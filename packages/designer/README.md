@@ -46,11 +46,11 @@ surfaces and live in `@clossys/publisher/web`.
   `Separator`, `Chip`.
 - **`blocks`** — owns the internal layout of multiple named regions,
   typically by composing one or more atoms (and/or layout) into something
-  with a real job on a page. Eighteen ship: `PageHeader`, `EmptyState`,
+  with a real job on a page. Twenty ship: `PageHeader`, `EmptyState`,
   `DataTable`, `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`,
   `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`,
-  `FeatureGrid`, `Faq`, `PricingTable`, `Testimonial`, `ArticleBody` — the
-  last six are marketing/editorial content blocks, completing this layer
+  `FeatureGrid`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`, `Testimonial`, `ArticleBody` — the
+  last eight are marketing/editorial content blocks, completing this layer
   (see "Blocks" below).
 - **`shell`** — the persistent frame around content (nav, layout chrome)
   that provides the slots content fills. One per app; survives route
@@ -265,7 +265,7 @@ source file's own header for the exact probe and its result). Today that's:
 | Subpath | Server-safe members |
 | --- | --- |
 | `@clossys/designer/atoms/server` | `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Skeleton`, `Spinner`, `mergeUiClasses` |
-| `@clossys/designer/blocks/server` | `ArticleBody`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `PageHeader`, `PricingTable`, `SectionHeader`, `Stat` |
+| `@clossys/designer/blocks/server` | `ArticleBody`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `SectionHeader`, `Stat`, `StatusList` |
 | `@clossys/designer/shell/server` | `Shell`, `SiteFooter`, `SiteHeader`, `SkipLink` |
 | `@clossys/designer/charts/server` | `ChartFrame`, `Sparkline` |
 | `@clossys/designer/theme/server` | `getThemeInitScript` |
@@ -2351,6 +2351,20 @@ exactly that reason: this package owns visual vocabulary, never copy (see
 "Public contract" above — audience-facing words belong to
 `@clossys/writer`).
 
+`Hero`, `FeatureGrid`, `Faq` (including its server implementation),
+`OrderedStepSequence`, and `StatusList` share one closed `ground` contract:
+`"base" | "sunken" | "inverse"` (default `"base"`). Base inherits the
+ambient page surface, preserving existing composition and markup, while
+sunken and inverse paint their semantic surfaces explicitly. Every ground
+selects its foreground, divider/connector, and status treatment from
+Designer's exported `SECTION_GROUND_CLASSES`; consumers do not pair a surface
+with unrelated foreground tokens. The mapping and its
+`SectionGround` type are exported from both `@clossys/designer/blocks` and
+`@clossys/designer/blocks/server`. Status dots retain the closed display-status
+colors on all three grounds; sunken and inverse add a checked, ground-specific
+contrast boundary, while the adjacent visible label remains the meaning-bearing
+channel.
+
 ### `Hero`
 
 ```tsx
@@ -2409,6 +2423,9 @@ content heading; a page with its own `<h1>` elsewhere, or a second
 `Hero`-shaped section further down the page, needs `headingLevel={2}`
 instead, the same document-outline reasoning `SectionHeader`'s `level`
 documents.
+Use `ground="sunken"` or `ground="inverse"` for those semantic section
+grounds; the block applies the matching painted surface and ink policy as one
+unit. The default base ground inherits the surrounding base surface.
 
 ### `FeatureGrid`
 
@@ -2447,6 +2464,53 @@ same reasoning `NavGrid`'s cards apply) — the grid's own optional
 `heading` (via `headingLevel`, default `2`) is the only real heading
 region. Items lay out one per row on narrow viewports, two from `tablet`,
 three from `desktop` — the same responsive grid `NavGrid` uses.
+`ground` uses the shared closed section-ground contract above.
+
+### `OrderedStepSequence`
+
+```tsx
+import { OrderedStepSequence } from "@clossys/designer/blocks";
+
+<OrderedStepSequence
+  heading="How it works"
+  items={[
+    { id: "discover", ordinal: "01", label: "First", heading: "Discover", description: "Understand the need." },
+    { id: "decide", ordinal: "02", label: "Second", heading: "Decide", description: "Choose a path." },
+  ]}
+/>
+```
+
+An editorial `<ol>`, not a stepper or progress indicator. Each ordinal remains
+authored text, while decorative connectors are hidden from assistive technology
+and render only between adjacent items. The sequence changes from a vertical
+column/connector to a horizontal row/connector at `tablet`. Set
+`ground="sunken"` or `ground="inverse"` selects the shared matching painted
+surface, ink, border, and connector policy. Base inherits its surrounding
+surface. `headingLevel` controls the real heading
+elements (default `2`).
+
+### `StatusList`
+
+```tsx
+import { StatusList } from "@clossys/designer/blocks";
+
+<StatusList
+  legendLabel="Readiness"
+  labels={{ available: "Available", partial: "Partial", planned: "Planned" }}
+  groups={[
+    { id: "coverage", heading: "Coverage", items: [{ id: "reports", label: "Reports", state: "available" }] },
+  ]}
+/>
+```
+
+A grouped `<dl>` for editorial readiness statements, with one section-level
+legend whose required `legendLabel` is caller-localized, visible, and names
+the semantic legend list. State is closed to `available`, `partial`, and `planned`; the block
+maps those values to status tokens rather than accepting a color. The dot is
+decorative and its adjacent state text remains ordinary reading text, so color
+never carries the meaning alone.
+`ground` uses the shared closed section-ground contract above, including the
+ground-appropriate status-dot boundary.
 
 ### `Faq`
 
@@ -2481,6 +2545,9 @@ question and nothing more. Each pair expands and collapses
 INDEPENDENTLY — `Faq` holds no shared "which one is open" state and
 renders no `DisclosureGroup`, so opening one question never closes
 another, unlike a coordinated accordion.
+Both implementations accept the same shared `ground` values and apply the
+matching surface policy, question/answer foregrounds, and dividers. Base
+inherits the ambient surface; sunken and inverse paint their own surfaces.
 
 ### `PricingTable`
 
@@ -3826,7 +3893,7 @@ not a grab-bag).
 | `FileTrigger` | component | File selection wired onto an arbitrary pressable trigger, built on react-aria-components' `FileTrigger`. |
 | `FileTriggerProps` | type | Props for `FileTrigger`: `children` (the pressable trigger), plus everything react-aria-components' own `FileTrigger` accepts (`acceptedFileTypes`, `allowsMultiple`, `onSelect`, ...). No `className` — see `FileTrigger.tsx`'s own doc comment for why. |
 | `Disclosure` | component | A single expandable/collapsible section, built on react-aria-components' `Disclosure`/`DisclosurePanel`. |
-| `DisclosureProps` | type | Props for `Disclosure`: `title`, `children`, `className`, plus most of react-aria-components' own `Disclosure` props. |
+| `DisclosureProps` | type | Props for `Disclosure`: `title`, `children`, `className`, `triggerClassName`, `panelClassName`, plus most of react-aria-components' own `Disclosure` props. |
 | `ProgressBar` | component | Determinate/indeterminate progress built on react-aria-components' own `ProgressBar`. |
 | `ProgressBarProps` | type | Props for `ProgressBar`: `label`, `className`, plus everything react-aria-components' own `ProgressBar` accepts (`value`, `minValue`, `maxValue`, `isIndeterminate`, ...). |
 | `Separator` | component | Visual divider built on react-aria-components' own `Separator`. |
@@ -3867,14 +3934,30 @@ not a grab-bag).
 | `SectionHeaderProps` | type | Props for `SectionHeader`: `eyebrow`, `title`, `description`, `actions`, `level`, `className`, `style`, plus every native `<div>` attribute. |
 | `SectionHeaderLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
 | `Hero` | component | Above-the-fold message: eyebrow, heading, description, actions slot, optional media slot (switches to a two-column layout when supplied). `headingLevel` picks its heading element. |
-| `HeroProps` | type | Props for `Hero`: `eyebrow`, `heading`, `description`, `actions`, `media`, `headingLevel`, `className`, `style`, plus every native `<section>` attribute. |
+| `SECTION_GROUND_CLASSES` | constant | Exhaustive Designer-owned surface, foreground, divider/connector, and status class policy for every `SectionGround`; base inherits its ambient surface, while sunken and inverse paint theirs; server-safe and exported from both blocks barrels. |
+| `SectionGround` | type | `"base" \| "sunken" \| "inverse"`. |
+| `SectionGroundClasses` | type | The complete class-map shape for one section ground. |
+| `SectionStatusTone` | type | `"success" \| "warning" \| "info"`; keys for the mapping's closed status treatment. |
+| `HeroProps` | type | Props for `Hero`: `eyebrow`, `heading`, `description`, `actions`, `media`, `headingLevel`, `ground`, `className`, `style`, plus every native `<section>` attribute. |
 | `HeroHeadingLevel` | type | `1 \| 2`. |
 | `FeatureGrid` | component | Titled collection of feature items: optional eyebrow/heading/description region, a grid of icon/heading/description items. |
-| `FeatureGridProps` | type | Props for `FeatureGrid`: `eyebrow`, `heading`, `description`, `items`, `headingLevel`, `className`, `style`, plus every native `<div>` attribute. |
+| `FeatureGridProps` | type | Props for `FeatureGrid`: `eyebrow`, `heading`, `description`, `items`, `headingLevel`, `ground`, `className`, `style`, plus every native `<div>` attribute. |
 | `FeatureGridItem` | type | One item: `id`, `icon?`, `heading`, `description?`. |
 | `FeatureGridHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
+| `OrderedStepSequence` | component | Editorial ordered sequence: optional heading region, authored ordinal/label/heading/body steps, responsive decorative connectors. |
+| `OrderedStepSequenceProps` | type | Props for `OrderedStepSequence`: `heading`, `description`, `items`, `headingLevel`, `ground`, `className`, `style`, plus every native `<section>` attribute. |
+| `OrderedStepSequenceItem` | type | One step: `id`, `ordinal`, `label?`, `heading`, `description?`. |
+| `OrderedStepSequenceHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
+| `OrderedStepSequenceGround` | type | Sequence-specific alias of the shared `SectionGround`: `"base" \| "sunken" \| "inverse"`. |
+| `StatusList` | component | Grouped editorial status list: one legend and a definition list per group. |
+| `StatusListProps` | type | Props for `StatusList`: `heading`, `description`, `labels`, `groups`, `legendLabel`, `headingLevel`, `ground`, `className`, `style`, plus every native `<section>` attribute. |
+| `StatusListGroup` | type | One group: `id`, `heading`, `items`. |
+| `StatusListItem` | type | One row: `id`, `label`, `state`. |
+| `StatusListLabels` | type | A label for each `StatusListState`. |
+| `StatusListState` | type | `"available" \| "partial" \| "planned"`. |
+| `StatusListHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
 | `Faq` | component | Expand/collapse question/answer list, under an optional heading region. Each item is this package's own `Disclosure` atom — independent, not a coordinated accordion. |
-| `FaqProps` | type | Props for `Faq`: `heading`, `description`, `items`, `headingLevel`, `className`, `style`, plus every native `<div>` attribute. |
+| `FaqProps` | type | Props for `Faq`: `heading`, `description`, `items`, `headingLevel`, `ground`, `className`, `style`, plus every native `<div>` attribute. |
 | `FaqItem` | type | One item: `id`, `question`, `answer`. |
 | `FaqHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
 | `PricingTable` | component | Pricing tiers under an optional heading region: name, price, feature list, CTA slot per tier, `isHighlighted` plus an optional `badge` slot to mark one as recommended. |
@@ -4336,9 +4419,9 @@ speculatively, just because a related component shipped, is the exact
 un-bounded growth this package's own "variant rule" warns against one level
 up. They get added here only once something real needs them.
 
-**Blocks:** eighteen ship — `PageHeader`, `EmptyState`, `DataTable`,
+**Blocks:** twenty ship — `PageHeader`, `EmptyState`, `DataTable`,
 `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`, `ConfirmDialog`,
-`Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `FeatureGrid`, `Faq`,
+`Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `FeatureGrid`, `OrderedStepSequence`, `StatusList`, `Faq`,
 `PricingTable`, `Testimonial`, `ArticleBody` — completing this layer. No
 `FilterBar` block:
 `DataTable`'s own `toolbar` slot (and `Toolbar`'s own `search` slot) are
