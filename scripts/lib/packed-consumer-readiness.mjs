@@ -1,4 +1,4 @@
-import { execFile } from "node:child_process";
+import { spawn } from "node:child_process";
 import { mkdtemp, mkdir, readFile, readdir, realpath, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, relative, resolve, sep } from "node:path";
@@ -447,13 +447,86 @@ export function validateOptionalPeerPolicy(packages, policy, { allowUnselected =
 }
 
 export function runProcess(file, args, { cwd, env, timeout = DEFAULT_TIMEOUT_MS } = {}) {
+  const grouped = process.platform !== "win32";
+  const maxBytes = 4 * 1024 * 1024;
   return new Promise((resolveResult) => {
-    execFile(file, args, { cwd, env, timeout, maxBuffer: 4 * 1024 * 1024 }, (error, stdout, stderr) => {
-      if (!error) return resolveResult({ exitCode: 0, stdout, stderr, timedOut: false, launchError: undefined });
-      const timedOut = error.killed === true || error.signal === "SIGTERM";
-      const exitCode = typeof error.code === "number" ? error.code : null;
-      const launchError = typeof error.code === "string" && !timedOut ? error.message : undefined;
-      return resolveResult({ exitCode, stdout: stdout ?? "", stderr: stderr ?? "", timedOut, launchError });
+    let child;
+    let settled = false;
+    let timedOut = false;
+    let overflow = false;
+    let spawnError = null;
+    let exitResult = null;
+    let closedResult = null;
+    let terminationStarted = false;
+    let terminationComplete = false;
+    let forcedTermination = false;
+    let stdout = Buffer.alloc(0);
+    let stderr = Buffer.alloc(0);
+    let timeoutTimer;
+    const maybeFinish = () => {
+      if (settled || closedResult === null || (terminationStarted && !terminationComplete)) return;
+      settled = true;
+      clearTimeout(timeoutTimer);
+      const { code, signal } = closedResult;
+      resolveResult({
+        exitCode: timedOut || overflow || spawnError ? null : Number.isInteger(code) ? code : null,
+        // Reaping a private group after its leader exits must not convert the
+        // leader's successful observation into a synthetic SIGKILL failure.
+        signal: signal ?? (forcedTermination ? "SIGKILL" : null),
+        launchError: spawnError ? spawnError.message : overflow ? "process output exceeded buffer limit" : undefined,
+        stdout: stdout.toString("utf8"),
+        stderr: stderr.toString("utf8"),
+        timedOut,
+      });
+    };
+    const terminate = () => {
+      try {
+        // `detached` gives this invocation its own process group on Unix.
+        // Killing only -child.pid cannot affect sibling processes.
+        if (grouped && Number.isInteger(child?.pid)) process.kill(-child.pid, "SIGKILL");
+        else child?.kill("SIGKILL");
+      } catch (error) {
+        if (error?.code !== "ESRCH") spawnError ??= error;
+      }
+    };
+    const beginTermination = ({ forced = false } = {}) => {
+      if (terminationStarted) return;
+      terminationStarted = true;
+      forcedTermination = forced;
+      terminate();
+      terminationComplete = true;
+      maybeFinish();
+    };
+    const append = (current, chunk) => {
+      const next = Buffer.concat([current, chunk]);
+      if (next.length <= maxBytes) return next;
+      overflow = true;
+      beginTermination({ forced: true });
+      return next.subarray(0, maxBytes);
+    };
+    try {
+      child = spawn(file, args, { cwd, env, detached: grouped, stdio: ["ignore", "pipe", "pipe"] });
+    } catch (error) {
+      resolveResult({ exitCode: null, signal: null, launchError: error instanceof Error ? error.message : String(error), stdout: "", stderr: "", timedOut: false });
+      return;
+    }
+    child.stdout.on("data", (chunk) => { stdout = append(stdout, chunk); });
+    child.stderr.on("data", (chunk) => { stderr = append(stderr, chunk); });
+    child.on("error", (error) => { spawnError = error; });
+    timeoutTimer = setTimeout(() => {
+      timedOut = true;
+      beginTermination({ forced: true });
+    }, timeout);
+    // `close` waits for stdio. A clean parent can leave a descendant holding
+    // those descriptors, so reap this invocation's private group at `exit`.
+    child.on("exit", (code, signal) => {
+      exitResult = { code, signal };
+      beginTermination();
+    });
+    child.on("close", (code, signal) => {
+      closedResult = exitResult ?? { code, signal };
+      clearTimeout(timeoutTimer);
+      maybeFinish();
     });
   });
 }

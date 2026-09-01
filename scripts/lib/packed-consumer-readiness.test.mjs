@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, mkdir, rm, symlink, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -315,4 +315,20 @@ test("bounded execution distinguishes a reached nonzero bin from a timeout", asy
   assert.equal(reached.launchError, undefined);
   const timedOut = await runProcess(process.execPath, ["--eval", "setInterval(() => {}, 1000)"], { timeout: 20 });
   assert.equal(timedOut.timedOut, true);
+  const unavailable = await runProcess("foundry-command-that-does-not-exist", []);
+  assert.equal(unavailable.exitCode, null);
+  assert.ok(unavailable.launchError);
+});
+
+test("normal parent exit reaps only its private process group", { skip: process.platform === "win32" }, async (t) => {
+  const root = await fixture(t);
+  const marker = join(root, "lingering-descendant-marker");
+  const delayedWriter = `setTimeout(() => require('node:fs').writeFileSync(${JSON.stringify(marker)}, 'unexpected'), 350);`;
+  const parent = `require('node:child_process').spawn(process.execPath, ['--eval', ${JSON.stringify(delayedWriter)}], { stdio: 'ignore' }); process.exit(0);`;
+  const result = await runProcess(process.execPath, ["--eval", parent], { timeout: 5_000 });
+  assert.equal(result.exitCode, 0, result.stderr);
+  assert.equal(result.signal, null);
+  assert.equal(result.timedOut, false);
+  await new Promise((resolveResult) => setTimeout(resolveResult, 700));
+  await assert.rejects(() => readFile(marker), { code: "ENOENT" });
 });
