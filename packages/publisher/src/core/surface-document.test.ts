@@ -119,6 +119,40 @@ describe("SurfaceRepeatingSlotBinding", () => {
     const findings = validateSurfaceDocument({ ...validWeb, bindings: [...validWeb.bindings, { slot: "capabilities", items: ["not-an-object", { assetId: "" }] }] });
     expect(findings.map((finding) => finding.rule)).toEqual(expect.arrayContaining(["surface-binding-group-item-shape", "binding-asset-id-shape"]));
   });
+
+  it("accepts a non-empty structured field map whose fields each use exactly one normal copy/asset source", () => {
+    const structured: SurfaceDocument = {
+      ...validWeb,
+      bindings: [...validWeb.bindings, { slot: "faq", items: [{ fields: { question: { copy: ref("acme.faq.question") }, image: { assetId: "acme.faq.image" } } }] }],
+    };
+    expect(validateSurfaceDocument(structured)).toEqual([]);
+  });
+
+  it("fails closed on malformed structured maps, ambiguous sources, and a node hidden inside a field", () => {
+    const findings = validateSurfaceDocument({
+      ...validWeb,
+      bindings: [
+        ...validWeb.bindings,
+        {
+          slot: "faq",
+          items: [
+            { fields: {} },
+            { fields: { question: { copy: ref("acme.question"), assetId: "acme.question.asset" } } },
+            { fields: { answer: { node: { text: "bypass" } } } },
+            { copy: ref("acme.legacy"), fields: { answer: { copy: ref("acme.answer") } } },
+          ],
+        },
+      ],
+    });
+    expect(findings.map((finding) => finding.rule)).toEqual(
+      expect.arrayContaining([
+        "surface-binding-group-item-fields-shape",
+        "surface-binding-group-item-field-source-exclusive",
+        "surface-binding-group-item-field-node-forbidden",
+        "surface-binding-group-item-source-exclusive",
+      ]),
+    );
+  });
 });
 
 describe("OutputManifest", () => {

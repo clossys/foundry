@@ -14,8 +14,8 @@ export { buildWebHeadMetadata } from "./headMetadata.js";
 export { listWebTemplateNames } from "./internal/webTemplates.js";
 export { defineWebTemplate } from "./internal/defineWebTemplate.js";
 export { createWebRenderer } from "./internal/createWebRenderer.js";
-export { AuthView, ErrorView, MarketingView } from "./views/index.js";
-export type { AuthViewProps, ErrorViewProps, MarketingFaqItem, MarketingFeatureItem, MarketingViewProps } from "./views/index.js";
+export { AuthView, CaptureView, CollectionView, DocumentView, ErrorView, MarketingView, SectionedView } from "./views/index.js";
+export type { AuthViewProps, CaptureViewProps, CollectionViewEmptyState, CollectionViewEntry, CollectionViewLink, CollectionViewPagination, CollectionViewProps, DocumentViewEffectiveDate, DocumentViewProps, ErrorViewProps, MarketingFaqItem, MarketingFeatureItem, MarketingViewProps, SectionedViewProps } from "./views/index.js";
 
 export { RenderError } from "../internal/errors.js";
 export type { RenderErrorReason } from "../internal/errors.js";
@@ -27,7 +27,9 @@ export type {
   DefineWebTemplateOptions,
   RenderWebOptions,
   RenderWebResult,
+  RepeatingWebSlotFieldSpec,
   RepeatingWebSlotSpec,
+  ResolvedWebGroupField,
   ResolvedWebGroupItem,
   WebHeadMetadata,
   WebOpenGraphMetadata,

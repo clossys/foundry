@@ -108,10 +108,24 @@ export interface SurfaceSlotBinding {
  * a slot on its own — it fills one ordinal position inside the slot its
  * enclosing `SurfaceRepeatingSlotBinding` already names.
  */
+export interface SurfaceRepeatingSlotFieldBinding {
+  /** Approved audience-facing copy, resolved through the same CopyRef seam as every flowed slot. */
+  copy?: CopyRef;
+  /** Media registry seam, resolved by the target renderer just like a single asset binding. */
+  assetId?: string;
+}
+
 export interface SurfaceSlotBindingItem {
   copy?: CopyRef;
   node?: object;
   assetId?: string;
+  /**
+   * Named editorial fields for one structured repeating item. Every field
+   * is deliberately limited to `copy` or `assetId`: a caller-owned `node`
+   * belongs only to the legacy single-value escape hatch and must not become
+   * a way around CopyRef resolution for ordinary multi-field copy.
+   */
+  fields?: Record<string, SurfaceRepeatingSlotFieldBinding>;
 }
 
 /**
