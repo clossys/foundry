@@ -118,10 +118,10 @@ export function NavShell({
           {triggerLabel}
         </Button>
         <ModalOverlay className="fixed inset-0 bg-overlay-scrim" style={{ zIndex: UI_Z_MODAL }} isDismissable>
-          <Modal className="fixed inset-y-0 left-0 flex h-full w-[min(20rem,85vw)] flex-col outline-none">
+          <Modal className="fixed inset-y-0 start-0 flex h-full w-[min(20rem,85vw)] flex-col outline-none">
             <AriaDialog
               aria-label={ariaLabel}
-              className="flex h-full w-full flex-col gap-lg overflow-auto border-r border-overlay-border bg-overlay-surface p-lg text-body text-ink-primary outline-none"
+              className="flex h-full w-full flex-col gap-lg overflow-auto border-e border-overlay-border bg-overlay-surface p-lg text-body text-ink-primary outline-none"
               style={{ boxShadow: UI_ELEVATION_FLOATING }}
             >
               {({ close }) => (

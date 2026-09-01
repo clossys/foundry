@@ -59,7 +59,7 @@ export function SkipLink({ targetId, children, className }: SkipLinkProps) {
       }}
       className={cx(
         "sr-only focus:not-sr-only",
-        "focus:fixed focus:left-sm focus:top-sm focus:rounded-control focus:bg-accent focus:px-md focus:py-sm",
+        "focus:fixed focus:start-sm focus:top-sm focus:rounded-control focus:bg-accent focus:px-md focus:py-sm",
         "focus:text-body focus:text-ink-on-accent focus:outline-none",
         className,
       )}

@@ -78,6 +78,17 @@ export type { HeroProps, HeroHeadingLevel } from "./Hero.js";
 export { FeatureGrid } from "./FeatureGrid.js";
 export type { FeatureGridProps, FeatureGridItem, FeatureGridHeadingLevel } from "./FeatureGrid.js";
 
+export { OrderedStepSequence } from "./OrderedStepSequence.js";
+export type {
+  OrderedStepSequenceProps,
+  OrderedStepSequenceItem,
+  OrderedStepSequenceHeadingLevel,
+  OrderedStepSequenceGround,
+} from "./OrderedStepSequence.js";
+
+export { StatusList } from "./StatusList.js";
+export type { StatusListProps, StatusListGroup, StatusListItem, StatusListLabels, StatusListState, StatusListHeadingLevel } from "./StatusList.js";
+
 export { Faq } from "./Faq.js";
 export type { FaqProps, FaqItem, FaqHeadingLevel } from "./Faq.js";
 
