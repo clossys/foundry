@@ -229,8 +229,18 @@ jobs:
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && !inputs.verify_only }}
         working-directory: packages/${{ matrix.package }}
         run: |
+          set -euo pipefail
           registry="$(node -p "JSON.parse(require('fs').readFileSync('../../package-scope.json','utf8')).registry")"
-          npm publish . --dry-run --provenance --access public --ignore-scripts --registry "$registry"
+          status=0
+          output="$(npm publish . --dry-run --provenance --access public --ignore-scripts --registry "$registry" 2>&1)" || status=$?
+          printf '%s\n' "$output"
+          if [ "$status" -ne 0 ]; then
+            exit "$status"
+          fi
+          if printf '%s\n' "$output" | grep -E -q 'npm auto-corrected|bin\[[^]]+\].*(invalid|removed)'; then
+            echo '::error title=Publish dry-run changed the manifest::npm auto-corrected the package manifest; refusing to publish a different bin map.'
+            exit 1
+          fi
 
       - name: Upload exact candidate and qualification transcript
         if: ${{ always() }}

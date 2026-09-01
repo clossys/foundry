@@ -82,8 +82,8 @@
     }
   },
   "bin": {
-    "publisher-media-check": "./dist/media/cli.js",
-    "publisher-record-check": "./dist/record/cli.js"
+    "publisher-media-check": "dist/media/cli.js",
+    "publisher-record-check": "dist/record/cli.js"
   },
   "files": [
     "dist",
