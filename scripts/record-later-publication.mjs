@@ -10,7 +10,7 @@ import { join, dirname, basename, resolve } from "node:path";
 import { tmpdir } from "node:os";
 
 import { assertCredentialFree } from "./lib/candidate-runner.mjs";
-import { currentQualificationJoins, parseStrictJson, qualificationPath, qualificationRecordHistory, validateCandidateQualification } from "./lib/candidate-qualification.mjs";
+import { comparableTranscriptSha256, currentQualificationJoins, parseStrictJson, qualificationPath, qualificationRecordHistory, validateCandidateQualification } from "./lib/candidate-qualification.mjs";
 import { fetchPublicNpmArtifact } from "./fetch-public-npm-artifact.mjs";
 import { assertPackageAuthorized, loadReleaseCatalog, readCurrentReleaseIdentity, resolveReleaseTarget } from "./check-release-catalog.mjs";
 import { repositoryIdentityFromPackument, validatePublicNpmRegistryProof } from "./lib/public-npm-registry.mjs";
@@ -202,7 +202,12 @@ async function buildReplay({ root, packageKey, qualification, qualificationIntro
   const runQualification = {
     run: { id: runId, url: `https://github.com/clossys/foundry/actions/runs/${runId}`, headSha: provider.run.head_sha, conclusion: provider.run.conclusion, qualificationJob: selected(`qualify (${packageKey})`) },
     artifact: { id: provider.artifact.id, name: provider.artifact.name, archiveSha256: archiveDigest, size: provider.artifact.size_in_bytes, url: provider.artifact.archive_download_url },
-    transcript: { rawSha256: digest("sha256", transcriptBytes), canonicalSha256: transcript.canonicalSha256, candidateTarball: structuredClone(qualification.candidate.tarball) },
+    transcript: {
+      rawSha256: digest("sha256", transcriptBytes),
+      canonicalSha256: transcript.canonicalSha256,
+      comparableSha256: comparableTranscriptSha256(transcript),
+      candidateTarball: structuredClone(qualification.candidate.tarball),
+    },
     publicationJob: selected(`publish (${packageKey})`),
     anonymousRegistry: { packumentSha256: digest("sha256", Buffer.from(JSON.stringify(packument))), auditSha256: digest("sha256", Buffer.from(JSON.stringify(audit))), provenanceBundleSha256: digest("sha256", Buffer.from(JSON.stringify(provenance))), signatureSha256: digest("sha256", Buffer.from(JSON.stringify(signatures))), signatureKeyids: signatures.map((item) => item.keyid).sort(), attestationUrl: version?.dist?.attestations?.url },
   };

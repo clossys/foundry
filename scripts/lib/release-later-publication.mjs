@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
-import { currentQualificationJoins, parseStrictJson, qualificationPath, qualificationRecordHistory, validateCandidateQualification } from "./candidate-qualification.mjs";
+import { comparableTranscriptSha256, currentQualificationJoins, parseStrictJson, qualificationPath, qualificationRecordHistory, validateCandidateQualification } from "./candidate-qualification.mjs";
 import { publicNpmPackageUrl, publicNpmVersionUrl, PUBLIC_NPM_REGISTRY } from "./public-npm-registry.mjs";
 import { TRIO } from "./release-qualification-trio.mjs";
 
@@ -123,7 +123,7 @@ function exactJob(value, id, name) {
     && value.url === `https://github.com/clossys/foundry/actions/runs/${id}/job/${value.id}`;
 }
 
-function replayRunQualification(findings, value, candidate, sourceSha, qualificationCanonicalSha256, publication) {
+function replayRunQualification(findings, value, candidate, sourceSha, qualificationTranscript, publication) {
   closed(findings, value, ["run", "artifact", "transcript", "publicationJob", "anonymousRegistry"], "publication.runQualification");
   const key = packageKey(candidate?.name);
   const run = value?.run;
@@ -140,11 +140,19 @@ function replayRunQualification(findings, value, candidate, sourceSha, qualifica
     finding(findings, "replay-artifact", "replay evidence must bind one exact qualified-candidate archive and its provider digest.");
   }
   const transcript = value?.transcript;
-  closed(findings, transcript, ["rawSha256", "canonicalSha256", "candidateTarball"], "publication.runQualification.transcript");
+  closed(findings, transcript, ["rawSha256", "canonicalSha256", "comparableSha256", "candidateTarball"], "publication.runQualification.transcript");
   if (!SHA256.test(transcript?.rawSha256 ?? "") || !same(transcript?.candidateTarball, candidate?.tarball)) {
     finding(findings, "replay-transcript", "replay evidence must bind fresh raw transcript bytes and the exact candidate tarball.");
   }
-  if (!SHA256.test(transcript?.canonicalSha256 ?? "") || transcript?.canonicalSha256 !== qualificationCanonicalSha256) finding(findings, "replay-transcript", "replay transcript canonical bytes must exactly join the retained qualification.");
+  const canonicalValid = SHA256.test(transcript?.canonicalSha256 ?? "");
+  const canonicalExact = canonicalValid && transcript.canonicalSha256 === qualificationTranscript?.canonicalSha256;
+  const qualificationComparableSha256 = object(qualificationTranscript) ? comparableTranscriptSha256(qualificationTranscript) : null;
+  // v3 records retained before the comparable digest existed remain valid only
+  // when their fresh canonical transcript is exact. Any difference must carry
+  // the new digest and prove the shared consumer-neutral projection unchanged.
+  if (!canonicalValid || (!canonicalExact && (!SHA256.test(transcript?.comparableSha256 ?? "") || transcript.comparableSha256 !== qualificationComparableSha256))) {
+    finding(findings, "replay-transcript", "replay transcript must exactly join the retained canonical bytes or its consumer-neutral comparable digest.");
+  }
   if (!exactJob(value?.publicationJob, run?.id, `publish (${key})`)) finding(findings, "publish-job", "replay evidence must bind the exact successful publish job in the qualification run.");
   const registry = value?.anonymousRegistry;
   closed(findings, registry, ["packumentSha256", "auditSha256", "provenanceBundleSha256", "signatureSha256", "signatureKeyids", "attestationUrl"], "publication.runQualification.anonymousRegistry");
@@ -274,7 +282,7 @@ export function validateLaterPublication(record, { recordPath, recordBytes, qual
   if (trusted && !exactAttestedSubject(record?.publication?.provenance, proof, c)) finding(findings, "attestation-subject", "attestation subject must exactly project the candidate package/version and SHA-512.");
   if (replay && !v2) finding(findings, "registry-proof", "v3 replay requires the exact-version anonymous registry proof v2.");
   if (replay && !exactAttestedSubject(record?.publication?.provenance, proof, c)) finding(findings, "attestation-subject", "v3 attestation subject must exactly project the candidate package/version and SHA-512.");
-  if (replay) replayRunQualification(findings, record?.runQualification, c, record?.source?.publicationSource?.sha, qualification?.transcript?.canonicalSha256, record?.publication);
+  if (replay) replayRunQualification(findings, record?.runQualification, c, record?.source?.publicationSource?.sha, qualification?.transcript, record?.publication);
   if (typeof recordPath === "string" && typeof recordBytes === "string" && (!key || !VERSION.test(c?.version ?? "") || recordPath !== `${LATER_PUBLICATION_DIRECTORY}/${key}-${c.version}.json`)) finding(findings, "record-path", "record path must be the unique package/version identity.");
   return findings;
 }
