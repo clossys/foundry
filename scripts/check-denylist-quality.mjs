@@ -36,7 +36,6 @@
 
 import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { join, dirname } from "node:path";
-import { homedir } from "node:os";
 import { fileURLToPath } from "node:url";
 
 const argv = process.argv.slice(2);
@@ -46,11 +45,21 @@ function flagValue(name) {
   return i >= 0 ? argv[i + 1] : undefined;
 }
 
-const denylistPath =
-  flagValue("--denylist") ??
-  process.env.PUBLIC_SAFETY_DENYLIST ??
-  join(homedir(), ".config", "public-safety", "denylist.json");
+// There is deliberately no generic on-disk fallback here. A machine may hold
+// several repositories' denylists, and selecting a same-named file from the
+// wrong repository makes the quality result look authoritative while grading
+// different policy data from the tree scan. The caller must choose one policy
+// explicitly (as an argument or environment capability), just like
+// check-public-safety.mjs.
+const denylistPath = flagValue("--denylist") ?? process.env.PUBLIC_SAFETY_DENYLIST ?? null;
 
+if (!denylistPath) {
+  console.error(
+    "check-denylist-quality: no denylist selected — set --denylist <file> or $PUBLIC_SAFETY_DENYLIST; " +
+      "refusing to grade an unselected policy",
+  );
+  process.exit(2);
+}
 if (!existsSync(denylistPath)) {
   console.error(`check-denylist-quality: denylist not found at ${denylistPath}`);
   process.exit(2);
