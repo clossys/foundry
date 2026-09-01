@@ -225,13 +225,15 @@ export function ownerPresentPtyArgs(registry, platform = process.platform) {
 
 export function createOwnerPromptRelay(write = (line) => process.stderr.write(line)) {
   let buffered = "", authPromptShown = false, loginShown = false, browserUrlShown = false, browserEnterShown = false;
-  return (chunk) => {
+  return (chunk, context = {}) => {
     buffered = `${buffered}${Buffer.from(chunk).toString("utf8")}`.slice(-8192);
     if (!authPromptShown && /(?:one[- ]time password|\botp\b|two[- ]factor|\b2fa\b|webauthn|authentication code|enter.{0,32}(?:code|password))/i.test(buffered)) {
+      context.ownerInputRequested?.();
       write("npm authentication requires owner input.\n");
       authPromptShown = true;
     }
-    if (!loginShown && /https:\/\/(?:www\.)?npmjs\.com\/login(?:[/?#]|$)/i.test(buffered)) {
+    if (!loginShown && /https:\/\/(?:www\.)?npmjs\.com\/login(?:[/?#]|\r?\n|$)/i.test(buffered)) {
+      if (context.ownerInputAvailable === false) context.ownerInputRequested?.();
       write("Open https://www.npmjs.com/login to continue npm authentication.\n");
       loginShown = true;
     }
@@ -244,7 +246,12 @@ export function createOwnerPromptRelay(write = (line) => process.stderr.write(li
     // must not relay a truncated browser capability.
     const browserUrl = /(?:^|[\r\n])[ \t]*https:\/\/www\.npmjs\.com\/auth\/cli\/([A-Za-z0-9_-]{1,256})[ \t]*\r?\n/i.exec(buffered);
     if (!browserUrlShown && browserUrl) {
-      write(`Open https://www.npmjs.com/auth/cli/${browserUrl[1]} to continue npm authentication.\n`);
+      // A non-TTY worker cannot hand an opaque browser capability to an owner:
+      // its input is deliberately ignored and any eventual owner prompt will
+      // fail closed. Keep the generic Enter verdict below, but never relay the
+      // one-time URL outside a real interactive terminal.
+      if (context.ownerInputAvailable === false) context.ownerInputRequested?.();
+      else write(`Open https://www.npmjs.com/auth/cli/${browserUrl[1]} to continue npm authentication.\n`);
       browserUrlShown = true;
     }
     // npm 11 uses readline.question(), whose prompt has no newline. Accept
@@ -252,6 +259,7 @@ export function createOwnerPromptRelay(write = (line) => process.stderr.write(li
     // Any appended non-whitespace text keeps the expression from matching;
     // once relayed, only this generic instruction (never child text) escapes.
     if (browserUrlShown && !browserEnterShown && /(?:^|[\r\n])[ \t]*Press ENTER to open in the browser(?:\.\.\.|…)?[ \t]*(?:\r?\n)?$/i.test(buffered)) {
+      context.ownerInputRequested?.();
       write("Press ENTER to continue npm authentication.\n");
       browserEnterShown = true;
     }
@@ -260,18 +268,43 @@ export function createOwnerPromptRelay(write = (line) => process.stderr.write(li
 
 export function runInteractiveChild(file, args, options, onOutput = () => {}) {
   return new Promise((resolve) => {
-    const child = spawn(file, args, { ...options, encoding: undefined });
+    const stdinIsTTY = process.stdin.isTTY === true;
+    const stdin = stdinIsTTY ? "inherit" : "ignore";
+    let spawnOptions = { ...options, encoding: undefined };
+    if (Array.isArray(spawnOptions.stdio) && spawnOptions.stdio[0] === "inherit") {
+      spawnOptions = { ...spawnOptions, stdio: [stdin, ...spawnOptions.stdio.slice(1)] };
+    } else if (spawnOptions.stdio === "inherit") {
+      spawnOptions = { ...spawnOptions, stdio: [stdin, "inherit", "inherit"] };
+    }
+    const child = spawn(file, args, spawnOptions);
     let stdout = "", stderr = "", settled = false;
+    let ownerInputRequested = false;
+    const failClosed = () => {
+      if (stdinIsTTY || ownerInputRequested) return;
+      ownerInputRequested = true;
+      if (!settled) child.kill("SIGTERM");
+    };
     const finish = (result) => {
       if (settled) return;
       settled = true;
+      if (ownerInputRequested && !result.error && result.status === 0) result = { ...result, status: 1, signal: null };
       resolve(result);
     };
     const forward = (stream) => (chunk) => {
       const text = Buffer.from(chunk).toString("utf8");
       if (stream === "stdout") stdout += text;
       else stderr += text;
-      onOutput(chunk, { write: (input) => child.stdin?.write(input) });
+      onOutput(chunk, {
+        ownerInputAvailable: stdinIsTTY,
+        ownerInputRequested: failClosed,
+        write: (input) => {
+          if (!child.stdin) {
+            failClosed();
+            return false;
+          }
+          return child.stdin.write(input);
+        },
+      });
     };
     child.stdout?.on("data", forward("stdout"));
     child.stderr?.on("data", forward("stderr"));
@@ -340,7 +373,7 @@ export async function publishQualifiedDirectory({ root = process.cwd(), packageK
       // This owner-present command is unchanged: it uses a PTY for WebAuthn
       // or OTP, but always publishes the private clean directory, never the
       // candidate tarball.
-      const ownerSession = await interactiveRun(PTY_SCRIPT, ownerPresentPtyArgs(target.registry), { cwd: packageRoot, env: ownerPresentEnvironment(env), stdio: ["inherit", "pipe", "pipe"] }, createOwnerPromptRelay());
+      const ownerSession = await interactiveRun(PTY_SCRIPT, ownerPresentPtyArgs(target.registry), { cwd: packageRoot, env: ownerPresentEnvironment(env), stdio: [process.stdin.isTTY === true ? "inherit" : "ignore", "pipe", "pipe"] }, createOwnerPromptRelay());
       if (ownerSession?.error || ownerSession?.signal || ownerSession?.status !== 0) throw new Error("owner-present npm publish failed");
     } else {
       const oidc = oidcEnvironment(env, stageRoot);

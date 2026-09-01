@@ -624,8 +624,8 @@ the restrictive **Require two-factor authentication and disallow tokens**
 setting. A later bounded patch through the protected `npm-publish` OIDC path
 should not need npm terminal 2FA once that trust is configured, but it can
 still pause for the required GitHub protected-environment reviewer. Neither
-the retained record nor this handoff claims that either provider setting has
-already been changed.
+the retained publication record nor the source successor establishes that
+provider configuration; its current state is recorded below.
 
 `@clossys/publisher@0.1.9` is quarantined and unpublished. Its immutable
 qualification record remains retained for audit, but its candidate tarball was
@@ -636,9 +636,17 @@ first-publication candidate. Writer and Designer passed anonymous served-byte
 verification, Publisher 0.1.10 was packed and replayed with the pinned release
 runtime, and its owner-present upload now has both an immutable qualification
 record and an anonymous served-byte publication record. Publisher's npm
-trusted-publisher connection and restrictive publishing-access setting remain
-separate provider changes; after those are configured, the protected OIDC
-successor will be `0.1.11`.
+trusted publisher is now configured for `clossys/foundry` through
+`publish.yml` and its `npm-publish` environment, with only `npm publish`
+allowed; npm's restrictive **Require two-factor authentication and disallow
+tokens** setting is checked. That configuration establishes publisher trust
+only: it does not qualify, publish, or registry-verify `0.1.11`. The source has
+advanced to that later protected OIDC successor, and it now has its own
+immutable qualification record but no publication record. Do not prepare a
+0.1.11 trusted-publisher/OIDC upload until its fresh exact-head candidate has
+passed the required qualification and FULL release checks. After upload,
+require anonymous registry and provenance verification before treating 0.1.11
+as published.
 
 ### Why the name-collision check runs first, always
 
