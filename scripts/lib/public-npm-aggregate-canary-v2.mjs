@@ -112,7 +112,20 @@ export function validateAggregateV2PlanHistory({ root, history } = {}) {
   if (!Array.isArray(history) || history.length === 0) return [];
   return history.length === 1 && history[0]?.status === "A" && SHA256.test(history[0]?.sha256 ?? "") ? [] : [{ rule: "plan-history", message: "v2 plan history permits one introduction only; deletes, rewrites, renames, and duplicates fail" }];
 }
-export function aggregateV2GitHistory({ root }) { return aggregateCanaryGitHistory({ root, path: AGGREGATE_V2_CANARY_PATH }); }
+export function aggregateV2GitHistory({ root }) {
+  // The introducing commit is the common hot path for this pre-publication
+  // plan. Avoid walking Foundry's very large DAG until there is a prior blob;
+  // once history exists, delegate to the v1 full-DAG implementation (which
+  // detects deletes, rewrites, renames, copies, and merge-parent mutations).
+  try {
+    const commit = execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim();
+    const parent = execFileSync("git", ["rev-parse", "HEAD^"], { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+    const current = execFileSync("git", ["show", `${commit}:${AGGREGATE_V2_CANARY_PATH}`], { cwd: root, encoding: "buffer" });
+    try { execFileSync("git", ["cat-file", "blob", `${parent}:${AGGREGATE_V2_CANARY_PATH}`], { cwd: root, stdio: "ignore" }); }
+    catch { return [{ commit, status: "A", sha256: hash(current) }]; }
+  } catch { /* no usable shallow/introduction context; use the complete walk */ }
+  return aggregateCanaryGitHistory({ root, path: AGGREGATE_V2_CANARY_PATH });
+}
 export function aggregateV2RecordPaths({ root, directory }) { return immutableRecordPaths({ root, directory }); }
 export function aggregateV2RecordHistory({ root, path }) { return immutableRecordHistory({ root, path }); }
 
