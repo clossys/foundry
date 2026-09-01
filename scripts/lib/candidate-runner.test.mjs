@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { promisify } from "node:util";
-import { QUALIFICATION_PHASE_TIMEOUTS, assertCredentialFree, containedRegularFile, installNpmrc, packedFrameworkContexts, runCandidateQualification, runProcess, runtimeImportArguments, wildcardCapture } from "./candidate-runner.mjs";
+import { QUALIFICATION_PHASE_TIMEOUTS, assertCredentialFree, containedRegularFile, installNpmrc, normalizedStream, packedFrameworkContexts, runCandidateQualification, runProcess, runtimeImportArguments, wildcardCapture } from "./candidate-runner.mjs";
 import { RELEASE_RUNTIME } from "./release-runtime.mjs";
 
 const execFile = promisify(execFileCallback);
@@ -387,6 +387,12 @@ test("packed framework contexts are closed against exact declared runtime export
   for (const [foundryReleaseVerification, expected] of hostile) {
     assert.throws(() => packedFrameworkContexts({ name: "@example/pkg", foundryReleaseVerification }, runtime), expected);
   }
+});
+
+test("framework replay normalization equates module and plain Next config labels", () => {
+  const plain = "✓ Running next.config took 8ms\n✓ Compiled successfully in 2.5s\n";
+  const moduleConfig = "✓ Running next.config.mjs took 17ms\n✓ Compiled successfully in 3.1s\n";
+  assert.equal(normalizedStream("/tmp/consumer", plain, "framework"), normalizedStream("/tmp/consumer", moduleConfig, "framework"));
 });
 
 test("runtime import arguments distinguish the explicit react-server condition", () => {
