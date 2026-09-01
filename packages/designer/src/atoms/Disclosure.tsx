@@ -14,6 +14,10 @@ export interface DisclosureProps extends Omit<AriaDisclosureProps, "children"> {
   children: ReactNode;
   /** Merged onto the outer wrapper. */
   className?: string;
+  /** Merged onto the trigger; blocks use this to select a semantic ground's foreground. */
+  triggerClassName?: string;
+  /** Merged onto the panel; blocks use this to select a semantic ground's foreground. */
+  panelClassName?: string;
 }
 
 /**
@@ -42,14 +46,18 @@ export interface DisclosureProps extends Omit<AriaDisclosureProps, "children"> {
  * `Button` in `children` never accidentally inherits the trigger's own
  * behavior).
  */
-export function Disclosure({ title, children, className, ...rest }: DisclosureProps) {
+export function Disclosure({ title, children, className, triggerClassName, panelClassName, ...rest }: DisclosureProps) {
   return (
     <AriaDisclosure {...rest} className={cx("flex flex-col", className)}>
       {(renderProps) => (
         <>
           <AriaButton
             slot="trigger"
-            className="flex w-full items-center gap-sm rounded-default py-sm text-left text-body text-ink-primary outline-none disabled:cursor-not-allowed"
+            className={cx(
+              "flex w-full items-center gap-sm rounded-default py-sm text-left text-body",
+              triggerClassName ?? "text-ink-primary",
+              "outline-none disabled:cursor-not-allowed",
+            )}
           >
             <span
               aria-hidden="true"
@@ -62,7 +70,7 @@ export function Disclosure({ title, children, className, ...rest }: DisclosurePr
             </span>
             {title}
           </AriaButton>
-          <AriaDisclosurePanel className="pl-lg text-body-s text-ink-secondary">
+          <AriaDisclosurePanel className={cx("pl-lg text-body-s", panelClassName ?? "text-ink-secondary")}>
             {children}
           </AriaDisclosurePanel>
         </>

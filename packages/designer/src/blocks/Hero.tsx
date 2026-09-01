@@ -1,5 +1,6 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { cx } from "../atoms/internal/cx.js";
+import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 
 export type HeroHeadingLevel = 1 | 2;
 
@@ -51,6 +52,8 @@ export interface HeroProps extends HTMLAttributes<HTMLElement> {
    * @default 1
    */
   headingLevel?: HeroHeadingLevel;
+  /** Semantic section ground; selects the complete matching surface and foreground policy. @default "base" */
+  ground?: SectionGround;
   className?: string;
   style?: CSSProperties;
 }
@@ -82,20 +85,22 @@ export function Hero({
   actions,
   media,
   headingLevel = 1,
+  ground = "base",
   className,
   style,
   ...rest
 }: HeroProps) {
   const HeadingTag = headingLevel === 1 ? "h1" : "h2";
+  const colors = SECTION_GROUND_CLASSES[ground];
 
   const content = (
     <div className="flex flex-col items-start gap-md">
       {eyebrow ? (
-        <p className="text-caption uppercase tracking-label text-ink-muted">{eyebrow}</p>
+        <p className={cx("text-caption uppercase tracking-label", colors.muted)}>{eyebrow}</p>
       ) : null}
-      <HeadingTag className="text-display-l font-display text-ink-primary">{heading}</HeadingTag>
+      <HeadingTag className={cx("text-display-l font-display", colors.primary)}>{heading}</HeadingTag>
       {description ? (
-        <p className="text-body-l text-ink-secondary">{description}</p>
+        <p className={cx("text-body-l", colors.secondary)}>{description}</p>
       ) : null}
       {actions ? (
         <div className="flex flex-wrap items-center gap-sm">{actions}</div>
@@ -107,6 +112,7 @@ export function Hero({
     <section
       {...rest}
       className={cx(
+        colors.surface,
         media
           ? "grid grid-cols-1 items-center gap-xl tablet:grid-cols-2"
           : "flex flex-col",
