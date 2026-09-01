@@ -278,7 +278,8 @@ export function validateSectionedViewDocument(value: unknown): ComposeFinding[] 
         findings.push(finding("sectioned-view-section-kind", `${path}.kind`, `${path}.kind must be one of hero, feature-grid, faq, ordered-step-sequence, status-list.`));
     }
   }
-  if ((value.sections[0] as { kind?: unknown }).kind !== "hero") findings.push(finding("sectioned-view-hero-first", "sections.0.kind", "sections.0.kind must be hero so the page has one h1."));
+  const firstSection = value.sections[0];
+  if (!isPlainObject(firstSection) || !hasOwn(firstSection, "kind") || firstSection.kind !== "hero") findings.push(finding("sectioned-view-hero-first", "sections.0.kind", "sections.0.kind must be hero so the page has one h1."));
   if (heroCount !== 1) findings.push(finding("sectioned-view-hero-count", "sections", "A SectionedViewDocument must contain exactly one hero section."));
   return findings;
 }
