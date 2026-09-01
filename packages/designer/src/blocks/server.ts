@@ -37,6 +37,9 @@ import { REACT_DECLARED_RANGE } from "../internal/declared-peer-ranges.js";
  */
 assertPeerVersion({ peer: "react", declaredRange: REACT_DECLARED_RANGE, foundVersion: reactVersion });
 
+export { SECTION_GROUND_CLASSES } from "./section-ground.js";
+export type { SectionGround, SectionGroundClasses, SectionStatusTone } from "./section-ground.js";
+
 export { ArticleBody } from "./ArticleBody.js";
 export type { ArticleBodyProps } from "./ArticleBody.js";
 

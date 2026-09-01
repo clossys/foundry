@@ -55,4 +55,17 @@ describe("StatusList", () => {
     expect(root.className).toContain("gap-2xl");
     expect(root.style.marginTop).toBe("8px");
   });
+
+  it.each([
+    ["base", "bg-surface-base", "text-ink-primary", "border-line-base", "bg-status-success"],
+    ["sunken", "bg-surface-sunken", "text-ink-primary", "border-line-base", "ring-ink-primary"],
+    ["inverse", "bg-surface-inverse", "text-ink-on-inverse", "border-line-on-inverse", "ring-ink-on-inverse"],
+  ] as const)("selects the complete %s ground policy", (ground, surface, primary, border, statusBoundary) => {
+    const { container } = render(<StatusList labels={LABELS} groups={GROUPS} legendLabel="Readiness" ground={ground} />);
+    expect(container.querySelector("section")).toHaveClass(surface);
+    expect(screen.getByText("Readiness")).toHaveClass(primary);
+    expect(container.querySelectorAll("dl > div")[1]).toHaveClass(border);
+    const availableDot = [...container.querySelectorAll('span[aria-hidden="true"]')].find((dot) => dot.className.includes("bg-status-success"));
+    expect(availableDot).toHaveClass(statusBoundary);
+  });
 });

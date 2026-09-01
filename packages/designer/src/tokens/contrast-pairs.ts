@@ -289,6 +289,14 @@ export const CONTRAST_PAIRS: readonly ContrastPair[] = [
     minimumRatio: AA,
     description: "Primary reading text on the inverse plate. Mirrors contrast.test.ts's \"ink-on-inverse / surface-inverse\".",
   },
+  {
+    id: "ink-on-inverse-muted/surface-inverse",
+    foreground: "--color-ink-on-inverse-muted",
+    background: "--color-surface-inverse",
+    level: "AA",
+    minimumRatio: AA,
+    description: "Secondary and muted site-block text on the inverse section ground.",
+  },
 
   // ── status -text on its own -tint, composited over surface-base: AA ───
   {

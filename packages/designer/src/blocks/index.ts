@@ -36,6 +36,9 @@ assertPeerVersion({
   foundVersion: reactAriaComponentsPackageJson.version,
 });
 
+export { SECTION_GROUND_CLASSES } from "./section-ground.js";
+export type { SectionGround, SectionGroundClasses, SectionStatusTone } from "./section-ground.js";
+
 export { PageHeader } from "./PageHeader.js";
 export type { PageHeaderProps } from "./PageHeader.js";
 

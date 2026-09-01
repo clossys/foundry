@@ -55,6 +55,17 @@ describe("OrderedStepSequence", () => {
     expect(screen.getByRole("heading", { name: "Discover" }).className).toContain("text-ink-on-inverse");
   });
 
+  it.each([
+    ["base", "bg-surface-base", "text-ink-primary", "bg-line-base"],
+    ["sunken", "bg-surface-sunken", "text-ink-primary", "bg-line-base"],
+    ["inverse", "bg-surface-inverse", "text-ink-on-inverse", "bg-line-on-inverse"],
+  ] as const)("selects the complete %s ground policy", (ground, surface, primary, line) => {
+    const { container } = render(<OrderedStepSequence items={ITEMS} ground={ground} />);
+    expect(container.querySelector("section")).toHaveClass(surface);
+    expect(screen.getByRole("heading", { name: "Discover" })).toHaveClass(primary);
+    expect(container.querySelector('span[aria-hidden="true"]')).toHaveClass(line);
+  });
+
   it("forwards className and style to its section root", () => {
     const { container } = render(<OrderedStepSequence items={ITEMS} className="gap-2xl" style={{ marginTop: "8px" }} />);
     const root = container.querySelector("section") as HTMLElement;
