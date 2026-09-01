@@ -224,12 +224,32 @@ export interface ResolvedWebGroupItem {
   text?: string;
   element?: ReactNode;
   node?: object;
+  /** Named, already-resolved copy/asset fields for a structured repeating item. */
+  fields?: Record<string, ResolvedWebGroupField>;
+}
+
+/** One already-renderable field inside {@link ResolvedWebGroupItem.fields}. */
+export interface ResolvedWebGroupField {
+  text?: string;
+  element?: ReactNode;
+}
+
+/** One named field a structured repeating slot accepts. */
+export interface RepeatingWebSlotFieldSpec {
+  key: string;
+  required?: boolean;
 }
 
 /** One repeating slot key a `WebTemplate` expects to receive via `RenderWebOptions.groups`, and whether that slot must be present (not necessarily non-empty). */
 export interface RepeatingWebSlotSpec {
   key: string;
   required?: boolean;
+  /**
+   * When present, every item must carry a `fields` map containing only these
+   * declared names. Required fields must be present; `node` is never a field
+   * source, so editorial copy remains CopyRef-resolved and attributable.
+   */
+  fields?: RepeatingWebSlotFieldSpec[];
 }
 
 /**

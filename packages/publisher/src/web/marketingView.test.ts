@@ -41,6 +41,12 @@ const registry: CopyRegistry = {
     { id: "acme.feature.a", text: "Placeholder feature A", context: "fixture", status: "approved" },
     { id: "acme.feature.b", text: "Placeholder feature B", context: "fixture", status: "approved" },
     { id: "acme.feature.c", text: "Placeholder feature C", context: "fixture", status: "approved" },
+    { id: "acme.faq.question.one", text: "Placeholder question one?", context: "fixture", status: "approved" },
+    { id: "acme.faq.answer.one", text: "Placeholder answer one.", context: "fixture", status: "approved" },
+    { id: "acme.faq.question.two", text: "Placeholder question two?", context: "fixture", status: "approved" },
+    { id: "acme.faq.answer.two", text: "Placeholder answer two.", context: "fixture", status: "approved" },
+    { id: "acme.faq.question.three", text: "Placeholder question three?", context: "fixture", status: "approved" },
+    { id: "acme.faq.answer.three", text: "Placeholder answer three.", context: "fixture", status: "approved" },
   ],
 };
 
@@ -122,8 +128,8 @@ describe("MarketingView — repeating 'features' slot: 0, 1, and many items", ()
   });
 });
 
-describe("MarketingView — repeating 'faq' slot: absent, empty, one, and many, authored via node items", () => {
-  const faqItem = (question: string, answer: string) => ({ node: { question, answer } });
+describe("MarketingView — repeating 'faq' slot: absent, empty, one, and many, authored as CopyRef field maps", () => {
+  const faqItem = (question: string, answer: string) => ({ fields: { question: { copy: ref(question) }, answer: { copy: ref(answer) } } });
 
   it("omits the FAQ section entirely when the binding is never authored — not an empty section", () => {
     const doc = marketingDoc([...baseBindings, { slot: "features", items: [] }]);
@@ -146,12 +152,23 @@ describe("MarketingView — repeating 'faq' slot: absent, empty, one, and many, 
   });
 
   it("renders one FAQ entry", () => {
-    const doc = marketingDoc([...baseBindings, { slot: "features", items: [] }, { slot: "faq", items: [faqItem("Placeholder question one?", "Placeholder answer one.")] }]);
+    const doc = marketingDoc([...baseBindings, { slot: "features", items: [] }, { slot: "faq", items: [faqItem("acme.faq.question.one", "acme.faq.answer.one")] }]);
     const resolved = resolveSurfaceDocument(doc, resolver);
     const { element } = renderWebDocument(resolved.document, { groups: resolved.groups });
     const html = renderToStaticMarkup(element);
     expect(html).toContain("Placeholder question one?");
     expect(html).toContain("Placeholder answer one.");
+  });
+
+  it("resolves FAQ fields through the ordinary copy registry and retains each field's provenance", () => {
+    const doc = marketingDoc([...baseBindings, { slot: "features", items: [] }, { slot: "faq", items: [faqItem("acme.faq.question.one", "acme.faq.answer.one")] }]);
+    const resolved = resolveSurfaceDocument(doc, resolver);
+    expect(resolved.groups?.find((group) => group.slot === "faq")?.items).toEqual([
+      { index: 0, fields: { question: { value: "Placeholder question one?" }, answer: { value: "Placeholder answer one." } } },
+    ]);
+    const faqResolutions = resolved.resolutions.filter((resolution) => resolution.entryId.startsWith("acme.faq."));
+    expect(faqResolutions.map((resolution) => resolution.entryId)).toEqual(["acme.faq.question.one", "acme.faq.answer.one"]);
+    expect(faqResolutions.every((resolution) => resolution.locale === "en" && resolution.recordId === "acme-marketing-fixture")).toBe(true);
   });
 
   it("renders many FAQ entries and preserves authored order end to end", () => {
@@ -160,7 +177,7 @@ describe("MarketingView — repeating 'faq' slot: absent, empty, one, and many, 
       { slot: "features", items: [] },
       {
         slot: "faq",
-        items: [faqItem("Placeholder question two?", "Placeholder answer two."), faqItem("Placeholder question one?", "Placeholder answer one."), faqItem("Placeholder question three?", "Placeholder answer three.")],
+        items: [faqItem("acme.faq.question.two", "acme.faq.answer.two"), faqItem("acme.faq.question.one", "acme.faq.answer.one"), faqItem("acme.faq.question.three", "acme.faq.answer.three")],
       },
     ]);
     const resolved = resolveSurfaceDocument(doc, resolver);
@@ -203,28 +220,38 @@ describe("MarketingView — fail-closed contracts", () => {
     }
   });
 
-  it("throws RenderError('empty-output') when a 'faq' item is authored via copy instead of node — a single value cannot supply both question and answer", () => {
-    const doc = marketingDoc([...baseBindings, { slot: "features", items: [] }, { slot: "faq", items: [{ copy: ref("acme.feature.a") }] }]);
+  it("refuses a legacy caller-owned node FAQ item — structured editorial fields cannot escape CopyRef resolution", () => {
+    const doc = marketingDoc([...baseBindings, { slot: "features", items: [] }, { slot: "faq", items: [{ node: { question: "Q", answer: "A" } }] }]);
     const resolved = resolveSurfaceDocument(doc, resolver);
     try {
       renderWebDocument(resolved.document, { groups: resolved.groups });
       expect.unreachable();
     } catch (error) {
       expect(error).toBeInstanceOf(RenderError);
-      expect((error as RenderError).reason).toBe("empty-output");
+      expect((error as RenderError).reason).toBe("resolution-failed");
       expect((error as Error).message).toContain("faq");
     }
   });
 
-  it("throws RenderError('empty-output') when a 'faq' node item is missing 'answer'", () => {
-    const doc = marketingDoc([...baseBindings, { slot: "features", items: [] }, { slot: "faq", items: [{ node: { question: "Q only?" } }] }]);
+  it("refuses a FAQ field map with a missing required answer", () => {
+    const doc = marketingDoc([...baseBindings, { slot: "features", items: [] }, { slot: "faq", items: [{ fields: { question: { copy: ref("acme.faq.question.one") } } }] }]);
     const resolved = resolveSurfaceDocument(doc, resolver);
     try {
       renderWebDocument(resolved.document, { groups: resolved.groups });
       expect.unreachable();
     } catch (error) {
-      expect((error as RenderError).reason).toBe("empty-output");
+      expect((error as RenderError).reason).toBe("resolution-failed");
     }
+  });
+
+  it("refuses an unknown FAQ field rather than dropping it or letting it reach the view", () => {
+    const doc = marketingDoc([
+      ...baseBindings,
+      { slot: "features", items: [] },
+      { slot: "faq", items: [{ fields: { question: { copy: ref("acme.faq.question.one") }, answer: { copy: ref("acme.faq.answer.one") }, extra: { copy: ref("acme.feature.a") } } }] },
+    ]);
+    const resolved = resolveSurfaceDocument(doc, resolver);
+    expect(() => renderWebDocument(resolved.document, { groups: resolved.groups })).toThrow(/unknown field\(s\) extra/);
   });
 
   it("throws RenderError('resolution-failed') when a repeating group targets a slot MarketingView does not declare as repeating", () => {
