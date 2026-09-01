@@ -328,6 +328,32 @@ export const CONTRAST_PAIRS: readonly ContrastPair[] = [
     description: "An info banner/badge. Mirrors contrast.test.ts's \"info-text / info-tint\".",
   },
 
+  // ── status dots on the page ground: WCAG non-text contrast ───────────
+  {
+    id: "status-success-text/surface-base",
+    foreground: "--color-status-success-text",
+    background: "--color-surface-base",
+    level: "AA-large",
+    minimumRatio: AA_LARGE,
+    description: "A status-list available dot on the page ground; its adjacent state label uses ink-primary rather than this display token.",
+  },
+  {
+    id: "status-warning-text/surface-base",
+    foreground: "--color-status-warning-text",
+    background: "--color-surface-base",
+    level: "AA-large",
+    minimumRatio: AA_LARGE,
+    description: "A status-list partial dot on the page ground; its adjacent state label uses ink-primary rather than this display token.",
+  },
+  {
+    id: "status-info-text/surface-base",
+    foreground: "--color-status-info-text",
+    background: "--color-surface-base",
+    level: "AA-large",
+    minimumRatio: AA_LARGE,
+    description: "A status-list planned dot on the page ground; its adjacent state label uses ink-primary rather than this display token.",
+  },
+
   // ── chart chrome: axis-label text on the chart surface: AA-large ──────
   {
     id: "chart-axis-label/chart-surface",
