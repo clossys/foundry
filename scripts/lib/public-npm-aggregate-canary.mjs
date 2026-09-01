@@ -75,7 +75,7 @@ export function validateAggregateRecordSets({ closureRecords = {}, transcriptRec
   }
   return findings;
 }
-async function containedRegularDirectory(root, relativeDirectory) {
+export async function containedRegularDirectory(root, relativeDirectory) {
   const canonicalRoot = await realpath(root);
   const target = resolve(canonicalRoot, relativeDirectory);
   const rel = relative(canonicalRoot, target);
