@@ -330,24 +330,24 @@ export const CONTRAST_PAIRS: readonly ContrastPair[] = [
 
   // ── status dots on the page ground: WCAG non-text contrast ───────────
   {
-    id: "status-success-text/surface-base",
-    foreground: "--color-status-success-text",
+    id: "status-success/surface-base",
+    foreground: "--color-status-success",
     background: "--color-surface-base",
     level: "AA-large",
     minimumRatio: AA_LARGE,
     description: "A status-list available dot on the page ground; its adjacent state label uses ink-primary rather than this display token.",
   },
   {
-    id: "status-warning-text/surface-base",
-    foreground: "--color-status-warning-text",
+    id: "status-warning/surface-base",
+    foreground: "--color-status-warning",
     background: "--color-surface-base",
     level: "AA-large",
     minimumRatio: AA_LARGE,
     description: "A status-list partial dot on the page ground; its adjacent state label uses ink-primary rather than this display token.",
   },
   {
-    id: "status-info-text/surface-base",
-    foreground: "--color-status-info-text",
+    id: "status-info/surface-base",
+    foreground: "--color-status-info",
     background: "--color-surface-base",
     level: "AA-large",
     minimumRatio: AA_LARGE,

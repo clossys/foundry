@@ -2476,6 +2476,7 @@ elements (default `2`).
 import { StatusList } from "@clossys/designer/blocks";
 
 <StatusList
+  legendLabel="Readiness"
   labels={{ available: "Available", partial: "Partial", planned: "Planned" }}
   groups={[
     { id: "coverage", heading: "Coverage", items: [{ id: "reports", label: "Reports", state: "available" }] },
@@ -2484,7 +2485,8 @@ import { StatusList } from "@clossys/designer/blocks";
 ```
 
 A grouped `<dl>` for editorial readiness statements, with one section-level
-legend. State is closed to `available`, `partial`, and `planned`; the block
+legend whose required `legendLabel` is caller-localized, visible, and names
+the semantic legend list. State is closed to `available`, `partial`, and `planned`; the block
 maps those values to status tokens rather than accepting a color. The dot is
 decorative and its adjacent state text remains ordinary reading text, so color
 never carries the meaning alone.

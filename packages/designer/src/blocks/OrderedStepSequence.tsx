@@ -8,7 +8,7 @@ export interface OrderedStepSequenceItem {
   /** Stable identifier — the React key. */
   id: string;
   /** Authored ordinal, exposed as text rather than generated decoration. */
-  ordinal: ReactNode;
+  ordinal: string | number;
   /** A short label above the step heading. */
   label?: ReactNode;
   /** The step's own heading. */
@@ -24,7 +24,7 @@ export interface OrderedStepSequenceProps extends Omit<HTMLAttributes<HTMLElemen
   description?: ReactNode;
   /** Ordered, editorial steps. Their source order is their reading order. */
   items: readonly OrderedStepSequenceItem[];
-  /** Which heading element the sequence heading and its item headings use. @default 2 */
+  /** Which heading element the sequence heading uses; item headings render one rank lower, capped at h6. @default 2 */
   headingLevel?: OrderedStepSequenceHeadingLevel;
   /** The ground this block is placed on; it selects matching connector and ink tokens. @default "base" */
   ground?: OrderedStepSequenceGround;
@@ -74,6 +74,7 @@ export function OrderedStepSequence({
   ...rest
 }: OrderedStepSequenceProps) {
   const HeadingTag = `h${headingLevel}` as `h${OrderedStepSequenceHeadingLevel}`;
+  const ItemHeadingTag = `h${Math.min(headingLevel + 1, 6)}` as `h${OrderedStepSequenceHeadingLevel}`;
   const colors = GROUND_CLASSES[ground];
   const hasHeadingRegion = heading !== undefined || description !== undefined;
 
@@ -99,7 +100,7 @@ export function OrderedStepSequence({
               </span>
               <div className="flex min-w-0 flex-col gap-xs">
                 {item.label ? <p className={cx("text-caption uppercase tracking-label", colors.secondary)}>{item.label}</p> : null}
-                <HeadingTag className={cx("text-h3 font-display", colors.primary)}>{item.heading}</HeadingTag>
+                <ItemHeadingTag className={cx("text-h3 font-display", colors.primary)}>{item.heading}</ItemHeadingTag>
                 {item.description ? <p className={cx("text-body-s", colors.secondary)}>{item.description}</p> : null}
               </div>
             </div>

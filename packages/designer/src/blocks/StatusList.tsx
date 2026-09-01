@@ -33,8 +33,8 @@ export interface StatusListProps extends Omit<HTMLAttributes<HTMLElement>, "titl
   labels: StatusListLabels;
   /** Grouped editorial statements. */
   groups: readonly StatusListGroup[];
-  /** Optional visible title for the one section-level legend. */
-  legendLabel?: ReactNode;
+  /** Required caller-localized visible and accessible name for the one section-level legend. */
+  legendLabel: string;
   /** Which heading element the block and group headings render as. @default 2 */
   headingLevel?: StatusListHeadingLevel;
   className?: string;
@@ -44,9 +44,9 @@ export interface StatusListProps extends Omit<HTMLAttributes<HTMLElement>, "titl
 const STATES: readonly StatusListState[] = ["available", "partial", "planned"];
 
 const STATE_CLASSES: Record<StatusListState, string> = {
-  available: "bg-status-success-text",
-  partial: "bg-status-warning-text",
-  planned: "bg-status-info-text",
+  available: "bg-status-success",
+  partial: "bg-status-warning",
+  planned: "bg-status-info",
 };
 
 /**
@@ -85,9 +85,9 @@ export function StatusList({
           {description ? <p className="text-body text-ink-secondary">{description}</p> : null}
         </div>
       ) : null}
-      <div aria-label="Status legend" className="flex flex-col gap-xs">
-        {legendLabel ? <p className="text-caption font-body font-medium text-ink-primary">{legendLabel}</p> : null}
-        <ul className="flex flex-wrap gap-md">
+      <div className="flex flex-col gap-xs">
+        <p className="text-caption font-body font-medium text-ink-primary">{legendLabel}</p>
+        <ul aria-label={legendLabel} className="flex flex-wrap gap-md">
           {STATES.map((state) => (
             <li key={state} className="flex items-center gap-xs text-body-s text-ink-primary">
               <span aria-hidden="true" className={cx("size-xs shrink-0 rounded-pill", STATE_CLASSES[state])} />
