@@ -5,6 +5,12 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.1] - 2026-09-02
+
+### Changed
+
+- Widened the `@clossys/advisor` devDependency range from `^0.1.2` to `^0.2.0` to cover advisor's 0.2.0 release. This is a devDependency only (`check-workspace-links.mjs` does not gate `dependencies` ranges against it), but leaving it stale made npm fall back to a nested `packages/controller/node_modules/@clossys/advisor` install resolved from the registry instead of the local workspace link — exactly the failure mode `check-workspace-links.test.mjs`'s own "this repository's own current tree passes the gate cleanly" self-test catches. No other change.
+
 ## [0.9.0] - 2026-09-02
 
 ### Added
