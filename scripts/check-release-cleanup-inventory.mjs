@@ -25,12 +25,32 @@ const SHA256 = /^[a-f0-9]{64}$/;
 const SHA512 = /^[a-f0-9]{128}$/;
 const VERSION = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
 const REQUIRED_FIELDS = ["repository", "bugs", "homepage", "_from", "_resolved"];
+// The sealed floor each package's live manifest must never fall behind: the
+// version that replaced its last contaminated publish (see SEALED_TUPLES
+// below). This is a one-way floor, not a pin — the live manifest must be at
+// this version *or newer*, so the package remains free to ship further
+// releases. Only a manifest at or below a contaminated/pre-remediation
+// version is a regression.
 const REPLACEMENTS = new Map([
   ["@clossys/advisor", "0.1.6"],
   ["@clossys/starter", "0.1.5"],
   ["@clossys/controller", "0.8.24"],
   ["@clossys/strategist", "0.1.2"],
 ]);
+
+function parseVersion(version) {
+  const match = VERSION.exec(version);
+  return match ? match.slice(1).map(Number) : null;
+}
+
+// Numeric major/minor/patch comparison — never lexical/string comparison,
+// which would misorder e.g. "0.10.0" before "0.9.0".
+function compareVersions(left, right) {
+  for (let index = 0; index < 3; index += 1) {
+    if (left[index] !== right[index]) return left[index] < right[index] ? -1 : 1;
+  }
+  return 0;
+}
 
 // These are the seven observed public tuples. Keeping the complete tuple in
 // code makes each retained digest independently reviewable and prevents a
@@ -112,7 +132,12 @@ export function validateReleaseCleanupInventory({ root = process.cwd(), inventor
   for (const [name, version] of REPLACEMENTS) {
     try {
       const manifest = JSON.parse(readFileSync(`${root}/packages/${name.slice(name.indexOf("/") + 1)}/package.json`, "utf8"));
-      if (manifest.name !== name || manifest.version !== version) fail(`replacement manifest mismatch for ${name}`);
+      const floor = parseVersion(version);
+      const live = VERSION.test(manifest.version ?? "") ? parseVersion(manifest.version) : null;
+      // The manifest must never be the wrong package (name) and must never
+      // regress below the sealed replacement floor (version). It is free to
+      // be at or above that floor — advancing past it is the point.
+      if (manifest.name !== name || !live || compareVersions(live, floor) < 0) fail(`replacement manifest mismatch for ${name}`);
     } catch { fail(`replacement manifest unavailable for ${name}`); }
   }
   return errors;
