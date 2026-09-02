@@ -140,7 +140,7 @@
     "@testing-library/user-event": "^14.6.6",
     "@types/node": "^22.10.0",
     "@types/react": "^19.2.0",
-    "@types/react-dom": "^19.2.0",
+    "@types/react-dom": "^19.2.5",
     "react": "^19.2.8",
     "react-aria-components": "^1.20.0",
     "react-dom": "^19.2.8",
