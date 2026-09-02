@@ -153,6 +153,31 @@ theme that stayed clean while the injected one failed — and its author had not
 noticed it was one, reporting it as a feature of the gate rather than as the
 half that made the red mean anything.
 
+**A version bump un-stages a package whose site is a retained record, and that
+is intended.** Most packages stage on a static invocation site, which does not
+move when a version does. Where the site is instead a retained qualification
+record — `@clossys/starter` is the only one today, because the qualification
+runner executes its installed dist CLI and nothing statically imports it — the
+record must bind the package's *exact current* manifest version. So any bump,
+for any reason, invalidates the site, and the record that would restore it can
+only be produced by a qualify run against the already-merged tree. There is
+necessarily a window in which the gate is red.
+
+Admitting the immediately-previous version would not fix this and would cost
+more than it saves. The record binds `packageTreeSha1` and
+`packageManifestSha256` alongside the version, so those joins would still
+fail; relaxing the version alone is incoherent, and relaxing the content joins
+too would make `staged` mean "some earlier version went through the gate"
+rather than "these bytes did" — which is the one thing this state exists to
+say. The window is the honest cost, and it is bounded: one merge, one qualify
+run, one record.
+
+So sequence a bump and its re-qualification as one piece of work, and carry an
+acknowledged `gap` at `staged` with its issue for the duration — that
+mechanism exists for exactly this case, and the gate refuses to let such an
+acknowledgement outlive its reason. See #784, which asked whether the strict
+equality was right; this paragraph is the answer.
+
 ### 4. published
 
 [docs/PUBLISHING.md](PUBLISHING.md) is this state in full, written as a
@@ -305,7 +330,7 @@ fails when the committed copy drifts from the derived one — #493.
 | `@clossys/messenger` | implemented | not yet | not yet | unknown — #484 | not yet |
 | `@clossys/observer` | implemented | not yet | not yet | unknown — #484 | not yet |
 | `@clossys/publisher` | implemented | not yet | not yet | unknown — #484 | not yet |
-| `@clossys/starter` | published | not yet | N/A — executable tooling | N/A — executable tooling | N/A — executable tooling |
+| `@clossys/starter` | published | yes | N/A — executable tooling | N/A — executable tooling | N/A — executable tooling |
 | `@clossys/strategist` | implemented | not yet | not yet | unknown — #484 | not yet |
 | `@clossys/writer` | implemented | not yet | not yet | unknown — #484 | not yet |
 | `@vespeneventures/advisor` | published | yes | not yet | unknown — #484 | not yet |
