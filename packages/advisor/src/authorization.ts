@@ -1,15 +1,20 @@
 import type { AdvisorAssessment, AdvisorFinding, AssessmentBasis, ImmutablePackageRef } from "./types.js";
 
-const BASIS_FIELDS = ["snapshotDigest", "grantDigest", "catalogDigest", "planDigest", "blockerDigest", "clearanceDigest", "conflictDigest", "baselineDigest", "completionDefinitionDigest", "assessedAt", "freshUntil"] as const;
-const BASIS_DIGEST_FIELDS = ["snapshotDigest", "grantDigest", "catalogDigest", "planDigest", "blockerDigest", "clearanceDigest", "conflictDigest", "baselineDigest", "completionDefinitionDigest"] as const;
+/** Every field an {@link AssessmentBasis} carries, including its freshness window. Stable field order; do not rely on it for anything other than iteration. */
+export const BASIS_FIELDS = ["snapshotDigest", "grantDigest", "catalogDigest", "planDigest", "blockerDigest", "clearanceDigest", "conflictDigest", "baselineDigest", "completionDefinitionDigest", "assessedAt", "freshUntil"] as const;
+/** The sha256 content-addressed digest fields of an {@link AssessmentBasis}, excluding its two timestamp fields. A caller deriving its own current basis from source material should digest exactly these fields to stay bound to Advisor's own contract instead of a hand-copied field list. */
+export const BASIS_DIGEST_FIELDS = ["snapshotDigest", "grantDigest", "catalogDigest", "planDigest", "blockerDigest", "clearanceDigest", "conflictDigest", "baselineDigest", "completionDefinitionDigest"] as const;
 function finding(rule: string, message: string): AdvisorFinding { return { rule, severity: "error", message }; }
 function shapeFinding(rule: string, message: string, path: string): AdvisorFinding { return { rule, severity: "error", message, path }; }
 function record(value: unknown): value is Record<string, unknown> { return typeof value === "object" && value !== null && !Array.isArray(value); }
 function nonEmpty(value: unknown): value is string { return typeof value === "string" && value.trim().length > 0; }
 function parseTimestamp(value: unknown): number { return typeof value === "string" ? Date.parse(value) : Number.NaN; }
-function sameBasis(left: AssessmentBasis, right: AssessmentBasis): boolean { return BASIS_FIELDS.every((field) => left[field] === right[field]); }
-function sameStrings(left: readonly string[], right: readonly string[]): boolean { return left.length === right.length && [...left].sort().every((item, index) => item === [...right].sort()[index]); }
-function packageKey(item: ImmutablePackageRef): string { return `${item.name}@${item.version}#${item.integrity}`; }
+/** Whether two assessment bases are field-for-field identical across every {@link BASIS_FIELDS} entry, including the freshness window. Digests are compared as opaque strings; this does not interpret or re-derive them. */
+export function sameBasis(left: AssessmentBasis, right: AssessmentBasis): boolean { return BASIS_FIELDS.every((field) => left[field] === right[field]); }
+/** Whether two string arrays hold the same values, ignoring order and without tolerating a duplicate on one side that isn't matched on the other. Neither input is mutated. */
+export function sameStrings(left: readonly string[], right: readonly string[]): boolean { return left.length === right.length && [...left].sort().every((item, index) => item === [...right].sort()[index]); }
+/** The canonical identity key for an immutable package reference: `name@version#integrity`. Two references with the same key are the exact same install candidate; use it with {@link sameStrings} to compare arrays of package references (for example, an authorization's `permittedPackages` against an approved work-item set) without writing a bespoke deep-equality check. */
+export function packageKey(item: ImmutablePackageRef): string { return `${item.name}@${item.version}#${item.integrity}`; }
 
 /** Validates authorization structure and time fields without needing a derived plan. */
 export function validateExecutionAuthorizationShape(value: unknown, asOf: unknown, path = "engagement.executionAuthorization"): AdvisorFinding[] {

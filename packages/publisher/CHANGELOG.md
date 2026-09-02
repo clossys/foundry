@@ -3,6 +3,49 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.4.0] - 2026-09-02
+
+### Added
+
+- Relaxed `SectionedViewDocument`'s hero rule from "exactly one hero section,
+  and it must be first" to "at most one hero section, anywhere in the
+  document." A document with zero heroes, or with a hero that is not the
+  first section (a closing call-to-action band, say), now validates.
+  `SectionedView` was already forgiving of a hero's position when rendering
+  (`headingLevel` is 1 only at section index 0, 2 otherwise); this only
+  widens the validation and render-time assertion to match. A document
+  carrying a single leading hero — every document that validated before —
+  still validates and renders identically.
+- Made a `status-list` section's `groups` optional and added a sibling
+  `items` field: a flat, ungrouped array of the same status-item shape,
+  for the common case of a short list with nothing to group. Provide
+  exactly one of `groups` or `items`. Renders through Designer `0.4.0`'s
+  new `StatusList` `items` prop as a single definition list with no group
+  heading. A document using `groups` — every document that validated
+  before — still validates and renders identically.
+
+### Changed
+
+- Raised the runtime Designer floor from `^0.3.0` to `^0.4.0`. The
+  `status-list` `items` field above renders into Designer 0.4.0's new
+  `StatusList` `items` prop, which the older range does not resolve.
+
+Both of the additions above are optional and additive: a document that
+validated before still validates, and a document carrying a single leading
+hero with grouped status-list items — the shape every document authored
+against 0.2.1 through 0.3.1 already has — renders byte-for-byte the markup
+it always did, asserted against the same frozen captured markup this
+package's tests have used since the 0.3.0 additive round rather than merely
+described. This is a minor rather than a patch because 0.x caret and tilde
+ranges are minor-locked, so a consumer that wants either relaxation widens
+its declared range deliberately.
+
+## [0.3.1] - 2026-09-02
+
+### Changed
+
+- Widened the `@clossys/controller` runtime dependency range from `~0.8.0` to `~0.9.0` to cover controller's 0.9.0 release. No other change.
+
 ## [0.3.0] - 2026-09-01
 
 ### Added

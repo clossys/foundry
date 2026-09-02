@@ -136,3 +136,59 @@ describe("SectionedView optional additive fields", () => {
     expect(() => renderToStaticMarkup(<SectionedView document={document} landmark={"aside" as "none"} />)).toThrow(/invalid resolved document/);
   });
 });
+
+describe("SectionedView gap 2 and gap 7 relaxations", () => {
+  it("still renders a document with a single leading hero and grouped status-list items byte for byte", () => {
+    // Same proof technique as the LEGACY_MARKUP assertion above: this is the
+    // exact shape gaps 2 and 7 relax around, not merely near it.
+    expect(renderToStaticMarkup(<SectionedView document={LEGACY_DOCUMENT} />)).toBe(LEGACY_MARKUP);
+  });
+
+  it("renders a document with zero hero sections, with no h1 anywhere", () => {
+    const noHero = { ...document, sections: document.sections.slice(1) };
+    const html = renderToStaticMarkup(<SectionedView document={noHero as unknown as ResolvedSectionedViewDocument} />);
+    expect(html).not.toContain("<h1");
+    expect(html).toContain('id="features"');
+  });
+
+  it("renders a hero section anywhere in the document, not only first, at h2 when it is not", () => {
+    const trailingHero = { ...document, sections: [...document.sections.slice(1), { ...document.sections[0], id: "closing-cta" }] };
+    const html = renderToStaticMarkup(<SectionedView document={trailingHero as unknown as ResolvedSectionedViewDocument} />);
+    expect(html).not.toContain("<h1");
+    expect(html).toMatch(/id="closing-cta"[\s\S]*<h2[^>]*>Welcome<\/h2>/);
+  });
+
+  it("still refuses more than one hero section at render time", () => {
+    const twoHeroes = { ...document, sections: [document.sections[0], { ...document.sections[0], id: "hero-two" }, ...document.sections.slice(1)] };
+    expect(() => renderToStaticMarkup(<SectionedView document={twoHeroes as unknown as ResolvedSectionedViewDocument} />)).toThrow(/invalid resolved document/);
+  });
+
+  const flatStatusSection = { id: "status", kind: "status-list" as const, ground: "sunken" as const, heading: "Readiness", labels: document.sections[4].labels, items: [{ id: "one", label: "Feature", state: "available" as const }, { id: "none", label: "No certifications", disposition: "not-offered" as const }] };
+
+  it("renders a flat status-list (no groups) as one dl with no group heading", () => {
+    const flat = { ...document, sections: [document.sections[0], flatStatusSection] };
+    const html = renderToStaticMarkup(<SectionedView document={flat as unknown as ResolvedSectionedViewDocument} />);
+    expect(html).toContain("<dl");
+    expect(html).not.toContain("<h3");
+    expect((html.match(/<dl/g) ?? []).length).toBe(1);
+    expect(html).toContain("Feature");
+    expect(html).toContain("No certifications");
+  });
+
+  it("renders a flat status row's detail exactly the way a grouped row's detail renders", () => {
+    const flatWithDetail = { ...document, sections: [document.sections[0], { ...flatStatusSection, items: [{ ...flatStatusSection.items[0], detail: "Generally available." }] }] };
+    const groupedWithDetail = { ...document, sections: [document.sections[0], { ...document.sections[4], groups: [{ ...document.sections[4].groups[0], items: [{ id: "one", label: "Feature", detail: "Generally available.", state: "available" }] }] }] };
+    const flatHtml = renderToStaticMarkup(<SectionedView document={flatWithDetail as unknown as ResolvedSectionedViewDocument} />);
+    const groupedHtml = renderToStaticMarkup(<SectionedView document={groupedWithDetail as unknown as ResolvedSectionedViewDocument} />);
+    const rowOf = (html: string) => html.slice(html.indexOf("<dl"), html.indexOf("</dl>"));
+    expect(rowOf(flatHtml)).toBe(rowOf(groupedHtml));
+  });
+
+  it("fails closed on a status-list section carrying both groups and items, or neither", () => {
+    const both = { ...document, sections: [document.sections[0], { ...flatStatusSection, groups: document.sections[4].groups }] };
+    const neither = { ...document, sections: [document.sections[0], { id: "status", kind: "status-list", ground: "sunken", heading: "Readiness", labels: document.sections[4].labels }] };
+    for (const candidate of [both, neither]) {
+      expect(() => renderToStaticMarkup(<SectionedView document={candidate as unknown as ResolvedSectionedViewDocument} />)).toThrow(/invalid resolved document/);
+    }
+  });
+});

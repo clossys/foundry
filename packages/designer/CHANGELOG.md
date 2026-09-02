@@ -3,6 +3,17 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.4.0] - 2026-09-02
+
+### Added
+
+- Made `StatusList`'s `groups` prop optional and added a sibling `items`
+  prop: a flat array of the same row shape, rendered as a single `dl` with
+  no group heading at all. Provide exactly one of the two. A grouped list
+  (`groups`) renders exactly the markup it always did — one heading and one
+  `dl` per group — so this is additive for every existing caller; `items` is
+  the only new rendering path.
+
 ## [0.3.1] - 2026-09-01
 
 ### Fixed

@@ -238,9 +238,10 @@ order and returns its ordinary `CopyResolution[]`. Pass that list directly to
 provenance format. A missing or empty resolution fails the entire document and
 names the exact authored path. This core stage intentionally imports neither
 React nor Designer and does not render a web view. The grounded web renderer
-uses Designer `0.3.0`'s server-safe site-block API, including the separate
+uses Designer `0.4.0`'s server-safe site-block API, including the separate
 `not-offered` disposition and its caller-localized `labels.dispositions` map,
-the non-hero `eyebrow` slot, and the per-row `detail` slot.
+the non-hero `eyebrow` slot, the per-row `detail` slot, and the flat `items`
+alternative to `StatusList`'s `groups`.
 
 `SectionedView` is now the dedicated web renderer after that Designer floor is
 available. Resolve the CopyRef document first, retain its `resolutions` as the
@@ -319,6 +320,51 @@ const resolved = resolveSectionedViewDocument({
         }],
       }],
     },
+  ],
+}, resolveCopy);
+```
+
+#### At most one hero, and a status-list may go flat
+
+Two contract rules relaxed additively, both keeping every previously-valid
+document valid and unchanged:
+
+- **A hero section is now optional, and may sit anywhere.** The document
+  previously required exactly one `hero` section and required it to be
+  first. It now permits zero or one — never more than one — in any position.
+  A document with a single leading hero, the shape every document authored
+  before this change already has, still validates and renders identically:
+  `SectionedView` already assigned `headingLevel={1}` only to a hero at
+  index 0 and `headingLevel={2}` to any other section, so a non-leading hero
+  renders as an `h2`, the same fixed-outline discipline the view has always
+  held. This unlocks a closing call-to-action band authored as its own
+  section, and a page with no hero section at all.
+- **A `status-list` section's `groups` is now optional, with a flat `items`
+  alternative.** Provide exactly one of `groups` (unchanged: one heading and
+  one definition list per group) or `items` (new: the same row shape with no
+  group at all) — the common shape for a short list with nothing to group.
+  It renders through Designer `0.4.0`'s `StatusList` `items` prop as a
+  single definition list with no group heading.
+
+```tsx
+const resolved = resolveSectionedViewDocument({
+  id: "acme-trust",
+  sections: [
+    {
+      id: "core",
+      kind: "status-list",
+      ground: "base",
+      heading: { id: "acme.trust.posture" },
+      labels: {
+        available: { id: "acme.status.available" },
+        partial: { id: "acme.status.partial" },
+        planned: { id: "acme.status.planned" },
+        dispositions: { "not-offered": { id: "acme.status.not-offered" } },
+      },
+      items: [{ id: "audit", label: { id: "acme.trust.audit.label" }, disposition: "not-offered" }],
+    },
+    // A closing call-to-action band: a second hero, not first, rendered as h2.
+    { id: "cta", kind: "hero", ground: "inverse", heading: { id: "acme.trust.cta" } },
   ],
 }, resolveCopy);
 ```
@@ -1400,7 +1446,7 @@ import-free of each other under one version.
 
 Node 20+. This package's own `package.json` declares runtime dependencies on
 `@clossys/writer` (`^0.3.0`), `@clossys/designer`
-(`^0.3.0`), and `@clossys/controller` (`~0.8.0`), of which this
+(`^0.4.0`), and `@clossys/controller` (`~0.9.0`), of which this
 package only imports the `./policy` subpath, `@clossys/controller/policy`,
 never `controller`'s other exports. `writer` and `designer` are caret
 ranges (both fresh `0.x` role packages); `controller` stays a tilde range,
@@ -1419,16 +1465,19 @@ first moved from `^0.1.0` to `^0.2.0` when Designer added the
 `designer-environment-check` gate (issue #405), then to `^0.2.7`
 because Publisher's React-server target imports the server-safe
 section-ground, `Faq`, ordered-step, and status-list exports, including the
-separate `not-offered` disposition, introduced in Designer 0.2.7, and then to
-the current `^0.3.0` because the `eyebrow` and `actions` slots this package's
-section contract now renders into are Designer 0.3.0 additions. These ranges are independent; leaving
+separate `not-offered` disposition, introduced in Designer 0.2.7, then to
+`^0.3.0` because the `eyebrow` and `actions` slots this package's
+section contract now renders into are Designer 0.3.0 additions, and then to
+the current `^0.4.0` because a `status-list` section's flat `items`
+alternative to `groups` renders into Designer 0.4.0's new `StatusList`
+`items` prop. These ranges are independent; leaving
 either one behind would still resolve an older package without any install
 failure, silently withholding a required contract.
 
 A consumer whose own policy is to pin exact versions must pin `writer` to a
-matching `0.3.x` release, `designer` to `0.3.0` or a later compatible `0.3.x`
+matching `0.3.x` release, `designer` to `0.4.0` or a later compatible `0.4.x`
 release, and
-`controller` to a matching `0.8.x` patch release — otherwise
+`controller` to a matching `0.9.x` patch release — otherwise
 `publisher`'s declared ranges and the consumer's exact pin cannot both be
 satisfied, and the install fails with an unresolvable version conflict.
 `react` and `react-dom` are optional peer dependencies (`>=18`) required only

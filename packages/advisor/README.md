@@ -30,6 +30,16 @@ Every nonterminal session has one valid accountable next action. There is no pau
 
 `ExecutionAuthorization` must bind the exact plan and assessment basis, an accountable sponsor reference, approved repository/package/mutation scope, and a valid expiry. `advanceAdvisorSession()` recomputes the assessment from the session's retained input and validates all of that before moving to `ready-for-execution`; a caller-supplied assessment result is never trusted as readiness. `validateExecutionAuthorization()` is the shared validator used by both session transitions and decision-currency measurement.
 
+### Comparison primitives
+
+A caller that independently verifies an authorization, an assessment basis, or a package set against its own retained evidence can reuse the exact primitives `validateExecutionAuthorization()` is built from, rather than re-implementing content-addressed comparison and drifting from this package's contract over a release:
+
+- `BASIS_FIELDS` — every field an `AssessmentBasis` carries, in a stable order: its nine sha256 digest fields followed by `assessedAt` and `freshUntil`.
+- `BASIS_DIGEST_FIELDS` — just the nine sha256 digest fields, excluding the two timestamps. Use this when independently deriving a current basis from source material, so the field set stays bound to this package's own contract instead of a hand-copied list.
+- `sameBasis(left, right)` — whether two `AssessmentBasis` values are field-for-field identical across every `BASIS_FIELDS` entry. Digests are compared as opaque strings; this does not interpret or re-derive them.
+- `sameStrings(left, right)` — whether two string arrays hold the same values, ignoring order, without tolerating an unmatched duplicate on either side. Neither input is mutated.
+- `packageKey(ref)` — the canonical identity key for an `ImmutablePackageRef`: `name@version#integrity`. Two references with the same key are the exact same install candidate. Combine with `sameStrings` to compare arrays of package references — for example, an authorization's `permittedPackages` against an approved work-item set — without writing a bespoke deep-equality check.
+
 ## Usage
 
 ```ts
@@ -46,7 +56,7 @@ const session = createAdvisorSession("opaque-session-id", nextAction);
 
 `ADVISOR_TOOL_CONTRACTS` and `handleAdvisorTool()` provide pure, connector-facing contracts. They do not themselves authenticate, persist, or contact providers.
 
-The remaining top-level runtime API is `ADVISOR_CHARTER`, `SPONSOR_ENTRY_PROMPT`, `validateAdvisorAssessmentInput()`, `shouldReassess()`, `advanceAdvisorSession()`, `validateExecutionAuthorization()`, `assessAdvisorExecutionReadiness()`, `assessEngagementDecisionCurrency()`, and `resolveEngagementActionDisposition()`. Exported TypeScript contracts include `AdvisorAssessmentInput`, `AdvisorAssessment`, `AdvisorExecutionReadiness`, `AssessmentBasis`, `BaselineDefinition`, `FirstWaveWorkItem`, `PreWorkItem`, `Initiative`, `ExecutionAuthorization`, and their supporting state and finding types.
+The remaining top-level runtime API is `ADVISOR_CHARTER`, `SPONSOR_ENTRY_PROMPT`, `validateAdvisorAssessmentInput()`, `shouldReassess()`, `advanceAdvisorSession()`, `validateExecutionAuthorization()`, `assessAdvisorExecutionReadiness()`, `assessEngagementDecisionCurrency()`, `resolveEngagementActionDisposition()`, `BASIS_FIELDS`, `BASIS_DIGEST_FIELDS`, `sameBasis()`, `sameStrings()`, and `packageKey()`. Exported TypeScript contracts include `AdvisorAssessmentInput`, `AdvisorAssessment`, `AdvisorExecutionReadiness`, `AssessmentBasis`, `BaselineDefinition`, `FirstWaveWorkItem`, `PreWorkItem`, `Initiative`, `ExecutionAuthorization`, and their supporting state and finding types.
 
 ## Engagement decision currency
 

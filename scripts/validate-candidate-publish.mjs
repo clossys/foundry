@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { lstatSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, lstatSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
@@ -56,6 +56,17 @@ export function validateCandidatePublish({ root = process.cwd(), args }) {
     if (!NAME.test(manifest?.name) || !VERSION.test(manifest?.version) || manifest.name !== selected.name) throw new Error("packed manifest identity is invalid");
     const candidate = { name: manifest.name, version: manifest.version };
     const recordPath = resolve(root, qualificationPath(root, candidate));
+    // A retained qualification record is a precondition for publishing, not an
+    // I/O detail. Reported as a finding so the operator reads why the publish
+    // stopped, rather than a raw ENOENT stack from `lstat` — see issue #769,
+    // where that crash surfaced only after the npm-publish environment
+    // approval had already been spent.
+    if (!existsSync(recordPath)) {
+      return [{
+        rule: "qualification-record-missing",
+        message: `no retained qualification record for ${candidate.name}@${candidate.version} at ${qualificationPath(root, candidate)}. Qualify the candidate and retain its record on the default branch before publishing.`,
+      }];
+    }
     const record = parseStrictJson(readFileSync(regular(recordPath, "qualification record"), "utf8"));
     const transcript = parseStrictJson(readFileSync(transcriptPath, "utf8"));
     const expected = { name: manifest.name, version: manifest.version, ...currentQualificationJoins(root, candidate, qualificationJoinsRef(record, args.mode, root)) };
