@@ -1400,7 +1400,7 @@ import-free of each other under one version.
 
 Node 20+. This package's own `package.json` declares runtime dependencies on
 `@clossys/writer` (`^0.3.0`), `@clossys/designer`
-(`^0.3.0`), and `@clossys/controller` (`~0.8.0`), of which this
+(`^0.3.0`), and `@clossys/controller` (`~0.9.0`), of which this
 package only imports the `./policy` subpath, `@clossys/controller/policy`,
 never `controller`'s other exports. `writer` and `designer` are caret
 ranges (both fresh `0.x` role packages); `controller` stays a tilde range,
@@ -1428,7 +1428,7 @@ failure, silently withholding a required contract.
 A consumer whose own policy is to pin exact versions must pin `writer` to a
 matching `0.3.x` release, `designer` to `0.3.0` or a later compatible `0.3.x`
 release, and
-`controller` to a matching `0.8.x` patch release — otherwise
+`controller` to a matching `0.9.x` patch release — otherwise
 `publisher`'s declared ranges and the consumer's exact pin cannot both be
 satisfied, and the install fails with an unresolvable version conflict.
 `react` and `react-dom` are optional peer dependencies (`>=18`) required only
