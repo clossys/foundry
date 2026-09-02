@@ -1,16 +1,25 @@
 name: Publish
 
-# A merged package version is the release request. Source-only changes cannot
-# publish: the discovery job selects only a manifest whose version has no
-# registry counterpart yet (see scripts/select-publishable-packages.mjs and
-# scripts/registry-version-lookup.mjs — registry-versus-manifest, not a diff
-# of this push, precisely so a publish evicted from the concurrency queue
-# below, or lost to a timeout or failure, is picked up by the very next run
-# rather than requiring anyone to notice a cancelled run in a list; see
-# issue #416). Manual dispatch remains available for preflight dry-runs and
-# the initial bootstrap publish of a brand-new package's very first version,
-# which the registry-driven discovery above deliberately never auto-selects
-# (see registry-version-lookup.mjs's header for why).
+# This workflow's only trigger is workflow_dispatch below — there is no push
+# trigger. A merged package version bump is NOT itself a release: it
+# publishes nothing until a person notices the bump landed and manually
+# dispatches this workflow with dry_run: false (see issue #757).
+#
+# The discovery job still selects a manifest whose version has no registry
+# counterpart yet (see scripts/select-publishable-packages.mjs and
+# scripts/registry-version-lookup.mjs) — registry-versus-manifest, not a
+# diff of any one run — which is why re-dispatching after a publish was
+# evicted from the concurrency queue below, or lost to a timeout or
+# failure, still resolves to the right package. But that re-dispatch is a
+# manual act, not an automatic one: without a push trigger there is no
+# "next run" for a lost publish to be picked up by. A cancelled or failed
+# run stays unpublished until a human notices it in the run list and
+# dispatches again themselves; see issue #416 for the discovery logic this
+# was originally designed alongside. Manual dispatch is also how a
+# brand-new package's very first version is bootstrap-published and how
+# preflight dry-runs are exercised, since the registry-driven discovery
+# above deliberately never auto-selects a package with no registry
+# counterpart at all (see registry-version-lookup.mjs's header for why).
 on:
   workflow_dispatch:
     inputs:
@@ -44,8 +53,10 @@ permissions:
   contents: read
 
 concurrency:
-  # Publishing is serial across packages and push events. A later version must
-  # never race an earlier tarball through the same registry namespace.
+  # Publishing is serial across packages and across runs of this
+  # workflow_dispatch-triggered workflow (there is no push trigger to be
+  # serial across). A later version must never race an earlier tarball
+  # through the same registry namespace.
   group: publish
   cancel-in-progress: false
 
@@ -255,9 +266,12 @@ jobs:
 
   publish:
     needs: [discover, qualify]
-    # Deliberately manual and non-dry-run only. A version bump cannot upload on
-    # push, and qualification still fails closed unless the exact immutable
-    # pre-publication record exists.
+    # Deliberately manual and non-dry-run only: this job uploads only on a
+    # workflow_dispatch run to main with dry_run: false. There is no push
+    # trigger that could reach this job at all (see the workflow header), so
+    # a merged version bump alone can never upload — a human dispatch is
+    # required every time. Qualification still fails closed unless the exact
+    # immutable pre-publication record exists.
     if: ${{ always() && !cancelled() && needs.discover.result == 'success' && needs.qualify.result == 'success' && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && !inputs.dry_run && !inputs.verify_only && needs.discover.outputs.packages != '[]' }}
     permissions:
       contents: read
