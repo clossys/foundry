@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 3,
+  "kind": "foundry-trusted-publication-replay-v3",
+  "qualification": {
+    "path": "governance/release-qualifications/clossys-locksmith-0.1.7.json",
+    "sha256": "e587b745bd98f9853f2e313a3b1c9d63713d6e8310d33107a0fe1995810e841c"
+  },
+  "candidate": {
+    "name": "@clossys/locksmith",
+    "version": "0.1.7",
+    "packageTreeSha1": "68dc4fdf5f38dbe76643306360db3677996d78b4",
+    "packageManifestSha256": "4dd405a93c67cd9e9eb5be19b6c8a2273f17ebbfa8e69accb098d9392b821a90",
+    "tarball": {
+      "sha1": "8ca22bb78cbc706f8c03dbebba4f01c0de222ef7",
+      "sha256": "2f1609bb4e424ca216bc06faa64d7ee472d21a1a0dc5379d0d63b0507c78d696",
+      "sha512": "4bb7274cf310fb833070633b5f606f9a584d592d3e13432f21f8a4ec139e7fc5544ab80b8fb4e9d84d5ab56d6dd5f2907e28ee1b0f7d21c6d4c7d134b7a389ff"
+    }
+  },
+  "source": {
+    "reviewedCommit": "3657f3d924e78513f0f6507c1837a03f2256e48a",
+    "qualificationRoots": {
+      "packageJsonSha256": "5139f32acfe4363d6bfdccf110670aa012f48c5222def780259ab5d7f5608834",
+      "packageLockSha256": "46fabdec775d5121d351f80205e4f4f31cd8ff1f413a484baa2e210b187ab382"
+    },
+    "publicationSource": {
+      "sha": "624f70c7318b2f96fd59af730b02ba9e3de8f65f",
+      "rootPackageJsonSha256": "6ff0f787892e920e3dc221631c5807aa22f3648a2778bb5d2c3c7fdaa2cb8a74",
+      "rootPackageLockSha256": "f6f02d3d00ff7917116a5b2d03b4aeb9e2640458a025f99566371fedf70b0235"
+    }
+  },
+  "catalog": {
+    "path": "governance/release-catalog.json",
+    "sha256": "3f43692f3c12dc1b21a3931fcf2abd53a68a207874b2ae2206e8e10f08b68404",
+    "packageKey": "locksmith"
+  },
+  "publication": {
+    "mode": "trusted-publisher",
+    "publishedAt": "2026-09-01T14:17:55.604Z",
+    "reference": "https://github.com/clossys/foundry/actions/runs/33518086370",
+    "provenance": {
+      "repository": "https://github.com/clossys/foundry",
+      "workflow": ".github/workflows/publish.yml",
+      "ref": "refs/heads/main",
+      "event": "workflow_dispatch",
+      "sourceSha": "624f70c7318b2f96fd59af730b02ba9e3de8f65f",
+      "builder": "https://github.com/actions/runner/github-hosted",
+      "invocation": "https://github.com/clossys/foundry/actions/runs/33518086370/attempts/1",
+      "attestationUrl": "https://registry.npmjs.org/-/npm/v1/attestations/@clossys%2flocksmith@0.1.7"
+    }
+  },
+  "registryProof": {
+    "schemaVersion": 2,
+    "kind": "public-npm-anonymous-registry-proof-v2",
+    "evidence": {
+      "registry": "https://registry.npmjs.org",
+      "access": "anonymous",
+      "name": "@clossys/locksmith",
+      "version": "0.1.7",
+      "metadataUrl": "https://registry.npmjs.org/%40clossys%2Flocksmith/0.1.7",
+      "repository": "clossys/foundry",
+      "tarballUrl": "https://registry.npmjs.org/@clossys/locksmith/-/locksmith-0.1.7.tgz",
+      "integrity": "sha512-S7cnTPMQ+4MwcGM7X2BvmlhNWS0+E0MvIfik7BOef8VUSrgLj7Tp2E1atW1t1fKQfijuGw99IcbUx9E0t6OJ/w==",
+      "shasum": "8ca22bb78cbc706f8c03dbebba4f01c0de222ef7",
+      "sha256": "2f1609bb4e424ca216bc06faa64d7ee472d21a1a0dc5379d0d63b0507c78d696",
+      "sha512": "4bb7274cf310fb833070633b5f606f9a584d592d3e13432f21f8a4ec139e7fc5544ab80b8fb4e9d84d5ab56d6dd5f2907e28ee1b0f7d21c6d4c7d134b7a389ff",
+      "packedManifestSha256": "4dd405a93c67cd9e9eb5be19b6c8a2273f17ebbfa8e69accb098d9392b821a90",
+      "size": 58544
+    }
+  },
+  "runQualification": {
+    "run": {
+      "id": 33518086370,
+      "url": "https://github.com/clossys/foundry/actions/runs/33518086370",
+      "headSha": "624f70c7318b2f96fd59af730b02ba9e3de8f65f",
+      "conclusion": "success",
+      "qualificationJob": {
+        "id": 99890202307,
+        "name": "qualify (locksmith)",
+        "conclusion": "success",
+        "url": "https://github.com/clossys/foundry/actions/runs/33518086370/job/99890202307"
+      }
+    },
+    "artifact": {
+      "id": 9804629420,
+      "name": "qualified-candidate-locksmith",
+      "archiveSha256": "sha256:9f1727d91e31a1d5577d5893293adc14b50b82bbb96cccc50c3edd7fe3e3d18c",
+      "size": 60353,
+      "url": "https://api.github.com/repos/clossys/foundry/actions/artifacts/9804629420/zip"
+    },
+    "transcript": {
+      "rawSha256": "98511865e9eb5ee25db4d05214f42972c504afb5b1fa805e647867c166b24db5",
+      "canonicalSha256": "d012e97c34462b302bde482bb5b5ac88e9cfed0f8d563a7360e598b4bb116ca7",
+      "comparableSha256": "c2de42dd8b95fe7c14e5ffb5ad9bb266f4da8d73869ef8c7a2862ed465dab51c",
+      "candidateTarball": {
+        "sha1": "8ca22bb78cbc706f8c03dbebba4f01c0de222ef7",
+        "sha256": "2f1609bb4e424ca216bc06faa64d7ee472d21a1a0dc5379d0d63b0507c78d696",
+        "sha512": "4bb7274cf310fb833070633b5f606f9a584d592d3e13432f21f8a4ec139e7fc5544ab80b8fb4e9d84d5ab56d6dd5f2907e28ee1b0f7d21c6d4c7d134b7a389ff"
+      }
+    },
+    "publicationJob": {
+      "id": 99891600075,
+      "name": "publish (locksmith)",
+      "conclusion": "success",
+      "url": "https://github.com/clossys/foundry/actions/runs/33518086370/job/99891600075"
+    },
+    "anonymousRegistry": {
+      "packumentSha256": "d0e3b1c9b96523515282e6a3d5c1e28d19eb2fd34cd573aa06226727f8616413",
+      "auditSha256": "bc3757256fffc52c899c1bbbb728d3a780adc9051e070fc6fdbdb6b6dc298876",
+      "provenanceBundleSha256": "3f3ef50334986a2f974315a7a931f16a391bbb0b574cf1ae0fb728bd956910ba",
+      "signatureSha256": "813c7f2f351cd7641444d69e13bb569fef3d8136560305a9d0497fd78e1d523b",
+      "signatureKeyids": [
+        "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+      ],
+      "attestationUrl": "https://registry.npmjs.org/-/npm/v1/attestations/@clossys%2flocksmith@0.1.7"
+    }
+  }
+}

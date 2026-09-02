@@ -8,6 +8,7 @@ import test from "node:test";
 
 import { checkRegistryParity, discoverManifests, selectSinglePackage } from "./check-registry-parity.mjs";
 import { GITHUB_PACKAGES_REGISTRY } from "./registry-version-lookup.mjs";
+import { PUBLIC_NPM_REGISTRY, verifyPublicNpmArtifact } from "./lib/public-npm-registry.mjs";
 
 // Two layers of coverage, matching scripts/check-package-visibility.test.mjs:
 //
@@ -53,7 +54,14 @@ function discovery(entries) {
 }
 
 function entry(directory, name, version) {
-  return { directory, manifest: { name, version } };
+  return {
+    directory,
+    manifest: {
+      name,
+      version,
+      repository: { type: "git", url: "git+https://github.com/fixture/platform.git" },
+    },
+  };
 }
 
 // -------------------------------------------------------------------- discoverManifests
@@ -193,10 +201,52 @@ test("public npmjs parity proves served bytes and exact manifest identity throug
   });
   assert.equal(received.name, "@clossys/advisor");
   assert.equal(received.version, "0.1.3");
-  assert.equal(received.registry, "https://registry.npmjs.org");
+  assert.equal(received.registry, PUBLIC_NPM_REGISTRY);
+  assert.equal(received.repository, "fixture/platform");
   assert.equal(outcome.code, 0);
   assert.equal(outcome.results[0].status, "pass");
   assert.equal(outcome.results[0].evidence.sha256, "b".repeat(64));
+});
+
+test("public npmjs parity fails closed without a canonical repository in the selected manifest", async () => {
+  for (const manifest of [
+    { name: "@clossys/advisor", version: "0.1.3" },
+    { name: "@clossys/advisor", version: "0.1.3", repository: { type: "git", url: "https://example.test/foreign/advisor.git" } },
+  ]) {
+    let verifierCalled = false;
+    const outcome = await checkRegistryParity({
+      owner: "clossys",
+      registry: PUBLIC_NPM_REGISTRY,
+      fetchImpl: async () => { throw new Error("manifest identity must fail before any network call"); },
+      verifyArtifactImpl: async () => {
+        verifierCalled = true;
+        return { kind: "verified", evidence: {} };
+      },
+      discovery: discovery([{ directory: "advisor", manifest }]),
+    });
+    assert.equal(verifierCalled, false);
+    assert.equal(outcome.code, 2);
+    assert.equal(outcome.results[0].status, "error");
+    assert.match(outcome.results[0].detail, /no canonical GitHub repository identity/);
+  }
+});
+
+test("public npmjs parity rejects a foreign registry repository against the manifest identity", async () => {
+  const outcome = await checkRegistryParity({
+    owner: "clossys",
+    registry: PUBLIC_NPM_REGISTRY,
+    fetchImpl: queueFetch([
+      jsonResponse(200, {
+        name: "@clossys/advisor",
+        version: "0.1.3",
+        repository: { type: "git", url: "git+https://github.com/other/project.git" },
+      }),
+    ]),
+    verifyArtifactImpl: verifyPublicNpmArtifact,
+    discovery: discovery([entry("advisor", "@clossys/advisor", "0.1.3")]),
+  });
+  assert.equal(outcome.code, 2);
+  assert.equal(outcome.results[0].status, "error");
 });
 
 test("public npmjs parity keeps missing, mismatch, and unreadable outcomes distinct", async () => {

@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "secretScan": {
+    "observation": {
+      "attempted": true,
+      "toolName": "example-scanner",
+      "toolVersion": "8.30.1",
+      "exitCode": 1,
+      "scope": "full-history",
+      "unitsScanned": 5,
+      "hits": [
+        {
+          "ruleId": "generic-api-key",
+          "path": "src/a.ts"
+        }
+      ]
+    }
+  }
+}

@@ -40,11 +40,11 @@
 import type { ReactNode } from "react";
 import { createElement } from "react";
 import { RenderError } from "../../internal/errors.js";
-import { AuthView, ErrorView, MarketingView } from "../views/index.js";
+import { AuthView, ErrorView, MarketingView } from "#publisher-web-views";
 import type { MarketingFaqItem, MarketingFeatureItem } from "../views/index.js";
-import type { ResolvedWebGroupItem, WebSlotContentKind, WebTemplate } from "../types.js";
+import type { ResolvedWebGroupField, ResolvedWebGroupItem, WebSlotContentKind, WebTemplate } from "../types.js";
 
-export type { RepeatingWebSlotSpec, ResolvedWebGroupItem, WebTemplate } from "../types.js";
+export type { RepeatingWebSlotFieldSpec, RepeatingWebSlotSpec, ResolvedWebGroupField, ResolvedWebGroupItem, WebTemplate } from "../types.js";
 
 /**
  * The two content sources every flowed web slot has always accepted —
@@ -123,9 +123,7 @@ const ERROR_VIEW_TEMPLATE: WebTemplate = {
  * (`text`, an asset `element`, or a raw caller-owned `node`, in that
  * order — the three are mutually exclusive by construction, see that
  * type's own doc comment, so the order never matters in practice). Used
- * for `features`, whose items are single-value content — never for `faq`,
- * whose items need the two-field `{ question, answer }` shape checked by
- * `isFaqItemNode` below instead.
+ * for `features`, whose items are single-value content.
  */
 function firstResolvedValue(item: ResolvedWebGroupItem): ReactNode | undefined {
   if (item.text !== undefined) return item.text;
@@ -134,25 +132,10 @@ function firstResolvedValue(item: ResolvedWebGroupItem): ReactNode | undefined {
   return undefined;
 }
 
-/**
- * `true` when `value` is a plain object exposing both `question` and
- * `answer` — the shape a repeating `faq` item's `node` MUST carry. A
- * single repeating-group item resolves to exactly one value (`copy`,
- * `node`, or `assetId` — see `SurfaceSlotBindingItem`'s own doc comment),
- * but one `Faq` entry genuinely needs two independent pieces of copy
- * (`question` and `answer`). `node`'s own doc comment already frames it as
- * "the explicit escape hatch for a caller-owned interactive or rich UI
- * node" — a plain `{ question, answer }` object is exactly that escape
- * hatch used for its stated purpose, the same way `AuthView.form` is a
- * `node`-shaped escape hatch for content plain text cannot carry. A
- * `faq` item authored via `copy`/`assetId` instead (one value, not two)
- * cannot satisfy this shape and is refused — see `MARKETING_VIEW_TEMPLATE`
- * 's own `build`, below.
- */
-function isFaqItemNode(value: unknown): value is { question: ReactNode; answer: ReactNode } {
-  if (typeof value !== "object" || value === null) return false;
-  const candidate = value as Record<string, unknown>;
-  return candidate.question !== undefined && candidate.answer !== undefined;
+function resolvedFieldValue(field: ResolvedWebGroupField | undefined): ReactNode | undefined {
+  if (field?.text !== undefined) return field.text;
+  if (field?.element !== undefined) return field.element;
+  return undefined;
 }
 
 const MARKETING_VIEW_TEMPLATE: WebTemplate = {
@@ -185,7 +168,7 @@ const MARKETING_VIEW_TEMPLATE: WebTemplate = {
   // comment.
   repeatingSlots: [
     { key: "features", required: true },
-    { key: "faq" },
+    { key: "faq", fields: [{ key: "question", required: true }, { key: "answer", required: true }] },
   ],
   build: (content, groups) => {
     const features: MarketingFeatureItem[] = (groups.features ?? []).map((item) => ({
@@ -198,12 +181,14 @@ const MARKETING_VIEW_TEMPLATE: WebTemplate = {
       faqGroup === undefined
         ? undefined
         : faqGroup.map((item) => {
-            if (item.node !== undefined && isFaqItemNode(item.node)) {
-              return { id: `faq-${item.index}`, question: item.node.question, answer: item.node.answer };
+            const question = resolvedFieldValue(item.fields?.question);
+            const answer = resolvedFieldValue(item.fields?.answer);
+            if (question !== undefined && answer !== undefined) {
+              return { id: `faq-${item.index}`, question, answer };
             }
             throw new RenderError(
               "empty-output",
-              `renderWebDocument could not use MarketingView's "faq" repeating slot item ${item.index}: a FAQ entry needs both a question and an answer, which a single copy/assetId value cannot supply. Author that item as a repeating "node" binding shaped { question, answer } instead.`,
+              `renderWebDocument could not use MarketingView's "faq" repeating slot item ${item.index}: its required question or answer field produced no renderable content.`,
             );
           });
 

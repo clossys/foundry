@@ -1,0 +1,15 @@
+[
+  {
+    "itemId": "item_1",
+    "subjectId": "sub_1",
+    "actorId": "actor_1",
+    "heldSince": "2026-08-01T00:00:00.000Z",
+    "holdingClass": "authored-notes",
+    "origin": "authored",
+    "provenance": {
+      "kind": "indeterminate",
+      "namedReason": "synthetic ledger timeout"
+    },
+    "belief": null
+  }
+]

@@ -1,6 +1,6 @@
 import { execFile as execFileCallback } from "node:child_process";
 import { once } from "node:events";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -10,6 +10,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 const execFile = promisify(execFileCallback);
 const cliPath = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "dist", "infisical", "cli.js");
+const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const roots: string[] = [];
 
 afterEach(() => {
@@ -57,6 +58,169 @@ describe("vespene-secrets-infisical CLI", () => {
     expect(result.code).toBe(2);
     expect(result.stderr).toContain("value-free");
     expect(result.stderr).not.toContain("example-value");
+  });
+
+  it("qualifies a complete required-name snapshot offline without reading credentials or the network", async () => {
+    const root = mkdtempSync(join(tmpdir(), "secrets-infisical-cli-"));
+    roots.push(root);
+    const catalog = join(root, "catalog.json");
+    const available = join(root, "available.json");
+    const credentialGuard = join(root, "credential-guard.cjs");
+    writeFileSync(catalog, JSON.stringify({ version: 1, entries: [{ key: "REQUIRED_KEY", required: true }] }));
+    writeFileSync(available, JSON.stringify({ version: 1, names: ["REQUIRED_KEY"] }));
+    writeFileSync(
+      credentialGuard,
+      [
+        "const protectedNames = new Set(['INFISICAL_TOKEN', 'INFISICAL_MACHINE_IDENTITY_ID', 'INFISICAL_JWT']);",
+        "const environment = process.env;",
+        "process.env = new Proxy(environment, {",
+        "  get(target, property) {",
+        "    if (typeof property === 'string' && protectedNames.has(property)) throw new Error('credential environment must not be read');",
+        "    return target[property];",
+        "  },",
+        "});",
+      ].join("\n"),
+    );
+
+    let requests = 0;
+    const server = createServer((_request, response) => {
+      requests += 1;
+      response.writeHead(500);
+      response.end();
+    });
+    server.listen(0, "127.0.0.1");
+    await once(server, "listening");
+    const address = server.address();
+    if (address === null || typeof address === "string") throw new Error("test server did not bind a TCP port");
+
+    try {
+      const decoy = "credential-value-that-must-not-be-read-or-printed";
+      const result = await runCli(["qualify", "--catalog", catalog, "--available", available], {
+        INFISICAL_API_URL: `http://127.0.0.1:${address.port}`,
+        INFISICAL_TOKEN: decoy,
+        INFISICAL_MACHINE_IDENTITY_ID: decoy,
+        INFISICAL_JWT: decoy,
+        NODE_OPTIONS: `--require=${credentialGuard}`,
+      });
+      expect(result.code).toBe(0);
+      expect(JSON.parse(result.stdout)).toEqual({ ok: true, missingRequired: [] });
+      expect(result.stdout).not.toContain(decoy);
+      expect(result.stderr).not.toContain(decoy);
+      expect(requests).toBe(0);
+    } finally {
+      await new Promise<void>((resolveClose) => server.close(() => resolveClose()));
+    }
+  });
+
+  it("reports missing required names with exit 1 and never reports snapshot values", async () => {
+    const root = mkdtempSync(join(tmpdir(), "secrets-infisical-cli-"));
+    roots.push(root);
+    const catalog = join(root, "catalog.json");
+    const available = join(root, "available.json");
+    writeFileSync(
+      catalog,
+      JSON.stringify({
+        version: 1,
+        entries: [
+          { key: "REQUIRED_KEY", required: true },
+          { key: "OPTIONAL_KEY", required: false },
+        ],
+      }),
+    );
+    writeFileSync(available, JSON.stringify({ version: 1, names: ["OPTIONAL_KEY"] }));
+
+    const result = await runCli(["qualify", "--catalog", catalog, "--available", available]);
+    expect(result.code).toBe(1);
+    expect(JSON.parse(result.stdout)).toEqual({ ok: false, missingRequired: ["REQUIRED_KEY"] });
+    expect(result.stdout).not.toContain("OPTIONAL_KEY");
+  });
+
+  it("requires an available-name snapshot", async () => {
+    const root = mkdtempSync(join(tmpdir(), "secrets-infisical-cli-"));
+    roots.push(root);
+    const catalog = join(root, "catalog.json");
+    writeFileSync(catalog, JSON.stringify({ version: 1, entries: [{ key: "REQUIRED_KEY", required: true }] }));
+
+    const result = await runCli(["qualify", "--catalog", catalog]);
+    expect(result.code).toBe(2);
+    expect(result.stderr).toContain("--available is required");
+  });
+
+  it("rejects malformed available snapshots without echoing their contents", async () => {
+    const root = mkdtempSync(join(tmpdir(), "secrets-infisical-cli-"));
+    roots.push(root);
+    const catalog = join(root, "catalog.json");
+    const available = join(root, "available.json");
+    const decoy = "snapshot-value-that-must-not-be-printed";
+    writeFileSync(catalog, JSON.stringify({ version: 1, entries: [{ key: "REQUIRED_KEY", required: true }] }));
+
+    const cases: readonly [string, unknown][] = [
+      ["duplicate names", { version: 1, names: ["REQUIRED_KEY", "REQUIRED_KEY"] }],
+      ["an empty name", { version: 1, names: [""] }],
+      ["a non-string name", { version: 1, names: ["REQUIRED_KEY", 1] }],
+      ["an unexpected key", { version: 1, names: ["REQUIRED_KEY"], unexpected: decoy }],
+      ["a value-bearing key", { version: 1, names: ["REQUIRED_KEY"], value: decoy }],
+    ];
+    for (const [label, snapshot] of cases) {
+      writeFileSync(available, JSON.stringify(snapshot));
+      const result = await runCli(["qualify", "--catalog", catalog, "--available", available]);
+      expect(result.code, label).toBe(2);
+      expect(result.stdout, label).toBe("");
+      expect(result.stderr, label).toContain("secret-name snapshot");
+      expect(result.stderr, label).not.toContain(decoy);
+    }
+  });
+
+  it("delegates catalog validation to the existing strict value-free parser", async () => {
+    const root = mkdtempSync(join(tmpdir(), "secrets-infisical-cli-"));
+    roots.push(root);
+    const catalog = join(root, "catalog.json");
+    const available = join(root, "available.json");
+    const decoy = "catalog-value-that-must-not-be-printed";
+    writeFileSync(
+      catalog,
+      JSON.stringify({ version: 1, entries: [{ key: "REQUIRED_KEY", required: true, value: decoy }] }),
+    );
+    writeFileSync(available, JSON.stringify({ version: 1, names: ["REQUIRED_KEY"] }));
+
+    const result = await runCli(["qualify", "--catalog", catalog, "--available", available]);
+    expect(result.code).toBe(2);
+    expect(result.stderr).toContain("Secret catalog must be value-free version 1 metadata with unique keys.");
+    expect(result.stderr).not.toContain(decoy);
+  });
+
+  it("runs offline qualification from the packed artifact", async () => {
+    const root = mkdtempSync(join(tmpdir(), "secrets-infisical-cli-"));
+    roots.push(root);
+    const catalog = join(root, "catalog.json");
+    const available = join(root, "available.json");
+    writeFileSync(catalog, JSON.stringify({ version: 1, entries: [{ key: "REQUIRED_KEY", required: true }] }));
+    writeFileSync(available, JSON.stringify({ version: 1, names: ["REQUIRED_KEY"] }));
+
+    const packedDestination = join(root, "packed");
+    mkdirSync(packedDestination);
+    const { stdout } = await execFile("npm", ["pack", "--ignore-scripts", "--json", "--pack-destination", packedDestination], {
+      cwd: packageRoot,
+    });
+    const packed = JSON.parse(stdout) as Array<{ filename?: unknown }>;
+    const filename = packed[0]?.filename;
+    if (typeof filename !== "string") throw new Error("npm pack did not report an artifact filename");
+    const consumer = join(root, "consumer");
+    mkdirSync(consumer);
+    writeFileSync(join(consumer, "package.json"), JSON.stringify({ private: true, type: "module" }));
+    await execFile("npm", ["install", "--offline", "--ignore-scripts", "--no-audit", "--no-fund", join(packedDestination, filename)], {
+      cwd: consumer,
+    });
+
+    const installedBin = join(consumer, "node_modules", ".bin", "vespene-secrets-infisical");
+    const { stdout: output } = await execFile(installedBin, [
+      "qualify",
+      "--catalog",
+      catalog,
+      "--available",
+      available,
+    ], { cwd: consumer });
+    expect(JSON.parse(output)).toEqual({ ok: true, missingRequired: [] });
   });
 
   it("rejects unknown command options instead of silently using other configuration", async () => {

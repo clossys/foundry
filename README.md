@@ -2,9 +2,9 @@
 
 A small set of TypeScript packages for validating an npm workspace against
 what is actually true of it — not against what its own packages claim about
-themselves. This repository is public and MIT licensed; published package
-versions are **public** on GitHub Packages. Some source packages have not yet
-been released (see Installing, below).
+themselves. This repository is public and MIT licensed; current `@clossys`
+package releases are **public** on npm. Some source packages have not yet been
+released (see Installing, below).
 
 **Thesis:** every check here runs against what is actually on disk or
 actually installed — never against what a manifest claims about itself. An
@@ -77,25 +77,32 @@ package READMEs and their lifecycle records.
 
 ## Installing
 
-The `@clossys` source catalogue is prepared for public npm, but W1D publishes
-nothing. There is therefore no supported `npm install @clossys/...` command
-yet. A 404 from npmjs is the expected pre-publication state, not an
-authentication problem and not evidence that a consumer should add a token.
+The current `@clossys` public npm Trio is published and verified through npm
+trusted publishing with provenance: Advisor 0.1.5, Starter 0.1.4, and
+Controller 0.8.23. Public packument and tarball access, exact served-byte
+parity, and the immutable qualification records are retained for each current
+release. The original owner-present identities remain historical evidence; they
+are not current installation pins.
 
-W1E will make installation guidance current first for the exact Advisor,
-Starter, and Controller launch Trio, after the registry proves anonymous public
-access plus exact digest parity for all three. Designer is the first separately
-qualified catalogue expansion after that immutable Trio; the other fifteen
-packages remain later expansions in dependency order. The expected post-W1E command
-is ordinary credential-free npm resolution:
-
-```bash
-npm install @clossys/controller
-```
+Consumers may use the exact current versions through ordinary credentialless
+public npm resolution. Install only the package or packages a consumer needs,
+using exact pins rather than a floating `latest` tag. Publication and
+installation remain distinct from consumer adoption, independent grounding, or
+closure. Strategist 0.1.1 has owner-present first-publication evidence.
+Strategist 0.1.2, Writer, and Designer are reviewed qualification candidates,
+not published packages; each later publication needs its own
+immutable, package-neutral record joined to the exact qualification, catalogue
+entry, candidate tarball, anonymous served bytes, and applicable publisher
+provenance when a separately evidenced trusted-publisher release exists.
 
 Do not add a token or a private registry mapping for `@clossys`. The canonical
-source tuple is declared once in [`package-scope.json`](package-scope.json),
-and publication remains disabled until the separately reviewed W1E change.
+source tuple is declared once in [`package-scope.json`](package-scope.json).
+The original first identities were owner-present publications; the current Trio
+versions are the later trusted-publisher releases. Provider state is now
+value-free verified for each current Trio member: Publishing access requires
+2FA and disallows traditional publish tokens. Publication or installation does
+not prove consumer adoption, independent grounding, or closure; those require
+separate consumer-owned evidence.
 
 ### Historical `@vespeneventures` packages
 

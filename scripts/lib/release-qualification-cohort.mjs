@@ -1,15 +1,14 @@
 import { createHash } from "node:crypto";
 import { validateCandidateQualification } from "./candidate-qualification.mjs";
-import { TRIO, TRIO_COHORT_PATH, TRIO_QUARANTINE_PATH, TRIO_RELEASE, isTrioCandidate } from "./release-qualification-trio.mjs";
+import { TRIO, TRIO_COHORT_PATH, TRIO_QUARANTINE_PATH, TRIO_RELEASE, isTrioCandidate, validateTrioPartialFailureQuarantine } from "./release-qualification-trio.mjs";
 
-export { TRIO, TRIO_COHORT_PATH, TRIO_QUARANTINE_PATH, TRIO_RELEASE, isTrioCandidate } from "./release-qualification-trio.mjs";
+export { TRIO, TRIO_COHORT_PATH, TRIO_QUARANTINE_PATH, TRIO_RELEASE, isTrioCandidate, validateTrioPartialFailureQuarantine } from "./release-qualification-trio.mjs";
 
 const SHA1 = /^[a-f0-9]{40}$/;
 const SHA256 = /^[a-f0-9]{64}$/;
 const SHA512 = /^[a-f0-9]{128}$/;
 const VERSION = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
 const object = (value) => value && typeof value === "object" && !Array.isArray(value);
-const nonempty = (value) => typeof value === "string" && value.trim().length > 0;
 const digest = (value) => createHash("sha256").update(value).digest("hex");
 
 function finding(findings, rule, message) { findings.push({ rule, message }); }
@@ -57,19 +56,6 @@ export function validateTrioPrepublicationCohort(cohort, { records = new Map(), 
     if (validateCandidateQualification(record).length > 0 || !(validatedRecordPaths instanceof Set) || !validatedRecordPaths.has(member.qualificationPath)) finding(findings, "record-validation", `cohort member ${key} must join one fully validated schema-v2 qualification record.`);
     if (record.timing !== "pre-publication" || !same(candidateProjection(record.candidate), candidate)) finding(findings, "record-join", `cohort member ${key} must join the exact name/version/tarball projection of one pre-publication record.`);
   }
-  return findings;
-}
-
-/** A partial execution is terminally quarantined, never reinterpreted as a Trio release. */
-export function validateTrioPartialFailureQuarantine(quarantine, { cohortBytes } = {}) {
-  const findings = [];
-  closed(findings, quarantine, ["schemaVersion", "kind", "cohortPath", "cohortSha256", "release", "completedPackages", "failedPackage", "disposition", "reference"], "quarantine");
-  if (quarantine?.schemaVersion !== 1 || quarantine?.kind !== "clossys-npmjs-trio-partial-failure-v1" || quarantine?.cohortPath !== TRIO_COHORT_PATH || !SHA256.test(quarantine?.cohortSha256 ?? "") || quarantine?.disposition !== "quarantined" || !nonempty(quarantine?.reference)) finding(findings, "quarantine", "closed immutable partial-failure quarantine fields required.");
-  release(findings, quarantine?.release, "quarantine.release");
-  if (typeof cohortBytes === "string" && digest(cohortBytes) !== quarantine?.cohortSha256) finding(findings, "cohort-digest", "quarantine must bind exact cohort bytes.");
-  const completed = quarantine?.completedPackages;
-  if (!Array.isArray(completed) || !same(completed, TRIO.slice(0, completed.length)) || completed.length >= TRIO.length) finding(findings, "completed", "completed packages must be a strict ordered Trio prefix.");
-  if (quarantine?.failedPackage !== TRIO[completed?.length]) finding(findings, "failed-package", "failed package must be the next exact Trio member.");
   return findings;
 }
 

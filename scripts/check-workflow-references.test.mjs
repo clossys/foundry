@@ -100,6 +100,7 @@ export function candidateQualificationCiFailures(workflowText) {
   if (!/^  build:\n\s+name: build and test$/m.test(build)) failures.push("required-build-context");
   if (!/- uses: actions\/checkout@[^\n]+\n[ \t]+with:\n(?:[ \t]+#[^\n]+\n)*[ \t]+fetch-depth: 0\b/.test(build)) failures.push("full-history-checkout");
   if (!/^\s+- name: Candidate qualification records\n\s+run: npm run check:candidate-qualification$/m.test(build)) failures.push("candidate-invocation");
+  if (!/^\s+- name: Later publication records\n\s+run: npm run check:later-publications$/m.test(build)) failures.push("later-publication-invocation");
   return failures;
 }
 
@@ -133,6 +134,12 @@ test("the required build context fails closed on candidate qualification records
     "",
   );
   assert.deepEqual(candidateQualificationCiFailures(withoutInvocation), ["candidate-invocation"]);
+
+  const withoutLaterPublication = build.replace(
+    "      - name: Later publication records\n        run: npm run check:later-publications\n",
+    "",
+  );
+  assert.deepEqual(candidateQualificationCiFailures(withoutLaterPublication), ["later-publication-invocation"]);
 
   const shallow = build.replace("          fetch-depth: 0\n", "          fetch-depth: 1\n");
   assert.deepEqual(candidateQualificationCiFailures(shallow), ["full-history-checkout"]);
@@ -171,4 +178,19 @@ test("every suite in check:gates imports only node builtins and local scripts", 
     `check:gates suite(s) importing something the dependency-free \`safety\` job cannot resolve: ${offenders.join(", ")}. ` +
       "Move the suite to ci.yml's `build and test` job as its own step, next to scripts/observation-bundle.test.mjs.",
   );
+});
+
+test("real candidate framework acceptance runs only after install and build in required paths", () => {
+  const manifest = JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8"));
+  assert.doesNotMatch(manifest.scripts["check:gates"], /candidate-runner-acceptance/);
+  assert.match(manifest.scripts["check:candidate-runner-acceptance"], /candidate-runner-acceptance\.test\.mjs/);
+  assert.ok(manifest.scripts.check.indexOf("npm run build") < manifest.scripts.check.indexOf("npm run check:candidate-runner-acceptance"));
+
+  const workflow = readFileSync(join(repoRoot, ".github/workflows/ci.yml"), "utf8");
+  const build = workflowJob(workflow, "build");
+  const install = build.indexOf("- run: npm ci");
+  const compile = build.indexOf("- run: npm run build");
+  const runtime = build.indexOf("- name: Assert qualified-directory release runtime");
+  const acceptance = build.indexOf("run: npm run check:candidate-runner-acceptance");
+  assert.ok(install !== -1 && install < compile && compile < runtime && runtime < acceptance);
 });

@@ -1,6 +1,6 @@
 {
   "name": "@clossys/locksmith",
-  "version": "0.1.3",
+  "version": "0.1.7",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -29,7 +29,7 @@
     "LICENSE"
   ],
   "sideEffects": false,
-  "description": "Key custody, rotation, revocation, and a distribution manifest, plus the provider-neutral secret resolution contracts (environment and test adapters, and an optional Infisical subpath) those verbs sit beside. Resolution is one verb of five; this package owns the other four.",
+  "description": "Key custody, distribution, rotation, revocation, credential lifecycle evaluation, and provider-neutral secret resolution through environment, test, and optional Infisical adapters.",
   "keywords": [
     "secrets",
     "custody",
@@ -48,13 +48,13 @@
   "author": "Vespene Ventures",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/clossys/platform.git",
+    "url": "git+https://github.com/clossys/foundry.git",
     "directory": "packages/locksmith"
   },
   "bugs": {
-    "url": "https://github.com/clossys/platform/issues"
+    "url": "https://github.com/clossys/foundry/issues"
   },
-  "homepage": "https://github.com/clossys/platform/tree/main/packages/locksmith#readme",
+  "homepage": "https://github.com/clossys/foundry/tree/main/packages/locksmith#readme",
   "engines": {
     "node": ">=20"
   },

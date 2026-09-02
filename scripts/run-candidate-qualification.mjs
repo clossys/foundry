@@ -5,6 +5,7 @@ import { writeFile } from "node:fs/promises";
 import { assertCredentialFree, runCandidateQualification } from "./lib/candidate-runner.mjs";
 import { parseStrictJson } from "./lib/candidate-qualification.mjs";
 import { selectPolicyPackage, validateReleaseQualificationContract, validateReleaseQualificationPolicy } from "./lib/release-qualification-contract.mjs";
+import { assertReleaseRuntime } from "./lib/release-runtime.mjs";
 
 const ROOT = resolve(".");
 const PACKAGE_KEY = /^[a-z0-9][a-z0-9-]{0,63}$/;
@@ -49,11 +50,13 @@ function scopedRegistry(scopeConfig, name) {
 
 const args = parseArgs(process.argv);
 assertCredentialFree();
+assertReleaseRuntime();
 const policy = parseStrictJson(readFileSync(repositoryPath("governance/release-qualification-policy.json"), "utf8"));
 const policyFindings = validateReleaseQualificationPolicy(policy);
 if (policyFindings.length) throw new Error(`invalid qualification policy: ${policyFindings.map((item) => item.rule).join(",")}`);
 const selected = selectPolicyPackage(policy, args.package);
 if (!selected) throw new Error("package key has no unique policy entry");
+if (selected.entry.archetypes?.["current-direct"]?.status !== "required") throw new Error("package current-direct qualification is blocked by policy");
 const adapter = parseStrictJson(readFileSync(repositoryPath(selected.entry.adapterPath), "utf8"));
 if (adapter.package !== selected.name) throw new Error("adapter package does not match selected policy entry");
 const manifest = parseStrictJson(execFileSync("tar", ["-xOf", resolve(args.tarball), "package/package.json"], { encoding: "utf8" }));

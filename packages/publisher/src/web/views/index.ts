@@ -12,3 +12,15 @@ export type { AuthViewProps } from "./AuthView.js";
 
 export { MarketingView } from "./MarketingView.js";
 export type { MarketingFaqItem, MarketingFeatureItem, MarketingViewProps } from "./MarketingView.js";
+
+export { CaptureView } from "./CaptureView.js";
+export type { CaptureViewProps } from "./CaptureView.js";
+
+export { DocumentView } from "./DocumentView.js";
+export type { DocumentViewEffectiveDate, DocumentViewProps } from "./DocumentView.js";
+
+export { CollectionView } from "./CollectionView.js";
+export type { CollectionViewEmptyState, CollectionViewEntry, CollectionViewLink, CollectionViewPagination, CollectionViewProps } from "./CollectionView.js";
+
+export { SectionedView } from "./SectionedView.js";
+export type { SectionedViewLandmark, SectionedViewProps } from "./SectionedView.js";

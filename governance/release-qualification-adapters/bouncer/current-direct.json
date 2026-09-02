@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "package": "@clossys/bouncer",
+  "archetype": "current-direct",
+  "peerInstall": {
+    "@clerk/nextjs": "7.7.5",
+    "next": "16.3.1",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "svix": "1.99.1"
+  },
+  "bins": {
+    "bouncer-check": 0
+  },
+  "fixtures": [
+    "actors-satisfied.json",
+    "actors-violated.json",
+    "actors-indeterminate.json"
+  ],
+  "cases": [
+    {
+      "id": "delegation-satisfied",
+      "bin": "bouncer-check",
+      "args": [
+        {
+          "literal": "delegation-ceiling"
+        },
+        {
+          "fixture": "actors-satisfied.json"
+        }
+      ],
+      "exitCode": 0,
+      "group": "delegation-ceiling"
+    },
+    {
+      "id": "delegation-violated",
+      "bin": "bouncer-check",
+      "args": [
+        {
+          "literal": "delegation-ceiling"
+        },
+        {
+          "fixture": "actors-violated.json"
+        }
+      ],
+      "exitCode": 1,
+      "group": "delegation-ceiling"
+    },
+    {
+      "id": "delegation-indeterminate",
+      "bin": "bouncer-check",
+      "args": [
+        {
+          "literal": "delegation-ceiling"
+        },
+        {
+          "fixture": "actors-indeterminate.json"
+        }
+      ],
+      "exitCode": 2,
+      "group": "delegation-ceiling"
+    }
+  ],
+  "dimensionEvidence": {
+    "rollback": "restoration",
+    "duplicate": "delegation-ceiling"
+  }
+}

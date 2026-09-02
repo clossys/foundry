@@ -5,6 +5,47 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.7] - 2026-08-31
+
+### Changed
+
+- Prepared a bounded trusted-publisher patch source for provenance after the owner-present first publication and anonymous registry verification. This change does not publish the package or claim provenance.
+
+## [0.1.6] - 2026-08-31
+
+### Added
+
+- Added `vespene-secrets-infisical qualify`, an offline readiness operation
+  that compares a strict value-free version-1 catalog with a strict
+  names-only availability snapshot. It exits `0` when every required catalog
+  name is present, `1` when a required name is missing, and `2` for malformed
+  input. The operation reads only those two files: it does not accept provider
+  configuration, read credentials, perform network access, or print a secret
+  value.
+
+## [0.1.5] - 2026-08-30
+
+### Added
+
+- Added a value-free credential lifecycle contract that distinguishes
+  provider-created ephemeral job credentials from manually rotatable secrets.
+  Ephemeral evidence validates provider, scope, job lifetime, scoped use, and
+  expiry-at-job-end semantics without inventing a rotation timestamp. Manual
+  evidence keeps repository-secret metadata separate from owner-controlled
+  token provenance, so `updatedAt` alone remains indeterminate. Results retain
+  the closed `satisfied` / `violated` / `indeterminate` and `0` / `1` / `2`
+  behavior. Scope evidence is dense, sorted, unique, and limited to an explicit
+  GitHub permission vocabulary; expiry evidence distinguishes unknown from an
+  explicit false assertion; and every unexpected own key, including symbols,
+  is rejected without being echoed. This is a contract addition only; no
+  consumer adoption is claimed.
+
+## [0.1.4] - 2026-08-30
+
+### Changed
+
+- Updated the package's public repository, issue-tracker, and homepage metadata to the canonical Foundry repository. This change is not a publication or qualification claim.
+
 ## [0.1.3] - 2026-08-21
 
 ### Changed

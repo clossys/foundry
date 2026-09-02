@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "package": "@clossys/messenger",
+  "archetype": "current-direct",
+  "peerInstall": {
+    "resend": "6.19.0"
+  },
+  "bins": {
+    "messenger-check": 0
+  },
+  "fixtures": [
+    "delivery-satisfied.json",
+    "delivery-violated.json",
+    "delivery-indeterminate.json"
+  ],
+  "cases": [
+    {
+      "id": "delivery-satisfied",
+      "bin": "messenger-check",
+      "args": [
+        {
+          "literal": "delivery-closure"
+        },
+        {
+          "fixture": "delivery-satisfied.json"
+        }
+      ],
+      "exitCode": 0,
+      "group": "delivery-closure"
+    },
+    {
+      "id": "delivery-violated",
+      "bin": "messenger-check",
+      "args": [
+        {
+          "literal": "delivery-closure"
+        },
+        {
+          "fixture": "delivery-violated.json"
+        }
+      ],
+      "exitCode": 1,
+      "group": "delivery-closure"
+    },
+    {
+      "id": "delivery-indeterminate",
+      "bin": "messenger-check",
+      "args": [
+        {
+          "literal": "delivery-closure"
+        },
+        {
+          "fixture": "delivery-indeterminate.json"
+        }
+      ],
+      "exitCode": 2,
+      "group": "delivery-closure"
+    }
+  ],
+  "dimensionEvidence": {
+    "rollback": "restoration",
+    "duplicate": "delivery-closure"
+  }
+}

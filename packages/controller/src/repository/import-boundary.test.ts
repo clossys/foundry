@@ -1,17 +1,19 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const fsIo = vi.hoisted(() => ({
-  existsSync: vi.fn(() => { throw new Error("unexpected existsSync during import"); }),
-  readFileSync: vi.fn(() => { throw new Error("unexpected readFileSync during import"); }),
-  realpathSync: vi.fn(() => { throw new Error("unexpected realpathSync during import"); }),
-  statSync: vi.fn(() => { throw new Error("unexpected statSync during import"); }),
-  writeFileSync: vi.fn(() => { throw new Error("unexpected writeFileSync during import"); }),
+const mocks = vi.hoisted(() => ({
+  fsIo: {
+    existsSync: vi.fn(() => { throw new Error("unexpected existsSync during import"); }),
+    readFileSync: vi.fn(() => { throw new Error("unexpected readFileSync during import"); }),
+    readdirSync: vi.fn(() => { throw new Error("unexpected readdirSync during import"); }),
+    statSync: vi.fn(() => { throw new Error("unexpected statSync during import"); }),
+  },
+  injectedApi: "existsSync",
 }));
+const { fsIo } = mocks;
 
-vi.mock("node:fs", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("node:fs")>()),
-  ...fsIo,
-}));
+vi.mock("node:fs", () => fsIo);
+
+const hostileFsApis = ["existsSync", "readFileSync", "readdirSync", "statSync"] as const;
 
 type Write = typeof process.stdout.write;
 
@@ -19,18 +21,40 @@ const originalExitCode = process.exitCode;
 
 beforeEach(() => {
   vi.resetModules();
+  vi.doUnmock("./locate.js");
   for (const spy of Object.values(fsIo)) spy.mockClear();
 });
 
 afterEach(() => {
+  vi.doUnmock("./locate.js");
   process.exitCode = originalExitCode;
   vi.restoreAllMocks();
+});
+
+describe.each(hostileFsApis)("hostile node:fs mock: %s", (api) => {
+  it("proves this API red is reachable during the CLI import", async () => {
+    mocks.injectedApi = api;
+    vi.doMock("./locate.js", () => {
+      mocks.fsIo[mocks.injectedApi as keyof typeof fsIo]();
+      return { locateRepositoryProfile: () => undefined };
+    });
+
+    let failure: unknown;
+    try { await import("./cli.js"); } catch (error) { failure = error; }
+    expect(failure).toBeInstanceOf(Error);
+    expect((failure as Error).cause).toBeInstanceOf(Error);
+    expect(((failure as Error).cause as Error).message).toContain(`unexpected ${api} during import`);
+    expect(fsIo[api]).toHaveBeenCalledTimes(1);
+    vi.doUnmock("./locate.js");
+    vi.resetModules();
+  });
 });
 
 describe.each([
   ["the importable CLI module", () => import("./cli.js")],
   ["the importable full-runner CLI module", () => import("./run-cli.js")],
   ["the importable adoption CLI module", () => import("./adoption-cli.js")],
+  ["the importable singular-authority CLI module", () => import("../release/singular-authority-cli.js")],
   ["the public repository entrypoint", () => import("./index.js")],
 ])("no-I/O import boundary: %s", (_label, importModule) => {
   it("performs no filesystem I/O, output, or process-state mutation", async () => {

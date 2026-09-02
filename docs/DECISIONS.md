@@ -7,7 +7,7 @@ doesn't have to reconstruct the reasoning from git history.
 
 **Status:** set in [`package-scope.json`](../package-scope.json).
 
-The transferred `clossys/platform` producer owns the complete nineteen-package
+The transferred `clossys/foundry` producer owns the complete nineteen-package
 source catalogue. W1D recuts that catalogue atomically; it does not publish a
 package or activate provider trust.
 
@@ -22,12 +22,15 @@ identity, repository tuple, release catalogue, and finally the single scope
 declaration. `set-scope --check` remains a structural drift check; it is not a
 second transition mechanism.
 
-## 2. The registry — public npm source prepared, publication inactive
+## 2. The registry — public npm Trio published through trusted publishing
 
 **Status:** `https://registry.npmjs.org`, scope `@clossys`, and explicit public
 access are declared together in [`package-scope.json`](../package-scope.json).
-All package manifests carry the same tuple. The W1D publish workflow and OIDC
-trust are intentionally inert; W1E owns the first irreversible publication.
+All package manifests carry the same tuple. W1D left publication and OIDC trust
+inert. W1E first published and anonymously verified the owner-present Trio
+identities, then verified trusted-publisher forward releases with npm
+provenance: Advisor 0.1.5, Starter 0.1.4, and Controller 0.8.23. Publication
+and installation are not consumer adoption, independent grounding, or closure.
 
 The old namespace and GitHub Packages releases remain immutable historical
 evidence. They are not deleted, rewritten, forwarded, or treated as current
@@ -50,12 +53,11 @@ chosen at the time. It remains evidence, not current installation guidance:
   supersedes the migration issue (#194) and the credentialless acceptance
   criteria in its umbrella program (#196). Both are closed as not planned.
 
-  GitHub Packages is therefore the current canonical adoption lane.
-  Consumers authenticate through whichever plane owns their package
-  credentials. It remains the single authority unless the later, bounded
-  producer-owned cutover in decision 18 passes its transfer and
-  whole-catalogue gates; that is not a package-by-package exception to the
-  current lane.
+  GitHub Packages was therefore the canonical adoption lane at that time.
+  Consumers authenticated through whichever plane owned their package
+  credentials. Decision 18 later replaced that lane only after its bounded
+  producer-owned cutover passed the transfer and whole-catalogue gates; it was
+  not a package-by-package exception.
 
   The reasoning, since "we changed our mind" is not a reason: the first
   step of that migration was verifying and, if unclaimed, **claiming
@@ -136,7 +138,7 @@ See `docs/PUBLISHING.md` for what it checks and why it is ordered first.
 
 ## 3. The GitHub organization — transferred producer
 
-**Status:** `clossys/platform` is the public neutral producer. The prior
+**Status:** `clossys/foundry` is the public neutral producer. The prior
 producer and its issue/package URLs remain only where retained as exact
 historical evidence.
 
@@ -1025,47 +1027,40 @@ owner configure npm trusted publishing. Its later activation requires Node
 The first owner-present publication and subsequent OIDC publication are
 separate evidence events.
 
-### Current execution status and remaining sequence (2026-08-29)
+### Current execution status and remaining sequence (2026-08-30)
 
 W1A through W1D are complete: the decision and representative evidence are
 retained, singular authority is mechanically checked, this source is now the
-transferred `clossys/platform` repository, and all 19 source identities plus
+transferred `clossys/foundry` repository, and all 19 source identities plus
 their first-party edges have moved together to `@clossys`. Exact predecessor
 lines remain only through the content-addressed history inventory. The
 producer programme remains tracked by
-[#567](https://github.com/clossys/platform/issues/567), with W1D's reviewed
+[#567](https://github.com/clossys/foundry/issues/567), with W1D's reviewed
 source result retained in
-[#593](https://github.com/clossys/platform/issues/593).
+[#593](https://github.com/clossys/foundry/issues/593).
 
-W1D proves reversible source readiness only. Every candidate remains
-unpublished, and npm trusted publishing remains disabled. It creates no
-install, adoption, provenance, or consumer-outcome evidence.
+W1D proved reversible source readiness only. W1E has completed the first
+irreversible Trio publications, anonymous registry verification, and the
+trusted-publisher provenance-bearing forward releases. These producer facts
+create no consumer adoption, independent grounding, closure, or
+consumer-outcome evidence.
 
-The remaining critical path is deliberately narrow:
+The completed W1E evidence is deliberately narrow:
 
-1. Close every actionable producer security finding tracked by
-   [#586](https://github.com/clossys/platform/issues/586) on the recut source
-   head. Warning-free CodeQL plus FULL publish safety is the final reversible
-   code gate before immutable publication.
-2. Execute W1E [#594](https://github.com/clossys/platform/issues/594) with the
-   owner present. Re-run exact preflights, then publish and verify **Advisor,
-   Starter, and Controller**, in that order, using interactive npm 2FA for each
-   first identity. Stop after every member and retain its registry-served
-   digest, public metadata, and anonymous install proof before advancing.
-3. Only after all three first identities are public and verified, enable their
-   npm trusted-publisher bindings. The later activation must satisfy the
-   protected `npm-publish` environment/reviewer, Node `>=22.14`, npm `>=11.5.1`,
-   upload-job-only `id-token: write`, and no token environment. Prove each
-   binding with a bounded patch release and verify npm provenance plus
-   served-byte parity; configuring trust alone is not publication evidence.
-4. Run one minimal credentialless consumer smoke test from a clean disposable
-   project. Install the exact public Trio, exercise the qualified Advisor and
-   Starter CLI controls plus Controller's selected public surface, and prove
-   removal/reinstall rollback. Retain commands, versions, exits, and served
-   digests under W1E.
+1. Retain the completed W1E [#594](https://github.com/clossys/foundry/issues/594)
+   evidence for the owner-present first identities and minimal credentialless
+   Trio smoke. Retain [#626](https://github.com/clossys/foundry/issues/626)
+   for the current provenance-bearing Advisor 0.1.5, Starter 0.1.4, and
+   Controller 0.8.23 releases, including anonymous public access,
+   served-digest parity, and provider trust settings.
+2. Provider state was verified without recording a credential or token value:
+   every current Trio package's Publishing access requires 2FA and disallows
+   traditional publish tokens.
+3. Treat the completed minimal credentialless Trio smoke as producer evidence
+   only. Consumer adoption continues in consumer-owned changes with exact
+   pins, lockfile evidence, and local checks.
 
-Designer is the first bounded post-Trio producer qualification. Publishing the
-other fifteen packages, migrating the wider consumer fleet,
+Publishing the other sixteen packages, migrating the wider consumer fleet,
 and building `apps:site`, `apps:app`, or `apps:admin` dogfood applications are
 post-cutover expansion. They scale from the Trio evidence in declared
 dependency order and do not enlarge or delay W1E. This sequence keeps source

@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "package": "@clossys/giver",
+  "archetype": "current-direct",
+  "bins": {
+    "giver-check": 0
+  },
+  "fixtures": [
+    "obligations.json",
+    "proofs-satisfied.json",
+    "proofs-violated.json",
+    "proofs-indeterminate.json"
+  ],
+  "cases": [
+    {
+      "id": "discharge-satisfied",
+      "bin": "giver-check",
+      "args": [
+        {
+          "literal": "obligation-discharge"
+        },
+        {
+          "fixture": "obligations.json"
+        },
+        {
+          "fixture": "proofs-satisfied.json"
+        },
+        {
+          "literal": "--at"
+        },
+        {
+          "literal": "2026-08-22T12:00:00.000Z"
+        }
+      ],
+      "exitCode": 0,
+      "group": "obligation-discharge"
+    },
+    {
+      "id": "discharge-violated",
+      "bin": "giver-check",
+      "args": [
+        {
+          "literal": "obligation-discharge"
+        },
+        {
+          "fixture": "obligations.json"
+        },
+        {
+          "fixture": "proofs-violated.json"
+        },
+        {
+          "literal": "--at"
+        },
+        {
+          "literal": "2026-08-22T12:00:00.000Z"
+        }
+      ],
+      "exitCode": 1,
+      "group": "obligation-discharge"
+    },
+    {
+      "id": "discharge-indeterminate",
+      "bin": "giver-check",
+      "args": [
+        {
+          "literal": "obligation-discharge"
+        },
+        {
+          "fixture": "obligations.json"
+        },
+        {
+          "fixture": "proofs-indeterminate.json"
+        },
+        {
+          "literal": "--at"
+        },
+        {
+          "literal": "2026-08-22T12:00:00.000Z"
+        }
+      ],
+      "exitCode": 2,
+      "group": "obligation-discharge"
+    }
+  ],
+  "dimensionEvidence": {
+    "rollback": "restoration",
+    "duplicate": "obligation-discharge"
+  }
+}

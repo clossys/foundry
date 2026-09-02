@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "package": "@clossys/keeper",
+  "archetype": "current-direct",
+  "peerInstall": {
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "bins": {
+    "keeper-check": 0
+  },
+  "fixtures": [
+    "items-satisfied.json",
+    "items-violated.json",
+    "items-indeterminate.json",
+    "events.json"
+  ],
+  "cases": [
+    {
+      "id": "attribution-satisfied",
+      "bin": "keeper-check",
+      "args": [
+        {
+          "literal": "attribution"
+        },
+        {
+          "fixture": "items-satisfied.json"
+        },
+        {
+          "fixture": "events.json"
+        }
+      ],
+      "exitCode": 0,
+      "group": "attribution"
+    },
+    {
+      "id": "attribution-violated",
+      "bin": "keeper-check",
+      "args": [
+        {
+          "literal": "attribution"
+        },
+        {
+          "fixture": "items-violated.json"
+        },
+        {
+          "fixture": "events.json"
+        }
+      ],
+      "exitCode": 1,
+      "group": "attribution"
+    },
+    {
+      "id": "attribution-indeterminate",
+      "bin": "keeper-check",
+      "args": [
+        {
+          "literal": "attribution"
+        },
+        {
+          "fixture": "items-indeterminate.json"
+        },
+        {
+          "fixture": "events.json"
+        }
+      ],
+      "exitCode": 2,
+      "group": "attribution"
+    }
+  ],
+  "dimensionEvidence": {
+    "rollback": "restoration",
+    "duplicate": "attribution"
+  }
+}

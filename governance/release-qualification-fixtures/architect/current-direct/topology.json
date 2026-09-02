@@ -1,0 +1,46 @@
+{
+  "id": "example",
+  "schemaVersion": "0.1.0",
+  "scope": {
+    "id": "example-business",
+    "kind": "business"
+  },
+  "systems": [
+    {
+      "id": "workspace",
+      "kind": "workspace",
+      "responsibilities": [
+        "control-plane"
+      ]
+    },
+    {
+      "id": "product",
+      "kind": "repository",
+      "responsibilities": [
+        "product"
+      ]
+    }
+  ],
+  "authorities": [
+    {
+      "responsibility": "control-plane",
+      "owner": "owner",
+      "systemOfRecord": "workspace"
+    },
+    {
+      "responsibility": "product",
+      "owner": "owner",
+      "systemOfRecord": "product"
+    }
+  ],
+  "interfaces": [
+    {
+      "id": "workspace-product",
+      "from": "workspace",
+      "to": "product",
+      "responsibilities": [
+        "product"
+      ]
+    }
+  ]
+}

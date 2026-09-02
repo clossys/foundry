@@ -1,20 +1,34 @@
-import { execFile } from "node:child_process";
+import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
-import { copyFile, lstat, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import { copyFile, lstat, mkdir, mkdtemp, readFile, readdir, realpath, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { basename, dirname, join, resolve, sep } from "node:path";
-import { promisify } from "node:util";
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { validateReleaseQualificationContract } from "./release-qualification-contract.mjs";
 import { parseStrictJson } from "./candidate-qualification.mjs";
+import { assertReleaseRuntime } from "./release-runtime.mjs";
 
-const exec = promisify(execFile);
 const hash = (algorithm, value) => createHash(algorithm).update(value).digest("hex");
-const streamHash = (root, value) => hash("sha256", String(value)
-  .split(root).join("$TEMP")
-  .replace(/npm notice[^\n]*\n/g, "")
-  .replace(/\b(?:added|removed|changed) \d+ packages?(?:, and audited \d+ packages?)? in [^\n]+\n?/g, "")
-  .replace(/\n?\d+ packages? (?:are|is) looking for funding\n(?: {2}run `npm fund` for details\n)?/g, "")
-  .replace(/\n?found 0 vulnerabilities\n?/g, ""));
+export function normalizedStream(root, value, kind) {
+  let normalized = String(value)
+    .split(root).join("$TEMP")
+    .replace(/npm notice[^\n]*\n/g, "")
+    .replace(/\b(?:added|removed|changed) \d+ packages?(?:, and audited \d+ packages?)? in [^\n]+\n?/g, "")
+    .replace(/\n?\d+ packages? (?:are|is) looking for funding\n(?: {2}run `npm fund` for details\n)?/g, "")
+    .replace(/\n?found 0 vulnerabilities\n?/g, "");
+  if (kind === "framework") {
+    // Next reports machine-speed timings and worker counts. They are useful to
+    // a human at execution time but cannot be part of replayable evidence.
+    normalized = normalized
+      .replace(/\busing \d+ workers?\b/gi, "using $WORKERS workers")
+      .replace(/\b\d+(?:\.\d+)?(?:ms|s)\b/g, "$DURATION")
+      // The framework evaluator may be a plain root (`next.config`) or an
+      // explicit module (`next.config.mjs`). Both execute the same build and
+      // must have one replay identity.
+      .replace(/✓ Running next\.config(?:\.mjs)? took \$DURATION\n/g, "✓ Running next.config took $DURATION\n");
+  }
+  return normalized;
+}
+const streamHash = (root, value, kind) => hash("sha256", normalizedStream(root, value, kind));
 const hasOwn = (object, key) => Object.prototype.hasOwnProperty.call(object, key);
 
 function stableJson(value) {
@@ -22,8 +36,7 @@ function stableJson(value) {
   if (value && typeof value === "object") return Object.fromEntries(Object.keys(value).sort().map((key) => [key, stableJson(value[key])]));
   return value;
 }
-
-function consumerDigest(root, value) {
+export function consumerDigest(root, value) {
   const normalized = String(value).split(root).join("$TEMP");
   try {
     const parsed = JSON.parse(normalized);
@@ -35,6 +48,8 @@ function consumerDigest(root, value) {
 
 const CREDENTIAL_ENV = ["NODE_AUTH_TOKEN", "NPM_TOKEN", "GH_PACKAGES_TOKEN", "GITHUB_TOKEN", "GH_TOKEN"];
 const TEMPLATE = /\{\{([A-Z_]+)\}\}/g;
+export const QUALIFICATION_PHASE_TIMEOUTS = Object.freeze({ npm: 180_000, framework: 120_000, probe: 30_000 });
+const TRUSTED_ROOTS = new Map();
 
 export function assertCredentialFree(env = process.env) {
   if (CREDENTIAL_ENV.some((name) => typeof env[name] === "string" && env[name].length > 0)) throw new Error("qualification runner refuses credential-bearing parent environment");
@@ -48,8 +63,12 @@ function sanitizedEnv(root) {
     TMPDIR: root,
     TEMP: root,
     TMP: root,
-    npm_config_userconfig: join(root, "npmrc"),
+    npm_config_userconfig: join(root, "user-npmrc"),
+    npm_config_globalconfig: join(root, "global-npmrc"),
     npm_config_cache: join(root, "cache"),
+    npm_config_registry: "https://registry.npmjs.org/",
+    npm_config_always_auth: "false",
+    npm_config_ignore_scripts: "true",
     npm_config_audit: "false",
     npm_config_fund: "false",
     npm_config_update_notifier: "false",
@@ -73,11 +92,136 @@ function renderFixture(value, variables) {
   return rendered;
 }
 
-async function caseArgument(root, descriptor) {
+async function registerTrustedRoot(root) {
+  const canonicalRoot = await realpath(root);
+  const state = await lstat(canonicalRoot);
+  if (!state.isDirectory() || state.isSymbolicLink()) throw new Error("qualification consumer root must be a regular directory");
+  TRUSTED_ROOTS.set(canonicalRoot, { dev: state.dev, ino: state.ino });
+  return canonicalRoot;
+}
+
+async function trustedRoot(root) {
+  const canonicalRoot = resolve(root);
+  const expected = TRUSTED_ROOTS.get(canonicalRoot);
+  if (!expected) throw new Error("qualification consumer root was not registered before filesystem access");
+  const state = await lstat(canonicalRoot);
+  if (!state.isDirectory() || state.isSymbolicLink() || state.dev !== expected.dev || state.ino !== expected.ino) throw new Error("qualification consumer root was replaced during qualification");
+  return canonicalRoot;
+}
+
+async function assertRestorePathContained(root, path, label) {
+  const canonicalRoot = await trustedRoot(root);
+  const target = resolve(path);
+  const rel = relative(canonicalRoot, target);
+  if (!rel || rel === ".." || rel.startsWith(`..${sep}`) || isAbsolute(rel)) throw new Error(`${label} escapes the consumer root during restoration`);
+  // lstat every existing parent rather than realpath(target): realpath follows
+  // an attacker-controlled parent symlink and would make an external target
+  // appear to be an ordinary file below the consumer root.
+  let cursor = canonicalRoot;
+  for (const component of rel.split(sep).slice(0, -1)) {
+    cursor = join(cursor, component);
+    let state;
+    try { state = await lstat(cursor); }
+    catch (error) {
+      if (error?.code === "ENOENT") throw new Error(`${label} parent disappeared during qualification`);
+      throw error;
+    }
+    if (!state.isDirectory() || state.isSymbolicLink()) throw new Error(`${label} parent was replaced during qualification`);
+  }
+  return target;
+}
+
+async function ensureContainedDirectory(root, directory, label) {
+  const canonicalRoot = await trustedRoot(root);
+  const target = resolve(directory);
+  const rel = relative(canonicalRoot, target);
+  if (!rel) return canonicalRoot;
+  if (rel === ".." || rel.startsWith(`..${sep}`) || isAbsolute(rel)) throw new Error(`${label} escapes the consumer root`);
+  let cursor = canonicalRoot;
+  for (const component of rel.split(sep)) {
+    cursor = join(cursor, component);
+    try {
+      const state = await lstat(cursor);
+      if (!state.isDirectory() || state.isSymbolicLink()) throw new Error(`${label} has a non-directory or symlink component`);
+    } catch (error) {
+      if (error?.code !== "ENOENT") throw error;
+      await mkdir(cursor);
+      const state = await lstat(cursor);
+      if (!state.isDirectory() || state.isSymbolicLink()) throw new Error(`${label} changed while creating its directory component`);
+    }
+  }
+  return target;
+}
+
+// Aggregate runs place each candidate beneath a private fixture namespace.
+// Being below the consumer is not sufficient: a reviewed adapter must not use
+// ../ to read a sibling candidate's fixtures (or an aggregate-owned file).
+async function assertFixturePathContained(root, fixtureRoot, path, label) {
+  const canonicalFixtureRoot = resolve(fixtureRoot);
+  const target = resolve(path);
+  const rel = relative(canonicalFixtureRoot, target);
+  if (!rel || rel === ".." || rel.startsWith(`..${sep}`) || isAbsolute(rel)) throw new Error(`${label} escapes the fixture root`);
+  await assertRestorePathContained(root, target, label);
+  return target;
+}
+
+async function prepareFixtureTarget(root, fixtureRoot, path, label) {
+  await ensureContainedDirectory(root, fixtureRoot, `${label} fixture root`);
+  const target = resolve(path);
+  const base = resolve(fixtureRoot);
+  const rel = relative(base, target);
+  if (!rel || rel === ".." || rel.startsWith(`..${sep}`) || isAbsolute(rel)) throw new Error(`${label} escapes the fixture root`);
+  await ensureContainedDirectory(root, dirname(target), `${label} parent`);
+  await assertFixturePathContained(root, fixtureRoot, target, label);
+  try {
+    const state = await lstat(target);
+    if (!state.isFile() || state.isSymbolicLink()) throw new Error(`${label} target was replaced with a non-regular file`);
+  } catch (error) {
+    if (error?.code !== "ENOENT") throw error;
+  }
+  return target;
+}
+
+async function readRegularFile(root, path, label) {
+  await assertRestorePathContained(root, path, label);
+  const state = await lstat(path);
+  if (!state.isFile() || state.isSymbolicLink()) throw new Error(`${label} must remain a contained regular file`);
+  return readFile(path);
+}
+
+async function restoreRegularFile(root, path, bytes, label) {
+  await assertRestorePathContained(root, path, label);
+  try {
+    const state = await lstat(path);
+    if (!state.isFile() || state.isSymbolicLink()) throw new Error(`${label} was replaced with a non-regular file during qualification`);
+  } catch (error) {
+    // A candidate deleting an original regular file is still an integrity
+    // violation. Restoring its bytes is safe only when this target was absent
+    // before the run, which is represented by a null backup.
+    if (error?.code !== "ENOENT" || bytes !== null) throw error?.code === "ENOENT"
+      ? new Error(`${label} disappeared during qualification`)
+      : error;
+  }
+  if (bytes === null) { await rm(path, { force: true }); return; }
+  await writeFile(path, bytes, { flag: "w" });
+}
+
+async function removeContainedDirectory(root, path, label) {
+  await assertRestorePathContained(root, path, label);
+  try {
+    const state = await lstat(path);
+    if (!state.isDirectory() || state.isSymbolicLink()) throw new Error(`${label} was replaced with a non-directory during qualification`);
+  } catch (error) {
+    if (error?.code === "ENOENT") return;
+    throw error;
+  }
+  await rm(path, { recursive: true, force: true });
+}
+
+async function caseArgument(root, fixtureRoot, descriptor) {
   if (typeof descriptor.literal === "string") return descriptor.literal;
   const relative = descriptor.fixture ?? descriptor.fixtureDirectory;
-  const path = resolve(root, "fixtures", relative);
-  if (!path.startsWith(`${resolve(root, "fixtures")}${sep}`)) throw new Error("case fixture argument escapes fixture root");
+  const path = await assertFixturePathContained(root, fixtureRoot, resolve(fixtureRoot, relative), "case fixture argument");
   const state = await lstat(path);
   if (state.isSymbolicLink() || (descriptor.fixture !== undefined ? !state.isFile() : !state.isDirectory())) throw new Error("case fixture argument has the wrong filesystem type");
   return path;
@@ -111,23 +255,92 @@ export function installNpmrc(registry) {
 }
 
 export async function runProcess(file, args, options = {}) {
-  try {
-    const result = await exec(file, args, {
-      ...options,
-      timeout: options.timeout ?? 30_000,
-      killSignal: "SIGKILL",
-      maxBuffer: 1_000_000,
-    });
-    return { exitCode: 0, signal: null, launchError: false, stdout: result.stdout, stderr: result.stderr };
-  } catch (error) {
-    return {
-      exitCode: Number.isInteger(error.code) ? error.code : null,
-      signal: error.signal ?? (error.killed ? "SIGKILL" : null),
-      launchError: !Number.isInteger(error.code) && !error.signal,
-      stdout: error.stdout ?? "",
-      stderr: error.stderr ?? "",
+  const timeout = options.timeout ?? 30_000;
+  const { timeout: _ignoredTimeout, ...spawnOptions } = options;
+  const grouped = process.platform !== "win32";
+  const maxBytes = 1_000_000;
+  return new Promise((finish) => {
+    let child;
+    let settled = false;
+    let timedOut = false;
+    let overflow = false;
+    let spawnError = null;
+    let closedResult = null;
+    let exitResult = null;
+    let terminationStarted = false;
+    let terminationComplete = false;
+    let forcedTermination = false;
+    let stdout = Buffer.alloc(0);
+    let stderr = Buffer.alloc(0);
+    let timeoutTimer;
+    const maybeFinish = () => {
+      if (settled || closedResult === null || (terminationStarted && !terminationComplete)) return;
+      settled = true;
+      clearTimeout(timeoutTimer);
+      const { code, signal } = closedResult;
+      finish({
+        exitCode: timedOut || overflow ? null : Number.isInteger(code) ? code : null,
+        // A detached process group is also reaped after a normal parent exit.
+        // That cleanup must not turn a successfully reached command into a
+        // synthetic signal failure: the parent exit is still the observation.
+        signal: signal ?? (forcedTermination ? "SIGKILL" : null),
+        launchError: spawnError !== null || overflow,
+        stdout: stdout.toString("utf8"),
+        stderr: stderr.toString("utf8"),
+      });
     };
-  }
+    const terminate = () => {
+      try {
+        if (grouped && Number.isInteger(child?.pid)) process.kill(-child.pid, "SIGKILL");
+        else child?.kill("SIGKILL");
+      } catch (error) {
+        if (error?.code !== "ESRCH") spawnError ??= error;
+      }
+    };
+    const beginTermination = ({ forced = false } = {}) => {
+      if (terminationStarted) return;
+      terminationStarted = true;
+      forcedTermination = forced;
+      terminate();
+      terminationComplete = true;
+      maybeFinish();
+    };
+    const append = (current, chunk) => {
+      const next = Buffer.concat([current, chunk]);
+      if (next.length <= maxBytes) return next;
+      overflow = true;
+      beginTermination({ forced: true });
+      return next.subarray(0, maxBytes);
+    };
+    try {
+      child = spawn(file, args, { ...spawnOptions, detached: grouped, stdio: ["ignore", "pipe", "pipe"] });
+    } catch (error) {
+      finish({ exitCode: null, signal: null, launchError: true, stdout: "", stderr: error instanceof Error ? error.message : String(error) });
+      return;
+    }
+    child.stdout.on("data", (chunk) => { stdout = append(stdout, chunk); });
+    child.stderr.on("data", (chunk) => { stderr = append(stderr, chunk); });
+    child.on("error", (error) => { spawnError = error; });
+    timeoutTimer = setTimeout(() => {
+      timedOut = true;
+      beginTermination({ forced: true });
+    }, timeout);
+    // `close` waits for stdio. A parent that exits cleanly can leave a
+    // descendant holding an inherited descriptor forever, so reap our private
+    // detached group at `exit`, before that descendant can outlive the result.
+    child.on("exit", (code, signal) => {
+      exitResult = { code, signal };
+      beginTermination();
+    });
+    child.on("close", (code, signal) => {
+      // A normal parent can be observed as SIGKILL at `close` because the
+      // private group is reaped immediately after `exit`. Retain the parent's
+      // actual result rather than reporting our descendant cleanup as its run.
+      closedResult = exitResult ?? { code, signal };
+      clearTimeout(timeoutTimer);
+      maybeFinish();
+    });
+  });
 }
 
 function normalizedBins(manifest) {
@@ -150,13 +363,13 @@ function observation(root, id, kind, expectedExitCode, result) {
   return {
     id,
     kind,
-    launch: ["install", "uninstall", "reinstall"].includes(kind) ? "npm-fixed" : "node-direct",
+    launch: ["install", "uninstall", "reinstall"].includes(kind) ? "npm-fixed" : kind === "framework" ? "next-build" : "node-direct",
     expectedExitCode,
     observedExitCode: result.exitCode,
     signal: result.signal,
     launchError: result.launchError,
-    stdoutSha256: streamHash(root, result.stdout),
-    stderrSha256: streamHash(root, result.stderr),
+    stdoutSha256: streamHash(root, result.stdout, kind),
+    stderrSha256: streamHash(root, result.stderr, kind),
   };
 }
 
@@ -188,6 +401,7 @@ function tokenizedRaw(root, value) {
 }
 
 async function materializedFiles(root, target, output = []) {
+  await assertRestorePathContained(root, target, "raw case evidence input");
   const state = await lstat(target);
   if (state.isSymbolicLink()) throw new Error("raw case evidence refuses symbolic-link inputs");
   if (state.isDirectory()) {
@@ -204,10 +418,11 @@ async function materializedFiles(root, target, output = []) {
   return output;
 }
 
-async function materializedConsumerOverlay(root, overlay) {
-  const sourcePath = resolve(root, "fixtures", overlay.fixture);
+async function materializedConsumerOverlay(root, fixtureRoot, overlay) {
+  const sourcePath = await assertFixturePathContained(root, fixtureRoot, resolve(fixtureRoot, overlay.fixture), "raw case evidence consumer overlay source");
   const targetPath = resolve(root, overlay.target);
-  if (!sourcePath.startsWith(`${resolve(root, "fixtures")}${sep}`) || !targetPath.startsWith(`${root}${sep}`)) throw new Error("raw case evidence consumer overlay escapes the disposable root");
+  if (!targetPath.startsWith(`${root}${sep}`)) throw new Error("raw case evidence consumer overlay escapes the disposable root");
+  await assertRestorePathContained(root, targetPath, "raw case evidence consumer overlay target");
   const [sourceState, targetState] = await Promise.all([lstat(sourcePath), lstat(targetPath)]);
   if (sourceState.isSymbolicLink() || targetState.isSymbolicLink() || !sourceState.isFile() || !targetState.isFile()) throw new Error("raw case evidence consumer overlay must map regular files");
   const [sourceBytes, targetBytes] = await Promise.all([readFile(sourcePath), readFile(targetPath)]);
@@ -224,16 +439,16 @@ async function materializedConsumerOverlay(root, overlay) {
   };
 }
 
-async function rawCaseInputSnapshot(root, descriptors, consumerOverlay) {
+async function rawCaseInputSnapshot(root, fixtureRoot, descriptors, consumerOverlay) {
   const inputs = [];
   for (const descriptor of descriptors) {
-    if (typeof descriptor === "string") await materializedFiles(root, join(root, "fixtures", descriptor), inputs);
-    else if (typeof descriptor?.fixture === "string") await materializedFiles(root, join(root, "fixtures", descriptor.fixture), inputs);
-    else if (typeof descriptor?.fixtureDirectory === "string") await materializedFiles(root, join(root, "fixtures", descriptor.fixtureDirectory), inputs);
+    if (typeof descriptor === "string") await materializedFiles(root, await assertFixturePathContained(root, fixtureRoot, resolve(fixtureRoot, descriptor), "raw case evidence input"), inputs);
+    else if (typeof descriptor?.fixture === "string") await materializedFiles(root, await assertFixturePathContained(root, fixtureRoot, resolve(fixtureRoot, descriptor.fixture), "raw case evidence input"), inputs);
+    else if (typeof descriptor?.fixtureDirectory === "string") await materializedFiles(root, await assertFixturePathContained(root, fixtureRoot, resolve(fixtureRoot, descriptor.fixtureDirectory), "raw case evidence input"), inputs);
   }
   inputs.sort((left, right) => left.path.localeCompare(right.path));
   const overlay = [];
-  for (const item of consumerOverlay ?? []) overlay.push(await materializedConsumerOverlay(root, item));
+  for (const item of consumerOverlay ?? []) overlay.push(await materializedConsumerOverlay(root, fixtureRoot, item));
   overlay.sort((left, right) => left.sourcePath.localeCompare(right.sourcePath));
   const retainedFiles = [...inputs, ...overlay];
   if (inputs.length < 1 || retainedFiles.length > RAW_CASE_MAX_FILES || new Set(inputs.map((item) => item.path)).size !== inputs.length || new Set(overlay.map((item) => item.sourcePath)).size !== overlay.length || new Set(overlay.map((item) => item.targetPath)).size !== overlay.length || retainedFiles.reduce((total, item) => total + Buffer.byteLength(item.bytes), 0) > RAW_CASE_MAX_TOTAL_BYTES) throw new Error("raw case evidence inputs exceed the closed bounds");
@@ -253,10 +468,10 @@ function rawCaseEvidence(root, target, args, snapshot, result) {
   };
 }
 
-async function assertRawCaseInputsUnchanged(root, preparedCases, consumerOverlay, observedExitCode) {
+async function assertRawCaseInputsUnchanged(root, fixtureRoot, preparedCases, consumerOverlay, observedExitCode) {
   try {
     for (const prepared of preparedCases) {
-      const current = await rawCaseInputSnapshot(root, prepared.descriptors, consumerOverlay);
+      const current = await rawCaseInputSnapshot(root, fixtureRoot, prepared.descriptors, consumerOverlay);
       if (JSON.stringify(current) !== JSON.stringify(prepared.snapshot)) throw new Error("changed bytes");
     }
   } catch {
@@ -264,12 +479,14 @@ async function assertRawCaseInputsUnchanged(root, preparedCases, consumerOverlay
   }
 }
 
-async function containedRegularFile(root, target) {
+export async function containedRegularFile(root, target) {
   const resolved = resolve(root, target);
   if (!resolved.startsWith(`${root}${sep}`)) return null;
   try {
     const state = await lstat(resolved);
-    return state.isFile() && !state.isSymbolicLink() ? resolved : null;
+    if (!state.isFile() || state.isSymbolicLink()) return null;
+    const [canonicalRoot, canonicalTarget] = await Promise.all([realpath(root), realpath(resolved)]);
+    return canonicalTarget.startsWith(`${canonicalRoot}${sep}`) ? canonicalTarget : null;
   } catch {
     return null;
   }
@@ -286,7 +503,9 @@ async function packedManifest(tarball) {
 }
 
 const JS_TARGET = /\.(?:m?js|cjs)$/;
-const KNOWN_CONDITIONS = new Set(["types", "import", "default"]);
+const KNOWN_CONDITIONS = new Set(["types", "import", "default", "react-server"]);
+const RUNTIME_CONDITIONS = new Set(["string", "import", "default", "react-server"]);
+const FRAMEWORK_SUBPATH = /^[A-Za-z0-9@._~+-]+(?:\/[A-Za-z0-9@._~+-]+)*$/;
 
 async function packageFiles(root, current = root, output = []) {
   for (const entry of await readdir(current, { withFileTypes: true })) {
@@ -322,8 +541,31 @@ function targetsFromEntry(entry) {
   return keys.map((condition) => ({
     condition,
     target: entry.value[condition],
-    runtime: condition === "import" || (condition === "default" && !hasOwn(entry.value, "import")),
+    runtime: condition === "import" || condition === "react-server" || (condition === "default" && !hasOwn(entry.value, "import")),
   }));
+}
+
+/** Build the one fixed Node invocation that resolves and imports a declared runtime target. */
+export function runtimeImportArguments(condition, specifier, expectedTarget, packageRoot) {
+  if (!RUNTIME_CONDITIONS.has(condition) || typeof specifier !== "string" || specifier.length === 0 || typeof expectedTarget !== "string" || expectedTarget.length === 0 || typeof packageRoot !== "string" || packageRoot.length === 0) throw new Error("unsupported runtime export condition");
+  const probe = [
+    'import { realpath } from "node:fs/promises";',
+    'import { fileURLToPath } from "node:url";',
+    `const specifier = ${JSON.stringify(specifier)};`,
+    `const expectedTarget = ${JSON.stringify(expectedTarget)};`,
+    `const packageRoot = ${JSON.stringify(packageRoot)};`,
+    'const resolved = import.meta.resolve(specifier);',
+    'if (!resolved.startsWith("file:")) throw new Error("runtime export did not resolve to a file");',
+    'const [resolvedReal, expectedReal, rootReal] = await Promise.all([realpath(fileURLToPath(resolved)), realpath(expectedTarget), realpath(packageRoot)]);',
+    'if (resolvedReal !== expectedReal || !(resolvedReal.startsWith(`${rootReal}/`))) throw new Error("runtime export resolved outside its declared packed target");',
+    'await import(specifier);',
+  ].join("\n");
+  return [
+    ...(condition === "react-server" ? ["--conditions=react-server"] : []),
+    "--input-type=module",
+    "--eval",
+    probe,
+  ];
 }
 
 export function wildcardCapture(target, candidate) {
@@ -337,12 +579,71 @@ export function wildcardCapture(target, candidate) {
   return candidate.slice(before.length, captureEnd);
 }
 
-async function exportCoverage(manifest, installed, root, timeoutMs) {
+function frameworkSpecifier(packageName, subpath) {
+  if (subpath === ".") return packageName;
+  if (typeof subpath !== "string" || !subpath.startsWith("./") || !FRAMEWORK_SUBPATH.test(subpath.slice(2))) {
+    throw new Error(`${packageName} Next context must name an exact package-relative subpath`);
+  }
+  return `${packageName}/${subpath.slice(2)}`;
+}
+
+/**
+ * Interpret framework execution contexts from the packed manifest itself.
+ * This is intentionally closed in both directions: every row must be known,
+ * nonempty when present, unique across roles, and name a runtime export that
+ * the same packed manifest actually declares.
+ */
+export function packedFrameworkContexts(manifest, runtimeSpecifiers) {
+  const verification = manifest.foundryReleaseVerification;
+  if (verification === undefined) return { client: [], server: [], proxy: [], all: [] };
+  if (!verification || typeof verification !== "object" || Array.isArray(verification)) throw new Error(`${manifest.name} foundryReleaseVerification must be an object`);
+  if (JSON.stringify(Object.keys(verification).sort()) !== JSON.stringify(["next"])) throw new Error(`${manifest.name} foundryReleaseVerification has an unsupported or missing context row`);
+  const next = verification.next;
+  if (!next || typeof next !== "object" || Array.isArray(next)) throw new Error(`${manifest.name} foundryReleaseVerification.next must be an object`);
+  const fields = [["client", "clientSubpaths"], ["server", "serverSubpaths"], ["proxy", "proxySubpaths"]];
+  const allowed = new Set(fields.map(([, field]) => field));
+  if (Object.keys(next).some((key) => !allowed.has(key))) throw new Error(`${manifest.name} foundryReleaseVerification.next has an unsupported context row`);
+  const runtime = new Set(runtimeSpecifiers);
+  const contexts = {};
+  const seen = new Set();
+  for (const [role, field] of fields) {
+    const present = hasOwn(next, field);
+    const subpaths = present ? next[field] : [];
+    if (!Array.isArray(subpaths) || (present && subpaths.length === 0) || subpaths.some((subpath) => typeof subpath !== "string" || subpath.length === 0)) {
+      throw new Error(`${manifest.name} ${field} must be a nonempty array of declared runtime subpaths when present`);
+    }
+    contexts[role] = subpaths.map((subpath) => {
+      const specifier = frameworkSpecifier(manifest.name, subpath);
+      if (seen.has(specifier)) throw new Error(`${manifest.name} Next context duplicates ${subpath}`);
+      if (!runtime.has(specifier)) throw new Error(`${manifest.name} Next context names undeclared runtime export ${subpath}`);
+      seen.add(specifier);
+      return specifier;
+    });
+  }
+  if (seen.size === 0) throw new Error(`${manifest.name} foundryReleaseVerification.next declares no framework exports`);
+  return { ...contexts, all: [...seen].sort() };
+}
+
+function namespaceImports(specifiers) {
+  return specifiers.map((specifier, index) => `import * as probe${index} from ${JSON.stringify(specifier)};\nvoid probe${index};`).join("\n");
+}
+
+export async function writeNextFixture(root, contexts) {
+  const app = join(root, "app");
+  await mkdir(app, { recursive: true });
+  await Promise.all([
+    writeFile(join(app, "layout.tsx"), 'import type { ReactNode } from "react";\n\nexport default function RootLayout({ children }: { children: ReactNode }) {\n  return <html><body>{children}</body></html>;\n}\n'),
+    writeFile(join(app, "client-probe.tsx"), `"use client";\n\n${namespaceImports(contexts.client)}\n\nexport function ClientProbe() {\n  return null;\n}\n`),
+    writeFile(join(app, "server-probe.ts"), `${namespaceImports(contexts.server)}\n\nexport const serverProbe = true;\n`),
+    writeFile(join(app, "page.tsx"), 'import { ClientProbe } from "./client-probe";\nimport { serverProbe } from "./server-probe";\n\nexport const dynamic = "force-dynamic";\n\nexport default function Page() {\n  void serverProbe;\n  return <ClientProbe />;\n}\n'),
+    writeFile(join(root, "proxy.ts"), `${namespaceImports(contexts.proxy)}\n\nexport function proxy() {\n  return new Response(null);\n}\n`),
+  ]);
+}
+
+async function exportCoverage(manifest, installed, root) {
   const files = await packageFiles(installed);
   const declared = entriesFromExports(manifest.exports);
-  const coverage = { declaredExportKeys: declared.length, concreteTargets: 0, runtimeImports: 0, staticTargets: 0, failed: 0, installedManifestSha256: hash("sha256", await readFile(join(installed, "package.json")) ) };
-  const operations = [];
-  let targetIndex = 0;
+  const concreteTargets = [];
   for (const entry of declared) for (const descriptor of targetsFromEntry(entry)) {
     const stars = targetShape(descriptor.target);
     const keyStars = [...entry.key].filter((character) => character === "*").length;
@@ -353,30 +654,84 @@ async function exportCoverage(manifest, installed, root, timeoutMs) {
     }).filter(Boolean);
     if (concrete.length === 0) throw new Error("export wildcard has no packaged files");
     for (const item of concrete) {
-      const target = await containedRegularFile(installed, item.target);
-      const id = targetIndex++;
-      coverage.concreteTargets += 1;
-      if (!target) { coverage.failed += 1; continue; }
-      if (descriptor.runtime) {
-        const suffix = entry.key === "." ? "" : `/${entry.key.slice(2).replaceAll("*", item.capture)}`;
-        const result = await runProcess(process.execPath, ["--input-type=module", "--eval", `import(${JSON.stringify(`${manifest.name}${suffix}`)})`], { cwd: root, env: sanitizedEnv(root), timeout: timeoutMs });
-        operations.push({ id: `import:${id}`, result });
-        coverage.runtimeImports += 1;
-        if (result.exitCode !== 0 || result.signal || result.launchError) coverage.failed += 1;
-      } else coverage.staticTargets += 1;
+      const suffix = entry.key === "." ? "" : `/${entry.key.slice(2).replaceAll("*", item.capture)}`;
+      concreteTargets.push({ condition: descriptor.condition, target: item.target, runtime: descriptor.runtime, specifier: `${manifest.name}${suffix}` });
     }
+  }
+  const runtimeSpecifiers = [...new Set(concreteTargets.filter((item) => item.runtime && item.condition !== "react-server").map((item) => item.specifier))];
+  const framework = packedFrameworkContexts(manifest, runtimeSpecifiers);
+  const frameworkRoles = new Map();
+  for (const role of ["client", "server", "proxy"]) for (const specifier of framework[role]) frameworkRoles.set(specifier, role);
+  const coverage = {
+    declaredExportKeys: declared.length,
+    concreteTargets: concreteTargets.length,
+    runtimeImports: 0,
+    reactServerImports: 0,
+    staticTargets: 0,
+    frameworkExports: 0,
+    frameworkBuilds: framework.all.length > 0 ? 1 : 0,
+    failed: 0,
+    installedManifestSha256: hash("sha256", await readFile(join(installed, "package.json"))),
+  };
+  const operations = [];
+  for (const item of concreteTargets) {
+    const target = await containedRegularFile(installed, item.target);
+    if (!item.runtime) coverage.staticTargets += 1;
+    else if (item.condition !== "react-server" && frameworkRoles.has(item.specifier)) coverage.frameworkExports += 1;
+    else {
+      coverage.runtimeImports += 1;
+      if (item.condition === "react-server") coverage.reactServerImports += 1;
+    }
+    if (!target) { coverage.failed += 1; continue; }
+    if (item.runtime && (item.condition === "react-server" || !frameworkRoles.has(item.specifier))) {
+      const result = await runProcess(process.execPath, runtimeImportArguments(item.condition, item.specifier, target, installed), { cwd: root, env: sanitizedEnv(root), timeout: QUALIFICATION_PHASE_TIMEOUTS.probe });
+      operations.push({ id: `import:${item.condition}:${item.specifier}`, kind: "import", result });
+      if (result.exitCode !== 0 || result.signal || result.launchError) coverage.failed += 1;
+    }
+  }
+  if (framework.all.length > 0) {
+    // A shared aggregate consumer must not retain one package's app/, proxy,
+    // or .next cache for a later adapter. Give each framework probe a private
+    // evaluator root that only symlinks the already-installed dependency tree.
+    const evaluatorRoot = await mkdtemp(join(root, ".foundry-framework-"));
+    let result;
+    try {
+      await writeFile(join(evaluatorRoot, "package.json"), '{"private":true,"type":"module"}\n');
+      // Turbopack rejects a node_modules symlink that resolves above its
+      // inferred project root.  The evaluator is deliberately nested inside
+      // the disposable consumer, so bind its allowed root explicitly while
+      // keeping app/proxy/.next outputs private to this evaluator directory.
+      await writeFile(join(evaluatorRoot, "next.config.mjs"), `export default { turbopack: { root: ${JSON.stringify(root)} } };\n`);
+      await symlink(join(root, "node_modules"), join(evaluatorRoot, "node_modules"), "dir");
+      await writeNextFixture(evaluatorRoot, framework);
+      result = await runProcess(join(evaluatorRoot, "node_modules", ".bin", "next"), ["build"], {
+        cwd: evaluatorRoot,
+        env: { ...sanitizedEnv(root), CI: "1", NEXT_TELEMETRY_DISABLED: "1" },
+        timeout: QUALIFICATION_PHASE_TIMEOUTS.framework,
+      });
+    } finally { await rm(evaluatorRoot, { recursive: true, force: true }); }
+    for (const role of ["client", "server", "proxy"]) for (const specifier of framework[role]) {
+      operations.push({ id: `framework:next:${role}:${specifier}`, kind: "framework", result });
+    }
+    if (result.exitCode !== 0 || result.signal || result.launchError) coverage.failed += framework.all.length;
   }
   return { coverage, operations };
 }
 
 /** Execute the fixed, data-only contract against exactly one local tarball. */
-export async function runCandidateQualification({ tarball, policy, adapter, fixtures, manifestBins, registry, timeoutMs }) {
+export async function runCandidateQualification({ tarball, policy, adapter, fixtures, manifestBins, registry, consumerRoot = null, skipRollback = false, restoreConsumerOverlay = false, releaseRuntimeRun }) {
   assertCredentialFree();
+  assertReleaseRuntime(releaseRuntimeRun ? { run: releaseRuntimeRun } : {});
   const bytes = await readFile(tarball);
   const tarballDigests = { sha1: hash("sha1", bytes), sha256: hash("sha256", bytes), sha512: hash("sha512", bytes) };
-  const root = await mkdtemp(join(tmpdir(), "foundry-candidate-"));
-  const artifact = join(root, "artifact", "candidate.tgz");
-  await mkdir(join(root, "artifact")); await writeFile(artifact, bytes);
+  const ownsRoot = consumerRoot === null;
+  const root = await registerTrustedRoot(ownsRoot ? await mkdtemp(join(tmpdir(), "foundry-candidate-")) : consumerRoot);
+  // Aggregate execution reuses one consumer root.  Each supplied tarball gets
+  // a content-addressed private path so a later candidate cannot overwrite a
+  // prior adapter's packed bytes or fail on an existing artifact directory.
+  const artifact = join(root, "artifact", `${tarballDigests.sha256}.tgz`);
+  const artifactSpec = `file:./artifact/${tarballDigests.sha256}.tgz`;
+  await ensureContainedDirectory(root, join(root, "artifact"), "candidate artifact directory"); await writeFile(artifact, bytes, { flag: "wx" });
   const manifest = await packedManifest(artifact);
   if (adapter.package !== manifest.name) throw new Error("adapter package must equal packed manifest name");
   if (registry?.scope !== packageScope(manifest.name)) throw new Error("registry scope must match candidate package scope");
@@ -388,8 +743,10 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
   const packagePolicy = policy.packages[adapter.package];
   const fixtureMaterializedAt = adapter.retainRawCaseEvidence === true ? new Date().toISOString() : null;
   const transcript = {
-    schema: "foundry-candidate-qualification-transcript-v2",
-    version: 2,
+    // Aggregate execution has one shared install/rollback. It must not claim
+    // the standalone v3's per-package rollback observations.
+    schema: skipRollback ? "foundry-aggregate-child-execution-v1" : "foundry-candidate-qualification-transcript-v3",
+    version: skipRollback ? 1 : 3,
     candidate: { name: manifest.name, version: manifest.version },
     archetype: adapter.archetype,
     tarball: tarballDigests,
@@ -400,7 +757,7 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
     dimensions: ["position", "completion", "rollback", "duplicate", "cadence", "closeWindow"].map((dimension) => {
       const rule = packagePolicy.dimensions[dimension];
       if (rule.status === "unsupported") return { dimension, status: "unsupported", reason: rule.reason };
-      if (dimension === "rollback") return { dimension, status: "supported", evidence: ["uninstall", "reinstall"] };
+      if (dimension === "rollback") return { dimension, status: "supported", evidence: skipRollback ? ["aggregate-rollback-delegated"] : ["uninstall", "reinstall"] };
       const group = adapter.dimensionEvidence.duplicate;
       return { dimension, status: "supported", evidence: adapter.cases.filter((item) => item.group === group && [0, 1].includes(item.exitCode)).map((item) => "case:" + item.id) };
     }),
@@ -409,27 +766,51 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
     ok: false,
   };
   if (fixtureMaterializedAt) transcript.fixtureMaterializedAt = fixtureMaterializedAt;
+  const aggregateFixtureBackup = new Map();
+  let caseBase = null;
+  const overlayRoots = new Set();
+  const overlayRootExisted = new Map();
+  const overlayBackup = new Map();
   try {
-    await mkdir(join(root, "fixtures"));
+    const fixtureRoot = ownsRoot || adapter.package === "@clossys/starter" ? join(root, "fixtures") : join(root, "fixtures", adapter.package.slice(adapter.package.indexOf("/") + 1));
+    await ensureContainedDirectory(root, fixtureRoot, "fixture root");
     const variables = { CANDIDATE_NAME: manifest.name, CANDIDATE_VERSION: manifest.version, CANDIDATE_INTEGRITY: npmIntegrity(tarballDigests.sha512), NOW: fixtureMaterializedAt ?? new Date().toISOString() };
     for (const fixture of adapter.fixtures) {
-      const target = join(root, "fixtures", fixture);
-      await mkdir(dirname(target), { recursive: true });
+      const target = await prepareFixtureTarget(root, fixtureRoot, resolve(fixtureRoot, fixture), "materialized fixture");
+      if (!ownsRoot) {
+        try { aggregateFixtureBackup.set(target, await readFile(target)); }
+        catch (error) { if (error?.code !== "ENOENT") throw error; aggregateFixtureBackup.set(target, null); }
+      }
       await writeFile(target, renderFixture(await readFile(fixtures[fixture].path, "utf8"), variables));
     }
-    const npmrc = join(root, "npmrc");
-    await writeFile(npmrc, installNpmrc(registry));
-    await writeFile(join(root, "package.json"), "{\"private\":true}\n");
+    const userNpmrc = join(root, "user-npmrc");
+    const globalNpmrc = join(root, "global-npmrc");
+    await Promise.all([writeFile(userNpmrc, installNpmrc(registry)), writeFile(globalNpmrc, "")]);
+    const frameworkFixtureDevDependencies = manifest.foundryReleaseVerification === undefined ? undefined : {
+      "@types/node": "22.20.1",
+      "@types/react": "19.2.18",
+      typescript: "6.0.3",
+    };
+    if (ownsRoot) await writeFile(join(root, "package.json"), `${JSON.stringify({
+      name: "foundry-candidate-consumer",
+      private: true,
+      type: "module",
+      ...(frameworkFixtureDevDependencies ? { devDependencies: frameworkFixtureDevDependencies } : {}),
+    }, null, 2)}\n`);
 
     const peerArgs = Object.entries(adapter.peerInstall ?? {}).sort(([left], [right]) => left.localeCompare(right)).map(([name, version]) => `${name}@${version}`);
-    const install = await runProcess("npm", ["install", "--ignore-scripts", "--save-exact", "file:./artifact/candidate.tgz", ...peerArgs], {
-      cwd: root, env: sanitizedEnv(root), timeout: timeoutMs,
-    });
-    transcript.observations.push(observation(root, "install", "install", 0, install));
-    if (install.exitCode !== 0 || install.signal || install.launchError) transcript.mismatches.push("install");
+    const install = ownsRoot ? await runProcess("npm", ["install", "--ignore-scripts", "--save-exact", artifactSpec, ...peerArgs], {
+      cwd: root, env: sanitizedEnv(root), timeout: QUALIFICATION_PHASE_TIMEOUTS.npm,
+    }) : null;
+    // A shared aggregate root has exactly one real npm install recorded by its
+    // aggregate transcript. Never manufacture nineteen child install results.
+    if (!skipRollback) {
+      transcript.observations.push(observation(root, "install", "install", 0, install));
+      if (install.exitCode !== 0 || install.signal || install.launchError) transcript.mismatches.push("install");
+    }
     // This file may temporarily contain an install credential. Candidate code sees
     // neither it nor the credential-bearing environment, even after an install error.
-    await writeFile(npmrc, "");
+    await writeFile(userNpmrc, "");
 
     const installed = join(root, "node_modules", ...manifest.name.split("/"));
     let installedManifest;
@@ -449,78 +830,121 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
       if (!target) transcript.mismatches.push(`bin:${bin}`);
       else targets[bin] = target;
     }
-    const exported = await exportCoverage(manifest, installed, root, timeoutMs);
+    const exported = await exportCoverage(manifest, installed, root);
     for (const operation of exported.operations) {
-      transcript.observations.push(observation(root, operation.id, "import", 0, operation.result));
+      transcript.observations.push(observation(root, operation.id, operation.kind, 0, operation.result));
       if (operation.result.exitCode !== 0 || operation.result.signal || operation.result.launchError) transcript.mismatches.push(operation.id);
     }
     if (exported.coverage.failed !== 0) transcript.mismatches.push("export-coverage");
     for (const bin of Object.keys(adapter.bins).sort()) {
       const result = targets[bin]
-        ? await runProcess(process.execPath, [targets[bin], "--help"], { cwd: root, env: sanitizedEnv(root), timeout: timeoutMs })
+        ? await runProcess(process.execPath, [targets[bin], "--help"], { cwd: root, env: sanitizedEnv(root), timeout: QUALIFICATION_PHASE_TIMEOUTS.probe })
         : { exitCode: null, signal: null, launchError: true, stdout: "", stderr: "missing contained bin target" };
       transcript.observations.push(observation(root, `help:${bin}`, "help", adapter.bins[bin], result));
       if (result.exitCode !== adapter.bins[bin] || result.signal || result.launchError) transcript.mismatches.push(`help:${bin}`);
     }
-    const caseBase = { manifest: await readFile(join(root, "package.json"), "utf8"), lock: await readFile(join(root, "package-lock.json"), "utf8") };
-    const overlayRoots = new Set();
+    caseBase = { manifest: await readRegularFile(root, join(root, "package.json"), "consumer package.json"), lock: await readRegularFile(root, join(root, "package-lock.json"), "consumer package-lock.json") };
     for (const item of adapter.consumerOverlay ?? []) {
       const target = resolve(root, item.target);
       if (!target.startsWith(`${root}${sep}`)) throw new Error("consumer overlay escapes disposable root");
       const packageRoot = overlayPackageRoot(root, item.target);
       if (packageRoot) overlayRoots.add(packageRoot);
     }
-    await assertConsumerOverlayRootsAbsent(overlayRoots, "refuses to overwrite");
+    if (!restoreConsumerOverlay) await assertConsumerOverlayRootsAbsent(overlayRoots, "refuses to overwrite");
+    if (restoreConsumerOverlay) for (const packageRoot of overlayRoots) {
+      try { await lstat(packageRoot); overlayRootExisted.set(packageRoot, true); }
+      catch (error) { if (error?.code !== "ENOENT") throw error; overlayRootExisted.set(packageRoot, false); }
+    }
     for (const item of adapter.consumerOverlay ?? []) {
       const target = resolve(root, item.target);
-      await mkdir(dirname(target), { recursive: true });
-      await copyFile(join(root, "fixtures", item.fixture), target);
+      await ensureContainedDirectory(root, dirname(target), `consumer overlay ${item.target} parent`);
+      await assertRestorePathContained(root, target, `consumer overlay ${item.target}`);
+      if (restoreConsumerOverlay) {
+        try { overlayBackup.set(target, await readRegularFile(root, target, `consumer overlay ${item.target}`)); }
+        catch (error) { if (error?.code !== "ENOENT") throw error; overlayBackup.set(target, null); }
+      }
+      const source = await assertFixturePathContained(root, fixtureRoot, resolve(fixtureRoot, item.fixture), `consumer overlay source ${item.fixture}`);
+      await copyFile(source, target);
     }
     const preparedCases = [];
     for (const item of adapter.cases) {
       const args = item.fixtureArgs
-        ? item.fixtureArgs.map((fixture) => join(root, "fixtures", fixture))
-        : await Promise.all(item.args.map((descriptor) => caseArgument(root, descriptor)));
+        ? await Promise.all(item.fixtureArgs.map((fixture) => assertFixturePathContained(root, fixtureRoot, resolve(fixtureRoot, fixture), "case fixture argument")))
+        : await Promise.all(item.args.map((descriptor) => caseArgument(root, fixtureRoot, descriptor)));
       const descriptors = item.fixtureArgs ?? item.args;
-      const snapshot = adapter.retainRawCaseEvidence === true ? await rawCaseInputSnapshot(root, descriptors, adapter.consumerOverlay) : null;
+      const snapshot = adapter.retainRawCaseEvidence === true ? await rawCaseInputSnapshot(root, fixtureRoot, descriptors, adapter.consumerOverlay) : null;
       preparedCases.push({ item, args, descriptors, snapshot });
     }
     for (const prepared of preparedCases) {
       const { item, args, snapshot } = prepared;
       const result = targets[item.bin]
-        ? await runProcess(process.execPath, [targets[item.bin], ...args], { cwd: root, env: sanitizedEnv(root), timeout: timeoutMs })
+        ? await runProcess(process.execPath, [targets[item.bin], ...args], { cwd: root, env: sanitizedEnv(root), timeout: QUALIFICATION_PHASE_TIMEOUTS.probe })
         : { exitCode: null, signal: null, launchError: true, stdout: "", stderr: "missing contained bin target" };
-      if (adapter.retainRawCaseEvidence === true && targets[item.bin]) await assertRawCaseInputsUnchanged(root, preparedCases, adapter.consumerOverlay, result.exitCode);
+      if (adapter.retainRawCaseEvidence === true && targets[item.bin]) await assertRawCaseInputsUnchanged(root, fixtureRoot, preparedCases, adapter.consumerOverlay, result.exitCode);
       const observed = observation(root, `case:${item.id}`, "case", item.exitCode, result);
       if (adapter.retainRawCaseEvidence === true && targets[item.bin]) observed.rawCaseEvidence = rawCaseEvidence(root, targets[item.bin], args, snapshot, result);
       transcript.observations.push(observed);
       if (result.exitCode !== item.exitCode || result.signal || result.launchError) transcript.mismatches.push(`case:${item.id}`);
     }
 
-    await writeFile(join(root, "package.json"), caseBase.manifest);
-    await writeFile(join(root, "package-lock.json"), caseBase.lock);
-    for (const packageRoot of overlayRoots) await rm(packageRoot, { recursive: true, force: true });
-    await assertConsumerOverlayRootsAbsent(overlayRoots, "post-case restoration failed");
+    await restoreRegularFile(root, join(root, "package.json"), caseBase.manifest, "consumer package.json");
+    await restoreRegularFile(root, join(root, "package-lock.json"), caseBase.lock, "consumer package-lock.json");
+    if (restoreConsumerOverlay) {
+      for (const [target, bytes] of overlayBackup) {
+        await restoreRegularFile(root, target, bytes, "consumer overlay");
+      }
+      for (const [packageRoot, existed] of overlayRootExisted) if (!existed) await removeContainedDirectory(root, packageRoot, "consumer overlay package root");
+    } else {
+      for (const packageRoot of overlayRoots) await removeContainedDirectory(root, packageRoot, "consumer overlay package root");
+      await assertConsumerOverlayRootsAbsent(overlayRoots, "post-case restoration failed");
+    }
 
     const before = { manifest: await readFile(join(root, "package.json"), "utf8"), lock: await readFile(join(root, "package-lock.json"), "utf8") };
-    const uninstall = await runProcess("npm", ["uninstall", manifest.name, "--ignore-scripts"], { cwd: root, env: sanitizedEnv(root), timeout: timeoutMs });
-    transcript.observations.push(observation(root, "uninstall", "uninstall", 0, uninstall));
     let packageAbsentAfterUninstall = false;
-    try { await lstat(installed); } catch { packageAbsentAfterUninstall = true; }
-    const reinstall = await runProcess("npm", ["install", "--ignore-scripts", "--save-exact", "file:./artifact/candidate.tgz"], { cwd: root, env: sanitizedEnv(root), timeout: timeoutMs });
-    transcript.observations.push(observation(root, "reinstall", "reinstall", 0, reinstall));
-    const after = { manifest: await readFile(join(root, "package.json"), "utf8"), lock: await readFile(join(root, "package-lock.json"), "utf8") };
-    const restored = before.manifest === after.manifest && before.lock === after.lock;
-    if (uninstall.exitCode !== 0 || reinstall.exitCode !== 0 || !packageAbsentAfterUninstall || !restored) transcript.mismatches.push("restoration");
+    let restored = false;
+    if (skipRollback) {
+      // A preinstalled aggregate has one real all-package rollback.  Do not
+      // manufacture individual npm observations: the aggregate transcript
+      // owns absence and reinstall proof, while this child records delegation.
+      restored = true;
+    } else {
+      const uninstall = await runProcess("npm", ["uninstall", manifest.name, "--ignore-scripts"], { cwd: root, env: sanitizedEnv(root), timeout: QUALIFICATION_PHASE_TIMEOUTS.npm });
+      transcript.observations.push(observation(root, "uninstall", "uninstall", 0, uninstall));
+      try { await lstat(installed); } catch { packageAbsentAfterUninstall = true; }
+      const reinstall = await runProcess("npm", ["install", "--ignore-scripts", "--save-exact", artifactSpec], { cwd: root, env: sanitizedEnv(root), timeout: QUALIFICATION_PHASE_TIMEOUTS.npm });
+      transcript.observations.push(observation(root, "reinstall", "reinstall", 0, reinstall));
+      const after = { manifest: await readFile(join(root, "package.json"), "utf8"), lock: await readFile(join(root, "package-lock.json"), "utf8") };
+      restored = before.manifest === after.manifest && before.lock === after.lock;
+      if (uninstall.exitCode !== 0 || reinstall.exitCode !== 0 || !packageAbsentAfterUninstall || !restored) transcript.mismatches.push("restoration");
+    }
 
-    transcript.consumer = { manifestSha256: consumerDigest(root, before.manifest), lockfileSha256: consumerDigest(root, before.lock) };
+    transcript.consumer = { manifestSha256: skipRollback ? hash("sha256", before.manifest) : consumerDigest(root, before.manifest), lockfileSha256: skipRollback ? hash("sha256", before.lock) : consumerDigest(root, before.lock) };
     transcript.coverage = { ...exported.coverage, bins: Object.keys(packedBins).length, lifecycleScriptsDisabled };
-    transcript.restoration = { manifestRestored: restored, lockfileRestored: restored, packageAbsentAfterUninstall };
+    transcript.restoration = skipRollback ? { delegatedToAggregate: true } : { manifestRestored: restored, lockfileRestored: restored, packageAbsentAfterUninstall };
     transcript.mismatches.sort();
     transcript.ok = transcript.mismatches.length === 0;
     transcript.canonicalSha256 = hash("sha256", JSON.stringify(transcript));
     return transcript;
   } finally {
-    await rm(root, { recursive: true, force: true });
+    // A child can throw after materializing a shared-root overlay (for
+    // example while a Starter raw-case assertion detects a hostile rewrite).
+    // The aggregate's baseline remains authoritative even on that failure.
+    if (!ownsRoot && caseBase) {
+      await restoreRegularFile(root, join(root, "package.json"), caseBase.manifest, "consumer package.json");
+      await restoreRegularFile(root, join(root, "package-lock.json"), caseBase.lock, "consumer package-lock.json");
+      if (restoreConsumerOverlay) {
+        for (const [target, bytes] of overlayBackup) await restoreRegularFile(root, target, bytes, "consumer overlay");
+        for (const [packageRoot, existed] of overlayRootExisted) if (!existed) await removeContainedDirectory(root, packageRoot, "consumer overlay package root");
+      } else {
+        for (const packageRoot of overlayRoots) await removeContainedDirectory(root, packageRoot, "consumer overlay package root");
+      }
+    }
+    // In aggregate mode Starter intentionally uses root/fixtures so its v3
+    // raw evidence remains compatible.  Every preexisting fixture byte is
+    // restored here, including failures during a case or framework build.
+    for (const [target, bytes] of aggregateFixtureBackup) {
+      await restoreRegularFile(root, target, bytes, "aggregate fixture");
+    }
+    if (ownsRoot) await rm(root, { recursive: true, force: true });
   }
 }

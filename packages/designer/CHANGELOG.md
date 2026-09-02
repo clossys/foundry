@@ -3,6 +3,100 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.3.1] - 2026-09-01
+
+### Fixed
+
+- Declared the four CLI bin targets in the form npm actually publishes, without
+  a leading `./`. npm rewrote those values during packing, so the manifest in
+  the tarball disagreed with the manifest in the tree and publish qualification
+  refused the candidate. The normalised values are byte-identical to what
+  0.2.7 already carries on the registry, so no installed CLI path moves.
+
+### Note on 0.3.0
+
+0.3.0 was never published. It carried the additive SectionedView slots below
+and was withdrawn before release when the bin-map defect was found. Everything
+0.3.0 added ships in 0.3.1 unchanged; the number is skipped rather than reused
+because a released version is immutable and this candidate's packed contents
+changed after qualification.
+
+## [0.3.0] - 2026-09-01
+
+### Added
+
+- Added an optional `detail` slot to every `StatusList` row, readiness and
+  off-axis disposition alike. It renders as a second description of the same
+  term, so a row's own explanation, including the reasoning behind a
+  `not-offered` answer, stays inside the definition-list semantics rather than
+  becoming a paragraph that only looks adjacent. A row had nowhere to put that
+  reasoning before but its own label.
+- Added the optional `eyebrow` slot `Hero` and `FeatureGrid` already shipped
+  to `Faq` (both the React Aria and server-native implementations),
+  `OrderedStepSequence`, and `StatusList`. A small label above the block
+  heading is now expressible on every editorial block rather than on two of
+  them. A block given no eyebrow, heading, or description still renders no
+  heading region at all.
+
+Both slots are optional and additive: a call that compiled and rendered under
+0.2.7 compiles and renders identically under 0.3.0, and a block passed neither
+slot emits the markup it always did. This is a minor rather than a patch
+because 0.x caret and tilde ranges are minor-locked, so a consumer that wants
+either slot widens its declared range deliberately.
+
+## [0.2.7] - 2026-09-01
+
+### Added
+
+- Added the separately closed `StatusList` `not-offered` disposition for
+  deliberate non-capabilities outside the readiness axis. It uses a neutral
+  tone rather than reading as a warning or future commitment.
+
+## [0.2.6] - 2026-08-31
+
+### Added
+
+- Added server-safe `OrderedStepSequence` and `StatusList` editorial blocks
+  with ordered and definition-list semantics, caller-localized labels,
+  closed state and ground vocabularies, accessible authored ordinals,
+  responsive decorative connectors, and explicit contrast coverage.
+- Added the server-safe, closed `SectionGround` contract (`base`, `sunken`,
+  `inverse`) and Designer-owned class/token mapping. `Hero`, `FeatureGrid`,
+  both `Faq` implementations, `OrderedStepSequence`, and `StatusList` now
+  apply their own matching surface, foreground, divider/connector, and status
+  treatment rather than requiring a consumer to paint around them.
+
+### Fixed
+
+- Replaced the five bounded physical-direction shell patterns with logical
+  inset, border, and focus-position utilities so navigation, drawers, toasts,
+  and skip links follow the document writing direction.
+
+## [0.2.5] - 2026-08-31
+
+### Changed
+
+- Prepared a bounded trusted-publisher patch source for provenance after the owner-present first publication and anonymous registry verification. This change does not publish the package or claim provenance.
+
+## [0.2.4] - 2026-08-31
+
+### Fixed
+
+- Added `Faq` to `@clossys/designer/blocks/server` with a native
+  `details`/`summary` implementation. The ordinary blocks entry continues to
+  use React Aria, while server consumers receive the same public props without
+  reaching the client-only dependency graph. The native summary retains its
+  stateful disclosure marker and uses the package-standard focus-visible
+  outline without the `outline-none` custom-property override that would
+  prevent Tailwind's generated outline width from painting. The same
+  conflicting reset was removed from Banner's dismiss control.
+
+## [0.2.3] - 2026-08-30
+
+### Changed
+
+- Updated the package's public repository, issue-tracker, and homepage metadata to the canonical Foundry repository. This change is not a publication or qualification claim.
+
 ## [0.2.2] - 2026-08-29
 
 ### Security

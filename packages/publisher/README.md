@@ -19,15 +19,29 @@ Use explicit subpaths:
 
 - `@clossys/publisher/core` — canonical `SurfaceDocument` contract, validation, copy/media resolution, and output manifests.
 - `@clossys/publisher/media` — media registry, reader, and coverage check.
-- `@clossys/publisher/web` — web composition and head metadata.
+- `@clossys/publisher/web` — web composition, head metadata, and the dedicated
+  resolved-model `SectionedView` renderer. Under React's
+  `react-server` export condition it resolves a server-safe target with the
+  same runtime export names and Designer's server-only component barrels;
+  ordinary imports retain the interactive React Aria FAQ.
 - `@clossys/publisher/document` — the product-neutral structured-document contract (sections, paragraphs, lists, tables, callouts, safe links) and its renderer.
 - `@clossys/publisher/email`, `/print`, `/image`, `/slides` — channel renderers.
 - `@clossys/publisher/record` — the append-only, content-addressed publication ledger and its drift checker. See "`record` — the append-only publication ledger," below.
 
 The package has no root export. `core` is deliberately framework-agnostic;
-the web and document subpaths have optional React (and, for `web`, designer)
-peers, while non-web renderers do not require them at runtime. `record` is
-pure and has no peer dependencies of its own.
+the web and document subpaths have optional React peers, while `web` also
+declares Designer's optional runtime peers directly so a public-registry
+consumer receives a complete, inspectable peer contract. Non-web renderers do
+not require them at runtime. `record` is pure and has no peer dependencies of
+its own.
+
+The web condition changes only the implementation selected for server
+rendering, not the API. `MarketingView` keeps the same props and regional
+layout; its server target uses Designer's native `details`/`summary` FAQ while
+the ordinary target keeps Designer's React Aria FAQ. `AuthView`, `ErrorView`,
+`CaptureView`, `CollectionView`, `DocumentView`, the renderer functions,
+template helpers, error class, and all runtime export names are present in
+both targets.
 
 ## Why `publisher` is one package, not two
 
@@ -113,7 +127,11 @@ A repeating binding still names one explicit slot the consumer already
 decided exists — it does not select a template or invent a slot, the same
 boundary every other binding in this package holds to (see "Scope," above).
 Each item in `items` independently obeys the identical exactly-one-of
-discipline a single binding does:
+discipline a single binding does. For a one-value item, use `copy`, `node`,
+or `assetId` as before. For ordinary multi-field editorial content, use one
+named `fields` map instead; each field is exactly one `copy` or `assetId`
+binding. A field may never be a `node`, so structured copy cannot bypass the
+registry, voice checks, locale selection, or output provenance.
 
 ```ts
 import type { SurfaceDocument } from "@clossys/publisher/core";
@@ -128,6 +146,13 @@ const acmeCapabilities: SurfaceDocument["bindings"][number] = {
 };
 ```
 
+Templates opt into structured items by declaring their accepted field names
+and requiredness in `repeatingSlots`. At render time, an unknown field, a
+missing required field, a malformed field map, or a legacy one-value item
+against a structured slot fails closed. A field map against a slot that did
+not declare fields fails closed too. This keeps the template—not a caller's
+ad hoc object—the authority for the repeating item's shape.
+
 `items` may be an empty array. That is a deliberate choice, not an
 oversight: this package cannot tell "the consumer configured zero of these
 on purpose" (a legitimately-empty testimonial list) apart from "something
@@ -137,7 +162,7 @@ doc comment for the fuller reasoning.
 
 `resolveSurfaceDocument` resolves a repeating binding's items in order and
 returns them on `ResolvedSurfaceDocument.groups` — an array of
-`{ slot, items: [{ index, value? , node?, assetId? }, ...] }` — rather than
+`{ slot, items: [{ index, value?, node?, assetId?, fields? }, ...] }` — rather than
 folding them into the legacy `ComposeDocument.bindings` shape, which has no
 way to carry more than one source per slot. `groups` is omitted entirely
 (not an empty array) on a document with no repeating binding, so an existing
@@ -150,7 +175,184 @@ it does not invent a second, partial-success mode just because the content
 is array-shaped. Per-item copy resolutions flow into the same
 `resolutions`/`collectCopyProvenance` provenance path a single binding's
 does, so a repeating-group slot shows up in manifest provenance per item,
-not just per slot — see `output-manifest.ts`.
+not just per slot — see `output-manifest.ts`. A structured field resolved
+from `assetId` instead carries registry-validated asset evidence into the
+target renderer; it has no copy provenance because it is not copy.
+At the public `RenderWebOptions.groups` boundary, items must retain the
+resolver's contiguous source order: item `index` is exactly its zero-based
+array position. This prevents a direct caller from silently reordering,
+duplicating, or sparsifying the authored group after resolution.
+
+### Structured repeating-item migration and planned semver boundary
+
+Publisher `0.1.10` exposed the FAQ repeat as a legacy one-value/node-shaped
+contract. That shape cannot represent two separately governed editorial
+fields, and it is not compatible with the structured FAQ contract above.
+Migrate each FAQ item from a caller-authored node to explicit approved-copy
+fields:
+
+```ts
+// Before: legacy node-shaped FAQ item (do not carry this forward).
+{ node: { question: "...", answer: "..." } }
+
+// After: every audience-facing field is a CopyRef.
+{
+  fields: {
+    question: { copy: ref("acme.faq.question") },
+    answer: { copy: ref("acme.faq.answer") },
+  },
+}
+```
+
+This is a breaking contract correction, so Publisher source is now the planned
+`0.2.0` successor; a `^0.1.x` range must not satisfy it. The source is neither
+qualified nor published: an exact-head candidate and public dependency
+verification remain required before any release action.
+
+### `SectionedViewDocument` — Designer-independent long-page core
+
+`@clossys/publisher/core` now owns the closed, data-only source model for a
+long public site page: `SectionedViewDocument`. It requires one or more
+ordered sections with unique lowercase fragment-safe ids and one of five
+named kinds: `hero`, `feature-grid`, `faq`, `ordered-step-sequence`, or
+`status-list`. Grounds are the closed `base`/`sunken`/`inverse` vocabulary;
+status values are the closed `available`/`partial`/`planned` readiness axis,
+with a separate `not-offered` disposition for deliberate non-capabilities.
+Every audience-facing label, heading, description, question, answer, ordinal,
+and status label is a `CopyRef`. There are no React nodes, render callbacks,
+router fields, locale overrides, classes, styles, arbitrary colours, or
+composition escape hatches.
+
+This is a closed wire model at runtime as well as in TypeScript: structural
+objects use only enumerable own data properties (no inherited, symbol, hidden,
+or accessor fields), and every ordered section, item, and status-group array
+must be dense. A `CopyRef` has only its non-empty `id`, optional non-empty
+`locale`, and an optional plain interpolation-value record whose values are
+strings, numbers, or booleans. Malformed input is rejected before a custom
+resolver is called.
+
+`validateSectionedViewDocument` reports malformed or unknown structure;
+`resolveSectionedViewDocument` resolves every CopyRef depth-first in authored
+order and returns its ordinary `CopyResolution[]`. Pass that list directly to
+`collectCopyProvenance` or existing output-manifest helpers—there is no second
+provenance format. A missing or empty resolution fails the entire document and
+names the exact authored path. This core stage intentionally imports neither
+React nor Designer and does not render a web view. The grounded web renderer
+uses Designer `0.3.0`'s server-safe site-block API, including the separate
+`not-offered` disposition and its caller-localized `labels.dispositions` map,
+the non-hero `eyebrow` slot, and the per-row `detail` slot.
+
+`SectionedView` is now the dedicated web renderer after that Designer floor is
+available. Resolve the CopyRef document first, retain its `resolutions` as the
+only publication provenance, and pass the resolved model directly:
+Here `resolveCopy` is the consumer's approved `CopyResolver`.
+
+```tsx
+import { resolveSectionedViewDocument } from "@clossys/publisher/core";
+import { SectionedView } from "@clossys/publisher/web";
+
+const resolved = resolveSectionedViewDocument({
+  id: "acme-home",
+  sections: [{
+    id: "welcome",
+    kind: "hero",
+    ground: "base",
+    heading: { id: "acme.home.heading" },
+    description: { id: "acme.home.description" },
+  }],
+}, resolveCopy);
+
+const page = <SectionedView document={resolved} />;
+// resolved.resolutions feeds collectCopyProvenance/output-manifest helpers.
+```
+
+#### Optional fields the document may also carry
+
+Four slots are optional and additive: a document written without them
+validates and renders exactly as it did before they existed.
+
+- **`eyebrow` on every section kind.** `hero` always had one; `feature-grid`,
+  `faq`, `ordered-step-sequence`, and `status-list` now carry the same
+  optional `CopyRef`, so authored eyebrow copy is no longer dropped at
+  conversion time.
+- **`actions` on the hero section.** An optional, non-empty list of
+  `{ id, label, href }`, where `label` is a `CopyRef` and `href` must be a
+  fragment, a one-origin path, an `http(s)` URL, or a `mailto:` link. It stays
+  data: there is no node, class, or handler slot, and the view renders the
+  anchors into the Designer `Hero` block's existing `actions` slot.
+- **`detail` on a status-list item.** An optional `CopyRef` carrying that
+  row's own explanation, including the reasoning behind a `not-offered`
+  answer. It renders as a second description of the same row, so the
+  definition-list semantics stay intact.
+
+```tsx
+const resolved = resolveSectionedViewDocument({
+  id: "acme-trust",
+  sections: [
+    {
+      id: "welcome",
+      kind: "hero",
+      ground: "base",
+      heading: { id: "acme.trust.heading" },
+      actions: [{ id: "contact", label: { id: "acme.trust.contact" }, href: "/contact" }],
+    },
+    {
+      id: "posture",
+      kind: "status-list",
+      ground: "sunken",
+      eyebrow: { id: "acme.trust.eyebrow" },
+      heading: { id: "acme.trust.posture" },
+      labels: {
+        available: { id: "acme.status.available" },
+        partial: { id: "acme.status.partial" },
+        planned: { id: "acme.status.planned" },
+        dispositions: { "not-offered": { id: "acme.status.not-offered" } },
+      },
+      groups: [{
+        id: "core",
+        heading: { id: "acme.trust.core" },
+        items: [{
+          id: "audit",
+          label: { id: "acme.trust.audit.label" },
+          detail: { id: "acme.trust.audit.detail" },
+          disposition: "not-offered",
+        }],
+      }],
+    },
+  ],
+}, resolveCopy);
+```
+
+#### Mounting part of a page: the `landmark` prop
+
+`SectionedView` renders its own `main` landmark by default, which is right
+when the whole page is the document. A page that can express only some of its
+sections through this contract needs the other option, or its remaining
+content ends up outside the page's only `main`:
+
+```tsx
+<main>
+  <SectionedView document={resolved} landmark="none" />
+  <ConsumerOwnedSection />
+</main>
+```
+
+`landmark="none"` renders the same sections in a plain grouping element with
+no landmark role and no accessible name. Default behaviour is unchanged, and
+choosing it makes the surrounding page responsible for supplying exactly one
+`main` landmark containing this output.
+
+The ordinary and `react-server` `@clossys/publisher/web` exports are aligned.
+The view owns section markup, source order, unique section ids, grounds, and
+the h1/h2/h3 outline; Designer owns visual tokens and block internals. Per
+#708, Publisher does not own locale selection, routing, or document-level
+`html`, `lang`, or `dir` attributes: the host application supplies those
+boundaries around this renderer.
+
+`section-header` and `article-body` are intentionally not section kinds in
+this core stage: the former's action region and the latter's full structured
+document rendering need a grounded view integration to remain fully
+data-shaped and provenance-complete. They are not represented as node slots.
 
 On its own, this is a repeating-group *binding* primitive only — it says
 nothing about which template actually consumes it. `web`'s `MarketingView`
@@ -181,13 +383,11 @@ was never authored at all omits the whole FAQ section instead, which is a
 different, equally valid outcome (see `MarketingView`'s own `faq` prop doc
 comment).
 
-Because one repeating item carries exactly one resolved value
-(`copy`/`node`/`assetId`) but a FAQ entry needs two independent ones
-(`question` and `answer`), a `faq` item must be authored via `node`,
-shaped `{ question, answer }` — the same "explicit escape hatch for
-content plain text cannot carry" `node` already is everywhere else in this
-package. A `faq` item authored via `copy`/`assetId` instead fails closed
-with `RenderError("empty-output", ...)`.
+`faq` declares two required structured fields: `question` and `answer`.
+Each resolves through the normal `CopyRef` path, so its locale, approved
+voice, and provenance stay visible alongside the rest of the page. A FAQ
+item authored as a caller-owned `node`, as a legacy single value, or with an
+unknown/missing field is refused rather than bypassing editorial governance.
 
 ```ts
 import type { SurfaceDocument } from "@clossys/publisher/core";
@@ -206,13 +406,18 @@ const acmeMarketingHome: SurfaceDocument = {
     { slot: "heroHeading", copy: ref("acme.hero.heading") },
     { slot: "heroDescription", copy: ref("acme.hero.description") },
     { slot: "ctaHeading", copy: ref("acme.cta.heading") },
+    // Required repeating slot; an explicitly empty grid is valid.
+    { slot: "features", items: [] },
     // A repeating slot — one CopyRef per placeholder feature, in order.
     {
-      slot: "features",
+      slot: "faq",
       items: [
-        { copy: ref("acme.feature.one") },
-        { copy: ref("acme.feature.two") },
-        { copy: ref("acme.feature.three") },
+        {
+          fields: {
+            question: { copy: ref("acme.faq.one.question") },
+            answer: { copy: ref("acme.faq.one.answer") },
+          },
+        },
       ],
     },
   ],
@@ -220,7 +425,7 @@ const acmeMarketingHome: SurfaceDocument = {
 
 const resolved = resolveSurfaceDocument(acmeMarketingHome, myCopyResolver);
 const { element, head } = renderWebDocument(resolved.document, {
-  groups: resolved.groups, // carries "features" (and, if authored, "faq")
+  groups: resolved.groups, // carries the structured FAQ fields
 });
 ```
 
@@ -233,6 +438,56 @@ each declared repeating slot's resolved items onto `MarketingView`'s
 `RenderError("resolution-failed", ...)` — the same error contract a
 missing/unknown single-slot binding already produces for `AuthView`/
 `ErrorView`.
+
+### `CaptureView`, `DocumentView`, and `CollectionView` — fixed publisher page shells
+
+These exports are direct, server-safe page shells rather than new
+`SurfaceDocument.template` registrations. They deliberately do not select
+content, load a CMS, own a router, or add client state.
+
+`CaptureView` provides the site chrome, one heading, a consumer-owned form
+region, and a footer. The consumer owns form fields, submission, validation,
+and network effects. On a failed client-side submission, pass both
+`errorSummary` and `errorSummaryId`, focus that id, and keep the summary
+before the form; the view makes it a focusable `role="alert"`. On success,
+pass `submitted`: it replaces the form in the same position in a polite live
+region. `CaptureView` intentionally does not choose a form library, add spam
+handling, or model submission state.
+
+`DocumentView` accepts a `StructuredDocument` and an approved-copy resolver,
+then calls `renderStructuredDocument` itself. A caller cannot supply a
+pre-rendered article node or skip heading and in-document-fragment validation
+on this path. The document title becomes the page `h1`; optional summary and
+effective-date labels remain `CopyRef`s. An effective date is
+`{ dateTime, text }`, so its visible approved copy is paired with a semantic
+`time` value; `dateTime` must be a real ISO date or date-time, not arbitrary
+display text. Invalid document structure, unresolved fragments, missing copy,
+and malformed effective-date metadata fail closed with `RenderError`.
+
+`CollectionView` supplies an accessible collection index: each non-empty
+entry has a unique linked title, a semantic `time`, optional summary and tag
+list, and a navigation landmark for consumer-owned pagination. Its required
+`empty` state prevents an empty index from silently becoming a blank region.
+Entries use a deliberately small closed shape (`id`, `href`, string `title`,
+`date`, optional string `summary`/`tags`); its raw props are consumer-owned
+view data and do not themselves carry CopyRef provenance. Consumers that need
+editorial provenance resolve structured fields before constructing these
+strings, while Publisher's structured renderer continues to retain the
+underlying field-level copy/asset evidence. Pagination and empty-state actions
+are likewise `{ href, label }` data, not node escape hatches. Route loading,
+taxonomy, and paging state remain outside Publisher. If a router replaces collection items in place, it
+must move focus to `focusTargetId` (the focusable `PageHeader` region that
+contains the view's `h1`); ordinary links retain normal browser route focus
+handling. Entry, empty-state, and pagination links accept only a fragment,
+a single-root-relative path (never `//`), `http(s)`, or non-empty `mailto:`;
+script, data, file, and protocol-relative URLs fail closed.
+
+There is intentionally no `EntryView`. A document-backed entry page uses
+`DocumentView`, with its optional header action linking back to the
+collection, rather than duplicating the validated document page contract.
+This is the narrow disposition for entry pages; it does not add CMS, parser,
+or taxonomy behavior. A future Designer-block integration is separately
+staged and is not part of these publisher shells.
 
 ### `defineWebTemplate` / `createWebRenderer` — an extensible, instance-scoped web-template registry
 
@@ -1056,7 +1311,8 @@ choice `checkLedgerDrift` makes for a citation it could not check.
   `validateSurfaceDocument`, `isSurfaceRepeatingSlotBinding`,
   `createOutputManifest`,
   `collectCopyProvenance`, `createResolvedOutputManifest`,
-  `resolveSurfaceDocument`,
+  `resolveSurfaceDocument`, `validateSectionedViewDocument`,
+  `resolveSectionedViewDocument`,
   `resolveDocument`, `resolveCopy`, `resolveAssets`, `frameToInches`,
   `frameToPercent`, `getSlotSpec`, `listSlotKeys`, `requiredSlotKeys`, and
   the `Channel`, `ChannelMeta`, `ComposeDocument`, `ComposeFinding`,
@@ -1064,14 +1320,24 @@ choice `checkLedgerDrift` makes for a citation it could not check.
   `PrintMeta`, `Rect`, `ResolvedSlot`, `ResolveResult`, `SlidesMeta`,
   `SlotBinding`, `SlotSpec`, `StyleBinding`, `SurfaceDocument`,
   `SurfaceBinding`, `SurfaceSlotBinding`, `SurfaceRepeatingSlotBinding`,
-  `SurfaceSlotBindingItem`, `SurfaceChannelMeta`, `OutputArtifact`,
+  `SurfaceRepeatingSlotFieldBinding`, `SurfaceSlotBindingItem`, `SurfaceChannelMeta`, `OutputArtifact`,
   `OutputManifest`, `StrategyProvenance`, `CopyProvenance`, `WebMeta`, `CopyLookup`,
   `CopyResolveResult`, `ResolvedText`, `AssetLookup`, `AssetResolveResult`,
   `ResolvedAsset`, `ResolvedSurfaceDocument`, `ResolvedSurfaceGroup`,
-  `ResolvedSurfaceGroupItem`, `ResolvedSurfaceNode`,
+  `ResolvedSurfaceGroupField`, `ResolvedSurfaceGroupItem`, `ResolvedSurfaceNode`,
   `ResolveSurfaceDocumentOptions`, `SurfaceResolutionReason`, and
-  `CanvasInches` types. `SurfaceResolutionError` is thrown when canonical
-  resolution fails closed.
+  `CanvasInches`, `SectionedViewAction`, `SectionedViewDocument`, `SectionedViewSection`,
+  `SectionedViewSectionKind`, `SectionedViewGround`, `SectionedViewHeroSection`,
+  `SectionedViewFeatureGridSection`, `SectionedViewFeatureItem`, `SectionedViewFaqSection`,
+  `SectionedViewFaqItem`, `SectionedViewOrderedStepSequenceSection`,
+  `SectionedViewOrderedStep`, `SectionedViewStatusListSection`,
+  `SectionedViewStatusGroup`, `SectionedViewStatusItem`, `SectionedViewStatus`,
+  `SectionedViewStatusDisposition`,
+  `ResolvedSectionedViewAction`, `ResolvedSectionedViewDocument`,
+  `ResolvedSectionedViewSection`, and
+  `SectionedViewResolutionReason` types. `SurfaceResolutionError` and
+  `SectionedViewResolutionError` are thrown when their canonical resolution
+  paths fail closed.
 - `media`: `parseAssetRecord`, `validateAssetRecordShape`,
   `readAssetRecord`, `checkAssetCoverage`, and the `AssetEntry`,
   `AssetEntryId`, `AssetFinding`, `AssetRecord`, `AssetRegistryReadIssue`,
@@ -1081,11 +1347,15 @@ choice `checkLedgerDrift` makes for a citation it could not check.
   `VideoReducedMotionBehavior` types. The CLI is `publisher-media-check`.
 - `web`: `renderWebDocument`, `buildWebHeadMetadata`,
   `listWebTemplateNames`, `defineWebTemplate`, `createWebRenderer`,
-  `AuthView`, `ErrorView`, `MarketingView`,
-  `RenderError`, and the `AuthViewProps`, `ErrorViewProps`,
-  `MarketingViewProps`, `MarketingFeatureItem`, `MarketingFaqItem`,
+  `AuthView`, `CaptureView`, `CollectionView`, `DocumentView`, `ErrorView`,
+  `MarketingView`, `SectionedView`, `RenderError`, and the `AuthViewProps`,
+  `CaptureViewProps`, `CollectionViewEmptyState`, `CollectionViewEntry`,
+  `CollectionViewLink`, `CollectionViewPagination`, `CollectionViewProps`,
+  `DocumentViewEffectiveDate`, `DocumentViewProps`,
+  `ErrorViewProps`, `MarketingViewProps`, `MarketingFeatureItem`, `MarketingFaqItem`,
+  `SectionedViewLandmark`, `SectionedViewProps`,
   `RenderErrorReason`, `AssetResolver`, `CopyResolver`, `RenderWebOptions`,
-  `RenderWebResult`, `RepeatingWebSlotSpec`, `ResolvedWebGroupItem`,
+  `RenderWebResult`, `RepeatingWebSlotFieldSpec`, `RepeatingWebSlotSpec`, `ResolvedWebGroupField`, `ResolvedWebGroupItem`,
   `WebSlotContentKind`, `WebTemplate`, `DefineWebTemplateOptions`,
   `CreateWebRendererOptions`, `WebRenderer`, `WebHeadMetadata`,
   `WebOpenGraphMetadata`, and `WebTwitterMetadata` types.
@@ -1130,7 +1400,7 @@ import-free of each other under one version.
 
 Node 20+. This package's own `package.json` declares runtime dependencies on
 `@clossys/writer` (`^0.3.0`), `@clossys/designer`
-(`^0.2.0`), and `@clossys/controller` (`~0.8.0`) — of which this
+(`^0.3.0`), and `@clossys/controller` (`~0.8.0`), of which this
 package only imports the `./policy` subpath, `@clossys/controller/policy`,
 never `controller`'s other exports. `writer` and `designer` are caret
 ranges (both fresh `0.x` role packages); `controller` stays a tilde range,
@@ -1139,26 +1409,35 @@ under semver and has broken this repository's CI before. Every declared
 range is a real constraint on the dependency graph, not an install-ordering
 concern: a package manager resolves the whole graph regardless of what order
 packages are requested in, so none of this can be worked around by
-installing things in a particular sequence. `writer`'s range moved from
-`^0.1.0` to `^0.2.0` when `writer` 0.2.0 changed `writer-check
-addressability`'s exit-code precedence (issue #407) — a behavioural
-contract change, not a patch, so the old `^0.1.0` range does not resolve it
-(0.x ranges are minor-locked). `designer`'s range moved the same way and
-for the same reason at `designer` 0.2.0, which added the
-`designer-environment-check` gate (issue #405). Both widenings landed
-independently and are carried together here; taking only one would have
-left the other range pinned to a superseded version without any gate
-failing, since an un-widened range still resolves against the older
-published release.
+installing things in a particular sequence. `writer`'s range first moved
+from `^0.1.0` to `^0.2.0` when `writer` 0.2.0 changed `writer-check
+addressability`'s exit-code precedence (issue #407), then to the current
+`^0.3.0` when Writer added its passage layer (issue #373). Both were
+additive or behavioural minor releases rather than patches, so the older
+ranges do not resolve them (0.x ranges are minor-locked). `designer`'s range
+first moved from `^0.1.0` to `^0.2.0` when Designer added the
+`designer-environment-check` gate (issue #405), then to `^0.2.7`
+because Publisher's React-server target imports the server-safe
+section-ground, `Faq`, ordered-step, and status-list exports, including the
+separate `not-offered` disposition, introduced in Designer 0.2.7, and then to
+the current `^0.3.0` because the `eyebrow` and `actions` slots this package's
+section contract now renders into are Designer 0.3.0 additions. These ranges are independent; leaving
+either one behind would still resolve an older package without any install
+failure, silently withholding a required contract.
 
 A consumer whose own policy is to pin exact versions must pin `writer` to a
-matching `0.2.x` patch release, `designer` to a matching `0.2.x` patch
-release, and `controller` to a matching `0.8.x` patch release — otherwise
+matching `0.3.x` release, `designer` to `0.3.0` or a later compatible `0.3.x`
+release, and
+`controller` to a matching `0.8.x` patch release — otherwise
 `publisher`'s declared ranges and the consumer's exact pin cannot both be
 satisfied, and the install fails with an unresolvable version conflict.
-`react` and `react-dom` are optional
-peer dependencies (`>=18`) required only by the `web` and `document`
-subpaths' renderers; `record` has no peer dependencies of its own.
+`react` and `react-dom` are optional peer dependencies (`>=18`) required only
+by the `web` and `document` subpaths' renderers. The `web` subpath also imports
+Designer surfaces, so Publisher directly repeats Designer's optional
+`@internationalized/date`, `react-aria-components`, `tailwind-merge`, and
+`tailwindcss` peer ranges. This closes the public npm consumer graph instead
+of relying on an installer to propagate a dependency's optional peers.
+`record` has no peer dependencies of its own.
 
 Marking `react` optional means npm gives no install-time signal if it's
 missing or on an incompatible version — importing `./web` or `./document`
@@ -1172,22 +1451,15 @@ own — no file in this package ever imports it directly; only your own
 either renderer returns. See `src/internal/peer-version.ts` for the
 guard's own contract.
 
-**Registry note: `react` and `react-dom` install even for a consumer using
-only the non-web renderers.** Both are declared `optional: true` in
-`peerDependenciesMeta`, correctly reflecting that `./core`, `./media`,
-`./email`, `./print`, `./image`, `./slides`, and `./record` need neither.
-That declaration does not reach an installer resolving against
-`npm.pkg.github.com`: the registry's packument omits
-`peerDependenciesMeta` entirely, so both peers resolve as required
-regardless of which subpaths are actually imported. A consumer rendering
-only email, print, or `record` output still has React and React DOM
-installed. This package's own `dependencies` on `@clossys/designer`
-(`^0.2.0`) compounds it one level further: `designer` declares six of its
-own optional peers the same way, and the same registry gap applies to them
-too, so a consumer of `publisher` inherits `designer`'s full peer set
-through the same mechanism, not just `publisher`'s own two. See
-[issue #226](https://github.com/clossys/platform/issues/226) for the
-full evidence and why the declarations stay as-is.
+All six peers remain `optional: true` in `peerDependenciesMeta`, correctly
+reflecting that `./core`, `./media`, `./email`, `./print`, `./image`,
+`./slides`, and `./record` do not need them. A consumer of `./web` must install
+the declared peers at compatible versions; the release qualification adapter
+does so explicitly and proves both the ordinary and `react-server` entry
+points from a clean public-registry install. Historical GitHub Packages
+metadata omitted `peerDependenciesMeta`; see
+[issue #226](https://github.com/clossys/foundry/issues/226) for that retired
+registry behavior.
 
 ## Licence
 

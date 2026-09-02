@@ -1,0 +1,209 @@
+{
+  "schemaVersion": 2,
+  "timing": "pre-publication",
+  "candidate": {
+    "name": "@clossys/influencer",
+    "version": "0.1.2",
+    "packageTreeSha1": "d081ed8dbf6cb394a7cbe2b272ec896ceb4e8e8f",
+    "packageManifestSha256": "a14d90522137c7470234e3942f6332a286e1843e8b2ab52ae1e8c1500a544290",
+    "policySha256": "41d1329b071de72e00315c47c1c417c87c0401cb72f3d7901c1e075067b77ca2",
+    "adapterSha256": "e90a24bee3b3a44022bd7beff6247b8e56894cc8fc84055e1cd1f09c80b08776",
+    "fixtureSetSha256": "5421e3d1be4df6bd449f630b7050b8ab059b790d65993ab0cd613f5ca3702720",
+    "tarball": {
+      "sha1": "18a3527cd253b2c52cf02b35e5ca9d89d20fc7fa",
+      "sha256": "85960de3cedff1479186219354c3fc109a560ba34df9ab7f767f1b2f6b9c90e0",
+      "sha512": "8c55ce4eba2da971d5e966de808776a2d1e96def07795330962e1eac52169c7af1266822442a51f3e02bdd9d9766462be22b357d31fbac20a11a2345a69255c0"
+    }
+  },
+  "archetypes": [
+    {
+      "kind": "current-direct",
+      "status": "qualified"
+    },
+    {
+      "kind": "prior-minor",
+      "status": "unsupported"
+    },
+    {
+      "kind": "oldest-supported",
+      "status": "unsupported"
+    },
+    {
+      "kind": "control-plane",
+      "status": "unsupported"
+    }
+  ],
+  "reviewedCommit": "4bd2a3ad4909409f7735ce042f2c93b23b9aedd7",
+  "rootPackageJsonSha256": "c6f5f6791c7d6e105376603da0152618ae03aa5f25a522dda0432c11999a9bf1",
+  "rootPackageLockSha256": "5f4cdde3f18ddd555680034f87ea682408f4800e189a3df8041bd3f7d500a73a",
+  "transcript": {
+    "schema": "foundry-candidate-qualification-transcript-v3",
+    "version": 3,
+    "candidate": {
+      "name": "@clossys/influencer",
+      "version": "0.1.2"
+    },
+    "archetype": "current-direct",
+    "tarball": {
+      "sha1": "18a3527cd253b2c52cf02b35e5ca9d89d20fc7fa",
+      "sha256": "85960de3cedff1479186219354c3fc109a560ba34df9ab7f767f1b2f6b9c90e0",
+      "sha512": "8c55ce4eba2da971d5e966de808776a2d1e96def07795330962e1eac52169c7af1266822442a51f3e02bdd9d9766462be22b357d31fbac20a11a2345a69255c0"
+    },
+    "peerInstall": {},
+    "consumer": {
+      "manifestSha256": "be0ab35fbd6daf065739dd4a65e42994b664acf50c191385facfa99a870d65a2",
+      "lockfileSha256": "ca8d6c9c3d1ebdd95e6e5fc039bbef77d21164086204e6d399faa0b01d4203df"
+    },
+    "coverage": {
+      "declaredExportKeys": 1,
+      "concreteTargets": 2,
+      "runtimeImports": 1,
+      "reactServerImports": 0,
+      "staticTargets": 1,
+      "frameworkExports": 0,
+      "frameworkBuilds": 0,
+      "failed": 0,
+      "installedManifestSha256": "a14d90522137c7470234e3942f6332a286e1843e8b2ab52ae1e8c1500a544290",
+      "bins": 1,
+      "lifecycleScriptsDisabled": true
+    },
+    "observations": [
+      {
+        "id": "install",
+        "kind": "install",
+        "launch": "npm-fixed",
+        "expectedExitCode": 0,
+        "observedExitCode": 0,
+        "signal": null,
+        "launchError": false,
+        "stdoutSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+        "stderrSha256": "62d23df6c26cde48b45a87bdd8ca669e2a84da2ad8930aad8d4a3c2004523b97"
+      },
+      {
+        "id": "import:import:@clossys/influencer",
+        "kind": "import",
+        "launch": "node-direct",
+        "expectedExitCode": 0,
+        "observedExitCode": 0,
+        "signal": null,
+        "launchError": false,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "help:influencer-check",
+        "kind": "help",
+        "launch": "node-direct",
+        "expectedExitCode": 0,
+        "observedExitCode": 0,
+        "signal": null,
+        "launchError": false,
+        "stdoutSha256": "82ee0a37a18cb45c07438037e5b4b127a6476c3e268fb002c6d2fbd1452a8d40",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "case:response-satisfied",
+        "kind": "case",
+        "launch": "node-direct",
+        "expectedExitCode": 0,
+        "observedExitCode": 0,
+        "signal": null,
+        "launchError": false,
+        "stdoutSha256": "925bbf040492b16fd4ae7d04fc76370db200878c2703ea20491a5a59aeba299b",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "case:response-violated",
+        "kind": "case",
+        "launch": "node-direct",
+        "expectedExitCode": 1,
+        "observedExitCode": 1,
+        "signal": null,
+        "launchError": false,
+        "stdoutSha256": "39c1182acd1ab8883bf7989f714f9ba7aa1daaf0c36cbe32d51f59aed094e50b",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "case:response-indeterminate",
+        "kind": "case",
+        "launch": "node-direct",
+        "expectedExitCode": 2,
+        "observedExitCode": 2,
+        "signal": null,
+        "launchError": false,
+        "stdoutSha256": "3ce0dcc5667169c3c066bc01b31201a8891f550299f9403f3f209eb808709f97",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "uninstall",
+        "kind": "uninstall",
+        "launch": "npm-fixed",
+        "expectedExitCode": 0,
+        "observedExitCode": 0,
+        "signal": null,
+        "launchError": false,
+        "stdoutSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+        "stderrSha256": "62d23df6c26cde48b45a87bdd8ca669e2a84da2ad8930aad8d4a3c2004523b97"
+      },
+      {
+        "id": "reinstall",
+        "kind": "reinstall",
+        "launch": "npm-fixed",
+        "expectedExitCode": 0,
+        "observedExitCode": 0,
+        "signal": null,
+        "launchError": false,
+        "stdoutSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+        "stderrSha256": "62d23df6c26cde48b45a87bdd8ca669e2a84da2ad8930aad8d4a3c2004523b97"
+      }
+    ],
+    "dimensions": [
+      {
+        "dimension": "position",
+        "status": "unsupported",
+        "reason": "A disposable consumer makes no installed position claim."
+      },
+      {
+        "dimension": "completion",
+        "status": "unsupported",
+        "reason": "Response yield is not consumer completion."
+      },
+      {
+        "dimension": "rollback",
+        "status": "supported",
+        "evidence": [
+          "uninstall",
+          "reinstall"
+        ]
+      },
+      {
+        "dimension": "duplicate",
+        "status": "unsupported",
+        "reason": "Influencer has no first-party runtime dependency graph to deduplicate."
+      },
+      {
+        "dimension": "cadence",
+        "status": "unsupported",
+        "reason": "Cadence is not established by a disposable installation canary."
+      },
+      {
+        "dimension": "closeWindow",
+        "status": "unsupported",
+        "reason": "A synthetic response window does not establish a consumer close window."
+      }
+    ],
+    "restoration": {
+      "manifestRestored": true,
+      "lockfileRestored": true,
+      "packageAbsentAfterUninstall": true
+    },
+    "mismatches": [],
+    "ok": true,
+    "canonicalSha256": "7c5a02d0a4105450add53dd2c2dcde2739d408d2fffd1cb0f545e171c74dc8a0"
+  },
+  "candidateReview": {
+    "headSha": "4bd2a3ad4909409f7735ce042f2c93b23b9aedd7",
+    "reference": "github-pull:670"
+  },
+  "findings": []
+}

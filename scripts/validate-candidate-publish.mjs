@@ -11,6 +11,7 @@ const usage = "Usage: --package <package-key> --tarball <file> --transcript <fil
 const sha = (algorithm, bytes) => createHash(algorithm).update(bytes).digest("hex");
 const NAME = /^(?:@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*$/;
 const VERSION = /^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/;
+const SHA1 = /^[a-f0-9]{40}$/;
 
 function argsFrom(argv) {
   const args = {};
@@ -29,12 +30,26 @@ export function freezeTarball(path) {
   return { bytes, tarball, cleanup: () => rmSync(root, { recursive: true, force: true }) };
 }
 
+export function qualificationJoinsRef(record, mode, root = process.cwd()) {
+  if (mode !== "prepublish" || record?.timing !== "pre-publication") return "WORKTREE";
+  if (!SHA1.test(record.reviewedCommit)) throw new Error("prepublication reviewedCommit must be a full commit SHA");
+  let resolved;
+  try {
+    resolved = execFileSync("git", ["rev-parse", "--verify", `${record.reviewedCommit}^{commit}`], { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+  } catch {
+    throw new Error("prepublication reviewedCommit must resolve to a commit object");
+  }
+  if (resolved !== record.reviewedCommit) throw new Error("prepublication reviewedCommit must resolve to the identical commit SHA");
+  return record.reviewedCommit;
+}
+
 export function validateCandidatePublish({ root = process.cwd(), args }) {
   const policy = parseStrictJson(readFileSync(resolve(root, "governance/release-qualification-policy.json"), "utf8"));
   const policyFindings = validateReleaseQualificationPolicy(policy);
   if (policyFindings.length) throw new Error("invalid qualification policy");
   const selected = selectPolicyPackage(policy, args.package);
   if (!selected) throw new Error("package key has no unique policy entry");
+  if (selected.entry.archetypes?.["current-direct"]?.status !== "required") throw new Error("package current-direct qualification is blocked by policy");
   const transcriptPath = regular(args.transcript, "transcript"), frozen = freezeTarball(args.tarball);
   try {
     const manifest = parseStrictJson(execFileSync("tar", ["-xOf", frozen.tarball, "package/package.json"], { encoding: "utf8" }));
@@ -43,7 +58,7 @@ export function validateCandidatePublish({ root = process.cwd(), args }) {
     const recordPath = resolve(root, qualificationPath(root, candidate));
     const record = parseStrictJson(readFileSync(regular(recordPath, "qualification record"), "utf8"));
     const transcript = parseStrictJson(readFileSync(transcriptPath, "utf8"));
-    const expected = { name: manifest.name, version: manifest.version, ...currentQualificationJoins(root, candidate) };
+    const expected = { name: manifest.name, version: manifest.version, ...currentQualificationJoins(root, candidate, qualificationJoinsRef(record, args.mode, root)) };
     const hashes = { sha1: sha("sha1", frozen.bytes), sha256: sha("sha256", frozen.bytes), sha512: sha("sha512", frozen.bytes) };
     const findings = validateCandidateQualification(record, { mode: args.mode === "prepublish" ? "prepublish" : "offline", expected, freshTranscript: transcript });
     if (args.mode === "bootstrap" && record.timing !== "post-publication-bootstrap") findings.push({ rule: "bootstrap-timing", message: "bootstrap validation requires a bootstrap record." });

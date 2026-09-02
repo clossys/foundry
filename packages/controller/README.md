@@ -1871,7 +1871,7 @@ version. See `src/internal/peer-version.ts` for the guard's own contract.
 
 **Registry note:** `npm.pkg.github.com`'s packument has historically
 omitted `peerDependenciesMeta` from published metadata (see
-[issue #226](https://github.com/clossys/platform/issues/226)), so an
+[issue #226](https://github.com/clossys/foundry/issues/226)), so an
 installer resolving `@clossys/controller` from that registry sees
 `typescript` as required regardless of the `optional: true` declared here —
 a consumer who only ever imports the root or `./gates` (and never

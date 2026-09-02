@@ -1,6 +1,6 @@
 {
   "name": "@clossys/keeper",
-  "version": "0.1.1",
+  "version": "0.1.3",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -43,13 +43,13 @@
   "author": "Calvin Hung",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/clossys/platform.git",
+    "url": "git+https://github.com/clossys/foundry.git",
     "directory": "packages/keeper"
   },
   "bugs": {
-    "url": "https://github.com/clossys/platform/issues"
+    "url": "https://github.com/clossys/foundry/issues"
   },
-  "homepage": "https://github.com/clossys/platform/tree/main/packages/keeper#readme",
+  "homepage": "https://github.com/clossys/foundry/tree/main/packages/keeper#readme",
   "engines": {
     "node": ">=20"
   },
@@ -72,10 +72,10 @@
     }
   },
   "devDependencies": {
-    "@testing-library/react": "^16.3.2",
+    "@testing-library/react": "^16.3.3",
     "@types/node": "^22.10.0",
     "@types/react": "^19.2.0",
-    "@types/react-dom": "^19.2.0",
+    "@types/react-dom": "^19.2.5",
     "jsdom": "^26.1.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",

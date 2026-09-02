@@ -147,6 +147,40 @@ equality — this package never derives a digest from a value, computes a
 hash, or stores one; it only echoes back whatever opaque fingerprint the
 caller already produced elsewhere.
 
+### Credential lifecycle
+
+`evaluateCredential` keeps provider-created, per-job credentials separate from
+credentials an owner must rotate manually. It accepts metadata only and
+returns a value-free `satisfied` / `violated` / `indeterminate` result with
+exit code `0` / `1` / `2`:
+
+```ts
+evaluateCredential({
+  key: "GITHUB_TOKEN",
+  credentialClass: "ephemeral-job",
+  provider: "github-actions",
+  scope: ["packages:read"],
+  jobStartedAt: "2026-08-18T00:00:00.000Z",
+  jobEndedAt: "2026-08-18T00:01:00.000Z",
+  expiresAtJobEnd: true,
+  scopedUseObserved: true,
+}); // { verdict: "satisfied", exitCode: 0, ... }
+```
+
+The ephemeral path requires the `github-actions` provider, a dense, sorted,
+unique scope drawn from the closed `contents:read`, `id-token:write`,
+`packages:read`, and `packages:write` vocabulary, a canonical UTC job lifetime
+whose end is strictly after its start, explicit expiry-at-job-end
+semantics, and observed scoped use; it does not invent a rotation timestamp.
+The manually rotatable path requires the explicit `github` provider and
+the same closed scope except `id-token:write`, plus owner-controlled token
+provenance, while keeping provider metadata (including
+an optional repository-secret `updatedAt`) separate. `updatedAt` alone
+therefore remains `indeterminate`, never proof of a token rotation. Unknown fields are rejected
+without being returned, so credential values cannot travel through the
+evidence or evaluation objects. `defineCredentialEvidence` freezes complete,
+already-satisfied evidence for callers that want an authored record.
+
 ### Revocation
 
 ```ts
@@ -247,18 +281,36 @@ catalog metadata. `run()` injects values into one non-shell child process
 without writing a file or printing the environment.
 
 The package intentionally keeps the provider-specific CLI name
-`vespene-secrets-infisical` unchanged by this rename; it avoids introducing a
-misleading neutral CLI for operations that require Infisical configuration.
-Its `catalog`, `check`, `list`, `get`, and `run` commands never print secret
-values. `get` reports presence only, and the CLI exposes no mutation command.
+`vespene-secrets-infisical` unchanged by this rename. Its `catalog`, `check`,
+`list`, `get`, and `run` commands never print secret values. `get` reports
+presence only, and the CLI exposes no mutation command. `qualify` is the one
+offline readiness operation: it compares a value-free catalog to a names-only
+availability snapshot, without provider configuration, credentials, or network
+access. It exits `0` when every required name is available, `1` when one or
+more required names are missing, and `2` for malformed input.
 
 ```text
 vespene-secrets-infisical catalog --catalog ./secret-catalog.json
+vespene-secrets-infisical qualify --catalog ./secret-catalog.json --available ./available-names.json
 vespene-secrets-infisical check --catalog ./secret-catalog.json
 vespene-secrets-infisical list
 vespene-secrets-infisical get APP_SIGNING_KEY
 vespene-secrets-infisical run -- node server.js
 ```
+
+The availability snapshot is strict version-1 names-only metadata; fields
+other than `version` and `names` are rejected so a value cannot be accepted by
+mistake:
+
+```json
+{
+  "version": 1,
+  "names": ["APP_SIGNING_KEY", "OPTIONAL_WEBHOOK_KEY"]
+}
+```
+
+The `qualify` report prints only `ok` and `missingRequired`; it does not echo
+the snapshot or catalog descriptions.
 
 For maintenance, `createInfisicalMaintenanceClient(config, authorize)` is a
 separate constructor. Each replacement requires a consumer authorization
@@ -301,6 +353,11 @@ authority.
 | `sameDigest(a, b)` | function | Compares two caller-supplied, opaque rotation digests for equality. |
 | `RotationState` | type | The closed four-member state union: `current` \| `stale` \| `unowned` \| `unverifiable`. |
 | `RotationPolicy` / `RotationRecord` / `RotationEvaluation` / `RotationMetric` | types | Rotation policy, observed rotation history, judged outcome, and the summarized metric. |
+| `evaluateCredential(evidence)` | function | Judges ephemeral-job or manually-rotatable value-free lifecycle evidence with `satisfied` / `violated` / `indeterminate` and exit code `0` / `1` / `2`. |
+| `defineCredentialEvidence(evidence)` | function | Freezes complete, value-free credential evidence after requiring a satisfied evaluation. |
+| `CredentialClass` / `CredentialProvider` / `CredentialEvidence` / `CredentialEvaluation` | types | Credential lifecycle classes, known providers, evidence union, and value-free ternary result. |
+| `CredentialVerdict` / `CredentialExitCode` / `CredentialReason` | types | Closed verdict, numeric exit-code, and safe reason vocabularies. |
+| `EphemeralJobCredentialEvidence` / `ManuallyRotatableCredentialEvidence` | types | Per-job expiry evidence and separately owner-provenanced manual-rotation evidence. |
 | `defineRevocationPath(path)` | function | Records where revocation authority lives for a key; performs no revocation. |
 | `recordRevocation(record)` | function | Builds a frozen, value-free record that a key was revoked. |
 | `isRevoked(records, key)` | function | Whether any record revokes the given key. |
@@ -334,8 +391,8 @@ authority.
 
 ## Ownership boundary
 
-The root entry owns resolution, custody, rotation, and revocation
-record-keeping, and the distribution manifest. It has no provider SDK,
+The root entry owns resolution, custody, rotation, credential-lifecycle
+judgement, and revocation record-keeping, and the distribution manifest. It has no provider SDK,
 network calls, authentication, global adapter registry, project identifier,
 folder convention, or repository topology. The explicit `./infisical`
 subpath owns provider integration and its value-safe operational CLI.
@@ -348,9 +405,9 @@ on it.
 
 No code path in this package reads, logs, prints, or transports a secret
 **value**. It handles names, owners, ages, stores, rotation policies,
-revocation records, and digests only. Every test is hermetic; no test
-resolves a real credential. Scanning for leaked values is a different
-package's job and stays there.
+credential lifecycle metadata, revocation records, and digests only. Every
+test is hermetic; no test resolves a real credential. Scanning for leaked
+values is a different package's job and stays there.
 
 ## Requirements
 

@@ -247,10 +247,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          # The cleanup inventory binds its observation base by real ancestry.
+          # A shallow checkout cannot distinguish a missing ancestor from a
+          # forged or unrelated base commit, so that gate must fail closed.
+          fetch-depth: 0
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 20
       - run: npm run check:package-identity
+      - run: npm run check:public-npm-aggregate-canary
+      - run: npm run check:public-npm-aggregate-canary-v2
+      - run: npm run check:release-cleanup-inventory
       - run: node scripts/set-scope.mjs --check
 
   # package-scope.json.registry is the single declared source for which
@@ -322,11 +330,11 @@ jobs:
   # directory, the count of dist-path invocation sites across package.json,
   # scripts/ and .github/workflows/, and the lifecycle contract's status.
   #
-  # Same shallow-checkout shape as the gates above and no build needed: it reads
-  # the tree as text and never imports a package it grades. That independence is
-  # deliberate -- a gate that had to build the packages it measures could not
-  # report on one whose build is broken, which is exactly when the report
-  # matters.
+  # No build is needed: it reads the tree as text and never imports a package it
+  # grades. It does need full Git history because current-scope publication is
+  # derived only after the immutable publication and qualification introductions
+  # are joined. Build independence still lets this gate report when a package
+  # build itself is broken.
   #
   # NOT added to `main-required-checks` by this change, same as the jobs above: a
   # status context with no reporting history wedges a repository if it lands
@@ -336,6 +344,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          # Published state joins the sealed first-publication Trio and any
+          # immutable package-neutral later-publication record to their exact
+          # introductions and retained qualification history.
+          # A shallow checkout cannot prove those history invariants.
+          fetch-depth: 0
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 20
@@ -610,6 +624,10 @@ jobs:
       # ruleset migration promoted its status name.
       - name: Candidate qualification records
         run: npm run check:candidate-qualification
+      # Later-publication records are the same kind of retained immutable
+      # history join, and must fail in the already-required build context.
+      - name: Later publication records
+        run: npm run check:later-publications
       - run: npm ci
       # Build first. dist/ is gitignored, so a fresh checkout has none, and
       # a package with a real internal dependency (gates on catalog and
@@ -618,6 +636,12 @@ jobs:
       # every package has zero internal dependencies, and silently stops
       # working the moment one gains its first -- so build stays first.
       - run: npm run build
+      # Install every exact local tarball together in a credentialless,
+      # disposable consumer. This checks the packed public surface and the
+      # optional-peer omission contract; it does not claim publication or
+      # adoption.
+      - name: Packed consumer readiness
+        run: npm run check:packed-consumer
       - name: Installed position ledger fixture
         run: npm run check:installed-positions
       - name: Consumer completion evidence fixture
@@ -659,6 +683,27 @@ jobs:
       - run: npm run check:typechecked-assertions
       - run: npm run typecheck
       - run: npm test
+      # This stays in the already-required build-and-test context. The normal
+      # repository suite remains on Node 20, while this first-publication
+      # wrapper is only valid on the exact credential-free qualification and
+      # upload runtime. The focused acceptance starts a real npm client
+      # against an isolated loopback registry; it never contacts npmjs.
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24.19.0
+      - name: Assert qualified-directory release runtime
+        run: |
+          test "$(node --version)" = 'v24.19.0'
+          test "$(npm --version)" = '11.17.0'
+          test "$(node -p 'process.versions.zlib')" = '1.3.2.1-motley-3246f1b'
+      # The production candidate runner starts a real isolated Next build for
+      # Bouncer's manifest-declared client/server/proxy exports. It requires
+      # this job's installed dependencies, built package, and the exact release
+      # runtime asserted above, so it cannot live in dependency-free check:gates.
+      - name: Candidate runner framework acceptance
+        run: npm run check:candidate-runner-acceptance
+      - name: Qualified-directory owner-present acceptance
+        run: node --test scripts/publish-qualified-directory.test.mjs
       # scripts/observation-bundle.test.mjs (node:test, not check:gates --
       # see that test file's own header for why: check:gates runs BEFORE
       # `npm run build` in the `npm run check` aggregate, and this test

@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "kind": "foundry-later-publication-v1",
+  "qualification": {
+    "path": "governance/release-qualifications/clossys-locksmith-0.1.6.json",
+    "sha256": "72f9ab6ee2b0b01ea640621de428c734922726eaab430dcbb2888500b8b69745"
+  },
+  "candidate": {
+    "name": "@clossys/locksmith",
+    "version": "0.1.6",
+    "packageTreeSha1": "d9bc3a5c9957355d9cc4339ce80bbe6db7126562",
+    "packageManifestSha256": "64456445b7dcd5f6ee8d2dcb98a05e41d8500c2d403f852659c5fc6dec8c07e4",
+    "tarball": {
+      "sha1": "bfe5dcb967cb65fc9df09ce3465cf913f545de1f",
+      "sha256": "0964e9de3fbb1a098f7b5e4cc75c447726d76b4c4ac18372ba0b521fd3482770",
+      "sha512": "91cfecbbdccdcd068916e89e8082da44399d798dc46e459c825f68524e8de1576640d819701918f0e4fefa6da45544159d40e564d840ae7a0af72a496652f56e"
+    }
+  },
+  "source": {
+    "reviewedCommit": "4bd2a3ad4909409f7735ce042f2c93b23b9aedd7",
+    "rootPackageJsonSha256": "c6f5f6791c7d6e105376603da0152618ae03aa5f25a522dda0432c11999a9bf1",
+    "rootPackageLockSha256": "5f4cdde3f18ddd555680034f87ea682408f4800e189a3df8041bd3f7d500a73a",
+    "policySha256": "50b216b89a83ad0f2e22732db07d6eda9e86978963c19ca52570fd8ca56737fc",
+    "adapterSha256": "57f79ad3a9540a039227dea54e5908292eefad991bfefb3ca3a89ef17b2fbfe8",
+    "fixtureSetSha256": "1a39b7f990459843ad03ae20b926901923899b9f06cc6343d903481c3426d9c8"
+  },
+  "catalog": {
+    "path": "governance/release-catalog.json",
+    "sha256": "3f43692f3c12dc1b21a3931fcf2abd53a68a207874b2ae2206e8e10f08b68404",
+    "packageKey": "locksmith"
+  },
+  "publication": {
+    "mode": "owner-present",
+    "publishedAt": "2026-08-31T17:47:10.337Z",
+    "reference": "https://www.npmjs.com/package/@clossys/locksmith/v/0.1.6"
+  },
+  "registryProof": {
+    "schemaVersion": 2,
+    "kind": "public-npm-anonymous-registry-proof-v2",
+    "evidence": {
+      "registry": "https://registry.npmjs.org",
+      "access": "anonymous",
+      "name": "@clossys/locksmith",
+      "version": "0.1.6",
+      "metadataUrl": "https://registry.npmjs.org/%40clossys%2Flocksmith/0.1.6",
+      "repository": "clossys/foundry",
+      "tarballUrl": "https://registry.npmjs.org/@clossys/locksmith/-/locksmith-0.1.6.tgz",
+      "integrity": "sha512-kc/su9zNzQaJFuiegILaRDmdeY3EbkWcgl9oUk6N4VdmQNgZcBkY8OT++m2kVUQVnUDlZNhArnoK9ypJZlL1bg==",
+      "shasum": "bfe5dcb967cb65fc9df09ce3465cf913f545de1f",
+      "sha256": "0964e9de3fbb1a098f7b5e4cc75c447726d76b4c4ac18372ba0b521fd3482770",
+      "sha512": "91cfecbbdccdcd068916e89e8082da44399d798dc46e459c825f68524e8de1576640d819701918f0e4fefa6da45544159d40e564d840ae7a0af72a496652f56e",
+      "packedManifestSha256": "64456445b7dcd5f6ee8d2dcb98a05e41d8500c2d403f852659c5fc6dec8c07e4",
+      "size": 58456
+    }
+  }
+}

@@ -76,7 +76,7 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 import { GITHUB_PACKAGES_REGISTRY, probeVersions, resolveVersionLookups } from "./registry-version-lookup.mjs";
-import { PUBLIC_NPM_REGISTRY, verifyPublicNpmArtifact } from "./lib/public-npm-registry.mjs";
+import { PUBLIC_NPM_REGISTRY, repositoryIdentityFromPackument, verifyPublicNpmArtifact } from "./lib/public-npm-registry.mjs";
 
 const DEFAULT_SCOPE_PATH = "package-scope.json";
 
@@ -159,7 +159,16 @@ export async function checkRegistryParity({ owner, token, registry = GITHUB_PACK
   if (registry === PUBLIC_NPM_REGISTRY) {
     const results = await Promise.all(
       entries.map(async ({ manifest }) => {
-        const verified = await verifyArtifactImpl({ registry, name: manifest.name, version: manifest.version, fetchImpl });
+        const repository = repositoryIdentityFromPackument({ repository: manifest.repository, versions: {} }, manifest.version);
+        if (!repository) {
+          return {
+            package: manifest.name,
+            version: manifest.version,
+            status: "error",
+            detail: "could not verify anonymous public npmjs artifact: selected package manifest has no canonical GitHub repository identity.",
+          };
+        }
+        const verified = await verifyArtifactImpl({ registry, name: manifest.name, version: manifest.version, repository, fetchImpl });
         if (verified.kind === "verified") {
           return {
             package: manifest.name,

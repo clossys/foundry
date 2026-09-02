@@ -1,6 +1,6 @@
 {
   "name": "@clossys/publisher",
-  "version": "0.1.5",
+  "version": "0.3.0",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -25,13 +25,13 @@
   "author": "Calvin Hung",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/clossys/platform.git",
+    "url": "git+https://github.com/clossys/foundry.git",
     "directory": "packages/publisher"
   },
   "bugs": {
-    "url": "https://github.com/clossys/platform/issues"
+    "url": "https://github.com/clossys/foundry/issues"
   },
-  "homepage": "https://github.com/clossys/platform/tree/main/packages/publisher#readme",
+  "homepage": "https://github.com/clossys/foundry/tree/main/packages/publisher#readme",
   "engines": {
     "node": ">=20"
   },
@@ -46,6 +46,7 @@
     },
     "./web": {
       "types": "./dist/web/index.d.ts",
+      "react-server": "./dist/web/server.js",
       "import": "./dist/web/index.js"
     },
     "./document": {
@@ -73,9 +74,16 @@
       "import": "./dist/record/index.js"
     }
   },
+  "imports": {
+    "#publisher-web-views": {
+      "types": "./dist/web/views/index.d.ts",
+      "react-server": "./dist/web/views/server.js",
+      "default": "./dist/web/views/index.js"
+    }
+  },
   "bin": {
-    "publisher-media-check": "./dist/media/cli.js",
-    "publisher-record-check": "./dist/record/cli.js"
+    "publisher-media-check": "dist/media/cli.js",
+    "publisher-record-check": "dist/record/cli.js"
   },
   "files": [
     "dist",
@@ -94,31 +102,51 @@
   },
   "dependencies": {
     "@clossys/writer": "^0.3.0",
-    "@clossys/designer": "^0.2.0",
+    "@clossys/designer": "^0.3.0",
     "@clossys/controller": "~0.8.0"
   },
   "peerDependencies": {
+    "@internationalized/date": "^3.12.2",
     "react": ">=18",
-    "react-dom": ">=18"
+    "react-aria-components": "^1.19.0",
+    "react-dom": ">=18",
+    "tailwind-merge": "^3.0.0",
+    "tailwindcss": "^4.0.0"
   },
   "peerDependenciesMeta": {
+    "@internationalized/date": {
+      "optional": true
+    },
     "react": {
+      "optional": true
+    },
+    "react-aria-components": {
       "optional": true
     },
     "react-dom": {
       "optional": true
+    },
+    "tailwind-merge": {
+      "optional": true
+    },
+    "tailwindcss": {
+      "optional": true
     }
   },
   "devDependencies": {
+    "@internationalized/date": "^3.12.3",
     "@testing-library/jest-dom": "^7.0.1",
-    "@testing-library/react": "^16.3.2",
-    "@testing-library/user-event": "^14.6.3",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.6",
     "@types/node": "^22.10.0",
     "@types/react": "^19.2.0",
-    "@types/react-dom": "^19.2.0",
+    "@types/react-dom": "^19.2.5",
     "react": "^19.2.8",
+    "react-aria-components": "^1.20.0",
     "react-dom": "^19.2.8",
     "jsdom": "^26.1.0",
+    "tailwind-merge": "^3.0.0",
+    "tailwindcss": "^4.3.3",
     "typescript": "~6.0.0",
     "vitest": "^4.1.9"
   },

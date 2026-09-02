@@ -79,6 +79,18 @@ describe("Disclosure", () => {
     expect(wrapper.style.marginTop).toBe("8px");
   });
 
+  it("accepts distinct trigger and panel foreground classes for grounded block composition", () => {
+    render(
+      <Disclosure title="Advanced options" triggerClassName="text-ink-on-inverse" panelClassName="text-ink-on-inverse-muted">
+        Extra content here.
+      </Disclosure>,
+    );
+    const trigger = screen.getByRole("button", { name: "Advanced options" });
+    expect(trigger).toHaveClass("text-ink-on-inverse");
+    expect(trigger).not.toHaveClass("text-ink-primary");
+    expect(document.getElementById(trigger.getAttribute("aria-controls") as string)).toHaveClass("text-ink-on-inverse-muted");
+  });
+
   it("disabled: the trigger is disabled and does not toggle", async () => {
     const user = userEvent.setup();
     render(

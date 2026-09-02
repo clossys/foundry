@@ -20,6 +20,20 @@ export type { CustodyStore, KeyCustodyManifest, KeyCustodyRecord } from "./custo
 export { evaluateRotation, rotationQueue, sameDigest, summarizeRotationMetric } from "./rotation.js";
 export type { RotationEvaluation, RotationMetric, RotationPolicy, RotationRecord, RotationState } from "./rotation.js";
 
+export { defineCredentialEvidence, evaluateCredential } from "./credential.js";
+export type {
+  CredentialClass,
+  CredentialEvidence,
+  CredentialEvaluation,
+  CredentialExitCode,
+  CredentialReason,
+  CredentialProvider,
+  CredentialScope,
+  CredentialVerdict,
+  EphemeralJobCredentialEvidence,
+  ManuallyRotatableCredentialEvidence,
+} from "./credential.js";
+
 export { defineRevocationPath, isRevoked, latestRevocation, recordRevocation } from "./revocation.js";
 export type { RevocationPath, RevocationRecord } from "./revocation.js";
 

@@ -1,0 +1,16 @@
+[
+  {
+    "agentIdentityId": "agent-1",
+    "agentKind": "automation",
+    "displayName": "Example automation",
+    "toolScope": [
+      "records.read"
+    ],
+    "monetaryLimitAmount": 250,
+    "monetaryLimitCurrency": "USD",
+    "responsibleHumanId": "operator-1",
+    "validFrom": null,
+    "validTo": null,
+    "revokedAt": null
+  }
+]

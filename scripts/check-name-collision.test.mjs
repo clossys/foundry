@@ -24,7 +24,7 @@ function run(packageDirectory, packument) {
   try {
     const stdout = execFileSync(process.execPath, [script, packageDirectory, "--json", "--packument-json", path], {
       encoding: "utf8",
-      env: { ...process.env, GITHUB_REPOSITORY: "clossys/platform" },
+      env: { ...process.env, GITHUB_REPOSITORY: "clossys/foundry" },
       stdio: ["ignore", "pipe", "pipe"],
     });
     return { code: 0, stdout, stderr: "" };
@@ -42,8 +42,12 @@ test("public npmjs name collision lookup is anonymous, repository-bound, and fai
 
     const same = run(packageDirectory, {
       name: "@clossys/probe",
-      repository: { url: "git+https://github.com/clossys/platform.git" },
-      versions: {},
+      repository: { url: "git+https://github.com/clossys/foundry.git" },
+      versions: {
+        "1.2.2": {
+          repository: { url: "git+https://github.com/clossys/foundry.git" },
+        },
+      },
     });
     assert.equal(same.code, 0);
     assert.equal(JSON.parse(same.stdout).verdict, "same-repo-version-bump");
@@ -55,6 +59,18 @@ test("public npmjs name collision lookup is anonymous, repository-bound, and fai
     });
     assert.equal(foreign.code, 1);
     assert.equal(JSON.parse(foreign.stdout).verdict, "collision");
+
+    const mixed = run(packageDirectory, {
+      name: "@clossys/probe",
+      repository: { url: "git+https://github.com/clossys/foundry.git" },
+      versions: {
+        "1.2.2": {
+          repository: { url: "https://github.com/other/project.git" },
+        },
+      },
+    });
+    assert.equal(mixed.code, 1);
+    assert.equal(JSON.parse(mixed.stdout).verdict, "collision");
 
     const malformed = run(packageDirectory, { name: "@clossys/other", versions: {} });
     assert.equal(malformed.code, 2);

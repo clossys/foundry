@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "key": "REQUIRED_KEY",
+      "required": true
+    },
+    {
+      "key": "OPTIONAL_KEY",
+      "required": false
+    }
+  ]
+}

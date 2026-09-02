@@ -1,0 +1,220 @@
+{
+  "schemaVersion": 2,
+  "timing": "pre-publication",
+  "candidate": {
+    "name": "@clossys/advisor",
+    "version": "0.1.6",
+    "packageTreeSha1": "d3aa3751d74a96dfbcb5a03fb4b689d095d29954",
+    "packageManifestSha256": "c1c20914aa39ed2760d8cbf380210726e3cc442f86cf5ae711b49c48a560caa7",
+    "policySha256": "bed3ffba190620bfbbc4a6b7e089ca8ec056071d06aee19b537391dae5a207a9",
+    "adapterSha256": "f88046dbed0b393cd6be77d40ef4696831d837e2300b7c77294bc1f42fbd8dd7",
+    "fixtureSetSha256": "1031bef13577af89ecbf815556d730fb7a287a2fbc9d74928bff17d2ce8b3dd9",
+    "tarball": {
+      "sha1": "53137d743379aeb3ef2c47167d7f5f7b3b562739",
+      "sha256": "66110b94d522429425fcb583270bfad184b29f3f53ec9054bc81eeb50a2dbec3",
+      "sha512": "3be4f6d32f2b720eb357a8dab617ab9cabc395687059fe2561481f9c119dab1cfa18550b041fb8127ab825ea7aff22c6ad57f6a70d32fa58ddd0409fafea369a"
+    }
+  },
+  "archetypes": [
+    {
+      "kind": "current-direct",
+      "status": "qualified"
+    },
+    {
+      "kind": "prior-minor",
+      "status": "unsupported"
+    },
+    {
+      "kind": "oldest-supported",
+      "status": "unsupported"
+    },
+    {
+      "kind": "control-plane",
+      "status": "unsupported"
+    }
+  ],
+  "reviewedCommit": "4bd2a3ad4909409f7735ce042f2c93b23b9aedd7",
+  "rootPackageJsonSha256": "c6f5f6791c7d6e105376603da0152618ae03aa5f25a522dda0432c11999a9bf1",
+  "rootPackageLockSha256": "5f4cdde3f18ddd555680034f87ea682408f4800e189a3df8041bd3f7d500a73a",
+  "transcript": {
+    "schema": "foundry-candidate-qualification-transcript-v3",
+    "version": 3,
+    "candidate": {
+      "name": "@clossys/advisor",
+      "version": "0.1.6"
+    },
+    "archetype": "current-direct",
+    "tarball": {
+      "sha1": "53137d743379aeb3ef2c47167d7f5f7b3b562739",
+      "sha256": "66110b94d522429425fcb583270bfad184b29f3f53ec9054bc81eeb50a2dbec3",
+      "sha512": "3be4f6d32f2b720eb357a8dab617ab9cabc395687059fe2561481f9c119dab1cfa18550b041fb8127ab825ea7aff22c6ad57f6a70d32fa58ddd0409fafea369a"
+    },
+    "peerInstall": {},
+    "consumer": {
+      "manifestSha256": "2e2277df584a4acdc92b4ae5c7a69b5374786753fd427a4cbaf3eb69c64713d2",
+      "lockfileSha256": "f43a122af019c70ed2bf975e5199460009e1e3913b70cd93d080163d7df3a484"
+    },
+    "coverage": {
+      "declaredExportKeys": 1,
+      "concreteTargets": 2,
+      "runtimeImports": 1,
+      "reactServerImports": 0,
+      "staticTargets": 1,
+      "frameworkExports": 0,
+      "frameworkBuilds": 0,
+      "failed": 0,
+      "installedManifestSha256": "c1c20914aa39ed2760d8cbf380210726e3cc442f86cf5ae711b49c48a560caa7",
+      "bins": 2,
+      "lifecycleScriptsDisabled": true
+    },
+    "observations": [
+      {
+        "id": "install",
+        "kind": "install",
+        "launch": "npm-fixed",
+        "expectedExitCode": 0,
+        "observedExitCode": 0,
+        "signal": null,
+        "launchError": false,
+        "stdoutSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+        "stderrSha256": "62d23df6c26cde48b45a87bdd8ca669e2a84da2ad8930aad8d4a3c2004523b97"
+      },
+      {
+        "id": "import:import:@clossys/advisor",
+        "kind": "import",
+        "launch": "node-direct",
+        "expectedExitCode": 0,
+        "observedExitCode": 0,
+        "signal": null,
+        "launchError": false,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "help:advisor-check",
+        "kind": "help",
+        "launch": "node-direct",
+        "expectedExitCode": 0,
+        "observedExitCode": 0,
+        "signal": null,
+        "launchError": false,
+        "stdoutSha256": "9879ca452b31268d83c1e185a0170a073323fa803034486544770d69d1a428e2",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "help:advisor-execution-readiness",
+        "kind": "help",
+        "launch": "node-direct",
+        "expectedExitCode": 0,
+        "observedExitCode": 0,
+        "signal": null,
+        "launchError": false,
+        "stdoutSha256": "0e8691ba94b1082103f02ebf6eb0218148e9c63f365fe1ac9c7fa9b986564307",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "case:assessment-satisfied",
+        "kind": "case",
+        "launch": "node-direct",
+        "expectedExitCode": 0,
+        "observedExitCode": 0,
+        "signal": null,
+        "launchError": false,
+        "stdoutSha256": "48ec6ce4c4d5cfa91764e3f2a78be1001d77d257e80d09ef038f1adf49e5e49f",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "case:assessment-violated",
+        "kind": "case",
+        "launch": "node-direct",
+        "expectedExitCode": 1,
+        "observedExitCode": 1,
+        "signal": null,
+        "launchError": false,
+        "stdoutSha256": "0b86d204f5c4295692f77fd08df98e59132c237f387398020bf20d1acfcf5ccf",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "case:assessment-indeterminate",
+        "kind": "case",
+        "launch": "node-direct",
+        "expectedExitCode": 2,
+        "observedExitCode": 2,
+        "signal": null,
+        "launchError": false,
+        "stdoutSha256": "6162dc1e1a31077760646c17d9500b8431f1b9f947a09ba8aab5ac40eeb63589",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "uninstall",
+        "kind": "uninstall",
+        "launch": "npm-fixed",
+        "expectedExitCode": 0,
+        "observedExitCode": 0,
+        "signal": null,
+        "launchError": false,
+        "stdoutSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+        "stderrSha256": "62d23df6c26cde48b45a87bdd8ca669e2a84da2ad8930aad8d4a3c2004523b97"
+      },
+      {
+        "id": "reinstall",
+        "kind": "reinstall",
+        "launch": "npm-fixed",
+        "expectedExitCode": 0,
+        "observedExitCode": 0,
+        "signal": null,
+        "launchError": false,
+        "stdoutSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+        "stderrSha256": "62d23df6c26cde48b45a87bdd8ca669e2a84da2ad8930aad8d4a3c2004523b97"
+      }
+    ],
+    "dimensions": [
+      {
+        "dimension": "position",
+        "status": "unsupported",
+        "reason": "A disposable consumer makes no installed position claim."
+      },
+      {
+        "dimension": "completion",
+        "status": "unsupported",
+        "reason": "A disposable consumer makes no completion claim."
+      },
+      {
+        "dimension": "rollback",
+        "status": "supported",
+        "evidence": [
+          "uninstall",
+          "reinstall"
+        ]
+      },
+      {
+        "dimension": "duplicate",
+        "status": "unsupported",
+        "reason": "Advisor has no first-party runtime dependency graph to deduplicate."
+      },
+      {
+        "dimension": "cadence",
+        "status": "unsupported",
+        "reason": "Cadence is not established by a disposable installation canary."
+      },
+      {
+        "dimension": "closeWindow",
+        "status": "unsupported",
+        "reason": "Close-window evidence is not established by a disposable installation canary."
+      }
+    ],
+    "restoration": {
+      "manifestRestored": true,
+      "lockfileRestored": true,
+      "packageAbsentAfterUninstall": true
+    },
+    "mismatches": [],
+    "ok": true,
+    "canonicalSha256": "9d660f189d6222bd6363e883f6ee8b4757ea848fc58321dc71cf2f01474b424c"
+  },
+  "candidateReview": {
+    "headSha": "4bd2a3ad4909409f7735ce042f2c93b23b9aedd7",
+    "reference": "github-pull:670"
+  },
+  "findings": []
+}

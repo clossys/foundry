@@ -7,24 +7,23 @@ to make a protected base join a pull-request evidence snapshot to authenticated
 GitHub Actions event facts, fixed npm or pnpm installation evidence, Advisor's
 runner-time readiness result, and one directly installed target CLI.
 
-It is not a remote action. A consumer keeps its own thin workflow, package
-credentials, artifact retention, blocking placement, business policy,
+It is not a remote action. A consumer keeps its own thin workflow, artifact
+access, retention, blocking placement, business policy,
 rollback, cadence, and outcome measurement. See
 [`documents/caller-workflow.md`](documents/caller-workflow.md) for the
 canonical two-phase shape.
 
 ## Install
 
-Configure the consumer-owned GitHub Packages mapping and credential reference,
-then pin an exact published version in that consumer's manifest and lockfile:
+Pin an exact public npm version in the consumer's manifest and lockfile:
 
 ```bash
-npm install --save-dev --save-exact @clossys/starter@0.1.2
+npm install --save-dev --save-exact @clossys/starter@0.1.4
 ```
 
-The public package registry still requires the consumer's own read credential.
-The credential belongs only to that workflow's fixed install step; the
-decision, Advisor, and target CLI steps receive none.
+Public npm reads are credentialless. Do not add a token or private registry
+mapping for `@clossys`; the fixed install and every decisive CLI step receive
+no registry credential.
 
 ## Contract
 
@@ -44,19 +43,19 @@ snapshot identity, and two normalized relative evidence paths.
   },
   "starter": {
     "name": "@clossys/starter",
-    "version": "0.1.2",
+    "version": "0.1.4",
     "integrity": "<npm-sha512-sri>",
     "bin": "foundry-starter"
   },
   "advisor": {
     "name": "@clossys/advisor",
-    "version": "0.1.3",
+    "version": "0.1.5",
     "integrity": "<npm-sha512-sri>",
     "bin": "advisor-execution-readiness"
   },
   "target": {
     "name": "@clossys/advisor",
-    "version": "0.1.3",
+    "version": "0.1.5",
     "integrity": "<npm-sha512-sri>",
     "bin": "advisor-check",
     "invocation": "single-json-input"
@@ -153,8 +152,9 @@ subpath accepts a command, a package-manager path, or caller options.
 ## Requirements
 
 Node.js 20+, ESM, and no runtime dependencies. The consumer owns GitHub
-Actions configuration and any registry credential; this package never reads a
-provider API and includes no remote action or provider adapter.
+Actions configuration and artifact access. Public npm package reads need no
+registry credential; this package never reads a provider API and includes no
+remote action or provider adapter.
 
 ## Licence
 

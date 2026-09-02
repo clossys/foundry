@@ -20,6 +20,12 @@ const PRECUTOVER_TARGET = Object.freeze({
   registry: "https://registry.npmjs.org",
   packages: Object.freeze(["advisor", "starter", "controller"]),
 });
+export const ALL_PACKAGE_RELEASE_ORDER = Object.freeze([
+  "advisor", "starter", "controller", "strategist", "writer", "designer",
+  "architect", "bouncer", "butler", "giver", "influencer", "integrator",
+  "keeper", "locksmith", "messenger", "observer", "builder", "inspector",
+  "publisher",
+]);
 const CURRENT_TARGET = Object.freeze({
   id: "current-github-packages",
   status: "active",
@@ -33,7 +39,7 @@ const CUTOVER_TARGET = Object.freeze({
   scope: "@clossys",
   registry: "https://registry.npmjs.org",
   access: "public",
-  packages: Object.freeze(["advisor", "starter", "controller", "designer"]),
+  packages: ALL_PACKAGE_RELEASE_ORDER,
 });
 
 class CatalogInputError extends Error {
@@ -81,6 +87,16 @@ function validRegistry(value) {
 
 function matchesExactArray(actual, expected) {
   return Array.isArray(actual) && actual.length === expected.length && actual.every((value, index) => value === expected[index]);
+}
+
+function hasInitialPublicationPrefix(actual) {
+  return Array.isArray(actual) && actual.length >= PRECUTOVER_TARGET.packages.length &&
+    PRECUTOVER_TARGET.packages.every((value, index) => actual[index] === value) &&
+    new Set(actual).size === actual.length;
+}
+
+function hasCompleteReleaseOrder(actual) {
+  return matchesExactArray(actual, CUTOVER_TARGET.packages);
 }
 
 /**
@@ -146,10 +162,11 @@ export function loadReleaseCatalog({ path = "governance/release-catalog.json", r
       cutover.scope !== CUTOVER_TARGET.scope ||
       cutover.registry !== CUTOVER_TARGET.registry ||
       cutover.access !== CUTOVER_TARGET.access ||
-      !matchesExactArray(cutover.packages, CUTOVER_TARGET.packages) ||
+      !hasInitialPublicationPrefix(cutover.packages) ||
+      !hasCompleteReleaseOrder(cutover.packages) ||
       catalog.defaultTarget !== CUTOVER_TARGET.id
     ) {
-      fail(`${path} candidate state must activate the exact launch Trio followed by the reviewed Designer expansion`);
+      fail(`${path} candidate state must retain the exact dependency-ordered all-package public-npm allowlist`);
     }
   }
   if (!ids.has(catalog.defaultTarget)) fail(`${path} defaultTarget "${catalog.defaultTarget}" is not declared in targets`);

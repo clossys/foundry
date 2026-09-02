@@ -1,6 +1,6 @@
 {
   "name": "@clossys/designer",
-  "version": "0.2.2",
+  "version": "0.3.1",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -20,13 +20,13 @@
   "author": "Calvin Hung",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/clossys/platform.git",
+    "url": "git+https://github.com/clossys/foundry.git",
     "directory": "packages/designer"
   },
   "bugs": {
-    "url": "https://github.com/clossys/platform/issues"
+    "url": "https://github.com/clossys/foundry/issues"
   },
-  "homepage": "https://github.com/clossys/platform/tree/main/packages/designer#readme",
+  "homepage": "https://github.com/clossys/foundry/tree/main/packages/designer#readme",
   "engines": {
     "node": ">=20"
   },
@@ -93,10 +93,10 @@
     }
   },
   "bin": {
-    "designer-token-check": "./dist/cli.js",
-    "designer-brand-check": "./dist/tokens/cli.js",
-    "designer-contrast-check": "./dist/tokens/contrast-cli.js",
-    "designer-environment-check": "./dist/environment-conformance-cli.js"
+    "designer-token-check": "dist/cli.js",
+    "designer-brand-check": "dist/tokens/cli.js",
+    "designer-contrast-check": "dist/tokens/contrast-cli.js",
+    "designer-environment-check": "dist/environment-conformance-cli.js"
   },
   "files": [
     "dist",
@@ -150,12 +150,12 @@
   "devDependencies": {
     "@internationalized/date": "^3.12.3",
     "@testing-library/jest-dom": "^7.0.1",
-    "@testing-library/react": "^16.3.2",
-    "@testing-library/user-event": "^14.6.3",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.6",
     "@types/node": "^22.10.0",
     "@types/react": "^19.2.0",
-    "@types/react-dom": "^19.2.0",
-    "esbuild": "^0.25.12",
+    "@types/react-dom": "^19.2.5",
+    "esbuild": "^0.28.2",
     "jsdom": "^26.1.0",
     "react": "^19.2.8",
     "react-aria-components": "^1.20.0",

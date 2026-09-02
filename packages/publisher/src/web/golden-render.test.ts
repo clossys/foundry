@@ -278,7 +278,7 @@ describe("golden: JSON-LD escaping — the </script> XSS case", () => {
 });
 
 describe("golden: MarketingView", () => {
-  it("renders the exact expected markup, byte for byte — every flowed slot filled, a repeating 'features' group of 2, and a repeating 'faq' group of 1 authored via a node item", () => {
+  it("renders the exact expected markup, byte for byte — every flowed slot filled, a repeating 'features' group of 2, and a repeating structured 'faq' group of 1", () => {
     const doc: ComposeDocument = {
       id: "acme-marketing-home",
       channel: "web",
@@ -306,7 +306,7 @@ describe("golden: MarketingView", () => {
         },
         {
           slot: "faq",
-          items: [{ index: 0, node: { question: "Placeholder question A?", answer: "Placeholder answer A." } }],
+          items: [{ index: 0, fields: { question: { value: "Placeholder question A?" }, answer: { value: "Placeholder answer A." } } }],
         },
       ],
     });

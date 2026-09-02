@@ -17,9 +17,9 @@ below is a placeholder for something the consuming repository chooses.
 repository that has, until now, only ever shipped importable TypeScript:
 
 - **Foundry hosts a reusable workflow directly**
-  (`uses: clossys/platform/.github/workflows/_gate.yml@<ref>`).
+  (`uses: clossys/foundry/.github/workflows/_gate.yml@<ref>`).
 - **Foundry publishes a composite GitHub Action**
-  (`uses: clossys/platform/actions/gate@<ref>`).
+  (`uses: clossys/foundry/actions/gate@<ref>`).
 - **Foundry publishes the gate's logic as an npm package; each repository
   keeps a thin workflow of its own, invoking it.**
 

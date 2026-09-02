@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "package": "@clossys/butler",
+  "archetype": "current-direct",
+  "peerInstall": {
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "bins": {
+    "butler-check": 0
+  },
+  "fixtures": [
+    "intents.json",
+    "confirmations-satisfied.json",
+    "confirmations-violated.json",
+    "confirmations-indeterminate.json"
+  ],
+  "cases": [
+    {
+      "id": "confirmation-satisfied",
+      "bin": "butler-check",
+      "args": [
+        {
+          "literal": "confirmation-completeness"
+        },
+        {
+          "fixture": "intents.json"
+        },
+        {
+          "fixture": "confirmations-satisfied.json"
+        },
+        {
+          "literal": "--floor"
+        },
+        {
+          "literal": "0.8"
+        }
+      ],
+      "exitCode": 0,
+      "group": "confirmation-completeness"
+    },
+    {
+      "id": "confirmation-violated",
+      "bin": "butler-check",
+      "args": [
+        {
+          "literal": "confirmation-completeness"
+        },
+        {
+          "fixture": "intents.json"
+        },
+        {
+          "fixture": "confirmations-violated.json"
+        },
+        {
+          "literal": "--floor"
+        },
+        {
+          "literal": "0.8"
+        }
+      ],
+      "exitCode": 1,
+      "group": "confirmation-completeness"
+    },
+    {
+      "id": "confirmation-indeterminate",
+      "bin": "butler-check",
+      "args": [
+        {
+          "literal": "confirmation-completeness"
+        },
+        {
+          "fixture": "intents.json"
+        },
+        {
+          "fixture": "confirmations-indeterminate.json"
+        },
+        {
+          "literal": "--floor"
+        },
+        {
+          "literal": "0.8"
+        }
+      ],
+      "exitCode": 2,
+      "group": "confirmation-completeness"
+    }
+  ],
+  "dimensionEvidence": {
+    "rollback": "restoration",
+    "duplicate": "confirmation-completeness"
+  }
+}

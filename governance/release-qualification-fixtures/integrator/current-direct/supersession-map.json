@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "supersededBy": {
+    "legacy-a": {
+      "replacement": "replacement-a",
+      "since": "1.0.0"
+    }
+  }
+}

@@ -3,6 +3,131 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.3.0] - 2026-09-01
+
+### Added
+
+- Added an optional `eyebrow` `CopyRef` to the `feature-grid`, `faq`,
+  `ordered-step-sequence`, and `status-list` sections of
+  `SectionedViewDocument`. Only `hero` carried one before, so authored eyebrow
+  copy for any other section had nowhere to go.
+- Added an optional `actions` list to the `SectionedViewDocument` hero
+  section: data-only `{ id, label, href }` entries whose `href` is held to the
+  same sanctioned-target rule the other server-rendered views use, rendered
+  into the Designer `Hero` block's existing actions slot. A document could not
+  express a hero call to action at all before, even though the block beneath
+  it always had the slot.
+- Added an optional `detail` `CopyRef` to a `status-list` item, carrying that
+  row's own explanation, including the reasoning behind a `not-offered`
+  answer. That reasoning previously had to be folded into the row label or
+  left off the page.
+- Added the optional `landmark` prop to `SectionedView`. The default, `"main"`,
+  is unchanged; `"none"` renders the same sections without the view's own
+  `main` landmark, so a page can mount the subset this contract expresses and
+  keep the rest inside a landmark it owns. Partial adoption previously had to
+  choose between a second `main` landmark and leaving real content outside the
+  only one.
+
+### Changed
+
+- Raised the runtime Designer floor from `^0.2.7` to `^0.3.0`. The non-hero
+  `eyebrow` slot and the per-row `detail` slot that the new document fields
+  render into are Designer 0.3.0 additions, and 0.x caret ranges are
+  minor-locked, so the older range would resolve a Designer without them.
+
+Every one of these is optional and additive: a document that validated before
+still validates, and a document carrying none of them renders byte-for-byte
+the markup it did at 0.2.1, which is asserted against frozen captured markup
+rather than described. This is a minor rather than a patch because 0.x caret
+and tilde ranges are minor-locked, so a consumer that wants any of the four
+widens its declared range deliberately.
+
+## [0.2.1] - 2026-09-01
+
+### Fixed
+
+- Normalized both published CLI targets so npm preserves the declared
+  `publisher-media-check` and `publisher-record-check` bin map without
+  auto-correction. The unpublished 0.2.0 dry-run candidate was rejected and
+  is not publication evidence.
+
+## [0.2.0] - 2026-08-31
+
+### Added
+
+- Added the closed, provenance-preserving `SectionedView` web renderer for
+  resolved `SectionedViewDocument` models. It maps the five approved section
+  kinds to Designer 0.2.7's ground-aware server-safe blocks without opening a
+  caller-authored node or styling escape hatch.
+- Added the separate `not-offered` status disposition and its localized label,
+  keeping deliberate non-capabilities outside the readiness axis.
+
+### Changed
+
+- Raised the runtime Designer floor to `^0.2.7`, which supplies the
+  server-safe section-ground, ordered-step, and status-list blocks required by
+  `SectionedView`. This source version is intentionally unqualified and
+  unpublished; exact-head qualification remains required.
+
+## [0.1.11] - 2026-08-31
+
+### Changed
+
+- Advanced the source to the later trusted-publisher/OIDC successor after the
+  owner-present 0.1.10 first publication. This source-only change is neither
+  qualification nor publication evidence: a future 0.1.11 candidate requires
+  fresh exact-head qualification, release checks, and registry verification.
+
+## [0.1.10] - 2026-08-31
+
+### Changed
+
+- Advanced the first-publication source candidate after the immutable 0.1.9
+  qualification was quarantined as unpublished: its retained tarball was
+  produced outside the required release runtime and cannot be rewritten under
+  the append-only qualification contract. This 0.1.10 source is not yet
+  qualified or published; its future candidate must be packed and replayed
+  with the pinned release runtime.
+
+## [0.1.9] - 2026-08-31
+
+### Fixed
+
+- Declared Designer's optional `@internationalized/date`,
+  `react-aria-components`, `tailwind-merge`, and `tailwindcss` peers directly
+  and installed their exact qualification versions. A clean public-registry
+  consumer can now import both ordinary and `react-server`
+  `@clossys/publisher/web` instead of failing on Designer's absent transitive
+  optional peers. The rejected 0.1.8 candidate was never published. The
+  immutable 0.1.9 qualification is retained as quarantined evidence only;
+  the source's next first-publication candidate is 0.1.10.
+
+## [0.1.8] - 2026-08-31
+
+### Fixed
+
+- Added a `react-server` target for `@clossys/publisher/web`. Its runtime
+  exports match the ordinary target, while `MarketingView`, `AuthView`, and
+  `ErrorView` resolve only Designer's server-safe barrels and the server FAQ
+  renders as native `details`/`summary`. Ordinary imports retain the React
+  Aria FAQ. The runtime dependency floor is now `@clossys/designer ^0.2.4`,
+  the first release that exports `Faq` from its server-safe blocks barrel.
+
+## [0.1.7] - 2026-08-30
+
+### Changed
+
+- Updated the package's public repository, issue-tracker, and homepage metadata to the canonical Foundry repository. This change is not a publication or qualification claim.
+
+## [0.1.6] - 2026-08-30
+
+### Fixed
+
+- Corrected exact-pin consumer guidance to require Writer `0.3.x`, matching
+  this package's real `@clossys/writer ^0.3.0` runtime dependency, rather
+  than directing a clean consumer to the incompatible historical `0.2.x`
+  line.
+
 ## [0.1.5] - 2026-08-29
 
 ### Security

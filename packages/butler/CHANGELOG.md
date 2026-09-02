@@ -3,6 +3,18 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.2] - 2026-08-31
+
+### Changed
+
+- Prepared a bounded trusted-publisher patch source for provenance after the owner-present first publication and anonymous registry verification. This change does not publish the package or claim provenance.
+
+## [0.1.1] - 2026-08-30
+
+### Changed
+
+- Updated the package's public repository, issue-tracker, and homepage metadata to the canonical Foundry repository. This change is not a publication or qualification claim.
+
 ## [0.1.0] - 2026-08-21
 
 First release. This package is the butler role: everything about what a

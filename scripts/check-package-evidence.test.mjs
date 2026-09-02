@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -13,13 +14,16 @@ import {
   STATES,
   evaluatePrograms,
   isFailureFinding,
+  packageAuthenticStarterQualificationSite,
   readLifecycleStatuses,
+  readValidatedPublishedPackages,
   readWorkspacePackages,
   renderLifecyclePositionTable,
   replaceLifecyclePositionTable,
   scanInvocationSites,
   stateIndex,
 } from "./check-package-evidence.mjs";
+import { TRIO_PUBLICATION_PATH, TRIO_PUBLICATION_TRANSITION_PATHS } from "./lib/release-publication-cohort.mjs";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const script = join(repoRoot, "scripts/check-package-evidence.mjs");
@@ -37,7 +41,7 @@ const P = "@clossys/thing";
 // free of a rule they are not about.
 function grade(
   entry,
-  { sites = [], bins = [], status = "published", inWorkspace = true, manifestBins = ["thing-check"], workspaceScope = "@clossys" } = {},
+  { sites = [], bins = [], status = "published", inWorkspace = true, manifestBins = ["thing-check"], workspaceScope = "@clossys", publication = true } = {},
 ) {
   return evaluatePrograms({
     contract: {
@@ -49,10 +53,32 @@ function grade(
     workspacePackages: new Set(inWorkspace ? [P] : []),
     workspaceBins: new Map([[P, manifestBins]]),
     workspaceScope,
+    publishedPackages: new Set(publication ? [P] : []),
   });
 }
 
 const rules = (r) => r.findings.filter(isFailureFinding).map((f) => f.rule);
+const CURRENT_PUBLISHED_PACKAGES = [
+  "@clossys/advisor",
+  "@clossys/architect",
+  "@clossys/bouncer",
+  "@clossys/builder",
+  "@clossys/butler",
+  "@clossys/controller",
+  "@clossys/designer",
+  "@clossys/giver",
+  "@clossys/influencer",
+  "@clossys/inspector",
+  "@clossys/integrator",
+  "@clossys/keeper",
+  "@clossys/locksmith",
+  "@clossys/messenger",
+  "@clossys/observer",
+  "@clossys/publisher",
+  "@clossys/starter",
+  "@clossys/strategist",
+  "@clossys/writer",
+];
 
 test("the ladder is ordered and its derivable states are a prefix of it", () => {
   assert.deepEqual(STATES, ["designed", "implemented", "staged", "published", "adopted", "grounded", "closed"]);
@@ -64,12 +90,105 @@ test("the ladder is ordered and its derivable states are a prefix of it", () => 
   assert.equal(DERIVABLE_STATES.has("closed"), false);
 });
 
+test("current-scope publication requires the exact validated first-publication record", () => {
+  const withoutPublication = grade(
+    { name: P, state: "published", stagedBy: { run: "https://example/run/1", defectOrigin: "injected", defect: "the installed gate observed one real fixture defect", control: "the matched control passed through the same installed gate" } },
+    { sites: ["fixture:1"], publication: false },
+  );
+  assert.ok(rules(withoutPublication).includes("state-ahead-of-evidence"));
+  assert.deepEqual([...readValidatedPublishedPackages(repoRoot)].sort(), CURRENT_PUBLISHED_PACKAGES);
+});
+
+test("current-scope publication rejects coherent rewrites and rewrite-restore history", () => {
+  const dir = mkdtempSync(join(tmpdir(), "publication-history-"));
+  const fixtureRoot = join(dir, "repository");
+  try {
+    execFileSync("git", ["clone", "--local", "--no-hardlinks", repoRoot, fixtureRoot], { stdio: "ignore" });
+    execFileSync("git", ["config", "user.name", "package evidence fixture"], { cwd: fixtureRoot });
+    execFileSync("git", ["config", "user.email", "fixture@invalid.example"], { cwd: fixtureRoot });
+
+    if (!existsSync(join(fixtureRoot, TRIO_PUBLICATION_PATH))) {
+      for (const path of TRIO_PUBLICATION_TRANSITION_PATHS) {
+        const target = join(fixtureRoot, path);
+        mkdirSync(dirname(target), { recursive: true });
+        writeFileSync(target, readFileSync(join(repoRoot, path)));
+      }
+      execFileSync("git", ["add", "--all"], { cwd: fixtureRoot });
+      execFileSync("git", ["commit", "-m", "fixture: materialize publication transition"], { cwd: fixtureRoot, stdio: "ignore" });
+    }
+
+    const publicationPath = join(fixtureRoot, "governance/release-publications/clossys-npmjs-trio.json");
+    const originalBytes = readFileSync(publicationPath, "utf8");
+    const rewritten = JSON.parse(originalBytes);
+    rewritten.members[0].publication.publishedAt = "2026-08-30T06:31:59.838Z";
+    const rewrittenBytes = `${JSON.stringify(rewritten, null, 2)}\n`;
+
+    assert.deepEqual([...readValidatedPublishedPackages(fixtureRoot)].sort(), CURRENT_PUBLISHED_PACKAGES);
+    writeFileSync(publicationPath, rewrittenBytes);
+    assert.deepEqual([...readValidatedPublishedPackages(fixtureRoot)], []);
+
+    execFileSync("git", ["add", "governance/release-publications/clossys-npmjs-trio.json"], { cwd: fixtureRoot });
+    execFileSync("git", ["commit", "-m", "fixture: rewrite publication"], { cwd: fixtureRoot, stdio: "ignore" });
+    writeFileSync(publicationPath, originalBytes);
+    execFileSync("git", ["add", "governance/release-publications/clossys-npmjs-trio.json"], { cwd: fixtureRoot });
+    execFileSync("git", ["commit", "-m", "fixture: restore publication"], { cwd: fixtureRoot, stdio: "ignore" });
+
+    assert.equal(readFileSync(publicationPath, "utf8"), originalBytes);
+    assert.deepEqual([...readValidatedPublishedPackages(fixtureRoot)], []);
+    assert.throws(
+      () => execFileSync(process.execPath, [script, "--json"], { cwd: fixtureRoot, stdio: "pipe" }),
+      (error) => error.status === 1,
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test("executable tooling is explicit and stays outside the role-package inference", () => {
   assert.deepEqual([...PACKAGE_CATEGORIES].sort(), ["executable-tooling", "role"]);
   const tooling = grade({ name: P, category: "executable-tooling", state: "implemented" });
   assert.deepEqual(rules(tooling), []);
   assert.equal(tooling.results[0].category, "executable-tooling");
   assert.equal(rules(grade({ name: P, category: "remote-action", state: "implemented" })).includes("unknown-package-category"), true);
+});
+
+test("only the exact validated package-authentic Starter qualification earns a staging site", () => {
+  const adapterBytes = readFileSync(join(repoRoot, "governance/release-qualification-adapters/starter/current-direct.json"), "utf8");
+  const record = JSON.parse(readFileSync(join(repoRoot, "governance/release-qualifications/clossys-starter-0.1.2.json"), "utf8"));
+  const input = { packageName: "@clossys/starter", manifestVersion: "0.1.2", adapterBytes, record };
+  assert.equal(
+    packageAuthenticStarterQualificationSite(input),
+    "governance/release-qualifications/clossys-starter-0.1.2.json#transcript:current-direct",
+  );
+  const v3 = structuredClone(record);
+  v3.transcript.schema = "foundry-candidate-qualification-transcript-v3";
+  v3.transcript.version = 3;
+  v3.transcript.coverage.reactServerImports = 0;
+  v3.transcript.coverage.frameworkExports = 0;
+  v3.transcript.coverage.frameworkBuilds = 0;
+  for (const [index, observation] of v3.transcript.observations.filter((item) => item.kind === "import").entries()) {
+    observation.id = `import:import:@clossys/starter${index === 0 ? "" : `/test-${index}`}`;
+  }
+  delete v3.transcript.canonicalSha256;
+  v3.transcript.canonicalSha256 = createHash("sha256").update(JSON.stringify(v3.transcript)).digest("hex");
+  assert.equal(
+    packageAuthenticStarterQualificationSite({ ...input, record: v3 }),
+    "governance/release-qualifications/clossys-starter-0.1.2.json#transcript:current-direct",
+  );
+
+  assert.equal(packageAuthenticStarterQualificationSite({ ...input, packageName: "@clossys/advisor" }), null);
+  assert.equal(packageAuthenticStarterQualificationSite({ ...input, manifestVersion: "0.1.1" }), null);
+  assert.equal(packageAuthenticStarterQualificationSite({ ...input, adapterBytes: adapterBytes.replace('"current-direct"', '"prior-minor"') }), null);
+
+  const declarationOnly = structuredClone(record);
+  declarationOnly.transcript.observations = declarationOnly.transcript.observations.filter((item) => item.kind !== "case");
+  assert.equal(packageAuthenticStarterQualificationSite({ ...input, record: declarationOnly }), null);
+
+  const forcedRed = structuredClone(record);
+  const violated = forcedRed.transcript.observations.find((item) => item.id === "case:activation-violated");
+  violated.observedExitCode = 0;
+  violated.rawCaseEvidence.exitCode = 0;
+  assert.equal(packageAuthenticStarterQualificationSite({ ...input, record: forcedRed }), null);
 });
 
 test("a published package with no invocation site and no gap is a violation", () => {

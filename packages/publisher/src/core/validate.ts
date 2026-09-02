@@ -813,7 +813,9 @@ export function isSurfaceRepeatingSlotBinding(binding: unknown): binding is Surf
 
 /**
  * Rule: surface-binding-group-exclusive, surface-binding-group-items-shape,
- * surface-binding-group-item-shape, surface-binding-group-item-source-exclusive.
+ * surface-binding-group-item-shape, surface-binding-group-item-source-exclusive,
+ * surface-binding-group-item-fields-shape, surface-binding-group-item-field-shape,
+ * surface-binding-group-item-field-source-exclusive.
  *
  * Validates a {@link SurfaceRepeatingSlotBinding} candidate: `items` must
  * be an array (possibly empty — see `types.ts`'s `SurfaceRepeatingSlotBinding`
@@ -821,10 +823,11 @@ export function isSurfaceRepeatingSlotBinding(binding: unknown): binding is Surf
  * `copy`/`node`/`assetId` must NOT also be present on the binding itself (a
  * repeating-group binding carries its sources in `items`, not on the
  * binding — mixing the two is ambiguous, not additive), and every entry in
- * `items` independently obeys the same exactly-one-of-copy/node/assetId
- * discipline `validateSurfaceDocument` already enforces for a single
- * binding — see `SurfaceSlotBinding`'s own validation just above this
- * function. Every finding's `path` names the specific failing item
+ * `items` independently obeys the same exactly-one-of discipline a single
+ * binding uses, extended with one structured `fields` map. A field map is
+ * made only of `copy`/`assetId` bindings: ordinary multi-field editorial
+ * content may not use a caller-owned node to bypass CopyRef resolution.
+ * Every finding's `path` names the specific failing item
  * (`bindings.N.items.M[...]`), not just the slot, so a caller can say
  * which of six capability-grid entries broke.
  */
@@ -852,16 +855,44 @@ function validateSurfaceRepeatingBindingShape(binding: Record<string, unknown>, 
       findings.push({ rule: "surface-binding-group-item-shape", severity: "error", message: `${itemPath} must be an object.`, path: itemPath });
       return;
     }
-    const itemSources = [item.copy !== undefined, item.node !== undefined, item.assetId !== undefined];
+    const itemSources = [item.copy !== undefined, item.node !== undefined, item.assetId !== undefined, item.fields !== undefined];
     if (itemSources.filter(Boolean).length !== 1) {
-      findings.push({ rule: "surface-binding-group-item-source-exclusive", severity: "error", message: `${itemPath} must set exactly one of copy/node/assetId.`, path: itemPath });
+      findings.push({ rule: "surface-binding-group-item-source-exclusive", severity: "error", message: `${itemPath} must set exactly one of copy/node/assetId/fields.`, path: itemPath });
     }
     if (item.copy !== undefined) validateCopyRef(item.copy, `${itemPath}.copy`, findings);
     if (item.node !== undefined && (typeof item.node !== "object" || item.node === null)) {
       findings.push({ rule: "surface-node-shape", severity: "error", message: `${itemPath}.node must be a non-null object; use copy for audience-facing text.`, path: `${itemPath}.node` });
     }
-    if (item.assetId !== undefined && !isNonEmptyString(item.assetId)) {
-      findings.push({ rule: "binding-asset-id-shape", severity: "error", message: `${itemPath}.assetId must be a non-empty string when present.`, path: `${itemPath}.assetId` });
+    if (item.assetId !== undefined && !isNonEmptyNonWhitespaceString(item.assetId)) {
+      findings.push({ rule: "binding-asset-id-shape", severity: "error", message: `${itemPath}.assetId must be a non-whitespace string when present.`, path: `${itemPath}.assetId` });
+    }
+    if (item.fields !== undefined) {
+      const fieldsPath = `${itemPath}.fields`;
+      if (!isPlainObject(item.fields) || Object.keys(item.fields).length === 0) {
+        findings.push({ rule: "surface-binding-group-item-fields-shape", severity: "error", message: `${fieldsPath} must be a non-empty object mapping field names to copy/assetId bindings.`, path: fieldsPath });
+        return;
+      }
+      for (const [field, fieldBinding] of Object.entries(item.fields)) {
+        const fieldPath = `${fieldsPath}.${field}`;
+        if (!isNonEmptyNonWhitespaceString(field)) {
+          findings.push({ rule: "surface-binding-group-item-field-name-shape", severity: "error", message: `${fieldsPath} contains an empty or whitespace-only field name.`, path: fieldsPath });
+        }
+        if (!isPlainObject(fieldBinding)) {
+          findings.push({ rule: "surface-binding-group-item-field-shape", severity: "error", message: `${fieldPath} must be an object.`, path: fieldPath });
+          continue;
+        }
+        const fieldSources = [fieldBinding.copy !== undefined, fieldBinding.assetId !== undefined];
+        if (fieldSources.filter(Boolean).length !== 1) {
+          findings.push({ rule: "surface-binding-group-item-field-source-exclusive", severity: "error", message: `${fieldPath} must set exactly one of copy/assetId; node is not permitted in a structured field.`, path: fieldPath });
+        }
+        if (fieldBinding.copy !== undefined) validateCopyRef(fieldBinding.copy, `${fieldPath}.copy`, findings);
+        if (fieldBinding.assetId !== undefined && !isNonEmptyNonWhitespaceString(fieldBinding.assetId)) {
+          findings.push({ rule: "binding-asset-id-shape", severity: "error", message: `${fieldPath}.assetId must be a non-whitespace string when present.`, path: `${fieldPath}.assetId` });
+        }
+        if (fieldBinding.node !== undefined) {
+          findings.push({ rule: "surface-binding-group-item-field-node-forbidden", severity: "error", message: `${fieldPath}.node is not permitted; structured fields must use copy or assetId.`, path: `${fieldPath}.node` });
+        }
+      }
     }
   });
 }

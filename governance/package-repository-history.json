@@ -1,0 +1,91 @@
+{
+  "$comment": "Closed content-addressed multiset for repository aliases that may remain after the public producer rename. Every path, line digest, and multiplicity is required; any extra, missing, moved, or changed alias occurrence fails. The policy binds these entries to its one declared historical repository.",
+  "schemaVersion": 1,
+  "references": [
+    {
+      "path": "governance/release-publications/clossys-npmjs-trio.json",
+      "lineSha256": "sha256:e87c8e51bf7f640969668d482d84190542182acb249bfffcfc7fbc55d1a77e5e",
+      "count": 1
+    },
+    {
+      "path": "governance/release-publications/clossys-npmjs-trio.json",
+      "lineSha256": "sha256:c9b566ffec2bdb53ef3c7860ee75511537d097db805a1364b136ddee6cc4b59c",
+      "count": 3
+    },
+    {
+      "path": "scripts/lib/release-publication-cohort.mjs",
+      "lineSha256": "sha256:69d4dfa7bf24d9846eb7f44c79e898a45265fcf1992ad9a0fdcf8b16ed9ac0b6",
+      "count": 1
+    },
+    {
+      "path": "governance/release-publications/later/advisor-0.1.5.json",
+      "lineSha256": "sha256:a573b4066f58b4db75a720f70713ce5ce586648f40de27efb70e99683d3c0542",
+      "count": 1
+    },
+    {
+      "path": "governance/release-publications/later/advisor-0.1.5.json",
+      "lineSha256": "sha256:2d465d0fe470afe8096847372ced8b60a25c5ab6f39f98e38eace99bc67dc3c5",
+      "count": 1
+    },
+    {
+      "path": "governance/release-publications/later/controller-0.8.23.json",
+      "lineSha256": "sha256:49da6a936bd44e74550d3adfc0932bba8c9dfad5afac00cb71856a352170aba6",
+      "count": 1
+    },
+    {
+      "path": "governance/release-publications/later/controller-0.8.23.json",
+      "lineSha256": "sha256:68ce0fa40589fad09935848ce7feec8c5944f7fad30c9e3082c527acdfb271a2",
+      "count": 1
+    },
+    {
+      "path": "governance/release-publications/later/starter-0.1.4.json",
+      "lineSha256": "sha256:68c41b3958f322fad0ed1dacc88c1eaf3db10a219aa8d15652470776b426aa9f",
+      "count": 1
+    },
+    {
+      "path": "governance/release-publications/later/starter-0.1.4.json",
+      "lineSha256": "sha256:0b10402b6aff62ad368e6afc485c0a612d12f015823fb9ebde54a49b4b1eea08",
+      "count": 1
+    },
+    {
+      "path": "governance/release-cleanup/clossys-npmjs-affected.json",
+      "lineSha256": "sha256:7a2df27ed3d5c2ae6340788a7c37b6d30d640d89b27fb3fe24cc8a42feba8039",
+      "count": 1
+    },
+    {
+      "path": "governance/release-cleanup/clossys-npmjs-affected.json",
+      "lineSha256": "sha256:0e27e98048b3a2c8497f478a216a5f9dd664d6f527d60febedb8f007e618b18d",
+      "count": 7
+    },
+    {
+      "path": "scripts/lib/public-npm-aggregate-canary.mjs",
+      "lineSha256": "sha256:d8a4f31ebf72cddca9daa1b33e308ba6076aee0844d02f8711143ba69e645f65",
+      "count": 1
+    },
+    {
+      "path": "scripts/lib/public-npm-aggregate-canary.mjs",
+      "lineSha256": "sha256:303aa920190354a2c13a9f89f18fc81c2acd394bd08d3db67e08dbfe8091ebdf",
+      "count": 1
+    },
+    {
+      "path": "scripts/lib/public-npm-aggregate-canary.test.mjs",
+      "lineSha256": "sha256:10d037d894e3f89d485d6cfe5a60d39f83c1d11758c9ab6c883b186614a59a2d",
+      "count": 1
+    },
+    {
+      "path": "scripts/lib/public-npm-aggregate-canary.test.mjs",
+      "lineSha256": "sha256:7988263d1367f6322d0d146f9d2d807bcd258c895886fc9bb8735a08c0d584c3",
+      "count": 2
+    },
+    {
+      "path": "scripts/lib/public-npm-aggregate-canary.test.mjs",
+      "lineSha256": "sha256:d75daba907d0eef7dd476ab06e041a5464bc58263d47692eaf74f47478051893",
+      "count": 1
+    },
+    {
+      "path": "scripts/lib/public-npm-aggregate-canary.test.mjs",
+      "lineSha256": "sha256:aed6ef05cb62c9898546159f092ce2b9acd5e9264147078d2a68ada0c254b7f9",
+      "count": 1
+    }
+  ]
+}

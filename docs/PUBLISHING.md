@@ -220,6 +220,12 @@ that can damage something *other* than this package — see below), denylist
 quality, gate regression, tree safety, and artifact safety (the actual packed
 tarball, not the tree).
 
+The denylist may be selected explicitly with `--denylist <file>`; preflight
+forwards that same policy to denylist quality, tree safety, and artifact safety.
+This prevents a same-named file for another repository from being selected on
+a shared machine. Without the flag, the gates use `PUBLIC_SAFETY_DENYLIST`; with
+`--require-denylist`, an unselected or unreadable policy fails closed.
+
 **What `npm run preflight` does *not* run: consumer qualification.** Artifact safety
 (`scripts/check-artifact-safety.mjs`) packs the tarball for real and scans its
 *contents* — forbidden files, credential-shaped strings, private identity,
@@ -266,6 +272,31 @@ to the retained record before dry-run or upload. It never executes stored
 record commands. Producer policy, rather than a record, owns unsupported
 archetypes and dimensions; the runner proves the required install surface,
 native `0`/`1`/`2` outcomes, matched control, and restoration evidence.
+New qualifications retain transcript v3. Runtime exports named by the packed
+manifest's closed `foundryReleaseVerification.next` rows are excluded from raw
+Node imports and instead resolved in their declared client, server, or proxy
+context by one real isolated Next build. The transcript records one framework
+observation per export, counts the framework exports and the single shared
+build separately, and rejects stale, duplicate, undeclared, or empty context
+rows. A packed `react-server` export condition remains a separate audited
+runtime branch: v3 records an ordinary import and an explicit
+`node --conditions=react-server` import with condition-bearing identities, and
+counts the latter as a closed subset of runtime imports. Retained v1 and v2
+transcripts remain immutable and valid under their original closed schemas.
+
+An already-public trusted release whose qualification was immutable before the
+protected publish source changed may use the separate closed **v3 replay**
+record only when both root `package.json` and `package-lock.json` hashes
+drifted and every package-owned join still matches exactly. It is not a waiver
+for a changed package, policy, adapter, fixture, archetype, dimension, manifest,
+or tarball. The record retains qualification roots and publication-source roots
+in different fields, proves strict ancestry `qualification introduction < source
+< publication record`, and binds successful qualification and publish jobs,
+the exact GitHub artifact ID/archive digest, fresh raw and canonical transcript
+digests, candidate hashes, and anonymous npm signature/attestation evidence.
+An overall workflow conclusion is never substituted for the successful publish
+job; a later verification failure remains visible. V1 and v2 cannot opt into
+this path and retain their original closed semantics.
 
 A candidate review binds its reviewed commit. Before squash, the PR tail may
 change only its versioned record; at publish, content joins and fresh tarball
@@ -273,6 +304,23 @@ evidence are squash-safe and do not require `main` to equal the reviewed SHA.
 Final provider review remains separate evidence, not workflow authority. The
 trusted PR-side qualification workflow is deferred until the protected base
 contains this runner, so untrusted PR code never receives publish credentials.
+
+Qualification records are append-only by exact version. Each retained record
+must still match the blob from its own single introduction commit. A closed
+publication record continues to select the qualifications it originally bound
+by their exact retained paths and digests; it does not require the directory to
+contain only one version of each package. A later release therefore adds a new
+versioned record without rewriting or replacing the first-publication evidence.
+The exact predecessor record paths present at the immutable publication-transition
+base retain their schema and introduction-time policy joins; their retained,
+introduction, and transition-base blobs must agree and they may never be touched
+after introduction. Validation therefore does not require a predecessor's
+historical reviewed commit to remain reachable.
+Its introduction is a direct, single-parent child of the reviewed candidate
+commit, and that introduction changes exactly the jointly retained new
+qualification records. Their content joins are measured at the reviewed
+commit; their retained bytes must remain their introduction blobs, with no
+later touch, including a rewrite followed by restoration.
 
 This is release qualification only. It does not claim real consumer adoption,
 provider truth, independent grounding, or closure; a provider-specific review
@@ -291,24 +339,60 @@ lane.
 Its registry-backed replay is retained post-publication evidence only, not a
 retroactive gate, adoption, grounding, or release clearance.
 
+### Replay runtime invariant
+
+The credential-free `qualify` job and OIDC `publish` job both use the pinned
+official `actions/setup-node` runtime: Node `v24.19.0`, bundled npm `11.17.0`,
+and zlib `1.3.2.1-motley-3246f1b`. Each job asserts all three exact values before any
+npm install, pack, or publish operation. A mismatch fails closed; it may not
+reuse an ambient runner runtime or mutate the exact qualified tarball handoff.
+This invariant was added after failed workflow run `33329284276` exposed that
+replaying a release path requires an explicit runtime tuple.
+
 ### Release target selection
 
 [`governance/release-catalog.json`](../governance/release-catalog.json) is the
 fail-closed source catalogue. After W1D its active target is `clossys-npmjs`,
 and `package-scope.json` binds the same `@clossys` scope and public npm
-registry. The source tree contains nineteen packages. The active release
-target preserves the immutable first-publication order `advisor`, `starter`,
-`controller`, then adds `designer` as the first separately reviewed expansion.
-Any further package requires another separately reviewed catalogue expansion.
-This is a source-state declaration only. No `@clossys` package is published
-or supported for installation during W1D.
+registry. The active release target closes over all nineteen publishable
+source manifests in a reviewed dependency order: the sealed Advisor, Starter,
+Controller prefix remains first; Builder and Inspector follow Controller; and
+Publisher follows Controller, Writer, and Designer. It never accepts `all`, a
+partial source inventory, reordering, duplication, or replacement of the first
+Trio. Catalogue membership is not qualification: to be eligible, a package
+must also have a required current-direct adapter with explicit 0/1/2 behavior.
+A blocked policy entry remains ineligible even when it appears in the catalogue;
+the current policy requires runnable adapters for all nineteen packages. Each
+release also needs a separately
+introduced immutable package-neutral publication record. That record joins
+qualification path/digest, candidate source/manifest/tarball, the
+catalogue bytes from that record's introduction commit plus its continuing
+current allowlist membership and anonymous served-byte proof. The legacy v1
+form records owner-present publication time/evidence only. The append-only v2
+trusted-publisher form additionally binds the exact npm attestation, reviewed
+workflow/ref/event/source/run/builder provenance, and the registry-served
+bytes. A package may have later records at distinct versions; each record is
+uniquely bound to its exact `name@version`. These later records do not alter
+the immutable first-publication Trio evidence.
 
-The publish workflow remains reviewable scaffolding, but its upload job is
-disabled and read-only. Neither a push nor a manual dispatch can publish from
-the W1D tree. W1E must separately review and activate publication, qualify the
-exact candidate tarballs, publish them in the declared dependency order, and
-verify anonymous packument and tarball access plus digest parity. Until that
-evidence exists, a version change is source preparation, not a release.
+Catalogue closure does not make all nineteen records producible in parallel:
+Publisher's current-direct run remains deferred until its required Writer and
+Designer versions are public and verified. A local sibling tarball or
+workspace link is diagnostic only and cannot substitute for that
+registry-backed dependency proof.
+This is a source-state declaration only. During W1D no `@clossys` package was
+published or supported for installation. W1E subsequently published and
+anonymously verified the owner-present first Trio identities, then published
+and verified the current trusted-publisher releases: Advisor 0.1.5, Starter
+0.1.4, and Controller 0.8.23. The current releases carry npm provenance and
+served-byte parity evidence.
+
+The publish workflow is active only through its reviewed, protected publish
+path. Every future release still needs a fresh exact candidate qualification,
+FULL safety and artifact checks, immutable review evidence, anonymous
+packument/tarball verification, and—when published through trusted
+publishing—provenance verification. A version change is source preparation
+until those release facts exist.
 
 The catalogue's GitHub Packages target and the workflow behavior associated
 with it are retained as immutable predecessor history. They explain how the
@@ -325,7 +409,9 @@ one tarball. The disabled W1D workflow cannot perform these publication steps.
 2. **The fixed candidate-qualification runner installs that exact tarball into
    a genuinely isolated directory, covers every declared export target, and
    invokes every declared bin plus its fixed adversarial cases — before anything
-   is published.** A failure here stops the job: `npm publish` never
+   is published. Framework-bound runtime exports are covered by the one
+   manifest-declared real framework build rather than a context-invalid raw
+   Node import.** A failure here stops the job: `npm publish` never
    runs, and nothing reaches the registry. This is the fix for the ordering
    defect issue #191 describes — this check used to run
    only *after* `npm publish`, where a registry version is already immutable
@@ -370,8 +456,20 @@ immutable `clossys-npmjs-trio` cohort record by raw-byte SHA-256, exact public
 registry tuple, and each candidate's SHA-1/SHA-256/SHA-512 tarball tuple. A
 partial attempt is not silently retried as a cohort: it must be recorded in
 the immutable quarantine record with the completed ordered prefix and next
-failed member. These are future-only contracts; no cohort or qualification
-record is fabricated until exact candidate bytes and review evidence exist.
+failed member. The retained cohort and qualification records now bind the
+exact first Trio identities and their anonymously served bytes. They prove
+publication and public access only; they do not prove consumer adoption,
+independent grounding, or closure.
+
+The retained Trio records authorize one sealed control-tail correction from
+protected base `9760d6b63ce9347aa528b5ba3625b924c792f9a2`. Its immutable authorization
+record binds the exact retained cohort and qualification records, the complete
+ordered correction path set, and the SHA-256 of every authorized file. The
+authorization must be introduced atomically with those exact bytes and cannot
+authorize a later rewrite, an unrelated tail path, or any other cohort. This is
+a one-time reachability repair for the already-retained records, not a general
+exception to immutable qualification evidence. After it lands, only the exact
+closed partial-failure quarantine described above may extend that sealed tail.
 
 ### Owner-present first publication, then OIDC
 
@@ -382,14 +480,20 @@ the public registry, enters npm's 2FA challenge at the terminal, and keeps the
 same reviewed tarball for publication and verification. Never put an OTP, npm
 token, or registry credential in a command, workflow, issue, or artifact.
 
-Run this handoff once per package, strictly in this order:
+Run this handoff once per package, strictly in this order. The owner-present
+wrapper accepts the qualified tarball only as immutable input; it extracts that
+candidate into private staging, FULL-scans the staged package, re-packs `.`
+with lifecycle scripts disabled, and requires SHA-1/SHA-256/SHA-512 equality
+before the one interactive upload. The actual upload is always `npm publish .`
+from that clean staging directory. Never publish a tarball, URL, package
+specifier, OTP, token, or provenance flag directly.
 
 ```text
-advisor -> npm publish <advisor-tarball> --access public --registry=https://registry.npmjs.org
+advisor -> node scripts/publish-qualified-directory.mjs --package advisor --candidate <advisor-candidate.tgz> --record <advisor-qualification.json>
            STOP; anonymously verify @clossys/advisor@<version>, served digest, and public access
-starter -> npm publish <starter-tarball> --access public --registry=https://registry.npmjs.org
+starter -> node scripts/publish-qualified-directory.mjs --package starter --candidate <starter-candidate.tgz> --record <starter-qualification.json>
            STOP; anonymously verify @clossys/starter@<version>, served digest, and public access
-controller -> npm publish <controller-tarball> --access public --registry=https://registry.npmjs.org
+controller -> node scripts/publish-qualified-directory.mjs --package controller --candidate <controller-candidate.tgz> --record <controller-qualification.json>
              STOP; anonymously verify @clossys/controller@<version>, served digest, and public access
 ```
 
@@ -402,22 +506,187 @@ unpublished candidates, and never delete, overwrite, or reuse a published
 version. A correction is a new forward version that re-enters qualification
 with the whole cohort from one exact source head.
 
-Only after all three first identities pass those stops may the owner configure
-npm trusted publishing for each package. That is a separate provider action,
-followed by a separately reviewed workflow activation. The activation must use
-Node `>=22.14` and npm `>=11.5.1`, grant `id-token: write` only to the upload
-job, run in the protected `npm-publish` environment with a required reviewer,
-and have no `NODE_AUTH_TOKEN`, `NPM_TOKEN`, `GH_TOKEN`, or equivalent token
-environment. A bounded patch release through that OIDC path must then prove
-npm provenance and served-byte parity; configuring trust alone is not evidence
-of publication or provenance. Before activation, the owner must configure and
-verify that the GitHub `npm-publish` environment has the intended required
-reviewer; a branch policy or a workflow `environment` key is not proof of that
-provider setting. After all three OIDC patch releases and their provenance
-checks succeed, the owner must set and verify each npm package's Publishing
-access as **Require two-factor authentication and disallow tokens**. That
-removes the alternate granular bypass-2FA token path only after the trusted
-replacement has proved it works.
+Only after all three first identities passed those stops was npm trusted
+publishing configured for each package. The protected `npm-publish` path then
+published the bounded current releases with npm provenance and served-byte
+parity. The workflow uses Node `>=22.14` and npm `>=11.5.1`, grants
+`id-token: write` only to the upload job, runs in the protected environment,
+and has no npm or GitHub publish token environment.
+
+Provider state was value-free verified for each current Trio package:
+Publishing access is **Require two-factor authentication and disallow tokens**.
+That setting removes the alternate granular bypass-2FA token path after the
+trusted replacement has proved it works.
+
+### Current retained-candidate first-publication handoff
+
+The Trio section above is closed historical evidence. It neither publishes nor
+authorizes a first identity for another package. The following are the current
+retained candidates, not registry facts: each still needs its own
+owner-present first publication and anonymous public-registry verification.
+
+| order | retained candidate | exact qualification record |
+| --- | --- | --- |
+| 1 | `@clossys/writer@0.3.2` | `governance/release-qualifications/clossys-writer-0.3.2.json` |
+| 2 | `@clossys/designer@0.2.4` | `governance/release-qualifications/clossys-designer-0.2.4.json` |
+| 3 | `@clossys/architect@0.1.2` | `governance/release-qualifications/clossys-architect-0.1.2.json` |
+| 4 | `@clossys/bouncer@0.1.1` | `governance/release-qualifications/clossys-bouncer-0.1.1.json` |
+| 5 | `@clossys/butler@0.1.1` | `governance/release-qualifications/clossys-butler-0.1.1.json` |
+| 6 | `@clossys/giver@0.1.2` | `governance/release-qualifications/clossys-giver-0.1.2.json` |
+| 7 | `@clossys/influencer@0.1.2` | `governance/release-qualifications/clossys-influencer-0.1.2.json` |
+| 8 | `@clossys/integrator@0.6.2` | `governance/release-qualifications/clossys-integrator-0.6.2.json` |
+| 9 | `@clossys/keeper@0.1.2` | `governance/release-qualifications/clossys-keeper-0.1.2.json` |
+| 10 | `@clossys/locksmith@0.1.6` | `governance/release-qualifications/clossys-locksmith-0.1.6.json` |
+| 11 | `@clossys/messenger@0.1.2` | `governance/release-qualifications/clossys-messenger-0.1.2.json` |
+| 12 | `@clossys/observer@0.2.3` | `governance/release-qualifications/clossys-observer-0.2.3.json` |
+| 13 | `@clossys/builder@0.7.3` | `governance/release-qualifications/clossys-builder-0.7.3.json` |
+| 14 | `@clossys/inspector@0.1.18` | `governance/release-qualifications/clossys-inspector-0.1.18.json` |
+
+The ordering preserves the runtime graph: Builder and Inspector wait for the
+already-public Controller, and Publisher remains outside this list until
+Writer and Designer are public and verified. Before every row, re-run the
+required FULL preflight and exact-candidate validation; a retained record does
+not excuse a changed byte, a stale review, or a failed gate.
+
+Each first identity is an interactive owner action and requires the owner's
+npm authentication and 2FA response. From the repository root, pass only the
+retained candidate tarball named by the matching record to the existing
+qualified-directory wrapper:
+
+```text
+writer     -> node scripts/publish-qualified-directory.mjs --package writer --candidate <writer-0.3.2-qualified-candidate.tgz> --record governance/release-qualifications/clossys-writer-0.3.2.json
+designer   -> node scripts/publish-qualified-directory.mjs --package designer --candidate <designer-0.2.4-qualified-candidate.tgz> --record governance/release-qualifications/clossys-designer-0.2.4.json
+architect  -> node scripts/publish-qualified-directory.mjs --package architect --candidate <architect-0.1.2-qualified-candidate.tgz> --record governance/release-qualifications/clossys-architect-0.1.2.json
+bouncer    -> node scripts/publish-qualified-directory.mjs --package bouncer --candidate <bouncer-0.1.1-qualified-candidate.tgz> --record governance/release-qualifications/clossys-bouncer-0.1.1.json
+butler     -> node scripts/publish-qualified-directory.mjs --package butler --candidate <butler-0.1.1-qualified-candidate.tgz> --record governance/release-qualifications/clossys-butler-0.1.1.json
+giver      -> node scripts/publish-qualified-directory.mjs --package giver --candidate <giver-0.1.2-qualified-candidate.tgz> --record governance/release-qualifications/clossys-giver-0.1.2.json
+influencer -> node scripts/publish-qualified-directory.mjs --package influencer --candidate <influencer-0.1.2-qualified-candidate.tgz> --record governance/release-qualifications/clossys-influencer-0.1.2.json
+integrator -> node scripts/publish-qualified-directory.mjs --package integrator --candidate <integrator-0.6.2-qualified-candidate.tgz> --record governance/release-qualifications/clossys-integrator-0.6.2.json
+keeper     -> node scripts/publish-qualified-directory.mjs --package keeper --candidate <keeper-0.1.2-qualified-candidate.tgz> --record governance/release-qualifications/clossys-keeper-0.1.2.json
+locksmith  -> node scripts/publish-qualified-directory.mjs --package locksmith --candidate <locksmith-0.1.6-qualified-candidate.tgz> --record governance/release-qualifications/clossys-locksmith-0.1.6.json
+messenger  -> node scripts/publish-qualified-directory.mjs --package messenger --candidate <messenger-0.1.2-qualified-candidate.tgz> --record governance/release-qualifications/clossys-messenger-0.1.2.json
+observer   -> node scripts/publish-qualified-directory.mjs --package observer --candidate <observer-0.2.3-qualified-candidate.tgz> --record governance/release-qualifications/clossys-observer-0.2.3.json
+builder    -> node scripts/publish-qualified-directory.mjs --package builder --candidate <builder-0.7.3-qualified-candidate.tgz> --record governance/release-qualifications/clossys-builder-0.7.3.json
+inspector  -> node scripts/publish-qualified-directory.mjs --package inspector --candidate <inspector-0.1.18-qualified-candidate.tgz> --record governance/release-qualifications/clossys-inspector-0.1.18.json
+```
+
+The wrapper makes a private staging directory, FULL-scans its unpacked
+contents, re-packs it with lifecycle scripts disabled, and requires the
+SHA-1/SHA-256/SHA-512 tuple to match before it runs the one interactive
+`npm publish .` command. Do not replace it with a tarball, URL, package
+specifier, token, OTP, or a workflow upload flag.
+
+Before each wrapper invocation, run the mandatory preflight sequence against
+the exact candidate, produce a fresh credentialless transcript, and retain
+both outputs:
+
+```text
+node scripts/preflight-package.mjs packages/<name> --require-denylist
+node scripts/run-candidate-qualification.mjs --package <name> --tarball <candidate.tgz> --output <fresh-transcript.json>
+node scripts/validate-candidate-publish.mjs --package <name> --tarball <candidate.tgz> --transcript <fresh-transcript.json> --mode prepublish
+```
+
+The transcript passed to `validate-candidate-publish.mjs` must be this fresh
+file from the immediately preceding credentialless run; the embedded
+transcript in a retained qualification record is not a substitute.
+
+After the owner upload completes, perform the anonymous served-byte
+verification described below and save its exact `registry-proof.json` outside
+the repository. Then create the one retained publication record with the
+credentialless recorder. A trusted-publisher publication uses the closed v2
+record; an owner-present publication uses the same recorder and the legacy
+owner evidence shape accepted by the validator:
+
+```text
+node scripts/record-later-publication.mjs \
+  --package <name> \
+  --qualification governance/release-qualifications/clossys-<name>-<version>.json \
+  --candidate <candidate.tgz> \
+  --proof <registry-proof.json> \
+  --publication <publication-evidence.json>
+```
+
+The v3 replay path additionally requires both regular, non-symlink inputs;
+supplying only one fails, while omitting both continues to select the ordinary
+v1/v2 path:
+
+```text
+  --artifact-archive <qualified-candidate.zip> \
+  --replay-evidence <run-and-artifact-id.json>
+```
+
+The archive is the source of the fresh transcript and candidate tarball — a
+separate locally generated transcript is not accepted. The anonymous registry
+proof remains a separate `--proof` input or is fetched by the recorder's
+ordinary `--fetch` path, and must exactly join those candidate bytes. The
+recorder computes the archive digest, validates its exact contents against the
+qualification and served artifact, credential-freely re-reads the named GitHub
+run/jobs/artifact metadata, and performs its own isolated public npm install
+plus `npm audit signatures --include-attestations` verification against the
+exact source and served artifact before retaining the closed identities and
+SHA-256 digests.
+
+`publication-evidence.json` is a closed object. For trusted publication it
+must contain `mode: "trusted-publisher"`, the canonical publication time and
+run reference, plus the exact workflow provenance; for an owner-present first
+publication it contains `mode: "owner-present"`, the canonical publication
+time, and an HTTPS reference without provenance. Use `--fetch` in place of
+`--candidate` and `--proof` when the recorder should obtain both artifacts
+anonymously from public npm. The recorder writes only
+`governance/release-publications/later/<name>-<version>.json`, refuses an
+existing path (including a symlink), and self-validates the retained bytes.
+Run `npm run check:later-publications` after creation and review that one-file
+change before proceeding to the next package. Never put credentials in either
+evidence file.
+
+**Stop after every row.** Anonymously fetch the exact public
+`@clossys/<package>@<version>` packument and tarball, then compare its name,
+version, public access, `dist.integrity`, SHA-1/SHA-256/SHA-512, packed
+manifest, and raw size with the reviewed candidate. Do not start the next row
+until that evidence is retained. These fourteen rows are independent
+per-package transitions, not a shared quarantine: a completed and verified
+row remains that package's individual immutable record, and an untouched
+candidate remains qualified unless its bytes, source, or retained evidence
+change.
+
+If an upload or its verification fails or is uncertain, stop. Query the
+anonymous registry for that exact name and version before any retry. If it is
+absent, create no publication record and require renewed owner authorization
+before retrying. If that exact version is visibly served, retain its individual
+publication record only after the required anonymous served-byte verification;
+the already verified prefix remains valid as individual records. A published
+version is never deleted, unpublished, overwritten, or reused; a defect moves
+forward through a newly qualified version.
+
+Only after a package's first identity and anonymous served-byte verification
+are complete may its owner configure that package's npm trusted publisher and
+the restrictive **Require two-factor authentication and disallow tokens**
+setting. A later bounded patch through the protected `npm-publish` OIDC path
+should not need npm terminal 2FA once that trust is configured, but it can
+still pause for the required GitHub protected-environment reviewer. Neither
+the retained publication record nor the source successor establishes that
+provider configuration; its current state is recorded below.
+
+`@clossys/publisher@0.1.9` is quarantined and unpublished. Its immutable
+qualification record remains retained for audit, but its candidate tarball was
+packed outside the required release runtime, so the retained bytes cannot be
+rewritten under the append-only qualification contract. No registry upload was
+performed. The Publisher source has therefore advanced to `0.1.10` as the new
+first-publication candidate. Writer and Designer passed anonymous served-byte
+verification, Publisher 0.1.10 was packed and replayed with the pinned release
+runtime, and its owner-present upload now has both an immutable qualification
+record and an anonymous served-byte publication record. Publisher's npm
+trusted publisher is now configured for `clossys/foundry` through
+`publish.yml` and its `npm-publish` environment, with only `npm publish`
+allowed; npm's restrictive **Require two-factor authentication and disallow
+tokens** setting is checked. That configuration establishes publisher trust
+only: it does not qualify, publish, or registry-verify `0.1.11`. The source has
+advanced to that later protected OIDC successor, and it now has its own
+immutable qualification record but no publication record. Do not prepare a
+0.1.11 trusted-publisher/OIDC upload until its fresh exact-head candidate has
+passed the required qualification and FULL release checks. After upload,
+require anonymous registry and provenance verification before treating 0.1.11
+as published.
 
 ### Why the name-collision check runs first, always
 
@@ -428,16 +697,16 @@ checks are retained only for immutable predecessor evidence; W1E must prove
 the corresponding public npm namespace facts for `@clossys` before enabling
 the new lane.
 
-### Installing during W1D
+### Installing after the first W1E cohort
 
-There is no supported new-namespace install yet. The source manifests are
-prepared for `@clossys` on public npm, but W1D deliberately publishes nothing.
-An install command becomes current guidance only after W1E records the exact
-registry-served identity, digest, and public-access result.
+The current Trio identities are supported through ordinary credential-free
+public npm resolution: Advisor 0.1.5, Starter 0.1.4, and Controller 0.8.23.
+Their registry-served identities, digests, anonymous public access, and npm
+trusted-publisher provenance have been verified. The owner-present first
+releases remain immutable historical evidence, not current installation pins.
 
-No npm token belongs in a consumer `.npmrc` for a public package. The expected
-post-W1E shape is ordinary credential-free npm resolution, but the repository
-must not claim that path works before the registry does.
+No npm token belongs in a consumer `.npmrc` for a public package. Public npm
+resolution is credential-free; publication trust remains producer-only.
 
 ### Public access and parity
 
@@ -492,10 +761,11 @@ evidence or permission to upload.
 
 ## 8. W1E publication and installation boundary
 
-W1E, not W1D, owns the first `@clossys` public npm publications. First
-identities use the owner-present interactive handoff above. Only after the
-complete Trio is public and verified may W1E enable npm trusted publishing
-through a separately reviewed change. For each selected package, W1E must:
+W1E, not W1D, owns the first `@clossys` public npm publications. The
+owner-present first identities and the provenance-bearing current Trio releases
+are public and anonymously verified. Every current Trio package's
+token-disallow setting is also value-free verified. For each selected package,
+W1E requires:
 
 1. run FULL public-safety and package preflight against the exact candidate;
 2. retain exact candidate qualification, review, and tarball digest joins;
@@ -521,6 +791,6 @@ for the capability and wiring ledger.
 | Thing | Where | Notes |
 | --- | --- | --- |
 | Denylist | `~/.config/public-safety/denylist-foundry.json` locally; `PUBLIC_SAFETY_DENYLIST_B64` repository secret in CI | Never committed here — it names exactly what must not be public. Specific to this repository — never reuse a denylist file written for a different project. |
-| W1E publish trust | Outside the W1D tree | Not active during W1D or the owner-present first-identity publications. Only after the complete Trio exists and verifies may W1E configure and review each npm trusted publisher, the `npm-publish` required reviewer, and the later token-disallow setting. No publish token or value is recorded here. |
-| Public npm consumer read | None | Future `@clossys` reads are anonymous. A consumer token or private-registry mapping is neither required nor supported. |
+| W1E publish trust | Outside the W1D tree | Trusted publishing and the protected `npm-publish` path have proved the current Trio releases. Value-free provider evidence confirms each package-level token-disallow setting. No publish token or value is recorded here. |
+| Public npm consumer read | None | Current `@clossys` reads are anonymous. A consumer token or private-registry mapping is neither required nor supported. |
 | Predecessor GitHub Packages credentials | Historical consumer environments only | They explain immutable `@vespeneventures` evidence and must not be copied into current `@clossys` instructions or used as a fallback lane. |

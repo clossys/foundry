@@ -75,4 +75,17 @@ describe("Hero", () => {
     );
     expect(screen.getByRole("heading")).toHaveTextContent("Heading text (beta)");
   });
+
+  it.each([
+    ["base", "", "text-ink-primary", "text-ink-secondary"],
+    ["sunken", "bg-surface-sunken", "text-ink-primary", "text-ink-secondary"],
+    ["inverse", "bg-surface-inverse", "text-ink-on-inverse", "text-ink-on-inverse-muted"],
+  ] as const)("selects the complete %s ground policy", (ground, surface, primary, secondary) => {
+    const { container } = render(<Hero heading="Heading text" description="Description" ground={ground} />);
+    const root = container.querySelector("section") as HTMLElement;
+    if (surface) expect(root).toHaveClass(surface);
+    else expect(root.className).not.toMatch(/\bbg-surface-/);
+    expect(screen.getByRole("heading")).toHaveClass(primary);
+    expect(screen.getByText("Description")).toHaveClass(secondary);
+  });
 });

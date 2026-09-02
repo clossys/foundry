@@ -161,6 +161,7 @@ import { fileURLToPath } from "node:url";
 import { loadReleaseCatalog } from "./check-release-catalog.mjs";
 import {
   identityState,
+  historicalRepositoryAllowance,
   isIdentityTransitionControlSurface,
   lineDigest,
   loadTransitionPolicy,
@@ -323,6 +324,7 @@ const transitionPolicyPath = join(root, "governance", "package-identity-transiti
 let transitionPolicy = null;
 let transitionState = null;
 let historicalLineKeys = new Set();
+let historicalRepositoryAllowances = new Map();
 if (existsSync(transitionPolicyPath)) {
   try {
     transitionPolicy = loadTransitionPolicy(transitionPolicyPath);
@@ -333,6 +335,8 @@ if (existsSync(transitionPolicyPath)) {
     const failures = validateHistoryInventory(inventory, transitionPolicy);
     if (failures.length) die(`cannot validate ${transitionPolicy.historyInventory}: ${failures.join("; ")}`);
     historicalLineKeys = new Set(inventory.references.map((item) => `${item.path}\0${item.lineSha256}`));
+    const repositoryInventory = JSON.parse(readFileSync(join(root, transitionPolicy.historicalRepositoryInventory), "utf8"));
+    historicalRepositoryAllowances = historicalRepositoryAllowance(repositoryInventory, transitionPolicy);
   } catch (error) {
     die(`cannot validate package identity transition inputs: ${error.message}`);
   }
@@ -629,6 +633,17 @@ for (const file of files) {
           ((kind === "npm-scope" || kind === "bare-scope") && normalized === oldScope) ||
           (kind === "forge-slug" && normalized === oldRepository);
         if (isRetiredIdentity && historicalLineKeys.has(`${rel}\0${lineDigest(line)}`)) return;
+        if (
+          kind === "forge-slug" &&
+          transitionPolicy.historicalRepositories.includes(normalized)
+        ) {
+          const key = `${rel}\0${lineDigest(line)}`;
+          const remaining = historicalRepositoryAllowances.get(key) ?? 0;
+          if (remaining > 0) {
+            historicalRepositoryAllowances.set(key, remaining - 1);
+            return;
+          }
+        }
       }
       findings.push({ file: rel, line: index + 1, kind, reference, text: line.trim().slice(0, 200) });
     };
@@ -648,6 +663,11 @@ for (const file of files) {
     }
   });
 }
+
+// The package-identity transition gate validates the complete content-addressed
+// alias multiset, including bare registry repository fields. This checker sees
+// only forge URLs, so it consumes matching URL allowances without treating an
+// unscanned bare field as a missing URL occurrence.
 
 // ------------------------------------------------------------------- reporting
 

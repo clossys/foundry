@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "kind": "foundry-later-publication-v1",
+  "qualification": {
+    "path": "governance/release-qualifications/clossys-observer-0.2.3.json",
+    "sha256": "92022d3a26ee53ea33ec3797d859617044b14db154bd4734a2ad55382c268815"
+  },
+  "candidate": {
+    "name": "@clossys/observer",
+    "version": "0.2.3",
+    "packageTreeSha1": "894895b58200281d3e166324d63a69495bd67111",
+    "packageManifestSha256": "e06e1831bb24442c5522cf43982cc15084c639796fda3fc76541413808831834",
+    "tarball": {
+      "sha1": "6a2ed2400a08f7768b89ee97110a3c26441f01f4",
+      "sha256": "56ffdf84b6f20405966f9e3b5913bcff8cfd9cbb00df49fd385271fcd5201567",
+      "sha512": "d66aac686e3a8d8830097cb6319d76e7f68dfe3d3d9d8eda760c601e0c3a32410cca68edf5553e1a53127579a5866b1d6fd6c312d2119aef86df20f2da541e0c"
+    }
+  },
+  "source": {
+    "reviewedCommit": "4bd2a3ad4909409f7735ce042f2c93b23b9aedd7",
+    "rootPackageJsonSha256": "c6f5f6791c7d6e105376603da0152618ae03aa5f25a522dda0432c11999a9bf1",
+    "rootPackageLockSha256": "5f4cdde3f18ddd555680034f87ea682408f4800e189a3df8041bd3f7d500a73a",
+    "policySha256": "c9053ff22da0c38d1a78c8093e709bde07fddec540306a9eef14657e821545c8",
+    "adapterSha256": "4ebd5d4563071a2077df017624aa8ea18050d6dcb0824f2b2543ff8143f4ddc2",
+    "fixtureSetSha256": "383fdef25cd84be32ea7306fe26d130a6e795b5df3f5116899adf86f67836c55"
+  },
+  "catalog": {
+    "path": "governance/release-catalog.json",
+    "sha256": "3f43692f3c12dc1b21a3931fcf2abd53a68a207874b2ae2206e8e10f08b68404",
+    "packageKey": "observer"
+  },
+  "publication": {
+    "mode": "owner-present",
+    "publishedAt": "2026-08-31T17:48:01.940Z",
+    "reference": "https://www.npmjs.com/package/@clossys/observer/v/0.2.3"
+  },
+  "registryProof": {
+    "schemaVersion": 2,
+    "kind": "public-npm-anonymous-registry-proof-v2",
+    "evidence": {
+      "registry": "https://registry.npmjs.org",
+      "access": "anonymous",
+      "name": "@clossys/observer",
+      "version": "0.2.3",
+      "metadataUrl": "https://registry.npmjs.org/%40clossys%2Fobserver/0.2.3",
+      "repository": "clossys/foundry",
+      "tarballUrl": "https://registry.npmjs.org/@clossys/observer/-/observer-0.2.3.tgz",
+      "integrity": "sha512-1mqsaG46jYgwCXy2MZ125/aN/j09nY7adgxgHgw6MkEMymjt9VU+GlMSdXmlhmsdb9bDEtIRmu+G3yDy2lQeDA==",
+      "shasum": "6a2ed2400a08f7768b89ee97110a3c26441f01f4",
+      "sha256": "56ffdf84b6f20405966f9e3b5913bcff8cfd9cbb00df49fd385271fcd5201567",
+      "sha512": "d66aac686e3a8d8830097cb6319d76e7f68dfe3d3d9d8eda760c601e0c3a32410cca68edf5553e1a53127579a5866b1d6fd6c312d2119aef86df20f2da541e0c",
+      "packedManifestSha256": "e06e1831bb24442c5522cf43982cc15084c639796fda3fc76541413808831834",
+      "size": 63542
+    }
+  }
+}
