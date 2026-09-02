@@ -11,7 +11,9 @@ const manifest = JSON.parse(readFileSync(fileURLToPath(new URL("../package.json"
 
 describe("public role boundary", () => {
   it("ships one gate, zero runtime dependencies, and no provider adapter surface", () => {
-    expect(manifest.bin).toEqual({ "influencer-check": "./dist/cli.js" });
+    // Not "./dist/cli.js": npm rejects that form and silently drops the entry
+    // on publish, shipping a package with no working CLI at all.
+    expect(manifest.bin).toEqual({ "influencer-check": "dist/cli.js" });
     expect(manifest.dependencies).toBeUndefined();
     expect(Object.keys(manifest.exports ?? {})).toEqual(["."]);
     expect(existsSync(`${packageRoot}/src/providers`)).toBe(false);

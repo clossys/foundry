@@ -1,6 +1,6 @@
 {
   "name": "@clossys/locksmith",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -18,7 +18,7 @@
     }
   },
   "bin": {
-    "vespene-secrets-infisical": "./dist/infisical/cli.js"
+    "vespene-secrets-infisical": "dist/infisical/cli.js"
   },
   "files": [
     "dist",
@@ -45,7 +45,7 @@
     "oidc",
     "cli"
   ],
-  "author": "Vespene Ventures",
+  "author": "Clossys",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/clossys/foundry.git",

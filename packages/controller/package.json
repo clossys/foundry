@@ -1,6 +1,6 @@
 {
   "name": "@clossys/controller",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -73,15 +73,15 @@
     "./contracts/completion-evidence-contract.json": "./contracts/completion-evidence-contract.json"
   },
   "bin": {
-    "foundry-governance": "./dist/cli.js",
-    "foundry-check": "./dist/gates/cli.js",
-    "repository-check": "./dist/repository/bin.js",
-    "repository-profile-check": "./dist/repository/run-bin.js",
-    "repository-package-adoption-check": "./dist/repository/adoption-bin.js",
-    "review-check": "./dist/review/cli.js",
-    "foundry-position-check": "./dist/positions/bin.js",
-    "foundry-completion-evidence-check": "./dist/positions/completion-evidence-bin.js",
-    "singular-authority-check": "./dist/release/singular-authority-bin.js"
+    "foundry-governance": "dist/cli.js",
+    "foundry-check": "dist/gates/cli.js",
+    "repository-check": "dist/repository/bin.js",
+    "repository-profile-check": "dist/repository/run-bin.js",
+    "repository-package-adoption-check": "dist/repository/adoption-bin.js",
+    "review-check": "dist/review/cli.js",
+    "foundry-position-check": "dist/positions/bin.js",
+    "foundry-completion-evidence-check": "dist/positions/completion-evidence-bin.js",
+    "singular-authority-check": "dist/release/singular-authority-bin.js"
   },
   "files": [
     "dist",
@@ -112,7 +112,7 @@
     "content-addressed",
     "typescript"
   ],
-  "author": "Calvin Hung",
+  "author": "Clossys",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/clossys/foundry.git",

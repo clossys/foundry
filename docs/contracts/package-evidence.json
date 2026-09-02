@@ -87,7 +87,14 @@
         "defectOrigin": "injected",
         "defect": "The activation-violated request and materialized target input caused the installed Starter CLI to execute its fixed decision path and emit its own violated exit 1; the raw retained argv, inputs, overlay, stdout, and stderr bind the package-authentic run.",
         "control": "The matched activation-satisfied request used the same exact adapter, installed CLI, and bounded consumer overlay and exited 0; the indeterminate request exited 2, and uninstall/reinstall restored the disposable consumer."
-      }
+      },
+      "gaps": [
+        {
+          "state": "staged",
+          "reason": "The sole staging site is packageAuthenticStarterQualificationSite(), which requires the retained qualification record to bind the exact current manifest version. The catalogue-wide attribution and bin change bumped starter to 0.1.6, and a record for 0.1.6 can only be produced by a qualify run against the merged tree. Remove this gap once that record is retained.",
+          "issue": 784
+        }
+      ]
     },
     {
       "name": "@clossys/strategist",

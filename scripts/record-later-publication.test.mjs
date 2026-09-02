@@ -58,6 +58,31 @@ function build(overrides = {}) {
   });
 }
 
+// A retained record supplies the real schema; every field that binds a specific
+// tree — the version, the digests, the reviewed commit — is derived from the
+// package actually packed below. The template's own version is therefore
+// irrelevant, which is the point: a catalogue-wide bump must not stale a test
+// about the creator's behaviour.
+const QUALIFICATION_TEMPLATE = "governance/release-qualifications/clossys-strategist-0.1.2.json";
+function syntheticQualification({ root, base, manifestBytes, version, hashes }) {
+  const qualification = JSON.parse(readFileSync(join(process.cwd(), QUALIFICATION_TEMPLATE), "utf8"));
+  qualification.reviewedCommit = base;
+  qualification.candidateReview.headSha = base;
+  qualification.candidate.version = version;
+  qualification.candidate.packageManifestSha256 = digest("sha256", manifestBytes);
+  qualification.candidate.packageTreeSha1 = execFileSync("git", ["rev-parse", `${base}:packages/strategist`], { cwd: root, encoding: "utf8" }).trim();
+  qualification.candidate.tarball = hashes;
+  qualification.rootPackageJsonSha256 = digest("sha256", readFileSync(join(root, "package.json")));
+  qualification.rootPackageLockSha256 = digest("sha256", readFileSync(join(root, "package-lock.json")));
+  qualification.transcript.candidate.version = version;
+  qualification.transcript.coverage.installedManifestSha256 = qualification.candidate.packageManifestSha256;
+  qualification.transcript.tarball = hashes;
+  const transcriptForDigest = { ...qualification.transcript };
+  delete transcriptForDigest.canonicalSha256;
+  qualification.transcript.canonicalSha256 = digest("sha256", JSON.stringify(transcriptForDigest));
+  return qualification;
+}
+
 test("creator emits exactly the closed later-publication v2 shape", () => {
   const result = build();
   assert.deepEqual(Object.keys(result.record), ["schemaVersion", "kind", "qualification", "candidate", "source", "catalog", "publication", "registryProof"]);
@@ -138,47 +163,50 @@ test("creator writes one canonical owner-present record in a synthetic git repos
   const packDirectory = join(root, ".pack-output");
   mkdirSync(packDirectory);
   execFileSync("npm", ["pack", "--ignore-scripts", "--pack-destination", packDirectory, "--workspace=packages/strategist"], { cwd: root, stdio: ["ignore", "ignore", "ignore"] });
-  const candidatePath = join(packDirectory, "clossys-strategist-0.1.2.tgz");
+  // Derived, not hardcoded: the packed filename carries strategist's current
+  // version, so pinning it here breaks on every version bump.
+  const candidatePath = join(packDirectory, readdirSync(packDirectory).find((entry) => entry.endsWith(".tgz")));
   const candidateBytesForRecord = readFileSync(candidatePath);
   const hashes = { sha1: digest("sha1", candidateBytesForRecord), sha256: digest("sha256", candidateBytesForRecord), sha512: digest("sha512", candidateBytesForRecord) };
-  const qualificationPath = "governance/release-qualifications/clossys-strategist-0.1.2.json";
-  const qualification = JSON.parse(readFileSync(join(sourceRoot, qualificationPath), "utf8"));
-  qualification.reviewedCommit = base;
-  qualification.candidateReview.headSha = base;
-  qualification.candidate.packageTreeSha1 = execFileSync("git", ["rev-parse", `${base}:packages/strategist`], { cwd: root, encoding: "utf8" }).trim();
-  qualification.rootPackageJsonSha256 = digest("sha256", readFileSync(join(root, "package.json")));
-  qualification.rootPackageLockSha256 = digest("sha256", readFileSync(join(root, "package-lock.json")));
-  qualification.candidate.tarball = hashes;
-  qualification.transcript.tarball = hashes;
-  const transcriptForDigest = { ...qualification.transcript };
-  delete transcriptForDigest.canonicalSha256;
-  qualification.transcript.canonicalSha256 = digest("sha256", JSON.stringify(transcriptForDigest));
+  const manifestBytes = readFileSync(join(root, "packages/strategist/package.json"));
+  const version = JSON.parse(manifestBytes).version;
+  const qualification = syntheticQualification({ root, base, manifestBytes, version, hashes });
+  const qualificationPath = `governance/release-qualifications/clossys-strategist-${version}.json`;
   writeFileSync(join(root, qualificationPath), `${JSON.stringify(qualification, null, 2)}\n`);
   execFileSync("git", ["add", qualificationPath], { cwd: root });
   execFileSync("git", ["commit", "-qm", "synthetic qualification record"], { cwd: root });
 
-  const manifestBytes = readFileSync(join(root, "packages/strategist/package.json"));
   const proof = {
     schemaVersion: 2, kind: "public-npm-anonymous-registry-proof-v2", evidence: {
       registry: PUBLIC_NPM_REGISTRY, access: "anonymous", name: qualification.candidate.name, version: qualification.candidate.version,
       metadataUrl: publicNpmVersionUrl(PUBLIC_NPM_REGISTRY, qualification.candidate.name, qualification.candidate.version), repository: "clossys/foundry",
-      tarballUrl: `${PUBLIC_NPM_REGISTRY}/@clossys/strategist/-/strategist-0.1.2.tgz`, integrity: `sha512-${Buffer.from(hashes.sha512, "hex").toString("base64")}`,
+      tarballUrl: `${PUBLIC_NPM_REGISTRY}/@clossys/strategist/-/strategist-${version}.tgz`, integrity: `sha512-${Buffer.from(hashes.sha512, "hex").toString("base64")}`,
       shasum: hashes.sha1, sha256: hashes.sha256, sha512: hashes.sha512, packedManifestSha256: digest("sha256", manifestBytes), size: candidateBytesForRecord.length,
     },
   };
   const proofPath = join(root, "registry-proof.json");
   writeFileSync(proofPath, `${JSON.stringify(proof, null, 2)}\n`);
   const publicationPath = join(root, "publication-evidence.json");
-  writeFileSync(publicationPath, `${JSON.stringify({ mode: "owner-present", publishedAt: "2026-08-31T00:00:00.000Z", reference: "https://registry.npmjs.org/%40clossys%2Fstrategist/0.1.2" }, null, 2)}\n`);
+  writeFileSync(publicationPath, `${JSON.stringify({ mode: "owner-present", publishedAt: "2026-08-31T00:00:00.000Z", reference: `https://registry.npmjs.org/%40clossys%2Fstrategist/${version}` }, null, 2)}\n`);
 
-  const result = await createLaterPublicationRecord({
+  const call = () => createLaterPublicationRecord({
     root, packageKey: "strategist", qualificationPath: join(root, qualificationPath), candidatePath, proofPath, publicationPath, env: {}, releaseRuntimeRun,
   });
-  assert.equal(result.path, "governance/release-publications/later/strategist-0.1.2.json");
+  const result = await call();
+  assert.equal(result.path, `governance/release-publications/later/strategist-${version}.json`);
   assert.equal(result.record.kind, "foundry-later-publication-v1");
   assert.deepEqual(Object.keys(JSON.parse(readFileSync(join(root, result.path), "utf8"))), ["schemaVersion", "kind", "qualification", "candidate", "source", "catalog", "publication", "registryProof"]);
-  assert.deepEqual(readdirSync(join(root, "governance/release-publications/later")), ["strategist-0.1.2.json"]);
+  assert.deepEqual(readdirSync(join(root, "governance/release-publications/later")), [`strategist-${version}.json`]);
   assert.deepEqual(readFileSync(join(root, result.path)), result.bytes);
+
+  // The qualification above is derived from the very tree it qualifies, so the
+  // manifest join is satisfied by construction and would no longer be exercised
+  // by the happy path alone. Drift the live manifest and assert the creator
+  // still refuses: that refusal is the property these tests exist to defend,
+  // and it must not rest on a package's version happening to be stale.
+  writeFileSync(join(root, "packages/strategist/package.json"), `${manifestBytes.toString("utf8")}\n`);
+  await assert.rejects(call(), /current package manifest does not match the immutable qualification/);
+  assert.deepEqual(readdirSync(join(root, "governance/release-publications/later")), [`strategist-${version}.json`]);
 });
 
 test("creator retains one provider-bound replay record from the exact qualified archive", async (t) => {
@@ -203,21 +231,15 @@ test("creator retains one provider-bound replay record from the exact qualified 
   const packDirectory = join(root, ".pack-output");
   mkdirSync(packDirectory);
   execFileSync("npm", ["pack", "--ignore-scripts", "--pack-destination", packDirectory, "--workspace=packages/strategist"], { cwd: root, stdio: ["ignore", "ignore", "ignore"] });
-  const candidatePath = join(packDirectory, "clossys-strategist-0.1.2.tgz");
+  // Derived, not hardcoded: the packed filename carries strategist's current
+  // version, so pinning it here breaks on every version bump.
+  const candidatePath = join(packDirectory, readdirSync(packDirectory).find((entry) => entry.endsWith(".tgz")));
   const candidateBytesForRecord = readFileSync(candidatePath);
   const hashes = { sha1: digest("sha1", candidateBytesForRecord), sha256: digest("sha256", candidateBytesForRecord), sha512: digest("sha512", candidateBytesForRecord) };
-  const qualificationPath = "governance/release-qualifications/clossys-strategist-0.1.2.json";
-  const qualification = JSON.parse(readFileSync(join(sourceRoot, qualificationPath), "utf8"));
-  qualification.reviewedCommit = base;
-  qualification.candidateReview.headSha = base;
-  qualification.candidate.packageTreeSha1 = execFileSync("git", ["rev-parse", `${base}:packages/strategist`], { cwd: root, encoding: "utf8" }).trim();
-  qualification.rootPackageJsonSha256 = digest("sha256", readFileSync(join(root, "package.json")));
-  qualification.rootPackageLockSha256 = digest("sha256", readFileSync(join(root, "package-lock.json")));
-  qualification.candidate.tarball = hashes;
-  qualification.transcript.tarball = hashes;
-  const transcriptForDigest = { ...qualification.transcript };
-  delete transcriptForDigest.canonicalSha256;
-  qualification.transcript.canonicalSha256 = digest("sha256", JSON.stringify(transcriptForDigest));
+  const manifestBytes = readFileSync(join(root, "packages/strategist/package.json"));
+  const version = JSON.parse(manifestBytes).version;
+  const qualification = syntheticQualification({ root, base, manifestBytes, version, hashes });
+  const qualificationPath = `governance/release-qualifications/clossys-strategist-${version}.json`;
   writeFileSync(join(root, qualificationPath), `${JSON.stringify(qualification, null, 2)}\n`);
   execFileSync("git", ["add", qualificationPath], { cwd: root });
   execFileSync("git", ["commit", "-qm", "synthetic qualification record"], { cwd: root });
@@ -230,12 +252,11 @@ test("creator retains one provider-bound replay record from the exact qualified 
   execFileSync("git", ["commit", "-qm", "synthetic root resolution drift"], { cwd: root });
   const sourceSha = execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim();
 
-  const manifestBytes = readFileSync(join(root, "packages/strategist/package.json"));
   const replayProof = {
     schemaVersion: 2, kind: "public-npm-anonymous-registry-proof-v2", evidence: {
       registry: PUBLIC_NPM_REGISTRY, access: "anonymous", name: qualification.candidate.name, version: qualification.candidate.version,
       metadataUrl: publicNpmVersionUrl(PUBLIC_NPM_REGISTRY, qualification.candidate.name, qualification.candidate.version), repository: "clossys/foundry",
-      tarballUrl: `${PUBLIC_NPM_REGISTRY}/@clossys/strategist/-/strategist-0.1.2.tgz`, integrity: `sha512-${Buffer.from(hashes.sha512, "hex").toString("base64")}`,
+      tarballUrl: `${PUBLIC_NPM_REGISTRY}/@clossys/strategist/-/strategist-${version}.tgz`, integrity: `sha512-${Buffer.from(hashes.sha512, "hex").toString("base64")}`,
       shasum: hashes.sha1, sha256: hashes.sha256, sha512: hashes.sha512, packedManifestSha256: digest("sha256", manifestBytes), size: candidateBytesForRecord.length,
     },
   };
@@ -243,7 +264,7 @@ test("creator retains one provider-bound replay record from the exact qualified 
   writeFileSync(proofPath, `${JSON.stringify(replayProof, null, 2)}\n`);
   const runId = 777, artifactId = 778;
   const publicationPath = join(root, "publication-evidence.json");
-  const attestationUrl = `${PUBLIC_NPM_REGISTRY}/-/npm/v1/attestations/%40clossys%2Fstrategist%400.1.2`;
+  const attestationUrl = `${PUBLIC_NPM_REGISTRY}/-/npm/v1/attestations/%40clossys%2Fstrategist%40${version}`;
   writeFileSync(publicationPath, `${JSON.stringify({
     mode: "trusted-publisher", publishedAt: "2026-08-31T00:00:00.000Z", reference: `https://github.com/clossys/foundry/actions/runs/${runId}`,
     provenance: {
@@ -263,7 +284,7 @@ test("creator retains one provider-bound replay record from the exact qualified 
 
   const statement = {
     _type: "https://in-toto.io/Statement/v1",
-    subject: [{ name: "pkg:npm/%40clossys/strategist@0.1.2", digest: { sha512: hashes.sha512 } }],
+    subject: [{ name: `pkg:npm/%40clossys/strategist@${version}`, digest: { sha512: hashes.sha512 } }],
     predicateType: "https://slsa.dev/provenance/v1",
     predicate: {
       buildDefinition: {
@@ -300,7 +321,7 @@ test("creator retains one provider-bound replay record from the exact qualified 
   assert.equal(result.record.runQualification.artifact.archiveSha256, `sha256:${digest("sha256", archiveBytes)}`);
   assert.equal(result.record.runQualification.transcript.rawSha256, digest("sha256", Buffer.from(`${JSON.stringify(qualification.transcript, null, 2)}\n`)));
   assert.equal(result.record.runQualification.transcript.comparableSha256, comparableTranscriptSha256(qualification.transcript));
-  assert.deepEqual(readdirSync(join(root, "governance/release-publications/later")), ["strategist-0.1.2.json"]);
+  assert.deepEqual(readdirSync(join(root, "governance/release-publications/later")), [`strategist-${version}.json`]);
 });
 
 test("creator refuses credential-bearing environments before reading inputs", async () => {

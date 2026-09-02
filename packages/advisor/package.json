@@ -1,6 +1,6 @@
 {
   "name": "@clossys/advisor",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -14,8 +14,8 @@
     }
   },
   "bin": {
-    "advisor-check": "./dist/cli.js",
-    "advisor-execution-readiness": "./dist/execution-readiness-cli.js"
+    "advisor-check": "dist/cli.js",
+    "advisor-execution-readiness": "dist/execution-readiness-cli.js"
   },
   "files": [
     "dist",
@@ -34,7 +34,7 @@
     "sponsor",
     "typescript"
   ],
-  "author": "Calvin Hung",
+  "author": "Clossys",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/clossys/foundry.git",

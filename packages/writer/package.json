@@ -1,6 +1,6 @@
 {
   "name": "@clossys/writer",
-  "version": "0.3.3",
+  "version": "0.3.4",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -19,7 +19,7 @@
     "./voice-record.template.jsonc": "./templates/voice-record.template.jsonc"
   },
   "bin": {
-    "writer-check": "./dist/cli.js"
+    "writer-check": "dist/cli.js"
   },
   "files": [
     "dist",
@@ -41,7 +41,7 @@
     "content-checker",
     "typescript"
   ],
-  "author": "Calvin Hung",
+  "author": "Clossys",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/clossys/foundry.git",

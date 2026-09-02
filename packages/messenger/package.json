@@ -1,6 +1,6 @@
 {
   "name": "@clossys/messenger",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -18,7 +18,7 @@
     }
   },
   "bin": {
-    "messenger-check": "./dist/cli.js"
+    "messenger-check": "dist/cli.js"
   },
   "files": [
     "dist",
@@ -37,7 +37,7 @@
     "idempotency",
     "typescript"
   ],
-  "author": "Calvin Hung",
+  "author": "Clossys",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/clossys/foundry.git",

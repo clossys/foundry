@@ -1,6 +1,6 @@
 {
   "name": "@clossys/inspector",
-  "version": "0.1.20",
+  "version": "0.1.21",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -19,7 +19,7 @@
     "./documents/*": "./documents/*"
   },
   "bin": {
-    "inspector": "./dist/bin.js"
+    "inspector": "dist/bin.js"
   },
   "files": [
     "dist",
@@ -42,7 +42,7 @@
     "policy-drift",
     "typescript"
   ],
-  "author": "Calvin Hung",
+  "author": "Clossys",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/clossys/foundry.git",

@@ -22,5 +22,5 @@ import type { PolicyBinding } from "./types.js";
 export const OWN_LICENSE_BINDING: PolicyBinding = {
   policyId: "self:license",
   digestAlgorithm: "sha256",
-  digest: "6ddaee99b49e12fbb935212ff047634e6cb1d95d3dc8f9f84855ef8fb28e11b3",
+  digest: "2fb06c60d79b0be483fd2dc0c907f58edb27afbc716e9d6c678384c38cf58544",
 };

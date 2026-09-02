@@ -66,12 +66,19 @@ function runAsync(command: string, args: readonly string[], cwd: string, timeout
   });
 }
 function writeJson(path: string, value: unknown): void { writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`); }
-function pack(directory: string, destination: string, name: string, version: string, environmentRoot: string): PackedPackage {
+// The version is DERIVED from the manifest that was actually packed, never
+// declared by the caller: the tarball carries whatever the manifest holds, so a
+// literal here does not pin anything — it just drifts on the next release bump
+// and reappears as an unrelated-looking `installed-bin` finding. The name stays
+// an explicit expectation, because it identifies which package is under test
+// and is not something a release moves.
+function pack(directory: string, destination: string, name: string, environmentRoot: string): PackedPackage {
   const output = run("npm", ["pack", "--json", "--pack-destination", destination, "--ignore-scripts"], directory, 30_000, environmentRoot);
   const item = JSON.parse(output) as Array<{ filename: string }>;
   const path = join(destination, item[0]?.filename ?? "");
-  const manifest = JSON.parse(readFileSync(join(directory, "package.json"), "utf8")) as { peerDependencies?: Record<string, string> };
-  return { name, version, path, integrity: integrityFor(path), peerDependencies: manifest.peerDependencies };
+  const manifest = JSON.parse(readFileSync(join(directory, "package.json"), "utf8")) as { name: string; version: string; peerDependencies?: Record<string, string> };
+  if (manifest.name !== name) throw new Error(`packed ${manifest.name} where ${name} was expected`);
+  return { name, version: manifest.version, path, integrity: integrityFor(path), peerDependencies: manifest.peerDependencies };
 }
 
 function assessment(target: { name: string; version: string; integrity: string; bin: string }, repository: string) {
@@ -218,12 +225,16 @@ describe("packed installed activation canaries", () => {
       run("npm", ["run", "build", "--workspace=packages/starter"], repoRoot, 30_000, fixtureRoot);
       const packed = join(fixtureRoot, "packed"); const targetPackage = join(fixtureRoot, "target-package");
       mkdirSync(packed); mkdirSync(join(targetPackage, "bin"), { recursive: true });
-      writeJson(join(targetPackage, "package.json"), { name: "@fixture/starter-target", version: "1.0.0", private: true, type: "module", bin: { "fixture-target-check": "./bin/check.js" }, peerDependencies: { "@clossys/advisor": "0.2.0" }, files: ["bin"] });
+      // Derived for the same reason as pack() above: this peer range must admit
+      // the Advisor actually packed below, and pnpm's resolution of it is
+      // asserted against that version in installPnpmConsumer.
+      const advisorVersion = (JSON.parse(readFileSync(join(repoRoot, "packages/advisor/package.json"), "utf8")) as { version: string }).version;
+      writeJson(join(targetPackage, "package.json"), { name: "@fixture/starter-target", version: "1.0.0", private: true, type: "module", bin: { "fixture-target-check": "./bin/check.js" }, peerDependencies: { "@clossys/advisor": advisorVersion }, files: ["bin"] });
       writeFileSync(join(targetPackage, "bin", "check.js"), "#!/usr/bin/env node\nimport { readFileSync } from 'node:fs';\nconst input = JSON.parse(readFileSync(process.argv[2], 'utf8'));\nconst state = input.mode === 'violated' ? 'violated' : input.mode === 'indeterminate' ? 'indeterminate' : 'satisfied';\nconsole.log(JSON.stringify({state}));\nprocess.exit(state === 'satisfied' ? 0 : state === 'violated' ? 1 : 2);\n");
       chmodSync(join(targetPackage, "bin", "check.js"), 0o755);
-      const starter = pack(join(repoRoot, "packages/starter"), packed, "@clossys/starter", "0.1.5", fixtureRoot);
-      const advisor = pack(join(repoRoot, "packages/advisor"), packed, "@clossys/advisor", "0.2.0", fixtureRoot);
-      const target = pack(targetPackage, packed, "@fixture/starter-target", "1.0.0", fixtureRoot);
+      const starter = pack(join(repoRoot, "packages/starter"), packed, "@clossys/starter", fixtureRoot);
+      const advisor = pack(join(repoRoot, "packages/advisor"), packed, "@clossys/advisor", fixtureRoot);
+      const target = pack(targetPackage, packed, "@fixture/starter-target", fixtureRoot);
       const installed = identities(starter, advisor, target); const registry = await localRegistry([starter, advisor, target]);
       try {
         const npmRoot = join(fixtureRoot, "npm-consumer"); mkdirSync(npmRoot);

@@ -3,6 +3,14 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.4.1] - 2026-09-02
+
+### Changed
+
+- Named Clossys as copyright holder in `LICENSE` and as `author` in the
+  package manifest, so every package in the catalogue attributes identically.
+
+
 ## [0.4.0] - 2026-09-02
 
 ### Added
