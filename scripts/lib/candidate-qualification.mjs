@@ -129,6 +129,35 @@ export function parseStrictJson(input) {
 const git = (root, args) => execFileSync("git", args, { cwd: root, encoding: "utf8" }).trim();
 const blob = (root, ref, path) => execFileSync("git", ["show", ref + ":" + path], { cwd: root, encoding: "utf8" });
 const content = (root, ref, path) => ref === "WORKTREE" ? readFileSync(join(root, path)) : blob(root, ref, path);
+function commitParents(root, commit) {
+  const [resolved, ...parents] = execFileSync("git", ["rev-list", "--parents", "-n", "1", commit], { cwd: root, encoding: "utf8" }).trim().split(/\s+/);
+  if (resolved !== commit) throw new Error("git returned an unexpected commit for its own rev-list lookup");
+  return parents;
+}
+function blobOid(root, ref, path) {
+  try { return execFileSync("git", ["rev-parse", "--verify", `${ref}:${path}`], { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim(); }
+  catch { return null; }
+}
+/**
+ * `git log --full-history` reports a merge commit for `path` whenever the
+ * merge's tree differs from *any* parent's, even when the merge only carries
+ * an unchanged blob through — a pass-through merge of a branch that already
+ * contains the immutable record (e.g. merging `main` after the record landed
+ * there). Those are not touches.
+ *
+ * The invariant being enforced is that the record keeps its introduction
+ * bytes, so that is what every commit in the range is measured against
+ * directly. Comparing a merge against its *parents* instead would be weaker
+ * in a way that matters: a side branch that rewrites the record and is then
+ * merged produces a merge whose blob equals the rewriting parent's, which a
+ * parent-relative test reads as a pass-through and lets through. Measuring
+ * against the introduction blob catches that, and reports a deletion (a
+ * missing blob) for free.
+ */
+function realPathTouches(root, range, path, introducedBlob) {
+  const commits = git(root, ["log", "--full-history", "--format=%H", range, "--", path]).split("\n").filter(Boolean);
+  return commits.filter((commit) => blobOid(root, commit, path) !== introducedBlob);
+}
 const POLICY_PATH = "governance/release-qualification-policy.json";
 function selectedPolicy(root, candidate, ref) {
   const policy = parseStrictJson(content(root, ref, POLICY_PATH));
@@ -169,7 +198,7 @@ export function validateRetainedCandidateQualification(r, { root = process.cwd()
       execFileSync("git", ["merge-base", "--is-ancestor", introductionCommit, sealedBase], { cwd: root, stdio: "ignore" });
       execFileSync("git", ["merge-base", "--is-ancestor", sealedBase, head], { cwd: root, stdio: "ignore" });
       if (digest(content(root, sealedBase, path)) !== history.introducedRecordSha256) fail(findings, "sealed-record-bytes", "sealed predecessor bytes must match their introduction and transition-base blobs.");
-      const laterTouches = git(root, ["log", "--full-history", "--format=%H", `${introductionCommit}..${head}`, "--", path]).split("\n").filter(Boolean);
+      const laterTouches = realPathTouches(root, `${introductionCommit}..${head}`, path, blobOid(root, introductionCommit, path));
       if (laterTouches.length > 0) fail(findings, "sealed-record-touches", "sealed predecessor record was touched after its introduction.");
     } catch (error) {
       fail(findings, "sealed-record-history", error instanceof Error ? error.message : "sealed predecessor history could not be verified.");
@@ -405,7 +434,7 @@ export function validateTrioControlTailAuthorization(authorization, { root = pro
         } catch { fail(a, "control-tail-introduction-digest", `authorization cannot read introduced control file: ${file?.path}`); }
       }
       for (const path of [TRIO_CONTROL_TAIL_AUTHORIZATION_PATH, ...TRIO_CONTROL_TAIL_PATHS]) {
-        const laterTouches = git(root, ["log", "--full-history", "--format=%H", `${introduction}..${head}`, "--", path]).split("\n").filter(Boolean);
+        const laterTouches = realPathTouches(root, `${introduction}..${head}`, path, blobOid(root, introduction, path));
         if (laterTouches.length > 0) fail(a, "control-tail-file-history", `sealed control-tail path was touched after introduction: ${path}`);
       }
     }
@@ -442,7 +471,7 @@ export function validateTrioPublicationClosure(publication, { root = process.cwd
     fileBytes = new Map(TRIO_PUBLICATION_TRANSITION_PATHS.filter((path) => path !== TRIO_PUBLICATION_PATH).map((path) => [path, content(root, transitionCommit, path)]));
     try {
       if (digest(content(root, transitionCommit, TRIO_PUBLICATION_PATH)) !== digest(readFileSync(join(root, TRIO_PUBLICATION_PATH)))) fail(a, "publication-transition-record", "retained publication record differs from its introduction blob.");
-      const later = git(root, ["log", "--full-history", "--format=%H", `${transitionCommit}..${head}`, "--", TRIO_PUBLICATION_PATH]).split("\n").filter(Boolean);
+      const later = realPathTouches(root, `${transitionCommit}..${head}`, TRIO_PUBLICATION_PATH, blobOid(root, transitionCommit, TRIO_PUBLICATION_PATH));
       if (later.length > 0) fail(a, "publication-transition-record-history", "publication record was touched after its introduction.");
     } catch { fail(a, "publication-transition-record", "publication record history could not be verified."); }
   } else {
@@ -467,7 +496,7 @@ export function validateTrioPublicationClosure(publication, { root = process.cwd
   for (const path of immutablePaths) {
     try {
       if (digest(content(root, TRIO_PUBLICATION_TRANSITION_BASE, path)) !== digest(readFileSync(join(root, path)))) fail(a, "publication-transition-evidence", `retained evidence drift: ${path}`);
-      const later = transitionCommit ? git(root, ["log", "--full-history", "--format=%H", `${TRIO_PUBLICATION_TRANSITION_BASE}..${head}`, "--", path]).split("\n").filter(Boolean) : [];
+      const later = transitionCommit ? realPathTouches(root, `${TRIO_PUBLICATION_TRANSITION_BASE}..${head}`, path, blobOid(root, TRIO_PUBLICATION_TRANSITION_BASE, path)) : [];
       if (later.length > 0) fail(a, "publication-transition-evidence-history", `retained evidence was touched after the transition base: ${path}`);
     } catch { fail(a, "publication-transition-evidence", `retained evidence could not be verified: ${path}`); }
   }
@@ -505,7 +534,7 @@ function validateForwardQualificationIntroduction(r, { root, head, trioRecords, 
     if (exactJointPaths.length === 0 || JSON.stringify(changed) !== JSON.stringify(exactJointPaths)) fail(a, "forward-record-paths", "a new qualification introduction must change exactly the jointly introduced versioned qualification records.");
 
     if (digest(content(root, introduction, path)) !== digest(readFileSync(join(root, path)))) fail(a, "forward-record-bytes", "a new qualification record must retain its exact introduction blob.");
-    const laterTouches = git(root, ["log", "--full-history", "--format=%H", `${introduction}..${head}`, "--", path]).split("\n").filter(Boolean);
+    const laterTouches = realPathTouches(root, `${introduction}..${head}`, path, blobOid(root, introduction, path));
     if (laterTouches.length > 0) fail(a, "forward-record-touches", "a new qualification record must not be touched after its introduction.");
 
     const expected = currentQualificationJoins(root, r.candidate, r.reviewedCommit);
@@ -560,7 +589,7 @@ export function validatePrepublicationPrTail(r, { root = process.cwd(), head = "
               else {
                 try { execFileSync("git", ["merge-base", "--is-ancestor", controlIntroductions[0], quarantineIntroductions[0]], { cwd: root, stdio: "ignore" }); }
                 catch { fail(a, "trio-quarantine-history", "quarantine introduction must descend from the exact control-tail authorization introduction."); }
-                const laterTouches = git(root, ["log", "--full-history", "--format=%H", `${quarantineIntroductions[0]}..${head}`, "--", TRIO_QUARANTINE_PATH]).split("\n").filter(Boolean);
+                const laterTouches = realPathTouches(root, `${quarantineIntroductions[0]}..${head}`, TRIO_QUARANTINE_PATH, blobOid(root, quarantineIntroductions[0], TRIO_QUARANTINE_PATH));
                 if (laterTouches.length > 0) fail(a, "trio-quarantine-history", "quarantine must remain immutable after its valid descendant introduction.");
               }
             } catch { fail(a, "trio-quarantine-history", "quarantine introduction ancestry could not be verified."); }
@@ -572,7 +601,13 @@ export function validatePrepublicationPrTail(r, { root = process.cwd(), head = "
     }
   }
   if (JSON.stringify(changed) !== JSON.stringify(allowed)) fail(a, "pr-tail", "tail");
-  const touched = [...new Set(git(root, ["log", "--full-history", "--format=", "--name-only", `${r.reviewedCommit}..${head}`, "--"]).split("\n").filter(Boolean))].sort();
+  // Same pass-through-merge caveat as `realPathTouches`: `--name-only` over
+  // `--full-history` lists every path a merge differs from a parent on, so a
+  // tail that merges the default branch would report the whole merged range
+  // as "touched by this tail". Re-measure each candidate path against its own
+  // bytes at the reviewed commit and keep only the ones that really moved.
+  const touchedCandidates = [...new Set(git(root, ["log", "--full-history", "--format=", "--name-only", `${r.reviewedCommit}..${head}`, "--"]).split("\n").filter(Boolean))];
+  const touched = touchedCandidates.filter((path) => realPathTouches(root, `${r.reviewedCommit}..${head}`, path, blobOid(root, r.reviewedCommit, path)).length > 0).sort();
   if (touched.some((path) => !allowed.includes(path))) fail(a, "pr-tail-history", "tail history touched a path outside the exact admitted set.");
   try { const base = currentQualificationJoins(root, r.candidate, r.reviewedCommit), now = currentQualificationJoins(root, r.candidate, head); for (const k of Object.keys(base).filter((key) => !["archetypes", "dimensions", "frameworkObservationsSha256"].includes(key))) if (base[k] !== now[k] || base[k] !== (r[k] ?? r.candidate[k])) fail(a, "git-content-join", k); if (base.frameworkObservationsSha256 !== now.frameworkObservationsSha256 || JSON.stringify(base.archetypes) !== JSON.stringify(now.archetypes) || JSON.stringify(base.archetypes) !== JSON.stringify(r.archetypes) || JSON.stringify(base.dimensions) !== JSON.stringify(now.dimensions) || JSON.stringify(base.dimensions) !== JSON.stringify(r.transcript?.dimensions)) fail(a, "git-content-join", "policy derivation"); } catch (e) { fail(a, "git-content-join", e instanceof Error ? e.message : "git"); }
   return a;

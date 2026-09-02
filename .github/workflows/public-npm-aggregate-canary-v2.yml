@@ -1,0 +1,74 @@
+name: Public npm aggregate canary v2
+
+on:
+  workflow_dispatch:
+    inputs:
+      closure:
+        description: Exact committed v2 closure path to execute
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  canary:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      # This dispatch-only lane has no npm token, GitHub write permission, or
+      # repository dependency installation. It verifies public bytes and
+      # leaves the fresh transcript as an uploaded artifact for review.
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24.19.0
+
+      - name: Bootstrap exact credential-free npm
+        env:
+          NPM_CONFIG_USERCONFIG: /dev/null
+          NPM_CONFIG_GLOBALCONFIG: /dev/null
+          NPM_CONFIG_ALWAYS_AUTH: "false"
+          NPM_CONFIG_REGISTRY: https://registry.npmjs.org/
+        run: |
+          env -u NODE_AUTH_TOKEN -u NPM_TOKEN -u GH_PACKAGES_TOKEN -u GITHUB_TOKEN -u GH_TOKEN \
+            npm install --global --ignore-scripts --no-audit --no-fund npm@11.17.0
+
+      - name: Assert pinned credential-free runtime
+        run: |
+          test "$(node --version)" = 'v24.19.0'
+          test "$(npm --version)" = '11.17.0'
+          test "$(node -p 'process.versions.zlib')" = '1.3.2.1-motley-3246f1b'
+
+      - name: Validate committed aggregate evidence
+        env:
+          NPM_CONFIG_USERCONFIG: /dev/null
+          NPM_CONFIG_GLOBALCONFIG: /dev/null
+          NPM_CONFIG_ALWAYS_AUTH: "false"
+          NPM_CONFIG_REGISTRY: https://registry.npmjs.org/
+        run: |
+          env -u NODE_AUTH_TOKEN -u NPM_TOKEN -u GH_PACKAGES_TOKEN -u GITHUB_TOKEN -u GH_TOKEN \
+            node scripts/check-public-npm-aggregate-canary-v2.mjs
+
+      - name: Run committed aggregate closure
+        env:
+          CLOSURE: ${{ inputs.closure }}
+          NPM_CONFIG_USERCONFIG: /dev/null
+          NPM_CONFIG_GLOBALCONFIG: /dev/null
+          NPM_CONFIG_ALWAYS_AUTH: "false"
+          NPM_CONFIG_REGISTRY: https://registry.npmjs.org/
+        run: |
+          env -u NODE_AUTH_TOKEN -u NPM_TOKEN -u GH_PACKAGES_TOKEN -u GITHUB_TOKEN -u GH_TOKEN \
+            node scripts/run-public-npm-aggregate-canary-v2.mjs --closure "$CLOSURE"
+
+      - name: Upload generated transcript
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: public-npm-aggregate-canary-v2-transcript
+          path: governance/public-npm-aggregate-transcripts-v2/*.json
+          if-no-files-found: error

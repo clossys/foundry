@@ -1,6 +1,6 @@
 {
   "name": "@clossys/designer",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -93,10 +93,10 @@
     }
   },
   "bin": {
-    "designer-token-check": "./dist/cli.js",
-    "designer-brand-check": "./dist/tokens/cli.js",
-    "designer-contrast-check": "./dist/tokens/contrast-cli.js",
-    "designer-environment-check": "./dist/environment-conformance-cli.js"
+    "designer-token-check": "dist/cli.js",
+    "designer-brand-check": "dist/tokens/cli.js",
+    "designer-contrast-check": "dist/tokens/contrast-cli.js",
+    "designer-environment-check": "dist/environment-conformance-cli.js"
   },
   "files": [
     "dist",
@@ -151,11 +151,11 @@
     "@internationalized/date": "^3.12.3",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
-    "@testing-library/user-event": "^14.6.3",
+    "@testing-library/user-event": "^14.6.6",
     "@types/node": "^22.10.0",
     "@types/react": "^19.2.0",
-    "@types/react-dom": "^19.2.0",
-    "esbuild": "^0.25.12",
+    "@types/react-dom": "^19.2.5",
+    "esbuild": "^0.28.2",
     "jsdom": "^26.1.0",
     "react": "^19.2.8",
     "react-aria-components": "^1.20.0",
