@@ -208,7 +208,12 @@ describe("packed Publisher web React-server boundary", () => {
     const legacyManifest = JSON.parse(readFileSync(legacyManifestPath, "utf8")) as {
       dependencies: Record<string, string>;
     };
-    expect(legacyManifest.dependencies["@clossys/designer"]).toBe("^0.3.0");
+    // Premise guard: this test downgrades the range below to simulate the
+    // former lower bound, so it must first confirm the packed manifest really
+    // does carry the current one. Tracks Designer's current minor — a Designer
+    // minor bump updates this line too, the same way `expectedVersions` in
+    // scripts/run-candidate-qualification.test.mjs tracks every package.
+    expect(legacyManifest.dependencies["@clossys/designer"]).toBe("^0.4.0");
     legacyManifest.dependencies["@clossys/designer"] = "^0.2.0";
     writeFileSync(legacyManifestPath, `${JSON.stringify(legacyManifest, null, 2)}\n`);
     const legacyPublisherTarball = packPackage(legacyPublisherRoot, join(fixtureRoot, "legacy-packed"));

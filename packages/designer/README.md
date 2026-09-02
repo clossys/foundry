@@ -2522,6 +2522,12 @@ sitting near them. `eyebrow` is the same optional label slot `Hero` and
 `FeatureGrid` ship; a block given neither an eyebrow, a heading, nor a
 description renders no heading region at all, exactly as before.
 
+`groups` is optional; provide it or the sibling `items` prop, never both.
+`items` is a flat array of the same row shape with no group at all — the
+common shape for a short list with nothing to group — rendered as a single
+`<dl>` with no group heading. A caller using `groups` sees no rendering
+change from `items` existing.
+
 ### `Faq`
 
 ```tsx
@@ -3962,7 +3968,7 @@ not a grab-bag).
 | `OrderedStepSequenceHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
 | `OrderedStepSequenceGround` | type | Sequence-specific alias of the shared `SectionGround`: `"base" \| "sunken" \| "inverse"`. |
 | `StatusList` | component | Grouped editorial status list: one legend and a definition list per group. |
-| `StatusListProps` | type | Props for `StatusList`: `eyebrow`, `heading`, `description`, `labels`, `groups`, `legendLabel`, `headingLevel`, `ground`, `className`, `style`, plus every native `<section>` attribute. |
+| `StatusListProps` | type | Props for `StatusList`: `eyebrow`, `heading`, `description`, `labels`, `groups?`, `items?`, `legendLabel`, `headingLevel`, `ground`, `className`, `style`, plus every native `<section>` attribute. Provide `groups` or `items`, never both. |
 | `StatusListGroup` | type | One group: `id`, `heading`, `items`. |
 | `StatusListItem` | type | One row: either `id`, `label`, `detail?`, `state`, or `id`, `label`, `detail?`, `disposition`. |
 | `StatusListReadinessItem` | type | A `StatusListItem` on the three-value readiness axis. |
