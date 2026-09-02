@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { readFileSync, readdirSync } from "node:fs";
-import { parseStrictJson, qualificationPath, sealedQualificationPathsAtTransitionBase, validatePrepublicationPrTail, validateRetainedCandidateQualification, validateTrioPublicationClosure } from "./lib/candidate-qualification.mjs";
+import { blobOid, parseStrictJson, qualificationPath, realPathTouches, sealedQualificationPathsAtTransitionBase, validatePrepublicationPrTail, validateRetainedCandidateQualification, validateTrioPublicationClosure } from "./lib/candidate-qualification.mjs";
 import { loadTransitionPolicy } from "./lib/package-identity-transition.mjs";
 import { TRIO_PUBLICATION_PATH, TRIO_PUBLICATION_TRANSITION_BASE, validateTrioFirstPublication } from "./lib/release-publication-cohort.mjs";
 import { TRIO_COHORT_PATH, TRIO_QUARANTINE_PATH, validateTrioQualificationState } from "./lib/release-qualification-cohort.mjs";
@@ -17,7 +17,11 @@ function immutableIntroducedBytes(path) {
   const introduced = execFileSync("git", ["show", `${commits[0]}:${path}`], { encoding: "utf8" });
   const retained = readFileSync(path, "utf8");
   if (sha256(introduced) !== sha256(retained)) throw new Error("retained bytes differ from their introduction blob");
-  const laterTouches = execFileSync("git", ["log", "--full-history", "--format=%H", `${commits[0]}..HEAD`, "--", path], { encoding: "utf8" }).trim().split("\n").filter(Boolean);
+  // Same pass-through-merge caveat the lib's `realPathTouches` documents: a
+  // raw `--full-history` walk counts a merge that only carried this blob
+  // through unchanged, so a branch merging `main` after the record landed
+  // read as tampering. Measure against the introduction blob instead.
+  const laterTouches = realPathTouches(process.cwd(), `${commits[0]}..HEAD`, path, blobOid(process.cwd(), commits[0], path));
   if (laterTouches.length > 0) throw new Error("retained path was touched after its introduction");
 }
 function historicalRecord(record) {
