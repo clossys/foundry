@@ -1,6 +1,6 @@
 {
   "name": "@clossys/designer",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -93,10 +93,10 @@
     }
   },
   "bin": {
-    "designer-token-check": "./dist/cli.js",
-    "designer-brand-check": "./dist/tokens/cli.js",
-    "designer-contrast-check": "./dist/tokens/contrast-cli.js",
-    "designer-environment-check": "./dist/environment-conformance-cli.js"
+    "designer-token-check": "dist/cli.js",
+    "designer-brand-check": "dist/tokens/cli.js",
+    "designer-contrast-check": "dist/tokens/contrast-cli.js",
+    "designer-environment-check": "dist/environment-conformance-cli.js"
   },
   "files": [
     "dist",
