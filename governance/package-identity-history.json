@@ -1157,6 +1157,310 @@
     {
       "path": "packages/writer/CHANGELOG.md",
       "lineSha256": "sha256:f3906c6d8e71409ad8f2de54cad4b26b658e057c0d332546322c3a33a5bba2f2"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:61bddd9afa5ca5689a5fe894ef18787db87cc8376cb4dcca7954a22c8e2de4bf"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:5298bb71f6c7507295e59d3e3b1393d0404ef9d8bf32c38577f89a63c9e78b54"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:794f5775f708fc1cc238476fc1c8a94c2071232dbef889c68c14d538d6b43f58"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:5d2745cea32b930c4dc1b6fa6895e67d96c3e853c369fe5a48e5712c9b56d4ba"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:72543d0624e5a5a23873839934c9ee11baa2d28b699c254a6c807c76888ef919"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:3e0d71d3f858dee3ee1f831dfa9c0b4aa34fe318fd573dd47ad70487ab8dc7d1"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:02a217818e618e5b3c3c7da679e66d071386815bab45e48f68ce7af4b11d97a2"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:c251266e9e1be917d8233e09639e41a430df06287eae28496f54648c79a16786"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:3f79a66e86075209ec20620d5649010c2b9c6f8a75d4b0d34238059d24541802"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:e8bed0a5b87fa5454d7cd5407624276a6690b2e2303334e502206b0724f33ca6"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:83173c065dcc9d4e119a3cba5761c2ed73d2d1e0ca6c1a93e3b050687d671d8a"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:6d8f8db99cdbee435520f949c6c57795b680c67c0a5f5ec359dc56b1f667cc47"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:764dc55161e1f6aa5c75aefc1d9f1d3d91bece9d2d0ef8535de004780681852d"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:86391877a472c3748bdafc8a5eb2d61d9c84193fb3177436431892d6c6b7cebe"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:66186e88e80ddc99826fa1362da22a59c05f8edbfa26675df5bd5e980a334702"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:0128f19855418169ef6a53ccda1db14b5ec24d7920673d1dc133bf232a54dc0a"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:6768351a847686bb6d380e7545ff37ccf0d8fb1ec29e8e5d19ce19a18acfe5ef"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:d6c5fa4ce16394d5e9bc24670a0061775c19cf178e85907b67b19718fb7e5b95"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:7b8db6053d6f7cc49a257f82b108f04152b18ec06a62ac37d09dc64e538f4bda"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:e6d3021ae2f00a45502a3b8fed136949808cba4dac24f610c6a01b0a44c4e19d"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:27a49aac17c627fc088507988deec61da77caddfa97333776287c80d14f9319c"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:5018853f0fe311a16b4ff19d3cfd60a21fba26fdd780177a72539f1e3a7457e6"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:37a2c67bdcf39d9b9d1773cdd0f7819fb3a68bc58ebcec68d07d75b3c3e2bb1e"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:ffd9966d4a5f3a16cd60828da8697ef57315a071f5445329c93e0548941462df"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:1dfe48d1e8e045887501e46b2144b1d12955ca30e6522f10505ebf3a27ee2843"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:480709af0f2c6f8a91a1306b76b88c76c6689b4338c0e1faf8b8b96c592847fc"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:966ccdd171572edb2a7c0baf2d9fffeec7e1ef3a1a4646711d9d4ea96052647a"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:0acd09353559a3805c231d75432b1f15162625a0df064012987015446722cbc5"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:b8abef6870e97e7e577c09b3757c7f9d733ebdd1077d59fd27a97117e68596f8"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:5d65352a476b86ed48c78af5115f1959c4e677b95f1c7c506bd364e6aa799dcd"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:64d920321b967b4e5740531fa23cde6db2b91cbab632fbe233260e619ab80732"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:9d0cb53129da4da4239fd93c27819458fa960e9816018955e121a9c040fca42f"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:d90417f3c587d50d50ca126270be25b1831968f6175c61c50fea5ccb7a1ccf34"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:c8cc8909592bd3448bf1b04f911ab51edc5bd82c448740a4a3ab59f2d2bab736"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:9641d6bbb072aaa20779435b38aa14e2c65713c8b950e36ba1f9e3a0da8bea3d"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:5f29b69b7a5787cc7a4b98573b95b7353ad7ae4580a87654f654f9e180ce3c71"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:1b6b2a121f9613e90a3beeb7a7f3ac9ca14616e5ee8b82a9ca02e7370066f59a"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:d4346aa08f3979941981522378654f64bcdaf26284b800140e7312ceea934638"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:30a179103b6dcf1b1e3a0cb7508ec7c1897bd9c88c146bcf66767c9e2938db7c"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:0cdd396dcbd109c5e5cb49772826eb69ddc7b3fb4fc660a3e18d5ff21359d2d5"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:762dd1e5e1417ddd8ad83d47844fc33657b2328bf84935e6775e8607744a0dcf"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:e1cd14305c78efac91098ab31d61b355d37b1d9175b01d7251b3da087e909d92"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:04938235f00880ab4a856a889e4b541dec91d0eb16e24fb5250f49d9072e0a0c"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:7dfb5cb1904093fa25cb5290e84bfe01e63eeebced7e543077c20fdaa7756cfd"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:8efdb8f54f2f3a463d8771d8923bf7b1a95b1b0c15a02a433260228fa5068041"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:45e4891712df8a441f558f4063baf6bfbdafbabbb7e12bd5ab8e85c29ada1f51"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:1b1177e07456a29d8ea5d9ce706bc5b79c8ddc260146e51330c9732d5888e956"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:41fc65f0b1693fd7874ba389928bdd9441e10ef459f09f3e86a6db274c84028e"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:bab0956e729e77173b9793b7cee71b6e5987740f624043849d759428b68d7dc4"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:0a8ad5b68bb7379aa0488e552359e09e45f6d80042743dcb82916d01c41214bb"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:2133eef28bfa5c8bd36fdd3e933175ff81b553dc9093d8eefca97c5dfd7a0732"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:fd28b82afeb1a25bcda00aed0d46a4e00b2a84ec134cc6fccf84597cf9026322"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:d808e85ccaa28550ca9568631dfa52ac9a0072b5dbdb4a5ee1c8591916edf9bc"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:4800814e0d0650092e0d544cfc45f11f737f78c532b9232160377ea47739ed86"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:7bfc10623fac08e53d315a2ed8b0108e3b2dd9ad004cdefbcc0549a9e0055af4"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:365171281bb66ce40662d4eacf3999bee90d42452c4dfe7c7c81b1753596dcba"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:7f9ded39dbaed02b3e1e290513d2637bf648e73fd135c2a97f47fa9083119c01"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:60e575fbb1c99eac52341819f30a32f3f6c584062a1d234f7b290edf7bea7b79"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:8350a4099a41053c65cde45d994c863587e163dc831190425165e652112bf1fa"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:dc02a329793863215f0007a6ae0e314ffc3182671818a83030b1110118ede70d"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:a1ab7efb493beadf73d3c629abfdc84d017c696c14e0ee903260084b4f61f2b4"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:2837ad25bf1e123260a2fd1f5b166d3387f5fe644503abd63c716ecb09756774"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:bf415991cd130b0f37a9acc6e7da12fd4e2708d6ff2a671f10c856c27e74070f"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:f550440091678ab4171ed6358aef3a1163c6d40ddc383388efa85d9deb1e2d31"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:3bdaf15b6fe63f55e8dc55fb9dabc59dfe80e68dd4229101f2b0ea679e337819"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:2cca96868e5085bea7bbdd9a5a3faa045fb5176b025bc076a3f5b2da74a0e631"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:3019de4ad72510d6126a7961d6141b4f47506b2acce10a6bf29938d55b6e98cf"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:4f3187ae6702ff735a66c87aa9a29a705dfaaba4f4235d93590291a3e5a2dade"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:222684bf31d9619ec5f5ca4b8c1957cfeab6c1a160edb8b14364ca615f52039d"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:c2d8c265e9106dc2baf5cefe582357096ac8e3a8fc035cdacf37e616a2693c68"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:5d11b68b8127a9edbe7364d719bd4bc0cbe8357fcb32fc34396b5e25775072cd"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:3cb7516570caca54266eb490c3ce8d4c5019f76cd4027a791bd2a24234b59f3f"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:40e4aac758344c868bd242a6d7adc77235097fbd40786e21a50dbb74084538f9"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:d581dfcce03ef65002ecf7f2c8782a88fc627f39caf8c9911161c331b866e658"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:9cceae79ffd169fee92eeafb833b60e15a1b79ce07badef17d1912bdc1561229"
+    },
+    {
+      "path": "docs/contracts/scope-migration.md",
+      "lineSha256": "sha256:985758bf9fdb316e40ce6ab6e0b7dadeb292e4f6ca88dcab67f32181a9586c88"
     }
   ]
 }
