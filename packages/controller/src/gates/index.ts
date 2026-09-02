@@ -52,6 +52,13 @@ export {
   isSatisfied,
   isViolated,
 } from "./result.js";
+export { adaptLegacyCheckResult } from "./legacy-adapter.js";
+export type {
+  AdaptedFinding,
+  AdaptLegacyCheckResultOptions,
+  LegacyCheckResult,
+  LegacyFinding,
+} from "./legacy-adapter.js";
 export type {
   CommonIndeterminateReason,
   GateReasonVocabulary,
