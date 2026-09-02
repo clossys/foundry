@@ -5,13 +5,15 @@ import { isSanctionedHref } from "../../internal/href.js";
 
 type HeadingLevel = 2 | 3 | 4 | 5 | 6;
 type GroundProps = { id: string; eyebrow?: string; heading: string; description?: string; headingLevel: HeadingLevel; ground: SectionedViewGround };
+type StatusListItemProps = { id: string; label: string; detail?: string; state: SectionedViewStatus; disposition?: never } | { id: string; label: string; detail?: string; disposition: SectionedViewStatusDisposition; state?: never };
 
 export interface SectionedViewBlockSet {
   Hero(props: { id: string; eyebrow?: string; heading: string; description?: string; actions?: ReactNode; headingLevel: 1 | 2; ground: SectionedViewGround }): ReactNode;
   FeatureGrid(props: GroundProps & { items: readonly { id: string; heading: string; description?: string }[] }): ReactNode;
   Faq(props: GroundProps & { items: readonly { id: string; question: string; answer: string }[] }): ReactNode;
   OrderedStepSequence(props: GroundProps & { items: readonly { id: string; ordinal: string; label?: string; heading: string; description?: string }[] }): ReactNode;
-  StatusList(props: GroundProps & { labels: Readonly<Record<SectionedViewStatus, string>> & { dispositions: Readonly<Record<SectionedViewStatusDisposition, string>> }; groups: readonly { id: string; heading: string; items: readonly ({ id: string; label: string; detail?: string; state: SectionedViewStatus; disposition?: never } | { id: string; label: string; detail?: string; disposition: SectionedViewStatusDisposition; state?: never })[] }[]; legendLabel: string }): ReactNode;
+  /** `groups` and `items` are each optional; the resolved document guarantees exactly one is present. */
+  StatusList(props: GroundProps & { labels: Readonly<Record<SectionedViewStatus, string>> & { dispositions: Readonly<Record<SectionedViewStatusDisposition, string>> }; groups?: readonly { id: string; heading: string; items: readonly StatusListItemProps[] }[]; items?: readonly StatusListItemProps[]; legendLabel: string }): ReactNode;
 }
 
 /** Whether this view owns the page's `main` landmark or renders inside one the page already owns. */
@@ -106,6 +108,19 @@ function assertActions(value: unknown, path: string): void {
   }
 }
 
+/** Resolved status items, shared between a group's `items` and a status-list section's flat `items`. */
+function assertStatusItems(value: unknown, path: string): void {
+  dense(value, path);
+  closedItems(value, path, ["id", "label", "detail", "state", "disposition"]);
+  itemIds(value, path);
+  for (let index = 0; index < value.length; index += 1) {
+    const item = value[index] as Record<string, unknown>;
+    const hasState = Object.hasOwn(item, "state");
+    const hasDisposition = Object.hasOwn(item, "disposition");
+    if (!nonBlank(item.label) || (item.detail !== undefined && !nonBlank(item.detail)) || hasState === hasDisposition || (hasState && !STATUSES.includes(item.state as SectionedViewStatus)) || (hasDisposition && !DISPOSITIONS.includes(item.disposition as SectionedViewStatusDisposition))) throw new Error(`${path}.${index} is not a resolved status item or off-axis disposition.`);
+  }
+}
+
 /** Validates the direct resolved-model boundary before any Designer block receives props. */
 export function assertRenderableSectionedViewDocument(document: unknown): asserts document is ResolvedSectionedViewDocument {
   if (!plain(document) || !closed(document, ["id", "sections", "resolutions"]) || !Object.hasOwn(document, "id") || !Object.hasOwn(document, "sections") || !Object.hasOwn(document, "resolutions") || !nonBlank(document.id)) throw new Error("document must be a closed object with a non-blank id, sections, and resolutions.");
@@ -139,26 +154,25 @@ export function assertRenderableSectionedViewDocument(document: unknown): assert
       continue;
     }
     if (record.kind === "status-list") {
-      if (!closed(record, ["id", "kind", "ground", "eyebrow", "heading", "description", "labels", "groups"])) throw new Error(`${path} has keys not allowed for a status-list section.`);
+      if (!closed(record, ["id", "kind", "ground", "eyebrow", "heading", "description", "labels", "groups", "items"])) throw new Error(`${path} has keys not allowed for a status-list section.`);
       const labels = record.labels;
       if (!plain(labels) || !closed(labels, [...STATUSES, "dispositions"])) throw new Error(`${path}.labels must contain resolved labels for every status and disposition.`);
       const dispositions = labels.dispositions;
       if (STATUSES.some((status) => !nonBlank(labels[status])) || !plain(dispositions) || !closed(dispositions, DISPOSITIONS) || DISPOSITIONS.some((disposition) => !nonBlank(dispositions[disposition]))) throw new Error(`${path}.labels must contain resolved labels for every status and disposition.`);
+      const hasGroups = Object.hasOwn(record, "groups");
+      const hasItems = Object.hasOwn(record, "items");
+      if (hasGroups === hasItems) throw new Error(`${path} must have exactly one of groups or items.`);
+      if (hasItems) {
+        assertStatusItems(record.items, `${path}.items`);
+        continue;
+      }
       dense(record.groups, `${path}.groups`);
       closedItems(record.groups, `${path}.groups`, ["id", "heading", "items"]);
       itemIds(record.groups, `${path}.groups`);
       for (let groupIndex = 0; groupIndex < record.groups.length; groupIndex += 1) {
         const group = record.groups[groupIndex] as Record<string, unknown>;
         if (!nonBlank(group.heading)) throw new Error(`${path}.groups.${groupIndex}.heading must be resolved non-blank copy.`);
-        dense(group.items, `${path}.groups.${groupIndex}.items`);
-        closedItems(group.items, `${path}.groups.${groupIndex}.items`, ["id", "label", "detail", "state", "disposition"]);
-        itemIds(group.items, `${path}.groups.${groupIndex}.items`);
-        for (let itemIndex = 0; itemIndex < group.items.length; itemIndex += 1) {
-          const item = group.items[itemIndex] as Record<string, unknown>;
-          const hasState = Object.hasOwn(item, "state");
-          const hasDisposition = Object.hasOwn(item, "disposition");
-          if (!nonBlank(item.label) || (item.detail !== undefined && !nonBlank(item.detail)) || hasState === hasDisposition || (hasState && !STATUSES.includes(item.state as SectionedViewStatus)) || (hasDisposition && !DISPOSITIONS.includes(item.disposition as SectionedViewStatusDisposition))) throw new Error(`${path}.groups.${groupIndex}.items.${itemIndex} is not a resolved status item or off-axis disposition.`);
-        }
+        assertStatusItems(group.items, `${path}.groups.${groupIndex}.items`);
       }
       continue;
     }
@@ -175,7 +189,7 @@ export function assertRenderableSectionedViewDocument(document: unknown): assert
       copyFields(item, `${path}.items.${itemIndex}`, required, optional);
     }
   }
-  if ((candidate.sections[0] as { kind?: unknown }).kind !== "hero" || heroCount !== 1) throw new Error("sections must begin with exactly one hero for the fixed h1/h2/h3 outline.");
+  if (heroCount > 1) throw new Error("sections must contain at most one hero section.");
 }
 
 const SECTION_STACK = "flex flex-col gap-2xl py-2xl";
@@ -232,6 +246,6 @@ function renderSection(section: ResolvedSectionedViewSection, index: number, blo
     case "feature-grid": return <blocks.FeatureGrid key={section.id} id={section.id} eyebrow={section.eyebrow} heading={section.heading} description={section.description} items={section.items} headingLevel={2} ground={section.ground} />;
     case "faq": return <blocks.Faq key={section.id} id={section.id} eyebrow={section.eyebrow} heading={section.heading} description={section.description} items={section.items} headingLevel={2} ground={section.ground} />;
     case "ordered-step-sequence": return <blocks.OrderedStepSequence key={section.id} id={section.id} eyebrow={section.eyebrow} heading={section.heading} description={section.description} items={section.items} headingLevel={2} ground={section.ground} />;
-    case "status-list": return <blocks.StatusList key={section.id} id={section.id} eyebrow={section.eyebrow} heading={section.heading} description={section.description} labels={section.labels} groups={section.groups} legendLabel={section.heading} headingLevel={2} ground={section.ground} />;
+    case "status-list": return <blocks.StatusList key={section.id} id={section.id} eyebrow={section.eyebrow} heading={section.heading} description={section.description} labels={section.labels} groups={section.groups} items={section.items} legendLabel={section.heading} headingLevel={2} ground={section.ground} />;
   }
 }

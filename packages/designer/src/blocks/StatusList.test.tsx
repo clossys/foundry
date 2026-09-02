@@ -140,3 +140,37 @@ describe("StatusList optional slots", () => {
     expect(without.querySelector("h2")?.previousElementSibling).toBeNull();
   });
 });
+
+describe("StatusList flat items", () => {
+  const FLAT = [
+    { id: "reports", label: "Reports", state: "available" as const },
+    { id: "certifications", label: "Certifications", disposition: "not-offered" as const },
+  ];
+
+  it("renders a flat item list as one dl with no group heading, given `items` instead of `groups`", () => {
+    const { container } = render(<StatusList labels={LABELS} items={FLAT} legendLabel="Status" />);
+    expect(container.querySelectorAll("dl")).toHaveLength(1);
+    expect(container.querySelectorAll("h3")).toHaveLength(0);
+    expect(container.querySelectorAll("dt")).toHaveLength(2);
+    expect(container.querySelectorAll("dd")).toHaveLength(2);
+    expect(screen.getByText("Reports").tagName).toBe("DT");
+    expect(screen.getByText("Not offered", { selector: "dd" }).tagName).toBe("DD");
+  });
+
+  it("renders a flat row's detail exactly the way a grouped row's detail renders", () => {
+    const detailed = [{ id: "reports", label: "Reports", detail: "Available in every region today.", state: "available" as const }];
+    const { container } = render(<StatusList labels={LABELS} items={detailed} legendLabel="Status" />);
+    const row = container.querySelector("dl > div") as HTMLElement;
+    expect(row.className).toContain("flex-wrap");
+    expect(row.children).toHaveLength(3);
+    expect(row.children[2].tagName).toBe("DD");
+    expect(row.children[2].textContent).toBe("Available in every region today.");
+  });
+
+  it("does not change the grouped rendering path: every dl still sits under its own group section with a heading", () => {
+    const { container } = render(<StatusList labels={LABELS} groups={GROUPS} legendLabel="Status" />);
+    const dls = container.querySelectorAll("dl");
+    expect(dls).toHaveLength(2);
+    for (const dl of dls) expect(dl.parentElement?.querySelector("h3")).not.toBeNull();
+  });
+});

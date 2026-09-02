@@ -108,16 +108,18 @@ describe("SectionedViewDocument core contract", () => {
     ]));
   });
 
-  it("requires exactly one first-position hero for the fixed document outline", () => {
-    const noFirstHero = { ...document, sections: document.sections.slice(1) };
+  it("allows at most one hero section, anywhere in the document, but refuses more than one", () => {
+    const noHero = { ...document, sections: document.sections.slice(1) };
+    const heroNotFirst = { ...document, sections: [document.sections[1], document.sections[0], ...document.sections.slice(2)] };
     const twoHeroes = { ...document, sections: [document.sections[0], { ...document.sections[0], id: "hero-two" }] };
-    expect(validateSectionedViewDocument(noFirstHero).map((entry) => entry.path)).toContain("sections.0.kind");
-    expect(validateSectionedViewDocument(twoHeroes).map((entry) => entry.rule)).toEqual(expect.arrayContaining(["sectioned-view-hero-position", "sectioned-view-hero-count"]));
+    expect(validateSectionedViewDocument(noHero)).toEqual([]);
+    expect(validateSectionedViewDocument(heroNotFirst)).toEqual([]);
+    expect(validateSectionedViewDocument(twoHeroes).map((entry) => entry.rule)).toEqual(["sectioned-view-hero-count"]);
   });
 
   it("reports a null first section without leaking a runtime error", () => {
     const candidate = { ...document, sections: [null] };
-    expect(validateSectionedViewDocument(candidate).map((entry) => entry.path)).toContain("sections.0.kind");
+    expect(validateSectionedViewDocument(candidate).map((entry) => entry.path)).toContain("sections.0");
     expect(() => resolveSectionedViewDocument(candidate as unknown as SectionedViewDocument, resolver)).toThrow(SectionedViewResolutionError);
   });
 
@@ -309,5 +311,93 @@ describe("SectionedViewDocument optional additive fields", () => {
       expect((error as SectionedViewResolutionError).reason).toBe("unresolved-copy");
       expect((error as Error).message).toContain("sections.4.groups.0.items.0.detail");
     }
+  });
+});
+
+describe("SectionedViewDocument gap 2 and gap 7 relaxations", () => {
+  it("still accepts, unchanged, a document with a single leading hero and grouped status-list items", () => {
+    // The exact shape gap 2 and gap 7 must not disturb: this is the same
+    // `document` fixture the rest of this file already measures byte-for-byte
+    // at the render layer in SectionedView.test.tsx's LEGACY_MARKUP assertion.
+    expect(validateSectionedViewDocument(document)).toEqual([]);
+    const resolved = resolveSectionedViewDocument(document, resolver);
+    expect(resolved.sections[0].kind).toBe("hero");
+    expect(resolved.sections[4]).toMatchObject({ kind: "status-list", groups: [{ id: "core" }] });
+    expect((resolved.sections[4] as { items?: unknown }).items).toBeUndefined();
+  });
+
+  it("accepts a document with zero heroes", () => {
+    const noHero = { ...document, sections: document.sections.slice(1) };
+    const resolved = resolveSectionedViewDocument(noHero, resolver);
+    expect(resolved.sections.every((section) => section.kind !== "hero")).toBe(true);
+  });
+
+  it("accepts a hero section anywhere in the document, not only first", () => {
+    const trailingHero = { ...document, sections: [...document.sections.slice(1), { ...document.sections[0], id: "closing-cta" }] };
+    expect(validateSectionedViewDocument(trailingHero)).toEqual([]);
+    const resolved = resolveSectionedViewDocument(trailingHero, resolver);
+    expect(resolved.sections.at(-1)?.kind).toBe("hero");
+  });
+
+  it("still refuses more than one hero section", () => {
+    const twoHeroes = { ...document, sections: [document.sections[0], { ...document.sections[0], id: "hero-two" }, ...document.sections.slice(1)] };
+    const findings = validateSectionedViewDocument(twoHeroes);
+    expect(findings).toEqual([expect.objectContaining({ rule: "sectioned-view-hero-count", path: "sections" })]);
+    expect(() => resolveSectionedViewDocument(twoHeroes as unknown as SectionedViewDocument, resolver)).toThrow(SectionedViewResolutionError);
+  });
+
+  // `groups` is omitted entirely (not merely set to `undefined`) below: an
+  // own property with value `undefined` still satisfies `Object.hasOwn`, so
+  // the exactly-one-of-groups-or-items check needs the key genuinely absent.
+  const { groups: _statusGroups, ...statusWithoutGroups } = document.sections[4] as SectionedViewDocument["sections"][4] & { groups: unknown };
+  const flatStatus: SectionedViewDocument = {
+    ...document,
+    sections: [
+      document.sections[0],
+      {
+        ...statusWithoutGroups,
+        items: [
+          { id: "capability", label: ref("acme.status.item.label"), state: "available" },
+          { id: "unavailable", label: ref("acme.status.item.label"), disposition: "not-offered" },
+        ],
+      } as unknown as SectionedViewDocument["sections"][4],
+    ],
+  };
+
+  it("accepts a flat status-list with no groups", () => {
+    expect(validateSectionedViewDocument(flatStatus)).toEqual([]);
+    const resolved = resolveSectionedViewDocument(flatStatus, resolver);
+    const status = resolved.sections[1] as { groups?: unknown; items?: { id: string; label: string }[] };
+    expect(status.groups).toBeUndefined();
+    expect(status.items).toEqual([
+      { id: "capability", label: "Fixture capability", detail: undefined, state: "available" },
+      { id: "unavailable", label: "Fixture capability", detail: undefined, disposition: "not-offered" },
+    ]);
+  });
+
+  it("resolves a flat detail the same way a grouped one resolves", () => {
+    const withDetail = {
+      ...flatStatus,
+      sections: [flatStatus.sections[0], { ...flatStatus.sections[1], items: [{ id: "capability", label: ref("acme.status.item.label"), detail: ref("acme.status.item.detail"), state: "available" as const }] }],
+    };
+    const resolved = resolveSectionedViewDocument(withDetail, resolver);
+    expect((resolved.sections[1] as { items: { detail?: string }[] }).items[0].detail).toBe("Generally available in every region.");
+  });
+
+  it("refuses a status-list section with both groups and items, or with neither", () => {
+    const both = { ...document, sections: [document.sections[0], { ...document.sections[4], items: flatStatus.sections[1].items }] };
+    const { items: _unusedItems, ...statusWithoutItems } = statusWithoutGroups as SectionedViewDocument["sections"][4] & { items?: unknown };
+    const neither = { ...document, sections: [document.sections[0], statusWithoutItems] };
+    expect(validateSectionedViewDocument(both as unknown as SectionedViewDocument).map((entry) => entry.rule)).toContain("sectioned-view-status-shape");
+    expect(validateSectionedViewDocument(neither as unknown as SectionedViewDocument).map((entry) => entry.rule)).toContain("sectioned-view-status-shape");
+  });
+
+  it("validates a flat item's shape and exactly-one-of-state-or-disposition the same way a grouped item is validated", () => {
+    const badShape = { ...flatStatus, sections: [flatStatus.sections[0], { ...flatStatus.sections[1], items: [{ id: "x" }] }] };
+    const bothAxes = { ...flatStatus, sections: [flatStatus.sections[0], { ...flatStatus.sections[1], items: [{ id: "x", label: ref("acme.status.item.label"), state: "available" as const, disposition: "not-offered" as const }] }] };
+    const emptyItems = { ...flatStatus, sections: [flatStatus.sections[0], { ...flatStatus.sections[1], items: [] }] };
+    expect(validateSectionedViewDocument(badShape as unknown as SectionedViewDocument).map((entry) => entry.rule)).toContain("sectioned-view-status-item-shape");
+    expect(validateSectionedViewDocument(bothAxes as unknown as SectionedViewDocument).map((entry) => entry.rule)).toContain("sectioned-view-status-item-shape");
+    expect(validateSectionedViewDocument(emptyItems as unknown as SectionedViewDocument).map((entry) => entry.rule)).toContain("sectioned-view-status-items-shape");
   });
 });

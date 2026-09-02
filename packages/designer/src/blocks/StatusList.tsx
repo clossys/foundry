@@ -69,8 +69,14 @@ export interface StatusListProps extends Omit<HTMLAttributes<HTMLElement>, "titl
   description?: ReactNode;
   /** Visible labels for the readiness axis and separately closed dispositions. */
   labels: StatusListLabels;
-  /** Grouped editorial statements. */
-  groups: readonly StatusListGroup[];
+  /** Grouped editorial statements, each under its own heading. Provide this or `items`, never both. */
+  groups?: readonly StatusListGroup[];
+  /**
+   * A flat list of statements with no group headings — the common shape for
+   * a short list that has nothing to group. Provide this or `groups`, never
+   * both.
+   */
+  items?: readonly StatusListItem[];
   /** Required caller-localized visible and accessible name for the combined readiness-and-disposition legend. */
   legendLabel: string;
   /** Which heading element the block and group headings render as. @default 2 */
@@ -119,6 +125,12 @@ function labelFor(item: StatusListItem, labels: StatusListLabels): ReactNode {
  * checked non-text floor directly; sunken and inverse add a two-pixel boundary
  * using the ground's checked primary ink. The adjacent label remains the sole
  * meaning-bearing channel on every ground.
+ *
+ * `groups` and `items` are each optional; provide exactly one. `groups`
+ * renders the original grouped shape unchanged: one heading and one `dl` per
+ * group. `items` renders the same rows as a single flat `dl` with no group
+ * heading at all, for a short list that has nothing to group. A caller using
+ * `groups` sees no rendering change from this addition.
  */
 export function StatusList({
   eyebrow,
@@ -126,6 +138,7 @@ export function StatusList({
   description,
   labels,
   groups,
+  items,
   legendLabel,
   headingLevel = 2,
   ground = "base",
@@ -137,6 +150,28 @@ export function StatusList({
   const colors = SECTION_GROUND_CLASSES[ground];
   const GroupHeadingTag = `h${Math.min(headingLevel + 1, 6)}` as `h${StatusListHeadingLevel}`;
   const hasHeadingRegion = eyebrow !== undefined || heading !== undefined || description !== undefined;
+
+  const row = (item: StatusListItem, index: number) => (
+    <div
+      key={item.id}
+      className={cx("flex items-center justify-between gap-md py-sm", item.detail !== undefined ? "flex-wrap" : undefined, index > 0 ? cx("border-t", colors.border) : undefined)}
+    >
+      <dt className={cx("text-body", colors.primary)}>{item.label}</dt>
+      <dd className={cx("flex shrink-0 items-center gap-xs text-body-s", colors.primary)}>
+        <span
+          aria-hidden="true"
+          className={cx(
+            "size-xs shrink-0 rounded-pill",
+            isDispositionItem(item) ? colors.offAxis : colors.status[STATE_TONES[item.state]],
+          )}
+        />
+        {labelFor(item, labels)}
+      </dd>
+      {item.detail !== undefined ? (
+        <dd className={cx("w-full text-body-s", colors.secondary)}>{item.detail}</dd>
+      ) : null}
+    </div>
+  );
 
   return (
     <section {...rest} className={cx("flex flex-col gap-lg", colors.surface, className)} style={style}>
@@ -164,36 +199,18 @@ export function StatusList({
           ))}
         </ul>
       </div>
-      <div className="flex flex-col gap-lg">
-        {groups.map((group) => (
-          <section key={group.id} className="flex flex-col gap-sm">
-            <GroupHeadingTag className={cx("text-h3 font-display", colors.primary)}>{group.heading}</GroupHeadingTag>
-            <dl className="flex flex-col">
-              {group.items.map((item, index) => (
-                <div
-                  key={item.id}
-                  className={cx("flex items-center justify-between gap-md py-sm", item.detail !== undefined ? "flex-wrap" : undefined, index > 0 ? cx("border-t", colors.border) : undefined)}
-                >
-                  <dt className={cx("text-body", colors.primary)}>{item.label}</dt>
-                  <dd className={cx("flex shrink-0 items-center gap-xs text-body-s", colors.primary)}>
-                    <span
-                      aria-hidden="true"
-                      className={cx(
-                        "size-xs shrink-0 rounded-pill",
-                        isDispositionItem(item) ? colors.offAxis : colors.status[STATE_TONES[item.state]],
-                      )}
-                    />
-                    {labelFor(item, labels)}
-                  </dd>
-                  {item.detail !== undefined ? (
-                    <dd className={cx("w-full text-body-s", colors.secondary)}>{item.detail}</dd>
-                  ) : null}
-                </div>
-              ))}
-            </dl>
-          </section>
-        ))}
-      </div>
+      {items ? (
+        <dl className="flex flex-col">{items.map((item, index) => row(item, index))}</dl>
+      ) : (
+        <div className="flex flex-col gap-lg">
+          {(groups ?? []).map((group) => (
+            <section key={group.id} className="flex flex-col gap-sm">
+              <GroupHeadingTag className={cx("text-h3 font-display", colors.primary)}>{group.heading}</GroupHeadingTag>
+              <dl className="flex flex-col">{group.items.map((item, index) => row(item, index))}</dl>
+            </section>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
