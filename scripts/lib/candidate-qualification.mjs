@@ -134,7 +134,7 @@ function commitParents(root, commit) {
   if (resolved !== commit) throw new Error("git returned an unexpected commit for its own rev-list lookup");
   return parents;
 }
-function blobOid(root, ref, path) {
+export function blobOid(root, ref, path) {
   try { return execFileSync("git", ["rev-parse", "--verify", `${ref}:${path}`], { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim(); }
   catch { return null; }
 }
@@ -154,7 +154,7 @@ function blobOid(root, ref, path) {
  * against the introduction blob catches that, and reports a deletion (a
  * missing blob) for free.
  */
-function realPathTouches(root, range, path, introducedBlob) {
+export function realPathTouches(root, range, path, introducedBlob) {
   const commits = git(root, ["log", "--full-history", "--format=%H", range, "--", path]).split("\n").filter(Boolean);
   return commits.filter((commit) => blobOid(root, commit, path) !== introducedBlob);
 }
