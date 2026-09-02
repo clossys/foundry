@@ -3,6 +3,24 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.3.1] - 2026-09-01
+
+### Fixed
+
+- Declared the four CLI bin targets in the form npm actually publishes, without
+  a leading `./`. npm rewrote those values during packing, so the manifest in
+  the tarball disagreed with the manifest in the tree and publish qualification
+  refused the candidate. The normalised values are byte-identical to what
+  0.2.7 already carries on the registry, so no installed CLI path moves.
+
+### Note on 0.3.0
+
+0.3.0 was never published. It carried the additive SectionedView slots below
+and was withdrawn before release when the bin-map defect was found. Everything
+0.3.0 added ships in 0.3.1 unchanged; the number is skipped rather than reused
+because a released version is immutable and this candidate's packed contents
+changed after qualification.
+
 ## [0.3.0] - 2026-09-01
 
 ### Added
