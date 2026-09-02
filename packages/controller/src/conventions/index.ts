@@ -116,3 +116,5 @@ export {
   validateRunnerSet,
   summarizeRunnerResults,
 } from "./runner.js";
+
+export { canonicalJson, nonEmptyString, sameCanonicalJson, sameSet, sorted } from "./canonical.js";
