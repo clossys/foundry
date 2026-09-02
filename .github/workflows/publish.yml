@@ -79,6 +79,31 @@ jobs:
             echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
           fi
 
+      # Publishing requires qualify -> RETAIN the record -> publish, in that
+      # order. `validate-candidate-publish` already enforces that join, but it
+      # runs inside the `publish` job, behind the `npm-publish` environment —
+      # so a missing record used to surface only after a human had approved
+      # the deployment, as a raw ENOENT (issue #769). The cost of that is not
+      # the minutes, it is the spent approval.
+      #
+      # Asking the same question here, before the environment gate, stops the
+      # run while it is still free. This does not replace the publish-time
+      # join: that one binds the exact tarball, this one only answers whether
+      # the record exists at all.
+      - name: Preflight retained qualification records
+        env:
+          MATRIX: ${{ steps.packages.outputs.matrix }}
+        run: |
+          set -euo pipefail
+          missing=0
+          for key in $(node -e 'for (const e of JSON.parse(process.env.MATRIX)) console.log(e.package)'); do
+            node scripts/check-qualification-record-present.mjs --package "$key" || missing=1
+          done
+          if [ "$missing" -ne 0 ]; then
+            echo "::error title=Missing qualification record::A selected package has no retained qualification record. Retain it on the default branch before dispatching a publish."
+            exit 1
+          fi
+
   fetch-published:
     needs: discover
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.verify_only && needs.discover.outputs.packages != '[]' }}
