@@ -101,7 +101,17 @@ jobs:
       # run while it is still free. This does not replace the publish-time
       # join: that one binds the exact tarball, this one only answers whether
       # the record exists at all.
+      #
+      # Gated to the runs that can actually spend an approval. The `publish`
+      # job uploads only on `dry_run: false` (see its own comment), and the
+      # dry-run itself happens inside `qualify` — so a `dry_run: true`
+      # dispatch is exactly how a NEW version's record gets produced in the
+      # first place, from the `qualified-candidate-*` artifact that job
+      # uploads. Blocking it on the record's existence would demand the thing
+      # the run exists to create, and there would be no way to qualify a new
+      # version at all. That regression shipped in #777 and is fixed here.
       - name: Preflight retained qualification records
+        if: ${{ !inputs.dry_run && !inputs.verify_only }}
         env:
           MATRIX: ${{ steps.packages.outputs.matrix }}
         run: |
