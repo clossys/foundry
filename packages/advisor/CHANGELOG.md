@@ -5,22 +5,12 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.2.0] - 2026-09-02
 
 ### Added
 
 - Export `BASIS_FIELDS` and `BASIS_DIGEST_FIELDS`, the exact field lists an `AssessmentBasis` is built from, so a caller deriving its own current basis from source material can stay bound to this package's own contract instead of a hand-copied field list.
 - Export `sameBasis()`, `sameStrings()`, and `packageKey()` — the exact comparison primitives `validateExecutionAuthorization()` is built from — so a caller independently verifying an authorization, a basis, or a package set against its own retained evidence can reuse them instead of re-implementing content-addressed comparison.
-
-This is a source-only, unpublished change. The package's `version` field
-deliberately stays at `0.1.6`: `governance/release-cleanup/clossys-npmjs-affected.json`
-seals that exact version as the current sha256/sha1/sha512-verified replacement
-target for a completed npm metadata remediation (issue #651), and
-`scripts/check-release-cleanup-inventory.mjs` fails `npm run check` if
-`package.json`'s version departs from that sealed record. Cutting the next
-real version number is a decision for whoever next updates that governance
-record with genuine registry evidence, not something this change can do
-unilaterally.
 
 ## [0.1.6] - 2026-08-30
 
