@@ -882,6 +882,81 @@ test("post-closure qualification history rejects rewrite restoration and an inco
   assert.ok(incomplete.includes("forward-record-paths"));
 });
 
+test("forward-record-touches ignores a pass-through merge but still catches a genuine rewrite or deletion", async (t) => {
+  const fixture = await clonePendingPublicationTransition();
+  t.after(() => removeFixtureDirectory(fixture.parent));
+  const base = (await git(fixture.root, ["rev-parse", "HEAD"])).stdout.trim();
+  const forward = await appendForwardTrioQualifications(fixture);
+  const path = qualificationPath(fixture.root, forward.records[0].candidate, forward.reviewedCommit);
+  const context = {
+    root: fixture.root,
+    publication: fixture.publication,
+    publicationClosureValid: true,
+    trioRecords: [...fixture.records, ...forward.records],
+  };
+
+  // 1. A branch merged in after the record's introduction, that never itself
+  // touches the record, must not trip forward-record-touches merely because
+  // `git log --full-history` reports the merge for that path.
+  await git(fixture.root, ["checkout", "-b", "forward-head"]);
+  await git(fixture.root, ["checkout", "-b", "unrelated-side", base]);
+  await writeFile(join(fixture.root, "unrelated-side-change.txt"), "side\n");
+  await commit(fixture.root, "unrelated side-branch change");
+  await git(fixture.root, ["checkout", "forward-head"]);
+  await git(fixture.root, ["merge", "--no-ff", "-m", "merge unrelated side branch", "unrelated-side"]);
+  assert.deepEqual(validatePrepublicationPrTail(forward.records[0], context).map((item) => item.rule), []);
+
+  // 2. A genuine post-introduction rewrite (even later restored to the exact
+  // introduction bytes) must still trip it.
+  const retained = readFileSync(join(fixture.root, path));
+  await writeFile(join(fixture.root, path), `${retained.toString("utf8")}\n`);
+  await commit(fixture.root, "rewrite future qualification record");
+  await writeFile(join(fixture.root, path), retained);
+  await commit(fixture.root, "restore future qualification record");
+  const rewritten = validatePrepublicationPrTail(forward.records[0], context).map((item) => item.rule);
+  assert.ok(rewritten.includes("forward-record-touches"));
+
+  // 3. A genuine post-introduction deletion (even later restored) must still
+  // be rejected. It surfaces as `forward-record-history` rather than
+  // `forward-record-touches`: the sibling history rule reaches a vanished
+  // record first. Asserted by its real rule name so this test states what
+  // actually enforces the invariant.
+  await rm(join(fixture.root, path));
+  await commit(fixture.root, "delete future qualification record");
+  await writeFile(join(fixture.root, path), retained);
+  await commit(fixture.root, "restore deleted future qualification record");
+  const deleted = validatePrepublicationPrTail(forward.records[0], context).map((item) => item.rule);
+  assert.ok(deleted.includes("forward-record-history"));
+});
+
+test("forward-record-touches catches a rewrite that arrives through a merge rather than a direct commit", async (t) => {
+  const fixture = await clonePendingPublicationTransition();
+  t.after(() => removeFixtureDirectory(fixture.parent));
+  const forward = await appendForwardTrioQualifications(fixture);
+  const path = qualificationPath(fixture.root, forward.records[0].candidate, forward.reviewedCommit);
+  const context = {
+    root: fixture.root,
+    publication: fixture.publication,
+    publicationClosureValid: true,
+    trioRecords: [...fixture.records, ...forward.records],
+  };
+
+  // The rewrite happens on a side branch and reaches the head only as a
+  // merge, so the merge commit's own blob is identical to the blob of the
+  // parent that rewrote it. A parent-relative pass-through test reads that
+  // as "carried through unchanged" and lets it past; measuring against the
+  // introduction blob is what actually catches it.
+  const retained = readFileSync(join(fixture.root, path));
+  await git(fixture.root, ["checkout", "-b", "rewrite-side"]);
+  await writeFile(join(fixture.root, path), `${retained.toString("utf8")}\n`);
+  await commit(fixture.root, "rewrite the record on a side branch");
+  await git(fixture.root, ["checkout", "-"]);
+  await git(fixture.root, ["merge", "--no-ff", "-m", "merge the side-branch rewrite", "rewrite-side"]);
+
+  const merged = validatePrepublicationPrTail(forward.records[0], context).map((item) => item.rule);
+  assert.ok(merged.includes("forward-record-touches"));
+});
+
 test("publication closure rejects retained evidence rewrite and restoration", async (t) => {
   const fixture = await clonePendingPublicationTransition();
   t.after(() => removeFixtureDirectory(fixture.parent));
