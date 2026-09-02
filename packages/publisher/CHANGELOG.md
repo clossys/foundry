@@ -3,6 +3,12 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.3.1] - 2026-09-02
+
+### Changed
+
+- Widened the `@clossys/controller` runtime dependency range from `~0.8.0` to `~0.9.0` to cover controller's 0.9.0 release. No other change.
+
 ## [0.3.0] - 2026-09-01
 
 ### Added

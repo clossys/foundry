@@ -896,7 +896,7 @@ above.
 
 ## Requirements
 
-Node.js >= 20, ESM. Runtime dependency: `@clossys/controller` (`~0.8.0`), for the `GateResult` ternary the `liveStateSurface` and CI-mechanics modules build on rather than reinvent.
+Node.js >= 20, ESM. Runtime dependency: `@clossys/controller` (`~0.9.0`), for the `GateResult` ternary the `liveStateSurface` and CI-mechanics modules build on rather than reinvent.
 
 ## Licence
 

@@ -16,7 +16,7 @@ export const SPONSOR_ENTRY_PROMPT = "Start Foundry Advisor for <GitHub organizat
 export { assessAdvisorEngagement, shouldReassess, validateAdvisorAssessmentInput, REQUIRED_FIT_CRITERIA, REQUIRED_READINESS_CRITERIA } from "./assessment.js";
 export { assessEngagementDecisionCurrency, resolveEngagementActionDisposition } from "./currency.js";
 export { createAdvisorSession, advanceAdvisorSession } from "./session.js";
-export { validateExecutionAuthorization } from "./authorization.js";
+export { validateExecutionAuthorization, BASIS_FIELDS, BASIS_DIGEST_FIELDS, sameBasis, sameStrings, packageKey } from "./authorization.js";
 export { assessAdvisorExecutionReadiness } from "./execution-readiness.js";
 export { ADVISOR_TOOL_CONTRACTS, handleAdvisorTool } from "./tools.js";
 export type {
