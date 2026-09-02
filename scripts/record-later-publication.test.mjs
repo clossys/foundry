@@ -138,7 +138,9 @@ test("creator writes one canonical owner-present record in a synthetic git repos
   const packDirectory = join(root, ".pack-output");
   mkdirSync(packDirectory);
   execFileSync("npm", ["pack", "--ignore-scripts", "--pack-destination", packDirectory, "--workspace=packages/strategist"], { cwd: root, stdio: ["ignore", "ignore", "ignore"] });
-  const candidatePath = join(packDirectory, "clossys-strategist-0.1.2.tgz");
+  // Derived, not hardcoded: the packed filename carries strategist's current
+  // version, so pinning it here breaks on every version bump.
+  const candidatePath = join(packDirectory, readdirSync(packDirectory).find((entry) => entry.endsWith(".tgz")));
   const candidateBytesForRecord = readFileSync(candidatePath);
   const hashes = { sha1: digest("sha1", candidateBytesForRecord), sha256: digest("sha256", candidateBytesForRecord), sha512: digest("sha512", candidateBytesForRecord) };
   const qualificationPath = "governance/release-qualifications/clossys-strategist-0.1.2.json";
@@ -203,7 +205,9 @@ test("creator retains one provider-bound replay record from the exact qualified 
   const packDirectory = join(root, ".pack-output");
   mkdirSync(packDirectory);
   execFileSync("npm", ["pack", "--ignore-scripts", "--pack-destination", packDirectory, "--workspace=packages/strategist"], { cwd: root, stdio: ["ignore", "ignore", "ignore"] });
-  const candidatePath = join(packDirectory, "clossys-strategist-0.1.2.tgz");
+  // Derived, not hardcoded: the packed filename carries strategist's current
+  // version, so pinning it here breaks on every version bump.
+  const candidatePath = join(packDirectory, readdirSync(packDirectory).find((entry) => entry.endsWith(".tgz")));
   const candidateBytesForRecord = readFileSync(candidatePath);
   const hashes = { sha1: digest("sha1", candidateBytesForRecord), sha256: digest("sha256", candidateBytesForRecord), sha512: digest("sha512", candidateBytesForRecord) };
   const qualificationPath = "governance/release-qualifications/clossys-strategist-0.1.2.json";
