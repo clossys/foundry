@@ -5,6 +5,37 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+This package's manifest `version` is not bumped in this change. A permanent
+regression check (`scripts/check-release-cleanup-inventory.mjs`, sealed to
+issue #651's closed public-registry cleanup) pins this package's manifest
+version to the exact, already-published `0.8.24` it verified; bumping it here
+without the accompanying real npm-registry observation that check requires
+would fail `npm run check` in FULL mode. The additive surface below ships as
+source in this change; the actual version bump belongs to whichever later
+change performs that registry observation as part of a real release.
+
+### Added
+
+- `./conventions` now ships `sameSet`, `canonicalJson`, `sameCanonicalJson`,
+  `nonEmptyString`, and `sorted` — dependency-free comparison primitives for
+  declared JSON documents: order-independent (but duplicate-sensitive)
+  sequence equality, deep key-order-independent JSON equality, and a
+  non-empty-string type guard. Multiple independent consumers of this
+  package have hand-written this same small cluster inside their own
+  scripts; it is centralized here once, unchanged in behavior from what
+  every known caller already relies on.
+- `./gates` now ships `adaptLegacyCheckResult`, a generic adapter that folds
+  a pre-existing, non-`GateResult` check outcome onto the existing
+  `GateResult` ternary. The caller reduces its own bespoke result shape to
+  the three verdict tags `GateResult` already uses and supplies a severity
+  map for its own findings; this function handles the rest — evaluated-count
+  defaulting, per-finding assembly, and the required non-empty-findings
+  fallback `gateViolated` itself refuses to skip. Consolidates an adapter
+  more than one consumer of this package had already hand-written for its
+  own legacy check.
+
 ## [0.8.24] - 2026-08-30
 
 ### Changed

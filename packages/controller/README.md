@@ -257,9 +257,10 @@ build-order, and policy checks — none of them do I/O; a caller reads
 whatever real data each one needs and passes it in. A fourth addition, the
 gate-result ternary below, is not a gate itself but the shared vocabulary
 the other three (and `foundry-check`'s own CLI) already independently
-converged on. (The source-aware secret-surface checks that used to be
-listed alongside these now live at `./gates/secrets` instead — see
-"Requirements" below for why they moved.)
+converged on. A fifth, `adaptLegacyCheckResult`, folds a pre-existing,
+non-`GateResult` check outcome onto that same ternary. (The source-aware
+secret-surface checks that used to be listed alongside these now live at
+`./gates/secrets` instead — see "Requirements" below for why they moved.)
 
 #### The gate-result ternary: `satisfied` / `violated` / `indeterminate`
 
@@ -311,6 +312,47 @@ produce no real evaluation and it throws if the gate under test reports
 `satisfied` anyway. `gateResultFromRatchet(result)` converts an existing
 `evaluateRatchet` result into this shape, as a worked proof that the two
 are the same contract rather than parallel ones.
+
+#### `adaptLegacyCheckResult(legacy, options)`
+
+Folds a pre-existing, non-`GateResult` check outcome onto this same
+ternary. A repository rarely adopts `GateResult` for every check on day
+one — more often, one existing script already reports its own ad hoc
+pass/fail/can't-tell shape, and a caller further up (an observation
+transport, a report aggregator, a CI summary) wants to fold that outcome in
+next to every other `GateResult`-native check without rewriting the
+original script. This has been hand-written more than once by consumers of
+this package: a short `switch` over the legacy check's own three states, a
+per-finding severity remap (a legacy check's own severity words are almost
+never the caller's own `Finding` vocabulary), and a required fallback
+finding for the one case `gateViolated` itself refuses — reporting a
+violation with nothing wrong in it.
+
+```ts
+import { adaptLegacyCheckResult } from "@clossys/controller/gates";
+
+type LegacySeverity = "error" | "warning" | "info";
+const legacyResult = runMyExistingCheck(); // { verdict: "violated", findings: [{ severity: "error", message: "..." }] }
+
+const result = adaptLegacyCheckResult(legacyResult, {
+  severityMap: { error: "high", warning: "medium", info: "low" } as Record<LegacySeverity, "high" | "medium" | "low">,
+  defaultSeverity: "high",
+  fallbackMessage: "myExistingCheck reported violated with no findings.",
+});
+```
+
+`legacy` must already be reduced to the three verdict tags `GateResult`
+itself uses (`"satisfied" | "violated" | "indeterminate"`) — translating a
+genuinely bespoke result shape (its own `status`/`ok` fields, its own
+nesting) down to that is the caller's own job, since it is the one part
+that is truly different for every legacy check. Everything past that point
+is common: a `"satisfied"` legacy result with no evaluated count becomes
+`gateSatisfied(1)` (matching `gateResultFromRatchet`'s own convention for
+an equivalent single-question check); a `"violated"` legacy finding's
+`path`, when present, is folded into `message`; and `severityMap` /
+`defaultSeverity` are fully generic over whichever severity vocabulary the
+caller's own `Finding` type uses — this function never assumes one severity
+vocabulary is universal.
 
 #### `evaluateRatchet(current, baseline)`
 
@@ -1455,10 +1497,43 @@ import {
   validateSkillRegistry,
   documentPath,
   adapterPath,
+  sameSet,
+  sameCanonicalJson,
 } from "@clossys/controller/conventions";
 
 const findings = validateBranchName("claude/fix-the-thing", { taxonomy: TAXONOMY_PREFIXES });
 ```
+
+#### Deterministic comparison primitives: `sameSet`, `canonicalJson`, `sameCanonicalJson`, `nonEmptyString`, `sorted`
+
+A recurring shape of check across the validators above — and across more
+than one consumer's own scripts built on them — is "does this declared list
+of strings still name the same members as the reviewed set, regardless of
+order" and "does this parsed JSON document still equal the one reviewed
+value it must not silently drift from." These five dependency-free
+primitives are that comparison, named once:
+
+```ts
+import { canonicalJson, nonEmptyString, sameCanonicalJson, sameSet, sorted } from "@clossys/controller/conventions";
+
+sameSet(["a", "b"], ["b", "a"]); // true — order does not matter
+sameSet(["a", "a", "b"], ["a", "b"]); // false — duplicates are never deduplicated
+sameCanonicalJson({ a: 1, b: { d: 2, c: 3 } }, { b: { c: 3, d: 2 }, a: 1 }); // true — key order at any depth does not matter
+```
+
+`sameSet(left, right)` compares two values as a sorted sequence, never as a
+mathematical set — a duplicate-count mismatch is a real difference, the
+same as a length mismatch, because every known caller's own declared lists
+(top-level keys, allowed values) can never legitimately repeat a member.
+`canonicalJson(value)` returns a deep copy with every plain object's own
+keys sorted at every depth (array element order is untouched — only key
+order is normalized); `sameCanonicalJson` compares two values by their
+canonicalized, serialized form. `JSON.stringify(canonicalJson(value))` is
+also a ready deterministic string for a caller that wants one for its own
+purposes (e.g. a content digest), with no second hand-rolled traversal
+needed alongside it. `nonEmptyString(value)` is the type guard "is this a
+string with at least one non-whitespace character," and `sorted(values)`
+returns a sorted shallow copy, treating `null`/`undefined` as empty.
 
 ### `liveStateSurface` (#255): the shared reconciliation contract
 
@@ -1521,6 +1596,7 @@ adapter can find the shared guidance without duplicating it.
 | `SKILL_REGISTRY_SCHEMA_VERSION` / `validateSkillRegistry` / `computeCapabilityCoverage` / `validateRoutineCoverage` | constant / functions | The capability-first skill registry's grammar, coverage computation, and routine-coverage cross-check. |
 | `CONVENTION_DOCUMENTS` / `CONVENTION_ADAPTERS` / `DOCUMENTS_ROOT` / `ADAPTERS_ROOT` / `documentPath` / `adapterPath` / `templatedFilenames` | constants / functions | The shipped document/adapter manifest and path resolution — no I/O. |
 | `renderProductLoader` | function | Renders a small pointer file a consuming product installs to reach shared guidance without duplicating it. |
+| `sameSet` / `canonicalJson` / `sameCanonicalJson` / `nonEmptyString` / `sorted` | functions | Dependency-free comparison primitives: order-independent sequence equality, deep key-order-independent JSON equality, and a non-empty-string type guard. |
 | `ConventionDocument` / `ConventionAdapter` / `RoutineDeclaration` / `RoutineRegistry` / `ScheduleDeclaration` / `ScheduleRegistry` / `Finding` / `Severity` | types | Shapes shared across the validators above. |
 | `LiveStateSurfaceDeclaration` / `LiveStateSurfaceFindingKind` / `LiveStateDriftKind` / `LiveStateFinding` / `LiveStateSubjectReport` / `LiveStateReconciliationResult` / `LiveStateReconciliationReason` / `LiveStateObservation` / `LiveStateDeclarationValue` / `ReconcileLiveStateInput` | types | The `liveStateSurface` declaration, its finding vocabulary, and the shapes `reconcileLiveState` reads and returns. |
 
