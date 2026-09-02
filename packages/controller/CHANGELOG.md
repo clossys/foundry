@@ -5,16 +5,7 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
-
-This package's manifest `version` is not bumped in this change. A permanent
-regression check (`scripts/check-release-cleanup-inventory.mjs`, sealed to
-issue #651's closed public-registry cleanup) pins this package's manifest
-version to the exact, already-published `0.8.24` it verified; bumping it here
-without the accompanying real npm-registry observation that check requires
-would fail `npm run check` in FULL mode. The additive surface below ships as
-source in this change; the actual version bump belongs to whichever later
-change performs that registry observation as part of a real release.
+## [0.9.0] - 2026-09-02
 
 ### Added
 
