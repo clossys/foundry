@@ -5,6 +5,21 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.4] - 2026-09-02
+
+### Fixed
+
+- Declared `bin` targets without a leading `./`. npm rejected the dotted
+  form as an invalid script name and **removed the entry entirely** on
+  publish, so `architect-check` would not have been installed
+  by a consumer of the previous release.
+
+### Changed
+
+- Named Clossys as copyright holder in `LICENSE` and as `author` in the
+  package manifest, so every package in the catalogue attributes identically.
+
+
 ## [0.1.3] - 2026-08-31
 
 ### Changed

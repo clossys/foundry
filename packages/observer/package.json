@@ -1,6 +1,6 @@
 {
   "name": "@clossys/observer",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -14,7 +14,7 @@
     }
   },
   "bin": {
-    "observer-coverage-check": "./dist/bin.js"
+    "observer-coverage-check": "dist/bin.js"
   },
   "files": [
     "dist",
@@ -36,7 +36,7 @@
     "audit",
     "typescript"
   ],
-  "author": "Calvin Hung",
+  "author": "Clossys",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/clossys/foundry.git",

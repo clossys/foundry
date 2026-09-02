@@ -1,6 +1,6 @@
 {
   "name": "@clossys/architect",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -18,7 +18,7 @@
     }
   },
   "bin": {
-    "architect-check": "./dist/cli.js"
+    "architect-check": "dist/cli.js"
   },
   "files": [
     "dist",
@@ -38,7 +38,7 @@
     "validation",
     "typescript"
   ],
-  "author": "Calvin Hung",
+  "author": "Clossys",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/clossys/foundry.git",

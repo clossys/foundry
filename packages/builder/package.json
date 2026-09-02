@@ -1,6 +1,6 @@
 {
   "name": "@clossys/builder",
-  "version": "0.7.5",
+  "version": "0.7.6",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -34,8 +34,8 @@
     }
   },
   "bin": {
-    "builder-verify-toolchain": "./dist/ci/bin.js",
-    "builder-verify-machine": "./dist/machine/bin.js"
+    "builder-verify-toolchain": "dist/ci/bin.js",
+    "builder-verify-machine": "dist/machine/bin.js"
   },
   "files": [
     "dist",
@@ -61,7 +61,7 @@
     "aggregation",
     "typescript"
   ],
-  "author": "Calvin Hung",
+  "author": "Clossys",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/clossys/foundry.git",

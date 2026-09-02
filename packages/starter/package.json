@@ -1,6 +1,6 @@
 {
   "name": "@clossys/starter",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -22,7 +22,7 @@
     }
   },
   "bin": {
-    "foundry-starter": "./dist/cli.js"
+    "foundry-starter": "dist/cli.js"
   },
   "files": [
     "dist",
@@ -43,7 +43,7 @@
     "evidence",
     "typescript"
   ],
-  "author": "Calvin Hung",
+  "author": "Clossys",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/clossys/foundry.git",

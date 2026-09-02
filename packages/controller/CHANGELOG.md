@@ -5,6 +5,21 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.2] - 2026-09-02
+
+### Fixed
+
+- Declared `bin` targets without a leading `./`. npm rejected the dotted
+  form as an invalid script name and **removed the entry entirely** on
+  publish, so `foundry-governance` and `foundry-check` and `repository-check` and `repository-profile-check` and `repository-package-adoption-check` and `review-check` and `foundry-position-check` and `foundry-completion-evidence-check` and `singular-authority-check` would not have been installed
+  by a consumer of the previous release.
+
+### Changed
+
+- Named Clossys as copyright holder in `LICENSE` and as `author` in the
+  package manifest, so every package in the catalogue attributes identically.
+
+
 ## [0.9.1] - 2026-09-02
 
 ### Changed

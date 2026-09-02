@@ -1,6 +1,6 @@
 {
   "name": "@clossys/bouncer",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -38,7 +38,7 @@
     }
   },
   "bin": {
-    "bouncer-check": "./dist/cli.js"
+    "bouncer-check": "dist/cli.js"
   },
   "files": [
     "dist",
@@ -60,7 +60,7 @@
     "gate",
     "typescript"
   ],
-  "author": "Calvin Hung",
+  "author": "Clossys",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/clossys/foundry.git",
