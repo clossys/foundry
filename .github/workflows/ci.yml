@@ -257,6 +257,7 @@ jobs:
           node-version: 20
       - run: npm run check:package-identity
       - run: npm run check:public-npm-aggregate-canary
+      - run: npm run check:public-npm-aggregate-canary-v2
       - run: npm run check:release-cleanup-inventory
       - run: node scripts/set-scope.mjs --check
 
