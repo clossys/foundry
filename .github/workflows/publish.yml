@@ -99,8 +99,13 @@ jobs:
       #
       # Asking the same question here, before the environment gate, stops the
       # run while it is still free. This does not replace the publish-time
-      # join: that one binds the exact tarball, this one only answers whether
-      # the record exists at all.
+      # join: that one binds the exact tarball, this one asks whether a
+      # retained record exists AND still describes the current candidate —
+      # a record binds a specific package manifest and tree digest, and a
+      # later merge to that package (even one that leaves package.json
+      # untouched) can move one or both digests without touching the record
+      # at all, leaving a stale record that reads as present until the join
+      # is recomputed.
       #
       # Gated to the runs that can actually spend an approval. The `publish`
       # job uploads only on `dry_run: false` (see its own comment), and the
@@ -121,7 +126,7 @@ jobs:
             node scripts/check-qualification-record-present.mjs --package "$key" || missing=1
           done
           if [ "$missing" -ne 0 ]; then
-            echo "::error title=Missing qualification record::A selected package has no retained qualification record. Retain it on the default branch before dispatching a publish."
+            echo "::error title=Missing or stale qualification record::A selected package has no retained qualification record, or its record no longer matches the current candidate. See the job log above for which and why; qualify (or re-qualify) and retain a fresh record on the default branch before dispatching a publish."
             exit 1
           fi
 
