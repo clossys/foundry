@@ -1191,9 +1191,39 @@ revived by this cutover.
 
 ## Settled
 
-**Author attribution — keep a real name in the `"author"` field.** A real
-author name is conventional in open source, and the MIT licence requires a
-named copyright holder to be a valid grant. The gate's `neutralize` list is
-path-scoped to `package.json`, where that field actually lives — this
-document deliberately does not repeat the literal value, since a doc file is
-not one of the neutralized paths and would fail the same gate it describes.
+**Author attribution — the project name holds the copyright.** Every package's
+`LICENSE` copyright holder names the project, identically, across the whole
+catalogue, as does the repository-root `LICENSE`. The MIT licence requires a
+named copyright holder for the grant to be valid; the project name supplies
+one without publishing an individual's name in twenty public artifacts.
+
+The `package.json` `"author"` field is deliberately NOT changed in the same
+commit, and this is a constraint rather than an oversight. Each package's
+pre-publication qualification record seals `candidate.packageManifestSha256`,
+a sha256 over the manifest's exact bytes (`scripts/record-later-publication.mjs`
+`validateCandidateAndProof`). Editing any byte of a manifest — `"author"`
+included — breaks that binding, and re-sealing it requires genuine registry
+evidence rather than a source edit. `LICENSE` carries no such seal, which is
+why the legally load-bearing half lands first. The `"author"` field is
+normalized in whichever change next re-qualifies each package, and until then
+the catalogue is deliberately half-normalized with the difference recorded
+here rather than left to be rediscovered.
+
+This supersedes an earlier settled decision to keep an individual's real name
+in the `"author"` field. That decision was reasonable — a real author name is
+conventional in open source — but it had two costs this one does not. It put
+an individual's name on every published artifact, and it depended on the
+denylist's `neutralize` list being path-scoped to `package.json` to stay
+publishable at all. Naming the project removes the individual's name from the
+published surface entirely, so no neutralize carve-out is load-bearing for it.
+
+The catalogue had drifted before this change: three packages named a retired
+entity in `LICENSE`, two named one in `"author"`, and one contradicted itself
+between the two files. A reader performing licence review could get different
+answers from packages built in the same repository, which is the failure this
+decision closes.
+
+Consistency here is now asserted, not assumed: `preflight-package.mjs` should
+fail a publish whose `LICENSE` holder and `"author"` disagree, or which
+disagrees with the rest of the catalogue. Until that assertion exists, this
+record is the only thing holding the invariant.
