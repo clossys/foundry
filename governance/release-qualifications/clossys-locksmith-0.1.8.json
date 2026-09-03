@@ -1,0 +1,220 @@
+{
+  "schemaVersion": 2,
+  "timing": "pre-publication",
+  "candidate": {
+    "name": "@clossys/locksmith",
+    "version": "0.1.8",
+    "packageTreeSha1": "8666850eb97628ba57f2499460efce9aadfd0472",
+    "packageManifestSha256": "590885bd7389c1637237705cec00c7321215d9915a953041b3ec257bac618142",
+    "policySha256": "50b216b89a83ad0f2e22732db07d6eda9e86978963c19ca52570fd8ca56737fc",
+    "adapterSha256": "57f79ad3a9540a039227dea54e5908292eefad991bfefb3ca3a89ef17b2fbfe8",
+    "fixtureSetSha256": "1a39b7f990459843ad03ae20b926901923899b9f06cc6343d903481c3426d9c8",
+    "tarball": {
+      "sha1": "16e1fdd35e251033e3d26660bf0bb1fa68c5f2b2",
+      "sha256": "823e806cc410f5f37920c4796be26cbf588aec4f5e9a7afde767da0314068b5c",
+      "sha512": "53910bd237442f23177da74fb61aae0c6be3b32e53c6309dbf9af73fce60ebbcb14c3f6a23f64e8b8cb208755701930dc6de89be89b22e35ef608223e7537771"
+    }
+  },
+  "archetypes": [
+    {
+      "kind": "current-direct",
+      "status": "qualified"
+    },
+    {
+      "kind": "prior-minor",
+      "status": "unsupported"
+    },
+    {
+      "kind": "oldest-supported",
+      "status": "unsupported"
+    },
+    {
+      "kind": "control-plane",
+      "status": "unsupported"
+    }
+  ],
+  "reviewedCommit": "188848db2e869efa58a5870141e54a0c8e294563",
+  "rootPackageJsonSha256": "6b2b68ecd56b72daf24babb5b99a83d08d36b5f4c8e8261d9de7d05d7844c7e2",
+  "rootPackageLockSha256": "8aab1a72aaf189067ae5c0a96654adc1565494e4703fdb3143b7ebff12028bc8",
+  "transcript": {
+    "schema": "foundry-candidate-qualification-transcript-v3",
+    "version": 3,
+    "candidate": {
+      "name": "@clossys/locksmith",
+      "version": "0.1.8"
+    },
+    "archetype": "current-direct",
+    "tarball": {
+      "sha1": "16e1fdd35e251033e3d26660bf0bb1fa68c5f2b2",
+      "sha256": "823e806cc410f5f37920c4796be26cbf588aec4f5e9a7afde767da0314068b5c",
+      "sha512": "53910bd237442f23177da74fb61aae0c6be3b32e53c6309dbf9af73fce60ebbcb14c3f6a23f64e8b8cb208755701930dc6de89be89b22e35ef608223e7537771"
+    },
+    "peerInstall": {},
+    "consumer": {
+      "manifestSha256": "008e3d84a75f371f683ae69023c3e45f42e401b631f7bbacd60202294a6a40e5",
+      "lockfileSha256": "82e8355f50e4ebae9dfa6ac54b12319b64a91767adf0e48df24febe412a910bd"
+    },
+    "coverage": {
+      "declaredExportKeys": 2,
+      "concreteTargets": 4,
+      "runtimeImports": 2,
+      "reactServerImports": 0,
+      "staticTargets": 2,
+      "frameworkExports": 0,
+      "frameworkBuilds": 0,
+      "failed": 0,
+      "installedManifestSha256": "590885bd7389c1637237705cec00c7321215d9915a953041b3ec257bac618142",
+      "bins": 1,
+      "lifecycleScriptsDisabled": true
+    },
+    "observations": [
+      {
+        "id": "install",
+        "kind": "install",
+        "launch": "npm-fixed",
+        "expectedExitCode": 0,
+        "observedExitCode": 0,
+        "signal": null,
+        "launchError": false,
+        "stdoutSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+        "stderrSha256": "62d23df6c26cde48b45a87bdd8ca669e2a84da2ad8930aad8d4a3c2004523b97"
+      },
+      {
+        "id": "import:import:@clossys/locksmith",
+        "kind": "import",
+        "launch": "node-direct",
+        "expectedExitCode": 0,
+        "observedExitCode": 0,
+        "signal": null,
+        "launchError": false,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "import:import:@clossys/locksmith/infisical",
+        "kind": "import",
+        "launch": "node-direct",
+        "expectedExitCode": 0,
+        "observedExitCode": 0,
+        "signal": null,
+        "launchError": false,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "help:vespene-secrets-infisical",
+        "kind": "help",
+        "launch": "node-direct",
+        "expectedExitCode": 0,
+        "observedExitCode": 0,
+        "signal": null,
+        "launchError": false,
+        "stdoutSha256": "9b6a4f7539f0ddee299ee9d7d90bbdc4e7b70ffd3f1128b9518f333f37c3318e",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "case:required-names-complete",
+        "kind": "case",
+        "launch": "node-direct",
+        "expectedExitCode": 0,
+        "observedExitCode": 0,
+        "signal": null,
+        "launchError": false,
+        "stdoutSha256": "add00627764d45fe5ad5b0520ee8386b418b89675df690453024d8d809df6d7e",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "case:required-name-missing",
+        "kind": "case",
+        "launch": "node-direct",
+        "expectedExitCode": 1,
+        "observedExitCode": 1,
+        "signal": null,
+        "launchError": false,
+        "stdoutSha256": "d52397badf77b48f2255fb06c9ccefc2f21e3ad5b2dfda6e5395c85c8072abf9",
+        "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "id": "case:available-snapshot-malformed",
+        "kind": "case",
+        "launch": "node-direct",
+        "expectedExitCode": 2,
+        "observedExitCode": 2,
+        "signal": null,
+        "launchError": false,
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "7074c24b3b5ba93a21ea13ea39758c569c9a918f13bb00667be6f81121265e1f"
+      },
+      {
+        "id": "uninstall",
+        "kind": "uninstall",
+        "launch": "npm-fixed",
+        "expectedExitCode": 0,
+        "observedExitCode": 0,
+        "signal": null,
+        "launchError": false,
+        "stdoutSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+        "stderrSha256": "62d23df6c26cde48b45a87bdd8ca669e2a84da2ad8930aad8d4a3c2004523b97"
+      },
+      {
+        "id": "reinstall",
+        "kind": "reinstall",
+        "launch": "npm-fixed",
+        "expectedExitCode": 0,
+        "observedExitCode": 0,
+        "signal": null,
+        "launchError": false,
+        "stdoutSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+        "stderrSha256": "62d23df6c26cde48b45a87bdd8ca669e2a84da2ad8930aad8d4a3c2004523b97"
+      }
+    ],
+    "dimensions": [
+      {
+        "dimension": "position",
+        "status": "unsupported",
+        "reason": "A catalog availability check makes no installed position claim."
+      },
+      {
+        "dimension": "completion",
+        "status": "unsupported",
+        "reason": "Required-name availability is not consumer completion."
+      },
+      {
+        "dimension": "rollback",
+        "status": "supported",
+        "evidence": [
+          "uninstall",
+          "reinstall"
+        ]
+      },
+      {
+        "dimension": "duplicate",
+        "status": "unsupported",
+        "reason": "Locksmith has no first-party runtime dependency graph to deduplicate."
+      },
+      {
+        "dimension": "cadence",
+        "status": "unsupported",
+        "reason": "Cadence is not established by a disposable catalog canary."
+      },
+      {
+        "dimension": "closeWindow",
+        "status": "unsupported",
+        "reason": "Close-window evidence is not established by a disposable catalog canary."
+      }
+    ],
+    "restoration": {
+      "manifestRestored": true,
+      "lockfileRestored": true,
+      "packageAbsentAfterUninstall": true
+    },
+    "mismatches": [],
+    "ok": true,
+    "canonicalSha256": "1699a3a37fdcd52e085ef79a2b894a60de2190b9adf51137fb38bcae584f54f7"
+  },
+  "candidateReview": {
+    "headSha": "188848db2e869efa58a5870141e54a0c8e294563",
+    "reference": "https://github.com/clossys/foundry/actions/runs/33694469877"
+  },
+  "findings": []
+}
