@@ -29,14 +29,30 @@
 // the two cannot disagree about where a record lives. Likewise, "does the
 // record still match?" reuses `currentQualificationJoins()` — the same
 // function `generate-qualification-record.mjs` calls to corroborate its own
-// `reviewedCommit` — rather than inventing a second notion of freshness. A
-// record binds a specific candidate via `candidate.packageManifestSha256`;
-// a later merge to an unrelated file in that package can change the
-// candidate's manifest digest without ever touching the record itself
-// (designer 0.3.1 qualified at one manifest digest, then a routine
-// dependabot bump landed 29 minutes later and changed it — the publish
-// failed hours afterwards with a raw ENOENT, after a human approval had
-// already been spent). Nothing short of recomputing the join would notice.
+// `reviewedCommit` — rather than inventing a second notion of freshness.
+//
+// A record binds a candidate on TWO axes, and both are checked because
+// neither alone covers what actually ships: `candidate.packageManifestSha256`
+// is a digest of `package.json` bytes alone, while `candidate.packageTreeSha1`
+// is `git rev-parse <ref>:<packageDir>` — a tree hash over the whole package
+// directory, so it also covers `LICENSE`, `README`, `dist/`, and everything
+// else `npm pack` would include. A later merge to an unrelated file in that
+// package can move either digest without ever touching the record itself
+// (designer 0.3.1 qualified at one manifest digest, then a routine dependabot
+// bump landed 29 minutes later and changed it — the publish failed hours
+// afterwards with a raw ENOENT, after a human approval had already been
+// spent). A real case measured on this repository's own tree: `@clossys/starter`
+// held a record whose `packageManifestSha256` still matched — `package.json`
+// was untouched — while its `packageTreeSha1` had drifted, because something
+// else inside `packages/starter/` had changed. A manifest-only comparison
+// would have reported that as `present` and let it reach the publish job on a
+// spent approval. Comparing only `packageTreeSha1` and dropping the manifest
+// digest would not be safe either: nothing about this check should silently
+// stop noticing a `package.json` edit just because the tree digest happens to
+// be the coarser of the two. So both are compared, and a `stale` result says
+// which one (or both) diverged, because "stale in the tree but not the
+// manifest" and "stale in both" are different diagnoses for the operator.
+// Nothing short of recomputing the join would notice either kind of drift.
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { currentQualificationJoins, qualificationPath } from "./lib/candidate-qualification.mjs";
@@ -67,19 +83,40 @@ export function qualificationRecordPresence({ root = process.cwd(), packageKey }
   } catch (error) {
     return { state: "indeterminate", reason: `${path} could not be read as JSON: ${error instanceof Error ? error.message : "unknown error"}` };
   }
-  const recordedDigest = record?.candidate?.packageManifestSha256;
-  if (typeof recordedDigest !== "string" || recordedDigest === "") {
+  const recordedManifestDigest = record?.candidate?.packageManifestSha256;
+  if (typeof recordedManifestDigest !== "string" || recordedManifestDigest === "") {
     return { state: "indeterminate", reason: `${path} carries no candidate.packageManifestSha256 to join against` };
   }
-
-  let currentDigest;
-  try {
-    currentDigest = currentQualificationJoins(root, candidate).packageManifestSha256;
-  } catch (error) {
-    return { state: "indeterminate", reason: `current package manifest digest could not be recomputed: ${error instanceof Error ? error.message : "unknown error"}` };
+  const recordedTreeDigest = record?.candidate?.packageTreeSha1;
+  if (typeof recordedTreeDigest !== "string" || recordedTreeDigest === "") {
+    return { state: "indeterminate", reason: `${path} carries no candidate.packageTreeSha1 to join against` };
   }
 
-  if (recordedDigest !== currentDigest) return { state: "stale", candidate, path, recordedDigest, currentDigest };
+  let current;
+  try {
+    current = currentQualificationJoins(root, candidate);
+  } catch (error) {
+    return { state: "indeterminate", reason: `current package digests could not be recomputed: ${error instanceof Error ? error.message : "unknown error"}` };
+  }
+  const currentManifestDigest = current.packageManifestSha256;
+  const currentTreeDigest = current.packageTreeSha1;
+
+  const staleFields = [];
+  if (recordedManifestDigest !== currentManifestDigest) staleFields.push("packageManifestSha256");
+  if (recordedTreeDigest !== currentTreeDigest) staleFields.push("packageTreeSha1");
+
+  if (staleFields.length > 0) {
+    return {
+      state: "stale",
+      candidate,
+      path,
+      staleFields,
+      recordedManifestDigest,
+      currentManifestDigest,
+      recordedTreeDigest,
+      currentTreeDigest,
+    };
+  }
   return { state: "present", candidate, path };
 }
 
@@ -98,7 +135,14 @@ if (process.argv[1] && process.argv[1].endsWith("check-qualification-record-pres
     process.exit(1);
   }
   if (result.state === "stale") {
-    console.error(`QUALIFICATION RECORD STALE — ${result.candidate.name}@${result.candidate.version} at ${result.path} was qualified against a manifest that has since changed (recorded candidate.packageManifestSha256 ${result.recordedDigest}, current ${result.currentDigest}).`);
+    const diagnoses = [];
+    if (result.staleFields.includes("packageManifestSha256")) {
+      diagnoses.push(`its package.json has changed (recorded candidate.packageManifestSha256 ${result.recordedManifestDigest}, current ${result.currentManifestDigest})`);
+    }
+    if (result.staleFields.includes("packageTreeSha1")) {
+      diagnoses.push(`its package directory has changed (recorded candidate.packageTreeSha1 ${result.recordedTreeDigest}, current ${result.currentTreeDigest})`);
+    }
+    console.error(`QUALIFICATION RECORD STALE — ${result.candidate.name}@${result.candidate.version} at ${result.path} was qualified against a candidate that has since changed: ${diagnoses.join("; ")}.`);
     console.error("Re-qualify the candidate and retain a fresh record before dispatching a publish — this one no longer describes it.");
     console.error("Stopping here rather than inside the publish job, so the npm-publish approval is not spent on a run that cannot succeed.");
     process.exit(1);

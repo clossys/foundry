@@ -58,16 +58,23 @@ function commitAll(root, message = "fixture") {
   git(root, ["commit", "-m", message]);
 }
 
-test("reports present when the retained record exists for the manifest's exact version and still joins on its manifest digest", (t) => {
+// A retained record fixture: writes both digests `currentQualificationJoins`
+// returns, so a "present" fixture is genuinely joining on both axes rather
+// than happening to pass because one axis was never populated.
+function writeRecord(root, recordPath, joins, overrides = {}) {
+  writeFileSync(
+    join(root, recordPath),
+    JSON.stringify({ candidate: { packageManifestSha256: joins.packageManifestSha256, packageTreeSha1: joins.packageTreeSha1, ...overrides } }),
+  );
+}
+
+test("reports present when the retained record exists for the manifest's exact version and still joins on both its manifest and tree digests", (t) => {
   const root = gitFixtureRoot(t);
   writeManifest(root, "writer", { name: "@clossys/writer", version: "0.3.3" });
   writeAdapter(root, "writer");
   commitAll(root);
   const joins = currentQualificationJoins(root, { name: "@clossys/writer", version: "0.3.3" });
-  writeFileSync(
-    join(root, "governance/release-qualifications/clossys-writer-0.3.3.json"),
-    JSON.stringify({ candidate: { packageManifestSha256: joins.packageManifestSha256 } }),
-  );
+  writeRecord(root, "governance/release-qualifications/clossys-writer-0.3.3.json", joins);
   const result = qualificationRecordPresence({ root, packageKey: "writer" });
   assert.equal(result.state, "present");
   assert.equal(result.path, "governance/release-qualifications/clossys-writer-0.3.3.json");
@@ -110,32 +117,85 @@ test("is indeterminate, never a pass, when no package key is given", () => {
   assert.equal(qualificationRecordPresence({}).state, "indeterminate");
 });
 
-// --- staleness: a record binds a specific candidate via
-// `candidate.packageManifestSha256`. A retained record that exists but no
-// longer describes the *current* candidate must be its own state, distinct
-// from both "present" (matches) and "missing" (no file at all) — a record
+// --- staleness: a record binds a candidate on TWO axes —
+// `candidate.packageManifestSha256` (package.json bytes alone) and
+// `candidate.packageTreeSha1` (a git tree hash over the whole package
+// directory, covering LICENSE/README/dist/everything else `npm pack` would
+// include). A retained record that exists but no longer describes the
+// *current* candidate on either axis must be its own state, distinct from
+// both "present" (matches on both) and "missing" (no file at all) — a record
 // that always reads "present" once the file exists is exactly what let
 // designer 0.3.1 reach the publish job with a record qualified against a
 // manifest a routine dependabot bump had already changed 29 minutes later.
+//
+// `currentQualificationJoins(root, candidate, "WORKTREE")` (the default)
+// resolves `packageManifestSha256` from *disk* bytes but `packageTreeSha1`
+// from the committed `HEAD` tree — so an uncommitted edit to package.json
+// moves only the manifest digest, while a committed edit to some other file
+// in the package directory moves only the tree digest. That asymmetry is
+// exactly what lets the fixtures below isolate one axis of drift at a time.
 
-test("reports stale when a later change moves the manifest digest the record was qualified against", (t) => {
+test("reports stale (manifest only) when an uncommitted later change moves the manifest digest the record was qualified against", (t) => {
   const root = gitFixtureRoot(t);
   writeManifest(root, "writer", { name: "@clossys/writer", version: "0.3.3" });
   writeAdapter(root, "writer");
   commitAll(root);
   const joins = currentQualificationJoins(root, { name: "@clossys/writer", version: "0.3.3" });
-  writeFileSync(
-    join(root, "governance/release-qualifications/clossys-writer-0.3.3.json"),
-    JSON.stringify({ candidate: { packageManifestSha256: joins.packageManifestSha256 } }),
-  );
+  writeRecord(root, "governance/release-qualifications/clossys-writer-0.3.3.json", joins);
   // Stand in for PR #684: a merge to the package after qualification, same
-  // version, different manifest bytes. The record is never touched.
+  // version, different manifest bytes. The record is never touched, and
+  // nothing else in the package directory changes (uncommitted, so
+  // packageTreeSha1 — resolved against HEAD — does not move either).
   writeManifest(root, "writer", { name: "@clossys/writer", version: "0.3.3", dependencies: { "@types/react-dom": "19.2.3" } });
   const result = qualificationRecordPresence({ root, packageKey: "writer" });
   assert.equal(result.state, "stale");
   assert.equal(result.path, "governance/release-qualifications/clossys-writer-0.3.3.json");
-  assert.equal(result.recordedDigest, joins.packageManifestSha256);
-  assert.notEqual(result.currentDigest, joins.packageManifestSha256);
+  assert.deepEqual(result.staleFields, ["packageManifestSha256"]);
+  assert.equal(result.recordedManifestDigest, joins.packageManifestSha256);
+  assert.notEqual(result.currentManifestDigest, joins.packageManifestSha256);
+  assert.equal(result.recordedTreeDigest, result.currentTreeDigest, "package.json is the only thing that changed — the tree digest must not have moved");
+});
+
+// The case measured on this repository's own live tree: `@clossys/starter`
+// held a record whose packageManifestSha256 still matched — package.json was
+// untouched — while its packageTreeSha1 had drifted because another file
+// inside packages/starter/ had changed and been committed. A manifest-only
+// comparison reports that as "present" and lets it reach the publish job on a
+// spent approval; this is the case this issue's corrected finding is about.
+test("reports stale (tree only) when a later committed change to a non-manifest file in the package directory moves the tree digest, package.json untouched", (t) => {
+  const root = gitFixtureRoot(t);
+  writeManifest(root, "writer", { name: "@clossys/writer", version: "0.3.3" });
+  writeAdapter(root, "writer");
+  commitAll(root);
+  const joins = currentQualificationJoins(root, { name: "@clossys/writer", version: "0.3.3" });
+  writeRecord(root, "governance/release-qualifications/clossys-writer-0.3.3.json", joins);
+  // Stand in for the @clossys/starter case: package.json is never touched,
+  // but another file inside the package directory changes and is committed —
+  // this alone moves packageTreeSha1, which is resolved against HEAD.
+  writeFileSync(join(root, "packages/writer/LICENSE"), "MIT\n");
+  commitAll(root, "add LICENSE");
+  const result = qualificationRecordPresence({ root, packageKey: "writer" });
+  assert.equal(result.state, "stale");
+  assert.equal(result.path, "governance/release-qualifications/clossys-writer-0.3.3.json");
+  assert.deepEqual(result.staleFields, ["packageTreeSha1"]);
+  assert.equal(result.recordedManifestDigest, result.currentManifestDigest, "package.json is untouched — the manifest digest must not have moved");
+  assert.equal(result.recordedTreeDigest, joins.packageTreeSha1);
+  assert.notEqual(result.currentTreeDigest, joins.packageTreeSha1);
+});
+
+test("reports stale (both) and names both fields when the manifest and another packed file both drift", (t) => {
+  const root = gitFixtureRoot(t);
+  writeManifest(root, "writer", { name: "@clossys/writer", version: "0.3.3" });
+  writeAdapter(root, "writer");
+  commitAll(root);
+  const joins = currentQualificationJoins(root, { name: "@clossys/writer", version: "0.3.3" });
+  writeRecord(root, "governance/release-qualifications/clossys-writer-0.3.3.json", joins);
+  writeManifest(root, "writer", { name: "@clossys/writer", version: "0.3.3", dependencies: { "@types/react-dom": "19.2.3" } });
+  writeFileSync(join(root, "packages/writer/LICENSE"), "MIT\n");
+  commitAll(root, "bump dependency and add LICENSE");
+  const result = qualificationRecordPresence({ root, packageKey: "writer" });
+  assert.equal(result.state, "stale");
+  assert.deepEqual(result.staleFields.slice().sort(), ["packageManifestSha256", "packageTreeSha1"]);
 });
 
 test("a stale finding still exits non-zero like missing, but is distinguishable from it", (t) => {
@@ -143,7 +203,8 @@ test("a stale finding still exits non-zero like missing, but is distinguishable 
   writeManifest(root, "writer", { name: "@clossys/writer", version: "0.3.3" });
   writeAdapter(root, "writer");
   commitAll(root);
-  writeFileSync(join(root, "governance/release-qualifications/clossys-writer-0.3.3.json"), JSON.stringify({ candidate: { packageManifestSha256: "0".repeat(64) } }));
+  const joins = currentQualificationJoins(root, { name: "@clossys/writer", version: "0.3.3" });
+  writeRecord(root, "governance/release-qualifications/clossys-writer-0.3.3.json", joins, { packageManifestSha256: "0".repeat(64) });
   const result = qualificationRecordPresence({ root, packageKey: "writer" });
   assert.equal(result.state, "stale");
   assert.notEqual(result.state, "missing");
@@ -156,6 +217,20 @@ test("is indeterminate, never a pass, when the retained record carries no packag
   writeAdapter(root, "writer");
   commitAll(root);
   writeFileSync(join(root, "governance/release-qualifications/clossys-writer-0.3.3.json"), "{}");
+  const result = qualificationRecordPresence({ root, packageKey: "writer" });
+  assert.equal(result.state, "indeterminate");
+});
+
+test("is indeterminate, never a pass, when the retained record carries no packageTreeSha1 to join against", (t) => {
+  const root = gitFixtureRoot(t);
+  writeManifest(root, "writer", { name: "@clossys/writer", version: "0.3.3" });
+  writeAdapter(root, "writer");
+  commitAll(root);
+  const joins = currentQualificationJoins(root, { name: "@clossys/writer", version: "0.3.3" });
+  writeFileSync(
+    join(root, "governance/release-qualifications/clossys-writer-0.3.3.json"),
+    JSON.stringify({ candidate: { packageManifestSha256: joins.packageManifestSha256 } }),
+  );
   const result = qualificationRecordPresence({ root, packageKey: "writer" });
   assert.equal(result.state, "indeterminate");
 });
@@ -179,7 +254,7 @@ test("is indeterminate, never a pass, when the current manifest digest cannot be
   commitAll(root);
   writeFileSync(
     join(root, "governance/release-qualifications/clossys-writer-0.3.3.json"),
-    JSON.stringify({ candidate: { packageManifestSha256: "irrelevant-because-unreachable" } }),
+    JSON.stringify({ candidate: { packageManifestSha256: "irrelevant-because-unreachable", packageTreeSha1: "irrelevant-because-unreachable" } }),
   );
   const result = qualificationRecordPresence({ root, packageKey: "writer" });
   assert.equal(result.state, "indeterminate");
@@ -190,16 +265,20 @@ test("is indeterminate, never a pass, when the current manifest digest cannot be
 // as a plain readback, not asserted either way, since the live tree moves —
 // see the agent report/PR body for the recorded comparison at the time this
 // suite was written.
-test("live check: reads back designer's 0.2.7 record against today's packages/designer manifest", () => {
+test("live check: reads back designer's 0.2.7 record against today's packages/designer manifest and tree", () => {
   const path = "governance/release-qualifications/clossys-designer-0.2.7.json";
   const record = JSON.parse(readFileSync(path, "utf8"));
   assert.equal(record.candidate.name, "@clossys/designer");
   assert.equal(record.candidate.version, "0.2.7");
   assert.equal(typeof record.candidate.packageManifestSha256, "string");
-  const currentDigest = currentQualificationJoins(process.cwd(), { name: record.candidate.name, version: record.candidate.version }).packageManifestSha256;
+  assert.equal(typeof record.candidate.packageTreeSha1, "string");
+  const current = currentQualificationJoins(process.cwd(), { name: record.candidate.name, version: record.candidate.version });
   console.log(
     `designer 0.2.7 record packageManifestSha256=${record.candidate.packageManifestSha256} ` +
-      `vs today's packages/designer packageManifestSha256=${currentDigest} ` +
-      `(fresh=${record.candidate.packageManifestSha256 === currentDigest})`,
+      `vs today's packages/designer packageManifestSha256=${current.packageManifestSha256} ` +
+      `(manifest fresh=${record.candidate.packageManifestSha256 === current.packageManifestSha256}); ` +
+      `record packageTreeSha1=${record.candidate.packageTreeSha1} ` +
+      `vs today's packages/designer packageTreeSha1=${current.packageTreeSha1} ` +
+      `(tree fresh=${record.candidate.packageTreeSha1 === current.packageTreeSha1})`,
   );
 });
