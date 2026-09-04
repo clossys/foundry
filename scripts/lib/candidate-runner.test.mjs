@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { promisify } from "node:util";
-import { QUALIFICATION_PHASE_TIMEOUTS, assertCredentialFree, containedRegularFile, installNpmrc, normalizedStream, packedFrameworkContexts, runCandidateQualification, runProcess, runtimeImportArguments, wildcardCapture } from "./candidate-runner.mjs";
+import { QUALIFICATION_PHASE_TIMEOUTS, assertCredentialFree, candidateNotInstalledMessage, containedRegularFile, installNpmrc, normalizedStream, packedFrameworkContexts, runCandidateQualification, runProcess, runtimeImportArguments, wildcardCapture } from "./candidate-runner.mjs";
 import { RELEASE_RUNTIME } from "./release-runtime.mjs";
 
 const execFile = promisify(execFileCallback);
@@ -441,4 +441,40 @@ test("optional peer runtime exports stay red until an exact compatible peer is i
   assert.equal(green.ok, true);
   assert.deepEqual(green.peerInstall, { typescript: "6.0.3" });
   assert.equal(green.observations.find((item) => item.id === "install").expectedExitCode, 0);
+});
+
+
+test("candidateNotInstalledMessage carries npm's own failure forward instead of a bare refusal (issue #791)", () => {
+  // publisher@0.4.1 failed qualification on 2026-09-02 with only "candidate
+  // package was not installed from the supplied tarball" — the actual cause
+  // (an unresolvable @clossys/designer@^0.4.0, since the registry only had
+  // 0.2.7 at the time) had to be reconstructed from workflow logs and
+  // historical registry state. No install: an aggregate child never gets
+  // its own failure surfaced this way.
+  assert.equal(candidateNotInstalledMessage(null), "candidate package was not installed from the supplied tarball");
+  // A clean install exit with the manifest still unreadable (e.g. a
+  // corrupt tarball) must not fabricate an npm failure that never happened.
+  assert.equal(
+    candidateNotInstalledMessage({ exitCode: 0, signal: null, launchError: false, stderr: "" }),
+    "candidate package was not installed from the supplied tarball",
+  );
+  // The exact defect: an unresolvable dependency exits non-zero and npm's
+  // own stderr names it. That sentence must survive into the thrown error.
+  assert.equal(
+    candidateNotInstalledMessage({ exitCode: 1, signal: null, launchError: false, stderr: "npm error ETARGET\nnpm error No matching version found for @clossys/designer@^0.4.0\n" }),
+    'candidate package was not installed from the supplied tarball (npm install exited 1: npm error ETARGET\nnpm error No matching version found for @clossys/designer@^0.4.0)',
+  );
+  assert.equal(
+    candidateNotInstalledMessage({ exitCode: null, signal: "SIGKILL", launchError: false, stderr: "" }),
+    "candidate package was not installed from the supplied tarball (npm install was terminated by SIGKILL)",
+  );
+  assert.equal(
+    candidateNotInstalledMessage({ exitCode: null, signal: null, launchError: true, stderr: "spawn ENOENT" }),
+    "candidate package was not installed from the supplied tarball (npm install could not be launched: spawn ENOENT)",
+  );
+  // A very long stderr must not leak unboundedly into the thrown error.
+  const long = "x".repeat(5000);
+  const message = candidateNotInstalledMessage({ exitCode: 1, signal: null, launchError: false, stderr: long });
+  assert.ok(message.length < long.length, "stderr tail must be bounded");
+  assert.ok(message.endsWith("x".repeat(50) + ")"));
 });

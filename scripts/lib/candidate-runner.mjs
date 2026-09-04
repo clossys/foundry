@@ -719,6 +719,25 @@ async function exportCoverage(manifest, installed, root) {
 }
 
 /** Execute the fixed, data-only contract against exactly one local tarball. */
+// An unresolvable dependency, a registry outage, and a corrupt tarball all
+// leave the candidate's own package.json unreadable from node_modules, and
+// this refusal is the only artifact an operator sees (issue #791). `install`
+// is the real `runProcess("npm", ["install", ...])` result for a candidate
+// that owns its own install root, or `null` for a shared aggregate root
+// (where a child's individual failure is never this candidate's install).
+// When the install itself failed, surface npm's own exit status and a
+// bounded stderr tail — exactly the sentence ("No matching version found
+// for ...", ETARGET, a registry 5xx, ...) that tells a reader "wait",
+// "retry", and "stop and investigate" apart. Pure and exported so it is
+// directly testable without a real, slow, network-dependent npm install.
+export function candidateNotInstalledMessage(install) {
+  const installFailed = install !== null && (install.exitCode !== 0 || install.signal || install.launchError);
+  if (!installFailed) return "candidate package was not installed from the supplied tarball";
+  const how = install.launchError ? "could not be launched" : install.signal ? `was terminated by ${install.signal}` : `exited ${install.exitCode}`;
+  const stderrTail = install.stderr?.trim() ? `: ${install.stderr.trim().slice(-4000)}` : "";
+  return `candidate package was not installed from the supplied tarball (npm install ${how}${stderrTail})`;
+}
+
 export async function runCandidateQualification({ tarball, policy, adapter, fixtures, manifestBins, registry, consumerRoot = null, skipRollback = false, restoreConsumerOverlay = false, releaseRuntimeRun }) {
   assertCredentialFree();
   assertReleaseRuntime(releaseRuntimeRun ? { run: releaseRuntimeRun } : {});
@@ -816,8 +835,14 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
     let installedManifest;
     try {
       installedManifest = JSON.parse(await readFile(join(installed, "package.json"), "utf8"));
-    } catch {
-      throw new Error("candidate package was not installed from the supplied tarball");
+    } catch (error) {
+      // This refusal is the only artifact an operator sees. An unresolvable
+      // dependency, a registry outage, and a corrupt tarball all land here
+      // identically unless the cause is carried forward (issue #791). See
+      // `candidateNotInstalledMessage` for the exact mapping, kept as a pure
+      // function so it is directly testable without a real, slow,
+      // network-dependent npm install.
+      throw new Error(candidateNotInstalledMessage(install), { cause: error });
     }
     const installedBins = normalizedBins(installedManifest);
     if (!sameBinMap(packedBins, installedBins)) transcript.mismatches.push("installed-bin-map");
