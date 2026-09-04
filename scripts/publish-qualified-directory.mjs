@@ -15,7 +15,7 @@ import { tmpdir } from "node:os";
 import { basename, join, relative, resolve, sep } from "node:path";
 
 import { assertPackageAuthorized, loadReleaseCatalog, readCurrentReleaseIdentity, resolveReleaseTarget } from "./check-release-catalog.mjs";
-import { verifyPostPublishPublicNpmArtifact } from "./verify-post-publish-public-npm-artifact.mjs";
+import { IndeterminateError, verifyPostPublishPublicNpmArtifact } from "./verify-post-publish-public-npm-artifact.mjs";
 import { assertReleaseRuntime, RELEASE_RUNTIME } from "./lib/release-runtime.mjs";
 
 const KEY = /^[a-z0-9][a-z0-9-]{0,63}$/;
@@ -388,6 +388,19 @@ export async function publishQualifiedDirectory({ root = process.cwd(), packageK
   }
 }
 
+// The embedded post-publish verify (see `verify` above) can throw
+// IndeterminateError when its bounded observation window merely runs out
+// on a confirmed upload — that is this repository's exit code 2, never a
+// failure. This is the exact call whose plain-Error failure aborted
+// controller@0.9.2's run and skipped its authoritative post-publish check
+// (issue #790); every other error here (a real publish failure, a genuine
+// byte mismatch, ...) still exits 1. Exported as its own pure function so
+// the mapping is directly testable without spawning this CLI against a
+// real, slow, network-dependent observation window.
+export function publishExitCode(error) {
+  return error instanceof IndeterminateError ? 2 : 1;
+}
+
 if (process.argv[1] === new URL(import.meta.url).pathname) {
   try {
     const args = argsFrom(process.argv);
@@ -396,7 +409,7 @@ if (process.argv[1] === new URL(import.meta.url).pathname) {
   } catch (error) {
     // Do not echo npm's output, registry documents, input paths, or an
     // interactive account context. The caller only gets the control verdict.
-    console.error(`publish-qualified-directory: ${error.message}`);
-    process.exitCode = 1;
+    console.error(`publish-qualified-directory: ${error instanceof IndeterminateError ? "INDETERMINATE — " : ""}${error.message}`);
+    process.exitCode = publishExitCode(error);
   }
 }
