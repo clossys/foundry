@@ -488,16 +488,52 @@ jobs:
           # The wrapper extracts and FULL-scans the qualified tarball, proves
           # clean-directory SHA-1/SHA-256/SHA-512 parity, then invokes this
           # trusted OIDC upload as `npm publish .` from its private stage.
+          #
+          # This wrapper's own embedded post-publish verify (see
+          # scripts/verify-post-publish-public-npm-artifact.mjs) exits 2 —
+          # INDETERMINATE, this repository's convention for "could not
+          # confirm" — when its bounded observation window merely runs out
+          # on an upload that already, immutably, happened; it exits 1 only
+          # for a genuine byte mismatch or an actual publish failure. `set
+          # -e` is suspended around just this command so a 2 can be
+          # inspected instead of aborting the step outright — that exact
+          # abort is what skipped `verify-published` for controller@0.9.2
+          # (issue #790).
+          set +e
           node scripts/publish-qualified-directory.mjs --package "$PKG" --candidate "$TARBALL" --record "$record" --mode oidc
+          status=$?
+          set -e
+          if [ "$status" -eq 2 ]; then
+            echo "::warning title=Anonymous visibility indeterminate::${PKG}'s embedded post-publish observation window ended without anonymously confirming the upload. The upload already happened and is immutable; this is NOT a failure. The independent 'post-publish anonymous registry verification' job is the authoritative check and still runs."
+            exit 0
+          fi
+          exit "$status"
 
+      # This in-job probe has its own bounded observation window (see
+      # scripts/lib/public-npm-registry.mjs) and can legitimately run out of
+      # retries before the anonymous public npm edge has caught up with an
+      # upload that already, immutably, happened. verify-post-publish-public-
+      # npm-artifact.mjs exits 2 for exactly that case — INDETERMINATE, this
+      # repository's convention for "could not confirm", never a failure —
+      # and reserves exit 1 for a genuine byte mismatch. Only exit 1 (or any
+      # other unexpected non-zero code) fails this step; exit 2 is reported
+      # as a warning and does not fail the job, so a slow CDN edge never
+      # skips the independent, authoritative `verify-published` job below
+      # (issue #790 — that is exactly what happened to controller@0.9.2).
       - name: Verify anonymous public npm visibility and exact bytes
         env:
           PKG: ${{ matrix.package }}
           PUBLISH_RELEASE_TARGET: ${{ inputs.release_target }}
           EXPECTED_TARBALL: ${{ runner.temp }}/qualification/${{ matrix.package }}/candidate.tgz
         run: |
-          set -euo pipefail
+          set -uo pipefail
           node scripts/verify-post-publish-public-npm-artifact.mjs --package "$PKG" --expected-tarball "$EXPECTED_TARBALL"
+          status=$?
+          if [ "$status" -eq 2 ]; then
+            echo "::warning title=Anonymous visibility indeterminate::${PKG}'s bounded post-publish observation window ended without anonymously confirming the upload. The upload already happened and is immutable; this is NOT a failure. The independent 'post-publish anonymous registry verification' job is the authoritative check and still runs."
+            exit 0
+          fi
+          exit "$status"
 
       - name: Redact denylist
         if: always()
