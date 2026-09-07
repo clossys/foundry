@@ -10,7 +10,8 @@ import test from "node:test";
 import { once } from "node:events";
 import { promisify } from "node:util";
 
-import { argsFrom, createOwnerPromptRelay, ownerPresentPtyArgs, publishQualifiedDirectory, runInteractiveChild } from "./publish-qualified-directory.mjs";
+import { argsFrom, createOwnerPromptRelay, ownerPresentPtyArgs, publishExitCode, publishQualifiedDirectory, runInteractiveChild } from "./publish-qualified-directory.mjs";
+import { IndeterminateError } from "./verify-post-publish-public-npm-artifact.mjs";
 import { ALL_PACKAGE_RELEASE_ORDER } from "./check-release-catalog.mjs";
 
 const execFile = promisify(execFileCallback);
@@ -576,4 +577,21 @@ test("wrapper rejects archive symlinks and transient client manifest fields befo
   let called = false;
   await assert.rejects(() => publishQualifiedDirectory({ root: item.root, packageKey: "strategist", candidatePath: unsafe, recordPath: item.recordPath, env: { PATH: process.env.PATH, HOME: item.root, PUBLIC_SAFETY_DENYLIST: item.denylist }, run: () => { called = true; return { status: 0, stdout: "", stderr: "" }; }, verify: async () => {} }), /unsafe|symlink|extended metadata|entries/);
   assert.equal(called, false);
+});
+
+
+test("publishExitCode reports indeterminate observation windows as 2, everything else as a failure", () => {
+  // This is the exact defect behind issue #790: controller@0.9.2 and
+  // strategist@0.1.3 both published correctly, then the CLI's un-narrowed
+  // catch-all turned a merely-unconfirmed anonymous visibility window into a
+  // hard failure, aborting the job and skipping the authoritative
+  // `verify-published` check downstream. `publishExitCode` is the pure
+  // mapping the CLI defers to; test it directly rather than spawning a real,
+  // slow, network-dependent observation window.
+  assert.equal(publishExitCode(new IndeterminateError("anonymous public npm visibility did not complete within the observation window: known")), 2);
+  // A genuine finding about bytes we DID observe must still fail — the
+  // opposite defect (folding a real mismatch into "indeterminate") would let
+  // a corrupted upload report as merely unconfirmed.
+  assert.equal(publishExitCode(new Error("published tarball mismatch: registry sha256 differs from the uploaded candidate")), 1);
+  assert.equal(publishExitCode(new Error("some other publish failure")), 1);
 });
