@@ -13,6 +13,12 @@ const checker = join(scriptsDir, "check-foreign-references.mjs");
 const futureScope = `@${"clossys"}`;
 const transitionPolicy = readFileSync(join(scriptsDir, "..", "governance", "package-identity-transition.json"), "utf8");
 const parsedTransitionPolicy = JSON.parse(transitionPolicy);
+// The retired producer identity is never spelled out here. It is read from the
+// closed transition policy these fixtures are validated against, so a fixture
+// cannot drift from the one declaration the gate itself resolves.
+const retiredScope = parsedTransitionPolicy.current.scope;
+const retiredRegistry = parsedTransitionPolicy.current.registry;
+const retiredRepository = parsedTransitionPolicy.current.repository;
 
 function write(path, contents) {
   mkdirSync(dirname(path), { recursive: true });
@@ -25,7 +31,7 @@ function catalog({ malformed = false } = {}) {
     schemaVersion: 1,
     defaultTarget: "current-github-packages",
     targets: [
-      { id: "current-github-packages", status: "active", scope: "@vespeneventures", registry: "https://npm.pkg.github.com", packages: "all" },
+      { id: "current-github-packages", status: "active", scope: retiredScope, registry: retiredRegistry, packages: "all" },
       { id: "clossys-npmjs-precutover", status: "planned", scope: futureScope, registry: "https://registry.npmjs.org", packages: ["advisor", "starter", "controller"] },
     ],
   });
@@ -33,8 +39,8 @@ function catalog({ malformed = false } = {}) {
 
 function fixture({ malformed = false, extraFiles = {} } = {}) {
   const root = mkdtempSync(join(tmpdir(), "foreign-release-catalog-"));
-  write(join(root, "package-scope.json"), JSON.stringify({ scope: "@vespeneventures", registry: "https://npm.pkg.github.com" }));
-  write(join(root, "package.json"), JSON.stringify({ private: true, repository: { type: "git", url: "https://github.com/vespeneventures/foundry.git" } }));
+  write(join(root, "package-scope.json"), JSON.stringify({ scope: retiredScope, registry: retiredRegistry }));
+  write(join(root, "package.json"), JSON.stringify({ private: true, repository: { type: "git", url: `https://github.com/${retiredRepository}.git` } }));
   write(join(root, "governance/release-catalog.json"), catalog({ malformed }));
   for (const [path, contents] of Object.entries(extraFiles)) write(join(root, path), contents);
   return root;
@@ -48,7 +54,7 @@ function digestLine(line) {
   return `sha256:${createHash("sha256").update(line).digest("hex")}`;
 }
 
-function candidateFixture({ historicalLine = "Retained @vespeneventures/advisor evidence.", inventoryLine = null, extraFiles = {} } = {}) {
+function candidateFixture({ historicalLine = `Retained ${retiredScope}/advisor evidence.`, inventoryLine = null, extraFiles = {} } = {}) {
   const root = mkdtempSync(join(tmpdir(), "foreign-candidate-history-"));
   write(join(root, "package-scope.json"), JSON.stringify({ scope: futureScope, registry: "https://registry.npmjs.org", access: "public" }));
   write(join(root, "package.json"), JSON.stringify({ private: true, repository: { type: "git", url: "https://github.com/clossys/foundry.git" } }));
@@ -74,7 +80,7 @@ function candidateFixture({ historicalLine = "Retained @vespeneventures/advisor 
     schemaVersion: 2,
     defaultTarget: "clossys-npmjs",
     targets: [
-      { id: "current-github-packages", status: "historical", scope: "@vespeneventures", registry: "https://npm.pkg.github.com", packages: "all" },
+      { id: "current-github-packages", status: "historical", scope: retiredScope, registry: retiredRegistry, packages: "all" },
       { id: "clossys-npmjs", status: "active", scope: futureScope, registry: "https://registry.npmjs.org", access: "public", packages: [...ALL_PACKAGE_RELEASE_ORDER] },
     ],
   }));
@@ -142,8 +148,8 @@ test("candidate state admits a retired identity only at its exact inventoried hi
 });
 
 test("candidate state rejects changed historical bytes and the same identity on an active source path", () => {
-  const changed = candidateFixture({ inventoryLine: "Retained prior evidence.", historicalLine: "Retained @vespeneventures/advisor evidence." });
-  const active = candidateFixture({ extraFiles: { "src/current.mjs": 'export const active = "@vespeneventures/advisor";\n' } });
+  const changed = candidateFixture({ inventoryLine: "Retained prior evidence.", historicalLine: `Retained ${retiredScope}/advisor evidence.` });
+  const active = candidateFixture({ extraFiles: { "src/current.mjs": `export const active = "${retiredScope}/advisor";\n` } });
   try {
     const changedResult = run(changed);
     assert.equal(changedResult.status, 1, changedResult.stderr || changedResult.stdout);

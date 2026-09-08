@@ -280,6 +280,7 @@ const PLACEHOLDER_NAMES = new Map([
   ["yourscope", "docs/DECISIONS.md stand-in addressed at the reader's own scope"],
   ["acme", "the standard fictional-company placeholder, used in packages/surface metadata fixtures"],
   ["containment-fixture-scope", "scripts/test-gates.mjs denylist-containment fixture scope"],
+  ["retired-scope", "gate test stand-in for a predecessor scope a package was published under before it moved"],
 ]);
 
 // --------------------------------------------------------------------- identity
