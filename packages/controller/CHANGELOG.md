@@ -5,6 +5,16 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- Historical entries below now describe the previous npm scope without naming
+  the producer account this catalogue no longer publishes under, and links to
+  this repository use its current `clossys/foundry` path. No date, version,
+  or recorded fact changed — only the way the retired scope is referred to.
+
+
 ## [0.9.2] - 2026-09-02
 
 ### Fixed
@@ -72,7 +82,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `@vespeneventures/controller/release` now exposes the generic,
+- `@clossys/controller/release` now exposes the generic,
   caller-supplied singular-authority lock-graph check and the installed
   `singular-authority-check` CLI. A declaration identifies only packages that
   represent one authority in a consumer scope; ordinary duplicate libraries
@@ -91,7 +101,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `@vespeneventures/controller/repository` now ships
+- `@clossys/controller/repository` now ships
   `RepositoryPackageAdoptionV1`, its strict pure validator/evaluator,
   candidate-only planner, versioned contract/fixture, and the installed
   `repository-package-adoption-check` CLI. It keeps repository profiles as
@@ -169,7 +179,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Extended the shipped schema-version-4 role-loop contract with the
-  provider-neutral `@vespeneventures/advisor` role and its engagement decision
+  provider-neutral `@clossys/advisor` role and its engagement decision
   currency metric. Consumer position validation now recognizes Advisor as an
   active role.
 
@@ -177,7 +187,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `@vespeneventures/controller/positions` now ships the versioned,
+- `@clossys/controller/positions` now ships the versioned,
   consumer-owned completion-evidence contract and
   `foundry-completion-evidence-check`. It links one open position to exact
   package/install proof, invocation and placement, red/green control,
@@ -211,7 +221,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `@vespeneventures/controller/positions` and `foundry-position-check`: a
+- `@clossys/controller/positions` and `foundry-position-check`: a
   pure validator for consumer-owned installed-position ledgers. Every active
   role receives an explicit `open` or `not-applicable` disposition; open roles
   cite complete positions with first-day assessment and all five loop-stage
@@ -277,8 +287,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `checkProviderResourceNames`, `checkSecretName`, `checkSecretReadiness`,
   `checkValueFreeSecretCatalog`, `detectRawSecretReads`, and their
   associated types are **no longer exported from
-  `@vespeneventures/controller/gates`**. Import them from
-  `@vespeneventures/controller/gates/secrets` instead.
+  `@clossys/controller/gates`**. Import them from
+  `@clossys/controller/gates/secrets` instead.
 - **`typescript` is an optional peer again**
   (`peerDependenciesMeta: { typescript: { optional: true } }`, restored).
   It was made required in 0.8.4 (issue #411) because
@@ -408,7 +418,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   bare dotted-numeric version string (`"20"`, `"20.11"`, `"10.33.0"`), parsed
   and compared by a new minimal, dependency-free comparator
   (`src/repository/version-floor.ts` — deliberately not
-  `@vespeneventures/integrator`'s `semver.ts`; this package takes no runtime
+  `@clossys/integrator`'s `semver.ts`; this package takes no runtime
   dependencies and the two parsers serve different grammars). `evaluateRepositoryRequirements`
   combines multiple declared floors for the same requirement by keeping the
   strictest, reports `conflicting` when a floor and a `one-of` set share no
@@ -422,7 +432,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `src/repository/validate.test.ts` and `src/repository/evaluate.test.ts`.
 
   Versioned `0.8.3`, not `0.9.0`: `packages/builder`, `packages/inspector`,
-  and `packages/ledger` each declare `"@vespeneventures/controller": "~0.8.0"`.
+  and `packages/ledger` each declare `"@clossys/controller": "~0.8.0"`.
   A minor bump falls outside that range and silently swaps their local
   workspace link for a remote registry copy on the next lockfile
   resolution — confirmed by hand via `npm install --package-lock-only`
@@ -517,7 +527,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **`prepublishOnly` now runs the name-collision check before building.** A hand-run `npm publish` from this package's directory previously built and published without `check-name-collision.mjs` ever executing — npm only runs `prepublishOnly` for a directory-type publish, and this manifest declared just `npm run build`. See [issue #273](https://github.com/vespeneventures/foundry/issues/273). No runtime behavior changed.
+- **`prepublishOnly` now runs the name-collision check before building.** A hand-run `npm publish` from this package's directory previously built and published without `check-name-collision.mjs` ever executing — npm only runs `prepublishOnly` for a directory-type publish, and this manifest declared just `npm run build`. See [issue #273](https://github.com/clossys/foundry/issues/273). No runtime behavior changed.
 
 ## [0.7.1] - Unreleased
 
@@ -601,7 +611,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   evaluators, the exit-code ternary — but not the thing that runs it: locate
   a declaration, observe the repository's real state, call the evaluators,
   decide one of `satisfied` / `violated` / `indeterminate`
-  (`@vespeneventures/controller/gates`'s `GateResult`), and print something
+  (`@clossys/controller/gates`'s `GateResult`), and print something
   actionable. `runRepositoryProfileCheck` is that runner as a single,
   zero-I/O call; `repository-profile-check` is the single command wrapping
   it, alongside the existing `repository-check`. Discovery of the
@@ -729,8 +739,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `validateLiveStateSurfaceDeclaration`, `reconcileLiveState`, and the three
   outcome constructors `liveStateVerified` / `liveStateDrifted` /
   `liveStateCouldNotVerify`. This consolidates a shape that had already been
-  reimplemented independently in `@vespeneventures/builder` and
-  `@vespeneventures/observer`, plus this package's own tier-specific
+  reimplemented independently in `@clossys/builder` and
+  `@clossys/observer`, plus this package's own tier-specific
   `reconciliationFindingKinds` (`./routines.ts`) and
   `scheduleReconciliationFindingKinds` (`./schedules.ts`): `controller` owns
   every rule those two vocabularies already specialize and has no dependency
@@ -836,14 +846,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- First release of `@vespeneventures/controller`, formed by merging three
-  packages into one (issue #282, program issue #281): `@vespeneventures/governance`
-  (`0.15.0`) — package lifecycle, catalog, gates, release, repository,
-  review, cleanup, and composition — `@vespeneventures/conventions`
+- First release of `@clossys/controller`, formed by merging three
+  packages from the previous scope into one (issue #282, program issue #281):
+  `governance` (`0.15.0`) — package lifecycle, catalog, gates, release,
+  repository, review, cleanup, and composition — `conventions`
   (`0.8.0`) — account-neutral agent conventions — and
-  `@vespeneventures/policy` (`0.1.0`) — the content-addressed binding
+  `policy` (`0.1.0`) — the content-addressed binding
   primitive. Every subpath previously reachable under the three old package
-  names resolves unchanged under `@vespeneventures/controller`: this is a
+  names resolves unchanged under `@clossys/controller`: this is a
   rename and a merge, not a rewrite, and no public API was redesigned.
 - New subpaths: `./conventions` (governance's own `./gates`, `./repository`,
   etc. carry over unchanged), `./conventions/documents/*`,
@@ -852,8 +862,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 > retired. This release entry records their state at the time of 0.1.0; the
 > lifecycle contract is authoritative for current availability.
 
-- `@vespeneventures/governance`, `@vespeneventures/conventions`, and
-  `@vespeneventures/policy` are deprecated. `governance` and `policy` remain
+- The previous scope's `governance`, `conventions`, and
+  `policy` are deprecated. `governance` and `policy` remain
   published as thin compatibility stubs forwarding here (their own
   compatibility-shim consumers — `catalog`, `gates`, `release`,
   `repository`, `review`, and, outside this program, `ledger` and
@@ -863,5 +873,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Issue #288 removes the `governance` and `policy` stubs once the migration
   window closes.
 
-See `@vespeneventures/governance`'s own historical changelog (this package's
-former name, before issue #282) for this source's history before the merge.
+See the previous scope's `governance` changelog (this package's former name,
+before issue #282) for this source's history before the merge.

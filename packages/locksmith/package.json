@@ -18,6 +18,7 @@
     }
   },
   "bin": {
+    "clossys-secrets-infisical": "dist/infisical/cli.js",
     "vespene-secrets-infisical": "dist/infisical/cli.js"
   },
   "files": [

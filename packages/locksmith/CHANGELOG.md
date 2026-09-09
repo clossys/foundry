@@ -5,13 +5,44 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **A second `bin` name, `clossys-secrets-infisical`.** It points at the same
+  entry point as the existing one, so both names now install and behave
+  identically. The previous name carried a producer identity this catalogue no
+  longer publishes under, and a command on a consumer's `PATH` is the one
+  surface where that is not merely cosmetic.
+
+### Deprecated
+
+- **The `vespene-secrets-infisical` bin name.** It is still installed and
+  still works; it is deprecated as of this entry and will be **removed one
+  release cycle after this deprecation ships**. Renaming it in place would
+  have deleted a command consumers may already have wired into their own CI,
+  which is a breaking change, not a rename — so both names ship together for
+  a cycle and callers migrate on their own schedule. Migration is a
+  one-for-one substitution: every command, flag, exit code, and output is
+  unchanged.
+
+### Changed
+
+- `--help` output and CLI error prefixes now name `clossys-secrets-infisical`.
+  Invoking the deprecated name still works and still prints this usage text;
+  the name it prints is the one callers should move to.
+- The catalogue's own scope transition is now described without naming the
+  producer account this catalogue no longer publishes under. History is
+  unchanged; only the way the retired scope is referred to is.
+
+
 ## [0.1.8] - 2026-09-02
 
 ### Fixed
 
 - Declared `bin` targets without a leading `./`. npm rejected the dotted
   form as an invalid script name and **removed the entry entirely** on
-  publish, so `vespene-secrets-infisical` would not have been installed
+  publish, so the Infisical CLI bin would not have been installed
   by a consumer of the previous release.
 
 ### Changed
@@ -30,7 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Added `vespene-secrets-infisical qualify`, an offline readiness operation
+- Added the Infisical CLI's `qualify` command, an offline readiness operation
   that compares a strict value-free version-1 catalog with a strict
   names-only availability snapshot. It exits `0` when every required catalog
   name is present, `1` when a required name is missing, and `2` for malformed
@@ -76,7 +107,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **`prepublishOnly` now runs the name-collision check before building.** A hand-run `npm publish` from this package's directory previously built and published without `check-name-collision.mjs` ever executing — npm only runs `prepublishOnly` for a directory-type publish, and this manifest declared just `npm run build`. See [issue #273](https://github.com/vespeneventures/foundry/issues/273). No runtime behavior changed.
+- **`prepublishOnly` now runs the name-collision check before building.** A hand-run `npm publish` from this package's directory previously built and published without `check-name-collision.mjs` ever executing — npm only runs `prepublishOnly` for a directory-type publish, and this manifest declared just `npm run build`. See [issue #273](https://github.com/clossys/foundry/issues/273). No runtime behavior changed.
 
 ## [0.1.1] - Unreleased
 
@@ -91,7 +122,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.0] - Unreleased
 
-Renamed from `@vespeneventures/secrets`, which never published a release.
+Renamed from the previous scope's `secrets`, which never published a release.
 Resolution was one verb of five; this package now owns the other four —
 custody, rotation, revocation, and distribution — end to end, alongside the
 resolution contracts unchanged.

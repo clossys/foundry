@@ -5,6 +5,16 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- Historical entries below now describe the previous npm scope without naming
+  the producer account this catalogue no longer publishes under, and links to
+  this repository use its current `clossys/foundry` path. No date, version,
+  or recorded fact changed — only the way the retired scope is referred to.
+
+
 ## [0.1.4] - 2026-09-02
 
 ### Fixed
@@ -49,4 +59,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Evidence-based architecture exception assessment with explicit indeterminate
   results when no material changes have been observed.
 - `architect-check` topology and exception-assessment commands.
-- Ontology model and snapshot API under `@vespeneventures/architect/ontology`.
+- Ontology model and snapshot API under `@clossys/architect/ontology`.

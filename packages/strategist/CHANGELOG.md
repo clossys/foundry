@@ -3,6 +3,16 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Changed
+
+- Historical entries below now describe the previous npm scope without naming
+  the producer account this catalogue no longer publishes under, and links to
+  this repository use its current `clossys/foundry` path. No date, version,
+  or recorded fact changed — only the way the retired scope is referred to.
+
+
 ## [0.1.3] - 2026-09-02
 
 ### Fixed
@@ -34,7 +44,7 @@ All notable changes to this package are documented here. Format follows
 ## [0.1.0] - 2026-08-20
 
 First release. This package is the strategist role, recut from
-`@vespeneventures/strategy` per
+the previous scope's `strategy` package per
 [decision 10](../../docs/DECISIONS.md#10-recutting-the-expression-surface-into-role-shaped-packages).
 
 This changelog starts here rather than carrying the donor's history, which
@@ -59,7 +69,7 @@ reader who arrives at this package first.
   find out what changed; a new package should be born with the current
   convention rather than inheriting its donor's gap.
 
-### Changed from `@vespeneventures/strategy`
+### Changed from the previous scope's `strategy`
 
 - **The package is named for the job, not the artifact.** The role's exclusive
   question is *is it true, and is it us?* A name that describes a thing rather
@@ -75,11 +85,11 @@ reader who arrives at this package first.
 
 ### Not included
 
-> **Current lifecycle note:** `@vespeneventures/strategy` is now retired.
+> **Current lifecycle note:** the previous scope's `strategy` is now retired.
 > This release note records its state at 0.1.0; the lifecycle contract is the
 > authority for current availability.
 
-- **No forwarding stub in the donor.** `@vespeneventures/strategy` is
+- **No forwarding stub in the donor.** The previous scope's `strategy` is
   deprecated-and-retained: still installable for a consumer already pinned to
   it, with no re-export pointing here. A stub would keep the old name
   importable, and a supersession check could then never reach zero — the

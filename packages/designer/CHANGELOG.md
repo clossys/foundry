@@ -3,6 +3,16 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Changed
+
+- Historical entries below now describe the previous npm scope without naming
+  the producer account this catalogue no longer publishes under, and links to
+  this repository use its current `clossys/foundry` path. No date, version,
+  or recorded fact changed — only the way the retired scope is referred to.
+
+
 ## [0.4.1] - 2026-09-02
 
 ### Changed
@@ -136,9 +146,9 @@ either slot widens its declared range deliberately.
 ### Added
 
 - **The `environment-conformance` gate**, closing
-  [issue #405](https://github.com/vespeneventures/foundry/issues/405) as
+  [issue #405](https://github.com/clossys/foundry/issues/405) as
   narrowed by that issue's own correction comment once
-  [issue #358](https://github.com/vespeneventures/foundry/issues/358) routed
+  [issue #358](https://github.com/clossys/foundry/issues/358) routed
   the full module-graph resolver elsewhere: `render-environment.ts` has
   exported `RENDER_ENVIRONMENT` — a plain record declaring each
   `package.json#exports` subpath `"server-safe"` or `"client-only"` — since
@@ -147,12 +157,12 @@ either slot widens its declared range deliberately.
   from, or renamed in `package.json#exports` with no matching edit to the
   record, or vice versa, and nothing would notice.
   - **`checkEnvironmentConformance(packageRoot)`** (new export from
-    `@vespeneventures/designer/gate`) checks that `RENDER_ENVIRONMENT`'s key
+    `@clossys/designer/gate`) checks that `RENDER_ENVIRONMENT`'s key
     set and `package.json#exports`' subpath set are the SAME SET, in both
     directions — nothing more. It performs NO module resolution and does
     not verify that a `"server-safe"` subpath actually resolves safely
     under a real export condition; that real verification is
-    [issue #358](https://github.com/vespeneventures/foundry/issues/358)'s
+    [issue #358](https://github.com/clossys/foundry/issues/358)'s
     shared `builder` capability, deliberately not built twice here. A
     `"satisfied"` verdict means the declaration is internally consistent
     with the manifest — it says nothing about whether the declaration is
@@ -180,7 +190,7 @@ either slot widens its declared range deliberately.
 ## [0.1.0] - 2026-08-21
 
 First release. This package is the designer role, recut from
-`@vespeneventures/ui` per
+the previous scope's `ui` package per
 [decision 10](../../docs/DECISIONS.md#10-recutting-the-expression-surface-into-role-shaped-packages).
 
 This changelog starts here rather than carrying the donor's history, which
@@ -198,7 +208,7 @@ reader who arrives at this package first.
   to find out what changed; a new package should be born with the current
   convention rather than inheriting its donor's gap.
 
-### Changed from `@vespeneventures/ui`
+### Changed from the previous scope's `ui`
 
 - **The package is named for the job, not the artifact.** The role's
   exclusive question is *is it well made?* A name that describes a thing
@@ -225,9 +235,9 @@ reader who arrives at this package first.
   have made the diff unreviewable while changing no behaviour.
 - **The peer-version guard's source comment is strengthened, not just
   copied.** `internal/peer-version.ts` mirrors the donor's local ternary
-  (never imported from `@vespeneventures/controller`) exactly, but its header
+  (never imported from `@clossys/controller`) exactly, but its header
   now records both reasons that copy must stay a copy — this package sits at
-  or below `@vespeneventures/controller` in build order, and `controller`
+  or below `@clossys/controller` in build order, and `controller`
   itself cannot re-export the type because `gates/secret-gates.ts` already
   imports its own `internal/peer-version.js`, which would create a cycle —
   and states plainly that consolidating the (now six) identical copies into
@@ -239,11 +249,11 @@ reader who arrives at this package first.
 
 ### Not included
 
-> **Current lifecycle note:** `@vespeneventures/ui` is now retired. This
+> **Current lifecycle note:** the previous scope's `ui` is now retired. This
 > release note records its state at 0.1.0; the lifecycle contract is the
 > authority for current availability.
 
-- **No forwarding stub in the donor.** `@vespeneventures/ui` is
+- **No forwarding stub in the donor.** The previous scope's `ui` is
   deprecated-and-retained: still installable for a consumer already pinned to
   it, with no re-export pointing here. A stub would keep the old name
   importable, and a supersession check could then never reach zero — the
