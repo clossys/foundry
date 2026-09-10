@@ -49,7 +49,7 @@ chosen at the time. It remains evidence, not current installation guidance:
   of the registry choice itself.
 - Public npmjs would make "anyone can install this, no token required"
   literally true. It was planned, worked on, and then **cancelled** — see
-  [issue #213](https://github.com/vespeneventures/foundry/issues/213), which
+  [issue #213](https://github.com/clossys/foundry/issues/213), which
   supersedes the migration issue (#194) and the credentialless acceptance
   criteria in its umbrella program (#196). Both are closed as not planned.
 
@@ -91,7 +91,7 @@ chosen at the time. It remains evidence, not current installation guidance:
 
 ### A standing property of that registry: optional peers install as required
 
-**Status:** documented, not worked around. [Issue #226](https://github.com/vespeneventures/foundry/issues/226)
+**Status:** documented, not worked around. [Issue #226](https://github.com/clossys/foundry/issues/226)
 confirmed, with a control query, that the GitHub Packages packument omits
 `peerDependenciesMeta` for every version it serves — `peerDependencies`
 comes back complete, `peerDependenciesMeta` comes back empty, from the same
@@ -937,7 +937,7 @@ The source catalogue has nineteen current package directories. Its only
 first-party runtime edges are `builder -> controller`, `inspector ->
 controller`, and `publisher -> controller`, `designer`, and `writer`.
 Controller lists Advisor as a development dependency, not a runtime edge.
-Issue [#567](https://github.com/vespeneventures/foundry/issues/567) is the
+Issue [#567](https://github.com/clossys/foundry/issues/567) is the
 durable execution record for this producer catalogue, registry, and repository
 cutover. Issue #557 remains only the required consumer authority-convergence
 dependency.
