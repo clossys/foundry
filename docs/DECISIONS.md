@@ -1189,6 +1189,103 @@ revived by this cutover.
   authoritative. It does not authorize a partial retry on a second source
   repository or a mixed-namespace publish.
 
+## 19. The consumer-adoption hold, and what actually clears it
+
+**Status:** declared once, in
+[issue #567](https://github.com/clossys/foundry/issues/567) on 2026-08-31.
+Never lifted, never restated, and recorded in no durable file here until this
+entry. The live status of its clearing condition is deliberately **not** in
+this entry; it is measured in
+[issue #806](https://github.com/clossys/foundry/issues/806), so that a record
+meant to outlive a measurement cannot age into a false claim about one.
+
+### What was actually declared
+
+One producer checkpoint comment on #567, dated 2026-08-31T04:36:02Z, is the
+only place this repository has ever declared a hold on consumer adoption. Two
+sentences carry it. The first states the stop and its target, with the four
+named consumer repositories elided here:
+
+> The programme now has a hard producer-side stop before any [four named
+> consumer repositories] adoption. The target is all 19 current `@clossys`
+> packages safely public, provenance-bearing, anonymously installable,
+> package-authentically exercised, rollback-proven, and retained by immutable
+> release evidence.
+
+The second states its scope and what it does not stop:
+
+> The all-four-repository rollout remains held until the full catalogue
+> checkpoint, while requirements/routes/brand/content preparation may proceed
+> without package installation.
+
+That is the whole of it. It is a producer sequencing hold on one coordinated
+four-repository rollout, written in the programme record. It is not a rule in
+a contract, a lifecycle status, or a gate, and it was never given effect by
+any of those.
+
+### It did name a clearing condition, and it did name who decides
+
+Both are recoverable from that same comment. Recording this matters because
+the only surviving downstream account of this hold states that it names
+neither, and a consumer reading that account has no way to discover otherwise.
+
+The clearing condition is the "full catalogue checkpoint" quoted above: all 19
+current `@clossys` packages safely public, provenance-bearing, anonymously
+installable, package-authentically exercised, rollback-proven, and retained by
+immutable release evidence. The same comment then sequences the work that
+condition was waiting on as an ordered list of tracked issues. The condition is
+therefore measurable against published artifacts and closed issues rather than
+being a matter of standing opinion, which is what makes #806 able to carry its
+status instead of this file.
+
+The decider is the producer cutover programme, whose durable execution record
+is #567. A hold declared in that record is cleared in that record, by the
+producer cutover owner, and by nobody else. A consumer cannot clear it and
+neither can this document.
+
+### What was never declared
+
+No record in this repository forbids a consuming repository from adding an
+`@clossys` dependency, from committing an `@clossys` lockfile resolution, or
+from removing a dependency on the retired scope. Those three prohibitions are
+recorded downstream, in a consumer's own entitlements file, citing this hold.
+They are not in the hold's text, in any contract here, or in any gate here.
+
+The producer's durable consumer-facing instruction runs the other way.
+[`docs/contracts/scope-migration.md`](contracts/scope-migration.md), added the
+same day the hold was declared, exists to tell a consuming repository how to
+move off the retired scope: which names map, which version to floor at, and
+that the retired scope's registry routing line should be removed rather than
+repointed. The machine-readable authority agrees with it. Every retired-scope
+entry in [`package-lifecycle.json`](contracts/package-lifecycle.json) carries
+an explicit `replacement` under `@clossys`, and every current `@clossys` entry
+reads `active`.
+
+Nothing here executes the hold either. The one shipped mechanism a reader
+might mistake for one, the singular-authority convergence checker in
+`@clossys/controller`, is read-only, is handed its authority declarations by
+the consumer, and never infers authority from a package name. It reports
+whether a migration has converged, which presupposes that the migration is
+permitted. Decision 18's boundary condition against a consumer combining old
+and new namespaces is a constraint on how a migration is carried out and
+proven, never on whether one may begin.
+
+### The failure this entry closes
+
+A hold that lives in a single comment on a single issue, and whose only
+written trace is in a consumer repository, is indistinguishable from no hold
+at all to every reader who was not present when it was declared. The consumer
+holding on it recorded that it named no clearing condition and no owner. Both
+were in fact stated, in a place that reader had no reason to look, while this
+repository's own consumer-facing contract was simultaneously telling consumers
+how to migrate. Two producer positions, one of them invisible, is worse than
+either alone.
+
+The correction is not to lift, re-declare, or reinterpret anything. It is that
+a producer position which binds a consumer belongs in this file, where a
+consumer is directed to look, and its live status belongs in an open issue,
+where it is measured rather than remembered.
+
 ## Settled
 
 **Author attribution — the project name holds the copyright.** Every package's
