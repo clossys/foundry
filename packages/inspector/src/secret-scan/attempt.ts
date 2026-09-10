@@ -151,7 +151,7 @@ export function attemptGitleaksScan(options: AttemptGitleaksScanOptions): Secret
  * file the last flag on the command line happened to name.
  */
 export const defaultGitleaksExecutor: GitleaksExecutor = (binaryPath, args) => {
-  const scratchDir = mkdtempSync(join(tmpdir(), "vespeneventures-gitleaks-report-"));
+  const scratchDir = mkdtempSync(join(tmpdir(), "clossys-gitleaks-report-"));
   const reportPath = join(scratchDir, "report.json");
   try {
     const result = spawnSync(binaryPath, [...args, "--report-format", "json", "--report-path", reportPath], {

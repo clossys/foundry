@@ -280,22 +280,28 @@ readiness report. `parseValueFreeCatalog()` accepts only strict version-1
 catalog metadata. `run()` injects values into one non-shell child process
 without writing a file or printing the environment.
 
-The package intentionally keeps the provider-specific CLI name
-`vespene-secrets-infisical` unchanged by this rename. Its `catalog`, `check`,
-`list`, `get`, and `run` commands never print secret values. `get` reports
-presence only, and the CLI exposes no mutation command. `qualify` is the one
+The provider-specific CLI installs as `clossys-secrets-infisical`. It is also
+still installed under its previous, now **deprecated** name, which will be
+dropped a release cycle after the deprecation was announced — see the
+[changelog](CHANGELOG.md). Both names point at the same entry point, so a
+consumer already invoking the old one keeps working and can switch on its own
+schedule.
+
+Its `catalog`, `check`, `list`, `get`, and `run` commands never print secret
+values. `get` reports presence only, and the CLI exposes no mutation command.
+`qualify` is the one
 offline readiness operation: it compares a value-free catalog to a names-only
 availability snapshot, without provider configuration, credentials, or network
 access. It exits `0` when every required name is available, `1` when one or
 more required names are missing, and `2` for malformed input.
 
 ```text
-vespene-secrets-infisical catalog --catalog ./secret-catalog.json
-vespene-secrets-infisical qualify --catalog ./secret-catalog.json --available ./available-names.json
-vespene-secrets-infisical check --catalog ./secret-catalog.json
-vespene-secrets-infisical list
-vespene-secrets-infisical get APP_SIGNING_KEY
-vespene-secrets-infisical run -- node server.js
+clossys-secrets-infisical catalog --catalog ./secret-catalog.json
+clossys-secrets-infisical qualify --catalog ./secret-catalog.json --available ./available-names.json
+clossys-secrets-infisical check --catalog ./secret-catalog.json
+clossys-secrets-infisical list
+clossys-secrets-infisical get APP_SIGNING_KEY
+clossys-secrets-infisical run -- node server.js
 ```
 
 The availability snapshot is strict version-1 names-only metadata; fields
