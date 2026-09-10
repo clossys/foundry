@@ -158,7 +158,7 @@
     "esbuild": "^0.28.2",
     "jsdom": "^26.1.0",
     "react": "^19.2.8",
-    "react-aria-components": "^1.20.0",
+    "react-aria-components": "^1.21.1",
     "react-dom": "^19.2.8",
     "tailwind-merge": "^3.0.0",
     "tailwindcss": "^4.3.3",
