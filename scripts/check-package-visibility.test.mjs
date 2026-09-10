@@ -88,7 +88,7 @@ test("selectDeclaredPackages: a published entry with a valid declaration is incl
 });
 
 test("selectDeclaredPackages: W1D monitors predecessor publication without claiming candidate publication", () => {
-  const predecessor = `@${["vespene", "ventures"].join("")}/controller`;
+  const predecessor = "@retired-scope/controller";
   const lifecycle = lifecycleWith([
     { name: "@clossys/controller", status: "active" },
     { name: predecessor, status: "published" },

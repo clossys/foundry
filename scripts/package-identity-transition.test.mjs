@@ -18,17 +18,22 @@ import {
 import { checkCandidatePublishInert, ensureFullGitHistory } from "./check-package-identity-transition.mjs";
 
 const policy = loadTransitionPolicy(new URL("../governance/package-identity-transition.json", import.meta.url));
+// Every fixture below builds the retired producer identity out of the closed
+// transition policy rather than spelling it out, so a fixture can never assert
+// against an identity the gate itself would not resolve.
+const retiredScope = policy.current.scope;
+const retiredRepository = policy.current.repository;
 
 function json(value) { return `${JSON.stringify(value, null, 2)}\n`; }
 
 function manifest(directory, dependencies = undefined) {
   return {
-    name: `@vespeneventures/${directory}`,
+    name: `${retiredScope}/${directory}`,
     version: "0.1.0",
     private: false,
-    repository: { type: "git", url: "git+https://github.com/vespeneventures/foundry.git", directory: `packages/${directory}` },
-    bugs: { url: "https://github.com/vespeneventures/foundry/issues" },
-    homepage: `https://github.com/vespeneventures/foundry/tree/main/packages/${directory}#readme`,
+    repository: { type: "git", url: `git+https://github.com/${retiredRepository}.git`, directory: `packages/${directory}` },
+    bugs: { url: `https://github.com/${retiredRepository}/issues` },
+    homepage: `https://github.com/${retiredRepository}/tree/main/packages/${directory}#readme`,
     publishConfig: { registry: "https://npm.pkg.github.com" },
     ...(dependencies ? { dependencies } : {}),
   };
@@ -41,19 +46,19 @@ function fixture() {
   mkdirSync(join(root, "governance", "release-qualifications"), { recursive: true });
   mkdirSync(join(root, "docs", "contracts"), { recursive: true });
   writeFileSync(join(root, "package-scope.json"), json({ scope: policy.current.scope, registry: policy.current.registry, status: "current" }));
-  writeFileSync(join(root, "packages", "alpha", "package.json"), json(manifest("alpha", { "@vespeneventures/beta": "^0.1.0", thirdparty: "1.0.0" })));
+  writeFileSync(join(root, "packages", "alpha", "package.json"), json(manifest("alpha", { [`${retiredScope}/beta`]: "^0.1.0", thirdparty: "1.0.0" })));
   writeFileSync(join(root, "packages", "beta", "package.json"), json(manifest("beta")));
   writeFileSync(join(root, "package-lock.json"), json({
     name: "fixture",
     lockfileVersion: 3,
     packages: {
       "": { workspaces: ["packages/*"] },
-      "packages/alpha": { name: "@vespeneventures/alpha", version: "0.1.0", dependencies: { "@vespeneventures/beta": "^0.1.0", thirdparty: "1.0.0" } },
-      "packages/beta": { name: "@vespeneventures/beta", version: "0.1.0" },
-      "packages/stale": { name: "@vespeneventures/stale", version: "0.0.1" },
-      "node_modules/@vespeneventures/stale": { resolved: "packages/stale", link: true },
-      "node_modules/@vespeneventures/alpha": { resolved: "packages/alpha", link: true },
-      "node_modules/@vespeneventures/beta": { resolved: "packages/beta", link: true },
+      "packages/alpha": { name: `${retiredScope}/alpha`, version: "0.1.0", dependencies: { [`${retiredScope}/beta`]: "^0.1.0", thirdparty: "1.0.0" } },
+      "packages/beta": { name: `${retiredScope}/beta`, version: "0.1.0" },
+      "packages/stale": { name: `${retiredScope}/stale`, version: "0.0.1" },
+      [`node_modules/${retiredScope}/stale`]: { resolved: "packages/stale", link: true },
+      [`node_modules/${retiredScope}/alpha`]: { resolved: "packages/alpha", link: true },
+      [`node_modules/${retiredScope}/beta`]: { resolved: "packages/beta", link: true },
       "node_modules/thirdparty": { version: "1.0.0" },
     },
   }));
@@ -61,11 +66,11 @@ function fixture() {
     schemaVersion: 1,
     defaultTarget: "current-github-packages",
     targets: [
-      { id: "current-github-packages", status: "active", scope: "@vespeneventures", registry: "https://npm.pkg.github.com", packages: "all" },
+      { id: "current-github-packages", status: "active", scope: retiredScope, registry: policy.current.registry, packages: "all" },
       { id: "clossys-npmjs-precutover", status: "planned", scope: "@clossys", registry: "https://registry.npmjs.org", packages: ["advisor", "starter", "controller"] },
     ],
   }));
-  const historyBytes = json({ packages: [{ name: "@vespeneventures/alpha", status: "published" }] });
+  const historyBytes = json({ packages: [{ name: `${retiredScope}/alpha`, status: "published" }] });
   writeFileSync(join(root, "docs", "contracts", "package-lifecycle.json"), historyBytes);
   writeFileSync(join(root, "governance", "release-qualifications", "alpha-0.1.0.json"), historyBytes);
   return { root, historyBytes };
@@ -116,8 +121,8 @@ test("the structured W1D plan is complete, candidate-public, declaration-last, a
     assert.deepEqual(catalog.targets[1].packages, ["advisor", "starter", "controller"]);
     const lock = JSON.parse(readFileSync(join(root, "package-lock.json"), "utf8"));
     assert.equal(lock.packages["packages/stale"], undefined);
-    assert.equal(lock.packages["node_modules/@vespeneventures/stale"], undefined);
-    assert.equal(lock.packages["node_modules/@vespeneventures/alpha"], undefined);
+    assert.equal(lock.packages[`node_modules/${retiredScope}/stale`], undefined);
+    assert.equal(lock.packages[`node_modules/${retiredScope}/alpha`], undefined);
     assert.equal(lock.packages["node_modules/@clossys/alpha"].link, true);
     assert.equal(readFileSync(join(root, "docs", "contracts", "package-lifecycle.json"), "utf8"), historyBytes);
     assert.equal(readFileSync(join(root, "governance", "release-qualifications", "alpha-0.1.0.json"), "utf8"), historyBytes);
@@ -176,7 +181,7 @@ test("current planning rejects a manifest and workspace-lock dependency mismatch
   try {
     const path = join(root, "packages", "alpha", "package.json");
     const value = JSON.parse(readFileSync(path, "utf8"));
-    delete value.dependencies["@vespeneventures/beta"];
+    delete value.dependencies[`${retiredScope}/beta`];
     writeFileSync(path, json(value));
     assert.throws(
       () => planIdentityTransition({ root, policy }),
@@ -194,7 +199,7 @@ test("mixed source state is rejected before a plan can write anything", () => {
     value.publishConfig.registry = "https://registry.npmjs.org";
     writeFileSync(path, json(value));
     assert.throws(() => planIdentityTransition({ root, policy }), /mixed registry\/access tuple/);
-    assert.equal(JSON.parse(readFileSync(join(root, "package-scope.json"), "utf8")).scope, "@vespeneventures");
+    assert.equal(JSON.parse(readFileSync(join(root, "package-scope.json"), "utf8")).scope, retiredScope);
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
@@ -414,7 +419,7 @@ test("shallow history fails closed for wrong CI identity, origin, source SHA, or
 });
 
 test("historical exceptions are exact line digests on closed path classes", () => {
-  const lineSha256 = lineDigest("old @vespeneventures/advisor evidence");
+  const lineSha256 = lineDigest(`old ${retiredScope}/advisor evidence`);
   assert.deepEqual(validateHistoryInventory({ $comment: "fixture", schemaVersion: 1, references: [{ path: "docs/DECISIONS.md", lineSha256 }] }, policy), []);
   assert.deepEqual(validateHistoryInventory({ $comment: "fixture", schemaVersion: 1, references: [{ path: "packages/advisor/CHANGELOG.md", lineSha256 }] }, policy), []);
   assert.match(validateHistoryInventory({ $comment: "fixture", schemaVersion: 1, references: [{ path: "packages/advisor/src/index.ts", lineSha256 }] }, policy)[0], /admitted relative path/);
