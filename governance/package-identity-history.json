@@ -296,10 +296,6 @@
     },
     {
       "path": "docs/contracts/package-lifecycle.json",
-      "lineSha256": "sha256:784b474970c66e705b89bd1e11587ba73e3d1298b5c4e31cb172c251058601c0"
-    },
-    {
-      "path": "docs/contracts/package-lifecycle.json",
       "lineSha256": "sha256:814fe282eb5b95c8f7819d4d333b0867a00b6e1f54bff151f09edc3d17bef7fc"
     },
     {
@@ -496,10 +492,6 @@
     },
     {
       "path": "docs/DECISIONS.md",
-      "lineSha256": "sha256:6e96bc39de7dfd87db78f44487f57d3caae53bb2fb112c3b967cbe43d794d8e0"
-    },
-    {
-      "path": "docs/DECISIONS.md",
       "lineSha256": "sha256:75100048df187b1470d3cd7c267a1e2e87ee9c9b792971f47813ea08c25e09ec"
     },
     {
@@ -520,10 +512,6 @@
     },
     {
       "path": "docs/DECISIONS.md",
-      "lineSha256": "sha256:b14210fe8d42d73021ff96d35f01ce35dc9430c5212315cb430c8f6af12d2e0c"
-    },
-    {
-      "path": "docs/DECISIONS.md",
       "lineSha256": "sha256:b48e71c27ff56342cff28a7c05e9db0044302a38153a2dfd3e16aa35e99694d3"
     },
     {
@@ -541,10 +529,6 @@
     {
       "path": "docs/DECISIONS.md",
       "lineSha256": "sha256:e8e466736fd5fc3cdc5c7467796adbf4998550e94d23df437a5bda266773af61"
-    },
-    {
-      "path": "docs/DECISIONS.md",
-      "lineSha256": "sha256:ea6fd218837cd68779f3487b62338cd08c95e014856a34d2d4bed67f8b1855a3"
     },
     {
       "path": "docs/DECISIONS.md",

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -8,7 +8,11 @@ import { fileURLToPath } from "node:url";
 
 import { ALL_PACKAGE_RELEASE_ORDER, assertPackageAuthorized, filterPackagesForTarget, loadReleaseCatalog, readCurrentReleaseIdentity, resolveReleaseTarget } from "./check-release-catalog.mjs";
 
-const currentIdentity = { scope: "@vespeneventures", registry: "https://npm.pkg.github.com" };
+// The retired GitHub Packages identity is read from the closed transition
+// policy rather than spelled out here, so this fixture cannot drift from the
+// one declaration governance/release-catalog.json is validated against.
+const transitionPolicy = JSON.parse(readFileSync(new URL("../governance/package-identity-transition.json", import.meta.url), "utf8"));
+const currentIdentity = { scope: transitionPolicy.current.scope, registry: transitionPolicy.current.registry };
 const targetIdentity = { scope: "@clossys", registry: "https://registry.npmjs.org" };
 const cutoverIdentity = { ...targetIdentity, access: "public" };
 const launchPackages = [...ALL_PACKAGE_RELEASE_ORDER];
@@ -56,7 +60,7 @@ function runCli({ catalogContents, catalogPresent = true, scopeContents, scopePr
 
 test("default current release selection remains all-package GitHub Packages behavior", () => {
   const target = resolveReleaseTarget(load(catalog()), currentIdentity);
-  const entries = ["advisor", "architect", "starter", "controller"].map((directory) => ({ directory, manifest: { name: `@vespeneventures/${directory}`, version: "0.1.0" } }));
+  const entries = ["advisor", "architect", "starter", "controller"].map((directory) => ({ directory, manifest: { name: `${currentIdentity.scope}/${directory}`, version: "0.1.0" } }));
   assert.equal(target.id, "current-github-packages");
   assert.deepEqual(filterPackagesForTarget(entries, target), entries);
   assert.doesNotThrow(() => assertPackageAuthorized(target, "architect"));
@@ -75,7 +79,7 @@ test("the future target rejects a non-catalog package rather than publishing it"
 
 test("a scope switch cannot implicitly retain the current all-package target", () => {
   const document = load(catalog());
-  assert.throws(() => resolveReleaseTarget(document, targetIdentity), /expects @vespeneventures/);
+  assert.throws(() => resolveReleaseTarget(document, targetIdentity), new RegExp(`expects ${currentIdentity.scope}`));
   assert.equal(resolveReleaseTarget(document, targetIdentity, "clossys-npmjs-precutover").id, "clossys-npmjs-precutover");
 });
 
@@ -114,7 +118,7 @@ test("the catalog rejects active migration targets and any migration target that
 test("an implicit selection resolves only the current target", () => {
   const document = load(catalog());
   assert.equal(resolveReleaseTarget(document, currentIdentity).id, "current-github-packages");
-  assert.throws(() => resolveReleaseTarget(document, targetIdentity), /expects @vespeneventures/);
+  assert.throws(() => resolveReleaseTarget(document, targetIdentity), new RegExp(`expects ${currentIdentity.scope}`));
 });
 
 test("the post-recut catalogue preserves the sealed Trio prefix and exact dependency-ordered portfolio", () => {
@@ -127,6 +131,36 @@ test("the post-recut catalogue preserves the sealed Trio prefix and exact depend
   assert.deepEqual(filterPackagesForTarget(entries, target).map((entry) => entry.directory), launchPackages);
   assert.throws(() => assertPackageAuthorized(target, "not-a-package"), /not authorized/);
   assert.throws(() => resolveReleaseTarget(document, currentIdentity, "current-github-packages"), /historical/);
+});
+
+// The gate no longer carries its own literal for the retired producer identity;
+// it reads governance/package-identity-transition.json. That removes a
+// duplicated literal, but it would be worthless if nothing checked that the
+// catalogue is still actually pinned to it -- a gate and a test reading the
+// same file agree with each other by construction. What must stay true is that
+// a catalogue REWRITING the historical target is refused, so this asserts on a
+// fixture the gate does not share: a candidate catalogue whose historical entry
+// names some other predecessor.
+test("the historical target cannot be quietly rewritten to a different predecessor identity", () => {
+  const rewrittenScope = cutoverCatalog({
+    targets: [
+      { id: "current-github-packages", status: "historical", scope: "@retired-scope", registry: currentIdentity.registry, packages: "all" },
+      { id: "clossys-npmjs", status: "active", scope: targetIdentity.scope, registry: targetIdentity.registry, access: "public", packages: [...launchPackages] },
+    ],
+  });
+  assert.throws(() => load(rewrittenScope), /historical/);
+
+  const rewrittenRegistry = cutoverCatalog({
+    targets: [
+      { id: "current-github-packages", status: "historical", scope: currentIdentity.scope, registry: "https://registry.npmjs.org", packages: "all" },
+      { id: "clossys-npmjs", status: "active", scope: targetIdentity.scope, registry: targetIdentity.registry, access: "public", packages: [...launchPackages] },
+    ],
+  });
+  assert.throws(() => load(rewrittenRegistry), /historical/);
+
+  // The unmodified fixture must still load, or the two assertions above would
+  // pass for reasons unrelated to the identity they are pinning.
+  assert.doesNotThrow(() => load(cutoverCatalog()));
 });
 
 test("the launch target emits declared dependency order rather than caller inventory order", () => {
@@ -238,7 +272,7 @@ test("the active launch target refuses a missing package rather than selecting a
 
 test("current release identity itself is validated before a target is resolved", () => {
   assert.deepEqual(readCurrentReleaseIdentity({ path: "scope.json", readFile: () => JSON.stringify(currentIdentity) }), currentIdentity);
-  assert.throws(() => readCurrentReleaseIdentity({ path: "scope.json", readFile: () => JSON.stringify({ scope: "vespeneventures", registry: currentIdentity.registry }) }), /valid npm scope/);
+  assert.throws(() => readCurrentReleaseIdentity({ path: "scope.json", readFile: () => JSON.stringify({ scope: currentIdentity.scope.slice(1), registry: currentIdentity.registry }) }), /valid npm scope/);
   assert.deepEqual(readCurrentReleaseIdentity({ path: "scope.json", readFile: () => JSON.stringify(cutoverIdentity) }), cutoverIdentity);
   assert.throws(() => readCurrentReleaseIdentity({ path: "scope.json", readFile: () => JSON.stringify({ ...targetIdentity, access: "restricted" }) }), /access must be/);
 });
