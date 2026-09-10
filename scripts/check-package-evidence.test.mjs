@@ -312,7 +312,7 @@ test("a retired package has left the ladder and is not graded for stopping", () 
 });
 
 test("a published predecessor retains implementation evidence after source moves to the current scope", () => {
-  const predecessor = `@${["vespene", "ventures"].join("")}/thing`;
+  const predecessor = "@retired-scope/thing";
   const result = evaluatePrograms({
     contract: { packages: [{ name: predecessor, state: "implemented" }] },
     distSites: new Map(),

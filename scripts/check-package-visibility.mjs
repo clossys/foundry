@@ -358,9 +358,12 @@ export async function fetchPackageVisibility({ owner, name, token, fetchImpl }) 
  * own `name` field is not pinned down here to one shape: if it already reads
  * as a scoped name, it is trusted as-is; otherwise it is prefixed with
  * `scope`, which is either package-scope.json's own declared scope or, if
- * that file is unavailable, `@${owner}` — the ordinary convention this
- * workspace itself follows (`owner` "vespeneventures", `scope`
- * "@clossys").
+ * that file is unavailable, `@${owner}` — the ordinary convention where a
+ * repository publishes under a scope spelled the same as its forge owner.
+ * That fallback is a convention, never a guarantee: the two are independent
+ * declarations and a repository may deliberately publish under a scope that
+ * is not its owner's name, which is why package-scope.json wins whenever it
+ * can be read.
  */
 export function normalizeRegistryName(rawName, scope) {
   return rawName.startsWith("@") ? rawName : `${scope}/${rawName}`;

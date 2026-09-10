@@ -26,11 +26,21 @@ export const ALL_PACKAGE_RELEASE_ORDER = Object.freeze([
   "keeper", "locksmith", "messenger", "observer", "builder", "inspector",
   "publisher",
 ]);
+// The retired producer identity is not spelled out here. Its scope and
+// registry are read from governance/package-identity-transition.json — the one
+// closed declaration of what this repository published under before it moved —
+// so this gate and that policy cannot drift apart about the very identity whose
+// retention in the catalogue this constant exists to pin. The read is
+// repository-absolute rather than --root-relative on purpose: the pin is a
+// property of this repository's own history, not of whatever tree is scanned.
+const TRANSITION_POLICY = JSON.parse(
+  readFileSync(new URL("../governance/package-identity-transition.json", import.meta.url), "utf8"),
+);
 const CURRENT_TARGET = Object.freeze({
   id: "current-github-packages",
   status: "active",
-  scope: "@vespeneventures",
-  registry: "https://npm.pkg.github.com",
+  scope: TRANSITION_POLICY.current.scope,
+  registry: TRANSITION_POLICY.current.registry,
   packages: "all",
 });
 const CUTOVER_TARGET = Object.freeze({
