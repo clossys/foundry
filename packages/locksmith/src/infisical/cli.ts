@@ -8,7 +8,7 @@ import { createInfisicalClient } from "./client.js";
 import { InfisicalError } from "./errors.js";
 import type { InfisicalAccessTokenProvider, InfisicalClientConfig } from "./types.js";
 
-const USAGE = `Usage: vespene-secrets-infisical <command> [options]
+const USAGE = `Usage: clossys-secrets-infisical <command> [options]
 
 Commands:
   catalog --catalog <file>  Validate and print value-free catalog metadata.
@@ -241,9 +241,9 @@ async function run(): Promise<void> {
     process.exitCode = await main();
   } catch (error) {
     if (error instanceof CliInputError || error instanceof InfisicalError) {
-      console.error(`vespene-secrets-infisical: ${error.message}`);
+      console.error(`clossys-secrets-infisical: ${error.message}`);
     } else {
-      console.error("vespene-secrets-infisical: unexpected failure");
+      console.error("clossys-secrets-infisical: unexpected failure");
     }
     process.exitCode = 2;
   }

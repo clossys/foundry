@@ -1,6 +1,6 @@
 import { execFile as execFileCallback } from "node:child_process";
 import { once } from "node:events";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -27,11 +27,11 @@ async function runCli(args: string[], environment: NodeJS.ProcessEnv = process.e
   }
 }
 
-describe("vespene-secrets-infisical CLI", () => {
+describe("clossys-secrets-infisical CLI", () => {
   it("prints help when invoked through the built bin entry", async () => {
     const result = await runCli(["--help"]);
     expect(result.code).toBe(0);
-    expect(result.stdout).toContain("Usage: vespene-secrets-infisical");
+    expect(result.stdout).toContain("Usage: clossys-secrets-infisical");
   });
 
   it("prints only value-free catalog metadata", async () => {
@@ -212,7 +212,14 @@ describe("vespene-secrets-infisical CLI", () => {
       cwd: consumer,
     });
 
-    const installedBin = join(consumer, "node_modules", ".bin", "vespene-secrets-infisical");
+    // Both bin names must install: the deprecated alias is still on a
+    // consumer's PATH until it is dropped a release cycle after its
+    // deprecation was announced, so removing it here would not be a rename,
+    // it would be a silent break of a command already wired into CI.
+    const installedBin = join(consumer, "node_modules", ".bin", "clossys-secrets-infisical");
+    const deprecatedBin = join(consumer, "node_modules", ".bin", "vespene-secrets-infisical");
+    expect(existsSync(installedBin)).toBe(true);
+    expect(existsSync(deprecatedBin)).toBe(true);
     const { stdout: output } = await execFile(installedBin, [
       "qualify",
       "--catalog",

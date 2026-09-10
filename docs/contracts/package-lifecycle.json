@@ -366,7 +366,7 @@
       "status": "retired",
       "replacement": {
         "name": "@clossys/inspector",
-        "range": "^0.1.0"
+        "range": "^0.2.0"
       },
       "deprecatedOn": "2026-08-18",
       "retiredOn": "2026-08-19",
@@ -379,7 +379,7 @@
       "status": "retired",
       "replacement": {
         "name": "@clossys/locksmith",
-        "range": "^0.1.0"
+        "range": "^0.2.0"
       },
       "deprecatedOn": "2026-08-18",
       "retiredOn": "2026-08-22",
@@ -452,7 +452,7 @@
       "status": "retired",
       "replacement": {
         "name": "@clossys/inspector",
-        "range": "^0.1.0"
+        "range": "^0.2.0"
       },
       "deprecatedOn": "2026-08-18",
       "retiredOn": "2026-08-22",

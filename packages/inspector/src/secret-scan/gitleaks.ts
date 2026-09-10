@@ -106,7 +106,7 @@ export function assertUsableSha256(value: unknown, context: string): asserts val
   }
 }
 
-const DEFAULT_CACHE_DIR = join(tmpdir(), "vespeneventures", "secret-scan", "gitleaks");
+const DEFAULT_CACHE_DIR = join(tmpdir(), "clossys", "secret-scan", "gitleaks");
 /**
  * KNOWN, NOT TRUSTED
  * -------------------

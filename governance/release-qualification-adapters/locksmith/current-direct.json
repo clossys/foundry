@@ -3,6 +3,7 @@
   "package": "@clossys/locksmith",
   "archetype": "current-direct",
   "bins": {
+    "clossys-secrets-infisical": 0,
     "vespene-secrets-infisical": 0
   },
   "fixtures": [

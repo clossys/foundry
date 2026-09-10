@@ -3,6 +3,16 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.3.5] - 2026-09-09
+
+### Changed
+
+- Historical entries below now describe the previous npm scope without naming
+  the producer account this catalogue no longer publishes under, and links to
+  this repository use its current `clossys/foundry` path. No date, version,
+  or recorded fact changed — only the way the retired scope is referred to.
+
+
 ## [0.3.4] - 2026-09-02
 
 ### Fixed
@@ -41,7 +51,7 @@ All notable changes to this package are documented here. Format follows
 ### Added — the passage layer (issue #373)
 
 **A `Passage` composes `CopyEntry`/glossary-term REFERENCES the way a UI
-block composes atoms.** `@vespeneventures/writer` already had terms (a
+block composes atoms.** `@clossys/writer` already had terms (a
 glossary) and entries (single addressable strings) and nothing between
 them — in practice nobody reuses one string; they reuse a whole
 empty-state (title + body + action), a whole FAQ item (question + answer),
@@ -95,7 +105,7 @@ of scope for this release — see the issue.
   from inline literals (it has zero references to check), while
   `writer-check passages`, spawned as the compiled CLI, correctly exits 1
   on the identical fixture.
-- Not ported from `@vespeneventures/designer/tokens`: the `brandable` boolean.
+- Not ported from `@clossys/designer/tokens`: the `brandable` boolean.
   See `passage.ts`'s own top doc comment, "WHERE THE MIRROR STOPS", for
   why forcing that field into this layer would be false symmetry.
 
@@ -143,8 +153,8 @@ precedence.
 
 ## [0.1.0] - 2026-08-21
 
-First release. This package is the writer role, recut from
-`@vespeneventures/copy` per
+First release. This package is the writer role, recut from the previous
+scope's `copy` per
 [decision 10](../../docs/DECISIONS.md#10-recutting-the-expression-surface-into-role-shaped-packages).
 
 This changelog starts here rather than carrying the donor's history, which
@@ -167,14 +177,14 @@ a reader who arrives at this package first.
   path.
 - Zero runtime dependencies, unchanged from the donor.
 - The `voice-record.template.jsonc` template, still reachable at the
-  `@vespeneventures/writer/voice-record.template.jsonc` export subpath.
+  `@clossys/writer/voice-record.template.jsonc` export subpath.
 - **The published tarball carries this changelog.** `files` includes
   `CHANGELOG.md`, following the convention the operation packages adopted in
   #417. A consumer reading the installed package should not have to leave it
   to find out what changed; a new package should be born with the current
   convention rather than inheriting its donor's gap.
 
-### Changed from `@vespeneventures/copy`
+### Changed from the previous scope's `copy`
 
 - **The package is named for the job, not the artifact.** The role's
   exclusive question is *is it well said?* A name that describes a thing
@@ -187,20 +197,20 @@ a reader who arrives at this package first.
   renaming the role does not rename what it reasons about. A sweep that also
   renamed the vocabulary would have made the diff unreviewable while
   changing no behaviour.
-- Self-referential `@vespeneventures/copy` package-name mentions in doc
+- Self-referential `copy` package-name mentions in doc
   comments — including the `/voice` subpath — were updated to
-  `@vespeneventures/writer`, the same treatment `strategist` gave its own
-  self-references to `@vespeneventures/strategy`.
+  `@clossys/writer`, the same treatment `strategist` gave its own
+  self-references to its own donor, `strategy`.
 
 ### On the donor, and why it is not deprecated yet
 
-> **Current lifecycle note:** `@vespeneventures/copy` and
-> `@vespeneventures/surface` are now retired. This release note records their
+> **Current lifecycle note:** the previous scope's `copy` and
+> `surface` are now retired. This release note records their
 > state at 0.1.0; the lifecycle contract is the authority for current
 > availability.
 
-`@vespeneventures/copy` stays `published` for now. It cannot be marked
-deprecated while `@vespeneventures/surface` still declares it as a runtime
+The previous scope's `copy` stays `published` for now. It cannot be marked
+deprecated while that scope's `surface` still declares it as a runtime
 dependency — `check:package-governance` reports a lifecycle finding for a live
 package depending on a deprecated one, and it is right to. The donors are
 deprecated once `publisher` replaces `surface` and depends on this package
@@ -210,7 +220,7 @@ This is a deferral with a trigger, not an omission.
 
 ### Not included
 
-- **No forwarding stub in the donor.** `@vespeneventures/copy` is
+- **No forwarding stub in the donor.** The previous scope's `copy` is
   deprecated-and-retained: still installable for a consumer already pinned
   to it, with no re-export pointing here. A stub would keep the old name
   importable, and a supersession check could then never reach zero — the

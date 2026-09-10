@@ -3,6 +3,16 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.6] - 2026-09-09
+
+### Changed
+
+- Historical entries below now describe the previous npm scope without naming
+  the producer account this catalogue no longer publishes under, and links to
+  this repository use its current `clossys/foundry` path. No date, version,
+  or recorded fact changed — only the way the retired scope is referred to.
+
+
 ## [0.2.5] - 2026-09-02
 
 ### Fixed
@@ -90,7 +100,7 @@ All notable changes to this package are documented here. Format follows
     construction.
   - The installed inventory is a **caller-supplied** input, never fetched:
     `FleetInstalledInventory` is a structural match for
-    `@vespeneventures/integrator`'s own `InstalledInventory`, named here
+    `@clossys/integrator`'s own `InstalledInventory`, named here
     rather than imported, so this package adds **no runtime dependency**
     to grade coverage. It remains at zero.
   - Deliberately a NEW module, not an extension of the existing
@@ -110,7 +120,7 @@ All notable changes to this package are documented here. Format follows
   `observer` shipped zero bins, exactly the case that issue names).
   `cli.ts` exports a port-injected `main(argv, port)` (testable with an
   in-memory `CliPort`, no real filesystem needed), mirroring
-  `@vespeneventures/builder`'s `ci/cli.ts` + `ci/bin.ts` split; `bin.ts` is
+  `@clossys/builder`'s `ci/cli.ts` + `ci/bin.ts` split; `bin.ts` is
   the thin installed executable wiring the real `node:fs`/`process` port.
   Reads one caller-assembled JSON input document (the package catalog,
   plus each repository's already-fetched declaration and already-computed
@@ -155,14 +165,14 @@ All notable changes to this package are documented here. Format follows
 
 ### Changed
 
-- **`prepublishOnly` now runs the name-collision check before building.** A hand-run `npm publish` from this package's directory previously built and published without `check-name-collision.mjs` ever executing — npm only runs `prepublishOnly` for a directory-type publish, and this manifest declared just `npm run build`. See [issue #273](https://github.com/vespeneventures/foundry/issues/273). No runtime behavior changed.
+- **`prepublishOnly` now runs the name-collision check before building.** A hand-run `npm publish` from this package's directory previously built and published without `check-name-collision.mjs` ever executing — npm only runs `prepublishOnly` for a directory-type publish, and this manifest declared just `npm run build`. See [issue #273](https://github.com/clossys/foundry/issues/273). No runtime behavior changed.
 
 ## [0.1.1] - Unreleased
 
 ### Changed
 
 - **`live-state.ts`'s header comment now names
-  `@vespeneventures/controller/conventions` as the canonical home for the
+  `@clossys/controller/conventions` as the canonical home for the
   `liveStateSurface` shape and states explicitly why this package keeps its
   own copy instead of depending on it (#255): `observer`'s own contract is
   zero runtime dependencies, and adding one to dedupe five frozen strings
