@@ -392,7 +392,7 @@ table remains the caller's responsibility.
 
 ### Cache location
 
-Binaries are cached in `$TMPDIR/vespeneventures/secret-scan/gitleaks/`
+Binaries are cached in `$TMPDIR/clossys/secret-scan/gitleaks/`
 organized by `gitleaks-<version>-<platform>-<arch>/`. The cache is per-user
 and survives across CI runs on self-hosted runners.
 

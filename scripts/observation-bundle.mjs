@@ -49,13 +49,14 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const scriptPath = fileURLToPath(import.meta.url);
 const defaultRepositoryRoot = dirname(dirname(scriptPath));
 
-// This plane's own id for foundry in vespeneventures/workspace's
-// governance/repositories.json (the fleet registry vespeneventures/
-// workspace#59's aggregator reads bundle `repository.id` against). Bare,
-// no owner prefix -- matching every other entry in that registry, and kept
-// bare here specifically so this file never reads as naming any other
-// account or repository (this repository is a public, neutral producer;
-// see scripts/check-foreign-references.mjs).
+// This plane's own id for foundry in the fleet registry's
+// governance/repositories.json (the registry's aggregator reads a bundle's
+// `repository.id` against it). Bare, no owner prefix -- matching every other
+// entry in that registry, and kept bare here specifically so this file never
+// reads as naming any other account or repository. The registry itself is a
+// separate, privately held workspace and is deliberately not named here (this
+// repository is a public, neutral producer; see
+// scripts/check-foreign-references.mjs).
 const DEFAULT_REPOSITORY_ID = "foundry";
 
 const DECLARATION_RELATIVE_PATH = "governance/repository-profile.json";

@@ -1,6 +1,6 @@
 {
   "name": "@clossys/observer",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -56,7 +56,7 @@
     "test": "vitest run"
   },
   "devDependencies": {
-    "@types/node": "^22.10.0",
+    "@types/node": "^26.4.1",
     "typescript": "~6.0.0",
     "vitest": "^4.1.9"
   },

@@ -5,6 +5,16 @@ All notable changes to `@clossys/integrator` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.5] - 2026-09-09
+
+### Changed
+
+- Historical entries below now describe the previous npm scope without naming
+  the producer account this catalogue no longer publishes under, and links to
+  this repository use its current `clossys/foundry` path. No date, version,
+  or recorded fact changed — only the way the retired scope is referred to.
+
+
 ## [0.6.4] - 2026-09-02
 
 ### Fixed
@@ -224,7 +234,7 @@ and stay fail-closed.
 
 ### Changed
 
-- **`prepublishOnly` now runs the name-collision check before building.** A hand-run `npm publish` from this package's directory previously built and published without `check-name-collision.mjs` ever executing — npm only runs `prepublishOnly` for a directory-type publish, and this manifest declared just `npm run build`. See [issue #273](https://github.com/vespeneventures/foundry/issues/273). No runtime behavior changed.
+- **`prepublishOnly` now runs the name-collision check before building.** A hand-run `npm publish` from this package's directory previously built and published without `check-name-collision.mjs` ever executing — npm only runs `prepublishOnly` for a directory-type publish, and this manifest declared just `npm run build`. See [issue #273](https://github.com/clossys/foundry/issues/273). No runtime behavior changed.
 
 ## [0.2.1]
 
@@ -285,7 +295,8 @@ and stay fail-closed.
   recorded reason is what turns an absence into a decision instead of drift.
 - `readInstalledInventory` and `createNodeInventoryFileSystem` for reading a
   plane's own manifest and lockfile through an injected `InventoryFileSystemPort`,
-  following `@vespeneventures/provisioning`'s injected-port pattern. Reports
+  following the injected-port pattern from the previous scope's
+  `provisioning`. Reports
   only what actually resolves in the lockfile, not merely what is declared.
 - `probeReachability` and `resolveReachability` for a registry reachability
   probe over an injected `Transport`. Resolves the `unreachable` vs
@@ -315,4 +326,4 @@ and stay fail-closed.
 - `IntegratorValidationError` with a stable `IntegratorErrorCode`, thrown by
   every offline validator in this package.
 
-[0.1.0]: https://github.com/vespeneventures/foundry/releases/tag/integrator-v0.1.0
+[0.1.0]: https://github.com/clossys/foundry/releases/tag/integrator-v0.1.0

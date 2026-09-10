@@ -286,7 +286,9 @@ describe("validatePackageLifecycle", () => {
 
   it("retains still-published predecessor-scope packages while the candidate scope is source-only", () => {
     const currentScope = "@clossys";
-    const predecessorScope = `@${["vespene", "ventures"].join("")}`;
+    // A stand-in, not the real predecessor: this case needs only *a* scope the
+    // packages were published under before the move, never that specific one.
+    const predecessorScope = "@retired-scope";
     const current = `${currentScope}/current`;
     const lifecycle = {
       schemaVersion: 1,

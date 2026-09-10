@@ -33,7 +33,7 @@ test("repository Trio policy, adapters, and current-candidate fixtures bind the 
   const expected = [
     ["advisor", "@clossys/advisor", "0.2.1"],
     ["starter", "@clossys/starter", "0.1.6"],
-    ["controller", "@clossys/controller", "0.9.2"],
+    ["controller", "@clossys/controller", "0.9.3"],
   ];
 
   for (const [key, name, version] of expected) {
@@ -73,24 +73,24 @@ test("all 19 publishable packages are exact-source bound to the catalogue and qu
   const catalog = await repositoryJson("governance/release-catalog.json");
   const expectedVersions = {
     "@clossys/advisor": "0.2.1",
-    "@clossys/architect": "0.1.4",
+    "@clossys/architect": "0.1.5",
     "@clossys/bouncer": "0.1.3",
-    "@clossys/builder": "0.7.6",
+    "@clossys/builder": "0.7.7",
     "@clossys/butler": "0.1.3",
-    "@clossys/controller": "0.9.2",
-    "@clossys/designer": "0.4.1",
+    "@clossys/controller": "0.9.3",
+    "@clossys/designer": "0.4.2",
     "@clossys/giver": "0.1.4",
     "@clossys/influencer": "0.1.4",
-    "@clossys/inspector": "0.1.21",
-    "@clossys/integrator": "0.6.4",
+    "@clossys/inspector": "0.2.0",
+    "@clossys/integrator": "0.6.5",
     "@clossys/keeper": "0.1.4",
-    "@clossys/locksmith": "0.1.8",
+    "@clossys/locksmith": "0.2.0",
     "@clossys/messenger": "0.1.4",
-    "@clossys/observer": "0.2.5",
-    "@clossys/publisher": "0.4.1",
+    "@clossys/observer": "0.2.6",
+    "@clossys/publisher": "0.4.2",
     "@clossys/starter": "0.1.6",
-    "@clossys/strategist": "0.1.3",
-    "@clossys/writer": "0.3.4",
+    "@clossys/strategist": "0.1.4",
+    "@clossys/writer": "0.3.5",
   };
   const packageKeys = (await readdir(new URL("../packages", import.meta.url))).sort();
   const manifests = await Promise.all(packageKeys.map((key) => repositoryJson(`packages/${key}/package.json`)));
