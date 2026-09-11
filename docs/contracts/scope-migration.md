@@ -144,6 +144,64 @@ should target `@clossys/controller` directly. `catalog`, `gates`, `release`,
 `repository`, `review`, `conventions`, and `policy` all collapse into
 `@clossys/controller` the same way.
 
+### 1c. Four source directories absent here, and why that is not a backlog
+
+Section 1b answers the mapping question for a reader who already holds an old
+package name. It does not answer it for a reader who arrived a different way:
+by listing this repository's `packages/` directory beside the predecessor
+producer's and finding four directories present there and absent here.
+
+Those four are `auth`, `comms`, `consent`, and `domain`. Their absence is a
+completed disposition, not an unported backlog. Each was **superseded** by a
+role package that is published and current. None is awaiting a port, and no
+consumer should hold work open expecting one to reappear.
+
+| Absent source directory | Disposition | Replacement | Range |
+| --- | --- | --- | --- |
+| `auth` | superseded | `@clossys/bouncer` | `^0.1.0` |
+| `comms` | superseded | `@clossys/messenger` | `^0.1.0` |
+| `consent` | superseded | `@clossys/butler` | `^0.1.0` |
+| `domain` | superseded | `@clossys/architect` | `^0.1.0` |
+
+`consent` is the one row a name mapping alone reads wrongly. Its surface split
+across two destinations rather than moving to one: consent records and standing
+instructions went to `@clossys/butler`, while enforcement and proof of owed
+delivery went to `@clossys/giver` at `^0.1.0`. The lifecycle entry names Butler
+alone because a machine-readable `replacement` field holds one name. A consumer
+that used the enforcement half needs Giver as well, and reading only the table
+above would miss it.
+
+Where each disposition is already recorded, in order of authority:
+
+- [`package-lifecycle.json`](package-lifecycle.json) is the machine-readable
+  authority. All four entries read `"status": "retired"` with an explicit
+  `replacement`, a `retiredOn` of `2026-08-24`, and
+  `"forwardsToReplacement": false`.
+- [`docs/DECISIONS.md`](../DECISIONS.md) decision 16 is the decision itself,
+  and names the same four replacements. Decisions 11, 12, and 13 carry the
+  role boundary each replacement was cut along, which is what a consumer needs
+  in order to move an import rather than merely rename one.
+
+Re-verified on 2026-09-10 against `registry.npmjs.org`, with the four
+replacements queried as positive controls in the same run, so that a uniformly
+failing query could not be misread as a uniformly absent name:
+
+| Query | Result |
+| --- | --- |
+| `@clossys/auth`, `@clossys/comms`, `@clossys/consent`, `@clossys/domain` | HTTP 404, all four |
+| `@clossys/bouncer`, `@clossys/messenger`, `@clossys/butler`, `@clossys/architect` | HTTP 200, all four |
+
+No package in this repository depends on or imports any of the four. Verified
+with an anchored search over `packages/`, which returns nothing:
+
+```bash
+git grep -nE "@clossys/(auth|comms|consent|domain)([/\"']|\\$)" -- packages/
+```
+
+The absence of a consumer here says nothing about any consuming repository.
+Foundry does not read a consumer's tree and makes no claim about one; see
+"What this document does not establish".
+
 ## 2. Role roster
 
 The installed role catalog is a `schemaVersion: 4` role contract shipped
@@ -432,14 +490,13 @@ The producer-side authority for this is
 whose `candidate` tuple is scope `@clossys`, registry
 `https://registry.npmjs.org`, access `public`, repository `clossys/foundry`.
 
-> **Known defect in this repository, not in the published packages.**
-> [`.npmrc.example`](../../.npmrc.example) is stale and self-contradictory. Its
-> header comment claims "Both installing FROM and publishing TO this scope go
-> through GitHub Packages, not public npmjs", which is no longer true, while the
-> line beneath it correctly reads
-> `@clossys:registry=https://registry.npmjs.org`. It also still carries a
-> `//npm.pkg.github.com/:_authToken=` line. Consumers should follow this
-> section, not that file. Correcting it is out of scope for this document.
+[`.npmrc.example`](../../.npmrc.example) now agrees with this section. It
+previously did not: its header comment claimed that installing from and
+publishing to this scope both went through GitHub Packages, contradicting the
+correct `@clossys:registry=https://registry.npmjs.org` line beneath it, and it
+carried a `//npm.pkg.github.com/:_authToken=` line that no `@clossys` install
+needs. Both are removed. The file is a single routing line and a comment
+saying that even that line is redundant.
 
 ## 6. The two reference forms
 
