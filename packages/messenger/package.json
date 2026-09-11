@@ -60,7 +60,7 @@
     "@types/node": "^26.4.1",
     "resend": "^6.19.0",
     "typescript": "~6.0.0",
-    "vitest": "^4.1.9"
+    "vitest": "^5.0.0"
   },
   "peerDependencies": {
     "resend": "^6.19.0"
