@@ -32,6 +32,7 @@ import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { createHash } from "node:crypto";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(scriptDir, "..");
@@ -137,6 +138,21 @@ const synthPath = join(work, "synth-denylist.json");
 writeFileSync(synthPath, JSON.stringify(SYNTH_DENYLIST, null, 2));
 // Every gate invocation in this suite uses the synthetic list.
 const DL = ["--denylist", synthPath];
+
+// check-commit-messages.mjs validates its historical-exceptions file
+// UNCONDITIONALLY, before it even looks at the denylist — so every fixture
+// invocation below needs a *valid* exceptions file, or every one of them
+// would fail for a reason that has nothing to do with what it is actually
+// testing. This one is deliberately empty: none of these fixture commits
+// are real repository history, so none of them could ever be validly
+// admitted by an exception (see the dedicated exception-mechanism cases
+// further down, which build their own fixture-specific exceptions files).
+const emptyExceptionsPath = join(work, "empty-exceptions.json");
+writeFileSync(
+  emptyExceptionsPath,
+  JSON.stringify({ $comment: "test fixture — no historical exceptions", schemaVersion: 1, sealedAtCommit: "0".repeat(40), exceptions: [] }),
+);
+const EX = ["--exceptions", emptyExceptionsPath];
 
 try {
   // ---------------------------------------------------------------- secrets
@@ -739,7 +755,7 @@ try {
     // terminator after every entry but the last, which landed on the FRONT
     // of the next entry's hash once split on our embedded NUL byte. That's
     // fixed now; see the combined-range hash checks below.)
-    const leakyRun = run("node", [COMMITMSG, `${hash0}..${leaky}`, ...DL, "--require-denylist"], { cwd: dir });
+    const leakyRun = run("node", [COMMITMSG, `${hash0}..${leaky}`, ...DL, ...EX, "--require-denylist"], { cwd: dir });
     check("flags a commit whose message body carries a denylisted term", leakyRun.code === 1, `exit was ${leakyRun.code}: ${leakyRun.out.slice(0, 200)}`);
     check(
       `names the offending commit (${leaky.slice(0, 12)}) in the finding`,
@@ -747,21 +763,21 @@ try {
       `no finding for the leaky commit: ${leakyRun.out.slice(0, 200)}`,
     );
 
-    const trailerRun = run("node", [COMMITMSG, `${leaky}..${trailerOnly}`, ...DL, "--require-denylist"], { cwd: dir });
+    const trailerRun = run("node", [COMMITMSG, `${leaky}..${trailerOnly}`, ...DL, ...EX, "--require-denylist"], { cwd: dir });
     check(
       "does NOT flag a commit whose only occurrence is inside a GitHub Co-authored-by trailer",
       trailerRun.code === 0,
       `the trailer-exempt commit was flagged — the exemption regressed. exit ${trailerRun.code}: ${trailerRun.out.slice(0, 200)}`,
     );
 
-    const handWrittenRun = run("node", [COMMITMSG, `${trailerOnly}..${handWritten}`, ...DL, "--require-denylist"], { cwd: dir });
+    const handWrittenRun = run("node", [COMMITMSG, `${trailerOnly}..${handWritten}`, ...DL, ...EX, "--require-denylist"], { cwd: dir });
     check(
       "flags a hand-written Co-authored-by line with a real domain",
       handWrittenRun.code === 1 && handWrittenRun.out.includes(handWritten.slice(0, 12)),
       `a non-GitHub-shaped Co-authored-by line escaped the scan — the exemption is too broad. exit ${handWrittenRun.code}: ${handWrittenRun.out.slice(0, 200)}`,
     );
 
-    const cleanRun = run("node", [COMMITMSG, `${handWritten}..${clean}`, ...DL, "--require-denylist"], { cwd: dir });
+    const cleanRun = run("node", [COMMITMSG, `${handWritten}..${clean}`, ...DL, ...EX, "--require-denylist"], { cwd: dir });
     check("does not flag a clean commit", cleanRun.code === 0, `exit was ${cleanRun.code}: ${cleanRun.out.slice(0, 200)}`);
 
     // Sanity: a single combined range spanning all four commits still
@@ -769,7 +785,7 @@ try {
     // not just the single-commit ranges exercised above) and still nets
     // exactly the two real findings (leaky + handWritten).
     const range = `${hash0}..${clean}`;
-    const r = run("node", [COMMITMSG, range, ...DL, "--require-denylist"], { cwd: dir });
+    const r = run("node", [COMMITMSG, range, ...DL, ...EX, "--require-denylist"], { cwd: dir });
     check("fails when the combined range contains any offending commit", r.code === 1, `exit was ${r.code}`);
     check(
       "reports scanning all 4 commits in range",
@@ -797,26 +813,303 @@ try {
       `expected "commit ${handWritten.slice(0, 12)}" in the combined-range output, got: ${r.out.slice(0, 400)}`,
     );
 
-    const titleClean = run("node", [COMMITMSG, "--title", "A perfectly ordinary PR title", ...DL, "--require-denylist"], { cwd: dir });
+    const titleClean = run("node", [COMMITMSG, "--title", "A perfectly ordinary PR title", ...DL, ...EX, "--require-denylist"], { cwd: dir });
     check("a clean --title alone passes", titleClean.code === 0, `exit was ${titleClean.code}`);
 
-    const titleLeaky = run("node", [COMMITMSG, "--title", "Mentions acme-corp in the title", ...DL, "--require-denylist"], { cwd: dir });
+    const titleLeaky = run("node", [COMMITMSG, "--title", "Mentions acme-corp in the title", ...DL, ...EX, "--require-denylist"], { cwd: dir });
     check("a leaky --title alone fails", titleLeaky.code === 1, `exit was ${titleLeaky.code}`);
 
     const noDenylistEnv = { ...process.env };
     delete noDenylistEnv.PUBLIC_SAFETY_DENYLIST;
-    const partial = run("node", [COMMITMSG, range], { cwd: dir, env: noDenylistEnv });
+    const partial = run("node", [COMMITMSG, range, ...EX], { cwd: dir, env: noDenylistEnv });
     check(
       "PARTIAL mode (no denylist) exits 0 without scanning for identity",
       partial.code === 0 && /PARTIAL/.test(partial.out),
       `exit ${partial.code}: ${partial.out.slice(0, 200)}`,
     );
 
-    const requirePartial = run("node", [COMMITMSG, range, "--require-denylist", "--denylist", "/nonexistent/dl.json"], { cwd: dir });
+    const requirePartial = run("node", [COMMITMSG, range, ...EX, "--require-denylist", "--denylist", "/nonexistent/dl.json"], { cwd: dir });
     check("--require-denylist exits 2 when the denylist cannot be loaded", requirePartial.code === 2, `exit was ${requirePartial.code}`);
 
-    const badRange = run("node", [COMMITMSG, "not-a-real-rev..also-not-real", ...DL, "--require-denylist"], { cwd: dir });
+    const badRange = run("node", [COMMITMSG, "not-a-real-rev..also-not-real", ...DL, ...EX, "--require-denylist"], { cwd: dir });
     check("a bad git rev-range fails closed (exit 2), not a silent 0-commit pass", badRange.code === 2, `exit was ${badRange.code}`);
+  }
+
+  // ------------- check-commit-messages: content-addressed historical exceptions (issue #809)
+  //
+  // GitHub's own squash-merge composes a Co-authored-by trailer from the
+  // merging account's PUBLIC PROFILE email, not the emails on the commits
+  // being squashed — so a repository can have every author configured
+  // correctly and still bake a personal address into an immutable commit
+  // message. governance/commit-message-history-exceptions.json is the
+  // content-addressed, sealed admission for exactly that, modelled on
+  // governance/package-identity-history.json's exact-digest historical-line
+  // admission. Every case here plants something that MUST still fail —
+  // fails closed is the entire point — alongside the one shape that must
+  // actually be admitted.
+  console.log("\n# check-commit-messages: content-addressed historical exception (issue #809)");
+  {
+    const dir = join(work, "commit-messages-exceptions");
+    mkdirSync(dir, { recursive: true });
+    run("git", ["-C", dir, "init", "-q"]);
+    writeFileSync(join(dir, "seed.txt"), "seed\n");
+    const seed = gitCommit(dir, "seed commit, nothing sensitive");
+
+    writeFileSync(join(dir, "a.txt"), "a\n");
+    // Single finding — the shape a real squash-merge trailer produces.
+    const sealedLeak = gitCommit(dir, "chore(deps): bump widget\n\nCo-authored-by: someone <acme-corp@users.noreply.example>");
+    const sealedLeakMessage = run("git", ["-C", dir, "log", "-1", "--format=%B", sealedLeak]).out;
+    const sealedLeakDigest = "sha256:" + createHash("sha256").update(sealedLeakMessage, "utf8").digest("hex");
+
+    writeFileSync(join(dir, "b.txt"), "b\n");
+    // Two findings on one commit, authored AFTER sealedLeak — this is both
+    // the "partial coverage" fixture (an exception covering only one of two
+    // real findings must not suppress the other) and the "commit created
+    // after the seal" fixture (requirement 3's adversarial case): sealing at
+    // `sealedLeak` and then trying to admit THIS commit must fail, because a
+    // later commit is never an ancestor of an earlier one.
+    const laterLeak = gitCommit(dir, "chore(deps): bump gadget\n\nMentions acme-corp and zeta.example together.");
+    const laterLeakMessage = run("git", ["-C", dir, "log", "-1", "--format=%B", laterLeak]).out;
+    const laterLeakDigest = "sha256:" + createHash("sha256").update(laterLeakMessage, "utf8").digest("hex");
+
+    writeFileSync(join(dir, "c.txt"), "c\n");
+    const tip = gitCommit(dir, "unrelated clean commit, used only as a later sealedAtCommit");
+
+    const fakeSha = "f".repeat(40);
+    const fakeDigest = "sha256:" + "0".repeat(64);
+
+    function exceptionsFile(name, doc) {
+      const p = join(dir, `${name}.json`);
+      writeFileSync(p, JSON.stringify(doc));
+      return p;
+    }
+
+    const singleFindingRange = `${seed}..${sealedLeak}`;
+    const doubleFindingRange = `${sealedLeak}..${laterLeak}`;
+
+    // ---- the shape that MUST work: exact SHA, exact message digest, exact
+    // finding, sealed at a proper ANCESTOR (not just an equal) commit.
+    {
+      const ex = exceptionsFile("valid-ancestor-seal", {
+        $comment: "test",
+        schemaVersion: 1,
+        sealedAtCommit: tip, // a proper descendant of sealedLeak, not equal to it
+        exceptions: [
+          {
+            commitSha: sealedLeak,
+            messageSha256: sealedLeakDigest,
+            findings: [{ why: "synthetic sibling product", severity: "high" }],
+            ref: "#809",
+          },
+        ],
+      });
+      const r = run("node", [COMMITMSG, singleFindingRange, ...DL, "--exceptions", ex, "--require-denylist"], { cwd: dir });
+      check(
+        "a commit whose SHA, message digest, and finding all match a valid exception passes",
+        r.code === 0 && /PASS/.test(r.out),
+        `exit ${r.code}: ${r.out.slice(0, 400)}`,
+      );
+      check(
+        "a passing exception run reports the exception it applied",
+        /historical exception\(s\) applied/.test(r.out) && r.out.includes(sealedLeak.slice(0, 12)),
+        `expected a suppression report naming ${sealedLeak.slice(0, 12)}, got: ${r.out.slice(0, 400)}`,
+      );
+    }
+
+    // ---- sealedAtCommit EQUAL TO the excepted commit must also work — the
+    // ancestor check must accept equality, not only proper ancestry.
+    {
+      const ex = exceptionsFile("valid-equal-seal", {
+        $comment: "test",
+        schemaVersion: 1,
+        sealedAtCommit: sealedLeak,
+        exceptions: [
+          {
+            commitSha: sealedLeak,
+            messageSha256: sealedLeakDigest,
+            findings: [{ why: "synthetic sibling product", severity: "high" }],
+            ref: "#809",
+          },
+        ],
+      });
+      const r = run("node", [COMMITMSG, singleFindingRange, ...DL, "--exceptions", ex, "--require-denylist"], { cwd: dir });
+      check("sealedAtCommit equal to the excepted commit itself is accepted", r.code === 0, `exit ${r.code}: ${r.out.slice(0, 300)}`);
+    }
+
+    // ---- PARTIAL coverage: an exception admitting only ONE of two real
+    // findings on a commit must not suppress the other. The exception is
+    // not a blanket amnesty for the commit.
+    {
+      const ex = exceptionsFile("partial-coverage", {
+        $comment: "test",
+        schemaVersion: 1,
+        sealedAtCommit: laterLeak,
+        exceptions: [
+          {
+            commitSha: laterLeak,
+            messageSha256: laterLeakDigest,
+            findings: [{ why: "synthetic sibling product", severity: "high" }], // omits "synthetic product domain"
+            ref: "#809",
+          },
+        ],
+      });
+      const r = run("node", [COMMITMSG, doubleFindingRange, ...DL, "--exceptions", ex, "--require-denylist"], { cwd: dir });
+      check(
+        "a commit with 2 real findings but only 1 admitted still fails",
+        r.code === 1 && /synthetic product domain/.test(r.out) && !/FAIL.*synthetic sibling product/s.test(r.out),
+        `exit ${r.code}: ${r.out.slice(0, 500)}`,
+      );
+      check(
+        "the covered finding is reported as suppressed, not as a failure",
+        /historical exception\(s\) applied/.test(r.out) && /synthetic sibling product/.test(r.out.split("FAIL")[0] ?? r.out),
+        `expected the admitted finding in the suppression report, got: ${r.out.slice(0, 500)}`,
+      );
+    }
+
+    // ---- requirement 3's adversarial case: a commit AUTHORED AFTER the
+    // seal cannot be admitted merely by appending its SHA — it is not (and
+    // can never be) an ancestor of an earlier sealedAtCommit.
+    {
+      const ex = exceptionsFile("out-of-seal", {
+        $comment: "test",
+        schemaVersion: 1,
+        sealedAtCommit: sealedLeak, // earlier than laterLeak
+        exceptions: [
+          {
+            commitSha: laterLeak, // later than sealedAtCommit — not an ancestor of it
+            messageSha256: laterLeakDigest,
+            findings: [
+              { why: "synthetic sibling product", severity: "high" },
+              { why: "synthetic product domain", severity: "high" },
+            ],
+            ref: "#809",
+          },
+        ],
+      });
+      const r = run("node", [COMMITMSG, doubleFindingRange, ...DL, "--exceptions", ex, "--require-denylist"], { cwd: dir });
+      check(
+        "a commit authored after sealedAtCommit is rejected as a config error (exit 2), not silently admitted",
+        r.code === 2 && /not sealed/.test(r.out),
+        `exit ${r.code}: ${r.out.slice(0, 400)}`,
+      );
+    }
+
+    // ---- a recorded message digest that does not match the commit's real
+    // message must fail closed — a typo'd or wrong digest is not trusted.
+    {
+      const ex = exceptionsFile("digest-mismatch", {
+        $comment: "test",
+        schemaVersion: 1,
+        sealedAtCommit: tip,
+        exceptions: [
+          {
+            commitSha: sealedLeak,
+            messageSha256: fakeDigest,
+            findings: [{ why: "synthetic sibling product", severity: "high" }],
+            ref: "#809",
+          },
+        ],
+      });
+      const r = run("node", [COMMITMSG, singleFindingRange, ...DL, "--exceptions", ex, "--require-denylist"], { cwd: dir });
+      check(
+        "a messageSha256 that does not match the commit's real message fails closed (exit 2)",
+        r.code === 2 && /does not match/.test(r.out),
+        `exit ${r.code}: ${r.out.slice(0, 400)}`,
+      );
+    }
+
+    // ---- a commitSha not present in this repository's object database at
+    // all must fail closed, never be silently skipped.
+    {
+      const ex = exceptionsFile("unknown-commit", {
+        $comment: "test",
+        schemaVersion: 1,
+        sealedAtCommit: tip,
+        exceptions: [{ commitSha: fakeSha, messageSha256: fakeDigest, findings: [{ why: "x", severity: "high" }], ref: "#809" }],
+      });
+      const r = run("node", [COMMITMSG, singleFindingRange, ...DL, "--exceptions", ex, "--require-denylist"], { cwd: dir });
+      check(
+        "an exception naming a commit absent from the object database fails closed (exit 2)",
+        r.code === 2 && /not present in this repository/.test(r.out),
+        `exit ${r.code}: ${r.out.slice(0, 400)}`,
+      );
+    }
+
+    // ---- structural malformation: missing file, unparsable JSON, wrong
+    // schema version, and a duplicate commitSha must all fail closed.
+    {
+      const r = run("node", [COMMITMSG, singleFindingRange, ...DL, "--exceptions", join(dir, "does-not-exist.json"), "--require-denylist"], {
+        cwd: dir,
+      });
+      check("a missing exceptions file fails closed (exit 2)", r.code === 2 && /not found/.test(r.out), `exit ${r.code}: ${r.out.slice(0, 300)}`);
+    }
+    {
+      const p = exceptionsFile("malformed", {});
+      writeFileSync(p, "{ not json");
+      const r = run("node", [COMMITMSG, singleFindingRange, ...DL, "--exceptions", p, "--require-denylist"], { cwd: dir });
+      check("unparsable JSON fails closed (exit 2)", r.code === 2 && /not valid JSON/.test(r.out), `exit ${r.code}: ${r.out.slice(0, 300)}`);
+    }
+    {
+      const ex = exceptionsFile("wrong-schema", {
+        $comment: "test",
+        schemaVersion: 2,
+        sealedAtCommit: tip,
+        exceptions: [],
+      });
+      const r = run("node", [COMMITMSG, singleFindingRange, ...DL, "--exceptions", ex, "--require-denylist"], { cwd: dir });
+      check("a schemaVersion other than 1 fails closed (exit 2)", r.code === 2, `exit ${r.code}: ${r.out.slice(0, 300)}`);
+    }
+    {
+      const ex = exceptionsFile("duplicate-sha", {
+        $comment: "test",
+        schemaVersion: 1,
+        sealedAtCommit: tip,
+        exceptions: [
+          { commitSha: sealedLeak, messageSha256: sealedLeakDigest, findings: [{ why: "synthetic sibling product", severity: "high" }], ref: "#809" },
+          { commitSha: sealedLeak, messageSha256: sealedLeakDigest, findings: [{ why: "synthetic sibling product", severity: "high" }], ref: "#810" },
+        ],
+      });
+      const r = run("node", [COMMITMSG, singleFindingRange, ...DL, "--exceptions", ex, "--require-denylist"], { cwd: dir });
+      check("a duplicate commitSha across entries fails closed (exit 2)", r.code === 2 && /duplicate/.test(r.out), `exit ${r.code}: ${r.out.slice(0, 300)}`);
+    }
+
+    // ---- an exception admitting a real commit must never bleed into an
+    // unrelated --title scan: a --title item carries no commit hash, so it
+    // can never match any exception entry.
+    {
+      const ex = exceptionsFile("does-not-cover-title", {
+        $comment: "test",
+        schemaVersion: 1,
+        sealedAtCommit: tip,
+        exceptions: [
+          { commitSha: sealedLeak, messageSha256: sealedLeakDigest, findings: [{ why: "synthetic sibling product", severity: "high" }], ref: "#809" },
+        ],
+      });
+      const r = run("node", [COMMITMSG, "--title", "Mentions acme-corp in the title", ...DL, "--exceptions", ex, "--require-denylist"], {
+        cwd: dir,
+      });
+      check(
+        "a commit-scoped exception never suppresses an unrelated --title finding",
+        r.code === 1 && /synthetic sibling product/.test(r.out),
+        `exit ${r.code}: ${r.out.slice(0, 300)}`,
+      );
+    }
+
+    // ---- the exceptions file is validated even in PARTIAL mode (no
+    // denylist) — a broken exception mechanism must never hide behind
+    // "identity checks were skipped anyway".
+    {
+      const p = exceptionsFile("malformed-for-partial", {});
+      writeFileSync(p, "not json at all");
+      const noDenylistEnv = { ...process.env };
+      delete noDenylistEnv.PUBLIC_SAFETY_DENYLIST;
+      const r = run("node", [COMMITMSG, singleFindingRange, "--exceptions", p], { cwd: dir, env: noDenylistEnv });
+      check(
+        "a malformed exceptions file fails closed even in PARTIAL mode (exit 2, not a PARTIAL pass)",
+        r.code === 2 && !/PARTIAL/.test(r.out),
+        `exit ${r.code}: ${r.out.slice(0, 300)}`,
+      );
+    }
   }
 
   // ------------------------- check-contamination-classes CLASS 4 (issue #27)
@@ -3186,7 +3479,7 @@ try {
       .filter((h) => h.length > 0);
     check("fixture actually produced 3 commits", trueHashes.length === 3, `got ${trueHashes.length}: ${trueHashes.join(",")}`);
 
-    const r = run("node", [COMMIT_MESSAGES, "HEAD", ...DL, "--require-denylist"], { cwd: dir });
+    const r = run("node", [COMMIT_MESSAGES, "HEAD", ...DL, ...EX, "--require-denylist"], { cwd: dir });
     check(
       "gate reports FAIL (every commit's message matches the synthetic denylist term)",
       r.code === 1,
