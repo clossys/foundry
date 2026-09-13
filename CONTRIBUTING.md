@@ -84,6 +84,7 @@ scope change, registry change, or package publication.
 | `check-scope` | Every first-party package name matches the scope declared in `package-scope.json`. |
 | `check-registry` (`registry drift` in CI) | Every non-private package's `publishConfig.registry` matches the single registry declared in `package-scope.json`. Same single-source-of-truth pattern as `check-scope`, extended to the registry — see `scripts/set-registry.mjs` and [docs/PUBLISHING.md](docs/PUBLISHING.md#current-cutover-constraint). |
 | `check-gates` | Regression tests proving the safety gates still catch planted contamination. |
+| `check-commit-messages` | Scans commit message text — not file content — against the same identity denylist. A commit message is as public and as permanent as any file it changes, and no tree scan has ever read one. See "Merging without publishing a private address" below for the surface it cannot reach. |
 | `check:foreign-references` | The inverse of `check-public-safety`. That gate is a denylist and can only refuse names someone already listed; this one admits only this repository's own account and scope — derived from `package-scope.json` and the manifests' own `repository.url` — and fails every other account-shaped reference (`@scope/name`, and `owner/repo` in a GitHub URL, a workflow `uses:`, or a `gh --repo` argument) by shape. Foundry supplies planes that do not govern each other, so it must never name a consumer, a sibling repository, or any other account. Public infrastructure and fictional placeholders are admitted explicitly, and third-party npm scopes are derived from `package-lock.json` at run time. Runs on fork pull requests too — it needs no denylist. |
 | `check:readme` / `check:contamination` | Catch README/export drift and internal-convention leakage that no denylist string-match can see. Run unconditionally in CI, including on fork pull requests, since they read only the tree itself. |
 | `check:typechecked-assertions` | Fails if a `@ts-expect-error`, `@ts-ignore`, `expectTypeOf(...)`, or `assertType(...)` lives in a file `tsc` doesn't actually compile — see "Type-level assertions live in `.check.ts(x)` files" below. |
@@ -131,6 +132,54 @@ Practically:
   `PUBLIC_SAFETY_DENYLIST=~/.config/public-safety/denylist-foundry.json node scripts/check-conversation-safety.mjs --file <draft.txt>` yourself first.
 - Found a security vulnerability instead of a bug? Don't put it in a public
   issue or PR at all — see SECURITY.md's private vulnerability reporting.
+
+## Merging without publishing a private address
+
+Maintainers, not contributors: this section is about the merge button, not
+about anything a pull request contains.
+
+`scripts/check-commit-messages.mjs` is the one gate here that reads commit
+message text rather than file content — the same structural gap the section
+above describes, one surface over. It cannot close this one. When GitHub
+squash-merges a pull request it composes the squash commit's message
+server-side and appends a `Co-authored-by:` trailer per contributor to the
+squashed branch, and it builds that trailer from each account's **public
+profile email**, not from the address configured on the commits being
+squashed. Every local and global git identity in this repository was already
+the privacy-preserving forge noreply form the whole time. The profile address
+was published anyway, on eight squash merges, because the trailer never reads
+the commit's own identity at all. There is no commit for the gate to scan
+until the merge has already happened, so this is not a check that was missed —
+it is a check that cannot exist at that point.
+
+A squash merge also writes that address into the commit's **author header**
+when the merging account is the pull request's author. That is commit metadata
+rather than message text, so no gate in this repository reads it — and it is
+the bigger surface by an order of magnitude: of the 630 commits reachable from
+`main`, 447 carry a non-noreply address there, against 8 in message text. 436
+of those 447 were written by GitHub's own web-side merge rather than by a local
+`git commit`, which is exactly the operation the account setting governs — so
+the setting is the load-bearing fix here and the merge method is the narrower
+one.
+
+Two things follow, and the order matters:
+
+- **Enable "Keep my email addresses private" on your own GitHub account.** It
+  is the only control that covers both surfaces, it is one setting, and this
+  repository cannot check it for you — verifying it would mean naming a
+  personal account in a committed file, which is exactly what the identity
+  denylist refuses.
+- **Merge with a merge commit or a rebase, not a squash.** Neither composes a
+  new message, so neither has a trailer-synthesis step for profile data to
+  reach. `governance/merge-policy.json` declares this, and
+  `npm run check:merge-policy` fails when the forge's settings disagree — but
+  the declaration is a stated policy and a drift alarm, never an enforcement
+  mechanism: merge methods live in GitHub's settings store, not in this tree.
+
+Do all of this *before* clicking merge. A commit message is exactly as public
+and exactly as permanent as any file it changes; editing the pull request
+afterwards changes nothing, and only a history rewrite removes it. There is no
+equivalent fix after.
 
 ## Conventions
 
