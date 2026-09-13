@@ -202,6 +202,38 @@ The absence of a consumer here says nothing about any consuming repository.
 Foundry does not read a consumer's tree and makes no claim about one; see
 "What this document does not establish".
 
+### 1d. `workspace-control-plane` — not a producer package, and what stays open
+
+[Issue #797](https://github.com/clossys/foundry/issues/797) records a second
+kind of absence, different in kind from 1c's four. A consuming repository
+declares a package named `workspace-control-plane` under the retired scope.
+That name has no directory in this repository's `packages/`, no directory in
+the predecessor producer's tree either, and no entry among the nineteen
+current or twenty-seven retired package names in
+[decision 18's exhaustive catalogue inventory](../DECISIONS.md#18-producer-owned-catalogue-distribution-cutover) —
+the complete list of every package name this repository has ever owned, under
+either scope. None of it is this one.
+
+Re-verified on 2026-09-13 against `registry.npmjs.org`:
+
+```bash
+curl -sS -w '%{http_code}' https://registry.npmjs.org/@clossys%2fworkspace-control-plane
+# {"error":"Not found"}404
+```
+
+That is what this repository can state with evidence: `@clossys` has no
+package by this name, this repository's source has never had one, and it is
+not one of decision 18's twenty-seven retired names either. It is not a
+porting backlog item in 1c's sense, because there is nothing here to port.
+
+It does not establish where the package actually lives. Issue #797 raises,
+and does not answer, that a self-publish by the declaring consumer repository
+is one live possibility and "needs confirming rather than assuming."
+Confirming or ruling that out means reading that repository's own manifest
+and publish workflow — exactly the kind of consumer-tree fact this document's
+own closing section says Foundry cannot read and does not claim. That half of
+#797 stays open, for resolution in the consuming repository, not here.
+
 ## 2. Role roster
 
 The installed role catalog is a `schemaVersion: 4` role contract shipped
