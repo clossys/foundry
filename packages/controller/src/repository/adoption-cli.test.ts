@@ -33,6 +33,15 @@ function invoke(evaluation: unknown): { readonly code: 0 | 1 | 2; readonly outpu
   return { code: main([adoptionPath, evaluationPath], (line) => output.push(line)), output };
 }
 
+function invokeSingle(input: unknown): { readonly code: 0 | 1 | 2; readonly output: readonly string[] } {
+  const root = mkdtempSync(join(tmpdir(), "repository-package-adoption-cli-single-"));
+  roots.push(root);
+  const path = join(root, "evaluation-input.json");
+  writeFileSync(path, JSON.stringify(input));
+  const output: string[] = [];
+  return { code: main([path], (line) => output.push(line)), output };
+}
+
 describe("repository-package-adoption-check", () => {
   it("maps phase-local satisfaction, violation, and indeterminacy to 0/1/2", () => {
     const satisfied = invoke({ repositoryProfile: profile, stableProfileCoverage: coverage, foundationReview: review });
@@ -46,5 +55,44 @@ describe("repository-package-adoption-check", () => {
     const indeterminate = invoke({ repositoryProfile: profile, stableProfileCoverage: [], foundationReview: review });
     expect(indeterminate.code).toBe(2);
     expect(indeterminate.output[0]).toBe("foundation-incomplete (foundation; phase-local)");
+  });
+
+  it("single-argument form emits canonical satisfied JSON with exit 0", () => {
+    const result = invokeSingle({ adoption, repositoryProfile: profile, stableProfileCoverage: coverage, foundationReview: review });
+    expect(result.code).toBe(0);
+    expect(result.output).toEqual(['{"state":"satisfied","findings":[]}']);
+  });
+
+  it("single-argument form emits canonical violated JSON with exit 1 and joined findings", () => {
+    const violatedReview = structuredClone(review);
+    violatedReview.evidence.headSha = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+    const result = invokeSingle({ adoption, repositoryProfile: profile, stableProfileCoverage: coverage, foundationReview: violatedReview });
+    expect(result.code).toBe(1);
+    const parsed = JSON.parse(result.output[0]!);
+    expect(parsed.state).toBe("violated");
+    expect(Array.isArray(parsed.findings)).toBe(true);
+    expect(parsed.findings.length).toBeGreaterThan(0);
+    expect(parsed.findings[0]).toHaveProperty("rule");
+    expect(parsed.findings[0]).toHaveProperty("path");
+    expect(parsed.findings[0]).toHaveProperty("message");
+  });
+
+  it("single-argument form emits canonical indeterminate JSON with exit 2 and a named reason", () => {
+    const result = invokeSingle({ adoption, repositoryProfile: profile, stableProfileCoverage: [], foundationReview: review });
+    expect(result.code).toBe(2);
+    const parsed = JSON.parse(result.output[0]!);
+    expect(parsed).toEqual({ state: "indeterminate", findings: [], reason: "profile-coverage-incomplete", detail: "The stable profile was not completely and conclusively covered." });
+  });
+
+  it("single-argument form still emits parseable JSON, never prose, when the input file cannot be read", () => {
+    const root = mkdtempSync(join(tmpdir(), "repository-package-adoption-cli-single-"));
+    roots.push(root);
+    const output: string[] = [];
+    const code = main([join(root, "does-not-exist.json")], (line) => output.push(line));
+    expect(code).toBe(2);
+    expect(output).toHaveLength(1);
+    const parsed = JSON.parse(output[0]!);
+    expect(parsed.state).toBe("indeterminate");
+    expect(parsed.reason).toBe("unreadable-input");
   });
 });
