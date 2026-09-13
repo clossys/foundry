@@ -29,6 +29,8 @@ forward; there are no long-term support branches.
 | `check-public-safety` | Required check on every pull request |
 | `check-name-collision` | Required before every publish — see below |
 | `conversation-safety` (issues, comments, pull request descriptions) | Runs after the text is already posted — labels a finding and fails the check, never echoing the matched text and never commenting. Detects; does not prevent. See below |
+| `check-commit-messages` | Required check on every pull request. Scans commit message text against the same identity denylist — a surface neither the tree scan nor the tarball scan has ever read. See below |
+| `check-merge-policy` | Weekly on a schedule. Compares the merge methods the forge offers for the default branch against `governance/merge-policy.json` and fails on drift. Observes; it cannot apply the declaration, because merge methods live in GitHub's settings store rather than in this tree. See below |
 | `check-package-visibility` | Runs immediately after every real publish, and daily on a schedule. GitHub Packages defaults every new package to private regardless of this repository being public; this gate fails when a package declared "published" is actually private on the registry. Detects; there is no API to fix it. See [docs/PUBLISHING.md](docs/PUBLISHING.md#the-automated-visibility-gate) |
 
 ## The publish-safety gate
@@ -128,6 +130,66 @@ every issue and pull request template
 (`.github/ISSUE_TEMPLATE/`, `.github/PULL_REQUEST_TEMPLATE.md`), and
 running `scripts/check-conversation-safety.mjs` by hand against a draft
 before it goes anywhere near the GitHub API.
+
+## The commit-message gate
+
+`check-public-safety.mjs` scans the git tree; `check-artifact-safety.mjs`
+scans the packed tarball; `check-conversation-safety.mjs` scans issue,
+comment and pull-request-description text after it posts. None of the three
+ever reads a commit **message** — message text is neither tree content nor a
+record in GitHub's conversation database, and no amount of tightening any of
+them reaches it. `scripts/check-commit-messages.mjs` is the gate for that
+fourth surface, run in CI in FULL mode against the commit range of every pull
+request. It applies no neutralize exceptions: a commit message never
+legitimately needs to state private identity, so the strictest check is also
+the simplest one to reason about.
+
+It has a blind spot of its own, and a boundary beyond it that no gate here
+covers.
+
+The blind spot is the commit's **author header**. The gate scans message text
+only. On a squash merge where the merging account is the pull request's
+author, GitHub writes that account's public profile email into the resulting
+commit's author metadata — a field this gate never opens, and which no gate
+in this repository reads. That surface is not a corner case: measured across
+the 630 commits reachable from `main`, 447 carry a non-noreply address in
+their author header, against 8 carrying one in message text, and 436 of those
+447 were written by GitHub's own web-side merge rather than by a local `git
+commit`. The message-text finding is the one a gate can see, not the larger
+one.
+
+The boundary is that neither surface is populated by an author. GitHub
+composes a squash commit's message server-side and appends a
+`Co-authored-by:` trailer per contributor to the squashed branch, built from
+each account's public profile email rather than from the address configured
+on the commits being squashed. A repository whose every local and global git
+identity is already the privacy-preserving forge noreply form still publishes
+the profile address this way. That is how private identity reached this
+repository's own commit messages, on the eight squash-merged dependency-bot
+pull requests that carry it: machine-generated at merge time, after every
+check had passed, with no commit yet existing for a gate to scan. **The exposure is created at the
+merge button, not missed afterwards by a script.**
+
+So the controls live where the choice is made rather than after it.
+`governance/merge-policy.json` declares which merge methods this repository
+permits into its default branch, and `scripts/check-merge-policy.mjs` fails
+when the forge's live settings disagree. That is a drift alarm, not an
+enforcement mechanism: merge methods live in GitHub's settings store, not in
+this tree, and writing them needs an Administration-level credential no gate
+here holds. The account-level "Keep my email addresses private" setting — the
+only control that also covers the author header — cannot be asserted from
+here at all, since observing it would mean naming a personal account in a
+committed file, which is precisely what the identity denylist refuses. The
+declaration records that as unassertable rather than implying coverage it
+does not have.
+
+A commit message is exactly as public and exactly as permanent as any file it
+changes. Editing a later commit does not remove it; only a history rewrite
+does, and a rewrite invalidates every existing clone, every merged pull
+request's recorded SHAs, and the `reviewedCommit` bindings in
+`governance/release-qualifications/`, which are sealed by design. See
+[CONTRIBUTING.md](CONTRIBUTING.md) for what a maintainer checks before
+clicking merge.
 
 ## The name-collision gate
 

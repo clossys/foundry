@@ -1,0 +1,70 @@
+name: Merge policy
+
+# WHAT THIS WORKFLOW CANNOT DO — READ THIS FIRST
+# ------------------------------------------------
+# This workflow only OBSERVES which merge methods the forge offers for this
+# repository's default branch, and fails when that disagrees with
+# governance/merge-policy.json. It cannot change the configuration and does
+# not try to:
+#
+#   * Merge methods live in the forge's own settings store, not in this git
+#     tree. There is no file here a pull request could edit to turn one off.
+#   * Writing them needs an Administration-level credential. This job holds a
+#     read-only token on purpose, and no workflow in this repository should
+#     hold more to fix a configuration a human set.
+#   * The first application of the declaration is therefore a human action in
+#     repository settings, or a branch ruleset restricting merge methods.
+#     What this workflow buys is that the change cannot then be reverted
+#     silently — which is the whole failure it exists for, since the setting
+#     that leaked had been the default all along and nothing here noticed.
+#
+# It is blind to the sharper half of the same hazard. The account-level
+# "Keep my email addresses private" setting is the only control that also
+# covers a squash commit's AUTHOR header, and it cannot be observed from here
+# without naming a personal account — exactly what the identity denylist
+# refuses. governance/merge-policy.json records that as unassertable rather
+# than pretending this workflow covers it. Do not read this workflow's
+# existence as "the merge surface is covered": it watches one of the two
+# controls, and only the one that lives on the repository.
+#
+# WHY THIS IS NOT A PULL REQUEST CHECK
+# -------------------------------------
+# It reads the live forge API with a credential, so it can say nothing useful
+# on a fork's pull request, and it reports on repository configuration rather
+# than on a diff — no pull request can cause or fix a finding here. Promoting
+# any check to "required" is an owner decision made in branch protection
+# settings, never something a workflow file decides for itself.
+
+on:
+  schedule:
+    # Weekly, and offset off the hour that every "on the hour" cron in the
+    # world competes for. Repository settings change rarely and by hand; a
+    # daily cadence would re-report an unchanged answer. Offset from the
+    # other scheduled checks so they do not contend for the same runner
+    # minute.
+    - cron: "29 5 * * 2"
+  workflow_dispatch:
+
+permissions:
+  # Read this repository's own settings and branch rules. Nothing here writes,
+  # and nothing here needs package, PR, or administration scope — a gate that
+  # could apply the configuration it audits would be a far larger credential
+  # than the finding is worth.
+  contents: read
+
+jobs:
+  merge-policy:
+    name: merge policy drift
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+      # No `npm ci`: the gate imports node builtins only, and a dependency-free
+      # job cannot be broken by an install that a dependency bot's own pull
+      # request happens to be mid-flight on.
+      - name: check-merge-policy
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run check:merge-policy
