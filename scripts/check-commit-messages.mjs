@@ -12,10 +12,18 @@
 // the gate for that surface, and it existing at all is the direct result of
 // a real gap: every other surface had a gate, this one didn't.
 //
-// Unlike check-public-safety.mjs, this gate applies NO neutralize
-// exceptions: a commit message never legitimately needs to state private
-// identity (unlike, say, package.json's author field), so the strictest
-// possible check is also the simplest one to reason about.
+// Unlike check-public-safety.mjs, this gate applies NO path- or pattern-scoped
+// neutralize exceptions: a commit message never legitimately needs to state
+// private identity (unlike, say, package.json's author field), so the
+// strictest possible check is also the simplest one to reason about for any
+// NEW commit.
+//
+// The ONE exception this gate makes beyond the machine-trailer exemption
+// below is content-addressed, not path- or pattern-scoped: see "historical
+// exceptions" further down. It exists because a commit message is immutable
+// — a finding in one cannot be fixed by editing a later commit — so a small,
+// closed, reviewed set of already-public historical commits needs a way to
+// go green without weakening the rule for anything committed after them.
 //
 // This intentionally duplicates a small amount of matching logic from
 // check-public-safety.mjs rather than importing it, since that script's
@@ -24,6 +32,9 @@
 
 import { readFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 function flagValue(name) {
   const i = process.argv.indexOf(name);
@@ -36,10 +47,249 @@ const titleArg = flagValue("--title");
 
 if (!range && !titleArg) {
   console.error(
-    "usage: check-commit-messages.mjs <git-rev-range> [--title <pr-title>] [--require-denylist] [--denylist <file>]"
+    "usage: check-commit-messages.mjs <git-rev-range> [--title <pr-title>] [--require-denylist] [--denylist <file>] [--exceptions <file>]"
   );
   process.exit(2);
 }
+
+// ------------------------------------------------------- historical exceptions
+//
+// WHY THIS EXISTS (issue #809): GitHub's own squash-merge composes
+// `Co-authored-by:` trailers from a contributor's PUBLIC PROFILE email, not
+// the email on the commits being squashed — so a repository can have every
+// author configured correctly and still get a personal address baked into a
+// commit message it never wrote a line of. That message is immutable: a
+// later commit cannot edit it, only a full history rewrite can, and that
+// costs every existing clone, every merged PR's recorded SHA, and every
+// sealed `governance/release-qualifications/` binding. This is the narrow,
+// content-addressed escape hatch for exactly that situation — modeled on
+// governance/package-identity-history.json's own exact-digest admission of
+// historical identity lines, applied here to whole commit messages instead
+// of file lines.
+//
+// SHAPE: each entry names an exact 40-hex commit SHA, a sha256 digest of
+// that EXACT commit's full message text (never the matched text itself —
+// this file is tracked in a public repository and is itself scanned by
+// check-public-safety.mjs and conversation-safety.yml), and the exact
+// denylist "why" categories reviewed and admitted for it. A commit message
+// is immutable, so the SHA alone already pins the content — the message
+// digest is a second, independent tripwire: any divergence (a typo'd digest,
+// a copy-paste from the wrong commit) fails the gate rather than silently
+// admitting the wrong text.
+//
+// THE SEAL — this is what stops requirement 3's adversarial case ("add a
+// commit with a real secret, then append its SHA here"): every entry's
+// commitSha must be an ancestor of (or equal to) `sealedAtCommit`, a FIXED
+// historical commit that must never be advanced. A commit created after the
+// seal is by construction a DESCENDANT of it, never an ancestor — so no
+// newly authored commit's SHA can ever satisfy this check, no matter what
+// text is appended alongside it. Defeating this mechanically (not just by
+// hoping a reviewer notices) would require moving `sealedAtCommit` itself
+// forward, which is exactly the kind of change a reviewer diffing this file
+// is asked to treat as suspicious on its face: nothing routine ever touches
+// that field again after it is first set.
+//
+// WHAT THIS DOES NOT PREVENT: a reviewer who approves a PR that both (a)
+// adds a new leaking commit under the *current* PR's own head and (b) also
+// moves `sealedAtCommit` forward to cover it, in the same review pass. The
+// mechanical seal converts that from "silently works" into "requires a
+// visibly unusual diff to a security-relevant file, including a field that
+// otherwise never changes" — it makes the attempt loud, not impossible.
+// Nothing here substitutes for review actually looking at that diff. Note
+// also that CI never lets a PR's own edits to this file take effect against
+// its own commits anyway (see ci.yml's trusted-scripts checkout below) — an
+// entry only ever matters once it has already been merged to a prior base
+// ref, which forces a second, separate review pass before it can admit
+// anything.
+//
+// FAILS CLOSED: missing, unparsable, structurally invalid, or out-of-seal
+// exception data exits 2 (a gate configuration error) unconditionally —
+// before denylist loading, so this is checked even in PARTIAL mode. A
+// broken exception mechanism must never be indistinguishable from "nothing
+// needed excepting".
+//
+// DELIBERATELY NOT a FINDING when an entry's commit is simply absent from
+// THIS run's scan range — unlike check-package-identity-transition.mjs's
+// checkCandidateHistory, which walks the ENTIRE current tree every run and
+// so can reliably call an expected-but-unobserved line "unused". This gate
+// is invoked once per push/PR against a narrow diff range (see ci.yml) —
+// once one of these 8 commits is merged, it will almost never reappear in
+// any future range, forever. Treating that ordinary, permanent state as a
+// failure would make every future CI run red again, which is the exact
+// "assumed unused = safe to flag" mistake #809 itself points at
+// (check-package-identity-transition.mjs's historical-record FINDING cost
+// this project a CI failure once already). Structural validity (existence,
+// seal membership, message digest) is instead checked unconditionally on
+// every run, independent of range, which is what actually keeps a stale or
+// tampered entry from going unnoticed.
+const exceptionsPath =
+  flagValue("--exceptions") ?? join(dirname(fileURLToPath(import.meta.url)), "..", "governance", "commit-message-history-exceptions.json");
+
+const SHA1_RE = /^[a-f0-9]{40}$/;
+const MSG_DIGEST_RE = /^sha256:[a-f0-9]{64}$/;
+const SEVERITIES = new Set(["critical", "high", "medium"]);
+const EXPECTED_EXCEPTIONS_SCHEMA_VERSION = 1;
+
+function exceptionsFail(message) {
+  console.error(`check-commit-messages: historical exception file invalid (${exceptionsPath}) — ${message}`);
+  console.error(
+    "  A commit-message exception must name an exact, already-sealed commit SHA, a digest of\n" +
+      "  its exact message, and the exact finding categories it admits. This fails CLOSED: a\n" +
+      "  missing, malformed, or out-of-seal exception file can never result in a silent pass."
+  );
+  process.exit(2);
+}
+
+function exactKeys(value, keys) {
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    !Array.isArray(value) &&
+    Object.keys(value).sort().join("\0") === [...keys].sort().join("\0")
+  );
+}
+
+function runGitOrNull(args) {
+  try {
+    return execFileSync("git", args, { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+  } catch {
+    return null;
+  }
+}
+
+function isAncestorOrEqual(sha, ofSha) {
+  try {
+    execFileSync("git", ["merge-base", "--is-ancestor", sha, ofSha], { stdio: "ignore" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Parses exactly the shape `git log --format=%x00%H%x01%B` produces for ONE
+// commit, mirroring the range-scan parser below so a message digested here
+// is byte-for-byte the same text that would be scanned if this commit ever
+// appears in a real range. See the range-scan parser's own comment for why
+// %x00 leads rather than trails.
+function readCommitMessage(sha) {
+  let raw;
+  try {
+    raw = execFileSync("git", ["log", "-1", "--format=%x00%H%x01%B", sha], { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
+  } catch {
+    return null;
+  }
+  if (!raw.startsWith("\0")) return null;
+  const record = raw.slice(1);
+  const sep = record.indexOf("\x01");
+  if (sep === -1) return null;
+  return { hash: record.slice(0, sep), message: record.slice(sep + 1) };
+}
+
+function digestMessage(message) {
+  return `sha256:${createHash("sha256").update(message, "utf8").digest("hex")}`;
+}
+
+let exceptionsRaw;
+try {
+  exceptionsRaw = readFileSync(exceptionsPath, "utf8");
+} catch (error) {
+  exceptionsFail(error.code === "ENOENT" ? "not found" : error.message);
+}
+let exceptionsDoc;
+try {
+  exceptionsDoc = JSON.parse(exceptionsRaw);
+} catch (error) {
+  exceptionsFail(`not valid JSON: ${error.message}`);
+}
+if (
+  !exactKeys(exceptionsDoc, ["$comment", "schemaVersion", "sealedAtCommit", "exceptions"]) ||
+  exceptionsDoc.schemaVersion !== EXPECTED_EXCEPTIONS_SCHEMA_VERSION ||
+  typeof exceptionsDoc.sealedAtCommit !== "string" ||
+  !SHA1_RE.test(exceptionsDoc.sealedAtCommit) ||
+  !Array.isArray(exceptionsDoc.exceptions)
+) {
+  exceptionsFail(`must be the closed schemaVersion ${EXPECTED_EXCEPTIONS_SCHEMA_VERSION} document with a 40-hex sealedAtCommit`);
+}
+
+const seenExceptionShas = new Set();
+for (const [index, entry] of exceptionsDoc.exceptions.entries()) {
+  const where = `exceptions[${index}]`;
+  if (!exactKeys(entry, ["commitSha", "messageSha256", "findings", "ref"])) {
+    exceptionsFail(`${where} has the wrong shape`);
+  }
+  if (typeof entry.commitSha !== "string" || !SHA1_RE.test(entry.commitSha)) {
+    exceptionsFail(`${where}.commitSha must be a 40-hex commit SHA`);
+  }
+  if (seenExceptionShas.has(entry.commitSha)) {
+    exceptionsFail(`duplicate exception entry for commit ${entry.commitSha}`);
+  }
+  seenExceptionShas.add(entry.commitSha);
+  if (typeof entry.messageSha256 !== "string" || !MSG_DIGEST_RE.test(entry.messageSha256)) {
+    exceptionsFail(`${where}.messageSha256 must be "sha256:" followed by 64 hex characters`);
+  }
+  if (typeof entry.ref !== "string" || entry.ref.trim().length === 0) {
+    exceptionsFail(`${where}.ref must be a non-empty string`);
+  }
+  if (!Array.isArray(entry.findings) || entry.findings.length === 0) {
+    exceptionsFail(`${where}.findings must be a non-empty array`);
+  }
+  const seenWhy = new Set();
+  for (const finding of entry.findings) {
+    if (!exactKeys(finding, ["why", "severity"])) {
+      exceptionsFail(`${where}.findings has an entry with the wrong shape`);
+    }
+    if (typeof finding.why !== "string" || finding.why.trim().length === 0) {
+      exceptionsFail(`${where}.findings entry has an empty "why"`);
+    }
+    if (!SEVERITIES.has(finding.severity)) {
+      exceptionsFail(`${where}.findings entry has an invalid severity ${JSON.stringify(finding.severity)}`);
+    }
+    if (seenWhy.has(finding.why)) {
+      exceptionsFail(`${where}.findings has a duplicate "why" (${JSON.stringify(finding.why)})`);
+    }
+    seenWhy.add(finding.why);
+  }
+}
+
+// Git-dependent validation only runs when there is at least one entry to
+// check — an empty exceptions list needs no live repository to be valid.
+if (exceptionsDoc.exceptions.length > 0) {
+  if (runGitOrNull(["cat-file", "-t", exceptionsDoc.sealedAtCommit]) !== "commit") {
+    exceptionsFail(`sealedAtCommit ${exceptionsDoc.sealedAtCommit} is not a commit in this repository's object database`);
+  }
+  for (const entry of exceptionsDoc.exceptions) {
+    if (runGitOrNull(["cat-file", "-t", entry.commitSha]) !== "commit") {
+      exceptionsFail(`commit ${entry.commitSha} is not present in this repository's object database — it cannot be verified and cannot be admitted`);
+    }
+    if (!isAncestorOrEqual(entry.commitSha, exceptionsDoc.sealedAtCommit)) {
+      exceptionsFail(
+        `commit ${entry.commitSha} is not sealed — it is not sealedAtCommit ${exceptionsDoc.sealedAtCommit} or an ancestor of it. ` +
+          "A commit created after the seal can never be admitted this way; moving sealedAtCommit forward to cover it is a change that must be reviewed on its own merits, not a routine edit."
+      );
+    }
+    const actual = readCommitMessage(entry.commitSha);
+    if (!actual || actual.hash !== entry.commitSha) {
+      exceptionsFail(`could not read the exact message of commit ${entry.commitSha}`);
+    }
+    const actualDigest = digestMessage(actual.message);
+    if (actualDigest !== entry.messageSha256) {
+      exceptionsFail(
+        `commit ${entry.commitSha}'s actual message digest (${actualDigest}) does not match the recorded messageSha256 (${entry.messageSha256}) — refusing to admit a mismatch rather than trusting a possibly wrong record`
+      );
+    }
+  }
+}
+
+// hash -> Map(why -> { severity, ref }), used below to filter findings for
+// exactly the recorded categories on exactly this commit — a denylist term
+// added later that ALSO happens to match one of these old commits is a NEW
+// finding, not automatically covered, and still fails.
+const exceptionsByHash = new Map(
+  exceptionsDoc.exceptions.map((entry) => [
+    entry.commitSha,
+    { ref: entry.ref, why: new Map(entry.findings.map((f) => [f.why, f.severity])) },
+  ])
+);
 
 // ------------------------------------------------------------ denylist loading
 //
@@ -148,10 +398,10 @@ function findMatches(label, text) {
 
 // ------------------------------------------------------------------- gather text
 
-const items = []; // [{ label, text }]
+const items = []; // [{ label, text, hash }] — hash is null for the PR title, which no exception can ever cover.
 
 if (titleArg) {
-  items.push({ label: "PR title", text: titleArg });
+  items.push({ label: "PR title", text: titleArg, hash: null });
 }
 
 if (range) {
@@ -215,7 +465,7 @@ if (range) {
     }
     const hash = record.slice(0, sep);
     const message = record.slice(sep + 1);
-    items.push({ label: `commit ${hash.slice(0, 12)}`, text: message });
+    items.push({ label: `commit ${hash.slice(0, 12)}`, text: message, hash });
   }
   if (records.length === 0) {
     console.log(`check-commit-messages: range "${range}" contains no commits — nothing to scan.`);
@@ -225,8 +475,26 @@ if (range) {
 // ------------------------------------------------------------------------ scan
 
 const allFindings = [];
-for (const { label, text } of items) {
-  allFindings.push(...findMatches(label, text));
+const suppressed = [];
+for (const { label, text, hash } of items) {
+  const findings = findMatches(label, text);
+  const exception = hash ? exceptionsByHash.get(hash) : undefined;
+  if (!exception) {
+    allFindings.push(...findings);
+    continue;
+  }
+  for (const finding of findings) {
+    if (exception.why.has(finding.why)) {
+      // Admitted: exactly this commit, exactly this recorded finding
+      // category. A finding whose "why" is NOT in the recorded set (e.g. a
+      // denylist term added after this exception was written) still falls
+      // through to allFindings below — the exception is not a blanket
+      // amnesty for the commit, only for what was actually reviewed.
+      suppressed.push({ label, why: finding.why, ref: exception.ref });
+    } else {
+      allFindings.push(finding);
+    }
+  }
 }
 
 console.log(
@@ -235,6 +503,12 @@ console.log(
   }`
 );
 console.log(`mode: ${mode} (denylist v${denylist.version}, ${denylist.terms.length} terms)`);
+if (suppressed.length > 0) {
+  console.log(`\n${suppressed.length} historical exception(s) applied from ${exceptionsPath}:`);
+  for (const s of suppressed) {
+    console.log(`  ${s.label} (${s.ref}): ${s.why}`);
+  }
+}
 
 if (allFindings.length > 0) {
   console.error(`\nFAIL — ${allFindings.length} identity finding(s) in commit message text:\n`);

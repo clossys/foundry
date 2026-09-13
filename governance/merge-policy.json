@@ -1,0 +1,15 @@
+{
+  "$comment": "THE ONE PLACE THIS REPOSITORY'S PERMITTED MERGE METHODS ARE DECLARED. `scripts/check-merge-policy.mjs` (wired as `check:merge-policy`) reads this file, reads the forge's live configuration, and fails when the two disagree. It cannot apply this declaration: the merge methods a repository offers live in GitHub's own settings store, not in the git tree, and writing them needs an Administration-level credential no gate here holds. This file is therefore a stated policy plus a drift alarm, never an enforcement mechanism. Read docs in SECURITY.md's 'The commit-message gate' section before changing it.",
+  "schemaVersion": 1,
+  "defaultBranch": "main",
+  "permittedMergeMethods": ["merge", "rebase"],
+  "why": {
+    "squash": "Excluded. GitHub composes a squash commit's message server-side and appends a `Co-authored-by:` trailer per contributor to the squashed branch, built from each account's PUBLIC PROFILE email rather than from the address configured on the commits being squashed. A repository whose every local and global git identity is already the privacy-preserving forge noreply form still publishes the profile address this way, on every squash, after every check has passed. That is how identity reached this repository's commit messages: the finding is machine-generated, not authored, and `scripts/check-commit-messages.mjs` cannot prevent it because there is no commit to scan until the merge has already happened.",
+    "merge": "Permitted. A merge commit does compose its own message (GitHub's default 'Merge pull request #N from ...' text), but it preserves every original commit and its original author rather than folding them into that new commit — so there is no per-contributor Co-authored-by trailer for it to synthesise from profile data.",
+    "rebase": "Permitted. A rebase replays the original commits as-is and composes no new commit at all, so there is nothing for a trailer-synthesis step to attach to."
+  },
+  "notAssertableFromThisRepository": [
+    "The account-level 'Keep my email addresses private' setting, which makes the forge use a noreply alias for its own web-side git operations. It is the only control that also covers a squash commit's AUTHOR header, which carries the same address and which no gate in this repository reads. It cannot be observed here without naming a personal account, and naming one is precisely what the identity denylist refuses.",
+    "The repository merge-method settings themselves, and any branch ruleset restricting them. Both are readable by an unprivileged token and are what this gate reads; neither is writable without Administration-level access."
+  ]
+}

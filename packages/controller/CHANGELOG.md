@@ -5,6 +5,28 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.4] - 2026-09-13
+
+### Added
+
+- `repository-package-adoption-check` accepts a second, additive invocation
+  form: a single `<evaluation-input.json>` argument, in place of the existing
+  two-file `<adoption.json> <evaluation.json>` form. The single-file form is
+  the same evaluation input `evaluateRepositoryPackageAdoption` already
+  accepts as one object, with `adoption` inlined as one more field, so this
+  is a wrapper change only — no evaluation logic moved. On success it emits
+  one canonical, non-phase-local JSON line on stdout —
+  `{"state":"satisfied"|"violated"|"indeterminate","findings":[...]}`, with
+  `findings` populated only for `"violated"` and an `"indeterminate"` result
+  also carrying `reason` (and, when present, `detail`) — with exit code
+  0/1/2 agreeing with `state`. The two-argument form's output and exit codes
+  are unchanged.
+
+  This closes the gap #789 reported: a downstream evaluator that spawns the
+  target with exactly one argument and requires parseable JSON carrying a
+  canonical `state` could not previously invoke this check at all. The
+  two-argument form stays exactly as it was for every existing caller.
+
 ## [0.9.3] - 2026-09-09
 
 ### Changed
