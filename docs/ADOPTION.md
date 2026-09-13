@@ -138,6 +138,38 @@ provider credentials, or outcome evidence.
 
 ## Consumer-local responsibilities
 
+**A producer sequencing hold covers one coordinated multi-repository
+rollout, and this document is not silent about it.**
+[Decision 19](DECISIONS.md#19-the-consumer-adoption-hold-and-what-actually-clears-it)
+records what was declared, in
+[issue #567](https://github.com/clossys/foundry/issues/567) on 2026-08-31: a
+hold on **adoption** — package installation — for one coordinated rollout
+across a named group of consumer repositories, until a stated **clearing
+condition** — the "full catalogue checkpoint": all 19 current `@clossys`
+packages safely public, provenance-bearing, anonymously installable,
+package-authentically exercised, rollback-proven, and retained by immutable
+release evidence. Decision 19 also names who decides when that condition is
+met — the producer cutover programme, whose durable record is #567, and
+nobody else.
+
+Decision 19 also corrects a narrower, separate misreading found downstream:
+the hold never forbade a consumer from adding an `@clossys` dependency,
+committing an `@clossys` lockfile resolution, or removing a dependency on the
+retired scope — ordinary scope-migration mechanics, not the rollout itself.
+For the held rollout, adoption is exactly what stays paused until the
+checkpoint; those three narrower actions were simply never part of what was
+declared.
+
+The hold binds that one named rollout, not adoption in general. If your
+repository is not part of it, this hold does not apply to you: follow the
+Adoption flow above as normal. If it is, the clearing condition is measured,
+not declared, so its live status belongs in one place that is re-checked
+rather than restated:
+[issue #806](https://github.com/clossys/foundry/issues/806). Read #806 for
+where the catalogue currently stands against the checkpoint before treating
+this document's silence on live status as either "cleared" or "still
+blocked".
+
 ## Repository cutover evidence
 
 `repository-profile-check` is structural context only. It validates a profile
