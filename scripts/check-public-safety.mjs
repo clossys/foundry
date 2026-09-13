@@ -6,6 +6,10 @@
 //     --require-denylist   fail (exit 2) rather than degrade to a partial scan
 //     --allow-changelogs   permit CHANGELOG.md (see FORBIDDEN_NAMES)
 //     --denylist <file>    explicit denylist path
+//     --path-prefix <p>    repo-relative prefix to prepend to a scanned file's
+//                          path before matching a neutralize rule's `paths`
+//                          (see WHY --path-prefix EXISTS below); the path shown
+//                          in a reported finding is never affected
 //     --json               machine-readable output
 //
 // Exit 0 = safe to publish. Exit 1 = findings. Exit 2 = the gate could not run.
@@ -51,7 +55,7 @@ const positional = argv.filter((a) => !a.startsWith("--"));
 const root = positional[0];
 
 if (!root) {
-  console.error("usage: check-public-safety.mjs <dir> [--require-denylist] [--allow-changelogs] [--json]");
+  console.error("usage: check-public-safety.mjs <dir> [--require-denylist] [--allow-changelogs] [--denylist <file>] [--path-prefix <p>] [--json]");
   process.exit(2);
 }
 if (!existsSync(root)) {
@@ -62,6 +66,41 @@ if (!existsSync(root)) {
 function flagValue(name) {
   const i = argv.indexOf(name);
   return i >= 0 ? argv[i + 1] : undefined;
+}
+
+// WHY --path-prefix EXISTS
+// -------------------------
+// A neutralize rule's `paths` are written as repository-relative paths (e.g.
+// "packages/foo") because that is what a human reviewing the denylist reads
+// them against. But this script is also invoked by check-artifact-safety.mjs
+// against an EXTRACTED TARBALL, whose root is the package directory itself:
+// everything in an npm tarball lives under `package/`, and that layer is
+// stripped before this script ever sees the tree. Inside that scan `rel` is
+// bare "CHANGELOG.md", not "packages/foo/CHANGELOG.md", so a package-scoped
+// rule can never match there no matter how it is written: there is no
+// repository-relative path left to compare against.
+//
+// --path-prefix closes that gap by letting the caller (which knows where the
+// package really lives relative to the repository root) restore the missing
+// leading segment before the comparison, and ONLY before the comparison:
+// `rel` itself, and everything reported in a finding, stays the real scanned
+// path. Omitted, matching is exactly what it always was.
+const pathPrefix = flagValue("--path-prefix") ?? null;
+
+// Neutralize `paths` are always written with "/" regardless of platform (see
+// the denylist format note further down), so the comparison has to join on
+// "/" too rather than the OS path separator, since these are repo-relative
+// paths, not OS paths, even when this script runs on a platform whose
+// `path.sep` isn't "/".
+function toPosix(p) {
+  return p.split(sep).join("/");
+}
+
+function prefixedRel(rel) {
+  const posixRel = toPosix(rel);
+  if (!pathPrefix) return posixRel;
+  const trimmedPrefix = pathPrefix.replace(/\/+$/, "");
+  return trimmedPrefix ? `${trimmedPrefix}/${posixRel}` : posixRel;
 }
 
 // ---------------------------------------------------------------- rule tables
@@ -408,10 +447,15 @@ for (const file of files) {
 
   const rawLines = contents.split("\n");
   const identityLines = normalizeOpaqueLockIntegrity(contents, rel).split("\n");
+  // Neutralize rules compare against `matchRel`, not `rel`; see WHY
+  // --path-prefix EXISTS above. Every failure pushed below (here and
+  // elsewhere in this file) still reports `rel`, the real scanned path: only
+  // the neutralize comparison is rebased, never what a finding shows.
+  const matchRel = prefixedRel(rel);
   const neutralizedLines = identityLines.map((text) => {
     let scannable = text;
     for (const rule of neutralizeRules) {
-      if (rule.paths && !rule.paths.some((p) => rel === p || rel.startsWith(p + "/"))) continue;
+      if (rule.paths && !rule.paths.some((p) => matchRel === p || matchRel.startsWith(p + "/"))) continue;
       rule.re.lastIndex = 0;
       scannable = scannable.replace(rule.re, " ");
     }

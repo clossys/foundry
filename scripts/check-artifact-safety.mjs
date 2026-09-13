@@ -31,7 +31,7 @@
 
 import { constants, mkdtempSync, rmSync, existsSync, readdirSync, readFileSync, statSync, openSync, fstatSync, closeSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { basename, join, resolve, relative } from "node:path";
+import { basename, join, resolve, relative, sep } from "node:path";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
@@ -254,6 +254,18 @@ try {
   }
   if (!scopeConfigPath) die(`no package-scope.json found above ${absPkgDir} — cannot verify the registry pin`);
   passThrough.push("--scope-config", scopeConfigPath);
+
+  // A neutralize rule's `paths` are written repository-relative (e.g.
+  // "packages/foo"), but inside this tarball scan the scanned root is the
+  // package directory itself. package-scope.json sits at the repository
+  // root, so the walk above that found it also tells us where that root is.
+  // Reusing it (rather than a second discovery mechanism) to compute the
+  // package's own repository-relative path and handing that to the inner
+  // scan as --path-prefix is what lets a package-scoped rule still apply
+  // once the "package/" tarball layer has stripped the leading segment away.
+  const repoRoot = dirname(scopeConfigPath);
+  const packagePathPrefix = relative(repoRoot, absPkgDir).split(sep).join("/");
+  passThrough.push("--path-prefix", packagePathPrefix);
 
   let contentOut = "";
   let contentCode = 0;
