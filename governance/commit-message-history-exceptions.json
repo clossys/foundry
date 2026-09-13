@@ -1,0 +1,79 @@
+{
+  "$comment": "Content-addressed exceptions for scripts/check-commit-messages.mjs — see issue #809. Each entry admits EXACTLY one immutable historical commit message, bound by its full SHA and an independent sha256 digest of that exact message text (never the matched value itself, which never appears in this file). Every commitSha must be an ancestor of (or equal to) sealedAtCommit, which is fixed and must never be advanced except as its own separately reviewed change: a commit authored after the seal is, by construction, never an ancestor of it, so a newly created commit's SHA can never be added here regardless of what text accompanies it. Each entry's findings list is exactly the denylist categories reviewed and admitted for that commit at the time this entry was written; a denylist term added later that also matches one of these commits is a NEW, uncovered finding and still fails the gate. All eight commits are squash-merged Dependabot pull requests: GitHub's squash-merge composes Co-authored-by trailers from the merging account's public profile email, not from the commits being squashed, so the address is machine-generated attribution rather than prose any author here chose to write.",
+  "schemaVersion": 1,
+  "sealedAtCommit": "700d84e03610ae1a5cdeff5d4be7951c19d846d2",
+  "exceptions": [
+    {
+      "commitSha": "700d84e03610ae1a5cdeff5d4be7951c19d846d2",
+      "messageSha256": "sha256:0ff4d9e7d7bac75a05d83c13e114f41df28b00b2bf7636dcd8ae2def0ccc5eb3",
+      "findings": [
+        { "why": "personal email local-part", "severity": "high" },
+        { "why": "personal GitHub org/namespace", "severity": "high" }
+      ],
+      "ref": "#809"
+    },
+    {
+      "commitSha": "e2b04229343737ae57518f400bf48b7522b8592e",
+      "messageSha256": "sha256:48fb631ba272c75730c8c3e9e54b14e579fc5175e3aa25448ae62cbea94b4158",
+      "findings": [
+        { "why": "personal email local-part", "severity": "high" },
+        { "why": "personal GitHub org/namespace", "severity": "high" }
+      ],
+      "ref": "#809"
+    },
+    {
+      "commitSha": "9d8e55e3dce9357038927ec8f5a4e55e5cfefdcd",
+      "messageSha256": "sha256:c4c99e550c54586b79e8d649b96404e69f2489f245b8d51c662536d880aa08c0",
+      "findings": [
+        { "why": "personal email local-part", "severity": "high" },
+        { "why": "personal GitHub org/namespace", "severity": "high" }
+      ],
+      "ref": "#809"
+    },
+    {
+      "commitSha": "6e64347450cc9466a1733c789714ee128f3613e4",
+      "messageSha256": "sha256:64e662e9fc331fed69a80b32034bae5153b0b3513e07f070232b7d5fc0a82206",
+      "findings": [
+        { "why": "personal email local-part", "severity": "high" },
+        { "why": "personal GitHub org/namespace", "severity": "high" }
+      ],
+      "ref": "#809"
+    },
+    {
+      "commitSha": "adbfb5aef12d4940ff2237bef001d6e38ac4858f",
+      "messageSha256": "sha256:d8157bfc1d5cdc3d596e51873d6b4507118578c6d9a4c4e3c6eb16bfe5d4a97a",
+      "findings": [
+        { "why": "personal email local-part", "severity": "high" },
+        { "why": "personal GitHub org/namespace", "severity": "high" }
+      ],
+      "ref": "#809"
+    },
+    {
+      "commitSha": "a9b122c6467b6c3757e916acf95755078b153459",
+      "messageSha256": "sha256:34312805cea0162fd236cec00462ae76b57800a5f5cb38eab872ad8f3ff50e0c",
+      "findings": [
+        { "why": "personal email local-part", "severity": "high" },
+        { "why": "personal GitHub org/namespace", "severity": "high" }
+      ],
+      "ref": "#809"
+    },
+    {
+      "commitSha": "09b90793f53c1c71ce5aa4ad4e299af19d99679d",
+      "messageSha256": "sha256:67cca0441938ce96ca19f5ccdf7f9ababeb9d85f11861ada575e10d0575b981d",
+      "findings": [
+        { "why": "personal email local-part", "severity": "high" },
+        { "why": "personal GitHub org/namespace", "severity": "high" }
+      ],
+      "ref": "#809"
+    },
+    {
+      "commitSha": "39e42183e63d705ceb6a2efc3d3c4f4d4c5d0911",
+      "messageSha256": "sha256:f70a3a44cd55ffbde342a90029a05538aced11030b9b88a2755d32921a134971",
+      "findings": [
+        { "why": "personal email local-part", "severity": "high" },
+        { "why": "personal GitHub org/namespace", "severity": "high" }
+      ],
+      "ref": "#809"
+    }
+  ]
+}

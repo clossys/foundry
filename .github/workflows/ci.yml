@@ -104,6 +104,16 @@ jobs:
       # gitignored directory is by definition never published, so a PR
       # cannot smuggle a scanned finding into `.trusted-scripts/` to dodge
       # the gate — the content in it is base-ref content regardless.
+      #
+      # governance/commit-message-history-exceptions.json rides along in this
+      # same sparse checkout for the same reason the scripts do: it is the
+      # data check-commit-messages.mjs trusts to admit a historical finding
+      # (issue #809), and it must be read from the base ref, never this PR's
+      # own copy — otherwise a PR could add a new leaking commit and grant
+      # itself an exception for it in the very same PR. Reading only the
+      # base-ref version means a new admission can never take effect for the
+      # PR that introduces it; it only matters once already merged, which
+      # forces a separate, prior review pass.
       - name: Checkout trusted scripts (base ref only, never this PR's own copy)
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -112,6 +122,7 @@ jobs:
           sparse-checkout: |
             scripts
             package-scope.json
+            governance/commit-message-history-exceptions.json
           sparse-checkout-cone-mode: false
 
       - name: check-public-safety
