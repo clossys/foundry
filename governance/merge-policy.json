@@ -5,8 +5,8 @@
   "permittedMergeMethods": ["merge", "rebase"],
   "why": {
     "squash": "Excluded. GitHub composes a squash commit's message server-side and appends a `Co-authored-by:` trailer per contributor to the squashed branch, built from each account's PUBLIC PROFILE email rather than from the address configured on the commits being squashed. A repository whose every local and global git identity is already the privacy-preserving forge noreply form still publishes the profile address this way, on every squash, after every check has passed. That is how identity reached this repository's commit messages: the finding is machine-generated, not authored, and `scripts/check-commit-messages.mjs` cannot prevent it because there is no commit to scan until the merge has already happened.",
-    "merge": "Permitted. A merge commit preserves each original commit and its original author instead of composing a new message, so there is no trailer synthesis step for profile data to reach.",
-    "rebase": "Permitted. A rebase replays the original commits and composes no new message either."
+    "merge": "Permitted. A merge commit does compose its own message (GitHub's default 'Merge pull request #N from ...' text), but it preserves every original commit and its original author rather than folding them into that new commit — so there is no per-contributor Co-authored-by trailer for it to synthesise from profile data.",
+    "rebase": "Permitted. A rebase replays the original commits as-is and composes no new commit at all, so there is nothing for a trailer-synthesis step to attach to."
   },
   "notAssertableFromThisRepository": [
     "The account-level 'Keep my email addresses private' setting, which makes the forge use a noreply alias for its own web-side git operations. It is the only control that also covers a squash commit's AUTHOR header, which carries the same address and which no gate in this repository reads. It cannot be observed here without naming a personal account, and naming one is precisely what the identity denylist refuses.",

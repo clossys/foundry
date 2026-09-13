@@ -103,18 +103,31 @@ export const MERGE_METHODS = Object.freeze({
  * replacing is the load-bearing part: a ruleset naming a method the repository
  * itself does not offer does not make that method available, and reading the
  * ruleset alone would report one that cannot be used.
+ *
+ * More than one `pull_request` rule can apply to the same branch at once —
+ * GitHub enforces every ruleset that targets it simultaneously, each
+ * contributing its own restriction, so the true effective set is the
+ * intersection of ALL of them, not just the first one this API response
+ * happens to list. Taking only the first (an earlier version of this
+ * function did) is always a superset of the truth: it can never let an
+ * undeclared method through undetected, but it CAN report a declared method
+ * as available when a second ruleset this gate ignored actually forbids it —
+ * silently defeating the half of `evaluate` that exists to catch a stale
+ * declaration.
  */
 export function effectiveMergeMethods(repository, branchRules) {
   const repositoryLevel = [];
   for (const [method, field] of Object.entries(MERGE_METHODS)) {
     if (repository[field] === true) repositoryLevel.push(method);
   }
-  const restriction = branchRules
+  const restrictions = branchRules
     .filter((rule) => rule?.type === "pull_request")
     .map((rule) => rule?.parameters?.allowed_merge_methods)
-    .find((value) => Array.isArray(value));
-  if (!restriction) return repositoryLevel;
-  return repositoryLevel.filter((method) => restriction.includes(method));
+    .filter((value) => Array.isArray(value));
+  return restrictions.reduce(
+    (allowed, restriction) => allowed.filter((method) => restriction.includes(method)),
+    repositoryLevel,
+  );
 }
 
 /**

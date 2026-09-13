@@ -52,6 +52,39 @@ test("rules that are not pull_request rules are ignored", () => {
   assert.deepEqual(effectiveMergeMethods(allMethodsOn, rules), ["merge", "squash", "rebase"]);
 });
 
+test("TWO pull_request rules intersect, they do not let the first one found win", () => {
+  // GitHub enforces every ruleset that targets a branch simultaneously, so
+  // more than one `pull_request` rule can be in force at once — reading only
+  // the first one this API response happens to list (an earlier version of
+  // this function did exactly that) is always a superset of the truth. It
+  // can never let an undeclared method through undetected, since the true
+  // set can only be smaller — but it CAN wrongly report a declared method as
+  // still available when a second, ignored ruleset actually forbids it,
+  // which silently defeats evaluate()'s "declared-unavailable" half.
+  const rules = [
+    { type: "pull_request", parameters: { allowed_merge_methods: ["merge", "squash", "rebase"] } },
+    { type: "pull_request", parameters: { allowed_merge_methods: ["squash"] } },
+  ];
+  assert.deepEqual(effectiveMergeMethods(allMethodsOn, rules), ["squash"]);
+});
+
+test("three pull_request rules intersect down to whatever every one of them allows", () => {
+  const rules = [
+    { type: "pull_request", parameters: { allowed_merge_methods: ["merge", "squash", "rebase"] } },
+    { type: "pull_request", parameters: { allowed_merge_methods: ["merge", "rebase"] } },
+    { type: "pull_request", parameters: { allowed_merge_methods: ["merge", "squash"] } },
+  ];
+  assert.deepEqual(effectiveMergeMethods(allMethodsOn, rules), ["merge"]);
+});
+
+test("a second pull_request rule that allows nothing this repository offers narrows to empty, not to the first rule's set", () => {
+  const rules = [
+    { type: "pull_request", parameters: { allowed_merge_methods: ["merge", "rebase"] } },
+    { type: "pull_request", parameters: { allowed_merge_methods: ["squash"] } },
+  ];
+  assert.deepEqual(effectiveMergeMethods(allMethodsOn, rules), []);
+});
+
 // -------------------------------------------------------------------- evaluate
 
 test("a forge that permits an undeclared method is a high finding", () => {
