@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { runFoundationCheck } from "./foundation.js";
+import { skipUnlessPermissionBitsAreEnforced } from "../testing/permission-enforcement.js";
 
 // Real file I/O against a temp directory, matching @example/catalog's
 // own build.test.ts and @example/release's preflight/pack-round-trip
@@ -155,7 +156,9 @@ describe("runFoundationCheck — report.complete (Part A4)", () => {
     expect(report.complete).toBe(false);
   });
 
-  it("is false — and an unreadable directory drives exit-1-worthy severity — for a real chmod-000 fixture", () => {
+  it("is false — and an unreadable directory drives exit-1-worthy severity — for a real chmod-000 fixture", (ctx) => {
+    skipUnlessPermissionBitsAreEnforced(ctx.skip);
+
     const root = mkdtempSync(join(tmpdir(), "gates-foundation-fixture-chmod-"));
     createdRoots.push(root);
     const cleanDir = join(root, "packages", "clean");
