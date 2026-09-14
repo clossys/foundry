@@ -730,12 +730,34 @@ async function exportCoverage(manifest, installed, root) {
 // for ...", ETARGET, a registry 5xx, ...) that tells a reader "wait",
 // "retry", and "stop and investigate" apart. Pure and exported so it is
 // directly testable without a real, slow, network-dependent npm install.
+//
+// One more cause belongs in that same list (issue #833): `sanitizedEnv()`
+// above deliberately builds the install child's environment from a literal
+// object rather than spreading `process.env`, so it never forwards a
+// CA-trust variable a parent shell may have set to trust a TLS-intercepting
+// egress proxy. In a sandbox that transparently re-terminates outbound HTTPS
+// behind such a proxy, that shows up here as a certificate-chain error on the
+// registry fetch — a real, deterministic install failure, but one whose true
+// cause ("this sandbox intercepts TLS and the sanitized child does not trust
+// it") is not obvious from a bare npm exit code the way ETARGET already is.
+const CERT_CHAIN_ERROR_CODES = [
+  "SELF_SIGNED_CERT_IN_CHAIN",
+  "UNABLE_TO_VERIFY_LEAF_SIGNATURE",
+  "DEPTH_ZERO_SELF_SIGNED_CERT",
+  "UNABLE_TO_GET_ISSUER_CERT_LOCALLY",
+  "CERT_HAS_EXPIRED",
+];
+function certChainHint(stderr) {
+  const code = CERT_CHAIN_ERROR_CODES.find((candidate) => stderr?.includes(candidate));
+  if (!code) return "";
+  return ` — this looks like a TLS certificate-chain failure (${code}) on the registry fetch, not a package problem. Qualification's sanitized install environment never forwards a CA-trust variable, so it cannot run behind a TLS-intercepting proxy; run it where the registry is reachable without interception.`;
+}
 export function candidateNotInstalledMessage(install) {
   const installFailed = install !== null && (install.exitCode !== 0 || install.signal || install.launchError);
   if (!installFailed) return "candidate package was not installed from the supplied tarball";
   const how = install.launchError ? "could not be launched" : install.signal ? `was terminated by ${install.signal}` : `exited ${install.exitCode}`;
   const stderrTail = install.stderr?.trim() ? `: ${install.stderr.trim().slice(-4000)}` : "";
-  return `candidate package was not installed from the supplied tarball (npm install ${how}${stderrTail})`;
+  return `candidate package was not installed from the supplied tarball (npm install ${how}${stderrTail})${certChainHint(install.stderr)}`;
 }
 
 export async function runCandidateQualification({ tarball, policy, adapter, fixtures, manifestBins, registry, consumerRoot = null, skipRollback = false, restoreConsumerOverlay = false, releaseRuntimeRun }) {

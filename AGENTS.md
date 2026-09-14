@@ -90,6 +90,31 @@ scoped repository checks. Cloud sessions do not receive the public-safety
 denylist or publication credentials, so they may not produce a FULL clearance
 or publish packages.
 
+A separate, unrelated limitation (#833): release qualification-record
+generation (`node scripts/run-candidate-qualification.mjs`) needs neither the
+denylist nor publication credentials — `assertCredentialFree()` only refuses
+an *ambient* `NODE_AUTH_TOKEN`/`NPM_TOKEN`/`GH_*TOKEN`, and qualification
+installs the candidate against the public, credentialless
+`registry.npmjs.org` — but it can still fail in a cloud sandbox class whose
+outbound HTTPS is transparently intercepted and re-terminated by a
+policy-enforcing egress proxy. `sanitizedEnv()` in
+`scripts/lib/candidate-runner.mjs` deliberately builds the qualification
+child's environment from a hardcoded literal rather than spreading
+`process.env`, precisely so a candidate never inherits a parent-shell
+credential; the same literal also never forwards a CA-trust variable
+(`NODE_EXTRA_CA_CERTS`, `NODE_USE_SYSTEM_CA`, or similar) a parent shell may
+have set to trust such a proxy's CA. In that sandbox class this surfaces as a
+certificate-chain error (for example `SELF_SIGNED_CERT_IN_CHAIN`) on the
+child's registry fetch, and `candidateNotInstalledMessage()` now names that
+cause explicitly rather than leaving only a bare npm exit code. This
+repository has deliberately not changed `sanitizedEnv()` itself to pass
+through a CA-trust variable: doing so would mean qualification — a gate whose
+entire purpose is proving exact artifact bytes — trusting an interception
+path for the very bytes it qualifies, which is not a call one session should
+make unilaterally. Treat qualification-record generation as
+owner/developer-machine work, same as publication itself, in any cloud
+sandbox of this class; #833 has the full measurement.
+
 ## Working rules
 
 - **Model-assisted code review is manually initiated.** Do not add a background

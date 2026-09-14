@@ -478,3 +478,32 @@ test("candidateNotInstalledMessage carries npm's own failure forward instead of 
   assert.ok(message.length < long.length, "stderr tail must be bounded");
   assert.ok(message.endsWith("x".repeat(50) + ")"));
 });
+
+test("candidateNotInstalledMessage names a TLS-intercepting proxy as the likely cause of a certificate-chain install failure (issue #833)", () => {
+  // sanitizedEnv() deliberately never forwards a CA-trust variable to the
+  // install child. In a sandbox that transparently intercepts outbound TLS,
+  // npm's registry fetch fails with exactly this class of error — real npm
+  // stderr text, reproduced verbatim from issue #833's own measurement.
+  const proxyStderr = [
+    "npm http fetch GET https://registry.npmjs.org/typescript attempt 1 failed with SELF_SIGNED_CERT_IN_CHAIN",
+    "npm http fetch GET https://registry.npmjs.org/typescript attempt 2 failed with SELF_SIGNED_CERT_IN_CHAIN",
+    "npm http fetch GET https://registry.npmjs.org/typescript attempt 3 failed with SELF_SIGNED_CERT_IN_CHAIN",
+  ].join("\n");
+  const message = candidateNotInstalledMessage({ exitCode: 1, signal: null, launchError: false, stderr: proxyStderr });
+  assert.ok(message.includes("SELF_SIGNED_CERT_IN_CHAIN"), "npm's own stderr must still survive into the message");
+  assert.ok(
+    message.includes("TLS-intercepting proxy"),
+    "a certificate-chain failure must be named as a likely TLS-intercepting-proxy cause, not left as a bare npm exit code",
+  );
+  // Other known cert-chain codes get the same hint; an unrelated failure does not.
+  for (const code of ["UNABLE_TO_VERIFY_LEAF_SIGNATURE", "DEPTH_ZERO_SELF_SIGNED_CERT", "UNABLE_TO_GET_ISSUER_CERT_LOCALLY", "CERT_HAS_EXPIRED"]) {
+    assert.ok(
+      candidateNotInstalledMessage({ exitCode: 1, signal: null, launchError: false, stderr: `npm http fetch failed with ${code}` }).includes("TLS-intercepting proxy"),
+      `${code} must be recognized as a certificate-chain failure`,
+    );
+  }
+  assert.ok(
+    !candidateNotInstalledMessage({ exitCode: 1, signal: null, launchError: false, stderr: "npm error ETARGET\nnpm error No matching version found for @clossys/designer@^0.4.0\n" }).includes("TLS-intercepting proxy"),
+    "an unrelated npm failure (ETARGET) must not be mislabeled as a certificate-chain problem",
+  );
+});
