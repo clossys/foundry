@@ -5,6 +5,24 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.2] - 2026-09-14
+
+### Added
+
+- **A CLI for `evaluateCredential`, the installed executable
+  `clossys-locksmith-credential` (issue #849, #850).** `evaluateCredential`
+  and `defineCredentialEvidence` (`./credential.ts`) already mapped
+  satisfied/violated/indeterminate credential lifecycle evidence to exit
+  codes 0/1/2, but no caller could reach that machinery except by importing
+  the library directly — the package's only existing bin
+  (`infisical/cli.ts`) relays an unrelated subprocess's own exit code and
+  never touches it. The new command reads one caller-assembled JSON evidence
+  document and reports the verdict unchanged: it mints, fetches, and rotates
+  nothing, and talks to no provider. Like the CLI split this catalogue
+  already uses elsewhere, `src/bin.ts` is the thin installed entry point and
+  `src/cli.ts` exports a port-injected `main(argv, port)` that is testable
+  without touching a real filesystem or process.
+
 ## [0.2.1] - 2026-09-14
 
 ### Changed
