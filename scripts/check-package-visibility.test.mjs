@@ -140,7 +140,7 @@ test("resolveActiveVisibilityTarget: an identity that does not match the catalog
       });
     }
     // A mismatched scope: package-scope.json disagrees with the target.
-    return JSON.stringify({ scope: "@someone-else", registry: PUBLIC_NPM_REGISTRY, access: "public" });
+    return JSON.stringify({ scope: "@other-scope", registry: PUBLIC_NPM_REGISTRY, access: "public" });
   };
   const { target: resolved, fatal } = resolveActiveVisibilityTarget({ readFile });
   assert.equal(resolved, null);
@@ -375,7 +375,10 @@ test("isBlindCredential: true only when every attempted lookup found nothing", (
 // ------------------------------------------------------ checkAllPackageVisibility
 
 test("checkAllPackageVisibility: a registry other than public npm is refused, never silently skipped", async () => {
-  const t = target({ registry: "https://npm.pkg.github.com" });
+  // A fictional non-public-npm registry -- this guard only cares that the
+  // value is not PUBLIC_NPM_REGISTRY, so a placeholder keeps this fixture
+  // decoupled from any real registry identity, historical or otherwise.
+  const t = target({ registry: "https://registry.example.invalid" });
   const outcome = await checkAllPackageVisibility({ target: t, lifecycle: lifecycleWith([]), retention: retentionWith([]), token: "t", fetchImpl: queueFetch([]) });
   assert.equal(outcome.code, 2);
   assert.match(outcome.fatal, /only knows how to verify visibility on public npm/);
