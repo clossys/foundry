@@ -18,7 +18,7 @@
       "stagedBy": {
         "run": "`npm run stage:architect` (builds packages/architect then runs scripts/stage-architect.mjs, invoking packages/architect/dist/cli.js by dist path). Printed: `architect topology red: exit 1 (\"state\": \"violated\")` then `architect topology control: exit 0 (\"state\": \"satisfied\")`, followed by the exception-assessment red/control/indeterminate trio (exit 1, 0, 2).",
         "defectOrigin": "injected",
-        "defect": "The red topology fixture kept both operating systems and their interface but dropped the authority entry for the \"product\" responsibility (kept only the first of two authorities). validateOperatingTopology's own authority-required rule (topology.ts) detected the uncovered responsibility and the compiled CLI printed a violated finding at exit 1 — the same rule a real topology document with a missing owner would trip.",
+        "defect": "The red topology fixture kept both operating systems and their interface but dropped the authority entry for the \"product\" responsibility (kept only the first of two authorities). validateOperatingTopology's own authority-required rule (topology.ts) detected the uncovered responsibility and the compiled CLI printed a violated finding at exit 1 \u2014 the same rule a real topology document with a missing owner would trip.",
         "control": "The adjacent control fixture is the identical topology with both authority entries intact, so the same authority-required rule found every responsibility owned and the CLI exited 0 with state satisfied, through the same compiled dist/cli.js path."
       }
     },
@@ -29,12 +29,18 @@
         "run": "`npm run stage:bouncer-butler-giver-keeper` (builds the workspace then runs scripts/stage-bouncer-butler-giver-keeper.mjs against packages/bouncer/dist/cli.js). Printed: `bouncer authority-reconciliation red: exit 1 (Authority reconciliation: violated.)` / control exit 0, `bouncer delegation-ceiling red: exit 1 ... / control exit 0`, `bouncer provider-contract red: exit 1 ... / control exit 0`.",
         "defectOrigin": "injected",
         "defect": "Three genuine violations from the compiled CLI's own reconciliation logic: authority-reconciliation flagged a grant whose only backing provider had revoked it; delegation-ceiling flagged an automation actor declared with no monetaryLimitAmount or monetaryLimitCurrency; provider-contract flagged a mapping that reads \"data.legacy_id\" when the provider's declared shape only emits \"data.id\".",
-        "control": "The adjacent fixtures changed exactly one fact each — an active backing, a bounded actor, and a mapping reading the declared field — and the same three compiled checks exited 0 with \"satisfied\" for each."
+        "control": "The adjacent fixtures changed exactly one fact each \u2014 an active backing, a bounded actor, and a mapping reading the declared field \u2014 and the same three compiled checks exited 0 with \"satisfied\" for each."
       }
     },
     {
       "name": "@clossys/builder",
-      "state": "implemented"
+      "state": "staged",
+      "stagedBy": {
+        "run": "`npm run stage:builder-inspector-integrator-observer-locksmith` (builds the workspace then runs scripts/stage-builder-inspector-integrator-observer-locksmith.mjs, invoking packages/builder/dist/ci/bin.js deployment-health by dist path). Printed: `builder deployment-health red: exit 1 (Overall: UNHEALTHY (exit 1))` then `builder deployment-health control: exit 0 (Overall: HEALTHY (exit 0))`; run directly with the same two fixtures, the red report's full text reads `healthy 1, degraded 0, unhealthy 1, unknown 0` and the control reads `healthy 2, degraded 0, unhealthy 0, unknown 0`.",
+        "defectOrigin": "injected",
+        "defect": "The red fixture recorded two surface observations, stage-surface-one healthy and stage-surface-two unhealthy. evaluateDeploymentHealth (packages/builder/src/deployment/health.ts) counted one healthy and one unhealthy observation itself, its own `counts.unhealthy > 0` rule set the overall status to unhealthy, and deploymentHealthExitCode mapped that real status to exit 1 -- nothing forced the code.",
+        "control": "The control fixture changed only stage-surface-two's status to healthy; the identical counting function then saw zero unhealthy and zero degraded observations among two recognized ones and returned status healthy, so the compiled CLI exited 0 through the same deployment-health code path."
+      }
     },
     {
       "name": "@clossys/butler",
@@ -43,7 +49,7 @@
         "run": "`npm run stage:bouncer-butler-giver-keeper`, invoking packages/butler/dist/cli.js. Printed: `butler confirmation-completeness red: exit 1 (Confirmation completeness: violated.)` / control exit 0, `butler currency red: exit 1 (Currency: violated.)` / control exit 0, `butler withdrawal-parity red: exit 1 (Withdrawal parity: violated.)` / control exit 0.",
         "defectOrigin": "injected",
         "defect": "confirmation-completeness computed 0 confirmations against 1 acted intent (floor 0.8) and reported violated; currency found a usage recorded against policy version 4 while the governing instruction was last decided under version 3 with --invalidate-denial-on-policy-bump true; withdrawal-parity found a 9-step, contact-required withdrawal path opposite a 2-step grant path for the same topic.",
-        "control": "Each control fixture changed only the fact under test — a recorded confirmation, a usage bound to the current policy version, and a withdrawal path matching the grant path's cost — and the same three compiled checks exited 0 satisfied."
+        "control": "Each control fixture changed only the fact under test \u2014 a recorded confirmation, a usage bound to the current policy version, and a withdrawal path matching the grant path's cost \u2014 and the same three compiled checks exited 0 satisfied."
       }
     },
     {
@@ -73,7 +79,7 @@
         "run": "`npm run stage:bouncer-butler-giver-keeper`, invoking packages/giver/dist/cli.js. Printed: `giver obligation-discharge red: exit 1 (Obligation discharge: violated.)` / control exit 0, `giver handoff-placement red: exit 1 (Hand-off placement: violated.)` / control exit 0, `giver grounding red: exit 1 (Grounding: violated.)` / control exit 0.",
         "defectOrigin": "injected",
         "defect": "obligation-discharge found a proof recorded with state \"failed\" for an obligation that had fired; handoff-placement found a raised hand-off with zero recorded placements; grounding found a delivered answer whose outcome cited zero retained grounds despite one being available.",
-        "control": "The adjacent fixtures changed only the fact under test — a \"delivered\" proof, a recorded placement, and an answer citing the available ground — and the same three compiled checks exited 0 satisfied."
+        "control": "The adjacent fixtures changed only the fact under test \u2014 a \"delivered\" proof, a recorded placement, and an answer citing the available ground \u2014 and the same three compiled checks exited 0 satisfied."
       }
     },
     {
@@ -88,11 +94,23 @@
     },
     {
       "name": "@clossys/inspector",
-      "state": "implemented"
+      "state": "staged",
+      "stagedBy": {
+        "run": "`npm run stage:builder-inspector-integrator-observer-locksmith`, invoking packages/inspector/dist/bin.js --checks secret-scan by dist path. Printed: `inspector secret-scan red: exit 1 (Overall: VIOLATED (exit 1))` then `inspector secret-scan control: exit 0 (Overall: SATISFIED (exit 0))`; run directly with the same two fixtures, the red report's finding row reads `secret-detected (stage/fixture.env): stage-scanner rule aws-access-key-id: a credential-shaped string was reported at this location.` and the control row reads `secret-scan | satisfied | 12 evaluated`.",
+        "defectOrigin": "injected",
+        "defect": "The red observation declared toolName stage-scanner, exitCode 1, unitsScanned 12, and one hit with ruleId aws-access-key-id at path stage/fixture.env. checkSecretScan (packages/inspector/src/secret-scan.ts) passed its own self-consistency check (exit 1 paired with a non-empty hit list) before its `hits.length > 0` branch produced a real gateViolated finding -- not a forced or mocked one.",
+        "control": "The adjacent fixture kept toolName, toolVersion, and unitsScanned 12 identical but set exitCode 0 with an empty hits array; the same consistency-then-hits-count logic in checkSecretScan found nothing to report and returned satisfied, exiting 0 through the identical compiled path."
+      }
     },
     {
       "name": "@clossys/integrator",
-      "state": "implemented"
+      "state": "staged",
+      "stagedBy": {
+        "run": "`npm run stage:builder-inspector-integrator-observer-locksmith`, invoking packages/integrator/dist/cli.js --block against governance/foundry-supersession-map.json by dist path. Printed: `integrator supersession red: exit 1 (conflicting pair installed together)` then `integrator supersession control: exit 0 (No conflicting pairs installed.)`; run directly, the red report reads `1 conflicting pair installed together: \"@example/auth\" (dependencies) alongside its replacement \"@clossys/bouncer\" (dependencies), superseded since 0.1.0.` and the control, run against this repository's own package.json, reads `Evaluated 4 declared supersessions. No conflicting pairs installed.`",
+        "defectOrigin": "injected",
+        "defect": "The red manifest declared both @example/auth and @clossys/bouncer as dependencies. detectSupersession's findSupersededPairs (packages/integrator/src/supersession.ts) matched that pair against the supersession map's real @example/auth -> @clossys/bouncer entry (since 0.1.0) and returned a genuine violated verdict naming one pair -- the map lookup found it, nothing forced it.",
+        "control": "The control run used this repository's own package.json as the manifest; the same map lookup evaluated all four declared supersessions against it and found none of the four donor names present alongside their replacements, so the compiled CLI exited 0 satisfied through the identical detectSupersession path."
+      }
     },
     {
       "name": "@clossys/keeper",
@@ -101,12 +119,18 @@
         "run": "`npm run stage:bouncer-butler-giver-keeper`, invoking packages/keeper/dist/cli.js. Printed: `keeper visibility red: exit 1 (Visibility: violated.)` / control exit 0, `keeper attribution red: exit 1 (Attribution: violated.)` / control exit 0, `keeper disposal red: exit 1 (Disposal: violated (items-retained-past-schedule).)` / control exit 0.",
         "defectOrigin": "injected",
         "defect": "visibility found an item with zero recorded disclosures on a surface; attribution found an item whose provenance was rewritten to kind \"none\" with a named reason instead of citing its source event; disposal found the item's holding class scheduled for 10-day retention while the item had actually been held since 2026-08-01, past that schedule.",
-        "control": "The adjacent fixtures changed only the fact under test — a recorded disclosure, provenance citing the real source event, and a 90-day retention schedule that had not yet elapsed — and the same three compiled checks exited 0 satisfied."
+        "control": "The adjacent fixtures changed only the fact under test \u2014 a recorded disclosure, provenance citing the real source event, and a 90-day retention schedule that had not yet elapsed \u2014 and the same three compiled checks exited 0 satisfied."
       }
     },
     {
       "name": "@clossys/locksmith",
-      "state": "implemented"
+      "state": "staged",
+      "stagedBy": {
+        "run": "`npm run stage:builder-inspector-integrator-observer-locksmith`, invoking `packages/locksmith/dist/infisical/cli.js qualify --catalog <file> --available <file>` by dist path -- never `catalog`, whose own outer handler (`run()` in packages/locksmith/src/infisical/cli.ts) maps every shape failure, including a duplicate key thrown by parseValueFreeCatalog, to exit 2 indeterminate, not exit 1. Verified directly: a two-entry catalog fixture with both entries keyed STAGE_REQUIRED_TOKEN made `catalog --catalog <file>` print `clossys-secrets-infisical: Secret catalog must be value-free version 1 metadata with unique keys.` and exit 2, confirming catalog has no exit-1 path at all. The staged run printed: `locksmith qualify red: exit 1 (\"ok\": false)` then `locksmith qualify control: exit 0 (\"ok\": true)`; run directly, the red report reads `{\"ok\": false, \"missingRequired\": [\"STAGE_REQUIRED_TOKEN\"]}` and the control reads `{\"ok\": true, \"missingRequired\": []}`.",
+        "defectOrigin": "injected",
+        "defect": "The catalog fixture declared STAGE_REQUIRED_TOKEN as required and STAGE_OPTIONAL_TOKEN as not required. The red available-names snapshot listed only STAGE_OPTIONAL_TOKEN, so the qualify command's own missingRequired filter (`entry.required && !available.has(entry.key)`, cli.ts) found the required key absent and returned ok:false at exit 1 -- the genuine violated path, distinct from catalog's indeterminate one.",
+        "control": "The control snapshot added STAGE_REQUIRED_TOKEN to the available names alongside STAGE_OPTIONAL_TOKEN, so the identical missingRequired filter over the same catalog found zero missing required keys and qualify returned ok:true at exit 0, through the same compiled cli.js path."
+      }
     },
     {
       "name": "@clossys/messenger",
@@ -120,7 +144,13 @@
     },
     {
       "name": "@clossys/observer",
-      "state": "implemented"
+      "state": "staged",
+      "stagedBy": {
+        "run": "`npm run stage:builder-inspector-integrator-observer-locksmith`, invoking packages/observer/dist/bin.js --input by dist path. Printed: `observer coverage red: exit 1 (Overall: VIOLATED (exit 1))` then `observer coverage control: exit 0 (Overall: SATISFIED (exit 0))`; run directly with the same two fixtures, the red report's contradiction line reads `@clossys/bouncer in stage-fixture-repo: declared reason \"Stage fixture: no lane for authority reconciliation yet.\"` over `Counts: installed=1 declared-absent=0 unclassified=0`.",
+        "defectOrigin": "injected",
+        "defect": "The red fixture declared @clossys/bouncer absent from stage-fixture-repo with a reason, while the same repository's installed inventory listed @clossys/bouncer at version 0.1.0. gradeFleetCoverage's own installed-branch (packages/observer/src/coverage.ts) found the package present, recorded the contradiction against the declared absence, and its `contradictions.length > 0` rule returned violated -- not a stubbed result.",
+        "control": "The control fixture kept @clossys/bouncer installed at 0.1.0 in the same repository but declared zero absences, so the identical installed-cell logic found one installed cell and zero contradictions, and gradeFleetCoverage returned satisfied through the same compiled path."
+      }
     },
     {
       "name": "@clossys/publisher",
@@ -129,7 +159,7 @@
         "run": "`npm run stage:strategist-writer-publisher`, invoking packages/publisher/dist/media/cli.js and packages/publisher/dist/record/cli.js. Printed: `publisher media red: exit 1 (finding(s))` / control exit 0, `publisher record red: exit 1 (finding(s))` / control exit 0.",
         "defectOrigin": "injected",
         "defect": "The media check's red fixture referenced asset id \"marketing.missing-image\", which is absent from the declared asset registry, and the compiled CLI reported a real missing-reference finding. The record check's red fixture set the current value of \"published-items\" to 4 while the ledger's own citation digest was bound to 3, and the compiled drift checker recomputed the digest and found real drift.",
-        "control": "Each control fixture changed only the fact under test — a referenced asset that exists in the registry, and a current value of 3 matching the ledger's bound digest — and both compiled checks exited 0 with no findings."
+        "control": "Each control fixture changed only the fact under test \u2014 a referenced asset that exists in the registry, and a current value of 3 matching the ledger's bound digest \u2014 and both compiled checks exited 0 with no findings."
       }
     },
     {
@@ -167,7 +197,7 @@
       "name": "@vespeneventures/advisor",
       "state": "published",
       "stagedBy": {
-        "run": "LOCAL fixture run — reproduce with `npm run stage:advisor` after checkout. It builds `packages/advisor`, then runs `node packages/advisor/dist/cli.js` against a temporary assessment with unresolved pre-work (exit 1, `state: violated`), the otherwise equivalent cleared control (exit 0, `state: satisfied`), and an unknown readiness observation paired with owned indeterminate pre-work (exit 2, `state: indeterminate`). The script finishes `Advisor fixture evidence: unresolved pre-work violated, the cleared control satisfied, and unknown readiness stayed indeterminate.`",
+        "run": "LOCAL fixture run \u2014 reproduce with `npm run stage:advisor` after checkout. It builds `packages/advisor`, then runs `node packages/advisor/dist/cli.js` against a temporary assessment with unresolved pre-work (exit 1, `state: violated`), the otherwise equivalent cleared control (exit 0, `state: satisfied`), and an unknown readiness observation paired with owned indeterminate pre-work (exit 2, `state: indeterminate`). The script finishes `Advisor fixture evidence: unresolved pre-work violated, the cleared control satisfied, and unknown readiness stayed indeterminate.`",
         "defectOrigin": "injected",
         "defect": "The temporary assessment leaves a first-wave baseline pre-work item unresolved. Advisor's compiled CLI produces its own violated state and exit 1 rather than allowing execution readiness through an uncleared prerequisite.",
         "control": "In the same fixture run, the otherwise equivalent assessment clears the baseline and conflict pre-work and exits 0 satisfied; an unknown readiness observation with matching owned indeterminate pre-work exits 2 rather than becoming a pass."
@@ -177,7 +207,7 @@
       "name": "@vespeneventures/architect",
       "state": "published",
       "stagedBy": {
-        "run": "LOCAL fixture run, not a CI run — after building `packages/architect`, `node scripts/stage-architect.mjs` ran the compiled CLI. The topology red exited 1 violated and its control exited 0 satisfied; the exception red exited 1 violated, its control exited 0 satisfied, and the no-observation case exited 2 indeterminate. The script finished `Architect fixture evidence: topology and exception judgments discriminated, and absent evidence stayed indeterminate.` 2026-08-23.",
+        "run": "LOCAL fixture run, not a CI run \u2014 after building `packages/architect`, `node scripts/stage-architect.mjs` ran the compiled CLI. The topology red exited 1 violated and its control exited 0 satisfied; the exception red exited 1 violated, its control exited 0 satisfied, and the no-observation case exited 2 indeterminate. The script finished `Architect fixture evidence: topology and exception judgments discriminated, and absent evidence stayed indeterminate.` 2026-08-23.",
         "defectOrigin": "injected",
         "defect": "The topology fixture omitted the authority for its product responsibility, and the exception fixture observed a material crossing opposite the declared interface direction. The compiled architect CLI produced its own violated judgments and exit 1 for both defects.",
         "control": "In the same fixture run, the complete authority mapping and direction-matching crossing each stayed satisfied with exit 0. An empty observation set stayed indeterminate with exit 2 instead of becoming a false zero exception rate."
@@ -191,7 +221,7 @@
       "name": "@vespeneventures/bouncer",
       "state": "published",
       "stagedBy": {
-        "run": "LOCAL fixture run, not a CI run — reproduce with `npm run stage:bouncer-butler-giver-keeper` after checkout. It creates temporary synthetic records and runs all three `node packages/bouncer/dist/cli.js` gates: authority-reconciliation (upstream-revoked / active), delegation-ceiling (unbounded / bounded), and provider-contract (undeclared field / declared field). Every red exits 1 with its violated report and each adjacent control exits 0 with its satisfied report. This proves compiled CLI discrimination only; real product wiring, adoption, and #507 remain distinct. 2026-08-22.",
+        "run": "LOCAL fixture run, not a CI run \u2014 reproduce with `npm run stage:bouncer-butler-giver-keeper` after checkout. It creates temporary synthetic records and runs all three `node packages/bouncer/dist/cli.js` gates: authority-reconciliation (upstream-revoked / active), delegation-ceiling (unbounded / bounded), and provider-contract (undeclared field / declared field). Every red exits 1 with its violated report and each adjacent control exits 0 with its satisfied report. This proves compiled CLI discrimination only; real product wiring, adoption, and #507 remain distinct. 2026-08-22.",
         "defectOrigin": "injected",
         "defect": "The three synthetic violations are a live grant revoked upstream, a machine actor with no declared spending ceiling, and an adapter reading a provider field the declared shape lacks. The compiled bouncer CLI produced each normal exit-1 violation; the harness did not force an exit code.",
         "control": "Each matching fixture control marks the authority active, declares a bounded actor, or aligns the adapter field with the provider shape. All three compiled CLI controls exit 0 with their satisfied reports, proving only fixture discrimination."
@@ -201,7 +231,7 @@
       "name": "@vespeneventures/builder",
       "state": "published",
       "stagedBy": {
-        "run": "LOCAL, not a CI run — after `npm ci && npm run build`, run `node packages/builder/dist/ci/bin.js deployment-health --inputs <red-input>` with one healthy and one unhealthy surface. It printed `Overall: UNHEALTHY (exit 1)` with `healthy 1, degraded 0, unhealthy 1, unknown 0`. The control with the healthy surface only printed `Overall: HEALTHY (exit 0)`. 2026-08-22.",
+        "run": "LOCAL, not a CI run \u2014 after `npm ci && npm run build`, run `node packages/builder/dist/ci/bin.js deployment-health --inputs <red-input>` with one healthy and one unhealthy surface. It printed `Overall: UNHEALTHY (exit 1)` with `healthy 1, degraded 0, unhealthy 1, unknown 0`. The control with the healthy surface only printed `Overall: HEALTHY (exit 0)`. 2026-08-22.",
         "defectOrigin": "injected",
         "defect": "An unhealthy deployment observation is a real input a consuming plane's deployment-health gate can receive. Builder's compiled dist CLI judged it unhealthy and supplied its normal exit 1 rather than a mock or forced exit status.",
         "control": "The otherwise same one-surface control with status healthy stayed GREEN in the same local session: builder printed HEALTHY, one healthy observation, and exit 0."
@@ -211,7 +241,7 @@
       "name": "@vespeneventures/butler",
       "state": "published",
       "stagedBy": {
-        "run": "LOCAL fixture run, not a CI run — reproduce with `npm run stage:bouncer-butler-giver-keeper` after checkout. It creates temporary synthetic records and runs all three `node packages/butler/dist/cli.js` gates: confirmation-completeness (unconfirmed / confirmed), currency (superseded policy / current policy), and withdrawal-parity (harder withdrawal / equal route). Every red exits 1 with its violated report and each adjacent control exits 0 with its satisfied report. This proves compiled CLI discrimination only; real product wiring, adoption, and #507 remain distinct. 2026-08-22.",
+        "run": "LOCAL fixture run, not a CI run \u2014 reproduce with `npm run stage:bouncer-butler-giver-keeper` after checkout. It creates temporary synthetic records and runs all three `node packages/butler/dist/cli.js` gates: confirmation-completeness (unconfirmed / confirmed), currency (superseded policy / current policy), and withdrawal-parity (harder withdrawal / equal route). Every red exits 1 with its violated report and each adjacent control exits 0 with its satisfied report. This proves compiled CLI discrimination only; real product wiring, adoption, and #507 remain distinct. 2026-08-22.",
         "defectOrigin": "injected",
         "defect": "The three synthetic violations are an acted-on intent with no confirmation, a standing instruction used after its policy version changed, and a withdrawal route that costs more than its grant route. The compiled butler CLI produced each normal exit-1 violation; the harness did not force an exit code.",
         "control": "Each matching fixture control supplies a confirmation, retains the current policy version, or makes withdrawal no harder than grant. All three compiled CLI controls exit 0 with their satisfied reports, proving only fixture discrimination."
@@ -229,7 +259,7 @@
       "name": "@vespeneventures/controller",
       "state": "published",
       "stagedBy": {
-        "run": "LOCAL, not a CI run — after `npm ci && npm run build`, `node packages/controller/dist/cli.js docs/contracts/package-lifecycle.json . --scope @vespeneventures` printed `Package governance: PASS` and exited 0. The injected red ran the same dist CLI with `packages/locksmith` as root; it printed `Package governance: FAIL`, one packages-dir-missing foundation finding, 16 catalog-package-missing lifecycle findings, and exited 1. 2026-08-22.",
+        "run": "LOCAL, not a CI run \u2014 after `npm ci && npm run build`, `node packages/controller/dist/cli.js docs/contracts/package-lifecycle.json . --scope @vespeneventures` printed `Package governance: PASS` and exited 0. The injected red ran the same dist CLI with `packages/locksmith` as root; it printed `Package governance: FAIL`, one packages-dir-missing foundation finding, 16 catalog-package-missing lifecycle findings, and exited 1. 2026-08-22.",
         "defectOrigin": "injected",
         "defect": "A consumer pointing the governance CLI at a package directory instead of its repository root is a real catalog defect. The built controller gate discovered no packages directory and named every lifecycle package the incomplete catalog omitted; the gate itself produced exit 1.",
         "control": "The same compiled CLI, lifecycle contract, and scope against this repository root stayed GREEN in the same session: 18 packages, zero foundation findings, zero lifecycle findings, and exit 0."
@@ -243,9 +273,9 @@
       "name": "@vespeneventures/designer",
       "state": "published",
       "stagedBy": {
-        "run": "LOCAL, not a CI run — no Actions URL exists for it. Reproduce: build designer, copy packages/designer/styles/tokens.css, set --color-ink-primary to oklch(0.9702 0 0) (identical to --color-surface-base), then `node packages/designer/dist/tokens/contrast-cli.js <that file>`. 2026-08-22.",
+        "run": "LOCAL, not a CI run \u2014 no Actions URL exists for it. Reproduce: build designer, copy packages/designer/styles/tokens.css, set --color-ink-primary to oklch(0.9702 0 0) (identical to --color-surface-base), then `node packages/designer/dist/tokens/contrast-cli.js <that file>`. 2026-08-22.",
         "defectOrigin": "injected",
-        "defect": "--color-ink-primary set equal to --color-surface-base gives a 1:1 contrast ratio against the page ground. designer-contrast-check exited 1 with three light-theme findings, reached through the gate’s own contrast computation over CONTRAST_PAIRS — not a mock, a stub, or a forced exit code.",
+        "defect": "--color-ink-primary set equal to --color-surface-base gives a 1:1 contrast ratio against the page ground. designer-contrast-check exited 1 with three light-theme findings, reached through the gate\u2019s own contrast computation over CONTRAST_PAIRS \u2014 not a mock, a stub, or a forced exit code.",
         "control": "The dark theme stayed GREEN in the same run: 0 findings, while light produced 3. Only the light-theme value was altered, so the clean dark result shows the gate discriminates between a violating and a conforming palette rather than failing on any input it is handed."
       }
     },
@@ -257,7 +287,7 @@
       "name": "@vespeneventures/giver",
       "state": "published",
       "stagedBy": {
-        "run": "LOCAL fixture run, not a CI run — reproduce with `npm run stage:bouncer-butler-giver-keeper` after checkout. It creates temporary synthetic records and runs all three `node packages/giver/dist/cli.js` gates: obligation-discharge (failed / delivered), handoff-placement (unplaced / placed), and grounding (uncited / retained-ground citation). Every red exits 1 with its violated report and each adjacent control exits 0 with its satisfied report. This proves compiled CLI discrimination only; real product wiring, adoption, and #507 remain distinct. 2026-08-22.",
+        "run": "LOCAL fixture run, not a CI run \u2014 reproduce with `npm run stage:bouncer-butler-giver-keeper` after checkout. It creates temporary synthetic records and runs all three `node packages/giver/dist/cli.js` gates: obligation-discharge (failed / delivered), handoff-placement (unplaced / placed), and grounding (uncited / retained-ground citation). Every red exits 1 with its violated report and each adjacent control exits 0 with its satisfied report. This proves compiled CLI discrimination only; real product wiring, adoption, and #507 remain distinct. 2026-08-22.",
         "defectOrigin": "injected",
         "defect": "The three synthetic violations are a failed delivery proof for a due obligation, an expired handoff with no placement, and a delivered answer with no retained-ground citation. The compiled giver CLI produced each normal exit-1 violation; the harness did not force an exit code.",
         "control": "Each matching fixture control supplies a delivered proof, a timely handoff placement, or a citation to the retained ground. All three compiled CLI controls exit 0 with their satisfied reports, proving only fixture discrimination."
@@ -267,7 +297,7 @@
       "name": "@vespeneventures/influencer",
       "state": "published",
       "stagedBy": {
-        "run": "LOCAL fixture run, not a CI run — after `npm run build --workspace=packages/influencer`, `node scripts/stage-influencer.mjs` ran the compiled `response-yield` CLI. One qualified response from 2,000 eligible exposures exited 1 violated at a setpoint of 2 per thousand; five responses from the same exposure count exited 0 satisfied; and an unreadable response source exited 2 indeterminate. The script finished `Influencer fixture evidence: response yield discriminated, and unreadable outcome evidence stayed indeterminate.` 2026-08-23.",
+        "run": "LOCAL fixture run, not a CI run \u2014 after `npm run build --workspace=packages/influencer`, `node scripts/stage-influencer.mjs` ran the compiled `response-yield` CLI. One qualified response from 2,000 eligible exposures exited 1 violated at a setpoint of 2 per thousand; five responses from the same exposure count exited 0 satisfied; and an unreadable response source exited 2 indeterminate. The script finished `Influencer fixture evidence: response yield discriminated, and unreadable outcome evidence stayed indeterminate.` 2026-08-23.",
         "defectOrigin": "injected",
         "defect": "One synthetic governed publication produced one independently observed qualified response from 2,000 eligible exposures. The compiled influencer CLI calculated 0.5 per thousand against the declared setpoint of 2, emitted its own violated judgment, and exited 1.",
         "control": "In the same author-produced fixture, five otherwise identical unique qualified responses from 2,000 exposures calculated 2.5 per thousand and exited 0 satisfied. An unreadable response evidence source exited 2 indeterminate rather than becoming a measured zero."
@@ -277,7 +307,7 @@
       "name": "@vespeneventures/inspector",
       "state": "published",
       "stagedBy": {
-        "run": "LOCAL, not a CI run — after `npm ci && npm run build`, run `node packages/inspector/dist/bin.js --inputs <red-input> --checks secret-scan`; the injected observation printed `secret-detected (src/a.ts): example-scanner rule generic-api-key` and `Overall: VIOLATED (exit 1)`. With the otherwise identical control containing zero hits, the same dist CLI printed `secret-scan | satisfied | 5 evaluated` and `Overall: SATISFIED (exit 0)`. 2026-08-22.",
+        "run": "LOCAL, not a CI run \u2014 after `npm ci && npm run build`, run `node packages/inspector/dist/bin.js --inputs <red-input> --checks secret-scan`; the injected observation printed `secret-detected (src/a.ts): example-scanner rule generic-api-key` and `Overall: VIOLATED (exit 1)`. With the otherwise identical control containing zero hits, the same dist CLI printed `secret-scan | satisfied | 5 evaluated` and `Overall: SATISFIED (exit 0)`. 2026-08-22.",
         "defectOrigin": "injected",
         "defect": "A scanner reporting a credential-shaped hit at a source path is the real secret-scan violation this gate consumes. The compiled inspector entry point rendered its own violated report and exit 1, with no mocked return or forced process status.",
         "control": "The same scanner observation shape with five evaluated units and no hits stayed GREEN in the same local session, proving the dist CLI distinguishes a reported hit from a clean scan."
@@ -287,7 +317,7 @@
       "name": "@vespeneventures/integrator",
       "state": "published",
       "stagedBy": {
-        "run": "LOCAL, not a CI run — reproduce after `npm ci && npm run build`: run `node packages/integrator/dist/cli.js package.json governance/foundry-supersession-map.json --block` (printed `Evaluated 2 declared supersessions. No conflicting pairs installed.` and exited 0). For the injected red, run the same dist CLI with a manifest whose dependencies contain @vespeneventures/auth and @vespeneventures/bouncer; it printed `1 conflicting pair installed together` and exited 1. 2026-08-22.",
+        "run": "LOCAL, not a CI run \u2014 reproduce after `npm ci && npm run build`: run `node packages/integrator/dist/cli.js package.json governance/foundry-supersession-map.json --block` (printed `Evaluated 2 declared supersessions. No conflicting pairs installed.` and exited 0). For the injected red, run the same dist CLI with a manifest whose dependencies contain @vespeneventures/auth and @vespeneventures/bouncer; it printed `1 conflicting pair installed together` and exited 1. 2026-08-22.",
         "defectOrigin": "injected",
         "defect": "A manifest pinning both the retained auth donor and its published bouncer replacement is the real duplicate-install condition this supersession gate judges. The built CLI found the pair in dependencies and produced its normal blocking exit 1, not a mocked result or forced exit code.",
         "control": "The repository's root package.json stayed GREEN in the same local staging session against governance/foundry-supersession-map.json: both declared relationships were evaluated and no conflicting pair was installed, so the built CLI exited 0 in --block mode."
@@ -297,7 +327,7 @@
       "name": "@vespeneventures/keeper",
       "state": "published",
       "stagedBy": {
-        "run": "LOCAL fixture run, not a CI run — reproduce with `npm run stage:bouncer-butler-giver-keeper` after checkout. It creates temporary synthetic records and runs all three `node packages/keeper/dist/cli.js` gates: visibility (no disclosure / visible and correctable), attribution (no source / retained source event), and disposal (expired retention / current retention). Every red exits 1 with its violated report and each adjacent control exits 0 with its satisfied report. This proves compiled CLI discrimination only; real product wiring, adoption, and #507 remain distinct. 2026-08-22.",
+        "run": "LOCAL fixture run, not a CI run \u2014 reproduce with `npm run stage:bouncer-butler-giver-keeper` after checkout. It creates temporary synthetic records and runs all three `node packages/keeper/dist/cli.js` gates: visibility (no disclosure / visible and correctable), attribution (no source / retained source event), and disposal (expired retention / current retention). Every red exits 1 with its violated report and each adjacent control exits 0 with its satisfied report. This proves compiled CLI discrimination only; real product wiring, adoption, and #507 remain distinct. 2026-08-22.",
         "defectOrigin": "injected",
         "defect": "The three synthetic violations are a held item with no disclosure route, a held item with no source event, and a held item outliving its declared retention. The compiled keeper CLI produced each normal exit-1 violation; the harness did not force an exit code.",
         "control": "Each matching fixture control supplies a visible correctable route, a retained matching source event, or a current retention rule. All three compiled CLI controls exit 0 with their satisfied reports, proving only fixture discrimination."
@@ -311,7 +341,7 @@
       "name": "@vespeneventures/locksmith",
       "state": "published",
       "stagedBy": {
-        "run": "LOCAL, not a CI run — reproduce after `npm ci && npm run build`: run `node packages/locksmith/dist/infisical/cli.js catalog --catalog governance/locksmith-catalog.json` (printed the two value-free registry credential entries and exited 0). For the injected red, run the same dist CLI against a version-1 catalog containing GH_PACKAGES_TOKEN twice; it printed `Secret catalog must be value-free version 1 metadata with unique keys.` and exited 2. 2026-08-22.",
+        "run": "LOCAL, not a CI run \u2014 reproduce after `npm ci && npm run build`: run `node packages/locksmith/dist/infisical/cli.js catalog --catalog governance/locksmith-catalog.json` (printed the two value-free registry credential entries and exited 0). For the injected red, run the same dist CLI against a version-1 catalog containing GH_PACKAGES_TOKEN twice; it printed `Secret catalog must be value-free version 1 metadata with unique keys.` and exited 2. 2026-08-22.",
         "defectOrigin": "injected",
         "defect": "A duplicate credential name is a real value-free catalogue defect a consuming plane can produce. The built locksmith parser, not a mocked return or forced exit code, rejected the duplicate-key catalogue and printed its own uniqueness failure.",
         "control": "The repository-owned governance/locksmith-catalog.json stayed GREEN in the same local staging session: the built dist CLI printed its two declared, value-free workflow credential classes and exited 0. The control differs only by having unique keys."
@@ -321,7 +351,7 @@
       "name": "@vespeneventures/messenger",
       "state": "published",
       "stagedBy": {
-        "run": "LOCAL fixture run, not a CI run — after `npm run build --workspace=packages/messenger`, `node scripts/stage-messenger.mjs` ran the compiled `delivery-closure` CLI. A due sample with one missing outcome exited 1 violated, its otherwise equivalent fully delivered control exited 0 satisfied, and a nonempty sample with no intent due exited 2 indeterminate. The script finished `Messenger fixture evidence: delivery closure discriminated, and no due intent stayed indeterminate.` 2026-08-23.",
+        "run": "LOCAL fixture run, not a CI run \u2014 after `npm run build --workspace=packages/messenger`, `node scripts/stage-messenger.mjs` ran the compiled `delivery-closure` CLI. A due sample with one missing outcome exited 1 violated, its otherwise equivalent fully delivered control exited 0 satisfied, and a nonempty sample with no intent due exited 2 indeterminate. The script finished `Messenger fixture evidence: delivery closure discriminated, and no due intent stayed indeterminate.` 2026-08-23.",
         "defectOrigin": "injected",
         "defect": "Two authorized message intents were due at a setpoint of one, but only one synthetic record carried a timely delivery observation. The compiled messenger CLI computed one of two, named the missing intent, emitted its own violated result, and exited 1.",
         "control": "In the same author-produced fixture, both otherwise identical due intents carried delivery observations inside their inclusive windows and exited 0 satisfied. A nonempty not-yet-due sample exited 2 indeterminate instead of becoming a false perfect rate."
@@ -331,7 +361,7 @@
       "name": "@vespeneventures/observer",
       "state": "published",
       "stagedBy": {
-        "run": "LOCAL, not a CI run — after `npm ci && npm run build`, run `node packages/observer/dist/bin.js --input <red-input>` with observer installed in repo-a and the same package declared absent there. It printed the contradiction, `Overall: VIOLATED (exit 1)`. The control removed the declared absence and the same dist CLI printed `Overall: SATISFIED (exit 0)`. 2026-08-22.",
+        "run": "LOCAL, not a CI run \u2014 after `npm ci && npm run build`, run `node packages/observer/dist/bin.js --input <red-input>` with observer installed in repo-a and the same package declared absent there. It printed the contradiction, `Overall: VIOLATED (exit 1)`. The control removed the declared absence and the same dist CLI printed `Overall: SATISFIED (exit 0)`. 2026-08-22.",
         "defectOrigin": "injected",
         "defect": "An installed package simultaneously declared absent is the real coverage contradiction observer exists to surface. Its compiled CLI found the contradiction and emitted its normal violated exit 1, not a mocked verdict or forced process code.",
         "control": "The otherwise identical installed inventory without a declared absence stayed GREEN in the same local session: observer classified the package installed with no contradiction and exited 0."
@@ -341,7 +371,7 @@
       "name": "@vespeneventures/publisher",
       "state": "published",
       "stagedBy": {
-        "run": "LOCAL fixture run, not a CI run — reproduce with `npm run stage:strategist-writer-publisher` after checkout. It runs both compiled publisher CLIs: media coverage on an unregistered asset reference (exit 1) and its registered control (exit 0), then record drift on a changed cited fact (exit 1) and its matching control (exit 0). This proves fixture discrimination only; it does not reconcile a ledger emitted by Foundry's publish path against an independent record, which remains #502. 2026-08-22.",
+        "run": "LOCAL fixture run, not a CI run \u2014 reproduce with `npm run stage:strategist-writer-publisher` after checkout. It runs both compiled publisher CLIs: media coverage on an unregistered asset reference (exit 1) and its registered control (exit 0), then record drift on a changed cited fact (exit 1) and its matching control (exit 0). This proves fixture discrimination only; it does not reconcile a ledger emitted by Foundry's publish path against an independent record, which remains #502. 2026-08-22.",
         "defectOrigin": "injected",
         "defect": "The temporary media fixture referenced a missing asset id, and the temporary ledger fixture supplied a current fact value different from its recorded content-addressed citation. The compiled media and record CLIs respectively produced their own exit-1 findings for coverage failure and fact drift.",
         "control": "In the same fixture command, the media fixture referenced its registered asset and the temporary ledger supplied its exact cited fact value. Both compiled publisher CLIs exited 0 with No findings; this does not establish the independent publish-path reconciliation #502 requires."
@@ -356,7 +386,7 @@
       "name": "@vespeneventures/strategist",
       "state": "published",
       "stagedBy": {
-        "run": "LOCAL fixture run, not a CI run — reproduce with `npm run stage:strategist-writer-publisher` after checkout. It creates temporary facts and prose inputs, runs `node packages/strategist/dist/cli.js` against an unregistered numerical claim (exit 1, finding(s)), then against the registered value (exit 0, No findings). This proves the compiled CLI discriminates; it does not wire it to a real Foundry facts subject, which remains #500. 2026-08-22.",
+        "run": "LOCAL fixture run, not a CI run \u2014 reproduce with `npm run stage:strategist-writer-publisher` after checkout. It creates temporary facts and prose inputs, runs `node packages/strategist/dist/cli.js` against an unregistered numerical claim (exit 1, finding(s)), then against the registered value (exit 0, No findings). This proves the compiled CLI discriminates; it does not wire it to a real Foundry facts subject, which remains #500. 2026-08-22.",
         "defectOrigin": "injected",
         "defect": "A temporary fixture announcement claimed 9 customers while its fixture facts registry contained only 3 customers. The compiled strategist CLI's own traceability scan produced exit 1 and finding output; no exit code was forced.",
         "control": "In the same fixture command, the identical temporary registry was scanned against an announcement claiming its registered 3 customers value. The compiled CLI exited 0 with No findings, proving discrimination within the fixture rather than real author-subject wiring."
@@ -378,7 +408,7 @@
       "name": "@vespeneventures/writer",
       "state": "published",
       "stagedBy": {
-        "run": "LOCAL fixture run, not a CI run — reproduce with `npm run stage:strategist-writer-publisher` after checkout. It creates temporary copy-record and source-tree inputs, runs `node packages/writer/dist/cli.js` against an unregistered user-facing string (exit 1, finding(s)), then against a registered string (exit 0, No findings). This proves the compiled CLI discriminates; choosing and wiring writer's real Foundry subject remains #501. 2026-08-22.",
+        "run": "LOCAL fixture run, not a CI run \u2014 reproduce with `npm run stage:strategist-writer-publisher` after checkout. It creates temporary copy-record and source-tree inputs, runs `node packages/writer/dist/cli.js` against an unregistered user-facing string (exit 1, finding(s)), then against a registered string (exit 0, No findings). This proves the compiled CLI discriminates; choosing and wiring writer's real Foundry subject remains #501. 2026-08-22.",
         "defectOrigin": "injected",
         "defect": "A temporary source fixture contained the user-facing literal Unregistered result while its fixture copy record registered only No results. The compiled writer CLI's own scanner and traceability judgment produced exit 1 and finding output; the harness did not force its exit code.",
         "control": "In the same fixture command, the same temporary copy record was scanned against a source file containing its registered No results string. The compiled CLI exited 0 with No findings, proving discrimination within the fixture rather than a decision about Foundry's real author subject."
