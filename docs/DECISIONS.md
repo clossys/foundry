@@ -1395,29 +1395,80 @@ property of this repository's history and of one of its two permitted merge
 methods. It is not a defect awaiting repair, and nothing is sequenced behind
 it.
 
+### The predicate, stated exactly, and why it is the one used below
+
+"Non-noreply" needs a precise definition before a count means anything, and an
+earlier working draft of this entry got it wrong in a way worth recording
+rather than silently correcting: it anchored only on GitHub's own per-account
+alias, `@users\.noreply\.github\.com$`, which counts every other address —
+including this project's own AGENTS.md/CONTRIBUTING.md-documented agent
+commit address, `noreply@anthropic.com` — as if it exposed personal identity.
+It does not. `noreply@anthropic.com` is a generic, shared, non-personal
+address with no individual behind it, structurally the same kind of thing as
+GitHub's own `users.noreply.github.com` domain — see the "forge's own no-reply
+mail domain" admission already in `scripts/check-foreign-references.mjs`'s
+`NON_ACCOUNT_AT_TOKENS`, which this entry's own reproduction commands below
+now also rely on. Anchoring on one noreply convention while missing the other
+answers a narrower question than the one #826 actually asks (which commits
+carry an address that exposes a person, not which commits carry an address
+other than one specific forge's alias format).
+
+The predicate used throughout this entry is therefore: an author address is
+already privacy-preserving — and so excluded from "non-noreply" — when it
+matches GitHub's per-account alias **or** is exactly this project's own agent
+no-reply address:
+
+```
+$ SAFE='@users\.noreply\.github\.com$|^noreply@anthropic\.com$'
+$ git log origin/main --format='%ae' | grep -vcE "$SAFE"
+465
+```
+
+This was cross-checked against the simpler "does the address contain the
+substring `noreply` at all" predicate a second, independent measurement used,
+and the two agree exactly (465), because no third noreply-shaped domain exists
+in this history to make the looser substring test overcount:
+
+```
+$ git log origin/main --format='%ae' | grep -civ 'noreply'
+465
+$ git log origin/main --format='%ae' | grep -i 'noreply' | sed -E 's/^[^@]+@//' | sort -u
+anthropic.com
+users.noreply.github.com
+```
+
+An earlier narrower run — anchoring on the GitHub form alone, the mistake
+described above — read 491, 26 higher, and every one of those 26 was a
+`noreply@anthropic.com` commit miscounted as non-noreply. That number is not
+carried forward: it answered the wrong question, and this entry's whole point
+is that the next reader gets the same figure this one does, not a different
+one from a different, unstated predicate.
+
 ### What was measured
 
 Independently re-derived rather than carried forward from the issue, which
 itself said its own 447/630 figure was incidental to a different
-investigation:
+investigation, using the predicate above throughout:
 
 ```
 $ git rev-list --count origin/main
 667
 
-$ git log origin/main --format='%ae' | grep -vc '@users\.noreply\.github\.com$'
-491
+$ SAFE='@users\.noreply\.github\.com$|^noreply@anthropic\.com$'
 
-$ git log origin/main --format='%ae' | grep -c '@users\.noreply\.github\.com$'
-176
+$ git log origin/main --format='%ae' | grep -vcE "$SAFE"
+465
 
-$ git log origin/main --no-merges --format='%ae' | grep -vc '@users\.noreply\.github\.com$'
-353
+$ git log origin/main --format='%ae' | grep -cE "$SAFE"
+202
+
+$ git log origin/main --no-merges --format='%ae' | grep -vcE "$SAFE"
+335
 $ git log origin/main --no-merges --format='%H' | wc -l
 511
 
-$ git log origin/main --merges --format='%ae' | grep -vc '@users\.noreply\.github\.com$'
-138
+$ git log origin/main --merges --format='%ae' | grep -vcE "$SAFE"
+130
 $ git log origin/main --merges --format='%H' | wc -l
 156
 
@@ -1425,15 +1476,17 @@ $ git log origin/main --merges --format='%an' | sort -u | wc -l
 3
 ```
 
-491 of 667 reachable commits (74%) carry a non-noreply author address today,
+465 of 667 reachable commits (70%) carry a non-noreply author address today,
 against 447 of 630 (71%) when the issue was filed a few hours earlier the same
-day — **+44 non-noreply commits in under a day**, not the "stops growing" the
-issue's own body originally claimed. The issue's first comment had already
-found one live counterexample (the #811 revert, a directly-authored, non-squash
-commit); this measurement confirms the pattern is not a single outlier: 353 of
-511 non-merge commits and 138 of 156 merge commits both carry it, and squash
-being disabled changed neither figure, because squash was never the only
-generating mechanism for either.
+day — still **+18 non-noreply commits in under a day**, not the "stops
+growing" the issue's own body originally claimed (the issue's own 447 was not
+reproduced against a stated predicate, so this comparison is directional, not
+exact to the commit). The issue's first comment had already found one live
+counterexample (the #811 revert, a directly-authored, non-squash commit);
+this measurement confirms the pattern is not a single outlier: 335 of 511
+non-merge commits (66%) and 130 of 156 merge commits (83%) both carry it, and
+squash being disabled changed neither figure, because squash was never the
+only generating mechanism for either.
 
 ### A gap this measurement adds to the issue's own finding
 
@@ -1467,17 +1520,17 @@ principle: `check-commit-messages.mjs`'s own model (scan a narrow per-push
 diff range, no history rescan) would apply cleanly here with no historical-
 exception mechanism needed at all, unlike #809/#813 — an AUTHOR header is
 metadata on commits not yet made, not immutable text already merged, so a
-forward-only range scan naturally excludes the 491 already on `main` without
+forward-only range scan naturally excludes the 465 already on `main` without
 needing to admit any of them.
 
-It was rejected anyway, on what it could actually catch. Of the 491,
-353 (72%) are non-merge commits a contributor could avoid by configuring
+It was rejected anyway, on what it could actually catch. Of the 465,
+335 (72%) are non-merge commits a contributor could avoid by configuring
 `user.email` to their forge noreply alias locally — genuinely actionable, but
 this repository has no existing convention asking contributors to do that, so
 a hard-fail gate here would fail ordinary, correctly-configured commits from
 any contributor who has not opted into the forge's privacy setting, which is
 a new contribution requirement this task was not asked to institute. The
-other 138 (28%) — the merge commits themselves — are composed by GitHub
+other 130 (28%) — the merge commits themselves — are composed by GitHub
 exactly the way `why.squash` describes for the trailer: server-side, at merge
 time, from account profile data, after every check has already run. No gate
 in this repository can observe or act on that account setting without naming
@@ -1489,7 +1542,7 @@ that keeps growing every merge sails through untouched would read as coverage
 this surface does not actually have.
 
 **3. Rewrite history.** Not recommended, for the reasons Decision 20 already
-gives at greater length, unchanged here: 74% of `main`'s history, not 16%,
+gives at greater length, unchanged here: 70% of `main`'s history, not 16%,
 which makes the disproportion sharper, not the same.
 
 ### The one thing that actually closes this

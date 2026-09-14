@@ -151,7 +151,7 @@ The blind spot is the commit's **author header**. The gate scans message text
 only. GitHub writes an account's public profile email into a commit's author
 metadata in two distinct ways — a field this gate never opens, and which no
 gate in this repository reads. That surface is not a corner case: as of
-[Decision 21](docs/DECISIONS.md), 491 of the 667 commits reachable from `main`
+[Decision 21](docs/DECISIONS.md), 465 of the 667 commits reachable from `main`
 carry a non-noreply address in their author header, against 102 carrying the
 predecessor identity in message text ([Decision 20](docs/DECISIONS.md)). See
 those two entries for the current counts and their trend — both are measured,

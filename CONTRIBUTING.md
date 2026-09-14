@@ -157,7 +157,7 @@ A web-side merge also writes that address into the commit's **author header**
 `squash` — whenever the merging account is the pull request's author. That is
 commit metadata rather than message text, so no gate in this repository reads
 it, and it is the bigger surface by an order of magnitude: [Decision
-21](docs/DECISIONS.md) measures 491 of 667 commits reachable from `main`
+21](docs/DECISIONS.md) measures 465 of 667 commits reachable from `main`
 carrying a non-noreply address there, against 102 carrying the predecessor
 identity in message text ([Decision 20](docs/DECISIONS.md)). See those entries
 for the current counts rather than trusting a number pinned in this file — an
