@@ -5,6 +5,20 @@ All notable changes to `@clossys/integrator` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.6] - 2026-09-14
+
+### Changed
+
+- Patch version bump only, to obtain a fresh, never-before-used
+  `governance/release-qualifications/` record path. The 0.6.5 qualification
+  record added by #811 was orphaned when that pull request was squash-merged
+  (#821) and had to be removed (#834); the immutability gate that protects
+  already-introduced record paths (`check-candidate-qualification.mjs`'s
+  single-introduction-commit invariant) means a valid record can never again
+  be introduced at the `0.6.5` path, so this package moves to `0.6.6`
+  purely to regain one. No functional or behavioral change.
+
+
 ## [0.6.5] - 2026-09-09
 
 ### Changed
