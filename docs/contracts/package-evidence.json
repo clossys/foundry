@@ -14,11 +14,23 @@
     },
     {
       "name": "@clossys/architect",
-      "state": "implemented"
+      "state": "staged",
+      "stagedBy": {
+        "run": "`npm run stage:architect` (builds packages/architect then runs scripts/stage-architect.mjs, invoking packages/architect/dist/cli.js by dist path). Printed: `architect topology red: exit 1 (\"state\": \"violated\")` then `architect topology control: exit 0 (\"state\": \"satisfied\")`, followed by the exception-assessment red/control/indeterminate trio (exit 1, 0, 2).",
+        "defectOrigin": "injected",
+        "defect": "The red topology fixture kept both operating systems and their interface but dropped the authority entry for the \"product\" responsibility (kept only the first of two authorities). validateOperatingTopology's own authority-required rule (topology.ts) detected the uncovered responsibility and the compiled CLI printed a violated finding at exit 1 — the same rule a real topology document with a missing owner would trip.",
+        "control": "The adjacent control fixture is the identical topology with both authority entries intact, so the same authority-required rule found every responsibility owned and the CLI exited 0 with state satisfied, through the same compiled dist/cli.js path."
+      }
     },
     {
       "name": "@clossys/bouncer",
-      "state": "implemented"
+      "state": "staged",
+      "stagedBy": {
+        "run": "`npm run stage:bouncer-butler-giver-keeper` (builds the workspace then runs scripts/stage-bouncer-butler-giver-keeper.mjs against packages/bouncer/dist/cli.js). Printed: `bouncer authority-reconciliation red: exit 1 (Authority reconciliation: violated.)` / control exit 0, `bouncer delegation-ceiling red: exit 1 ... / control exit 0`, `bouncer provider-contract red: exit 1 ... / control exit 0`.",
+        "defectOrigin": "injected",
+        "defect": "Three genuine violations from the compiled CLI's own reconciliation logic: authority-reconciliation flagged a grant whose only backing provider had revoked it; delegation-ceiling flagged an automation actor declared with no monetaryLimitAmount or monetaryLimitCurrency; provider-contract flagged a mapping that reads \"data.legacy_id\" when the provider's declared shape only emits \"data.id\".",
+        "control": "The adjacent fixtures changed exactly one fact each — an active backing, a bounded actor, and a mapping reading the declared field — and the same three compiled checks exited 0 with \"satisfied\" for each."
+      }
     },
     {
       "name": "@clossys/builder",
@@ -26,7 +38,13 @@
     },
     {
       "name": "@clossys/butler",
-      "state": "implemented"
+      "state": "staged",
+      "stagedBy": {
+        "run": "`npm run stage:bouncer-butler-giver-keeper`, invoking packages/butler/dist/cli.js. Printed: `butler confirmation-completeness red: exit 1 (Confirmation completeness: violated.)` / control exit 0, `butler currency red: exit 1 (Currency: violated.)` / control exit 0, `butler withdrawal-parity red: exit 1 (Withdrawal parity: violated.)` / control exit 0.",
+        "defectOrigin": "injected",
+        "defect": "confirmation-completeness computed 0 confirmations against 1 acted intent (floor 0.8) and reported violated; currency found a usage recorded against policy version 4 while the governing instruction was last decided under version 3 with --invalidate-denial-on-policy-bump true; withdrawal-parity found a 9-step, contact-required withdrawal path opposite a 2-step grant path for the same topic.",
+        "control": "Each control fixture changed only the fact under test — a recorded confirmation, a usage bound to the current policy version, and a withdrawal path matching the grant path's cost — and the same three compiled checks exited 0 satisfied."
+      }
     },
     {
       "name": "@clossys/controller",
@@ -40,15 +58,33 @@
     },
     {
       "name": "@clossys/designer",
-      "state": "implemented"
+      "state": "staged",
+      "stagedBy": {
+        "run": "`npm run stage:strategist-writer-publisher` (builds the workspace then runs scripts/stage-strategist-writer-publisher.mjs against packages/designer/dist/tokens/contrast-cli.js). Printed: `designer red: exit 1 (finding(s))`, `designer control: exit 0 ([dark] No findings.)`, `designer indeterminate: exit 2 (could NOT be evaluated)`.",
+        "defectOrigin": "injected",
+        "defect": "The red fixture is the package's own packages/designer/styles/tokens.css with --color-ink-primary overwritten to a near-white oklch(0.9702 0 0) value; the compiled contrast CLI computed the actual foreground/background ratio against WCAG and reported a real contrast finding at exit 1.",
+        "control": "The control run passed no argument, so the CLI evaluated the package's real, unmodified tokens.css and exited 0 with no findings in both themes; a third fixture with an unparseable color value (\"invalid\") exited 2 rather than being scored as either pass or fail."
+      }
     },
     {
       "name": "@clossys/giver",
-      "state": "implemented"
+      "state": "staged",
+      "stagedBy": {
+        "run": "`npm run stage:bouncer-butler-giver-keeper`, invoking packages/giver/dist/cli.js. Printed: `giver obligation-discharge red: exit 1 (Obligation discharge: violated.)` / control exit 0, `giver handoff-placement red: exit 1 (Hand-off placement: violated.)` / control exit 0, `giver grounding red: exit 1 (Grounding: violated.)` / control exit 0.",
+        "defectOrigin": "injected",
+        "defect": "obligation-discharge found a proof recorded with state \"failed\" for an obligation that had fired; handoff-placement found a raised hand-off with zero recorded placements; grounding found a delivered answer whose outcome cited zero retained grounds despite one being available.",
+        "control": "The adjacent fixtures changed only the fact under test — a \"delivered\" proof, a recorded placement, and an answer citing the available ground — and the same three compiled checks exited 0 satisfied."
+      }
     },
     {
       "name": "@clossys/influencer",
-      "state": "implemented"
+      "state": "staged",
+      "stagedBy": {
+        "run": "`npm run stage:influencer` (builds packages/influencer then runs scripts/stage-influencer.mjs against packages/influencer/dist/cli.js response-yield). Printed a JSON report with `\"state\": \"violated\"`, `\"qualifiedResponseCount\": 1`, `\"eligibleExposureCount\": 2000`, `\"valuePerThousand\": 0.5` at exit 1, then a control at exit 0 with `\"qualifiedResponseCount\": 5` and `\"valuePerThousand\": 2.5`.",
+        "defectOrigin": "injected",
+        "defect": "The red fixture recorded 1 independently observed qualified response against 2000 eligible exposures (0.5 per thousand); the compiled response-yield judgment computed that rate itself against the declared setpoint of 2 per thousand and returned exit 1 with state violated.",
+        "control": "The adjacent fixture recorded 5 qualified responses from the same 2000 exposures (2.5 per thousand), clearing the setpoint through the identical computed-rate code path and exiting 0 with state satisfied; a third fixture with unreadable response evidence exited 2 indeterminate."
+      }
     },
     {
       "name": "@clossys/inspector",
@@ -60,7 +96,13 @@
     },
     {
       "name": "@clossys/keeper",
-      "state": "implemented"
+      "state": "staged",
+      "stagedBy": {
+        "run": "`npm run stage:bouncer-butler-giver-keeper`, invoking packages/keeper/dist/cli.js. Printed: `keeper visibility red: exit 1 (Visibility: violated.)` / control exit 0, `keeper attribution red: exit 1 (Attribution: violated.)` / control exit 0, `keeper disposal red: exit 1 (Disposal: violated (items-retained-past-schedule).)` / control exit 0.",
+        "defectOrigin": "injected",
+        "defect": "visibility found an item with zero recorded disclosures on a surface; attribution found an item whose provenance was rewritten to kind \"none\" with a named reason instead of citing its source event; disposal found the item's holding class scheduled for 10-day retention while the item had actually been held since 2026-08-01, past that schedule.",
+        "control": "The adjacent fixtures changed only the fact under test — a recorded disclosure, provenance citing the real source event, and a 90-day retention schedule that had not yet elapsed — and the same three compiled checks exited 0 satisfied."
+      }
     },
     {
       "name": "@clossys/locksmith",
@@ -68,7 +110,13 @@
     },
     {
       "name": "@clossys/messenger",
-      "state": "implemented"
+      "state": "staged",
+      "stagedBy": {
+        "run": "`npm run stage:messenger` (builds packages/messenger then runs scripts/stage-messenger.mjs against packages/messenger/dist/cli.js delivery-closure). Printed: `messenger delivery red: exit 1 (violated)`, `messenger delivery control: exit 0 (satisfied)`, `messenger delivery not due: exit 2 (indeterminate)`.",
+        "defectOrigin": "injected",
+        "defect": "The red fixture left intent \"two\" authorized and due within its delivery window but with no delivery outcome observation recorded; checkDeliveryClosure computed the resulting shortfall against the declared setpoint of 1 and returned exit 1 with state violated.",
+        "control": "The control fixture supplied a signed-provider-delivery-event outcome for the same intent \"two\", so the identical delivery-closure computation cleared the setpoint and exited 0 satisfied; a third fixture with no due intent yet exited 2 indeterminate."
+      }
     },
     {
       "name": "@clossys/observer",
@@ -76,7 +124,13 @@
     },
     {
       "name": "@clossys/publisher",
-      "state": "implemented"
+      "state": "staged",
+      "stagedBy": {
+        "run": "`npm run stage:strategist-writer-publisher`, invoking packages/publisher/dist/media/cli.js and packages/publisher/dist/record/cli.js. Printed: `publisher media red: exit 1 (finding(s))` / control exit 0, `publisher record red: exit 1 (finding(s))` / control exit 0.",
+        "defectOrigin": "injected",
+        "defect": "The media check's red fixture referenced asset id \"marketing.missing-image\", which is absent from the declared asset registry, and the compiled CLI reported a real missing-reference finding. The record check's red fixture set the current value of \"published-items\" to 4 while the ledger's own citation digest was bound to 3, and the compiled drift checker recomputed the digest and found real drift.",
+        "control": "Each control fixture changed only the fact under test — a referenced asset that exists in the registry, and a current value of 3 matching the ledger's bound digest — and both compiled checks exited 0 with no findings."
+      }
     },
     {
       "name": "@clossys/starter",
@@ -91,11 +145,23 @@
     },
     {
       "name": "@clossys/strategist",
-      "state": "implemented"
+      "state": "staged",
+      "stagedBy": {
+        "run": "`npm run stage:strategist-writer-publisher`, invoking packages/strategist/dist/cli.js. Printed: `strategist red: exit 1 (finding(s))` then `strategist control: exit 0 (No findings.)`.",
+        "defectOrigin": "injected",
+        "defect": "The red fixture is a draft announcement reading \"We serve 9 customers.\" against a declared fact of 3 active customers; the compiled strategist CLI compared the draft's stated figure to the registered fact and reported a real contradiction finding at exit 1.",
+        "control": "The control fixture is the identical fact set with the announcement corrected to \"We serve 3 customers.\", so the same comparison found no contradiction and exited 0 with no findings."
+      }
     },
     {
       "name": "@clossys/writer",
-      "state": "implemented"
+      "state": "staged",
+      "stagedBy": {
+        "run": "`npm run stage:strategist-writer-publisher`, invoking packages/writer/dist/cli.js. Printed: `writer red: exit 1 (finding(s))` then `writer control: exit 0 (No findings.)`.",
+        "defectOrigin": "injected",
+        "defect": "The red fixture is a source file whose literal string is \"Unregistered result\" where the registered copy record for that context (\"empty.no-results\") declares the text must be \"No results\"; the compiled writer CLI compared the rendered literal against the registered copy entry and reported a real mismatch at exit 1.",
+        "control": "The control fixture is the identical file with the literal corrected to \"No results\", matching the registered copy entry exactly, and the same comparison exited 0 with no findings."
+      }
     },
     {
       "name": "@vespeneventures/advisor",
