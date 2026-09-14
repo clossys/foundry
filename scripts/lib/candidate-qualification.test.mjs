@@ -957,6 +957,43 @@ test("forward-record-touches catches a rewrite that arrives through a merge rath
   assert.ok(merged.includes("forward-record-touches"));
 });
 
+test("an unrelated record's ambiguous introduction is attributed to that record alone", async (t) => {
+  const fixture = await clonePendingPublicationTransition();
+  t.after(() => removeFixtureDirectory(fixture.parent));
+  const forward = await appendForwardTrioQualifications(fixture);
+  const context = { root: fixture.root, publication: fixture.publication, publicationClosureValid: true };
+
+  // Sanity: the good forward records are clean before any ambiguity exists.
+  for (const record of forward.records) {
+    assert.deepEqual(validatePrepublicationPrTail(record, { ...context, forwardRecords: forward.records }).map((item) => item.rule), []);
+  }
+
+  // Manufacture an unrelated forward record whose own introduction history is
+  // ambiguous — added, removed, and re-added, so `--diff-filter=A` finds two
+  // commits rather than one. It shares no commit with the good records above.
+  const broken = { candidate: { name: "@clossys/advisor", version: "9.9.5" }, timing: "pre-publication", reviewedCommit: forward.reviewedCommit };
+  const brokenPath = qualificationPath(fixture.root, broken.candidate, forward.reviewedCommit);
+  await mkdir(dirname(join(fixture.root, brokenPath)), { recursive: true });
+  await writeFile(join(fixture.root, brokenPath), "ambiguous\n");
+  await commit(fixture.root, "add ambiguous record");
+  await rm(join(fixture.root, brokenPath));
+  await commit(fixture.root, "remove ambiguous record");
+  await writeFile(join(fixture.root, brokenPath), "ambiguous\n");
+  await commit(fixture.root, "re-add ambiguous record");
+  const forwardRecords = [...forward.records, broken];
+
+  // The broken record's own validation must name itself, exactly once.
+  const brokenFindings = validatePrepublicationPrTail(broken, { ...context, forwardRecords }).map((item) => item.rule);
+  assert.deepEqual(brokenFindings, ["forward-record-history"]);
+
+  // Every other, unrelated forward record must still be evaluated on its own
+  // merits: the broken record's ambiguity must not leak into their findings.
+  for (const record of forward.records) {
+    const findings = validatePrepublicationPrTail(record, { ...context, forwardRecords }).map((item) => item.rule);
+    assert.deepEqual(findings, [], `${record.candidate.name} must not be blamed for an unrelated record's ambiguous introduction`);
+  }
+});
+
 test("publication closure rejects retained evidence rewrite and restoration", async (t) => {
   const fixture = await clonePendingPublicationTransition();
   t.after(() => removeFixtureDirectory(fixture.parent));
