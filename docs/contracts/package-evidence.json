@@ -34,7 +34,13 @@
     },
     {
       "name": "@clossys/builder",
-      "state": "implemented"
+      "state": "staged",
+      "stagedBy": {
+        "run": "`npm run stage:builder-inspector-integrator-observer-locksmith` (builds the workspace then runs scripts/stage-builder-inspector-integrator-observer-locksmith.mjs, invoking packages/builder/dist/ci/bin.js deployment-health by dist path). Printed: `builder deployment-health red: exit 1 (Overall: UNHEALTHY (exit 1))` then `builder deployment-health control: exit 0 (Overall: HEALTHY (exit 0))`; run directly with the same two fixtures, the red report's full text reads `healthy 1, degraded 0, unhealthy 1, unknown 0` and the control reads `healthy 2, degraded 0, unhealthy 0, unknown 0`.",
+        "defectOrigin": "injected",
+        "defect": "The red fixture recorded two surface observations, stage-surface-one healthy and stage-surface-two unhealthy. evaluateDeploymentHealth (packages/builder/src/deployment/health.ts) counted one healthy and one unhealthy observation itself, its own `counts.unhealthy > 0` rule set the overall status to unhealthy, and deploymentHealthExitCode mapped that real status to exit 1 -- nothing forced the code.",
+        "control": "The control fixture changed only stage-surface-two's status to healthy; the identical counting function then saw zero unhealthy and zero degraded observations among two recognized ones and returned status healthy, so the compiled CLI exited 0 through the same deployment-health code path."
+      }
     },
     {
       "name": "@clossys/butler",
@@ -88,11 +94,23 @@
     },
     {
       "name": "@clossys/inspector",
-      "state": "implemented"
+      "state": "staged",
+      "stagedBy": {
+        "run": "`npm run stage:builder-inspector-integrator-observer-locksmith`, invoking packages/inspector/dist/bin.js --checks secret-scan by dist path. Printed: `inspector secret-scan red: exit 1 (Overall: VIOLATED (exit 1))` then `inspector secret-scan control: exit 0 (Overall: SATISFIED (exit 0))`; run directly with the same two fixtures, the red report's finding row reads `secret-detected (stage/fixture.env): stage-scanner rule aws-access-key-id: a credential-shaped string was reported at this location.` and the control row reads `secret-scan | satisfied | 12 evaluated`.",
+        "defectOrigin": "injected",
+        "defect": "The red observation declared toolName stage-scanner, exitCode 1, unitsScanned 12, and one hit with ruleId aws-access-key-id at path stage/fixture.env. checkSecretScan (packages/inspector/src/secret-scan.ts) passed its own self-consistency check (exit 1 paired with a non-empty hit list) before its `hits.length > 0` branch produced a real gateViolated finding -- not a forced or mocked one.",
+        "control": "The adjacent fixture kept toolName, toolVersion, and unitsScanned 12 identical but set exitCode 0 with an empty hits array; the same consistency-then-hits-count logic in checkSecretScan found nothing to report and returned satisfied, exiting 0 through the identical compiled path."
+      }
     },
     {
       "name": "@clossys/integrator",
-      "state": "implemented"
+      "state": "staged",
+      "stagedBy": {
+        "run": "`npm run stage:builder-inspector-integrator-observer-locksmith`, invoking packages/integrator/dist/cli.js --block against governance/foundry-supersession-map.json by dist path. Printed: `integrator supersession red: exit 1 (conflicting pair installed together)` then `integrator supersession control: exit 0 (No conflicting pairs installed.)`; run directly, the red report reads `1 conflicting pair installed together: \"@example/auth\" (dependencies) alongside its replacement \"@clossys/bouncer\" (dependencies), superseded since 0.1.0.` and the control, run against this repository's own package.json, reads `Evaluated 4 declared supersessions. No conflicting pairs installed.`",
+        "defectOrigin": "injected",
+        "defect": "The red manifest declared both @example/auth and @clossys/bouncer as dependencies. detectSupersession's findSupersededPairs (packages/integrator/src/supersession.ts) matched that pair against the supersession map's real @example/auth -> @clossys/bouncer entry (since 0.1.0) and returned a genuine violated verdict naming one pair -- the map lookup found it, nothing forced it.",
+        "control": "The control run used this repository's own package.json as the manifest; the same map lookup evaluated all four declared supersessions against it and found none of the four donor names present alongside their replacements, so the compiled CLI exited 0 satisfied through the identical detectSupersession path."
+      }
     },
     {
       "name": "@clossys/keeper",
@@ -106,7 +124,13 @@
     },
     {
       "name": "@clossys/locksmith",
-      "state": "implemented"
+      "state": "staged",
+      "stagedBy": {
+        "run": "`npm run stage:builder-inspector-integrator-observer-locksmith`, invoking `packages/locksmith/dist/infisical/cli.js qualify --catalog <file> --available <file>` by dist path -- never `catalog`, whose own outer handler (`run()` in packages/locksmith/src/infisical/cli.ts) maps every shape failure, including a duplicate key thrown by parseValueFreeCatalog, to exit 2 indeterminate, not exit 1. Verified directly: a two-entry catalog fixture with both entries keyed STAGE_REQUIRED_TOKEN made `catalog --catalog <file>` print `clossys-secrets-infisical: Secret catalog must be value-free version 1 metadata with unique keys.` and exit 2, confirming catalog has no exit-1 path at all. The staged run printed: `locksmith qualify red: exit 1 (\"ok\": false)` then `locksmith qualify control: exit 0 (\"ok\": true)`; run directly, the red report reads `{\"ok\": false, \"missingRequired\": [\"STAGE_REQUIRED_TOKEN\"]}` and the control reads `{\"ok\": true, \"missingRequired\": []}`.",
+        "defectOrigin": "injected",
+        "defect": "The catalog fixture declared STAGE_REQUIRED_TOKEN as required and STAGE_OPTIONAL_TOKEN as not required. The red available-names snapshot listed only STAGE_OPTIONAL_TOKEN, so the qualify command's own missingRequired filter (`entry.required && !available.has(entry.key)`, cli.ts) found the required key absent and returned ok:false at exit 1 -- the genuine violated path, distinct from catalog's indeterminate one.",
+        "control": "The control snapshot added STAGE_REQUIRED_TOKEN to the available names alongside STAGE_OPTIONAL_TOKEN, so the identical missingRequired filter over the same catalog found zero missing required keys and qualify returned ok:true at exit 0, through the same compiled cli.js path."
+      }
     },
     {
       "name": "@clossys/messenger",
@@ -120,7 +144,13 @@
     },
     {
       "name": "@clossys/observer",
-      "state": "implemented"
+      "state": "staged",
+      "stagedBy": {
+        "run": "`npm run stage:builder-inspector-integrator-observer-locksmith`, invoking packages/observer/dist/bin.js --input by dist path. Printed: `observer coverage red: exit 1 (Overall: VIOLATED (exit 1))` then `observer coverage control: exit 0 (Overall: SATISFIED (exit 0))`; run directly with the same two fixtures, the red report's contradiction line reads `@clossys/bouncer in stage-fixture-repo: declared reason \"Stage fixture: no lane for authority reconciliation yet.\"` over `Counts: installed=1 declared-absent=0 unclassified=0`.",
+        "defectOrigin": "injected",
+        "defect": "The red fixture declared @clossys/bouncer absent from stage-fixture-repo with a reason, while the same repository's installed inventory listed @clossys/bouncer at version 0.1.0. gradeFleetCoverage's own installed-branch (packages/observer/src/coverage.ts) found the package present, recorded the contradiction against the declared absence, and its `contradictions.length > 0` rule returned violated -- not a stubbed result.",
+        "control": "The control fixture kept @clossys/bouncer installed at 0.1.0 in the same repository but declared zero absences, so the identical installed-cell logic found one installed cell and zero contradictions, and gradeFleetCoverage returned satisfied through the same compiled path."
+      }
     },
     {
       "name": "@clossys/publisher",

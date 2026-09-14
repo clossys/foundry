@@ -317,18 +317,18 @@ fails when the committed copy drifts from the derived one — #493.
 | `@clossys/advisor` | published | yes | not yet | unknown — #484 | not yet |
 | `@clossys/architect` | staged | yes | not yet | unknown — #484 | not yet |
 | `@clossys/bouncer` | staged | yes | not yet | unknown — #484 | not yet |
-| `@clossys/builder` | implemented | not yet | not yet | unknown — #484 | not yet |
+| `@clossys/builder` | staged | yes | not yet | unknown — #484 | not yet |
 | `@clossys/butler` | staged | yes | not yet | unknown — #484 | not yet |
 | `@clossys/controller` | published | yes | not yet | unknown — #484 | not yet |
 | `@clossys/designer` | staged | yes | not yet | unknown — #484 | not yet |
 | `@clossys/giver` | staged | yes | not yet | unknown — #484 | not yet |
 | `@clossys/influencer` | staged | yes | not yet | unknown — #484 | not yet |
-| `@clossys/inspector` | implemented | not yet | not yet | unknown — #484 | not yet |
-| `@clossys/integrator` | implemented | not yet | not yet | unknown — #484 | not yet |
+| `@clossys/inspector` | staged | yes | not yet | unknown — #484 | not yet |
+| `@clossys/integrator` | staged | yes | not yet | unknown — #484 | not yet |
 | `@clossys/keeper` | staged | yes | not yet | unknown — #484 | not yet |
-| `@clossys/locksmith` | implemented | not yet | not yet | unknown — #484 | not yet |
+| `@clossys/locksmith` | staged | yes | not yet | unknown — #484 | not yet |
 | `@clossys/messenger` | staged | yes | not yet | unknown — #484 | not yet |
-| `@clossys/observer` | implemented | not yet | not yet | unknown — #484 | not yet |
+| `@clossys/observer` | staged | yes | not yet | unknown — #484 | not yet |
 | `@clossys/publisher` | staged | yes | not yet | unknown — #484 | not yet |
 | `@clossys/starter` | published | yes | N/A — executable tooling | N/A — executable tooling | N/A — executable tooling |
 | `@clossys/strategist` | staged | yes | not yet | unknown — #484 | not yet |
