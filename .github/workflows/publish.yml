@@ -192,6 +192,25 @@ jobs:
           test "$(npm --version)" = '11.17.0'
           test "$(node -p 'process.versions.zlib')" = '1.3.2.1-motley-3246f1b'
 
+      # Same warmed cache as ci.yml's `build` job -- see that step's own
+      # comment for why the round trip's isolated npm subprocess needs a
+      # cache separate from setup-node's ambient one (issue #528). Restoring
+      # it here too matters even though ci.yml already ran on this exact
+      # commit before it reached main: this job runs on a different,
+      # separately provisioned runner with no filesystem continuity from
+      # that one.
+      - name: Restore round-trip npm cache
+        if: ${{ !inputs.verify_only }}
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ${{ runner.temp }}/round-trip-npm-cache
+          key: round-trip-npm-cache-${{ runner.os }}-${{ hashFiles('packages/controller/package.json') }}
+          restore-keys: |
+            round-trip-npm-cache-${{ runner.os }}-
+      - name: Point round-trip proofs at the warmed cache
+        if: ${{ !inputs.verify_only }}
+        run: echo "RELEASE_ROUND_TRIP_NPM_CACHE_DIR=${{ runner.temp }}/round-trip-npm-cache" >> "$GITHUB_ENV"
+
       - name: Validate package input
         env:
           PKG: ${{ matrix.package }}
@@ -212,14 +231,38 @@ jobs:
         if: ${{ !inputs.verify_only }}
         run: npm ci --ignore-scripts
 
+      # `npm run build` stays unscoped: a candidate package can have a
+      # first-party dependency (e.g. builder and inspector resolve through
+      # controller) whose own dist/ must exist before typecheck or test can
+      # even start. `check:candidate-qualification` and
+      # `check:package-governance` stay unscoped too -- they are repository-
+      # wide governance gates, not one package's own test suite, and are
+      # fast (no real subprocess/network round trip).
+      #
+      # `typecheck` and `test`, below, are scoped to the CANDIDATE package's
+      # own workspace rather than every workspace. This job's job is to
+      # qualify matrix.package for publish, not to re-prove the rest of the
+      # repository -- that already happened, unscoped, in ci.yml's required
+      # `build and test` job for this exact commit before it could reach
+      # main, and happens again on every future push to main regardless of
+      # whether anyone ever dispatches a publish. Running it a third time
+      # here, per package, per dispatch, adds no new coverage; it only adds
+      # a second chance for an unrelated package's own suite to fail this
+      # package's release. That already happened (issue #528): a `writer`
+      # publish failed here on a `controller` fixture timing out, with
+      # writer's own 443/443 tests green -- fail-closed behaved correctly,
+      # but the failure was never writer's to own. Scoping down does not
+      # weaken what this job proves about matrix.package itself.
       - name: Build and run repository checks
         if: ${{ !inputs.verify_only }}
+        env:
+          PKG: ${{ matrix.package }}
         run: |
           npm run build
           npm run check:candidate-qualification
           npm run check:package-governance
-          npm run typecheck
-          npm test
+          npm run typecheck --workspace="packages/$PKG" --if-present
+          npm run test --workspace="packages/$PKG" --if-present
 
       - name: Pack one pre-publication candidate
         if: ${{ !inputs.verify_only }}

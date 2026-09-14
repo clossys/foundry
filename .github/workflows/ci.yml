@@ -628,6 +628,28 @@ jobs:
         with:
           node-version: 20
           cache: npm
+      # Warms the npm package cache that packages/controller's REAL,
+      # subprocess `npm install` round-trip tests use to resolve their
+      # declared runtime peers (e.g. typescript, via ./gates/secrets) from
+      # the public registry (issue #528). This is a SEPARATE cache from
+      # setup-node's own `cache: npm` above -- that one keys `~/.npm` off
+      # package-lock.json for THIS repository's own dependency install, but
+      # the round trip's subprocess environment deliberately never inherits
+      # ambient npm config (see pack-round-trip.ts's subprocessEnv), so it
+      # cannot see `~/.npm` at all and needs its own warmed, persisted
+      # location. Restore-keys fall back to the newest prior save so a
+      # version bump still starts from a mostly-warm cache instead of cold;
+      # npm's own cache is content-addressed, so a stale entry can only make
+      # resolution faster, never wrong.
+      - name: Restore round-trip npm cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: ${{ runner.temp }}/round-trip-npm-cache
+          key: round-trip-npm-cache-${{ runner.os }}-${{ hashFiles('packages/controller/package.json') }}
+          restore-keys: |
+            round-trip-npm-cache-${{ runner.os }}-
+      - name: Point round-trip proofs at the warmed cache
+        run: echo "RELEASE_ROUND_TRIP_NPM_CACHE_DIR=${{ runner.temp }}/round-trip-npm-cache" >> "$GITHUB_ENV"
       # Fail before the expensive install/build when a retained qualification
       # record, its immutable history, or the pre-publication tail is invalid.
       # This is deliberately in the already-required `build and test` context:
