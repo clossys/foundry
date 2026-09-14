@@ -152,15 +152,21 @@ the commit's own identity at all. There is no commit for the gate to scan
 until the merge has already happened, so this is not a check that was missed —
 it is a check that cannot exist at that point.
 
-A squash merge also writes that address into the commit's **author header**
-when the merging account is the pull request's author. That is commit metadata
-rather than message text, so no gate in this repository reads it — and it is
-the bigger surface by an order of magnitude: of the 630 commits reachable from
-`main`, 447 carry a non-noreply address there, against 8 in message text. 436
-of those 447 were written by GitHub's own web-side merge rather than by a local
-`git commit`, which is exactly the operation the account setting governs — so
-the setting is the load-bearing fix here and the merge method is the narrower
-one.
+A web-side merge also writes that address into the commit's **author header**
+— the merge commit's own header for `merge`, or the squash commit's for
+`squash` — whenever the merging account is the pull request's author. That is
+commit metadata rather than message text, so no gate in this repository reads
+it, and it is the bigger surface by an order of magnitude: [Decision
+21](docs/DECISIONS.md) measures 491 of 667 commits reachable from `main`
+carrying a non-noreply address there, against 102 carrying the predecessor
+identity in message text ([Decision 20](docs/DECISIONS.md)). See those entries
+for the current counts rather than trusting a number pinned in this file — an
+earlier version of this paragraph already went stale once, within hours.
+Choosing `merge` over `squash` closes the trailer surface above; it does not
+close this one, because a plain merge commit's own author header is composed
+from the same public profile data a squash commit's is. The account setting
+is the load-bearing fix for the header surface regardless of merge method; the
+merge-method choice only ever covered the trailer.
 
 Two things follow, and the order matters:
 
