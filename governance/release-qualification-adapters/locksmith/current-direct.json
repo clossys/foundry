@@ -4,13 +4,17 @@
   "archetype": "current-direct",
   "bins": {
     "clossys-secrets-infisical": 0,
-    "vespene-secrets-infisical": 0
+    "vespene-secrets-infisical": 0,
+    "clossys-locksmith-credential": 0
   },
   "fixtures": [
     "catalog.json",
     "available-complete.json",
     "available-missing.json",
-    "available-malformed.json"
+    "available-malformed.json",
+    "credential-satisfied.json",
+    "credential-violated.json",
+    "credential-indeterminate.json"
   ],
   "cases": [
     {
@@ -81,6 +85,48 @@
       ],
       "exitCode": 2,
       "group": "required-name-coverage"
+    },
+    {
+      "id": "credential-satisfied",
+      "bin": "clossys-locksmith-credential",
+      "args": [
+        {
+          "literal": "--evidence"
+        },
+        {
+          "fixture": "credential-satisfied.json"
+        }
+      ],
+      "exitCode": 0,
+      "group": "credential-lifecycle"
+    },
+    {
+      "id": "credential-violated",
+      "bin": "clossys-locksmith-credential",
+      "args": [
+        {
+          "literal": "--evidence"
+        },
+        {
+          "fixture": "credential-violated.json"
+        }
+      ],
+      "exitCode": 1,
+      "group": "credential-lifecycle"
+    },
+    {
+      "id": "credential-indeterminate",
+      "bin": "clossys-locksmith-credential",
+      "args": [
+        {
+          "literal": "--evidence"
+        },
+        {
+          "fixture": "credential-indeterminate.json"
+        }
+      ],
+      "exitCode": 2,
+      "group": "credential-lifecycle"
     }
   ],
   "dimensionEvidence": {
