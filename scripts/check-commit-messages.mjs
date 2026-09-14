@@ -166,6 +166,16 @@ function isAncestorOrEqual(sha, ofSha) {
   }
 }
 
+// issue #830: `cat-file -t` and `merge-base --is-ancestor` below can only see
+// what THIS checkout actually fetched. `git rev-parse --is-shallow-repository`
+// is the one call that tells the difference between "genuinely absent /
+// genuinely not an ancestor" and "absent from a checkout that was never asked
+// for the history needed to check it" — used only to make an already-failing
+// message name its likely cause, never to change whether it fails.
+function isShallowClone() {
+  return runGitOrNull(["rev-parse", "--is-shallow-repository"]) === "true";
+}
+
 // Parses exactly the shape `git log --format=%x00%H%x01%B` produces for ONE
 // commit, mirroring the range-scan parser below so a message digested here
 // is byte-for-byte the same text that would be scanned if this commit ever
@@ -253,23 +263,49 @@ for (const [index, entry] of exceptionsDoc.exceptions.entries()) {
 
 // Git-dependent validation only runs when there is at least one entry to
 // check — an empty exceptions list needs no live repository to be valid.
+//
+// DEPENDS ON A FULL (UNSHALLOWED) CLONE, back through at least sealedAtCommit
+// (issue #830). Every `cat-file -t` and `merge-base --is-ancestor` call below
+// can only resolve what this checkout actually fetched — on a shallow clone
+// they fail exactly the way they would for a genuinely-absent or genuinely-
+// not-an-ancestor commit, and this block already fails CLOSED (exit 2) in
+// that case (see exceptionsFail below), never a silent different pass. That
+// is correct, but until now it rested entirely on `.github/workflows/ci.yml`
+// happening to pass `fetch-depth: 0` — added originally for gitleaks' full-
+// history scan, not for this mechanism — so this script did not own or
+// assert the dependency itself. `shallowRepo` below exists only to make an
+// already-failing message NAME that as the likely cause instead of reading
+// like an unexplained CI outage; it never changes whether anything passes.
+const shallowRepo = exceptionsDoc.exceptions.length > 0 ? isShallowClone() : false;
+const shallowHint =
+  " — this checkout is a SHALLOW clone (`git rev-parse --is-shallow-repository` = true); " +
+  "this check needs a full clone back through sealedAtCommit (fetch-depth: 0), not a shallow one.";
 if (exceptionsDoc.exceptions.length > 0) {
   if (runGitOrNull(["cat-file", "-t", exceptionsDoc.sealedAtCommit]) !== "commit") {
-    exceptionsFail(`sealedAtCommit ${exceptionsDoc.sealedAtCommit} is not a commit in this repository's object database`);
+    exceptionsFail(
+      `sealedAtCommit ${exceptionsDoc.sealedAtCommit} is not a commit in this repository's object database` +
+        (shallowRepo ? shallowHint : "")
+    );
   }
   for (const entry of exceptionsDoc.exceptions) {
     if (runGitOrNull(["cat-file", "-t", entry.commitSha]) !== "commit") {
-      exceptionsFail(`commit ${entry.commitSha} is not present in this repository's object database — it cannot be verified and cannot be admitted`);
+      exceptionsFail(
+        `commit ${entry.commitSha} is not present in this repository's object database — it cannot be verified and cannot be admitted` +
+          (shallowRepo ? shallowHint : "")
+      );
     }
     if (!isAncestorOrEqual(entry.commitSha, exceptionsDoc.sealedAtCommit)) {
       exceptionsFail(
         `commit ${entry.commitSha} is not sealed — it is not sealedAtCommit ${exceptionsDoc.sealedAtCommit} or an ancestor of it. ` +
-          "A commit created after the seal can never be admitted this way; moving sealedAtCommit forward to cover it is a change that must be reviewed on its own merits, not a routine edit."
+          "A commit created after the seal can never be admitted this way; moving sealedAtCommit forward to cover it is a change that must be reviewed on its own merits, not a routine edit." +
+          (shallowRepo
+            ? " Note also" + shallowHint + " If this commit really is an ancestor, a shallow clone can make merge-base report it as not one; fetch full history and re-run before trusting this result."
+            : "")
       );
     }
     const actual = readCommitMessage(entry.commitSha);
     if (!actual || actual.hash !== entry.commitSha) {
-      exceptionsFail(`could not read the exact message of commit ${entry.commitSha}`);
+      exceptionsFail(`could not read the exact message of commit ${entry.commitSha}` + (shallowRepo ? shallowHint : ""));
     }
     const actualDigest = digestMessage(actual.message);
     if (actualDigest !== entry.messageSha256) {
