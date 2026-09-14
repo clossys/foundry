@@ -707,6 +707,20 @@ jobs:
       # because it imports both packages' built dist/.
       - name: Shared vocabularies agree across packages
         run: npm run check:shared-vocabularies
+      # assertPeerVersion is hand-copied into six packages' internal/ (#518)
+      # — extraction was declined because five of the six owning packages
+      # are zero-first-party-dependency by design. This hashes every copy
+      # (comments and each package's own self-naming stripped) against a
+      # declared canonical. Reads packages/*/src directly, so it does not
+      # need npm ci or a build, but lives in this job next to the shared-
+      # vocabularies check above rather than in a dependency-free job, for
+      # the same reason: one place a reader already looks for "do these
+      # hand-kept copies still agree" checks. Currently passes only via an
+      # ACKNOWLEDGED_EXCEPTIONS entry (issue #847) for butler/keeper's
+      # known divergence — see the script's own header for why that is a
+      # deliberate, tracked exception and not a general amnesty.
+      - name: assertPeerVersion copies agree across packages
+        run: npm run check:peer-version-assert
       # Asks each package's own tsc which files it actually compiles, then
       # fails if a @ts-expect-error/@ts-ignore/expectTypeOf/assertType lives
       # outside that set — i.e. in a *.test.ts(x) file, where it would be

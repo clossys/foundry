@@ -31,7 +31,7 @@ forward; there are no long-term support branches.
 | `conversation-safety` (issues, comments, pull request descriptions) | Runs after the text is already posted — labels a finding and fails the check, never echoing the matched text and never commenting. Detects; does not prevent. See below |
 | `check-commit-messages` | Required check on every pull request. Scans commit message text against the same identity denylist — a surface neither the tree scan nor the tarball scan has ever read. See below |
 | `check-merge-policy` | Weekly on a schedule. Compares the merge methods the forge offers for the default branch against `governance/merge-policy.json` and fails on drift. Observes; it cannot apply the declaration, because merge methods live in GitHub's settings store rather than in this tree. See below |
-| `check-package-visibility` | Daily on a schedule. A scoped npm package defaults to restricted access unless published with `--access public`; this gate fails when a package the active release target authorizes is actually private on public npm. Detects; there is no API to fix it. See [scripts/check-package-visibility.mjs](scripts/check-package-visibility.mjs) and [docs/PUBLISHING.md](docs/PUBLISHING.md#public-access-and-parity) |
+| `check-package-visibility` | Daily on a schedule, with no credential in either direction it checks -- every request, declared-package reads and the scope roster read alike, is anonymous. A scoped npm package defaults to restricted access unless published with `--access public`; this gate fails when a declared package is not anonymously installable right now (it deliberately does not try to tell "never published" apart from "private" -- both are the same failure of this repository's invariant that every declared package is already public) AND when a package live under the scope is not accounted for by the declaration. See the script's own header for both directions and issue #844 for the one piece (a deprecated-package retention cross-check) cut as a separate scope decision. Detects; there is no API to fix it. See [scripts/check-package-visibility.mjs](scripts/check-package-visibility.mjs) and [docs/PUBLISHING.md](docs/PUBLISHING.md#public-access-and-parity) |
 
 ## The publish-safety gate
 
@@ -148,27 +148,32 @@ It has a blind spot of its own, and a boundary beyond it that no gate here
 covers.
 
 The blind spot is the commit's **author header**. The gate scans message text
-only. On a squash merge where the merging account is the pull request's
-author, GitHub writes that account's public profile email into the resulting
-commit's author metadata — a field this gate never opens, and which no gate
-in this repository reads. That surface is not a corner case: measured across
-the 630 commits reachable from `main`, 447 carry a non-noreply address in
-their author header, against 8 carrying one in message text, and 436 of those
-447 were written by GitHub's own web-side merge rather than by a local `git
-commit`. The message-text finding is the one a gate can see, not the larger
-one.
+only. GitHub writes an account's public profile email into a commit's author
+metadata in two distinct ways — a field this gate never opens, and which no
+gate in this repository reads. That surface is not a corner case: as of
+[Decision 21](docs/DECISIONS.md), 465 of the 667 commits reachable from `main`
+carry a non-noreply address in their author header, against 102 carrying the
+predecessor identity in message text ([Decision 20](docs/DECISIONS.md)). See
+those two entries for the current counts and their trend — both are measured,
+not estimated, and neither is static, so a number pinned here would go stale
+the way an earlier version of this paragraph already did.
 
-The boundary is that neither surface is populated by an author. GitHub
-composes a squash commit's message server-side and appends a
-`Co-authored-by:` trailer per contributor to the squashed branch, built from
-each account's public profile email rather than from the address configured
-on the commits being squashed. A repository whose every local and global git
-identity is already the privacy-preserving forge noreply form still publishes
-the profile address this way. That is how private identity reached this
-repository's own commit messages, on the eight squash-merged dependency-bot
-pull requests that carry it: machine-generated at merge time, after every
-check had passed, with no commit yet existing for a gate to scan. **The exposure is created at the
-merge button, not missed afterwards by a script.**
+The boundary is that neither surface is populated by an author. **Squash**
+composes a commit's message server-side and appends a `Co-authored-by:`
+trailer per contributor to the squashed branch, built from each account's
+public profile email rather than from the address configured on the commits
+being squashed — the mechanism behind the eight squash-merged pull requests
+that carry it in message text, and why squash is no longer a permitted merge
+method here (`governance/merge-policy.json`). **Merge**, the method this
+repository does permit, composes no such trailer and keeps every original
+commit's message untouched — but the merge commit it creates has its own
+author header, set to the account that performed the merge, from the same
+public profile data. Disabling squash closed the trailer mechanism; it did
+not close this one, because this one was never squash-specific. Both are
+machine-generated at merge time, after every check has passed, with no commit
+yet existing for a gate to scan. **The exposure is created at the merge
+button, not missed afterwards by a script — for both permitted and forbidden
+merge methods alike.**
 
 So the controls live where the choice is made rather than after it.
 `governance/merge-policy.json` declares which merge methods this repository
@@ -177,11 +182,15 @@ when the forge's live settings disagree. That is a drift alarm, not an
 enforcement mechanism: merge methods live in GitHub's settings store, not in
 this tree, and writing them needs an Administration-level credential no gate
 here holds. The account-level "Keep my email addresses private" setting — the
-only control that also covers the author header — cannot be asserted from
-here at all, since observing it would mean naming a personal account in a
-committed file, which is precisely what the identity denylist refuses. The
-declaration records that as unassertable rather than implying coverage it
-does not have.
+only control that also covers *both* author-header mechanisms above, not only
+squash's — cannot be asserted from here at all, since observing it would mean
+naming a personal account in a committed file, which is precisely what the
+identity denylist refuses. The declaration records that as unassertable
+rather than implying coverage it does not have. Decision 21 explains why no
+gate here can substitute for it: a range-scoped scan could reach the minority
+of author-header findings that come from a directly-authored commit, but the
+majority — every merge commit's own header — is composed the same way
+regardless of what any repository-side check does.
 
 A commit message is exactly as public and exactly as permanent as any file it
 changes. Editing a later commit does not remove it; only a history rewrite

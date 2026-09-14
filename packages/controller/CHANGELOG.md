@@ -7,24 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.9.5] - 2026-09-14
 
-### Fixed
-
-- `packRoundTrip` (`./release`) now resolves its dependencies (a declared
-  runtime peer such as `typescript`, needed by `./gates/secrets`) through a
-  stable, shared npm package cache instead of a fresh, single-use one
-  created and deleted on every call. Previously, every invocation re-fetched
-  the same dependency from the public registry uncached, which made the
-  real subprocess install/import proof this function performs disproportionately
-  sensitive to registry latency and contention (issue #528). The candidate
-  package itself is unaffected: it is always installed from a local tarball
-  path, never resolved through this cache.
-
 ### Added
 
-- `PackRoundTripOptions.npmCacheDir` lets a caller override the npm package
-  cache directory `packRoundTrip` uses for dependency resolution. Falls back
-  to the `RELEASE_ROUND_TRIP_NPM_CACHE_DIR` environment variable, then to a
-  stable default, when omitted.
+- `src/testing/permission-enforcement.ts` (test-only): `permissionBitsAreEnforced()`
+  probes, directly, whether `chmod 0o000` on a file this process owns actually
+  blocks that same process from reading it back, and
+  `skipUnlessPermissionBitsAreEnforced()` skips — loudly, with a recorded
+  reason, never silently — a chmod-000 "unreadable path" fixture when it
+  would not. A root-uid process (the default identity inside many
+  container/CI/agent sandboxes) ignores POSIX permission bits for its own
+  reads, so such a fixture stops proving "this process could not read that
+  path" in that environment without ever failing loudly. Wired into the four
+  affected fixtures in `catalog/build.test.ts`, `catalog/evaluate.test.ts`,
+  `gates/cli.test.ts`, and `gates/foundation.test.ts`. See #825.
+
+### Fixed
+
+- The package's `files` array now also excludes `src/testing/**` from the
+  packed npm tarball. Previously `files` listed `"src"` wholesale and negated
+  only `!src/**/*.test.ts` — that excludes test files but not a plain `.ts`
+  helper module, so the addition above would otherwise have shipped to every
+  consumer of this package. `npm pack --dry-run` no longer lists
+  `src/testing/permission-enforcement.ts` or its test.
 
 ## [0.9.4] - 2026-09-13
 
