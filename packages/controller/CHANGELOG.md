@@ -5,6 +5,31 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.5] - 2026-09-14
+
+### Added
+
+- `src/testing/permission-enforcement.ts` (test-only): `permissionBitsAreEnforced()`
+  probes, directly, whether `chmod 0o000` on a file this process owns actually
+  blocks that same process from reading it back, and
+  `skipUnlessPermissionBitsAreEnforced()` skips — loudly, with a recorded
+  reason, never silently — a chmod-000 "unreadable path" fixture when it
+  would not. A root-uid process (the default identity inside many
+  container/CI/agent sandboxes) ignores POSIX permission bits for its own
+  reads, so such a fixture stops proving "this process could not read that
+  path" in that environment without ever failing loudly. Wired into the four
+  affected fixtures in `catalog/build.test.ts`, `catalog/evaluate.test.ts`,
+  `gates/cli.test.ts`, and `gates/foundation.test.ts`. See #825.
+
+### Fixed
+
+- The package's `files` array now also excludes `src/testing/**` from the
+  packed npm tarball. Previously `files` listed `"src"` wholesale and negated
+  only `!src/**/*.test.ts` — that excludes test files but not a plain `.ts`
+  helper module, so the addition above would otherwise have shipped to every
+  consumer of this package. `npm pack --dry-run` no longer lists
+  `src/testing/permission-enforcement.ts` or its test.
+
 ## [0.9.4] - 2026-09-13
 
 ### Added

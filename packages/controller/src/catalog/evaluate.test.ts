@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { buildCatalog } from "./build.js";
 import { cleanupFixtureRoots, makeFixtureRoot } from "./build.test.js";
+import { skipUnlessPermissionBitsAreEnforced } from "../testing/permission-enforcement.js";
 import { closureOf, evaluateCatalog, findByName, internalDependencyNamesOf } from "./evaluate.js";
 import type { Catalog, CatalogEntry } from "./types.js";
 
@@ -409,7 +410,9 @@ describe("evaluateCatalog — skipped:* ('I could not check this' is representab
     }
   });
 
-  it("motivating reproduction: a real error-severity finding survives next to an unreadable sibling directory, and the unreadable directory itself is now reported as an error rather than silently producing a clean report", () => {
+  it("motivating reproduction: a real error-severity finding survives next to an unreadable sibling directory, and the unreadable directory itself is now reported as an error rather than silently producing a clean report", (ctx) => {
+    skipUnlessPermissionBitsAreEnforced(ctx.skip);
+
     const root = makeFixtureRoot([
       {
         dirName: "widgets",

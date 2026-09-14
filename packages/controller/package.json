@@ -1,6 +1,6 @@
 {
   "name": "@clossys/controller",
-  "version": "0.9.4",
+  "version": "0.9.5",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -87,6 +87,7 @@
     "dist",
     "src",
     "!src/**/*.test.ts",
+    "!src/testing/**",
     "conventions",
     "contracts",
     "CHANGELOG.md",
