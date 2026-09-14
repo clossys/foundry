@@ -33,6 +33,7 @@ import { join, dirname } from "node:path";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
+import zlib from "node:zlib";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(scriptDir, "..");
@@ -125,6 +126,82 @@ function check(name, condition, detail) {
     failures.push({ name, detail });
     console.log(`  FAIL ${name}\n         ${detail}`);
   }
+}
+
+// --------------------------------------------------- opaque fixture builders
+//
+// Built from bytes, not downloaded: a real sample PDF/PNG off the internet
+// would (a) not be reproducible/hermetic and (b) not let a case control
+// exactly where the planted synthetic identity term sits (plain vs. behind
+// zlib). Neither fixture needs to be a fully spec-valid file — the gate under
+// test never parses PDF/PNG structure, it walks raw bytes — but the PNG is
+// built with a real CRC32 anyway so it is legible as an actual minimal PNG.
+
+function crc32(buf) {
+  let crc = 0xffffffff;
+  for (let i = 0; i < buf.length; i++) {
+    crc ^= buf[i];
+    for (let k = 0; k < 8; k++) crc = (crc >>> 1) ^ (0xedb88320 & -(crc & 1));
+  }
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
+function pngChunk(type, data) {
+  const typeBuf = Buffer.from(type, "ascii");
+  const len = Buffer.alloc(4);
+  len.writeUInt32BE(data.length, 0);
+  const crc = Buffer.alloc(4);
+  crc.writeUInt32BE(crc32(Buffer.concat([typeBuf, data])), 0);
+  return Buffer.concat([len, typeBuf, data, crc]);
+}
+
+// A minimal, structurally real 1x1 truecolor PNG carrying a tEXt chunk —
+// PNG's own plaintext metadata chunk type — whose payload is `text`.
+function buildPngWithText(keyword, text) {
+  const sig = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+  const ihdrData = Buffer.alloc(13);
+  ihdrData.writeUInt32BE(1, 0); // width
+  ihdrData.writeUInt32BE(1, 4); // height
+  ihdrData[8] = 8; // bit depth
+  ihdrData[9] = 2; // color type: truecolor
+  const ihdr = pngChunk("IHDR", ihdrData);
+  const tEXt = pngChunk("tEXt", Buffer.concat([Buffer.from(keyword, "ascii"), Buffer.from([0]), Buffer.from(text, "ascii")]));
+  const idat = pngChunk("IDAT", zlib.deflateSync(Buffer.from([0, 255, 0, 0]))); // filter byte + one RGB pixel
+  const iend = pngChunk("IEND", Buffer.alloc(0));
+  return Buffer.concat([sig, ihdr, tEXt, idat, iend]);
+}
+
+// A random-noise "PNG" with no embedded text at all — used to prove refusal
+// does not depend on the best-effort extractor finding anything: an opaque
+// file with no readable planted content must still be refused when
+// unacknowledged, because this gate can never prove a negative about a
+// format it does not fully parse.
+function buildOpaqueNoise(byteLength) {
+  const buf = Buffer.alloc(byteLength);
+  for (let i = 0; i < byteLength; i++) buf[i] = (i * 137 + 41) % 256; // deterministic, non-printable-heavy
+  return buf;
+}
+
+// A minimal PDF whose page-content stream is real zlib/FlateDecode — the
+// compression nearly every real PDF writer applies to page text — with
+// `text` drawn via a `Tj` show-text operator. The rest of the object graph
+// (xref table, etc.) is intentionally not spec-complete: the gate under test
+// never parses PDF structure, only finds `stream ... endstream` blocks whose
+// nearest preceding dictionary mentions /FlateDecode and inflates them.
+function buildFlateDecodePdf(text) {
+  const contentStream = Buffer.from(`BT /F1 12 Tf 72 712 Td (${text}) Tj ET`, "latin1");
+  const compressed = zlib.deflateSync(contentStream);
+  const parts = [
+    "%PDF-1.4\n",
+    "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
+    "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+    "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>\nendobj\n",
+    `4 0 obj\n<< /Length ${compressed.length} /Filter /FlateDecode >>\nstream\n`,
+  ].map((s) => Buffer.from(s, "latin1"));
+  const tail = ["\nendstream\nendobj\n", "5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n", "trailer\n<< /Root 1 0 R /Size 6 >>\n%%EOF\n"].map(
+    (s) => Buffer.from(s, "latin1"),
+  );
+  return Buffer.concat([...parts, compressed, ...tail]);
 }
 
 function gitInit(dir) {
@@ -243,6 +320,176 @@ try {
       "does not treat an opaque npm integrity hash as identity prose",
       r.code === 0,
       `lock integrity fixture exited ${r.code}: ${r.out.slice(0, 200)}`,
+    );
+  }
+
+  // --------------------------------------------------------- opaque content
+  //
+  // Issue #588: PDF/image/font/video/wasm formats used to be silently
+  // skipped (SKIP_CONTENT -> `continue`, no bytes ever opened) while both
+  // this gate and check-artifact-safety.mjs's pass banner claimed the
+  // COMPLETE tree/tarball carried no private identity or credential-shaped
+  // content. That claim was never actually checked for these formats. Fixed
+  // shape: opaque files are refused by default (fail closed), extracted
+  // best-effort via deterministic printable-string/PDF-inflate scanning
+  // regardless, and pass only with an explicit sha256-pinned exemption in
+  // governance/opaque-content-exemptions.json.
+  console.log("\n# opaque content (issue #588)");
+  {
+    // (a) The core fix: an opaque file with NO findable planted content
+    // must still be refused when unacknowledged. This is deliberately
+    // content-empty so it cannot pass "by accident" via the best-effort
+    // extractor finding nothing — refusal here can only come from the
+    // fail-closed default itself, which is exactly what regressed to a
+    // silent skip before this fix.
+    const dir = join(work, "opaque-noise");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, "asset.png"), buildOpaqueNoise(256));
+    gitInit(dir);
+    const r = run("node", [SAFETY, dir, ...DL, "--require-denylist", "--json"]);
+    let report;
+    try { report = JSON.parse(r.out); } catch { report = { failures: [] }; }
+    const hit = (report.failures ?? []).some((f) => f.kind === "opaque-unacknowledged" && f.rel === "asset.png");
+    check(
+      "an unacknowledged opaque file with no findable content is still refused, not silently passed",
+      r.code === 1 && hit,
+      `expected exit 1 with an opaque-unacknowledged finding for asset.png, got ${r.code}: ${r.out.slice(0, 600)}`,
+    );
+  }
+  {
+    // (b) Plaintext metadata: a PNG tEXt chunk carrying a denylisted term in
+    // raw ASCII must be caught by the printable-strings extractor, not just
+    // refused as unacknowledged.
+    const dir = join(work, "opaque-png-text");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, "logo.png"), buildPngWithText("Author", "made by acme-corp"));
+    gitInit(dir);
+    const r = run("node", [SAFETY, dir, ...DL, "--require-denylist", "--json"]);
+    let report;
+    try { report = JSON.parse(r.out); } catch { report = { failures: [] }; }
+    const identityHit = (report.failures ?? []).some((f) => f.kind === "identity" && f.rel === "logo.png");
+    const unackHit = (report.failures ?? []).some((f) => f.kind === "opaque-unacknowledged" && f.rel === "logo.png");
+    check(
+      "a denylisted term inside a PNG tEXt chunk is caught by printable-string extraction",
+      r.code === 1 && identityHit,
+      `expected an identity finding for logo.png, got ${r.code}: ${r.out.slice(0, 600)}`,
+    );
+    check(
+      "the same unacknowledged PNG is also refused as opaque, independent of the content match",
+      unackHit,
+      `expected an opaque-unacknowledged finding for logo.png alongside the identity finding`,
+    );
+  }
+  {
+    // (c) Compressed content: a PDF whose page-content stream is
+    // /FlateDecode (how nearly every real PDF writer stores text) must have
+    // that stream inflated and scanned — a raw printable-strings pass alone
+    // would see only zlib-compressed bytes and miss it entirely.
+    const dir = join(work, "opaque-pdf-flate");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, "report.pdf"), buildFlateDecodePdf("Prepared for acme-corp"));
+    gitInit(dir);
+    const r = run("node", [SAFETY, dir, ...DL, "--require-denylist", "--json"]);
+    let report;
+    try { report = JSON.parse(r.out); } catch { report = { failures: [] }; }
+    const identityHit = (report.failures ?? []).some((f) => f.kind === "identity" && f.rel === "report.pdf");
+    check(
+      "a denylisted term inside a PDF's FlateDecode content stream is caught by the inflate extractor",
+      r.code === 1 && identityHit,
+      `expected an identity finding for report.pdf, got ${r.code}: ${r.out.slice(0, 600)}`,
+    );
+  }
+  {
+    // (d)+(e) The exemption mechanism: sha256-pinned, mirroring
+    // check-package-evidence.mjs's `gaps` (reason + issue, and an
+    // acknowledgement that cannot outlive what it was reviewed against —
+    // here enforced by the hash rather than by re-derived evidence).
+    const dir = join(work, "opaque-exempt");
+    mkdirSync(dir, { recursive: true });
+    const bytes = buildOpaqueNoise(128);
+    writeFileSync(join(dir, "font.woff"), bytes);
+    gitInit(dir);
+    const sha256 = createHash("sha256").update(bytes).digest("hex");
+    const exemptPath = join(work, "opaque-exempt-registry.json");
+    writeFileSync(
+      exemptPath,
+      JSON.stringify({
+        schemaVersion: 1,
+        exemptions: [{ path: "font.woff", sha256, reason: "Inert synthetic test font fixture, byte-reviewed by hand.", issue: 588 }],
+      }),
+    );
+    const ok = run("node", [SAFETY, dir, ...DL, "--require-denylist", "--opaque-exemptions", exemptPath, "--json"]);
+    let okReport;
+    try { okReport = JSON.parse(ok.out); } catch { okReport = { failures: [] }; }
+    const okHit = (okReport.failures ?? []).some((f) => f.rel === "font.woff");
+    check(
+      "a sha256-pinned exemption lets an otherwise-refused opaque file pass",
+      ok.code === 0 && !okHit,
+      `expected exit 0 with no finding for font.woff, got ${ok.code}: ${ok.out.slice(0, 600)}`,
+    );
+
+    // Mutate the file after exemption: the exemption must not outlive the
+    // exact bytes it was reviewed against.
+    writeFileSync(join(dir, "font.woff"), Buffer.concat([bytes, Buffer.from([0])]));
+    const stale = run("node", [SAFETY, dir, ...DL, "--require-denylist", "--opaque-exemptions", exemptPath, "--json"]);
+    let staleReport;
+    try { staleReport = JSON.parse(stale.out); } catch { staleReport = { failures: [] }; }
+    const staleHit = (staleReport.failures ?? []).some((f) => f.kind === "opaque-unacknowledged" && f.rel === "font.woff");
+    check(
+      "an exemption does not outlive the bytes it was reviewed against — a changed file is refused again",
+      stale.code === 1 && staleHit,
+      `expected exit 1 with opaque-unacknowledged for the mutated font.woff, got ${stale.code}: ${stale.out.slice(0, 600)}`,
+    );
+  }
+  {
+    // (f) A malformed exemption entry must be a loud, visible failure of its
+    // own — never a silent no-op that could be mistaken for "no exemptions
+    // configured" while actually meaning "this reviewer forgot the reason".
+    const dir = join(work, "opaque-exempt-invalid");
+    mkdirSync(dir, { recursive: true });
+    const bytes = buildOpaqueNoise(64);
+    writeFileSync(join(dir, "clip.mp4"), bytes);
+    gitInit(dir);
+    const sha256 = createHash("sha256").update(bytes).digest("hex");
+    const exemptPath = join(work, "opaque-exempt-invalid-registry.json");
+    writeFileSync(exemptPath, JSON.stringify({ schemaVersion: 1, exemptions: [{ path: "clip.mp4", sha256, issue: 588 }] })); // no `reason`
+    const r = run("node", [SAFETY, dir, ...DL, "--require-denylist", "--opaque-exemptions", exemptPath, "--json"]);
+    let report;
+    try { report = JSON.parse(r.out); } catch { report = { failures: [] }; }
+    const invalidHit = (report.failures ?? []).some((f) => f.kind === "opaque-exemption-invalid");
+    const stillRefused = (report.failures ?? []).some((f) => f.kind === "opaque-unacknowledged" && f.rel === "clip.mp4");
+    check(
+      "an exemption entry missing a reason is reported as its own invalid-exemption finding",
+      r.code === 1 && invalidHit,
+      `expected an opaque-exemption-invalid finding, got ${r.code}: ${r.out.slice(0, 600)}`,
+    );
+    check(
+      "a file covered only by an invalid exemption entry stays refused, not silently granted",
+      stillRefused,
+      `expected clip.mp4 to still be opaque-unacknowledged despite the (invalid) exemption entry`,
+    );
+  }
+  {
+    // The honest-claim requirement: the PASS banner must not claim a bare
+    // "no private identity found" when opaque content was present and only
+    // checked via best-effort extraction plus a reviewed exemption.
+    const dir = join(work, "opaque-pass-wording");
+    mkdirSync(dir, { recursive: true });
+    const bytes = buildOpaqueNoise(64);
+    writeFileSync(join(dir, "icon.ico"), bytes);
+    gitInit(dir);
+    const sha256 = createHash("sha256").update(bytes).digest("hex");
+    const exemptPath = join(work, "opaque-pass-wording-registry.json");
+    writeFileSync(
+      exemptPath,
+      JSON.stringify({ schemaVersion: 1, exemptions: [{ path: "icon.ico", sha256, reason: "Synthetic inert icon fixture, byte-reviewed by hand.", issue: 588 }] }),
+    );
+    const r = run("node", [SAFETY, dir, ...DL, "--require-denylist", "--opaque-exemptions", exemptPath]);
+    check("a pass with an acknowledged opaque file present still exits 0", r.code === 0, `exited ${r.code}: ${r.out.slice(0, 400)}`);
+    check(
+      "the pass banner names the opaque file count and points at the exemption registry rather than claiming a blanket clean tarball",
+      /1 opaque file/.test(r.out) && /opaque-content-exemptions\.json/.test(r.out),
+      `pass banner did not narrow its claim for opaque content: ${r.out.slice(0, 600)}`,
     );
   }
 
