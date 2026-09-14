@@ -72,8 +72,7 @@
 // `/-/user/<user>/package` on 404 — the same org-then-user fallback
 // `fetchNpmOrgPackages` below uses, mirrored from `libnpmaccess`'s own
 // `getPackages`, the function `npm access list packages` itself calls).
-// That endpoint is NOT anonymous — verified directly: it returns HTTP 401
-// without a valid token — and, authenticated as an account with read access
+// Authenticated as an account with read access
 // to this npm organization, it enumerates every package name the
 // organization actually holds, public or private, REGARDLESS of whether an
 // anonymous reader could see it. A name present in that authenticated roster
@@ -81,10 +80,16 @@
 // this gate exists to catch: published, but invisible to everyone else. A
 // name absent from the roster too has simply never been published.
 //
-// This is a cleaner signal than GitHub Packages gave: a lost or
-// insufficiently-scoped credential fails the roster call LOUDLY (401/403),
-// rather than requiring the aggregate "every lookup came back 404" inference
-// the GitHub-Packages version of this gate needed. The aggregate guard is
+// A word on what this endpoint does NOT do, because an earlier revision of
+// this comment claimed the opposite and was wrong. It is not gated on
+// authentication: measured 2026-09-14, `GET /-/org/clossys/package` with no
+// Authorization header at all returns HTTP 200 and the full roster, and the
+// same is true of other public organizations. Only an actively invalid or
+// expired credential returns 401 ("You must be logged in to publish
+// packages."). So "the roster call fails loudly if the credential is lost"
+// holds for a WRONG token, not for a MISSING one — a missing one never
+// reaches the network, because the token check in main() exits 2 first.
+// The aggregate guard is
 // kept anyway, as defence in depth — see the guard in
 // checkAllPackageVisibility for why an all-miss result stays suspicious even
 // though the roster call's own auth failure would normally have caught it
@@ -255,10 +260,12 @@ export async function fetchNpmPackageVisibility({ registry, name, fetchImpl }) {
  * org endpoint, the personal npm account of the same name) actually holds —
  * `GET /-/org/<org>/package`, falling back to `/-/user/<org>/package` on a
  * first-page 404, the exact endpoints and fallback order `libnpmaccess`'s
- * own `getPackages` uses (what `npm access list packages` calls) — verified
- * directly: unauthenticated, this endpoint returns HTTP 401, never a silent
- * empty list, so a lost or insufficiently-scoped token fails loudly here
- * rather than needing to be inferred.
+ * own `getPackages` uses (what `npm access list packages` calls). An
+ * actively invalid or expired token gets HTTP 401 here rather than a silent
+ * empty list; an absent token never reaches this function, because main()
+ * exits 2 before any network call. Note this endpoint answers anonymously
+ * with HTTP 200 for a public organization, so its 401 is evidence about the
+ * credential presented, not proof that the endpoint requires one.
  *
  * Returns one of:
  *   - { state: "found", packages: [fullScopedName, ...] }
