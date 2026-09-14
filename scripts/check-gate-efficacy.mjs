@@ -16,14 +16,16 @@
 // many times it was skipped, and a verbatim tally of its own verdicts. Those
 // are real numbers from a source outside the gates being measured.
 //
-// It does NOT supply the ESCAPE-RATE half, and says so in its output rather
-// than implying otherwise. `LandedChangeOutcome.violation` must be an
-// independent judgment that a landed change really did violate the rule --
-// a later audit, an incident report, a downstream detector -- and explicitly
-// never the gate's own verdict, because that would measure whether a gate
-// agrees with itself. Nothing in this repository produces such a judgment
-// yet. Every landed change therefore reports `could-not-read`, which makes
-// `couldNotReadCount` equal `landedCount` and the rate a LOWER BOUND of zero.
+// It supplies the ESCAPE-RATE half for exactly ONE gate so far: "publish
+// safety" (the CI job that runs gitleaks), via `./secret-scanning-
+// outcomes.mjs` — GitHub's own secret-scanning alerts, a detector this
+// repository's CI does not invoke and cannot influence, which is exactly the
+// independence `LandedChangeOutcome.violation` requires (see that module's
+// own header for the full argument and escape-rate.ts for the requirement).
+// Every OTHER gate still reports `could-not-read` for every landed change,
+// honestly, because no comparable independent detector exists for what they
+// check: `couldNotReadCount` equals `landedCount` for those, and their rate
+// is a LOWER BOUND of zero, not a clean record.
 //
 // A zero printed under those conditions is not good news, and this command
 // refuses to present it as such: an all-green gate with unreadable ground
@@ -43,6 +45,10 @@ import { fileURLToPath } from "node:url";
 import { computeGateEfficacy, isCouldNotRead } from "@clossys/observer";
 
 import { collectJobs, createGateRunHistoryReader, gatesSeen, unsourcedOutcomes, toRunRecords } from "./gate-run-history.mjs";
+import { secretScanningOutcomes } from "./secret-scanning-outcomes.mjs";
+
+/** The one gate with a real, independent violation source wired so far. See this file's own header. */
+const SECRET_SCAN_GATE = "publish safety";
 
 /** `gh api` as an injected fetcher: it already holds the credential and the host. */
 export function ghFetchJson(path) {
@@ -105,7 +111,14 @@ export async function run({ fetchJson, owner, repo, runLimit }) {
   const reports = [];
   for (const gate of gates) {
     const records = toRunRecords(collected.jobs, gate);
-    reports.push(await computeGateEfficacy(gate, reader, unsourcedOutcomes(records, gate)));
+    // "publish safety" gets a real, independent violation source (GitHub's
+    // own secret-scanning alerts); every other gate still gets the honest
+    // placeholder. See this file's own header.
+    const outcomes =
+      gate === SECRET_SCAN_GATE
+        ? await secretScanningOutcomes({ fetchJson, owner, repo, records, gate })
+        : unsourcedOutcomes(records, gate);
+    reports.push(await computeGateEfficacy(gate, reader, outcomes));
   }
   const graded = reports.map((report) => ({ report, ...gradeReport(report) }));
   const code = graded.some((g) => g.level === "error") ? 2 : graded.some((g) => g.level === "finding") ? 1 : 0;

@@ -19,7 +19,8 @@
   },
   "bin": {
     "clossys-secrets-infisical": "dist/infisical/cli.js",
-    "vespene-secrets-infisical": "dist/infisical/cli.js"
+    "vespene-secrets-infisical": "dist/infisical/cli.js",
+    "clossys-locksmith-credential": "dist/bin.js"
   },
   "files": [
     "dist",

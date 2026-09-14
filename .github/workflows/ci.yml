@@ -29,6 +29,57 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm run check:dependency-audit
 
+  # `evaluateCredential` (@clossys/locksmith) shipped real ternary machinery
+  # mapping credential lifecycle evidence to satisfied/violated/indeterminate
+  # exit codes, with no bin and no caller anywhere in this fleet -- a
+  # primitive that never operated. This job is that caller: it judges the
+  # automatic `GITHUB_TOKEN` the "dependency audit" job above actually used,
+  # from evidence this run can read about ITSELF, never invented. See
+  # `.github/scripts/collect-credential-evidence.mjs` for exactly what is
+  # read and where each field comes from.
+  #
+  # `needs: dependency-audit` is load-bearing: it is what guarantees that
+  # job's own start and end timestamps are real and already recorded by the
+  # time this job asks the Jobs API for them, not a run still in progress.
+  # `if: always()` means this job still runs -- and still judges the real
+  # evidence -- even if `dependency-audit` itself failed; a credential's
+  # lifecycle evidence does not depend on the job's own business outcome.
+  credential-lifecycle:
+    name: credential lifecycle (dependency-audit token)
+    needs: dependency-audit
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      # Job-level permissions REPLACE the workflow-level block for this job
+      # alone, so both are named explicitly: `contents: read` for the
+      # checkout and build, `actions: read` for the one Jobs API call this
+      # job makes to read `dependency-audit`'s own recorded timestamps.
+      # Nothing here writes.
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+      - run: npm ci --ignore-scripts
+      - run: npm run build --workspace=packages/locksmith
+      - name: Assemble credential evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node .github/scripts/collect-credential-evidence.mjs > credential-evidence.json
+      - name: credential lifecycle (locksmith judgment)
+        run: |
+          set -o pipefail
+          report="$RUNNER_TEMP/credential-lifecycle-report.txt"
+          status=0
+          node packages/locksmith/dist/bin.js \
+            --evidence credential-evidence.json \
+            > "$report" || status=$?
+          cat "$report"
+          cat "$report" >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"
+
   # The safety gate runs FIRST and everything else depends on it. A tree that
   # leaks private identity should never reach the point of being built or
   # tested — the interesting failure here is disclosure, not a broken build.
@@ -232,17 +283,38 @@ jobs:
       #
       # Pinned by version AND sha256: an unpinned download in a security gate
       # means the thing verifying the build is itself unverified.
+      #
+      # `--report-format json --report-path` is new: this step used to be the
+      # whole gate (raise on `--exit-code 1`, nothing else). It still does
+      # that -- the fail-fast behaviour below is unchanged -- but it now ALSO
+      # writes a structured record of the attempt, which the
+      # "secret-scan (inspector judgment)" step further down feeds to
+      # `@clossys/inspector`'s `checkSecretScan`. That judge asks questions
+      # this raw exit code cannot: whether the tool identified itself, whether
+      # it actually examined anything, and whether its own exit code and hit
+      # list agree -- exactly the "stopped scanning, kept reporting green"
+      # failure class `checkSecretScan`'s own header describes. See
+      # `.github/scripts/collect-secret-scan-observation.mjs` for how the
+      # record below becomes that judge's input.
+      #
+      # The exit status is captured explicitly (`|| exit 1` on each earlier
+      # command, `status=$?` on gitleaks itself -- `set -e` is deliberately
+      # NOT used in this script) and re-raised at the end, so this step still
+      # fails exactly when it always has, independent of whether the
+      # judgment step downstream is ever added, changed, or removed.
       - name: gitleaks (full history)
+        id: gitleaks
         env:
           GITLEAKS_VERSION: 8.30.1
           GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
         run: |
-          set -euo pipefail
+          set -uo pipefail
           tarball="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
           curl -sSfL -o "$RUNNER_TEMP/$tarball" \
-            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${tarball}"
-          echo "${GITLEAKS_SHA256}  $RUNNER_TEMP/$tarball" | sha256sum -c -
-          tar -xzf "$RUNNER_TEMP/$tarball" -C "$RUNNER_TEMP" gitleaks
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${tarball}" || exit 1
+          echo "${GITLEAKS_SHA256}  $RUNNER_TEMP/$tarball" | sha256sum -c - || exit 1
+          tar -xzf "$RUNNER_TEMP/$tarball" -C "$RUNNER_TEMP" gitleaks || exit 1
+          report="$RUNNER_TEMP/gitleaks-report.json"
           # --redact so a hit reports its location without reprinting the secret
           # into a public build log. --log-opts=--all covers every ref, not just
           # the checked-out branch: history is the point of this scan.
@@ -251,7 +323,69 @@ jobs:
             --redact \
             --no-banner \
             --log-opts=--all \
+            --report-format json \
+            --report-path "$report" \
             --exit-code 1
+          status=$?
+          echo "exit-code=$status" >> "$GITHUB_OUTPUT"
+          echo "report-path=$report" >> "$GITHUB_OUTPUT"
+          exit "$status"
+
+      # ---- COLLECT (secret-scan judgment) -----------------------------------
+      # The judgment steps below run with `if: always()` -- deliberately, and
+      # only because of it can this ever prove anything. If they ran only on
+      # a clean gitleaks step, this judge could never be exercised on a real
+      # finding, and an untested judge that only ever sees clean input is the
+      # "cannot fail" defect the owner explicitly warned against. The job as a
+      # whole is already failed by the raw gitleaks step above whenever there
+      # is a finding; these steps add a second, independent verdict on top --
+      # they never launder a real finding back to green, because a failed
+      # step earlier in a job cannot be un-failed by a later one.
+      #
+      # This needs the workspace installed and this one package's runtime
+      # dependency built, which the rest of this job does not: every other
+      # step here runs a dependency-free script directly with `node`.
+      - name: Install workspace (secret-scan judgment)
+        if: always()
+        run: npm ci --ignore-scripts
+
+      - name: Build the judge and its runtime dependency
+        if: always()
+        run: |
+          npm run build --workspace=packages/controller
+          npm run build --workspace=packages/inspector
+
+      - name: Assemble the secret-scan observation
+        if: always()
+        id: secret-scan-observation
+        env:
+          GITLEAKS_VERSION: 8.30.1
+          GITLEAKS_EXIT_CODE: ${{ steps.gitleaks.outputs.exit-code }}
+          GITLEAKS_REPORT_PATH: ${{ steps.gitleaks.outputs.report-path }}
+        run: |
+          set -euo pipefail
+          # An honest count of what "full-history" covered: every commit
+          # reachable from any ref, the same universe `--log-opts=--all`
+          # asked gitleaks to walk. Derived from this job's own checkout,
+          # never invented.
+          export UNITS_SCANNED
+          UNITS_SCANNED="$(git rev-list --all --count)"
+          node .github/scripts/collect-secret-scan-observation.mjs > secret-scan-inputs.json
+
+      # ---- DECIDE ------------------------------------------------------------
+      - name: secret-scan (inspector judgment)
+        if: always()
+        run: |
+          set -o pipefail
+          report="$RUNNER_TEMP/secret-scan-report.txt"
+          status=0
+          node packages/inspector/dist/bin.js \
+            --inputs secret-scan-inputs.json \
+            --checks secret-scan \
+            > "$report" || status=$?
+          cat "$report"
+          cat "$report" >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"
 
   scope:
     name: scope drift
