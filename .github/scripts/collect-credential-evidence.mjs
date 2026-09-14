@@ -17,12 +17,17 @@
 //     the "dependency audit" job. This script's own job `needs:
 //     dependency-audit`, so that job has already reached a terminal
 //     conclusion and both timestamps are real.
-//   - scope: the "dependency audit" job declares no job-level `permissions:`
-//     of its own, so it inherits this WORKFLOW's top-level block --
-//     `contents: read`, and nothing else -- read directly from this
-//     checkout's own `.github/workflows/ci.yml` at the commit this run
-//     checked out, not asserted from memory of what the file is supposed to
-//     say.
+//   - scope: read directly from this checkout's own
+//     `.github/workflows/ci.yml` at the commit this run checked out, never
+//     asserted from memory of what the file is supposed to say. A job-level
+//     `permissions:` block REPLACES the workflow-level one entirely for that
+//     job (GitHub Actions' own rule, not this script's assumption) -- so
+//     this script checks the "dependency audit" job's OWN block first, and
+//     only falls back to the workflow-level block when that job declares no
+//     override of its own. Checking only the workflow-level block
+//     unconditionally would silently keep reporting `contents: read` even
+//     after a future edit gave that job a wider job-level override -- this
+//     script would then be guessing a scope it never actually verified.
 //   - expiresAtJobEnd: `true` is GitHub Actions' own documented platform
 //     guarantee for the automatic `GITHUB_TOKEN` on every job, not something
 //     this run measures itself -- there is no API that reports it per run.
@@ -37,17 +42,8 @@
 // cannot parse, is reported as an evidence document `evaluateCredential`
 // reads as `indeterminate` -- never guessed into a passing shape.
 
-import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
-
-/** `gh api`, matching this repository's existing `check-gate-efficacy.mjs` convention. */
-function ghApi(path) {
-  const out = execFileSync("gh", ["api", "-H", "Accept: application/vnd.github+json", path], {
-    encoding: "utf8",
-    maxBuffer: 16 * 1024 * 1024,
-  });
-  return JSON.parse(out);
-}
+import { ghFetchJson } from "../../scripts/lib/gh-api.mjs";
 
 /** GitHub's Jobs API reports `2026-09-14T07:53:00Z` (no fractional seconds); the credential evidence contract requires exactly three digits. */
 export function toCanonicalUtcTimestamp(value) {
@@ -86,6 +82,49 @@ export function workflowGrantsOnlyContentsRead(workflowText) {
   return entries.length === 1 && entries[0] === "contents: read";
 }
 
+/**
+ * `true` when `jobBlock` (as returned by `extractJobBlock`) declares its own
+ * job-level `permissions:` key. GitHub Actions REPLACES the workflow-level
+ * permission set entirely for a job that declares one — never merges the
+ * two — so a caller must know whether one exists before deciding which
+ * block actually governs that job's token.
+ */
+export function jobHasOwnPermissionsBlock(jobBlock) {
+  return /^ {4}permissions:\s*$/m.test(jobBlock);
+}
+
+/**
+ * `true` when a job's OWN `permissions:` block (nested inside `jobBlock`,
+ * indented four spaces, ending at the next four-space key or the block's
+ * end) declares exactly `contents: read` and nothing else. Only meaningful
+ * when `jobHasOwnPermissionsBlock` is `true`; returns `false` otherwise.
+ */
+export function jobGrantsOnlyContentsRead(jobBlock) {
+  const lines = jobBlock.split("\n");
+  const startIndex = lines.findIndex((line) => /^ {4}permissions:\s*$/.test(line));
+  if (startIndex === -1) return false;
+  const entries = [];
+  for (let i = startIndex + 1; i < lines.length; i += 1) {
+    const line = lines[i];
+    if (/^ {4}\S/.test(line)) break; // the job block's next four-space key
+    const trimmed = line.trim();
+    if (trimmed !== "" && !trimmed.startsWith("#")) entries.push(trimmed);
+  }
+  return entries.length === 1 && entries[0] === "contents: read";
+}
+
+/**
+ * The declared scope actually governing `jobId`, verified from this
+ * checkout's own workflow text: the job's own `permissions:` block when it
+ * has one (it REPLACES the workflow-level block for that job), otherwise
+ * the workflow-level block. `false` means "not verifiably contents:read
+ * only" — never guessed into `true`.
+ */
+export function jobEffectivelyGrantsOnlyContentsRead(workflowText, jobBlock) {
+  if (jobHasOwnPermissionsBlock(jobBlock)) return jobGrantsOnlyContentsRead(jobBlock);
+  return workflowGrantsOnlyContentsRead(workflowText);
+}
+
 function main() {
   const repository = process.env.GITHUB_REPOSITORY;
   const runId = process.env.GITHUB_RUN_ID;
@@ -99,7 +138,7 @@ function main() {
 
   let jobsPage;
   try {
-    jobsPage = ghApi(`repos/${repository}/actions/runs/${runId}/jobs`);
+    jobsPage = ghFetchJson(`repos/${repository}/actions/runs/${runId}/jobs`);
   } catch {
     process.stdout.write(`${JSON.stringify({})}\n`);
     return;
@@ -118,8 +157,11 @@ function main() {
     return;
   }
 
-  const scopeIsContentsReadOnly = workflowGrantsOnlyContentsRead(workflowText);
   const jobBlock = extractJobBlock(workflowText, jobId);
+  // Checked from the job's OWN block first — a job-level `permissions:` key
+  // replaces the workflow-level one entirely, never merges with it. See
+  // `jobEffectivelyGrantsOnlyContentsRead`'s own header.
+  const scopeIsContentsReadOnly = jobBlock !== undefined && jobEffectivelyGrantsOnlyContentsRead(workflowText, jobBlock);
   const scopedUseObserved = jobBlock !== undefined && !jobBlock.includes("secrets.");
 
   if (job === undefined || jobStartedAt === undefined || jobEndedAt === undefined || !scopeIsContentsReadOnly || jobBlock === undefined) {

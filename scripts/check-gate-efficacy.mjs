@@ -46,18 +46,17 @@ import { computeGateEfficacy, isCouldNotRead } from "@clossys/observer";
 
 import { collectJobs, createGateRunHistoryReader, gatesSeen, unsourcedOutcomes, toRunRecords } from "./gate-run-history.mjs";
 import { secretScanningOutcomes } from "./secret-scanning-outcomes.mjs";
+import { ghFetchJson } from "./lib/gh-api.mjs";
 
 /** The one gate with a real, independent violation source wired so far. See this file's own header. */
 const SECRET_SCAN_GATE = "publish safety";
 
-/** `gh api` as an injected fetcher: it already holds the credential and the host. */
-export function ghFetchJson(path) {
-  const out = execFileSync("gh", ["api", "-H", "Accept: application/vnd.github+json", path], {
-    encoding: "utf8",
-    maxBuffer: 64 * 1024 * 1024,
-  });
-  return JSON.parse(out);
-}
+// `ghFetchJson` used to be defined here directly; it now lives in
+// `./lib/gh-api.mjs` so `.github/scripts/collect-credential-evidence.mjs`
+// can share it without importing this file (and, with it, this file's own
+// `@clossys/observer` dependency, which that script has no reason to
+// require). Re-exported for anything that already imports it from here.
+export { ghFetchJson };
 
 /**
  * Grade one gate's efficacy report.
