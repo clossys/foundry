@@ -223,6 +223,16 @@ const NON_ACCOUNT_AT_TOKENS = new Set([
   // domain the forge operates for every account on it is infrastructure, not
   // an account this repository has a relationship with.
   "users.noreply.github.com",
+  // The SAME domain, truncated to its first label. BARE_SCOPE_RE's capture
+  // group is [a-z0-9._-]*, which does not include a literal backslash — so
+  // when this domain appears inside a shell/grep pattern with its dots
+  // backslash-escaped (`@users\.noreply\.github\.com`, as in a reproduction
+  // command quoted in prose, e.g. docs/DECISIONS.md's measurement commands
+  // for issue #826), the capture stops at the first `\` and this check only
+  // ever sees `@users`. Still the same forge infrastructure domain above,
+  // not a different admission — listed separately because the regex that
+  // reaches this Set does not know the two spellings are the same string.
+  "users",
 ]);
 
 // CLASS B — public ecosystem vendors this repository TALKS ABOUT without
