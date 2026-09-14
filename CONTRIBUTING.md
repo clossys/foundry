@@ -288,27 +288,41 @@ equivalent fix after.
   wrong.** A closing keyword (`Closes`, `Fixes`, `Resolves`, …) and a plain
   `Refs:` fail in opposite directions:
   - **A closing keyword auto-closes an issue the pull request did not
-    actually resolve.** GitHub applies it at merge time from a text pattern
-    alone, with no evidence behind it beyond "some text matched" —
-    `docs/LIFECYCLE.md`'s standing rule is that state is derived from
-    evidence, never declared, and a keyword-driven close is exactly that
-    defect for an issue. #811 said, in its own "What this does NOT do"
-    section, "Does not close #808," and #808 closed one second after #811
-    merged, attributed to the merging account — the signature of an
-    automatic keyword close. What is directly verifiable now: #811's
-    current body and all twelve of its commit messages carry no closing
-    keyword for #808, only `Refs: #808`; and the body was edited more than
-    once between opening and merge (`gh api graphql` against
-    `pullRequest(number: 811) { userContentEdits { nodes { editedAt } } }`
-    shows edits before the merge timestamp). So the keyword, if it was ever
-    present, is not there now — consistent with having been in the body at
-    merge time and edited out afterward, but not provable from here:
-    GitHub's audit log would settle it and is not reachable from the CLI.
-    The issue still needed a manual reopen with evidence the underlying
-    condition was unmet either way (#828). #797/#819 shows the same
-    mechanism landing correctly only by chance — the keyword happened to
-    match the real work, not because anything checked it against #797's
-    stated done-condition.
+    actually resolve — and it does not understand negation.** GitHub
+    applies it at merge time from a text pattern alone, with no evidence
+    behind it beyond "some text matched" — `docs/LIFECYCLE.md`'s standing
+    rule is that state is derived from evidence, never declared, and a
+    keyword-driven close is exactly that defect for an issue. #811's own
+    "What this does NOT do" section reads, verbatim:
+
+        - Does not close #808. It removes the blocker; the registry still
+          carries the retired identity until the packages actually publish.
+
+    That sentence's entire purpose is to say the pull request does not
+    close #808. GitHub's keyword parser does not read the sentence; it
+    matches `close #808` lexically, wherever it sits in the body, and
+    closed #808 anyway: the issue's `closed` event is timestamped
+    `2026-09-13T21:51:52Z`, one second after #811's own `merged` timestamp
+    (`2026-09-13T21:51:51Z`), attributed to the merging account, with no
+    associated commit — the signature of an automatic keyword close, not a
+    manual one. The body's last edit was `2026-09-13T18:42:05Z`, over three
+    hours before the merge, so the sentence quoted above is the text GitHub
+    actually parsed, not a later rewrite. Reproduce with
+    `gh pr view 811 --json body` and
+    `gh api repos/clossys/foundry/issues/808/events`. Two lines later the
+    same body also carries `Refs: #808` — the author used the correct form
+    for the reference that mattered and was still defeated by the negating
+    sentence above it. The lesson: a closing keyword is matched anywhere in
+    the body, with no understanding of negation or surrounding prose.
+    Writing "does not close #N", "should not close #N", or "this does not
+    fix #N" closes #N regardless of the words around it. The only safe way
+    to mention an issue a pull request is NOT closing is a form that
+    contains no keyword at all — `Refs: #N`, or rephrasing so the keyword
+    and the number are never adjacent. The issue still needed a manual
+    reopen with evidence the underlying condition was unmet (#828).
+    #797/#819 shows the same mechanism landing correctly only by chance —
+    the keyword happened to match the real work, not because anything
+    checked it against #797's stated done-condition.
   - **`Refs:` leaves a genuinely resolved issue open, indefinitely and
     silently.** #769 was fixed by #777, merged 2026-09-02T15:00:30Z, but
     #769 itself was not closed until 2026-09-14T11:35:36Z — about 12 days
@@ -332,19 +346,23 @@ equivalent fix after.
     getting caught, and it is the one this repository actually paid for at
     that point.
 
-    *Corrected measurement, recorded rather than silently overwritten:* an
-    earlier draft of this entry gave both issues the same "ten days," taken
-    from a single unverified claim rather than measured — and the claim
-    itself conflated #794's *creation* date (2026-09-04) with its *merge*
-    date (2026-09-10), then applied the resulting single interval to both
-    pairs. Both problems are visible above once the real timestamps are
-    used: #769/#777 (≈12 days) and #782/#794 (≈4 days) are not the same
-    figure, and treating them as one obscured that #782's delay was itself
-    two separate things — six days for #794 to merge, then four more before
-    #782 was closed. This section is specifically about not taking a claim
-    on faith; an unverified claim reaching this section anyway is exactly
-    the failure it warns against, so the correction is recorded here rather
-    than folded in silently.
+    *Corrected twice, recorded rather than silently overwritten:* an
+    earlier draft of this entry gave both issues the same "ten days,"
+    conflating #794's *creation* date (2026-09-04) with its *merge* date
+    (2026-09-10) and applying the resulting single interval to both pairs;
+    the figures above are the measured ones — #769/#777 (≈12 days) and
+    #782/#794 (≈4 days) are not the same figure, and #782's total was
+    itself two separate delays, not one. A separate earlier draft of the
+    keyword bullet above also hedged its #811/#808 citation as merely
+    "consistent with" a keyword close, because it took on faith a review
+    finding that #811's body carried no closing keyword anywhere — a
+    finding that was itself wrong, as the quoted sentence above shows; the
+    review had checked for the presence of a keyword without checking
+    whether it sat inside a negation. This section has now been wrong
+    twice, in opposite directions — once by trusting an unverified figure,
+    once by trusting a review's negative result without reading the text it
+    was a claim about — and both are recorded here for the same reason the
+    section exists.
 
   Use a closing keyword when the pull request genuinely resolves the whole
   issue; use `Refs: #N` when it only removes a blocker or lands a partial
