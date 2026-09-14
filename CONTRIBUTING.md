@@ -283,26 +283,49 @@ equivalent fix after.
 - **Public API changes** need the README updated in the same pull request —
   `check-readme-parity.mjs` checks this mechanically for undocumented or
   stale exports.
-- **A pull request that only unblocks an issue uses `Refs:`, never a closing
-  keyword.** GitHub auto-closes an issue when a merged pull request's title or
-  description carries a closing keyword (`Closes`, `Fixes`, `Resolves`, …)
-  referencing it — a text pattern the forge applies at merge time, with no
-  evidence behind it beyond "some text matched." `docs/LIFECYCLE.md`'s
-  standing rule is that state is derived from evidence, never declared, and a
-  keyword-driven close is exactly that defect for an issue. This happened
-  twice in one day: #811 said, in its own "What this does NOT do" section,
-  "Does not close #808," but also carried a closing keyword for #808
-  elsewhere in its text — the merge auto-closed #808 anyway, and it had to be
-  manually reopened with evidence the underlying condition was still unmet
-  (#828). #797/#819 shows the same mechanism landing correctly only by
-  chance — the keyword happened to match the real work, not because anything
-  checked it against #797's stated done-condition. No gate can enforce this:
-  GitHub's keyword-to-closure behavior is a platform feature outside every
-  script in this repository, so it depends on the author's own judgement, the
-  same as several conventions above. Reserve a closing keyword for a pull
-  request whose merge is itself sufficient evidence the referenced issue's
-  condition is met; use `Refs: #N` for one that only removes a blocker or
-  lands a partial step.
+- **A pull request's issue reference is a judgement call, not a safe
+  default — and this repository has now paid for both ways of getting it
+  wrong.** A closing keyword (`Closes`, `Fixes`, `Resolves`, …) and a plain
+  `Refs:` fail in opposite directions:
+  - **A closing keyword auto-closes an issue the pull request did not
+    actually resolve.** GitHub applies it at merge time from a text pattern
+    alone, with no evidence behind it beyond "some text matched" —
+    `docs/LIFECYCLE.md`'s standing rule is that state is derived from
+    evidence, never declared, and a keyword-driven close is exactly that
+    defect for an issue. #811 said, in its own "What this does NOT do"
+    section, "Does not close #808," but also carried a closing keyword for
+    #808 elsewhere in its text — the merge auto-closed #808 anyway, and it
+    had to be manually reopened with evidence the underlying condition was
+    still unmet (#828). #797/#819 shows the same mechanism landing correctly
+    only by chance — the keyword happened to match the real work, not
+    because anything checked it against #797's stated done-condition.
+  - **`Refs:` leaves a genuinely resolved issue open, indefinitely and
+    silently.** #769 was fixed by #777 (merged 2026-09-02) and #782 was
+    fixed by #794 (merged 2026-09-04); both pull requests wrote `Refs:`
+    rather than a closing keyword, so neither issue's
+    `closedByPullRequestsReferences` ever populated and both sat open for
+    ten days after the fix had already landed on `main` — found only
+    because an agent was dispatched to fix one of them, set up a worktree,
+    and discovered the work already done. A silently stale open-issue list
+    is not a smaller failure than a wrongly-closed one; it is a quieter
+    failure that accumulates instead of getting caught, and it is the one
+    this repository actually paid for at that point.
+
+  Use a closing keyword when the pull request genuinely resolves the whole
+  issue; use `Refs: #N` when it only removes a blocker or lands a partial
+  step. Neither choice is safe by default — the part that actually matters
+  is checking afterward which one happened: did the issue close on merge, or
+  is it still open and does it need a manual close with the evidence that
+  justifies it? Neither GitHub nor any gate in this repository will tell you
+  if you chose wrong; a merged, genuinely-resolving pull request whose issue
+  still shows `closedByPullRequestsReferences: []` (`gh issue view --json
+  closedByPullRequestsReferences`) is the tell.
+
+  This is a convention, not an enforcement mechanism, the same honest
+  position `governance/merge-policy.json` takes about its own declaration —
+  "a stated policy plus a drift alarm, never an enforcement mechanism."
+  Nothing in CI reads this entry; it depends entirely on the author's own
+  judgement and a follow-up look, the same as several conventions above.
 - **Type-level assertions live in `.check.ts(x)` files, never in
   `.test.ts(x)` files.** Every package's `tsconfig.json` excludes
   `**/*.test.ts(x)` from `include`, so `npm run typecheck` never compiles a

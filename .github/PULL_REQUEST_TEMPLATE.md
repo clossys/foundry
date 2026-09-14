@@ -45,10 +45,13 @@ exists — but only if it's an issue on THIS repository. A reference to an
 issue on a private repository (`org/private-repo#N`) discloses that repo by
 itself, even with no other detail attached.
 
-Use `Refs: #N`, not a closing keyword (`Closes`, `Fixes`, `Resolves`, …),
-unless merging THIS pull request is itself sufficient evidence #N is done —
-a closing keyword auto-closes the issue the moment this merges, with no
-check that its condition is actually met. See CONTRIBUTING.md's Conventions.
+Reference it with whichever is actually true: a closing keyword (`Closes`,
+`Fixes`, `Resolves`, …) if this pull request fully resolves #N, `Refs: #N`
+if it only removes a blocker or lands a partial step. Both directions have
+burned this repository: a closing keyword can auto-close an issue that
+isn't actually done (#828), and `Refs:` can leave a genuinely resolved issue
+silently open for days (#769, #782). Whichever you use, check afterward
+that it actually did what you meant — see CONTRIBUTING.md's Conventions.
 -->
 
 ## Checks
