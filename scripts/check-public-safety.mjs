@@ -10,6 +10,12 @@
 //                          path before matching a neutralize rule's `paths`
 //                          (see WHY --path-prefix EXISTS below); the path shown
 //                          in a reported finding is never affected
+//     --opaque-exemptions <file>
+//                          explicit path to the opaque-content exemption
+//                          registry (see OPAQUE_EXTENSIONS below); defaults to
+//                          an upward search for governance/opaque-content-
+//                          exemptions.json, same resolution style as
+//                          package-scope.json
 //     --json               machine-readable output
 //
 // Exit 0 = safe to publish. Exit 1 = findings. Exit 2 = the gate could not run.
@@ -48,6 +54,8 @@
 import { readFileSync, readdirSync, statSync, existsSync, writeSync } from "node:fs";
 import { join, relative, basename, extname, resolve, sep } from "node:path";
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
+import zlib from "node:zlib";
 
 const argv = process.argv.slice(2);
 const flags = new Set(argv.filter((a) => a.startsWith("--")));
@@ -55,7 +63,10 @@ const positional = argv.filter((a) => !a.startsWith("--"));
 const root = positional[0];
 
 if (!root) {
-  console.error("usage: check-public-safety.mjs <dir> [--require-denylist] [--allow-changelogs] [--denylist <file>] [--path-prefix <p>] [--json]");
+  console.error(
+    "usage: check-public-safety.mjs <dir> [--require-denylist] [--allow-changelogs] [--denylist <file>] " +
+      "[--path-prefix <p>] [--opaque-exemptions <file>] [--json]",
+  );
   process.exit(2);
 }
 if (!existsSync(root)) {
@@ -159,24 +170,184 @@ const ARTIFACT_ALLOWED_DIRS = new Set(["dist", "build"]);
 // nested agent instructions are still refused.
 const FORBIDDEN_EXEMPT_PATHS = new Set(["AGENTS.md", "CLAUDE.md"]);
 
-// Extensions never scanned for identity prose (secrets scanning is likewise
-// meaningless on binary pixel/audio/video/font data). Kept small and each
-// group justified below — none of these can carry a hidden text file inside
-// them the way an archive can, so skipping is a real "nothing here to scan",
-// not a convenient shortcut.
-const SKIP_CONTENT = new Set([
-  ".png", ".jpg", ".jpeg", ".gif", ".webp", ".ico", ".avif", // raster images: pixel data only
-  ".woff", ".woff2", ".ttf", ".otf", ".eot", // font binaries
-  ".mp4", ".webm", // video containers
-  ".wasm", // compiled binary, not source
-  ".pdf", // scanned for secrets/binary marker like the rest; not a container the way an archive is
+// OPAQUE FORMATS (issue #588)
+// ---------------------------
+// These extensions used to be SKIP_CONTENT: `continue`d past with no bytes
+// ever opened, on the theory that a raster image, a font, a video container
+// or a PDF is "pixel/audio/binary data only" the way a JPEG's compressed
+// pixel grid genuinely is. That theory does not hold for the formats
+// themselves: a PNG carries plaintext tEXt/iTXt metadata chunks, a JPEG
+// carries EXIF/XMP/COM text segments, a PDF carries an Info dictionary and
+// (usually zlib-compressed) page-content text streams, a font's `name` table
+// carries copyright/vendor strings, and MP4/WebM containers carry title and
+// comment atoms. Every one of those can carry private identity or a
+// credential-shaped string this gate exists to catch — and until this fixed,
+// a passing scan and a passing tarball claimed to have checked for exactly
+// that, on files it had never opened. No opaque file is committed anywhere
+// in this repository today, which is what made this a FUTURE false-green
+// rather than a current wrong answer: the day one is added, the old
+// behaviour would report it clean without a single byte read.
+//
+// The fix does two independent things to every file with one of these
+// extensions, neither of which is "skip":
+//
+//   1. REFUSE BY DEFAULT. This gate cannot deterministically parse any of
+//      these formats, so it can never prove one is clean — and "cannot
+//      prove clean" must never become "counted as clean" (see docs/
+//      LIFECYCLE.md's "derived from evidence, never declared"). The only
+//      way past the refusal is an explicit, human-reviewed, sha256-pinned
+//      exemption — see "opaque exemption loading" further down, mirroring
+//      check-package-evidence.mjs's `gaps`.
+//   2. EXTRACT ANYWAY, best-effort. Refusing the file does not mean giving
+//      up on looking at it: extractOpaqueStrings pulls every printable-ASCII
+//      run out of the raw bytes (the same technique the `strings` utility
+//      uses) and, for a PDF specifically, additionally inflates any
+//      /FlateDecode content stream it can find first. Both are deterministic
+//      and need no format parser or new dependency. A SECRET or identity
+//      match found this way fails the file even when it IS exempted — a
+//      human's "this is just a logo" review does not get to override an
+//      actual credential sitting in the bytes. What this extraction can
+//      never do is prove a negative: a string in an encoding, a compression
+//      codec, or a binary field it does not know how to read is invisible to
+//      it, which is exactly why passing extraction is never by itself
+//      sufficient to admit the file — only an exemption is (see the PASS
+//      banner at the bottom of this file, which says so rather than
+//      claiming more than was checked).
+const OPAQUE_EXTENSIONS = new Set([
+  ".png", ".jpg", ".jpeg", ".gif", ".webp", ".ico", ".avif", // raster images: can carry text metadata chunks/segments
+  ".woff", ".woff2", ".ttf", ".otf", ".eot", // fonts: `name` table can carry copyright/vendor strings
+  ".mp4", ".webm", // video containers: can carry title/comment metadata atoms
+  ".wasm", // compiled binary: custom sections can carry producer/debug strings
+  ".pdf", // Info dictionary and (usually compressed) content streams can carry text
 ]);
 
-// Archives are deliberately NOT in SKIP_CONTENT. A .zip (or a gzip-wrapped
-// tar) can carry an arbitrary text file inside it — a copied CLAUDE.md, a
-// stray .env, an identity-bearing README — that this gate would otherwise
-// never open, silently passing exactly the kind of contamination it exists
-// to catch. Rather than skip them like the true binaries above, refuse them
+// Minimum run length for the printable-ASCII extractor below, matching the
+// `strings` utility's own default (`strings -n 6`... actually GNU strings
+// defaults to 4; 6 is chosen here to cut noise from short binary runs that
+// happen to land in the printable range without meaningfully raising the
+// risk of missing a real identity term, which this gate's own SHORT-term
+// `caseSensitive` convention already exists to catch unanchored).
+const OPAQUE_MIN_STRING_LEN = 6;
+
+// Printable-ASCII run extraction: a deterministic, format-agnostic way to
+// recover embedded text from bytes this gate cannot otherwise parse. See
+// OPAQUE FORMATS above for what it does and does not catch.
+function printableStrings(buf) {
+  const out = [];
+  let start = -1;
+  for (let i = 0; i <= buf.length; i++) {
+    const byte = i < buf.length ? buf[i] : -1;
+    const printable = byte >= 0x20 && byte <= 0x7e;
+    if (printable) {
+      if (start < 0) start = i;
+    } else if (start >= 0) {
+      if (i - start >= OPAQUE_MIN_STRING_LEN) out.push(buf.toString("latin1", start, i));
+      start = -1;
+    }
+  }
+  return out;
+}
+
+// PDF-specific: locate every `stream\r?\n ... \r?\nendstream` block whose
+// nearest preceding dictionary mentions /FlateDecode, and inflate it with
+// Node's built-in zlib — no new dependency, and this is how nearly every
+// real-world PDF writer compresses page content, so a printable-strings pass
+// over the raw file alone would see only compressed bytes and miss the
+// actual visible text entirely.
+function pdfInflatedStrings(buf) {
+  const out = [];
+  const text = buf.toString("latin1");
+  const streamRe = /stream\r?\n/g;
+  let m;
+  while ((m = streamRe.exec(text))) {
+    const dataStart = m.index + m[0].length;
+    const endIdx = text.indexOf("endstream", dataStart);
+    if (endIdx < 0) break;
+    // The dictionary governing this stream is whatever precedes `stream`,
+    // bounded to a generous window so a malformed or huge file cannot make
+    // this scan quadratic.
+    const dict = text.slice(Math.max(0, m.index - 4096), m.index);
+    if (/\/Filter\s*(\/FlateDecode|\[[^\]]*\/FlateDecode)/.test(dict)) {
+      let dataEnd = endIdx;
+      if (text[dataEnd - 1] === "\n") dataEnd -= 1; // PDF spec: one EOL before `endstream`
+      if (text[dataEnd - 1] === "\r") dataEnd -= 1;
+      try {
+        out.push(...printableStrings(zlib.inflateSync(buf.subarray(dataStart, dataEnd))));
+      } catch {
+        // Not actually valid FlateDecode data, or truncated — best-effort;
+        // move on rather than failing the whole scan on one bad stream.
+      }
+    }
+    streamRe.lastIndex = endIdx;
+  }
+  return out;
+}
+
+function extractOpaqueStrings(buf, ext) {
+  const strings = printableStrings(buf);
+  if (ext === ".pdf") strings.push(...pdfInflatedStrings(buf));
+  return strings;
+}
+
+// The exemption registry. Mirrors check-package-evidence.mjs's `gaps`
+// mechanism: a `reason` (>=20 chars) and an integer `issue` are required, so
+// an exemption is a recorded decision, not a standing carve-out — and here
+// it is additionally pinned to the file's exact sha256, so it cannot outlive
+// its reason in the most literal sense: change one byte of the file and the
+// hash no longer matches, and the file is refused again until it is
+// reviewed again. `path` is repository-relative (matched the same way a
+// neutralize rule's `paths` is, against the --path-prefix-restored path —
+// see WHY --path-prefix EXISTS above — so one exemption covers both the tree
+// scan and the tarball scan of the same file).
+// A nested Map (path -> sha256 -> entry), deliberately not a single map
+// keyed by a joined string: a joined key needs a separator character that is
+// guaranteed absent from both a path and a hex digest, and getting that
+// subtly wrong (as an earlier draft of this function did, joining with a
+// literal embedded NUL byte that then had to be typed identically at every
+// call site) is exactly the class of bug this shape makes structurally
+// impossible.
+function validateOpaqueExemptions(list, sourceLabel) {
+  const errors = [];
+  const map = new Map();
+  for (const entry of list) {
+    if (!entry || typeof entry !== "object") {
+      errors.push(`${sourceLabel}: an exemption entry is not an object`);
+      continue;
+    }
+    const { path: entryPath, sha256, reason, issue } = entry;
+    if (typeof entryPath !== "string" || !entryPath) {
+      errors.push(`${sourceLabel}: an exemption entry needs a string "path"`);
+      continue;
+    }
+    if (typeof sha256 !== "string" || !/^[0-9a-f]{64}$/.test(sha256)) {
+      errors.push(`${sourceLabel}: exemption for "${entryPath}" needs a 64-hex-character "sha256" of the exact file it covers`);
+      continue;
+    }
+    if (typeof reason !== "string" || reason.trim().length < 20) {
+      errors.push(`${sourceLabel}: exemption for "${entryPath}" needs a "reason" of at least 20 characters saying what was checked and why it is safe`);
+      continue;
+    }
+    if (!Number.isInteger(issue)) {
+      errors.push(`${sourceLabel}: exemption for "${entryPath}" needs an integer "issue" — a countdown, like check-package-evidence.mjs's \`gaps\`, not a standing exemption`);
+      continue;
+    }
+    if (!map.has(entryPath)) map.set(entryPath, new Map());
+    const byHash = map.get(entryPath);
+    if (byHash.has(sha256)) {
+      errors.push(`${sourceLabel}: duplicate exemption for "${entryPath}" at the same sha256`);
+      continue;
+    }
+    byHash.set(sha256, entry);
+  }
+  return { map, errors };
+}
+
+// Archives are deliberately NOT in OPAQUE_EXTENSIONS — there is no printable-
+// strings extraction pass for them below, unlike an opaque file. A .zip (or a
+// gzip-wrapped tar) can carry an arbitrary text file inside it — a copied
+// CLAUDE.md, a stray .env, an identity-bearing README — that this gate would
+// otherwise never open, silently passing exactly the kind of contamination it
+// exists to catch. Rather than best-effort extract them, refuse them
 // outright: the safe default when the gate cannot see inside a container is
 // to treat it as unsafe, not to assume it's clean.
 const ARCHIVE_EXTENSIONS = new Set([".zip", ".gz", ".tgz"]);
@@ -258,9 +429,11 @@ if (!denylist && flags.has("--require-denylist")) {
 // check), and this gate's own wholesale-skip once made that entire file
 // invisible to FULL-mode scanning — the same file a real identity leak later
 // shipped in and survived FULL-mode CI. A boundary gate must not have a byte
-// that switches it off. Genuinely binary formats are already excluded above
-// by extension (SKIP_CONTENT / ARCHIVE_EXTENSIONS); everything else is
-// scanned in full, with the NUL and zero-width characters stripped out first.
+// that switches it off. Genuinely opaque formats are handled separately above
+// (OPAQUE_EXTENSIONS: refused by default, best-effort extracted regardless —
+// never silently skipped) and archives are refused outright (ARCHIVE_
+// EXTENSIONS); everything else is scanned in full here, with the NUL and
+// zero-width characters stripped out first.
 const ZERO_WIDTH_RE = /[\u0000\u200B\u200C\u200D\u2060\u180E\u00AD\uFEFF]/g;
 function stripInvisible(text) {
   return text.replace(ZERO_WIDTH_RE, "");
@@ -309,6 +482,20 @@ const neutralizeRules = (denylist?.neutralize ?? []).map((a) => ({
   re: new RegExp(a.pattern, "gi"),
   paths: a.paths ?? null,
 }));
+
+// Shared by both the text-file path and the opaque-extraction path below, so
+// there is one implementation of "does a neutralize rule apply here" rather
+// than two that can drift apart. `matchRelForFile` is the --path-prefix
+// restored path (see WHY --path-prefix EXISTS above), never the raw `rel`.
+function applyNeutralize(text, matchRelForFile) {
+  let scannable = text;
+  for (const rule of neutralizeRules) {
+    if (rule.paths && !rule.paths.some((p) => matchRelForFile === p || matchRelForFile.startsWith(p + "/"))) continue;
+    rule.re.lastIndex = 0;
+    scannable = scannable.replace(rule.re, " ");
+  }
+  return scannable;
+}
 
 // --------------------------------------------------------------------- walking
 
@@ -377,6 +564,53 @@ if (explicitScopeConfig) {
   }
 }
 
+// -------------------------------------------------- opaque exemption loading
+//
+// Resolved the same way package-scope.json above is: an explicit --opaque-
+// exemptions flag first, else an upward search from `root` for governance/
+// opaque-content-exemptions.json. The upward search has no answer when
+// `root` is an extracted tarball in a temp directory (no repository above
+// it) — check-artifact-safety.mjs passes --opaque-exemptions explicitly for
+// exactly that reason, same as it already does for --scope-config.
+let opaqueExemptionMap = new Map();
+const opaqueExemptionLoadErrors = [];
+const explicitOpaqueExemptions = flagValue("--opaque-exemptions");
+let opaqueExemptionsPath = null;
+if (explicitOpaqueExemptions) {
+  if (!existsSync(explicitOpaqueExemptions)) {
+    console.error(`check-public-safety: --opaque-exemptions ${explicitOpaqueExemptions} does not exist`);
+    process.exit(2);
+  }
+  opaqueExemptionsPath = explicitOpaqueExemptions;
+} else {
+  for (let dir = rootAbs; ; dir = join(dir, "..")) {
+    const candidate = join(dir, "governance", "opaque-content-exemptions.json");
+    if (existsSync(candidate)) {
+      opaqueExemptionsPath = candidate;
+      break;
+    }
+    const parent = join(dir, "..");
+    if (parent === dir) break; // reached filesystem root
+  }
+}
+// No registry found at all is not an error — it just means every opaque file
+// in this scan is refused, which is the correct default with nothing yet
+// reviewed. A registry that exists but does not parse, or that carries a
+// malformed entry, IS an error: pushed into `failures` below (once that
+// array exists) rather than silently treated as "no exemptions" — a
+// reviewer's typo must never read as "nothing to see here".
+if (opaqueExemptionsPath) {
+  try {
+    const parsed = JSON.parse(readFileSync(opaqueExemptionsPath, "utf8"));
+    const list = Array.isArray(parsed.exemptions) ? parsed.exemptions : [];
+    const { map, errors } = validateOpaqueExemptions(list, opaqueExemptionsPath);
+    opaqueExemptionMap = map;
+    opaqueExemptionLoadErrors.push(...errors);
+  } catch (error) {
+    opaqueExemptionLoadErrors.push(`${opaqueExemptionsPath} does not parse: ${error.message}`);
+  }
+}
+
 function walk(dir, out = []) {
   for (const entry of readdirSync(dir)) {
     if (entry === "node_modules" || entry === ".git") continue;
@@ -395,6 +629,20 @@ function walk(dir, out = []) {
 }
 
 const failures = [];
+// A malformed opaque-exemption registry is a real, visible failure — see
+// "No registry found at all is not an error" above — pushed here rather than
+// where it was discovered, since `failures` did not exist yet at that point.
+for (const message of opaqueExemptionLoadErrors) {
+  failures.push({
+    rel: opaqueExemptionsPath ? relative(rootAbs, opaqueExemptionsPath) : "governance/opaque-content-exemptions.json",
+    kind: "opaque-exemption-invalid",
+    detail: message,
+    severity: "high",
+    line: 0,
+  });
+}
+let opaqueScanned = 0;
+let opaqueAcknowledged = 0;
 const files = walk(rootAbs);
 
 for (const file of files) {
@@ -428,7 +676,68 @@ for (const file of files) {
     });
     continue;
   }
-  if (SKIP_CONTENT.has(ext)) continue;
+  // Neutralize rules (and now, the opaque-exemption registry) compare
+  // against `matchRel`, not `rel`; see WHY --path-prefix EXISTS above. Every
+  // failure pushed below still reports `rel`, the real scanned path: only
+  // the comparison is rebased, never what a finding shows. Computed once per
+  // file, ahead of both the opaque path and the text path, since both need it.
+  const matchRel = prefixedRel(rel);
+
+  if (OPAQUE_EXTENSIONS.has(ext)) {
+    opaqueScanned += 1;
+    let raw;
+    try {
+      raw = readFileSync(file);
+    } catch {
+      // Cannot even open the bytes. Fail closed exactly like every other
+      // path in this gate: "could not be read" is the strongest possible
+      // case for refusing an opaque file, never a reason to let it slide.
+      failures.push({
+        rel,
+        kind: "opaque-unreadable",
+        detail: `${ext} file could not be read; an unreadable opaque file is refused, never treated as clean`,
+        severity: "high",
+        line: 0,
+      });
+      continue;
+    }
+    const sha256 = createHash("sha256").update(raw).digest("hex");
+    const exemption = opaqueExemptionMap.get(matchRel)?.get(sha256);
+
+    // Best-effort extraction runs regardless of exemption status — see
+    // OPAQUE FORMATS above for why a SECRET/identity hit here fails the file
+    // even when a human has reviewed and exempted it.
+    for (const line of extractOpaqueStrings(raw, ext)) {
+      for (const [pattern, why] of secretRes) {
+        pattern.lastIndex = 0;
+        if (pattern.test(line)) {
+          failures.push({ rel, kind: "SECRET", detail: why, severity: "critical", line: 0, text: "<redacted>" });
+        }
+      }
+      const neutralizedLine = applyNeutralize(line, matchRel);
+      for (const [re, why, severity] of denyRes) {
+        re.lastIndex = 0;
+        if (re.test(neutralizedLine)) {
+          failures.push({ rel, kind: "identity", detail: why, severity, line: 0, text: line.trim().slice(0, 100) });
+        }
+      }
+    }
+
+    if (exemption) {
+      opaqueAcknowledged += 1;
+    } else {
+      failures.push({
+        rel,
+        kind: "opaque-unacknowledged",
+        detail:
+          `${ext} is an opaque format that can carry hidden text, metadata, or an attachment this gate cannot fully parse; ` +
+          "refused unless explicitly reviewed and recorded (with this exact file's sha256) in governance/opaque-content-exemptions.json",
+        severity: "high",
+        line: 0,
+      });
+    }
+    continue;
+  }
 
   let contents;
   try {
@@ -447,20 +756,10 @@ for (const file of files) {
 
   const rawLines = contents.split("\n");
   const identityLines = normalizeOpaqueLockIntegrity(contents, rel).split("\n");
-  // Neutralize rules compare against `matchRel`, not `rel`; see WHY
-  // --path-prefix EXISTS above. Every failure pushed below (here and
-  // elsewhere in this file) still reports `rel`, the real scanned path: only
-  // the neutralize comparison is rebased, never what a finding shows.
-  const matchRel = prefixedRel(rel);
-  const neutralizedLines = identityLines.map((text) => {
-    let scannable = text;
-    for (const rule of neutralizeRules) {
-      if (rule.paths && !rule.paths.some((p) => matchRel === p || matchRel.startsWith(p + "/"))) continue;
-      rule.re.lastIndex = 0;
-      scannable = scannable.replace(rule.re, " ");
-    }
-    return scannable;
-  });
+  // `matchRel` was already computed above (shared with the opaque path).
+  // Every failure pushed below still reports `rel`, the real scanned path:
+  // only the neutralize comparison is rebased, never what a finding shows.
+  const neutralizedLines = identityLines.map((text) => applyNeutralize(text, matchRel));
 
   rawLines.forEach((text, i) => {
     for (const [pattern, why] of secretRes) {
@@ -588,7 +887,10 @@ if (flags.has("--json")) {
   //
   // writeSync(1, ...) blocks until the bytes are handed over, so the
   // subsequent exit cannot truncate it.
-  writeSync(1, JSON.stringify({ mode, root: rootAbs, scanned: files.length, failures }, null, 2) + "\n");
+  writeSync(
+    1,
+    JSON.stringify({ mode, root: rootAbs, scanned: files.length, opaqueScanned, opaqueAcknowledged, failures }, null, 2) + "\n",
+  );
   process.exit(failures.length ? 1 : 0);
 }
 
@@ -604,17 +906,25 @@ if (!denylist) {
 }
 console.log("");
 
+// The opaque-content claim, narrowed to exactly what was checked (issue
+// #588): an opaque file is never silently absent from this sentence, and a
+// PASS never implies this gate parsed a format it cannot parse. See OPAQUE
+// FORMATS above for what "reviewed" and "best-effort" mean here.
+const opaqueNote = opaqueScanned
+  ? ` ${opaqueScanned} opaque file(s) (PDF/image/font/video/wasm) present, each explicitly reviewed and acknowledged in governance/opaque-content-exemptions.json; best-effort text extraction found no additional SECRET or identity match in them, but that extraction cannot prove a negative on a format this gate does not fully parse — the exemption, not the extraction, is what authorizes shipping them.`
+  : " No opaque (PDF/image/font/video/wasm) files were present in this scan.";
+
 if (!failures.length) {
   console.log(
-    mode === "FULL"
-      ? "PASS — no private identity, forbidden file, or credential-shaped string found."
-      : "PASS (partial) — no forbidden file or credential-shaped string found.",
+    (mode === "FULL"
+      ? "PASS — no private identity, forbidden file, or credential-shaped string found in readable content."
+      : "PASS (partial) — no forbidden file or credential-shaped string found in readable content.") + opaqueNote,
   );
   process.exit(0);
 }
 
 const RANK = { critical: 0, high: 1, medium: 2 };
-for (const kind of ["SECRET", "forbidden-file", "manifest", "identity"]) {
+for (const kind of ["SECRET", "forbidden-file", "opaque-unacknowledged", "opaque-unreadable", "opaque-exemption-invalid", "manifest", "identity"]) {
   const rows = failures.filter((f) => f.kind === kind);
   if (!rows.length) continue;
   console.log(`## ${kind} — ${rows.length} finding(s)`);
