@@ -5,7 +5,7 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 
-import { normalize, discoverPeerVersionFiles, run, EXIT_CODES, CANONICAL_PATH } from "./check-peer-version-assert.mjs";
+import { normalize, discoverPeerVersionFiles, run, EXIT_CODES, CANONICAL_PATH, ACKNOWLEDGED_EXCEPTIONS, hash as hashOf } from "./check-peer-version-assert.mjs";
 
 const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -147,19 +147,22 @@ test("EMPTY/SHORT SCAN CONTROL: fewer than the expected minimum is indeterminate
 test("MUTATION-VERIFY: agreement passes, and a planted divergence in the SAME fixture is caught (fails), then fixing it passes again", async () => {
   await withRepoFixture(async (root) => {
     // Mirror the real gate's canonical path exactly (packages/bouncer/src/internal/peer-version.ts),
-    // so run()'s hardcoded CANONICAL_PATH resolves inside this temp root.
+    // so run()'s hardcoded CANONICAL_PATH resolves inside this temp root. `exceptions: []` — this
+    // fixture deliberately carries none of the real butler/keeper paths the default
+    // ACKNOWLEDGED_EXCEPTIONS names, and an exception naming an undiscovered file is itself a
+    // (correct) finding, so the default roster must not leak into a fixture that isn't the real tree.
     writePeerVersionPackage(root, "bouncer", "internal/peer-version.ts", BODY_A);
     writePeerVersionPackage(root, "sibling-agrees", "internal/peer-version.ts", BODY_A_REWRAPPED);
     writePeerVersionPackage(root, "sibling-diverges", "web/internal/peer-version.ts", BODY_B_DIVERGED);
 
-    const divergedResult = await run({ repoRoot: root });
+    const divergedResult = await run({ repoRoot: root, exceptions: [] });
     assert.equal(divergedResult.verdict, "violated", "PASS 1 (planted divergence): the gate must FAIL here");
     assert.ok(divergedResult.reasons.some((r) => r.includes("sibling-diverges")));
     assert.ok(!divergedResult.reasons.some((r) => r.includes("sibling-agrees")), "the agreeing sibling must not be reported as diverging");
 
     // Mutate the SAME fixture back into agreement and re-run — both directions verified.
     writePeerVersionPackage(root, "sibling-diverges", "web/internal/peer-version.ts", BODY_A);
-    const fixedResult = await run({ repoRoot: root });
+    const fixedResult = await run({ repoRoot: root, exceptions: [] });
     assert.equal(fixedResult.verdict, "satisfied", "PASS 2 (agreement restored): the gate must PASS here");
     assert.equal(fixedResult.reasons.length, 0);
   });
@@ -181,8 +184,12 @@ test("EXIT_CODES follow the repo's satisfied=0 / violated=1 / indeterminate=2 co
 
 // --- Against the REAL repository tree: locks in the state this gate found ---
 
-test("REAL TREE: reports the actual current divergence — butler and keeper violate canonical, controller/designer/publisher agree", async () => {
-  const result = await run({ repoRoot: REPO_ROOT });
+test("REAL TREE (no exceptions): reports the actual current divergence — butler and keeper violate canonical, controller/designer/publisher agree", async () => {
+  // exceptions: [] — this asserts what the RAW comparison finds, independent of the acknowledged-
+  // exception mechanism, so this test stays a true record of the underlying divergence even after
+  // #847 lands and ACKNOWLEDGED_EXCEPTIONS is emptied. See "REAL ROSTER" below for the gate's
+  // actual default-configuration behaviour (satisfied, via the acknowledged exceptions).
+  const result = await run({ repoRoot: REPO_ROOT, exceptions: [] });
   assert.equal(result.files.length, 6, `expected 6 real peer-version.ts files (nine minus the three retired in #536), found ${result.files.length}`);
   assert.equal(result.verdict, "violated");
 
@@ -192,4 +199,148 @@ test("REAL TREE: reports the actual current divergence — butler and keeper vio
   assert.equal(byFile["packages/controller/src/internal/peer-version.ts"], "satisfied");
   assert.equal(byFile["packages/designer/src/internal/peer-version.ts"], "satisfied");
   assert.equal(byFile["packages/publisher/src/internal/peer-version.ts"], "satisfied");
+});
+
+// --- ACKNOWLEDGED_EXCEPTIONS: the check-package-evidence.mjs "gaps" shape ---
+//
+// Same reasoning as check-package-evidence.mjs's `stale-gap`: an
+// acknowledgement is a countdown, not a standing exemption. Three outcomes,
+// each mutation-verified below: the acknowledged divergence PASSES, a
+// planted THIRD state (neither canonical nor the acknowledged hash) still
+// FAILS loudly, and once the file matches canonical the acknowledgement
+// itself becomes the failure ("stale-exception").
+
+function buildExceptionFixtureFiles(root) {
+  // Mirrors the real gate's canonical path and layout: packages/bouncer is
+  // canonical, packages/sibling-acked is the file an exception will name.
+  writePeerVersionPackage(root, "bouncer", "internal/peer-version.ts", BODY_A);
+  writePeerVersionPackage(root, "sibling-acked", "internal/peer-version.ts", BODY_B_DIVERGED);
+}
+
+test("ACKNOWLEDGED: a divergence pinned by file AND hash passes, without being reported as violated", async () => {
+  await withRepoFixture(async (root) => {
+    buildExceptionFixtureFiles(root);
+    const canonicalHash = hashOf(normalize(BODY_A, "@scope/bouncer"));
+    const divergedHash = hashOf(normalize(BODY_B_DIVERGED, "@scope/sibling-acked"));
+    assert.notEqual(canonicalHash, divergedHash, "fixture sanity: the acknowledged file must actually diverge from canonical");
+
+    const exceptions = [
+      { file: "packages/sibling-acked/src/internal/peer-version.ts", acknowledgedHash: divergedHash, reason: "known, tracked divergence used only by this test suite", issue: 1 },
+    ];
+    const result = await run({ repoRoot: root, exceptions });
+    assert.equal(result.verdict, "satisfied", `expected acknowledged divergence to pass, got: ${JSON.stringify(result.reasons)}`);
+    const acked = result.files.find((f) => f.file === "packages/sibling-acked/src/internal/peer-version.ts");
+    assert.equal(acked.verdict, "acknowledged");
+    assert.equal(acked.issue, 1);
+  });
+});
+
+test("NOT A GENERAL AMNESTY: a THIRD state in the acknowledged file (neither canonical nor the acknowledged hash) still fails loudly", async () => {
+  await withRepoFixture(async (root) => {
+    buildExceptionFixtureFiles(root);
+    const divergedHash = hashOf(normalize(BODY_B_DIVERGED, "@scope/sibling-acked"));
+    const exceptions = [
+      { file: "packages/sibling-acked/src/internal/peer-version.ts", acknowledgedHash: divergedHash, reason: "known, tracked divergence used only by this test suite", issue: 1 },
+    ];
+
+    // Mutate the acknowledged file to a THIRD body — not canonical, not the
+    // acknowledged divergence. A file-path-only exception would wrongly pass
+    // this; a hash-pinned one must not.
+    const THIRD_BODY = BODY_B_DIVERGED.replace("could not verify", "COULD NOT VERIFY AT ALL");
+    writePeerVersionPackage(root, "sibling-acked", "internal/peer-version.ts", THIRD_BODY);
+
+    const result = await run({ repoRoot: root, exceptions });
+    assert.equal(result.verdict, "violated", "a new divergence not covered by the pinned exception must still fail");
+    const entry = result.files.find((f) => f.file === "packages/sibling-acked/src/internal/peer-version.ts");
+    assert.equal(entry.verdict, "violated");
+    assert.ok(
+      result.reasons.some((r) => r.includes("sibling-acked") && r.includes("does not cover this")),
+      `expected a reason explaining the exception does not cover this new state, got: ${result.reasons.join(" | ")}`,
+    );
+  });
+});
+
+test("STALE EXCEPTION: once the acknowledged file matches canonical, the acknowledgement itself becomes the failure", async () => {
+  await withRepoFixture(async (root) => {
+    buildExceptionFixtureFiles(root);
+    const divergedHash = hashOf(normalize(BODY_B_DIVERGED, "@scope/sibling-acked"));
+    const exceptions = [
+      { file: "packages/sibling-acked/src/internal/peer-version.ts", acknowledgedHash: divergedHash, reason: "known, tracked divergence used only by this test suite", issue: 1 },
+    ];
+
+    // PASS 1: the divergence is still real — acknowledged, satisfied overall.
+    const beforeFix = await run({ repoRoot: root, exceptions });
+    assert.equal(beforeFix.verdict, "satisfied");
+
+    // Bring the file into line with canonical (the real-world equivalent of
+    // landing the #847 port) — SAME exceptions array, unmodified.
+    writePeerVersionPackage(root, "sibling-acked", "internal/peer-version.ts", BODY_A);
+    const afterFix = await run({ repoRoot: root, exceptions });
+    assert.equal(afterFix.verdict, "violated", "an exception that has outlived its reason must fail, not silently keep passing");
+    assert.ok(
+      afterFix.reasons.some((r) => r.includes("STALE") && r.includes("issue #1")),
+      `expected a stale-exception finding, got: ${afterFix.reasons.join(" | ")}`,
+    );
+    const entry = afterFix.files.find((f) => f.file === "packages/sibling-acked/src/internal/peer-version.ts");
+    assert.equal(entry.verdict, "stale-exception");
+  });
+});
+
+test("a divergence in a file NOT named by any exception still fails — the exception is scoped, not blanket", async () => {
+  await withRepoFixture(async (root) => {
+    buildExceptionFixtureFiles(root);
+    writePeerVersionPackage(root, "unrelated-sibling", "internal/peer-version.ts", BODY_B_DIVERGED);
+    const divergedHash = hashOf(normalize(BODY_B_DIVERGED, "@scope/sibling-acked"));
+    const exceptions = [
+      { file: "packages/sibling-acked/src/internal/peer-version.ts", acknowledgedHash: divergedHash, reason: "known, tracked divergence used only by this test suite", issue: 1 },
+    ];
+    const result = await run({ repoRoot: root, exceptions });
+    assert.equal(result.verdict, "violated");
+    assert.ok(result.reasons.some((r) => r.includes("unrelated-sibling")), "the unacknowledged sibling's divergence must be reported");
+    assert.ok(!result.reasons.some((r) => r.includes("sibling-acked:")), "the acknowledged file must not be reported as a plain violation");
+  });
+});
+
+test("MALFORMED EXCEPTION VALIDATION: missing reason, missing issue, missing acknowledgedHash, and unknown file all fail closed", async () => {
+  await withRepoFixture(async (root) => {
+    buildExceptionFixtureFiles(root);
+    const target = "packages/sibling-acked/src/internal/peer-version.ts";
+
+    const noReason = await run({ repoRoot: root, exceptions: [{ file: target, acknowledgedHash: "x", issue: 1 }] });
+    assert.equal(noReason.verdict, "violated");
+    assert.ok(noReason.reasons.some((r) => r.includes("reason of at least 20 characters")));
+
+    const noIssue = await run({ repoRoot: root, exceptions: [{ file: target, acknowledgedHash: "x", reason: "a reason at least twenty characters long" }] });
+    assert.equal(noIssue.verdict, "violated");
+    assert.ok(noIssue.reasons.some((r) => r.includes("integer `issue`")));
+
+    const noHash = await run({ repoRoot: root, exceptions: [{ file: target, reason: "a reason at least twenty characters long", issue: 1 }] });
+    assert.equal(noHash.verdict, "violated");
+    assert.ok(noHash.reasons.some((r) => r.includes("acknowledgedHash")));
+
+    const unknownFile = await run({
+      repoRoot: root,
+      exceptions: [{ file: "packages/does-not-exist/src/internal/peer-version.ts", acknowledgedHash: "x", reason: "a reason at least twenty characters long", issue: 1 }],
+    });
+    assert.equal(unknownFile.verdict, "violated");
+    assert.ok(unknownFile.reasons.some((r) => r.includes("was not discovered")));
+  });
+});
+
+// --- The REAL ACKNOWLEDGED_EXCEPTIONS roster, validated as data ---
+
+test("REAL ROSTER: ACKNOWLEDGED_EXCEPTIONS is well-formed and currently makes the real tree satisfied", async () => {
+  assert.equal(ACKNOWLEDGED_EXCEPTIONS.length, 2, "expected exactly the butler and keeper exceptions");
+  for (const exception of ACKNOWLEDGED_EXCEPTIONS) {
+    assert.ok(exception.reason.trim().length >= 20);
+    assert.ok(Number.isInteger(exception.issue));
+    assert.ok(typeof exception.acknowledgedHash === "string" && exception.acknowledgedHash.length > 0);
+  }
+  const result = await run({ repoRoot: REPO_ROOT });
+  assert.equal(result.verdict, "satisfied", `real tree should be satisfied via the acknowledged exceptions, got: ${JSON.stringify(result.reasons)}`);
+  const ackedFiles = result.files.filter((f) => f.verdict === "acknowledged").map((f) => f.file).sort();
+  assert.deepEqual(ackedFiles, [
+    "packages/butler/src/web/internal/peer-version.ts",
+    "packages/keeper/src/web/internal/peer-version.ts",
+  ]);
 });

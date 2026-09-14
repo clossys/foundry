@@ -5,12 +5,17 @@
 //
 //   node scripts/check-peer-version-assert.mjs [--json]
 //
-// Exit 0 = every discovered `peer-version.ts` matches canonical. Exit 1 =
-// at least one has diverged. Exit 2 = the check could not be completed (the
-// canonical file is unreadable, a discovered file's owning package could
-// not be identified, or discovery itself looks broken — see EMPTY/SHORT
-// SCAN below). Same three-way split every gate in this repo uses — see
-// CONTRIBUTING.md's "Gate CLIs exit 0/1/2" entry.
+// Exit 0 = every discovered `peer-version.ts` matches canonical, or its
+// divergence is an ACKNOWLEDGED EXCEPTION (see below). Exit 1 = at least
+// one has diverged with no matching exception, an exception has gone
+// STALE (the file it names now matches canonical — the acknowledgement has
+// outlived its reason), or a NEW divergence has appeared in a file an
+// exception already names (the exception is pinned to a specific hash, not
+// a blanket amnesty for that file). Exit 2 = the check could not be
+// completed (the canonical file is unreadable, a discovered file's owning
+// package could not be identified, or discovery itself looks broken — see
+// EMPTY/SHORT SCAN below). Same three-way split every gate in this repo
+// uses — see CONTRIBUTING.md's "Gate CLIs exit 0/1/2" entry.
 //
 // WHY A GATE, NOT AN EXTRACTION (#518)
 // -------------------------------------
@@ -59,8 +64,29 @@
 // mechanism ever to see. Porting #389 into butler and keeper is a real
 // source change to two published packages — a version bump and a
 // qualification record each, per `docs/LIFECYCLE.md` — and is deliberately
-// NOT bundled into the change that added this gate. See the PR that added
-// this file for the recommended follow-up.
+// NOT bundled into the change that added this gate. Tracked at #847.
+//
+// WHY THIS GATE IS GREEN ON ARRIVAL, NOT RED
+// ---------------------------------------------
+// A gate that fails the moment it lands on `main` teaches everyone to
+// ignore it — `main` had just been brought back to green after #821 cost a
+// full day, and #831 is a second, independent account of a required check
+// going red on `main` doing exactly that damage. So the butler/keeper
+// divergence above is recorded as an ACKNOWLEDGED_EXCEPTIONS entry — same
+// shape as `check-package-evidence.mjs`'s `gaps`: a real, tracked shortfall
+// with a `reason` and an `issue` (#847), pinned to the SPECIFIC normalized
+// hash measured when it was recorded, not merely to the file path. That
+// pinning is what keeps this from being a general amnesty: if butler or
+// keeper's `peer-version.ts` changes to some THIRD state — neither
+// canonical nor the acknowledged divergence — that is a new, unacknowledged
+// problem and fails loudly, exactly like any other file here. And the
+// moment butler or keeper is brought into line with canonical, ITS
+// EXCEPTION ENTRY BECOMES THE FAILURE ("stale-exception") — the same
+// `stale-gap` shape `check-package-evidence.mjs` uses for exactly this:
+// an acknowledgement that now has evidence must not silently outlive the
+// reason it was recorded for. Every file NOT named in
+// ACKNOWLEDGED_EXCEPTIONS gets zero tolerance from the day this gate
+// landed.
 //
 // COMMENTS AND SELF-NAMING. Every copy's own module-doc header
 // legitimately names its own package — `check-shared-vocabularies.mjs`
@@ -93,6 +119,97 @@ export const CANONICAL_REASON =
   "carries the #389 fix (warn-and-continue on an unparseable INSTALLED version) that " +
   "bouncer, controller, designer and publisher all share once each package's own name " +
   "is set aside, and that butler and keeper's own tests show they never received.";
+
+/**
+ * A REAL, ACKNOWLEDGED divergence — not a general amnesty. Each entry is
+ * pinned to `acknowledgedHash`: the specific normalized hash the file had
+ * when the exception was recorded. Same shape as `check-package-evidence.mjs`'s
+ * `gaps`: a shortfall carries a `reason` and an `issue`, and passes ONLY
+ * while it is still true.
+ *
+ * THREE OUTCOMES PER LISTED FILE, EVERY RUN:
+ *   1. current hash === canonical hash        -> "stale-exception": FAILS.
+ *      The regression is gone; the acknowledgement has outlived its reason
+ *      and must be deleted here (see check-package-evidence.mjs's
+ *      `stale-gap` for the same shape — a gap that now has evidence is
+ *      itself a finding, never silently carried forward).
+ *   2. current hash === acknowledgedHash       -> "acknowledged": PASSES.
+ *      Exactly the known, tracked shortfall — main stays green.
+ *   3. current hash === neither                -> "violated": FAILS.
+ *      Pinning to a hash, not just a file path, means a NEW divergence in
+ *      butler or keeper — one that is not the #389 gap this exception
+ *      describes — is never swallowed by the same amnesty. Any file NOT
+ *      listed here gets no exception at all, acknowledged or otherwise.
+ *
+ * Landing this gate red on `main` the day it merges teaches everyone to
+ * ignore it — see #831 and the day #821 cost recovering from exactly that
+ * failure mode. This is why butler/keeper (a real, already-tracked gap) are
+ * acknowledged instead of silently exempted or left to fail loudly on
+ * arrival; every OTHER file still has zero tolerance.
+ */
+export const ACKNOWLEDGED_EXCEPTIONS = Object.freeze([
+  Object.freeze({
+    file: "packages/butler/src/web/internal/peer-version.ts",
+    acknowledgedHash: "3b56a43c128a",
+    reason:
+      "missing the #389 fix (warn-and-continue on an unparseable INSTALLED peer version); still " +
+      "hard-throws, and its own test file asserts the old behaviour by name. Porting the fix is a " +
+      "real source change to a published package — a version bump and a qualification record per " +
+      "docs/LIFECYCLE.md — tracked separately so it is not bundled into the change that added this gate.",
+    issue: 847,
+  }),
+  Object.freeze({
+    file: "packages/keeper/src/web/internal/peer-version.ts",
+    acknowledgedHash: "3b56a43c128a",
+    reason:
+      "missing the #389 fix (warn-and-continue on an unparseable INSTALLED peer version); still " +
+      "hard-throws, and its own test file asserts the old behaviour by name. Porting the fix is a " +
+      "real source change to a published package — a version bump and a qualification record per " +
+      "docs/LIFECYCLE.md — tracked separately so it is not bundled into the change that added this gate.",
+    issue: 847,
+  }),
+]);
+
+/**
+ * Validate ACKNOWLEDGED_EXCEPTIONS the same way check-package-evidence.mjs
+ * validates `gaps`: a malformed entry is never silently honoured — it is
+ * reported AND excluded from lookup, so a broken declaration fails closed
+ * (the file it names gets zero protection) rather than failing open.
+ */
+function validateExceptions(discoveredFiles, exceptions) {
+  const findings = [];
+  const byFile = new Map();
+  const seenFiles = new Set();
+  for (const exception of exceptions) {
+    if (typeof exception.file !== "string" || exception.file.length === 0) {
+      findings.push("an ACKNOWLEDGED_EXCEPTIONS entry has no `file`");
+      continue;
+    }
+    if (seenFiles.has(exception.file)) {
+      findings.push(`${exception.file}: two ACKNOWLEDGED_EXCEPTIONS entries declared for the same file`);
+      continue;
+    }
+    seenFiles.add(exception.file);
+    if (typeof exception.reason !== "string" || exception.reason.trim().length < 20) {
+      findings.push(`${exception.file}: ACKNOWLEDGED_EXCEPTIONS entry needs a reason of at least 20 characters saying what is actually missing`);
+      continue;
+    }
+    if (!Number.isInteger(exception.issue)) {
+      findings.push(`${exception.file}: ACKNOWLEDGED_EXCEPTIONS entry needs an integer \`issue\` tracking it — a countdown, not a standing exemption`);
+      continue;
+    }
+    if (typeof exception.acknowledgedHash !== "string" || exception.acknowledgedHash.length === 0) {
+      findings.push(`${exception.file}: ACKNOWLEDGED_EXCEPTIONS entry needs an \`acknowledgedHash\` — pinned to a file path alone, ANY divergence in that file would pass, which is a general amnesty, not an acknowledged one`);
+      continue;
+    }
+    if (!discoveredFiles.includes(exception.file)) {
+      findings.push(`${exception.file}: ACKNOWLEDGED_EXCEPTIONS names a file that was not discovered under packages/*/src — remove the stale entry or fix the path`);
+      continue;
+    }
+    byFile.set(exception.file, exception);
+  }
+  return { findings, byFile };
+}
 
 /** A scan finding fewer files than this is treated as broken discovery, not a clean pass. */
 const MINIMUM_EXPECTED_FILES = 2;
@@ -154,7 +271,7 @@ export function normalize(src, ownName) {
     .join(" ");
 }
 
-function hash(text) {
+export function hash(text) {
   return createHash("sha256").update(text).digest("hex").slice(0, 12);
 }
 
@@ -209,7 +326,7 @@ function ownPackageName(filePath, repoRoot) {
   return null;
 }
 
-export async function run({ repoRoot = REPO_ROOT } = {}) {
+export async function run({ repoRoot = REPO_ROOT, exceptions = ACKNOWLEDGED_EXCEPTIONS } = {}) {
   const files = discoverPeerVersionFiles(repoRoot);
 
   if (files.length < MINIMUM_EXPECTED_FILES) {
@@ -239,7 +356,9 @@ export async function run({ repoRoot = REPO_ROOT } = {}) {
   const canonicalNormalized = normalize(canonicalRaw, canonicalOwnName);
   const canonicalHash = hash(canonicalNormalized);
 
-  const reasons = [];
+  const { findings: exceptionFindings, byFile: exceptionsByFile } = validateExceptions(files, exceptions);
+
+  const reasons = [...exceptionFindings];
   const details = [];
   for (const file of files) {
     const rawText = readFileSync(join(repoRoot, file), "utf8");
@@ -251,15 +370,52 @@ export async function run({ repoRoot = REPO_ROOT } = {}) {
     }
     const normalized = normalize(rawText, own);
     const fileHash = hash(normalized);
+    const exception = exceptionsByFile.get(file);
+
     if (file === CANONICAL_PATH || fileHash === canonicalHash) {
+      if (exception) {
+        // STALE EXCEPTION — the regression this acknowledgement describes is
+        // gone. Same shape as check-package-evidence.mjs's `stale-gap`: an
+        // acknowledgement that now has evidence is itself a failure, so it
+        // cannot silently outlive the reason it was recorded for.
+        reasons.push(
+          `${file}: ACKNOWLEDGED_EXCEPTIONS entry (issue #${exception.issue}) is STALE — this file now matches canonical ` +
+            `(hash ${fileHash}). Remove the exception from ACKNOWLEDGED_EXCEPTIONS in scripts/check-peer-version-assert.mjs ` +
+            `and close #${exception.issue}.`,
+        );
+        details.push({ file, verdict: "stale-exception", hash: fileHash, issue: exception.issue });
+        continue;
+      }
       details.push({ file, verdict: "satisfied", hash: fileHash });
       continue;
     }
+
+    if (exception && exception.acknowledgedHash === fileHash) {
+      // ACKNOWLEDGED — exactly the known, tracked divergence, pinned by hash
+      // (not merely by file path), so this does not become a general amnesty
+      // for whatever butler/keeper happen to contain later.
+      details.push({ file, verdict: "acknowledged", hash: fileHash, issue: exception.issue });
+      continue;
+    }
+
     const firstDiffLine = firstDivergingLine(canonicalNormalized, normalized);
-    reasons.push(
-      `${file}: diverges from canonical (${CANONICAL_PATH}) — normalized hash ${fileHash} vs ${canonicalHash}. ` +
-        `First point of divergence: ${firstDiffLine}`,
-    );
+    if (exception) {
+      // A real divergence exists, an exception is declared for this file,
+      // but the hash does NOT match what was acknowledged — this is a NEW,
+      // unacknowledged divergence riding in on the same file, and must fail
+      // loudly rather than being swallowed by the existing exception.
+      reasons.push(
+        `${file}: diverges from canonical (${CANONICAL_PATH}) AND from its acknowledged exception (issue #${exception.issue}) — ` +
+          `this is a DIFFERENT divergence than the one that exception covers (acknowledged hash ${exception.acknowledgedHash}, ` +
+          `actual hash ${fileHash}, canonical hash ${canonicalHash}). The exception does not cover this. ` +
+          `First point of divergence: ${firstDiffLine}`,
+      );
+    } else {
+      reasons.push(
+        `${file}: diverges from canonical (${CANONICAL_PATH}) — normalized hash ${fileHash} vs ${canonicalHash}. ` +
+          `First point of divergence: ${firstDiffLine}`,
+      );
+    }
     details.push({ file, verdict: "violated", hash: fileHash });
   }
 
@@ -294,15 +450,19 @@ async function main() {
     console.log(JSON.stringify(result, null, 2));
   } else {
     console.log(`  [${result.verdict.toUpperCase()}] assertPeerVersion — ${result.files?.length ?? 0} copies discovered under packages/*/src`);
+    const acknowledged = (result.files ?? []).filter((f) => f.verdict === "acknowledged");
+    for (const a of acknowledged) {
+      console.log(`      [ACKNOWLEDGED, issue #${a.issue}] ${a.file}: diverges from canonical, but is a known, tracked exception — see ACKNOWLEDGED_EXCEPTIONS`);
+    }
     for (const reason of result.reasons) console.log(`      ${reason}`);
     if (result.verdict !== "indeterminate") {
       console.log(`\n  canonical: ${CANONICAL_PATH}\n  reason: ${CANONICAL_REASON}`);
     }
     console.log(
       result.verdict === "satisfied"
-        ? `\nPEER-VERSION-ASSERT OK — every discovered copy matches canonical.`
+        ? `\nPEER-VERSION-ASSERT OK — every discovered copy matches canonical, modulo ${acknowledged.length} acknowledged exception(s).`
         : result.verdict === "violated"
-          ? `\nPEER-VERSION-ASSERT FAIL — at least one copy of assertPeerVersion has diverged from canonical.`
+          ? `\nPEER-VERSION-ASSERT FAIL — at least one copy of assertPeerVersion has diverged from canonical without an acknowledged exception, or an exception has gone stale.`
           : `\nPEER-VERSION-ASSERT INDETERMINATE — the check could not be completed; see reasons above.`,
     );
   }
