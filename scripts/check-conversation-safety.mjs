@@ -16,8 +16,10 @@
 //                            comments, and review summaries
 //     --all                 scan every issue and PR in the repository
 //     --since <iso>         only fetch/consider items updated (--all) or
-//                            comments posted (--issue/--pr) at or after this
-//                            ISO 8601 timestamp
+//                            comments/reviews UPDATED — not merely created;
+//                            an edit after this cutoff still counts
+//                            (--issue/--pr) — at or after this ISO 8601
+//                            timestamp
 //     --file <path>         DRAFT mode: scan text that has NOT been posted yet
 //     --repo <owner/repo>   override repository detection
 //     --denylist <file>     explicit denylist path (forwarded)
@@ -228,14 +230,68 @@ function bodyItemWithTitle(kind, number, id, url, title, body) {
   return { kind, number, id, url, body: t ? `${t}\n\n${b}` : b };
 }
 
-// Comments/reviews carry `created_at`; a body object (issue/PR/review) is
-// always included regardless of --since — the object was explicitly asked
-// for by number, so its own body is always in scope even if it predates the
-// cutoff. --since only thins out which COMMENTS ride along with it.
+// A body object (issue/PR) is always included regardless of --since — the
+// object was explicitly asked for by number, so its own body is always in
+// scope even if it predates the cutoff. --since only thins out which
+// COMMENTS/REVIEWS ride along with it, via `afterSince` below. (--all's own
+// top-level issue/PR listing is thinned a different way: GitHub's
+// `issues?...&since=` query parameter itself already filters on the
+// PROVIDER'S updated_at — documented as "results that were last updated
+// after the given time" — so that path was never the bug; nothing local
+// needs to re-filter it.)
+//
+// TIMESTAMP FIELDS PER ITEM TYPE (verified against the live GitHub REST API,
+// not assumed — a PR review's shape in particular is easy to get wrong by
+// analogy with the other three):
+//
+//   issue comment        created_at, updated_at
+//   pr comment            created_at, updated_at   (an issue-style comment
+//                                                     posted on a PR — same
+//                                                     endpoint/shape as an
+//                                                     issue comment)
+//   pr review comment     created_at, updated_at   (an inline diff comment)
+//   pr review              submitted_at ONLY         (no created_at, no
+//                                                      updated_at — a
+//                                                      review's own REST
+//                                                      object never grew a
+//                                                      separate "last
+//                                                      edited" timestamp in
+//                                                      GitHub's schema, so
+//                                                      submitted_at is the
+//                                                      newest timestamp the
+//                                                      provider gives us for
+//                                                      this one type)
+//
+// PRECEDENCE (this is the fix for #589): `updated_at` wins whenever the
+// provider supplies it and it parses to a valid instant. That is exactly the
+// case a bounded retrospective scan most needs to catch — per this
+// repository's own AGENTS.md ("Conversation surface"), editing text after
+// posting does not undo the notification GitHub already sent, and GitHub
+// keeps the pre-edit revision visible in the object's own edit-history — an
+// item created long before --since but EDITED after it is precisely the
+// item this scan exists to still catch, not skip. Fall back to `created_at`,
+// then `submitted_at`, only when `updated_at` is absent or unparsable (a PR
+// review, or a malformed payload).
+//
+// FAIL CLOSED: if NONE of updated_at/created_at/submitted_at parses to a
+// valid instant, this item's age relative to --since is unknown, so it is
+// INCLUDED in the scan unconditionally (scanned unnecessarily) rather than
+// silently dropped. An unscannable item read as "before the cutoff, skip it"
+// is exactly the false-clean this issue describes.
+function itemTimestamp(obj) {
+  for (const field of ["updated_at", "created_at", "submitted_at"]) {
+    if (obj[field] == null) continue;
+    const t = new Date(obj[field]).getTime();
+    if (!Number.isNaN(t)) return t;
+  }
+  return null;
+}
+
 function afterSince(obj, sinceTs) {
   if (!sinceTs) return true;
-  const t = new Date(obj.created_at ?? obj.submitted_at ?? 0).getTime();
-  return !Number.isNaN(t) && t >= sinceTs;
+  const t = itemTimestamp(obj);
+  if (t === null) return true; // fail closed — unresolvable timestamp: include it
+  return t >= sinceTs;
 }
 
 function fetchIssueComments(repo, n, sinceTs) {

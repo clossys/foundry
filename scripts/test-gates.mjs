@@ -33,6 +33,7 @@ import { join, dirname } from "node:path";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
+import zlib from "node:zlib";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(scriptDir, "..");
@@ -125,6 +126,82 @@ function check(name, condition, detail) {
     failures.push({ name, detail });
     console.log(`  FAIL ${name}\n         ${detail}`);
   }
+}
+
+// --------------------------------------------------- opaque fixture builders
+//
+// Built from bytes, not downloaded: a real sample PDF/PNG off the internet
+// would (a) not be reproducible/hermetic and (b) not let a case control
+// exactly where the planted synthetic identity term sits (plain vs. behind
+// zlib). Neither fixture needs to be a fully spec-valid file — the gate under
+// test never parses PDF/PNG structure, it walks raw bytes — but the PNG is
+// built with a real CRC32 anyway so it is legible as an actual minimal PNG.
+
+function crc32(buf) {
+  let crc = 0xffffffff;
+  for (let i = 0; i < buf.length; i++) {
+    crc ^= buf[i];
+    for (let k = 0; k < 8; k++) crc = (crc >>> 1) ^ (0xedb88320 & -(crc & 1));
+  }
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
+function pngChunk(type, data) {
+  const typeBuf = Buffer.from(type, "ascii");
+  const len = Buffer.alloc(4);
+  len.writeUInt32BE(data.length, 0);
+  const crc = Buffer.alloc(4);
+  crc.writeUInt32BE(crc32(Buffer.concat([typeBuf, data])), 0);
+  return Buffer.concat([len, typeBuf, data, crc]);
+}
+
+// A minimal, structurally real 1x1 truecolor PNG carrying a tEXt chunk —
+// PNG's own plaintext metadata chunk type — whose payload is `text`.
+function buildPngWithText(keyword, text) {
+  const sig = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+  const ihdrData = Buffer.alloc(13);
+  ihdrData.writeUInt32BE(1, 0); // width
+  ihdrData.writeUInt32BE(1, 4); // height
+  ihdrData[8] = 8; // bit depth
+  ihdrData[9] = 2; // color type: truecolor
+  const ihdr = pngChunk("IHDR", ihdrData);
+  const tEXt = pngChunk("tEXt", Buffer.concat([Buffer.from(keyword, "ascii"), Buffer.from([0]), Buffer.from(text, "ascii")]));
+  const idat = pngChunk("IDAT", zlib.deflateSync(Buffer.from([0, 255, 0, 0]))); // filter byte + one RGB pixel
+  const iend = pngChunk("IEND", Buffer.alloc(0));
+  return Buffer.concat([sig, ihdr, tEXt, idat, iend]);
+}
+
+// A random-noise "PNG" with no embedded text at all — used to prove refusal
+// does not depend on the best-effort extractor finding anything: an opaque
+// file with no readable planted content must still be refused when
+// unacknowledged, because this gate can never prove a negative about a
+// format it does not fully parse.
+function buildOpaqueNoise(byteLength) {
+  const buf = Buffer.alloc(byteLength);
+  for (let i = 0; i < byteLength; i++) buf[i] = (i * 137 + 41) % 256; // deterministic, non-printable-heavy
+  return buf;
+}
+
+// A minimal PDF whose page-content stream is real zlib/FlateDecode — the
+// compression nearly every real PDF writer applies to page text — with
+// `text` drawn via a `Tj` show-text operator. The rest of the object graph
+// (xref table, etc.) is intentionally not spec-complete: the gate under test
+// never parses PDF structure, only finds `stream ... endstream` blocks whose
+// nearest preceding dictionary mentions /FlateDecode and inflates them.
+function buildFlateDecodePdf(text) {
+  const contentStream = Buffer.from(`BT /F1 12 Tf 72 712 Td (${text}) Tj ET`, "latin1");
+  const compressed = zlib.deflateSync(contentStream);
+  const parts = [
+    "%PDF-1.4\n",
+    "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
+    "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+    "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>\nendobj\n",
+    `4 0 obj\n<< /Length ${compressed.length} /Filter /FlateDecode >>\nstream\n`,
+  ].map((s) => Buffer.from(s, "latin1"));
+  const tail = ["\nendstream\nendobj\n", "5 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n", "trailer\n<< /Root 1 0 R /Size 6 >>\n%%EOF\n"].map(
+    (s) => Buffer.from(s, "latin1"),
+  );
+  return Buffer.concat([...parts, compressed, ...tail]);
 }
 
 function gitInit(dir) {
@@ -243,6 +320,176 @@ try {
       "does not treat an opaque npm integrity hash as identity prose",
       r.code === 0,
       `lock integrity fixture exited ${r.code}: ${r.out.slice(0, 200)}`,
+    );
+  }
+
+  // --------------------------------------------------------- opaque content
+  //
+  // Issue #588: PDF/image/font/video/wasm formats used to be silently
+  // skipped (SKIP_CONTENT -> `continue`, no bytes ever opened) while both
+  // this gate and check-artifact-safety.mjs's pass banner claimed the
+  // COMPLETE tree/tarball carried no private identity or credential-shaped
+  // content. That claim was never actually checked for these formats. Fixed
+  // shape: opaque files are refused by default (fail closed), extracted
+  // best-effort via deterministic printable-string/PDF-inflate scanning
+  // regardless, and pass only with an explicit sha256-pinned exemption in
+  // governance/opaque-content-exemptions.json.
+  console.log("\n# opaque content (issue #588)");
+  {
+    // (a) The core fix: an opaque file with NO findable planted content
+    // must still be refused when unacknowledged. This is deliberately
+    // content-empty so it cannot pass "by accident" via the best-effort
+    // extractor finding nothing — refusal here can only come from the
+    // fail-closed default itself, which is exactly what regressed to a
+    // silent skip before this fix.
+    const dir = join(work, "opaque-noise");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, "asset.png"), buildOpaqueNoise(256));
+    gitInit(dir);
+    const r = run("node", [SAFETY, dir, ...DL, "--require-denylist", "--json"]);
+    let report;
+    try { report = JSON.parse(r.out); } catch { report = { failures: [] }; }
+    const hit = (report.failures ?? []).some((f) => f.kind === "opaque-unacknowledged" && f.rel === "asset.png");
+    check(
+      "an unacknowledged opaque file with no findable content is still refused, not silently passed",
+      r.code === 1 && hit,
+      `expected exit 1 with an opaque-unacknowledged finding for asset.png, got ${r.code}: ${r.out.slice(0, 600)}`,
+    );
+  }
+  {
+    // (b) Plaintext metadata: a PNG tEXt chunk carrying a denylisted term in
+    // raw ASCII must be caught by the printable-strings extractor, not just
+    // refused as unacknowledged.
+    const dir = join(work, "opaque-png-text");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, "logo.png"), buildPngWithText("Author", "made by acme-corp"));
+    gitInit(dir);
+    const r = run("node", [SAFETY, dir, ...DL, "--require-denylist", "--json"]);
+    let report;
+    try { report = JSON.parse(r.out); } catch { report = { failures: [] }; }
+    const identityHit = (report.failures ?? []).some((f) => f.kind === "identity" && f.rel === "logo.png");
+    const unackHit = (report.failures ?? []).some((f) => f.kind === "opaque-unacknowledged" && f.rel === "logo.png");
+    check(
+      "a denylisted term inside a PNG tEXt chunk is caught by printable-string extraction",
+      r.code === 1 && identityHit,
+      `expected an identity finding for logo.png, got ${r.code}: ${r.out.slice(0, 600)}`,
+    );
+    check(
+      "the same unacknowledged PNG is also refused as opaque, independent of the content match",
+      unackHit,
+      `expected an opaque-unacknowledged finding for logo.png alongside the identity finding`,
+    );
+  }
+  {
+    // (c) Compressed content: a PDF whose page-content stream is
+    // /FlateDecode (how nearly every real PDF writer stores text) must have
+    // that stream inflated and scanned — a raw printable-strings pass alone
+    // would see only zlib-compressed bytes and miss it entirely.
+    const dir = join(work, "opaque-pdf-flate");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, "report.pdf"), buildFlateDecodePdf("Prepared for acme-corp"));
+    gitInit(dir);
+    const r = run("node", [SAFETY, dir, ...DL, "--require-denylist", "--json"]);
+    let report;
+    try { report = JSON.parse(r.out); } catch { report = { failures: [] }; }
+    const identityHit = (report.failures ?? []).some((f) => f.kind === "identity" && f.rel === "report.pdf");
+    check(
+      "a denylisted term inside a PDF's FlateDecode content stream is caught by the inflate extractor",
+      r.code === 1 && identityHit,
+      `expected an identity finding for report.pdf, got ${r.code}: ${r.out.slice(0, 600)}`,
+    );
+  }
+  {
+    // (d)+(e) The exemption mechanism: sha256-pinned, mirroring
+    // check-package-evidence.mjs's `gaps` (reason + issue, and an
+    // acknowledgement that cannot outlive what it was reviewed against —
+    // here enforced by the hash rather than by re-derived evidence).
+    const dir = join(work, "opaque-exempt");
+    mkdirSync(dir, { recursive: true });
+    const bytes = buildOpaqueNoise(128);
+    writeFileSync(join(dir, "font.woff"), bytes);
+    gitInit(dir);
+    const sha256 = createHash("sha256").update(bytes).digest("hex");
+    const exemptPath = join(work, "opaque-exempt-registry.json");
+    writeFileSync(
+      exemptPath,
+      JSON.stringify({
+        schemaVersion: 1,
+        exemptions: [{ path: "font.woff", sha256, reason: "Inert synthetic test font fixture, byte-reviewed by hand.", issue: 588 }],
+      }),
+    );
+    const ok = run("node", [SAFETY, dir, ...DL, "--require-denylist", "--opaque-exemptions", exemptPath, "--json"]);
+    let okReport;
+    try { okReport = JSON.parse(ok.out); } catch { okReport = { failures: [] }; }
+    const okHit = (okReport.failures ?? []).some((f) => f.rel === "font.woff");
+    check(
+      "a sha256-pinned exemption lets an otherwise-refused opaque file pass",
+      ok.code === 0 && !okHit,
+      `expected exit 0 with no finding for font.woff, got ${ok.code}: ${ok.out.slice(0, 600)}`,
+    );
+
+    // Mutate the file after exemption: the exemption must not outlive the
+    // exact bytes it was reviewed against.
+    writeFileSync(join(dir, "font.woff"), Buffer.concat([bytes, Buffer.from([0])]));
+    const stale = run("node", [SAFETY, dir, ...DL, "--require-denylist", "--opaque-exemptions", exemptPath, "--json"]);
+    let staleReport;
+    try { staleReport = JSON.parse(stale.out); } catch { staleReport = { failures: [] }; }
+    const staleHit = (staleReport.failures ?? []).some((f) => f.kind === "opaque-unacknowledged" && f.rel === "font.woff");
+    check(
+      "an exemption does not outlive the bytes it was reviewed against — a changed file is refused again",
+      stale.code === 1 && staleHit,
+      `expected exit 1 with opaque-unacknowledged for the mutated font.woff, got ${stale.code}: ${stale.out.slice(0, 600)}`,
+    );
+  }
+  {
+    // (f) A malformed exemption entry must be a loud, visible failure of its
+    // own — never a silent no-op that could be mistaken for "no exemptions
+    // configured" while actually meaning "this reviewer forgot the reason".
+    const dir = join(work, "opaque-exempt-invalid");
+    mkdirSync(dir, { recursive: true });
+    const bytes = buildOpaqueNoise(64);
+    writeFileSync(join(dir, "clip.mp4"), bytes);
+    gitInit(dir);
+    const sha256 = createHash("sha256").update(bytes).digest("hex");
+    const exemptPath = join(work, "opaque-exempt-invalid-registry.json");
+    writeFileSync(exemptPath, JSON.stringify({ schemaVersion: 1, exemptions: [{ path: "clip.mp4", sha256, issue: 588 }] })); // no `reason`
+    const r = run("node", [SAFETY, dir, ...DL, "--require-denylist", "--opaque-exemptions", exemptPath, "--json"]);
+    let report;
+    try { report = JSON.parse(r.out); } catch { report = { failures: [] }; }
+    const invalidHit = (report.failures ?? []).some((f) => f.kind === "opaque-exemption-invalid");
+    const stillRefused = (report.failures ?? []).some((f) => f.kind === "opaque-unacknowledged" && f.rel === "clip.mp4");
+    check(
+      "an exemption entry missing a reason is reported as its own invalid-exemption finding",
+      r.code === 1 && invalidHit,
+      `expected an opaque-exemption-invalid finding, got ${r.code}: ${r.out.slice(0, 600)}`,
+    );
+    check(
+      "a file covered only by an invalid exemption entry stays refused, not silently granted",
+      stillRefused,
+      `expected clip.mp4 to still be opaque-unacknowledged despite the (invalid) exemption entry`,
+    );
+  }
+  {
+    // The honest-claim requirement: the PASS banner must not claim a bare
+    // "no private identity found" when opaque content was present and only
+    // checked via best-effort extraction plus a reviewed exemption.
+    const dir = join(work, "opaque-pass-wording");
+    mkdirSync(dir, { recursive: true });
+    const bytes = buildOpaqueNoise(64);
+    writeFileSync(join(dir, "icon.ico"), bytes);
+    gitInit(dir);
+    const sha256 = createHash("sha256").update(bytes).digest("hex");
+    const exemptPath = join(work, "opaque-pass-wording-registry.json");
+    writeFileSync(
+      exemptPath,
+      JSON.stringify({ schemaVersion: 1, exemptions: [{ path: "icon.ico", sha256, reason: "Synthetic inert icon fixture, byte-reviewed by hand.", issue: 588 }] }),
+    );
+    const r = run("node", [SAFETY, dir, ...DL, "--require-denylist", "--opaque-exemptions", exemptPath]);
+    check("a pass with an acknowledged opaque file present still exits 0", r.code === 0, `exited ${r.code}: ${r.out.slice(0, 400)}`);
+    check(
+      "the pass banner names the opaque file count and points at the exemption registry rather than claiming a blanket clean tarball",
+      /1 opaque file/.test(r.out) && /opaque-content-exemptions\.json/.test(r.out),
+      `pass banner did not narrow its claim for opaque content: ${r.out.slice(0, 600)}`,
     );
   }
 
@@ -3859,6 +4106,150 @@ try {
           `expected exit 1 (title term should have been flagged), got ${result.code}: ${result.out.slice(0, 300)}`,
         );
         check(`the title match is still never echoed in ${label} mode`, !result.out.includes("acme-corp"), `matched title term leaked into ${label} output: ${result.out}`);
+      }
+    }
+
+    // ---- SINCE/UPDATED_AT REGRESSION (issue #589). --since used to filter
+    // comments/reviews on created_at (or, for a review, submitted_at) ONLY —
+    // an item created long before the cutoff but EDITED after it evaded a
+    // bounded retrospective scan entirely, the exact false-clean AGENTS.md's
+    // "Conversation surface" section warns about (an edit after posting does
+    // not undo the notification already sent, and GitHub keeps the pre-edit
+    // revision visible in its own edit-history). Real provider field shapes,
+    // verified against the live GitHub REST API before writing this fixture
+    // (not assumed): an issue comment and a PR review (inline diff) comment
+    // both carry `created_at` AND `updated_at`; a PR review carries ONLY
+    // `submitted_at` — GitHub's review object has no updated_at at all, so
+    // "old-created/new-updated" cannot be literally constructed for that one
+    // type. Its regression is instead: (a) submitted_at is still honored
+    // on its own, both to include and to exclude, and (b) a review with NO
+    // usable timestamp field is INCLUDED (fail-closed), never silently
+    // dropped as "before the cutoff".
+    {
+      const SINCE_CUTOFF = "2024-06-15T00:00:00Z";
+      const OLD_CREATED = "2024-01-01T00:00:00Z"; // before the cutoff
+      const NEW_UPDATED = "2024-07-01T00:00:00Z"; // after the cutoff — the edit
+      const OLD_UPDATED = "2024-01-02T00:00:00Z"; // before the cutoff — never edited
+      const REVIEW_SUBMITTED_INCLUDED = "2024-07-01T00:00:00Z"; // after cutoff
+      const REVIEW_SUBMITTED_EXCLUDED = "2024-01-01T00:00:00Z"; // before cutoff
+
+      const ghFixtureDir = join(work, "gh-since-fixture");
+      mkdirSync(ghFixtureDir, { recursive: true });
+      const fakeGhPath = join(ghFixtureDir, "gh");
+      // Routed by path shape, same seam as the title-regression fixture
+      // above. Order matters: the PR-scoped `/comments` and `/reviews`
+      // checks must run before the generic `.endsWith("/comments")` check,
+      // since `repos/x/y/pulls/1/comments` also ends with `/comments`.
+      writeFileSync(
+        fakeGhPath,
+        [
+          "#!/usr/bin/env node",
+          "const args = process.argv.slice(2);",
+          'if (args[0] !== "api") { process.exit(1); }',
+          'const path = args[1] || "";',
+          `const OLD_CREATED = ${JSON.stringify(OLD_CREATED)};`,
+          `const NEW_UPDATED = ${JSON.stringify(NEW_UPDATED)};`,
+          `const OLD_UPDATED = ${JSON.stringify(OLD_UPDATED)};`,
+          `const REVIEW_SUBMITTED_INCLUDED = ${JSON.stringify(REVIEW_SUBMITTED_INCLUDED)};`,
+          `const REVIEW_SUBMITTED_EXCLUDED = ${JSON.stringify(REVIEW_SUBMITTED_EXCLUDED)};`,
+          "if (/\\/pulls\\/\\d+\\/comments$/.test(path)) {",
+          "  // PR review (inline diff) comments — created_at AND updated_at, verified live.",
+          "  process.stdout.write(JSON.stringify([[",
+          '    { id: 101, html_url: "https://example.invalid/rc/101", body: "review comment edited after cutoff, mentions acme-corp", created_at: OLD_CREATED, updated_at: NEW_UPDATED },',
+          '    { id: 102, html_url: "https://example.invalid/rc/102", body: "review comment never edited, mentions acme-corp", created_at: OLD_CREATED, updated_at: OLD_UPDATED },',
+          "  ]]));",
+          "} else if (/\\/pulls\\/\\d+\\/reviews$/.test(path)) {",
+          "  // PR reviews — submitted_at only, no created_at/updated_at, verified live.",
+          "  process.stdout.write(JSON.stringify([[",
+          '    { id: 201, html_url: "https://example.invalid/rv/201", body: "review submitted after cutoff, mentions acme-corp", submitted_at: REVIEW_SUBMITTED_INCLUDED },',
+          '    { id: 202, html_url: "https://example.invalid/rv/202", body: "review submitted before cutoff, mentions acme-corp", submitted_at: REVIEW_SUBMITTED_EXCLUDED },',
+          '    { id: 203, html_url: "https://example.invalid/rv/203", body: "review with no usable timestamp at all, mentions acme-corp" },',
+          "  ]]));",
+          '} else if (path.endsWith("/comments")) {',
+          "  // issue comments (and a PR's issue-style comments) — created_at AND updated_at, verified live.",
+          "  process.stdout.write(JSON.stringify([[",
+          '    { id: 301, html_url: "https://example.invalid/ic/301", body: "issue comment edited after cutoff, mentions acme-corp", created_at: OLD_CREATED, updated_at: NEW_UPDATED },',
+          '    { id: 302, html_url: "https://example.invalid/ic/302", body: "issue comment never edited, mentions acme-corp", created_at: OLD_CREATED, updated_at: OLD_UPDATED },',
+          "  ]]));",
+          "} else {",
+          "  // a bare issues/N or pulls/N — the object's own body, deliberately clean",
+          "  // so every finding below is attributable to a comment/review, not the body.",
+          "  process.stdout.write(JSON.stringify({",
+          '    title: "ordinary title, nothing planted",',
+          '    body: "ordinary body text, nothing planted",',
+          '    html_url: "https://example.invalid/n",',
+          "  }));",
+          "}",
+          "process.exit(0);",
+        ].join("\n"),
+        "utf8",
+      );
+      chmodSync(fakeGhPath, 0o755);
+
+      const env = { ...process.env, PATH: `${ghFixtureDir}:${process.env.PATH}` };
+
+      function findingLocations(modeArgs) {
+        const result = run(
+          "node",
+          [CONVERSATION, ...modeArgs, "--repo", "x/y", "--since", SINCE_CUTOFF, "--denylist", synthPath, "--require-denylist", "--json"],
+          { env },
+        );
+        let parsed = null;
+        try {
+          parsed = JSON.parse(result.out);
+        } catch {
+          parsed = null;
+        }
+        return { result, locations: parsed ? parsed.findings.map((f) => f.location) : null };
+      }
+
+      {
+        const { result, locations } = findingLocations(["--issue", "1"]);
+        check(
+          "--since --issue: an issue comment CREATED before the cutoff but UPDATED after it is scanned",
+          locations !== null && locations.some((l) => l.includes("comment 301")),
+          `expected comment 301 among findings, got: ${JSON.stringify(locations)} (raw: ${result.out.slice(0, 300)})`,
+        );
+        check(
+          "--since --issue: an issue comment entirely before the cutoff (never edited) is still excluded",
+          locations !== null && !locations.some((l) => l.includes("comment 302")),
+          `comment 302 (entirely before cutoff) should have been excluded, got: ${JSON.stringify(locations)}`,
+        );
+      }
+
+      {
+        const { result, locations } = findingLocations(["--pr", "1"]);
+        check(
+          "--since --pr: a PR (issue-style) comment CREATED before the cutoff but UPDATED after it is scanned",
+          locations !== null && locations.some((l) => l.includes("comment 301")),
+          `expected comment 301 among findings, got: ${JSON.stringify(locations)} (raw: ${result.out.slice(0, 300)})`,
+        );
+        check(
+          "--since --pr: a review comment CREATED before the cutoff but UPDATED after it is scanned",
+          locations !== null && locations.some((l) => l.includes("review comment 101")),
+          `expected review comment 101 among findings, got: ${JSON.stringify(locations)} (raw: ${result.out.slice(0, 300)})`,
+        );
+        check(
+          "--since --pr: a review comment entirely before the cutoff (never edited) is still excluded",
+          locations !== null && !locations.some((l) => l.includes("review comment 102")),
+          `review comment 102 (entirely before cutoff) should have been excluded, got: ${JSON.stringify(locations)}`,
+        );
+        check(
+          "--since --pr: a review submitted after the cutoff is scanned (submitted_at fallback still works)",
+          locations !== null && locations.some((l) => l.includes("review 201") && !l.includes("comment")),
+          `expected review 201 among findings, got: ${JSON.stringify(locations)} (raw: ${result.out.slice(0, 300)})`,
+        );
+        check(
+          "--since --pr: a review submitted before the cutoff is excluded",
+          locations !== null && !locations.some((l) => l.includes("review 202") && !l.includes("comment")),
+          `review 202 (submitted before cutoff) should have been excluded, got: ${JSON.stringify(locations)}`,
+        );
+        check(
+          "--since --pr: a review with NO usable timestamp at all is INCLUDED (fail closed, never silently dropped)",
+          locations !== null && locations.some((l) => l.includes("review 203") && !l.includes("comment")),
+          `expected review 203 (unresolvable timestamp) to be included by fail-closed handling, got: ${JSON.stringify(locations)} (raw: ${result.out.slice(0, 300)})`,
+        );
+        check(`--since --pr: no matched text is echoed into output`, !result.out.includes("acme-corp"), `matched term leaked into --pr --since output: ${result.out}`);
       }
     }
   }
