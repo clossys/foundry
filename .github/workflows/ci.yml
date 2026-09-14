@@ -297,11 +297,28 @@ jobs:
       # `.github/scripts/collect-secret-scan-observation.mjs` for how the
       # record below becomes that judge's input.
       #
-      # The exit status is captured explicitly (`|| exit 1` on each earlier
-      # command, `status=$?` on gitleaks itself -- `set -e` is deliberately
-      # NOT used in this script) and re-raised at the end, so this step still
-      # fails exactly when it always has, independent of whether the
-      # judgment step downstream is ever added, changed, or removed.
+      # GitHub Actions runs a `run:` step's default script with `bash -e
+      # {0}` (see verify-standards.yml's own comment on this exact point) --
+      # errexit is ALREADY ON before this script's first line runs, and
+      # `set -uo pipefail` does not and cannot clear it (only `set +e`
+      # would). A standalone command that exits non-zero therefore aborts
+      # the script immediately, before any line after it runs -- which is
+      # exactly why `curl`/`sha256sum`/`tar` above are each written as
+      # `command || exit 1` rather than bare: a command that is the LEFT
+      # side of `||` does not trigger errexit, by bash's own rule for
+      # compound commands, regardless of whether `-e` is active. The
+      # gitleaks invocation below needs the same treatment for the opposite
+      # reason -- it must NOT exit the script on a real finding, so its own
+      # exit code can be captured and used deliberately -- so it is written
+      # `... --exit-code 1 || status=$?` rather than bare followed by a
+      # separate `status=$?` line. An earlier version of this step got this
+      # wrong in exactly the way described above: `status=$?` sat on its own
+      # line after a bare invocation, so a real finding (gitleaks exiting 1)
+      # aborted the script right there and neither $GITHUB_OUTPUT line below
+      # ever ran -- the judge downstream then saw `attempted: false` instead
+      # of the actual finding, for the one case this whole change exists to
+      # catch. Verified locally: the bare form silently drops the two lines
+      # after it under `bash -e`; the `|| status=$?` form does not.
       - name: gitleaks (full history)
         id: gitleaks
         env:
@@ -315,6 +332,7 @@ jobs:
           echo "${GITLEAKS_SHA256}  $RUNNER_TEMP/$tarball" | sha256sum -c - || exit 1
           tar -xzf "$RUNNER_TEMP/$tarball" -C "$RUNNER_TEMP" gitleaks || exit 1
           report="$RUNNER_TEMP/gitleaks-report.json"
+          status=0
           # --redact so a hit reports its location without reprinting the secret
           # into a public build log. --log-opts=--all covers every ref, not just
           # the checked-out branch: history is the point of this scan.
@@ -325,43 +343,94 @@ jobs:
             --log-opts=--all \
             --report-format json \
             --report-path "$report" \
-            --exit-code 1
-          status=$?
+            --exit-code 1 || status=$?
           echo "exit-code=$status" >> "$GITHUB_OUTPUT"
           echo "report-path=$report" >> "$GITHUB_OUTPUT"
+          # Read back from this step's OWN env var rather than a second
+          # literal, so the version this job tells the downstream judgment
+          # job about can never drift from the one actually downloaded,
+          # checksummed, and run two lines above.
+          echo "version=$GITLEAKS_VERSION" >> "$GITHUB_OUTPUT"
           exit "$status"
 
-      # ---- COLLECT (secret-scan judgment) -----------------------------------
-      # The judgment steps below run with `if: always()` -- deliberately, and
-      # only because of it can this ever prove anything. If they ran only on
-      # a clean gitleaks step, this judge could never be exercised on a real
-      # finding, and an untested judge that only ever sees clean input is the
-      # "cannot fail" defect the owner explicitly warned against. The job as a
-      # whole is already failed by the raw gitleaks step above whenever there
-      # is a finding; these steps add a second, independent verdict on top --
-      # they never launder a real finding back to green, because a failed
-      # step earlier in a job cannot be un-failed by a later one.
-      #
-      # This needs the workspace installed and this one package's runtime
-      # dependency built, which the rest of this job does not: every other
-      # step here runs a dependency-free script directly with `node`.
-      - name: Install workspace (secret-scan judgment)
+      # The report is this job's own artifact, not the downstream judgment
+      # job's -- that job runs on a DIFFERENT runner with no access to this
+      # one's filesystem, so the only way it sees the report at all is by
+      # downloading it here. `if: always()` so a real finding (this step's
+      # own conclusion is failure) still uploads the evidence the judgment
+      # job needs to evaluate it.
+      - name: Upload gitleaks report
         if: always()
-        run: npm ci --ignore-scripts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: gitleaks-report
+          path: ${{ steps.gitleaks.outputs.report-path }}
+          if-no-files-found: warn
 
-      - name: Build the judge and its runtime dependency
-        if: always()
-        run: |
+    outputs:
+      gitleaks-exit-code: ${{ steps.gitleaks.outputs.exit-code }}
+      gitleaks-version: ${{ steps.gitleaks.outputs.version }}
+
+  # A SEPARATE job, deliberately, not more steps appended to `safety` above.
+  # `safety`'s own ten steps were dependency-free -- every one of them a
+  # single `node scripts/...mjs` invocation -- and staying that way matters:
+  # a registry flake or an unrelated compile error in `packages/controller`
+  # or `packages/inspector` while installing and building for this judgment
+  # would otherwise turn the `safety` job red under the name "publish
+  # safety", which a human (or an automated reader of run history, like
+  # `scripts/check-gate-efficacy.mjs`) could misattribute to the identity or
+  # secret gate itself having found something. Splitting the job means a
+  # build problem here surfaces under ITS OWN name, and `safety`'s own
+  # conclusion is driven only by its original ten steps plus the raw
+  # gitleaks exit code, exactly as before this change.
+  #
+  # `needs: safety` + `if: always()`: this job must still run -- and still
+  # judge the real finding -- when `safety` itself failed (a real secret was
+  # found). See `safety`'s own gitleaks step comment for why the judgment
+  # steps must be exercised on a real failure to prove anything at all.
+  secret-scan-judgment:
+    name: secret-scan (inspector judgment)
+    needs: safety
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      # Full history, matching `safety`'s own checkout: `UNITS_SCANNED`
+      # below is `git rev-list --all --count` on THIS checkout, which must
+      # report the same universe gitleaks actually scanned in the other
+      # job, not whatever a default shallow clone happens to contain.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+      - run: npm ci --ignore-scripts
+      - run: |
           npm run build --workspace=packages/controller
           npm run build --workspace=packages/inspector
 
+      # `if-no-files-found: warn` on the upload side means this can
+      # legitimately come back empty -- for example if `safety` itself never
+      # reached the gitleaks step at all (an earlier step in that job, like
+      # the denylist scan, failed first). `continue-on-error` here so a
+      # missing artifact reaches the COLLECT step below as an absent report
+      # rather than aborting this job before it can report anything.
+      - name: Download gitleaks report
+        id: download-report
+        continue-on-error: true
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: gitleaks-report
+          path: ${{ runner.temp }}/gitleaks-report
+
+      # ---- COLLECT -----------------------------------------------------------
       - name: Assemble the secret-scan observation
-        if: always()
         id: secret-scan-observation
         env:
-          GITLEAKS_VERSION: 8.30.1
-          GITLEAKS_EXIT_CODE: ${{ steps.gitleaks.outputs.exit-code }}
-          GITLEAKS_REPORT_PATH: ${{ steps.gitleaks.outputs.report-path }}
+          GITLEAKS_VERSION: ${{ needs.safety.outputs.gitleaks-version }}
+          GITLEAKS_EXIT_CODE: ${{ needs.safety.outputs.gitleaks-exit-code }}
+          GITLEAKS_REPORT_PATH: ${{ runner.temp }}/gitleaks-report/gitleaks-report.json
+          REPORT_DOWNLOADED: ${{ steps.download-report.outcome == 'success' }}
         run: |
           set -euo pipefail
           # An honest count of what "full-history" covered: every commit
@@ -370,11 +439,18 @@ jobs:
           # never invented.
           export UNITS_SCANNED
           UNITS_SCANNED="$(git rev-list --all --count)"
+          # A report that never downloaded is not a report path this job can
+          # honestly claim to have read -- clear the env var rather than
+          # hand the collector a path that does not exist, which it would
+          # otherwise be unable to tell apart from "gitleaks wrote an empty
+          # report".
+          if [ "$REPORT_DOWNLOADED" != "true" ]; then
+            unset GITLEAKS_REPORT_PATH
+          fi
           node .github/scripts/collect-secret-scan-observation.mjs > secret-scan-inputs.json
 
       # ---- DECIDE ------------------------------------------------------------
       - name: secret-scan (inspector judgment)
-        if: always()
         run: |
           set -o pipefail
           report="$RUNNER_TEMP/secret-scan-report.txt"
