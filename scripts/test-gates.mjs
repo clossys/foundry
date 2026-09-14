@@ -3861,6 +3861,150 @@ try {
         check(`the title match is still never echoed in ${label} mode`, !result.out.includes("acme-corp"), `matched title term leaked into ${label} output: ${result.out}`);
       }
     }
+
+    // ---- SINCE/UPDATED_AT REGRESSION (issue #589). --since used to filter
+    // comments/reviews on created_at (or, for a review, submitted_at) ONLY —
+    // an item created long before the cutoff but EDITED after it evaded a
+    // bounded retrospective scan entirely, the exact false-clean AGENTS.md's
+    // "Conversation surface" section warns about (an edit after posting does
+    // not undo the notification already sent, and GitHub keeps the pre-edit
+    // revision visible in its own edit-history). Real provider field shapes,
+    // verified against the live GitHub REST API before writing this fixture
+    // (not assumed): an issue comment and a PR review (inline diff) comment
+    // both carry `created_at` AND `updated_at`; a PR review carries ONLY
+    // `submitted_at` — GitHub's review object has no updated_at at all, so
+    // "old-created/new-updated" cannot be literally constructed for that one
+    // type. Its regression is instead: (a) submitted_at is still honored
+    // on its own, both to include and to exclude, and (b) a review with NO
+    // usable timestamp field is INCLUDED (fail-closed), never silently
+    // dropped as "before the cutoff".
+    {
+      const SINCE_CUTOFF = "2024-06-15T00:00:00Z";
+      const OLD_CREATED = "2024-01-01T00:00:00Z"; // before the cutoff
+      const NEW_UPDATED = "2024-07-01T00:00:00Z"; // after the cutoff — the edit
+      const OLD_UPDATED = "2024-01-02T00:00:00Z"; // before the cutoff — never edited
+      const REVIEW_SUBMITTED_INCLUDED = "2024-07-01T00:00:00Z"; // after cutoff
+      const REVIEW_SUBMITTED_EXCLUDED = "2024-01-01T00:00:00Z"; // before cutoff
+
+      const ghFixtureDir = join(work, "gh-since-fixture");
+      mkdirSync(ghFixtureDir, { recursive: true });
+      const fakeGhPath = join(ghFixtureDir, "gh");
+      // Routed by path shape, same seam as the title-regression fixture
+      // above. Order matters: the PR-scoped `/comments` and `/reviews`
+      // checks must run before the generic `.endsWith("/comments")` check,
+      // since `repos/x/y/pulls/1/comments` also ends with `/comments`.
+      writeFileSync(
+        fakeGhPath,
+        [
+          "#!/usr/bin/env node",
+          "const args = process.argv.slice(2);",
+          'if (args[0] !== "api") { process.exit(1); }',
+          'const path = args[1] || "";',
+          `const OLD_CREATED = ${JSON.stringify(OLD_CREATED)};`,
+          `const NEW_UPDATED = ${JSON.stringify(NEW_UPDATED)};`,
+          `const OLD_UPDATED = ${JSON.stringify(OLD_UPDATED)};`,
+          `const REVIEW_SUBMITTED_INCLUDED = ${JSON.stringify(REVIEW_SUBMITTED_INCLUDED)};`,
+          `const REVIEW_SUBMITTED_EXCLUDED = ${JSON.stringify(REVIEW_SUBMITTED_EXCLUDED)};`,
+          "if (/\\/pulls\\/\\d+\\/comments$/.test(path)) {",
+          "  // PR review (inline diff) comments — created_at AND updated_at, verified live.",
+          "  process.stdout.write(JSON.stringify([[",
+          '    { id: 101, html_url: "https://example.invalid/rc/101", body: "review comment edited after cutoff, mentions acme-corp", created_at: OLD_CREATED, updated_at: NEW_UPDATED },',
+          '    { id: 102, html_url: "https://example.invalid/rc/102", body: "review comment never edited, mentions acme-corp", created_at: OLD_CREATED, updated_at: OLD_UPDATED },',
+          "  ]]));",
+          "} else if (/\\/pulls\\/\\d+\\/reviews$/.test(path)) {",
+          "  // PR reviews — submitted_at only, no created_at/updated_at, verified live.",
+          "  process.stdout.write(JSON.stringify([[",
+          '    { id: 201, html_url: "https://example.invalid/rv/201", body: "review submitted after cutoff, mentions acme-corp", submitted_at: REVIEW_SUBMITTED_INCLUDED },',
+          '    { id: 202, html_url: "https://example.invalid/rv/202", body: "review submitted before cutoff, mentions acme-corp", submitted_at: REVIEW_SUBMITTED_EXCLUDED },',
+          '    { id: 203, html_url: "https://example.invalid/rv/203", body: "review with no usable timestamp at all, mentions acme-corp" },',
+          "  ]]));",
+          '} else if (path.endsWith("/comments")) {',
+          "  // issue comments (and a PR's issue-style comments) — created_at AND updated_at, verified live.",
+          "  process.stdout.write(JSON.stringify([[",
+          '    { id: 301, html_url: "https://example.invalid/ic/301", body: "issue comment edited after cutoff, mentions acme-corp", created_at: OLD_CREATED, updated_at: NEW_UPDATED },',
+          '    { id: 302, html_url: "https://example.invalid/ic/302", body: "issue comment never edited, mentions acme-corp", created_at: OLD_CREATED, updated_at: OLD_UPDATED },',
+          "  ]]));",
+          "} else {",
+          "  // a bare issues/N or pulls/N — the object's own body, deliberately clean",
+          "  // so every finding below is attributable to a comment/review, not the body.",
+          "  process.stdout.write(JSON.stringify({",
+          '    title: "ordinary title, nothing planted",',
+          '    body: "ordinary body text, nothing planted",',
+          '    html_url: "https://example.invalid/n",',
+          "  }));",
+          "}",
+          "process.exit(0);",
+        ].join("\n"),
+        "utf8",
+      );
+      chmodSync(fakeGhPath, 0o755);
+
+      const env = { ...process.env, PATH: `${ghFixtureDir}:${process.env.PATH}` };
+
+      function findingLocations(modeArgs) {
+        const result = run(
+          "node",
+          [CONVERSATION, ...modeArgs, "--repo", "x/y", "--since", SINCE_CUTOFF, "--denylist", synthPath, "--require-denylist", "--json"],
+          { env },
+        );
+        let parsed = null;
+        try {
+          parsed = JSON.parse(result.out);
+        } catch {
+          parsed = null;
+        }
+        return { result, locations: parsed ? parsed.findings.map((f) => f.location) : null };
+      }
+
+      {
+        const { result, locations } = findingLocations(["--issue", "1"]);
+        check(
+          "--since --issue: an issue comment CREATED before the cutoff but UPDATED after it is scanned",
+          locations !== null && locations.some((l) => l.includes("comment 301")),
+          `expected comment 301 among findings, got: ${JSON.stringify(locations)} (raw: ${result.out.slice(0, 300)})`,
+        );
+        check(
+          "--since --issue: an issue comment entirely before the cutoff (never edited) is still excluded",
+          locations !== null && !locations.some((l) => l.includes("comment 302")),
+          `comment 302 (entirely before cutoff) should have been excluded, got: ${JSON.stringify(locations)}`,
+        );
+      }
+
+      {
+        const { result, locations } = findingLocations(["--pr", "1"]);
+        check(
+          "--since --pr: a PR (issue-style) comment CREATED before the cutoff but UPDATED after it is scanned",
+          locations !== null && locations.some((l) => l.includes("comment 301")),
+          `expected comment 301 among findings, got: ${JSON.stringify(locations)} (raw: ${result.out.slice(0, 300)})`,
+        );
+        check(
+          "--since --pr: a review comment CREATED before the cutoff but UPDATED after it is scanned",
+          locations !== null && locations.some((l) => l.includes("review comment 101")),
+          `expected review comment 101 among findings, got: ${JSON.stringify(locations)} (raw: ${result.out.slice(0, 300)})`,
+        );
+        check(
+          "--since --pr: a review comment entirely before the cutoff (never edited) is still excluded",
+          locations !== null && !locations.some((l) => l.includes("review comment 102")),
+          `review comment 102 (entirely before cutoff) should have been excluded, got: ${JSON.stringify(locations)}`,
+        );
+        check(
+          "--since --pr: a review submitted after the cutoff is scanned (submitted_at fallback still works)",
+          locations !== null && locations.some((l) => l.includes("review 201") && !l.includes("comment")),
+          `expected review 201 among findings, got: ${JSON.stringify(locations)} (raw: ${result.out.slice(0, 300)})`,
+        );
+        check(
+          "--since --pr: a review submitted before the cutoff is excluded",
+          locations !== null && !locations.some((l) => l.includes("review 202") && !l.includes("comment")),
+          `review 202 (submitted before cutoff) should have been excluded, got: ${JSON.stringify(locations)}`,
+        );
+        check(
+          "--since --pr: a review with NO usable timestamp at all is INCLUDED (fail closed, never silently dropped)",
+          locations !== null && locations.some((l) => l.includes("review 203") && !l.includes("comment")),
+          `expected review 203 (unresolvable timestamp) to be included by fail-closed handling, got: ${JSON.stringify(locations)} (raw: ${result.out.slice(0, 300)})`,
+        );
+        check(`--since --pr: no matched text is echoed into output`, !result.out.includes("acme-corp"), `matched term leaked into --pr --since output: ${result.out}`);
+      }
+    }
   }
 
   // ------------------------------------------- check-foreign-references
