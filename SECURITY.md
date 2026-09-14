@@ -93,6 +93,47 @@ publish workflow uses that flag, so a release can never pass on a degraded scan.
 Both modes are advisory in one direction only: the gate can prove a tree dirty,
 never prove it clean. Human review before a first publish is still required.
 
+### Opaque content (PDF, image, font, video, wasm)
+
+A PDF, raster image, font, video, or `.wasm` file cannot be read as text: a
+PDF's page content is usually zlib-compressed, a PNG/JPEG's metadata sits in
+binary chunks or segments, a font's `name` table and a WASM custom section
+are both binary-framed. This gate cannot deterministically parse any of
+those — and until issue #588, that meant these extensions were skipped
+outright, with no bytes ever opened, while both this gate's and
+`check-artifact-safety.mjs`'s PASS message claimed no private identity or
+credential-shaped content existed anywhere in the tree or the complete
+tarball. No opaque file has ever been committed to this repository, which is
+what made that a *future* false-green rather than a present wrong answer: the
+day one was added, the old behaviour would have reported it clean without
+reading it.
+
+The fix: an opaque file is **refused by default**. This gate cannot prove one
+is clean, and "cannot prove clean" must never become "counted as clean" (see
+[docs/LIFECYCLE.md](docs/LIFECYCLE.md)'s "derived from evidence, never
+declared"). The only way past the refusal is an explicit, human-reviewed
+exemption in [`governance/opaque-content-exemptions.json`](governance/opaque-content-exemptions.json),
+pinned to the file's exact sha256 — mirroring
+`scripts/check-package-evidence.mjs`'s `gaps` mechanism (a `reason` and an
+issue number, never a standing exemption), with the hash doing the job
+`gaps` does with re-derived evidence: change one byte of the file and its
+sha256 no longer matches any entry, so the exemption stops applying and the
+file is refused again until it is reviewed again.
+
+Refusal does not mean the file goes unexamined. Every opaque file is still
+run through a deterministic, best-effort extractor — every printable-ASCII
+run in its raw bytes, plus (for a PDF specifically) the same extraction
+re-run against any `/FlateDecode` content stream it can find, once inflated
+with Node's built-in `zlib` — and a SECRET or identity match found this way
+fails the file even when it **is** exempted: a reviewer's "this is just a
+logo" does not override an actual credential sitting in the bytes. What that
+extraction can never do is prove a negative — a string in an encoding, a
+compression codec, or a binary field it does not know how to read is
+invisible to it. That is exactly why the extraction finding nothing is never
+by itself sufficient to admit a file; only the exemption is, and both gates'
+PASS message says so explicitly rather than claiming a full parse of a
+format neither one can parse.
+
 ## The conversation-safety gate
 
 `scripts/check-public-safety.mjs` and the tarball scan both operate on

@@ -267,6 +267,16 @@ try {
   const packagePathPrefix = relative(repoRoot, absPkgDir).split(sep).join("/");
   passThrough.push("--path-prefix", packagePathPrefix);
 
+  // Same reasoning as --scope-config just above: the extracted tarball has
+  // no repository above it, so check-public-safety.mjs's own upward search
+  // for governance/opaque-content-exemptions.json would find nothing. Reuse
+  // `repoRoot`, already located, rather than a second discovery mechanism.
+  // Omitted (not passed) when the file does not exist yet — that is not an
+  // error, it just means every opaque file in this tarball is refused, the
+  // correct default with nothing reviewed.
+  const opaqueExemptionsPath = join(repoRoot, "governance", "opaque-content-exemptions.json");
+  if (existsSync(opaqueExemptionsPath)) passThrough.push("--opaque-exemptions", opaqueExemptionsPath);
+
   let contentOut = "";
   let contentCode = 0;
   try {
@@ -297,9 +307,14 @@ try {
   else if (contentCode !== 0 || structural.length) exitCode = 1;
 
   if (!flags.has("--json")) {
+    // Narrowed to what was actually inspected (issue #588): an opaque file
+    // (PDF/image/font/video/wasm) inside the tarball is never fully parsed
+    // by the delegated content scan, only best-effort text-extracted and
+    // gated by an explicit, sha256-pinned exemption — "PASS" must say that,
+    // never imply a full parse of a format this gate cannot parse.
     console.log(
       exitCode === 0
-        ? "ARTIFACT PASS — the packed tarball carries no forbidden file, credential-shaped string, private identity, or structural defect."
+        ? "ARTIFACT PASS — the packed tarball's readable content carries no forbidden file, credential-shaped string, or private identity, and no structural defect; any opaque file present was refused unless explicitly reviewed and acknowledged (see governance/opaque-content-exemptions.json)."
         : exitCode === 2
           ? "ARTIFACT ERROR — the check could not run."
           : "ARTIFACT FAIL — this tarball is NOT safe to publish.",
