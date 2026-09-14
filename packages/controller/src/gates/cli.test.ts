@@ -5,6 +5,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { afterEach, describe, expect, it } from "vitest";
+import { skipUnlessPermissionBitsAreEnforced } from "../testing/permission-enforcement.js";
 
 // Real subprocess tests against the BUILT dist/cli.js, matching
 // @example/release's own subprocess-testing style (pack-round-trip.ts,
@@ -219,7 +220,9 @@ describe("foundry-check CLI — exit codes", () => {
 });
 
 describe("foundry-check CLI — coverage reporting (Part A)", () => {
-  it("a real chmod-000 package directory drives exit 2, with the skip visible in the output", async () => {
+  it("a real chmod-000 package directory drives exit 2, with the skip visible in the output", async (ctx) => {
+    skipUnlessPermissionBitsAreEnforced(ctx.skip);
+
     // Real reproduction, not a mock: a clean package next to one whose
     // directory cannot be read at all (chmod 000). This asserted exit 1
     // before #256's retrofit, routed through the severity-based path
