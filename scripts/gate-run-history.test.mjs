@@ -13,23 +13,23 @@ function fixtureFetch(pages) {
   };
 }
 
-const run = (id, sha) => ({ id, head_sha: sha });
+const run = (id, sha, event = "push") => ({ id, head_sha: sha, event });
 const job = (name, conclusion) => ({ name, conclusion });
 
 test("a skipped job is recorded as not-run, never as a verdict", () => {
   // "the gate was skipped" and "the gate ran and passed" are the two states
   // this programme keeps finding collapsed into one another.
   const jobs = [
-    { gate: "g", changeId: "s1", conclusion: "success" },
-    { gate: "g", changeId: "s2", conclusion: "skipped" },
-    { gate: "g", changeId: "s3", conclusion: "cancelled" },
-    { gate: "g", changeId: "s4", conclusion: null },
+    { gate: "g", changeId: "s1", conclusion: "success", event: "push" },
+    { gate: "g", changeId: "s2", conclusion: "skipped", event: "push" },
+    { gate: "g", changeId: "s3", conclusion: "cancelled", event: "push" },
+    { gate: "g", changeId: "s4", conclusion: null, event: "push" },
   ];
   assert.deepEqual(toRunRecords(jobs, "g"), [
-    { gate: "g", changeId: "s1", ran: true, verdict: "success" },
-    { gate: "g", changeId: "s2", ran: false },
-    { gate: "g", changeId: "s3", ran: false },
-    { gate: "g", changeId: "s4", ran: false },
+    { gate: "g", changeId: "s1", ran: true, verdict: "success", event: "push" },
+    { gate: "g", changeId: "s2", ran: false, event: "push" },
+    { gate: "g", changeId: "s3", ran: false, event: "push" },
+    { gate: "g", changeId: "s4", ran: false, event: "push" },
   ]);
 });
 
@@ -59,19 +59,24 @@ test("only change events are collected, and a run's jobs are keyed to its head s
   // onto one change id. The event filter is why.
   assert.deepEqual(CHANGE_EVENTS, ["pull_request", "push"]);
   const fetchJson = fixtureFetch([
-    ["event=pull_request", { workflow_runs: [run(1, "sha-a")] }],
-    ["event=push", { workflow_runs: [run(2, "sha-b")] }],
+    ["event=pull_request", { workflow_runs: [run(1, "sha-a", "pull_request")] }],
+    ["event=push", { workflow_runs: [run(2, "sha-b", "push")] }],
     ["runs/1/jobs", { jobs: [job("build", "success")] }],
     ["runs/2/jobs", { jobs: [job("build", "failure")] }],
   ]);
   const collected = await collectJobs({ fetchJson, owner: "o", repo: "r" });
   assert.equal(collected.ok, true);
   assert.deepEqual(gatesSeen(collected.jobs), ["build"]);
+  // `event` is carried through per record — load-bearing for
+  // `secretScanningOutcomes`, which must tell a `pull_request`-event row
+  // (a pre-merge validation run, keyed by the PR branch's own head SHA)
+  // apart from the `push`-event row that is the actual landing. See
+  // `secret-scanning-outcomes.mjs`'s own header.
   assert.deepEqual(
     toRunRecords(collected.jobs, "build"),
     [
-      { gate: "build", changeId: "sha-a", ran: true, verdict: "success" },
-      { gate: "build", changeId: "sha-b", ran: true, verdict: "failure" },
+      { gate: "build", changeId: "sha-a", ran: true, verdict: "success", event: "pull_request" },
+      { gate: "build", changeId: "sha-b", ran: true, verdict: "failure", event: "push" },
     ],
   );
 });
