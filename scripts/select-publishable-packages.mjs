@@ -100,9 +100,12 @@ export function discoverPackageManifests({ packagesRoot, listDirectories, manife
  * and `inconclusive` (denied, unreachable, or a not-found the batch could
  * not resolve — see scripts/registry-version-lookup.mjs). `anyKnown` is
  * true the moment at least one package resolved definitively (published OR
- * missing) — the same "did this scan see ANYTHING real?" signal
- * scripts/check-package-visibility.mjs's isBlindCredential uses, generalised
- * from "every lookup 404d" to "every lookup came back inconclusive".
+ * missing) — a "did this scan see ANYTHING real?" signal, generalised from
+ * "every lookup 404d" to "every lookup came back inconclusive". (An earlier
+ * revision of scripts/check-package-visibility.mjs used the same shape of
+ * guard for its own credentialed roster lookup; that lookup was removed
+ * when the gate moved to anonymous-only checks (issue #817) — noted here
+ * only because this comment used to point at it by name.)
  *
  * Pure: `verdicts` is already resolveVersionLookups's output, so this
  * function makes no network call and needs no injection.
