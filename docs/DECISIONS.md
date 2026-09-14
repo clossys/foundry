@@ -1387,6 +1387,134 @@ are least able to judge it, and most tempted to weaken the rule to get moving.
 Measuring it and writing the number down converts that ambush into a decision
 someone already made on the evidence.
 
+## 21. Commit AUTHOR headers carrying a non-noreply address are accepted and recorded, not gated
+
+**Status:** measured on [issue #826](https://github.com/clossys/foundry/issues/826)
+on 2026-09-14 and decided here. Like Decision 20, this records a standing
+property of this repository's history and of one of its two permitted merge
+methods. It is not a defect awaiting repair, and nothing is sequenced behind
+it.
+
+### What was measured
+
+Independently re-derived rather than carried forward from the issue, which
+itself said its own 447/630 figure was incidental to a different
+investigation:
+
+```
+$ git rev-list --count origin/main
+667
+
+$ git log origin/main --format='%ae' | grep -vc '@users\.noreply\.github\.com$'
+491
+
+$ git log origin/main --format='%ae' | grep -c '@users\.noreply\.github\.com$'
+176
+
+$ git log origin/main --no-merges --format='%ae' | grep -vc '@users\.noreply\.github\.com$'
+353
+$ git log origin/main --no-merges --format='%H' | wc -l
+511
+
+$ git log origin/main --merges --format='%ae' | grep -vc '@users\.noreply\.github\.com$'
+138
+$ git log origin/main --merges --format='%H' | wc -l
+156
+
+$ git log origin/main --merges --format='%an' | sort -u | wc -l
+3
+```
+
+491 of 667 reachable commits (74%) carry a non-noreply author address today,
+against 447 of 630 (71%) when the issue was filed a few hours earlier the same
+day — **+44 non-noreply commits in under a day**, not the "stops growing" the
+issue's own body originally claimed. The issue's first comment had already
+found one live counterexample (the #811 revert, a directly-authored, non-squash
+commit); this measurement confirms the pattern is not a single outlier: 353 of
+511 non-merge commits and 138 of 156 merge commits both carry it, and squash
+being disabled changed neither figure, because squash was never the only
+generating mechanism for either.
+
+### A gap this measurement adds to the issue's own finding
+
+`governance/merge-policy.json`'s `why.merge` records that a merge commit
+"preserves every original commit and its original author rather than folding
+them into that new commit — so there is no per-contributor Co-authored-by
+trailer for it to synthesise from profile data." That is true of the commits a
+merge commit brings in, and is why `merge` is permitted. It says nothing about
+the merge commit's **own** author header — a distinct piece of metadata from
+any trailer in message text. All 156 merge commits on `main` were authored
+under only 3 distinct identities (checked directly, not printed), which is
+consistent with GitHub's own web "Merge pull request" action setting the merge
+commit's author to the account that clicked merge — the same account-profile
+composition `why.squash` documents for the trailer, on a different field, and
+on the one method this policy currently treats as clean. `permittedMergeMethods`
+is not wrong to include `merge` (its own message text stays clean, matching
+`why.merge`'s claim), but the file's stated reasoning does not cover the
+header surface this issue is about.
+
+### Options assessed, same three the issue named
+
+**1. Accept and record.** The historical commits are immutable without a
+rewrite (see Decision 20's reasoning — it transfers here unchanged: every
+clone, every recorded PR SHA, and every sealed `reviewedCommit` binding under
+`governance/release-qualifications/` would be invalidated). The exposed
+address is already public on the account's own GitHub profile page, not a
+credential.
+
+**2. A gate reading author headers.** Assessed concretely, not dismissed on
+principle: `check-commit-messages.mjs`'s own model (scan a narrow per-push
+diff range, no history rescan) would apply cleanly here with no historical-
+exception mechanism needed at all, unlike #809/#813 — an AUTHOR header is
+metadata on commits not yet made, not immutable text already merged, so a
+forward-only range scan naturally excludes the 491 already on `main` without
+needing to admit any of them.
+
+It was rejected anyway, on what it could actually catch. Of the 491,
+353 (72%) are non-merge commits a contributor could avoid by configuring
+`user.email` to their forge noreply alias locally — genuinely actionable, but
+this repository has no existing convention asking contributors to do that, so
+a hard-fail gate here would fail ordinary, correctly-configured commits from
+any contributor who has not opted into the forge's privacy setting, which is
+a new contribution requirement this task was not asked to institute. The
+other 138 (28%) — the merge commits themselves — are composed by GitHub
+exactly the way `why.squash` describes for the trailer: server-side, at merge
+time, from account profile data, after every check has already run. No gate
+in this repository can observe or act on that account setting without naming
+the account, which the identity denylist itself refuses (this is the same
+`notAssertableFromThisRepository` boundary `governance/merge-policy.json`
+already states for the squash case, and it applies unchanged to `merge`'s own
+author header). A gate that only catches the 72% it can reach while the 28%
+that keeps growing every merge sails through untouched would read as coverage
+this surface does not actually have.
+
+**3. Rewrite history.** Not recommended, for the reasons Decision 20 already
+gives at greater length, unchanged here: 74% of `main`'s history, not 16%,
+which makes the disproportion sharper, not the same.
+
+### The one thing that actually closes this
+
+Unlike Decision 20's backlog, this one has a real single point of leverage,
+named in `governance/merge-policy.json` line 12 already: the account-level
+"Keep my email addresses private" setting. Flipping it once closes **both**
+mechanisms — the squash trailer `why.squash` documents and the merge-commit
+author header this entry adds — for every future commit, the same way
+disabling squash closed the trailer-synthesis half. That is a one-time action
+available to the account, not a repository change, and it is why this entry
+recommends it explicitly rather than proposing a gate that could only ever
+cover part of the surface a single setting closes completely.
+
+### The failure this entry closes
+
+The issue's own "stops growing going forward" claim was falsified by its own
+first comment within about an hour of being filed, and by this measurement a
+few hours after that. Recording the corrected shape — not closed by squash
+alone, not evenly split between actionable and unactionable, and resolvable
+by one account setting rather than by any code this repository could add —
+keeps the next reader from re-deriving the same conclusion from scratch, or
+worse, building a gate that looks like it closes the surface while only ever
+reaching three quarters of it.
+
 ## Settled
 
 **Author attribution — the project name holds the copyright.** Every package's

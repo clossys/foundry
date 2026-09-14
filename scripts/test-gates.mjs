@@ -1112,6 +1112,104 @@ try {
     }
   }
 
+  // --------------- check-commit-messages: shallow-clone dependency (issue #830)
+  // The historical-exceptions validation above (cat-file -t / merge-base
+  // --is-ancestor for every governance/commit-message-history-exceptions.json
+  // entry) already fails closed when a commit is absent from the object
+  // database -- the "unknown-commit" case above proves that with a fabricated
+  // SHA. What #830 actually found missing was that this dependency on FULL
+  // history (fetch-depth: 0) was never asserted by the script itself, only
+  // incidentally true because ci.yml's safety job happens to pass it -- so a
+  // future "optimize the checkout" change would turn this into an unexplained
+  // CI outage with no comment anywhere pointing at the cause. This proves the
+  // dependency against a REAL shallow clone (local, via file://, so no
+  // network) of a repo this suite fully controls, not a fabricated SHA, and
+  // that the failure now explains WHY (names the shallow clone), not just
+  // THAT it failed.
+  console.log("\n# check-commit-messages: shallow-clone dependency on full history fails loudly, not silently (issue #830)");
+  {
+    const srcRepo = join(work, "commitmsg-shallow-src");
+    mkdirSync(srcRepo, { recursive: true });
+    run("git", ["-C", srcRepo, "init", "-q"]);
+    writeFileSync(join(srcRepo, "seed.txt"), "seed\n");
+    gitCommit(srcRepo, "seed commit");
+
+    writeFileSync(join(srcRepo, "a.txt"), "a\n");
+    const sealedLeak = gitCommit(srcRepo, "chore(deps): bump widget\n\nCo-authored-by: someone <acme-corp@users.noreply.example>");
+    const sealedLeakMessage = run("git", ["-C", srcRepo, "log", "-1", "--format=%B", sealedLeak]).out;
+    const sealedLeakDigest = "sha256:" + createHash("sha256").update(sealedLeakMessage, "utf8").digest("hex");
+
+    // Filler commits between sealedLeak and the tip -- enough that a
+    // depth-1 clone's single retained commit is nowhere near sealedLeak.
+    for (let i = 0; i < 3; i++) {
+      writeFileSync(join(srcRepo, `filler-${i}.txt`), `filler ${i}\n`);
+      gitCommit(srcRepo, `unrelated filler commit ${i}`);
+    }
+    writeFileSync(join(srcRepo, "tip.txt"), "tip\n");
+    const tip = gitCommit(srcRepo, "unrelated clean commit, used only as sealedAtCommit");
+
+    const exceptionsDoc = {
+      $comment: "test",
+      schemaVersion: 1,
+      sealedAtCommit: tip,
+      exceptions: [
+        { commitSha: sealedLeak, messageSha256: sealedLeakDigest, findings: [{ why: "synthetic sibling product", severity: "high" }], ref: "#809" },
+      ],
+    };
+    const exPath = join(srcRepo, "exceptions.json");
+    writeFileSync(exPath, JSON.stringify(exceptionsDoc));
+
+    // A range that does not itself touch sealedLeak -- proves this is the
+    // historical-exceptions STRUCTURAL check running unconditionally
+    // (documented at the top of that block in check-commit-messages.mjs),
+    // not the ordinary range scan needing sealedLeak's content for some
+    // other reason.
+    const recentRange = `${tip}~1..${tip}`;
+
+    // Sanity anchor: the identical exceptions file, evaluated with FULL
+    // history (the un-cloned source repo), passes -- proves clone depth is
+    // the only variable in the shallow case below, not some other
+    // difference between the two invocations.
+    const fullRun = run("node", [COMMITMSG, recentRange, ...DL, "--exceptions", exPath, "--require-denylist"], { cwd: srcRepo });
+    check(
+      "sanity: the same exceptions file, checked with full history, passes",
+      fullRun.code === 0 && /PASS/.test(fullRun.out),
+      `exit ${fullRun.code}: ${fullRun.out.slice(0, 400)}`,
+    );
+
+    const shallowClone = join(work, "commitmsg-shallow-clone");
+    run("git", ["clone", "--depth", "1", `file://${srcRepo}`, shallowClone]);
+    const shallowExPath = join(shallowClone, "exceptions.json");
+    writeFileSync(shallowExPath, JSON.stringify(exceptionsDoc));
+
+    const shallowRun = run("node", [COMMITMSG, recentRange, ...DL, "--exceptions", shallowExPath, "--require-denylist"], {
+      cwd: shallowClone,
+    });
+    check(
+      "a shallow clone (fetch-depth 1) that cannot resolve the sealed exception commit fails CLOSED (exit 2), not a silent different pass",
+      shallowRun.code === 2,
+      `exit ${shallowRun.code}: ${shallowRun.out.slice(0, 500)}`,
+    );
+    check(
+      "the failure explicitly names the shallow clone as the likely cause, not just an unexplained absence",
+      /SHALLOW clone/.test(shallowRun.out) && /fetch-depth: 0/.test(shallowRun.out),
+      `expected an explicit shallow-clone diagnosis, got: ${shallowRun.out.slice(0, 500)}`,
+    );
+
+    // Confirm this really is a depth artifact, not something else cloning
+    // changed: unshallow the SAME clone and re-run the SAME command -- it
+    // must now pass exactly like the full-history source did.
+    run("git", ["-C", shallowClone, "fetch", "--unshallow", "origin"]);
+    const unshallowRun = run("node", [COMMITMSG, recentRange, ...DL, "--exceptions", shallowExPath, "--require-denylist"], {
+      cwd: shallowClone,
+    });
+    check(
+      "fetching full history into the SAME clone (fetch-depth: 0) makes the identical command pass -- pins depth, not something else, as the variable",
+      unshallowRun.code === 0 && /PASS/.test(unshallowRun.out),
+      `exit ${unshallowRun.code}: ${unshallowRun.out.slice(0, 400)}`,
+    );
+  }
+
   // ------------------------- check-contamination-classes CLASS 4 (issue #27)
   // GH issue #27's own suggested-direction text asks for exactly this case:
   // "a fixture naming a retired package in a CHANGELOG should pass, while a
