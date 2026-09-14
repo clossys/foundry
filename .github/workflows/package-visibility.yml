@@ -10,10 +10,18 @@ name: Package visibility
 # npmjs.com). This scheduled run is the independent, continuously recurring
 # backstop: it re-checks every package the active release target authorizes
 # against its real public-npm visibility on its own cadence, with no publish
-# required to trigger it. See scripts/check-package-visibility.mjs's own
-# header for the full design, the GitHub Packages incident that originally
-# motivated this gate, and why it now targets public npm instead (issue
-# #817).
+# required to trigger it.
+#
+# Runs with NO credential, deliberately: the owner's decision is "no token,
+# all pkg are public from foundry repo," so this workflow does not hold or
+# pass an NPM_PACKAGES_TOKEN. The check makes only anonymous
+# `GET https://registry.npmjs.org/<name>` requests — the same anonymous read
+# every other public-npm gate in this repository already makes — and reports
+# a 404 as a finding without trying to tell "never published" apart from
+# "private": see scripts/check-package-visibility.mjs's own header for the
+# full design, the GitHub Packages incident that originally motivated this
+# gate, why it targets public npm (issue #817), and why the credentialed
+# roster path was removed rather than kept behind a flag.
 on:
   schedule:
     # Daily, off the top of the hour to avoid the scheduled-workflow queue
@@ -39,13 +47,8 @@ jobs:
         with:
           node-version: 20
 
-      # A read-only npm token (a granular access token scoped to Read-only
-      # on the @clossys organization's packages is sufficient) — this gate
-      # only ever enumerates and reads, it never publishes, deprecates, or
-      # changes access. See scripts/check-package-visibility.mjs's own
-      # header for exactly which endpoints this credential authenticates to
-      # and why an unauthenticated call cannot do this job.
+      # No credential: every request this gate makes is an anonymous public
+      # npm packument read. See scripts/check-package-visibility.mjs's own
+      # header for exactly what that check can and cannot distinguish.
       - name: check-package-visibility
-        env:
-          NPM_PACKAGES_TOKEN: ${{ secrets.NPM_PACKAGES_TOKEN }}
         run: node scripts/check-package-visibility.mjs
