@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { buildCatalog } from "./build.js";
+import { skipUnlessPermissionBitsAreEnforced } from "../testing/permission-enforcement.js";
 
 // This test file does real file I/O against temp directories — that's the
 // point of testing buildCatalog, the one function in this package that
@@ -357,7 +358,9 @@ describe("buildCatalog — recursive walk", () => {
 });
 
 describe("buildCatalog — catalog.skipped (Part A: representing 'could not check this')", () => {
-  it("records an unreadable-directory skip for a chmod-000 package directory, without losing a sibling package's entry", () => {
+  it("records an unreadable-directory skip for a chmod-000 package directory, without losing a sibling package's entry", (ctx) => {
+    skipUnlessPermissionBitsAreEnforced(ctx.skip);
+
     // The motivating reproduction: a clean package next to one whose
     // directory cannot be read at all. Before this fix, the unreadable
     // directory's readdirSync failure was swallowed identically to a benign
@@ -388,7 +391,9 @@ describe("buildCatalog — catalog.skipped (Part A: representing 'could not chec
     }
   });
 
-  it("records an unreadable-manifest skip when only the manifest file itself is unreadable (directory stays listable)", () => {
+  it("records an unreadable-manifest skip when only the manifest file itself is unreadable (directory stays listable)", (ctx) => {
+    skipUnlessPermissionBitsAreEnforced(ctx.skip);
+
     const root = makeFixtureRoot([
       { dirName: "clean", manifest: validLeafManifest("@catalog-fixture/clean") },
       { dirName: "locked-manifest", manifest: validLeafManifest("@catalog-fixture/locked-manifest") },
