@@ -12,6 +12,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { execFileSync } from "node:child_process";
 
 import {
   MERGE_METHODS,
@@ -20,6 +21,7 @@ import {
   effectiveMergeMethods,
   evaluate,
   parsePolicy,
+  reportError,
 } from "./check-merge-policy.mjs";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -148,11 +150,18 @@ test("a credential that cannot see the merge settings is 'could not check', not 
 
 // ------------------------------------------------------------ deriveRepository
 
-function fakeFs(files) {
+function fakeFs(files, { packagesDirExists = true, packagesEntries = ["alpha", "beta"] } = {}) {
+  // `packagesDirExists` and `packagesEntries` are explicit fixture inputs
+  // now (#827) rather than a hardcoded `true` / `["alpha", "beta"]` no test
+  // could override: the old stub reported a packages/ directory as present
+  // for ANY fixture, regardless of what that fixture declared, so the "no
+  // packages/ directory at all" branch in `deriveRepository` was
+  // structurally unreachable from this file, and the packages listing was
+  // never actually driven by per-test data.
   return {
-    existsSync: (p) => Object.hasOwn(files, p) || p.endsWith("packages"),
+    existsSync: (p) => Object.hasOwn(files, p) || (p.endsWith("packages") && packagesDirExists),
     readFileSync: (p) => files[p],
-    readdirSync: () => ["alpha", "beta"],
+    readdirSync: () => packagesEntries,
   };
 }
 
@@ -182,6 +191,40 @@ test("a repository.url this gate cannot parse is refused rather than queried", (
   assert.throws(() => deriveRepository("/r", fakeFs(files)), /cannot read as an/);
 });
 
+test("no packages/ directory at all is a branch this stub can now actually simulate", () => {
+  // Regression guard for the fakeFs helper itself (#827): a files fixture
+  // that places a manifest at a packages/<x>/package.json path must NOT be
+  // read when the fixture declares no packages/ directory exists, the same
+  // way a real `existsSync(packagesDir)` would gate a real `readdirSync`.
+  // Under the old, unconditional-true stub this manifest was read anyway
+  // and the call below returned successfully instead of throwing.
+  const files = {
+    [join("/r", "package.json")]: JSON.stringify({ name: "root-only" }),
+    [join("/r", "packages", "alpha", "package.json")]: JSON.stringify({
+      repository: { url: "https://github.com/example/example" },
+    }),
+  };
+  assert.throws(
+    () => deriveRepository("/r", fakeFs(files, { packagesDirExists: false })),
+    /no package\.json declares a repository\.url/,
+  );
+});
+
+test("the packages/ listing is driven by the fixture's own entries, not a hardcoded pair", () => {
+  // Regression guard for the fakeFs helper itself (#827): the old stub's
+  // `readdirSync` always returned `["alpha", "beta"]` no matter what a test
+  // fixture put under packages/, so a manifest at any other entry name was
+  // silently invisible to deriveRepository regardless of what the gate's
+  // own logic did with it.
+  const files = {
+    [join("/r", "package.json")]: JSON.stringify({ name: "root-only" }),
+    [join("/r", "packages", "gamma", "package.json")]: JSON.stringify({
+      repository: { url: "https://github.com/example/example" },
+    }),
+  };
+  assert.equal(deriveRepository("/r", fakeFs(files, { packagesEntries: ["gamma"] })), "example/example");
+});
+
 // --------------------------------------------- this repository's own declaration
 
 test("the declaration this repository actually ships parses and excludes squash", () => {
@@ -202,4 +245,77 @@ test("the shipped declaration finds the configuration that published identity", 
   const shipped = parsePolicy(readFileSync(join(repoRoot, "governance", "merge-policy.json"), "utf8"), "shipped");
   const { findings } = evaluate({ policy: shipped, repository: allMethodsOn, branchRules: [] });
   assert.ok(findings.some((f) => f.kind === "permits-undeclared" && f.method === "squash"));
+});
+
+// ------------------------------------------------------- reportError (#827)
+//
+// `main()`'s success path already branched on `--json` once for its human
+// summary and once for its JSON payload; every exit-2 catch site called
+// `console.error` with plain text unconditionally, ignoring `--json`
+// entirely. reportError() is the one place that decision is made now.
+
+test("reportError formats plain text the same way every exit-2 path used to", () => {
+  assert.equal(reportError("boom", false), "check-merge-policy: boom");
+});
+
+test("reportError honours --json on an error path, not just on findings", () => {
+  const parsed = JSON.parse(reportError("boom", true));
+  assert.deepEqual(parsed, { error: "boom" });
+});
+
+test("reportError collapses a human-formatted, multi-line message into one JSON string", () => {
+  // The no-token message wraps itself across lines with hanging indentation
+  // for terminal readability. A --json caller has no use for that wrapping
+  // and every use for a message it can log as one string.
+  const message = "no token\n  continuation one\n  continuation two";
+  const parsed = JSON.parse(reportError(message, true));
+  assert.equal(parsed.error, "no token continuation one continuation two");
+});
+
+// ---------------------------------------------- the CLI's exit-2 paths (#827)
+//
+// Integration-level, not just a unit test of reportError in isolation: this
+// proves main() actually threads `asJson` into the catch sites that call it,
+// which a test of reportError alone cannot show. Both cases below are
+// reachable with no network and no token, so they stay inside this file's
+// own "no network, no token, no fixture server" contract.
+
+const cliPath = join(dirname(fileURLToPath(import.meta.url)), "check-merge-policy.mjs");
+
+function runCli(args, env) {
+  try {
+    const stdout = execFileSync("node", [cliPath, ...args], { encoding: "utf8", env });
+    return { status: 0, stdout, stderr: "" };
+  } catch (error) {
+    return { status: error.status, stdout: error.stdout ?? "", stderr: error.stderr ?? "" };
+  }
+}
+
+test("the CLI's policy-parse exit-2 path honours --json", () => {
+  const missingPolicyPath = join(repoRoot, "governance", "merge-policy.json") + ".does-not-exist";
+
+  const prose = runCli(["--policy", missingPolicyPath], process.env);
+  assert.equal(prose.status, 2);
+  assert.match(prose.stderr, /^check-merge-policy: /);
+
+  const json = runCli(["--policy", missingPolicyPath, "--json"], process.env);
+  assert.equal(json.status, 2);
+  const parsed = JSON.parse(json.stderr);
+  assert.ok(typeof parsed.error === "string" && parsed.error.length > 0);
+});
+
+test("the CLI's missing-token exit-2 path honours --json", () => {
+  const envWithoutToken = { ...process.env };
+  delete envWithoutToken.GH_TOKEN;
+  delete envWithoutToken.GITHUB_TOKEN;
+
+  const prose = runCli([], envWithoutToken);
+  assert.equal(prose.status, 2);
+  assert.match(prose.stderr, /^check-merge-policy: no \$GH_TOKEN or \$GITHUB_TOKEN/);
+
+  const json = runCli(["--json"], envWithoutToken);
+  assert.equal(json.status, 2);
+  const parsed = JSON.parse(json.stderr);
+  assert.match(parsed.error, /no \$GH_TOKEN or \$GITHUB_TOKEN/);
+  assert.ok(!parsed.error.includes("\n"), "the JSON form collapses the human message's line breaks");
 });
