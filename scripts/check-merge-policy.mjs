@@ -300,6 +300,29 @@ export function assertObservable(repository, branchRules) {
   }
 }
 
+/**
+ * Every exit-2 path shares this one decision. The success path already
+ * branches on `--json` once for its human summary and once for its JSON
+ * payload, but each error path used to call `console.error` with plain text
+ * unconditionally, ignoring `asJson` entirely -- a `--json` caller got prose
+ * on every exit-2 path and a parseable payload only on exit 0/1. This is now
+ * the one place that branch is made, reused by every catch site in `main`,
+ * so a future error path inherits `--json` support instead of needing to
+ * remember it.
+ *
+ * A human-formatted message may carry its own line breaks and indentation
+ * for terminal readability (see the no-token message below); those are
+ * collapsed to single-line prose for the JSON form, which has no use for
+ * terminal wrapping and every use for a message a machine caller can log
+ * as-is.
+ */
+export function reportError(message, asJson) {
+  if (asJson) {
+    return JSON.stringify({ error: message.replace(/\s+/g, " ").trim() }, null, 2);
+  }
+  return `check-merge-policy: ${message}`;
+}
+
 // ---------------------------------------------------------------------- main
 
 async function main(argv) {
@@ -316,16 +339,19 @@ async function main(argv) {
     policy = parsePolicy(readFileSync(policyPath, "utf8"), "governance/merge-policy.json");
     slug = deriveRepository(repoRoot);
   } catch (error) {
-    console.error(`check-merge-policy: ${error.message}`);
+    console.error(reportError(error.message, asJson));
     return 2;
   }
 
   const token = process.env.GH_TOKEN ?? process.env.GITHUB_TOKEN ?? null;
   if (!token) {
     console.error(
-      "check-merge-policy: no $GH_TOKEN or $GITHUB_TOKEN — this gate reads the forge's live merge\n" +
-        "  settings and cannot form an opinion without one. Reporting \"could not check\" (exit 2)\n" +
-        "  rather than a pass it never earned.",
+      reportError(
+        "no $GH_TOKEN or $GITHUB_TOKEN — this gate reads the forge's live merge\n" +
+          "  settings and cannot form an opinion without one. Reporting \"could not check\" (exit 2)\n" +
+          "  rather than a pass it never earned.",
+        asJson,
+      ),
     );
     return 2;
   }
@@ -335,7 +361,7 @@ async function main(argv) {
     forge = await readForge(slug, policy.defaultBranch, token, globalThis.fetch);
     assertObservable(forge.repository, forge.branchRules);
   } catch (error) {
-    console.error(`check-merge-policy: ${error.message}`);
+    console.error(reportError(error.message, asJson));
     return 2;
   }
 
