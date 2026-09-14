@@ -5,6 +5,27 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.5] - 2026-09-14
+
+### Fixed
+
+- `packRoundTrip` (`./release`) now resolves its dependencies (a declared
+  runtime peer such as `typescript`, needed by `./gates/secrets`) through a
+  stable, shared npm package cache instead of a fresh, single-use one
+  created and deleted on every call. Previously, every invocation re-fetched
+  the same dependency from the public registry uncached, which made the
+  real subprocess install/import proof this function performs disproportionately
+  sensitive to registry latency and contention (issue #528). The candidate
+  package itself is unaffected: it is always installed from a local tarball
+  path, never resolved through this cache.
+
+### Added
+
+- `PackRoundTripOptions.npmCacheDir` lets a caller override the npm package
+  cache directory `packRoundTrip` uses for dependency resolution. Falls back
+  to the `RELEASE_ROUND_TRIP_NPM_CACHE_DIR` environment variable, then to a
+  stable default, when omitted.
+
 ## [0.9.4] - 2026-09-13
 
 ### Added
