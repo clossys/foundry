@@ -29,6 +29,57 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm run check:dependency-audit
 
+  # `evaluateCredential` (@clossys/locksmith) shipped real ternary machinery
+  # mapping credential lifecycle evidence to satisfied/violated/indeterminate
+  # exit codes, with no bin and no caller anywhere in this fleet -- a
+  # primitive that never operated. This job is that caller: it judges the
+  # automatic `GITHUB_TOKEN` the "dependency audit" job above actually used,
+  # from evidence this run can read about ITSELF, never invented. See
+  # `.github/scripts/collect-credential-evidence.mjs` for exactly what is
+  # read and where each field comes from.
+  #
+  # `needs: dependency-audit` is load-bearing: it is what guarantees that
+  # job's own start and end timestamps are real and already recorded by the
+  # time this job asks the Jobs API for them, not a run still in progress.
+  # `if: always()` means this job still runs -- and still judges the real
+  # evidence -- even if `dependency-audit` itself failed; a credential's
+  # lifecycle evidence does not depend on the job's own business outcome.
+  credential-lifecycle:
+    name: credential lifecycle (dependency-audit token)
+    needs: dependency-audit
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      # Job-level permissions REPLACE the workflow-level block for this job
+      # alone, so both are named explicitly: `contents: read` for the
+      # checkout and build, `actions: read` for the one Jobs API call this
+      # job makes to read `dependency-audit`'s own recorded timestamps.
+      # Nothing here writes.
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+      - run: npm ci --ignore-scripts
+      - run: npm run build --workspace=packages/locksmith
+      - name: Assemble credential evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node .github/scripts/collect-credential-evidence.mjs > credential-evidence.json
+      - name: credential lifecycle (locksmith judgment)
+        run: |
+          set -o pipefail
+          report="$RUNNER_TEMP/credential-lifecycle-report.txt"
+          status=0
+          node packages/locksmith/dist/bin.js \
+            --evidence credential-evidence.json \
+            > "$report" || status=$?
+          cat "$report"
+          cat "$report" >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"
+
   # The safety gate runs FIRST and everything else depends on it. A tree that
   # leaks private identity should never reach the point of being built or
   # tested — the interesting failure here is disclosure, not a broken build.
