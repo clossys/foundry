@@ -1,18 +1,23 @@
 #!/usr/bin/env node
-// check-package-visibility — fail when a package this repository declares as
-// active is NOT anonymously installable from public npm right now.
+// check-package-visibility — a two-directional, fully anonymous check
+// against public npm:
+//
+//   DECLARED -> is every package governance/release-catalog.json's active
+//               target authorizes anonymously installable right now?
+//   UNDECLARED -> is every package actually live under the scope on the
+//               registry accounted for by that same declaration?
 //
 //   node scripts/check-package-visibility.mjs [--json] [--declarations-only]
 //     [--catalog path] [--scope-file path] [--lifecycle path] [--retention path]
 //
-// Exit 0 = every declared package resolved with an anonymous 200. Exit 1 =
-// at least one declared package did not (a finding). Exit 2 = the check
-// could not be completed at all — an unresolvable release target, an
-// unsupported registry or access mode, a network error, a non-200/404
-// response, or an unparseable/non-object response. Same three-state
-// contract every gate in this repo uses (see CONTRIBUTING.md's "Gate CLIs
-// exit 0/1/2" entry): a check that cannot run must fail, never silently
-// pass.
+// Exit 0 = both directions reconcile cleanly. Exit 1 = at least one finding
+// in either direction. Exit 2 = the check could not be completed at all —
+// an unresolvable release target, an unsupported registry or access mode,
+// an empty declared package set, a network error, a non-200/404 response,
+// an unparseable/non-object response, or a roster enumeration that could
+// not be trusted. Same three-state contract every gate in this repo uses
+// (see CONTRIBUTING.md's "Gate CLIs exit 0/1/2" entry): a check that
+// cannot run must fail, never silently pass.
 //
 // WHY THIS GATE EXISTS (issue #817)
 // ------------------------------------
@@ -31,28 +36,35 @@
 // public` (`npm help access`), so the same failure mode remains possible on
 // the new registry — just with a different API to observe it with.
 //
-// THIS GATE RUNS WITH NO CREDENTIAL, DELIBERATELY (issue #817 follow-up)
+// THIS GATE RUNS WITH NO CREDENTIAL, BECAUSE NEITHER ENDPOINT NEEDS ONE
 // ---------------------------------------------------------------------------
 // A prior revision of this gate authenticated to `GET /-/org/<scope>/package`
-// with an `NPM_PACKAGES_TOKEN` to enumerate every package name the npm
-// organization actually holds, public or private, so it could tell "went
-// private" apart from "never published" for a package that came back 404 on
-// the anonymous per-package read. That token was never created —
-// the owner's decision, made explicitly when this gate was reworked: "no
-// token, all pkg are public from foundry repo." Minting and storing a
-// credential — even a read-only one — for a repository whose entire
-// publishing model is "everything here is public" was judged not worth the
-// standing secret, the rotation burden, and the blast radius of one more
-// token that can leak. `.github/workflows/package-visibility.yml` had gone
-// permanently red with no token to read: a gate that can never go green
-// gets ignored, which is a worse state than an honest, narrower gate that
-// actually runs. This is that narrower gate, not an oversight.
+// with an `NPM_PACKAGES_TOKEN`. The owner's decision, made explicitly when
+// this gate was first reworked: "no token, all pkg are public from foundry
+// repo" — that token was never going to be created, and
+// `.github/workflows/package-visibility.yml` had gone permanently red with
+// no token to read.
+//
+// Removing the credential requirement is NOT what determines what this gate
+// checks, though — read that distinction carefully, because an earlier
+// revision of this file conflated the two. Independently re-verified
+// 2026-09-14: `GET /-/org/clossys/package`, with NO Authorization header at
+// all, returns HTTP 200 and the full package roster; only an actively
+// INVALID token gets HTTP 401. The roster endpoint was never
+// credential-gated for a public organization. So dropping the token did not
+// force dropping the roster-based check that endpoint enables — that would
+// have been a scope decision falsely blamed on the credential decision. This
+// gate makes BOTH the per-package anonymous packument reads AND the
+// anonymous roster read, and is two-directional as a result. See
+// "TWO DIRECTIONS" below for exactly what each one checks, and "WHAT THIS
+// GATE USED TO DO, AND NO LONGER DOES" for the one piece of the old gate's
+// job that WAS cut, as its own separate, argued scope decision.
 //
 // WHAT THIS GATE CAN AND CANNOT DISTINGUISH, AND WHY THAT'S ENOUGH
 // ---------------------------------------------------------------------------
-// The only network call this gate makes is the same anonymous packument GET
-// every other public-npm gate in this repository already uses
-// (scripts/lib/public-npm-registry.mjs's fetchPublicNpmPackument):
+// The DECLARED direction's only network call is the same anonymous
+// packument GET every other public-npm gate in this repository already
+// uses (scripts/lib/public-npm-registry.mjs's fetchPublicNpmPackument):
 //
 //   GET https://registry.npmjs.org/<name>, no Authorization header
 //     200 -> the package is public and published right now. Definitive.
@@ -66,67 +78,70 @@
 //            that specific endpoint buys nothing, because it never requires
 //            or even accepts a credential in the first place.
 //
-// This gate DOES NOT try to resolve that ambiguity, and says so in its own
-// output. It does not need to: this repository's actual invariant is
-// narrower than "tell me why a package is hidden" — it is "every package
-// governance/release-catalog.json's active target declares must be publicly
-// installable right now." Under that invariant, "never published" and
-// "published but private" are the SAME failure — both mean an external
-// reader cannot `npm install` a package this repository says is live — so a
-// single undifferentiated 404 finding is a complete, honest answer, not a
-// weakened one. A 200 is a definitive pass either way: an anonymous read
-// that actually succeeds is proof the package is genuinely public, no
-// authenticated cross-check needed.
+// This gate DOES NOT try to resolve that ambiguity for the DECLARED
+// direction, and says so in its own output. It does not need to: this
+// repository's actual invariant is narrower than "tell me why a package is
+// hidden" — it is "every package governance/release-catalog.json's active
+// target declares must be publicly installable right now." Under that
+// invariant, "never published" and "published but private" are the SAME
+// failure — both mean an external reader cannot `npm install` a package
+// this repository says is live — so a single undifferentiated 404 finding
+// is a complete, honest answer for that direction, not a weakened one. A
+// 200 is a definitive pass either way.
 //
-// (For completeness: `GET /-/org/<scope>/package` was independently
-// re-verified anonymously too — with no Authorization header at all it
-// returns HTTP 200 and the full package roster; only an actively INVALID
-// token gets HTTP 401. That endpoint is nonetheless not used here — see
-// "WHAT THIS GATE USED TO DO" below for why re-adding it was rejected
-// rather than merely left unauthenticated.)
+// TWO DIRECTIONS, CLEARLY LABELLED
+// ---------------------------------------------------------------------------
+// Every result this gate produces carries a `direction`, printed inline in
+// both the human-readable and `--json` output, because the two directions
+// have different remedies and a reader must not have to guess which one
+// they are looking at:
+//
+//   direction "declared"   — "is this package this repository SAYS is live
+//                             actually publicly installable?" A finding
+//                             here means: publish it, or fix its access
+//                             (`npm access set status=public <name>`).
+//   direction "undeclared" — "is this package that IS live under the scope
+//                             actually accounted for by a declaration?" A
+//                             finding here means: a forgotten publish, a
+//                             name something else placed under this scope,
+//                             or a release catalogue that has drifted from
+//                             reality — governance/release-catalog.json
+//                             needs updating, or the package needs to come
+//                             down.
+//
+// The "undeclared" direction needs the full roster
+// (fetchNpmScopePackages, anonymous — see above) with the declared set
+// (governance/release-catalog.json's active target) subtracted out
+// (findUndeclaredPackages). A roster fetch that fails is FATAL for the
+// whole run (exit 2) — never silently downgraded to "found: nothing
+// undeclared". An empty roster that was genuinely, successfully read (HTTP
+// 200, a well-formed `{}` object) is a legitimate zero-undeclared result,
+// not an error; the two are distinguished by which code path produced them,
+// never conflated.
 //
 // WHAT THIS GATE USED TO DO, AND NO LONGER DOES
 // ---------------------------------------------------------------------------
-// The token-era version of this gate was two-directional: forward (every
-// declared package's visibility matches the target's declared access) AND
-// reverse (every package actually live under the scope is accounted for by
-// a declaration, with a "deprecated" carve-out backed by
-// docs/contracts/package-retention.json). The reverse direction existed
-// specifically to catch a package left live on the registry that this
-// repository no longer declares — a name nobody remembered to unpublish, or
-// a stale "deprecated" retention window. That direction fundamentally
-// requires enumerating the FULL package roster under the scope, not just
-// checking the declared names one at a time.
-//
-// That enumeration is now known to work anonymously too (see above), so it
-// could technically have been kept. It was deliberately cut instead, not
-// merely left unauthenticated, because it answers a different question than
-// the one this gate now exists to answer. "Every declared package is
-// publicly installable" (what remains) needs one anonymous read per
-// declared name. "No undeclared or stale-deprecated package is live" (what
-// was cut) needs a full roster diff, a second document
-// (package-retention.json) joined against package-lifecycle.json, and a
-// second exit-code path — real, standing complexity in permanent service of
-// a check this rework was not asked to keep, and retention.json is
-// currently empty with no deprecated `@clossys` entries to protect. Reintroducing
-// it — anonymously or not — belongs to a change that actually wants that
-// property back, argued and reviewed on its own, not carried forward here
-// by default. Concretely, this means: a package that is live under
-// `@clossys` but not authorized by the active release target, and any
-// "deprecated" package's retention window lapsing while still live, are no
-// longer caught by the LIVE half of this gate. The OFFLINE
-// `--declarations-only` half still confirms every "deprecated" package
-// under the active scope carries a valid, unexpired retention declaration —
-// see below — but it checks the declaration alone; it no longer cross-checks
-// that state against the real registry roster.
+// The token-era gate also cross-checked a "deprecated" roster package (per
+// docs/contracts/package-lifecycle.json) against
+// docs/contracts/package-retention.json's `{ reason, reviewBy }`
+// declarations, to catch a retention window lapsing while the package
+// stayed live. THAT piece — and only that piece — is cut, as its own
+// separate, argued scope decision, not a consequence of dropping the
+// credential: it needs a second document join on top of the roster diff,
+// real standing complexity, and package-retention.json is currently empty
+// (no "deprecated" `@clossys` entries), so there is nothing live to protect
+// today. Tracked in issue #844 rather than left to silently regress or
+// require re-reading this file's history to rediscover. `--declarations-only`
+// still validates the retention declaration itself (offline, no roster
+// involved) — see below.
 //
 // EVERY PACKAGE, NOT JUST THE FIRST FAILURE
 // --------------------------------------------
-// Every declared package is checked and reported; a failure on one never
-// short-circuits the rest. The worst status across all results decides the
-// exit code: an error (2) dominates a finding (1), which dominates a clean
-// pass (0) — the same aggregation check-workspace-links.mjs and
-// check-release-readiness.mjs already use.
+// Every declared package, and every roster package, is checked and
+// reported; a failure on one never short-circuits the rest. The worst
+// status across all results decides the exit code: an error (2) dominates
+// a finding (1), which dominates a clean pass (0) — the same aggregation
+// check-workspace-links.mjs and check-release-readiness.mjs already use.
 //
 // NEVER WIRED INTO LOCAL `npm run check`, WITH ONE OFFLINE EXCEPTION
 // -----------------------------------------------------------------------
@@ -134,7 +149,7 @@
 // stays out of the hermetic `npm run check` chain and runs in CI instead —
 // see .github/workflows/package-visibility.yml's scheduled run — the same
 // reason check:registry-parity is kept out of `check` (see its own comment
-// in package.json). This is a network-access concern now, not a credential
+// in package.json). This is a network-access concern, not a credential
 // concern: the live half needs no token at all, it just isn't the kind of
 // call every contributor's offline local run should depend on succeeding.
 // --declarations-only runs the pure offline half instead (no network, no
@@ -165,6 +180,10 @@ const CALENDAR_DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 // cannot drift into disagreeing about what a status is called.
 const STATUS_LABELS = { pass: "PASS ", finding: "FIND ", error: "ERROR" };
 const BENIGN_STATUSES = new Set(["pass"]);
+// One label per direction — see this file's header's "TWO DIRECTIONS"
+// section for what each one means and why they must never be conflated in
+// output.
+const DIRECTION_LABELS = { declared: "DECLARED  ", undeclared: "UNDECLARED" };
 
 export function isFailureStatus(status) {
   return !BENIGN_STATUSES.has(status);
@@ -172,6 +191,10 @@ export function isFailureStatus(status) {
 
 function statusLabel(status) {
   return STATUS_LABELS[status] ?? String(status).toUpperCase();
+}
+
+function directionLabel(direction) {
+  return DIRECTION_LABELS[direction] ?? String(direction).toUpperCase();
 }
 
 function die(msg, code = 2) {
@@ -211,8 +234,9 @@ export function resolveActiveVisibilityTarget({ catalogPath = DEFAULT_CATALOG_PA
  *     succeeded: this package genuinely is public. Definitive.
  *   - { state: "not-found" } — 404. Deliberately ambiguous between "never
  *     published" and "private" — see this file's header. This gate does not
- *     try to resolve that ambiguity; both are failures of the same
- *     invariant, so both are reported as one undifferentiated finding.
+ *     try to resolve that ambiguity for the DECLARED direction; both are
+ *     failures of the same invariant, so both are reported as one
+ *     undifferentiated finding.
  *   - { state: "error", detail } — a denied or unreachable anonymous
  *     request. Never treated as "not-found" or silently downgraded to a
  *     pass.
@@ -222,6 +246,60 @@ export async function fetchNpmPackageVisibility({ registry, name, fetchImpl }) {
   if (result.kind === "found") return { state: "found", visibility: "public" };
   if (result.kind === "not-found") return { state: "not-found" };
   return { state: "error", detail: result.detail ?? `anonymous public npm request for "${name}" could not be completed (${result.kind}).` };
+}
+
+/**
+ * Enumerates every package name actually live under the npm scope,
+ * anonymously — `GET /-/org/<org>/package`, falling back to
+ * `/-/user/<org>/package` on a first-page 404, the exact endpoints and
+ * fallback order `libnpmaccess`'s own `getPackages` uses (what `npm access
+ * list packages` calls). No credential is sent or accepted: this endpoint
+ * is not gated on authentication for a public organization — independently
+ * re-verified 2026-09-14, `GET /-/org/clossys/package` with no
+ * Authorization header returns HTTP 200 and the full roster. See this
+ * file's header for why that fact means the "undeclared" direction did not
+ * need to be cut alongside the credential.
+ *
+ * Returns one of:
+ *   - { state: "found", packages: [fullScopedName, ...] } — may legitimately
+ *     be an empty array (an org that owns nothing yet); that is a real
+ *     result, never confused with the error states below.
+ *   - { state: "error", detail } — a network error, a non-200/404 HTTP
+ *     status, an unparseable response, or an org name neither endpoint
+ *     recognises. Deliberately no "found: empty" read as clean on a total
+ *     miss from both endpoints — the caller must treat this as fatal
+ *     (exit 2), never as "nothing undeclared".
+ */
+export async function fetchNpmScopePackages({ scope, fetchImpl }) {
+  const org = scope.startsWith("@") ? scope.slice(1) : scope;
+  for (const kind of ["orgs", "users"]) {
+    const url = kind === "orgs" ? `${PUBLIC_NPM_REGISTRY}/-/org/${encodeURIComponent(org)}/package` : `${PUBLIC_NPM_REGISTRY}/-/user/${encodeURIComponent(org)}/package`;
+    const label = kind === "orgs" ? "organization" : "user";
+    let response;
+    try {
+      response = await fetchImpl(url, { headers: { Accept: "application/json" } });
+    } catch (error) {
+      return { state: "error", detail: `network error calling the anonymous npm ${label} package roster endpoint for "${org}": ${error.message}` };
+    }
+    if (response.status === 404) continue;
+    if (!response.ok) {
+      return { state: "error", detail: `the anonymous npm ${label} package roster endpoint for "${org}" returned HTTP ${response.status} — could not enumerate registry packages.` };
+    }
+    let body;
+    try {
+      body = await response.json();
+    } catch (error) {
+      return { state: "error", detail: `the anonymous npm ${label} package roster endpoint for "${org}" returned a response this gate could not parse as JSON: ${error.message}` };
+    }
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+      return { state: "error", detail: `the anonymous npm ${label} package roster endpoint for "${org}" returned a non-object response — could not enumerate registry packages.` };
+    }
+    return { state: "found", packages: Object.keys(body) };
+  }
+  return {
+    state: "error",
+    detail: `neither the anonymous npm organization nor user package roster endpoint could enumerate registry packages for "${org}" — the scope name may be wrong, or npm's roster endpoint shape has changed. Refusing to report a reconciled set it never verified.`,
+  };
 }
 
 /** True for a well-formed `YYYY-MM-DD` calendar date (rejects `2026-13-40` shapes the regexp alone would accept). */
@@ -247,9 +325,9 @@ export function isRetentionExpired(reviewBy, now = new Date()) {
 /**
  * Parses docs/contracts/package-retention.json into a Map from package name
  * to its `{ reason, reviewBy }` declaration. Pure, no network. Used only by
- * the offline --declarations-only half now — see this file's header for why
- * the live half no longer cross-checks retention against the real registry
- * roster.
+ * the offline --declarations-only half now — see this file's header (and
+ * issue #844) for why the live half no longer cross-checks retention
+ * against the real registry roster.
  */
 export function selectRetentionDeclarations(retention) {
   const byName = new Map();
@@ -289,14 +367,16 @@ export function selectRetentionDeclarations(retention) {
 }
 
 /**
- * For every package the active release target authorizes, look up whether
- * it is anonymously installable from public npm right now. Every package is
- * checked — a failure on one never stops the rest.
+ * The DECLARED direction: for every package the active release target
+ * authorizes, look up whether it is anonymously installable from public npm
+ * right now. Every package is checked — a failure on one never stops the
+ * rest.
  *
- * A 404 is always a finding here, never a benign skip: this gate no longer
- * distinguishes "never published" from "private" (see this file's header),
- * and this repository's invariant is that every declared package must be
- * public right now, so an absence is not an expected steady state.
+ * A 404 is always a finding here, never a benign skip: this gate does not
+ * distinguish "never published" from "private" for this direction (see this
+ * file's header), and this repository's invariant is that every declared
+ * package must be public right now, so an absence is not an expected steady
+ * state.
  */
 export async function checkDeclaredPackages({ target, fetchImpl }) {
   const results = [];
@@ -307,19 +387,21 @@ export async function checkDeclaredPackages({ target, fetchImpl }) {
     lookups.attempted += 1;
     const outcome = await fetchNpmPackageVisibility({ registry: target.registry, name, fetchImpl });
     if (outcome.state === "error") {
-      results.push({ package: name, status: "error", detail: `could not determine whether "${name}" is publicly installable: ${outcome.detail}` });
+      results.push({ package: name, direction: "declared", status: "error", detail: `could not determine whether "${name}" is publicly installable: ${outcome.detail}` });
       continue;
     }
     if (outcome.state === "found") {
       lookups.found += 1;
-      results.push({ package: name, status: "pass", detail: `"${name}" is anonymously readable on ${target.registry} — publicly installable right now.` });
+      results.push({ package: name, direction: "declared", status: "pass", detail: `"${name}" is anonymously readable on ${target.registry} — publicly installable right now.` });
       continue;
     }
     // not-found: an anonymous 404. Deliberately undifferentiated — see this
     // file's header for why this gate does not try to tell "never
-    // published" apart from "private", and why it does not need to.
+    // published" apart from "private" for this direction, and why it does
+    // not need to.
     results.push({
       package: name,
+      direction: "declared",
       status: "finding",
       detail:
         `"${name}" returned HTTP 404 from an anonymous request to ${target.registry} — it is NOT publicly installable right now. ` +
@@ -335,10 +417,45 @@ export async function checkDeclaredPackages({ target, fetchImpl }) {
 }
 
 /**
- * The full check, orchestrated as one pure-async function so it is testable
- * end-to-end with an injected `fetchImpl` — never through a spawned CLI
- * process, which cannot inject a fake network. No credential is accepted or
- * required: every call this function makes is anonymous.
+ * The UNDECLARED direction: for every package actually live under the
+ * scope (`roster`), does the active release target's declared package set
+ * account for it? A roster package the target authorizes was already
+ * reconciled by checkDeclaredPackages above and is skipped here — this
+ * function only reports packages the roster holds that the declaration does
+ * not name at all.
+ *
+ * Deliberately does NOT special-case a "deprecated" lifecycle status — that
+ * cross-check (docs/contracts/package-lifecycle.json joined against
+ * docs/contracts/package-retention.json) was cut as its own scope decision;
+ * see this file's header and issue #844. Every undeclared roster package is
+ * a finding here, full stop: a forgotten publish, a name something else put
+ * under this scope, or a release catalogue that has drifted from reality.
+ */
+export function findUndeclaredPackages(roster, target) {
+  const declaredNames = new Set(target.packages.map((directory) => `${target.scope}/${directory}`));
+  const results = [];
+  for (const name of roster) {
+    if (declaredNames.has(name)) continue;
+    results.push({
+      package: name,
+      direction: "undeclared",
+      status: "finding",
+      detail:
+        `"${name}" is live on ${target.registry} under ${target.scope}, but the active release target ("${target.id}") does not ` +
+        "declare it. This is a forgotten publish, a name something else placed under this scope, or " +
+        `${DEFAULT_CATALOG_PATH} has drifted from reality — update the catalogue if this is intentional, or remove the package ` +
+        "from the registry if it is not.",
+    });
+  }
+  return results;
+}
+
+/**
+ * The full, two-directional check, orchestrated as one pure-async function
+ * so it is testable end-to-end with an injected `fetchImpl` — never through
+ * a spawned CLI process, which cannot inject a fake network. No credential
+ * is accepted or required: every call this function makes, in both
+ * directions, is anonymous.
  */
 export async function checkAllPackageVisibility({ target, fetchImpl }) {
   if (target.registry !== PUBLIC_NPM_REGISTRY) {
@@ -351,14 +468,26 @@ export async function checkAllPackageVisibility({ target, fetchImpl }) {
     return { fatal: `the active release target ("${target.id}") authorizes no packages — refusing to report a clean pass on an empty scan`, code: 2 };
   }
 
-  const { results, lookups } = await checkDeclaredPackages({ target, fetchImpl });
+  const { results: declaredResults, lookups } = await checkDeclaredPackages({ target, fetchImpl });
+
+  // The roster fetch is fatal on failure, never silently read as "nothing
+  // undeclared" — see fetchNpmScopePackages's own header and this file's
+  // "TWO DIRECTIONS" section.
+  const rosterResult = await fetchNpmScopePackages({ scope: target.scope, fetchImpl });
+  if (rosterResult.state === "error") {
+    return { fatal: `could not enumerate public npm packages for ${target.scope}: ${rosterResult.detail}`, code: 2 };
+  }
+  const roster = new Set(rosterResult.packages);
+
+  const undeclaredResults = findUndeclaredPackages(roster, target);
+  const allResults = [...declaredResults, ...undeclaredResults];
 
   // Worst-of-three: an error anywhere dominates a finding, which dominates a
   // clean pass. An UNRECOGNISED status is treated as `error`, never falls
   // through to a pass — see isFailureStatus.
-  const code = results.reduce((acc, r) => (isFailureStatus(r.status) && r.status !== "finding" ? 2 : r.status === "finding" && acc !== 2 ? 1 : acc), 0);
+  const code = allResults.reduce((acc, r) => (isFailureStatus(r.status) && r.status !== "finding" ? 2 : r.status === "finding" && acc !== 2 ? 1 : acc), 0);
 
-  return { fatal: null, code, results, lookups };
+  return { fatal: null, code, results: allResults, lookups, registryPackagesEnumerated: roster.size };
 }
 
 // ------------------------------------------------------------------- main
@@ -407,7 +536,7 @@ async function main() {
     // unexpired retention declaration — the one piece of this gate's job
     // knowable before any registry call. This does NOT confirm the
     // declaration matches the real registry roster — see this file's
-    // header for why that cross-check no longer exists.
+    // header and issue #844 for why that cross-check no longer exists.
     const retention = readJsonFile(options.retentionPath);
     const lifecycle = readJsonFile(options.lifecyclePath);
     const { byName: retentionByName, findings: retentionFindings, fatal: retentionFatal } = selectRetentionDeclarations(retention);
@@ -451,29 +580,32 @@ async function main() {
     process.exit(findings.length === 0 ? 0 : 1);
   }
 
-  // No token required, ever — every call this gate makes is anonymous. See
-  // this file's header for the owner's decision and why an anonymous
-  // per-package check is a complete answer to this repository's invariant.
+  // No token required, ever — every call this gate makes, in both
+  // directions, is anonymous. See this file's header for the owner's
+  // decision, why it did not by itself force cutting the roster-based
+  // "undeclared" direction, and what was cut instead (issue #844).
   const outcome = await checkAllPackageVisibility({ target, fetchImpl: fetch });
   if (outcome.fatal) die(outcome.fatal, outcome.code);
 
-  const { results: allResults, lookups, code: worst } = outcome;
+  const { results: allResults, lookups, registryPackagesEnumerated, code: worst } = outcome;
 
   if (options.json) {
-    console.log(JSON.stringify({ target: target.id, results: allResults }, null, 2));
+    console.log(JSON.stringify({ target: target.id, results: allResults, registryPackagesEnumerated }, null, 2));
   } else {
-    for (const r of allResults) console.log(`  [${statusLabel(r.status)}] ${r.package} — ${r.detail}`);
+    for (const r of allResults) console.log(`  [${statusLabel(r.status)}] [${directionLabel(r.direction)}] ${r.package} — ${r.detail}`);
   }
 
   if (!options.json) {
     console.log("");
     console.log(
       worst === 0
-        ? `PACKAGE VISIBILITY OK — all ${lookups.attempted} declared package(s) are anonymously installable from public npm right now. No credential was used or needed.`
+        ? `PACKAGE VISIBILITY OK — all ${lookups.attempted} declared package(s) are anonymously installable from public npm right now, and ` +
+            `all ${registryPackagesEnumerated} package(s) actually live under ${target.scope} are accounted for by the active release target. ` +
+            "No credential was used or needed, in either direction."
         : worst === 2
-          ? "PACKAGE VISIBILITY ERROR — could not determine at least one package's real visibility (see ERROR lines above). This is not a pass."
-          : "PACKAGE VISIBILITY FAIL — at least one declared package is not publicly installable right now — see FIND lines above. " +
-              "This gate cannot tell whether that is because it was never published or because it is private; see the detail on each finding.",
+          ? "PACKAGE VISIBILITY ERROR — could not determine at least one result (see ERROR lines above). This is not a pass."
+          : "PACKAGE VISIBILITY FAIL — see FIND lines above. [DECLARED] findings mean a declared package is not publicly installable; " +
+              "[UNDECLARED] findings mean a live package is not accounted for by the declaration. Different remedies — see each finding's detail.",
     );
   }
   process.exit(worst);

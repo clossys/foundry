@@ -10,6 +10,8 @@ import {
   checkAllPackageVisibility,
   checkDeclaredPackages,
   fetchNpmPackageVisibility,
+  fetchNpmScopePackages,
+  findUndeclaredPackages,
   isFailureStatus,
   isRetentionExpired,
   resolveActiveVisibilityTarget,
@@ -23,8 +25,9 @@ import { PUBLIC_NPM_REGISTRY } from "./lib/public-npm-registry.mjs";
 //      fake `fetchImpl`/`readFile`, the same dependency-injection shape
 //      packages/deployment/src/vercel/inspector.ts already uses for its own
 //      provider calls. NEVER makes a real network call. This is where the
-//      live registry path (found/not-found/error) is actually exercised,
-//      including with no credential of any kind — there is none to inject.
+//      live registry paths (both directions: declared-package packument
+//      reads AND the roster enumeration) are actually exercised, including
+//      with no credential of any kind — there is none to inject.
 //   2. CLI — spawns the real script exactly the way CI does, for the paths
 //      that exercise real files: the offline --declarations-only mode
 //      against this repository's own governance/release-catalog.json and
@@ -169,6 +172,83 @@ test("fetchNpmPackageVisibility: a network failure is an error", async () => {
   assert.equal(outcome.state, "error");
 });
 
+// ------------------------------------------------------ fetchNpmScopePackages (anonymous roster)
+
+test("fetchNpmScopePackages: a successful org lookup returns every package name as the roster, no credential sent", async () => {
+  const fetchImpl = queueFetch([jsonResponse(200, { "@clossys/advisor": "write", "@clossys/starter": "write" })]);
+  const outcome = await fetchNpmScopePackages({ scope: "@clossys", fetchImpl });
+  assert.equal(outcome.state, "found");
+  assert.deepEqual(new Set(outcome.packages), new Set(["@clossys/advisor", "@clossys/starter"]));
+});
+
+test("fetchNpmScopePackages: an org 404 falls back to the user endpoint, same as the org-then-user npm pattern", async () => {
+  const fetchImpl = queueFetch([jsonResponse(404, {}), jsonResponse(200, { "@clossys/advisor": "write" })]);
+  const outcome = await fetchNpmScopePackages({ scope: "@clossys", fetchImpl });
+  assert.equal(outcome.state, "found");
+  assert.deepEqual(outcome.packages, ["@clossys/advisor"]);
+});
+
+test("fetchNpmScopePackages: both endpoints 404 is an enumeration error, never found:empty", async () => {
+  const fetchImpl = queueFetch([jsonResponse(404, {}), jsonResponse(404, {})]);
+  const outcome = await fetchNpmScopePackages({ scope: "@clossys", fetchImpl });
+  assert.equal(outcome.state, "error");
+});
+
+test("fetchNpmScopePackages: a genuinely empty but well-formed roster is a legitimate found:[], not an error", async () => {
+  const fetchImpl = queueFetch([jsonResponse(200, {})]);
+  const outcome = await fetchNpmScopePackages({ scope: "@clossys", fetchImpl });
+  assert.deepEqual(outcome, { state: "found", packages: [] });
+});
+
+test("fetchNpmScopePackages: a non-200/404 status is an error, never treated as an empty-but-valid roster", async () => {
+  const fetchImpl = queueFetch([jsonResponse(500, {})]);
+  const outcome = await fetchNpmScopePackages({ scope: "@clossys", fetchImpl });
+  assert.equal(outcome.state, "error");
+});
+
+test("fetchNpmScopePackages: a non-object roster body is an error", async () => {
+  const fetchImpl = queueFetch([jsonResponse(200, ["not", "an", "object"])]);
+  const outcome = await fetchNpmScopePackages({ scope: "@clossys", fetchImpl });
+  assert.equal(outcome.state, "error");
+});
+
+test("fetchNpmScopePackages: an unparseable JSON body is an error", async () => {
+  const fetchImpl = queueFetch([{ status: 200, ok: true, async json() { throw new Error("bad json"); } }]);
+  const outcome = await fetchNpmScopePackages({ scope: "@clossys", fetchImpl });
+  assert.equal(outcome.state, "error");
+});
+
+test("fetchNpmScopePackages: a network error is reported, never treated as a pass", async () => {
+  const fetchImpl = queueFetch([new Error("dns failure")]);
+  const outcome = await fetchNpmScopePackages({ scope: "@clossys", fetchImpl });
+  assert.equal(outcome.state, "error");
+  assert.match(outcome.detail, /dns failure/);
+});
+
+// ------------------------------------------------------ findUndeclaredPackages
+
+test("findUndeclaredPackages: a roster package the target authorizes is skipped (already reconciled by the declared direction)", () => {
+  const t = target({ packages: ["advisor"] });
+  const results = findUndeclaredPackages(new Set(["@clossys/advisor"]), t);
+  assert.deepEqual(results, []);
+});
+
+test("findUndeclaredPackages: a roster package not in the declared set is a finding, tagged direction 'undeclared'", () => {
+  const t = target({ packages: ["advisor"] });
+  const results = findUndeclaredPackages(new Set(["@clossys/rogue"]), t);
+  assert.equal(results.length, 1);
+  assert.equal(results[0].status, "finding");
+  assert.equal(results[0].direction, "undeclared");
+  assert.match(results[0].detail, /does not declare it/);
+});
+
+test("findUndeclaredPackages: every undeclared package is reported, not just the first", () => {
+  const t = target({ packages: ["advisor"] });
+  const results = findUndeclaredPackages(new Set(["@clossys/rogue-one", "@clossys/rogue-two"]), t);
+  assert.equal(results.length, 2);
+  assert.ok(results.every((r) => r.status === "finding" && r.direction === "undeclared"));
+});
+
 // ------------------------------------------------------ retention (unchanged shape, offline-only now)
 
 test("isRetentionExpired: strictly before today is expired, today and after are not", () => {
@@ -219,22 +299,24 @@ test("selectRetentionDeclarations: a malformed document shape is fatal", () => {
 
 // ------------------------------------------------------ checkDeclaredPackages
 
-test("checkDeclaredPackages: an anonymously-public package is a pass", async () => {
+test("checkDeclaredPackages: an anonymously-public package is a pass, tagged direction 'declared'", async () => {
   const t = target({ packages: ["advisor"] });
   const fetchImpl = queueFetch([packumentFound("@clossys/advisor")]);
   const { results, lookups } = await checkDeclaredPackages({ target: t, fetchImpl });
   assert.equal(results.length, 1);
   assert.equal(results[0].status, "pass");
+  assert.equal(results[0].direction, "declared");
   assert.equal(lookups.found, 1);
   assert.equal(lookups.attempted, 1);
 });
 
-test("checkDeclaredPackages: a 404 is ALWAYS a finding now -- no roster, no benign not-published skip", async () => {
+test("checkDeclaredPackages: a 404 is ALWAYS a finding now -- no roster cross-check, no benign not-published skip", async () => {
   const t = target({ packages: ["advisor"] });
   const fetchImpl = queueFetch([jsonResponse(404, {})]);
   const { results } = await checkDeclaredPackages({ target: t, fetchImpl });
   assert.equal(results.length, 1);
   assert.equal(results[0].status, "finding");
+  assert.equal(results[0].direction, "declared");
   assert.match(results[0].detail, /NOT publicly installable right now/);
   assert.match(results[0].detail, /cannot tell, and does not try to tell/);
 });
@@ -265,7 +347,7 @@ test("isFailureStatus: only pass is benign; everything else, including an unreco
   assert.equal(isFailureStatus("something-new-nobody-added-a-case-for"), true);
 });
 
-// ------------------------------------------------------ checkAllPackageVisibility (no credential, ever)
+// ------------------------------------------------------ checkAllPackageVisibility (no credential, ever, both directions)
 
 test("checkAllPackageVisibility: a registry other than public npm is refused, never silently skipped", async () => {
   // A fictional non-public-npm registry -- this guard only cares that the
@@ -291,38 +373,67 @@ test("checkAllPackageVisibility: a target authorizing no packages is a fatal emp
   assert.match(outcome.fatal, /authorizes no packages/);
 });
 
-test("checkAllPackageVisibility: a fully public declared set is a clean pass, with no credential involved anywhere", async () => {
+test("checkAllPackageVisibility: a roster enumeration error is fatal -- never silently read as 'nothing undeclared'", async () => {
+  const t = target({ packages: ["advisor"] });
+  const fetchImpl = queueFetch([
+    packumentFound("@clossys/advisor"), // declared direction: fine
+    jsonResponse(404, {}), // roster: org 404
+    jsonResponse(404, {}), // roster: user 404 too -> enumeration error
+  ]);
+  const outcome = await checkAllPackageVisibility({ target: t, fetchImpl });
+  assert.equal(outcome.code, 2);
+  assert.match(outcome.fatal, /could not enumerate public npm packages/);
+});
+
+test("checkAllPackageVisibility: a fully reconciled two-directional set is a clean pass, with no credential involved anywhere", async () => {
   const t = target({ packages: ["advisor", "starter"] });
-  const fetchImpl = queueFetch([packumentFound("@clossys/advisor"), packumentFound("@clossys/starter")]);
+  const fetchImpl = queueFetch([
+    packumentFound("@clossys/advisor"),
+    packumentFound("@clossys/starter"),
+    jsonResponse(200, { "@clossys/advisor": "write", "@clossys/starter": "write" }), // roster: exactly the declared set
+  ]);
   const outcome = await checkAllPackageVisibility({ target: t, fetchImpl });
   assert.equal(outcome.fatal, null);
   assert.equal(outcome.code, 0);
+  assert.equal(outcome.registryPackagesEnumerated, 2);
   assert.ok(outcome.results.every((r) => r.status === "pass"));
+  assert.ok(outcome.results.every((r) => r.direction === "declared")); // nothing undeclared to report
 });
 
-test("checkAllPackageVisibility: one declared package 404ing is a finding (exit 1), not an error", async () => {
+test("checkAllPackageVisibility: one declared package 404ing is a 'declared' finding (exit 1), not an error", async () => {
   const t = target({ packages: ["advisor", "starter"] });
-  const fetchImpl = queueFetch([packumentFound("@clossys/advisor"), jsonResponse(404, {})]);
+  const fetchImpl = queueFetch([
+    packumentFound("@clossys/advisor"),
+    jsonResponse(404, {}),
+    jsonResponse(200, { "@clossys/advisor": "write" }), // roster: starter genuinely never published
+  ]);
   const outcome = await checkAllPackageVisibility({ target: t, fetchImpl });
   assert.equal(outcome.fatal, null);
   assert.equal(outcome.code, 1);
-  assert.ok(outcome.results.some((r) => r.status === "finding"));
+  assert.ok(outcome.results.some((r) => r.status === "finding" && r.direction === "declared"));
 });
 
-test("checkAllPackageVisibility: every declared package 404ing is still a finding, never a fatal escape hatch -- there is no credential whose loss this could be confused with", async () => {
-  const t = target({ packages: ["advisor", "starter"] });
-  const fetchImpl = queueFetch([jsonResponse(404, {}), jsonResponse(404, {})]);
+test("checkAllPackageVisibility: a live-but-undeclared roster package is an 'undeclared' finding, distinct from a declared finding", async () => {
+  const t = target({ packages: ["advisor"] });
+  const fetchImpl = queueFetch([
+    packumentFound("@clossys/advisor"),
+    jsonResponse(200, { "@clossys/advisor": "write", "@clossys/rogue": "write" }), // roster: rogue is undeclared
+  ]);
   const outcome = await checkAllPackageVisibility({ target: t, fetchImpl });
   assert.equal(outcome.fatal, null);
   assert.equal(outcome.code, 1);
-  assert.equal(outcome.results.filter((r) => r.status === "finding").length, 2);
+  const undeclared = outcome.results.filter((r) => r.direction === "undeclared");
+  assert.equal(undeclared.length, 1);
+  assert.equal(undeclared[0].package, "@clossys/rogue");
+  assert.equal(undeclared[0].status, "finding");
 });
 
 test("checkAllPackageVisibility: an error anywhere dominates a finding -- exit 2, not 1", async () => {
   const t = target({ packages: ["advisor", "starter"] });
   const fetchImpl = queueFetch([
-    jsonResponse(404, {}), // advisor: finding
+    jsonResponse(404, {}), // advisor: declared finding
     jsonResponse(500, {}), // starter: error
+    jsonResponse(200, {}), // roster: empty, fine on its own
   ]);
   const outcome = await checkAllPackageVisibility({ target: t, fetchImpl });
   assert.equal(outcome.code, 2);
