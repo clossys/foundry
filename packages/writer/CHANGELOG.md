@@ -3,6 +3,20 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.3.6] - 2026-09-14
+
+### Changed
+
+- Patch version bump only, to obtain a fresh, never-before-used
+  `governance/release-qualifications/` record path. The 0.3.5 qualification
+  record added by #811 was orphaned when that pull request was squash-merged
+  (#821) and had to be removed (#834); the immutability gate that protects
+  already-introduced record paths (`check-candidate-qualification.mjs`'s
+  single-introduction-commit invariant) means a valid record can never again
+  be introduced at the `0.3.5` path, so this package moves to `0.3.6`
+  purely to regain one. No functional or behavioral change.
+
+
 ## [0.3.5] - 2026-09-09
 
 ### Changed
