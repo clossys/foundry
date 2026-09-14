@@ -1286,6 +1286,107 @@ a producer position which binds a consumer belongs in this file, where a
 consumer is directed to look, and its live status belongs in an open issue,
 where it is measured rather than remembered.
 
+## 20. Pre-migration commit messages name the predecessor identity, and that is the recorded position
+
+**Status:** measured on
+[issue #813](https://github.com/clossys/foundry/issues/813) on 2026-09-13,
+re-measured 2026-09-14, and decided here. This entry records a standing
+property of this repository's history. It is not a defect awaiting repair,
+and nothing is sequenced behind it.
+
+### What was measured
+
+`scripts/check-commit-messages.mjs` in FULL mode, over every commit reachable
+from `main`, against a denylist whose only term is the retired producer
+identity:
+
+```
+matching commits                                                102
+  ancestors of the catalogue recut c1e568f5 (2026-08-29)         98
+  authored after it                                               4
+  merge commits among them                                        4
+inside the seal of governance/commit-message-history-exceptions.json
+                                                                102
+overlap with the eight commits that file already admits           0
+oldest match  cd6f0d6a  2026-08-06  (~3h after the repository was created)
+newest match  349942eb  2026-09-10
+```
+
+First measured over 631 reachable commits, re-measured over 643 on
+2026-09-14: still 102. None of the twelve commits merged on 2026-09-13 added
+one.
+
+The full SHA list lives on #813 and is deliberately not copied here. A commit
+SHA is stable, so the issue remains the addressable record, and this file
+stays a decision rather than an inventory.
+
+### The position, in two halves
+
+Both halves matter. Recording only the first would be incomplete in a way
+that misleads the next reader.
+
+**Pre-recut history names the predecessor identity as a matter of course.**
+This repository was published under that identity. 98 of the 102 matches
+precede the recut, beginning roughly three hours after the repository existed
+at all. A reader who finds them has found the migration, not a leak. What is
+exposed is a retired organisation name that is already public — not a
+credential — and the remedy must stay proportionate to that.
+
+**The set is not closed, and has no terminal state.** Four matches postdate
+the recut. Every one is a commit whose message legitimately *describes* the
+migration — the same justification the documentation and contract neutralize
+entries already rest on. So 102 is a floor, not a total: any future commit
+that correctly names what was migrated away from adds to it. It grows slowly,
+and it does not stop growing.
+
+### Why neither alternative was taken
+
+**Not a history rewrite.** It would invalidate every existing clone, every
+merged pull request's recorded SHAs, and every `reviewedCommit` binding under
+`governance/release-qualifications/`, which are sealed and immutable by
+design. Touching 16% of history to remove an already-public organisation name
+is not proportionate, and the sealed bindings make it destructive rather than
+merely expensive.
+
+**Not an extension of the exception mechanism.** Decision-relevant, because it
+would have worked: all 102 are inside the existing seal, so admitting them
+needs no move of `sealedAtCommit` — the one change that file's own header asks
+reviewers to treat as suspicious on its face. It was rejected on cost and on
+shape. Cost: one entry per commit, each carrying a 40-hex SHA, a sha256 of
+that commit's exact message, a findings array and a ref — roughly a 700-line
+governance file. Shape: the mechanism was built for *eight* commits carrying a
+**personal address** that GitHub itself injected. Reusing it for 102 commits
+carrying a public organisation name would dilute what an entry in that file
+means, and because the set is not closed it would need appending every time
+someone writes a correct commit message about the migration. An exception list
+that grows on ordinary, correct work teaches people to route around it.
+
+The two sets are disjoint, so nothing here disturbs the eight already admitted
+under #809, or the seal that bounds them.
+
+### What this means for anyone widening the gate's scan range
+
+`check-commit-messages.mjs` scans a narrow per-push or per-PR diff range, not
+whole history. Widening it is a reasonable hardening and this entry is not an
+argument against it. But whoever does it should expect **a three-figure
+finding count on the first run, and a slowly rising one thereafter**, and
+should read that as this recorded position rather than as a regression to fix
+or a rule to weaken.
+
+Concretely: a widened range needs a history cutoff, not an exception list. The
+recut commit `c1e568f5` is the natural boundary — it accounts for 98 of the
+102 — and the four that postdate it are legitimate migration description that
+any cutoff must still permit.
+
+### The failure this entry closes
+
+The count in #813 was originally "dozens", reported incidentally rather than
+scanned for. A backlog no gate rescans, whose size nobody has established, is
+one that gets discovered by whoever next hardens the gate — at the moment they
+are least able to judge it, and most tempted to weaken the rule to get moving.
+Measuring it and writing the number down converts that ambush into a decision
+someone already made on the evidence.
+
 ## Settled
 
 **Author attribution — the project name holds the copyright.** Every package's
