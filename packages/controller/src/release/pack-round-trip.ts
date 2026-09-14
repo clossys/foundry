@@ -48,6 +48,58 @@ const IMPORT_TIMEOUT_MS = 30_000;
 /** The kill signal used once a subprocess exceeds its timeout — SIGKILL, not the default SIGTERM, so a subprocess that is ignoring SIGTERM cannot outlive its budget. */
 const TIMEOUT_KILL_SIGNAL = "SIGKILL";
 
+/**
+ * Default location for the npm package cache this function's subprocesses
+ * use to resolve a round trip's DEPENDENCIES — never the candidate package
+ * itself; see the note below. Stable across every call in this process,
+ * rather than a fresh, single-use directory per call.
+ *
+ * Measured evidence this exists to fix (issue #528): a package whose
+ * `exports` genuinely execute a runtime peer — @clossys/controller's own
+ * `./gates/secrets` subpath does `import ts from "typescript"` at its top
+ * level — makes this function install that peer from the real public
+ * registry on every call (see step 3b below). `typescript`'s registry
+ * packument (its full version-history metadata document) is unusually
+ * large, so that fetch is disproportionately sensitive to registry latency
+ * and contention. Before this fix, `subprocessEnv` pointed `npm_config_cache`
+ * at a directory inside the per-call `mkdtemp`-created `tarballDir` — deleted
+ * in this function's own `finally` block — so the identical `typescript`
+ * fetch was repeated, uncached, on EVERY invocation: at least twice within
+ * controller's own test suite alone (`pack-round-trip.test.ts` and
+ * `preflight.test.ts` each run a real round trip against
+ * packages/controller), and once per invocation everywhere else this
+ * function is called. Under "full workspace load" — many packages' builds,
+ * tests, and gates running at once, several of which also touch the network
+ * — that repeated, uncached fetch is exactly the kind of registry operation
+ * whose latency is highly variable, and a fixed test timeout will
+ * occasionally lose that race regardless of what the timeout is set to.
+ * Directly reproduced: a single isolated call to this function, run alone
+ * with no other load at all, took 143324ms end-to-end purely waiting on that
+ * one uncached fetch (measured 2026-09-14) — proof the delay lives in
+ * network wait, not in contention-driven compute, and that raising a test's
+ * timeout would only buy a larger window for the same uncached fetch to
+ * still occasionally miss it, not fix the fetch.
+ *
+ * Sharing this cache is safe. npm's local package cache is content-addressed
+ * (keyed by the exact integrity hash of what was fetched) and already
+ * designed for concurrent access — that is exactly how the ordinary,
+ * un-overridden `~/.npm` cache behaves for every concurrent `npm` invocation
+ * on a real machine, every day. And the CANDIDATE package under test is
+ * never resolved through this cache at all: step 3 below installs it by
+ * local tarball path, which touches no registry and no cache. Only its
+ * THIRD-PARTY dependencies — here, `typescript` — are ever cache-eligible,
+ * and a warm cache entry for a public, immutable, already-published
+ * third-party version is not a correctness risk to what this function exists
+ * to prove: it only removes a redundant re-fetch of bytes already proven to
+ * resolve.
+ *
+ * Override with `PackRoundTripOptions.npmCacheDir`, or the
+ * `RELEASE_ROUND_TRIP_NPM_CACHE_DIR` environment variable (checked when the
+ * option is omitted) — CI uses the latter to persist a warm cache across
+ * separate job runs, not only within one process.
+ */
+const DEFAULT_NPM_CACHE_DIR = join(tmpdir(), "clossys-release-round-trip-npm-cache");
+
 /** Options for `packRoundTrip`. */
 export interface PackRoundTripOptions {
   /**
@@ -82,6 +134,18 @@ export interface PackRoundTripOptions {
    * are still never inherited by the isolated subprocesses.
    */
   registry?: string | RegistryInstallOptions;
+  /**
+   * Overrides the npm package cache directory used to resolve this round
+   * trip's third-party dependencies (e.g. a declared peer such as
+   * `typescript`). Defaults to a stable, shared location reused across
+   * calls — see `DEFAULT_NPM_CACHE_DIR`'s own doc comment for why sharing it
+   * is deliberate and safe. Falls back to the
+   * `RELEASE_ROUND_TRIP_NPM_CACHE_DIR` environment variable when omitted,
+   * which is how CI persists a warm cache across separate job runs. Never
+   * affects how the candidate package itself is installed — that is always
+   * a local tarball path, not a cache lookup.
+   */
+  npmCacheDir?: string;
   /**
    * Opt selected exports into an isolated Next.js compilation proof instead
    * of a raw Node import. Next route, middleware, and client-component
@@ -160,11 +224,13 @@ export interface RegistryInstallOptions {
  *   - `npm_config_userconfig` — a path inside this round trip's own isolated
  *     directory that is never written, so `$HOME/.npmrc` (and whatever
  *     registry auth it holds on the host machine) is never consulted.
- *   - `npm_config_cache` — a fresh cache directory inside this round trip's
- *     own isolated directory, so concurrent round trips (this repository
- *     routinely checks several packages at once) never share npm's cache
- *     and nothing left over from a previous run can leak into this one's
- *     result.
+ *   - `npm_config_cache` — a stable, shared cache directory (see
+ *     `DEFAULT_NPM_CACHE_DIR`'s own doc comment for the measured evidence
+ *     this exists to address), not a fresh one per call. Deliberately
+ *     shared: npm's package cache is content-addressed, so a warm entry can
+ *     only make a THIRD-PARTY dependency resolve faster, never differently
+ *     — and it never touches how the CANDIDATE package itself resolves,
+ *     which is always a local tarball install, not a cache lookup.
  *   - `npm_config_registry` — pinned explicitly to the public default
  *     (`https://registry.npmjs.org/`) unless the caller supplied an explicit
  *     registry option. Either way it is never inherited from ambient host
@@ -191,13 +257,16 @@ export interface RegistryInstallOptions {
 export function subprocessEnv(
   isolationDir: string,
   registry?: string | RegistryInstallOptions,
+  npmCacheDir?: string,
 ): NodeJS.ProcessEnv {
   const registryUrl = typeof registry === "string" ? registry : registry?.url ?? "https://registry.npmjs.org/";
+  const resolvedCacheDir = npmCacheDir ?? process.env.RELEASE_ROUND_TRIP_NPM_CACHE_DIR ?? DEFAULT_NPM_CACHE_DIR;
+  mkdirSync(resolvedCacheDir, { recursive: true });
   const env: NodeJS.ProcessEnv = {
     PATH: process.env.PATH,
     HOME: process.env.HOME ?? process.env.USERPROFILE,
     npm_config_userconfig: join(isolationDir, "unused-userconfig.npmrc"),
-    npm_config_cache: join(isolationDir, "npm-cache"),
+    npm_config_cache: resolvedCacheDir,
     npm_config_registry: typeof registry === "object" && registry.scope ? "https://registry.npmjs.org/" : registryUrl,
     npm_config_audit: "false",
     npm_config_fund: "false",
@@ -606,7 +675,7 @@ export async function packRoundTrip(packageDir: string, options?: PackRoundTripO
   // below, including `npm pack` itself, runs isolated the same way.
   const tarballDir = mkdtempSync(join(tmpdir(), "release-pack-"));
   const consumerDir = mkdtempSync(join(tmpdir(), "release-consumer-"));
-  const env = subprocessEnv(tarballDir, options?.registry);
+  const env = subprocessEnv(tarballDir, options?.registry, options?.npmCacheDir);
   const importEnv = { ...env };
   delete importEnv.NODE_AUTH_TOKEN;
   const authConfig = registryAuthConfig(options?.registry);

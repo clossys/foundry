@@ -809,4 +809,49 @@ describe("subprocessEnv — subprocess environment sanitization (defect 3)", () 
     expect(env.npm_config_registry).not.toBe(process.env.npm_config_registry);
     expect(env.NODE_AUTH_TOKEN).toBeUndefined();
   });
+
+  // Regression for issue #528: the npm package cache used to live inside
+  // each call's own isolationDir, deleted by packRoundTrip's `finally` block
+  // right after that call finished -- so a dependency (e.g. controller's own
+  // `typescript` peer) was re-fetched from the real registry, uncached, on
+  // EVERY invocation. See pack-round-trip.ts's own `DEFAULT_NPM_CACHE_DIR`
+  // doc comment for the measured evidence. These assert the fix's actual
+  // contract: the cache directory is stable across calls with DIFFERENT
+  // isolationDirs (so it survives any one call's own cleanup), and remains
+  // overridable per call and via environment for CI-persisted warm caches.
+  it("uses a stable npm cache directory shared across calls, not one nested inside isolationDir", () => {
+    const envA = subprocessEnv("/tmp/release-env-test-isolation-dir-a");
+    const envB = subprocessEnv("/tmp/release-env-test-isolation-dir-b");
+
+    expect(envA.npm_config_cache).toBeDefined();
+    expect(envA.npm_config_cache).toBe(envB.npm_config_cache);
+    expect(envA.npm_config_cache).not.toContain("release-env-test-isolation-dir-a");
+    expect(envA.npm_config_cache).not.toContain("release-env-test-isolation-dir-b");
+  });
+
+  it("honors an explicit npmCacheDir override", () => {
+    const cacheDir = join(tmpdir(), "release-env-test-explicit-cache");
+
+    const env = subprocessEnv("/tmp/does-not-need-to-exist-for-this-check", undefined, cacheDir);
+
+    expect(env.npm_config_cache).toBe(cacheDir);
+  });
+
+  it("falls back to RELEASE_ROUND_TRIP_NPM_CACHE_DIR when no explicit npmCacheDir is given", () => {
+    const cacheDir = join(tmpdir(), "release-env-test-env-var-cache");
+    process.env.RELEASE_ROUND_TRIP_NPM_CACHE_DIR = cacheDir;
+
+    const env = subprocessEnv("/tmp/does-not-need-to-exist-for-this-check");
+
+    expect(env.npm_config_cache).toBe(cacheDir);
+  });
+
+  it("prefers an explicit npmCacheDir over RELEASE_ROUND_TRIP_NPM_CACHE_DIR", () => {
+    process.env.RELEASE_ROUND_TRIP_NPM_CACHE_DIR = join(tmpdir(), "release-env-test-env-var-cache-loses");
+    const explicitCacheDir = join(tmpdir(), "release-env-test-explicit-cache-wins");
+
+    const env = subprocessEnv("/tmp/does-not-need-to-exist-for-this-check", undefined, explicitCacheDir);
+
+    expect(env.npm_config_cache).toBe(explicitCacheDir);
+  });
 });
