@@ -523,11 +523,22 @@ function validateForwardQualificationIntroduction(r, { root, head, trioRecords, 
     const jointPaths = [];
     for (const record of trioRecords) {
       if (record?.timing !== "pre-publication") continue;
-      const retainedCandidatePath = qualificationPath(root, record.candidate);
-      if (sealedPaths.has(retainedCandidatePath)) continue;
-      const candidatePath = qualificationPath(root, record.candidate, record.reviewedCommit);
-      const candidateIntroduction = qualificationIntroductionCommit(root, record.candidate, head, candidatePath);
-      if (candidateIntroduction === introduction) jointPaths.push(candidatePath);
+      // Each OTHER record's own introduction history is resolved here only to
+      // learn whether it was introduced jointly with `r`. If that record's own
+      // history is itself broken (e.g. ambiguous, per `qualificationIntroductionCommit`),
+      // that is a defect in THAT record, not in `r` — it must be reported on
+      // that record's own turn through this same function, not raised here
+      // where it would be misattributed to `r` and abort every other record's
+      // joint-introduction computation for the rest of this shared list.
+      try {
+        const retainedCandidatePath = qualificationPath(root, record.candidate);
+        if (sealedPaths.has(retainedCandidatePath)) continue;
+        const candidatePath = qualificationPath(root, record.candidate, record.reviewedCommit);
+        const candidateIntroduction = qualificationIntroductionCommit(root, record.candidate, head, candidatePath);
+        if (candidateIntroduction === introduction) jointPaths.push(candidatePath);
+      } catch {
+        continue;
+      }
     }
     const exactJointPaths = [...new Set(jointPaths)].sort();
     const changed = git(root, ["diff", "--name-only", `${r.reviewedCommit}..${introduction}`]).split("\n").filter(Boolean).sort();
