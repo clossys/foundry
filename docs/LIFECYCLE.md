@@ -315,24 +315,24 @@ fails when the committed copy drifts from the derived one — #493.
 | package | current position | staged here | adoption | grounding | closure |
 | --- | --- | --- | --- | --- | --- |
 | `@clossys/advisor` | published | yes | not yet | unknown — #484 | not yet |
-| `@clossys/architect` | implemented | not yet | not yet | unknown — #484 | not yet |
-| `@clossys/bouncer` | implemented | not yet | not yet | unknown — #484 | not yet |
+| `@clossys/architect` | staged | yes | not yet | unknown — #484 | not yet |
+| `@clossys/bouncer` | staged | yes | not yet | unknown — #484 | not yet |
 | `@clossys/builder` | implemented | not yet | not yet | unknown — #484 | not yet |
-| `@clossys/butler` | implemented | not yet | not yet | unknown — #484 | not yet |
+| `@clossys/butler` | staged | yes | not yet | unknown — #484 | not yet |
 | `@clossys/controller` | published | yes | not yet | unknown — #484 | not yet |
-| `@clossys/designer` | implemented | not yet | not yet | unknown — #484 | not yet |
-| `@clossys/giver` | implemented | not yet | not yet | unknown — #484 | not yet |
-| `@clossys/influencer` | implemented | not yet | not yet | unknown — #484 | not yet |
+| `@clossys/designer` | staged | yes | not yet | unknown — #484 | not yet |
+| `@clossys/giver` | staged | yes | not yet | unknown — #484 | not yet |
+| `@clossys/influencer` | staged | yes | not yet | unknown — #484 | not yet |
 | `@clossys/inspector` | implemented | not yet | not yet | unknown — #484 | not yet |
 | `@clossys/integrator` | implemented | not yet | not yet | unknown — #484 | not yet |
-| `@clossys/keeper` | implemented | not yet | not yet | unknown — #484 | not yet |
+| `@clossys/keeper` | staged | yes | not yet | unknown — #484 | not yet |
 | `@clossys/locksmith` | implemented | not yet | not yet | unknown — #484 | not yet |
-| `@clossys/messenger` | implemented | not yet | not yet | unknown — #484 | not yet |
+| `@clossys/messenger` | staged | yes | not yet | unknown — #484 | not yet |
 | `@clossys/observer` | implemented | not yet | not yet | unknown — #484 | not yet |
-| `@clossys/publisher` | implemented | not yet | not yet | unknown — #484 | not yet |
+| `@clossys/publisher` | staged | yes | not yet | unknown — #484 | not yet |
 | `@clossys/starter` | published | yes | N/A — executable tooling | N/A — executable tooling | N/A — executable tooling |
-| `@clossys/strategist` | implemented | not yet | not yet | unknown — #484 | not yet |
-| `@clossys/writer` | implemented | not yet | not yet | unknown — #484 | not yet |
+| `@clossys/strategist` | staged | yes | not yet | unknown — #484 | not yet |
+| `@clossys/writer` | staged | yes | not yet | unknown — #484 | not yet |
 | `@vespeneventures/advisor` | published | yes | not yet | unknown — #484 | not yet |
 | `@vespeneventures/architect` | published | yes | not yet | unknown — #484 | not yet |
 | `@vespeneventures/bouncer` | published | yes | not yet | unknown — #484 | not yet |
