@@ -293,23 +293,58 @@ equivalent fix after.
     `docs/LIFECYCLE.md`'s standing rule is that state is derived from
     evidence, never declared, and a keyword-driven close is exactly that
     defect for an issue. #811 said, in its own "What this does NOT do"
-    section, "Does not close #808," but also carried a closing keyword for
-    #808 elsewhere in its text — the merge auto-closed #808 anyway, and it
-    had to be manually reopened with evidence the underlying condition was
-    still unmet (#828). #797/#819 shows the same mechanism landing correctly
-    only by chance — the keyword happened to match the real work, not
-    because anything checked it against #797's stated done-condition.
+    section, "Does not close #808," and #808 closed one second after #811
+    merged, attributed to the merging account — the signature of an
+    automatic keyword close. What is directly verifiable now: #811's
+    current body and all twelve of its commit messages carry no closing
+    keyword for #808, only `Refs: #808`; and the body was edited more than
+    once between opening and merge (`gh api graphql` against
+    `pullRequest(number: 811) { userContentEdits { nodes { editedAt } } }`
+    shows edits before the merge timestamp). So the keyword, if it was ever
+    present, is not there now — consistent with having been in the body at
+    merge time and edited out afterward, but not provable from here:
+    GitHub's audit log would settle it and is not reachable from the CLI.
+    The issue still needed a manual reopen with evidence the underlying
+    condition was unmet either way (#828). #797/#819 shows the same
+    mechanism landing correctly only by chance — the keyword happened to
+    match the real work, not because anything checked it against #797's
+    stated done-condition.
   - **`Refs:` leaves a genuinely resolved issue open, indefinitely and
-    silently.** #769 was fixed by #777 (merged 2026-09-02) and #782 was
-    fixed by #794 (merged 2026-09-04); both pull requests wrote `Refs:`
-    rather than a closing keyword, so neither issue's
-    `closedByPullRequestsReferences` ever populated and both sat open for
-    ten days after the fix had already landed on `main` — found only
-    because an agent was dispatched to fix one of them, set up a worktree,
-    and discovered the work already done. A silently stale open-issue list
-    is not a smaller failure than a wrongly-closed one; it is a quieter
-    failure that accumulates instead of getting caught, and it is the one
-    this repository actually paid for at that point.
+    silently.** #769 was fixed by #777, merged 2026-09-02T15:00:30Z, but
+    #769 itself was not closed until 2026-09-14T11:35:36Z — about 12 days
+    later (11d 21h). #782 was fixed by #794, merged 2026-09-10T09:44:55Z
+    (it sat open as a pull request for six days first — opened
+    2026-09-04T04:36:11Z — which is a separate delay from the one this
+    entry is about), and #782 itself was not closed until
+    2026-09-14T11:35:45Z — about 4 days later (4d 2h). Two different gaps,
+    not one repeated number: reproduce both with
+    `gh pr view <PR> --json mergedAt` and
+    `gh issue view <issue> --json closedAt`, the same way
+    `closedByPullRequestsReferences` is checked below. Both pull requests
+    wrote `Refs:` rather than a closing keyword, so neither issue's
+    `closedByPullRequestsReferences` ever populated
+    (`gh issue view 769 --json closedByPullRequestsReferences` and the same
+    for 782 both return `[]`), and both sat open after the fix had already
+    landed on `main` — found only because an agent was dispatched to fix
+    one of them, set up a worktree, and discovered the work already done.
+    A silently stale open-issue list is not a smaller failure than a
+    wrongly-closed one; it is a quieter failure that accumulates instead of
+    getting caught, and it is the one this repository actually paid for at
+    that point.
+
+    *Corrected measurement, recorded rather than silently overwritten:* an
+    earlier draft of this entry gave both issues the same "ten days," taken
+    from a single unverified claim rather than measured — and the claim
+    itself conflated #794's *creation* date (2026-09-04) with its *merge*
+    date (2026-09-10), then applied the resulting single interval to both
+    pairs. Both problems are visible above once the real timestamps are
+    used: #769/#777 (≈12 days) and #782/#794 (≈4 days) are not the same
+    figure, and treating them as one obscured that #782's delay was itself
+    two separate things — six days for #794 to merge, then four more before
+    #782 was closed. This section is specifically about not taking a claim
+    on faith; an unverified claim reaching this section anyway is exactly
+    the failure it warns against, so the correction is recorded here rather
+    than folded in silently.
 
   Use a closing keyword when the pull request genuinely resolves the whole
   issue; use `Refs: #N` when it only removes a blocker or lands a partial
@@ -318,8 +353,8 @@ equivalent fix after.
   is it still open and does it need a manual close with the evidence that
   justifies it? Neither GitHub nor any gate in this repository will tell you
   if you chose wrong; a merged, genuinely-resolving pull request whose issue
-  still shows `closedByPullRequestsReferences: []` (`gh issue view --json
-  closedByPullRequestsReferences`) is the tell.
+  still shows `closedByPullRequestsReferences: []` (`gh issue view <issue>
+  --json closedByPullRequestsReferences`) is the tell.
 
   This is a convention, not an enforcement mechanism, the same honest
   position `governance/merge-policy.json` takes about its own declaration —

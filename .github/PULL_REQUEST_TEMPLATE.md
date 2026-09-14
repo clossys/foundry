@@ -50,8 +50,10 @@ Reference it with whichever is actually true: a closing keyword (`Closes`,
 if it only removes a blocker or lands a partial step. Both directions have
 burned this repository: a closing keyword can auto-close an issue that
 isn't actually done (#828), and `Refs:` can leave a genuinely resolved issue
-silently open for days (#769, #782). Whichever you use, check afterward
-that it actually did what you meant — see CONTRIBUTING.md's Conventions.
+silently open for days after the fix already shipped — about 4 days for
+#782, about 12 for #769 (CONTRIBUTING.md's Conventions has the exact,
+reproducible timestamps for both). Whichever you use, check afterward that
+it actually did what you meant.
 -->
 
 ## Checks
