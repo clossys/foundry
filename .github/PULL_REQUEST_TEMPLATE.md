@@ -44,6 +44,11 @@ What breaks, or what stays broken, without this change? Link an issue if one
 exists — but only if it's an issue on THIS repository. A reference to an
 issue on a private repository (`org/private-repo#N`) discloses that repo by
 itself, even with no other detail attached.
+
+Use `Refs: #N`, not a closing keyword (`Closes`, `Fixes`, `Resolves`, …),
+unless merging THIS pull request is itself sufficient evidence #N is done —
+a closing keyword auto-closes the issue the moment this merges, with no
+check that its condition is actually met. See CONTRIBUTING.md's Conventions.
 -->
 
 ## Checks

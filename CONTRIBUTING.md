@@ -283,6 +283,26 @@ equivalent fix after.
 - **Public API changes** need the README updated in the same pull request —
   `check-readme-parity.mjs` checks this mechanically for undocumented or
   stale exports.
+- **A pull request that only unblocks an issue uses `Refs:`, never a closing
+  keyword.** GitHub auto-closes an issue when a merged pull request's title or
+  description carries a closing keyword (`Closes`, `Fixes`, `Resolves`, …)
+  referencing it — a text pattern the forge applies at merge time, with no
+  evidence behind it beyond "some text matched." `docs/LIFECYCLE.md`'s
+  standing rule is that state is derived from evidence, never declared, and a
+  keyword-driven close is exactly that defect for an issue. This happened
+  twice in one day: #811 said, in its own "What this does NOT do" section,
+  "Does not close #808," but also carried a closing keyword for #808
+  elsewhere in its text — the merge auto-closed #808 anyway, and it had to be
+  manually reopened with evidence the underlying condition was still unmet
+  (#828). #797/#819 shows the same mechanism landing correctly only by
+  chance — the keyword happened to match the real work, not because anything
+  checked it against #797's stated done-condition. No gate can enforce this:
+  GitHub's keyword-to-closure behavior is a platform feature outside every
+  script in this repository, so it depends on the author's own judgement, the
+  same as several conventions above. Reserve a closing keyword for a pull
+  request whose merge is itself sufficient evidence the referenced issue's
+  condition is met; use `Refs: #N` for one that only removes a blocker or
+  lands a partial step.
 - **Type-level assertions live in `.check.ts(x)` files, never in
   `.test.ts(x)` files.** Every package's `tsconfig.json` excludes
   `**/*.test.ts(x)` from `include`, so `npm run typecheck` never compiles a
