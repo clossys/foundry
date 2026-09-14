@@ -232,3 +232,63 @@ test("path-prefix: a term outside the neutralized path still fails a plain repos
   assert.equal(hit("packages/pkg-a/CHANGELOG.md"), false, "pkg-a's own CHANGELOG.md should stay neutralized in tree mode");
   assert.equal(hit("packages/pkg-b/CHANGELOG.md"), true, "pkg-b's CHANGELOG.md carries the same term outside the neutralized path and must still fail");
 });
+
+// --------------------------------------------------------- opaque content
+//
+// End-to-end proof that the full pack -> extract -> scan pipeline (not just
+// the delegated check-public-safety.mjs matcher tested above and in
+// scripts/test-gates.mjs) refuses an opaque file by default and admits one
+// only via an exemption keyed to the repository-relative path AND the exact
+// packed bytes' sha256 (see scripts/check-public-safety.mjs's OPAQUE FORMATS
+// header for why — issue #588).
+async function buildOpaquePackageFixture() {
+  const root = await mkdtemp(join(tmpdir(), "opaque-artifact-"));
+  const registry = "https://registry.example.test";
+  await writeFile(join(root, "package-scope.json"), JSON.stringify({ scope: "@example", registry }));
+  const pkgDir = join(root, "packages", "has-logo");
+  await mkdir(pkgDir, { recursive: true });
+  const pngBytes = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10, 1, 2, 3, 4, 5, 6, 7, 8]); // PNG signature + inert noise
+  await writeFile(
+    join(pkgDir, "package.json"),
+    JSON.stringify(
+      { name: "@example/has-logo", version: "1.0.0", private: false, license: "MIT", files: ["README.md", "LICENSE", "logo.png"], publishConfig: { registry } },
+      null,
+      2,
+    ),
+  );
+  await writeFile(join(pkgDir, "README.md"), "# has-logo\n");
+  await writeFile(join(pkgDir, "LICENSE"), "MIT\n");
+  await writeFile(join(pkgDir, "logo.png"), pngBytes);
+  const sha256 = createHash("sha256").update(pngBytes).digest("hex");
+  return { root, pkgDir, sha256 };
+}
+
+test("opaque content: an unacknowledged opaque file inside a packed tarball is refused end to end", async (t) => {
+  const { root, pkgDir } = await buildOpaquePackageFixture();
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const result = await runNode([gate, pkgDir]);
+  const out = (result.stdout ?? "") + (result.stderr ?? "");
+  assert.equal(result.code, 1, out);
+  assert.match(out, /opaque-unacknowledged/);
+  assert.match(out, /logo\.png/);
+  assert.match(out, /ARTIFACT FAIL/);
+});
+
+test("opaque content: a sha256-pinned governance/opaque-content-exemptions.json entry admits the same tarball end to end", async (t) => {
+  const { root, pkgDir, sha256 } = await buildOpaquePackageFixture();
+  t.after(() => rm(root, { recursive: true, force: true }));
+  await mkdir(join(root, "governance"), { recursive: true });
+  await writeFile(
+    join(root, "governance", "opaque-content-exemptions.json"),
+    JSON.stringify({
+      schemaVersion: 1,
+      exemptions: [{ path: "packages/has-logo/logo.png", sha256, reason: "Synthetic inert test logo fixture, byte-reviewed by hand.", issue: 588 }],
+    }),
+  );
+  const result = await runNode([gate, pkgDir]);
+  const out = (result.stdout ?? "") + (result.stderr ?? "");
+  assert.equal(result.code ?? 0, 0, out);
+  assert.doesNotMatch(out, /opaque-unacknowledged/);
+  assert.match(out, /ARTIFACT PASS/);
+  assert.match(out, /opaque-content-exemptions\.json/, "the PASS message should still name the exemption registry rather than claiming a blanket clean tarball");
+});
