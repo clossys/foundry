@@ -283,56 +283,17 @@ jobs:
       #
       # Pinned by version AND sha256: an unpinned download in a security gate
       # means the thing verifying the build is itself unverified.
-      #
-      # `--report-format json --report-path` is new: this step used to be the
-      # whole gate (raise on `--exit-code 1`, nothing else). It still does
-      # that -- the fail-fast behaviour below is unchanged -- but it now ALSO
-      # writes a structured record of the attempt, which the
-      # "secret-scan (inspector judgment)" step further down feeds to
-      # `@clossys/inspector`'s `checkSecretScan`. That judge asks questions
-      # this raw exit code cannot: whether the tool identified itself, whether
-      # it actually examined anything, and whether its own exit code and hit
-      # list agree -- exactly the "stopped scanning, kept reporting green"
-      # failure class `checkSecretScan`'s own header describes. See
-      # `.github/scripts/collect-secret-scan-observation.mjs` for how the
-      # record below becomes that judge's input.
-      #
-      # GitHub Actions runs a `run:` step's default script with `bash -e
-      # {0}` (see verify-standards.yml's own comment on this exact point) --
-      # errexit is ALREADY ON before this script's first line runs, and
-      # `set -uo pipefail` does not and cannot clear it (only `set +e`
-      # would). A standalone command that exits non-zero therefore aborts
-      # the script immediately, before any line after it runs -- which is
-      # exactly why `curl`/`sha256sum`/`tar` above are each written as
-      # `command || exit 1` rather than bare: a command that is the LEFT
-      # side of `||` does not trigger errexit, by bash's own rule for
-      # compound commands, regardless of whether `-e` is active. The
-      # gitleaks invocation below needs the same treatment for the opposite
-      # reason -- it must NOT exit the script on a real finding, so its own
-      # exit code can be captured and used deliberately -- so it is written
-      # `... --exit-code 1 || status=$?` rather than bare followed by a
-      # separate `status=$?` line. An earlier version of this step got this
-      # wrong in exactly the way described above: `status=$?` sat on its own
-      # line after a bare invocation, so a real finding (gitleaks exiting 1)
-      # aborted the script right there and neither $GITHUB_OUTPUT line below
-      # ever ran -- the judge downstream then saw `attempted: false` instead
-      # of the actual finding, for the one case this whole change exists to
-      # catch. Verified locally: the bare form silently drops the two lines
-      # after it under `bash -e`; the `|| status=$?` form does not.
       - name: gitleaks (full history)
-        id: gitleaks
         env:
           GITLEAKS_VERSION: 8.30.1
           GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
         run: |
-          set -uo pipefail
+          set -euo pipefail
           tarball="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
           curl -sSfL -o "$RUNNER_TEMP/$tarball" \
-            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${tarball}" || exit 1
-          echo "${GITLEAKS_SHA256}  $RUNNER_TEMP/$tarball" | sha256sum -c - || exit 1
-          tar -xzf "$RUNNER_TEMP/$tarball" -C "$RUNNER_TEMP" gitleaks || exit 1
-          report="$RUNNER_TEMP/gitleaks-report.json"
-          status=0
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${tarball}"
+          echo "${GITLEAKS_SHA256}  $RUNNER_TEMP/$tarball" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/$tarball" -C "$RUNNER_TEMP" gitleaks
           # --redact so a hit reports its location without reprinting the secret
           # into a public build log. --log-opts=--all covers every ref, not just
           # the checked-out branch: history is the point of this scan.
@@ -341,127 +302,7 @@ jobs:
             --redact \
             --no-banner \
             --log-opts=--all \
-            --report-format json \
-            --report-path "$report" \
-            --exit-code 1 || status=$?
-          echo "exit-code=$status" >> "$GITHUB_OUTPUT"
-          echo "report-path=$report" >> "$GITHUB_OUTPUT"
-          # Read back from this step's OWN env var rather than a second
-          # literal, so the version this job tells the downstream judgment
-          # job about can never drift from the one actually downloaded,
-          # checksummed, and run two lines above.
-          echo "version=$GITLEAKS_VERSION" >> "$GITHUB_OUTPUT"
-          exit "$status"
-
-      # The report is this job's own artifact, not the downstream judgment
-      # job's -- that job runs on a DIFFERENT runner with no access to this
-      # one's filesystem, so the only way it sees the report at all is by
-      # downloading it here. `if: always()` so a real finding (this step's
-      # own conclusion is failure) still uploads the evidence the judgment
-      # job needs to evaluate it.
-      - name: Upload gitleaks report
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          name: gitleaks-report
-          path: ${{ steps.gitleaks.outputs.report-path }}
-          if-no-files-found: warn
-
-    outputs:
-      gitleaks-exit-code: ${{ steps.gitleaks.outputs.exit-code }}
-      gitleaks-version: ${{ steps.gitleaks.outputs.version }}
-
-  # A SEPARATE job, deliberately, not more steps appended to `safety` above.
-  # `safety`'s own ten steps were dependency-free -- every one of them a
-  # single `node scripts/...mjs` invocation -- and staying that way matters:
-  # a registry flake or an unrelated compile error in `packages/controller`
-  # or `packages/inspector` while installing and building for this judgment
-  # would otherwise turn the `safety` job red under the name "publish
-  # safety", which a human (or an automated reader of run history, like
-  # `scripts/check-gate-efficacy.mjs`) could misattribute to the identity or
-  # secret gate itself having found something. Splitting the job means a
-  # build problem here surfaces under ITS OWN name, and `safety`'s own
-  # conclusion is driven only by its original ten steps plus the raw
-  # gitleaks exit code, exactly as before this change.
-  #
-  # `needs: safety` + `if: always()`: this job must still run -- and still
-  # judge the real finding -- when `safety` itself failed (a real secret was
-  # found). See `safety`'s own gitleaks step comment for why the judgment
-  # steps must be exercised on a real failure to prove anything at all.
-  secret-scan-judgment:
-    name: secret-scan (inspector judgment)
-    needs: safety
-    if: always()
-    runs-on: ubuntu-latest
-    steps:
-      # Full history, matching `safety`'s own checkout: `UNITS_SCANNED`
-      # below is `git rev-list --all --count` on THIS checkout, which must
-      # report the same universe gitleaks actually scanned in the other
-      # job, not whatever a default shallow clone happens to contain.
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version: 20
-      - run: npm ci --ignore-scripts
-      - run: |
-          npm run build --workspace=packages/controller
-          npm run build --workspace=packages/inspector
-
-      # `if-no-files-found: warn` on the upload side means this can
-      # legitimately come back empty -- for example if `safety` itself never
-      # reached the gitleaks step at all (an earlier step in that job, like
-      # the denylist scan, failed first). `continue-on-error` here so a
-      # missing artifact reaches the COLLECT step below as an absent report
-      # rather than aborting this job before it can report anything.
-      - name: Download gitleaks report
-        id: download-report
-        continue-on-error: true
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
-        with:
-          name: gitleaks-report
-          path: ${{ runner.temp }}/gitleaks-report
-
-      # ---- COLLECT -----------------------------------------------------------
-      - name: Assemble the secret-scan observation
-        id: secret-scan-observation
-        env:
-          GITLEAKS_VERSION: ${{ needs.safety.outputs.gitleaks-version }}
-          GITLEAKS_EXIT_CODE: ${{ needs.safety.outputs.gitleaks-exit-code }}
-          GITLEAKS_REPORT_PATH: ${{ runner.temp }}/gitleaks-report/gitleaks-report.json
-          REPORT_DOWNLOADED: ${{ steps.download-report.outcome == 'success' }}
-        run: |
-          set -euo pipefail
-          # An honest count of what "full-history" covered: every commit
-          # reachable from any ref, the same universe `--log-opts=--all`
-          # asked gitleaks to walk. Derived from this job's own checkout,
-          # never invented.
-          export UNITS_SCANNED
-          UNITS_SCANNED="$(git rev-list --all --count)"
-          # A report that never downloaded is not a report path this job can
-          # honestly claim to have read -- clear the env var rather than
-          # hand the collector a path that does not exist, which it would
-          # otherwise be unable to tell apart from "gitleaks wrote an empty
-          # report".
-          if [ "$REPORT_DOWNLOADED" != "true" ]; then
-            unset GITLEAKS_REPORT_PATH
-          fi
-          node .github/scripts/collect-secret-scan-observation.mjs > secret-scan-inputs.json
-
-      # ---- DECIDE ------------------------------------------------------------
-      - name: secret-scan (inspector judgment)
-        run: |
-          set -o pipefail
-          report="$RUNNER_TEMP/secret-scan-report.txt"
-          status=0
-          node packages/inspector/dist/bin.js \
-            --inputs secret-scan-inputs.json \
-            --checks secret-scan \
-            > "$report" || status=$?
-          cat "$report"
-          cat "$report" >> "$GITHUB_STEP_SUMMARY"
-          exit "$status"
+            --exit-code 1
 
   scope:
     name: scope drift

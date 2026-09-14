@@ -122,45 +122,19 @@ export async function collectJobs({ fetchJson, owner, repo, events = CHANGE_EVEN
     }
     for (const job of jobsPage.jobs) {
       if (typeof job?.name !== "string") continue;
-      // `event` rides along even though `toRunRecords`'s own `GateRunRecord`
-      // output (observer's fixed shape) does not carry it forward -- it is
-      // read separately by `secretScanningOutcomes` (see that module's own
-      // header) to tell an actual landing (`push` to the default branch)
-      // apart from a pre-merge validation run (`pull_request`) that shares
-      // the SAME eventual change under a DIFFERENT `head_sha` (the PR
-      // branch's own tip, not the merge commit). Collapsing those into one
-      // "distinct changeId" set — which `unsourcedOutcomes` already does,
-      // harmlessly, because every entry was `could-not-read` regardless —
-      // stops being harmless the moment a real per-changeId verdict exists:
-      // it would count the same landed change (and, worse, the same real
-      // secret, since the PR head SHA is normally still resolvable via git
-      // ancestry too) as two escapes instead of one.
-      jobs.push({ gate: job.name, changeId: run.head_sha, conclusion: job.conclusion ?? null, event: typeof run.event === "string" ? run.event : undefined });
+      jobs.push({ gate: job.name, changeId: run.head_sha, conclusion: job.conclusion ?? null });
     }
   }
   return { ok: true, jobs };
 }
 
-/**
- * Map collected jobs into observer's `GateRunRecord` shape.
- *
- * Each record also carries `event` as an extra, non-`GateRunRecord` field.
- * `computeGateEfficacy` (imported from the published `@clossys/observer`
- * package) reads only `gate`/`ran`/`verdict`/`changeId` and ignores unknown
- * properties, so this is additive and does not change what any existing
- * caller sees. `secretScanningOutcomes` is the one caller that reads it —
- * see its own header for why "which event produced this changeId" matters
- * for an escape-rate source in a way it never mattered for
- * `unsourcedOutcomes`.
- */
+/** Map collected jobs into observer's `GateRunRecord` shape. */
 export function toRunRecords(jobs, gate) {
   return jobs
     .filter((job) => job.gate === gate)
     .map((job) => {
       const ran = !DID_NOT_RUN.has(job.conclusion);
-      return ran
-        ? { gate, changeId: job.changeId, ran: true, verdict: job.conclusion, event: job.event }
-        : { gate, changeId: job.changeId, ran: false, event: job.event };
+      return ran ? { gate, changeId: job.changeId, ran: true, verdict: job.conclusion } : { gate, changeId: job.changeId, ran: false };
     });
 }
 
