@@ -208,6 +208,133 @@ describe("main — JSX text nodes (issue #37)", () => {
 });
 
 // -----------------------------------------------------------------------
+// Issue #753: a `//`/`/* */` JSX comment between an element's attributes
+// used to be unclassifiable (see scan.test.ts's own "issue #753" describe
+// block for the unit-level repro/fix). These are the CLI-level
+// regressions: (1) the previously-broken construct now runs to a real
+// 0/1 verdict instead of the indeterminate 2 it used to force; (2) real
+// findings produced alongside a DIFFERENT, genuinely-unclassifiable
+// construct are no longer silently discarded — `--format json` carries
+// them even though the run is still, correctly, exit 2; and (3) a
+// genuinely unclassifiable construct is STILL reported as indeterminate,
+// never silently dropped or read as clean, in both text and json modes —
+// this fix narrows what counts as unclassifiable, it does not widen what
+// counts as valid JSX.
+// -----------------------------------------------------------------------
+describe("main — JSX comment trivia between attributes (issue #753)", () => {
+  const faqWithCommentBetweenAttrs = (childText: string): string =>
+    "export function Page() {\n" +
+    "  return (\n" +
+    "    <div>\n" +
+    "      <Faq\n" +
+    "        // TODO: verify copy before ship\n" +
+    "        items={data}\n" +
+    "      >\n" +
+    `        <span>${childText}</span>\n` +
+    "      </Faq>\n" +
+    "    </div>\n" +
+    "  );\n" +
+    "}\n";
+
+  it("the previously-unclassifiable construct no longer forces exit 2 — a registered child now returns a real 0", () => {
+    const recordFile = writeRecord({
+      id: "t",
+      entries: [{ id: "faq.hello", text: "Hello world", context: "Faq" }],
+    });
+    writeFileSync(join(scanDir, "Page.tsx"), faqWithCommentBetweenAttrs("Hello world"));
+    expect(main([recordFile, scanDir])).toBe(0);
+  });
+
+  it("the previously-unclassifiable construct now surfaces its child copy as a real finding (1), not an indeterminate 2", () => {
+    const recordFile = writeRecord({ id: "t", entries: [] });
+    writeFileSync(join(scanDir, "Page.tsx"), faqWithCommentBetweenAttrs("Totally unregistered copy"));
+    const logSpy = vi.spyOn(console, "log");
+    expect(main([recordFile, scanDir])).toBe(1);
+    const printed = logSpy.mock.calls.map((c) => c.join(" ")).join("\n");
+    expect(printed).toMatch(/Totally unregistered copy/);
+    expect(printed).not.toMatch(/unrecognized-jsx-child/);
+  });
+
+  it("findings are no longer discarded when a DIFFERENT construct in the same scan is genuinely unclassifiable — --format json still carries every finding under exit 2", () => {
+    const recordFile = writeRecord({ id: "t", entries: [] });
+    // Clean file: real, traceable findings the old behavior's exit code
+    // alone would make unreachable to a machine consumer.
+    writeFileSync(
+      join(scanDir, "About.tsx"),
+      'export const About = () => <p>First unregistered finding</p>;\nexport const Sub = () => <p>Second unregistered finding</p>;\n',
+    );
+    // A genuinely unclassifiable construct — unrelated to comments,
+    // untouched by this fix — an unclosed attribute expression. A
+    // single-line, top-level (non-nested) element on purpose: it fails
+    // BEFORE any child text is ever reached, so it contributes zero
+    // incidental candidates of its own — the only two findings below are
+    // the real ones from About.tsx.
+    writeFileSync(join(scanDir, "Broken.tsx"), "export const Broken = () => <div attr={oops>Text</div>;\n");
+
+    const logSpy = vi.spyOn(console, "log");
+    const exitCode = main([recordFile, scanDir, "--format", "json"]);
+    expect(exitCode).toBe(2); // unchecked still wins — an indeterminate result must never read as clean
+
+    expect(logSpy.mock.calls).toHaveLength(1); // exactly one JSON object, nothing else, on stdout
+    const report = JSON.parse(logSpy.mock.calls[0]?.[0] as string);
+    expect(report.verdict).toBe("indeterminate");
+    expect(report.exitCode).toBe(2);
+    // The two real findings from About.tsx survive in the structured
+    // report even though the overall run is indeterminate — this is the
+    // exact discard #753 reported (292 findings lost to one unchecked
+    // construct), reproduced here at n=2 and proven fixed.
+    expect(report.findings).toHaveLength(2);
+    expect(report.findings.map((f: { message: string }) => f.message).join("\n")).toMatch(/First unregistered finding/);
+    expect(report.findings.map((f: { message: string }) => f.message).join("\n")).toMatch(/Second unregistered finding/);
+    expect(report.unchecked).toHaveLength(1);
+    expect(report.unchecked[0].kind).toBe("malformed-jsx-tag");
+  });
+
+  it("a genuinely unclassifiable construct (no comments involved) is STILL reported as indeterminate — never silently dropped, never counted clean, in --format json exactly as in text mode", () => {
+    const recordFile = writeRecord({ id: "t", entries: [] });
+    writeFileSync(join(scanDir, "Broken.tsx"), "export const Broken = () => <div attr={oops>Text</div>;\n");
+
+    const logSpy = vi.spyOn(console, "log");
+    const exitCode = main([recordFile, scanDir, "--format", "json"]);
+    expect(exitCode).toBe(2);
+    const report = JSON.parse(logSpy.mock.calls[0]?.[0] as string);
+    expect(report.verdict).toBe("indeterminate"); // never "clean" — zero findings must not be conflated with "nothing wrong"
+    expect(report.findings).toEqual([]);
+    expect(report.unchecked).toHaveLength(1);
+  });
+
+  it("--format json on a genuinely clean run reports verdict \"clean\", not merely a bare 0", () => {
+    const recordFile = writeRecord(validRecord);
+    writeFileSync(join(scanDir, "about.ts"), 'const rangeSummary = "No results";\n');
+    const logSpy = vi.spyOn(console, "log");
+    expect(main([recordFile, scanDir, "--format", "json"])).toBe(0);
+    const report = JSON.parse(logSpy.mock.calls[0]?.[0] as string);
+    expect(report.verdict).toBe("clean");
+    expect(report.findings).toEqual([]);
+    expect(report.unchecked).toEqual([]);
+  });
+
+  it("--format json on a record-load failure still reports indeterminate with a reason, and prints nothing else", () => {
+    const recordFile = join(recordDir, "copy.json");
+    writeFileSync(recordFile, "{ not json");
+    writeFileSync(join(scanDir, "about.ts"), 'const x = "irrelevant";\n');
+    const logSpy = vi.spyOn(console, "log");
+    expect(main([recordFile, scanDir, "--format", "json"])).toBe(2);
+    expect(logSpy.mock.calls).toHaveLength(1);
+    const report = JSON.parse(logSpy.mock.calls[0]?.[0] as string);
+    expect(report.verdict).toBe("indeterminate");
+    expect(report.exitCode).toBe(2);
+    expect(typeof report.reason).toBe("string");
+    expect(report.reason.length).toBeGreaterThan(0);
+  });
+
+  it("--format bogus is rejected as a CliInputError, exactly like an unknown flag", () => {
+    const recordFile = writeRecord(validRecord);
+    expect(() => main([recordFile, scanDir, "--format", "bogus"])).toThrow(CliInputError);
+  });
+});
+
+// -----------------------------------------------------------------------
 // voice-derivation-coverage — the second subcommand. Same hermetic-mkdtemp
 // discipline as the tests above: real files on disk, `main(argv)` called
 // directly, nothing spawned.

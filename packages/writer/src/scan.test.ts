@@ -532,6 +532,120 @@ describe("extractCopyCandidates — JSX text nodes (issue #37)", () => {
   });
 });
 
+// Issue #753: a `//` line comment or `/* */` block comment placed
+// BETWEEN a JSX element's attributes is legal TSX — every mainstream
+// formatter (Prettier included) produces exactly this shape for a
+// commented-out or explained prop — and until this fix, the attribute-
+// parsing loop inside `tryScanJsxElement` had no case for either comment
+// form: it fell straight through to the loop's final `return backtrack()`
+// (the same "not committed, silently not-JSX" branch TSX's generic-
+// arrow-function syntax hits), so the element was reprocessed as
+// ordinary JS. For a TOP-LEVEL element that reprocessing is silent (see
+// the generic-arrow-function test above); for a NESTED element (the
+// realistic shape — a real component tree), `scanJsxChildren`'s own
+// nested-null branch reports it as `"unrecognized-jsx-child"`, and the
+// misinterpreted tag/comment/attribute text gets folded into a garbage
+// `jsx-text` "candidate" besides. A 270-entry real `CopyRecord` scan hit
+// this on exactly one construct and still discarded 292 real findings
+// over it (see `cli.test.ts`, "issue #753" describe block, for the
+// full CLI-level regression).
+describe("extractCopyCandidates — JSX comment trivia between attributes (issue #753)", () => {
+  it("a `//` line comment between attributes on a NESTED element is no longer unclassifiable", () => {
+    const src =
+      "export function Foo() {\n" +
+      "  return (\n" +
+      "    <div>\n" +
+      "      <Faq\n" +
+      "        // TODO: verify copy before ship\n" +
+      "        items={data}\n" +
+      "      >\n" +
+      "        <span>Hello world</span>\n" +
+      "      </Faq>\n" +
+      "    </div>\n" +
+      "  );\n" +
+      "}\n";
+    const { candidates, unchecked } = extractCopyCandidates(src, "Widget.tsx");
+    expect(unchecked).toEqual([]);
+    expect(candidates).toEqual([expect.objectContaining({ kind: "jsx-text", normalized: "Hello world", line: 8 })]);
+  });
+
+  it("a `/* */` block comment between attributes on a NESTED element is no longer unclassifiable", () => {
+    const src =
+      "export function Foo() {\n" +
+      "  return (\n" +
+      "    <div>\n" +
+      "      <Faq\n" +
+      "        /* verify copy before ship */\n" +
+      "        items={data}\n" +
+      "      >\n" +
+      "        <span>Hello world</span>\n" +
+      "      </Faq>\n" +
+      "    </div>\n" +
+      "  );\n" +
+      "}\n";
+    const { candidates, unchecked } = extractCopyCandidates(src, "Widget.tsx");
+    expect(unchecked).toEqual([]);
+    expect(candidates).toEqual([expect.objectContaining({ kind: "jsx-text", normalized: "Hello world", line: 8 })]);
+  });
+
+  it("consecutive comments (line then block) between attributes are both skipped as trivia", () => {
+    const src =
+      "const el = (\n" +
+      "  <div>\n" +
+      "    <Faq\n" +
+      "      // first note\n" +
+      "      /* second note */\n" +
+      "      items={data}\n" +
+      "    >\n" +
+      "      <span>Visible copy</span>\n" +
+      "    </Faq>\n" +
+      "  </div>\n" +
+      ");\n";
+    const { candidates, unchecked } = extractCopyCandidates(src, "Widget.tsx");
+    expect(unchecked).toEqual([]);
+    expect(candidates).toEqual([expect.objectContaining({ normalized: "Visible copy" })]);
+  });
+
+  it("a comment immediately after the tag name, before any attribute, is skipped as trivia", () => {
+    const src =
+      "const el = (\n" +
+      "  <div>\n" +
+      "    <Faq /* leading note */ items={data}>\n" +
+      "      <span>Visible copy</span>\n" +
+      "    </Faq>\n" +
+      "  </div>\n" +
+      ");\n";
+    const { candidates, unchecked } = extractCopyCandidates(src, "Widget.tsx");
+    expect(unchecked).toEqual([]);
+    expect(candidates).toEqual([expect.objectContaining({ normalized: "Visible copy" })]);
+  });
+
+  it("a trailing comment right before a self-closing `/>` is skipped as trivia", () => {
+    const src = "const el = <div><Faq items={data} // trailing note\n/></div>;\n";
+    const { candidates, unchecked } = extractCopyCandidates(src, "Widget.tsx");
+    expect(unchecked).toEqual([]);
+    expect(candidates).toEqual([]);
+  });
+
+  it("an UNTERMINATED block comment between attributes still fails closed — silently not-JSX, exactly like every other pre-commit failure in this loop, never reported as clean", () => {
+    const src = "const el = <Faq /* never closes\n  items={data}>Text</Faq>;\n";
+    const { candidates, unchecked, excluded } = extractCopyCandidates(src, "Widget.tsx");
+    // Not committed as JSX at all (mirrors the generic-arrow-function
+    // case above) — so this is not a false "clean" reading of the
+    // element's own children either: nothing about "Faq"/"items"/"Text"
+    // is reported as satisfied copy.
+    expect(candidates).toEqual([]);
+    expect(excluded).toEqual([]);
+    expect(unchecked).toEqual([]);
+  });
+
+  it("a genuinely unclassifiable construct (unrelated to comments) is STILL reported via `unchecked`, never silently dropped or counted clean — comment-skipping did not widen what counts as valid JSX", () => {
+    const src = "const el = <div attr={oops>Text</div>;\n";
+    const { unchecked } = extractCopyCandidates(src, "Broken.tsx");
+    expect(unchecked).toEqual([expect.objectContaining({ kind: "malformed-jsx-tag" })]);
+  });
+});
+
 describe("extractCopyCandidates — parseFailure position claims (issue #37 follow-up review)", () => {
   // Same "report where the construct actually starts" discipline applies
   // to `parseFailure` messages, not just `unchecked` entries. A

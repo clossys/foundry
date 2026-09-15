@@ -130,11 +130,11 @@ import {
   type AddressabilityGateResult,
   type AddressabilityScanResult,
 } from "./addressability.js";
-import { checkCopyTraceability, type CopyGateResult } from "./copy-gate.js";
+import { checkCopyTraceability, type CopyGateFinding, type CopyGateIgnored, type CopyGateResult } from "./copy-gate.js";
 import { checkLocaleCoverage, type LocaleCoverageReport } from "./locale-coverage.js";
 import { checkPassageComposition, readPassageRecord, type PassageGateResult } from "./passage.js";
 import { readCopyRecord } from "./registry.js";
-import { scanCopySourceTree, type ScanResult } from "./scan.js";
+import { scanCopySourceTree, type ScanResult, type UncheckedItem } from "./scan.js";
 import { checkVoiceDerivationCoverage, type VoiceDerivationCoverageResult } from "./voice/index.js";
 
 const USAGE = `Usage: writer-check <record-file> [scan-dir] [options]
@@ -154,8 +154,18 @@ are separate, stricter gates; neither runs as part of this default command.
 
 Options:
   --help         Print this message and exit 0.
+  --format <text|json>  Output format. Defaults to text. "json" prints exactly one
+                 machine-readable object to stdout (see CopyTraceabilityReport in
+                 cli.ts) instead of the human-readable report — "verdict" states the
+                 same clean/findings/indeterminate outcome as the exit code, but
+                 "findings" and "unchecked" are always both present, so a consumer
+                 that only checks the exit code is never the only way to see what a
+                 run DID measure: a scan that produced real findings AND one
+                 unclassifiable construct in the same run (issue #753) still exits 2
+                 (an indeterminate result must never read as clean), but its findings
+                 remain reachable in this object rather than discarded with it.
 
-Exit codes: 0 = clean, 1 = at least one finding, 2 = could not run (bad input, missing/invalid record, nothing matched to scan, or every matched file failed to parse).
+Exit codes: 0 = clean, 1 = at least one finding, 2 = could not run (bad input, missing/invalid record, nothing matched to scan, every matched file failed to parse, or at least one JSX construct recognized but not reliably classified — see --format json above to still recover any findings a run like that DID produce).
 
 Run "writer-check voice-derivation-coverage --help" for the second subcommand's own usage.
 Run "writer-check locale-coverage --help" for the third subcommand's own usage.
@@ -196,17 +206,28 @@ export class CliInputError extends Error {}
 interface ParsedArgs {
   recordFile?: string;
   scanDir?: string;
+  format: "text" | "json";
   help: boolean;
 }
 
 function parseArgs(argv: string[]): ParsedArgs {
   let recordFile: string | undefined;
   let scanDir: string | undefined;
+  let format: "text" | "json" = "text";
   let help = false;
 
-  for (const arg of argv) {
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i] as string;
     if (arg === "--help" || arg === "-h") {
       help = true;
+      continue;
+    }
+    if (arg === "--format") {
+      const value = argv[++i];
+      if (value !== "text" && value !== "json") {
+        throw new CliInputError(`--format must be "text" or "json", got ${JSON.stringify(value)}`);
+      }
+      format = value;
       continue;
     }
     if (arg.startsWith("-")) {
@@ -221,7 +242,7 @@ function parseArgs(argv: string[]): ParsedArgs {
     }
   }
 
-  return { recordFile, scanDir, help };
+  return { recordFile, scanDir, format, help };
 }
 
 function requireDirectory(label: string, path: string): void {
@@ -706,6 +727,74 @@ function printAddressabilityReport(result: AddressabilityGateResult): void {
  * that reason — `run()` below is the only caller that reads the real
  * `process.argv`.
  */
+/**
+ * The default command's own structured, machine-readable report — issue
+ * #753's second half. `printGateReport`/`printScanAccounting` already put
+ * every finding a run DID produce ahead of any exit-code decision in the
+ * text output; the gap #753 found is that a consumer keying on the exit
+ * code alone (2 = indeterminate) cannot reach those findings at all,
+ * because nothing besides that human-readable text carries them. This
+ * type is that carrier: `--format json` prints EXACTLY ONE of these,
+ * nothing else, to stdout, whatever `exitCode` turns out to be — the same
+ * "one parseable object regardless of verdict" contract `inspector`'s own
+ * `VerifyStandardsReport`/`--format json` already publishes (see
+ * `packages/inspector/src/cli.ts`), and the same shape `observer`'s
+ * fleet-coverage grader and `addressability.ts`'s own `AddressabilityGateResult`
+ * use: a per-item verdict (here, each `CopyGateFinding`/`UncheckedItem`) is
+ * a DIFFERENT question from the run's one overall verdict, and collapsing
+ * the two into a bare exit code is exactly what discarded 292 real
+ * findings alongside one unclassifiable construct in #753's own repro.
+ *
+ * `verdict` is the SAME three states this whole package uses everywhere
+ * else (`"clean" | "findings" | "indeterminate"`), computed with the
+ * identical precedence `main()`'s own exit-code decision already applies
+ * below — `unchecked.length > 0` wins over `findings.length > 0`, which
+ * wins over a clean pass. Never a fourth state, and never inferred
+ * separately from `exitCode` by a consumer — read `verdict` (or
+ * `exitCode`) and treat `findings`/`unchecked` as what was actually
+ * measured, present or empty independent of which verdict resulted.
+ *
+ * `reason` is populated ONLY for the "could not run at all" shape of
+ * indeterminate — a missing/invalid copy record, an untrustworthy
+ * exclusion list, or a scan that matched/parsed nothing — where `findings`
+ * and `unchecked` are necessarily both `[]` because `checkCopyTraceability`
+ * never ran. It is `undefined` whenever a real scan DID run, including the
+ * `"indeterminate"` case #753 is about (real `findings`, plus one or more
+ * `unchecked` entries) — that case needs no extra prose beyond the data
+ * itself, which is the entire point of shipping it as data.
+ */
+export interface CopyTraceabilityReport {
+  recordFile: string;
+  scanDir: string;
+  verdict: "clean" | "findings" | "indeterminate";
+  exitCode: 0 | 1 | 2;
+  reason?: string;
+  filesScanned: number;
+  candidatesScanned: number;
+  matched: number;
+  findings: CopyGateFinding[];
+  ignored: CopyGateIgnored[];
+  unchecked: UncheckedItem[];
+  parseFailures: { file: string; detail: string }[];
+}
+
+function emptyReport(recordFile: string, scanDir: string, exitCode: 0 | 1 | 2, reason: string): CopyTraceabilityReport {
+  return {
+    recordFile,
+    scanDir,
+    verdict: "indeterminate",
+    exitCode,
+    reason,
+    filesScanned: 0,
+    candidatesScanned: 0,
+    matched: 0,
+    findings: [],
+    ignored: [],
+    unchecked: [],
+    parseFailures: [],
+  };
+}
+
 export function main(argv: string[]): number {
   // Subcommand dispatch: only `argv[0] === "voice-derivation-coverage"` or
   // `argv[0] === "locale-coverage"` exactly diverts to the second/third
@@ -729,13 +818,20 @@ export function main(argv: string[]): number {
     throw new CliInputError("record-file is required");
   }
 
+  const jsonMode = args.format === "json";
+  const emitJson = (report: CopyTraceabilityReport): void => {
+    if (jsonMode) console.log(JSON.stringify(report, null, 2));
+  };
+
   const recordFile = resolve(args.recordFile);
   const scanDir = resolve(args.scanDir ?? process.cwd());
   requireFile("record-file", recordFile);
   requireDirectory("scan-dir", scanDir);
 
-  console.log(`Copy record: ${recordFile}`);
-  console.log(`Scan directory: ${scanDir}`);
+  if (!jsonMode) {
+    console.log(`Copy record: ${recordFile}`);
+    console.log(`Scan directory: ${scanDir}`);
+  }
 
   // The copy record itself missing/unreadable/unparseable/invalid is
   // fail-closed: there is no trustworthy set of registered entries to
@@ -744,9 +840,19 @@ export function main(argv: string[]): number {
   // `strategy-facts-check` holds `facts.json` to.
   const read = readCopyRecord(recordFile);
   if (!read.complete || !read.record) {
-    console.error(`\nCopy record could not be loaded:`);
-    for (const issue of read.issues) console.error(`  [${issue.reason}] ${issue.detail}`);
-    console.error("Refusing to report a pass with no trustworthy copy record to check source against.");
+    if (!jsonMode) {
+      console.error(`\nCopy record could not be loaded:`);
+      for (const issue of read.issues) console.error(`  [${issue.reason}] ${issue.detail}`);
+      console.error("Refusing to report a pass with no trustworthy copy record to check source against.");
+    }
+    emitJson(
+      emptyReport(
+        recordFile,
+        scanDir,
+        2,
+        `copy record could not be loaded: ${read.issues.map((i) => `[${i.reason}] ${i.detail}`).join("; ")}`,
+      ),
+    );
     return 2;
   }
 
@@ -758,7 +864,7 @@ export function main(argv: string[]): number {
   // own options) does not require touching this exit-code logic again —
   // see this file's top doc comment.
   const scan = scanCopySourceTree(scanDir); // throws (fail-closed) on an unreadable directory — caught by run()
-  printScanAccounting(scan);
+  if (!jsonMode) printScanAccounting(scan);
 
   // A malformed pathExclusions entry means this run cannot trust which
   // files were correctly excluded — "could not run", not "ran and found
@@ -767,8 +873,13 @@ export function main(argv: string[]): number {
   // walk itself found anything.
   const invalidPathExclusions = scan.pathExclusionFindings.filter((f) => f.severity === "error");
   if (invalidPathExclusions.length > 0) {
-    console.error(
-      `\n${invalidPathExclusions.length} pathExclusions entr${invalidPathExclusions.length === 1 ? "y is" : "ies are"} invalid — refusing to report a pass built on an exclusion list that cannot be trusted.`,
+    if (!jsonMode) {
+      console.error(
+        `\n${invalidPathExclusions.length} pathExclusions entr${invalidPathExclusions.length === 1 ? "y is" : "ies are"} invalid — refusing to report a pass built on an exclusion list that cannot be trusted.`,
+      );
+    }
+    emitJson(
+      emptyReport(recordFile, scanDir, 2, `${invalidPathExclusions.length} invalid pathExclusions entr(y/ies)`),
     );
     return 2;
   }
@@ -779,12 +890,19 @@ export function main(argv: string[]): number {
   // scan.parseFailures) are both, deliberately, the same outcome here —
   // neither one is "scanned everything, found nothing wrong".
   if (scan.filesScanned === 0) {
-    console.error(
+    const reason =
       scan.parseFailures.length > 0
-        ? `\nEvery file matched under "${scanDir}" failed to parse — nothing was actually scanned.`
-        : `\nNo files matched under "${scanDir}" — nothing was scanned.`,
-    );
-    console.error("Refusing to report a pass for a scan that checked nothing.");
+        ? `every file matched under "${scanDir}" failed to parse — nothing was actually scanned`
+        : `no files matched under "${scanDir}" — nothing was scanned`;
+    if (!jsonMode) {
+      console.error(
+        scan.parseFailures.length > 0
+          ? `\nEvery file matched under "${scanDir}" failed to parse — nothing was actually scanned.`
+          : `\nNo files matched under "${scanDir}" — nothing was scanned.`,
+      );
+      console.error("Refusing to report a pass for a scan that checked nothing.");
+    }
+    emitJson(emptyReport(recordFile, scanDir, 2, reason));
     return 2;
   }
 
@@ -807,15 +925,25 @@ export function main(argv: string[]): number {
   // read as fully accounted-for, it does not hide anything that was
   // learned.
   if (scan.parseFailures.length > 0) {
-    console.error(
-      `\n${scan.parseFailures.length} of ${scan.parseFailures.length + scan.filesScanned} matched file(s) under "${scanDir}" could not be parsed and were never examined for copy.`,
+    if (!jsonMode) {
+      console.error(
+        `\n${scan.parseFailures.length} of ${scan.parseFailures.length + scan.filesScanned} matched file(s) under "${scanDir}" could not be parsed and were never examined for copy.`,
+      );
+      console.error("Refusing to report a pass for a scan whose coverage is incomplete.");
+    }
+    emitJson(
+      emptyReport(
+        recordFile,
+        scanDir,
+        2,
+        `${scan.parseFailures.length} of ${scan.parseFailures.length + scan.filesScanned} matched file(s) could not be parsed and were never examined for copy`,
+      ),
     );
-    console.error("Refusing to report a pass for a scan whose coverage is incomplete.");
     return 2;
   }
 
   const result = checkCopyTraceability(scan.candidates, scan.citations, read.record, scan.filesScanned, scan.unchecked);
-  printGateReport(result);
+  if (!jsonMode) printGateReport(result);
 
   // `unchecked` wins over everything else in the exit-code decision — see
   // this file's own top doc comment for why it is a `2`, not a `1`: it
@@ -824,9 +952,34 @@ export function main(argv: string[]): number {
   // finding was still printed above, so nothing real is hidden — this
   // only refuses to let the run as a whole read as clean or as
   // fully-accounted-for.
-  if (result.unchecked.length > 0) return 2;
-
-  return result.findings.length > 0 ? 1 : 0;
+  //
+  // THIS is #753's own partial-evaluation case: `result.findings` can be
+  // (and in #753's own repro, was) non-empty at the exact same time as
+  // `result.unchecked` — a real 292-finding scan sitting right next to one
+  // unclassifiable construct. `verdict` is still, correctly,
+  // `"indeterminate"` (never `"clean"`, never silently `"findings"`) —
+  // but unlike a bare exit code, `--format json`'s report carries
+  // `findings` (all 292 of them) AND `unchecked` (the one construct) in
+  // the SAME object, so a consumer keying on `exitCode`/`verdict` alone
+  // still fails closed exactly as this package intends, while a consumer
+  // that reads further is never forced to throw away what was measured.
+  const exitCode: 0 | 1 | 2 = result.unchecked.length > 0 ? 2 : result.findings.length > 0 ? 1 : 0;
+  const verdict: CopyTraceabilityReport["verdict"] =
+    result.unchecked.length > 0 ? "indeterminate" : result.findings.length > 0 ? "findings" : "clean";
+  emitJson({
+    recordFile,
+    scanDir,
+    verdict,
+    exitCode,
+    filesScanned: scan.filesScanned,
+    candidatesScanned: result.candidatesScanned,
+    matched: result.matched,
+    findings: result.findings,
+    ignored: result.ignored,
+    unchecked: result.unchecked,
+    parseFailures: scan.parseFailures.map((p) => ({ file: p.file, detail: p.detail })),
+  });
+  return exitCode;
 }
 
 function run(): void {
