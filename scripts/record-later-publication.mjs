@@ -10,7 +10,7 @@ import { join, dirname, basename, resolve } from "node:path";
 import { tmpdir } from "node:os";
 
 import { assertCredentialFree } from "./lib/candidate-runner.mjs";
-import { comparableTranscriptSha256, currentQualificationJoins, parseStrictJson, qualificationPath, qualificationRecordHistory, validateCandidateQualification } from "./lib/candidate-qualification.mjs";
+import { comparableTranscriptSha256, currentQualificationJoins, packageManifestDigest, parseStrictJson, qualificationPath, qualificationRecordHistory, validateCandidateQualification } from "./lib/candidate-qualification.mjs";
 import { fetchPublicNpmArtifact } from "./fetch-public-npm-artifact.mjs";
 import { assertPackageAuthorized, loadReleaseCatalog, readCurrentReleaseIdentity, resolveReleaseTarget } from "./check-release-catalog.mjs";
 import { repositoryIdentityFromPackument, validatePublicNpmRegistryProof } from "./lib/public-npm-registry.mjs";
@@ -80,7 +80,7 @@ function prePublicationSourceValid(root, qualification, qualificationIntroductio
   if (!SHA1.test(sourceSha ?? "") || sourceSha === qualificationIntroduction) return false;
   if (!gitAncestor(root, qualificationIntroduction, sourceSha) || !gitAncestor(root, sourceSha, "HEAD")) return false;
   try {
-    const joins = currentQualificationJoins(root, qualification.candidate, sourceSha);
+    const joins = currentQualificationJoins(root, qualification.candidate, sourceSha, { schemaVersion: qualification.schemaVersion });
     return [
       ["packageTreeSha1", qualification.candidate?.packageTreeSha1],
       ["packageManifestSha256", qualification.candidate?.packageManifestSha256],
@@ -172,9 +172,9 @@ async function buildReplay({ root, packageKey, qualification, qualificationIntro
   const transcriptBytes = archiveEntry(archiveFile.absolute, "transcript.json");
   if (!archivedCandidate.equals(candidateBytes)) throw new Error("qualified artifact archive does not contain the exact candidate being retained");
   const transcript = parseJson(transcriptBytes, "fresh qualification transcript");
-  const joins = currentQualificationJoins(root, qualification.candidate, provider.run.head_sha);
+  const joins = currentQualificationJoins(root, qualification.candidate, provider.run.head_sha, { schemaVersion: qualification.schemaVersion });
   const transcriptFindings = validateCandidateQualification(qualification, {
-    expected: { name: qualification.candidate.name, version: qualification.candidate.version, ...currentQualificationJoins(root, qualification.candidate, qualificationIntroduction) },
+    expected: { name: qualification.candidate.name, version: qualification.candidate.version, ...currentQualificationJoins(root, qualification.candidate, qualificationIntroduction, { schemaVersion: qualification.schemaVersion }) },
     freshTranscript: transcript,
   });
   if (transcriptFindings.length) throw new Error(`fresh replay transcript is invalid: ${transcriptFindings[0].message}`);
@@ -287,7 +287,7 @@ async function validateCandidateAndProof({ root, packageKey, qualification, qual
 
   const packageManifest = regularBytes(join(root, "packages", packageKey, "package.json"), "current package manifest");
   const manifest = parseJson(packageManifest.bytes, "current package manifest");
-  if (manifest.name !== candidate.name || manifest.version !== candidate.version || digest("sha256", packageManifest.bytes) !== candidate.packageManifestSha256) throw new Error("current package manifest does not match the immutable qualification");
+  if (manifest.name !== candidate.name || manifest.version !== candidate.version || packageManifestDigest(packageManifest.bytes, qualification.schemaVersion) !== candidate.packageManifestSha256) throw new Error("current package manifest does not match the immutable qualification");
   const repository = repositoryIdentityFromPackument({ repository: manifest.repository, versions: {} }, manifest.version);
   if (!repository) throw new Error("current package manifest has no canonical repository identity");
 
@@ -302,7 +302,7 @@ async function validateCandidateAndProof({ root, packageKey, qualification, qual
   if (!proofV2) throw new Error("later publication records require anonymous registry proof v2");
 
   const qualificationHistory = qualificationRecordHistory(root, qualificationRecordPath, candidate, "HEAD", qualificationRecordPath);
-  const expected = { name: candidate.name, version: candidate.version, ...currentQualificationJoins(root, candidate, qualificationHistory.introductionCommit) };
+  const expected = { name: candidate.name, version: candidate.version, ...currentQualificationJoins(root, candidate, qualificationHistory.introductionCommit, { schemaVersion: qualification.schemaVersion }) };
   const qualificationFindings = validateCandidateQualification(qualification, { expected });
   if (qualificationFindings.length) throw new Error(`qualification is invalid: ${qualificationFindings[0].message}`);
   if (qualificationHistory.introducedRecordSha256 !== qualificationHistory.retainedRecordSha256) throw new Error("qualification record differs from its immutable introduction blob");
