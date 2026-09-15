@@ -9,7 +9,15 @@
 //     --path-prefix <p>    repo-relative prefix to prepend to a scanned file's
 //                          path before matching a neutralize rule's `paths`
 //                          (see WHY --path-prefix EXISTS below); the path shown
-//                          in a reported finding is never affected
+//                          in a reported finding is never affected. Usually
+//                          unnecessary: when `root` sits inside a real
+//                          repository tree this is now auto-detected from
+//                          where package-scope.json is found (see
+//                          AUTO-DETECTING --path-prefix below) — pass this
+//                          explicitly only to override that, or when scanning
+//                          a root with no repository above it (e.g. an
+//                          extracted tarball), where there is nothing to
+//                          auto-detect from
 //     --opaque-exemptions <file>
 //                          explicit path to the opaque-content exemption
 //                          registry (see OPAQUE_EXTENSIONS below); defaults to
@@ -95,8 +103,13 @@ function flagValue(name) {
 // package really lives relative to the repository root) restore the missing
 // leading segment before the comparison, and ONLY before the comparison:
 // `rel` itself, and everything reported in a finding, stays the real scanned
-// path. Omitted, matching is exactly what it always was.
-const pathPrefix = flagValue("--path-prefix") ?? null;
+// path. Omitted, matching is exactly what it always was — EXCEPT that when
+// `root` sits inside a real repository tree (there is a package-scope.json
+// somewhere above it), the value is now auto-detected rather than staying
+// null; see "AUTO-DETECTING --path-prefix" further down, right after
+// package-scope.json is located. An explicit --path-prefix always wins over
+// the auto-detected value (issue #854).
+let pathPrefix = flagValue("--path-prefix") ?? null;
 
 // Neutralize `paths` are always written with "/" regardless of platform (see
 // the denylist format note further down), so the comparison has to join on
@@ -536,6 +549,13 @@ const ignored = ignoredPaths(rootAbs);
 // that has nothing to do with the artifact. The caller that extracted the
 // tarball knows where the real config is and passes it explicitly.
 let scopeConfig = null;
+// The directory that upward search actually found package-scope.json in —
+// distinct from scopeConfig itself, which is null both when nothing was
+// found AND when something was found but failed to parse. AUTO-DETECTING
+// --path-prefix below needs the directory in both of those latter cases too
+// (a malformed package-scope.json is still sitting at the real repository
+// root), so this is tracked unconditionally, before the parse is attempted.
+let scopeConfigDir = null;
 const explicitScopeConfig = flagValue("--scope-config");
 if (explicitScopeConfig) {
   if (!existsSync(explicitScopeConfig)) {
@@ -552,6 +572,7 @@ if (explicitScopeConfig) {
   for (let dir = rootAbs; ; dir = join(dir, "..")) {
     const candidate = join(dir, "package-scope.json");
     if (existsSync(candidate)) {
+      scopeConfigDir = dir;
       try {
         scopeConfig = JSON.parse(readFileSync(candidate, "utf8"));
       } catch {
@@ -562,6 +583,49 @@ if (explicitScopeConfig) {
     const parent = join(dir, "..");
     if (parent === dir) break; // reached filesystem root
   }
+}
+
+// AUTO-DETECTING --path-prefix (issue #854)
+// ------------------------------------------
+// A neutralize rule's `paths` are always written repository-relative. When
+// `root` already IS the repository root, `rel` (a scanned file's path
+// relative to `root`) is already repository-relative and no prefix is
+// needed. But when `root` is a subdirectory of the repository — most
+// commonly a single package directory, exactly what publish.yml's
+// package-scoped safety-gate step scans — `rel` loses its leading
+// `packages/<name>/` segment, and a neutralize entry written against the
+// full repository-relative path can never match there again no matter how
+// it is spelled. That silently turns an already-reviewed, deliberately
+// exempted reference into a fresh CRITICAL finding purely because of how
+// the gate happened to be invoked — not because anything about the tree
+// changed.
+//
+// check-artifact-safety.mjs already avoids this for its own (extracted-
+// tarball) scan by computing and passing --path-prefix explicitly (see that
+// file for why). This block gives every OTHER caller the same correction
+// automatically — including a bare manual invocation, and publish.yml's
+// package-scoped step, neither of which pass --path-prefix today — by
+// reusing the exact directory this scan already walked upward to find
+// package-scope.json: the same single anchor this script already treats as
+// "the repository root" for the registry-pin check above. There is
+// deliberately no second, independent repository-root-finding mechanism
+// (e.g. shelling out to `git rev-parse --show-toplevel`) here: reusing the
+// one this script already trusts means the two can never disagree with each
+// other about where the repository root is.
+//
+// An explicit --path-prefix always wins (this only fills in when none was
+// given). And it only fills in when the upward search actually found an
+// anchor to compute one from: in --artifact mode the extracted tarball sits
+// in a temp directory with no repository above it, but that mode always
+// supplies --scope-config (and, from check-artifact-safety.mjs, its own
+// correctly-computed --path-prefix) explicitly instead, so
+// `explicitScopeConfig` is set and this block is skipped entirely — it never
+// runs a second, redundant computation of the same value. When neither an
+// explicit prefix nor a discoverable package-scope.json exists, `pathPrefix`
+// stays null and matching is exactly what it always was: never widened,
+// only correctly rebased when a repository root is actually known.
+if (pathPrefix === null && !explicitScopeConfig && scopeConfigDir) {
+  pathPrefix = toPosix(relative(scopeConfigDir, rootAbs));
 }
 
 // -------------------------------------------------- opaque exemption loading

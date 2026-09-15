@@ -861,6 +861,98 @@ try {
     );
   }
 
+  // ----------------------- neutralize is scan-root-invariant (issue #854)
+  console.log("\n# neutralize matches identically regardless of scan root (issue #854)");
+  {
+    // A neutralize rule's `paths` are always written repository-relative —
+    // the form a human reviewing the denylist reads them against, e.g.
+    // "packages/widget/allowed.md". Scanning FROM the repository root, a
+    // matched file's `rel` IS that repository-relative path and the entry
+    // applies. Scanning the SAME repository but rooted directly at
+    // packages/widget instead (exactly what publish.yml's package-scoped
+    // safety-gate step does), that file's `rel` loses its leading
+    // "packages/widget/" segment and becomes bare "allowed.md" — a
+    // package-scoped rule written against the full path could then never
+    // match there again no matter how it was spelled, and a deliberately
+    // exempted, already-reviewed reference read as a fresh CRITICAL finding
+    // purely because of how the gate happened to be invoked, not because
+    // anything about the tree changed. This is a regression test for that:
+    // it scans the identical fixture from both roots and asserts IDENTICAL
+    // verdicts. MUTATION-VERIFIED against the pre-fix behaviour (see the PR
+    // body for the recorded before/after counts).
+    const rootDir = join(work, "scan-root-invariance");
+    const pkgDir = join(rootDir, "packages", "widget");
+    mkdirSync(pkgDir, { recursive: true });
+    // package-scope.json is the anchor the gate's own upward search already
+    // uses to find "the repository root" for the registry-pin check; the fix
+    // reuses that same anchor to auto-detect --path-prefix, so it has to be
+    // present here for the case to exercise the real code path rather than
+    // an explicit --path-prefix override.
+    writeFileSync(
+      join(rootDir, "package-scope.json"),
+      JSON.stringify({ scope: "@gate-fixture", registry: "https://example.invalid" }, null, 2),
+    );
+    // A dedicated synthetic denylist, scoped to this case: the neutralize
+    // entry's `paths` is written the same way a real package-scoped entry
+    // is — the full repository-relative path — which is exactly the shape
+    // that broke under a package-scoped scan root before this fix.
+    const scopedDenylist = {
+      version: "synthetic-scan-root-invariance-test",
+      terms: [{ pattern: "acme-corp", why: "synthetic sibling product", severity: "high" }],
+      neutralize: [{ pattern: "acme-corp-widget-allowed", paths: ["packages/widget/allowed.md"] }],
+    };
+    const scopedDenylistPath = join(rootDir, "scoped-denylist.json");
+    writeFileSync(scopedDenylistPath, JSON.stringify(scopedDenylist, null, 2));
+
+    // The neutralized reference: must PASS (no finding) under both roots.
+    writeFileSync(join(pkgDir, "allowed.md"), "install acme-corp-widget-allowed here\n");
+    // Negative control, planted in the SAME subdirectory: a genuine,
+    // non-neutralized violation must still be CAUGHT under both roots. A fix
+    // that makes the scoped scan pass by making it blind (matching on
+    // basename, or widening the pattern) would pass this fixture wrongly too
+    // — this case exists specifically to rule that out.
+    writeFileSync(join(pkgDir, "violation.md"), "mentions acme-corp directly, never neutralized\n");
+    gitInit(rootDir);
+
+    const DLX = ["--denylist", scopedDenylistPath];
+    const fromRoot = run("node", [SAFETY, rootDir, ...DLX, "--require-denylist", "--json"]);
+    const fromSubdir = run("node", [SAFETY, pkgDir, ...DLX, "--require-denylist", "--json"]);
+    let reportRoot, reportSubdir;
+    try { reportRoot = JSON.parse(fromRoot.out); } catch { reportRoot = { failures: [] }; }
+    try { reportSubdir = JSON.parse(fromSubdir.out); } catch { reportSubdir = { failures: [] }; }
+
+    const rootAllowedHit = (reportRoot.failures ?? []).some((f) => f.rel === "packages/widget/allowed.md");
+    const subdirAllowedHit = (reportSubdir.failures ?? []).some((f) => f.rel === "allowed.md");
+    const rootViolationHit = (reportRoot.failures ?? []).some((f) => f.rel === "packages/widget/violation.md");
+    const subdirViolationHit = (reportSubdir.failures ?? []).some((f) => f.rel === "violation.md");
+
+    check(
+      "neutralized reference passes scanning from the repository root",
+      !rootAllowedHit,
+      `expected no finding for packages/widget/allowed.md, got: ${JSON.stringify(reportRoot.failures)}`,
+    );
+    check(
+      "the SAME neutralized reference passes scanning from the package subdirectory (issue #854)",
+      !subdirAllowedHit,
+      `expected no finding for allowed.md when scanning from packages/widget, got: ${JSON.stringify(reportSubdir.failures)}`,
+    );
+    check(
+      "verdicts are IDENTICAL across scan roots for the neutralized file",
+      fromRoot.code === fromSubdir.code,
+      `root scan exited ${fromRoot.code}, subdirectory scan exited ${fromSubdir.code} for the same fixture`,
+    );
+    check(
+      "negative control: a genuine violation is still caught scanning from the repository root",
+      rootViolationHit,
+      `expected a finding for packages/widget/violation.md, got: ${JSON.stringify(reportRoot.failures)}`,
+    );
+    check(
+      "negative control: the SAME genuine violation is still caught scanning from the package subdirectory",
+      subdirViolationHit,
+      `expected a finding for violation.md when scanning from packages/widget, got: ${JSON.stringify(reportSubdir.failures)}`,
+    );
+  }
+
   // ------------------------------------- separator-optional matching (shape)
   console.log("\n# identity pattern shape");
   {
