@@ -733,14 +733,16 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: node scripts/check-release-readiness.mjs --base "$BASE_SHA"
 
-  # THE JOB NAME BELOW IS DELIBERATELY NOT RENAMED. It still reads
-  # "ui-contrast-check" while running designer's copy, because that exact
-  # string is a REQUIRED status check on main. Renaming a required context
-  # does not rename anything -- it creates a required context that never
-  # reports, and wedges every pull request until the ruleset is edited to
-  # match. Moving it is a three-phase operation (add the new context, let it
-  # report on real pull requests, swap the required list, retire the old
-  # name), tracked separately rather than smuggled into a deletion.
+  # THE JOB NAME BELOW IS STILL DELIBERATELY NOT RENAMED (issue #497, phase
+  # 1 of 3). It still reads "ui-contrast-check" while running designer's
+  # copy, because that exact string is a REQUIRED status check on main.
+  # Renaming a required context does not rename anything -- it creates a
+  # required context that never reports, and wedges every pull request until
+  # the ruleset is edited to match. This job stays byte-for-byte unchanged
+  # (id, name, steps) so the required context it already satisfies keeps
+  # reporting without interruption. See the `designer-contrast` job directly
+  # below for phase 1's other half: the new context, reporting alongside
+  # this one, not yet required by anything.
   #
   # designer-contrast-check computes real WCAG contrast ratios for
   # @clossys/designer's own token registry (light AND dark) against a
@@ -763,6 +765,30 @@ jobs:
   # needed and this job does.
   contrast:
     name: WCAG contrast gate (ui-contrast-check)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build --workspace=packages/designer
+      - run: npm run check:contrast
+
+  # PHASE 1 of #497's three-phase context migration (see the comment on
+  # `contrast` above): this job is a deliberate duplicate of `contrast`,
+  # under a name that carries no retired package name, so its context can
+  # start reporting on real pull requests before anything requires it. It
+  # is NOT YET a required status check -- that is phase 3, and it is an
+  # owner-only ruleset edit, not something this job or this PR changes.
+  # Once the ruleset requires this context instead of `contrast`'s, and that
+  # has been observed for a real deprecation window, `contrast` above (and
+  # this comment) retires in a follow-up PR. Until then the two jobs run the
+  # identical check and must be kept identical on purpose: divergence here
+  # would mean the two contexts are no longer proof of the same thing.
+  designer-contrast:
+    name: WCAG contrast gate (designer-contrast-check)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
