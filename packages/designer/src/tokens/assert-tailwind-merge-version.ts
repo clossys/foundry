@@ -32,6 +32,18 @@
  * (browser, bundled or not). Call it once, in Node — a build script, a
  * setup/postinstall step, or a test — never from component code. See the
  * README's Setup section for the exact call.
+ *
+ * NOTE, post-#749: this guard's scope narrowed. It used to also be the
+ * only thing standing between an ABSENT `tailwind-merge` and an
+ * unhandled `Cannot find package 'tailwind-merge'` thrown out of
+ * `cx.ts`'s own static import — except it never actually covered that
+ * case, since nothing calls it automatically (see above). #749 fixed
+ * absence handling directly in `cx.ts` instead (a dynamic `import()` in
+ * a `try`/`catch`, degrading to a plain join rather than throwing when
+ * the package cannot be found — see that file's own header), so this
+ * function's job is now exactly what its name says: verifying an
+ * INSTALLED `tailwind-merge`'s VERSION, nothing about whether it is
+ * installed at all.
  */
 
 import { resolveInstalledPeerVersion } from "../internal/resolve-installed-peer-version.js";
