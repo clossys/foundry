@@ -54,6 +54,16 @@
  *     because "safe to run automatically, everywhere" genuinely isn't
  *     achievable for this one peer. See `tokens/assert-tailwind-merge-
  *     version.ts` for the guard itself and its own header for more.
+ *     NOTE, post-#749: the paragraph above is about VERSION checking
+ *     only, and stays true. Whether `tailwind-merge` is installed AT ALL
+ *     is a separate question, and used to have no answer better than "the
+ *     static import throws" — #749 fixed that in `cx.ts` itself (a
+ *     dynamic `import()` in a `try`/`catch`, degrading to a plain,
+ *     unmerged join instead of throwing when the package cannot be
+ *     found), independently of this file and of
+ *     `assertTailwindMergeVersion`. That guard's job is narrower than it
+ *     used to be: it is now the only way to catch an INSTALLED-but-
+ *     incompatible version, not the only way to survive an absent one.
  *   - `tailwindcss` is imported only from `compiled-css/generate.ts`, a
  *     repository-internal build tool with no public `exports` subpath of
  *     its own (never reachable by an external consumer, browser or

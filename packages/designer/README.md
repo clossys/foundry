@@ -629,6 +629,19 @@ is Node-only: it throws its own clear error rather than a misleading "not
 installed" if it is ever called from real browser code. See
 `assert-tailwind-merge-version.ts`'s own header for the full reasoning.
 
+**You do not have to call it just to avoid a crash.** Before #749, an
+absent `tailwind-merge` crashed the moment `cx` (this package's internal
+class-merge helper, reachable from every atom and therefore from the
+server-safe barrels too) was imported at all — `Cannot find package
+'tailwind-merge'`, even on a purely server-rendered path that never
+mentioned styling. `cx` now resolves `tailwind-merge` lazily and degrades
+to a plain, unmerged class join when it is absent, so importing any
+component subpath without this optional peer installed no longer throws.
+Call `assertTailwindMergeVersion` when you specifically want a loud,
+named error for an absent or incompatible `tailwind-merge` version —
+`cx`'s own silent degrade is enough to keep rendering working, but says
+nothing about WHY a class conflict didn't resolve the way you expected.
+
 `react-dom` and `@internationalized/date` are declared, optional peers
 with no guard at all — neither has an adapter import site anywhere in this
 package's own source to guard. `react-dom` is always the consumer's own
