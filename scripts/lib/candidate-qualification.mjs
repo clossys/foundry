@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { TRIO_PUBLICATION_PATH, TRIO_PUBLICATION_TRANSITION_BASE, TRIO_PUBLICATION_TRANSITION_PATHS, validateTrioPublicationTransition } from "./release-publication-cohort.mjs";
 import { TRIO, TRIO_COHORT_PATH, TRIO_CONTROL_TAIL_AUTHORIZATION_PATH, TRIO_CONTROL_TAIL_BASE_COMMIT, TRIO_CONTROL_TAIL_PATHS, TRIO_QUARANTINE_PATH, isTrioCandidate, validateTrioPartialFailureQuarantine } from "./release-qualification-trio.mjs";
@@ -26,6 +27,43 @@ const text = (v) => typeof v === "string" && v.trim().length > 0;
 const digest = (v) => createHash("sha256").update(v).digest("hex");
 const own = (v, k) => Object.prototype.hasOwnProperty.call(v, k);
 const fail = (a, rule, message) => a.push({ rule, message });
+// The manifest fields that are part of the PUBLISHED ARTIFACT, as opposed to
+// the working directory that produced it.
+//
+// `devDependencies` is deliberately absent — but NOT because npm strips it
+// from the packed manifest. Measured directly (`npm pack` a real package
+// here, extract `package/package.json` from the real tarball): the field is
+// still present in the shipped bytes, verbatim, unmodified. What makes it
+// non-artifact is narrower and behavioral, not textual: npm's own installer
+// never reads a DEPENDENCY's `devDependencies` when resolving what a
+// consumer needs (npm only ever installs a package's `dependencies` /
+// `peerDependencies` / `optionalDependencies` transitively) — so the field
+// ships as inert text a consumer's tooling has no reason to read, and it can
+// never change what gets installed, run, or exported. That is exactly
+// issue #879's own point: a digest that moves when this field moves is
+// measuring the working directory, not anything a consumer can observe.
+//
+// `scripts` IS included, by contrast: it ships verbatim in the packed
+// `package.json` too, but npm DOES run entries from it (`postinstall`,
+// `prepare`, …) on a CONSUMER's machine, not just this repository's own
+// `prepublishOnly` — a changed `postinstall` script is directly
+// consumer-observable behavior, unlike a devDependency bump, so excluding it
+// would silently narrow this digest past what actually ships.
+//
+// This list is the floor the issue names, plus `scripts`; nothing else was
+// added because nothing else in a `package.json` both ships in the tarball
+// and can change what a consumer receives or executes.
+export const ARTIFACT_MANIFEST_FIELDS = [
+  "name", "version", "dependencies", "peerDependencies", "peerDependenciesMeta",
+  "optionalDependencies", "bundledDependencies", "exports", "main", "module",
+  "types", "typesVersions", "bin", "engines", "files", "os", "cpu", "sideEffects",
+  "type", "license", "publishConfig", "scripts",
+];
+function pick(source, fields) {
+  const out = {};
+  for (const field of fields) if (object(source) && own(source, field)) out[field] = source[field];
+  return out;
+}
 function closed(a, v, allowed, path) { if (!object(v)) { fail(a, "shape", path); return; } for (const k of Object.keys(v)) if (!allowed.includes(k)) fail(a, "unknown-field", path + "." + k); }
 function stable(v) { if (Array.isArray(v)) return v.map(stable); if (object(v)) return Object.fromEntries(Object.keys(v).sort().map((k) => [k, stable(v[k])])); return v; }
 function canonicalInstant(value) { return typeof value === "string" && CANONICAL_INSTANT.test(value) && new Date(value).toISOString() === value; }
@@ -129,6 +167,186 @@ export function parseStrictJson(input) {
 const git = (root, args) => execFileSync("git", args, { cwd: root, encoding: "utf8" }).trim();
 const blob = (root, ref, path) => execFileSync("git", ["show", ref + ":" + path], { cwd: root, encoding: "utf8" });
 const content = (root, ref, path) => ref === "WORKTREE" ? readFileSync(join(root, path)) : blob(root, ref, path);
+// --- artifact-scoped digests (schemaVersion 3; issue #879) ---------------
+//
+// A qualification record proves a specific TARBALL installs and behaves.
+// `packageTreeSha1` under the legacy (schemaVersion 2) computation is
+// `git rev-parse <ref>:<packageDir>` — a tree hash over the WHOLE package
+// directory, including devDependencies-only manifest churn, test files, and
+// fixtures that `npm pack` never ships. That is measuring the working
+// directory, not the artifact.
+//
+// The packed file set is never hand-matched against `files`/`.npmignore`:
+// it comes from `npm pack --dry-run --json` itself, the same computation
+// `npm publish` uses, run against a real materialized directory so npm's own
+// always-included/always-excluded rules and any `.npmignore` apply exactly
+// as they would at publish time.
+//
+// For `ref === "WORKTREE"` that directory is the real, currently-materialized
+// package directory on disk — consistent with how every other WORKTREE join
+// in this file already prefers live disk bytes over a git blob (e.g. the
+// manifest bytes above). For any other ref, npm has nothing to pack against
+// directly, so the package subtree is first materialized with
+// `git archive <ref> -- <packageDir>` into a throwaway directory and cleaned
+// up afterward. Both paths run the identical `npm pack --dry-run --json`.
+//
+// One deliberate, documented, MEASURED limitation: `git archive` can only
+// ever reproduce git-TRACKED content. `dist/` is gitignored (built, not
+// committed) and was never captured at any historical commit, so a
+// historical-ref computation is necessarily blind to build output — the same
+// way the legacy (schema-2) `git rev-parse` tree hash always was, despite
+// its own header comment in check-qualification-record-present.mjs once
+// claiming otherwise. This is not a hypothetical gap: a real publish
+// dispatch of `@clossys/writer@0.3.7` measured it directly — the record's
+// `packageTreeSha1` matched `git rev-parse HEAD:packages/writer` exactly
+// while `dist/` (first in writer's `files`) had drifted with no git-visible
+// cause, and a freshly packed tarball did not match the record's
+// `candidate.tarball.sha256`. `validate-candidate-publish.mjs` caught that
+// and refused the publish before any upload — proof the layered design
+// works, not evidence this digest needed to grow a build step.
+//
+// This digest is therefore explicitly SOURCE-scoped, never artifact-byte-
+// exact, and does not try to be: closing the dist/ gap here would mean
+// rebuilding the package from an arbitrary historical git commit on every
+// re-verification (`validateRetainedCandidateQualification`,
+// `check-candidate-qualification.mjs`, run against 100+ retained records),
+// which is not a cheap, static, no-network operation — the opposite of what
+// makes those gates fast enough to run on every pull request. The
+// authoritative, dist-inclusive binding is `candidate.tarball.{sha1,sha256,
+// sha512}` — a hash of the REAL, fully-built tarball produced once at
+// qualify time and independently reverified byte-for-byte by
+// `validate-candidate-publish.mjs` immediately before upload. This PR does
+// not touch that check. For `ref === "WORKTREE"` specifically, where the
+// real materialized directory (dist/ included, if actually built there) is
+// available cheaply, this digest DOES capture it — see
+// `candidate-qualification-artifact-digest.test.mjs`'s negative control (i).
+// Verifying the actual built tarball's CONTENTS for safety is
+// check-artifact-safety.mjs's separate job, which already packs the real,
+// freshly-built directory for exactly that reason.
+function materializedPackageDir(root, ref, packageDir) {
+  if (ref === "WORKTREE") return { dir: join(root, packageDir), cleanup: () => {} };
+  const tmp = mkdtempSync(join(tmpdir(), "foundry-artifact-scope-"));
+  try {
+    const archive = execFileSync("git", ["archive", ref, "--", packageDir], { cwd: root, maxBuffer: 256 * 1024 * 1024 });
+    execFileSync("tar", ["-x", "-C", tmp], { input: archive });
+  } catch (error) {
+    rmSync(tmp, { recursive: true, force: true });
+    throw new Error(`could not materialize ${packageDir} at ${ref}: ${error instanceof Error ? error.message : "unknown error"}`);
+  }
+  return { dir: join(tmp, packageDir), cleanup: () => rmSync(tmp, { recursive: true, force: true }) };
+}
+function packedArtifactPaths(dir) {
+  let raw;
+  try {
+    raw = execFileSync("npm", ["pack", "--dry-run", "--json", "--ignore-scripts"], { cwd: dir, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+  } catch (error) {
+    throw new Error(`npm pack --dry-run could not enumerate the packed artifact in ${dir}: ${error instanceof Error ? error.message : "unknown error"}`);
+  }
+  let parsed;
+  try { parsed = JSON.parse(raw); } catch { throw new Error(`npm pack --dry-run --json produced unparseable output for ${dir}`); }
+  const entry = Array.isArray(parsed) ? parsed[0] : null;
+  if (!entry || !Array.isArray(entry.files) || entry.files.length === 0) throw new Error(`npm pack --dry-run --json produced no packed file manifest for ${dir}`);
+  return entry.files.map((file) => file.path).filter((p) => typeof p === "string").sort();
+}
+// A `files` array entry counts as checkable when it is a plain literal path:
+// not a negation (`!…`, never itself an inclusion) and not a glob (matching
+// it against literal packed paths by prefix would be meaningless). This
+// covers exactly the shape every real package in this repository actually
+// uses for a directory entry (`dist`, `src`, `templates`, …).
+function declaredFilesEntryIsCheckable(entry) {
+  return typeof entry === "string" && entry.length > 0 && !entry.startsWith("!") && !/[*?[\]{}]/.test(entry);
+}
+/**
+ * `npm pack --dry-run` silently omits a `files`-declared path that does not
+ * exist, or a declared directory that exists but is empty — it never fails
+ * for that reason on its own; the CLI's job is to report what it found, not
+ * to judge whether that's suspiciously little. An unbuilt `dist/` is exactly
+ * such a case: `files` names it, nothing on disk backs it, and
+ * `packedArtifactPaths` above happily returns a shorter, real-looking list
+ * with zero complaint — the exact silent partial pack this repository
+ * refuses everywhere else it can detect one. This closes it for the one
+ * place it is cheap to check: does EVERY non-negated, non-glob `files` entry
+ * contribute at least one packed path? If not, fail loudly rather than
+ * return a digest over an artifact that is missing something it declared.
+ *
+ * Deliberately WORKTREE-only (see call site): a historical git-archived ref
+ * can never contain a gitignored build directory like `dist/` — that is a
+ * structural, permanent property of `git archive`, not a transient "someone
+ * forgot to build" defect, and asserting this there would make every
+ * historical-ref computation for a package that ships `dist` fail every
+ * single time, which is not a bug being caught, it is a real capability this
+ * design deliberately does not have (see this function's own header comment
+ * above, and check-qualification-record-present.mjs's header comment, for
+ * why).
+ */
+function assertDeclaredFilesEntriesArePacked(dir, packedPaths) {
+  let manifest;
+  try { manifest = parseStrictJson(readFileSync(join(dir, "package.json"), "utf8")); }
+  catch { return; } // an unreadable/invalid manifest fails elsewhere in this file; nothing more to assert here.
+  const entries = Array.isArray(manifest.files) ? manifest.files : [];
+  for (const raw of entries) {
+    if (!declaredFilesEntryIsCheckable(raw)) continue;
+    const entry = raw.replace(/\/+$/, "");
+    const contributes = packedPaths.some((p) => p === entry || p.startsWith(entry + "/"));
+    if (!contributes) throw new Error(`"${entry}" is declared in package.json "files" but npm pack --dry-run packed zero files under it in ${dir} — an unbuilt or emptied declared path would otherwise silently produce a digest over an incomplete artifact. Build the package first.`);
+  }
+}
+/**
+ * The exact set of files `npm pack` would ship for the package materialized
+ * at `dir`, each paired with a content digest — computed by asking npm
+ * itself which paths it would include (never a hand-rolled `files`/
+ * `.npmignore` matcher), then hashing the real bytes on disk at that path.
+ * `checkDeclaredFiles` additionally refuses a silent partial pack — see
+ * `assertDeclaredFilesEntriesArePacked`'s own header comment for why it is
+ * not the default.
+ */
+export function artifactPackedFiles(dir, { checkDeclaredFiles = false } = {}) {
+  const paths = packedArtifactPaths(dir);
+  if (checkDeclaredFiles) assertDeclaredFilesEntriesArePacked(dir, paths);
+  return paths.map((path) => ({ path, sha256: digest(readFileSync(join(dir, path))) }));
+}
+/**
+ * `artifactPackedFiles`, materializing `packageDir` at `ref` first. The
+ * silent-partial-pack assertion runs only for `ref === "WORKTREE"` — see
+ * `assertDeclaredFilesEntriesArePacked`'s header comment for why a
+ * historical ref cannot and must not be held to it.
+ */
+export function artifactPackedManifest(root, ref, packageDir) {
+  const { dir, cleanup } = materializedPackageDir(root, ref, packageDir);
+  try { return artifactPackedFiles(dir, { checkDeclaredFiles: ref === "WORKTREE" }); }
+  finally { cleanup(); }
+}
+/** sha256 of the manifest fields that ship — see `ARTIFACT_MANIFEST_FIELDS`. */
+export function artifactManifestDigest(manifestBytes) {
+  return digest(JSON.stringify(stable(pick(parseStrictJson(manifestBytes), ARTIFACT_MANIFEST_FIELDS))));
+}
+/**
+ * sha1 of the sorted packed file list, each entry paired with its own content
+ * sha256 — EXCLUDING `package.json` itself. `package.json` is always packed
+ * (npm never omits it), so its raw bytes would otherwise leak straight back
+ * into this "artifact-scoped" tree digest — a devDependency-only edit changes
+ * package.json's raw bytes exactly as much as a `dependencies` edit does, so
+ * hashing them here would make this digest exactly as broad as the legacy
+ * one for that one file. `package.json`'s artifact-relevant identity is
+ * already captured, narrowly, by `packageManifestSha256`; this digest's job
+ * is everything else `npm pack` ships.
+ */
+export function artifactTreeSha1(files) {
+  return createHash("sha1").update(JSON.stringify(files.filter((f) => f.path !== "package.json").sort((a, b) => a.path.localeCompare(b.path)).map((f) => ({ path: f.path, sha256: f.sha256 })))).digest("hex");
+}
+/**
+ * The manifest digest a retained record's `candidate.packageManifestSha256`
+ * was computed with, selected by the record's OWN `schemaVersion` — schema 2
+ * hashes the whole `package.json` bytes (legacy), schema 3 hashes only the
+ * fields that ship (`ARTIFACT_MANIFEST_FIELDS`). Exists so a caller that
+ * compares a freshly-read `package.json` directly against a retained
+ * `candidate.packageManifestSha256` (bypassing `currentQualificationJoins`,
+ * e.g. because it has no adapter/policy in scope) still picks the right
+ * formula instead of hard-coding the legacy one.
+ */
+export function packageManifestDigest(manifestBytes, schemaVersion = 2) {
+  return schemaVersion === 3 ? artifactManifestDigest(manifestBytes) : digest(manifestBytes);
+}
 function commitParents(root, commit) {
   const [resolved, ...parents] = execFileSync("git", ["rev-list", "--parents", "-n", "1", commit], { cwd: root, encoding: "utf8" }).trim().split(/\s+/);
   if (resolved !== commit) throw new Error("git returned an unexpected commit for its own rev-list lookup");
@@ -190,7 +408,14 @@ export function validateRetainedCandidateQualification(r, { root = process.cwd()
   const resolvedExpectedPath = sealedBase ? qualificationPath(root, r.candidate, introductionCommit) : expectedPath ?? qualificationPath(root, r.candidate);
   const history = qualificationRecordHistory(root, path, r.candidate, head, resolvedExpectedPath);
   const joinCommit = sealedBase ? history.introductionCommit : r.timing === "pre-publication" ? r.reviewedCommit : history.introductionCommit;
-  const expected = { name: r.candidate?.name, version: r.candidate?.version, ...currentQualificationJoins(root, r.candidate, joinCommit) };
+  // The retained record's OWN declared schemaVersion selects the digest
+  // formula used to recompute what it should say — never the caller's or
+  // this build's default. That is what keeps a schema-2 (legacy,
+  // whole-manifest/whole-tree) record verifiable forever without being
+  // rewritten: this function recomputes it the same way it was written,
+  // at the same commit, every time. A schema-3 (artifact-scoped) record
+  // gets the new formula. See issue #879.
+  const expected = { name: r.candidate?.name, version: r.candidate?.version, ...currentQualificationJoins(root, r.candidate, joinCommit, { schemaVersion: r.schemaVersion }) };
   const findings = validateCandidateQualification(r, { expected });
   if (history.introducedRecordSha256 !== history.retainedRecordSha256) fail(findings, "record-history-join", "retained record bytes differ from their exact introduction blob.");
   if (sealedBase) {
@@ -231,11 +456,14 @@ function frameworkObservationIds(manifest) {
   if (ids.length === 0) throw new Error("empty source framework verification mapping");
   return ids.sort();
 }
-export function currentQualificationJoins(root, candidate, ref = "WORKTREE") {
+export function currentQualificationJoins(root, candidate, ref = "WORKTREE", { schemaVersion = 2 } = {}) {
   const selected = selectedPolicy(root, candidate, ref), treeRef = ref === "WORKTREE" ? "HEAD" : ref;
   const adapter = parseStrictJson(content(root, ref, selected.adapterPath));
   const manifestBytes = content(root, ref, selected.packageDir + "/package.json");
   const manifest = parseStrictJson(manifestBytes);
+  const artifactScoped = schemaVersion === 3;
+  const packageManifestSha256 = artifactScoped ? artifactManifestDigest(manifestBytes) : digest(manifestBytes);
+  const packageTreeSha1 = artifactScoped ? artifactTreeSha1(artifactPackedManifest(root, ref, selected.packageDir)) : git(root, ["rev-parse", treeRef + ":" + selected.packageDir]);
   const duplicateGroup = adapter.dimensionEvidence?.duplicate;
   const duplicateEvidence = Array.isArray(adapter.cases) ? adapter.cases.filter((item) => item.group === duplicateGroup && [0, 1].includes(item.exitCode)).map((item) => `case:${item.id}`) : [];
   const dimensions = DIMENSIONS.map((dimension) => {
@@ -245,7 +473,7 @@ export function currentQualificationJoins(root, candidate, ref = "WORKTREE") {
     if (dimension === "duplicate") return { dimension, status: "supported", evidence: duplicateEvidence };
     throw new Error("unsupported required dimension");
   });
-  return { packageTreeSha1: git(root, ["rev-parse", treeRef + ":" + selected.packageDir]), packageManifestSha256: digest(manifestBytes), rootPackageJsonSha256: digest(content(root, ref, "package.json")), rootPackageLockSha256: digest(content(root, ref, "package-lock.json")), policySha256: digest(JSON.stringify(stable(selected))), adapterSha256: digest(content(root, ref, selected.adapterPath)), fixtureSetSha256: fixtureDigest(root, ref, selected.adapterPath, selected.fixturePath), frameworkObservationsSha256: digest(JSON.stringify(frameworkObservationIds(manifest))), archetypes: ARCHETYPES.map((kind) => ({ kind, status: selected?.archetypes?.[kind]?.status === "required" ? "qualified" : "unsupported" })), dimensions };
+  return { packageTreeSha1, packageManifestSha256, rootPackageJsonSha256: digest(content(root, ref, "package.json")), rootPackageLockSha256: digest(content(root, ref, "package-lock.json")), policySha256: digest(JSON.stringify(stable(selected))), adapterSha256: digest(content(root, ref, selected.adapterPath)), fixtureSetSha256: fixtureDigest(root, ref, selected.adapterPath, selected.fixturePath), frameworkObservationsSha256: digest(JSON.stringify(frameworkObservationIds(manifest))), archetypes: ARCHETYPES.map((kind) => ({ kind, status: selected?.archetypes?.[kind]?.status === "required" ? "qualified" : "unsupported" })), dimensions };
 }
 function candidateExportSpecifier(specifier, candidateName) {
   return specifier === candidateName || (specifier?.startsWith(`${candidateName}/`) && FRAMEWORK_SUBPATH.test(specifier.slice(candidateName.length + 1)));
@@ -349,7 +577,7 @@ function checkTranscript(a, t) {
   if (digest(JSON.stringify(copy)) !== t?.canonicalSha256) fail(a, "transcript-digest", "canonical digest");
 }
 export function validateCandidateQualification(r, { mode = "offline", expected, freshTranscript } = {}) {
-  const a = []; if (!object(r) || r.schemaVersion !== 2) { fail(a, "record-shape", "schema v2"); return a; }
+  const a = []; if (!object(r) || ![2, 3].includes(r.schemaVersion)) { fail(a, "record-shape", "schema v2 or v3"); return a; }
   const pre = r.timing === "pre-publication", post = r.timing === "post-publication-bootstrap"; closed(a, r, pre ? ["schemaVersion", "timing", "candidate", "archetypes", "reviewedCommit", "rootPackageJsonSha256", "rootPackageLockSha256", "transcript", "candidateReview", "findings"] : ["schemaVersion", "timing", "candidate", "archetypes", "publishedCommit", "transcript", "registry", "findings"], "record");
   if (!pre && !post) fail(a, "timing", "timing"); if (mode === "prepublish" && !pre) fail(a, "bootstrap-timing", "bootstrap is not authorization");
   if (mode === "prepublish" && (!object(expected) || !object(freshTranscript) || !["name", "version", "packageTreeSha1", "packageManifestSha256", "rootPackageJsonSha256", "rootPackageLockSha256", "policySha256", "adapterSha256", "fixtureSetSha256", "archetypes", "dimensions", ...(r?.transcript?.schema === "foundry-candidate-qualification-transcript-v3" ? ["frameworkObservationsSha256"] : [])].every((key) => expected[key] !== undefined))) fail(a, "prepublish-evidence", "complete current joins and a fresh transcript are required.");
@@ -548,7 +776,7 @@ function validateForwardQualificationIntroduction(r, { root, head, trioRecords, 
     const laterTouches = realPathTouches(root, `${introduction}..${head}`, path, blobOid(root, introduction, path));
     if (laterTouches.length > 0) fail(a, "forward-record-touches", "a new qualification record must not be touched after its introduction.");
 
-    const expected = currentQualificationJoins(root, r.candidate, r.reviewedCommit);
+    const expected = currentQualificationJoins(root, r.candidate, r.reviewedCommit, { schemaVersion: r.schemaVersion });
     for (const key of Object.keys(expected).filter((item) => !["archetypes", "dimensions", "frameworkObservationsSha256"].includes(item))) if (expected[key] !== (r[key] ?? r.candidate?.[key])) fail(a, "forward-record-join", `qualification record does not bind ${key} at its reviewed commit.`);
     if (JSON.stringify(expected.archetypes) !== JSON.stringify(r.archetypes) || JSON.stringify(expected.dimensions) !== JSON.stringify(r.transcript?.dimensions)) fail(a, "forward-record-join", "qualification record policy derivation does not bind its reviewed commit.");
   } catch (error) {
@@ -620,6 +848,6 @@ export function validatePrepublicationPrTail(r, { root = process.cwd(), head = "
   const touchedCandidates = [...new Set(git(root, ["log", "--full-history", "--format=", "--name-only", `${r.reviewedCommit}..${head}`, "--"]).split("\n").filter(Boolean))];
   const touched = touchedCandidates.filter((path) => realPathTouches(root, `${r.reviewedCommit}..${head}`, path, blobOid(root, r.reviewedCommit, path)).length > 0).sort();
   if (touched.some((path) => !allowed.includes(path))) fail(a, "pr-tail-history", "tail history touched a path outside the exact admitted set.");
-  try { const base = currentQualificationJoins(root, r.candidate, r.reviewedCommit), now = currentQualificationJoins(root, r.candidate, head); for (const k of Object.keys(base).filter((key) => !["archetypes", "dimensions", "frameworkObservationsSha256"].includes(key))) if (base[k] !== now[k] || base[k] !== (r[k] ?? r.candidate[k])) fail(a, "git-content-join", k); if (base.frameworkObservationsSha256 !== now.frameworkObservationsSha256 || JSON.stringify(base.archetypes) !== JSON.stringify(now.archetypes) || JSON.stringify(base.archetypes) !== JSON.stringify(r.archetypes) || JSON.stringify(base.dimensions) !== JSON.stringify(now.dimensions) || JSON.stringify(base.dimensions) !== JSON.stringify(r.transcript?.dimensions)) fail(a, "git-content-join", "policy derivation"); } catch (e) { fail(a, "git-content-join", e instanceof Error ? e.message : "git"); }
+  try { const base = currentQualificationJoins(root, r.candidate, r.reviewedCommit, { schemaVersion: r.schemaVersion }), now = currentQualificationJoins(root, r.candidate, head, { schemaVersion: r.schemaVersion }); for (const k of Object.keys(base).filter((key) => !["archetypes", "dimensions", "frameworkObservationsSha256"].includes(key))) if (base[k] !== now[k] || base[k] !== (r[k] ?? r.candidate[k])) fail(a, "git-content-join", k); if (base.frameworkObservationsSha256 !== now.frameworkObservationsSha256 || JSON.stringify(base.archetypes) !== JSON.stringify(now.archetypes) || JSON.stringify(base.archetypes) !== JSON.stringify(r.archetypes) || JSON.stringify(base.dimensions) !== JSON.stringify(now.dimensions) || JSON.stringify(base.dimensions) !== JSON.stringify(r.transcript?.dimensions)) fail(a, "git-content-join", "policy derivation"); } catch (e) { fail(a, "git-content-join", e instanceof Error ? e.message : "git"); }
   return a;
 }

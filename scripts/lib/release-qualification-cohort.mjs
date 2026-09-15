@@ -53,7 +53,21 @@ export function validateTrioPrepublicationCohort(cohort, { records = new Map(), 
     const bytes = recordBytes.get(member?.qualificationPath);
     if (!record || typeof bytes !== "string") { finding(findings, "record", `cohort member ${key} record bytes are required.`); continue; }
     if (digest(bytes) !== member.qualificationSha256) finding(findings, "record-digest", `cohort member ${key} record digest differs from retained bytes.`);
-    if (validateCandidateQualification(record).length > 0 || !(validatedRecordPaths instanceof Set) || !validatedRecordPaths.has(member.qualificationPath)) finding(findings, "record-validation", `cohort member ${key} must join one fully validated schema-v2 qualification record.`);
+    // Pinned to schema 2, explicitly and deterministically — not merely
+    // "whatever validateCandidateQualification currently accepts". That
+    // function's own shape gate used to double as this constraint by
+    // accident: schema 2 was the only schema it would ever accept, so any
+    // other schemaVersion value failed there first. Once issue #879 taught
+    // it to also accept schema 3 (artifact-scoped digests), a schema-3-
+    // labeled record could reach every check below this one — an offline,
+    // filesystem-free re-projection that never recomputes a digest against
+    // real content (this function takes no `root`), so nothing downstream
+    // would catch a record whose digest fields simply don't correspond to
+    // what a schema-3 computation would produce for it either. This is the
+    // confusion attack this check's own message already named ("schema-v2
+    // qualification record") before it was ever mechanically enforced; #879
+    // pointed out the code no longer matched the message.
+    if (record?.schemaVersion !== 2 || validateCandidateQualification(record).length > 0 || !(validatedRecordPaths instanceof Set) || !validatedRecordPaths.has(member.qualificationPath)) finding(findings, "record-validation", `cohort member ${key} must join one fully validated schema-v2 qualification record.`);
     if (record.timing !== "pre-publication" || !same(candidateProjection(record.candidate), candidate)) finding(findings, "record-join", `cohort member ${key} must join the exact name/version/tarball projection of one pre-publication record.`);
   }
   return findings;

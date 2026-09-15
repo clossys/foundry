@@ -95,6 +95,58 @@ import { dirname, resolve } from "node:path";
 import { currentQualificationJoins, parseStrictJson, qualificationPath } from "./lib/candidate-qualification.mjs";
 import { selectPolicyPackage, validateReleaseQualificationPolicy } from "./lib/release-qualification-contract.mjs";
 
+// This still writes schema 2 (legacy: whole-`package.json`,
+// whole-package-directory digests) — NOT schema 3 (artifact-scoped; issue
+// #879) — deliberately, for now. `currentQualificationJoins()` and every
+// retained-record validator already support schema 3 end to end (every
+// reader in scripts/lib/candidate-qualification.mjs and its callers selects
+// the digest formula from the record's OWN `schemaVersion`, so this constant
+// alone does not retroactively change what any retained record means), and
+// schema 3 is fully covered by dedicated negative-control tests. What blocks
+// flipping this constant to 3 is one level deeper: `checkTranscript()`
+// requires `transcript.coverage.installedManifestSha256 === candidate.packageManifestSha256`
+// exactly (the "transcript-join" invariant, proving the transcript really
+// examined the recorded candidate) — and `scripts/lib/candidate-runner.mjs`
+// computes `installedManifestSha256` as a RAW whole-manifest-bytes hash of
+// the really-installed `package.json` during a live, network qualification
+// run. An artifact-scoped `candidate.packageManifestSha256` would never equal
+// that raw hash, so every schema-3 record this generator produced would fail
+// `transcript-join` outright — not eventually, on its very first run. Making
+// schema 3 the live default therefore requires also updating
+// `candidate-runner.mjs`'s `installedManifestSha256` computation (and
+// re-verifying the whole live qualification pipeline this repository's own
+// instructions say not to exercise casually: `run-candidate-qualification.mjs`
+// is a real, slow, network-installing run). Flip this to 3 once that
+// coordinated change lands; until then, changing only this constant would
+// silently break every future qualification.
+//
+// A SECOND, independent blocker, found on later review and not yet fixed
+// either: several files compare a registry-OBSERVED
+// `evidence.packedManifestSha256` — always a raw sha256 of a downloaded
+// tarball's real `package.json` bytes, computed once in
+// `scripts/lib/public-npm-registry.mjs` (`packedManifestSha256: sha("sha256",
+// packed.bytes)`) — directly against a qualification record's
+// `candidate.packageManifestSha256`. For a schema-3 record those can never
+// be equal: a raw whole-file hash cannot equal a field-subset hash, by
+// construction, regardless of whether the underlying bytes agree. The direct
+// comparisons live in `scripts/lib/release-publication-cohort.mjs`
+// (`evidence?.packedManifestSha256 !== candidate?.packageManifestSha256`)
+// and `scripts/lib/release-later-publication.mjs`
+// (`proof?.packedManifestSha256 !== c?.packageManifestSha256`);
+// `scripts/lib/public-npm-aggregate-canary.mjs` and
+// `public-npm-aggregate-canary-v2.mjs` both thread the same raw
+// `evidence.packedManifestSha256` value through as a stand-in
+// `packageManifestSha256` when joining served bytes back to a candidate.
+// `scripts/record-later-publication.mjs` sits upstream of this chain (it
+// calls `validatePublicNpmRegistryProof`, which only self-compares two raw
+// hashes and is schema-safe on its own) but is where a later-publication
+// record for a schema-3 candidate would first be attempted and first fail.
+// This is a materially larger follow-up than `candidate-runner.mjs` alone:
+// it touches the anonymous public-registry proof shape itself, not just one
+// runner's transcript field. Recorded here, deliberately not fixed in this
+// change — see this repository's scope-discipline convention.
+const RECORD_SCHEMA_VERSION = 2;
+
 const USAGE = "Usage: --package <policy-key> --tarball <candidate.tgz> --transcript <transcript.json> --review-reference <string> [--out <path>]";
 const PACKAGE_KEY = /^[a-z0-9][a-z0-9-]{0,63}$/;
 const SHA1 = /^[a-f0-9]{40}$/;
@@ -201,7 +253,7 @@ export function generateQualificationRecord({ root = gitRoot(), args }) {
 
   // --- policy-derived joins, pinned at the corroborated reviewed commit ---
   let joins;
-  try { joins = currentQualificationJoins(root, candidate, reviewedCommit); }
+  try { joins = currentQualificationJoins(root, candidate, reviewedCommit, { schemaVersion: RECORD_SCHEMA_VERSION }); }
   catch (error) { throw new IndeterminateError(`policy-derived joins could not be computed at ${reviewedCommit}: ${error instanceof Error ? error.message : "unknown error"}`); }
 
   let recordPath;
@@ -209,7 +261,7 @@ export function generateQualificationRecord({ root = gitRoot(), args }) {
   catch (error) { throw new IndeterminateError(`qualification record path could not be derived: ${error instanceof Error ? error.message : "unknown error"}`); }
 
   const record = {
-    schemaVersion: 2,
+    schemaVersion: RECORD_SCHEMA_VERSION,
     timing: "pre-publication",
     candidate: {
       name: candidate.name,

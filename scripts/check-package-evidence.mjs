@@ -343,7 +343,7 @@ export function readPackageAuthenticQualificationSites(repoRoot) {
     const record = parseStrictJson(readFileSync(join(repoRoot, recordPath), "utf8"));
     const history = qualificationRecordHistory(repoRoot, recordPath, candidate);
     if (history.introducedRecordSha256 !== history.retainedRecordSha256) return sites;
-    const expected = { name: candidate.name, version: candidate.version, ...currentQualificationJoins(repoRoot, candidate, history.introductionCommit) };
+    const expected = { name: candidate.name, version: candidate.version, ...currentQualificationJoins(repoRoot, candidate, history.introductionCommit, { schemaVersion: record?.schemaVersion }) };
     const adapterBytes = readFileSync(join(repoRoot, STARTER_ADAPTER_PATH), "utf8");
     const site = packageAuthenticStarterQualificationSite({
       packageName: candidate.name,
@@ -383,7 +383,7 @@ export function readValidatedPublishedPackages(repoRoot) {
       const expected = {
         name: record.candidate?.name,
         version: record.candidate?.version,
-        ...currentQualificationJoins(repoRoot, record.candidate, history.introductionCommit),
+        ...currentQualificationJoins(repoRoot, record.candidate, history.introductionCommit, { schemaVersion: record.schemaVersion }),
       };
       if (validateCandidateQualification(record, { expected }).length > 0) return new Set();
       records.set(path, record);

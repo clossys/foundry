@@ -15,6 +15,7 @@ import { tmpdir } from "node:os";
 import { basename, join, relative, resolve, sep } from "node:path";
 
 import { assertPackageAuthorized, loadReleaseCatalog, readCurrentReleaseIdentity, resolveReleaseTarget } from "./check-release-catalog.mjs";
+import { packageManifestDigest } from "./lib/candidate-qualification.mjs";
 import { IndeterminateError, verifyPostPublishPublicNpmArtifact } from "./verify-post-publish-public-npm-artifact.mjs";
 import { assertReleaseRuntime, RELEASE_RUNTIME } from "./lib/release-runtime.mjs";
 
@@ -322,7 +323,7 @@ function exactRecord({ root, packageKey, recordPath, record, manifest, candidate
     const expectedHash = record.candidate.tarball?.[algorithm];
     if (!pattern.test(expectedHash ?? "") || actual[algorithm] !== expectedHash) throw new Error(`qualified candidate ${algorithm} does not match its record`);
   }
-  if (record.candidate.packageManifestSha256 !== digest("sha256", readFileSync(join(resolve(root, "packages", packageKey), "package.json")))) throw new Error("qualification record does not match the current package manifest");
+  if (record.candidate.packageManifestSha256 !== packageManifestDigest(readFileSync(join(resolve(root, "packages", packageKey), "package.json")), record.schemaVersion)) throw new Error("qualification record does not match the current package manifest");
 }
 
 function assertReleaseTarget(root, packageKey, manifest) {

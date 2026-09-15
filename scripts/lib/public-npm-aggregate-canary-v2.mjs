@@ -181,7 +181,7 @@ export function validateCommittedV2LaterPublication({ root, path, read = functio
     const expectedQualification = {
       name: qualification.candidate?.name,
       version: qualification.candidate?.version,
-      ...currentQualificationJoins(root, qualification.candidate, qualificationIntroduction),
+      ...currentQualificationJoins(root, qualification.candidate, qualificationIntroduction, { schemaVersion: qualification.schemaVersion }),
     };
     const qualificationFindings = validateCandidateQualification(qualification, { expected: expectedQualification });
     const catalogBytes = gitHeadBlob(root, publicationIntroduction, "governance/release-catalog.json");
