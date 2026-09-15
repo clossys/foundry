@@ -93,6 +93,65 @@ publish workflow uses that flag, so a release can never pass on a degraded scan.
 Both modes are advisory in one direction only: the gate can prove a tree dirty,
 never prove it clean. Human review before a first publish is still required.
 
+### Why `prepublishOnly` does not run this gate (issue #510)
+
+Every non-private `packages/*/package.json` wires `prepublishOnly` to
+`check-name-collision.mjs && npm run build` (`scripts/set-prepublish-hook.mjs`
+is the single source; `npm run check:prepublish-hook` enforces it everywhere).
+`prepublishOnly` is the one lifecycle hook npm fires unconditionally for a
+directory-type `npm publish`, so issue #510 asked whether this gate — not just
+collision-checking — belongs there too. Measured, not assumed, the answer is
+**no**:
+
+1. **The cost is real, not hypothetical.** `package.json` ships in every
+   tarball, and `scripts` is part of it, so changing the hook text changes the
+   packed surface of all 19 non-private packages at once.
+   `scripts/check-release-readiness.mjs` fails any packed-file change with no
+   matching version bump; simulating the change (locally, never committed)
+   produced exactly 19 `[BUMP]` findings, one per package, and reverting it
+   restored exactly 19 `[READY]`. Each bump needs its own exact-candidate
+   qualification record under `governance/release-qualifications/` (see
+   `docs/PUBLISHING.md`), each backed by a real isolated install against
+   public npm — 19 real releases, not paperwork.
+2. **A correctly-written hook could fail closed, so that concern is
+   resolvable on its own — and is not why the answer is no.**
+   `--require-denylist` already turns a missing denylist into a hard exit-2
+   failure rather than a PARTIAL pass; a hook using it would either FULL-scan
+   or block, never mislead.
+3. **The decisive finding: neither sanctioned publish path in this repository
+   ever runs `prepublishOnly` at all**, so the 19-release cost would buy
+   protection nothing here would ever exercise. The OIDC job in
+   `.github/workflows/publish.yml` and the owner-present interactive handoff
+   in `scripts/publish-qualified-directory.mjs` both upload with
+   `npm publish . --ignore-scripts` — a directory-type publish with lifecycle
+   scripts explicitly disabled (asserted by
+   `scripts/publish-qualified-directory.test.mjs` and
+   `scripts/publish-workflow.test.mjs`), precisely so nothing can mutate or
+   add to an already hash-verified candidate at upload time. Both paths
+   already run this gate in FULL mode — package-scoped and whole-tree
+   `check-public-safety.mjs --require-denylist`, plus
+   `check-artifact-safety.mjs --require-denylist` against the actual tarball —
+   during `npm run preflight` (which produces the qualification record) and
+   again in `publish.yml` immediately before upload. `prepublishOnly` would be
+   dead code for every publish this repository's own tooling performs.
+
+   The only publish a `prepublishOnly` safety gate would ever protect is a
+   maintainer bypassing *both* sanctioned paths and hand-running a bare
+   `npm publish` (no `--ignore-scripts`) from inside a package directory —
+   exactly the scenario issue #510 named, and a real one, but already a known
+   and accepted limit of this hook when issue #273 added it:
+   `package.json`'s own `//check-prepublish-hook` comment says the hook "does
+   not (and cannot) claim to close every bypass." Issue #510 itself records
+   no evidence that bypass has happened.
+
+**Decision: the safety gate does not move into `prepublishOnly`.** The hook
+stays exactly as issue #273 left it — collision check, then build. What would
+change this: a new sanctioned publish path that is a directory-type
+`npm publish` without `--ignore-scripts` (at which point `prepublishOnly`
+would start mattering for real releases, not just a hand-run bypass); a
+qualification process cheap enough that 19 bumps stops being a material cost;
+or evidence that the hand-run bypass this issue names has actually happened.
+
 ### Opaque content (PDF, image, font, video, wasm)
 
 A PDF, raster image, font, video, or `.wasm` file cannot be read as text: a

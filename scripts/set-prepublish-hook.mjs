@@ -28,11 +28,20 @@
 // invocation this issue describes (`npm publish` / `npm publish .` from
 // inside a package directory), on every machine, unconditionally. This
 // repository's own publish workflow (.github/workflows/publish.yml) never
-// triggers it at all: that workflow packs a tarball once and calls
-// `npm publish "$TARBALL"` — a FILE-type publish — for which npm's own
-// dispatcher does not run prepublishOnly (confirmed by reading the installed
-// npm CLI's publish.js locally: scripts only run "for directory type
-// publishes"). So embedding the check here closes the direct-publish path
+// triggers it either, but NOT because it packs a tarball and uploads that —
+// it does not (see scripts/publish-qualified-directory.mjs and issue #510).
+// Both sanctioned publish paths — the OIDC job in publish.yml and the
+// owner-present interactive handoff — upload with a DIRECTORY-type
+// `npm publish . --ignore-scripts`, asserted by
+// scripts/publish-qualified-directory.test.mjs and
+// scripts/publish-workflow.test.mjs. `--ignore-scripts` is what suppresses
+// prepublishOnly here, deliberately: both paths publish an already-qualified,
+// hash-verified candidate and must not let any lifecycle script mutate or
+// add to what gets uploaded. See SECURITY.md ("Why `prepublishOnly` does not
+// run this gate") for why issue #510 concluded the public-safety gate itself
+// should not move into this hook: neither sanctioned path would ever run it,
+// so the only publish it would ever protect is one that bypasses both. So
+// embedding the collision check here closes the direct-publish path
 // without duplicating — or, worse, silently double-running — the
 // workflow's own explicit collision-check step.
 //
