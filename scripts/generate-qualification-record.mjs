@@ -119,6 +119,32 @@ import { selectPolicyPackage, validateReleaseQualificationPolicy } from "./lib/r
 // is a real, slow, network-installing run). Flip this to 3 once that
 // coordinated change lands; until then, changing only this constant would
 // silently break every future qualification.
+//
+// A SECOND, independent blocker, found on later review and not yet fixed
+// either: several files compare a registry-OBSERVED
+// `evidence.packedManifestSha256` — always a raw sha256 of a downloaded
+// tarball's real `package.json` bytes, computed once in
+// `scripts/lib/public-npm-registry.mjs` (`packedManifestSha256: sha("sha256",
+// packed.bytes)`) — directly against a qualification record's
+// `candidate.packageManifestSha256`. For a schema-3 record those can never
+// be equal: a raw whole-file hash cannot equal a field-subset hash, by
+// construction, regardless of whether the underlying bytes agree. The direct
+// comparisons live in `scripts/lib/release-publication-cohort.mjs`
+// (`evidence?.packedManifestSha256 !== candidate?.packageManifestSha256`)
+// and `scripts/lib/release-later-publication.mjs`
+// (`proof?.packedManifestSha256 !== c?.packageManifestSha256`);
+// `scripts/lib/public-npm-aggregate-canary.mjs` and
+// `public-npm-aggregate-canary-v2.mjs` both thread the same raw
+// `evidence.packedManifestSha256` value through as a stand-in
+// `packageManifestSha256` when joining served bytes back to a candidate.
+// `scripts/record-later-publication.mjs` sits upstream of this chain (it
+// calls `validatePublicNpmRegistryProof`, which only self-compares two raw
+// hashes and is schema-safe on its own) but is where a later-publication
+// record for a schema-3 candidate would first be attempted and first fail.
+// This is a materially larger follow-up than `candidate-runner.mjs` alone:
+// it touches the anonymous public-registry proof shape itself, not just one
+// runner's transcript field. Recorded here, deliberately not fixed in this
+// change — see this repository's scope-discipline convention.
 const RECORD_SCHEMA_VERSION = 2;
 
 const USAGE = "Usage: --package <policy-key> --tarball <candidate.tgz> --transcript <transcript.json> --review-reference <string> [--out <path>]";

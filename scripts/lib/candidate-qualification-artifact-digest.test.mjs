@@ -278,3 +278,54 @@ test("negative control (i): a WORKTREE schema-3 digest catches built dist/ drift
   assert.notEqual(afterWorktree.packageTreeSha1, beforeWorktree.packageTreeSha1, "a live, currently-materialized dist/ IS captured by the WORKTREE-ref digest");
   assert.equal(afterHead.packageTreeSha1, beforeHead.packageTreeSha1, "a git-archived ref cannot see gitignored dist/ content — by construction, not by accident");
 });
+
+// --- (j) the silent partial pack — a declared, unbuilt directory MUST fail
+// loudly rather than silently return a digest over an incomplete artifact.
+// A real publish dispatch measured `check-qualification-record-present.mjs`
+// reporting PRESENT while `dist/` had drifted with no git-visible cause
+// (negative control (i)); a second, INDEPENDENT review measured that
+// `packedArtifactPaths()` itself would not even throw if a `files`-declared
+// directory contributed zero packed files (as it always would for an
+// unbuilt `dist/`) — meaning a WORKTREE schema-3 digest computed before a
+// build silently describes a SHORTER, real-looking artifact instead of
+// failing. This control is WORKTREE-only, deliberately: see
+// `assertDeclaredFilesEntriesArePacked`'s own header comment in
+// candidate-qualification.mjs for why a historical (git-archived) ref
+// cannot be held to the same standard without making every historical
+// computation for any package that ships `dist` fail unconditionally.
+test("negative control (j): an unbuilt files-declared directory fails LOUDLY on a WORKTREE digest, not silently — the silent-partial-pack this repository refuses everywhere else it can detect one", (t) => {
+  const root = fixture(t, baseManifest({ files: ["index.js", "dist"] }));
+  writeFileSync(join(root, ".gitignore"), "dist/\n");
+  // `dist` is declared in `files` but was never built — exactly the state
+  // packages/writer/dist was in when CI's `discover` job (which does not
+  // build first) ran check-qualification-record-present.mjs.
+  assert.throws(
+    () => joinsV3(root),
+    /"dist" is declared in package\.json "files" but npm pack --dry-run packed zero files under it/,
+    "a declared-but-absent directory must fail loudly, not silently produce a partial digest",
+  );
+
+  // The identical fixture's git-archived (historical) computation is NOT
+  // held to this standard — `dist` was never committed either way, so this
+  // is not a build-state problem there, it is a structural property of what
+  // `git archive` can ever see (negative control (i)).
+  assert.doesNotThrow(() => currentQualificationJoins(root, CANDIDATE, "HEAD", { schemaVersion: 3 }));
+
+  // Building it — materializing real content under the declared directory —
+  // clears the failure; the WORKTREE digest then succeeds normally.
+  mkdirSync(join(root, PACKAGE_DIR, "dist"), { recursive: true });
+  writeFileSync(join(root, PACKAGE_DIR, "dist/bundle.js"), "// built output\n");
+  assert.doesNotThrow(() => joinsV3(root));
+});
+
+// A `files`-declared directory that exists but is genuinely EMPTY of any
+// packable content must fail exactly the same way as one that is entirely
+// absent — npm never packs an empty directory either way, so there is no
+// observable difference between "never built" and "built into nothing" from
+// the packed file list alone, and both are the same silent-partial-pack risk.
+test("negative control (j2): a files-declared directory that exists but is empty fails the same way as one that is absent", (t) => {
+  const root = fixture(t, baseManifest({ files: ["index.js", "dist"] }));
+  writeFileSync(join(root, ".gitignore"), "dist/\n");
+  mkdirSync(join(root, PACKAGE_DIR, "dist"), { recursive: true }); // exists, but empty — npm packs nothing from it
+  assert.throws(() => joinsV3(root), /"dist" is declared in package\.json "files" but npm pack --dry-run packed zero files under it/);
+});

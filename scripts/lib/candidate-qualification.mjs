@@ -248,19 +248,72 @@ function packedArtifactPaths(dir) {
   if (!entry || !Array.isArray(entry.files) || entry.files.length === 0) throw new Error(`npm pack --dry-run --json produced no packed file manifest for ${dir}`);
   return entry.files.map((file) => file.path).filter((p) => typeof p === "string").sort();
 }
+// A `files` array entry counts as checkable when it is a plain literal path:
+// not a negation (`!…`, never itself an inclusion) and not a glob (matching
+// it against literal packed paths by prefix would be meaningless). This
+// covers exactly the shape every real package in this repository actually
+// uses for a directory entry (`dist`, `src`, `templates`, …).
+function declaredFilesEntryIsCheckable(entry) {
+  return typeof entry === "string" && entry.length > 0 && !entry.startsWith("!") && !/[*?[\]{}]/.test(entry);
+}
+/**
+ * `npm pack --dry-run` silently omits a `files`-declared path that does not
+ * exist, or a declared directory that exists but is empty — it never fails
+ * for that reason on its own; the CLI's job is to report what it found, not
+ * to judge whether that's suspiciously little. An unbuilt `dist/` is exactly
+ * such a case: `files` names it, nothing on disk backs it, and
+ * `packedArtifactPaths` above happily returns a shorter, real-looking list
+ * with zero complaint — the exact silent partial pack this repository
+ * refuses everywhere else it can detect one. This closes it for the one
+ * place it is cheap to check: does EVERY non-negated, non-glob `files` entry
+ * contribute at least one packed path? If not, fail loudly rather than
+ * return a digest over an artifact that is missing something it declared.
+ *
+ * Deliberately WORKTREE-only (see call site): a historical git-archived ref
+ * can never contain a gitignored build directory like `dist/` — that is a
+ * structural, permanent property of `git archive`, not a transient "someone
+ * forgot to build" defect, and asserting this there would make every
+ * historical-ref computation for a package that ships `dist` fail every
+ * single time, which is not a bug being caught, it is a real capability this
+ * design deliberately does not have (see this function's own header comment
+ * above, and check-qualification-record-present.mjs's header comment, for
+ * why).
+ */
+function assertDeclaredFilesEntriesArePacked(dir, packedPaths) {
+  let manifest;
+  try { manifest = parseStrictJson(readFileSync(join(dir, "package.json"), "utf8")); }
+  catch { return; } // an unreadable/invalid manifest fails elsewhere in this file; nothing more to assert here.
+  const entries = Array.isArray(manifest.files) ? manifest.files : [];
+  for (const raw of entries) {
+    if (!declaredFilesEntryIsCheckable(raw)) continue;
+    const entry = raw.replace(/\/+$/, "");
+    const contributes = packedPaths.some((p) => p === entry || p.startsWith(entry + "/"));
+    if (!contributes) throw new Error(`"${entry}" is declared in package.json "files" but npm pack --dry-run packed zero files under it in ${dir} — an unbuilt or emptied declared path would otherwise silently produce a digest over an incomplete artifact. Build the package first.`);
+  }
+}
 /**
  * The exact set of files `npm pack` would ship for the package materialized
  * at `dir`, each paired with a content digest — computed by asking npm
  * itself which paths it would include (never a hand-rolled `files`/
  * `.npmignore` matcher), then hashing the real bytes on disk at that path.
+ * `checkDeclaredFiles` additionally refuses a silent partial pack — see
+ * `assertDeclaredFilesEntriesArePacked`'s own header comment for why it is
+ * not the default.
  */
-export function artifactPackedFiles(dir) {
-  return packedArtifactPaths(dir).map((path) => ({ path, sha256: digest(readFileSync(join(dir, path))) }));
+export function artifactPackedFiles(dir, { checkDeclaredFiles = false } = {}) {
+  const paths = packedArtifactPaths(dir);
+  if (checkDeclaredFiles) assertDeclaredFilesEntriesArePacked(dir, paths);
+  return paths.map((path) => ({ path, sha256: digest(readFileSync(join(dir, path))) }));
 }
-/** `artifactPackedFiles`, materializing `packageDir` at `ref` first. */
+/**
+ * `artifactPackedFiles`, materializing `packageDir` at `ref` first. The
+ * silent-partial-pack assertion runs only for `ref === "WORKTREE"` — see
+ * `assertDeclaredFilesEntriesArePacked`'s header comment for why a
+ * historical ref cannot and must not be held to it.
+ */
 export function artifactPackedManifest(root, ref, packageDir) {
   const { dir, cleanup } = materializedPackageDir(root, ref, packageDir);
-  try { return artifactPackedFiles(dir); }
+  try { return artifactPackedFiles(dir, { checkDeclaredFiles: ref === "WORKTREE" }); }
   finally { cleanup(); }
 }
 /** sha256 of the manifest fields that ship — see `ARTIFACT_MANIFEST_FIELDS`. */
