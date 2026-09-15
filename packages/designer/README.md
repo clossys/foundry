@@ -629,6 +629,28 @@ is Node-only: it throws its own clear error rather than a misleading "not
 installed" if it is ever called from real browser code. See
 `assert-tailwind-merge-version.ts`'s own header for the full reasoning.
 
+**You do not have to call it just to avoid a crash — but a missing peer is
+never fully silent either.** Before #749, an absent `tailwind-merge`
+crashed the moment `cx` (this package's internal class-merge helper,
+reachable from every atom and therefore from the server-safe barrels too)
+was imported at all — `Cannot find package 'tailwind-merge'`, even on a
+purely server-rendered path that never mentioned styling. `cx` now
+resolves `tailwind-merge` lazily, so importing any component subpath
+without this optional peer installed no longer throws, and rendering
+completes. What changes is class-conflict resolution: with the peer
+absent, `cx` cannot tell that two classes conflict, so BOTH of them are
+emitted instead of the later one winning (`bg-accent` passed by this
+package and a consumer's own `bg-status-danger` override, say, would both
+end up in the rendered `className`, and which one is visually applied
+then depends on Tailwind's generated stylesheet order, not on argument
+order). That is real, wrong-relative-to-intent output, so `cx` logs a
+`console.warn` the first time it actually happens — once per process, not
+once per call, so it is not spam — naming the cause and pointing at
+installing `tailwind-merge`. Call `assertTailwindMergeVersion` when you
+specifically want a loud, thrown error instead (for example to fail a
+build or a startup check rather than merely log): its three failure modes
+(absent, out of range, unparseable) are unchanged by this.
+
 `react-dom` and `@internationalized/date` are declared, optional peers
 with no guard at all — neither has an adapter import site anywhere in this
 package's own source to guard. `react-dom` is always the consumer's own

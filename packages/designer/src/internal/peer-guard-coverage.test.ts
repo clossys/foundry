@@ -29,11 +29,22 @@ function collectSourceFiles(dir: string, out: string[] = []): string[] {
 
 const ALL_SOURCE_FILES = collectSourceFiles(packageSrcRoot);
 
+/**
+ * Matches BOTH a static `import ... from "specifier"` and a dynamic
+ * `import("specifier")` — #749's fix made `atoms/internal/cx.ts` resolve
+ * `tailwind-merge` via a dynamic `import()` (inside a `try`/`catch`,
+ * so an absent optional peer degrades instead of throwing; see that
+ * file's own header) instead of the static import it used before. A
+ * detector that only matched the static `from "..."` shape would stop
+ * seeing that real import site at all the moment it went dynamic —
+ * silently losing coverage rather than adapting to it.
+ */
 function filesImporting(specifier: string): string[] {
-  const needle = `"${specifier}"`;
+  const quoted = `"${specifier}"`.replace(/[.+*?^${}()|[\]\\]/g, "\\$&");
+  const pattern = new RegExp(`from\\s+${quoted}|import\\(\\s*${quoted}\\s*\\)`);
   return ALL_SOURCE_FILES.filter((file) => {
     const code = readFileSync(file, "utf8");
-    return new RegExp(`from\\s+${needle.replace(/[.+*?^${}()|[\]\\]/g, "\\$&")}`).test(code);
+    return pattern.test(code);
   }).map((file) => relative(packageSrcRoot, file));
 }
 

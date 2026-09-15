@@ -3,6 +3,35 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.4.4] - 2026-09-15
+
+### Fixed
+
+- The internal `cx()` class-merge helper — reachable from every atom, and
+  therefore from the server-safe barrels (`atoms/server`, `blocks/server`)
+  too — used to `import` `tailwind-merge` STATICALLY. `tailwind-merge` is
+  declared an OPTIONAL peer in this package's own `peerDependenciesMeta`,
+  so a consumer who (correctly) did not install it got
+  `Cannot find package 'tailwind-merge'` the moment any server-safe import
+  touched `cx`, even on a render path that never mentioned styling. `cx`
+  now resolves `tailwind-merge` via a dynamic import inside a `try`/`catch`,
+  so importing a subpath no longer throws on this peer's absence, and
+  still uses the full token-aware merge whenever it is installed. See
+  `atoms/internal/cx.ts` and `atoms/internal/cx.optional-peer.test.ts`
+  (#749).
+
+### Changed
+
+- When `tailwind-merge` is genuinely absent, `cx()` renders with a plain,
+  unmerged class join instead of resolving conflicts — two conflicting
+  Tailwind utilities passed to the same `cx(...)` call (a built-in default
+  and a consumer's own override, say) are now BOTH present in the
+  rendered `className`, and which one is visually applied depends on
+  Tailwind's generated stylesheet order rather than on argument order.
+  This is not silent: `cx()` logs one `console.warn` per process (not per
+  call) the first time it actually happens, naming the cause. See the
+  README's "Optional-peer version guards" section.
+
 ## [0.4.3] - 2026-09-14
 
 ### Changed
