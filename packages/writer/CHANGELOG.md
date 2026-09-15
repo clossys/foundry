@@ -3,6 +3,48 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.3.7] - 2026-09-15
+
+### Fixed
+
+- The default `writer-check` command's scanner could not classify a `//`
+  line comment or a `/* */` block comment placed BETWEEN a JSX element's
+  attributes — legal TSX every mainstream formatter produces for a
+  commented-out or explained prop. The attribute-parsing loop inside
+  `tryScanJsxElement` had no case for either comment form, so it fell
+  through to the loop's own "not committed, silently not-JSX" backtrack;
+  for a NESTED element (the realistic shape in a real component tree)
+  that backtrack surfaced as an `"unrecognized-jsx-child"` `unchecked`
+  entry, and this package's own indeterminate-fold ("one unreadable
+  region must not let a scan report itself clean") turned that ONE
+  construct into exit code 2 for the WHOLE run — discarding every real
+  finding the same scan had already produced (issue #753: a 270-entry
+  `CopyRecord` scan against a real application tree extracted 294
+  candidates, produced 292 findings, and still exited 2 over this one
+  construct). Comment trivia between attributes is now skipped exactly
+  like the whitespace surrounding it, before any commit decision is
+  made — the same "silent, pre-commit trivia" treatment this loop
+  already gives TSX's generic-arrow-function syntax.
+
+### Added
+
+- `writer-check --format json`: the default command's own structured,
+  machine-readable report (`CopyTraceabilityReport`), matching the
+  `--format json` shape `inspector`'s CLI already publishes. Exit code 2
+  (indeterminate) is unchanged and still wins whenever any JSX construct
+  is `unchecked` — an indeterminate result must never read as clean, and
+  this does not touch that rule. What changes is that a consumer no
+  longer has to choose between reading the exit code and discarding
+  everything the run DID measure: `--format json` prints exactly one
+  object to stdout, always carrying `verdict` (the same
+  `"clean" | "findings" | "indeterminate"` states this package uses
+  everywhere), `findings`, and `unchecked` together, regardless of which
+  verdict resulted — so a real finding produced alongside a genuinely
+  unclassifiable construct in the same run is still reachable by a
+  consumer that reads past the exit code, exactly as #753 asked for,
+  while a consumer that only checks `exitCode`/`verdict` still, correctly,
+  never sees an indeterminate run reported as a pass.
+
 ## [0.3.6] - 2026-09-14
 
 ### Changed

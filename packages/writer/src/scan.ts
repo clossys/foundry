@@ -1319,6 +1319,37 @@ function tokenize(content: string, isJsxFile: boolean): TokenizeResult {
         if (j >= n) return backtrack(); // ran off the end before the head ever closed — not committed, silently not-JSX
 
         const cj = content[j] as string;
+
+        // Comment trivia BETWEEN attributes (`//` line comment or `/* */`
+        // block comment) — legal TSX a formatter routinely produces
+        // (issue #753). Checked before the self-closing `/>` test below,
+        // since both start with `/`: `content[j + 1] === ">"` is the
+        // self-close, anything else after a `/` here is a comment, never
+        // a division operator — there is no expression context inside an
+        // opening tag's attribute list for `/` to divide. Treated exactly
+        // like the whitespace just skipped above: this function has not
+        // committed to "this is real JSX" yet (no `>`/`/>` found), so
+        // consuming a comment here is silent trivia-skipping, not a
+        // reportable event — matching every other pre-commit case in
+        // this loop (e.g. the TSX generic-arrow-function `,` below,
+        // which also backtracks with no message). An unterminated `/*`
+        // is the one exception: it means this position can never
+        // resolve to a valid tag head, so this reports the SAME "not
+        // JSX after all" backtrack as running off the end of the file,
+        // above.
+        if (cj === "/" && content[j + 1] === "/") {
+          const nl = content.indexOf("\n", j);
+          j = nl === -1 ? n : nl;
+          continue;
+        }
+        if (cj === "/" && content[j + 1] === "*") {
+          const close = content.indexOf("*/", j + 2);
+          if (close === -1) return backtrack(); // unterminated block comment — not committed, silently not-JSX
+          advanceLine(j, close + 2);
+          j = close + 2;
+          continue;
+        }
+
         if (cj === "/" && content[j + 1] === ">") {
           selfClosing = true;
           j += 2;
