@@ -33,10 +33,25 @@
 //
 // A record binds a candidate on TWO axes, and both are checked because
 // neither alone covers what actually ships: `candidate.packageManifestSha256`
-// is a digest of `package.json` bytes alone, while `candidate.packageTreeSha1`
-// is `git rev-parse <ref>:<packageDir>` — a tree hash over the whole package
-// directory, so it also covers `LICENSE`, `README`, `dist/`, and everything
-// else `npm pack` would include. A later merge to an unrelated file in that
+// is a digest derived from `package.json` (the whole file's bytes under
+// schema 2, only the fields that ship under schema 3 — issue #879), while
+// `candidate.packageTreeSha1` is derived from the package directory (the
+// whole git tree under schema 2, the `npm pack`-selected file set under
+// schema 3). Neither axis, under EITHER schema, can see `dist/`: it is
+// gitignored, so nothing computed from git content — `git rev-parse`, same as
+// a schema-3 `git archive` — ever sees it, at any commit. A real publish
+// dispatch of `@clossys/writer@0.3.7` measured this directly: its (schema-2)
+// `packageTreeSha1` matched `git rev-parse HEAD:packages/writer` exactly, yet
+// a freshly packed tarball from that same tree did not match the record's
+// `candidate.tarball.sha256` — because `dist` ships first in writer's
+// `files` and had drifted with no git-visible cause. That mismatch is
+// real and was caught, just not here: `validate-candidate-publish.mjs`
+// independently reverifies the exact tarball bytes immediately before
+// upload, and refused the publish before anything reached the registry. This
+// check's two axes are a cheap, git-only, PR-time early warning for what they
+// CAN see — a devDependency bump or a tracked-file edit moving one axis
+// without the other, exactly as designed below — not a claim to catch
+// everything a build can change. A later merge to an unrelated file in that
 // package can move either digest without ever touching the record itself
 // (designer 0.3.1 qualified at one manifest digest, then a routine dependabot
 // bump landed 29 minutes later and changed it — the publish failed hours
@@ -110,9 +125,16 @@ export function qualificationRecordPresenceForCandidate({ root = process.cwd(), 
     return { state: "indeterminate", reason: `${path} carries no candidate.packageTreeSha1 to join against` };
   }
 
+  // The retained record's own `schemaVersion` selects which formula "current"
+  // is recomputed with — schema 2 (legacy, whole-manifest/whole-tree) or
+  // schema 3 (artifact-scoped, issue #879). A schema-2 record is still
+  // compared against a schema-2 recomputation, so this remains exactly as
+  // sensitive to a devDependency-only or non-shipped-file change as it always
+  // was; only a schema-3 record is immune to that class of change, because it
+  // is qualifying an artifact-scoped digest in the first place.
   let current;
   try {
-    current = currentQualificationJoins(root, candidate);
+    current = currentQualificationJoins(root, candidate, "WORKTREE", { schemaVersion: record?.schemaVersion });
   } catch (error) {
     return { state: "indeterminate", reason: `current package digests could not be recomputed: ${error instanceof Error ? error.message : "unknown error"}` };
   }

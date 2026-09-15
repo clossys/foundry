@@ -69,7 +69,7 @@ export function validateCandidatePublish({ root = process.cwd(), args }) {
     }
     const record = parseStrictJson(readFileSync(regular(recordPath, "qualification record"), "utf8"));
     const transcript = parseStrictJson(readFileSync(transcriptPath, "utf8"));
-    const expected = { name: manifest.name, version: manifest.version, ...currentQualificationJoins(root, candidate, qualificationJoinsRef(record, args.mode, root)) };
+    const expected = { name: manifest.name, version: manifest.version, ...currentQualificationJoins(root, candidate, qualificationJoinsRef(record, args.mode, root), { schemaVersion: record?.schemaVersion }) };
     const hashes = { sha1: sha("sha1", frozen.bytes), sha256: sha("sha256", frozen.bytes), sha512: sha("sha512", frozen.bytes) };
     const findings = validateCandidateQualification(record, { mode: args.mode === "prepublish" ? "prepublish" : "offline", expected, freshTranscript: transcript });
     if (args.mode === "bootstrap" && record.timing !== "post-publication-bootstrap") findings.push({ rule: "bootstrap-timing", message: "bootstrap validation requires a bootstrap record." });

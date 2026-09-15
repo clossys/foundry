@@ -91,7 +91,7 @@ export function trustedProvenanceSourceValid(root, qualification, qualificationI
     execFileSync("git", ["merge-base", "--is-ancestor", qualificationIntroduction, sourceSha], { cwd: root, stdio: "ignore" });
     execFileSync("git", ["merge-base", "--is-ancestor", sourceSha, publicationIntroduction], { cwd: root, stdio: "ignore" });
     const candidate = qualification?.candidate;
-    const joins = joinsAt(root, candidate, sourceSha);
+    const joins = joinsAt(root, candidate, sourceSha, { schemaVersion: qualification?.schemaVersion });
     return [
       ["packageTreeSha1", candidate?.packageTreeSha1],
       ["packageManifestSha256", candidate?.packageManifestSha256],
@@ -182,7 +182,7 @@ export function trustedReplaySourceEvidence(root, qualification, qualificationIn
     if (selected?.sha === qualificationIntroduction || (!allowSourceAtPublication && selected?.sha === publicationIntroduction)) throw new Error("source must strictly sit between introductions");
     execFileSync("git", ["merge-base", "--is-ancestor", qualificationIntroduction, selected?.sha], { cwd: root, stdio: "ignore" });
     execFileSync("git", ["merge-base", "--is-ancestor", selected?.sha, publicationIntroduction], { cwd: root, stdio: "ignore" });
-    const joins = joinsAt(root, qualification?.candidate, selected?.sha);
+    const joins = joinsAt(root, qualification?.candidate, selected?.sha, { schemaVersion: qualification?.schemaVersion });
     if (joins.rootPackageJsonSha256 !== selected?.rootPackageJsonSha256 || joins.rootPackageLockSha256 !== selected?.rootPackageLockSha256 || ![
       ["packageTreeSha1", qualification?.candidate?.packageTreeSha1],
       ["packageManifestSha256", qualification?.candidate?.packageManifestSha256],
@@ -370,7 +370,7 @@ export function validateRetainedLaterPublications(root) {
       const qualification = parseStrictJson(qbytes);
       const history = qualificationRecordHistory(root, qpath, qualification.candidate, "HEAD", qpath);
       strictQualificationIntroductionAncestor(root, history.introductionCommit, introductionCommit);
-      const expected = { name: qualification.candidate?.name, version: qualification.candidate?.version, ...currentQualificationJoins(root, qualification.candidate, history.introductionCommit) };
+      const expected = { name: qualification.candidate?.name, version: qualification.candidate?.version, ...currentQualificationJoins(root, qualification.candidate, history.introductionCommit, { schemaVersion: qualification.schemaVersion }) };
       const introCatalogBytes = gitBlob(root, introductionCommit, CATALOG_PATH);
       const introCatalog = parseStrictJson(introCatalogBytes);
       const qualificationFindings = validateCandidateQualification(qualification, { expected });

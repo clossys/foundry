@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 
 import { assertCredentialFree, consumerDigest, runCandidateQualification, writeNextFixture } from "./candidate-runner.mjs";
+import { packageManifestDigest } from "./candidate-qualification.mjs";
 import { installedPackageRoots, runProcess, validateOptionalPeerPolicy } from "./packed-consumer-readiness.mjs";
 import { PUBLIC_NPM_REGISTRY, validatePublicNpmRegistryProof, verifyGithubRepositoryRedirect, verifyPublicNpmArtifact } from "./public-npm-registry.mjs";
 
@@ -1157,7 +1158,7 @@ export async function runAggregatePublicNpmCanary({ root, record, set = "oidc-su
       const fixtureDigest = hash(JSON.stringify(adapter.fixtures.slice().sort().map((fixture) => ({ path: `${selectedPolicy.fixturePath}/${fixture}`, sha256: hash(atReviewed(`${selectedPolicy.fixturePath}/${fixture}`)) }))));
       if (fixtureDigest !== qualification.candidate.fixtureSetSha256) throw new Error(`${artifact.entry.name} reviewed fixture set does not join its qualification`);
       const manifestBytes = atReviewed(`${selectedPolicy.packageDir}/package.json`);
-      if (hash(manifestBytes) !== qualification.candidate.packageManifestSha256) throw new Error(`${artifact.entry.name} reviewed manifest does not join its qualification`);
+      if (packageManifestDigest(manifestBytes, qualification.schemaVersion) !== qualification.candidate.packageManifestSha256) throw new Error(`${artifact.entry.name} reviewed manifest does not join its qualification`);
       const manifestBins = JSON.parse(manifestBytes).bin ?? {};
       runs.push(await executeCandidate({ tarball, policy, adapter, fixtures, manifestBins, registry: { scope: "@clossys", registry: PUBLIC_NPM_REGISTRY }, consumerRoot: scratch, skipRollback: true, restoreConsumerOverlay: true }));
       if (hash(await readFile(join(scratch, "package.json"), "utf8")) !== hash(before.manifest) || hash(await readFile(join(scratch, "package-lock.json"), "utf8")) !== hash(before.lock) || await treeDigest(join(scratch, "node_modules")) !== before.tree) throw new Error(`${artifact.entry.name} child execution did not restore the shared aggregate consumer tree`);
