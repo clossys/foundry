@@ -537,9 +537,21 @@ function evaluatePackageDiff(pkgDir, requestedBase) {
   }
 
   if (baseVersion !== manifest.version) {
+    // `versionChanged`/`baseVersion`/`mergeBase` are additive fields, read by
+    // scripts/check-qualification-record-required.mjs so that script can
+    // reuse THIS function's merge-base computation and version comparison —
+    // the one this repository already trusts for "did this pull request
+    // bump a version" — rather than recomputing the same join a second way
+    // that could drift from this one. No existing caller reads these fields,
+    // so this is a pure addition to the shape, not a behavior change.
     return {
       package: label,
       status: "pass",
+      versionChanged: true,
+      baseVersion,
+      version: manifest.version,
+      mergeBase,
+      gitRoot,
       detail: `version changed from ${baseVersion} to ${manifest.version} since merge-base ${mergeBase.slice(0, 12)} (base ${baseRef})`,
     };
   }

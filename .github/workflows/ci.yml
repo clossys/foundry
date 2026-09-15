@@ -733,6 +733,65 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: node scripts/check-release-readiness.mjs --base "$BASE_SHA"
 
+  # scripts/check-qualification-record-present.mjs already answers "does the
+  # selected candidate have a retained, matching qualification record?" —
+  # but it was wired into publish.yml's `discover` job only, which runs at
+  # PUBLISH DISPATCH: a version bump could merge to main with every
+  # pull-request check green and no record at all, discovered only when
+  # someone later tried to publish it (issue #863; the real instance was PR
+  # #860, found by human review, not by any gate). This job asks the
+  # identical question here instead, scoped to the same merge base
+  # `release-readiness` above already resolves, via
+  # scripts/check-qualification-record-required.mjs — which reuses
+  # check-release-readiness.mjs's own evaluatePackageDiff() for "did the
+  # version actually change" rather than a second implementation of that
+  # join, and check-qualification-record-present.mjs's own present/missing/
+  # stale logic for "does the record still match" rather than a third.
+  #
+  # Deliberately a separate job/script from `release-readiness`, not folded
+  # into it: that gate's question ("does this change need a version bump")
+  # and this one's ("does an already-bumped version have its record") have
+  # different remedies, and conflating them would mean re-deriving the
+  # devDependencies exemption (issue #269) and identity-transition handling
+  # a second time inside a script that has nothing to do with either. This
+  # gate's own trigger — an actual `version` field change — is strictly
+  # narrower than that exemption's condition, so it is unaffected by it
+  # (see check-qualification-record-required.mjs's own header for why, and
+  # for the real Dependabot pull requests checked against it).
+  #
+  # A version bump landing here with its record deliberately DEFERRED (the
+  # PR #848 shape: declining to bump mid publish-wave, or here, declining to
+  # block a merge on a re-qualification the operator has explicitly decided
+  # can follow) is not treated as a defect — it must be an ACKNOWLEDGED
+  # exception naming an issue, in governance/release-qualification-deferrals.json,
+  # never silence. That acknowledgement cannot outlive its reason: once a
+  # matching record exists, the same job fails until the deferral is removed
+  # (see the script's own STALE DEFERRALS section).
+  #
+  # OUT OF SCOPE, DELIBERATELY: issues #860 and #862 also collided on the
+  # same version (`controller@0.9.5`) in two separate, simultaneously open
+  # pull requests. This job — like `release-readiness` beside it — reads
+  # only this checkout's own tree at one pull request's merge base and HEAD;
+  # it has no view of any OTHER open pull request's branch, so it cannot see
+  # a cross-PR version collision and does not attempt to. That needs forge
+  # state (every open pull request's head), not tree state, and is not
+  # solved here.
+  qualification-record-required:
+    name: qualification record required (version bump vs. retained record)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+      - name: check-qualification-record-required (diffed against this PR's actual base)
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: node scripts/check-qualification-record-required.mjs --base "$BASE_SHA"
+
   # THE JOB NAME BELOW IS STILL DELIBERATELY NOT RENAMED (issue #497, phase
   # 1 of 3). It still reads "ui-contrast-check" while running designer's
   # copy, because that exact string is a REQUIRED status check on main.

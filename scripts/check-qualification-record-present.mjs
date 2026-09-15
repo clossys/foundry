@@ -69,6 +69,24 @@ export function qualificationRecordPresence({ root = process.cwd(), packageKey }
   if (typeof candidate.name !== "string" || typeof candidate.version !== "string") {
     return { state: "indeterminate", reason: `packages/${packageKey}/package.json declares no name/version pair` };
   }
+  return qualificationRecordPresenceForCandidate({ root, candidate });
+}
+
+// The candidate-parameterized core of qualificationRecordPresence() above,
+// split out so a caller that already HAS a {name, version} pair in hand —
+// scripts/check-qualification-record-required.mjs asking about a version an
+// acknowledged exception names, which may not be the version the manifest
+// currently declares (the manifest can have moved on since the exception
+// was written) — can ask the identical present/missing/stale question
+// without first reading it back out of a package.json on disk. This is the
+// same "one join, two callers" discipline this script's own header comment
+// describes for qualificationPath/currentQualificationJoins: the exception
+// mechanism must not invent a second, looser notion of "does the record for
+// THIS candidate still hold."
+export function qualificationRecordPresenceForCandidate({ root = process.cwd(), candidate } = {}) {
+  if (typeof candidate?.name !== "string" || typeof candidate?.version !== "string") {
+    return { state: "indeterminate", reason: "no candidate {name, version} pair was given" };
+  }
   let path;
   try {
     path = qualificationPath(root, candidate);
