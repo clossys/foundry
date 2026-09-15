@@ -1,0 +1,5 @@
+{
+  "schemaVersion": 1,
+  "$comment": "Acknowledged, issue-referenced exceptions to scripts/check-qualification-record-required.mjs (issue #863): a package version that merged to main ahead of its retained qualification record, with a reason and a tracking issue. Modelled on the `gaps` mechanism in docs/contracts/package-evidence.json / scripts/check-package-evidence.mjs. This is a countdown, not a standing exemption -- the gate refuses to let an entry outlive its reason: once a retained, matching record exists for the exact package@version an entry names, the entry is stale and the gate fails until it is removed and its issue closed.",
+  "deferrals": []
+}
