@@ -733,11 +733,45 @@ installable migration paths. Their authoritative disposition is the
 `docs/contracts/package-retention.json` is intentionally empty. Do not
 republish, copy, reuse, or select a retired name for a new integration.
 
-The manual **Deprecate legacy packages** workflow remains a historical
-read-only capability check. GitHub Packages currently rejects `npm deprecate`
-metadata writes, and no retired name is a candidate for that mutation. The
-lifecycle records and their historical decision/migration references preserve
-the prior recuts without asserting that the retired artifacts remain live.
+The manual **Deprecate legacy packages** workflow targets retired NAMES, and
+its derived plan is currently empty: no lifecycle entry is in the `deprecated`
+state. Its header formerly described GitHub Packages rejecting `npm deprecate`
+metadata writes — that predates the npmjs.org cutover recorded in
+`package-scope.json`, and both the header and the workflow's authentication
+have been corrected. The lifecycle records and their historical
+decision/migration references preserve the prior recuts without asserting that
+the retired artifacts remain live.
+
+### Deprecating one live version
+
+A package that is still current, with one broken version among good ones, is
+not a retirement, and the lifecycle contract cannot express it — there is no
+replacement NAME to point at, only a different version of the same package. The
+manual **Deprecate registry version** workflow
+(`.github/workflows/deprecate-registry-version.yml`) covers that case. It
+resolves the version spec through npm itself, refuses a spec that matches no
+version, applies the notice, and then re-reads the packument anonymously to
+confirm the exact version carries it.
+
+Two properties matter to anyone reviewing a dispatch:
+
+* **It is reversible.** `npm deprecate <pkg>@<ver> ""` clears the notice, and
+  dispatching with an empty message applies that by the same verified path. The
+  blast radius of a mistake is "a wrong notice was public for a while", not the
+  permanence that governs publication — which is why this workflow can be
+  exercised for real rather than only reasoned about. The notice is still
+  public the moment it lands, and clearing it later does not un-print it for
+  anyone who installed in between.
+* **It needs a stored credential, and OIDC cannot supply one.** npm documents
+  OIDC authentication as supporting `npm publish` and `npm stage publish`
+  only; in the npm CLI the OIDC exchange (`lib/utils/oidc.js`) is required from
+  `lib/commands/publish.js` alone, and `npm deprecate` authenticates against an
+  existing token instead. Dry-run mode needs no credential at all and exercises
+  everything up to the mutation, including the refusal on a no-match.
+
+A preflight exists because `npm deprecate` exits 0 when its spec matches
+nothing. A typo would otherwise be indistinguishable from a successful
+deprecation while the broken version stayed installable with no warning.
 
 ## 7. W1D source recut and immutable predecessor history
 
@@ -792,5 +826,6 @@ for the capability and wiring ledger.
 | --- | --- | --- |
 | Denylist | `~/.config/public-safety/denylist-foundry.json` locally; `PUBLIC_SAFETY_DENYLIST_B64` repository secret in CI | Never committed here — it names exactly what must not be public. Specific to this repository — never reuse a denylist file written for a different project. |
 | W1E publish trust | Outside the W1D tree | Trusted publishing and the protected `npm-publish` path have proved the current Trio releases. Value-free provider evidence confirms each package-level token-disallow setting. No publish token or value is recorded here. |
+| Registry deprecation token | `NPM_DEPRECATE_TOKEN` repository secret, reachable only from the protected `npm-publish` environment | Required ONLY by the two manual deprecation workflows. npm's OIDC trusted-publishing exchange authorizes `npm publish` and `npm stage publish` only and cannot authorize `npm deprecate`, so those workflows have no credential-free path and publish.yml's posture is unchanged. Until the secret exists, apply mode fails closed by name rather than reporting a run that mutated nothing; dry-run needs no credential. No token value is recorded here. |
 | Public npm consumer read | None | Current `@clossys` reads are anonymous. A consumer token or private-registry mapping is neither required nor supported. |
 | Predecessor GitHub Packages credentials | Historical consumer environments only | They explain immutable `@vespeneventures` evidence and must not be copied into current `@clossys` instructions or used as a fallback lane. |

@@ -1,9 +1,49 @@
 name: Deprecate legacy packages
 
-# Registry deprecation is an irreversible consumer-facing lifecycle signal.
-# It is deliberately manual-only. GitHub Packages currently rejects npm's
-# packument overwrite when its version identity is empty, so apply first runs
-# an exact-version capability preflight and refuses before any mutation.
+# Apply the registry deprecation notices for package NAMES this repository has
+# renamed or retired. The plan is not an input: it is derived from
+# docs/contracts/package-lifecycle.json's own "deprecated" entries, each of
+# which must name a `replacement.name`.
+#
+# For a still-live package with one broken VERSION, this is the wrong workflow
+# — there is no replacement NAME to point at, so the lifecycle contract cannot
+# express it and the derived plan will never contain it. Use
+# `deprecate-registry-version.yml` instead.
+#
+# THIS WORKFLOW'S AUTHENTICATION WAS STALE AND IS NOW CORRECTED
+# --------------------------------------------------------------
+# It previously ran with `packages: write` and `NODE_AUTH_TOKEN:
+# ${{ github.token }}`, and its header described GitHub Packages rejecting
+# npm's packument overwrite. All three predate this repository's cutover to
+# npmjs.org: `package-scope.json` now declares
+# `https://registry.npmjs.org`, and a GitHub token authenticates to GitHub
+# Packages, not to npmjs.org. Its last runs were before that cutover.
+#
+# That combination was worse than merely broken, for a reason specific to this
+# workflow: the derived plan is currently EMPTY (no lifecycle entry is in the
+# `deprecated` state, which the deriving script documents as the desired steady
+# state). An empty plan reaches no `npm deprecate` call at all — so an `apply`
+# dispatch would have exited 0, having authenticated to nothing, mutated
+# nothing, and proven nothing about a credential that could not have worked.
+# A green run that cannot be distinguished from a working one is the exact
+# shape #909 and #914 describe.
+#
+# WHY A STORED TOKEN AND NOT OIDC
+# --------------------------------
+# publish.yml authenticates with npm trusted publishing over OIDC and stores no
+# npm token. That path cannot authorize `npm deprecate`: npm documents OIDC as
+# supporting `npm publish` and `npm stage publish` only, and in the npm CLI the
+# OIDC exchange (`lib/utils/oidc.js`) is required from exactly one file,
+# `lib/commands/publish.js`. `lib/commands/deprecate.js` never reaches it.
+# So this workflow, like `deprecate-registry-version.yml`, needs a stored npm
+# granular token with write access to the scope.
+#
+# UNTIL `NPM_DEPRECATE_TOKEN` EXISTS, APPLY MODE FAILS CLOSED AND SAYS SO.
+# It is not left looking operational. Dry-run mode reports the derived plan and
+# needs no credential.
+#
+# Registry deprecation of a retired name is a consumer-facing lifecycle signal
+# and is deliberately manual-only.
 on:
   workflow_dispatch:
     inputs:
@@ -16,9 +56,10 @@ on:
           - dry-run
           - apply
 
+# No `packages: write`: this workflow mutates npmjs.org, not GitHub Packages.
+# No `id-token: write`: OIDC cannot authorize `npm deprecate` (see header).
 permissions:
   contents: read
-  packages: write
 
 concurrency:
   group: legacy-package-deprecation
@@ -72,9 +113,21 @@ jobs:
           node scripts/check-public-safety.mjs . --allow-changelogs --require-denylist
           node --test scripts/deprecate-legacy-packages.test.mjs
 
+      # Fail closed, by name, before anything touches the registry — rather
+      # than running an apply that authenticates to nothing and reports success.
+      - name: Require a stored npm token for an apply
+        if: ${{ inputs.mode == 'apply' }}
+        env:
+          NPM_DEPRECATE_TOKEN: ${{ secrets.NPM_DEPRECATE_TOKEN }}
+        run: |
+          if [ -z "$NPM_DEPRECATE_TOKEN" ]; then
+            echo "::error title=Cannot apply deprecation::NPM_DEPRECATE_TOKEN is not set. npm's OIDC trusted-publishing exchange authorizes 'npm publish' and 'npm stage publish' only and cannot authorize 'npm deprecate', so apply mode needs a stored npm granular token with write access to this scope. Dispatch with mode=dry-run to report the derived plan without a credential."
+            exit 1
+          fi
+
       - name: Apply and verify fixed registry notices
         env:
-          NODE_AUTH_TOKEN: ${{ github.token }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_DEPRECATE_TOKEN }}
           MODE: ${{ inputs.mode }}
         run: node scripts/deprecate-legacy-packages.mjs --mode="$MODE"
 

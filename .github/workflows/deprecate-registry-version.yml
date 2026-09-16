@@ -1,0 +1,174 @@
+name: Deprecate registry version
+
+# Write a deprecation notice onto one exact version — or one resolved range —
+# of a package that is still LIVE on the public npm registry. The case this
+# exists for is a package that remains the right thing to install, with one
+# broken version among good ones; `deprecate-legacy-packages.yml` cannot
+# express that, because it deprecates retired NAMES and requires every entry to
+# name a replacement name.
+#
+# DEPRECATION IS REVERSIBLE. THAT IS THE CENTRAL FACT FOR A REVIEWER.
+# -------------------------------------------------------------------
+# Almost everything else this repository gates is one-way: published bytes are
+# permanent, and the surrounding tooling is built around that. This is not.
+# `npm deprecate <pkg>@<ver> ""` clears the notice, and the same script here
+# applies a cleared message by the same verified path — dispatch with an empty
+# message and the verification inverts to assert the field is ABSENT.
+#
+# So the blast radius of a mistake here is "a wrong notice was public for a
+# while", not "a wrong artifact exists forever". That is a real difference, and
+# it is why this workflow can be, and should be, exercised for real rather than
+# only reasoned about. It is NOT permission to be casual: the notice is public
+# the moment it lands, it is what every installer prints, and clearing it later
+# does not un-print it for anyone who installed in between.
+#
+# WHY THERE IS NO PUSH TRIGGER
+# -----------------------------
+# Same deliberate manual gate as publish.yml (#757). A merged change is not
+# itself an instruction to mutate the public registry; a person dispatches this
+# after deciding the notice is right.
+#
+# WHY THIS WORKFLOW REQUESTS NO id-token PERMISSION
+# --------------------------------------------------
+# publish.yml authenticates with npm trusted publishing over OIDC and stores no
+# npm token. That path CANNOT authorize this operation, and the absence of
+# `id-token: write` below is deliberate rather than an oversight:
+#
+#   * npm documents OIDC authentication as supporting `npm publish` and
+#     `npm stage publish` only, and states that other npm commands "still
+#     require traditional authentication methods".
+#   * In the npm CLI, the OIDC token exchange lives in `lib/utils/oidc.js` and
+#     is required from exactly ONE file: `lib/commands/publish.js`.
+#     `lib/commands/deprecate.js` never reaches it — it authenticates through
+#     `otplease` against an existing token and PUTs the mutated packument.
+#
+# Requesting `id-token: write` here would therefore mint a token that cannot
+# perform the only mutation this workflow exists to perform, while implying to
+# every future reader that the credential-free path works. So an apply here
+# requires a stored npm granular token, `NPM_DEPRECATE_TOKEN`, with write
+# access to the scope. That secret is a real cost and a real change to this
+# repository's no-stored-credential posture; see this workflow's PR and
+# docs/PUBLISHING.md for the tradeoff.
+#
+# UNTIL THAT SECRET EXISTS, APPLY MODE FAILS CLOSED AND LOUDLY. It does not
+# run, do nothing, and report success — the preflight below and the script's
+# own guard both refuse before any registry call, because a deprecation run
+# that silently mutated nothing is exactly the "green gate that never ran"
+# shape this repository keeps finding (#909, #914).
+#
+# DRY RUN NEEDS NO CREDENTIAL AT ALL
+# -----------------------------------
+# `npm deprecate --dry-run` reads the packument anonymously (`GET /<pkg>
+# ?write=true` returns 200 unauthenticated for a public package), so the whole
+# dry-run path — resolution, preflight, refusal on a no-match — is exercisable
+# today, with no secret configured, against the real registry. Use it.
+
+on:
+  workflow_dispatch:
+    inputs:
+      package:
+        description: Exact scoped package name, e.g. @scope/name
+        required: true
+        type: string
+      versions:
+        description: Exact version (0.4.3) or range (>=0.4.3 <0.4.5). npm resolves it; the preflight refuses a spec matching nothing.
+        required: true
+        type: string
+      message:
+        description: The public notice every installer will print. Leave EMPTY to CLEAR an existing notice.
+        required: false
+        default: ""
+        type: string
+      dry_run:
+        description: Resolve and report only — no registry mutation, no credential used
+        required: true
+        default: true
+        type: boolean
+
+# Deliberately no `id-token: write` (see header) and no `packages: write`:
+# this workflow mutates npmjs.org, not GitHub Packages.
+permissions:
+  contents: read
+
+concurrency:
+  group: registry-version-deprecation
+  cancel-in-progress: false
+
+jobs:
+  deprecate:
+    runs-on: ubuntu-latest
+    # The same protected environment used for package uploads. A deprecation
+    # uploads no bytes, but it is still a public registry mutation and must
+    # retain the same reviewer boundary.
+    environment: npm-publish
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Read registry and scope from package-scope.json
+        id: scope
+        run: |
+          echo "registry=$(node -p "JSON.parse(require('fs').readFileSync('package-scope.json','utf8')).registry")" >> "$GITHUB_OUTPUT"
+          echo "scope=$(node -p "JSON.parse(require('fs').readFileSync('package-scope.json','utf8')).scope")" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+          registry-url: ${{ steps.scope.outputs.registry }}
+          scope: ${{ steps.scope.outputs.scope }}
+
+      - name: Materialise denylist
+        env:
+          DENYLIST_B64: ${{ secrets.PUBLIC_SAFETY_DENYLIST_B64 }}
+        run: |
+          if [ -z "$DENYLIST_B64" ]; then
+            echo "::error title=Cannot deprecate::PUBLIC_SAFETY_DENYLIST_B64 is not set."
+            exit 1
+          fi
+          printf '%s' "$DENYLIST_B64" | base64 -d > "$RUNNER_TEMP/denylist.json"
+          echo "PUBLIC_SAFETY_DENYLIST=$RUNNER_TEMP/denylist.json" >> "$GITHUB_ENV"
+
+      - name: Verify reviewed registry operation
+        run: |
+          node scripts/set-scope.mjs --check
+          node scripts/check-public-safety.mjs . --allow-changelogs --require-denylist
+          node --test scripts/deprecate-registry-version.test.mjs
+
+      # The notice becomes permanent public text on the registry the instant it
+      # lands, exactly like an issue body — and like an issue body it is typed
+      # into a form by a person, so it gets the same draft scan before posting
+      # rather than a detection after the fact.
+      - name: Scan the public notice text before it can be posted
+        env:
+          MESSAGE: ${{ inputs.message }}
+        run: printf '%s' "$MESSAGE" | node scripts/check-conversation-safety.mjs --require-denylist
+
+      # Fail closed, by name, before anything touches the registry. The script
+      # guards this too; this step exists so the reason appears as a GitHub
+      # error annotation rather than only in a log tail.
+      - name: Require a stored npm token for an apply
+        if: ${{ !inputs.dry_run }}
+        env:
+          NPM_DEPRECATE_TOKEN: ${{ secrets.NPM_DEPRECATE_TOKEN }}
+        run: |
+          if [ -z "$NPM_DEPRECATE_TOKEN" ]; then
+            echo "::error title=Cannot apply deprecation::NPM_DEPRECATE_TOKEN is not set. npm's OIDC trusted-publishing exchange authorizes 'npm publish' and 'npm stage publish' only and cannot authorize 'npm deprecate', so apply mode needs a stored npm granular token with write access to this scope. Re-dispatch with dry_run enabled to exercise everything up to the mutation."
+            exit 1
+          fi
+
+      - name: Resolve, apply, and verify the exact notice
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_DEPRECATE_TOKEN }}
+          PACKAGE: ${{ inputs.package }}
+          VERSIONS: ${{ inputs.versions }}
+          MESSAGE: ${{ inputs.message }}
+          MODE: ${{ inputs.dry_run && 'dry-run' || 'apply' }}
+        run: |
+          node scripts/deprecate-registry-version.mjs \
+            --package "$PACKAGE" \
+            --versions "$VERSIONS" \
+            --message "$MESSAGE" \
+            --mode "$MODE"
+
+      - name: Redact denylist
+        if: always()
+        run: rm -f "$RUNNER_TEMP/denylist.json"
