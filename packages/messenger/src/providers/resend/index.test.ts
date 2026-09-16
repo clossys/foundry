@@ -1,12 +1,18 @@
 import { Buffer } from "node:buffer";
 import { createHmac } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it, vi } from "vitest";
 import {
+  RESEND_DECLARED_RANGE,
   ResendMessengerError,
   createResendAdapter,
   verifyResendWebhook,
   type ResendClient,
 } from "./index.js";
+import { assertPeerVersion } from "../../internal/peer-version.js";
+import { resolveInstalledPeerVersion } from "../../internal/resolve-installed-peer-version.js";
 
 const message = {
   id: "invitation-123",
@@ -117,5 +123,39 @@ describe("signed Resend delivery evidence", () => {
       headers,
       createClient: () => client(vi.fn(), invalid),
     })).rejects.toMatchObject({ code: "invalid_webhook_signature", retryable: false });
+  });
+});
+
+describe("the resend peer-version guard (#886)", () => {
+  it("keeps RESEND_DECLARED_RANGE in sync with package.json's declared optional peer range", () => {
+    const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
+    const manifest = JSON.parse(readFileSync(join(packageRoot, "package.json"), "utf8")) as {
+      peerDependencies: Record<string, string>;
+      peerDependenciesMeta: Record<string, { optional?: boolean }>;
+    };
+    expect(RESEND_DECLARED_RANGE).toBe(manifest.peerDependencies.resend);
+    expect(manifest.peerDependenciesMeta.resend?.optional).toBe(true);
+  });
+
+  it("importing index.ts does not throw against this repository's own real installed resend (peer present)", () => {
+    // index.ts calls assertPeerVersion(...) at module load time (see its
+    // own header comment); this file already imported from it above, so
+    // reaching this test at all is itself the assertion that it didn't
+    // throw against the real resend this workspace has installed.
+    expect(RESEND_DECLARED_RANGE).toBe("^6.19.0");
+    expect(resolveInstalledPeerVersion("resend", import.meta.url)).toMatch(/^\d+\.\d+\.\d+$/);
+  });
+
+  it("names resend and the declared range when the peer is absent or incompatible", () => {
+    // The other direction: the exact inputs the module-scope call would
+    // have produced had resend been absent, or installed out of range.
+    // This is what a consumer now sees instead of whatever the Resend SDK
+    // happened to throw deep inside its own call surface.
+    expect(() =>
+      assertPeerVersion({ peer: "resend", declaredRange: RESEND_DECLARED_RANGE, foundVersion: undefined }),
+    ).toThrow(/resend is required for this import but is not installed/);
+    expect(() =>
+      assertPeerVersion({ peer: "resend", declaredRange: RESEND_DECLARED_RANGE, foundVersion: "5.1.0" }),
+    ).toThrow(/resend@5\.1\.0 is installed, but this package requires resend@"\^6\.19\.0"/);
   });
 });
