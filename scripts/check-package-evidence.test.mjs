@@ -301,7 +301,18 @@ test("current-scope publication rejects coherent rewrites and rewrite-restore hi
     const advisorEntry = contract.packages.find((entry) => entry.name === "@clossys/advisor");
     advisorEntry.state = "published";
     writeFileSync(contractPath, `${JSON.stringify(contract, null, 2)}\n`);
-    execFileSync("git", ["add", "packages/advisor/package.json", "docs/contracts/package-evidence.json"], { cwd: fixtureRoot });
+    // Regenerate docs/LIFECYCLE.md's generated position table to match, in
+    // THIS fixture only, so the assertions below see exactly one finding --
+    // the one this test is actually about -- rather than a second,
+    // unrelated `lifecycle-position-table-drift` finding riding along
+    // because the fixture's contract and its LIFECYCLE.md fell out of
+    // sync. An incidental second finding would make the CLI's exit code
+    // true for the wrong reason: independent review caught exactly this
+    // shape once already (the drift finding alone was enough to force
+    // exit 1, with no `state-ahead-of-evidence` finding present at all,
+    // when published-evidence checking was disabled outright).
+    execFileSync(process.execPath, [script, "--write-lifecycle-position"], { cwd: fixtureRoot, stdio: "ignore" });
+    execFileSync("git", ["add", "packages/advisor/package.json", "docs/contracts/package-evidence.json", "docs/LIFECYCLE.md"], { cwd: fixtureRoot });
     execFileSync("git", ["commit", "-m", "fixture: version-key advisor to the sealed Trio identity"], { cwd: fixtureRoot, stdio: "ignore" });
 
     const publicationPath = join(fixtureRoot, "governance/release-publications/clossys-npmjs-trio.json");
@@ -322,9 +333,31 @@ test("current-scope publication rejects coherent rewrites and rewrite-restore hi
 
     assert.equal(readFileSync(publicationPath, "utf8"), originalBytes);
     assert.deepEqual([...readValidatedPublishedPackages(fixtureRoot)], []);
-    assert.throws(
-      () => execFileSync(process.execPath, [script, "--json"], { cwd: fixtureRoot, stdio: "pipe" }),
-      (error) => error.status === 1,
+
+    // Assert the SPECIFIC finding, not merely a nonzero exit code -- a
+    // nonzero exit proves only that *some* finding fired, and independent
+    // review demonstrated that the incidental `lifecycle-position-table-drift`
+    // finding alone (see above) is enough to force exit 1 even with
+    // published-evidence checking completely disabled. The exit code is
+    // still asserted, but it is not load-bearing on its own here.
+    let cliExitCode;
+    let cliStdout;
+    try {
+      cliStdout = execFileSync(process.execPath, [script, "--json"], { cwd: fixtureRoot, stdio: "pipe" });
+      cliExitCode = 0;
+    } catch (error) {
+      cliExitCode = error.status;
+      cliStdout = error.stdout;
+    }
+    assert.equal(cliExitCode, 1);
+    const report = JSON.parse(cliStdout.toString("utf8"));
+    // With LIFECYCLE.md kept in sync above, the tampered Trio record's
+    // invalidation of advisor's `published` evidence is the ONLY finding --
+    // the cleanest, most exact shape this control can assert, and the one
+    // that actually proves the CLI detects tampering end to end.
+    assert.deepEqual(
+      report.findings.map((item) => ({ rule: item.rule, subject: item.subject })),
+      [{ rule: "state-ahead-of-evidence", subject: "@clossys/advisor" }],
     );
   } finally {
     rmSync(dir, { recursive: true, force: true });
