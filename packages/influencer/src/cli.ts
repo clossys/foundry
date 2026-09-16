@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 
-import { existsSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync, statSync } from "node:fs";
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { checkResponseYield, validateResponseYieldInput } from "./response-yield.js";
 import type { ResponseYieldInput } from "./types.js";
 
@@ -48,4 +50,22 @@ export function main(argv = process.argv.slice(2)): number {
   return result.state === "satisfied" ? 0 : 1;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) process.exitCode = main();
+/**
+ * Same real-path guard `@example/copy`'s `cli.ts` uses, for the
+ * same reason: `npm install` publishes `bin` entries as symlinks, so
+ * comparing `process.argv[1]` to `import.meta.url` without resolving
+ * symlinks on both sides fails the moment this file is actually invoked
+ * the only way it ships — as an installed CLI.
+ */
+function detectMainModule(): boolean {
+  const argvPath = process.argv[1];
+  if (argvPath === undefined) return false;
+  const modulePath = fileURLToPath(import.meta.url);
+  try {
+    return realpathSync(resolve(argvPath)) === realpathSync(modulePath);
+  } catch {
+    return resolve(argvPath) === modulePath;
+  }
+}
+
+if (detectMainModule()) process.exitCode = main();
