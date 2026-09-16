@@ -750,4 +750,9 @@ function main() {
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) main();
 
-export { diffPackedFiles, evaluatePackageAudit, evaluatePackageDiff, findBumpCommit, packedFiles, resolveBaseRef };
+// `git` and `resolveBaseRef` are exported alongside the rest so that
+// scripts/check-touches-packages.mjs (the pull-request change-detector
+// gating the expensive package-verification steps in .github/workflows/ci.yml's
+// `build` job) reuses this file's own merge-base resolution rather than
+// re-implementing it a second time where it could drift out of sync.
+export { diffPackedFiles, evaluatePackageAudit, evaluatePackageDiff, findBumpCommit, git, packedFiles, resolveBaseRef };
