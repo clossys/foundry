@@ -45,8 +45,9 @@ import { assertPeerVersion } from "../../../internal/peer-version.js";
  * This is a permanent constraint of `@clerk/nextjs`'s own published
  * shape, not a gap in this package's effort — see `proxy.ts`'s own header
  * for the identical conclusion reached independently for the edge-safe
- * side, and `internal/peer-guard-coverage.test.ts`, which encodes this as
- * a deliberate, checked exception rather than silence. `@clerk/nextjs`'s
+ * side, confirmed by this package's own internal build-graph coverage test
+ * (not part of the published package), which encodes this as a deliberate,
+ * checked exception rather than silence. `@clerk/nextjs`'s
  * PRESENCE is still guarded: the unconditional import above already
  * throws Node's own named `ERR_MODULE_NOT_FOUND` if it is not installed
  * at all, a deliberately accepted tradeoff (an absent peer still fails
@@ -54,8 +55,8 @@ import { assertPeerVersion } from "../../../internal/peer-version.js";
  * uncovered is specifically an INSTALLED-but-incompatible `@clerk/nextjs`.
  *
  * `REACT_DECLARED_RANGE` must match package.json's
- * `peerDependencies.react` exactly — `client.test.tsx` asserts that
- * directly.
+ * `peerDependencies.react` exactly, confirmed directly by this package's
+ * own (unshipped) test suite.
  */
 export const REACT_DECLARED_RANGE = ">=19 <20";
 assertPeerVersion({ peer: "react", declaredRange: REACT_DECLARED_RANGE, foundVersion: reactVersion });

@@ -3,6 +3,42 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.6] - 2026-09-16
+
+### Fixed
+
+- **A shipped citation pointed at a file no consumer receives.** 0.1.5
+  removed three dangling citations of a repository-root decisions log by
+  path (see the 0.1.5 note below) but, in the same rewrite, introduced a
+  citation of the identical class: `src/index.ts`, `src/providers/clerk/web/client.tsx`,
+  `src/providers/clerk/web/proxy.ts`, and `README.md` all named
+  `internal/peer-guard-coverage.test.ts` by path. That file is excluded
+  from the TypeScript build (`tsconfig.json`'s
+  `"**/*.test.ts"`/`"**/*.test.tsx"` excludes) and from the packed tarball
+  (`package.json`'s `files` allowlist negates `src/**/*.test.ts`), yet the
+  citation survived into `dist/index.js`, `dist/index.d.ts`,
+  `dist/providers/clerk/web/client.js`, `.../client.d.ts`,
+  `.../proxy.js`, `.../proxy.d.ts`, and the shipped `README.md`, because
+  `tsc` preserves comments. A consumer reading any of those shipped files
+  was pointed at a path that does not exist in anything they can install.
+  `scripts/check-contamination-classes.mjs`'s CLASS 1 check did not catch
+  this because it only matches `.md` paths (tracked separately as #935;
+  out of scope for this fix). Auditing the rest of the package (against
+  the actual packed tarball, not just the `files` array) turned up the
+  same class in six more places — `src/schema.ts`, `src/cli.ts` (two
+  citations), `src/providers/clerk/verify.ts`,
+  `src/internal/peer-version.ts`, and
+  `src/providers/clerk/web/server-routes.tsx` — each naming a sibling
+  `*.test.ts`/`*.test.tsx` file that does not ship either. One of those,
+  `src/providers/clerk/verify.ts`, cited a file
+  (`auth-clerk.test.ts`) that never existed in this repository at all;
+  the real, non-shipping test for that module is `verify.test.ts`. Every
+  one of these doc comments explained genuinely subtle guarded-peer
+  behavior worth keeping, so each citation is rewritten to describe what
+  is verified — confirmed directly by this package's own internal test
+  suite — without naming a path the reader cannot open, rather than
+  deleted outright.
+
 ## [0.1.5] - 2026-09-16
 
 ### Note

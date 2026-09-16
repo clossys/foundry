@@ -5,8 +5,8 @@
  * that package does not expose this as part of its public API surface, and
  * even if it did, `@clossys/bouncer` would gain nothing by taking a
  * real runtime dependency on a sibling just to reach one shared utility, and
- * its "zero runtime dependencies" claim — which `public-contract.test.ts`
- * asserts directly — would then be wrong. Keep the copies in sync by hand if
+ * its "zero runtime dependencies" claim — confirmed directly by this
+ * package's own (unshipped) test suite — would then be wrong. Keep the copies in sync by hand if
  * the ported range algorithm ever changes.
  *
  * `assertPeerVersion` — the runtime half of #182's "optional peer, no

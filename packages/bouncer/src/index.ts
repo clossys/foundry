@@ -61,9 +61,9 @@
  * `/proxy` subpaths, which cannot range-check `@clerk/nextjs` from a
  * browser- or edge-safe module because that peer publishes no readable
  * version signal at all (see `providers/clerk/web/client.tsx`'s and
- * `providers/clerk/web/proxy.ts`'s own headers, and
- * `internal/peer-guard-coverage.test.ts`, for the exact, checked shape of
- * this).
+ * `providers/clerk/web/proxy.ts`'s own headers for the exact, checked shape
+ * of this — confirmed by this package's own internal build-graph coverage
+ * test, which is not part of the published package).
  *
  * ONE-WAY, FOR PUBLIC CONSUMPTION
  * --------------------------------

@@ -31,7 +31,8 @@ import { assertPeerVersion } from "../../../internal/peer-version.js";
  * involved: the module loader (Node's, or a bundler's) reads it, not this
  * file. Confirmed edge/browser-safe the same way `resolveInstalledPeerVersion`
  * above was confirmed unsafe: `esbuild --bundle --platform=browser` against
- * this file's own built `proxy.js` resolves clean — see `proxy.test.ts`.
+ * this file's own built `proxy.js` resolves clean, confirmed directly by
+ * this package's own (unshipped) test suite.
  *
  * `@clerk/nextjs` is NOT range-guarded here, and this is a real,
  * documented gap rather than an oversight: `@clerk/nextjs`'s own
@@ -55,10 +56,12 @@ import { assertPeerVersion } from "../../../internal/peer-version.js";
  * uncovered is specifically an INSTALLED-but-incompatible `@clerk/nextjs`,
  * which will surface as whatever `clerkMiddleware`/`createRouteMatcher`
  * themselves happen to throw instead of a named range error.
- * `internal/peer-guard-coverage.test.ts` encodes this as a deliberate,
- * checked exception rather than silence.
+ * This package's own internal build-graph coverage test (not part of the
+ * published package) encodes this as a deliberate, checked exception
+ * rather than silence.
  * `NEXT_DECLARED_RANGE` must match package.json's `peerDependencies.next`
- * exactly — `proxy.test.ts` asserts that directly.
+ * exactly, confirmed directly by this package's own (unshipped) test
+ * suite.
  */
 export const NEXT_DECLARED_RANGE = ">=16 <17";
 assertPeerVersion({ peer: "next", declaredRange: NEXT_DECLARED_RANGE, foundVersion: nextPackageJson.version });

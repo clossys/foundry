@@ -234,10 +234,11 @@ does — `next` declares no `exports` field at all, so its `package.json` is
 readable as an ordinary JSON import, with no `node:fs` involved — but for
 the identical reason, does not range-check `@clerk/nextjs` either: an Edge
 Middleware bundle has no filesystem, the same constraint as the browser
-side. See `client.tsx`'s and `proxy.ts`'s own doc comments, and
-`internal/peer-guard-coverage.test.ts`, for the exact, checked shape of
-this — every subpath either range-guards a peer it imports or is a named,
-tested exception; nothing is silently uncovered.
+side. See `client.tsx`'s and `proxy.ts`'s own doc comments for the exact,
+checked shape of this — every subpath either range-guards a peer it
+imports or is a named, tested exception, confirmed by this package's own
+internal build-graph coverage test (not part of the published package);
+nothing is silently uncovered.
 
 Every entry point still guards each optional peer's PRESENCE, range-checked
 or not: the unconditional import throws Node's own named

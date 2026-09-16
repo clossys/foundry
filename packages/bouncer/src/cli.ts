@@ -117,7 +117,7 @@ Exit codes: 0 = every mapping still matches its provider's declared shape, 1 = a
 
 const GATES = ["authority-reconciliation", "delegation-ceiling", "provider-contract"] as const;
 
-/** Exported for `cli.test.ts` — anything wrong with the arguments themselves always maps to exit code 2, never 1. */
+/** Exported for this package's own (unshipped) test suite — anything wrong with the arguments themselves always maps to exit code 2, never 1. */
 export class CliInputError extends Error {}
 
 interface ParsedArgs {
@@ -363,7 +363,8 @@ function runProviderContract(argv: string[]): number {
 }
 
 /**
- * Exported (unlike a typical CLI `main`) so `cli.test.ts` can exercise the
+ * Exported (unlike a typical CLI `main`) so this package's own
+ * (unshipped) test suite can exercise the
  * whole argv-to-exit-code contract directly, against real `mkdtemp` temp
  * directories, without spawning a subprocess per case. Takes `argv` as a
  * parameter rather than reading `process.argv` itself for exactly that
