@@ -1,9 +1,7 @@
 import { assessAdvisorEngagement } from "./assessment.js";
-import { validateExecutionAuthorization } from "./authorization.js";
+import { sameBasis, validateExecutionAuthorization } from "./authorization.js";
 import type { AdvisorFinding, AssessmentBasis, EngagementActionDisposition, EngagementDecisionCurrencyAssessment, EngagementDecisionCurrencyInput, EngagementRecord } from "./types.js";
 
-const BASIS_FIELDS = ["snapshotDigest", "grantDigest", "catalogDigest", "planDigest", "blockerDigest", "clearanceDigest", "conflictDigest", "baselineDigest", "completionDefinitionDigest", "assessedAt", "freshUntil"] as const;
-function equalBasis(left: AssessmentBasis, right: AssessmentBasis): boolean { return BASIS_FIELDS.every((field) => left[field] === right[field]); }
 function finding(rule: string, message: string, path?: string): AdvisorFinding { return { rule, severity: "warning", message, path }; }
 function engagementIdOf(value: unknown): string | null { if (typeof value !== "object" || value === null || Array.isArray(value)) return null; const engagement = (value as Record<string, unknown>).engagement; if (typeof engagement !== "object" || engagement === null || Array.isArray(engagement)) return null; const id = (engagement as Record<string, unknown>).id; return typeof id === "string" && id.trim().length > 0 ? id : null; }
 
@@ -21,7 +19,7 @@ export function assessEngagementDecisionCurrency(input: EngagementDecisionCurren
   const asOf = Date.parse(input.asOf);
   let current = 0;
   for (const engagement of active) {
-    const assessment = assessments.find((entry) => entry.engagementId === engagement.id && entry.assessment.firstWavePlan.basis !== null && entry.assessment.firstWavePlan.basis.planDigest === engagement.assessmentBasis.planDigest && equalBasis(entry.assessment.firstWavePlan.basis as AssessmentBasis, engagement.assessmentBasis))?.assessment;
+    const assessment = assessments.find((entry) => entry.engagementId === engagement.id && entry.assessment.firstWavePlan.basis !== null && entry.assessment.firstWavePlan.basis.planDigest === engagement.assessmentBasis.planDigest && sameBasis(entry.assessment.firstWavePlan.basis as AssessmentBasis, engagement.assessmentBasis))?.assessment;
     const elapsed = input.elapsedDaysByEngagement[engagement.id];
     let valid = true;
     if (Number.isNaN(asOf)) { findings.push(finding("currency-as-of", "A valid asOf timestamp is required to measure decision currency.", engagement.id)); valid = false; }
