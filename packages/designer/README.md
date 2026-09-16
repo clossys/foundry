@@ -812,9 +812,10 @@ to another.
   (`parseDate("2024-01-15")`, `new CalendarDate(2024, 1, 15)`) means a
   consumer of `DateField` needs it too, so it is a documented optional peer
   rather than an unlisted transitive of `react-aria-components`.
-- **`tailwind-merge`** — every atom accepts a `className` prop, and a
-  consumer's value has to reliably win over this package's own default
-  classes. Two Tailwind utilities that set the same CSS property have
+- **`tailwind-merge`** — every atom accepts a `className` prop (the one
+  documented exception is `FileTrigger`, which does not — see its own entry
+  below), and a consumer's value has to reliably win over this package's own
+  default classes. Two Tailwind utilities that set the same CSS property have
   identical specificity, so which one wins is otherwise decided by source
   order in the generated stylesheet, not by which one you passed last. This
   package's internal `cx()` helper resolves that with `tailwind-merge`,
