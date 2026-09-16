@@ -347,17 +347,28 @@ function controlledQualificationPath(root, record, introductionCommit) {
   return path;
 }
 
-/** Validate retained later-publication records without throwing on bad input. */
+/**
+ * Validate retained later-publication records without throwing on bad input.
+ *
+ * Returns both `names` (package names with at least one validated retained
+ * record, at any version — "has this package ever been validated as
+ * later-published, at some version") and `identities` (the exact
+ * `name@version` pairs a validated record actually proves — "was exactly
+ * this version published"). A retained record proves only the version it
+ * names; it does not carry forward to any other version of the same
+ * package, superseding or superseded. A caller asking "can someone else
+ * install exactly this" must join against `identities`, never `names`.
+ */
 export function validateRetainedLaterPublications(root) {
   const findings = [], names = new Set(), identities = new Set();
   const directory = join(root, LATER_PUBLICATION_DIRECTORY);
-  if (!existsSync(directory)) return { names, findings };
+  if (!existsSync(directory)) return { names, identities, findings };
   let currentCatalog;
   try { currentCatalog = parseStrictJson(readFileSync(join(root, CATALOG_PATH), "utf8")); }
-  catch (error) { finding(findings, "current-catalog", error instanceof Error ? error.message : "cannot read current catalogue"); return { names, findings }; }
+  catch (error) { finding(findings, "current-catalog", error instanceof Error ? error.message : "cannot read current catalogue"); return { names, identities, findings }; }
   let files;
   try { files = readdirSync(directory).filter((name) => name.endsWith(".json")).sort(); }
-  catch (error) { finding(findings, "publication-directory", error instanceof Error ? error.message : "cannot read later-publication directory"); return { names, findings }; }
+  catch (error) { finding(findings, "publication-directory", error instanceof Error ? error.message : "cannot read later-publication directory"); return { names, identities, findings }; }
   for (const file of files) {
     const path = `${LATER_PUBLICATION_DIRECTORY}/${file}`;
     try {
@@ -389,11 +400,19 @@ export function validateRetainedLaterPublications(root) {
       finding(findings, "retained-record", `${path}: ${error instanceof Error ? error.message : "invalid record"}`);
     }
   }
-  return { names, findings };
+  return { names, identities, findings };
 }
 
+/**
+ * The validated `name@version` identities this repository's retained
+ * later-publication records actually prove — never bare names. A record for
+ * `advisor@0.1.5` proves `advisor@0.1.5`; it says nothing about `0.1.6` or
+ * any later version, so a caller that reduces this to names alone is exactly
+ * the mistake #875 measured (a package kept `published` through every
+ * version after the one its evidence names).
+ */
 export function readValidatedLaterPublishedPackages(root) {
-  const { names, findings } = validateRetainedLaterPublications(root);
+  const { identities, findings } = validateRetainedLaterPublications(root);
   if (findings.length) throw new Error(findings.map((item) => `${item.rule}: ${item.message}`).join("; "));
-  return names;
+  return identities;
 }
