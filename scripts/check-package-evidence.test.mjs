@@ -281,6 +281,29 @@ test("current-scope publication rejects coherent rewrites and rewrite-restore hi
       execFileSync("git", ["commit", "-m", "fixture: materialize publication transition"], { cwd: fixtureRoot, stdio: "ignore" });
     }
 
+    // Version-key the fixture so the sealed Trio's advisor@0.1.3 identity
+    // (#875) is the package's CURRENT manifest version, and declare advisor
+    // `published` in this fixture's OWN copy of the contract. Neither edit
+    // touches this repository's real files: advisor is declared `staged`
+    // there (docs/contracts/package-evidence.json), on the strength of
+    // retained records for 0.1.5/0.1.6, neither of which is advisor's real
+    // current version (0.2.1) -- so nothing in the real contract is "ahead
+    // of its evidence" for the Trio rewrite below to expose. This
+    // fixture-only pairing recreates a package that IS satisfied by the
+    // sealed Trio record at its current version, so rewriting that record
+    // still has a `published` claim to invalidate end to end.
+    const advisorManifestPath = join(fixtureRoot, "packages/advisor/package.json");
+    const advisorManifest = JSON.parse(readFileSync(advisorManifestPath, "utf8"));
+    advisorManifest.version = "0.1.3";
+    writeFileSync(advisorManifestPath, `${JSON.stringify(advisorManifest, null, 2)}\n`);
+    const contractPath = join(fixtureRoot, "docs/contracts/package-evidence.json");
+    const contract = JSON.parse(readFileSync(contractPath, "utf8"));
+    const advisorEntry = contract.packages.find((entry) => entry.name === "@clossys/advisor");
+    advisorEntry.state = "published";
+    writeFileSync(contractPath, `${JSON.stringify(contract, null, 2)}\n`);
+    execFileSync("git", ["add", "packages/advisor/package.json", "docs/contracts/package-evidence.json"], { cwd: fixtureRoot });
+    execFileSync("git", ["commit", "-m", "fixture: version-key advisor to the sealed Trio identity"], { cwd: fixtureRoot, stdio: "ignore" });
+
     const publicationPath = join(fixtureRoot, "governance/release-publications/clossys-npmjs-trio.json");
     const originalBytes = readFileSync(publicationPath, "utf8");
     const rewritten = JSON.parse(originalBytes);
