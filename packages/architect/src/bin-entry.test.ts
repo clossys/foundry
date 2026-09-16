@@ -20,7 +20,7 @@
  * CI.
  */
 import { spawnSync } from "node:child_process";
-import { chmodSync, mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from "node:fs";
+import { chmodSync, cpSync, mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -49,18 +49,39 @@ beforeAll(() => {
   const compiler = fileURLToPath(new URL("../../../node_modules/typescript/bin/tsc", import.meta.url));
   const built = spawnSync(process.execPath, [compiler, "-p", "tsconfig.json"], { cwd: packageRoot, encoding: "utf8" });
   if (built.status !== 0) throw new Error(`Architect build failed: ${built.stderr || built.stdout}`);
-  const realCliPath = join(packageRoot, "dist", "cli.js");
-  // `npm` sets the executable bit on a declared `bin` target when it packs
-  // and installs a package; a bare `tsc` build does not, so this
-  // reproduces that step explicitly rather than relying on it having
-  // happened to already be true.
-  chmodSync(realCliPath, 0o755);
 
   workDir = mkdtempSync(join(tmpdir(), "architect-bin-entry-"));
   const dotBin = join(workDir, "node_modules", ".bin");
   mkdirSync(dotBin, { recursive: true });
+  // Copy the whole built `dist/` into the temp install root instead of
+  // pointing the `.bin` symlink at the repository's own `dist/cli.js`.
+  // `cli.js` imports sibling compiled modules (`./assessment.js`,
+  // `./topology.js`, ...) by relative path, so only the entry file cannot
+  // be relocated on its own -- the copy has to keep the whole directory's
+  // relative layout intact for those imports to resolve.
+  //
+  // This test execs the symlink directly (not via `node <path>`), so the OS
+  // needs the target to be executable -- but a bare `tsc` build does not
+  // set that bit, and (measured directly, comparing tarball contents at
+  // mode 644 vs 755 for this same file) `npm pack` does not force it
+  // either; it preserves whatever mode is already on disk. So chmod'ing the
+  // real `dist/cli.js` would leave it at a different mode than a clean
+  // build produces -- the exact file `npm pack` reads moments later in CI
+  // -- and desynchronize this package's tarball from its already-recorded
+  // qualification hash. Copying the directory first and chmod'ing only the
+  // copy's `cli.js` reproduces the installed-bin topology (a
+  // `node_modules/.bin` symlink to an executable file) without mutating
+  // the packed artifact. The guard in `cli.ts` resolves `import.meta.url`
+  // against `process.argv[1]` via `realpathSync`, and both of those follow
+  // the symlink to this copy, so relocating the file moves both sides of
+  // that comparison together -- the test still proves exactly what it
+  // proved before.
+  const installedDistDir = join(workDir, "dist");
+  cpSync(join(packageRoot, "dist"), installedDistDir, { recursive: true });
+  const installedCliPath = join(installedDistDir, "cli.js");
+  chmodSync(installedCliPath, 0o755);
   binPath = join(dotBin, "architect-check");
-  symlinkSync(realCliPath, binPath);
+  symlinkSync(installedCliPath, binPath);
 });
 
 function runBin(args: string[]) {
