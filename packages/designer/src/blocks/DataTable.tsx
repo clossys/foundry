@@ -87,7 +87,7 @@ function columnStyle(width: string | number | undefined): CSSProperties | undefi
 }
 
 function SkeletonCell() {
-  return <div className="h-4 w-full animate-pulse rounded-subtle bg-surface-sunken" />;
+  return <div className="h-4 w-full animate-pulse motion-reduce:animate-none rounded-subtle bg-surface-sunken" />;
 }
 
 /**
