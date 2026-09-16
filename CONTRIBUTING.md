@@ -237,7 +237,11 @@ equivalent fix after.
   distinguishes "I checked and it's fine" from "I never checked." Collapsing
   `2` into `0` reports a clean pass for work that never happened; collapsing
   it into `1` reports a finding that doesn't exist. A new gate should reuse
-  this contract rather than inventing its own exit-code scheme.
+  this contract rather than inventing its own exit-code scheme. When a single
+  run holds both a confirmed finding and something it could not check at all,
+  which of `1` and `2` wins is a per-gate choice, not a repository default —
+  `docs/DECISIONS.md` entry 23 records how to make it and why two gates here
+  answer it opposite ways.
 
   This is what makes the contract load-bearing, not decorative: **a check
   that cannot run must fail (`2`), never pass (`0`).**
