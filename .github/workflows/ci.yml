@@ -945,6 +945,38 @@ jobs:
             round-trip-npm-cache-${{ runner.os }}-
       - name: Point round-trip proofs at the warmed cache
         run: echo "RELEASE_ROUND_TRIP_NPM_CACHE_DIR=${{ runner.temp }}/round-trip-npm-cache" >> "$GITHUB_ENV"
+      # Decides whether ANYTHING this pull request changed could possibly
+      # affect the two expensive package-verification steps below
+      # ("Candidate qualification records", 27% of this repository's entire
+      # per-PR CI runner-time on its own, and "Packed consumer readiness").
+      # A documentation-only or other-workflow-only pull request cannot have
+      # broken either one, so this lets those two steps -- and only those
+      # two -- skip on such a PR (issue #911 has the measurement this is
+      # answering).
+      #
+      # `continue-on-error: true` plus both downstream steps' own
+      # `if: steps.touch.outputs.touches != 'false'` (never `== 'true'`) is
+      # deliberate, layered fail-safety: the ONLY way to skip is an
+      # explicit, successfully-written `touches=false` output. Any failure
+      # of this step -- including one that stops the script before it
+      # writes any output at all -- leaves `outputs.touches` unset, which
+      # is "not literally 'false'", so the expensive steps still run. See
+      # scripts/check-touches-packages.mjs's own header for the full list
+      # of conditions this treats as "uncertain, therefore run" and why an
+      # empty diff is one of them.
+      #
+      # This job keeps `needs: [safety, scope]` and every step above and
+      # below unconditional either way, so "build and test" -- a required
+      # status context -- always reports, whether or not these two steps
+      # ran inside it; nothing here can make the required check itself stop
+      # reporting.
+      - name: Detect whether this change touches packages
+        id: touch
+        continue-on-error: true
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: node scripts/check-touches-packages.mjs
       # Fail before the expensive install/build when a retained qualification
       # record, its immutable history, or the pre-publication tail is invalid.
       # This is deliberately in the already-required `build and test` context:
@@ -952,6 +984,7 @@ jobs:
       # ruleset migration promoted its status name.
       - name: Candidate qualification records
         run: npm run check:candidate-qualification
+        if: steps.touch.outputs.touches != 'false'
       # Later-publication records are the same kind of retained immutable
       # history join, and must fail in the already-required build context.
       - name: Later publication records
@@ -970,6 +1003,7 @@ jobs:
       # adoption.
       - name: Packed consumer readiness
         run: npm run check:packed-consumer
+        if: steps.touch.outputs.touches != 'false'
       - name: Installed position ledger fixture
         run: npm run check:installed-positions
       - name: Consumer completion evidence fixture
