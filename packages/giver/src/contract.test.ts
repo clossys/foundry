@@ -73,8 +73,22 @@ function inputs(overrides: Partial<OutcomeInputs> = {}): OutcomeInputs {
 
 /**
  * The complement the two collapse sweeps care about, derived from the schema's
- * own constant instead of hardcoded as "not granted and not denied". A sixth
- * indeterminate status would otherwise be swept as if it were determinate.
+ * own constant instead of hardcoded as "not granted and not denied".
+ *
+ * The two are equivalent today. They diverge if a sixth status is ever added,
+ * and the direction is worth stating exactly, because an earlier version of
+ * this comment had it backwards.
+ *
+ * A sixth INDETERMINATE status changes nothing: the hardcoded check skips only
+ * `granted` and `denied`, so it sweeps the new status too, which is correct.
+ *
+ * A sixth DETERMINATE status is where the hardcoded form fails. It is neither
+ * `granted` nor `denied`, so the hardcoded check does not skip it, and the
+ * sweeps below assert the two collapses against a read that DID decide --
+ * asserting a rule about indeterminate reads over a determinate one. Deriving
+ * the set from `INDETERMINATE_STANDING_STATUSES` skips it correctly, because
+ * membership is declared rather than inferred from the two names that happen
+ * to be determinate today.
  */
 function isIndeterminate(status: StandingRead["status"]): boolean {
   return (INDETERMINATE_STANDING_STATUSES as readonly string[]).includes(status);
