@@ -5,6 +5,64 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.3] - 2026-09-16
+
+### Fixed
+
+- **The README's "Hard boundaries" section claimed a package-wide
+  value-free guarantee that only a 5-of-22-module test proves (audit pass 3
+  of #897, finding A).** "No code path in this package reads, logs,
+  prints, or transports a secret value" was stated unqualified, but
+  `no-value-escapes.test.ts` only ever covered the five verb modules named
+  in its own header -- `custody`, `rotation`, `revocation`, `distribution`,
+  `credential` -- and explicitly forbids those five from importing
+  `client.ts`, `adapters.ts`, or the Infisical subtree. The README's own
+  first usage example contradicts the broad claim it later makes:
+  `createSecretsClient(...).require()` returns a value, `infisical.get()`
+  returns a value, and `run()` transports every project secret into a
+  child process environment. For a credential package, an unqualified
+  false safety claim is the "reader skips their own audit" hazard in its
+  most direct form. The claim is now scoped to the five modules the test
+  actually proves it for, with an explicit list of the entry points that do
+  handle values.
+- **The rotation "learn" bullet claimed a repeatedly-`unverifiable` key
+  shows up in `summarizeRotationMetric`'s owner count the same way an
+  unowned key does (finding B).** It does not:
+  `unownedKeyCount` only ever counted `state === "unowned"`, so a set where
+  every key is `unverifiable` reported `unownedKeyCount: 0`, silently
+  losing the "could not observe" signal. Fixed by giving the metric a
+  channel for that signal instead of only correcting the prose: `RotationMetric` gains a new
+  `unverifiableKeyCount` field, and `summarizeRotationMetric` now counts
+  `unverifiable` keys separately from unowned ones. This is an additive,
+  non-breaking change to a public type (`RotationMetric` gains a required
+  field; existing code that reads `p95AgeDays` / `unownedKeyCount` is
+  unaffected, and any code that already spreads or serializes the full
+  object gains one more key). The alternative -- narrowing the README's
+  claim without changing the metric -- was rejected: `docs/LIFECYCLE.md`'s
+  eighth value is explicit that "a thing that could not be observed must
+  not grade identically to a thing observed and found fine," and this
+  package's own `RotationState` already keeps `unverifiable` distinct from
+  every other state for exactly that reason; the metric should not
+  reintroduce the collapse the state union was designed to prevent.
+- **`dist/infisical/types.d.ts` referenced the ambient `NodeJS` namespace
+  (`InfisicalRunOptions.env: NodeJS.ProcessEnv`,
+  `InfisicalRunResult.signal: NodeJS.Signals`) despite `@types/node` being
+  neither a dependency nor a peer, and the README's Requirements promising
+  no runtime dependencies (finding C).** A consumer importing
+  `@clossys/locksmith/infisical` with no `@types/node` installed and
+  `skipLibCheck: false` failed to typecheck with `TS2503: Cannot find
+  namespace 'NodeJS'`. Replaced both with structural types --
+  `Record<string, string | undefined>` for `env` and `string | null` for
+  `signal` -- which lose nothing: `process.env` already satisfies the
+  former structurally, and every signal name Node reports is a string.
+- **The installed bin `clossys-locksmith-credential` was undocumented in
+  the README, and `src/cli.ts`'s header comment still described
+  `infisical/cli.ts` as "the only bin this package ships" (finding D).**
+  Added a `clossys-locksmith-credential` CLI section to the README
+  (usage, exit codes, and what it does and does not do), and reworded the
+  comment to describe the package's two-bin state accurately instead of
+  the pre-0.2.2 one.
+
 ## [0.2.2] - 2026-09-14
 
 ### Added

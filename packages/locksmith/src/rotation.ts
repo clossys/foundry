@@ -52,6 +52,14 @@ export interface RotationMetric {
   readonly p95AgeDays: number | null;
   /** The count of keys with no recorded owner. */
   readonly unownedKeyCount: number;
+  /**
+   * The count of keys that are owned but whose rotation could not be
+   * observed (`state === "unverifiable"`). Counted separately from
+   * `unownedKeyCount` because "nobody has checked" is not the same finding
+   * as "nobody owns this" -- collapsing the two would let a key repeatedly
+   * marked `unverifiable` hide inside a count meant for custody gaps.
+   */
+  readonly unverifiableKeyCount: number;
 }
 
 function parsedAgeDays(iso: string, now: Date): number | null {
@@ -124,11 +132,16 @@ function percentile(sortedAscending: readonly number[], p: number): number {
 }
 
 /**
- * The package metric: key age at the 95th percentile, plus the count of
- * keys with no recorded owner. Ages are drawn only from evaluations that
- * actually observed an age — an `unverifiable` or `unowned` key contributes
- * to `unownedKeyCount` (when applicable) but never to the age percentile,
- * because "we could not check" must never be averaged in as if it were data.
+ * The package metric: key age at the 95th percentile, the count of keys
+ * with no recorded owner, and the count of owned keys whose rotation could
+ * not be observed. Ages are drawn only from evaluations that actually
+ * observed an age -- an `unverifiable` or `unowned` key never contributes
+ * to the age percentile, because "we could not check" must never be
+ * averaged in as if it were data. `unverifiable` is counted in its own
+ * field, not folded into `unownedKeyCount`: a key repeatedly `unverifiable`
+ * is a distinct finding from an unowned key, and grading them the same way
+ * would hide the "could not observe" case inside a count meant for custody
+ * gaps.
  */
 export function summarizeRotationMetric(evaluations: readonly RotationEvaluation[]): RotationMetric {
   const ages = evaluations
@@ -139,6 +152,7 @@ export function summarizeRotationMetric(evaluations: readonly RotationEvaluation
   return {
     p95AgeDays: ages.length === 0 ? null : percentile(ages, 95),
     unownedKeyCount: evaluations.filter((evaluation) => evaluation.state === "unowned").length,
+    unverifiableKeyCount: evaluations.filter((evaluation) => evaluation.state === "unverifiable").length,
   };
 }
 
