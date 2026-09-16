@@ -947,12 +947,13 @@ jobs:
         run: echo "RELEASE_ROUND_TRIP_NPM_CACHE_DIR=${{ runner.temp }}/round-trip-npm-cache" >> "$GITHUB_ENV"
       # Decides whether ANYTHING this pull request changed could possibly
       # affect the two expensive package-verification steps below
-      # ("Candidate qualification records", 27% of this repository's entire
-      # per-PR CI runner-time on its own, and "Packed consumer readiness").
-      # A documentation-only or other-workflow-only pull request cannot have
-      # broken either one, so this lets those two steps -- and only those
-      # two -- skip on such a PR (issue #911 has the measurement this is
-      # answering).
+      # ("Candidate qualification records" and "Packed consumer readiness",
+      # together 403s of a 619s `build and test` run -- 65% of the job, 30%
+      # of this repository's entire summed per-PR CI runner-time -- measured
+      # against run 34967120874). A documentation-only or other-workflow-only
+      # pull request cannot have broken either one, so this lets those two
+      # steps -- and only those two -- skip on such a PR (issue #887 has the
+      # measurement this is answering).
       #
       # `continue-on-error: true` plus both downstream steps' own
       # `if: steps.touch.outputs.touches != 'false'` (never `== 'true'`) is
