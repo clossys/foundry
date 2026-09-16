@@ -122,7 +122,19 @@ export const OPTIONAL_PEER_POLICY = {
     react: omissionRow(designerExports, designerReactExports),
     "react-aria-components": omissionRow(designerExports, designerClientExports),
     "react-dom": omissionRow(designerExports, designerClientExports),
-    "tailwind-merge": omissionRow(designerExports, designerReactExports),
+    // #749: atoms/internal/cx.ts used to import tailwind-merge STATICALLY,
+    // so every one of designerReactExports (the entry points that reach
+    // it) rejected the moment tailwind-merge was omitted -- a bare
+    // import, before any component ever rendered. cx.ts now resolves it
+    // via a dynamic import() inside a try/catch, so importing a subpath
+    // no longer throws on that peer's absence; cx() itself degrades to a
+    // plain, unmerged class join instead (with a one-time console.warn --
+    // see cx.ts and cx.optional-peer.test.ts), which this table cannot
+    // observe, since it only probes bare `import()`, never a render. That
+    // makes this row's real, measured shape identical to tailwindcss's
+    // below: nothing rejects on import. See #878 for the measurement that
+    // retired the old row (which this test caught drifting from reality).
+    "tailwind-merge": omissionRow(designerExports),
     tailwindcss: omissionRow(designerExports),
   },
   "@clossys/keeper": {
@@ -137,7 +149,16 @@ export const OPTIONAL_PEER_POLICY = {
     react: publisherOmissionRow({ rejected: ["@clossys/publisher/document"], web: { default: "rejects", reactServer: "rejects" } }),
     "react-aria-components": publisherOmissionRow({ web: { default: "rejects", reactServer: "imports" } }),
     "react-dom": publisherOmissionRow({ web: { default: "rejects", reactServer: "imports" } }),
-    "tailwind-merge": publisherOmissionRow({ web: { default: "rejects", reactServer: "rejects" } }),
+    // #749/#878: publisher/web reaches designer's cx() transitively
+    // (publisher has no tailwind-merge import site of its own -- grep
+    // confirms it appears only in fixture peer-name lists inside
+    // react-server-artifact.test.ts). cx.ts no longer throws merely from
+    // being imported when tailwind-merge is absent (see the designer row
+    // above), so this row's measured shape follows the same change:
+    // nothing rejects on import. Left unmeasured/unverified here would be
+    // an assumption, not evidence -- see #878's PR body for the actual
+    // `--package publisher` run this literal was set from.
+    "tailwind-merge": publisherOmissionRow({ web: { default: "imports", reactServer: "imports" } }),
     tailwindcss: publisherOmissionRow({ web: { default: "imports", reactServer: "imports" } }),
   },
 };

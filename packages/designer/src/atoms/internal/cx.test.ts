@@ -48,4 +48,15 @@ describe("cx", () => {
     expect(classes).toContain("text-ink-on-accent");
     expect(classes).toContain("py-sm");
   });
+
+  it("still uses tailwind-merge when it IS installed (regression guard for #749, paired with cx.optional-peer.test.ts's absent-peer case): a real conflict resolves to the last class, not a plain join of both", () => {
+    // This repository's own devDependency-installed tailwind-merge is
+    // real, on disk -- no mocking. #749's fix made cx.ts resolve
+    // tailwind-merge lazily instead of statically; this test exists so a
+    // regression that accidentally stopped USING it once present (e.g.
+    // always falling back to the plain join) would fail here, not just
+    // in the absent-peer case cx.optional-peer.test.ts covers.
+    expect(cx("p-4", "p-8")).toBe("p-8");
+    expect(cx("p-4", "p-8")).not.toBe("p-4 p-8");
+  });
 });
