@@ -43,9 +43,13 @@ name: Deprecate legacy packages
 # that omits `environment:` and therefore faces no reviewer gate at all. Only
 # an environment secret is bound by that environment's protection rules.
 #
-# UNTIL `NPM_DEPRECATE_TOKEN` EXISTS, APPLY MODE FAILS CLOSED AND SAYS SO.
-# It is not left looking operational. Dry-run mode reports the derived plan,
-# needs no credential, and is not given one.
+# `NPM_DEPRECATE_TOKEN` DOES NOT EXIST, APPLY MODE FAILS CLOSED AND SAYS SO,
+# AND THAT IS THE INTENDED STATE -- not a gap awaiting a secret. It is not
+# left looking operational. Dry-run mode reports the derived plan, needs no
+# credential, and is not given one. Do not create the token: this repository's
+# recorded provider state (docs/PUBLISHING.md section 6, Publishing access
+# "Require two-factor authentication and disallow tokens") is evidence that a
+# granular token cannot perform this mutation at all.
 #
 # Registry deprecation of a retired name is a consumer-facing lifecycle signal
 # and is deliberately manual-only.

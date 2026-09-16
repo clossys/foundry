@@ -762,15 +762,22 @@ Two properties matter to anyone reviewing a dispatch:
   exercised for real rather than only reasoned about. The notice is still
   public the moment it lands, and clearing it later does not un-print it for
   anyone who installed in between.
-* **It needs a stored credential, and OIDC cannot supply one.** The token lives
-  as an environment secret on the protected `npm-publish` environment, never as
-  a repository secret — see the prerequisites table below for why that
-  distinction is what makes the reviewer gate real. npm documents
-  OIDC authentication as supporting `npm publish` and `npm stage publish`
-  only; in the npm CLI the OIDC exchange (`lib/utils/oidc.js`) is required from
-  `lib/commands/publish.js` alone, and `npm deprecate` authenticates against an
-  existing token instead. Dry-run mode needs no credential at all and exercises
-  everything up to the mutation, including the refusal on a no-match.
+* **Apply mode has no proven credential; dry-run is the supported path.** npm
+  documents OIDC authentication as supporting `npm publish` and `npm stage
+  publish` only; in the npm CLI the OIDC exchange (`lib/utils/oidc.js`) is
+  required from `lib/commands/publish.js` alone, and `npm deprecate`
+  authenticates against an existing token instead — so trusted publishing
+  cannot authorize this mutation. The obvious substitute, a stored granular
+  token, is **not known to work here**, and this repository's own recorded
+  provider state argues that it does not: section 6 (*Owner-present first
+  publication, then OIDC*) verified Publishing access as *Require two-factor
+  authentication and disallow tokens*, which removes the
+  granular bypass-2FA token path. Apply mode therefore fails closed by name,
+  and that is the intended state rather than a gap awaiting a secret. Dry-run
+  needs no credential at all and exercises everything up to the mutation,
+  including the refusal on a no-match. Treat "can any credential deprecate a
+  current `@clossys` version?" as an open question recorded in the
+  prerequisites table, not as a setup step to work through.
 
 A preflight exists because `npm deprecate` exits 0 when its spec matches
 nothing. A typo would otherwise be indistinguishable from a successful
@@ -829,6 +836,6 @@ for the capability and wiring ledger.
 | --- | --- | --- |
 | Denylist | `~/.config/public-safety/denylist-foundry.json` locally; `PUBLIC_SAFETY_DENYLIST_B64` repository secret in CI | Never committed here — it names exactly what must not be public. Specific to this repository — never reuse a denylist file written for a different project. |
 | W1E publish trust | Outside the W1D tree | Trusted publishing and the protected `npm-publish` path have proved the current Trio releases. Value-free provider evidence confirms each package-level token-disallow setting. No publish token or value is recorded here. |
-| Registry deprecation token | `NPM_DEPRECATE_TOKEN` **environment** secret on the protected `npm-publish` environment — NOT a repository secret | Required ONLY by the two manual deprecation workflows. npm's OIDC trusted-publishing exchange authorizes `npm publish` and `npm stage publish` only and cannot authorize `npm deprecate`, so those workflows have no credential-free path and publish.yml's posture is unchanged. The distinction is load-bearing, not pedantic: a repository secret resolves in every workflow and job here, so any job that simply omits `environment:` can read it with no reviewer approval — this repository already depends on that behaviour for `PUBLIC_SAFETY_DENYLIST_B64`, which `ci.yml` reads on `pull_request` with no environment declared. Stored as a repository secret, a same-repo PR branch could read this token and defeat the very `npm-publish` reviewer gate the deprecation workflows rely on. Only an environment secret is bound by that environment's protection rules. Until it exists, apply mode fails closed by name rather than reporting a run that mutated nothing; dry-run needs no credential and is not given one. No token value is recorded here. |
+| Registry deprecation credential | **None exists, and none should be created yet** — see *Deprecating one live version* in section 6 | Read ONLY by the two manual deprecation workflows, which fail closed by name in its absence. That is the current and intended state, not a gap awaiting a secret. npm's OIDC trusted-publishing exchange authorizes `npm publish` and `npm stage publish` only and cannot authorize `npm deprecate`, so those workflows have no credential-free path and publish.yml's posture is unchanged. The distinction is load-bearing, not pedantic: a repository secret resolves in every workflow and job here, so any job that simply omits `environment:` can read it with no reviewer approval — this repository already depends on that behaviour for `PUBLIC_SAFETY_DENYLIST_B64`, which `ci.yml` reads on `pull_request` with no environment declared. Stored as a repository secret, a same-repo PR branch could read this token and defeat the very `npm-publish` reviewer gate the deprecation workflows rely on. Only an environment secret is bound by that environment's protection rules. Whether any token can deprecate these packages is UNVERIFIED and contradicted by this repository's own evidence: section 6 (*Owner-present first publication, then OIDC*) records Publishing access as **Require two-factor authentication and disallow tokens**, and states that the setting "removes the alternate granular bypass-2FA token path" — the exact path such a token would use. A direct `npm deprecate` against a current `@clossys` version returned `E404` on the `PUT`, which is what npm returns for an unauthorized metadata write as well as for a package that is not there, so it neither confirms nor refutes the mechanism. Do not create the credential to find out. A granular token with scope write access is a standing, publish-capable credential; minting one to test a path the provider setting says is closed trades a real and permanent capability for an experiment. Dry-run needs no credential, is not given one, and exercises everything up to the mutation. No token value is recorded here. |
 | Public npm consumer read | None | Current `@clossys` reads are anonymous. A consumer token or private-registry mapping is neither required nor supported. |
 | Predecessor GitHub Packages credentials | Historical consumer environments only | They explain immutable `@vespeneventures` evidence and must not be copied into current `@clossys` instructions or used as a fallback lane. |

@@ -45,10 +45,21 @@ name: Deprecate registry version
 # Requesting `id-token: write` here would therefore mint a token that cannot
 # perform the only mutation this workflow exists to perform, while implying to
 # every future reader that the credential-free path works. So an apply here
-# requires a stored npm granular token, `NPM_DEPRECATE_TOKEN`, with write
-# access to the scope. That secret is a real cost and a real change to this
-# repository's no-stored-credential posture; see this workflow's PR and
-# docs/PUBLISHING.md for the tradeoff.
+# reads a stored npm granular token, `NPM_DEPRECATE_TOKEN`, with write access
+# to the scope.
+#
+# THAT TOKEN DOES NOT EXIST, AND IS NOT KNOWN TO WORK EVEN IF IT DID. Do not
+# create one to find out. This repository's own recorded provider state is
+# evidence against it: docs/PUBLISHING.md section 6 verified every current
+# package's Publishing access as "Require two-factor authentication and
+# disallow tokens", which is documented there as removing the granular
+# bypass-2FA token path -- the exact path this token would use. A direct
+# `npm deprecate` attempt returned E404 on the PUT, which npm returns for an
+# unauthorized metadata write as readily as for a missing package, so it
+# settles nothing either way. A granular write token is a standing
+# publish-capable credential; minting one to test a path the provider setting
+# says is closed is a real and permanent cost for an experiment. Apply mode
+# failing closed is the intended state, not a gap awaiting a secret.
 #
 # IT MUST BE AN ENVIRONMENT SECRET ON `npm-publish`, NOT A REPOSITORY SECRET.
 # A repository secret resolves in every workflow and every job in the
