@@ -9,8 +9,7 @@ import { describe, expect, it } from "vitest";
  * what actually ships, not asserted in prose — that is exactly what let
  * #889 happen unnoticed: `README.md` claimed every Clerk web entry point
  * guarded its own optional peer with `assertPeerVersion`, and three of
- * the five did not, with nothing checking (see `docs/DECISIONS.md` entry
- * 24). This file is that check. It enumerates every `exports` subpath
+ * the five did not, with nothing checking. This file is that check. It enumerates every `exports` subpath
  * from this package's own `package.json` — never a hand-maintained list,
  * which is exactly the kind of list that drifted silently before —
  * resolves each subpath's BUILT `dist/` entry point (never `src/`: what a

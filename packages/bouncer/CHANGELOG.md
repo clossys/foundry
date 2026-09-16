@@ -3,6 +3,31 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.5] - 2026-09-16
+
+### Note
+
+- **0.1.4 was never published; this release supersedes it without repeating
+  its work.** 0.1.4 (below) carried the actual #889 fix — the `next` guard
+  in `proxy.ts` and the corrected coverage claims — and its qualification
+  record (`governance/release-qualifications/clossys-bouncer-0.1.4.json`)
+  was generated and retained, binding candidate `packageTreeSha1
+  294f33ab7b064a5f0aebe6a62d17a550fbf7ebb7` (tarball sha256
+  `79ba339e1d5c188ad7640b47487b6322b54dc65a75d5a594471d55e8a9d89f07`).
+  Before publication, CI's `prose quality` gate (`check-contamination-classes.mjs`)
+  caught three CLASS 1 findings — `src/internal/peer-guard-coverage.test.ts`,
+  `src/providers/clerk/web/client.tsx`, and `src/providers/clerk/web/proxy.ts`
+  each cited a repository-root decisions log by path, a reference that does
+  not ship with the published package and that a reader of the installed
+  package cannot open. That correction touched files inside `packages/bouncer/`,
+  moving the package tree and leaving the retained 0.1.4 record qualified
+  against a tree that no longer exists. Qualification records are
+  immutable — each file path is introduced exactly once and is never
+  corrected in place — so the 0.1.4 record cannot be updated to match, and
+  0.1.4 cannot be published. This release reuses the already-fixed source
+  unchanged and exists solely to obtain a fresh, never-before-used record
+  path. See #889.
+
 ## [0.1.4] - 2026-09-16
 
 ### Fixed

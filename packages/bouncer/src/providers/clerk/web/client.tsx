@@ -49,9 +49,9 @@ import { assertPeerVersion } from "../../../internal/peer-version.js";
  * a deliberate, checked exception rather than silence. `@clerk/nextjs`'s
  * PRESENCE is still guarded: the unconditional import above already
  * throws Node's own named `ERR_MODULE_NOT_FOUND` if it is not installed
- * at all, deliberately accepted as sufficient (see `docs/DECISIONS.md`
- * entry 24); what remains uncovered is specifically an
- * INSTALLED-but-incompatible `@clerk/nextjs`.
+ * at all, a deliberately accepted tradeoff (an absent peer still fails
+ * loudly, just not with THIS package's own wording); what remains
+ * uncovered is specifically an INSTALLED-but-incompatible `@clerk/nextjs`.
  *
  * `REACT_DECLARED_RANGE` must match package.json's
  * `peerDependencies.react` exactly — `client.test.tsx` asserts that

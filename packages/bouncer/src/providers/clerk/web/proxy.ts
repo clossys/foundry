@@ -50,12 +50,13 @@ import { assertPeerVersion } from "../../../internal/peer-version.js";
  * independently for the browser side. `@clerk/nextjs`'s PRESENCE is still
  * guarded: the unconditional import at the top of this file already
  * throws Node's own named `ERR_MODULE_NOT_FOUND` if it is not installed
- * at all, which is deliberately accepted as sufficient (see
- * `docs/DECISIONS.md` entry 24) — what remains uncovered is specifically
- * an INSTALLED-but-incompatible `@clerk/nextjs`, which will surface as
- * whatever `clerkMiddleware`/`createRouteMatcher` themselves happen to
- * throw instead of a named range error. `internal/peer-guard-coverage.test.ts`
- * encodes this as a deliberate, checked exception rather than silence.
+ * at all, a deliberately accepted tradeoff (an absent peer still fails
+ * loudly, just not with THIS package's own wording) — what remains
+ * uncovered is specifically an INSTALLED-but-incompatible `@clerk/nextjs`,
+ * which will surface as whatever `clerkMiddleware`/`createRouteMatcher`
+ * themselves happen to throw instead of a named range error.
+ * `internal/peer-guard-coverage.test.ts` encodes this as a deliberate,
+ * checked exception rather than silence.
  * `NEXT_DECLARED_RANGE` must match package.json's `peerDependencies.next`
  * exactly — `proxy.test.ts` asserts that directly.
  */
