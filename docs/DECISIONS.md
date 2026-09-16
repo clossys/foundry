@@ -2104,6 +2104,115 @@ something a cloud or analysis session should produce unreviewed. Tracked as
 #886 and #889 instead, for a local session to pick up alongside the code
 fixes.
 
+## 25. Lifecycle state 7 is consumer-owned by design, and the supplier-side gap is thirteen READMEs, not the shared close condition
+
+#906 recorded that `docs/LIFECYCLE.md` state 7 (`closed`) is unreachable
+catalogue-wide, for two reasons it treated as comparable. Re-measured against
+current `main`, they are not comparable: the first is the contract working as
+designed, and only the second is a defect this repository can fix.
+
+### The shared close condition is bound by consumers, and that is the design
+
+Measured by walking the role key set with `JSON.parse`, not by substring
+search — the distinction matters, because the condition string *mentions*
+"setpoint" and "cadence", so a `grep -c` makes it look as though all eighteen
+roles declare them:
+
+```
+roles: 18
+role keys: boundary, closeCondition, jobQuestion, metric, primaryMode, secondaryModes
+distinct closeCondition values: 1
+setpoint is a role key: False
+cadence is a role key: False
+```
+
+All eighteen roles share one string: *"Independent consumer evidence shows the
+position's owned metric meets its setpoint over the declared review cadence."*
+
+An earlier draft of this measurement — repeated to nine agents and written into
+#906 — concluded that `setpoint` and `cadence` "are not keys anywhere", and
+that a condition whose terms have no referent is indistinguishable from an
+unfinished one. **That conclusion was wrong, and correcting it inverts it.**
+Both terms are entries in the contract's top-level `consumerBindings`
+vocabulary:
+
+```
+consumerBindings: businessMetricPath, causalHypothesis, baseline, setpoint,
+  operatingScope, authority, evidenceSource, cadence, budget, guardrails,
+  escalationPath, workerComponents, stageBindings, firstDayAssessment
+```
+
+`consumerBindings` is a declared list of what a *consumer* binds. So the
+contract does record which of the two possibilities this is. The close
+condition's terms are not missing; they are deliberately not the supplier's to
+set, and the mechanism for binding them is declared here and exercised in
+consumer planes.
+
+That also makes the condition correct rather than merely unmet. A supplier that
+declared its own setpoint and its own review cadence, and then graded itself
+against them, would be producing exactly the self-certification `LIFECYCLE.md`'s
+standing rule exists to forbid. State 7 being out of this repository's reach is
+the rule holding, not failing.
+
+**Decided:** state 7 is consumer-owned. The eighteen identical close-condition
+strings stay identical and stay unbound here. No role gains a supplier-set
+`setpoint` or `cadence`, and #906's warning against editing eighteen identical
+strings into eighteen different-looking ones without binding their terms stands
+as recorded policy: that would hide the property rather than change it.
+
+Nothing in this repository can therefore report a package as `closed`, and no
+gate should be written that tries. A catalogue-wide `closed` count of zero is
+the expected steady state, not a backlog.
+
+### Thirteen READMEs stating no close condition is a real gap
+
+State 7 is defined as read "as written in the package's own README". Measured
+across all nineteen:
+
+```
+states a close condition (6):
+  builder  controller  inspector  integrator  locksmith  observer
+states none (13):
+  advisor  architect  bouncer  butler  designer  giver  influencer
+  keeper  messenger  publisher  starter  strategist  writer
+```
+
+For those thirteen, state 7 is unreachable by the state's own definition — not
+because a consumer has not bound anything, but because there is no supplier
+text for a consumer to bind *to*. That half is squarely this repository's, and
+unlike the close condition it is fixable without deciding anything about
+consumer authority.
+
+**Decided:** every package README states its close condition. This is supplier
+work, tracked in #906, and it is a documentation change: it states what
+evidence would close the position, without claiming the position is closed.
+
+### A stated condition can still reference machinery that does not exist
+
+Stating one is necessary and not sufficient. `locksmith`'s README states a
+close condition requiring `unverifiable` to appear "only under an explicit,
+recorded opt-out", and no opt-out field, type, or function ships. A condition
+that can be neither satisfied nor refuted is not a close condition; it is a
+sentence shaped like one. The same shape appears in two owned-metric
+declarations: `observer`'s README stakes closure on `escapeRate` while its
+contract entry declares `unobserved outcome rate`, and `publisher`'s contract
+declares `verified publication rate`, which occurs repository-wide only in the
+declaration itself.
+
+**Decided:** a close condition must name only fields, states, or metrics that
+ship. The three instances above are defects against this entry and are fixed
+with their packages, not by softening the condition into something unfalsifiable.
+
+### What this entry does not settle
+
+#302 asks a different question — a distribution shape for a consumer whose CI
+forbids network access and therefore cannot install `controller`'s
+`./conventions` export. That is an implementation choice with real artifacts
+behind it, not a position to record, and it stays open in #302 rather than
+being resolved by assertion here.
+
+Refs: #906, #897, #444, #484, #326, #502
+
 ## Settled
 
 **Author attribution — the project name holds the copyright.** Every package's
