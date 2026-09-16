@@ -3,6 +3,30 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.3.8] - 2026-09-16
+
+### Added
+
+- README now documents the `writer-check --format json` contract added in
+  0.3.7: the exact object shape, and the guarantee that `verdict`, `findings`
+  and `unchecked` are present together on every path — clean, findings, and
+  total failure alike. The flag was documented in `--help` and in this
+  changelog but not in the README, where this package documents its other
+  CLI exit-code contracts (#880).
+
+### Changed
+
+- Version bumped from 0.3.7 to 0.3.8 without a functional change to the
+  shipped code. 0.3.7 was never published: its retained qualification record
+  bound a tarball that could not be reproduced from the tree, because the
+  record was generated against an incrementally-built `dist/` that carried
+  stale artifacts. Qualification records are immutable — one introduction per
+  path, hash-pinned — so the 0.3.7 record could not be corrected and 0.3.7
+  could never be published. It is skipped deliberately rather than reused.
+
+  The mechanism is filed as #893; this release's own record was generated
+  from a clean build on the pinned release runtime specifically because of it.
+
 ## [0.3.7] - 2026-09-15
 
 ### Fixed

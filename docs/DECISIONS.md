@@ -1568,6 +1568,98 @@ keeps the next reader from re-deriving the same conclusion from scratch, or
 worse, building a gate that looks like it closes the surface while only ever
 reaching three quarters of it.
 
+## 22. State 4 (`published`) is keyed by `name@version`, not by name
+
+**Status:** decided in [issue #875](https://github.com/clossys/foundry/issues/875),
+following a self-correction recorded in that issue's own comment thread —
+the issue's opening claim (that sixteen packages could never reach
+`published` because the grader only read the sealed Trio record) was false
+and was replaced there by the measurement this entry acts on.
+
+### The question and why a name cannot answer it
+
+`docs/LIFECYCLE.md` states state 4's question as "Can someone else install
+exactly this?" That is a question about one version. A package name resolves
+to whatever `latest` currently is; it does not resolve to whichever version a
+publication record happens to describe. A set keyed by name can therefore
+only ever answer "exactly something, once" — the first version that ever
+validated — never "exactly this one".
+
+### What was actually measured
+
+`validateRetainedLaterPublications` in `scripts/lib/release-later-publication.mjs`
+collected `record.candidate.name` into a `Set`, discarding the version each
+record already carried on its way in (`identities.add(`${record.candidate.name}@${record.candidate.version}`)`
+existed already, purely for duplicate detection, and its output was thrown
+away). `scripts/check-package-evidence.mjs` then asked `publishedPackages.has(name)`
+— a question with no version in it at all.
+
+Run against this repository's own tree at the time of filing: all 38 retained
+records under `governance/release-publications/later/` (19 packages, two
+records apiece) sat at superseded versions. Zero of them named their
+package's current manifest version. Every one of the 19 packages nonetheless
+satisfied `published` under the name-keyed grader — including the sixteen
+still declared `staged` in the contract, which the grader permits (declaring
+below your evidence is allowed; only declaring ahead is the defect it
+exists to catch), and including `@clossys/advisor`, `@clossys/controller`,
+and `@clossys/starter`, which were declared `published` on the strength of
+records for `0.1.5`/`0.1.3`, `0.8.23`/`0.8.21`, and `0.1.4`/`0.1.2` while
+those packages' actual current versions were `0.2.1`, `0.9.6`, and `0.1.6`.
+
+### The decision
+
+State 4 is version-keyed. The published set the grader consults is a set of
+`name@version` identities, never bare names, and `evidence.set("published", …)`
+joins a package's identity against its CURRENT manifest version — the same
+shape the qualification gate already uses to refuse a version bump without a
+record for that exact candidate. A record proves the one identity it names
+and nothing else; it does not carry forward to a later version of the same
+package, no matter how small the gap.
+
+This is deliberately a narrowing, not a new evidence class. Every check the
+grader already performed on a retained record — immutability, the
+qualification join, trusted provenance — is unchanged; the only new
+requirement is that the record's own version also match the package's
+current one.
+
+### The immediate consequence, taken
+
+Under version-keying, none of the 19 packages' retained records cover their
+package's current version, so none currently satisfies `published`. The
+correct reading of the evidence for all 19 is `staged`. `docs/contracts/package-evidence.json`
+is updated in the same change: `@clossys/advisor`, `@clossys/controller`, and
+`@clossys/starter` move from `published` to `staged`, matching what their
+evidence actually shows rather than what it showed for a version they no
+longer ship. No `gaps` entry is added for this — a `gaps` entry acknowledges
+a shortfall against evidence that does not yet exist; this is not that. The
+evidence used to exist for an earlier version and stopped applying the moment
+the version moved, which is exactly the reading this decision makes correct
+rather than an anomaly to excuse.
+
+The sixteen packages already declared `staged` are unaffected by this
+decision on their own — they were already at the state their evidence now
+supports, and the separate question of whether they could be raised to
+`published` under the OLD name-keyed rule (`#875`'s "what survives" comment)
+is now moot, since the rule that would have permitted it no longer exists.
+
+### What this does not do
+
+It does not regenerate any qualification or publication record, and it does
+not bump any package version. Qualification records are immutable — one
+introduction commit per path, hash-pinned — and manufacturing a fresh record
+or a version bump solely to restore `published` status would be producing
+evidence to match a desired conclusion rather than reading the evidence that
+exists. Packages will earn `published` at their current version as they
+naturally ship again, the same way they earned it the first time.
+
+It does not touch `readValidatedPublishedPackageNames`, the narrower,
+name-only view `scripts/check-package-identity-transition.mjs` uses to ask
+whether the sealed Trio has ever cleared trusted-publisher provenance at all
+— a question that gates whether the publish workflow may carry real OIDC
+trust, and one that genuinely does not care which version cleared it. Not
+every consumer of "has this package published" is asking state 4's question;
+this decision applies the join only where the question is version-exact.
+
 ## Settled
 
 **Author attribution — the project name holds the copyright.** Every package's
