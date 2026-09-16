@@ -247,6 +247,24 @@ describe("checkConfirmationCompleteness", () => {
     expect(result.reason).toBe("no-intents-provided");
     expect(result.findings).toHaveLength(0);
   });
+
+  it("has no mixed indeterminate-and-violated state to resolve, and this pins why", () => {
+    // See `checkDelegationCeiling`'s identically-named test in
+    // `packages/bouncer/src/contract.test.ts` for the general shape this
+    // pins across every interaction gate that has it (issue #508). This
+    // gate's only indeterminate reason is `no-intents-provided`, which
+    // requires an empty `intents` array, and every finding here is derived
+    // by walking `intents` — so an empty array can never also produce a
+    // finding. There is nothing to order.
+    const empty = checkConfirmationCompleteness([], [confirmation()], floor);
+    expect(empty.reason).toBe("no-intents-provided");
+    expect(empty.findings).toHaveLength(0);
+
+    // And a non-empty `intents` resolves to exactly one of clean or
+    // violated — never to an indeterminate reason alongside a real finding.
+    expect(checkConfirmationCompleteness([intent()], [confirmation()], floor).reason).toBeUndefined();
+    expect(checkConfirmationCompleteness([intent()], [], floor).reason).toBe("unconfirmed-intents");
+  });
 });
 
 // ------------------------------------------------------------------- gate 2
@@ -302,6 +320,25 @@ describe("checkCurrency", () => {
     expect(checkCurrency([], [usage()], strict)).toMatchObject({ ok: false, reason: "no-instructions-provided" });
     expect(checkCurrency([instruction()], [], strict)).toMatchObject({ ok: false, reason: "no-usages-provided" });
   });
+
+  it("has no mixed indeterminate-and-violated state to resolve, and this pins why", () => {
+    // Unlike `bouncer`'s `checkProviderContract` (a genuinely mixed case:
+    // one mapping's shape can go unobserved while another mapping drifts),
+    // this gate has no PER-USAGE indeterminate outcome at all — only the two
+    // top-level "nothing provided" early returns, each requiring an empty
+    // array before any usage is ever walked and a finding could exist.
+    const noInstructions = checkCurrency([], [usage()], strict);
+    expect(noInstructions.reason).toBe("no-instructions-provided");
+    expect(noInstructions.findings).toHaveLength(0);
+    const noUsages = checkCurrency([instruction()], [], strict);
+    expect(noUsages.reason).toBe("no-usages-provided");
+    expect(noUsages.findings).toHaveLength(0);
+
+    // Once both sides are non-empty, the result is exactly clean or
+    // violated — never indeterminate alongside a finding.
+    expect(checkCurrency([instruction()], [usage()], strict).reason).toBeUndefined();
+    expect(checkCurrency([instruction()], [usage({ usedAt: "2026-06-01T00:00:00.000Z" })], strict).reason).toBe("stale-instructions-used");
+  });
 });
 
 // ------------------------------------------------------------------- gate 3
@@ -344,5 +381,19 @@ describe("checkWithdrawalParity", () => {
 
   it("is indeterminate, not clean, when no paths were supplied", () => {
     expect(checkWithdrawalParity([])).toEqual({ ok: false, reason: "no-paths-provided", pathsChecked: 0, findings: [] });
+  });
+
+  it("has no mixed indeterminate-and-violated state to resolve, and this pins why", () => {
+    // This gate's only indeterminate reason is `no-paths-provided`, which
+    // requires an empty `paths` array, and every finding is derived by
+    // walking `paths` — so an empty array can never also produce a finding.
+    const empty = checkWithdrawalParity([]);
+    expect(empty.reason).toBe("no-paths-provided");
+    expect(empty.findings).toHaveLength(0);
+
+    // A non-empty `paths` resolves to exactly one of clean or violated —
+    // never to an indeterminate reason alongside a real finding.
+    expect(checkWithdrawalParity([path()]).reason).toBeUndefined();
+    expect(checkWithdrawalParity([{ surfaceId: "prefs", topic: "email", grant: easyGrant }]).reason).toBe("withdrawal-harder-than-granting");
   });
 });

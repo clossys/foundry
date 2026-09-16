@@ -1659,6 +1659,152 @@ whether the sealed Trio has ever cleared trusted-publisher provenance at all
 trust, and one that genuinely does not care which version cleared it. Not
 every consumer of "has this package published" is asking state 4's question;
 this decision applies the join only where the question is version-exact.
+## 23. Indeterminate-over-violated precedence in the interaction gates — settled as already-correct, gate-by-gate, not as one repository-wide rule
+
+**Status:** measured against [issue #508](https://github.com/clossys/foundry/issues/508)
+on 2026-09-15 and decided here. This is not a defect awaiting repair. Every
+gate #508 named already behaves the way this entry settles on, and the gap
+was that nothing had said so in one place.
+
+### What #508 asked
+
+Four packages — `bouncer`, `butler`, `giver`, `keeper` — each ship interaction
+gates whose per-item classification can mix a confirmed violation with an
+item that could not be verified at all in the same run. #508 measured one
+such run in `keeper`'s attribution gate (a confirmed
+`belief-constrains-without-confirmation` finding alongside a
+`source-unverifiable` item) and asked which should win the exit code: `1`
+(a real, actionable violation is present) or `2` (the finding list is known
+to be incomplete, so calling it "here are the findings" undersells how much
+was never checked). It asked this be settled once, recorded, and applied
+uniformly with a test per package pinning the mixed case.
+
+### The precedence was already settled, per gate, and already tested
+
+Reading `bouncer/src/contract.ts`'s `checkAuthorityReconciliation`, its own
+doc comment states the answer and the reasoning it rests on:
+
+```
+ * INDETERMINATE WINS OVER VIOLATED, deliberately. A run in which SOME grants
+ * were found unreconciled and SOME providers were unreachable reports the
+ * unreachability: the set of violations is known to be incomplete, and a
+ * caller who is handed "1 — here are the findings" reasonably reads it as
+ * "and there are no others". There are.
+```
+
+`keeper/src/contract.ts`'s `checkAttribution` (and `checkVisibility`,
+`checkDisposal`) and `giver/src/contract.ts`'s `checkObligationDischarge`
+implement the identical precedence — an indeterminate-classified finding kind
+present anywhere in the set wins over a plain violation — without repeating
+that comment:
+
+```ts
+// packages/keeper/src/contract.ts:606-608
+const indeterminate = findings.some((finding) => INDETERMINATE_ATTRIBUTION_FINDING_KINDS.includes(finding.kind));
+if (indeterminate) return { ok: false, reason: "attribution-unverifiable", ...base, attributed, beliefsChecked, findings };
+if (findings.length > 0) return { ok: false, reason: "holdings-unattributed", ...base, attributed, beliefsChecked, findings };
+```
+
+And none of the four packages discard the findings that were found. Every
+gate's own CLI prints them unconditionally, before branching on the verdict —
+`keeper/src/cli.ts`'s `printAttributionReport` calls `printFindings(result.findings)`
+ahead of the `result.ok`/`result.reason` branch, on every run, regardless of
+exit code. #508's own framing — "reports a real finding as could-not-run" —
+describes the exit code and the verdict label, never the findings themselves;
+nothing in this measurement found a run that hid a finding it had.
+
+The mixed case is already pinned by an existing test at both the pure-function
+and the CLI-exit-code layer, in every package where it is reachable:
+
+- `keeper/src/contract.test.ts` / `cli.test.ts` — "reports the indeterminate
+  reason on a mixed set — and still lists the violation it did find" /
+  "exits 2 — not 1 — on a mixed set, and still prints the violation it did
+  find", for all three of `checkAttribution`, `checkVisibility` and
+  `checkDisposal`.
+- `bouncer/src/contract.test.ts` / `cli.test.ts` — "reports indeterminate over
+  violated when both are present, because the finding list is known to be
+  incomplete" (plus an order-independence test) for
+  `checkAuthorityReconciliation`, and "reports indeterminate over drift when
+  both are present, and still returns the drift it did find" for
+  `checkProviderContract`.
+- `giver/src/contract.test.ts` / `cli.test.ts` — "reports the indeterminate
+  reason on a mixed run, and still carries the breach it did find" for
+  `checkObligationDischarge`.
+
+This measurement mutation-tested one of those (`keeper`'s attribution CLI
+test): with `checkAttribution`'s mixed-set branch forced to return
+`{ ok: true, ... }` regardless of findings, both the contract-level and the
+CLI-level "mixed set" tests failed — `main(["attribution", …])` returned `0`
+instead of `2`, and `result.reason` came back `undefined` instead of
+`"attribution-unverifiable"`. Restoring the original code returned both
+tests to green. The control that was reverted and re-passed is the same
+discipline `docs/LIFECYCLE.md`'s `staged` evidence already requires of a
+gate's own violation record.
+
+### Not every gate has the mixed case, and that is a fact, not a gap
+
+`butler`'s three gates (`checkConfirmationCompleteness`, `checkCurrency`,
+`checkWithdrawalParity`) and two of `giver`'s three (`checkHandoffPlacement`,
+`checkGrounding`) and one of `bouncer`'s three (`checkDelegationCeiling`) have
+no per-item indeterminate finding kind at all. Their only indeterminate
+routes are early "nothing was provided" returns, each gated on an input array
+being empty — and every finding in these gates is derived by walking that
+same array, so an empty array can never also produce a finding. The mixed
+case #508 describes is structurally unreachable in all six, not merely
+untested. Per `docs/LIFECYCLE.md`'s eighth value — "not-applicable, with a
+reason... distinct from 'not yet' and from 'unknown'" — this measurement
+records that fact rather than silently omitting these gates or forcing a
+mixed-case test that could never fail. `bouncer`'s `checkDelegationCeiling`
+already carried this exact pin ("has no mixed indeterminate-and-violated
+state to resolve, and this pins why"); this measurement adds the matching pin
+to `butler`'s three gates, which had none (`packages/butler/src/contract.test.ts`).
+
+### Why this is not one repository-wide rule
+
+`@clossys/writer`'s `addressability.ts` (`checkAddressability`) answers the
+identical-shaped question — a real violation and an unclassified position in
+the same scan — the OPPOSITE way, and says so in its own doc comment ("THE
+TERNARY"), citing issue #407: on that gate, an unclassified position is not a
+rare edge case but the common result of every real scan it has ever been run
+against, so letting indeterminate win would make the `"violated"` branch
+permanently unreachable in production. `copy-gate.ts`'s own traceability
+check, in the same package, keeps indeterminate-wins for the identical
+reason `bouncer` states — for it, an unchecked construct is genuinely rare.
+
+Both are correct for their own gate. A blanket "indeterminate always wins" or
+"violated always wins" rule would have been wrong for at least one of the two
+gates already shipping in this repository. What #508 asked to settle "once,"
+this measurement settles as: **the precedence is a deliberate, gate-local
+choice, made once per gate and never silently defaulted — indeterminate wins
+in every interaction gate measured here, because none of them has
+`addressability`'s structural reason to choose otherwise — and it must be
+stated somewhere a reader can find it**, which this entry is.
+
+### What this measurement did not do, and why
+
+`bouncer` states its reasoning in a doc comment beside the code; `keeper` and
+`giver` implement the identical precedence without one. Closing that
+asymmetry means editing `packages/keeper/src/contract.ts` and
+`packages/giver/src/contract.ts` — files `files` ships in both packages'
+published tarballs. Any edit to either, including a comment-only one,
+requires a version bump under `check-release-readiness` and, once bumped, a
+release qualification record before either package can publish again.
+Neither is warranted to land a comment. This entry is the recorded reasoning
+in the meantime; carrying it into the source comments themselves is left for
+a session that is already bumping one of these two packages for an unrelated
+reason.
+
+A mechanical, CI-checked version of "every gate states its precedence"
+was considered — the strongest form would need a new exported declaration
+next to each `INDETERMINATE_*_FINDING_KINDS` constant, which is the same
+shipped-file, same version-bump problem one level up, spread across three
+packages instead of two. A weaker form, a script asserting each package's
+test suite contains a test titled like the ones listed above, was rejected
+as decorative: it would verify a string appears in a test file, not that the
+precedence the test names is the one the code actually implements — exactly
+the kind of check `CONTRIBUTING.md`'s own "Gate CLIs exit `0`/`1`/`2`" entry
+warns a written-but-unchecked convention decays into. Filed as follow-up work
+for whichever session next has version-bump budget in `keeper` or `giver`.
 
 ## Settled
 
