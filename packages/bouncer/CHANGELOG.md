@@ -3,6 +3,61 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.4] - 2026-09-16
+
+### Fixed
+
+- **Three entry points accepted an incompatible `@clerk/nextjs` or `next`
+  silently instead of naming it (#889).** `./providers/clerk/web/proxy`
+  imported both `next/server` and `@clerk/nextjs/server` unconditionally
+  with no `assertPeerVersion` guard for either; `./providers/clerk/web`
+  and its `/client` alias imported `@clerk/nextjs` unconditionally,
+  guarding only `react`. An installed-but-incompatible peer at any of
+  these three entry points previously surfaced as whatever `next` or
+  `@clerk/nextjs` themselves happened to crash on, with nothing naming a
+  version range as the cause. `./providers/clerk/web/proxy` now guards
+  `next` the same way `./providers/clerk/web/server` already did, reading
+  the installed version from `next/package.json` — `next` declares no
+  `exports` field of its own, so that subpath resolves as an ordinary JSON
+  import, with no `node:fs` involved and no risk to an edge-runtime
+  bundle (confirmed with `esbuild --platform=browser`).
+- **A comment in `client.tsx` claimed `@clerk/nextjs` was "guarded instead
+  from `server-routes.tsx`."** It was not: `./providers/clerk/web` and its
+  `/client` alias never import `server-routes.tsx` at all (confirmed by
+  reading their own `export … from` statements), so that claim was false
+  on the day it was written, not merely stale. The comment is corrected.
+- **`README.md`, `src/index.ts`, and both `dist/` copies claimed every
+  Clerk web entry point "guards its own optional peer with
+  `assertPeerVersion`."** True for three of five; false for
+  `./providers/clerk/web`, `/client`, and `/proxy`'s `@clerk/nextjs`
+  import specifically. Corrected to state precisely which peers are
+  range-guarded at which entry points, and why `@clerk/nextjs` cannot be:
+  its own `exports` map declares no `./package.json` subpath (confirmed:
+  `require("@clerk/nextjs/package.json")` throws
+  `ERR_PACKAGE_PATH_NOT_EXPORTED` against the real installed 7.9.1), and
+  its public surface exports no version constant of any kind — a
+  permanent constraint of that peer's own published shape, not a gap in
+  this package's effort. `@clerk/nextjs`'s presence is still guarded: the
+  unconditional import already throws Node's own named
+  `ERR_MODULE_NOT_FOUND` if it is absent.
+- **The README's absent-vs-out-of-range sentence described unreachable
+  behavior.** Every guarded call site sits behind a static ESM import, so
+  an absent peer throws Node's own module-resolution error before
+  `assertPeerVersion`'s "not installed" message can ever run — the guard's
+  real job is the installed-but-incompatible case. Corrected.
+
+### Added
+
+- `internal/peer-guard-coverage.test.ts`, deriving its subpath set from
+  `package.json`'s own `exports` map (never a hand-written list) and
+  checking each subpath's BUILT `dist/` import graph, not `src/`. It
+  either confirms a co-located `assertPeerVersion` call for every optional
+  peer a subpath's compiled output imports, or requires a named,
+  bidirectionally-checked exception — `@clerk/nextjs` at
+  `./providers/clerk/web`, `/client`, and `/proxy` today, for the reason
+  above. This is the enumerate-and-confirm test #889 itself named as
+  missing.
+
 ## [0.1.3] - 2026-09-02
 
 ### Fixed

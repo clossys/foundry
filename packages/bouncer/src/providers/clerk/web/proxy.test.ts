@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import type { NextFetchEvent, NextRequest } from "next/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -11,7 +14,7 @@ vi.mock("@clerk/nextjs/server", () => ({
   createRouteMatcher: vi.fn(() => clerk.matcher),
 }));
 
-import { createSiteProxy } from "./proxy.js";
+import { createSiteProxy, NEXT_DECLARED_RANGE } from "./proxy.js";
 
 describe("createSiteProxy development bypass", () => {
   beforeEach(() => {
@@ -48,5 +51,27 @@ describe("createSiteProxy development bypass", () => {
     );
     expect(response?.headers.get("x-mounted-key")).toBe("configured-dynamically");
     expect(clerk.middleware).toHaveBeenCalledOnce();
+  });
+});
+
+describe("the next peer-version guard (#889)", () => {
+  it("keeps NEXT_DECLARED_RANGE in sync with package.json's declared peer range", () => {
+    const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "..");
+    const manifest = JSON.parse(readFileSync(join(packageRoot, "package.json"), "utf8")) as {
+      peerDependencies: Record<string, string>;
+      peerDependenciesMeta: Record<string, { optional?: boolean }>;
+    };
+    expect(NEXT_DECLARED_RANGE).toBe(manifest.peerDependencies.next);
+    expect(manifest.peerDependenciesMeta.next?.optional).toBe(true);
+  });
+
+  it("importing this module does not throw against this repository's own real installed next — proxy.ts's own assertPeerVersion(...) call, unmocked", () => {
+    // Unlike @clerk/nextjs/server above, next/server (and next/package.json,
+    // which NEXT_DECLARED_RANGE's guard reads) are never mocked in this
+    // file — #889 named this file's total @clerk/nextjs/server mock as
+    // exactly what let the missing guards ship unnoticed for that peer;
+    // this assertion exercises the real, installed next the same way
+    // server-routes.test.ts already does for its own two guards.
+    expect(NEXT_DECLARED_RANGE).toBe(">=16 <17");
   });
 });
