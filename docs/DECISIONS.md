@@ -2149,9 +2149,17 @@ set, and the mechanism for binding them is declared here.
 
 Whether any consumer has actually bound them is **not observable from this
 repository**, and this entry does not claim it. The only `setpoint` bindings
-present here are fixtures — `docs/contracts/package-evidence.json`'s red and
-control pairs, and `docs/contracts/installed-position-ledger.fixture.json`,
-whose every row reads *"Synthetic schema fixture; no consumer decision."* An
+present here are in `docs/contracts/installed-position-ledger.fixture.json`,
+whose every row reads *"Synthetic schema fixture; no consumer decision."*
+
+(An earlier draft of this paragraph also cited `docs/contracts/package-evidence.json`.
+That was wrong, and wrong in the specific way this entry warns against two
+paragraphs above: the word `setpoint` occurs there seven times in free-text
+prose describing unrelated packages' own CLI thresholds, and the file contains
+**zero** structural `setpoint` keys and no reference to `consumerBindings` at
+all. Citing it was a substring match dressed as a measurement.)
+
+An
 earlier draft of this entry asserted the mechanism "is exercised in consumer
 planes"; that was an unevidenced claim about things outside this repository
 and is withdrawn.
