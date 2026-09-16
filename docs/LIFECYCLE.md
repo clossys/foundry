@@ -56,7 +56,7 @@ second person could reproduce without asking the first.
 | 1 | **designed** | Is there a job here, and can it be graded? | The versioned [role-package contract](contracts/role-loop-archetypes.json) parses with one job question, one owned metric, one primary mode, a durable boundary, and the universal consumer-binding requirements. |
 | 2 | **implemented** | Does it build and hold its own contracts? | `npm run check` and release readiness, both green. |
 | 3 | **staged** | Has the author's own repository run it? | An executable invocation site here, **and a recorded run in which the gate went red on a genuine violation, alongside a control that stayed green**. |
-| 4 | **published** | Can someone else install exactly this? | A registry artifact, a lifecycle entry, a clear name-collision check, and a declared visibility. |
+| 4 | **published** | Can someone else install exactly this? | A registry artifact, a lifecycle entry, a clear name-collision check, and a declared visibility — bound to the package's CURRENT manifest version, not merely some version it once had (#875). |
 | 5 | **adopted** | Does it block in a consumer's tree? | Installed at the current version, invoked by dist path, in blocking position, proven by a deliberate failure — and the consumer's hand-written equivalent deleted. |
 | 6 | **grounded** | Is the loop worth having? | An independent measurer reads host-owned outcome records, and a metric outside the package demonstrably moves in response to a real change. Conformance gates may use `observer` catch and escape outcomes; other loop shapes may use an externally produced standing count or observed outcome. |
 | 7 | **closed** | Is the loop done? | The close condition, as written in the package's own README, reads satisfied. Revocable. |
@@ -183,6 +183,40 @@ equality was right; this paragraph is the answer.
 [docs/PUBLISHING.md](PUBLISHING.md) is this state in full, written as a
 checklist because the failure mode — publishing something private — is not
 reversible.
+
+**The evidence is version-exact, not name-exact (#875).** "Can someone else
+install exactly this?" is a question about one version, and only a retained
+publication record that names that exact `name@version` identity answers it.
+A record proving `advisor@0.1.5` shipped is real evidence that `0.1.5`
+shipped; it is not evidence about `0.1.6`, `0.2.0`, or whatever `advisor`'s
+manifest carries today, no matter how similar the surrounding source is. The
+gate (`scripts/check-package-evidence.mjs`) joins every retained record's
+identity against the package's CURRENT manifest version before crediting
+`published`; a record for any other version — superseded or, in principle,
+ahead — does not count.
+
+The direct consequence: a package that shipped at `0.1.5` and has since moved
+to `0.2.1` is not `published` at `0.2.1` until a record exists for `0.2.1`.
+It does not matter that `0.1.5` and `0.2.1` are the same package, built from
+the same source lineage, by the same author — `published` is not a claim
+about the package in general, it is a claim about one installable artifact,
+and the evidence for one version was never evidence for another. Measured on
+this repository's own catalogue at the time #875 was filed: all 38 retained
+publication records (19 packages, two records each) sat at superseded
+versions, and none covered its package's current manifest version — so the
+correct reading of the evidence, for every one of those 19 packages today,
+is `staged`, not `published`. That is not a shortfall to acknowledge with a
+`gaps` entry; it is what the evidence actually shows. `docs/contracts/package-evidence.json`
+reads that directly: `@clossys/advisor`, `@clossys/controller`, and
+`@clossys/starter` — the only three previously declared `published` — are
+declared `staged` as of this change, and will move back to `published` the
+first time a retained record exists for whatever version each is actually
+shipping.
+
+This does not relax anything else this state already required. The
+name-collision check, the declared visibility, and the underlying qualified
+first-publication machinery are unchanged; the join is additive, and it can
+only narrow which identities satisfy `published`, never widen them.
 
 ### 5. adopted
 
@@ -314,12 +348,12 @@ fails when the committed copy drifts from the derived one — #493.
 
 | package | current position | staged here | adoption | grounding | closure |
 | --- | --- | --- | --- | --- | --- |
-| `@clossys/advisor` | published | yes | not yet | unknown — #484 | not yet |
+| `@clossys/advisor` | staged | yes | not yet | unknown — #484 | not yet |
 | `@clossys/architect` | staged | yes | not yet | unknown — #484 | not yet |
 | `@clossys/bouncer` | staged | yes | not yet | unknown — #484 | not yet |
 | `@clossys/builder` | staged | yes | not yet | unknown — #484 | not yet |
 | `@clossys/butler` | staged | yes | not yet | unknown — #484 | not yet |
-| `@clossys/controller` | published | yes | not yet | unknown — #484 | not yet |
+| `@clossys/controller` | staged | yes | not yet | unknown — #484 | not yet |
 | `@clossys/designer` | staged | yes | not yet | unknown — #484 | not yet |
 | `@clossys/giver` | staged | yes | not yet | unknown — #484 | not yet |
 | `@clossys/influencer` | staged | yes | not yet | unknown — #484 | not yet |
@@ -330,7 +364,7 @@ fails when the committed copy drifts from the derived one — #493.
 | `@clossys/messenger` | staged | yes | not yet | unknown — #484 | not yet |
 | `@clossys/observer` | staged | yes | not yet | unknown — #484 | not yet |
 | `@clossys/publisher` | staged | yes | not yet | unknown — #484 | not yet |
-| `@clossys/starter` | published | yes | N/A — executable tooling | N/A — executable tooling | N/A — executable tooling |
+| `@clossys/starter` | staged | yes | N/A — executable tooling | N/A — executable tooling | N/A — executable tooling |
 | `@clossys/strategist` | staged | yes | not yet | unknown — #484 | not yet |
 | `@clossys/writer` | staged | yes | not yet | unknown — #484 | not yet |
 | `@vespeneventures/advisor` | published | yes | not yet | unknown — #484 | not yet |

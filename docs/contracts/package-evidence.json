@@ -4,7 +4,7 @@
   "packages": [
     {
       "name": "@clossys/advisor",
-      "state": "published",
+      "state": "staged",
       "stagedBy": {
         "run": "Retained package-authentic current-direct transcript at governance/release-qualifications/clossys-advisor-0.1.3.json; reproduce its closed joins with `npm run check:candidate-qualification`. The installed Advisor dist CLI produced native assessment exits 0, 1, and 2 from the matched fixture cases.",
         "defectOrigin": "injected",
@@ -54,7 +54,7 @@
     },
     {
       "name": "@clossys/controller",
-      "state": "published",
+      "state": "staged",
       "stagedBy": {
         "run": "Retained package-authentic current-direct transcript at governance/release-qualifications/clossys-controller-0.8.21.json; reproduce its closed joins with `npm run check:candidate-qualification`. The installed singular-authority dist CLI produced native authority exits 0, 1, and 2 from matched fixtures.",
         "defectOrigin": "injected",
@@ -165,7 +165,7 @@
     {
       "name": "@clossys/starter",
       "category": "executable-tooling",
-      "state": "published",
+      "state": "staged",
       "stagedBy": {
         "run": "Retained package-authentic current-direct adapter and raw transcript at governance/release-qualification-adapters/starter/current-direct.json and governance/release-qualifications/clossys-starter-0.1.2.json; reproduce their closed joins with `npm run check:candidate-qualification`. The exact installed Starter dist CLI produced native activation exits 0, 1, and 2.",
         "defectOrigin": "injected",
