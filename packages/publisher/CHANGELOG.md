@@ -3,6 +3,27 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.4.4] - 2026-09-16
+
+### Fixed
+
+- `resolveSectionedViewDocument` no longer writes both `groups` and `items`
+  as own keys on a resolved status-list section. It previously used optional
+  chaining (`groups: section.groups?.map(...)`), which sets the VALUE to
+  `undefined` but still creates the KEY. `SectionedView` decides grouped-vs-flat
+  with `Object.hasOwn`, which is true for a key holding `undefined`, so its
+  "exactly one of groups or items" check saw both and threw — for every
+  status-list section, whether the source carried `groups`, `items`, or one of
+  each. Rendering any status-list section was impossible in 0.4.3.
+
+  The resolver now spreads each key conditionally, so exactly the one the
+  source declared survives. `groups` and `items` are also destructured out of
+  the spread base, because spreading the whole section would carry the
+  unresolved shapes alongside the resolved ones.
+
+  A test pins the resolved own-key set in both directions — grouped sections
+  carry `groups` and not `items`, flat sections the reverse.
+
 ## [0.4.3] - 2026-09-14
 
 ### Changed

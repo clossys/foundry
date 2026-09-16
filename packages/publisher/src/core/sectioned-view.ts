@@ -479,9 +479,13 @@ function resolveSection(section: SectionedViewSection, path: string, text: (ref:
       return { ...section, eyebrow: optional(section.eyebrow, `${path}.eyebrow`), heading: text(section.heading, `${path}.heading`), description: optional(section.description, `${path}.description`), items: section.items.map((item, index) => ({ ...item, question: text(item.question, `${path}.items.${index}.question`), answer: text(item.answer, `${path}.items.${index}.answer`) })) };
     case "ordered-step-sequence":
       return { ...section, eyebrow: optional(section.eyebrow, `${path}.eyebrow`), heading: text(section.heading, `${path}.heading`), description: optional(section.description, `${path}.description`), items: section.items.map((item, index) => ({ ...item, ordinal: text(item.ordinal, `${path}.items.${index}.ordinal`), label: optional(item.label, `${path}.items.${index}.label`), heading: text(item.heading, `${path}.items.${index}.heading`), description: optional(item.description, `${path}.items.${index}.description`) })) };
-    case "status-list":
+    case "status-list": {
+      // `groups` and `items` are destructured OUT of the spread base on purpose:
+      // spreading `section` would carry the unresolved shapes and union them with
+      // the resolved ones below.
+      const { groups: sourceGroups, items: sourceItems, ...base } = section;
       return {
-        ...section,
+        ...base,
         eyebrow: optional(section.eyebrow, `${path}.eyebrow`),
         heading: text(section.heading, `${path}.heading`),
         description: optional(section.description, `${path}.description`),
@@ -489,8 +493,14 @@ function resolveSection(section: SectionedViewSection, path: string, text: (ref:
           ...Object.fromEntries(STATUSES.map((status) => [status, text(section.labels[status], `${path}.labels.${status}`)])),
           dispositions: Object.fromEntries(DISPOSITIONS.map((disposition) => [disposition, text(section.labels.dispositions[disposition], `${path}.labels.dispositions.${disposition}`)])),
         } as Record<SectionedViewStatus, string> & { dispositions: Record<SectionedViewStatusDisposition, string> },
-        groups: section.groups?.map((group, groupIndex) => ({ ...group, heading: text(group.heading, `${path}.groups.${groupIndex}.heading`), items: group.items.map((item, itemIndex) => resolveStatusItem(item, `${path}.groups.${groupIndex}.items.${itemIndex}`, text, optional)) })),
-        items: section.items?.map((item, itemIndex) => resolveStatusItem(item, `${path}.items.${itemIndex}`, text, optional)),
+        // Spread conditionally, never `groups: section.groups?.map(...)`. Optional
+        // chaining sets the value to undefined but still creates the key, and the
+        // renderer decides grouped-vs-flat with Object.hasOwn, which is true for a
+        // key holding undefined. Writing both keys made every status-list section
+        // fail the renderer's exactly-one check. Issue #890.
+        ...(sourceGroups ? { groups: sourceGroups.map((group, groupIndex) => ({ ...group, heading: text(group.heading, `${path}.groups.${groupIndex}.heading`), items: group.items.map((item, itemIndex) => resolveStatusItem(item, `${path}.groups.${groupIndex}.items.${itemIndex}`, text, optional)) })) } : {}),
+        ...(sourceItems ? { items: sourceItems.map((item, itemIndex) => resolveStatusItem(item, `${path}.items.${itemIndex}`, text, optional)) } : {}),
       };
+    }
   }
 }
