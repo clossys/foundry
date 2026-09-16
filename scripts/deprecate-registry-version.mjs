@@ -40,12 +40,12 @@
 // `npm deprecate` exits 0 when its version spec matches NOTHING. Measured
 // against this repository's own registry target with npm 11.12.1:
 //
-//   npm deprecate '<pkg>@<absent>' msg --dry-run ->  "npm warn deprecate No
-//                                                   version found for <absent>"
-//                                              ->  exit 0
-//   npm deprecate '<pkg>@<present>' msg --dry-run ->  "npm notice deprecating
-//                                                   <pkg>@<present> ..."
-//                                              ->  exit 0
+//   npm deprecate '<pkg>@<absent>'  msg --dry-run  ->  "npm warn deprecate
+//                                                       No version found"
+//                                                  ->  exit 0
+//   npm deprecate '<pkg>@<present>' msg --dry-run  ->  "npm notice
+//                                                       deprecating ..."
+//                                                  ->  exit 0
 //
 // Identical exit codes. A typo in the version therefore produces a silent
 // no-op that an operator reads as a successful deprecation, while the broken
