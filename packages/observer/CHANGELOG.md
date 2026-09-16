@@ -3,6 +3,86 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.8] - 2026-09-16
+
+### Fixed
+
+- **`gradeFleetCoverage` no longer returns a confident `satisfied` on a
+  malformed coverage declaration (issue #897 audit finding A).**
+  `coverage.ts` computed a `declarationIsInvalid` flag but the
+  `installedPackage !== undefined` branch `continue`d before ever
+  consulting it, so the flag was reachable only on the not-installed path.
+  A repository whose declaration failed validation but that had every
+  package genuinely installed graded every cell `installed`, zero
+  unclassified, zero contradictions -- a clean `satisfied`, exit `0` --
+  with no trace anywhere that its declaration could not be read. This
+  matters beyond one bad exit code: a **stale `declared-absent` entry**
+  hiding inside a malformed declaration is the one contradiction this
+  module exists to surface (see `FleetCoverageContradiction`), and it
+  became undetectable exactly when the declaration was unreadable. As this
+  fleet's packages move toward "installed everywhere," the affected case
+  -- every package installed, one bad declaration -- stops being an edge
+  case and becomes the steady state, so the signal was heading toward
+  disappearing entirely.
+  - The fix consults `declarationIsInvalid` on the installed path too.
+    Ground truth still wins for the cell's own `state` (it stays
+    `"installed"`, matching this module's existing contradiction handling
+    and its own test at `coverage.test.ts`'s "a package confirmed
+    installed still resolves to installed even when the declaration is
+    unreadable") -- hiding a real install because a stale or merely
+    unreadable declaration disagrees would be worse than the problem this
+    contract exists to solve. What changed is the *aggregate*: such a cell
+    is now recorded in a new `FleetCoverageReport.unverifiedInstalledCells`
+    list and forces the verdict to `indeterminate`
+    (`installed-cell-with-unreadable-declaration`) rather than
+    `satisfied`, at the same precedence as an unclassified cell -- both are
+    "we don't know," not "we know it's clean," and `violated` requires a
+    *known* contradiction this case does not have. `observer-coverage-check`
+    (`cli.ts`) now also prints these cells under a new "Unverified" section
+    in its rendered report.
+  - The pre-existing test at `coverage.test.ts` ("a package confirmed
+    installed still resolves to installed even when the declaration is
+    unreadable") used a multi-package catalogue where a sibling cell was
+    already unclassified, so its aggregate landed on `indeterminate` for an
+    unrelated reason and the test asserted only per-cell states, never the
+    aggregate -- masking this defect. A new test, "an all-installed
+    catalogue with an unreadable declaration must NOT resolve to
+    satisfied," uses a single repository where every package is installed
+    and nothing else is unclassified, and asserts the aggregate verdict
+    directly.
+- **The documented input to `parseCoverageDeclaration` was the failing
+  input (issue #897 audit finding B).** `README.md`, the CLI's own
+  `--help`, and `coverage-declaration.ts`'s own header all instructed a
+  caller to pass "the already-fetched body" of a repository's
+  coverage-declaration file -- and that body, fetched with the plain,
+  unauthenticated raw-content HTTP GET this contract is explicitly
+  designed around, is a **string**. `parseCoverageDeclaration` required an
+  already-`JSON.parse`d object and rejected a string outright with
+  `coverage-declaration/not-an-object`. Following the documentation
+  literally landed a caller directly on finding A above: a
+  `not-an-object` declaration is exactly the "malformed declaration" case,
+  and (before finding A's fix) with every package installed this graded a
+  confident `satisfied`.
+  - Fixed by making `parseCoverageDeclaration` accept **either** shape: an
+    already-parsed value (unchanged, still works) or the raw JSON string a
+    real `fetch(url).then((r) => r.text())` actually returns, which it now
+    `JSON.parse`s internally. Chosen over the documentation-only fix
+    (saying "already-parsed" in the docs) because a raw-content GET
+    naturally hands a caller a string, not a pre-parsed value, and making
+    the function accept what its own designed transport actually produces
+    removes an entire class of caller mistake rather than merely
+    describing it more precisely.
+  - **Fails closed, never throws:** a string that is not valid JSON
+    returns `{ ok: false, findings: [...] }` with a new
+    `coverage-declaration/invalid-json` finding, exactly like any other
+    shape defect -- never an unhandled `SyntaxError`. This is untrusted
+    input from a stranger's repository; a malformed body is data for
+    `coverage.ts` to grade as `declaration-unreadable`, not a program
+    error that crashes a whole fleet run over one repository's bad file.
+  - `README.md`, `cli.ts`'s `USAGE` text, and `coverage-declaration.ts`'s
+    own module header and `parseCoverageDeclaration` doc comment are all
+    updated consistently to state that both shapes are accepted.
+
 ## [0.2.7] - 2026-09-14
 
 ### Changed
