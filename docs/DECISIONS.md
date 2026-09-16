@@ -1606,3 +1606,53 @@ Consistency here is now asserted, not assumed: `preflight-package.mjs` should
 fail a publish whose `LICENSE` holder and `"author"` disagree, or which
 disagrees with the rest of the catalogue. Until that assertion exists, this
 record is the only thing holding the invariant.
+
+**Issue #421's ten unconditional-optional-peer-import rows — measured against
+current `main`, not the issue's own table.** #421 listed ten rows across six
+packages named `auth`, `comms`, `consent`, `controller`, `surface`, `ui`. Three
+of those six — `auth`, `comms`, `consent` — are the pre-#536 donor package
+names; `governance/foundry-supersession-map.json` records their exact
+successors as `@clossys/bouncer`, `@clossys/messenger`, and `@clossys/butler`.
+`surface` and `ui` are decision 10's pre-recut names for `publisher` and
+`designer`. The issue's table therefore describes a repository state that
+predates both the #536 retirement and the `#182` `assertPeerVersion` adapter
+convention `scripts/check-peer-version-assert.mjs` now verifies across six
+`peer-version.ts` copies (`bouncer`, `butler`, `controller`, `designer`,
+`keeper`, `publisher`). A fresh measurement — walking every package's
+`peerDependenciesMeta` optional entries against real `src/` import sites,
+excluding tests — finds:
+
+| package | peer | static import sites (non-test) | guard | verdict |
+| --- | --- | --- | --- | --- |
+| `bouncer` | `@clerk/nextjs` | `providers/clerk/web/client.tsx` | `assertPeerVersion` in `providers/clerk/web/server-routes.tsx` (Node-context sibling, same installed copy) | (c) correctly guarded, confined to `./providers/clerk` |
+| `bouncer` | `react` | `providers/clerk/web/{client.tsx,server-routes.tsx}` | `assertPeerVersion` in `client.tsx` | (c) correctly guarded |
+| `bouncer` | `svix` | `providers/clerk/verify.ts` | `assertPeerVersion` in the same file | (c) correctly guarded |
+| `butler` | `react` | `web/{index.ts,useStandingWants.ts}` | `assertPeerVersion` in `web/index.ts`; `useStandingWants.ts` is reachable only through that barrel (`./web` is its own `exports` subpath — root and `./inbound` never touch `react`) | (c) correctly guarded, confined to `./web` |
+| `controller` | `typescript` | `gates/secret-gates.ts` | `assertPeerVersion` in the same file, behind the isolated `./gates/secrets` subpath since #411/#419 | (c) already fixed |
+| `designer` | `react`, `react-aria-components` | every atom/block/shell/chart/theme barrel (69 / 27 files) | `assertPeerVersion` at each of the five public barrels | (c) correctly guarded — a component library cannot degrade without its render peer, and every entry point that reaches these files is already a rendering entry point |
+| `designer` | `tailwind-merge` | `atoms/internal/cx.ts` | in flight on `claude/designer-optional-peer` (PR #882, issue #749) | out of scope here — do not duplicate that work |
+| `keeper` | `react` | `web/{index.ts,useHeldRecord.ts}` | `assertPeerVersion` in `web/index.ts`; same confined-subpath shape as `butler` | (c) correctly guarded |
+| `messenger` | `resend` | `providers/resend/index.ts` | none — no `internal/peer-version.ts` exists in this package at all | (b) unguarded, not degradable (there is no meaningful "send mail without a mail client" fallback), confined to the honestly-optional `./providers/resend` subpath |
+| `publisher` | `react` | `document/render.ts`, `web/renderWebDocument.ts`, and internal files those two import (`web/internal/webTemplates.ts`, `web/types.ts`, `web/views/*.tsx`) | `assertPeerVersion` in `document/render.ts` and `web/renderWebDocument.ts` | (c) correctly guarded, confined to `./document` and `./web` |
+
+Nine of the ten original rows are already resolved on `main` or in flight on a
+named branch. The one real, currently unguarded gap is `messenger`'s `resend`
+adapter: unlike every sibling adapter (`@clerk/nextjs`, `svix`, `react` in
+five other packages), it has no `assertPeerVersion` call at all, so an
+installed-but-incompatible `resend` fails with whatever the Resend SDK itself
+happens to throw rather than a named, actionable range error. This is not a
+"make it degrade" case — there is no sensible fallback for sending mail
+without a mail client, the same non-degradable shape `controller`'s
+`typescript` and every `react` row above already have — so the fix is a
+guard, the same shape `bouncer`/`butler`/`controller`/`designer`/`keeper`/
+`publisher` already carry, not a lazy-import/degrade rewrite.
+
+That fix was deliberately NOT made in the pull request that added this entry.
+Adding `messenger/src/internal/peer-version.ts` and wiring
+`providers/resend/index.ts` to call it changes `messenger`'s packed `src/`
+surface, which `check-release-readiness.mjs` would then require a version
+bump for, which `check-qualification-record-required.mjs` would in turn
+require a retained qualification record for — and `scripts/
+run-candidate-qualification.mjs` is owner/developer-machine work per #833,
+not something a cloud session can produce. Filed as #886 instead of bundled
+here, tracked for a local session to pick up.
