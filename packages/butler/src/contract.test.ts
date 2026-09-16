@@ -252,10 +252,12 @@ describe("checkConfirmationCompleteness", () => {
     // See `checkDelegationCeiling`'s identically-named test in
     // `packages/bouncer/src/contract.test.ts` for the general shape this
     // pins across every interaction gate that has it (issue #508). This
-    // gate's only indeterminate reason is `no-intents-provided`, which
-    // requires an empty `intents` array, and every finding here is derived
-    // by walking `intents` — so an empty array can never also produce a
-    // finding. There is nothing to order.
+    // gate's only indeterminate reason is `no-intents-provided`, and it
+    // returns `findings: []` before either loop runs. Not every finding here
+    // derives from walking `intents` — the second loop walks `confirmations`
+    // to produce `confirmation-without-intent` — so what makes the mixed
+    // state unreachable is that return shape, not which array is walked.
+    // There is nothing to order.
     const empty = checkConfirmationCompleteness([], [confirmation()], floor);
     expect(empty.reason).toBe("no-intents-provided");
     expect(empty.findings).toHaveLength(0);

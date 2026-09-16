@@ -1659,6 +1659,7 @@ whether the sealed Trio has ever cleared trusted-publisher provenance at all
 trust, and one that genuinely does not care which version cleared it. Not
 every consumer of "has this package published" is asking state 4's question;
 this decision applies the join only where the question is version-exact.
+
 ## 23. Indeterminate-over-violated precedence in the interaction gates — settled as already-correct, gate-by-gate, not as one repository-wide rule
 
 **Status:** measured against [issue #508](https://github.com/clossys/foundry/issues/508)
@@ -1713,14 +1714,19 @@ exit code. #508's own framing — "reports a real finding as could-not-run" —
 describes the exit code and the verdict label, never the findings themselves;
 nothing in this measurement found a run that hid a finding it had.
 
-The mixed case is already pinned by an existing test at both the pure-function
-and the CLI-exit-code layer, in every package where it is reachable:
+The mixed case is already pinned by an existing test at the pure-function
+layer in every gate where it is reachable, and at the CLI-exit-code layer in
+every package where it is:
 
-- `keeper/src/contract.test.ts` / `cli.test.ts` — "reports the indeterminate
-  reason on a mixed set — and still lists the violation it did find" /
-  "exits 2 — not 1 — on a mixed set, and still prints the violation it did
-  find", for all three of `checkAttribution`, `checkVisibility` and
-  `checkDisposal`.
+- `keeper/src/contract.test.ts` — "reports the indeterminate reason on a mixed
+  set — and still lists the violation it did find", for all three of
+  `checkAttribution`, `checkVisibility` and `checkDisposal`. `cli.test.ts`
+  carries the matching exit-code test — "exits 2 — not 1 — on a mixed set, and
+  still prints the violation/drift it did find" — for `checkAttribution` and
+  `checkDisposal`, not for all three: the visibility block's only exit-`2`
+  test is the indeterminate-only case (a single disclosure route at
+  `reach: "unknown"`), so `checkVisibility`'s mixed set is pinned at the
+  contract layer alone.
 - `bouncer/src/contract.test.ts` / `cli.test.ts` — "reports indeterminate over
   violated when both are present, because the finding list is known to be
   incomplete" (plus an order-independence test) for
@@ -1860,12 +1866,55 @@ therefore unavoidable, and given that, `2` is the borrow that overstates least.
 `butler`'s three gates (`checkConfirmationCompleteness`, `checkCurrency`,
 `checkWithdrawalParity`) and two of `giver`'s three (`checkHandoffPlacement`,
 `checkGrounding`) and one of `bouncer`'s three (`checkDelegationCeiling`) have
-no per-item indeterminate finding kind at all. Their only indeterminate
-routes are early "nothing was provided" returns, each gated on an input array
-being empty — and every finding in these gates is derived by walking that
-same array, so an empty array can never also produce a finding. The mixed
-case #508 describes is structurally unreachable in all six, not merely
-untested. Per `docs/LIFECYCLE.md`'s eighth value — "not-applicable, with a
+no per-item indeterminate finding kind at all. What makes the mixed case
+unreachable in all six is the **return shape**: every indeterminate return in
+these gates literally constructs `findings: []`, so an indeterminate reason
+and a finding cannot be carried out of the same call. Most of those returns
+are early "nothing was provided" guards that run before any finding could
+exist; the one that is not — `giver/src/contract.ts:489`'s `no-handoffs-due`,
+which sits after both loops rather than ahead of them, and is gated on
+`placed === 0` rather than on an empty input array — is reachable only past
+the `if (findings.length > 0)` return immediately above it, so it too can be
+taken only with an empty findings list.
+
+It is specifically NOT the case that every finding in these gates derives from
+walking the array its indeterminate return is gated on. Three of the six
+derive at least one finding from the other input array:
+`checkConfirmationCompleteness`'s second loop walks `confirmations`, not
+`intents`, to produce `confirmation-without-intent`
+(`packages/butler/src/contract.ts:331-338`); `checkCurrency`'s
+`no-instructions-provided` route is gated on `instructions` while every one of
+its findings is derived from walking `usages`; and `checkHandoffPlacement`'s
+second loop walks `placements`, not `handoffs`, to produce
+`placement-without-handoff` (`packages/giver/src/contract.ts:475-482`). In
+each, the early return short-circuits before that finding is ever computed
+rather than making it impossible — which is precisely why the guarantee has to
+rest on the return shape and not on which array is walked.
+
+Measured on 2026-09-16 against `butler`'s compiled `dist/cli.js`: the same
+dangling confirmation is silent under the guard and a real, exit-`1` finding
+without it. (The two echoed input-path lines each run prints first are elided.)
+
+```
+$ node dist/cli.js confirmation-completeness intents-empty.json confirmations-ghost.json --floor 0.7
+0 intent(s) checked against 1 confirmation(s), floor 0.7.
+Confirmation completeness: indeterminate (no-intents-provided).
+exit=2
+
+$ node dist/cli.js confirmation-completeness intents-one.json confirmations-ghost.json --floor 0.7
+1 intent(s) checked against 1 confirmation(s), floor 0.7.
+  [confirmation-without-intent] int_ghost — a read-back answers an intent that is not in the set being checked
+Confirmation completeness: violated.
+exit=1
+```
+
+`confirmations-ghost.json` is the same one-element file in both runs;
+`intents-one.json` holds a single `handed-off` intent, which produces no
+finding of its own, so the only finding printed is the one derived from
+`confirmations`. The mixed case #508 describes is still structurally
+unreachable in all six, not merely untested — on the return shape.
+
+Per `docs/LIFECYCLE.md`'s eighth value — "not-applicable, with a
 reason... distinct from 'not yet' and from 'unknown'" — this measurement
 records that fact rather than silently omitting these gates or forcing a
 mixed-case test that could never fail. `bouncer`'s `checkDelegationCeiling`
