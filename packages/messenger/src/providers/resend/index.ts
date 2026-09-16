@@ -8,8 +8,30 @@ import type {
   MessageAdapter,
 } from "../../types.js";
 import { assertValidMessage } from "../../validation.js";
+import { assertPeerVersion } from "../../internal/peer-version.js";
+import { resolveInstalledPeerVersion } from "../../internal/resolve-installed-peer-version.js";
 
+/**
+ * `resend` is this package's one optional peer (see package.json's
+ * `peerDependenciesMeta`) — optional so a consumer can install
+ * `@clossys/messenger` and use the provider-neutral root export without
+ * ever installing it; only this subpath needs it. This is the one module
+ * that imports it, so it's the adapter entry point #886 asks for: an
+ * absent or out-of-range `resend` previously surfaced as whatever the
+ * Resend SDK happened to throw deep inside its own call surface, with
+ * nothing naming a version range as the cause. This file already does
+ * `import { Buffer } from "node:buffer"`, so it is unambiguously a
+ * Node-context module — safe for the `node:module`/`node:fs`-based
+ * `resolveInstalledPeerVersion`. `RESEND_DECLARED_RANGE` must match
+ * package.json's `peerDependencies.resend` exactly —
+ * `public-contract.test.ts` asserts that directly.
+ */
 export const RESEND_DECLARED_RANGE = "^6.19.0";
+assertPeerVersion({
+  peer: "resend",
+  declaredRange: RESEND_DECLARED_RANGE,
+  foundVersion: resolveInstalledPeerVersion("resend", import.meta.url),
+});
 
 const PROVIDER = "resend";
 const IDEMPOTENCY_KEY_MAX_LENGTH = 256;

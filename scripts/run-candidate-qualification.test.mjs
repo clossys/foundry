@@ -85,7 +85,7 @@ test("all 19 publishable packages are exact-source bound to the catalogue and qu
     "@clossys/integrator": "0.6.6",
     "@clossys/keeper": "0.1.4",
     "@clossys/locksmith": "0.2.2",
-    "@clossys/messenger": "0.1.4",
+    "@clossys/messenger": "0.1.5",
     "@clossys/observer": "0.2.7",
     "@clossys/publisher": "0.4.4",
     "@clossys/starter": "0.1.6",

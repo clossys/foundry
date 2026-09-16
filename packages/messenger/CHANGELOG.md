@@ -5,6 +5,22 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.5] - 2026-09-15
+
+### Added
+
+- A named, actionable optional-peer guard for `resend` on
+  `@clossys/messenger/providers/resend`. That subpath is the package's one
+  import site for `resend`, and an absent or out-of-range install used to
+  surface only as whatever the Resend SDK itself happened to throw deep
+  inside its own call surface. It now reports the peer, the version
+  actually found, and the range this package declares. A version string
+  the guard cannot parse is reported as indeterminate — a single warning,
+  never a thrown error — so an unreadable version never crashes a build.
+  The provider-neutral root export is unchanged and still needs no
+  `resend` install at all.
+
+
 ## [0.1.4] - 2026-09-02
 
 ### Fixed

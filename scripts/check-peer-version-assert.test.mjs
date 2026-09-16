@@ -184,13 +184,20 @@ test("EXIT_CODES follow the repo's satisfied=0 / violated=1 / indeterminate=2 co
 
 // --- Against the REAL repository tree: locks in the state this gate found ---
 
-test("REAL TREE (no exceptions): reports the actual current divergence — butler and keeper violate canonical, controller/designer/publisher agree", async () => {
+test("REAL TREE (no exceptions): reports the actual current divergence — butler and keeper violate canonical, controller/designer/messenger/publisher agree", async () => {
   // exceptions: [] — this asserts what the RAW comparison finds, independent of the acknowledged-
   // exception mechanism, so this test stays a true record of the underlying divergence even after
   // #847 lands and ACKNOWLEDGED_EXCEPTIONS is emptied. See "REAL ROSTER" below for the gate's
   // actual default-configuration behaviour (satisfied, via the acknowledged exceptions).
   const result = await run({ repoRoot: REPO_ROOT, exceptions: [] });
-  assert.equal(result.files.length, 6, `expected 6 real peer-version.ts files (nine minus the three retired in #536), found ${result.files.length}`);
+  // Nine at #518, minus the three retired in #536, plus messenger's own
+  // copy added in #886 — so seven. This count is deliberately hardcoded
+  // rather than derived: #886's plan read the gate's tree-walking
+  // discovery as meaning there was "no roster to edit" anywhere, which is
+  // true of the gate SCRIPT and false of this line. A new copy landing
+  // without anyone noticing is precisely what this assertion is for, so
+  // it must be updated deliberately — that friction is the feature.
+  assert.equal(result.files.length, 7, `expected 7 real peer-version.ts files (nine minus the three retired in #536, plus messenger's added in #886), found ${result.files.length}`);
   assert.equal(result.verdict, "violated");
 
   const byFile = Object.fromEntries(result.files.map((f) => [f.file, f.verdict]));
@@ -198,6 +205,7 @@ test("REAL TREE (no exceptions): reports the actual current divergence — butle
   assert.equal(byFile["packages/keeper/src/web/internal/peer-version.ts"], "violated");
   assert.equal(byFile["packages/controller/src/internal/peer-version.ts"], "satisfied");
   assert.equal(byFile["packages/designer/src/internal/peer-version.ts"], "satisfied");
+  assert.equal(byFile["packages/messenger/src/internal/peer-version.ts"], "satisfied");
   assert.equal(byFile["packages/publisher/src/internal/peer-version.ts"], "satisfied");
 });
 
