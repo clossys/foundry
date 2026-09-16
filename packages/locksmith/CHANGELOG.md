@@ -5,6 +5,28 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.4] - 2026-09-16
+
+### Note
+
+- **0.2.3 was never published; this release supersedes it without repeating
+  its work.** 0.2.3 (below) carried the four audit-pass-3 fixes for issue
+  #897, and its qualification record
+  (`governance/release-qualifications/clossys-locksmith-0.2.3.json`) was
+  generated and retained. Before publication, this repository's
+  contamination-class gate caught a dangling reference, in the 0.2.3
+  changelog entry below, to a repository policy document that does not
+  ship inside this package -- a citation only, no path string an outside
+  reader could act on, but not resolvable from this package directory
+  either. Fixing that reference is itself a change to packed content
+  (`CHANGELOG.md` ships in the tarball), which moved the package tree the
+  0.2.3 record was generated against. Qualification records are
+  immutable -- each file path is introduced exactly once and is never
+  corrected in place -- so the 0.2.3 record cannot be updated to match, and
+  0.2.3 cannot be published. This release carries the same already-fixed
+  source unchanged (the entry below no longer names that document) and
+  exists solely to obtain a fresh, never-before-used record path.
+
 ## [0.2.3] - 2026-09-16
 
 ### Fixed
@@ -38,12 +60,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   field; existing code that reads `p95AgeDays` / `unownedKeyCount` is
   unaffected, and any code that already spreads or serializes the full
   object gains one more key). The alternative -- narrowing the README's
-  claim without changing the metric -- was rejected: `docs/LIFECYCLE.md`'s
-  eighth value is explicit that "a thing that could not be observed must
-  not grade identically to a thing observed and found fine," and this
-  package's own `RotationState` already keeps `unverifiable` distinct from
-  every other state for exactly that reason; the metric should not
-  reintroduce the collapse the state union was designed to prevent.
+  claim without changing the metric -- was rejected: this repository's
+  package-lifecycle policy is explicit that "a thing that could not be
+  observed must not grade identically to a thing observed and found fine,"
+  and this package's own `RotationState` already keeps `unverifiable`
+  distinct from every other state for exactly that reason; the metric
+  should not reintroduce the collapse the state union was designed to
+  prevent.
 - **`dist/infisical/types.d.ts` referenced the ambient `NodeJS` namespace
   (`InfisicalRunOptions.env: NodeJS.ProcessEnv`,
   `InfisicalRunResult.signal: NodeJS.Signals`) despite `@types/node` being
