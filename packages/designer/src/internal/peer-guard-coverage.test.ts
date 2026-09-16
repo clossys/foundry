@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
@@ -53,7 +53,71 @@ function fileCallsAssertPeerVersionFor(relativePath: string, peer: string): bool
   return code.includes("assertPeerVersion(") && code.includes(`peer: "${peer}"`);
 }
 
+/**
+ * #903 (designer's half): every `<dir>/server.ts` is its own `exports`
+ * subpath a consumer can import without ever loading its sibling
+ * `<dir>/index.ts` — so a guard wired only into `index.ts` covers nothing for
+ * a consumer who only ever resolves `@clossys/designer/charts/server`.
+ * The barrel set below is DERIVED from `package.json#exports` (never a
+ * hand-written array that could drift from it, same reasoning as
+ * `ALL_SOURCE_FILES` above) and checked against BUILT `dist/` — what a
+ * consumer actually resolves — rather than `src/`, so a source-only guard
+ * that fails to survive the build is caught here too.
+ */
+const packageRoot = join(packageSrcRoot, "..");
+const exportsMap = (JSON.parse(readFileSync(join(packageRoot, "package.json"), "utf8")) as { exports: Record<string, { import?: string }> }).exports;
+
+const COMPONENT_LAYER_DIRS = ["atoms", "blocks", "charts", "shell", "theme"] as const;
+
+const COMPONENT_BARRELS = Object.keys(exportsMap)
+  .filter((subpath) => COMPONENT_LAYER_DIRS.some((dir) => subpath === `./${dir}` || subpath === `./${dir}/server`))
+  .map((subpath) => {
+    const distImport = exportsMap[subpath]?.import;
+    if (!distImport) throw new Error(`${subpath} has no "import" condition in package.json#exports`);
+    return { subpath, distPath: distImport.replace(/^\.\//, "") };
+  });
+
+function readDistFile(distPath: string): string {
+  const full = join(packageRoot, distPath);
+  if (!existsSync(full)) {
+    throw new Error(`${distPath} does not exist — run "npm run build" in packages/designer before this test (dist/ is gitignored and must be fresh, same precondition as check:contrast and check:package-governance)`);
+  }
+  return readFileSync(full, "utf8");
+}
+
 describe("peer guard coverage (#182)", () => {
+  it("covers every component-layer exports subpath, derived from package.json — not a hand-written barrel list", () => {
+    // Regression guard for #903: this must be 10 (5 index.ts + 5
+    // server.ts — one per component-layer dir) for designer today. Of
+    // those 10, 9 actually call assertPeerVersion (theme/server.ts is
+    // the documented exception the next test below confirms). A number
+    // changes only when package.json#exports itself changes, which is
+    // the point — the count is a consequence of the derivation, not an
+    // assertion pinned independently of it.
+    expect(COMPONENT_BARRELS.length).toBe(10);
+  });
+
+  it("every component-layer barrel that imports react in its BUILT dist output guards it, except a documented exception", () => {
+    for (const { subpath, distPath } of COMPONENT_BARRELS) {
+      const code = readDistFile(distPath);
+      const importsReact = /from\s+"react"/.test(code);
+
+      if (!importsReact) {
+        // theme/server is the one barrel with no runtime react import at
+        // all (getThemeInitScript has no react dependency — see
+        // theme/server.ts's own header) — nothing to guard, and its
+        // absence must stay documented there rather than silently
+        // vanishing from this test's coverage.
+        expect(subpath, `${subpath} has no "react" import in dist and must document why (see theme/server.ts's header) if that's intentional`).toBe("./theme/server");
+        const source = readFileSync(join(packageSrcRoot, distPath.replace(/^dist\//, "").replace(/\.js$/, ".ts")), "utf8");
+        expect(source, `${subpath}'s source must document why it has no react peer guard`).toMatch(/no `?react`? peer guard/i);
+        continue;
+      }
+
+      expect(code.includes("assertPeerVersion("), `${subpath} (${distPath}) imports react but never calls assertPeerVersion`).toBe(true);
+      expect(code.includes('peer: "react"'), `${subpath} (${distPath}) imports react but doesn't guard peer "react"`).toBe(true);
+    }
+  });
   it("every file importing react-aria-components is a component subpath barrel that guards it", () => {
     const importers = filesImporting("react-aria-components");
     expect(importers.length).toBeGreaterThan(0);
@@ -72,13 +136,6 @@ describe("peer guard coverage (#182)", () => {
     for (const importer of importers) {
       const coveredByABarrel = guardedBarrels.some((barrel) => importer.startsWith(barrel.replace("/index.ts", "/")) || importer === barrel);
       expect(coveredByABarrel, `${importer} imports react-aria-components outside a guarded barrel's subtree`).toBe(true);
-    }
-  });
-
-  it("every component subpath barrel that imports react directly guards it", () => {
-    const guardedBarrels = ["atoms/index.ts", "blocks/index.ts", "shell/index.ts", "charts/index.ts", "theme/index.ts"];
-    for (const barrel of guardedBarrels) {
-      expect(fileCallsAssertPeerVersionFor(barrel, "react")).toBe(true);
     }
   });
 
