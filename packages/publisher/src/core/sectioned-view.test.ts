@@ -392,6 +392,20 @@ describe("SectionedViewDocument gap 2 and gap 7 relaxations", () => {
     expect(validateSectionedViewDocument(neither as unknown as SectionedViewDocument).map((entry) => entry.rule)).toContain("sectioned-view-status-shape");
   });
 
+  // The renderer decides grouped-vs-flat with Object.hasOwn, which is true for a
+  // key whose value is undefined. Optional chaining sets the VALUE to undefined
+  // but still creates the KEY, so a resolver that always writes both keys makes
+  // every status-list section fail the renderer's exactly-one check. Issue #890.
+  it("resolves a status-list section carrying exactly one of groups or items as an own key", () => {
+    const grouped = resolveSectionedViewDocument(document, resolver).sections[4];
+    expect(Object.hasOwn(grouped, "groups")).toBe(true);
+    expect(Object.hasOwn(grouped, "items")).toBe(false);
+
+    const flat = resolveSectionedViewDocument(flatStatus, resolver).sections[1];
+    expect(Object.hasOwn(flat, "items")).toBe(true);
+    expect(Object.hasOwn(flat, "groups")).toBe(false);
+  });
+
   it("validates a flat item's shape and exactly-one-of-state-or-disposition the same way a grouped item is validated", () => {
     const badShape = { ...flatStatus, sections: [flatStatus.sections[0], { ...flatStatus.sections[1], items: [{ id: "x" }] }] };
     const bothAxes = { ...flatStatus, sections: [flatStatus.sections[0], { ...flatStatus.sections[1], items: [{ id: "x", label: ref("acme.status.item.label"), state: "available" as const, disposition: "not-offered" as const }] }] };
