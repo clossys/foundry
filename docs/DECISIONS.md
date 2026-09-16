@@ -1741,6 +1741,120 @@ tests to green. The control that was reverted and re-passed is the same
 discipline `docs/LIFECYCLE.md`'s `staged` evidence already requires of a
 gate's own violation record.
 
+### #508's third option, measured: half of it already ships, and the other half is declined
+
+#508 does not only ask "`1` or `2`". Near the end it proposes a way out of the
+choice altogether, and this is the strongest form of the argument against what
+ships:
+
+> A third option exists and may be the real answer: `1` when any confirmed
+> violation is present, and report the unverifiable count as a distinct,
+> always-printed line, so the two facts are never in competition for one exit
+> code.
+
+That is two proposals, not one — an exit-code change and a reporting change —
+and they get different answers.
+
+**The reporting half already ships.** Measured on 2026-09-15 by running each
+package's compiled `dist/cli.js` against constructed inputs holding a confirmed
+violation and an unverifiable item at the same time, not by reading the code.
+`bouncer` prints the count the third option asks for, literally, on its own
+line, on every path — including a clean run, where it prints `0`:
+
+```
+2 live grant(s) checked against 2 provider observation(s).
+Unreconciled grant surface: 1. Grants nothing could be learned about: 1.
+  [revoked-upstream] grant-1 (actor actor-1, subject subject-1, provider provider-a) — the provider of record reports this authority revoked, and it is still live here
+Authority reconciliation: indeterminate (provider-unreachable).
+exit=2
+```
+
+`keeper` and `giver` report the same fact per item rather than as a count: each
+unverifiable item gets its own finding line, and the reason gets the verdict
+line.
+
+```
+  [held-without-source-event] item_bad (subject sub_1) — held since 2026-08-01T00:00:00.000Z and names no source event (imported)
+  [source-unverifiable] item_unknown (subject sub_1) — the store could not say where this came from (ledger timeout)
+Attribution: indeterminate (attribution-unverifiable).
+exit=2
+```
+
+```
+  [delivery-failed] obl-1 (1 attempt(s)) — 1 send(s) recorded against this obligation and every one of them failed: an attempt is not a delivery
+  [delivery-unprovable] obl-2 (1 attempt(s)) — 1 send(s) recorded, none observed to have arrived, and the window closed at 2026-08-22T11:00:00.000Z
+Obligation discharge: indeterminate (discharge-unprovable).
+exit=2
+```
+
+`butler` has no mixed case to print at all (see the next section). It prints
+the verdict distinctly on each single-state path it does have —
+`Confirmation completeness: violated.` at exit `1`,
+`Confirmation completeness: indeterminate (no-intents-provided).` at exit `2`.
+
+So "the two facts are never in competition" is already true of the text output
+in all four. What is NOT true is that a machine consumer can read them: none of
+the four ships a `--format json` mode, so a caller keying on the exit code
+alone — the only part of a gate's output CI branches on — still loses the
+findings. That is a real gap. It is [#753](https://github.com/clossys/foundry/issues/753)
+point 2, fixed in `writer` and unfixed here, and it is filed as
+[#899](https://github.com/clossys/foundry/issues/899) rather than settled by
+this entry, because closing it means editing four published packages' shipped
+`src/`.
+
+**The exit-code half is declined, because `1` claims more than the run
+established.** Exit `1` is a completeness claim — "this gate checked, and here
+is what it found." When part of the input could not be compared at all, the
+violations found are a lower bound, not a set: there may be more inside the
+portion nobody could read. Exit `2` claims less. A mixed run is genuinely a
+fourth state, and three values cannot express it exactly; the only question is
+which of the three absorbs it, and the answer is the one that does not overstate
+what the run established. `bouncer`'s doc comment, quoted above, makes this
+argument in its own words — a caller handed "1 — here are the findings"
+reasonably reads it as "and there are no others."
+
+**This repository has already split this exact proposal once, and answered it
+the same way.** [#753](https://github.com/clossys/foundry/issues/753) is
+`writer-check` producing 292 real findings alongside one unclassifiable JSX
+construct and exiting `2`, reported by a consumer running it against a real
+application tree. It separates the two halves itself:
+
+> **2. The indeterminate fold is correct, and it still deserves a better
+> report.** Exit 2 over findings is the right contract: one unreadable input
+> must not let a scan report itself complete... No change requested to the exit
+> code. But the 292 findings that WERE produced are currently only discoverable
+> in the human-readable output.
+
+`writer` kept the exit code and added the structured report —
+`packages/writer/src/cli.ts`'s `CopyTraceabilityReport`, whose own doc comment
+records that "a per-item verdict ... is a DIFFERENT question from the run's one
+overall verdict." The interaction gates sit at the same settlement, minus the
+structured half, which is what #899 is for.
+
+**On #450 and #491, which #508 cites against what ships.** Both were read in
+full, and neither says what #508 uses it for. #450 relabelled a benign
+`not-published` result from `FIND ` to `SKIP ` — it moved a non-finding OUT of
+the findings bucket, which is the opposite direction from routing a
+partly-blind run INTO it. #491 resolved a `404` from a registry that had
+answered to `{ kind: "unreachable" }` — a definite claim about a cause ("a
+transport failure, a server error, a malformed body") that had not been
+established — and its fix added an explicit `indeterminate` arm and routed the
+case there. Its own diagnosis, that the vocabulary "had no word for
+undecidable, so the nearest neighbour was borrowed," is an argument for naming
+an undecidable case honestly, and its remedy moved a case TOWARD indeterminate,
+not away from it.
+
+The shared principle #508 quotes is real and is accepted here: a verdict that
+borrows its nearest neighbour's name misroutes the reader. It simply does not
+decide this question. In #450 and #491 exactly one thing was true and was
+mislabelled; a mixed run has two things true at once and three exit codes to
+say them in. Where the principle does reach is the honest limit of this
+argument: #491's remedy for a case with no word of its own was to ADD one, and
+the exit-code vocabulary cannot be extended that way. `CONTRIBUTING.md`'s "Gate
+CLIs exit `0` clean / `1` findings / `2` could not run" is fixed at three, and
+a fourth code would break every caller's branch on it. Some borrowing is
+therefore unavoidable, and given that, `2` is the borrow that overstates least.
+
 ### Not every gate has the mixed case, and that is a fact, not a gap
 
 `butler`'s three gates (`checkConfirmationCompleteness`, `checkCurrency`,
@@ -1770,6 +1884,27 @@ against, so letting indeterminate win would make the `"violated"` branch
 permanently unreachable in production. `copy-gate.ts`'s own traceability
 check, in the same package, keeps indeterminate-wins for the identical
 reason `bouncer` states — for it, an unchecked construct is genuinely rare.
+
+**The general rule, stated so a fifth gate does not have to rediscover it:
+dominance belongs to whichever verdict is EXCEPTIONAL in that gate's own input
+distribution.** A verdict that is the norm carries no information — #407
+measured `addressability` at 5 violations against 768 unclassified positions on
+one real tree, so letting indeterminate dominate there makes the `"violated"`
+branch unreachable outside a fixture and leaves the gate one usable state. A
+verdict that is exceptional carries a great deal, and must dominate: a provider
+that could not be reached, or a store that could not say where an item came
+from, is rare in `bouncer` and `keeper`, so on the run where it happens it is
+the most important thing about the run. That is why two packages answer the
+identically-shaped question opposite ways and both are right. Note what the
+rule is NOT about: it is a claim about how often each verdict occurs in that
+gate's real input, not about which of the two facts is more severe — severity
+would pick the same answer everywhere and is exactly the reasoning that would
+have broken `addressability`. `copy-gate.ts`, cited above, is the control on
+this reading — same package, opposite distribution, opposite precedence, and
+the precedence is a single line: `packages/writer/src/cli.ts:966`,
+`result.unchecked.length > 0 ? 2 : result.findings.length > 0 ? 1 : 0`. A gate
+adopting either precedence should record which of the two distributions it is
+in.
 
 Both are correct for their own gate. A blanket "indeterminate always wins" or
 "violated always wins" rule would have been wrong for at least one of the two
