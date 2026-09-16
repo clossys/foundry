@@ -50,6 +50,16 @@ name: Deprecate registry version
 # repository's no-stored-credential posture; see this workflow's PR and
 # docs/PUBLISHING.md for the tradeoff.
 #
+# IT MUST BE AN ENVIRONMENT SECRET ON `npm-publish`, NOT A REPOSITORY SECRET.
+# A repository secret resolves in every workflow and every job in the
+# repository, so it is readable by any job that simply omits `environment:` —
+# this repository already relies on that for PUBLIC_SAFETY_DENYLIST_B64, which
+# ci.yml reads on `pull_request` with no environment declared. Stored that way,
+# a same-repo PR branch could add a job and read this token with no reviewer
+# approval, which is exactly the protection the `environment:` line below is
+# there to obtain. Only an environment secret is gated by that environment's
+# protection rules.
+#
 # UNTIL THAT SECRET EXISTS, APPLY MODE FAILS CLOSED AND LOUDLY. It does not
 # run, do nothing, and report success — the preflight below and the script's
 # own guard both refuse before any registry call, because a deprecation run
@@ -83,6 +93,13 @@ on:
         description: Resolve and report only — no registry mutation, no credential used
         required: true
         default: true
+        type: boolean
+      allow_dist_tagged:
+        description: >-
+          Permit a notice on a version that currently holds a dist-tag (e.g.
+          latest). Required for '*', which resolves to every published version.
+        required: false
+        default: false
         type: boolean
 
 # Deliberately no `id-token: write` (see header) and no `packages: write`:
@@ -155,19 +172,45 @@ jobs:
             exit 1
           fi
 
+      # Two steps, not one with a conditional token, because the dry-run path
+      # PRINTS "no credential was used". Handing it the secret and relying on
+      # the script not to need it would make that line false the moment the
+      # secret exists: setup-node's .npmrc would attach the token to the
+      # dry-run's own packument read. The credential is absent from this step's
+      # environment entirely, and `env -u` (this repository's existing idiom,
+      # see public-npm-aggregate-canary-v2.yml) strips anything a runner or
+      # action may have set, so the claim is structural rather than trusted.
+      - name: Resolve and report the exact notice (dry run, no credential)
+        if: ${{ inputs.dry_run }}
+        env:
+          PACKAGE: ${{ inputs.package }}
+          VERSIONS: ${{ inputs.versions }}
+          MESSAGE: ${{ inputs.message }}
+          ALLOW_DIST_TAGGED: ${{ inputs.allow_dist_tagged }}
+        run: |
+          env -u NODE_AUTH_TOKEN -u NPM_TOKEN -u GH_PACKAGES_TOKEN -u GITHUB_TOKEN -u GH_TOKEN \
+            node scripts/deprecate-registry-version.mjs \
+              --package "$PACKAGE" \
+              --versions "$VERSIONS" \
+              --message "$MESSAGE" \
+              --mode dry-run \
+              --allow-dist-tagged "$ALLOW_DIST_TAGGED"
+
       - name: Resolve, apply, and verify the exact notice
+        if: ${{ !inputs.dry_run }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_DEPRECATE_TOKEN }}
           PACKAGE: ${{ inputs.package }}
           VERSIONS: ${{ inputs.versions }}
           MESSAGE: ${{ inputs.message }}
-          MODE: ${{ inputs.dry_run && 'dry-run' || 'apply' }}
+          ALLOW_DIST_TAGGED: ${{ inputs.allow_dist_tagged }}
         run: |
           node scripts/deprecate-registry-version.mjs \
             --package "$PACKAGE" \
             --versions "$VERSIONS" \
             --message "$MESSAGE" \
-            --mode "$MODE"
+            --mode apply \
+            --allow-dist-tagged "$ALLOW_DIST_TAGGED"
 
       - name: Redact denylist
         if: always()

@@ -6,8 +6,19 @@
 //     --package <@scope/name> --versions <spec> --message <text> --mode dry-run|apply
 //
 // Exit 0 = the intended notice is present on every exact version, confirmed by
-// an anonymous read. Exit 1 = a concrete mismatch. Exit 2 = an input or a
-// registry answer this script could not establish; uncertainty never passes.
+// an anonymous read. Exit 1 = a concrete mismatch: the packument was read and
+// it disagrees with what was asked for. Exit 2 = an input or a registry answer
+// this script could not establish; uncertainty never passes.
+//
+// Those last two are kept apart on purpose — see verifyDeprecationState. An
+// exit code the code cannot actually reach is a stated contract with nothing
+// behind it, which is the defect class this repository keeps finding (#914),
+// so "a mismatch fails" has to be a path, not a sentence in a header.
+//
+// A version carrying a dist-tag needs `--allow-dist-tagged true`. That guard
+// exists because `--versions '*'` resolves to EVERY published version,
+// `latest` included, without the operator ever naming it; see
+// assertDistTagOptIn for why the gate keys on blast radius rather than count.
 //
 // WHY THIS IS NOT scripts/deprecate-legacy-packages.mjs
 // -----------------------------------------------------
@@ -103,13 +114,13 @@ const DEL_CODE_POINT = 127;
 const FIRST_PRINTABLE_CODE_POINT = 32;
 
 const usage =
-  "Usage: --package <@scope/name> --versions <spec> --message <text> --mode dry-run|apply";
+  "Usage: --package <@scope/name> --versions <spec> --message <text> --mode dry-run|apply [--allow-dist-tagged true]";
 
 /** Exit 2 — an input or registry answer this script refuses to guess at. */
 export class IndeterminateError extends Error {}
 
 export function argsFrom(argv) {
-  const allowed = { package: true, versions: true, message: true, mode: true };
+  const allowed = { package: true, versions: true, message: true, mode: true, "allow-dist-tagged": true };
   const result = {};
   for (let index = 2; index < argv.length; index += 2) {
     const key = argv[index]?.slice(2);
@@ -122,8 +133,13 @@ export function argsFrom(argv) {
     }
     result[key] = value;
   }
-  if (Object.keys(result).length !== 4) throw new IndeterminateError(usage);
+  for (const required of ["package", "versions", "message", "mode"]) {
+    if (result[required] === undefined) throw new IndeterminateError(usage);
+  }
   if (!MODES.has(result.mode)) throw new IndeterminateError(`--mode must be one of: ${[...MODES].join(", ")}`);
+  if (result["allow-dist-tagged"] !== undefined && !["true", "false"].includes(result["allow-dist-tagged"])) {
+    throw new IndeterminateError("--allow-dist-tagged must be true or false");
+  }
   return result;
 }
 
@@ -257,6 +273,29 @@ export function distTagsOver({ document, versions }) {
 }
 
 /**
+ * Refuse to notice a dist-tagged version unless that was asked for explicitly.
+ *
+ * The advisory warning this replaces was the wrong shape. A notice on the
+ * version behind `latest` is what EVERY default `npm install` prints, which is
+ * a categorically larger blast radius than deprecating a superseded version —
+ * and `--versions '*'` reaches it without the operator ever naming it, because
+ * `*` resolves to every published version including whichever holds the tag.
+ *
+ * This is not a count limit. Deprecating fifty superseded versions is a normal,
+ * low-risk bulk operation and stays unguarded; deprecating the one version new
+ * consumers actually get is the decision worth making deliberately. So the gate
+ * keys on the blast radius, not the size, and the opt-in must name itself.
+ */
+export function assertDistTagOptIn({ tagged, allowDistTagged, packageName }) {
+  if (tagged.length === 0 || allowDistTagged) return;
+  const described = tagged.map(({ tag, version }) => `${packageName}@${version} holds "${tag}"`).join("; ");
+  throw new IndeterminateError(
+    `refusing to write a notice onto a dist-tagged version without an explicit opt-in: ${described}. ` +
+      "A notice there is what every default install prints. Re-dispatch with allow_dist_tagged enabled if that is genuinely intended.",
+  );
+}
+
+/**
  * Compare observed deprecation state against what was asked for.
  *
  * `--message ""` clears a notice, so the assertion inverts: an empty message
@@ -288,8 +327,21 @@ function sleep(ms) {
  * claim worth proving — the claim is that an ordinary installer sees it. The
  * registry can acknowledge the PUT before its public edge serves the change,
  * so this reuses the same bounded visibility window post-publish verification
- * uses. Running out of that window is INDETERMINATE, never a failure: the
- * write already happened and is not disputed by not yet being readable.
+ * uses.
+ *
+ * WHAT THE CLOSED WINDOW MEANS DEPENDS ON THE LAST OBSERVATION, and the two
+ * outcomes are deliberately not folded together (the same distinction
+ * verify-post-publish-public-npm-artifact.mjs draws for published bytes):
+ *
+ *   unreadable -> INDETERMINATE. We never got a packument to judge. The write
+ *                 already happened and is not disputed by not yet being
+ *                 readable.
+ *   mismatch   -> a CONCRETE FINDING. We read the packument, repeatedly, and
+ *                 it disagrees with what was asked for. That is a fact about
+ *                 a document we DID observe, not an absence of evidence.
+ *
+ * Retrying THROUGH a mismatch is still right: a stale edge legitimately serves
+ * the old notice for a while. Only the final observation decides the verdict.
  */
 export async function verifyDeprecationState({
   registry,
@@ -312,6 +364,7 @@ export async function verifyDeprecationState({
     if (mismatches.length === 0) return { kind: "verified", versions };
     last = { kind: "mismatch", mismatches };
   }
+  if (last?.kind === "mismatch") return { kind: "mismatch", mismatches: last.mismatches };
   return { kind: "indeterminate", detail: last };
 }
 
@@ -365,6 +418,7 @@ export async function deprecateRegistryVersion({
   fetchImpl = fetch,
   log = console.log,
   identity = undefined,
+  allowDistTagged = false,
   npmRun = runNpmDeprecate,
   delays = undefined,
 } = {}) {
@@ -396,9 +450,11 @@ export async function deprecateRegistryVersion({
     const current = before.document.versions[version]?.deprecated;
     log(`  - ${packageName}@${version}${current === undefined ? "" : ` (already deprecated: ${JSON.stringify(current)})`}`);
   }
-  for (const { tag, version } of distTagsOver({ document: before.document, versions })) {
+  const tagged = distTagsOver({ document: before.document, versions });
+  for (const { tag, version } of tagged) {
     log(`  ! ${packageName}@${version} is currently the "${tag}" dist-tag — a notice here is what every default install prints`);
   }
+  assertDistTagOptIn({ tagged, allowDistTagged, packageName });
 
   if (mode === "dry-run") {
     log("dry-run: no registry mutation attempted, and no credential was used. Re-dispatch with dry_run disabled to apply.");
@@ -423,6 +479,13 @@ export async function deprecateRegistryVersion({
     log(`verified: the anonymous packument shows the intended state on every targeted version of ${packageName}`);
     return { kind: "verified", versions };
   }
+  // A stable mismatch is a real finding about a document we read, so it fails
+  // (exit 1) rather than folding into "could not establish" (exit 2).
+  if (verified.kind === "mismatch") {
+    throw new Error(
+      `the registry write was accepted but the anonymous packument still disagrees with the intended state: ${JSON.stringify(verified.mismatches)}`,
+    );
+  }
   throw new IndeterminateError(
     `the registry write was accepted but anonymous verification did not settle within the observation window: ${JSON.stringify(verified.detail)}. ` +
       "This is indeterminate, not a failed write — re-read the packument before re-dispatching.",
@@ -442,6 +505,7 @@ if (process.argv[1] === new URL(import.meta.url).pathname) {
     spec: args.versions,
     message: args.message,
     mode: args.mode,
+    allowDistTagged: args["allow-dist-tagged"] === "true",
   }).catch((error) => {
     console.error(`deprecate-registry-version: ${error.message}`);
     process.exit(error instanceof IndeterminateError ? 2 : 1);

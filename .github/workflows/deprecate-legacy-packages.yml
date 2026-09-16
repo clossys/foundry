@@ -38,9 +38,14 @@ name: Deprecate legacy packages
 # So this workflow, like `deprecate-registry-version.yml`, needs a stored npm
 # granular token with write access to the scope.
 #
+# It must be an ENVIRONMENT secret on `npm-publish`, not a repository secret:
+# a repository secret resolves in every job in the repository, including one
+# that omits `environment:` and therefore faces no reviewer gate at all. Only
+# an environment secret is bound by that environment's protection rules.
+#
 # UNTIL `NPM_DEPRECATE_TOKEN` EXISTS, APPLY MODE FAILS CLOSED AND SAYS SO.
-# It is not left looking operational. Dry-run mode reports the derived plan and
-# needs no credential.
+# It is not left looking operational. Dry-run mode reports the derived plan,
+# needs no credential, and is not given one.
 #
 # Registry deprecation of a retired name is a consumer-facing lifecycle signal
 # and is deliberately manual-only.
@@ -125,11 +130,21 @@ jobs:
             exit 1
           fi
 
+      # Same split as deprecate-registry-version.yml: the reporting mode is not
+      # handed a credential it does not need, so "dry-run used no credential"
+      # stays a structural fact rather than a claim about what the script does
+      # with a token it was given.
+      - name: Report the derived plan (dry run, no credential)
+        if: ${{ inputs.mode == 'dry-run' }}
+        run: |
+          env -u NODE_AUTH_TOKEN -u NPM_TOKEN -u GH_PACKAGES_TOKEN -u GITHUB_TOKEN -u GH_TOKEN \
+            node scripts/deprecate-legacy-packages.mjs --mode=dry-run
+
       - name: Apply and verify fixed registry notices
+        if: ${{ inputs.mode == 'apply' }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_DEPRECATE_TOKEN }}
-          MODE: ${{ inputs.mode }}
-        run: node scripts/deprecate-legacy-packages.mjs --mode="$MODE"
+        run: node scripts/deprecate-legacy-packages.mjs --mode=apply
 
       - name: Redact denylist
         if: always()

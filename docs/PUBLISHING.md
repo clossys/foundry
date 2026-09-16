@@ -762,7 +762,10 @@ Two properties matter to anyone reviewing a dispatch:
   exercised for real rather than only reasoned about. The notice is still
   public the moment it lands, and clearing it later does not un-print it for
   anyone who installed in between.
-* **It needs a stored credential, and OIDC cannot supply one.** npm documents
+* **It needs a stored credential, and OIDC cannot supply one.** The token lives
+  as an environment secret on the protected `npm-publish` environment, never as
+  a repository secret — see the prerequisites table below for why that
+  distinction is what makes the reviewer gate real. npm documents
   OIDC authentication as supporting `npm publish` and `npm stage publish`
   only; in the npm CLI the OIDC exchange (`lib/utils/oidc.js`) is required from
   `lib/commands/publish.js` alone, and `npm deprecate` authenticates against an
@@ -826,6 +829,6 @@ for the capability and wiring ledger.
 | --- | --- | --- |
 | Denylist | `~/.config/public-safety/denylist-foundry.json` locally; `PUBLIC_SAFETY_DENYLIST_B64` repository secret in CI | Never committed here — it names exactly what must not be public. Specific to this repository — never reuse a denylist file written for a different project. |
 | W1E publish trust | Outside the W1D tree | Trusted publishing and the protected `npm-publish` path have proved the current Trio releases. Value-free provider evidence confirms each package-level token-disallow setting. No publish token or value is recorded here. |
-| Registry deprecation token | `NPM_DEPRECATE_TOKEN` repository secret, reachable only from the protected `npm-publish` environment | Required ONLY by the two manual deprecation workflows. npm's OIDC trusted-publishing exchange authorizes `npm publish` and `npm stage publish` only and cannot authorize `npm deprecate`, so those workflows have no credential-free path and publish.yml's posture is unchanged. Until the secret exists, apply mode fails closed by name rather than reporting a run that mutated nothing; dry-run needs no credential. No token value is recorded here. |
+| Registry deprecation token | `NPM_DEPRECATE_TOKEN` **environment** secret on the protected `npm-publish` environment — NOT a repository secret | Required ONLY by the two manual deprecation workflows. npm's OIDC trusted-publishing exchange authorizes `npm publish` and `npm stage publish` only and cannot authorize `npm deprecate`, so those workflows have no credential-free path and publish.yml's posture is unchanged. The distinction is load-bearing, not pedantic: a repository secret resolves in every workflow and job here, so any job that simply omits `environment:` can read it with no reviewer approval — this repository already depends on that behaviour for `PUBLIC_SAFETY_DENYLIST_B64`, which `ci.yml` reads on `pull_request` with no environment declared. Stored as a repository secret, a same-repo PR branch could read this token and defeat the very `npm-publish` reviewer gate the deprecation workflows rely on. Only an environment secret is bound by that environment's protection rules. Until it exists, apply mode fails closed by name rather than reporting a run that mutated nothing; dry-run needs no credential and is not given one. No token value is recorded here. |
 | Public npm consumer read | None | Current `@clossys` reads are anonymous. A consumer token or private-registry mapping is neither required nor supported. |
 | Predecessor GitHub Packages credentials | Historical consumer environments only | They explain immutable `@vespeneventures` evidence and must not be copied into current `@clossys` instructions or used as a fallback lane. |

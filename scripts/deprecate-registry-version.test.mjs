@@ -5,6 +5,7 @@ import {
   IndeterminateError,
   argsFrom,
   assertApplyCredentialPresent,
+  assertDistTagOptIn,
   assertMessage,
   assertPackageInScope,
   assertPublicRegistry,
@@ -170,6 +171,11 @@ function packumentFetch(sequence) {
 
 const VERIFY_DELAYS = [0, 0, 0];
 
+/** An edge that never yields a readable packument, as distinct from one that yields the wrong answer. */
+function unreadableFetch() {
+  return async () => ({ ok: false, status: 503, json: async () => ({}) });
+}
+
 test("verifyDeprecationState settles once the anonymous edge shows the notice", async () => {
   const stale = { name: NAME, versions: { "0.4.3": {} } };
   const fresh = { name: NAME, versions: { "0.4.3": { deprecated: "notice" } } };
@@ -185,9 +191,24 @@ test("verifyDeprecationState settles once the anonymous edge shows the notice", 
   assert.equal(result.kind, "verified");
 });
 
-// A propagation window that runs out is INDETERMINATE, never a failure: the
-// write already happened and is not disputed by not yet being readable.
-test("verifyDeprecationState reports indeterminate, not failure, when the window runs out", async () => {
+// The two closed-window outcomes must stay apart. An edge we could never read
+// is an absence of evidence; an edge we read repeatedly that disagrees is a
+// finding about a document we DID observe.
+test("verifyDeprecationState reports indeterminate when the edge was never readable", async () => {
+  const result = await verifyDeprecationState({
+    registry: IDENTITY.registry,
+    name: NAME,
+    versions: ["0.4.3"],
+    message: "notice",
+    fetchImpl: unreadableFetch(),
+    delays: VERIFY_DELAYS,
+    wait: async () => {},
+  });
+  assert.equal(result.kind, "indeterminate");
+  assert.equal(result.detail.kind, "unreadable");
+});
+
+test("verifyDeprecationState reports a stable readable disagreement as a mismatch, not indeterminate", async () => {
   const stale = { name: NAME, versions: { "0.4.3": {} } };
   const result = await verifyDeprecationState({
     registry: IDENTITY.registry,
@@ -198,8 +219,24 @@ test("verifyDeprecationState reports indeterminate, not failure, when the window
     delays: VERIFY_DELAYS,
     wait: async () => {},
   });
-  assert.equal(result.kind, "indeterminate");
-  assert.equal(result.detail.kind, "mismatch");
+  assert.equal(result.kind, "mismatch");
+  assert.deepEqual(result.mismatches, [{ version: "0.4.3", expected: "notice", observed: "(no notice)" }]);
+});
+
+// Retrying THROUGH a mismatch is still right — only the last observation counts.
+test("verifyDeprecationState still settles when a stale edge catches up mid-window", async () => {
+  const stale = { name: NAME, versions: { "0.4.3": { deprecated: "an older notice" } } };
+  const fresh = { name: NAME, versions: { "0.4.3": { deprecated: "notice" } } };
+  const result = await verifyDeprecationState({
+    registry: IDENTITY.registry,
+    name: NAME,
+    versions: ["0.4.3"],
+    message: "notice",
+    fetchImpl: packumentFetch([stale, stale, fresh]),
+    delays: VERIFY_DELAYS,
+    wait: async () => {},
+  });
+  assert.equal(result.kind, "verified");
 });
 
 // ------------------------------------------------------------- credentials
@@ -315,7 +352,31 @@ test("a spec matching nothing refuses before any mutation, even in apply mode wi
   assert.deepEqual(calls, ["dry-run"]);
 });
 
+// Exit 2 — could not establish. The header promises this and the code reaches it.
 test("an apply whose notice never becomes publicly readable is indeterminate, not a silent success", async () => {
+  const before = { name: NAME, versions: { "0.4.3": {} } };
+  let call = 0;
+  // Readable for the preflight, then unreadable for every verification attempt.
+  const fetchImpl = async () => {
+    if (call++ === 0) return { ok: true, status: 200, json: async () => before };
+    return { ok: false, status: 503, json: async () => ({}) };
+  };
+  const { npmRun } = harness({ packuments: [before] });
+  await assert.rejects(
+    deprecateRegistryVersion({
+      packageName: NAME, spec: "0.4.3", message: "notice", mode: "apply",
+      identity: IDENTITY, env: { NODE_AUTH_TOKEN: "a-token-value" },
+      npmRun, fetchImpl, log: () => {}, delays: VERIFY_DELAYS,
+    }),
+    (error) => error instanceof IndeterminateError && /indeterminate, not a failed write/.test(error.message),
+  );
+});
+
+// Exit 1 — a concrete mismatch. This is the path the header promised and the
+// code could not previously reach at all: every throw was Indeterminate, so a
+// stable disagreement exited 2. A stated contract with no path to it is the
+// defect this repository keeps finding.
+test("an apply the edge stably disagrees with fails as a mismatch, NOT as indeterminate", async () => {
   const before = { name: NAME, versions: { "0.4.3": {} } };
   const { npmRun, fetchImpl } = harness({ packuments: [before] });
   await assert.rejects(
@@ -324,7 +385,7 @@ test("an apply whose notice never becomes publicly readable is indeterminate, no
       identity: IDENTITY, env: { NODE_AUTH_TOKEN: "a-token-value" },
       npmRun, fetchImpl, log: () => {}, delays: VERIFY_DELAYS,
     }),
-    (error) => error instanceof IndeterminateError && /indeterminate, not a failed write/.test(error.message),
+    (error) => !(error instanceof IndeterminateError) && /still disagrees with the intended state/.test(error.message),
   );
 });
 
@@ -337,4 +398,46 @@ test("a non-public registry is refused before anything else happens", async () =
     }),
     IndeterminateError,
   );
+});
+
+// ------------------------------------------------------- dist-tag opt-in
+
+test("assertDistTagOptIn refuses a dist-tagged target unless it was asked for", () => {
+  const tagged = [{ tag: "latest", version: "0.4.4" }];
+  assert.throws(
+    () => assertDistTagOptIn({ tagged, allowDistTagged: false, packageName: NAME }),
+    (error) => error instanceof IndeterminateError && /every default install prints/.test(error.message),
+  );
+  assert.doesNotThrow(() => assertDistTagOptIn({ tagged, allowDistTagged: true, packageName: NAME }));
+  assert.doesNotThrow(() => assertDistTagOptIn({ tagged: [], allowDistTagged: false, packageName: NAME }));
+});
+
+// The gate keys on blast radius, not count: bulk-deprecating superseded
+// versions stays unguarded, which is the normal, low-risk case.
+test("many untagged versions need no opt-in, but one tagged version does", async () => {
+  const document = {
+    name: NAME,
+    versions: { "0.1.0": {}, "0.2.0": {}, "0.3.0": {}, "0.4.3": {}, "0.4.4": {} },
+    "dist-tags": { latest: "0.4.4" },
+  };
+  const untagged = ["0.1.0", "0.2.0", "0.3.0", "0.4.3"];
+  const run = (resolved, allowDistTagged) => deprecateRegistryVersion({
+    packageName: NAME, spec: "<0.5.0", message: "notice", mode: "dry-run",
+    identity: IDENTITY, env: {}, allowDistTagged, log: () => {},
+    fetchImpl: packumentFetch([document]),
+    npmRun: () => resolved.map((v) => `npm notice deprecating ${NAME}@${v} with message "notice"`).join("\n"),
+  });
+  const ok = await run(untagged, false);
+  assert.equal(ok.kind, "planned");
+  assert.equal(ok.versions.length, 4);
+  await assert.rejects(run([...untagged, "0.4.4"], false), IndeterminateError);
+  const opted = await run([...untagged, "0.4.4"], true);
+  assert.equal(opted.versions.length, 5);
+});
+
+test("argsFrom accepts the optional opt-in and rejects a non-boolean one", () => {
+  const base = ["--package", NAME, "--versions", "*", "--message", "m", "--mode", "dry-run"];
+  assert.equal(argsFrom(argv(...base))["allow-dist-tagged"], undefined);
+  assert.equal(argsFrom(argv(...base, "--allow-dist-tagged", "true"))["allow-dist-tagged"], "true");
+  assert.throws(() => argsFrom(argv(...base, "--allow-dist-tagged", "yes")), IndeterminateError);
 });
