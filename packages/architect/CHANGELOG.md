@@ -5,6 +5,31 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.8] - 2026-09-16
+
+### Note
+
+- **0.1.7 was never published; this release supersedes it without repeating
+  its work.** 0.1.7 (below) carried the same `architect-check` entry-point
+  fix as this release, and its qualification record
+  (`governance/release-qualifications/clossys-architect-0.1.7.json`) was
+  generated and retained, binding candidate `packageTreeSha1
+  45714600108521d00ca95f9d43a72092acbf8d42`. Before publication, #919
+  corrected the new `bin-entry.test.ts` added by #909/0.1.7 so it chmods a
+  temporary copy of `dist/cli.js` instead of the real packed file — a fix
+  needed because CI packs immediately after running the package's tests, so
+  the original test left CI publishing a tarball in the wrong file mode.
+  That correction touched a file inside `packages/architect/`, which moved
+  the package tree to `9233ea5efff49257bcebc7e6e5882753591f5aee` and left the
+  retained 0.1.7 record qualified against a package tree that no longer
+  exists. Qualification records are immutable — each file path is
+  introduced exactly once and is never corrected in place — so the 0.1.7
+  record cannot be updated to match, and 0.1.7 cannot be published. This
+  release reuses the already-fixed and already-corrected source unchanged
+  and exists solely to obtain a fresh, never-before-used record path. See
+  #909 (the original `architect-check` defect) and #919 (the test
+  correction that made 0.1.7 unpublishable).
+
 ## [0.1.7] - 2026-09-16
 
 ### Fixed
