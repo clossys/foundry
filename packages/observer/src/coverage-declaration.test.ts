@@ -117,6 +117,46 @@ describe("parseCoverageDeclaration", () => {
       expect(result.findings.length).toBeGreaterThan(0);
     }
   });
+
+  // Issue #897 audit finding B: README.md and the CLI's own --help both
+  // instruct the caller to pass "the already-fetched body" of the
+  // coverage-declaration file, and that body comes from a raw-content HTTP
+  // GET, which returns a STRING. The original implementation required an
+  // already-JSON.parse'd object and rejected a string outright with
+  // coverage-declaration/not-an-object -- so following the documentation
+  // landed the caller directly on a bug. These tests hold the fix: a raw
+  // JSON string is now accepted and parsed internally.
+  it("accepts the raw JSON string body a real HTTP GET actually returns, exactly as documented", () => {
+    const result = parseCoverageDeclaration(JSON.stringify(validRaw));
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.declaration.repository).toBe("example-repository-id");
+      expect(result.declaration.declaredAbsences).toHaveLength(1);
+    }
+  });
+
+  it("fails closed -- ok:false, never a thrown SyntaxError -- for a string that is not valid JSON", () => {
+    expect(() => parseCoverageDeclaration("not json {{{")).not.toThrow();
+    const result = parseCoverageDeclaration("not json {{{");
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.findings.map((f) => f.rule)).toEqual(["coverage-declaration/invalid-json"]);
+    }
+  });
+
+  it("fails closed for a string that IS valid JSON but not a well-formed declaration once parsed", () => {
+    const result = parseCoverageDeclaration(JSON.stringify({ nonsense: true }));
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.findings.length).toBeGreaterThan(0);
+      expect(result.findings.some((f) => f.rule === "coverage-declaration/invalid-json")).toBe(false);
+    }
+  });
+
+  it("still accepts an already-JSON.parse'd object exactly as before (both input shapes work)", () => {
+    const result = parseCoverageDeclaration(validRaw);
+    expect(result.ok).toBe(true);
+  });
 });
 
 describe("writeCoverageDeclaration", () => {

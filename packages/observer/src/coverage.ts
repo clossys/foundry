@@ -149,6 +149,27 @@ export interface FleetCoverageContradiction {
   readonly declaredReason: string;
 }
 
+/**
+ * One package-repository cell that resolved `"installed"` (ground truth:
+ * the caller-supplied inventory says so, and that fact is never hidden --
+ * see `FleetCoverageContradiction` above on ground truth winning the
+ * cell's own `state`) whose repository's coverage declaration WAS supplied
+ * but FAILED validation. Unlike `FleetCoverageContradiction`, this is not
+ * a known conflict: a declaration that cannot be parsed might contain a
+ * stale `declared-absent` entry for this exact package -- the one
+ * contradiction #395 exists to surface -- or might not; a malformed
+ * declaration makes that undecidable, not absent. This fails closed the
+ * same way an `unclassified` cell does (see the module header's
+ * "discipline" paragraph): the cell's own `state` stays truthfully
+ * `"installed"`, but its repository's declaration is not evidence of
+ * anything, so it must not let the aggregate verdict land on `satisfied`
+ * -- see `gradeFleetCoverage` below.
+ */
+export interface FleetUnverifiedInstalledCell {
+  readonly package: string;
+  readonly repository: string;
+}
+
 /** One repository's contribution to a fleet coverage grading run. */
 export interface FleetRepositoryCoverageInput {
   /** Stable identifier for the repository. Must be unique within one `FleetCoverageInput.repositories`. */
@@ -197,6 +218,15 @@ export interface FleetCoverageReport {
   readonly cells: readonly CoverageCell[];
   readonly countsByState: CoverageCellCounts;
   readonly contradictions: readonly FleetCoverageContradiction[];
+  /**
+   * Installed cells (see `FleetUnverifiedInstalledCell`) whose repository's
+   * declaration was supplied but failed validation, so a stale
+   * `declared-absent` entry for that same package cannot be ruled out. Not
+   * reflected in `countsByState` -- these cells still count as `installed`
+   * there, since that is their true, ground-truth `state` -- but never
+   * empty when the aggregate `result` is `satisfied`; see `gradeFleetCoverage`.
+   */
+  readonly unverifiedInstalledCells: readonly FleetUnverifiedInstalledCell[];
   readonly result: FleetCoverageVerdict;
 }
 
@@ -235,6 +265,7 @@ export function gradeFleetCoverage(input: FleetCoverageInput): FleetCoverageRepo
       cells: [],
       countsByState: { installed: 0, declaredAbsent: 0, unclassified: 0 },
       contradictions: [],
+      unverifiedInstalledCells: [],
       result: {
         verdict: "indeterminate",
         reason: "no-cells-to-grade",
@@ -247,6 +278,7 @@ export function gradeFleetCoverage(input: FleetCoverageInput): FleetCoverageRepo
 
   const cells: CoverageCell[] = [];
   const contradictions: FleetCoverageContradiction[] = [];
+  const unverifiedInstalledCells: FleetUnverifiedInstalledCell[] = [];
   let installedCount = 0;
   let declaredAbsentCount = 0;
   let unclassifiedCount = 0;
@@ -275,9 +307,23 @@ export function gradeFleetCoverage(input: FleetCoverageInput): FleetCoverageRepo
         });
         installedCount += 1;
 
-        const declaredReason = declaredReasonByPackage.get(pkg);
-        if (declaredReason !== undefined) {
-          contradictions.push({ package: pkg, repository: repo.repository, declaredReason });
+        // Consult `declarationIsInvalid` here too (issue #897 audit finding
+        // A): a repository whose declaration could not be read might still
+        // contain a stale `declared-absent` entry for this exact
+        // package -- the one contradiction this module exists to surface --
+        // and a parse failure makes that undecidable, not absent. Reported
+        // via `unverifiedInstalledCells` rather than folded into
+        // `contradictions` (which requires a KNOWN `declaredReason`) or into
+        // `state` (which stays truthfully `"installed"` -- ground truth
+        // wins, see `FleetCoverageContradiction`'s doc comment); either way
+        // it must not let the aggregate land on `satisfied` -- see below.
+        if (declarationIsInvalid) {
+          unverifiedInstalledCells.push({ package: pkg, repository: repo.repository });
+        } else {
+          const declaredReason = declaredReasonByPackage.get(pkg);
+          if (declaredReason !== undefined) {
+            contradictions.push({ package: pkg, repository: repo.repository, declaredReason });
+          }
         }
         continue;
       }
@@ -334,10 +380,34 @@ export function gradeFleetCoverage(input: FleetCoverageInput): FleetCoverageRepo
       cells,
       countsByState,
       contradictions,
+      unverifiedInstalledCells,
       result: {
         verdict: "indeterminate",
         reason: "unclassified-cells",
         detail: `${unclassifiedCount} of ${cells.length} cell(s) are unclassified -- an ungradeable matrix cannot certify coverage.`,
+      },
+    };
+  }
+
+  // Same precedence as the unclassified-cells check above, and for the same
+  // reason: this is uncertainty ("we don't know if there's a contradiction"),
+  // not a known fact, so it is resolved before -- and takes priority over --
+  // `violated`, which requires a KNOWN contradiction. See issue #897 audit
+  // finding A and `FleetUnverifiedInstalledCell`'s doc comment.
+  if (unverifiedInstalledCells.length > 0) {
+    return {
+      cells,
+      countsByState,
+      contradictions,
+      unverifiedInstalledCells,
+      result: {
+        verdict: "indeterminate",
+        reason: "installed-cell-with-unreadable-declaration",
+        detail:
+          `${unverifiedInstalledCells.length} installed cell(s) belong to a repository whose coverage declaration was ` +
+          "supplied but failed validation, so whether it also declares that same package absent -- a stale-declaration " +
+          "contradiction, the one this module exists to surface -- cannot be ruled out: " +
+          `${unverifiedInstalledCells.map((entry) => `${entry.package} in ${entry.repository}`).join(", ")}.`,
       },
     };
   }
@@ -347,6 +417,7 @@ export function gradeFleetCoverage(input: FleetCoverageInput): FleetCoverageRepo
       cells,
       countsByState,
       contradictions,
+      unverifiedInstalledCells,
       result: { verdict: "violated", findings: contradictions },
     };
   }
@@ -355,6 +426,7 @@ export function gradeFleetCoverage(input: FleetCoverageInput): FleetCoverageRepo
     cells,
     countsByState,
     contradictions,
+    unverifiedInstalledCells,
     result: { verdict: "satisfied", evaluated: cells.length },
   };
 }
