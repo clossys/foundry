@@ -121,7 +121,7 @@ jobs:
           NPM_DEPRECATE_TOKEN: ${{ secrets.NPM_DEPRECATE_TOKEN }}
         run: |
           if [ -z "$NPM_DEPRECATE_TOKEN" ]; then
-            echo "::error title=Cannot apply deprecation::NPM_DEPRECATE_TOKEN is not set. npm's OIDC trusted-publishing exchange authorizes 'npm publish' and 'npm stage publish' only and cannot authorize 'npm deprecate', so apply mode needs a stored npm granular token with write access to this scope. Dispatch with mode=dry-run to report the derived plan without a credential."
+            echo "::error title=Cannot apply deprecation::NPM_DEPRECATE_TOKEN is not set. npm's OIDC trusted-publishing exchange authorizes only its two publishing commands and cannot authorize a deprecation, so apply mode needs a stored npm granular token with write access to this scope. Dispatch with mode=dry-run to report the derived plan without a credential."
             exit 1
           fi
 

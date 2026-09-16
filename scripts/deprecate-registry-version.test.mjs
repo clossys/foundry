@@ -89,7 +89,7 @@ test("assertPackageInScope refuses a package this repository does not publish", 
 
 test("assertPublicRegistry refuses any registry but the declared public one", () => {
   assert.doesNotThrow(() => assertPublicRegistry("https://registry.npmjs.org"));
-  assert.throws(() => assertPublicRegistry("https://npm.pkg.github.com"), IndeterminateError);
+  assert.throws(() => assertPublicRegistry("https://registry.example.com"), IndeterminateError);
 });
 
 // -------------------------------------------------------------- resolution
@@ -332,7 +332,7 @@ test("a non-public registry is refused before anything else happens", async () =
   await assert.rejects(
     deprecateRegistryVersion({
       packageName: NAME, spec: "0.4.3", message: "n", mode: "dry-run",
-      identity: { scope: "@clossys", registry: "https://npm.pkg.github.com" },
+      identity: { scope: "@clossys", registry: "https://registry.example.com" },
       env: {}, npmRun: () => assert.fail("must not reach npm"), fetchImpl: () => assert.fail("must not fetch"), log: () => {},
     }),
     IndeterminateError,
