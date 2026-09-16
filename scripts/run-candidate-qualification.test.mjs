@@ -90,7 +90,7 @@ test("all 19 publishable packages are exact-source bound to the catalogue and qu
     "@clossys/publisher": "0.4.4",
     "@clossys/starter": "0.1.6",
     "@clossys/strategist": "0.1.5",
-    "@clossys/writer": "0.3.7",
+    "@clossys/writer": "0.3.8",
   };
   const packageKeys = (await readdir(new URL("../packages", import.meta.url))).sort();
   const manifests = await Promise.all(packageKeys.map((key) => repositoryJson(`packages/${key}/package.json`)));

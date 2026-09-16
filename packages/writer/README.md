@@ -388,6 +388,52 @@ this run is reported too, as a `"warning"`, since a stale exclusion (the
 file it named was renamed or deleted) is otherwise indistinguishable from
 one still doing real work.
 
+## Machine-readable output: `writer-check --format json`
+
+The default `writer-check` command takes `--format <text|json>`, defaulting to
+`text`. Under `json` it prints exactly one object to stdout and nothing else —
+every diagnostic that would normally go to stdout is suppressed, so the output
+is always parseable — and writes nothing to stderr on a successful run.
+
+The contract that matters is what the object carries, and when:
+
+```
+{
+  recordFile, scanDir,
+  verdict: "clean" | "findings" | "indeterminate",
+  exitCode: 0 | 1 | 2,
+  reason?,                     // present when the verdict needs explaining
+  filesScanned, candidatesScanned, matched,
+  findings:       CopyGateFinding[],
+  ignored:        CopyGateIgnored[],
+  unchecked:      UncheckedItem[],
+  parseFailures:  { file, detail }[]
+}
+```
+
+**`verdict`, `findings` and `unchecked` are always present together, on every
+path** — the clean path, the findings path, and the total-failure path alike.
+That is the whole point of the shape. A single construct the scanner cannot
+classify makes the run `indeterminate` and exits `2`, but the findings it did
+produce are still in `findings`, recoverable by any caller that reads past the
+exit code.
+
+That mattered concretely: before this shape existed, one unclassifiable JSX
+comment between attributes forced exit `2` and discarded **292 real findings**
+from the same scan (issue #753). The exit code and the verdict still refuse to
+read as clean — an indeterminate must never look like a pass — but "I could
+not evaluate THIS ITEM" is no longer collapsed into "I could not evaluate
+ANYTHING."
+
+A caller keying only on `exitCode` or `verdict` therefore never mistakes an
+indeterminate run for a clean one; a caller that reads `findings` recovers
+everything the run measured regardless of how it ended.
+
+This mirrors `@clossys/inspector`'s `VerifyStandardsReport` (per-row verdict
+plus one overall verdict and exit code) and `@clossys/observer`'s
+`CoverageCellState` three-state union, rather than inventing a fourth
+convention.
+
 ## Copy addressability — is prose resolved from the registry, or typed inline?
 
 `checkCopyTraceability` above answers "does this literal match a registered
