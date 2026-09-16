@@ -81,6 +81,7 @@ export type {
   UnclassifiedCoverageCell,
   CoverageCell,
   FleetCoverageContradiction,
+  FleetUnverifiedInstalledCell,
   FleetRepositoryCoverageInput,
   FleetCoverageInput,
   CoverageCellCounts,

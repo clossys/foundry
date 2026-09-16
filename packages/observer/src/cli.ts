@@ -38,11 +38,16 @@
  * Exit codes — this package's one gate ternary
  * (`fleetCoverageVerdictToExitCode`, `./coverage.ts`), applied here:
  *
- *   0 — every cell resolved, none unclassified, no contradiction.
+ *   0 — every cell resolved, none unclassified, no contradiction, and no
+ *       installed cell's own repository declaration failed validation.
  *   1 — every cell resolved, but at least one repository is BOTH installed
  *       AND declared absent for the same package (a stale or wrong
  *       declaration).
- *   2 — at least one cell is unclassified, OR the matrix was empty (#338:
+ *   2 — at least one cell is unclassified, OR at least one installed cell's
+ *       repository supplied a declaration that failed validation (issue
+ *       #897 audit finding A: a stale declared-absence hiding inside an
+ *       unreadable declaration cannot be ruled out, so it must not
+ *       silently count as a clean pass), OR the matrix was empty (#338:
  *       zero cells graded is never a clean pass), OR the input itself could
  *       not be read/parsed.
  *
@@ -71,16 +76,20 @@ Input document shape:
       {
         "repository": "repo-id",
         "declaration": <the already-fetched body of this repository's own coverage-declaration
-                         file, or omit entirely if none could be found>,
+                         file -- either the raw JSON string a plain HTTP GET actually returns, or
+                         an already-JSON.parse'd value; both are accepted -- or omit entirely if
+                         none could be found>,
         "installed": { "packages": [{ "name": "@scope/package-a" }] }
                         (omit entirely if the installed inventory could not be read)
       }
     ]
   }
 
-Exit codes: 0 = every cell resolved and clean, 1 = at least one repository is both installed
-and declared absent for the same package, 2 = at least one cell is unclassified, the matrix
-was empty, or the input could not be read.
+Exit codes: 0 = every cell resolved and clean, and no installed cell's own repository
+declaration failed validation; 1 = at least one repository is both installed and declared
+absent for the same package; 2 = at least one cell is unclassified, or an installed cell's own
+repository declaration failed validation (a stale declared-absence for that package cannot be
+ruled out), or the matrix was empty, or the input could not be read.
 `;
 
 /** Everything this CLI touches outside itself. Injected so no test needs a filesystem. */
@@ -231,6 +240,15 @@ export function renderReport(report: FleetCoverageReport): string {
     lines.push("", "Contradictions (installed AND declared-absent for the same package):");
     for (const contradiction of report.contradictions) {
       lines.push(`- ${contradiction.package} in ${contradiction.repository}: declared reason ${JSON.stringify(contradiction.declaredReason)}`);
+    }
+  }
+  if (report.unverifiedInstalledCells.length > 0) {
+    lines.push(
+      "",
+      "Unverified (installed, but the repository's own declaration failed validation -- a stale declared-absence for this package cannot be ruled out):",
+    );
+    for (const entry of report.unverifiedInstalledCells) {
+      lines.push(`- ${entry.package} in ${entry.repository}`);
     }
   }
   const overallLabel =

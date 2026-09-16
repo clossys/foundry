@@ -41,14 +41,28 @@
  * hosting-provider opinion, and a filesystem path inside a package that
  * otherwise performs zero I/O (`./coverage.ts`'s own header states the same
  * discipline for the grader). `parseCoverageDeclaration` takes the
- * ALREADY-FETCHED response body -- `unknown`, exactly as a caller's own
- * script would hand back the parsed JSON of one completed GET, or the
- * parsed contents of a local checkout's copy of the same file. This is the
- * identical shape `@clossys/builder`'s `observation-bundle.ts`
- * already established for its own self-published, provider-agnostic bundle
- * contract ("this module never fetches anything itself... no storage
- * opinion") -- reused here as a design pattern, not as a dependency: this
- * package adds no import of `@clossys/builder` to get it.
+ * ALREADY-FETCHED response body -- `unknown` -- and accepts it in EITHER of
+ * the two shapes that phrase honestly covers: the raw JSON **string** a
+ * `fetch(url).then((response) => response.text())` (or any bare HTTP GET
+ * against the raw-content endpoint above) actually hands back, or an
+ * **already-`JSON.parse`d value**, for a caller whose own script parsed the
+ * body itself before calling in (for example, the parsed contents of a
+ * local checkout's copy of the same file). A `string` input is
+ * `JSON.parse`d internally; a syntax error in that string is reported as an
+ * ordinary validation finding (`coverage-declaration/invalid-json`), never
+ * thrown -- this is untrusted input from a stranger's repository, and a
+ * malformed body is data for `./coverage.ts` to grade as
+ * `"declaration-unreadable"`, not a program error that should crash the
+ * whole fleet run over one repository's bad file (see issue #897's audit:
+ * the ORIGINAL shipped behavior required an already-parsed object and
+ * rejected the literal input this file's own README and CLI `--help`
+ * instructed callers to pass, which is exactly the "GET returns a string"
+ * shape now accepted). This is the identical shape `@clossys/builder`'s
+ * `observation-bundle.ts` already established for its own self-published,
+ * provider-agnostic bundle contract ("this module never fetches anything
+ * itself... no storage opinion") -- reused here as a design pattern, not as
+ * a dependency: this package adds no import of `@clossys/builder` to get
+ * it.
  */
 
 /** This contract's own schema version. Bumped only when the declaration SHAPE changes. */
@@ -188,13 +202,36 @@ export interface InvalidCoverageDeclaration {
  * `CoverageDeclaration`. Never throws -- a malformed declaration is data
  * for `./coverage.ts` to grade (as `unclassified`), not a program error
  * that should crash the whole fleet run over one repository's bad file.
+ *
+ * `raw` may be the raw JSON **string** body of an already-fetched HTTP GET
+ * (the module header explains why that is the shape a real caller most
+ * often has in hand), or an already-`JSON.parse`d value. A string is
+ * `JSON.parse`d here; a syntax error becomes an ordinary
+ * `coverage-declaration/invalid-json` finding, exactly like any other
+ * shape defect -- never a thrown `SyntaxError`.
  */
 export function parseCoverageDeclaration(raw: unknown): ParsedCoverageDeclaration | InvalidCoverageDeclaration {
-  const findings = validateCoverageDeclarationShape(raw);
+  let candidate: unknown = raw;
+  if (typeof raw === "string") {
+    try {
+      candidate = JSON.parse(raw);
+    } catch (error) {
+      return {
+        ok: false,
+        findings: [
+          finding(
+            "coverage-declaration/invalid-json",
+            `The declaration body is a string but is not valid JSON: ${error instanceof Error ? error.message : String(error)}.`,
+          ),
+        ],
+      };
+    }
+  }
+  const findings = validateCoverageDeclarationShape(candidate);
   if (findings.length > 0) {
     return { ok: false, findings };
   }
-  return { ok: true, declaration: raw as CoverageDeclaration };
+  return { ok: true, declaration: candidate as CoverageDeclaration };
 }
 
 /** What `writeCoverageDeclaration` accepts: the caller-owned data a `CoverageDeclaration` is built from. */

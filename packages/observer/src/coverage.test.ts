@@ -130,6 +130,51 @@ describe("gradeFleetCoverage — the three-state classification", () => {
     expect(controllerCell).toMatchObject({ state: "unclassified", reason: "declaration-unreadable" });
   });
 
+  it("issue #897 audit finding A: an all-installed catalogue with an unreadable declaration must NOT resolve to satisfied", () => {
+    // Every package in this repository is genuinely installed (ground
+    // truth). Its own coverage declaration was supplied but fails shape
+    // validation. Before the fix, the `installedPackage !== undefined`
+    // branch returned early without ever consulting `declarationIsInvalid`
+    // -- the flag was reachable only on the not-installed path -- so this
+    // exact input graded every cell "installed", zero unclassified, zero
+    // contradictions, and a confident `satisfied`. A stale
+    // `declared-absent` entry hiding inside the same malformed declaration
+    // (undecidable, because the whole document failed to parse) would have
+    // been silently unreportable. Unlike the pre-existing
+    // "declaration is unreadable" test below, this uses a SINGLE-package,
+    // all-installed catalogue on purpose: no sibling cell is unclassified,
+    // so nothing else can push the aggregate off `satisfied` -- only this
+    // fix does.
+    const input: FleetCoverageInput = {
+      packages: [...PACKAGES],
+      repositories: [
+        repo({
+          repository: "repo-a",
+          declaration: { garbage: true },
+          installed: { packages: [{ name: "@clossys/observer" }, { name: "@clossys/controller" }] },
+        }),
+      ],
+    };
+    const report = gradeFleetCoverage(input);
+    // Ground truth still wins for each cell's own state -- see
+    // `FleetCoverageContradiction`'s doc comment in coverage.ts -- so both
+    // cells stay classified "installed", not "unclassified".
+    expect(report.cells.every((cell) => cell.state === "installed")).toBe(true);
+    expect(report.countsByState).toEqual({ installed: 2, declaredAbsent: 0, unclassified: 0 });
+    // The aggregate verdict is the load-bearing assertion this test exists
+    // for: it must never be "satisfied" when a repository's declaration
+    // could not be read, regardless of how cleanly every cell classified.
+    expect(report.result.verdict).not.toBe("satisfied");
+    expect(report.result.verdict).toBe("indeterminate");
+    expect(report.unverifiedInstalledCells).toHaveLength(2);
+    expect(report.unverifiedInstalledCells).toEqual(
+      expect.arrayContaining([
+        { package: "@clossys/observer", repository: "repo-a" },
+        { package: "@clossys/controller", repository: "repo-a" },
+      ]),
+    );
+  });
+
   it("a declared absence with an empty reason does not qualify as declared-absent (fails to unclassified)", () => {
     const input: FleetCoverageInput = {
       packages: [...PACKAGES],
@@ -149,6 +194,39 @@ describe("gradeFleetCoverage — the three-state classification", () => {
     // package in this repository is unclassified via declaration-unreadable, not silently
     // treated as "no absence declared".
     expect(report.cells.every((cell) => cell.state === "unclassified" && cell.reason === "declaration-unreadable")).toBe(true);
+  });
+});
+
+describe("gradeFleetCoverage — issue #897 audit finding B: the documented input now works", () => {
+  it("a declaration passed as the raw JSON string body an HTTP GET actually returns is read correctly, contradiction and all", () => {
+    // README.md and the CLI's own --help instruct the caller to pass "the
+    // already-fetched body" of a repository's coverage-declaration file --
+    // which, fetched with a bare HTTP GET against a raw-content endpoint (as
+    // coverage-declaration.ts's own header specifies), is a STRING. Before
+    // the fix this always failed validation (not-an-object) and, combined
+    // with finding A, silently graded "satisfied". This test follows the
+    // documentation literally -- a string, not a pre-parsed object -- end
+    // to end through gradeFleetCoverage.
+    const input: FleetCoverageInput = {
+      packages: ["@clossys/observer"],
+      repositories: [
+        repo({
+          repository: "repo-a",
+          installed: { packages: [{ name: "@clossys/observer" }] },
+          declaration: JSON.stringify({
+            schemaVersion: COVERAGE_DECLARATION_SCHEMA_VERSION,
+            repository: "repo-a",
+            declaredAbsences: [{ package: "@clossys/observer", reason: "believed unused" }],
+          }),
+        }),
+      ],
+    };
+    const report = gradeFleetCoverage(input);
+    expect(report.cells[0]).toMatchObject({ state: "installed" });
+    expect(report.contradictions).toEqual([
+      { package: "@clossys/observer", repository: "repo-a", declaredReason: "believed unused" },
+    ]);
+    expect(report.result.verdict).toBe("violated");
   });
 });
 

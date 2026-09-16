@@ -116,15 +116,19 @@ exactly three states:
   module rather than a relabeling of `computeUnobservedSurface`).
 
 `gradeFleetCoverage` (`coverage.ts`) takes the package catalog, every
-repository's already-fetched, raw coverage-declaration payload (see
-`coverage-declaration.ts`), and every repository's own caller-supplied
+repository's already-fetched, raw coverage-declaration payload — the raw
+JSON string body of the GET described below, or an already-parsed value;
+see `coverage-declaration.ts` — and every repository's own caller-supplied
 installed inventory, and returns every cell plus one aggregate verdict in
-this package's usual ternary: `satisfied` (every cell resolved, clean),
+this package's usual ternary: `satisfied` (every cell resolved, clean, and
+no installed cell's own repository declaration failed validation),
 `violated` (at least one repository is BOTH installed AND declared-absent
 for the same package — a stale or wrong declaration, ground truth wins for
 the cell but the contradiction is reported), or `indeterminate` (at least
-one cell is unclassified, or the matrix itself was empty — see "An empty
-matrix is never satisfied" below).
+one cell is unclassified; or an installed cell's own repository supplied a
+declaration that failed validation, so a stale declared-absence for that
+package cannot be ruled out — issue #897's audit finding A; or the matrix
+itself was empty — see "An empty matrix is never satisfied" below).
 
 The installed inventory is **caller-supplied**, on purpose: this package
 adds no dependency on `@clossys/integrator` to compute it.
@@ -175,8 +179,11 @@ JSON file committed to a repository's own default branch at one fixed
 path, read with a bare, unauthenticated HTTP GET against the hosting
 provider's raw-content endpoint. `parseCoverageDeclaration` and
 `gradeFleetCoverage` never fetch anything themselves — they take the
-already-fetched body, exactly as `@clossys/builder`'s
-`observation-bundle.ts` already does for its own self-published contract.
+already-fetched body, accepted either as the raw JSON **string** that GET
+actually returns or as an already-`JSON.parse`d value (a string is parsed
+internally, failing closed — never throwing — on invalid JSON), exactly as
+`@clossys/builder`'s `observation-bundle.ts` already does for its own
+self-published contract.
 
 ### An empty matrix is never `satisfied`
 
@@ -197,8 +204,10 @@ observer-coverage-check --input fleet.json [--format text|json]
 
 `fleet.json` is one JSON document the caller assembles: the package
 catalog, and for each repository its id, the already-fetched body of its
-coverage-declaration file (or omitted, if none was found), and its already-
-computed installed inventory (or omitted, if it could not be read). This
+coverage-declaration file — the raw JSON string a plain HTTP GET actually
+returns, or an already-parsed value; either is accepted (or omitted, if
+none was found) — and its already-computed installed inventory (or
+omitted, if it could not be read). This
 command performs no fetching and no manifest/lockfile parsing of its own —
 see `cli.ts`'s own header for the full account of why "wiring a caller's
 inventory in at the call site" means the data always arrives already
