@@ -2145,8 +2145,22 @@ consumerBindings: businessMetricPath, causalHypothesis, baseline, setpoint,
 `consumerBindings` is a declared list of what a *consumer* binds. So the
 contract does record which of the two possibilities this is. The close
 condition's terms are not missing; they are deliberately not the supplier's to
-set, and the mechanism for binding them is declared here and exercised in
-consumer planes.
+set, and the mechanism for binding them is declared here.
+
+Whether any consumer has actually bound them is **not observable from this
+repository**, and this entry does not claim it. The only `setpoint` bindings
+present here are fixtures — `docs/contracts/package-evidence.json`'s red and
+control pairs, and `docs/contracts/installed-position-ledger.fixture.json`,
+whose every row reads *"Synthetic schema fixture; no consumer decision."* An
+earlier draft of this entry asserted the mechanism "is exercised in consumer
+planes"; that was an unevidenced claim about things outside this repository
+and is withdrawn.
+
+Its absence is not a counter-argument. A supplier repository that could
+observe its consumers' bindings would be a supplier able to grade itself, and
+that is what the decision below rejects. Unobservability here is the expected
+consequence of consumer ownership, not a gap in it — but it does mean this
+entry records a design position, not a measurement of adoption.
 
 That also makes the condition correct rather than merely unmet. A supplier that
 declared its own setpoint and its own review cadence, and then graded itself
@@ -2197,7 +2211,12 @@ sentence shaped like one. The same shape appears in two owned-metric
 declarations: `observer`'s README stakes closure on `escapeRate` while its
 contract entry declares `unobserved outcome rate`, and `publisher`'s contract
 declares `verified publication rate`, which occurs repository-wide only in the
-declaration itself.
+declaration itself. `locksmith` is a fourth instance of the same kind: its
+contract declares `controlled key rate`, which appears repository-wide only at
+`docs/contracts/role-loop-archetypes.json`, its `packages/controller/contracts`
+copy, and a row in `docs/contracts/scope-migration.md` — three declarations and
+no computation. #906 already recorded it; an earlier draft of this entry listed
+three instances and omitted it.
 
 **Decided:** a close condition must name only fields, states, or metrics that
 ship. The three instances above are defects against this entry and are fixed
