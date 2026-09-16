@@ -1990,6 +1990,120 @@ the kind of check `CONTRIBUTING.md`'s own "Gate CLIs exit `0`/`1`/`2`" entry
 warns a written-but-unchecked convention decays into. Filed as follow-up work
 for whichever session next has version-bump budget in `keeper` or `giver`.
 
+## 24. #421's ten optional-peer rows measure to fourteen, and only three import sites are genuinely unguarded
+
+This entry measures issue #421's ten unconditional-optional-peer-import rows
+against current `main` rather than against the issue's own table, and replaces
+a recovered draft of this same entry that reached a materially different, less
+complete conclusion (see below).
+
+#421 listed ten rows across six packages named `auth`, `comms`, `consent`,
+`controller`, `surface`, `ui`. Three of those six — `auth`, `comms`,
+`consent` — are the pre-#536 donor package names;
+`governance/foundry-supersession-map.json` records their exact successors as
+`@clossys/bouncer`, `@clossys/messenger`, and `@clossys/butler`. `surface` and
+`ui` are decision 10's pre-recut names for `publisher` and `designer`. The
+issue's table therefore describes a repository state that predates both the
+#536 retirement and the `#182` `assertPeerVersion` adapter convention
+`scripts/check-peer-version-assert.mjs` now verifies across six
+`peer-version.ts` copies (`bouncer`, `butler`, `controller`, `designer`,
+`keeper`, `publisher`).
+
+A fresh measurement walked every package's `peerDependenciesMeta` optional
+entries against real `src/` import sites (excluding `*.test.*`/`*.check.*`)
+using the TypeScript compiler's own AST — not a text grep — specifically to
+exclude `import type` clauses and type-only named specifiers, neither of
+which survives compilation into a runtime `import` that Node's resolver ever
+sees. That distinction matters enough to change the headline numbers: a naive
+grep counts `designer` importing `react` in dozens of files (73 by one count
+already circulating for this issue) because almost every atom writes `import
+type { ... } from "react"` for prop types; the AST walk finds only 20 files
+with a real, runtime react import (a `useState`, a `createElement`, a bare
+`import "react"` value binding — something that actually touches Node's
+module resolver) and 27 for `react-aria-components`. The lower number is the
+one this issue's actual concern — an opaque resolution failure — can ever be
+about; a type-only import is erased before any resolver runs and can never
+throw `ERR_MODULE_NOT_FOUND`. The walk also matched subpath specifiers
+(`next/server` against a declared `next` peer, `react-aria-components/package.json`
+against `react-aria-components`), which the first pass at this measurement
+missed entirely — see below for what that found.
+
+Reachability against each package's own `exports` map was checked by hand for
+every row: which subpath(s) resolve to a file that reaches the import, and
+whether every one of those subpaths' module graphs also reaches a matching
+`assertPeerVersion({ peer: "<name>", ... })` call.
+
+| package | peer | static import sites (non-test) | already guarded? | verdict |
+| --- | --- | --- | --- | --- |
+| `bouncer` | `@clerk/nextjs` | `providers/clerk/web/client.tsx` (base import); `providers/clerk/web/server-routes.tsx` (`/server` import); `providers/clerk/web/proxy.ts` (`/server` import) | `server-routes.tsx` guards itself. `client.tsx` guards `react` in the same file but never calls `assertPeerVersion` for `@clerk/nextjs`, and `./providers/clerk/web`/`./providers/clerk/web/client` never load `server-routes.tsx`. `proxy.ts` imports `clerkMiddleware`/`createRouteMatcher` as values at line 1 and guards nothing: neither it nor `proxy-entry.ts` — the whole `./providers/clerk/web/proxy` module graph — calls `assertPeerVersion` for either peer it imports. Both confirmed by empty grep | **(b) unguarded** at two sites, `client.tsx` and `proxy.ts` — filed as #889 |
+| `bouncer` | `next` | `providers/clerk/web/server-routes.tsx` (guarded); `providers/clerk/web/proxy.ts` (unguarded) | `server-routes.tsx` guards itself; `proxy.ts`/`proxy-entry.ts` (the whole `./providers/clerk/web/proxy` module graph) call `assertPeerVersion` nowhere — confirmed empty grep | **(b) unguarded** for the `proxy.ts` site — filed as #889 |
+| `bouncer` | `react` | `providers/clerk/web/client.tsx` | `assertPeerVersion` in the same file | (c) correctly guarded |
+| `bouncer` | `svix` | `providers/clerk/verify.ts` | `assertPeerVersion` in the same file | (c) correctly guarded |
+| `butler` | `react` | `web/{index.ts,useStandingWants.ts}` | `assertPeerVersion` in `web/index.ts`; `useStandingWants.ts` is reachable only through that barrel (`./web` is its own `exports` subpath — root and `./inbound` never touch `react`) | (c) correctly guarded, confined to `./web` |
+| `controller` | `typescript` | `gates/secret-gates.ts` | `assertPeerVersion` in the same file, behind the isolated `./gates/secrets` subpath since #411/#419 | (c) already fixed |
+| `designer` | `react` | 20 files (all under `atoms/`, `blocks/`, `charts/`, `shell/`, or `theme/`) | `assertPeerVersion` in each of the five barrels (`{atoms,blocks,charts,shell,theme}/index.ts`), which every file in its own subtree loads first | (c) correctly guarded, confirmed by `internal/peer-guard-coverage.test.ts` — a component library cannot degrade without its render peer, and the version-mismatch case IS caught; true absence still resolves as Node's own named `ERR_MODULE_NOT_FOUND`, accepted deliberately (see `internal/peer-version.ts`'s own header) |
+| `designer` | `react-aria-components` | 27 files (all under `atoms/`, `blocks/Toolbar.tsx`, or `shell/`) | `assertPeerVersion` in `atoms/index.ts`, `blocks/index.ts`, `shell/index.ts` | (c) correctly guarded, same confirmation and reasoning as `react` above |
+| `designer` | `tailwind-merge` | `atoms/internal/cx.ts` (dynamic `import()`) | try/catch around the dynamic import, degrade-and-warn-once | (c) fixed by PR #882 (issue #749) — the template this audit follows |
+| `designer` | `tailwindcss` | `compiled-css/generate.ts` (dynamic `import()`) | `assertPeerVersion`; Node-only build tool, never reachable by an external consumer | (c) correctly guarded |
+| `designer`, `publisher` | `react-dom`, `@internationalized/date` | none | n/a — no adapter import site exists anywhere in either package's own source | (c) trivially honest — nothing to guard |
+| `keeper` | `react` | `web/{index.ts,useHeldRecord.ts}` | `assertPeerVersion` in `web/index.ts`; same confined-subpath shape as `butler` | (c) correctly guarded |
+| `messenger` | `resend` | `providers/resend/index.ts` | none — no `internal/peer-version.ts` exists in this package at all | (b) unguarded, not degradable (there is no meaningful "send mail without a mail client" fallback), confined to the honestly-optional `./providers/resend` subpath — filed as #886 |
+| `publisher` | `react` | `document/render.ts`, `web/renderWebDocument.ts` (both guard themselves); `web/internal/webTemplates.ts` (does not guard itself) | `render.ts`/`renderWebDocument.ts` guard directly. `webTemplates.ts` does not call `assertPeerVersion`, and exactly one subpath reaches it: `./web`, under both of its conditions. `./document` does NOT — `document/render.ts` imports `react`, `@clossys/writer`, `../internal/errors.js`, `../internal/peer-version.js`, `./validate.js` and `./types.js`, and never `webTemplates.js`. (`core/resolve-surface.ts` and `print/renderPrintDocument.ts` only name the file in doc comments, which is what a text search misreads as a reach.) `./web`'s `import` condition resolves to `web/index.ts` and its `react-server` condition to `web/server.ts`, and each of those two files re-exports statically from `renderWebDocument.js` — which guards itself — as well as from `webTemplates.js`, so the guard runs before control returns to the consumer, whichever binding was imported | (c) correctly guarded in effect — confirmed by reading the actual `import`/`export … from` statements in `web/index.ts`, `web/server.ts` and `document/render.ts`, not assumed and not grepped |
+
+Fourteen rows against a naive per-package count of the ten original ones,
+because `bouncer` alone resolves to four — one row each for `@clerk/nextjs`,
+`next`, `react` and `svix` — once subpath specifiers (`next/server` and
+`@clerk/nextjs/server` against the declared `next` and `@clerk/nextjs` peers)
+and per-`exports`-entry-point reachability are checked individually rather
+than per package. Eleven of the fourteen are already correct on `main` or
+fixed on a named branch (`tailwind-merge`, PR #882). The remaining three are
+genuine, currently unguarded gaps.
+
+Those three are three ROWS, and a row here is one peer, not one file. Counted
+as files there are three unguarded import sites; counted as the peer×site
+pairs a fix actually has to add a guard for there are four, because
+`proxy.ts`'s two unguarded import statements are two pairs, not one:
+
+| unguarded site | peer(s) left unguarded | pairs |
+| --- | --- | --- |
+| `messenger` `providers/resend/index.ts` | `resend` | 1 |
+| `bouncer` `providers/clerk/web/client.tsx` | `@clerk/nextjs` | 1 |
+| `bouncer` `providers/clerk/web/proxy.ts` | `next`, `@clerk/nextjs` | 2 |
+
+Three files, four pairs — quote whichever number the question asks for, and
+say which one it is. All four pairs are the same non-degradable shape
+`controller`'s `typescript` already handles correctly (a named range error,
+not a lazy-import/degrade rewrite, because there is no sensible fallback for
+"send mail without a mail client" or "run Clerk middleware without Clerk or
+Next.js"):
+
+- `messenger`/`resend` in `providers/resend/index.ts` — already filed as #886
+  before this entry was written (the dead agent that started this audit
+  managed to file the issue before losing its session; only this file's own
+  git history was lost).
+- `bouncer`/`@clerk/nextjs` in `client.tsx`, and `bouncer`/`next` +
+  `@clerk/nextjs` in `proxy.ts` — newly found by this measurement (the
+  recovered draft this entry replaces did not catch either; both require
+  checking per-`exports`-subpath reachability rather than trusting that a
+  sibling file in the same directory shares a module graph). Both are sharper
+  than the typical case: `packages/bouncer/README.md` already claims *"Each
+  of those entry points guards its own optional peer with
+  `assertPeerVersion`, evaluated once at import time"* — which holds for
+  exactly one of the four Clerk web entry points. `./providers/clerk/web/server`
+  guards both of its peers. `./providers/clerk/web` and
+  `./providers/clerk/web/client` both resolve to `client.tsx`, which guards
+  `react` but not `@clerk/nextjs`. `./providers/clerk/web/proxy` guards
+  neither of its two. Filed as #889.
+
+None of the three fixes were made in the pull request that added this entry.
+Each touches packed `src/` content, which `check-release-readiness.mjs` would
+then require a version bump for, which `check-qualification-record-required.mjs`
+would in turn require a retained qualification record for — and `scripts/
+run-candidate-qualification.mjs` is owner/developer-machine work per #833, not
+something a cloud or analysis session should produce unreviewed. Tracked as
+#886 and #889 instead, for a local session to pick up alongside the code
+fixes.
+
 ## Settled
 
 **Author attribution — the project name holds the copyright.** Every package's
