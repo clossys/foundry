@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { existsSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { assessArchitectureExceptions } from "./assessment.js";
@@ -71,4 +71,23 @@ function run(): void {
   }
 }
 
-if (process.argv[1] !== undefined && fileURLToPath(import.meta.url) === resolve(process.argv[1])) run();
+/**
+ * Same real-path guard `designer`'s `cli.ts` and `writer`'s `cli.ts` both
+ * use, for the same reason: `npm install` publishes `bin` entries as
+ * symlinks, so comparing `process.argv[1]` to `import.meta.url` without
+ * resolving symlinks on both sides fails the moment this file is actually
+ * invoked the only way it ships — as an installed CLI — and does so
+ * silently (`run()` never fires, nothing prints, exit code 0).
+ */
+function detectMainModule(): boolean {
+  const argvPath = process.argv[1];
+  if (argvPath === undefined) return false;
+  const modulePath = fileURLToPath(import.meta.url);
+  try {
+    return realpathSync(resolve(argvPath)) === realpathSync(modulePath);
+  } catch {
+    return resolve(argvPath) === modulePath;
+  }
+}
+
+if (detectMainModule()) run();
