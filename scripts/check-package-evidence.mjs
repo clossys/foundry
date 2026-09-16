@@ -65,7 +65,12 @@
 //                 that historical fact merely because current source moved.
 //   staged      — the count of DIST-PATH invocation sites across
 //                 package.json scripts, scripts/, and .github/workflows/.
-//   published   — the package's status in the lifecycle contract.
+//   published   — the package's status in the lifecycle contract, AND a
+//                 validated retained publication record whose exact
+//                 `name@version` identity matches the package's CURRENT
+//                 manifest version (#875). A record for a superseded
+//                 version proves that version shipped, never that the
+//                 package's current version did.
 //
 // Not derivable here, and therefore requiring a declaration with a pointer
 // rather than defaulting to satisfied:
@@ -363,6 +368,17 @@ export function readPackageAuthenticQualificationSites(repoRoot) {
 /**
  * Derive current-scope publication only from the exact validated first-publication
  * record. Lifecycle status alone predates publication and cannot prove it.
+ *
+ * Returns `name@version` IDENTITIES, never bare names (#875). "Can someone
+ * else install exactly this?" is a question about one version, and a record
+ * proving `advisor@0.1.5` shipped says nothing about `0.1.6` — a name-keyed
+ * set cannot tell a superseded record from a current one, so it answered
+ * "exactly something, once" rather than "exactly this". A caller must join
+ * an identity against the package's CURRENT manifest version itself; this
+ * function does not do that join, because it has no workspace to read one
+ * from — see `readValidatedPublishedPackageNames` below for the narrower,
+ * name-only question a different caller (package-identity transition) is
+ * actually asking.
  */
 export function readValidatedPublishedPackages(repoRoot) {
   try {
@@ -399,11 +415,29 @@ export function readValidatedPublishedPackages(repoRoot) {
       cohortBytes,
       controlTailAuthorization,
     }).length > 0) return new Set();
-    const sealed = publication.members.map((member) => records.get(member.qualification.path)?.candidate?.name).filter(Boolean);
+    const sealed = publication.members
+      .map((member) => records.get(member.qualification.path)?.candidate)
+      .filter(Boolean)
+      .map((candidate) => `${candidate.name}@${candidate.version}`);
     return new Set([...sealed, ...readValidatedLaterPublishedPackages(repoRoot)]);
   } catch {
     return new Set();
   }
+}
+
+/**
+ * The names with at least one validated `published` identity, at ANY
+ * version — never version-exact. This is deliberately narrower than nothing
+ * and deliberately not the state-4 question: `check-package-identity-transition.mjs`
+ * uses this to ask "has this package ever cleared trusted-publisher
+ * provenance at all", which is what gates whether the publish workflow may
+ * carry real OIDC trust. That question does not care which version cleared
+ * it, so reducing `readValidatedPublishedPackages` to names here — rather
+ * than requiring a current-version join it has no use for — keeps that
+ * gate's existing behavior unchanged by the version-keying in #875.
+ */
+export function readValidatedPublishedPackageNames(repoRoot) {
+  return new Set([...readValidatedPublishedPackages(repoRoot)].map((identity) => identity.slice(0, identity.lastIndexOf("@"))));
 }
 
 /** Lifecycle status per package name, from the lifecycle contract. */
@@ -595,6 +629,7 @@ export function evaluatePrograms({
   workspaceBins = new Map(),
   workspaceScope,
   publishedPackages = new Set(),
+  workspacePackageVersions = new Map(),
 }) {
   const findings = [];
   const results = [];
@@ -674,7 +709,15 @@ export function evaluatePrograms({
     // that cannot be derived here — so staged is never satisfied by scan alone.
     const stagedByOk = validateStagedBy(entry.stagedBy, name, findings);
     evidence.set("staged", sites.length > 0 && stagedByOk);
-    evidence.set("published", PUBLISHED_STATUSES.has(lifecycleStatus ?? "") && (publishedPredecessor || publishedPackages.has(name)));
+    // Version-exact (#875): a retained publication record proves only the
+    // one `name@version` identity it names, never any other version of the
+    // same package. "Published" must join that identity against the
+    // package's CURRENT manifest version — a name-keyed match would let one
+    // record for a long-superseded version satisfy every later version
+    // forever, which is exactly the defect this join exists to close.
+    const currentVersion = workspacePackageVersions.get(name);
+    const publishedAtCurrentVersion = typeof currentVersion === "string" && publishedPackages.has(`${name}@${currentVersion}`);
+    evidence.set("published", PUBLISHED_STATUSES.has(lifecycleStatus ?? "") && (publishedPredecessor || publishedAtCurrentVersion));
 
     const gaps = new Map();
     for (const gap of entry.gaps ?? []) {
@@ -868,6 +911,34 @@ export function readWorkspacePackages(repoRoot) {
 }
 
 /**
+ * Each workspace package's own CURRENT manifest version, by name. This is
+ * the other half of the `published` join (#875): `readValidatedPublishedPackages`
+ * proves which exact `name@version` identities have validated retained
+ * evidence, and this supplies the exact version a package is AT right now,
+ * so the two can be joined rather than compared by name alone.
+ */
+export function readWorkspacePackageVersions(repoRoot) {
+  const versions = new Map();
+  let entries;
+  try {
+    entries = readdirSync(join(repoRoot, "packages"), { withFileTypes: true });
+  } catch {
+    return versions;
+  }
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+    try {
+      const manifest = JSON.parse(readFileSync(join(repoRoot, "packages", entry.name, "package.json"), "utf8"));
+      if (typeof manifest.name === "string" && typeof manifest.version === "string") versions.set(manifest.name, manifest.version);
+    } catch {
+      // Same as readWorkspacePackages: an unreadable manifest carries no
+      // current version to join against.
+    }
+  }
+  return versions;
+}
+
+/**
  * Bin entry-point names per package, read from each manifest on disk.
  *
  * Read from the manifest rather than from the contract for the same reason
@@ -948,6 +1019,7 @@ async function main() {
   }
 
   const workspaceBins = readWorkspaceBins(repoRoot);
+  const workspacePackageVersions = readWorkspacePackageVersions(repoRoot);
   const publishedPackages = readValidatedPublishedPackages(repoRoot);
   const { findings, results } = evaluatePrograms({
     contract,
@@ -958,6 +1030,7 @@ async function main() {
     workspaceBins,
     workspaceScope,
     publishedPackages,
+    workspacePackageVersions,
   });
   let roleNames;
   try {

@@ -9,7 +9,7 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
-import { readValidatedPublishedPackages } from "./check-package-evidence.mjs";
+import { readValidatedPublishedPackageNames } from "./check-package-evidence.mjs";
 import {
   identityState,
   isIdentityTransitionControlSurface,
@@ -287,9 +287,13 @@ export function evaluatePackageIdentity(rootOverride = root) {
   if (state === "current" && inventory.references.length !== 0) findings.push("current state must not pre-authorize candidate historical references");
   if (state === "candidate") {
     ensureFullGitHistory(root);
-    const publishedPackages = readValidatedPublishedPackages(root);
+    // Name-only, deliberately (#875): this asks "has this package ever
+    // cleared trusted-publisher provenance at all", not "is its current
+    // version published" — the identity-transition workflow-trust question
+    // does not care which version cleared it.
+    const publishedPackageNames = readValidatedPublishedPackageNames(root);
     const trustedPublishing = ["@clossys/advisor", "@clossys/starter", "@clossys/controller"]
-      .every((name) => publishedPackages.has(name));
+      .every((name) => publishedPackageNames.has(name));
     findings.push(
       ...checkCandidateHistory(policy),
       ...validateHistoricalRepositoryAliases(root, policy, { files: trackedFiles() }),

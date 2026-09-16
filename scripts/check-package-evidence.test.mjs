@@ -16,6 +16,7 @@ import {
   isFailureFinding,
   packageAuthenticStarterQualificationSite,
   readLifecycleStatuses,
+  readValidatedPublishedPackageNames,
   readValidatedPublishedPackages,
   readWorkspacePackages,
   renderLifecyclePositionTable,
@@ -24,6 +25,7 @@ import {
   stateIndex,
 } from "./check-package-evidence.mjs";
 import { TRIO_PUBLICATION_PATH, TRIO_PUBLICATION_TRANSITION_PATHS } from "./lib/release-publication-cohort.mjs";
+import { validateRetainedLaterPublications } from "./lib/release-later-publication.mjs";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const script = join(repoRoot, "scripts/check-package-evidence.mjs");
@@ -39,10 +41,32 @@ const P = "@clossys/thing";
 // rule (docs/DECISIONS.md 11) grades. The default is one bin: a package that
 // ships a gate is the ordinary case, and it keeps every ladder test above
 // free of a rule they are not about.
+//
+// `version` is the package's CURRENT manifest version, and `publication`
+// controls what `readValidatedPublishedPackages` is stood in for (#875):
+// `true` (the default) means "published at exactly the current version",
+// `false` means "nothing published", and a string or array of strings is
+// taken as the literal validated `name@version` identity/identities — which
+// is how the version-mismatch and cross-package controls below are built,
+// without needing a real retained-publication fixture on disk for every one.
 function grade(
   entry,
-  { sites = [], bins = [], status = "published", inWorkspace = true, manifestBins = ["thing-check"], workspaceScope = "@clossys", publication = true } = {},
+  {
+    sites = [],
+    bins = [],
+    status = "published",
+    inWorkspace = true,
+    manifestBins = ["thing-check"],
+    workspaceScope = "@clossys",
+    publication = true,
+    version = "1.0.0",
+  } = {},
 ) {
+  const publishedIdentities = publication === true
+    ? [`${P}@${version}`]
+    : publication === false
+      ? []
+      : Array.isArray(publication) ? publication : [publication];
   return evaluatePrograms({
     contract: {
       packages: [entry],
@@ -53,32 +77,70 @@ function grade(
     workspacePackages: new Set(inWorkspace ? [P] : []),
     workspaceBins: new Map([[P, manifestBins]]),
     workspaceScope,
-    publishedPackages: new Set(publication ? [P] : []),
+    publishedPackages: new Set(publishedIdentities),
+    workspacePackageVersions: new Map(inWorkspace ? [[P, version]] : []),
   });
 }
 
 const rules = (r) => r.findings.filter(isFailureFinding).map((f) => f.rule);
-const CURRENT_PUBLISHED_PACKAGES = [
-  "@clossys/advisor",
-  "@clossys/architect",
-  "@clossys/bouncer",
-  "@clossys/builder",
-  "@clossys/butler",
-  "@clossys/controller",
-  "@clossys/designer",
-  "@clossys/giver",
-  "@clossys/influencer",
-  "@clossys/inspector",
-  "@clossys/integrator",
-  "@clossys/keeper",
-  "@clossys/locksmith",
-  "@clossys/messenger",
-  "@clossys/observer",
-  "@clossys/publisher",
-  "@clossys/starter",
-  "@clossys/strategist",
-  "@clossys/writer",
+
+// `readValidatedPublishedPackages` returns `name@version` IDENTITIES, never
+// bare names (#875) — every retained record in
+// governance/release-publications/later, plus the three Trio members sealed
+// at their own first-publication versions. Measured directly against this
+// repository's own tree; see the correction on issue #875 for how this list
+// was derived (`governance/release-publications/later/*.json` file names,
+// joined with `governance/release-publications/clossys-npmjs-trio.json`'s
+// three sealed qualification records).
+const CURRENT_PUBLISHED_IDENTITIES = [
+  "@clossys/advisor@0.1.3",
+  "@clossys/advisor@0.1.5",
+  "@clossys/advisor@0.1.6",
+  "@clossys/architect@0.1.2",
+  "@clossys/architect@0.1.3",
+  "@clossys/bouncer@0.1.1",
+  "@clossys/bouncer@0.1.2",
+  "@clossys/builder@0.7.3",
+  "@clossys/builder@0.7.4",
+  "@clossys/butler@0.1.1",
+  "@clossys/butler@0.1.2",
+  "@clossys/controller@0.8.21",
+  "@clossys/controller@0.8.23",
+  "@clossys/controller@0.8.24",
+  "@clossys/designer@0.2.4",
+  "@clossys/designer@0.2.7",
+  "@clossys/giver@0.1.2",
+  "@clossys/giver@0.1.3",
+  "@clossys/influencer@0.1.2",
+  "@clossys/influencer@0.1.3",
+  "@clossys/inspector@0.1.18",
+  "@clossys/inspector@0.1.19",
+  "@clossys/integrator@0.6.2",
+  "@clossys/integrator@0.6.3",
+  "@clossys/keeper@0.1.2",
+  "@clossys/keeper@0.1.3",
+  "@clossys/locksmith@0.1.6",
+  "@clossys/locksmith@0.1.7",
+  "@clossys/messenger@0.1.2",
+  "@clossys/messenger@0.1.3",
+  "@clossys/observer@0.2.3",
+  "@clossys/observer@0.2.4",
+  "@clossys/publisher@0.1.10",
+  "@clossys/publisher@0.2.1",
+  "@clossys/starter@0.1.2",
+  "@clossys/starter@0.1.4",
+  "@clossys/starter@0.1.5",
+  "@clossys/strategist@0.1.1",
+  "@clossys/strategist@0.1.2",
+  "@clossys/writer@0.3.2",
+  "@clossys/writer@0.3.3",
 ];
+
+// None of the identities above matches any package's CURRENT manifest
+// version — that is the exact finding #875 measured. This is the load-bearing
+// consequence of version-keying: today, zero packages satisfy `published` at
+// their current version from retained-publication evidence alone.
+const CURRENT_PUBLISHED_PACKAGE_NAMES = [...new Set(CURRENT_PUBLISHED_IDENTITIES.map((identity) => identity.slice(0, identity.lastIndexOf("@"))))].sort();
 
 test("the ladder is ordered and its derivable states are a prefix of it", () => {
   assert.deepEqual(STATES, ["designed", "implemented", "staged", "published", "adopted", "grounded", "closed"]);
@@ -96,7 +158,109 @@ test("current-scope publication requires the exact validated first-publication r
     { sites: ["fixture:1"], publication: false },
   );
   assert.ok(rules(withoutPublication).includes("state-ahead-of-evidence"));
-  assert.deepEqual([...readValidatedPublishedPackages(repoRoot)].sort(), CURRENT_PUBLISHED_PACKAGES);
+  assert.deepEqual([...readValidatedPublishedPackages(repoRoot)].sort(), CURRENT_PUBLISHED_IDENTITIES);
+  assert.deepEqual([...readValidatedPublishedPackageNames(repoRoot)].sort(), CURRENT_PUBLISHED_PACKAGE_NAMES);
+});
+
+// ------------------------------------------------------- #875 negative controls
+//
+// The published set is version-keyed: a validated record proves exactly one
+// `name@version` identity, and `published` must join that identity against
+// the package's CURRENT manifest version. Before this change, a record for
+// ANY version of a package satisfied `published` for every version of it,
+// forever — these controls are the demonstration that it no longer does,
+// each targeted at one way that could silently regress back to name-only.
+
+const STAGED_BY = {
+  run: "https://example/run/1",
+  defectOrigin: "injected",
+  defect: "the installed gate observed one real fixture defect",
+  control: "the matched control passed through the same installed gate",
+};
+
+// Interpolated on BOTH sides of the `@`, deliberately: an at-sign directly
+// followed by a literal version number in this file's own source reads to
+// scripts/check-foreign-references.mjs as a bare-scope account reference
+// (the exact shape that gate exists to catch), not as test data about a
+// package version.
+const identity = (name, version) => `${name}@${version}`;
+
+test("(a) a publication record for a SUPERSEDED version does not satisfy published for the current version", () => {
+  // @clossys/thing is at 2.0.0; the only validated identity is 1.0.0 — the
+  // exact shape #875 measured live for all 19 packages (e.g. a record
+  // proving advisor@0.1.5 shipped does not keep advisor published at 0.2.1).
+  const r = grade(
+    { name: P, state: "published", stagedBy: STAGED_BY },
+    { sites: ["ci.yml:10"], version: "2.0.0", publication: identity(P, "1.0.0") },
+  );
+  assert.deepEqual(rules(r), ["state-ahead-of-evidence"]);
+});
+
+test("(b) a publication record at the EXACT current version satisfies published", () => {
+  const r = grade(
+    { name: P, state: "published", stagedBy: STAGED_BY },
+    { sites: ["ci.yml:10"], version: "2.0.0", publication: identity(P, "2.0.0") },
+  );
+  assert.deepEqual(rules(r), []);
+});
+
+test("(c) a different package's name@version identity does not leak across packages", () => {
+  // The published set contains a real identity — just not this package's.
+  // A join that degraded to "the set is non-empty" or matched by version
+  // alone would let this through; an exact `name@version` join will not.
+  const r = grade(
+    { name: P, state: "published", stagedBy: STAGED_BY },
+    { sites: ["ci.yml:10"], version: "2.0.0", publication: identity("@clossys/other", "2.0.0") },
+  );
+  assert.deepEqual(rules(r), ["state-ahead-of-evidence"]);
+});
+
+test("(d) a malformed later-publication record fails closed rather than silently satisfying anything", () => {
+  const dir = mkdtempSync(join(tmpdir(), "malformed-later-publication-"));
+  const fixtureRoot = join(dir, "repository");
+  try {
+    execFileSync("git", ["clone", "--local", "--no-hardlinks", repoRoot, fixtureRoot], { stdio: "ignore" });
+    execFileSync("git", ["config", "user.name", "package evidence fixture"], { cwd: fixtureRoot });
+    execFileSync("git", ["config", "user.email", "fixture@invalid.example"], { cwd: fixtureRoot });
+
+    if (!existsSync(join(fixtureRoot, TRIO_PUBLICATION_PATH))) {
+      for (const path of TRIO_PUBLICATION_TRANSITION_PATHS) {
+        const target = join(fixtureRoot, path);
+        mkdirSync(dirname(target), { recursive: true });
+        writeFileSync(target, readFileSync(join(repoRoot, path)));
+      }
+      execFileSync("git", ["add", "--all"], { cwd: fixtureRoot });
+      execFileSync("git", ["commit", "-m", "fixture: materialize publication transition"], { cwd: fixtureRoot, stdio: "ignore" });
+    }
+
+    const malformedPath = join(fixtureRoot, "governance/release-publications/later/strategist-9.9.9.json");
+    writeFileSync(malformedPath, "{ this is not valid json");
+    execFileSync("git", ["add", "governance/release-publications/later/strategist-9.9.9.json"], { cwd: fixtureRoot });
+    execFileSync("git", ["commit", "-m", "fixture: introduce a malformed later-publication record"], { cwd: fixtureRoot, stdio: "ignore" });
+
+    const { names, identities, findings } = validateRetainedLaterPublications(fixtureRoot);
+    assert.ok(findings.some((item) => item.rule === "retained-record"), "the malformed record must be reported, not skipped");
+    // The 38 genuine records still validate individually...
+    assert.equal(names.size, 19);
+    assert.equal(identities.size, 38);
+    // ...but the gate is fail-closed as a whole: one invalid record among
+    // many zeroes the entire published set rather than admitting the rest.
+    assert.deepEqual([...readValidatedPublishedPackages(fixtureRoot)], []);
+    assert.deepEqual([...readValidatedPublishedPackageNames(fixtureRoot)], []);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("(e) the retained-record immutability and qualification joins still reject what they rejected before", () => {
+  // check-later-publications.mjs (npm run check:later-publications) is the
+  // dedicated gate for this; this asserts the same thing at the library
+  // level so it is covered here alongside the other four controls, not only
+  // by a separate CLI invocation.
+  const { findings, names, identities } = validateRetainedLaterPublications(repoRoot);
+  assert.deepEqual(findings, []);
+  assert.equal(names.size, 19);
+  assert.equal(identities.size, 38);
 });
 
 test("current-scope publication rejects coherent rewrites and rewrite-restore history", () => {
@@ -123,7 +287,7 @@ test("current-scope publication rejects coherent rewrites and rewrite-restore hi
     rewritten.members[0].publication.publishedAt = "2026-08-30T06:31:59.838Z";
     const rewrittenBytes = `${JSON.stringify(rewritten, null, 2)}\n`;
 
-    assert.deepEqual([...readValidatedPublishedPackages(fixtureRoot)].sort(), CURRENT_PUBLISHED_PACKAGES);
+    assert.deepEqual([...readValidatedPublishedPackages(fixtureRoot)].sort(), CURRENT_PUBLISHED_IDENTITIES);
     writeFileSync(publicationPath, rewrittenBytes);
     assert.deepEqual([...readValidatedPublishedPackages(fixtureRoot)], []);
 
