@@ -5,6 +5,71 @@ All notable changes to `@clossys/inspector` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.2] - 2026-09-16
+
+### Fixed
+
+- **The README's Install section named the wrong registry and told a
+  consumer to create a credential it does not need (#924, audit pass 9 /
+  #897 Finding A).** It said this package is published to GitHub Packages
+  and that installing it requires the scope pointed at that registry plus
+  an authenticated `NODE_AUTH_TOKEN`. Both were false: `publishConfig` has
+  always named `registry.npmjs.org` with `access: public`, and installing
+  this package needs no scope redirection and no authentication at all. A
+  consumer who followed the old instructions would have gone and created a
+  `read:packages`-scoped token this package never asked for and never
+  checked. Proved against a packed tarball installed into a disposable
+  consumer with an empty `--userconfig` and every ambient credential
+  environment variable stripped: the install succeeds anonymous.
+- **`KNOWN_RELEASES` had no platform dimension, so the documented
+  `resolveGitleaksRelease` convenience path threw on every platform except
+  linux/x64 (#301's second, previously unfixed, suggested fix).** On
+  darwin/arm64 specifically, `resolveGitleaksRelease("8.30.1")` returned
+  the linux/x64 entry's checksum regardless of the caller's actual
+  platform, so a caller who resolved a checksum and passed it straight
+  through to `downloadAndVerifyGitleaks` downloaded the correct (genuine,
+  untampered, current) darwin/arm64 asset and then rejected it, 100% of the
+  time, against a checksum recorded for a different platform's asset.
+  `GitleaksRelease` now carries `platform` and `arch`, `KNOWN_RELEASES`
+  carries one real, gitleaks-project-published checksum per platform/arch
+  (verified both against `gitleaks_8.30.1_checksums.txt` and by hashing
+  each asset directly), and `resolveGitleaksRelease` and
+  `downloadAndVerifyGitleaks` are keyed on all three of version, platform,
+  and arch. The checksum-mismatch error message no longer claims an asset
+  "may have been tampered with or the release metadata is outdated" as the
+  only two explanations — a platform-mismatched pin is neither, and the
+  message now says so.
+- **A test named as a platform control did not actually depend on
+  platform.** `gitleaks.artifact.test.ts`'s "rejects substituted platform,
+  version, and hash controls" case asserted that a `darwin/arm64` request
+  against the linux checksum throws `Checksum verification failed` — true,
+  but for the same reason any platform would have thrown against a fully
+  fabricated hermetic fixture whose digest can never equal any pinned
+  value. The only assertion in it actually sensitive to `platform` was the
+  fetched-URL check. Split into a version/hash-control test (kept, already
+  genuinely input-decisive) and a new test that is genuinely
+  platform-decisive: the same expected checksum, resolved against two
+  platforms whose mocked responses differ, verifies for the platform whose
+  asset actually hashes to it and fails for the one whose asset does not —
+  only possible to write honestly once the platform-dimension fix above
+  landed.
+- `checkTaskRecord`'s doc comment (packed in the `.d.ts`) said it evaluates
+  a change's task record "against the consuming repository's policy"
+  without saying which part of the record — a reader could take that as
+  covering everything a task-record policy might require. It evaluates
+  work-item *reference resolution* only: whether the change description
+  names a work item in a shape that resolves. A body with the reference
+  correct and every other required field left as an unfilled placeholder
+  still reports `satisfied` against this check, because those fields are
+  outside its vocabulary and always have been (#329's own cheaper,
+  doc-only option; the module header and the README's own description of
+  this check already stated the narrower scope correctly).
+- The README's `defaultGitleaksExecutor` row cited "the hermetic-tests note
+  below," which did not exist — the explanation lived only in
+  `vitest.config.ts`, a file this package does not ship (`files` in
+  `package.json` never listed it). Replaced the dangling citation with a
+  self-contained explanation in the row itself.
+
 ## [0.2.1] - 2026-09-14
 
 ### Changed

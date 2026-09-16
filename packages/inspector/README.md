@@ -88,9 +88,10 @@ never evidence this gate should start counting its own escapes.
 npm install --save-dev @clossys/inspector
 ```
 
-The package is published to GitHub Packages, so a consuming project needs the
-scope pointed at that registry and an authenticated `NODE_AUTH_TOKEN` before
-installing — the same setup every other package in this scope already needs.
+The package is published to the public npm registry
+(`registry.npmjs.org`) with public access. Installing it needs no scope
+redirection and no authentication — a plain, anonymous `npm install`
+resolves it.
 
 ```ts
 import { verifyStandards, checkSecretScan } from "@clossys/inspector";
@@ -351,7 +352,7 @@ real I/O, both kept out of the judge above:
 | --- | --- |
 | `downloadAndVerifyGitleaks(options)` | Downloads the gitleaks release asset, verifies its SHA-256 checksum against `options.sha256`, extracts the binary, and caches it. Returns `{ path, version, verified }`. Throws on unknown version, an unusable `options.sha256` (see `assertUsableSha256`, checked before any network call), or checksum mismatch. |
 | `getCachedGitleaksPath(version, cacheDir?)` | Returns the cached binary path if it exists, otherwise `undefined`. |
-| `resolveGitleaksRelease(version)` | Returns this package's own recorded `GitleaksRelease` entry for a known version, or `undefined` — a lookup convenience, not the value verified against (see the export's own doc comment). |
+| `resolveGitleaksRelease(version, platform?, arch?)` | Returns this package's own recorded `GitleaksRelease` entry for a known version *and* platform/arch (`platform`/`arch` default to the current process's own), or `undefined` — a lookup convenience, not the value verified against (see the export's own doc comment). |
 | `getPlatformArch()` | Returns `{ platform, arch }` for the current process. |
 | `getAssetName(version, platform, arch)` | Constructs the GitHub release asset filename for the given version/platform/arch. |
 | `getKnownVersions()` | Returns an array of built-in known release versions. |
@@ -361,19 +362,30 @@ real I/O, both kept out of the judge above:
 | `EMPTY_INPUT_SHA256` | The well-known SHA-256 of empty input, as a constant — for comparison, and so this exact string appears in exactly one place in this package. |
 | `ALL_ZERO_SHA256` | 64 `"0"` characters, as a constant. |
 | `attemptGitleaksScan(options)` | Runs gitleaks through `options.execute` and returns a `SecretScanObservation` built from its report. `attempted` is always `true` in what it returns. |
-| `defaultGitleaksExecutor` | A real `GitleaksExecutor` a caller may use as-is: spawns the binary, asks for a JSON report in a scratch directory, reads it back, cleans up. Not exercised by this package's own tests — see the hermetic-tests note below. |
+| `defaultGitleaksExecutor` | A real `GitleaksExecutor` a caller may use as-is: spawns the binary, asks for a JSON report in a scratch directory, reads it back, cleans up. Not exercised by this package's own tests: this package's test suite never spawns a process or opens a socket for real (`fetch` and process execution are always injected), on the reasoning that a gate whose own tests need the network cannot be trusted to report honestly about a network it could not reach — so `defaultGitleaksExecutor`'s real spawn-and-read path is exercised by a caller's own integration test, not here. |
 | `GitleaksBinaryOptions` | Type. `{ version, sha256, cacheDir?, platform?, arch? }`. |
 | `GitleaksBinaryResult` | Type. `{ path, version, verified }`. |
-| `GitleaksRelease` | Type. `{ version, sha256, url }`. |
+| `GitleaksRelease` | Type. `{ version, platform, arch, sha256, url }`. |
 | `AttemptGitleaksScanOptions` | Type. `{ binaryPath, toolVersion, scope, unitsScanned, args, execute }`. |
 | `GitleaksExecutor` | Type. `(binaryPath, args) => { exitCode, report }` — injected, never called for real in this package's tests. |
 | `GitleaksRunResult` | Type. `{ exitCode, report }`. |
 
 ### Known releases
 
-| Version | SHA-256 (linux x64, as recorded here) |
-|---------|---------------------|
-| 8.30.1 | `551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb` |
+One entry per platform/arch, never one entry per version standing in for
+every platform — a checksum is only ever a valid pin for the one platform's
+asset it was recorded against (see `GitleaksRelease.platform`'s doc comment;
+this used to be a single linux/x64-only entry per version, which made the
+documented convenience path throw on every other platform — fixed here).
+
+| Version | Platform | Arch | SHA-256 |
+|---------|----------|------|---------|
+| 8.30.1 | linux | x64 | `551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb` |
+| 8.30.1 | linux | arm64 | `e4a487ee7ccd7d3a7f7ec08657610aa3606637dab924210b3aee62570fb4b080` |
+| 8.30.1 | darwin | x64 | `dfe101a4db2255fc85120ac7f3d25e4342c3c20cf749f2c20a18081af1952709` |
+| 8.30.1 | darwin | arm64 | `b40ab0ae55c505963e365f271a8d3846efbc170aa17f2607f13df610a9aeb6a5` |
+| 8.30.1 | win32 | x64 | `d29144deff3a68aa93ced33dddf84b7fdc26070add4aa0f4513094c8332afc4e` |
+| 8.30.1 | win32 | arm64 | `b95f5e4f5c425cedca7ee203d9afd29597e692c4924a12ed42f970537c72cc0f` |
 
 This is a lookup convenience for `resolveGitleaksRelease`, not the value
 `downloadAndVerifyGitleaks` verifies against — that is always the caller's

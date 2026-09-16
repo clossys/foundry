@@ -566,7 +566,16 @@ function findExemption(observation: TaskRecordObservation, policy: TaskRecordPol
   return undefined;
 }
 
-/** Evaluates one change's task record against the consuming repository's policy. */
+/**
+ * Evaluates one change's task record against the consuming repository's
+ * policy. Scope: work-item *reference resolution* only — does the change
+ * description carry a reference to a work item, in a shape that resolves
+ * to a real tracked item (or a declared exemption fires instead). It does
+ * not read or validate any other field a policy label might introduce
+ * (an unfilled "Who:", "Why (origin):", or "Outcome:" placeholder, for
+ * example) — those are outside this check's vocabulary and pass through
+ * unexamined.
+ */
 export function checkTaskRecord(
   observation: TaskRecordObservation | undefined,
   policy: TaskRecordPolicy | undefined,
