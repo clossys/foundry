@@ -345,7 +345,7 @@ test("owner-present wrapper runs real pinned npm publish against a loopback regi
   assert.equal(packed.env.HOME.includes("clossys-qualified-publish-"), true);
   const scan = calls.find((call) => call.file === process.execPath && call.args[0]?.endsWith("/scripts/check-public-safety.mjs"));
   assert.ok(scan, "only the intended staged safety-check executable is stubbed and captured");
-  assert.deepEqual(scan.args.slice(-6), ["--artifact", "--no-gitignore", "--allow-changelogs", "--require-denylist", "--scope-config", join(item.root, "package-scope.json")]);
+  assert.deepEqual(scan.args.slice(-8), ["--artifact", "--no-gitignore", "--allow-changelogs", "--require-denylist", "--scope-config", join(item.root, "package-scope.json"), "--path-prefix", "packages/strategist"]);
   assert.equal(scan.env.NPM_TOKEN, undefined, "the full scan receives only its explicit denylist capability");
   assert.equal(verified.length, 1);
   assert.equal(verified[0].env.NPM_TOKEN, undefined);

@@ -27,7 +27,8 @@ import { resolveInstalledPeerVersion } from "../../../internal/resolve-installed
  * surfaced as whatever `@clerk/nextjs/server`'s own call surface happened
  * to crash on, with nothing naming a version range as the cause. Both
  * declared-range constants must match package.json's `peerDependencies`
- * exactly — `server-routes.test.ts` asserts that directly.
+ * exactly, confirmed directly by this package's own (unshipped) test
+ * suite.
  */
 export const CLERK_NEXTJS_DECLARED_RANGE = ">=7 <8";
 export const NEXT_DECLARED_RANGE = ">=16 <17";
