@@ -715,6 +715,55 @@ for the full contract each subpath ships — the shape is unchanged from
 `@example/deployment`'s own README, which this package's history
 carries forward.
 
+### Which branch feeds which environment (issue #929)
+
+`DEPLOYMENT_ENVIRONMENTS` enumerates the environments and stops. A repository
+that takes day-to-day work on one long-lived branch and deploys from a second
+one is describing a real, checkable arrangement, and until now no part of
+this contract could hold it: a surface said *where* it is live and *how to
+tell*, never *what feeds it*.
+
+```ts
+import {
+  checkDeploymentBranchBindings,
+  defineDeploymentBranchBindings,
+  validateDeploymentBranchBindings,
+} from "@clossys/builder/deployment";
+
+const branchBindings = defineDeploymentBranchBindings([
+  { environment: "production", branch: "release" },
+  { environment: "preview", branch: "main" },
+]);
+
+const result = checkDeploymentBranchBindings({ manifest, branchBindings });
+// => { ok: true, findings: [], surfacesChecked: 2, bindingsChecked: 2, productionBranch: "release" }
+```
+
+`branch` is a **plain string**. It names a branch that a repository's own
+profile — a different package's contract entirely — declares, and this
+package does not import that package to resolve it. That is the same seam
+`@clossys/strategist`'s `BrandDerivation` already uses for token slots and
+voice rules, and for the same reason: one package declares the topology, this
+one declares which environment consumes it, and the repository that depends
+on both is the one place the two names can actually be compared.
+
+This stays a contract a repository satisfies. Nothing here deploys, mutates a
+provider, or makes a network call; the provider adapters remain read-only.
+
+`checkDeploymentBranchBindings` fails closed. An empty binding list or a
+manifest with no surfaces is a finding, never a vacuous pass, and
+`surfacesChecked`/`bindingsChecked` are present in every result so "nothing
+was compared" and "everything agreed" can never be told apart by a caller who
+only glances at `ok`. `productionBranch` appears only on a clean result.
+
+| Export | Kind | Purpose |
+| --- | --- | --- |
+| `validateDeploymentBranchBindings(value)` / `isValidDeploymentBranchBindings(value)` | functions | Strict structural validation of untyped authoring input; a throwing accessor reads as unreadable input, never as a pass. |
+| `defineDeploymentBranchBindings(definitions)` | function | Produces a detached, explicit binding list. |
+| `checkDeploymentBranchBindings(input)` | function | Compares a manifest's declared environments against the bindings; reports every unbound environment and an unbound `production`. |
+| `REQUIRED_BOUND_DEPLOYMENT_ENVIRONMENT` | constant | The one environment a repository cannot leave unbound once a surface declares it. |
+| `DeploymentBranchBinding` / `DeploymentBranchBindingDefinition` / `DeploymentBranchBindingCheck` / `DeploymentBranchBindingFindingRule` | types | The binding, its authoring shape, the check result, and the closed finding vocabulary. |
+
 `evaluateDeploymentHealth` is also reachable from the shell, via the same
 `builder-verify-toolchain` bin's `deployment-health` subcommand:
 

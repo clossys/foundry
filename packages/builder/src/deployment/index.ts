@@ -4,6 +4,19 @@ export { defineDeploymentConfigurationPlan, isValidDeploymentConfigurationPlan, 
 export { evaluateDeploymentHealth } from "./health.js";
 export { normalizeDeploymentManifest, serializeDeploymentManifest } from "./normalize.js";
 export { DEPLOYMENT_ENVIRONMENTS } from "./types.js";
+export {
+  REQUIRED_BOUND_DEPLOYMENT_ENVIRONMENT,
+  checkDeploymentBranchBindings,
+  defineDeploymentBranchBindings,
+  isValidDeploymentBranchBindings,
+  validateDeploymentBranchBindings,
+} from "./branch-binding.js";
+export type {
+  DeploymentBranchBinding,
+  DeploymentBranchBindingCheck,
+  DeploymentBranchBindingDefinition,
+  DeploymentBranchBindingFindingRule,
+} from "./branch-binding.js";
 export { isValidDeploymentManifest, validateDeploymentManifest } from "./validate.js";
 export type {
   DeploymentEnvironment,
