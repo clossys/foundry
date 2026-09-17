@@ -39,11 +39,11 @@ function response(bytes: Buffer): Response {
   } as Response;
 }
 
-async function localArchive(): Promise<Buffer> {
+async function localArchive(content = "hermetic fixture"): Promise<Buffer> {
   const root = mkdtempSync(join(tmpdir(), "inspector-gitleaks-archive-"));
   const output = join(root, "fixture.tar.gz");
   try {
-    writeFileSync(join(root, "gitleaks"), "#!/bin/sh\necho hermetic fixture\n");
+    writeFileSync(join(root, "gitleaks"), `#!/bin/sh\necho ${content}\n`);
     await createTarArchive({ cwd: root, file: output, gzip: true }, ["gitleaks"]);
     return readFileSync(output);
   } finally {
@@ -95,8 +95,13 @@ describe("packed Inspector gitleaks provenance", () => {
       expect(bytes).toContain(LINUX_X64_SHA256);
     }
 
-    expect(packed.resolveGitleaksRelease(VERSION)).toEqual({
+    // `resolveGitleaksRelease` is now keyed on platform/arch too (Finding
+    // C), so the linux/x64 tuple this test names is asked for explicitly
+    // rather than relied on as whatever this test happens to run on.
+    expect(packed.resolveGitleaksRelease(VERSION, "linux", "x64")).toEqual({
       version: VERSION,
+      platform: "linux",
+      arch: "x64",
       url: LINUX_X64_URL,
       sha256: LINUX_X64_SHA256,
     });
@@ -122,23 +127,50 @@ describe("packed Inspector gitleaks provenance", () => {
     }
   });
 
-  it("rejects substituted platform, version, and hash controls without a live download", async () => {
+  // Audit pass 9 / #897, Finding B: the earlier version of this test (one
+  // "it" covering platform, version, and hash controls) asserted that a
+  // `platform: "darwin", arch: "arm64"` request against the LINUX checksum
+  // throws `Checksum verification failed` -- true, but for a reason that had
+  // nothing to do with platform: `fetch` was stubbed to return the same
+  // hermetic local fixture regardless of which URL was requested, and that
+  // fixture's digest can never equal ANY pinned value, real or not, so the
+  // identical throw would have occurred for `platform: "linux"` too. The
+  // only assertion in that block that was actually sensitive to the
+  // `platform` argument was the fetched-URL check. A reader who distrusts
+  // the README and reads this test suite instead could walk away believing
+  // the platform mismatch itself was what got rejected, when the rejection
+  // was really Finding C's unfixed defect (`KNOWN_RELEASES` had no platform
+  // dimension) wearing a control's name.
+  //
+  // Split in two, below: the version and hash controls (genuinely
+  // input-decisive on their own dimensions, kept) and a platform control,
+  // below, that now genuinely exercises the packed
+  // `resolveGitleaksRelease`/`KNOWN_RELEASES` fix for Finding C.
+  //
+  // CORRECTION (post-merge review of this same PR): an earlier version of
+  // the next test's own comment claimed it "could not have been written
+  // without first fixing" Finding C. That claim was false -- that version
+  // built `darwinUrl`/`linuxUrl` from hardcoded template strings and never
+  // called `resolveGitleaksRelease` at all, so it passed unchanged with
+  // Finding C's exact bug reintroduced (`resolveGitleaksRelease` patched to
+  // ignore its `platform`/`arch` arguments and always resolve the linux/x64
+  // entry): reproduced by making that edit, rebuilding, and rerunning this
+  // file -- all 5 tests here still passed, 0 failures. The real regression
+  // coverage for Finding C lives in `gitleaks.test.ts`'s
+  // "resolveGitleaksRelease" and "KNOWN_RELEASES integrity" `describe`
+  // blocks, which fail (5 tests) under that identical mutation.
+  //
+  // The test below now asks the PACKED module's own `resolveGitleaksRelease`
+  // for the darwin/arm64 and linux/x64 entries and asserts they are distinct
+  // BEFORE doing anything else, then drives the fetch mock off the URLs
+  // those calls returned rather than off hardcoded strings. Reproduced
+  // fixed: with the same mutation applied, `resolveGitleaksRelease(VERSION,
+  // "darwin", "arm64")` now returns the identical entry as
+  // `resolveGitleaksRelease(VERSION, "linux", "x64")`, so the very first
+  // `.url`/`.sha256` inequality assertions below fail immediately, before
+  // the fetch mock is ever installed.
+  it("rejects a substituted version before any download, and a substituted hash after one, without a live download", async () => {
     const archive = await localArchive();
-
-    const platformCache = mkdtempSync(join(tmpdir(), "inspector-gitleaks-platform-"));
-    const platformFetch = vi.fn(async () => response(archive));
-    vi.stubGlobal("fetch", platformFetch);
-    await expect(packed.downloadAndVerifyGitleaks({
-      version: VERSION,
-      sha256: LINUX_X64_SHA256,
-      platform: "darwin",
-      arch: "arm64",
-      cacheDir: platformCache,
-    })).rejects.toThrow("Checksum verification failed");
-    expect(platformFetch).toHaveBeenCalledWith(
-      `https://github.com/gitleaks/gitleaks/releases/download/v${VERSION}/gitleaks_${VERSION}_darwin_arm64.tar.gz`,
-    );
-    rmSync(platformCache, { force: true, recursive: true });
 
     const versionFetch = vi.fn();
     vi.stubGlobal("fetch", versionFetch);
@@ -160,6 +192,70 @@ describe("packed Inspector gitleaks provenance", () => {
     })).rejects.toThrow("Checksum verification failed");
     expect(existsSync(cachedBinary(hashCache))).toBe(false);
     rmSync(hashCache, { force: true, recursive: true });
+  });
+
+  it("the SAME expected checksum verifies for the platform whose asset hashes to it and fails for a different platform (genuinely platform-decisive: sourced from the packed resolveGitleaksRelease/KNOWN_RELEASES, no live download)", async () => {
+    // Ask the PACKED module itself -- not a hardcoded string -- which URL
+    // each platform/arch resolves to. If Finding C's bug were reintroduced
+    // (platform/arch ignored, always the linux/x64 entry), `darwinRelease`
+    // and `linuxRelease` would be the SAME object and these four
+    // assertions would fail here, before any fetch mock exists.
+    const darwinRelease = packed.resolveGitleaksRelease(VERSION, "darwin", "arm64");
+    const linuxRelease = packed.resolveGitleaksRelease(VERSION, "linux", "x64");
+    expect(darwinRelease).toBeDefined();
+    expect(linuxRelease).toBeDefined();
+    expect(darwinRelease?.url).not.toBe(linuxRelease?.url);
+    expect(darwinRelease?.sha256).not.toBe(linuxRelease?.sha256);
+    const darwinUrl = darwinRelease!.url;
+    const linuxUrl = linuxRelease!.url;
+
+    // Two DIFFERENT archives with different content, hence different
+    // digests. `matchingArchive` is served for the darwin/arm64 URL only;
+    // `mismatchedArchive` (standing in for a genuine, differently-built
+    // linux/x64 asset) is served for every other URL. Both are real,
+    // extractable tar.gz fixtures -- this is not a byte string standing in
+    // for "some download", it is what "the download differs by platform"
+    // actually looks like.
+    const matchingArchive = await localArchive("darwin arm64 fixture");
+    const mismatchedArchive = await localArchive("linux x64 fixture");
+    const expectedSha256 = sha256(matchingArchive);
+    expect(sha256(mismatchedArchive)).not.toBe(expectedSha256);
+
+    const platformFetch = vi.fn(async (url: string) =>
+      response(url === darwinUrl ? matchingArchive : mismatchedArchive),
+    );
+    vi.stubGlobal("fetch", platformFetch);
+
+    const darwinCache = mkdtempSync(join(tmpdir(), "inspector-gitleaks-platform-darwin-"));
+    try {
+      const result = await packed.downloadAndVerifyGitleaks({
+        version: VERSION,
+        sha256: expectedSha256,
+        platform: "darwin",
+        arch: "arm64",
+        cacheDir: darwinCache,
+      });
+      expect(result.verified).toBe(true);
+      expect(platformFetch).toHaveBeenCalledWith(darwinUrl);
+      expect(readFileSync(result.path, "utf8")).toContain("darwin arm64 fixture");
+    } finally {
+      rmSync(darwinCache, { force: true, recursive: true });
+    }
+
+    const linuxCache = mkdtempSync(join(tmpdir(), "inspector-gitleaks-platform-linux-"));
+    try {
+      await expect(packed.downloadAndVerifyGitleaks({
+        version: VERSION,
+        sha256: expectedSha256,
+        platform: "linux",
+        arch: "x64",
+        cacheDir: linuxCache,
+      })).rejects.toThrow("Checksum verification failed");
+      expect(platformFetch).toHaveBeenCalledWith(linuxUrl);
+      expect(existsSync(cachedBinary(linuxCache))).toBe(false);
+    } finally {
+      rmSync(linuxCache, { force: true, recursive: true });
+    }
   });
 
   it("rejects a malformed archive even when the caller hash matches, while a local control extracts", async () => {

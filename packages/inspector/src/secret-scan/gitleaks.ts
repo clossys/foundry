@@ -18,6 +18,16 @@ import { join } from "node:path";
 
 export interface GitleaksRelease {
   readonly version: string;
+  /**
+   * The platform/arch this exact `sha256` and `url` were recorded for.
+   * `resolveGitleaksRelease` and `KNOWN_RELEASES` are keyed on all three of
+   * `version`, `platform`, and `arch` together (#301's second finding,
+   * fixed here): a checksum pinned for one platform's asset is never a
+   * valid pin for another platform's asset, so a table with no platform
+   * dimension could only ever be correct for one platform per version.
+   */
+  readonly platform: "linux" | "darwin" | "win32";
+  readonly arch: "x64" | "arm64";
   readonly sha256: string;
   readonly url: string;
 }
@@ -131,22 +141,82 @@ const DEFAULT_CACHE_DIR = join(tmpdir(), "clossys", "secret-scan", "gitleaks");
  *      not have leaked a bad binary (a real tarball never hashes to it, so
  *      verification fails closed), but a caller passing it through got a
  *      guaranteed, unexplained failure, and a reader got a value that looked
- *      revalidated and was not. The entry below was verified two ways on
- *      2026-08-18: against the gitleaks project's own
+ *      revalidated and was not. The linux/x64 entry below was verified two
+ *      ways on 2026-08-18: against the gitleaks project's own
  *      `gitleaks_8.30.1_checksums.txt`, and by hashing the 8,230,402-byte
- *      asset directly.
+ *      asset directly. Every other platform/arch entry for 8.30.1 was
+ *      verified the same two ways, on the day the platform dimension below
+ *      was added: against `gitleaks_8.30.1_checksums.txt`, and by
+ *      downloading and hashing that entry's own asset directly.
  *   2. A caller who already has the checksum from its own source of truth
  *      does not need an entry here at all — `downloadAndVerifyGitleaks`
- *      still requires the version to be present in this table (an
- *      allowlist of versions this package has been exercised against), but
- *      the checksum it verifies against is always the caller's, never this
- *      table's.
+ *      still requires the version+platform+arch combination to be present
+ *      in this table (an allowlist of exactly which per-platform assets
+ *      this package has been exercised against), but the checksum it
+ *      verifies against is always the caller's, never this table's.
+ *   3. THE PLATFORM DIMENSION (#301's second finding, unfixed until now):
+ *      a `GitleaksRelease` is only a valid pin for the one platform/arch it
+ *      was recorded for. Before this field existed, this table carried one
+ *      entry per *version*, always the linux/x64 asset's checksum, and
+ *      `resolveGitleaksRelease(version)` returned it regardless of which
+ *      platform actually called `downloadAndVerifyGitleaks` — so the
+ *      documented convenience path (resolve a checksum, then verify a
+ *      download against it) downloaded the CORRECT platform's asset (the
+ *      URL was always platform-derived) but checked it against the WRONG
+ *      platform's checksum on every platform except linux/x64, and so threw
+ *      `Checksum verification failed` unconditionally on darwin/arm64 (and
+ *      every other non-linux/x64 platform) — a genuine asset, wrongly
+ *      rejected, 100% of the time, with a message that (before this fix)
+ *      claimed the asset "may have been tampered with or the release
+ *      metadata is outdated." Neither was ever true in that case: the
+ *      asset was genuine and the metadata was current for a DIFFERENT
+ *      platform than the one running. `resolveGitleaksRelease` and this
+ *      table are now keyed on platform and arch as well as version, so the
+ *      convenience path resolves the checksum that actually matches what
+ *      it is about to download.
  */
 const KNOWN_RELEASES: readonly GitleaksRelease[] = Object.freeze([
   {
     version: "8.30.1",
+    platform: "linux",
+    arch: "x64",
     sha256: "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb",
     url: "https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz",
+  },
+  {
+    version: "8.30.1",
+    platform: "linux",
+    arch: "arm64",
+    sha256: "e4a487ee7ccd7d3a7f7ec08657610aa3606637dab924210b3aee62570fb4b080",
+    url: "https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_arm64.tar.gz",
+  },
+  {
+    version: "8.30.1",
+    platform: "darwin",
+    arch: "x64",
+    sha256: "dfe101a4db2255fc85120ac7f3d25e4342c3c20cf749f2c20a18081af1952709",
+    url: "https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_darwin_x64.tar.gz",
+  },
+  {
+    version: "8.30.1",
+    platform: "darwin",
+    arch: "arm64",
+    sha256: "b40ab0ae55c505963e365f271a8d3846efbc170aa17f2607f13df610a9aeb6a5",
+    url: "https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_darwin_arm64.tar.gz",
+  },
+  {
+    version: "8.30.1",
+    platform: "win32",
+    arch: "x64",
+    sha256: "d29144deff3a68aa93ced33dddf84b7fdc26070add4aa0f4513094c8332afc4e",
+    url: "https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_windows_x64.zip",
+  },
+  {
+    version: "8.30.1",
+    platform: "win32",
+    arch: "arm64",
+    sha256: "b95f5e4f5c425cedca7ee203d9afd29597e692c4924a12ed42f970537c72cc0f",
+    url: "https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_windows_arm64.zip",
   },
 ]);
 
@@ -177,32 +247,57 @@ export function getAssetName(version: string, platform: "linux" | "darwin" | "wi
   return `gitleaks_${version}_${platformName}_${archName}${ext}`;
 }
 
-export function resolveGitleaksRelease(version: string): GitleaksRelease | undefined {
-  return KNOWN_RELEASES.find((r) => r.version === version);
+/**
+ * Looks up this package's own recorded release entry for a version AND a
+ * platform/arch — see `GitleaksRelease.platform`'s doc comment for why all
+ * three are part of the key. `platform`/`arch` default to the current
+ * process's own (`getPlatformArch()`) when omitted, matching
+ * `downloadAndVerifyGitleaks`'s own default, so `resolveGitleaksRelease(v)`
+ * remains a valid one-argument call for a caller building the documented
+ * convenience path on whatever platform it is running on.
+ */
+export function resolveGitleaksRelease(
+  version: string,
+  platform?: "linux" | "darwin" | "win32",
+  arch?: "x64" | "arm64",
+): GitleaksRelease | undefined {
+  const resolved = platform && arch ? { platform, arch } : getPlatformArch();
+  return KNOWN_RELEASES.find(
+    (r) => r.version === version && r.platform === resolved.platform && r.arch === resolved.arch,
+  );
 }
 
 export async function downloadAndVerifyGitleaks(
   options: GitleaksBinaryOptions,
 ): Promise<GitleaksBinaryResult> {
-  const release = resolveGitleaksRelease(options.version);
-  if (!release) {
-    throw new Error(`Unknown gitleaks version: ${options.version}. Known versions: ${KNOWN_RELEASES.map((r) => r.version).join(", ")}`);
-  }
-
   const { platform, arch } = options.platform && options.arch
     ? { platform: options.platform, arch: options.arch }
     : getPlatformArch();
+
+  const release = resolveGitleaksRelease(options.version, platform, arch);
+  if (!release) {
+    const knownForVersion = KNOWN_RELEASES.filter((r) => r.version === options.version)
+      .map((r) => `${r.platform}/${r.arch}`)
+      .join(", ");
+    throw new Error(
+      knownForVersion
+        ? `Unknown gitleaks version for ${platform}/${arch}: ${options.version} is only recorded for ${knownForVersion}.`
+        : `Unknown gitleaks version: ${options.version}. Known versions: ${Array.from(new Set(KNOWN_RELEASES.map((r) => r.version))).join(", ")}`,
+    );
+  }
 
   const assetName = getAssetName(options.version, platform, arch);
   // The CALLER'S checksum is what gets verified, never `release.sha256` —
   // `sha256` is a required field on `GitleaksBinaryOptions` precisely so a
   // caller always states what it expects rather than this function silently
   // substituting its own bundled value. `release` above still gates which
-  // VERSIONS are accepted at all (an allowlist this package has been
-  // exercised against); it does not gate what content is trusted for one.
-  // A caller who wants this package's own recorded checksum for a known
-  // version still gets it, explicitly, via `resolveGitleaksRelease` — see
-  // that function and the README's usage example.
+  // VERSION+PLATFORM+ARCH combinations are accepted at all (an allowlist of
+  // exactly the per-platform assets this package has been exercised
+  // against); it does not gate what content is trusted for one. A caller
+  // who wants this package's own recorded checksum for a known
+  // version/platform/arch still gets it, explicitly, via
+  // `resolveGitleaksRelease` — see that function and the README's usage
+  // example.
   const expectedSha256 = options.sha256;
 
   const cacheDir = options.cacheDir ?? DEFAULT_CACHE_DIR;
@@ -238,8 +333,10 @@ export async function downloadAndVerifyGitleaks(
   const actualSha256 = createHash("sha256").update(buffer).digest("hex");
   if (actualSha256 !== expectedSha256) {
     throw new Error(
-      `Checksum verification failed for gitleaks ${options.version}: expected ${expectedSha256}, got ${actualSha256}. ` +
-      `The downloaded asset may have been tampered with or the release metadata is outdated.`,
+      `Checksum verification failed for gitleaks ${options.version} (${platform}/${arch}): expected ${expectedSha256}, got ${actualSha256}. ` +
+      `This can mean the downloaded asset was tampered with, the release metadata is outdated, or (most commonly) the caller-supplied checksum ` +
+      `is simply pinned for a different platform/arch than ${platform}/${arch} — a checksum is only ever a valid pin for the one platform's ` +
+      `asset it was recorded against; see \`resolveGitleaksRelease\`.`,
     );
   }
 
@@ -279,6 +376,12 @@ export function getCachedGitleaksPath(version: string, cacheDir?: string): strin
   return existsSync(path) ? path : undefined;
 }
 
+/**
+ * Distinct known versions across every recorded platform/arch —
+ * deduplicated because `KNOWN_RELEASES` now carries one entry per
+ * platform/arch for a version (see `GitleaksRelease.platform`'s doc
+ * comment), not one entry per version.
+ */
 export function getKnownVersions(): readonly string[] {
-  return KNOWN_RELEASES.map((r) => r.version);
+  return Array.from(new Set(KNOWN_RELEASES.map((r) => r.version)));
 }
