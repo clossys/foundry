@@ -4344,6 +4344,92 @@ try {
         check(`--since --pr: no matched text is echoed into output`, !result.out.includes("acme-corp"), `matched term leaked into --pr --since output: ${result.out}`);
       }
     }
+
+    // ---- #923: `--help` used to have no handler at all, so it silently
+    // fell through into draft mode — reading zero bytes of stdin (or, with
+    // a real terminal attached, blocking forever) and reporting a FULL-mode
+    // PASS over a run that examined nothing. Now `--help` is handled first,
+    // before stdin is ever touched, and any other unrecognised flag is
+    // refused (exit 2, naming the flag) rather than silently treated as
+    // "read stdin instead".
+    {
+      // No `input` option here at all (not even ""), matching the run()
+      // helper's own contract above: without `input`, child stdio[0] is
+      // "ignore" rather than piped/inherited — this is what actually stood
+      // in for the reported terminal-hang report while staying hermetic
+      // (an "ignore"d stdin behaves like /dev/null: an immediate EOF, not a
+      // blocking read). The defect this regression-tests is not "does it
+      // hang" so much as "does --help even get recognised before stdin is
+      // consulted at all" — and that is exactly what the old code failed to
+      // do, whether stdin was a live terminal or already closed.
+      const help = run("node", [CONVERSATION, "--help"]);
+      check("--help exits 0", help.code === 0, `exit was ${help.code}: ${help.out.slice(0, 300)}`);
+      check(
+        "--help prints usage and says nothing about a scan (never reads stdin, never emits a verdict)",
+        /Usage:/.test(help.out) && !/scanned \d+ conversation item/.test(help.out) && !/PASS|FAIL|NOT-APPLICABLE/.test(help.out),
+        `output: ${help.out.slice(0, 400)}`,
+      );
+
+      const unknown = run("node", [CONVERSATION, "--bogus-flag"]);
+      check(
+        "an unrecognised flag exits 2 (could not run) rather than falling through to stdin/draft mode",
+        unknown.code === 2,
+        `exit was ${unknown.code}: ${unknown.out.slice(0, 300)}`,
+      );
+      check("the unrecognised-flag message names the offending flag", unknown.out.includes("--bogus-flag"), `output: ${unknown.out}`);
+
+      // ---- "scanned 0 items" must read as not-applicable, never as PASS
+      // (docs/LIFECYCLE.md's eighth value: `not-applicable, with a reason`
+      // is a distinct verdict from a pass, because nothing was examined).
+      const emptyDraft = run("node", [CONVERSATION, "--denylist", synthPath, "--require-denylist", "--json"], { input: "" });
+      let emptyReport = null;
+      try {
+        emptyReport = JSON.parse(emptyDraft.out);
+      } catch {
+        emptyReport = null;
+      }
+      check("scanning 0 items still exits 0 — it is a legitimate no-op, not a failure", emptyDraft.code === 0, `exit was ${emptyDraft.code}: ${emptyDraft.out.slice(0, 300)}`);
+      check(
+        "scanning 0 items reports verdict not-applicable in --json, never pass",
+        emptyReport?.scanned === 0 && emptyReport?.verdict === "not-applicable",
+        `report: ${JSON.stringify(emptyReport)}`,
+      );
+
+      const emptyDraftText = run("node", [CONVERSATION, "--denylist", synthPath, "--require-denylist"], { input: "" });
+      check(
+        "scanning 0 items in text mode prints NOT-APPLICABLE, never a bare PASS line",
+        /NOT-APPLICABLE/.test(emptyDraftText.out) && !/^PASS/m.test(emptyDraftText.out),
+        `output: ${emptyDraftText.out}`,
+      );
+
+      // ---- the legitimate empty-draft no-op is the ONLY thing that
+      // changed. A real, non-empty draft must still scan normally and still
+      // report an ordinary PASS when clean — this is the regression check
+      // that the not-applicable change above didn't also swallow real scans.
+      const realDraft = run("node", [CONVERSATION, "--denylist", synthPath, "--require-denylist", "--json"], {
+        input: "An ordinary, unremarkable comment about a bug fix.\n",
+      });
+      let realReport = null;
+      try {
+        realReport = JSON.parse(realDraft.out);
+      } catch {
+        realReport = null;
+      }
+      check(
+        "a real (non-empty) draft still scans normally and reports verdict pass",
+        realDraft.code === 0 && realReport?.scanned === 1 && realReport?.verdict === "pass",
+        `report: ${JSON.stringify(realReport)}`,
+      );
+
+      // ---- stdin mode remains genuinely intended and unbroken: piping
+      // real, non-empty text with no --file still works end to end.
+      const stdinDraft = run("node", [CONVERSATION, "--denylist", synthPath, "--require-denylist"], { input: "hello from stdin\n" });
+      check(
+        "stdin mode (no --file) still scans a genuinely piped draft and passes",
+        stdinDraft.code === 0 && /scanned 1 conversation item/.test(stdinDraft.out) && /PASS/.test(stdinDraft.out),
+        `output: ${stdinDraft.out.slice(0, 300)}`,
+      );
+    }
   }
 
   // ------------------------------------------- check-foreign-references
