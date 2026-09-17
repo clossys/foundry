@@ -3,8 +3,9 @@
 A small set of TypeScript packages for validating an npm workspace against
 what is actually true of it — not against what its own packages claim about
 themselves. This repository is public and MIT licensed; current `@clossys`
-package releases are **public** on npm. Some source packages have not yet been
-released (see Installing, below).
+package releases are **public** on npm. The table below is a source-tree
+inventory. Whether a given version is the one to pin is a registry
+measurement, not a sentence in this file — see Installing.
 
 **Thesis:** every check here runs against what is actually on disk or
 actually installed — never against what a manifest claims about itself. An
@@ -61,14 +62,18 @@ investigation time before they opened the README and found out:
   current value. It does not distribute anything and does not export a
   package.
 
-The cross-package ownership and adoption plan is in
+The first-wave productization and install sequence — Advisor through
+operating integrity, then expression, with Publisher before Influencer so
+the publication pipeline actually closes — is
+[docs/FIRST-WAVE.md](docs/FIRST-WAVE.md). Transport-role ownership is in
 [docs/COMMUNICATIONS.md](docs/COMMUNICATIONS.md).
 
 The table is a source-tree inventory, not a promise that every named package
 is available in the registry. Dependent packages publish only after their
 runtime siblings, and every such release is proved from an isolated install
-of its selected tarball. The required order for the core release graph is
-documented in [docs/PUBLISHING.md](docs/PUBLISHING.md).
+of its selected tarball. The required order for the core *release* graph is
+documented in [docs/PUBLISHING.md](docs/PUBLISHING.md). That graph is not
+the first-wave productization order.
 
 For historical background on the predecessor delivery pipeline, see
 [the archived product delivery pipeline](docs/PIPELINE.md). Current package
@@ -77,32 +82,31 @@ package READMEs and their lifecycle records.
 
 ## Installing
 
-The current `@clossys` public npm Trio is published and verified through npm
-trusted publishing with provenance: Advisor 0.1.5, Starter 0.1.4, and
-Controller 0.8.23. Public packument and tarball access, exact served-byte
-parity, and the immutable qualification records are retained for each current
-release. The original owner-present identities remain historical evidence; they
-are not current installation pins.
+Current `@clossys` packages install from the public npm registry,
+`https://registry.npmjs.org`, with no authentication. Do not add a token or a
+private registry mapping for `@clossys`. Pin exact versions; do not treat
+`latest` as a pin. Install only the package or packages a first-wave position
+actually opens — [docs/FIRST-WAVE.md](docs/FIRST-WAVE.md) ranks producer
+productization, and [docs/ADOPTION.md](docs/ADOPTION.md) forbids a blanket
+install.
 
-Consumers may use the exact current versions through ordinary credentialless
-public npm resolution. Install only the package or packages a consumer needs,
-using exact pins rather than a floating `latest` tag. Publication and
-installation remain distinct from consumer adoption, independent grounding, or
-closure. Strategist 0.1.1 has owner-present first-publication evidence.
-Strategist 0.1.2, Writer, and Designer are reviewed qualification candidates,
-not published packages; each later publication needs its own
-immutable, package-neutral record joined to the exact qualification, catalogue
-entry, candidate tarball, anonymous served bytes, and applicable publisher
-provenance when a separately evidenced trusted-publisher release exists.
+Measure identities rather than copying versions out of this paragraph:
 
-Do not add a token or a private registry mapping for `@clossys`. The canonical
-source tuple is declared once in [`package-scope.json`](package-scope.json).
-The original first identities were owner-present publications; the current Trio
-versions are the later trusted-publisher releases. Provider state is now
-value-free verified for each current Trio member: Publishing access requires
-2FA and disallows traditional publish tokens. Publication or installation does
-not prove consumer adoption, independent grounding, or closure; those require
-separate consumer-owned evidence.
+```bash
+npm view @clossys/<package> version --registry https://registry.npmjs.org
+node scripts/check-registry-parity.mjs
+```
+
+A source tree that is ahead of the registry is not an install target. A
+retained publication record for a superseded version is not evidence that the
+current manifest version shipped ([docs/LIFECYCLE.md](docs/LIFECYCLE.md)
+state 4). Publication or installation does not prove consumer adoption,
+independent grounding, or closure.
+
+The canonical source tuple is declared once in
+[`package-scope.json`](package-scope.json). Historical Trio versions, owner-present
+first identities, and later trusted-publisher releases remain in the
+qualification and publication records; they are not current installation pins.
 
 ### Historical `@vespeneventures` packages
 

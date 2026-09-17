@@ -57,6 +57,15 @@ engagement sequencing for the representative Trio, not a manifest edge.
 Advisor's connector, sponsor identity, evidence store, and any repository or
 provider adapters remain consumer-owned.
 
+This graph is publication order. It is not the first-wave productization
+order. Writer and designer sit before publisher here because publisher cannot
+publish without them; they do not jump the operating-control queue when the
+remaining work is "make each package honestly installable and closed-loop."
+That sequence — catalogue integrity, Advisor, Starter, Controller, operating
+control, agreements, then expression, with publisher before influencer — is
+[`docs/FIRST-WAVE.md`](FIRST-WAVE.md) and
+[`docs/contracts/first-wave-sequence.json`](contracts/first-wave-sequence.json).
+
 `controller` (issue #282 — formerly three separate packages: `governance`,
 `conventions`, and `policy`) owns the catalog, composition, gates, release,
 repository, review, conventions, and policy subpaths, with no runtime

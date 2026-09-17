@@ -96,6 +96,13 @@ mutation surfaces, direct consumers, and evidence paths are independent.
 Package availability, a plane-wide inventory, or the historical A/B/C delivery
 cohorts never authorize a bulk installation.
 
+Producer work that makes those packages honestly installable and closed-loop
+is sequenced separately: operational integrity before frontend development,
+Advisor through Publisher's expression pipeline, in
+[FIRST-WAVE.md](FIRST-WAVE.md). That sequence ranks Foundry backlog. It does
+not authorize a consumer to install every name, and it does not replace the
+flow below.
+
 1. **Open Advisor first.** For a new or continuing engagement, create or
    reassess the Advisor position before opening a Controller or first-wave
    operating position. Advisor reconciles sponsor intent, offering fit,

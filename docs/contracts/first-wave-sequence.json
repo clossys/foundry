@@ -1,0 +1,174 @@
+{
+  "schemaVersion": 1,
+  "$comment": "Producer productization and first-wave consumer-install sequence. Not a live lifecycle-position table, not a publication catalogue, and not permission to install every package. Membership is the nineteen current source packages; order is engagement, then operational integrity, then expression. Runtime edges are read from package manifests at check time, not restated here. A consumer still opens only justified positions and skips not-applicable roles.",
+  "priority": [
+    "catalogue-integrity",
+    "engagement",
+    "executable-tooling",
+    "operational-integrity",
+    "frontend-expression"
+  ],
+  "trioPrefix": [
+    "advisor",
+    "starter",
+    "controller"
+  ],
+  "nonRuntimeOrder": [
+    {
+      "earlier": "publisher",
+      "later": "influencer",
+      "reason": "Audience-response measurement is the learn stage of publication; productizing influencer before publisher designs an open loop."
+    }
+  ],
+  "waves": [
+    {
+      "id": "catalogue-integrity",
+      "kind": "catalogue-integrity",
+      "job": "Make every current identity anonymously installable and honestly documented before any first-wave consumer is told to pin it.",
+      "packages": []
+    },
+    {
+      "id": "engagement-gate",
+      "kind": "engagement",
+      "job": "Reconcile sponsor intent, readiness, and first-wave pre-work before any operating position is opened.",
+      "packages": [
+        "advisor"
+      ]
+    },
+    {
+      "id": "trusted-base",
+      "kind": "executable-tooling",
+      "job": "Prove the consumer-owned trusted-base foundation and activation path without treating executable tooling as a role.",
+      "packages": [
+        "starter"
+      ]
+    },
+    {
+      "id": "operating-rules",
+      "kind": "operational-integrity",
+      "job": "Make operating rules expressible, current, and followable; this is the runtime root for later operating packages.",
+      "packages": [
+        "controller"
+      ]
+    },
+    {
+      "id": "operating-control",
+      "kind": "operational-integrity",
+      "job": "Productize the independent measurer, topology, change judgment, live-state realization, key custody, and package-currency loops before any expression or frontend work.",
+      "packages": [
+        "observer",
+        "architect",
+        "inspector",
+        "builder",
+        "locksmith",
+        "integrator"
+      ]
+    },
+    {
+      "id": "agreements-and-custody",
+      "kind": "operational-integrity",
+      "job": "Productize authority, intent confirmation, transport, obligation discharge, and holding-stewardship loops for person-facing operating integrity.",
+      "packages": [
+        "bouncer",
+        "butler",
+        "messenger",
+        "giver",
+        "keeper"
+      ]
+    },
+    {
+      "id": "strategy-and-expression",
+      "kind": "frontend-expression",
+      "job": "Productize strategy, copy, design, verified publication, then audience-response learning. Designer and publisher are last among expression because they are frontend surfaces; publisher still waits for writer and designer at runtime.",
+      "packages": [
+        "strategist",
+        "writer",
+        "designer",
+        "publisher",
+        "influencer"
+      ]
+    }
+  ],
+  "productizationCriteria": [
+    {
+      "id": "charter",
+      "owner": "supplier",
+      "gated": "check:role-loop-archetypes",
+      "means": "The role declares one job question, one owned metric, one primary mode, a durable boundary, and a close condition."
+    },
+    {
+      "id": "bin-reachable",
+      "owner": "supplier",
+      "gated": null,
+      "means": "Every declared bin runs when invoked through the installer-linked name, not only when spawned by real path. A bin that exits 0 with no output on every input is not staged evidence."
+    },
+    {
+      "id": "install-docs",
+      "owner": "supplier",
+      "gated": null,
+      "means": "The package README names the public npm registry and states that current-scope install needs no token. A GitHub Packages token instruction on a public-npm package is a blocking defect."
+    },
+    {
+      "id": "readme-close-condition",
+      "owner": "supplier",
+      "gated": null,
+      "means": "The package README states the close condition a consumer binds. The shared charter string stays consumer-owned; thirteen READMEs stating none is the supplier gap."
+    },
+    {
+      "id": "metric-computed",
+      "owner": "supplier",
+      "gated": null,
+      "means": "The owned metric is computed by shipped code under the name the charter declares. A declaration with no computation, or a computation of a different metric, is an open loop."
+    },
+    {
+      "id": "ternary-exit",
+      "owner": "supplier",
+      "gated": null,
+      "means": "The installed CLI produces native 0, 1, and 2 from matched fixtures, with a control that stays green in the same run."
+    },
+    {
+      "id": "re-runnable",
+      "owner": "consumer-after-supplier",
+      "gated": "check:package-evidence",
+      "means": "This repository can invoke the package by dist path, and a consumer can re-run the same CLI or export from an exact pin without a second unpublished path."
+    },
+    {
+      "id": "assessment-surface",
+      "owner": "supplier",
+      "gated": "check:role-assessment-surfaces",
+      "means": "A first-day role declares foundry.assessment against a mapped bin. Orchestration never infers one. Advisor is the first role that must have one."
+    }
+  ],
+  "backlogRouting": [
+    {
+      "kind": "catalogue-integrity",
+      "wave": "catalogue-integrity",
+      "matches": "Source/registry drift, contaminated latest tarball, missing current-version qualification, dead installer-linked bins, install docs that demand a token for public npm, or a check that reports success over ground it never examined on a consumer-facing bin."
+    },
+    {
+      "kind": "package-productization",
+      "wave": "that-package",
+      "matches": "A defect, missing criterion, or closed-loop gap named against one current package. Route it to that package's wave; do not pull an expression package forward to fix an operating package."
+    },
+    {
+      "kind": "frontend-expression",
+      "wave": "strategy-and-expression",
+      "matches": "Visual, RTL, composition, dogfood application, or audience-surface work. These wait until operational-integrity waves are productized."
+    },
+    {
+      "kind": "consumer-adoption",
+      "wave": null,
+      "matches": "Work that can only be evidenced in a consuming repository: pinning, wiring, deliberate failure, duplicate deletion, outcome measurement. Foundry can unblock it; it cannot finish it."
+    },
+    {
+      "kind": "new-role",
+      "wave": null,
+      "matches": "A candidate role that is not one of the nineteen current packages. Record it; do not sequence it in front of first-wave productization of the current catalogue."
+    },
+    {
+      "kind": "historical-tracking",
+      "wave": null,
+      "matches": "A/B/C programme plans, superseded publication-order trackers, or any issue whose orientation command or position table no longer exists. Do not use them as the session entry point."
+    }
+  ]
+}
