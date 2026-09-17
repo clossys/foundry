@@ -5,21 +5,28 @@ name: Publish
 # publishes nothing until a person notices the bump landed and manually
 # dispatches this workflow with dry_run: false (see issue #757).
 #
-# The discovery job still selects a manifest whose version has no registry
-# counterpart yet (see scripts/select-publishable-packages.mjs and
-# scripts/registry-version-lookup.mjs) — registry-versus-manifest, not a
-# diff of any one run — which is why re-dispatching after a publish was
-# evicted from the concurrency queue below, or lost to a timeout or
-# failure, still resolves to the right package. But that re-dispatch is a
-# manual act, not an automatic one: without a push trigger there is no
-# "next run" for a lost publish to be picked up by. A cancelled or failed
-# run stays unpublished until a human notices it in the run list and
-# dispatches again themselves; see issue #416 for the discovery logic this
-# was originally designed alongside. Manual dispatch is also how a
-# brand-new package's very first version is bootstrap-published and how
-# preflight dry-runs are exercised, since the registry-driven discovery
-# above deliberately never auto-selects a package with no registry
-# counterpart at all (see registry-version-lookup.mjs's header for why).
+# What the discover job below ACTUALLY does on the only trigger this
+# workflow has: it takes the dispatched `package` input, checks it against
+# the release catalogue, and emits a one-entry matrix. That is the whole
+# selection. It never asks the registry which versions are missing.
+#
+# The registry-versus-manifest discovery this file used to describe is real
+# code (scripts/select-publishable-packages.mjs, built on
+# scripts/registry-version-lookup.mjs, designed alongside issue #416) and it
+# is genuinely good — but it sits in the `else` branch of that step, the
+# branch taken for a non-workflow_dispatch event. With no such trigger the
+# branch is unreachable, so the recovery property it exists to provide is
+# unavailable twice over: there is no automatic run to recover a lost
+# publish, and the automatic selection that would find it never executes.
+# A cancelled, evicted or failed run stays unpublished until a human
+# notices it in the run list and dispatches this workflow again, naming the
+# package themselves.
+#
+# Manual dispatch is also how a brand-new package's very first version is
+# bootstrap-published and how preflight dry-runs are exercised. (Even if a
+# push trigger were added, registry-driven discovery would still never
+# auto-select a package with no registry counterpart at all — see
+# registry-version-lookup.mjs's header for why.)
 on:
   workflow_dispatch:
     inputs:
@@ -75,8 +82,14 @@ jobs:
         with:
           node-version: 20
 
+      # The `else` branch is UNREACHABLE under this workflow's only trigger
+      # (see the file header). It is kept rather than deleted because it is
+      # the selection logic issue #416 built and the one a push trigger would
+      # need, and because deleting it would quietly convert "this recovery
+      # property is switched off" into "this recovery property was never
+      # written". Nothing below should be read as evidence that it runs.
       - id: packages
-        name: Select packages with a version missing from the registry
+        name: Select the dispatched package (registry-wide selection is unreachable — see header)
         env:
           EVENT_NAME: ${{ github.event_name }}
           MANUAL_PACKAGE: ${{ inputs.package }}
@@ -264,6 +277,31 @@ jobs:
           npm run typecheck --workspace="packages/$PKG" --if-present
           npm run test --workspace="packages/$PKG" --if-present
 
+      # ISSUE #351. Nothing else in this workflow ever executes a package's
+      # npm publish lifecycle scripts, and `prepublishOnly` is a live gate:
+      # set-prepublish-hook.mjs keeps it wired to check-name-collision.mjs so
+      # a hand-run `npm publish` from a package directory — which npm DOES
+      # fire the hook for — cannot bypass the collision check (#273). A change
+      # that breaks that hook passed every check here and failed first on a
+      # maintainer's own machine.
+      #
+      # Run BEFORE the pack below, so the candidate is packed from the tree
+      # the rehearsal leaves behind rather than one the rehearsal's own
+      # `npm run build` could move underneath an already-packed tarball.
+      #
+      # Needs no credential and mutates no registry: the declared hooks read
+      # the public registry anonymously and compile. What it still cannot
+      # cover is stated in the script's own header — chiefly that npm's
+      # decision to FIRE a hook comes from the publish target's spec type,
+      # not from running it by name, and that `publish`/`postpublish` can
+      # only run after a real upload (the script fails closed if one is ever
+      # declared).
+      - name: Rehearse publish lifecycle hooks
+        if: ${{ !inputs.verify_only }}
+        env:
+          PKG: ${{ matrix.package }}
+        run: node scripts/rehearse-publish-lifecycle.mjs "packages/$PKG"
+
       - name: Pack one pre-publication candidate
         if: ${{ !inputs.verify_only }}
         working-directory: packages/${{ matrix.package }}
@@ -319,6 +357,15 @@ jobs:
           TRANSCRIPT: ${{ runner.temp }}/qualification/${{ matrix.package }}/transcript.json
         run: node scripts/run-candidate-qualification.mjs --package "$PKG" --tarball "$TARBALL" --output "$TRANSCRIPT"
 
+      # This is NOT a lifecycle rehearsal and must not be read as one (issue
+      # #351). `--dry-run` does not execute lifecycle scripts, and
+      # `--ignore-scripts` is passed here deliberately because the real
+      # upload passes it too (scripts/publish-qualified-directory.mjs) —
+      # dropping it would make this step LESS faithful to the real publish,
+      # not more. What this step DOES prove is narrower and still worth
+      # proving: that npm accepts the directory-form publish command and does
+      # not silently auto-correct the manifest on its way out. The hooks are
+      # covered by the separate rehearsal step above.
       - name: Exercise directory-form OIDC publish command without upload credentials
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && !inputs.verify_only }}
         working-directory: packages/${{ matrix.package }}
