@@ -41,11 +41,11 @@
  * carries nothing else.
  *
  * Validation here is hand-rolled over `unknown`, with no schema library,
- * matching every other package in this workspace (see the root
- * `AGENTS.md`). These validators exist for the boundary where records
- * arrive as untyped JSON — a preference-centre route body, a file the CLI
- * reads, a value read back out of a host's own store — before anything
- * downstream is allowed to trust them.
+ * matching every other package in this workspace. These validators exist
+ * for the boundary where records arrive as untyped JSON — a
+ * preference-centre route body, a file the CLI reads, a value read back out
+ * of a host's own store — before anything downstream is allowed to trust
+ * them.
  */
 
 import {
