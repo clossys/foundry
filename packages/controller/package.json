@@ -1,6 +1,6 @@
 {
   "name": "@clossys/controller",
-  "version": "0.9.7",
+  "version": "0.9.8",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -80,6 +80,7 @@
     "repository-package-adoption-check": "dist/repository/adoption-bin.js",
     "review-check": "dist/review/cli.js",
     "foundry-position-check": "dist/positions/bin.js",
+    "foundry-onboarding-run": "dist/onboarding/bin.js",
     "foundry-completion-evidence-check": "dist/positions/completion-evidence-bin.js",
     "singular-authority-check": "dist/release/singular-authority-bin.js"
   },
