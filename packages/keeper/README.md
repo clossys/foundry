@@ -125,10 +125,48 @@ access; installing it requires no authentication of any kind.
 import { checkDisposal, decideHolding } from "@clossys/keeper";
 ```
 
+## Justified visible holding rate
+
+Independent consumer evidence shows the position's owned metric meets its
+setpoint over the declared review cadence. The owned metric is `justified
+visible holding rate`, computed by `assessJustifiedVisibleHoldingRate()`.
+An empty evaluated set is `indeterminate`, never a perfect rate of 1.
+`checkAttribution`, `checkVisibility`, and `checkDisposal` remain the
+gates they are; none of them is this combined rate. This package does not
+measure consumer evidence and does not close the loop. A green run of this
+package's tests is not a close.
+
+```ts
+import { assessJustifiedVisibleHoldingRate } from "@clossys/keeper";
+
+const report = assessJustifiedVisibleHoldingRate(input);
+```
+
+```bash
+keeper-rate-check assessment.json
+```
+
+The command prints JSON and exits `0` for satisfied, `1` for violated, and
+`2` for indeterminate, unreadable, or invalid input.
+
+This package declares that command as its first-day assessment surface in
+its own manifest:
+
+```json
+"foundry": { "assessment": { "bin": "keeper-rate-check", "invocation": "single-json-input" } }
+```
+
+Onboarding discovers that declaration from the installed manifest and never
+infers a surface. `keeper-check` remains the three-gate CLI and is not the
+assessment surface. Keeper is not a required first-day role; Advisor
+remains the only required first-day assessment.
+
 ## The three gates
 
 All three are reachable from one installed bin, `keeper-check`, dispatched on
-the first argument matching a gate name exactly.
+the first argument matching a gate name exactly. The charter assessment is a
+second mapped bin, `keeper-rate-check`, and is not a fourth gate on this
+dispatcher.
 
 ```bash
 keeper-check attribution ./items.json ./source-events.json
@@ -263,6 +301,8 @@ Everything below is exported from the package root.
 | `checkAttribution` | Gate 1, over held items and the source events the consumer still retains. |
 | `checkVisibility` | Gate 2, over held items, `giver`'s retained-grounds document, and the disclosure routes that reach both. |
 | `checkDisposal` | Gate 3, over held items, the consumer's declared retention schedule, the deletions recorded against them, and the instant to judge at. |
+| `assessJustifiedVisibleHoldingRate` | Charter close metric. Returns `JustifiedVisibleHoldingRateAssessment` from consumer-supplied independent observations. Not any one of the three gates. |
+| `JustifiedVisibleHoldingRateAssessment`, `JustifiedVisibleHoldingRateFinding`, `JustifiedVisibleHoldingRateState` | Its result shape |
 
 ### Validators and guards
 

@@ -25,7 +25,10 @@
  *      `checkDisposal`. Each is a pure function returning a three-state
  *      result, and `cli.ts` folds those onto the `0`/`1`/`2` exit contract
  *      without ever collapsing "could not run" into either "clean" or
- *      "findings".
+ *      "findings". The charter metric `justified visible holding rate` is
+ *      computed by `assessJustifiedVisibleHoldingRate` from consumer-supplied
+ *      independent observations and is not any one gate. `keeper-rate-check`
+ *      is the assessment surface; `keeper-check` remains the three-gate CLI.
  *
  * THE BOUNDARY RULE. An instruction constrains us; an understanding only
  * informs us. A belief inferred from behaviour may inform anything; the
@@ -100,6 +103,12 @@ export {
   checkVisibility,
   decideHolding,
 } from "./contract.js";
+export { assessJustifiedVisibleHoldingRate } from "./justified-visible-holding-rate.js";
+export type {
+  JustifiedVisibleHoldingRateAssessment,
+  JustifiedVisibleHoldingRateFinding,
+  JustifiedVisibleHoldingRateState,
+} from "./justified-visible-holding-rate.js";
 export type {
   AttributionFailureReason,
   AttributionFinding,
