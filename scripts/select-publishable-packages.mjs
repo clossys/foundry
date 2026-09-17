@@ -1,6 +1,12 @@
 #!/usr/bin/env node
-// Select the packages `publish.yml`'s `discover` job is allowed to publish
-// on a push to `main`.
+// Select the packages `publish.yml`'s `discover` job is allowed to publish.
+//
+// NOT CURRENTLY REACHED (issue #757). publish.yml's only trigger is
+// workflow_dispatch, and its discover job calls this script solely from the
+// `else` branch taken for a non-dispatch event. Everything below describes
+// what this script does when something calls it; nothing below is evidence
+// that anything does. Read publish.yml's own header for what actually
+// selects a package today.
 //
 // WHAT THIS USED TO DO, AND WHY THAT WAS THE DEFECT (issue #416)
 // -----------------------------------------------------------------
@@ -23,10 +29,12 @@
 // version? A package whose manifest version has no registry counterpart is
 // selected, regardless of which push introduced that version or whether an
 // earlier run for it was evicted, timed out, or simply failed. This makes
-// publishing idempotent and self-healing — the next push (or a scheduled
-// run of scripts/check-registry-parity.mjs finding the same gap) recovers
-// automatically instead of requiring anyone to notice a cancelled run in a
-// list.
+// publishing idempotent and self-healing WHEREVER THIS RUNS — a later run
+// (or a scheduled run of scripts/check-registry-parity.mjs finding the same
+// gap) recovers instead of requiring anyone to notice a cancelled run in a
+// list. With publish.yml dispatch-only, that "later run" is a person
+// dispatching it, so the recovery is designed-for but not automatic; see
+// the note at the top of this file and issue #757.
 //
 // The actual registry lookup and its denied/unreachable/not-found
 // discipline live in scripts/registry-version-lookup.mjs — see that

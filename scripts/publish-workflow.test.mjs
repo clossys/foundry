@@ -134,6 +134,86 @@ test("qualification is least privilege and owns candidate execution", () => {
   assertPinnedReplayRuntime(qualify, "qualify", "npm ci --ignore-scripts");
 });
 
+// ---------------------------------------------------------------------------
+// ISSUE #757 — the file's prose must not describe a trigger the file lacks.
+// ---------------------------------------------------------------------------
+
+/** The top-level keys of the workflow's own `on:` block: its real triggers. */
+function declaredTriggers() {
+  const start = workflow.search(/^on:\n/m);
+  assert.notEqual(start, -1, "workflow has no on: block");
+  const rest = workflow.slice(start + 3);
+  const end = rest.search(/^[a-z]/m);
+  const block = end === -1 ? rest : rest.slice(0, end);
+  return block.split("\n").filter((line) => /^  [a-z_]+:/.test(line)).map((line) => line.trim().replace(/:.*$/, ""));
+}
+
+test("ISSUE #757: the only trigger is workflow_dispatch, and the prose says exactly that", () => {
+  assert.deepEqual(declaredTriggers(), ["workflow_dispatch"], "a new trigger here invalidates every comment in this file that says there is none — update both together");
+
+  // The claims that inverted the operational contract. Their absence is the fix;
+  // restoring any of them must turn this red.
+  for (const inverted of [
+    "picked up by the very next run",
+    "Publishing is serial across packages and push events",
+    "A merged package version is the release request",
+    "still resolves to the right package",
+  ]) {
+    assert.ok(!workflow.includes(inverted), `publish.yml still claims: "${inverted}" — it has no push trigger`);
+  }
+
+  // And the corrected statements must be present, not merely the old ones absent.
+  assert.match(workflow, /This workflow's only trigger is workflow_dispatch/);
+  assert.match(workflow, /It never asks the registry which versions are missing\./);
+  assert.match(workflow, /branch is unreachable/);
+});
+
+test("ISSUE #757: the discover step is named for what it does, and the unreachable branch is labelled as unreachable", () => {
+  const discover = job("discover");
+  // This step carries an `id:` above its `name:`, so it is matched on the
+  // job text rather than through step().
+  assert.match(discover, /name: Select the dispatched package \(registry-wide selection is unreachable — see header\)/);
+  // The dispatch branch — the only one that runs — and the dead branch that
+  // the header used to be written about.
+  assert.match(discover, /check-release-catalog\.mjs --package "\$MANUAL_PACKAGE"/);
+  assert.match(discover, /select-publishable-packages\.mjs/);
+  assert.match(discover, /UNREACHABLE under this workflow's only trigger/);
+});
+
+// ---------------------------------------------------------------------------
+// ISSUE #351 — a lifecycle hook that breaks publishing must go red before the
+// real publish, which is production.
+// ---------------------------------------------------------------------------
+
+test("ISSUE #351: qualify rehearses the publish lifecycle hooks, before it packs and before the dry run", () => {
+  const qualify = job("qualify");
+  const rehearsal = step(qualify, "Rehearse publish lifecycle hooks");
+  assert.match(rehearsal, /if: \$\{\{ !inputs\.verify_only \}\}/);
+  assert.match(rehearsal, /node scripts\/rehearse-publish-lifecycle\.mjs "packages\/\$PKG"/);
+  assert.doesNotMatch(rehearsal, /NODE_AUTH_TOKEN|NPM_TOKEN|GH_PACKAGES_TOKEN|GITHUB_TOKEN|--dry-run/);
+
+  // Before the pack, so the rehearsal's own `npm run build` cannot move dist/
+  // underneath an already-packed candidate; and before the dry run, so the
+  // cheaper, more specific failure is the one a reader meets first.
+  assert.ok(
+    position(qualify, "- name: Rehearse publish lifecycle hooks") < position(qualify, "- name: Pack one pre-publication candidate"),
+    "the hook rehearsal must run before the candidate is packed",
+  );
+  assert.ok(
+    position(qualify, "- name: Rehearse publish lifecycle hooks") < position(qualify, "- name: Exercise directory-form OIDC publish command without upload credentials"),
+    "the hook rehearsal must run before the dry run it exists to compensate for",
+  );
+});
+
+test("ISSUE #351: the dry-run step does not present itself as a lifecycle rehearsal", () => {
+  const qualify = job("qualify");
+  const dryRun = step(qualify, "Exercise directory-form OIDC publish command without upload credentials");
+  // It still passes --ignore-scripts, deliberately: the REAL upload does too,
+  // so dropping it would make the dry run less faithful, not more.
+  assert.match(dryRun, /--ignore-scripts/);
+  assert.match(workflow, /This is NOT a lifecycle rehearsal and must not be read as one/);
+});
+
 test("directory-form publish dry-run fails closed on npm manifest auto-correction", () => {
   const qualify = job("qualify");
   const dryRun = step(qualify, "Exercise directory-form OIDC publish command without upload credentials");

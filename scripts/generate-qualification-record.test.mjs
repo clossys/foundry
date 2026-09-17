@@ -9,6 +9,7 @@ import test from "node:test";
 import { promisify } from "node:util";
 import { currentQualificationJoins, parseStrictJson, qualificationPath, validateRetainedCandidateQualification } from "./lib/candidate-qualification.mjs";
 import { validateCandidatePublish } from "./validate-candidate-publish.mjs";
+import { ReproducibilityIndeterminate, ReproducibilityMismatch } from "./lib/artifact-reproducibility.mjs";
 import { argsFrom, generateQualificationRecord } from "./generate-qualification-record.mjs";
 
 const execFile = promisify(execFileCallback);
@@ -83,6 +84,14 @@ async function fixture(t) {
   return { root, candidate, joins, reviewedCommit, tarball: packed, tarballHashes, transcriptPath, transcript };
 }
 
+// The reproducibility seam (issue #893). The real one removes every
+// packages/*/dist, rebuilds the workspace and re-packs the candidate; this
+// fixture is a throwaway git repository with no node_modules and a
+// hand-rolled tarball, so it can neither build nor reproduce one. Tests that
+// are about DERIVATION inject this stub; that the CLI runs the REAL check is
+// proven separately, by spawning it, at the bottom of this file.
+const REPRODUCIBLE = () => ({ sha1: "stub", sha256: "stub", sha512: "stub" });
+
 function argsOf(f, overrides = {}) {
   return { package: "controller", tarball: f.tarball, transcript: f.transcriptPath, "review-reference": "fixture review", ...overrides };
 }
@@ -98,7 +107,7 @@ test("generator CLI has a closed argument set and requires every field", () => {
 
 test("generator derives a full retained record from a real qualify artifact", async (t) => {
   const f = await fixture(t);
-  const result = generateQualificationRecord({ root: f.root, args: argsOf(f) });
+  const result = generateQualificationRecord({ root: f.root, args: argsOf(f), reproducibility: REPRODUCIBLE });
   assert.equal(result.record.schemaVersion, 2);
   assert.equal(result.record.timing, "pre-publication");
   assert.deepEqual(result.record.candidate, {
@@ -121,22 +130,61 @@ test("generator derives a full retained record from a real qualify artifact", as
   assert.equal(result.recordPath, qualificationPath(f.root, f.candidate, f.reviewedCommit));
 });
 
-test("generator CLI writes the record at its canonical governance path and exits 0", async (t) => {
+test("the derived record lands at its canonical governance path, with the real tarball digests", async (t) => {
   const f = await fixture(t);
-  const { stdout } = await execFile(process.execPath, [generatorScript, "--package", "controller", "--tarball", f.tarball, "--transcript", f.transcriptPath, "--review-reference", "fixture review"], { cwd: f.root });
-  assert.match(stdout, /QUALIFICATION RECORD WRITTEN/);
-  const recordPath = join(f.root, qualificationPath(f.root, f.candidate, f.reviewedCommit));
-  assert.ok(existsSync(recordPath), "record file must exist at its canonical path");
-  const written = parseStrictJson(await readFile(recordPath, "utf8"));
+  const result = generateQualificationRecord({ root: f.root, args: argsOf(f), reproducibility: REPRODUCIBLE });
+  assert.equal(result.outPath, join(f.root, qualificationPath(f.root, f.candidate, f.reviewedCommit)));
+  await mkdir(dirname(result.outPath), { recursive: true });
+  await writeFile(result.outPath, `${JSON.stringify(result.record, null, 2)}\n`);
+  assert.ok(existsSync(result.outPath), "record file must exist at its canonical path");
+  const written = parseStrictJson(await readFile(result.outPath, "utf8"));
   assert.deepEqual(written.candidate.tarball, f.tarballHashes);
+});
+
+test("ISSUE #893: a tarball a clean build does not reproduce is RECORD NOT PRODUCIBLE, not a record", async (t) => {
+  const f = await fixture(t);
+  const mismatch = () => { throw new ReproducibilityMismatch("the candidate tarball is NOT what a clean build of this checkout produces (sha256 differ)."); };
+  assert.throws(
+    () => generateQualificationRecord({ root: f.root, args: argsOf(f), reproducibility: mismatch }),
+    (error) => error.constructor.name === "UnproducibleError" && /NOT what a clean build/.test(error.message),
+    "a measured mismatch must be a refusal to produce the record, not an indeterminate skip",
+  );
+});
+
+test("ISSUE #893: a reproducibility question that could not be asked is indeterminate, never a pass", async (t) => {
+  const f = await fixture(t);
+  const indeterminate = () => { throw new ReproducibilityIndeterminate("the clean rebuild failed."); };
+  assert.throws(
+    () => generateQualificationRecord({ root: f.root, args: argsOf(f), reproducibility: indeterminate }),
+    (error) => error.constructor.name === "IndeterminateError" && /clean rebuild failed/.test(error.message),
+  );
+});
+
+test("ISSUE #893: the CLI runs the REAL reproducibility gate — there is no way to generate a record around it", async (t) => {
+  const f = await fixture(t);
+  // This fixture cannot pass the real gate: it is a bare git repository with
+  // no node_modules and a hand-rolled tarball. That is precisely what makes
+  // this a wiring proof — the CLI must refuse, and the refusal must name the
+  // gate rather than any of the checks that already passed above it.
+  await assert.rejects(
+    execFile(process.execPath, [generatorScript, "--package", "controller", "--tarball", f.tarball, "--transcript", f.transcriptPath, "--review-reference", "fixture review"], { cwd: f.root }),
+    (error) => error.code !== 0 && /clean rebuild|release qualification requires Node|clean build/.test(error.stderr),
+  );
+  assert.ok(!existsSync(join(f.root, qualificationPath(f.root, f.candidate, f.reviewedCommit))), "no record may be written once the gate refuses");
 });
 
 test("generator CLI refuses to overwrite an existing record and exits 1", async (t) => {
   const f = await fixture(t);
-  const args = [generatorScript, "--package", "controller", "--tarball", f.tarball, "--transcript", f.transcriptPath, "--review-reference", "fixture review"];
-  await execFile(process.execPath, args, { cwd: f.root });
+  // Retain a record the ordinary way first. The reproducibility gate (#893)
+  // runs AFTER this refusal deliberately — it is the expensive check, and a
+  // record that already exists is never going to be written whatever a
+  // rebuild would say — so the CLI reaches the refusal without needing to
+  // build anything.
+  const existing = generateQualificationRecord({ root: f.root, args: argsOf(f), reproducibility: REPRODUCIBLE });
+  await mkdir(dirname(existing.outPath), { recursive: true });
+  await writeFile(existing.outPath, `${JSON.stringify(existing.record, null, 2)}\n`);
   await assert.rejects(
-    execFile(process.execPath, args, { cwd: f.root }),
+    execFile(process.execPath, [generatorScript, "--package", "controller", "--tarball", f.tarball, "--transcript", f.transcriptPath, "--review-reference", "fixture review"], { cwd: f.root }),
     (error) => error.code === 1 && /refusing to overwrite/.test(error.stderr),
   );
 });
@@ -174,7 +222,7 @@ test("reviewedCommit is refused once git HEAD no longer corroborates the transcr
 
 test("a generated record is accepted by the real prepublish validator", async (t) => {
   const f = await fixture(t);
-  const result = generateQualificationRecord({ root: f.root, args: argsOf(f) });
+  const result = generateQualificationRecord({ root: f.root, args: argsOf(f), reproducibility: REPRODUCIBLE });
   await mkdir(dirname(result.outPath), { recursive: true });
   await writeFile(result.outPath, `${JSON.stringify(result.record, null, 2)}\n`);
   const findings = validateCandidatePublish({ root: f.root, args: { package: "controller", tarball: f.tarball, transcript: f.transcriptPath, mode: "prepublish" } });
@@ -183,7 +231,7 @@ test("a generated record is accepted by the real prepublish validator", async (t
 
 test("a generated record satisfies the retained-record validator check-candidate-qualification.mjs runs per record", async (t) => {
   const f = await fixture(t);
-  const result = generateQualificationRecord({ root: f.root, args: argsOf(f) });
+  const result = generateQualificationRecord({ root: f.root, args: argsOf(f), reproducibility: REPRODUCIBLE });
   await mkdir(dirname(result.outPath), { recursive: true });
   await writeFile(result.outPath, `${JSON.stringify(result.record, null, 2)}\n`);
   await commit(f.root, "retain candidate record");
@@ -193,7 +241,7 @@ test("a generated record satisfies the retained-record validator check-candidate
 
 test("negative control: a mutated candidate.tarball.sha256 is rejected by both real validators, naming transcript-join and/or tarball", async (t) => {
   const f = await fixture(t);
-  const result = generateQualificationRecord({ root: f.root, args: argsOf(f) });
+  const result = generateQualificationRecord({ root: f.root, args: argsOf(f), reproducibility: REPRODUCIBLE });
   const mutated = structuredClone(result.record);
   const original = mutated.candidate.tarball.sha256;
   mutated.candidate.tarball.sha256 = original.slice(0, -1) + (original.endsWith("0") ? "1" : "0");
