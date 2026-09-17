@@ -120,6 +120,8 @@ describe("first-day onboarding, end to end, against a synthetic consumer", () =>
 
     const proposal = proposeInstalledPositionLedger(run, roles);
     expect(proposal.ledger).toBeNull();
+    // The blocked roles are named, and neither is quietly dispositioned away.
+    expect(proposal.findings.filter((item) => item.rule === "ledger-blocked-by-unassessed-role").map((item) => item.path)).toEqual(["@clossys/architect", "@clossys/strategist"]);
     const approval = { decisionOwner: "decision-owner-alpha", approvedRunDigest: onboardingRunDigest(run), approvedAt: "2026-08-18T00:00:00.000Z" };
     expect(authorizeMutation(run, proposal.ledger, approval).authorized).toBe(false);
   });
