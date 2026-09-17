@@ -161,14 +161,39 @@ const CLASS_NAMES = {
 // in the shipped tarball, and `tsc` preserves comments — the #927 citation
 // reached `dist/index.js` and six `.d.ts` files, where a consumer reads it
 // and no tree scan ever looked. So the surface is opt-in rather than absent:
-// `--include-built` is what `preflight-package.mjs` passes after a real
-// build, and check-artifact-safety.mjs runs this gate against the EXTRACTED
-// TARBALL, which is the same question asked with no build-artifact ambiguity
-// at all (everything in a tarball ships, by definition).
+// `--include-built` is what `preflight-package.mjs` passes after a real build.
+//
+// This gate is NOT run against the extracted tarball. check-artifact-safety.mjs
+// unpacks the tarball and spawns check-public-safety.mjs on it — the denylist
+// gate — and nothing else. Coverage of the packed artifact comes from a
+// different argument entirely, and it is an argument rather than a second scan:
+// `npm pack` copies existing files instead of synthesising them, so the tarball
+// is exactly (files in the tree) INTERSECT (the published file set), and this
+// gate reads that same published file list from `npm pack --dry-run` and
+// restricts itself to it. Tree + `--include-built` is therefore the same file
+// set the tarball contains, which is why `preflight-package.mjs` passing
+// `--include-built` is the step that actually closes the #927 surface — and why
+// claiming "check-artifact-safety runs this gate on the tarball" would be
+// claiming a scan that does not happen.
 const SKIP_DIRS = new Set(["node_modules", ".git", "coverage"]);
 const BUILT_DIRS = ["dist", "build"];
 if (!flags.has("--include-built")) for (const d of BUILT_DIRS) SKIP_DIRS.add(d);
-const SCAN_EXT = new Set([".ts", ".tsx", ".js", ".jsx", ".mjs", ".css", ".md"]);
+// Kept in step with CITATION_EXTENSIONS below ON PURPOSE. A file type that can
+// CONTAIN a citation but is never SCANNED is this class's own defect (#935)
+// moved from the extraction end to the file-walk end: a shipped `.cjs`,
+// `.mts`, `.cts` or `.scss` would have had its comments read by nobody. No
+// package emits those today, so the gap was latent rather than live — which is
+// exactly the state `.mjs` was in right up until it was not, and the reason
+// this list is now closed against the citation list rather than left to be
+// noticed later. The two lists differ only where a file type is a citation
+// TARGET that carries no prose this class reads: `.json`, `.jsonc`, `.yml`,
+// `.yaml`, `.sh` and `.mdx` can be cited but are not walked as prose sources.
+const SCAN_EXT = new Set([
+  ".ts", ".tsx", ".mts", ".cts",
+  ".js", ".jsx", ".mjs", ".cjs",
+  ".css", ".scss",
+  ".md",
+]);
 
 function walk(dir, out = []) {
   let entries;
@@ -639,6 +664,9 @@ function findElsewhereInRepo(citedPath) {
 const CITATION_SHIPS = "ships";
 const CITATION_UNREACHABLE = "unreachable";
 const CITATION_ROT = "rot";
+// Rot could not be decided, because deciding it needs history this checkout
+// does not have. Neither a pass nor a finding — see repositoryShapedness.
+const CITATION_ROT_UNVERIFIABLE = "rot-unverifiable";
 const CITATION_UNKNOWN = "unknown";
 const CITATION_IGNORE = "ignore";
 
@@ -653,13 +681,16 @@ const BUILT_SEGMENT_RE = /(?:^|\/)(?:dist|build)\//;
 
 // ROT — "there is nothing to open, at any path, at any commit" — is a strong
 // claim, so it is only made about citations that are unambiguously ABOUT THIS
-// REPOSITORY. Two shapes qualify:
+// REPOSITORY. Three shapes qualify:
 //
-//   a `packages/…` path, which names this repository's own layout and can
-//   mean nothing else; and
+//   a `packages/<dir>/…` path where `<dir>` names a package directory this
+//   repository HAS OR HAS EVER HAD — see below, this is narrower than the
+//   syntactic shape and deliberately so;
 //
 //   a `*.test.*` / `*.spec.*` file, which is a test in some source tree and is
-//   never the reader's own integration file.
+//   never the reader's own integration file; and
+//
+//   a `.md` / `.mdx` documentation path.
 //
 // Everything else that resolves nowhere is deliberately NOT reported. A README
 // that says "add this to `app/layout.tsx`" or "write it to `./proofs.json`" is
@@ -667,15 +698,95 @@ const BUILT_SEGMENT_RE = /(?:^|\/)(?:dist|build)\//;
 // separates those from a rotted citation. Reporting them would be the
 // false-positive flood that gets a gate suppressed, so the narrower claim is
 // the one enforced and the gap is named here rather than papered over.
+//
+// WHY `^packages/` ALONE IS NOT THE TEST (and was a live false positive)
+//
+// The original reasoning was that a `packages/…` path "names this repository's
+// own layout and can mean nothing else". That is false for any package whose
+// SUBJECT is other repositories' layouts. `controller` walks a consumer's
+// `packages/` tree, and its documentation of a `maxDepth` parameter reads
+// "`packages/a/package.json` is depth 1" — an illustrative placeholder naming
+// the READER's tree, which is precisely the `app/layout.tsx` case the gap
+// above already excludes. Under `^packages/` those were reported as rot, so
+// three of the 25 rot citations this widening surfaced were non-defects.
+//
+// The separation is not a shape and cannot be: `packages/auth/package.json`
+// (a real retired donor — rot) and `packages/a/package.json` (a placeholder —
+// not rot) are syntactically identical. What separates them is IDENTITY: does
+// `<dir>` name a package this repository has, or ever had? Git already knows,
+// so the set is derived rather than listed — the same self-maintaining
+// discipline CLASS 4 uses for retired package NAMES, and the reason there is
+// nothing here for a human to remember to update when a package is retired.
+// A hardcoded list of placeholder names (`a`, `foo`, `bar`) would be a fix
+// that works only for today's three strings.
+//
+// `reliable` matters as much as the set, for exactly the reason it does in
+// CLASS 4: a SHALLOW clone makes `git log` succeed with almost no history, and
+// "this donor was retired" then reads identically to "this was always a
+// placeholder". That is not a clean pass and not a confident finding either,
+// so it is reported as a third outcome rather than guessed at. CI checks out
+// this gate's job with `fetch-depth: 0` already, for CLASS 4's sake.
 const REPO_SHAPED_RE = /^packages\//;
+const PACKAGES_DIR_RE = /^packages\/([^/]+)\//;
+let knownPackageDirsCache;
+function knownPackageDirs() {
+  if (knownPackageDirsCache !== undefined) return knownPackageDirsCache;
+  const dirs = new Set();
+  // Present tense: whatever `packages/` holds right now, no git required.
+  try {
+    for (const entry of readdirSync(join(repoRoot, "packages"))) {
+      if (existsSync(join(repoRoot, "packages", entry, "package.json"))) dirs.add(entry);
+    }
+  } catch {
+    /* no packages/ directory at all — fine, the historical half still answers */
+  }
+  let shallow;
+  try {
+    shallow = execFileSync("git", ["-C", repoRoot, "rev-parse", "--is-shallow-repository"], {
+      encoding: "utf8",
+    }).trim();
+  } catch {
+    knownPackageDirsCache = { dirs, reliable: false };
+    return knownPackageDirsCache;
+  }
+  if (shallow !== "false") {
+    knownPackageDirsCache = { dirs, reliable: false };
+    return knownPackageDirsCache;
+  }
+  // Past tense: every `packages/<dir>/package.json` that has ever been touched
+  // at any commit on any ref. `--name-only --format=` keeps this to one cheap
+  // invocation — it is the path list that is wanted here, not the contents.
+  try {
+    const log = execFileSync(
+      "git",
+      ["-C", repoRoot, "log", "--all", "--name-only", "--format=", "--", "packages/*/package.json"],
+      { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 },
+    );
+    for (const line of log.split("\n")) {
+      const m = /^packages\/([^/]+)\/package\.json$/.exec(line.trim());
+      if (m) dirs.add(m[1]);
+    }
+  } catch {
+    knownPackageDirsCache = { dirs, reliable: false };
+    return knownPackageDirsCache;
+  }
+  knownPackageDirsCache = { dirs, reliable: true };
+  return knownPackageDirsCache;
+}
 const TEST_FILE_RE = /(?:^|[\/.])[\w-]+\.(?:test|spec)\.[a-z]+$/;
 // `.md` is the third shape, and it is here to PRESERVE behaviour rather than
 // to add any: a documentation citation that resolves nowhere is the original
 // CLASS 1 finding, the one #930 caught in a CHANGELOG, and widening the
 // extraction must not quietly narrow the rule that already worked.
 const DOC_FILE_RE = /\.mdx?$/i;
-function isRepositoryShaped(citedPath) {
-  return REPO_SHAPED_RE.test(citedPath) || TEST_FILE_RE.test(citedPath) || DOC_FILE_RE.test(citedPath);
+// Three answers, not two. "unverifiable" is the shallow-clone case above.
+function repositoryShapedness(citedPath) {
+  if (TEST_FILE_RE.test(citedPath) || DOC_FILE_RE.test(citedPath)) return "yes";
+  const m = PACKAGES_DIR_RE.exec(citedPath);
+  if (!m) return "no";
+  const { dirs, reliable } = knownPackageDirs();
+  if (dirs.has(m[1])) return "yes";
+  return reliable ? "no" : "unverifiable";
 }
 
 function classifyCitation(citedPath, file) {
@@ -713,7 +824,11 @@ function classifyCitation(citedPath, file) {
   if (reachedVia !== null) return { state: CITATION_UNREACHABLE, where: reachedVia };
   const elsewhere = findElsewhereInRepo(citedPath);
   if (elsewhere) return { state: CITATION_UNREACHABLE, where: elsewhere };
-  if (!isRepositoryShaped(citedPath)) return { state: CITATION_IGNORE };
+  const shaped = repositoryShapedness(citedPath);
+  if (shaped === "no") return { state: CITATION_IGNORE };
+  if (shaped === "unverifiable") {
+    return { state: CITATION_ROT_UNVERIFIABLE, dir: PACKAGES_DIR_RE.exec(citedPath)?.[1] };
+  }
   return { state: CITATION_ROT };
 }
 
@@ -745,14 +860,22 @@ function classifyCitation(citedPath, file) {
 // whose defect is shipping — `present-not-shipped`. A citation that resolves
 // NOWHERE is not explained by "it does not ship with this package": the
 // reader was still told to go and look, and there is nothing to find, in this
-// tarball or any checkout. So `missing` is never exempt, however the
-// surrounding prose is worded.
+// tarball or any checkout. So rot is never exempt by SHIPPING vocabulary,
+// however the surrounding prose is worded.
 //
-// That is what makes a block-wide search safe. The widest thing a stray
-// qualifier can do is excuse a real, findable file that merely is not in this
-// package's tarball — the mildest half of the class — and it can never
-// excuse rot. A suppression comment, by contrast, would excuse both, which is
-// precisely why one is not offered here.
+// That is what makes a block-wide search safe FOR THIS ONE EXEMPTION. The
+// widest thing a stray unavailability qualifier can do is excuse a real,
+// findable file that merely is not in this package's tarball — the mildest
+// half of the class. A suppression comment, by contrast, would excuse both,
+// which is precisely why one is not offered here.
+//
+// Read that as a bound on THIS exemption rather than as a property of the
+// gate. The rot half has a second, separate vocabulary below, and the
+// argument above does NOT license searching a block for it: a rot qualifier
+// has no mildest half to fall back on, so it is bounded by file kind and by
+// sentence instead. The reasoning is at NONEXISTENCE_RE, and it is there
+// because this comment previously asserted the absolute — "it can never
+// excuse rot" — while the code one screen below made it false.
 const UNAVAILABILITY_RE = new RegExp(
   [
     "\\bun-?shipped\\b",
@@ -773,17 +896,84 @@ const UNAVAILABILITY_RE = new RegExp(
 
 // The SECOND exemption, and the mirror of the first. Prose that records a
 // citation's referent as GONE — a CHANGELOG entry documenting the dangling
-// reference it just fixed, a comment explaining that a donor package was
-// retired — names a path a reader is explicitly told not to go looking for.
-// Reporting that as rot would mean a package cannot describe its own
-// corrected history without failing the gate that caught it, which is a
-// direct incentive to describe the fix vaguely, or not at all.
+// reference it just fixed — names a path a reader is explicitly told not to
+// go looking for. Reporting that as rot would mean a package cannot describe
+// its own corrected history without failing the gate that caught it, which is
+// a direct incentive to describe the fix vaguely, or not at all.
 //
-// Scoped to ROT and only rot, exactly as UNAVAILABILITY_RE is scoped to
-// unreachable and only unreachable: "this file was deleted" does not explain
-// a path that is real, present, and merely absent from the tarball. Each
-// qualifier excuses the one defect it is actually a claim about, which is
-// what keeps a block-wide search from becoming a general-purpose mute.
+// IT IS NOT SEARCHED BLOCK-WIDE, AND NOT IN SHIPPED SOURCE. That is the whole
+// difference between this exemption and the one above, and getting it wrong
+// was a live defect in the change that introduced it.
+//
+// UNAVAILABILITY_RE can safely be searched across a whole comment block
+// because of what its vocabulary IS: a claim about shipping can only ever
+// excuse a citation whose defect is shipping — a real, findable file that
+// merely is not in this tarball, the mildest half of the class. Rot has no
+// such floor. The widest thing a stray rot qualifier can do is excuse a
+// pointer at nothing, which is the finding this class exists for, so the
+// argument that licenses a block-wide search for one does not transfer to the
+// other. Searched block-wide, it did exactly what that predicts: `does not
+// exist` written about a quoted `tsc` error message, and about a validation
+// rule, silently excused three genuine rot citations in shipped `designer`
+// source twenty lines away — which then never reached the waiver, so #941
+// under-reported by three. Changing three unrelated words twenty lines from a
+// rotten citation flipped the gate from exit 0 to exit 1.
+//
+// So the exemption is bounded twice, and each bound is measured on this tree:
+//
+//   BY FILE. Only a CHANGELOG can carry it. A changelog is a record of what
+//   changed, so a path named in one is understood by its reader as history
+//   rather than as somewhere to go — the same distinction CLASS 4 already
+//   draws for a retired package name in a CHANGELOG entry, and the same one
+//   check-public-safety.mjs's `--allow-changelogs` rests on. Everywhere else
+//   — every `.ts`, `.tsx`, `.md`, README, every line of shipped source — rot
+//   is now inexcusable by prose of ANY wording. There is no vocabulary, no
+//   phrasing and no suppression comment that mutes it; the only way to record
+//   one is an enumerated, issue-keyed entry in the waiver, which is visible in
+//   a diff and is itself a finding once it stops matching.
+//
+//   BY SENTENCE. Inside a changelog the qualifier must sit in the same
+//   SENTENCE as the citation, not merely the same entry. A changelog entry is
+//   long and describes several changes; "the v1 cache format no longer exists"
+//   three paragraphs down is not a statement about some other entry's
+//   citation. Sentence segmentation errs toward splitting (an `e.g.` ends a
+//   sentence as far as this is concerned), which can only ever NARROW the
+//   exemption — never widen it — so a segmentation mistake fails closed.
+//
+// This does not make rot absolutely inexcusable and the comment should not
+// claim it does: inside a changelog, correctly-scoped prose still exempts.
+// What it does guarantee is the property the block-wide search actually needs
+// — that a qualifier can never excuse a citation it is not about, and that
+// nothing a reader would follow as a live pointer can be muted by wording.
+const CHANGELOG_FILE_RE = /(?:^|\/)CHANGELOG(?:\.[A-Za-z0-9]+)?$/;
+
+// Split prose into sentences. A terminator counts only when it is followed by
+// whitespace, optionally through closing punctuation (`…gone."` / `…gone.**`),
+// so `auth-clerk.test.ts` and `0.1.6` are never mistaken for sentence ends —
+// citations are full of dots, and splitting inside one would sever a citation
+// from its own disclosure.
+function sentencesIn(text) {
+  // Whitespace-normalised first: a disclosure is prose, and prose WRAPS, so
+  // `…which no longer\n  exists` arrives here as `no longer   exists` and
+  // would not match a vocabulary written with single spaces. Safe to do here
+  // and not for the block-wide search above, because the result is then cut
+  // into sentences — normalising cannot let a qualifier reach a citation in
+  // some other sentence, only let one reach the citation it is already with.
+  return text.replace(/\s+/g, " ").split(/(?<=[.!?][)\]"'`*_]*)\s+/);
+}
+
+// Does this citation's own sentence, in a changelog, record its referent as
+// gone? Matched per citation STRING rather than per occurrence: a path written
+// twice in one entry is one citation, which is the same reading the
+// already-resolving-sibling rule above takes.
+function rotDisclosedInChangelog(relFile, blockOrLine, citedPath) {
+  if (!CHANGELOG_FILE_RE.test(relFile)) return false;
+  for (const sentence of sentencesIn(blockOrLine)) {
+    if (sentence.includes(citedPath) && NONEXISTENCE_RE.test(sentence)) return true;
+  }
+  return false;
+}
+
 const NONEXISTENCE_RE = new RegExp(
   [
     "\\bno longer exists?\\b",
@@ -892,6 +1082,17 @@ function checkClass1(file, lines, ext) {
   const blocks = blockRangesFor(prose);
   const blockText = new Map();
   for (const [from, to] of blocks) {
+    // NOT whitespace-normalised, deliberately. Joining wrapped lines leaves
+    // runs of spaces (`…no longer\n  exists` becomes `no longer   exists`),
+    // and every phrase in both exemption vocabularies is written with single
+    // spaces, so a wrapped qualifier does not match here. Collapsing the runs
+    // was tried and measured: it newly excused three UNREACHABLE citations in
+    // `bouncer` and `locksmith` changelogs whose paragraphs happen to contain
+    // a wrapped "does not ship" written about a DIFFERENT path — a block-wide
+    // search reaching further, which is the opposite of this PR's direction.
+    // Line wrapping failing closed is the safe side of that trade, so it is
+    // left alone here; the ROT path, which is sentence-scoped and so cannot
+    // reach across a block, normalises for itself (see sentencesIn).
     const text = prose.slice(from, to + 1).join(" ");
     for (let i = from; i <= to; i++) blockText.set(i, text);
   }
@@ -928,6 +1129,17 @@ function checkClass1(file, lines, ext) {
 
       if (cited.state === CITATION_IGNORE) continue;
 
+      if (cited.state === CITATION_ROT_UNVERIFIABLE) {
+        reportIndeterminate(
+          1,
+          file,
+          i + 1,
+          lines[i] ?? text,
+          `cites "${t}", which resolves nowhere — and this run cannot tell whether "packages/${cited.dir}" is a package this repository retired (rot) or a placeholder naming the reader's own tree (not a defect). Its git history is unreliable here (a shallow clone, or no usable checkout), and those two read identically without it. A full-history run is required.`,
+        );
+        continue;
+      }
+
       if (cited.state === CITATION_UNKNOWN) {
         reportIndeterminate(
           1,
@@ -942,11 +1154,13 @@ function checkClass1(file, lines, ext) {
       // The exemption, and the whole reason it is safe to search the entire
       // enclosing block for it: an unavailability qualifier is a claim about
       // SHIPPING, so it can only ever excuse the citation whose defect is
-      // shipping. CITATION_ROT is never exempt, however the prose is worded —
-      // "it does not ship with this package" does not explain a path that
-      // exists in no checkout at any commit.
+      // shipping. CITATION_ROT is never exempt by THIS vocabulary, however the
+      // prose is worded — "it does not ship with this package" does not
+      // explain a path that exists in no checkout at any commit. The rot
+      // vocabulary is a separate exemption with its own, much tighter bounds
+      // (changelog files, same sentence) — see rotDisclosedInChangelog.
       if (cited.state === CITATION_UNREACHABLE && UNAVAILABILITY_RE.test(blockText.get(i) ?? text)) continue;
-      if (cited.state === CITATION_ROT && NONEXISTENCE_RE.test(blockText.get(i) ?? text)) continue;
+      if (cited.state === CITATION_ROT && rotDisclosedInChangelog(relFile, blockText.get(i) ?? text, t)) continue;
 
       const entry = allowlistEntryFor(relFile, t);
       if (entry) {

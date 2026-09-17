@@ -128,18 +128,11 @@
         "scripts/check-release-readiness.mjs",
         "verify.test.ts"
       ],
-      "src/catalog/build.ts": [
-        "packages/a/package.json"
-      ],
       "src/catalog/evaluate.ts": [
         "build.test.ts"
       ],
       "src/catalog/index.ts": [
         "scripts/check-public-safety.mjs"
-      ],
-      "src/catalog/types.ts": [
-        "packages/foo/package.json",
-        "packages/tier/foo/package.json"
       ],
       "src/cleanup/classify.ts": [
         "classify.test.ts"
@@ -506,7 +499,8 @@
       ],
       "src/shell/internal/shell-contract.check.tsx": [
         "../Shell.test.tsx",
-        "Shell.test.tsx"
+        "Shell.test.tsx",
+        "packages/ui/src/atoms/internal/icon-contract.check.tsx"
       ],
       "src/shell/internal/shell-vars.ts": [
         "token-parity.test.ts"
@@ -542,6 +536,8 @@
       ],
       "src/tokens/check-brand-file-coverage.ts": [
         "brand-coverage.test.ts",
+        "packages/surface/src/internal/tokens-brand-file-coverage-agreement.test.ts",
+        "packages/surface/src/internal/tokens.ts",
         "src/brand-coverage.test.ts"
       ],
       "src/tokens/cli.ts": [

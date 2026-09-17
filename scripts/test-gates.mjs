@@ -214,6 +214,30 @@ function gitInit(dir) {
   run("git", ["-C", dir, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "fixture"]);
 }
 
+// A package directory this fixture repository ONCE HAD and has since retired.
+// check-contamination-classes CLASS 1 only claims rot for a `packages/<dir>/…`
+// citation when `<dir>` names a package the repository has or ever had — the
+// test that separates a retired donor from an illustrative placeholder naming
+// the reader's own tree. A fixture that wants the rot half has to supply the
+// history that makes the claim true, rather than relying on the citation's
+// SHAPE, which is the thing that turned out not to separate them.
+//
+// Call after gitInit: the manifest is committed and then deleted, which is
+// what retirement actually looks like in git.
+function gitRetirePackageDir(dir, name) {
+  const pkgDir = join(dir, "packages", name);
+  mkdirSync(pkgDir, { recursive: true });
+  writeFileSync(
+    join(pkgDir, "package.json"),
+    JSON.stringify({ name: `${FIXTURE_SCOPE}/${name}`, version: "0.0.1" }, null, 2) + "\n",
+  );
+  run("git", ["-C", dir, "add", "-A"]);
+  run("git", ["-C", dir, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", `fixture: add ${name}`]);
+  rmSync(pkgDir, { recursive: true, force: true });
+  run("git", ["-C", dir, "add", "-A"]);
+  run("git", ["-C", dir, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", `fixture: retire ${name}`]);
+}
+
 const work = mkdtempSync(join(tmpdir(), "gate-tests-"));
 const synthPath = join(work, "synth-denylist.json");
 writeFileSync(synthPath, JSON.stringify(SYNTH_DENYLIST, null, 2));
@@ -1873,6 +1897,7 @@ try {
         "// Docs live at https://example.invalid/docs/DESIGN.md too.\nexport const e = 1;\n",
     );
     gitInit(dir);
+    gitRetirePackageDir(dir, "retired");
 
     const r = run("node", [CONTAM, dir, "--class", "1", "--json"]);
     let report;
@@ -1943,6 +1968,7 @@ try {
       ].join("\n"),
     );
     gitInit(rotDir);
+    gitRetirePackageDir(rotDir, "retired");
     const rot = run("node", [CONTAM, rotDir, "--class", "1", "--json"]);
     let rotReport;
     try {
@@ -1954,6 +1980,165 @@ try {
       'a "does not ship" disclosure does NOT excuse a path that exists nowhere',
       (rotReport.findings ?? []).some((x) => x.detail.includes('cites "packages/retired/src/gone.ts"')),
       `rot was excused by a shipping disclosure: ${JSON.stringify(rotReport.findings)}`,
+    );
+  }
+
+  // ---- the ROT exemption's own bounds: by file kind, and by sentence
+  //
+  // The rot vocabulary (`no longer exists`, `was deleted`, …) is the mirror of
+  // the shipping vocabulary, but it CANNOT borrow the shipping one's
+  // block-wide licence. A shipping qualifier's worst case is excusing a real,
+  // findable file; a rot qualifier's worst case is excusing a pointer at
+  // nothing. Searched block-wide it did exactly that: `does not exist`,
+  // written in shipped source about a quoted `tsc` error and about a
+  // validation rule, silently excused three genuine rot citations twenty
+  // lines away — so they never reached the waiver either.
+  //
+  // Both halves of the bound are asserted here: shipped source can never
+  // excuse rot by any wording, and inside a CHANGELOG the qualifier has to be
+  // in the citation's OWN sentence, not merely the same entry.
+  console.log("\n# check-contamination-classes CLASS 1: the rot exemption is bounded by file kind and by sentence");
+  {
+    // (a) shipped source. The rot citation and an unrelated `no longer exists`
+    // sentence sit in ONE comment block, twenty lines apart — the exact
+    // arrangement that used to pass.
+    const srcDir = join(work, "contam-class1-rot-block-source");
+    mkdirSync(join(srcDir, "src"), { recursive: true });
+    writeFileSync(
+      join(srcDir, "package.json"),
+      JSON.stringify({ name: `${FIXTURE_SCOPE}/rot-block-source`, version: "1.0.0", files: ["src"] }, null, 2) + "\n",
+    );
+    writeFileSync(
+      join(srcDir, "src", "index.ts"),
+      [
+        "/**",
+        " * Ported from `packages/retired/src/gone.ts` — read that file's header",
+        " * before touching this one.",
+        ...Array.from({ length: 20 }, (_, n) => ` * Filler line ${n + 1}, describing the port in detail.`),
+        " * NOTE ON THE LEGACY CACHE: the v1 on-disk cache format no longer exists;",
+        " * nothing reads it any more.",
+        " */",
+        "export const x = 1;",
+        "",
+      ].join("\n"),
+    );
+    gitInit(srcDir);
+    gitRetirePackageDir(srcDir, "retired");
+    const srcRun = run("node", [CONTAM, srcDir, "--class", "1", "--json"]);
+    let srcReport;
+    try {
+      srcReport = JSON.parse(srcRun.out);
+    } catch {
+      srcReport = { findings: [] };
+    }
+    check(
+      "a rot qualifier elsewhere in the same comment block does NOT excuse rot in shipped source",
+      (srcReport.findings ?? []).some((x) => x.detail.includes('cites "packages/retired/src/gone.ts"')),
+      `rot was excused block-wide in shipped source: ${JSON.stringify(srcReport.findings)}`,
+    );
+    check(
+      "…and the run fails rather than passing clean",
+      srcRun.code === 1,
+      `exit was ${srcRun.code}: ${srcRun.out.slice(0, 400)}`,
+    );
+
+    // (b) a CHANGELOG. Same sentence exempts; a different sentence in the same
+    // entry does not.
+    const clDir = join(work, "contam-class1-rot-changelog");
+    mkdirSync(join(clDir, "src"), { recursive: true });
+    writeFileSync(
+      join(clDir, "package.json"),
+      JSON.stringify(
+        { name: `${FIXTURE_SCOPE}/rot-changelog`, version: "1.0.0", files: ["src", "CHANGELOG.md"] },
+        null,
+        2,
+      ) + "\n",
+    );
+    writeFileSync(join(clDir, "src", "index.ts"), "export const y = 1;\n");
+    writeFileSync(
+      join(clDir, "CHANGELOG.md"),
+      [
+        "# Changelog",
+        "",
+        "## [1.0.0] - 2026-01-01",
+        "",
+        "### Fixed",
+        "",
+        "- Dropped a citation of `packages/retired/src/gone.ts`, which no longer",
+        "  exists at any commit in this repository.",
+        "",
+        "- Dropped a second citation, of `packages/retired/src/also-gone.ts`. The",
+        "  path named in the entry above no longer exists, but that sentence says",
+        "  nothing whatever about this one.",
+        "",
+      ].join("\n"),
+    );
+    gitInit(clDir);
+    gitRetirePackageDir(clDir, "retired");
+    const clRun = run("node", [CONTAM, clDir, "--class", "1", "--json"]);
+    let clReport;
+    try {
+      clReport = JSON.parse(clRun.out);
+    } catch {
+      clReport = { findings: [] };
+    }
+    const clCites = (path) => (clReport.findings ?? []).some((x) => x.detail.includes(`cites "${path}"`));
+    check(
+      "a changelog entry that records its own citation as gone, in that sentence, is NOT a finding",
+      !clCites("packages/retired/src/gone.ts"),
+      `the same-sentence changelog disclosure was flagged: ${JSON.stringify(clReport.findings)}`,
+    );
+    check(
+      "a rot qualifier in a DIFFERENT sentence of the same changelog entry does NOT excuse it",
+      clCites("packages/retired/src/also-gone.ts"),
+      `a different sentence excused rot in a changelog: ${JSON.stringify(clReport.findings)}`,
+    );
+
+    // (c) `packages/…` is a SHAPE, not proof of self-reference. A package whose
+    // job is walking other repositories' `packages/` trees documents its own
+    // parameters with placeholder paths that name the READER's tree — the same
+    // case as `app/layout.tsx`, which this class already declines to claim.
+    // Separated by identity (does this repository have, or have it ever had,
+    // that package directory?), never by a list of placeholder names.
+    const phDir = join(work, "contam-class1-packages-placeholder");
+    mkdirSync(join(phDir, "src"), { recursive: true });
+    writeFileSync(
+      join(phDir, "package.json"),
+      JSON.stringify({ name: `${FIXTURE_SCOPE}/placeholder`, version: "1.0.0", files: ["src"] }, null, 2) + "\n",
+    );
+    writeFileSync(
+      join(phDir, "src", "depth.ts"),
+      [
+        "// `maxDepth` counts directory levels below the scanned root:",
+        "// `packages/a/package.json` is depth 1; `packages/tier/foo/package.json`",
+        "// is depth 2.",
+        "export const maxDepth = 2;",
+        "",
+      ].join("\n"),
+    );
+    writeFileSync(
+      join(phDir, "src", "real.ts"),
+      "// Ported from `packages/retired/src/gone.ts`.\nexport const z = 1;\n",
+    );
+    gitInit(phDir);
+    gitRetirePackageDir(phDir, "retired");
+    const phRun = run("node", [CONTAM, phDir, "--class", "1", "--json"]);
+    let phReport;
+    try {
+      phReport = JSON.parse(phRun.out);
+    } catch {
+      phReport = { findings: [] };
+    }
+    const phFindings = phReport.findings ?? [];
+    check(
+      "a `packages/<dir>` citation naming a directory this repository never had is NOT claimed as rot",
+      !phFindings.some((x) => x.file === "src/depth.ts"),
+      `an illustrative placeholder was reported as rot: ${JSON.stringify(phFindings.filter((x) => x.file === "src/depth.ts"))}`,
+    );
+    check(
+      "…while a `packages/<dir>` citation naming a directory it DID have still is",
+      phFindings.some((x) => x.detail.includes('cites "packages/retired/src/gone.ts"')),
+      `the retired-donor citation stopped being reported: ${JSON.stringify(phFindings)}`,
     );
   }
 
@@ -1986,6 +2171,7 @@ try {
     writeFileSync(join(dir, "dist", "index.js"), "// See `packages/retired/src/gone.ts`.\nexport const x = 1;\n");
     writeFileSync(join(dir, ".gitignore"), "dist/\n");
     gitInit(dir);
+    gitRetirePackageDir(dir, "retired");
 
     const tree = run("node", [CONTAM, dir, "--class", "1"]);
     check(
