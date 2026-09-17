@@ -1,0 +1,304 @@
+name: Conversation safety sweep
+
+# WHAT THIS ADDS THAT conversation-safety.yml CANNOT — READ THIS FIRST
+# --------------------------------------------------------------------
+# conversation-safety.yml is EVENT-DRIVEN: one run per posted issue, comment,
+# review or PR body, scanned once, at the moment it is posted. That shape has
+# a hole nothing in that workflow can close, because the hole is not in its
+# triggers and not in the scanner:
+#
+#   A SCAN IS A JUDGEMENT AGAINST THE DENYLIST OF THE MOMENT IT RAN.
+#
+# The denylist is a private file outside this repository, mirrored into CI as
+# the `PUBLIC_SAFETY_DENYLIST_B64` secret. That mirror is a SNAPSHOT, refreshed
+# by hand. Every time a term is added to the real denylist and the secret has
+# not yet been re-uploaded, the event gate keeps running — in FULL mode, with a
+# green check — against a denylist that does not contain the new term. It
+# reports PASS, correctly, for the question it was actually asked. Nothing then
+# ever asks it again: the text was scanned, the event is long gone, and a later
+# denylist update does not retroactively re-scan a single character of the
+# conversation surface.
+#
+# That is not hypothetical. Issue #335 reported the conversation gate missing a
+# denylisted identity in a comment that a manual
+# `check-conversation-safety.mjs --pr <n> --require-denylist` run caught, and
+# read the pattern as "the gate exempts bot-authored comments". It does not —
+# see the note below — the missed comments and the caught ones differ by WHICH
+# TERM matched, not by who wrote them.
+#
+# The same gap swallows anything else that stops an event run from ever
+# happening or ever finishing: text posted before the event workflow existed, a
+# run cancelled or expired, an event GitHub did not deliver, a transient
+# infrastructure failure on the one run that would have scanned that one
+# comment. In every case the symptom is identical and silent — no failing
+# check, no label, nothing to notice.
+#
+# This workflow closes that by RE-ASKING the question on a cadence, with
+# whatever denylist is current, over text that was already scanned before. It
+# is the only path here that can catch a finding the event gate structurally
+# cannot, so it is deliberately not a duplicate of it and must not be deleted
+# as one.
+#
+# NOT AN AUTHOR EXEMPTION — WHAT #335 ACTUALLY MEASURED
+# ------------------------------------------------------
+# For the record, so this is never "fixed" again in the wrong place: neither
+# conversation-safety.yml nor scripts/check-conversation-safety.mjs has ever
+# looked at a comment's author. Both scan every author's text identically, and
+# #274 records 12 `pull_request_review_comment` runs failing on bot-authored
+# comments — the event gate firing on, and catching, exactly the class of
+# comment #335 believed was skipped. Correlating every comment posted in this
+# repository against this workflow family's run history confirms it from the
+# other direction: after the event gate went live, bot-authored comments
+# triggered runs at the same rate as human-authored ones. Adding an author
+# filter, widening a trigger, or changing the scanner would all have been a
+# confident fix to something that was never broken.
+#
+# WHY THIS STILL NEVER POSTS A COMMENT
+# -------------------------------------
+# Same reason conversation-safety.yml does not, and it applies with more force
+# here: this sweep speaks about text that has been public for days or weeks. An
+# automated "private identity detected here" reply on a PUBLIC repository is
+# itself a public signal — it announces that this specific issue holds
+# something its author did not mean to publish, and points a reader straight at
+# the edit-history dropdown where the original text is still readable even if
+# the comment is later edited. The label plus the failed check carry the same
+# information to maintainers, who can see both, without broadcasting it to
+# anyone who cannot. This workflow therefore only ever ADDS A LABEL. Do not add
+# a comment step, a job summary quoting a match, or an issue-opening step: the
+# scanner never echoes a matched string precisely so that its output is safe in
+# a public log, and a comment would undo that at the last hop.
+
+on:
+  schedule:
+    # Daily, at a minute that is not the top of the hour — GitHub queues
+    # scheduled workflows across every repository on the platform and :00 is
+    # the most contended slot, which is where a cron run is most likely to be
+    # delayed or dropped. A dropped sweep is silent, so avoid the slot rather
+    # than rely on noticing.
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+    inputs:
+      since:
+        description: >-
+          ISO 8601 cutoff, e.g. 2026-01-31T00:00:00Z. Blank sweeps the ENTIRE
+          conversation surface — run that deliberately, after a denylist
+          change, and see the rate-limit note in this file.
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  # Identical to conversation-safety.yml's: enough to read issue/PR text
+  # through the API and to label a finding, and nothing else. Nothing here
+  # writes code, packages, or contents.
+  issues: write
+  pull-requests: write
+  contents: read
+
+concurrency:
+  # One sweep at a time, and never cancelled. Two sweeps racing would scan the
+  # same text twice for no new information, and cancelling the running one
+  # would abandon a partial scan whose remaining items nothing else is going to
+  # look at — the same reasoning conversation-safety.yml's own concurrency
+  # block spells out at length.
+  group: conversation-safety-sweep
+  cancel-in-progress: false
+
+jobs:
+  sweep:
+    name: conversation safety sweep
+    runs-on: ubuntu-latest
+    # Generous relative to a single-item event scan: this walks many issues and
+    # PRs and their comment collections over the network. Bounded anyway, so a
+    # hung `gh` call cannot pin a runner indefinitely.
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+
+      # Same reasoning as conversation-safety.yml's equivalent step: this
+      # workflow only ever runs in the base-repository security context, so a
+      # denylist is always expected and a missing one is a misconfiguration,
+      # not a condition to degrade for. A PARTIAL sweep skips identity checks
+      # entirely while still printing a green check, and this sweep's whole
+      # purpose is catching identity the event gate's denylist did not know —
+      # a PARTIAL pass here would be the exact false clearance being fixed.
+      - name: Materialise denylist
+        env:
+          DENYLIST_B64: ${{ secrets.PUBLIC_SAFETY_DENYLIST_B64 }}
+        run: |
+          if [ -z "$DENYLIST_B64" ]; then
+            echo "::error title=Cannot run conversation safety sweep::PUBLIC_SAFETY_DENYLIST_B64 is not set. This sweep only ever runs in FULL mode; a missing denylist fails the job rather than degrading to a scan that could be mistaken for a clean result."
+            exit 1
+          fi
+          printf '%s' "$DENYLIST_B64" | base64 -d > "$RUNNER_TEMP/denylist.json"
+          echo "PUBLIC_SAFETY_DENYLIST=$RUNNER_TEMP/denylist.json" >> "$GITHUB_ENV"
+
+      # RATE LIMIT, AND WHY THE SCHEDULED WINDOW IS BOUNDED
+      # ---------------------------------------------------
+      # `--all` walks every issue and PR the listing returns and then fetches
+      # each one's comments, review comments and reviews — several paginated
+      # API calls per item. GITHUB_TOKEN is rate-limited per repository per
+      # hour, and an unbounded sweep of a repository this size is comfortably
+      # capable of exhausting that budget, at which point `gh` starts failing
+      # and the scanner exits 2 ("could not run") — visible, at least, but a
+      # sweep that reliably cannot finish is a sweep nobody trusts.
+      #
+      # So the scheduled run is bounded to a rolling window, wide enough that
+      # every item is covered by many consecutive sweeps (one skipped or
+      # throttled day is not a hole), and `workflow_dispatch` takes an explicit
+      # `since` — including blank, meaning everything — for the deliberate full
+      # sweep that belongs immediately after a denylist change, which is the
+      # one moment the whole back catalogue genuinely needs re-asking.
+      #
+      # `--since` filters on the item's `updated_at` where the provider gives
+      # one, so an OLD comment EDITED inside the window is still swept; see
+      # itemTimestamp() in the scanner for the per-type field precedence.
+      - name: Resolve sweep window
+        id: window
+        env:
+          DISPATCH_SINCE: ${{ inputs.since }}
+          SWEEP_DAYS: "30"
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            # A deliberate operator choice, including the deliberate choice of
+            # "everything" — never silently widened or narrowed here.
+            echo "since=$DISPATCH_SINCE" >> "$GITHUB_OUTPUT"
+            if [ -z "$DISPATCH_SINCE" ]; then
+              echo "Dispatched with no cutoff: sweeping the ENTIRE conversation surface."
+            else
+              echo "Dispatched with cutoff: $DISPATCH_SINCE"
+            fi
+          else
+            since="$(date -u -d "-${SWEEP_DAYS} days" +%Y-%m-%dT%H:%M:%SZ)"
+            echo "since=$since" >> "$GITHUB_OUTPUT"
+            echo "Scheduled sweep window: items updated since $since"
+          fi
+
+      # Never fails on its own exit code, for the same reason
+      # conversation-safety.yml's gate step does not: the labeling step below
+      # must get its chance to run on a finding before the job's status is
+      # decided. The last step turns the recorded status into the real result.
+      #
+      # --json is used rather than the human report because the labeling step
+      # needs the issue/PR numbers as data. The JSON carries no matched text —
+      # the scanner's findings deliberately have no `text` field — so it is as
+      # safe in this public log as the prose form, and the summary printed
+      # below is built from it rather than from a second scan.
+      - name: Run conversation safety sweep
+        id: sweep
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          SWEEP_SINCE: ${{ steps.window.outputs.since }}
+        run: |
+          set +e
+          report="$RUNNER_TEMP/conversation-sweep.json"
+
+          if [ -n "$SWEEP_SINCE" ]; then
+            node scripts/check-conversation-safety.mjs --all --since "$SWEEP_SINCE" --require-denylist --json > "$report" 2>"$RUNNER_TEMP/sweep-stderr.txt"
+          else
+            node scripts/check-conversation-safety.mjs --all --require-denylist --json > "$report" 2>"$RUNNER_TEMP/sweep-stderr.txt"
+          fi
+          status=$?
+
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          echo "report=$report" >> "$GITHUB_OUTPUT"
+
+          if [ "$status" = "2" ]; then
+            # stderr here is the scanner's own human-written error text (a gh
+            # failure, a missing denylist) — no scanned content in it.
+            cat "$RUNNER_TEMP/sweep-stderr.txt" || true
+            exit 0
+          fi
+
+          # Redacted summary: mode, how many items were examined, and a count
+          # per category. Locations are printed by the labeling step. No
+          # matched string exists anywhere in this report to print.
+          REPORT_PATH="$report" node -e '
+            const fs = require("node:fs");
+            const r = JSON.parse(fs.readFileSync(process.env.REPORT_PATH, "utf8"));
+            console.log(`sweep: ${r.source}`);
+            console.log(`mode: ${r.mode} — scanned ${r.scanned} conversation item(s) — verdict: ${r.verdict}`);
+            const byDetail = new Map();
+            for (const f of r.findings ?? []) {
+              const k = `[${f.severity}] ${f.kind} — ${f.detail}`;
+              const e = byDetail.get(k) ?? { hits: 0, numbers: new Set() };
+              e.hits++;
+              if (f.number != null) e.numbers.add(f.number);
+              byDetail.set(k, e);
+            }
+            for (const [k, e] of byDetail) {
+              console.log(`  ${k}: ${e.hits} hit(s) across ${e.numbers.size} issue/PR(s)`);
+            }
+          ' 2>&1
+          exit 0
+
+      - name: Redact denylist
+        if: always()
+        run: rm -f "$RUNNER_TEMP/denylist.json"
+
+      # Only on an actual finding (exit 1). Never on exit 2, "could not run":
+      # there is nothing confirmed to report, and labeling on a failed scan
+      # would put a public-safety label on an issue no one has shown to carry
+      # anything. See this file's header for why this labels and never
+      # comments — that property is the point, not an omission.
+      - name: Label findings
+        if: ${{ steps.sweep.outputs.status == '1' }}
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          REPORT_PATH: ${{ steps.sweep.outputs.report }}
+        with:
+          script: |
+            const fs = require("node:fs");
+            const report = JSON.parse(fs.readFileSync(process.env.REPORT_PATH, "utf8"));
+            const { owner, repo } = context.repo;
+            const label = "public-safety";
+
+            // `number` is supplied by the scanner as a number, deliberately,
+            // so this never parses it back out of the prose `location` field.
+            const numbers = [...new Set((report.findings ?? []).map((f) => f.number).filter((n) => Number.isInteger(n)))].sort((a, b) => a - b);
+            if (!numbers.length) {
+              // Exit 1 means findings exist, so zero labelable numbers means
+              // the report and this step disagree about its own shape. Fail
+              // loudly: a sweep that finds something and labels nothing looks
+              // exactly like a sweep that found nothing.
+              core.setFailed("sweep reported findings but no issue/PR number could be resolved from them — refusing to report a silently unlabeled finding as handled");
+              return;
+            }
+
+            try {
+              await github.rest.issues.getLabel({ owner, repo, name: label });
+            } catch (error) {
+              if (error.status !== 404) throw error;
+              await github.rest.issues.createLabel({
+                owner,
+                repo,
+                name: label,
+                color: "b60205",
+                description: "Automated conversation-safety finding — see CONTRIBUTING.md",
+              });
+            }
+
+            // Locations only. An issue or PR number discloses nothing a public
+            // issue tracker does not already make trivially findable; the
+            // matched string is the one thing that must never appear here, and
+            // the scanner never put it in this report to begin with.
+            core.info(`labeling ${numbers.length} issue(s)/PR(s): ${numbers.join(", ")}`);
+            for (const issue_number of numbers) {
+              await github.rest.issues.addLabels({ owner, repo, issue_number, labels: [label] });
+            }
+
+      - name: Reflect sweep result in job status
+        if: ${{ steps.sweep.outputs.status != '0' }}
+        run: |
+          status="${{ steps.sweep.outputs.status }}"
+          if [ "$status" = "2" ]; then
+            echo "::error title=Conversation safety sweep could not run::Denylist materialisation or scripts/check-conversation-safety.mjs itself failed — see the 'Run conversation safety sweep' step log above. This is NOT a clean sweep and must not be read as one; no label was applied because there is nothing confirmed to report."
+          else
+            echo "::error title=Conversation safety sweep finding::scripts/check-conversation-safety.mjs reported a possible private-identity match in already-posted conversation text. The 'public-safety' label has been applied to the affected issues/PRs; the redacted categories and counts are in the 'Run conversation safety sweep' step log above. This job deliberately posts no comment — see this workflow's header and CONTRIBUTING.md's 'Conversation surface' section."
+          fi
+          exit 1

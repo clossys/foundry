@@ -4594,6 +4594,190 @@ try {
         `output: ${stdinDraft.out.slice(0, 300)}`,
       );
     }
+
+    // ---- #335: BOT-AUTHORED COMMENTS ARE NOT EXEMPT, AND EVERY FINDING
+    // CARRIES A MACHINE-READABLE ISSUE/PR NUMBER.
+    //
+    // #335 reported the conversation gate missing a denylisted identity in a
+    // bot-authored comment and read that as an author exemption. There is no
+    // author exemption — neither this scanner nor
+    // .github/workflows/conversation-safety.yml has ever read a comment's
+    // author, and #274 records the event workflow failing 12
+    // `pull_request_review_comment` runs on bot-authored comments. The first
+    // assertion below is the one #335 asks for verbatim ("feed a bot-authored
+    // comment containing a denylisted fixture string and assert a finding"),
+    // and it is here to keep that true rather than to have ever been false:
+    // if someone later adds an author filter "to cut bot noise", this is what
+    // refuses it.
+    //
+    // The real gap #335 measured is that a scan is a judgement against the
+    // denylist OF THE MOMENT IT RAN, and nothing ever re-asks. That is closed
+    // by .github/workflows/conversation-safety-sweep.yml, whose shape the
+    // cases further below pin — and which needs `number` as DATA to know what
+    // to label. Recovering it by regex from `location`'s prose would break
+    // silently the day that wording changes, and a sweep that labels nothing
+    // is indistinguishable from a sweep that found nothing.
+    {
+      const ghFixtureDir = join(work, "gh-bot-author-fixture");
+      mkdirSync(ghFixtureDir, { recursive: true });
+      const fakeGhPath = join(ghFixtureDir, "gh");
+      // Routed by path shape, same seam as the fixtures above. The planted
+      // term is the synthetic one this whole suite uses — never a real
+      // denylist term; see SYNTH_DENYLIST's note at the top of this file.
+      // Both bot-authored comment KINDS are planted: an issue-style comment
+      // on the PR, and an inline review comment, because GitHub delivers
+      // those through two different events and a filter added to one would
+      // not necessarily show up in the other.
+      writeFileSync(
+        fakeGhPath,
+        [
+          "#!/usr/bin/env node",
+          "const args = process.argv.slice(2);",
+          'if (args[0] !== "api") { process.exit(1); }',
+          'const path = args[1] || "";',
+          'const BOT = { login: "some-review-bot[bot]", type: "Bot" };',
+          'if (path.includes("/pulls/") && path.endsWith("/comments")) {',
+          "  process.stdout.write(JSON.stringify([[{",
+          "    id: 9001,",
+          "    user: BOT,",
+          '    html_url: "https://example.invalid/pull/77#discussion_r9001",',
+          '    body: "Rate limit reached for acme-corp. Retrying later.",',
+          "  }]]));",
+          '} else if (path.includes("/pulls/") && path.endsWith("/reviews")) {',
+          "  process.stdout.write(JSON.stringify([[]]));",
+          '} else if (path.endsWith("/comments")) {',
+          "  process.stdout.write(JSON.stringify([[{",
+          "    id: 9002,",
+          "    user: BOT,",
+          '    html_url: "https://example.invalid/pull/77#issuecomment-9002",',
+          '    body: "Automated status from acme-corp tooling.",',
+          "  }]]));",
+          "} else {",
+          "  process.stdout.write(JSON.stringify({",
+          '    title: "An ordinary pull request title",',
+          '    body: "An ordinary pull request body.",',
+          '    html_url: "https://example.invalid/pull/77",',
+          "  }));",
+          "}",
+          "process.exit(0);",
+        ].join("\n"),
+        "utf8",
+      );
+      chmodSync(fakeGhPath, 0o755);
+
+      const env = { ...process.env, PATH: `${ghFixtureDir}:${process.env.PATH}` };
+      const result = run("node", [CONVERSATION, "--pr", "77", "--repo", "x/y", "--denylist", synthPath, "--require-denylist", "--json"], { env });
+      let report = null;
+      try {
+        report = JSON.parse(result.out);
+      } catch {
+        report = null;
+      }
+      const findings = report?.findings ?? [];
+
+      check(
+        "#335: a BOT-authored PR comment carrying a denylisted term is a finding — comment authors are never exempt",
+        result.code === 1 && findings.some((f) => String(f.location).includes("9002")),
+        `expected exit 1 with a finding on comment 9002, got exit ${result.code}: ${result.out.slice(0, 400)}`,
+      );
+      check(
+        "#335: a BOT-authored inline REVIEW comment carrying a denylisted term is a finding too",
+        result.code === 1 && findings.some((f) => String(f.location).includes("9001")),
+        `expected a finding on review comment 9001, got: ${JSON.stringify(findings.map((f) => f.location))}`,
+      );
+      check(
+        "#335: the bot comment's matched term is still never echoed",
+        !result.out.includes("acme-corp"),
+        `matched term leaked into bot-comment output: ${result.out}`,
+      );
+      check(
+        "every --json finding carries a machine-readable issue/PR `number`, so a sweep can label without regex-parsing prose",
+        findings.length > 0 && findings.every((f) => f.number === 77),
+        `expected every finding to carry number 77, got: ${JSON.stringify(findings.map((f) => ({ location: f.location, number: f.number })))}`,
+      );
+
+      // Draft mode has no issue/PR identity, so `number` must be null there
+      // rather than absent or invented — a caller filtering on
+      // Number.isInteger must not accidentally pick up a draft finding.
+      const draft = run("node", [CONVERSATION, "--denylist", synthPath, "--require-denylist", "--json"], { input: "a draft mentioning acme-corp\n" });
+      let draftReport = null;
+      try {
+        draftReport = JSON.parse(draft.out);
+      } catch {
+        draftReport = null;
+      }
+      check(
+        "a draft-mode finding carries `number: null` — a draft has no issue/PR to label",
+        draft.code === 1 && (draftReport?.findings ?? []).length > 0 && (draftReport?.findings ?? []).every((f) => f.number === null),
+        `report: ${JSON.stringify(draftReport)}`,
+      );
+    }
+
+    // ---- #335, second half: THE SWEEP MUST EXIST, BE SCHEDULED, AND NEVER
+    // COMMENT.
+    //
+    // conversation-safety.yml scans each piece of text exactly once, at the
+    // instant it is posted, against the denylist snapshot CI holds at that
+    // instant. When a term is added to the real denylist and the
+    // PUBLIC_SAFETY_DENYLIST_B64 secret has not yet been refreshed, that gate
+    // returns a correct, FULL-mode PASS for the question it was asked — and
+    // nothing ever asks again, because the event is gone. The same silence
+    // covers a run that was cancelled, an event that predates the workflow,
+    // and an event GitHub never delivered.
+    //
+    // conversation-safety-sweep.yml is the only thing in this repository that
+    // re-asks. These assertions are deliberately shape assertions on the
+    // workflow file: its value is entirely in RUNNING ON A CADENCE, and a
+    // sweep whose `schedule:` is quietly dropped still passes every scanner
+    // test in this file while never running again.
+    {
+      const sweepPath = join(repoRoot, ".github", "workflows", "conversation-safety-sweep.yml");
+      const exists = existsSync(sweepPath);
+      check(
+        "#335: a scheduled conversation-surface sweep workflow exists (the event gate alone can never re-scan under a newer denylist)",
+        exists,
+        `expected ${sweepPath} to exist`,
+      );
+      if (exists) {
+        const sweep = readFileSync(sweepPath, "utf8");
+        check(
+          "the sweep runs on a schedule — an on-demand-only sweep is one nobody runs",
+          /^\s*schedule:\s*$/m.test(sweep) && /^\s*-\s*cron:\s*["']/m.test(sweep),
+          "no `schedule:` with a `- cron:` entry found in conversation-safety-sweep.yml",
+        );
+        check(
+          "the sweep is also dispatchable on demand, for the deliberate full pass after a denylist change",
+          /^\s*workflow_dispatch:/m.test(sweep),
+          "no `workflow_dispatch:` trigger found in conversation-safety-sweep.yml",
+        );
+        check(
+          "the sweep invokes check-conversation-safety.mjs in --all mode",
+          /check-conversation-safety\.mjs --all/.test(sweep),
+          "conversation-safety-sweep.yml does not run the scanner in --all mode",
+        );
+        check(
+          "the sweep refuses to degrade to PARTIAL — a sweep that skips identity checks is the exact false clearance being fixed",
+          /--require-denylist/.test(sweep),
+          "conversation-safety-sweep.yml does not pass --require-denylist",
+        );
+        check(
+          "the sweep labels its findings",
+          /addLabels/.test(sweep),
+          "conversation-safety-sweep.yml never calls addLabels — a finding nobody is told about is not a finding",
+        );
+        // The load-bearing negative. On a public repository an automated
+        // "private identity detected here" reply is itself a public signal,
+        // and points a reader at the edit history where the original text
+        // still sits — see conversation-safety.yml's own note. This sweep
+        // speaks about text that has been public for weeks, so it applies
+        // with more force here, not less.
+        check(
+          "the sweep NEVER posts a comment — labeling is the whole remediation channel, deliberately",
+          !/createComment|create_comment|gh (issue|pr) comment/.test(sweep),
+          "conversation-safety-sweep.yml appears to post a comment; on a public repository that broadcasts the very finding it is meant to contain",
+        );
+      }
+    }
   }
 
   // ------------------------------------------- check-foreign-references
