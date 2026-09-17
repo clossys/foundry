@@ -120,4 +120,34 @@ describe("architect-check, invoked through a node_modules/.bin-shaped symlink", 
     expect(report.state).toBe("satisfied");
     expect(report.findings).toEqual([]);
   });
+
+  it("exits 0 with a satisfied architecture-exception report from one assessment.json", () => {
+    const path = join(workDir, "assessment.json");
+    writeFileSync(path, JSON.stringify({
+      topology: validTopology,
+      observations: [{
+        id: "one",
+        observedAt: "2026-08-23T12:00:00Z",
+        material: true,
+        crossings: [{ from: "workspace", to: "product", responsibility: "product" }],
+      }],
+      maximumExceptionRate: 0,
+    }));
+
+    const result = runBin([path]);
+
+    expect(result.status).toBe(0);
+    expect(JSON.parse(result.stdout)).toMatchObject({
+      state: "satisfied",
+      exceptionRate: 0,
+      proposedPositions: [],
+    });
+  });
+
+  it("exits 2 for a missing assessment file without computing a zero exception rate", () => {
+    const result = runBin([join(workDir, "missing.json")]);
+    expect(result.status).toBe(2);
+    expect(result.stderr).toContain("does not exist");
+    expect(result.stdout).not.toMatch(/"exceptionRate": 0/);
+  });
 });

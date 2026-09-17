@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
   assessArchitectureExceptions,
@@ -8,6 +11,11 @@ import {
   validateOperatingTopology,
 } from "./index.js";
 import type { OperatingTopologyDefinition } from "./types.js";
+
+const packageJson = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), "..", "package.json"), "utf8")) as {
+  bin?: Record<string, string>;
+  foundry?: { assessment?: { bin?: string; invocation?: string } };
+};
 
 function topology(overrides: Partial<OperatingTopologyDefinition> = {}): OperatingTopologyDefinition {
   return {
@@ -158,5 +166,15 @@ describe("architecture exception assessment", () => {
   it("returns indeterminate for invalid evidence, topology, or setpoint", () => {
     expect(assessArchitectureExceptions({}, [], { maximumExceptionRate: 2 })).toMatchObject({ state: "indeterminate", exceptionRate: null });
     expect(validateArchitectureChangeObservations([{ id: "same", observedAt: "no", material: "yes", crossings: "none" }, { id: "same", observedAt: "no", material: true, crossings: [] }]).map((entry) => entry.rule)).toEqual(expect.arrayContaining(["observed-at", "material-shape", "crossings-shape", "duplicate-observation-id"]));
+  });
+});
+
+describe("public contract", () => {
+  it("declares foundry.assessment against the mapped architect-check bin", () => {
+    expect(packageJson.foundry?.assessment).toEqual({
+      bin: "architect-check",
+      invocation: "single-json-input",
+    });
+    expect(packageJson.bin?.["architect-check"]).toBe("dist/cli.js");
   });
 });

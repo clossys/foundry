@@ -1,6 +1,6 @@
 {
   "name": "@clossys/architect",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -29,6 +29,12 @@
     "LICENSE"
   ],
   "sideEffects": false,
+  "foundry": {
+    "assessment": {
+      "bin": "architect-check",
+      "invocation": "single-json-input"
+    }
+  },
   "description": "The architect role: provider-neutral operating topology, ontology, authority and interface contracts, plus evidence-based architecture exception assessment.",
   "keywords": [
     "architecture",

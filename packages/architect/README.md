@@ -14,6 +14,39 @@ It performs no network I/O and has no runtime dependencies. Install it with:
 npm install @clossys/architect
 ```
 
+This package is published to the public npm registry, `https://registry.npmjs.org`.
+Installing it needs no authentication: no npm token, no `.npmrc` registry
+override, and no GitHub credential of any kind.
+
+## Close condition
+
+Independent consumer evidence shows the position's owned metric meets its
+setpoint over the declared review cadence. The owned metric is `architecture
+exception rate`, computed by `assessArchitectureExceptions()`. No observed
+material changes means the rate is `indeterminate`, never zero. This package
+does not measure consumer evidence and does not close the loop; a consumer
+binds the condition against their own declared topology and independent
+observations. A green run of this package's tests is not a close.
+
+```bash
+architect-check assessment.json
+```
+
+The command prints JSON and exits `0` for satisfied, `1` for violated, and
+`2` for indeterminate, unreadable, or invalid input. The assessment file is
+one JSON object with `topology`, `observations`, and `maximumExceptionRate`.
+
+This package declares that command as its first-day assessment surface in
+its own manifest:
+
+```json
+"foundry": { "assessment": { "bin": "architect-check", "invocation": "single-json-input" } }
+```
+
+Onboarding discovers that declaration from the installed manifest and never
+infers a surface. Architect is not a required first-day role; Advisor
+remains the only required first-day assessment.
+
 ## Job charter
 
 Architect operates in **optimize** mode. Its durable objective is to reduce
@@ -87,11 +120,16 @@ responsibilities implemented somewhere in the topology.
 ## CLI
 
 ```bash
+architect-check assessment.json
 architect-check topology topology.json
 architect-check exceptions topology.json observations.json --maximum-exception-rate 0.05
 ```
 
-Both commands emit JSON. Exit codes are `0` satisfied, `1` violated, and `2`
+`architect-check assessment.json` is the first-day assessment surface: one
+JSON file containing `topology`, `observations`, and `maximumExceptionRate`.
+The `topology` and `exceptions` subcommands remain for the two-file form.
+
+All commands emit JSON. Exit codes are `0` satisfied, `1` violated, and `2`
 indeterminate or unable to run. Invalid topology is a violation for the
 `topology` conformance command. Invalid inputs make the exception rate
 indeterminate because no valid measurement can be computed.
