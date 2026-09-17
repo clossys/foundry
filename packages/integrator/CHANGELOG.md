@@ -5,6 +5,19 @@ All notable changes to `@clossys/integrator` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.7] - 2026-09-16
+
+### Changed
+
+- Made explicit, at the top of the Install section, that installing this
+  package needs no authentication and that it publishes to
+  `https://registry.npmjs.org` with public access. This package's Install
+  line was never actually wrong, but an #924 audit flagged it anyway: the
+  "GitHub Packages" prose later in this document, describing a
+  caller-supplied registry this package can probe against, reads out of
+  context like an install requirement for `integrator` itself. The new
+  sentence forecloses that misreading.
+
 ## [0.6.6] - 2026-09-14
 
 ### Changed

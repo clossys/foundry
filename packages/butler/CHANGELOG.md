@@ -3,6 +3,20 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.4] - 2026-09-16
+
+### Fixed
+
+- The Install section told a consumer this package requires a GitHub
+  personal access token with `read:packages`, pointing at the repository
+  root README for confirmation. That pointer led to a section describing
+  the unrelated, still-token-gated `@vespeneventures` historical packages —
+  corroborating evidence for a claim that has never been true of
+  `@clossys/butler`, which publishes to `https://registry.npmjs.org` with
+  public access and installs anonymously. A reader following the
+  instruction as written would create a credential this package never asks
+  for. (#924)
+
 ## [0.1.3] - 2026-09-02
 
 ### Fixed

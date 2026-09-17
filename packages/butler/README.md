@@ -44,8 +44,9 @@ Two rules follow, and both are structural here rather than advisory:
 npm install @clossys/butler
 ```
 
-Installing from this registry needs a GitHub personal access token with
-`read:packages` — see the repository root README.
+The package publishes to the public npm registry
+(`https://registry.npmjs.org`) with public access; installing it needs no
+GitHub token or other credential.
 
 ```ts
 import { checkCurrency, evaluateStandingInstruction } from "@clossys/butler";
