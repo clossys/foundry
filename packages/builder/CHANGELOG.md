@@ -5,6 +5,41 @@ All notable changes to `@clossys/builder` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.9] - 2026-09-17
+
+### Added
+
+- `./deployment` gains the binding between an environment and the branch that
+  feeds it: `checkDeploymentBranchBindings`,
+  `defineDeploymentBranchBindings`, `validateDeploymentBranchBindings`,
+  `isValidDeploymentBranchBindings`,
+  `REQUIRED_BOUND_DEPLOYMENT_ENVIRONMENT`, and the
+  `DeploymentBranchBinding` / `DeploymentBranchBindingDefinition` /
+  `DeploymentBranchBindingCheck` / `DeploymentBranchBindingFindingRule`
+  types. `DEPLOYMENT_ENVIRONMENTS` enumerated the environments and stopped
+  there; a surface said where it is live and how to tell, never what feeds
+  it.
+
+### Notes
+
+- `DeploymentBranchBinding.branch` is a **plain string**. It names a branch a
+  repository's own profile — a different package's contract — declares, and
+  this package does not import that package to resolve it. That seam is
+  deliberate and is the one `@clossys/strategist`'s `BrandDerivation` already
+  uses for token slots and voice rules: one package declares the topology,
+  this one declares which environment consumes it, and the repository
+  depending on both is the one place the two names can be compared for real.
+- This stays a contract a repository satisfies. Nothing added here deploys,
+  mutates a provider, or makes a network call; the Vercel and Render adapters
+  remain read-only by design.
+- `checkDeploymentBranchBindings` fails closed: an empty binding list or a
+  manifest with no surfaces is a finding, never a vacuous pass, and
+  `surfacesChecked`/`bindingsChecked` are present in every result so a caller
+  who only glances at `ok` can still tell "nothing was compared" from
+  "everything agreed".
+- Additive only. No existing export, type, or behavior changed.
+- Refs issue #929.
+
 ## [0.7.8] - 2026-09-14
 
 ### Changed

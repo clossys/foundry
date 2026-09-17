@@ -5,6 +5,61 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.7] - 2026-09-17
+
+### Added
+
+- `RepositoryProfileV3.releaseBranch` (optional): the separate long-lived
+  branch a repository deploys from, beside `defaultBranch`. `releaseBranch`
+  and `release-branch-collision` join `RepositoryProfileFindingRule`, and
+  `validateRepositoryProfile` now asserts that a declared `releaseBranch` is
+  a valid Git branch name — the same check `defaultBranch` already gets — and
+  that it is not equal to `defaultBranch`. Two rules rather than one, because
+  a typo and "this repository has one long-lived branch, not two" are
+  different defects with different fixes.
+- `branchExemptionsFromProfile(profile)` (`./conventions`): the long-lived
+  branches a profile actually declares, and the exemption `validateBranchName`
+  honors. `BranchOptions.profile` is the new way to supply it.
+
+### Changed
+
+- `validateBranchName`'s branch-provenance exemption is now derived from the
+  repository profile rather than taken on trust from the caller. When
+  `BranchOptions.profile` is supplied, the derived set is **authoritative**:
+  an `exempt` entry the profile does not declare is reported as
+  `branch/undeclared-exemption` (high) and does **not** exempt anything.
+  Previously a caller could exempt a branch the repository had never had —
+  the exemption and the topology could not be cross-checked, because only one
+  of them existed as data.
+- `BranchOptions.exempt` is retained so existing callers keep working, and is
+  deprecated. Supplied without a `profile` it is still honored, but now
+  alongside a new `branch/underived-exemption` finding (medium): a list
+  nothing can check against the repository it claims to describe is not a
+  verified exemption, and reporting it as one would be a check passing
+  because it was handed nothing to check. Callers that assert on an exact
+  finding list for such a call will see this entry.
+
+### Notes
+
+- The field is **optional**, and only on v3. Optional because the field
+  cannot be truthfully filled by a repository with one long-lived branch, and
+  a required field would be satisfied by repeating `defaultBranch`, which
+  validation then refuses as a collision — leaving such a repository no valid
+  declaration at all. The strength a required field would buy is asserted
+  instead where the deployment concept actually lives: `@clossys/builder`'s
+  `./deployment` branch-binding contract requires a branch name for the
+  environment it binds. This package does not model a deployment surface and
+  does not start here; declaring one so this validator could condition on it
+  would put the same fact under two owners.
+- v3 only because `RepositoryProfileV1` and `RepositoryProfileV2` are closed
+  shapes retained for existing consumers. `releaseBranch` on either is
+  reported as `unknown-field` and is not additionally judged on its value.
+  Existing v3 declarations are unaffected: the field is optional and adds no
+  obligation to a profile that omits it.
+- Refs issue #929. The consuming-repository half of that issue is
+  deliberately not part of this release: the contract has to exist before a
+  repository can be held to it.
+
 ## [0.9.6] - 2026-09-14
 
 ### Fixed

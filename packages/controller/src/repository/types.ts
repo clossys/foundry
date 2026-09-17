@@ -119,10 +119,47 @@ export interface RepositoryProfileV2 {
   readonly requirements: RepositoryList<RepositoryRequirement>;
 }
 
-/** Current profile: requirements plus an exact, caller-owned root vocabulary. */
+/**
+ * Current profile: requirements, an exact caller-owned root vocabulary, and
+ * the repository's own branch topology.
+ *
+ * `releaseBranch` is declared HERE and only here -- not on
+ * `RepositoryProfileV1` or `RepositoryProfileV2` (issue #929). Those two
+ * shapes are retained for existing consumers, and `validate.ts` keeps each
+ * one closed with its own key set: a `releaseBranch` on a v1 or v2 profile
+ * is reported as `unknown-field`, which is the honest answer. Widening a
+ * frozen legacy shape to carry a field its own version never had would mean
+ * a v1 declaration could state a topology the v1 contract does not define,
+ * and nothing downstream could tell that apart from a v3 declaration. New
+ * expressive capability belongs on the current version; a consumer that
+ * wants to declare a release branch moves to v3, which is the one migration
+ * the version ladder exists to ask for.
+ *
+ * It is OPTIONAL rather than required because the fleet it describes is not
+ * uniform: a library repository has exactly one long-lived branch and has
+ * nothing truthful to put here, and a required field would be satisfied by
+ * repeating `defaultBranch` -- which `validate.ts` then refuses as a
+ * collision, leaving such a repository no valid declaration at all. The
+ * strength a required field would have bought is not lost; it is asserted
+ * where the deployment concept actually lives, at a deployment surface, by
+ * `@clossys/builder`'s `./deployment` branch-binding contract, which
+ * REQUIRES a branch name for the environment it binds. This package does
+ * not model a deployment surface and must not start: that is builder's
+ * domain, and inventing a second declaration of it here so that this
+ * validator could condition on it would put the same fact in two packages
+ * that do not import each other -- exactly the drift this catalogue keeps
+ * a dedicated gate for.
+ */
 export interface RepositoryProfileV3 {
   readonly schemaVersion: typeof REPOSITORY_PROFILE_VERSION;
   readonly defaultBranch: string;
+  /**
+   * The separate long-lived branch this repository deploys from, when it has
+   * one. Must be a valid Git branch name and must not equal `defaultBranch`:
+   * a repository whose release branch IS its default branch has a topology
+   * worth stating explicitly rather than expressing by collision.
+   */
+  readonly releaseBranch?: string;
   readonly commands: RepositoryList<RepositoryCommand>;
   readonly protectedPaths: RepositoryList<string>;
   readonly requirements: RepositoryList<RepositoryRequirement>;
@@ -232,6 +269,8 @@ export type RepositoryProfileFindingRule =
   | "unknown-field"
   | "schema-version"
   | "default-branch"
+  | "release-branch"
+  | "release-branch-collision"
   | "commands-shape"
   | "command-name"
   | "duplicate-command-name"

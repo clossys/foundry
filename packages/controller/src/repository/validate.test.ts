@@ -560,3 +560,64 @@ describe("repositoryProfileValidationCoverage", () => {
     });
   });
 });
+
+// The release branch (issue #929). A repository that deploys from a second
+// long-lived branch had no way to say so, which meant the exemption in
+// `conventions/branch` could never be cross-checked against the topology it
+// claimed to describe -- only one of the two existed as data.
+describe("validateRepositoryProfile — releaseBranch", () => {
+  const v3Profile = {
+    schemaVersion: 3,
+    defaultBranch: "main",
+    commands: [{ name: "setup", run: "npm ci" }],
+    protectedPaths: [".github/workflows/**"],
+    requirements: [],
+    rootEntries: [],
+  };
+
+  it("accepts a v3 profile that declares a separate release branch", () => {
+    expect(validateRepositoryProfile({ ...v3Profile, releaseBranch: "release" })).toEqual([]);
+  });
+
+  it("still accepts a v3 profile that declares no release branch at all", () => {
+    expect(validateRepositoryProfile(v3Profile)).toEqual([]);
+  });
+
+  it("refuses a releaseBranch that is not a valid Git branch name, using the same check defaultBranch gets", () => {
+    for (const value of ["bad branch", "", "HEAD", "-leading", "refs//double", "trailing.lock", 7, null]) {
+      const findings = validateRepositoryProfile({ ...v3Profile, releaseBranch: value });
+      expect(findings.map((entry) => entry.rule), String(value)).toEqual(["release-branch"]);
+      expect(findings[0]?.path).toBe("releaseBranch");
+    }
+  });
+
+  // An explicitly-present `undefined` is a declaration the author meant to
+  // make and got wrong. Skipping it would make a typo indistinguishable from
+  // a repository that has one long-lived branch.
+  it("refuses an explicitly present undefined releaseBranch rather than treating it as absent", () => {
+    expect(validateRepositoryProfile({ ...v3Profile, releaseBranch: undefined }).map((entry) => entry.rule)).toEqual([
+      "release-branch",
+    ]);
+  });
+
+  it("refuses a releaseBranch equal to defaultBranch under its own distinct rule", () => {
+    const findings = validateRepositoryProfile({ ...v3Profile, releaseBranch: "main" });
+    expect(findings.map((entry) => entry.rule)).toEqual(["release-branch-collision"]);
+    expect(findings[0]?.message).toContain("omit releaseBranch");
+  });
+
+  // The legacy shapes stay closed. A v1 or v2 declaration carrying a field
+  // its own version never defined is reported as exactly that -- an unknown
+  // field -- and never additionally judged on its value, which would be this
+  // validator reporting on a contract that version does not have.
+  it("reports releaseBranch on a v1 or v2 profile as an unknown field and nothing else", () => {
+    for (const schemaVersion of [1, 2]) {
+      const profile = schemaVersion === 1
+        ? { ...validProfile, releaseBranch: "main" }
+        : { ...validProfile, schemaVersion: 2, requirements: [], releaseBranch: "main" };
+      const findings = validateRepositoryProfile(profile);
+      expect(findings.map((entry) => entry.rule), `v${schemaVersion}`).toEqual(["unknown-field"]);
+      expect(findings[0]?.path).toBe("releaseBranch");
+    }
+  });
+});
