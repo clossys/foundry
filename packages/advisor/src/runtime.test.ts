@@ -32,6 +32,25 @@ describe("programmatic standards and reconciliation", () => {
     expect(report).toMatchObject({ state: "indeterminate", fit: { state: "indeterminate" } });
     expect(report.fit.findings).toEqual(expect.arrayContaining([expect.objectContaining({ rule: "sponsor-question" })]));
   });
+  it("names a single contradicted fit criterion instead of returning a bare violated verdict", () => {
+    const signals = input().fitSignals.map((item) => item.id === "adoption-capacity" ? { ...item, state: "contradicted" as const, evidence: [proof("contradicts-adoption-capacity")] } : item);
+    const report = assessAdvisorEngagement(input({ fitSignals: signals }));
+    expect(report).toMatchObject({ state: "violated", fit: { state: "violated" } });
+    expect(report.fit.findings).toEqual(expect.arrayContaining([expect.objectContaining({ rule: "fit-contradicted", path: "fitSignals.adoption-capacity" })]));
+    expect(report.findings).toEqual(expect.arrayContaining([expect.objectContaining({ rule: "fit-contradicted", path: "fitSignals.adoption-capacity" })]));
+  });
+  it("names every contradicted fit criterion when more than one is contradicted", () => {
+    const signals = input().fitSignals.map((item) => ["adoption-capacity", "material-need"].includes(item.id) ? { ...item, state: "contradicted" as const, evidence: [proof(`contradicts-${item.id}`)] } : item);
+    const report = assessAdvisorEngagement(input({ fitSignals: signals }));
+    expect(report).toMatchObject({ state: "violated", fit: { state: "violated" } });
+    expect(report.fit.findings).toEqual(expect.arrayContaining([expect.objectContaining({ rule: "fit-contradicted", path: "fitSignals.adoption-capacity" }), expect.objectContaining({ rule: "fit-contradicted", path: "fitSignals.material-need" })]));
+  });
+  it("names a contradicted criterion alongside an unrelated unknown one", () => {
+    const signals = input().fitSignals.map((item) => item.id === "adoption-capacity" ? { ...item, state: "contradicted" as const, evidence: [proof("contradicts-adoption-capacity")] } : item.id === "material-need" ? { ...item, state: "unknown" as const, evidence: [] } : item);
+    const report = assessAdvisorEngagement(input({ fitSignals: signals }));
+    expect(report).toMatchObject({ state: "violated", fit: { state: "violated" } });
+    expect(report.fit.findings).toEqual(expect.arrayContaining([expect.objectContaining({ rule: "fit-contradicted", path: "fitSignals.adoption-capacity" }), expect.objectContaining({ rule: "sponsor-question", path: "fitSignals.material-need" })]));
+  });
   it("recognizes a fully described single initiative as no-overlap satisfied", () => {
     const one = initiative("one");
     const report = assessAdvisorEngagement(input({ initiatives: [one], firstWave: { initiativeIds: [one.id], objectives: ["objective"], workItems: [work(one)] } }));

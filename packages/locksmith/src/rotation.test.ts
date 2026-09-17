@@ -107,6 +107,7 @@ describe("summarizeRotationMetric", () => {
     const metric = summarizeRotationMetric(evaluations);
     expect(metric.p95AgeDays).toBe(400);
     expect(metric.unownedKeyCount).toBe(1);
+    expect(metric.unverifiableKeyCount).toBe(1);
   });
 
   it("returns a null percentile, not zero, when no key has an observable age", () => {
@@ -116,6 +117,17 @@ describe("summarizeRotationMetric", () => {
     ];
 
     expect(summarizeRotationMetric(evaluations).p95AgeDays).toBeNull();
+  });
+
+  it("counts an all-unverifiable set separately from unowned, instead of grading it the same", () => {
+    const evaluations: RotationEvaluation[] = [
+      { key: "A", state: "unverifiable", ageDays: null },
+      { key: "B", state: "unverifiable", ageDays: null },
+    ];
+
+    const metric = summarizeRotationMetric(evaluations);
+    expect(metric.unownedKeyCount).toBe(0);
+    expect(metric.unverifiableKeyCount).toBe(2);
   });
 });
 

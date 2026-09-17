@@ -575,8 +575,10 @@ jobs:
           EXPECTED_TARBALL: ${{ runner.temp }}/qualification/${{ matrix.package }}/candidate.tgz
         run: |
           set -uo pipefail
+          set +e
           node scripts/verify-post-publish-public-npm-artifact.mjs --package "$PKG" --expected-tarball "$EXPECTED_TARBALL"
           status=$?
+          set -e
           if [ "$status" -eq 2 ]; then
             echo "::warning title=Anonymous visibility indeterminate::${PKG}'s bounded post-publish observation window ended without anonymously confirming the upload. The upload already happened and is immutable; this is NOT a failure. The independent 'post-publish anonymous registry verification' job is the authoritative check and still runs."
             exit 0
