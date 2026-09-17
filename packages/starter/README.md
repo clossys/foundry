@@ -18,12 +18,14 @@ canonical two-phase shape.
 Pin an exact public npm version in the consumer's manifest and lockfile:
 
 ```bash
-npm install --save-dev --save-exact @clossys/starter@0.1.4
+npm install --save-dev --save-exact @clossys/starter@0.1.7
 ```
 
+This package is published to the public npm registry, `https://registry.npmjs.org`.
 Public npm reads are credentialless. Do not add a token or private registry
 mapping for `@clossys`; the fixed install and every decisive CLI step receive
-no registry credential.
+no registry credential. Pin the exact version the first-wave plan named;
+`0.1.7` is this source version, not a claim that `latest` already matches it.
 
 ## Contract
 
@@ -43,19 +45,19 @@ snapshot identity, and two normalized relative evidence paths.
   },
   "starter": {
     "name": "@clossys/starter",
-    "version": "0.1.4",
+    "version": "0.1.7",
     "integrity": "<npm-sha512-sri>",
     "bin": "foundry-starter"
   },
   "advisor": {
     "name": "@clossys/advisor",
-    "version": "0.1.5",
+    "version": "0.2.3",
     "integrity": "<npm-sha512-sri>",
     "bin": "advisor-execution-readiness"
   },
   "target": {
     "name": "@clossys/advisor",
-    "version": "0.1.5",
+    "version": "0.2.3",
     "integrity": "<npm-sha512-sri>",
     "bin": "advisor-check",
     "invocation": "single-json-input"
@@ -128,6 +130,18 @@ a GitHub Actions `if:`. Capture its output, append it after the command, and
 re-raise its status as the caller template does. A missing artifact or a failed
 initial native install is a visible pre-runtime workflow failure, not a
 synthetic Starter result.
+
+## Close condition
+
+Starter is executable tooling, not a role. Adoption, grounding, and closure
+cells stay N/A: this package does not close a role loop.
+
+The trusted-base job is done when a consuming repository's own two-phase
+workflow invokes `foundry-starter decide` and retains the native ternary:
+`foundation` stays `2` after a successful fixed install (no activation claim),
+and `activation` is `0` only when every join, install receipt, Advisor
+readiness, and target CLI result is satisfied. A green run of this package's
+tests is not that evidence.
 
 ## API
 
