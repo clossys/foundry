@@ -599,6 +599,13 @@ jobs:
         with:
           node-version: 20
       - run: node scripts/check-role-loop-archetypes.mjs
+      # Same class exactly: manifest and contract reads only, no build. A role
+      # that DECLARES a first-day assessment entry point must actually map that
+      # bin in its own manifest, or the declaration reads as wired to its author
+      # and as absent to @clossys/controller/onboarding's discovery. The step
+      # also always prints the roles declaring no surface and their count, which
+      # is why it belongs in a job whose log a maintainer actually reads.
+      - run: node scripts/check-role-assessment-surfaces.mjs
 
   # Three gates over this repository's own tree that had never been invoked
   # by any workflow before this change, and that share one requirement: a

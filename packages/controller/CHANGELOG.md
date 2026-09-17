@@ -5,6 +5,59 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.8] - 2026-09-17
+
+### Added
+
+- First-day onboarding: one parameterized first-day assessment and
+  installed-position onboarding workflow that **discovers and invokes
+  role-owned assessments**, on this package's root entry point and as the
+  installed `foundry-onboarding-run` executable. `runFirstDayOnboarding` selects roles from fixed,
+  deterministic rules over consumer-*declared* facts (`selectRoles` /
+  `SELECTION_RULES`), resolves each selected role's own declared assessment
+  entry point from that role's own installed manifest
+  (`discoverRoleAssessmentSurface`, reading
+  `foundry.assessment = { bin, invocation }`), invokes it with no shell, no
+  caller-supplied command or executable path, a bounded deadline and
+  registry-credential environment variables removed (`observeRoleAssessment`),
+  and returns the join (`joinFirstDayOnboarding`).
+- `proposeInstalledPositionLedger` derives one complete installed-position
+  ledger — dispositions from the selection, positions copied by reference from
+  each role's own `proposedPositions` — and `authorizeMutation` refuses
+  mutation until the run is satisfied with no gaps, the ledger validates under
+  `validateInstalledPositionLedger` (which is what makes baseline, setpoint,
+  authority, guardrails and escalation path mandatory), and this engagement's
+  own decision owner has approved that exact run by `onboardingRunDigest`.
+- `foundry-onboarding-run <request.json> <install-root> <evidence-dir>`: the
+  installed entry point, on the same `0` / `1` / `2` ternary as every other
+  gate here.
+- The capability is exported from the **root** entry point rather than a
+  `./onboarding` subpath of its own. That is a constraint, not a preference:
+  the frozen public-npm aggregate canary plan pins an immutable optional-peer
+  matrix covering every declared export specifier of every package carrying an
+  optional peer, and that plan may not be rewritten, so a new subpath here has
+  nowhere to be recorded. The root specifier is already in that matrix and its
+  recorded `imports` outcome stays truthful, because nothing in this module
+  needs `typescript`.
+
+### Notes
+
+- The workflow carries no assessment content, and this is structural rather
+  than conventional. A role's assessment is typed `unknown` throughout the
+  subpath, so no code there has a vocabulary with which to construct one;
+  `assertPassThroughAssessments` and `assertRoleAuthoredPositions` re-check by
+  **reference identity** before any report or ledger is returned and throw
+  rather than ship a value the orchestration authored, defaulted, normalized
+  or merged. The report has no `baseline`, `target`, `setpoint`,
+  `causalHypothesis`, `recommendation`, `criticalPath` or `openQuestions`
+  field of its own.
+- A selected role that exposes nothing to invoke is a **determinate result,
+  not a skip**: every `AssessmentSurfaceAbsence` and
+  `AssessmentInvocationFailure` reaches the report as a named gap against the
+  role and the rule that opened it, and any gap makes the run
+  `indeterminate`. An unassessed role and an assessed clean role never produce
+  the same exit code.
+
 ## [0.9.7] - 2026-09-17
 
 ### Added
