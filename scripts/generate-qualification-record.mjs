@@ -72,6 +72,29 @@
 //                                           instead of guessing.
 //
 // ---------------------------------------------------------------------------
+// What is PROVEN before anything is written (issue #893):
+// ---------------------------------------------------------------------------
+//   * the candidate tarball REPRODUCES. Before this script writes a record it
+//     removes every `packages/*/dist`, rebuilds the workspace, re-packs the
+//     candidate, and refuses (exit 1) unless the result is byte-identical to
+//     the tarball it was handed. See scripts/lib/artifact-reproducibility.mjs.
+//
+//     This is the one binding a retained record can never take back. Every
+//     other join here is against the git tree, and `dist/` is gitignored --
+//     so `packageTreeSha1` is structurally blind to the content that
+//     dominates most tarballs. A record could therefore be produced,
+//     validated, reviewed and retained while binding bytes no clean build
+//     reproduces, and only the real publish would ever find out. Two versions
+//     were burned exactly that way and had to be skipped, because a record
+//     path can be introduced only once.
+//
+//     The check lives HERE, and not only in the workflow, because record
+//     generation is owner-machine work (#833) -- a CI-only gate would not run
+//     on the path that actually creates the binding. It runs last, after every
+//     cheap corroboration above has already passed, so a full rebuild is only
+//     ever spent on a record that is otherwise about to be written.
+//
+// ---------------------------------------------------------------------------
 // What is NOT derived (PR #770 identified exactly three; every one of them is
 // either an explicit CLI input or a documented fixed constant below):
 // ---------------------------------------------------------------------------
@@ -92,6 +115,7 @@ import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { existsSync, lstatSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
+import { ReproducibilityIndeterminate, ReproducibilityMismatch, assertTarballReproducible } from "./lib/artifact-reproducibility.mjs";
 import { currentQualificationJoins, parseStrictJson, qualificationPath } from "./lib/candidate-qualification.mjs";
 import { selectPolicyPackage, validateReleaseQualificationPolicy } from "./lib/release-qualification-contract.mjs";
 
@@ -204,7 +228,7 @@ function packedManifestBytes(tarballPath) {
   catch { throw new IndeterminateError("candidate tarball does not contain a readable package/package.json."); }
 }
 
-export function generateQualificationRecord({ root = gitRoot(), args }) {
+export function generateQualificationRecord({ root = gitRoot(), args, reproducibility = assertTarballReproducible }) {
   // --- policy: resolve the package key against the release qualification policy ---
   const policyPath = `governance/release-qualification-policy.json`;
   const policyBytes = gitBlob(root, "HEAD", policyPath) ?? (() => { throw new IndeterminateError("release qualification policy could not be read."); })();
@@ -285,7 +309,24 @@ export function generateQualificationRecord({ root = gitRoot(), args }) {
   const outPath = args.out ? resolve(args.out) : resolve(root, recordPath);
   if (existsSync(outPath)) throw new UnproducibleError(`refusing to overwrite an existing file at ${outPath}.`);
 
-  return { record, outPath, recordPath };
+  // The last gate, and the expensive one (issue #893). Deliberately last: it
+  // removes every packages/*/dist and rebuilds, so it is only ever spent on a
+  // record whose every cheaper corroboration above has already passed.
+  //
+  // `reproducibility` is a narrow deterministic test seam, the same pattern
+  // release-runtime.mjs and candidate-runner.mjs use for their own subprocess
+  // probes. Production callers -- main() below, and any other importer that
+  // does not pass one -- get the real clean-rebuild-and-repack. There is no
+  // CLI flag for it, on purpose: an opt-out is the hole.
+  try {
+    reproducibility({ root, packageDir: selected.entry.packageDir, expected: tarballHashes });
+  } catch (error) {
+    if (error instanceof ReproducibilityMismatch) throw new UnproducibleError(error.message);
+    if (error instanceof ReproducibilityIndeterminate) throw new IndeterminateError(error.message);
+    throw new IndeterminateError(`candidate tarball reproducibility could not be established: ${error instanceof Error ? error.message : "unknown error"}`);
+  }
+
+  return { record, outPath, recordPath, root, packageDir: selected.entry.packageDir };
 }
 
 function main() {
