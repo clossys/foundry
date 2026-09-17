@@ -291,6 +291,7 @@ test("the repository omission matrix is closed against every current publishable
 
 test("Publisher's optional-peer matrix binds both default and react-server web outcomes", () => {
   const publisherExports = [
+    "@clossys/publisher/assessment",
     "@clossys/publisher/core",
     "@clossys/publisher/document",
     "@clossys/publisher/email",

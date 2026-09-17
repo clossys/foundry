@@ -1,6 +1,6 @@
 {
   "name": "@clossys/publisher",
-  "version": "0.4.4",
+  "version": "0.4.5",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -39,6 +39,10 @@
     "./core": {
       "types": "./dist/core/index.d.ts",
       "import": "./dist/core/index.js"
+    },
+    "./assessment": {
+      "types": "./dist/verified-publication-rate.d.ts",
+      "import": "./dist/verified-publication-rate.js"
     },
     "./media": {
       "types": "./dist/media/index.d.ts",
@@ -83,7 +87,14 @@
   },
   "bin": {
     "publisher-media-check": "dist/media/cli.js",
-    "publisher-record-check": "dist/record/cli.js"
+    "publisher-record-check": "dist/record/cli.js",
+    "publisher-rate-check": "dist/verified-publication-rate-cli.js"
+  },
+  "foundry": {
+    "assessment": {
+      "bin": "publisher-rate-check",
+      "invocation": "single-json-input"
+    }
   },
   "files": [
     "dist",
