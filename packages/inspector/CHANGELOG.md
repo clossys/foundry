@@ -5,6 +5,55 @@ All notable changes to `@clossys/inspector` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.4] - 2026-09-17
+
+### Fixed
+
+- **A work-item reference naming another tracker was answered by this
+  repository's object of the same number (#363).** `parseTaskReference`
+  discarded the host of a URL-form reference and returned only `owner/name`,
+  and `checkTaskRecord` compared that path against the caller's own
+  `trackerScope`. A path is unique only within one tracker, so a URL naming
+  the same owner and name on a DIFFERENT host compared equal to the caller's
+  own repository: the caller then looked the number up in its own tracker and
+  the check reported `satisfied`, having validated an object the author never
+  referenced. Whether such a run passed or failed was a coincidence of what
+  the local object of that number happened to be — an open issue with the
+  right shape would have passed. Reproduced end to end before the fix: a
+  reference to `https://<other-host>/<this owner>/<this name>/issues/73`, with
+  this repository's own 73 resolving cleanly, exited 0 with `2 evaluated`.
+
+  The parse now carries the host out (still pinning no vendor: it is read from
+  the reference and compared only for equality), `TaskRecordObservation` gains
+  an optional `trackerHost`, and the check compares host and scope before any
+  lookup outcome is interpreted. A host-bearing reference is `indeterminate`
+  when it names another host, and `indeterminate` when the caller stated no
+  host of its own — because silence about the host is not agreement about it,
+  and a default invented here would be this package deciding that an
+  unfamiliar tracker is the familiar one.
+
+  The qualified `owner/name#n` form was already handled correctly and still
+  is; only the URL form carried the defect.
+
+### Added
+
+- **`item.lookupScope` / `item.lookupHost`: where a lookup was aimed, not just
+  how it ended (#363).** An outcome on its own says nothing about what was
+  examined, so a caller that strips a reference's `owner/name` prefix and
+  queries its own repository instead reports an ordinary `resolved` for an
+  unrelated object. Stated, the target is compared against the reference
+  before the outcome is read: a mismatch is `indeterminate`
+  (`item-lookup-target-mismatch`), never a verdict. Both fields are optional
+  and every existing caller keeps its current behaviour by omitting them — but
+  a caller whose credential genuinely reaches the named repository can now
+  resolve a cross-repository reference by saying so, instead of being told
+  forever that it is out of scope. A gate that can only ever refuse is one its
+  consumers route around.
+- Three declared reasons: `item-outside-tracker-host`,
+  `item-tracker-host-unstated`, `item-lookup-target-mismatch`. Unreachable,
+  private and non-existent all continue to land on `indeterminate` rather than
+  on a finding — none of them is a fact about the change.
+
 ## [0.2.3] - 2026-09-16
 
 ### Fixed

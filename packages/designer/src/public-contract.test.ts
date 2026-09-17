@@ -112,4 +112,105 @@ describe("public UI contract", () => {
       expect(source, `${file} must include a motion-reduce override`).toContain("motion-reduce:");
     }
   });
+
+  it("positions every component with logical inline utilities, never physical left/right ones", () => {
+    // #687 is why this exists. Five shell components positioned themselves
+    // with physical direction classes (`border-r`, `border-l`, `left-0`,
+    // `right-md`, `focus:left-sm`) and landed on the wrong side under a
+    // right-to-left locale. Each was replaced with its logical equivalent
+    // in 0.2.6 — but nothing then stopped a sixth from being written, and a
+    // per-instance fix without a gate only defers the next instance.
+    //
+    // Scanned, not hand-listed, for the same reason the reduced-motion test
+    // above is (#907): the CHECK is fully derived from the tree, so a new
+    // component, or a new physical class in an existing one, cannot escape
+    // it by not being on a list someone forgot to update.
+    //
+    // Block-direction utilities are deliberately NOT matched. `border-t`
+    // and `border-b` on `SiteHeader`, `SiteFooter`, `Shell.Header`,
+    // `Shell.Footer`, `Tabs` and `Table` are correct exactly as written:
+    // block direction does not flip under a right-to-left locale, and
+    // rewriting them would be the over-correction #687 explicitly refuses.
+    // Nor are axis utilities (`overflow-x-auto`, `inset-x-0`, `px-*`,
+    // `mx-*`), which address both inline sides at once and so are already
+    // direction-neutral.
+    const PHYSICAL_INLINE_RE = new RegExp(
+      "(?:^|[\\s\"'`:])(" +
+        [
+          "(?:scroll-)?[mp][lr]-[a-z0-9[\\]./%-]+", // ml-auto, pr-2xl, scroll-pl-md
+          "(?:left|right)-[a-z0-9[\\]./%-]+", // left-0, right-md
+          "border-[lr](?![a-z])(?:-[0-9[][a-z0-9[\\]./%-]*)?", // border-l, border-r-2 — never border-line-base
+          "text-(?:left|right)(?![a-z-])",
+          "float-(?:left|right)(?![a-z-])",
+          "clear-(?:left|right)(?![a-z-])",
+          "origin-(?:(?:top|bottom)-)?(?:left|right)(?![a-z-])",
+          "rounded-(?:[tb]?[lr])(?![a-z])(?:-[a-z0-9[\\]./%-]+)?",
+        ].join("|") +
+        ")",
+      "g",
+    );
+
+    /**
+     * Instances that exist TODAY, outside #687's declared scope (that issue
+     * is five shell components, and says in as many words that it is "not a
+     * general RTL audit"). This is a record of known debt, NOT a list of
+     * approved exceptions — every entry below is a real right-to-left
+     * defect in `atoms/` or `blocks/` awaiting its own change. Two rules
+     * keep it from rotting into an approval list: nothing may be ADDED to
+     * it (a new instance fails this test), and an entry that no longer
+     * matches fails too — so the list can only ever shrink.
+     */
+    const KNOWN_PHYSICAL_INLINE = [
+      "src/atoms/Chip.tsx :: pl-sm",
+      "src/atoms/Chip.tsx :: pr-xs",
+      "src/atoms/Disclosure.tsx :: pl-lg",
+      "src/atoms/Disclosure.tsx :: text-left",
+      "src/atoms/SearchField.tsx :: pl-md",
+      "src/atoms/SearchField.tsx :: pr-2xl",
+      "src/atoms/SearchField.tsx :: right-sm",
+      "src/atoms/Table.tsx :: text-left",
+      "src/blocks/ArticleBody.tsx :: border-l",
+      "src/blocks/ArticleBody.tsx :: pl-lg",
+      "src/blocks/DetailView.tsx :: ml-auto",
+      "src/blocks/Faq.server.tsx :: pl-lg",
+      "src/blocks/Faq.server.tsx :: text-left",
+      "src/blocks/NavGrid.tsx :: text-left",
+      "src/blocks/Toolbar.tsx :: ml-auto",
+    ];
+
+    const found = new Set<string>();
+    for (const dir of COMPONENT_DIRS) {
+      for (const file of sourceFiles(join(packageRoot, "src", dir))) {
+        const relative = file.slice(packageRoot.length + 1);
+        for (const match of readFileSync(file, "utf8").matchAll(PHYSICAL_INLINE_RE)) {
+          found.add(`${relative} :: ${match[1]}`);
+        }
+      }
+    }
+
+    // The pattern has to actually match something, or this test would pass
+    // by scanning nothing at all — the failure the LIFECYCLE contract calls
+    // a gate that has only ever run green.
+    expect(found.size).toBeGreaterThan(0);
+
+    const added = [...found].filter((hit) => !KNOWN_PHYSICAL_INLINE.includes(hit)).sort();
+    expect(
+      added,
+      "New physical inline-direction class(es). Use the logical equivalent so the component follows the document writing direction: " +
+        "ml-/mr- to ms-/me-, pl-/pr- to ps-/pe-, left-/right- to start-/end-, border-l/border-r to border-s/border-e, " +
+        "text-left/text-right to text-start/text-end, rounded-l*/rounded-r* to rounded-s*/rounded-e*.",
+    ).toEqual([]);
+
+    const stale = KNOWN_PHYSICAL_INLINE.filter((hit) => !found.has(hit)).sort();
+    expect(
+      stale,
+      "Known-debt entr(ies) no longer in the tree — delete them from KNOWN_PHYSICAL_INLINE so the list keeps shrinking.",
+    ).toEqual([]);
+
+    // Shell carries none of this debt: #687's five are fixed and the list
+    // above names only `atoms/` and `blocks/`. Asserted rather than left
+    // implied, so a shell regression fails HERE with the issue named,
+    // instead of as one anonymous line in the `added` diff above.
+    expect([...found].filter((hit) => hit.startsWith("src/shell/")), "#687 regression in src/shell/").toEqual([]);
+  });
 });
