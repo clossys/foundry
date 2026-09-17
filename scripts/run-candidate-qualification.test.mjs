@@ -79,7 +79,7 @@ test("all 19 publishable packages are exact-source bound to the catalogue and qu
     "@clossys/butler": "0.1.6",
     "@clossys/controller": "0.9.10",
     "@clossys/designer": "0.4.5",
-    "@clossys/giver": "0.1.5",
+    "@clossys/giver": "0.1.6",
     "@clossys/influencer": "0.1.5",
     "@clossys/inspector": "0.2.5",
     "@clossys/integrator": "0.6.8",
