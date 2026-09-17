@@ -84,10 +84,10 @@ instructions for integrator itself.
 
 ## Later
 
-Example probe against \`https://npm.pkg.github.com/clossys/probe\`:
+Example probe against a caller-supplied GitHub Packages registry:
 
 \`\`\`ts
-await lookup({ registry: "https://npm.pkg.github.com", name: "@other/pkg" });
+await lookup({ registry: callerRegistry, name: "@example/pkg" });
 \`\`\`
 `
   });
@@ -141,7 +141,7 @@ Installing this package requires \`read:packages\` on a GitHub token.
   assert.deepEqual(result.findings.map((item) => item.rule), ["token-required-install"]);
 });
 
-test("designer-style npm.pkg.github.com peerDependenciesMeta limitation is not an install instruction", () => {
+test("designer-style GitHub Packages peerDependenciesMeta limitation is not an install instruction", () => {
   const result = evaluateInstallDocs({
     "@gate-fixture/designer": `# @gate-fixture/designer
 
@@ -152,8 +152,8 @@ npm install @gate-fixture/designer
 \`\`\`
 
 **Registry note: the token-only path above installs the full peer set
-anyway.** That declaration is not honored by \`npm.pkg.github.com\`: the
-registry's packument omits \`peerDependenciesMeta\` entirely.
+anyway.** That declaration is not honored by GitHub Packages packuments:
+the packument omits \`peerDependenciesMeta\` entirely.
 `,
   });
   assert.equal(result.exitCode, 0, JSON.stringify(result.findings, null, 2));
