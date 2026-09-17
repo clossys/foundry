@@ -3,6 +3,19 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.5] - 2026-09-17
+
+### Fixed
+
+- Removed a doc-comment citation in `src/schema.ts` that pointed at a
+  repository-root agent-policy file. `src/` is packed content and compiles
+  into `dist/`, so that comment reached an installed consumer while the file
+  it named did not: `files` carries `dist`, `src`, this changelog, the README
+  and the licence, and nothing from the repository root. The sentence now
+  states the hand-rolled-validation convention on its own, which is the part
+  a reader of the installed package can actually act on. No type, export,
+  signature, or runtime behaviour changed.
+
 ## [0.1.4] - 2026-09-16
 
 ### Fixed
@@ -15,6 +28,7 @@ All notable changes to this package are documented here. Format follows
   publishes to `https://registry.npmjs.org` with public access and
   installs anonymously. A reader following the instruction as written
   would create a credential this package never asks for. (#924)
+
 
 ## [0.1.3] - 2026-09-02
 
