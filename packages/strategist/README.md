@@ -13,6 +13,45 @@ actual mission statement, market sizing, numbers, or brand attributes.
 npm install @clossys/strategist
 ```
 
+This package is published to the public npm registry, `https://registry.npmjs.org`.
+Installing it needs no authentication: no npm token, no `.npmrc` registry
+override, and no GitHub credential of any kind.
+
+## Strategy traceability rate
+
+Independent consumer evidence shows the position's owned metric meets its
+setpoint over the declared review cadence. The owned metric is `strategy
+traceability rate`, computed by `assessStrategyTraceabilityRate()`. An
+empty evaluated set is `indeterminate`, never a perfect rate of 1.
+`checkFactsTraceability` remains the facts gate; it is not this combined
+rate. This package does not measure consumer evidence and does not close
+the loop. A green run of this package's tests is not a close.
+
+```ts
+import { assessStrategyTraceabilityRate } from "@clossys/strategist";
+
+const report = assessStrategyTraceabilityRate(input);
+```
+
+```bash
+strategist-rate-check assessment.json
+```
+
+The command prints JSON and exits `0` for satisfied, `1` for violated, and
+`2` for indeterminate, unreadable, or invalid input.
+
+This package declares that command as its first-day assessment surface in
+its own manifest:
+
+```json
+"foundry": { "assessment": { "bin": "strategist-rate-check", "invocation": "single-json-input" } }
+```
+
+Onboarding discovers that declaration from the installed manifest and never
+infers a surface. `strategist-check` remains the multi-mode CLI and is not
+the assessment surface. Strategist is not a required first-day role;
+Advisor remains the only required first-day assessment.
+
 ## Scope: this package is strategy records AND brand derivation
 
 Before anything else: `strategy` is not only mission/positioning/markets/
@@ -730,6 +769,8 @@ anyone extending this package with their own entity.
 | `FactsGateFinding` | type | `{ rule: FactsGateRule; severity: "error"; file; line; message; snippet }`. |
 | `FactsGateRule` | type | `"untraced-numeric-claim" \| "untraced-superlative-claim" \| "unknown-fact-citation"`. |
 | `FactsGateIgnored` | type | `{ file; line; snippet }` — one claim suppressed via `facts-gate:ignore`. |
+| `assessStrategyTraceabilityRate(input)` | function | Charter close metric `strategy traceability rate` from consumer-supplied independent observations. Not `checkFactsTraceability`. |
+| `StrategyTraceabilityRateAssessment`, `StrategyTraceabilityRateFinding`, `StrategyTraceabilityRateState` | types | Charter assessment result shape. |
 
 The `strategist-check` CLI (`bin`, built from `cli.ts`) is documented in
 its own section above.
