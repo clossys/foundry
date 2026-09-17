@@ -3,7 +3,8 @@
   "package": "@clossys/influencer",
   "archetype": "current-direct",
   "bins": {
-    "influencer-check": 0
+    "influencer-check": 0,
+    "influencer-rate-check": 0
   },
   "fixtures": [
     "response-satisfied.json",

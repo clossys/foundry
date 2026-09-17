@@ -7,7 +7,8 @@
     "react-dom": "19.2.8"
   },
   "bins": {
-    "butler-check": 0
+    "butler-check": 0,
+    "butler-rate-check": 0
   },
   "fixtures": [
     "intents.json",

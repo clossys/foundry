@@ -6,7 +6,8 @@
     "resend": "6.19.0"
   },
   "bins": {
-    "messenger-check": 0
+    "messenger-check": 0,
+    "messenger-rate-check": 0
   },
   "fixtures": [
     "delivery-satisfied.json",

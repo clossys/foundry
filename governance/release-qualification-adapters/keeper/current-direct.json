@@ -7,7 +7,8 @@
     "react-dom": "19.2.8"
   },
   "bins": {
-    "keeper-check": 0
+    "keeper-check": 0,
+    "keeper-rate-check": 0
   },
   "fixtures": [
     "items-satisfied.json",

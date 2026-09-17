@@ -3,7 +3,8 @@
   "package": "@clossys/inspector",
   "archetype": "current-direct",
   "bins": {
-    "inspector": 0
+    "inspector": 0,
+    "inspector-check": 0
   },
   "fixtures": [
     "scan-satisfied.json",

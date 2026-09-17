@@ -3,7 +3,8 @@
   "package": "@clossys/observer",
   "archetype": "current-direct",
   "bins": {
-    "observer-coverage-check": 0
+    "observer-coverage-check": 0,
+    "observer-check": 0
   },
   "fixtures": [
     "coverage-satisfied.json",
