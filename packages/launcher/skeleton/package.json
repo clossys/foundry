@@ -1,0 +1,13 @@
+{
+  "name": "__REPOSITORY_NAME__",
+  "private": true,
+  "description": "Account workspace hub for Foundry engagement. Not a product application.",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@clossys/advisor": "__ADVISOR_VERSION__"
+  }
+}

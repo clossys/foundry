@@ -1,0 +1,6 @@
+{
+  "schemaVersion": 1,
+  "kind": "account-hub",
+  "owner": "__OWNER__",
+  "repository": "__OWNER__/__REPOSITORY_NAME__"
+}
