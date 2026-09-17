@@ -1,6 +1,6 @@
 {
   "name": "@clossys/advisor",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -26,6 +26,12 @@
     "LICENSE"
   ],
   "sideEffects": false,
+  "foundry": {
+    "assessment": {
+      "bin": "advisor-check",
+      "invocation": "single-json-input"
+    }
+  },
   "description": "Provider-neutral sponsor assessment, pre-work gating, and session contracts for Foundry engagements.",
   "keywords": [
     "advisory",

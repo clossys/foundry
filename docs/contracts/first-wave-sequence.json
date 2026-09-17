@@ -112,7 +112,7 @@
       "id": "readme-close-condition",
       "owner": "supplier",
       "gated": null,
-      "means": "The package README states the close condition a consumer binds. The shared charter string stays consumer-owned; thirteen READMEs stating none is the supplier gap."
+      "means": "The package README states the close condition a consumer binds. The shared charter string stays consumer-owned. Advisor is the first README that must state one; remaining packages are the supplier gap tracked in #906."
     },
     {
       "id": "metric-computed",
