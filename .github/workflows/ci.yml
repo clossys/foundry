@@ -998,6 +998,13 @@ jobs:
       # every package has zero internal dependencies, and silently stops
       # working the moment one gains its first -- so build stays first.
       - run: npm run build
+      # This repository's own verify-standards collector, checked against the
+      # one construction that can tell a real resolution from a retargeted
+      # one: a reference naming another repository (or another tracker) whose
+      # number also exists here (#363). Needs the build above -- it runs the
+      # real assembler and the real inspector bin.
+      - name: Verify-inputs assembler aims lookups at the named repository
+        run: npm run check:verify-inputs
       # Install every exact local tarball together in a credentialless,
       # disposable consumer. This checks the packed public surface and the
       # optional-peer omission contract; it does not claim publication or
