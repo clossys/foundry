@@ -3,6 +3,27 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.6] - 2026-09-18
+
+### Added
+
+- Stated the charter close condition in the README: independent consumer
+  evidence of `confirmed current intent rate`, computed by
+  `assessConfirmedCurrentIntentRate()`. An empty evaluated set is
+  indeterminate, never a perfect rate of 1. `checkConfirmationCompleteness`
+  and `checkCurrency` remain the gates they are; neither is this rate.
+- Declared `foundry.assessment` against a new mapped `butler-rate-check`
+  bin with `invocation: "single-json-input"`. `butler-check` remains the
+  three-gate CLI and is not the assessment surface. Advisor remains the
+  only required first-day role.
+- `butler-rate-check assessment.json`: prints the `confirmed current intent
+  rate` report and exits on the `0` / `1` / `2` ternary.
+
+### Notes
+
+- This does not claim the position is closed. Qualification of `0.1.6` is
+  deferred under #833.
+
 ## [0.1.5] - 2026-09-17
 
 ### Fixed
