@@ -25,8 +25,11 @@
 //     --denylist <file>     explicit denylist path (forwarded)
 //     --require-denylist    fail (exit 2) rather than degrade to PARTIAL mode
 //     --json                machine-readable output
+//     --help                show usage and exit 0 — scans nothing
 //
-// Exit 0 = safe. Exit 1 = findings. Exit 2 = the gate could not run.
+// Exit 0 = safe (or nothing to scan). Exit 1 = findings. Exit 2 = the gate
+// could not run — including an unrecognised flag, which is refused rather
+// than silently falling through to stdin draft mode.
 //
 // WHY THIS EXISTS
 // ----------------
@@ -123,6 +126,70 @@ function die(msg, code = 2) {
   console.error(`check-conversation-safety: ${msg}`);
   if (tmpDir) rmSync(tmpDir, { recursive: true, force: true });
   process.exit(code);
+}
+
+// ------------------------------------------------------------------ --help
+
+// #923: an unrecognised flag used to fall through silently into draft mode
+// (isDraftMode is simply "no --issue/--pr/--all"), so `--help` on its own
+// read zero bytes from stdin and reported a FULL-mode PASS over a run that
+// examined nothing — or, with a terminal attached, hung forever waiting for
+// stdin that would never come. `--help` is handled first, before any other
+// flag is inspected, exits 0, and — per the same reasoning as "NEVER ECHO A
+// MATCH" above — says nothing about safety, because it never scanned
+// anything to have an opinion about.
+const USAGE = `check-conversation-safety — extend the public-safety gate to GitHub's conversation surface
+
+Usage:
+  node scripts/check-conversation-safety.mjs --issue <n>  [options]
+  node scripts/check-conversation-safety.mjs --pr <n>     [options]
+  node scripts/check-conversation-safety.mjs --all        [options]
+  node scripts/check-conversation-safety.mjs --file <path>  (DRAFT mode)
+  <text> | node scripts/check-conversation-safety.mjs        (DRAFT mode, stdin)
+
+Options:
+  --issue <n>           scan one issue's body + its comments
+  --pr <n>              scan one PR's body, issue-style comments, review
+                         comments, and review summaries
+  --all                 scan every issue and PR in the repository
+  --since <iso>         only fetch/consider items updated (--all) or
+                         comments/reviews updated at or after this ISO 8601
+                         timestamp (--issue/--pr)
+  --file <path>         DRAFT mode: scan text that has NOT been posted yet
+  --repo <owner/repo>   override repository detection
+  --denylist <file>     explicit denylist path (forwarded)
+  --require-denylist    fail (exit 2) rather than degrade to PARTIAL mode
+  --json                machine-readable output
+  --help                show this usage and exit 0 — scans nothing
+
+Exit codes: 0 = safe (or nothing to scan), 1 = findings, 2 = the gate could not run.
+`;
+
+if (flags.has("--help") || argv.includes("-h")) {
+  console.log(USAGE);
+  process.exit(0);
+}
+
+// Any other flag-shaped argument this script does not recognise used to
+// fall through into draft mode exactly the way --help did — silently, with
+// no indication anything was wrong. Refuse it instead: exit 2, this
+// repository's convention for "could not run", naming the flag, rather than
+// quietly interpreting a typo'd flag as "read stdin instead".
+const KNOWN_FLAGS = new Set([
+  "--issue",
+  "--pr",
+  "--all",
+  "--since",
+  "--file",
+  "--repo",
+  "--denylist",
+  "--require-denylist",
+  "--json",
+  "--help",
+]);
+const unknownFlags = [...flags].filter((f) => !KNOWN_FLAGS.has(f));
+if (unknownFlags.length) {
+  die(`unrecognised flag${unknownFlags.length > 1 ? "s" : ""}: ${unknownFlags.join(", ")} — pass --help for usage`);
 }
 
 // --------------------------------------------------------------- mode select
@@ -562,8 +629,19 @@ try {
       };
     });
 
+    // #923, second half: "scanned 0 items" must never read as PASS. A
+    // FULL-mode PASS asserts something was looked at and found clean —
+    // docs/LIFECYCLE.md's eighth value calls that verdict distinct from
+    // `not-applicable, with a reason`. Zero staged items (an empty draft,
+    // most commonly) is a legitimate no-op, not a clearance: nothing was
+    // examined, so nothing was cleared, and the two must not print
+    // identically. This is orthogonal to `report.mode` (FULL vs PARTIAL) —
+    // staged is this script's own count of items it handed to the
+    // underlying gate, checked first, before mode is even consulted.
+    const verdict = staged === 0 ? "not-applicable" : findings.length ? "fail" : report.mode === "FULL" ? "pass" : "pass-partial";
+
     if (flags.has("--json")) {
-      console.log(JSON.stringify({ mode: report.mode, source: sourceLabel, scanned: staged, findings }, null, 2));
+      console.log(JSON.stringify({ mode: report.mode, source: sourceLabel, scanned: staged, verdict, findings }, null, 2));
     } else {
       console.log(`check-conversation-safety: scanned ${staged} conversation item(s) from ${sourceLabel}`);
       console.log(`mode: ${report.mode}`);
@@ -577,7 +655,12 @@ try {
       }
       console.log("");
 
-      if (!findings.length) {
+      if (staged === 0) {
+        console.log(
+          "NOT-APPLICABLE — 0 conversation item(s) had any text to scan. Nothing was examined, so nothing was cleared; " +
+            "this is not a pass.",
+        );
+      } else if (!findings.length) {
         console.log(
           report.mode === "FULL"
             ? "PASS — no private identity or credential-shaped string found in scanned conversation text."

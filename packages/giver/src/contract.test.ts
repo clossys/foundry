@@ -20,6 +20,7 @@ import {
   type OutcomeInputs,
   type OwedObligation,
 } from "./contract.js";
+import { INDETERMINATE_STANDING_STATUSES, STANDING_READ_STATUSES } from "./schema.js";
 import type {
   AnswerRecord,
   DeliveryProof,
@@ -70,6 +71,29 @@ function inputs(overrides: Partial<OutcomeInputs> = {}): OutcomeInputs {
   };
 }
 
+/**
+ * The complement the two collapse sweeps care about, derived from the schema's
+ * own constant instead of hardcoded as "not granted and not denied".
+ *
+ * The two are equivalent today. They diverge if a sixth status is ever added,
+ * and the direction is worth stating exactly, because an earlier version of
+ * this comment had it backwards.
+ *
+ * A sixth INDETERMINATE status changes nothing: the hardcoded check skips only
+ * `granted` and `denied`, so it sweeps the new status too, which is correct.
+ *
+ * A sixth DETERMINATE status is where the hardcoded form fails. It is neither
+ * `granted` nor `denied`, so the hardcoded check does not skip it, and the
+ * sweeps below assert the two collapses against a read that DID decide --
+ * asserting a rule about indeterminate reads over a determinate one. Deriving
+ * the set from `INDETERMINATE_STANDING_STATUSES` skips it correctly, because
+ * membership is declared rather than inferred from the two names that happen
+ * to be determinate today.
+ */
+function isIndeterminate(status: StandingRead["status"]): boolean {
+  return (INDETERMINATE_STANDING_STATUSES as readonly string[]).includes(status);
+}
+
 function everyCombination(): OutcomeInputs[] {
   const all: OutcomeInputs[] = [];
   for (const standing of STANDING_READS) {
@@ -85,8 +109,29 @@ function everyCombination(): OutcomeInputs[] {
 }
 
 describe("decideOutcome — the whole input space", () => {
-  it("covers all forty combinations, so the sweeps below are over the real space and not a subset", () => {
-    expect(everyCombination()).toHaveLength(STANDING_READS.length * 2 * 2 * 2);
+  // This is the test the sweeps below depend on, so it has to prove the one
+  // thing that can silently turn them into a subset: a fixture array that no
+  // longer enumerates its type's full domain.
+  //
+  // It previously asserted `everyCombination()` had length
+  // `STANDING_READS.length * 2 * 2 * 2`. That is the product the loop nest
+  // literally computes, so it held BY CONSTRUCTION and moved in lockstep with
+  // the very array whose completeness was in question. Add a sixth standing
+  // status to the union and to `STANDING_READ_STATUSES` but forget it here,
+  // and the old assertion still passed while every sweep below quietly stopped
+  // covering it — the exact failure its name promised to catch.
+  it("sweeps every standing status the schema declares, not merely every one this file lists", () => {
+    expect([...STANDING_READS].map((read) => read.status).sort()).toEqual([...STANDING_READ_STATUSES].sort());
+  });
+
+  it("sweeps both sides of each binary dimension", () => {
+    // The remaining three dimensions are genuinely binary, so completeness is
+    // "both values are present", asserted against the values themselves rather
+    // than against a count that any future third option would satisfy.
+    expect([...OWED_OPTIONS].map((owed) => owed === null)).toEqual(expect.arrayContaining([true, false]));
+    expect([...HUMAN_OPTIONS].map((human) => human.available)).toEqual(expect.arrayContaining([true, false]));
+    expect([...GROUNDS_OPTIONS].map((grounds) => grounds.ready)).toEqual(expect.arrayContaining([true, false]));
+    expect(everyCombination()).toHaveLength(STANDING_READS.length * OWED_OPTIONS.length * HUMAN_OPTIONS.length * GROUNDS_OPTIONS.length);
   });
 
   it("never converts an indeterminate standing read into a delivery", () => {
@@ -97,7 +142,7 @@ describe("decideOutcome — the whole input space", () => {
     // because it is not the indeterminate read producing the delivery.
     for (const candidate of everyCombination()) {
       if (candidate.owed !== null) continue;
-      if (candidate.standing.status === "granted" || candidate.standing.status === "denied") continue;
+      if (!isIndeterminate(candidate.standing.status)) continue;
       expect(decideOutcome(candidate).kind).not.toBe("delivered");
     }
   });
@@ -110,7 +155,7 @@ describe("decideOutcome — the whole input space", () => {
     // never a refusal that lost the fact a person was needed.
     for (const candidate of everyCombination()) {
       if (candidate.owed !== null) continue;
-      if (candidate.standing.status === "granted" || candidate.standing.status === "denied") continue;
+      if (!isIndeterminate(candidate.standing.status)) continue;
       const verdict = decideOutcome(candidate);
       if (verdict.kind === "handed-off") continue;
       expect(verdict.kind).toBe("refused");
@@ -400,14 +445,42 @@ describe("checkHandoffPlacement", () => {
   });
 
   it("has no mixed indeterminate-and-violated state, and this pins why", () => {
-    // Every hand-off is placed, late, unplaced past its level, or not yet
-    // due — all four are determinate. The only indeterminate reasons are
-    // "nothing provided" and "nothing due", and neither can coexist with a
-    // finding: a finding means at least one hand-off came due and was
-    // compared.
+    // The conclusion here is right, but it used to be pinned by a reason that
+    // is false (#904). The old comment said "a finding means at least one
+    // hand-off came due and was compared". It does not: `findings` is also
+    // pushed to by the SECOND loop, which walks `placements`, not `handoffs`
+    // (`src/contract.ts:475-482`). A `placement-without-handoff` finding can
+    // therefore arise with every hand-off still inside its service level and
+    // nothing compared at all — the very `no-handoffs-due` state the comment
+    // claimed could not coexist with a finding. The test below exercises
+    // exactly that pair.
+    //
+    // The real guarantee is the RETURN SHAPE, not which array is walked:
+    // `findings.length > 0` returns first, so `no-handoffs-due` at
+    // `src/contract.ts:489` is only reachable past it, and every indeterminate
+    // return literally constructs `findings: []`. That holds however many
+    // loops later push findings, which is why it is the durable reason.
     const result = checkHandoffPlacement([handoff(), handoff({ handoffId: "handoff-2", raisedAt: "2026-08-22T11:45:00.000Z" })], [], AT);
     expect(result.reason).toBe("handoffs-unplaced");
     expect(result.awaitingPlacement).toBe(1);
+  });
+
+  it("reports a finding, not no-handoffs-due, when a stray placement arrives while every hand-off is still inside its service level", () => {
+    // The case the old comment above ruled out. The single hand-off was raised
+    // 15 minutes ago against a 60-minute level, so nothing has come due and
+    // the first loop compares nothing — `placed` stays 0, which on its own
+    // reaches `no-handoffs-due`. The stray placement answers a hand-off that
+    // is not in the set, so the second loop pushes a finding anyway.
+    const result = checkHandoffPlacement(
+      [handoff({ raisedAt: "2026-08-22T11:45:00.000Z" })],
+      [placement({ handoffId: "handoff-not-in-set" })],
+      AT,
+    );
+
+    expect(result.ok).toBe(false);
+    expect(result.reason).toBe("handoffs-unplaced");
+    expect(result.placed).toBe(0);
+    expect(result.findings.map((finding) => finding.kind)).toEqual(["placement-without-handoff"]);
   });
 });
 

@@ -201,3 +201,38 @@ test("no predecessor registry token or visibility mode remains in the public npm
   assert.equal((workflow.match(/id-token:\s*write/g) ?? []).length, 1);
   assert.equal((workflow.match(/\bnpm publish "\$TARBALL"/g) ?? []).length, 0);
 });
+
+// Regression test for #905: `.github/workflows/publish.yml`'s "Verify
+// anonymous public npm visibility and exact bytes" step captured
+// `status=$?` after a command that could legitimately exit 2 (this
+// repository's "could not confirm" convention), intending to absorb that
+// case as a warning rather than a step failure. But GitHub runs `run:`
+// blocks as `shell: /usr/bin/bash -e {0}`, and `set -uo pipefail` does not
+// clear `-e` — so the failing command aborted the whole script before
+// `status=$?` was ever reached, and the intended exit-2 branch was dead
+// code. The fix is the identical `set +e` / `set -e` bracket the "Publish"
+// step already used 25 lines earlier. This test generalizes the check: ANY
+// standalone `status=$?` capture in this workflow (the `|| status=$?`
+// idiom used elsewhere is exempt from -e by construction and is not this
+// pattern) must be immediately preceded by `set +e` and immediately
+// followed by `set -e`, so the same silent-abort defect cannot recur at a
+// third call site without a test failure naming it.
+test("every standalone status=$? capture is bracketed by set +e / set -e, so -e cannot swallow it", () => {
+  const lines = workflow.split("\n");
+  const captureLineIndexes = lines
+    .map((line, i) => (line.trim() === "status=$?" ? i : -1))
+    .filter((i) => i !== -1);
+
+  assert.ok(captureLineIndexes.length >= 2, "expected at least the Publish and post-publish-verify status=$? captures");
+
+  for (const i of captureLineIndexes) {
+    assert.equal(lines[i - 2]?.trim(), "set +e", `line ${i + 1} ("status=$?") must be preceded two lines up by "set +e" (got: ${JSON.stringify(lines[i - 2])})`);
+    assert.equal(lines[i + 1]?.trim(), "set -e", `line ${i + 1} ("status=$?") must be immediately followed by "set -e" (got: ${JSON.stringify(lines[i + 1])})`);
+  }
+});
+
+test("the post-publish visibility step itself is bracketed, not merely some step in the workflow", () => {
+  const publish = job("publish");
+  const postPublishVisibility = step(publish, "Verify anonymous public npm visibility and exact bytes");
+  assert.match(postPublishVisibility, /set \+e\n\s+node scripts\/verify-post-publish-public-npm-artifact\.mjs[^\n]*\n\s+status=\$\?\n\s+set -e\n/);
+});
