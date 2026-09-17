@@ -171,6 +171,28 @@ node scripts/check-contamination-classes.mjs packages/<name>
 node scripts/check-readme-parity.mjs packages/<name>
 ```
 
+`check-contamination-classes` reads the files the package actually **ships**
+— the `npm pack` file list, not the working tree — and asks of every citation
+in them whether a reader who installed the package could open it. Add
+`--include-built` after a build to scan `dist/` too, which is what
+`preflight-package.mjs` does; `tsc` preserves comments, so a citation written
+in a source comment is also sitting in the `.d.ts` a consumer reads. A
+citation that says inline that its referent does not ship (`"this package's
+own (unshipped) test suite"`) is not reported — that is the house convention
+for a reference that is deliberately outside the tarball, and it exists so
+nobody needs a suppression comment.
+
+That convention covers exactly one case: a path that is **real but not in the
+tarball**. It does not cover a path that is tracked nowhere at any commit,
+which is a reader being sent somewhere that does not exist, and no wording in
+a source file excuses it — not `"no longer exists"`, not `"was deleted"`, not
+anything else. The one place prose can record such a path is a `CHANGELOG`
+entry describing the citation it just removed, and even there the wording has
+to be in the same sentence as the path. If you hit this in source, the fix is
+to correct the citation or drop it; if it cannot be fixed in the change you are
+making, it needs an entry in `governance/known-dangling-citations.json`, which
+is reviewed in a diff and is itself a finding once it stops matching anything.
+
 `check-readme-parity` catches two specific, previously-real defects: an export
 that exists in `src/index.ts` but is undocumented in the README (added in the
 same commit as a feature, with nothing forcing the README to keep up), and a
