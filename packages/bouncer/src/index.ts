@@ -44,8 +44,16 @@
  *      the `0`/`1`/`2` exit contract without ever collapsing "could not run"
  *      into either "clean" or "findings".
  *
- * THE METRIC: unreconciled grant surface — authority live here that no
- * provider still backs. `checkAuthorityReconciliation` counts it.
+ * THE GATE COUNT: unreconciled grant surface — authority live here that no
+ * provider still backs. `checkAuthorityReconciliation` counts it. That count
+ * is 0 on an empty set and is not the charter metric.
+ *
+ * THE CHARTER METRIC: unreconciled grant rate — live grants not independently
+ * backed by their current provider of record / all live grants evaluated.
+ * `assessUnreconciledGrantRate` computes it. An empty evaluated set is
+ * indeterminate, never a perfect rate of 0. Unverifiable observations stay
+ * unevaluated. Grant expiry is not this rate. `bouncer-check` remains the
+ * three-gate CLI; `bouncer-rate-check` is the assessment surface.
  *
  * PROVIDER-NEUTRAL, AND THAT IS STRUCTURAL
  * -----------------------------------------
@@ -154,6 +162,12 @@ export {
   checkProviderContract,
   evaluateGrant,
 } from "./contract.js";
+export { assessUnreconciledGrantRate } from "./unreconciled-grant-rate.js";
+export type {
+  UnreconciledGrantRateAssessment,
+  UnreconciledGrantRateFinding,
+  UnreconciledGrantRateState,
+} from "./unreconciled-grant-rate.js";
 export type {
   AuthorityDecision,
   AuthorityDenialReason,
