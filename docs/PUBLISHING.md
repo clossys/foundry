@@ -372,6 +372,47 @@ lane.
 Its registry-backed replay is retained post-publication evidence only, not a
 retroactive gate, adoption, grounding, or release clearance.
 
+### The retained record's tarball must reproduce
+
+A qualification record binds exact tarball bytes and can never be rewritten,
+so a record bound to bytes no clean build produces makes that version
+permanently unpublishable. Two versions were lost that way and had to be
+skipped rather than fixed.
+
+Nothing in the tree can detect it. `dist/` is gitignored, so
+`packageTreeSha1` — and every other join computed from git — is blind to
+exactly the content that dominates a tarball, since `dist` is the first
+entry in almost every package's `files` array. The record reads PRESENT and
+not-stale against every pull-request check right up to the real publish,
+where `validate-candidate-publish.mjs` refuses it correctly and far too
+late.
+
+Two ordinary things produce it, neither of them a mistake:
+
+- `tsc` never deletes an output whose source has gone away. Delete or rename
+  a source file, rebuild, and its `.js`, `.d.ts` and both `.map` files stay
+  in `dist/` forever — and pack.
+- An artifact carried across a rebase is a clean build of a *different*
+  commit.
+
+`scripts/generate-qualification-record.mjs` therefore proves reproducibility
+before it writes anything: it removes every `packages/*/dist`, rebuilds,
+re-packs the candidate, and refuses unless the result is byte-identical to
+the tarball it was handed. There is no flag to skip it. Because gzip bytes
+are a function of the runtime that produced them, this can only be attempted
+on the pinned release runtime below; off it, the generator reports
+indeterminate rather than a mismatch it cannot attribute.
+
+To ask the same question earlier, while the answer is still free:
+
+```bash
+npm run verify:artifact-reproducible -- packages/<name>
+```
+
+That is destructive in the same way and for the same reason: it removes every
+`packages/*/dist` and rebuilds, because there is no honest way to answer
+without doing so.
+
 ### Replay runtime invariant
 
 The credential-free `qualify` job and OIDC `publish` job both use the pinned

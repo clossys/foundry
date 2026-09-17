@@ -108,7 +108,8 @@ const worst = results.reduce((a, r) => (r.code === 2 ? 2 : r.code !== 0 && a !==
 console.log(
   worst === 0
     ? "\npreflight PASSED — this package may be proposed for publish.\n" +
-        "A merged version change is released by the repository's automated workflow; a green preflight is a required local precondition, not publication evidence."
+        "A merged version change does NOT release itself: publish.yml is workflow_dispatch-only, so someone must dispatch it with dry_run: false (issue #757). " +
+        "A green preflight is a required local precondition, not publication evidence."
     : "\npreflight FAILED — do not publish.",
 );
 process.exit(worst);
