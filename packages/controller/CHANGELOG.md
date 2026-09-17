@@ -9,9 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `@clossys/controller/onboarding`: one parameterized first-day assessment and
+- First-day onboarding: one parameterized first-day assessment and
   installed-position onboarding workflow that **discovers and invokes
-  role-owned assessments**. `runFirstDayOnboarding` selects roles from fixed,
+  role-owned assessments**, on this package's root entry point and as the
+  installed `foundry-onboarding-run` executable. `runFirstDayOnboarding` selects roles from fixed,
   deterministic rules over consumer-*declared* facts (`selectRoles` /
   `SELECTION_RULES`), resolves each selected role's own declared assessment
   entry point from that role's own installed manifest
@@ -30,6 +31,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `foundry-onboarding-run <request.json> <install-root> <evidence-dir>`: the
   installed entry point, on the same `0` / `1` / `2` ternary as every other
   gate here.
+- The capability is exported from the **root** entry point rather than a
+  `./onboarding` subpath of its own. That is a constraint, not a preference:
+  the frozen public-npm aggregate canary plan pins an immutable optional-peer
+  matrix covering every declared export specifier of every package carrying an
+  optional peer, and that plan may not be rewritten, so a new subpath here has
+  nowhere to be recorded. The root specifier is already in that matrix and its
+  recorded `imports` outcome stays truthful, because nothing in this module
+  needs `typescript`.
 
 ### Notes
 

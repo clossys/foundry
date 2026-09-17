@@ -76,7 +76,6 @@ versioned packages.
 | `@clossys/controller/release` | Isolated packed-artifact and installed-import proof. |
 | `@clossys/controller/repository` | Consumer-owned repository profiles, upward requirements, exact-root declarations, pure evaluation, `repository-check`, the full runner (`runRepositoryProfileCheck` / `repository-profile-check`), and one-package repository adoption evidence (`RepositoryPackageAdoptionV1` / `repository-package-adoption-check`). `repository-package-adoption-check` accepts two forms: the original `<adoption.json> <evaluation.json>` (unchanged: human-readable, phase-local text) and, as of this version, a single `<evaluation-input.json>` (the same evaluation input as one file, `adoption` inlined) that emits one canonical `{"state":"satisfied"\|"violated"\|"indeterminate","findings":[...]}` JSON line, with exit code 0/1/2 agreeing with `state`. `--help` documents both. |
 | `@clossys/controller/positions` | Pure installed-position ledger and completion-evidence validation. `foundry-position-check <ledger.json> [role-contract.json]` validates positions only. `foundry-completion-evidence-check <completion-evidence.json> <position-ledger.json>` validates one linked consumer-retained record for an open position: an exact-version artifact declaration with retained references, recorded invocation and distinct red/green controls, duplicate disposition and rollback records, linked review-cadence evidence, and separately attributed before/after outcome and close-window verdicts. Reference and locator strings have a 65,536-code-unit cap and lexically reject explicit inline sensitive-payload assignments and URL authority userinfo after bounded percent decoding plus NFKC/case/default-ignorable normalization and a separate URL-style tab/CR/LF authority scan; form-style `+` is treated as a label separator only at root/query/fragment assignment contexts. Ordinary identifiers containing those words remain valid. Evidence instants are known-offset RFC3339 with at most millisecond precision and obey `before < invocation/red/green ≤ rollback ≤ after ≤ startedAt < satisfied recurrence ≤ endedAt`. A violated or indeterminate in-window cadence result prevents satisfaction. The outcome retains the position baseline and source locator, moves into the linked setpoint, and cannot be owned by the position action authority. References, authorship, provider truth, and adoption are not authenticated or inferred. |
-| `@clossys/controller/onboarding` | The one parameterized first-day onboarding workflow: deterministic role selection, discovery of each role's OWN declared assessment entry point (`foundry.assessment`), fixed credentialless invocation of it, and the join. It carries no assessment content and substitutes for no role; `foundry-onboarding-run` prints the join and `proposeInstalledPositionLedger` / `authorizeMutation` produce and gate the installed-position contract. |
 | `@clossys/controller/review` | Provider-neutral review evidence contracts, validation, and `review-check`. |
 | `@clossys/controller/review/github` | Pure normalization of caller-provided GitHub-shaped review evidence. |
 | `@clossys/controller/artifacts` | Deterministic, fail-closed verification for a consumer-owned governed artifact: declared kind + schema version, exact-content checksum, and structural provenance. |
@@ -141,12 +140,24 @@ can support a completion result.
 It never claims a provider observation is true, installs a package, or
 measures a provider itself.
 
-### `./onboarding`: the first-day assessment workflow
+### First-day onboarding: discovering and invoking role-owned assessments
 
 One parameterized workflow that **discovers and invokes role-owned
 assessments** for a consuming repository's first day. It is orchestration, and
 deliberately nothing more: it carries no assessment content, and it is not a
 substitute for any role it opens.
+
+It reaches consumers two ways: as the installed `foundry-onboarding-run`
+executable, and as named exports on this package's **root** entry point
+(`@clossys/controller`) rather than a subpath of its own. That placement is a
+constraint, not a preference. The frozen public-npm aggregate canary plan pins
+an immutable optional-peer matrix covering every declared export specifier of
+every package carrying an optional peer, and that plan may not be rewritten —
+so a new subpath on this package has nowhere to be recorded. The root
+specifier is already in that matrix and its recorded `imports` outcome stays
+truthful, because nothing in this module needs `typescript`. Declaring the
+subpath in a way the matrix could not see would have been the other option,
+and would have been a false green.
 
 `runFirstDayOnboarding(request, options)` does four things in order.
 
@@ -2040,6 +2051,27 @@ mismatch (or another binding finding), `2` when it could not run. Use
 | `GovernanceReport` | type | Foundation report, build order, lifecycle findings, and combined status. |
 | `NewPackagePlanInput` / `NewPackagePlanProfile` / `NewPackagePlan` / `NewPackagePlanReadiness` / `PackageScaffoldFile` | types | New-package input, repository-owned profile, readiness state, and reviewable generated file plan. |
 | `GovernedPreflightOptions` / `GovernedPreflightReport` | types | Options and result for the release-plus-governance preflight. |
+| `runFirstDayOnboarding(request, options)` | function | Runs one first-day onboarding — select, discover, invoke, join — and returns the `OnboardingRun`. `FirstDayOnboardingOptions` supplies the install root, the consumer's evidence directory, an optional explicit role set, an optional `AssessmentInvoker` seam and an optional deadline. |
+| `selectRoles(request, activeRoles)` | function | The deterministic selection: every active role gets exactly one `RoleSelection`, opened by a named `SelectionRule` or excluded under `NO_RULE_OPENED`. |
+| `validateOnboardingRequest(value)` | function | Rejects a malformed request outright; a request that cannot be read selects nothing. |
+| `activeRolesFromContract(contract?)` | function | Every active role named by the role contract this package ships. The workflow never keeps a role list of its own. |
+| `discoverRoleAssessmentSurface(installRoot, role)` / `discoverRoleAssessmentSurfaces(installRoot, roles)` | functions | Resolve a role's `foundry.assessment` declaration against its own installed manifest and `bin` map. Filesystem reads only; nothing is executed. `ASSESSMENT_DECLARATION_PATH` names the manifest key. |
+| `observeRoleAssessment(surface, evidenceDirectory, invoke?, timeoutMs?)` | function | Runs one discovered surface and reports exactly what came back. `nodeAssessmentInvoker` is the fixed production `AssessmentInvoker`; `DEFAULT_ASSESSMENT_TIMEOUT_MS` is its deadline; `assessmentInputPath` derives the consumer-owned evidence file from the role name alone. |
+| `joinFirstDayOnboarding(request, selection, observations)` | function | The pure join. No I/O, no process, no clock. |
+| `assertPassThroughAssessments(records, observations)` | function | Throws unless every carried assessment is reference-identical to the value its role returned — the structural guard against the orchestration authoring one. |
+| `onboardingExitCode(state)` | function | The `0` / `1` / `2` process code for a run state. |
+| `proposeInstalledPositionLedger(run, activeRoles)` | function | Derives one complete installed-position ledger, or a `LedgerProposal` with `ledger: null` and findings. `PROPOSED_POSITIONS_KEY` names the key a role's assessment returns its positions under. |
+| `assertRoleAuthoredPositions(positions, roleAuthored)` | function | Throws when a ledger carries a position object no role returned. |
+| `onboardingRunDigest(run)` | function | The content-addressed identity of one run; a decision owner approves this exact value, not a summary of it. |
+| `authorizeMutation(run, ledger, approval)` | function | The mutation gate: a satisfied gap-free run, a ledger that validates, and this engagement's own decision owner approving that exact digest. Returns a `MutationAuthorization`. |
+| `SELECTION_RULES` / `NO_RULE_OPENED` / `EXCLUSION_REASON` | constants | The rule vocabulary, the single exclusion reason code, and the disposition text it produces. |
+| `DIRECTION_SUBJECTS` / `ARCHITECTURE_SUBJECTS` | constants | The declared subjects that open the direction and operating-system roles, typed as `DirectionSubject` / `ArchitectureSubject`. |
+| `ENGAGEMENT_BASELINE_ROLE` / `DIRECTION_ROLE` / `OPERATING_SYSTEM_ROLE` / `INDEPENDENT_OUTCOME_ROLE` | constants | The four roles the operating model binds to a fixed rule rather than to a consumer request. |
+| `ASSESSMENT_INVOCATION_KINDS` / `ASSESSMENT_SURFACE_ABSENCES` / `ASSESSMENT_INVOCATION_FAILURES` / `ASSESSMENT_OUTCOMES` | constants | The supported invocation kind (`AssessmentInvocationKind`), and the complete determinate vocabularies for why a surface is absent (`AssessmentSurfaceAbsence`), why an invocation produced nothing (`AssessmentInvocationFailure`), and what a selected role's record says (`AssessmentOutcome`). |
+| `OnboardingRequest` / `OnboardingEngagement` / `RoleSelection` / `RoleSelectionOutcome` / `SelectionRule` | types | The consumer-declared request, its engagement identity and accountable decision owner, and one role's selection result. |
+| `AssessmentSurface` / `AssessmentSurfaceDiscovery` / `AssessmentProcessResult` / `AssessmentInvoker` | types | A role-declared entry point, its discovery result, one raw process observation, and the invocation seam. |
+| `RoleAssessmentObservation` / `RoleAssessmentRecord` / `OnboardingGap` / `OnboardingFinding` / `OnboardingRun` / `OnboardingState` | types | One observed role assessment, its record in the report, a selected-but-unassessed role, a join finding, the whole report, and its ternary state. |
+| `LedgerProposal` / `MutationApproval` / `MutationAuthorization` / `FirstDayOnboardingOptions` | types | The ledger proposal result, a decision owner's digest-bound approval, the authorization result, and the runner's options. |
 
 ## Requirements
 
