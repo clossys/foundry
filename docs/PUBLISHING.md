@@ -395,7 +395,7 @@ indeterminate rather than a mismatch it cannot attribute.
 To ask the same question earlier, while the answer is still free:
 
 ```bash
-npm run check:artifact-reproducible -- packages/<name>
+npm run verify:artifact-reproducible -- packages/<name>
 ```
 
 That is destructive in the same way and for the same reason: it removes every
