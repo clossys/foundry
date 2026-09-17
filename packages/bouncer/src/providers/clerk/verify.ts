@@ -18,8 +18,8 @@ import { resolveInstalledPeerVersion } from "../../internal/resolve-installed-pe
  * `resolveInstalledPeerVersion`, unlike the edge-safe `proxy.ts`/
  * `proxy-entry.ts` or the browser-side `client.tsx` (see those files'
  * own comments). `SVIX_DECLARED_RANGE` must match package.json's
- * `peerDependencies.svix` exactly — `auth-clerk.test.ts` asserts that
- * directly.
+ * `peerDependencies.svix` exactly, confirmed directly by this package's
+ * own (unshipped) test suite.
  */
 export const SVIX_DECLARED_RANGE = "^1.96.0";
 assertPeerVersion({

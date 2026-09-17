@@ -52,9 +52,18 @@
  * Nothing reachable from this entry point imports a vendor SDK, a framework,
  * or React. `./agent` is delegated machine-actor authority and is equally
  * neutral. Every provider adapter lives behind `./providers/<name>` and its
- * own subpaths, each guarded by `assertPeerVersion` at import time so an
- * absent or out-of-range optional peer names itself rather than surfacing as
- * a crash deep inside somebody else's call surface.
+ * own subpaths. Every entry point that unconditionally imports an optional
+ * peer guards that peer's PRESENCE, at minimum: an absent peer names itself
+ * via Node's own module-resolution error rather than surfacing as a crash
+ * deep inside somebody else's call surface. Most entry points guard the
+ * installed VERSION too, with `assertPeerVersion` at import time — the two
+ * genuine exceptions are `./providers/clerk/web` and its `/client` and
+ * `/proxy` subpaths, which cannot range-check `@clerk/nextjs` from a
+ * browser- or edge-safe module because that peer publishes no readable
+ * version signal at all (see `providers/clerk/web/client.tsx`'s and
+ * `providers/clerk/web/proxy.ts`'s own headers for the exact, checked shape
+ * of this — confirmed by this package's own internal build-graph coverage
+ * test, which is not part of the published package).
  *
  * ONE-WAY, FOR PUBLIC CONSUMPTION
  * --------------------------------

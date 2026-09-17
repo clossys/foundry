@@ -3,6 +3,177 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.7] - 2026-09-16
+
+### Fixed
+
+- **The 0.1.6 entry below overstated one of its own findings.** It said
+  `verify.ts`'s stale citation of `auth-clerk.test.ts` pointed at a file
+  that "never existed in this repository at all." That is false, and this
+  repository's own history contradicts it:
+
+  ```
+  $ git log --all --full-history --diff-filter=A --name-only -- '*auth-clerk.test.ts'
+  579b5d8 Add consolidated auth package (#103)
+  packages/auth/src/providers/clerk/auth-clerk.test.ts
+  $ git log --all --full-history --diff-filter=D --oneline -- packages/auth/src/providers/clerk/auth-clerk.test.ts
+  9bd1137 Retire superseded donor packages (#536)
+  ```
+
+  The file was real: it lived at
+  `packages/auth/src/providers/clerk/auth-clerk.test.ts` in the `auth`
+  donor package, added by #103, and was deleted by #536 when the donor
+  packages were retired. `verify.ts`'s comment cited it correctly at the
+  time it was written — the citation rotted only because a later,
+  cross-package retirement removed its referent, with nothing in CI
+  positioned to notice a doc comment in one package going stale because
+  of a commit to a different package. That makes the defect systemic — a
+  retirement with no mechanism to find what it orphans elsewhere in the
+  repository — rather than the carelessness the 0.1.6 wording implied.
+  Per this repository's own package-lifecycle policy ("derived from
+  evidence, never declared"), this is a forward correction: the 0.1.6
+  entry below is left as originally written, and this entry records the
+  accurate account instead of rewriting it in place.
+- **Four remaining bare citations of files outside this package's own
+  publishable boundary, in `src/internal/peer-version.ts`.** The 0.1.6 fix
+  deliberately kept one citation of repo-root
+  `scripts/check-workspace-links.mjs` in this file's header comment,
+  because the header discloses inline, in the same paragraph, that
+  `scripts/` is outside every package's `files` allowlist and so does not
+  ship — the unavailability is the sentence's own subject, not a
+  disclaimer bolted on afterward. That reasoning does not extend to four
+  other sites in the same file that named the same script, or its sibling
+  `check-workspace-links.test.mjs`, bare and without the header's nearby
+  disclosure: a reader arriving 75–160 lines below the header has no way
+  to connect the two. Each of the four now either carries the
+  does-not-ship qualifier at its own site or is reworded so it no longer
+  points a reader at a path they cannot open; the header citation itself
+  is unchanged, since the reasoning for keeping it still holds.
+- **A 0.1.4 changelog bullet named an unshipped test file bare.** The
+  0.1.4 "Added" entry below opened with
+  `` `internal/peer-guard-coverage.test.ts`, deriving its subpath set
+  from… `` — naming the file with no note that it does not ship, unlike
+  the self-describing 0.1.5 and 0.1.6 mentions of the same file. The
+  bullet now states directly that the file is excluded from both the
+  TypeScript build and the packed tarball.
+
+## [0.1.6] - 2026-09-16
+
+### Fixed
+
+- **A shipped citation pointed at a file no consumer receives.** 0.1.5
+  removed three dangling citations of a repository-root decisions log by
+  path (see the 0.1.5 note below) but, in the same rewrite, introduced a
+  citation of the identical class: `src/index.ts`, `src/providers/clerk/web/client.tsx`,
+  `src/providers/clerk/web/proxy.ts`, and `README.md` all named
+  `internal/peer-guard-coverage.test.ts` by path. That file is excluded
+  from the TypeScript build (`tsconfig.json`'s
+  `"**/*.test.ts"`/`"**/*.test.tsx"` excludes) and from the packed tarball
+  (`package.json`'s `files` allowlist negates `src/**/*.test.ts`), yet the
+  citation survived into `dist/index.js`, `dist/index.d.ts`,
+  `dist/providers/clerk/web/client.js`, `.../client.d.ts`,
+  `.../proxy.js`, `.../proxy.d.ts`, and the shipped `README.md`, because
+  `tsc` preserves comments. A consumer reading any of those shipped files
+  was pointed at a path that does not exist in anything they can install.
+  `scripts/check-contamination-classes.mjs`'s CLASS 1 check did not catch
+  this because it only matches `.md` paths (tracked separately as #935;
+  out of scope for this fix). Auditing the rest of the package (against
+  the actual packed tarball, not just the `files` array) turned up the
+  same class in six more places — `src/schema.ts`, `src/cli.ts` (two
+  citations), `src/providers/clerk/verify.ts`,
+  `src/internal/peer-version.ts`, and
+  `src/providers/clerk/web/server-routes.tsx` — each naming a sibling
+  `*.test.ts`/`*.test.tsx` file that does not ship either. One of those,
+  `src/providers/clerk/verify.ts`, cited a file
+  (`auth-clerk.test.ts`) that never existed in this repository at all;
+  the real, non-shipping test for that module is `verify.test.ts`. Every
+  one of these doc comments explained genuinely subtle guarded-peer
+  behavior worth keeping, so each citation is rewritten to describe what
+  is verified — confirmed directly by this package's own internal test
+  suite — without naming a path the reader cannot open, rather than
+  deleted outright.
+
+## [0.1.5] - 2026-09-16
+
+### Note
+
+- **0.1.4 was never published; this release supersedes it without repeating
+  its work.** 0.1.4 (below) carried the actual #889 fix — the `next` guard
+  in `proxy.ts` and the corrected coverage claims — and its qualification
+  record (`governance/release-qualifications/clossys-bouncer-0.1.4.json`)
+  was generated and retained, binding candidate `packageTreeSha1
+  294f33ab7b064a5f0aebe6a62d17a550fbf7ebb7` (tarball sha256
+  `79ba339e1d5c188ad7640b47487b6322b54dc65a75d5a594471d55e8a9d89f07`).
+  Before publication, CI's `prose quality` gate (`check-contamination-classes.mjs`)
+  caught three CLASS 1 findings — `src/internal/peer-guard-coverage.test.ts`,
+  `src/providers/clerk/web/client.tsx`, and `src/providers/clerk/web/proxy.ts`
+  each cited a repository-root decisions log by path, a reference that does
+  not ship with the published package and that a reader of the installed
+  package cannot open. That correction touched files inside `packages/bouncer/`,
+  moving the package tree and leaving the retained 0.1.4 record qualified
+  against a tree that no longer exists. Qualification records are
+  immutable — each file path is introduced exactly once and is never
+  corrected in place — so the 0.1.4 record cannot be updated to match, and
+  0.1.4 cannot be published. This release reuses the already-fixed source
+  unchanged and exists solely to obtain a fresh, never-before-used record
+  path. See #889.
+
+## [0.1.4] - 2026-09-16
+
+### Fixed
+
+- **Three entry points accepted an incompatible `@clerk/nextjs` or `next`
+  silently instead of naming it (#889).** `./providers/clerk/web/proxy`
+  imported both `next/server` and `@clerk/nextjs/server` unconditionally
+  with no `assertPeerVersion` guard for either; `./providers/clerk/web`
+  and its `/client` alias imported `@clerk/nextjs` unconditionally,
+  guarding only `react`. An installed-but-incompatible peer at any of
+  these three entry points previously surfaced as whatever `next` or
+  `@clerk/nextjs` themselves happened to crash on, with nothing naming a
+  version range as the cause. `./providers/clerk/web/proxy` now guards
+  `next` the same way `./providers/clerk/web/server` already did, reading
+  the installed version from `next/package.json` — `next` declares no
+  `exports` field of its own, so that subpath resolves as an ordinary JSON
+  import, with no `node:fs` involved and no risk to an edge-runtime
+  bundle (confirmed with `esbuild --platform=browser`).
+- **A comment in `client.tsx` claimed `@clerk/nextjs` was "guarded instead
+  from `server-routes.tsx`."** It was not: `./providers/clerk/web` and its
+  `/client` alias never import `server-routes.tsx` at all (confirmed by
+  reading their own `export … from` statements), so that claim was false
+  on the day it was written, not merely stale. The comment is corrected.
+- **`README.md`, `src/index.ts`, and both `dist/` copies claimed every
+  Clerk web entry point "guards its own optional peer with
+  `assertPeerVersion`."** True for three of five; false for
+  `./providers/clerk/web`, `/client`, and `/proxy`'s `@clerk/nextjs`
+  import specifically. Corrected to state precisely which peers are
+  range-guarded at which entry points, and why `@clerk/nextjs` cannot be:
+  its own `exports` map declares no `./package.json` subpath (confirmed:
+  `require("@clerk/nextjs/package.json")` throws
+  `ERR_PACKAGE_PATH_NOT_EXPORTED` against the real installed 7.9.1), and
+  its public surface exports no version constant of any kind — a
+  permanent constraint of that peer's own published shape, not a gap in
+  this package's effort. `@clerk/nextjs`'s presence is still guarded: the
+  unconditional import already throws Node's own named
+  `ERR_MODULE_NOT_FOUND` if it is absent.
+- **The README's absent-vs-out-of-range sentence described unreachable
+  behavior.** Every guarded call site sits behind a static ESM import, so
+  an absent peer throws Node's own module-resolution error before
+  `assertPeerVersion`'s "not installed" message can ever run — the guard's
+  real job is the installed-but-incompatible case. Corrected.
+
+### Added
+
+- `internal/peer-guard-coverage.test.ts` — a test file excluded from both
+  the TypeScript build and the packed tarball, so it does not ship with
+  this package — deriving its subpath set from `package.json`'s own
+  `exports` map (never a hand-written list) and checking each subpath's
+  BUILT `dist/` import graph, not `src/`. It either confirms a co-located
+  `assertPeerVersion` call for every optional peer a subpath's compiled
+  output imports, or requires a named, bidirectionally-checked exception —
+  `@clerk/nextjs` at `./providers/clerk/web`, `/client`, and `/proxy`
+  today, for the reason above. This is the enumerate-and-confirm test
+  #889 itself named as missing.
+
 ## [0.1.3] - 2026-09-02
 
 ### Fixed

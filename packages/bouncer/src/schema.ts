@@ -5,8 +5,9 @@
  * WHY HAND-ROLLED
  * ----------------
  * This package declares no `dependencies` at all — only optional peers a
- * consumer opts into by importing the subpath that needs them (see
- * `public-contract.test.ts`, which asserts exactly that). A schema library
+ * consumer opts into by importing the subpath that needs them
+ * (confirmed directly by this package's own (unshipped) test suite). A
+ * schema library
  * would be a hard runtime dependency for every consumer of the provider-
  * neutral root, which is the one thing the root is for.
  *

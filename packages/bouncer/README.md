@@ -220,12 +220,37 @@ webhook verification) plus `./providers/clerk/web`,
 `./providers/clerk/web/proxy`, split so importing the edge-safe proxy entry
 never pulls `next/headers`, `next/navigation`, React, or client components.
 
-Each of those entry points guards its own optional peer with
-`assertPeerVersion`, evaluated once at import time. An absent peer and an
-out-of-range peer throw different messages, because "not installed" and
-"installed but incompatible" are different problems with different fixes; an
-installed version this guard cannot parse at all is treated as indeterminate
-and warns rather than blocking a build.
+`./providers/clerk` (guards `svix`) and `./providers/clerk/web/server`
+(guards both `@clerk/nextjs` and `next`) each guard every optional peer they
+import with `assertPeerVersion`, evaluated once at import time, checking the
+installed version against this package's declared range.
+`./providers/clerk/web` and its `/client` subpath guard `react` the same
+way, but do NOT range-check `@clerk/nextjs`: that peer's own `exports` map
+declares no `./package.json` subpath and its public surface exports no
+version constant of any kind, so there is no signal a browser-safe module
+can read without `node:fs` (which cannot resolve in a browser bundle at
+all). `./providers/clerk/web/proxy` guards `next` the same way `server`
+does — `next` declares no `exports` field at all, so its `package.json` is
+readable as an ordinary JSON import, with no `node:fs` involved — but for
+the identical reason, does not range-check `@clerk/nextjs` either: an Edge
+Middleware bundle has no filesystem, the same constraint as the browser
+side. See `client.tsx`'s and `proxy.ts`'s own doc comments for the exact,
+checked shape of this — every subpath either range-guards a peer it
+imports or is a named, tested exception, confirmed by this package's own
+internal build-graph coverage test (not part of the published package);
+nothing is silently uncovered.
+
+Every entry point still guards each optional peer's PRESENCE, range-checked
+or not: the unconditional import throws Node's own named
+`ERR_MODULE_NOT_FOUND` if the peer is not installed at all, before this
+package's own code ever runs — that case never reaches `assertPeerVersion`'s
+own "not installed" message, because every call site sits behind a static
+ESM import, and an absent package fails module resolution first. What `assertPeerVersion` covers, where it runs, is
+specifically the installed-but-incompatible case: a version that resolves
+but falls outside this package's declared range gets a named, actionable
+error instead of whatever the peer's own call surface happened to crash on.
+An installed version this guard cannot parse at all is treated as
+indeterminate and warns rather than blocking a build.
 
 ## One-way, for public consumption
 

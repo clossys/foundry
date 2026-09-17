@@ -6,23 +6,57 @@ import { devAuthBypassIsKeyless } from "./dev-bypass.js";
 import { assertPeerVersion } from "../../../internal/peer-version.js";
 
 /**
- * `react` is one of this package's optional peers (see package.json's
- * `peerDependenciesMeta`). This is a `"use client"` module — reachable
- * from a browser bundle, not just a Node process — so the version check
- * reads `react`'s own exported `version` directly rather than
- * `resolve-installed-peer-version.ts`'s Node-only fs-based resolver
- * (`verify.ts` and `server-routes.tsx` are the Node-context files that
- * use that resolver — see their own comments). This file deliberately
- * imports only `assertPeerVersion` from `../../../internal/
+ * `react` and `@clerk/nextjs` are two of this package's optional peers
+ * (see package.json's `peerDependenciesMeta`). This is a `"use client"`
+ * module — reachable from a browser bundle, not just a Node process — so
+ * `react`'s version check reads its own exported `version` directly
+ * rather than `resolve-installed-peer-version.ts`'s Node-only fs-based
+ * resolver (`verify.ts` and `server-routes.tsx` are the Node-context
+ * files that use that resolver — see their own comments). This file
+ * deliberately imports only `assertPeerVersion` from `../../../internal/
  * peer-version.js`, never anything from `resolve-installed-peer-
  * version.js`: that file's `node:module`/`node:fs` imports cannot resolve
  * in a browser bundle at all, even for a named export never called from
- * here — see `peer-version.ts`'s own header. `@clerk/nextjs` has no
- * equivalent in-module version export to read this way, so it is guarded
- * instead from `server-routes.tsx` (the same installed copy on disk,
- * checked from a genuinely Node-context file). `REACT_DECLARED_RANGE`
- * must match package.json's `peerDependencies.react` exactly —
- * `client.test.tsx` asserts that directly.
+ * here — see `peer-version.ts`'s own header, and confirmed directly
+ * against this package's own `resolveInstalledPeerVersion`: `esbuild
+ * --bundle --platform=browser` against it fails with `Could not resolve
+ * "node:fs"` (and `"node:module"`, `"node:path"`).
+ *
+ * `@clerk/nextjs` is imported unconditionally above but is NOT
+ * range-guarded in this file, and this is a real, documented gap, not an
+ * oversight — and NOT, contrary to an earlier version of this comment,
+ * covered by `server-routes.tsx`: `./providers/clerk/web` and
+ * `./providers/clerk/web/client` (this file's own two `exports` subpaths)
+ * resolve to `client-index.ts` / `index.ts`, both of which re-export
+ * exclusively from THIS file, and neither ever imports
+ * `server-routes.tsx` — confirmed by reading their own `export … from`
+ * statements, not assumed. `@clerk/nextjs` publishes no version signal
+ * this file could read even if it wanted to: its own `package.json`
+ * declares an `exports` field (`.`, `./server`, `./errors`, `./internal`,
+ * `./webhooks`, `./experimental`, `./legacy`, `./types`) that does not
+ * list `./package.json` — confirmed by attempting
+ * `require("@clerk/nextjs/package.json")` against the real installed
+ * 7.9.1, which throws `ERR_PACKAGE_PATH_NOT_EXPORTED` — and its public
+ * surface exports no version constant of any kind (confirmed by grepping
+ * every file under its built `dist/` for `PACKAGE_VERSION`,
+ * `SDK_VERSION`, and `LIB_VERSION` — no match). The only technique that
+ * CAN read it, `resolveInstalledPeerVersion`, needs `node:fs`, which is
+ * unusable here for the same reason it is unusable for `react` above.
+ * This is a permanent constraint of `@clerk/nextjs`'s own published
+ * shape, not a gap in this package's effort — see `proxy.ts`'s own header
+ * for the identical conclusion reached independently for the edge-safe
+ * side, confirmed by this package's own internal build-graph coverage test
+ * (not part of the published package), which encodes this as a deliberate,
+ * checked exception rather than silence. `@clerk/nextjs`'s
+ * PRESENCE is still guarded: the unconditional import above already
+ * throws Node's own named `ERR_MODULE_NOT_FOUND` if it is not installed
+ * at all, a deliberately accepted tradeoff (an absent peer still fails
+ * loudly, just not with THIS package's own wording); what remains
+ * uncovered is specifically an INSTALLED-but-incompatible `@clerk/nextjs`.
+ *
+ * `REACT_DECLARED_RANGE` must match package.json's
+ * `peerDependencies.react` exactly, confirmed directly by this package's
+ * own (unshipped) test suite.
  */
 export const REACT_DECLARED_RANGE = ">=19 <20";
 assertPeerVersion({ peer: "react", declaredRange: REACT_DECLARED_RANGE, foundVersion: reactVersion });
