@@ -1,6 +1,6 @@
 {
   "name": "@clossys/builder",
-  "version": "0.7.9",
+  "version": "0.7.10",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -35,7 +35,8 @@
   },
   "bin": {
     "builder-verify-toolchain": "dist/ci/bin.js",
-    "builder-verify-machine": "dist/machine/bin.js"
+    "builder-verify-machine": "dist/machine/bin.js",
+    "builder-check": "dist/desired-state-realization-cli.js"
   },
   "files": [
     "dist",
@@ -48,6 +49,12 @@
     "LICENSE"
   ],
   "sideEffects": false,
+  "foundry": {
+    "assessment": {
+      "bin": "builder-check",
+      "invocation": "single-json-input"
+    }
+  },
   "description": "Declared reality made actual: an idempotent manifest engine and machine verification, a deployment surface contract with read-only platform adapters, a toolchain pin (runtime, package manager, build order), the liveStateSurface contract and shared CI gate mechanics that reconcile any of them against what is actually live, and an observation-bundle transport for aggregating each repository's own self-reported gate results.",
   "keywords": [
     "provisioning",

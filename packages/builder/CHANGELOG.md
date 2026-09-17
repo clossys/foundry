@@ -5,6 +5,31 @@ All notable changes to `@clossys/builder` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.10] - 2026-09-18
+
+### Added
+
+- Documented installation against the public npm registry
+  (`https://registry.npmjs.org`) and that installing needs no authentication.
+- Stated the charter close condition in the README: independent consumer
+  evidence of `desired-state realization rate`, computed by
+  `assessDesiredStateRealizationRate()`. An empty evaluated set is
+  indeterminate, never a perfect rate of 1. This package does not measure
+  consumer evidence and does not close the loop.
+- Declared `foundry.assessment` against a new mapped `builder-check` bin with
+  `invocation: "single-json-input"`. Advisor remains the only required
+  first-day role. `builder-verify-toolchain` and `builder-verify-machine`
+  stay flag-shaped tooling CLIs.
+- `builder-check assessment.json`: prints the `desired-state realization
+  rate` report and exits on the `0` / `1` / `2` ternary.
+- `assessDesiredStateRealizationRate()` computes that charter metric from
+  consumer-supplied independent observations. Builder cannot observe itself.
+
+### Notes
+
+- This does not claim the position is closed. Qualification of `0.7.10` is
+  deferred under #833.
+
 ## [0.7.9] - 2026-09-17
 
 ### Added
