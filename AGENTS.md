@@ -74,7 +74,16 @@ public signal, pointing a reader at the edit history where the original
 text still sits. The label and the failed check tell a maintainer what they
 need without broadcasting it. That workflow says so plainly in its own header: it detects after
 the fact, it cannot undo a notification that already went out, and it is
-not a substitute for checking a draft before posting. The issue templates
+not a substitute for checking a draft before posting.
+
+That workflow also judges each item exactly once, against the denylist CI
+holds at the moment the text is posted — so a term added to the denylist
+after the fact is never applied to anything already public.
+`.github/workflows/conversation-safety-sweep.yml` re-asks on a cadence with
+the current denylist (and on demand, for the full pass that belongs right
+after a denylist change), labels findings, and likewise never comments. It
+is the only path here that can catch what the event gate structurally
+cannot; do not remove it as a duplicate. The issue templates
 under `.github/ISSUE_TEMPLATE/` and `.github/PULL_REQUEST_TEMPLATE.md`
 carry the same "never post this" list up front, before a contributor has
 typed anything, because that is the only point where prevention is

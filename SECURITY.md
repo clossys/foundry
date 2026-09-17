@@ -29,6 +29,7 @@ forward; there are no long-term support branches.
 | `check-public-safety` | Required check on every pull request |
 | `check-name-collision` | Required before every publish — see below |
 | `conversation-safety` (issues, comments, pull request descriptions) | Runs after the text is already posted — labels a finding and fails the check, never echoing the matched text and never commenting. Detects; does not prevent. See below |
+| `conversation-safety-sweep` | Daily on a schedule, and on demand. Re-scans already-posted conversation text against the denylist CI holds **now**, because the event-driven gate above judged each item once, against the denylist snapshot of the moment it was posted, and nothing ever re-asks. Labels findings; posts no comment, same as the gate above. See below |
 | `check-commit-messages` | Required check on every pull request. Scans commit message text against the same identity denylist — a surface neither the tree scan nor the tarball scan has ever read. See below |
 | `check-merge-policy` | Weekly on a schedule. Compares the merge methods the forge offers for the default branch against `governance/merge-policy.json` and fails on drift. Observes; it cannot apply the declaration, because merge methods live in GitHub's settings store rather than in this tree. See below |
 | `check-package-visibility` | Daily on a schedule, with no credential in either direction it checks -- every request, declared-package reads and the scope roster read alike, is anonymous. A scoped npm package defaults to restricted access unless published with `--access public`; this gate fails when a declared package is not anonymously installable right now (it deliberately does not try to tell "never published" apart from "private" -- both are the same failure of this repository's invariant that every declared package is already public) AND when a package live under the scope is not accounted for by the declaration. See the script's own header for both directions and issue #844 for the one piece (a deprecated-package retention cross-check) cut as a separate scope decision. Detects; there is no API to fix it. See [scripts/check-package-visibility.mjs](scripts/check-package-visibility.mjs) and [docs/PUBLISHING.md](docs/PUBLISHING.md#public-access-and-parity) |
@@ -230,6 +231,43 @@ every issue and pull request template
 (`.github/ISSUE_TEMPLATE/`, `.github/PULL_REQUEST_TEMPLATE.md`), and
 running `scripts/check-conversation-safety.mjs` by hand against a draft
 before it goes anywhere near the GitHub API.
+
+### Why a scheduled sweep exists alongside it
+
+The event-driven gate scans each item exactly once, at the instant it is
+posted, against whatever denylist CI holds at that instant. The denylist is
+a private file outside this repository, mirrored into CI as the
+`PUBLIC_SAFETY_DENYLIST_B64` secret, and that mirror is a **snapshot,
+refreshed by hand**. In the window between a term being added to the real
+denylist and the secret being re-uploaded, the gate keeps running in FULL
+mode, with a green check, against a denylist that does not contain the new
+term — and returns a correct PASS for the question it was actually asked.
+Nothing then asks again: the event is gone, and a later denylist update
+re-scans nothing.
+
+That is the shape of the miss reported in #335, where a manual
+`check-conversation-safety.mjs --pr <n> --require-denylist` run found what
+the required check had passed. It was read at the time as the gate exempting
+bot-authored comments; it is not. Neither the workflow nor the scanner has
+ever looked at a comment's author — #274 records the same workflow failing
+twelve `pull_request_review_comment` runs on bot-authored comments — and
+correlating this repository's comment history against the workflow's run
+history shows bot- and human-authored comments triggering runs alike. The
+missed items and the caught ones differ by *which term matched*, not by who
+wrote them.
+
+`.github/workflows/conversation-safety-sweep.yml` closes that by re-asking
+on a cadence: daily over a rolling window, and on demand via
+`workflow_dispatch` (blank `since` sweeps the entire surface — the run that
+belongs immediately after a denylist change). The same silence it breaks
+also covers text posted before the event workflow existed, a run that was
+cancelled or expired, and an event GitHub never delivered. It labels and,
+deliberately, never comments, for the same reason the event gate does not.
+
+The scheduled window is bounded rather than exhaustive because `--all`
+issues several API calls per issue and pull request, and `GITHUB_TOKEN` is
+rate-limited per repository per hour; a sweep that reliably cannot finish is
+a sweep nobody trusts. The workflow's own header carries the full reasoning.
 
 ## The commit-message gate
 

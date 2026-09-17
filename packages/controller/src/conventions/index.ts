@@ -35,7 +35,7 @@ export {
   templatedFilenames,
 } from "./documents.js";
 
-export { TAXONOMY_PREFIXES, validateBranchName } from "./branch.js";
+export { TAXONOMY_PREFIXES, branchExemptionsFromProfile, validateBranchName } from "./branch.js";
 export type { BranchOptions } from "./branch.js";
 
 export { SKILL_VERBS, validateSkillName, validateSkillSet } from "./skills.js";

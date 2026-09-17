@@ -9,6 +9,7 @@ import type {
   RepositoryRequirementObservation,
   RepositoryRequirementStatus,
   RepositoryRootEntry,
+  RepositoryProfileFindingRule,
   RepositoryRootEntryEvaluation,
 } from "./types.js";
 
@@ -57,4 +58,26 @@ export type RepositoryRequirementStatesAreComplete = ExpectTrue<
 /** Compile-time proof that observed evidence always carries a concrete value. */
 export type ObservedRequirementEvidenceHasValue = ExpectTrue<
   Extract<RepositoryRequirementObservation, { state: "observed" }> extends { value: string } ? true : false
+>;
+
+/** Compile-time proof that the release branch is optional, so existing v3 declarations stay valid (issue #929). */
+export type ReleaseBranchIsOptional = ExpectTrue<
+  { schemaVersion: 3; defaultBranch: string; commands: []; protectedPaths: []; requirements: []; rootEntries: [] } extends RepositoryProfileV3
+    ? true
+    : false
+>;
+
+/** Compile-time proof that the release branch, when declared, is a plain branch name. */
+export type ReleaseBranchIsAStringWhenPresent = ExpectTrue<
+  RepositoryProfileV3["releaseBranch"] extends string | undefined ? true : false
+>;
+
+/** Compile-time proof that both release-branch verdicts are members of the closed finding-rule union. */
+export type ReleaseBranchRulesAreDeclared = ExpectTrue<
+  "release-branch" | "release-branch-collision" extends RepositoryProfileFindingRule ? true : false
+>;
+
+/** Compile-time proof that the legacy shapes stay closed: neither one gained the field. */
+export type LegacyProfilesDoNotDeclareAReleaseBranch = ExpectTrue<
+  "releaseBranch" extends keyof RepositoryProfileV1 | keyof RepositoryProfileV2 ? false : true
 >;

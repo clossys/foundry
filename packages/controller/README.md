@@ -506,6 +506,7 @@ import {
 const profile: RepositoryProfileV3 = {
   schemaVersion: REPOSITORY_PROFILE_VERSION,
   defaultBranch: "main",
+  releaseBranch: "release",
   commands: [{ name: "check", run: "npm run check" }],
   protectedPaths: [".github/workflows/**"],
   requirements: [
@@ -541,10 +542,35 @@ const findings = validateRepositoryProfile(profile);
 | --- | --- | --- |
 | `schemaVersion` | `3` | New declarations use `REPOSITORY_PROFILE_VERSION`. The closed v1 and v2 shapes remain accepted deliberately; see compatibility below. |
 | `defaultBranch` | `string` | A valid Git branch name. |
+| `releaseBranch` | `string` (optional) | The separate long-lived branch this repository deploys from, when it has one. A valid Git branch name, and never equal to `defaultBranch`. v3 only — see below. |
 | `commands` | `RepositoryCommand[]` | Ordered, dense array (at most 10,000 entries); names are unique. |
 | `protectedPaths` | `string[]` | Ordered, dense repository-relative paths or the supported `*`/`**` patterns; duplicates are rejected. |
 | `requirements` | `RepositoryRequirement[]` | Ordered, dense array of unique `(scope, id)` declarations. Foundry supplies no entries. |
 | `rootEntries` | `RepositoryRootEntry[]` | The caller's exact direct-child vocabulary. Names are unique single path segments; every entry has an explicit classification and disposition. |
+
+#### The branch topology, and the exemption derived from it (issue #929)
+
+`releaseBranch` is optional, and deliberately so. A repository with one
+long-lived branch has nothing truthful to put there, and a required field
+would be satisfied by repeating `defaultBranch` — which validation then
+refuses as a collision, leaving such a repository no valid declaration at
+all. Two separate verdicts, because they are two different defects with two
+different fixes:
+
+| Rule | When |
+| --- | --- |
+| `release-branch` | `releaseBranch` is present and is not a valid Git branch name — the same check `defaultBranch` gets. |
+| `release-branch-collision` | `releaseBranch` is a perfectly good branch name that happens to equal `defaultBranch`. A repository that deploys from its default branch has one long-lived branch: omit the field rather than repeating it. |
+
+The field is declared on v3 only. `releaseBranch` on a v1 or v2 profile is
+reported as `unknown-field` and is not additionally judged on its value —
+those shapes are closed, and a legacy declaration must not be able to state a
+topology its own version does not define.
+
+This is the half that makes the branch-provenance exemption checkable. See
+`branchExemptionsFromProfile` under [Conventions](#conventions): until the
+topology existed as data, an exemption list and the repository it claimed to
+describe could not be compared, because only one of them existed.
 
 #### Requirement-id grammar (issue #316)
 
@@ -1504,6 +1530,37 @@ import {
 const findings = validateBranchName("claude/fix-the-thing", { taxonomy: TAXONOMY_PREFIXES });
 ```
 
+##### The exemption is derived, not asserted (issue #929)
+
+A repository's long-lived branches are exempt from branch provenance because
+they keep their repository-defined names. That exemption used to arrive as
+`BranchOptions.exempt`, a list written at the call site — so a caller could
+exempt a branch the repository has never had, or one with a typo in it, and
+the check passed exactly as if the exemption were real. The exemption and the
+topology could not be cross-checked, because only one of them existed as
+data.
+
+Supply the repository's own profile instead. The set derived from it is
+**authoritative**:
+
+```ts
+import { branchExemptionsFromProfile, validateBranchName } from "@clossys/controller/conventions";
+
+branchExemptionsFromProfile(profile); // => ["main", "release"]
+
+validateBranchName("release", { agents: ["claude"], profile }); // => [] — declared
+validateBranchName("release", { agents: ["claude"], profile: withoutReleaseBranch, exempt: ["release"] });
+// => branch/undeclared-exemption, and "release" is NOT exempt
+```
+
+`exempt` is retained so existing callers keep working, and is no longer the
+authority:
+
+| Options | Behavior |
+| --- | --- |
+| `profile` supplied | Only the derived set exempts anything. Every `exempt` entry the profile does not declare is reported as `branch/undeclared-exemption` (high) and does not take effect — reporting it and honoring it anyway would leave the hazard exactly where it was, with a finding next to it. |
+| `profile` omitted, `exempt` supplied | The list is still honored, alongside `branch/underived-exemption` (medium): nothing can check it against the repository it claims to describe. |
+
 #### Deterministic comparison primitives: `sameSet`, `canonicalJson`, `sameCanonicalJson`, `nonEmptyString`, `sorted`
 
 A recurring shape of check across the validators above — and across more
@@ -1587,6 +1644,7 @@ adapter can find the shared guidance without duplicating it.
 | Export | Kind | Purpose |
 | --- | --- | --- |
 | `TAXONOMY_PREFIXES` / `validateBranchName` | constant / function | Agent branch-naming grammar and its validator. |
+| `branchExemptionsFromProfile(profile)` | function | The long-lived branches a repository profile actually declares — its `defaultBranch` and, when present, its `releaseBranch`. This is the exemption `validateBranchName` honors; see below. |
 | `SKILL_VERBS` / `validateSkillName` / `validateSkillSet` | constant / functions | Skill-naming grammar and its validators. |
 | `validateRoutineDeclaration` / `validateRoutineSet` / `validateScheduledSkillDescription` / `reconciliationFindingKinds` | functions / constant | Routine-declaration grammar and its tier-specific live-reconciliation findings. |
 | `isCronExpression` / `validateScheduleDeclaration` / `validateScheduleSet` / `scheduleReconciliationFindingKinds` | functions / constant | Schedule-declaration grammar and its tier-specific live-reconciliation findings. |
