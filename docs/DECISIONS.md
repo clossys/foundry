@@ -2149,15 +2149,16 @@ set, and the mechanism for binding them is declared here.
 
 Whether any consumer has actually bound them is **not observable from this
 repository**, and this entry does not claim it. The only `setpoint` bindings
-present here are in `docs/contracts/installed-position-ledger.fixture.json`,
-whose every row reads *"Synthetic schema fixture; no consumer decision."*
+present here are in `docs/contracts/installed-position-ledger.fixture.json`.
+Seventeen of its eighteen rows read *"Synthetic schema fixture; no consumer
+decision."* The eighteenth is the only row in this repository that populates a
+`setpoint` at all, and it reads *"Synthetic schema fixture; exercises a
+complete open position"* — a schema exercise, which is if anything a plainer
+statement that no consumer decided anything.
 
-(An earlier draft of this paragraph also cited `docs/contracts/package-evidence.json`.
-That was wrong, and wrong in the specific way this entry warns against two
-paragraphs above: the word `setpoint` occurs there seven times in free-text
-prose describing unrelated packages' own CLI thresholds, and the file contains
-**zero** structural `setpoint` keys and no reference to `consumerBindings` at
-all. Citing it was a substring match dressed as a measurement.)
+(An earlier draft also cited `docs/contracts/package-evidence.json`, which
+contains zero structural `setpoint` keys — a substring match dressed as a
+measurement, and the very thing this entry warns against two paragraphs above.)
 
 An
 earlier draft of this entry asserted the mechanism "is exercised in consumer
@@ -2227,7 +2228,7 @@ no computation. #906 already recorded it; an earlier draft of this entry listed
 three instances and omitted it.
 
 **Decided:** a close condition must name only fields, states, or metrics that
-ship. The three instances above are defects against this entry and are fixed
+ship. The four instances above are defects against this entry and are fixed
 with their packages, not by softening the condition into something unfalsifiable.
 
 ### What this entry does not settle
