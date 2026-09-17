@@ -9,6 +9,11 @@ of whether a plane actually has what it installed.
 npm install @clossys/integrator
 ```
 
+Published to `https://registry.npmjs.org` with public access — installing it
+needs no authentication. The GitHub Packages references later in this
+document describe a *caller-supplied* registry this package can probe
+against; they are not install instructions for `integrator` itself.
+
 ## The job
 
 A plane declares what catalogue it is entitled to. Separately, and offline

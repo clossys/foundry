@@ -5,6 +5,17 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.7] - 2026-09-16
+
+### Fixed
+
+- The Install section stated this package is published to GitHub Packages
+  and instructed consumers to map the `@clossys` scope and supply a
+  `read:packages` token. Neither step is real: `@clossys/messenger`
+  publishes to `https://registry.npmjs.org` with public access and
+  installs anonymously, with no scope mapping or token of any kind.
+  (#924)
+
 ## [0.1.6] - 2026-09-16
 
 ### Fixed
