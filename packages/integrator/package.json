@@ -1,6 +1,6 @@
 {
   "name": "@clossys/integrator",
-  "version": "0.6.7",
+  "version": "0.6.8",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -14,7 +14,8 @@
     }
   },
   "bin": {
-    "integrator-supersession-check": "dist/cli.js"
+    "integrator-supersession-check": "dist/cli.js",
+    "integrator-check": "dist/package-currency-rate-cli.js"
   },
   "files": [
     "dist",
@@ -26,6 +27,12 @@
     "LICENSE"
   ],
   "sideEffects": false,
+  "foundry": {
+    "assessment": {
+      "bin": "integrator-check",
+      "invocation": "single-json-input"
+    }
+  },
   "description": "Machinery a consuming plane runs against itself to answer whether it holds the catalogue it is entitled to, and whether that holding is current: entitlement and opt-out validation, an installed-inventory reader, a version reconciler, a reachability probe, an admission contract, and a supersession detector. Ships no registry of consumers.",
   "keywords": [
     "catalogue",

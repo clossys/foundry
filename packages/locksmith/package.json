@@ -1,6 +1,6 @@
 {
   "name": "@clossys/locksmith",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -20,7 +20,8 @@
   "bin": {
     "clossys-secrets-infisical": "dist/infisical/cli.js",
     "vespene-secrets-infisical": "dist/infisical/cli.js",
-    "clossys-locksmith-credential": "dist/bin.js"
+    "clossys-locksmith-credential": "dist/bin.js",
+    "locksmith-check": "dist/controlled-key-rate-cli.js"
   },
   "files": [
     "dist",
@@ -31,6 +32,12 @@
     "LICENSE"
   ],
   "sideEffects": false,
+  "foundry": {
+    "assessment": {
+      "bin": "locksmith-check",
+      "invocation": "single-json-input"
+    }
+  },
   "description": "Key custody, distribution, rotation, revocation, credential lifecycle evaluation, and provider-neutral secret resolution through environment, test, and optional Infisical adapters.",
   "keywords": [
     "secrets",

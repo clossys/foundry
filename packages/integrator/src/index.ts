@@ -45,6 +45,12 @@ export type {
 } from "./reachability.js";
 
 export { judgeCurrency, upgradeSet, optOutGaps, computeCurrencyMetric, classifyCurrencyDistance, currencyVerdict, currencyVerdictToExitCode } from "./currency.js";
+export { assessPackageCurrencyRate } from "./package-currency-rate.js";
+export type {
+  PackageCurrencyRateAssessment,
+  PackageCurrencyRateFinding,
+  PackageCurrencyRateState,
+} from "./package-currency-rate.js";
 export type {
   PackageCurrency,
   JudgeCurrencyInput,

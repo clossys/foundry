@@ -10,6 +10,45 @@ value.
 npm install @clossys/locksmith
 ```
 
+This package is published to the public npm registry, `https://registry.npmjs.org`.
+Installing it needs no authentication: no npm token, no `.npmrc` registry
+override, and no GitHub credential of any kind.
+
+## Controlled key rate
+
+Independent consumer evidence shows the position's owned metric meets its
+setpoint over the declared review cadence. The owned metric is `controlled
+key rate`, computed by `assessControlledKeyRate()`. An empty evaluated set
+is `indeterminate`, never a perfect rate of 1. `summarizeRotationMetric`
+remains the rotation triple; it is not this rate. This package does not
+measure consumer evidence and does not close the loop. A green run of this
+package's tests is not a close.
+
+```ts
+import { assessControlledKeyRate } from "@clossys/locksmith";
+
+const report = assessControlledKeyRate(input);
+```
+
+```bash
+locksmith-check assessment.json
+```
+
+The command prints JSON and exits `0` for satisfied, `1` for violated, and
+`2` for indeterminate, unreadable, or invalid input.
+
+This package declares that command as its first-day assessment surface in
+its own manifest:
+
+```json
+"foundry": { "assessment": { "bin": "locksmith-check", "invocation": "single-json-input" } }
+```
+
+Onboarding discovers that declaration from the installed manifest and never
+infers a surface. Existing credential and adapter CLIs stay as they are;
+they are not the assessment surface. Locksmith is not a required first-day
+role; Advisor remains the only required first-day assessment.
+
 ## The job
 
 **Aim** — every live key is owned, current, and revocable.
