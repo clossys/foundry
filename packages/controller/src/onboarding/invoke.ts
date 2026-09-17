@@ -5,9 +5,11 @@
  * package runner, no caller-supplied command, argument list or executable
  * path. The executable comes from the role's own validated `bin` mapping
  * (see `./discovery.ts`) and the single argument is the consumer-owned
- * evidence file at a derived path. Registry-credential environment variables
- * are removed from the child, because a role's first-day assessment reads
- * consumer evidence and has no business holding one.
+ * evidence file at a derived path. The child's environment is a fixed
+ * allowlist, never spread from `process.env` -- see {@link childEnvironment}
+ * for why a denylist is the wrong primitive for this boundary -- because a
+ * role's first-day assessment reads consumer evidence and has no business
+ * holding a credential of any shape.
  *
  * Whatever the role prints is parsed as JSON and carried onward untouched.
  * This module never repairs, defaults or normalizes it: an unparseable answer
@@ -18,8 +20,23 @@ import { statSync } from "node:fs";
 import { join } from "node:path";
 import type { AssessmentInvocationFailure, AssessmentSurface, RoleAssessmentObservation } from "./types.js";
 
-/** Environment names a child assessment must never inherit. */
-const STRIPPED_ENVIRONMENT = Object.freeze(["NODE_AUTH_TOKEN", "NPM_TOKEN", "NPM_CONFIG__AUTH", "NPM_CONFIG__AUTHTOKEN", "GH_TOKEN", "GITHUB_TOKEN", "GH_PACKAGES_TOKEN"] as const);
+/**
+ * Environment names a first-day assessment child may see. A denylist of
+ * credential names -- spread `process.env`, delete a short named list -- is
+ * the wrong primitive for this boundary: it can only ever be as complete as
+ * the list of credential shapes its author thought of, and has no answer for
+ * a cloud provider's own token, an SSH agent socket, or any other secret a
+ * consumer's shell happens to export that this module has never heard of.
+ * (An earlier version of this function used exactly that shape, and a
+ * review of this change is what caught it.) An assessment executable is a
+ * role package's own code, run on a real consumer's machine -- there is no
+ * bound on what it might be handed by accident, so the child gets an
+ * allowlist instead: PATH so Node and any toolchain it shells out to can be
+ * found, the HOME/TMPDIR family so code that expects a home or scratch
+ * directory does not fail outright, and the locale pair so printed evidence
+ * is not corrupted. Nothing on this list can carry a credential.
+ */
+const INHERITED_ENVIRONMENT = Object.freeze(["PATH", "HOME", "TMPDIR", "TEMP", "TMP", "LANG", "LC_ALL"] as const);
 
 export const DEFAULT_ASSESSMENT_TIMEOUT_MS = 120_000;
 
@@ -38,8 +55,11 @@ export interface AssessmentProcessResult {
 export type AssessmentInvoker = (surface: AssessmentSurface, inputPath: string, timeoutMs: number) => AssessmentProcessResult;
 
 function childEnvironment(): NodeJS.ProcessEnv {
-  const environment: NodeJS.ProcessEnv = { ...process.env };
-  for (const name of STRIPPED_ENVIRONMENT) delete environment[name];
+  const environment: NodeJS.ProcessEnv = {};
+  for (const name of INHERITED_ENVIRONMENT) {
+    const value = process.env[name];
+    if (value !== undefined) environment[name] = value;
+  }
   return environment;
 }
 
