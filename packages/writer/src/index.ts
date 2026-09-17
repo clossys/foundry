@@ -54,6 +54,12 @@ export { readCopyRecord } from "./registry.js";
 export type { CopyRegistryReadIssue, CopyRegistryReadIssueReason, CopyRegistryReadResult } from "./registry.js";
 
 export { checkCopyRecord } from "./checker.js";
+export { assessApprovedCopyCoverageRate } from "./approved-copy-coverage-rate.js";
+export type {
+  ApprovedCopyCoverageRateAssessment,
+  ApprovedCopyCoverageRateFinding,
+  ApprovedCopyCoverageRateState,
+} from "./approved-copy-coverage-rate.js";
 export type {
   CopyEntryCheckResult,
   CopyEntrySkip,

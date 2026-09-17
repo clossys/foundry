@@ -16,6 +16,45 @@ template; each consumer supplies its own language and facts.
 npm install @clossys/writer
 ```
 
+This package is published to the public npm registry, `https://registry.npmjs.org`.
+Installing it needs no authentication: no npm token, no `.npmrc` registry
+override, and no GitHub credential of any kind.
+
+## Approved copy coverage rate
+
+Independent consumer evidence shows the position's owned metric meets its
+setpoint over the declared review cadence. The owned metric is `approved
+copy coverage rate`, computed by `assessApprovedCopyCoverageRate()`. An
+empty evaluated set is `indeterminate`, never a perfect rate of 1.
+`checkCopyRecord` and `checkCopyTraceability` remain the gates they are;
+neither is this rate. This package does not measure consumer evidence and
+does not close the loop. A green run of this package's tests is not a close.
+
+```ts
+import { assessApprovedCopyCoverageRate } from "@clossys/writer";
+
+const report = assessApprovedCopyCoverageRate(input);
+```
+
+```bash
+writer-rate-check assessment.json
+```
+
+The command prints JSON and exits `0` for satisfied, `1` for violated, and
+`2` for indeterminate, unreadable, or invalid input.
+
+This package declares that command as its first-day assessment surface in
+its own manifest:
+
+```json
+"foundry": { "assessment": { "bin": "writer-rate-check", "invocation": "single-json-input" } }
+```
+
+Onboarding discovers that declaration from the installed manifest and never
+infers a surface. `writer-check` remains the multi-mode CLI and is not the
+assessment surface. Writer is not a required first-day role; Advisor
+remains the only required first-day assessment.
+
 ## Public entry points
 
 - `@clossys/writer` exposes both voice and copy-record APIs.
@@ -613,6 +652,10 @@ The root entry point exports the copy registry and traceability surface:
   `PathExclusionFindingRule`, and `PathExclusionValidation`.
 - Traceability: `checkCopyTraceability`, `CopyGateFinding`,
   `CopyGateIgnored`, `CopyGateResult`, and `CopyGateRule`.
+- Charter close metric: `assessApprovedCopyCoverageRate`,
+  `ApprovedCopyCoverageRateAssessment`, `ApprovedCopyCoverageRateFinding`,
+  and `ApprovedCopyCoverageRateState`. Not `checkCopyRecord` or
+  `checkCopyTraceability`.
 - Addressability (see above): `scanAddressabilitySources`,
   `extractAddressabilityCandidates`, `checkAddressability`,
   `AddressabilityGateResult`, `AddressabilityPosition`,

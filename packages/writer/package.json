@@ -1,6 +1,6 @@
 {
   "name": "@clossys/writer",
-  "version": "0.3.8",
+  "version": "0.3.9",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -19,7 +19,8 @@
     "./voice-record.template.jsonc": "./templates/voice-record.template.jsonc"
   },
   "bin": {
-    "writer-check": "dist/cli.js"
+    "writer-check": "dist/cli.js",
+    "writer-rate-check": "dist/approved-copy-coverage-rate-cli.js"
   },
   "files": [
     "dist",
@@ -31,6 +32,12 @@
     "LICENSE"
   ],
   "sideEffects": false,
+  "foundry": {
+    "assessment": {
+      "bin": "writer-rate-check",
+      "invocation": "single-json-input"
+    }
+  },
   "description": "The writer role: is it well said? A consumer-owned language system: voice rules, glossary and claims validation, addressable copy records, source traceability, locale coverage, and passage-layer composition — five gates reachable from one bin. Ships machinery and templates, never a consumer's actual copy or voice.",
   "keywords": [
     "writer",

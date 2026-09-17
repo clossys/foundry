@@ -3,6 +3,29 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.3.9] - 2026-09-18
+
+### Added
+
+- Documented installation against the public npm registry
+  (`https://registry.npmjs.org`) and that installing needs no authentication.
+- Stated the charter close condition in the README: independent consumer
+  evidence of `approved copy coverage rate`, computed by
+  `assessApprovedCopyCoverageRate()`. An empty evaluated set is
+  indeterminate, never a perfect rate of 1. `checkCopyRecord` and
+  `checkCopyTraceability` remain the gates they are; neither is this rate.
+- Declared `foundry.assessment` against a new mapped `writer-rate-check`
+  bin with `invocation: "single-json-input"`. `writer-check` remains the
+  multi-mode CLI and is not the assessment surface. Advisor remains the
+  only required first-day role.
+- `writer-rate-check assessment.json`: prints the `approved copy coverage
+  rate` report and exits on the `0` / `1` / `2` ternary.
+
+### Notes
+
+- This does not claim the position is closed. Qualification of `0.3.9` is
+  deferred under #833.
+
 ## [0.3.8] - 2026-09-16
 
 ### Added
