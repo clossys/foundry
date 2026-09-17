@@ -157,7 +157,12 @@ test("every suite in check:gates imports only node builtins and local scripts", 
   // as its own step, the way scripts/observation-bundle.test.mjs and
   // scripts/gate-run-history.test.mjs already are.
   const manifest = JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8"));
-  const suites = manifest.scripts["check:gates"].match(/scripts\/[A-Za-z0-9._-]+\.test\.mjs/g) ?? [];
+  // The lookbehind refuses to start a match partway through a longer path —
+  // without it, `.github/scripts/collect-credential-evidence.test.mjs`
+  // matches as a bare `scripts/collect-credential-evidence.test.mjs`
+  // (silently dropping the `.github/` prefix), which then fails to open
+  // below for a file that exists, just not at that path.
+  const suites = manifest.scripts["check:gates"].match(/(?<![\w/.-])(?:\.github\/)?scripts\/[A-Za-z0-9._-]+\.test\.mjs/g) ?? [];
   assert.ok(suites.length > 0, "expected check:gates to name at least one suite — fixture drift?");
 
   const offenders = [];

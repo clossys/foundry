@@ -255,9 +255,18 @@ jobs:
       # added to `check:gates`, which is the same trap one command vouching for
       # its siblings already set once.
       #
-      # Runs in this dependency-free job because every one of the ten imports
-      # only node builtins and local scripts; verified by grepping all ten for
-      # non-builtin, non-relative imports and finding none.
+      # Runs in this dependency-free job because every suite in that list
+      # imports only node builtins and local scripts. Deliberately stated
+      # without a count, which the "ten" above has already outlived: the list
+      # has grown, and re-measuring is cheaper than trusting a number. The
+      # measurement is a transitive import walk from every entry, failing any
+      # specifier that is neither `node:`-prefixed nor relative -- 45 entries
+      # reaching 84 local files, none of which import a package. That
+      # invariant now covers `.github/scripts/` too: the one entry outside
+      # scripts/ is collect-credential-evidence.test.mjs, whose subject
+      # reaches scripts/lib/gh-api.mjs and node builtins and nothing else. See
+      # the `//check-gates` note in package.json for why that suite is here
+      # rather than in check:verify-inputs.
       - name: gate regression tests
         run: npm run check:gates
 
