@@ -197,7 +197,8 @@ describe("parseTaskReference", () => {
     ["#12", { scope: "fallback/scope", number: "12" }],
     ["12", { scope: "fallback/scope", number: "12" }],
     ["a-scope/a-project#12", { scope: "a-scope/a-project", number: "12" }],
-    ["https://tracker.example/a-scope/a-project/issues/12", { scope: "a-scope/a-project", number: "12" }],
+    ["https://tracker.example/a-scope/a-project/issues/12", { scope: "a-scope/a-project", host: "tracker.example", number: "12" }],
+    ["https://tracker.example:8443/a-scope/a-project/issues/12", { scope: "a-scope/a-project", host: "tracker.example:8443", number: "12" }],
   ])("parses %s", (raw, expected) => {
     expect(parseTaskReference(raw, "fallback/scope")).toMatchObject(expected);
   });
@@ -219,6 +220,12 @@ describe("parseTaskReference", () => {
     // attached to the token, so the anchored pattern used to reject a
     // reference that was plainly there.
     expect(parseTaskReference(raw, "fallback/scope")).toMatchObject(expected);
+  });
+
+  it.each(["#12", "12", "a-scope/a-project#12"])("reads no host out of %s, which names none", (raw) => {
+    // A host invented for a host-less reference would be the check deciding,
+    // on the author's behalf, which tracker they meant.
+    expect(parseTaskReference(raw, "fallback/scope")).not.toHaveProperty("host");
   });
 
   it("keeps raw exactly as it was written, delimiters and all", () => {
@@ -444,6 +451,170 @@ describe("checkTaskRecord", () => {
     it("declines when no observation or no policy was supplied", () => {
       expect(checkTaskRecord(undefined, policy).result).toMatchObject({ reason: "no-observation-supplied" });
       expect(checkTaskRecord(change(), undefined).result).toMatchObject({ reason: "no-policy-supplied" });
+    });
+  });
+
+  describe("a reference is answered by the repository it names, or by nothing", () => {
+    // Every case here is built the one way that can tell a real resolution
+    // from a retargeted one: the reference names ANOTHER repository, and the
+    // lookup handed to the check came back "resolved". A check that reports
+    // satisfied has validated the local object carrying that number, which is
+    // an unrelated object. A weaker implementation that merely "handles"
+    // cross-repository references passes every test that does not construct
+    // that collision, so every test below constructs it.
+    const resolvedLocally = { outcome: "resolved", title: "an unrelated local object of the same number" } as const;
+
+    it("does not let a same-numbered local object stand in for another repository's item", () => {
+      const report = checkTaskRecord(
+        change({ description: "Work item: elsewhere/other#42", item: resolvedLocally }),
+        policy,
+      );
+      expect(report.result).toMatchObject({ verdict: "indeterminate", reason: "item-outside-tracker-scope" });
+      expect(gateResultToExitCode(report.result)).toBe(2);
+    });
+
+    it("does not let a same-numbered local object stand in for another TRACKER's item", () => {
+      // The sharper half of the same defect: owner and name match this run's
+      // own scope exactly, and only the host differs. A scope comparison that
+      // drops the host reads this as a local reference and validates local
+      // #42 against a URL that names someone else's tracker entirely.
+      const report = checkTaskRecord(
+        change({
+          description: "Work item: https://other-tracker.invalid/a-scope/a-project/issues/42",
+          trackerHost: "tracker.invalid",
+          item: resolvedLocally,
+        }),
+        policy,
+      );
+      expect(report.result).toMatchObject({ verdict: "indeterminate", reason: "item-outside-tracker-host" });
+      expect(report.result.detail).toContain("other-tracker.invalid");
+      expect(gateResultToExitCode(report.result)).toBe(2);
+    });
+
+    it("declines a host-bearing reference when the run states no host of its own", () => {
+      // Silence about the host is not agreement about the host. With nothing
+      // stated to compare against, "is this our tracker?" has no answer, and
+      // an unanswered question is not a match.
+      const report = checkTaskRecord(
+        change({
+          description: "Work item: https://other-tracker.invalid/a-scope/a-project/issues/42",
+          item: resolvedLocally,
+        }),
+        policy,
+      );
+      expect(report.result).toMatchObject({ verdict: "indeterminate", reason: "item-tracker-host-unstated" });
+      expect(gateResultToExitCode(report.result)).toBe(2);
+    });
+
+    it("declines when the lookup examined a different repository than the reference names", () => {
+      // The retargeting made visible: the caller says plainly that it looked
+      // in its own repository, for a reference that names another one.
+      const report = checkTaskRecord(
+        change({
+          description: "Work item: elsewhere/other#42",
+          item: { ...resolvedLocally, lookupScope: "a-scope/a-project" },
+        }),
+        policy,
+      );
+      expect(report.result).toMatchObject({ verdict: "indeterminate", reason: "item-lookup-target-mismatch" });
+      expect(report.result.detail).toContain("a-scope/a-project#42");
+      expect(report.result.detail).toContain("elsewhere/other#42");
+    });
+
+    it("declines when the lookup examined the right path on a different host", () => {
+      const report = checkTaskRecord(
+        change({
+          description: "Work item: https://tracker.invalid/elsewhere/other/issues/42",
+          trackerHost: "tracker.invalid",
+          item: { ...resolvedLocally, lookupScope: "elsewhere/other", lookupHost: "other-tracker.invalid" },
+        }),
+        policy,
+      );
+      expect(report.result).toMatchObject({ verdict: "indeterminate", reason: "item-lookup-target-mismatch" });
+    });
+
+    it("resolves a cross-repository reference when the lookup was aimed at the repository it names", () => {
+      // The other half of the contract, and the reason the check does not
+      // simply refuse every foreign reference: a caller whose credential
+      // genuinely reaches the named repository, and who says so, gets a real
+      // verdict rather than a permanent indeterminate it would learn to
+      // route around.
+      const report = checkTaskRecord(
+        change({
+          description: "Work item: elsewhere/other#42",
+          item: { outcome: "resolved", title: "the item actually referenced", lookupScope: "elsewhere/other" },
+        }),
+        policy,
+      );
+      expect(report.result).toMatchObject({ verdict: "satisfied", evaluated: 2 });
+      expect(report.reference).toMatchObject({ scope: "elsewhere/other", number: "42" });
+    });
+
+    it("resolves a cross-tracker reference when the lookup was aimed at that tracker", () => {
+      const report = checkTaskRecord(
+        change({
+          description: "Work item: https://other-tracker.invalid/elsewhere/other/issues/42",
+          trackerHost: "tracker.invalid",
+          item: {
+            outcome: "resolved",
+            lookupScope: "elsewhere/other",
+            lookupHost: "other-tracker.invalid",
+          },
+        }),
+        policy,
+      );
+      expect(report.result).toMatchObject({ verdict: "satisfied", evaluated: 2 });
+    });
+
+    it("still judges a cross-repository lookup that did not resolve, rather than passing it", () => {
+      const report = checkTaskRecord(
+        change({
+          description: "Work item: elsewhere/other#42",
+          item: { outcome: "resolved-wrong-kind", detail: "it is a proposed change", lookupScope: "elsewhere/other" },
+        }),
+        policy,
+      );
+      expect(report.result).toMatchObject({ verdict: "violated" });
+      expect(report.result.findings?.[0]).toMatchObject({ rule: "task-record-wrong-kind" });
+    });
+
+    it.each(["unavailable", "not-visible"] as const)(
+      "reports a named repository this run could not read as indeterminate, never as a finding (%s)",
+      (outcome) => {
+        // Unreachable, private and absent are one answer from a scoped
+        // credential, and none of them is a fact about the change. A gate
+        // that failed a change over a third party's repository being private
+        // would be routed around within a week.
+        const report = checkTaskRecord(
+          change({
+            description: "Work item: elsewhere/other#42",
+            item: { outcome, lookupScope: "elsewhere/other" },
+          }),
+          policy,
+        );
+        expect(report.result.verdict).toBe("indeterminate");
+        expect(gateResultToExitCode(report.result)).toBe(2);
+      },
+    );
+
+    it("compares host and scope case-insensitively, and does not compare anything else", () => {
+      const report = checkTaskRecord(
+        change({
+          description: "Work item: https://Tracker.Invalid/A-Scope/A-Project/issues/42",
+          trackerHost: "tracker.invalid",
+        }),
+        policy,
+      );
+      expect(report.result).toMatchObject({ verdict: "satisfied", evaluated: 2 });
+    });
+
+    it.each([
+      ["trackerHost", { trackerHost: "" }],
+      ["item.lookupScope", { item: { outcome: "resolved", lookupScope: "" } }],
+      ["item.lookupHost without a scope", { item: { outcome: "resolved", lookupHost: "tracker.invalid" } }],
+    ])("is indeterminate rather than guessing when %s is stated as nothing", (_name, broken) => {
+      const report = checkTaskRecord({ ...change(), ...broken } as unknown as TaskRecordObservation, policy);
+      expect(report.result).toMatchObject({ verdict: "indeterminate", reason: "observation-invalid" });
     });
   });
 
