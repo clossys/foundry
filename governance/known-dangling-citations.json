@@ -1,0 +1,841 @@
+{
+  "issue": "#941",
+  "note": "CLASS 1 citations that predate the extension-generalising fix in #935. Each entry waives one cited path in one file of one package. This file is a RATCHET, not an exemption: the gate refuses to let the set grow, and an entry that no longer matches anything is itself a finding, so fixing a citation and deleting its entry are the same commit. Every run prints the waived set. When this file is empty, delete it and close #941.",
+  "packages": {
+    "architect": {
+      "CHANGELOG.md": [
+        "bin-entry.test.ts",
+        "cli.test.ts",
+        "designer/src/cli.ts",
+        "governance/release-qualifications/clossys-architect-0.1.7.json",
+        "writer/src/cli.ts"
+      ]
+    },
+    "bouncer": {
+      "CHANGELOG.md": [
+        "auth-clerk.test.ts",
+        "governance/release-qualifications/clossys-bouncer-0.1.4.json",
+        "packages/auth/src/providers/clerk/auth-clerk.test.ts",
+        "src/internal/peer-guard-coverage.test.ts"
+      ],
+      "src/internal/peer-version.ts": [
+        "packages/auth/src/internal/peer-version.ts"
+      ]
+    },
+    "builder": {
+      "CHANGELOG.md": [
+        "./deployment/health.ts",
+        "./live-state.ts",
+        "./machine/bin.ts",
+        "./machine/cli.ts",
+        "./observation-aggregate.ts",
+        "./observation-bundle.ts",
+        "skills-manifest.test.ts",
+        "src/ci/cli.test.ts"
+      ],
+      "README.md": [
+        "../composition.ts",
+        "../types.ts",
+        "./bin.ts",
+        "./cli.ts",
+        "./discovery.ts",
+        "./machine-layer.ts",
+        "./report.ts",
+        "./skills-manifest.test.ts",
+        "./skills-manifest.ts",
+        "./third-party.ts"
+      ],
+      "src/ci/cli.ts": [
+        "cli.test.ts"
+      ],
+      "src/ci/version.ts": [
+        "src/version.ts"
+      ],
+      "src/live-state.ts": [
+        "conventions/live-state.ts"
+      ],
+      "src/machine/machine-layer.ts": [
+        "packages/observer/src/coverage-declaration.ts"
+      ],
+      "src/machine/skills-manifest.ts": [
+        "report.test.ts"
+      ]
+    },
+    "butler": {
+      "README.md": [
+        "./intents.json"
+      ],
+      "src/audit-shape.check.ts": [
+        "scripts/check-typechecked-assertions.mjs"
+      ],
+      "src/cli.ts": [
+        "cli.test.ts"
+      ],
+      "src/web/index.ts": [
+        "peer-guard.test.ts"
+      ],
+      "src/web/internal/peer-version.ts": [
+        "packages/consent/src/web/internal/peer-version.ts",
+        "scripts/check-workspace-links.mjs"
+      ]
+    },
+    "controller": {
+      "CHANGELOG.md": [
+        "./routines.ts",
+        "./schedules.ts",
+        ".github/workflows/publish.yml",
+        "catalog/build.test.ts",
+        "catalog/evaluate.test.ts",
+        "check-workspace-links.test.mjs",
+        "gates/cli.test.ts",
+        "gates/cli.ts",
+        "gates/foundation.test.ts",
+        "gates/index.ts",
+        "gates/result.ts",
+        "gates/secret-gates.ts",
+        "gates/typescript-required.test.ts",
+        "governance/repository-profile.json",
+        "public-contract.test.ts",
+        "repository/cli.ts",
+        "review/cli.ts",
+        "root-entry-boundary.test.ts",
+        "secret-gates.test.ts",
+        "src/repository/evaluate.test.ts",
+        "src/repository/installed-bin.test.ts",
+        "src/repository/validate.test.ts",
+        "src/testing/permission-enforcement.ts"
+      ],
+      "README.md": [
+        "./routines.ts",
+        "./schedules.ts",
+        "docs/contracts/repository-package-adoption.fixture.json",
+        "gates/index.ts",
+        "gates/secrets.ts",
+        "gates/typescript-required.test.ts",
+        "governance/repository-profile.json",
+        "installed-bin.test.ts",
+        "packages/controller/src/cleanup/classify.ts",
+        "packages/controller/src/cleanup/types.ts",
+        "packages/controller/src/gates/secret-gates.ts",
+        "packages/controller/src/review/types.ts",
+        "packages/controller/src/review/validate.ts",
+        "scripts/check-neutrality.mjs",
+        "src/artifacts/verify.test.ts",
+        "src/cleanup/no-deletion-api.test.ts",
+        "src/cleanup/parity.test.ts"
+      ],
+      "src/artifacts/verify.ts": [
+        "scripts/check-release-readiness.mjs",
+        "verify.test.ts"
+      ],
+      "src/catalog/build.ts": [
+        "packages/a/package.json"
+      ],
+      "src/catalog/evaluate.ts": [
+        "build.test.ts"
+      ],
+      "src/catalog/index.ts": [
+        "scripts/check-public-safety.mjs"
+      ],
+      "src/catalog/types.ts": [
+        "packages/foo/package.json",
+        "packages/tier/foo/package.json"
+      ],
+      "src/cleanup/classify.ts": [
+        "classify.test.ts"
+      ],
+      "src/cleanup/index.ts": [
+        "no-deletion-api.test.ts"
+      ],
+      "src/cli.ts": [
+        "cli.test.ts"
+      ],
+      "src/gates/index.ts": [
+        "installed-bin.test.ts",
+        "root-entry-boundary.test.ts"
+      ],
+      "src/gates/result.ts": [
+        "scripts/test-gates.mjs"
+      ],
+      "src/gates/secret-gates.ts": [
+        "governance.test.ts",
+        "installed-bin.test.ts",
+        "root-entry-boundary.test.ts",
+        "secret-gates.test.ts"
+      ],
+      "src/gates/secrets.ts": [
+        "installed-bin.test.ts"
+      ],
+      "src/governance.ts": [
+        "root-entry-boundary.test.ts"
+      ],
+      "src/internal/peer-version.ts": [
+        "packages/auth/package.json",
+        "packages/surface/package.json",
+        "scripts/check-workspace-links.mjs"
+      ],
+      "src/lifecycle.ts": [
+        "packages/consent/src/web/internal/peer-version.ts",
+        "scripts/check-workspace-links.mjs"
+      ],
+      "src/policy/self-license.ts": [
+        "src/self-host.test.ts"
+      ],
+      "src/release/pack-round-trip.ts": [
+        "pack-round-trip.test.ts",
+        "preflight.test.ts"
+      ],
+      "src/repository/cli.ts": [
+        "governance/repository-profile.json"
+      ],
+      "src/repository/locate.ts": [
+        "governance/repository-profile.json"
+      ],
+      "src/repository/run-cli.ts": [
+        "governance/repository-profile.json"
+      ],
+      "src/review/types.ts": [
+        "src/currency.ts"
+      ]
+    },
+    "designer": {
+      "CHANGELOG.md": [
+        "atoms/ProgressBar.tsx",
+        "atoms/Skeleton.tsx",
+        "atoms/internal/cx.optional-peer.test.ts",
+        "atoms/internal/cx.ts",
+        "blocks/DataTable.tsx",
+        "environment-conformance.adversarial.test.ts",
+        "gates/secret-gates.ts",
+        "internal/peer-version.ts",
+        "ladder.test.ts",
+        "peer-guard-coverage.test.ts",
+        "public-contract.test.ts",
+        "theme/server.ts"
+      ],
+      "README.md": [
+        "ArticleBody.test.tsx",
+        "AuthView.test.tsx",
+        "Avatar.test.tsx",
+        "Badge.test.tsx",
+        "Banner.test.tsx",
+        "BarChart.test.tsx",
+        "Breadcrumb.test.tsx",
+        "Button.test.tsx",
+        "Card.test.tsx",
+        "ChartFrame.test.tsx",
+        "Checkbox.test.tsx",
+        "Chip.test.tsx",
+        "ComboBox.test.tsx",
+        "ConfirmDialog.test.tsx",
+        "DataTable.test.tsx",
+        "DateField.test.tsx",
+        "DetailView.test.tsx",
+        "Dialog.test.tsx",
+        "Disclosure.test.tsx",
+        "EmptyState.test.tsx",
+        "ErrorView.test.tsx",
+        "Faq.test.tsx",
+        "FeatureGrid.test.tsx",
+        "Field.test.tsx",
+        "FieldGroup.test.tsx",
+        "FileTrigger.test.tsx",
+        "Form.test.tsx",
+        "Hero.test.tsx",
+        "LineChart.test.tsx",
+        "Link.test.tsx",
+        "Menu.test.tsx",
+        "NavGrid.test.tsx",
+        "NavShell.test.tsx",
+        "PageHeader.test.tsx",
+        "Pagination.test.tsx",
+        "Popover.test.tsx",
+        "PricingTable.test.tsx",
+        "ProgressBar.test.tsx",
+        "RadioGroup.test.tsx",
+        "SearchField.test.tsx",
+        "SectionHeader.test.tsx",
+        "Select.test.tsx",
+        "Separator.test.tsx",
+        "Shell.test.tsx",
+        "SiteFooter.test.tsx",
+        "SiteHeader.test.tsx",
+        "Skeleton.test.tsx",
+        "SkipLink.test.tsx",
+        "Sparkline.test.tsx",
+        "Spinner.test.tsx",
+        "Stat.test.tsx",
+        "Switch.test.tsx",
+        "Table.test.tsx",
+        "Tabs.test.tsx",
+        "Testimonial.test.tsx",
+        "TextField.test.tsx",
+        "Textarea.test.tsx",
+        "ThemeProvider.test.tsx",
+        "ThemeToggle.test.tsx",
+        "Toaster.test.tsx",
+        "Toolbar.test.tsx",
+        "Tooltip.test.tsx",
+        "atoms/Icon.tsx",
+        "atoms/internal/cx.ts",
+        "atoms/internal/ui-vars.ts",
+        "blocks/index.ts",
+        "contrast.test.ts",
+        "environment-conformance-cli.test.ts",
+        "environment-conformance-worker.test.ts",
+        "environment-conformance.adversarial.test.ts",
+        "environment-conformance.test.ts",
+        "icons/types.ts",
+        "initScript.test.ts",
+        "internal/chart-vars.test.ts",
+        "internal/cx.test.ts",
+        "internal/scale.test.ts",
+        "internal/theme-core.test.ts",
+        "ladder.test.ts",
+        "override.test.ts",
+        "render-environment.test.ts",
+        "scripts/generate-icons.mjs",
+        "scripts/icon-source-data.json",
+        "src/compiled-css/coverage.test.tsx",
+        "src/contrast.test.ts",
+        "src/icons/icons.test.ts",
+        "src/icons/tree-shake.test.ts",
+        "src/ladder.test.ts",
+        "src/theme/theme-script-parity.test.ts",
+        "theme/theme-script-parity.test.ts",
+        "token-parity.test.ts"
+      ],
+      "THIRD-PARTY-NOTICES.md": [
+        "scripts/generate-icons.mjs",
+        "scripts/icon-source-data.json"
+      ],
+      "TOKENS.md": [
+        "contrast.test.ts",
+        "parity.test.ts",
+        "src/contrast.test.ts",
+        "src/tailwind-builtin-collision.test.ts",
+        "src/theme-parity.test.ts"
+      ],
+      "src/atoms/Banner.tsx": [
+        "ladder.test.ts"
+      ],
+      "src/atoms/Dialog.tsx": [
+        "token-parity.test.ts"
+      ],
+      "src/atoms/Icon.tsx": [
+        "src/types.ts"
+      ],
+      "src/atoms/Select.tsx": [
+        "ladder.test.ts"
+      ],
+      "src/atoms/Table.tsx": [
+        "ladder.test.ts"
+      ],
+      "src/atoms/internal/cx.ts": [
+        "cx.test.ts"
+      ],
+      "src/atoms/internal/icon-contract.check.tsx": [
+        "Icon.test.tsx",
+        "src/ladder.test.ts"
+      ],
+      "src/atoms/server.ts": [
+        "render-environment.test.ts"
+      ],
+      "src/blocks/index.ts": [
+        "ladder.test.ts"
+      ],
+      "src/blocks/server.ts": [
+        "render-environment.test.ts"
+      ],
+      "src/charts/index.ts": [
+        "src/ladder.test.ts"
+      ],
+      "src/charts/server.ts": [
+        "render-environment.test.ts"
+      ],
+      "src/cli.ts": [
+        "cli.test.ts"
+      ],
+      "src/compiled-css/check.ts": [
+        "scripts/set-scope.mjs"
+      ],
+      "src/compiled-css/class-scan.ts": [
+        "coverage.test.ts"
+      ],
+      "src/compiled-css/generate.ts": [
+        "./tokens.css",
+        "declared-peer-ranges.test.ts",
+        "override.test.ts",
+        "src/compiled-css/check.test.ts"
+      ],
+      "src/environment-conformance-cli.ts": [
+        "environment-conformance-cli.test.ts",
+        "environment-conformance.adversarial.test.ts"
+      ],
+      "src/environment-conformance-worker.ts": [
+        "environment-conformance-worker.test.ts"
+      ],
+      "src/environment-conformance.ts": [
+        "environment-conformance.adversarial.test.ts",
+        "environment-conformance.test.ts"
+      ],
+      "src/gate-index.ts": [
+        "scripts/check-readme-parity.mjs"
+      ],
+      "src/icons/AlertTriangle.ts": [
+        "scripts/generate-icons.mjs"
+      ],
+      "src/icons/BookOpen.ts": [
+        "scripts/generate-icons.mjs"
+      ],
+      "src/icons/Box.ts": [
+        "scripts/generate-icons.mjs"
+      ],
+      "src/icons/Building2.ts": [
+        "scripts/generate-icons.mjs"
+      ],
+      "src/icons/Calendar.ts": [
+        "scripts/generate-icons.mjs"
+      ],
+      "src/icons/Check.ts": [
+        "scripts/generate-icons.mjs"
+      ],
+      "src/icons/CheckCircle.ts": [
+        "scripts/generate-icons.mjs"
+      ],
+      "src/icons/ChevronDown.ts": [
+        "scripts/generate-icons.mjs"
+      ],
+      "src/icons/ChevronLeft.ts": [
+        "scripts/generate-icons.mjs"
+      ],
+      "src/icons/ChevronRight.ts": [
+        "scripts/generate-icons.mjs"
+      ],
+      "src/icons/ChevronUp.ts": [
+        "scripts/generate-icons.mjs"
+      ],
+      "src/icons/Clock.ts": [
+        "scripts/generate-icons.mjs"
+      ],
+      "src/icons/CreditCard.ts": [
+        "scripts/generate-icons.mjs"
+      ],
+      "src/icons/ExternalLink.ts": [
+        "scripts/generate-icons.mjs"
+      ],
+      "src/icons/FileText.ts": [
+        "scripts/generate-icons.mjs"
+      ],
+      "src/icons/Folder.ts": [
+        "scripts/generate-icons.mjs"
+      ],
+      "src/icons/Grid3x3.ts": [
+        "scripts/generate-icons.mjs"
+      ],
+      "src/icons/Home.ts": [
+        "scripts/generate-icons.mjs"
+      ],
+      "src/icons/Info.ts": [
+        "scripts/generate-icons.mjs"
+      ],
+      "src/icons/List.ts": [
+        "scripts/generate-icons.mjs"
+      ],
+      "src/icons/Lock.ts": [
+        "scripts/generate-icons.mjs"
+      ],
+      "src/icons/Monitor.ts": [
+        "scripts/generate-icons.mjs"
+      ],
+      "src/icons/Moon.ts": [
+        "scripts/generate-icons.mjs"
+      ],
+      "src/icons/Plug.ts": [
+        "scripts/generate-icons.mjs"
+      ],
+      "src/icons/Receipt.ts": [
+        "scripts/generate-icons.mjs"
+      ],
+      "src/icons/Search.ts": [
+        "scripts/generate-icons.mjs"
+      ],
+      "src/icons/Settings.ts": [
+        "scripts/generate-icons.mjs"
+      ],
+      "src/icons/Sun.ts": [
+        "scripts/generate-icons.mjs"
+      ],
+      "src/icons/User.ts": [
+        "scripts/generate-icons.mjs"
+      ],
+      "src/icons/Users.ts": [
+        "scripts/generate-icons.mjs"
+      ],
+      "src/icons/X.ts": [
+        "scripts/generate-icons.mjs"
+      ],
+      "src/icons/XCircle.ts": [
+        "scripts/generate-icons.mjs"
+      ],
+      "src/icons/index.ts": [
+        "scripts/generate-icons.mjs"
+      ],
+      "src/icons/types.ts": [
+        "ladder.test.ts",
+        "src/ladder.test.ts"
+      ],
+      "src/index.ts": [
+        "scripts/check-readme-parity.mjs"
+      ],
+      "src/internal/declared-peer-ranges.ts": [
+        "declared-peer-ranges.test.ts"
+      ],
+      "src/internal/peer-version.ts": [
+        "scripts/check-workspace-links.mjs"
+      ],
+      "src/render-environment.ts": [
+        "environment-conformance.adversarial.test.ts",
+        "render-environment.test.ts"
+      ],
+      "src/shell/SiteHeader.tsx": [
+        "src/ladder.test.ts"
+      ],
+      "src/shell/index.ts": [
+        "src/ladder.test.ts"
+      ],
+      "src/shell/internal/shell-contract.check.tsx": [
+        "../Shell.test.tsx",
+        "Shell.test.tsx"
+      ],
+      "src/shell/internal/shell-vars.ts": [
+        "token-parity.test.ts"
+      ],
+      "src/shell/server.ts": [
+        "render-environment.test.ts"
+      ],
+      "src/style-scan.ts": [
+        "packages/ui/package.json",
+        "scripts/check-typechecked-assertions.mjs"
+      ],
+      "src/theme/ThemeProvider.tsx": [
+        "theme-script-parity.test.ts"
+      ],
+      "src/theme/index.ts": [
+        "src/ladder.test.ts"
+      ],
+      "src/theme/initScript.ts": [
+        "theme-script-parity.test.ts"
+      ],
+      "src/theme/internal/theme-core.ts": [
+        "theme-core.test.ts",
+        "theme-script-parity.test.ts"
+      ],
+      "src/theme/server.ts": [
+        "render-environment.test.ts"
+      ],
+      "src/token-gate.ts": [
+        "packages/ui/src/atoms/internal/ui-vars.ts"
+      ],
+      "src/tokens/assert-tailwind-merge-version.ts": [
+        "atoms/internal/cx.test.ts"
+      ],
+      "src/tokens/check-brand-file-coverage.ts": [
+        "brand-coverage.test.ts",
+        "src/brand-coverage.test.ts"
+      ],
+      "src/tokens/cli.ts": [
+        "cli.test.ts"
+      ],
+      "src/tokens/color.ts": [
+        "contrast.test.ts"
+      ],
+      "src/tokens/contrast-cli.ts": [
+        "contrast-cli.test.ts",
+        "contrast.test.ts"
+      ],
+      "src/tokens/contrast-gate.ts": [
+        "contrast.test.ts"
+      ],
+      "src/tokens/contrast-pairs.ts": [
+        "contrast.test.ts",
+        "theme-parity.test.ts"
+      ],
+      "src/tokens/internal/cascade.ts": [
+        "src/dark-mode-cascade.test.ts"
+      ],
+      "src/tokens/internal/registry-from-css.ts": [
+        "contrast.test.ts",
+        "theme-parity.test.ts"
+      ],
+      "src/tokens/internal/resolve-token-value.ts": [
+        "parity.test.ts",
+        "theme-parity.test.ts"
+      ],
+      "src/tokens/read-brand-css.ts": [
+        "scripts/check-public-safety.mjs"
+      ],
+      "src/tokens/tokens.ts": [
+        "parity.test.ts",
+        "src/theme-parity.test.ts"
+      ],
+      "styles/brand-template.css": [
+        "src/dark-mode-cascade.test.ts",
+        "src/theme-parity.test.ts"
+      ],
+      "styles/compiled.css": [
+        "src/compiled-css/check.test.ts"
+      ],
+      "styles/tokens.css": [
+        "contrast.test.ts",
+        "dark-mode-cascade.test.ts",
+        "parity.test.ts",
+        "src/contrast.test.ts",
+        "src/dark-mode-cascade.test.ts",
+        "src/theme-parity.test.ts"
+      ]
+    },
+    "giver": {
+      "README.md": [
+        "./obligations.json"
+      ],
+      "src/cli.ts": [
+        "cli.test.ts"
+      ]
+    },
+    "inspector": {
+      "CHANGELOG.md": [
+        ".github/workflows/verify-standards.yml",
+        "scripts/run-candidate-qualification.test.mjs",
+        "src/bin.actions-shell.test.ts",
+        "src/cli.test.ts"
+      ],
+      "documents/caller-workflow.md": [
+        ".github/workflows/ci.yml"
+      ]
+    },
+    "integrator": {
+      "CHANGELOG.md": [
+        "scripts/check-package-visibility.mjs"
+      ],
+      "README.md": [
+        "./package-lock.json",
+        "./supersession-map.json",
+        "scripts/check-package-visibility.mjs"
+      ],
+      "src/cli.ts": [
+        "cli.test.ts"
+      ],
+      "src/reachability.ts": [
+        "scripts/check-package-visibility.mjs",
+        "scripts/select-publishable-packages.mjs"
+      ]
+    },
+    "keeper": {
+      "src/cli.ts": [
+        "cli.test.ts"
+      ],
+      "src/justification.check.ts": [
+        "scripts/check-typechecked-assertions.mjs"
+      ],
+      "src/web/index.ts": [
+        "index.test.ts"
+      ],
+      "src/web/internal/peer-version.ts": [
+        "scripts/check-workspace-links.mjs"
+      ]
+    },
+    "locksmith": {
+      "CHANGELOG.md": [
+        "./credential.ts",
+        "governance/release-qualifications/clossys-locksmith-0.2.3.json",
+        "infisical/cli.ts",
+        "no-value-escapes.test.ts"
+      ],
+      "README.md": [
+        "no-value-escapes.test.ts"
+      ]
+    },
+    "messenger": {
+      "src/internal/peer-version.ts": [
+        "scripts/check-workspace-links.mjs"
+      ],
+      "src/providers/resend/index.ts": [
+        "public-contract.test.ts"
+      ]
+    },
+    "observer": {
+      "CHANGELOG.md": [
+        "./index.ts",
+        "ci/bin.ts",
+        "ci/cli.ts",
+        "coverage.test.ts",
+        "metrics-non-combination.test.ts",
+        "redaction.test.ts"
+      ],
+      "README.md": [
+        "metrics-non-combination.test.ts",
+        "observation.test.ts",
+        "packages/integrator/src/inventory.ts",
+        "redaction.test.ts"
+      ],
+      "src/bin.ts": [
+        "ci/bin.ts",
+        "ci/cli.ts"
+      ],
+      "src/cli.ts": [
+        "ci/bin.ts",
+        "ci/cli.ts"
+      ],
+      "src/coverage.ts": [
+        "metrics-non-combination.test.ts",
+        "packages/integrator/src/inventory.ts"
+      ],
+      "src/live-state.ts": [
+        "conventions/live-state.ts"
+      ],
+      "src/metrics.check.ts": [
+        "metrics-non-combination.test.ts",
+        "packages/consent/src/audit-shape.check.ts"
+      ],
+      "src/redaction.ts": [
+        "redaction.test.ts"
+      ]
+    },
+    "publisher": {
+      "README.md": [
+        "../internal/assets.ts",
+        "internal/errors.ts",
+        "packages/auth/src/redirect.ts"
+      ],
+      "src/document/types.ts": [
+        "packages/surface/src/web/views/ErrorView.tsx"
+      ],
+      "src/document/validate.ts": [
+        "packages/auth/src/redirect.ts"
+      ],
+      "src/email/internal/emailDocument.ts": [
+        "../golden-render.test.ts"
+      ],
+      "src/email/internal/escapeHtml.ts": [
+        "internal/jsonLd.ts"
+      ],
+      "src/email/internal/styles.ts": [
+        "renderEmailDocument.test.ts"
+      ],
+      "src/image/renderSlots.ts": [
+        "engine.test.ts"
+      ],
+      "src/image/resolveCanvasLayout.ts": [
+        "resolveImageDocument.test.ts"
+      ],
+      "src/index.ts": [
+        "scripts/check-readme-parity.mjs"
+      ],
+      "src/internal/assets.ts": [
+        "packages/auth/src/redirect.ts"
+      ],
+      "src/internal/peer-version.ts": [
+        "scripts/check-workspace-links.mjs"
+      ],
+      "src/internal/typography.ts": [
+        "internal/styles.ts",
+        "typography.test.ts"
+      ],
+      "src/media/cli.ts": [
+        "cli.test.ts"
+      ],
+      "src/media/types.ts": [
+        "packages/surface/src/core/types.ts"
+      ],
+      "src/print/renderPrintDocument.ts": [
+        "internal/webTemplates.ts"
+      ],
+      "src/record/cli.ts": [
+        "cli.test.ts"
+      ],
+      "src/web/internal/createWebRenderer.ts": [
+        "packages/auth/src/redirect.ts"
+      ],
+      "src/web/renderWebDocument.ts": [
+        "../types.ts",
+        "renderWebDocument.test.ts"
+      ],
+      "src/web/views/internal/view-vars.ts": [
+        "atoms/internal/ui-vars.ts",
+        "ladder.test.ts",
+        "shell/internal/shell-vars.ts",
+        "styles/tokens.css"
+      ]
+    },
+    "starter": {
+      "README.md": [
+        "evidence/assessment.json"
+      ],
+      "documents/caller-workflow.md": [
+        "evidence/assessment.json"
+      ]
+    },
+    "strategist": {
+      "README.md": [
+        "brand-coverage.test.ts"
+      ],
+      "src/brand-derivation.ts": [
+        "brand-coverage.test.ts"
+      ],
+      "src/cli.ts": [
+        "cli.test.ts"
+      ],
+      "src/index.ts": [
+        "brand-coverage.test.ts"
+      ],
+      "src/scan.ts": [
+        "scripts/check-contamination-classes.mjs"
+      ]
+    },
+    "writer": {
+      "CHANGELOG.md": [
+        "passage.adversarial.test.ts"
+      ],
+      "README.md": [
+        "packages/writer/src/voice/checker.test.ts",
+        "passage.adversarial.test.ts"
+      ],
+      "src/addressability.ts": [
+        "packages/inspector/src/review-evidence.ts"
+      ],
+      "src/cli.ts": [
+        "cli.test.ts",
+        "packages/inspector/src/cli.ts"
+      ],
+      "src/fingerprint.ts": [
+        "scripts/check-release-readiness.mjs"
+      ],
+      "src/passage.ts": [
+        "passage.adversarial.test.ts"
+      ],
+      "src/scan.ts": [
+        "packages/ui/src/atoms/Table.tsx",
+        "packages/ui/src/atoms/internal/cx.ts",
+        "packages/ui/src/blocks/Pagination.tsx",
+        "scripts/check-contamination-classes.mjs"
+      ],
+      "src/voice/checker.ts": [
+        "checker.test.ts"
+      ],
+      "src/voice/derivation-coverage.ts": [
+        "derivation-coverage.test.ts",
+        "packages/strategy/src/brand-derivation.ts"
+      ],
+      "src/voice/fields.ts": [
+        "brand-coverage.test.ts",
+        "src/field-coverage.test.ts",
+        "styles/tokens.css"
+      ],
+      "src/voice/internal/parse-template.ts": [
+        "internal/parse-css.ts",
+        "src/field-coverage.test.ts"
+      ]
+    }
+  }
+}

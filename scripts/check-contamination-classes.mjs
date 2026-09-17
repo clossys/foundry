@@ -107,7 +107,7 @@
 // separate, harder gate that still has to pass before anything publishes.
 
 import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
-import { join, relative, extname, resolve, dirname, sep } from "node:path";
+import { join, relative, extname, resolve, dirname, basename, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { execFileSync } from "node:child_process";
 
@@ -122,7 +122,10 @@ function flagValue(name) {
 }
 
 if (!root) {
-  console.error("usage: check-contamination-classes.mjs <dir> [--json] [--class N]");
+  console.error(
+    "usage: check-contamination-classes.mjs <dir> [--json] [--class N] [--include-built]\n" +
+      "                                        [--allowlist <file>] [--no-allowlist]",
+  );
   process.exit(2);
 }
 if (!existsSync(root)) {
@@ -150,7 +153,21 @@ const CLASS_NAMES = {
 
 // --------------------------------------------------------------- file walking
 
-const SKIP_DIRS = new Set(["node_modules", ".git", "dist", "build", "coverage"]);
+// `dist` and `build` are skipped by DEFAULT and scanned under --include-built.
+//
+// They are gitignored, so a tree scan that walked them would be reading
+// whatever happens to be lying around from the last local build rather than
+// anything a reviewer can see in a diff. But they are also the LARGEST thing
+// in the shipped tarball, and `tsc` preserves comments — the #927 citation
+// reached `dist/index.js` and six `.d.ts` files, where a consumer reads it
+// and no tree scan ever looked. So the surface is opt-in rather than absent:
+// `--include-built` is what `preflight-package.mjs` passes after a real
+// build, and check-artifact-safety.mjs runs this gate against the EXTRACTED
+// TARBALL, which is the same question asked with no build-artifact ambiguity
+// at all (everything in a tarball ships, by definition).
+const SKIP_DIRS = new Set(["node_modules", ".git", "coverage"]);
+const BUILT_DIRS = ["dist", "build"];
+if (!flags.has("--include-built")) for (const d of BUILT_DIRS) SKIP_DIRS.add(d);
 const SCAN_EXT = new Set([".ts", ".tsx", ".js", ".jsx", ".mjs", ".css", ".md"]);
 
 function walk(dir, out = []) {
@@ -342,37 +359,501 @@ function reportIndeterminate(cls, file, line, snippet, detail) {
 
 // ------------------------------------------------------------------- CLASS 1
 
-// A path-shaped citation: at least one directory segment before a `.md` file,
-// e.g. `docs/architecture/foo.md` or `../../SOME-CONVENTIONS.md`. Deliberately
-// broad — a broad match that turns out to exist is simply not reported, since
-// existence is the actual test.
-const PATH_MD_RE = /(?:[\w.-]+\/)+[\w.-]+\.md\b/g;
+// EXTRACTION — WHAT COUNTS AS A CITATION (GH #935)
+//
+// This used to terminate in a literal `\.md\b`, which meant the class caught
+// exactly the Markdown half of itself. A `see internal/foo.test.ts` comment
+// was invisible, and one such citation in a shipped package outlived the
+// cross-package retirement that deleted its referent and passed every gate
+// on every release since. The extension list below is deliberately a LIST
+// rather than "any dotted suffix": `foo.bar` in prose is far more often a
+// property access, a version, or a hostname than a file. A new file type
+// joins the class by being added here — not by growing a second
+// `.ts`-shaped pair of patterns beside the `.md` one, which would reproduce
+// the same defect one extension along.
+const CITATION_EXTENSIONS = [
+  "md", "mdx",
+  "ts", "tsx", "mts", "cts",
+  "js", "jsx", "mjs", "cjs",
+  "json", "jsonc",
+  "yml", "yaml",
+  "css", "scss",
+  "sh",
+];
+const CITATION_EXT_ALT = CITATION_EXTENSIONS.join("|");
+
+// A path-shaped citation: at least one directory segment before the filename,
+// e.g. `docs/architecture/foo.md`, `../../DECISIONS.md`,
+// `internal/peer-guard-coverage.test.ts`. Deliberately broad — a broad match
+// that turns out to resolve is simply not reported, since resolution is the
+// actual test.
+// The leading `(?<![@$\\w])` is load-bearing. `@scope/pkg/tokens.css` is a
+// package SUBPATH EXPORT, resolved by the module system, and `$RUNNER_TEMP/
+// report.json` is an environment variable — neither is a path in this tree,
+// and without the guard the regex would start matching mid-token at `scope/`
+// and `RUNNER_TEMP/` and report both as dangling.
+const PATH_CITATION_RE = new RegExp(`(?<![@$\\w\\/])(?:[\\w.-]+\\/)+[\\w.-]+\\.(?:${CITATION_EXT_ALT})\\b`, "g");
 // A bare SHOUTY-KEBAB or SHOUTY_SNAKE (or single-word SHOUTY) filename with no
 // path prefix at all, e.g. `CASCADE.md`, `KIT-CONVENTIONS.md`.
 const SHOUTY_MD_RE = /\b[A-Z]{2,}[A-Z0-9]*(?:[-_][A-Z0-9]+)*\.md\b/g;
+// A bare test-file citation — `verify.test.ts`, `auth-clerk.test.ts`. The one
+// bare, non-SHOUTY shape that earns a place here, because it is the shape the
+// #935 evidence is actually made of: a `see foo.test.ts` comment is written
+// beside the file it names, never read again by its author, and survives every
+// rename and retirement of its referent. Bare citations in general are NOT
+// extracted (`package.json`, `index.ts`, `tsconfig.json` appear constantly in
+// prose as vocabulary rather than as pointers, and matching them would drown
+// the class); `.test.`/`.spec.` is specific enough to be a pointer every time.
+const BARE_TEST_FILE_RE = /(?<![@$\w\/.\-])[\w-]+(?:\.[\w-]+)*\.(?:test|spec)\.(?:ts|tsx|js|jsx|mjs|cjs)\b/g;
 
-// Existence is checked ONE way only: real relative-path resolution from the
-// scanned directory. That deliberately does NOT walk up to "the enclosing
-// repository" and search there — a citation copy-pasted while this package
-// still sits inside its giant PRIVATE origin monorepo would "resolve" against
-// that monorepo's own docs/ tree, which is exactly the false negative that
-// matters (the citation is dangling the moment this directory is copied out
-// alone, which is the only scenario this gate is actually guarding). A
-// genuine relative link (`../../docs/DECISIONS.md`) still resolves correctly
-// here, because `path.resolve` walks real "../" segments through the real
-// filesystem regardless of how big the surrounding repository is — no
-// separate "repo root" concept is needed for that case at all.
-//
-// The one thing this would over-flag without help: docs conventionally cited
-// BARE (no leading `../`, as if "from repo root") right next to the real
-// working relative link, e.g. `[docs/DECISIONS.md](../../docs/DECISIONS.md)`
-// — both `docs/DECISIONS.md` and `../../docs/DECISIONS.md` are separate
-// regex matches on that one line, but they're one citation, not two. A bare
-// match that is exactly the tail of an already-resolving sibling match on the
-// same line is treated as that same, working citation.
-function resolvesLocally(citedPath) {
-  return existsSync(resolve(rootAbs, citedPath));
+// An absolute URL is openable by definition — its path segments are not a
+// citation of anything in this tree. Stripped before extraction so that
+// `https://example.com/docs/FOO.md` does not read as a dangling
+// `docs/FOO.md`, and so that a `//`-introduced URL inside a string literal
+// cannot be mistaken for the start of a line comment below.
+const URL_RE = /\b[a-z][a-z0-9+.-]*:\/\/[^\s)\]>"'`]+/gi;
+
+// WHERE A CITATION CAN LIVE. In Markdown, prose is the whole file. In code it
+// is the comments — and ONLY the comments. A module specifier
+// (`from "./foo.js"`) is not a citation: it is resolved by the toolchain,
+// which fails loudly when it is wrong, and reading it as prose would flag
+// every TypeScript ESM import in the catalogue. This is the inverse of
+// `codeOnlyLines` below (CLASS 6), which keeps the code and drops the
+// comments.
+const COMMENTED_CODE_EXT = new Set([".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs", ".css", ".scss"]);
+
+function commentOnlyLines(lines, ext) {
+  const out = [];
+  let inBlock = false;
+  const hasLineComment = ext !== ".css" && ext !== ".scss";
+  for (const raw of lines) {
+    // URLs are removed BEFORE the comment split, not after: `"https://x/y"`
+    // sitting in live code would otherwise have its `//` read as the start of
+    // a line comment and drag the rest of the line into the prose surface.
+    let rest = raw.replace(URL_RE, " ");
+    let acc = "";
+    for (;;) {
+      if (inBlock) {
+        const end = rest.indexOf("*/");
+        if (end === -1) {
+          acc += rest;
+          rest = "";
+          break;
+        }
+        acc += rest.slice(0, end);
+        rest = rest.slice(end + 2);
+        inBlock = false;
+        continue;
+      }
+      const startBlock = rest.indexOf("/*");
+      const startLine = hasLineComment ? rest.indexOf("//") : -1;
+      if (startLine !== -1 && (startBlock === -1 || startLine < startBlock)) {
+        acc += " " + rest.slice(startLine + 2);
+        rest = "";
+        break;
+      }
+      if (startBlock !== -1) {
+        rest = rest.slice(startBlock + 2);
+        inBlock = true;
+        continue;
+      }
+      break;
+    }
+    out.push(acc);
+  }
+  return out;
 }
+
+// The prose surface of a file, line for line: comments for code, everything
+// for Markdown and other text. Same length as `lines`, so a finding still
+// reports the real line number and the real source line as its snippet.
+function proseLines(lines, ext) {
+  if (COMMENTED_CODE_EXT.has(ext)) return commentOnlyLines(lines, ext);
+  return lines.map((l) => l.replace(URL_RE, " "));
+}
+
+// The block of prose a citation sits inside — the unit a reader takes in as
+// one thought. For code that is the contiguous run of comment lines (a JSDoc
+// header, a `//` paragraph); for Markdown, the paragraph. Used ONLY by the
+// self-disclosure exemption below, never by resolution.
+function blockRangesFor(prose) {
+  const ranges = [];
+  let start = -1;
+  prose.forEach((text, i) => {
+    const has = text.trim().length > 0;
+    if (has && start === -1) start = i;
+    if (!has && start !== -1) {
+      ranges.push([start, i - 1]);
+      start = -1;
+    }
+  });
+  if (start !== -1) ranges.push([start, prose.length - 1]);
+  return ranges;
+}
+
+// ---------------------------------------------------------------- resolution
+
+// WHAT SHIPS. The decisive question this class asks is not "does the cited
+// path exist on the machine that wrote the comment" — it is "can the reader
+// open it". For a published package the reader's world is the tarball, so
+// the shipped file set is read from `npm pack --dry-run`, the same list npm
+// itself will publish, rather than from a reimplementation of npm's `files`
+// matching rules. That distinction is the entire #927 defect: the cited
+// `internal/peer-guard-coverage.test.ts` DID exist in `src/`, and was
+// excluded from the tarball by `"!src/**/*.test.ts"`, so an existence-only
+// check reports clean while the shipped `.d.ts` points a consumer at nothing.
+let shippedSetCache;
+function shippedFileSet() {
+  if (shippedSetCache !== undefined) return shippedSetCache;
+  if (!existsSync(join(rootAbs, "package.json"))) {
+    // Not a package at all (a docs tree, a fixture). There is no "ships"
+    // concept here, so resolution degrades honestly to existence — not to a
+    // silent failure, and not to a fabricated tarball.
+    shippedSetCache = { set: null, reason: "no-manifest" };
+    return shippedSetCache;
+  }
+  let out;
+  try {
+    out = execFileSync("npm", ["pack", "--dry-run", "--json", "--ignore-scripts"], {
+      cwd: rootAbs,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+      maxBuffer: 64 * 1024 * 1024,
+    });
+  } catch {
+    shippedSetCache = { set: null, reason: "pack-failed" };
+    return shippedSetCache;
+  }
+  try {
+    const parsed = JSON.parse(out);
+    const files = parsed?.[0]?.files;
+    if (!Array.isArray(files)) throw new Error("no files[]");
+    shippedSetCache = { set: new Set(files.map((f) => f.path)), reason: null };
+  } catch {
+    shippedSetCache = { set: null, reason: "pack-failed" };
+  }
+  return shippedSetCache;
+}
+
+// WHOSE citations matter. A dangling reference inside a file that is itself
+// excluded from the tarball — a `*.test.ts`, a vitest config — reaches no
+// consumer and misleads nobody outside this repository. The class is about
+// what a reader of the PUBLISHED package is pointed at, so the citing file
+// has to be one of the files they receive.
+function shipsToAReader(file) {
+  const shipped = shippedFileSet();
+  if (!shipped.set) return true; // no manifest, or no packable answer — scan everything
+  return shipped.set.has(relative(rootAbs, file).split(sep).join("/"));
+}
+
+// Every directory from the citing file up to the scanned root. A reader of
+// `src/internal/peer-version.ts` who meets `providers/clerk/verify.ts` finds
+// it at `src/providers/clerk/verify.ts` without being told; a reader of
+// `README.md` resolves from the package root. Resolving from the root ALONE
+// — the previous behaviour — was survivable while only `.md` paths were
+// extracted, and is not once source comments are in scope.
+//
+// Still deliberately NOT extended upward past the scanned directory into "the
+// enclosing repository": a citation copy-pasted while a package still sits
+// inside a large private origin monorepo would resolve against that
+// monorepo's tree, which is exactly the false negative that matters.
+function candidateBases(file) {
+  const bases = [];
+  let dir = dirname(file);
+  for (let i = 0; i < 64; i++) {
+    bases.push(dir);
+    if (dir === rootAbs) break;
+    const parent = dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  if (!bases.includes(rootAbs)) bases.push(rootAbs);
+  return bases;
+}
+
+// TypeScript's own module-specifier convention writes `./peer-version.js` for
+// a file that is `peer-version.ts` in source and `peer-version.js` only after
+// a build. A comment quoting that specifier is citing a real, openable file,
+// so the source spellings are tried too.
+const SOURCE_SPELLINGS = { js: ["ts", "tsx"], jsx: ["tsx"], mjs: ["mts", "ts"], cjs: ["cts", "ts"] };
+function pathSpellings(citedPath) {
+  const out = [citedPath];
+  const m = /\.(js|jsx|mjs|cjs)$/.exec(citedPath);
+  if (m) for (const ext of SOURCE_SPELLINGS[m[1]]) out.push(citedPath.slice(0, -m[0].length) + "." + ext);
+  return out;
+}
+
+// Every path git tracks in the enclosing repository, used for ONE question:
+// is the cited path real somewhere in this repository, or real nowhere? That
+// separates ordinary rot ("this file no longer exists at all") from a
+// deliberate cross-boundary reference ("this file exists, it just is not in
+// your tarball"), and the two are not the same defect — see the exemption
+// below, which applies to the second and never to the first.
+let repoFileCache;
+function repoFileList() {
+  if (repoFileCache !== undefined) return repoFileCache;
+  try {
+    const out = execFileSync("git", ["-C", repoRoot, "ls-files", "-z"], {
+      encoding: "utf8",
+      maxBuffer: 128 * 1024 * 1024,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    repoFileCache = out.split("\u0000").filter(Boolean);
+  } catch {
+    repoFileCache = null;
+  }
+  return repoFileCache;
+}
+// Two questions, not one, and the strictness differs on purpose.
+//
+// A `packages/…` citation names an EXACT repository-relative path, so it is
+// matched exactly: `packages/auth/src/internal/peer-version.ts` either is a
+// tracked path or names a package this repository retired, and there is no
+// third reading.
+//
+// Any other citation is matched loosely — by full-path suffix first, then by
+// BASENAME anywhere in the repository. That is deliberately conservative
+// about claiming rot: `src/theme-parity.test.ts` cited from a file whose real
+// sibling lives at `src/tokens/theme-parity.test.ts` is a citation a reader
+// cannot follow, but it is not a file that stopped existing, and saying so
+// would be false.
+function findElsewhereInRepo(citedPath) {
+  const files = repoFileList();
+  if (!files) return null;
+  const tail = citedPath.replace(/^(?:\.\.?\/)+/, "");
+  if (!tail) return null;
+  if (REPO_SHAPED_RE.test(tail)) return files.includes(tail) ? tail : null;
+  const exact = files.find((f) => f === tail || f.endsWith("/" + tail));
+  if (exact) return exact;
+  // The basename fallback is for TEST FILES ONLY. `theme-parity.test.ts` is a
+  // distinctive name that identifies one file; `package.json` is not, and
+  // matching it by basename would "find" `next/package.json` — a path inside
+  // an installed dependency — somewhere in this repository's own fixtures and
+  // report a confident, wrong location.
+  if (!TEST_FILE_RE.test(tail)) return null;
+  const base = tail.slice(tail.lastIndexOf("/") + 1);
+  const byName = files.find((f) => f === base || f.endsWith("/" + base));
+  return byName ?? null;
+}
+
+const CITATION_SHIPS = "ships";
+const CITATION_UNREACHABLE = "unreachable";
+const CITATION_ROT = "rot";
+const CITATION_UNKNOWN = "unknown";
+const CITATION_IGNORE = "ignore";
+
+// Built output is named in prose constantly — `dist/cli.js`, `packages/x/dist/
+// bin.js` — and is gitignored, so on any tree without a build it resolves
+// nowhere while being perfectly real in the tarball. Treating that as a
+// dangling citation would make the gate's answer depend on whether someone
+// had run `npm run build` in this checkout, which is not a property of the
+// code. Under --include-built the directory is present and is checked for
+// real, like anything else.
+const BUILT_SEGMENT_RE = /(?:^|\/)(?:dist|build)\//;
+
+// ROT — "there is nothing to open, at any path, at any commit" — is a strong
+// claim, so it is only made about citations that are unambiguously ABOUT THIS
+// REPOSITORY. Two shapes qualify:
+//
+//   a `packages/…` path, which names this repository's own layout and can
+//   mean nothing else; and
+//
+//   a `*.test.*` / `*.spec.*` file, which is a test in some source tree and is
+//   never the reader's own integration file.
+//
+// Everything else that resolves nowhere is deliberately NOT reported. A README
+// that says "add this to `app/layout.tsx`" or "write it to `./proofs.json`" is
+// naming the READER's files, not this package's, and no mechanical test
+// separates those from a rotted citation. Reporting them would be the
+// false-positive flood that gets a gate suppressed, so the narrower claim is
+// the one enforced and the gap is named here rather than papered over.
+const REPO_SHAPED_RE = /^packages\//;
+const TEST_FILE_RE = /(?:^|[\/.])[\w-]+\.(?:test|spec)\.[a-z]+$/;
+function isRepositoryShaped(citedPath) {
+  return REPO_SHAPED_RE.test(citedPath) || TEST_FILE_RE.test(citedPath);
+}
+
+function classifyCitation(citedPath, file) {
+  if (!flags.has("--include-built") && BUILT_SEGMENT_RE.test(citedPath)) return { state: CITATION_IGNORE };
+
+  const shipped = shippedFileSet();
+  let reachedVia = null; // a real file this citation resolves to, if any
+
+  for (const base of candidateBases(file)) {
+    for (const spelling of pathSpellings(citedPath)) {
+      const abs = resolve(base, spelling);
+      if (!existsSync(abs)) continue;
+      if (!shipped.set) {
+        // No manifest (a docs tree, a fixture): there is no "ships" concept
+        // here, so resolution degrades honestly to existence — exactly as
+        // this class behaved before #935.
+        if (shipped.reason === "no-manifest") return { state: CITATION_SHIPS };
+        return { state: CITATION_UNKNOWN, where: relative(rootAbs, abs) };
+      }
+      const rel = relative(rootAbs, abs).split(sep).join("/");
+      if (!rel.startsWith("..") && shipped.set.has(rel)) return { state: CITATION_SHIPS };
+      // An EXPLICITLY relative link that walks out of the package
+      // (`../../docs/DECISIONS.md`) is a deliberate, working cross-boundary
+      // reference — the author wrote the `../` themselves, and it resolves
+      // for a reader browsing this public repository. That has always been
+      // treated as legitimate here; widening the extraction does not change
+      // it. A BARE path that merely happens to sit at the repository root
+      // (`docs/LIFECYCLE.md`) is the opposite case and is still reported —
+      // that is exactly the #930 finding this class already catches.
+      if (rel.startsWith("..") && /(?:^|\/)\.\.\//.test("/" + citedPath)) return { state: CITATION_SHIPS };
+      if (reachedVia === null) reachedVia = rel;
+    }
+  }
+
+  if (reachedVia !== null) return { state: CITATION_UNREACHABLE, where: reachedVia };
+  const elsewhere = findElsewhereInRepo(citedPath);
+  if (elsewhere) return { state: CITATION_UNREACHABLE, where: elsewhere };
+  if (!isRepositoryShaped(citedPath)) return { state: CITATION_IGNORE };
+  return { state: CITATION_ROT };
+}
+
+// ----------------------------------------------- the self-disclosure exemption
+//
+// The rule this class enforces is NOT "no citation to a path that does not
+// ship". It is "no citation a reader would reasonably expect to be able to
+// open" — and a citation that discloses its own unavailability in the same
+// breath is exactly the case where that expectation was never created. This
+// repository has a real, load-bearing instance: a hand-ported range algorithm
+// whose header cites the repository-root script it was ported FROM, and says
+// in the same comment that `scripts/` is in no package's `files` allowlist and
+// so is not present once a package is installed. Stripping that path would
+// destroy the point of the sentence, and flagging it would invite a
+// suppression comment — which is how gates start being routed around.
+//
+// HOW THE EXEMPTION IS BOUNDED, AND WHY THAT BOUND IS SAFE
+//
+// The disclosure is looked for in the citation's whole enclosing comment
+// block or Markdown paragraph, not in some tuned window of N lines or N
+// characters around it. Proximity was tried first and does not survive
+// contact with real prose: in this repository's own example the disclosure
+// sits four lines below its citation, while an unrelated "(unshipped)"
+// qualifier sits seven lines below a DIFFERENT, genuinely rotten citation in
+// the same file. No line or character window separates those two.
+//
+// What separates them is the STATE, not the distance. An unavailability
+// qualifier is a claim about SHIPPING, so it can only ever excuse a citation
+// whose defect is shipping — `present-not-shipped`. A citation that resolves
+// NOWHERE is not explained by "it does not ship with this package": the
+// reader was still told to go and look, and there is nothing to find, in this
+// tarball or any checkout. So `missing` is never exempt, however the
+// surrounding prose is worded.
+//
+// That is what makes a block-wide search safe. The widest thing a stray
+// qualifier can do is excuse a real, findable file that merely is not in this
+// package's tarball — the mildest half of the class — and it can never
+// excuse rot. A suppression comment, by contrast, would excuse both, which is
+// precisely why one is not offered here.
+const UNAVAILABILITY_RE = new RegExp(
+  [
+    "\\bun-?shipped\\b",
+    "\\b(?:does|do|did|will) not ship\\b",
+    "\\bnever ships?\\b",
+    "\\bnever shipped\\b",
+    "\\bnot shipped\\b",
+    "\\bnot packed\\b",
+    "\\bnot in the (?:packed )?tarball\\b",
+    "\\babsent from the (?:packed )?tarball\\b",
+    "\\bexcluded from the (?:published|packed|shipped)\\b",
+    "\\b(?:not|never) part of (?:any |this |the )?[^.]{0,40}`?files`? allowlist\\b",
+    "\\bnot present once [^.]{0,40}installed\\b",
+    "\\bnot (?:available|present) in the (?:published|installed) package\\b",
+  ].join("|"),
+  "i",
+);
+
+// The SECOND exemption, and the mirror of the first. Prose that records a
+// citation's referent as GONE — a CHANGELOG entry documenting the dangling
+// reference it just fixed, a comment explaining that a donor package was
+// retired — names a path a reader is explicitly told not to go looking for.
+// Reporting that as rot would mean a package cannot describe its own
+// corrected history without failing the gate that caught it, which is a
+// direct incentive to describe the fix vaguely, or not at all.
+//
+// Scoped to ROT and only rot, exactly as UNAVAILABILITY_RE is scoped to
+// unreachable and only unreachable: "this file was deleted" does not explain
+// a path that is real, present, and merely absent from the tarball. Each
+// qualifier excuses the one defect it is actually a claim about, which is
+// what keeps a block-wide search from becoming a general-purpose mute.
+const NONEXISTENCE_RE = new RegExp(
+  [
+    "\\bno longer exists?\\b",
+    "\\bnever existed\\b",
+    "\\b(?:does|did|do) not exist\\b",
+    "\\b(?:was|were|since|been) (?:deleted|removed)\\b",
+    "\\b(?:stale|dangling) citation\\b",
+    "\\bdangling reference\\b",
+    "\\b(?:retired|deleted|removed) (?:by|in) #?\\d+\\b",
+    "\\bretirement that deleted\\b",
+    "\\b(?:donor|sibling) packages? (?:was|were|has been|have been) retired\\b",
+    "\\bthis repository (?:no longer|does not) (?:ships?|contains?)\\b",
+  ].join("|"),
+  "i",
+);
+
+// --------------------------------------------------------------- allowlist
+//
+// The pre-existing instances this widening surfaces across the catalogue are
+// NOT fixed here: every one of them sits in packed content, so each fix moves
+// a package tree and needs its own version and qualification record. Landing
+// the gate and fixing the findings in one change would be unreviewable, so
+// the known set is recorded once, keyed to the issue that tracks it, and the
+// gate refuses to let that set grow. An entry that no longer matches anything
+// is itself a finding — that is what makes the list shrink rather than
+// calcify, and it is why fixing a citation and deleting its entry are the
+// same commit.
+const DEFAULT_ALLOWLIST = join(repoRoot, "governance", "known-dangling-citations.json");
+
+function loadAllowlist() {
+  if (flags.has("--no-allowlist")) return { entries: [], path: null };
+  const explicit = flagValue("--allowlist");
+  const path = explicit ?? DEFAULT_ALLOWLIST;
+  if (!existsSync(path)) {
+    if (explicit) {
+      console.error(`check-contamination-classes: no such allowlist: ${path}`);
+      process.exit(2);
+    }
+    return { entries: [], path: null };
+  }
+  let parsed;
+  try {
+    parsed = JSON.parse(readFileSync(path, "utf8"));
+  } catch (error) {
+    console.error(`check-contamination-classes: cannot parse allowlist ${path}: ${error.message}`);
+    process.exit(2);
+  }
+  const issue = parsed?.issue;
+  if (typeof issue !== "string" || !issue) {
+    console.error(`check-contamination-classes: allowlist ${path} has no "issue" — a waiver with nothing tracking it is not a waiver`);
+    process.exit(2);
+  }
+  const entries = [];
+  for (const [pkg, files] of Object.entries(parsed.packages ?? {})) {
+    for (const [file, cited] of Object.entries(files ?? {})) {
+      if (!Array.isArray(cited)) {
+        console.error(`check-contamination-classes: allowlist ${path}: packages["${pkg}"]["${file}"] must be an array of cited paths`);
+        process.exit(2);
+      }
+      for (const c of cited) entries.push({ package: pkg, file, cited: c, issue });
+    }
+  }
+  return { entries, path };
+}
+const allowlist = loadAllowlist();
+const scannedPackageDirName = basename(rootAbs);
+const allowlistForScan = allowlist.entries.filter((e) => e.package === scannedPackageDirName);
+const allowlistUsed = new Set();
+const waived = [];
+
+function allowlistEntryFor(relFile, citedPath) {
+  return allowlistForScan.find((e) => e.file === relFile && e.cited === citedPath);
+}
+
+// ---------------------------------------------------------------- the check
 
 // Filenames that name a PUBLIC, third-party agent-instruction format rather
 // than a document in anyone's repository. When prose says a policy lives in
@@ -401,30 +882,109 @@ const PUBLIC_FORMAT_FILENAMES = new Set([
   "SKILL.md", // the Agent Skills package format
 ]);
 
-function checkClass1(file, lines) {
-  lines.forEach((text, i) => {
+function checkClass1(file, lines, ext) {
+  const prose = proseLines(lines, ext);
+  const blocks = blockRangesFor(prose);
+  const blockText = new Map();
+  for (const [from, to] of blocks) {
+    const text = prose.slice(from, to + 1).join(" ");
+    for (let i = from; i <= to; i++) blockText.set(i, text);
+  }
+  const relFile = relative(rootAbs, file);
+
+  prose.forEach((text, i) => {
     const matches = [];
-    for (const m of text.matchAll(PATH_MD_RE)) matches.push(m[0]);
-    for (const m of text.matchAll(SHOUTY_MD_RE)) {
-      // A bare shouty filename that's just the tail of a path match already
-      // collected above (`packages/KIT-CONVENTIONS.md` also contains
-      // `KIT-CONVENTIONS.md`) is the same citation, not a second one.
-      if (matches.some((p) => p === m[0] || p.endsWith("/" + m[0]))) continue;
-      matches.push(m[0]);
+    for (const m of text.matchAll(PATH_CITATION_RE)) matches.push(m[0]);
+    for (const re of [SHOUTY_MD_RE, BARE_TEST_FILE_RE]) {
+      for (const m of text.matchAll(re)) {
+        // A bare filename that's just the tail of a path match already
+        // collected above (`packages/KIT-CONVENTIONS.md` also contains
+        // `KIT-CONVENTIONS.md`) is the same citation, not a second one.
+        if (matches.some((p) => p === m[0] || p.endsWith("/" + m[0]))) continue;
+        matches.push(m[0]);
+      }
     }
     if (!matches.length) return;
-    const resolved = new Map(matches.map((t) => [t, resolvesLocally(t)]));
+    const state = new Map(matches.map((t) => [t, classifyCitation(t, file)]));
     for (const t of matches) {
-      if (resolved.get(t)) continue;
+      const cited = state.get(t);
+      if (cited.state === CITATION_SHIPS) continue;
       // Only the BARE name is format vocabulary. A path-prefixed citation
       // (`docs/AGENTS.md`) is a real pointer at a real file, and a dangling one
       // is exactly this class's job regardless of what the file is called.
       if (PUBLIC_FORMAT_FILENAMES.has(t)) continue;
-      const echoesResolvedSibling = matches.some((other) => other !== t && resolved.get(other) && other.endsWith(t));
+      // A bare match that is exactly the tail of an already-resolving sibling
+      // match on the same line — `[docs/X.md](../../docs/X.md)` — is that same,
+      // working citation written twice, not a second, broken one.
+      const echoesResolvedSibling = matches.some(
+        (other) => other !== t && state.get(other).state === CITATION_SHIPS && other.endsWith(t),
+      );
       if (echoesResolvedSibling) continue;
-      report(1, "high", file, i + 1, text, `cites "${t}" — does not resolve relative to the scanned package directory; a reader here cannot open it`);
+
+      if (cited.state === CITATION_IGNORE) continue;
+
+      if (cited.state === CITATION_UNKNOWN) {
+        reportIndeterminate(
+          1,
+          file,
+          i + 1,
+          lines[i] ?? text,
+          `cites "${t}", which exists at "${cited.where}" — but this run could not determine whether that path is in the published file set, because \`npm pack --dry-run\` failed here. Whether a reader can open it is exactly the question, so this is neither a pass nor a finding.`,
+        );
+        continue;
+      }
+
+      // The exemption, and the whole reason it is safe to search the entire
+      // enclosing block for it: an unavailability qualifier is a claim about
+      // SHIPPING, so it can only ever excuse the citation whose defect is
+      // shipping. CITATION_ROT is never exempt, however the prose is worded —
+      // "it does not ship with this package" does not explain a path that
+      // exists in no checkout at any commit.
+      if (cited.state === CITATION_UNREACHABLE && UNAVAILABILITY_RE.test(blockText.get(i) ?? text)) continue;
+      if (cited.state === CITATION_ROT && NONEXISTENCE_RE.test(blockText.get(i) ?? text)) continue;
+
+      const entry = allowlistEntryFor(relFile, t);
+      if (entry) {
+        allowlistUsed.add(entry);
+        waived.push({ file: relFile, line: i + 1, cited: t, issue: entry.issue, state: cited.state });
+        continue;
+      }
+
+      if (cited.state === CITATION_ROT) {
+        report(
+          1,
+          "high",
+          file,
+          i + 1,
+          lines[i] ?? text,
+          `cites "${t}" — no such path is tracked anywhere in this repository. A reader has nothing to open, in this package or any checkout of it.`,
+        );
+      } else {
+        report(
+          1,
+          "high",
+          file,
+          i + 1,
+          lines[i] ?? text,
+          `cites "${t}" — the nearest real file is "${cited.where}", which is NOT in this package's published file set, so a reader who installed this package cannot open it at the path cited. Either correct the path, drop the citation, or say inline that it does not ship.`,
+        );
+      }
     }
   });
+}
+
+function reportStaleAllowlistEntries() {
+  for (const entry of allowlistForScan) {
+    if (allowlistUsed.has(entry)) continue;
+    report(
+      1,
+      "medium",
+      join(rootAbs, entry.file),
+      0,
+      `allowlist entry: ${entry.cited}`,
+      `governance/known-dangling-citations.json still waives "${entry.cited}" in "${entry.file}", but this run found no such citation. A waiver that matches nothing is a waiver that has stopped tracking anything — delete it in the same commit as the fix (${entry.issue}).`,
+    );
+  }
 }
 
 // ------------------------------------------------------------------- CLASS 2
@@ -709,13 +1269,18 @@ for (const file of scanFiles) {
   const lines = contents.split("\n");
   const ext = extname(file).toLowerCase();
 
-  if (wants(1)) checkClass1(file, lines);
+  if (wants(1) && shipsToAReader(file)) checkClass1(file, lines, ext);
   if (wants(2) && CLASS2_6_EXT.has(ext)) checkClass2(file, lines);
   if (wants(3)) checkClass3(file, lines);
   if (wants(4)) checkClass4(file, lines);
   if (wants(5)) checkClass5(file, lines);
   if (wants(6) && CLASS2_6_EXT.has(ext)) checkClass6(file, lines, ext);
 }
+
+// An allowlist entry that matched nothing this run is reported as a finding of
+// its own — see the allowlist note in CLASS 1 for why a waiver that tracks
+// nothing is worse than no waiver.
+if (wants(1)) reportStaleAllowlistEntries();
 
 // CLASS 5's structural package.json check runs outside the main extension
 // filter (see above) — package.json is scanned for that one check regardless
@@ -733,7 +1298,7 @@ if (wants(5)) {
 
 if (flags.has("--json")) {
   console.log(
-    JSON.stringify({ root: rootAbs, repoRoot, scanned: scanFiles.length, findings, indeterminate }, null, 2),
+    JSON.stringify({ root: rootAbs, repoRoot, scanned: scanFiles.length, findings, indeterminate, waived }, null, 2),
   );
   process.exit(indeterminate.length ? 2 : findings.length ? 1 : 0);
 }
@@ -759,8 +1324,24 @@ if (indeterminate.length) {
   console.log("");
 }
 
+// Waived citations are PRINTED on every run, pass or fail. A waiver that is
+// invisible while it holds is indistinguishable from a rule that was never
+// broken, and the whole point of this list is that it is embarrassing enough
+// to shrink.
+if (waived.length) {
+  console.log(`## KNOWN, WAIVED — ${waived.length} pre-existing CLASS 1 citation(s)`);
+  for (const w of waived) {
+    console.log(`  ${w.file}:${w.line} cites "${w.cited}" (${w.state}) — waived, tracked by ${w.issue}`);
+  }
+  console.log("");
+}
+
 if (!findings.length && !indeterminate.length) {
-  console.log("PASS — no contamination-class findings.");
+  console.log(
+    waived.length
+      ? `PASS — no NEW contamination-class findings (${waived.length} known citation(s) waived above; a waived run is not a clean one).`
+      : "PASS — no contamination-class findings.",
+  );
   process.exit(0);
 }
 

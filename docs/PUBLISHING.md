@@ -171,6 +171,17 @@ node scripts/check-contamination-classes.mjs packages/<name>
 node scripts/check-readme-parity.mjs packages/<name>
 ```
 
+`check-contamination-classes` reads the files the package actually **ships**
+— the `npm pack` file list, not the working tree — and asks of every citation
+in them whether a reader who installed the package could open it. Add
+`--include-built` after a build to scan `dist/` too, which is what
+`preflight-package.mjs` does; `tsc` preserves comments, so a citation written
+in a source comment is also sitting in the `.d.ts` a consumer reads. A
+citation that says inline that its referent does not ship (`"this package's
+own (unshipped) test suite"`) is not reported — that is the house convention
+for a reference that is deliberately outside the tarball, and it exists so
+nobody needs a suppression comment.
+
 `check-readme-parity` catches two specific, previously-real defects: an export
 that exists in `src/index.ts` but is undocumented in the README (added in the
 same commit as a feature, with nothing forcing the README to keep up), and a

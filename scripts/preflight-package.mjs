@@ -73,7 +73,14 @@ const gates = [
   { name: "tree safety", argv: [join(scriptDir, "check-public-safety.mjs"), repoRoot, "--allow-changelogs", ...strict, ...denylist] },
   { name: "artifact safety", argv: [join(scriptDir, "check-artifact-safety.mjs"), absPkgDir, ...strict, ...denylist] },
   { name: "README parity", argv: [join(scriptDir, "check-readme-parity.mjs"), absPkgDir] },
-  { name: "contamination classes", argv: [join(scriptDir, "check-contamination-classes.mjs"), absPkgDir] },
+  // --include-built: preflight runs against a package that has been built, and
+  // `tsc` preserves comments, so a citation in a source comment is also sitting
+  // in `dist/*.js` and every `.d.ts` beside it — the copy a consumer actually
+  // reads. Scanning the built output here makes preflight's coverage identical
+  // to the packed tarball's: the tarball is the shipped file set (which is how
+  // this gate resolves citations in the first place) applied to exactly these
+  // files. Absent a build, the flag adds nothing and costs nothing.
+  { name: "contamination classes", argv: [join(scriptDir, "check-contamination-classes.mjs"), absPkgDir, "--include-built"] },
 ];
 
 const results = [];
