@@ -53,7 +53,7 @@ test("the production runner qualifies Bouncer's four framework exports in one is
     frameworkBuilds: 1,
     failed: 0,
     installedManifestSha256: transcript.coverage.installedManifestSha256,
-    bins: 1,
+    bins: 2,
     lifecycleScriptsDisabled: true,
   });
   const framework = transcript.observations.filter((item) => item.kind === "framework");
