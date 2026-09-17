@@ -5,6 +5,29 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.6] - 2026-09-18
+
+### Added
+
+- Documented installation against the public npm registry
+  (`https://registry.npmjs.org`) and that installing needs no authentication.
+- Stated the charter close condition in the README: independent consumer
+  evidence of `qualified response yield per thousand`, computed by
+  `assessQualifiedResponseYieldPerThousand()`. An empty eligible-exposure
+  set is indeterminate, never a perfect yield. `checkResponseYield`
+  remains the kebab-metric gate; it is not this assessment.
+- Declared `foundry.assessment` against a new mapped `influencer-rate-check`
+  bin with `invocation: "single-json-input"`. `influencer-check` remains
+  the two-argument CLI and is not the assessment surface. Advisor remains
+  the only required first-day role.
+- `influencer-rate-check assessment.json`: prints the `qualified response
+  yield per thousand` report and exits on the `0` / `1` / `2` ternary.
+
+### Notes
+
+- This does not claim the position is closed. Qualification of `0.1.6` is
+  deferred under #833.
+
 ## [0.1.5] - 2026-09-16
 
 ### Fixed
