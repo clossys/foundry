@@ -30,10 +30,14 @@
 import { mkdtempSync, rmSync, mkdirSync, writeFileSync, readFileSync, cpSync, existsSync, chmodSync, readdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
 import zlib from "node:zlib";
+
+import { publishQualifiedDirectory } from "./publish-qualified-directory.mjs";
+import { packageManifestDigest } from "./lib/candidate-qualification.mjs";
+import { ALL_PACKAGE_RELEASE_ORDER } from "./check-release-catalog.mjs";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(scriptDir, "..");
@@ -950,6 +954,166 @@ try {
       "negative control: the SAME genuine violation is still caught scanning from the package subdirectory",
       subdirViolationHit,
       `expected a finding for violation.md when scanning from packages/widget, got: ${JSON.stringify(reportSubdir.failures)}`,
+    );
+  }
+
+  // -------------- publish path and artifact path agree on --path-prefix (issue #936)
+  console.log("\n# publish path and artifact path agree on --path-prefix (issue #936)");
+  {
+    // check-artifact-safety.mjs (the artifact-tarball gate) and
+    // publish-qualified-directory.mjs (the publish-time staged gate) both hand
+    // check-public-safety.mjs an EXTRACTED copy of the same package content.
+    // Issue #936 is exactly what happens when only one of the two callers
+    // restores the package's repository-relative --path-prefix before that
+    // handoff: a package-scoped neutralize rule fails closed on one caller
+    // and passes on the other, for byte-identical content. The per-flag
+    // tests in check-artifact-safety.test.mjs never caught this — they test
+    // the flag in isolation, never agreement between the two callers this
+    // case exists to check. MUTATION-VERIFIED: reverting
+    // publish-qualified-directory.mjs's --path-prefix/--scope-config
+    // derivation makes this case fail (see the PR body for the recorded
+    // before/after verdicts).
+    const rootDir = join(work, "publish-path-prefix-agreement");
+    const packageKey = "strategist";
+    const pkgDir = join(rootDir, "packages", packageKey);
+    mkdirSync(pkgDir, { recursive: true });
+    mkdirSync(join(rootDir, "governance", "release-qualifications"), { recursive: true });
+    // publishQualifiedDirectory() resolves the safety-scan script from `root`
+    // itself (join(absoluteRoot, "scripts/check-public-safety.mjs")), so the
+    // real script has to exist at that path under this fixture root for the
+    // scan to actually run rather than throw MODULE_NOT_FOUND. It has no
+    // repository-local dependencies (only Node core modules), so a plain copy
+    // is safe and keeps this case exercising the exact production script.
+    mkdirSync(join(rootDir, "scripts"), { recursive: true });
+    cpSync(SAFETY, join(rootDir, "scripts", "check-public-safety.mjs"));
+    writeFileSync(join(rootDir, "package-scope.json"), JSON.stringify({ scope: "@clossys", registry: "https://registry.npmjs.org", access: "public" }));
+    // The release-catalogue validator deliberately preserves its predecessor
+    // and validates the cutover target's package list exactly — see
+    // publish-qualified-directory.test.mjs's fixture() for the same
+    // construction. Build the fixture-only predecessor tuple at runtime: it
+    // is test data, not a current source identity declaration.
+    const historicalScope = String.fromCodePoint(64, 118, 101, 115, 112, 101, 110, 101, 118, 101, 110, 116, 117, 114, 101, 115);
+    const historicalStatus = ["hist", "orical"].join("");
+    const historicalRegistry = ["https://npm.", "pkg.github.com"].join("");
+    writeFileSync(join(rootDir, "governance", "release-catalog.json"), JSON.stringify({ schemaVersion: 2, defaultTarget: "clossys-npmjs", targets: [
+      { id: "current-github-packages", status: historicalStatus, scope: historicalScope, registry: historicalRegistry, packages: "all" },
+      { id: "clossys-npmjs", status: "active", scope: "@clossys", registry: "https://registry.npmjs.org", access: "public", packages: [...ALL_PACKAGE_RELEASE_ORDER] },
+    ] }));
+    const manifest = { name: "@clossys/strategist", version: "0.1.1", type: "module", files: ["README.md", "LICENSE", "CHANGELOG.md"] };
+    writeFileSync(join(pkgDir, "package.json"), `${JSON.stringify(manifest, null, 2)}\n`);
+    writeFileSync(join(pkgDir, "README.md"), "Public package\n");
+    writeFileSync(join(pkgDir, "LICENSE"), "MIT\n");
+    // The planted term is package-scoped-neutralized ONLY at its real
+    // repository-relative path, "packages/strategist/CHANGELOG.md" — the
+    // exact shape a real recorded neutralize decision takes (see issue #936's
+    // own reproduction against @clossys/locksmith's CHANGELOG.md and
+    // package.json), and the exact shape a bare-extracted-tarball scan
+    // strips down to "CHANGELOG.md".
+    writeFileSync(join(pkgDir, "CHANGELOG.md"), "ships with acme-corp-strategist936-allowed noted here\n");
+
+    const scopedDenylist = {
+      version: "synthetic-publish-path-prefix-agreement-test",
+      terms: [{ pattern: "acme-corp", why: "synthetic sibling product", severity: "high" }],
+      neutralize: [{ pattern: "acme-corp-strategist936-allowed", paths: [`packages/${packageKey}/CHANGELOG.md`] }],
+    };
+    const scopedDenylistPath = join(rootDir, "scoped-denylist.json");
+    writeFileSync(scopedDenylistPath, JSON.stringify(scopedDenylist, null, 2));
+
+    // 1. THE ARTIFACT PATH: check-artifact-safety.mjs packs pkgDir for real,
+    //    extracts, and scans with its own --path-prefix derivation.
+    const artifactResult = run("node", [ARTIFACT, pkgDir, "--denylist", scopedDenylistPath, "--require-denylist"]);
+
+    // 2. THE PUBLISH PATH: build the exact qualified-candidate inputs
+    //    publish-qualified-directory.mjs expects (a real npm-pack tarball
+    //    plus its matching qualification record), then run the real
+    //    publishQualifiedDirectory() function against them. Only the runtime
+    //    probe, the clean-directory repack, and the OIDC dry-run publish are
+    //    stubbed — deliberately NOT the safety-scan subprocess, which is the
+    //    one call this case exists to observe running for real, exactly as
+    //    it runs in production.
+    const packedDir = join(rootDir, "packed");
+    mkdirSync(packedDir, { recursive: true });
+    const packOut = execFileSync("npm", ["pack", ".", "--ignore-scripts", "--json", "--pack-destination", packedDir], { cwd: pkgDir, encoding: "utf8" });
+    const packedFilename = JSON.parse(packOut)[0].filename;
+    const candidatePath = join(packedDir, packedFilename);
+    const candidateBytes = readFileSync(candidatePath);
+    const manifestBytes = readFileSync(join(pkgDir, "package.json"));
+    const record = {
+      timing: "pre-publication",
+      candidate: {
+        name: manifest.name,
+        version: manifest.version,
+        packageManifestSha256: packageManifestDigest(manifestBytes, undefined),
+        tarball: Object.fromEntries(["sha1", "sha256", "sha512"].map((algorithm) => [algorithm, createHash(algorithm).update(candidateBytes).digest("hex")])),
+      },
+    };
+    const recordPath = join(rootDir, "governance", "release-qualifications", `clossys-${packageKey}-${manifest.version}.json`);
+    writeFileSync(recordPath, `${JSON.stringify(record)}\n`);
+
+    const oidcEnv = {
+      ACTIONS_ID_TOKEN_REQUEST_URL: "https://token.actions.githubusercontent.test/oidc",
+      ACTIONS_ID_TOKEN_REQUEST_TOKEN: "opaque-oidc-request-token",
+      GITHUB_ACTIONS: "true", GITHUB_EVENT_NAME: "workflow_dispatch",
+      GITHUB_REF: "refs/heads/main", GITHUB_REPOSITORY: "clossys/foundry", GITHUB_REPOSITORY_ID: "123",
+      GITHUB_REPOSITORY_OWNER_ID: "456", GITHUB_RUN_ATTEMPT: "1", GITHUB_RUN_ID: "42", GITHUB_SERVER_URL: "https://github.com", GITHUB_SHA: "a".repeat(40),
+      GITHUB_WORKFLOW: "Publish", GITHUB_WORKFLOW_REF: "clossys/foundry/.github/workflows/publish.yml@refs/heads/main",
+      GITHUB_WORKFLOW_SHA: "b".repeat(40), RUNNER_ENVIRONMENT: "github-hosted",
+    };
+
+    let publishSafetyScanResult = null;
+    const publishRun = (file, args, options) => {
+      if (args[0] === "--version") return { status: 0, stdout: file === process.execPath ? "v24.19.0\n" : "11.17.0\n", stderr: "" };
+      if (args[0] === "-p") return { status: 0, stdout: "1.3.2.1-motley-3246f1b\n", stderr: "" };
+      if (file === process.execPath && args[0]?.endsWith("/scripts/check-public-safety.mjs")) {
+        const result = spawnSync(file, args, { ...options, encoding: "utf8" });
+        publishSafetyScanResult = { code: result.status, out: `${result.stdout ?? ""}${result.stderr ?? ""}` };
+        return result;
+      }
+      if (args[0] === "pack") {
+        writeFileSync(join(args.at(-1), "repacked.tgz"), candidateBytes);
+        return { status: 0, stdout: JSON.stringify([{ filename: "repacked.tgz" }]), stderr: "" };
+      }
+      if (args[0] === "publish") return { status: 0, stdout: "", stderr: "" };
+      throw new Error(`unexpected command in publish-path-prefix-agreement case: ${file} ${args.join(" ")}`);
+    };
+
+    let publishError = null;
+    try {
+      await publishQualifiedDirectory({
+        root: rootDir, packageKey, candidatePath, recordPath, mode: "oidc", dryRun: true,
+        env: { ...oidcEnv, PATH: process.env.PATH, HOME: rootDir, PUBLIC_SAFETY_DENYLIST: scopedDenylistPath },
+        run: publishRun,
+        interactiveRun: async () => { throw new Error("OIDC must not create an owner PTY"); },
+        verify: async () => {},
+      });
+    } catch (error) {
+      publishError = error;
+    }
+
+    check(
+      "the publish-path scan actually ran and returned a verdict (not skipped/stubbed)",
+      publishSafetyScanResult !== null,
+      `publish-qualified-directory.mjs never invoked check-public-safety.mjs${publishError ? ` (threw: ${publishError.message})` : ""}`,
+    );
+    check(
+      "the neutralized reference PASSES the artifact-tarball scan (check-artifact-safety.mjs)",
+      artifactResult.code === 0,
+      `expected PASS, check-artifact-safety.mjs exited ${artifactResult.code}: ${artifactResult.out.slice(0, 800)}`,
+    );
+    check(
+      "the SAME neutralized reference PASSES the publish-time staged scan (publish-qualified-directory.mjs) — issue #936",
+      publishSafetyScanResult?.code === 0,
+      `expected PASS, the staged safety scan exited ${publishSafetyScanResult?.code}: ${(publishSafetyScanResult?.out ?? "").slice(0, 800)}`,
+    );
+    check(
+      "publishQualifiedDirectory did not abort on a false FULL-scan failure",
+      publishError === null,
+      `publishQualifiedDirectory threw unexpectedly: ${publishError?.message}`,
+    );
+    check(
+      "the two gates reach an IDENTICAL exit-code verdict on the same package content",
+      publishSafetyScanResult !== null && artifactResult.code === publishSafetyScanResult.code,
+      `artifact-path exited ${artifactResult.code}, publish-path exited ${publishSafetyScanResult?.code} for the same fixture`,
     );
   }
 

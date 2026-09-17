@@ -3,6 +3,18 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.5] - 2026-09-16
+
+### Fixed
+
+- The Install section claimed a GitHub personal access token with
+  `read:packages` was required, citing the repository root README as
+  confirmation. That citation is real but answers a different question:
+  the root README's `read:packages` guidance covers a different, unrelated
+  set of packages, not `@clossys/giver`, which publishes to
+  `https://registry.npmjs.org` with public access and installs with no
+  credential at all. (#924)
+
 ## [0.1.4] - 2026-09-02
 
 ### Fixed

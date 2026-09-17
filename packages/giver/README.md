@@ -132,8 +132,9 @@ version or a ground with no subject is unreadable, never silently visible.
 npm install @clossys/giver
 ```
 
-Installing from this registry needs a GitHub personal access token with
-`read:packages` — see the repository root README.
+`@clossys/giver` publishes to `https://registry.npmjs.org` with public
+access, and installing it needs no GitHub personal access token or other
+credential.
 
 ```ts
 import { checkObligationDischarge, decideOutcome } from "@clossys/giver";

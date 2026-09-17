@@ -49,9 +49,9 @@ The universal loop is concrete here:
 npm install @clossys/messenger
 ```
 
-The package is published to GitHub Packages, so consumers must map the
-`@clossys` scope and provide a token with `read:packages` — see the
-repository root README.
+The package is published to the public npm registry
+(`https://registry.npmjs.org`) with public access; no `@clossys` scope
+mapping or GitHub token is needed to install it.
 
 The provider-neutral root has no runtime dependencies. The optional
 `./providers/resend` subpath requires a consumer-installed `resend@^6.19.0`

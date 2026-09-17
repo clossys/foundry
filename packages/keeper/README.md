@@ -118,8 +118,8 @@ answer this package needs most.
 npm install @clossys/keeper
 ```
 
-Installing from this registry needs a GitHub personal access token with
-`read:packages` — see the repository root README.
+This package is published to `https://registry.npmjs.org` under public
+access; installing it requires no authentication of any kind.
 
 ```ts
 import { checkDisposal, decideHolding } from "@clossys/keeper";
