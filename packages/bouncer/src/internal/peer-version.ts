@@ -54,7 +54,8 @@
  * through even if the reference resolved. Keep both in sync by hand if
  * the ported range algorithm ever changes; `scripts/
  * check-workspace-links.test.mjs`'s own 0.x cases are the source of truth
- * this was ported from.
+ * this was ported from — that test file sits under the same repository-root
+ * `scripts/` tree named above and does not ship with this package either.
  *
  * ONE GENUINE EXTENSION BEYOND WHAT WAS PORTED: `parseGteForm` below. This
  * package's own declared peer ranges for `@clerk/nextjs`, `next`, `react`,
@@ -116,7 +117,7 @@ interface Bound {
   patch: number;
 }
 
-/** Strict x.y.z only — same as scripts/check-workspace-links.mjs's parseVersion(). */
+/** Strict x.y.z only — same as scripts/check-workspace-links.mjs's parseVersion() (that script does not ship with this package; see this file's header). */
 function parseVersion(version: string): Bound | null {
   const m = /^(\d+)\.(\d+)\.(\d+)$/.exec(String(version).trim());
   if (!m) return null;
@@ -129,8 +130,9 @@ function compareVersions(a: Bound, b: Bound): number {
 
 /**
  * Ported verbatim from scripts/check-workspace-links.mjs's
- * parseRange()/rangeBounds(): an exact pin, a caret range, or a tilde
- * range against a plain x.y.z. For `0.y.z`, BOTH `^` and `~` are
+ * parseRange()/rangeBounds() (that script does not ship with this
+ * package; see this file's header): an exact pin, a caret range, or a
+ * tilde range against a plain x.y.z. For `0.y.z`, BOTH `^` and `~` are
  * minor-locked; above `0.y.z`, `^` is major-locked and only `~` is
  * minor-locked. Returns `null` — unparseable — for anything else,
  * including the `>=`/`<` forms `parseGteForm` below understands instead.
@@ -200,7 +202,8 @@ function looksLikePrereleaseVersion(versionStr: string): boolean {
 /**
  * Returns `{ evaluated: false, kind, reason }` when either side could not
  * be parsed — a finding, never assumed satisfied, the same discipline
- * `scripts/check-workspace-links.mjs`'s own `satisfies()` uses — or
+ * `scripts/check-workspace-links.mjs`'s own `satisfies()` uses (that
+ * script does not ship with this package; see this file's header) — or
  * `{ evaluated: true, ok }` once both sides parsed cleanly. `kind`
  * distinguishes an unparseable RANGE (this package's own bug — `assertPeerVersion`
  * still throws) from an unparseable installed VERSION (an external input

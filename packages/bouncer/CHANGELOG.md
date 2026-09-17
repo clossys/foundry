@@ -3,6 +3,60 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.7] - 2026-09-16
+
+### Fixed
+
+- **The 0.1.6 entry below overstated one of its own findings.** It said
+  `verify.ts`'s stale citation of `auth-clerk.test.ts` pointed at a file
+  that "never existed in this repository at all." That is false, and this
+  repository's own history contradicts it:
+
+  ```
+  $ git log --all --full-history --diff-filter=A --name-only -- '*auth-clerk.test.ts'
+  579b5d8 Add consolidated auth package (#103)
+  packages/auth/src/providers/clerk/auth-clerk.test.ts
+  $ git log --all --full-history --diff-filter=D --oneline -- packages/auth/src/providers/clerk/auth-clerk.test.ts
+  9bd1137 Retire superseded donor packages (#536)
+  ```
+
+  The file was real: it lived at
+  `packages/auth/src/providers/clerk/auth-clerk.test.ts` in the `auth`
+  donor package, added by #103, and was deleted by #536 when the donor
+  packages were retired. `verify.ts`'s comment cited it correctly at the
+  time it was written — the citation rotted only because a later,
+  cross-package retirement removed its referent, with nothing in CI
+  positioned to notice a doc comment in one package going stale because
+  of a commit to a different package. That makes the defect systemic — a
+  retirement with no mechanism to find what it orphans elsewhere in the
+  repository — rather than the carelessness the 0.1.6 wording implied.
+  Per this repository's own package-lifecycle policy ("derived from
+  evidence, never declared"), this is a forward correction: the 0.1.6
+  entry below is left as originally written, and this entry records the
+  accurate account instead of rewriting it in place.
+- **Four remaining bare citations of files outside this package's own
+  publishable boundary, in `src/internal/peer-version.ts`.** The 0.1.6 fix
+  deliberately kept one citation of repo-root
+  `scripts/check-workspace-links.mjs` in this file's header comment,
+  because the header discloses inline, in the same paragraph, that
+  `scripts/` is outside every package's `files` allowlist and so does not
+  ship — the unavailability is the sentence's own subject, not a
+  disclaimer bolted on afterward. That reasoning does not extend to four
+  other sites in the same file that named the same script, or its sibling
+  `check-workspace-links.test.mjs`, bare and without the header's nearby
+  disclosure: a reader arriving 75–160 lines below the header has no way
+  to connect the two. Each of the four now either carries the
+  does-not-ship qualifier at its own site or is reworded so it no longer
+  points a reader at a path they cannot open; the header citation itself
+  is unchanged, since the reasoning for keeping it still holds.
+- **A 0.1.4 changelog bullet named an unshipped test file bare.** The
+  0.1.4 "Added" entry below opened with
+  `` `internal/peer-guard-coverage.test.ts`, deriving its subpath set
+  from… `` — naming the file with no note that it does not ship, unlike
+  the self-describing 0.1.5 and 0.1.6 mentions of the same file. The
+  bullet now states directly that the file is excluded from both the
+  TypeScript build and the packed tarball.
+
 ## [0.1.6] - 2026-09-16
 
 ### Fixed
@@ -109,15 +163,16 @@ All notable changes to this package are documented here. Format follows
 
 ### Added
 
-- `internal/peer-guard-coverage.test.ts`, deriving its subpath set from
-  `package.json`'s own `exports` map (never a hand-written list) and
-  checking each subpath's BUILT `dist/` import graph, not `src/`. It
-  either confirms a co-located `assertPeerVersion` call for every optional
-  peer a subpath's compiled output imports, or requires a named,
-  bidirectionally-checked exception — `@clerk/nextjs` at
-  `./providers/clerk/web`, `/client`, and `/proxy` today, for the reason
-  above. This is the enumerate-and-confirm test #889 itself named as
-  missing.
+- `internal/peer-guard-coverage.test.ts` — a test file excluded from both
+  the TypeScript build and the packed tarball, so it does not ship with
+  this package — deriving its subpath set from `package.json`'s own
+  `exports` map (never a hand-written list) and checking each subpath's
+  BUILT `dist/` import graph, not `src/`. It either confirms a co-located
+  `assertPeerVersion` call for every optional peer a subpath's compiled
+  output imports, or requires a named, bidirectionally-checked exception —
+  `@clerk/nextjs` at `./providers/clerk/web`, `/client`, and `/proxy`
+  today, for the reason above. This is the enumerate-and-confirm test
+  #889 itself named as missing.
 
 ## [0.1.3] - 2026-09-02
 

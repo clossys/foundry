@@ -74,7 +74,7 @@ test("all 19 publishable packages are exact-source bound to the catalogue and qu
   const expectedVersions = {
     "@clossys/advisor": "0.2.1",
     "@clossys/architect": "0.1.8",
-    "@clossys/bouncer": "0.1.6",
+    "@clossys/bouncer": "0.1.7",
     "@clossys/builder": "0.7.8",
     "@clossys/butler": "0.1.3",
     "@clossys/controller": "0.9.6",
