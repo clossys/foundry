@@ -29,10 +29,14 @@
  * WHY EXECUTION IS INJECTED
  * ---------------------------
  * Spawning a process is exactly the kind of I/O this package's tests are
- * forbidden from doing for real (see the vitest config header and #283's
- * hermetic-tests requirement — the same rule the binary download already
- * follows). `GitleaksExecutor` is the same shape of seam `CliPort` uses for
- * the CLI: `attemptGitleaksScan` is a pure function of whatever the executor
+ * forbidden from doing for real: this package's test suite never spawns a
+ * process or opens a socket for real — `fetch` and process execution are
+ * always injected — on the reasoning that a gate whose own tests need the
+ * network or a live binary cannot be trusted to report honestly about a
+ * network or binary it could not reach. `./gitleaks.ts`'s binary download
+ * already follows this same rule (see #283's hermetic-tests requirement).
+ * `GitleaksExecutor` is the same shape of seam `CliPort` uses for the CLI:
+ * `attemptGitleaksScan` is a pure function of whatever the executor
  * returns, so a test can inject a canned result and this module is
  * exercised completely without a real gitleaks binary on the test runner's
  * PATH — and without a real repository for it to scan.

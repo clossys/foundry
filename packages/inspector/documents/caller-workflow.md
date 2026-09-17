@@ -304,7 +304,11 @@ workflow files**, joined by an uploaded artifact:
   credential available here at all. It never checks out, builds, or
   executes a single byte of the pull request's own code. Its only input
   from the untrusted run is one downloaded JSON artifact, and even that is
-  not trusted as-is (see "Re-derive, do not believe" below).
+  not trusted as-is: the `decide` job below independently re-establishes
+  that the collect run succeeded and that the commit it names is real
+  before evaluating anything the artifact contains, rather than taking
+  either fact from the artifact's own content (see that job's
+  `RE-DERIVE, DO NOT BELIEVE` step comment).
 
 ```yaml
 # .github/workflows/inspector-collect.yml — untrusted, holds no secret,

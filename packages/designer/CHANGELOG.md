@@ -3,6 +3,50 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.4.5] - 2026-09-16
+
+### Fixed
+
+- `DataTable`'s loading-skeleton row (`SkeletonCell`, in
+  `blocks/DataTable.tsx`) rendered its `animate-pulse` class with no
+  `motion-reduce:animate-none` override — the one miss in an otherwise
+  consistently-followed convention (`atoms/Skeleton.tsx`,
+  `atoms/ProgressBar.tsx`, and every other motion-bearing class in this
+  package already pair the two). A consumer with `prefers-reduced-motion:
+  reduce` set saw a pulsing skeleton row on every `DataTable` in a loading
+  state. `SkeletonCell` now carries `motion-reduce:animate-none` like
+  every other animated class this package ships.
+- `README.md`'s "Optional-peer version guards" section claimed, unqualified,
+  that "every atom accepts a `className` prop." `FileTrigger` does not, by
+  design (react-aria-components' own `FileTrigger` hardcodes its hidden
+  input's `className` to `""` and discards whatever is passed — see
+  `FileTrigger.tsx`'s own header) — and the README already documented that
+  exception correctly everywhere else. Only this one unqualified line
+  contradicted it; it now names the exception instead of overclaiming.
+
+### Changed
+
+- `public-contract.test.ts`'s reduced-motion test asserted "every shipped
+  animation or transition" but checked that claim against a hand-written
+  list of ten files — a list that cannot notice a new motion site, which
+  is exactly how the `DataTable` gap above shipped unnoticed (the same
+  mechanism #907 is about). The test now scans `src/{atoms,blocks,shell,
+  charts,theme}` for `animate-`/`transition-` class literals and checks
+  every file it finds, the same file-discovery pattern `ladder.test.ts`
+  and `peer-guard-coverage.test.ts` already use elsewhere in this package.
+- `peer-guard-coverage.test.ts`'s `react`-peer coverage test (#182) checked
+  a hand-written array of five `*/index.ts` barrels only. Designer has
+  nine real `assertPeerVersion` call sites, not five: each `*/server.ts`
+  is its own `exports` subpath (`@clossys/designer/charts/server`, etc.)
+  a consumer can import without ever loading its sibling `index.ts`, so a
+  guard wired only into `index.ts` left four call sites completely
+  unpinned. The barrel set is now derived from `package.json#exports`
+  itself and checked against built `dist/` output — what a consumer
+  actually resolves — rather than `src/`. `theme/server.ts` deliberately
+  ships no guard (`getThemeInitScript` has no runtime `react` dependency
+  at all); the new test confirms that by reading dist rather than special-
+  casing the file path out of its coverage. Designer's half of #903.
+
 ## [0.4.4] - 2026-09-15
 
 ### Fixed

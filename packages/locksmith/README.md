@@ -16,10 +16,14 @@ npm install @clossys/locksmith
 
 ## Metric
 
-Key age at the ninety-fifth percentile, plus the count of keys with no
-recorded owner. `summarizeRotationMetric` computes exactly this pair from a
-set of rotation evaluations, so the metric is a function this package ships,
-not a promise made only in prose.
+Key age at the ninety-fifth percentile, the count of keys with no recorded
+owner, and the count of owned keys whose rotation could not be observed.
+`summarizeRotationMetric` computes exactly this triple from a set of
+rotation evaluations, so the metric is a function this package ships, not a
+promise made only in prose. The third count is deliberately its own field,
+not folded into the owner count: "nobody has checked" and "nobody owns
+this" are different findings, and collapsing them would let a repeatedly
+`unverifiable` key hide inside a count meant for custody gaps.
 
 ## Loop
 
@@ -30,15 +34,16 @@ not a promise made only in prose.
 - **act** — emit the rotation queue (`rotationQueue`); this package never
   rotates a key itself and never calls a revocation authority — only the
   plane's own explicit authority does that.
-- **learn** — a key that is repeatedly `unverifiable` is a custody gap, not a
-  scheduling problem; it shows up in `summarizeRotationMetric`'s owner count
-  the same way an unowned key does.
+- **learn** — a key that is repeatedly `unverifiable` is not a custody gap
+  and not a scheduling problem; it is its own finding, and
+  `summarizeRotationMetric` reports it in `unverifiableKeyCount`, a field
+  separate from `unownedKeyCount` so the two are never graded the same way.
 
 The loop closes when every declared key evaluates to `current`, every key has
-a recorded owner, and `summarizeRotationMetric`'s owner count is zero. A key
-stuck at `unverifiable` never counts toward that close — it stays visible in
-`rotationQueue` until an observation actually resolves it one way or the
-other.
+a recorded owner, and both `summarizeRotationMetric`'s `unownedKeyCount` and
+`unverifiableKeyCount` are zero. A key stuck at `unverifiable` never counts
+toward that close — it stays visible in `rotationQueue` until an observation
+actually resolves it one way or the other.
 
 **Close condition, for a consuming plane's credential inventory:** this loop
 closes on inventory COVERAGE, which is deliberately a weaker claim than
@@ -134,7 +139,7 @@ const evaluation = evaluateRotation(
 // evaluation.state is one of "current" | "stale" | "unowned" | "unverifiable"
 
 rotationQueue([evaluation]); // every key that is not "current"
-summarizeRotationMetric([evaluation]); // { p95AgeDays, unownedKeyCount }
+summarizeRotationMetric([evaluation]); // { p95AgeDays, unownedKeyCount, unverifiableKeyCount }
 ```
 
 `RotationState` is exactly four literal states, enforced in the type itself:
@@ -180,6 +185,26 @@ therefore remains `indeterminate`, never proof of a token rotation. Unknown fiel
 without being returned, so credential values cannot travel through the
 evidence or evaluation objects. `defineCredentialEvidence` freezes complete,
 already-satisfied evidence for callers that want an authored record.
+
+#### `clossys-locksmith-credential` CLI
+
+The installed executable `clossys-locksmith-credential` is the command-line
+entry point for `evaluateCredential`. It reads one caller-assembled JSON
+evidence document, judges it, and reports the verdict unchanged -- it mints,
+fetches, and rotates nothing, and talks to no provider; a caller's own
+collection step is responsible for assembling the evidence beforehand.
+
+```text
+clossys-locksmith-credential --evidence ./credential-evidence.json
+clossys-locksmith-credential --evidence ./credential-evidence.json --format json
+clossys-locksmith-credential --help
+```
+
+Exit codes mirror `evaluateCredential` exactly: `0` for `satisfied`, `1` for
+`violated` (the evidence itself proves a problem), and `2` for
+`indeterminate`, including evidence that could not be read at all. There is
+no flag that turns a `1` or `2` into a `0`; whether either blocks a merge is
+left to the caller.
 
 ### Revocation
 
@@ -355,7 +380,7 @@ authority.
 | `CustodyStore` | type | The string label naming where a key's value lives; taxonomy is provider-owned, not fixed here. |
 | `evaluateRotation(record, policy, custody, now?)` | function | Judges one key's rotation state: `current` / `stale` / `unowned` / `unverifiable`. |
 | `rotationQueue(evaluations)` | function | Every key whose state is not `current`. |
-| `summarizeRotationMetric(evaluations)` | function | The package metric: p95 key age plus the count of unowned keys. |
+| `summarizeRotationMetric(evaluations)` | function | The package metric: p95 key age, the count of unowned keys, and the count of owned-but-unverifiable keys. |
 | `sameDigest(a, b)` | function | Compares two caller-supplied, opaque rotation digests for equality. |
 | `RotationState` | type | The closed four-member state union: `current` \| `stale` \| `unowned` \| `unverifiable`. |
 | `RotationPolicy` / `RotationRecord` / `RotationEvaluation` / `RotationMetric` | types | Rotation policy, observed rotation history, judged outcome, and the summarized metric. |
@@ -409,11 +434,30 @@ on it.
 
 ## Hard boundaries
 
-No code path in this package reads, logs, prints, or transports a secret
-**value**. It handles names, owners, ages, stores, rotation policies,
-credential lifecycle metadata, revocation records, and digests only. Every
-test is hermetic; no test resolves a real credential. Scanning for leaked
-values is a different package's job and stays there.
+**This value-free guarantee is scoped, not package-wide.** It covers exactly
+the five verb modules `no-value-escapes.test.ts` proves it for --
+`custody`, `rotation`, `revocation`, `distribution`, and `credential` -- 5
+of this package's 22 non-test modules. Within that scope, and only within
+it: no code path reads, logs, prints, or transports a secret **value**.
+Those five modules handle names, owners, ages, stores, rotation policies,
+credential lifecycle metadata, revocation records, and digests only, and
+the test enforces this two ways -- statically, by asserting none of the
+five imports the resolution client/adapters, the Infisical subtree, or any
+other value-reading or I/O capability; and at runtime, by asserting every
+record these modules produce has a closed, exact field set that a
+decoy value-shaped string cannot ride through.
+
+**Everything outside that scope handles values, by design.** The root
+entry's `createSecretsClient(...).require()` / `.get()` (see
+[Resolution](#resolution-unchanged) above) and the `./infisical` subpath's
+`client.get()` and `run()` (which injects every requested value into a
+child process's environment -- see
+[Infisical subpath and CLI](#infisical-subpath-and-cli) below) all resolve
+or transport a real secret value directly. Auditing this package means
+auditing those entry points; the guarantee above does not extend to them,
+and no test in this package claims that it does. Every test is hermetic;
+no test resolves a real credential. Scanning for leaked values is a
+different package's job and stays there.
 
 ## Requirements
 

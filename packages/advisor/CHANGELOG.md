@@ -5,6 +5,33 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.2] - 2026-09-16
+
+### Fixed
+
+- A contradicted fit signal collapsed straight to a `violated` verdict with
+  no finding naming which criterion was contradicted. `advisor-check` on a
+  schema-valid input with one contradicted fit signal returned `state:
+  violated`, `firstWavePlan.state: not-recommended`, and an empty
+  `findings` array — a sponsor received a blocking "not recommended"
+  result with no stated reason. The weaker `unknown` state already emitted
+  a named `sponsor-question` finding; `contradicted`, the only other
+  negative `SignalState`, emitted nothing. `assessAdvisorEngagement()` now
+  emits one `fit-contradicted` finding per contradicted `fitSignals.<id>`,
+  naming the criterion, mirroring the shape `sponsor-question` already uses
+  for `unknown`.
+- Deleted a hand-copied, silently driftable duplicate of `BASIS_FIELDS` (and
+  its `equalBasis` helper) from `currency.ts`; it now imports `BASIS_FIELDS`
+  and `sameBasis` from `authorization.ts`, the single source this package's
+  own README already tells consumers to reuse instead of hand-copying.
+  Deleting a field from the private copy previously left every test and gate
+  green while `assessEngagementDecisionCurrency()` silently stopped
+  comparing that field. `assessment.ts`'s inline basis-digest field list is
+  likewise replaced with the exported `BASIS_DIGEST_FIELDS`.
+- Documented installation in the README: the public npm registry
+  (`https://registry.npmjs.org`) and that no authentication is required.
+  Previously the README had no install instructions at all.
+
 ## [0.2.1] - 2026-09-02
 
 ### Fixed

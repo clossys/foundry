@@ -74,16 +74,54 @@ describe("secret-scan / gitleaks", () => {
   });
 
   describe("resolveGitleaksRelease", () => {
-    it("returns release for known version", () => {
+    it("returns release for known version, defaulting to the current process's own platform/arch", () => {
       const release = resolveGitleaksRelease("8.30.1");
+      const { platform, arch } = getPlatformArch();
       expect(release).toBeDefined();
       expect(release?.version).toBe("8.30.1");
+      expect(release?.platform).toBe(platform);
+      expect(release?.arch).toBe(arch);
       expect(release?.sha256).toBeDefined();
     });
 
     it("returns undefined for unknown version", () => {
       const release = resolveGitleaksRelease("99.99.99");
       expect(release).toBeUndefined();
+    });
+
+    it("returns a DIFFERENT entry per explicit platform/arch for the same version (#301's second finding)", () => {
+      // Before the platform dimension existed, every platform resolved to
+      // the same linux/x64 entry -- which is exactly what made the
+      // documented convenience path throw on every other platform. Each
+      // combination below must resolve, and no two may share a checksum or
+      // URL: each is a distinct real asset with its own real digest.
+      const combos: ReadonlyArray<{ platform: "linux" | "darwin" | "win32"; arch: "x64" | "arm64" }> = [
+        { platform: "linux", arch: "x64" },
+        { platform: "linux", arch: "arm64" },
+        { platform: "darwin", arch: "x64" },
+        { platform: "darwin", arch: "arm64" },
+        { platform: "win32", arch: "x64" },
+        { platform: "win32", arch: "arm64" },
+      ];
+      const releases = combos.map(({ platform, arch }) => resolveGitleaksRelease("8.30.1", platform, arch));
+      for (const [index, release] of releases.entries()) {
+        expect(release, `expected an entry for ${combos[index].platform}/${combos[index].arch}`).toBeDefined();
+        expect(release?.platform).toBe(combos[index].platform);
+        expect(release?.arch).toBe(combos[index].arch);
+      }
+      const sha256s = new Set(releases.map((r) => r?.sha256));
+      const urls = new Set(releases.map((r) => r?.url));
+      expect(sha256s.size).toBe(combos.length);
+      expect(urls.size).toBe(combos.length);
+    });
+
+    it("explicit platform/arch overrides the current process's own", () => {
+      const { platform: liveProcessPlatform } = getPlatformArch();
+      const otherPlatform = liveProcessPlatform === "darwin" ? "linux" : "darwin";
+      const own = resolveGitleaksRelease("8.30.1");
+      const other = resolveGitleaksRelease("8.30.1", otherPlatform, "x64");
+      expect(other?.platform).toBe(otherPlatform);
+      expect(other?.sha256).not.toBe(own?.sha256);
     });
   });
 
@@ -266,16 +304,56 @@ describe("secret-scan / gitleaks", () => {
 //
 // These are cheap, hermetic, and make the specific mistake unrepeatable.
 
+// Every combination `GitleaksBinaryOptions` can name, so a version added to
+// the table later without an entry for one of these six is caught here
+// rather than only discovered the first time a caller on that platform
+// hits `downloadAndVerifyGitleaks` (exactly the failure mode #301's second
+// finding was: a whole platform silently unsupported by a table shaped as
+// if it were platform-agnostic).
+const ALL_PLATFORM_ARCH_COMBOS: ReadonlyArray<{ platform: "linux" | "darwin" | "win32"; arch: "x64" | "arm64" }> = [
+  { platform: "linux", arch: "x64" },
+  { platform: "linux", arch: "arm64" },
+  { platform: "darwin", arch: "x64" },
+  { platform: "darwin", arch: "arm64" },
+  { platform: "win32", arch: "x64" },
+  { platform: "win32", arch: "arm64" },
+];
+
+function allKnownReleases() {
+  const releases: NonNullable<ReturnType<typeof resolveGitleaksRelease>>[] = [];
+  for (const version of getKnownVersions()) {
+    for (const { platform, arch } of ALL_PLATFORM_ARCH_COMBOS) {
+      const release = resolveGitleaksRelease(version, platform, arch);
+      if (release) releases.push(release);
+    }
+  }
+  return releases;
+}
+
 describe("KNOWN_RELEASES integrity", () => {
-  it("no entry carries the digest of empty input", () => {
+  it("every version has an entry for every platform/arch combination", () => {
+    // Guards the matrix itself, before any per-entry check below runs: a
+    // version present for some platforms and silently absent for others is
+    // exactly the shape #301's second finding exploited.
     for (const version of getKnownVersions()) {
-      expect(resolveGitleaksRelease(version)?.sha256).not.toBe(EMPTY_INPUT_SHA256);
+      for (const { platform, arch } of ALL_PLATFORM_ARCH_COMBOS) {
+        expect(
+          resolveGitleaksRelease(version, platform, arch),
+          `expected ${version} to have an entry for ${platform}/${arch}`,
+        ).toBeDefined();
+      }
+    }
+  });
+
+  it("no entry carries the digest of empty input", () => {
+    for (const release of allKnownReleases()) {
+      expect(release.sha256).not.toBe(EMPTY_INPUT_SHA256);
     }
   });
 
   it("no entry carries an all-zero digest", () => {
-    for (const version of getKnownVersions()) {
-      expect(resolveGitleaksRelease(version)?.sha256).not.toBe(ALL_ZERO_SHA256);
+    for (const release of allKnownReleases()) {
+      expect(release.sha256).not.toBe(ALL_ZERO_SHA256);
     }
   });
 
@@ -284,36 +362,55 @@ describe("KNOWN_RELEASES integrity", () => {
     // the general predicate directly, so a THIRD degenerate shape added to
     // `isKnownDegenerateSha256` in the future is caught here too, without
     // this test needing to be told about it by name.
-    for (const version of getKnownVersions()) {
-      expect(isKnownDegenerateSha256(resolveGitleaksRelease(version)?.sha256)).toBe(false);
+    for (const release of allKnownReleases()) {
+      expect(isKnownDegenerateSha256(release.sha256)).toBe(false);
     }
   });
 
-  it("8.30.1 carries the checksum published by the gitleaks project for the asset beside it", () => {
-    // Verified 2026-08-18 two ways: against gitleaks_8.30.1_checksums.txt, and
-    // by hashing the 8,230,402-byte asset directly. Pinned here so a future
-    // edit to the table has to change this line too, deliberately.
-    expect(resolveGitleaksRelease("8.30.1")?.sha256).toBe(
-      "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb",
-    );
+  it("8.30.1 carries the checksum published by the gitleaks project for the asset beside it, on every platform/arch", () => {
+    // Verified two ways for every entry: against gitleaks' own
+    // gitleaks_8.30.1_checksums.txt, and by downloading and hashing that
+    // entry's own asset directly. Pinned here, one literal per platform, so
+    // a future edit to the table has to change this line too, deliberately.
+    const expected: Record<string, string> = {
+      "linux/x64": "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb",
+      "linux/arm64": "e4a487ee7ccd7d3a7f7ec08657610aa3606637dab924210b3aee62570fb4b080",
+      "darwin/x64": "dfe101a4db2255fc85120ac7f3d25e4342c3c20cf749f2c20a18081af1952709",
+      "darwin/arm64": "b40ab0ae55c505963e365f271a8d3846efbc170aa17f2607f13df610a9aeb6a5",
+      "win32/x64": "d29144deff3a68aa93ced33dddf84b7fdc26070add4aa0f4513094c8332afc4e",
+      "win32/arm64": "b95f5e4f5c425cedca7ee203d9afd29597e692c4924a12ed42f970537c72cc0f",
+    };
+    for (const { platform, arch } of ALL_PLATFORM_ARCH_COMBOS) {
+      expect(resolveGitleaksRelease("8.30.1", platform, arch)?.sha256).toBe(expected[`${platform}/${arch}`]);
+    }
   });
 
   it("every entry's checksum is a well-formed lowercase sha256 hex digest", () => {
-    // Iterates whatever `getKnownVersions()` reports, not a hardcoded list —
-    // a version added to the table later is covered automatically, rather
-    // than silently skipped until this test is remembered to be updated too.
-    expect(getKnownVersions().length).toBeGreaterThan(0);
-    for (const version of getKnownVersions()) {
-      const sha256 = resolveGitleaksRelease(version)?.sha256;
-      expect(sha256).toMatch(/^[0-9a-f]{64}$/);
-      expect(isWellFormedSha256(sha256)).toBe(true);
+    // Iterates the full matrix, not a hardcoded list — a version added to
+    // the table later is covered automatically, rather than silently
+    // skipped until this test is remembered to be updated too.
+    const releases = allKnownReleases();
+    expect(releases.length).toBeGreaterThan(0);
+    for (const release of releases) {
+      expect(release.sha256).toMatch(/^[0-9a-f]{64}$/);
+      expect(isWellFormedSha256(release.sha256)).toBe(true);
     }
   });
 
-  it("every entry's url names the exact asset its version and platform imply", () => {
-    const release = resolveGitleaksRelease("8.30.1");
-    expect(release?.url).toContain(getAssetName("8.30.1", "linux", "x64"));
-    expect(release?.url).toContain("/v8.30.1/");
+  it("no two platform/arch entries share a checksum or a URL", () => {
+    // A cheap structural check for the exact bug this table used to have:
+    // every platform silently resolving to the same (linux/x64) entry would
+    // pass every other test in this file while still being wrong.
+    const releases = allKnownReleases();
+    expect(new Set(releases.map((r) => r.sha256)).size).toBe(releases.length);
+    expect(new Set(releases.map((r) => r.url)).size).toBe(releases.length);
+  });
+
+  it("every entry's url names the exact asset its own version, platform, and arch imply", () => {
+    for (const release of allKnownReleases()) {
+      expect(release.url).toContain(getAssetName(release.version, release.platform, release.arch));
+      expect(release.url).toContain(`/v${release.version}/`);
+    }
   });
 });
 
