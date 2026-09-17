@@ -99,14 +99,14 @@
     {
       "id": "bin-reachable",
       "owner": "supplier",
-      "gated": null,
+      "gated": "check:bin-reachability",
       "means": "Every declared bin runs when invoked through the installer-linked name, not only when spawned by real path. A bin that exits 0 with no output on every input is not staged evidence."
     },
     {
       "id": "install-docs",
       "owner": "supplier",
-      "gated": null,
-      "means": "The package README names the public npm registry and states that current-scope install needs no token. A GitHub Packages token instruction on a public-npm package is a blocking defect."
+      "gated": "check:install-docs",
+      "means": "The package README names the public npm registry and states that current-scope install needs no token. A GitHub Packages token instruction on a public-npm package is a blocking defect. A missing public-npm claim is counted, not a pass over unexamined ground."
     },
     {
       "id": "readme-close-condition",

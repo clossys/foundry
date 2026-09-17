@@ -610,6 +610,11 @@ jobs:
       # then expression. Distinct from the release-catalogue upload order.
       # Reads the sequence contract plus packages/*/package.json runtime edges.
       - run: node scripts/check-first-wave-sequence.mjs
+      # Catalogue-integrity install docs: a current-scope README that tells a
+      # consumer they need a GitHub token or GitHub Packages to install this
+      # package is a blocking defect (#924). Missing public-npm claims are
+      # printed and counted, never a silent pass. README text only, no build.
+      - run: node scripts/check-install-docs.mjs
 
   # Three gates over this repository's own tree that had never been invoked
   # by any workflow before this change, and that share one requirement: a
@@ -1018,6 +1023,12 @@ jobs:
       # every package has zero internal dependencies, and silently stops
       # working the moment one gains its first -- so build stays first.
       - run: npm run build
+      # Every declared packages/*/package.json bin, invoked through a fresh
+      # node_modules/.bin-shaped symlink, must produce output (#909). Needs
+      # the build above: missing dist/ is exit 2, not a skip. Distinct from
+      # packed-consumer, which now uses the same launch shape after a pack.
+      - name: Declared bins reachable through node_modules/.bin
+        run: node scripts/check-bin-reachability.mjs
       # This repository's own verify-standards collector, checked against the
       # one construction that can tell a real resolution from a retargeted
       # one: a reference naming another repository (or another tracker) whose
