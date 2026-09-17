@@ -29,6 +29,40 @@ An intent becomes due when its `windowClosesAt` is at or before `evaluatedAt`.
 If no intent is due, the value is `null` and the judgment is `indeterminate`—
 never a synthetic 100% pass.
 
+Independent consumer evidence shows the position's owned metric meets its
+setpoint over the declared review cadence. The owned metric is `timely
+verified delivery rate`, computed by `assessTimelyVerifiedDeliveryRate()`.
+An empty evaluated set is `indeterminate`, never a perfect rate of 1.
+`checkDeliveryClosure` still reports kebab `timely-verified-delivery-rate`
+against a caller-supplied setpoint; that function is not this assessment.
+This package does not measure consumer evidence and does not close the
+loop. A green run of this package's tests is not a close.
+
+```ts
+import { assessTimelyVerifiedDeliveryRate } from "@clossys/messenger";
+
+const report = assessTimelyVerifiedDeliveryRate(input);
+```
+
+```bash
+messenger-rate-check assessment.json
+```
+
+The command prints JSON and exits `0` for satisfied, `1` for violated, and
+`2` for indeterminate, unreadable, or invalid input.
+
+This package declares that command as its first-day assessment surface in
+its own manifest:
+
+```json
+"foundry": { "assessment": { "bin": "messenger-rate-check", "invocation": "single-json-input" } }
+```
+
+Onboarding discovers that declaration from the installed manifest and never
+infers a surface. `messenger-check delivery-closure` stays the setpoint
+gate and is not the assessment surface. Messenger is not a required
+first-day role; Advisor remains the only required first-day assessment.
+
 The universal loop is concrete here:
 
 1. **Sense:** accept finished `DeliveryIntent` records and signed provider
@@ -207,7 +241,9 @@ switch their provider import to the new subpath.
 | --- | --- | --- |
 | `MessengerDeliveryError` | class | Normalized transport failure with retryability and provider context |
 | `MessengerValidationError` | class | Structured invalid-message or invalid-intent error |
-| `checkDeliveryClosure` | function | Compute the primary metric and ternary judgment |
+| `checkDeliveryClosure` | function | Compute kebab `timely-verified-delivery-rate` against a caller-supplied setpoint. Not the charter assessment. |
+| `assessTimelyVerifiedDeliveryRate` | function | Charter close metric `timely verified delivery rate` from consumer-supplied independent observations |
+| `TimelyVerifiedDeliveryRateAssessment`, `TimelyVerifiedDeliveryRateFinding`, `TimelyVerifiedDeliveryRateState` | type | Charter assessment result shape |
 | `validateDeliveryClosureInput` | function | Validate gate evidence without turning bad input into a metric failure |
 | `createMessenger` | function | Build the mandatory policy, claim, transport, and completion pipeline |
 | `assertValidDeliveryIntent` | function | Throw for invalid authorization, message, or window data |

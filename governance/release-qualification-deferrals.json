@@ -85,6 +85,12 @@
       "version": "0.1.6",
       "reason": "This version was cut in a cloud sandbox whose outbound HTTPS is intercepted and re-terminated (issue #833). scripts/run-candidate-qualification.mjs is owner/developer-machine work in that sandbox class: sanitizedEnv() does not forward a parent CA-trust variable, and a qualification record exists to prove exact artifact bytes rather than bytes observed through an interception path. 0.1.6 may not be published before the record exists.",
       "issue": 833
+    },
+    {
+      "package": "messenger",
+      "version": "0.1.8",
+      "reason": "This version was cut in a cloud sandbox whose outbound HTTPS is intercepted and re-terminated (issue #833). scripts/run-candidate-qualification.mjs is owner/developer-machine work in that sandbox class: sanitizedEnv() does not forward a parent CA-trust variable, and a qualification record exists to prove exact artifact bytes rather than bytes observed through an interception path. 0.1.8 may not be published before the record exists.",
+      "issue": 833
     }
   ]
 }
