@@ -248,7 +248,16 @@ else a caller's own collection step produces in this shape.
 Evaluates whether a change names a work item, in a shape that resolves. A
 lookup that was never attempted, could not be made, or returned "not visible"
 is `indeterminate` — a scoped credential answers identically for an item that
-is absent and one it may not read. Structural exemptions (automation authors,
+is absent and one it may not read.
+
+"Resolves" means resolves against the repository the reference *names*. Item
+numbers are per-repository and per-tracker, so answering `owner/name#12` — or a
+URL on another host — with the local object carrying that number validates an
+unrelated object and reports success. A reference naming somewhere else is
+answered only when the caller states it aimed its lookup there
+(`item.lookupScope`, and `item.lookupHost` for a host-bearing reference), and
+is `indeterminate` otherwise: never a pass, and never a finding against a
+change whose reference may be perfectly correct. Structural exemptions (automation authors,
 release-automation branches, declared labels) are first-class policy and are
 named in the result rather than disappearing into a silent pass.
 
@@ -256,13 +265,13 @@ named in the result rather than disappearing into a silent pass.
 | --- | --- |
 | `checkTaskRecord` | Evaluates one change's task record against a consumer-owned policy. |
 | `extractTaskReferenceText` | Pulls the first work-item reference out of a description. Caller labels are escaped, never spliced into a pattern. |
-| `parseTaskReference` | Parses a reference into a scope and a number. Accepts a bare number, a qualified `owner/name#n`, and a tracker URL. |
+| `parseTaskReference` | Parses a reference into a scope, a number, and — for the URL form — the tracker host it names. Accepts a bare number, a qualified `owner/name#n`, and a tracker URL. |
 | `taskRecordReasons` | The declared reasons it can decline to answer. |
-| `TaskRecordObservation` | Type. Event kind, description, author, branch, labels, tracker scope, and the caller's lookup result. |
+| `TaskRecordObservation` | Type. Event kind, description, author, branch, labels, tracker scope and host, and the caller's lookup result. |
 | `TaskRecordPolicy` | Type. Applicable events, exemption lists, record labels, and whether resolution is required. |
 | `TaskRecordReport` | Type. The verdict, plus any exemption and parsed reference. |
 | `TaskRecordExemption` | Type. Which exemption fired and what matched. |
-| `TaskItemObservation` | Type. What the caller found out about the referenced item. |
+| `TaskItemObservation` | Type. What the caller found out about the referenced item, and which repository it looked in. |
 | `TaskItemLookupOutcome` | Type. How the caller's lookup ended. |
 | `TASK_ITEM_LOOKUP_OUTCOMES` | The same vocabulary as a value, so a caller-supplied outcome can be checked against it at runtime. An outcome outside it is `indeterminate`, never a resolved item. |
 | `ParsedTaskReference` | Type. |

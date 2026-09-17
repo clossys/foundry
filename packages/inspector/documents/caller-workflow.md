@@ -612,10 +612,28 @@ named reason rather than a partial read.
       "headRef": "<the source branch>",
       "labels": [],
       "trackerScope": "<the owner/name this run's token can read>",
+      // The tracker host that scope lives on. OPTIONAL, and omit it rather
+      // than guessing: `owner/name` is unique only within one host, so a
+      // reference written as a URL on some OTHER host names a different
+      // repository with the same path. Stated, it is compared; unstated, such
+      // a reference is reported indeterminate instead of being read as local.
+      "trackerHost": "<the host, e.g. from GITHUB_SERVER_URL>",
       // The caller's own lookup result. "not-visible" and "unavailable" are
       // both indeterminate: a scoped token answers identically for an item
       // that is absent and one it may not read.
-      "item": { "outcome": "resolved", "title": "..." }
+      //
+      // `lookupScope` (and `lookupHost`, when the reference carries a host)
+      // say WHERE this lookup was aimed. An outcome alone says only how a
+      // lookup ended, never what it examined — a run that strips a
+      // reference's `owner/name` prefix and queries its own repository
+      // instead reports an ordinary "resolved" for an unrelated object. The
+      // stated target is compared against the reference before the outcome is
+      // read, so a lookup aimed elsewhere is indeterminate rather than a
+      // verdict. Omit both when no lookup was made; stating a target nothing
+      // examined is the same untruth in the other direction. Omitting them
+      // entirely is still valid and still safe — it just limits what can
+      // resolve to `trackerScope` itself.
+      "item": { "outcome": "resolved", "title": "...", "lookupScope": "<the owner/name actually queried>" }
     },
     "policy": {
       "applicableEventKinds": ["pull_request"],

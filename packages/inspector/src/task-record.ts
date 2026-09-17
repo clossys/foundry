@@ -21,6 +21,28 @@
  *    that as proof of absence would fail changes for a reason that is about
  *    the credential rather than the change.
  *
+ * A REFERENCE IS JUDGED AGAINST THE REPOSITORY IT NAMES, OR NOT AT ALL
+ * ---------------------------------------------------------------------
+ * A reference can name a repository — and, in its URL form, a tracker host —
+ * other than the one the run itself sits in. Item numbers are per-repository
+ * and per-host, so the same number names a different object on every tracker
+ * that has one. Answering such a reference with the local object carrying
+ * that number is not a fallback: it validates an unrelated object, and
+ * whether the result then passes or fails is a coincidence of what that local
+ * number happens to be. So the target a reference names is compared — scope
+ * AND host — against what the caller stated about its own run, before any
+ * lookup outcome is interpreted. What cannot be established that way is
+ * `indeterminate`: never a pass, and never a finding against the change,
+ * whose reference may be perfectly correct.
+ *
+ * A caller that CAN read the named repository says so by stating, on the
+ * lookup result itself, which target it queried (`lookupScope`, plus
+ * `lookupHost` when the reference carries a host). That claim is checked
+ * against the reference before the outcome is read, so a lookup aimed
+ * somewhere else establishes nothing rather than standing in. Stating no
+ * lookup target stays valid and stays safe; it only limits what can resolve
+ * to the run's own tracker scope.
+ *
  * STRUCTURAL EXEMPTIONS ARE PART OF THE CHECK, NOT AN ESCAPE HATCH
  * -----------------------------------------------------------------
  * Automated changes — a dependency bot's version bump, a release-automation
@@ -76,6 +98,26 @@ export interface TaskItemObservation {
   readonly title?: string;
   /** Free-text detail from the tracker, for the report. */
   readonly detail?: string;
+  /**
+   * The scope this lookup was actually aimed at, when the caller states one.
+   *
+   * An outcome on its own says how a lookup ended, never what it examined,
+   * and those are different facts: a run that strips a reference's
+   * `owner/name` prefix and queries its own repository instead reports a
+   * perfectly ordinary `resolved` for an object the author never referenced.
+   * Stating the target makes that claim checkable — it is compared with the
+   * reference's own target before the outcome is read, and a mismatch is
+   * `indeterminate` rather than a verdict.
+   *
+   * Optional, and omitting it is not a lesser answer: it just leaves the
+   * check with nothing to go on but the run's own scope, so only a reference
+   * naming that scope can resolve. Supplying it is what lets a caller whose
+   * credential genuinely reaches another repository resolve a reference to
+   * it.
+   */
+  readonly lookupScope?: string;
+  /** The tracker host this lookup was aimed at. Only meaningful alongside `lookupScope`. */
+  readonly lookupHost?: string;
 }
 
 /** Everything observed about one proposed change. All caller-supplied; none discovered here. */
@@ -96,6 +138,21 @@ export interface TaskRecordObservation {
    * scope is `indeterminate`, never a finding.
    */
   readonly trackerScope: string;
+  /**
+   * The tracker host that scope lives on, opaque and compared only for
+   * equality (case-insensitively). A reference's URL form carries a host, and
+   * `owner/name` is only unique WITHIN a host — the same path names a
+   * different repository on every tracker that has one. So a URL reference is
+   * compared against this before anything else about it is believed.
+   *
+   * Optional, because a caller that never states one is not thereby wrong: it
+   * has simply not said which tracker it reads, and a URL reference is then
+   * reported as unverifiable instead of being assumed local. A host invented
+   * here as a default would be this package deciding, on the caller's behalf,
+   * that an unfamiliar tracker is the familiar one — which is the retargeting
+   * this field exists to prevent.
+   */
+  readonly trackerHost?: string;
   /** The caller's lookup result for whatever reference was extracted, if it made one. */
   readonly item?: TaskItemObservation;
 }
@@ -137,6 +194,9 @@ export const taskRecordReasons = createGateReasons([
   "item-lookup-unavailable",
   "item-not-visible",
   "item-outside-tracker-scope",
+  "item-outside-tracker-host",
+  "item-tracker-host-unstated",
+  "item-lookup-target-mismatch",
 ] as const);
 
 export type TaskRecordReason = (typeof taskRecordReasons.reasons)[number];
@@ -152,6 +212,16 @@ export interface ParsedTaskReference {
   readonly raw: string;
   /** The tracker scope it names, defaulting to the observation's own scope for a bare number. */
   readonly scope: string;
+  /**
+   * The tracker host it names, when the reference is a URL. `undefined` for
+   * the bare and qualified forms, which name no host and are therefore read
+   * as naming the caller's own tracker.
+   *
+   * Kept rather than discarded: `owner/name` is unique only within a host, so
+   * a URL whose host is not the caller's own names a repository the caller's
+   * scope comparison would otherwise mistake for its own.
+   */
+  readonly host?: string;
   /** The item's number within that scope. */
   readonly number: string;
 }
@@ -378,10 +448,16 @@ export function extractTaskReferenceText(description: string, recordLabels: read
  *
  * Three accepted shapes: a tracker URL ending `/<scope-owner>/<scope-name>/
  * issues/<n>`, a qualified `<owner>/<name>#<n>`, and a bare `#<n>` or `<n>`
- * resolved against the observation's own scope. The URL form deliberately
- * does not pin a host: this package endorses no tracker vendor, and a host
- * literal here would be exactly the vendor-shaped knowledge the sibling
- * packages' charters refuse.
+ * resolved against the observation's own scope. The URL form still pins no
+ * host — this package endorses no tracker vendor, and a host literal here
+ * would be exactly the vendor-shaped knowledge the sibling packages' charters
+ * refuse — but it no longer DISCARDS the host either, which is a different
+ * thing and was a real defect. Dropping it left `owner/name` to be compared
+ * against a caller's own scope as though that path were unique across every
+ * tracker in the world; a URL naming the same path on some other host then
+ * compared equal to the caller's own repository and was answered by it. The
+ * host is carried out unexamined and compared only for equality, by the
+ * check, against the host the caller stated for itself.
  *
  * Backticks around the reference are stripped first. A description is
  * Markdown, and writing a reference in a code span — `` `Work item: #12` ``
@@ -414,6 +490,7 @@ export function parseTaskReference(raw: string, defaultScope: string): ParsedTas
   };
 
   let scope: string;
+  let host: string | undefined;
   let number: string;
   const schemeEnd = unspanned.startsWith("https://") ? 8 : unspanned.startsWith("http://") ? 7 : undefined;
   if (schemeEnd !== undefined) {
@@ -421,15 +498,15 @@ export function parseTaskReference(raw: string, defaultScope: string): ParsedTas
     const ownerEnd = hostEnd === -1 ? -1 : unspanned.indexOf("/", hostEnd + 1);
     const nameEnd = ownerEnd === -1 ? -1 : unspanned.indexOf("/", ownerEnd + 1);
     if (hostEnd === -1 || ownerEnd === -1 || nameEnd === -1) return undefined;
-    const host = unspanned.slice(schemeEnd, hostEnd);
+    const urlHost = unspanned.slice(schemeEnd, hostEnd);
     const owner = unspanned.slice(hostEnd + 1, ownerEnd);
     const name = unspanned.slice(ownerEnd + 1, nameEnd);
     const issuePrefix = "/issues/";
     if (
-      host === "" ||
+      urlHost === "" ||
       owner === "" ||
       name === "" ||
-      hasWhitespace(host) ||
+      hasWhitespace(urlHost) ||
       hasWhitespace(owner) ||
       hasWhitespace(name) ||
       !unspanned.startsWith(issuePrefix, nameEnd)
@@ -439,6 +516,7 @@ export function parseTaskReference(raw: string, defaultScope: string): ParsedTas
     number = unspanned.slice(nameEnd + issuePrefix.length);
     if (!isDigits(number)) return undefined;
     scope = `${owner}/${name}`;
+    host = urlHost;
   } else {
     const slash = unspanned.indexOf("/");
     const hash = unspanned.indexOf("#");
@@ -458,7 +536,28 @@ export function parseTaskReference(raw: string, defaultScope: string): ParsedTas
     }
   }
   if (number === undefined || scope.trim() === "") return undefined;
-  return { raw, scope, number };
+  return host === undefined ? { raw, scope, number } : { raw, scope, host, number };
+}
+
+/** One tracker target: a repository path, and the host it lives on when one is known. */
+interface TrackerTarget {
+  readonly host?: string;
+  readonly scope: string;
+}
+
+/** The one comparison form for a host or a scope: trimmed, case-folded, `undefined` preserved. */
+function fold(value: string | undefined): string | undefined {
+  return value?.trim().toLowerCase();
+}
+
+/** Equal ignoring case, with an unstated host equal only to another unstated host. */
+function sameTarget(left: TrackerTarget, right: TrackerTarget): boolean {
+  return fold(left.host) === fold(right.host) && fold(left.scope) === fold(right.scope);
+}
+
+/** How a target is written in a report: `host/owner/name#12`, or `owner/name#12` when no host is known. */
+function describeTarget(target: TrackerTarget, number: string): string {
+  return `${target.host === undefined ? "" : `${target.host}/`}${target.scope}#${number}`;
 }
 
 /** Why a change was exempt, when it was. Reported so an exemption is never invisible. */
@@ -538,6 +637,16 @@ function validateObservation(observation: TaskRecordObservation): string | undef
   if (observation.trackerScope.trim() === "") {
     return "trackerScope is empty, so no reference could be compared against the scope this run can read.";
   }
+  const trackerHost: unknown = observation.trackerHost;
+  if (trackerHost !== undefined) {
+    if (typeof trackerHost !== "string") return "trackerHost must be a string when it is present.";
+    if (trackerHost.trim() === "") {
+      // An empty host is not "no host stated": it is a stated host that
+      // matches nothing, and the difference decides whether a URL reference
+      // is compared or reported unverifiable. Say so rather than picking one.
+      return "trackerHost is present but empty. Omit it to state no host; an empty one states a host that is nothing.";
+    }
+  }
   if (!isStringArray(observation.labels)) return "labels must be a list of strings.";
   const item: unknown = observation.item;
   if (item !== undefined) {
@@ -551,6 +660,21 @@ function validateObservation(observation: TaskRecordObservation): string | undef
         `item.outcome is ${JSON.stringify(item.outcome)}, which is not one of ` +
         `${TASK_ITEM_LOOKUP_OUTCOMES.join(", ")}. An outcome this build cannot read is not a resolved item.`
       );
+    }
+    for (const name of ["lookupScope", "lookupHost"] as const) {
+      const value: unknown = item[name];
+      if (value === undefined) continue;
+      if (typeof value !== "string") return `item.${name} must be a string when it is present.`;
+      if (value.trim() === "") {
+        return `item.${name} is present but empty, which states a target that is nothing. Omit it instead.`;
+      }
+    }
+    if (item.lookupHost !== undefined && item.lookupScope === undefined) {
+      // A host with no scope names no repository, so there is nothing to
+      // compare the reference against — and reading it as "the run's own
+      // scope, on that host" would be this check inventing the half the
+      // caller did not state.
+      return "item.lookupHost was stated without item.lookupScope, so it names no repository to have looked in.";
     }
   }
   return undefined;
@@ -570,7 +694,18 @@ function findExemption(observation: TaskRecordObservation, policy: TaskRecordPol
  * Evaluates one change's task record against the consuming repository's
  * policy. Scope: work-item *reference resolution* only — does the change
  * description carry a reference to a work item, in a shape that resolves
- * to a real tracked item (or a declared exemption fires instead). It does
+ * to a real tracked item (or a declared exemption fires instead).
+ *
+ * "Resolves" means resolves against the repository the reference NAMES. A
+ * reference to another repository, or to another tracker host, is answered by
+ * the caller's lookup only when the caller stated it aimed that lookup there;
+ * otherwise it is `indeterminate`, with the reference and the run's own
+ * stated scope in the message. Unreachable, private, and non-existent all
+ * land on that same third state rather than on a finding, for the reason the
+ * header gives: a gate that fails a change over a fact about a credential is
+ * a gate people route around, and one that passes it is worse.
+ *
+ * It does
  * not read or validate any other field a policy label might introduce
  * (an unfilled "Who:", "Why (origin):", or "Outcome:" placeholder, for
  * example) — those are outside this check's vocabulary and pass through
@@ -648,15 +783,72 @@ export function checkTaskRecord(
     };
   }
 
-  if (reference.scope.toLowerCase() !== observation.trackerScope.toLowerCase()) {
-    return {
-      reference,
-      result: taskRecordReasons.indeterminate(
-        "item-outside-tracker-scope",
-        `${reference.scope}#${reference.number} is outside ${observation.trackerScope}, which is the only scope this ` +
-          "run's credential is stated to read. The reference's shape is valid; whether the item exists is unknown.",
-      ),
-    };
+  const item = observation.item;
+
+  // A host-less reference (`#12`, `owner/name#12`) names no tracker, so it is
+  // read as naming the caller's own — the same assumption the caller's own
+  // lookup makes. Normalising both sides the same way is what keeps that
+  // assumption from becoming a mismatch between two descriptions of one
+  // place, while leaving a reference that DOES name a host to be compared.
+  const referenceTarget: TrackerTarget = { host: reference.host ?? observation.trackerHost, scope: reference.scope };
+  const lookupTarget: TrackerTarget | undefined =
+    item?.lookupScope === undefined
+      ? undefined
+      : { host: item.lookupHost ?? observation.trackerHost, scope: item.lookupScope };
+
+  if (lookupTarget !== undefined) {
+    // The caller stated where it looked, so that is what gets checked — and a
+    // credential that genuinely reaches another repository can resolve a
+    // reference to it, which is the whole point of letting the target be
+    // stated. What it can never do is stand in for a different target.
+    if (!sameTarget(lookupTarget, referenceTarget)) {
+      return {
+        reference,
+        result: taskRecordReasons.indeterminate(
+          "item-lookup-target-mismatch",
+          `This run's lookup examined ${describeTarget(lookupTarget, reference.number)} and the reference names ` +
+            `${describeTarget(referenceTarget, reference.number)}. Item numbers are per-repository, so an object with ` +
+            "the same number somewhere else is an unrelated object: whatever that lookup returned, it is not evidence " +
+            "about this reference.",
+        ),
+      };
+    }
+  } else {
+    // Nothing was stated about where a lookup went, so the only place this run
+    // can speak for is its own tracker. Both halves of that — host and scope —
+    // are compared, because `owner/name` is unique only within one host.
+    if (reference.host !== undefined && observation.trackerHost === undefined) {
+      return {
+        reference,
+        result: taskRecordReasons.indeterminate(
+          "item-tracker-host-unstated",
+          `${describeTarget(referenceTarget, reference.number)} names a tracker host, and this run states none, so ` +
+            "whether that is the tracker its credential reads cannot be established. The reference's shape is valid; " +
+            "nothing here was validated against it.",
+        ),
+      };
+    }
+    if (reference.host !== undefined && fold(reference.host) !== fold(observation.trackerHost)) {
+      return {
+        reference,
+        result: taskRecordReasons.indeterminate(
+          "item-outside-tracker-host",
+          `${describeTarget(referenceTarget, reference.number)} is on ${reference.host}, and this run states it reads ` +
+            `${String(observation.trackerHost)}. The same owner and name on another tracker is a different ` +
+            "repository, so nothing here was validated against it.",
+        ),
+      };
+    }
+    if (reference.scope.toLowerCase() !== observation.trackerScope.toLowerCase()) {
+      return {
+        reference,
+        result: taskRecordReasons.indeterminate(
+          "item-outside-tracker-scope",
+          `${reference.scope}#${reference.number} is outside ${observation.trackerScope}, which is the only scope this ` +
+            "run's credential is stated to read. The reference's shape is valid; whether the item exists is unknown.",
+        ),
+      };
+    }
   }
 
   if (!policy.requireResolvedItem) {
@@ -665,7 +857,6 @@ export function checkTaskRecord(
     return { result: gateSatisfied(1), reference };
   }
 
-  const item = observation.item;
   if (item === undefined || item.outcome === "not-attempted") {
     return {
       reference,
