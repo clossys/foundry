@@ -78,6 +78,27 @@ const publisherExports = [
  * deliberately explicit: a manifest can say that a peer is optional, but it
  * cannot say which public entry points are expected to remain usable without
  * that peer.
+ *
+ * ADDING AN EXPORT SUBPATH TO A PACKAGE WITH AN OPTIONAL PEER
+ * ----------------------------------------------------------
+ * This table is the one record you edit, and it is deliberately mutable: it
+ * describes the CURRENT source tree, so it moves whenever the exports do.
+ * A new subpath on any package named below fails `check:gates` and
+ * `check:packed-consumer` with `omission row <peer> misses <specifier>`, once
+ * per optional peer, until every row here covers it.
+ *
+ * Fill it in from a MEASUREMENT, never from a guess about what should happen --
+ * `npm run check:packed-consumer -- --package <name>` physically removes each
+ * peer and imports the specifier. #878 exists because a row that looked
+ * obviously right (designer's `tailwind-merge`) had stopped being true.
+ * If the new export declares a `react-server` condition, its outcome must be
+ * the `{ default, "react-server" }` object form: a bare string there is
+ * refused as a collapse rather than accepted as a shorthand.
+ *
+ * `governance/public-npm-aggregate-canary.json` carries rows of the same shape
+ * and is NOT the file to edit -- it is frozen measurement of already-published
+ * tarballs, and it stopped asking anything of this tree in #533. See
+ * `validateAggregateCanary`'s header in `public-npm-aggregate-canary.mjs`.
  */
 export const OPTIONAL_PEER_POLICY = {
   "@clossys/bouncer": {
@@ -424,10 +445,26 @@ function declaredRuntimeTargets(manifest) {
 
 function policyOutcomeShapeFindings(manifest, peer, specifier, value, conditions) {
   const prefix = `${manifest.name} omission row ${peer} ${specifier}`;
-  if (typeof value === "string") return ["imports", "rejects"].includes(value) ? [] : [`${prefix} has invalid outcome`];
+  const expected = [...conditions].sort();
+  if (typeof value === "string") {
+    if (!["imports", "rejects"].includes(value)) return [`${prefix} has invalid outcome`];
+    // A bare outcome string asserts one result for every condition the export
+    // declares, which is only true when `default` is the only one. An export
+    // with a `react-server` target resolves to DIFFERENT files per condition,
+    // so one string is a claim about two unmeasured things rather than a
+    // shorthand for one measured thing. The object branch below is checked for
+    // exact condition coverage; this branch used to return before reaching it,
+    // which is how a string could silently opt out of that check. The frozen
+    // aggregate plan carried its own copy of this rule against the source
+    // tree; #533 moved it here, where it runs against the manifest each caller
+    // actually measured -- packed source for `check:packed-consumer`, the
+    // installed frozen tarball for the aggregate canary's own execution join.
+    return expected.length === 1 && expected[0] === "default"
+      ? []
+      : [`${prefix} collapses its ${expected.join("/")} outcomes into one string`];
+  }
   if (!value || typeof value !== "object" || Array.isArray(value)) return [`${prefix} has invalid condition outcomes`];
   const actual = Object.keys(value).sort();
-  const expected = [...conditions].sort();
   const findings = [];
   if (JSON.stringify(actual) !== JSON.stringify(expected)) findings.push(`${prefix} has incomplete or stale condition outcomes`);
   for (const condition of expected) if (!['imports', 'rejects'].includes(value[condition])) findings.push(`${prefix} has invalid ${condition} outcome`);

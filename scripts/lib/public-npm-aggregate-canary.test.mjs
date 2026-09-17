@@ -127,18 +127,54 @@ test("aggregate record fails closed on ordering and non-identity plan rows", () 
   }
 });
 
-test("aggregate optional-peer matrices reject missing relationships and collapsed react-server outcomes", () => {
+test("aggregate optional-peer matrices reject missing relationships", () => {
   const missing = structuredClone(record);
   missing.optionalPeerMatrix.find((row) => row.set === "baseline" && row.packageKey === "publisher").peers.pop();
-  assert.ok(validateAggregateCanary(missing, { read }).some((item) => item.rule === "optional-peer-coverage" || item.rule === "optional-peer-manifest"));
-  const collapsed = structuredClone(record);
-  collapsed.optionalPeerMatrix.find((row) => row.set === "oidc-successor" && row.packageKey === "publisher").peers.find((peer) => peer.peer === "@internationalized/date").outcomes["@clossys/publisher/web"] = "rejects";
-  assert.ok(validateAggregateCanary(collapsed, { read }).some((item) => item.rule === "optional-peer-manifest"));
+  assert.ok(validateAggregateCanary(missing, { read }).some((item) => item.rule === "optional-peer-coverage"));
   const { plan, closure, transcript } = satisfiedFixture();
   const missingCondition = structuredClone(transcript);
   missingCondition.optionalPeerObservations = missingCondition.optionalPeerObservations.filter((item) => !(item.package === "@clossys/publisher" && item.peer === "@internationalized/date" && item.specifier === "@clossys/publisher/web" && item.condition === "react-server"));
   missingCondition.canonicalSha256 = sha256(JSON.stringify(stable(Object.fromEntries(Object.entries(missingCondition).filter(([key]) => key !== "canonicalSha256")))));
   assert.ok(validateSatisfiedAggregateTranscript(missingCondition, { plan, closure }).some((item) => item.rule === "optional-peer-observations"));
+});
+
+// #533/#949: the matrix measures published tarballs. Joining it to the source
+// tree by NAME alone made every finding it could raise unclearable, because
+// the only place to record one is the frozen record itself — which is how a
+// new export subpath became a package-design constraint.
+test("the frozen optional-peer matrix joins a source manifest only at the version it measured", () => {
+  const row = record.optionalPeerMatrix.find((item) => item.set === "baseline" && item.packageKey === "controller");
+  const successor = record.optionalPeerMatrix.find((item) => item.set === "oidc-successor" && item.packageKey === "controller");
+  const specifiers = Object.keys(row.peers[0].outcomes);
+  assert.notEqual(row.version, successor.version); // the two frozen rows this one tree is joined by
+  const manifest = (version, exported) => JSON.stringify({
+    name: row.name,
+    version,
+    peerDependenciesMeta: { [row.peers[0].peer]: { optional: true } },
+    exports: Object.fromEntries(exported.map((specifier) => [
+      specifier === row.name ? "." : `./${specifier.slice(row.name.length + 1)}`,
+      { import: "./dist/index.js" },
+    ])),
+  });
+  const findings = (bytes) => validateAggregateCanary(record, {
+    read: (path) => path === `packages/${row.packageKey}/package.json` ? bytes : read(path),
+  }).filter((item) => item.rule === "optional-peer-manifest");
+
+  // While the tree still sits on the measured version the row must close it
+  // exactly, in both directions — and only that row, never its sibling set's,
+  // since one tree cannot be two published versions at once.
+  assert.deepEqual(findings(manifest(row.version, specifiers)), []);
+  assert.deepEqual(findings(manifest(row.version, [...specifiers, `${row.name}/added`])).length, 1);
+  assert.ok(findings(manifest(row.version, [...specifiers, `${row.name}/added`]))[0].message.includes("misses"));
+  assert.ok(findings(manifest(row.version, specifiers.slice(1))).some((item) => item.message.includes("stale export")));
+
+  // Once the tree moves past it, the row describes a shipped artifact and this
+  // tree is outside its scope. A new subpath is then the mutable
+  // OPTIONAL_PEER_POLICY's business, not an unclearable frozen-record finding.
+  assert.deepEqual(findings(manifest("9.9.9", [...specifiers, `${row.name}/added`])), []);
+  // The sibling set's row is not exempt — it simply owns a different version,
+  // and closes this tree exactly when the tree is on that one instead.
+  assert.deepEqual(findings(manifest(successor.version, [...specifiers, `${row.name}/added`])).length, 1);
 });
 
 test("introduced aggregate plan is immutable", () => {

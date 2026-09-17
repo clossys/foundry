@@ -43,12 +43,6 @@ function optionalPeerOutcomeValid(outcome) {
     : object(outcome) && Object.keys(outcome).length > 0
       && Object.entries(outcome).every(([condition, value]) => OPTIONAL_PEER_CONDITIONS.has(condition) && OPTIONAL_PEER_OUTCOMES.has(value));
 }
-function hasReactServerCondition(value) {
-  if (!object(value)) return false;
-  if (own(value, "react-server")) return true;
-  return Object.values(value).some(hasReactServerCondition);
-}
-
 function finding(findings, rule, message) { findings.push({ rule, message }); }
 export function canonicalRedirectProjection(rows) {
   if (!Array.isArray(rows)) return [];
@@ -311,6 +305,63 @@ export function validateAggregateChildExecution(run, { name, version, qualificat
  * Validate the closed, aggregate public-npm canary declaration without
  * contacting npm. A held/pending member is a hard incomplete result at run
  * time, not an optimistic substitute for public registry evidence.
+ *
+ * ON `optional-peer-manifest` AND `packages/<key>/package.json` (#533, #949)
+ * ------------------------------------------------------------------------
+ * The 38 `optionalPeerMatrix` rows are frozen MEASUREMENTS of published
+ * tarballs: "with this optional peer physically absent, `@clossys/x@1.2.3`
+ * resolved these specifiers this way". The freeze protects a measurement, and
+ * nothing in this working tree can retroactively change what a published
+ * tarball did.
+ *
+ * This rule used to join each row to `packages/<packageKey>/package.json` by
+ * NAME ALONE, which made it a check of the frozen measurement against a
+ * manifest that is not the artifact it measured. Two consequences, both real:
+ *
+ *   1. Each source manifest is joined by two rows — one per frozen set —
+ *      naming two DIFFERENT published versions. At most one of those can be
+ *      "the reviewed manifest", and since the introducing commit (edc1f07)
+ *      neither ever was: controller froze at 0.8.23/0.8.24 with the tree
+ *      already on 0.8.24, and is on 0.9.7 now.
+ *   2. Every finding the join can raise is therefore unclearable by
+ *      construction. A new export subpath yields `misses <specifier>`; a
+ *      removed one yields `has stale export <specifier>`; a new or dropped
+ *      optional peer yields `has no omission row` / `is stale`. The only
+ *      place to record any of them is the matrix, which
+ *      `validateAggregateCanaryAppendOnly` freezes. #949 met this while adding
+ *      an export to controller and routed the capability onto the root entry
+ *      point instead — honest, but that is package design bending to an
+ *      evidence record.
+ *
+ * So the join is gated on the source manifest actually BEING the frozen
+ * identity (name and version). While the tree still sits on that version the
+ * row must close it exactly, as before; once the version moves on, the row
+ * describes a shipped artifact and this tree is outside its scope.
+ *
+ * Nothing is weakened, because the matrix is joined to a real manifest twice
+ * more, both times against the artifact it names rather than this tree:
+ *
+ *   - at execution, `runAggregatePublicNpmCanary` runs the same
+ *     `validateOptionalPeerPolicy` over the INSTALLED packed manifests of the
+ *     frozen versions (each pinned to its served `packedManifestSha256`), then
+ *     physically removes each peer and executes every specifier;
+ *   - `OPTIONAL_PEER_POLICY` in `packed-consumer-readiness.mjs` carries the
+ *     same obligation for the CURRENT source tree, is mutable on purpose, and
+ *     is enforced on every `npm run check` by `check:packed-consumer` and by
+ *     `packed-consumer-readiness.test.mjs`.
+ *
+ * That second one is where a new export subpath belongs, and it is the answer
+ * to "which record do I edit": the mutable one that describes today's source,
+ * never the frozen one that describes what shipped. The react-server collapse
+ * rule this function used to apply here moved into `policyOutcomeShapeFindings`
+ * for the same reason — it now runs in both of the joins above instead of the
+ * one that could not be satisfied.
+ *
+ * A successor plan (`public-npm-aggregate-canary-v2.json`) is NOT the fix for
+ * this. v2 already reaches the same conclusion structurally: `validateAggregateV2Plan`
+ * never reads a source manifest at all. Cutting a v3 per export subpath would
+ * re-freeze 19 packages' measurements to record one specifier, which spends the
+ * freeze rather than honouring it.
  */
 export function validateAggregateCanary(record, { read = () => { throw new Error("read unavailable"); } } = {}) {
   const findings = [];
@@ -401,14 +452,17 @@ export function validateAggregateCanary(record, { read = () => { throw new Error
     for (const row of matrix) {
       let manifest;
       try { manifest = JSON.parse(read(`packages/${row.packageKey}/package.json`)); } catch { continue; }
-      if (manifest?.name !== row.name) continue;
+      // Each row is closed evidence about ONE published tarball, named by its
+      // own `name` and `version`. The source manifest is only that tarball's
+      // manifest while the working tree still sits on that exact version, so
+      // the join below is gated on the full identity rather than on the name
+      // alone. See this function's `optional-peer-manifest` header note for
+      // why the name-only form could not be satisfied at all, and where the
+      // obligation it was reaching for actually lives.
+      if (manifest?.name !== row.name || manifest?.version !== row.version) continue;
       const policy = { [row.name]: Object.fromEntries((row.peers ?? []).map((peer) => [peer.peer, peer.outcomes])) };
       const sourceFindings = validateOptionalPeerPolicy([{ manifest }], policy);
       if (sourceFindings.length) finding(findings, "optional-peer-manifest", `${row.name} matrix does not close the reviewed manifest: ${sourceFindings.join("; ")}`);
-      for (const peer of row.peers ?? []) for (const [key, value] of Object.entries(manifest.exports ?? {})) {
-        const specifier = key === "." ? row.name : `${row.name}/${key.slice(2)}`;
-        if (hasReactServerCondition(value) && typeof peer.outcomes?.[specifier] === "string") finding(findings, "optional-peer-manifest", `${row.name} optional peer ${peer.peer} collapses the ${specifier} react-server outcome`);
-      }
     }
   }
   return findings;

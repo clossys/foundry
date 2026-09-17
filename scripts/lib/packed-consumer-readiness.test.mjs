@@ -240,6 +240,46 @@ test("optional-peer policy is closed in both directions against packed metadata"
   assert.ok(validateOptionalPeerPolicy(conditional, { "@example/conditional": { react: {
     "@example/conditional/web": { default: "imports", "react-server": "imports", browser: "imports" },
   } } }).some((finding) => finding.includes("incomplete or stale condition outcomes")));
+
+  // #533: a bare outcome string is one claim covering every condition the
+  // export declares, so it is a shorthand only when `default` is the only
+  // one. `react-server` resolves a DIFFERENT file, and this branch used to
+  // return before the exact-coverage check below it — the one way a
+  // condition-bearing export could opt out of being measured per condition.
+  // The frozen aggregate plan carried a private copy of this rule against the
+  // source tree; here it runs against the manifest each caller measured.
+  for (const collapsed of ["imports", "rejects"]) {
+    assert.ok(validateOptionalPeerPolicy(conditional, { "@example/conditional": { react: {
+      "@example/conditional/web": collapsed,
+    } } }).some((finding) => finding === "@example/conditional omission row react @example/conditional/web collapses its default/react-server outcomes into one string"));
+  }
+  // ...and stays a shorthand where there is genuinely one condition.
+  assert.deepEqual(validateOptionalPeerPolicy(packages, green), []);
+  assert.ok(validateOptionalPeerPolicy(packages, { "@example/pkg": { react: { "@example/pkg": "sometimes" } } })
+    .some((finding) => finding.includes("has invalid outcome")));
+});
+
+// #533/#949: adding an export subpath to a package with an optional peer must
+// land here — a mutable record that describes today's source — rather than in
+// the frozen aggregate canary plan, which measures already-published tarballs
+// and cannot be edited at all. The finding a new subpath raises has to be
+// clearable by editing the policy, or the gate is a constraint on package
+// design rather than a check.
+test("a new export subpath is a clearable optional-peer policy finding, not an unclearable one", () => {
+  const manifest = (exports) => ({
+    name: "@example/pkg",
+    version: "1.0.0",
+    exports,
+    peerDependenciesMeta: { react: { optional: true } },
+  });
+  const before = [{ manifest: manifest({ ".": { import: "./dist/index.js" } }) }];
+  const after = [{ manifest: manifest({ ".": { import: "./dist/index.js" }, "./added": { import: "./dist/added.js" } }) }];
+  const policy = { "@example/pkg": { react: { "@example/pkg": "imports" } } };
+
+  assert.deepEqual(validateOptionalPeerPolicy(before, policy), []);
+  assert.deepEqual(validateOptionalPeerPolicy(after, policy), ["@example/pkg omission row react misses @example/pkg/added"]);
+  policy["@example/pkg"].react["@example/pkg/added"] = "imports";
+  assert.deepEqual(validateOptionalPeerPolicy(after, policy), []);
 });
 
 test("the repository omission matrix is closed against every current publishable manifest", async () => {
