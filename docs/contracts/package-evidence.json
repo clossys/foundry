@@ -171,7 +171,14 @@
         "defectOrigin": "injected",
         "defect": "The activation-violated request and materialized target input caused the installed Starter CLI to execute its fixed decision path and emit its own violated exit 1; the raw retained argv, inputs, overlay, stdout, and stderr bind the package-authentic run.",
         "control": "The matched activation-satisfied request used the same exact adapter, installed CLI, and bounded consumer overlay and exited 0; the indeterminate request exited 2, and uninstall/reinstall restored the disposable consumer."
-      }
+      },
+      "gaps": [
+        {
+          "state": "staged",
+          "issue": 833,
+          "reason": "The 0.1.7 bump invalidated Starter's only staging site because the package-authentic current-direct qualification record must bind the exact current manifest version; clossys-starter-0.1.7.json cannot be produced in this intercepted-egress sandbox class, and 0.1.7 may not be published before that record exists."
+        }
+      ]
     },
     {
       "name": "@clossys/strategist",
