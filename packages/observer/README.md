@@ -9,6 +9,44 @@ gate is working and never judges a change itself.
 npm install @clossys/observer
 ```
 
+This package is published to the public npm registry, `https://registry.npmjs.org`.
+Installing it needs no authentication: no npm token, no `.npmrc` registry
+override, and no GitHub credential of any kind.
+
+## Unobserved outcome rate
+
+Independent consumer evidence shows the position's owned metric meets its
+setpoint over the declared review cadence. The owned metric is `unobserved
+outcome rate`, computed by `assessUnobservedOutcomeRate()`. An empty
+evaluated set is `indeterminate`, never a perfect rate of 0. This package
+does not measure consumer evidence and does not close the loop; a consumer
+binds the condition against their own declared outcome subjects and
+independent observations. A green run of this package's tests is not a close.
+
+```ts
+import { assessUnobservedOutcomeRate } from "@clossys/observer";
+
+const report = assessUnobservedOutcomeRate(input);
+```
+
+```bash
+observer-check assessment.json
+```
+
+The command prints JSON and exits `0` for satisfied, `1` for violated, and
+`2` for indeterminate, unreadable, or invalid input.
+
+This package declares that command as its first-day assessment surface in
+its own manifest:
+
+```json
+"foundry": { "assessment": { "bin": "observer-check", "invocation": "single-json-input" } }
+```
+
+Onboarding discovers that declaration from the installed manifest and never
+infers a surface. Observer is not a required first-day role; Advisor
+remains the only required first-day assessment.
+
 ## The job
 
 `observer` measures what actually happened — including whether the gates
@@ -405,6 +443,14 @@ const unobservedSurface = computeUnobservedSurface(declaredSubjects, presenceRea
 | `SubjectTelemetryRead` | type | One subject's presence read: `subject`, `presence`. |
 | `UnobservedSurfaceMetric` | type | `computeUnobservedSurface`'s result: `declaredCount`, `observed`, `unobserved`, `couldNotRead`. |
 | `computeUnobservedSurface(declared, reads)` | function | Sorts declared subjects into observed / unobserved / could-not-read. |
+| `UnobservedOutcomeRateState` | type | `"satisfied" \| "violated" \| "indeterminate"`. |
+| `UnobservedOutcomeRateFinding` | type | One finding from `assessUnobservedOutcomeRate`. |
+| `UnobservedOutcomeEvidence` | type | One evidence pointer: `id`, `description`. |
+| `UnobservedOutcomePresence` | type | Observation presence on a counting observation: `"observed" \| "unobserved" \| "could-not-read"`. |
+| `UnobservedOutcomeObservation` | type | One independent observation of a declared subject: `subjectId`, `independent`, `presence`, `observerRef`, `evidence`. |
+| `UnobservedOutcomeRateInput` | type | Consumer-owned input from which `unobserved outcome rate` is computed. |
+| `UnobservedOutcomeRateAssessment` | type | Report for the charter metric `unobserved outcome rate`: `rate`, `evaluatedSubjects`, `unobservedSubjects`, `findings`, `proposedPositions`. |
+| `assessUnobservedOutcomeRate(input)` | function | Computes the charter metric `unobserved outcome rate` from consumer-supplied independent observations. Reuses `computeUnobservedSurface` for the three-state sort. An empty evaluated set is indeterminate, never 0. Does not invent observations and does not combine this rate with escape rate. |
 | `COVERAGE_DECLARATION_SCHEMA_VERSION` | value | This contract's schema version, `1`. |
 | `DeclaredPackageAbsence` | type | One package a repository declares absent, with a required `reason`. |
 | `CoverageDeclaration` | type | One repository's own declaration: `schemaVersion`, `repository`, `declaredAbsences`. |
@@ -448,11 +494,12 @@ const unobservedSurface = computeUnobservedSurface(declaredSubjects, presenceRea
 ## Requirements
 
 Node.js >= 20. Zero runtime dependencies. The library (everything except
-`cli.ts`/`bin.ts`) is zero I/O — every function is a pure function of its
-arguments. `observer-coverage-check` (the CLI) is this package's only I/O:
-it reads one input file and writes to stdout/stderr, through an injected
-`CliPort` (`cli.ts`) so the logic itself stays testable without a real
-filesystem.
+`cli.ts`/`bin.ts` and `unobserved-outcome-cli.ts`) is zero I/O — every
+function is a pure function of its arguments. This package ships two CLIs:
+`observer-coverage-check` grades a caller-assembled fleet coverage document
+through an injected `CliPort` (`cli.ts`); `observer-check` prints the
+`unobserved outcome rate` assessment as JSON. Each reads one input file and
+writes to stdout/stderr.
 
 ## License
 

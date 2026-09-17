@@ -3,6 +3,32 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.9] - 2026-09-18
+
+### Added
+
+- Documented installation against the public npm registry
+  (`https://registry.npmjs.org`) and that installing needs no authentication.
+- Stated the charter close condition in the README: independent consumer
+  evidence of `unobserved outcome rate`, computed by
+  `assessUnobservedOutcomeRate()`. An empty evaluated set is indeterminate,
+  never a perfect rate of 0. This package does not measure consumer evidence
+  and does not close the loop.
+- Declared `foundry.assessment` against the mapped `observer-check` bin with
+  `invocation: "single-json-input"`, so first-day onboarding discovers this
+  role's assessment surface from the installed manifest instead of inferring
+  one. Advisor remains the only required first-day role.
+- `observer-check assessment.json`: prints the `unobserved outcome rate`
+  report and exits on the `0` / `1` / `2` ternary.
+- `assessUnobservedOutcomeRate()` computes that charter metric from
+  consumer-supplied independent observations, reusing `computeUnobservedSurface`
+  for the three-state sort. It does not combine this rate with escape rate.
+
+### Notes
+
+- This does not claim the position is closed. Qualification of `0.2.9` is
+  deferred under #833.
+
 ## [0.2.8] - 2026-09-16
 
 ### Fixed
