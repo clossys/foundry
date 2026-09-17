@@ -19,7 +19,7 @@ type RecordValue = Record<string, unknown>;
 
 const PROFILE_V1_KEYS = new Set(["schemaVersion", "defaultBranch", "commands", "protectedPaths"]);
 const PROFILE_V2_KEYS = new Set([...PROFILE_V1_KEYS, "requirements"]);
-const PROFILE_V3_KEYS = new Set([...PROFILE_V2_KEYS, "rootEntries"]);
+const PROFILE_V3_KEYS = new Set([...PROFILE_V2_KEYS, "rootEntries", "releaseBranch"]);
 const COMMAND_KEYS = new Set(["name", "run", "cwd"]);
 const REQUIREMENT_KEYS = new Set(["id", "scope", "constraint"]);
 const PRESENCE_CONSTRAINT_KEYS = new Set(["kind"]);
@@ -380,6 +380,37 @@ function validateRepositoryProfileValue(value: unknown): RepositoryProfileFindin
   const defaultBranch = ownDataValue(value, "defaultBranch")?.value;
   if (typeof defaultBranch !== "string" || !isBranchName(defaultBranch)) {
     findings.push(finding("default-branch", "defaultBranch", "defaultBranch must be a valid Git branch name."));
+  }
+
+  // The release branch (issue #929). Optional: a repository with one
+  // long-lived branch declares nothing here. Present-but-wrong is never the
+  // same as absent, so the check keys off whether the own data property
+  // EXISTS, not off whether its value is `undefined` -- an explicit
+  // `"releaseBranch": undefined` is a declaration the author meant to make
+  // and got wrong, and is reported rather than skipped.
+  //
+  // Two separate rules, deliberately. `release-branch` says the value is not
+  // a branch name at all; `release-branch-collision` says it is a perfectly
+  // good branch name that happens to be this repository's default branch.
+  // Those are different defects with different fixes, and folding them into
+  // one rule would leave a consumer's own routing unable to tell "typo" from
+  // "this repository has one branch, not two."
+  // Gated on the profile's own key set rather than run unconditionally: on a
+  // v1 or v2 profile the field is not part of the contract at all, and the
+  // `unknown-field` finding above is the whole and correct answer. Adding a
+  // value-level verdict on top of it would report on a field that version
+  // does not have.
+  const releaseBranch = profileKeys.has("releaseBranch") ? ownDataValue(value, "releaseBranch") : undefined;
+  if (releaseBranch !== undefined) {
+    if (typeof releaseBranch.value !== "string" || !isBranchName(releaseBranch.value)) {
+      findings.push(finding("release-branch", "releaseBranch", "releaseBranch must be a valid Git branch name."));
+    } else if (releaseBranch.value === defaultBranch) {
+      findings.push(finding(
+        "release-branch-collision",
+        "releaseBranch",
+        "releaseBranch must not equal defaultBranch. A repository that deploys from its default branch has one long-lived branch: omit releaseBranch rather than repeating defaultBranch.",
+      ));
+    }
   }
 
   const commands = inspectArray(ownDataValue(value, "commands")?.value);

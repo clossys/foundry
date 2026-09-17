@@ -33,7 +33,7 @@ test("repository Trio policy, adapters, and current-candidate fixtures bind the 
   const expected = [
     ["advisor", "@clossys/advisor", "0.2.2"],
     ["starter", "@clossys/starter", "0.1.6"],
-    ["controller", "@clossys/controller", "0.9.6"],
+    ["controller", "@clossys/controller", "0.9.7"],
   ];
 
   for (const [key, name, version] of expected) {
@@ -75,9 +75,9 @@ test("all 19 publishable packages are exact-source bound to the catalogue and qu
     "@clossys/advisor": "0.2.2",
     "@clossys/architect": "0.1.8",
     "@clossys/bouncer": "0.1.7",
-    "@clossys/builder": "0.7.8",
+    "@clossys/builder": "0.7.9",
     "@clossys/butler": "0.1.5",
-    "@clossys/controller": "0.9.6",
+    "@clossys/controller": "0.9.7",
     "@clossys/designer": "0.4.5",
     "@clossys/giver": "0.1.5",
     "@clossys/influencer": "0.1.5",
