@@ -218,6 +218,17 @@ written; `npm install` got the right tarball, the following `import` line
 - [ ] `repository.directory` points at this package.
 - [ ] `LICENSE` copied into the package directory — a tarball without one is
       not usefully MIT licensed.
+- [ ] **A new `exports` subpath on a package that also declares
+      `peerDependenciesMeta`** (Controller, Bouncer, Designer, Publisher today)
+      needs a measured row added to `OPTIONAL_PEER_POLICY` in
+      `scripts/lib/packed-consumer-readiness.mjs` for every optional peer —
+      `npm run check:packed-consumer -- --package <name>` names exactly which
+      one is missing, and that table's own header comment says how to measure
+      it. **Never** `governance/public-npm-aggregate-canary.json`: that file
+      is frozen, immutable measurement of already-published tarballs
+      (`docs/DECISIONS.md` entry 26), and its own `optional-peer-manifest`
+      rule stops asking anything of a package once its version has moved past
+      what a frozen row measured — which every unpublished new subpath has.
 
 ## 4. Write the furniture
 

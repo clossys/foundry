@@ -2279,3 +2279,85 @@ Consistency here is now asserted, not assumed: `preflight-package.mjs` should
 fail a publish whose `LICENSE` holder and `"author"` disagree, or which
 disagrees with the rest of the catalogue. Until that assertion exists, this
 record is the only thing holding the invariant.
+
+## 26. A new export subpath on an optional-peer package is a mutable-policy edit, never a frozen-plan one
+
+Measured on 2026-09-17 while implementing #533: adding
+`"./anything": { "types": "./dist/.../index.d.ts", "import": "./dist/.../index.js" }`
+to `packages/controller/package.json` and running
+`npm run check:public-npm-aggregate-canary` produced two `optional-peer-manifest`
+findings that no edit could clear, because the only place the gate offered to
+record the new specifier — `governance/public-npm-aggregate-canary.json`'s
+`optionalPeerMatrix` — is exactly the field
+`validateAggregateCanaryAppendOnly` freezes on introduction (commit `edc1f07`).
+PR #949 met this first and routed the new capability onto Controller's root
+entry point instead, which is honest but is package design bending to satisfy
+an evidence record rather than a design decision. Nothing had hit this before
+#949 because no package had gained an export subpath since the freeze.
+
+**The root cause was a join by name alone, not the freeze itself.**
+`validateAggregateCanary`'s `optional-peer-manifest` rule read each of the 38
+frozen matrix rows and re-validated it against
+`packages/<packageKey>/package.json` in the *current* working tree, matched
+only on package **name**. Every row is a closed measurement of one specific
+published version — `@clossys/controller` alone appears twice, once for
+`0.8.23` (baseline) and once for `0.8.24` (oidc-successor), and the source
+tree has since moved to `0.9.7`. So the rule was comparing a frozen
+measurement of a byte-identical historical tarball against a manifest that
+was never the artifact it measured, for any commit after the freeze. Every
+finding that comparison could raise was therefore structurally unclearable:
+a new export produces "misses `<specifier>`", a removed one produces "has
+stale export `<specifier>`", and the one file that could record either is
+the one field the append-only rule forbids touching.
+
+**The fix scopes the join to the version the row actually measured.** The
+source manifest now closes a frozen row only while `packages/<packageKey>/
+package.json` still declares that row's exact `name` **and** `version`; once
+the tree moves past it, the row is evidence about a shipped artifact the
+working tree no longer is, and validation of it moves to where the shipped
+bytes actually live — the frozen closure's installed, hash-pinned packed
+manifest, joined at aggregate-canary *execution* time in
+`runAggregatePublicNpmCanary`, not at plan-validation time against this tree.
+The freeze itself is untouched: `validateAggregateCanaryAppendOnly` still
+rejects any edit to `optionalPeerMatrix`, `sets`, or `peerResolution` — the
+join was loosened, not the immutability.
+
+**A new export subpath is answered by a different, deliberately mutable
+record: `OPTIONAL_PEER_POLICY` in `scripts/lib/packed-consumer-readiness.mjs`.**
+It describes the *current* source tree, is enforced on every `npm run check`
+through `check:packed-consumer` and its own gate-regression test
+(`packed-consumer-readiness.test.mjs`, wired into `check:gates`), and is
+exactly where a new subpath's `"omission row <peer> misses <specifier>"`
+finding is meant to be cleared — by adding a measured row, the same way
+issue #878 corrected a stale one. Both files now carry a header comment
+pointing a contributor at each other, so whichever one a failure surfaces
+first, the fix lands in the one that is actually editable.
+
+**Options considered and not taken:**
+
+- **A successor plan version.** `public-npm-aggregate-canary-v2.json` and
+  `create-public-npm-aggregate-canary-v2-closures.mjs` already exist, but for
+  an unrelated reason (direct current-release verification, #832-class work)
+  — `validateAggregateV2Plan` never reads a source manifest at all, so v2 was
+  never going to hit this defect and is not a template for fixing it. Cutting
+  a v3 solely to record one new export specifier would re-freeze measurements
+  of all nineteen packages to capture one row — spending the freeze rather
+  than honoring it, and for every subsequent subpath addition, forever.
+- **A bounded amendment mechanism for the matrix alone.** Rejected: it would
+  mean a "frozen" record that is not actually frozen, undermining exactly the
+  property `validateAggregateCanaryAppendOnly` exists to guarantee — that a
+  measurement of already-published bytes cannot be edited to match whatever
+  the source tree currently says.
+- **A documented rule that Controller/Bouncer/Designer/Publisher may not gain
+  export subpaths.** Rejected as a permanent constraint on package design
+  driven by an evidence-record's shape, which is the complaint #533 raised in
+  the first place, not an answer to it.
+
+Regression coverage: `packed-consumer-readiness.test.mjs` gained a case
+mutation-proving the collapsed `policyOutcomeShapeFindings` react-server
+branch and a case proving a new export subpath is clearable purely by editing
+`OPTIONAL_PEER_POLICY`; `public-npm-aggregate-canary.test.mjs` gained a case
+proving the frozen matrix now joins a source manifest only at the exact
+version it measured, in both directions, and remains closed while the tree
+sits on that version. Both were confirmed to fail against the pre-fix source
+before the fix restored them to green.
