@@ -5,12 +5,12 @@
  * `evaluateCredential` and `defineCredentialEvidence` shipped real ternary
  * machinery mapping satisfied/violated/indeterminate credential lifecycle
  * evidence to exit codes 0/1/2, and no way for any caller to reach it except
- * by importing the library directly. The only bin this package ships
- * (`infisical/cli.ts`) relays an unrelated subprocess's own exit code and
- * never touches this machinery — `evaluateCredential` existed as a primitive
- * but never operated. This file is the missing bin: it reads one
- * caller-assembled evidence document and reports `evaluateCredential`'s
- * verdict, unchanged.
+ * by importing the library directly. Until this file existed, the package's
+ * only bin (`infisical/cli.ts`) relayed an unrelated subprocess's own exit
+ * code and never touched this machinery — `evaluateCredential` existed as a
+ * primitive but never operated. This file is that missing bin, and the
+ * package's second one: it reads one caller-assembled evidence document and
+ * reports `evaluateCredential`'s verdict, unchanged.
  *
  * PORT-INJECTED, LIKE `@clossys/inspector`'s AND `@clossys/observer`'s CLIs
  * -----------------------------------------------------------------------
