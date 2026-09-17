@@ -143,18 +143,32 @@ describe("packed Inspector gitleaks provenance", () => {
   // dimension) wearing a control's name.
   //
   // Split in two, below: the version and hash controls (genuinely
-  // input-decisive on their own dimensions, kept) and a platform control
-  // that is now genuinely platform-decisive, exercising the real fix for
-  // Finding C -- the SAME expected checksum, resolved against two different
-  // platforms whose mocked responses differ, verifies for the platform
-  // whose asset actually hashes to it and fails for the platform whose asset
-  // does not. That is only possible to assert honestly now that
-  // `KNOWN_RELEASES` carries a real, distinct, gitleaks-project-published
-  // checksum per platform/arch (see `gitleaks.ts`'s `KNOWN_RELEASES` and
-  // `gitleaks.test.ts`'s "KNOWN_RELEASES integrity" suite) -- before that
-  // fix, every platform's "real" checksum was actually the linux/x64 one,
-  // so this exact test could not have been written without first fixing the
-  // defect it exists to prove is no longer there.
+  // input-decisive on their own dimensions, kept) and a platform control,
+  // below, that now genuinely exercises the packed
+  // `resolveGitleaksRelease`/`KNOWN_RELEASES` fix for Finding C.
+  //
+  // CORRECTION (post-merge review of this same PR): an earlier version of
+  // the next test's own comment claimed it "could not have been written
+  // without first fixing" Finding C. That claim was false -- that version
+  // built `darwinUrl`/`linuxUrl` from hardcoded template strings and never
+  // called `resolveGitleaksRelease` at all, so it passed unchanged with
+  // Finding C's exact bug reintroduced (`resolveGitleaksRelease` patched to
+  // ignore its `platform`/`arch` arguments and always resolve the linux/x64
+  // entry): reproduced by making that edit, rebuilding, and rerunning this
+  // file -- all 5 tests here still passed, 0 failures. The real regression
+  // coverage for Finding C lives in `gitleaks.test.ts`'s
+  // "resolveGitleaksRelease" and "KNOWN_RELEASES integrity" `describe`
+  // blocks, which fail (5 tests) under that identical mutation.
+  //
+  // The test below now asks the PACKED module's own `resolveGitleaksRelease`
+  // for the darwin/arm64 and linux/x64 entries and asserts they are distinct
+  // BEFORE doing anything else, then drives the fetch mock off the URLs
+  // those calls returned rather than off hardcoded strings. Reproduced
+  // fixed: with the same mutation applied, `resolveGitleaksRelease(VERSION,
+  // "darwin", "arm64")` now returns the identical entry as
+  // `resolveGitleaksRelease(VERSION, "linux", "x64")`, so the very first
+  // `.url`/`.sha256` inequality assertions below fail immediately, before
+  // the fetch mock is ever installed.
   it("rejects a substituted version before any download, and a substituted hash after one, without a live download", async () => {
     const archive = await localArchive();
 
@@ -180,9 +194,20 @@ describe("packed Inspector gitleaks provenance", () => {
     rmSync(hashCache, { force: true, recursive: true });
   });
 
-  it("the SAME expected checksum verifies for the platform whose asset hashes to it and fails for a different platform (genuinely platform-decisive, no live download)", async () => {
-    const darwinUrl = `https://github.com/gitleaks/gitleaks/releases/download/v${VERSION}/gitleaks_${VERSION}_darwin_arm64.tar.gz`;
-    const linuxUrl = `https://github.com/gitleaks/gitleaks/releases/download/v${VERSION}/gitleaks_${VERSION}_linux_x64.tar.gz`;
+  it("the SAME expected checksum verifies for the platform whose asset hashes to it and fails for a different platform (genuinely platform-decisive: sourced from the packed resolveGitleaksRelease/KNOWN_RELEASES, no live download)", async () => {
+    // Ask the PACKED module itself -- not a hardcoded string -- which URL
+    // each platform/arch resolves to. If Finding C's bug were reintroduced
+    // (platform/arch ignored, always the linux/x64 entry), `darwinRelease`
+    // and `linuxRelease` would be the SAME object and these four
+    // assertions would fail here, before any fetch mock exists.
+    const darwinRelease = packed.resolveGitleaksRelease(VERSION, "darwin", "arm64");
+    const linuxRelease = packed.resolveGitleaksRelease(VERSION, "linux", "x64");
+    expect(darwinRelease).toBeDefined();
+    expect(linuxRelease).toBeDefined();
+    expect(darwinRelease?.url).not.toBe(linuxRelease?.url);
+    expect(darwinRelease?.sha256).not.toBe(linuxRelease?.sha256);
+    const darwinUrl = darwinRelease!.url;
+    const linuxUrl = linuxRelease!.url;
 
     // Two DIFFERENT archives with different content, hence different
     // digests. `matchingArchive` is served for the darwin/arm64 URL only;

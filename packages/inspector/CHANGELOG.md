@@ -5,6 +5,56 @@ All notable changes to `@clossys/inspector` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.3] - 2026-09-16
+
+### Fixed
+
+- **A regression test's own comment overclaimed what it proves (post-merge
+  review of #932, Finding B follow-up).** `gitleaks.artifact.test.ts`'s
+  "genuinely platform-decisive" test claimed it "could not have been written
+  without first fixing" Finding C (`resolveGitleaksRelease`/`KNOWN_RELEASES`
+  having no platform dimension). That was false: the test built its
+  `darwinUrl`/`linuxUrl` from hardcoded template strings and never called
+  `resolveGitleaksRelease` at all, so with Finding C's exact bug
+  reintroduced (`resolveGitleaksRelease` patched to ignore its
+  `platform`/`arch` arguments and always resolve the linux/x64 entry), all 5
+  tests in that file still passed — reproduced by making that edit,
+  rebuilding, and rerunning the file. The real regression coverage for
+  Finding C lives in `gitleaks.test.ts`'s "resolveGitleaksRelease" and
+  "KNOWN_RELEASES integrity" suites, which fail (5 tests) under the same
+  mutation. The test now asks the PACKED module's own `resolveGitleaksRelease`
+  for the darwin/arm64 and linux/x64 entries, asserts they are distinct
+  before doing anything else, and drives its fetch mock off the URLs those
+  calls return rather than off hardcoded strings — genuinely sensitive to
+  Finding C's defect class as shipped in the tarball, reproduced by the same
+  mutation: with it applied, the two resolved entries collapse to the same
+  object and the test now fails immediately, before the fetch mock even
+  exists.
+- **Two more dangling citations of Finding E's class, found on a
+  whole-package audit against the extracted tarball (post-merge review of
+  #932).** `src/secret-scan/attempt.ts` (packed 3x, as `.ts`/`.js`/`.d.ts`)
+  cited "the vitest config header" for why this package's tests never spawn
+  a process for real; `vitest.config.ts` is not shipped (`files` in
+  `package.json` never lists it — the 0.2.2 CHANGELOG entry for Finding E
+  already says so for the README instance it fixed there). Replaced with a
+  self-contained explanation in the comment itself. Separately,
+  `documents/caller-workflow.md` cited a "Re-derive, do not believe" section
+  "below" that does not exist as a heading anywhere in the document — the
+  text actually lives as a step comment inside the `decide` job's YAML later
+  in the same file, not a linkable section. Reworded the citation to
+  describe inline what the `decide` job does and to point at that step
+  comment by name instead of an implied heading. A full audit of the
+  extracted tarball across every shipped extension (not just `.md` —
+  `check-contamination-classes.mjs` only matches `.md` paths, see #935)
+  found no further instances of either class.
+
+### Changed
+
+- Updates the hardcoded `@clossys/inspector` version literal in
+  `scripts/run-candidate-qualification.test.mjs` and retains a qualification
+  record for 0.2.3 as a separate commit. No functional or behavioral change
+  to the package itself beyond the two fixes above.
+
 ## [0.2.2] - 2026-09-16
 
 ### Fixed
