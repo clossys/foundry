@@ -5,6 +5,27 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.10] - 2026-09-18
+
+### Added
+
+- Declared `foundry.assessment` against the mapped `controller-check` bin with
+  `invocation: "single-json-input"`, so first-day onboarding discovers this
+  role's assessment surface from the installed manifest instead of inferring
+  one. Advisor remains the only required first-day role.
+- `controller-check assessment.json`: prints the `rule conformance rate`
+  report and exits on the `0` / `1` / `2` ternary.
+- `assessRuleConformanceRate()` computes that charter metric from
+  consumer-supplied independent observations. An empty evaluated set is
+  indeterminate, never a perfect rate. This package does not invent
+  observations, does not call `foundry-check`, and does not judge a proposed
+  change.
+
+### Notes
+
+- This does not claim the position is closed. Qualification of `0.9.10` is
+  deferred under #833.
+
 ## [0.9.9] - 2026-09-18
 
 ### Fixed

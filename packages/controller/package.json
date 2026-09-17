@@ -1,6 +1,6 @@
 {
   "name": "@clossys/controller",
-  "version": "0.9.9",
+  "version": "0.9.10",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -74,6 +74,7 @@
   },
   "bin": {
     "foundry-governance": "dist/cli.js",
+    "controller-check": "dist/rule-conformance-cli.js",
     "foundry-check": "dist/gates/cli.js",
     "repository-check": "dist/repository/bin.js",
     "repository-profile-check": "dist/repository/run-bin.js",
@@ -97,7 +98,11 @@
   ],
   "sideEffects": false,
   "foundry": {
-    "singularAuthority": "controller"
+    "singularAuthority": "controller",
+    "assessment": {
+      "bin": "controller-check",
+      "invocation": "single-json-input"
+    }
   },
   "description": "Owns every rule: package lifecycle and process orchestration (catalog, composition, gates, release, repository-profile, review-evidence, workspace-cleanup), account-neutral agent conventions (branch provenance, skill naming, agent interoperability, routine and schedule declarations, CI gate naming, capability-first skill registry), and the zero-I/O content-addressed policy-binding primitive that binds a rule to a document without disclosing it.",
   "keywords": [

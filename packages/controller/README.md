@@ -22,6 +22,39 @@ setpoint and review cadence; Controller supplies neither.
 **Close condition.** Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.
 <!-- controller-role-contract:end -->
 
+## Rule conformance rate
+
+The owned metric `rule conformance rate` is computed by
+`assessRuleConformanceRate()`. An empty evaluated set is `indeterminate`,
+never a perfect rate of 1. This package does not measure consumer evidence
+and does not close the loop; a consumer binds the condition against their
+own declared rules and independent observations. A green run of this
+package's tests is not a close.
+
+Independent consumer evidence shows the position's owned metric meets its
+setpoint over the declared review cadence. The owned metric is `rule
+conformance rate`, computed by `assessRuleConformanceRate()`. Controller
+does not invent observations, does not call `foundry-check`, and does not
+judge a proposed change.
+
+```bash
+controller-check assessment.json
+```
+
+The command prints JSON and exits `0` for satisfied, `1` for violated, and
+`2` for indeterminate, unreadable, or invalid input.
+
+This package declares that command as its first-day assessment surface in
+its own manifest:
+
+```json
+"foundry": { "assessment": { "bin": "controller-check", "invocation": "single-json-input" } }
+```
+
+Onboarding discovers that declaration from the installed manifest and never
+infers a surface. Controller is not a required first-day role; Advisor
+remains the only required first-day assessment.
+
 This is a rename and a merge, not a rewrite: the former package surfaces are
 now provided by this package's subpaths. The former package names are retired;
 new integrations use the current subpaths directly.
@@ -2000,6 +2033,11 @@ graph makes the preflight fail. Omitting it means no graph claim is made.
 
 ## CLI
 
+`controller-check` is this package's first-day assessment command. It reads
+one consumer-owned `assessment.json` and prints the `rule conformance rate`
+report computed by `assessRuleConformanceRate()`. See the Rule conformance
+rate section above.
+
 `foundry-governance` reads one lifecycle JSON file and prints a deterministic,
 compact text report by default. It never runs package scripts or writes
 workspace state.
@@ -2051,6 +2089,8 @@ mismatch (or another binding finding), `2` when it could not run. Use
 | `evaluateDependencyInstallability(value, edges)` | function | Does every dependency of a still-installable package terminate somewhere installable? Reports `dependency-not-installable` only where the depender can still be installed and its dependency cannot — a deprecated package depending on a deprecated package is correct, and a retired one depending on a retired one cannot break. This is the ordering constraint on a retirement. Run by `runGovernanceCheck`, which reads the edges from the catalog's own manifests. |
 | `runGovernanceCheck(root, lifecycle, options?)` | function | Composes the existing foundation check and build order with lifecycle coverage. |
 | `preflightGovernedPackage(root, packageDir, lifecycle, options?)` | function | Combines `release`'s existing package preflight with a governance report. |
+| `assessRuleConformanceRate(input)` | function | Computes the charter metric `rule conformance rate` from consumer-supplied independent observations of declared rules. An empty evaluated set is indeterminate, never 1. Does not invent observations, call `foundry-check`, or judge a proposed change. |
+| `RuleConformanceAssessment` / `RuleConformanceFinding` / `RuleConformanceInput` / `RuleConformanceObservation` / `RuleConformanceState` / `DeclaredRule` / `RuleConformanceEvidence` | types | The metric report, one finding, the consumer-owned input shape, one independent observation, the ternary state, a declared rule identity, and a value-free evidence pointer. |
 | `PackageLifecycleDocument` / `PackageLifecycleEntry` / `PackageLifecycleStatus` | types | Consumer-owned maturity registry, one lifecycle entry, and its status vocabulary. |
 | `PackageLifecyclePromotionEvidence` | type | Durable `{ reference, date }` citation shape used by `qualifiedEvidence` and `adoptedEvidence`. |
 | `LifecycleFinding` / `LifecycleFindingRule` | types | Deterministic lifecycle validation result and rule vocabulary. |

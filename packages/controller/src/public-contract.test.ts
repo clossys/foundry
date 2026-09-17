@@ -8,7 +8,11 @@ const packageJson = JSON.parse(readFileSync(join(packageRoot, "package.json"), "
   dependencies?: Record<string, string>;
   peerDependencies: Record<string, string>;
   peerDependenciesMeta?: Record<string, { optional?: boolean }>;
-  foundry?: { singularAuthority?: string };
+  foundry?: {
+    singularAuthority?: string;
+    assessment?: { bin?: string; invocation?: string };
+  };
+  bin?: Record<string, string>;
 };
 
 /**
@@ -54,6 +58,14 @@ const packageJson = JSON.parse(readFileSync(join(packageRoot, "package.json"), "
 describe("public contract — dependency boundary", () => {
   it("declares Controller as a singular authority for caller-supplied consumer graph checks", () => {
     expect(packageJson.foundry?.singularAuthority).toBe("controller");
+  });
+
+  it("declares foundry.assessment against the mapped controller-check bin", () => {
+    expect(packageJson.foundry?.assessment).toEqual({
+      bin: "controller-check",
+      invocation: "single-json-input",
+    });
+    expect(packageJson.bin?.["controller-check"]).toBe("dist/rule-conformance-cli.js");
   });
 
   it("declares zero unconditional runtime dependencies", () => {
