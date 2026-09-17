@@ -76,6 +76,7 @@ versioned packages.
 | `@clossys/controller/release` | Isolated packed-artifact and installed-import proof. |
 | `@clossys/controller/repository` | Consumer-owned repository profiles, upward requirements, exact-root declarations, pure evaluation, `repository-check`, the full runner (`runRepositoryProfileCheck` / `repository-profile-check`), and one-package repository adoption evidence (`RepositoryPackageAdoptionV1` / `repository-package-adoption-check`). `repository-package-adoption-check` accepts two forms: the original `<adoption.json> <evaluation.json>` (unchanged: human-readable, phase-local text) and, as of this version, a single `<evaluation-input.json>` (the same evaluation input as one file, `adoption` inlined) that emits one canonical `{"state":"satisfied"\|"violated"\|"indeterminate","findings":[...]}` JSON line, with exit code 0/1/2 agreeing with `state`. `--help` documents both. |
 | `@clossys/controller/positions` | Pure installed-position ledger and completion-evidence validation. `foundry-position-check <ledger.json> [role-contract.json]` validates positions only. `foundry-completion-evidence-check <completion-evidence.json> <position-ledger.json>` validates one linked consumer-retained record for an open position: an exact-version artifact declaration with retained references, recorded invocation and distinct red/green controls, duplicate disposition and rollback records, linked review-cadence evidence, and separately attributed before/after outcome and close-window verdicts. Reference and locator strings have a 65,536-code-unit cap and lexically reject explicit inline sensitive-payload assignments and URL authority userinfo after bounded percent decoding plus NFKC/case/default-ignorable normalization and a separate URL-style tab/CR/LF authority scan; form-style `+` is treated as a label separator only at root/query/fragment assignment contexts. Ordinary identifiers containing those words remain valid. Evidence instants are known-offset RFC3339 with at most millisecond precision and obey `before < invocation/red/green ≤ rollback ≤ after ≤ startedAt < satisfied recurrence ≤ endedAt`. A violated or indeterminate in-window cadence result prevents satisfaction. The outcome retains the position baseline and source locator, moves into the linked setpoint, and cannot be owned by the position action authority. References, authorship, provider truth, and adoption are not authenticated or inferred. |
+| `@clossys/controller/onboarding` | The one parameterized first-day onboarding workflow: deterministic role selection, discovery of each role's OWN declared assessment entry point (`foundry.assessment`), fixed credentialless invocation of it, and the join. It carries no assessment content and substitutes for no role; `foundry-onboarding-run` prints the join and `proposeInstalledPositionLedger` / `authorizeMutation` produce and gate the installed-position contract. |
 | `@clossys/controller/review` | Provider-neutral review evidence contracts, validation, and `review-check`. |
 | `@clossys/controller/review/github` | Pure normalization of caller-provided GitHub-shaped review evidence. |
 | `@clossys/controller/artifacts` | Deterministic, fail-closed verification for a consumer-owned governed artifact: declared kind + schema version, exact-content checksum, and structural provenance. |
@@ -139,6 +140,103 @@ observation whose RFC3339 instant has at most millisecond precision before it
 can support a completion result.
 It never claims a provider observation is true, installs a package, or
 measures a provider itself.
+
+### `./onboarding`: the first-day assessment workflow
+
+One parameterized workflow that **discovers and invokes role-owned
+assessments** for a consuming repository's first day. It is orchestration, and
+deliberately nothing more: it carries no assessment content, and it is not a
+substitute for any role it opens.
+
+`runFirstDayOnboarding(request, options)` does four things in order.
+
+1. **Select.** `selectRoles` opens a role when — and only when — one of the
+   fixed `SELECTION_RULES` fires over facts the consumer *declared*:
+   `engagement-baseline` always opens the advisory role;
+   `unresolved-direction` opens the direction role when the request declares
+   any of `business-model`, `value-formula`, `northstars` or
+   `causal-metric-tree` unresolved; `unmapped-operating-system` opens the
+   operating-system role when it declares `ontology` or `repository-topology`
+   unmapped; `independent-outcome` always opens the outcome role; and
+   `consumer-requested` opens any operating role the consumer named. Every
+   other active role is excluded under the single reason
+   `no-selection-rule-opened-this-role`. Deciding *whether* a direction
+   question is unresolved is expertise; reading a declared `unresolved` list
+   is arithmetic, and only the second happens here.
+2. **Discover.** `discoverRoleAssessmentSurface` reads the role's **own
+   installed manifest** for its own declaration —
+   `"foundry": { "assessment": { "bin": "<binName>", "invocation": "single-json-input" } }`
+   — and resolves it against that same manifest's `bin` map. It never infers a
+   surface. A role that ships five gate CLIs and declares none has no
+   assessment surface, because choosing which of the five *is* the assessment
+   would be this package deciding what another role's assessment is.
+3. **Invoke.** `observeRoleAssessment` runs the resolved executable with no
+   shell, no caller-supplied command, argument list or executable path, a
+   bounded deadline, and registry-credential environment variables removed. It
+   parses what the role printed and carries it onward untouched: an
+   unparseable answer is `assessment-output-unreadable`, never an empty
+   assessment, and a printed `state` that disagrees with the exit code is
+   `assessment-exit-inconsistent`.
+4. **Join.** `joinFirstDayOnboarding` produces the report: which roles a rule
+   opened, what each one's own surface returned, and what could not be
+   observed. That is the whole of its output.
+
+#### Two constraints, enforced structurally rather than by convention
+
+**The workflow carries no assessment content.** A role's assessment is typed
+`unknown` throughout this subpath, so no code here has a vocabulary with which
+to construct one that typechecks as content. `assertPassThroughAssessments`
+re-checks that by **reference identity** before any report is returned: a
+record whose `assessment` is not the very object the role returned — because
+it was authored, defaulted, normalized or merged — throws rather than ships.
+`assertRoleAuthoredPositions` applies the same test to every position in a
+proposed ledger.
+
+**The workflow claims no role's expertise.** Its report has no `baseline`,
+`target`, `setpoint`, `causalHypothesis`, `recommendation`, `criticalPath` or
+`openQuestions` field of its own; those appear only inside a role's returned
+`assessment`. A role's violation stays the role's finding. And the run state
+is derived, never asserted: `satisfied` requires that every selected role
+returned its own assessment cleanly, `indeterminate` dominates `violated`, and
+a run that opened no role at all is `indeterminate` rather than vacuously
+clean.
+
+#### A role with no assessment surface is a result, not a skip
+
+Each `AssessmentSurfaceAbsence` — `package-not-installed`,
+`manifest-unreadable`, `no-assessment-declaration`,
+`invalid-assessment-declaration`, `undeclared-assessment-bin`,
+`assessment-executable-missing` — and each `AssessmentInvocationFailure` —
+`assessment-input-missing`, `assessment-not-executed`,
+`assessment-output-unreadable`, `assessment-exit-inconsistent`,
+`assessment-timed-out` — reaches the report as a named `gap` against the role
+that was opened, with the rule that opened it. Any gap makes the run
+`indeterminate`. A capability that could not be observed must not grade
+identically to one that was observed and was fine, so an unassessed role and
+an assessed clean role never produce the same exit code.
+
+#### Producing the contract, and refusing mutation without it
+
+`proposeInstalledPositionLedger(run, activeRoles)` derives one complete
+installed-position ledger covering every active role: dispositions from the
+deterministic selection, positions copied **by reference** from each role's own
+`proposedPositions`. It returns `ledger: null` whenever a selected role
+produced no assessment. There is no "assume not-applicable" path — deciding
+that an opened role is not needed is that role's call or the decision owner's.
+
+`authorizeMutation(run, ledger, approval)` is the gate. It authorizes nothing
+unless the run is satisfied with no gaps, the ledger validates under
+`validateInstalledPositionLedger` — which is what makes baseline, setpoint,
+authority, guardrails and escalation path mandatory on every open position —
+and this engagement's own decision owner has approved that **exact** run by
+`onboardingRunDigest`. A stale digest, a different approver, a missing
+baseline evidence reference or an absent action authority each refuse.
+
+`foundry-onboarding-run <request.json> <install-root> <evidence-dir>
+[--report <path>] [--ledger <path>]` is the installed entry point, on the same
+`0` / `1` / `2` ternary as every other gate here. The active role set comes
+from the role contract shipped beside this package, never from a list
+maintained in this subpath.
 
 ### `./artifacts`: governed artifact verification
 

@@ -109,6 +109,7 @@ export const OPTIONAL_PEER_POLICY = {
       "@clossys/controller/conventions": "imports",
       "@clossys/controller/gates": "imports",
       "@clossys/controller/gates/secrets": "rejects",
+      "@clossys/controller/onboarding": "imports",
       "@clossys/controller/policy": "imports",
       "@clossys/controller/positions": "imports",
       "@clossys/controller/release": "imports",
