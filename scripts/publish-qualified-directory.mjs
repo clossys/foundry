@@ -16,6 +16,7 @@ import { basename, join, relative, resolve, sep } from "node:path";
 
 import { assertPackageAuthorized, loadReleaseCatalog, readCurrentReleaseIdentity, resolveReleaseTarget } from "./check-release-catalog.mjs";
 import { packageManifestDigest } from "./lib/candidate-qualification.mjs";
+import { resolvePackagePathPrefix } from "./lib/package-path-prefix.mjs";
 import { IndeterminateError, verifyPostPublishPublicNpmArtifact } from "./verify-post-publish-public-npm-artifact.mjs";
 import { assertReleaseRuntime, RELEASE_RUNTIME } from "./lib/release-runtime.mjs";
 
@@ -359,7 +360,16 @@ export async function publishQualifiedDirectory({ root = process.cwd(), packageK
     const denylist = env.PUBLIC_SAFETY_DENYLIST;
     if (typeof denylist !== "string" || !denylist) throw new Error("FULL staged public-safety scan requires PUBLIC_SAFETY_DENYLIST");
     const safetyEnv = { PATH: env.PATH ?? "/usr/bin:/bin", PUBLIC_SAFETY_DENYLIST: denylist };
-    runChecked(run, process.execPath, [join(absoluteRoot, "scripts/check-public-safety.mjs"), packageRoot, "--artifact", "--no-gitignore", "--allow-changelogs", "--require-denylist", "--scope-config", join(absoluteRoot, "package-scope.json")], { cwd: absoluteRoot, env: safetyEnv }, "FULL staged public-safety scan");
+    // `packageRoot` is a private staging directory with no repository above
+    // it (see writeArchive above), so check-public-safety.mjs's own upward
+    // search for package-scope.json would find nothing. Derive --scope-config
+    // and --path-prefix from the package's real, on-disk location instead —
+    // the exact same derivation check-artifact-safety.mjs uses for its own
+    // tarball scan (issue #936), so a package-scoped neutralize rule or
+    // opaque exemption reaches the identical verdict from both callers on
+    // the identical bytes.
+    const { scopeConfigPath, pathPrefix } = resolvePackagePathPrefix(join(absoluteRoot, "packages", packageKey));
+    runChecked(run, process.execPath, [join(absoluteRoot, "scripts/check-public-safety.mjs"), packageRoot, "--artifact", "--no-gitignore", "--allow-changelogs", "--require-denylist", "--scope-config", scopeConfigPath, "--path-prefix", pathPrefix], { cwd: absoluteRoot, env: safetyEnv }, "FULL staged public-safety scan");
 
     const packed = join(stageRoot, "packed"); mkdirSync(packed, { mode: 0o700 });
     const packedResult = runChecked(run, "npm", ["pack", ".", "--ignore-scripts", "--json", "--pack-destination", packed], { cwd: packageRoot, env: credentialFreeNpm, stdio: "pipe", encoding: "utf8" }, "clean-directory npm pack");
