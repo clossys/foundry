@@ -36,6 +36,7 @@ import { createHash } from "node:crypto";
 import zlib from "node:zlib";
 
 import { publishQualifiedDirectory } from "./publish-qualified-directory.mjs";
+import { ReproducibilityMismatch, assertTarballReproducible, cleanRebuildAndPack, packAsIs } from "./lib/artifact-reproducibility.mjs";
 import { packageManifestDigest } from "./lib/candidate-qualification.mjs";
 import { ALL_PACKAGE_RELEASE_ORDER } from "./check-release-catalog.mjs";
 
@@ -5500,6 +5501,76 @@ try {
         "a missing scan root fails closed (exit 2)",
         result.code === 2,
         `expected exit 2, got ${result.code}: ${result.out.slice(0, 400)}`,
+      );
+    }
+  }
+
+  // ------------------------------------------------ artifact reproducibility
+  //
+  // ISSUE #893. A qualification record is immutable, and `dist/` is
+  // gitignored — so a record can bind tarball bytes that no clean build of
+  // the recorded commit reproduces while every tree-digest join stays green,
+  // and that version is then permanently unpublishable. Two were burned that
+  // way.
+  //
+  // The negative control has to plant a REAL stale artifact, not a mock one,
+  // or it proves nothing. It plants it the way the real one arrives: build,
+  // delete a source file, rebuild without cleaning. The build here is two
+  // lines of node instead of tsc, but it has tsc's defining property — it
+  // never removes an output whose source is gone.
+  {
+    const root = join(work, "reproducibility");
+    const pkg = join(root, "packages", "demo");
+    mkdirSync(join(pkg, "src"), { recursive: true });
+    writeFileSync(join(root, "package.json"), JSON.stringify({ name: "gate-repro-fixture", version: "0.0.0", private: true, workspaces: ["packages/*"], scripts: { build: "node build.mjs" } }, null, 2));
+    writeFileSync(
+      join(root, "build.mjs"),
+      'import { cpSync, mkdirSync, readdirSync } from "node:fs";\nimport { join } from "node:path";\n' +
+        'for (const name of readdirSync("packages")) {\n  const src = join("packages", name, "src");\n  const dist = join("packages", name, "dist");\n' +
+        '  mkdirSync(dist, { recursive: true });\n  for (const file of readdirSync(src)) cpSync(join(src, file), join(dist, file));\n}\n',
+    );
+    writeFileSync(join(pkg, "package.json"), JSON.stringify({ name: `${FIXTURE_SCOPE}/demo`, version: "0.0.1", files: ["dist"] }, null, 2));
+    writeFileSync(join(pkg, "src", "index.js"), "export const value = 1;\n");
+
+    let staleDigests;
+    let cleanDigests;
+    try {
+      cleanRebuildAndPack({ root, packageDir: "packages/demo" });
+      writeFileSync(join(pkg, "src", "removed-later.js"), "export const removed = true;\n");
+      cleanRebuildAndPack({ root, packageDir: "packages/demo" });
+      rmSync(join(pkg, "src", "removed-later.js"));
+      // The developer-machine rebuild: incremental, uncleaned. dist/ keeps an
+      // output whose source no longer exists, and that output packs.
+      run("npm", ["run", "build"], { cwd: root });
+      staleDigests = packAsIs({ root, packageDir: "packages/demo" });
+      cleanDigests = cleanRebuildAndPack({ root, packageDir: "packages/demo" });
+    } catch (error) {
+      check("artifact reproducibility fixture builds and packs", false, error instanceof Error ? error.message : String(error));
+    }
+
+    if (staleDigests && cleanDigests) {
+      check(
+        "the stale-dist fixture really is stale — it packs different bytes than a clean build",
+        staleDigests.sha256 !== cleanDigests.sha256,
+        "the fixture failed to produce a stale artifact, so the control below would prove nothing",
+      );
+
+      let refused = null;
+      try { assertTarballReproducible({ root, packageDir: "packages/demo", expected: staleDigests, requireReleaseRuntime: false }); }
+      catch (error) { refused = error; }
+      check(
+        "a tarball packed from a stale dist/ is refused (issue #893)",
+        refused instanceof ReproducibilityMismatch,
+        `expected a ReproducibilityMismatch, got: ${refused ? refused.constructor.name + " " + refused.message.slice(0, 200) : "no error at all"}`,
+      );
+
+      let accepted = null;
+      try { accepted = assertTarballReproducible({ root, packageDir: "packages/demo", expected: cleanDigests, requireReleaseRuntime: false }); }
+      catch (error) { accepted = error; }
+      check(
+        "a tarball packed from a clean build is accepted, so the gate is not simply refusing everything",
+        accepted && !(accepted instanceof Error) && accepted.sha256 === cleanDigests.sha256,
+        `expected acceptance, got: ${accepted instanceof Error ? accepted.message.slice(0, 300) : JSON.stringify(accepted)}`,
       );
     }
   }
