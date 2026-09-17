@@ -666,5 +666,14 @@ test("satisfied records bind the closed plan, closure, canonical payload, and on
   const expected = structuredClone(transcript.packages[0].run);
   const wrongOperation = structuredClone(expected); wrongOperation.observations[1].kind = "help"; wrongOperation.canonicalSha256 = sha256(JSON.stringify(Object.fromEntries(Object.entries(wrongOperation).filter(([key]) => key !== "canonicalSha256"))));
   assert.ok(validateAggregateChildExecution(wrongOperation, { name: transcript.packages[0].name, version: transcript.packages[0].version, qualificationTranscript: expected }).some((item) => item.rule === "qualification-operations"));
+  const renamedLaunch = structuredClone(expected);
+  for (const item of renamedLaunch.observations) {
+    if (item.kind === "help" || item.kind === "case") item.launch = "installed-bin";
+  }
+  renamedLaunch.canonicalSha256 = sha256(JSON.stringify(Object.fromEntries(Object.entries(renamedLaunch).filter(([key]) => key !== "canonicalSha256"))));
+  assert.equal(
+    validateAggregateChildExecution(renamedLaunch, { name: transcript.packages[0].name, version: transcript.packages[0].version, qualificationTranscript: expected }).some((item) => item.rule === "qualification-operations"),
+    false,
+  );
   assert.doesNotThrow(() => validateAggregateChildExecution({ schema: "foundry-aggregate-child-execution-v1", version: 1, candidate: { name: transcript.packages[0].name, version: transcript.packages[0].version }, archetype: "x", tarball: { sha1, sha256: sha, sha512 }, peerInstall: {}, consumer: { manifestSha256: sha, lockfileSha256: sha }, coverage: {}, observations: null, dimensions: null, restoration: {}, mismatches: [], ok: false, canonicalSha256: sha }, transcript.packages[0]));
 });

@@ -16,7 +16,7 @@ const releaseRuntimeRun = (file, args) => {
   if (args[0] === "-p") return { status: 0, stdout: `${RELEASE_RUNTIME.zlib}\n`, stderr: "" };
   throw new Error(`unexpected release runtime probe ${file} ${args.join(" ")}`);
 };
-async function syntheticPackage({ mismatch = false, exports = undefined, runtimePeer = false, peerInstall = undefined, rawStarter = false, mutateCaseEvidence = null } = {}) {
+async function syntheticPackage({ mismatch = false, exports = undefined, runtimePeer = false, peerInstall = undefined, rawStarter = false, mutateCaseEvidence = null, unresolvedArgvGuard = false, binName = "synthetic-check" } = {}) {
   const root = await mkdtemp(join(tmpdir(), "foundry-runner-test-"));
   const source = join(root, "source");
   const fixturesDir = join(root, "fixtures");
@@ -31,7 +31,7 @@ async function syntheticPackage({ mismatch = false, exports = undefined, runtime
     type: "module",
     exports: exports ?? { ".": { types: "./index.d.ts", import: "./index.js" }, "./asset": "./asset.txt", "./static/*": "./static/*.txt" },
     files: ["index.js", "react-server.js", "index.d.ts", "cli.js", "asset.txt", "static"],
-    bin: { "synthetic-check": "cli.js" },
+    bin: { [binName]: "cli.js" },
     scripts: { preinstall: "node -e \"require('fs').writeFileSync('preinstall-marker','ran')\"" },
     ...(runtimePeer ? { peerDependencies: { typescript: "~6.0.0" }, peerDependenciesMeta: { typescript: { optional: true } } } : {}),
   }, null, 2));
@@ -44,6 +44,12 @@ async function syntheticPackage({ mismatch = false, exports = undefined, runtime
   await writeFile(join(source, "static", "two.txt"), "two\n");
   await writeFile(join(source, "cli.js"), [
     "import { readFileSync, writeFileSync } from 'node:fs';",
+    ...(unresolvedArgvGuard ? [
+      "import { fileURLToPath } from 'node:url';",
+      "import { resolve } from 'node:path';",
+      "function detectMainModule() { return fileURLToPath(import.meta.url) === resolve(process.argv[1]); }",
+      "if (!detectMainModule()) process.exit(0);",
+    ] : []),
     "const credentials = ['NODE_AUTH_TOKEN', 'NPM_TOKEN', 'GH_PACKAGES_TOKEN', 'GITHUB_TOKEN', 'GH_TOKEN'];",
     "if (credentials.some((key) => process.env[key])) process.exit(9);",
     "if (process.argv[2] === '--help') { console.log('synthetic help'); process.exit(0); }",
@@ -108,16 +114,16 @@ async function syntheticPackage({ mismatch = false, exports = undefined, runtime
       ],
     } : {}),
     ...(peerInstall ? { peerInstall } : {}),
-    bins: { "synthetic-check": 0 },
+    bins: { [binName]: 0 },
     fixtures: fixtureNames,
     cases: [
-      { id: "green", bin: "synthetic-check", fixtureArgs: ["green.json"], exitCode: 0, group: "authority" },
-      { id: "red", bin: "synthetic-check", fixtureArgs: ["red.json"], exitCode: 1, group: "authority" },
-      { id: "indeterminate", bin: "synthetic-check", fixtureArgs: ["indeterminate.json"], exitCode: 2, group: "authority" },
+      { id: "green", bin: binName, fixtureArgs: ["green.json"], exitCode: 0, group: "authority" },
+      { id: "red", bin: binName, fixtureArgs: ["red.json"], exitCode: 1, group: "authority" },
+      { id: "indeterminate", bin: binName, fixtureArgs: ["indeterminate.json"], exitCode: 2, group: "authority" },
     ],
     dimensionEvidence: { rollback: "restoration", duplicate: "authority" },
   };
-  return { root, source, tarball, policy, adapter, fixtures, manifestBins: { "synthetic-check": "cli.js" }, registry: { scope: rawStarter ? "@clossys" : "@acme", registry: "https://registry.npmjs.org/" }, releaseRuntimeRun };
+  return { root, source, tarball, policy, adapter, fixtures, manifestBins: { [binName]: "cli.js" }, registry: { scope: rawStarter ? "@clossys" : "@acme", registry: "https://registry.npmjs.org/" }, releaseRuntimeRun };
 }
 
 test("runner isolates a packed candidate and produces a deterministic complete transcript", async (t) => {
@@ -152,7 +158,8 @@ test("runner isolates a packed candidate and produces a deterministic complete t
     bins: 1,
     lifecycleScriptsDisabled: true,
   });
-  assert.ok(first.observations.filter((item) => item.kind === "help" || item.kind === "case").every((item) => item.launch === "node-direct"));
+  assert.ok(first.observations.filter((item) => item.kind === "import").every((item) => item.launch === "node-direct"));
+  assert.ok(first.observations.filter((item) => item.kind === "help" || item.kind === "case").every((item) => item.launch === "installed-bin"));
   assert.equal(JSON.stringify(first).includes(fixture.root), false);
   const { canonicalSha256, ...canonical } = first;
   assert.equal(canonicalSha256, sha256(JSON.stringify(canonical)));
@@ -168,7 +175,7 @@ test("Starter v3 retains only bounded tokenized raw case commands, inputs, exits
   assert.deepEqual(cases.map((item) => item.rawCaseEvidence.exitCode), [0, 1, 2]);
   for (const item of cases) {
     const raw = item.rawCaseEvidence;
-    assert.deepEqual(raw.argv.slice(0, 2), ["$NODE", "$TEMP/node_modules/@clossys/starter/cli.js"]);
+    assert.deepEqual(raw.argv.slice(0, 2), ["$NODE", "$TEMP/node_modules/.bin/synthetic-check"]);
     assert.equal(raw.argv.some((argument) => argument.includes(fixture.root)), false);
     assert.equal(raw.materializedInputs.length, 1);
     assert.match(raw.materializedInputs[0].path, /^\$TEMP\/fixtures\//);
@@ -258,7 +265,7 @@ test("consumer overlays restore new roots and refuse to overwrite an installed o
 
 test("preinstalled aggregate children run sequentially without child installs and restore Starter overlays after failure", async (t) => {
   const starter = await syntheticPackage({ rawStarter: true });
-  const sibling = await syntheticPackage();
+  const sibling = await syntheticPackage({ binName: "synthetic-sibling" });
   const failingStarter = await syntheticPackage({ rawStarter: true, mutateCaseEvidence: "input" });
   const roots = [starter, sibling, failingStarter];
   t.after(() => Promise.all(roots.map((item) => rm(item.root, { recursive: true, force: true }))));
@@ -289,6 +296,18 @@ test("runner collects all case observations before reporting a case mismatch", a
   assert.equal(transcript.ok, false);
   assert.deepEqual(transcript.mismatches, ["case:red"]);
   assert.deepEqual(transcript.observations.filter((item) => item.kind === "case").map((item) => item.id), ["case:green", "case:red", "case:indeterminate"]);
+});
+
+test("a bin whose main-module guard does not realpath argv[1] is a help mismatch when launched through .bin", async (t) => {
+  const fixture = await syntheticPackage({ unresolvedArgvGuard: true });
+  t.after(() => rm(fixture.root, { recursive: true, force: true }));
+  const transcript = await runCandidateQualification(fixture);
+  assert.equal(transcript.ok, false);
+  assert.ok(transcript.mismatches.includes("help:synthetic-check"));
+  const help = transcript.observations.find((item) => item.id === "help:synthetic-check");
+  assert.equal(help.launch, "installed-bin");
+  assert.equal(help.observedExitCode, 0);
+  assert.equal(help.launchError, false);
 });
 
 test("tarball bytes, malformed candidate launch, and timeout outcomes fail closed", async (t) => {
