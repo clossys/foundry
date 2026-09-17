@@ -52,6 +52,15 @@ describe("launcher CLI", () => {
     expect(() => main(["--org", "acme"], host("/tmp", {}), skeletonRoot)).toThrow(/no arguments/);
   });
 
+  it("prints usage from a non-empty non-git directory instead of refusing", () => {
+    const directory = mkdtempSync(join(tmpdir(), "launcher-files-"));
+    roots.push(directory);
+    writeFileSync(join(directory, "notes.txt"), "keep\n");
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    expect(main([], host(directory, {}), skeletonRoot)).toBe(0);
+    expect(log.mock.calls[0]?.[0]).toBe(USAGE);
+  });
+
   it("creates a hub from an empty directory through the CLI", () => {
     const directory = mkdtempSync(join(tmpdir(), "launcher-cli-"));
     roots.push(directory);

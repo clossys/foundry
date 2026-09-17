@@ -14,7 +14,8 @@
     }
   },
   "bin": {
-    "launcher": "dist/cli.js"
+    "launcher": "dist/cli.js",
+    "launcher-check": "dist/check-cli.js"
   },
   "files": [
     "dist",

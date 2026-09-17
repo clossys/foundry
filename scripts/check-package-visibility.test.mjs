@@ -18,6 +18,7 @@ import {
   selectRetentionDeclarations,
 } from "./check-package-visibility.mjs";
 import { PUBLIC_NPM_REGISTRY } from "./lib/public-npm-registry.mjs";
+import { ALL_PACKAGE_RELEASE_ORDER } from "./check-release-catalog.mjs";
 
 // Two layers of coverage, matching this repo's existing split:
 //
@@ -127,12 +128,7 @@ test("resolveActiveVisibilityTarget: an identity that does not match the catalog
             scope: "@clossys",
             registry: PUBLIC_NPM_REGISTRY,
             access: "public",
-            packages: [
-              "advisor", "starter", "controller", "strategist", "writer", "designer",
-              "architect", "bouncer", "butler", "giver", "influencer", "integrator",
-              "keeper", "locksmith", "messenger", "observer", "builder", "inspector",
-              "publisher",
-            ],
+            packages: [...ALL_PACKAGE_RELEASE_ORDER],
           },
         ],
       });

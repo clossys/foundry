@@ -57,6 +57,8 @@ until you approve a next action. The same command resumes later.
 ```bash
 launcher
 launcher --help
+launcher-check --help
+launcher-check --input observation.json
 ```
 
 Exit codes preserve the ternary:
@@ -66,6 +68,8 @@ Exit codes preserve the ternary:
 | `0` | `satisfied` | Created, resumed, or appointed the hub. |
 | `1` | `violated` | Known refusal: not GitHub, not empty, or the supplier tree. |
 | `2` | `indeterminate` | Missing `gh`, unreadable registry pin, or an owner that could not be inferred. |
+
+`launcher-check` grades a captured observation JSON through `planWorkspace` and does not create a hub. Same ternary: 0 is a create/resume/adopt plan, 1 is a known refusal, 2 could not run or could not decide.
 
 ## API
 

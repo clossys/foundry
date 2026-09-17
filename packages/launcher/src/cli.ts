@@ -34,6 +34,15 @@ export function main(argv: readonly string[], host: WorkspaceHost, skeletonRoot:
   }
   if (argv.length !== 0) throw new LauncherInputError("launcher takes no arguments; run it from the directory to create or appoint");
   const observation = observeWorkspace(host);
+  if (
+    !observation.cwd.empty &&
+    !observation.cwd.git &&
+    observation.cwd.hub === undefined &&
+    !observation.cwd.looksLikeFoundry
+  ) {
+    console.log(USAGE);
+    return 0;
+  }
   const decision = planWorkspace(observation, host);
   if (decision.action === "refuse") {
     console.error(`launcher: ${decision.message}`);

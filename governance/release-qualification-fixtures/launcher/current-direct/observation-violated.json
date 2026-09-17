@@ -1,0 +1,11 @@
+{
+  "cwd": {
+    "absolutePath": "/tmp/foundry",
+    "empty": false,
+    "git": true,
+    "looksLikeFoundry": true
+  },
+  "ownerCandidates": ["acme"],
+  "ghAvailable": true,
+  "gitAvailable": true
+}
