@@ -29,7 +29,7 @@
 
 import { mkdtempSync, rmSync, mkdirSync, writeFileSync, readFileSync, cpSync, existsSync, chmodSync, readdirSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, dirname } from "node:path";
+import { join, dirname, basename } from "node:path";
 import { execFileSync, spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
@@ -1804,6 +1804,241 @@ try {
       `internal.md was not flagged: ${JSON.stringify(report.findings)}`,
     );
     check("exits 1 overall (the prefixed + internal findings still fail the gate)", r.code === 1, `exit was ${r.code}`);
+  }
+
+  // ----------- check-contamination-classes CLASS 1: citations that are not .md
+  // CLASS 1's two extraction patterns both terminated in a literal `\.md\b`,
+  // so the class caught exactly the Markdown half of itself and its green
+  // result was read as the broader claim (GH #935). Every case below is a
+  // NEGATIVE test against a fixture whose ONLY defect is that the cited path
+  // is not Markdown — each one passed green before the fix.
+  //
+  // The fixture is a real package with a real `files` allowlist, because the
+  // decisive question is not "does this path exist on the machine that wrote
+  // the comment" but "can a reader who installed this package open it". Those
+  // differ, and the #927 defect lives exactly in the gap: the cited test file
+  // DID exist in src/ and was excluded from the tarball.
+  console.log("\n# check-contamination-classes CLASS 1: a dangling .ts citation is a finding, not a pass");
+  {
+    const dir = join(work, "contam-class1-extensions");
+    const src = join(dir, "src");
+    const internal = join(src, "internal");
+    mkdirSync(internal, { recursive: true });
+    writeFileSync(
+      join(dir, "package.json"),
+      JSON.stringify(
+        {
+          name: `${FIXTURE_SCOPE}/citations`,
+          version: "1.0.0",
+          private: false,
+          license: "MIT",
+          files: ["src", "!src/**/*.test.ts", "README.md"],
+        },
+        null,
+        2,
+      ) + "\n",
+    );
+    writeFileSync(join(dir, "README.md"), "# citations\n");
+    // Ships, and cited correctly: the control that proves the cases below are
+    // not just "this gate flags everything".
+    writeFileSync(join(internal, "helper.ts"), "export const helper = 1;\n");
+    // Exists in src/, excluded from the tarball by the `files` negation above.
+    writeFileSync(join(internal, "helper.test.ts"), "// fixture test\n");
+
+    writeFileSync(join(src, "ok.ts"), "// See `internal/helper.ts` for the shape.\nexport const ok = 1;\n");
+    writeFileSync(
+      join(src, "unreachable.ts"),
+      "// See `internal/helper.test.ts` for the exact checked shape.\nexport const a = 1;\n",
+    );
+    writeFileSync(join(src, "rot.ts"), "// Ported from `packages/retired/src/gone.ts`.\nexport const b = 1;\n");
+    writeFileSync(
+      join(src, "disclosed.ts"),
+      [
+        "/**",
+        " * The range algorithm here is a hand port of the one in",
+        " * `internal/helper.test.ts` — that file does not ship with this package,",
+        " * so importing it would resolve nothing for a real consumer.",
+        " */",
+        "export const c = 1;",
+        "",
+      ].join("\n"),
+    );
+    writeFileSync(
+      join(src, "specifier.ts"),
+      '// A module specifier is not a citation.\nimport { helper } from "./internal/helper.js";\nexport const d = helper;\n',
+    );
+    writeFileSync(
+      join(src, "vocabulary.ts"),
+      `// Reads \`${FIXTURE_SCOPE}/tokens/theme.css\` and $RUNNER_TEMP/receipt.json.\n` +
+        "// Docs live at https://example.invalid/docs/DESIGN.md too.\nexport const e = 1;\n",
+    );
+    gitInit(dir);
+
+    const r = run("node", [CONTAM, dir, "--class", "1", "--json"]);
+    let report;
+    try {
+      report = JSON.parse(r.out);
+    } catch {
+      report = { findings: [], indeterminate: [] };
+    }
+    const findings = report.findings ?? [];
+    const on = (f) => findings.filter((x) => x.file.split("/").join("/") === f);
+    const cites = (f, path) => on(f).some((x) => x.detail.includes(`cites "${path}"`));
+
+    check(
+      "a .ts citation that exists in src/ but is excluded from the tarball IS a finding",
+      cites("src/unreachable.ts", "internal/helper.test.ts"),
+      `no finding for src/unreachable.ts: ${JSON.stringify(findings)}`,
+    );
+    check(
+      "a .ts citation that resolves nowhere in the repository IS a finding",
+      cites("src/rot.ts", "packages/retired/src/gone.ts"),
+      `no finding for src/rot.ts: ${JSON.stringify(findings)}`,
+    );
+    check(
+      "a citation to a path that actually ships is NOT a finding",
+      on("src/ok.ts").length === 0,
+      `src/ok.ts was flagged: ${JSON.stringify(on("src/ok.ts"))}`,
+    );
+    check(
+      "a module specifier is not read as a citation",
+      on("src/specifier.ts").length === 0,
+      `src/specifier.ts was flagged: ${JSON.stringify(on("src/specifier.ts"))}`,
+    );
+    check(
+      "a @scope subpath export, a $VAR path and an absolute URL are not citations",
+      on("src/vocabulary.ts").length === 0,
+      `src/vocabulary.ts was flagged: ${JSON.stringify(on("src/vocabulary.ts"))}`,
+    );
+    check("exits 1 overall on the planted citations", r.code === 1, `exit was ${r.code}: ${r.out.slice(0, 400)}`);
+
+    // ---- the self-disclosing exception, and the bound that keeps it honest
+    check(
+      "a citation that discloses inline that it does not ship is NOT a finding",
+      on("src/disclosed.ts").length === 0,
+      `src/disclosed.ts was flagged: ${JSON.stringify(on("src/disclosed.ts"))}`,
+    );
+
+    // The bound. A "does not ship" qualifier is a claim about SHIPPING, so it
+    // must not excuse a path that exists in no checkout at any commit — the
+    // reader was still told to go and look, and there is nothing to find. If
+    // this ever passes, the exemption has become a general-purpose mute and
+    // the class has a suppression comment in all but name.
+    const rotDir = join(work, "contam-class1-rot-disclosure");
+    mkdirSync(join(rotDir, "src"), { recursive: true });
+    writeFileSync(
+      join(rotDir, "package.json"),
+      JSON.stringify({ name: `${FIXTURE_SCOPE}/rot-disclosure`, version: "1.0.0", files: ["src"] }, null, 2) + "\n",
+    );
+    writeFileSync(
+      join(rotDir, "src", "index.ts"),
+      [
+        "/**",
+        " * Ported from `packages/retired/src/gone.ts` — that file does not ship",
+        " * with this package, and this package's own (unshipped) test suite",
+        " * confirms the port.",
+        " */",
+        "export const x = 1;",
+        "",
+      ].join("\n"),
+    );
+    gitInit(rotDir);
+    const rot = run("node", [CONTAM, rotDir, "--class", "1", "--json"]);
+    let rotReport;
+    try {
+      rotReport = JSON.parse(rot.out);
+    } catch {
+      rotReport = { findings: [] };
+    }
+    check(
+      'a "does not ship" disclosure does NOT excuse a path that exists nowhere',
+      (rotReport.findings ?? []).some((x) => x.detail.includes('cites "packages/retired/src/gone.ts"')),
+      `rot was excused by a shipping disclosure: ${JSON.stringify(rotReport.findings)}`,
+    );
+  }
+
+  // ------- check-contamination-classes CLASS 1: the surface, and the allowlist
+  // Two properties that a widened extraction alone would not give:
+  //
+  //   `tsc` preserves comments, so the #927 citation reached dist/index.js and
+  //   six .d.ts files — the copies a consumer actually reads — and no tree scan
+  //   ever looked there.
+  //
+  //   The pre-existing instances this widening surfaces are waived, not fixed,
+  //   so the waiver has to be a ratchet: it cannot grow, and an entry that
+  //   stops matching anything has to be a finding, or a fixed citation leaves
+  //   its waiver behind and the list never shrinks.
+  console.log("\n# check-contamination-classes CLASS 1: built output, and the allowlist ratchet");
+  {
+    const dir = join(work, "contam-class1-surface");
+    mkdirSync(join(dir, "src"), { recursive: true });
+    mkdirSync(join(dir, "dist"), { recursive: true });
+    writeFileSync(
+      join(dir, "package.json"),
+      JSON.stringify(
+        { name: `${FIXTURE_SCOPE}/surface`, version: "1.0.0", files: ["dist", "src"] },
+        null,
+        2,
+      ) + "\n",
+    );
+    writeFileSync(join(dir, "src", "index.ts"), "export const x = 1;\n");
+    // Only in build output — the artifact surface, never a tracked file.
+    writeFileSync(join(dir, "dist", "index.js"), "// See `packages/retired/src/gone.ts`.\nexport const x = 1;\n");
+    writeFileSync(join(dir, ".gitignore"), "dist/\n");
+    gitInit(dir);
+
+    const tree = run("node", [CONTAM, dir, "--class", "1"]);
+    check(
+      "the default tree scan does not read gitignored build output",
+      tree.code === 0,
+      `default run exited ${tree.code}; if this now fails the default gained dist visibility — good, update this test`,
+    );
+    const built = run("node", [CONTAM, dir, "--class", "1", "--include-built"]);
+    check(
+      "--include-built CATCHES a citation that exists only in compiled output",
+      built.code === 1 && built.out.includes('cites "packages/retired/src/gone.ts"'),
+      `--include-built exited ${built.code} without the dist finding: ${built.out.slice(0, 400)}`,
+    );
+
+    const allowPath = join(dir, "allow.json");
+    writeFileSync(
+      allowPath,
+      JSON.stringify(
+        { issue: "#941", packages: { [basename(dir)]: { "dist/index.js": ["packages/retired/src/gone.ts"] } } },
+        null,
+        2,
+      ) + "\n",
+    );
+    const waived = run("node", [CONTAM, dir, "--class", "1", "--include-built", "--allowlist", allowPath]);
+    check(
+      "an allowlisted citation passes, and the run says so rather than reporting a clean bill",
+      waived.code === 0 && /KNOWN, WAIVED/.test(waived.out) && /not a clean one/.test(waived.out),
+      `waived run exited ${waived.code}: ${waived.out.slice(0, 500)}`,
+    );
+
+    const stalePath = join(dir, "stale.json");
+    writeFileSync(
+      stalePath,
+      JSON.stringify(
+        {
+          issue: "#941",
+          packages: {
+            [basename(dir)]: {
+              "dist/index.js": ["packages/retired/src/gone.ts"],
+              "src/index.ts": ["packages/retired/src/never-cited.ts"],
+            },
+          },
+        },
+        null,
+        2,
+      ) + "\n",
+    );
+    const stale = run("node", [CONTAM, dir, "--class", "1", "--include-built", "--allowlist", stalePath]);
+    check(
+      "a waiver that no longer matches anything is itself a finding (the list has to shrink)",
+      stale.code === 1 && /never-cited\.ts/.test(stale.out),
+      `stale waiver did not fail the gate; exit ${stale.code}: ${stale.out.slice(0, 500)}`,
+    );
   }
 
   // --------------- check-contamination-classes CLASS 4: shallow clones fail closed

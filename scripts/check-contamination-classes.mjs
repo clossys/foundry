@@ -669,8 +669,13 @@ const BUILT_SEGMENT_RE = /(?:^|\/)(?:dist|build)\//;
 // the one enforced and the gap is named here rather than papered over.
 const REPO_SHAPED_RE = /^packages\//;
 const TEST_FILE_RE = /(?:^|[\/.])[\w-]+\.(?:test|spec)\.[a-z]+$/;
+// `.md` is the third shape, and it is here to PRESERVE behaviour rather than
+// to add any: a documentation citation that resolves nowhere is the original
+// CLASS 1 finding, the one #930 caught in a CHANGELOG, and widening the
+// extraction must not quietly narrow the rule that already worked.
+const DOC_FILE_RE = /\.mdx?$/i;
 function isRepositoryShaped(citedPath) {
-  return REPO_SHAPED_RE.test(citedPath) || TEST_FILE_RE.test(citedPath);
+  return REPO_SHAPED_RE.test(citedPath) || TEST_FILE_RE.test(citedPath) || DOC_FILE_RE.test(citedPath);
 }
 
 function classifyCitation(citedPath, file) {
