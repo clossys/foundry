@@ -3,6 +3,31 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.4.6] - 2026-09-18
+
+### Added
+
+- Documented installation against the public npm registry
+  (`https://registry.npmjs.org`) and that installing needs no authentication.
+- Stated the charter close condition in the README: independent consumer
+  evidence of `design conformance rate`, computed by
+  `assessDesignConformanceRate()`. An empty evaluated set is
+  indeterminate, never a perfect rate of 1. `designer-token-check`,
+  `designer-brand-check`, `designer-contrast-check`, and
+  `designer-environment-check` remain the gates they are; none is this
+  rate.
+- Declared `foundry.assessment` against a new mapped `designer-rate-check`
+  bin with `invocation: "single-json-input"`. The four existing designer
+  bins remain gates and are not the assessment surface. Advisor remains
+  the only required first-day role.
+- `designer-rate-check assessment.json`: prints the `design conformance
+  rate` report and exits on the `0` / `1` / `2` ternary.
+
+### Notes
+
+- This does not claim the position is closed. Qualification of `0.4.6` is
+  deferred under #833.
+
 ## [0.4.5] - 2026-09-16
 
 ### Fixed

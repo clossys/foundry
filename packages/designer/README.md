@@ -9,6 +9,50 @@ artifacts, and renaming the role does not rename what it reasons about.
 Design tokens, theme CSS, and React components for Tailwind CSS v4. This
 package ships reusable visual vocabulary built on its own token layer:
 
+```bash
+npm install @clossys/designer
+```
+
+This package is published to the public npm registry, `https://registry.npmjs.org`.
+Installing it needs no authentication: no npm token, no `.npmrc` registry
+override, and no GitHub credential of any kind.
+
+## Design conformance rate
+
+Independent consumer evidence shows the position's owned metric meets its
+setpoint over the declared review cadence. The owned metric is `design
+conformance rate`, computed by `assessDesignConformanceRate()`. An empty
+evaluated set is `indeterminate`, never a perfect rate of 1.
+`designer-token-check`, `designer-brand-check`, `designer-contrast-check`,
+and `designer-environment-check` remain the gates they are; none is this
+rate. This package does not measure consumer evidence and does not close
+the loop. A green run of this package's tests is not a close.
+
+```ts
+import { assessDesignConformanceRate } from "@clossys/designer/gate";
+
+const report = assessDesignConformanceRate(input);
+```
+
+```bash
+designer-rate-check assessment.json
+```
+
+The command prints JSON and exits `0` for satisfied, `1` for violated, and
+`2` for indeterminate, unreadable, or invalid input.
+
+This package declares that command as its first-day assessment surface in
+its own manifest:
+
+```json
+"foundry": { "assessment": { "bin": "designer-rate-check", "invocation": "single-json-input" } }
+```
+
+Onboarding discovers that declaration from the installed manifest and never
+infers a surface. The four existing designer bins remain gates and are not
+the assessment surface. Designer is not a required first-day role; Advisor
+remains the only required first-day assessment.
+
 ## Package structure
 
 ```

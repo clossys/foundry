@@ -1,6 +1,6 @@
 {
   "name": "@clossys/designer",
-  "version": "0.4.5",
+  "version": "0.4.6",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -96,7 +96,14 @@
     "designer-token-check": "dist/cli.js",
     "designer-brand-check": "dist/tokens/cli.js",
     "designer-contrast-check": "dist/tokens/contrast-cli.js",
-    "designer-environment-check": "dist/environment-conformance-cli.js"
+    "designer-environment-check": "dist/environment-conformance-cli.js",
+    "designer-rate-check": "dist/design-conformance-rate-cli.js"
+  },
+  "foundry": {
+    "assessment": {
+      "bin": "designer-rate-check",
+      "invocation": "single-json-input"
+    }
   },
   "files": [
     "dist",
