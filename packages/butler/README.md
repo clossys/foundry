@@ -52,10 +52,48 @@ GitHub token or other credential.
 import { checkCurrency, evaluateStandingInstruction } from "@clossys/butler";
 ```
 
+## Confirmed current intent rate
+
+Independent consumer evidence shows the position's owned metric meets its
+setpoint over the declared review cadence. The owned metric is `confirmed
+current intent rate`, computed by `assessConfirmedCurrentIntentRate()`. An
+empty evaluated set is `indeterminate`, never a perfect rate of 1.
+`checkConfirmationCompleteness` and `checkCurrency` remain the gates they
+are; neither is this rate. This package does not measure consumer evidence
+and does not close the loop. A green run of this package's tests is not a
+close.
+
+```ts
+import { assessConfirmedCurrentIntentRate } from "@clossys/butler";
+
+const report = assessConfirmedCurrentIntentRate(input);
+```
+
+```bash
+butler-rate-check assessment.json
+```
+
+The command prints JSON and exits `0` for satisfied, `1` for violated, and
+`2` for indeterminate, unreadable, or invalid input.
+
+This package declares that command as its first-day assessment surface in
+its own manifest:
+
+```json
+"foundry": { "assessment": { "bin": "butler-rate-check", "invocation": "single-json-input" } }
+```
+
+Onboarding discovers that declaration from the installed manifest and never
+infers a surface. `butler-check` remains the three-gate CLI and is not the
+assessment surface. Butler is not a required first-day role; Advisor
+remains the only required first-day assessment.
+
 ## The three gates
 
 All three are reachable from one installed bin, `butler-check`, dispatched
-on the first argument matching a gate name exactly.
+on the first argument matching a gate name exactly. The charter assessment
+is a second mapped bin, `butler-rate-check`, and is not a fourth gate on
+this dispatcher.
 
 ```bash
 butler-check confirmation-completeness ./intents.json ./confirmations.json --floor 0.8
@@ -140,6 +178,8 @@ Everything below is exported from the package root.
 | `checkConfirmationCompleteness` | Gate 1, over intents, confirmations, and a declared floor. |
 | `checkCurrency` | Gate 2, over instructions, usages, and the caller's denial-invalidation decision. |
 | `checkWithdrawalParity` | Gate 3, over measured preference paths. |
+| `assessConfirmedCurrentIntentRate` | Charter close metric. Returns `ConfirmedCurrentIntentRateAssessment` from consumer-supplied independent observations. Not `checkConfirmationCompleteness` or `checkCurrency`. |
+| `ConfirmedCurrentIntentRateAssessment`, `ConfirmedCurrentIntentRateFinding`, `ConfirmedCurrentIntentRateState` | Its result shape |
 
 ### Validators and guards
 
