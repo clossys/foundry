@@ -29,7 +29,11 @@
  *      `checkCurrency`, and `checkWithdrawalParity`. Each is a pure
  *      function returning a three-state result, and `cli.ts` folds those
  *      onto the `0`/`1`/`2` exit contract without ever collapsing "could
- *      not run" into either "clean" or "findings".
+ *      not run" into either "clean" or "findings". The charter metric
+ *      `confirmed current intent rate` is computed by
+ *      `assessConfirmedCurrentIntentRate` from consumer-supplied
+ *      independent observations and is not either gate. `butler-rate-check`
+ *      is the assessment surface; `butler-check` remains the three-gate CLI.
  *
  * Two subpaths sit beside this one. `./inbound` is admission — whether an
  * event arriving on a channel should be acknowledged and processed at all,
@@ -95,6 +99,12 @@ export {
   recordReopened,
   recordStaleness,
 } from "./contract.js";
+export { assessConfirmedCurrentIntentRate } from "./confirmed-current-intent-rate.js";
+export type {
+  ConfirmedCurrentIntentRateAssessment,
+  ConfirmedCurrentIntentRateFinding,
+  ConfirmedCurrentIntentRateState,
+} from "./confirmed-current-intent-rate.js";
 export type {
   ConfirmationCompletenessResult,
   ConfirmationFailureReason,
