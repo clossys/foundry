@@ -2,6 +2,7 @@
 
 export { PACKAGE_LIFECYCLE_VERSION } from "./types.js";
 export type {
+  DeclaredRule,
   GovernedPreflightOptions,
   GovernedPreflightReport,
   GovernanceReport,
@@ -16,6 +17,12 @@ export type {
   PackageLifecyclePromotionEvidence,
   PackageLifecycleStatus,
   PackageScaffoldFile,
+  RuleConformanceAssessment,
+  RuleConformanceEvidence,
+  RuleConformanceFinding,
+  RuleConformanceInput,
+  RuleConformanceObservation,
+  RuleConformanceState,
 } from "./types.js";
 
 export { validatePackageLifecycle, evaluateDependencyInstallability,
@@ -23,6 +30,7 @@ export { validatePackageLifecycle, evaluateDependencyInstallability,
 export { planNewPackage } from "./scaffold.js";
 export { runGovernanceCheck } from "./governance.js";
 export { preflightGovernedPackage } from "./preflight.js";
+export { assessRuleConformanceRate } from "./rule-conformance.js";
 export {
   POSITION_FIELDS,
   POSITION_RECOMMENDATIONS,

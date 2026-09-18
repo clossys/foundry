@@ -202,3 +202,61 @@ export interface GovernedPreflightReport {
 
 /** Type-only convenience exports for consumers handling the composed reports. */
 export type { BuildOrderResult, CatalogFinding, FoundationReport, PreflightPackageOptions, PreflightReport };
+
+/** Exact three-state vocabulary used by the rule-conformance assessment. */
+export type RuleConformanceState = "satisfied" | "violated" | "indeterminate";
+
+/** One deterministic finding from computing `rule conformance rate`. */
+export interface RuleConformanceFinding {
+  readonly rule: string;
+  readonly severity: "error";
+  readonly message: string;
+  readonly path?: string;
+}
+
+/** One consumer-declared operating rule identity. */
+export interface DeclaredRule {
+  readonly id: string;
+}
+
+/** A value-free pointer to evidence held by the consumer. */
+export interface RuleConformanceEvidence {
+  readonly id: string;
+  readonly description: string;
+}
+
+/**
+ * One independent observation of a declared rule. Controller does not invent
+ * these; a consumer supplies them. `independent` must be boolean `true` for
+ * the observation to count as an evaluation.
+ */
+export interface RuleConformanceObservation {
+  readonly ruleId: string;
+  readonly independent: boolean;
+  readonly wellFormed: boolean;
+  readonly followed: boolean;
+  readonly observerRef: string;
+  readonly evidence: readonly RuleConformanceEvidence[];
+}
+
+/** Consumer-owned input from which `rule conformance rate` is computed. */
+export interface RuleConformanceInput {
+  readonly asOf: string;
+  readonly declaredRules: readonly DeclaredRule[];
+  readonly observations: readonly RuleConformanceObservation[];
+}
+
+/**
+ * Report for the charter metric `rule conformance rate`.
+ * `proposedPositions` is always the empty array: this metric does not
+ * propose install positions or invent ledger rows.
+ */
+export interface RuleConformanceAssessment {
+  readonly metric: "rule conformance rate";
+  readonly state: RuleConformanceState;
+  readonly rate: number | null;
+  readonly evaluatedRules: number;
+  readonly conformingRules: number;
+  readonly findings: readonly RuleConformanceFinding[];
+  readonly proposedPositions: readonly unknown[];
+}
