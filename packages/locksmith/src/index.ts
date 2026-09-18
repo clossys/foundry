@@ -20,6 +20,13 @@ export type { CustodyStore, KeyCustodyManifest, KeyCustodyRecord } from "./custo
 export { evaluateRotation, rotationQueue, sameDigest, summarizeRotationMetric } from "./rotation.js";
 export type { RotationEvaluation, RotationMetric, RotationPolicy, RotationRecord, RotationState } from "./rotation.js";
 
+export { assessControlledKeyRate } from "./controlled-key-rate.js";
+export type {
+  ControlledKeyRateAssessment,
+  ControlledKeyRateFinding,
+  ControlledKeyRateState,
+} from "./controlled-key-rate.js";
+
 export { defineCredentialEvidence, evaluateCredential } from "./credential.js";
 export type {
   CredentialClass,
