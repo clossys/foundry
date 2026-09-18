@@ -1,6 +1,6 @@
 {
   "name": "@clossys/observer",
-  "version": "0.2.8",
+  "version": "0.2.9",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -14,7 +14,8 @@
     }
   },
   "bin": {
-    "observer-coverage-check": "dist/bin.js"
+    "observer-coverage-check": "dist/bin.js",
+    "observer-check": "dist/unobserved-outcome-cli.js"
   },
   "files": [
     "dist",
@@ -25,6 +26,12 @@
     "LICENSE"
   ],
   "sideEffects": false,
+  "foundry": {
+    "assessment": {
+      "bin": "observer-check",
+      "invocation": "single-json-input"
+    }
+  },
   "description": "Telemetry contracts, redaction as a tested contract, gate efficacy measured from caller-supplied run history, and a fleet package-coverage grader with a CLI. The measurer, never the measured: this package computes whether a gate is working and never judges a change itself. The library stays zero I/O, zero network calls; only the CLI touches a filesystem, and only through an injected port.",
   "keywords": [
     "telemetry",

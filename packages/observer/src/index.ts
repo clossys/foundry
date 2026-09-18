@@ -5,9 +5,10 @@
  * separate package from any gate it measures.
  *
  * This barrel deliberately exports no function that accepts both
- * `EscapeRateMetric` and `UnobservedSurfaceMetric` at once. See
- * `metrics.check.ts` for the compiled proof that the two share no field to
- * combine even if a caller tried.
+ * `EscapeRateMetric` and `UnobservedSurfaceMetric` at once, and no
+ * combiner of escape rate and unobserved outcome rate. See
+ * `metrics.check.ts` for the compiled proof that EscapeRateMetric and
+ * UnobservedSurfaceMetric share no field to combine even if a caller tried.
  */
 
 export type { ObservationState, Observation } from "./observation.js";
@@ -55,6 +56,17 @@ export type {
   UnobservedSurfaceMetric,
 } from "./unobserved-surface.js";
 export { computeUnobservedSurface } from "./unobserved-surface.js";
+
+export type {
+  UnobservedOutcomeRateState,
+  UnobservedOutcomeRateFinding,
+  UnobservedOutcomeEvidence,
+  UnobservedOutcomePresence,
+  UnobservedOutcomeObservation,
+  UnobservedOutcomeRateInput,
+  UnobservedOutcomeRateAssessment,
+} from "./unobserved-outcome-rate.js";
+export { assessUnobservedOutcomeRate } from "./unobserved-outcome-rate.js";
 
 export type {
   CoverageDeclaration,
