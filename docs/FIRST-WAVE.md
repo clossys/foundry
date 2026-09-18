@@ -90,11 +90,11 @@ re-run*, not a claim that state 5–7 have been reached.
 | One job, one owned metric, one primary mode, durable boundary, close condition | supplier | `check:role-loop-archetypes` |
 | Declared bin runs through the installer-linked name, not only by real path | supplier | `check:bin-reachability`; packed-consumer and qualification help/case probes use the same launch shape |
 | README names public npm and needs no token | supplier | `check:install-docs` fails token-required install language (#924); missing public-npm claims are counted, not failed |
-| README states the close condition a consumer binds | supplier | no — decision 25, tracked in #906 |
+| README states the close condition a consumer binds | supplier | no dedicated gate — decision 25, tracked in #906. Advisor's README states the charter condition; remaining packages are still the supplier gap |
 | Owned metric is computed under the name the charter declares | supplier | no — decision 25 names the misses |
 | Installed CLI produces native 0 / 1 / 2 with a matched control | supplier | staging evidence is presence-checked, not truth-checked |
 | This repository can invoke it by dist path; a consumer can re-run the same path from an exact pin | supplier, then consumer | `check:package-evidence` for the author-side half |
-| First-day roles declare `foundry.assessment` against a mapped bin | supplier | `check:role-assessment-surfaces` counts the gap; it does not require Advisor to declare one yet |
+| First-day roles declare `foundry.assessment` against a mapped bin | supplier | `check:role-assessment-surfaces` requires Advisor to declare one; other roles remain counted as the undeclared gap |
 
 State 7 remains consumer-owned ([decision 25](DECISIONS.md#25-lifecycle-state-7-is-consumer-owned-by-design-and-the-supplier-side-gap-is-thirteen-readmes-not-the-shared-close-condition)).
 A catalogue-wide `closed` count of zero is the expected steady state. The

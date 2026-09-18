@@ -5,6 +5,20 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.3] - 2026-09-17
+
+### Added
+
+- Declared `foundry.assessment` against the mapped `advisor-check` bin with
+  `invocation: "single-json-input"`, so controller onboarding discovers this
+  role's first-day assessment surface from the installed manifest instead of
+  inferring one.
+- Stated the close condition in the README, matching the charter: independent
+  consumer evidence shows the owned metric,
+  `engagement-decision-currency-rate` as computed by
+  `assessEngagementDecisionCurrency()`, meets its setpoint over the declared
+  review cadence. This does not claim the position is closed.
+
 ## [0.2.2] - 2026-09-16
 
 ### Fixed

@@ -80,6 +80,10 @@ next action, and exact-plan-bound execution authorization where applicable
 
 The desired direction is increase. With no active engagements the result is `indeterminate`, never a perfect rate. `resolveEngagementActionDisposition()` turns a passed deadline into `reassess-required`; the caller owns any escalation.
 
+## Close condition
+
+Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence. The owned metric is `engagement-decision-currency-rate`, computed by `assessEngagementDecisionCurrency()`. This package does not measure that evidence and does not close the loop; a consumer binds the condition against their own engagements. A green run of this package's tests is not a close.
+
 ## CLI
 
 ```bash
@@ -87,6 +91,14 @@ advisor-check assessment.json
 ```
 
 The command prints JSON and exits `0` for satisfied, `1` for violated, and `2` for indeterminate, unreadable, or invalid input.
+
+This package declares that command as its first-day assessment surface in its own manifest:
+
+```json
+"foundry": { "assessment": { "bin": "advisor-check", "invocation": "single-json-input" } }
+```
+
+Controller onboarding discovers that declaration from the installed manifest and never infers a surface.
 
 ```bash
 advisor-execution-readiness assessment.json 2026-08-24T14:00:00Z
