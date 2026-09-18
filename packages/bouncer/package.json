@@ -1,6 +1,6 @@
 {
   "name": "@clossys/bouncer",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -38,7 +38,8 @@
     }
   },
   "bin": {
-    "bouncer-check": "dist/cli.js"
+    "bouncer-check": "dist/cli.js",
+    "bouncer-rate-check": "dist/unreconciled-grant-rate-cli.js"
   },
   "files": [
     "dist",
@@ -50,6 +51,12 @@
     "LICENSE"
   ],
   "sideEffects": false,
+  "foundry": {
+    "assessment": {
+      "bin": "bouncer-rate-check",
+      "invocation": "single-json-input"
+    }
+  },
   "description": "The bouncer role: is this actor who they claim, and is what they are doing still inside what they were granted? Dependency-free machinery for a consumer's own authority records: a closed consumer-declared role hierarchy, a fail-closed session predicate, external-membership reconciliation against a provider of record, a strict redirect allowlist, an isolated ./agent subpath for delegated machine actors, provider adapters isolated behind ./providers/* so the root stays provider-neutral, a runtime verdict that is a ternary — authorized, denied, unverifiable — because a provider that did not answer is neither of the other two, and three gates behind one bouncer-check bin: authority-reconciliation, which fails when a live grant is revoked upstream, is not backed by its provider of record at all, or has passed its own declared expiry, and which exits 2 rather than 0 when a provider could not be reached; delegation-ceiling, which fails when a machine actor has no declared spend ceiling, has an undeclared unlimited one, has an amount with no currency or a currency with no amount, names no responsible human, or has an empty tool scope; and provider-contract, which fails when an adapter reads a field or recognises an event the provider no longer declares, requires a field the provider only sometimes sends, or ignores an event the provider does emit. Ships the schema and the checkers; every consumer authors its own values.",
   "keywords": [
     "authorization",
