@@ -5,6 +5,31 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.9] - 2026-09-18
+
+### Added
+
+- Documented installation against the public npm registry
+  (`https://registry.npmjs.org`) and that installing needs no authentication.
+- Stated the charter close condition in the README: independent consumer
+  evidence of `architecture exception rate`, computed by
+  `assessArchitectureExceptions()`. No observed material changes is
+  indeterminate, never a zero rate. This package does not measure consumer
+  evidence and does not close the loop.
+- Declared `foundry.assessment` against the mapped `architect-check` bin with
+  `invocation: "single-json-input"`, so first-day onboarding discovers this
+  role's assessment surface from the installed manifest instead of inferring
+  one. Advisor remains the only required first-day role.
+- `architect-check assessment.json`: one JSON object with `topology`,
+  `observations`, and `maximumExceptionRate`. Prints the architecture
+  exception rate report and exits on the `0` / `1` / `2` ternary. The
+  existing `topology` and `exceptions` subcommands remain.
+
+### Notes
+
+- This does not claim the position is closed. Qualification of `0.1.9` is
+  deferred under #833.
+
 ## [0.1.8] - 2026-09-16
 
 ### Note

@@ -5,16 +5,22 @@ import { fileURLToPath } from "node:url";
 import { assessArchitectureExceptions } from "./assessment.js";
 import { validateOperatingTopology } from "./topology.js";
 
-const USAGE = `Usage: architect-check topology <topology-file>
+const USAGE = `Usage: architect-check <assessment.json>
+       architect-check topology <topology-file>
        architect-check exceptions <topology-file> <observations-file> --maximum-exception-rate <rate>
 
 Commands:
-  topology    Validate a provider-neutral operating topology.
-  exceptions Assess architecture exception rate from observed changes.
+  <assessment.json>  Assess architecture exception rate from one JSON file containing topology, observations, and maximumExceptionRate.
+  topology           Validate a provider-neutral operating topology.
+  exceptions         Assess architecture exception rate from observed changes.
 
 Exit codes: 0 = satisfied, 1 = violated, 2 = indeterminate or could not run.`;
 
 export class ArchitectCliInputError extends Error {}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
 
 function readJson(path: string, label: string): unknown {
   const resolved = resolve(path);
@@ -23,6 +29,15 @@ function readJson(path: string, label: string): unknown {
   catch (error) { if (error instanceof ArchitectCliInputError) throw error; throw new ArchitectCliInputError(`cannot inspect ${label} "${path}": ${error instanceof Error ? error.message : String(error)}`); }
   try { return JSON.parse(readFileSync(resolved, "utf8")); }
   catch (error) { throw new ArchitectCliInputError(`${label} "${path}" is not valid JSON: ${error instanceof Error ? error.message : String(error)}`); }
+}
+
+function assessmentCommand(path: string): number {
+  const value = readJson(path, "assessment file");
+  if (!isRecord(value)) throw new ArchitectCliInputError("assessment file must be a JSON object");
+  const maximumExceptionRate = typeof value.maximumExceptionRate === "number" ? value.maximumExceptionRate : Number(value.maximumExceptionRate);
+  const report = assessArchitectureExceptions(value.topology, value.observations, { maximumExceptionRate });
+  console.log(JSON.stringify({ ...report, proposedPositions: [] }, null, 2));
+  return report.state === "satisfied" ? 0 : report.state === "violated" ? 1 : 2;
 }
 
 function topologyCommand(argv: readonly string[]): number {
@@ -60,7 +75,8 @@ export function main(argv: readonly string[]): number {
   const [command, ...rest] = argv;
   if (command === "topology") return topologyCommand(rest);
   if (command === "exceptions") return exceptionsCommand(rest);
-  throw new ArchitectCliInputError(command === undefined ? "a command is required" : `unknown command "${command}"`);
+  if (command !== undefined && rest.length === 0) return assessmentCommand(command);
+  throw new ArchitectCliInputError(command === undefined ? "a command or assessment.json file is required" : `unknown command "${command}"`);
 }
 
 function run(): void {
