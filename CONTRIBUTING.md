@@ -5,10 +5,13 @@ are short for the same reason.
 
 ## Getting set up
 
-Installing a package from here needs a `.npmrc` with a GitHub **classic**
-personal access token carrying `read:packages` — see
-[README.md](README.md#installing). Working on the repository
-itself does not; it's a plain npm workspace.
+Installing a *current* `@clossys` package from the public npm registry needs
+no token and no `.npmrc` override — see [README.md](README.md#installing) and
+[docs/FIRST-WAVE.md](docs/FIRST-WAVE.md). The historical predecessor-scope
+packages on GitHub Packages still need a classic personal access token with
+`read:packages`; that authenticated lane is not current installation
+guidance. Working on this repository itself is a plain npm workspace and needs
+neither.
 
 ```bash
 npm install

@@ -2361,3 +2361,79 @@ proving the frozen matrix now joins a source manifest only at the exact
 version it measured, in both directions, and remains closed while the tree
 sits on that version. Both were confirmed to fail against the pre-fix source
 before the fix restored them to green.
+
+## 27. First-wave productization order is not the publication catalogue and not surface-area audit order
+
+### Measurement before the decision
+
+Three live orders in this repository were being used as if they answered the
+same question: what work must happen so a first-wave consumer can actually
+install and re-run the current `@clossys` packages as closed loops.
+
+Measured:
+
+1. `governance/release-catalog.json`'s active target lists
+   `strategist`, `writer`, and `designer` immediately after the Trio, before
+   `architect`, `observer`, `builder`, and `inspector`. That is correct
+   *publication* order: publisher's first-party runtime edges are controller,
+   writer, and designer, so those three must be public before publisher can
+   publish. It is not a reason to productize frontend surfaces before
+   operating loops.
+2. Issue #897 ranks a per-package audit by consumer-facing surface area,
+   most-exposed first. Its table puts publisher fourth and designer fifth,
+   with advisor eleventh. That order is the right one for "what already burned
+   a consumer." It is the wrong one for "what a first-wave consumer must be
+   able to install as a closed loop."
+3. Issue #517 still presents itself as the session entry point. A 2026-09-17
+   comment on that issue recorded that its orientation command,
+   `node scripts/check-package-programs.mjs`, does not exist, and that its
+   programme-position table is not current. Orienting from it recreates the
+   stale-table failure [LIFECYCLE.md](LIFECYCLE.md) already deleted its own
+   prose table to avoid.
+4. [ADOPTION.md](ADOPTION.md) already requires Advisor before any first-wave
+   operating position, and already groups roles as engagement, operating
+   control, strategy and expression, and agreements and custody. Decision 17
+   made Advisor the engagement gate. Decision 15 removed A/B/C as a live
+   operating model. None of those decisions ranked the remaining producer
+   backlog against operational integrity versus frontend development.
+
+The first-party runtime graph is unchanged: builder and inspector depend on
+controller; publisher depends on controller, writer, and designer; every
+other current package has no first-party runtime dependency. Advisor-before-
+Controller remains engagement sequencing, not a manifest edge.
+
+### Decision
+
+Producer productization and first-wave install-readiness work follows
+[docs/FIRST-WAVE.md](FIRST-WAVE.md) and
+[`docs/contracts/first-wave-sequence.json`](contracts/first-wave-sequence.json):
+
+1. catalogue integrity (no package: honest install docs, reachable bins,
+   source/registry parity, current-version qualification);
+2. Advisor;
+3. Starter;
+4. Controller;
+5. operating control — observer, architect, inspector, builder, locksmith,
+   integrator;
+6. agreements and custody — bouncer, butler, messenger, giver, keeper;
+7. strategy and expression — strategist, writer, designer, publisher,
+   influencer.
+
+Operational integrity stays ahead of frontend development. Publisher waits
+for writer and designer at runtime and still sits in the expression wave.
+Influencer waits for publisher even without a runtime edge, because
+audience-response measurement is the learn stage of publication.
+
+The release catalogue, the #897 audit order, and #517 remain what they are:
+publication allowlist, surface-area audit, and historical programme record.
+They are not this sequence. `npm run check:first-wave-sequence` fails when
+the committed order drifts from the manifests' runtime graph, drops a
+current package, breaks the Trio prefix, or lets expression outrank
+operating control.
+
+This decision does not lift the consumer-adoption hold, does not claim any
+package adopted, grounded, or closed, and does not authorize a blanket
+install. A first-wave consumer still opens only justified positions.
+
+Refs: #517, #533, #567, #806, #897, #906, #909, #924
+

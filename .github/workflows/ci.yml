@@ -606,6 +606,10 @@ jobs:
       # also always prints the roles declaring no surface and their count, which
       # is why it belongs in a job whose log a maintainer actually reads.
       - run: node scripts/check-role-assessment-surfaces.mjs
+      # First-wave productization order: engagement, then operational integrity,
+      # then expression. Distinct from the release-catalogue upload order.
+      # Reads the sequence contract plus packages/*/package.json runtime edges.
+      - run: node scripts/check-first-wave-sequence.mjs
 
   # Three gates over this repository's own tree that had never been invoked
   # by any workflow before this change, and that share one requirement: a

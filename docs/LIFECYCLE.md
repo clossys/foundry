@@ -521,5 +521,7 @@ else, and only a reader catches it.
   cohorts from the live operating model.
 - [PUBLISHING.md](PUBLISHING.md) — state 4 in full.
 - [ADOPTION.md](ADOPTION.md) — state 5, from the consumer's side.
+- [FIRST-WAVE.md](FIRST-WAVE.md) — producer productization and first-wave
+  install order. It does not move a package along this ladder.
 - `docs/contracts/package-evidence.json` — the record this document
   describes, and the thing that is actually enforced.
