@@ -90,7 +90,7 @@ re-run*, not a claim that state 5–7 have been reached.
 | One job, one owned metric, one primary mode, durable boundary, close condition | supplier | `check:role-loop-archetypes` |
 | Declared bin runs through the installer-linked name, not only by real path | supplier | `check:bin-reachability`; packed-consumer and qualification help/case probes use the same launch shape |
 | README names public npm and needs no token | supplier | `check:install-docs` fails token-required install language (#924); missing public-npm claims are counted, not failed |
-| README states the close condition a consumer binds | supplier | no dedicated gate — decision 25, tracked in #906. Advisor's README states the charter condition; remaining packages are still the supplier gap |
+| README states the close condition a consumer binds | supplier | no dedicated gate — decision 25, tracked in #906. Advisor's README states the charter condition; Starter's README states that role-loop closure is N/A and names the trusted-base ternary; remaining packages are still the supplier gap |
 | Owned metric is computed under the name the charter declares | supplier | no — decision 25 names the misses |
 | Installed CLI produces native 0 / 1 / 2 with a matched control | supplier | staging evidence is presence-checked, not truth-checked |
 | This repository can invoke it by dist path; a consumer can re-run the same path from an exact pin | supplier, then consumer | `check:package-evidence` for the author-side half |

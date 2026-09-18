@@ -32,7 +32,7 @@ test("repository Trio policy, adapters, and current-candidate fixtures bind the 
   const policy = await repositoryJson("governance/release-qualification-policy.json");
   const expected = [
     ["advisor", "@clossys/advisor", "0.2.3"],
-    ["starter", "@clossys/starter", "0.1.6"],
+    ["starter", "@clossys/starter", "0.1.7"],
     ["controller", "@clossys/controller", "0.9.8"],
   ];
 
@@ -88,7 +88,7 @@ test("all 19 publishable packages are exact-source bound to the catalogue and qu
     "@clossys/messenger": "0.1.7",
     "@clossys/observer": "0.2.8",
     "@clossys/publisher": "0.4.4",
-    "@clossys/starter": "0.1.6",
+    "@clossys/starter": "0.1.7",
     "@clossys/strategist": "0.1.5",
     "@clossys/writer": "0.3.8",
   };

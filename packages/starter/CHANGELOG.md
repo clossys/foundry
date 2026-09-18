@@ -5,6 +5,23 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.7] - 2026-09-18
+
+### Fixed
+
+- Documented installation against this source version (`0.1.7`) and the public
+  npm registry. The README previously told a consumer to pin `0.1.4`, two
+  patches behind the shipped manifest, so a copied install command could not
+  be the exact identity Starter itself requires in `StarterRequest.starter`.
+
+### Added
+
+- Stated the close condition in the README: Starter is not a role, so
+  adoption, grounding, and closure stay N/A. The trusted-base job is done
+  when the consumer's own two-phase workflow retains `foundry-starter
+  decide`'s native ternary (`foundation` stays `2`; `activation` is `0` only
+  on complete joins). This does not claim the job is done.
+
 ## [0.1.6] - 2026-09-02
 
 ### Fixed
