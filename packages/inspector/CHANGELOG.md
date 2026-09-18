@@ -5,6 +5,27 @@ All notable changes to `@clossys/inspector` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.5] - 2026-09-18
+
+### Added
+
+- Stated the charter close condition with the exact metric name `change
+  escape rate`. Observer's `computeEscapeRate` computes that metric; this
+  package does not. A green Inspector history is not a close.
+- Declared `foundry.assessment` against a new mapped `inspector-check` bin
+  with `invocation: "single-json-input"`, so first-day onboarding discovers
+  this role's assessment surface from the installed manifest instead of
+  inferring one. Advisor remains the only required first-day role.
+- `inspector-check assessment.json`: wraps `verifyStandards()` for
+  pre-landing rule satisfaction and exits on the `0` / `1` / `2` ternary.
+  The existing `inspector --inputs` gate CLI remains; it is not the
+  assessment surface. Output never includes `metric` or `rate`.
+
+### Notes
+
+- This does not claim the position is closed. Qualification of `0.2.5` is
+  deferred under #833.
+
 ## [0.2.4] - 2026-09-17
 
 ### Fixed

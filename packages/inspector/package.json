@@ -1,6 +1,6 @@
 {
   "name": "@clossys/inspector",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -19,7 +19,8 @@
     "./documents/*": "./documents/*"
   },
   "bin": {
-    "inspector": "dist/bin.js"
+    "inspector": "dist/bin.js",
+    "inspector-check": "dist/assessment-cli.js"
   },
   "files": [
     "dist",
@@ -31,6 +32,12 @@
     "LICENSE"
   ],
   "sideEffects": false,
+  "foundry": {
+    "assessment": {
+      "bin": "inspector-check",
+      "invocation": "single-json-input"
+    }
+  },
   "description": "Judges a change before it lands: a secret-scan attempt (attested, or actually run via the ./secret-scan subpath's verified gitleaks acquisition), a change's task record, its review evidence, and policy drift, each reported as satisfied/violated/indeterminate and folded into a 0/1/2 exit contract, with a caller-visible minimum-safe-version floor.",
   "keywords": [
     "ci-gate",

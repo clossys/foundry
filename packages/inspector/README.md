@@ -75,12 +75,18 @@ the outside.
 - **learn** — a recurring `indeterminate` is a missing input contract, not a
   flaky gate.
 
-**Close condition:** this loop closes when `observer` reports an escape rate
-of zero, across a bounded run of landed changes, for every rule this gate
-evaluates — never when this package's own run history looks clean, because
-this package has no way to tell a clean history from an unmeasured one. A
-nonzero rate is evidence a rule needs a check here (or a stronger one); it is
-never evidence this gate should start counting its own escapes.
+**Close condition:** this loop closes when Observer reports `change escape
+rate` of zero, across a bounded run of landed changes, for every rule this
+gate evaluates — never when this package's own run history looks clean,
+because this package has no way to tell a clean history from an unmeasured
+one. Observer's `computeEscapeRate` computes that charter metric; this
+package does not compute it and must not. A nonzero rate is evidence a rule
+needs a check here (or a stronger one); it is never evidence this gate
+should start counting its own escapes.
+
+Independent consumer evidence shows the position's owned metric meets its
+setpoint over the declared review cadence. The owned metric is `change
+escape rate`. A green run of this package's tests is not a close.
 
 ## Install
 
@@ -92,6 +98,31 @@ The package is published to the public npm registry
 (`registry.npmjs.org`) with public access. Installing it needs no scope
 redirection and no authentication — a plain, anonymous `npm install`
 resolves it.
+
+```bash
+inspector-check assessment.json
+```
+
+The command prints JSON and exits `0` for satisfied, `1` for violated, and
+`2` for indeterminate, unreadable, or invalid input. The assessment file is
+the same `schemaVersion` 1 document `inspector --inputs` already reads;
+`selectedChecks`, `declaredRange`, and `minimumVersion` may live in that
+file. `installedVersion` is never taken from JSON — this build names itself.
+
+This is pre-landing rule satisfaction, the first-day job surface. It is not
+`change escape rate`.
+
+This package declares that command as its first-day assessment surface in
+its own manifest:
+
+```json
+"foundry": { "assessment": { "bin": "inspector-check", "invocation": "single-json-input" } }
+```
+
+Onboarding discovers that declaration from the installed manifest and never
+infers a surface. `inspector --inputs` stays the flag-shaped gate CLI; it is
+not the assessment surface. Inspector is not a required first-day role;
+Advisor remains the only required first-day assessment.
 
 ```ts
 import { verifyStandards, checkSecretScan } from "@clossys/inspector";
