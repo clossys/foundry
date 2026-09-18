@@ -589,6 +589,42 @@ export function runProcess(file, args, { cwd, env, timeout = DEFAULT_TIMEOUT_MS 
   });
 }
 
+/**
+ * Launch an installed bin the way a consumer's `node_modules/.bin` entry is
+ * actually invoked: `node <linkedBin> --help`, so `process.argv[1]` is the
+ * installer-created path. Launching the realpath target instead is a false
+ * green against a `detectMainModule` guard that compares `import.meta.url`
+ * (always a realpath) to `resolve(argv[1])` (the `.bin` symlink). A reached
+ * process with empty stdout and stderr is a dead bin, not a pass.
+ */
+export async function probeInstalledBin({
+  linkedBin,
+  targetPath,
+  runProcess: invoke = runProcess,
+  cwd,
+  env,
+  timeout = DEFAULT_TIMEOUT_MS,
+  label = "bin",
+}) {
+  let linkedReal;
+  let targetReal;
+  try {
+    linkedReal = await realpath(linkedBin);
+    targetReal = await realpath(targetPath);
+  } catch {
+    throw new Error(`${label} is not linked to its declared target`);
+  }
+  if (linkedReal !== targetReal) throw new Error(`${label} is not linked to its declared target`);
+  const result = await invoke(process.execPath, [linkedBin, "--help"], { cwd, env, timeout });
+  if (result.timedOut || result.launchError) {
+    throw new Error(`${label} was not reached within ${timeout}ms`);
+  }
+  if (result.stdout === "" && result.stderr === "") {
+    throw new Error(`${label} was reached with empty stdout and stderr`);
+  }
+  return result;
+}
+
 export function installedIdentityFindings({ packedManifest, installedManifest, dependencySpec, consumer, tarball }) {
   const findings = [];
   if (installedManifest?.name !== packedManifest?.name || installedManifest?.version !== packedManifest?.version) {
@@ -815,9 +851,13 @@ export async function runPackedConsumerReadiness({ root, selected, skipBuild = f
         await stat(targetPath);
         if (!inside(packageReal, await realpath(targetPath))) throw new Error(`${entry.packedManifest.name} bin ${name} resolves outside the installed package`);
         const linkedBin = join(consumer, "node_modules", ".bin", name);
-        if (await realpath(linkedBin) !== await realpath(targetPath)) throw new Error(`${entry.packedManifest.name} bin ${name} is not linked to its declared target`);
-        const result = await runProcess(process.execPath, [targetPath, "--help"], { cwd: consumer, env });
-        if (result.timedOut || result.launchError) throw new Error(`${entry.packedManifest.name} bin ${name} was not reached within ${DEFAULT_TIMEOUT_MS}ms`);
+        await probeInstalledBin({
+          linkedBin,
+          targetPath,
+          cwd: consumer,
+          env,
+          label: `${entry.packedManifest.name} bin ${name}`,
+        });
         bins += 1;
       }
     }

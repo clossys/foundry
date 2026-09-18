@@ -359,11 +359,18 @@ function sameBinKeys(left, right) {
   return JSON.stringify(Object.keys(left).sort()) === JSON.stringify(Object.keys(right).sort());
 }
 
+function observationLaunch(kind) {
+  if (["install", "uninstall", "reinstall"].includes(kind)) return "npm-fixed";
+  if (kind === "framework") return "next-build";
+  if (kind === "help" || kind === "case") return "installed-bin";
+  return "node-direct";
+}
+
 function observation(root, id, kind, expectedExitCode, result) {
   return {
     id,
     kind,
-    launch: ["install", "uninstall", "reinstall"].includes(kind) ? "npm-fixed" : kind === "framework" ? "next-build" : "node-direct",
+    launch: observationLaunch(kind),
     expectedExitCode,
     observedExitCode: result.exitCode,
     signal: result.signal,
@@ -371,6 +378,20 @@ function observation(root, id, kind, expectedExitCode, result) {
     stdoutSha256: streamHash(root, result.stdout, kind),
     stderrSha256: streamHash(root, result.stderr, kind),
   };
+}
+
+function reachedWithEmptyOutput(result) {
+  return !result.launchError && result.stdout === "" && result.stderr === "";
+}
+
+async function resolveInstalledBinLink(root, binName, targetPath) {
+  const linkedBin = join(root, "node_modules", ".bin", binName);
+  try {
+    if (await realpath(linkedBin) !== await realpath(targetPath)) return null;
+    return linkedBin;
+  } catch {
+    return null;
+  }
 }
 
 const RAW_CASE_MAX_FILES = 64;
@@ -877,6 +898,16 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
       if (!target) transcript.mismatches.push(`bin:${bin}`);
       else targets[bin] = target;
     }
+    // Help and case probes must launch the installer-created `node_modules/.bin`
+    // entry so argv[1] is the consumer-facing path, not the realpath target.
+    // A missing or redirected link is a mismatch, not a silent skip.
+    const linkedBins = {};
+    const probeBins = new Set([...Object.keys(adapter.bins), ...adapter.cases.map((item) => item.bin)]);
+    for (const bin of [...probeBins].sort()) {
+      const linkedBin = targets[bin] ? await resolveInstalledBinLink(root, bin, targets[bin]) : null;
+      if (!linkedBin) transcript.mismatches.push(`installed-bin:${bin}`);
+      else linkedBins[bin] = linkedBin;
+    }
     const exported = await exportCoverage(manifest, installed, root);
     for (const operation of exported.operations) {
       transcript.observations.push(observation(root, operation.id, operation.kind, 0, operation.result));
@@ -884,11 +915,12 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
     }
     if (exported.coverage.failed !== 0) transcript.mismatches.push("export-coverage");
     for (const bin of Object.keys(adapter.bins).sort()) {
-      const result = targets[bin]
-        ? await runProcess(process.execPath, [targets[bin], "--help"], { cwd: root, env: sanitizedEnv(root), timeout: QUALIFICATION_PHASE_TIMEOUTS.probe })
-        : { exitCode: null, signal: null, launchError: true, stdout: "", stderr: "missing contained bin target" };
+      const linkedBin = linkedBins[bin];
+      const result = linkedBin
+        ? await runProcess(process.execPath, [linkedBin, "--help"], { cwd: root, env: sanitizedEnv(root), timeout: QUALIFICATION_PHASE_TIMEOUTS.probe })
+        : { exitCode: null, signal: null, launchError: true, stdout: "", stderr: "missing installed bin entry" };
       transcript.observations.push(observation(root, `help:${bin}`, "help", adapter.bins[bin], result));
-      if (result.exitCode !== adapter.bins[bin] || result.signal || result.launchError) transcript.mismatches.push(`help:${bin}`);
+      if (result.exitCode !== adapter.bins[bin] || result.signal || result.launchError || reachedWithEmptyOutput(result)) transcript.mismatches.push(`help:${bin}`);
     }
     caseBase = { manifest: await readRegularFile(root, join(root, "package.json"), "consumer package.json"), lock: await readRegularFile(root, join(root, "package-lock.json"), "consumer package-lock.json") };
     for (const item of adapter.consumerOverlay ?? []) {
@@ -924,12 +956,13 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
     }
     for (const prepared of preparedCases) {
       const { item, args, snapshot } = prepared;
-      const result = targets[item.bin]
-        ? await runProcess(process.execPath, [targets[item.bin], ...args], { cwd: root, env: sanitizedEnv(root), timeout: QUALIFICATION_PHASE_TIMEOUTS.probe })
-        : { exitCode: null, signal: null, launchError: true, stdout: "", stderr: "missing contained bin target" };
-      if (adapter.retainRawCaseEvidence === true && targets[item.bin]) await assertRawCaseInputsUnchanged(root, fixtureRoot, preparedCases, adapter.consumerOverlay, result.exitCode);
+      const linkedBin = linkedBins[item.bin];
+      const result = linkedBin
+        ? await runProcess(process.execPath, [linkedBin, ...args], { cwd: root, env: sanitizedEnv(root), timeout: QUALIFICATION_PHASE_TIMEOUTS.probe })
+        : { exitCode: null, signal: null, launchError: true, stdout: "", stderr: "missing installed bin entry" };
+      if (adapter.retainRawCaseEvidence === true && linkedBin) await assertRawCaseInputsUnchanged(root, fixtureRoot, preparedCases, adapter.consumerOverlay, result.exitCode);
       const observed = observation(root, `case:${item.id}`, "case", item.exitCode, result);
-      if (adapter.retainRawCaseEvidence === true && targets[item.bin]) observed.rawCaseEvidence = rawCaseEvidence(root, targets[item.bin], args, snapshot, result);
+      if (adapter.retainRawCaseEvidence === true && linkedBin) observed.rawCaseEvidence = rawCaseEvidence(root, linkedBin, args, snapshot, result);
       transcript.observations.push(observed);
       if (result.exitCode !== item.exitCode || result.signal || result.launchError) transcript.mismatches.push(`case:${item.id}`);
     }

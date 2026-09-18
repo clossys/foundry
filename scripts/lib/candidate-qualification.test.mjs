@@ -405,6 +405,29 @@ test("accepts immutable v1 history and closed v2 Starter raw 0/1/2 evidence", ()
   assert.deepEqual(rules(record), []);
   assert.deepEqual([...new Set(record.transcript.observations.filter((item) => item.kind === "case").map((item) => item.rawCaseEvidence.exitCode))].sort(), [0, 1, 2]);
 });
+test("help and case observations accept historical node-direct and current installed-bin launches", () => {
+  const historical = source();
+  assert.ok(historical.transcript.observations.some((item) => item.kind === "help" && item.launch === "node-direct"));
+  assert.ok(historical.transcript.observations.some((item) => item.kind === "case" && item.launch === "node-direct"));
+  assert.deepEqual(rules(historical), []);
+
+  const current = source();
+  for (const observation of current.transcript.observations) {
+    if (observation.kind === "help" || observation.kind === "case") observation.launch = "installed-bin";
+  }
+  refreshTranscriptDigest(current);
+  assert.deepEqual(rules(current), []);
+
+  const wrongHelp = source();
+  wrongHelp.transcript.observations.find((item) => item.kind === "help").launch = "next-build";
+  refreshTranscriptDigest(wrongHelp);
+  assert.ok(rules(wrongHelp).includes("observation"));
+
+  const importMustStay = source();
+  importMustStay.transcript.observations.find((item) => item.kind === "import").launch = "installed-bin";
+  refreshTranscriptDigest(importMustStay);
+  assert.ok(rules(importMustStay).includes("observation"));
+});
 test("accepts v3 framework evidence while v1 and v2 remain closed to v3 fields and kinds", () => {
   assert.deepEqual(rules(frameworkV3Record()), []);
 

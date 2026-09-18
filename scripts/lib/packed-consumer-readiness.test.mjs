@@ -13,6 +13,7 @@ import {
   installedPackageRoots,
   importSpecifier,
   parsePackedConsumerArgs,
+  probeInstalledBin,
   runProcess,
   validateOptionalPeerPolicy,
 } from "./packed-consumer-readiness.mjs";
@@ -358,6 +359,62 @@ test("bounded execution distinguishes a reached nonzero bin from a timeout", asy
   const unavailable = await runProcess("foundry-command-that-does-not-exist", []);
   assert.equal(unavailable.exitCode, null);
   assert.ok(unavailable.launchError);
+});
+
+test("installed-bin probe fails a detectMainModule guard that does not realpath argv[1]", async (t) => {
+  // The #909 class: `import.meta.url` is always a realpath, so comparing it to
+  // `resolve(argv[1])` without `realpathSync` treats a `node_modules/.bin`
+  // symlink as "not the main module" and exits 0 with empty output. Launching
+  // the realpath target cannot see that class; launching the linked path can.
+  const root = await fixture(t);
+  const packageRoot = join(root, "package");
+  const consumer = join(root, "consumer");
+  const linkedBin = join(consumer, "node_modules", ".bin", "probe-check");
+  const targetPath = join(packageRoot, "cli.mjs");
+  await mkdir(packageRoot);
+  await mkdir(join(consumer, "node_modules", ".bin"), { recursive: true });
+
+  const unresolvedArgvGuard = [
+    "import { fileURLToPath } from 'node:url';",
+    "import { resolve } from 'node:path';",
+    "function detectMainModule() {",
+    "  return fileURLToPath(import.meta.url) === resolve(process.argv[1]);",
+    "}",
+    "if (detectMainModule()) console.log('synthetic help');",
+    "",
+  ].join("\n");
+  const realpathGuard = [
+    "import { realpathSync } from 'node:fs';",
+    "import { fileURLToPath } from 'node:url';",
+    "import { resolve } from 'node:path';",
+    "function detectMainModule() {",
+    "  return realpathSync(fileURLToPath(import.meta.url)) === realpathSync(resolve(process.argv[1]));",
+    "}",
+    "if (detectMainModule()) console.log('synthetic help');",
+    "",
+  ].join("\n");
+
+  await writeFile(targetPath, unresolvedArgvGuard);
+  await symlink(targetPath, linkedBin);
+
+  const viaTarget = await runProcess(process.execPath, [targetPath, "--help"], { cwd: consumer });
+  assert.equal(viaTarget.exitCode, 0, viaTarget.stderr);
+  assert.match(viaTarget.stdout, /synthetic help/);
+
+  const viaLink = await runProcess(process.execPath, [linkedBin, "--help"], { cwd: consumer });
+  assert.equal(viaLink.exitCode, 0, viaLink.stderr);
+  assert.equal(viaLink.stdout, "");
+  assert.equal(viaLink.stderr, "");
+
+  await assert.rejects(
+    () => probeInstalledBin({ linkedBin, targetPath, cwd: consumer }),
+    /was reached with empty stdout and stderr/,
+  );
+
+  await writeFile(targetPath, realpathGuard);
+  const control = await probeInstalledBin({ linkedBin, targetPath, cwd: consumer });
+  assert.equal(control.exitCode, 0, control.stderr);
+  assert.match(control.stdout, /synthetic help/);
 });
 
 test("normal parent exit reaps only its private process group", { skip: process.platform === "win32" }, async (t) => {

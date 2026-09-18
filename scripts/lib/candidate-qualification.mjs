@@ -27,6 +27,12 @@ const text = (v) => typeof v === "string" && v.trim().length > 0;
 const digest = (v) => createHash("sha256").update(v).digest("hex");
 const own = (v, k) => Object.prototype.hasOwnProperty.call(v, k);
 const fail = (a, rule, message) => a.push({ rule, message });
+function observationLaunchAllowed(kind, launch) {
+  if (["install", "uninstall", "reinstall"].includes(kind)) return launch === "npm-fixed";
+  if (kind === "framework") return launch === "next-build";
+  if (kind === "help" || kind === "case") return launch === "node-direct" || launch === "installed-bin";
+  return launch === "node-direct";
+}
 // The manifest fields that are part of the PUBLISHED ARTIFACT, as opposed to
 // the working directory that produced it.
 //
@@ -529,8 +535,12 @@ function checkTranscript(a, t) {
       ids.add(observation?.id);
       const kindAllowed = allowedKinds.has(observation?.kind);
       if (kindAllowed) count[observation.kind] += 1;
-      const launch = ["install", "uninstall", "reinstall"].includes(observation?.kind) ? "npm-fixed" : observation?.kind === "framework" ? "next-build" : "node-direct";
-      if (!text(observation?.id) || !kindAllowed || observation.launch !== launch || ![0, 1, 2].includes(observation.expectedExitCode) || observation.observedExitCode !== observation.expectedExitCode || observation.signal !== null || observation.launchError !== false || !SHA256.test(observation.stdoutSha256) || !SHA256.test(observation.stderrSha256)) fail(a, "observation", "observation");
+      // Help and case used to be recorded as node-direct because the runner
+      // spawned `node <realpath>`. Existing retained records remain accurate
+      // statements of what was measured. New runs record installed-bin.
+      // Accept either for those kinds so historical records stay valid.
+      // Import stays node-direct; npm and framework launches are unchanged.
+      if (!text(observation?.id) || !kindAllowed || !observationLaunchAllowed(observation?.kind, observation.launch) || ![0, 1, 2].includes(observation.expectedExitCode) || observation.observedExitCode !== observation.expectedExitCode || observation.signal !== null || observation.launchError !== false || !SHA256.test(observation.stdoutSha256) || !SHA256.test(observation.stderrSha256)) fail(a, "observation", "observation");
       if (v3 && observation?.kind === "import") {
         const identity = importObservationIdentity(observation.id, t?.candidate?.name);
         if (observation.expectedExitCode !== 0 || !identity) fail(a, "import-observation", "runtime import evidence must bind one exact condition and candidate export.");

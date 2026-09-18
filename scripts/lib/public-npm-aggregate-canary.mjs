@@ -212,6 +212,16 @@ function aggregateNpmOperation(id, result) {
   };
 }
 
+function childObservationLaunchAllowed(kind, launch) {
+  // Help and case used to be recorded as node-direct. Existing aggregate
+  // child transcripts remain accurate statements of what was measured, so
+  // both historical node-direct and new installed-bin are accepted. Import
+  // stays node-direct; framework stays next-build.
+  if (kind === "framework") return launch === "next-build";
+  if (kind === "help" || kind === "case") return launch === "node-direct" || launch === "installed-bin";
+  return launch === "node-direct";
+}
+
 /** Stable, typed aggregate view of one retained candidate-runner transcript. */
 export function aggregateChildExecutionProjection(run) {
   if (!object(run)) return null;
@@ -241,7 +251,7 @@ export function validateAggregateChildExecution(run, { name, version, qualificat
   if (!exactKeys(run.restoration, ["delegatedToAggregate"]) || run.restoration.delegatedToAggregate !== true || !Array.isArray(run.mismatches) || run.mismatches.length !== 0 || run.observations.some((item) => ["install", "uninstall", "reinstall"].includes(item?.kind))) finding(findings, "child-rollback", `${name}@${version} aggregate child must delegate install and rollback and may not fabricate individual npm observations`);
   const observationKeys = ["id", "kind", "launch", "expectedExitCode", "observedExitCode", "signal", "launchError", "stdoutSha256", "stderrSha256", "rawCaseEvidence?"];
   const permittedKinds = new Set(["import", "framework", "help", "case"]);
-  if (run.observations.some((item) => !onlyKeys(item, observationKeys) || typeof item.id !== "string" || !permittedKinds.has(item.kind) || item.launch !== (item.kind === "framework" ? "next-build" : "node-direct") || !Number.isInteger(item.expectedExitCode) || item.expectedExitCode !== item.observedExitCode || item.signal !== null || item.launchError !== false || !SHA256.test(item.stdoutSha256 ?? "") || !SHA256.test(item.stderrSha256 ?? ""))) finding(findings, "child-observation", `${name}@${version} child observations are incomplete or do not record successful exact execution`);
+  if (run.observations.some((item) => !onlyKeys(item, observationKeys) || typeof item.id !== "string" || !permittedKinds.has(item.kind) || !childObservationLaunchAllowed(item.kind, item.launch) || !Number.isInteger(item.expectedExitCode) || item.expectedExitCode !== item.observedExitCode || item.signal !== null || item.launchError !== false || !SHA256.test(item.stdoutSha256 ?? "") || !SHA256.test(item.stderrSha256 ?? ""))) finding(findings, "child-observation", `${name}@${version} child observations are incomplete or do not record successful exact execution`);
   const cases = run.observations.filter((item) => item?.kind === "case");
   if (new Set(run.observations.map((item) => item?.id)).size !== run.observations.length || run.observations.some((item) => ![0, 1, 2].includes(item.expectedExitCode)) || cases.length === 0 || ![0, 1, 2].every((code) => cases.some((item) => item.expectedExitCode === code && item.observedExitCode === code))) finding(findings, "child-cases", `${name}@${version} child observations must have unique IDs and retain the required 0/1/2 cases`);
   const coverageKeys = ["declaredExportKeys", "concreteTargets", "runtimeImports", "reactServerImports", "staticTargets", "frameworkExports", "frameworkBuilds", "failed", "installedManifestSha256", "bins", "lifecycleScriptsDisabled"];
@@ -257,7 +267,15 @@ export function validateAggregateChildExecution(run, { name, version, qualificat
       const expectedDimensions = (qualificationTranscript.dimensions ?? []).filter((item) => item?.dimension !== "rollback");
       const actualDimensions = run.dimensions.filter((item) => item?.dimension !== "rollback");
       if (!Array.isArray(qualificationTranscript.dimensions) || JSON.stringify(stable(actualDimensions)) !== JSON.stringify(stable(expectedDimensions))) finding(findings, "qualification-dimensions", `${name}@${version} child non-rollback dimension evidence must exactly match immutable qualification evidence`);
-      const project = (item) => ({ id: item?.id, kind: item?.kind, launch: item?.launch, expectedExitCode: item?.expectedExitCode });
+      const comparableLaunch = (kind, launch) => {
+        // Help/case used to be recorded as node-direct. A later child that
+        // probes the installer-created .bin records installed-bin; both are
+        // the same operation identity. Do not require regenerating the
+        // qualification transcript merely to rename the launch.
+        if (kind === "help" || kind === "case") return launch === "installed-bin" || launch === "node-direct" ? "bin-probe" : launch;
+        return launch;
+      };
+      const project = (item) => ({ id: item?.id, kind: item?.kind, launch: comparableLaunch(item?.kind, item?.launch), expectedExitCode: item?.expectedExitCode });
       const operationKinds = new Set(["import", "framework", "help", "case"]);
       const expected = expectedObservations.filter((item) => operationKinds.has(item?.kind)).map(project);
       const actual = run.observations.filter((item) => operationKinds.has(item?.kind)).map(project);
