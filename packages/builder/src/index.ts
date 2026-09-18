@@ -164,3 +164,12 @@ export type {
   ToolchainDeclaration,
   ToolchainObservation,
 } from "./toolchain.js";
+
+export {
+  assessDesiredStateRealizationRate,
+} from "./desired-state-realization.js";
+export type {
+  DesiredStateRealizationAssessment,
+  DesiredStateRealizationFinding,
+  DesiredStateRealizationState,
+} from "./desired-state-realization.js";

@@ -14,6 +14,48 @@ published.
 npm install @clossys/builder
 ```
 
+This package is published to the public npm registry, `https://registry.npmjs.org`.
+Installing it needs no authentication: no npm token, no `.npmrc` registry
+override, and no GitHub credential of any kind.
+
+## Desired-state realization rate
+
+Independent consumer evidence shows the position's owned metric meets its
+setpoint over the declared review cadence. The owned metric is
+`desired-state realization rate`, computed by
+`assessDesiredStateRealizationRate()`. An empty evaluated set is
+`indeterminate`, never a perfect rate of 1. This package does not measure
+consumer evidence and does not close the loop; a consumer binds the
+condition against their own declared live-state subjects and independent
+observations. A green run of this package's tests is not a close. An
+offline declaration check is not live proof.
+
+```ts
+import { assessDesiredStateRealizationRate } from "@clossys/builder";
+
+const report = assessDesiredStateRealizationRate(input);
+```
+
+```bash
+builder-check assessment.json
+```
+
+The command prints JSON and exits `0` for satisfied, `1` for violated, and
+`2` for indeterminate, unreadable, or invalid input.
+
+This package declares that command as its first-day assessment surface in
+its own manifest:
+
+```json
+"foundry": { "assessment": { "bin": "builder-check", "invocation": "single-json-input" } }
+```
+
+Onboarding discovers that declaration from the installed manifest and never
+infers a surface. `builder-verify-toolchain` and `builder-verify-machine`
+stay flag-shaped tooling CLIs; they are not the assessment surface. Builder
+is not a required first-day role; Advisor remains the only required
+first-day assessment.
+
 ## The job
 
 Builder owns the gap between what a plane declared and what the machine, the
