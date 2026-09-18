@@ -5,6 +5,15 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.9] - 2026-09-18
+
+### Fixed
+
+- Documented installation in the README: the public npm registry
+  (`https://registry.npmjs.org`) and that no authentication is required.
+  Previously the README showed `npm install @clossys/controller` without
+  naming the registry or that installing needs no authentication.
+
 ## [0.9.8] - 2026-09-17
 
 ### Added

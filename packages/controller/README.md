@@ -26,9 +26,15 @@ This is a rename and a merge, not a rewrite: the former package surfaces are
 now provided by this package's subpaths. The former package names are retired;
 new integrations use the current subpaths directly.
 
+## Install
+
 ```bash
 npm install @clossys/controller
 ```
+
+This package is published to the public npm registry, `https://registry.npmjs.org`.
+Installing it needs no authentication: no npm token, no `.npmrc` registry
+override, and no GitHub credential of any kind.
 
 ## Boundaries
 
