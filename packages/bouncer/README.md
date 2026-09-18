@@ -36,8 +36,13 @@ A package that only answers "may they?" at runtime, without ever reconciling,
 has a setpoint and an act and nothing else — half a loop, and the missing half
 is the half that notices.
 
-**Metric:** *unreconciled grant surface* — authority live here that no provider
-still backs. `checkAuthorityReconciliation` counts it.
+**Gate count:** *unreconciled grant surface* — authority live here that no
+provider still backs. `checkAuthorityReconciliation` counts it. That count is
+0 on an empty set and is not the charter metric.
+
+**Charter metric:** *unreconciled grant rate* — live grants not independently
+backed by their current provider of record / all live grants evaluated.
+`assessUnreconciledGrantRate()` computes it.
 
 **Runtime verdict:** `authorized` / `denied` / `unverifiable`.
 
@@ -47,15 +52,58 @@ still backs. `checkAuthorityReconciliation` counts it.
 npm install @clossys/bouncer
 ```
 
+This package is published to the public npm registry, `https://registry.npmjs.org`.
+Installing it needs no authentication: no npm token, no `.npmrc` registry
+override, and no GitHub credential of any kind.
+
 Nothing is required alongside it. This package declares **zero runtime
 dependencies** — only optional peers (`@clerk/nextjs`, `next`, `react`,
 `react-dom`, `svix`), each needed by exactly one subpath and installed only if
 you import that subpath. The provider-neutral root, and `./agent`, need none of
 them.
 
+## Unreconciled grant rate
+
+Independent consumer evidence shows the position's owned metric meets its
+setpoint over the declared review cadence. The owned metric is `unreconciled
+grant rate`, computed by `assessUnreconciledGrantRate()`. An empty evaluated
+set is `indeterminate`, never a perfect rate of 0.
+`checkAuthorityReconciliation` still reports unreconciled grant surface as a
+count; that count is not this rate. Unverifiable observations stay
+unevaluated and are never folded into the rate. Grant expiry is not this
+metric. This package does not measure consumer evidence and does not close
+the loop. A green run of this package's tests is not a close.
+
+```ts
+import { assessUnreconciledGrantRate } from "@clossys/bouncer";
+
+const report = assessUnreconciledGrantRate(input);
+```
+
+```bash
+bouncer-rate-check assessment.json
+```
+
+The command prints JSON and exits `0` for satisfied, `1` for violated, and
+`2` for indeterminate, unreadable, or invalid input.
+
+This package declares that command as its first-day assessment surface in
+its own manifest:
+
+```json
+"foundry": { "assessment": { "bin": "bouncer-rate-check", "invocation": "single-json-input" } }
+```
+
+Onboarding discovers that declaration from the installed manifest and never
+infers a surface. `bouncer-check` remains the three-gate CLI and is not the
+assessment surface. Bouncer is not a required first-day role; Advisor
+remains the only required first-day assessment.
+
 ## The three gates
 
-All three are reachable from the single `bouncer-check` bin.
+All three are reachable from the single `bouncer-check` bin. The charter
+assessment is a second mapped bin, `bouncer-rate-check`, and is not a fourth
+gate on this dispatcher.
 
 ```sh
 bouncer-check authority-reconciliation grants.json providers.json --at 2026-08-22T12:00:00.000Z
@@ -174,6 +222,8 @@ framework, or React.
 | `AuthorityUnverifiableReason` | `provider-unreachable` \| `provider-not-observed` \| `provider-mismatch` \| `unreadable-clock` |
 | `checkAuthorityReconciliation` | Gate 1. Returns `AuthorityReconciliationResult`, carrying the unreconciled grant surface |
 | `AuthorityReconciliationResult`, `ReconciliationFinding`, `ReconciliationFindingKind`, `ReconciliationFailureReason` | Its result shape |
+| `assessUnreconciledGrantRate` | Charter close metric. Returns `UnreconciledGrantRateAssessment` from consumer-supplied independent observations. Not `checkAuthorityReconciliation`. |
+| `UnreconciledGrantRateAssessment`, `UnreconciledGrantRateFinding`, `UnreconciledGrantRateState` | Its result shape |
 | `checkDelegationCeiling` | Gate 2. Returns `DelegationCeilingResult` |
 | `DelegationCeilingResult`, `DelegationFinding`, `DelegationFindingKind`, `DelegationFailureReason` | Its result shape |
 | `checkProviderContract` | Gate 3. Returns `ProviderContractResult` |

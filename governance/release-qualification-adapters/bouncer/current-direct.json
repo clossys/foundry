@@ -10,7 +10,8 @@
     "svix": "1.99.1"
   },
   "bins": {
-    "bouncer-check": 0
+    "bouncer-check": 0,
+    "bouncer-rate-check": 0
   },
   "fixtures": [
     "actors-satisfied.json",
