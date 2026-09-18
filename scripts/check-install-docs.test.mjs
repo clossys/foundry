@@ -141,6 +141,23 @@ Installing this package requires \`read:packages\` on a GitHub token.
   assert.deepEqual(result.findings.map((item) => item.rule), ["token-required-install"]);
 });
 
+test("a URL whose path contains registry.npmjs.org does not count as naming public npm", () => {
+  const result = evaluateInstallDocs({
+    "@gate-fixture/path-host": `## Install
+
+\`\`\`bash
+npm install @gate-fixture/path-host
+\`\`\`
+
+Published via https://evil.example/registry.npmjs.org. Installing it needs no authentication.
+`,
+  });
+  assert.equal(result.exitCode, 0);
+  assert.deepEqual(result.findings, []);
+  assert.equal(result.documented.length, 0);
+  assert.equal(result.undocumented[0].packageName, "@gate-fixture/path-host");
+});
+
 test("designer-style GitHub Packages peerDependenciesMeta limitation is not an install instruction", () => {
   const result = evaluateInstallDocs({
     "@gate-fixture/designer": `# @gate-fixture/designer
@@ -152,8 +169,8 @@ npm install @gate-fixture/designer
 \`\`\`
 
 **Registry note: the token-only path above installs the full peer set
-anyway.** That declaration is not honored by GitHub Packages packuments:
-the packument omits \`peerDependenciesMeta\` entirely.
+anyway.** That declaration is not honored by GitHub Packages packuments
+on \`npm.pkg.github.com\`: the packument omits \`peerDependenciesMeta\` entirely.
 `,
   });
   assert.equal(result.exitCode, 0, JSON.stringify(result.findings, null, 2));
