@@ -14,6 +14,42 @@ needs no authentication. The GitHub Packages references later in this
 document describe a *caller-supplied* registry this package can probe
 against; they are not install instructions for `integrator` itself.
 
+## Package currency rate
+
+Independent consumer evidence shows the position's owned metric meets its
+setpoint over the declared review cadence. The owned metric is `package
+currency rate`, computed by `assessPackageCurrencyRate()`. An empty
+evaluated set is `indeterminate`, never a perfect rate of 1.
+`computeCurrencyMetric` still reports `currencyShare` 0 on an empty status
+list; that function is not this rate. `integrator-supersession-check` stays
+report-only and is not the assessment surface. This package does not measure
+consumer evidence and does not close the loop. A green run of this package's
+tests is not a close.
+
+```ts
+import { assessPackageCurrencyRate } from "@clossys/integrator";
+
+const report = assessPackageCurrencyRate(input);
+```
+
+```bash
+integrator-check assessment.json
+```
+
+The command prints JSON and exits `0` for satisfied, `1` for violated, and
+`2` for indeterminate, unreadable, or invalid input.
+
+This package declares that command as its first-day assessment surface in
+its own manifest:
+
+```json
+"foundry": { "assessment": { "bin": "integrator-check", "invocation": "single-json-input" } }
+```
+
+Onboarding discovers that declaration from the installed manifest and never
+infers a surface. Integrator is not a required first-day role; Advisor
+remains the only required first-day assessment.
+
 ## The job
 
 A plane declares what catalogue it is entitled to. Separately, and offline
