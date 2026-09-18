@@ -5,6 +5,26 @@ All notable changes to `@clossys/integrator` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.8] - 2026-09-18
+
+### Added
+
+- Stated the charter close condition with the exact metric name `package
+  currency rate`, computed by `assessPackageCurrencyRate()`. An empty
+  evaluated set is indeterminate, never a perfect rate of 1.
+  `computeCurrencyMetric` is not this rate. `integrator-supersession-check`
+  stays report-only and is not the assessment surface.
+- Declared `foundry.assessment` against a new mapped `integrator-check` bin
+  with `invocation: "single-json-input"`. Advisor remains the only required
+  first-day role.
+- `integrator-check assessment.json`: prints the `package currency rate`
+  report and exits on the `0` / `1` / `2` ternary.
+
+### Notes
+
+- This does not claim the position is closed. Qualification of `0.6.8` is
+  deferred under #833.
+
 ## [0.6.7] - 2026-09-16
 
 ### Changed
