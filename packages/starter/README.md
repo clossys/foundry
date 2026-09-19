@@ -18,14 +18,14 @@ canonical two-phase shape.
 Pin an exact public npm version in the consumer's manifest and lockfile:
 
 ```bash
-npm install --save-dev --save-exact @clossys/starter@0.1.7
+npm install --save-dev --save-exact @clossys/starter@0.1.8
 ```
 
 This package is published to the public npm registry, `https://registry.npmjs.org`.
 Public npm reads are credentialless. Do not add a token or private registry
 mapping for `@clossys`; the fixed install and every decisive CLI step receive
 no registry credential. Pin the exact version the first-wave plan named;
-`0.1.7` is this source version, not a claim that `latest` already matches it.
+`0.1.8` is this source version, not a claim that `latest` already matches it.
 
 ## Contract
 
@@ -45,7 +45,7 @@ snapshot identity, and two normalized relative evidence paths.
   },
   "starter": {
     "name": "@clossys/starter",
-    "version": "0.1.7",
+    "version": "0.1.8",
     "integrity": "<npm-sha512-sri>",
     "bin": "foundry-starter"
   },
@@ -86,10 +86,24 @@ for integrations that have already established an exact trusted Starter
 runtime. That data contract does not turn the canonical initial install into a
 Starter verdict: its failure remains pre-runtime as described above.
 
-The only target invocation v1 supports is `single-json-input`: the path comes
-from the captured snapshot and the executable comes from the installed
-package's validated `bin` field. The caller can select neither a command nor a
-CLI path.
+## Hub inventory evidence
+
+The request may optionally carry a `hub` object — `{ "owner": "...",
+"repository": "...", "inventoried": true | false }` — naming the account hub
+and stating, on the caller's own evidence, whether this repository is
+inventoried by it (issue #997). Starter treats it as evidence, never as a
+prompt: it performs no I/O to obtain or verify the object, and an absent
+`hub` changes nothing.
+
+When `hub.inventoried` is `false`, the decision report gains one finding,
+`not-hub-inventoried`, and nothing else changes: the state is not downgraded,
+because flagging an un-inventoried repository is the hub's reconciliation
+work, not an activation violation. The finding rides along in every result —
+`satisfied`, `violated`, and `indeterminate` alike — so a caller reading the
+report sees the gap even on a successful decision.
+
+The only v1 supported target invocation is `single-json-input`; the hub
+object adds no command surface and accepts no path.
 
 GitHub provider facts are deliberately distinct from evidence commitments:
 `snapshot.baseSha`, `snapshot.headSha`, `trustedEvent.baseSha`, and
@@ -152,6 +166,7 @@ tests is not that evidence.
 | `isNormalizedRelativePath()` | Tests the portable relative-path grammar accepted for captured evidence. |
 | `validateStarterRequest()` | Rejects malformed request data and every untyped command or CLI surface. |
 | `StarterEvaluationInput` / `StarterFinding` / `StarterPhase` / `StarterReport` / `StarterRequest` / `StarterState` | Typed core input, report, phase, and outcome contracts. |
+| `StarterHubEvidence` | The optional caller-supplied `hub` request object: `{ owner, repository, inventoried }`. |
 | `ExactPackage` / `InstallReceipt` / `PackageManager` / `ProcessObservation` / `SnapshotFile` / `SnapshotManifest` / `TargetPackage` / `TrustedEvent` | Typed identity, receipt, snapshot, process, target, and authenticated-event contracts. |
 
 ## Fixed package-manager subpaths

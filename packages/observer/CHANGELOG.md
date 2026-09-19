@@ -3,6 +3,27 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.3.0] - 2026-09-19
+
+### Added
+
+- `mapBundleToPlacementCells()` (`placement-cells.ts`), the bundle-to-cells
+  adapter issue #997 names: converts one caller-supplied observation bundle
+  into advisor's `HubPlacementEvidence` cell shapes — an installed
+  `@clossys` package absent from the read `devDependencies` is an
+  `over-install` cell, a declared-but-unreadable package is a `missing`
+  cell, and an installed version strictly below its declared range's floor
+  is a `stale` cell.
+- `HubPlacementCellKind`, `HubPlacementCellInput`,
+  `RepositoryPackageObservation`, and `HubPlacementObservationBundle` —
+  the adapter's exported shapes. The cell shape mirrors
+  `@clossys/advisor`'s `HubPlacementCell` structurally, not by import: this
+  package adds no dependency on advisor, the same move
+  `FleetInstalledInventory` already makes for integrator's inventory.
+- A README section documenting the adapter, its three mappings, and what it
+  deliberately does not do (fetch, clock-read, assemble a
+  `placementEvidence` document, or judge non-`@clossys` placements).
+
 ## [0.2.9] - 2026-09-18
 
 ### Added
