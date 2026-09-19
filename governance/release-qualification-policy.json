@@ -65,6 +65,27 @@
         "closeWindow": { "status": "unsupported", "reason": "Close-window evidence is not established by a disposable installation canary." }
       }
     },
+    "@clossys/launcher": {
+      "packageKey": "launcher",
+      "recordStem": "clossys-launcher",
+      "packageDir": "packages/launcher",
+      "adapterPath": "governance/release-qualification-adapters/launcher/current-direct.json",
+      "fixturePath": "governance/release-qualification-fixtures/launcher/current-direct",
+      "archetypes": {
+        "current-direct": { "status": "required" },
+        "prior-minor": { "status": "unsupported", "reason": "No supported prior-minor consumer line is declared." },
+        "oldest-supported": { "status": "unsupported", "reason": "No oldest supported migration line is declared." },
+        "control-plane": { "status": "unsupported", "reason": "GitHub account topology remains consumer-owned." }
+      },
+      "dimensions": {
+        "position": { "status": "unsupported", "reason": "Launcher is non-role tooling and a disposable consumer makes no installed position claim." },
+        "completion": { "status": "unsupported", "reason": "Tooling conformance is not consumer completion." },
+        "rollback": { "status": "required" },
+        "duplicate": { "status": "unsupported", "reason": "Launcher has no first-party runtime dependency graph to deduplicate." },
+        "cadence": { "status": "unsupported", "reason": "Cadence is not established by a disposable installation canary." },
+        "closeWindow": { "status": "unsupported", "reason": "Close-window evidence is not established by a disposable installation canary." }
+      }
+    },
     "@clossys/strategist": {
       "packageKey": "strategist",
       "recordStem": "clossys-strategist",

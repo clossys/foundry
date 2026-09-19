@@ -145,6 +145,16 @@ test("the required build context fails closed on candidate qualification records
   assert.deepEqual(candidateQualificationCiFailures(shallow), ["full-history-checkout"]);
 });
 
+test("tree-identical main pushes skip duplicate CI without dropping the required build context on pull_request", () => {
+  const workflow = readFileSync(join(workflowsDir, "ci.yml"), "utf8");
+  assert.match(workflow, /^  push-tree:\n    name: push-tree identity$/m);
+  assert.match(workflow, /node scripts\/push-tree-identical\.mjs/);
+  const build = workflowJob(workflow, "build");
+  assert.match(build, /needs: \[push-tree\]/);
+  assert.doesNotMatch(build, /needs: \[safety, scope\]/);
+  assert.match(build, /github\.event_name != 'push'/);
+});
+
 test("every suite in check:gates imports only node builtins and local scripts", () => {
   // `check:gates` runs in ci.yml's dependency-free `safety` job -- no `npm ci`,
   // no build. A suite that imports a workspace package therefore passes
