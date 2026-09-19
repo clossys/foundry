@@ -401,6 +401,79 @@ describe("foldCurrencyDelta -- introduced scope: carried-through indeterminate r
   });
 });
 
+describe("foldCurrencyDelta -- extra and opted-out-and-installed", () => {
+  it("treats extra as an absolute violation", () => {
+    const result = foldCurrencyDelta({
+      scope: "absolute",
+      statuses: [{ state: "extra", name: "a", installedVersion: "0.1.0" }],
+      blockingSeverities: blocking,
+    });
+    expect(result).toEqual({
+      scope: "absolute",
+      verdict: "violated",
+      violations: [{ kind: "extra", name: "a", installedVersion: "0.1.0" }],
+    });
+  });
+
+  it("treats opted-out-and-installed as an absolute violation", () => {
+    const result = foldCurrencyDelta({
+      scope: "absolute",
+      statuses: [{ state: "opted-out-and-installed", name: "a", installedVersion: "1.0.0", reason: "not here" }],
+      blockingSeverities: blocking,
+    });
+    expect(result).toEqual({
+      scope: "absolute",
+      verdict: "violated",
+      violations: [{ kind: "opted-out-and-installed", name: "a", installedVersion: "1.0.0", reason: "not here" }],
+    });
+  });
+
+  it("marks a newly reported extra as introduced", () => {
+    const result = foldCurrencyDelta({
+      scope: "introduced",
+      statuses: [{ state: "extra", name: "a", installedVersion: "0.1.0" }],
+      baseline: [current("b")],
+      blockingSeverities: blocking,
+    });
+    expect(result).toEqual({
+      scope: "introduced",
+      verdict: "violated",
+      introduced: [{ kind: "extra", name: "a", installedVersion: "0.1.0" }],
+      inherited: [],
+    });
+  });
+
+  it("marks an extra that the baseline already reported as inherited", () => {
+    const extra: PackageCurrency = { state: "extra", name: "a", installedVersion: "0.1.0" };
+    const result = foldCurrencyDelta({
+      scope: "introduced",
+      statuses: [extra],
+      baseline: [extra],
+      blockingSeverities: blocking,
+    });
+    expect(result).toEqual({
+      scope: "introduced",
+      verdict: "satisfied",
+      inherited: [{ kind: "extra", name: "a", installedVersion: "0.1.0" }],
+    });
+  });
+
+  it("marks a newly reported opted-out-and-installed contradiction as introduced", () => {
+    const result = foldCurrencyDelta({
+      scope: "introduced",
+      statuses: [{ state: "opted-out-and-installed", name: "a", installedVersion: "1.0.0", reason: "not here" }],
+      baseline: [current("a")],
+      blockingSeverities: blocking,
+    });
+    expect(result).toEqual({
+      scope: "introduced",
+      verdict: "violated",
+      introduced: [{ kind: "opted-out-and-installed", name: "a", installedVersion: "1.0.0", reason: "not here" }],
+      inherited: [],
+    });
+  });
+});
+
 describe("foldCurrencyDelta -- introduced scope: exit codes", () => {
   it("maps verdicts onto the fleet's 0/1/2 exit-code ternary", () => {
     expect(currencyFoldResultToExitCode({ scope: "introduced", verdict: "satisfied", inherited: [] })).toBe(0);

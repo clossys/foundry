@@ -11,9 +11,9 @@ import { parseVersion, type ParsedVersion } from "./semver.js";
  * `PackageCurrency` is a discriminated union, one variant per required state,
  * each carrying only the fields that state can truthfully report -- `behind`
  * is the only variant with a `latestVersion` (and the `severity` that grades
- * it), `absent-with-reason` is the only one with a `reason`. That is
- * deliberate: a wider shape (a single interface with every field optional,
- * tagged by a plain `state: string`) would let a bug construct
+ * it), and `reason` exists only on variants that can truthfully name one.
+ * That is deliberate: a wider shape (a single interface with every field
+ * optional, tagged by a plain `state: string`) would let a bug construct
  * `{ state: "current", reason: "..." }` and have it silently type-check. This
  * shape does not allow that object literal to exist at all -- TypeScript's
  * excess-property check on a literal rejects `reason` on a `current` result
@@ -82,7 +82,14 @@ export type PackageCurrency =
   | { readonly state: "absent-without-reason"; readonly name: string }
   | { readonly state: "unreachable"; readonly name: string }
   | { readonly state: "unauthenticated"; readonly name: string }
-  | { readonly state: "indeterminate"; readonly name: string; readonly reason: CurrencyIndeterminateReason };
+  | { readonly state: "indeterminate"; readonly name: string; readonly reason: CurrencyIndeterminateReason }
+  | { readonly state: "extra"; readonly name: string; readonly installedVersion: string }
+  | {
+      readonly state: "opted-out-and-installed";
+      readonly name: string;
+      readonly installedVersion: string;
+      readonly reason: string;
+    };
 
 export interface JudgeCurrencyInput {
   readonly declaration: EntitlementDeclaration;
@@ -143,21 +150,23 @@ export function classifyCurrencyDistance(installedVersion: string, latestVersion
 }
 
 /**
- * Judge every entitled package's currency. Every entitlement is reported --
- * this never stops at the first problem, because, same as
- * `@example/provisioning`'s `verifyInstallation`, a drift report is
- * only useful when it is complete.
+ * Judge every entitled package's currency, then every installed name that is
+ * not entitled. Entitlements are reported first and never stop at the first
+ * problem. Extra installed names follow, so over-install is visible on this
+ * one plane without walking sister trees.
  *
- * Absence is judged BEFORE reachability is even consulted: whether a package
- * is installed, and whether its absence has a recorded reason, are both facts
- * a plane already holds about itself offline. Only `current` vs `behind`
- * needs the registry at all, which is exactly the shape the blindness rule
- * demands -- the parts of this judgment that do not need the network do not
- * touch it.
+ * Absence and opt-out-vs-installed are judged BEFORE reachability is even
+ * consulted: whether a package is installed, whether its absence has a
+ * recorded reason, and whether an opted-out entitlement is still present are
+ * all facts a plane already holds about itself offline. Only `current` vs
+ * `behind` needs the registry at all, which is exactly the shape the
+ * blindness rule demands -- the parts of this judgment that do not need the
+ * network do not touch it.
  */
 export function judgeCurrency(input: JudgeCurrencyInput): readonly PackageCurrency[] {
   const installedByName = new Map(input.installed.packages.map((pkg) => [pkg.name, pkg] as const));
   const optOutByName = new Map(input.declaration.optOuts.map((optOut) => [optOut.name, optOut] as const));
+  const entitledNames = new Set(input.declaration.entitlements.map((entry) => entry.name));
 
   const results: PackageCurrency[] = [];
   for (const entitlement of input.declaration.entitlements) {
@@ -167,6 +176,17 @@ export function judgeCurrency(input: JudgeCurrencyInput): readonly PackageCurren
     if (installedPkg === undefined) {
       const optOut = optOutByName.get(name);
       results.push(optOut === undefined ? { state: "absent-without-reason", name } : { state: "absent-with-reason", name, reason: optOut.reason });
+      continue;
+    }
+
+    const optOut = optOutByName.get(name);
+    if (optOut !== undefined) {
+      results.push({
+        state: "opted-out-and-installed",
+        name,
+        installedVersion: installedPkg.installedVersion,
+        reason: optOut.reason,
+      });
       continue;
     }
 
@@ -190,15 +210,10 @@ export function judgeCurrency(input: JudgeCurrencyInput): readonly PackageCurren
       continue;
     }
 
-    // verdict.kind === "known" from here -- now narrowed by the compiler
-    // rather than asserted by this comment.
     const classification = classifyCurrencyDistance(installedPkg.installedVersion, verdict.latestVersion);
     if (classification.kind === "indeterminate") {
       // An unparseable installed or "latest" version, or a prerelease
       // identifier on either side, cannot be trusted to compare correctly.
-      // Reporting a confident current/behind result off a version we could
-      // not safely order would be worse than reporting that we could not
-      // determine it.
       results.push({ state: "indeterminate", name, reason: classification.reason });
       continue;
     }
@@ -214,6 +229,12 @@ export function judgeCurrency(input: JudgeCurrencyInput): readonly PackageCurren
             severity: classification.distance,
           },
     );
+  }
+
+  for (const pkg of input.installed.packages) {
+    if (!entitledNames.has(pkg.name)) {
+      results.push({ state: "extra", name: pkg.name, installedVersion: pkg.installedVersion });
+    }
   }
   return results;
 }
@@ -245,6 +266,15 @@ export function optOutGaps(statuses: readonly PackageCurrency[]): readonly strin
   return names;
 }
 
+/** Installed names that are not entitled -- over-install on this one plane. */
+export function extraNames(statuses: readonly PackageCurrency[]): readonly string[] {
+  const names: string[] = [];
+  for (const status of statuses) {
+    if (status.state === "extra") names.push(status.name);
+  }
+  return names;
+}
+
 export interface CurrencyMetric {
   /** Entitled packages installed and at the latest published version, over every entitled package. Zero when there are no entitlements at all, rather than division by zero. */
   readonly currencyShare: number;
@@ -269,25 +299,31 @@ function assertNeverState(value: never): never {
 export function computeCurrencyMetric(statuses: readonly PackageCurrency[]): CurrencyMetric {
   let currentCount = 0;
   let absentWithoutReasonCount = 0;
+  let entitledCount = 0;
   for (const status of statuses) {
     switch (status.state) {
       case "current":
         currentCount += 1;
+        entitledCount += 1;
         break;
       case "absent-without-reason":
         absentWithoutReasonCount += 1;
+        entitledCount += 1;
         break;
       case "behind":
       case "absent-with-reason":
       case "unreachable":
       case "unauthenticated":
       case "indeterminate":
+      case "opted-out-and-installed":
+        entitledCount += 1;
+        break;
+      case "extra":
         break;
       default:
         assertNeverState(status);
     }
   }
-  const entitledCount = statuses.length;
   return {
     entitledCount,
     currentCount,
@@ -317,6 +353,8 @@ export type CurrencyVerdict = "satisfied" | "violated" | "indeterminate";
  *                                                       informational, reported
  *                                                       but never blocking
  *   - `absent-without-reason`                       -> violated
+ *   - `extra`                                       -> violated
+ *   - `opted-out-and-installed`                     -> violated
  *   - `indeterminate` / `unreachable` /
  *     `unauthenticated`                              -> indeterminate
  *
@@ -347,13 +385,18 @@ export function currencyVerdict(judgments: readonly PackageCurrency[]): Currency
       case "unauthenticated":
         return "indeterminate";
       case "absent-without-reason":
+      case "extra":
+      case "opted-out-and-installed":
         violated = true;
         break;
       case "behind":
         if (judgment.severity === "major") violated = true;
         break;
-      default:
+      case "current":
+      case "absent-with-reason":
         break;
+      default:
+        assertNeverState(judgment);
     }
   }
   return violated ? "violated" : "satisfied";

@@ -84,8 +84,8 @@ The loop this closes: **aim** — a plane holds exactly the catalogue it is
 entitled to, current. **sense** — read the plane's own manifest, lockfile, and
 the registry it authenticates against. **judge** — `current` / `behind` /
 `absent-with-reason` / `absent-without-reason` / `unreachable` /
-`unauthenticated` / `indeterminate`. **act** — emit the upgrade set and the
-opt-out gaps.
+`unauthenticated` / `indeterminate` / `extra` / `opted-out-and-installed`. **act** — emit the upgrade set, the
+opt-out gaps, and the extra names.
 **learn** — a package many planes opt out of is a catalogue problem, and the
 recorded opt-out reasons are the evidence. The loop closes when
 `currencyShare` is `1` and `absentWithoutReasonCount` is `0`: every
@@ -130,6 +130,7 @@ import {
   judgeCurrency,
   upgradeSet,
   optOutGaps,
+  extraNames,
   computeCurrencyMetric,
 } from "@clossys/integrator";
 
@@ -153,7 +154,7 @@ const outcomes = await probeReachability(
 );
 const reachability = resolveReachability(outcomes);
 
-// 4. Judge every entitlement.
+// 4. Judge every entitlement, then any installed name that is not entitled.
 const statuses = judgeCurrency({ declaration, installed, reachability });
 
 console.log(computeCurrencyMetric(statuses));
@@ -161,6 +162,7 @@ console.log(computeCurrencyMetric(statuses));
 
 console.log(upgradeSet(statuses)); // what to install to close the gap
 console.log(optOutGaps(statuses)); // entitled, absent, unexplained
+console.log(extraNames(statuses)); // installed, not entitled
 ```
 
 ## Entitlement and opt-outs
@@ -297,9 +299,13 @@ distinction being protected.
 ## Version reconciler
 
 `judgeCurrency` combines the entitlement declaration, the installed
-inventory, and the resolved reachability verdicts into exactly the seven
-required states, and reports every entitlement — it never stops at the
-first problem, because a drift report is only useful complete.
+inventory, and the resolved reachability verdicts into the required
+states, and reports every entitlement first — it never stops at the
+first problem, because a drift report is only useful complete. Installed
+names that are not entitled follow as `extra`, so over-install on this
+one plane is visible without walking sister trees. An entitlement that
+is opted out and still installed is `opted-out-and-installed`, never
+`current` or `behind`.
 
 `PackageCurrency` is a discriminated union, one variant per state, each
 carrying only the fields that state can truthfully report: `behind` is the
@@ -311,9 +317,9 @@ has its own, differently-typed `reason`). A plain
 shape does not allow that object literal to exist at all, which is what
 "enforced in the types" means here rather than only in review.
 
-Absence is judged **before** reachability is even consulted: whether a
-package is installed, and whether its absence has a recorded reason, are both
-facts a plane already holds about itself offline. Only `current` vs `behind`
+Absence and opt-out-versus-installed are judged **before** reachability is even consulted: whether a
+package is installed, whether its absence has a recorded reason, and whether an opted-out entitlement
+is still present are all facts a plane already holds about itself offline. Only `current` vs `behind`
 needs the registry, which is exactly the shape the blindness rule demands —
 the parts of this judgment that don't need the network don't touch it.
 
@@ -361,6 +367,8 @@ maps that onto the `0` / `1` / `2` ternary:
 | `minor`, `patch`, `current` | satisfied — reported, never blocking |
 | `absent-with-reason` | satisfied — an absence on record is a decision |
 | `absent-without-reason` | violated — entitled, absent, and nobody recorded why |
+| `extra` | violated — installed on this plane and not entitled |
+| `opted-out-and-installed` | violated — entitled, opted out, and still installed |
 | `indeterminate`, `unreachable`, `unauthenticated` | indeterminate |
 
 The last row is the load-bearing one, and `indeterminate` takes precedence
@@ -392,9 +400,10 @@ through `@clossys/controller`'s `GateResult` ternary
 (`gateSatisfied` / `gateViolated` / `gateIndeterminate` / `foldGateResults`)
 can map the verdict onto it in one step; nothing here assumes it does.
 
-`upgradeSet` and `optOutGaps` are the loop's **act** step: the first is every
+`upgradeSet`, `optOutGaps`, and `extraNames` are the loop's **act** step: the first is every
 `behind` entry, each still carrying its `severity`, with what to upgrade to;
-the second is every entitled, absent, unexplained package name.
+the second is every entitled, absent, unexplained package name; the third is
+every installed name that is not entitled.
 
 ## Currency delta fold
 
@@ -591,10 +600,11 @@ at) zero.
 | `createNodeInventoryFileSystem()` | function | The default `InventoryFileSystemPort`, backed by `node:fs` |
 | `probeReachability(names, options)` | function | Probes an injected `Transport` for each name's latest published version. Never touches a real network itself |
 | `resolveReachability(outcomes)` | function | Resolves raw probe outcomes into `known` / `unauthenticated` / `unreachable`, applying the aggregate 404 rule |
-| `judgeCurrency(input)` | function | Combines entitlement, inventory, and reachability into `PackageCurrency[]` — one of the seven required states per entitlement |
+| `judgeCurrency(input)` | function | Combines entitlement, inventory, and reachability into `PackageCurrency[]` — entitlements first, then extra installed names |
 | `classifyCurrencyDistance(installedVersion, latestVersion)` | function | Grades a version pair by semver distance: `current` / `patch` / `minor` / `major` (pre-1.0 minor counts as `major`), or `indeterminate` with a reason. Never throws |
 | `upgradeSet(statuses)` | function | Every `behind` entry, as `{ name, installedVersion, latestVersion, severity }` |
 | `optOutGaps(statuses)` | function | Every `absent-without-reason` package name |
+| `extraNames(statuses)` | function | Every `extra` package name |
 | `computeCurrencyMetric(statuses)` | function | This package's stated metric: `currencyShare`, `entitledCount`, `currentCount`, `absentWithoutReasonCount` |
 | `foldCurrencyDelta(input)` | function | One fold, two scopes: `absolute` grades the current state; `introduced` grades it against a `baseline`, splitting `introduced` (blocking) from `inherited` (reported, never blocking) findings. An unreadable or omitted `baseline` is `indeterminate`, never a silent pass and never a silent fall-back to `absolute` |
 | `currencyFoldResultToExitCode(result)` | function | Maps a `CurrencyFoldResult` onto the `0` / `1` / `2` ternary |
@@ -609,12 +619,12 @@ at) zero.
 | `InventoryFileSystemPort` / `InventorySourceOptions` / `InstalledPackage` / `InstalledInventory` | types | The installed-inventory reader's contracts |
 | `InventoryReportSourceOptions` / `InstalledInventoryReadResult` / `InstalledInventoryIndeterminateReason` / `InventoryLockfileFormat` | types | `readInstalledInventoryReport`'s never-throwing contract (issue #330) |
 | `Transport` / `ProbeOutcome` / `ReachabilityProbeOptions` / `ReachabilityVerdict` | types | The reachability probe's contracts |
-| `PackageCurrency` / `JudgeCurrencyInput` / `UpgradeSetEntry` / `CurrencyMetric` | types | The version reconciler's contracts, including the seven required states |
+| `PackageCurrency` / `JudgeCurrencyInput` / `UpgradeSetEntry` / `CurrencyMetric` | types | The version reconciler's contracts, including extra and opted-out-and-installed |
 | `CurrencySeverity` / `CurrencyDistance` / `CurrencyIndeterminateReason` / `ClassifyCurrencyDistanceResult` | types | The graded-severity contract: `"patch" \| "minor" \| "major"`, plus `"current"`, plus the two indeterminate reasons |
 | `CurrencyVerdict` | type | `currencyVerdict`'s three-state result: `"satisfied" \| "violated" \| "indeterminate"` |
 | `CurrencyFoldScope` / `CurrencyFoldInput` / `AbsoluteCurrencyFoldInput` / `IntroducedCurrencyFoldInput` | types | `foldCurrencyDelta`'s input, keyed by `scope: "absolute" \| "introduced"` |
 | `CurrencyBaseline` / `CurrencyBaselineUnreadable` | types | `introduced`'s baseline: a real `PackageCurrency[]` snapshot, or an explicit `{ kind: "unreadable", reason }` marker |
-| `CurrencyFoldFinding` / `CurrencyFoldResult` | types | One graded finding (`behind` or `absent-without-reason`), and `foldCurrencyDelta`'s discriminated result, tagged by both `scope` and `verdict` |
+| `CurrencyFoldFinding` / `CurrencyFoldResult` | types | One graded finding (`behind`, `absent-without-reason`, `extra`, or `opted-out-and-installed`), and `foldCurrencyDelta`'s discriminated result, tagged by both `scope` and `verdict` |
 | `AdmissionRule` / `AdmissionContract` / `AdmissionCandidate` / `AdmissionContext` / `AdmissionFinding` | types | The admission contract's schema |
 | `ParsedVersion` | type | `{ major, minor, patch, prerelease }` |
 | `IntegratorErrorCode` | type | Stable error-code union for `IntegratorValidationError` |

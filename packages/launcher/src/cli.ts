@@ -6,7 +6,7 @@ import { applyWorkspacePlan, observeWorkspace, planWorkspace, skeletonRootFromMo
 import { createNodeHost } from "./host.js";
 import type { WorkspaceHost } from "./types.js";
 
-export const USAGE = `Usage: launcher
+export const USAGE = `Usage: launcher [--inventory <path>]
 
 Create, resume, or appoint a GitHub repository as the account workspace hub.
 
@@ -14,6 +14,11 @@ Run from an empty directory to create {owner}/workspace. Run from an existing
 hub to resume. Run from any GitHub repository you want to own the account-level
 hub to appoint it — it does not have to be a new exclusive repo, and it keeps
 its current name and files.
+
+Appointing requires a populated generated hub inventory (packed template
+skeleton/.clossys/inventory.json; the generated path does not ship), or
+--inventory <path> pointing at one. Resume does not write. Create may write
+an empty inventory.
 
 GitHub-only. Owner is inferred from \`gh\` and git remotes. Public npm reads
 need no token.
@@ -26,13 +31,20 @@ function exitCodeFor(state: "satisfied" | "violated" | "indeterminate"): number 
   return state === "satisfied" ? 0 : state === "violated" ? 1 : 2;
 }
 
-/** Testable CLI dispatcher. Extra arguments throw; the executable maps them to exit 2. */
+export function parseLauncherArgs(argv: readonly string[]): { help: boolean; inventoryPath?: string } {
+  if (argv.length === 1 && (argv[0] === "--help" || argv[0] === "-h")) return { help: true };
+  if (argv.length === 0) return { help: false };
+  if (argv.length === 2 && argv[0] === "--inventory" && argv[1]) return { help: false, inventoryPath: argv[1] };
+  throw new LauncherInputError("launcher takes no arguments except optional --inventory <path>; run it from the directory to create or appoint");
+}
+
+/** Testable CLI dispatcher. Unknown arguments throw; the executable maps them to exit 2. */
 export function main(argv: readonly string[], host: WorkspaceHost, skeletonRoot: string): number {
-  if (argv.length === 1 && (argv[0] === "--help" || argv[0] === "-h")) {
+  const parsed = parseLauncherArgs(argv);
+  if (parsed.help) {
     console.log(USAGE);
     return 0;
   }
-  if (argv.length !== 0) throw new LauncherInputError("launcher takes no arguments; run it from the directory to create or appoint");
   const observation = observeWorkspace(host);
   if (
     !observation.cwd.empty &&
@@ -43,10 +55,14 @@ export function main(argv: readonly string[], host: WorkspaceHost, skeletonRoot:
     console.log(USAGE);
     return 0;
   }
-  const decision = planWorkspace(observation, host);
+  const decision = planWorkspace(observation, host, { inventoryPath: parsed.inventoryPath });
   if (decision.action === "refuse") {
     console.error(`launcher: ${decision.message}`);
     return exitCodeFor(decision.state);
+  }
+  if (parsed.inventoryPath !== undefined && decision.action !== "adopt") {
+    console.error("launcher: --inventory is only valid when appointing a GitHub repository");
+    return 1;
   }
   const result = applyWorkspacePlan(host, decision, skeletonRoot);
   console.log(result.message);

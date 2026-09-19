@@ -50,6 +50,50 @@ describe("launcher-check", () => {
     expect(checkMain(["--input", "/tmp/indeterminate.json"], read, () => {}, () => {})).toBe(2);
   });
 
+  it("grades adopt only when the observation already has a populated inventory", () => {
+    const files: Record<string, string> = {
+      "/tmp/adopt.json": JSON.stringify({
+        cwd: {
+          absolutePath: "/tmp/central",
+          empty: false,
+          git: true,
+          looksLikeFoundry: false,
+          githubOwner: "acme",
+          githubRepository: "central",
+          inventory: { status: "populated", count: 2 },
+        },
+        ownerCandidates: ["acme"],
+        advisorVersion: "0.2.2",
+        ghAvailable: true,
+        gitAvailable: true,
+      }),
+      "/tmp/adopt-empty.json": JSON.stringify({
+        cwd: {
+          absolutePath: "/tmp/central",
+          empty: false,
+          git: true,
+          looksLikeFoundry: false,
+          githubOwner: "acme",
+          githubRepository: "central",
+          inventory: { status: "missing", count: 0 },
+        },
+        ownerCandidates: ["acme"],
+        advisorVersion: "0.2.2",
+        ghAvailable: true,
+        gitAvailable: true,
+      }),
+    };
+    const read = (path: string) => {
+      const body = files[path];
+      if (body === undefined) throw new Error("missing");
+      return body;
+    };
+    const out: string[] = [];
+    expect(checkMain(["--input", "/tmp/adopt.json"], read, (text) => out.push(text), () => {})).toBe(0);
+    expect(out[0]).toContain('"action":"adopt"');
+    expect(checkMain(["--input", "/tmp/adopt-empty.json"], read, () => {}, () => {})).toBe(1);
+  });
+
   it("maps unreadable input to a thrown input error for exit 2", () => {
     expect(() =>
       checkMain(["--input", "/tmp/missing.json"], () => {

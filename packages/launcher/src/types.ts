@@ -32,6 +32,24 @@ export interface HubDocument {
   readonly repository: string;
 }
 
+export interface InventoryObservation {
+  readonly status: "missing" | "empty" | "populated";
+  readonly count: number;
+}
+
+/** Read-only pin and inventory report after adopt or resume. Never uninstalls. */
+export interface HubHealthReport {
+  readonly marker: "present" | "missing";
+  readonly inventory: InventoryObservation;
+  readonly advisorPin: {
+    readonly dependencies?: string;
+    readonly devDependencies?: string;
+    readonly live?: string;
+  };
+  readonly dualPin: boolean;
+  readonly extraClossys: readonly string[];
+}
+
 export interface CwdObservation {
   readonly absolutePath: string;
   readonly empty: boolean;
@@ -40,6 +58,7 @@ export interface CwdObservation {
   readonly githubRepository?: string;
   readonly hub?: HubDocument;
   readonly looksLikeFoundry: boolean;
+  readonly inventory?: InventoryObservation;
 }
 
 export interface WorkspaceObservation {
@@ -74,6 +93,8 @@ export interface WorkspacePlanAdopt {
   readonly repository: string;
   readonly directory: string;
   readonly advisorVersion: string;
+  /** Absolute path of a populated inventory document to copy. Absent when cwd already has one. */
+  readonly inventorySource?: string;
 }
 
 export type WorkspacePlan = WorkspacePlanCreate | WorkspacePlanResume | WorkspacePlanAdopt;
@@ -85,3 +106,9 @@ export interface WorkspaceRefusal {
 }
 
 export type WorkspaceDecision = WorkspacePlan | WorkspaceRefusal;
+
+export interface WorkspaceApplyResult {
+  readonly state: "satisfied";
+  readonly message: string;
+  readonly health: HubHealthReport;
+}

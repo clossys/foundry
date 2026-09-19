@@ -49,7 +49,7 @@ describe("launcher CLI", () => {
   });
 
   it("maps extra arguments to a thrown input error", () => {
-    expect(() => main(["--org", "acme"], host("/tmp", {}), skeletonRoot)).toThrow(/no arguments/);
+    expect(() => main(["--org", "acme"], host("/tmp", {}), skeletonRoot)).toThrow(/no arguments except optional --inventory/);
   });
 
   it("prints usage from a non-empty non-git directory instead of refusing", () => {
@@ -84,6 +84,7 @@ describe("launcher CLI", () => {
     );
     expect(code).toBe(0);
     expect(String(log.mock.calls[0]?.[0])).toContain("created acme/workspace");
+    expect(String(log.mock.calls[0]?.[0])).toContain("health:");
   });
 
   it("recognizes an installed-style POSIX bin symlink", () => {

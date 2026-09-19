@@ -2,14 +2,17 @@ import { dirname, join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import type {
   CommandResult,
+  CwdObservation,
   HubDocument,
+  HubHealthReport,
+  InventoryObservation,
+  WorkspaceApplyResult,
   WorkspaceDecision,
   WorkspaceHost,
   WorkspaceObservation,
   WorkspacePlan,
   WorkspacePlanCreate,
   WorkspaceRefusal,
-  CwdObservation,
 } from "./types.js";
 
 export const DEFAULT_REPOSITORY_NAME = "workspace";
@@ -109,6 +112,21 @@ function readHub(host: WorkspaceHost, directory: string): HubDocument | undefine
   }
 }
 
+/** Classifies a generated hub inventory (packed template skeleton/.clossys/inventory.json; the generated path does not ship) without inventing repositories. */
+export function inspectInventory(raw: string | null): InventoryObservation {
+  if (raw === null) return { status: "missing", count: 0 };
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!isRecord(parsed) || parsed.schemaVersion !== 1 || !Array.isArray(parsed.repositories)) {
+      return { status: "empty", count: 0 };
+    }
+    const count = parsed.repositories.length;
+    return { status: count > 0 ? "populated" : "empty", count };
+  } catch {
+    return { status: "empty", count: 0 };
+  }
+}
+
 function looksLikeFoundry(host: WorkspaceHost, directory: string): boolean {
   const manifestRaw = host.readText(join(directory, "package.json"));
   if (manifestRaw !== null) {
@@ -190,6 +208,7 @@ export function observeWorkspace(host: WorkspaceHost): WorkspaceObservation {
     ...(githubRepository === undefined ? {} : { githubRepository }),
     ...(readHub(host, cwd) === undefined ? {} : { hub: readHub(host, cwd) }),
     looksLikeFoundry: looksLikeFoundry(host, cwd),
+    inventory: inspectInventory(host.readText(join(cwd, WORKSPACE_INVENTORY_REL))),
   };
 
   return {
@@ -226,7 +245,35 @@ function resolveOwner(observation: WorkspaceObservation, host: WorkspaceHost): {
  * Decides create, resume, or adopt from a cwd observation.
  * Appointing means: run this from the GitHub repository that should own the hub.
  */
-export function planWorkspace(observation: WorkspaceObservation, host: WorkspaceHost): WorkspaceDecision {
+function resolveAdoptInventory(
+  host: WorkspaceHost,
+  cwd: CwdObservation,
+  inventoryPath: string | undefined,
+): { inventorySource?: string } | WorkspaceRefusal {
+  if (cwd.inventory?.status === "populated") return {};
+  const trimmed = inventoryPath?.trim();
+  if (!trimmed) {
+    return refuse(
+      "violated",
+      "appointing requires a populated generated hub inventory (packed template skeleton/.clossys/inventory.json; the generated path does not ship), or --inventory <path> to a populated inventory document",
+    );
+  }
+  const resolved = resolve(cwd.absolutePath, trimmed);
+  const imported = inspectInventory(host.readText(resolved));
+  if (imported.status !== "populated") {
+    return refuse(
+      "violated",
+      "--inventory must point at a populated inventory document (schemaVersion 1, nonempty repositories)",
+    );
+  }
+  return { inventorySource: resolved };
+}
+
+export function planWorkspace(
+  observation: WorkspaceObservation,
+  host: WorkspaceHost,
+  options: { inventoryPath?: string } = {},
+): WorkspaceDecision {
   const { cwd } = observation;
   if (cwd.looksLikeFoundry) {
     return refuse(
@@ -247,12 +294,15 @@ export function planWorkspace(observation: WorkspaceObservation, host: Workspace
     if (!observation.advisorVersion) {
       return refuse("indeterminate", `cannot read a public ${ADVISOR_PACKAGE} version from the npm registry`);
     }
+    const imported = resolveAdoptInventory(host, cwd, options.inventoryPath);
+    if ("action" in imported) return imported;
     return {
       action: "adopt",
       owner: cwd.githubOwner,
       repository: cwd.githubRepository,
       directory: cwd.absolutePath,
       advisorVersion: observation.advisorVersion,
+      ...(imported.inventorySource === undefined ? {} : { inventorySource: imported.inventorySource }),
     };
   }
   if (cwd.git) {
@@ -312,6 +362,24 @@ function writeSkeletonFile(host: WorkspaceHost, directory: string, relativePath:
   host.writeText(target, contents);
 }
 
+function pinString(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() !== "" ? value.trim() : undefined;
+}
+
+function clossysNames(bucket: unknown, extra: Set<string>): string | undefined {
+  if (!isRecord(bucket)) return undefined;
+  let advisor: string | undefined;
+  for (const [name, version] of Object.entries(bucket)) {
+    if (name === ADVISOR_PACKAGE) {
+      advisor = pinString(version);
+      continue;
+    }
+    if (name.startsWith("@clossys/")) extra.add(name);
+  }
+  return advisor;
+}
+
+/** Leaves an existing Advisor pin in whichever bucket it already occupies. */
 function mergeAdvisorPin(
   host: WorkspaceHost,
   directory: string,
@@ -335,6 +403,10 @@ function mergeAdvisorPin(
   } catch {
     throw new Error("existing package.json is unreadable JSON");
   }
+  const extra = new Set<string>();
+  const inDependencies = clossysNames(manifest.dependencies, extra);
+  const inDevDependencies = clossysNames(manifest.devDependencies, extra);
+  if (inDependencies !== undefined || inDevDependencies !== undefined) return;
   const devDependencies = isRecord(manifest.devDependencies) ? { ...manifest.devDependencies } : {};
   devDependencies[ADVISOR_PACKAGE] = advisorVersion;
   manifest.devDependencies = devDependencies;
@@ -359,9 +431,12 @@ function adoptHubFiles(host: WorkspaceHost, skeletonRoot: string, plan: Workspac
     repository: `${plan.owner}/${plan.repository}`,
   };
   writeSkeletonFile(host, plan.directory, WORKSPACE_MARKER_REL, `${JSON.stringify(marker, null, 2)}\n`);
-  if (host.readText(join(plan.directory, WORKSPACE_INVENTORY_REL)) === null) {
-    const inventory = host.readText(join(skeletonRoot, WORKSPACE_INVENTORY_REL)) ?? `${JSON.stringify({ schemaVersion: 1, repositories: [] }, null, 2)}\n`;
-    writeSkeletonFile(host, plan.directory, WORKSPACE_INVENTORY_REL, inventory);
+  if ("inventorySource" in plan && typeof plan.inventorySource === "string") {
+    const raw = host.readText(plan.inventorySource);
+    if (raw === null || inspectInventory(raw).status !== "populated") {
+      throw new Error("inventory source is not a populated inventory document");
+    }
+    writeSkeletonFile(host, plan.directory, WORKSPACE_INVENTORY_REL, raw.endsWith("\n") ? raw : `${raw}\n`);
   }
   if (host.readText(join(plan.directory, "AGENTS.md")) === null) {
     writeSkeletonFile(host, plan.directory, "AGENTS.md", CONSUMER_AGENTS_MD);
@@ -386,8 +461,71 @@ function requireZero(result: CommandResult, label: string): void {
   }
 }
 
-/** Applies a create, resume, or adopt plan through the host. */
-export function applyWorkspacePlan(host: WorkspaceHost, plan: WorkspacePlan, skeletonRoot: string): { state: "satisfied"; message: string } {
+/** Read-only pin and inventory report. Does not install or uninstall. */
+export function reportHubHealth(host: WorkspaceHost, directory: string, liveAdvisorVersion?: string): HubHealthReport {
+  const extra = new Set<string>();
+  let dependencies: string | undefined;
+  let devDependencies: string | undefined;
+  const manifestRaw = host.readText(join(directory, "package.json"));
+  if (manifestRaw !== null) {
+    try {
+      const parsed: unknown = JSON.parse(manifestRaw);
+      if (isRecord(parsed)) {
+        dependencies = clossysNames(parsed.dependencies, extra);
+        devDependencies = clossysNames(parsed.devDependencies, extra);
+      }
+    } catch {
+      /* unreadable manifest is reported as missing pins */
+    }
+  }
+  return {
+    marker: readHub(host, directory) === undefined ? "missing" : "present",
+    inventory: inspectInventory(host.readText(join(directory, WORKSPACE_INVENTORY_REL))),
+    advisorPin: {
+      ...(dependencies === undefined ? {} : { dependencies }),
+      ...(devDependencies === undefined ? {} : { devDependencies }),
+      ...(liveAdvisorVersion === undefined ? {} : { live: liveAdvisorVersion }),
+    },
+    dualPin: dependencies !== undefined && devDependencies !== undefined,
+    extraClossys: [...extra].sort(),
+  };
+}
+
+export function formatHubHealth(report: HubHealthReport): string {
+  const pinParts: string[] = [];
+  if (report.advisorPin.dependencies !== undefined) pinParts.push(`dependencies ${report.advisorPin.dependencies}`);
+  if (report.advisorPin.devDependencies !== undefined) pinParts.push(`devDependencies ${report.advisorPin.devDependencies}`);
+  const pin = pinParts.length === 0 ? "missing" : pinParts.join(" and ");
+  const live = report.advisorPin.live === undefined ? "" : `; live ${report.advisorPin.live}`;
+  const extra = report.extraClossys.length === 0 ? "none" : report.extraClossys.join(", ");
+  const inventory =
+    report.inventory.status === "populated" ? `populated (${report.inventory.count})` : report.inventory.status;
+  return [
+    `hub marker: ${report.marker}`,
+    `inventory: ${inventory}`,
+    `advisor pin: ${pin}${live}`,
+    `dual pin: ${report.dualPin ? "yes" : "no"}`,
+    `extra @clossys/*: ${extra}`,
+    `health: ${JSON.stringify(report)}`,
+  ].join("\n");
+}
+
+function withHealth(
+  host: WorkspaceHost,
+  directory: string,
+  headline: string,
+  liveAdvisorVersion?: string,
+): WorkspaceApplyResult {
+  const health = reportHubHealth(host, directory, liveAdvisorVersion);
+  return {
+    state: "satisfied",
+    message: `${headline}\n${formatHubHealth(health)}`,
+    health,
+  };
+}
+
+/** Applies a create, resume, or adopt plan through the host. Resume does not write. */
+export function applyWorkspacePlan(host: WorkspaceHost, plan: WorkspacePlan, skeletonRoot: string): WorkspaceApplyResult {
   if (plan.action === "resume") {
     if (plan.clone) {
       requireZero(
@@ -395,10 +533,11 @@ export function applyWorkspacePlan(host: WorkspaceHost, plan: WorkspacePlan, ske
         "gh repo clone",
       );
     }
-    return {
-      state: "satisfied",
-      message: `resumed ${plan.owner}/${plan.repository} as the account hub\nOpen this folder in your coding agent. Advisor stays read-only until you approve a next action.`,
-    };
+    return withHealth(
+      host,
+      plan.directory,
+      `resumed ${plan.owner}/${plan.repository} as the account hub\nOpen this folder in your coding agent. Advisor stays read-only until you approve a next action.`,
+    );
   }
   if (plan.action === "create") {
     copySkeleton(host, skeletonRoot, plan);
@@ -410,16 +549,20 @@ export function applyWorkspacePlan(host: WorkspaceHost, plan: WorkspacePlan, ske
       ),
       "gh repo create",
     );
-    return {
-      state: "satisfied",
-      message: `created ${plan.owner}/${plan.repository} as the account hub\nOpen this folder in your coding agent. Advisor stays read-only until you approve a next action.`,
-    };
+    return withHealth(
+      host,
+      plan.directory,
+      `created ${plan.owner}/${plan.repository} as the account hub\nOpen this folder in your coding agent. Advisor stays read-only until you approve a next action.`,
+      plan.advisorVersion,
+    );
   }
   adoptHubFiles(host, skeletonRoot, plan);
-  return {
-    state: "satisfied",
-    message: `appointed ${plan.owner}/${plan.repository} as the account hub\nExisting project files were kept. This hub inventories engagement; it does not install the catalogue into the repo.`,
-  };
+  return withHealth(
+    host,
+    plan.directory,
+    `appointed ${plan.owner}/${plan.repository} as the account hub\nExisting project files were kept. This hub inventories engagement; it does not install the catalogue into the repo.`,
+    plan.advisorVersion,
+  );
 }
 
 export function skeletonRootFromModule(moduleUrl: string): string {

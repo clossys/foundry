@@ -6,11 +6,14 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   ADVISOR_PACKAGE,
   applyWorkspacePlan,
+  inspectInventory,
   isHubDocument,
   observeWorkspace,
   parseGitHubRemote,
   planWorkspace,
+  reportHubHealth,
   DEFAULT_REPOSITORY_NAME,
+  WORKSPACE_INVENTORY_REL,
   WORKSPACE_MARKER_REL,
 } from "./core.js";
 import type { CommandResult, WorkspaceHost, WorkspaceObservation } from "./types.js";
@@ -62,6 +65,14 @@ function host(
   };
 }
 
+function writeInventory(directory: string, repositories: readonly unknown[] = [{ id: "app" }]): void {
+  mkdirSync(join(directory, ".clossys"), { recursive: true });
+  writeFileSync(
+    join(directory, WORKSPACE_INVENTORY_REL),
+    `${JSON.stringify({ schemaVersion: 1, repositories }, null, 2)}\n`,
+  );
+}
+
 function observation(overrides: Partial<WorkspaceObservation> = {}): WorkspaceObservation {
   return {
     ownerCandidates: ["acme"],
@@ -109,6 +120,7 @@ describe("planWorkspace", () => {
             githubOwner: "acme",
             githubRepository: "central",
             looksLikeFoundry: false,
+            inventory: { status: "populated", count: 1 },
           },
         }),
         silent,
@@ -166,6 +178,53 @@ describe("planWorkspace", () => {
     });
   });
 
+  it("refuses appoint when inventory is missing or empty", () => {
+    const missing = planWorkspace(
+      observation({
+        cwd: {
+          absolutePath: "/tmp/central",
+          empty: false,
+          git: true,
+          githubOwner: "acme",
+          githubRepository: "central",
+          looksLikeFoundry: false,
+          inventory: { status: "missing", count: 0 },
+        },
+      }),
+      silent,
+    );
+    expect(missing).toMatchObject({ action: "refuse", state: "violated" });
+    if (missing.action === "refuse") expect(missing.message).toMatch(/generated hub inventory/);
+  });
+
+  it("accepts --inventory when the cwd inventory is missing", () => {
+    const directory = tempDir();
+    const source = join(directory, "members.json");
+    writeFileSync(source, `${JSON.stringify({ schemaVersion: 1, repositories: [{ id: "app" }] })}\n`);
+    expect(
+      planWorkspace(
+        observation({
+          cwd: {
+            absolutePath: directory,
+            empty: false,
+            git: true,
+            githubOwner: "acme",
+            githubRepository: "central",
+            looksLikeFoundry: false,
+            inventory: { status: "missing", count: 0 },
+          },
+        }),
+        host(directory),
+        { inventoryPath: "members.json" },
+      ),
+    ).toMatchObject({
+      action: "adopt",
+      owner: "acme",
+      repository: "central",
+      inventorySource: resolve(directory, "members.json"),
+    });
+  });
+
   it("stays indeterminate when several owners are visible and stdin is not a TTY", () => {
     const decision = planWorkspace(observation({ ownerCandidates: ["acme", "widgets"] }), silent);
     expect(decision).toMatchObject({ action: "refuse", state: "indeterminate" });
@@ -186,7 +245,10 @@ describe("applyWorkspacePlan", () => {
     expect(manifest.devDependencies[ADVISOR_PACKAGE]).toBe("0.1.5");
     expect(manifest.devDependencies["@clossys/starter"]).toBeUndefined();
     expect(manifest.devDependencies["@clossys/controller"]).toBeUndefined();
+    expect(manifest.devDependencies["@clossys/architect"]).toBeUndefined();
+    expect(manifest.devDependencies["@clossys/bouncer"]).toBeUndefined();
     expect(JSON.parse(readFileSync(join(directory, WORKSPACE_MARKER_REL), "utf8"))).toMatchObject({ kind: "account-hub", owner: "acme" });
+    expect(inspectInventory(readFileSync(join(directory, WORKSPACE_INVENTORY_REL), "utf8"))).toEqual({ status: "empty", count: 0 });
     expect(readFileSync(join(directory, "AGENTS.md"), "utf8")).toContain("account hub");
   });
 
@@ -194,7 +256,8 @@ describe("applyWorkspacePlan", () => {
     const directory = tempDir();
     writeFileSync(join(directory, "README.md"), "# Product\n");
     writeFileSync(join(directory, "package.json"), `${JSON.stringify({ name: "product", private: false, dependencies: { react: "19.0.0" } }, null, 2)}\n`);
-    applyWorkspacePlan(
+    writeInventory(directory);
+    const result = applyWorkspacePlan(
       host(directory),
       { action: "adopt", owner: "acme", repository: "product", directory, advisorVersion: "0.1.5" },
       skeletonRoot,
@@ -217,6 +280,95 @@ describe("applyWorkspacePlan", () => {
       owner: "acme",
       repository: "acme/product",
     });
+    expect(result.health.inventory).toEqual({ status: "populated", count: 1 });
+    expect(result.health.marker).toBe("present");
+  });
+
+  it("leaves an existing Advisor pin and does not dual-pin", () => {
+    const directory = tempDir();
+    writeFileSync(
+      join(directory, "package.json"),
+      `${JSON.stringify({ name: "hub", dependencies: { [ADVISOR_PACKAGE]: "0.2.1" } }, null, 2)}\n`,
+    );
+    writeInventory(directory);
+    applyWorkspacePlan(
+      host(directory),
+      { action: "adopt", owner: "acme", repository: "hub", directory, advisorVersion: "0.2.3" },
+      skeletonRoot,
+    );
+    const manifest = JSON.parse(readFileSync(join(directory, "package.json"), "utf8")) as {
+      dependencies: Record<string, string>;
+      devDependencies?: Record<string, string>;
+    };
+    expect(manifest.dependencies[ADVISOR_PACKAGE]).toBe("0.2.1");
+    expect(manifest.devDependencies?.[ADVISOR_PACKAGE]).toBeUndefined();
+  });
+
+  it("does not overwrite an existing Advisor devDependency", () => {
+    const directory = tempDir();
+    writeFileSync(
+      join(directory, "package.json"),
+      `${JSON.stringify({ name: "hub", devDependencies: { [ADVISOR_PACKAGE]: "0.1.6" } }, null, 2)}\n`,
+    );
+    writeInventory(directory);
+    applyWorkspacePlan(
+      host(directory),
+      { action: "adopt", owner: "acme", repository: "hub", directory, advisorVersion: "0.2.3" },
+      skeletonRoot,
+    );
+    const manifest = JSON.parse(readFileSync(join(directory, "package.json"), "utf8")) as {
+      devDependencies: Record<string, string>;
+    };
+    expect(manifest.devDependencies[ADVISOR_PACKAGE]).toBe("0.1.6");
+  });
+
+  it("copies --inventory onto the hub and reports extra @clossys names without removing them", () => {
+    const directory = tempDir();
+    const source = join(directory, "supplied-inventory.json");
+    writeFileSync(source, `${JSON.stringify({ schemaVersion: 1, repositories: [{ id: "one" }, { id: "two" }] }, null, 2)}\n`);
+    writeFileSync(
+      join(directory, "package.json"),
+      `${JSON.stringify({
+        name: "hub",
+        dependencies: { [ADVISOR_PACKAGE]: "0.2.1", "@clossys/starter": "0.1.5" },
+      }, null, 2)}\n`,
+    );
+    const result = applyWorkspacePlan(
+      host(directory),
+      { action: "adopt", owner: "acme", repository: "hub", directory, advisorVersion: "0.2.3", inventorySource: source },
+      skeletonRoot,
+    );
+    expect(inspectInventory(readFileSync(join(directory, WORKSPACE_INVENTORY_REL), "utf8"))).toEqual({
+      status: "populated",
+      count: 2,
+    });
+    const manifest = JSON.parse(readFileSync(join(directory, "package.json"), "utf8")) as {
+      dependencies: Record<string, string>;
+      devDependencies?: Record<string, string>;
+    };
+    expect(manifest.dependencies["@clossys/starter"]).toBe("0.1.5");
+    expect(manifest.devDependencies?.[ADVISOR_PACKAGE]).toBeUndefined();
+    expect(result.health.extraClossys).toEqual(["@clossys/starter"]);
+    expect(result.health.dualPin).toBe(false);
+    expect(result.message).toMatch(/health:/);
+  });
+
+  it("reports health on resume without writing a marker", () => {
+    const directory = tempDir();
+    mkdirSync(join(directory, ".clossys"), { recursive: true });
+    writeFileSync(
+      join(directory, WORKSPACE_MARKER_REL),
+      `${JSON.stringify({ schemaVersion: 1, kind: "account-hub", owner: "acme", repository: "acme/hub" }, null, 2)}\n`,
+    );
+    writeInventory(directory);
+    const result = applyWorkspacePlan(
+      host(directory),
+      { action: "resume", owner: "acme", repository: "hub", directory, clone: false },
+      skeletonRoot,
+    );
+    expect(result.health.marker).toBe("present");
+    expect(result.health.inventory.status).toBe("populated");
+    expect(reportHubHealth(host(directory), directory).marker).toBe("present");
   });
 });
 
@@ -239,6 +391,7 @@ describe("observeWorkspace", () => {
     expect(seen.cwd.githubOwner).toBe("acme");
     expect(seen.cwd.githubRepository).toBe("central");
     expect(seen.cwd.empty).toBe(false);
+    expect(seen.cwd.inventory).toEqual({ status: "missing", count: 0 });
     expect(seen.advisorVersion).toBe("0.1.5");
   });
 });

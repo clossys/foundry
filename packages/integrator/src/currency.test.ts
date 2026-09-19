@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { classifyCurrencyDistance, computeCurrencyMetric, judgeCurrency, optOutGaps, upgradeSet, type PackageCurrency, type CurrencySeverity, currencyVerdict, currencyVerdictToExitCode } from "./currency.js";
+import { classifyCurrencyDistance, computeCurrencyMetric, extraNames, judgeCurrency, optOutGaps, upgradeSet, type PackageCurrency, type CurrencySeverity, currencyVerdict, currencyVerdictToExitCode } from "./currency.js";
 import type { EntitlementDeclaration } from "./entitlement.js";
 import type { InstalledInventory } from "./inventory.js";
 import type { ReachabilityVerdict } from "./reachability.js";
@@ -230,6 +230,45 @@ describe("judgeCurrency", () => {
     expect(results.map((r) => r.name)).toEqual(["a", "b", "c"]);
   });
 
+  it("reports installed names that are not entitled as extra, after every entitlement", () => {
+    const results = judgeCurrency({
+      declaration: declaration(["a"]),
+      installed: installed([
+        { name: "a", installedVersion: "1.0.0" },
+        { name: "extra-one", installedVersion: "0.1.0" },
+        { name: "extra-two", installedVersion: "0.2.0" },
+      ]),
+      reachability: new Map<string, ReachabilityVerdict>([["a", { kind: "known", latestVersion: "1.0.0" }]]),
+    });
+    expect(results).toEqual([
+      { state: "current", name: "a", installedVersion: "1.0.0" },
+      { state: "extra", name: "extra-one", installedVersion: "0.1.0" },
+      { state: "extra", name: "extra-two", installedVersion: "0.2.0" },
+    ]);
+  });
+
+  it("reports an entitled, opted-out, still-installed name as opted-out-and-installed, never current or behind", () => {
+    const results = judgeCurrency({
+      declaration: declaration(["a"], [{ name: "a", reason: "not adopted here" }]),
+      installed: installed([{ name: "a", installedVersion: "1.2.0" }]),
+      reachability: new Map<string, ReachabilityVerdict>([["a", { kind: "known", latestVersion: "1.3.0" }]]),
+    });
+    expect(results).toEqual([
+      { state: "opted-out-and-installed", name: "a", installedVersion: "1.2.0", reason: "not adopted here" },
+    ]);
+  });
+
+  it("judges opted-out-and-installed without consulting reachability", () => {
+    const results = judgeCurrency({
+      declaration: declaration(["a"], [{ name: "a", reason: "deliberate" }]),
+      installed: installed([{ name: "a", installedVersion: "1.0.0" }]),
+      reachability: new Map<string, ReachabilityVerdict>([["a", { kind: "unreachable" }]]),
+    });
+    expect(results).toEqual([
+      { state: "opted-out-and-installed", name: "a", installedVersion: "1.0.0", reason: "deliberate" },
+    ]);
+  });
+
   it("reports #339's own observed example: two patches stay informational, the pre-1.0 minor gap grades major, not advisory", () => {
     // #339's own table: two straightforward patch gaps (0.3.1 -> 0.3.2,
     // 0.1.8 -> 0.1.9) plus a 0.6.0 -> 0.7.0 gap that reads as "minor" by the
@@ -265,7 +304,7 @@ describe("judgeCurrency", () => {
 // upgradeSet and optOutGaps
 // ---------------------------------------------------------------------------
 
-describe("upgradeSet and optOutGaps", () => {
+describe("upgradeSet, optOutGaps, and extraNames", () => {
   const statuses: PackageCurrency[] = [
     { state: "current", name: "a", installedVersion: "1.0.0" },
     { state: "behind", name: "b", installedVersion: "1.0.0", latestVersion: "2.0.0", severity: "major" },
@@ -275,6 +314,8 @@ describe("upgradeSet and optOutGaps", () => {
     { state: "unreachable", name: "e" },
     { state: "unauthenticated", name: "f" },
     { state: "indeterminate", name: "h", reason: "version-unparseable" },
+    { state: "extra", name: "i", installedVersion: "0.9.0" },
+    { state: "opted-out-and-installed", name: "j", installedVersion: "1.0.0", reason: "not here" },
   ];
 
   it("upgradeSet contains exactly the behind entries, each carrying its graded severity", () => {
@@ -286,6 +327,10 @@ describe("upgradeSet and optOutGaps", () => {
 
   it("optOutGaps contains exactly the absent-without-reason names", () => {
     expect(optOutGaps(statuses)).toEqual(["d"]);
+  });
+
+  it("extraNames contains exactly the extra names", () => {
+    expect(extraNames(statuses)).toEqual(["i"]);
   });
 });
 
@@ -317,6 +362,16 @@ describe("computeCurrencyMetric", () => {
     ];
     const metric = computeCurrencyMetric(statuses);
     expect(metric).toEqual({ entitledCount: 3, currentCount: 1, absentWithoutReasonCount: 0, currencyShare: 1 / 3 });
+  });
+
+  it("does not count extra installs toward entitledCount", () => {
+    const statuses: PackageCurrency[] = [
+      { state: "current", name: "a", installedVersion: "1.0.0" },
+      { state: "extra", name: "b", installedVersion: "0.1.0" },
+      { state: "opted-out-and-installed", name: "c", installedVersion: "1.0.0", reason: "not here" },
+    ];
+    const metric = computeCurrencyMetric(statuses);
+    expect(metric).toEqual({ entitledCount: 2, currentCount: 1, absentWithoutReasonCount: 0, currencyShare: 0.5 });
   });
 });
 
@@ -362,6 +417,13 @@ describe("currencyVerdict", () => {
 
   it("does not let a recorded absence taint the verdict", () => {
     expect(currencyVerdict([{ state: "absent-with-reason", name: "a", reason: "not adopted here" }])).toBe("satisfied");
+  });
+
+  it("folds extra and opted-out-and-installed to violated, never current", () => {
+    expect(currencyVerdict([{ state: "extra", name: "a", installedVersion: "1.0.0" }])).toBe("violated");
+    expect(
+      currencyVerdict([{ state: "opted-out-and-installed", name: "a", installedVersion: "1.0.0", reason: "not here" }]),
+    ).toBe("violated");
   });
 
   // Precedence matters: a run that could not evaluate part of the set cannot

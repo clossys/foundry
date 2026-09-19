@@ -5,6 +5,29 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.5] - 2026-09-19
+
+### Changed
+
+- Patch version bump only, to obtain a fresh
+  `governance/release-qualifications/` record path. The 0.2.4 record was
+  introduced in a commit that also changed an unrelated test file; the
+  single-introduction-commit invariant refuses that shape, so 0.2.4 cannot
+  be published. No functional change from 0.2.4.
+
+## [0.2.4] - 2026-09-19
+
+### Added
+
+- First-wave work items accept optional `act`: `install` (default), `remove`,
+  or `relocate`. Pre-work kinds include `remove` and `relocate`, so taking a
+  package off a hub or moving it is typed work rather than free-text.
+- Optional caller-supplied `placementEvidence` (`schemaVersion` 1) of missing,
+  stale, wrong-wiring, over-install, and hub-versus-product cells. Validation
+  joins each cell to a matching first-wave act or to `prerequisite` / `remove`
+  / `relocate` pre-work. This package still has no filesystem or GitHub I/O;
+  a connector fills the JSON from hub-tree observations.
+
 ## [0.2.3] - 2026-09-17
 
 ### Added
