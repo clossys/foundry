@@ -405,6 +405,20 @@ test("accepts immutable v1 history and closed v2 Starter raw 0/1/2 evidence", ()
   assert.deepEqual(rules(record), []);
   assert.deepEqual([...new Set(record.transcript.observations.filter((item) => item.kind === "case").map((item) => item.rawCaseEvidence.exitCode))].sort(), [0, 1, 2]);
 });
+test("v2 Starter raw argv accepts the installer-linked bin and refuses a different .bin", () => {
+  const linked = rawStarterV2Record();
+  const linkedArgv1 = `$TEMP/node_modules/.bin/${["foundry", "starter"].join("-")}`;
+  for (const observation of linked.transcript.observations.filter((item) => item.kind === "case")) {
+    observation.rawCaseEvidence.argv[1] = linkedArgv1;
+  }
+  refreshTranscriptDigest(linked);
+  assert.deepEqual(rules(linked), []);
+
+  const other = rawStarterV2Record();
+  other.transcript.observations.find((item) => item.kind === "case").rawCaseEvidence.argv[1] = "$TEMP/node_modules/.bin/other-check";
+  refreshTranscriptDigest(other);
+  assert.ok(rules(other).includes("raw-case-argv"));
+});
 test("help and case observations accept historical node-direct and current installed-bin launches", () => {
   const historical = source();
   assert.ok(historical.transcript.observations.some((item) => item.kind === "help" && item.launch === "node-direct"));
