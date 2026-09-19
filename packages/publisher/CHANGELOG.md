@@ -3,6 +3,31 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.4.5] - 2026-09-18
+
+### Added
+
+- Documented installation against the public npm registry
+  (`https://registry.npmjs.org`) and that installing needs no authentication.
+- Stated the charter close condition in the README: independent consumer
+  evidence of `verified publication rate`, computed by
+  `assessVerifiedPublicationRate()`. An empty evaluated set is
+  indeterminate, never a perfect rate of 1. `publisher-media-check` and
+  `publisher-record-check` remain the gates they are; neither is this
+  rate. The record half still records and does not judge.
+- Declared `foundry.assessment` against a new mapped `publisher-rate-check`
+  bin with `invocation: "single-json-input"`. The two existing publisher
+  bins remain gates and are not the assessment surface. Advisor remains
+  the only required first-day role.
+- Public `./assessment` subpath for `assessVerifiedPublicationRate`.
+- `publisher-rate-check assessment.json`: prints the `verified publication
+  rate` report and exits on the `0` / `1` / `2` ternary.
+
+### Notes
+
+- This does not claim the position is closed. Qualification of `0.4.5` is
+  deferred under #833.
+
 ## [0.4.4] - 2026-09-16
 
 ### Fixed

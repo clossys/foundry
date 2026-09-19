@@ -1,7 +1,7 @@
 /**
  * This file is NOT a public entry point — `package.json` deliberately
  * declares no `"."` export. Import an explicit `@clossys/publisher`
- * subpath instead: `/core`, `/media`, `/web`, `/document`, `/email`,
+ * subpath instead: `/assessment`, `/core`, `/media`, `/web`, `/document`, `/email`,
  * `/print`, `/image`, `/slides`, or the record half's `/record`.
  * This barrel exists only so the same names are reachable from one place
  * for internal tooling (see `scripts/check-readme-parity.mjs` in the

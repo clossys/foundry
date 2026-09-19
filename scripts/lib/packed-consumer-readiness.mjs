@@ -62,6 +62,7 @@ const designerReactExports = [
   "@clossys/designer/theme",
 ];
 const publisherExports = [
+  "@clossys/publisher/assessment",
   "@clossys/publisher/core",
   "@clossys/publisher/document",
   "@clossys/publisher/email",
