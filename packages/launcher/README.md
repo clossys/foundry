@@ -8,6 +8,21 @@ The hub inventories where Foundry packages are installed and coordinates
 engagement. It is not a product application and does not receive a dump of
 the catalogue.
 
+## Health report and staleness
+
+After create, resume, or appoint — and on every resume — the command prints
+a read-only health report. It scans all four dependency buckets
+(`dependencies`, `devDependencies`, `optionalDependencies`,
+`peerDependencies`) for the Advisor pin and for extra `@clossys/*` names.
+When the live registry version is known, each pin is graded against it: a
+pin older than live is a `stale pin` finding and marks the report
+**degraded**. Exit stays 0 on resume (the report is advisory); adopt prints
+the same report and an unparseable pin-versus-live comparison is noted as
+indeterminate rather than stale. `checkInventoryEntries()` additionally
+validates hub inventory ids read-only, marking ids whose repository no
+longer resolves (skipped with a note when `gh` is unavailable).
+
+
 ## Install
 
 The get-started command is the package name:
@@ -22,7 +37,7 @@ mapping for `@clossys`. Pin an exact version once you depend on the library
 API:
 
 ```bash
-npm install --save-dev --save-exact @clossys/launcher@0.1.1
+npm install --save-dev --save-exact @clossys/launcher@0.1.2
 ```
 
 ## How to run it
@@ -38,8 +53,8 @@ silent fallback.
 | Current directory | What happens |
 | --- | --- |
 | Empty | Creates `{owner}/workspace` from the in-package skeleton, or clones that hub if it already exists. |
-| Already a hub (generated marker; packed template `skeleton/.clossys/workspace.json`) | Resumes. No new repository. |
-| Any other GitHub repository you control | Appoints it as the account hub. Keeps the existing name and files. Writes the hub marker. Leaves an existing `@clossys/advisor` pin in whichever bucket it already occupies; pins live Advisor in `devDependencies` only when missing. Refuses if the generated hub inventory is missing or empty (packed template `skeleton/.clossys/inventory.json`; that generated path does not ship) unless `--inventory <path>` supplies a populated document. Does not rewrite the lockfile or dump the catalogue. Prints a read-only health report. |
+| Already a hub (generated marker; packed template `skeleton/.clossys/workspace.json`) | Resumes. No new repository. `--inventory` here is refused with a pointer to the appointed hub's own `.clossys/inventory.json`. |
+| Any other GitHub repository you control | Appoints it as the account hub. Keeps the existing name and files. Refuses when the working tree has uncommitted changes (`git status --porcelain` non-empty) — the refusal names the offending remote host when the origin is not on github.com. Refuses when `CLOSSYS_OWNER` names a different account than the repository's github.com origin owner. Writes the hub marker. Leaves an existing `@clossys/advisor` pin in whichever bucket it already occupies; pins live Advisor in `devDependencies` only when missing. Refuses if the generated hub inventory is missing or empty (packed template `skeleton/.clossys/inventory.json`; that generated path does not ship) unless `--inventory <path>` supplies a populated document — or, when the on-disk inventory is already populated and `--inventory` is also supplied, merges the two by repository id (on-disk order first, new ids appended, first occurrence of an id wins). Does not rewrite the lockfile or dump the catalogue. Prints a read-only health report. |
 
 It does not have to be a brand-new exclusive repository, and it does not
 have to already match a Foundry layout. Informal "workspace-looking" trees
@@ -68,7 +83,7 @@ Exit codes preserve the ternary:
 | Exit | State | Meaning |
 | --- | --- | --- |
 | `0` | `satisfied` | Created, resumed, or appointed the hub. The message includes a read-only health report. |
-| `1` | `violated` | Known refusal: not GitHub, not empty, missing appoint inventory, or the supplier tree. |
+| `1` | `violated` | Known refusal: not GitHub, not empty, missing appoint inventory, the supplier tree, uncommitted changes in the appoint tree, or a `CLOSSYS_OWNER` that disagrees with the origin owner. |
 | `2` | `indeterminate` | Missing `gh`, unreadable registry pin, or an owner that could not be inferred. |
 
 `launcher-check` grades a captured observation JSON through `planWorkspace` and does not create a hub. Same ternary: 0 is a create/resume/adopt plan, 1 is a known refusal, 2 could not run or could not decide. Appoint grades as a plan only when the observation already records a populated inventory; `--inventory` is a live CLI flag, not a check-cli input.
@@ -85,10 +100,12 @@ Exit codes preserve the ternary:
 | `inspectInventory()` | Classifies inventory JSON as missing, empty, or populated. |
 | `reportHubHealth()` | Read-only pin and inventory report. Does not install or uninstall. |
 | `formatHubHealth()` | Human lines plus a `health:` JSON line for the same report. |
+| `hasAdvisorPin()` | True when a manifest already pins Advisor in any dependency bucket. |
+| `checkInventoryEntries()` | Read-only inventory id validation through `gh repo view` (batched; skips with a note when `gh` is unavailable). |
 | `DEFAULT_REPOSITORY_NAME` | Default new-hub repository name (`workspace`). Used only when creating, never when appointing. |
 | `WORKSPACE_MARKER_REL` | Relative path of the hub marker. |
 | `WORKSPACE_INVENTORY_REL` | Relative path of the hub inventory. |
-| `CommandResult` / `CwdObservation` / `HubDocument` / `HubHealthReport` / `InventoryObservation` / `WorkspaceApplyResult` / `WorkspaceDecision` / `WorkspaceHost` / `WorkspaceObservation` / `WorkspacePlan` / `WorkspaceRefusal` / `WorkspaceState` | Typed host, observation, plan, health, and outcome contracts. |
+| `CommandResult` / `CwdObservation` / `DependencyBucket` / `HubDocument` / `HubHealthReport` / `InventoryObservation` / `InventoryValidationEntry` / `InventoryValidationReport` / `PinFinding` / `PinGrade` / `WorkspaceApplyResult` / `WorkspaceDecision` / `WorkspaceHost` / `WorkspaceObservation` / `WorkspacePlan` / `WorkspaceRefusal` / `WorkspaceState` | Typed host, observation, plan, health, and outcome contracts. |
 
 ## Why this is not Advisor, Starter, Builder, installer, creator, or a connector
 

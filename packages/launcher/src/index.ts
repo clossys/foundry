@@ -1,7 +1,9 @@
 /** Consumer-owned workspace hub scaffolder: create, resume, or appoint a GitHub repository. */
 export {
   applyWorkspacePlan,
+  checkInventoryEntries,
   formatHubHealth,
+  hasAdvisorPin,
   inspectInventory,
   isHubDocument,
   observeWorkspace,
@@ -15,9 +17,14 @@ export {
 export type {
   CommandResult,
   CwdObservation,
+  DependencyBucket,
   HubDocument,
   HubHealthReport,
   InventoryObservation,
+  InventoryValidationEntry,
+  InventoryValidationReport,
+  PinFinding,
+  PinGrade,
   WorkspaceApplyResult,
   WorkspaceDecision,
   WorkspaceHost,

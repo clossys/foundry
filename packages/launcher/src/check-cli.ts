@@ -2,7 +2,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { isDirectInvocation } from "./cli.js";
-import { planWorkspace } from "./core.js";
+import { isHubDocument, planWorkspace } from "./core.js";
 import type {
   CommandResult,
   CwdObservation,
@@ -56,6 +56,9 @@ function parseCwd(value: unknown): CwdObservation {
   if (value.githubRepository !== undefined && !isText(value.githubRepository)) {
     throw new LauncherCheckInputError("observation.cwd.githubRepository must be a string");
   }
+  if (value.hub !== undefined && !isHubDocument(value.hub)) {
+    throw new LauncherCheckInputError("observation.cwd.hub must be a v1 account-hub marker (schemaVersion, kind, owner, repository)");
+  }
   const inventory = parseInventoryObservation(value.inventory);
   return {
     absolutePath: value.absolutePath,
@@ -64,6 +67,7 @@ function parseCwd(value: unknown): CwdObservation {
     looksLikeFoundry: value.looksLikeFoundry,
     ...(isText(value.githubOwner) ? { githubOwner: value.githubOwner } : {}),
     ...(isText(value.githubRepository) ? { githubRepository: value.githubRepository } : {}),
+    ...(isHubDocument(value.hub) ? { hub: value.hub } : {}),
     ...(inventory === undefined ? {} : { inventory }),
   };
 }

@@ -61,7 +61,11 @@ export function main(argv: readonly string[], host: WorkspaceHost, skeletonRoot:
     return exitCodeFor(decision.state);
   }
   if (parsed.inventoryPath !== undefined && decision.action !== "adopt") {
-    console.error("launcher: --inventory is only valid when appointing a GitHub repository");
+    if (decision.action === "resume") {
+      console.error("launcher: this hub is already appointed; edit .clossys/inventory.json to change its inventory");
+    } else {
+      console.error("launcher: --inventory is only valid when appointing a GitHub repository");
+    }
     return 1;
   }
   const result = applyWorkspacePlan(host, decision, skeletonRoot);

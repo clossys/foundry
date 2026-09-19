@@ -3,9 +3,13 @@ import { fileURLToPath } from "node:url";
 import type {
   CommandResult,
   CwdObservation,
+  DependencyBucket,
   HubDocument,
   HubHealthReport,
   InventoryObservation,
+  InventoryValidationEntry,
+  InventoryValidationReport,
+  PinFinding,
   WorkspaceApplyResult,
   WorkspaceDecision,
   WorkspaceHost,
@@ -19,6 +23,13 @@ export const DEFAULT_REPOSITORY_NAME = "workspace";
 export const WORKSPACE_MARKER_REL = ".clossys/workspace.json";
 export const WORKSPACE_INVENTORY_REL = ".clossys/inventory.json";
 export const ADVISOR_PACKAGE = "@clossys/advisor";
+
+const DEPENDENCY_BUCKETS: readonly DependencyBucket[] = [
+  "dependencies",
+  "devDependencies",
+  "optionalDependencies",
+  "peerDependencies",
+];
 
 const OWNER = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$/;
 const REPO = /^[A-Za-z0-9._-]+$/;
@@ -87,6 +98,34 @@ export function parseGitHubRemote(url: string): { owner: string; repository: str
   } catch {
     return null;
   }
+}
+
+function readJson(host: WorkspaceHost, path: string): unknown {
+  const raw = host.readText(path);
+  if (raw === null) return undefined;
+  try {
+    return JSON.parse(raw) as unknown;
+  } catch {
+    return undefined;
+  }
+}
+
+/** Tiny semver-ish compare of `a` versus `b`: -1 older, 0 equal, 1 newer. Unparseable versions are indeterminate (null). */
+function compareVersions(a: string, b: string): -1 | 0 | 1 | null {
+  const parse = (version: string): readonly number[] | null => {
+    const match = version.trim().match(/^v?(\d+)\.(\d+)\.(\d+)$/);
+    return match ? [Number(match[1]), Number(match[2]), Number(match[3])] : null;
+  };
+  const left = parse(a);
+  const right = parse(b);
+  if (!left || !right) return null;
+  for (let index = 0; index < 3; index += 1) {
+    const l = left[index] ?? 0;
+    const r = right[index] ?? 0;
+    if (l < r) return -1;
+    if (l > r) return 1;
+  }
+  return 0;
 }
 
 /** True when the marker is a v1 account-hub document. */
@@ -159,6 +198,12 @@ function commandAvailable(host: WorkspaceHost, command: string): boolean {
   return result.status === 0;
 }
 
+/** True when the tree already pins Advisor in some bucket, so adopt would not need a new version. */
+export function hasAdvisorPin(manifest: unknown): boolean {
+  if (!isRecord(manifest)) return false;
+  return DEPENDENCY_BUCKETS.some((bucket) => clossysNames(manifest[bucket], new Set()) !== undefined);
+}
+
 /** Collects GitHub owner, cwd shape, default-hub presence, and the public Advisor pin. */
 export function observeWorkspace(host: WorkspaceHost): WorkspaceObservation {
   const cwd = host.cwd;
@@ -196,9 +241,14 @@ export function observeWorkspace(host: WorkspaceHost): WorkspaceObservation {
     const viewed = host.run("gh", ["repo", "view", `${ownerGuess}/${DEFAULT_REPOSITORY_NAME}`, "--json", "name"]);
     if (viewed.status === 0) remoteDefaultHub = { owner: ownerGuess, repository: DEFAULT_REPOSITORY_NAME };
   }
-  const viewedAdvisor = host.run("npm", ["view", ADVISOR_PACKAGE, "version"]);
-  const version = viewedAdvisor.stdout.trim();
-  if (viewedAdvisor.status === 0 && /^\d+\.\d+\.\d+$/.test(version)) advisorVersion = version;
+  // Skip the registry read when the tree already pins Advisor in some bucket:
+  // adopt leaves an existing pin alone, so no live version is needed to plan it.
+  const manifestPinsAdvisor = hasAdvisorPin(readJson(host, join(cwd, "package.json")));
+  if (!manifestPinsAdvisor) {
+    const viewedAdvisor = host.run("npm", ["view", ADVISOR_PACKAGE, "version"]);
+    const version = viewedAdvisor.stdout.trim();
+    if (viewedAdvisor.status === 0 && /^\d+\.\d+\.\d+$/.test(version)) advisorVersion = version;
+  }
 
   const cwdObservation: CwdObservation = {
     absolutePath: cwd,
@@ -245,19 +295,43 @@ function resolveOwner(observation: WorkspaceObservation, host: WorkspaceHost): {
  * Decides create, resume, or adopt from a cwd observation.
  * Appointing means: run this from the GitHub repository that should own the hub.
  */
+function readInventoryRepositories(host: WorkspaceHost, source: string, label: string): readonly string[] {
+  const raw = host.readText(source);
+  if (raw === null) return [];
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!isRecord(parsed) || !Array.isArray(parsed.repositories)) return [];
+    return parsed.repositories.map((entry) => {
+      if (isRecord(entry) && isText(entry.id)) return entry.id.trim();
+      return "";
+    });
+  } catch {
+    throw new Error(`${label} is not readable inventory JSON (schemaVersion 1, repositories array)`);
+  }
+}
+
+/**
+ * Resolves which repositories the adopt plan inventories. When the on-disk hub
+ * inventory is populated AND --inventory is supplied, the two are merged by id:
+ * on-disk entries keep their order, ids not already on disk are appended in
+ * supplied-file order, and the first occurrence of an id wins; the plan carries
+ * the merged ids for applyWorkspacePlan to write. When both are empty or
+ * missing, adopt refuses rather than appointing an inventory-less hub.
+ */
 function resolveAdoptInventory(
   host: WorkspaceHost,
   cwd: CwdObservation,
   inventoryPath: string | undefined,
-): { inventorySource?: string } | WorkspaceRefusal {
-  if (cwd.inventory?.status === "populated") return {};
+): { inventorySource?: string; mergedInventoryIds?: readonly string[] } | WorkspaceRefusal {
   const trimmed = inventoryPath?.trim();
-  if (!trimmed) {
+  const onDiskPopulated = cwd.inventory?.status === "populated";
+  if (!onDiskPopulated && !trimmed) {
     return refuse(
       "violated",
       "appointing requires a populated generated hub inventory (packed template skeleton/.clossys/inventory.json; the generated path does not ship), or --inventory <path> to a populated inventory document",
     );
   }
+  if (!trimmed) return {};
   const resolved = resolve(cwd.absolutePath, trimmed);
   const imported = inspectInventory(host.readText(resolved));
   if (imported.status !== "populated") {
@@ -266,7 +340,22 @@ function resolveAdoptInventory(
       "--inventory must point at a populated inventory document (schemaVersion 1, nonempty repositories)",
     );
   }
-  return { inventorySource: resolved };
+  if (!onDiskPopulated) return { inventorySource: resolved };
+  const merged: string[] = [];
+  const seen = new Set<string>();
+  for (const id of readInventoryRepositories(host, join(cwd.absolutePath, WORKSPACE_INVENTORY_REL), "the on-disk hub inventory")) {
+    if (id !== "" && !seen.has(id)) {
+      seen.add(id);
+      merged.push(id);
+    }
+  }
+  for (const id of readInventoryRepositories(host, resolved, "--inventory")) {
+    if (id !== "" && !seen.has(id)) {
+      seen.add(id);
+      merged.push(id);
+    }
+  }
+  return { mergedInventoryIds: merged };
 }
 
 export function planWorkspace(
@@ -275,6 +364,20 @@ export function planWorkspace(
   options: { inventoryPath?: string } = {},
 ): WorkspaceDecision {
   const { cwd } = observation;
+  const envOwner = observation.envOwner ?? (host.env.CLOSSYS_OWNER?.trim() || undefined);
+  if (
+    envOwner !== undefined &&
+    !cwd.looksLikeFoundry &&
+    cwd.hub === undefined &&
+    cwd.git &&
+    cwd.githubOwner !== undefined &&
+    cwd.githubOwner !== envOwner
+  ) {
+    return refuse(
+      "violated",
+      `CLOSSYS_OWNER is "${envOwner}" but the github.com origin here is owned by "${cwd.githubOwner}"; refusing to appoint a marker for the wrong account`,
+    );
+  }
   if (cwd.looksLikeFoundry) {
     return refuse(
       "violated",
@@ -303,6 +406,7 @@ export function planWorkspace(
       directory: cwd.absolutePath,
       advisorVersion: observation.advisorVersion,
       ...(imported.inventorySource === undefined ? {} : { inventorySource: imported.inventorySource }),
+      ...(imported.mergedInventoryIds === undefined ? {} : { mergedInventoryIds: imported.mergedInventoryIds }),
     };
   }
   if (cwd.git) {
@@ -404,9 +508,8 @@ function mergeAdvisorPin(
     throw new Error("existing package.json is unreadable JSON");
   }
   const extra = new Set<string>();
-  const inDependencies = clossysNames(manifest.dependencies, extra);
-  const inDevDependencies = clossysNames(manifest.devDependencies, extra);
-  if (inDependencies !== undefined || inDevDependencies !== undefined) return;
+  const pinnedSomewhere = DEPENDENCY_BUCKETS.some((bucket) => clossysNames(manifest[bucket], extra) !== undefined);
+  if (pinnedSomewhere) return;
   const devDependencies = isRecord(manifest.devDependencies) ? { ...manifest.devDependencies } : {};
   devDependencies[ADVISOR_PACKAGE] = advisorVersion;
   manifest.devDependencies = devDependencies;
@@ -423,7 +526,30 @@ function copySkeleton(host: WorkspaceHost, skeletonRoot: string, plan: Workspace
   writeSkeletonFile(host, plan.directory, "CLAUDE.md", CONSUMER_CLAUDE_MD);
 }
 
+/** Refuses adopt when the working tree has uncommitted changes; names a non-github.com remote host. */
+function assertCleanTree(host: WorkspaceHost, directory: string): void {
+  const status = host.run("git", ["status", "--porcelain"], { cwd: directory });
+  if (status.status === 0 && status.stdout.trim() !== "") {
+    const origin = host.run("git", ["remote", "get-url", "origin"], { cwd: directory }).stdout.trim();
+    let where = "this checkout";
+    if (origin !== "") {
+      try {
+        const parsed = new URL(origin);
+        if (parsed.protocol === "ssh:" || parsed.protocol === "https:" || parsed.protocol === "http:") {
+          where = `the repository on ${parsed.hostname}`;
+        }
+      } catch {
+        /* ssh form or unparsable; keep the generic host */
+      }
+    }
+    throw new Error(
+      `${where} has uncommitted changes (git status --porcelain is nonempty); commit or stash them before appointing it as the account hub`,
+    );
+  }
+}
+
 function adoptHubFiles(host: WorkspaceHost, skeletonRoot: string, plan: WorkspacePlan & { advisorVersion: string }): void {
+  assertCleanTree(host, plan.directory);
   const marker = {
     schemaVersion: 1,
     kind: "account-hub",
@@ -431,7 +557,15 @@ function adoptHubFiles(host: WorkspaceHost, skeletonRoot: string, plan: Workspac
     repository: `${plan.owner}/${plan.repository}`,
   };
   writeSkeletonFile(host, plan.directory, WORKSPACE_MARKER_REL, `${JSON.stringify(marker, null, 2)}\n`);
-  if ("inventorySource" in plan && typeof plan.inventorySource === "string") {
+  if ("mergedInventoryIds" in plan && Array.isArray(plan.mergedInventoryIds)) {
+    const document = { schemaVersion: 1, repositories: plan.mergedInventoryIds.map((id) => ({ id })) };
+    writeSkeletonFile(
+      host,
+      plan.directory,
+      WORKSPACE_INVENTORY_REL,
+      `${JSON.stringify(document, null, 2)}\n`,
+    );
+  } else if ("inventorySource" in plan && typeof plan.inventorySource === "string") {
     const raw = host.readText(plan.inventorySource);
     if (raw === null || inspectInventory(raw).status !== "populated") {
       throw new Error("inventory source is not a populated inventory document");
@@ -461,53 +595,116 @@ function requireZero(result: CommandResult, label: string): void {
   }
 }
 
-/** Read-only pin and inventory report. Does not install or uninstall. */
+/**
+ * Read-only pin and inventory report. Does not install or uninstall. Scans all
+ * four dependency buckets; grades each pinned advisor version against the live
+ * registry version, marking a pin older than live as a stale-pin finding and a
+ * degraded report.
+ */
 export function reportHubHealth(host: WorkspaceHost, directory: string, liveAdvisorVersion?: string): HubHealthReport {
   const extra = new Set<string>();
-  let dependencies: string | undefined;
-  let devDependencies: string | undefined;
+  const pins: Partial<Record<DependencyBucket, string>> = {};
   const manifestRaw = host.readText(join(directory, "package.json"));
   if (manifestRaw !== null) {
     try {
       const parsed: unknown = JSON.parse(manifestRaw);
       if (isRecord(parsed)) {
-        dependencies = clossysNames(parsed.dependencies, extra);
-        devDependencies = clossysNames(parsed.devDependencies, extra);
+        for (const bucket of DEPENDENCY_BUCKETS) {
+          const pin = clossysNames(parsed[bucket], extra);
+          if (pin !== undefined) pins[bucket] = pin;
+        }
       }
     } catch {
       /* unreadable manifest is reported as missing pins */
     }
   }
+  const pinFindings: PinFinding[] = Object.entries(pins).flatMap(([bucket, pinned]): PinFinding[] => {
+    if (liveAdvisorVersion === undefined) return [];
+    const comparison = compareVersions(pinned, liveAdvisorVersion);
+    if (comparison === null) {
+      return [{ bucket: bucket as DependencyBucket, pinned, grade: "indeterminate", note: `cannot compare ${pinned} with live ${liveAdvisorVersion}` }];
+    }
+    return comparison < 0
+      ? [{ bucket: bucket as DependencyBucket, pinned, grade: "stale", note: `pinned ${pinned} is older than live ${liveAdvisorVersion}` }]
+      : [];
+  });
   return {
     marker: readHub(host, directory) === undefined ? "missing" : "present",
     inventory: inspectInventory(host.readText(join(directory, WORKSPACE_INVENTORY_REL))),
     advisorPin: {
-      ...(dependencies === undefined ? {} : { dependencies }),
-      ...(devDependencies === undefined ? {} : { devDependencies }),
+      ...(pins.dependencies === undefined ? {} : { dependencies: pins.dependencies }),
+      ...(pins.devDependencies === undefined ? {} : { devDependencies: pins.devDependencies }),
+      ...(pins.optionalDependencies === undefined ? {} : { optionalDependencies: pins.optionalDependencies }),
+      ...(pins.peerDependencies === undefined ? {} : { peerDependencies: pins.peerDependencies }),
       ...(liveAdvisorVersion === undefined ? {} : { live: liveAdvisorVersion }),
     },
-    dualPin: dependencies !== undefined && devDependencies !== undefined,
+    dualPin: Object.values(pins).filter((value) => value !== undefined).length > 1,
     extraClossys: [...extra].sort(),
+    pinFindings,
+    degraded: pinFindings.some((finding) => finding.grade === "stale"),
   };
 }
 
 export function formatHubHealth(report: HubHealthReport): string {
   const pinParts: string[] = [];
-  if (report.advisorPin.dependencies !== undefined) pinParts.push(`dependencies ${report.advisorPin.dependencies}`);
-  if (report.advisorPin.devDependencies !== undefined) pinParts.push(`devDependencies ${report.advisorPin.devDependencies}`);
+  for (const bucket of DEPENDENCY_BUCKETS) {
+    const pinned = report.advisorPin[bucket];
+    if (pinned !== undefined) pinParts.push(`${bucket} ${pinned}`);
+  }
   const pin = pinParts.length === 0 ? "missing" : pinParts.join(" and ");
   const live = report.advisorPin.live === undefined ? "" : `; live ${report.advisorPin.live}`;
   const extra = report.extraClossys.length === 0 ? "none" : report.extraClossys.join(", ");
   const inventory =
     report.inventory.status === "populated" ? `populated (${report.inventory.count})` : report.inventory.status;
+  const findings = report.pinFindings.map((finding) =>
+    finding.note !== undefined ? `${finding.bucket} ${finding.note}` : `${finding.bucket} ${finding.grade}`,
+  );
+  const findingLine = findings.length === 0 ? "none" : findings.join("; ");
   return [
     `hub marker: ${report.marker}`,
     `inventory: ${inventory}`,
     `advisor pin: ${pin}${live}`,
     `dual pin: ${report.dualPin ? "yes" : "no"}`,
     `extra @clossys/*: ${extra}`,
+    `pin findings: ${findingLine}`,
+    `degraded: ${report.degraded ? "yes" : "no"}`,
     `health: ${JSON.stringify(report)}`,
   ].join("\n");
+}
+
+/**
+ * Read-only inventory validation: runs `gh repo view --json name` for each
+ * repository id, batched. Tolerates a missing or failing `gh` by skipping with
+ * a note; marks ids whose check fails as unknown. Never mutates the inventory.
+ */
+export function checkInventoryEntries(host: WorkspaceHost, directory: string): InventoryValidationReport {
+  const raw = host.readText(join(directory, WORKSPACE_INVENTORY_REL));
+  const observation = inspectInventory(raw);
+  if (observation.status !== "populated") {
+    return { entries: [], skipped: true, note: `inventory is ${observation.status}; nothing to validate` };
+  }
+  const available = commandAvailable(host, "gh");
+  if (!available) {
+    return { entries: [], skipped: true, note: "`gh` is unavailable; inventory ids were not validated" };
+  }
+  const ids = readInventoryRepositories(host, join(directory, WORKSPACE_INVENTORY_REL), "the hub inventory").filter(
+    (id) => id !== "",
+  );
+  const batch = 20;
+  const entries: InventoryValidationEntry[] = [];
+  for (let index = 0; index < ids.length; index += batch) {
+    for (const id of ids.slice(index, index + batch)) {
+      const viewed = host.run("gh", ["repo", "view", id, "--json", "name"]);
+      if (viewed.status === 0) {
+        entries.push({ id, known: true });
+      } else if (viewed.status === 127 || (viewed.status === null && viewed.stderr.includes("ENOENT"))) {
+        entries.push({ id, known: null, note: "`gh` unavailable; not checked" });
+      } else {
+        entries.push({ id, known: false, note: "`gh repo view` failed; the repository may not exist" });
+      }
+    }
+  }
+  return { entries, skipped: false };
 }
 
 function withHealth(
