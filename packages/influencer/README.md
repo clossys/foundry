@@ -9,7 +9,9 @@ npm install @clossys/influencer
 
 This package is published to the public npm registry, `https://registry.npmjs.org`.
 Installing it needs no authentication: no npm token, no `.npmrc` registry
-override, and no GitHub credential of any kind.
+override, and no GitHub credential of any kind. Hub placement across
+repositories is appointed by `@clossys/launcher`; this package declares no
+hub I/O.
 
 ## Qualified response yield per thousand
 

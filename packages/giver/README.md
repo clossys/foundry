@@ -134,7 +134,8 @@ npm install @clossys/giver
 
 `@clossys/giver` publishes to `https://registry.npmjs.org` with public
 access, and installing it needs no GitHub personal access token or other
-credential.
+credential. Hub placement across repositories is appointed by
+`@clossys/launcher`; this package declares no hub I/O.
 
 ```ts
 import { checkObligationDischarge, decideOutcome } from "@clossys/giver";

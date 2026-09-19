@@ -119,7 +119,9 @@ npm install @clossys/keeper
 ```
 
 This package is published to `https://registry.npmjs.org` under public
-access; installing it requires no authentication of any kind.
+access; installing it requires no authentication of any kind. Hub placement
+across repositories is appointed by `@clossys/launcher`; this package
+declares no hub I/O.
 
 ```ts
 import { checkDisposal, decideHolding } from "@clossys/keeper";

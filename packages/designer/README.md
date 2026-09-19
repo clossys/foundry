@@ -4570,6 +4570,28 @@ components, not a general-purpose numerical or color library (see
 
 Node 20+. React 18+. Tailwind CSS v4.
 
+All six peers declared in `peerDependencies` — `react`, `react-dom`,
+`react-aria-components`, `tailwind-merge`, `tailwindcss`, and
+`@internationalized/date` — are optional (`peerDependenciesMeta`), following
+the same per-subpath pattern `@clossys/publisher` documents: which ones a
+given import needs depends on the subpath you import, not on the package as
+a whole.
+
+- No peers: `tokens`, every CSS subpath (`tokens.css`, `theme.css`,
+  `compiled.css`, `brand-template.css`), `icons`, `gate`, and
+  `render-environment`.
+- `react`: `atoms`, `blocks`, `shell`, `charts`, `theme`, and each `/server`
+  subpath.
+- `react-aria-components`: `atoms`, `blocks`, and `shell` only — `charts`
+  and `theme` render without it.
+- `tailwind-merge`: imported by every React component subpath through the
+  shared class-merge helper; a missing install degrades to an unmerged
+  class join rather than failing, and `assertTailwindMergeVersion()` from
+  `tokens` catches an installed-but-out-of-range version.
+- Not imported by this package at all (consumer-owned): `react-dom` is
+  your own render call, and `@internationalized/date` is only needed when
+  you construct a `DateField` value.
+
 ## Licence
 
 MIT
