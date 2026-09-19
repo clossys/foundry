@@ -13,12 +13,47 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # After a merge-commit PR lands, GitHub pushes a merge commit whose tree
+  # equals the PR head that just passed required checks. Re-running every
+  # job on that commit consumes the Free-plan 20 concurrent GitHub-hosted
+  # job slots and queues the next stacked PR's `build and test`. Live
+  # qualification is not this workflow (publish.yml). This job always
+  # reports; others skip only when it writes duplicate=true. A detector
+  # failure leaves duplicate unset, which is not 'true', so CI still runs.
+  push-tree:
+    name: push-tree identity
+    runs-on: ubuntu-latest
+    outputs:
+      duplicate: ${{ steps.cmp.outputs.duplicate }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        with:
+          node-version: 20
+      - id: cmp
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_REF: ${{ github.ref }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" != "push" ] || [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "duplicate=false" >> "$GITHUB_OUTPUT"
+            echo "duplicate=false"
+            exit 0
+          fi
+          node scripts/push-tree-identical.mjs
+
   # Direct tooling is part of the public-package supply chain even when it is
   # not shipped as a runtime dependency. Audit the complete locked graph and
   # fail on high or critical advisories; lower severities remain visible in
   # the command output and are handled through the security issue queue.
   dependency-audit:
     name: dependency audit
+    needs: [push-tree]
+    if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -46,8 +81,8 @@ jobs:
   # lifecycle evidence does not depend on the job's own business outcome.
   credential-lifecycle:
     name: credential lifecycle (dependency-audit token)
-    needs: dependency-audit
-    if: always()
+    needs: [push-tree, dependency-audit]
+    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true')
     runs-on: ubuntu-latest
     permissions:
       # Job-level permissions REPLACE the workflow-level block for this job
@@ -85,6 +120,8 @@ jobs:
   # tested — the interesting failure here is disclosure, not a broken build.
   safety:
     name: publish safety
+    needs: [push-tree]
+    if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -399,8 +436,8 @@ jobs:
   # steps must be exercised on a real failure to prove anything at all.
   secret-scan-judgment:
     name: secret-scan (inspector judgment)
-    needs: safety
-    if: always()
+    needs: [push-tree, safety]
+    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true')
     runs-on: ubuntu-latest
     steps:
       # Full history, matching `safety`'s own checkout: `UNITS_SCANNED`
@@ -474,6 +511,8 @@ jobs:
 
   scope:
     name: scope drift
+    needs: [push-tree]
+    if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -499,6 +538,8 @@ jobs:
   # workflow prose or ambient npm configuration.
   registry:
     name: registry drift
+    needs: [push-tree]
+    if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -519,6 +560,8 @@ jobs:
   # a lifecycle script instead of a manifest field.
   prepublish-hook:
     name: prepublish hook drift
+    needs: [push-tree]
+    if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -545,6 +588,8 @@ jobs:
   # added there are recommended for promotion and why).
   root-entry:
     name: root entry policy drift
+    needs: [push-tree]
+    if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -571,6 +616,8 @@ jobs:
   # straight into `required_status_checks`.
   package-evidence:
     name: package state (declared vs. evidence)
+    needs: [push-tree]
+    if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -592,6 +639,8 @@ jobs:
   # dependency-free, shallow-checkout class as package-evidence.
   role-loop-archetypes:
     name: role-loop archetypes
+    needs: [push-tree]
+    if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -628,6 +677,8 @@ jobs:
   # recommendation on each of the three.
   controller-gates:
     name: controller gates (catalog, neutrality, repository-profile)
+    needs: [push-tree]
+    if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -706,6 +757,8 @@ jobs:
   # checkout is fine.
   workspace-links:
     name: workspace link integrity
+    needs: [push-tree]
+    if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -849,6 +902,8 @@ jobs:
   # needed and this job does.
   contrast:
     name: WCAG contrast gate (ui-contrast-check)
+    needs: [push-tree]
+    if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -873,6 +928,8 @@ jobs:
   # would mean the two contexts are no longer proof of the same thing.
   designer-contrast:
     name: WCAG contrast gate (designer-contrast-check)
+    needs: [push-tree]
+    if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -898,6 +955,8 @@ jobs:
   # `safety` job's gitleaks step already requires, not just node/npm.
   prose:
     name: prose quality (README parity, contamination classes)
+    needs: [push-tree]
+    if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -935,7 +994,8 @@ jobs:
 
   build:
     name: build and test
-    needs: [safety, scope]
+    needs: [push-tree]
+    if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -991,11 +1051,20 @@ jobs:
       # of conditions this treats as "uncertain, therefore run" and why an
       # empty diff is one of them.
       #
-      # This job keeps `needs: [safety, scope]` and every step above and
-      # below unconditional either way, so "build and test" -- a required
-      # status context -- always reports, whether or not these two steps
-      # ran inside it; nothing here can make the required check itself stop
-      # reporting.
+      # This job no longer waits for `safety`/`scope`. Both remain required
+      # merge contexts; sequencing them ahead of this job only saved runner
+      # minutes when safety failed, and on a merge train it added ~8 minutes
+      # of wall-clock before `build and test` could even start. Live
+      # qualification is still not this job.
+      #
+      # A job-level `if:` is allowed here only because it is true for every
+      # pull_request (the required context still reports). It skips a
+      # tree-identical push to main so the next PR is not queued behind a
+      # duplicate 18-minute job on the Free-plan 20 concurrent-job cap.
+      #
+      # Every step below stays unconditional on pull_request, so "build and
+      # test" always reports for a PR, whether or not the two expensive
+      # package-verification steps ran inside it.
       - name: Detect whether this change touches packages
         id: touch
         continue-on-error: true
@@ -1193,7 +1262,8 @@ jobs:
   # time when it is much more expensive to unwind.
   artifact:
     name: artifact safety (tarball)
-    needs: [safety, scope]
+    needs: [push-tree]
+    if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
