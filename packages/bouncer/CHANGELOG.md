@@ -3,6 +3,25 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.9] - 2026-09-19
+
+### Fixed
+
+- **`bouncer-check authority-reconciliation` now attributes the unreconciled
+  surface line to the failing provider (#1000).** The line printed
+  `Unreconciled grant surface: N` with no reference to which provider of
+  record failed, so in a multi-owner setup — one gate run covering every
+  owner's grants — a single provider's revocations surfaced as an
+  unattributed count the reader had to correlate against the finding lines
+  below it. When the surface is non-zero, the line now names the failing
+  side: `Unreconciled grant surface: 2 (providers: provider-a, provider-b).`,
+  taking each unreconciled finding's `providerId` — the consumer-authored,
+  host-owned reference the finding lines already print; a singular
+  `(provider: …)` form is used when exactly one provider failed, and the line
+  is unchanged when the surface is zero. No credential material is ever
+  printed: `providerId` is an opaque host-owned reference by schema. Exit
+  codes are unchanged, including `2` for unverifiable.
+
 ## [0.1.8] - 2026-09-18
 
 ### Added
