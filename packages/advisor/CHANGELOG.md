@@ -5,6 +5,16 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.5] - 2026-09-19
+
+### Changed
+
+- Patch version bump only, to obtain a fresh
+  `governance/release-qualifications/` record path. The 0.2.4 record was
+  introduced in a commit that also changed an unrelated test file; the
+  single-introduction-commit invariant refuses that shape, so 0.2.4 cannot
+  be published. No functional change from 0.2.4.
+
 ## [0.2.4] - 2026-09-19
 
 ### Added
