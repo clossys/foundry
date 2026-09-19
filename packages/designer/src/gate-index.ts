@@ -71,3 +71,10 @@ export type {
   ConformanceViolation,
   ConformanceViolationReason,
 } from "./environment-conformance.js";
+
+export { assessDesignConformanceRate } from "./design-conformance-rate.js";
+export type {
+  DesignConformanceRateAssessment,
+  DesignConformanceRateFinding,
+  DesignConformanceRateState,
+} from "./design-conformance-rate.js";
