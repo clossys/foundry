@@ -108,6 +108,12 @@ export { buildFactIndex, isTracedSurfaceForm } from "./fact-index.js";
 export type { FactIndex } from "./fact-index.js";
 
 export { checkFactsTraceability } from "./facts-gate.js";
+export { assessStrategyTraceabilityRate } from "./strategy-traceability-rate.js";
+export type {
+  StrategyTraceabilityRateAssessment,
+  StrategyTraceabilityRateFinding,
+  StrategyTraceabilityRateState,
+} from "./strategy-traceability-rate.js";
 export type {
   FactsGateFinding,
   FactsGateIgnored,

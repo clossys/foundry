@@ -3,6 +3,29 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.6] - 2026-09-18
+
+### Added
+
+- Documented installation against the public npm registry
+  (`https://registry.npmjs.org`) and that installing needs no authentication.
+- Stated the charter close condition in the README: independent consumer
+  evidence of `strategy traceability rate`, computed by
+  `assessStrategyTraceabilityRate()`. An empty evaluated set is
+  indeterminate, never a perfect rate of 1. `checkFactsTraceability`
+  remains the facts gate; it is not this combined rate.
+- Declared `foundry.assessment` against a new mapped `strategist-rate-check`
+  bin with `invocation: "single-json-input"`. `strategist-check` remains the
+  multi-mode CLI and is not the assessment surface. Advisor remains the
+  only required first-day role.
+- `strategist-rate-check assessment.json`: prints the `strategy
+  traceability rate` report and exits on the `0` / `1` / `2` ternary.
+
+### Notes
+
+- This does not claim the position is closed. Qualification of `0.1.6` is
+  deferred under #833.
+
 ## [0.1.5] - 2026-09-14
 
 ### Changed

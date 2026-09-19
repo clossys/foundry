@@ -90,7 +90,7 @@ test("all 20 publishable packages are exact-source bound to the catalogue and qu
     "@clossys/observer": "0.2.9",
     "@clossys/publisher": "0.4.4",
     "@clossys/starter": "0.1.7",
-    "@clossys/strategist": "0.1.5",
+    "@clossys/strategist": "0.1.6",
     "@clossys/writer": "0.3.8",
   };
   const packageKeys = (await readdir(new URL("../packages", import.meta.url))).sort();

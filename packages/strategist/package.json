@@ -1,6 +1,6 @@
 {
   "name": "@clossys/strategist",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -14,7 +14,8 @@
     }
   },
   "bin": {
-    "strategist-check": "dist/cli.js"
+    "strategist-check": "dist/cli.js",
+    "strategist-rate-check": "dist/strategy-traceability-rate-cli.js"
   },
   "files": [
     "dist",
@@ -25,6 +26,12 @@
     "LICENSE"
   ],
   "sideEffects": false,
+  "foundry": {
+    "assessment": {
+      "bin": "strategist-rate-check",
+      "invocation": "single-json-input"
+    }
+  },
   "description": "The strategist role: is it true, and is it us? Dependency-free validators for a consumer's own strategy records (facts, mission, positioning, markets, audiences, roadmap, brand essence/attributes/derivations), a typed reader over a consumer's strategy directory, and three gates reachable from one bin — a facts-traceability gate that fails when a numeric or superlative claim cannot be traced to a facts.json entry, a brand-coverage checker over brandable token slots, and a direction-currency check that reports a derivation still citing superseded direction. Ships the schema and the checkers; every consumer authors its own values.",
   "keywords": [
     "strategist",
