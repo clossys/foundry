@@ -389,7 +389,8 @@ Usage: strategist-check <strategy-dir> [scan-dir] [options]
   scan-dir       Directory to scan for prose/copy claims. Defaults to the current working directory.
 
 Options:
-  --help         Print this message and exit 0.
+  --help              Print this message and exit 0.
+  --facts-dir <dir>   Read facts from a directory of per-fact JSON files (each leaf a JSON array of Fact) instead of the strategy directory's flat facts.json. Mutually exclusive with facts.json — see below.
 ```
 
 Exit codes — the same three-state contract `@clossys/controller/gates`'
@@ -407,6 +408,34 @@ against: a missing or invalid `facts.json` (nothing trustworthy to check
 prose against) and a scan that matched zero files (nothing was actually
 scanned — "found nothing wrong" and "checked nothing" must never look the
 same in a report).
+
+#### `--facts-dir <dir>` — facts from a directory of leaves
+
+```bash
+npx strategist-check ./strategy ./docs --facts-dir ./strategy/facts
+```
+
+`--facts-dir` replaces the flat `facts.json` as the gate's ground truth:
+`<dir>` holds one JSON file per fact (or per fact group), each leaf a JSON
+array of `Fact` validated by the same rules the flat file follows. The
+directory must be a flat registry of leaves — subdirectories are not
+descended into, and every file in it must be accounted for:
+
+- a leaf that is not valid JSON, or does not validate as `Fact[]`, is
+  reported by name and the run exits `2`;
+- a non-JSON leaf (a stray `.md`, a CSV export) is refused too, never
+  silently skipped — an unaccounted-for file in a facts directory means
+  the wrong directory or a misplaced export;
+- a directory with no `*.json` leaf at all is refused (exit `2`) — an
+  empty registry reads as "the directory is wrong", not "there are no
+  facts".
+
+Each fact loaded this way records its source leaf in `Fact.sourceFile`.
+
+`--facts-dir` and the flat `facts.json` are mutually exclusive: when a
+`facts.json` exists in `strategy-dir`, supplying `--facts-dir` is refused
+with the conflict named (exit `2`) rather than silently preferring one of
+the two registries.
 
 ### `strategist-check brand-coverage` — the second subcommand
 
@@ -713,7 +742,7 @@ them throw.
 
 | Export | Kind | Purpose |
 | --- | --- | --- |
-| `validateFact(value)` | function | One `Fact`: `key`, `label`, `value`, optional `unit`/`asOf`/`verifiedBy`/`aliases`, required `source` and `lastUpdatedAt`. |
+| `validateFact(value)` | function | One `Fact`: `key`, `label`, `value`, optional `unit`/`asOf`/`verifiedBy`/`aliases`/`sourceFile`, required `source` and `lastUpdatedAt`. |
 | `validateFacts(value)` | function | The whole contents of a `facts.json` file — `Fact[]`, additionally rejecting a duplicate `key`. |
 | `validateMoney(value)` | function | `{ amount: number; currency: string }` — an ISO 4217 code. A monetary `Fact.value` is always this shape, never a bare number. |
 | `validateMission(value)` | function | `{ statement, vision, values: OperatingValue[] }`. |
@@ -748,6 +777,16 @@ anyone extending this package with their own entity.
 | `StrategyBundle` | type | `{ root, facts, mission?, positioning?, markets?, audiences?, roadmap?, brandEssence?, brandAttributes?, brandDerivations?, issues, complete }`. |
 | `StrategyReadIssue` | type | `{ file, reason: StrategyReadIssueReason, detail }` — one file that did not become usable data. |
 | `StrategyReadIssueReason` | type | `"unreadable" \| "unparseable" \| "invalid-schema" \| "missing-required"`. |
+
+### Facts directory reader (`facts-dir.ts`)
+
+| Export | Kind | Purpose |
+| --- | --- | --- |
+| `readStrategyDirectory(input)` | function | Pure. Combines a facts directory's `*.json` leaves — supplied as `input.files`, a map of relative path -> raw file text — into one validated `Fact[]`, each leaf checked by the same `validateFacts` rules as the flat file. Never throws: a leaf that is unparseable, schema-invalid, or not `*.json` at all, and a directory with no JSON leaf, is recorded in `issues` (naming the offending file) and flips `complete` to `false`, exactly the `readStrategy` discipline. Each fact records its source leaf in `Fact.sourceFile`. |
+| `FactsDirectoryInput` | type | `{ files: Readonly<Record<string, string>> }` — the directory's contents, caller-fed: the CLI builds the map by reading `<dir>` for `--facts-dir`; a programmatic caller can source it from anywhere; a test passes a literal. |
+| `FactsDirectoryResult` | type | `{ facts, issues, complete }` — facts from leaves that validated, every leaf that did not and why, and whether every leaf was accounted for. |
+| `FactsDirectoryIssue` | type | `{ file, reason: FactsDirectoryIssueReason, detail }` — one leaf (or the empty directory) that did not become usable facts. |
+| `FactsDirectoryIssueReason` | type | `"unparseable" \| "invalid-schema" \| "non-json" \| "empty"` — the first two mean exactly what they mean in `StrategyReadIssueReason`; `"non-json"` is an unaccounted-for leaf (refused, never skipped); `"empty"` is no `*.json` leaf at all. |
 
 ### Fact index (`fact-index.ts`)
 

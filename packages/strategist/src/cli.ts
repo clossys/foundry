@@ -46,8 +46,8 @@
  * real `strategy-dir` path, still falls through unchanged.
  */
 
-import { existsSync, readFileSync, realpathSync, statSync } from "node:fs";
-import { resolve } from "node:path";
+import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from "node:fs";
+import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   checkBrandCoverage,
@@ -62,8 +62,9 @@ import {
   type DirectionCurrencyResult,
 } from "./direction-invalidation.js";
 import { checkFactsTraceability, type FactsGateResult } from "./facts-gate.js";
+import { readStrategyDirectory } from "./facts-dir.js";
 import { readStrategy, type StrategyBundle } from "./reader.js";
-import { validateDirectionEntities, type DirectionEntity } from "./schema.js";
+import { validateDirectionEntities, type DirectionEntity, type Fact } from "./schema.js";
 import { scanStrategyDirectory } from "./scan.js";
 
 const USAGE = `Usage: strategist-check <strategy-dir> [scan-dir] [options]
@@ -74,7 +75,8 @@ const USAGE = `Usage: strategist-check <strategy-dir> [scan-dir] [options]
   scan-dir       Directory to scan for prose/copy claims. Defaults to the current working directory.
 
 Options:
-  --help         Print this message and exit 0.
+  --help              Print this message and exit 0.
+  --facts-dir <dir>   Read facts from a directory of per-fact JSON files (each leaf a JSON array of Fact, e.g. one file per fact) instead of the strategy directory's flat facts.json. The rest of the strategy bundle (mission.json, roadmap.json, ...) is not read in this mode. Mutually exclusive with the flat facts.json: a facts.json present in strategy-dir alongside --facts-dir is refused — exit 2, naming the conflict.
 
 Exit codes: 0 = clean, 1 = at least one finding, 2 = could not run (bad input, missing/invalid facts.json, nothing matched to scan, or an unreadable directory).
 
@@ -115,17 +117,37 @@ export class CliInputError extends Error {}
 interface ParsedArgs {
   strategyDir?: string;
   scanDir?: string;
+  factsDir?: string;
   help: boolean;
 }
 
 function parseArgs(argv: string[]): ParsedArgs {
   let strategyDir: string | undefined;
   let scanDir: string | undefined;
+  let factsDir: string | undefined;
   let help = false;
 
-  for (const arg of argv) {
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i] as string;
     if (arg === "--help" || arg === "-h") {
       help = true;
+      continue;
+    }
+    if (arg === "--facts-dir") {
+      const value = argv[i + 1];
+      if (value === undefined || value.startsWith("-")) {
+        throw new CliInputError('--facts-dir requires a directory argument, e.g. --facts-dir ./strategy/facts');
+      }
+      factsDir = value;
+      i += 1;
+      continue;
+    }
+    if (arg.startsWith("--facts-dir=")) {
+      const value = arg.slice("--facts-dir=".length);
+      if (value.length === 0) {
+        throw new CliInputError('--facts-dir requires a directory argument, e.g. --facts-dir ./strategy/facts');
+      }
+      factsDir = value;
       continue;
     }
     if (arg.startsWith("-")) {
@@ -140,7 +162,7 @@ function parseArgs(argv: string[]): ParsedArgs {
     }
   }
 
-  return { strategyDir, scanDir, help };
+  return { strategyDir, scanDir, factsDir, help };
 }
 
 function requireDirectory(label: string, path: string): void {
@@ -165,12 +187,30 @@ function requireFile(label: string, path: string): void {
   if (!stat.isFile()) throw new CliInputError(`${label} "${path}" is not a file`);
 }
 
-function printBundleIssues(bundle: StrategyBundle): void {
-  if (bundle.issues.length === 0) return;
-  console.log(`\n${bundle.issues.length} strategy file issue(s):`);
-  for (const issue of bundle.issues) {
-    console.log(`  [${issue.reason}] ${issue.file}: ${issue.detail}`);
+/**
+ * The facts half of a strategy bundle, as `main()` consumes it: either the
+ * full `readStrategy` bundle (flat facts.json) or the facts-only directory
+ * read (`--facts-dir`), normalized to the two things the gate needs. The
+ * union issue shape keeps the CLI's reporting and fail-closed mapping
+ * identical across both modes.
+ */
+type LoadedFacts =
+  | { mode: "bundle"; bundle: StrategyBundle; facts: Fact[]; issues: Array<{ file: string; reason: string; detail: string }> }
+  | { mode: "facts-dir"; facts: Fact[]; issues: Array<{ file: string; reason: string; detail: string }> };
+
+/**
+ * Loads facts for the gate in exactly one of the two mutually exclusive
+ * modes. A directory with a failing leaf is recorded, never thrown —
+ * `main()` maps those issues to exit code 2 below, the same fail-closed
+ * route a bad flat facts.json takes.
+ */
+function readStrategyFacts(strategyDir: string, factsDir: string | undefined): LoadedFacts {
+  if (factsDir === undefined) {
+    const bundle = readStrategy(strategyDir);
+    return { mode: "bundle", bundle, facts: bundle.facts, issues: bundle.issues };
   }
+  const result = readStrategyDirectory({ files: readDirectoryFiles(factsDir) });
+  return { mode: "facts-dir", facts: result.facts, issues: result.issues };
 }
 
 function printReport(result: FactsGateResult): void {
@@ -539,6 +579,47 @@ function runDirection(argv: string[]): number {
 }
 
 /**
+ * The CLI's own small I/O helper for `--facts-dir`: reads the directory's
+ * direct entries into the relative-path -> raw-text map
+ * `readStrategyDirectory` consumes. This is the ONLY filesystem call in
+ * the --facts-dir path — the directory reader itself stays pure, the same
+ * split `scan.ts` (I/O) and `facts-gate.ts` (pure) draw. Mirrors
+ * `scanStrategyDirectory`'s fail-closed discipline: an unreadable
+ * directory or entry throws (caught by `run()` → exit 2) rather than
+ * being silently treated as empty, and subdirectories are not descended
+ * into — a facts directory is one flat registry of leaves.
+ */
+function readDirectoryFiles(dir: string): Record<string, string> {
+  let entries: string[];
+  try {
+    entries = readdirSync(dir);
+  } catch (error) {
+    throw new CliInputError(`cannot read --facts-dir "${dir}": ${error instanceof Error ? error.message : String(error)}`);
+  }
+  const files: Record<string, string> = {};
+  for (const entry of entries) {
+    const full = join(dir, entry);
+    let stat;
+    try {
+      stat = statSync(full);
+    } catch (error) {
+      throw new CliInputError(`cannot read --facts-dir entry "${full}": ${error instanceof Error ? error.message : String(error)}`);
+    }
+    if (!stat.isFile()) {
+      throw new CliInputError(`--facts-dir entry "${entry}" is not a file — a facts directory is one flat registry of leaves, no subdirectories`);
+    }
+    let raw: string;
+    try {
+      raw = readFileSync(full, "utf8");
+    } catch (error) {
+      throw new CliInputError(`cannot read --facts-dir entry "${full}": ${error instanceof Error ? error.message : String(error)}`);
+    }
+    files[entry] = raw;
+  }
+  return files;
+}
+
+/**
  * Exported (unlike a typical CLI `main`) so `cli.test.ts` can exercise the
  * whole argv-to-exit-code contract directly, against a real `mkdtemp` temp
  * directory, without spawning a subprocess for every case. Takes `argv`
@@ -575,23 +656,60 @@ export function main(argv: string[]): number {
   requireDirectory("strategy-dir", strategyDir);
   requireDirectory("scan-dir", scanDir);
 
+  // The two facts sources are mutually exclusive by contract: --facts-dir
+  // REPLACES the flat facts.json as the gate's ground truth, and silently
+  // preferring one of two simultaneously supplied registries would let a
+  // run pass against facts the operator believed were superseded. Refused
+  // before anything runs, naming the conflict, at exit code 2 — the same
+  // "could not run" third state as every other bad input.
+  let factsDir: string | undefined;
+  if (args.factsDir !== undefined) {
+    factsDir = resolve(args.factsDir);
+    requireDirectory("--facts-dir", factsDir);
+    const flatFactsPath = join(strategyDir, "facts.json");
+    if (existsSync(flatFactsPath)) {
+      throw new CliInputError(
+        `--facts-dir "${factsDir}" and facts.json "${flatFactsPath}" are mutually exclusive facts sources; supply exactly one — remove --facts-dir to use the flat file, or point strategy-dir somewhere without a facts.json`,
+      );
+    }
+  }
+
   console.log(`Strategy directory: ${strategyDir}`);
+  if (factsDir !== undefined) {
+    console.log(`Facts directory: ${factsDir} (flat facts.json not used)`);
+  }
   console.log(`Scan directory: ${scanDir}`);
 
-  const bundle = readStrategy(strategyDir);
-  printBundleIssues(bundle);
+  const loaded = readStrategyFacts(strategyDir, factsDir);
+  const issues = loaded.issues;
+  if (issues.length > 0 && loaded.mode === "bundle") {
+    console.log(`\n${issues.length} strategy file issue(s):`);
+    for (const issue of issues) {
+      console.log(`  [${issue.reason}] ${issue.file}: ${issue.detail}`);
+    }
+  } else if (issues.length > 0) {
+    console.log(`\n${issues.length} facts directory issue(s):`);
+    for (const issue of issues) {
+      console.log(`  [${issue.reason}] ${issue.file}: ${issue.detail}`);
+    }
+  }
 
-  // facts.json itself missing/unreadable/unparseable/invalid is fail-closed:
-  // there is no trustworthy ground truth to check prose against, so this is
-  // "could not run", never a clean pass produced from zero facts. An issue
-  // on some OTHER strategy file (mission.json, roadmap.json, ...) does not
-  // block this gate — the facts gate only ever needs facts.json.
-  const factsIssue = bundle.issues.find((i) => i.file === "facts.json");
+  // The gate has exactly one trustworthy ground truth, whichever mode
+  // supplied it. Any issue at all in --facts-dir mode is fail-closed —
+  // there is no notion of optional files there, so a refused leaf (bad
+  // JSON, schema violation, a non-JSON file, an empty directory) is never
+  // reported as a clean pass. Flat mode keeps its narrower rule: only a
+  // facts.json issue blocks; an issue on some OTHER optional strategy file
+  // (mission.json, roadmap.json, ...) does not, because the facts gate
+  // only ever needs facts.
+  const factsIssue = loaded.mode === "bundle" ? issues.find((i) => i.file === "facts.json") : issues[0];
   if (factsIssue) {
-    console.error(`\nfacts.json could not be loaded (${factsIssue.reason}: ${factsIssue.detail}).`);
+    console.error(`\nFacts could not be loaded (${factsIssue.reason}: ${factsIssue.detail}).`);
     console.error("Refusing to report a pass with no trustworthy facts to check prose against.");
     return 2;
   }
+
+  const facts = loaded.facts;
 
   const files = scanStrategyDirectory(scanDir); // throws (fail-closed) on an unreadable directory — caught by run()
 
@@ -604,7 +722,7 @@ export function main(argv: string[]): number {
     return 2;
   }
 
-  const result = checkFactsTraceability(files, bundle.facts);
+  const result = checkFactsTraceability(files, facts);
   printReport(result);
 
   return result.findings.length > 0 ? 1 : 0;
