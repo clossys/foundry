@@ -31,7 +31,7 @@ async function repositoryJson(path) {
 test("repository Trio policy, adapters, and current-candidate fixtures bind the selected @clossys identities", async () => {
   const policy = await repositoryJson("governance/release-qualification-policy.json");
   const expected = [
-    ["advisor", "@clossys/advisor", "0.2.3"],
+    ["advisor", "@clossys/advisor", "0.2.4"],
     ["starter", "@clossys/starter", "0.1.7"],
     ["controller", "@clossys/controller", "0.9.10"],
   ];
@@ -72,8 +72,8 @@ test("all 20 publishable packages are exact-source bound to the catalogue and qu
   const policy = await repositoryJson("governance/release-qualification-policy.json");
   const catalog = await repositoryJson("governance/release-catalog.json");
   const expectedVersions = {
-    "@clossys/advisor": "0.2.3",
-    "@clossys/launcher": "0.1.0",
+    "@clossys/advisor": "0.2.4",
+    "@clossys/launcher": "0.1.1",
     "@clossys/architect": "0.1.9",
     "@clossys/bouncer": "0.1.8",
     "@clossys/builder": "0.7.10",
@@ -83,7 +83,7 @@ test("all 20 publishable packages are exact-source bound to the catalogue and qu
     "@clossys/giver": "0.1.6",
     "@clossys/influencer": "0.1.6",
     "@clossys/inspector": "0.2.5",
-    "@clossys/integrator": "0.6.8",
+    "@clossys/integrator": "0.6.9",
     "@clossys/keeper": "0.1.6",
     "@clossys/locksmith": "0.2.5",
     "@clossys/messenger": "0.1.8",
