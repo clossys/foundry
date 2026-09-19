@@ -12,14 +12,15 @@
 // -----------------------------------------------------------------
 // Until #416, this script diffed `package.json` between the push's `before`
 // and `head` commits and selected whatever manifest's `version` changed. That
-// is a "what did THIS push do?" question, and `publish.yml`'s own
-// `concurrency: { group: publish, cancel-in-progress: false }` block means
-// it is sometimes the wrong one to ask: GitHub holds at most one PENDING run
-// per concurrency group, and a third arrival EVICTS the pending one before
-// any job starts. `@example/auth@0.2.4` was merged, changelogged,
-// and locked, and its publish run was evicted this way — it reports
-// `cancelled`, not `failure`, so nothing goes red. No later run could ever
-// pick it up either: a diff against a LATER push's own before/head never
+// is a "what did THIS push do?" question, and `publish.yml`'s concurrency
+// group (today `publish-${package}`, historically a catalogue-wide
+// `publish` group) means it is sometimes the wrong one to ask: GitHub
+// holds at most one PENDING run per group, and a third arrival for that
+// same group EVICTS the pending one before any job starts.
+// `@example/auth@0.2.4` was merged, changelogged, and locked, and its
+// publish run was evicted this way — it reports `cancelled`, not
+// `failure`, so nothing goes red. No later run could ever pick it up
+// either: a diff against a LATER push's own before/head never
 // re-examines a version bump an EARLIER, evicted push already introduced.
 //
 // WHAT IT DOES NOW: registry-versus-manifest, not push-versus-push

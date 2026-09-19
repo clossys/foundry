@@ -20,14 +20,15 @@
 // WHY THIS GATE EXISTS (issue #416)
 // -----------------------------------
 // `@example/auth@0.2.4` was merged to `main`, changelogged, and
-// locked — and never published. `publish.yml`'s own
-// `concurrency: { group: publish, cancel-in-progress: false }` correctly
-// serialises publishing, but GitHub holds at most one PENDING run per
-// concurrency group: a third push in a short window EVICTS the pending run
-// before any job starts. That run reports `cancelled`, not `failure` — main
-// stays green, the changelog claims the version shipped, and the registry
-// silently disagrees. The only reason it was caught at all is that someone
-// happened to read a run list.
+// locked — and never published. `publish.yml` serialises per package
+// (`group: publish-${package}`, `cancel-in-progress: false`) so two
+// versions of the same name cannot race, but GitHub still holds at most
+// one PENDING run per group: a third dispatch of that same package in a
+// short window EVICTS the pending run before any job starts. That run
+// reports `cancelled`, not `failure` — main stays green, the changelog
+// claims the version shipped, and the registry silently disagrees. The
+// only reason it was caught at all is that someone happened to read a
+// run list.
 //
 // scripts/select-publishable-packages.mjs's `discover` job now selects by
 // registry-versus-manifest instead of by one push's diff, which makes an

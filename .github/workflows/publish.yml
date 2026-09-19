@@ -60,11 +60,14 @@ permissions:
   contents: read
 
 concurrency:
-  # Publishing is serial across packages and across runs of this
-  # workflow_dispatch-triggered workflow (there is no push trigger to be
-  # serial across). A later version must never race an earlier tarball
-  # through the same registry namespace.
-  group: publish
+  # Serial per registry package name, not across the catalogue. Two
+  # versions of the same package must never race an earlier tarball
+  # through that package's namespace; advisor and architect do not share
+  # one. GitHub still holds at most one PENDING run per group, so a
+  # catalogue-wide group would evict a queued second package when a
+  # third is dispatched. cancel-in-progress stays false so an in-flight
+  # upload is never cancelled by the next dispatch of that same package.
+  group: publish-${{ inputs.package }}
   cancel-in-progress: false
 
 jobs:

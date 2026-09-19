@@ -168,6 +168,16 @@ test("ISSUE #757: the only trigger is workflow_dispatch, and the prose says exac
   assert.match(workflow, /branch is unreachable/);
 });
 
+test("publish concurrency is per dispatched package, not catalogue-wide", () => {
+  assert.match(workflow, /group: publish-\$\{\{ inputs\.package \}\}/);
+  assert.match(workflow, /cancel-in-progress: false/);
+  assert.equal(
+    workflow.match(/^\s+group: publish$/m),
+    null,
+    "catalogue-wide group: publish would serialise unrelated packages and evict a queued second dispatch",
+  );
+});
+
 test("ISSUE #757: the discover step is named for what it does, and the unreachable branch is labelled as unreachable", () => {
   const discover = job("discover");
   // This step carries an `id:` above its `name:`, so it is matched on the
