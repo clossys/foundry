@@ -5,6 +5,20 @@ All notable changes to `@clossys/integrator` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-09-19
+
+### Added
+
+- `emitCurrencyDelta(input)` serializes one or more repositories' currency
+  deltas into the shared, launcher-consumable inventory document, schema
+  version 1: `{ schemaVersion: 1, repositories: [{ id, packages: [{ name,
+  version?, wiring? }] }] }`. A `behind` judgment becomes an entry with its
+  target version; `extra` and `opted-out-and-installed` become entries with
+  `wiring: "unknown"` and no version; every other judgment serializes to no
+  entry at all. Pure and offline, like every other fold in this package. The
+  v1 document shape (`InventoryDocument` and siblings) ships from here so
+  both sides of the emitter/consumer fence read one definition.
+
 ## [0.6.10] - 2026-09-19
 
 ### Changed

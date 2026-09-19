@@ -78,6 +78,16 @@ export type {
 export { loadAdmissionContract, evaluateAdmission } from "./admission.js";
 export type { AdmissionRule, AdmissionContract, AdmissionCandidate, AdmissionContext, AdmissionFinding } from "./admission.js";
 
+export { emitCurrencyDelta } from "./delta.js";
+export type {
+  InventoryPackageWiring,
+  InventoryPackageEntry,
+  InventoryRepositoryEntry,
+  InventoryDocument,
+  CurrencyDeltaRepositoryInput,
+  EmitCurrencyDeltaInput,
+} from "./delta.js";
+
 export { parseVersion, compareVersions } from "./semver.js";
 export type { ParsedVersion } from "./semver.js";
 
