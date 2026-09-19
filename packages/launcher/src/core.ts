@@ -112,7 +112,7 @@ function readHub(host: WorkspaceHost, directory: string): HubDocument | undefine
   }
 }
 
-/** Classifies `.clossys/inventory.json` without inventing repositories. */
+/** Classifies a generated hub inventory (packed template skeleton/.clossys/inventory.json; the generated path does not ship) without inventing repositories. */
 export function inspectInventory(raw: string | null): InventoryObservation {
   if (raw === null) return { status: "missing", count: 0 };
   try {
@@ -255,7 +255,7 @@ function resolveAdoptInventory(
   if (!trimmed) {
     return refuse(
       "violated",
-      "appointing requires a populated .clossys/inventory.json, or --inventory <path> to a populated inventory document",
+      "appointing requires a populated generated hub inventory (packed template skeleton/.clossys/inventory.json; the generated path does not ship), or --inventory <path> to a populated inventory document",
     );
   }
   const resolved = resolve(cwd.absolutePath, trimmed);

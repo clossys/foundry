@@ -15,8 +15,10 @@ hub to resume. Run from any GitHub repository you want to own the account-level
 hub to appoint it — it does not have to be a new exclusive repo, and it keeps
 its current name and files.
 
-Appointing requires a populated .clossys/inventory.json, or --inventory <path>
-pointing at one. Resume does not write. Create may write an empty inventory.
+Appointing requires a populated generated hub inventory (packed template
+skeleton/.clossys/inventory.json; the generated path does not ship), or
+--inventory <path> pointing at one. Resume does not write. Create may write
+an empty inventory.
 
 GitHub-only. Owner is inferred from \`gh\` and git remotes. Public npm reads
 need no token.

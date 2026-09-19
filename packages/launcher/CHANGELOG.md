@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Appoint leaves an existing `@clossys/advisor` pin in whichever bucket it already occupies. It no longer dual-pins or overwrites a frozen version with the live registry version.
-- Appoint refuses when `.clossys/inventory.json` is missing or empty, unless `--inventory <path>` supplies a populated document. Create may still write an empty inventory. Resume does not invent one.
+- Appoint refuses when the generated hub inventory is missing or empty (packed template `skeleton/.clossys/inventory.json`; that generated path does not ship), unless `--inventory <path>` supplies a populated document. Create may still write an empty inventory. Resume does not invent one.
 
 ### Added
 

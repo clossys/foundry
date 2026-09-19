@@ -194,7 +194,7 @@ describe("planWorkspace", () => {
       silent,
     );
     expect(missing).toMatchObject({ action: "refuse", state: "violated" });
-    if (missing.action === "refuse") expect(missing.message).toMatch(/inventory/);
+    if (missing.action === "refuse") expect(missing.message).toMatch(/generated hub inventory/);
   });
 
   it("accepts --inventory when the cwd inventory is missing", () => {
