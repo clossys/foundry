@@ -44,7 +44,7 @@ export type {
   ReachabilityIndeterminateReason,
 } from "./reachability.js";
 
-export { judgeCurrency, upgradeSet, optOutGaps, computeCurrencyMetric, classifyCurrencyDistance, currencyVerdict, currencyVerdictToExitCode } from "./currency.js";
+export { judgeCurrency, upgradeSet, optOutGaps, extraNames, computeCurrencyMetric, classifyCurrencyDistance, currencyVerdict, currencyVerdictToExitCode } from "./currency.js";
 export { assessPackageCurrencyRate } from "./package-currency-rate.js";
 export type {
   PackageCurrencyRateAssessment,

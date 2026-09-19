@@ -29,7 +29,7 @@ export interface Initiative {
   dataOutcomeMetricConflictKeys: readonly string[];
 }
 
-export type PreWorkKind = "baseline" | "conflict" | "prerequisite" | "authority" | "artifact-access" | "mutation-conflict" | "independent-outcome";
+export type PreWorkKind = "baseline" | "conflict" | "prerequisite" | "authority" | "artifact-access" | "mutation-conflict" | "independent-outcome" | "remove" | "relocate";
 export type PreWorkStatus = "satisfied" | "unresolved" | "indeterminate";
 export interface EngagementNextAction { kind: string; ownerRef: string; dueAt: string; escalationRef: string; }
 export interface AuthorityClearance { authorityOwnerRef: string; evidence: readonly EvidenceReference[]; }
@@ -64,12 +64,18 @@ export interface ImmutablePackageRef { name: string; version: string; integrity:
 export interface CompletionDefinition { definition: string; independentOutcomeOwnerRef: string; evidenceSource: string; direction: "increase" | "decrease"; setpoint: number; windowDays: number; }
 export interface RollbackDefinition { procedure: string; evidenceSource: string; }
 export interface BaselineDefinition { metricRef: string; value: number; observedAt: string; evidence: EvidenceReference; }
-/** Exact execution material for one repo/initiative pair in the first wave. */
-export interface FirstWaveWorkItem { id: string; initiativeId: string; targetRepositoryId: string; deliveryOwnerRef: string; package: ImmutablePackageRef; bin: string; invocation: string; placement: string; baseline: BaselineDefinition; completion: CompletionDefinition; rollback: RollbackDefinition; mutationSurfaces: readonly string[]; }
+export type FirstWaveAct = "install" | "remove" | "relocate";
+/** Exact execution material for one repo/initiative pair in the first wave. `act` defaults to install when omitted. */
+export interface FirstWaveWorkItem { id: string; initiativeId: string; targetRepositoryId: string; deliveryOwnerRef: string; package: ImmutablePackageRef; bin: string; invocation: string; placement: string; act?: FirstWaveAct; baseline: BaselineDefinition; completion: CompletionDefinition; rollback: RollbackDefinition; mutationSurfaces: readonly string[]; }
 export interface FirstWaveDefinition { initiativeIds: readonly string[]; objectives: readonly string[]; workItems: readonly FirstWaveWorkItem[]; }
 
+export type HubPlacementCellKind = "missing" | "stale" | "wrong-wiring" | "over-install" | "hub-versus-product";
+/** One caller-observed placement defect on a hub. Advisor never reads the tree; the caller fills this. */
+export interface HubPlacementCell { id: string; kind: HubPlacementCellKind; packageName: string; repositoryId: string; observedAt: string; evidence: EvidenceReference; addressedBy?: readonly string[]; }
+export interface HubPlacementEvidence { schemaVersion: 1; cells: readonly HubPlacementCell[]; }
+
 /** All material entered by a connector or other caller; it is not provider-specific. */
-export interface AdvisorAssessmentInput { id: string; asOf: string; engagement: EngagementRecord; fitSignals: readonly FitSignal[]; prerequisiteObservations: readonly ReadinessCriterion[]; initiatives: readonly Initiative[]; firstWave: FirstWaveDefinition; preWorkItems: readonly PreWorkItem[]; reassessment: ReassessmentPolicy; }
+export interface AdvisorAssessmentInput { id: string; asOf: string; engagement: EngagementRecord; fitSignals: readonly FitSignal[]; prerequisiteObservations: readonly ReadinessCriterion[]; initiatives: readonly Initiative[]; firstWave: FirstWaveDefinition; preWorkItems: readonly PreWorkItem[]; reassessment: ReassessmentPolicy; placementEvidence?: HubPlacementEvidence; }
 export interface AdvisorComponentAssessment { state: AdvisorState; findings: readonly AdvisorFinding[]; }
 export interface InitiativeOverlap { first: string; second: string; workstreamConflictKeys: readonly string[]; dependencyConflictKeys: readonly string[]; mutationConflictKeys: readonly string[]; authorityConflictKeys: readonly string[]; scheduleConflictKeys: readonly string[]; dataOutcomeMetricConflictKeys: readonly string[]; }
 export type FirstWavePlanState = "not-recommended" | "stabilize-first" | "indeterminate" | "ready-for-sponsor-approval";

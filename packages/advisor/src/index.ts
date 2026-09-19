@@ -23,8 +23,8 @@ export type {
   AdvisorAssessment, AdvisorAssessmentInput, AdvisorCharter, AdvisorComponentAssessment, AdvisorFinding, AdvisorSession, AdvisorSessionEvent, AdvisorSessionState,
   AdvisorState, AdvisorToolContract, AdvisorToolRequest, AdvisorToolResponse, AssessmentBasis, AuthorityClearance, BaselineDefinition, CompletionDefinition, CriterionDefinition,
   EngagementActionDisposition, EngagementDecisionCurrencyAssessment, EngagementDecisionCurrencyInput, EngagementNextAction, EngagementRecord, EngagementStatus,
-  ExecutionAuthorization, EvidenceReference, FirstWaveDefinition, FirstWavePlan, FirstWavePlanState, FirstWavePlanStep, FirstWaveWorkItem, FitSignal,
-  ImmutablePackageRef, Initiative, InitiativeOverlap, InitiativeStatus, PreWorkItem, PreWorkKind, PreWorkStatus, ReadinessCriterion, ReadinessState,
+  ExecutionAuthorization, EvidenceReference, FirstWaveAct, FirstWaveDefinition, FirstWavePlan, FirstWavePlanState, FirstWavePlanStep, FirstWaveWorkItem, FitSignal,
+  HubPlacementCell, HubPlacementCellKind, HubPlacementEvidence, ImmutablePackageRef, Initiative, InitiativeOverlap, InitiativeStatus, PreWorkItem, PreWorkKind, PreWorkStatus, ReadinessCriterion, ReadinessState,
   ReassessmentPolicy, ReassessmentTrigger, RequiredFitCriterionId, RequiredReadinessCriterionId, RollbackDefinition, SessionClosure, SignalState,
 } from "./types.js";
 export type { AdvisorExecutionReadiness } from "./execution-readiness.js";

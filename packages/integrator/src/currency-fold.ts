@@ -201,7 +201,14 @@ export type CurrencyFoldFinding =
       readonly latestVersion: string;
       readonly severity: CurrencySeverity;
     }
-  | { readonly kind: "absent-without-reason"; readonly name: string };
+  | { readonly kind: "absent-without-reason"; readonly name: string }
+  | { readonly kind: "extra"; readonly name: string; readonly installedVersion: string }
+  | {
+      readonly kind: "opted-out-and-installed";
+      readonly name: string;
+      readonly installedVersion: string;
+      readonly reason: string;
+    };
 
 /**
  * The result of one fold call, tagged by both `scope` and `verdict` so each
@@ -237,6 +244,21 @@ function behindFinding(status: Extract<PackageCurrency, { state: "behind" }>): C
   };
 }
 
+function extraFinding(status: Extract<PackageCurrency, { state: "extra" }>): CurrencyFoldFinding {
+  return { kind: "extra", name: status.name, installedVersion: status.installedVersion };
+}
+
+function optedOutInstalledFinding(
+  status: Extract<PackageCurrency, { state: "opted-out-and-installed" }>,
+): CurrencyFoldFinding {
+  return {
+    kind: "opted-out-and-installed",
+    name: status.name,
+    installedVersion: status.installedVersion,
+    reason: status.reason,
+  };
+}
+
 function foldAbsolute(input: AbsoluteCurrencyFoldInput): CurrencyFoldResult {
   const violations: CurrencyFoldFinding[] = [];
   for (const status of input.statuses) {
@@ -259,6 +281,12 @@ function foldAbsolute(input: AbsoluteCurrencyFoldInput): CurrencyFoldResult {
         break;
       case "behind":
         if (input.blockingSeverities.has(status.severity)) violations.push(behindFinding(status));
+        break;
+      case "extra":
+        violations.push(extraFinding(status));
+        break;
+      case "opted-out-and-installed":
+        violations.push(optedOutInstalledFinding(status));
         break;
       case "current":
       case "absent-with-reason":
@@ -325,6 +353,42 @@ function foldIntroduced(input: IntroducedCurrencyFoldInput): CurrencyFoldResult 
       continue;
     }
 
+    if (status.state === "extra") {
+      const finding = extraFinding(status);
+      const base = baselineByName.get(status.name);
+      if (base !== undefined && (base.state === "indeterminate" || base.state === "unreachable" || base.state === "unauthenticated")) {
+        return {
+          scope: "introduced",
+          verdict: "indeterminate",
+          reason: `baseline judgment for "${status.name}" (${base.state}) could not be read, so whether this extra install is newly introduced cannot be told`,
+        };
+      }
+      if (base !== undefined && base.state === "extra") {
+        inherited.push(finding);
+      } else {
+        introduced.push(finding);
+      }
+      continue;
+    }
+
+    if (status.state === "opted-out-and-installed") {
+      const finding = optedOutInstalledFinding(status);
+      const base = baselineByName.get(status.name);
+      if (base !== undefined && (base.state === "indeterminate" || base.state === "unreachable" || base.state === "unauthenticated")) {
+        return {
+          scope: "introduced",
+          verdict: "indeterminate",
+          reason: `baseline judgment for "${status.name}" (${base.state}) could not be read, so whether this opted-out-and-installed contradiction is newly introduced cannot be told`,
+        };
+      }
+      if (base !== undefined && base.state === "opted-out-and-installed") {
+        inherited.push(finding);
+      } else {
+        introduced.push(finding);
+      }
+      continue;
+    }
+
     if (status.state !== "behind") continue; // current / absent-with-reason: nothing to report, in either scope
     if (!input.blockingSeverities.has(status.severity)) continue; // advisory severities are not this fold's concern, in either scope
 
@@ -348,6 +412,10 @@ function foldIntroduced(input: IntroducedCurrencyFoldInput): CurrencyFoldResult 
     }
     if (base.state === "absent-with-reason" || base.state === "absent-without-reason") {
       introduced.push(finding); // the baseline never tracked this name as a graded install at all
+      continue;
+    }
+    if (base.state === "extra" || base.state === "opted-out-and-installed") {
+      introduced.push(finding); // baseline had no graded behind result to inherit
       continue;
     }
 
