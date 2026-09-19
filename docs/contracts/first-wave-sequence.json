@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "$comment": "Producer productization and first-wave consumer-install sequence. Not a live lifecycle-position table, not a publication catalogue, and not permission to install every package. Membership is the nineteen current source packages; order is engagement, then operational integrity, then expression. Runtime edges are read from package manifests at check time, not restated here. A consumer still opens only justified positions and skips not-applicable roles.",
+  "$comment": "Producer productization and first-wave consumer-install sequence. Not a live lifecycle-position table, not a publication catalogue, and not permission to install every package. Membership is every current source package exactly once; order is engagement, then operational integrity, then expression. Runtime edges are read from package manifests at check time, not restated here. A consumer still opens only justified positions and skips not-applicable roles.",
   "priority": [
     "catalogue-integrity",
     "engagement",
@@ -49,6 +49,14 @@
       "job": "Make operating rules expressible, current, and followable; this is the runtime root for later operating packages.",
       "packages": [
         "controller"
+      ]
+    },
+    {
+      "id": "workspace-hub",
+      "kind": "executable-tooling",
+      "job": "Scaffold or appoint the consumer-owned account workspace hub without treating the scaffolder as a role or dumping the catalogue into it.",
+      "packages": [
+        "launcher"
       ]
     },
     {
@@ -163,7 +171,7 @@
     {
       "kind": "new-role",
       "wave": null,
-      "matches": "A candidate role that is not one of the nineteen current packages. Record it; do not sequence it in front of first-wave productization of the current catalogue."
+      "matches": "A candidate role that is not one of the current packages. Record it; do not sequence it in front of first-wave productization of the current catalogue."
     },
     {
       "kind": "historical-tracking",

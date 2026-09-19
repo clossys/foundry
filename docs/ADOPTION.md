@@ -11,6 +11,22 @@ An install is not adoption. A valid position is not independent grounding.
 No package reaches `grounded` or `closed` until an independent observer reads
 consumer-owned outcome evidence.
 
+## Get started
+
+The account hub is mandatory as inventory and coordination, not as a dump of
+the catalogue. Appoint any GitHub repository you control — it does not have
+to be a new exclusive repo, and it does not have to already match a Foundry
+layout. Run the command from that checkout, or from an empty directory to
+create `{owner}/workspace`:
+
+```bash
+npx @clossys/launcher
+```
+
+Launcher is executable tooling, not a role. Advisor stays the engagement
+engine. Starter stays the protected-base `decide` gate in CI after a hub
+exists. Positions still open in the repository that has the real job.
+
 ## The two records
 
 1. [`role-loop-archetypes.json`](contracts/role-loop-archetypes.json) is the
@@ -62,10 +78,11 @@ complete ledger. A workspace can coordinate those decisions, but it cannot
 make a sister repository's disposition by editing or replacing that ledger.
 
 Diagnosis may begin in Foundry, an account workspace, or a consuming
-repository. There is no mandatory "workspace first" installation hop: the
-repository with the real job and direct consumer opens the position. If the
-account workspace also consumes the package for its own control plane, that is
-a second position with its own wiring and evidence, not a proxy adoption for
+repository. The account hub is the inventory and coordination surface;
+it is not a required installation hop for every role. The repository with
+the real job and direct consumer opens the position. If the account
+workspace also consumes the package for its own control plane, that is a
+second position with its own wiring and evidence, not a proxy adoption for
 the rest of the plane.
 
 ## Active role packages

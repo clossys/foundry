@@ -50,6 +50,10 @@
       "status": "active"
     },
     {
+      "name": "@clossys/launcher",
+      "status": "active"
+    },
+    {
       "name": "@clossys/locksmith",
       "status": "active"
     },
