@@ -23,6 +23,24 @@ create `{owner}/workspace`:
 npx @clossys/launcher
 ```
 
+Appointing an existing tree also requires a populated inventory: the
+launcher refuses when the checkout has none, so point it at one:
+
+```bash
+cat > inventory.json <<'EOF'
+{
+  "schemaVersion": 1,
+  "repositories": [{ "id": "app" }]
+}
+EOF
+npx @clossys/launcher --inventory ./inventory.json
+```
+
+The inventory is `schemaVersion: 1` with a nonempty `repositories` array
+(one `{ "id": ... }` entry per repository to track); the launcher copies it
+to `.clossys/inventory.json` on the appointed hub. The bare command above
+still covers the empty-directory create path, which needs no inventory.
+
 Launcher is executable tooling, not a role. Advisor stays the engagement
 engine. Starter stays the protected-base `decide` gate in CI after a hub
 exists. Positions still open in the repository that has the real job.

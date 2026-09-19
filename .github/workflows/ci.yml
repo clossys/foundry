@@ -1,5 +1,14 @@
 name: CI
 
+# CI's triggers are pull_request and push to main. It is this repository's
+# broad, always-on gate: safety, scope, provenance, build, and test run here
+# so a change is judged before it can merge. It does not publish, qualify,
+# or reconcile against the registry — publish.yml owns release execution,
+# registry-parity.yml owns the post-merge registry comparison, and the
+# aggregate canary runs only from its own dispatch-only workflow — while its
+# per-package tarball scan reuses the same scripts rather than introducing a
+# second copy.
+
 on:
   pull_request:
   push:

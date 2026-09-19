@@ -46,7 +46,8 @@ npm install @clossys/butler
 
 The package publishes to the public npm registry
 (`https://registry.npmjs.org`) with public access; installing it needs no
-GitHub token or other credential.
+GitHub token or other credential. Hub placement across repositories is
+appointed by `@clossys/launcher`; this package declares no hub I/O.
 
 ```ts
 import { checkCurrency, evaluateStandingInstruction } from "@clossys/butler";

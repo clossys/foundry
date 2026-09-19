@@ -19,6 +19,12 @@
       "version": "0.9.9",
       "reason": "This version was cut in a cloud sandbox whose outbound HTTPS is intercepted and re-terminated (issue #833). scripts/run-candidate-qualification.mjs is owner/developer-machine work in that sandbox class: sanitizedEnv() does not forward a parent CA-trust variable, and a qualification record exists to prove exact artifact bytes rather than bytes observed through an interception path. 0.9.9 may not be published before the record exists.",
       "issue": 833
+    },
+    {
+      "package": "inspector",
+      "version": "0.2.6",
+      "reason": "Docs-hygiene batch (#999/#1001) also pins inspector's adm-zip dependency to its exact resolved version (0.6.1) and bumps 0.2.5 -> 0.2.6 from the same developer machine that produced 0.2.4 and 0.2.5. The qualification runtime stays pinned exactly (scripts/lib/release-runtime.mjs: Node v24.19.0, npm 11.17.0, zlib 1.3.2.1-motley-3246f1b) while this machine runs node v24.15.0, npm 11.12.1, zlib 1.2.12, so run-candidate-qualification.mjs refuses before it packs anything — same cause as the 0.2.4 instance, distinct from #833's intercepted-egress sandbox class. The pin is right; a record made on a different toolchain proves different bytes. The dependency-pin edit touches dependencies in packages/inspector/package.json only and no source; 0.2.6 may not be published before the record exists.",
+      "issue": 999
     }
   ]
 }
