@@ -1,6 +1,6 @@
 {
   "name": "@clossys/giver",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -18,7 +18,8 @@
     }
   },
   "bin": {
-    "giver-check": "dist/cli.js"
+    "giver-check": "dist/cli.js",
+    "giver-rate-check": "dist/timely-semantic-closure-rate-cli.js"
   },
   "files": [
     "dist",
@@ -29,6 +30,12 @@
     "LICENSE"
   ],
   "sideEffects": false,
+  "foundry": {
+    "assessment": {
+      "bin": "giver-rate-check",
+      "invocation": "single-json-input"
+    }
+  },
   "description": "The giver role: did this person get what they asked for, or a reason, or a human — and everything we owed them, on time? Dependency-free machinery for a consumer's own delivery records: a runtime verdict that is a ternary (delivered/refused/handed off, never a binary), an obligation ternary (discharged/breached/unprovable), a decision core in which no collaborator is optional and no indeterminate read can become a delivery or a bare refusal, the precedence rule between a standing refusal and a thing we owe, a ./record subpath carrying versioned standing-decision and retained-grounds document seams without cross-role imports, and three gates behind one giver-check bin — handoff-placement, which fails when a hand-off's declared service level elapsed with no placement record, when it was picked up late, when a placement predates the hand-off it answers, or when a placement names a hand-off outside the set; grounding, which fails when a delivered answer cites no source, when a refusal retains no grounds, or when either cites material the consumer no longer holds; and obligation-discharge, which fails when a fired obligation's window closed with no delivery proof, when every recorded send against it failed, when a delivery landed outside the window, or when a proof names an obligation outside the set. Ships the schema and the checkers; every consumer authors its own values.",
   "keywords": [
     "giver",
