@@ -184,7 +184,7 @@ test("control (d4): a missing BASE_SHA (empty string) reports touches=true", () 
 // fail-closed (`!= 'false'`, never `== 'true'`), and the gating step itself
 // is `continue-on-error: true` so its own failure cannot stop the job
 // either.
-test("control (e): the build job has no job-level `if:` — it always reports its required status context", () => {
+test("control (e): the build job always reports its required status context on pull_request", () => {
   const workflow = readFileSync(workflowPath, "utf8");
   const start = workflow.indexOf("  build:\n");
   assert.notEqual(start, -1, "workflow is missing the build job");
@@ -193,10 +193,19 @@ test("control (e): the build job has no job-level `if:` — it always reports it
   const build = workflow.slice(start, next === -1 ? workflow.length : start + 1 + next);
 
   assert.match(build, /^\s+name: build and test$/m, "the required context name must be present");
-  // A job-level `if:` sits at 4-space indent, directly under `build:`,
-  // never inside a step (steps are list items at 6-space indent with their
-  // own keys at 8-space indent).
-  assert.doesNotMatch(build, /^ {4}if:/m, "the build job itself must never carry a job-level `if:`");
+  // A job-level `if:` that is false on pull_request is how a required
+  // context stops reporting. Skipping a tree-identical push to main is
+  // allowed: that tree already passed on the PR head.
+  const jobIf = build.match(/^ {4}if: (.+)$/m);
+  if (jobIf) {
+    assert.match(
+      jobIf[1],
+      /github\.event_name != 'push'/,
+      "any job-level if on build must remain true for every pull_request",
+    );
+  }
+
+  assert.doesNotMatch(build, /needs: \[safety, scope\]/, "build must not wait for safety/scope before starting");
 
   assert.match(
     build,
