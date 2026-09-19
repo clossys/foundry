@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "package": "@clossys/launcher",
+  "archetype": "current-direct",
+  "bins": {
+    "launcher": 0,
+    "launcher-check": 0
+  },
+  "fixtures": [
+    "observation-satisfied.json",
+    "observation-violated.json",
+    "observation-indeterminate.json"
+  ],
+  "cases": [
+    {
+      "id": "plan-satisfied",
+      "bin": "launcher-check",
+      "args": [
+        { "literal": "--input" },
+        { "fixture": "observation-satisfied.json" }
+      ],
+      "exitCode": 0,
+      "group": "plan"
+    },
+    {
+      "id": "plan-violated",
+      "bin": "launcher-check",
+      "args": [
+        { "literal": "--input" },
+        { "fixture": "observation-violated.json" }
+      ],
+      "exitCode": 1,
+      "group": "plan"
+    },
+    {
+      "id": "plan-indeterminate",
+      "bin": "launcher-check",
+      "args": [
+        { "literal": "--input" },
+        { "fixture": "observation-indeterminate.json" }
+      ],
+      "exitCode": 2,
+      "group": "plan"
+    }
+  ],
+  "dimensionEvidence": {
+    "rollback": "restoration",
+    "duplicate": "plan"
+  }
+}
