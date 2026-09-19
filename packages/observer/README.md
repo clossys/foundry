@@ -256,7 +256,7 @@ assemble into advisor's document — this adapter attaches no `id`,
 `observedAt`, or `evidence`, because it has no clock and no evidence store.
 
 The cell shape mirrors `@clossys/advisor`'s `HubPlacementCell`
-(`packages/advisor/src/types.ts`) **structurally, not by import** — the
+(`packages/advisor/src/types.ts`; that path does not ship with this package) **structurally, not by import** — the
 same move `FleetInstalledInventory` already makes for integrator's
 inventory (above). A real advisor cell satisfies `HubPlacementCellInput`
 as-is, and this package adds no dependency on advisor to produce one.

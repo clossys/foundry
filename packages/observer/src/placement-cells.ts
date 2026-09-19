@@ -5,7 +5,7 @@
  * ADVISOR'S TYPE, MIRRORED STRUCTURALLY
  * --------------------------------------
  * The cell shape here mirrors `@clossys/advisor`'s `HubPlacementCell`
- * (`packages/advisor/src/types.ts`) -- kind, packageName, repositoryId,
+ * (`packages/advisor/src/types.ts`; that path does not ship with this package) -- kind, packageName, repositoryId,
  * observed, expected -- WITHOUT importing that package. This is the same
  * "named here without depending on the other package" move this package's
  * own `FleetInstalledInventory` already makes for `@clossys/integrator`'s
@@ -35,7 +35,7 @@ export type HubPlacementCellKind = "over-install" | "missing" | "stale";
 
 /**
  * Structural match for `@clossys/advisor`'s `HubPlacementCell`
- * (`packages/advisor/src/types.ts`), named here rather than imported -- see
+ * (`packages/advisor/src/types.ts`; that path does not ship with this package), named here rather than imported -- see
  * the module header. A real advisor cell carries additional fields (`id`,
  * `observedAt`, `evidence`); those are the caller's to attach when the
  * cells become a `HubPlacementEvidence` document, since this adapter has no

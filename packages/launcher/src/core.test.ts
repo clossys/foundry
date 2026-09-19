@@ -570,7 +570,7 @@ describe("applyWorkspacePlan", () => {
       `${JSON.stringify(
         {
           name: "hub",
-          optionalDependencies: { [ADVISOR_PACKAGE]: "0.2.1", "@clossys/scout": "0.1.0" },
+          optionalDependencies: { [ADVISOR_PACKAGE]: "0.2.1", "@clossys/writer": "0.1.0" },
           peerDependencies: { [ADVISOR_PACKAGE]: "0.2.0" },
         },
         null,
@@ -581,7 +581,7 @@ describe("applyWorkspacePlan", () => {
     expect(report.advisorPin.optionalDependencies).toBe("0.2.1");
     expect(report.advisorPin.peerDependencies).toBe("0.2.0");
     expect(report.dualPin).toBe(true);
-    expect(report.extraClossys).toEqual(["@clossys/scout"]);
+    expect(report.extraClossys).toEqual(["@clossys/writer"]);
     expect(report.pinFindings.map((finding) => finding.bucket)).toEqual(["optionalDependencies", "peerDependencies"]);
   });
 
