@@ -27,7 +27,11 @@
  *      `checkObligationDischarge`. Each is a pure function returning a
  *      three-state result, and `cli.ts` folds those onto the `0`/`1`/`2`
  *      exit contract without ever collapsing "could not run" into either
- *      "clean" or "findings".
+ *      "clean" or "findings". The charter metric `timely semantic closure
+ *      rate` is computed by `assessTimelySemanticClosureRate` from
+ *      consumer-supplied independent observations and is not any one gate.
+ *      `giver-rate-check` is the assessment surface; `giver-check` remains
+ *      the three-gate CLI.
  *
  * The defect this package repays is a send path whose policy collaborator
  * was optional and defaulted to permissive, so a host that wired nothing
@@ -93,6 +97,12 @@ export {
   decideOutcome,
   evaluateObligation,
 } from "./contract.js";
+export { assessTimelySemanticClosureRate } from "./timely-semantic-closure-rate.js";
+export type {
+  TimelySemanticClosureRateAssessment,
+  TimelySemanticClosureRateFinding,
+  TimelySemanticClosureRateState,
+} from "./timely-semantic-closure-rate.js";
 export type {
   DeliveryBasis,
   GroundingFailureReason,

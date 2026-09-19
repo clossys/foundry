@@ -140,10 +140,48 @@ credential.
 import { checkObligationDischarge, decideOutcome } from "@clossys/giver";
 ```
 
+## Timely semantic closure rate
+
+Independent consumer evidence shows the position's owned metric meets its
+setpoint over the declared review cadence. The owned metric is `timely
+semantic closure rate`, computed by `assessTimelySemanticClosureRate()`. An
+empty evaluated set is `indeterminate`, never a perfect rate of 1.
+`checkHandoffPlacement`, `checkGrounding`, and `checkObligationDischarge`
+remain the gates they are; none of them is this combined rate. This package
+does not measure consumer evidence and does not close the loop. A green run
+of this package's tests is not a close.
+
+```ts
+import { assessTimelySemanticClosureRate } from "@clossys/giver";
+
+const report = assessTimelySemanticClosureRate(input);
+```
+
+```bash
+giver-rate-check assessment.json
+```
+
+The command prints JSON and exits `0` for satisfied, `1` for violated, and
+`2` for indeterminate, unreadable, or invalid input.
+
+This package declares that command as its first-day assessment surface in
+its own manifest:
+
+```json
+"foundry": { "assessment": { "bin": "giver-rate-check", "invocation": "single-json-input" } }
+```
+
+Onboarding discovers that declaration from the installed manifest and never
+infers a surface. `giver-check` remains the three-gate CLI and is not the
+assessment surface. Giver is not a required first-day role; Advisor remains
+the only required first-day assessment.
+
 ## The three gates
 
 All three are reachable from one installed bin, `giver-check`, dispatched
-on the first argument matching a gate name exactly.
+on the first argument matching a gate name exactly. The charter assessment
+is a second mapped bin, `giver-rate-check`, and is not a fourth gate on
+this dispatcher.
 
 ```bash
 giver-check handoff-placement ./handoffs.json ./placements.json --at 2026-08-22T12:00:00.000Z
@@ -251,6 +289,8 @@ Everything below is exported from the package root.
 | `checkHandoffPlacement` | Gate 1, over hand-offs, placements, and the instant to judge at. |
 | `checkGrounding` | Gate 2, over answers and the grounds the consumer still retains. |
 | `checkObligationDischarge` | Gate 3, over obligations, delivery proofs, and the instant to judge at. |
+| `assessTimelySemanticClosureRate` | Charter close metric. Returns `TimelySemanticClosureRateAssessment` from consumer-supplied independent observations. Not any one of the three gates. |
+| `TimelySemanticClosureRateAssessment`, `TimelySemanticClosureRateFinding`, `TimelySemanticClosureRateState` | Its result shape |
 
 ### Validators and guards
 
