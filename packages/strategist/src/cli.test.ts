@@ -12,6 +12,7 @@ import { CliInputError, main } from "./cli.js";
 
 let strategyDir: string;
 let scanDir: string;
+let factsDir: string;
 
 const validFact = {
   key: "active-customers",
@@ -25,6 +26,7 @@ const validFact = {
 beforeEach(() => {
   strategyDir = mkdtempSync(join(tmpdir(), "strategy-cli-strategy-"));
   scanDir = mkdtempSync(join(tmpdir(), "strategy-cli-scan-"));
+  factsDir = mkdtempSync(join(tmpdir(), "strategy-cli-factsdir-"));
   vi.spyOn(console, "log").mockImplementation(() => {});
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
@@ -32,6 +34,7 @@ beforeEach(() => {
 afterEach(() => {
   rmSync(strategyDir, { recursive: true, force: true });
   rmSync(scanDir, { recursive: true, force: true });
+  rmSync(factsDir, { recursive: true, force: true });
   vi.restoreAllMocks();
 });
 
@@ -555,5 +558,116 @@ describe("direct-path reachability — the real compiled dist/cli.js", () => {
 
     expect(result.stdout).toContain("Brand coverage: satisfied.");
     expect(result.status).toBe(0);
+  });
+});
+
+// -----------------------------------------------------------------------
+// --facts-dir — the directory facts source, as an alternative to the flat
+// facts.json. Same hermetic-mkdtemp discipline as everything above: real
+// files on disk, `main(argv)` called directly. The mode is mutually
+// exclusive with the flat file by contract, so each suite below also
+// proves the OTHER source is absent (or refuses) — a run must never be
+// able to pass while silently preferring one of two supplied registries.
+// -----------------------------------------------------------------------
+
+function writeFactsLeaf(name: string, value: unknown): void {
+  writeFileSync(join(factsDir, name), JSON.stringify(value));
+}
+
+describe("main — --facts-dir — argument handling", () => {
+  it("throws CliInputError when --facts-dir is given without a value", () => {
+    expect(() => main([strategyDir, scanDir, "--facts-dir"])).toThrow(CliInputError);
+  });
+
+  it("throws CliInputError when --facts-dir names a directory that does not exist", () => {
+    writeFileSync(join(scanDir, "about.md"), "Nothing claim-shaped here.");
+    expect(() => main([strategyDir, scanDir, "--facts-dir", join(factsDir, "nope")])).toThrow(CliInputError);
+  });
+
+  it("refuses --facts-dir and the flat facts.json together, naming the conflict", () => {
+    writeFileSync(join(strategyDir, "facts.json"), JSON.stringify([validFact])); // flat facts.json present
+    writeFileSync(join(scanDir, "about.md"), "Nothing claim-shaped here.");
+    expect(() => main([strategyDir, scanDir, "--facts-dir", factsDir])).toThrow(
+      /mutually exclusive facts sources/,
+    );
+  });
+
+  it("refuses --facts-dir when facts.json exists in strategy-dir, even with the facts directory elsewhere", () => {
+    writeFileSync(join(strategyDir, "facts.json"), JSON.stringify([validFact]));
+    writeFileSync(join(scanDir, "about.md"), "Nothing claim-shaped here.");
+    expect(() => main([strategyDir, scanDir, "--facts-dir", factsDir])).toThrow(/mutually exclusive/);
+  });
+});
+
+describe("main — --facts-dir — the third state: could not run (exit 2)", () => {
+  it("returns 2 when a leaf is unparseable, and the error names the leaf", () => {
+    writeFactsLeaf("customers.json", [validFact]);
+    writeFileSync(join(factsDir, "broken.json"), "{ not json");
+    writeFileSync(join(scanDir, "about.md"), "We now serve 4,200 customers.");
+    expect(main([strategyDir, scanDir, "--facts-dir", factsDir])).toBe(2);
+  });
+
+  it("returns 2 when a leaf is schema-invalid, and the error names the leaf", () => {
+    writeFactsLeaf("customers.json", [validFact]);
+    writeFileSync(join(factsDir, "claims.json"), JSON.stringify([{ key: "bad key" }]));
+    writeFileSync(join(scanDir, "about.md"), "We now serve 4,200 customers.");
+    expect(main([strategyDir, scanDir, "--facts-dir", factsDir])).toBe(2);
+  });
+
+  it("returns 2 when a non-JSON leaf is present — unaccounted-for leaves are refused, never ignored", () => {
+    writeFactsLeaf("customers.json", [validFact]);
+    writeFileSync(join(factsDir, "notes.md"), "misplaced prose");
+    writeFileSync(join(scanDir, "about.md"), "We now serve 4,200 customers.");
+    expect(main([strategyDir, scanDir, "--facts-dir", factsDir])).toBe(2);
+  });
+
+  it("returns 2 when the facts directory holds no JSON leaf at all", () => {
+    writeFileSync(join(scanDir, "about.md"), "Nothing claim-shaped here.");
+    expect(main([strategyDir, scanDir, "--facts-dir", factsDir])).toBe(2);
+  });
+});
+
+describe("main — --facts-dir — real runs", () => {
+  it("returns 0 on a clean pass reading facts from directory leaves", () => {
+    writeFactsLeaf("customers.json", [validFact]);
+    writeFileSync(join(scanDir, "about.md"), "We now serve 4,200 customers.");
+    expect(main([strategyDir, scanDir, "--facts-dir", factsDir])).toBe(0);
+  });
+
+  it("returns 1 on a finding, exactly as the flat mode would", () => {
+    writeFactsLeaf("customers.json", [validFact]);
+    writeFileSync(join(scanDir, "about.md"), "We now serve 9,999 customers.");
+    expect(main([strategyDir, scanDir, "--facts-dir", factsDir])).toBe(1);
+  });
+
+  it("combines multiple leaves into one fact set — a claim traced by a second leaf's fact is not a finding", () => {
+    writeFactsLeaf("customers.json", [validFact]);
+    writeFactsLeaf("uptime.json", [{ ...validFact, key: "uptime", label: "Uptime", value: 99.9, aliases: ["99.9%"] }]);
+    writeFileSync(join(scanDir, "about.md"), "We now serve 4,200 customers at 99.9% uptime.");
+    expect(main([strategyDir, scanDir, "--facts-dir", factsDir])).toBe(0);
+  });
+
+  it("combined directory output equals the flat equivalent: same scan, same verdict either way", () => {
+    // Flat mode.
+    writeFileSync(join(strategyDir, "facts.json"), JSON.stringify([validFact]));
+    writeFileSync(join(scanDir, "about.md"), "We now serve 4,200 customers.");
+    const flatClean = main([strategyDir, scanDir]);
+    writeFileSync(join(scanDir, "about.md"), "We now serve 9,999 customers.");
+    const flatFinding = main([strategyDir, scanDir]);
+
+    // Directory mode over the same registry, re-laid-out into one leaf.
+    // The flat file must go first — the two sources are mutually
+    // exclusive, which is exactly what the refusal tests above prove.
+    rmSync(join(strategyDir, "facts.json"));
+    writeFactsLeaf("customers.json", [validFact]);
+    writeFileSync(join(scanDir, "about.md"), "We now serve 4,200 customers.");
+    const dirClean = main([strategyDir, scanDir, "--facts-dir", factsDir]);
+    writeFileSync(join(scanDir, "about.md"), "We now serve 9,999 customers.");
+    const dirFinding = main([strategyDir, scanDir, "--facts-dir", factsDir]);
+
+    expect(flatClean).toBe(0);
+    expect(dirClean).toBe(flatClean);
+    expect(flatFinding).toBe(1);
+    expect(dirFinding).toBe(flatFinding);
   });
 });

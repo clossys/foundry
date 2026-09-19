@@ -3,6 +3,36 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.0] - 2026-09-19
+
+### Added
+
+- `readStrategyDirectory`, a pure reader that combines a directory of
+  per-fact JSON leaves into one validated `Fact[]`. It accepts the
+  directory's contents as a map of relative path -> raw file text (no
+  filesystem access of its own — `readStrategy` remains this package's
+  one deliberate I/O surface, and a CLI or programmatic caller feeds the
+  map), validates every leaf with the same `validateFacts` rules the flat
+  file follows, and refuses — naming the offending file — any leaf that
+  is unparseable, schema-invalid, or not a `*.json` file at all, plus a
+  directory holding no JSON leaf. Facts from leaves that did validate are
+  still returned; judgement about an incomplete set belongs to the
+  caller, the same discipline `readStrategy`'s `issues`/`complete` pair
+  holds to.
+- Each fact read from a directory records its provenance in the new
+  optional `Fact.sourceFile` (the leaf's path as supplied). `readStrategy`
+  leaves the field unset; validators neither require nor reject it.
+- `strategist-check --facts-dir <dir>`: reads facts from a directory of
+  per-fact JSON files instead of the flat `facts.json`, via the same
+  fail-closed contract — any leaf refusal is exit code 2, never a clean
+  pass. `--facts-dir` and the flat `facts.json` are mutually exclusive:
+  supplying both is refused (exit 2), naming the conflict.
+
+### Notes
+
+- This does not claim the position is closed. No publication or
+  qualification is recorded by this change.
+
 ## [0.1.6] - 2026-09-18
 
 ### Added
