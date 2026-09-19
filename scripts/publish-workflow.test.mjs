@@ -169,6 +169,8 @@ test("ISSUE #757: the only trigger is workflow_dispatch, and the prose says exac
 });
 
 test("publish concurrency is per dispatched package, not catalogue-wide", () => {
+  // Refs: #416, #757 — catalogue-wide `group: publish` serialised unrelated
+  // packages and could evict a queued second dispatch of a different name.
   assert.match(workflow, /group: publish-\$\{\{ inputs\.package \}\}/);
   assert.match(workflow, /cancel-in-progress: false/);
   assert.equal(
