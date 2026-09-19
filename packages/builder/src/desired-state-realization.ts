@@ -29,6 +29,22 @@ export interface DesiredStateRealizationAssessment {
   readonly proposedPositions: readonly unknown[];
 }
 
+/** One hub-inventoried repository. Mirrors the hub inventory's `repositories` entries (issue #997). */
+export interface HubInventoryEntry {
+  readonly id: string;
+}
+
+/**
+ * Caller-supplied hub inventory (issue #997): the repositories the account
+ * hub inventories. Pure input -- this module never reads a hub marker, an
+ * inventory file, or `gh`; the caller supplies the document, and scoping is
+ * the only thing done with it.
+ */
+export interface HubInventory {
+  readonly schemaVersion: 1;
+  readonly repositories: readonly HubInventoryEntry[];
+}
+
 type UnknownRecord = Record<string, unknown>;
 
 function record(value: unknown): value is UnknownRecord {
@@ -82,6 +98,14 @@ interface CountingObservation {
  * Computes `desired-state realization rate`: declared live-state subjects
  * independently verified at their desired state / all declared live-state
  * subjects evaluated.
+ *
+ * When `input.hubInventory` is present (issue #997), reconciliation is
+ * scoped to the inventoried repositories: the caller must declare every
+ * subject's repositoryId, subjects whose repositoryId the hub does not
+ * inventory are flagged `unlisted` and excluded from the rate, and
+ * observations tied to unlisted subjects are never counted as evidence.
+ * The inventory is caller-supplied structure -- this module performs no
+ * I/O to obtain or verify it.
  */
 export function assessDesiredStateRealizationRate(input: unknown): DesiredStateRealizationAssessment {
   if (!record(input)) {
@@ -101,6 +125,35 @@ export function assessDesiredStateRealizationRate(input: unknown): DesiredStateR
 
   const declaredIds: string[] = [];
   const declaredSet = new Set<string>();
+  // The inventory, re-validated here as one predicate: a well-formed
+  // schemaVersion 1 document is the only thing that scopes reconciliation.
+  // A malformed one never scopes anything (all declared subjects stay in
+  // the denominator) and leaves exactly the shape finding below as the
+  // caller's signal.
+  const inventory = input.hubInventory;
+  const inventoryValid =
+    inventory !== undefined &&
+    record(inventory) &&
+    inventory.schemaVersion === 1 &&
+    Array.isArray(inventory.repositories) &&
+    inventory.repositories.every((entry: unknown) => record(entry) && text(entry.id));
+  if (inventory !== undefined && !inventoryValid) {
+    findings.push(
+      finding(
+        "hub-inventory-shape",
+        "hubInventory, when present, must be a schemaVersion 1 document whose repositories each declare a non-empty id.",
+        "hubInventory",
+      ),
+    );
+  }
+  const inventoriedIds = new Set<string>();
+  if (inventoryValid) {
+    for (const entry of inventory.repositories as unknown[]) {
+      const id = (entry as Record<string, unknown>).id;
+      if (typeof id === "string" && id.trim() !== "") inventoriedIds.add(id);
+    }
+  }
+  const scoping = inventoryValid;
   declaredSubjects.forEach((item, index) => {
     const path = `declaredSubjects[${index}]`;
     if (!record(item) || !text(item.id)) {
@@ -109,6 +162,10 @@ export function assessDesiredStateRealizationRate(input: unknown): DesiredStateR
     }
     if (declaredSet.has(item.id)) {
       findings.push(finding("duplicate-subject-id", `Duplicate id "${item.id}".`, `${path}.id`));
+      return;
+    }
+    if (scoping && (typeof item.repositoryId !== "string" || item.repositoryId.trim() === "")) {
+      findings.push(finding("subject-repository-id-required", "repositoryId must be a non-empty string when a hub inventory scopes reconciliation.", `${path}.repositoryId`));
       return;
     }
     declaredSet.add(item.id);
@@ -152,6 +209,22 @@ export function assessDesiredStateRealizationRate(input: unknown): DesiredStateR
   let evaluatedSubjects = 0;
   let realizedSubjects = 0;
   for (const id of declaredIds) {
+    if (scoping) {
+      const subjectRecord = declaredSubjects.find(
+        (item: unknown) => record(item) && item.id === id,
+      ) as Record<string, unknown> | undefined;
+      const repositoryId = subjectRecord?.repositoryId;
+      if (typeof repositoryId === "string" && !inventoriedIds.has(repositoryId)) {
+        findings.push(
+          finding(
+            "unlisted",
+            `Declared subject "${id}" belongs to repository "${repositoryId}", which the supplied hub inventory does not list; it is excluded from the rate.`,
+            `declaredSubjects.${id}`,
+          ),
+        );
+        continue;
+      }
+    }
     const observed = counting.get(id) ?? [];
     if (observed.length === 0) {
       findings.push(finding("subject-unevaluated", `Declared subject "${id}" has no counting independent observation.`, `declaredSubjects.${id}`));

@@ -4,7 +4,14 @@ import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { assessDesiredStateRealizationRate } from "./desired-state-realization.js";
 
-const USAGE = `Usage: builder-check <assessment.json>\n\nAssess desired-state realization rate from consumer-supplied independent observations.\nExit codes: 0 = satisfied, 1 = violated, 2 = indeterminate or unreadable.`;
+const USAGE = `Usage: builder-check <assessment.json>
+
+Assess desired-state realization rate from consumer-supplied independent
+observations. The input may optionally carry a "hubInventory"
+({ "schemaVersion": 1, "repositories": [{ "id": "..." }] }) document; when
+present, reconciliation is scoped to those repository ids and unlisted
+subjects are flagged. Pure input: no hub or inventory is ever fetched.
+Exit codes: 0 = satisfied, 1 = violated, 2 = indeterminate or unreadable.`;
 
 export class BuilderCliInputError extends Error {}
 

@@ -16,6 +16,13 @@ export interface TargetPackage extends ExactPackage {
   readonly invocation: "single-json-input";
 }
 
+/** Caller-supplied evidence about the hub that appointed the subject repository. Starter performs no I/O to verify it. */
+export interface StarterHubEvidence {
+  readonly owner: string;
+  readonly repository: string;
+  readonly inventoried: boolean;
+}
+
 /** Consumer-owned protected-base request. It never contains a command, shell fragment, or CLI path. */
 export interface StarterRequest {
   readonly schemaVersion: 1;
@@ -32,6 +39,8 @@ export interface StarterRequest {
     readonly assessment: string;
     readonly targetInput: string;
   };
+  /** Optional hub-inventory evidence supplied by the caller; absence changes nothing. */
+  readonly hub?: StarterHubEvidence;
 }
 
 /** Metadata produced by the uncredentialed pull-request job. */

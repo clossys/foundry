@@ -43,6 +43,29 @@ builder-check assessment.json
 The command prints JSON and exits `0` for satisfied, `1` for violated, and
 `2` for indeterminate, unreadable, or invalid input.
 
+### Hub inventory scoping (#997)
+
+The assessment input may optionally carry a `hubInventory` document —
+`{ "schemaVersion": 1, "repositories": [{ "id": "..." }] }` — naming the
+repositories the account hub inventories. It is pure caller input: this
+module never reads a hub marker, an inventory file, or `gh`, and an absent
+`hubInventory` changes nothing.
+
+When a well-formed inventory is supplied, reconciliation is scoped to it:
+
+- every declared subject must name the repository it belongs to
+  (`repositoryId`); one without it is a `subject-repository-id-required`
+  finding;
+- a subject whose `repositoryId` the inventory does not list is flagged
+  `unlisted` and excluded from the rate — it is the hub's reconciliation
+  work to list a repository, not this metric's job to certify one it was
+  never told about; and
+- observations tied to unlisted subjects are never counted as evidence.
+
+A malformed inventory never scopes anything — every declared subject stays
+in the denominator, and the `hub-inventory-shape` finding is the caller's
+signal that the run was not scoped.
+
 This package declares that command as its first-day assessment surface in
 its own manifest:
 
@@ -974,6 +997,7 @@ package's whole design exists to keep from reading as "looks fine."
 | `RepositoryObservationStatus` / `RepositoryObservationResult` | type | One expected repository's status, and the `GateResult` it carries |
 | `ObservationAggregateIndeterminateReason` | type | The union `OBSERVATION_AGGREGATE_INDETERMINATE_REASONS` enumerates |
 | `ObservationAggregateResultIndeterminateReason` | type | The union `OBSERVATION_AGGREGATE_RESULT_INDETERMINATE_REASONS` enumerates |
+| `HubInventory` / `HubInventoryEntry` | type | The optional caller-supplied hub-inventory input (`schemaVersion: 1`, `repositories: [{ id }]`) and its entries (#997) |
 
 | `discoverAccountWorkspaces(port, options)` (`./machine`) | function | Finds every self-declared account workspace under a root; `indeterminate`, never dropped, for one that cannot be resolved |
 | `loadThirdPartySkills(port, options)` (`./machine`) | function | The third-party-scoped skill source of truth, tagged with controller's own `SkillScope` |
