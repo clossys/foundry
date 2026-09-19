@@ -1,6 +1,6 @@
 {
   "name": "@clossys/messenger",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -18,7 +18,8 @@
     }
   },
   "bin": {
-    "messenger-check": "dist/cli.js"
+    "messenger-check": "dist/cli.js",
+    "messenger-rate-check": "dist/timely-verified-delivery-rate-cli.js"
   },
   "files": [
     "dist",
@@ -29,6 +30,12 @@
     "LICENSE"
   ],
   "sideEffects": false,
+  "foundry": {
+    "assessment": {
+      "bin": "messenger-rate-check",
+      "invocation": "single-json-input"
+    }
+  },
   "description": "The messenger role: deliver authorized, finished communications through a durable dispatch boundary and measure timely delivery from independent outcome evidence.",
   "keywords": [
     "messaging",
