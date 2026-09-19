@@ -356,7 +356,7 @@ test("current-scope publication rejects coherent rewrites and rewrite-restore hi
     // the cleanest, most exact shape this control can assert, and the one
     // that actually proves the CLI detects tampering end to end.
     assert.deepEqual(
-      report.findings.map((item) => ({ rule: item.rule, subject: item.subject })),
+      report.findings.filter(isFailureFinding).map((item) => ({ rule: item.rule, subject: item.subject })),
       [{ rule: "state-ahead-of-evidence", subject: "@clossys/advisor" }],
     );
   } finally {

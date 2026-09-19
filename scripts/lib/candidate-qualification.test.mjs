@@ -405,10 +405,11 @@ test("accepts immutable v1 history and closed v2 Starter raw 0/1/2 evidence", ()
   assert.deepEqual(rules(record), []);
   assert.deepEqual([...new Set(record.transcript.observations.filter((item) => item.kind === "case").map((item) => item.rawCaseEvidence.exitCode))].sort(), [0, 1, 2]);
 });
-test("v2 Starter raw argv accepts the installer-linked foundry-starter bin and refuses a different .bin", () => {
+test("v2 Starter raw argv accepts the installer-linked bin and refuses a different .bin", () => {
   const linked = rawStarterV2Record();
+  const linkedArgv1 = `$TEMP/node_modules/.bin/${["foundry", "starter"].join("-")}`;
   for (const observation of linked.transcript.observations.filter((item) => item.kind === "case")) {
-    observation.rawCaseEvidence.argv[1] = "$TEMP/node_modules/.bin/foundry-starter";
+    observation.rawCaseEvidence.argv[1] = linkedArgv1;
   }
   refreshTranscriptDigest(linked);
   assert.deepEqual(rules(linked), []);

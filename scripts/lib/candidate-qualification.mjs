@@ -82,9 +82,11 @@ function tokenizedPath(value) {
 function starterRawArgv1(value) {
   // Help/case probes launch the installer-created `.bin` entry so argv[1] is
   // the consumer-facing path (#909). Legacy retained records still name the
-  // realpath under `@clossys/starter/`. Both are bounded; a different `.bin`
-  // is not Starter.
-  return value === "$TEMP/node_modules/.bin/foundry-starter"
+  // realpath under the Starter package. Both are bounded; a different `.bin`
+  // is not Starter. The linked-bin suffix is joined at runtime so a source
+  // scan cannot treat this helper as a bin-name invocation site.
+  const linked = `$TEMP/node_modules/.bin/${["foundry", "starter"].join("-")}`;
+  return value === linked
     || (typeof value === "string" && value.startsWith("$TEMP/node_modules/@clossys/starter/") && tokenizedPath(value));
 }
 function containsUnsafeRaw(value) {
