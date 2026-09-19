@@ -11,6 +11,8 @@ function initiative(id: string, repository = `repo-${id}`, shared: Partial<Initi
 function work(item: Initiative): FirstWaveWorkItem { return { id: `work-${item.id}`, initiativeId: item.id, targetRepositoryId: item.targetRepositoryIds[0] as string, deliveryOwnerRef: `delivery-${item.id}`, package: { name: `package-${item.id}`, version: "1.2.3", integrity: integrity() }, bin: "approved-check", invocation: "single-json-input", placement: "declared placement", baseline: { metricRef: `metric-${item.id}`, value: 0, observedAt: "2026-08-24T12:00:00Z", evidence: proof(`baseline-${item.id}`) }, completion: { definition: "Outcome moves in the declared direction.", independentOutcomeOwnerRef: `outcome-${item.id}`, evidenceSource: "independent-measurement", direction: "increase", setpoint: 1, windowDays: 14 }, rollback: { procedure: "Use the approved rollback procedure.", evidenceSource: "rollback-record" }, mutationSurfaces: [`mutation-${item.id}`] }; }
 function prework(id: string, kind: PreWorkItem["kind"], repository: string, status: PreWorkItem["status"] = "satisfied"): PreWorkItem { const value: PreWorkItem = { id, kind, status, addressesReadinessCriteria: [kind === "baseline" ? "baseline" : "initiative-mutation-dependency-inventory"], targetRepositoryIds: [repository], ownerRef: `work-owner-${id}`, impact: "Affects the first-wave decision.", evidence: [proof(`observed-${id}`)], nextAction: { ...nextAction, ownerRef: `work-owner-${id}` }, dependencySurfaces: ["dependency-surface"], mutationSurfaces: ["mutation-surface"] }; if (status === "satisfied") value.clearance = { authorityOwnerRef: `authority-owner-${id}`, evidence: [proof(`clearance-${id}`)] }; return value; }
 function placement(kind: HubPlacementCellKind, packageName: string, repositoryId = "repo-one") { return { id: `cell-${kind}-${packageName}`, kind, packageName, repositoryId, observedAt: "2026-08-24T12:00:00Z", evidence: proof(`cell-${kind}-${packageName}`) }; }
+function workWithVersion(version: string): FirstWaveWorkItem { const declared = work(initiative("one")); return { ...declared, package: { ...declared.package, version } }; }
+function preworkForPackage(id: string, kind: PreWorkItem["kind"], repository: string, packageName: string): PreWorkItem { return { ...prework(id, kind, repository, "unresolved"), packageName }; }
 function overlapPrework(first: Initiative, second: Initiative): PreWorkItem { return { ...prework(`overlap-${first.id}-${second.id}`, "conflict", first.targetRepositoryIds[0] as string, "unresolved"), initiativeOverlapIds: [first.id, second.id] }; }
 function input(overrides: Partial<AdvisorAssessmentInput> = {}): AdvisorAssessmentInput { const one = initiative("one"); const two = initiative("two"); return { id: "assessment-one", asOf: "2026-08-24T13:00:00Z", engagement: { id: "engagement-one", status: "active", nextAction, assessmentBasis: basis() }, fitSignals: REQUIRED_FIT_CRITERIA.map((criterion) => ({ id: criterion.id as never, state: "supported" as const, evidence: [proof(`fit-${criterion.id}`)] })), prerequisiteObservations: REQUIRED_READINESS_CRITERIA.map((criterion) => ({ id: criterion.id as never, state: "satisfied" as const, evidence: [proof(`readiness-${criterion.id}`)] })), initiatives: [one, two], firstWave: { initiativeIds: [one.id], objectives: ["A bounded first outcome."], workItems: [work(one)] }, preWorkItems: [prework("baseline-one", "baseline", "repo-one"), prework("conflict-one", "conflict", "repo-one")], reassessment: { cadenceDays: 7, triggers: ["evidence-change", "sponsor-request"] }, ...overrides }; }
 
@@ -157,17 +159,49 @@ describe("first-wave and pre-work gates", () => {
     byWork.firstWave.workItems = [declared, { ...declared, id: "work-remove", act: "remove", package: { ...declared.package, name: "extra-package" } }];
     byWork.placementEvidence = { schemaVersion: 1, cells: [placement("over-install", "extra-package")] };
     expect(validateAdvisorAssessmentInput(byWork).map((entry) => entry.rule)).not.toContain("placement-cell-coverage");
-    const byPre = input({
+    const byUnrelatedPre = input({
       preWorkItems: [...input().preWorkItems, prework("remove-extra", "remove", "repo-one", "unresolved")],
       placementEvidence: { schemaVersion: 1, cells: [placement("over-install", "extra-package")] },
     });
-    expect(validateAdvisorAssessmentInput(byPre).map((entry) => entry.rule)).not.toContain("placement-cell-coverage");
+    expect(validateAdvisorAssessmentInput(byUnrelatedPre).map((entry) => entry.rule)).toContain("placement-cell-coverage");
     const relocate = input();
     relocate.firstWave.workItems[0] = { ...relocate.firstWave.workItems[0] as FirstWaveWorkItem, act: "relocate" };
     relocate.placementEvidence = { schemaVersion: 1, cells: [placement("wrong-wiring", "package-one"), placement("hub-versus-product", "package-one")] };
     expect(validateAdvisorAssessmentInput(relocate).map((entry) => entry.rule)).not.toContain("placement-cell-coverage");
     const missing = input({ placementEvidence: { schemaVersion: 1, cells: [placement("missing", "package-one"), placement("stale", "package-one")] } });
     expect(validateAdvisorAssessmentInput(missing).map((entry) => entry.rule)).not.toContain("placement-cell-coverage");
+  });
+  it("keeps a cell with expectedVersion open until a work item declares that exact version", () => {
+    const reinstall = input();
+    reinstall.firstWave.workItems[0] = workWithVersion("1.2.3");
+    reinstall.placementEvidence = { schemaVersion: 1, cells: [{ ...placement("stale", "package-one"), expectedVersion: "2.0.0" }] };
+    expect(validateAdvisorAssessmentInput(reinstall).map((entry) => entry.rule)).toContain("placement-cell-coverage");
+    const fixed = input();
+    fixed.firstWave.workItems[0] = workWithVersion("2.0.0");
+    fixed.placementEvidence = { schemaVersion: 1, cells: [{ ...placement("stale", "package-one"), expectedVersion: "2.0.0" }] };
+    expect(validateAdvisorAssessmentInput(fixed).map((entry) => entry.rule)).not.toContain("placement-cell-coverage");
+    expect(validateAdvisorAssessmentInput(input({ placementEvidence: { schemaVersion: 1, cells: [{ ...placement("stale", "package-one"), expectedVersion: "not-semver" }] } })).map((entry) => entry.rule)).toContain("placement-cell-field");
+  });
+  it("keeps a cell with expectedPlacement open until the work item declares that bucket", () => {
+    const wrongBucket = input();
+    wrongBucket.firstWave.workItems[0] = { ...workWithVersion("2.0.0"), placement: "devDependencies" };
+    wrongBucket.placementEvidence = { schemaVersion: 1, cells: [{ ...placement("stale", "package-one"), expectedVersion: "2.0.0", expectedPlacement: "dependencies" }] };
+    expect(validateAdvisorAssessmentInput(wrongBucket).map((entry) => entry.rule)).toContain("placement-cell-coverage");
+    const rightBucket = input();
+    rightBucket.firstWave.workItems[0] = { ...workWithVersion("2.0.0"), placement: "dependencies" };
+    rightBucket.placementEvidence = { schemaVersion: 1, cells: [{ ...placement("stale", "package-one"), expectedVersion: "2.0.0", expectedPlacement: "dependencies" }] };
+    expect(validateAdvisorAssessmentInput(rightBucket).map((entry) => entry.rule)).not.toContain("placement-cell-coverage");
+    expect(validateAdvisorAssessmentInput(input({ placementEvidence: { schemaVersion: 1, cells: [{ ...placement("stale", "package-one"), expectedPlacement: "optionalDependencies" as never }] } })).map((entry) => entry.rule)).toContain("placement-cell-field");
+  });
+  it("requires pre-work covering a placement cell to name the cell's package", () => {
+    const referenced = input({
+      preWorkItems: [...input().preWorkItems, preworkForPackage("remove-extra", "remove", "repo-one", "extra-package")],
+      placementEvidence: { schemaVersion: 1, cells: [placement("over-install", "extra-package")] },
+    });
+    expect(validateAdvisorAssessmentInput(referenced).map((entry) => entry.rule)).not.toContain("placement-cell-coverage");
+    expect(validateAdvisorAssessmentInput(input({ preWorkItems: [...input().preWorkItems, prework("remove-extra", "remove", "repo-one", "unresolved")] })).map((entry) => entry.rule)).not.toContain("pre-work-package-name");
+    const missingName = { ...prework("remove-extra", "remove", "repo-one", "unresolved"), packageName: "  " };
+    expect(validateAdvisorAssessmentInput(input({ preWorkItems: [...input().preWorkItems, missingName] })).map((entry) => entry.rule)).toContain("pre-work-package-name");
   });
   it("rejects placement evidence that is not schemaVersion 1 or that names unknown addressedBy ids", () => {
     expect(validateAdvisorAssessmentInput(input({ placementEvidence: { schemaVersion: 2 as never, cells: [] } })).map((entry) => entry.rule)).toContain("placement-evidence-schema");

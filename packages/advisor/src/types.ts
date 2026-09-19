@@ -71,7 +71,7 @@ export interface FirstWaveDefinition { initiativeIds: readonly string[]; objecti
 
 export type HubPlacementCellKind = "missing" | "stale" | "wrong-wiring" | "over-install" | "hub-versus-product";
 /** One caller-observed placement defect on a hub. Advisor never reads the tree; the caller fills this. */
-export interface HubPlacementCell { id: string; kind: HubPlacementCellKind; packageName: string; repositoryId: string; observedAt: string; evidence: EvidenceReference; addressedBy?: readonly string[]; }
+export interface HubPlacementCell { id: string; kind: HubPlacementCellKind; packageName: string; repositoryId: string; observedAt: string; evidence: EvidenceReference; addressedBy?: readonly string[]; /** Concrete exact semver the covering fix must land; a work item declaring any other version keeps the cell open. */ readonly expectedVersion?: string; /** Dependency bucket the pin must land in; a covering work item must declare this exact placement. */ readonly expectedPlacement?: "dependencies" | "devDependencies"; }
 export interface HubPlacementEvidence { schemaVersion: 1; cells: readonly HubPlacementCell[]; }
 
 /** All material entered by a connector or other caller; it is not provider-specific. */

@@ -5,6 +5,22 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.6] - 2026-09-19
+
+### Changed
+
+- Tightened the placement-evidence join. A `HubPlacementCell` may now carry two
+  optional fields (schemaVersion 1, additive): `expectedVersion`, an exact
+  semver the fix must land, and `expectedPlacement`, the `dependencies` or
+  `devDependencies` bucket the pin must land in. A covering install work item
+  that does not declare that exact version — a same-version reinstall of a
+  stale pin, for example — or that places the package in the other bucket no
+  longer closes the cell; it stays open with a `placement-cell-coverage`
+  finding. Pre-work covering a cell must now also name the cell's package
+  through a new optional `PreWorkItem.packageName` field, so unrelated
+  pre-work never closes a cell. Existing cells without the new fields join
+  exactly as before.
+
 ## [0.2.5] - 2026-09-19
 
 ### Changed
