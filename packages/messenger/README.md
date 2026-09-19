@@ -85,13 +85,7 @@ npm install @clossys/messenger
 
 The package is published to the public npm registry
 (`https://registry.npmjs.org`) with public access; no `@clossys` scope
-mapping or GitHub token is needed to install it. Hub placement across
-repositories is appointed by `@clossys/launcher`; this package declares no
-hub I/O.
-
-## Requirements
-
-Node.js 20+.
+mapping or GitHub token is needed to install it.
 
 The provider-neutral root has no runtime dependencies. The optional
 `./providers/resend` subpath requires a consumer-installed `resend@^6.19.0`

@@ -25,6 +25,60 @@
       "version": "0.2.6",
       "reason": "Docs-hygiene batch (#999/#1001) also pins inspector's adm-zip dependency to its exact resolved version (0.6.1) and bumps 0.2.5 -> 0.2.6 from the same developer machine that produced 0.2.4 and 0.2.5. The qualification runtime stays pinned exactly (scripts/lib/release-runtime.mjs: Node v24.19.0, npm 11.17.0, zlib 1.3.2.1-motley-3246f1b) while this machine runs node v24.15.0, npm 11.12.1, zlib 1.2.12, so run-candidate-qualification.mjs refuses before it packs anything — same cause as the 0.2.4 instance, distinct from #833's intercepted-egress sandbox class. The pin is right; a record made on a different toolchain proves different bytes. The dependency-pin edit touches dependencies in packages/inspector/package.json only and no source; 0.2.6 may not be published before the record exists.",
       "issue": 999
+    },
+    {
+      "package": "advisor",
+      "version": "0.2.6",
+      "reason": "The 0.2.6 qualification record cannot be introduced on this integration branch: a qualification introduction must be the direct single-parent child of its reviewed commit and change only the record files, while this branch's merge diff is the full integration set. This acknowledges a merge, never a publication: advisor 0.2.6 may not be published before the record exists. The record lands in one joint introduction on main immediately after merge.",
+      "issue": 993
+    },
+    {
+      "package": "launcher",
+      "version": "0.1.2",
+      "reason": "The 0.1.2 qualification record cannot be introduced on this integration branch: a qualification introduction must be the direct single-parent child of its reviewed commit and change only the record files, while this branch's merge diff is the full integration set. This acknowledges a merge, never a publication: launcher 0.1.2 may not be published before the record exists. The record lands in one joint introduction on main immediately after merge.",
+      "issue": 994
+    },
+    {
+      "package": "integrator",
+      "version": "0.7.0",
+      "reason": "The 0.7.0 qualification record cannot be introduced on this integration branch: a qualification introduction must be the direct single-parent child of its reviewed commit and change only the record files, while this branch's merge diff is the full integration set. This acknowledges a merge, never a publication: integrator 0.7.0 may not be published before the record exists. The record lands in one joint introduction on main immediately after merge.",
+      "issue": 996
+    },
+    {
+      "package": "starter",
+      "version": "0.1.8",
+      "reason": "The 0.1.8 qualification record cannot be introduced on this integration branch: a qualification introduction must be the direct single-parent child of its reviewed commit and change only the record files, while this branch's merge diff is the full integration set. This acknowledges a merge, never a publication: starter 0.1.8 may not be published before the record exists. The record lands in one joint introduction on main immediately after merge.",
+      "issue": 997
+    },
+    {
+      "package": "observer",
+      "version": "0.3.0",
+      "reason": "The 0.3.0 qualification record cannot be introduced on this integration branch: a qualification introduction must be the direct single-parent child of its reviewed commit and change only the record files, while this branch's merge diff is the full integration set. This acknowledges a merge, never a publication: observer 0.3.0 may not be published before the record exists. The record lands in one joint introduction on main immediately after merge.",
+      "issue": 997
+    },
+    {
+      "package": "builder",
+      "version": "0.8.0",
+      "reason": "The 0.8.0 qualification record cannot be introduced on this integration branch: a qualification introduction must be the direct single-parent child of its reviewed commit and change only the record files, while this branch's merge diff is the full integration set. This acknowledges a merge, never a publication: builder 0.8.0 may not be published before the record exists. The record lands in one joint introduction on main immediately after merge.",
+      "issue": 997
+    },
+    {
+      "package": "bouncer",
+      "version": "0.1.9",
+      "reason": "The 0.1.9 qualification record cannot be introduced on this integration branch: a qualification introduction must be the direct single-parent child of its reviewed commit and change only the record files, while this branch's merge diff is the full integration set. This acknowledges a merge, never a publication: bouncer 0.1.9 may not be published before the record exists. The record lands in one joint introduction on main immediately after merge.",
+      "issue": 1000
+    },
+    {
+      "package": "designer",
+      "version": "0.4.7",
+      "reason": "The 0.4.7 qualification record cannot be introduced on this integration branch: a qualification introduction must be the direct single-parent child of its reviewed commit and change only the record files, while this branch's merge diff is the full integration set. This acknowledges a merge, never a publication: designer 0.4.7 may not be published before the record exists. The record lands in one joint introduction on main immediately after merge.",
+      "issue": 1002
+    },
+    {
+      "package": "strategist",
+      "version": "0.2.0",
+      "reason": "The 0.2.0 qualification record cannot be introduced on this integration branch: a qualification introduction must be the direct single-parent child of its reviewed commit and change only the record files, while this branch's merge diff is the full integration set. This acknowledges a merge, never a publication: strategist 0.2.0 may not be published before the record exists. The record lands in one joint introduction on main immediately after merge.",
+      "issue": 1003
     }
   ]
 }

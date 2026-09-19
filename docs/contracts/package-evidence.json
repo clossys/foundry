@@ -171,6 +171,13 @@
       "name": "@clossys/starter",
       "category": "executable-tooling",
       "state": "staged",
+      "gaps": [
+        {
+          "state": "staged",
+          "reason": "The 0.1.8 package-authentic current-direct qualification record cannot be introduced on this integration branch; it lands in the joint records commit on main immediately after merge.",
+          "issue": 997
+        }
+      ],
       "stagedBy": {
         "run": "Retained package-authentic current-direct adapter and raw transcript at governance/release-qualification-adapters/starter/current-direct.json and governance/release-qualifications/clossys-starter-0.1.2.json; reproduce their closed joins with `npm run check:candidate-qualification`. The exact installed Starter dist CLI produced native activation exits 0, 1, and 2.",
         "defectOrigin": "injected",

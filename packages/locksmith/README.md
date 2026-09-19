@@ -345,11 +345,11 @@ catalog metadata. `run()` injects values into one non-shell child process
 without writing a file or printing the environment.
 
 The provider-specific CLI installs as `clossys-secrets-infisical`. It is also
-still installed under its previous, now **deprecated** name,
-`vespene-secrets-infisical`, which will be dropped a release cycle after the
-deprecation was announced — see the [changelog](CHANGELOG.md). Both names
-point at the same entry point, so a consumer already invoking the old one
-keeps working and can switch on its own schedule.
+still installed under its previous, now **deprecated** name, which will be
+dropped a release cycle after the deprecation was announced — see the
+[changelog](CHANGELOG.md). Both names point at the same entry point, so a
+consumer already invoking the old one keeps working and can switch on its own
+schedule.
 
 Its `catalog`, `check`, `list`, `get`, and `run` commands never print secret
 values. `get` reports presence only, and the CLI exposes no mutation command.

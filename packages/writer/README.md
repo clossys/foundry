@@ -20,10 +20,6 @@ This package is published to the public npm registry, `https://registry.npmjs.or
 Installing it needs no authentication: no npm token, no `.npmrc` registry
 override, and no GitHub credential of any kind.
 
-## Requirements
-
-Node.js 20+.
-
 ## Approved copy coverage rate
 
 Independent consumer evidence shows the position's owned metric meets its
