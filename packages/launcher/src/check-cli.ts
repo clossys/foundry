@@ -6,6 +6,7 @@ import { planWorkspace } from "./core.js";
 import type {
   CommandResult,
   CwdObservation,
+  InventoryObservation,
   WorkspaceHost,
   WorkspaceObservation,
 } from "./types.js";
@@ -28,6 +29,20 @@ function isText(value: unknown): value is string {
   return typeof value === "string" && value.trim() !== "";
 }
 
+function parseInventoryObservation(value: unknown): InventoryObservation | undefined {
+  if (value === undefined) return undefined;
+  if (!isRecord(value)) {
+    throw new LauncherCheckInputError("observation.cwd.inventory must be an object");
+  }
+  if (value.status !== "missing" && value.status !== "empty" && value.status !== "populated") {
+    throw new LauncherCheckInputError("observation.cwd.inventory.status must be missing, empty, or populated");
+  }
+  if (typeof value.count !== "number" || !Number.isInteger(value.count) || value.count < 0) {
+    throw new LauncherCheckInputError("observation.cwd.inventory.count must be a nonnegative integer");
+  }
+  return { status: value.status, count: value.count };
+}
+
 function parseCwd(value: unknown): CwdObservation {
   if (!isRecord(value) || !isText(value.absolutePath)) {
     throw new LauncherCheckInputError("observation.cwd.absolutePath must be a nonempty string");
@@ -41,6 +56,7 @@ function parseCwd(value: unknown): CwdObservation {
   if (value.githubRepository !== undefined && !isText(value.githubRepository)) {
     throw new LauncherCheckInputError("observation.cwd.githubRepository must be a string");
   }
+  const inventory = parseInventoryObservation(value.inventory);
   return {
     absolutePath: value.absolutePath,
     empty: value.empty,
@@ -48,6 +64,7 @@ function parseCwd(value: unknown): CwdObservation {
     looksLikeFoundry: value.looksLikeFoundry,
     ...(isText(value.githubOwner) ? { githubOwner: value.githubOwner } : {}),
     ...(isText(value.githubRepository) ? { githubRepository: value.githubRepository } : {}),
+    ...(inventory === undefined ? {} : { inventory }),
   };
 }
 
