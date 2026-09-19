@@ -34,6 +34,30 @@ import { fileURLToPath } from "node:url";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const PUBLIC_NPM_HOST = "registry.npmjs.org";
+const GITHUB_PACKAGES_HOST = "npm.pkg.github.com";
+
+function hostnamesInText(text) {
+  const hosts = new Set();
+  for (const match of text.matchAll(/\bhttps?:\/\/[^\s)`'"<>\]]+/gi)) {
+    try {
+      hosts.add(new URL(match[0].replace(/[.,;:]+$/, "")).hostname.toLowerCase());
+    } catch {
+      /* not a URL */
+    }
+  }
+  for (const match of text.matchAll(/`((?:[a-z0-9-]+\.)+[a-z]{2,})`/gi)) {
+    try {
+      hosts.add(new URL(`https://${match[1]}`).hostname.toLowerCase());
+    } catch {
+      /* not a host */
+    }
+  }
+  return hosts;
+}
+
+function textNamesHost(text, host) {
+  return hostnamesInText(text).has(host.toLowerCase());
+}
 
 function isRecord(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -67,7 +91,7 @@ function isDisclaimer(text) {
     t.includes("not install instructions") ||
     t.includes("caller-supplied") ||
     t.includes("not honored by") ||
-    /peerdependenciesmeta/.test(t.replace(/_/g, "").toLowerCase()) && t.includes("npm.pkg.github.com")
+    /peerdependenciesmeta/.test(t.replace(/_/g, "").toLowerCase()) && textNamesHost(text, GITHUB_PACKAGES_HOST)
   );
 }
 
@@ -150,7 +174,7 @@ function extractNpmInstallVicinity(readme, packageName) {
 }
 
 function namesPublicNpm(text) {
-  return text.includes(PUBLIC_NPM_HOST) || text.includes("https://registry.npmjs.org");
+  return textNamesHost(text, PUBLIC_NPM_HOST);
 }
 
 function statesNoAuth(text) {

@@ -27,7 +27,7 @@ installability.
 | --- | --- | --- |
 | [`governance/release-catalog.json`](../governance/release-catalog.json) | Which source packages may publish, and in which runtime-closed upload order? Writer and designer sit early because publisher cannot publish without them. | Ranking the remaining productization backlog. Frontend packages do not jump the operating-control queue merely because a later package depends on them. |
 | [ADOPTION.md](ADOPTION.md) | How does one consumer open one evidenced position? Advisor first, then only justified roles, never a blanket install. | Ranking producer work. A consumer that does not need publication never installs publisher. |
-| This sequence | In what order does Foundry make the nineteen current packages honestly installable and closed-loop, so a first-wave consumer can pin, run, and re-run them? | Claiming adoption, grounding, or closure. Those remain consumer-owned. |
+| This sequence | In what order does Foundry make the current packages honestly installable and closed-loop, so a first-wave consumer can pin, run, and re-run them? | Claiming adoption, grounding, or closure. Those remain consumer-owned. |
 
 Issue #517 still presents itself as the session entry point and tells a
 reader to run `node scripts/check-package-programs.mjs`, which does not
@@ -58,15 +58,18 @@ Flattened, and checked against the manifests' first-party runtime graph:
 4. **Controller** — operating rules. Runtime root for builder, inspector, and
    publisher. Advisor-before-Controller is engagement sequencing, not a
    manifest edge.
-5. **Operating control** — `observer`, `architect`, `inspector`, `builder`,
+5. **Launcher** — executable tooling that creates, resumes, or appoints the
+   account workspace hub. Not a role. It sits after the Trio so the hub
+   scaffolder pins a productized Advisor rather than an unfinished one.
+6. **Operating control** — `observer`, `architect`, `inspector`, `builder`,
    `locksmith`, `integrator`. Independent measurement first, then topology,
    change judgment, live-state realization, key custody, and package currency.
    Inspector and builder wait for controller at runtime; the sequence already
    placed controller.
-6. **Agreements and custody** — `bouncer`, `butler`, `messenger`, `giver`,
+7. **Agreements and custody** — `bouncer`, `butler`, `messenger`, `giver`,
    `keeper`. Person-facing operating integrity, still ahead of frontend
    surfaces.
-7. **Strategy and expression** — `strategist`, `writer`, `designer`,
+8. **Strategy and expression** — `strategist`, `writer`, `designer`,
    `publisher`, `influencer`. Designer and publisher are frontend work and
    wait. Publisher still waits for controller, writer, and designer at
    runtime. Influencer waits for publisher even though it has no runtime
@@ -119,7 +122,7 @@ Do not start from #517. Classify each open issue against
   `apps:app` / `apps:admin`, audience-surface polish. These wait.
 - **Consumer adoption** — pin, wire, deliberate failure, duplicate deletion,
   independent outcome. Foundry unblocks; only the consuming repository finishes.
-- **New role** — not one of the nineteen. Record it; do not sequence it in
+- **New role** — not one of the current packages. Record it; do not sequence it in
   front of first-wave productization.
 - **Historical tracking** — programme plans whose orientation command or
   position table no longer exists. Leave them open as history if they still
