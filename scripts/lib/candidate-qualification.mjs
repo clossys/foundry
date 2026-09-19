@@ -79,6 +79,14 @@ function tokenizedPath(value) {
   return parts[0] === "$TEMP" && parts.length > 1
     && parts.slice(1).every((part) => /^[A-Za-z0-9@._-]+$/.test(part) && part !== "." && part !== "..");
 }
+function starterRawArgv1(value) {
+  // Help/case probes launch the installer-created `.bin` entry so argv[1] is
+  // the consumer-facing path (#909). Legacy retained records still name the
+  // realpath under `@clossys/starter/`. Both are bounded; a different `.bin`
+  // is not Starter.
+  return value === "$TEMP/node_modules/.bin/foundry-starter"
+    || (typeof value === "string" && value.startsWith("$TEMP/node_modules/@clossys/starter/") && tokenizedPath(value));
+}
 function containsUnsafeRaw(value) {
   if (typeof value !== "string" || value.includes("\0") || ABSOLUTE_HOST_PATH.test(value)) return true;
   for (const match of value.matchAll(/\$TEMP(?:\/[^\s"'`<>{}\[\],)]*)?/g)) if (!tokenizedPath(match[0])) return true;
@@ -128,7 +136,7 @@ function checkRawCaseEvidence(a, observation, fixtureMaterializedAt) {
   closed(a, raw, ["argv", "materializedInputs", "consumerOverlay", "exitCode", "stdout", "stderr"], "transcript.observation.rawCaseEvidence");
   const argv = raw?.argv;
   const fixtureArgs = Array.isArray(argv) ? argv.slice(3) : [];
-  if (!Array.isArray(argv) || argv.length < 4 || argv.length > 12 || argv[0] !== "$NODE" || !tokenizedPath(argv[1]) || !argv[1].startsWith("$TEMP/node_modules/@clossys/starter/") || argv[2] !== "decide" || fixtureArgs.some((item) => !tokenizedPath(item) || !item.startsWith("$TEMP/fixtures/")) || argv.some(containsUnsafeRaw)) fail(a, "raw-case-argv", "raw Starter case argv must be bounded and tokenized.");
+  if (!Array.isArray(argv) || argv.length < 4 || argv.length > 12 || argv[0] !== "$NODE" || !starterRawArgv1(argv[1]) || argv[2] !== "decide" || fixtureArgs.some((item) => !tokenizedPath(item) || !item.startsWith("$TEMP/fixtures/")) || argv.some(containsUnsafeRaw)) fail(a, "raw-case-argv", "raw Starter case argv must be bounded and tokenized.");
   const inputs = raw?.materializedInputs;
   let instantOccurrences = occurrences(raw?.stdout, fixtureMaterializedAt) + occurrences(raw?.stderr, fixtureMaterializedAt);
   if (!Array.isArray(inputs) || inputs.length < 1 || inputs.length > RAW_MAX_FILES) fail(a, "raw-case-inputs", "raw Starter case inputs must be bounded.");
