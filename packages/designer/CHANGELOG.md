@@ -3,6 +3,18 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.4.7] - 2026-09-19
+
+### Fixed
+
+- Removed a stray comment-terminator sequence (`*/`) from CSS comment
+  text in `styles/tokens.css`. A comment listing token families read
+  `--color-surface-*/--color-ink-*`; the `*/` inside it terminated the
+  comment early, so the rest of the comment block was parsed as
+  declarations and broke the file for strict CSS parsers (Turbopack).
+  Rewritten as `--color-surface-* or --color-ink-*` in both affected
+  comments; no token name, value, or meaning changed.
+
 ## [0.4.6] - 2026-09-18
 
 ### Added
