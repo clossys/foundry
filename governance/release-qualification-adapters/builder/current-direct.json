@@ -4,7 +4,8 @@
   "archetype": "current-direct",
   "bins": {
     "builder-verify-toolchain": 0,
-    "builder-verify-machine": 0
+    "builder-verify-machine": 0,
+    "builder-check": 0
   },
   "fixtures": [
     "deployment-satisfied.json",

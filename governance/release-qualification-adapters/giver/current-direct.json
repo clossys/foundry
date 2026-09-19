@@ -3,7 +3,8 @@
   "package": "@clossys/giver",
   "archetype": "current-direct",
   "bins": {
-    "giver-check": 0
+    "giver-check": 0,
+    "giver-rate-check": 0
   },
   "fixtures": [
     "obligations.json",

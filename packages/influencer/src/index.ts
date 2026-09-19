@@ -1,6 +1,12 @@
 export { InfluencerActionError, InfluencerValidationError } from "./errors.js";
 export { createInfluencer } from "./influencer.js";
 export { checkResponseYield, validateResponseYieldInput } from "./response-yield.js";
+export { assessQualifiedResponseYieldPerThousand } from "./qualified-response-yield.js";
+export type {
+  QualifiedResponseYieldAssessment,
+  QualifiedResponseYieldFinding,
+  QualifiedResponseYieldState,
+} from "./qualified-response-yield.js";
 export {
   PRESENCE_ACTION_KINDS,
   PRESENCE_SUBJECT_KINDS,

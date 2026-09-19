@@ -1,6 +1,6 @@
 {
   "name": "@clossys/influencer",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -14,7 +14,14 @@
     }
   },
   "bin": {
-    "influencer-check": "dist/cli.js"
+    "influencer-check": "dist/cli.js",
+    "influencer-rate-check": "dist/qualified-response-yield-cli.js"
+  },
+  "foundry": {
+    "assessment": {
+      "bin": "influencer-rate-check",
+      "invocation": "single-json-input"
+    }
   },
   "files": [
     "dist",

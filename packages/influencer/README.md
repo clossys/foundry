@@ -3,6 +3,50 @@
 Influencer operates a declared organization or product presence and improves
 independently verified qualified audience response.
 
+```bash
+npm install @clossys/influencer
+```
+
+This package is published to the public npm registry, `https://registry.npmjs.org`.
+Installing it needs no authentication: no npm token, no `.npmrc` registry
+override, and no GitHub credential of any kind.
+
+## Qualified response yield per thousand
+
+Independent consumer evidence shows the position's owned metric meets its
+setpoint over the declared review cadence. The owned metric is `qualified
+response yield per thousand`, computed by
+`assessQualifiedResponseYieldPerThousand()`. An empty eligible-exposure set
+is `indeterminate`, never a perfect yield. `checkResponseYield` remains the
+kebab-metric gate; it is not this assessment. This package does not measure
+consumer evidence and does not close the loop. A green run of this package's
+tests is not a close.
+
+```ts
+import { assessQualifiedResponseYieldPerThousand } from "@clossys/influencer";
+
+const report = assessQualifiedResponseYieldPerThousand(input);
+```
+
+```bash
+influencer-rate-check assessment.json
+```
+
+The command prints JSON and exits `0` for satisfied, `1` for violated, and
+`2` for indeterminate, unreadable, or invalid input.
+
+This package declares that command as its first-day assessment surface in
+its own manifest:
+
+```json
+"foundry": { "assessment": { "bin": "influencer-rate-check", "invocation": "single-json-input" } }
+```
+
+Onboarding discovers that declaration from the installed manifest and never
+infers a surface. `influencer-check` remains the two-argument CLI and is not
+the assessment surface. Influencer is not a required first-day role; Advisor
+remains the only required first-day assessment.
+
 The durable job question is:
 
 > Is this governed outbound presence producing qualified audience responses at
@@ -173,8 +217,12 @@ evidence separate from a measured violation.
 | `InfluencerActionError` | class | Normalized actuator failure |
 | `InfluencerValidationError` | class | Structured invalid-input error |
 | `createInfluencer` | function | Build claim, authority, action, and completion orchestration |
-| `checkResponseYield` | function | Compute the primary metric and ternary judgment |
+| `checkResponseYield` | function | Compute the kebab metric and ternary judgment |
+| `assessQualifiedResponseYieldPerThousand` | function | Charter close metric from independent observations |
 | `validateResponseYieldInput` | function | Validate metric evidence |
+| `QualifiedResponseYieldAssessment` | type | Charter close report |
+| `QualifiedResponseYieldFinding` | type | Charter close finding |
+| `QualifiedResponseYieldState` | type | Satisfied, violated, or indeterminate |
 | `PRESENCE_ACTION_KINDS` | const | Closed v1 action vocabulary |
 | `PRESENCE_SUBJECT_KINDS` | const | Organization/product subject vocabulary |
 | `assertValidPresenceActionIntent` | function | Throw for invalid action authority or payload |

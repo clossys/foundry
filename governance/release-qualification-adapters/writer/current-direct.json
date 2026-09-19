@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "package": "@clossys/writer",
   "archetype": "current-direct",
-  "bins": { "writer-check": 0 },
+  "bins": { "writer-check": 0, "writer-rate-check": 0 },
   "fixtures": ["copy.json", "clean/View.ts", "violated/View.ts", "invalid-copy.json"],
   "cases": [
     { "id": "copy-clean", "bin": "writer-check", "args": [{ "fixture": "copy.json" }, { "fixtureDirectory": "clean" }], "exitCode": 0, "group": "copy" },

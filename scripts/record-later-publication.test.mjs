@@ -7,7 +7,7 @@ import { join } from "node:path";
 import test from "node:test";
 
 import { argsFrom, buildLaterPublicationRecord, createLaterPublicationRecord, credentiallessAuditEnv, verifiedAnonymousAudit, writeNoOverwrite } from "./record-later-publication.mjs";
-import { comparableTranscriptSha256 } from "./lib/candidate-qualification.mjs";
+import { comparableTranscriptSha256, currentQualificationJoins } from "./lib/candidate-qualification.mjs";
 import { publicNpmVersionUrl, PUBLIC_NPM_REGISTRY } from "./lib/public-npm-registry.mjs";
 import { RELEASE_RUNTIME } from "./lib/release-runtime.mjs";
 
@@ -64,19 +64,25 @@ function build(overrides = {}) {
 // irrelevant, which is the point: a catalogue-wide bump must not stale a test
 // about the creator's behaviour.
 const QUALIFICATION_TEMPLATE = "governance/release-qualifications/clossys-strategist-0.1.2.json";
-function syntheticQualification({ root, base, manifestBytes, version, hashes }) {
+function syntheticQualification({ root, base, version, hashes }) {
   const qualification = JSON.parse(readFileSync(join(process.cwd(), QUALIFICATION_TEMPLATE), "utf8"));
+  const joins = currentQualificationJoins(root, { name: qualification.candidate.name, version }, base, { schemaVersion: qualification.schemaVersion });
   qualification.reviewedCommit = base;
   qualification.candidateReview.headSha = base;
   qualification.candidate.version = version;
-  qualification.candidate.packageManifestSha256 = digest("sha256", manifestBytes);
-  qualification.candidate.packageTreeSha1 = execFileSync("git", ["rev-parse", `${base}:packages/strategist`], { cwd: root, encoding: "utf8" }).trim();
+  qualification.candidate.packageTreeSha1 = joins.packageTreeSha1;
+  qualification.candidate.packageManifestSha256 = joins.packageManifestSha256;
+  qualification.candidate.policySha256 = joins.policySha256;
+  qualification.candidate.adapterSha256 = joins.adapterSha256;
+  qualification.candidate.fixtureSetSha256 = joins.fixtureSetSha256;
   qualification.candidate.tarball = hashes;
-  qualification.rootPackageJsonSha256 = digest("sha256", readFileSync(join(root, "package.json")));
-  qualification.rootPackageLockSha256 = digest("sha256", readFileSync(join(root, "package-lock.json")));
+  qualification.rootPackageJsonSha256 = joins.rootPackageJsonSha256;
+  qualification.rootPackageLockSha256 = joins.rootPackageLockSha256;
+  qualification.archetypes = joins.archetypes;
   qualification.transcript.candidate.version = version;
   qualification.transcript.coverage.installedManifestSha256 = qualification.candidate.packageManifestSha256;
   qualification.transcript.tarball = hashes;
+  qualification.transcript.dimensions = joins.dimensions;
   const transcriptForDigest = { ...qualification.transcript };
   delete transcriptForDigest.canonicalSha256;
   qualification.transcript.canonicalSha256 = digest("sha256", JSON.stringify(transcriptForDigest));

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "package": "@clossys/strategist",
   "archetype": "current-direct",
-  "bins": { "strategist-check": 0 },
+  "bins": { "strategist-check": 0, "strategist-rate-check": 0 },
   "fixtures": ["strategy/facts.json", "clean/announcement.md", "violated/announcement.md", "indeterminate/announcement.md"],
   "cases": [
     { "id": "facts-clean", "bin": "strategist-check", "args": [{ "fixtureDirectory": "strategy" }, { "fixtureDirectory": "clean" }], "exitCode": 0, "group": "facts" },
