@@ -1,0 +1,12 @@
+{
+  "cwd": {
+    "absolutePath": "/tmp/empty",
+    "empty": true,
+    "git": false,
+    "looksLikeFoundry": false
+  },
+  "ownerCandidates": ["acme"],
+  "advisorVersion": "0.2.2",
+  "ghAvailable": true,
+  "gitAvailable": true
+}

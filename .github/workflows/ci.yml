@@ -1132,6 +1132,13 @@ jobs:
       # and outside publish.yml's bootstrap discovery (#494, #495).
       - name: Locksmith value-free catalogue
         run: npm run check:locksmith-catalog
+      # Launcher get-started help, invoked by dist path after build. The
+      # root script exists so package-evidence has a packages/launcher/dist
+      # site (the bin name `launcher` would otherwise fire
+      # invocation-by-bin-name). Needs dist/; keep out of the
+      # dependency-free safety job.
+      - name: Launcher help
+        run: npm run check:launcher-help
       - name: Supersession map
         run: npm run check:supersession
       # One vocabulary, two packages, no import between them (#443). The

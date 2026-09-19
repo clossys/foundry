@@ -123,6 +123,11 @@
       }
     },
     {
+      "name": "@clossys/launcher",
+      "category": "executable-tooling",
+      "state": "implemented"
+    },
+    {
       "name": "@clossys/locksmith",
       "state": "staged",
       "stagedBy": {
