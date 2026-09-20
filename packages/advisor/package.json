@@ -1,6 +1,6 @@
 {
   "name": "@clossys/advisor",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -23,7 +23,8 @@
     "!src/**/*.test.ts",
     "README.md",
     "CHANGELOG.md",
-    "LICENSE"
+    "LICENSE",
+    "skill"
   ],
   "sideEffects": false,
   "foundry": {

@@ -93,6 +93,11 @@ Independent consumer evidence shows the position's owned metric meets its setpoi
 
 ## CLI
 
+This package also ships the `clossys-advisor` Agent Skill at `skill/SKILL.md`.
+In Cursor, mention `@clossys-advisor` to talk to that receptionist voice next
+to the assessment bins below. The skill is a chat voice, not a second engine,
+and it does not replace `advisor-check` or `advisor-execution-readiness`.
+
 ```bash
 advisor-check assessment.json
 ```
