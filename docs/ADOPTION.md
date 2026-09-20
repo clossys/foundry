@@ -17,7 +17,12 @@ The account hub is mandatory as inventory and coordination, not as a dump of
 the catalogue. Appoint any GitHub repository you control — it does not have
 to be a new exclusive repo, and it does not have to already match a Foundry
 layout. Run the command from that checkout, or from an empty directory to
-create `{owner}/workspace`:
+create `{owner}/workspace` (package name `@owner/workspace`). The hub pins
+live `@clossys/advisor` in `devDependencies` only — an existing pin in
+another bucket is moved, not preserved. Other Foundry roles stay in the
+repositories that do the work. Resume grades that pin against the live
+registry and reports degraded when it is stale, missing, dual-pinned, or in
+the wrong bucket:
 
 ```bash
 npx @clossys/launcher

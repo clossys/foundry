@@ -5,6 +5,19 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.3] - 2026-09-20
+
+### Changed
+
+- Appoint now pins live `@clossys/advisor` in `devDependencies` only. It relocates a pin left in another bucket and overwrites a frozen version. A dedicated `{owner}/workspace` hub is named `@owner/workspace`; an appointed product keeps its package name.
+- Observe always reads the public Advisor version, including when a pin already exists, so appoint can write the live pin and resume can grade it.
+- Health is degraded when Advisor is missing, dual-pinned, or present outside `devDependencies`, not only when the pin is older than live.
+- New-hub skeleton package name is `@owner/workspace`.
+
+### Fixed
+
+- Resume health now receives the live Advisor version from observe, so a stale or misplaced pin is visible on every resume instead of only after a fresh appoint.
+
 ## [0.1.2] - 2026-09-19
 
 ### Fixed

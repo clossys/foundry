@@ -338,7 +338,11 @@ describe("applyWorkspacePlan", () => {
       { action: "create", owner: "acme", repository: "workspace", directory, advisorVersion: "0.1.5" },
       skeletonRoot,
     );
-    const manifest = JSON.parse(readFileSync(join(directory, "package.json"), "utf8")) as { devDependencies: Record<string, string> };
+    const manifest = JSON.parse(readFileSync(join(directory, "package.json"), "utf8")) as {
+      name: string;
+      devDependencies: Record<string, string>;
+    };
+    expect(manifest.name).toBe("@acme/workspace");
     expect(manifest.devDependencies[ADVISOR_PACKAGE]).toBe("0.1.5");
     expect(manifest.devDependencies["@clossys/starter"]).toBeUndefined();
     expect(manifest.devDependencies["@clossys/controller"]).toBeUndefined();
@@ -381,11 +385,11 @@ describe("applyWorkspacePlan", () => {
     expect(result.health.marker).toBe("present");
   });
 
-  it("leaves an existing Advisor pin and does not dual-pin", () => {
+  it("relocates an existing Advisor pin into devDependencies at the live version", () => {
     const directory = tempDir();
     writeFileSync(
       join(directory, "package.json"),
-      `${JSON.stringify({ name: "hub", dependencies: { [ADVISOR_PACKAGE]: "0.2.1" } }, null, 2)}\n`,
+      `${JSON.stringify({ name: "hub", dependencies: { [ADVISOR_PACKAGE]: "0.2.1", react: "19.0.0" } }, null, 2)}\n`,
     );
     writeInventory(directory);
     applyWorkspacePlan(
@@ -394,14 +398,17 @@ describe("applyWorkspacePlan", () => {
       skeletonRoot,
     );
     const manifest = JSON.parse(readFileSync(join(directory, "package.json"), "utf8")) as {
+      name: string;
       dependencies: Record<string, string>;
       devDependencies?: Record<string, string>;
     };
-    expect(manifest.dependencies[ADVISOR_PACKAGE]).toBe("0.2.1");
-    expect(manifest.devDependencies?.[ADVISOR_PACKAGE]).toBeUndefined();
+    expect(manifest.name).toBe("hub");
+    expect(manifest.dependencies[ADVISOR_PACKAGE]).toBeUndefined();
+    expect(manifest.dependencies.react).toBe("19.0.0");
+    expect(manifest.devDependencies?.[ADVISOR_PACKAGE]).toBe("0.2.3");
   });
 
-  it("does not overwrite an existing Advisor devDependency", () => {
+  it("overwrites a frozen Advisor devDependency with the live version", () => {
     const directory = tempDir();
     writeFileSync(
       join(directory, "package.json"),
@@ -416,7 +423,27 @@ describe("applyWorkspacePlan", () => {
     const manifest = JSON.parse(readFileSync(join(directory, "package.json"), "utf8")) as {
       devDependencies: Record<string, string>;
     };
-    expect(manifest.devDependencies[ADVISOR_PACKAGE]).toBe("0.1.6");
+    expect(manifest.devDependencies[ADVISOR_PACKAGE]).toBe("0.2.3");
+  });
+
+  it("names a dedicated workspace hub @owner/workspace without rewriting a product name", () => {
+    const directory = tempDir();
+    writeFileSync(
+      join(directory, "package.json"),
+      `${JSON.stringify({ name: "workspace-control-plane", private: true }, null, 2)}\n`,
+    );
+    writeInventory(directory);
+    applyWorkspacePlan(
+      host(directory),
+      { action: "adopt", owner: "acme", repository: DEFAULT_REPOSITORY_NAME, directory, advisorVersion: "0.2.3" },
+      skeletonRoot,
+    );
+    const manifest = JSON.parse(readFileSync(join(directory, "package.json"), "utf8")) as {
+      name: string;
+      devDependencies: Record<string, string>;
+    };
+    expect(manifest.name).toBe("@acme/workspace");
+    expect(manifest.devDependencies[ADVISOR_PACKAGE]).toBe("0.2.3");
   });
 
   it("copies --inventory onto the hub and reports extra @clossys names without removing them", () => {
@@ -444,9 +471,11 @@ describe("applyWorkspacePlan", () => {
       devDependencies?: Record<string, string>;
     };
     expect(manifest.dependencies["@clossys/starter"]).toBe("0.1.5");
-    expect(manifest.devDependencies?.[ADVISOR_PACKAGE]).toBeUndefined();
+    expect(manifest.dependencies[ADVISOR_PACKAGE]).toBeUndefined();
+    expect(manifest.devDependencies?.[ADVISOR_PACKAGE]).toBe("0.2.3");
     expect(result.health.extraClossys).toEqual(["@clossys/starter"]);
     expect(result.health.dualPin).toBe(false);
+    expect(result.health.degraded).toBe(false);
     expect(result.message).toMatch(/health:/);
   });
 
@@ -531,34 +560,48 @@ describe("applyWorkspacePlan", () => {
     expect(reportHubHealth(host(directory), directory).marker).toBe("present");
   });
 
-  it("grades a stale pin as degraded and an equal pin as current", () => {
+  it("grades a stale pin as degraded and an equal exclusive devDependency as current", () => {
     const directory = tempDir();
     writeFileSync(
       join(directory, "package.json"),
-      `${JSON.stringify({ name: "hub", dependencies: { [ADVISOR_PACKAGE]: "0.1.0" } }, null, 2)}\n`,
+      `${JSON.stringify({ name: "hub", devDependencies: { [ADVISOR_PACKAGE]: "0.1.0" } }, null, 2)}\n`,
     );
     writeInventory(directory);
     const stale = reportHubHealth(host(directory), directory, "0.2.0");
     expect(stale.pinFindings).toEqual([
-      { bucket: "dependencies", pinned: "0.1.0", grade: "stale", note: expect.stringContaining("older than live 0.2.0") },
+      { bucket: "devDependencies", pinned: "0.1.0", grade: "stale", note: expect.stringContaining("older than live 0.2.0") },
     ]);
     expect(stale.degraded).toBe(true);
-    expect(formatHubHealth(stale)).toMatch(/pin findings: dependencies pinned 0\.1\.0 is older than live 0\.2\.0/);
+    expect(formatHubHealth(stale)).toMatch(/pin findings: devDependencies pinned 0\.1\.0 is older than live 0\.2\.0/);
     expect(formatHubHealth(stale)).toMatch(/degraded: yes/);
     const current = reportHubHealth(host(directory), directory, "0.1.0");
     expect(current.pinFindings).toEqual([]);
     expect(current.degraded).toBe(false);
   });
 
+  it("degrades a current Advisor pin that is not exclusively in devDependencies", () => {
+    const directory = tempDir();
+    writeFileSync(
+      join(directory, "package.json"),
+      `${JSON.stringify({ name: "hub", dependencies: { [ADVISOR_PACKAGE]: "0.2.0" } }, null, 2)}\n`,
+    );
+    const misplaced = reportHubHealth(host(directory), directory, "0.2.0");
+    expect(misplaced.pinFindings).toEqual([]);
+    expect(misplaced.degraded).toBe(true);
+    writeFileSync(join(directory, "package.json"), `${JSON.stringify({ name: "hub" }, null, 2)}\n`);
+    const absent = reportHubHealth(host(directory), directory, "0.2.0");
+    expect(absent.degraded).toBe(true);
+  });
+
   it("marks an unparseable pin-versus-live comparison as indeterminate, not stale", () => {
     const directory = tempDir();
     writeFileSync(
       join(directory, "package.json"),
-      `${JSON.stringify({ name: "hub", dependencies: { [ADVISOR_PACKAGE]: "next" } }, null, 2)}\n`,
+      `${JSON.stringify({ name: "hub", devDependencies: { [ADVISOR_PACKAGE]: "next" } }, null, 2)}\n`,
     );
     const report = reportHubHealth(host(directory), directory, "0.2.0");
     expect(report.pinFindings).toEqual([
-      { bucket: "dependencies", pinned: "next", grade: "indeterminate", note: expect.stringContaining("cannot compare") },
+      { bucket: "devDependencies", pinned: "next", grade: "indeterminate", note: expect.stringContaining("cannot compare") },
     ]);
     expect(report.degraded).toBe(false);
   });
@@ -581,6 +624,7 @@ describe("applyWorkspacePlan", () => {
     expect(report.advisorPin.optionalDependencies).toBe("0.2.1");
     expect(report.advisorPin.peerDependencies).toBe("0.2.0");
     expect(report.dualPin).toBe(true);
+    expect(report.degraded).toBe(true);
     expect(report.extraClossys).toEqual(["@clossys/writer"]);
     expect(report.pinFindings.map((finding) => finding.bucket)).toEqual(["optionalDependencies", "peerDependencies"]);
   });
@@ -635,7 +679,7 @@ describe("observeWorkspace", () => {
     expect(seen.advisorVersion).toBe("0.1.5");
   });
 
-  it("skips the npm registry read when the tree already pins Advisor in any bucket", () => {
+  it("always reads the public Advisor version, even when a pin already exists", () => {
     const directory = tempDir();
     mkdirSync(join(directory, ".git"));
     writeFileSync(
@@ -647,10 +691,14 @@ describe("observeWorkspace", () => {
         "gh --version": { status: 0, stdout: "gh 2.0.0\n", stderr: "" },
         "git --version": { status: 0, stdout: "git 2.0.0\n", stderr: "" },
         "git remote get-url origin": { status: 0, stdout: "git@github.com:acme/central.git\n", stderr: "" },
+        "gh api user --jq .login": { status: 0, stdout: "acme\n", stderr: "" },
+        "gh org list": { status: 0, stdout: "", stderr: "" },
+        "gh repo view acme/workspace --json name": { status: 1, stdout: "", stderr: "not found" },
+        "npm view @clossys/advisor version": { status: 0, stdout: "0.2.6\n", stderr: "" },
       }),
     );
     expect(seen.cwd.githubOwner).toBe("acme");
     expect(seen.cwd.inventory).toEqual({ status: "missing", count: 0 });
-    expect(seen.advisorVersion).toBeUndefined();
+    expect(seen.advisorVersion).toBe("0.2.6");
   });
 });
