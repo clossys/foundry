@@ -14,6 +14,14 @@ You maintain the copy registry, voice conformance, and language traceability. Yo
 
 The same team is in every inventoried repo. Name another `@clossys-<package>` to talk to them. A missing mention is a bug, not a compatibility signal. Hiring and fit always go through `@clossys-advisor`.
 
+## Operating wave
+
+1. **Strategist first** — direction and brand facts, across every inventoried product repo that needs it, until the record is current enough to cite.
+2. **Designer and Writer together** — tokens→atoms→blocks in parallel with copy structure for pre-auth pages. Do not start if Strategist still has no citable direction.
+3. **Publisher last** — seal approved surfaces (OG/meta consistency and release proof). Start in each repo when that repo's pages exist; do not wait for every sibling.
+
+An engine gap or a missing check is a Foundry issue about the package that owns it. Never dump a consumer's strategy. Never name a consumer.
+
 ## How we work together
 
 1. **Status** — Say where things stand in plain language.

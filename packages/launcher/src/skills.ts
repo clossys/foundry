@@ -77,6 +77,11 @@ function writeDiscoveryLink(host: WorkspaceHost, directory: string, packageDir: 
   const agentsDirRel = join(AGENTS_SKILLS_REL, `clossys-${packageDir}`);
   const linkTarget = join("..", "..", agentsDirRel);
   for (const prefix of DISCOVERY_PREFIXES) {
+    const prefixPath = containedPath(directory, prefix);
+    // A directory-symlink onto `.agents/skills` already exposes every composed
+    // skill. Writing a nested `.claude/skills/clossys-<pkg>` link follows that
+    // symlink and replaces the just-written SKILL.md with a circular link.
+    if (host.isSymlink(prefixPath)) continue;
     const linkRel = join(prefix, `clossys-${packageDir}`);
     const linkPath = containedPath(directory, linkRel);
     host.mkdirp(dirname(linkPath));

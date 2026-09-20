@@ -673,6 +673,10 @@ jobs:
       # package is a blocking defect (#924). Missing public-npm claims are
       # printed and counted, never a silent pass. README text only, no build.
       - run: node scripts/check-install-docs.mjs
+      # Packed Agent Skills: every publishable package ships skill/SKILL.md with
+      # valid frontmatter binding `name` to clossys-<pkg>. README and manifest
+      # reads only, no build — same shallow-checkout class as the steps above.
+      - run: node scripts/check-package-skills.mjs
 
   # Three gates over this repository's own tree that had never been invoked
   # by any workflow before this change, and that share one requirement: a

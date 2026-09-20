@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, readdirSync, readSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
+import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, readSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import type { CommandResult, WorkspaceHost } from "./types.js";
 
@@ -44,6 +44,13 @@ export function createNodeHost(cwd = process.cwd(), env: NodeJS.ProcessEnv = pro
     now: () => new Date().toISOString(),
     exists: (path) => existsSync(path),
     isDirectory: (path) => existsSync(path) && statSync(path).isDirectory(),
+    isSymlink: (path) => {
+      try {
+        return lstatSync(path).isSymbolicLink();
+      } catch {
+        return false;
+      }
+    },
     readText: (path) => {
       try {
         return readFileSync(path, "utf8");

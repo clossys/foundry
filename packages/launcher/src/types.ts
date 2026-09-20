@@ -16,6 +16,8 @@ export interface WorkspaceHost {
   now(): string;
   exists(path: string): boolean;
   isDirectory(path: string): boolean;
+  /** True when path exists and is a symlink (lstat; does not follow). Missing path is false. */
+  isSymlink(path: string): boolean;
   readText(path: string): string | null;
   writeText(path: string, contents: string): void;
   mkdirp(path: string): void;

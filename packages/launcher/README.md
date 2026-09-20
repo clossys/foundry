@@ -37,7 +37,7 @@ mapping for `@clossys`. Pin an exact version once you depend on the library
 API:
 
 ```bash
-npm install --save-dev --save-exact @clossys/launcher@0.1.4
+npm install --save-dev --save-exact @clossys/launcher@0.1.5
 ```
 
 ## Talking to the team

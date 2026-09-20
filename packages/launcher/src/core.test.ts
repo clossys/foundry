@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
+import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -47,6 +47,13 @@ function host(
     now: () => "2026-09-18T00:00:00.000Z",
     exists: (path) => existsSync(path),
     isDirectory: (path) => existsSync(path) && statSync(path).isDirectory(),
+    isSymlink: (path) => {
+      try {
+        return lstatSync(path).isSymbolicLink();
+      } catch {
+        return false;
+      }
+    },
     readText: (path) => {
       try {
         return readFileSync(path, "utf8");
