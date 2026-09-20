@@ -128,6 +128,7 @@ const CURRENT_PUBLISHED_IDENTITIES = [
   "@clossys/keeper@0.1.2",
   "@clossys/keeper@0.1.3",
   "@clossys/launcher@0.1.2",
+  "@clossys/launcher@0.1.5",
   "@clossys/locksmith@0.1.6",
   "@clossys/locksmith@0.1.7",
   "@clossys/messenger@0.1.2",
