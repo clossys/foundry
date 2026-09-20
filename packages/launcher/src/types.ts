@@ -133,6 +133,8 @@ export interface WorkspacePlanResume {
   readonly repository: string;
   readonly directory: string;
   readonly clone: boolean;
+  /** Live registry Advisor version, when observeWorkspace could read one. Used only to grade health. */
+  readonly advisorVersion?: string;
 }
 
 export interface WorkspacePlanAdopt {

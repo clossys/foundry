@@ -73,7 +73,7 @@ test("all 20 publishable packages are exact-source bound to the catalogue and qu
   const catalog = await repositoryJson("governance/release-catalog.json");
   const expectedVersions = {
     "@clossys/advisor": "0.2.7",
-    "@clossys/launcher": "0.1.5",
+    "@clossys/launcher": "0.1.6",
     "@clossys/architect": "0.1.9",
     "@clossys/bouncer": "0.1.9",
     "@clossys/builder": "0.8.0",

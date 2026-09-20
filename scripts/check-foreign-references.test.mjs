@@ -105,6 +105,20 @@ function currentTransitionFixture(extraFiles = {}) {
   return root;
 }
 
+test("the appointed-hub placeholder scope is fictional, not a foreign account", () => {
+  const root = candidateFixture({
+    extraFiles: {
+      "docs/ADOPTION.md": "A dedicated hub is named @owner/workspace.\n",
+    },
+  });
+  try {
+    const result = run(root);
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("own-scope hyphenated Agent Skill handles are this repository, not a foreign account", () => {
   const root = candidateFixture({
     extraFiles: {
