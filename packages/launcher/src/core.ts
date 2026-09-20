@@ -48,6 +48,21 @@ This repository is the account hub for Foundry packages. It inventories
 where packages are installed and coordinates engagement. It is not a
 product application and does not need the whole catalogue installed here.
 
+The person in this folder is a founder, not an engineer. Speak like a
+person. Do not dump machine identifiers, JSON, hashes, or grant fields
+unless they ask.
+
+When there is a next step, say only:
+
+1. Where we are (one sentence).
+2. What you should do next (one sentence).
+3. What we will not do until you say yes.
+4. Whether anything will be saved to git (usually no).
+
+Wait for a plain yes before changing files. "Approved" in chat is
+permission for that one step only. It is not a lasting grant and it
+does not become a commit unless someone later saves a file.
+
 Open this folder in your coding agent. Advisor is read-only until you
 approve a next action.
 

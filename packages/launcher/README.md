@@ -67,8 +67,11 @@ not install packages.
 
 Do not run this inside the Foundry supplier tree.
 
-Open the resulting folder in your coding agent. Advisor stays read-only
-until you approve a next action. The same command resumes later.
+Open the resulting folder in your coding agent. Talk in ordinary
+sentences. Advisor stays read-only until you approve a next action. A
+yes in chat is permission for that one step only; it is not a lasting
+grant and it does not write git unless a file is saved later. The same
+command resumes later.
 
 ## CLI
 

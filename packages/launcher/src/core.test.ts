@@ -351,6 +351,7 @@ describe("applyWorkspacePlan", () => {
     expect(JSON.parse(readFileSync(join(directory, WORKSPACE_MARKER_REL), "utf8"))).toMatchObject({ kind: "account-hub", owner: "acme" });
     expect(inspectInventory(readFileSync(join(directory, WORKSPACE_INVENTORY_REL), "utf8"))).toEqual({ status: "empty", count: 0 });
     expect(readFileSync(join(directory, "AGENTS.md"), "utf8")).toContain("account hub");
+    expect(readFileSync(join(directory, "AGENTS.md"), "utf8")).toContain("Speak like a");
   });
 
   it("appoints an existing product repo without rewriting its README or dumping packages", () => {

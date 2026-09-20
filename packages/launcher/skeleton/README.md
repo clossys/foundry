@@ -7,8 +7,10 @@ product application. Do not install the whole catalogue here.
 ## Open this folder
 
 Open this repository in your coding agent (Cursor, Claude, Codex, or
-another agent that can work a GitHub checkout). Advisor is read-only
-until you approve a next action.
+another agent that can work a GitHub checkout). Talk in ordinary
+sentences. Advisor is read-only until you approve a next action. A
+yes in chat is permission for that one step; it is not a grant and
+it does not write git unless a file is saved later.
 
 ## Resume later
 
