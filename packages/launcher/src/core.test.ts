@@ -1,10 +1,12 @@
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   ADVISOR_PACKAGE,
+  CONSUMER_AGENTS_MD,
+  LEGACY_CONSUMER_AGENTS_MD,
   applyWorkspacePlan,
   checkInventoryEntries,
   formatHubHealth,
@@ -45,6 +47,13 @@ function host(
     now: () => "2026-09-18T00:00:00.000Z",
     exists: (path) => existsSync(path),
     isDirectory: (path) => existsSync(path) && statSync(path).isDirectory(),
+    isSymlink: (path) => {
+      try {
+        return lstatSync(path).isSymbolicLink();
+      } catch {
+        return false;
+      }
+    },
     readText: (path) => {
       try {
         return readFileSync(path, "utf8");
@@ -58,6 +67,11 @@ function host(
     },
     mkdirp: (path) => {
       mkdirSync(path, { recursive: true });
+    },
+    symlink: (relativeTarget, linkPath) => {
+      mkdirSync(dirname(linkPath), { recursive: true });
+      if (existsSync(linkPath)) rmSync(linkPath, { recursive: true, force: true });
+      symlinkSync(relativeTarget, linkPath, "dir");
     },
     readDir: (path) => (existsSync(path) ? readdirSync(path) : []),
     run: (command, args) => commands[`${command} ${args.join(" ")}`] ?? { status: 1, stdout: "", stderr: "unmocked" },
@@ -74,6 +88,31 @@ function writeInventory(directory: string, repositories: readonly unknown[] = [{
     join(directory, WORKSPACE_INVENTORY_REL),
     `${JSON.stringify({ schemaVersion: 1, repositories }, null, 2)}\n`,
   );
+}
+
+function skillFixture(name: string): string {
+  return `---\nname: clossys-${name}\ndescription: test skill for ${name}\ndisable-model-invocation: true\n---\n\n# ${name}\n`;
+}
+
+function seedSkillCatalogue(packages: readonly string[]): string {
+  const root = tempDir();
+  for (const name of packages) {
+    const dir = join(root, name);
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, "SKILL.md"), skillFixture(name));
+  }
+  return root;
+}
+
+function isolatedLauncherRoot(): string {
+  const root = tempDir();
+  const launcher = join(root, "packages", "launcher");
+  mkdirSync(launcher, { recursive: true });
+  return launcher;
+}
+
+function composeApplyOptions(catalogueRoot: string): { launcherPackageRoot: string; skillCatalogueRoot: string } {
+  return { launcherPackageRoot: isolatedLauncherRoot(), skillCatalogueRoot: catalogueRoot };
 }
 
 function observation(overrides: Partial<WorkspaceObservation> = {}): WorkspaceObservation {
@@ -346,7 +385,8 @@ describe("applyWorkspacePlan", () => {
     expect(manifest.devDependencies["@clossys/bouncer"]).toBeUndefined();
     expect(JSON.parse(readFileSync(join(directory, WORKSPACE_MARKER_REL), "utf8"))).toMatchObject({ kind: "account-hub", owner: "acme" });
     expect(inspectInventory(readFileSync(join(directory, WORKSPACE_INVENTORY_REL), "utf8"))).toEqual({ status: "empty", count: 0 });
-    expect(readFileSync(join(directory, "AGENTS.md"), "utf8")).toContain("account hub");
+    expect(readFileSync(join(directory, "AGENTS.md"), "utf8")).toContain("@clossys-advisor");
+    expect(readFileSync(join(directory, "AGENTS.md"), "utf8")).not.toMatch(/again to resume/i);
   });
 
   it("appoints an existing product repo without rewriting its README or dumping packages", () => {
@@ -514,21 +554,117 @@ describe("applyWorkspacePlan", () => {
     expect(ids).toEqual(["hub-a", "hub-c", "hub-b"]);
   });
 
-  it("reports health on resume without writing a marker", () => {    const directory = tempDir();
+  it("reports health on resume and composes skills plus refreshed guidance", () => {
+    const directory = tempDir();
     mkdirSync(join(directory, ".clossys"), { recursive: true });
     writeFileSync(
       join(directory, WORKSPACE_MARKER_REL),
       `${JSON.stringify({ schemaVersion: 1, kind: "account-hub", owner: "acme", repository: "acme/hub" }, null, 2)}\n`,
     );
     writeInventory(directory);
+    writeFileSync(join(directory, "AGENTS.md"), LEGACY_CONSUMER_AGENTS_MD);
+    const catalogue = seedSkillCatalogue(["advisor", "designer"]);
     const result = applyWorkspacePlan(
       host(directory),
       { action: "resume", owner: "acme", repository: "hub", directory, clone: false },
       skeletonRoot,
+      composeApplyOptions(catalogue),
     );
     expect(result.health.marker).toBe("present");
     expect(result.health.inventory.status).toBe("populated");
+    expect(readFileSync(join(directory, ".agents/skills/clossys-advisor/SKILL.md"), "utf8")).toContain("name: clossys-advisor");
+    expect(readFileSync(join(directory, ".agents/skills/clossys-designer/SKILL.md"), "utf8")).toContain("name: clossys-designer");
+    const agents = readFileSync(join(directory, "AGENTS.md"), "utf8");
+    expect(agents).toContain("@clossys-advisor");
+    expect(agents).not.toMatch(/again to resume/i);
     expect(reportHubHealth(host(directory), directory).marker).toBe("present");
+  });
+
+  it("composes skills into the hub and sibling clones resolved from inventory", () => {
+    const parent = tempDir();
+    const hub = join(parent, "hub");
+    const app = join(parent, "app");
+    const other = join(parent, "other");
+    const foundry = join(parent, "foundry");
+    for (const directory of [hub, app, other, foundry]) mkdirSync(directory, { recursive: true });
+    mkdirSync(join(hub, ".clossys"), { recursive: true });
+    writeFileSync(
+      join(hub, WORKSPACE_MARKER_REL),
+      `${JSON.stringify({ schemaVersion: 1, kind: "account-hub", owner: "acme", repository: "acme/hub" }, null, 2)}\n`,
+    );
+    writeInventory(hub, [
+      { id: "acme/app" },
+      { id: "acme/missing" },
+      { id: "acme/other" },
+      { id: "acme/foundry" },
+    ]);
+    for (const directory of [app, other, foundry]) mkdirSync(join(directory, ".git"), { recursive: true });
+    writeFileSync(join(foundry, "AGENTS.md"), "# supplier tree\n");
+    mkdirSync(join(foundry, "packages", "advisor"), { recursive: true });
+    writeFileSync(join(foundry, "packages", "advisor", "package.json"), "{}");
+    mkdirSync(join(foundry, "docs"), { recursive: true });
+    writeFileSync(join(foundry, "docs", "LIFECYCLE.md"), "# lifecycle\n");
+    const gitRemotes: Record<string, string> = {
+      [app]: "git@github.com:acme/app.git",
+      [other]: "git@github.com:otherowner/other.git",
+      [foundry]: "git@github.com:acme/foundry.git",
+    };
+    const base = host(hub);
+    const workspaceHost: WorkspaceHost = {
+      ...base,
+      run: (command, args, opts) => {
+        const cwd = opts?.cwd ?? hub;
+        if (command === "git" && args[0] === "remote" && args[1] === "get-url" && args[2] === "origin") {
+          const url = gitRemotes[cwd];
+          if (url !== undefined) return { status: 0, stdout: `${url}\n`, stderr: "" };
+          return { status: 1, stdout: "", stderr: "no remote" };
+        }
+        return base.run(command, args, opts);
+      },
+    };
+    const catalogue = seedSkillCatalogue(["advisor", "designer"]);
+    const result = applyWorkspacePlan(
+      workspaceHost,
+      { action: "resume", owner: "acme", repository: "hub", directory: hub, clone: false },
+      skeletonRoot,
+      composeApplyOptions(catalogue),
+    );
+    expect(readFileSync(join(hub, ".agents/skills/clossys-advisor/SKILL.md"), "utf8")).toContain("clossys-advisor");
+    expect(readFileSync(join(app, ".agents/skills/clossys-advisor/SKILL.md"), "utf8")).toContain("clossys-advisor");
+    expect(existsSync(join(other, ".agents/skills/clossys-advisor/SKILL.md"))).toBe(false);
+    expect(existsSync(join(foundry, ".agents/skills/clossys-advisor/SKILL.md"))).toBe(false);
+    expect(readFileSync(join(app, "AGENTS.md"), "utf8")).toContain("@clossys-advisor");
+    expect(result.health.skillComposition?.rosterTargets).toEqual(expect.arrayContaining(["acme/hub", "acme/app"]));
+    expect(result.message).toMatch(/skill roster skipped \(acme\/missing\)/);
+    expect(result.message).toMatch(/skill roster skipped \(acme\/other\).*origin does not match/);
+    expect(result.message).toMatch(/skill roster skipped \(acme\/foundry\).*foundry supplier/);
+    expect(result.state).toBe("satisfied");
+  });
+
+  it("composes catalogue skills on create and adopt", () => {
+    const catalogue = seedSkillCatalogue(["advisor", "designer"]);
+    const applyOpts = composeApplyOptions(catalogue);
+    const created = tempDir();
+    applyWorkspacePlan(
+      host(created, {
+        [`gh repo create acme/workspace --private --source ${created} --remote origin --push`]: { status: 0, stdout: "created\n", stderr: "" },
+      }),
+      { action: "create", owner: "acme", repository: "workspace", directory: created, advisorVersion: "0.1.5" },
+      skeletonRoot,
+      applyOpts,
+    );
+    expect(readFileSync(join(created, ".agents/skills/clossys-advisor/SKILL.md"), "utf8")).toContain("clossys-advisor");
+    expect(readFileSync(join(created, ".agents/skills/clossys-designer/SKILL.md"), "utf8")).toContain("clossys-designer");
+
+    const adopted = tempDir();
+    writeInventory(adopted);
+    applyWorkspacePlan(
+      host(adopted),
+      { action: "adopt", owner: "acme", repository: "hub", directory: adopted, advisorVersion: "0.1.5" },
+      skeletonRoot,
+      applyOpts,
+    );
+    expect(readFileSync(join(adopted, ".agents/skills/clossys-designer/SKILL.md"), "utf8")).toContain("clossys-designer");
   });
 
   it("grades a stale pin as degraded and an equal pin as current", () => {

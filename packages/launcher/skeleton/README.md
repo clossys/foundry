@@ -1,29 +1,19 @@
 # Account workspace
 
-This repository is the account hub for Foundry packages. It inventories
-where packages are installed and coordinates engagement. It is not a
-product application. Do not install the whole catalogue here.
+This folder is the account hub for Foundry packages.
 
-## Open this folder
+After `npx @clossys/launcher`, the same `@clossys-*` team is composed in
+every inventoried checkout beside this hub. Talk with `@clossys-advisor` and
+`@clossys-<package>` here or in a product repository. A missing `@` mention
+is not how we signal incompatibility — `@clossys-advisor` is the hiring check.
 
-Open this repository in your coding agent (Cursor, Claude, Codex, or
-another agent that can work a GitHub checkout). Advisor is read-only
-until you approve a next action.
+Run `npx @clossys/launcher` again for hub health and to refresh voices on
+clones next to the hub, not as how you talk to packages.
 
-## Resume later
-
-From this folder, or from any empty directory on a machine that can see
-the same GitHub owner:
-
-```bash
-npx @clossys/launcher
-```
-
-Public npm reads are credentialless. Do not add a token or private
-registry mapping for `@clossys`.
+Advisor is read-only until the sponsor approves a next action.
 
 ## What this hub pins
 
-Exact `@clossys/advisor` is a development dependency so the engagement
-gate can run against evidence you own. Other roles are pinned in the
-repositories that actually do the work, not dumped into this hub.
+Exact `@clossys/advisor` is a development dependency so the engagement gate
+can run against evidence you own. Other roles are pinned in the repositories
+that actually do the work, not dumped into this hub.

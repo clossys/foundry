@@ -31,7 +31,7 @@ async function repositoryJson(path) {
 test("repository Trio policy, adapters, and current-candidate fixtures bind the selected @clossys identities", async () => {
   const policy = await repositoryJson("governance/release-qualification-policy.json");
   const expected = [
-    ["advisor", "@clossys/advisor", "0.2.6"],
+    ["advisor", "@clossys/advisor", "0.2.7"],
     ["starter", "@clossys/starter", "0.1.8"],
     ["controller", "@clossys/controller", "0.9.10"],
   ];
@@ -72,8 +72,8 @@ test("all 20 publishable packages are exact-source bound to the catalogue and qu
   const policy = await repositoryJson("governance/release-qualification-policy.json");
   const catalog = await repositoryJson("governance/release-catalog.json");
   const expectedVersions = {
-    "@clossys/advisor": "0.2.6",
-    "@clossys/launcher": "0.1.2",
+    "@clossys/advisor": "0.2.7",
+    "@clossys/launcher": "0.1.5",
     "@clossys/architect": "0.1.9",
     "@clossys/bouncer": "0.1.9",
     "@clossys/builder": "0.8.0",

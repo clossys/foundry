@@ -66,6 +66,14 @@
 //      scope IS an npm organisation account; a bare `@name` in prose is either
 //      that same account, a forge handle, or a piece of language syntax.
 //
+//      This repository's own Agent Skill handles are the hyphenated form
+//      `@<own-scope>-<token>` (Agent Skills cannot put a slash in `name`).
+//      That is the same publisher as `@<own-scope>/<package>`, not a second
+//      account. `admittedScope` treats the hyphenated form as own identity.
+//      The truncated `@<own-scope>-` prefix that a placeholder such as
+//      `@<own-scope>-<package>` leaves in the bare-scope matcher is the same
+//      handle, cut at the `<`.
+//
 //      The bare form is not an optional extra: it is the shape the leak that
 //      motivated this gate actually had. `` e.g. `@<consumer>` `` in a doc
 //      comment has no slash after it, so a rule that only understood
@@ -289,6 +297,7 @@ const PLACEHOLDER_NAMES = new Map([
   ["other", "packages/governance preflight test stand-in for a mismatched scope"],
   ["yourscope", "docs/DECISIONS.md stand-in addressed at the reader's own scope"],
   ["acme", "the standard fictional-company placeholder, used in packages/surface metadata fixtures"],
+  ["otherowner", "launcher test stand-in for a sibling clone whose git origin is not the hub account"],
   ["containment-fixture-scope", "scripts/test-gates.mjs denylist-containment fixture scope"],
   ["retired-scope", "gate test stand-in for a predecessor scope a package was published under before it moved"],
 ]);
@@ -470,7 +479,15 @@ if (existsSync(lockPath)) {
 
 function admittedScope(name, rel) {
   const lower = name.toLowerCase();
-  if (lower === ownScopeName.toLowerCase()) return "this repository's own scope";
+  const own = ownScopeName.toLowerCase();
+  if (lower === own) return "this repository's own scope";
+  const skillPrefix = `${own}-`;
+  if (lower.startsWith(skillPrefix)) {
+    const token = lower.slice(skillPrefix.length);
+    if (token === "" || /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(token)) {
+      return "this repository's own Agent Skill handle";
+    }
+  }
   if (releaseTargetScopes.has(lower) && RELEASE_TARGET_SCOPE_SURFACES.has(rel)) return releaseTargetScopes.get(lower);
   if (derivedThirdPartyScopes.has(name)) return derivedThirdPartyScopes.get(name);
   if (VENDOR_SCOPES.has(lower)) return VENDOR_SCOPES.get(lower);

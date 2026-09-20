@@ -37,8 +37,28 @@ mapping for `@clossys`. Pin an exact version once you depend on the library
 API:
 
 ```bash
-npm install --save-dev --save-exact @clossys/launcher@0.1.2
+npm install --save-dev --save-exact @clossys/launcher@0.1.5
 ```
+
+## Talking to the team
+
+First contact is `npx @clossys/launcher` (empty directory or the checkout you
+appoint as the hub). After apply, the launcher composes the same
+`@clossys-<package>` voices into the hub and into every inventoried repository
+checkout that already sits beside the hub (`.agents/skills/clossys-<package>/`
+plus host discovery links). Composition is per checkout, not machine-wide, and
+is not a catalogue dump into `package.json`.
+
+Voices are how you talk in a coding agent; they are not engagement engines. The
+`@clossys/advisor` npm package is the engine that grades evidence;
+`@clossys-advisor` in chat is its hiring and compatibility voice. Use
+`@clossys-advisor` and `@clossys-<package>` in the hub or in any inventoried
+product repository. Each voice can talk even when that npm package is not pinned
+in that repo. Launcher health notes missing catalogue sources but apply continues.
+
+Run `npx @clossys/launcher` again from the hub for a health report and to
+refresh composed voices on sibling inventoried clones. It does not
+`gh repo clone` missing inventory entries—that is not how you talk to the team.
 
 ## How to run it
 
@@ -93,8 +113,10 @@ Exit codes preserve the ternary:
 | Export | Description |
 | --- | --- |
 | `planWorkspace()` | Decides create, resume, or adopt from a cwd observation. Optional `{ inventoryPath }` is the only way to appoint without a populated on-disk inventory. |
-| `applyWorkspacePlan()` | Copies the in-package skeleton or hub marker through a host port and returns a `WorkspaceApplyResult` with health. Resume does not write. |
+| `applyWorkspacePlan()` | Copies the in-package skeleton or hub marker through a host port and returns a `WorkspaceApplyResult` with health. Composes the same skill voices on the hub and on inventoried sibling checkouts beside it; refreshes stale hub guidance on every path, including resume. Optional `{ skillCatalogueRoot, launcherPackageRoot }` selects where skill bodies are read. |
 | `observeWorkspace()` | Reads `gh`, git remotes, cwd, inventory classification, and the public Advisor version. |
+| `readInventoryRepositories()` | Reads repository ids from a `schemaVersion: 1` inventory document. |
+| `launcherPackageRootFromModule()` | Resolves this package's root from `import.meta.url` so apply can find the packed skill catalogue. |
 | `parseGitHubRemote()` | Parses a github.com remote and rejects any other host. |
 | `isHubDocument()` | Type guard for the generated hub marker (packed template: `skeleton/.clossys/workspace.json`). |
 | `inspectInventory()` | Classifies inventory JSON as missing, empty, or populated. |
@@ -105,14 +127,15 @@ Exit codes preserve the ternary:
 | `DEFAULT_REPOSITORY_NAME` | Default new-hub repository name (`workspace`). Used only when creating, never when appointing. |
 | `WORKSPACE_MARKER_REL` | Relative path of the hub marker. |
 | `WORKSPACE_INVENTORY_REL` | Relative path of the hub inventory. |
-| `CommandResult` / `CwdObservation` / `DependencyBucket` / `HubDocument` / `HubHealthReport` / `InventoryObservation` / `InventoryValidationEntry` / `InventoryValidationReport` / `PinFinding` / `PinGrade` / `WorkspaceApplyResult` / `WorkspaceDecision` / `WorkspaceHost` / `WorkspaceObservation` / `WorkspacePlan` / `WorkspaceRefusal` / `WorkspaceState` | Typed host, observation, plan, health, and outcome contracts. |
+| `CommandResult` / `CwdObservation` / `DependencyBucket` / `HubDocument` / `HubHealthReport` / `InventoryObservation` / `InventoryValidationEntry` / `InventoryValidationReport` / `PinFinding` / `PinGrade` / `ApplyWorkspaceOptions` / `WorkspaceApplyResult` / `WorkspaceDecision` / `WorkspaceHost` / `WorkspaceObservation` / `WorkspacePlan` / `WorkspaceRefusal` / `WorkspaceState` | Typed host, observation, plan, health, and outcome contracts. |
 
 ## Why this is not Advisor, Starter, Builder, installer, creator, or a connector
 
 Advisor is the engagement engine: it grades evidence and names a next
-action. It has no GitHub I/O, and must not grow any. A remote chat
-connector is a separately deployed product surface for that engine, not a
-repo scaffolder.
+action. It has no GitHub I/O, and must not grow any. The composed
+`@clossys-advisor` voice is hiring and compatibility in chat, not a second
+engine. A remote chat connector is a separately deployed product surface for
+that engine, not a repo scaffolder.
 
 Starter (`@clossys/starter`) is the protected-base **activation** gate.
 Its only v1 subcommand is `decide`. It joins a pull-request snapshot to

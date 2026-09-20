@@ -5,6 +5,26 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.5] - 2026-09-20
+
+### Fixed
+
+- Discovery compose skips a `.claude/skills` or `.cursor/skills` path that is already a symlink so it cannot replace composed `SKILL.md`.
+
+## [0.1.4] - 2026-09-19
+
+### Added
+
+- Hub apply composes the full `clossys-*` skill tree under `.agents/skills/` on create, appoint, and resume, reading bodies from the packed skill catalogue (built at `npm run build` from each package's skill source) or from a sibling checkout. Missing sources are skipped with a health note; apply continues.
+- The same roster is composed into every inventoried repository clone beside the hub (resolved from the generated hub inventory and confirmed with `git remote get-url origin`); the health report lists targets and skipped ids. Sister checkouts get optional canned `AGENTS.md` only when missing or still the generated sister text.
+- Apply writes host discovery links under `.cursor/skills/` and `.claude/skills/` pointing at the composed skills in the hub and each resolved clone.
+- Packed Agent Skill `clossys-launcher` so a coding agent can be invoked as `@clossys-launcher`.
+
+### Changed
+
+- Resume refreshes composed skills and replaces stale generated `AGENTS.md` when it still tells founders to use `npx` to continue the conversation; customized `AGENTS.md` files are left alone.
+- Founder-facing hub guidance (`CONSUMER_AGENTS_MD`, skeleton README) now states the same `@clossys-*` team is available in every inventoried checkout; `@clossys-advisor` is the hiring check; `npx @clossys/launcher` refreshes voices on clones beside the hub.
+
 ## [0.1.2] - 2026-09-19
 
 ### Fixed

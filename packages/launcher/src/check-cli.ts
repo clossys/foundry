@@ -109,11 +109,15 @@ export function planningHost(): WorkspaceHost {
     now: () => "1970-01-01T00:00:00.000Z",
     exists: () => false,
     isDirectory: () => false,
+    isSymlink: () => false,
     readText: () => null,
     writeText: () => {
       throw new Error("launcher-check does not write");
     },
     mkdirp: () => {
+      throw new Error("launcher-check does not write");
+    },
+    symlink: () => {
       throw new Error("launcher-check does not write");
     },
     readDir: () => [],

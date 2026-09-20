@@ -105,6 +105,38 @@ function currentTransitionFixture(extraFiles = {}) {
   return root;
 }
 
+test("own-scope hyphenated Agent Skill handles are this repository, not a foreign account", () => {
+  const root = candidateFixture({
+    extraFiles: {
+      "docs/ADOPTION.md": "Talk with @clossys-advisor or @clossys-<package>.\n",
+    },
+  });
+  try {
+    const result = run(root);
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("a hyphenated handle under some other scope remains a foreign bare-scope", () => {
+  // Interpolate the `@` so this file's own source is not itself a finding.
+  const foreignToken = "widgetco-advisor";
+  const foreignHandle = `@${foreignToken}`;
+  const root = candidateFixture({
+    extraFiles: {
+      "docs/LEAK.md": `Talk with ${foreignHandle}.\n`,
+    },
+  });
+  try {
+    const result = run(root);
+    assert.equal(result.status, 1, result.stderr || result.stdout);
+    assert.match(result.stdout, new RegExp(`bare-scope @${foreignToken}`));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("a future producer scope is admitted only in an exact release-contract documentation surface", () => {
   const root = fixture({ extraFiles: { "docs/PUBLISHING.md": `planned ${futureScope}/advisor target` } });
   try {

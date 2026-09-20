@@ -45,6 +45,12 @@ Launcher is executable tooling, not a role. Advisor stays the engagement
 engine. Starter stays the protected-base `decide` gate in CI after a hub
 exists. Positions still open in the repository that has the real job.
 
+After the hub exists, talk with `@clossys-advisor` and `@clossys-<package>` in
+the hub or in any inventoried product repository—the launcher composes the same
+team voices on each checkout beside the hub, not only when you open the hub.
+`@clossys-advisor` is hiring and compatibility; the npm `@clossys/advisor`
+package remains the engine behind that voice.
+
 ## The two records
 
 1. [`role-loop-archetypes.json`](contracts/role-loop-archetypes.json) is the

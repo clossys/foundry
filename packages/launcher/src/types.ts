@@ -16,9 +16,13 @@ export interface WorkspaceHost {
   now(): string;
   exists(path: string): boolean;
   isDirectory(path: string): boolean;
+  /** True when path exists and is a symlink (lstat; does not follow). Missing path is false. */
+  isSymlink(path: string): boolean;
   readText(path: string): string | null;
   writeText(path: string, contents: string): void;
   mkdirp(path: string): void;
+  /** Creates a relative symlink at linkPath pointing at relativeTarget (directory link). */
+  symlink(relativeTarget: string, linkPath: string): void;
   readDir(path: string): string[];
   run(command: string, args: readonly string[], options?: { cwd?: string }): CommandResult;
   prompt(message: string, choices: readonly string[]): string | null;
@@ -80,6 +84,18 @@ export interface HubHealthReport {
   readonly extraClossys: readonly string[];
   readonly pinFindings: readonly PinFinding[];
   readonly degraded: boolean;
+  readonly skillComposition?: {
+    readonly composed: readonly string[];
+    readonly skipped: readonly { readonly packageDir: string; readonly note: string }[];
+    readonly rosterTargets?: readonly string[];
+    readonly rosterSkipped?: readonly { readonly inventoryId: string; readonly note: string }[];
+  };
+}
+
+/** Optional paths for skill composition during apply. */
+export interface ApplyWorkspaceOptions {
+  readonly skillCatalogueRoot?: string;
+  readonly launcherPackageRoot?: string;
 }
 
 export interface CwdObservation {
