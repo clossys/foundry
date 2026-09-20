@@ -268,14 +268,9 @@ export function observeWorkspace(host: WorkspaceHost): WorkspaceObservation {
     const viewed = host.run("gh", ["repo", "view", `${ownerGuess}/${DEFAULT_REPOSITORY_NAME}`, "--json", "name"]);
     if (viewed.status === 0) remoteDefaultHub = { owner: ownerGuess, repository: DEFAULT_REPOSITORY_NAME };
   }
-  // Skip the registry read when the tree already pins Advisor in some bucket:
-  // adopt leaves an existing pin alone, so no live version is needed to plan it.
-  const manifestPinsAdvisor = hasAdvisorPin(readJson(host, join(cwd, "package.json")));
-  if (!manifestPinsAdvisor) {
-    const viewedAdvisor = host.run("npm", ["view", ADVISOR_PACKAGE, "version"]);
-    const version = viewedAdvisor.stdout.trim();
-    if (viewedAdvisor.status === 0 && /^\d+\.\d+\.\d+$/.test(version)) advisorVersion = version;
-  }
+  const viewedAdvisor = host.run("npm", ["view", ADVISOR_PACKAGE, "version"]);
+  const version = viewedAdvisor.stdout.trim();
+  if (viewedAdvisor.status === 0 && /^\d+\.\d+\.\d+$/.test(version)) advisorVersion = version;
 
   const cwdObservation: CwdObservation = {
     absolutePath: cwd,
@@ -418,6 +413,7 @@ export function planWorkspace(
       repository: repoNameFromSlug(cwd.hub.repository, DEFAULT_REPOSITORY_NAME),
       directory: cwd.absolutePath,
       clone: false,
+      ...(observation.advisorVersion === undefined ? {} : { advisorVersion: observation.advisorVersion }),
     };
   }
   if (cwd.git && cwd.githubOwner && cwd.githubRepository) {
@@ -454,6 +450,7 @@ export function planWorkspace(
       repository: observation.remoteDefaultHub.repository,
       directory: cwd.absolutePath,
       clone: true,
+      ...(observation.advisorVersion === undefined ? {} : { advisorVersion: observation.advisorVersion }),
     };
   }
   if (!observation.ghAvailable) {
@@ -510,12 +507,18 @@ function clossysNames(bucket: unknown, extra: Set<string>): string | undefined {
   return advisor;
 }
 
-/** Leaves an existing Advisor pin in whichever bucket it already occupies. */
+/**
+ * Pins live Advisor in `devDependencies` only. Relocates a pin left in any
+ * other bucket and overwrites a frozen version. Does not touch other
+ * `@clossys/*` names. A dedicated `{owner}/workspace` hub is named
+ * `@owner/workspace`.
+ */
 function mergeAdvisorPin(
   host: WorkspaceHost,
   directory: string,
   skeletonRoot: string,
   advisorVersion: string,
+  owner: string,
   repository: string,
 ): void {
   const path = join(directory, "package.json");
@@ -523,7 +526,7 @@ function mergeAdvisorPin(
   if (raw === null) {
     const skeleton = host.readText(join(skeletonRoot, "package.json"));
     if (skeleton === null) throw new Error("missing skeleton package.json");
-    writeSkeletonFile(host, directory, "package.json", substitute(skeleton, { owner: repository, repository, advisorVersion }));
+    writeSkeletonFile(host, directory, "package.json", substitute(skeleton, { owner, repository, advisorVersion }));
     return;
   }
   let manifest: Record<string, unknown>;
@@ -534,12 +537,21 @@ function mergeAdvisorPin(
   } catch {
     throw new Error("existing package.json is unreadable JSON");
   }
-  const extra = new Set<string>();
-  const pinnedSomewhere = DEPENDENCY_BUCKETS.some((bucket) => clossysNames(manifest[bucket], extra) !== undefined);
-  if (pinnedSomewhere) return;
+  for (const bucket of DEPENDENCY_BUCKETS) {
+    if (bucket === "devDependencies") continue;
+    const current = manifest[bucket];
+    if (!isRecord(current) || !(ADVISOR_PACKAGE in current)) continue;
+    const next = { ...current };
+    delete next[ADVISOR_PACKAGE];
+    if (Object.keys(next).length === 0) delete manifest[bucket];
+    else manifest[bucket] = next;
+  }
   const devDependencies = isRecord(manifest.devDependencies) ? { ...manifest.devDependencies } : {};
   devDependencies[ADVISOR_PACKAGE] = advisorVersion;
   manifest.devDependencies = devDependencies;
+  if (repository === DEFAULT_REPOSITORY_NAME) {
+    manifest.name = `@${owner}/${repository}`;
+  }
   host.writeText(path, `${JSON.stringify(manifest, null, 2)}\n`);
 }
 
@@ -615,7 +627,7 @@ function adoptHubFiles(host: WorkspaceHost, skeletonRoot: string, plan: Workspac
     const ignore = host.readText(join(skeletonRoot, ".gitignore"));
     if (ignore !== null) writeSkeletonFile(host, plan.directory, ".gitignore", ignore);
   }
-  mergeAdvisorPin(host, plan.directory, skeletonRoot, plan.advisorVersion, plan.repository);
+  mergeAdvisorPin(host, plan.directory, skeletonRoot, plan.advisorVersion, plan.owner, plan.repository);
 }
 
 function requireZero(result: CommandResult, label: string): void {
@@ -670,7 +682,13 @@ export function reportHubHealth(host: WorkspaceHost, directory: string, liveAdvi
     dualPin: Object.values(pins).filter((value) => value !== undefined).length > 1,
     extraClossys: [...extra].sort(),
     pinFindings,
-    degraded: pinFindings.some((finding) => finding.grade === "stale"),
+    degraded:
+      pinFindings.some((finding) => finding.grade === "stale") ||
+      Object.values(pins).filter((value) => value !== undefined).length > 1 ||
+      pins.devDependencies === undefined ||
+      pins.dependencies !== undefined ||
+      pins.optionalDependencies !== undefined ||
+      pins.peerDependencies !== undefined,
   };
 }
 
@@ -937,7 +955,7 @@ export function applyWorkspacePlan(
       launcherPackageRoot,
       plan.owner,
       plan.repository,
-      undefined,
+      plan.advisorVersion,
       skillCatalogueRoot,
     );
   }

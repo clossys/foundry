@@ -16,11 +16,13 @@ a read-only health report. It scans all four dependency buckets
 `peerDependencies`) for the Advisor pin and for extra `@clossys/*` names.
 When the live registry version is known, each pin is graded against it: a
 pin older than live is a `stale pin` finding and marks the report
-**degraded**. Exit stays 0 on resume (the report is advisory); adopt prints
-the same report and an unparseable pin-versus-live comparison is noted as
-indeterminate rather than stale. `checkInventoryEntries()` additionally
-validates hub inventory ids read-only, marking ids whose repository no
-longer resolves (skipped with a note when `gh` is unavailable).
+**degraded**. The report is also degraded when Advisor is missing, dual-pinned,
+or present in any bucket other than `devDependencies`. Exit stays 0 on resume
+(the report is advisory); adopt prints the same report and an unparseable
+pin-versus-live comparison is noted as indeterminate rather than stale.
+`checkInventoryEntries()` additionally validates hub inventory ids read-only,
+marking ids whose repository no longer resolves (skipped with a note when
+`gh` is unavailable).
 
 
 ## Install
@@ -37,7 +39,7 @@ mapping for `@clossys`. Pin an exact version once you depend on the library
 API:
 
 ```bash
-npm install --save-dev --save-exact @clossys/launcher@0.1.5
+npm install --save-dev --save-exact @clossys/launcher@0.1.6
 ```
 
 ## Talking to the team
@@ -72,9 +74,9 @@ silent fallback.
 
 | Current directory | What happens |
 | --- | --- |
-| Empty | Creates `{owner}/workspace` from the in-package skeleton, or clones that hub if it already exists. |
+| Empty | Creates `{owner}/workspace` from the in-package skeleton (package name `@owner/workspace`), or clones that hub if it already exists. |
 | Already a hub (generated marker; packed template `skeleton/.clossys/workspace.json`) | Resumes. No new repository. `--inventory` here is refused with a pointer to the appointed hub's own `.clossys/inventory.json`. |
-| Any other GitHub repository you control | Appoints it as the account hub. Keeps the existing name and files. Refuses when the working tree has uncommitted changes (`git status --porcelain` non-empty) — the refusal names the offending remote host when the origin is not on github.com. Refuses when `CLOSSYS_OWNER` names a different account than the repository's github.com origin owner. Writes the hub marker. Leaves an existing `@clossys/advisor` pin in whichever bucket it already occupies; pins live Advisor in `devDependencies` only when missing. Refuses if the generated hub inventory is missing or empty (packed template `skeleton/.clossys/inventory.json`; that generated path does not ship) unless `--inventory <path>` supplies a populated document — or, when the on-disk inventory is already populated and `--inventory` is also supplied, merges the two by repository id (on-disk order first, new ids appended, first occurrence of an id wins). Does not rewrite the lockfile or dump the catalogue. Prints a read-only health report. |
+| Any other GitHub repository you control | Appoints it as the account hub. Keeps existing product files. Refuses when the working tree has uncommitted changes (`git status --porcelain` non-empty) — the refusal names the offending remote host when the origin is not on github.com. Refuses when `CLOSSYS_OWNER` names a different account than the repository's github.com origin owner. Writes the hub marker. Pins live `@clossys/advisor` in `devDependencies`, relocating and upgrading any pin left in another bucket. A dedicated `{owner}/workspace` checkout is named `@owner/workspace`; a product repository keeps its package name. Always reads the public Advisor version (needed to pin live and to grade resume health). Refuses if the generated hub inventory is missing or empty (packed template `skeleton/.clossys/inventory.json`; that generated path does not ship) unless `--inventory <path>` supplies a populated document — or, when the on-disk inventory is already populated and `--inventory` is also supplied, merges the two by repository id (on-disk order first, new ids appended, first occurrence of an id wins). Does not rewrite the lockfile or dump the catalogue. Prints a read-only health report. |
 
 It does not have to be a brand-new exclusive repository, and it does not
 have to already match a Foundry layout. Informal "workspace-looking" trees
