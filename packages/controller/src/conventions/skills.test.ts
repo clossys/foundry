@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { SKILL_VERBS, validateSkillName, validateSkillSet } from "./skills.js";
+import {
+  CLOSSYS_VENDOR_SKILL_PACKAGES,
+  SKILL_VERBS,
+  validateSkillName,
+  validateSkillSet,
+} from "./skills.js";
 
 const options = { prefixes: ["ex", "acme"] } as const;
 
@@ -58,6 +63,43 @@ describe("validateSkillName", () => {
     expect(SKILL_VERBS).toContain("groom");
     expect(validateSkillName("ex-expand-coverage", options)).toEqual([]);
     expect(validateSkillName("ex-groom-backlog", options)).toEqual([]);
+  });
+
+  describe("clossys vendor skills", () => {
+    const bareOptions = { prefixes: [] as const };
+
+    it.each(["clossys-advisor", "clossys-designer", "clossys-launcher", "clossys-starter"] as const)(
+      "accepts %s without a third-party allowlist",
+      (name) => {
+        expect(validateSkillName(name, bareOptions)).toEqual([]);
+      },
+    );
+
+    it("covers every published package slug", () => {
+      expect(CLOSSYS_VENDOR_SKILL_PACKAGES).toHaveLength(20);
+      for (const slug of CLOSSYS_VENDOR_SKILL_PACKAGES) {
+        expect(validateSkillName(`clossys-${slug}`, bareOptions)).toEqual([]);
+      }
+    });
+
+    it("rejects an unknown vendor package slug", () => {
+      const findings = validateSkillName("clossys-notapackage", bareOptions);
+      expect(findings.map((f) => f.rule)).toContain("skill/unknown-vendor-package");
+    });
+
+    it("rejects path-shaped and scoped spellings", () => {
+      expect(validateSkillName("clossys/advisor", bareOptions).map((f) => f.rule)).toContain(
+        "skill/malformed-segment",
+      );
+      expect(validateSkillName("@clossys-advisor", bareOptions).map((f) => f.rule)).toContain(
+        "skill/malformed-segment",
+      );
+    });
+
+    it("reports registering clossys as a first-party prefix", () => {
+      const findings = validateSkillName("ex-audit-dependencies", { prefixes: ["ex", "clossys"] });
+      expect(findings.map((f) => f.rule)).toContain("skill/prefix-collision");
+    });
   });
 });
 

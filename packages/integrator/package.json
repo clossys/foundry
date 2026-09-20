@@ -23,6 +23,7 @@
     "!src/**/*.test.ts",
     "!src/**/*.test-helper.ts",
     "CHANGELOG.md",
+    "skill",
     "README.md",
     "LICENSE"
   ],

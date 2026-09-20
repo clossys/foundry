@@ -29,6 +29,7 @@
     "src",
     "!src/**/*.test.ts",
     "documents",
+    "skill",
     "README.md",
     "CHANGELOG.md",
     "LICENSE"

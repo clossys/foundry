@@ -28,6 +28,7 @@
     "!src/**/*.test.ts",
     "templates",
     "CHANGELOG.md",
+    "skill",
     "README.md",
     "LICENSE"
   ],

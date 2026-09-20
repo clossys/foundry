@@ -27,6 +27,7 @@
     "dist",
     "src",
     "!src/**/*.test.ts",
+    "skill",
     "README.md",
     "CHANGELOG.md",
     "LICENSE"

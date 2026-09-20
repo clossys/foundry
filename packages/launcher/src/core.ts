@@ -1,6 +1,7 @@
 import { dirname, join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import type {
+  ApplyWorkspaceOptions,
   CommandResult,
   CwdObservation,
   DependencyBucket,
@@ -18,6 +19,7 @@ import type {
   WorkspacePlanCreate,
   WorkspaceRefusal,
 } from "./types.js";
+import { composeSkills, type SkillCompositionResult } from "./skills.js";
 
 export const DEFAULT_REPOSITORY_NAME = "workspace";
 export const WORKSPACE_MARKER_REL = ".clossys/workspace.json";
@@ -43,6 +45,31 @@ const SKELETON_FILES = [
 
 /** Written at generate time so this package never ships a nested AGENTS.md. */
 export const CONSUMER_AGENTS_MD = `# Account workspace
+
+This folder is the account hub for Foundry packages.
+
+After \`npx @clossys/launcher\`, the same \`@clossys-*\` team is composed in
+every inventoried checkout beside this hub. Talk with \`@clossys-advisor\` and
+\`@clossys-<package>\` here or in a product repository. A missing \`@\` mention
+is not how we signal incompatibility — \`@clossys-advisor\` is the hiring check.
+
+Run \`npx @clossys/launcher\` again for hub health and to refresh voices on
+clones next to the hub, not as how you talk to packages.
+
+Advisor is read-only until the sponsor approves a next action.
+`;
+
+/** Canned guidance for inventoried product checkouts (not the hub). */
+export const SISTER_CONSUMER_AGENTS_MD = `# Product repository
+
+This repository is part of the same account engagement. The same
+\`@clossys-<package>\` team is here for intro and questions;
+\`@clossys-advisor\` decides hiring and compatibility. This folder is not the
+hub — engines are hired per repository, not dumped here.
+`;
+
+/** Previous generate-time guidance; used to refresh stale hub AGENTS.md on resume. */
+export const LEGACY_CONSUMER_AGENTS_MD = `# Account workspace
 
 This repository is the account hub for Foundry packages. It inventories
 where packages are installed and coordinates engagement. It is not a
@@ -295,7 +322,7 @@ function resolveOwner(observation: WorkspaceObservation, host: WorkspaceHost): {
  * Decides create, resume, or adopt from a cwd observation.
  * Appointing means: run this from the GitHub repository that should own the hub.
  */
-function readInventoryRepositories(host: WorkspaceHost, source: string, label: string): readonly string[] {
+export function readInventoryRepositories(host: WorkspaceHost, source: string, label: string): readonly string[] {
   const raw = host.readText(source);
   if (raw === null) return [];
   try {
@@ -448,7 +475,7 @@ function containedPath(root: string, relativePath: string): string {
   const resolved = resolve(root, relativePath);
   const prefix = root.endsWith(sep) ? root : `${root}${sep}`;
   if (resolved !== root && !resolved.startsWith(prefix)) {
-    throw new Error(`refusing to write outside the hub directory: ${relativePath}`);
+    throw new Error(`refusing to write outside the workspace directory: ${relativePath}`);
   }
   return resolved;
 }
@@ -574,6 +601,8 @@ function adoptHubFiles(host: WorkspaceHost, skeletonRoot: string, plan: Workspac
   }
   if (host.readText(join(plan.directory, "AGENTS.md")) === null) {
     writeSkeletonFile(host, plan.directory, "AGENTS.md", CONSUMER_AGENTS_MD);
+  } else {
+    writeConsumerAgentsIfNeeded(host, plan.directory);
   }
   if (host.readText(join(plan.directory, "CLAUDE.md")) === null) {
     writeSkeletonFile(host, plan.directory, "CLAUDE.md", CONSUMER_CLAUDE_MD);
@@ -660,6 +689,23 @@ export function formatHubHealth(report: HubHealthReport): string {
     finding.note !== undefined ? `${finding.bucket} ${finding.note}` : `${finding.bucket} ${finding.grade}`,
   );
   const findingLine = findings.length === 0 ? "none" : findings.join("; ");
+  const skillParts: string[] = [];
+  if (report.skillComposition !== undefined) {
+    skillParts.push(
+      report.skillComposition.composed.length === 0
+        ? "skills composed: none"
+        : `skills composed: ${report.skillComposition.composed.map((name) => `clossys-${name}`).join(", ")}`,
+    );
+    for (const skip of report.skillComposition.skipped) {
+      skillParts.push(`skill skipped (${skip.packageDir}): ${skip.note}`);
+    }
+    if (report.skillComposition.rosterTargets !== undefined && report.skillComposition.rosterTargets.length > 0) {
+      skillParts.push(`skill roster written: ${report.skillComposition.rosterTargets.join(", ")}`);
+    }
+    for (const skip of report.skillComposition.rosterSkipped ?? []) {
+      skillParts.push(`skill roster skipped (${skip.inventoryId}): ${skip.note}`);
+    }
+  }
   return [
     `hub marker: ${report.marker}`,
     `inventory: ${inventory}`,
@@ -668,8 +714,27 @@ export function formatHubHealth(report: HubHealthReport): string {
     `extra @clossys/*: ${extra}`,
     `pin findings: ${findingLine}`,
     `degraded: ${report.degraded ? "yes" : "no"}`,
+    ...(skillParts.length === 0 ? [] : skillParts),
     `health: ${JSON.stringify(report)}`,
   ].join("\n");
+}
+
+function withHealth(
+  host: WorkspaceHost,
+  directory: string,
+  headline: string,
+  liveAdvisorVersion?: string,
+  skillComposition?: SkillCompositionResult,
+): WorkspaceApplyResult {
+  const health: HubHealthReport = {
+    ...reportHubHealth(host, directory, liveAdvisorVersion),
+    ...(skillComposition === undefined ? {} : { skillComposition }),
+  };
+  return {
+    state: "satisfied",
+    message: `${headline}\n${formatHubHealth(health)}`,
+    health,
+  };
 }
 
 /**
@@ -707,22 +772,157 @@ export function checkInventoryEntries(host: WorkspaceHost, directory: string): I
   return { entries, skipped: false };
 }
 
-function withHealth(
+function shouldRefreshConsumerAgents(existing: string | null): boolean {
+  if (existing === null) return true;
+  if (existing === CONSUMER_AGENTS_MD) return false;
+  if (existing === LEGACY_CONSUMER_AGENTS_MD) return true;
+  if (existing.includes("Run `npx @clossys/launcher` again to resume")) return true;
+  return false;
+}
+
+function writeConsumerAgentsIfNeeded(host: WorkspaceHost, directory: string): void {
+  const existing = host.readText(join(directory, "AGENTS.md"));
+  if (!shouldRefreshConsumerAgents(existing)) return;
+  writeSkeletonFile(host, directory, "AGENTS.md", CONSUMER_AGENTS_MD);
+}
+
+function writeSisterConsumerAgentsIfNeeded(host: WorkspaceHost, directory: string): void {
+  const existing = host.readText(join(directory, "AGENTS.md"));
+  if (existing !== null && existing.trim() !== "" && existing !== SISTER_CONSUMER_AGENTS_MD) return;
+  writeSkeletonFile(host, directory, "AGENTS.md", SISTER_CONSUMER_AGENTS_MD);
+}
+
+const CLONE_NOT_BESIDE_HUB_NOTE =
+  "clone not next to the hub; voices appear here after this repository is cloned beside the hub and launcher resumes";
+
+function parseInventoryRepositoryId(id: string, hubOwner: string): { owner: string; repository: string } | null {
+  const trimmed = id.trim();
+  if (trimmed === "") return null;
+  if (trimmed.includes("/")) {
+    const slash = trimmed.indexOf("/");
+    const owner = trimmed.slice(0, slash);
+    const repository = trimmed.slice(slash + 1);
+    if (!OWNER.test(owner) || !REPO.test(repository)) return null;
+    return { owner, repository };
+  }
+  if (!REPO.test(trimmed)) return null;
+  return { owner: hubOwner, repository: trimmed };
+}
+
+function resolveSisterCloneTargets(
+  host: WorkspaceHost,
+  hubDirectory: string,
+  hubOwner: string,
+): {
+  readonly targets: readonly { readonly inventoryId: string; readonly directory: string }[];
+  readonly skipped: readonly { readonly inventoryId: string; readonly note: string }[];
+} {
+  const parent = dirname(resolve(hubDirectory));
+  const hubResolved = resolve(hubDirectory);
+  const skipped: { inventoryId: string; note: string }[] = [];
+  const targets: { inventoryId: string; directory: string }[] = [];
+  const inventoryPath = join(hubDirectory, WORKSPACE_INVENTORY_REL);
+  let inventoryIds: readonly string[];
+  try {
+    inventoryIds = readInventoryRepositories(host, inventoryPath, "the hub inventory");
+  } catch {
+    return { targets: [], skipped: [] };
+  }
+  for (const id of inventoryIds) {
+    if (id === "") continue;
+    const parsed = parseInventoryRepositoryId(id, hubOwner);
+    if (parsed === null) {
+      skipped.push({ inventoryId: id, note: "inventory id is not a valid repository slug" });
+      continue;
+    }
+    if (parsed.owner !== hubOwner) {
+      skipped.push({ inventoryId: id, note: "other account; not this roster" });
+      continue;
+    }
+    const candidate = join(parent, parsed.repository);
+    const candidateResolved = resolve(candidate);
+    if (candidateResolved === hubResolved) continue;
+    if (!host.exists(candidate) || !host.isDirectory(candidate)) {
+      skipped.push({ inventoryId: id, note: CLONE_NOT_BESIDE_HUB_NOTE });
+      continue;
+    }
+    if (looksLikeFoundry(host, candidate)) {
+      skipped.push({ inventoryId: id, note: "foundry supplier tree; skills are not written here" });
+      continue;
+    }
+    const originResult = host.run("git", ["remote", "get-url", "origin"], { cwd: candidate });
+    const originUrl = originResult.status === 0 ? originResult.stdout.trim() : "";
+    const remote = originUrl === "" ? null : parseGitHubRemote(originUrl);
+    if (remote === null || remote.owner !== parsed.owner || remote.repository !== parsed.repository) {
+      skipped.push({ inventoryId: id, note: "git origin does not match inventory id" });
+      continue;
+    }
+    targets.push({ inventoryId: id, directory: candidate });
+  }
+  return { targets, skipped };
+}
+
+function hubRosterId(host: WorkspaceHost, hubDirectory: string, hubOwner: string, hubRepository: string): string {
+  const document = readHub(host, hubDirectory);
+  if (document !== undefined) return document.repository;
+  return `${hubOwner}/${hubRepository}`;
+}
+
+function composeSkillRoster(
+  host: WorkspaceHost,
+  hubDirectory: string,
+  hubOwner: string,
+  hubRepository: string,
+  options: { launcherPackageRoot: string; skillCatalogueRoot?: string },
+): SkillCompositionResult & {
+  readonly rosterTargets: readonly string[];
+  readonly rosterSkipped: readonly { readonly inventoryId: string; readonly note: string }[];
+} {
+  const hubSkill = composeSkills(host, hubDirectory, {
+    launcherPackageRoot: options.launcherPackageRoot,
+    ...(options.skillCatalogueRoot === undefined ? {} : { skillCatalogueRoot: options.skillCatalogueRoot }),
+  });
+  writeConsumerAgentsIfNeeded(host, hubDirectory);
+  const hubId = hubRosterId(host, hubDirectory, hubOwner, hubRepository);
+  const rosterTargets: string[] = [hubId];
+  const { targets, skipped } = resolveSisterCloneTargets(host, hubDirectory, hubOwner);
+  for (const target of targets) {
+    composeSkills(host, target.directory, {
+      launcherPackageRoot: options.launcherPackageRoot,
+      ...(options.skillCatalogueRoot === undefined ? {} : { skillCatalogueRoot: options.skillCatalogueRoot }),
+    });
+    writeSisterConsumerAgentsIfNeeded(host, target.directory);
+    rosterTargets.push(target.inventoryId);
+  }
+  return { ...hubSkill, rosterTargets, rosterSkipped: skipped };
+}
+
+function finishHubApply(
   host: WorkspaceHost,
   directory: string,
   headline: string,
+  launcherPackageRoot: string,
+  hubOwner: string,
+  hubRepository: string,
   liveAdvisorVersion?: string,
+  skillCatalogueRoot?: string,
 ): WorkspaceApplyResult {
-  const health = reportHubHealth(host, directory, liveAdvisorVersion);
-  return {
-    state: "satisfied",
-    message: `${headline}\n${formatHubHealth(health)}`,
-    health,
-  };
+  const skillComposition = composeSkillRoster(host, directory, hubOwner, hubRepository, {
+    launcherPackageRoot,
+    ...(skillCatalogueRoot === undefined ? {} : { skillCatalogueRoot }),
+  });
+  return withHealth(host, directory, headline, liveAdvisorVersion, skillComposition);
 }
 
-/** Applies a create, resume, or adopt plan through the host. Resume does not write. */
-export function applyWorkspacePlan(host: WorkspaceHost, plan: WorkspacePlan, skeletonRoot: string): WorkspaceApplyResult {
+/** Applies a create, resume, or adopt plan through the host. Resume refreshes composed skills and stale AGENTS.md guidance. */
+export function applyWorkspacePlan(
+  host: WorkspaceHost,
+  plan: WorkspacePlan,
+  skeletonRoot: string,
+  options: ApplyWorkspaceOptions = {},
+): WorkspaceApplyResult {
+  const launcherPackageRoot = options.launcherPackageRoot ?? resolve(skeletonRoot, "..");
+  const skillCatalogueRoot = options.skillCatalogueRoot;
   if (plan.action === "resume") {
     if (plan.clone) {
       requireZero(
@@ -730,10 +930,15 @@ export function applyWorkspacePlan(host: WorkspaceHost, plan: WorkspacePlan, ske
         "gh repo clone",
       );
     }
-    return withHealth(
+    return finishHubApply(
       host,
       plan.directory,
       `resumed ${plan.owner}/${plan.repository} as the account hub\nOpen this folder in your coding agent. Advisor stays read-only until you approve a next action.`,
+      launcherPackageRoot,
+      plan.owner,
+      plan.repository,
+      undefined,
+      skillCatalogueRoot,
     );
   }
   if (plan.action === "create") {
@@ -746,20 +951,32 @@ export function applyWorkspacePlan(host: WorkspaceHost, plan: WorkspacePlan, ske
       ),
       "gh repo create",
     );
-    return withHealth(
+    return finishHubApply(
       host,
       plan.directory,
       `created ${plan.owner}/${plan.repository} as the account hub\nOpen this folder in your coding agent. Advisor stays read-only until you approve a next action.`,
+      launcherPackageRoot,
+      plan.owner,
+      plan.repository,
       plan.advisorVersion,
+      skillCatalogueRoot,
     );
   }
   adoptHubFiles(host, skeletonRoot, plan);
-  return withHealth(
+  return finishHubApply(
     host,
     plan.directory,
     `appointed ${plan.owner}/${plan.repository} as the account hub\nExisting project files were kept. This hub inventories engagement; it does not install the catalogue into the repo.`,
+    launcherPackageRoot,
+    plan.owner,
+    plan.repository,
     plan.advisorVersion,
+    skillCatalogueRoot,
   );
+}
+
+export function launcherPackageRootFromModule(moduleUrl: string): string {
+  return resolve(dirname(fileURLToPath(moduleUrl)), "..");
 }
 
 export function skeletonRootFromModule(moduleUrl: string): string {

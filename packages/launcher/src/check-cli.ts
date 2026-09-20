@@ -116,6 +116,9 @@ export function planningHost(): WorkspaceHost {
     mkdirp: () => {
       throw new Error("launcher-check does not write");
     },
+    symlink: () => {
+      throw new Error("launcher-check does not write");
+    },
     readDir: () => [],
     run: () => unused(),
     prompt: () => null,

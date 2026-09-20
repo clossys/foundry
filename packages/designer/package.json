@@ -112,6 +112,7 @@
     "!src/**/*.test.tsx",
     "styles",
     "CHANGELOG.md",
+    "skill",
     "README.md",
     "TOKENS.md",
     "LICENSE",

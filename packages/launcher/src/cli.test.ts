@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync, symlinkSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -35,6 +35,11 @@ function host(directory: string, commands: Record<string, CommandResult>): Works
     },
     mkdirp: (path) => {
       mkdirSync(path, { recursive: true });
+    },
+    symlink: (relativeTarget, linkPath) => {
+      mkdirSync(dirname(linkPath), { recursive: true });
+      if (existsSync(linkPath)) rmSync(linkPath, { recursive: true, force: true });
+      symlinkSync(relativeTarget, linkPath, "dir");
     },
     readDir: (path) => (existsSync(path) ? readdirSync(path) : []),
     run: (command, args) => commands[`${command} ${args.join(" ")}`] ?? { status: 1, stdout: "", stderr: "unmocked" },

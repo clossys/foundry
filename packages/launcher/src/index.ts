@@ -6,15 +6,18 @@ export {
   hasAdvisorPin,
   inspectInventory,
   isHubDocument,
+  launcherPackageRootFromModule,
   observeWorkspace,
   parseGitHubRemote,
   planWorkspace,
+  readInventoryRepositories,
   reportHubHealth,
   DEFAULT_REPOSITORY_NAME,
   WORKSPACE_INVENTORY_REL,
   WORKSPACE_MARKER_REL,
 } from "./core.js";
 export type {
+  ApplyWorkspaceOptions,
   CommandResult,
   CwdObservation,
   DependencyBucket,

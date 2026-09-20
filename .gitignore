@@ -29,3 +29,6 @@ coverage/
 # skip anything `git ls-files --others --ignored` reports) from re-scanning
 # this directory as if it were part of the tree a PR proposes.
 .trusted-scripts/
+
+# Packed launcher skill catalogue (packages/launcher/scripts/pack-skills.mjs).
+packages/launcher/skill-catalogue/

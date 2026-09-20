@@ -38,7 +38,13 @@ export {
 export { TAXONOMY_PREFIXES, branchExemptionsFromProfile, validateBranchName } from "./branch.js";
 export type { BranchOptions } from "./branch.js";
 
-export { SKILL_VERBS, validateSkillName, validateSkillSet } from "./skills.js";
+export {
+  CLOSSYS_VENDOR_SKILL_NAMESPACE,
+  CLOSSYS_VENDOR_SKILL_PACKAGES,
+  SKILL_VERBS,
+  validateSkillName,
+  validateSkillSet,
+} from "./skills.js";
 export type { SkillOptions } from "./skills.js";
 
 export {
