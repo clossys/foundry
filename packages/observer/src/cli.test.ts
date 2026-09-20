@@ -1,4 +1,4 @@
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -246,13 +246,12 @@ describe("main — direct-path reachability (real compiled dist/bin.js)", () => 
   }
 
   function runCompiledCli(args: string[]): { status: number | null; stdout: string; stderr: string } {
-    try {
-      const stdout = execFileSync("node", [binPath, ...args], { encoding: "utf8" });
-      return { status: 0, stdout, stderr: "" };
-    } catch (error) {
-      const e = error as { status: number | null; stdout?: string; stderr?: string };
-      return { status: e.status, stdout: e.stdout ?? "", stderr: e.stderr ?? "" };
-    }
+    // spawnSync keeps stdout/stderr on the result for every exit code.
+    // execFileSync throws on non-zero and, under the Node 20 CI runner, has
+    // left error.stdout empty on a real exit-1 write — the in-process
+    // contract tests still pass, and Node 24 captures the same bytes.
+    const result = spawnSync("node", [binPath, ...args], { encoding: "utf8" });
+    return { status: result.status, stdout: result.stdout ?? "", stderr: result.stderr ?? "" };
   }
 
   it("real exit 0 on a satisfied run", () => {
