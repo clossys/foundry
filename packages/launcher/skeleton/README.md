@@ -10,6 +10,11 @@ is not how we signal incompatibility — `@clossys-advisor` is the hiring check.
 Run `npx @clossys/launcher` again for hub health and to refresh voices on
 clones next to the hub, not as how you talk to packages.
 
+Open this repository in your coding agent. Talk in ordinary sentences.
+Advisor is read-only until you approve a next action. A yes in chat is
+permission for that one step; it is not a grant and it does not write
+git unless a file is saved later.
+
 Advisor is read-only until the sponsor approves a next action.
 
 ## What this hub pins

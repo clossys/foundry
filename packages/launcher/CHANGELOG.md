@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Observe always reads the public Advisor version, including when a pin already exists, so appoint can write the live pin and resume can grade it.
 - Health is degraded when Advisor is missing, dual-pinned, or present outside `devDependencies`, not only when the pin is older than live.
 - New-hub skeleton package name is `@owner/workspace`.
+- New-hub `AGENTS.md` tells the coding agent to speak to a founder in
+  ordinary sentences: where we are, what to do next, what we will not
+  do, and whether anything is saved to git. Machine identifiers stay
+  out of the default voice.
 
 ### Fixed
 

@@ -391,6 +391,7 @@ describe("applyWorkspacePlan", () => {
     expect(inspectInventory(readFileSync(join(directory, WORKSPACE_INVENTORY_REL), "utf8"))).toEqual({ status: "empty", count: 0 });
     expect(readFileSync(join(directory, "AGENTS.md"), "utf8")).toContain("@clossys-advisor");
     expect(readFileSync(join(directory, "AGENTS.md"), "utf8")).not.toMatch(/again to resume/i);
+    expect(readFileSync(join(directory, "AGENTS.md"), "utf8")).toContain("Speak like a");
   });
 
   it("appoints an existing product repo without rewriting its README or dumping packages", () => {
