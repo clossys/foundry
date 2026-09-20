@@ -5,6 +5,22 @@ All notable changes to `@clossys/inspector` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.6] - 2026-09-19
+
+### Changed
+
+- `adm-zip` is pinned to the exact resolved version, `0.6.1`, replacing the
+  `^0.6.0` range (#999). A caret range on a `0.x` dependency is minor-locked
+  under semver rather than patch-only, so a fresh install could drift to a
+  newer minor than the one this package's tarball inspection was built and
+  tested against. The pin holds the dependency to the bytes already
+  resolved in this repository's lockfile; no source changed.
+
+### Notes
+
+- This does not claim the position is closed. Qualification of `0.2.6` is
+  deferred under #999.
+
 ## [0.2.5] - 2026-09-18
 
 ### Added

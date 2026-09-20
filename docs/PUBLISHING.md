@@ -437,7 +437,7 @@ replaying a release path requires an explicit runtime tuple.
 [`governance/release-catalog.json`](../governance/release-catalog.json) is the
 fail-closed source catalogue. After W1D its active target is `clossys-npmjs`,
 and `package-scope.json` binds the same `@clossys` scope and public npm
-registry. The active release target closes over all nineteen publishable
+registry. The active release target closes over all twenty publishable
 source manifests in a reviewed dependency order: the sealed Advisor, Starter,
 Controller prefix remains first; Builder and Inspector follow Controller; and
 Publisher follows Controller, Writer, and Designer. It never accepts `all`, a
@@ -445,7 +445,7 @@ partial source inventory, reordering, duplication, or replacement of the first
 Trio. Catalogue membership is not qualification: to be eligible, a package
 must also have a required current-direct adapter with explicit 0/1/2 behavior.
 A blocked policy entry remains ineligible even when it appears in the catalogue;
-the current policy requires runnable adapters for all nineteen packages. Each
+the current policy requires runnable adapters for all twenty packages. Each
 release also needs a separately
 introduced immutable package-neutral publication record. That record joins
 qualification path/digest, candidate source/manifest/tarball, the
@@ -458,7 +458,7 @@ bytes. A package may have later records at distinct versions; each record is
 uniquely bound to its exact `name@version`. These later records do not alter
 the immutable first-publication Trio evidence.
 
-Catalogue closure does not make all nineteen records producible in parallel:
+Catalogue closure does not make all twenty records producible in parallel:
 Publisher's current-direct run remains deferred until its required Writer and
 Designer versions are public and verified. A local sibling tarball or
 workspace link is diagnostic only and cannot substitute for that

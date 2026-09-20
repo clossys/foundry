@@ -115,7 +115,7 @@
  *     intentionally shares Tailwind's own `gray-50`...`gray-950`-shaped
  *     naming): Tailwind's own default gray scale does not invert itself
  *     in dark mode either, and a consumer already reaches for
- *     `--color-surface-*`/`--color-ink-*` — which DO flip — for anything
+ *     `--color-surface-*` or `--color-ink-*` — which DO flip — for anything
  *     that should read differently by theme. A raw `--color-neutral-100`
  *     reference keeps meaning "the same light-grey swatch" in both themes.
  * ════════════════════════════════════════════════════════════════════ */
@@ -239,8 +239,8 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
    * section of this file's header comment. --color-neutral-50 means
    * "the same light-grey swatch" whether the page is in light or dark
    * mode; it does not invert to become the darkest step. A token whose
-   * appearance SHOULD flip with theme is a --color-surface-*/--color-ink-*
-   * role, not a raw --color-neutral-* reference.
+   * appearance SHOULD flip with theme is a --color-surface-* or
+   * --color-ink-* role, not a raw --color-neutral-* reference.
    * ════════════════════════════════════════════════════════════════ */
   --color-neutral-50:             oklch(0.9702 0 0);
   --color-neutral-100:            oklch(0.9401 0 0);

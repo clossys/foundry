@@ -37,6 +37,34 @@ export interface InventoryObservation {
   readonly count: number;
 }
 
+/** A package.json dependency bucket scanned for the advisor pin. */
+export type DependencyBucket = "dependencies" | "devDependencies" | "optionalDependencies" | "peerDependencies";
+
+/** Staleness verdict for one pinned advisor version against the live registry version. */
+export type PinGrade = "stale" | "current" | "indeterminate";
+
+/** One graded advisor pin in one dependency bucket. */
+export interface PinFinding {
+  readonly bucket: DependencyBucket;
+  readonly pinned: string;
+  readonly grade: PinGrade;
+  readonly note?: string;
+}
+
+/** Verdict for one hub inventory repository id after a read-only existence check. */
+export interface InventoryValidationEntry {
+  readonly id: string;
+  readonly known: boolean | null;
+  readonly note?: string;
+}
+
+/** Read-only validation outcome for hub inventory ids. Never mutates the inventory. */
+export interface InventoryValidationReport {
+  readonly entries: readonly InventoryValidationEntry[];
+  readonly skipped: boolean;
+  readonly note?: string;
+}
+
 /** Read-only pin and inventory report after adopt or resume. Never uninstalls. */
 export interface HubHealthReport {
   readonly marker: "present" | "missing";
@@ -44,10 +72,14 @@ export interface HubHealthReport {
   readonly advisorPin: {
     readonly dependencies?: string;
     readonly devDependencies?: string;
+    readonly optionalDependencies?: string;
+    readonly peerDependencies?: string;
     readonly live?: string;
   };
   readonly dualPin: boolean;
   readonly extraClossys: readonly string[];
+  readonly pinFindings: readonly PinFinding[];
+  readonly degraded: boolean;
 }
 
 export interface CwdObservation {
@@ -95,6 +127,8 @@ export interface WorkspacePlanAdopt {
   readonly advisorVersion: string;
   /** Absolute path of a populated inventory document to copy. Absent when cwd already has one. */
   readonly inventorySource?: string;
+  /** Merged repository ids (on-disk first, then new ids from --inventory) written when both sources are populated. */
+  readonly mergedInventoryIds?: readonly string[];
 }
 
 export type WorkspacePlan = WorkspacePlanCreate | WorkspacePlanResume | WorkspacePlanAdopt;

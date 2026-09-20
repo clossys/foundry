@@ -102,4 +102,45 @@ describe("launcher-check", () => {
     ).toThrow(/cannot read/);
     expect(() => parseObservation(null)).toThrow(/JSON object/);
   });
+
+  it("grades an existing-hub observation as resume by forwarding cwd.hub", () => {
+    const files: Record<string, string> = {
+      "/tmp/hub.json": JSON.stringify({
+        cwd: {
+          absolutePath: "/tmp/central",
+          empty: false,
+          git: true,
+          looksLikeFoundry: false,
+          githubOwner: "acme",
+          githubRepository: "central",
+          hub: { schemaVersion: 1, kind: "account-hub", owner: "acme", repository: "acme/central" },
+        },
+        ownerCandidates: ["acme"],
+        advisorVersion: "0.2.2",
+        ghAvailable: true,
+        gitAvailable: true,
+      }),
+      "/tmp/bad-hub.json": JSON.stringify({
+        cwd: {
+          absolutePath: "/tmp/central",
+          empty: false,
+          git: true,
+          looksLikeFoundry: false,
+          hub: { schemaVersion: 2, kind: "account-hub", owner: "acme", repository: "acme/central" },
+        },
+        ownerCandidates: ["acme"],
+        ghAvailable: true,
+        gitAvailable: true,
+      }),
+    };
+    const read = (path: string) => {
+      const body = files[path];
+      if (body === undefined) throw new Error("missing");
+      return body;
+    };
+    const out: string[] = [];
+    expect(checkMain(["--input", "/tmp/hub.json"], read, (text) => out.push(text), () => {})).toBe(0);
+    expect(out[0]).toContain('"action":"resume"');
+    expect(() => checkMain(["--input", "/tmp/bad-hub.json"], read, () => {}, () => {})).toThrow(/account-hub marker/);
+  });
 });

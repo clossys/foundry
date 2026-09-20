@@ -248,7 +248,18 @@ function parseAt(raw: string | undefined): string {
 
 function printReconciliationReport(result: AuthorityReconciliationResult): void {
   console.log(`${result.grantsChecked} live grant(s) checked against ${result.providersChecked} provider observation(s).`);
-  console.log(`Unreconciled grant surface: ${result.unreconciledGrantSurface}. Grants nothing could be learned about: ${result.unverifiableGrants}.`);
+  // The surface line attributes itself: every unreconciled entry carries
+  // `providerId` (the consumer-authored provider of record, the same
+  // reference the findings below already print), so a run over several
+  // owners' grants names which provider(s) failed without the reader having
+  // to correlate the finding lines themselves. Opaque host-owned references,
+  // never credentials.
+  const unreconciledProviders = [...new Set(result.findings.map((finding) => finding.providerId))];
+  const providerRef =
+    unreconciledProviders.length === 0
+      ? ""
+      : ` (${unreconciledProviders.length === 1 ? "provider" : "providers"}: ${unreconciledProviders.join(", ")})`;
+  console.log(`Unreconciled grant surface: ${result.unreconciledGrantSurface}${providerRef}. Grants nothing could be learned about: ${result.unverifiableGrants}.`);
   for (const finding of result.findings) {
     console.log(`  [${finding.kind}] ${finding.grantId} (actor ${finding.actorId}, subject ${finding.subjectId}, provider ${finding.providerId}) — ${finding.message}`);
   }

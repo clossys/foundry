@@ -126,6 +126,16 @@ export interface Fact {
    * top-level doc comment for why aliases are declared, not derived.
    */
   aliases?: string[];
+  /**
+   * Which file this fact was read from — populated by `readStrategyDirectory`
+   * (`facts-dir.ts`) with the leaf's path relative to the facts directory,
+   * because a directory of facts has per-file provenance a single flat
+   * `facts.json` cannot express. Never required, never validated (an
+   * authored `sourceFile` in a facts file is ignored like any field
+   * outside the declared shape), and left unset by `readStrategy`
+   * (`reader.ts`) — the flat file has one provenance already: itself.
+   */
+  sourceFile?: string;
 }
 
 function readFactValue(value: unknown, path: string, issues: ValidationIssue[]): Fact["value"] | undefined {

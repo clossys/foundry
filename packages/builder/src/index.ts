@@ -172,4 +172,6 @@ export type {
   DesiredStateRealizationAssessment,
   DesiredStateRealizationFinding,
   DesiredStateRealizationState,
+  HubInventory,
+  HubInventoryEntry,
 } from "./desired-state-realization.js";

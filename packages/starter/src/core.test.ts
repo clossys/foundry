@@ -55,6 +55,30 @@ describe("request and event boundary", () => {
     expect(evaluateStarter(input({ target: process("indeterminate") })).state).toBe("indeterminate");
   });
 
+  it("treats hub evidence as caller-supplied, non-blocking, and absent-safe", () => {
+    const hub = { owner: "hub-owner", repository: "workspace" };
+    const withoutHub = evaluateStarter(input());
+    expect(withoutHub.state).toBe("satisfied");
+    expect(withoutHub.findings.map((entry) => entry.rule)).not.toContain("not-hub-inventoried");
+
+    const inventoried = evaluateStarter(input({ request: request({ hub: { ...hub, inventoried: true } }) }));
+    expect(inventoried.state).toBe("satisfied");
+    expect(inventoried.findings.map((entry) => entry.rule)).not.toContain("not-hub-inventoried");
+
+    const notInventoried = evaluateStarter(input({ request: request({ hub: { ...hub, inventoried: false } }) }));
+    expect(notInventoried.state).toBe("satisfied");
+    expect(notInventoried.findings.map((entry) => entry.rule)).toContain("not-hub-inventoried");
+
+    const foundation = evaluateStarter(input({ request: request({ phase: "foundation", hub: { ...hub, inventoried: false } }) }));
+    expect(foundation.state).toBe("indeterminate");
+    expect(foundation.findings.map((entry) => entry.rule)).toEqual(expect.arrayContaining(["foundation-only", "not-hub-inventoried"]));
+
+    const rejected = validateStarterRequest(request({ hub: { ...hub, inventoried: "yes" } }));
+    expect(rejected.request).toBeNull();
+    expect(rejected.findings.map((entry) => entry.rule)).toContain("hub-evidence");
+    expect(validateStarterRequest(request({ hub: { ...hub, extra: 1 } })).findings.map((entry) => entry.rule)).toContain("hub-evidence");
+  });
+
   it("keeps Starter and Advisor exact while allowing a neutral target package fixture", () => {
     expect(validateStarterRequest(request()).request).not.toBeNull();
     expect(validateStarterRequest(request({ starter: { ...starter, name: "@fixture/starter" } })).findings.map((entry) => entry.rule)).toContain("starter-contract");

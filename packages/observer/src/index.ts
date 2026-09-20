@@ -101,3 +101,11 @@ export type {
   FleetCoverageReport,
 } from "./coverage.js";
 export { UNCLASSIFIED_REASONS, gradeFleetCoverage, fleetCoverageVerdictToExitCode } from "./coverage.js";
+
+export type {
+  HubPlacementCellKind,
+  HubPlacementCellInput,
+  RepositoryPackageObservation,
+  HubPlacementObservationBundle,
+} from "./placement-cells.js";
+export { mapBundleToPlacementCells } from "./placement-cells.js";

@@ -7,6 +7,7 @@ import { isDirectInvocation, main, USAGE } from "./cli.js";
 import type { CommandResult, WorkspaceHost } from "./types.js";
 
 const skeletonRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "skeleton");
+const WORKSPACE_MARKER_REL = ".clossys/workspace.json";
 const roots: string[] = [];
 afterEach(() => {
   vi.restoreAllMocks();
@@ -94,5 +95,20 @@ describe("launcher CLI", () => {
     const bin = join(directory, "launcher");
     symlinkSync(fileURLToPath(source), bin);
     expect(isDirectInvocation(source.href, bin)).toBe(true);
+  });
+
+  it("tells a resume run that the hub is already appointed instead of 'only valid when appointing'", () => {
+    const directory = mkdtempSync(join(tmpdir(), "launcher-resume-"));
+    roots.push(directory);
+    mkdirSync(join(directory, ".clossys"), { recursive: true });
+    writeFileSync(
+      join(directory, WORKSPACE_MARKER_REL),
+      `${JSON.stringify({ schemaVersion: 1, kind: "account-hub", owner: "acme", repository: "acme/hub" }, null, 2)}\n`,
+    );
+    const err = vi.spyOn(console, "error").mockImplementation(() => {});
+    const code = main(["--inventory", "elsewhere.json"], host(directory, {}), skeletonRoot);
+    expect(code).toBe(1);
+    expect(String(err.mock.calls[0]?.[0])).toMatch(/already appointed; edit \.clossys\/inventory\.json/);
+    expect(String(err.mock.calls[0]?.[0])).not.toMatch(/only valid when appointing/);
   });
 });

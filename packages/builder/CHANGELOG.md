@@ -5,6 +5,26 @@ All notable changes to `@clossys/builder` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-09-19
+
+### Added
+
+- Optional `hubInventory` input to
+  `assessDesiredStateRealizationRate()` — a caller-supplied
+  `{ schemaVersion: 1, repositories: [{ id }] }` document naming the
+  repositories the account hub inventories (issue #997). Pure input: this
+  module never reads a hub marker, an inventory file, or `gh`; an absent
+  inventory changes nothing.
+- When a well-formed inventory scopes the run, every declared subject must
+  name its `repositoryId`; a subject whose repository the inventory does
+  not list is flagged `unlisted` and excluded from the rate, and
+  observations tied to unlisted subjects are never counted as evidence. A
+  malformed inventory never scopes anything — all subjects stay in the
+  denominator and one `hub-inventory-shape` finding says so.
+- `HubInventory` and `HubInventoryEntry`, exported from the root
+  entrypoint, a README section on the scoping behavior, and `builder-check`
+  `--help` text naming the optional input.
+
 ## [0.7.10] - 2026-09-18
 
 ### Added

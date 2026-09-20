@@ -494,6 +494,80 @@ package this fold needs to classify, make the whole fold `indeterminate` —
 the same "not judged, not judged-and-clean" precedence `currencyVerdict`
 already applies, one level removed.
 
+## Per-repository currency delta
+
+`judgeCurrency` and `upgradeSet` produce a per-repository delta — which
+packages are behind and which version closes the gap, which installed names
+are not entitled — but nothing serialized it, and the shapes on either side
+of the fence did not meet: this package's `InstalledPackage` is
+`{ name, declaredRange, installedVersion }` with no repository id, while a
+launcher reading an inventory document sees `repositories[{ id }]` whose
+entries it can only count, because nothing promised what an entry means.
+`emitCurrencyDelta` closes that gap: one shared v1 document shape, defined
+once and shipped from here, so the emitter and any consumer read the same
+definition.
+
+The document is deliberately a serialization contract, not a judgment
+envelope — flat, JSON-shaped, and versioned:
+
+```jsonc
+{
+  "schemaVersion": 1,
+  "repositories": [
+    {
+      "id": "the-plane's-own-id",
+      "packages": [
+        { "name": "@example-scope/one", "version": "2.0.0" },
+        { "name": "@example-scope/stray", "wiring": "unknown" }
+      ]
+    }
+  ]
+}
+```
+
+A consumer must refuse a document whose `schemaVersion` it was not built to
+read, exactly as `loadEntitlementDeclaration` refuses a declaration whose
+`version` is not `1` — the literal `1` in the type is what makes a silently
+misparsed document impossible to build against this package's types.
+
+Each judged state maps onto the document explicitly, and the mapping is the
+contract:
+
+| `PackageCurrency` state | Document entry |
+| --- | --- |
+| `behind` | `{ name, version }` — `version` is the judgment's target, the version that closes the gap |
+| `extra` | `{ name, wiring: "unknown" }` — an over-install is a fact about the name, never a version to sync to |
+| `opted-out-and-installed` | `{ name, wiring: "unknown" }` — the plane decided not to hold it; serializing its installed version would misread a recorded contradiction as a plan |
+| every other state | no entry — see below |
+
+`wiring` is optional and caller-completable: `behind` entries carry no
+position because a currency judgment records none, and a caller that knows
+the package sits in `devDependencies` may set it; `InventoryPackageWiring`
+allows the four manifest positions plus `"unknown"`. The last table row is
+load-bearing, the same law `currencyVerdict` applies one level down: a
+judgment that could not be made (`indeterminate`, `unreachable`,
+`unauthenticated`) or found nothing wrong (`current`, `absent-with-reason`,
+`absent-without-reason`) serializes to **no entry at all** — never to an
+entry invented from ground the judgment never covered. An absent entry is
+part of the contract, not missing data.
+
+`emitCurrencyDelta` is pure and offline — a fold over already-graded
+`PackageCurrency` values, no network, no filesystem, never throws. The
+repository `id` is caller-supplied, exactly like everything else the
+blindness rule governs: this package supplies the mechanism and never learns
+which planes exist.
+
+```ts
+import { emitCurrencyDelta } from "@clossys/integrator";
+
+const document = emitCurrencyDelta({
+  repositories: [
+    { id: repoId, statuses }, // statuses: judgeCurrency's output for that repository
+  ],
+});
+// document: { schemaVersion: 1, repositories: [{ id, packages: [...] }] }
+```
+
 ## Admission contract
 
 `AdmissionContract` declares what a candidate package must satisfy before a
@@ -608,6 +682,7 @@ at) zero.
 | `computeCurrencyMetric(statuses)` | function | This package's stated metric: `currencyShare`, `entitledCount`, `currentCount`, `absentWithoutReasonCount` |
 | `foldCurrencyDelta(input)` | function | One fold, two scopes: `absolute` grades the current state; `introduced` grades it against a `baseline`, splitting `introduced` (blocking) from `inherited` (reported, never blocking) findings. An unreadable or omitted `baseline` is `indeterminate`, never a silent pass and never a silent fall-back to `absolute` |
 | `currencyFoldResultToExitCode(result)` | function | Maps a `CurrencyFoldResult` onto the `0` / `1` / `2` ternary |
+| `emitCurrencyDelta(input)` | function | Serializes per-repository currency deltas into the shared v1 inventory document — `behind` entries carry their target version, `extra` and `opted-out-and-installed` carry `wiring: "unknown"`, all other states carry no entry. Pure and offline |
 | `loadAdmissionContract(raw)` | function | Validates a parsed admission contract offline. Rejects an unknown rule kind, a duplicate rule, or an unparseable `minimum-version` floor |
 | `evaluateAdmission(contract, candidate, context)` | function | Evaluates a candidate against a contract. Empty result means admitted |
 | `parseVersion(value)` / `compareVersions(a, b)` | function | A minimal, dependency-free semantic-version parser and comparator |
@@ -625,6 +700,8 @@ at) zero.
 | `CurrencyFoldScope` / `CurrencyFoldInput` / `AbsoluteCurrencyFoldInput` / `IntroducedCurrencyFoldInput` | types | `foldCurrencyDelta`'s input, keyed by `scope: "absolute" \| "introduced"` |
 | `CurrencyBaseline` / `CurrencyBaselineUnreadable` | types | `introduced`'s baseline: a real `PackageCurrency[]` snapshot, or an explicit `{ kind: "unreadable", reason }` marker |
 | `CurrencyFoldFinding` / `CurrencyFoldResult` | types | One graded finding (`behind`, `absent-without-reason`, `extra`, or `opted-out-and-installed`), and `foldCurrencyDelta`'s discriminated result, tagged by both `scope` and `verdict` |
+| `InventoryDocument` / `InventoryRepositoryEntry` / `InventoryPackageEntry` / `InventoryPackageWiring` | types | The shared v1 inventory document: `{ schemaVersion: 1, repositories: [{ id, packages: [{ name, version?, wiring? }] }] }` |
+| `CurrencyDeltaRepositoryInput` / `EmitCurrencyDeltaInput` | types | `emitCurrencyDelta`'s input: one caller-supplied `id` plus that repository's `PackageCurrency[]` per entry |
 | `AdmissionRule` / `AdmissionContract` / `AdmissionCandidate` / `AdmissionContext` / `AdmissionFinding` | types | The admission contract's schema |
 | `ParsedVersion` | type | `{ major, minor, patch, prerelease }` |
 | `IntegratorErrorCode` | type | Stable error-code union for `IntegratorValidationError` |

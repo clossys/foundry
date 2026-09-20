@@ -6,6 +6,9 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   ADVISOR_PACKAGE,
   applyWorkspacePlan,
+  checkInventoryEntries,
+  formatHubHealth,
+  hasAdvisorPin,
   inspectInventory,
   isHubDocument,
   observeWorkspace,
@@ -229,6 +232,100 @@ describe("planWorkspace", () => {
     const decision = planWorkspace(observation({ ownerCandidates: ["acme", "widgets"] }), silent);
     expect(decision).toMatchObject({ action: "refuse", state: "indeterminate" });
   });
+
+  it("refuses when CLOSSYS_OWNER names a different account than the origin", () => {
+    const decision = planWorkspace(
+      observation({
+        envOwner: "owner-a",
+        cwd: {
+          absolutePath: "/tmp/central",
+          empty: false,
+          git: true,
+          githubOwner: "owner-b",
+          githubRepository: "central",
+          looksLikeFoundry: false,
+          inventory: { status: "populated", count: 1 },
+        },
+      }),
+      silent,
+    );
+    expect(decision).toMatchObject({ action: "refuse", state: "violated" });
+    if (decision.action === "refuse") expect(decision.message).toMatch(/owner-a.*owner-b|owner-b.*owner-a/);
+  });
+
+  it("appoints normally when CLOSSYS_OWNER matches the origin owner", () => {
+    expect(
+      planWorkspace(
+        observation({
+          envOwner: "owner-a",
+          cwd: {
+            absolutePath: "/tmp/central",
+            empty: false,
+            git: true,
+            githubOwner: "owner-a",
+            githubRepository: "central",
+            looksLikeFoundry: false,
+            inventory: { status: "populated", count: 1 },
+          },
+        }),
+        silent,
+      ),
+    ).toMatchObject({ action: "adopt", owner: "owner-a" });
+  });
+
+  it("still resumes a hub whose origin owner differs from CLOSSYS_OWNER", () => {
+    expect(
+      planWorkspace(
+        observation({
+          envOwner: "owner-a",
+          cwd: {
+            absolutePath: "/tmp/central",
+            empty: false,
+            git: true,
+            githubOwner: "owner-b",
+            githubRepository: "central",
+            looksLikeFoundry: false,
+            hub: { schemaVersion: 1, kind: "account-hub", owner: "owner-b", repository: "owner-b/central" },
+          },
+        }),
+        silent,
+      ),
+    ).toMatchObject({ action: "resume", owner: "owner-b" });
+  });
+
+  it("merges a supplied --inventory into a populated on-disk inventory by id, on-disk order first", () => {
+    const directory = tempDir();
+    writeInventory(directory, [{ id: "hub-a" }, { id: "hub-c" }]);
+    const source = join(directory, "supplied.json");
+    writeFileSync(source, `${JSON.stringify({ schemaVersion: 1, repositories: [{ id: "hub-b" }, { id: "hub-a" }, { id: "hub-d" }] }, null, 2)}\n`);
+    const decision = planWorkspace(
+      observation({
+        cwd: {
+          absolutePath: directory,
+          empty: false,
+          git: true,
+          githubOwner: "acme",
+          githubRepository: "central",
+          looksLikeFoundry: false,
+          inventory: { status: "populated", count: 2 },
+        },
+      }),
+      host(directory),
+      { inventoryPath: "supplied.json" },
+    );
+    expect(decision).toMatchObject({ action: "adopt", mergedInventoryIds: ["hub-a", "hub-c", "hub-b", "hub-d"] });
+    expect(decision).not.toHaveProperty("inventorySource");
+  });
+});
+
+describe("hasAdvisorPin", () => {
+  it("finds a pin in any dependency bucket and rejects a pinless manifest", () => {
+    expect(hasAdvisorPin({ dependencies: { [ADVISOR_PACKAGE]: "0.2.1" } })).toBe(true);
+    expect(hasAdvisorPin({ optionalDependencies: { [ADVISOR_PACKAGE]: "0.2.1" } })).toBe(true);
+    expect(hasAdvisorPin({ peerDependencies: { [ADVISOR_PACKAGE]: "0.2.1" } })).toBe(true);
+    expect(hasAdvisorPin({ devDependencies: { react: "19.0.0" } })).toBe(false);
+    expect(hasAdvisorPin("not-an-object")).toBe(false);
+  });
 });
 
 describe("applyWorkspacePlan", () => {
@@ -353,8 +450,71 @@ describe("applyWorkspacePlan", () => {
     expect(result.message).toMatch(/health:/);
   });
 
-  it("reports health on resume without writing a marker", () => {
+  it("refuses adopt on a dirty tree and writes nothing", () => {
     const directory = tempDir();
+    writeFileSync(join(directory, "package.json"), `${JSON.stringify({ name: "product" }, null, 2)}\n`);
+    writeInventory(directory);
+    mkdirSync(join(directory, ".git"), { recursive: true });
+    const commands: Record<string, CommandResult> = {
+      "git status --porcelain": { status: 0, stdout: " M src/app.ts\n", stderr: "" },
+      "git remote get-url origin": { status: 0, stdout: "https://gitlab.example.net/acme/product.git\n", stderr: "" },
+    };
+    expect(() =>
+      applyWorkspacePlan(
+        host(directory, commands),
+        { action: "adopt", owner: "acme", repository: "product", directory, advisorVersion: "0.2.3" },
+        skeletonRoot,
+      ),
+    ).toThrow(/gitlab\.example\.net.*uncommitted changes/s);
+    expect(JSON.parse(readFileSync(join(directory, "package.json"), "utf8"))).toEqual({ name: "product" });
+    expect(existsSync(join(directory, WORKSPACE_MARKER_REL))).toBe(false);
+  });
+
+  it("names a github.com origin generically in the dirty-tree refusal", () => {
+    const directory = tempDir();
+    writeFileSync(join(directory, "package.json"), `${JSON.stringify({ name: "product" }, null, 2)}\n`);
+    writeInventory(directory);
+    mkdirSync(join(directory, ".git"), { recursive: true });
+    const commands: Record<string, CommandResult> = {
+      "git status --porcelain": { status: 0, stdout: "?? notes.txt\n", stderr: "" },
+      "git remote get-url origin": { status: 0, stdout: "git@github.com:acme/product.git\n", stderr: "" },
+    };
+    expect(() =>
+      applyWorkspacePlan(
+        host(directory, commands),
+        { action: "adopt", owner: "acme", repository: "product", directory, advisorVersion: "0.2.3" },
+        skeletonRoot,
+      ),
+    ).toThrow(/this checkout has uncommitted changes/);
+  });
+
+  it("writes merged inventory ids when both the on-disk inventory and --inventory are populated", () => {
+    const directory = tempDir();
+    writeInventory(directory, [{ id: "hub-a" }, { id: "hub-c" }]);
+    const source = join(directory, "supplied.json");
+    writeFileSync(source, `${JSON.stringify({ schemaVersion: 1, repositories: [{ id: "hub-b" }, { id: "hub-a" }] }, null, 2)}\n`);
+    applyWorkspacePlan(
+      host(directory),
+      {
+        action: "adopt",
+        owner: "acme",
+        repository: "hub",
+        directory,
+        advisorVersion: "0.2.3",
+        mergedInventoryIds: ["hub-a", "hub-c", "hub-b"],
+      },
+      skeletonRoot,
+    );
+    expect(inspectInventory(readFileSync(join(directory, WORKSPACE_INVENTORY_REL), "utf8"))).toEqual({
+      status: "populated",
+      count: 3,
+    });
+    const ids = (JSON.parse(readFileSync(join(directory, WORKSPACE_INVENTORY_REL), "utf8")) as { repositories: { id: string }[] })
+      .repositories.map((entry) => entry.id);
+    expect(ids).toEqual(["hub-a", "hub-c", "hub-b"]);
+  });
+
+  it("reports health on resume without writing a marker", () => {    const directory = tempDir();
     mkdirSync(join(directory, ".clossys"), { recursive: true });
     writeFileSync(
       join(directory, WORKSPACE_MARKER_REL),
@@ -369,6 +529,86 @@ describe("applyWorkspacePlan", () => {
     expect(result.health.marker).toBe("present");
     expect(result.health.inventory.status).toBe("populated");
     expect(reportHubHealth(host(directory), directory).marker).toBe("present");
+  });
+
+  it("grades a stale pin as degraded and an equal pin as current", () => {
+    const directory = tempDir();
+    writeFileSync(
+      join(directory, "package.json"),
+      `${JSON.stringify({ name: "hub", dependencies: { [ADVISOR_PACKAGE]: "0.1.0" } }, null, 2)}\n`,
+    );
+    writeInventory(directory);
+    const stale = reportHubHealth(host(directory), directory, "0.2.0");
+    expect(stale.pinFindings).toEqual([
+      { bucket: "dependencies", pinned: "0.1.0", grade: "stale", note: expect.stringContaining("older than live 0.2.0") },
+    ]);
+    expect(stale.degraded).toBe(true);
+    expect(formatHubHealth(stale)).toMatch(/pin findings: dependencies pinned 0\.1\.0 is older than live 0\.2\.0/);
+    expect(formatHubHealth(stale)).toMatch(/degraded: yes/);
+    const current = reportHubHealth(host(directory), directory, "0.1.0");
+    expect(current.pinFindings).toEqual([]);
+    expect(current.degraded).toBe(false);
+  });
+
+  it("marks an unparseable pin-versus-live comparison as indeterminate, not stale", () => {
+    const directory = tempDir();
+    writeFileSync(
+      join(directory, "package.json"),
+      `${JSON.stringify({ name: "hub", dependencies: { [ADVISOR_PACKAGE]: "next" } }, null, 2)}\n`,
+    );
+    const report = reportHubHealth(host(directory), directory, "0.2.0");
+    expect(report.pinFindings).toEqual([
+      { bucket: "dependencies", pinned: "next", grade: "indeterminate", note: expect.stringContaining("cannot compare") },
+    ]);
+    expect(report.degraded).toBe(false);
+  });
+
+  it("scans optionalDependencies and peerDependencies for pins and extra names", () => {
+    const directory = tempDir();
+    writeFileSync(
+      join(directory, "package.json"),
+      `${JSON.stringify(
+        {
+          name: "hub",
+          optionalDependencies: { [ADVISOR_PACKAGE]: "0.2.1", "@clossys/writer": "0.1.0" },
+          peerDependencies: { [ADVISOR_PACKAGE]: "0.2.0" },
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    const report = reportHubHealth(host(directory), directory, "0.2.2");
+    expect(report.advisorPin.optionalDependencies).toBe("0.2.1");
+    expect(report.advisorPin.peerDependencies).toBe("0.2.0");
+    expect(report.dualPin).toBe(true);
+    expect(report.extraClossys).toEqual(["@clossys/writer"]);
+    expect(report.pinFindings.map((finding) => finding.bucket)).toEqual(["optionalDependencies", "peerDependencies"]);
+  });
+
+  it("validates inventory ids read-only, skipping when gh is unavailable", () => {
+    const directory = tempDir();
+    writeInventory(directory, [{ id: "acme/alpha" }, { id: "acme/gone" }, { id: "acme/beta" }]);
+    const commands = (viewStatuses: Record<string, number>): Record<string, CommandResult> => ({
+      "gh --version": { status: 0, stdout: "gh 2.0.0\n", stderr: "" },
+      ...Object.fromEntries(
+        Object.entries(viewStatuses).map(([id, status]) => [
+          `gh repo view ${id} --json name`,
+          { status, stdout: status === 0 ? `{"name":"${id.split("/")[1]}"}\n` : "", stderr: status === 0 ? "" : "not found" },
+        ]),
+      ),
+    });
+    const checked = checkInventoryEntries(host(directory, commands({ "acme/alpha": 0, "acme/gone": 1, "acme/beta": 0 })), directory);
+    expect(checked.skipped).toBe(false);
+    expect(checked.entries).toEqual([
+      { id: "acme/alpha", known: true },
+      { id: "acme/gone", known: false, note: expect.stringContaining("may not exist") },
+      { id: "acme/beta", known: true },
+    ]);
+    const skipped = checkInventoryEntries(host(directory, {}), directory);
+    expect(skipped.skipped).toBe(true);
+    expect(skipped.note).toMatch(/`gh` is unavailable/);
+    expect(skipped.entries).toEqual([]);
+    expect(readFileSync(join(directory, WORKSPACE_INVENTORY_REL), "utf8")).toContain("acme/gone");
   });
 });
 
@@ -393,5 +633,24 @@ describe("observeWorkspace", () => {
     expect(seen.cwd.empty).toBe(false);
     expect(seen.cwd.inventory).toEqual({ status: "missing", count: 0 });
     expect(seen.advisorVersion).toBe("0.1.5");
+  });
+
+  it("skips the npm registry read when the tree already pins Advisor in any bucket", () => {
+    const directory = tempDir();
+    mkdirSync(join(directory, ".git"));
+    writeFileSync(
+      join(directory, "package.json"),
+      `${JSON.stringify({ name: "hub", optionalDependencies: { [ADVISOR_PACKAGE]: "0.2.1" } }, null, 2)}\n`,
+    );
+    const seen = observeWorkspace(
+      host(directory, {
+        "gh --version": { status: 0, stdout: "gh 2.0.0\n", stderr: "" },
+        "git --version": { status: 0, stdout: "git 2.0.0\n", stderr: "" },
+        "git remote get-url origin": { status: 0, stdout: "git@github.com:acme/central.git\n", stderr: "" },
+      }),
+    );
+    expect(seen.cwd.githubOwner).toBe("acme");
+    expect(seen.cwd.inventory).toEqual({ status: "missing", count: 0 });
+    expect(seen.advisorVersion).toBeUndefined();
   });
 });

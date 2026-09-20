@@ -3,6 +3,7 @@ export { evaluateStarter, evaluateProcessResult, isNormalizedRelativePath, valid
 export type {
   StarterEvaluationInput,
   StarterFinding,
+  StarterHubEvidence,
   StarterPhase,
   StarterReport,
   StarterRequest,

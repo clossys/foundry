@@ -230,6 +230,43 @@ mode: a run that evaluated nothing reporting `satisfied`. `gradeFleetCoverage`
 refuses to reproduce it — zero packages, zero repositories, or both, folds
 to `indeterminate`, never to a clean pass with an empty cell list.
 
+## Hub placement cells (#997)
+
+Advisor's assessment input accepts an optional `placementEvidence`
+document — a `schemaVersion: 1` list of placement cells naming what a
+hub-tree observation found wrong. Advisor never reads the tree; a
+"consumer connector" is expected to fill that document, and until now no
+shipped package produced its cells. `mapBundleToPlacementCells()`
+(`placement-cells.ts`) is that missing first half, for observations this
+package's vocabulary can express:
+
+- an installed `@clossys` package that is NOT in the read
+  `devDependencies` becomes an **`over-install`** cell;
+- a package declared but unreadable (declaration or resolved version
+  could not be established) becomes a **`missing`** cell;
+- an installed version strictly below its declared range's floor
+  (`^x.y.z`, `~x.y.z`, or exact; prerelease-aware per semver) becomes a
+  **`stale`** cell.
+
+Each cell carries `{ kind, packageName, repositoryId, observed, expected? }`.
+`expected` carries the declared range when a declaration said anything at
+all; `observed` is the installed version, or the literal
+`"declared but unreadable"` for a `missing` cell. Cells are the caller's to
+assemble into advisor's document — this adapter attaches no `id`,
+`observedAt`, or `evidence`, because it has no clock and no evidence store.
+
+The cell shape mirrors `@clossys/advisor`'s `HubPlacementCell`
+(`packages/advisor/src/types.ts`; that path does not ship with this package) **structurally, not by import** — the
+same move `FleetInstalledInventory` already makes for integrator's
+inventory (above). A real advisor cell satisfies `HubPlacementCellInput`
+as-is, and this package adds no dependency on advisor to produce one.
+The over-install mapping is scoped to `@clossys` packages: other
+software's placement is not the hub's business and is never reshaped
+into a defect that looks like one.
+
+Zero I/O, zero clock reads: the bundle in, the cells out, nothing
+fetched — see `placement-cells.ts` for the full mapping contract.
+
 ### CLI: `observer-coverage-check`
 
 observer's **first** shipped bin — until this existed, `gradeFleetCoverage`
@@ -473,6 +510,9 @@ const unobservedSurface = computeUnobservedSurface(declaredSubjects, presenceRea
 | `FleetCoverageReport` | type | The full graded report: every `CoverageCell`, its `CoverageCellCounts`, contradictions, and the `FleetCoverageVerdict`. |
 | `gradeFleetCoverage(input)` | function | Grades one fleet's coverage matrix. Throws only on a duplicate/empty identifier. |
 | `fleetCoverageVerdictToExitCode(result)` | function | `0` satisfied, `1` violated, `2` indeterminate. |
+| `mapBundleToPlacementCells(bundle)` | function | Converts one observation bundle into advisor-shaped `over-install` / `missing` / `stale` placement cells (#997). |
+| `HubPlacementCellKind` / `HubPlacementCellInput` | type | The three cell kinds this adapter emits, and the advisor-mirroring cell shape (structural, not imported). |
+| `RepositoryPackageObservation` / `HubPlacementObservationBundle` | type | One package observation, and the bundle this adapter accepts. |
 
 ## Non-Goals
 
@@ -490,6 +530,11 @@ const unobservedSurface = computeUnobservedSurface(declaredSubjects, presenceRea
   Both are caller-supplied — see "Fleet package coverage" above. This
   package adds no dependency on `@clossys/integrator` to compute an
   installed inventory itself.
+- **`mapBundleToPlacementCells` never imports `@clossys/advisor`.** The cell
+  shape is mirrored structurally — see "Hub placement cells" above — and the
+  bundle is caller-supplied; this package adds no dependency on advisor to
+  name one of its own cell shapes, and assembles no `placementEvidence`
+  document itself.
 
 ## Requirements
 

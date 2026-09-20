@@ -126,7 +126,10 @@ fold it into `authorized` and the same outage becomes a silent blanket grant.
 The same precedence holds inside a single run: if some grants were found
 unreconciled *and* some providers were unreachable, the run reports
 indeterminate. The findings it did produce are still printed — it is the exit
-code that refuses to call the list complete.
+code that refuses to call the list complete. When the surface is non-zero, the
+unreconciled line names its provider reference: the `providerId` of each
+failing grant's provider of record, so a run spanning several owners' grants
+names the failing side.
 
 ### `delegation-ceiling`
 

@@ -181,6 +181,44 @@ describe("authority-reconciliation", () => {
     expect(printed).toContain("Authority reconciliation: indeterminate (provider-unreachable)");
   });
 
+  it("names the failing provider on the unreconciled surface line, as each finding line already does", () => {
+    // Issue #1000: in a multi-owner setup one run covers every owner's
+    // grants, so the surface line must attribute itself to the failing
+    // side. `providerId` on each unreconciled finding is the provider/owner
+    // reference — the same consumer-authored, host-owned opaque string the
+    // finding lines print — and it carries no credential material.
+    const grants = write("grants.json", [liveGrant]);
+    const providers = write("providers.json", [providerRevoked]);
+    main(["authority-reconciliation", grants, providers, "--at", AT]);
+
+    const printed = vi.mocked(console.log).mock.calls.map((call) => String(call[0])).join("\n");
+    expect(printed).toContain("Unreconciled grant surface: 1 (provider: provider-a).");
+  });
+
+  it("lists each distinct failing provider once on the surface line", () => {
+    const grants = write("grants.json", [
+      liveGrant,
+      { ...liveGrant, grantId: "grant-2", actorId: "actor-2", providerId: "provider-b" },
+      { ...liveGrant, grantId: "grant-3", actorId: "actor-3", providerId: "provider-b" },
+    ]);
+    const providers = write("providers.json", [providerRevoked, { ...providerRevoked, providerId: "provider-b" }]);
+    main(["authority-reconciliation", grants, providers, "--at", AT]);
+
+    const printed = vi.mocked(console.log).mock.calls.map((call) => String(call[0])).join("\n");
+    expect(printed).toContain("Unreconciled grant surface: 3 (providers: provider-a, provider-b).");
+  });
+
+  it("leaves the surface line unattributed when nothing is unreconciled", () => {
+    // The reference appears only when there is something to attribute: a
+    // clean run's surface line reads exactly as it did before this change.
+    const grants = write("grants.json", [liveGrant]);
+    const providers = write("providers.json", [providerBacks]);
+    main(["authority-reconciliation", grants, providers, "--at", AT]);
+
+    const printed = vi.mocked(console.log).mock.calls.map((call) => String(call[0])).join("\n");
+    expect(printed).toContain("Unreconciled grant surface: 0. Grants nothing could be learned about: 0.");
+  });
+
   it("exits 2 when a grant names a provider nothing observed", () => {
     const grants = write("grants.json", [{ ...liveGrant, providerId: "provider-z" }]);
     const providers = write("providers.json", [providerBacks]);

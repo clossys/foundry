@@ -96,6 +96,7 @@ const CURRENT_PUBLISHED_IDENTITIES = [
   "@clossys/advisor@0.1.3",
   "@clossys/advisor@0.1.5",
   "@clossys/advisor@0.1.6",
+  "@clossys/advisor@0.2.5",
   "@clossys/architect@0.1.2",
   "@clossys/architect@0.1.3",
   "@clossys/bouncer@0.1.1",
@@ -115,6 +116,7 @@ const CURRENT_PUBLISHED_IDENTITIES = [
   "@clossys/influencer@0.1.3",
   "@clossys/inspector@0.1.18",
   "@clossys/inspector@0.1.19",
+  "@clossys/integrator@0.6.10",
   "@clossys/integrator@0.6.2",
   "@clossys/integrator@0.6.3",
   "@clossys/keeper@0.1.2",
@@ -240,9 +242,9 @@ test("(d) a malformed later-publication record fails closed rather than silently
 
     const { names, identities, findings } = validateRetainedLaterPublications(fixtureRoot);
     assert.ok(findings.some((item) => item.rule === "retained-record"), "the malformed record must be reported, not skipped");
-    // The 38 genuine records still validate individually...
+    // The 40 genuine records still validate individually...
     assert.equal(names.size, 19);
-    assert.equal(identities.size, 38);
+    assert.equal(identities.size, 40);
     // ...but the gate is fail-closed as a whole: one invalid record among
     // many zeroes the entire published set rather than admitting the rest.
     assert.deepEqual([...readValidatedPublishedPackages(fixtureRoot)], []);
@@ -260,7 +262,7 @@ test("(e) the retained-record immutability and qualification joins still reject 
   const { findings, names, identities } = validateRetainedLaterPublications(repoRoot);
   assert.deepEqual(findings, []);
   assert.equal(names.size, 19);
-  assert.equal(identities.size, 38);
+  assert.equal(identities.size, 40);
 });
 
 test("current-scope publication rejects coherent rewrites and rewrite-restore history", () => {

@@ -7,10 +7,13 @@
  *   1. SCHEMA + READERS. Hand-rolled, dependency-free entity validators
  *      (`Fact`, `Mission`, `Positioning`, `Market`, `Audience`,
  *      `RoadmapItem`, `BrandEssence`, `BrandAttribute`, `DirectionEntity`
- *      — see `schema.ts`) plus `readStrategy` (`reader.ts`), a typed
- *      reader that loads and validates a consumer's real strategy
- *      directory. Pure data and validation, except `readStrategy` itself,
- *      which is this package's one deliberate I/O surface.
+ *      — see `schema.ts`) plus two readers: `readStrategy` (`reader.ts`),
+ *      a typed reader that loads and validates a consumer's real strategy
+ *      directory, and `readStrategyDirectory` (`facts-dir.ts`), its pure,
+ *      caller-fed counterpart that combines a directory of per-fact JSON
+ *      leaves into one validated `Fact[]` (with per-fact `sourceFile`
+ *      provenance). Pure data and validation, except `readStrategy`
+ *      itself, which is this package's one deliberate I/O surface.
  *
  *   2. THE FACTS GATE. `checkFactsTraceability` (`facts-gate.ts`) scans
  *      prose (and copy in source) for numeric and superlative claims and
@@ -103,6 +106,9 @@ export type {
 
 export { readStrategy } from "./reader.js";
 export type { StrategyBundle, StrategyReadIssue, StrategyReadIssueReason } from "./reader.js";
+
+export { readStrategyDirectory } from "./facts-dir.js";
+export type { FactsDirectoryInput, FactsDirectoryIssue, FactsDirectoryIssueReason, FactsDirectoryResult } from "./facts-dir.js";
 
 export { buildFactIndex, isTracedSurfaceForm } from "./fact-index.js";
 export type { FactIndex } from "./fact-index.js";

@@ -5,6 +5,21 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.8] - 2026-09-19
+
+### Added
+
+- Optional `hub` request evidence — `{ owner, repository, inventoried }` —
+  naming the account hub and stating, on caller-supplied evidence, whether
+  the subject repository is hub-inventoried (#997). Starter performs no I/O
+  to obtain or verify it; an absent `hub` changes nothing.
+- When `hub.inventoried` is `false`, the decision report gains one
+  non-blocking finding, `not-hub-inventoried`, present in every result so
+  the hub's own reconciliation can see the gap. The verdict is never
+  downgraded: flagging is the hub's work, not an activation violation.
+- `StarterHubEvidence`, exported from the root entrypoint, and a README
+  section documenting the new optional input.
+
 ## [0.1.7] - 2026-09-18
 
 ### Fixed

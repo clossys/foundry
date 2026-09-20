@@ -22,7 +22,8 @@ const SEMVER_PRERELEASE_ID = "(?:0|[1-9]\\d*|\\d*[A-Za-z-][0-9A-Za-z-]*)";
 const VERSION = new RegExp(`^${SEMVER_NUMERIC}\\.${SEMVER_NUMERIC}\\.${SEMVER_NUMERIC}(?:-${SEMVER_PRERELEASE_ID}(?:\\.${SEMVER_PRERELEASE_ID})*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$`);
 const SAFE_NAME = /^@[a-z0-9][a-z0-9-]*\/[a-z0-9][a-z0-9-]*$/;
 const SAFE_BIN = /^[a-z0-9][a-z0-9-]*$/;
-const ALLOWED_REQUEST = new Set(["schemaVersion", "phase", "packageManager", "snapshot", "starter", "advisor", "target", "evidence"]);
+const ALLOWED_REQUEST = new Set(["schemaVersion", "phase", "packageManager", "snapshot", "starter", "advisor", "target", "evidence", "hub"]);
+const HUB_KEYS = new Set(["owner", "repository", "inventoried"]);
 const STARTER_KEYS = new Set(["name", "version", "integrity", "bin"]);
 const ADVISOR_KEYS = new Set(["name", "version", "integrity", "bin"]);
 const TARGET_KEYS = new Set(["name", "version", "integrity", "bin", "invocation"]);
@@ -90,6 +91,9 @@ export function validateStarterRequest(value: unknown): { request: StarterReques
   if (!record(value.evidence) || !exactKeys(value.evidence, new Set(["assessment", "targetInput"])) || !isNormalizedRelativePath(value.evidence.assessment) || !isNormalizedRelativePath(value.evidence.targetInput) || value.evidence.assessment === value.evidence.targetInput) {
     findings.push(find("evidence-path", "assessment and targetInput must be distinct normalized relative paths."));
   }
+  if (value.hub !== undefined && (!record(value.hub) || !exactKeys(value.hub, HUB_KEYS) || typeof value.hub.owner !== "string" || value.hub.owner.length === 0 || typeof value.hub.repository !== "string" || value.hub.repository.length === 0 || typeof value.hub.inventoried !== "boolean")) {
+    findings.push(find("hub-evidence", "hub, when present, must be an exact caller-supplied { owner, repository, inventoried } object; Starter reads it, never fetches it."));
+  }
   return { request: findings.length === 0 ? value as unknown as StarterRequest : null, findings };
 }
 
@@ -155,17 +159,25 @@ export function evaluateStarter(input: StarterEvaluationInput): StarterReport {
   const requestResult = validateStarterRequest(input.request);
   if (!requestResult.request) return report("indeterminate", null, requestResult.findings, null, null);
   const request = requestResult.request;
+  // Hub evidence is caller-supplied and non-blocking (issue #997): an
+  // un-inventoried repository still activates, but the finding rides along in
+  // every result so the hub's own reconciliation can see the gap. Absent hub
+  // evidence changes nothing.
+  const hubFindings: StarterFinding[] =
+    request.hub !== undefined && !request.hub.inventoried
+      ? [find("not-hub-inventoried", "The caller-supplied hub evidence reports this repository as not hub-inventoried; activation proceeds, and this finding is reported for the hub's own reconciliation.")]
+      : [];
   const snapshotResult = validateSnapshot(input.snapshot, request, input.now);
   const findings = [...snapshotResult.findings];
-  if (!snapshotResult.snapshot) return report("indeterminate", request.phase, findings, null, null);
+  if (!snapshotResult.snapshot) return report("indeterminate", request.phase, [...findings, ...hubFindings], null, null);
   findings.push(...validateTrustedEvent(input.trustedEvent, request, snapshotResult.snapshot));
   const installResult = validateInstall(input.install, request); findings.push(...installResult.findings);
-  if (findings.length > 0) return report("indeterminate", request.phase, findings, null, null);
+  if (findings.length > 0) return report("indeterminate", request.phase, [...findings, ...hubFindings], null, null);
   const installState = stateFromExit(installResult.install?.exitCode ?? 2) ?? "indeterminate";
-  if (installState !== "satisfied") return report(installState, request.phase, [find("install-result", `Fixed ${request.packageManager} install exited ${installResult.install?.exitCode}.`)], null, null);
-  if (request.phase === "foundation") return report("indeterminate", request.phase, [find("foundation-only", "Foundation installs and records evidence but intentionally makes no activation claim.")], null, null);
+  if (installState !== "satisfied") return report(installState, request.phase, [find("install-result", `Fixed ${request.packageManager} install exited ${installResult.install?.exitCode}.`), ...hubFindings], null, null);
+  if (request.phase === "foundation") return report("indeterminate", request.phase, [find("foundation-only", "Foundation installs and records evidence but intentionally makes no activation claim."), ...hubFindings], null, null);
   const advisor = evaluateProcessResult(input.advisor, "advisor", input.now);
-  if (advisor.state !== "satisfied") return report(advisor.state, request.phase, advisor.findings, advisor.state, null);
+  if (advisor.state !== "satisfied") return report(advisor.state, request.phase, [...advisor.findings, ...hubFindings], advisor.state, null);
   const target = evaluateProcessResult(input.target, "target");
-  return report(target.state, request.phase, target.findings, advisor.state, target.state);
+  return report(target.state, request.phase, [...target.findings, ...hubFindings], advisor.state, target.state);
 }

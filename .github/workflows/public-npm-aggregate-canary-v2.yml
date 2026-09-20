@@ -1,5 +1,14 @@
 name: Public npm aggregate canary v2
 
+# Dispatch-only (workflow_dispatch with an exact committed closure path);
+# there is no push or pull_request trigger, so it never runs on anything
+# but an explicit operator request. It verifies already-published public
+# registry bytes credential-free and writes only an uploaded transcript —
+# publication itself stays in publish.yml. CI's scope job runs
+# check:public-npm-aggregate-canary-v2 over the committed evidence on
+# every pull request and push; this workflow is the only lane that
+# executes a closure on demand, and it never publishes anything.
+
 on:
   workflow_dispatch:
     inputs:
