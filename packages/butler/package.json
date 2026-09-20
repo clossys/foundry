@@ -30,7 +30,6 @@
     "src",
     "!src/**/*.test.ts",
     "CHANGELOG.md",
-    "skill",
     "README.md",
     "LICENSE"
   ],

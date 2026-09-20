@@ -55,33 +55,6 @@ do not rename or fork them just to fit this convention. A locally copied
 provider skill must remain clearly marked as third-party in validation and
 documentation.
 
-## Vendor skills from a consuming plane
-
-Foundry ships one vendor skill name per published package:
-
-```text
-clossys-<package>
-```
-
-Use a single hyphen between the namespace and the package slug — not a path
-(`clossys/advisor`) and not the npm package name (`@clossys/advisor`). The
-skill file name has no `@`; Cursor chat adds `@` only as the mention key.
-Characters
-are lowercase letters, digits, and hyphens only. The `<package>` segment must
-be one of the published package slugs the validator knows (`advisor`,
-`architect`, `bouncer`, `builder`, `butler`, `controller`, `designer`,
-`giver`, `influencer`, `inspector`, `integrator`, `keeper`, `launcher`,
-`locksmith`, `messenger`, `observer`, `publisher`, `starter`, `strategist`,
-`writer`). These names are not `<owner>-<verb>-<what>` account workflows —
-`advisor` is a package role, not a verb, and `clossys` is seven letters so it
-already fails the two-to-six-letter account-prefix rule. Treat the whole name
-as a vendor class.
-
-`clossys` is a reserved provider namespace. A consuming plane must not
-register `clossys` as a first-party account prefix; doing so collides with
-vendor skill names. Valid `clossys-<package>` skills pass validation without
-listing them in a local third-party allowlist.
-
 The final `what` answers what the skill acts on, not the repository it happens
 to run in. Keep a skill only when it captures a proven repeated workflow;
 standing policy belongs in `AGENTS.md`, deterministic enforcement belongs in

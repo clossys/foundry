@@ -102,7 +102,6 @@
     "!src/**/*.test.ts",
     "!src/**/*.test.tsx",
     "CHANGELOG.md",
-    "skill",
     "README.md",
     "LICENSE"
   ],

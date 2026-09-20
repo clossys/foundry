@@ -3,13 +3,6 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## Unreleased
-
-### Added
-
-- Packed Agent Skill `clossys-observer` so a coding agent can be invoked as @clossys-observer.
-
-
 ## [0.3.0] - 2026-09-19
 
 ### Added

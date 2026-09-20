@@ -6,41 +6,6 @@ import type { Finding } from "./types.js";
  */
 
 /**
- * Provider namespace for vendor skills shipped with the Foundry package set.
- * A consuming plane must not register this string as a first-party account prefix.
- */
-export const CLOSSYS_VENDOR_SKILL_NAMESPACE = "clossys" as const;
-
-/**
- * Published package slugs that may appear as `clossys-<package>` vendor skills.
- * Frozen on purpose — the validator does not read the filesystem.
- */
-export const CLOSSYS_VENDOR_SKILL_PACKAGES: readonly string[] = Object.freeze([
-  "advisor",
-  "architect",
-  "bouncer",
-  "builder",
-  "butler",
-  "controller",
-  "designer",
-  "giver",
-  "influencer",
-  "inspector",
-  "integrator",
-  "keeper",
-  "launcher",
-  "locksmith",
-  "messenger",
-  "observer",
-  "publisher",
-  "starter",
-  "strategist",
-  "writer",
-]);
-
-const CLOSSYS_VENDOR_SKILL_PACKAGE_SET: ReadonlySet<string> = new Set(CLOSSYS_VENDOR_SKILL_PACKAGES);
-
-/**
  * A small, literal verb vocabulary. It is closed on purpose. An open vocabulary
  * drifts into synonyms -- `check`, `verify`, `validate`, `assert` for one
  * action -- and a reader can no longer predict a skill's name from what it does,
@@ -66,7 +31,6 @@ export const SKILL_VERBS: readonly string[] = Object.freeze([
 
 const SEGMENT = /^[a-z0-9]+$/;
 const PREFIX = /^[a-z]{2,6}$/;
-const CLOSSYS_VENDOR_SKILL = /^clossys-([a-z0-9]+)$/;
 
 export interface SkillOptions {
   /**
@@ -88,44 +52,6 @@ export interface SkillOptions {
   readonly thirdParty?: readonly string[];
 }
 
-function findingsForReservedClossysPrefix(options: SkillOptions): Finding[] {
-  if (!options.prefixes.includes(CLOSSYS_VENDOR_SKILL_NAMESPACE)) return [];
-  return [
-    {
-      rule: "skill/prefix-collision",
-      severity: "high",
-      message: `"${CLOSSYS_VENDOR_SKILL_NAMESPACE}" is a reserved provider namespace for vendor skills (\`${CLOSSYS_VENDOR_SKILL_NAMESPACE}-<package>\`). A consuming plane must not register it as a first-party account prefix.`,
-    },
-  ];
-}
-
-function validateVendorSkillName(name: string, directoryName?: string): Finding[] | null {
-  const match = CLOSSYS_VENDOR_SKILL.exec(name);
-  if (!match) return null;
-
-  const findings: Finding[] = [];
-  const packageSlug = match[1]!;
-
-  if (directoryName !== undefined && directoryName !== name) {
-    findings.push({
-      rule: "skill/directory-mismatch",
-      severity: "high",
-      message: `Directory "${directoryName}" and skill name "${name}" must be identical.`,
-    });
-  }
-
-  if (CLOSSYS_VENDOR_SKILL_PACKAGE_SET.has(packageSlug)) {
-    return findings;
-  }
-
-  findings.push({
-    rule: "skill/unknown-vendor-package",
-    severity: "high",
-    message: `"${name}" is not a recognized vendor skill. Known packages: ${CLOSSYS_VENDOR_SKILL_PACKAGES.join(", ")}`,
-  });
-  return findings;
-}
-
 /**
  * Validate a first-party skill name. Returns an empty array when it conforms.
  * `directoryName` is compared against the name when supplied, because the
@@ -137,62 +63,12 @@ export function validateSkillName(
   options: SkillOptions,
   directoryName?: string,
 ): Finding[] {
-  return validateSkillNameCore(name, options, directoryName, true);
-}
-
-/**
- * Validate a whole set at once, adding the cross-cutting rule a single name
- * cannot express: one prefix, one account. Duplicate names are reported here
- * rather than left to a filesystem collision.
- */
-export function validateSkillSet(
-  names: readonly string[],
-  options: SkillOptions,
-): Finding[] {
-  const findings: Finding[] = [...findingsForReservedClossysPrefix(options)];
-  const seen = new Set<string>();
-  for (const name of names) {
-    if (seen.has(name)) {
-      findings.push({
-        rule: "skill/duplicate",
-        severity: "high",
-        message: `"${name}" is declared more than once.`,
-      });
-    }
-    seen.add(name);
-    findings.push(...validateSkillNameCore(name, options, undefined, false));
-  }
-  return findings;
-}
-
-function validateSkillNameCore(
-  name: string,
-  options: SkillOptions,
-  directoryName: string | undefined,
-  includeReservedPrefixRegistration: boolean,
-): Finding[] {
   const findings: Finding[] = [];
 
   if (typeof name !== "string" || name.trim() === "") {
     return [{ rule: "skill/empty", severity: "high", message: "Skill name is empty." }];
   }
   if ((options.thirdParty ?? []).includes(name)) return findings;
-
-  if (includeReservedPrefixRegistration) {
-    findings.push(...findingsForReservedClossysPrefix(options));
-  }
-
-  if (!/^[a-z0-9-]+$/.test(name)) {
-    findings.push({
-      rule: "skill/malformed-segment",
-      severity: "high",
-      message: `"${name}" must use only lowercase letters, digits, and hyphens.`,
-    });
-    return findings;
-  }
-
-  const vendorFindings = validateVendorSkillName(name, directoryName);
-  if (vendorFindings !== null) return vendorFindings;
 
   if (directoryName !== undefined && directoryName !== name) {
     findings.push({
@@ -240,11 +116,7 @@ function validateSkillNameCore(
     });
   }
 
-  const reservedNamespaces = new Set([
-    CLOSSYS_VENDOR_SKILL_NAMESPACE,
-    ...(options.reservedNamespaces ?? []),
-  ]);
-  if (reservedNamespaces.has(prefix)) {
+  if ((options.reservedNamespaces ?? []).includes(prefix)) {
     findings.push({
       rule: "skill/prefix-collision",
       severity: "high",
@@ -268,5 +140,30 @@ function validateSkillNameCore(
     });
   }
 
+  return findings;
+}
+
+/**
+ * Validate a whole set at once, adding the cross-cutting rule a single name
+ * cannot express: one prefix, one account. Duplicate names are reported here
+ * rather than left to a filesystem collision.
+ */
+export function validateSkillSet(
+  names: readonly string[],
+  options: SkillOptions,
+): Finding[] {
+  const findings: Finding[] = [];
+  const seen = new Set<string>();
+  for (const name of names) {
+    if (seen.has(name)) {
+      findings.push({
+        rule: "skill/duplicate",
+        severity: "high",
+        message: `"${name}" is declared more than once.`,
+      });
+    }
+    seen.add(name);
+    findings.push(...validateSkillName(name, options));
+  }
   return findings;
 }

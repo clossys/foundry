@@ -5,17 +5,6 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
-
-### Added
-
-- Packed Agent Skill `clossys-controller` so a coding agent can be invoked as @clossys-controller.
-- `CLOSSYS_VENDOR_SKILL_NAMESPACE`, `CLOSSYS_VENDOR_SKILL_PACKAGES`, and
-  validation for vendor skill names `clossys-<package>` (one per published
-  Foundry package). These pass without a local third-party allowlist; unknown
-  slugs fail; registering `clossys` as a first-party account prefix is
-  reserved. Documented in `skill-grammar.md` and noted in `skill-registry.md`.
-
 ## [0.9.10] - 2026-09-18
 
 ### Added

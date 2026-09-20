@@ -1793,7 +1793,7 @@ adapter can find the shared guidance without duplicating it.
 | --- | --- | --- |
 | `TAXONOMY_PREFIXES` / `validateBranchName` | constant / function | Agent branch-naming grammar and its validator. |
 | `branchExemptionsFromProfile(profile)` | function | The long-lived branches a repository profile actually declares — its `defaultBranch` and, when present, its `releaseBranch`. This is the exemption `validateBranchName` honors; see below. |
-| `SKILL_VERBS` / `CLOSSYS_VENDOR_SKILL_PACKAGES` / `validateSkillName` / `validateSkillSet` | constants / functions | Skill-naming grammar, the frozen Foundry vendor-skill package slugs, and validators. |
+| `SKILL_VERBS` / `validateSkillName` / `validateSkillSet` | constant / functions | Skill-naming grammar and its validators. |
 | `validateRoutineDeclaration` / `validateRoutineSet` / `validateScheduledSkillDescription` / `reconciliationFindingKinds` | functions / constant | Routine-declaration grammar and its tier-specific live-reconciliation findings. |
 | `isCronExpression` / `validateScheduleDeclaration` / `validateScheduleSet` / `scheduleReconciliationFindingKinds` | functions / constant | Schedule-declaration grammar and its tier-specific live-reconciliation findings. |
 | `LIVE_STATE_SURFACE_FINDING_KINDS` / `validateLiveStateSurfaceDeclaration` / `reconcileLiveState` / `liveStateVerified` / `liveStateDrifted` / `liveStateCouldNotVerify` / `liveStateReconciliationReasons` | constant / functions | The shared `liveStateSurface` reconciliation contract (#255) the two rows above specialize. |

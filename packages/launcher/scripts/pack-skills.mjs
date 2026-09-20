@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Copies packages/<name>/skill/SKILL.md into skill-catalogue/<name>/SKILL.md
- * so the published launcher tarball can compose skills without the monorepo tree.
+ * Copies each package skill source into skill-catalogue/<name>/SKILL.md
+ * so the published launcher tarball can compose skills from its own packed files.
  */
 import { cpSync, existsSync, mkdirSync, readdirSync, rmSync } from "node:fs";
 import { dirname, join } from "node:path";

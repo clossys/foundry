@@ -36,11 +36,6 @@ routine's to hold.
   coverage is not bounded to one. A `third-party` skill must not carry a
   repository either, and it is never required to — see below.
 
-  Vendor skills named `clossys-<package>` (one per published Foundry package)
-  are always `third-party`-scoped from a consuming plane's perspective: they
-  are vendor-named, not first-party coverage, and this registry still has no
-  machine tier for them.
-
   **There is deliberately no fourth, "machine" or plane-spanning, tier.** A
   skill encodes judgment about a specific inventory someone actually
   reviewed — an account's repositories, or one repository's own internals.

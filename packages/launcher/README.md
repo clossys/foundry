@@ -54,8 +54,7 @@ Voices are how you talk in a coding agent; they are not engagement engines. The
 `@clossys-advisor` in chat is its hiring and compatibility voice. Use
 `@clossys-advisor` and `@clossys-<package>` in the hub or in any inventoried
 product repository. Each voice can talk even when that npm package is not pinned
-in that repo. A published Foundry package that ships without `skill/SKILL.md`
-is a defect; launcher health notes missing catalogue sources but apply continues.
+in that repo. Launcher health notes missing catalogue sources but apply continues.
 
 Run `npx @clossys/launcher` again from the hub for a health report and to
 refresh composed voices on sibling inventoried clones. It does not
@@ -114,8 +113,10 @@ Exit codes preserve the ternary:
 | Export | Description |
 | --- | --- |
 | `planWorkspace()` | Decides create, resume, or adopt from a cwd observation. Optional `{ inventoryPath }` is the only way to appoint without a populated on-disk inventory. |
-| `applyWorkspacePlan()` | Copies the in-package skeleton or hub marker through a host port and returns a `WorkspaceApplyResult` with health. Composes the same skill voices on the hub and on inventoried sibling checkouts beside it; refreshes stale hub guidance on every path, including resume. |
+| `applyWorkspacePlan()` | Copies the in-package skeleton or hub marker through a host port and returns a `WorkspaceApplyResult` with health. Composes the same skill voices on the hub and on inventoried sibling checkouts beside it; refreshes stale hub guidance on every path, including resume. Optional `{ skillCatalogueRoot, launcherPackageRoot }` selects where skill bodies are read. |
 | `observeWorkspace()` | Reads `gh`, git remotes, cwd, inventory classification, and the public Advisor version. |
+| `readInventoryRepositories()` | Reads repository ids from a `schemaVersion: 1` inventory document. |
+| `launcherPackageRootFromModule()` | Resolves this package's root from `import.meta.url` so apply can find the packed skill catalogue. |
 | `parseGitHubRemote()` | Parses a github.com remote and rejects any other host. |
 | `isHubDocument()` | Type guard for the generated hub marker (packed template: `skeleton/.clossys/workspace.json`). |
 | `inspectInventory()` | Classifies inventory JSON as missing, empty, or populated. |
@@ -126,7 +127,7 @@ Exit codes preserve the ternary:
 | `DEFAULT_REPOSITORY_NAME` | Default new-hub repository name (`workspace`). Used only when creating, never when appointing. |
 | `WORKSPACE_MARKER_REL` | Relative path of the hub marker. |
 | `WORKSPACE_INVENTORY_REL` | Relative path of the hub inventory. |
-| `CommandResult` / `CwdObservation` / `DependencyBucket` / `HubDocument` / `HubHealthReport` / `InventoryObservation` / `InventoryValidationEntry` / `InventoryValidationReport` / `PinFinding` / `PinGrade` / `WorkspaceApplyResult` / `WorkspaceDecision` / `WorkspaceHost` / `WorkspaceObservation` / `WorkspacePlan` / `WorkspaceRefusal` / `WorkspaceState` | Typed host, observation, plan, health, and outcome contracts. |
+| `CommandResult` / `CwdObservation` / `DependencyBucket` / `HubDocument` / `HubHealthReport` / `InventoryObservation` / `InventoryValidationEntry` / `InventoryValidationReport` / `PinFinding` / `PinGrade` / `ApplyWorkspaceOptions` / `WorkspaceApplyResult` / `WorkspaceDecision` / `WorkspaceHost` / `WorkspaceObservation` / `WorkspacePlan` / `WorkspaceRefusal` / `WorkspaceState` | Typed host, observation, plan, health, and outcome contracts. |
 
 ## Why this is not Advisor, Starter, Builder, installer, creator, or a connector
 

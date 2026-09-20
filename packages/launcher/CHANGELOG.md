@@ -9,8 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Hub apply composes the full `clossys-*` skill tree under `.agents/skills/` on create, appoint, and resume, reading bodies from the packed `skill-catalogue/` (built by `scripts/pack-skills.mjs` from monorepo `packages/*/skill/SKILL.md`) or from a sibling monorepo checkout. Missing sources are skipped with a health note; apply continues.
-- The same roster is composed into every inventoried repository clone beside the hub (resolved from `.clossys/inventory.json` and confirmed with `git remote get-url origin`); the health report lists targets and skipped ids. Sister checkouts get optional canned `AGENTS.md` only when missing or still the generated sister text.
+- Hub apply composes the full `clossys-*` skill tree under `.agents/skills/` on create, appoint, and resume, reading bodies from the packed skill catalogue (built at `npm run build` from each package's skill source) or from a sibling checkout. Missing sources are skipped with a health note; apply continues.
+- The same roster is composed into every inventoried repository clone beside the hub (resolved from the generated hub inventory and confirmed with `git remote get-url origin`); the health report lists targets and skipped ids. Sister checkouts get optional canned `AGENTS.md` only when missing or still the generated sister text.
 - Apply writes host discovery links under `.cursor/skills/` and `.claude/skills/` pointing at the composed skills in the hub and each resolved clone.
 - Packed Agent Skill `clossys-launcher` so a coding agent can be invoked as `@clossys-launcher`.
 
