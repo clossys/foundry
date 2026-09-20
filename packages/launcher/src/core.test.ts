@@ -599,7 +599,7 @@ describe("applyWorkspacePlan", () => {
     writeFileSync(join(foundry, "docs", "LIFECYCLE.md"), "# lifecycle\n");
     const gitRemotes: Record<string, string> = {
       [app]: "git@github.com:acme/app.git",
-      [other]: "git@github.com:example/other.git",
+      [other]: "git@github.com:otherowner/other.git",
       [foundry]: "git@github.com:acme/foundry.git",
     };
     const base = host(hub);

@@ -297,6 +297,7 @@ const PLACEHOLDER_NAMES = new Map([
   ["other", "packages/governance preflight test stand-in for a mismatched scope"],
   ["yourscope", "docs/DECISIONS.md stand-in addressed at the reader's own scope"],
   ["acme", "the standard fictional-company placeholder, used in packages/surface metadata fixtures"],
+  ["otherowner", "launcher test stand-in for a sibling clone whose git origin is not the hub account"],
   ["containment-fixture-scope", "scripts/test-gates.mjs denylist-containment fixture scope"],
   ["retired-scope", "gate test stand-in for a predecessor scope a package was published under before it moved"],
 ]);
