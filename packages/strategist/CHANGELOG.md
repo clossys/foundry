@@ -5,6 +5,21 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.2.6] - 2026-09-21
+
+### Added
+
+- Ships the `clossys-strategist` Agent Skill (`skill/SKILL.md`) next to the
+  existing gate bins `strategist-check` and `strategist-rate-check`. In
+  Cursor, mention `@clossys-strategist` to invoke that voice. The skill is
+  packed with the package; it does not add runtime exports and does not
+  replace the gate CLIs. The packed skill states that mechanical gates prove
+  3 only, never treats gate-green as keep, and names a walk that stops at 3
+  as a defect; Designer `PRE-AUTH-QUALITY.md` remains canonical for
+  exceptional (5) and does not ship with this package. The skill names
+  `strategist-check brand-coverage` slot N/N as necessary, not sufficient,
+  and points at `--surfaces` for Designer-readable do-not language (#1034).
+
 ## [0.2.5] - 2026-09-21
 
 ### Added
@@ -49,11 +64,6 @@ All notable changes to this package are documented here. Format follows
 
 ### Added
 
-- Ships the `clossys-strategist` Agent Skill (`skill/SKILL.md`) next to the
-  existing gate bins `strategist-check` and `strategist-rate-check`. In
-  Cursor, mention `@clossys-strategist` to invoke that voice. The skill is
-  packed with the package; it does not add runtime exports and does not
-  replace the gate CLIs.
 - `strategist-check brand-coverage --surfaces <path>`: requires do-not
   language on Designer-facing surfaces; slot N/N alone is reported as
   necessary, not sufficient.
