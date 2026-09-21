@@ -97,6 +97,42 @@ All of the following must hold, or the page is **below 3**:
 
 These gates are the floor. They are not the synthetic user's script.
 
+Deliverability of **3** is these fixtures and CLIs — not longer packed skills. Skills
+point here; they do not grow into an unbounded critique loop.
+
+---
+
+## Bounded taste pass (after 3 is green)
+
+The synthetic-user keep (**5**) is a **second pass** after the mechanical floor is
+green. It is not a substitute for fold-check **3**, and the doer walk must not
+self-certify exceptional keep.
+
+**Precondition:** `designer-hero-css-check`, `designer-fold-check`, and
+`writer-check --live` are green. Do not start inhabit or visual taste before
+`designer-fold-check` is green on fold measurement JSON. HTTP 200 and a heading
+string in markup are not keep evidence.
+
+**Inputs:** desktop screenshot, one narrow-width screenshot, and the live URL —
+not the source tree alone.
+
+**Independence:** a **separate session** from Designer, Writer, Publisher, and
+Strategist on that walk. The model that authored the page must not inhabit the
+user for that walk. The inhabit must be vision-capable; this document does not
+pin a vendor.
+
+**Bound:** at most **3 inhabit rounds** or **45 minutes** wall clock, whichever
+comes first. After each fail, the doer may change composition or copy and
+re-screenshot; do not open a fourth round or loop until it "looks world class."
+At the cap: stop, attach the last inhabit record, and ask the human.
+
+**Verdict:** keep requires visual and verbal yes from the inhabit. The doer
+**does not self-certify** exceptional keep and **does not grade its own** fold
+after gates are green.
+
+`disable-model-invocation` stays on expression-wave skills; the doer skill does
+not auto-invoke the inhabit.
+
 ---
 
 ## 4 great (authored, not gated)

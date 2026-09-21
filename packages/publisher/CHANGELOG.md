@@ -20,6 +20,12 @@ All notable changes to this package are documented here. Format follows
   `defineWebTemplate` for custom page bands; route-local block composition
   is a workaround, not the extension path.
 
+## [0.4.9] - 2026-09-21
+
+### Changed
+
+- Packed skill Pre-auth section: bounded taste pass after `designer-fold-check` is green (see PRE-AUTH-QUALITY, the brief that ships with `@clossys/designer`).
+
 ## [0.4.7] - 2026-09-21
 
 ### Added

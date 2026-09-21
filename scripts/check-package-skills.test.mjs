@@ -242,6 +242,30 @@ test("expression-wave skills without Pre-auth page heading fail", () => {
   assert.ok(result.findings.some((f) => f.rule === "pre-auth-page-heading"));
 });
 
+test("expression-wave skills must cap taste after fold-check green and forbid self-certify", () => {
+  const result = evaluatePackageSkills([
+    {
+      packageDir: "designer",
+      skillPath: "/tmp/ignored",
+      expectedName: "clossys-designer",
+      skillText: `---
+name: clossys-designer
+description: Design tokens.
+disable-model-invocation: true
+---
+
+## Pre-auth page
+
+PRE-AUTH-QUALITY exceptional synthetic user does not author keep-review evidence.
+`,
+    },
+  ]);
+  assert.equal(result.exitCode, 1);
+  assert.ok(result.findings.some((f) => f.rule === "pre-auth-taste-fold-precondition"));
+  assert.ok(result.findings.some((f) => f.rule === "pre-auth-taste-bound"));
+  assert.ok(result.findings.some((f) => f.rule === "pre-auth-no-self-certify"));
+});
+
 test("expression-wave skills must reference PRE-AUTH-QUALITY, exceptional, synthetic user, and not author keep-review", () => {
   const result = evaluatePackageSkills([
     {
