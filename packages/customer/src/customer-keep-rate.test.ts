@@ -66,14 +66,16 @@ describe("assessCustomerKeepRate", () => {
     expect(report.findings.map((item) => item.rule)).toContain("self-observation");
   });
 
-  it("does not count feedback, compare, refer, or churn observations toward keep rate", () => {
-    const report = assessCustomerKeepRate({
-      asOf: AS_OF,
-      declaredCandidates: [{ id: "candidate-one" }],
-      observations: [observation("candidate-one", { intent: "feedback", kept: true })],
-    });
-    expect(report.state).toBe("indeterminate");
-    expect(report.rate).toBeNull();
-    expect(report.findings.map((item) => item.rule)).toContain("candidate-unevaluated");
+  it("does not count speed-dial testimony observations toward keep rate", () => {
+    for (const intent of ["feedback", "compare", "refer", "churn", "adopt", "worth"]) {
+      const report = assessCustomerKeepRate({
+        asOf: AS_OF,
+        declaredCandidates: [{ id: "candidate-one" }],
+        observations: [observation("candidate-one", { intent, kept: true })],
+      });
+      expect(report.state).toBe("indeterminate");
+      expect(report.rate).toBeNull();
+      expect(report.findings.map((item) => item.rule)).toContain("candidate-unevaluated");
+    }
   });
 });

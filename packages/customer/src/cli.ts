@@ -8,10 +8,11 @@ import { checkKeepForm } from "./keep-form.js";
 const USAGE = `Usage: customer-check <record.json> <audience.json>
 
 Validates that a first-person inhabit record was spoken as the named customer
-— keep (seal gate), feedback, compare, refer, or churn — not as a reviewer,
-QA contractor, or market-research memo. This CLI never certifies a five-star
-quality score; dishonest first-person answers can still satisfy the shape.
-Only intent "keep" counts toward customer keep rate.
+— keep (seal gate), plus speed-dial testimony: feedback, compare, refer,
+churn, adopt, or worth — not as a reviewer, QA contractor, or market-research
+memo. This CLI never certifies a five-star quality score; dishonest
+first-person answers can still satisfy the shape. Only intent "keep" counts
+toward customer keep rate.
 
 Exit codes: 0 = clean form, 1 = inhabit or consistency findings, 2 = could not run
 (including unreadable files, unknown intent, or indeterminate shape).

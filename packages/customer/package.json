@@ -32,14 +32,16 @@
     "LICENSE"
   ],
   "sideEffects": false,
-  "description": "The customer role: first-person synthetic inhabit of the named audience — keep, lived feedback, comparison from their consideration set, referral, and churn. Job: if I am the person this was made for, do I keep this?",
+  "description": "The customer role: first-person synthetic inhabit of the named audience — keep, lived feedback on any topic, comparison from their consideration set, referral, churn, adopt, and worth. Job: if I am the person this was made for, do I keep this?",
   "keywords": [
     "audience",
     "customer",
     "keep",
     "feedback",
-    "inhabit",
+    "compare",
     "referral",
+    "churn",
+    "inhabit",
     "first-person",
     "typescript"
   ],

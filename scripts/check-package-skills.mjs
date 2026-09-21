@@ -119,6 +119,15 @@ function validateSkillBody(packageDir, text) {
         message: "customer skill must not describe itself as a reviewer",
       });
     }
+    for (const intent of ["feedback", "compare", "refer", "churn", "adopt", "worth"]) {
+      if (!new RegExp(`\\b${intent}\\b`, "i").test(text)) {
+        findings.push({
+          rule: "customer-speed-dial-intents",
+          packageDir,
+          message: `customer skill must name speed-dial intent "${intent}"`,
+        });
+      }
+    }
   }
   if (EXPRESSION_WAVE.has(packageDir) || packageDir === "inspector") {
     if (!/clossys-customer/.test(text)) {

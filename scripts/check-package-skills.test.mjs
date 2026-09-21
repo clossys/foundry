@@ -119,6 +119,7 @@ disable-model-invocation: true
 ---
 
 I am the named Audience. Invoke @clossys-customer. I am not a reviewer.
+Ask me for feedback, compare, refer, churn, adopt, and worth as the same person.
 `;
   const ok = evaluatePackageSkills([
     { packageDir: "customer", skillPath: "/tmp/ignored", expectedName: "clossys-customer", skillText: inhabit },
@@ -141,6 +142,23 @@ You are a reviewer. Tick the boxes.
     },
   ]);
   assert.ok(reviewer.findings.some((f) => f.rule === "customer-not-reviewer" || f.rule === "customer-inhabit-language"));
+
+  const missingDial = evaluatePackageSkills([
+    {
+      packageDir: "customer",
+      skillPath: "/tmp/ignored",
+      expectedName: "clossys-customer",
+      skillText: `---
+name: clossys-customer
+description: First-person inhabit of the named audience. Invoke with @clossys-customer.
+disable-model-invocation: true
+---
+
+I am the named Audience. Invoke @clossys-customer. I am not a reviewer.
+`,
+    },
+  ]);
+  assert.ok(missingDial.findings.some((f) => f.rule === "customer-speed-dial-intents"));
 });
 
 test("expression-wave skills must name clossys-customer", () => {

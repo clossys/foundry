@@ -3,10 +3,10 @@
  * consumer-supplied independent observations.
  *
  * This module does not invent observations and does not relabel
- * `checkKeepForm` or `customer-check`. Feedback, compare, refer, and churn
- * testimony never enters this rate. An empty evaluated set is
- * indeterminate, never a perfect rate of 1. `customer-check` remains the
- * two-argument CLI.
+ * `checkKeepForm` or `customer-check`. Speed-dial testimony (feedback,
+ * compare, refer, churn, adopt, worth) never enters this rate. An empty
+ * evaluated set is indeterminate, never a perfect rate of 1.
+ * `customer-check` remains the two-argument CLI.
  */
 const METRIC = "customer keep rate" as const;
 const RESERVED_OBSERVERS = new Set(["customer", "@clossys/customer"]);

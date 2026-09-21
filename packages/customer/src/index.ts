@@ -1,6 +1,7 @@
 export { parseAudience, parseKeepRecord, parseInhabitRecord, checkKeepForm, checkInhabitForm } from "./keep-form.js";
 export { assessCustomerKeepRate } from "./customer-keep-rate.js";
 export type {
+  AdoptRecord,
   AlternativeRelationship,
   Audience,
   ChurnRecord,
@@ -21,6 +22,7 @@ export type {
   LivedExpectation,
   LivedFunctional,
   ReferRecord,
+  WorthRecord,
   YesNo,
 } from "./types.js";
 export type {

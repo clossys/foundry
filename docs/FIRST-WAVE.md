@@ -73,7 +73,7 @@ Flattened, and checked against the manifests' first-party runtime graph:
    `customer`, `publisher`, `influencer`. Designer and publisher are frontend work and
    wait. Customer inhabits a named audience for keep-or-fail before seal and
    can supply on-demand first-person testimony on feedback, alternatives,
-   referral, and churn. Publisher still waits for controller, writer, and
+   referral, churn, adopt, and worth. Publisher still waits for controller, writer, and
    designer at runtime. Influencer waits for publisher even though it has no
    runtime edge: audience-response measurement is the learn stage of
    publication, and productizing it first designs an open loop.

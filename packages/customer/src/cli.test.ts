@@ -85,6 +85,9 @@ describe("customer-check main()", () => {
       functional: [{ happened: "The button did nothing.", expected: "The next step." }],
       experience: ["I felt stuck."],
       expectations: [],
+      blockedMe: "yes",
+      whatIDidInstead: "I clicked twice more, then left.",
+      wantedInstead: "The next step.",
       stillForMe: "yes",
     });
     const [feedbackPath, audiencePath] = jsonPair(feedback);
@@ -96,6 +99,10 @@ describe("customer-check main()", () => {
       familiarity: "returning",
       alternatives: [],
       versus: "I have no one to put this next to.",
+      whatTheyDoBetter: "Nothing I can name, because I have no one to put this next to.",
+      whatThisDoesBetter: "The first screen is calmer.",
+      whenIReachForThem: "I do not, because I have no one.",
+      switchingCost: "I would not know where to go.",
       iWouldSwitch: "no",
       whatKeepsMeHere: "Habit.",
       whatWouldMakeMeSwitch: "A reason.",

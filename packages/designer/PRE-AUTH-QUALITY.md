@@ -10,11 +10,11 @@ QA contractor to tick fold, type, or voice boxes — those already proved 3.
 
 Customer is not a checklist and not a five-star certifier. Dishonest
 first-person still passes the inhabit shape. The person may also be asked,
-in the same inhabit, for lived functional and experiential feedback, a
-comparison from alternatives they actually know, what it would take to
-refer, and what would make them churn. Those sessions are the same person
-on speed dial. They are not a second charter metric and they are not a
-reviewer.
+in the same inhabit, for lived functional and experiential feedback on any
+topic, a comparison from alternatives they actually know, what it would
+take to start or to refer, whether it is worth what it costs them, and
+what would make them leave. Those sessions are the same person on speed
+dial. They are not a second charter metric and they are not a reviewer.
 
 ## Sequence
 

@@ -1,4 +1,5 @@
 import type {
+  AdoptRecord,
   AlternativeRelationship,
   Audience,
   ChurnRecord,
@@ -14,13 +15,16 @@ import type {
   LivedExpectation,
   LivedFunctional,
   ReferRecord,
+  WorthRecord,
   YesNo,
 } from "./types.js";
 
 const SPEAKER = "customer" as const;
 const INHABITED_AS = "target-audience" as const;
 const YES_NO = new Set<YesNo>(["yes", "no"]);
-const INTENTS = new Set<InhabitIntent>(["keep", "feedback", "compare", "refer", "churn"]);
+const INTENT_ORDER = ["keep", "feedback", "compare", "refer", "churn", "adopt", "worth"] as const satisfies readonly InhabitIntent[];
+const INTENTS = new Set<InhabitIntent>(INTENT_ORDER);
+const INTENT_HELP = INTENT_ORDER.map((item) => `"${item}"`).join(", ").replace(/, "worth"/, ', or "worth"');
 const FAMILIARITIES = new Set<Familiarity>(["fresh", "returning"]);
 const RELATIONSHIPS = new Set<AlternativeRelationship>(["i-use-this", "a-peer-uses-this", "i-considered-this"]);
 const REJECTED_SPEAKERS = new Set([
@@ -123,10 +127,21 @@ function envelopeBase(value: UnknownRecord, findings: KeepFormFinding[]): void {
   if (!text(value.stance)) findings.push(finding("stance-required", "stance must be a non-empty string.", "stance"));
 }
 
+function envelopeReady(value: UnknownRecord): boolean {
+  return (
+    value.speaker === SPEAKER &&
+    value.inhabitedAs === INHABITED_AS &&
+    text(value.audienceId) &&
+    record(value.persona) &&
+    text(value.persona.name) &&
+    text(value.stance)
+  );
+}
+
 function resolveIntent(value: UnknownRecord, findings: KeepFormFinding[]): InhabitIntent | null {
   if (value.intent === undefined) return "keep";
   if (typeof value.intent !== "string") {
-    findings.push(finding("intent-unknown", 'intent must be "keep", "feedback", "compare", "refer", or "churn".', "intent"));
+    findings.push(finding("intent-unknown", `intent must be ${INTENT_HELP}.`, "intent"));
     return null;
   }
   if (!INTENTS.has(value.intent as InhabitIntent)) {
@@ -225,12 +240,7 @@ function parseKeepSession(
   }
 
   const shapeOk =
-    value.speaker === SPEAKER &&
-    value.inhabitedAs === INHABITED_AS &&
-    text(value.audienceId) &&
-    record(value.persona) &&
-    text(value.persona.name) &&
-    text(value.stance) &&
+    envelopeReady(value) &&
     record(value.impressions) &&
     text(value.impressions.firstSeconds) &&
     yesNo(value.impressions.isThisForMe) &&
@@ -282,7 +292,7 @@ function parseFeedbackSession(
     findings.push(finding("functional-shape", "functional must be an array of lived { happened, expected } items.", "functional"));
   }
   if (!Array.isArray(value.experience)) {
-    findings.push(finding("experience-required", "experience must be a nonempty array of first-person strings.", "experience"));
+    findings.push(finding("experience-shape", "experience must be an array of first-person strings.", "experience"));
   } else {
     value.experience.forEach((item, index) => {
       if (!text(item)) findings.push(finding("experience-item", "Each experience entry must be a non-empty string.", `experience[${index}]`));
@@ -290,6 +300,13 @@ function parseFeedbackSession(
   }
   if (!Array.isArray(value.expectations)) {
     findings.push(finding("expectations-shape", "expectations must be an array of { assumed, actually } items.", "expectations"));
+  }
+  if (!yesNo(value.blockedMe)) findings.push(finding("blocked-me", 'blockedMe must be exactly "yes" or "no".', "blockedMe"));
+  if (!text(value.whatIDidInstead)) {
+    findings.push(finding("what-i-did-instead", "whatIDidInstead must say what I did after — workaround, ask a peer, or give up.", "whatIDidInstead"));
+  }
+  if (!text(value.wantedInstead)) {
+    findings.push(finding("wanted-instead", "wantedInstead must say what I wanted in that moment.", "wantedInstead"));
   }
   if (!yesNo(value.stillForMe)) {
     findings.push(finding("still-for-me", 'stillForMe must be exactly "yes" or "no".', "stillForMe"));
@@ -304,15 +321,9 @@ function parseFeedbackSession(
   const experienceOk = Array.isArray(value.experience) && value.experience.every(text);
   const functionalOk = Array.isArray(value.functional) && functional.every((item) => item !== null);
   const expectationsOk = Array.isArray(value.expectations) && expectations.every((item) => item !== null);
-  const envelopeOk =
-    value.speaker === SPEAKER &&
-    value.inhabitedAs === INHABITED_AS &&
-    text(value.audienceId) &&
-    record(value.persona) &&
-    text(value.persona.name) &&
-    text(value.stance);
+  const extrasOk = yesNo(value.blockedMe) && text(value.whatIDidInstead) && text(value.wantedInstead) && yesNo(value.stillForMe);
 
-  if (!envelopeOk || !experienceOk || !functionalOk || !expectationsOk || !yesNo(value.stillForMe)) return null;
+  if (!envelopeReady(value) || !experienceOk || !functionalOk || !expectationsOk || !extrasOk) return null;
   const envelope = envelopeFields(value);
   if (!envelope) return null;
 
@@ -328,6 +339,9 @@ function parseFeedbackSession(
     functional: functional as LivedFunctional[],
     experience: value.experience as string[],
     expectations: expectations as LivedExpectation[],
+    blockedMe: value.blockedMe as YesNo,
+    whatIDidInstead: value.whatIDidInstead as string,
+    wantedInstead: value.wantedInstead as string,
     stillForMe: value.stillForMe as YesNo,
   };
 }
@@ -342,6 +356,18 @@ function parseCompareSession(
     findings.push(finding("alternatives-required", "compare requires a nonempty alternatives array from my actual consideration set.", "alternatives"));
   }
   if (!text(value.versus)) findings.push(finding("versus-required", "versus must be a nonempty first-person narrative.", "versus"));
+  if (!text(value.whatTheyDoBetter)) {
+    findings.push(finding("they-do-better", "whatTheyDoBetter must be lived, from my day — not a feature matrix.", "whatTheyDoBetter"));
+  }
+  if (!text(value.whatThisDoesBetter)) {
+    findings.push(finding("this-does-better", "whatThisDoesBetter must be lived, from my day.", "whatThisDoesBetter"));
+  }
+  if (!text(value.whenIReachForThem)) {
+    findings.push(finding("when-i-reach", "whenIReachForThem must say when I actually reach for the alternative.", "whenIReachForThem"));
+  }
+  if (!text(value.switchingCost)) {
+    findings.push(finding("switching-cost", "switchingCost must be the lived cost of moving — time, habit, risk — not a spreadsheet.", "switchingCost"));
+  }
   if (!yesNo(value.iWouldSwitch)) findings.push(finding("would-switch", 'iWouldSwitch must be exactly "yes" or "no".', "iWouldSwitch"));
   if (!text(value.whatKeepsMeHere)) findings.push(finding("keeps-me-required", "whatKeepsMeHere must be a nonempty string.", "whatKeepsMeHere"));
   if (!text(value.whatWouldMakeMeSwitch)) {
@@ -352,24 +378,17 @@ function parseCompareSession(
     ? value.alternatives.map((item, index) => readAlternative(item, `alternatives[${index}]`, findings))
     : [];
   const alternativesOk = Array.isArray(value.alternatives) && alternatives.every((item) => item !== null);
-  const envelopeOk =
-    value.speaker === SPEAKER &&
-    value.inhabitedAs === INHABITED_AS &&
-    text(value.audienceId) &&
-    record(value.persona) &&
-    text(value.persona.name) &&
-    text(value.stance);
+  const extrasOk =
+    text(value.versus) &&
+    text(value.whatTheyDoBetter) &&
+    text(value.whatThisDoesBetter) &&
+    text(value.whenIReachForThem) &&
+    text(value.switchingCost) &&
+    yesNo(value.iWouldSwitch) &&
+    text(value.whatKeepsMeHere) &&
+    text(value.whatWouldMakeMeSwitch);
 
-  if (
-    !envelopeOk ||
-    !alternativesOk ||
-    !text(value.versus) ||
-    !yesNo(value.iWouldSwitch) ||
-    !text(value.whatKeepsMeHere) ||
-    !text(value.whatWouldMakeMeSwitch)
-  ) {
-    return null;
-  }
+  if (!envelopeReady(value) || !alternativesOk || !extrasOk) return null;
   const envelope = envelopeFields(value);
   if (!envelope) return null;
 
@@ -384,6 +403,10 @@ function parseCompareSession(
     intent: "compare",
     alternatives: alternatives as KnownAlternative[],
     versus: value.versus as string,
+    whatTheyDoBetter: value.whatTheyDoBetter as string,
+    whatThisDoesBetter: value.whatThisDoesBetter as string,
+    whenIReachForThem: value.whenIReachForThem as string,
+    switchingCost: value.switchingCost as string,
     iWouldSwitch: value.iWouldSwitch as YesNo,
     whatKeepsMeHere: value.whatKeepsMeHere as string,
     whatWouldMakeMeSwitch: value.whatWouldMakeMeSwitch as string,
@@ -399,21 +422,25 @@ function parseReferSession(
   if (!yesNo(value.wouldITellAPeer)) {
     findings.push(finding("would-tell-peer", 'wouldITellAPeer must be exactly "yes" or "no".', "wouldITellAPeer"));
   }
+  if (!yesNo(value.alreadyToldSomeone)) {
+    findings.push(finding("already-told", 'alreadyToldSomeone must be exactly "yes" or "no".', "alreadyToldSomeone"));
+  }
   if (!text(value.whatIdSay)) findings.push(finding("what-id-say", "whatIdSay must be the actual words I would use.", "whatIdSay"));
   if (!text(value.whatStopsMe)) findings.push(finding("what-stops-me", "whatStopsMe must be a nonempty first-person sentence.", "whatStopsMe"));
+  if (!text(value.whatItWouldTake)) {
+    findings.push(finding("what-it-would-take", "whatItWouldTake must say what would make me want to tell a peer.", "whatItWouldTake"));
+  }
   if (!text(value.whoIdTell)) findings.push(finding("who-id-tell", "whoIdTell must name a kind of person, never a private name.", "whoIdTell"));
 
-  const envelopeOk =
-    value.speaker === SPEAKER &&
-    value.inhabitedAs === INHABITED_AS &&
-    text(value.audienceId) &&
-    record(value.persona) &&
-    text(value.persona.name) &&
-    text(value.stance);
+  const extrasOk =
+    yesNo(value.wouldITellAPeer) &&
+    yesNo(value.alreadyToldSomeone) &&
+    text(value.whatIdSay) &&
+    text(value.whatStopsMe) &&
+    text(value.whatItWouldTake) &&
+    text(value.whoIdTell);
 
-  if (!envelopeOk || !yesNo(value.wouldITellAPeer) || !text(value.whatIdSay) || !text(value.whatStopsMe) || !text(value.whoIdTell)) {
-    return null;
-  }
+  if (!envelopeReady(value) || !extrasOk) return null;
   const envelope = envelopeFields(value);
   if (!envelope) return null;
 
@@ -427,8 +454,10 @@ function parseReferSession(
     familiarity,
     intent: "refer",
     wouldITellAPeer: value.wouldITellAPeer as YesNo,
+    alreadyToldSomeone: value.alreadyToldSomeone as YesNo,
     whatIdSay: value.whatIdSay as string,
     whatStopsMe: value.whatStopsMe as string,
+    whatItWouldTake: value.whatItWouldTake as string,
     whoIdTell: value.whoIdTell as string,
   };
 }
@@ -440,21 +469,23 @@ function parseChurnSession(
   findings: KeepFormFinding[],
 ): ChurnRecord | null {
   if (!yesNo(value.wouldILeave)) findings.push(finding("would-leave", 'wouldILeave must be exactly "yes" or "no".', "wouldILeave"));
+  if (!yesNo(value.alreadyLooking)) {
+    findings.push(finding("already-looking", 'alreadyLooking must be exactly "yes" or "no".', "alreadyLooking"));
+  }
+  if (!text(value.theWarning)) findings.push(finding("the-warning", "theWarning must be the feeling before I go.", "theWarning"));
   if (!text(value.theMoment)) findings.push(finding("the-moment", "theMoment must describe the scene where I go.", "theMoment"));
   if (!text(value.whatWouldKeepMe)) findings.push(finding("what-would-keep-me", "whatWouldKeepMe must be a nonempty string.", "whatWouldKeepMe"));
   if (!text(value.whereIdGo)) findings.push(finding("where-id-go", "whereIdGo must name where I would actually go.", "whereIdGo"));
 
-  const envelopeOk =
-    value.speaker === SPEAKER &&
-    value.inhabitedAs === INHABITED_AS &&
-    text(value.audienceId) &&
-    record(value.persona) &&
-    text(value.persona.name) &&
-    text(value.stance);
+  const extrasOk =
+    yesNo(value.wouldILeave) &&
+    yesNo(value.alreadyLooking) &&
+    text(value.theWarning) &&
+    text(value.theMoment) &&
+    text(value.whatWouldKeepMe) &&
+    text(value.whereIdGo);
 
-  if (!envelopeOk || !yesNo(value.wouldILeave) || !text(value.theMoment) || !text(value.whatWouldKeepMe) || !text(value.whereIdGo)) {
-    return null;
-  }
+  if (!envelopeReady(value) || !extrasOk) return null;
   const envelope = envelopeFields(value);
   if (!envelope) return null;
 
@@ -468,9 +499,88 @@ function parseChurnSession(
     familiarity,
     intent: "churn",
     wouldILeave: value.wouldILeave as YesNo,
+    alreadyLooking: value.alreadyLooking as YesNo,
+    theWarning: value.theWarning as string,
     theMoment: value.theMoment as string,
     whatWouldKeepMe: value.whatWouldKeepMe as string,
     whereIdGo: value.whereIdGo as string,
+  };
+}
+
+function parseAdoptSession(
+  value: UnknownRecord,
+  topic: string,
+  familiarity: Familiarity,
+  findings: KeepFormFinding[],
+): AdoptRecord | null {
+  if (!yesNo(value.wouldIStart)) findings.push(finding("would-start", 'wouldIStart must be exactly "yes" or "no".', "wouldIStart"));
+  if (!text(value.whatStopsMeStarting)) {
+    findings.push(finding("what-stops-starting", "whatStopsMeStarting must say what is in the way of starting.", "whatStopsMeStarting"));
+  }
+  if (!text(value.whatItWouldTake)) {
+    findings.push(finding("what-it-would-take", "whatItWouldTake must say what would make me start.", "whatItWouldTake"));
+  }
+  if (!text(value.firstJobIdGiveIt)) {
+    findings.push(finding("first-job", "firstJobIdGiveIt must name the first real job I would give this.", "firstJobIdGiveIt"));
+  }
+
+  const extrasOk =
+    yesNo(value.wouldIStart) && text(value.whatStopsMeStarting) && text(value.whatItWouldTake) && text(value.firstJobIdGiveIt);
+
+  if (!envelopeReady(value) || !extrasOk) return null;
+  const envelope = envelopeFields(value);
+  if (!envelope) return null;
+
+  return {
+    speaker: SPEAKER,
+    inhabitedAs: INHABITED_AS,
+    audienceId: envelope.audienceId,
+    persona: { name: envelope.personaName },
+    stance: envelope.stance,
+    topic,
+    familiarity,
+    intent: "adopt",
+    wouldIStart: value.wouldIStart as YesNo,
+    whatStopsMeStarting: value.whatStopsMeStarting as string,
+    whatItWouldTake: value.whatItWouldTake as string,
+    firstJobIdGiveIt: value.firstJobIdGiveIt as string,
+  };
+}
+
+function parseWorthSession(
+  value: UnknownRecord,
+  topic: string,
+  familiarity: Familiarity,
+  findings: KeepFormFinding[],
+): WorthRecord | null {
+  if (!yesNo(value.isItWorthIt)) findings.push(finding("is-it-worth-it", 'isItWorthIt must be exactly "yes" or "no".', "isItWorthIt"));
+  if (!text(value.whatItCostsMe)) {
+    findings.push(finding("what-it-costs-me", "whatItCostsMe must name the lived cost — time, money, attention.", "whatItCostsMe"));
+  }
+  if (!text(value.whatIGet)) findings.push(finding("what-i-get", "whatIGet must say what I actually get.", "whatIGet"));
+  if (!text(value.whatWouldMakeItWorthIt)) {
+    findings.push(finding("what-would-make-it-worth-it", "whatWouldMakeItWorthIt must say the threshold where this becomes worth it.", "whatWouldMakeItWorthIt"));
+  }
+
+  const extrasOk = yesNo(value.isItWorthIt) && text(value.whatItCostsMe) && text(value.whatIGet) && text(value.whatWouldMakeItWorthIt);
+
+  if (!envelopeReady(value) || !extrasOk) return null;
+  const envelope = envelopeFields(value);
+  if (!envelope) return null;
+
+  return {
+    speaker: SPEAKER,
+    inhabitedAs: INHABITED_AS,
+    audienceId: envelope.audienceId,
+    persona: { name: envelope.personaName },
+    stance: envelope.stance,
+    topic,
+    familiarity,
+    intent: "worth",
+    isItWorthIt: value.isItWorthIt as YesNo,
+    whatItCostsMe: value.whatItCostsMe as string,
+    whatIGet: value.whatIGet as string,
+    whatWouldMakeItWorthIt: value.whatWouldMakeItWorthIt as string,
   };
 }
 
@@ -489,7 +599,9 @@ function validateInhabitShape(value: unknown, findings: KeepFormFinding[]): Inha
   if (intent === "feedback") return parseFeedbackSession(value, topic, familiarity, findings);
   if (intent === "compare") return parseCompareSession(value, topic, familiarity, findings);
   if (intent === "refer") return parseReferSession(value, topic, familiarity, findings);
-  return parseChurnSession(value, topic, familiarity, findings);
+  if (intent === "churn") return parseChurnSession(value, topic, familiarity, findings);
+  if (intent === "adopt") return parseAdoptSession(value, topic, familiarity, findings);
+  return parseWorthSession(value, topic, familiarity, findings);
 }
 
 function inhabitFindings(session: InhabitRecord, audience: Audience): KeepFormFinding[] {
@@ -511,12 +623,31 @@ function inhabitFindings(session: InhabitRecord, audience: Audience): KeepFormFi
       findings.push(finding("stance-pain-point", "stance must cite at least one Audience pain point when painPoints is non-empty.", "stance"));
     }
   }
-  if (session.intent === "feedback" && session.experience.length === 0) {
-    findings.push(finding("experience-required", "experience must be a nonempty array of first-person strings.", "experience"));
+  if (session.intent === "feedback") {
+    const hasLived =
+      session.functional.length > 0 || session.experience.length > 0 || session.expectations.length > 0;
+    if (!hasLived) {
+      findings.push(
+        finding(
+          "lived-channel-required",
+          "feedback must include at least one lived channel: functional, experience, or expectations.",
+          "functional",
+        ),
+      );
+    }
   }
   if (session.intent === "compare" && session.alternatives.length === 0) {
     findings.push(
       finding("alternatives-required", "compare requires a nonempty alternatives array from my actual consideration set.", "alternatives"),
+    );
+  }
+  if (session.intent === "refer" && session.alreadyToldSomeone === "yes" && session.wouldITellAPeer === "no") {
+    findings.push(
+      finding(
+        "refer-already-told-but-would-not",
+        'alreadyToldSomeone "yes" cannot coexist with wouldITellAPeer "no".',
+        "wouldITellAPeer",
+      ),
     );
   }
   if (session.intent === "keep" && session.verdict === "keep") {
@@ -542,7 +673,7 @@ export function parseAudience(input: unknown): Audience {
   return audience;
 }
 
-/** Parses any inhabit session (keep, feedback, compare, refer, churn). */
+/** Parses any inhabit session (keep plus speed-dial testimony). */
 export function parseInhabitRecord(input: unknown): InhabitRecord {
   const findings: KeepFormFinding[] = [];
   const session = validateInhabitShape(input, findings);
@@ -563,7 +694,7 @@ export function parseKeepRecord(input: unknown): KeepRecord {
 }
 
 /**
- * Validates inhabit form for keep, feedback, compare, refer, and churn.
+ * Validates inhabit form for keep and every speed-dial testimony intent.
  * Unreadable shapes are indeterminate; inhabit findings are violated.
  */
 export function checkInhabitForm(session: unknown, audience: unknown): KeepFormReport {
