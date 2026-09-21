@@ -5,6 +5,8 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.3.10] - 2026-09-20
+
 ### Added
 
 - `writer-check --live <dir>` (repeatable) with `--voice-record`: scans

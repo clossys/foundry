@@ -5,6 +5,8 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.4.8] - 2026-09-20
+
 ### Added
 
 - `PRE-AUTH-QUALITY.md`: star scale (3 good / 4 great / 5 exceptional); done is 5; gates prove 3 only.
