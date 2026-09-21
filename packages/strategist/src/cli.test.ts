@@ -321,6 +321,19 @@ describe("main — brand-coverage — real runs", () => {
     writeFileSync(surface, "Do not use neon accent on body copy.\n");
     expect(main(["brand-coverage", derivationsFile, slotsFile, "--surfaces", surface])).toBe(0);
   });
+
+  it("prints Designer-readable brand law separately from slot N/N when --surfaces is set", () => {
+    const derivationsFile = writeDerivations(strategyDir, [
+      derivation("Precise", ["--color-accent-primary"], ["no-hedging"]),
+    ]);
+    const slotsFile = writeBrandableSlots(strategyDir, ["--color-accent-primary"]);
+    const surface = join(strategyDir, "direction.md");
+    writeFileSync(surface, "Do not use neon accent on body copy.\n");
+    expect(main(["brand-coverage", derivationsFile, slotsFile, "--surfaces", surface])).toBe(0);
+    expect(vi.mocked(console.log).mock.calls.flat().join("\n")).toMatch(
+      /Designer-readable brand law: satisfied/,
+    );
+  });
 });
 
 // -----------------------------------------------------------------------
