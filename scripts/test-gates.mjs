@@ -1997,7 +1997,9 @@ try {
   //
   // Both halves of the bound are asserted here: shipped source can never
   // excuse rot by any wording, and inside a CHANGELOG the qualifier has to be
-  // in the citation's OWN sentence, not merely the same entry.
+  // in the citation's OWN sentence, not merely the same entry. The file half
+  // is a path, not a basename: only `CHANGELOG.md` at the scanned root and
+  // `packages/<name>/CHANGELOG.md` qualify.
   console.log("\n# check-contamination-classes CLASS 1: the rot exemption is bounded by file kind and by sentence");
   {
     // (a) shipped source. The rot citation and an unrelated `no longer exists`
@@ -2093,6 +2095,80 @@ try {
       "a rot qualifier in a DIFFERENT sentence of the same changelog entry does NOT excuse it",
       clCites("packages/retired/src/also-gone.ts"),
       `a different sentence excused rot in a changelog: ${JSON.stringify(clReport.findings)}`,
+    );
+
+    // (b2) where that changelog may live. The same-sentence disclosure above
+    // is exempt only because it sits in `CHANGELOG.md` at the scanned root.
+    // The identical disclosure in a nested path, or under any extension other
+    // than `.md`, is still a finding. `packages/<name>/CHANGELOG.md` is the
+    // other path that qualifies — one segment, Markdown, nothing deeper.
+    const anchorDir = join(work, "contam-class1-rot-changelog-anchor");
+    mkdirSync(join(anchorDir, "src"), { recursive: true });
+    mkdirSync(join(anchorDir, "packages", "pkg", "src"), { recursive: true });
+    writeFileSync(
+      join(anchorDir, "package.json"),
+      JSON.stringify(
+        { name: `${FIXTURE_SCOPE}/rot-changelog-anchor`, version: "1.0.0", files: ["src", "packages"] },
+        null,
+        2,
+      ) + "\n",
+    );
+    writeFileSync(join(anchorDir, "src", "index.ts"), "export const anchor = 1;\n");
+    const anchorChangelog = [
+      "# Changelog",
+      "",
+      "## [1.0.0] - 2026-01-01",
+      "",
+      "### Fixed",
+      "",
+      "- Dropped a citation of `packages/retired/src/gone.ts`, which no longer",
+      "  exists at any commit in this repository.",
+      "",
+    ].join("\n");
+    writeFileSync(join(anchorDir, "src", "CHANGELOG.md"), anchorChangelog);
+    writeFileSync(join(anchorDir, "packages", "pkg", "src", "CHANGELOG.md"), anchorChangelog);
+    writeFileSync(join(anchorDir, "packages", "pkg", "CHANGELOG.md"), anchorChangelog);
+    writeFileSync(
+      join(anchorDir, "src", "CHANGELOG.ts"),
+      [
+        "// Dropped a citation of `packages/retired/src/gone.ts`, which no longer",
+        "// exists at any commit in this repository.",
+        "export const anchorTs = 1;",
+        "",
+      ].join("\n"),
+    );
+    gitInit(anchorDir);
+    gitRetirePackageDir(anchorDir, "retired");
+    const anchorRun = run("node", [CONTAM, anchorDir, "--class", "1", "--json"]);
+    let anchorReport;
+    try {
+      anchorReport = JSON.parse(anchorRun.out);
+    } catch {
+      anchorReport = { findings: [] };
+    }
+    const anchorCites = (file) =>
+      (anchorReport.findings ?? []).some(
+        (x) => x.file === file && x.detail.includes('cites "packages/retired/src/gone.ts"'),
+      );
+    check(
+      "a same-sentence rot disclosure in src/CHANGELOG.md is STILL a finding — the exemption does not apply",
+      anchorCites("src/CHANGELOG.md"),
+      `src/CHANGELOG.md was exempted: ${JSON.stringify(anchorReport.findings)}`,
+    );
+    check(
+      "a same-sentence rot disclosure in src/CHANGELOG.ts is STILL a finding",
+      anchorCites("src/CHANGELOG.ts"),
+      `src/CHANGELOG.ts was exempted: ${JSON.stringify(anchorReport.findings)}`,
+    );
+    check(
+      "a same-sentence rot disclosure in packages/pkg/src/CHANGELOG.md is STILL a finding",
+      anchorCites("packages/pkg/src/CHANGELOG.md"),
+      `packages/pkg/src/CHANGELOG.md was exempted: ${JSON.stringify(anchorReport.findings)}`,
+    );
+    check(
+      "a same-sentence rot disclosure in packages/pkg/CHANGELOG.md is NOT a finding",
+      !anchorCites("packages/pkg/CHANGELOG.md"),
+      `packages/pkg/CHANGELOG.md was flagged: ${JSON.stringify(anchorReport.findings)}`,
     );
 
     // (c) `packages/…` is a SHAPE, not proof of self-reference. A package whose
