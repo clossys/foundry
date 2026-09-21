@@ -5,6 +5,15 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.2.7] - 2026-09-21
+
+### Changed
+
+- Packed skill: expression-wave ownership — maintain evidence-backed strategy
+  records and brand derivation; do not own the consumer brand overlay bytes,
+  author the in-tree page document (Designer and Writer together), invent
+  product copy, or publish surfaces. Refs: #1027.
+
 ## [0.2.6] - 2026-09-21
 
 ### Added

@@ -1,5 +1,7 @@
+import { createCopyResolver, type CopyRegistry } from "@clossys/writer";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { resolveSectionedViewDocument, type SectionedViewDocument } from "../../core/sectioned-view.js";
 import { SectionedView } from "./SectionedView.js";
 import type { ResolvedSectionedViewDocument } from "../../core/sectioned-view.js";
 
@@ -190,5 +192,76 @@ describe("SectionedView gap 2 and gap 7 relaxations", () => {
     for (const candidate of [both, neither]) {
       expect(() => renderToStaticMarkup(<SectionedView document={candidate as unknown as ResolvedSectionedViewDocument} />)).toThrow(/invalid resolved document/);
     }
+  });
+});
+
+describe("SectionedView resolve-then-render contract", () => {
+  const ref = (id: string) => ({ id });
+  const statusCopy = {
+    "acme.hero.heading": "Welcome",
+    "acme.status.heading": "Readiness",
+    "acme.status.available": "Available",
+    "acme.status.partial": "Partial",
+    "acme.status.planned": "Planned",
+    "acme.status.not-offered": "Not offered",
+    "acme.status.group.heading": "Core",
+    "acme.status.item.label": "Fixture capability",
+  };
+  const registry: CopyRegistry = {
+    id: "acme-status-resolve-render",
+    locale: "en",
+    revision: "1",
+    source: { kind: "consumer", reference: "fixtures/acme-status-resolve-render" },
+    entries: Object.entries(statusCopy).map(([id, text]) => ({ id, text, context: "fixture", status: "approved" })),
+  };
+  const resolver = createCopyResolver(registry);
+  const heroSection = { id: "hero", kind: "hero" as const, ground: "base" as const, heading: ref("acme.hero.heading") };
+  const statusLabels = {
+    available: ref("acme.status.available"),
+    partial: ref("acme.status.partial"),
+    planned: ref("acme.status.planned"),
+    dispositions: { "not-offered": ref("acme.status.not-offered") },
+  };
+  const groupedStatus: SectionedViewDocument = {
+    id: "acme.status-grouped",
+    sections: [
+      heroSection,
+      {
+        id: "status",
+        kind: "status-list",
+        ground: "sunken",
+        heading: ref("acme.status.heading"),
+        labels: statusLabels,
+        groups: [{ id: "core", heading: ref("acme.status.group.heading"), items: [{ id: "capability", label: ref("acme.status.item.label"), state: "available" }, { id: "unavailable", label: ref("acme.status.item.label"), disposition: "not-offered" }] }],
+      },
+    ],
+  };
+  const { groups: _groups, ...statusWithoutGroups } = groupedStatus.sections[1];
+  const flatStatus: SectionedViewDocument = {
+    ...groupedStatus,
+    id: "acme.status-flat",
+    sections: [
+      heroSection,
+      {
+        ...statusWithoutGroups,
+        items: [{ id: "capability", label: ref("acme.status.item.label"), state: "available" }, { id: "unavailable", label: ref("acme.status.item.label"), disposition: "not-offered" }],
+      } as SectionedViewDocument["sections"][1],
+    ],
+  };
+
+  it("renders a grouped status-list after resolveSectionedViewDocument", () => {
+    const resolved = resolveSectionedViewDocument(groupedStatus, resolver);
+    const html = renderToStaticMarkup(<SectionedView document={resolved} />);
+    expect(html).toContain("Core");
+    expect(html).toContain("Fixture capability");
+    expect(html).toContain("<h3");
+  });
+
+  it("renders a flat status-list after resolveSectionedViewDocument", () => {
+    const resolved = resolveSectionedViewDocument(flatStatus, resolver);
+    const html = renderToStaticMarkup(<SectionedView document={resolved} />);
+    expect(html).toContain("<dl");
+    expect(html).not.toContain("<h3");
+    expect(html).toContain("Fixture capability");
   });
 });

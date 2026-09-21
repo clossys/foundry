@@ -5,6 +5,21 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.4.16] - 2026-09-21
+
+### Changed
+
+- Packed skill: seal an approved named surface after a keep — head,
+  OG/meta join, and release proof — and verify the exact shipped result;
+  do not author the in-tree `SectionedView` or `MarketingView` page
+  document, select templates from business intent, own the app router, or
+  lock final copy. Refs: #1027.
+
+### Added
+
+- `SectionedView` resolve-then-render integration coverage for grouped
+  and flat `status-list` sections.
+
 ## [0.4.10] - 2026-09-21
 
 ### Changed
@@ -27,12 +42,6 @@ All notable changes to this package are documented here. Format follows
 - README and packed skill: choose shipped templates when slots fit; register
   `defineWebTemplate` for custom page bands; route-local block composition
   is a workaround, not the extension path.
-
-## [0.4.9] - 2026-09-21
-
-### Changed
-
-- Packed skill Pre-auth section: bounded taste pass after `designer-fold-check` is green (see PRE-AUTH-QUALITY, the brief that ships with `@clossys/designer`).
 
 ## [0.4.7] - 2026-09-21
 
