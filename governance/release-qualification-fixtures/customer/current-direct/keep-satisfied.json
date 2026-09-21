@@ -1,0 +1,23 @@
+{
+  "speaker": "customer",
+  "inhabitedAs": "target-audience",
+  "audienceId": "audience-one",
+  "persona": {
+    "name": "Jordan"
+  },
+  "stance": "The headline still leaves the offer unclear, but I can tell this page is meant for someone evaluating a first landing like me.",
+  "impressions": {
+    "firstSeconds": "I immediately see who this is for and what I should do next.",
+    "isThisForMe": "yes",
+    "doIBelieve": "yes",
+    "wouldIStay": "yes",
+    "wouldITellAPeer": "yes"
+  },
+  "visual": {
+    "impression": "The layout feels calm and the hierarchy makes the promise readable."
+  },
+  "verbal": {
+    "impression": "The words sound like a real person describing value, not a template."
+  },
+  "verdict": "keep"
+}

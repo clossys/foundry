@@ -5,6 +5,19 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.11] - 2026-09-21
+
+### Added
+
+- The role-loop charter (`contracts/role-loop-archetypes.json`) now includes
+  `@clossys/customer` as the nineteenth role, with job, metric, and boundary.
+
+### Notes
+
+- This does not claim the position is closed. Qualification of `0.9.11` is
+  deferred: this machine is not the pinned release runtime (same class as
+  #948), and the introducing branch also carries #833 for `customer@0.1.0`.
+
 ## [0.9.10] - 2026-09-18
 
 ### Added

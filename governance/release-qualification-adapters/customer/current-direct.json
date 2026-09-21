@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "package": "@clossys/customer",
+  "archetype": "current-direct",
+  "bins": {
+    "customer-check": 0,
+    "customer-rate-check": 0
+  },
+  "fixtures": [
+    "audience-one.json",
+    "keep-satisfied.json",
+    "keep-violated.json",
+    "keep-indeterminate.json"
+  ],
+  "cases": [
+    {
+      "id": "keep-satisfied",
+      "bin": "customer-check",
+      "args": [
+        { "fixture": "keep-satisfied.json" },
+        { "fixture": "audience-one.json" }
+      ],
+      "exitCode": 0,
+      "group": "keep"
+    },
+    {
+      "id": "keep-violated",
+      "bin": "customer-check",
+      "args": [
+        { "fixture": "keep-violated.json" },
+        { "fixture": "audience-one.json" }
+      ],
+      "exitCode": 1,
+      "group": "keep"
+    },
+    {
+      "id": "keep-indeterminate",
+      "bin": "customer-check",
+      "args": [
+        { "fixture": "keep-indeterminate.json" },
+        { "fixture": "audience-one.json" }
+      ],
+      "exitCode": 2,
+      "group": "keep"
+    }
+  ],
+  "dimensionEvidence": {
+    "rollback": "restoration",
+    "duplicate": "keep"
+  }
+}

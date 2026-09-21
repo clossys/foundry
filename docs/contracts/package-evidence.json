@@ -63,6 +63,16 @@
       }
     },
     {
+      "name": "@clossys/customer",
+      "state": "staged",
+      "stagedBy": {
+        "run": "`npm run stage:customer` (builds packages/customer then runs scripts/stage-customer.mjs, invoking packages/customer/dist/cli.js by dist path). Printed: `customer keep-red: exit 1` with `\"state\": \"violated\"` and rule `speaker-not-customer`, then `customer keep-control: exit 0` with `\"state\": \"satisfied\"`, then `customer keep-indeterminate: exit 2` with `\"state\": \"indeterminate\"`.",
+        "defectOrigin": "injected",
+        "defect": "The red fixture set speaker to \"designer\" on an otherwise complete keep record; checkKeepForm's speaker-not-customer rule detected the contractor inhabit and the compiled CLI printed a violated finding at exit 1.",
+        "control": "The adjacent control fixture is the identical keep spoken as speaker \"customer\" with all impressions yes, so the same inhabit rules found a clean form and the CLI exited 0 with state satisfied through the same compiled dist/cli.js path; a third fixture of unreadable JSON (`[]`) exited 2 indeterminate."
+      }
+    },
+    {
       "name": "@clossys/designer",
       "state": "staged",
       "stagedBy": {

@@ -26,6 +26,11 @@ function contract(overrides = {}) {
     trioPrefix: [...REQUIRED_TRIO],
     nonRuntimeOrder: [
       {
+        earlier: "customer",
+        later: "publisher",
+        reason: "Seal only after a first-person keep.",
+      },
+      {
         earlier: "publisher",
         later: "influencer",
         reason: "Audience-response measurement is the learn stage of publication.",
@@ -52,7 +57,7 @@ function contract(overrides = {}) {
         id: "strategy-and-expression",
         kind: "frontend-expression",
         job: "expression last",
-        packages: ["strategist", "writer", "designer", "publisher", "influencer"],
+        packages: ["strategist", "writer", "designer", "customer", "publisher", "influencer"],
       },
     ],
     productizationCriteria: [
@@ -75,7 +80,7 @@ function allManifests(overrides = {}) {
   const directories = [
     "advisor", "starter", "controller", "observer", "architect", "inspector", "builder",
     "locksmith", "integrator", "bouncer", "butler", "messenger", "giver", "keeper",
-    "strategist", "writer", "designer", "publisher", "influencer",
+    "strategist", "writer", "designer", "customer", "publisher", "influencer",
   ];
   const deps = {
     builder: { "@clossys/controller": "~0.9.0" },
