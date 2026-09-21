@@ -475,3 +475,42 @@ describe("SectionedViewDocument gap 2 and gap 7 relaxations", () => {
     expect(validateSectionedViewDocument(emptyItems as unknown as SectionedViewDocument).map((entry) => entry.rule)).toContain("sectioned-view-status-items-shape");
   });
 });
+
+describe("SectionedViewDocument section ground rhythm (#1105)", () => {
+  const rhythmDocument: SectionedViewDocument = {
+    id: "acme.rhythm",
+    sectionGroundRhythm: "base-then-sunken",
+    sections: [
+      { id: "hero", kind: "hero", heading: ref("acme.hero.heading") },
+      { id: "features", kind: "feature-grid", heading: ref("acme.features.heading"), items: [{ id: "one", heading: ref("acme.features.one.heading") }] },
+      { id: "faq", kind: "faq", heading: ref("acme.faq.heading"), items: [{ id: "one", question: ref("acme.faq.one.question"), answer: ref("acme.faq.one.answer") }] },
+    ],
+  };
+
+  it("fills base then sunken when a section omits ground", () => {
+    expect(validateSectionedViewDocument(rhythmDocument)).toEqual([]);
+    const resolved = resolveSectionedViewDocument(rhythmDocument, resolver);
+    expect(resolved.sections.map((section) => section.ground)).toEqual(["base", "sunken", "base"]);
+  });
+
+  it("keeps an explicit inverse ground under rhythm", () => {
+    const withInverse: SectionedViewDocument = {
+      ...rhythmDocument,
+      sections: [
+        rhythmDocument.sections[0],
+        { ...rhythmDocument.sections[1], ground: "inverse" },
+        rhythmDocument.sections[2],
+      ],
+    };
+    const resolved = resolveSectionedViewDocument(withInverse, resolver);
+    expect(resolved.sections.map((section) => section.ground)).toEqual(["base", "inverse", "base"]);
+  });
+
+  it("requires ground on every section when sectionGroundRhythm is absent", () => {
+    const missingGround = {
+      id: "acme.missing-ground",
+      sections: [{ id: "hero", kind: "hero", heading: ref("acme.hero.heading") }],
+    };
+    expect(validateSectionedViewDocument(missingGround).map((entry) => entry.rule)).toContain("sectioned-view-ground-required");
+  });
+});

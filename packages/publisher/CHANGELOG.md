@@ -5,6 +5,16 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.4.24] - 2026-09-21
+
+### Added
+
+- `SectionedViewDocument.sectionGroundRhythm` (`base-then-sunken`) fills omitted
+  section grounds as `base` then `sunken` in document order; explicit
+  `ground` values (including `inverse`) are never overwritten.
+- `MarketingView` passes semantic `ground` through to its hero, feature grid,
+  FAQ, and closing CTA bands (defaulting to base/sunken alternation).
+
 ## [0.4.21] - 2026-09-21
 
 ### Fixed

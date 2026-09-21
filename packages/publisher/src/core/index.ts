@@ -115,6 +115,7 @@ export type {
   SectionedViewOrderedStepSequenceSection,
   SectionedViewResolutionReason,
   SectionedViewSection,
+  SectionedViewSectionGroundRhythm,
   SectionedViewSectionKind,
   SectionedViewStatus,
   SectionedViewStatusDisposition,
