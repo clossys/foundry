@@ -70,11 +70,13 @@ Flattened, and checked against the manifests' first-party runtime graph:
    `keeper`. Person-facing operating integrity, still ahead of frontend
    surfaces.
 8. **Strategy and expression** — `strategist`, `writer`, `designer`,
-   `publisher`, `influencer`. Designer and publisher are frontend work and
-   wait. Publisher still waits for controller, writer, and designer at
-   runtime. Influencer waits for publisher even though it has no runtime
-   edge: audience-response measurement is the learn stage of publication, and
-   productizing it first designs an open loop.
+   `customer`, `publisher`, `influencer`. Designer and publisher are frontend work and
+   wait. Customer inhabits a named audience for keep-or-fail before seal and
+   can supply on-demand first-person testimony on feedback, alternatives,
+   referral, and churn. Publisher still waits for controller, writer, and
+   designer at runtime. Influencer waits for publisher even though it has no
+   runtime edge: audience-response measurement is the learn stage of
+   publication, and productizing it first designs an open loop.
 
 A first-wave consumer does not walk this list installing every name. They
 open Advisor, bind only justified positions, and skip `not-applicable` roles

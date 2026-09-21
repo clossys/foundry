@@ -22,6 +22,7 @@ const PRECUTOVER_TARGET = Object.freeze({
 });
 export const ALL_PACKAGE_RELEASE_ORDER = Object.freeze([
   "advisor", "starter", "controller", "launcher", "strategist", "writer", "designer",
+  "customer",
   "architect", "bouncer", "butler", "giver", "influencer", "integrator",
   "keeper", "locksmith", "messenger", "observer", "builder", "inspector",
   "publisher",

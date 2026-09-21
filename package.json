@@ -84,6 +84,7 @@
     "stage:architect": "npm run build && node scripts/stage-architect.mjs",
     "stage:messenger": "npm run build --workspace=packages/messenger && node scripts/stage-messenger.mjs",
     "stage:influencer": "npm run build --workspace=packages/influencer && node scripts/stage-influencer.mjs",
+    "stage:customer": "npm run build --workspace=packages/customer && node scripts/stage-customer.mjs",
     "stage:advisor": "npm run build --workspace=packages/advisor && node scripts/stage-advisor.mjs",
     "stage:builder-inspector-integrator-observer-locksmith": "npm run build && node scripts/stage-builder-inspector-integrator-observer-locksmith.mjs",
     "//check-neutrality": "The structural half of publish safety, for material meant to be shared between parties who do not govern each other: an absolute path or a named home directory discloses one operator's machine layout without containing a single denylisted string, so check:safety can never see it. Runs the BUILT @clossys/controller/conventions scan (issue #282 moved this off the now-retired @example/conventions) rather than a second copy of those regexes here — hence its position after build, alongside check:package-governance and check:contrast.",

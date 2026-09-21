@@ -111,10 +111,55 @@ test("missing skill file is a finding", () => {
   assert.equal(result.findings[0].rule, "missing-skill");
 });
 
+test("customer skill requires first-person inhabit and must not be a reviewer", () => {
+  const inhabit = `---
+name: clossys-customer
+description: First-person inhabit of the named audience. Invoke with @clossys-customer.
+disable-model-invocation: true
+---
+
+I am the named Audience. Invoke @clossys-customer. I am not a reviewer.
+`;
+  const ok = evaluatePackageSkills([
+    { packageDir: "customer", skillPath: "/tmp/ignored", expectedName: "clossys-customer", skillText: inhabit },
+  ]);
+  assert.equal(ok.exitCode, 0, JSON.stringify(ok.findings));
+
+  const reviewer = evaluatePackageSkills([
+    {
+      packageDir: "customer",
+      skillPath: "/tmp/ignored",
+      expectedName: "clossys-customer",
+      skillText: `---
+name: clossys-customer
+description: Reviewer skill. Invoke with @clossys-customer.
+disable-model-invocation: true
+---
+
+You are a reviewer. Tick the boxes.
+`,
+    },
+  ]);
+  assert.ok(reviewer.findings.some((f) => f.rule === "customer-not-reviewer" || f.rule === "customer-inhabit-language"));
+});
+
+test("expression-wave skills must name clossys-customer", () => {
+  const result = evaluatePackageSkills([
+    {
+      packageDir: "designer",
+      skillPath: "/tmp/ignored",
+      expectedName: "clossys-designer",
+      skillText: validSkill("clossys-designer", "Design tokens."),
+    },
+  ]);
+  assert.equal(result.exitCode, 1);
+  assert.ok(result.findings.some((f) => f.rule === "expression-customer-session"));
+});
+
 test("live repository package skills pass", () => {
   const result = scanPackageSkills(repoRoot);
   assert.equal(result.exitCode, 0, result.findings.map((f) => `${f.packageDir}:${f.rule}`).join(", "));
-  assert.equal(result.passed.length, 20);
+  assert.equal(result.passed.length, 21);
 });
 
 test("CLI exits 0 on this repository", () => {

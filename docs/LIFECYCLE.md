@@ -354,6 +354,7 @@ fails when the committed copy drifts from the derived one — #493.
 | `@clossys/builder` | staged | yes | not yet | unknown — #484 | not yet |
 | `@clossys/butler` | staged | yes | not yet | unknown — #484 | not yet |
 | `@clossys/controller` | staged | yes | not yet | unknown — #484 | not yet |
+| `@clossys/customer` | staged | yes | not yet | unknown — #484 | not yet |
 | `@clossys/designer` | staged | yes | not yet | unknown — #484 | not yet |
 | `@clossys/giver` | staged | yes | not yet | unknown — #484 | not yet |
 | `@clossys/influencer` | staged | yes | not yet | unknown — #484 | not yet |
@@ -493,7 +494,7 @@ never a pass it did not earn.
 The derivable half is now derived. The rest is not, and is declared:
 
 - **`designed`** is graded structurally by the normalized loop declaration for
-  all eighteen roles. That proves a parseable charter shape, not applicability
+  all nineteen roles. That proves a parseable charter shape, not applicability
   in a consumer or independent grounding.
 - **`staged`'s** second half — the recorded failing run — is a pointer this
   gate checks the presence of, not the truth of.

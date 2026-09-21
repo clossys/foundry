@@ -335,6 +335,31 @@
           ]
         }
       },
+      "@clossys/customer": {
+        "jobQuestion": "If I am the person this was made for, do I keep this?",
+        "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
+        "metric": {
+          "name": "customer keep rate",
+          "formula": "independently observed first-person keeps / all candidates independently inhabited before seal or land",
+          "unit": "ratio",
+          "direction": "increase"
+        },
+        "primaryMode": "assure",
+        "secondaryModes": [],
+        "boundary": {
+          "owns": "First-person inhabit of a named Audience: one keep or fail before seal, and first-person testimony on lived functional and experiential feedback, alternatives the person actually knows, referral, and churn — always spoken as that person.",
+          "excludes": [
+            "mutating the candidate",
+            "authoring strategy, copy, or UI",
+            "sealing",
+            "judging declared operating rules",
+            "becoming a reviewer",
+            "measuring its own efficacy",
+            "authoring competitive-intel or strategy documents",
+            "scoring against Designer, Writer, or Inspector rubrics"
+          ]
+        }
+      },
       "@clossys/publisher": {
         "jobQuestion": "Did an approved surface reach its audience, and can the exact shipped result be proved?",
         "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",

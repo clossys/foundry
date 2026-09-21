@@ -1,0 +1,74 @@
+{
+  "name": "@clossys/customer",
+  "version": "0.1.0",
+  "private": false,
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "customer-check": "dist/cli.js",
+    "customer-rate-check": "dist/customer-keep-rate-cli.js"
+  },
+  "foundry": {
+    "assessment": {
+      "bin": "customer-rate-check",
+      "invocation": "single-json-input"
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/**/*.test.ts",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "description": "The customer role: first-person synthetic inhabit of the named audience — keep, lived feedback, comparison from their consideration set, referral, and churn. Job: if I am the person this was made for, do I keep this?",
+  "keywords": [
+    "audience",
+    "customer",
+    "keep",
+    "feedback",
+    "inhabit",
+    "referral",
+    "first-person",
+    "typescript"
+  ],
+  "author": "Clossys",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/clossys/foundry.git",
+    "directory": "packages/customer"
+  },
+  "bugs": {
+    "url": "https://github.com/clossys/foundry/issues"
+  },
+  "homepage": "https://github.com/clossys/foundry/tree/main/packages/customer#readme",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "node ../../scripts/check-name-collision.mjs . && npm run build",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^26.5.1",
+    "typescript": "~6.0.0",
+    "vitest": "^5.0.0"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org",
+    "access": "public"
+  }
+}

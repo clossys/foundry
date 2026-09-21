@@ -106,6 +106,31 @@ test("the repository contract passes and rejects incomplete or duplicate role ch
   assert.equal(rules(evaluateRoleLoopArchetypes({ contract: unknownMode })).includes("invalid-primary-mode"), true);
 });
 
+test("@clossys/customer charter qualifies as create with empty same-job coverage", () => {
+  const contract = read(roleContractPath);
+  const customer = contract.roles["@clossys/customer"];
+  const assessment = {
+    schemaVersion: 1,
+    candidate: {
+      name: "@clossys/customer",
+      jobQuestion: customer.jobQuestion,
+      closeCondition: customer.closeCondition,
+      metric: customer.metric,
+      primaryMode: customer.primaryMode,
+      secondaryModes: customer.secondaryModes,
+      boundary: customer.boundary,
+    },
+    sameJobMetricLoopCoverage: [],
+    rejectionReasons: [],
+  };
+  assert.deepEqual(qualifyRoleCandidate({ assessment, contract }), {
+    verdict: "create",
+    validAssessment: true,
+    relatedRoles: [],
+    reasons: [],
+  });
+});
+
 test("candidate qualification returns create, extend, compose, and reject without inferring composition from adjacency", () => {
   const contract = read(roleContractPath);
 

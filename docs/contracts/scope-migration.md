@@ -282,6 +282,11 @@ per package will be off by one.
 | `@clossys/giver` | fulfill | `timely semantic closure rate` | ratio / increase |
 | `@clossys/keeper` | steward | `justified visible holding rate` | ratio / increase |
 
+**Current (live repository contract):** 19 roles across 21 packages.
+`@clossys/starter` and `@clossys/launcher` are executable-tooling packages, not
+roles. `@clossys/customer` is the nineteenth role. The tarball measurement
+above predates customer and is unchanged.
+
 Validate a consumer ledger against this catalog with Controller's installed
 executable:
 

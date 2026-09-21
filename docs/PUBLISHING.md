@@ -445,7 +445,7 @@ partial source inventory, reordering, duplication, or replacement of the first
 Trio. Catalogue membership is not qualification: to be eligible, a package
 must also have a required current-direct adapter with explicit 0/1/2 behavior.
 A blocked policy entry remains ineligible even when it appears in the catalogue;
-the current policy requires runnable adapters for all twenty packages. Each
+the current policy requires runnable adapters for all twenty-one packages. Each
 release also needs a separately
 introduced immutable package-neutral publication record. That record joins
 qualification path/digest, candidate source/manifest/tarball, the
