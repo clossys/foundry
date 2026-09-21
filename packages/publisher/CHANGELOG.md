@@ -5,7 +5,7 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
-## [0.4.28] - 2026-09-21
+## [0.4.30] - 2026-09-21
 
 ### Added
 
