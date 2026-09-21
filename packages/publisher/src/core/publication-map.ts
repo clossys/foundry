@@ -65,7 +65,7 @@ function parseLocation(value: unknown, pathPrefix: string): { location?: Publica
  * Validates a publication map against the templates the host has registered.
  * Returns findings only; never throws.
  */
-export function validatePublicationMap(map: PublicationMap, knownTemplates: readonly string[]): ComposeFinding[] {
+export function validatePublicationMap(map: unknown, knownTemplates: readonly string[]): ComposeFinding[] {
   const findings: ComposeFinding[] = [];
   const templateSet = new Set(knownTemplates);
   const seenIds = new Set<string>();

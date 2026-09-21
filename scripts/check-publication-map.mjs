@@ -18,7 +18,7 @@ const scriptDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(scriptDir, "..");
 
 async function loadPublisherCore() {
-  const distPath = resolve(repoRoot, "packages/publisher/dist/core/index.js");
+  const distPath = resolve(repoRoot, "packages/publisher/dist/core/publication-map.js");
   return import(pathToFileURL(distPath).href);
 }
 

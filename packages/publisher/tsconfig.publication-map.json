@@ -1,0 +1,4 @@
+{
+  "extends": "./tsconfig.json",
+  "include": ["src/core/publication-map.ts", "src/core/types.ts"]
+}

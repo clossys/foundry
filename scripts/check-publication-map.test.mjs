@@ -63,7 +63,7 @@ const failingFixtureMissingRoute = {
 };
 
 test("passing fixture: one marketing path and one slide deck entry", async () => {
-  const build = spawnSync("npm", ["run", "build", "--workspace=packages/publisher"], { cwd: repoRoot, encoding: "utf8" });
+  const build = spawnSync("npm", ["run", "build:publication-map", "--workspace=packages/publisher"], { cwd: repoRoot, encoding: "utf8" });
   assert.equal(build.status, 0, build.stderr || build.stdout);
 
   const result = await evaluatePublicationMapInput(passingFixture);
