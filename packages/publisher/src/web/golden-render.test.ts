@@ -320,11 +320,11 @@ describe("golden: MarketingView", () => {
         "</div>" +
         "</header>" +
         '<main class="flex flex-col gap-2xl py-2xl">' +
-        '<section class="flex flex-col gap-xl">' +
+        '<section composition="editorial" class="flex flex-col">' +
         '<div class="flex flex-col items-start gap-md">' +
         '<p class="text-caption uppercase tracking-label text-ink-muted">Placeholder eyebrow</p>' +
-        '<h1 class="text-display-l font-display max-w-display text-ink-primary">Placeholder hero heading</h1>' +
-        '<p class="text-body-l max-w-display text-ink-secondary">Placeholder hero description.</p>' +
+        '<h1 class="text-display-l font-display text-ink-primary">Placeholder hero heading</h1>' +
+        '<p class="text-body-l text-ink-secondary">Placeholder hero description.</p>' +
         "</div>" +
         "</section>" +
         '<div class="flex flex-col gap-lg">' +
@@ -347,10 +347,10 @@ describe("golden: MarketingView", () => {
         "</div>" +
         "</div>" +
         "</div>" +
-        '<section class="flex flex-col gap-xl">' +
+        '<section class="flex flex-col">' +
         '<div class="flex flex-col items-start gap-md">' +
-        '<h2 class="text-display-l font-display max-w-display text-ink-primary">Placeholder CTA heading</h2>' +
-        '<p class="text-body-l max-w-display text-ink-secondary">Placeholder CTA description.</p>' +
+        '<h2 class="text-display-l font-display text-ink-primary">Placeholder CTA heading</h2>' +
+        '<p class="text-body-l text-ink-secondary">Placeholder CTA description.</p>' +
         "</div>" +
         "</section>" +
         "</main>" +
@@ -414,9 +414,9 @@ describe("golden: MarketingView", () => {
         "</div>" +
         "</header>" +
         '<main class="flex flex-col gap-2xl py-2xl">' +
-        '<section class="flex flex-col gap-xl"><div class="flex flex-col items-start gap-md"><h1 class="text-display-l font-display max-w-display text-ink-primary">Placeholder hero heading</h1></div></section>' +
+        '<section composition="editorial" class="flex flex-col"><div class="flex flex-col items-start gap-md"><h1 class="text-display-l font-display text-ink-primary">Placeholder hero heading</h1></div></section>' +
         '<div class="flex flex-col gap-lg"><div class="grid grid-cols-1 gap-lg tablet:grid-cols-2 desktop:grid-cols-3"></div></div>' +
-        '<section class="flex flex-col gap-xl"><div class="flex flex-col items-start gap-md"><h2 class="text-display-l font-display max-w-display text-ink-primary">Placeholder CTA heading</h2></div></section>' +
+        '<section class="flex flex-col"><div class="flex flex-col items-start gap-md"><h2 class="text-display-l font-display text-ink-primary">Placeholder CTA heading</h2></div></section>' +
         "</main>" +
         '<footer class="bg-surface-raised py-lg border-t border-line-base" style="position:relative;z-index:var(--ui-z-shell, 20);border-top-width:var(--ui-border-hairline, 1px)">' +
         '<div class="mx-auto flex w-full flex-col gap-lg" style="padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))"></div>' +
