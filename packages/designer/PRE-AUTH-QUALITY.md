@@ -69,8 +69,8 @@ grade specialists. The keep is the user.
 
 | Stars | Name | Meaning |
 |------:|------|---------|
-| 3 | good | Mechanical floor. A mid-tier model must not stop here. Gates can prove 3. |
-| 4 | great | Authored brief executed: type pairing, domain-specific fold copy, honest media. Top-tier authors the brief; mid-tier executes. Still not a keep. |
+| 3 | good | Mechanical floor. The walk that proves gates must not stop here and call done. Gates can prove 3. |
+| 4 | great | Authored brief executed: type pairing, domain-specific fold copy, honest media. An independent session authors the brief; the making walk executes it. Still not a keep. |
 | 5 | exceptional | The keep. A synthetic user, first person, fresh look, comprehensive. The fold *is* the artifact. Swap the wordmark and it still could only be this product. Gates never certify 5. |
 
 ---
@@ -103,7 +103,7 @@ These gates are the floor. They are not the synthetic user's script.
 
 Everything in **3**, plus:
 
-- A **named type record executed** — display face, H1 minimum size, measure cap, monospace only for eyebrows/data; cite or author `templates/brand-type.template.json` and run `designer-type-check` (not invented ad hoc on a mid-tier walk).
+- A **named type record executed** — display face, H1 minimum size, measure cap, monospace only for eyebrows/data; cite or author `templates/brand-type.template.json` and run `designer-type-check` (not invented ad hoc during the walk that proves 3).
 - **Fold copy contains a domain noun** a competitor cannot reuse — aligned with Strategist do-not language and Writer slot discipline.
 - **Fold media is the thing** — the product surface with real data, or original art of the artifact being made, at a scale that *is* the page, not a card-in-a-slot screenshot.
 - **One visual device** that is not a generic dark/light SaaS band.
@@ -134,9 +134,9 @@ not about them:
   product's page with the name swapped.
 - **Something here is ours** — a device, rhythm, or object a template
   cannot slot-fill. I would remember it.
-- **Adversarial top-tier or frontier inhabit** after mechanical gates are
-  green, in a session that is not the doer's. Mid-tier does not invent this
-  level from the making session.
+- **Synthetic user inhabit** after mechanical gates are green, in an
+  independent session that is not the doer's. The making walk does not invent
+  this level or speak as the user.
 
 No CLI certifies 5. A form can prove the keep was written as the user; it
 never proves the page is exceptional. A specialist's scorecard, even a
@@ -159,13 +159,12 @@ green one, is not a keep.
 
 ---
 
-## Who does what (models)
+## Who does what
 
-| Role | Responsibility |
+| Seat | Responsibility |
 |------|----------------|
-| Mid-tier | Execute **3**. Execute **4** only from an already-authored type/media brief. Never inhabit the user. |
-| Top-tier (Opus/Sol) | Author the type record and media brief. Inhabit the user for **4→5** in a session that is not the doer. |
-| Frontier (Astra/Fable) | Optional **5** keep when the sponsor asks, still as the user, still not the doer. |
+| Making walk | Execute **3**. Execute **4** only from an already-authored type/media brief. Never inhabit the user. Do not invent the type pairing during this walk. |
+| Independent session | Author the type record and media brief. Inhabit the user for **5** after gates are green, in a session that is not the doer. |
 | Never | Stop at **3** and call it world class or done. Let the doer, the sealer, or a QA contractor write the keep. |
 
 ---

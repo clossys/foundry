@@ -1,7 +1,7 @@
 /**
  * Pure brand-type record gate — parse + check, no I/O. A consumer-authored
- * JSON record names the type scale a mid-tier walk must execute instead of
- * inventing pairing ad hoc.
+ * JSON record names the type scale the walk that proves 3 must execute instead
+ * of inventing pairing ad hoc.
  */
 
 export const TYPE_RECORD_SCHEMA_VERSION = 1 as const;

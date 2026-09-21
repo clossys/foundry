@@ -389,7 +389,7 @@ Author a type brief from `templates/brand-type.template.json` (display face,
 H1 minimum, measure cap, monospace roles, orphan-word policy) and verify it
 with `designer-type-check path/to/brand-type.json` — optional
 `--overlay path/to/brand.css` to require a bound `--font-display` in overlay
-CSS. Do not invent type pairing ad hoc on a mid-tier walk.
+CSS. Do not invent type pairing ad hoc during the walk that proves 3.
 
 ### Tailwind-native path (advanced)
 
