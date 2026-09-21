@@ -15,6 +15,11 @@ All notable changes to this package are documented here. Format follows
   entries) as violations with file and key path. Allowlisted keys (`href`,
   `to`, `path`, `icon`, …) and route-shaped values are not copy surfaces.
 
+### Fixed
+
+- Non-copy object-literal string keys stay in the unchecked bucket unless
+  allowlisted or flagged as copy violations.
+
 ## [0.3.13] - 2026-09-21
 
 ### Changed
