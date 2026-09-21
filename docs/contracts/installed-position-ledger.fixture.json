@@ -12,6 +12,7 @@
     { "package": "@clossys/strategist", "disposition": "not-applicable", "reason": "Synthetic schema fixture; no consumer decision.", "positionIds": [] },
     { "package": "@clossys/writer", "disposition": "not-applicable", "reason": "Synthetic schema fixture; no consumer decision.", "positionIds": [] },
     { "package": "@clossys/designer", "disposition": "not-applicable", "reason": "Synthetic schema fixture; no consumer decision.", "positionIds": [] },
+    { "package": "@clossys/customer", "disposition": "not-applicable", "reason": "Synthetic schema fixture; no consumer decision.", "positionIds": [] },
     { "package": "@clossys/publisher", "disposition": "not-applicable", "reason": "Synthetic schema fixture; no consumer decision.", "positionIds": [] },
     { "package": "@clossys/influencer", "disposition": "not-applicable", "reason": "Synthetic schema fixture; no consumer decision.", "positionIds": [] },
     { "package": "@clossys/bouncer", "disposition": "not-applicable", "reason": "Synthetic schema fixture; no consumer decision.", "positionIds": [] },

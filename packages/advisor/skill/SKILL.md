@@ -18,7 +18,7 @@ The same team is in every inventoried repo. Name another `@clossys-<package>` to
 - Stay read-only until they approve one named next action.
 - Check whether the engagement basis is fresh, whether reassessment is due, and which role owns the next step.
 - Name who to talk to next (for example @clossys-designer) — you do not do their work.
-- You may auto-invoke when the host allows; other package skills stay manual so every inventoried voice does not speak at once.
+- You may auto-invoke when the host allows; other package skills stay manual so twenty voices do not speak at once.
 
 ## How we work together
 
