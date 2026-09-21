@@ -89,7 +89,10 @@ function validateSkillName(name, expectedName, packageDir) {
   return findings;
 }
 
-const EXPRESSION_WAVE = new Set(["designer", "writer", "publisher", "strategist"]);
+const CUSTOMER_SESSION_WAVE = new Set(["designer", "writer", "publisher", "strategist"]);
+/** Expression-wave skills own the pre-auth page contract. Frontmatter-only was not enough. */
+const PRE_AUTH_EXPRESSION_WAVE = new Set(["designer", "writer", "publisher"]);
+const PRE_AUTH_HEADING = /^## Pre-auth page[ \t]*$/m;
 
 function validateSkillBody(packageDir, text) {
   const findings = [];
@@ -129,7 +132,7 @@ function validateSkillBody(packageDir, text) {
       }
     }
   }
-  if (EXPRESSION_WAVE.has(packageDir) || packageDir === "inspector") {
+  if (CUSTOMER_SESSION_WAVE.has(packageDir) || packageDir === "inspector") {
     if (!/clossys-customer/.test(text)) {
       findings.push({
         rule: "expression-customer-session",
@@ -145,7 +148,7 @@ function validateSkillBody(packageDir, text) {
 export function evaluatePackageSkills(packages) {
   const findings = [];
   const passed = [];
-  for (const { packageDir, skillPath, skillText, expectedName } of packages) {
+  for (const { packageDir, skillPath, skillText, expectedName, cataloguePath, catalogueText } of packages) {
     const pkgFindings = [];
     if (skillText === undefined && !existsSync(skillPath)) {
       pkgFindings.push({
@@ -177,6 +180,31 @@ export function evaluatePackageSkills(packages) {
           });
         }
         pkgFindings.push(...validateSkillBody(packageDir, text));
+        if (PRE_AUTH_EXPRESSION_WAVE.has(packageDir) && !PRE_AUTH_HEADING.test(text)) {
+          pkgFindings.push({
+            rule: "pre-auth-page-heading",
+            packageDir,
+            message: "expression-wave skill must contain a '## Pre-auth page' heading — the brief the packed skill carries",
+          });
+        }
+      }
+      if (cataloguePath !== undefined || catalogueText !== undefined) {
+        const packed =
+          catalogueText ??
+          (cataloguePath && existsSync(cataloguePath) ? readFileSync(cataloguePath, "utf8") : undefined);
+        if (packed === undefined) {
+          pkgFindings.push({
+            rule: "catalogue-missing",
+            packageDir,
+            message: `expected packages/launcher/skill-catalogue/${packageDir}/SKILL.md to mirror packages/${packageDir}/skill/SKILL.md`,
+          });
+        } else if (packed !== text) {
+          pkgFindings.push({
+            rule: "catalogue-drift",
+            packageDir,
+            message: `packages/launcher/skill-catalogue/${packageDir}/SKILL.md is not byte-identical to packages/${packageDir}/skill/SKILL.md — run packages/launcher/scripts/pack-skills.mjs`,
+          });
+        }
       }
     }
     if (pkgFindings.length === 0) {
@@ -204,6 +232,7 @@ export function collectPackageSkills(root) {
     packages.push({
       packageDir,
       skillPath: join(packagesDir, packageDir, "skill", "SKILL.md"),
+      cataloguePath: join(packagesDir, "launcher", "skill-catalogue", packageDir, "SKILL.md"),
       expectedName: `clossys-${packageDir}`,
     });
   }

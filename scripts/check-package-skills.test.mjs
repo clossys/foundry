@@ -174,6 +174,33 @@ test("expression-wave skills must name clossys-customer", () => {
   assert.ok(result.findings.some((f) => f.rule === "expression-customer-session"));
 });
 
+test("expression-wave skills without Pre-auth page heading fail", () => {
+  const result = evaluatePackageSkills([
+    {
+      packageDir: "designer",
+      skillPath: "/tmp/ignored",
+      expectedName: "clossys-designer",
+      skillText: validSkill("clossys-designer", "Design tokens and components."),
+    },
+  ]);
+  assert.equal(result.exitCode, 1);
+  assert.ok(result.findings.some((f) => f.rule === "pre-auth-page-heading"));
+});
+
+test("launcher catalogue drift is a finding", () => {
+  const result = evaluatePackageSkills([
+    {
+      packageDir: "alpha",
+      skillPath: "/tmp/ignored",
+      expectedName: "clossys-alpha",
+      skillText: validSkill("clossys-alpha", "Third-person description for alpha role."),
+      catalogueText: validSkill("clossys-alpha", "A different packed copy."),
+    },
+  ]);
+  assert.equal(result.exitCode, 1);
+  assert.ok(result.findings.some((f) => f.rule === "catalogue-drift"));
+});
+
 test("live repository package skills pass", () => {
   const result = scanPackageSkills(repoRoot);
   assert.equal(result.exitCode, 0, result.findings.map((f) => `${f.packageDir}:${f.rule}`).join(", "));
