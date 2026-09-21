@@ -33,7 +33,7 @@ test("repository Trio policy, adapters, and current-candidate fixtures bind the 
   const expected = [
     ["advisor", "@clossys/advisor", "0.2.8"],
     ["starter", "@clossys/starter", "0.1.9"],
-    ["controller", "@clossys/controller", "0.9.11"],
+    ["controller", "@clossys/controller", "0.9.12"],
   ];
 
   for (const [key, name, version] of expected) {
