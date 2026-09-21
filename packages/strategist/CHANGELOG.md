@@ -5,7 +5,7 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
-## [0.2.3] - 2026-09-21
+## [0.2.5] - 2026-09-21
 
 ### Added
 
@@ -21,6 +21,23 @@ All notable changes to this package are documented here. Format follows
 - `check-package-skills` regression: strategist skill must keep the
   brand-coverage necessary-not-sufficient and `--surfaces` do-not language
   (#1034).
+
+## [0.2.4] - 2026-09-21
+
+### Changed
+
+- `strategist-check --facts-dir` walks nested subdirectories for `*.json`
+  `Fact[]` leaves (paths such as `company/customers.json`), skips
+  `_schema.json` meta leaves, and refuses group-object domain JSON with an
+  explicit message rather than a generic array-shape error.
+- `Fact.value` money objects accept authored `{ value, currency }` and
+  normalize to `{ amount, currency }` on read.
+
+### Notes
+
+- Nested group-object facts trees remain consumer-local: the engine ingests
+  only flat `facts.json` or `--facts-dir` leaves that are each a `Fact[]`.
+  Refs: #1020.
 
 ## [0.2.2] - 2026-09-21
 
