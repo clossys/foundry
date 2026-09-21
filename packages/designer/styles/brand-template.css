@@ -12,6 +12,11 @@
  *   @import "@clossys/designer/tokens.css";
  *   @import "./brand.css";
  *
+ * MASTER BRAND MARK (separate from this file): supply three SVG documents in
+ * your repo — lockup, mark-only, and inverse — and validate them with
+ * `validateMasterMark` from `@clossys/designer/tokens`. This package ships
+ * no product logo.
+ *
  * and set `data-brand-bound` on your root element (usually <html>) once
  * every required slot below is filled in:
  *
