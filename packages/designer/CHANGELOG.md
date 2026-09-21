@@ -5,6 +5,14 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.4.9] - 2026-09-21
+
+### Added
+
+- `@clossys/designer/tokens` re-exports `checkTypeRecord`, `parseTypeRecord`,
+  `checkTypeRecordOverlay`, and the brand-type record types so consumers can
+  validate an authored type brief without importing `src/type-record/` paths.
+
 ## [0.4.8] - 2026-09-20
 
 ### Added
