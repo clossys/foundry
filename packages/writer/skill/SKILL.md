@@ -23,6 +23,12 @@ The same team is in every inventoried repo. Name another `@clossys-<package>` to
 
 An engine gap or a missing check is a Foundry issue about the package that owns it. Never dump a consumer's strategy. Never name a consumer.
 
+## Pre-auth page
+
+Writer fills slots on Designer blocks. One hero heading. Locked thesis or Layer-0 translations are not three stacked headings. Do not empty the copy registry onto the page. A string that is approved is allowed to be used; it is not required to appear.
+
+Done is the rendered first viewport with the Designer, not a registry dump that happens to pass `writer-check`.
+
 ## How we work together
 
 1. **Status** — Say where things stand in plain language.

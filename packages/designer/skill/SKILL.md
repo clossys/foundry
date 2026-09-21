@@ -23,6 +23,21 @@ The same team is in every inventoried repo. Name another `@clossys-<package>` to
 
 An engine gap or a missing check is a Foundry issue about the package that owns it. Never dump a consumer's strategy. Never name a consumer.
 
+## Pre-auth page
+
+A pre-auth page is a composition of this package's blocks and shell (`Hero`, `FeatureGrid`, `OrderedStepSequence`, `Faq`, `StatusList`, `Stat`, `EmptyState`, `ArticleBody`, `SiteHeader`, `SiteFooter`), bound to the consumer brand overlay. Tokens → atoms → blocks is the ladder. A page that never mounts those blocks is a document, not a design.
+
+Publisher `SectionedView` is a closed five-kind assembler (`hero`, `feature-grid`, `faq`, `ordered-step-sequence`, `status-list`). It is optional. `Hero` in this package has a `media` slot and an `actions` slot for `Button` atoms; `SectionedView` currently has neither media nor a statement/`Stat` kind. When the page needs a block that is not a SectionedView kind, compose the Designer block in the consumer renderer. Flattening into the five kinds so a document validates is a defect.
+
+Done is the rendered first viewport, not the JSON tree:
+
+- One display heading through `Hero`, not stacked thesis lines as consecutive headings.
+- `Hero` `actions` are `Button` atoms. `media` is used when a real visual exists (screenshot, illustration, product still). Omitting media is a choice, not the default.
+- Ground (`base` / `sunken` / `inverse`) is visible as a surface change, not as extra paragraphs.
+- If a block renders as unstyled HTML, the consumer CSS pipeline is not scanning this package (README Setup: `theme.css` + `@source` on `dist`, including the Next.js `@source` pitfall). That is a Designer defect in the consumer, not a reason to hand-roll markdown.
+
+Do not treat a green copy-id test or an HTTP 200 that contains the heading string as visual acceptance. Look at the page.
+
 ## How we work together
 
 1. **Status** — Say where things stand in plain language.

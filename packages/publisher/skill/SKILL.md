@@ -23,6 +23,10 @@ The same team is in every inventoried repo. Name another `@clossys-<package>` to
 
 An engine gap or a missing check is a Foundry issue about the package that owns it. Never dump a consumer's strategy. Never name a consumer.
 
+## Pre-auth page
+
+`SectionedView` is a closed five-kind assembler for pages that fit it. It does not own `Hero.media`, statement/prose, or `Stat`. Designer composing those blocks directly is the shipped path, not a workaround and not a Publisher assemble. Publisher seals an approved named surface last (head/OG/meta join, release proof). Flattening a page into the five kinds so the document validates is a Designer defect, not a Publisher success.
+
 ## How we work together
 
 1. **Status** — Say where things stand in plain language.
