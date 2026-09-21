@@ -44,7 +44,16 @@ export type {
   ReachabilityIndeterminateReason,
 } from "./reachability.js";
 
-export { judgeCurrency, upgradeSet, optOutGaps, extraNames, computeCurrencyMetric, classifyCurrencyDistance, currencyVerdict, currencyVerdictToExitCode } from "./currency.js";
+export {
+  judgeCurrency,
+  upgradeSet,
+  optOutGaps,
+  extraNames,
+  computeCurrencyMetric,
+  classifyCurrencyDistance,
+  currencyVerdict,
+  currencyVerdictToExitCode,
+} from "./currency.js";
 export { assessPackageCurrencyRate } from "./package-currency-rate.js";
 export type {
   PackageCurrencyRateAssessment,
@@ -61,6 +70,7 @@ export type {
   CurrencyIndeterminateReason,
   ClassifyCurrencyDistanceResult,
   CurrencyVerdict,
+  CurrencyVerdictOptions,
 } from "./currency.js";
 
 export { foldCurrencyDelta, currencyFoldResultToExitCode } from "./currency-fold.js";

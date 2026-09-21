@@ -1,5 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { classifyCurrencyDistance, computeCurrencyMetric, extraNames, judgeCurrency, optOutGaps, upgradeSet, type PackageCurrency, type CurrencySeverity, currencyVerdict, currencyVerdictToExitCode } from "./currency.js";
+import {
+  classifyCurrencyDistance,
+  computeCurrencyMetric,
+  extraNames,
+  judgeCurrency,
+  optOutGaps,
+  upgradeSet,
+  type PackageCurrency,
+  type CurrencySeverity,
+  currencyVerdict,
+  currencyVerdictToExitCode,
+} from "./currency.js";
 import type { EntitlementDeclaration } from "./entitlement.js";
 import type { InstalledInventory } from "./inventory.js";
 import type { ReachabilityVerdict } from "./reachability.js";
@@ -247,6 +258,28 @@ describe("judgeCurrency", () => {
     ]);
   });
 
+  it("still reports allowlisted non-entitled installs as extra for visibility", () => {
+    const foundation = "@scope/foundation";
+    const results = judgeCurrency({
+      declaration: declaration(["a"]),
+      installed: installed([
+        { name: "a", installedVersion: "1.0.0" },
+        { name: foundation, installedVersion: "2.0.0" },
+        { name: "stray", installedVersion: "0.1.0" },
+      ]),
+      reachability: new Map<string, ReachabilityVerdict>([["a", { kind: "known", latestVersion: "1.0.0" }]]),
+    });
+    expect(results).toEqual([
+      { state: "current", name: "a", installedVersion: "1.0.0" },
+      { state: "extra", name: foundation, installedVersion: "2.0.0" },
+      { state: "extra", name: "stray", installedVersion: "0.1.0" },
+    ]);
+    expect(extraNames(results)).toEqual([foundation, "stray"]);
+    expect(currencyVerdict(results)).toBe("violated");
+    expect(currencyVerdict(results, { expectedExtras: [foundation] })).toBe("violated");
+    expect(currencyVerdict(results, { expectedExtras: [foundation, "stray"] })).toBe("satisfied");
+  });
+
   it("reports an entitled, opted-out, still-installed name as opted-out-and-installed, never current or behind", () => {
     const results = judgeCurrency({
       declaration: declaration(["a"], [{ name: "a", reason: "not adopted here" }]),
@@ -373,6 +406,7 @@ describe("computeCurrencyMetric", () => {
     const metric = computeCurrencyMetric(statuses);
     expect(metric).toEqual({ entitledCount: 2, currentCount: 1, absentWithoutReasonCount: 0, currencyShare: 0.5 });
   });
+
 });
 
 describe("currencyVerdict", () => {
@@ -423,6 +457,37 @@ describe("currencyVerdict", () => {
     expect(currencyVerdict([{ state: "extra", name: "a", installedVersion: "1.0.0" }])).toBe("violated");
     expect(
       currencyVerdict([{ state: "opted-out-and-installed", name: "a", installedVersion: "1.0.0", reason: "not here" }]),
+    ).toBe("violated");
+  });
+
+  it("does not fold allowlisted extra installs to violated", () => {
+    const foundation = "@scope/foundation";
+    expect(
+      currencyVerdict(
+        [
+          { state: "current", name: "a", installedVersion: "1.0.0" },
+          { state: "extra", name: foundation, installedVersion: "1.0.0" },
+        ],
+        { expectedExtras: [foundation] },
+      ),
+    ).toBe("satisfied");
+  });
+
+  it("treats an empty expectedExtras allowlist like omitted — every extra still violates", () => {
+    expect(
+      currencyVerdict([{ state: "extra", name: "a", installedVersion: "1.0.0" }], { expectedExtras: [] }),
+    ).toBe("violated");
+  });
+
+  it("still violates when an extra is not on the allowlist", () => {
+    expect(
+      currencyVerdict(
+        [
+          { state: "extra", name: "allowed", installedVersion: "1.0.0" },
+          { state: "extra", name: "stray", installedVersion: "1.0.0" },
+        ],
+        { expectedExtras: ["allowed"] },
+      ),
     ).toBe("violated");
   });
 

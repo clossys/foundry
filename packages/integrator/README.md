@@ -359,7 +359,12 @@ report an unjudged pair as a judged one.
 This package supplies the grading **and** the fold, because grading alone is
 only half a standard. `currencyVerdict` reduces a set of judgments to one of
 `satisfied` / `violated` / `indeterminate`, and `currencyVerdictToExitCode`
-maps that onto the `0` / `1` / `2` ternary:
+maps that onto the `0` / `1` / `2` ternary. Pass optional
+`{ expectedExtras }` when a plane deliberately holds installed packages that
+are not entitled (for example a foundation layer alongside the catalogue):
+allowlisted `extra` judgments stay visible in `extraNames()` but no longer
+fold to `violated`; names not on the list still do. Omitted or empty
+`expectedExtras` keeps every `extra` blocking, matching earlier releases.
 
 | judgment | verdict |
 | --- | --- |
@@ -367,7 +372,7 @@ maps that onto the `0` / `1` / `2` ternary:
 | `minor`, `patch`, `current` | satisfied — reported, never blocking |
 | `absent-with-reason` | satisfied — an absence on record is a decision |
 | `absent-without-reason` | violated — entitled, absent, and nobody recorded why |
-| `extra` | violated — installed on this plane and not entitled |
+| `extra` | violated — unless the name is on `currencyVerdict`'s `expectedExtras` allowlist |
 | `opted-out-and-installed` | violated — entitled, opted out, and still installed |
 | `indeterminate`, `unreachable`, `unauthenticated` | indeterminate |
 
@@ -679,6 +684,7 @@ at) zero.
 | `upgradeSet(statuses)` | function | Every `behind` entry, as `{ name, installedVersion, latestVersion, severity }` |
 | `optOutGaps(statuses)` | function | Every `absent-without-reason` package name |
 | `extraNames(statuses)` | function | Every `extra` package name |
+| `currencyVerdict(judgments, options?)` | function | Folds graded judgments to `satisfied` / `violated` / `indeterminate`; optional `{ expectedExtras }` allowlists deliberate non-entitled installs |
 | `computeCurrencyMetric(statuses)` | function | This package's stated metric: `currencyShare`, `entitledCount`, `currentCount`, `absentWithoutReasonCount` |
 | `foldCurrencyDelta(input)` | function | One fold, two scopes: `absolute` grades the current state; `introduced` grades it against a `baseline`, splitting `introduced` (blocking) from `inherited` (reported, never blocking) findings. An unreadable or omitted `baseline` is `indeterminate`, never a silent pass and never a silent fall-back to `absolute` |
 | `currencyFoldResultToExitCode(result)` | function | Maps a `CurrencyFoldResult` onto the `0` / `1` / `2` ternary |
@@ -694,9 +700,9 @@ at) zero.
 | `InventoryFileSystemPort` / `InventorySourceOptions` / `InstalledPackage` / `InstalledInventory` | types | The installed-inventory reader's contracts |
 | `InventoryReportSourceOptions` / `InstalledInventoryReadResult` / `InstalledInventoryIndeterminateReason` / `InventoryLockfileFormat` | types | `readInstalledInventoryReport`'s never-throwing contract (issue #330) |
 | `Transport` / `ProbeOutcome` / `ReachabilityProbeOptions` / `ReachabilityVerdict` | types | The reachability probe's contracts |
-| `PackageCurrency` / `JudgeCurrencyInput` / `UpgradeSetEntry` / `CurrencyMetric` | types | The version reconciler's contracts, including extra and opted-out-and-installed |
+| `PackageCurrency` / `JudgeCurrencyInput` / `UpgradeSetEntry` / `CurrencyMetric` | types | The version reconciler's contracts, including `extra` and opted-out-and-installed |
 | `CurrencySeverity` / `CurrencyDistance` / `CurrencyIndeterminateReason` / `ClassifyCurrencyDistanceResult` | types | The graded-severity contract: `"patch" \| "minor" \| "major"`, plus `"current"`, plus the two indeterminate reasons |
-| `CurrencyVerdict` | type | `currencyVerdict`'s three-state result: `"satisfied" \| "violated" \| "indeterminate"` |
+| `CurrencyVerdict` / `CurrencyVerdictOptions` | types | `currencyVerdict`'s three-state result and its optional `{ expectedExtras }` allowlist |
 | `CurrencyFoldScope` / `CurrencyFoldInput` / `AbsoluteCurrencyFoldInput` / `IntroducedCurrencyFoldInput` | types | `foldCurrencyDelta`'s input, keyed by `scope: "absolute" \| "introduced"` |
 | `CurrencyBaseline` / `CurrencyBaselineUnreadable` | types | `introduced`'s baseline: a real `PackageCurrency[]` snapshot, or an explicit `{ kind: "unreadable", reason }` marker |
 | `CurrencyFoldFinding` / `CurrencyFoldResult` | types | One graded finding (`behind`, `absent-without-reason`, `extra`, or `opted-out-and-installed`), and `foldCurrencyDelta`'s discriminated result, tagged by both `scope` and `verdict` |

@@ -1,4 +1,5 @@
 import type { CurrencySeverity, PackageCurrency } from "./currency.js";
+import { expectedExtraAllowlist, extraViolatesVerdict } from "./currency.js";
 import { compareVersions } from "./semver.js";
 
 /**
@@ -173,6 +174,8 @@ export interface AbsoluteCurrencyFoldInput {
   readonly statuses: readonly PackageCurrency[];
   /** Which graded severities block a merge. Entirely caller-supplied -- this package grades, it never decides fleet policy. */
   readonly blockingSeverities: ReadonlySet<CurrencySeverity>;
+  /** Same allowlist as `currencyVerdict`'s `expectedExtras`; omitted or empty means every `extra` blocks. */
+  readonly expectedExtras?: readonly string[];
 }
 
 export interface IntroducedCurrencyFoldInput {
@@ -181,6 +184,8 @@ export interface IntroducedCurrencyFoldInput {
   /** Omit entirely, or pass a `CurrencyBaselineUnreadable` marker, when no trustworthy merge-base snapshot exists -- both fold to `indeterminate`. */
   readonly baseline: CurrencyBaseline | undefined;
   readonly blockingSeverities: ReadonlySet<CurrencySeverity>;
+  /** Same allowlist as `currencyVerdict`'s `expectedExtras`; omitted or empty means every `extra` blocks. */
+  readonly expectedExtras?: readonly string[];
 }
 
 export type CurrencyFoldInput = AbsoluteCurrencyFoldInput | IntroducedCurrencyFoldInput;
@@ -260,6 +265,7 @@ function optedOutInstalledFinding(
 }
 
 function foldAbsolute(input: AbsoluteCurrencyFoldInput): CurrencyFoldResult {
+  const allowlist = expectedExtraAllowlist({ expectedExtras: input.expectedExtras });
   const violations: CurrencyFoldFinding[] = [];
   for (const status of input.statuses) {
     switch (status.state) {
@@ -283,7 +289,7 @@ function foldAbsolute(input: AbsoluteCurrencyFoldInput): CurrencyFoldResult {
         if (input.blockingSeverities.has(status.severity)) violations.push(behindFinding(status));
         break;
       case "extra":
-        violations.push(extraFinding(status));
+        if (extraViolatesVerdict(status.name, allowlist)) violations.push(extraFinding(status));
         break;
       case "opted-out-and-installed":
         violations.push(optedOutInstalledFinding(status));
@@ -297,6 +303,7 @@ function foldAbsolute(input: AbsoluteCurrencyFoldInput): CurrencyFoldResult {
 }
 
 function foldIntroduced(input: IntroducedCurrencyFoldInput): CurrencyFoldResult {
+  const allowlist = expectedExtraAllowlist({ expectedExtras: input.expectedExtras });
   if (input.baseline === undefined) {
     return {
       scope: "introduced",
@@ -354,6 +361,7 @@ function foldIntroduced(input: IntroducedCurrencyFoldInput): CurrencyFoldResult 
     }
 
     if (status.state === "extra") {
+      if (!extraViolatesVerdict(status.name, allowlist)) continue;
       const finding = extraFinding(status);
       const base = baselineByName.get(status.name);
       if (base !== undefined && (base.state === "indeterminate" || base.state === "unreachable" || base.state === "unauthenticated")) {
