@@ -9,9 +9,12 @@ All notable changes to this package are documented here. Format follows
 
 ### Changed
 
-- Packed skill: name `MarketingView`, `SectionedView`, or a registered
-  web template before filling bands; do not author a page shape the
-  shipped views cannot hold.
+- Packed skill: expression-wave ownership — with Designer, author the in-tree
+  page document; do not invent strategy facts, treat yourself as
+  outline-only for Publisher to finish, or publish surfaces.
+- Packed skill: name `MarketingView`, `SectionedView`, or a registered web
+  template before filling bands; do not author a page shape the shipped
+  views cannot hold. Refs: #1027.
 
 ## [0.3.14] - 2026-09-21
 

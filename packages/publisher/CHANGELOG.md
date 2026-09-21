@@ -13,7 +13,7 @@ All notable changes to this package are documented here. Format follows
   OG/meta join, and release proof — and verify the exact shipped result;
   do not author the in-tree `SectionedView` or `MarketingView` page
   document, select templates from business intent, own the app router, or
-  lock final copy.
+  lock final copy. Refs: #1027.
 
 ### Added
 
