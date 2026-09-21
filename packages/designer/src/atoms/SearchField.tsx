@@ -77,7 +77,7 @@ export function SearchField({
             <Input
               placeholder={placeholder}
               className={cx(
-                "w-full rounded-control border bg-surface-raised py-sm pl-md pr-2xl text-body text-ink-primary",
+                "w-full rounded-control border bg-surface-raised py-sm ps-md pe-2xl text-body text-ink-primary",
                 isInvalid ? "border-status-danger" : "border-line-base",
                 inputClassName,
               )}
@@ -87,7 +87,7 @@ export function SearchField({
               })}
             />
             {!isEmpty ? (
-              <AriaButton className="absolute right-sm shrink-0 text-ink-muted outline-none">
+              <AriaButton className="absolute end-sm shrink-0 text-ink-muted outline-none">
                 <span aria-hidden="true">×</span>
               </AriaButton>
             ) : null}

@@ -75,6 +75,7 @@ describe("server-safe entry points resolve under react-server (test 1)", () => {
         "PageHeader",
         "PricingTable",
         "SECTION_GROUND_CLASSES",
+        "SectionFrame",
         "SectionHeader",
         "Stat",
         "StatusList",

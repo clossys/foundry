@@ -96,7 +96,7 @@ function TableColumn({ children, className, style, ...rest }: TableColumnProps) 
       {...rest}
       className={(renderProps) =>
         cx(
-          "px-md py-sm text-left text-body-s font-body text-ink-secondary outline-none",
+          "px-md py-sm text-start text-body-s font-body text-ink-secondary outline-none",
           renderProps.allowsSorting ? "cursor-pointer select-none" : "",
           className,
         )

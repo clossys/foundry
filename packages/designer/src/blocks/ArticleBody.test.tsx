@@ -59,7 +59,7 @@ describe("ArticleBody", () => {
     expect(article.className).toContain("gap-2xl");
   });
 
-  it("forwards a consumer style prop, merged with the internal max-width", () => {
+  it("forwards a consumer style prop without imposing measure (SectionFrame owns width)", () => {
     const { container } = render(
       <ArticleBody style={{ marginTop: "8px" }}>
         <p>Body copy goes here.</p>
@@ -67,6 +67,6 @@ describe("ArticleBody", () => {
     );
     const article = container.querySelector("article") as HTMLElement;
     expect(article.style.marginTop).toBe("8px");
-    expect(article.style.maxWidth).toBeTruthy();
+    expect(article.style.maxWidth).toBe("");
   });
 });

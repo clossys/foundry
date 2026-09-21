@@ -339,11 +339,11 @@ describe("golden: MarketingView", () => {
         '<div class="flex flex-col gap-lg">' +
         '<div class="flex flex-col">' +
         '<div class="flex flex-col" data-rac="">' +
-        '<button id="react-aria-_R_6eH1_" class="flex w-full items-center gap-sm rounded-default py-sm text-left text-body text-ink-primary outline-none disabled:cursor-not-allowed" data-rac="" type="button" tabindex="0" data-react-aria-pressable="true" aria-expanded="false" aria-controls="react-aria-_R_6eH2_" slot="trigger">' +
+        '<button id="react-aria-_R_6eH1_" class="flex w-full items-center gap-sm rounded-default py-sm text-start text-body text-ink-primary outline-none disabled:cursor-not-allowed" data-rac="" type="button" tabindex="0" data-react-aria-pressable="true" aria-expanded="false" aria-controls="react-aria-_R_6eH2_" slot="trigger">' +
         '<span aria-hidden="true" class="inline-block transition-transform motion-reduce:transition-none">▸</span>' +
         "Placeholder question A?" +
         "</button>" +
-        '<div class="pl-lg text-body-s text-ink-secondary" data-rac="" id="react-aria-_R_6eH2_" role="group" aria-labelledby="react-aria-_R_6eH1_" aria-hidden="true" hidden="">Placeholder answer A.</div>' +
+        '<div class="ps-lg text-body-s text-ink-secondary" data-rac="" id="react-aria-_R_6eH2_" role="group" aria-labelledby="react-aria-_R_6eH1_" aria-hidden="true" hidden="">Placeholder answer A.</div>' +
         "</div>" +
         "</div>" +
         "</div>" +
@@ -354,7 +354,7 @@ describe("golden: MarketingView", () => {
         "</div>" +
         "</section>" +
         "</main>" +
-        '<footer class="bg-surface-raised py-lg border-t border-line-base" style="position:relative;z-index:var(--ui-z-shell, 20);border-top-width:var(--ui-border-hairline, 1px)">' +
+        '<footer class="bg-surface-raised text-ink-primary py-lg border-t border-line-base" style="position:relative;z-index:var(--ui-z-shell, 20);border-top-width:var(--ui-border-hairline, 1px)">' +
         '<div class="mx-auto flex w-full flex-col gap-lg" style="padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))"></div>' +
         "</footer>" +
         "</div>",
@@ -418,7 +418,7 @@ describe("golden: MarketingView", () => {
         '<div class="flex flex-col gap-lg"><div class="grid grid-cols-1 gap-lg tablet:grid-cols-2 desktop:grid-cols-3"></div></div>' +
         '<section class="flex flex-col gap-xl"><div class="flex flex-col items-start gap-md"><h2 class="text-display-l font-display max-w-display text-ink-primary">Placeholder CTA heading</h2></div></section>' +
         "</main>" +
-        '<footer class="bg-surface-raised py-lg border-t border-line-base" style="position:relative;z-index:var(--ui-z-shell, 20);border-top-width:var(--ui-border-hairline, 1px)">' +
+        '<footer class="bg-surface-raised text-ink-primary py-lg border-t border-line-base" style="position:relative;z-index:var(--ui-z-shell, 20);border-top-width:var(--ui-border-hairline, 1px)">' +
         '<div class="mx-auto flex w-full flex-col gap-lg" style="padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))"></div>' +
         "</footer>" +
         "</div>",

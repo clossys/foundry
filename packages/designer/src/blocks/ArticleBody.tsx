@@ -1,7 +1,5 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { cx } from "../atoms/internal/cx.js";
-import { UI_WIDTH_PROSE_MAX } from "./internal/block-vars.js";
-
 export interface ArticleBodyProps extends HTMLAttributes<HTMLElement> {
   /**
    * Pre-structured content — headings, paragraphs, lists, a blockquote,
@@ -46,12 +44,10 @@ export interface ArticleBodyProps extends HTMLAttributes<HTMLElement> {
  * correctly reusable more than once per page (unlike `<header>`/`<footer>`,
  * which register a landmark that can't legally repeat at the top level).
  *
- * Content is constrained to `--ui-width-prose-max` (48rem default,
- * this package's own reading-measure token) — the same "case 2, no
- * Tailwind namespace" raw `var()` read `Shell.Main`'s own
- * `--ui-width-content-max` uses, applied via inline `style` for the exact
- * reason that file documents: Tailwind's `@theme inline` has no namespace
- * for a one-off content width the way it does for spacing/radius/colour.
+ * **Measure comes from `SectionFrame`, not from this component.** Render
+ * inside `SectionFrame` (`measure="prose"` for long-form copy). This
+ * wrapper only applies typography; the frame owns padding, ground, and
+ * `--ui-width-prose-max`.
  */
 export function ArticleBody({ children, className, style, ...rest }: ArticleBodyProps) {
   return (
@@ -67,10 +63,10 @@ export function ArticleBody({ children, className, style, ...rest }: ArticleBody
         "[&_h6]:text-h3 [&_h6]:font-display [&_h6]:text-ink-primary [&_h6]:mt-md",
         "[&_p]:text-body [&_p]:text-ink-primary",
         "[&_a]:text-ink-link [&_a]:underline",
-        "[&_ul]:list-disc [&_ul]:pl-lg [&_ul]:text-body [&_ul]:text-ink-primary",
-        "[&_ol]:list-decimal [&_ol]:pl-lg [&_ol]:text-body [&_ol]:text-ink-primary",
+        "[&_ul]:list-disc [&_ul]:ps-lg [&_ul]:text-body [&_ul]:text-ink-primary",
+        "[&_ol]:list-decimal [&_ol]:ps-lg [&_ol]:text-body [&_ol]:text-ink-primary",
         "[&_li]:text-body [&_li]:text-ink-primary",
-        "[&_blockquote]:text-blockquote [&_blockquote]:font-display [&_blockquote]:text-ink-secondary [&_blockquote]:border-l [&_blockquote]:border-line-base [&_blockquote]:pl-lg",
+        "[&_blockquote]:text-blockquote [&_blockquote]:font-display [&_blockquote]:text-ink-secondary [&_blockquote]:border-s [&_blockquote]:border-line-base [&_blockquote]:ps-lg",
         "[&_strong]:font-semibold [&_strong]:text-ink-primary",
         "[&_em]:italic",
         "[&_code]:font-mono [&_code]:text-body-s [&_code]:text-ink-primary [&_code]:bg-surface-sunken [&_code]:rounded-subtle [&_code]:px-xs",
@@ -80,7 +76,8 @@ export function ArticleBody({ children, className, style, ...rest }: ArticleBody
         "[&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-control",
         className,
       )}
-      style={{ maxWidth: UI_WIDTH_PROSE_MAX, ...style }}
+      data-designer-requires-section-frame=""
+      style={style}
     >
       {children}
     </article>

@@ -62,7 +62,7 @@ export function DetailView({ title, fields, actions, className, style, ...rest }
             <h2 className="text-h2 font-display text-ink-primary">{title}</h2>
           ) : null}
           {actions !== undefined ? (
-            <div className={cx("flex items-center gap-sm", title === undefined ? "ml-auto" : "")}>
+            <div className={cx("flex items-center gap-sm", title === undefined ? "ms-auto" : "")}>
               {actions}
             </div>
           ) : null}

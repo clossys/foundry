@@ -5,6 +5,25 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.4.16] - 2026-09-21
+
+### Added
+
+- `SectionFrame` block: full-bleed marketing section with `ground`, `measure`
+  (`content` | `wide` | `prose`), page padding, and a measured inner column.
+  Long-form and stat compositions render inside it instead of host `className`
+  wrappers (`data-designer-section-frame` marks framed regions).
+- `ground` on `SiteFooter`, `SiteHeader`, `Shell.Header`, and `Shell.Footer`
+  (`base` | `inverse`) — inverse plates use the same surface/ink tokens as
+  grounded content blocks.
+
+### Changed
+
+- `ArticleBody` no longer sets its own max width; measure comes from
+  `SectionFrame` (`measure="prose"`). Marks `data-designer-requires-section-frame`.
+- Replaced 15 physical inline-direction utilities in `atoms/` and `blocks/`
+  with logical equivalents for correct RTL layout (#951).
+
 ## [0.4.15] - 2026-09-21
 
 ### Changed

@@ -94,5 +94,8 @@ export type { PricingTableProps, PricingTier, PricingTableHeadingLevel } from ".
 export { SectionHeader } from "./SectionHeader.js";
 export type { SectionHeaderProps, SectionHeaderLevel } from "./SectionHeader.js";
 
+export { SectionFrame } from "./SectionFrame.js";
+export type { SectionFrameProps, SectionMeasure } from "./SectionFrame.js";
+
 export { Stat } from "./Stat.js";
 export type { StatProps, StatTrend } from "./Stat.js";

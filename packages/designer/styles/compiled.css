@@ -69,8 +69,8 @@
   .end-md {
     inset-inline-end: var(--spacing-md, 12px);
   }
-  .right-sm {
-    right: var(--spacing-sm, 8px);
+  .end-sm {
+    inset-inline-end: var(--spacing-sm, 8px);
   }
   .bottom-md {
     bottom: var(--spacing-md, 12px);
@@ -87,6 +87,9 @@
   .my-xs {
     margin-block: var(--spacing-xs, 4px);
   }
+  .ms-auto {
+    margin-inline-start: auto;
+  }
   .ms-lg {
     margin-inline-start: var(--spacing-lg, 16px);
   }
@@ -99,9 +102,6 @@
   .mt-xs {
     margin-top: var(--spacing-xs, 4px);
   }
-  .ml-auto {
-    margin-left: auto;
-  }
   .block {
     display: block;
   }
@@ -113,9 +113,6 @@
   }
   .hidden {
     display: none;
-  }
-  .inline {
-    display: inline;
   }
   .inline-block {
     display: inline-block;
@@ -541,32 +538,32 @@
   .py-xs {
     padding-block: var(--spacing-xs, 4px);
   }
+  .ps-lg {
+    padding-inline-start: var(--spacing-lg, 16px);
+  }
+  .ps-md {
+    padding-inline-start: var(--spacing-md, 12px);
+  }
+  .ps-sm {
+    padding-inline-start: var(--spacing-sm, 8px);
+  }
+  .pe-2xl {
+    padding-inline-end: var(--spacing-2xl, 32px);
+  }
+  .pe-xs {
+    padding-inline-end: var(--spacing-xs, 4px);
+  }
   .pt-lg {
     padding-top: var(--spacing-lg, 16px);
   }
   .pt-xs {
     padding-top: var(--spacing-xs, 4px);
   }
-  .pr-2xl {
-    padding-right: var(--spacing-2xl, 32px);
-  }
-  .pr-xs {
-    padding-right: var(--spacing-xs, 4px);
-  }
-  .pl-lg {
-    padding-left: var(--spacing-lg, 16px);
-  }
-  .pl-md {
-    padding-left: var(--spacing-md, 12px);
-  }
-  .pl-sm {
-    padding-left: var(--spacing-sm, 8px);
-  }
   .text-center {
     text-align: center;
   }
-  .text-left {
-    text-align: left;
+  .text-start {
+    text-align: start;
   }
   .font-body {
     font-family: var(--font-body, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif);

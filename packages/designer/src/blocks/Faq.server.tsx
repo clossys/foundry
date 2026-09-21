@@ -41,10 +41,10 @@ export function Faq({
             key={item.id}
             className={cx("flex flex-col", index > 0 ? cx("border-t pt-xs", colors.border) : undefined)}
           >
-            <summary className={cx("w-full cursor-pointer rounded-default py-sm text-left text-body focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent", colors.primary)}>
+            <summary className={cx("w-full cursor-pointer rounded-default py-sm text-start text-body focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent", colors.primary)}>
               {item.question}
             </summary>
-            <div className={cx("pl-lg text-body-s", colors.secondary)}>{item.answer}</div>
+            <div className={cx("ps-lg text-body-s", colors.secondary)}>{item.answer}</div>
           </details>
         ))}
       </div>

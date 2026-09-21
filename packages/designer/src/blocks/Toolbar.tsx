@@ -72,7 +72,7 @@ export function Toolbar({
       {leading ? <div className="flex flex-wrap items-center gap-sm">{leading}</div> : null}
       {search ? <div className="min-w-[12rem] flex-1">{search}</div> : null}
       {trailing ? (
-        <div className="ml-auto flex flex-wrap items-center gap-sm">{trailing}</div>
+        <div className="ms-auto flex flex-wrap items-center gap-sm">{trailing}</div>
       ) : null}
     </AriaToolbar>
   );

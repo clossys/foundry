@@ -1,5 +1,6 @@
 import type { HTMLAttributes, ReactNode } from "react";
 import { cx } from "../atoms/internal/cx.js";
+import { SHELL_GROUND_CLASSES, type ShellGround } from "./internal/shell-ground.js";
 import {
   UI_BORDER_HAIRLINE,
   UI_LAYOUT_ASIDE_W,
@@ -121,6 +122,8 @@ function SkipLink() {
 
 export interface ShellHeaderProps extends HTMLAttributes<HTMLElement> {
   children?: ReactNode;
+  /** Semantic plate for the header bar. @default "base" */
+  ground?: ShellGround;
 }
 
 /**
@@ -131,11 +134,13 @@ export interface ShellHeaderProps extends HTMLAttributes<HTMLElement> {
  * problem this package's README warns against, one layer up — see
  * "Placement rules" there.
  */
-function ShellHeader({ children, className, style, ...rest }: ShellHeaderProps) {
+function ShellHeader({ children, className, style, ground = "base", ...rest }: ShellHeaderProps) {
+  const colors = SHELL_GROUND_CLASSES[ground];
+
   return (
     <header
       {...rest}
-      className={cx("bg-surface-raised py-sm border-b border-line-base", className)}
+      className={cx(colors.surface, "py-sm border-b", colors.border, className)}
       style={{
         gridArea: "header",
         position: "relative",
@@ -263,14 +268,18 @@ function ShellRail({ children, className, style, ...rest }: ShellRailProps) {
 
 export interface ShellFooterProps extends HTMLAttributes<HTMLElement> {
   children?: ReactNode;
+  /** Semantic plate for the footer bar. @default "base" */
+  ground?: ShellGround;
 }
 
 /** The bottom chrome bar — a `<footer>` landmark. Optional, and empty of any built-in content, for the same reason `Shell.Header` is (see there). */
-function ShellFooter({ children, className, style, ...rest }: ShellFooterProps) {
+function ShellFooter({ children, className, style, ground = "base", ...rest }: ShellFooterProps) {
+  const colors = SHELL_GROUND_CLASSES[ground];
+
   return (
     <footer
       {...rest}
-      className={cx("bg-surface-raised py-sm border-t border-line-base", className)}
+      className={cx(colors.surface, "py-sm border-t", colors.border, className)}
       style={{
         gridArea: "footer",
         position: "relative",

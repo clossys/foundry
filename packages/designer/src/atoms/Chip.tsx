@@ -72,7 +72,7 @@ export function Chip({ children, onRemove, removeLabel, isDisabled = false, clas
       {...rest}
       className={cx(
         "inline-flex max-w-full items-center gap-xs rounded-pill bg-surface-sunken py-xs text-caption text-ink-secondary tracking-meta",
-        onRemove ? "pl-sm pr-xs" : "px-sm",
+        onRemove ? "ps-sm pe-xs" : "px-sm",
         className,
       )}
       style={{ opacity: isDisabled ? UI_ALPHA_DISABLED : undefined, ...style }}
