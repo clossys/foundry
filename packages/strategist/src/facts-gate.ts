@@ -118,7 +118,7 @@ const SUPERLATIVE_RE =
 // opener plus "fact:<key>" is required) so a stray missing `-->` doesn't
 // silently defeat the citation.
 const FACT_CITATION_RE = /(?:<!--|\/\*|\{\/\*|\/\/)\s*fact:([a-zA-Z][a-zA-Z0-9-]*)/g;
-const IGNORE_MARKER_RE = /(?:<!--|\/\*|\{\/\*|\/\/)\s*facts-gate:ignore/i;
+const IGNORE_MARKER_RE = /(?:<!--|\/\*|\{\/\*|\/\/)\s*facts-gate:ignore\b/i;
 
 const FENCE_RE = /^\s*(```|~~~)/;
 const INLINE_CODE_RE = /`[^`]*`/g;

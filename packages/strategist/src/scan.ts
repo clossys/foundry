@@ -29,7 +29,9 @@ export interface ScanOptions {
 }
 
 const DEFAULT_EXTENSIONS = [".md", ".mdx", ".ts", ".tsx", ".js", ".jsx"];
-const DEFAULT_SKIP_DIRS = new Set(["node_modules", ".git", "dist", "build", "coverage"]);
+/** Built-in directory names never descended into; CLI `--skip-dirs` values are added to this list. */
+export const DEFAULT_SKIP_DIRS = ["node_modules", ".git", "dist", "build", "coverage"];
+const DEFAULT_SKIP_DIRS_SET = new Set(DEFAULT_SKIP_DIRS);
 
 /**
  * Walks `root` recursively and returns every matching file's path
@@ -39,7 +41,7 @@ const DEFAULT_SKIP_DIRS = new Set(["node_modules", ".git", "dist", "build", "cov
  */
 export function scanStrategyDirectory(root: string, options: ScanOptions = {}): ScannedFile[] {
   const extensions = new Set(options.extensions ?? DEFAULT_EXTENSIONS);
-  const skipDirs = new Set(options.skipDirs ?? DEFAULT_SKIP_DIRS);
+  const skipDirs = new Set(options.skipDirs ?? DEFAULT_SKIP_DIRS_SET);
 
   const out: ScannedFile[] = [];
 
