@@ -424,15 +424,15 @@ export function main(argv: string[]): number {
 
 function run(): void {
   try {
-    process.exitCode = main(process.argv.slice(2));
+    process.exit(main(process.argv.slice(2)));
   } catch (error) {
     if (error instanceof CliInputError) {
       console.error(`giver-check: ${error.message}`);
       console.error(`\n${USAGE}`);
-      process.exitCode = 2;
+      process.exit(2);
     } else {
       console.error(`giver-check: unexpected error: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`);
-      process.exitCode = 2;
+      process.exit(2);
     }
   }
 }
