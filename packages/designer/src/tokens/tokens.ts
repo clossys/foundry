@@ -253,6 +253,11 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
 
   // ── UI · WIDTH (no Tailwind namespace — raw var() only) ───────────
   "--ui-width-content-max": { property: "--ui-width-content-max", family: "width", value: "64rem", brandable: true, themeDependent: false },
+  "--ui-font-display-style": { property: "--ui-font-display-style", family: "font", value: "normal", brandable: true, themeDependent: false },
+  "--ui-font-display-weight": { property: "--ui-font-display-weight", family: "font", value: "400", brandable: true, themeDependent: false },
+  "--ui-font-display-stretch": { property: "--ui-font-display-stretch", family: "font", value: "100%", brandable: true, themeDependent: false },
+  "--ui-font-display-scale-x": { property: "--ui-font-display-scale-x", family: "font", value: "1", brandable: true, themeDependent: false },
+  "--ui-width-display-max": { property: "--ui-width-display-max", family: "width", value: "var(--ui-width-wide-max, 72rem)", brandable: true, themeDependent: false },
   "--ui-width-prose-max": { property: "--ui-width-prose-max", family: "width", value: "48rem", brandable: true, themeDependent: false },
   "--ui-width-wide-max": { property: "--ui-width-wide-max", family: "width", value: "72rem", brandable: true, themeDependent: false },
   "--ui-width-page-padding-x": { property: "--ui-width-page-padding-x", family: "width", value: "clamp(16px, 4vw, 48px)", brandable: false, themeDependent: false },

@@ -42,7 +42,13 @@ Ask one question. Prefer the host multiple-choice control when it exists; otherw
 
 If `node_modules/@clossys/designer` is present (or this package's bins are on PATH), use the exact pin in the tree. Read `package.json` `bin` for the real command names.
 - Assessment CLI: `designer-rate-check`
-- Additional gate CLIs: `designer-brand-check`, `designer-hero-css-check`, `designer-fold-check`, `designer-type-check`
+- Additional gate CLIs: `designer-brand-check`, `designer-hero-css-check`, `designer-fold-check`, `designer-type-check`, `designer-environment-check surface`
+
+Public marketing surfaces: stamp the authored register with `getAuthoredThemeInitScript()` — OS preference is not the brand. Product chrome may use `getStoredThemeInitScript()` instead.
+
+One visual ladder per route: do not import a second atom/token stack beside `@clossys/designer`. Existing token root: `@clossys/designer/theme-keys.css`, not `theme.css` plus `tokens.css`.
+
+Marketing chapters after the fold: `MarketingChapter`, not `SectionHeader`. Hero `media` requires an explicit `composition` (`editorial` default).
 
 Do not invent a type pairing during the walk that proves 3 — cite or author the brand-type record from `templates/brand-type.template.json` and run `designer-type-check`.
 

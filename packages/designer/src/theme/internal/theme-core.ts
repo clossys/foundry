@@ -41,8 +41,11 @@ export type ThemePreference = (typeof THEME_PREFERENCES)[number];
 /** What is actually on screen right now — never `"system"`, always resolved. */
 export type ResolvedTheme = "light" | "dark";
 
-/** The default `localStorage` key `ThemeProvider`, `ThemeToggle`, and `getThemeInitScript` all read/write unless a consumer overrides it. */
+/** The default `localStorage` key `ThemeProvider`, `ThemeToggle`, and `getStoredThemeInitScript` all read/write unless a consumer overrides it. */
 export const DEFAULT_STORAGE_KEY = "ui-theme";
+
+/** Authored day register stamped before first paint on public marketing surfaces. */
+export const AUTHORED_THEME_REGISTER: ResolvedTheme = "light";
 
 /** Narrows an arbitrary value to `ThemePreference` — used to validate a stored string before trusting it. */
 export function isThemePreference(value: unknown): value is ThemePreference {
@@ -89,6 +92,15 @@ export function readStoredPreference(storageKey: string): ThemePreference {
  * leaves `color-scheme` alone is the classic half-done version of this —
  * every native widget on the page stays in whichever theme it started in.
  */
+/**
+ * Stamps the authored light register — does not read `prefers-color-scheme`.
+ * Use in marketing layouts via `getAuthoredThemeInitScript()`.
+ */
+export function stampAuthoredRegister(root: HTMLElement): void {
+  root.setAttribute("data-theme", AUTHORED_THEME_REGISTER);
+  root.style.colorScheme = AUTHORED_THEME_REGISTER;
+}
+
 export function applyThemeDom(root: HTMLElement, preference: ThemePreference): void {
   if (preference === "system") {
     root.removeAttribute("data-theme");

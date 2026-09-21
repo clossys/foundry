@@ -76,7 +76,10 @@ export { SectionHeader } from "./SectionHeader.js";
 export type { SectionHeaderProps, SectionHeaderLevel } from "./SectionHeader.js";
 
 export { Hero } from "./Hero.js";
-export type { HeroProps, HeroHeadingLevel } from "./Hero.js";
+export type { HeroProps, HeroHeadingLevel, HeroComposition } from "./Hero.js";
+
+export { MarketingChapter } from "./MarketingChapter.js";
+export type { MarketingChapterProps, MarketingChapterHeadingLevel } from "./MarketingChapter.js";
 
 export { FeatureGrid } from "./FeatureGrid.js";
 export type { FeatureGridProps, FeatureGridItem, FeatureGridHeadingLevel } from "./FeatureGrid.js";

@@ -373,6 +373,13 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   --font-body:                    ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono:                    ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
+  /* Display signature — brandable via overlay; consumed by `.font-display` */
+  --ui-font-display-style:        normal;
+  --ui-font-display-weight:       400;
+  --ui-font-display-stretch:      100%;
+  --ui-font-display-scale-x:      1;
+  --ui-width-display-max:         var(--ui-width-wide-max, 72rem);
+
   /* ════════════════════════════════════════════════════════════════
    * TRACKING (4 · fixed letter-spacing role scale)
    * ════════════════════════════════════════════════════════════════ */

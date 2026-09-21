@@ -20,3 +20,6 @@
 
 /** Max width `ArticleBody` centers its content within — a reasonable reading measure for long-form text. */
 export const UI_WIDTH_PROSE_MAX = "var(--ui-width-prose-max, 48rem)";
+
+/** Tailwind classes every display-sized marketing heading should carry (measure + brand display signature). */
+export const DISPLAY_HEADING_CLASS = "text-display-l font-display max-w-display";

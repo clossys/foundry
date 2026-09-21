@@ -80,7 +80,10 @@ export { FieldGroup } from "./FieldGroup.js";
 export type { FieldGroupProps, FieldGroupLayout } from "./FieldGroup.js";
 
 export { Hero } from "./Hero.js";
-export type { HeroProps, HeroHeadingLevel } from "./Hero.js";
+export type { HeroProps, HeroHeadingLevel, HeroComposition } from "./Hero.js";
+
+export { MarketingChapter } from "./MarketingChapter.js";
+export type { MarketingChapterProps, MarketingChapterHeadingLevel } from "./MarketingChapter.js";
 
 export { PageHeader } from "./PageHeader.js";
 export type { PageHeaderProps } from "./PageHeader.js";

@@ -559,6 +559,14 @@
   }
   .font-display {
     font-family: var(--font-display, system-ui, ui-sans-serif, -apple-system, "Segoe UI", sans-serif);
+    font-style: var(--ui-font-display-style, normal);
+    font-weight: var(--ui-font-display-weight, 400);
+    font-stretch: var(--ui-font-display-stretch, 100%);
+    letter-spacing: var(--tracking-tight, -0.01em);
+    transform: scaleX(var(--ui-font-display-scale-x, 1));
+  }
+  .max-w-display {
+    max-width: var(--ui-width-display-max, 72rem);
   }
   .text-blockquote {
     font-size: var(--text-blockquote, 22px);
