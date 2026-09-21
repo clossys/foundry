@@ -6,7 +6,20 @@ import type { ComposeFinding } from "./types.js";
 export type SectionedViewGround = "base" | "sunken" | "inverse";
 
 /** The closed block vocabulary for a long-form site page. */
-export type SectionedViewSectionKind = "hero" | "feature-grid" | "faq" | "ordered-step-sequence" | "status-list";
+export type SectionedViewSectionKind = "hero" | "feature-grid" | "faq" | "ordered-step-sequence" | "status-list" | "stat-grid";
+
+/** Direction a stat row's optional `delta` represents — mirrors Designer `Stat`'s closed `trend` prop. */
+export type SectionedViewStatTrend = "up" | "down" | "neutral";
+
+/**
+ * Optional hero companion media: an `assetId` the host resolves at render time
+ * plus audience-facing `alt` copy that participates in provenance like every
+ * other field here.
+ */
+export interface SectionedViewHeroMedia {
+  assetId: string;
+  alt: CopyRef;
+}
 
 /**
  * One call to action a hero section may carry. Data only, like every other
@@ -30,6 +43,27 @@ export interface SectionedViewHeroSection {
   description?: CopyRef;
   /** Optional calls to action. The Designer Hero block beneath this section has always had the slot; the document can now express it. */
   actions?: SectionedViewAction[];
+  /** Optional product-surface or original-art media beside the hero copy — same slot `MarketingView`'s `heroMedia` fills at render time. */
+  media?: SectionedViewHeroMedia;
+}
+
+export interface SectionedViewStatItem {
+  id: string;
+  label: CopyRef;
+  value: CopyRef;
+  delta?: CopyRef;
+  trend?: SectionedViewStatTrend;
+  description?: CopyRef;
+}
+
+export interface SectionedViewStatGridSection {
+  id: string;
+  kind: "stat-grid";
+  ground: SectionedViewGround;
+  eyebrow?: CopyRef;
+  heading: CopyRef;
+  description?: CopyRef;
+  items: SectionedViewStatItem[];
 }
 
 export interface SectionedViewFeatureItem {
@@ -130,7 +164,8 @@ export type SectionedViewSection =
   | SectionedViewFeatureGridSection
   | SectionedViewFaqSection
   | SectionedViewOrderedStepSequenceSection
-  | SectionedViewStatusListSection;
+  | SectionedViewStatusListSection
+  | SectionedViewStatGridSection;
 
 /** Canonical, Designer-independent input for a long public site page. */
 export interface SectionedViewDocument {
@@ -146,12 +181,15 @@ type ResolvedSectionedViewStatusItem =
 /** A hero action with its label copy resolved; the href travels unchanged. */
 export type ResolvedSectionedViewAction = Omit<SectionedViewAction, "label"> & { label: ResolvedCopy };
 
+export type ResolvedSectionedViewHeroMedia = Omit<SectionedViewHeroMedia, "alt"> & { alt: ResolvedCopy };
+
 export type ResolvedSectionedViewSection =
-  | Omit<SectionedViewHeroSection, "eyebrow" | "heading" | "description" | "actions"> & { eyebrow?: ResolvedCopy; heading: ResolvedCopy; description?: ResolvedCopy; actions?: ResolvedSectionedViewAction[] }
+  | Omit<SectionedViewHeroSection, "eyebrow" | "heading" | "description" | "actions" | "media"> & { eyebrow?: ResolvedCopy; heading: ResolvedCopy; description?: ResolvedCopy; actions?: ResolvedSectionedViewAction[]; media?: ResolvedSectionedViewHeroMedia }
   | Omit<SectionedViewFeatureGridSection, "eyebrow" | "heading" | "description" | "items"> & { eyebrow?: ResolvedCopy; heading: ResolvedCopy; description?: ResolvedCopy; items: Array<Omit<SectionedViewFeatureItem, "heading" | "description"> & { heading: ResolvedCopy; description?: ResolvedCopy }> }
   | Omit<SectionedViewFaqSection, "eyebrow" | "heading" | "description" | "items"> & { eyebrow?: ResolvedCopy; heading: ResolvedCopy; description?: ResolvedCopy; items: Array<Omit<SectionedViewFaqItem, "question" | "answer"> & { question: ResolvedCopy; answer: ResolvedCopy }> }
   | Omit<SectionedViewOrderedStepSequenceSection, "eyebrow" | "heading" | "description" | "items"> & { eyebrow?: ResolvedCopy; heading: ResolvedCopy; description?: ResolvedCopy; items: Array<Omit<SectionedViewOrderedStep, "ordinal" | "label" | "heading" | "description"> & { ordinal: ResolvedCopy; label?: ResolvedCopy; heading: ResolvedCopy; description?: ResolvedCopy }> }
-  | Omit<SectionedViewStatusListSection, "eyebrow" | "heading" | "description" | "labels" | "groups" | "items"> & { eyebrow?: ResolvedCopy; heading: ResolvedCopy; description?: ResolvedCopy; labels: Record<SectionedViewStatus, ResolvedCopy> & { dispositions: Record<SectionedViewStatusDisposition, ResolvedCopy> }; groups?: Array<Omit<SectionedViewStatusGroup, "heading" | "items"> & { heading: ResolvedCopy; items: ResolvedSectionedViewStatusItem[] }>; items?: ResolvedSectionedViewStatusItem[] };
+  | Omit<SectionedViewStatusListSection, "eyebrow" | "heading" | "description" | "labels" | "groups" | "items"> & { eyebrow?: ResolvedCopy; heading: ResolvedCopy; description?: ResolvedCopy; labels: Record<SectionedViewStatus, ResolvedCopy> & { dispositions: Record<SectionedViewStatusDisposition, ResolvedCopy> }; groups?: Array<Omit<SectionedViewStatusGroup, "heading" | "items"> & { heading: ResolvedCopy; items: ResolvedSectionedViewStatusItem[] }>; items?: ResolvedSectionedViewStatusItem[] }
+  | Omit<SectionedViewStatGridSection, "eyebrow" | "heading" | "description" | "items"> & { eyebrow?: ResolvedCopy; heading: ResolvedCopy; description?: ResolvedCopy; items: Array<Omit<SectionedViewStatItem, "label" | "value" | "delta" | "description"> & { label: ResolvedCopy; value: ResolvedCopy; delta?: ResolvedCopy; description?: ResolvedCopy }> };
 
 export interface ResolvedSectionedViewDocument {
   id: string;
@@ -162,7 +200,9 @@ export interface ResolvedSectionedViewDocument {
 
 export type SectionedViewResolutionReason = "invalid-document" | "unresolved-copy" | "unsupported-section-kind";
 
-const SECTION_KINDS: readonly SectionedViewSectionKind[] = ["hero", "feature-grid", "faq", "ordered-step-sequence", "status-list"];
+const SECTION_KINDS: readonly SectionedViewSectionKind[] = ["hero", "feature-grid", "faq", "ordered-step-sequence", "status-list", "stat-grid"];
+
+const STAT_TRENDS: readonly SectionedViewStatTrend[] = ["up", "down", "neutral"];
 
 function unsupportedSectionKindMessage(path: string, kind: string): string {
   return `${path}.kind "${kind}" is not a supported SectionedView section kind; supported kinds are ${SECTION_KINDS.join(", ")}.`;
@@ -289,11 +329,12 @@ export function validateSectionedViewDocument(value: unknown): ComposeFinding[] 
     switch (section.kind) {
       case "hero":
         heroCount += 1;
-        if (!hasOnlyOwnKeys(section, ["id", "kind", "ground", "eyebrow", "heading", "description", "actions"]) || !hasOwn(section, "heading")) findings.push(finding("sectioned-view-section-keys", path, `${path} has keys not allowed for hero.`));
+        if (!hasOnlyOwnKeys(section, ["id", "kind", "ground", "eyebrow", "heading", "description", "actions", "media"]) || !hasOwn(section, "heading")) findings.push(finding("sectioned-view-section-keys", path, `${path} has keys not allowed for hero.`));
         validateCopy(section.heading, `${path}.heading`, findings);
         if (section.eyebrow !== undefined) validateCopy(section.eyebrow, `${path}.eyebrow`, findings);
         if (section.description !== undefined) validateCopy(section.description, `${path}.description`, findings);
         if (section.actions !== undefined) validateActions(section.actions, `${path}.actions`, findings);
+        if (section.media !== undefined) validateHeroMedia(section.media, `${path}.media`, findings);
         break;
       case "feature-grid":
         validateRepeatedSection(section, path, ["id", "kind", "ground", "eyebrow", "heading", "description", "items"], ["id", "heading", "description"], findings, (item, itemPath) => {
@@ -327,6 +368,21 @@ export function validateSectionedViewDocument(value: unknown): ComposeFinding[] 
       case "status-list":
         validateStatusListSection(section, path, findings);
         break;
+      case "stat-grid":
+        validateRepeatedSection(section, path, ["id", "kind", "ground", "eyebrow", "heading", "description", "items"], ["id", "label", "value", "delta", "description", "trend"], findings, (item, itemPath) => {
+          validateCopy(item.label, `${itemPath}.label`, findings);
+          validateCopy(item.value, `${itemPath}.value`, findings);
+          if (item.delta !== undefined) validateCopy(item.delta, `${itemPath}.delta`, findings);
+          if (item.description !== undefined) validateCopy(item.description, `${itemPath}.description`, findings);
+          const hasTrend = hasOwn(item, "trend");
+          const hasDelta = hasOwn(item, "delta");
+          if (hasTrend && !STAT_TRENDS.includes(item.trend as SectionedViewStatTrend)) findings.push(finding("sectioned-view-stat-trend", `${itemPath}.trend`, `${itemPath}.trend must be one of ${STAT_TRENDS.join(", ")}.`));
+          if (hasTrend && !hasDelta) findings.push(finding("sectioned-view-stat-trend-without-delta", `${itemPath}.trend`, `${itemPath}.trend requires ${itemPath}.delta.`));
+        });
+        validateCopy(section.heading, `${path}.heading`, findings);
+        if (section.eyebrow !== undefined) validateCopy(section.eyebrow, `${path}.eyebrow`, findings);
+        if (section.description !== undefined) validateCopy(section.description, `${path}.description`, findings);
+        break;
       default:
         findings.push(finding("sectioned-view-section-kind", `${path}.kind`, unsupportedSectionKindMessage(path, section.kind)));
     }
@@ -342,7 +398,7 @@ function validateRepeatedSection(section: Record<string, unknown>, path: string,
   for (let itemIndex = 0; itemIndex < section.items.length; itemIndex += 1) {
     const item = section.items[itemIndex];
     const itemPath = `${path}.items.${itemIndex}`;
-    const requiredItemKeys = itemKeys.filter((key) => !["description", "label"].includes(key));
+    const requiredItemKeys = itemKeys.filter((key) => !["description", "label", "delta", "trend"].includes(key));
     if (!isPlainObject(item) || !hasOnlyOwnKeys(item, itemKeys) || !hasOwnKeys(item, requiredItemKeys) || !isNonWhitespaceString(item.id)) {
       findings.push(finding("sectioned-view-item-shape", itemPath, `${itemPath} must be a plain item with a non-whitespace id and only its kind's fields.`));
       continue;
@@ -356,6 +412,14 @@ function validateRepeatedSection(section: Record<string, unknown>, path: string,
  * missing decision rather than an expressed one, the same rule every other
  * repeated slot in this contract already follows.
  */
+function validateHeroMedia(value: unknown, path: string, findings: ComposeFinding[]): void {
+  if (!isPlainObject(value) || !hasOnlyOwnKeys(value, ["assetId", "alt"]) || !hasOwnKeys(value, ["assetId", "alt"]) || !isNonWhitespaceString(value.assetId)) {
+    findings.push(finding("sectioned-view-hero-media-shape", path, `${path} must be a plain { assetId, alt } object with a non-empty assetId.`));
+    return;
+  }
+  validateCopy(value.alt, `${path}.alt`, findings);
+}
+
 function validateActions(value: unknown, path: string, findings: ComposeFinding[]): void {
   if (!validateDenseArray(value, path, findings, "sectioned-view-actions-shape", `${path} must be a non-empty array when present.`)) return;
   validateItemIds(value, path, findings);
@@ -480,14 +544,17 @@ function resolveStatusItem(item: SectionedViewStatusItem, path: string, text: (r
 
 function resolveSection(section: SectionedViewSection, path: string, text: (ref: CopyRef, path: string) => string, optional: (ref: CopyRef | undefined, path: string) => string | undefined): ResolvedSectionedViewSection {
   switch (section.kind) {
-    case "hero":
+    case "hero": {
+      const { media: sourceMedia, ...heroBase } = section;
       return {
-        ...section,
+        ...heroBase,
         eyebrow: optional(section.eyebrow, `${path}.eyebrow`),
         heading: text(section.heading, `${path}.heading`),
         description: optional(section.description, `${path}.description`),
         actions: section.actions?.map((action, index) => ({ ...action, label: text(action.label, `${path}.actions.${index}.label`) })),
+        ...(sourceMedia ? { media: { assetId: sourceMedia.assetId, alt: text(sourceMedia.alt, `${path}.media.alt`) } } : {}),
       };
+    }
     case "feature-grid":
       return { ...section, eyebrow: optional(section.eyebrow, `${path}.eyebrow`), heading: text(section.heading, `${path}.heading`), description: optional(section.description, `${path}.description`), items: section.items.map((item, index) => ({ ...item, heading: text(item.heading, `${path}.items.${index}.heading`), description: optional(item.description, `${path}.items.${index}.description`) })) };
     case "faq":
@@ -517,6 +584,20 @@ function resolveSection(section: SectionedViewSection, path: string, text: (ref:
         ...(sourceItems ? { items: sourceItems.map((item, itemIndex) => resolveStatusItem(item, `${path}.items.${itemIndex}`, text, optional)) } : {}),
       };
     }
+    case "stat-grid":
+      return {
+        ...section,
+        eyebrow: optional(section.eyebrow, `${path}.eyebrow`),
+        heading: text(section.heading, `${path}.heading`),
+        description: optional(section.description, `${path}.description`),
+        items: section.items.map((item, index) => ({
+          ...item,
+          label: text(item.label, `${path}.items.${index}.label`),
+          value: text(item.value, `${path}.items.${index}.value`),
+          delta: optional(item.delta, `${path}.items.${index}.delta`),
+          description: optional(item.description, `${path}.items.${index}.description`),
+        })),
+      };
     default:
       throw new SectionedViewResolutionError(
         "unsupported-section-kind",

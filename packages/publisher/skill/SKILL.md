@@ -26,7 +26,7 @@ An engine gap or a missing check is a Foundry issue about the package that owns 
 ## Page shape — shipped templates first, `defineWebTemplate` for the rest
 
 1. Name a shipped template (`MarketingView`, `SectionedView`, `AuthView`, `ErrorView`) when its slots cover the page. Pre-auth marketing uses `MarketingView`, not `SectionedView`.
-2. If a required band is not a slot or `SectionedView` kind, do not flatten it into `feature-grid` or any other shipped kind — refuse and register `defineWebTemplate` in the consumer; `build` maps to Designer blocks.
+2. If a required band is not a slot or one of the six `SectionedView` kinds (`hero`, `feature-grid`, `faq`, `ordered-step-sequence`, `status-list`, `stat-grid`), do not flatten it into `feature-grid` or any other shipped kind — refuse and register `defineWebTemplate` in the consumer; `build` maps to Designer blocks. Hero `media` uses `resolveAssetId` at render time; metrics belong in `stat-grid`, not `feature-grid`. `section-header` / `article-body` stay out of contract — compose those blocks directly.
 3. Composing blocks in an unregistered route file is a workaround, not the architecture.
 
 ## Pre-auth page

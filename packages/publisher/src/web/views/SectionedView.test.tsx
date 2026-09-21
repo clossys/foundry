@@ -139,6 +139,62 @@ describe("SectionedView optional additive fields", () => {
   });
 });
 
+describe("SectionedView hero media and stat-grid (issue #1028)", () => {
+  const heroStill = {
+    type: "image" as const,
+    src: "https://cdn.example/hero-still.png",
+    width: 640,
+    height: 480,
+    alt: "Registry alt ignored when document alt wins",
+  };
+
+  it("renders hero media in a two-column Hero (tablet:grid-cols-2)", () => {
+    const withMedia: ResolvedSectionedViewDocument = {
+      ...document,
+      sections: [{ ...document.sections[0], media: { assetId: "acme.hero.still", alt: "Placeholder product still" } }, ...document.sections.slice(1)],
+    };
+    const html = renderToStaticMarkup(
+      <SectionedView
+        document={withMedia}
+        resolveAssetId={(id) => (id === "acme.hero.still" ? heroStill : undefined)}
+      />,
+    );
+    expect(html).toContain('class="grid grid-cols-1 items-center gap-xl tablet:grid-cols-2"');
+    expect(html).toContain('src="https://cdn.example/hero-still.png"');
+    expect(html).toContain('alt="Placeholder product still"');
+  });
+
+  it("fails closed when hero media is present but resolveAssetId is missing", () => {
+    const withMedia: ResolvedSectionedViewDocument = {
+      ...document,
+      sections: [{ ...document.sections[0], media: { assetId: "acme.hero.still", alt: "Placeholder product still" } }],
+    };
+    expect(() => renderToStaticMarkup(<SectionedView document={withMedia} />)).toThrow(/sections\.0\.media\.assetId/);
+  });
+
+  it("renders a stat-grid section through Designer Stat blocks", () => {
+    const withStats: ResolvedSectionedViewDocument = {
+      ...document,
+      sections: [
+        document.sections[0],
+        {
+          id: "stats",
+          kind: "stat-grid",
+          ground: "base",
+          heading: "Metrics",
+          items: [{ id: "one", label: "Active users", value: "2,481", delta: "+12%", trend: "up" }],
+        },
+        ...document.sections.slice(1),
+      ],
+    };
+    const html = renderToStaticMarkup(<SectionedView document={withStats} />);
+    expect(html).toContain("Active users");
+    expect(html).toContain("2,481");
+    expect(html).toContain("+12%");
+    expect(html).toContain("▲");
+  });
+});
+
 describe("SectionedView gap 2 and gap 7 relaxations", () => {
   it("still renders a document with a single leading hero and grouped status-list items byte for byte", () => {
     // Same proof technique as the LEGACY_MARKUP assertion above: this is the

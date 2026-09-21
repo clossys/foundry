@@ -187,6 +187,7 @@ import { buildWebHeadMetadata } from "./headMetadata.js";
 import { defaultWebTemplateMap, slotKindsFor } from "./internal/webTemplates.js";
 import type { RepeatingWebSlotFieldSpec, RepeatingWebSlotSpec, ResolvedWebGroupField, ResolvedWebGroupItem, WebTemplate } from "./types.js";
 import type { RenderWebOptions, RenderWebResult } from "./types.js";
+import { buildAssetElement } from "./buildAssetElement.js";
 
 /**
  * `react` is this subpath's optional peer (see package.json's
@@ -223,104 +224,6 @@ function resolveBindingText(
   if (binding.value !== undefined) return binding.value;
   if (binding.copyId !== undefined) return resolveCopyId?.(binding.copyId);
   return undefined;
-}
-
-// ─────────────────────────────────────────────────────────────────────────
-// buildAssetElement — the one place a resolved RenderAsset becomes a real
-// element, shared by the single-binding content loop and the repeating-
-// group loop below. See this file's own top comment, "Responsive images"
-// / "Video" / "Reduced motion is a rendering-time decision," for the full
-// contract.
-// ─────────────────────────────────────────────────────────────────────────
-
-/**
- * Groups `sources` by `format` (entries sharing no `format`, or the same
- * `format`, become one group), preserving first-occurrence order — the
- * shape one `<source srcset="..." type="...">` needs per distinct format.
- */
-function groupImageSourcesByFormat(sources: readonly RenderImageSource[]): Array<{ format: string | undefined; entries: RenderImageSource[] }> {
-  const groups: Array<{ format: string | undefined; entries: RenderImageSource[] }> = [];
-  const indexByFormat = new Map<string | undefined, number>();
-  for (const source of sources) {
-    let index = indexByFormat.get(source.format);
-    if (index === undefined) {
-      index = groups.length;
-      indexByFormat.set(source.format, index);
-      groups.push({ format: source.format, entries: [] });
-    }
-    groups[index]!.entries.push(source);
-  }
-  return groups;
-}
-
-/**
- * A `RenderImageAsset` with no `sources` (or an empty one) renders the
- * identical single `<img>` this function has always produced — see this
- * file's own top comment, "Responsive images," for the full `<picture>`
- * contract when `sources` IS present.
- */
-function buildResponsiveImageElement(asset: RenderImageAsset): ReactNode {
-  const sources = asset.sources ?? [];
-  const fallbackImg = createElement("img", { src: asset.src, alt: asset.alt, width: asset.width, height: asset.height });
-  if (sources.length === 0) return fallbackImg;
-
-  const sourceElements = groupImageSourcesByFormat(sources).map((group, i) =>
-    createElement("source", {
-      key: `source-${i}`,
-      srcSet: group.entries.map((entry) => `${entry.src} ${entry.width}w`).join(", "),
-      ...(group.format !== undefined ? { type: group.format } : {}),
-    }),
-  );
-  return createElement("picture", {}, ...sourceElements, fallbackImg);
-}
-
-/**
- * See this file's own top comment, "Video" / "Reduced motion is a
- * rendering-time decision, not a build-time one," for the full contract —
- * this function is where that contract is actually applied.
- * `prefersReducedMotion` is `RenderWebOptions.prefersReducedMotion`,
- * threaded straight through from the caller; `undefined`/`false` means
- * "not reduced," the regression-safe default.
- */
-function buildVideoElement(asset: RenderVideoAsset, prefersReducedMotion: boolean | undefined): ReactNode {
-  const reducedMotionActive = prefersReducedMotion === true;
-
-  if (reducedMotionActive && asset.reducedMotion === "static-poster") {
-    // `isRenderVideoAsset` already refuses a "static-poster" entry with no
-    // `poster` — see internal/assets.ts — so `asset.poster` is guaranteed
-    // present here.
-    return createElement("img", { src: asset.poster as string, alt: asset.alt, width: asset.width, height: asset.height });
-  }
-
-  const autoplaySuppressed = reducedMotionActive && (asset.reducedMotion === "pause" || asset.reducedMotion === "no-autoplay");
-  const autoPlay = asset.autoplay === true && !autoplaySuppressed;
-
-  const sourceElements = asset.sources.map((source, i) => createElement("source", { key: `source-${i}`, src: source.src, type: source.mimeType }));
-  const trackElements = (asset.captions ?? []).map((caption, i) =>
-    createElement("track", { key: `track-${i}`, kind: "captions", src: caption.src, srcLang: caption.srclang, label: caption.label }),
-  );
-
-  return createElement(
-    "video",
-    {
-      width: asset.width,
-      height: asset.height,
-      ...(asset.poster !== undefined ? { poster: asset.poster } : {}),
-      autoPlay,
-      loop: asset.loop === true,
-      muted: asset.muted === true,
-      controls: true,
-      "aria-label": asset.alt,
-    },
-    ...sourceElements,
-    ...trackElements,
-    asset.alt,
-  );
-}
-
-/** Dispatches a resolved `RenderAsset` to {@link buildResponsiveImageElement} or {@link buildVideoElement} — the one place `renderWebDocument` decides what element a resolved asset binding becomes, shared by the single-binding `content` loop and `resolveGroupItemContent` below. */
-function buildAssetElement(asset: RenderAsset, options: Pick<RenderWebOptions, "prefersReducedMotion">): ReactNode {
-  return asset.type === "image" ? buildResponsiveImageElement(asset) : buildVideoElement(asset, options.prefersReducedMotion);
 }
 
 /**

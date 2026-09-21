@@ -20,6 +20,25 @@ All notable changes to this package are documented here. Format follows
 - `SectionedView` resolve-then-render integration coverage for grouped
   and flat `status-list` sections.
 
+## [0.4.11] - 2026-09-21
+
+### Added
+
+- `SectionedViewDocument` hero sections may carry optional `media`
+  (`{ assetId, alt }`), with `alt` as a `CopyRef` and `assetId` resolved at
+  render time through `SectionedView`'s `resolveAssetId` — the same seam as
+  `MarketingView`'s `heroMedia`. Hero media switches Designer `Hero` to the
+  two-column layout (`tablet:grid-cols-2`).
+- A closed `stat-grid` section kind maps each row onto Designer `Stat` with
+  `CopyRef` label, value, optional delta/trend, and optional description.
+
+### Changed
+
+- README and skill: six shipped `SectionedView` kinds; hero `actions` still
+  render as underlined anchors into `Hero`'s `actions` slot (data-shaped
+  `href` contract unchanged). `article-body` / `section-header` remain out of
+  contract — compose those blocks in the consumer or via `defineWebTemplate`.
+
 ## [0.4.10] - 2026-09-21
 
 ### Changed
