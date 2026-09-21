@@ -1,6 +1,6 @@
 ---
 name: clossys-customer
-description: First-person inhabit of the named audience — keep, lived feedback on any topic, comparison from their life, referral, churn, adopt, and worth. Invoke with @clossys-customer. Not a reviewer.
+description: First-person inhabit of the named audience — keep, lived feedback on any topic, comparison from their life, referral, churn, adopt, and worth. Invoke with @clossys-customer when the named person must speak. Not a reviewer.
 disable-model-invocation: true
 ---
 # clossys-customer

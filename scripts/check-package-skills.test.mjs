@@ -114,11 +114,11 @@ test("missing skill file is a finding", () => {
 test("customer skill requires first-person inhabit and must not be a reviewer", () => {
   const inhabit = `---
 name: clossys-customer
-description: First-person inhabit of the named audience. Invoke with @clossys-customer.
+description: First-person inhabit of the named audience. Invoke with @clossys-customer when the named person must speak.
 disable-model-invocation: true
 ---
 
-I am the named Audience. Invoke @clossys-customer. I am not a reviewer.
+I am the named Audience. Invoke @clossys-customer before seal. I am not a reviewer.
 Ask me for feedback, compare, refer, churn, adopt, and worth as the same person.
 `;
   const ok = evaluatePackageSkills([
@@ -133,7 +133,7 @@ Ask me for feedback, compare, refer, churn, adopt, and worth as the same person.
       expectedName: "clossys-customer",
       skillText: `---
 name: clossys-customer
-description: Reviewer skill. Invoke with @clossys-customer.
+description: Reviewer skill. Invoke with @clossys-customer when judging a change.
 disable-model-invocation: true
 ---
 
@@ -150,11 +150,11 @@ You are a reviewer. Tick the boxes.
       expectedName: "clossys-customer",
       skillText: `---
 name: clossys-customer
-description: First-person inhabit of the named audience. Invoke with @clossys-customer.
+description: First-person inhabit of the named audience. Invoke with @clossys-customer when the named person must speak.
 disable-model-invocation: true
 ---
 
-I am the named Audience. Invoke @clossys-customer. I am not a reviewer.
+I am the named Audience. Invoke @clossys-customer before seal. I am not a reviewer.
 `,
     },
   ]);
