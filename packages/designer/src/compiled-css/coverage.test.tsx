@@ -42,7 +42,8 @@ import { Spinner } from "../atoms/Spinner.js";
 import { Switch } from "../atoms/Switch.js";
 import { TextField } from "../atoms/TextField.js";
 import { Textarea } from "../atoms/Textarea.js";
-import { scanClassCandidates } from "./class-scan.js";
+import { Hero } from "../blocks/Hero.js";
+import { scanCompiledCssSources } from "./scan-sources.js";
 import { generateCompiledCss } from "./generate.js";
 
 const packageRoot = resolve(import.meta.dirname, "..", "..");
@@ -130,7 +131,7 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
 
     expect(renderedClasses.size).toBeGreaterThan(20);
 
-    const scan = scanClassCandidates(resolve(packageRoot, "src", "atoms"));
+    const scan = scanCompiledCssSources(packageRoot);
     const generated = await generateCompiledCss({ stylesDir: resolve(packageRoot, "styles"), candidates: scan.candidates });
 
     const missing: string[] = [];
@@ -139,6 +140,40 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
       if (!generated.css.includes(selector)) missing.push(className);
     }
 
+    expect(missing).toEqual([]);
+  });
+
+  it("Hero (with media) and primary Button render classes present in a fresh compiled.css", async () => {
+    const trees: Array<ReturnType<typeof render>> = [];
+    trees.push(
+      render(
+        <Hero
+          heading="Placeholder heading"
+          description="Placeholder description."
+          actions={<Button variant="primary">Continue</Button>}
+          media={<img src="/placeholder.png" alt="Placeholder still" />}
+        />,
+      ),
+    );
+
+    const renderedClasses = new Set<string>();
+    for (const result of trees) {
+      for (const c of collectClassNames(result.container)) renderedClasses.add(c);
+      result.unmount();
+    }
+
+    for (const required of ["text-display-l", "font-display", "bg-accent", "rounded-control", "tablet:grid-cols-2"]) {
+      expect(renderedClasses.has(required)).toBe(true);
+    }
+
+    const scan = scanCompiledCssSources(packageRoot);
+    const generated = await generateCompiledCss({ stylesDir: resolve(packageRoot, "styles"), candidates: scan.candidates });
+
+    const missing: string[] = [];
+    for (const className of renderedClasses) {
+      const selector = toSelectorText(className);
+      if (!generated.css.includes(selector)) missing.push(className);
+    }
     expect(missing).toEqual([]);
   });
 });

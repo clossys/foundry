@@ -48,6 +48,14 @@ its own manifest:
 "foundry": { "assessment": { "bin": "designer-rate-check", "invocation": "single-json-input" } }
 ```
 
+## Pre-auth page quality
+
+Pre-auth marketing pages use a five-star contract: **done is exceptional (5)**;
+mechanical gates (`designer-hero-css-check`, `designer-fold-check`, and
+`writer-check --live` on the publishing repo) prove **good (3)** only. The
+full rubric — floor, authored great, review keep, and who certifies what — is
+in [PRE-AUTH-QUALITY.md](./PRE-AUTH-QUALITY.md).
+
 Onboarding discovers that declaration from the installed manifest and never
 infers a surface. The four existing designer bins remain gates and are not
 the assessment surface. Designer is not a required first-day role; Advisor
@@ -151,7 +159,7 @@ smallest stable subpath that owns what you need:
 | `@clossys/designer/tokens` | Typed `TOKENS`, brand CSS parsing, the brand-coverage gate, WCAG colour math (`contrastRatio` and friends), the contrast gate (`checkTokenContrast`, `CONTRAST_PAIRS`), and `assertTokenStylesLoaded` (dev-only token-CSS presence check — see "Setup" below). No React runtime. |
 | `@clossys/designer/tokens.css` | Neutral primitive custom-property defaults; works without Tailwind. |
 | `@clossys/designer/theme.css` | Optional Tailwind v4 wiring; imports `tokens.css` itself. |
-| `@clossys/designer/compiled.css` | GENERATED, precompiled utility CSS for `atoms` — the framework-portable path for a consumer with no Tailwind pipeline. Imports nothing itself; load after `tokens.css`. See "Framework-portable components, without Tailwind" below. |
+| `@clossys/designer/compiled.css` | GENERATED, precompiled utility CSS for `atoms`, `blocks`, and `shell` — the default path for a pre-auth page without Tailwind. Imports nothing itself; load after `tokens.css`. See "Framework-portable components, without Tailwind" below. |
 | `@clossys/designer/brand-template.css` | Copy-and-fill template for a consumer brand binding. |
 | `@clossys/designer/icons` | Tree-shakeable glyph data. |
 | `@clossys/designer/atoms`, `/blocks`, `/shell`, `/charts` | Reusable React visual primitives. |
@@ -343,19 +351,14 @@ verify the claim itself (that a `"server-safe"` subpath truly resolves
 safely under the `react-server` condition) — read that section before
 treating a passing gate as more than it is.
 
-### Framework-portable components, without Tailwind
+### Framework-portable components, without Tailwind (default for pre-auth pages)
 
-Everything above (`theme.css` + `@source`) assumes a Tailwind v4 pipeline —
-this package's deliberate, opinionated, and still the only *required* setup
-(see [CONTRIBUTING.md](../../CONTRIBUTING.md)'s "Supported configurations:
-the default answer is also no"). A consumer whose build has no Tailwind
-pipeline at all — and does
-not want to add one solely for this dependency — can still render this
-package's **`atoms`** with real styling, no Tailwind, no `@source`:
+**Default CSS path** — one mount, no Tailwind, no `@source`:
 
 ```css
 @import "@clossys/designer/tokens.css";
 @import "@clossys/designer/compiled.css";
+/* your brand overlay (from brand-template.css) */
 ```
 
 ```bash
@@ -364,28 +367,43 @@ npm install @clossys/designer react react-dom react-aria-components \
 # tailwindcss itself is NOT needed on this path
 ```
 
-That's the whole setup. No `@source` line, no bundler-specific symlink-
-following behavior to get right, no Tailwind dependency at all.
+Load **exactly one** styling path per project (see "Load exactly one path,
+never both" below). Do not also import `theme.css` or run a Tailwind
+`@source` scan on the same page — pick this path OR the advanced path, not
+both.
 
-**Scope: `atoms` only.** `compiled.css` covers this package's 31 atoms — the
-self-contained base layer that composes no other component (see "Placement
-rules" below). `blocks`, `shell`, `charts`, and `theme` remain Tailwind-native
-only for now; a consumer on this path composes layout from `atoms` and plain
-markup the same way any consumer already assembles blocks from atoms (see
-"Placement rules" — "most page-level composition belongs to the consumer").
-Extending this same generator to `blocks`/`shell`/`charts`/`theme` is a
-same-shape, incremental follow-up once this narrower contract has real
-production mileage — see the introducing PR (#174) for the full reasoning
-behind starting here.
+**Scope.** `compiled.css` is generated from `src/atoms/`, `src/blocks/`, and
+`src/shell/` — enough for Hero, feature blocks, and site chrome on a pre-auth
+marketing page. `charts` and `theme` remain Tailwind-native only.
+
+Verify the stylesheet your app loads with `designer-hero-css-check
+path/to/your.css` (or point it at `node_modules/@clossys/designer/styles/compiled.css`
+when you import that file unchanged).
+
+Record fold evidence (from your app or a browser script) and verify it with
+`designer-fold-check path/to/fold-measurement.json` — optional
+`--also path/to/mobile-fold.json` for a second viewport. Missing evidence is
+not done; the gate fails closed.
+
+Author a type brief from `templates/brand-type.template.json` (display face,
+H1 minimum, measure cap, monospace roles, orphan-word policy) and verify it
+with `designer-type-check path/to/brand-type.json` — optional
+`--overlay path/to/brand.css` to require a bound `--font-display` in overlay
+CSS. Do not invent type pairing ad hoc during the walk that proves 3.
+
+### Tailwind-native path (advanced)
+
+When you already run Tailwind v4 and want the full token surface including
+`charts`/`theme`, use `theme.css` + `@source` on `dist` instead of
+`compiled.css`. See **Setup** below for that path and its `@source` pitfalls.
 
 **What `compiled.css` is.** A GENERATED file — never hand-edited, checked by
 `npm run check:compiled-css` (also runs as part of `npm test`, so CI catches
 drift automatically) and regenerated with `npm run generate:compiled-css`.
 It is produced by a REAL Tailwind v4 compile (`src/compiled-css/generate.ts`,
 using the real `tailwindcss` package's own `compile()` API) of every class
-candidate `src/compiled-css/class-scan.ts` finds by statically scanning
-`src/atoms/`'s own source — the same `VARIANT_CLASSES`/`SIZE_CLASSES`-style
-tables every atom already uses (see "No `class-variance-authority`" below).
+candidate `src/compiled-css/scan-sources.ts` finds by statically scanning
+`src/atoms/`, `src/blocks/`, and `src/shell/`.
 It is not a second, hand-maintained approximation of what `bg-accent` means:
 it is Tailwind's own real compiled answer for the SAME tokens, precomputed
 once instead of recompiled at every consumer's own build time.
@@ -539,9 +557,14 @@ instead of to which component to reach for.
 
 ## Setup
 
-Two things have to both be true before an atom looks like anything: the
-token CSS has to be imported, and Tailwind has to be told to scan this
-package's compiled output for the classes it uses.
+**Default (pre-auth pages, no Tailwind):** import token + compiled styles and
+your brand overlay — see "Framework-portable components, without Tailwind"
+above. Run `designer-hero-css-check` on the CSS file your app actually loads.
+
+**Advanced (Tailwind v4 already in the project):** the token CSS has to be
+imported, and Tailwind has to be told to scan this package's built output
+for the classes it uses. Do **not** also import `compiled.css` on the same
+project.
 
 **1. Import the tokens' Tailwind wiring**, on top of Tailwind itself, in
 your CSS entry point:
@@ -558,9 +581,9 @@ full three-layer contract, including how to bind brand colors over the
 neutral greyscale default.)
 
 **2. Point Tailwind's `@source` at this package's built output**, in the
-same CSS file. This is the single highest-risk step in this whole setup: if
+same CSS file. This is the single highest-risk step on the advanced path: if
 Tailwind never scans `dist/`, it never sees `bg-accent` or `rounded-control`
-as classes anyone used, so it never generates them — every atom renders with
+as classes anyone used, so it never generates them — blocks render with
 zero applied styling, and nothing in your build fails or warns about it.
 
 ```css

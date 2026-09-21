@@ -3,6 +3,19 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Unreleased
+
+## [0.4.6] - 2026-09-20
+
+### Changed
+
+- README: `MarketingView` is the primary pre-auth marketing template;
+  `SectionedView` is documented only for the closed five section kinds.
+- README/skill: first-viewport `heroActions` carries one primary CTA;
+  `heroMedia` is product surface or original art, not decorative stock.
+  Publisher seals after a synthetic-user keep and does not inhabit the
+  persona.
+
 ## [0.4.5] - 2026-09-18
 
 ### Added

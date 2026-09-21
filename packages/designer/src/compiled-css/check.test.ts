@@ -7,9 +7,9 @@ import { checkCompiledCssFreshness } from "./check.js";
 const packageRoot = resolve(import.meta.dirname, "..", "..");
 
 describe("checkCompiledCssFreshness — real package (the actual CI gate)", () => {
-  it("reports the real, committed styles/compiled.css as in sync with the real src/atoms/", async () => {
+  it("reports the real, committed styles/compiled.css as in sync with atoms, blocks, and shell", async () => {
     // THE gate: if this ever fails, styles/compiled.css was hand-edited or
-    // src/atoms/ changed without regenerating it. Run
+    // src/atoms/, src/blocks/, or src/shell/ changed without regenerating it. Run
     // `npm run generate:compiled-css` to fix.
     const result = await checkCompiledCssFreshness({ packageRoot });
     if (!result.inSync) {
@@ -27,6 +27,8 @@ describe("checkCompiledCssFreshness — drift detection (isolated fixture)", () 
     dir = mkdtempSync(join(tmpdir(), "ui-compiled-css-check-"));
     cpSync(join(packageRoot, "styles"), join(dir, "styles"), { recursive: true });
     cpSync(join(packageRoot, "src", "atoms"), join(dir, "src", "atoms"), { recursive: true });
+    cpSync(join(packageRoot, "src", "blocks"), join(dir, "src", "blocks"), { recursive: true });
+    cpSync(join(packageRoot, "src", "shell"), join(dir, "src", "shell"), { recursive: true });
   });
 
   afterEach(() => {

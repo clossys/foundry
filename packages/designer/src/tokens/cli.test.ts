@@ -42,9 +42,10 @@ describe("main — argument handling", () => {
     expect(() => main([path, "--bogus"])).toThrow(CliInputError);
   });
 
-  it("throws CliInputError on an unexpected extra positional argument", () => {
-    const path = writeBrandCss(":root { --color-accent: #2a78d6; }\n");
-    expect(() => main([path, "extra"])).toThrow(CliInputError);
+  it("returns 1 when --also redeclares a brandable slot with a different value", () => {
+    const overlay = writeBrandCss(":root { --color-accent: #111111; --font-body: Inter, sans-serif; }\n");
+    const also = writeBrandCss(":root { --color-accent: #222222; }\n");
+    expect(main([overlay, "--also", also])).toBe(1);
   });
 
   it("throws CliInputError when brand-css-file does not exist", () => {

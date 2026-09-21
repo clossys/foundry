@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { CliInputError, main } from "./cli.js";
+import { CliInputError, main, mainAddressabilityCheck } from "./cli.js";
 
 // Hermetic: every test operates on its own pair of `mkdtemp` directories
 // (a real record.json file's directory, plus a scan directory), removed
@@ -357,6 +357,63 @@ function writeBrandDerivedRuleIds(value: unknown): string {
   writeFileSync(path, JSON.stringify(value));
   return path;
 }
+
+describe("main — live-copy trees", () => {
+  const voiceRecord = {
+    id: "acme-app",
+    rules: {
+      person: { description: "second-person", forbiddenPronouns: [] },
+      tense: { description: "present", forbiddenMarkers: [] },
+      formality: "neutral",
+      tone: [],
+    },
+    glossary: [],
+    claims: [{ id: "growth", text: "placeholder claim", matchPhrases: [], requiresSupport: true }],
+  };
+
+  function writeVoiceRecord(): string {
+    const path = join(recordDir, "voice.json");
+    writeFileSync(path, JSON.stringify(voiceRecord));
+    return path;
+  }
+
+  it("returns 2 when a declared live tree is missing", () => {
+    const recordFile = writeRecord(validRecord);
+    const voiceFile = writeVoiceRecord();
+    writeFileSync(join(scanDir, "page.ts"), 'const title = "No results";\n');
+    expect(main([recordFile, scanDir, "--live", join(scanDir, "missing-live"), "--voice-record", voiceFile])).toBe(2);
+  });
+
+  it("returns 1 when live copy contains unmarked magnitude", () => {
+    const recordFile = writeRecord(validRecord);
+    const voiceFile = writeVoiceRecord();
+    const liveDir = mkdtempSync(join(tmpdir(), "copy-cli-live-"));
+    writeFileSync(join(liveDir, "hero.tsx"), 'export const tag = "Save 50% today";\n');
+    writeFileSync(join(scanDir, "registry.ts"), 'const title = "No results";\n');
+    expect(main([recordFile, scanDir, "--live", liveDir, "--voice-record", voiceFile])).toBe(1);
+    rmSync(liveDir, { recursive: true, force: true });
+  });
+
+  it("returns 1 when live copy contains fold wallpaper", () => {
+    const recordFile = writeRecord(validRecord);
+    const voiceFile = writeVoiceRecord();
+    const liveDir = mkdtempSync(join(tmpdir(), "copy-cli-live-"));
+    writeFileSync(join(liveDir, "hero.tsx"), 'export const headline = "AI intelligence for your workflow";\n');
+    writeFileSync(join(scanDir, "registry.ts"), 'const title = "No results";\n');
+    expect(main([recordFile, scanDir, "--live", liveDir, "--voice-record", voiceFile])).toBe(1);
+    rmSync(liveDir, { recursive: true, force: true });
+  });
+
+  it("returns 0 on live copy without wallpaper when registry scan is clean", () => {
+    const recordFile = writeRecord(validRecord);
+    const voiceFile = writeVoiceRecord();
+    const liveDir = mkdtempSync(join(tmpdir(), "copy-cli-live-"));
+    writeFileSync(join(liveDir, "hero.tsx"), 'export const headline = "Ship the release you approved";\n');
+    writeFileSync(join(scanDir, "registry.ts"), 'const title = "No results";\n');
+    expect(main([recordFile, scanDir, "--live", liveDir, "--voice-record", voiceFile])).toBe(0);
+    rmSync(liveDir, { recursive: true, force: true });
+  });
+});
 
 describe("main — voice-derivation-coverage — argument handling", () => {
   it("--help returns 0 without touching either path", () => {
@@ -756,4 +813,42 @@ describe("main — direct-path reachability (real compiled dist/cli.js)", () => 
     },
     20_000,
   );
+});
+
+describe("mainAddressabilityCheck — argument handling", () => {
+  let dir: string;
+
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), "copy-addressability-cli-"));
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    vi.spyOn(console, "error").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+    vi.restoreAllMocks();
+  });
+
+  it("--help returns 0 and documents --extensions", () => {
+    expect(mainAddressabilityCheck(["--help"])).toBe(0);
+    const printed = vi.mocked(console.log).mock.calls.map((c) => String(c[0])).join("\n");
+    expect(printed).toContain("--extensions");
+  });
+
+  it("throws CliInputError when --extensions has no value", () => {
+    expect(() => mainAddressabilityCheck(["--extensions"])).toThrow(CliInputError);
+  });
+
+  it("throws CliInputError when --extensions omits the leading dot", () => {
+    expect(() => mainAddressabilityCheck(["--extensions", "mjs"])).toThrow(CliInputError);
+  });
+
+  it("does not scan .mjs by default; --extensions .mjs scans inline user-facing prose", () => {
+    writeFileSync(
+      join(dir, "Widget.mjs"),
+      'export const Widget = () => <input aria-label="Search products" />;\n',
+    );
+    expect(mainAddressabilityCheck([dir])).toBe(2);
+    expect(mainAddressabilityCheck([dir, "--extensions", ".mjs"])).toBe(1);
+  });
 });

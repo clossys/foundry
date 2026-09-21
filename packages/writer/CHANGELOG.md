@@ -3,6 +3,23 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Unreleased
+
+## [0.3.10] - 2026-09-20
+
+### Added
+
+- `writer-check --live <dir>` (repeatable) with `--voice-record`: scans
+  declared live-copy trees for claim-shaped and magnitude-shaped prose not
+  covered by the voice claims register.
+- Live-copy scan also flags built-in fold wallpaper phrases (`fold-wallpaper`).
+- Skill: a 5 keep is a synthetic user, not a Writer self-review of copy.
+- `writer-check addressability --extensions <ext>` (repeatable): scan
+  additional file extensions beyond the default `.ts`/`.tsx`/`.js`/`.jsx`
+  set.
+- README: documents `--extensions` and that this repository's own CLI prose
+  is operator messaging, not a copy-registry subject for addressability.
+
 ## [0.3.9] - 2026-09-18
 
 ### Added

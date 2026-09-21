@@ -361,6 +361,35 @@ describe("golden: MarketingView", () => {
     );
   });
 
+  it("renders a two-column Hero when heroMedia is present (tablet:grid-cols-2, not flex-only)", () => {
+    const doc: ComposeDocument = {
+      id: "acme-marketing-home",
+      channel: "web",
+      template: "MarketingView",
+      meta: { channel: "web", title: "Acme — placeholder", description: "Placeholder page description." },
+      bindings: [
+        { slot: "brand", value: "Acme Wordmark" },
+        { slot: "heroHeading", value: "Placeholder hero heading" },
+        { slot: "heroMedia", assetId: "acme.hero.still" },
+        { slot: "ctaHeading", value: "Placeholder CTA heading" },
+      ],
+    };
+    const heroStill = {
+      type: "image" as const,
+      src: "https://cdn.example/hero-still.png",
+      width: 640,
+      height: 480,
+      alt: "Placeholder product still",
+    };
+    const { element } = renderWebDocument(doc, {
+      groups: [{ slot: "features", items: [] }],
+      resolveAssetId: (id) => (id === "acme.hero.still" ? heroStill : undefined),
+    });
+    const html = renderToStaticMarkup(element);
+    expect(html).toContain('class="grid grid-cols-1 items-center gap-xl tablet:grid-cols-2"');
+    expect(html).toContain('src="https://cdn.example/hero-still.png"');
+  });
+
   it("renders cleanly with zero features (an empty grid, not a crash) and omits the FAQ section entirely when its binding was never authored", () => {
     const doc: ComposeDocument = {
       id: "acme-marketing-home",

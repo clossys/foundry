@@ -551,6 +551,19 @@ since the two gates' natural test fixtures are structurally incompatible (a
 literal traceability needs to prove a registry match is exactly a literal
 addressability cannot confirm is safe).
 
+Options:
+
+- `--extensions <ext>` (repeatable) — file extensions to scan, each
+  including the leading dot (for example `.mjs`). Values union across
+  repeats. When omitted, the default is `.ts`, `.tsx`, `.js`, and `.jsx`.
+  When any `--extensions` flag is present, that default set is replaced.
+
+This supplier repository does not ship a copy-registry subject for
+addressability to run against. The `writer-check` CLI strings in this tree
+are inline operator messaging on purpose, not product UI copy. Consumers
+run addressability on their own product UI source trees, not on this
+package's own CLI sources.
+
 ## The passage layer — the missing middle between an entry and a document
 
 `@example/copy` (now `writer`) has terms (a glossary) and entries

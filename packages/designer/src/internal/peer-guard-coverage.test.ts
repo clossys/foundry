@@ -139,12 +139,14 @@ describe("peer guard coverage (#182)", () => {
     }
   });
 
-  it("tailwindcss is imported only from compiled-css/generate.ts, and that file guards it", () => {
+  it("tailwindcss is imported only from guarded compile sites, and each guards it", () => {
+    const allowed = new Set(["compiled-css/generate.ts", "hero-css/compile-consumer-css.ts"]);
     const importers = filesImporting("tailwindcss").concat(filesImporting("tailwindcss/theme")).concat(filesImporting("tailwindcss/utilities"));
     for (const importer of importers) {
-      expect(importer, "an unexpected new tailwindcss import site needs its own #182 guard").toBe("compiled-css/generate.ts");
+      expect(allowed.has(importer), `an unexpected new tailwindcss import site needs its own #182 guard: ${importer}`).toBe(true);
     }
     expect(fileCallsAssertPeerVersionFor("compiled-css/generate.ts", "tailwindcss")).toBe(true);
+    expect(fileCallsAssertPeerVersionFor("hero-css/compile-consumer-css.ts", "tailwindcss")).toBe(true);
   });
 
   it("tailwind-merge is imported only from atoms/internal/cx.ts — the one file assertTailwindMergeVersion documents guarding", () => {

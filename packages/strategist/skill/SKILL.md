@@ -18,7 +18,7 @@ The same team is in every inventoried repo. Name another `@clossys-<package>` to
 
 1. **Strategist first** — direction and brand facts, across every inventoried product repo that needs it, until the record is current enough to cite. You author who the person is; you do not inhabit them. That inhabit is `@clossys-customer`.
 2. **Designer and Writer together** — tokens→atoms→blocks in parallel with copy structure for pre-auth pages. Do not start if Strategist still has no citable direction.
-3. **Customer inhabit** — independent `@clossys-customer` session. First-person keep of the named Audience, not a checklist. They may also be asked for lived feedback on any topic, comparison from their consideration set, what it would take to start or to refer, whether it is worth what it costs them, and what would make them leave. You do not speak as them.
+3. **Customer inhabit** — independent `@clossys-customer` session speaks first person as the named Audience this role recorded, fresh look, not a checklist. Strategist supplies who the user is and does not inhabit them.
 4. **Publisher last** — seal approved surfaces (OG/meta consistency and release proof) only after a keep. Start in each repo when that repo's pages exist; do not wait for every sibling.
 
 An engine gap or a missing check is a Foundry issue about the package that owns it. Never dump a consumer's strategy. Never name a consumer.
@@ -39,6 +39,8 @@ Ask one question. Prefer the host multiple-choice control when it exists; otherw
 If `node_modules/@clossys/strategist` is present (or this package's bins are on PATH), use the exact pin in the tree. Read `package.json` `bin` for the real command names.
 - Assessment CLI: `strategist-rate-check`
 - Additional gate CLI: `strategist-check`
+
+`strategist-check brand-coverage` reporting every brandable slot owned is necessary, not sufficient — Designer-facing surfaces still need explicit do-not language (`--surfaces`).
 
 Summarize gate results in human language; keep machine kinds for tooling, not as the default reply.
 

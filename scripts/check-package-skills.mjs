@@ -89,7 +89,16 @@ function validateSkillName(name, expectedName, packageDir) {
   return findings;
 }
 
-const EXPRESSION_WAVE = new Set(["designer", "writer", "publisher", "strategist"]);
+const CUSTOMER_SESSION_WAVE = new Set(["designer", "writer", "publisher", "strategist"]);
+/** Expression-wave skills own the pre-auth page contract. Frontmatter-only was not enough. */
+const PRE_AUTH_EXPRESSION_WAVE = new Set(["designer", "writer", "publisher"]);
+const PRE_AUTH_HEADING = /^## Pre-auth page[ \t]*$/m;
+const PUBLISHER_PRE_AUTH_MARKETING_VIEW = /MarketingView/;
+const PRE_AUTH_QUALITY_REF = /PRE-AUTH-QUALITY(?:\.md)?/;
+const PRE_AUTH_EXCEPTIONAL = /\bexceptional\b/i;
+const PRE_AUTH_SYNTHETIC_USER = /synthetic user/i;
+const PRE_AUTH_NO_AUTHOR_KEEP = /does not author keep-review|do not author keep-review/i;
+const INSPECTOR_USER_BOUNDARY = /synthetic user/i;
 
 function validateSkillBody(packageDir, text) {
   const findings = [];
@@ -129,7 +138,7 @@ function validateSkillBody(packageDir, text) {
       }
     }
   }
-  if (EXPRESSION_WAVE.has(packageDir) || packageDir === "inspector") {
+  if (CUSTOMER_SESSION_WAVE.has(packageDir) || packageDir === "inspector") {
     if (!/clossys-customer/.test(text)) {
       findings.push({
         rule: "expression-customer-session",
@@ -145,7 +154,7 @@ function validateSkillBody(packageDir, text) {
 export function evaluatePackageSkills(packages) {
   const findings = [];
   const passed = [];
-  for (const { packageDir, skillPath, skillText, expectedName } of packages) {
+  for (const { packageDir, skillPath, skillText, expectedName, cataloguePath, catalogueText } of packages) {
     const pkgFindings = [];
     if (skillText === undefined && !existsSync(skillPath)) {
       pkgFindings.push({
@@ -177,6 +186,75 @@ export function evaluatePackageSkills(packages) {
           });
         }
         pkgFindings.push(...validateSkillBody(packageDir, text));
+        if (PRE_AUTH_EXPRESSION_WAVE.has(packageDir) && !PRE_AUTH_HEADING.test(text)) {
+          pkgFindings.push({
+            rule: "pre-auth-page-heading",
+            packageDir,
+            message: "expression-wave skill must contain a '## Pre-auth page' heading — the brief the packed skill carries",
+          });
+        }
+        if (PRE_AUTH_EXPRESSION_WAVE.has(packageDir) && PRE_AUTH_HEADING.test(text)) {
+          if (!PRE_AUTH_QUALITY_REF.test(text)) {
+            pkgFindings.push({
+              rule: "pre-auth-quality-ref",
+              packageDir,
+              message: "expression-wave skill must reference PRE-AUTH-QUALITY (see packages/designer/PRE-AUTH-QUALITY.md)",
+            });
+          }
+          if (!PRE_AUTH_EXCEPTIONAL.test(text)) {
+            pkgFindings.push({
+              rule: "pre-auth-exceptional",
+              packageDir,
+              message: "expression-wave skill must state that done is exceptional (5), not good (3)",
+            });
+          }
+          if (!PRE_AUTH_SYNTHETIC_USER.test(text)) {
+            pkgFindings.push({
+              rule: "pre-auth-synthetic-user",
+              packageDir,
+              message: "expression-wave skill must name a synthetic user as the keep, not a hired QA or a self-review",
+            });
+          }
+          if (!PRE_AUTH_NO_AUTHOR_KEEP.test(text)) {
+            pkgFindings.push({
+              rule: "pre-auth-no-author-keep",
+              packageDir,
+              message: "expression-wave skill must say this role does not author keep-review evidence",
+            });
+          }
+        }
+        if (packageDir === "publisher" && PRE_AUTH_HEADING.test(text) && !PUBLISHER_PRE_AUTH_MARKETING_VIEW.test(text)) {
+          pkgFindings.push({
+            rule: "publisher-pre-auth-marketing-view",
+            packageDir,
+            message: "publisher skill Pre-auth page section must name MarketingView as the pre-auth template",
+          });
+        }
+        if (packageDir === "inspector" && !INSPECTOR_USER_BOUNDARY.test(text)) {
+          pkgFindings.push({
+            rule: "inspector-user-boundary",
+            packageDir,
+            message: "inspector skill must cede target-audience keep to a synthetic user — Inspector judges rules, not a person landing on the page",
+          });
+        }
+      }
+      if (cataloguePath !== undefined || catalogueText !== undefined) {
+        const packed =
+          catalogueText ??
+          (cataloguePath && existsSync(cataloguePath) ? readFileSync(cataloguePath, "utf8") : undefined);
+        if (packed === undefined) {
+          pkgFindings.push({
+            rule: "catalogue-missing",
+            packageDir,
+            message: `expected packages/launcher/skill-catalogue/${packageDir}/SKILL.md to mirror packages/${packageDir}/skill/SKILL.md`,
+          });
+        } else if (packed !== text) {
+          pkgFindings.push({
+            rule: "catalogue-drift",
+            packageDir,
+            message: `packages/launcher/skill-catalogue/${packageDir}/SKILL.md is not byte-identical to packages/${packageDir}/skill/SKILL.md — run packages/launcher/scripts/pack-skills.mjs`,
+          });
+        }
       }
     }
     if (pkgFindings.length === 0) {
@@ -201,9 +279,14 @@ export function collectPackageSkills(root) {
     const packageDir = entry.name;
     const manifestPath = join(packagesDir, packageDir, "package.json");
     if (!existsSync(manifestPath)) continue;
+    const cataloguePath = join(packagesDir, "launcher", "skill-catalogue", packageDir, "SKILL.md");
     packages.push({
       packageDir,
       skillPath: join(packagesDir, packageDir, "skill", "SKILL.md"),
+      // Generated by launcher `build` (`pack-skills.mjs`) and gitignored. When
+      // the files exist locally, they must match source; a clean CI clone has
+      // none, and must not fail for that.
+      ...(existsSync(cataloguePath) ? { cataloguePath } : {}),
       expectedName: `clossys-${packageDir}`,
     });
   }

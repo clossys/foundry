@@ -251,6 +251,18 @@ This is a breaking contract correction, so Publisher source is now the planned
 qualified nor published: an exact-head candidate and public dependency
 verification remain required before any release action.
 
+### Pre-auth marketing pages — `MarketingView` first
+
+For a pre-auth marketing landing page, use `MarketingView` (header, Hero with
+optional `heroMedia` and `heroActions`, feature grid, optional FAQ, CTA band,
+shell) and fill its slots. In the first viewport, ship exactly one primary CTA
+in `heroActions`; `heroMedia` must be the product surface or original art, not
+decorative stock imagery. See
+[`MarketingView`](#marketingview--the-flowed-marketing-template) below. When
+the page needs a Designer block that is not a MarketingView slot, import that
+named block in your page module. Do not flatten into `SectionedView` —
+that document assembler is not the pre-auth path.
+
 ### `SectionedViewDocument` — Designer-independent long-page core
 
 `@clossys/publisher/core` now owns the closed, data-only source model for a

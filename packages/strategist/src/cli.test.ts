@@ -1,10 +1,10 @@
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { CliInputError, main } from "./cli.js";
+import { CliInputError, main, parseArgs } from "./cli.js";
 
 // Hermetic: every test operates on its own pair of `mkdtemp` directories
 // (strategy + scan), removed afterward, and calls the exported `main(argv)`
@@ -36,6 +36,38 @@ afterEach(() => {
   rmSync(scanDir, { recursive: true, force: true });
   rmSync(factsDir, { recursive: true, force: true });
   vi.restoreAllMocks();
+});
+
+describe("parseArgs", () => {
+  it("collects repeatable --extensions values", () => {
+    expect(parseArgs(["./strategy", "./docs", "--extensions", ".md", "--extensions", ".txt"]).extensions).toEqual([
+      ".md",
+      ".txt",
+    ]);
+  });
+
+  it("collects repeatable --skip-dirs values", () => {
+    expect(parseArgs(["./strategy", "--skip-dirs", "vendor", "--skip-dirs", ".cache"]).skipDirs).toEqual([
+      "vendor",
+      ".cache",
+    ]);
+  });
+
+  it("throws CliInputError when --extensions is given without a value", () => {
+    expect(() => parseArgs([strategyDir, "--extensions"])).toThrow(CliInputError);
+  });
+
+  it("throws CliInputError when --extensions omits the leading dot", () => {
+    expect(() => parseArgs([strategyDir, "--extensions", "md"])).toThrow(CliInputError);
+  });
+
+  it("throws CliInputError when --skip-dirs is given without a value", () => {
+    expect(() => parseArgs([strategyDir, "--skip-dirs"])).toThrow(CliInputError);
+  });
+
+  it("throws CliInputError on an unknown flag", () => {
+    expect(() => parseArgs([strategyDir, "--bogus"])).toThrow(CliInputError);
+  });
 });
 
 describe("main — argument handling", () => {
@@ -93,6 +125,21 @@ describe("main — real runs", () => {
     writeFileSync(join(strategyDir, "roadmap.json"), JSON.stringify([{ id: "x" }])); // invalid, but not facts.json
     writeFileSync(join(scanDir, "about.md"), "We now serve 4,200 customers.");
     expect(main([strategyDir, scanDir])).toBe(0);
+  });
+
+  it("honors --extensions to limit scanned file types", () => {
+    writeFileSync(join(strategyDir, "facts.json"), JSON.stringify([validFact]));
+    writeFileSync(join(scanDir, "about.md"), "We now serve 4,200 customers.");
+    expect(main([strategyDir, scanDir, "--extensions", ".txt"])).toBe(2);
+  });
+
+  it("still skips node_modules when --skip-dirs adds extra names", () => {
+    writeFileSync(join(strategyDir, "facts.json"), JSON.stringify([validFact]));
+    writeFileSync(join(scanDir, "about.md"), "We now serve 4,200 customers.");
+    const nested = join(scanDir, "node_modules", "pkg");
+    mkdirSync(nested, { recursive: true });
+    writeFileSync(join(nested, "readme.md"), "We now serve 9,999 customers.");
+    expect(main([strategyDir, scanDir, "--skip-dirs", "vendor"])).toBe(0);
   });
 });
 
@@ -234,6 +281,30 @@ describe("main — brand-coverage — real runs", () => {
     const derivationsFile = writeDerivations(strategyDir, [derivation("Precise", ["--color-accent-primary"])]);
     const slotsFile = writeBrandableSlots(strategyDir, ["--color-accent-primary", "--color-accent-secondary"]);
     expect(main(["brand-coverage", derivationsFile, slotsFile])).toBe(1);
+  });
+
+  it("returns 2 when a declared --surfaces path is missing", () => {
+    const derivationsFile = writeDerivations(strategyDir, [derivation("Precise", ["--color-accent-primary"])]);
+    const slotsFile = writeBrandableSlots(strategyDir, ["--color-accent-primary"]);
+    expect(main(["brand-coverage", derivationsFile, slotsFile, "--surfaces", join(strategyDir, "nope.md")])).toBe(2);
+  });
+
+  it("returns 1 when a declared surface has no do-not language", () => {
+    const derivationsFile = writeDerivations(strategyDir, [derivation("Precise", ["--color-accent-primary"])]);
+    const slotsFile = writeBrandableSlots(strategyDir, ["--color-accent-primary"]);
+    const surface = join(strategyDir, "direction.md");
+    writeFileSync(surface, "Use accent blue for primary actions.\n");
+    expect(main(["brand-coverage", derivationsFile, slotsFile, "--surfaces", surface])).toBe(1);
+  });
+
+  it("returns 0 when slot coverage holds and surfaces include do-not language", () => {
+    const derivationsFile = writeDerivations(strategyDir, [
+      derivation("Precise", ["--color-accent-primary"], ["no-hedging"]),
+    ]);
+    const slotsFile = writeBrandableSlots(strategyDir, ["--color-accent-primary"]);
+    const surface = join(strategyDir, "direction.md");
+    writeFileSync(surface, "Do not use neon accent on body copy.\n");
+    expect(main(["brand-coverage", derivationsFile, slotsFile, "--surfaces", surface])).toBe(0);
   });
 });
 
@@ -444,7 +515,7 @@ describe("direct-path reachability — the real compiled dist/cli.js", () => {
 
     const result = runCli(["brand-coverage", derivationsFile, slotsFile]);
 
-    expect(result.stdout).toContain("Brand coverage: satisfied.");
+    expect(result.stdout).toContain("Brand coverage: satisfied");
     expect(result.status).toBe(0);
   });
 
@@ -556,7 +627,7 @@ describe("direct-path reachability — the real compiled dist/cli.js", () => {
 
     const result = runCli(["brand-coverage", derivationsFile, slotsFile]);
 
-    expect(result.stdout).toContain("Brand coverage: satisfied.");
+    expect(result.stdout).toContain("Brand coverage: satisfied");
     expect(result.status).toBe(0);
   });
 });

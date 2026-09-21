@@ -55,6 +55,7 @@ import {
   type BrandCoverageResult,
   type BrandDerivation,
 } from "./brand-derivation.js";
+import { checkBrandSurfaces } from "./brand-surfaces.js";
 import {
   checkDirectionCoverage,
   checkDirectionCurrency,
@@ -65,7 +66,7 @@ import { checkFactsTraceability, type FactsGateResult } from "./facts-gate.js";
 import { readStrategyDirectory } from "./facts-dir.js";
 import { readStrategy, type StrategyBundle } from "./reader.js";
 import { validateDirectionEntities, type DirectionEntity, type Fact } from "./schema.js";
-import { scanStrategyDirectory } from "./scan.js";
+import { DEFAULT_SKIP_DIRS, scanStrategyDirectory } from "./scan.js";
 
 const USAGE = `Usage: strategist-check <strategy-dir> [scan-dir] [options]
    or: strategist-check brand-coverage <derivations-file> <brandable-slots-file>
@@ -77,23 +78,26 @@ const USAGE = `Usage: strategist-check <strategy-dir> [scan-dir] [options]
 Options:
   --help              Print this message and exit 0.
   --facts-dir <dir>   Read facts from a directory of per-fact JSON files (each leaf a JSON array of Fact, e.g. one file per fact) instead of the strategy directory's flat facts.json. The rest of the strategy bundle (mission.json, roadmap.json, ...) is not read in this mode. Mutually exclusive with the flat facts.json: a facts.json present in strategy-dir alongside --facts-dir is refused — exit 2, naming the conflict.
+  --extensions <ext>  File extension to scan (repeatable; include the leading dot, e.g. --extensions .md). When none are given, the default set is .md, .mdx, .ts, .tsx, .js, and .jsx.
+  --skip-dirs <name>  Directory name to skip during the walk (repeatable). Each name is added to the built-in skip list (node_modules, .git, dist, build, coverage); supplying --skip-dirs does not replace those defaults, so node_modules is never walked accidentally.
 
 Exit codes: 0 = clean, 1 = at least one finding, 2 = could not run (bad input, missing/invalid facts.json, nothing matched to scan, or an unreadable directory).
 
 Run "strategist-check brand-coverage --help" or "strategist-check direction --help" for those subcommands' own usage.
 `;
 
-const BRAND_COVERAGE_USAGE = `Usage: strategist-check brand-coverage <derivations-file> <brandable-slots-file>
+const BRAND_COVERAGE_USAGE = `Usage: strategist-check brand-coverage <derivations-file> <brandable-slots-file> [options]
 
   derivations-file      Path to a JSON file containing an array of BrandDerivation objects (see @clossys/strategist's README, "The brand layer"). Required.
   brandable-slots-file  Path to a JSON file containing an array of brandable token-slot name strings (the thing being checked FOR — e.g. every @example/ui/tokens entry with "brandable: true", collected by the caller since this package never imports tokens). Required.
 
 Options:
+  --surfaces <path>      Designer-facing surface file that must contain do-not language (repeatable).
   --help                 Print this message and exit 0.
 
-Checks, in both directions, whether derivations-file fully accounts for the slot names brandable-slots-file declares — see checkBrandCoverage's own doc comment (src/brand-derivation.ts, "THE CHECKER'S SEAM").
+Checks, in both directions, whether derivations-file fully accounts for the slot names brandable-slots-file declares. Full N/N slot coverage is necessary, not sufficient for keep — Designer-facing surfaces must still carry explicit do-not language when --surfaces is declared.
 
-Exit codes: 0 = satisfied, 1 = violated (a real coverage gap in either direction), 2 = indeterminate (could not run: bad input, missing/unreadable/unparseable/invalid file, zero brandable slots supplied, or zero derivations supplied).
+Exit codes: 0 = satisfied, 1 = violated (a real coverage gap in either direction, or a surface missing do-not language), 2 = indeterminate (could not run: bad input, missing/unreadable/unparseable/invalid file, zero brandable slots supplied, zero derivations supplied, or a declared --surfaces path is missing).
 `;
 
 const DIRECTION_USAGE = `Usage: strategist-check direction <direction-entities-file> <reviewed-against-file>
@@ -118,13 +122,27 @@ interface ParsedArgs {
   strategyDir?: string;
   scanDir?: string;
   factsDir?: string;
+  extensions: string[];
+  skipDirs: string[];
   help: boolean;
 }
 
-function parseArgs(argv: string[]): ParsedArgs {
+function parseExtensionFlag(value: string): string {
+  if (!value.startsWith(".") || value.length < 2 || value.includes("/")) {
+    throw new CliInputError(
+      'each --extensions value must include the leading dot and name only, e.g. --extensions .md (not "md" or ".")',
+    );
+  }
+  return value;
+}
+
+/** Exported for `cli.test.ts` — argv parsing for the default facts-check subcommand only. */
+export function parseArgs(argv: string[]): ParsedArgs {
   let strategyDir: string | undefined;
   let scanDir: string | undefined;
   let factsDir: string | undefined;
+  const extensions: string[] = [];
+  const skipDirs: string[] = [];
   let help = false;
 
   for (let i = 0; i < argv.length; i += 1) {
@@ -150,6 +168,40 @@ function parseArgs(argv: string[]): ParsedArgs {
       factsDir = value;
       continue;
     }
+    if (arg === "--extensions") {
+      const value = argv[i + 1];
+      if (value === undefined || value.startsWith("-")) {
+        throw new CliInputError('--extensions requires an extension argument, e.g. --extensions .md');
+      }
+      extensions.push(parseExtensionFlag(value));
+      i += 1;
+      continue;
+    }
+    if (arg.startsWith("--extensions=")) {
+      const value = arg.slice("--extensions=".length);
+      if (value.length === 0) {
+        throw new CliInputError('--extensions requires an extension argument, e.g. --extensions .md');
+      }
+      extensions.push(parseExtensionFlag(value));
+      continue;
+    }
+    if (arg === "--skip-dirs") {
+      const value = argv[i + 1];
+      if (value === undefined || value.startsWith("-")) {
+        throw new CliInputError('--skip-dirs requires a directory name argument, e.g. --skip-dirs vendor');
+      }
+      skipDirs.push(value);
+      i += 1;
+      continue;
+    }
+    if (arg.startsWith("--skip-dirs=")) {
+      const value = arg.slice("--skip-dirs=".length);
+      if (value.length === 0) {
+        throw new CliInputError('--skip-dirs requires a directory name argument, e.g. --skip-dirs vendor');
+      }
+      skipDirs.push(value);
+      continue;
+    }
     if (arg.startsWith("-")) {
       throw new CliInputError(`unknown flag "${arg}"`);
     }
@@ -162,7 +214,7 @@ function parseArgs(argv: string[]): ParsedArgs {
     }
   }
 
-  return { strategyDir, scanDir, factsDir, help };
+  return { strategyDir, scanDir, factsDir, extensions, skipDirs, help };
 }
 
 function requireDirectory(label: string, path: string): void {
@@ -241,17 +293,26 @@ function printReport(result: FactsGateResult): void {
 interface BrandCoverageArgs {
   derivationsFile?: string;
   brandableSlotsFile?: string;
+  surfacePaths: string[];
   help: boolean;
 }
 
 function parseBrandCoverageArgs(argv: string[]): BrandCoverageArgs {
   let derivationsFile: string | undefined;
   let brandableSlotsFile: string | undefined;
+  const surfacePaths: string[] = [];
   let help = false;
 
-  for (const arg of argv) {
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i] as string;
     if (arg === "--help" || arg === "-h") {
       help = true;
+      continue;
+    }
+    if (arg === "--surfaces") {
+      const value = argv[++i];
+      if (value === undefined || value.startsWith("-")) throw new CliInputError("--surfaces requires a path argument");
+      surfacePaths.push(value);
       continue;
     }
     if (arg.startsWith("-")) {
@@ -266,7 +327,7 @@ function parseBrandCoverageArgs(argv: string[]): BrandCoverageArgs {
     }
   }
 
-  return { derivationsFile, brandableSlotsFile, help };
+  return { derivationsFile, brandableSlotsFile, surfacePaths, help };
 }
 
 type JsonReadResult = { ok: true; value: unknown } | { ok: false; detail: string };
@@ -319,7 +380,7 @@ function printBrandCoverageReport(result: BrandCoverageResult): void {
     for (const slot of result.unknownSlotsInDerivations) console.log(`  ${slot}`);
   }
   if (result.ok) {
-    console.log("Brand coverage: satisfied.");
+    console.log("Brand coverage: satisfied (slot N/N is necessary, not sufficient for keep).");
   } else if (result.reason === "coverage-gap") {
     console.log("Brand coverage: violated.");
   } else {
@@ -392,11 +453,32 @@ function runBrandCoverage(argv: string[]): number {
   const result = checkBrandCoverage(slotsRead.value, derivations);
   printBrandCoverageReport(result);
 
+  const surfaceTexts: { path: string; text: string }[] = [];
+  for (const surfacePath of args.surfacePaths) {
+    const resolved = resolve(surfacePath);
+    if (!existsSync(resolved)) {
+      console.error(`\nDeclared surface "${resolved}" does not exist.`);
+      return 2;
+    }
+    try {
+      surfaceTexts.push({ path: resolved, text: readFileSync(resolved, "utf8") });
+    } catch (error) {
+      console.error(`\nDeclared surface "${resolved}" could not be read: ${error instanceof Error ? error.message : String(error)}`);
+      return 2;
+    }
+  }
+  const surfaceFindings = checkBrandSurfaces(surfaceTexts);
+  if (surfaceFindings.length > 0) {
+    console.log(`\n${surfaceFindings.length} surface finding(s):`);
+    for (const f of surfaceFindings) console.log(`  [${f.rule}] ${f.path}  ${f.message}`);
+  }
+
   // Same fail-closed mapping `main()` below uses for the facts gate,
   // restated for this gate's own three-state result: an indeterminate
   // reason (nothing meaningful was compared) is `2`, never `0` and never
   // conflated with a real `1` violation.
   if (!result.ok && result.reason !== "coverage-gap") return 2;
+  if (surfaceFindings.length > 0) return 1;
   return result.ok ? 0 : 1;
 }
 
@@ -711,7 +793,14 @@ export function main(argv: string[]): number {
 
   const facts = loaded.facts;
 
-  const files = scanStrategyDirectory(scanDir); // throws (fail-closed) on an unreadable directory — caught by run()
+  const scanOptions: { extensions?: string[]; skipDirs?: string[] } = {};
+  if (args.extensions.length > 0) {
+    scanOptions.extensions = args.extensions;
+  }
+  if (args.skipDirs.length > 0) {
+    scanOptions.skipDirs = [...DEFAULT_SKIP_DIRS, ...args.skipDirs];
+  }
+  const files = scanStrategyDirectory(scanDir, scanOptions); // throws (fail-closed) on an unreadable directory — caught by run()
 
   // Zero files matched is the exact failure mode this gate is built to
   // never silently pass: "nothing to scan" is not the same thing as "scanned

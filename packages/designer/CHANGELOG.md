@@ -3,6 +3,30 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Unreleased
+
+## [0.4.8] - 2026-09-20
+
+### Added
+
+- `PRE-AUTH-QUALITY.md`: star scale (3 good / 4 great / 5 exceptional); done is 5; gates prove 3 only. Exceptional is a synthetic user, first person, fresh look — not a Designer or Writer self-review, not a Publisher seal, not a QA checklist.
+- `designer-hero-css-check` bin: fails when a built stylesheet is missing
+  Hero/Button utility rules (`text-display-l`, `font-display`, `bg-accent`,
+  `rounded-control`, `tablet:grid-cols-2`).
+- `designer-fold-check` bin: validates fold measurement JSON (H1 not clipped,
+  no overlays on the fold, exactly one primary CTA, closed `heroMediaKind`);
+  `--also` for an additional viewport file.
+- `designer-type-check` bin, `templates/brand-type.template.json`, and the
+  brand-type record schema (`--overlay` requires non-empty `--font-display`).
+- `designer-brand-check --also <path>`: refuses when an extra stylesheet
+  redeclares a brandable slot with a different value than the overlay.
+
+### Changed
+
+- `styles/compiled.css` is generated from `src/atoms/`, `src/blocks/`, and
+  `src/shell/` so the default `tokens.css` + `compiled.css` path styles
+  pre-auth Hero and shell without Tailwind.
+
 ## [0.4.7] - 2026-09-19
 
 ### Fixed

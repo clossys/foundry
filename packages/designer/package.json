@@ -1,6 +1,6 @@
 {
   "name": "@clossys/designer",
-  "version": "0.4.7",
+  "version": "0.4.8",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -97,6 +97,9 @@
     "designer-brand-check": "dist/tokens/cli.js",
     "designer-contrast-check": "dist/tokens/contrast-cli.js",
     "designer-environment-check": "dist/environment-conformance-cli.js",
+    "designer-hero-css-check": "dist/hero-css/hero-css-cli.js",
+    "designer-fold-check": "dist/fold/fold-cli.js",
+    "designer-type-check": "dist/type-record/type-record-cli.js",
     "designer-rate-check": "dist/design-conformance-rate-cli.js"
   },
   "foundry": {
@@ -111,8 +114,10 @@
     "!src/**/*.test.ts",
     "!src/**/*.test.tsx",
     "styles",
+    "templates",
     "CHANGELOG.md",
     "README.md",
+    "PRE-AUTH-QUALITY.md",
     "TOKENS.md",
     "LICENSE",
     "THIRD-PARTY-NOTICES.md"

@@ -11,7 +11,7 @@
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { scanClassCandidates } from "./class-scan.js";
+import { scanCompiledCssSources } from "./scan-sources.js";
 import { generateCompiledCss } from "./generate.js";
 
 export interface CheckCompiledCssOptions {
@@ -49,10 +49,9 @@ function firstDivergence(a: string, b: string): { line: number; expected: string
  */
 export async function checkCompiledCssFreshness(options: CheckCompiledCssOptions): Promise<CompiledCssCheckResult> {
   const stylesDir = join(options.packageRoot, "styles");
-  const atomsDir = join(options.packageRoot, "src", "atoms");
   const compiledCssPath = join(stylesDir, "compiled.css");
 
-  const scan = scanClassCandidates(atomsDir);
+  const scan = scanCompiledCssSources(options.packageRoot);
   const generated = await generateCompiledCss({ stylesDir, candidates: scan.candidates });
 
   let onDisk: string;
