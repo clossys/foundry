@@ -5,7 +5,7 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
-## [0.4.11] - 2026-09-21
+## [0.4.13] - 2026-09-21
 
 ### Added
 
@@ -18,7 +18,7 @@ All notable changes to this package are documented here. Format follows
 
 ### Notes
 
-- Qualification of `0.4.11` is deferred under #948 on this machine.
+- Qualification of `0.4.13` is deferred under #948 on this machine.
 
 ## [0.4.8] - 2026-09-21
 
