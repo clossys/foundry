@@ -11,7 +11,7 @@ type GroundProps = { id: string; eyebrow?: string; heading: string; description?
 type StatusListItemProps = { id: string; label: string; detail?: string; state: SectionedViewStatus; disposition?: never } | { id: string; label: string; detail?: string; disposition: SectionedViewStatusDisposition; state?: never };
 
 export interface SectionedViewBlockSet {
-  Hero(props: { id: string; eyebrow?: string; heading: string; description?: string; actions?: ReactNode; media?: ReactNode; headingLevel: 1 | 2; ground: SectionedViewGround }): ReactNode;
+  Hero(props: { id: string; eyebrow?: string; heading: string; description?: string; actions?: ReactNode; media?: ReactNode; composition?: "editorial" | "split"; headingLevel: 1 | 2; ground: SectionedViewGround }): ReactNode;
   FeatureGrid(props: GroundProps & { items: readonly { id: string; heading: string; description?: string }[] }): ReactNode;
   Faq(props: GroundProps & { items: readonly { id: string; question: string; answer: string }[] }): ReactNode;
   OrderedStepSequence(props: GroundProps & { items: readonly { id: string; ordinal: string; label?: string; heading: string; description?: string }[] }): ReactNode;
@@ -337,7 +337,8 @@ const STAT_GRID_GROUND: Record<SectionedViewGround, { surface: string; primary: 
 function renderSection(section: ResolvedSectionedViewSection, index: number, blocks: SectionedViewBlockSet, options: SectionedViewRenderOptions): ReactNode {
   const mediaPath = `sections.${index}.media`;
   switch (section.kind) {
-    case "hero":
+    case "hero": {
+      const heroMedia = resolveHeroMedia(section.media, mediaPath, options);
       return (
         <blocks.Hero
           key={section.id}
@@ -346,11 +347,13 @@ function renderSection(section: ResolvedSectionedViewSection, index: number, blo
           heading={section.heading}
           description={section.description}
           actions={renderActions(section.actions, section.ground)}
-          media={resolveHeroMedia(section.media, mediaPath, options)}
+          media={heroMedia}
+          {...(heroMedia ? { composition: "split" as const } : {})}
           headingLevel={index === 0 ? 1 : 2}
           ground={section.ground}
         />
       );
+    }
     case "feature-grid": return <blocks.FeatureGrid key={section.id} id={section.id} eyebrow={section.eyebrow} heading={section.heading} description={section.description} items={section.items} headingLevel={2} ground={section.ground} />;
     case "faq": return <blocks.Faq key={section.id} id={section.id} eyebrow={section.eyebrow} heading={section.heading} description={section.description} items={section.items} headingLevel={2} ground={section.ground} />;
     case "ordered-step-sequence": return <blocks.OrderedStepSequence key={section.id} id={section.id} eyebrow={section.eyebrow} heading={section.heading} description={section.description} items={section.items} headingLevel={2} ground={section.ground} />;
