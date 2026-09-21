@@ -927,16 +927,21 @@ const UNAVAILABILITY_RE = new RegExp(
 //
 // So the exemption is bounded twice, and each bound is measured on this tree:
 //
-//   BY FILE. Only a CHANGELOG can carry it. A changelog is a record of what
-//   changed, so a path named in one is understood by its reader as history
-//   rather than as somewhere to go — the same distinction CLASS 4 already
-//   draws for a retired package name in a CHANGELOG entry, and the same one
-//   check-public-safety.mjs's `--allow-changelogs` rests on. Everywhere else
-//   — every `.ts`, `.tsx`, `.md`, README, every line of shipped source — rot
-//   is now inexcusable by prose of ANY wording. There is no vocabulary, no
-//   phrasing and no suppression comment that mutes it; the only way to record
-//   one is an enumerated, issue-keyed entry in the waiver, which is visible in
-//   a diff and is itself a finding once it stops matching.
+//   BY FILE. Only a Markdown changelog at one of two paths can carry it:
+//   `CHANGELOG.md` at the scanned repository root, or
+//   `packages/<name>/CHANGELOG.md` where `<name>` is a single path segment.
+//   A nested path (`src/CHANGELOG.md`, `packages/<name>/src/CHANGELOG.md`),
+//   a non-markdown extension (`CHANGELOG.ts`), and a bare `CHANGELOG` cannot.
+//   A changelog is a record of what changed, so a path named in one is
+//   understood by its reader as history rather than as somewhere to go — the
+//   same distinction CLASS 4 already draws for a retired package name in a
+//   CHANGELOG entry, and the same one check-public-safety.mjs's
+//   `--allow-changelogs` rests on. Everywhere else — every `.ts`, `.tsx`,
+//   `.md`, README, every line of shipped source — rot is now inexcusable by
+//   prose of ANY wording. There is no vocabulary, no phrasing and no
+//   suppression comment that mutes it; the only way to record one is an
+//   enumerated, issue-keyed entry in the waiver, which is visible in a diff
+//   and is itself a finding once it stops matching.
 //
 //   BY SENTENCE. Inside a changelog the qualifier must sit in the same
 //   SENTENCE as the citation, not merely the same entry. A changelog entry is
@@ -951,7 +956,7 @@ const UNAVAILABILITY_RE = new RegExp(
 // What it does guarantee is the property the block-wide search actually needs
 // — that a qualifier can never excuse a citation it is not about, and that
 // nothing a reader would follow as a live pointer can be muted by wording.
-const CHANGELOG_FILE_RE = /(?:^|\/)CHANGELOG(?:\.[A-Za-z0-9]+)?$/;
+const CHANGELOG_FILE_RE = /^(?:CHANGELOG\.md|packages\/[^/]+\/CHANGELOG\.md)$/;
 
 // Split prose into sentences. A terminator counts only when it is followed by
 // whitespace, optionally through closing punctuation (`…gone."` / `…gone.**`),
