@@ -757,7 +757,12 @@ function printAddressabilityReport(result: AddressabilityGateResult): void {
   } else {
     console.log(`\n[addressability] ${result.violations.length} violation(s):`);
     for (const v of result.violations) {
-      const where = v.position === "markup-text" ? "a markup text node" : `the "${v.attribute}" attribute`;
+      const where =
+        v.position === "markup-text"
+          ? "a markup text node"
+          : v.position === "object-literal-copy"
+            ? `object-literal key "${v.keyPath ?? v.objectKey}"`
+            : `the "${v.attribute}" attribute`;
       console.log(`  [copy-addressability] ${v.file}:${v.line}  inline prose in ${where}, not resolved from the copy registry by id: ${v.raw}`);
     }
   }
