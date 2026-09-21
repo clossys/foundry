@@ -31,6 +31,7 @@ test("valid frontmatter passes", () => {
       skillPath: "/tmp/ignored",
       expectedName: "clossys-alpha",
       skillText: validSkill("clossys-alpha", "Third-person description for alpha role."),
+      files: ["dist", "skill"],
     },
   ]);
   assert.equal(result.exitCode, 0);
@@ -44,6 +45,7 @@ test("slash and at-sign in name are rejected", () => {
       skillPath: "/tmp/ignored",
       expectedName: "clossys-beta",
       skillText: validSkill("clossys/beta", "Description."),
+      files: ["skill"],
     },
   ]);
   assert.equal(badSlash.exitCode, 1);
@@ -55,6 +57,7 @@ test("slash and at-sign in name are rejected", () => {
       skillPath: "/tmp/ignored",
       expectedName: "clossys-beta",
       skillText: validSkill("clossys-beta@", "Description."),
+      files: ["skill"],
     },
   ]);
   assert.ok(badAt.findings.some((f) => f.rule === "invalid-name-chars" || f.rule === "name-pattern"));
@@ -72,6 +75,7 @@ description: Missing disable flag.
 ---
 
 Body.`,
+      files: ["skill"],
     },
   ]);
   assert.equal(result.exitCode, 1);
@@ -90,9 +94,38 @@ description: Receptionist skill.
 ---
 
 Body.`,
+      files: ["skill"],
     },
   ]);
   assert.equal(result.exitCode, 0);
+});
+
+test("skill without files entry is a finding", () => {
+  const result = evaluatePackageSkills([
+    {
+      packageDir: "epsilon",
+      skillPath: "/tmp/ignored",
+      expectedName: "clossys-epsilon",
+      skillText: validSkill("clossys-epsilon", "Description for epsilon."),
+      files: ["dist", "README.md", "LICENSE"],
+    },
+  ]);
+  assert.equal(result.exitCode, 1);
+  assert.deepEqual(result.findings.map((f) => f.rule), ["files-missing-skill"]);
+});
+
+test("skill with files entry passes packing gate", () => {
+  const result = evaluatePackageSkills([
+    {
+      packageDir: "zeta",
+      skillPath: "/tmp/ignored",
+      expectedName: "clossys-zeta",
+      skillText: validSkill("clossys-zeta", "Description for zeta."),
+      files: ["dist", "LICENSE", "skill"],
+    },
+  ]);
+  assert.equal(result.exitCode, 0);
+  assert.equal(result.findings.length, 0);
 });
 
 test("missing skill file is a finding", () => {

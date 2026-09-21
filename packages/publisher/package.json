@@ -103,7 +103,8 @@
     "!src/**/*.test.tsx",
     "CHANGELOG.md",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "skill"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",

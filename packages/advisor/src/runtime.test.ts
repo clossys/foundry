@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ADVISOR_CHARTER, REQUIRED_FIT_CRITERIA, REQUIRED_READINESS_CRITERIA, SPONSOR_ENTRY_PROMPT, advanceAdvisorSession, assessAdvisorEngagement, assessEngagementDecisionCurrency, createAdvisorSession, handleAdvisorTool, resolveEngagementActionDisposition, validateAdvisorAssessmentInput } from "./index.js";
+import { ADVISOR_CHARTER, REQUIRED_FIT_CRITERIA, REQUIRED_READINESS_CRITERIA, SPONSOR_ENTRY_PROMPT, advanceAdvisorSession, applySponsorChoice, assessAdvisorEngagement, assessEngagementDecisionCurrency, createAdvisorSession, handleAdvisorTool, nextSponsorQuestion, resolveEngagementActionDisposition, validateAdvisorAssessmentInput } from "./index.js";
 import type { AdvisorAssessmentInput, AssessmentBasis, EngagementNextAction, FirstWaveWorkItem, HubPlacementCellKind, Initiative, PreWorkItem } from "./types.js";
 
 const hash = (letter: string) => `sha256:${letter.repeat(64)}`;
@@ -287,6 +287,49 @@ describe("freshness, authorization, and action-bearing sessions", () => {
     const repeated = advanceAdvisorSession(closed, { type: "close", reason: "Overwrite attempted.", evidence: [proof("replacement")] });
     expect(repeated.findings.map((entry) => entry.rule)).toContain("session-closed");
     expect(repeated.session).toBe(closed);
+  });
+  it("derives sponsorSummary for satisfied, violated, and indeterminate assessments", () => {
+    const satisfied = assessAdvisorEngagement(input());
+    expect(satisfied.sponsorSummary).toBe("the engagement can take one approved next step, and nothing runs until that step is authorized.");
+    const violated = assessAdvisorEngagement(input({ fitSignals: input().fitSignals.map((signal) => (signal.id === "sponsor-mandate" ? { ...signal, state: "contradicted" as const } : signal)) }));
+    expect(violated.sponsorSummary).toBe("something already recorded blocks the next step, and that blocker has to clear before any new work.");
+    const indeterminate = assessAdvisorEngagement(input({ fitSignals: input().fitSignals.map((signal) => (signal.id === "material-need" ? { ...signal, state: "unknown" as const, evidence: [] } : signal)) }));
+    expect(indeterminate.sponsorSummary).toBe("there is not enough current evidence to choose a next step. That is a rest state, not a failed check.");
+  });
+  it("asks unknown fit before readiness and returns null when fully known", () => {
+    const partial = input({
+      fitSignals: input().fitSignals.map((signal) => (signal.id === "material-need" ? { ...signal, state: "unknown" as const, evidence: [] } : signal)),
+      prerequisiteObservations: input().prerequisiteObservations.map((observation) => (observation.id === "read-access" ? { ...observation, state: "unknown" as const, evidence: [] } : observation)),
+    });
+    const first = nextSponsorQuestion(partial);
+    expect(first?.criterionId).toBe("material-need");
+    expect(first?.prompt).toBe("What is going wrong now that this would change?");
+    expect(first?.somethingElseFollowUp).toBe("Say it in one sentence.");
+    const onlyReadinessUnknown = input({
+      prerequisiteObservations: input().prerequisiteObservations.map((observation) => (observation.id === "read-access" ? { ...observation, state: "unknown" as const, evidence: [] } : observation)),
+    });
+    const readinessCard = nextSponsorQuestion(onlyReadinessUnknown);
+    expect(readinessCard?.criterionId).toBe("read-access");
+    expect(readinessCard?.prompt).toContain("read the work");
+    expect(nextSponsorQuestion(input())).toBeNull();
+  });
+  it("treats a missing criterion entry as unknown for sponsor cards", () => {
+    const missingFit = input({
+      fitSignals: input().fitSignals.filter((signal) => signal.id !== "sponsor-mandate"),
+    });
+    const card = nextSponsorQuestion(missingFit);
+    expect(card?.criterionId).toBe("sponsor-mandate");
+    expect(card?.prompt).toBe("Who can say yes to this work?");
+    const missingReadiness = input({
+      prerequisiteObservations: input().prerequisiteObservations.filter((observation) => observation.id !== "baseline"),
+    });
+    expect(nextSponsorQuestion(missingReadiness)?.criterionId).toBe("baseline");
+  });
+  it("maps sponsor choices and distinguishes something-else from unknown ids", () => {
+    expect(applySponsorChoice("material-need", "supported")).toEqual({ kind: "fit", state: "supported" });
+    expect(applySponsorChoice("read-access", "violated")).toEqual({ kind: "readiness", state: "violated" });
+    expect(applySponsorChoice("material-need", "something-else")).toEqual({ kind: "something-else" });
+    expect(applySponsorChoice("read-access", "not-a-choice")).toEqual({ kind: "unknown-choice" });
   });
   it("fails malformed connector JSON closed instead of throwing", () => {
     expect(handleAdvisorTool(null)).toMatchObject({ state: "indeterminate", output: null, findings: [expect.objectContaining({ rule: "tool-input" })] });

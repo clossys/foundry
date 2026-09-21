@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - The role-loop charter (`contracts/role-loop-archetypes.json`) now includes
   `@clossys/customer` as the nineteenth role, with job, metric, and boundary.
+- Vendor skill names (`clossys-<package>`, exactly two segments) validate via
+  optional `SkillOptions.vendorPackages` without renaming into the account
+  grammar; three-segment `clossys-*` names still follow prefix collision rules.
+  List `clossys` in `reservedNamespaces` so no account can register that prefix.
 
 ### Notes
 

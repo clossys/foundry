@@ -29,7 +29,8 @@
     "!src/**/*.test.ts",
     "README.md",
     "CHANGELOG.md",
-    "LICENSE"
+    "LICENSE",
+    "skill"
   ],
   "sideEffects": false,
   "description": "The influencer role: operate a declared organizational presence and improve independently verified qualified audience response yield through bounded outbound experiments.",

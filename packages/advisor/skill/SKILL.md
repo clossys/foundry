@@ -37,7 +37,9 @@ If `node_modules/@clossys/advisor` is present (or this package's bins are on PAT
 - Assessment CLI: `advisor-check`
 - Also available: `advisor-execution-readiness`
 
-Summarize gate results in human language; keep machine kinds for tooling, not as the default reply.
+Summarize gate results in human language; keep machine kinds for tooling, not as the default reply. Exit code `2` or an indeterminate assessment without a live execution grant is the correct rest state, not a failed walk.
+
+Advisor does not install packages. Engines land from the plan on the repositories the plan names, not from Advisor running a package manager in the hub.
 
 ## When this package is not installed
 

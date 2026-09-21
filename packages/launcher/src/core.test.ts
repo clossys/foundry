@@ -516,7 +516,8 @@ describe("applyWorkspacePlan", () => {
     expect(manifest.devDependencies?.[ADVISOR_PACKAGE]).toBe("0.2.3");
     expect(result.health.extraClossys).toEqual(["@clossys/starter"]);
     expect(result.health.dualPin).toBe(false);
-    expect(result.health.degraded).toBe(false);
+    expect(result.health.degraded).toBe(true);
+    expect(result.message).toMatch(/skill roster skipped/);
     expect(result.message).toMatch(/health:/);
   });
 
@@ -585,13 +586,18 @@ describe("applyWorkspacePlan", () => {
   });
 
   it("reports health on resume and composes skills plus refreshed guidance", () => {
-    const directory = tempDir();
+    const parent = tempDir();
+    const directory = join(parent, "hub");
     mkdirSync(join(directory, ".clossys"), { recursive: true });
     writeFileSync(
       join(directory, WORKSPACE_MARKER_REL),
       `${JSON.stringify({ schemaVersion: 1, kind: "account-hub", owner: "acme", repository: "acme/hub" }, null, 2)}\n`,
     );
-    writeInventory(directory);
+    writeInventory(directory, [{ id: "acme/hub" }]);
+    writeFileSync(
+      join(directory, "package.json"),
+      `${JSON.stringify({ name: "hub", devDependencies: { [ADVISOR_PACKAGE]: "0.1.5" } }, null, 2)}\n`,
+    );
     writeFileSync(join(directory, "AGENTS.md"), LEGACY_CONSUMER_AGENTS_MD);
     const catalogue = seedSkillCatalogue(["advisor", "designer"]);
     const result = applyWorkspacePlan(
@@ -607,6 +613,8 @@ describe("applyWorkspacePlan", () => {
     const agents = readFileSync(join(directory, "AGENTS.md"), "utf8");
     expect(agents).toContain("@clossys-advisor");
     expect(agents).not.toMatch(/again to resume/i);
+    expect(result.health.degraded).toBe(false);
+    expect(result.message).not.toMatch(/skill roster skipped/);
     expect(reportHubHealth(host(directory), directory).marker).toBe("present");
   });
 
@@ -668,6 +676,8 @@ describe("applyWorkspacePlan", () => {
     expect(result.message).toMatch(/skill roster skipped \(acme\/missing\)/);
     expect(result.message).toMatch(/skill roster skipped \(acme\/other\).*origin does not match/);
     expect(result.message).toMatch(/skill roster skipped \(acme\/foundry\).*foundry supplier/);
+    expect(result.health.degraded).toBe(true);
+    expect(formatHubHealth(result.health)).toMatch(/degraded: yes/);
     expect(result.state).toBe("satisfied");
   });
 

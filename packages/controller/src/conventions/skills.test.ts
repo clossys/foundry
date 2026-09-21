@@ -59,6 +59,56 @@ describe("validateSkillName", () => {
     expect(validateSkillName("ex-expand-coverage", options)).toEqual([]);
     expect(validateSkillName("ex-groom-backlog", options)).toEqual([]);
   });
+
+  const vendorPackages = ["advisor", "launcher", "starter"] as const;
+
+  it("accepts a vendor skill when its package is inventoried", () => {
+    const vendorOptions = { ...options, vendorPackages: [...vendorPackages] };
+    expect(validateSkillName("clossys-advisor", vendorOptions)).toEqual([]);
+    expect(validateSkillName("clossys-launcher", vendorOptions)).toEqual([]);
+    expect(validateSkillName("clossys-starter", vendorOptions)).toEqual([]);
+  });
+
+  it("rejects a vendor-shaped name when vendorPackages is omitted", () => {
+    const findings = validateSkillName("clossys-advisor", options);
+    expect(findings.map((f) => f.rule)).toContain("skill/malformed");
+  });
+
+  it("rejects a vendor-shaped name when the package token is not inventoried", () => {
+    const findings = validateSkillName("clossys-unknown", {
+      ...options,
+      vendorPackages: [...vendorPackages],
+    });
+    expect(findings.map((f) => f.rule)).toContain("skill/malformed");
+  });
+
+  it("blocks an account prefix that collides with reserved clossys", () => {
+    const findings = validateSkillName("clossys-audit-dependencies", {
+      prefixes: ["clossys", "ex"],
+      reservedNamespaces: ["clossys"],
+      vendorPackages: [...vendorPackages],
+    });
+    expect(findings.map((f) => f.rule)).toContain("skill/prefix-collision");
+  });
+
+  it("does not treat a three-segment clossys name as vendor", () => {
+    const findings = validateSkillName("clossys-review-protocols", {
+      ...options,
+      vendorPackages: [...vendorPackages],
+      reservedNamespaces: ["clossys"],
+    });
+    expect(findings.map((f) => f.rule)).toContain("skill/prefix-collision");
+    expect(findings.map((f) => f.rule)).not.toContain("skill/malformed");
+  });
+
+  it("reports a directory mismatch for a vendor skill", () => {
+    const findings = validateSkillName(
+      "clossys-advisor",
+      { ...options, vendorPackages: [...vendorPackages] },
+      "clossys-wrong",
+    );
+    expect(findings.map((f) => f.rule)).toContain("skill/directory-mismatch");
+  });
 });
 
 describe("validateSkillSet", () => {
