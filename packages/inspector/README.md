@@ -94,10 +94,8 @@ escape rate`. A green run of this package's tests is not a close.
 npm install --save-dev @clossys/inspector
 ```
 
-The package is published to the public npm registry
-(`registry.npmjs.org`) with public access. Installing it needs no scope
-redirection and no authentication — a plain, anonymous `npm install`
-resolves it.
+This package is published to `https://registry.npmjs.org` with public
+access; installing it requires no authentication.
 
 ```bash
 inspector-check assessment.json

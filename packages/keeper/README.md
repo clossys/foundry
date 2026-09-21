@@ -118,8 +118,8 @@ answer this package needs most.
 npm install @clossys/keeper
 ```
 
-This package is published to `https://registry.npmjs.org` under public
-access; installing it requires no authentication of any kind.
+This package is published to `https://registry.npmjs.org` with public
+access; installing it requires no authentication.
 
 ```ts
 import { checkDisposal, decideHolding } from "@clossys/keeper";

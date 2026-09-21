@@ -5,6 +5,15 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.4.21] - 2026-09-21
+
+### Fixed
+
+- Install section names `https://registry.npmjs.org` and states that
+  installing requires no authentication, without GitHub-token wording that
+  could be read as a prerequisite. Peer-install notes no longer name a
+  retired registry lane as if it were current install guidance. (#924)
+
 ## [0.4.20] - 2026-09-21
 
 ### Changed

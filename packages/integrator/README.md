@@ -10,9 +10,7 @@ npm install @clossys/integrator
 ```
 
 Published to `https://registry.npmjs.org` with public access — installing it
-needs no authentication. The GitHub Packages references later in this
-document describe a *caller-supplied* registry this package can probe
-against; they are not install instructions for `integrator` itself.
+needs no authentication.
 
 ## Package currency rate
 
@@ -273,7 +271,8 @@ far better than an entire entitled slice of the catalogue having never been
 published, so every `404` in that batch resolves to `unauthenticated`. If at
 least one lookup in the batch comes back `known`, the credential is proven to
 work **for the names it worked for** — which is not proof of visibility for
-the one that `404`d, because GitHub Packages access control is per package. So
+the one that `404`d, because private-registry access control is often per
+package. So
 a lone `404` alongside a `known` stays genuinely undecidable, and says so:
 `{ kind: "indeterminate", reason: ReachabilityIndeterminateReason }`.
 
