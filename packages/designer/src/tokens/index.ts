@@ -109,6 +109,24 @@ export type {
   BrandFileCoverageUnchecked,
 } from "./check-brand-file-coverage.js";
 
+export {
+  checkTypeRecord,
+  checkTypeRecordOverlay,
+  formatParseFailure,
+  isPlaceholderAuthoredValue,
+  parseTypeRecord,
+  TYPE_RECORD_SCHEMA_VERSION,
+} from "../type-record/check-type-record.js";
+export type {
+  MonoReservedRole,
+  OrphanWordPolicy,
+  TypeRecord,
+  TypeRecordFinding,
+  TypeRecordParseFailure,
+  TypeRecordParseResult,
+  TypeRecordWrap,
+} from "../type-record/check-type-record.js";
+
 export { parseBrandDeclarations, readBrandCss } from "./read-brand-css.js";
 export type {
   BrandCssReadIssue,
