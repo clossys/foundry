@@ -1183,7 +1183,7 @@ asks whether cited facts changed since publication, given a caller-supplied
 reports for the same `name@version`. Hand-writing the ledger in the same
 script that runs the check produces two records with one source; that is the
 house failure pattern the Foundry repository lifecycle contract refuses (that
-document lives in the monorepo source tree and is not included in this
+write-up lives in that repository's source and is not included in this
 package).
 
 This package now ships the producer and the comparison as pure functions:
