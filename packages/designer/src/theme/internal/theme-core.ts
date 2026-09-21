@@ -97,8 +97,8 @@ export function readStoredPreference(storageKey: string): ThemePreference {
  * Use in marketing layouts via `getAuthoredThemeInitScript()`.
  */
 export function stampAuthoredRegister(root: HTMLElement): void {
-  root.setAttribute("data-theme", AUTHORED_THEME_REGISTER);
-  root.style.colorScheme = AUTHORED_THEME_REGISTER;
+  root.setAttribute("data-theme", "light");
+  root.style.colorScheme = "light";
 }
 
 export function applyThemeDom(root: HTMLElement, preference: ThemePreference): void {

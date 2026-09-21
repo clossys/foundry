@@ -136,6 +136,10 @@
    * brand has an opinion about typefaces, so there is no sensible
    * greyscale-style default to fall back on the way there is for color. */
   --font-display:                  ;
+  --font-display-style:            ;
+  --font-display-weight:           ;
+  --font-display-stretch:          ;
+  --font-display-scale-x:          ;
   --font-body:                     ;
   --font-mono:                     ;
 
@@ -150,6 +154,7 @@
   /* --ui-width-content-max: 64rem; */
   /* --ui-width-prose-max:   48rem; */
   /* --ui-width-wide-max:    72rem; */
+  /* --ui-width-display-max: var(--ui-width-wide-max, 72rem); */
 
   /* ─── LAYOUT (1 optional) ────────────────────────────────────────── */
   /* --ui-layout-sidebar-w: 256px; */

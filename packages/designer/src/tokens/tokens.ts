@@ -2,7 +2,7 @@
  * The token catalog: every custom property this package declares in
  * `styles/tokens.css`, as data. This file is the JS/TS half of the package;
  * `styles/tokens.css` is the CSS half. Both are hand-authored and both are
- * meant to describe the exact same 154 tokens — a test in this package
+ * meant to describe the exact same 159 tokens — a test in this package
  * (`parity.test.ts`) parses `styles/tokens.css` and asserts its custom
  * property names and values match this file entry-for-entry, in both
  * directions. That test is what keeps this file honest; nothing generates
@@ -35,7 +35,7 @@
  */
 
 /**
- * The 26 semantic groups the 154 tokens fall into. Each maps to exactly one
+ * The 26 semantic groups the 159 tokens fall into. Each maps to exactly one
  * CSS custom property prefix — see `FAMILY_PREFIX` in `parity.test.ts` (and
  * the README's naming table) for the concrete mapping.
  */
@@ -253,10 +253,10 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
 
   // ── UI · WIDTH (no Tailwind namespace — raw var() only) ───────────
   "--ui-width-content-max": { property: "--ui-width-content-max", family: "width", value: "64rem", brandable: true, themeDependent: false },
-  "--ui-font-display-style": { property: "--ui-font-display-style", family: "font", value: "normal", brandable: true, themeDependent: false },
-  "--ui-font-display-weight": { property: "--ui-font-display-weight", family: "font", value: "400", brandable: true, themeDependent: false },
-  "--ui-font-display-stretch": { property: "--ui-font-display-stretch", family: "font", value: "100%", brandable: true, themeDependent: false },
-  "--ui-font-display-scale-x": { property: "--ui-font-display-scale-x", family: "font", value: "1", brandable: true, themeDependent: false },
+  "--font-display-style": { property: "--font-display-style", family: "font", value: "normal", brandable: true, themeDependent: false },
+  "--font-display-weight": { property: "--font-display-weight", family: "font", value: "400", brandable: true, themeDependent: false },
+  "--font-display-stretch": { property: "--font-display-stretch", family: "font", value: "100%", brandable: true, themeDependent: false },
+  "--font-display-scale-x": { property: "--font-display-scale-x", family: "font", value: "1", brandable: true, themeDependent: false },
   "--ui-width-display-max": { property: "--ui-width-display-max", family: "width", value: "var(--ui-width-wide-max, 72rem)", brandable: true, themeDependent: false },
   "--ui-width-prose-max": { property: "--ui-width-prose-max", family: "width", value: "48rem", brandable: true, themeDependent: false },
   "--ui-width-wide-max": { property: "--ui-width-wide-max", family: "width", value: "72rem", brandable: true, themeDependent: false },

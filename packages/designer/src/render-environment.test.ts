@@ -70,6 +70,7 @@ describe("server-safe entry points resolve under react-server (test 1)", () => {
         "FeatureGrid",
         "FieldGroup",
         "Hero",
+        "MarketingChapter",
         "OrderedStepSequence",
         "PageHeader",
         "PricingTable",

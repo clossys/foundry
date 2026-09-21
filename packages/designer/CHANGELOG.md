@@ -21,7 +21,8 @@ All notable changes to this package are documented here. Format follows
 - `designer-environment-check surface [scan-dir]`: fails dual primitive
   stacks, dual Designer CSS roots, and marketing `SectionHeader` misuse
   (issues #1055, #1060).
-- Display signature tokens (`--ui-font-display-*`, `--ui-width-display-max`)
+- Display signature tokens (`--font-display-style` through `--font-display-scale-x`,
+  `--ui-width-display-max`)
   and `max-w-display` utility; display headings cap measure without host CSS
   copies (issue #1052).
 
