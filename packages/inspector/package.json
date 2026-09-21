@@ -1,6 +1,6 @@
 {
   "name": "@clossys/inspector",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -29,7 +29,8 @@
     "documents",
     "CHANGELOG.md",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "skill"
   ],
   "sideEffects": false,
   "foundry": {

@@ -4,6 +4,8 @@ import type { WorkspaceHost } from "./types.js";
 export interface SkillCompositionResult {
   readonly composed: readonly string[];
   readonly skipped: readonly { readonly packageDir: string; readonly note: string }[];
+  readonly rosterTargets?: readonly string[];
+  readonly rosterSkipped?: readonly { readonly inventoryId: string; readonly note: string }[];
 }
 
 export interface ComposeSkillsOptions {
@@ -33,7 +35,18 @@ function skillSourceCandidates(packageDir: string, options: ComposeSkillsOptions
   return paths;
 }
 
-function readSkillBody(host: WorkspaceHost, packageDir: string, options: ComposeSkillsOptions): string | null {
+function installedSkillPath(composeTargetDirectory: string, packageDir: string): string {
+  return join(composeTargetDirectory, "node_modules", "@clossys", packageDir, "skill", "SKILL.md");
+}
+
+function readSkillBody(
+  host: WorkspaceHost,
+  packageDir: string,
+  options: ComposeSkillsOptions,
+  composeTargetDirectory: string,
+): string | null {
+  const installed = host.readText(installedSkillPath(composeTargetDirectory, packageDir));
+  if (installed !== null) return installed;
   for (const path of skillSourceCandidates(packageDir, options)) {
     const body = host.readText(path);
     if (body !== null) return body;
@@ -107,7 +120,7 @@ export function composeSkills(
   const composed: string[] = [];
   const skipped: { packageDir: string; note: string }[] = [];
   for (const packageDir of listSkillPackageCandidates(host, options)) {
-    const body = readSkillBody(host, packageDir, options);
+    const body = readSkillBody(host, packageDir, options, directory);
     if (body === null) {
       skipped.push({ packageDir, note: "skill source missing at apply time" });
       continue;

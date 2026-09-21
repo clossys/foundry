@@ -86,4 +86,42 @@ describe("composeSkills", () => {
     const cursorLink = join(hub, ".cursor", "skills", "clossys-advisor");
     expect(lstatSync(cursorLink).isSymbolicLink()).toBe(true);
   });
+
+  it("prefers an installed package skill body over the catalogue", () => {
+    const hub = tempDir();
+    const catalogue = tempDir();
+    mkdirSync(join(catalogue, "advisor"), { recursive: true });
+    writeFileSync(join(catalogue, "advisor", "SKILL.md"), skillFixture("advisor", "catalogue-voice-marker"));
+    const installedSkill = join(hub, "node_modules", "@clossys", "advisor", "skill", "SKILL.md");
+    mkdirSync(dirname(installedSkill), { recursive: true });
+    writeFileSync(installedSkill, skillFixture("advisor", "installed-voice-marker"));
+    const launcherPackageRoot = tempDir();
+    mkdirSync(launcherPackageRoot, { recursive: true });
+
+    composeSkills(host(hub), hub, { launcherPackageRoot, skillCatalogueRoot: catalogue });
+    expect(readFileSync(join(hub, ".agents", "skills", "clossys-advisor", "SKILL.md"), "utf8")).toContain(
+      "installed-voice-marker",
+    );
+    expect(readFileSync(join(hub, ".agents", "skills", "clossys-advisor", "SKILL.md"), "utf8")).not.toContain(
+      "catalogue-voice-marker",
+    );
+  });
+
+  it("falls back to the catalogue when node_modules is absent", () => {
+    const hub = tempDir();
+    const catalogue = tempDir();
+    mkdirSync(join(catalogue, "advisor"), { recursive: true });
+    writeFileSync(join(catalogue, "advisor", "SKILL.md"), skillFixture("advisor", "catalogue-only-marker"));
+    const launcherPackageRoot = tempDir();
+    mkdirSync(launcherPackageRoot, { recursive: true });
+
+    composeSkills(host(hub), hub, { launcherPackageRoot, skillCatalogueRoot: catalogue });
+    expect(readFileSync(join(hub, ".agents", "skills", "clossys-advisor", "SKILL.md"), "utf8")).toContain(
+      "catalogue-only-marker",
+    );
+  });
 });
+
+function skillFixture(name: string, bodyMarker: string): string {
+  return `---\nname: clossys-${name}\ndescription: test skill for ${name}\ndisable-model-invocation: true\n---\n\n# ${name}\n\n${bodyMarker}\n`;
+}

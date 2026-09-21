@@ -5,6 +5,12 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.2.2] - 2026-09-21
+
+### Added
+
+- Ships the packed Agent Skill in the tarball (`files` includes `skill`).
+
 ## [0.2.1] - 2026-09-21
 
 ### Added

@@ -5,6 +5,17 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.8] - 2026-09-21
+
+### Added
+
+- Ships the packed Agent Skill in the tarball (`files` includes `skill`).
+
+### Fixed
+
+- Skill compose prefers each checkout's installed `@clossys/<package>/skill/SKILL.md` when present, then falls back to the packed catalogue or sibling source.
+- Apply marks hub health degraded when the skill roster skips inventoried targets; missing per-package catalogue sources remain notes only.
+
 ## [0.1.7] - 2026-09-20
 
 ### Changed

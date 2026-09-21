@@ -1,6 +1,6 @@
 {
   "name": "@clossys/writer",
-  "version": "0.3.10",
+  "version": "0.3.11",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -29,7 +29,8 @@
     "templates",
     "CHANGELOG.md",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "skill"
   ],
   "sideEffects": false,
   "foundry": {

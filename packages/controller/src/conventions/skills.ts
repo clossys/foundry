@@ -42,7 +42,9 @@ export interface SkillOptions {
   /**
    * Provider namespaces already in use. A registered prefix must not collide
    * with one -- the prefix is a safety boundary, and a boundary that can be
-   * confused for someone else's namespace is not one.
+   * confused for someone else's namespace is not one. Callers should include
+   * `clossys` so an account cannot register the vendor prefix; three-or-more-
+   * segment names such as `clossys-review-protocols` still hit this collision.
    */
   readonly reservedNamespaces?: readonly string[];
   /**
@@ -50,6 +52,12 @@ export interface SkillOptions {
    * here exempts it: renaming a vendor's skill to fit a local grammar forks it.
    */
   readonly thirdParty?: readonly string[];
+  /**
+   * Package directory names for vendor skills named `clossys-<package>` (exactly
+   * two segments). A token must be a single lowercase alphanumeric segment and
+   * appear in this list. Omitted or empty does not accept any `clossys-*` name.
+   */
+  readonly vendorPackages?: readonly string[];
 }
 
 /**
@@ -79,6 +87,19 @@ export function validateSkillName(
   }
 
   const parts = name.split("-");
+  if (parts.length === 2) {
+    const [namespace, token] = parts as [string, string];
+    const vendorPackages = options.vendorPackages ?? [];
+    if (
+      namespace === "clossys" &&
+      vendorPackages.length > 0 &&
+      vendorPackages.includes(token) &&
+      SEGMENT.test(token)
+    ) {
+      return findings;
+    }
+  }
+
   if (parts.length < 3) {
     findings.push({
       rule: "skill/malformed",

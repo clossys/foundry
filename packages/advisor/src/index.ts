@@ -14,6 +14,7 @@ export const ADVISOR_CHARTER: AdvisorCharter = {
 export const SPONSOR_ENTRY_PROMPT = "Start Foundry Advisor for <GitHub organization or repository URL>. If I have an active engagement, resume it; otherwise onboard me. Assess fit and readiness read-only, explain every question in plain language, and make no changes until I approve an evidence-bound first-wave plan.";
 
 export { assessAdvisorEngagement, shouldReassess, validateAdvisorAssessmentInput, REQUIRED_FIT_CRITERIA, REQUIRED_READINESS_CRITERIA } from "./assessment.js";
+export { nextSponsorQuestion, applySponsorChoice } from "./sponsor-questions.js";
 export { assessEngagementDecisionCurrency, resolveEngagementActionDisposition } from "./currency.js";
 export { createAdvisorSession, advanceAdvisorSession } from "./session.js";
 export { validateExecutionAuthorization, BASIS_FIELDS, BASIS_DIGEST_FIELDS, sameBasis, sameStrings, packageKey } from "./authorization.js";
@@ -27,4 +28,5 @@ export type {
   HubPlacementCell, HubPlacementCellKind, HubPlacementEvidence, ImmutablePackageRef, Initiative, InitiativeOverlap, InitiativeStatus, PreWorkItem, PreWorkKind, PreWorkStatus, ReadinessCriterion, ReadinessState,
   ReassessmentPolicy, ReassessmentTrigger, RequiredFitCriterionId, RequiredReadinessCriterionId, RollbackDefinition, SessionClosure, SignalState,
 } from "./types.js";
+export type { SponsorQuestionCard, SponsorQuestionChoice, SponsorChoiceApplyResult, SponsorQuestionInput } from "./sponsor-questions.js";
 export type { AdvisorExecutionReadiness } from "./execution-readiness.js";

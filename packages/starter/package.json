@@ -1,6 +1,6 @@
 {
   "name": "@clossys/starter",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -31,7 +31,8 @@
     "documents",
     "README.md",
     "CHANGELOG.md",
-    "LICENSE"
+    "LICENSE",
+    "skill"
   ],
   "sideEffects": false,
   "description": "Foundry Starter: credential-separated npm and pnpm installation evidence, trusted-base joins, and direct installed CLI execution for consumer-owned adoption workflows.",

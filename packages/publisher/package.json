@@ -1,6 +1,6 @@
 {
   "name": "@clossys/publisher",
-  "version": "0.4.6",
+  "version": "0.4.7",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -103,7 +103,8 @@
     "!src/**/*.test.tsx",
     "CHANGELOG.md",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "skill"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",

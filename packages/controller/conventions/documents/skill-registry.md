@@ -83,6 +83,13 @@ routine's to hold.
   can rely on. Because a `third-party` skill has no owning account, it
   cannot carry a `repository` field, and — unlike a `repo`-scoped skill — it
   is never required to name one.
+  Vendor voices from the vendor plane use the two-segment name
+  `clossys-<package>` (`advisor`, `launcher`, `starter`, and any other
+  package directory the consuming plane inventories in `vendorPackages`). They
+  are third-party from every consuming plane's perspective — validated by
+  inventory, not by the account grammar, and never first-party coverage. That
+  naming class does not introduce a fourth tier; it still maps to
+  `third-party` scope.
 - **A routine's validation is exactly two checks: does the target skill
   exist, and is the routine's scope a subset of what that skill already
   declares it covers.** A routine cannot grant coverage a skill never

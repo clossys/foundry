@@ -1,6 +1,6 @@
 {
   "name": "@clossys/locksmith",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -29,7 +29,8 @@
     "!src/**/*.test.ts",
     "CHANGELOG.md",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "skill"
   ],
   "sideEffects": false,
   "foundry": {

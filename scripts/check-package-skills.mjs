@@ -3,8 +3,10 @@
 //
 //   node scripts/check-package-skills.mjs [--json] [<repoRoot>]
 //
-// Exit 0 = every packages/*/package.json has skill/SKILL.md with valid frontmatter.
-// Exit 1 = at least one package is missing a skill or frontmatter is invalid.
+// Exit 0 = every packages/*/package.json has skill/SKILL.md with valid frontmatter
+//   and lists "skill" in package.json "files" so the packed tarball ships it.
+// Exit 1 = at least one package is missing a skill, frontmatter is invalid, or
+//   "files" omits "skill".
 // Exit 2 = the tree could not be read.
 //
 // Agent Skills spec: `name` is 1–64 chars, lowercase letters, digits, hyphens
@@ -154,9 +156,18 @@ function validateSkillBody(packageDir, text) {
 export function evaluatePackageSkills(packages) {
   const findings = [];
   const passed = [];
-  for (const { packageDir, skillPath, skillText, expectedName, cataloguePath, catalogueText } of packages) {
+  for (const {
+    packageDir,
+    skillPath,
+    skillText,
+    expectedName,
+    cataloguePath,
+    catalogueText,
+    files,
+  } of packages) {
     const pkgFindings = [];
-    if (skillText === undefined && !existsSync(skillPath)) {
+    const hasSkill = skillText !== undefined || existsSync(skillPath);
+    if (!hasSkill) {
       pkgFindings.push({
         rule: "missing-skill",
         packageDir,
@@ -256,6 +267,16 @@ export function evaluatePackageSkills(packages) {
           });
         }
       }
+      if (
+        files !== undefined &&
+        (!Array.isArray(files) || !files.includes("skill"))
+      ) {
+        pkgFindings.push({
+          rule: "files-missing-skill",
+          packageDir,
+          message: 'package.json "files" must include "skill" when skill/SKILL.md is shipped',
+        });
+      }
     }
     if (pkgFindings.length === 0) {
       passed.push({ packageDir, name: expectedName });
@@ -280,6 +301,7 @@ export function collectPackageSkills(root) {
     const manifestPath = join(packagesDir, packageDir, "package.json");
     if (!existsSync(manifestPath)) continue;
     const cataloguePath = join(packagesDir, "launcher", "skill-catalogue", packageDir, "SKILL.md");
+    const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
     packages.push({
       packageDir,
       skillPath: join(packagesDir, packageDir, "skill", "SKILL.md"),
@@ -288,6 +310,7 @@ export function collectPackageSkills(root) {
       // none, and must not fail for that.
       ...(existsSync(cataloguePath) ? { cataloguePath } : {}),
       expectedName: `clossys-${packageDir}`,
+      files: manifest.files,
     });
   }
   packages.sort((a, b) => a.packageDir.localeCompare(b.packageDir));

@@ -1,6 +1,6 @@
 {
   "name": "@clossys/strategist",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -23,7 +23,8 @@
     "!src/**/*.test.ts",
     "CHANGELOG.md",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "skill"
   ],
   "sideEffects": false,
   "foundry": {

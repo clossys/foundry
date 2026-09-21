@@ -763,9 +763,12 @@ function withHealth(
   liveAdvisorVersion?: string,
   skillComposition?: SkillCompositionResult,
 ): WorkspaceApplyResult {
+  const base = reportHubHealth(host, directory, liveAdvisorVersion);
+  const rosterSkipped = skillComposition?.rosterSkipped ?? [];
   const health: HubHealthReport = {
-    ...reportHubHealth(host, directory, liveAdvisorVersion),
+    ...base,
     ...(skillComposition === undefined ? {} : { skillComposition }),
+    degraded: base.degraded || rosterSkipped.length > 0,
   };
   return {
     state: "satisfied",

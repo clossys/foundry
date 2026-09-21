@@ -5,6 +5,21 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.8] - 2026-09-21
+
+### Added
+
+- Ships the packed Agent Skill in the tarball (`files` includes `skill`).
+- `AdvisorAssessment.sponsorSummary` — a derived, founder-facing one-line summary
+  from the assessment `state` (`satisfied`, `violated`, or `indeterminate`).
+  Callers cannot supply it.
+- Sponsor question cards as data: `nextSponsorQuestion()` returns one card at a
+  time for the first unknown fit criterion, then the first unknown readiness
+  criterion; `applySponsorChoice()` maps a stable choice id to fit or readiness
+  state, or signals `something-else` / `unknown-choice`. Exported types:
+  `SponsorQuestionCard`, `SponsorQuestionChoice`, `SponsorChoiceApplyResult`,
+  and `SponsorQuestionInput`.
+
 ## [0.2.7] - 2026-09-19
 
 ### Added

@@ -17,7 +17,11 @@ a read-only health report. It scans all four dependency buckets
 When the live registry version is known, each pin is graded against it: a
 pin older than live is a `stale pin` finding and marks the report
 **degraded**. The report is also degraded when Advisor is missing, dual-pinned,
-or present in any bucket other than `devDependencies`. Exit stays 0 on resume
+or present in any bucket other than `devDependencies`, and when apply skipped
+one or more inventoried roster targets (missing sibling clone, origin mismatch,
+and similar — the same `skill roster skipped` lines in the report). Per-package
+skill sources missing from the catalogue are noted but do not by themselves mark
+degraded. Exit stays 0 on resume
 (the report is advisory); adopt prints the same report and an unparseable
 pin-versus-live comparison is noted as indeterminate rather than stale.
 `checkInventoryEntries()` additionally validates hub inventory ids read-only,
@@ -56,7 +60,10 @@ Voices are how you talk in a coding agent; they are not engagement engines. The
 `@clossys-advisor` in chat is its hiring and compatibility voice. Use
 `@clossys-advisor` and `@clossys-<package>` in the hub or in any inventoried
 product repository. Each voice can talk even when that npm package is not pinned
-in that repo. Launcher health notes missing catalogue sources but apply continues.
+in that repo. When composing into a checkout, the launcher reads each skill body
+from that checkout's installed `@clossys/<package>/skill/SKILL.md` when present,
+then from the packed catalogue or a sibling monorepo source. Launcher health
+notes missing catalogue sources but apply continues.
 
 Run `npx @clossys/launcher` again from the hub for a health report and to
 refresh composed voices on sibling inventoried clones. It does not

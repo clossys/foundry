@@ -55,6 +55,22 @@ do not rename or fork them just to fit this convention. A locally copied
 provider skill must remain clearly marked as third-party in validation and
 documentation.
 
+## Vendor skills
+
+Some third-party skills ship from a vendor plane under a fixed two-segment
+name: `clossys-<package>`, where `<package>` is the directory name of the
+vendor package (for example `advisor`, `launcher`, or `starter` — roles and
+executable tooling alike). That shape is not `<owner>-<verb>-<what>`; it is
+a separate vendor class validated only when the consuming plane passes an
+inventoried `vendorPackages` list and the token is a single lowercase
+alphanumeric segment. A name with three or more segments under the `clossys`
+prefix is not a vendor skill — it is checked against the account grammar and
+against `reservedNamespaces` like any other prefix. Callers should list
+`clossys` in `reservedNamespaces` so no account can register that prefix as
+its own. From a consuming plane, vendor skills are third-party: inventoried,
+not assumed, and never counted as first-party coverage. This does not add a
+fourth registry tier; vendor skills remain `third-party`-scoped.
+
 The final `what` answers what the skill acts on, not the repository it happens
 to run in. Keep a skill only when it captures a proven repeated workflow;
 standing policy belongs in `AGENTS.md`, deterministic enforcement belongs in

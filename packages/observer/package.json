@@ -1,6 +1,6 @@
 {
   "name": "@clossys/observer",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -23,7 +23,8 @@
     "!src/**/*.test.ts",
     "CHANGELOG.md",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "skill"
   ],
   "sideEffects": false,
   "foundry": {

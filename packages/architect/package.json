@@ -1,6 +1,6 @@
 {
   "name": "@clossys/architect",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -26,7 +26,8 @@
     "!src/**/*.test.ts",
     "README.md",
     "CHANGELOG.md",
-    "LICENSE"
+    "LICENSE",
+    "skill"
   ],
   "sideEffects": false,
   "foundry": {

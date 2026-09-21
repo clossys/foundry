@@ -1,6 +1,6 @@
 {
   "name": "@clossys/influencer",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -29,7 +29,8 @@
     "!src/**/*.test.ts",
     "README.md",
     "CHANGELOG.md",
-    "LICENSE"
+    "LICENSE",
+    "skill"
   ],
   "sideEffects": false,
   "description": "The influencer role: operate a declared organizational presence and improve independently verified qualified audience response yield through bounded outbound experiments.",

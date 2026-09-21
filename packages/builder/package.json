@@ -1,6 +1,6 @@
 {
   "name": "@clossys/builder",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -46,7 +46,8 @@
     "documents",
     "CHANGELOG.md",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "skill"
   ],
   "sideEffects": false,
   "foundry": {

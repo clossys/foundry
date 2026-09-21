@@ -1,6 +1,6 @@
 {
   "name": "@clossys/launcher",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -25,7 +25,8 @@
     "skill-catalogue",
     "README.md",
     "CHANGELOG.md",
-    "LICENSE"
+    "LICENSE",
+    "skill"
   ],
   "sideEffects": false,
   "description": "Foundry workspace scaffolder: create, resume, or adopt a GitHub repository as the account hub. Executable tooling, not a role.",
