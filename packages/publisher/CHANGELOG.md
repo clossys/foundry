@@ -5,6 +5,14 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.4.23] - 2026-09-21
+
+### Added
+
+- `./core` publication-map document beside `SurfaceDocument`: path and slide
+  locations, validation against registered templates, and resolve helpers for
+  host routing (#1104).
+
 ## [0.4.21] - 2026-09-21
 
 ### Fixed

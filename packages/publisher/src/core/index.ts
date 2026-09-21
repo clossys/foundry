@@ -77,6 +77,15 @@ export { CHANNELS, ELEMENT_KINDS } from "./types.js";
 export { validateComposeDocument } from "./validate.js";
 export { validateSurfaceDocument, isSurfaceRepeatingSlotBinding } from "./validate.js";
 
+export {
+  findPublicationMapEntryByPath,
+  findPublicationMapEntryBySlideIndex,
+  listPublicationMapPaths,
+  validatePublicationMap,
+  validatePublicationMapRoutes,
+} from "./publication-map.js";
+export type { PublicationMap, PublicationMapEntry, PublicationMapLocation } from "./publication-map.js";
+
 export { resolveDocument } from "./resolve.js";
 
 export { resolveCopy } from "./resolve-copy.js";
