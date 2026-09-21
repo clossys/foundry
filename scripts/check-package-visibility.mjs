@@ -119,21 +119,24 @@
 // not an error; the two are distinguished by which code path produced them,
 // never conflated.
 //
-// WHAT THIS GATE USED TO DO, AND NO LONGER DOES
+// RETENTION: TWO HALVES, ONE CONTRACT (issue #449)
 // ---------------------------------------------------------------------------
-// The token-era gate also cross-checked a "deprecated" roster package (per
-// docs/contracts/package-lifecycle.json) against
-// docs/contracts/package-retention.json's `{ reason, reviewBy }`
-// declarations, to catch a retention window lapsing while the package
-// stayed live. THAT piece — and only that piece — is cut, as its own
-// separate, argued scope decision, not a consequence of dropping the
-// credential: it needs a second document join on top of the roster diff,
-// real standing complexity, and package-retention.json is currently empty
-// (no "deprecated" `@clossys` entries), so there is nothing live to protect
-// today. Tracked in issue #844 rather than left to silently regress or
-// require re-reading this file's history to rediscover. `--declarations-only`
-// still validates the retention declaration itself (offline, no roster
-// involved) — see below.
+// docs/contracts/package-retention.json says a deprecated package still live
+// on the registry with no entry — or with an expired `reviewBy` — is a gate
+// finding. That join is split across the two halves this gate already had:
+//
+//   PR / offline (`--declarations-only`, part of `npm run check`): every
+//     in-tree `package-lifecycle.json` package under the active scope whose
+//     status is `deprecated` must have a well-formed, unexpired retention
+//     declaration. Malformed retention JSON entries are errors. No registry
+//     call and no credential — only documents already in the tree.
+//
+//   Live / scheduled (full run in package-visibility.yml): for every package
+//     on the anonymous scope roster that the active release target does not
+//     declare, if lifecycle marks it `deprecated`, require a valid retention
+//     entry (same rules as above). Other undeclared roster packages stay
+//     ordinary UNDECLARED findings. This half needs the network; it is the
+//     detector for already-shipped registry state the PR half cannot see.
 //
 // EVERY PACKAGE, NOT JUST THE FIRST FAILURE
 // --------------------------------------------
@@ -183,10 +186,15 @@ const BENIGN_STATUSES = new Set(["pass"]);
 // One label per direction — see this file's header's "TWO DIRECTIONS"
 // section for what each one means and why they must never be conflated in
 // output.
-const DIRECTION_LABELS = { declared: "DECLARED  ", undeclared: "UNDECLARED" };
+const DIRECTION_LABELS = { declared: "DECLARED  ", undeclared: "UNDECLARED", retention: "RETENTION " };
 
 export function isFailureStatus(status) {
   return !BENIGN_STATUSES.has(status);
+}
+
+/** Worst-of-three exit code shared by both halves — error (2) beats finding (1). */
+export function worstExitCode(results) {
+  return results.reduce((acc, r) => (isFailureStatus(r.status) && r.status !== "finding" ? 2 : r.status === "finding" && acc !== 2 ? 1 : acc), 0);
 }
 
 function statusLabel(status) {
@@ -325,9 +333,8 @@ export function isRetentionExpired(reviewBy, now = new Date()) {
 /**
  * Parses docs/contracts/package-retention.json into a Map from package name
  * to its `{ reason, reviewBy }` declaration. Pure, no network. Used only by
- * the offline --declarations-only half now — see this file's header (and
- * issue #844) for why the live half no longer cross-checks retention
- * against the real registry roster.
+ * both halves of this gate — PR/offline via checkInTreeDeprecatedRetention,
+ * live/scheduled via findUndeclaredPackages (issue #449).
  */
 export function selectRetentionDeclarations(retention) {
   const byName = new Map();
@@ -364,6 +371,33 @@ export function selectRetentionDeclarations(retention) {
   }
 
   return { byName, findings, fatal: null };
+}
+
+/**
+ * Offline retention join: every in-scope `deprecated` lifecycle entry must
+ * carry a well-formed, unexpired docs/contracts/package-retention.json row.
+ * Pure — no network. Used by `--declarations-only`.
+ */
+export function checkInTreeDeprecatedRetention({ lifecycle, retentionByName, scope, retentionPath = DEFAULT_RETENTION_PATH, retentionFindings = [], now = new Date() }) {
+  const results = [...retentionFindings];
+  let deprecatedChecked = 0;
+  for (const entry of lifecycle?.packages ?? []) {
+    if (!entry || typeof entry !== "object" || typeof entry.name !== "string" || !entry.name.startsWith(`${scope}/`) || entry.status !== "deprecated") continue;
+    deprecatedChecked += 1;
+    const retentionEntry = retentionByName.get(entry.name);
+    if (retentionEntry && !isRetentionExpired(retentionEntry.reviewBy, now)) {
+      results.push({ package: entry.name, status: "pass", detail: `"${entry.name}" is "deprecated" and has a valid retention declaration (reviewBy ${retentionEntry.reviewBy}).` });
+    } else {
+      results.push({
+        package: entry.name,
+        status: "finding",
+        detail: retentionEntry
+          ? `"${entry.name}" is "deprecated" but its ${retentionPath} entry expired on ${retentionEntry.reviewBy}.`
+          : `"${entry.name}" is "deprecated" under the active scope but has no entry in ${retentionPath}.`,
+      });
+    }
+  }
+  return { results, deprecatedChecked };
 }
 
 /**
@@ -424,27 +458,58 @@ export async function checkDeclaredPackages({ target, fetchImpl }) {
  * function only reports packages the roster holds that the declaration does
  * not name at all.
  *
- * Deliberately does NOT special-case a "deprecated" lifecycle status — that
- * cross-check (docs/contracts/package-lifecycle.json joined against
- * docs/contracts/package-retention.json) was cut as its own scope decision;
- * see this file's header and issue #844. Every undeclared roster package is
- * a finding here, full stop: a forgotten publish, a name something else put
- * under this scope, or a release catalogue that has drifted from reality.
+ * When `lifecycle` and `retentionByName` are supplied (live half only), a
+ * roster package whose lifecycle status is `deprecated` is reconciled against
+ * docs/contracts/package-retention.json instead of being reported as a
+ * generic undeclared package — see this file's header (issue #449).
  */
-export function findUndeclaredPackages(roster, target) {
+export function findUndeclaredPackages(roster, target, lifecycle = null, retentionByName = new Map(), now = new Date()) {
   const declaredNames = new Set(target.packages.map((directory) => `${target.scope}/${directory}`));
+  const statusByName = new Map();
+  if (lifecycle && Array.isArray(lifecycle.packages)) {
+    for (const entry of lifecycle.packages) {
+      if (entry && typeof entry === "object" && typeof entry.name === "string" && entry.name.length > 0) statusByName.set(entry.name, entry.status);
+    }
+  }
+
   const results = [];
   for (const name of roster) {
     if (declaredNames.has(name)) continue;
+    const status = statusByName.get(name);
+
+    if (status === "deprecated") {
+      const retention = retentionByName.get(name);
+      if (retention && !isRetentionExpired(retention.reviewBy, now)) {
+        results.push({
+          package: name,
+          direction: "undeclared",
+          status: "pass",
+          detail: `"${name}" is live on the registry and "deprecated", but ${DEFAULT_RETENTION_PATH} deliberately retains it (reviewBy ${retention.reviewBy}: ${retention.reason}). A deprecated package remaining installable is the intended state.`,
+        });
+        continue;
+      }
+      results.push({
+        package: name,
+        direction: "undeclared",
+        status: "finding",
+        detail: retention
+          ? `"${name}" is live on the registry and "deprecated", but its ${DEFAULT_RETENTION_PATH} entry expired on ${retention.reviewBy} and no longer justifies keeping it published. Renew it with a new reviewBy after review, or remove the package from the registry.`
+          : `"${name}" is live on the registry and its ${DEFAULT_LIFECYCLE_PATH} status is "deprecated", with no entry in ${DEFAULT_RETENTION_PATH} declaring why it is deliberately still there. Add a retention entry (name, reason, reviewBy) if this is deliberate, or remove the package from the registry if it is not.`,
+      });
+      continue;
+    }
+
     results.push({
       package: name,
       direction: "undeclared",
       status: "finding",
       detail:
-        `"${name}" is live on ${target.registry} under ${target.scope}, but the active release target ("${target.id}") does not ` +
-        "declare it. This is a forgotten publish, a name something else placed under this scope, or " +
-        `${DEFAULT_CATALOG_PATH} has drifted from reality — update the catalogue if this is intentional, or remove the package ` +
-        "from the registry if it is not.",
+        typeof status === "string"
+          ? `"${name}" is live on ${target.registry} under ${target.scope}, but the active release target ("${target.id}") does not declare it and its ${DEFAULT_LIFECYCLE_PATH} status is "${status}", not "deprecated".`
+          : `"${name}" is live on ${target.registry} under ${target.scope}, but the active release target ("${target.id}") does not ` +
+            "declare it. This is a forgotten publish, a name something else placed under this scope, or " +
+            `${DEFAULT_CATALOG_PATH} has drifted from reality — update the catalogue if this is intentional, or remove the package ` +
+            "from the registry if it is not.",
     });
   }
   return results;
@@ -457,7 +522,7 @@ export function findUndeclaredPackages(roster, target) {
  * is accepted or required: every call this function makes, in both
  * directions, is anonymous.
  */
-export async function checkAllPackageVisibility({ target, fetchImpl }) {
+export async function checkAllPackageVisibility({ target, fetchImpl, lifecycle = null, retentionByName = new Map(), retentionFindings = [], now = new Date() }) {
   if (target.registry !== PUBLIC_NPM_REGISTRY) {
     return { fatal: `the active release target ("${target.id}") registry is "${target.registry}", not ${PUBLIC_NPM_REGISTRY} — this gate only knows how to verify visibility on public npm.`, code: 2 };
   }
@@ -479,13 +544,11 @@ export async function checkAllPackageVisibility({ target, fetchImpl }) {
   }
   const roster = new Set(rosterResult.packages);
 
-  const undeclaredResults = findUndeclaredPackages(roster, target);
-  const allResults = [...declaredResults, ...undeclaredResults];
+  const undeclaredResults = findUndeclaredPackages(roster, target, lifecycle, retentionByName, now);
+  const retentionResults = retentionFindings.map((r) => ({ ...r, direction: r.direction ?? "retention" }));
+  const allResults = [...declaredResults, ...undeclaredResults, ...retentionResults];
 
-  // Worst-of-three: an error anywhere dominates a finding, which dominates a
-  // clean pass. An UNRECOGNISED status is treated as `error`, never falls
-  // through to a pass — see isFailureStatus.
-  const code = allResults.reduce((acc, r) => (isFailureStatus(r.status) && r.status !== "finding" ? 2 : r.status === "finding" && acc !== 2 ? 1 : acc), 0);
+  const code = worstExitCode(allResults);
 
   return { fatal: null, code, results: allResults, lookups, registryPackagesEnumerated: roster.size };
 }
@@ -542,26 +605,16 @@ async function main() {
     const { byName: retentionByName, findings: retentionFindings, fatal: retentionFatal } = selectRetentionDeclarations(retention);
     if (retentionFatal) die(retentionFatal);
 
-    const results = [...retentionFindings];
-    let deprecatedChecked = 0;
-    for (const entry of lifecycle.packages ?? []) {
-      if (!entry || typeof entry !== "object" || typeof entry.name !== "string" || !entry.name.startsWith(`${target.scope}/`) || entry.status !== "deprecated") continue;
-      deprecatedChecked += 1;
-      const retentionEntry = retentionByName.get(entry.name);
-      if (retentionEntry && !isRetentionExpired(retentionEntry.reviewBy)) {
-        results.push({ package: entry.name, status: "pass", detail: `"${entry.name}" is "deprecated" and has a valid retention declaration (reviewBy ${retentionEntry.reviewBy}).` });
-      } else {
-        results.push({
-          package: entry.name,
-          status: "finding",
-          detail: retentionEntry
-            ? `"${entry.name}" is "deprecated" but its ${options.retentionPath} entry expired on ${retentionEntry.reviewBy}.`
-            : `"${entry.name}" is "deprecated" under the active scope but has no entry in ${options.retentionPath}.`,
-        });
-      }
-    }
+    const { results, deprecatedChecked } = checkInTreeDeprecatedRetention({
+      lifecycle,
+      retentionByName,
+      scope: target.scope,
+      retentionPath: options.retentionPath,
+      retentionFindings,
+    });
 
     const findings = results.filter((r) => isFailureStatus(r.status));
+    const exitCode = worstExitCode(results);
     if (options.json) {
       console.log(JSON.stringify({ mode: "declarations-only", target: target.id, deprecatedChecked, results }, null, 2));
     } else {
@@ -577,14 +630,18 @@ async function main() {
         console.log("PACKAGE VISIBILITY DECLARATIONS FAIL — see FIND lines above. This is the offline half of the gate.");
       }
     }
-    process.exit(findings.length === 0 ? 0 : 1);
+    process.exit(exitCode);
   }
+
+  const lifecycle = readJsonFile(options.lifecyclePath);
+  const retention = readJsonFile(options.retentionPath);
+  const { byName: retentionByName, findings: retentionFindings, fatal: retentionFatal } = selectRetentionDeclarations(retention);
+  if (retentionFatal) die(retentionFatal);
 
   // No token required, ever — every call this gate makes, in both
   // directions, is anonymous. See this file's header for the owner's
-  // decision, why it did not by itself force cutting the roster-based
-  // "undeclared" direction, and what was cut instead (issue #844).
-  const outcome = await checkAllPackageVisibility({ target, fetchImpl: fetch });
+  // decision and the retention split across PR vs live halves (issue #449).
+  const outcome = await checkAllPackageVisibility({ target, fetchImpl: fetch, lifecycle, retentionByName, retentionFindings });
   if (outcome.fatal) die(outcome.fatal, outcome.code);
 
   const { results: allResults, lookups, registryPackagesEnumerated, code: worst } = outcome;
