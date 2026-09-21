@@ -7,9 +7,13 @@ All notable changes to this package are documented here. Format follows
 
 ### Added
 
+- `PRE-AUTH-QUALITY.md`: star scale (3 good / 4 great / 5 exceptional); done is 5; gates prove 3 only.
 - `designer-hero-css-check` bin: fails when a built stylesheet is missing
   Hero/Button utility rules (`text-display-l`, `font-display`, `bg-accent`,
   `rounded-control`, `tablet:grid-cols-2`).
+- `designer-fold-check` bin: validates fold measurement JSON (H1 not clipped,
+  no overlays on the fold, exactly one primary CTA, closed `heroMediaKind`);
+  `--also` for an additional viewport file.
 - `designer-brand-check --also <path>`: refuses when an extra stylesheet
   redeclares a brandable slot with a different value than the overlay.
 

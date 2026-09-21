@@ -94,6 +94,8 @@ const CUSTOMER_SESSION_WAVE = new Set(["designer", "writer", "publisher", "strat
 const PRE_AUTH_EXPRESSION_WAVE = new Set(["designer", "writer", "publisher"]);
 const PRE_AUTH_HEADING = /^## Pre-auth page[ \t]*$/m;
 const PUBLISHER_PRE_AUTH_MARKETING_VIEW = /MarketingView/;
+const PRE_AUTH_QUALITY_REF = /PRE-AUTH-QUALITY(?:\.md)?/;
+const PRE_AUTH_EXCEPTIONAL = /\bexceptional\b/i;
 
 function validateSkillBody(packageDir, text) {
   const findings = [];
@@ -187,6 +189,22 @@ export function evaluatePackageSkills(packages) {
             packageDir,
             message: "expression-wave skill must contain a '## Pre-auth page' heading — the brief the packed skill carries",
           });
+        }
+        if (EXPRESSION_WAVE.has(packageDir) && PRE_AUTH_HEADING.test(text)) {
+          if (!PRE_AUTH_QUALITY_REF.test(text)) {
+            pkgFindings.push({
+              rule: "pre-auth-quality-ref",
+              packageDir,
+              message: "expression-wave skill must reference PRE-AUTH-QUALITY (see packages/designer/PRE-AUTH-QUALITY.md)",
+            });
+          }
+          if (!PRE_AUTH_EXCEPTIONAL.test(text)) {
+            pkgFindings.push({
+              rule: "pre-auth-exceptional",
+              packageDir,
+              message: "expression-wave skill must state that done is exceptional (5), not good (3)",
+            });
+          }
         }
         if (packageDir === "publisher" && PRE_AUTH_HEADING.test(text) && !PUBLISHER_PRE_AUTH_MARKETING_VIEW.test(text)) {
           pkgFindings.push({

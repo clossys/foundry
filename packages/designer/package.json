@@ -98,6 +98,7 @@
     "designer-contrast-check": "dist/tokens/contrast-cli.js",
     "designer-environment-check": "dist/environment-conformance-cli.js",
     "designer-hero-css-check": "dist/hero-css/hero-css-cli.js",
+    "designer-fold-check": "dist/fold/fold-cli.js",
     "designer-rate-check": "dist/design-conformance-rate-cli.js"
   },
   "foundry": {
@@ -114,6 +115,7 @@
     "styles",
     "CHANGELOG.md",
     "README.md",
+    "PRE-AUTH-QUALITY.md",
     "TOKENS.md",
     "LICENSE",
     "THIRD-PARTY-NOTICES.md"

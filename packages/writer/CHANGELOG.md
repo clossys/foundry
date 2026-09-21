@@ -10,6 +10,7 @@ All notable changes to this package are documented here. Format follows
 - `writer-check --live <dir>` (repeatable) with `--voice-record`: scans
   declared live-copy trees for claim-shaped and magnitude-shaped prose not
   covered by the voice claims register.
+- Live-copy scan also flags built-in fold wallpaper phrases (`fold-wallpaper`).
 
 ## [0.3.9] - 2026-09-18
 

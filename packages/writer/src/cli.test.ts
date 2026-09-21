@@ -393,6 +393,26 @@ describe("main — live-copy trees", () => {
     expect(main([recordFile, scanDir, "--live", liveDir, "--voice-record", voiceFile])).toBe(1);
     rmSync(liveDir, { recursive: true, force: true });
   });
+
+  it("returns 1 when live copy contains fold wallpaper", () => {
+    const recordFile = writeRecord(validRecord);
+    const voiceFile = writeVoiceRecord();
+    const liveDir = mkdtempSync(join(tmpdir(), "copy-cli-live-"));
+    writeFileSync(join(liveDir, "hero.tsx"), 'export const headline = "AI intelligence for your workflow";\n');
+    writeFileSync(join(scanDir, "registry.ts"), 'const title = "No results";\n');
+    expect(main([recordFile, scanDir, "--live", liveDir, "--voice-record", voiceFile])).toBe(1);
+    rmSync(liveDir, { recursive: true, force: true });
+  });
+
+  it("returns 0 on live copy without wallpaper when registry scan is clean", () => {
+    const recordFile = writeRecord(validRecord);
+    const voiceFile = writeVoiceRecord();
+    const liveDir = mkdtempSync(join(tmpdir(), "copy-cli-live-"));
+    writeFileSync(join(liveDir, "hero.tsx"), 'export const headline = "Ship the release you approved";\n');
+    writeFileSync(join(scanDir, "registry.ts"), 'const title = "No results";\n');
+    expect(main([recordFile, scanDir, "--live", liveDir, "--voice-record", voiceFile])).toBe(0);
+    rmSync(liveDir, { recursive: true, force: true });
+  });
 });
 
 describe("main — voice-derivation-coverage — argument handling", () => {

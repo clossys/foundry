@@ -5,6 +5,7 @@
 
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { findFoldWallpaperPhrase } from "./fold-wallpaper-gate.js";
 import { checkCopy, type VoiceFinding, type VoiceRecord } from "./voice/index.js";
 
 const LIVE_FILE_RE = /\.(tsx?|jsx?|mdx?|md|json)$/i;
@@ -94,6 +95,18 @@ export function scanLiveCopyTrees(record: VoiceRecord, roots: string[]): LiveCop
       for (const { line, value } of extractStringLiterals(text)) {
         const sourceLine = lines[line - 1] ?? "";
         if (lineHasClaimCitation(sourceLine)) continue;
+
+        const wallpaperPhrase = findFoldWallpaperPhrase(value);
+        if (wallpaperPhrase) {
+          findings.push({
+            rule: "fold-wallpaper",
+            severity: "error",
+            message: `Fold wallpaper phrase "${wallpaperPhrase}" is generic competitor copy and must not headline the hero.`,
+            path: value.slice(0, 80),
+            file,
+            line,
+          });
+        }
 
         const voiceReport = checkCopy(record, value);
         for (const f of voiceReport.findings) {

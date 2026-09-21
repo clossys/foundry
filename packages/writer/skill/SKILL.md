@@ -25,7 +25,7 @@ An engine gap or a missing check is a Foundry issue about the package that owns 
 
 ## Pre-auth page
 
-Fill the slots on Publisher `MarketingView` (or the named Designer blocks the page imports). One hero heading. Do not dump the registry onto the page. A green register over a tree the page does not render is not done — declare live trees with `writer-check --live`. Done is CLI-green on those gates, not prose approval.
+Done is exceptional (5) as defined in Designer `PRE-AUTH-QUALITY.md`. `designer-hero-css-check`, `designer-fold-check`, and `writer-check --live` prove 3 only — never call 3 done or world class.
 
 ## How we work together
 

@@ -255,7 +255,9 @@ verification remain required before any release action.
 
 For a pre-auth marketing landing page, use `MarketingView` (header, Hero with
 optional `heroMedia` and `heroActions`, feature grid, optional FAQ, CTA band,
-shell) and fill its slots; see
+shell) and fill its slots. In the first viewport, ship exactly one primary CTA
+in `heroActions`; `heroMedia` must be the product surface or original art, not
+decorative stock imagery. See
 [`MarketingView`](#marketingview--the-flowed-marketing-template) below. When
 the page needs a Designer block that is not a MarketingView slot, import that
 named block in your page module. Do not flatten into `SectionedView` —

@@ -9,6 +9,8 @@ All notable changes to this package are documented here. Format follows
 
 - README: `MarketingView` is the primary pre-auth marketing template;
   `SectionedView` is documented only for the closed five section kinds.
+- README/skill: first-viewport `heroActions` carries one primary CTA;
+  `heroMedia` is product surface or original art, not decorative stock.
 
 ## [0.4.5] - 2026-09-18
 

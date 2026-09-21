@@ -17,7 +17,7 @@ The same team is in every inventoried repo. Name another `@clossys-<package>` to
 ## Operating wave
 
 1. **Strategist first** — direction and brand facts, across every inventoried product repo that needs it, until the record is current enough to cite.
-2. **Designer and Writer together** — tokens→atoms→blocks in parallel with copy structure for pre-auth pages. Do not start if Strategist still has no citable direction.
+2. **Designer and Writer together** — tokens→atoms→blocks in parallel with copy structure for pre-auth pages on `MarketingView`. Do not start if Strategist still has no citable direction.
 3. **Customer inhabit** — independent `@clossys-customer` session. First-person keep of the named Audience, not a checklist. Seal only after a keep. Do not inhabit as Publisher; do not treat seal as the keep.
 4. **Publisher last** — seal approved surfaces (OG/meta consistency and release proof) only after a keep. Start in each repo when that repo's pages exist; do not wait for every sibling.
 
@@ -25,9 +25,7 @@ An engine gap or a missing check is a Foundry issue about the package that owns 
 
 ## Pre-auth page
 
-Default template: `MarketingView` — fill its slots (`heroMedia`, `heroActions`, features, FAQ, CTA, shell). When the page needs a Designer block that is not a MarketingView slot, import that named block in the page module with Writer copy in the slots. Do not flatten the page into `SectionedView`; that document assembler is not the pre-auth path.
-
-Publisher seals the approved surface last (head/OG/meta join, release proof). Done is mechanical gates green on what ships, not a screenshot review pass.
+Done is exceptional (5) as defined in Designer `PRE-AUTH-QUALITY.md`. `designer-hero-css-check`, `designer-fold-check`, and `writer-check --live` prove 3 only — never call 3 done or world class.
 
 ## How we work together
 

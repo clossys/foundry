@@ -48,6 +48,14 @@ its own manifest:
 "foundry": { "assessment": { "bin": "designer-rate-check", "invocation": "single-json-input" } }
 ```
 
+## Pre-auth page quality
+
+Pre-auth marketing pages use a five-star contract: **done is exceptional (5)**;
+mechanical gates (`designer-hero-css-check`, `designer-fold-check`, and
+`writer-check --live` on the publishing repo) prove **good (3)** only. The
+full rubric — floor, authored great, review keep, and who certifies what — is
+in [PRE-AUTH-QUALITY.md](./PRE-AUTH-QUALITY.md).
+
 Onboarding discovers that declaration from the installed manifest and never
 infers a surface. The four existing designer bins remain gates and are not
 the assessment surface. Designer is not a required first-day role; Advisor
@@ -371,6 +379,11 @@ marketing page. `charts` and `theme` remain Tailwind-native only.
 Verify the stylesheet your app loads with `designer-hero-css-check
 path/to/your.css` (or point it at `node_modules/@clossys/designer/styles/compiled.css`
 when you import that file unchanged).
+
+Record fold evidence (from your app or a browser script) and verify it with
+`designer-fold-check path/to/fold-measurement.json` — optional
+`--also path/to/mobile-fold.json` for a second viewport. Missing evidence is
+not done; the gate fails closed.
 
 ### Tailwind-native path (advanced)
 

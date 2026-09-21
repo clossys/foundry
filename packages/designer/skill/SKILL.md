@@ -25,11 +25,7 @@ An engine gap or a missing check is a Foundry issue about the package that owns 
 
 ## Pre-auth page
 
-Default mount with Publisher: fill `MarketingView` slots. When a block is not on that template (`ArticleBody`, `Stat`, `OrderedStepSequence`, `EmptyState`, extra `Hero` sections), import the named Designer block into the page module — slot-fill of existing components, not layout invention. Do not flatten into `SectionedView`; that assembler is off the pre-auth path.
-
-Default CSS (one path only): `@import "@clossys/designer/tokens.css"` and `@import "@clossys/designer/compiled.css"` plus the brand overlay. No `@source`, no Tailwind required. Never load `compiled.css` and `theme.css` + `@source` together. Tailwind-native setup is advanced-only (README Setup).
-
-Done is CLI-green on the stylesheet the app loads (`designer-hero-css-check`), not taste. One display heading through `Hero`. `Hero` `actions` are `Button` atoms. Never put a font shorthand in a `--text-*` custom property — `font-size` needs a length.
+Done is exceptional (5) as defined in `PRE-AUTH-QUALITY.md` in this package. `designer-hero-css-check`, `designer-fold-check`, and `writer-check --live` prove 3 only — never call 3 done or world class.
 
 ## How we work together
 
@@ -46,7 +42,7 @@ Ask one question. Prefer the host multiple-choice control when it exists; otherw
 
 If `node_modules/@clossys/designer` is present (or this package's bins are on PATH), use the exact pin in the tree. Read `package.json` `bin` for the real command names.
 - Assessment CLI: `designer-rate-check`
-- Additional gate CLIs: `designer-brand-check`, `designer-hero-css-check`
+- Additional gate CLIs: `designer-brand-check`, `designer-hero-css-check`, `designer-fold-check`
 
 Overlay brand coverage is not every stylesheet the public surface loads — run `designer-brand-check --also` on each extra CSS file.
 
