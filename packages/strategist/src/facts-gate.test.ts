@@ -151,6 +151,41 @@ describe("checkFactsTraceability — false-positive avoidance", () => {
     expect(result.claimsScanned).toBe(0);
     expect(result.findings).toEqual([]);
   });
+
+  it("does not flag color-mix() percentage literals in source", () => {
+    const content =
+      "const bg = `color-mix(in oklch, var(--color-accent), transparent 90%)` as const;";
+    const result = checkFactsTraceability([{ path: "tokens.ts", content }], []);
+    expect(result.findings).toEqual([]);
+    expect(result.claimsScanned).toBe(0);
+  });
+
+  it("does not flag JSX inline style dimension percentages", () => {
+    const content = 'export function Box() { return <div style={{ width: "100%" }} />; }';
+    const result = checkFactsTraceability([{ path: "Box.tsx", content }], []);
+    expect(result.findings).toEqual([]);
+    expect(result.claimsScanned).toBe(0);
+  });
+
+  it("does not flag declaration-shaped CSS percentages", () => {
+    const content = ".card { flex-basis: 50%; margin: 0; }";
+    const result = checkFactsTraceability([{ path: "card.css", content }], []);
+    expect(result.findings).toEqual([]);
+    expect(result.claimsScanned).toBe(0);
+  });
+
+  it("still flags a prose percent claim when scanStyleLiterals is false (default)", () => {
+    const files = [{ path: "about.md", content: "Widgetronic revenue grew 12% last year." }];
+    const result = checkFactsTraceability(files, []);
+    expect(result.findings).toHaveLength(1);
+    expect(result.findings[0]?.rule).toBe("untraced-numeric-claim");
+  });
+
+  it("can treat style-literal percentages as claims when scanStyleLiterals is true", () => {
+    const content = 'export function Box() { return <div style={{ width: "100%" }} />; }';
+    const result = checkFactsTraceability([{ path: "Box.tsx", content }], [], { scanStyleLiterals: true });
+    expect(result.claimsScanned).toBeGreaterThan(0);
+  });
 });
 
 describe("checkFactsTraceability — Money facts", () => {

@@ -5,22 +5,22 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
-## [0.2.4] - 2026-09-21
+## [0.2.3] - 2026-09-21
 
-### Changed
+### Added
 
-- `strategist-check --facts-dir` walks nested subdirectories for `*.json`
-  `Fact[]` leaves (paths such as `company/customers.json`), skips
-  `_schema.json` meta leaves, and refuses group-object domain JSON with an
-  explicit message rather than a generic array-shape error.
-- `Fact.value` money objects accept authored `{ value, currency }` and
-  normalize to `{ amount, currency }` on read.
-
-### Notes
-
-- Nested group-object facts trees remain consumer-local: the engine ingests
-  only flat `facts.json` or `--facts-dir` leaves that are each a `Fact[]`.
-  Refs: #1020.
+- `strategist-check --exclude <glob>` (repeatable): omits repo-relative
+  path globs such as `**/*.test.ts` or `**/fixtures/**` from the facts
+  gate walk; directory-name skips remain `--skip-dirs`.
+- README **Audience-facing copy only** recipe: shared extensions,
+  `--skip-dirs`, and `--exclude` contract for advisory vs blocking scans
+  (#1019).
+- `FactsGateOptions.scanStyleLiterals`: opt in to treating CSS/inline-style
+  percentage literals as claims; default skips `color-mix()`, declaration-
+  shaped `prop: N%`, and `style={{…}}` / `style="…"` regions (#1019).
+- `check-package-skills` regression: strategist skill must keep the
+  brand-coverage necessary-not-sufficient and `--surfaces` do-not language
+  (#1034).
 
 ## [0.2.2] - 2026-09-21
 

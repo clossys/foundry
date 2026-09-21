@@ -105,6 +105,8 @@ const PRE_AUTH_TASTE_BOUND =
   /at most 3 inhabit rounds|3 inhabit rounds or 45 minutes|whichever first/i;
 const PRE_AUTH_NO_SELF_CERTIFY = /does not self-certify exceptional keep|do not self-certify exceptional keep/i;
 const INSPECTOR_USER_BOUNDARY = /synthetic user/i;
+const STRATEGIST_BRAND_COVERAGE_NECESSARY = /necessary,\s*not sufficient/i;
+const STRATEGIST_BRAND_DO_NOT_SURFACES = /do-not language|--surfaces/i;
 
 function validateSkillBody(packageDir, text) {
   const findings = [];
@@ -274,6 +276,24 @@ export function evaluatePackageSkills(packages) {
             packageDir,
             message: "inspector skill must cede target-audience keep to a synthetic user — Inspector judges rules, not a person landing on the page",
           });
+        }
+        if (packageDir === "strategist") {
+          if (!STRATEGIST_BRAND_COVERAGE_NECESSARY.test(text)) {
+            pkgFindings.push({
+              rule: "strategist-brand-coverage-necessary",
+              packageDir,
+              message:
+                "strategist skill must state brand-coverage slot N/N is necessary, not sufficient for keep",
+            });
+          }
+          if (!STRATEGIST_BRAND_DO_NOT_SURFACES.test(text)) {
+            pkgFindings.push({
+              rule: "strategist-brand-surfaces-do-not",
+              packageDir,
+              message:
+                "strategist skill must name --surfaces / do-not language for Designer-facing surfaces",
+            });
+          }
         }
       }
       if (cataloguePath !== undefined || catalogueText !== undefined) {

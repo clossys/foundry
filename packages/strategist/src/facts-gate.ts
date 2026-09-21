@@ -72,6 +72,16 @@ export interface FactsGateResult {
   claimsScanned: number;
 }
 
+export interface FactsGateOptions {
+  /**
+   * When true, percentage literals inside CSS/style construction contexts are
+   * scanned like prose claims. Default false — `color-mix()` mixes,
+   * `style={{…}}` values, and declaration-shaped `prop: N%` fragments are
+   * not audience-facing claims.
+   */
+  scanStyleLiterals?: boolean;
+}
+
 // --------------------------------------------------------------- matchers
 
 const UNIT_WORDS = [
@@ -134,6 +144,44 @@ function snippetOf(text: string, max = 120): string {
   return trimmed.length > max ? `${trimmed.slice(0, max)}…` : trimmed;
 }
 
+/** Blanks a `name(` … `)` call, including one nested paren level inside arguments. */
+function blankBalancedCall(text: string, name: string): string {
+  const opener = new RegExp(`\\b${name}\\s*\\(`, "gi");
+  let result = "";
+  let lastIndex = 0;
+  for (const m of text.matchAll(opener)) {
+    const start = m.index ?? 0;
+    result += text.slice(lastIndex, start);
+    let depth = 1;
+    let i = start + m[0].length;
+    while (i < text.length && depth > 0) {
+      const ch = text[i] as string;
+      if (ch === "(") depth += 1;
+      else if (ch === ")") depth -= 1;
+      i += 1;
+    }
+    result += " ".repeat(i - start);
+    lastIndex = i;
+  }
+  result += text.slice(lastIndex);
+  return result;
+}
+
+const JSX_STYLE_ATTR_RE = /\bstyle=\{\{[\s\S]*?\}\}/g;
+const HTML_STYLE_ATTR_RE = /\bstyle=(?:"[^"]*"|'[^']*')/gi;
+const CSS_DECL_PERCENT_RE = /\b[\w-]+\s*:\s*[^;`"'}\n]*\d+(?:\.\d+)?\s*%/g;
+
+/** Removes style-literal regions where a trailing `%` is a dimension, not a claim. */
+function blankStyleLiteralRegions(text: string): string {
+  let out = blankBalancedCall(text, "color-mix");
+  out = blankBalancedCall(out, "clamp");
+  out = blankBalancedCall(out, "calc");
+  out = out.replace(JSX_STYLE_ATTR_RE, (m) => " ".repeat(m.length));
+  out = out.replace(HTML_STYLE_ATTR_RE, (m) => " ".repeat(m.length));
+  out = out.replace(CSS_DECL_PERCENT_RE, (m) => " ".repeat(m.length));
+  return out;
+}
+
 // ------------------------------------------------------------------- scan
 
 /**
@@ -142,7 +190,12 @@ function snippetOf(text: string, max = 120): string {
  * claim in `files` will simply be untraced), and any file content — however
  * malformed — is scanned as plain text with no assumption about its shape.
  */
-export function checkFactsTraceability(files: ScannedFile[], facts: Fact[]): FactsGateResult {
+export function checkFactsTraceability(
+  files: ScannedFile[],
+  facts: Fact[],
+  options: FactsGateOptions = {},
+): FactsGateResult {
+  const scanStyleLiterals = options.scanStyleLiterals === true;
   const index: FactIndex = buildFactIndex(facts);
   const findings: FactsGateFinding[] = [];
   const ignored: FactsGateIgnored[] = [];
@@ -186,7 +239,10 @@ export function checkFactsTraceability(files: ScannedFile[], facts: Fact[]): Fac
       const citedKeys = [...rawLine.matchAll(FACT_CITATION_RE)].map((m) => m[1] as string);
       const hasValidCitation = citedKeys.some((k) => index.byKey.has(k));
 
-      const scannable = blank(blank(rawLine, INLINE_CODE_RE), URL_RE);
+      let scannable = blank(blank(rawLine, INLINE_CODE_RE), URL_RE);
+      if (!scanStyleLiterals) {
+        scannable = blankStyleLiteralRegions(scannable);
+      }
 
       const matches = [
         ...[...scannable.matchAll(NUMERIC_CLAIM_RE)].map((m) => ({ text: m[0], rule: "untraced-numeric-claim" as const })),

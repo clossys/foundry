@@ -2,7 +2,7 @@ import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:f
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { scanStrategyDirectory } from "./scan.js";
+import { pathMatchesExcludeGlob, scanStrategyDirectory } from "./scan.js";
 
 // Hermetic: every test operates on its own `mkdtemp` directory, removed
 // afterward. Nothing here reads any path outside that directory.
@@ -53,6 +53,14 @@ describe("scanStrategyDirectory", () => {
     expect(files).toEqual([{ path: "notes.txt", content: "hello" }]);
   });
 
+  it("omits paths matching --exclude-style globs", () => {
+    mkdirSync(join(dir, "src", "__tests__"), { recursive: true });
+    writeFileSync(join(dir, "src", "about.md"), "prose");
+    writeFileSync(join(dir, "src", "widget.test.ts"), "test prose");
+    const files = scanStrategyDirectory(dir, { excludeGlobs: ["**/*.test.ts"] });
+    expect(files).toEqual([{ path: "src/about.md", content: "prose" }]);
+  });
+
   // Fails CLOSED: an unreadable directory must throw, never be silently
   // treated as empty — see scan.ts's doc comment. Skipped when running as
   // root (common in a sandboxed/CI shell), because root bypasses directory
@@ -65,5 +73,13 @@ describe("scanStrategyDirectory", () => {
     writeFileSync(join(locked, "secret.md"), "should never be silently skipped");
     chmodSync(locked, 0o000);
     expect(() => scanStrategyDirectory(dir)).toThrow(/cannot read directory/);
+  });
+});
+
+describe("pathMatchesExcludeGlob", () => {
+  it("matches suffix globs and fixture directory segments", () => {
+    expect(pathMatchesExcludeGlob("**/*.test.ts", "src/foo.test.ts")).toBe(true);
+    expect(pathMatchesExcludeGlob("**/*.test.ts", "src/foo.ts")).toBe(false);
+    expect(pathMatchesExcludeGlob("**/fixtures/**", "lib/fixtures/a.md")).toBe(true);
   });
 });
