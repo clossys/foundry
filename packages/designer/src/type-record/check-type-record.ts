@@ -1,7 +1,7 @@
 /**
  * `checkTypeRecord` — validates an authored type-scale record (schemaVersion 1).
- * A mid-tier walk executes this record; it does not invent fonts or pairings at
- * runtime. Optional `brandDeclarations` cross-check `--font-display` and
+ * The check executes this record as authored; it does not invent fonts or
+ * pairings at runtime. Optional `brandDeclarations` cross-check `--font-display` and
  * `--text-display-l` when a consumer supplies parsed brand CSS.
  */
 

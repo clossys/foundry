@@ -8,8 +8,8 @@ All notable changes to this package are documented here. Format follows
 ### Added
 
 - Authored type-scale record (`type-record.json`, schemaVersion 1) and
-  `checkTypeRecord()` in `src/type-record/` — a mid-tier walk executes the
-  record; the checker does not invent fonts at runtime.
+  `checkTypeRecord()` in `src/type-record/` — the check executes the record
+  as authored; it does not invent fonts at runtime.
 - `designer-type-check <record.json> [brand-css-file]` — optional brand CSS
   cross-checks `--font-display` and `--text-display-l` via `readBrandCss`.
   Exit codes `0` / `1` / `2` match satisfied / violated / indeterminate,

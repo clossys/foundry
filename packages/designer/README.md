@@ -4490,8 +4490,8 @@ over the IDENTICAL fixture in the same test, exits `0`.
 
 ## Type-scale record gate (`@clossys/designer/tokens`, `designer-type-check`)
 
-A type scale is an authored record a mid-tier walk executes — not a pairing
-the tooling invents at runtime. This package ships `type-record.json`
+A type scale is an authored record the check executes as authored — not a
+pairing the tooling invents at runtime. This package ships `type-record.json`
 (schemaVersion 1) as a worked example; consumers keep their own record and
 check it in CI.
 
