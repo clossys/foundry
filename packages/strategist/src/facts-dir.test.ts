@@ -69,6 +69,18 @@ describe("readStrategyDirectory — happy path", () => {
     expect(result.facts.map((f) => f.sourceFile)).toEqual(["customers.json", "uptime.json"]);
   });
 
+  it("combines nested relative paths in deterministic order", () => {
+    const result = readStrategyDirectory({
+      files: {
+        "company/customers.json": JSON.stringify([factA]),
+        "metrics/uptime.json": JSON.stringify([factB]),
+      },
+    });
+    expect(result.issues).toEqual([]);
+    expect(result.complete).toBe(true);
+    expect(result.facts.map((f) => f.sourceFile)).toEqual(["company/customers.json", "metrics/uptime.json"]);
+  });
+
   it("produces the same values as the flat facts.json equivalent", () => {
     // The directory form is a re-layout of the flat file, not a new
     // format: one leaf holding the whole flat array must combine to
@@ -135,6 +147,17 @@ describe("readStrategyDirectory — refusal, always naming the offending file", 
     // The same shape errors the flat file's validator emits — the leaf is
     // a whole facts file, so issues are addressed by index, not by name.
     expect(result.issues[0]?.detail).toContain("(root)[0].label: must be a string");
+  });
+
+  it("refuses a group-object domain leaf with an explicit projection message", () => {
+    const result = readStrategyDirectory({
+      files: { "company/traction.json": JSON.stringify({ customers: { value: 1 } }) },
+    });
+    expect(result.facts).toEqual([]);
+    expect(result.complete).toBe(false);
+    expect(result.issues[0]?.file).toBe("company/traction.json");
+    expect(result.issues[0]?.reason).toBe("invalid-schema");
+    expect(result.issues[0]?.detail).toContain("nested group-object");
   });
 
   it("refuses a non-JSON leaf instead of silently skipping it — every leaf must be accounted for", () => {

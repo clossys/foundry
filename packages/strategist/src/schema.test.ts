@@ -24,6 +24,12 @@ describe("validateMoney", () => {
     expect(validateMoney({ amount: 4200000, currency: "USD" }).ok).toBe(true);
   });
 
+  it("accepts value + currency and normalizes to amount", () => {
+    const result = validateMoney({ value: 4200000, currency: "USD" });
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.value).toEqual({ amount: 4200000, currency: "USD" });
+  });
+
   it("rejects a currency that is not a 3-letter uppercase code", () => {
     expect(validateMoney({ amount: 100, currency: "usd" }).ok).toBe(false);
     expect(validateMoney({ amount: 100, currency: "US" }).ok).toBe(false);
