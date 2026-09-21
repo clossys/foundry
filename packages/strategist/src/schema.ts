@@ -43,6 +43,7 @@ import {
   type ValidationIssue,
   type ValidationResult,
 } from "./validation.js";
+import { readBrandDerivationRecord, type BrandDerivation } from "./brand-derivation.js";
 
 // ------------------------------------------------------------------- money
 
@@ -224,7 +225,7 @@ export function validateFacts(value: unknown): ValidationResult<Fact[]> {
 // ----------------------------------------------------------------- mission
 
 export interface OperatingValue {
-  name: string;
+  id: string;
   /** The decision this value forces when two paths look equally good. Operational, not a slogan. */
   rule: string;
 }
@@ -235,10 +236,13 @@ function readOperatingValue(value: unknown, path: string, issues: ValidationIssu
     pushIssue(issues, path, "must be an object");
     return undefined;
   }
-  const name = requireString(value.name, `${path}.name`, issues, { minLength: 1 });
+  const id = requireString(value.id, `${path}.id`, issues, { minLength: 1 });
+  if (id !== undefined) {
+    requirePattern(id, `${path}.id`, issues, FACT_KEY_RE, 'must be kebab-case, e.g. "clarity"');
+  }
   const rule = requireString(value.rule, `${path}.rule`, issues, { minLength: 10 });
   if (issues.length > start) return undefined;
-  return { name: name as string, rule: rule as string };
+  return { id: id as string, rule: rule as string };
 }
 
 export interface Mission {
@@ -267,19 +271,16 @@ export function validateMission(value: unknown): ValidationResult<Mission> {
 
 // ------------------------------------------------------------- positioning
 
-/**
- * The classic positioning-statement madlib: "For `forWhom`, `productName`
- * is the `category` that `weAre` — unlike `unlike`, `because` `reasonToBelieve`."
- * Kept as discrete fields rather than one free-text paragraph so each part
- * can be reasoned about (and traced to `facts`) on its own.
- */
+/** Positioning binds audience and claim ids — not prose audience or reason fields. */
 export interface Positioning {
   productName: string;
   category: string;
-  forWhom: string;
+  audienceIds: string[];
   weAre: string;
   unlike: string;
-  reasonToBelieve: string;
+  claimIds: string[];
+  /** Room — not validated beyond string shape. */
+  notes?: string;
 }
 
 /** Validates a `Positioning` document. */
@@ -288,22 +289,38 @@ export function validatePositioning(value: unknown): ValidationResult<Positionin
   if (!isPlainObject(value)) {
     return { ok: false, issues: [{ path: "(root)", message: "must be an object" }] };
   }
+  if (value.forWhom !== undefined) {
+    pushIssue(issues, "forWhom", "retired — use audienceIds in positioning.json instead");
+  }
+  if (value.reasonToBelieve !== undefined) {
+    pushIssue(issues, "reasonToBelieve", "retired — use claimIds in positioning.json instead");
+  }
   const productName = requireString(value.productName, "productName", issues, { minLength: 1 });
   const category = requireString(value.category, "category", issues, { minLength: 1 });
-  const forWhom = requireString(value.forWhom, "forWhom", issues, { minLength: 1 });
+  const audienceIds = requireArrayOf(value.audienceIds, "audienceIds", issues, (item, path, inner) => {
+    const id = requireString(item, path, inner, { minLength: 1 });
+    if (id !== undefined) requirePattern(id, path, inner, FACT_KEY_RE, "must be kebab-case");
+    return id;
+  }, { minLength: 1 });
   const weAre = requireString(value.weAre, "weAre", issues, { minLength: 1 });
   const unlike = requireString(value.unlike, "unlike", issues, { minLength: 1 });
-  const reasonToBelieve = requireString(value.reasonToBelieve, "reasonToBelieve", issues, { minLength: 1 });
+  const claimIds = requireArrayOf(value.claimIds, "claimIds", issues, (item, path, inner) => {
+    const id = requireString(item, path, inner, { minLength: 1 });
+    if (id !== undefined) requirePattern(id, path, inner, FACT_KEY_RE, "must be kebab-case");
+    return id;
+  }, { minLength: 1 });
+  const notes = optionalString(value.notes, "notes", issues);
   if (issues.length > 0) return { ok: false, issues };
   return {
     ok: true,
     value: {
       productName: productName as string,
       category: category as string,
-      forWhom: forWhom as string,
+      audienceIds: audienceIds as string[],
       weAre: weAre as string,
       unlike: unlike as string,
-      reasonToBelieve: reasonToBelieve as string,
+      claimIds: claimIds as string[],
+      notes,
     },
   };
 }
@@ -313,9 +330,11 @@ export function validatePositioning(value: unknown): ValidationResult<Positionin
 export interface Market {
   id: string;
   name: string;
-  description: string;
+  audienceIds: string[];
   /** `Fact.key`s this market's sizing claims trace back to (e.g. a TAM figure). Not cross-checked against a live facts set here — pure shape validation, no cross-entity lookups. `readStrategy` (see `reader.ts`) is where that cross-check could happen. */
   factRefs?: string[];
+  /** Room — optional prose. */
+  description?: string;
 }
 
 function readMarket(value: unknown, path: string, issues: ValidationIssue[]): Market | undefined {
@@ -325,11 +344,17 @@ function readMarket(value: unknown, path: string, issues: ValidationIssue[]): Ma
     return undefined;
   }
   const id = requireString(value.id, `${path}.id`, issues, { minLength: 1 });
+  if (id !== undefined) requirePattern(id, `${path}.id`, issues, FACT_KEY_RE, "must be kebab-case");
   const name = requireString(value.name, `${path}.name`, issues, { minLength: 1 });
-  const description = requireString(value.description, `${path}.description`, issues, { minLength: 1 });
+  const audienceIds = requireArrayOf(value.audienceIds, `${path}.audienceIds`, issues, (item, itemPath, inner) => {
+    const audienceId = requireString(item, itemPath, inner, { minLength: 1 });
+    if (audienceId !== undefined) requirePattern(audienceId, itemPath, inner, FACT_KEY_RE, "must be kebab-case");
+    return audienceId;
+  }, { minLength: 1 });
   const factRefs = optionalStringArray(value.factRefs, `${path}.factRefs`, issues);
+  const description = optionalString(value.description, `${path}.description`, issues);
   if (issues.length > start) return undefined;
-  return { id: id as string, name: name as string, description: description as string, factRefs };
+  return { id: id as string, name: name as string, audienceIds: audienceIds as string[], factRefs, description };
 }
 
 /** Validates a single `Market`. */
@@ -351,9 +376,10 @@ export function validateMarkets(value: unknown): ValidationResult<Market[]> {
 export interface Audience {
   id: string;
   name: string;
-  description: string;
-  painPoints?: string[];
-  factRefs?: string[];
+  situation: string;
+  pains: string[];
+  /** Room — optional notes. */
+  notes?: string;
 }
 
 function readAudience(value: unknown, path: string, issues: ValidationIssue[]): Audience | undefined {
@@ -363,12 +389,15 @@ function readAudience(value: unknown, path: string, issues: ValidationIssue[]): 
     return undefined;
   }
   const id = requireString(value.id, `${path}.id`, issues, { minLength: 1 });
+  if (id !== undefined) requirePattern(id, `${path}.id`, issues, FACT_KEY_RE, "must be kebab-case");
   const name = requireString(value.name, `${path}.name`, issues, { minLength: 1 });
-  const description = requireString(value.description, `${path}.description`, issues, { minLength: 1 });
-  const painPoints = optionalStringArray(value.painPoints, `${path}.painPoints`, issues, { itemMinLength: 1 });
-  const factRefs = optionalStringArray(value.factRefs, `${path}.factRefs`, issues);
+  const situation = requireString(value.situation, `${path}.situation`, issues, { minLength: 1 });
+  const pains = requireArrayOf(value.pains, `${path}.pains`, issues, (item, itemPath, inner) =>
+    requireString(item, itemPath, inner, { minLength: 1 }),
+  { minLength: 1 });
+  const notes = optionalString(value.notes, `${path}.notes`, issues);
   if (issues.length > start) return undefined;
-  return { id: id as string, name: name as string, description: description as string, painPoints, factRefs };
+  return { id: id as string, name: name as string, situation: situation as string, pains: pains as string[], notes };
 }
 
 /** Validates a single `Audience`. */
@@ -406,8 +435,10 @@ export interface RoadmapItem {
   id: string;
   title: string;
   status: RoadmapStatus;
-  description: string;
+  description?: string;
   targetQuarter?: string;
+  factRef?: string;
+  claimId?: string;
 }
 
 function readRoadmapItem(value: unknown, path: string, issues: ValidationIssue[]): RoadmapItem | undefined {
@@ -427,15 +458,22 @@ function readRoadmapItem(value: unknown, path: string, issues: ValidationIssue[]
       `must be one of ${ROADMAP_STATUSES.join(", ")}, got ${statusValue === undefined ? "undefined" : JSON.stringify(statusValue)}`,
     );
   }
-  const description = requireString(value.description, `${path}.description`, issues, { minLength: 1 });
+  const description = optionalString(value.description, `${path}.description`, issues);
   const targetQuarter = optionalString(value.targetQuarter, `${path}.targetQuarter`, issues);
+  const factRef = optionalString(value.factRef, `${path}.factRef`, issues);
+  const claimId = optionalString(value.claimId, `${path}.claimId`, issues);
+  if (statusValue === "shipped" && factRef === undefined && claimId === undefined) {
+    pushIssue(issues, `${path}`, 'status "shipped" requires factRef or claimId');
+  }
   if (issues.length > start) return undefined;
   return {
     id: id as string,
     title: title as string,
     status: statusValue as RoadmapStatus,
-    description: description as string,
+    description,
     targetQuarter,
+    factRef,
+    claimId,
   };
 }
 
@@ -455,24 +493,21 @@ export function validateRoadmapItems(value: unknown): ValidationResult<RoadmapIt
 
 // -------------------------------------------------------------------- brand
 
-/**
- * The irreducible one-line statement of what the brand IS — distinct from
- * `Mission.statement` (why the *product* exists, present tense) and
- * `Positioning.weAre` (how it's framed against a category and a
- * competitor). `BrandEssence` is the thing every `BrandAttribute` below
- * ultimately has to be consistent with: an attribute that contradicts the
- * essence is a defect in the brand itself, not something this validator
- * can catch (it checks shape, never cross-entity consistency of meaning).
- *
- * Kept to a single required field on purpose, the same restraint
- * `Positioning` applies by staying a fixed madlib rather than free text: a
- * brand essence that needs bullet points or sub-clauses to explain itself
- * has already drifted into positioning or values, both of which already
- * have their own entities above (`Positioning`, `Mission.values`).
- */
 export interface BrandEssence {
-  /** One line, present tense — the same register as `Mission.statement`. */
   statement: string;
+}
+
+export interface BrandAttribute {
+  id: string;
+  statement: string;
+  basis: string;
+  factRef?: string;
+}
+
+export interface BrandDocument {
+  essence: BrandEssence;
+  attributes: BrandAttribute[];
+  derivations: BrandDerivation[];
 }
 
 function readBrandEssence(value: unknown, path: string, issues: ValidationIssue[]): BrandEssence | undefined {
@@ -486,183 +521,192 @@ function readBrandEssence(value: unknown, path: string, issues: ValidationIssue[
   return { statement: statement as string };
 }
 
-/** Validates a `BrandEssence` document. */
-export function validateBrandEssence(value: unknown): ValidationResult<BrandEssence> {
-  const issues: ValidationIssue[] = [];
-  const essence = readBrandEssence(value, "(root)", issues);
-  return essence !== undefined ? { ok: true, value: essence } : { ok: false, issues };
-}
-
-/**
- * What makes a `BrandAttribute` real rather than an assertion. Two fields,
- * for two different reasons:
- *
- *   - `basis` (REQUIRED, free prose) — the actual reason this attribute is
- *     true: a decision, a build choice, an observed customer pattern, a
- *     founder's stated rule. Required, not optional, because an attribute
- *     with no `basis` at all is exactly a vibe — a word picked because it
- *     sounds good, with nothing behind it. `minLength: 10` mirrors
- *     `OperatingValue.rule`'s own bar: long enough that "because it's
- *     true" cannot satisfy it.
- *   - `factRef` (OPTIONAL, opaque string) — when the basis happens to be a
- *     tracked, checkable number or claim, this names the `Fact.key` it
- *     traces to. This is the exact seam `@example/copy/voice`'s
- *     `Claim.factRef` already uses, and the same discipline this very
- *     file's `Market.factRefs`/`Audience.factRefs` already follow: a
- *     plain, optional string, never validated against a real `facts.json`
- *     here (this package does no cross-entity lookup at validation time —
- *     see `Market`'s own doc comment above) and never a typed import.
- *
- * WHY BOTH, NOT ONE OR THE OTHER: a `factRef`-only design would force every
- * brand attribute to be backed by a registered fact, but plenty of
- * legitimate evidence for a brand attribute isn't fact-shaped at all — a
- * design decision, a support policy, a founder's stated rule for breaking
- * ties — and forcing it into a fabricated `Fact` would corrupt the facts
- * registry with entries invented only to satisfy this schema, undermining
- * the exact traceability `checkFactsTraceability` exists to protect. A
- * `basis`-only design (prose, no seam at all) would accept a well-written
- * vibe: prose can be persuasive and still cite nothing checkable, which is
- * the specific failure this whole entity exists to rule out. Requiring
- * `basis` always, and allowing `factRef` as an additional, optional pointer
- * into the one registry this package can actually check something
- * against, gets real evidence in every case and traceable evidence in
- * every case where that's honestly possible.
- */
-export interface BrandEvidence {
-  basis: string;
-  factRef?: string;
-}
-
-function readBrandEvidence(value: unknown, path: string, issues: ValidationIssue[]): BrandEvidence | undefined {
-  const start = issues.length;
-  if (!isPlainObject(value)) {
-    pushIssue(issues, path, "must be an object shaped { basis: string; factRef?: string }");
-    return undefined;
-  }
-  const basis = requireString(value.basis, `${path}.basis`, issues, { minLength: 10 });
-  const factRef = optionalString(value.factRef, `${path}.factRef`, issues, { minLength: 1 });
-  if (issues.length > start) return undefined;
-  return { basis: basis as string, factRef };
-}
-
-/**
- * One trait the brand is known for, or is deliberately building toward.
- * Structurally a sibling of `OperatingValue` above: same package, same
- * hand-rolled validation discipline, same job of making a strategy
- * document mechanically checkable instead of just prose. Where
- * `OperatingValue.rule` forces a decision, `BrandAttribute.evidence`
- * forces a citation — see `BrandEvidence`'s own doc comment for why.
- */
-export interface BrandAttribute {
-  name: string;
-  description: string;
-  evidence: BrandEvidence;
-}
-
 function readBrandAttribute(value: unknown, path: string, issues: ValidationIssue[]): BrandAttribute | undefined {
   const start = issues.length;
   if (!isPlainObject(value)) {
     pushIssue(issues, path, "must be an object");
     return undefined;
   }
-  const name = requireString(value.name, `${path}.name`, issues, { minLength: 1 });
-  const description = requireString(value.description, `${path}.description`, issues, { minLength: 1 });
-  const evidence = readBrandEvidence(value.evidence, `${path}.evidence`, issues);
+  const id = requireString(value.id, `${path}.id`, issues, { minLength: 1 });
+  if (id !== undefined) requirePattern(id, `${path}.id`, issues, FACT_KEY_RE, "must be kebab-case");
+  const statement = requireString(value.statement, `${path}.statement`, issues, { minLength: 1 });
+  const basis = requireString(value.basis, `${path}.basis`, issues, { minLength: 10 });
+  const factRef = optionalString(value.factRef, `${path}.factRef`, issues, { minLength: 1 });
   if (issues.length > start) return undefined;
-  return { name: name as string, description: description as string, evidence: evidence as BrandEvidence };
+  return { id: id as string, statement: statement as string, basis: basis as string, factRef };
 }
 
-/** Validates a single `BrandAttribute`. */
+/** Validates `brand.json`. */
+export function validateBrand(value: unknown): ValidationResult<BrandDocument> {
+  const issues: ValidationIssue[] = [];
+  if (!isPlainObject(value)) return { ok: false, issues: [{ path: "(root)", message: "must be an object" }] };
+  const essence = readBrandEssence(value.essence, "essence", issues);
+  const attributes = requireArrayOf(value.attributes, "attributes", issues, readBrandAttribute, { minLength: 1 });
+  const derivations = requireArrayOf(value.derivations, "derivations", issues, readBrandDerivationRecord, { minLength: 1 });
+  if (issues.length > 0) return { ok: false, issues };
+  return {
+    ok: true,
+    value: {
+      essence: essence as BrandEssence,
+      attributes: attributes as BrandAttribute[],
+      derivations: derivations as BrandDerivation[],
+    },
+  };
+}
+
+/** @deprecated Retired file shape — use `validateBrand` / `brand.json`. */
+export function validateBrandEssence(value: unknown): ValidationResult<BrandEssence> {
+  const issues: ValidationIssue[] = [];
+  const essence = readBrandEssence(value, "(root)", issues);
+  return essence !== undefined ? { ok: true, value: essence } : { ok: false, issues };
+}
+
+/** @deprecated Retired file shape — use `validateBrand` / `brand.json`. */
 export function validateBrandAttribute(value: unknown): ValidationResult<BrandAttribute> {
   const issues: ValidationIssue[] = [];
   const attribute = readBrandAttribute(value, "(root)", issues);
   return attribute !== undefined ? { ok: true, value: attribute } : { ok: false, issues };
 }
 
-/** Validates the whole contents of a `brand-attributes.json` file: an array of `BrandAttribute`. */
+/** @deprecated Retired file shape — use `validateBrand` / `brand.json`. */
 export function validateBrandAttributes(value: unknown): ValidationResult<BrandAttribute[]> {
   const issues: ValidationIssue[] = [];
   const attributes = requireArrayOf(value, "(root)", issues, readBrandAttribute);
   return attributes !== undefined ? { ok: true, value: attributes } : { ok: false, issues };
 }
 
+// ------------------------------------------------------------------- claims
+
+export type StrategistClaimStatus = "approved" | "hypothesis";
+
+export interface StrategistClaim {
+  id: string;
+  status: StrategistClaimStatus;
+  assertion: string;
+  basis?: string;
+  factRefs?: string[];
+  audienceIds?: string[];
+  example?: string;
+}
+
+function readStrategistClaim(value: unknown, path: string, issues: ValidationIssue[]): StrategistClaim | undefined {
+  const start = issues.length;
+  if (!isPlainObject(value)) {
+    pushIssue(issues, path, "must be an object");
+    return undefined;
+  }
+  const id = requireString(value.id, `${path}.id`, issues, { minLength: 1 });
+  if (id !== undefined) requirePattern(id, `${path}.id`, issues, FACT_KEY_RE, "must be kebab-case");
+  const statusValue = value.status;
+  if (statusValue !== "approved" && statusValue !== "hypothesis") {
+    pushIssue(issues, `${path}.status`, 'must be "approved" or "hypothesis"');
+  }
+  const assertion = requireString(value.assertion, `${path}.assertion`, issues, { minLength: 10 });
+  const basis = optionalString(value.basis, `${path}.basis`, issues, { minLength: 10 });
+  const factRefs = optionalStringArray(value.factRefs, `${path}.factRefs`, issues);
+  const audienceIds = optionalStringArray(value.audienceIds, `${path}.audienceIds`, issues, { itemMinLength: 1 });
+  const example = optionalString(value.example, `${path}.example`, issues);
+  if (statusValue === "approved" && basis === undefined) {
+    pushIssue(issues, `${path}.basis`, "is required when status is approved");
+  }
+  if (issues.length > start) return undefined;
+  return {
+    id: id as string,
+    status: statusValue as StrategistClaimStatus,
+    assertion: assertion as string,
+    basis,
+    factRefs,
+    audienceIds,
+    example,
+  };
+}
+
+export function validateStrategistClaim(value: unknown): ValidationResult<StrategistClaim> {
+  const issues: ValidationIssue[] = [];
+  const claim = readStrategistClaim(value, "(root)", issues);
+  return claim !== undefined ? { ok: true, value: claim } : { ok: false, issues };
+}
+
+export function validateStrategistClaims(value: unknown): ValidationResult<StrategistClaim[]> {
+  const issues: ValidationIssue[] = [];
+  const claims = requireArrayOf(value, "(root)", issues, readStrategistClaim);
+  if (claims === undefined) return { ok: false, issues };
+  const seenAt = new Map<string, number>();
+  claims.forEach((claim, i) => {
+    const first = seenAt.get(claim.id);
+    if (first !== undefined) pushIssue(issues, `[${i}].id`, `duplicate claim id "${claim.id}" (first seen at index ${first})`);
+    else seenAt.set(claim.id, i);
+  });
+  return issues.length === 0 ? { ok: true, value: claims } : { ok: false, issues };
+}
+
+// -------------------------------------------------------------- constraints
+
+export type StrategyConstraintTarget = "copy" | "surface" | "all";
+
+export interface StrategyConstraint {
+  id: string;
+  target: StrategyConstraintTarget;
+  instruction: string;
+  why?: string;
+}
+
+function readStrategyConstraint(value: unknown, path: string, issues: ValidationIssue[]): StrategyConstraint | undefined {
+  const start = issues.length;
+  if (!isPlainObject(value)) {
+    pushIssue(issues, path, "must be an object");
+    return undefined;
+  }
+  const id = requireString(value.id, `${path}.id`, issues, { minLength: 1 });
+  if (id !== undefined) requirePattern(id, `${path}.id`, issues, FACT_KEY_RE, "must be kebab-case");
+  const target = value.target;
+  if (target !== "copy" && target !== "surface" && target !== "all") {
+    pushIssue(issues, `${path}.target`, 'must be "copy", "surface", or "all"');
+  }
+  const instruction = requireString(value.instruction, `${path}.instruction`, issues, { minLength: 10 });
+  const why = optionalString(value.why, `${path}.why`, issues);
+  if (issues.length > start) return undefined;
+  return { id: id as string, target: target as StrategyConstraintTarget, instruction: instruction as string, why };
+}
+
+export function validateStrategyConstraint(value: unknown): ValidationResult<StrategyConstraint> {
+  const issues: ValidationIssue[] = [];
+  const constraint = readStrategyConstraint(value, "(root)", issues);
+  return constraint !== undefined ? { ok: true, value: constraint } : { ok: false, issues };
+}
+
+export function validateStrategyConstraints(value: unknown): ValidationResult<StrategyConstraint[]> {
+  const issues: ValidationIssue[] = [];
+  const constraints = requireArrayOf(value, "(root)", issues, readStrategyConstraint);
+  return constraints !== undefined ? { ok: true, value: constraints } : { ok: false, issues };
+}
+
 // --------------------------------------------------------------- direction
 
-/**
- * Facts and direction have different physics. A `Fact` (above) is
- * checkable and citable, and it DRIFTS — the value underneath it changes
- * with nobody deciding anything, which is exactly what
- * `checkFactsTraceability` (`facts-gate.ts`) exists to catch. Direction —
- * vision, mission, positioning, market, audience — never drifts. Nothing
- * about a vision becomes false on its own; it is CHANGED, deliberately, by
- * someone who can say when and why. Drift detection is the wrong
- * instrument for that: the right one is derivation invalidation — when a
- * direction entity changes, nothing about it is wrong, but everything
- * built on top of it is now unreviewed. See `direction-invalidation.ts`
- * for the two checkers this entity exists to feed
- * (`checkDirectionCoverage`, `checkDirectionCurrency`) and issue #374 for
- * the full proposal.
- *
- * WHY A NEW TYPE, NOT FOUR RETROFITTED ONES
- * -------------------------------------------
- * `Mission`, `Positioning`, `Market`, and `Audience` above are already this
- * package's direction-bearing entities, and the instinct is to bolt the
- * DAG-versioning envelope (`id`, `rationale`, `decidedOn`, `supersedes`,
- * `derivesFrom`) directly onto each of them. That instinct doesn't survive
- * contact with their actual shapes: `Mission` already has both a
- * `statement` AND a `vision`, `Positioning` is a six-field madlib with no
- * single field that means "the statement", and `Market`/`Audience` name
- * their content `description`, not `statement`. Retrofitting the same five
- * fields onto four structurally incompatible shapes would mean either a
- * breaking change to all four already-shipped, already-tested entities, or
- * four independent, copy-pasted decisions about which existing field
- * "counts" as the direction statement — the second of which is exactly the
- * kind of silent inconsistency this package's hand-rolled validation
- * discipline exists to rule out.
- *
- * `DirectionEntity` is instead a new, uniform envelope, and `kind` is what
- * keeps it from being a parallel, disconnected system: its vocabulary is
- * drawn directly from the four direction concepts this file already
- * validates structurally (mirroring `RoadmapItem.status` drawing from
- * `ROADMAP_STATUSES`) — a `DirectionEntity` names WHICH existing direction
- * concept its `statement` is a dated, deliberate version of. The detailed,
- * already-validated shape of an actual `Mission`/`Positioning`/`Market`/
- * `Audience` document is untouched by this; `DirectionEntity` only ever
- * carries the versioning metadata none of the four have today.
- */
-export const DIRECTION_ENTITY_KINDS = ["mission", "positioning", "market", "audience"] as const;
-export type DirectionEntityKind = (typeof DIRECTION_ENTITY_KINDS)[number];
-
-const DIRECTION_ID_RE = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
-
-/**
- * One dated, deliberate direction decision — a single node in the DAG the
- * issue describes as "vision → positioning → market/audience → brand
- * attributes → (token slots, voice rules)". `id` is this exact version's
- * stable identifier (referenced by a derived artifact's `reviewedAgainst`
- * — see `direction-invalidation.ts` — and by another `DirectionEntity`'s
- * own `supersedes`), never the identifier of the ongoing conceptual thing
- * across time: revising a vision creates a NEW `DirectionEntity` with a
- * NEW `id` and `supersedes` naming the old one, rather than mutating the
- * old entity in place. This is what makes "current" a computable property
- * (an id nothing else's `supersedes` names) instead of a flag someone has
- * to remember to update.
- */
-export interface DirectionEntity {
-  /** Stable identifier for THIS VERSION, kebab-case — never reused once superseded. */
+export interface DirectionSubject {
+  file: string;
   id: string;
-  /** Which existing direction concept this is a version of — see this section's header comment. */
-  kind: DirectionEntityKind;
-  /** The decision itself, one or more lines, present tense. */
-  statement: string;
-  /** Why this decision, not some other — a real reason, not restated intent. */
-  rationale: string;
-  /** ISO 8601 date this version was decided. */
+}
+
+export interface DirectionEntity {
+  id: string;
+  subject: DirectionSubject;
   decidedOn: string;
-  /** `id` of the `DirectionEntity` this version replaces, when it replaces one. Omitted for a version with no prior history. */
   supersedes?: string;
-  /** `id`s of other `DirectionEntity` versions this one was decided in light of, forming the DAG's edges. Plain string ids, name-only — the same seam `BrandDerivation.tokenSlots`/`voiceRules` already use (see `brand-derivation.ts`'s header comment). May be empty: the DAG's roots (a vision) derive from nothing. */
   derivesFrom: string[];
+  rationale?: string;
+}
+
+function readDirectionSubject(value: unknown, path: string, issues: ValidationIssue[]): DirectionSubject | undefined {
+  const start = issues.length;
+  if (!isPlainObject(value)) {
+    pushIssue(issues, path, "must be an object shaped { file: string; id: string }");
+    return undefined;
+  }
+  const file = requireString(value.file, `${path}.file`, issues, { minLength: 1 });
+  const id = requireString(value.id, `${path}.id`, issues, { minLength: 1 });
+  if (issues.length > start) return undefined;
+  return { file: file as string, id: id as string };
 }
 
 function readDirectionEntity(value: unknown, path: string, issues: ValidationIssue[]): DirectionEntity | undefined {
@@ -672,54 +716,34 @@ function readDirectionEntity(value: unknown, path: string, issues: ValidationIss
     return undefined;
   }
   const id = requireString(value.id, `${path}.id`, issues, { minLength: 1 });
-  if (id !== undefined) {
-    requirePattern(id, `${path}.id`, issues, DIRECTION_ID_RE, 'must be kebab-case, e.g. "vision-2026-h2"');
-  }
-  const kindValue = value.kind;
-  const kindOk = typeof kindValue === "string" && (DIRECTION_ENTITY_KINDS as readonly string[]).includes(kindValue);
-  if (!kindOk) {
-    pushIssue(
-      issues,
-      `${path}.kind`,
-      `must be one of ${DIRECTION_ENTITY_KINDS.join(", ")}, got ${kindValue === undefined ? "undefined" : JSON.stringify(kindValue)}`,
-    );
-  }
-  const statement = requireString(value.statement, `${path}.statement`, issues, { minLength: 10 });
-  const rationale = requireString(value.rationale, `${path}.rationale`, issues, { minLength: 10 });
+  if (id !== undefined) requirePattern(id, `${path}.id`, issues, FACT_KEY_RE, 'must be kebab-case, e.g. "vision-2026-h2"');
+  const subject = readDirectionSubject(value.subject, `${path}.subject`, issues);
   const decidedOn = requireString(value.decidedOn, `${path}.decidedOn`, issues);
-  if (decidedOn !== undefined) {
-    requirePattern(decidedOn, `${path}.decidedOn`, issues, ISO_DATE_RE, "must be an ISO 8601 date (YYYY-MM-DD)");
-  }
+  if (decidedOn !== undefined) requirePattern(decidedOn, `${path}.decidedOn`, issues, ISO_DATE_RE, "must be an ISO 8601 date (YYYY-MM-DD)");
   const supersedes = optionalString(value.supersedes, `${path}.supersedes`, issues, { minLength: 1 });
-  const derivesFrom = requireStringArray(value.derivesFrom, `${path}.derivesFrom`, issues, { itemMinLength: 1 });
-
+  const derivesFromRaw = value.derivesFrom;
+  const derivesFrom =
+    derivesFromRaw === undefined
+      ? []
+      : requireStringArray(derivesFromRaw, `${path}.derivesFrom`, issues, { itemMinLength: 1 }) ?? [];
+  const rationale = optionalString(value.rationale, `${path}.rationale`, issues);
   if (issues.length > start) return undefined;
   return {
     id: id as string,
-    kind: kindValue as DirectionEntityKind,
-    statement: statement as string,
-    rationale: rationale as string,
+    subject: subject as DirectionSubject,
     decidedOn: decidedOn as string,
     supersedes,
     derivesFrom: derivesFrom as string[],
+    rationale,
   };
 }
 
-/** Validates a single `DirectionEntity`. */
 export function validateDirectionEntity(value: unknown): ValidationResult<DirectionEntity> {
   const issues: ValidationIssue[] = [];
   const entity = readDirectionEntity(value, "(root)", issues);
   return entity !== undefined ? { ok: true, value: entity } : { ok: false, issues };
 }
 
-/**
- * Validates the whole contents of a direction-entities file: an array of
- * `DirectionEntity`, each `id` unique — the same duplicate-key discipline
- * `validateFacts` applies to `Fact.key` above, for the identical reason: an
- * `id` is how a derived artifact's `reviewedAgainst` and another entity's
- * `supersedes` name this one, and two entities silently sharing an `id`
- * would make both references ambiguous.
- */
 export function validateDirectionEntities(value: unknown): ValidationResult<DirectionEntity[]> {
   const issues: ValidationIssue[] = [];
   const entities = requireArrayOf(value, "(root)", issues, readDirectionEntity);

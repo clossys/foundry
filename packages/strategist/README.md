@@ -115,12 +115,11 @@ over `unknown`, an accumulated issue list, never throws.
 
 ## Governed strategy contract
 
-`StrategyContract` is the stable handoff for a product's governed strategy.
-It is intentionally distinct from the file-oriented reader below. The reader
-validates a consumer's local authoring files; the contract is the normalized,
-directory-independent payload handed to downstream systems. A consumer may
-adapt one into the other, but they are not competing sources of truth and
-neither API silently reads or writes the other.
+`StrategyContract` is the portable payload downstream packages seal against.
+Consumers author one `strategy/` directory (see the skill and `readStrategy`);
+`projectStrategyContract` projects that bundle into a contract — do not
+maintain a parallel authored contract file. `validateStrategyContract` and
+`createStrategyProvenance` remain exported for adapters and Publisher seals.
 
 Every record has a kebab-case `id`, semantic-version `revision`, and source
 `provenance`. The contract covers `product`, `brand`, `audience`,

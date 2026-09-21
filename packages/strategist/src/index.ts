@@ -55,10 +55,10 @@
  */
 
 export {
-  DIRECTION_ENTITY_KINDS,
   ROADMAP_STATUSES,
   validateAudience,
   validateAudiences,
+  validateBrand,
   validateBrandAttribute,
   validateBrandAttributes,
   validateBrandEssence,
@@ -73,14 +73,18 @@ export {
   validatePositioning,
   validateRoadmapItem,
   validateRoadmapItems,
+  validateStrategistClaim,
+  validateStrategistClaims,
+  validateStrategyConstraint,
+  validateStrategyConstraints,
 } from "./schema.js";
 export type {
   Audience,
   BrandAttribute,
+  BrandDocument,
   BrandEssence,
-  BrandEvidence,
   DirectionEntity,
-  DirectionEntityKind,
+  DirectionSubject,
   Fact,
   Market,
   Mission,
@@ -89,6 +93,10 @@ export type {
   Positioning,
   RoadmapItem,
   RoadmapStatus,
+  StrategistClaim,
+  StrategistClaimStatus,
+  StrategyConstraint,
+  StrategyConstraintTarget,
 } from "./schema.js";
 
 export { checkBrandCoverage, validateBrandDerivation, validateBrandDerivations } from "./brand-derivation.js";
@@ -104,8 +112,16 @@ export type {
   DirectionCurrencyResult,
 } from "./direction-invalidation.js";
 
-export { readStrategy } from "./reader.js";
+export { readStrategy, brandDerivationsFromBundle } from "./reader.js";
 export type { StrategyBundle, StrategyReadIssue, StrategyReadIssueReason } from "./reader.js";
+
+export { checkStrategyHandoff, currentDirectionId, strategyDirectoryUnreadable } from "./handoff.js";
+export type { HandoffFinding, HandoffResult } from "./handoff.js";
+
+export { projectStrategyContract, projectAndValidateStrategyContract } from "./projector.js";
+
+export { checkClaimMarkers, checkConstraintMarkers, checkStrategyApply } from "./markers-gate.js";
+export type { MarkersGateFinding, MarkersGateResult, MarkersGateRule } from "./markers-gate.js";
 
 export { readStrategyDirectory } from "./facts-dir.js";
 export type { FactsDirectoryInput, FactsDirectoryIssue, FactsDirectoryIssueReason, FactsDirectoryResult } from "./facts-dir.js";

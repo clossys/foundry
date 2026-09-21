@@ -5,6 +5,24 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.3.0] - 2026-09-21
+
+### Changed
+
+- **Breaking:** one authored `strategy/` directory replaces the retired split brand files and positioning madlib fields. `readStrategy` loads `facts.json`, `audiences.json`, `markets.json`, `positioning.json`, `claims.json`, `constraints.json`, `brand.json`, `mission.json`, `roadmap.json`, and `direction.json`. `StrategyBundle.complete` means every present file validates; handoff readiness is `strategist-check handoff`.
+- `DirectionEntity` drops `statement` and `kind`; each record names a `subject` `{ file, id }` pointing at another directory record. Facts are not direction subjects.
+- Retired `forWhom` / `reasonToBelieve` and `brand-essence.json` / `brand-attributes.json` / `brand-derivations.json` fail validation with findings that name `audienceIds`, `claimIds`, or `brand.json`.
+- `projectStrategyContract` projects a portable `StrategyContract` with provenance source `strategy-directory` and synthesized evidence from each claim's `basis` (optional fact refs as observed-fact evidence).
+- New gate subcommands: `strategist-check handoff` and `strategist-check apply` (approved `claim:<id>` markers and cited `constraint:<id>` markers). Refs: #1115, #1116, #1117, #1118, #1119.
+
+### Migration
+
+- Merge brand essence, attributes, and derivations into `brand.json` (`essence.statement`, attributes with `id`/`statement`/`basis`, derivations with `attributeId`/`tokenSlots`/`voiceRuleIds`).
+- Replace positioning `forWhom` and `reasonToBelieve` with `audienceIds` and `claimIds`.
+- Replace audience `description`/`painPoints` with `situation` and `pains`.
+- Replace mission value `name` with kebab-case `id`.
+- Author `claims.json`, `constraints.json`, and `direction.json` for handoff; run `strategist-check handoff` before downstream skills cite ids.
+
 ## [0.2.8] - 2026-09-21
 
 ### Added
