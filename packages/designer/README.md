@@ -24,8 +24,7 @@ setpoint over the declared review cadence. The owned metric is `design
 conformance rate`, computed by `assessDesignConformanceRate()`. An empty
 evaluated set is `indeterminate`, never a perfect rate of 1.
 `designer-token-check`, `designer-brand-check`, `designer-contrast-check`,
-`designer-environment-check`, and `designer-type-check` remain the gates they
-are; none is this
+and `designer-environment-check` remain the gates they are; none is this
 rate. This package does not measure consumer evidence and does not close
 the loop. A green run of this package's tests is not a close.
 
@@ -4510,23 +4509,6 @@ over the IDENTICAL fixture in the same test, exits `0`.
 - **`designer-environment-check [package-dir]`** — the installable CLI,
   exit `0`/`1`/`2` matching `"satisfied"`/`"violated"`/`"indeterminate"`
   directly. Defaults to this package's own root.
-
-## Type-scale record gate (`@clossys/designer/tokens`, `designer-type-check`)
-
-A type scale is an authored record a mid-tier walk executes — not a pairing
-the tooling invents at runtime. This package ships `type-record.json`
-(schemaVersion 1) as a worked example; consumers keep their own record and
-check it in CI.
-
-- **`checkTypeRecord(record, options?)`** (from `@clossys/designer/tokens`) —
-  pure validation of `displayFace`, `h1MinimumPx`, `measureCapCh`, and
-  `monoReservedFor` (`"eyebrow" | "data" | "code"`). Invalid JSON shape is
-  `indeterminate`; a schemaVersion 1 object with missing or empty required
-  fields is `violated`. When `options.brandDeclarations` is supplied (from
-  `readBrandCss`), `--font-display` must include `displayFace` and
-  `--text-display-l` must be at least `h1MinimumPx`.
-- **`designer-type-check <record.json> [brand-css-file]`** — installable CLI,
-  same `0` / `1` / `2` ternary as `designer-brand-check`.
 
 ## What's deliberately not here
 
