@@ -5,6 +5,14 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.2.8] - 2026-09-21
+
+### Added
+
+- Facts gate: catalogue-count claims spelled as `twenty` or `twenty-one`, or as a
+  digit run, followed by `packages` or `records`, are scanned like other numeric
+  claims. Refs: #500.
+
 ## [0.2.7] - 2026-09-21
 
 ### Changed

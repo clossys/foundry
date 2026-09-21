@@ -186,10 +186,10 @@
       "name": "@clossys/strategist",
       "state": "staged",
       "stagedBy": {
-        "run": "`npm run stage:strategist-writer-publisher`, invoking packages/strategist/dist/cli.js. Printed: `strategist red: exit 1 (finding(s))` then `strategist control: exit 0 (No findings.)`.",
-        "defectOrigin": "injected",
-        "defect": "The red fixture is a draft announcement reading \"We serve 9 customers.\" against a declared fact of 3 active customers; the compiled strategist CLI compared the draft's stated figure to the registered fact and reported a real contradiction finding at exit 1.",
-        "control": "The control fixture is the identical fact set with the announcement corrected to \"We serve 3 customers.\", so the same comparison found no contradiction and exited 0 with no findings."
+        "run": "`npm run build` then `npm run check:strategist-subject` (node packages/strategist/dist/cli.js strategy docs with excludes so only docs/PUBLISHING.md is scanned). Input: docs/PUBLISHING.md as on origin/main before the twenty-one prose fix. Printed exit 1 with an untraced-numeric-claim on the line containing `all twenty records`; after correcting stale `twenty` catalogue phrases to `twenty-one`, the same command exited 0 with no findings while `twenty-one packages` in the same file was not a finding.",
+        "defectOrigin": "natural",
+        "defect": "On origin/main, docs/PUBLISHING.md still said catalogue closure covers all twenty records while strategy/facts.json registered twenty-one records; the compiled strategist CLI reported an untraced-numeric-claim for twenty records at exit 1.",
+        "control": "In the same wired run against docs/PUBLISHING.md, the phrase twenty-one packages appeared in prose and produced no finding because it matched the registered fact alias; after aligning the stale twenty records line to twenty-one, the subject check exited 0."
       }
     },
     {
