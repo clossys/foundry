@@ -136,6 +136,20 @@ unknown ID, locale mismatch, draft/retired entry, missing placeholder value,
 or unexpected value. Locale fallback belongs to a consumer-owned registry
 selector, rather than an implicit package policy.
 
+The default `writer-check` command also runs two registry-only gates against
+the same `CopyRegistry` file a surface renders from:
+
+- **Render-store parity** (`checkRenderRegistryParity`): `record-file` must be
+  a `CopyRegistry` — the store `createCopyResolver` reads at render, not a plain
+  `CopyRecord` or a second in-memory-only store. `--render-registry <file>` may
+  name the path the surface passes to `createCopyResolver`; after realpath it
+  must be the same file as `record-file`.
+- **Treatment word budgets** (`checkTreatmentWordBudgets`, `countCopyWords`,
+  `DEFAULT_TREATMENT_WORD_BUDGETS`): registry entries may declare `treatment`
+  and optional `maxWords`. Approved copy that exceeds the budget fails the
+  gate (built-in defaults for `display-heading`, `eyebrow`, and `button` when
+  `maxWords` is omitted).
+
 ## Where this package sits on i18n
 
 "i18n" is two different things, and this package deliberately does only one
@@ -557,6 +571,12 @@ Options:
   including the leading dot (for example `.mjs`). Values union across
   repeats. When omitted, the default is `.ts`, `.tsx`, `.js`, and `.jsx`.
   When any `--extensions` flag is present, that default set is replaced.
+- `--chrome <file>` (repeatable) — persistent chrome (site header, footer,
+  skip link, nav labels) shell or layout file to scan in addition to
+  `scan-dir`. Paths are relative to `scan-dir` unless absolute. Each file
+  must exist.
+- `--require-chrome` — refuse to run (exit `2`) when no `--chrome` file was
+  declared. Use when the surface mounts persistent chrome outside `scan-dir`.
 
 This supplier repository does not ship a copy-registry subject for
 addressability to run against. The `writer-check` CLI strings in this tree
@@ -675,6 +695,12 @@ The root entry point exports the copy registry and traceability surface:
   `AddressabilityScanOptions`, `AddressabilityScanResult`,
   `AddressabilityUncheckedItem`, `AddressabilityVerdict`, and
   `AddressabilityViolation`.
+- Render-store parity (see above): `checkRenderRegistryParity`,
+  `RenderRegistryParityReason`, and `RenderRegistryParityResult`.
+- Treatment word budgets (see above): `checkTreatmentWordBudgets`,
+  `countCopyWords`, `DEFAULT_TREATMENT_WORD_BUDGETS`,
+  `TreatmentWordBudgetFinding`, `TreatmentWordBudgetResult`, and
+  `TreatmentWordBudgetRule`.
 - Locale-coverage governance: `checkLocaleCoverage`, `LocaleCoverageFinding`,
   `LocaleCoverageReport`, `LocaleCoverageSkip`, and
   `LocaleCoverageSkipReason` — see "Where this package sits on i18n" above.

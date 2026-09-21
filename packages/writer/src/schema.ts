@@ -121,6 +121,8 @@ function validateCopyEntryShape(value: unknown, path: string): CopyFinding[] {
   const context = value.context;
   const placeholders = value.placeholders;
   const factRef = value.factRef;
+  const treatment = value.treatment;
+  const maxWords = value.maxWords;
 
   const findings: CopyFinding[] = [];
 
@@ -187,6 +189,26 @@ function validateCopyEntryShape(value: unknown, path: string): CopyFinding[] {
       message: `${path}.factRef must be a non-empty string when present, got ${JSON.stringify(factRef)}.`,
       path: `${path}.factRef`,
     });
+  }
+
+  if (treatment !== undefined && !isNonEmptyString(treatment)) {
+    findings.push({
+      rule: "treatment-shape",
+      severity: "error",
+      message: `${path}.treatment must be a non-empty string when present, got ${JSON.stringify(treatment)}.`,
+      path: `${path}.treatment`,
+    });
+  }
+
+  if (maxWords !== undefined) {
+    if (typeof maxWords !== "number" || !Number.isFinite(maxWords) || maxWords < 1) {
+      findings.push({
+        rule: "max-words-shape",
+        severity: "error",
+        message: `${path}.maxWords must be a positive finite number when present, got ${JSON.stringify(maxWords)}.`,
+        path: `${path}.maxWords`,
+      });
+    }
   }
 
   return findings;
@@ -461,6 +483,8 @@ function buildCopyRecord(value: Record<string, unknown>): CopyRecord {
       context: entry.context as string,
       placeholders: [...((entry.placeholders as string[] | undefined) ?? [])],
       factRef: entry.factRef as string | undefined,
+      treatment: entry.treatment as string | undefined,
+      maxWords: entry.maxWords as number | undefined,
     };
   });
 

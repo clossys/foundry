@@ -11,7 +11,7 @@ import {
   type AddressabilityGateResult,
   type AddressabilityScanResult,
 } from "./addressability.js";
-import { mainAddressabilityCheck } from "./cli.js";
+import { CliInputError, mainAddressabilityCheck } from "./cli.js";
 
 const DIST_CLI = join(dirname(fileURLToPath(import.meta.url)), "..", "dist", "cli.js");
 
@@ -408,6 +408,20 @@ describe("scanAddressabilitySources — directory walk", () => {
   it("throws (fail-closed) on an unreadable directory, mirroring scanCopySourceTree", () => {
     expect(() => scanAddressabilitySources(join(dir, "does-not-exist"))).toThrow();
   });
+
+  it("scans consumer-declared chrome files outside the route body tree", () => {
+    const chromeDir = mkdtempSync(join(tmpdir(), "copy-addressability-chrome-"));
+    try {
+      writeFileSync(join(dir, "page.tsx"), "export const Page = () => <main>{null}</main>;\n");
+      writeFileSync(join(chromeDir, "SiteHeader.tsx"), "export const SiteHeader = () => <nav>Sign in</nav>;\n");
+      const scan = scanAddressabilitySources(dir, {
+        chromeFiles: [join(chromeDir, "SiteHeader.tsx")],
+      });
+      expect(scan.violations.some((v) => v.raw.includes("Sign in"))).toBe(true);
+    } finally {
+      rmSync(chromeDir, { recursive: true, force: true });
+    }
+  });
 });
 
 describe("mainAddressabilityCheck — CLI wiring", () => {
@@ -452,6 +466,16 @@ describe("mainAddressabilityCheck — CLI wiring", () => {
     writeFileSync(join(dir, "labels.ts"), "const greeting = `Welcome, ${name}`;\n");
     expect(mainAddressabilityCheck([dir])).toBe(1);
     expect(mainAddressabilityCheck([dir])).not.toBe(2);
+  });
+
+  it("returns 2 when --require-chrome is set without --chrome", () => {
+    expect(() => mainAddressabilityCheck([dir, "--require-chrome"])).toThrow(CliInputError);
+  });
+
+  it("returns 1 when chrome file carries inline nav prose", () => {
+    writeFileSync(join(dir, "page.tsx"), "export const Page = () => <main />;\n");
+    writeFileSync(join(dir, "SiteHeader.tsx"), "export const SiteHeader = () => <a>About</a>;\n");
+    expect(mainAddressabilityCheck([dir, "--chrome", "SiteHeader.tsx"])).toBe(1);
   });
 });
 
