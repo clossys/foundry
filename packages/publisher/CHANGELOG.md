@@ -5,22 +5,7 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
-## [0.4.16] - 2026-09-21
-
-### Changed
-
-- Packed skill: seal an approved named surface after a keep — head,
-  OG/meta join, and release proof — and verify the exact shipped result;
-  do not author the in-tree `SectionedView` or `MarketingView` page
-  document, select templates from business intent, own the app router, or
-  lock final copy. Refs: #1027.
-
-### Added
-
-- `SectionedView` resolve-then-render integration coverage for grouped
-  and flat `status-list` sections.
-
-## [0.4.11] - 2026-09-21
+## [0.4.17] - 2026-09-21
 
 ### Added
 
@@ -42,6 +27,21 @@ All notable changes to this package are documented here. Format follows
   render as underlined anchors into `Hero`'s `actions` slot (data-shaped
   `href` contract unchanged). `article-body` / `section-header` remain out of
   contract — compose those blocks in the consumer or via `defineWebTemplate`.
+
+## [0.4.16] - 2026-09-21
+
+### Changed
+
+- Packed skill: seal an approved named surface after a keep — head,
+  OG/meta join, and release proof — and verify the exact shipped result;
+  do not author the in-tree `SectionedView` or `MarketingView` page
+  document, select templates from business intent, own the app router, or
+  lock final copy. Refs: #1027.
+
+### Added
+
+- `SectionedView` resolve-then-render integration coverage for grouped
+  and flat `status-list` sections.
 
 ## [0.4.10] - 2026-09-21
 
