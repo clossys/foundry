@@ -5,6 +5,12 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.3.16] - 2026-09-21
+
+### Changed
+
+- Packed skill: cite strategist handoff ids (audience, approved claims, constraints, direction); do not edit `strategy/`. Refs: #1120.
+
 ## [0.3.15] - 2026-09-21
 
 ### Changed

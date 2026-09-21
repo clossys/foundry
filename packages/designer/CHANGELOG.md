@@ -5,6 +5,12 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.4.16] - 2026-09-21
+
+### Changed
+
+- Packed skill: cite strategist constraint ids and derived slot names; do not author brand attributes or color/type pairings in strategy. Refs: #1121.
+
 ## [0.4.15] - 2026-09-21
 
 ### Changed
