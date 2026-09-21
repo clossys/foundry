@@ -3,6 +3,18 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.4.8] - 2026-09-21
+
+### Added
+
+- Authored type-scale record (`type-record.json`, schemaVersion 1) and
+  `checkTypeRecord()` in `src/type-record/` — a mid-tier walk executes the
+  record; the checker does not invent fonts at runtime.
+- `designer-type-check <record.json> [brand-css-file]` — optional brand CSS
+  cross-checks `--font-display` and `--text-display-l` via `readBrandCss`.
+  Exit codes `0` / `1` / `2` match satisfied / violated / indeterminate,
+  the same ternary as `designer-brand-check`.
+
 ## [0.4.7] - 2026-09-19
 
 ### Fixed

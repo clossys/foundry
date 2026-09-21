@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "displayFace": "system-ui",
+  "h1MinimumPx": 56,
+  "measureCapCh": 65,
+  "monoReservedFor": ["eyebrow", "data", "code"]
+}

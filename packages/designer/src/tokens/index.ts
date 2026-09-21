@@ -109,6 +109,15 @@ export type {
   BrandFileCoverageUnchecked,
 } from "./check-brand-file-coverage.js";
 
+export { checkTypeRecord, TYPE_RECORD_SCHEMA_VERSION } from "../type-record/check-type-record.js";
+export type {
+  TypeRecord,
+  TypeRecordCheckOptions,
+  TypeRecordCheckResult,
+  TypeRecordFinding,
+  TypeRecordState,
+} from "../type-record/check-type-record.js";
+
 export { parseBrandDeclarations, readBrandCss } from "./read-brand-css.js";
 export type {
   BrandCssReadIssue,

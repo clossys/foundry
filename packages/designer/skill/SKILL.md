@@ -38,6 +38,7 @@ Ask one question. Prefer the host multiple-choice control when it exists; otherw
 
 If `node_modules/@clossys/designer` is present (or this package's bins are on PATH), use the exact pin in the tree. Read `package.json` `bin` for the real command names.
 - Assessment CLI: `designer-rate-check`
+- Type scale is an authored record; `designer-type-check` validates it (and optional brand CSS) without inventing fonts at runtime.
 
 Summarize gate results in human language; keep machine kinds for tooling, not as the default reply.
 
