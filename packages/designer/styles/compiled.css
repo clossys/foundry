@@ -589,6 +589,9 @@
   .text-caption {
     font-size: var(--text-caption, 12px);
   }
+  .text-display-l {
+    font-size: var(--text-display-l, 56px);
+  }
   .text-h1 {
     font-size: var(--text-h1, 28px);
   }

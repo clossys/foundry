@@ -3,6 +3,14 @@ import { cx } from "../atoms/internal/cx.js";
 import { DISPLAY_HEADING_CLASS } from "./internal/block-vars.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 
+/**
+ * `class-scan.ts` skips `blocks/internal/` (where `DISPLAY_HEADING_CLASS`
+ * lives). This literal keeps `text-display-l` in the compiled.css candidate
+ * set so display headings stay styled on the tokens.css + compiled.css path.
+ */
+const COMPILED_CSS_CLASS_SCAN_ANCHOR = "text-display-l";
+void COMPILED_CSS_CLASS_SCAN_ANCHOR;
+
 export type HeroHeadingLevel = 1 | 2;
 
 /** Layout composition when `media` is present — media presence is not a layout. */
