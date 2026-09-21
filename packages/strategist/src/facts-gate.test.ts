@@ -154,7 +154,7 @@ describe("checkFactsTraceability — false-positive avoidance", () => {
 
   it("does not flag color-mix() percentage literals in source", () => {
     const content =
-      "const bg = `color-mix(in oklch, var(--color-accent), transparent 90%)` as const;";
+      "const bg = `color-mix(in oklch, rebeccapurple, transparent 90%)` as const;";
     const result = checkFactsTraceability([{ path: "tokens.ts", content }], []);
     expect(result.findings).toEqual([]);
     expect(result.claimsScanned).toBe(0);
