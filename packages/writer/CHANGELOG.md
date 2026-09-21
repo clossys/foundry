@@ -5,6 +5,14 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.3.15] - 2026-09-21
+
+### Changed
+
+- Packed skill: name `MarketingView`, `SectionedView`, or a registered
+  web template before filling bands; do not author a page shape the
+  shipped views cannot hold.
+
 ## [0.3.14] - 2026-09-21
 
 ### Added

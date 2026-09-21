@@ -5,6 +5,18 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.4.15] - 2026-09-21
+
+### Changed
+
+- Packed skill: expression-wave ownership — greyscale token contract,
+  consumer brand overlay binding, and with Writer the in-tree page document;
+  do not invent a brand against derivation law, treat Publisher as the
+  assembler, or seal surfaces.
+- Packed skill: name `MarketingView`, `SectionedView`, or a registered
+  web template before filling bands; do not author a page shape the
+  shipped views cannot hold. Refs: #1027.
+
 ## [0.4.12] - 2026-09-21
 
 ### Added

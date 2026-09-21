@@ -79,7 +79,7 @@ test("all 21 publishable packages are exact-source bound to the catalogue and qu
     "@clossys/butler": "0.1.7",
     "@clossys/controller": "0.9.12",
     "@clossys/customer": "0.1.0",
-    "@clossys/designer": "0.4.12",
+    "@clossys/designer": "0.4.15",
     "@clossys/giver": "0.1.7",
     "@clossys/influencer": "0.1.7",
     "@clossys/inspector": "0.2.7",
@@ -91,8 +91,8 @@ test("all 21 publishable packages are exact-source bound to the catalogue and qu
     "@clossys/observer": "0.3.1",
     "@clossys/publisher": "0.4.10",
     "@clossys/starter": "0.1.9",
-    "@clossys/strategist": "0.2.6",
-    "@clossys/writer": "0.3.14",
+    "@clossys/strategist": "0.2.7",
+    "@clossys/writer": "0.3.15",
   };
   const packageKeys = (await readdir(new URL("../packages", import.meta.url))).sort();
   const manifests = await Promise.all(packageKeys.map((key) => repositoryJson(`packages/${key}/package.json`)));

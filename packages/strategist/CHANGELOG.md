@@ -5,6 +5,13 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.2.7] - 2026-09-21
+
+### Changed
+
+- Packed skill: Strategist does not author the in-tree page document;
+  Designer and Writer together do.
+
 ## [0.2.6] - 2026-09-21
 
 ### Added
