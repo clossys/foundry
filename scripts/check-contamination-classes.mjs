@@ -790,7 +790,13 @@ function repositoryShapedness(citedPath) {
 }
 
 function classifyCitation(citedPath, file) {
-  if (!flags.has("--include-built") && BUILT_SEGMENT_RE.test(citedPath)) return { state: CITATION_IGNORE };
+  // Tree scan ignores citations whose *target* is under dist/ or build/ —
+  // those paths are gitignored, so CLASS 1 would otherwise report ROT for
+  // prose that names a compiled invocation path. `--include-built` scans
+  // compiled *files* for citations of source (the #927 surface). It must
+  // not flip those gitignored-target citations into findings; src-keyed
+  // #941 waivers already cover tsc-copied comments that name source paths.
+  if (BUILT_SEGMENT_RE.test(citedPath)) return { state: CITATION_IGNORE };
 
   const shipped = shippedFileSet();
   let reachedVia = null; // a real file this citation resolves to, if any
@@ -1044,8 +1050,33 @@ const allowlistForScan = allowlist.entries.filter((e) => e.package === scannedPa
 const allowlistUsed = new Set();
 const waived = [];
 
+// tsc preserves comments; #941 keys waivers under src/; with --include-built,
+// every compiled copy of the same citation would fail unless src-keyed entries
+// also waive the matching dist/ artifact (without duplicating ~124 dist/ keys).
+const DIST_ALLOWLIST_ARTIFACT_RE = /\.(?:d\.ts\.map|js\.map|d\.ts|js)$/;
+
+function srcRelFilesForDistArtifact(normRelFile) {
+  if (!normRelFile.startsWith("dist/")) return null;
+  const tail = normRelFile.slice("dist/".length);
+  if (!DIST_ALLOWLIST_ARTIFACT_RE.test(tail)) return null;
+  const stem = tail.replace(/\.(?:d\.ts\.map|js\.map|d\.ts|js)$/, "");
+  const dirPart = dirname(stem);
+  const srcDir = dirPart === "." ? "src" : join("src", dirPart).split(sep).join("/");
+  const base = basename(stem);
+  return [`${srcDir}/${base}.ts`, `${srcDir}/${base}.tsx`];
+}
+
 function allowlistEntryFor(relFile, citedPath) {
-  return allowlistForScan.find((e) => e.file === relFile && e.cited === citedPath);
+  const norm = relFile.split(sep).join("/");
+  const exact = allowlistForScan.find((e) => e.file === norm && e.cited === citedPath);
+  if (exact) return exact;
+  const srcCandidates = srcRelFilesForDistArtifact(norm);
+  if (!srcCandidates) return undefined;
+  for (const srcFile of srcCandidates) {
+    const viaSrc = allowlistForScan.find((e) => e.file === srcFile && e.cited === citedPath);
+    if (viaSrc) return viaSrc;
+  }
+  return undefined;
 }
 
 // ---------------------------------------------------------------- the check

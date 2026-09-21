@@ -2228,6 +2228,89 @@ try {
     );
   }
 
+  // ------- check-contamination-classes CLASS 1: src waiver mirrors to built output
+  // When `tsc` copies a comment from src into dist, waiving only the source path
+  // must waive the matching built artifact too — otherwise every src-only entry
+  // regresses the moment --include-built is turned on.
+  console.log("\n# check-contamination-classes CLASS 1: src waiver mirrors to built output");
+  {
+    const dir = join(work, "contam-class1-src-waiver-dist");
+    mkdirSync(join(dir, "src"), { recursive: true });
+    mkdirSync(join(dir, "dist"), { recursive: true });
+    const citation = "// See `packages/retired/src/gone.ts`.\nexport const x = 1;\n";
+    writeFileSync(
+      join(dir, "package.json"),
+      JSON.stringify(
+        { name: `${FIXTURE_SCOPE}/src-waiver-dist`, version: "1.0.0", files: ["dist", "src"] },
+        null,
+        2,
+      ) + "\n",
+    );
+    writeFileSync(join(dir, "src", "index.ts"), citation);
+    writeFileSync(join(dir, "dist", "index.js"), citation);
+    writeFileSync(join(dir, ".gitignore"), "dist/\n");
+    gitInit(dir);
+    gitRetirePackageDir(dir, "retired");
+
+    const srcOnlyAllowPath = join(dir, "src-only-allow.json");
+    writeFileSync(
+      srcOnlyAllowPath,
+      JSON.stringify(
+        {
+          issue: "#941",
+          packages: { [basename(dir)]: { "src/index.ts": ["packages/retired/src/gone.ts"] } },
+        },
+        null,
+        2,
+      ) + "\n",
+    );
+    const srcWaived = run("node", [CONTAM, dir, "--class", "1", "--include-built", "--allowlist", srcOnlyAllowPath]);
+    check(
+      "a src-only allowlist entry waives the matching dist citation under --include-built",
+      srcWaived.code === 0 && /KNOWN, WAIVED/.test(srcWaived.out) && /not a clean one/.test(srcWaived.out),
+      `src-only waiver run exited ${srcWaived.code}: ${srcWaived.out.slice(0, 500)}`,
+    );
+
+    const noAllow = run("node", [CONTAM, dir, "--class", "1", "--include-built"]);
+    check(
+      "the same dist citation still fails with no allowlist when src is not waived",
+      noAllow.code === 1 && noAllow.out.includes('cites "packages/retired/src/gone.ts"'),
+      `unwaived run exited ${noAllow.code}: ${noAllow.out.slice(0, 500)}`,
+    );
+
+    const wrongSrcAllowPath = join(dir, "wrong-src-allow.json");
+    writeFileSync(
+      wrongSrcAllowPath,
+      JSON.stringify(
+        {
+          issue: "#941",
+          packages: {
+            [basename(dir)]: { "src/index.ts": ["packages/retired/src/never-cited.ts"] },
+          },
+        },
+        null,
+        2,
+      ) + "\n",
+    );
+    const wrongSrc = run("node", [CONTAM, dir, "--class", "1", "--include-built", "--allowlist", wrongSrcAllowPath]);
+    check(
+      "a src waiver for a path the files never cite is a stale-waiver finding",
+      wrongSrc.code === 1 && /never-cited\.ts/.test(wrongSrc.out),
+      `wrong src waiver run exited ${wrongSrc.code}: ${wrongSrc.out.slice(0, 500)}`,
+    );
+
+    writeFileSync(
+      join(dir, "src", "invoke.ts"),
+      "// CI runs `node packages/fixture/dist/cli.js`.\nexport const y = 1;\n",
+    );
+    const invoke = run("node", [CONTAM, dir, "--class", "1", "--include-built", "--allowlist", srcOnlyAllowPath]);
+    check(
+      "a src comment that names a gitignored dist invocation path is not ROT under --include-built",
+      invoke.code === 0 && !invoke.out.includes('cites "packages/fixture/dist/cli.js"'),
+      `dist-invocation citation was reported: exit ${invoke.code}: ${invoke.out.slice(0, 500)}`,
+    );
+  }
+
   // --------------- check-contamination-classes CLASS 4: shallow clones fail closed
   // CLASS 4's git-history read for "did this repo ever publish that name" is
   // silently WRONG, not absent, on a shallow checkout: `git log` still
