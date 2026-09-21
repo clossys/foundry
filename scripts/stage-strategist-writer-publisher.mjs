@@ -10,8 +10,11 @@
  *
  * This is fixture evidence only. It does not wire strategist or writer to a
  * real Foundry subject (#500 and #501), and it does not make publisher's
- * hand-authored ledger independent of the publish path (#502). Those remain
- * separate programme work; consumer adoption remains #503.
+ * publish-path registry reconciliation (#502): the record CLI fixtures use a
+ * hand-authored ledger literal. `proposeRegistryPublicationEntry` in
+ * `@clossys/publisher/record` is the producer shape; wiring it from the
+ * publish workflow or keeping `./record` consumer-only is documented in
+ * packages/publisher/README.md. Consumer adoption remains #503.
  */
 
 import { spawnSync } from "node:child_process";
