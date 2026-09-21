@@ -9,13 +9,13 @@ import { defineWebTemplate } from "./defineWebTemplate.js";
 const DASHBOARD_TEMPLATE = defineWebTemplate({
   name: "DashboardView",
   flow: { slots: [{ key: "heading", required: true }] },
-  build: (content) => createElement("h1", null, content.heading),
+  blocks: [{ kind: "page-header", title: "heading" }],
 });
 
 const REPORT_TEMPLATE = defineWebTemplate({
   name: "ReportView",
   flow: { slots: [{ key: "title", required: true }] },
-  build: (content) => createElement("h2", null, content.title),
+  blocks: [{ kind: "page-header", title: "title" }],
 });
 
 const dashboardDoc: ComposeDocument = {
@@ -61,7 +61,7 @@ describe("createWebRenderer({ templates }) — scoped to exactly those templates
     const renderer = createWebRenderer({ templates: [DASHBOARD_TEMPLATE] });
     const { element, head } = renderer.renderWebDocument(dashboardDoc);
     const html = renderToStaticMarkup(element);
-    expect(html).toBe("<h1>Acme Dashboard</h1>");
+    expect(html).toContain("Acme Dashboard");
     expect(head.title).toBe("Dashboard");
   });
 });
@@ -98,7 +98,7 @@ describe("createWebRenderer({ includeBuiltins: true })", () => {
 
 describe("createWebRenderer — fails closed on a duplicate template name, never silently keeping the last one", () => {
   it("throws RenderError('duplicate-template', ...) when two entries in `templates` share a name", () => {
-    const duplicate = defineWebTemplate({ name: "DashboardView", flow: { slots: [{ key: "x" }] }, build: () => null });
+    const duplicate = defineWebTemplate({ name: "DashboardView", flow: { slots: [{ key: "x" }] }, blocks: [{ kind: "page-header", title: "x" }] });
     let thrown: unknown;
     try {
       createWebRenderer({ templates: [DASHBOARD_TEMPLATE, duplicate] });
@@ -111,7 +111,7 @@ describe("createWebRenderer — fails closed on a duplicate template name, never
   });
 
   it("throws RenderError('duplicate-template', ...) when a consumer's own template collides with a built-in name and includeBuiltins is true", () => {
-    const collidesWithAuthView = defineWebTemplate({ name: "AuthView", flow: { slots: [{ key: "x" }] }, build: () => null });
+    const collidesWithAuthView = defineWebTemplate({ name: "AuthView", flow: { slots: [{ key: "x" }] }, blocks: [{ kind: "page-header", title: "x" }] });
     let thrown: unknown;
     try {
       createWebRenderer({ templates: [collidesWithAuthView], includeBuiltins: true });

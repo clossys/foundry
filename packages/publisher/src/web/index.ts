@@ -14,6 +14,8 @@ export { buildWebHeadMetadata } from "./headMetadata.js";
 export { listWebTemplateNames } from "./internal/webTemplates.js";
 export { defineWebTemplate } from "./internal/defineWebTemplate.js";
 export { createWebRenderer } from "./internal/createWebRenderer.js";
+export { evaluateWebRouteManifest, evaluateWebRouteManifestWithSources, scanRouteSourceForDirectComposition } from "./checkWebRoutes.js";
+export type { WebRouteCheckResult, WebRouteFinding, WebRouteManifest, WebRouteManifestEntry } from "./checkWebRoutes.js";
 export { AuthView, CaptureView, CollectionView, DocumentView, ErrorView, MarketingView, SectionedView } from "./views/index.js";
 export type { AuthViewProps, CaptureViewProps, CollectionViewEmptyState, CollectionViewEntry, CollectionViewLink, CollectionViewPagination, CollectionViewProps, DocumentViewEffectiveDate, DocumentViewProps, ErrorViewProps, MarketingFaqItem, MarketingFeatureItem, MarketingViewProps, SectionedViewLandmark, SectionedViewProps } from "./views/index.js";
 
@@ -36,5 +38,7 @@ export type {
   WebRenderer,
   WebSlotContentKind,
   WebTemplate,
+  WebTemplateBlockKind,
+  WebTemplateBlockSpec,
   WebTwitterMetadata,
 } from "./types.js";
