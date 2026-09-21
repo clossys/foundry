@@ -21,9 +21,10 @@ name: Package visibility
 # "private") AND an anonymous `GET /-/org/<scope>/package` roster read to
 # catch a package live under the scope that the active release target does
 # not declare -- that roster endpoint needs no credential either, verified
-# directly against the live registry. Only the deprecated-package retention
-# cross-check (docs/contracts/package-retention.json joined against the
-# roster) was cut, as its own separate scope decision -- see issue #844. See
+# directly against the live registry. The live run also reconciles a
+# still-published "deprecated" roster package against
+# docs/contracts/package-retention.json (issue #449); the PR-blocking half
+# checks the same contract offline via --declarations-only. See
 # scripts/check-package-visibility.mjs's own header for the full design and
 # the GitHub Packages incident that originally motivated this gate (issue
 # #817).
