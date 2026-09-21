@@ -258,12 +258,12 @@ Name a shipped template when its slots cover the page:
 - **`MarketingView`** — pre-auth marketing landing (hero, features, optional
   FAQ, CTA).
 - **`SectionedView`** — long public pages whose sections are exactly the
-  closed five kinds (`hero`, `feature-grid`, `faq`, `ordered-step-sequence`,
-  `status-list`).
+  closed six kinds (`hero`, `feature-grid`, `faq`, `ordered-step-sequence`,
+  `status-list`, `stat-grid`).
 - **`AuthView`** / **`ErrorView`** — authentication and error shells.
 
 If a required band is not a slot on any shipped template and not one of the
-five `SectionedView` kinds, **do not flatten** it into a one-item
+six `SectionedView` kinds, **do not flatten** it into a one-item
 `feature-grid` or any other shipped kind — that produces a document that
 validates while the page is wrong. Register `defineWebTemplate` in the
 consumer instead; its `build` function maps resolved slots to Designer
@@ -291,9 +291,9 @@ that document assembler is not the pre-auth path.
 
 `@clossys/publisher/core` now owns the closed, data-only source model for a
 long public site page: `SectionedViewDocument`. It requires one or more
-ordered sections with unique lowercase fragment-safe ids and one of five
-named kinds: `hero`, `feature-grid`, `faq`, `ordered-step-sequence`, or
-`status-list`. Grounds are the closed `base`/`sunken`/`inverse` vocabulary;
+ordered sections with unique lowercase fragment-safe ids and one of six
+named kinds: `hero`, `feature-grid`, `faq`, `ordered-step-sequence`,
+`status-list`, or `stat-grid`. Grounds are the closed `base`/`sunken`/`inverse` vocabulary;
 status values are the closed `available`/`partial`/`planned` readiness axis,
 with a separate `not-offered` disposition for deliberate non-capabilities.
 Every audience-facing label, heading, description, question, answer, ordinal,
@@ -359,8 +359,20 @@ validates and renders exactly as it did before they existed.
 - **`actions` on the hero section.** An optional, non-empty list of
   `{ id, label, href }`, where `label` is a `CopyRef` and `href` must be a
   fragment, a one-origin path, an `http(s)` URL, or a `mailto:` link. It stays
-  data: there is no node, class, or handler slot, and the view renders the
-  anchors into the Designer `Hero` block's existing `actions` slot.
+  data: there is no node, class, or handler slot, and the view renders
+  underlined `<a href>` elements into the Designer `Hero` block's existing
+  `actions` slot (not `Button` atoms — the wire model stays href-shaped).
+- **`media` on the hero section.** An optional `{ assetId, alt }` pair:
+  `alt` is a `CopyRef` (provenance-complete) and `assetId` resolves at render
+  time through `SectionedView`'s `resolveAssetId`, the same seam
+  `renderWebDocument` uses for `MarketingView`'s `heroMedia`. Presence
+  switches `Hero` to the two-column layout (`tablet:grid-cols-2`). Product
+  surface or original art only — not decorative stock.
+- **`stat-grid` sections.** A titled grid of metrics: each item carries
+  `label` and `value` `CopyRef`s plus optional `delta`, closed `trend`
+  (`up` | `down` | `neutral`, only with `delta`), and optional `description`.
+  The view maps each row onto Designer `Stat`; do not flatten metrics into
+  `feature-grid`.
 - **`detail` on a status-list item.** An optional `CopyRef` carrying that
   row's own explanation, including the reasoning behind a `not-offered`
   answer. It renders as a second description of the same row, so the
@@ -475,10 +487,12 @@ the h1/h2/h3 outline; Designer owns visual tokens and block internals. Per
 `html`, `lang`, or `dir` attributes: the host application supplies those
 boundaries around this renderer.
 
-`section-header` and `article-body` are intentionally not section kinds in
-this core stage: the former's action region and the latter's full structured
-document rendering need a grounded view integration to remain fully
-data-shaped and provenance-complete. They are not represented as node slots.
+`section-header` and `article-body` remain intentionally outside the closed
+`SectionedView` kinds: the former's action region and the latter's full
+structured-document rendering still need a grounded view integration to stay
+fully data-shaped and provenance-complete without node slots. Compose those
+Designer blocks in the consumer renderer or register `defineWebTemplate` for
+the page band instead of flattening into `feature-grid` or `stat-grid`.
 
 On its own, this is a repeating-group *binding* primitive only — it says
 nothing about which template actually consumes it. `web`'s `MarketingView`
@@ -1459,7 +1473,8 @@ choice `checkLedgerDrift` makes for a citation it could not check.
   `ResolvedSurfaceGroupField`, `ResolvedSurfaceGroupItem`, `ResolvedSurfaceNode`,
   `ResolveSurfaceDocumentOptions`, `SurfaceResolutionReason`, and
   `CanvasInches`, `SectionedViewAction`, `SectionedViewDocument`, `SectionedViewSection`,
-  `SectionedViewSectionKind`, `SectionedViewGround`, `SectionedViewHeroSection`,
+  `SectionedViewSectionKind`, `SectionedViewGround`, `SectionedViewHeroMedia`, `SectionedViewHeroSection`,
+  `SectionedViewStatGridSection`, `SectionedViewStatItem`, `SectionedViewStatTrend`, `ResolvedSectionedViewHeroMedia`,
   `SectionedViewFeatureGridSection`, `SectionedViewFeatureItem`, `SectionedViewFaqSection`,
   `SectionedViewFaqItem`, `SectionedViewOrderedStepSequenceSection`,
   `SectionedViewOrderedStep`, `SectionedViewStatusListSection`,

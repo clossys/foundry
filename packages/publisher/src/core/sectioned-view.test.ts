@@ -43,6 +43,11 @@ const additionalCopy = {
   "acme.status.eyebrow": "Posture",
   "acme.status.item.detail": "Generally available in every region.",
   "acme.status.none.detail": "Not offered because the audit is not ours to claim.",
+  "acme.hero.media.alt": "Placeholder product still",
+  "acme.stats.heading": "Metrics",
+  "acme.stats.one.label": "Active users",
+  "acme.stats.one.value": "2,481",
+  "acme.stats.one.delta": "+12%",
 };
 
 const registry: CopyRegistry = {
@@ -311,6 +316,61 @@ describe("SectionedViewDocument optional additive fields", () => {
       expect((error as SectionedViewResolutionError).reason).toBe("unresolved-copy");
       expect((error as Error).message).toContain("sections.4.groups.0.items.0.detail");
     }
+  });
+});
+
+describe("SectionedViewDocument hero media and stat-grid (issue #1028)", () => {
+  it("accepts optional hero media and resolves its alt copy while keeping assetId", () => {
+    const withMedia = {
+      ...document,
+      sections: [{ ...document.sections[0], media: { assetId: "acme.hero.still", alt: ref("acme.hero.media.alt") } }, ...document.sections.slice(1)],
+    };
+    expect(validateSectionedViewDocument(withMedia)).toEqual([]);
+    const resolved = resolveSectionedViewDocument(withMedia, resolver);
+    expect(resolved.sections[0].media).toEqual({ assetId: "acme.hero.still", alt: "Placeholder product still" });
+    expect(resolved.resolutions.map((entry) => entry.entryId)).toContain("acme.hero.media.alt");
+  });
+
+  it("refuses malformed hero media and stat-grid rows", () => {
+    const badMedia = { ...document, sections: [{ ...document.sections[0], media: { assetId: " ", alt: ref("acme.hero.media.alt") } }] };
+    expect(validateSectionedViewDocument(badMedia).map((entry) => entry.rule)).toContain("sectioned-view-hero-media-shape");
+
+    const trendWithoutDelta = {
+      ...document,
+      sections: [
+        document.sections[0],
+        {
+          id: "stats",
+          kind: "stat-grid",
+          ground: "base",
+          heading: ref("acme.stats.heading"),
+          items: [{ id: "one", label: ref("acme.stats.one.label"), value: ref("acme.stats.one.value"), trend: "up" }],
+        },
+      ],
+    };
+    expect(validateSectionedViewDocument(trendWithoutDelta).map((entry) => entry.rule)).toContain("sectioned-view-stat-trend-without-delta");
+  });
+
+  it("accepts a stat-grid section and resolves every CopyRef in its items", () => {
+    const withStats = {
+      ...document,
+      sections: [
+        document.sections[0],
+        {
+          id: "stats",
+          kind: "stat-grid",
+          ground: "base",
+          heading: ref("acme.stats.heading"),
+          items: [{ id: "one", label: ref("acme.stats.one.label"), value: ref("acme.stats.one.value"), delta: ref("acme.stats.one.delta"), trend: "up" }],
+        },
+      ],
+    };
+    expect(validateSectionedViewDocument(withStats)).toEqual([]);
+    const resolved = resolveSectionedViewDocument(withStats, resolver);
+    expect(resolved.sections[1]).toMatchObject({
+      kind: "stat-grid",
+      items: [{ id: "one", label: "Active users", value: "2,481", delta: "+12%", trend: "up" }],
+    });
   });
 });
 
