@@ -5,6 +5,14 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.4.10] - 2026-09-21
+
+### Changed
+
+- `MarketingView` passes explicit Hero `composition` (`split` when media is
+  present) and golden markup matches Designer 0.4.12 display measure
+  classes.
+
 ## [0.4.8] - 2026-09-21
 
 ### Changed
