@@ -5,6 +5,13 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.3.13] - 2026-09-21
+
+### Added
+
+- Skill: expression-wave role-ownership sentences (aligned with strategist,
+  designer, and publisher skills).
+
 ## [0.3.12] - 2026-09-21
 
 ### Added

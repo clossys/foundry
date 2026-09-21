@@ -5,6 +5,23 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.2.4] - 2026-09-21
+
+### Changed
+
+- README: facts-gate input scope is flat `Fact[]` only (`facts.json` or
+  `--facts-dir` leaves). Nested authored group objects and schema meta
+  leaves (for example `_schema.json`) remain consumer-local; a projection
+  step that emits `Fact[]` is mandatory — the engine does not ingest or
+  flatten nested groups. Documented that `Money` requires `amount` (not
+  `value`) and that `--facts-dir` and `facts.json` in the same
+  `strategy-dir` stay mutually exclusive (exit `2`).
+
+### Added
+
+- Skill: expression-wave role-ownership sentences (aligned with designer,
+  writer, and publisher skills).
+
 ## [0.2.2] - 2026-09-21
 
 ### Added

@@ -413,6 +413,46 @@ prose against) and a scan that matched zero files (nothing was actually
 scanned — "found nothing wrong" and "checked nothing" must never look the
 same in a report).
 
+#### Facts gate input — flat `Fact[]` only
+
+The facts gate accepts **exactly** these ground-truth shapes — nothing
+else is ingested, and nested formats are not silently flattened:
+
+| Source | Contract |
+| --- | --- |
+| `facts.json` under `strategy-dir` | Document root is a JSON array of `Fact`. |
+| `--facts-dir <dir>` | Every `*.json` leaf in `<dir>` is a JSON array of `Fact` at its root. |
+
+**Nested authored facts stay consumer-local.** Some adopters keep a
+directory of domain files whose root is a **group object** (facts grouped
+by company / product / traction), plus meta leaves such as `_schema.json`.
+Those shapes are not engine input: `readStrategyDirectory` validates each
+leaf with `validateFacts`, which requires an array at the root — a
+group-object leaf or a schema file fails with `(root): must be an array,
+got an object`. The engine does not read nested groups, skip schema
+leaves, or flatten on your behalf. A **projection step** you own (adapter
+that emits `Fact[]`) is **mandatory** before the gate runs — typically
+writing either the flat `facts.json` or one `Fact[]` file per leaf under
+the directory you pass to `--facts-dir`.
+
+**Money shape.** When `Fact.value` is money, it must be
+`{ amount: number; currency: string }`. The gate does not accept
+`{ value, currency }` or other aliases; projection must rename to
+`amount` before validation (`validateMoney` in `schema.ts`).
+
+**One facts source per run.** `--facts-dir` and `facts.json` in the same
+`strategy-dir` are **mutually exclusive**: if `facts.json` exists there,
+supplying `--facts-dir` is refused (exit `2`) with the conflict named —
+never a silent preference. A tree that keeps both an authored nested
+directory and a generated flat projection must choose one ground-truth
+path for the gate (for example point `--facts-dir` at projected leaves
+only after removing or relocating `facts.json`, or use `facts.json` alone
+without `--facts-dir`).
+
+**Facts-only mode.** With `--facts-dir`, only facts load for the gate;
+`mission.json`, `roadmap.json`, and the rest of the strategy bundle under
+`strategy-dir` are not read (facts traceability only).
+
 #### `--facts-dir <dir>` — facts from a directory of leaves
 
 ```bash
@@ -420,10 +460,12 @@ npx strategist-check ./strategy ./docs --facts-dir ./strategy/facts
 ```
 
 `--facts-dir` replaces the flat `facts.json` as the gate's ground truth:
-`<dir>` holds one JSON file per fact (or per fact group), each leaf a JSON
-array of `Fact` validated by the same rules the flat file follows. The
-directory must be a flat registry of leaves — subdirectories are not
-descended into, and every file in it must be accounted for:
+`<dir>` holds one JSON file per fact (or per small `Fact[]` batch), each
+leaf a JSON array of `Fact` validated by the same rules the flat file
+follows — see "Facts gate input — flat `Fact[]` only" above for what is
+**not** accepted. The directory must be a flat registry of leaves —
+subdirectories are not descended into, and every file in it must be
+accounted for:
 
 - a leaf that is not valid JSON, or does not validate as `Fact[]`, is
   reported by name and the run exits `2`;
@@ -435,11 +477,6 @@ descended into, and every file in it must be accounted for:
   facts".
 
 Each fact loaded this way records its source leaf in `Fact.sourceFile`.
-
-`--facts-dir` and the flat `facts.json` are mutually exclusive: when a
-`facts.json` exists in `strategy-dir`, supplying `--facts-dir` is refused
-with the conflict named (exit `2`) rather than silently preferring one of
-the two registries.
 
 ### `strategist-check brand-coverage` — the second subcommand
 
