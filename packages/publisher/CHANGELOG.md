@@ -5,6 +5,12 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+### Changed
+
+- README: declared escape, metric, reconciliation loop, measurer, and close
+  condition for the publisher role (#446). Names the #502 reconciler blocker
+  so unmeasured rates are not mistaken for zero escapes.
+
 ## [0.4.19] - 2026-09-21
 
 ### Changed

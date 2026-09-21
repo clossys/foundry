@@ -54,6 +54,89 @@ remain gates and are not the assessment surface. Publisher is not a
 required first-day role; Advisor remains the only required first-day
 assessment.
 
+## The job
+
+**Aim** — every audience-facing release is accounted for in an immutable
+publication record, and nothing in the record names something that never
+shipped.
+
+Publisher is a **reconciliation** role, not a gate over a source tree. It
+does not scan prose or stylesheets and return a verdict the way `writer-check`
+or `designer-fold-check` do. It compares **two records that can disagree**:
+what an independent observer reports was released to an audience, and what
+the append-only ledger says was published.
+
+## Escape
+
+An **escape** is either:
+
+1. **Unrecorded release** — something reached an audience with no matching
+   immutable publication record.
+2. **Phantom record** — the ledger names a publication that never shipped, or
+   names bytes or strategy citations that no longer match what actually went
+   out.
+
+A green run of this package's own tests, or a ledger authored from the same
+knowledge that would check it, is **not** evidence of zero escapes — that is
+the house failure pattern this role exists to prevent.
+
+## The metric
+
+The charter metric is **`verified publication rate`**: due publication
+intents where independent observers report both audience release and a
+matching immutable record, divided by all due intents actually evaluated. An
+empty evaluated set is **indeterminate**, never a perfect rate of 1. See
+[Verified publication rate](#verified-publication-rate) above for
+`assessVerifiedPublicationRate()` and `publisher-rate-check`.
+
+`publisher-media-check` reports registry coverage (referenced asset ids vs
+registered entries). `publisher-record-check` reports fact drift, append-only
+integrity, and join-key completeness on a ledger a consumer already holds.
+Those counts are **inputs** to reconciliation; none of them is the charter
+rate, and none of them alone proves the escape surface is closed.
+
+## Loop
+
+- **sense** — enumerate due publication intents; collect independent
+  observations of audience release; hold the append-only ledger and the fact
+  snapshot `publisher-record-check` compares against.
+- **judge** — `assessVerifiedPublicationRate()` for the charter metric;
+  `publisher-record-check` for drift, append-only violations, and join-key
+  gaps on declared ledger entries.
+- **act** — append an immutable `PublicationEntry` when something ships;
+  remediate drift findings and missing join keys; retract or supersede
+  entries when a release is withdrawn.
+- **learn** — repeated `indeterminate` or `violated` assessments, or drift
+  findings that keep reopening on the same intent, signal that the publish
+  path is not emitting a record an observer can match — not that the gate
+  needs softer rules.
+
+**Measurer today:** `publisher-rate-check` (charter metric from
+consumer-supplied observations) and `publisher-record-check` (ledger gates).
+**Blocker:** nothing in this package yet produces a **second**,
+publish-path-emitted view of what actually shipped for an automatic
+reconcile — issue #502 tracks that gap. Until two independent records exist,
+every rate reads **unmeasured** rather than zero; treat silence as
+indeterminate, not health.
+
+## Close condition
+
+This loop closes when **`verified publication rate` reads satisfied** from
+**independent consumer evidence** over a non-empty set of due intents — each
+intent independently observed with both `audienceReleased` and
+`matchingImmutableRecord` — and when reconciliation machinery can compare
+that evidence to a publish-path-emitted ledger without hand-copying the same
+facts into both sides.
+
+It does **not** close when: no observer runs the assessment; the evaluated
+set is empty; `publisher` observes itself; or the ledger and the "what
+shipped" view share one author. A consumer wiring `publisher-record-check` in
+CI proves ledger **shape** integrity, not that the escape surface is zero.
+
+That close is **not claimed today** — the reconciler gap in #502 is the long
+pole. This README states the contract so the gap stays visible instead of
+reading as a perfect zero escape rate from outside.
+
 ## Public entry points
 
 Use explicit subpaths:
