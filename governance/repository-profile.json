@@ -39,6 +39,7 @@
     { "name": "package.json", "classification": "canonical", "disposition": "required" },
     { "name": "packages", "classification": "canonical", "disposition": "required" },
     { "name": "scripts", "classification": "canonical", "disposition": "required" },
+    { "name": "strategy", "classification": "canonical", "disposition": "required" },
     { "name": "governance", "classification": "extension", "disposition": "required" }
   ]
 }
