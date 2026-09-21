@@ -116,6 +116,18 @@ test("published verification fetch is anonymous, isolated, and read-only", () =>
   assert.doesNotMatch(fetch, /run-candidate-qualification|import\(/);
 });
 
+test("ISSUE #883: verify_only bootstrap validation runs in qualify, not behind publish", () => {
+  const qualify = job("qualify");
+  const publish = job("publish");
+  const bootstrap = step(qualify, "Validate qualification joins against retained record");
+  assert.match(bootstrap, /if: \$\{\{ inputs\.verify_only \}\}/);
+  assert.match(bootstrap, /validate-candidate-publish\.mjs --package "\$PKG" --tarball "\$TARBALL" --transcript "\$TRANSCRIPT" --mode bootstrap/);
+  assert.doesNotMatch(publish, /VERIFY_ONLY.*mode=bootstrap|mode=bootstrap.*VERIFY_ONLY/);
+  const publishJoins = step(publish, "Validate qualification joins");
+  assert.match(publishJoins, /--mode prepublish/);
+  assert.doesNotMatch(publishJoins, /mode=bootstrap/);
+});
+
 test("qualification is least privilege and owns candidate execution", () => {
   const qualify = job("qualify");
   assert.match(qualify, /needs: \[discover, fetch-published\]/);

@@ -150,6 +150,11 @@ test("uncommitted live-root drift cannot change prepublication authority", async
   assert.deepEqual(validateCandidatePublish({ root: fixture.root, args: validatorArgs(fixture) }), []);
 });
 
+test("bootstrap mode accepts a pre-publication retained record for registry re-verification", async (t) => {
+  const fixture = await validatorFixture(t);
+  assert.deepEqual(validateCandidatePublish({ root: fixture.root, args: validatorArgs(fixture, "bootstrap") }), []);
+});
+
 test("bootstrap validation continues to use current worktree joins", async (t) => {
   const fixture = await validatorFixture(t);
   const record = JSON.parse(await readFile(fixture.recordPath, "utf8"));

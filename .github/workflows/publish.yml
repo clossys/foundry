@@ -50,8 +50,9 @@ on:
       verify_only:
         description: >-
           Qualify an already-published package without uploading or changing
-          its visibility. Fetches the registry tarball and runs its isolated
-          consumer verification.
+          its visibility. Fetches the registry tarball, runs its isolated
+          consumer verification, and bootstrap-mode validation against the
+          retained qualification record.
         required: true
         default: false
         type: boolean
@@ -360,6 +361,17 @@ jobs:
           TRANSCRIPT: ${{ runner.temp }}/qualification/${{ matrix.package }}/transcript.json
         run: node scripts/run-candidate-qualification.mjs --package "$PKG" --tarball "$TARBALL" --output "$TRANSCRIPT"
 
+      # verify_only never reaches the publish job (gated on !inputs.verify_only),
+      # so bootstrap-mode validation must run here against the fetched registry
+      # bytes and fresh transcript — see issue #883.
+      - name: Validate qualification joins against retained record
+        if: ${{ inputs.verify_only }}
+        env:
+          PKG: ${{ matrix.package }}
+          TARBALL: ${{ runner.temp }}/qualification/${{ matrix.package }}/candidate.tgz
+          TRANSCRIPT: ${{ runner.temp }}/qualification/${{ matrix.package }}/transcript.json
+        run: node scripts/validate-candidate-publish.mjs --package "$PKG" --tarball "$TARBALL" --transcript "$TRANSCRIPT" --mode bootstrap
+
       # This is NOT a lifecycle rehearsal and must not be read as one (issue
       # #351). `--dry-run` does not execute lifecycle scripts, and
       # `--ignore-scripts` is passed here deliberately because the real
@@ -551,10 +563,7 @@ jobs:
           PKG: ${{ matrix.package }}
           TARBALL: ${{ runner.temp }}/qualification/${{ matrix.package }}/candidate.tgz
           TRANSCRIPT: ${{ runner.temp }}/qualification/${{ matrix.package }}/transcript.json
-          VERIFY_ONLY: ${{ inputs.verify_only }}
-        run: |
-          if [ "$VERIFY_ONLY" = true ]; then mode=bootstrap; else mode=prepublish; fi
-          node scripts/validate-candidate-publish.mjs --package "$PKG" --tarball "$TARBALL" --transcript "$TRANSCRIPT" --mode "$mode"
+        run: node scripts/validate-candidate-publish.mjs --package "$PKG" --tarball "$TARBALL" --transcript "$TRANSCRIPT" --mode prepublish
 
       - name: Verify exact tarball is unchanged
         if: ${{ !inputs.verify_only }}
