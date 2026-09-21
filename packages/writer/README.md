@@ -505,7 +505,7 @@ const result = checkAddressability(scan);
 // result.verdict: "satisfied" | "violated" | "indeterminate"
 ```
 
-Three positions are classified:
+Four positions are classified:
 
 1. **Markup text nodes** (`<span>Hello</span>`'s `Hello`) — always a
    violation when it carries real prose.
@@ -520,9 +520,16 @@ Three positions are classified:
    can override a default, so the component's own source does not lock
    the sentence in the way a hardcoded JSX attribute does, and flagging
    one would invert the verdict on an already-addressable construct.
-3. **Everything else** — a template literal (in any position, including
-   one of the four attributes above), an object/array literal value, or a
-   prop that is none of the four — this gate cannot confidently tell
+3. **Copy-bearing object-literal values** — chrome config bags
+   (`{ label: "Request access", href: "/join" }`, `items[].label`, nav
+   link tables) are Writer surfaces. A literal on keys such as `label`,
+   `title`, `cta`, `caption`, `heading`, `kicker`, `body`, `description`,
+   or `aria-label` is a violation with file and key path. Allowlisted keys
+   (`href`, `to`, `path`, `icon`, …) and route-shaped values (`/pricing`)
+   are not copy — a `SiteHeader` labels array is not an escape hatch.
+4. **Everything else** — a template literal (in any position, including
+   one of the four attributes above), or a prop that is none of the four —
+   this gate cannot confidently tell
    whether it is resolved-through-an-id or genuinely non-user-facing, so it
    is reported as `unchecked` (indeterminate), never silently treated as
    clean — UNLESS the string is itself shaped like a CSS/Tailwind utility

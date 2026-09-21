@@ -196,7 +196,7 @@ const DEFAULT_SKIP_DIRS = new Set(["node_modules", ".git", "dist", "build", "cov
 /** `.test.ts(x)`, `.spec.ts(x)`, `.check.ts(x)`, and bare `.d.ts` — the identical pattern `scan.ts` and `@example/ui`'s `style-scan.ts` both use, reused verbatim rather than reinvented (not exported by `scan.ts`, so redefined locally here — the same precedent `style-scan.ts` sets for its own copy of this constant). */
 const SKIP_FILE_RE = /\.(test|spec|check)\.(ts|tsx|js|jsx)$|\.d\.ts$/;
 
-export type AddressabilityPosition = "markup-text" | "user-facing-attribute";
+export type AddressabilityPosition = "markup-text" | "user-facing-attribute" | "object-literal-copy";
 
 export interface AddressabilityViolation {
   file: string;
@@ -204,6 +204,10 @@ export interface AddressabilityViolation {
   position: AddressabilityPosition;
   /** Set only for `"user-facing-attribute"` — which of the four this literal was the value of. */
   attribute?: "aria-label" | "placeholder" | "alt" | "title";
+  /** Set only for `"object-literal-copy"` — the property key this literal was the value of. */
+  objectKey?: string;
+  /** Set only for `"object-literal-copy"` — dotted/bracket path when nested under `items`/`nav`/`links`. */
+  keyPath?: string;
   /** The literal's own raw source text, for a human auditing the finding. */
   raw: string;
 }
@@ -482,6 +486,83 @@ const DESTRUCTURING_OR_PARAMETER_DEFAULT_RE =
  * `DESTRUCTURING_OR_PARAMETER_DEFAULT_RE`'s own doc comment for exactly
  * what is and is not matched.
  */
+/** Copy-bearing object-literal property keys (issue #1063) — normalized like `normalizeAttrName`. */
+const COPY_BEARING_OBJECT_KEYS = new Set([
+  "label",
+  "title",
+  "cta",
+  "caption",
+  "heading",
+  "kicker",
+  "body",
+  "description",
+  "arialabel",
+  "text",
+]);
+
+/** Non-copy object-literal keys — route targets, icons, tokens; not Writer surfaces. */
+const ALLOWLISTED_OBJECT_LITERAL_KEYS = new Set([
+  "href",
+  "to",
+  "path",
+  "pathname",
+  "icon",
+  "iconname",
+  "slug",
+  "token",
+  "variant",
+  "size",
+]);
+
+const OBJECT_LITERAL_CONTAINER_KEYS = ["items", "nav", "links"] as const;
+
+const OBJECT_LITERAL_PROP_NAME_RE =
+  /(?:"([^"]+)"|'([^']+)'|([A-Za-z_$][A-Za-z0-9_$-]*))\s*:\s*$/;
+
+function literalStartIndex(content: string, line: number, raw: string): number | undefined {
+  const lines = content.split("\n");
+  const lineText = lines[line - 1];
+  if (lineText === undefined) return undefined;
+  const col = lineText.indexOf(raw);
+  if (col === -1) return undefined;
+  let start = 0;
+  for (let i = 0; i < line - 1; i++) start += lines[i]!.length + 1;
+  return start + col;
+}
+
+function objectLiteralPropertyName(content: string, start: number): string | undefined {
+  const from = Math.max(0, start - 120);
+  const before = content.slice(from, start);
+  const match = OBJECT_LITERAL_PROP_NAME_RE.exec(before);
+  if (!match) return undefined;
+  return match[1] ?? match[2] ?? match[3];
+}
+
+function objectLiteralKeyPath(content: string, start: number, propName: string): string {
+  const from = Math.max(0, start - 500);
+  const slice = content.slice(from, start);
+  for (const container of OBJECT_LITERAL_CONTAINER_KEYS) {
+    const re = new RegExp(`\\b${container}\\s*:\\s*\\[`, "g");
+    let lastIndex = -1;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(slice)) !== null) lastIndex = m.index;
+    if (lastIndex !== -1) return `${container}[].${propName}`;
+  }
+  return propName;
+}
+
+/** Route/icon-shaped literal values that are never copy, regardless of key. */
+function looksLikeAllowlistedConstantValue(raw: string): boolean {
+  const quote = raw[0];
+  if (quote !== '"' && quote !== "'") return false;
+  const text = raw.slice(1, -1).trim();
+  if (text.length === 0) return false;
+  if (/^\/[^\s]*$/.test(text)) return true;
+  if (/^#[\w-]+$/.test(text)) return true;
+  if (/^https?:\/\//.test(text)) return true;
+  return false;
+}
+
 function isDestructuringOrParameterDefault(lines: string[], line: number, raw: string): boolean {
   const lineText = lines[line - 1];
   if (lineText === undefined) return false;
@@ -643,13 +724,46 @@ export function extractAddressabilityCandidates(content: string, filePath: strin
     violations.push({ file: c.file, line: c.line, position: "user-facing-attribute", attribute, raw: c.raw });
   }
 
-  // ---- position 3: everything else scan.ts kept as a real candidate —
+  // ---- position 3a: copy-bearing object-literal property values (issue
+  // #1063) — chrome config bags (`{ label: "...", href: "/join" }`) are
+  // Writer surfaces; allowlisted keys and route/icon-shaped values are not.
+  const objectLiteralClaimed = new Set<string>();
+  for (const c of candidates) {
+    if (c.kind !== "string") continue;
+    if (claimed.has(`${c.line}::${c.raw}`)) continue;
+    if (looksLikeUtilityClassList(c.raw)) continue;
+    const start = literalStartIndex(content, c.line, c.raw);
+    if (start === undefined) continue;
+    const propName = objectLiteralPropertyName(content, start);
+    if (propName === undefined) continue;
+    const normalizedProp = normalizeAttrName(propName);
+    if (ALLOWLISTED_OBJECT_LITERAL_KEYS.has(normalizedProp) || looksLikeAllowlistedConstantValue(c.raw)) {
+      objectLiteralClaimed.add(`${c.line}::${c.raw}`);
+      continue;
+    }
+    if (!COPY_BEARING_OBJECT_KEYS.has(normalizedProp)) continue;
+    if (isDestructuringOrParameterDefault(lines, c.line, c.raw)) continue;
+    if (!hasProse(c.raw)) continue;
+    const keyPath = objectLiteralKeyPath(content, start, propName);
+    objectLiteralClaimed.add(`${c.line}::${c.raw}`);
+    violations.push({
+      file: c.file,
+      line: c.line,
+      position: "object-literal-copy",
+      objectKey: propName,
+      keyPath,
+      raw: c.raw,
+    });
+  }
+
+  // ---- position 3b: everything else scan.ts kept as a real candidate —
   // never silently treated as clean, never treated as a violation either
   // — except a plain string shaped like a utility class LIST, which is
   // definitively not prose (see looksLikeUtilityClassList).
   for (const c of candidates) {
     if (c.kind === "jsx-text") continue; // already position 1
     if (c.kind === "string" && claimed.has(`${c.line}::${c.raw}`)) continue; // already position 2
+    if (c.kind === "string" && objectLiteralClaimed.has(`${c.line}::${c.raw}`)) continue;
     if (c.kind === "string" && looksLikeUtilityClassList(c.raw)) continue; // a class-name list, not prose
     unchecked.push({
       file: c.file,

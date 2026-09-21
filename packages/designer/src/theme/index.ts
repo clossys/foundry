@@ -38,7 +38,13 @@ import { REACT_DECLARED_RANGE } from "../internal/declared-peer-ranges.js";
  */
 assertPeerVersion({ peer: "react", declaredRange: REACT_DECLARED_RANGE, foundVersion: reactVersion });
 
-export { getThemeInitScript, type ThemeInitScriptOptions } from "./initScript.js";
+export {
+  getAuthoredThemeInitScript,
+  getStoredThemeInitScript,
+  getThemeInitScript,
+  type ThemeInitScriptOptions,
+} from "./initScript.js";
+export { AUTHORED_THEME_REGISTER, stampAuthoredRegister } from "./internal/theme-core.js";
 export {
   DEFAULT_STORAGE_KEY,
   THEME_PREFERENCES,

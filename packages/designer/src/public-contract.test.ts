@@ -27,7 +27,7 @@ const JS_SUBPATHS = [
   "./gate",
   "./render-environment",
 ] as const;
-const CSS_SUBPATHS = ["./tokens.css", "./theme.css", "./compiled.css", "./brand-template.css"] as const;
+const CSS_SUBPATHS = ["./tokens.css", "./theme.css", "./theme-keys.css", "./compiled.css", "./brand-template.css"] as const;
 const COMPONENT_DIRS = ["atoms", "blocks", "charts", "shell", "theme"] as const;
 
 function sourceFiles(dir: string, out: string[] = []): string[] {
@@ -74,6 +74,8 @@ describe("public UI contract", () => {
 
     expect(tokens).toContain(":root {");
     expect(theme).toContain('@import "./tokens.css";');
+    expect(theme).toContain('@import "./theme-keys.css";');
+    expect(existsSync(join(packageRoot, "styles", "theme-keys.css"))).toBe(true);
     expect(brand).toContain('@import "@clossys/designer/tokens.css";');
     expect(brand).toContain(":root[data-brand-bound]");
     expect(tokens).toContain(':root[data-theme="dark"]');

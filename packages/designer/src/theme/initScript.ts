@@ -1,4 +1,9 @@
-import { applyThemeDom, DEFAULT_STORAGE_KEY, readStoredPreference } from "./internal/theme-core.js";
+import {
+  applyThemeDom,
+  DEFAULT_STORAGE_KEY,
+  readStoredPreference,
+  stampAuthoredRegister,
+} from "./internal/theme-core.js";
 
 export interface ThemeInitScriptOptions {
   /** @default "ui-theme" */
@@ -69,7 +74,22 @@ export interface ThemeInitScriptOptions {
  * with storage unavailable still renders correctly; it just always
  * follows the OS.
  */
-export function getThemeInitScript(options: ThemeInitScriptOptions = {}): string {
+/**
+ * Public marketing default: stamp the authored day register. OS preference
+ * is not the brand — do not use this for product chrome that should follow
+ * the visitor's stored or OS-driven choice; use `getStoredThemeInitScript`.
+ */
+export function getAuthoredThemeInitScript(): string {
+  return (
+    "(function(){" +
+    `${stampAuthoredRegister.toString()}` +
+    `stampAuthoredRegister(document.documentElement);` +
+    "})();"
+  );
+}
+
+/** Product-app path: read stored preference (including `"system"` / OS following). */
+export function getStoredThemeInitScript(options: ThemeInitScriptOptions = {}): string {
   const storageKey = options.storageKey ?? DEFAULT_STORAGE_KEY;
   return (
     "(function(){" +
@@ -78,4 +98,9 @@ export function getThemeInitScript(options: ThemeInitScriptOptions = {}): string
     `applyThemeDom(document.documentElement,readStoredPreference(${JSON.stringify(storageKey)}));` +
     "})();"
   );
+}
+
+/** @deprecated Use `getAuthoredThemeInitScript` for marketing or `getStoredThemeInitScript` for apps. */
+export function getThemeInitScript(options: ThemeInitScriptOptions = {}): string {
+  return getStoredThemeInitScript(options);
 }

@@ -35,7 +35,14 @@ export function MarketingView({
     <div {...rest} className={mergeUiClasses("flex min-h-dvh flex-col", className)} style={style}>
       <SiteHeader brand={brand} />
       <main className="flex flex-col gap-2xl py-2xl">
-        <Hero eyebrow={heroEyebrow} heading={heroHeading} description={heroDescription} actions={heroActions} media={heroMedia} />
+        <Hero
+          eyebrow={heroEyebrow}
+          heading={heroHeading}
+          description={heroDescription}
+          actions={heroActions}
+          media={heroMedia}
+          composition={heroMedia ? "split" : "editorial"}
+        />
         <FeatureGrid heading={featuresHeading} description={featuresDescription} items={features} />
         {faq !== undefined ? <Faq heading={faqHeading} description={faqDescription} items={faq} /> : null}
         <Hero headingLevel={2} heading={ctaHeading} description={ctaDescription} actions={ctaAction} />

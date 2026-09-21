@@ -47,7 +47,7 @@
  */
 
 import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   checkBrandCoverage,
@@ -77,9 +77,10 @@ const USAGE = `Usage: strategist-check <strategy-dir> [scan-dir] [options]
 
 Options:
   --help              Print this message and exit 0.
-  --facts-dir <dir>   Read facts from a directory of per-fact JSON files (each leaf a JSON array of Fact, e.g. one file per fact) instead of the strategy directory's flat facts.json. The rest of the strategy bundle (mission.json, roadmap.json, ...) is not read in this mode. Mutually exclusive with the flat facts.json: a facts.json present in strategy-dir alongside --facts-dir is refused — exit 2, naming the conflict.
+  --facts-dir <dir>   Read facts from a directory tree of per-fact JSON leaves (each leaf a JSON array of Fact — not nested group-object domain files) instead of the strategy directory's flat facts.json. Walks subdirectories; every file under <dir> must be accounted for (_schema.json meta leaves are skipped). Mutually exclusive with flat facts.json in strategy-dir — exit 2 when both are supplied.
   --extensions <ext>  File extension to scan (repeatable; include the leading dot, e.g. --extensions .md). When none are given, the default set is .md, .mdx, .ts, .tsx, .js, and .jsx.
   --skip-dirs <name>  Directory name to skip during the walk (repeatable). Each name is added to the built-in skip list (node_modules, .git, dist, build, coverage); supplying --skip-dirs does not replace those defaults, so node_modules is never walked accidentally.
+  --exclude <glob>    Repo-relative path glob to omit from the scan (repeatable), e.g. **/*.test.ts or **/fixtures/**. Directory-name skips use --skip-dirs instead; --exclude is for file-path patterns tests and fixtures need.
 
 Exit codes: 0 = clean, 1 = at least one finding, 2 = could not run (bad input, missing/invalid facts.json, nothing matched to scan, or an unreadable directory).
 
@@ -124,6 +125,7 @@ interface ParsedArgs {
   factsDir?: string;
   extensions: string[];
   skipDirs: string[];
+  excludeGlobs: string[];
   help: boolean;
 }
 
@@ -143,6 +145,7 @@ export function parseArgs(argv: string[]): ParsedArgs {
   let factsDir: string | undefined;
   const extensions: string[] = [];
   const skipDirs: string[] = [];
+  const excludeGlobs: string[] = [];
   let help = false;
 
   for (let i = 0; i < argv.length; i += 1) {
@@ -202,6 +205,23 @@ export function parseArgs(argv: string[]): ParsedArgs {
       skipDirs.push(value);
       continue;
     }
+    if (arg === "--exclude") {
+      const value = argv[i + 1];
+      if (value === undefined || value.startsWith("-")) {
+        throw new CliInputError('--exclude requires a path glob argument, e.g. --exclude "**/*.test.ts"');
+      }
+      excludeGlobs.push(value);
+      i += 1;
+      continue;
+    }
+    if (arg.startsWith("--exclude=")) {
+      const value = arg.slice("--exclude=".length);
+      if (value.length === 0) {
+        throw new CliInputError('--exclude requires a path glob argument, e.g. --exclude "**/*.test.ts"');
+      }
+      excludeGlobs.push(value);
+      continue;
+    }
     if (arg.startsWith("-")) {
       throw new CliInputError(`unknown flag "${arg}"`);
     }
@@ -214,7 +234,7 @@ export function parseArgs(argv: string[]): ParsedArgs {
     }
   }
 
-  return { strategyDir, scanDir, factsDir, extensions, skipDirs, help };
+  return { strategyDir, scanDir, factsDir, extensions, skipDirs, excludeGlobs, help };
 }
 
 function requireDirectory(label: string, path: string): void {
@@ -668,36 +688,52 @@ function runDirection(argv: string[]): number {
  * split `scan.ts` (I/O) and `facts-gate.ts` (pure) draw. Mirrors
  * `scanStrategyDirectory`'s fail-closed discipline: an unreadable
  * directory or entry throws (caught by `run()` → exit 2) rather than
- * being silently treated as empty, and subdirectories are not descended
- * into — a facts directory is one flat registry of leaves.
+ * being silently treated as empty. Subdirectories are walked recursively
+ * (same path convention as `scanStrategyDirectory`); `_schema.json` meta
+ * leaves at any depth are skipped.
  */
-function readDirectoryFiles(dir: string): Record<string, string> {
-  let entries: string[];
-  try {
-    entries = readdirSync(dir);
-  } catch (error) {
-    throw new CliInputError(`cannot read --facts-dir "${dir}": ${error instanceof Error ? error.message : String(error)}`);
-  }
+function readDirectoryFiles(root: string): Record<string, string> {
   const files: Record<string, string> = {};
-  for (const entry of entries) {
-    const full = join(dir, entry);
-    let stat;
+
+  function walk(dir: string): void {
+    let entries: string[];
     try {
-      stat = statSync(full);
+      entries = readdirSync(dir);
     } catch (error) {
-      throw new CliInputError(`cannot read --facts-dir entry "${full}": ${error instanceof Error ? error.message : String(error)}`);
+      throw new CliInputError(
+        `cannot read --facts-dir "${dir}": ${error instanceof Error ? error.message : String(error)}`,
+      );
     }
-    if (!stat.isFile()) {
-      throw new CliInputError(`--facts-dir entry "${entry}" is not a file — a facts directory is one flat registry of leaves, no subdirectories`);
+    for (const entry of entries) {
+      if (entry === "_schema.json") continue;
+      const full = join(dir, entry);
+      let stat;
+      try {
+        stat = statSync(full);
+      } catch (error) {
+        throw new CliInputError(
+          `cannot read --facts-dir entry "${full}": ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+      if (stat.isDirectory()) {
+        walk(full);
+        continue;
+      }
+      if (!stat.isFile()) continue;
+      const relPath = relative(root, full).split(sep).join("/");
+      let raw: string;
+      try {
+        raw = readFileSync(full, "utf8");
+      } catch (error) {
+        throw new CliInputError(
+          `cannot read --facts-dir entry "${full}": ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+      files[relPath] = raw;
     }
-    let raw: string;
-    try {
-      raw = readFileSync(full, "utf8");
-    } catch (error) {
-      throw new CliInputError(`cannot read --facts-dir entry "${full}": ${error instanceof Error ? error.message : String(error)}`);
-    }
-    files[entry] = raw;
   }
+
+  walk(root);
   return files;
 }
 
@@ -793,12 +829,15 @@ export function main(argv: string[]): number {
 
   const facts = loaded.facts;
 
-  const scanOptions: { extensions?: string[]; skipDirs?: string[] } = {};
+  const scanOptions: { extensions?: string[]; skipDirs?: string[]; excludeGlobs?: string[] } = {};
   if (args.extensions.length > 0) {
     scanOptions.extensions = args.extensions;
   }
   if (args.skipDirs.length > 0) {
     scanOptions.skipDirs = [...DEFAULT_SKIP_DIRS, ...args.skipDirs];
+  }
+  if (args.excludeGlobs.length > 0) {
+    scanOptions.excludeGlobs = args.excludeGlobs;
   }
   const files = scanStrategyDirectory(scanDir, scanOptions); // throws (fail-closed) on an unreadable directory — caught by run()
 

@@ -40,7 +40,7 @@ If `node_modules/@clossys/strategist` is present (or this package's bins are on 
 - Assessment CLI: `strategist-rate-check`
 - Additional gate CLI: `strategist-check`
 
-`strategist-check brand-coverage` reporting every brandable slot owned is necessary, not sufficient — Designer-facing surfaces still need explicit do-not language (`--surfaces`).
+`strategist-check brand-coverage` reporting every brandable slot owned is necessary, not sufficient — full N/N slot coverage is not keep when Designer-facing surfaces have no explicit do-not language; declare those surfaces with `--surfaces`.
 
 Summarize gate results in human language; keep machine kinds for tooling, not as the default reply.
 

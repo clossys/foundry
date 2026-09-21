@@ -47,7 +47,9 @@ import {
 // ------------------------------------------------------------------- money
 
 /**
- * A monetary amount is always `{ amount, currency }`, never a bare number —
+ * A monetary amount is always `{ amount, currency }` at rest (authored
+ * `{ value, currency }` is accepted on read and normalized to `amount`),
+ * never a bare number —
  * a number alone has no unit, and a unit-less number is exactly the kind of
  * claim `checkFactsTraceability` (see `facts-gate.ts`) exists to catch
  * drifting from reality. `currency` is an ISO 4217 code.
@@ -62,10 +64,11 @@ const CURRENCY_RE = /^[A-Z]{3}$/;
 function readMoney(value: unknown, path: string, issues: ValidationIssue[]): Money | undefined {
   const start = issues.length;
   if (!isPlainObject(value)) {
-    pushIssue(issues, path, "must be an object shaped { amount: number; currency: string }");
+    pushIssue(issues, path, "must be an object shaped { amount: number; currency: string } (or { value: number; currency: string })");
     return undefined;
   }
-  const amount = requireNumber(value.amount, `${path}.amount`, issues);
+  const amountField = value.amount !== undefined ? "amount" : "value";
+  const amount = requireNumber(value[amountField], `${path}.${amountField}`, issues);
   const currency = requireString(value.currency, `${path}.currency`, issues);
   if (currency !== undefined) {
     requirePattern(currency, `${path}.currency`, issues, CURRENCY_RE, 'must be an ISO 4217 code, e.g. "USD"');

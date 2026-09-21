@@ -210,7 +210,26 @@ function buildEntryCss(stylesDir: string): string {
       `generateCompiledCss: "${themeCssPath}" no longer starts with the expected \`@import "./tokens.css";\` line this generator strips — theme.css's shape changed; update generate.ts's stripping logic to match.`,
     );
   }
-  const themeBlockOnly = themeCssFull.replace(tokensImportRe, "");
+  let themeBlockOnly = themeCssFull.replace(tokensImportRe, "");
+
+  const themeKeysImportRe = /^@import\s+["']\.\/theme-keys\.css["'];\s*\n/m;
+  if (themeKeysImportRe.test(themeBlockOnly)) {
+    const themeKeysPath = resolvePath(stylesDir, "theme-keys.css");
+    let themeKeysCss: string;
+    try {
+      themeKeysCss = readFileSync(themeKeysPath, "utf8");
+    } catch (error) {
+      throw new Error(
+        `generateCompiledCss: cannot read "${themeKeysPath}" referenced from theme.css: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+    themeBlockOnly = themeBlockOnly.replace(themeKeysImportRe, () => `${themeKeysCss}\n`);
+  } else if (!themeBlockOnly.includes("@theme inline")) {
+    throw new Error(
+      `generateCompiledCss: "${themeCssPath}" no longer carries an inline \`@theme inline\` block or a \`@import "./theme-keys.css";\` line this generator inlines — theme.css's shape changed; update generate.ts to match.`,
+    );
+  }
+
   return `@import "tailwindcss/theme" theme(reference);\n${themeBlockOnly}\n@import "tailwindcss/utilities" layer(foundry-ui-compiled);\n`;
 }
 

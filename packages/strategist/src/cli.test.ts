@@ -53,6 +53,12 @@ describe("parseArgs", () => {
     ]);
   });
 
+  it("collects repeatable --exclude globs", () => {
+    expect(parseArgs(["./strategy", "--exclude", "**/*.test.ts", "--exclude", "**/fixtures/**"]).excludeGlobs).toEqual(
+      ["**/*.test.ts", "**/fixtures/**"],
+    );
+  });
+
   it("throws CliInputError when --extensions is given without a value", () => {
     expect(() => parseArgs([strategyDir, "--extensions"])).toThrow(CliInputError);
   });
@@ -140,6 +146,15 @@ describe("main — real runs", () => {
     mkdirSync(nested, { recursive: true });
     writeFileSync(join(nested, "readme.md"), "We now serve 9,999 customers.");
     expect(main([strategyDir, scanDir, "--skip-dirs", "vendor"])).toBe(0);
+  });
+
+  it("honors --exclude to omit test paths from the scan", () => {
+    writeFileSync(join(strategyDir, "facts.json"), JSON.stringify([validFact]));
+    writeFileSync(join(scanDir, "about.md"), "We now serve 4,200 customers.");
+    mkdirSync(join(scanDir, "src"), { recursive: true });
+    writeFileSync(join(scanDir, "src", "widget.test.ts"), "We now serve 9,999 customers.");
+    expect(main([strategyDir, scanDir, "--exclude", "**/*.test.ts"])).toBe(0);
+    expect(main([strategyDir, scanDir])).toBe(1);
   });
 });
 
@@ -642,7 +657,9 @@ describe("direct-path reachability — the real compiled dist/cli.js", () => {
 // -----------------------------------------------------------------------
 
 function writeFactsLeaf(name: string, value: unknown): void {
-  writeFileSync(join(factsDir, name), JSON.stringify(value));
+  const full = join(factsDir, name);
+  mkdirSync(dirname(full), { recursive: true });
+  writeFileSync(full, JSON.stringify(value));
 }
 
 describe("main — --facts-dir — argument handling", () => {
@@ -703,6 +720,20 @@ describe("main — --facts-dir — real runs", () => {
     writeFactsLeaf("customers.json", [validFact]);
     writeFileSync(join(scanDir, "about.md"), "We now serve 4,200 customers.");
     expect(main([strategyDir, scanDir, "--facts-dir", factsDir])).toBe(0);
+  });
+
+  it("returns 0 when facts live in nested subdirectories and _schema.json is skipped", () => {
+    writeFactsLeaf("company/customers.json", [validFact]);
+    writeFileSync(join(factsDir, "_schema.json"), JSON.stringify({ version: 1 }));
+    writeFileSync(join(factsDir, "company", "_schema.json"), JSON.stringify({ version: 1 }));
+    writeFileSync(join(scanDir, "about.md"), "We now serve 4,200 customers.");
+    expect(main([strategyDir, scanDir, "--facts-dir", factsDir])).toBe(0);
+  });
+
+  it("returns 2 when a nested leaf is a group-object domain file", () => {
+    writeFactsLeaf("company/traction.json", { customers: { value: 1 } });
+    writeFileSync(join(scanDir, "about.md"), "We now serve 4,200 customers.");
+    expect(main([strategyDir, scanDir, "--facts-dir", factsDir])).toBe(2);
   });
 
   it("returns 1 on a finding, exactly as the flat mode would", () => {

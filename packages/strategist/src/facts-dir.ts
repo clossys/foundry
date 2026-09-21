@@ -43,7 +43,7 @@
  */
 
 import { validateFacts, type Fact } from "./schema.js";
-import { summarizeIssues } from "./validation.js";
+import { isPlainObject, summarizeIssues } from "./validation.js";
 
 export interface FactsDirectoryInput {
   /**
@@ -121,6 +121,17 @@ export function readStrategyDirectory(input: FactsDirectoryInput): FactsDirector
     } catch (error) {
       issues.push({ file: path, reason: "unparseable", detail: error instanceof Error ? error.message : String(error) });
       continue;
+    }
+    if (!Array.isArray(parsed)) {
+      if (isPlainObject(parsed)) {
+        issues.push({
+          file: path,
+          reason: "invalid-schema",
+          detail:
+            'document root must be a JSON array of Fact — nested group-object facts files are not ingested by the engine; project each domain file to Fact[] leaves or use flat facts.json',
+        });
+        continue;
+      }
     }
     const result = validateFacts(parsed);
     if (!result.ok) {

@@ -83,23 +83,54 @@ describe("copy-addressability — the six acceptance cases", () => {
     );
   });
 
-  // 3. Prose inside a template literal or object literal -> indeterminate
-  // (unclassifiable), NOT satisfied and NOT silently clean.
-  it("prose inside a template literal or an object literal value is indeterminate, not clean", () => {
-    const src = 'const greeting = `Welcome, ${name}`;\nconst labels = { save: "Save changes" };\n';
+  // 3. Prose inside a template literal -> indeterminate (unclassifiable).
+  it("prose inside a template literal is indeterminate, not clean", () => {
+    const src = "const greeting = `Welcome, ${name}`;\n";
     const result = checkSource(src, "labels.ts");
     expect(result.verdict).toBe("indeterminate");
-    // Never silently rounded down to a violation OR a pass — both strings
-    // are surfaced as unclassifiable positions, and nothing is reported as
-    // a violation for either (this gate does not guess).
     expect(result.violations).toEqual([]);
-    expect(result.unchecked).toHaveLength(2);
-    expect(result.unchecked).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ kind: "template-literal" }),
-        expect.objectContaining({ kind: "unclassified-string-position" }),
-      ]),
-    );
+    expect(result.unchecked).toEqual([expect.objectContaining({ kind: "template-literal" })]);
+  });
+
+  // 3a (issue #1063). Copy in object-literal chrome config is a violation.
+  it("prose in a copy-bearing object-literal property is a violation, with key path", () => {
+    const src = 'export const HEADER_LINKS = [{ label: "Request access", href: "/join" }];\n';
+    const result = checkSource(src, "header-config.ts");
+    expect(result.verdict).toBe("violated");
+    expect(result.violations).toEqual([
+      expect.objectContaining({
+        position: "object-literal-copy",
+        objectKey: "label",
+        keyPath: "label",
+        raw: '"Request access"',
+      }),
+    ]);
+    expect(result.unchecked).toEqual([]);
+  });
+
+  it("route paths in allowlisted object-literal keys are not violations (#1063)", () => {
+    const src = 'const nav = { label: "Pricing", href: "/pricing", to: "/pricing" };\n';
+    const result = checkSource(src, "nav-config.ts");
+    expect(result.violations).toEqual([
+      expect.objectContaining({ position: "object-literal-copy", objectKey: "label" }),
+    ]);
+    expect(result.violations).toHaveLength(1);
+  });
+
+  it("nested nav items report keyPath with the container segment (#1063)", () => {
+    const src = 'export const SITE_NAV = { items: [{ label: "Home", href: "/" }] };\n';
+    const result = checkSource(src, "site-nav.ts");
+    expect(result.violations).toEqual([
+      expect.objectContaining({ position: "object-literal-copy", keyPath: "items[].label" }),
+    ]);
+  });
+
+  it("a non-copy-bearing object key stays unclassified", () => {
+    const src = 'const meta = { save: "Save changes" };\n';
+    const result = checkSource(src, "meta.ts");
+    expect(result.verdict).toBe("indeterminate");
+    expect(result.violations).toEqual([]);
+    expect(result.unchecked).toEqual([expect.objectContaining({ kind: "unclassified-string-position" })]);
   });
 
   // 3b (issue #407). A violation found ALONGSIDE unclassified positions in
@@ -476,6 +507,15 @@ describe("mainAddressabilityCheck — CLI wiring", () => {
     writeFileSync(join(dir, "page.tsx"), "export const Page = () => <main />;\n");
     writeFileSync(join(dir, "SiteHeader.tsx"), "export const SiteHeader = () => <a>About</a>;\n");
     expect(mainAddressabilityCheck([dir, "--chrome", "SiteHeader.tsx"])).toBe(1);
+  });
+
+  it("returns 1 when a chrome config module carries inline object-literal labels (#1063)", () => {
+    writeFileSync(join(dir, "page.tsx"), "export const Page = () => <main />;\n");
+    writeFileSync(
+      join(dir, "site-header-config.ts"),
+      'export const SITE_NAV = [{ label: "Sign in", href: "/login" }];\n',
+    );
+    expect(mainAddressabilityCheck([dir, "--chrome", "site-header-config.ts"])).toBe(1);
   });
 });
 

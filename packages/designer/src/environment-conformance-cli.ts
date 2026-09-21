@@ -45,38 +45,57 @@ import { existsSync, realpathSync, statSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { checkEnvironmentConformance, type ConformanceResult } from "./environment-conformance.js";
+import { checkSurfaceLadder, collectRouteSourceFiles } from "./surface-ladder.js";
 
 const USAGE = `Usage: designer-environment-check [package-dir]
+       designer-environment-check surface [scan-dir]
 
   package-dir   Directory containing a package.json (with a non-empty
                 "exports" map) and a built "dist/render-environment.js"
                 exporting RENDER_ENVIRONMENT. Defaults to this package's
-                own root.
+                own root (exports mode).
+
+  surface       Walk scan-dir for route files and fail when two primitive
+                stacks or compose ladders share a mount (issues #1055, #1060).
 
 Options:
   --help        Print this message and exit 0.
 
-Checks only that RENDER_ENVIRONMENT's declared subpaths and
-package.json#exports' real subpaths are the same set, in both
-directions. Performs no module resolution and does not verify that a
-"server-safe" subpath actually resolves safely (see issue #358).
+Exports mode checks only that RENDER_ENVIRONMENT's declared subpaths and
+package.json#exports' real subpaths are the same set, in both directions.
 
-Exit codes: 0 = satisfied (the declaration and the manifest agree), 1 = violated (an undeclared or stale subpath, or both), 2 = indeterminate (see report for the machine-readable reason).
+Exit codes: 0 = satisfied / clean surface, 1 = violated / findings, 2 = indeterminate or could not run.
 `;
 
 /** Exported for `environment-conformance-cli.test.ts` — anything wrong with the arguments themselves always maps to exit code 2. */
 export class CliInputError extends Error {}
 
+type CliMode = "exports" | "surface";
+
 interface ParsedArgs {
+  mode: CliMode;
   packageDir?: string;
+  surfaceDir?: string;
   help: boolean;
 }
 
 function parseArgs(argv: string[]): ParsedArgs {
+  let mode: CliMode = "exports";
   let packageDir: string | undefined;
+  let surfaceDir: string | undefined;
   let help = false;
+  let i = 0;
 
-  for (const arg of argv) {
+  if (argv[0] === "surface") {
+    mode = "surface";
+    i = 1;
+    surfaceDir = argv[i];
+    if (surfaceDir?.startsWith("-")) surfaceDir = undefined;
+    else if (surfaceDir !== undefined) i++;
+  }
+
+  for (; i < argv.length; i++) {
+    const arg = argv[i] as string;
     if (arg === "--help" || arg === "-h") {
       help = true;
       continue;
@@ -84,14 +103,14 @@ function parseArgs(argv: string[]): ParsedArgs {
     if (arg.startsWith("-")) {
       throw new CliInputError(`unknown flag "${arg}"`);
     }
-    if (packageDir === undefined) {
+    if (mode === "exports" && packageDir === undefined) {
       packageDir = arg;
     } else {
       throw new CliInputError(`unexpected extra argument "${arg}"`);
     }
   }
 
-  return { packageDir, help };
+  return { mode, packageDir, surfaceDir, help };
 }
 
 /** This package's own root, resolved relative to THIS file — see this file's own header for why never `process.cwd()`. */
@@ -150,6 +169,26 @@ export async function main(argv: string[]): Promise<number> {
   if (args.help) {
     console.log(USAGE);
     return 0;
+  }
+
+  if (args.mode === "surface") {
+    const scanDir = resolve(args.surfaceDir ?? process.cwd());
+    requireDirectory("scan-dir", scanDir);
+    const files = collectRouteSourceFiles(scanDir);
+    if (files.length === 0) {
+      console.error(`designer-environment-check surface: no route source files under "${scanDir}"`);
+      return 2;
+    }
+    const result = checkSurfaceLadder(files, scanDir);
+    console.log(`Scan directory: ${scanDir}`);
+    console.log(`Files scanned: ${result.filesScanned}`);
+    if (result.findings.length === 0) return 0;
+    console.log(`${result.findings.length} finding(s):`);
+    for (const f of result.findings) {
+      console.log(`  [${f.rule}] ${f.file}`);
+      console.log(`      ${f.message}`);
+    }
+    return 1;
   }
 
   const packageDir = resolve(args.packageDir ?? defaultPackageDir());

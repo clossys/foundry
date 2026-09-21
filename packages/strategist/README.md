@@ -392,10 +392,45 @@ Usage: strategist-check <strategy-dir> [scan-dir] [options]
 
 Options:
   --help              Print this message and exit 0.
-  --facts-dir <dir>   Read facts from a directory of per-fact JSON files (each leaf a JSON array of Fact) instead of the strategy directory's flat facts.json. Mutually exclusive with facts.json — see below.
+  --facts-dir <dir>   Read facts from a directory tree of per-fact JSON leaves (each leaf a JSON array of Fact) instead of the strategy directory's flat facts.json. Mutually exclusive with facts.json — see below.
   --extensions <ext>  File extension to scan (repeatable; include the leading dot). Default when none are given: `.md`, `.mdx`, `.ts`, `.tsx`, `.js`, `.jsx`.
   --skip-dirs <name>  Directory name to skip during the walk (repeatable). Each name is **added** to the built-in skip list (`node_modules`, `.git`, `dist`, `build`, `coverage`); it does not replace those defaults.
+  --exclude <glob>    Repo-relative path glob to omit (repeatable), e.g. `**/*.test.ts` or `**/fixtures/**`. Use for test/fixture **files**; use `--skip-dirs` for directory **names** such as `__tests__` or `fixtures` at any depth.
 ```
+
+#### Audience-facing copy only (shared recipe)
+
+Advisory scans and stricter CI lanes that should check **external /
+audience-facing copy** — not implementation source, tests, or fixture
+trees — can share one `strategist-check` invocation. This is the
+contract the package documents; consumers point `scan-dir` at the copy
+root they own.
+
+```bash
+npx strategist-check ./strategy ./copy-root \
+  --extensions .md --extensions .mdx --extensions .html \
+  --skip-dirs __tests__ --skip-dirs fixtures --skip-dirs e2e \
+  --exclude '**/*.test.ts' --exclude '**/*.test.tsx' \
+  --exclude '**/*.test.js' --exclude '**/*.test.jsx' \
+  --exclude '**/*.spec.ts' --exclude '**/*.spec.tsx'
+```
+
+- **Extensions** — prose surfaces only (`.md`, `.mdx`, `.html`). Omit
+  `.ts`/`.tsx`/`.js`/`.jsx` unless copy actually lives in source and you
+  accept style-literal suppression (see `checkFactsTraceability`'s
+  default: CSS/`color-mix()` percentages are not claims).
+- **`--skip-dirs`** — directory **names** the walk never descends into
+  (`__tests__`, `fixtures`, `e2e`, plus any consumer-specific trees).
+  Built-in skips (`node_modules`, `.git`, `dist`, `build`, `coverage`)
+  always apply; each `--skip-dirs` value is added to that list.
+- **`--exclude`** — repo-relative **path globs** for files that must not
+  be scanned even when their extension matches (`**/*.test.ts`, etc.).
+  There is no separate `--exclude` for directories: that is what
+  `--skip-dirs` is for.
+
+The default invocation (no flags) still walks markdown plus common
+source extensions under `scan-dir`; use the recipe above when promoting
+the gate from advisory to blocking.
 
 Exit codes — the same three-state contract `@clossys/controller/gates`'
 `foundry-check` uses:
@@ -420,11 +455,15 @@ npx strategist-check ./strategy ./docs --facts-dir ./strategy/facts
 ```
 
 `--facts-dir` replaces the flat `facts.json` as the gate's ground truth:
-`<dir>` holds one JSON file per fact (or per fact group), each leaf a JSON
-array of `Fact` validated by the same rules the flat file follows. The
-directory must be a flat registry of leaves — subdirectories are not
-descended into, and every file in it must be accounted for:
+`<dir>` holds JSON leaves — each file a JSON array of `Fact`, validated by
+the same rules the flat file follows. Subdirectories are walked (for
+example `company/customers.json`); every file under `<dir>` must be
+accounted for except `_schema.json` meta leaves, which are skipped:
 
+- a leaf whose root is a **nested group object** (domain-shaped JSON, not
+  `Fact[]`) is refused with an explicit message — the engine does not
+  flatten authored group trees; project to `Fact[]` leaves or keep using
+  flat `facts.json`;
 - a leaf that is not valid JSON, or does not validate as `Fact[]`, is
   reported by name and the run exits `2`;
 - a non-JSON leaf (a stray `.md`, a CSV export) is refused too, never
@@ -433,6 +472,9 @@ descended into, and every file in it must be accounted for:
 - a directory with no `*.json` leaf at all is refused (exit `2`) — an
   empty registry reads as "the directory is wrong", not "there are no
   facts".
+
+`Fact.value` money objects accept `{ amount, currency }` or `{ value,
+currency }` on read (normalized to `amount` internally).
 
 Each fact loaded this way records its source leaf in `Fact.sourceFile`.
 
@@ -787,7 +829,7 @@ anyone extending this package with their own entity.
 
 | Export | Kind | Purpose |
 | --- | --- | --- |
-| `readStrategyDirectory(input)` | function | Pure. Combines a facts directory's `*.json` leaves — supplied as `input.files`, a map of relative path -> raw file text — into one validated `Fact[]`, each leaf checked by the same `validateFacts` rules as the flat file. Never throws: a leaf that is unparseable, schema-invalid, or not `*.json` at all, and a directory with no JSON leaf, is recorded in `issues` (naming the offending file) and flips `complete` to `false`, exactly the `readStrategy` discipline. Each fact records its source leaf in `Fact.sourceFile`. |
+| `readStrategyDirectory(input)` | function | Pure. Combines a facts directory's `*.json` leaves — supplied as `input.files`, a map of relative path -> raw file text (including nested paths such as `company/customers.json`) — into one validated `Fact[]`, each leaf checked by the same `validateFacts` rules as the flat file. Group-object domain files (JSON object roots) are refused with an explicit message. Never throws: a leaf that is unparseable, schema-invalid, or not `*.json` at all, and a directory with no JSON leaf, is recorded in `issues` (naming the offending file) and flips `complete` to `false`, exactly the `readStrategy` discipline. Each fact records its source leaf in `Fact.sourceFile`. |
 | `FactsDirectoryInput` | type | `{ files: Readonly<Record<string, string>> }` — the directory's contents, caller-fed: the CLI builds the map by reading `<dir>` for `--facts-dir`; a programmatic caller can source it from anywhere; a test passes a literal. |
 | `FactsDirectoryResult` | type | `{ facts, issues, complete }` — facts from leaves that validated, every leaf that did not and why, and whether every leaf was accounted for. |
 | `FactsDirectoryIssue` | type | `{ file, reason: FactsDirectoryIssueReason, detail }` — one leaf (or the empty directory) that did not become usable facts. |
@@ -808,7 +850,8 @@ anyone extending this package with their own entity.
 | `checkFactsTraceability(files, facts)` | function | Pure. Scans `files` for claim-shaped prose and evaluates each against `facts`. Never throws. Returns a `FactsGateResult`. |
 | `scanStrategyDirectory(root, options?)` | function | The I/O half: walks `root` and reads every file matching `options.extensions` (default `.md`, `.mdx`, `.ts`, `.tsx`, `.js`, `.jsx`) into `ScannedFile[]`. **Fails closed** — throws rather than silently skipping an unreadable directory. |
 | `ScannedFile` | type | `{ path: string; content: string }` — one file handed to the gate. |
-| `ScanOptions` | type | `{ extensions?: string[]; skipDirs?: string[] }` — `skipDirs` defaults to `node_modules`, `.git`, `dist`, `build`, `coverage`. |
+| `ScanOptions` | type | `{ extensions?: string[]; skipDirs?: string[]; excludeGlobs?: string[] }` — `skipDirs` defaults to `node_modules`, `.git`, `dist`, `build`, `coverage`. |
+| `FactsGateOptions` | type | `{ scanStyleLiterals?: boolean }` — when false (default), CSS/`color-mix()`/inline-style percentage literals are not claim-shaped. |
 | `FactsGateResult` | type | `{ findings: FactsGateFinding[]; ignored: FactsGateIgnored[]; filesScanned: number; claimsScanned: number }`. |
 | `FactsGateFinding` | type | `{ rule: FactsGateRule; severity: "error"; file; line; message; snippet }`. |
 | `FactsGateRule` | type | `"untraced-numeric-claim" \| "untraced-superlative-claim" \| "unknown-fact-citation"`. |

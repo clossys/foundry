@@ -26,6 +26,45 @@ export interface ScanOptions {
   extensions?: string[];
   /** Directory names never descended into. Default: node_modules, .git, dist, build, coverage. */
   skipDirs?: string[];
+  /**
+   * Repo-relative path globs to omit from the walk (repeatable on the CLI as
+   * `--exclude`). Use for test/fixture paths that `--skip-dirs` cannot express.
+   */
+  excludeGlobs?: string[];
+}
+
+/**
+ * Minimal glob match for scan excludes (suffix globs, fixture-directory
+ * segments, and exact relative paths). Exported for unit tests.
+ */
+export function pathMatchesExcludeGlob(pattern: string, filePath: string): boolean {
+  const normPattern = pattern.replace(/\\/g, "/");
+  const normPath = filePath.replace(/\\/g, "/");
+  if (normPattern === normPath) return true;
+
+  if (normPattern.startsWith("**/") && normPattern.endsWith("/**")) {
+    const segment = normPattern.slice(3, -3);
+    return normPath.includes(`/${segment}/`) || normPath.startsWith(`${segment}/`);
+  }
+
+  const slash = normPattern.lastIndexOf("/");
+  const filePart = slash === -1 ? normPattern : normPattern.slice(slash + 1);
+  if (filePart.startsWith("*.")) {
+    const suffix = filePart.slice(1);
+    const prefixOk =
+      slash === -1 || normPattern.startsWith("**/") || normPath.startsWith(normPattern.slice(0, slash + 1));
+    return prefixOk && normPath.endsWith(suffix);
+  }
+
+  if (normPattern.includes("*")) {
+    const escaped = normPattern
+      .replace(/[.+^${}()|[\]\\]/g, "\\$&")
+      .replace(/\*\*/g, ".*")
+      .replace(/\*/g, "[^/]*");
+    return new RegExp(`^${escaped}$`).test(normPath);
+  }
+
+  return false;
 }
 
 const DEFAULT_EXTENSIONS = [".md", ".mdx", ".ts", ".tsx", ".js", ".jsx"];
@@ -42,6 +81,7 @@ const DEFAULT_SKIP_DIRS_SET = new Set(DEFAULT_SKIP_DIRS);
 export function scanStrategyDirectory(root: string, options: ScanOptions = {}): ScannedFile[] {
   const extensions = new Set(options.extensions ?? DEFAULT_EXTENSIONS);
   const skipDirs = new Set(options.skipDirs ?? DEFAULT_SKIP_DIRS_SET);
+  const excludeGlobs = options.excludeGlobs ?? [];
 
   const out: ScannedFile[] = [];
 
@@ -70,6 +110,9 @@ export function scanStrategyDirectory(root: string, options: ScanOptions = {}): 
       if (!stat.isFile()) continue;
       if (!extensions.has(extname(entry).toLowerCase())) continue;
 
+      const relPath = relative(root, full).split(sep).join("/");
+      if (excludeGlobs.some((glob) => pathMatchesExcludeGlob(glob, relPath))) continue;
+
       let content: string;
       try {
         content = readFileSync(full, "utf8");
@@ -78,7 +121,7 @@ export function scanStrategyDirectory(root: string, options: ScanOptions = {}): 
           `scanStrategyDirectory: cannot read file "${full}": ${error instanceof Error ? error.message : String(error)}`,
         );
       }
-      out.push({ path: relative(root, full).split(sep).join("/"), content });
+      out.push({ path: relPath, content });
     }
   }
 
