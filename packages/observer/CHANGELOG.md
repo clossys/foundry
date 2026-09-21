@@ -3,6 +3,13 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.3.2] - 2026-09-21
+
+### Fixed
+
+- `observer-coverage-check` writes CLI output with `writeSync` on the stdio
+  file descriptors so piped consumers see stdout before the process exits
+  on Node 20.
 
 ## [0.3.1] - 2026-09-21
 

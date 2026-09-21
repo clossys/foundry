@@ -250,7 +250,7 @@ describe("main — direct-path reachability (real compiled dist/bin.js)", () => 
     // execFileSync throws on non-zero and, under the Node 20 CI runner, has
     // left error.stdout empty on a real exit-1 write — the in-process
     // contract tests still pass, and Node 24 captures the same bytes.
-    const result = spawnSync("node", [binPath, ...args], { encoding: "utf8" });
+    const result = spawnSync(process.execPath, [binPath, ...args], { encoding: "utf8" });
     return { status: result.status, stdout: result.stdout ?? "", stderr: result.stderr ?? "" };
   }
 
