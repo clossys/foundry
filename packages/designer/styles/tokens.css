@@ -373,6 +373,13 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   --font-body:                    ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono:                    ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
+  /* Display typography tuning — brandable in a consumer overlay */
+  --font-display-style:           normal;
+  --font-display-weight:          400;
+  --font-display-stretch:         100%;
+  --font-display-scale-x:         1;
+  --ui-width-display-max:         var(--ui-width-wide-max, 72rem);
+
   /* ════════════════════════════════════════════════════════════════
    * TRACKING (4 · fixed letter-spacing role scale)
    * ════════════════════════════════════════════════════════════════ */
@@ -717,7 +724,7 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
  * parse-css.ts`, used by `parity.test.ts`, `contrast.test.ts`, and
  * `dark-mode-cascade.test.ts`) parses only the FIRST top-level `:root {`
  * block in this file as "the real token layer" and asserts it declares
- * exactly this package's curated 154 tokens; this sentinel is not a
+ * exactly this package's curated 159 tokens; this sentinel is not a
  * design token — it is a structural presence marker — so it stays out
  * of `src/tokens/tokens.ts`'s registry and out of that block entirely,
  * in a second `:root` rule the browser cascades in fine (CSS allows any

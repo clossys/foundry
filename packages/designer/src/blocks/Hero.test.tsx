@@ -40,6 +40,31 @@ describe("Hero", () => {
     expect(screen.getByRole("img", { name: "Media description" })).toBeInTheDocument();
   });
 
+  it("defaults to editorial composition (no split grid when media is set)", () => {
+    const { container } = render(
+      <Hero heading="Heading text" media={<img src="/media.png" alt="Media description" />} />,
+    );
+    const section = container.querySelector("section") as HTMLElement;
+    expect(section.className).not.toContain("tablet:grid-cols-2");
+  });
+
+  it("uses split grid only when composition is split", () => {
+    const { container } = render(
+      <Hero
+        heading="Heading text"
+        media={<img src="/media.png" alt="Media description" />}
+        composition="split"
+      />,
+    );
+    const section = container.querySelector("section") as HTMLElement;
+    expect(section.className).toContain("tablet:grid-cols-2");
+  });
+
+  it("caps display heading width", () => {
+    render(<Hero heading="Heading text" />);
+    expect(screen.getByRole("heading")).toHaveClass("max-w-display");
+  });
+
   it("omits the media region entirely when none is given", () => {
     const { container } = render(<Hero heading="Heading text" />);
     expect(container.querySelector("img")).toBeNull();

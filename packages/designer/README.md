@@ -98,10 +98,10 @@ surfaces and live in `@clossys/publisher/web`.
   `Separator`, `Chip`.
 - **`blocks`** — owns the internal layout of multiple named regions,
   typically by composing one or more atoms (and/or layout) into something
-  with a real job on a page. Twenty ship: `PageHeader`, `EmptyState`,
+  with a real job on a page. Twenty-one ship: `PageHeader`, `EmptyState`,
   `DataTable`, `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`,
   `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`,
-  `FeatureGrid`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`, `Testimonial`, `ArticleBody` — the
+  `MarketingChapter`, `FeatureGrid`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`, `Testimonial`, `ArticleBody` — the
   last eight are marketing/editorial content blocks, completing this layer
   (see "Blocks" below).
 - **`shell`** — the persistent frame around content (nav, layout chrome)
@@ -317,7 +317,7 @@ source file's own header for the exact probe and its result). Today that's:
 | Subpath | Server-safe members |
 | --- | --- |
 | `@clossys/designer/atoms/server` | `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Skeleton`, `Spinner`, `mergeUiClasses` |
-| `@clossys/designer/blocks/server` | `ArticleBody`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `SectionHeader`, `Stat`, `StatusList` |
+| `@clossys/designer/blocks/server` | `ArticleBody`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `MarketingChapter`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `SectionHeader`, `Stat`, `StatusList` |
 | `@clossys/designer/shell/server` | `Shell`, `SiteFooter`, `SiteHeader`, `SkipLink` |
 | `@clossys/designer/charts/server` | `ChartFrame`, `Sparkline` |
 | `@clossys/designer/theme/server` | `getThemeInitScript` |
@@ -2517,6 +2517,28 @@ Use `ground="sunken"` or `ground="inverse"` for those semantic section
 grounds; the block applies the matching painted surface and ink policy as one
 unit. The default base ground inherits the surrounding base surface.
 
+### `MarketingChapter`
+
+```tsx
+import { MarketingChapter } from "@clossys/designer/blocks";
+import { ArticleBody } from "@clossys/designer/blocks";
+
+function FoldChapter() {
+  return (
+    <MarketingChapter title="Chapter heading" description="Supporting line.">
+      <ArticleBody>{/* long-form prose */}</ArticleBody>
+    </MarketingChapter>
+  );
+}
+```
+
+A full-bleed marketing chapter band after the fold: a marketing-scale title
+(`text-h2`, not settings-scale `SectionHeader` `text-h3`), an optional
+description, and a prose slot for long-form content. Use when the page hero
+already consumed `<h1>` and the next major section needs marketing heading
+scale. `headingLevel` (`2 | 3`, default `2`) picks the title element; `ground`
+follows the same `SectionGround` contract as `Hero` and `FeatureGrid`.
+
 ### `FeatureGrid`
 
 ```tsx
@@ -4048,6 +4070,9 @@ not a grab-bag).
 | `SectionStatusTone` | type | `"success" \| "warning" \| "info"`; closed readiness-dot tones. A separate off-axis disposition uses neutral structural ink. |
 | `HeroProps` | type | Props for `Hero`: `eyebrow`, `heading`, `description`, `actions`, `media`, `headingLevel`, `ground`, `className`, `style`, plus every native `<section>` attribute. |
 | `HeroHeadingLevel` | type | `1 \| 2`. |
+| `MarketingChapter` | component | Full-bleed marketing chapter band: marketing-scale title, optional description, prose slot. `headingLevel` picks its heading element. |
+| `MarketingChapterProps` | type | Props for `MarketingChapter`: `title`, `description`, `children`, `headingLevel`, `ground`, `className`, `style`, plus every native `<section>` attribute except `title`. |
+| `MarketingChapterHeadingLevel` | type | `2 \| 3`. |
 | `FeatureGrid` | component | Titled collection of feature items: optional eyebrow/heading/description region, a grid of icon/heading/description items. |
 | `FeatureGridProps` | type | Props for `FeatureGrid`: `eyebrow`, `heading`, `description`, `items`, `headingLevel`, `ground`, `className`, `style`, plus every native `<div>` attribute. |
 | `FeatureGridItem` | type | One item: `id`, `icon?`, `heading`, `description?`. |
@@ -4530,9 +4555,9 @@ speculatively, just because a related component shipped, is the exact
 un-bounded growth this package's own "variant rule" warns against one level
 up. They get added here only once something real needs them.
 
-**Blocks:** twenty ship — `PageHeader`, `EmptyState`, `DataTable`,
+**Blocks:** twenty-one ship — `PageHeader`, `EmptyState`, `DataTable`,
 `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`, `ConfirmDialog`,
-`Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `FeatureGrid`, `OrderedStepSequence`, `StatusList`, `Faq`,
+`Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `MarketingChapter`, `FeatureGrid`, `OrderedStepSequence`, `StatusList`, `Faq`,
 `PricingTable`, `Testimonial`, `ArticleBody` — completing this layer. No
 `FilterBar` block:
 `DataTable`'s own `toolbar` slot (and `Toolbar`'s own `search` slot) are

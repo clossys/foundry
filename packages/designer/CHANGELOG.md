@@ -5,6 +5,31 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.4.12] - 2026-09-21
+
+### Added
+
+- `theme-keys.css` export: Tailwind `@theme` utility keys without `:root`
+  primitives — for consumers who already ship a token root (issue #1051).
+- `getAuthoredThemeInitScript()` stamps the authored day register before
+  first paint; `getStoredThemeInitScript()` is the opt-in OS/storage path
+  for product chrome (issue #1065).
+- `MarketingChapter` block: marketing-scale chapter titles (`text-h2`) with
+  a prose slot (issue #1058).
+- `Hero` `composition` prop (`editorial` default, `split` opt-in): passing
+  `media` no longer implies a two-column product-shot layout (issue #1062).
+- `designer-environment-check surface [scan-dir]`: fails dual primitive
+  stacks, dual Designer CSS roots, and marketing `SectionHeader` misuse
+  (issues #1055, #1060).
+- Display signature tokens (`--font-display-style` through `--font-display-scale-x`,
+  `--ui-width-display-max`)
+  and `max-w-display` utility; display headings cap measure without host CSS
+  copies (issue #1052).
+
+### Changed
+
+- `Hero` display headings use the packaged display signature and measure cap.
+
 ## [0.4.11] - 2026-09-21
 
 ### Changed

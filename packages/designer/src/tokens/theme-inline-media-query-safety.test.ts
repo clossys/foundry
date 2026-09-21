@@ -6,12 +6,12 @@ import { TOKENS } from "./tokens.js";
 import { parseDeclarationsForSelector } from "./internal/parse-css.js";
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
-const themeCss = readFileSync(join(packageRoot, "styles", "theme.css"), "utf8");
+const themeKeysCss = readFileSync(join(packageRoot, "styles", "theme-keys.css"), "utf8");
 
-const themeInline = parseDeclarationsForSelector(themeCss, "@theme inline");
+const themeInline = parseDeclarationsForSelector(themeKeysCss, "@theme inline");
 
 /**
- * `styles/theme.css`'s `@theme inline { ... }` block deliberately declares
+ * `styles/theme-keys.css`'s `@theme inline { ... }` block deliberately declares
  * every entry as a self-reference, `--token: var(--token, <default>);` (see
  * the file's own header comment), so a consumer's brand.css override of the
  * plain custom property is still picked up by the generated Tailwind
@@ -51,7 +51,7 @@ const themeInline = parseDeclarationsForSelector(themeCss, "@theme inline");
 const MEDIA_QUERY_FAMILIES = ["breakpoint", "container"] as const;
 
 describe("@theme inline entries that generate a media-query condition never contain var()", () => {
-  it("every --breakpoint-*/--container-* entry in theme.css's @theme inline block is a literal value", () => {
+  it("every --breakpoint-*/--container-* entry in theme-keys.css's @theme inline block is a literal value", () => {
     const violations: string[] = [];
     for (const [name, value] of themeInline) {
       const def = TOKENS[name as keyof typeof TOKENS];

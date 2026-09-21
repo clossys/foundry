@@ -80,6 +80,41 @@ function toSelectorText(className: string): string {
 }
 
 describe("coverage: real rendered classes are all present in compiled.css", () => {
+  it("Hero (with media) and primary Button render classes present in a fresh compiled.css", async () => {
+    const trees: Array<ReturnType<typeof render>> = [];
+    trees.push(
+      render(
+        <Hero
+          heading="Placeholder heading"
+          description="Placeholder description."
+          actions={<Button variant="primary">Continue</Button>}
+          media={<img src="/placeholder.png" alt="Placeholder still" />}
+          composition="split"
+        />,
+      ),
+    );
+
+    const renderedClasses = new Set<string>();
+    for (const result of trees) {
+      for (const c of collectClassNames(result.container)) renderedClasses.add(c);
+      result.unmount();
+    }
+
+    for (const required of ["text-display-l", "font-display", "bg-accent", "rounded-control", "tablet:grid-cols-2"]) {
+      expect(renderedClasses.has(required)).toBe(true);
+    }
+
+    const scan = scanCompiledCssSources(packageRoot);
+    const generated = await generateCompiledCss({ stylesDir: resolve(packageRoot, "styles"), candidates: scan.candidates });
+
+    const missing: string[] = [];
+    for (const className of renderedClasses) {
+      const selector = toSelectorText(className);
+      if (!generated.css.includes(selector)) missing.push(className);
+    }
+    expect(missing).toEqual([]);
+  });
+
   it("collects classes from a representative set of atoms and cross-checks against a fresh compiled.css", async () => {
     const trees: Array<[string, ReturnType<typeof render>]> = [];
     trees.push(["Button primary md", render(<Button variant="primary" size="md">Save</Button>)]);
@@ -140,40 +175,6 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
       if (!generated.css.includes(selector)) missing.push(className);
     }
 
-    expect(missing).toEqual([]);
-  });
-
-  it("Hero (with media) and primary Button render classes present in a fresh compiled.css", async () => {
-    const trees: Array<ReturnType<typeof render>> = [];
-    trees.push(
-      render(
-        <Hero
-          heading="Placeholder heading"
-          description="Placeholder description."
-          actions={<Button variant="primary">Continue</Button>}
-          media={<img src="/placeholder.png" alt="Placeholder still" />}
-        />,
-      ),
-    );
-
-    const renderedClasses = new Set<string>();
-    for (const result of trees) {
-      for (const c of collectClassNames(result.container)) renderedClasses.add(c);
-      result.unmount();
-    }
-
-    for (const required of ["text-display-l", "font-display", "bg-accent", "rounded-control", "tablet:grid-cols-2"]) {
-      expect(renderedClasses.has(required)).toBe(true);
-    }
-
-    const scan = scanCompiledCssSources(packageRoot);
-    const generated = await generateCompiledCss({ stylesDir: resolve(packageRoot, "styles"), candidates: scan.candidates });
-
-    const missing: string[] = [];
-    for (const className of renderedClasses) {
-      const selector = toSelectorText(className);
-      if (!generated.css.includes(selector)) missing.push(className);
-    }
     expect(missing).toEqual([]);
   });
 });

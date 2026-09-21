@@ -224,6 +224,9 @@
   .max-w-2xl {
     max-width: var(--spacing-2xl, 32px);
   }
+  .max-w-display {
+    max-width: var(--ui-width-display-max, 72rem);
+  }
   .max-w-full {
     max-width: 100%;
   }
@@ -264,6 +267,14 @@
   }
   .rotate-90 {
     rotate: 90deg;
+  }
+  .font-display {
+    font-family: var(--font-display, system-ui, ui-sans-serif, -apple-system, "Segoe UI", sans-serif);
+    font-style: var(--font-display-style, normal);
+    font-weight: var(--font-display-weight, 400);
+    font-stretch: var(--font-display-stretch, 100%);
+    letter-spacing: var(--tracking-tight, -0.01em);
+    transform: scaleX(var(--font-display-scale-x, 1));
   }
   .animate-pulse {
     animation: var(--animate-pulse, pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite);
@@ -514,6 +525,9 @@
   }
   .px-xs {
     padding-inline: var(--spacing-xs, 4px);
+  }
+  .py-2xl {
+    padding-block: var(--spacing-2xl, 32px);
   }
   .py-lg {
     padding-block: var(--spacing-lg, 16px);
