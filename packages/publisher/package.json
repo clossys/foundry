@@ -1,6 +1,6 @@
 {
   "name": "@clossys/publisher",
-  "version": "0.4.28",
+  "version": "0.4.29",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -88,7 +88,8 @@
   "bin": {
     "publisher-media-check": "dist/media/cli.js",
     "publisher-record-check": "dist/record/cli.js",
-    "publisher-rate-check": "dist/verified-publication-rate-cli.js"
+    "publisher-rate-check": "dist/verified-publication-rate-cli.js",
+    "publisher-preview": "dist/web/preview-cli.js"
   },
   "foundry": {
     "assessment": {

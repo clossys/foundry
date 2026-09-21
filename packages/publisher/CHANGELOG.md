@@ -5,6 +5,15 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.4.29] - 2026-09-21
+
+### Added
+
+- `BrandGuideView` and `SystemAuditView` are catalog templates. `publisher-preview`
+  writes both from the same `brand.css` and brand-asset roster after the
+  brand-file check passes. Fixture copy ships with the package. Strategist
+  facts are cited beside the tokens; this package does not change Strategist.
+
 ## [0.4.28] - 2026-09-21
 
 ### Added

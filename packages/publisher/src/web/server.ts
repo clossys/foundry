@@ -9,7 +9,7 @@ export { brandAssetHeadLinks, publicationMapEmitsBrandAssets } from "./brandAsse
 export { listWebTemplateNames } from "./internal/webTemplates.js";
 export { defineWebTemplate } from "./internal/defineWebTemplate.js";
 export { createWebRenderer } from "./internal/createWebRenderer.js";
-export { AuthView, CaptureView, CollectionView, DocumentView, ErrorView, MarketingView, SectionedView } from "#publisher-web-views";
+export { AuthView, BrandGuideView, CaptureView, CollectionView, DocumentView, ErrorView, MarketingView, SectionedView, SystemAuditView } from "#publisher-web-views";
 export type {
   AuthViewProps,
   CaptureViewProps,
