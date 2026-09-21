@@ -5,6 +5,17 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.4.27] - 2026-09-21
+
+### Added
+
+- `publisher-preview` CLI: after `readBrandCss` and `checkBrandFileCoverage`
+  succeed, renders fixture documents for every shipped web view
+  (`MarketingView`, `SectionedView` including `pricing` / `testimonial` /
+  `stat`, `AuthView`, `ErrorView`, `CaptureView`, `DocumentView`,
+  `CollectionView`) into a static `gallery.html` using an in-package
+  `CopyRegistry` of approved placeholder copy. (#1107)
+
 ## [0.4.25] - 2026-09-21
 
 ### Added
