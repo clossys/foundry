@@ -31,8 +31,8 @@ async function repositoryJson(path) {
 test("repository Trio policy, adapters, and current-candidate fixtures bind the selected @clossys identities", async () => {
   const policy = await repositoryJson("governance/release-qualification-policy.json");
   const expected = [
-    ["advisor", "@clossys/advisor", "0.2.7"],
-    ["starter", "@clossys/starter", "0.1.8"],
+    ["advisor", "@clossys/advisor", "0.2.8"],
+    ["starter", "@clossys/starter", "0.1.9"],
     ["controller", "@clossys/controller", "0.9.11"],
   ];
 
@@ -72,25 +72,25 @@ test("all 21 publishable packages are exact-source bound to the catalogue and qu
   const policy = await repositoryJson("governance/release-qualification-policy.json");
   const catalog = await repositoryJson("governance/release-catalog.json");
   const expectedVersions = {
-    "@clossys/advisor": "0.2.7",
-    "@clossys/launcher": "0.1.7",
-    "@clossys/architect": "0.1.9",
-    "@clossys/bouncer": "0.1.9",
-    "@clossys/builder": "0.8.0",
-    "@clossys/butler": "0.1.6",
+    "@clossys/advisor": "0.2.8",
+    "@clossys/architect": "0.1.10",
+    "@clossys/bouncer": "0.1.10",
+    "@clossys/builder": "0.8.1",
+    "@clossys/butler": "0.1.7",
     "@clossys/controller": "0.9.11",
     "@clossys/customer": "0.1.0",
     "@clossys/designer": "0.4.9",
-    "@clossys/giver": "0.1.6",
-    "@clossys/influencer": "0.1.6",
-    "@clossys/inspector": "0.2.6",
+    "@clossys/giver": "0.1.7",
+    "@clossys/influencer": "0.1.7",
+    "@clossys/inspector": "0.2.7",
     "@clossys/integrator": "0.7.1",
-    "@clossys/keeper": "0.1.6",
-    "@clossys/locksmith": "0.2.5",
-    "@clossys/messenger": "0.1.8",
-    "@clossys/observer": "0.3.0",
+    "@clossys/keeper": "0.1.7",
+    "@clossys/launcher": "0.1.7",
+    "@clossys/locksmith": "0.2.6",
+    "@clossys/messenger": "0.1.9",
+    "@clossys/observer": "0.3.1",
     "@clossys/publisher": "0.4.6",
-    "@clossys/starter": "0.1.8",
+    "@clossys/starter": "0.1.9",
     "@clossys/strategist": "0.2.1",
     "@clossys/writer": "0.3.10",
   };
