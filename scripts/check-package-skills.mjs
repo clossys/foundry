@@ -267,7 +267,10 @@ export function evaluatePackageSkills(packages) {
           });
         }
       }
-      if (!Array.isArray(files) || !files.includes("skill")) {
+      if (
+        files !== undefined &&
+        (!Array.isArray(files) || !files.includes("skill"))
+      ) {
         pkgFindings.push({
           rule: "files-missing-skill",
           packageDir,
