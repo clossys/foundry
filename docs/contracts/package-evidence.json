@@ -383,7 +383,7 @@
         "run": "LOCAL fixture run, not a CI run — reproduce with `npm run stage:strategist-writer-publisher` after checkout. It runs both compiled publisher CLIs: media coverage on an unregistered asset reference (exit 1) and its registered control (exit 0), then record drift on a changed cited fact (exit 1) and its matching control (exit 0). This proves fixture discrimination only; it does not reconcile a ledger emitted by Foundry's publish path against an independent record, which remains #502. 2026-08-22.",
         "defectOrigin": "injected",
         "defect": "The temporary media fixture referenced a missing asset id, and the temporary ledger fixture supplied a current fact value different from its recorded content-addressed citation. The compiled media and record CLIs respectively produced their own exit-1 findings for coverage failure and fact drift.",
-        "control": "In the same fixture command, the media fixture referenced its registered asset and the temporary ledger supplied its exact cited fact value. Both compiled publisher CLIs exited 0 with No findings. Publish-path registry reconciliation is documented in packages/publisher/README.md; `proposeRegistryPublicationEntry` ships in 0.4.11 but this repository does not persist a `./record` ledger from its publish workflow."
+        "control": "In the same fixture command, the media fixture referenced its registered asset and the temporary ledger supplied its exact cited fact value. Both compiled publisher CLIs exited 0 with No findings. Publish-path registry reconciliation is documented in packages/publisher/README.md; `proposeRegistryPublicationEntry` ships in 0.4.12 but this repository does not persist a `./record` ledger from its publish workflow."
       }
     },
     {

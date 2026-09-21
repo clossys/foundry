@@ -5,6 +5,8 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.4.18] - 2026-09-21
+
 ### Added
 
 - `./record` reconciliation contracts: `proposeRegistryPublicationEntry`
