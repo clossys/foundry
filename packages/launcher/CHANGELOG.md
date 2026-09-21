@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Packed skill catalogue now carries pre-auth fold gates, `PRE-AUTH-QUALITY.md` exceptional keep as a synthetic user (not the doer, the sealer, or a QA contractor), and expression-wave skills that treat 3 as the floor not done.
+- Packed skill catalogue now carries pre-auth fold gates, the exceptional-keep brief that ships with `@clossys/designer` (synthetic user, not the doer, the sealer, or a QA contractor), and expression-wave skills that treat 3 as the floor not done.
 
 ## [0.1.6] - 2026-09-20
 
