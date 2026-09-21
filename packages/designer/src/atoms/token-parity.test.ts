@@ -279,6 +279,10 @@ const KNOWN_NON_CLASS_MAPS = new Set([
   // for the contrast gate to resolve var() aliases against; never a
   // Tailwind class name, the same role "declarations" above already has.
   "registry",
+  // hero-css/check-hero-css.ts — required-utility name -> closed CSS
+  // selector needles already written with Tailwind's `\:` form. Lookup
+  // table, not a class map the parity scanner should compile.
+  "UTILITY_RULE_NEEDLES",
 ]);
 
 function extractCandidateClasses(code: string): Set<string> {

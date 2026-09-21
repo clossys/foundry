@@ -468,7 +468,7 @@ describe("direct-path reachability — the real compiled dist/cli.js", () => {
 
     const result = runCli(["brand-coverage", derivationsFile, slotsFile]);
 
-    expect(result.stdout).toContain("Brand coverage: satisfied.");
+    expect(result.stdout).toContain("Brand coverage: satisfied");
     expect(result.status).toBe(0);
   });
 
@@ -580,7 +580,7 @@ describe("direct-path reachability — the real compiled dist/cli.js", () => {
 
     const result = runCli(["brand-coverage", derivationsFile, slotsFile]);
 
-    expect(result.stdout).toContain("Brand coverage: satisfied.");
+    expect(result.stdout).toContain("Brand coverage: satisfied");
     expect(result.status).toBe(0);
   });
 });
