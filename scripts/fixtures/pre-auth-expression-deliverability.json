@@ -1,0 +1,13 @@
+{
+  "floorGateClis": [
+    "designer-hero-css-check",
+    "designer-fold-check",
+    "writer-check --live"
+  ],
+  "tasteStartsAfterFoldCheckGreen": true,
+  "inhabitRoundCap": 3,
+  "wallClockMinutesCap": 45,
+  "requiresScreenshots": true,
+  "separateSessionFromDoer": true,
+  "doerMustNotSelfCertifyKeep": true
+}
