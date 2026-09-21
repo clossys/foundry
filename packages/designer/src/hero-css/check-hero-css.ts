@@ -29,10 +29,24 @@ export interface HeroCssResult {
   findings: HeroCssFinding[];
 }
 
-/** True when `css` contains a rule for `.utility` (Tailwind v4 writes `:` as `\:` in selectors). */
-export function utilityRulePresent(css: string, utility: string): boolean {
-  const selector = `.${utility.replace(/:/g, "\\:")}`;
-  return css.includes(`${selector} {`) || css.includes(`${selector}{`);
+/**
+ * Closed selector needles for each required utility. Tailwind v4 writes `:`
+ * as `\:` in the stylesheet. These strings are literals, not derived from
+ * caller input — a replace-based escape of `utility` is the exact shape
+ * CodeQL `js/bad-code-sanitization` refuses (backslash not escaped first).
+ */
+const UTILITY_RULE_NEEDLES: Record<HeroCssRequiredUtility, readonly [string, string]> = {
+  "text-display-l": [".text-display-l {", ".text-display-l{"],
+  "font-display": [".font-display {", ".font-display{"],
+  "bg-accent": [".bg-accent {", ".bg-accent{"],
+  "rounded-control": [".rounded-control {", ".rounded-control{"],
+  "tablet:grid-cols-2": [".tablet\\:grid-cols-2 {", ".tablet\\:grid-cols-2{"],
+};
+
+/** True when `css` contains a rule for that required utility. */
+export function utilityRulePresent(css: string, utility: HeroCssRequiredUtility): boolean {
+  const [spaced, compact] = UTILITY_RULE_NEEDLES[utility];
+  return css.includes(spaced) || css.includes(compact);
 }
 
 export function checkHeroCss(css: string): HeroCssResult {
@@ -42,7 +56,7 @@ export function checkHeroCss(css: string): HeroCssResult {
       findings.push({
         rule: "missing-utility",
         utility,
-        message: `No .${utility.replace(/:/g, "\\:")} rule found — Hero/Button will render as unstyled HTML.`,
+        message: `No ${UTILITY_RULE_NEEDLES[utility][0].trimEnd()} rule found — Hero/Button will render as unstyled HTML.`,
       });
     }
   }
