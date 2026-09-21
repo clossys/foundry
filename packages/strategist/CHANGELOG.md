@@ -5,6 +5,12 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.3.1] - 2026-09-21
+
+### Fixed
+
+- README API tables document handoff, contract projection, and marker gates added in 0.3.0.
+
 ## [0.3.0] - 2026-09-21
 
 ### Changed
