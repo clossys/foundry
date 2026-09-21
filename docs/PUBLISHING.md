@@ -523,6 +523,9 @@ one tarball. The disabled W1D workflow cannot perform these publication steps.
    version *already in the registry*, independent of whatever the current
    checkout contains (for example a version published before step 2 existed
    in this workflow, or as a later registry-served consumer qualification).
+   The `qualify` job then runs `validate-candidate-publish.mjs` in bootstrap
+   mode against the retained qualification record, using current-worktree
+   joins while binding the fresh transcript and exact registry tarball bytes.
    There is no
    pre-publish check that could have already covered that case.
 
