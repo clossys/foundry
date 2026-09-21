@@ -27,6 +27,7 @@ export function buildWebHeadMetadata(meta: WebMeta): WebHeadMetadata {
       ...(meta.og.description !== undefined ? { description: meta.og.description } : {}),
       ...(meta.og.image !== undefined ? { image: meta.og.image } : {}),
       ...(meta.og.type !== undefined ? { type: meta.og.type } : {}),
+      ...(meta.og.url !== undefined ? { url: meta.og.url } : {}),
     };
   }
 
@@ -34,7 +35,15 @@ export function buildWebHeadMetadata(meta: WebMeta): WebHeadMetadata {
     head.twitter = {
       ...(meta.twitter.card !== undefined ? { card: meta.twitter.card } : {}),
       ...(meta.twitter.site !== undefined ? { site: meta.twitter.site } : {}),
+      ...(meta.twitter.image !== undefined ? { image: meta.twitter.image } : {}),
     };
+  }
+
+  if (meta.hreflangAlternates !== undefined) {
+    head.hreflangAlternates = meta.hreflangAlternates.map((entry) => ({
+      hreflang: entry.hreflang,
+      href: entry.href,
+    }));
   }
 
   return head;

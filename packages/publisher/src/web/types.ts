@@ -155,6 +155,7 @@ export interface WebHeadMetadata {
   keywords?: string[];
   openGraph?: WebOpenGraphMetadata;
   twitter?: WebTwitterMetadata;
+  hreflangAlternates?: WebHreflangAlternate[];
   /**
    * Zero or more `<script type="application/ld+json">`-ready payloads —
    * each entry is already `JSON.stringify`'d AND escaped safe for
@@ -174,11 +175,18 @@ export interface WebOpenGraphMetadata {
   description?: string;
   image?: string;
   type?: string;
+  url?: string;
 }
 
 export interface WebTwitterMetadata {
   card?: "summary" | "summary_large_image";
   site?: string;
+  image?: string;
+}
+
+export interface WebHreflangAlternate {
+  hreflang: string;
+  href: string;
 }
 
 // ---------------------------------------------------------------------------

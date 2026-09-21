@@ -5,6 +5,15 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.4.26] - 2026-09-21
+
+### Added
+
+- Web head metadata: Open Graph URL (`og.url`), Twitter image
+  (`twitter.image`), and hreflang alternates (`hreflangAlternates`) on
+  `WebMeta` / `SurfaceWebMeta`, emitted from `buildWebHeadMetadata`.
+  (#1108)
+
 ## [0.4.21] - 2026-09-21
 
 ### Fixed
