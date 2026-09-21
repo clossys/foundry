@@ -209,7 +209,7 @@ test("expression-wave skills without Pre-auth page heading fail", () => {
   assert.ok(result.findings.some((f) => f.rule === "pre-auth-page-heading"));
 });
 
-test("expression-wave skills must reference PRE-AUTH-QUALITY and exceptional", () => {
+test("expression-wave skills must reference PRE-AUTH-QUALITY, exceptional, independent QA, and not author keep-review", () => {
   const result = evaluatePackageSkills([
     {
       packageDir: "writer",
@@ -230,6 +230,8 @@ Fill MarketingView slots only.
   assert.equal(result.exitCode, 1);
   assert.ok(result.findings.some((f) => f.rule === "pre-auth-quality-ref"));
   assert.ok(result.findings.some((f) => f.rule === "pre-auth-exceptional"));
+  assert.ok(result.findings.some((f) => f.rule === "pre-auth-independent-qa"));
+  assert.ok(result.findings.some((f) => f.rule === "pre-auth-no-author-keep"));
 });
 
 test("launcher catalogue drift is a finding", () => {

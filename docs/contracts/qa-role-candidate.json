@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "candidate": {
+    "name": "@clossys/qa",
+    "jobQuestion": "Is this work fit for the intended user or spec, independently of whoever made it?",
+    "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence. QA must not compute that metric itself.",
+    "metric": {
+      "name": "independent fitness keep rate",
+      "formula": "candidates independently kept for the named user or spec / all candidates independently fitness-reviewed before seal or land",
+      "unit": "ratio",
+      "direction": "increase"
+    },
+    "primaryMode": "assure",
+    "secondaryModes": [],
+    "boundary": {
+      "owns": "Independent fitness review against a named user or spec, including synthetic target-user inhabit for pre-auth pages.",
+      "excludes": [
+        "mutating the candidate under review",
+        "authoring the work being reviewed",
+        "sealing or publishing surfaces",
+        "judging whether a change satisfies declared operating rules",
+        "measuring its own historical efficacy"
+      ]
+    }
+  },
+  "sameJobMetricLoopCoverage": [],
+  "rejectionReasons": []
+}

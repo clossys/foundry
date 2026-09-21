@@ -9,7 +9,7 @@ All notable changes to this package are documented here. Format follows
 
 ### Added
 
-- `PRE-AUTH-QUALITY.md`: star scale (3 good / 4 great / 5 exceptional); done is 5; gates prove 3 only.
+- `PRE-AUTH-QUALITY.md`: star scale (3 good / 4 great / 5 exceptional); done is 5; gates prove 3 only. Exceptional is independent QA inhabited as the named audience — not a Designer or Writer self-review, not a Publisher seal.
 - `designer-hero-css-check` bin: fails when a built stylesheet is missing
   Hero/Button utility rules (`text-display-l`, `font-display`, `bg-accent`,
   `rounded-control`, `tablet:grid-cols-2`).

@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Packed skill catalogue now carries pre-auth fold gates, `PRE-AUTH-QUALITY.md` exceptional keep, and expression-wave skills that treat 3 as the floor not done.
+- Packed skill catalogue now carries pre-auth fold gates, `PRE-AUTH-QUALITY.md` exceptional keep as independent QA (not the doer or the sealer), and expression-wave skills that treat 3 as the floor not done.
 
 ## [0.1.6] - 2026-09-20
 

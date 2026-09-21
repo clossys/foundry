@@ -13,6 +13,8 @@ All notable changes to this package are documented here. Format follows
   `SectionedView` is documented only for the closed five section kinds.
 - README/skill: first-viewport `heroActions` carries one primary CTA;
   `heroMedia` is product surface or original art, not decorative stock.
+  Publisher seals after an independent QA keep and does not inhabit the
+  persona.
 
 ## [0.4.5] - 2026-09-18
 

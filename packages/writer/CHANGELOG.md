@@ -13,6 +13,7 @@ All notable changes to this package are documented here. Format follows
   declared live-copy trees for claim-shaped and magnitude-shaped prose not
   covered by the voice claims register.
 - Live-copy scan also flags built-in fold wallpaper phrases (`fold-wallpaper`).
+- Skill: a 5 keep is independent QA, not a Writer self-review of copy.
 
 ## [0.3.9] - 2026-09-18
 

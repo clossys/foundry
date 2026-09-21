@@ -96,6 +96,9 @@ const PRE_AUTH_HEADING = /^## Pre-auth page[ \t]*$/m;
 const PUBLISHER_PRE_AUTH_MARKETING_VIEW = /MarketingView/;
 const PRE_AUTH_QUALITY_REF = /PRE-AUTH-QUALITY(?:\.md)?/;
 const PRE_AUTH_EXCEPTIONAL = /\bexceptional\b/i;
+const PRE_AUTH_INDEPENDENT_QA = /independent QA/i;
+const PRE_AUTH_NO_AUTHOR_KEEP = /does not author keep-review|do not author keep-review/i;
+const INSPECTOR_QA_BOUNDARY = /independent QA/i;
 
 function validateSkillBody(packageDir, text) {
   const findings = [];
@@ -205,12 +208,33 @@ export function evaluatePackageSkills(packages) {
               message: "expression-wave skill must state that done is exceptional (5), not good (3)",
             });
           }
+          if (!PRE_AUTH_INDEPENDENT_QA.test(text)) {
+            pkgFindings.push({
+              rule: "pre-auth-independent-qa",
+              packageDir,
+              message: "expression-wave skill must name independent QA as the keep, not a Designer or Writer self-review",
+            });
+          }
+          if (!PRE_AUTH_NO_AUTHOR_KEEP.test(text)) {
+            pkgFindings.push({
+              rule: "pre-auth-no-author-keep",
+              packageDir,
+              message: "expression-wave skill must say this role does not author keep-review evidence",
+            });
+          }
         }
         if (packageDir === "publisher" && PRE_AUTH_HEADING.test(text) && !PUBLISHER_PRE_AUTH_MARKETING_VIEW.test(text)) {
           pkgFindings.push({
             rule: "publisher-pre-auth-marketing-view",
             packageDir,
             message: "publisher skill Pre-auth page section must name MarketingView as the pre-auth template",
+          });
+        }
+        if (packageDir === "inspector" && !INSPECTOR_QA_BOUNDARY.test(text)) {
+          pkgFindings.push({
+            rule: "inspector-qa-boundary",
+            packageDir,
+            message: "inspector skill must cede target-audience keep to independent QA — Inspector judges rules, not fitness",
           });
         }
       }
