@@ -13,9 +13,8 @@ rename what it composes or what it records.
 npm install @clossys/publisher
 ```
 
-This package is published to the public npm registry, `https://registry.npmjs.org`.
-Installing it needs no authentication: no npm token, no `.npmrc` registry
-override, and no GitHub credential of any kind.
+This package is published to `https://registry.npmjs.org` with public
+access; installing it requires no authentication.
 
 ## Verified publication rate
 
@@ -1780,8 +1779,8 @@ reflecting that `./core`, `./media`, `./email`, `./print`, `./image`,
 `./slides`, and `./record` do not need them. A consumer of `./web` must install
 the declared peers at compatible versions; the release qualification adapter
 does so explicitly and proves both the ordinary and `react-server` entry
-points from a clean public-registry install. Historical GitHub Packages
-metadata omitted `peerDependenciesMeta`; see
+points from a clean public-registry install. A legacy registry lane once
+omitted `peerDependenciesMeta`; see
 [issue #226](https://github.com/clossys/foundry/issues/226) for that retired
 registry behavior.
 
