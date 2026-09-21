@@ -1,6 +1,6 @@
 {
   "name": "@clossys/designer",
-  "version": "0.4.15",
+  "version": "0.4.16",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -40,6 +40,7 @@
     "./theme-keys.css": "./styles/theme-keys.css",
     "./compiled.css": "./styles/compiled.css",
     "./brand-template.css": "./styles/brand-template.css",
+    "./mark-template.tsx": "./templates/mark-template.tsx",
     "./atoms": {
       "types": "./dist/atoms/index.d.ts",
       "import": "./dist/atoms/index.js"
@@ -88,6 +89,10 @@
       "types": "./dist/gate-index.d.ts",
       "import": "./dist/gate-index.js"
     },
+    "./mark": {
+      "types": "./dist/mark/index.d.ts",
+      "import": "./dist/mark/index.js"
+    },
     "./render-environment": {
       "types": "./dist/render-environment.d.ts",
       "import": "./dist/render-environment.js"
@@ -101,6 +106,7 @@
     "designer-hero-css-check": "dist/hero-css/hero-css-cli.js",
     "designer-fold-check": "dist/fold/fold-cli.js",
     "designer-type-check": "dist/type-record/type-record-cli.js",
+    "designer-mark-check": "dist/mark/mark-cli.js",
     "designer-rate-check": "dist/design-conformance-rate-cli.js"
   },
   "foundry": {

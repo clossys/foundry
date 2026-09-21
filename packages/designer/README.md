@@ -161,6 +161,8 @@ smallest stable subpath that owns what you need:
 | `@clossys/designer/theme.css` | Optional Tailwind v4 wiring; imports `tokens.css` itself. |
 | `@clossys/designer/compiled.css` | GENERATED, precompiled utility CSS for `atoms`, `blocks`, and `shell` — the default path for a pre-auth page without Tailwind. Imports nothing itself; load after `tokens.css`. See "Framework-portable components, without Tailwind" below. |
 | `@clossys/designer/brand-template.css` | Copy-and-fill template for a consumer brand binding. |
+| `@clossys/designer/mark-template.tsx` | Copy-and-fill template for the master brand mark (lockup, mark-only, inverse variants). |
+| `@clossys/designer/mark` | `checkBrandMark` and the mark-variant contract constants; no React runtime. |
 | `@clossys/designer/icons` | Tree-shakeable glyph data. |
 | `@clossys/designer/atoms`, `/blocks`, `/shell`, `/charts` | Reusable React visual primitives. |
 | `@clossys/designer/atoms/server`, `/blocks/server`, `/shell/server`, `/charts/server`, `/theme/server` | The server-safe subset of each sibling subpath, importable from a React Server Component. See "Server Components" below. |
@@ -578,7 +580,10 @@ your CSS entry point:
 (`theme.css` already pulls in the base token file, so you don't need a
 second line for that. The token layer's `brand-template.css` provides the
 full three-layer contract, including how to bind brand colors over the
-neutral greyscale default.)
+neutral greyscale default. Copy `templates/mark-template.tsx` into your
+project the same way, fill `BRAND_WORDMARK` and your mark glyph, and run
+`designer-mark-check` on the result — lockup, mark-only, and inverse
+variants are all required once the wordmark is bound.)
 
 **2. Point Tailwind's `@source` at this package's built output**, in the
 same CSS file. This is the single highest-risk step on the advanced path: if
@@ -4625,8 +4630,9 @@ the same per-subpath pattern `@clossys/publisher` documents: which ones a
 given import needs depends on the subpath you import, not on the package as
 a whole.
 
-- No peers: `tokens`, every CSS subpath (`tokens.css`, `theme.css`,
-  `compiled.css`, `brand-template.css`), `icons`, `gate`, and
+- No peers: `tokens`, `mark`, every CSS subpath (`tokens.css`, `theme.css`,
+  `compiled.css`, `brand-template.css`), `mark-template.tsx` (copy-only;
+  the filled module imports `atoms`/`icons`), `icons`, `gate`, and
   `render-environment`.
 - `react`: `atoms`, `blocks`, `shell`, `charts`, `theme`, and each `/server`
   subpath.

@@ -5,6 +5,17 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.4.16] - 2026-09-21
+
+### Added
+
+- Master brand mark template (`mark-template.tsx`) with lockup, mark-only, and
+  inverse variants built from design tokens and the `Icon` atom; copy-fill
+  contract matches `brand-template.css` (issue #1109).
+- `designer-mark-check` and `@clossys/designer/mark` gate: fails when a
+  consumer authors a lockup wordmark but omits the inverse variant; ships a
+  passing fixture under `templates/fixtures/`.
+
 ## [0.4.15] - 2026-09-21
 
 ### Changed

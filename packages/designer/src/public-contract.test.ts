@@ -25,9 +25,11 @@ const JS_SUBPATHS = [
   "./theme",
   "./theme/server",
   "./gate",
+  "./mark",
   "./render-environment",
 ] as const;
 const CSS_SUBPATHS = ["./tokens.css", "./theme.css", "./theme-keys.css", "./compiled.css", "./brand-template.css"] as const;
+const MARK_TEMPLATE_SUBPATHS = ["./mark-template.tsx"] as const;
 const COMPONENT_DIRS = ["atoms", "blocks", "charts", "shell", "theme"] as const;
 
 function sourceFiles(dir: string, out: string[] = []): string[] {
@@ -41,7 +43,12 @@ function sourceFiles(dir: string, out: string[] = []): string[] {
 
 describe("public UI contract", () => {
   it("exports only intentional token, visual, and gate subpaths — never a root barrel or views", () => {
-    expect(Object.keys(packageJson.exports)).toEqual([JS_SUBPATHS[0], ...CSS_SUBPATHS, ...JS_SUBPATHS.slice(1)]);
+    expect(Object.keys(packageJson.exports)).toEqual([
+      JS_SUBPATHS[0],
+      ...CSS_SUBPATHS,
+      ...MARK_TEMPLATE_SUBPATHS,
+      ...JS_SUBPATHS.slice(1),
+    ]);
     expect(packageJson.exports["."]).toBeUndefined();
     expect(packageJson.exports["./views"]).toBeUndefined();
 
@@ -54,6 +61,12 @@ describe("public UI contract", () => {
     for (const subpath of CSS_SUBPATHS) {
       const entry = packageJson.exports[subpath];
       expect(entry, `${subpath} needs a CSS entry`).toMatch(/^\.\/styles\/.+\.css$/);
+      expect(existsSync(join(packageRoot, entry as string))).toBe(true);
+    }
+
+    for (const subpath of MARK_TEMPLATE_SUBPATHS) {
+      const entry = packageJson.exports[subpath];
+      expect(entry, `${subpath} needs a mark template entry`).toMatch(/^\.\/templates\/mark-template\.tsx$/);
       expect(existsSync(join(packageRoot, entry as string))).toBe(true);
     }
   });
