@@ -5,6 +5,21 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.4.11] - 2026-09-21
+
+### Added
+
+- `publisher-pre-auth-check` on a `SurfaceDocument` JSON: fails when a
+  pre-auth marketing page does not mount `MarketingView` with fold slots
+  (`heroHeading`, `heroActions`, repeating `features`). Refuses
+  `SectionedView` as a substitute (#1030).
+- Shipped fixture `src/web/fixtures/pre-auth-marketing.surface.json` and
+  gate tests (green control + SectionedView / missing-slot violations).
+
+### Notes
+
+- Qualification of `0.4.11` is deferred under #948 on this machine.
+
 ## [0.4.8] - 2026-09-21
 
 ### Changed

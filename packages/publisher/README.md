@@ -287,6 +287,12 @@ the page needs a Designer block that is not a MarketingView slot, import that
 named block in your page module. Do not flatten into `SectionedView` —
 that document assembler is not the pre-auth path.
 
+Before Designer fold/CSS gates run, `publisher-pre-auth-check` on the
+authored `SurfaceDocument` JSON fails closed when the template is not
+`MarketingView`, when `SectionedView` is substituted, or when fold slots
+(`heroHeading`, `heroActions`, repeating `features`) are missing. A shipped
+fixture lives at `src/web/fixtures/pre-auth-marketing.surface.json`.
+
 ### `SectionedViewDocument` — Designer-independent long-page core
 
 `@clossys/publisher/core` now owns the closed, data-only source model for a

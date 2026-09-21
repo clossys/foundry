@@ -31,7 +31,7 @@ An engine gap or a missing check is a Foundry issue about the package that owns 
 
 ## Pre-auth page
 
-Done is exceptional (5) as defined in the PRE-AUTH-QUALITY brief that ships with `@clossys/designer`, not in this package. `designer-hero-css-check`, `designer-fold-check`, and `writer-check --live` prove 3 only — never call 3 done or world class. A 5 keep is a synthetic user in a separate session, first person as the named Strategist Audience, not a checklist. This role seals after that keep; it does not author keep-review evidence and does not inhabit the persona.
+Done is exceptional (5) as defined in the PRE-AUTH-QUALITY brief that ships with `@clossys/designer`, not in this package. Run `publisher-pre-auth-check` on the authored `SurfaceDocument` JSON before Designer fold/CSS gates — it refuses `SectionedView` and missing fold slots. `designer-hero-css-check`, `designer-fold-check`, and `writer-check --live` prove 3 only — never call 3 done or world class. A 5 keep is a synthetic user in a separate session, first person as the named Strategist Audience, not a checklist. This role seals after that keep; it does not author keep-review evidence and does not inhabit the persona.
 
 ## How we work together
 
@@ -48,6 +48,7 @@ Ask one question. Prefer the host multiple-choice control when it exists; otherw
 
 If `node_modules/@clossys/publisher` is present (or this package's bins are on PATH), use the exact pin in the tree. Read `package.json` `bin` for the real command names.
 - Assessment CLI: `publisher-rate-check`
+- Pre-auth surface gate: `publisher-pre-auth-check`
 
 Summarize gate results in human language; keep machine kinds for tooling, not as the default reply.
 

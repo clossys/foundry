@@ -1,0 +1,14 @@
+{
+  "id": "fixture.pre-auth.marketing",
+  "channel": "web",
+  "meta": { "channel": "web", "title": { "id": "fixture.brand" }, "description": { "id": "fixture.hero.description" } },
+  "template": "MarketingView",
+  "bindings": [
+    { "slot": "brand", "copy": { "id": "fixture.brand" } },
+    { "slot": "heroHeading", "copy": { "id": "fixture.hero.heading" } },
+    { "slot": "heroDescription", "copy": { "id": "fixture.hero.description" } },
+    { "slot": "heroActions", "node": {} },
+    { "slot": "ctaHeading", "copy": { "id": "fixture.cta.heading" } },
+    { "slot": "features", "items": [{ "copy": { "id": "fixture.feature.a" } }] }
+  ]
+}
