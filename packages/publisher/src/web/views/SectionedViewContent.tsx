@@ -292,16 +292,16 @@ interface SectionedViewRenderOptions {
 function resolveHeroMedia(media: ResolvedSectionedViewHeroMedia | undefined, path: string, options: SectionedViewRenderOptions): ReactNode {
   if (media === undefined) return undefined;
   if (typeof options.resolveAssetId !== "function") {
-    throw new Error(`${path}.media.assetId could not be resolved (options.resolveAssetId is missing).`);
+    throw new Error(`${path}.assetId could not be resolved (options.resolveAssetId is missing).`);
   }
   let looked: unknown;
   try {
     looked = options.resolveAssetId(media.assetId);
   } catch {
-    throw new Error(`${path}.media.assetId "${media.assetId}" could not be resolved.`);
+    throw new Error(`${path}.assetId "${media.assetId}" could not be resolved.`);
   }
   if (!isRenderAsset(looked)) {
-    throw new Error(`${path}.media.assetId "${media.assetId}" did not resolve to a paintable asset.`);
+    throw new Error(`${path}.assetId "${media.assetId}" did not resolve to a paintable asset.`);
   }
   return buildAssetElement(looked, { prefersReducedMotion: options.prefersReducedMotion, altOverride: media.alt });
 }
