@@ -328,12 +328,13 @@ test("a timed-out Unix process group cannot leave a grandchild that writes after
   const root = await mkdtemp(join(tmpdir(), "foundry-process-tree-timeout-"));
   const marker = join(root, "descendant-wrote");
   t.after(() => rm(root, { recursive: true, force: true }));
-  const grandchild = `const fs=require('node:fs'); setTimeout(()=>fs.writeFileSync(${JSON.stringify(marker)},'escaped'),500); setInterval(()=>{},1000);`;
+  const grandchild = `const fs=require('node:fs'); setTimeout(()=>fs.writeFileSync(${JSON.stringify(marker)},'escaped'),4000); setInterval(()=>{},1000);`;
   const parent = `const {spawn}=require('node:child_process'); spawn(process.execPath,['-e',${JSON.stringify(grandchild)}],{stdio:'ignore'}); process.stdout.write('grandchild-spawned'); setInterval(()=>{},1000);`;
-  const result = await runProcess(process.execPath, ["-e", parent], { timeout: 200 });
+  // Timeout 2000 covers boot, spawn, and the stdout write; delay 4000 is after that timeout; wait 4500 is after the delay.
+  const result = await runProcess(process.execPath, ["-e", parent], { timeout: 2000 });
   assert.equal(result.signal, "SIGKILL");
   assert.equal(result.stdout, "grandchild-spawned");
-  await new Promise((resolveDelay) => setTimeout(resolveDelay, 800));
+  await new Promise((resolveDelay) => setTimeout(resolveDelay, 4500));
   await assert.rejects(() => readFile(marker), /ENOENT/);
 });
 
