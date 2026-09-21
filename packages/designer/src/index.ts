@@ -131,6 +131,7 @@ export {
   PricingTable,
   Testimonial,
   ArticleBody,
+  SectionFrame,
   SECTION_GROUND_CLASSES,
 } from "./blocks/index.js";
 export type {
@@ -186,6 +187,8 @@ export type {
   PricingTableHeadingLevel,
   TestimonialProps,
   ArticleBodyProps,
+  SectionFrameProps,
+  SectionMeasure,
 } from "./blocks/index.js";
 
 export { Shell, Toaster, toast, SkipLink, SiteHeader, NavShell, SiteFooter } from "./shell/index.js";

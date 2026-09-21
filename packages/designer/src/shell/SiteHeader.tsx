@@ -1,5 +1,6 @@
 import type { HTMLAttributes, ReactNode } from "react";
 import { cx } from "../atoms/internal/cx.js";
+import { SHELL_GROUND_CLASSES, type ShellGround } from "./internal/shell-ground.js";
 import { UI_BORDER_HAIRLINE, UI_WIDTH_PAGE_PADDING_X, UI_Z_SHELL } from "./internal/shell-vars.js";
 
 export interface SiteHeaderProps extends Omit<HTMLAttributes<HTMLElement>, "children"> {
@@ -24,6 +25,11 @@ export interface SiteHeaderProps extends Omit<HTMLAttributes<HTMLElement>, "chil
    * `theme` — see `src/ladder.test.ts`), auth controls, a CTA `Button`.
    */
   actions?: ReactNode;
+  /**
+   * Semantic plate for the header bar — `inverse` for a dark hero band.
+   * @default "base"
+   */
+  ground?: ShellGround;
 }
 
 /**
@@ -48,11 +54,13 @@ export interface SiteHeaderProps extends Omit<HTMLAttributes<HTMLElement>, "chil
  * `brand`/`nav`/`actions` fillings of THIS component, not three values of
  * a prop on it.
  */
-export function SiteHeader({ brand, nav, actions, className, style, ...rest }: SiteHeaderProps) {
+export function SiteHeader({ brand, nav, actions, ground = "base", className, style, ...rest }: SiteHeaderProps) {
+  const colors = SHELL_GROUND_CLASSES[ground];
+
   return (
     <header
       {...rest}
-      className={cx("bg-surface-raised py-sm border-b border-line-base", className)}
+      className={cx(colors.surface, "py-sm border-b", colors.border, className)}
       style={{
         position: "relative",
         zIndex: UI_Z_SHELL,

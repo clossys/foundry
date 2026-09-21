@@ -1,5 +1,6 @@
 import type { HTMLAttributes, ReactNode } from "react";
 import { cx } from "../atoms/internal/cx.js";
+import { SHELL_GROUND_CLASSES, type ShellGround } from "./internal/shell-ground.js";
 import { UI_BORDER_HAIRLINE, UI_WIDTH_PAGE_PADDING_X, UI_Z_SHELL } from "./internal/shell-vars.js";
 
 export interface SiteFooterProps extends Omit<HTMLAttributes<HTMLElement>, "children"> {
@@ -15,6 +16,13 @@ export interface SiteFooterProps extends Omit<HTMLAttributes<HTMLElement>, "chil
    * `columns` is present.
    */
   secondary?: ReactNode;
+  /**
+   * Semantic plate for the footer bar — `inverse` paints the same
+   * surface/ink tokens grounded marketing blocks use. Do not reconstruct
+   * the plate with host `className` utilities.
+   * @default "base"
+   */
+  ground?: ShellGround;
 }
 
 /**
@@ -26,11 +34,13 @@ export interface SiteFooterProps extends Omit<HTMLAttributes<HTMLElement>, "chil
  * automatically at the top level, the same placement rule `Shell.Footer`
  * already carries.
  */
-function SiteFooterRoot({ columns, secondary, className, style, ...rest }: SiteFooterProps) {
+function SiteFooterRoot({ columns, secondary, ground = "base", className, style, ...rest }: SiteFooterProps) {
+  const colors = SHELL_GROUND_CLASSES[ground];
+
   return (
     <footer
       {...rest}
-      className={cx("bg-surface-raised py-lg border-t border-line-base", className)}
+      className={cx(colors.surface, colors.primary, "py-lg border-t", colors.border, className)}
       style={{
         position: "relative",
         zIndex: UI_Z_SHELL,
@@ -48,9 +58,10 @@ function SiteFooterRoot({ columns, secondary, className, style, ...rest }: SiteF
         {secondary ? (
           <div
             className={cx(
-              "flex flex-col gap-sm text-body-s text-ink-secondary",
+              "flex flex-col gap-sm text-body-s",
+              colors.secondary,
               "tablet:flex-row tablet:items-center tablet:justify-between",
-              columns ? "border-t border-line-base pt-lg" : "",
+              columns ? cx("border-t pt-lg", colors.border) : "",
             )}
           >
             {secondary}
@@ -83,7 +94,7 @@ export interface SiteFooterColumnProps {
 function SiteFooterColumn({ heading, children, className }: SiteFooterColumnProps) {
   return (
     <div className={cx("flex flex-col gap-sm", className)}>
-      <h2 className="text-body-s font-body font-medium text-ink-primary">{heading}</h2>
+      <h2 className="text-body-s font-body font-medium">{heading}</h2>
       <div className="flex flex-col gap-xs">{children}</div>
     </div>
   );

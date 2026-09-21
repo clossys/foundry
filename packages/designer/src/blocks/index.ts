@@ -116,3 +116,6 @@ export type { TestimonialProps } from "./Testimonial.js";
 
 export { ArticleBody } from "./ArticleBody.js";
 export type { ArticleBodyProps } from "./ArticleBody.js";
+
+export { SectionFrame } from "./SectionFrame.js";
+export type { SectionFrameProps, SectionMeasure } from "./SectionFrame.js";

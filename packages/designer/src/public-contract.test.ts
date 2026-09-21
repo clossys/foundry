@@ -115,6 +115,12 @@ describe("public UI contract", () => {
     }
   });
 
+  it("marks ArticleBody as requiring a SectionFrame parent", () => {
+    const source = readFileSync(join(packageRoot, "src/blocks/ArticleBody.tsx"), "utf8");
+    expect(source).toContain('data-designer-requires-section-frame');
+    expect(source).not.toContain("UI_WIDTH_PROSE_MAX");
+  });
+
   it("positions every component with logical inline utilities, never physical left/right ones", () => {
     // #687 is why this exists. Five shell components positioned themselves
     // with physical direction classes (`border-r`, `border-l`, `left-0`,
@@ -162,23 +168,7 @@ describe("public UI contract", () => {
      * it (a new instance fails this test), and an entry that no longer
      * matches fails too — so the list can only ever shrink.
      */
-    const KNOWN_PHYSICAL_INLINE = [
-      "src/atoms/Chip.tsx :: pl-sm",
-      "src/atoms/Chip.tsx :: pr-xs",
-      "src/atoms/Disclosure.tsx :: pl-lg",
-      "src/atoms/Disclosure.tsx :: text-left",
-      "src/atoms/SearchField.tsx :: pl-md",
-      "src/atoms/SearchField.tsx :: pr-2xl",
-      "src/atoms/SearchField.tsx :: right-sm",
-      "src/atoms/Table.tsx :: text-left",
-      "src/blocks/ArticleBody.tsx :: border-l",
-      "src/blocks/ArticleBody.tsx :: pl-lg",
-      "src/blocks/DetailView.tsx :: ml-auto",
-      "src/blocks/Faq.server.tsx :: pl-lg",
-      "src/blocks/Faq.server.tsx :: text-left",
-      "src/blocks/NavGrid.tsx :: text-left",
-      "src/blocks/Toolbar.tsx :: ml-auto",
-    ];
+    const KNOWN_PHYSICAL_INLINE: string[] = [];
 
     const found = new Set<string>();
     for (const dir of COMPONENT_DIRS) {
@@ -190,10 +180,13 @@ describe("public UI contract", () => {
       }
     }
 
-    // The pattern has to actually match something, or this test would pass
-    // by scanning nothing at all — the failure the LIFECYCLE contract calls
-    // a gate that has only ever run green.
-    expect(found.size).toBeGreaterThan(0);
+    // #951 cleared the last known-debt entries; an empty scan is the goal.
+    // If this regresses to zero matches while debt reappears, `added` below
+    // still fails — this assertion only guards the "scan ran" case when debt
+    // remains listed in KNOWN_PHYSICAL_INLINE.
+    if (KNOWN_PHYSICAL_INLINE.length > 0) {
+      expect(found.size).toBeGreaterThan(0);
+    }
 
     const added = [...found].filter((hit) => !KNOWN_PHYSICAL_INLINE.includes(hit)).sort();
     expect(

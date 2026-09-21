@@ -317,7 +317,7 @@ source file's own header for the exact probe and its result). Today that's:
 | Subpath | Server-safe members |
 | --- | --- |
 | `@clossys/designer/atoms/server` | `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Skeleton`, `Spinner`, `mergeUiClasses` |
-| `@clossys/designer/blocks/server` | `ArticleBody`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `MarketingChapter`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `SectionHeader`, `Stat`, `StatusList` |
+| `@clossys/designer/blocks/server` | `ArticleBody`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `MarketingChapter`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `SectionFrame`, `SectionHeader`, `Stat`, `StatusList` |
 | `@clossys/designer/shell/server` | `Shell`, `SiteFooter`, `SiteHeader`, `SkipLink` |
 | `@clossys/designer/charts/server` | `ChartFrame`, `Sparkline` |
 | `@clossys/designer/theme/server` | `getThemeInitScript` |
@@ -2766,20 +2766,44 @@ pairing already establishes elsewhere in this package. Rendered through
 this package's own `Avatar` atom, which independently requires `alt` at
 its own type level too.
 
+### `SectionFrame`
+
+```tsx
+import { ArticleBody, SectionFrame, Stat } from "@clossys/designer/blocks";
+
+function MarketingChapter() {
+  return (
+    <SectionFrame ground="base" measure="prose">
+      <ArticleBody>
+        <h2>Section heading text</h2>
+        <p>Body copy goes here.</p>
+      </ArticleBody>
+    </SectionFrame>
+  );
+}
+```
+
+Full-bleed marketing section band: `ground`, horizontal page padding,
+vertical section rhythm, and a measured inner column (`content`, `wide`,
+or `prose`). Compose `ArticleBody`, `Stat`, and other blocks that do not
+own their own band inside this — not a host `className` wrapper.
+
 ### `ArticleBody`
 
 ```tsx
-import { ArticleBody } from "@clossys/designer/blocks";
+import { ArticleBody, SectionFrame } from "@clossys/designer/blocks";
 
 function ArticlePage() {
   return (
-    <ArticleBody>
-      <h2>Section heading text</h2>
-      <p>Body copy goes here.</p>
-      <ul>
-        <li>List item text</li>
-      </ul>
-    </ArticleBody>
+    <SectionFrame measure="prose">
+      <ArticleBody>
+        <h2>Section heading text</h2>
+        <p>Body copy goes here.</p>
+        <ul>
+          <li>List item text</li>
+        </ul>
+      </ArticleBody>
+    </SectionFrame>
   );
 }
 ```
@@ -2796,10 +2820,7 @@ shape into these elements in the first place — is explicitly out of scope
 here and belongs to a separate, already-filed proposal in
 `@clossys/publisher` instead.
 
-Content is constrained to this package's own `--ui-width-prose-max` token
-(48rem default) — the same "case 2, no Tailwind namespace" raw `var()`
-read `Shell.Main`'s own `--ui-width-content-max` uses, applied via inline
-`style` for the same reason. A page can hold two `ArticleBody`s (a main
+Measure and section padding come from the parent `SectionFrame` (`measure="prose"` for long-form copy). This component only applies typography. A page can hold two `ArticleBody`s (a main
 article plus a sidebar callout, or two comparison columns), which is what
 keeps it at this layer rather than being a view (test 3).
 
@@ -3359,6 +3380,10 @@ for the one real trade-off this design makes (`children` renders twice,
 once per breakpoint's own nav, so exactly one is ever visible and
 reachable at a time) and why it's the correct one given this package's
 "no JS-dependent layout" rule.
+
+`SiteFooter` accepts `ground` (`base` | `inverse`, default `base`) — use
+it for the common inverse footer plate instead of reconstructing
+`bg-surface-inverse` and ink utilities in host `className`.
 
 `SiteFooter` renders a real `<footer>` — the page's `contentinfo`
 landmark, the same top-level-placement rule `SiteHeader` follows. Two

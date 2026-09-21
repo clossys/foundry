@@ -5,6 +5,14 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.4.22] - 2026-09-21
+
+### Changed
+
+- Web golden markup for `MarketingView` and `SectionedView` matches Designer
+  0.4.16 logical inline utilities (`text-start`, `ps-lg`) and shell footer
+  ink on inverse-ground plates.
+
 ## [0.4.21] - 2026-09-21
 
 ### Fixed

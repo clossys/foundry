@@ -69,10 +69,10 @@ describe("SearchField", () => {
   });
 
   it("forwards inputClassName onto the input, and the consumer's conflicting class wins the merge", () => {
-    render(<SearchField label="Search prompts" inputClassName="pl-2xl" />);
+    render(<SearchField label="Search prompts" inputClassName="ps-2xl" />);
     const input = screen.getByRole("searchbox", { name: /Search prompts/ });
-    expect(input.className).toContain("pl-2xl");
-    expect(input.className).not.toContain("pl-md");
+    expect(input.className).toContain("ps-2xl");
+    expect(input.className).not.toContain("ps-md");
   });
 
   it("disabled: the input is disabled and does not accept typing", async () => {
