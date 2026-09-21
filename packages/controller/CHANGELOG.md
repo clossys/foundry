@@ -5,17 +5,22 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.12] - 2026-09-21
+
+### Added
+
+- Ships the packed Agent Skill in the tarball (`files` includes `skill`).
+- Vendor skill names (`clossys-<package>`, exactly two segments) validate via
+  optional `SkillOptions.vendorPackages` without renaming into the account
+  grammar; three-segment `clossys-*` names still follow prefix collision rules.
+  List `clossys` in `reservedNamespaces` so no account can register that prefix.
+
 ## [0.9.11] - 2026-09-21
 
 ### Added
 
 - The role-loop charter (`contracts/role-loop-archetypes.json`) now includes
   `@clossys/customer` as the nineteenth role, with job, metric, and boundary.
-- Ships the packed Agent Skill in the tarball (`files` includes `skill`).
-- Vendor skill names (`clossys-<package>`, exactly two segments) validate via
-  optional `SkillOptions.vendorPackages` without renaming into the account
-  grammar; three-segment `clossys-*` names still follow prefix collision rules.
-  List `clossys` in `reservedNamespaces` so no account can register that prefix.
 
 ### Notes
 

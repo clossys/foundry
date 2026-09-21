@@ -5,6 +5,12 @@ All notable changes to `@clossys/integrator` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.2] - 2026-09-21
+
+### Added
+
+- Ships the packed Agent Skill in the tarball (`files` includes `skill`).
+
 ## [0.7.1] - 2026-09-21
 
 ### Added
@@ -15,7 +21,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   every `extra` judgment, including allowlisted foundation installs.
   `foldCurrencyDelta` accepts the same allowlist on both scopes. Omitted or
   empty `expectedExtras` preserves prior behavior.
-- Ships the packed Agent Skill in the tarball (`files` includes `skill`).
 
 ## [0.7.0] - 2026-09-19
 
