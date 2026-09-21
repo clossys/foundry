@@ -453,13 +453,14 @@ npx strategist-check brand-coverage ./brand-derivations.json ./brandable-slots.j
 ```
 
 ```
-Usage: strategist-check brand-coverage <derivations-file> <brandable-slots-file>
+Usage: strategist-check brand-coverage <derivations-file> <brandable-slots-file> [--surfaces <file>]
 
   derivations-file      Path to a JSON file containing an array of BrandDerivation objects. Required.
   brandable-slots-file  Path to a JSON file containing an array of brandable token-slot name strings. Required.
 
 Options:
   --help                 Print this message and exit 0.
+  --surfaces <file>      Designer-facing surface that must contain do-not language (repeatable). Slot N/N is necessary, not sufficient.
 ```
 
 `derivations-file` is the JSON serialization of a `BrandDerivation[]` (see
