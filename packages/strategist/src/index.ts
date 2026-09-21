@@ -123,6 +123,7 @@ export type {
 export type {
   FactsGateFinding,
   FactsGateIgnored,
+  FactsGateOptions,
   FactsGateResult,
   FactsGateRule,
   ScannedFile,

@@ -53,6 +53,12 @@ describe("parseArgs", () => {
     ]);
   });
 
+  it("collects repeatable --exclude globs", () => {
+    expect(parseArgs(["./strategy", "--exclude", "**/*.test.ts", "--exclude", "**/fixtures/**"]).excludeGlobs).toEqual(
+      ["**/*.test.ts", "**/fixtures/**"],
+    );
+  });
+
   it("throws CliInputError when --extensions is given without a value", () => {
     expect(() => parseArgs([strategyDir, "--extensions"])).toThrow(CliInputError);
   });
@@ -140,6 +146,15 @@ describe("main — real runs", () => {
     mkdirSync(nested, { recursive: true });
     writeFileSync(join(nested, "readme.md"), "We now serve 9,999 customers.");
     expect(main([strategyDir, scanDir, "--skip-dirs", "vendor"])).toBe(0);
+  });
+
+  it("honors --exclude to omit test paths from the scan", () => {
+    writeFileSync(join(strategyDir, "facts.json"), JSON.stringify([validFact]));
+    writeFileSync(join(scanDir, "about.md"), "We now serve 4,200 customers.");
+    mkdirSync(join(scanDir, "src"), { recursive: true });
+    writeFileSync(join(scanDir, "src", "widget.test.ts"), "We now serve 9,999 customers.");
+    expect(main([strategyDir, scanDir, "--exclude", "**/*.test.ts"])).toBe(0);
+    expect(main([strategyDir, scanDir])).toBe(1);
   });
 });
 

@@ -266,6 +266,21 @@ PRE-AUTH-QUALITY exceptional synthetic user does not author keep-review evidence
   assert.ok(result.findings.some((f) => f.rule === "pre-auth-no-self-certify"));
 });
 
+test("strategist skill must state brand-coverage is necessary not sufficient, not keep without do-nots, and name --surfaces", () => {
+  const result = evaluatePackageSkills([
+    {
+      packageDir: "strategist",
+      skillPath: "/tmp/ignored",
+      expectedName: "clossys-strategist",
+      skillText: validSkill("clossys-strategist", "Strategy traceability."),
+    },
+  ]);
+  assert.equal(result.exitCode, 1);
+  assert.ok(result.findings.some((f) => f.rule === "strategist-brand-coverage-necessary"));
+  assert.ok(result.findings.some((f) => f.rule === "strategist-brand-surfaces-do-not"));
+  assert.ok(result.findings.some((f) => f.rule === "strategist-brand-not-keep"));
+});
+
 test("expression-wave skills must reference PRE-AUTH-QUALITY, exceptional, synthetic user, and not author keep-review", () => {
   const result = evaluatePackageSkills([
     {
