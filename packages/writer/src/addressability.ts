@@ -737,14 +737,15 @@ export function extractAddressabilityCandidates(content: string, filePath: strin
     const propName = objectLiteralPropertyName(content, start);
     if (propName === undefined) continue;
     const normalizedProp = normalizeAttrName(propName);
-    objectLiteralClaimed.add(`${c.line}::${c.raw}`);
     if (ALLOWLISTED_OBJECT_LITERAL_KEYS.has(normalizedProp) || looksLikeAllowlistedConstantValue(c.raw)) {
+      objectLiteralClaimed.add(`${c.line}::${c.raw}`);
       continue;
     }
     if (!COPY_BEARING_OBJECT_KEYS.has(normalizedProp)) continue;
     if (isDestructuringOrParameterDefault(lines, c.line, c.raw)) continue;
     if (!hasProse(c.raw)) continue;
     const keyPath = objectLiteralKeyPath(content, start, propName);
+    objectLiteralClaimed.add(`${c.line}::${c.raw}`);
     violations.push({
       file: c.file,
       line: c.line,
