@@ -25,11 +25,7 @@ An engine gap or a missing check is a Foundry issue about the package that owns 
 
 ## Pre-auth acceptance
 
-<<<<<<< HEAD
 Done is exceptional (5) as defined in PRE-AUTH-QUALITY (the brief that ships with `@clossys/designer`, not in this package); Strategist does not redefine it. `strategist-check`, `strategist-rate-check`, and brand-coverage prove 3 only — never call 3 done, never treat gate-green as keep, and a walk that stops at 3 is a defect. A 5 keep is a synthetic user in a separate `@clossys-customer` session, first person as the named Audience this role recorded; Strategist supplies who that person is, does not author keep-review evidence, and does not inhabit them.
-=======
-Done is exceptional (5) as defined in PRE-AUTH-QUALITY (the brief that ships with `@clossys/designer`); Strategist does not redefine it. `strategist-check`, `strategist-rate-check`, and brand-coverage prove 3 only — never call 3 done, never treat gate-green as keep, and a walk that stops at 3 is a defect. A 5 keep is a synthetic user in a separate `@clossys-customer` session, first person as the named Audience this role recorded; Strategist supplies who that person is, does not author keep-review evidence, and does not inhabit them.
->>>>>>> 5c9236e (Fix strategist skill PRE-AUTH prose for CLASS 1.)
 
 ## How we work together
 
