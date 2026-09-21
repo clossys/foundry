@@ -89,6 +89,58 @@ function validateSkillName(name, expectedName, packageDir) {
   return findings;
 }
 
+const EXPRESSION_WAVE = new Set(["designer", "writer", "publisher", "strategist"]);
+
+function validateSkillBody(packageDir, text) {
+  const findings = [];
+  if (packageDir === "customer") {
+    const inhabit =
+      /\bi am\b/i.test(text) ||
+      (/named/i.test(text) && /audience/i.test(text)) ||
+      /synthetic/i.test(text);
+    if (!inhabit) {
+      findings.push({
+        rule: "customer-inhabit-language",
+        packageDir,
+        message: "customer skill must speak first-person inhabit of a named Audience (I am / named Audience / synthetic)",
+      });
+    }
+    if (!/clossys-customer/.test(text)) {
+      findings.push({
+        rule: "customer-invoke-name",
+        packageDir,
+        message: "customer skill must mention clossys-customer as the invoke name",
+      });
+    }
+    if (/\b(?:you are|i am)(?: a| the)? reviewer\b/i.test(text)) {
+      findings.push({
+        rule: "customer-not-reviewer",
+        packageDir,
+        message: "customer skill must not describe itself as a reviewer",
+      });
+    }
+    for (const intent of ["feedback", "compare", "refer", "churn", "adopt", "worth"]) {
+      if (!new RegExp(`\\b${intent}\\b`, "i").test(text)) {
+        findings.push({
+          rule: "customer-speed-dial-intents",
+          packageDir,
+          message: `customer skill must name speed-dial intent "${intent}"`,
+        });
+      }
+    }
+  }
+  if (EXPRESSION_WAVE.has(packageDir) || packageDir === "inspector") {
+    if (!/clossys-customer/.test(text)) {
+      findings.push({
+        rule: "expression-customer-session",
+        packageDir,
+        message: "must name clossys-customer as the independent first-person inhabit session",
+      });
+    }
+  }
+  return findings;
+}
+
 /** Pure evaluation for tests and CLI. */
 export function evaluatePackageSkills(packages) {
   const findings = [];
@@ -124,6 +176,7 @@ export function evaluatePackageSkills(packages) {
             message: "disable-model-invocation: true is required (advisor may omit or set false)",
           });
         }
+        pkgFindings.push(...validateSkillBody(packageDir, text));
       }
     }
     if (pkgFindings.length === 0) {

@@ -26,6 +26,10 @@
       "status": "active"
     },
     {
+      "name": "@clossys/customer",
+      "status": "active"
+    },
+    {
       "name": "@clossys/designer",
       "status": "active"
     },

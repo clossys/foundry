@@ -285,7 +285,7 @@ test("a new export subpath is a clearable optional-peer policy finding, not an u
 
 test("the repository omission matrix is closed against every current publishable manifest", async () => {
   const packages = await discoverPublishablePackages(process.cwd());
-  assert.equal(packages.length, 20);
+  assert.equal(packages.length, 21);
   assert.deepEqual(validateOptionalPeerPolicy(packages, OPTIONAL_PEER_POLICY), []);
 });
 

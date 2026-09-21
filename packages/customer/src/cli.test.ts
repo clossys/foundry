@@ -1,0 +1,177 @@
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { main } from "./cli.js";
+
+const dirs: string[] = [];
+
+const audience = {
+  id: "audience-one",
+  name: "Maya Chen",
+  description: "A product lead evaluating onboarding.",
+};
+
+function cleanKeep(overrides: Record<string, unknown> = {}) {
+  return {
+    speaker: "customer",
+    inhabitedAs: "target-audience",
+    audienceId: "audience-one",
+    persona: { name: "Maya Chen" },
+    stance: "I came to see whether this is for me.",
+    impressions: {
+      firstSeconds: "Immediate clarity.",
+      isThisForMe: "yes",
+      doIBelieve: "yes",
+      wouldIStay: "yes",
+      wouldITellAPeer: "yes",
+    },
+    visual: { impression: "Looks intentional." },
+    verbal: { impression: "Sounds human." },
+    verdict: "keep",
+    ...overrides,
+  };
+}
+
+function jsonPair(keep: unknown, aud = audience): [string, string] {
+  const dir = mkdtempSync(join(tmpdir(), "customer-check-"));
+  dirs.push(dir);
+  const keepPath = join(dir, "keep.json");
+  const audiencePath = join(dir, "audience.json");
+  writeFileSync(keepPath, JSON.stringify(keep));
+  writeFileSync(audiencePath, JSON.stringify(aud));
+  return [keepPath, audiencePath];
+}
+
+afterEach(() => {
+  vi.restoreAllMocks();
+  for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true });
+});
+
+describe("customer-check main()", () => {
+  it("returns 0 for a satisfied keep form", () => {
+    vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const [keepPath, audiencePath] = jsonPair(cleanKeep());
+    expect(main([keepPath, audiencePath])).toBe(0);
+  });
+
+  it("returns 1 for inhabit findings", () => {
+    vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const [keepPath, audiencePath] = jsonPair(cleanKeep({ speaker: "qa" }));
+    expect(main([keepPath, audiencePath])).toBe(1);
+  });
+
+  it("returns 2 for wrong argv count and missing files", () => {
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    expect(main([])).toBe(2);
+    expect(main(["only-one.json"])).toBe(2);
+    const [keepPath] = jsonPair(cleanKeep());
+    expect(main([keepPath, join(tmpdir(), "missing-audience.json")])).toBe(2);
+  });
+
+  it("returns 0 for --help", () => {
+    vi.spyOn(console, "log").mockImplementation(() => undefined);
+    expect(main(["--help"])).toBe(0);
+  });
+
+  it("returns 0 for lived feedback and 1 for empty compare alternatives", () => {
+    vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const feedback = cleanKeep({
+      intent: "feedback",
+      topic: "the checkout flow",
+      familiarity: "returning",
+      functional: [{ happened: "The button did nothing.", expected: "The next step." }],
+      experience: ["I felt stuck."],
+      expectations: [],
+      blockedMe: "yes",
+      whatIDidInstead: "I clicked twice more, then left.",
+      wantedInstead: "The next step.",
+      stillForMe: "yes",
+    });
+    const [feedbackPath, audiencePath] = jsonPair(feedback);
+    expect(main([feedbackPath, audiencePath])).toBe(0);
+
+    const compare = cleanKeep({
+      intent: "compare",
+      topic: "competitors",
+      familiarity: "returning",
+      alternatives: [],
+      versus: "I have no one to put this next to.",
+      whatTheyDoBetter: "Nothing I can name, because I have no one to put this next to.",
+      whatThisDoesBetter: "The first screen is calmer.",
+      whenIReachForThem: "I do not, because I have no one.",
+      switchingCost: "I would not know where to go.",
+      iWouldSwitch: "no",
+      whatKeepsMeHere: "Habit.",
+      whatWouldMakeMeSwitch: "A reason.",
+    });
+    const [comparePath, compareAudience] = jsonPair(compare);
+    expect(main([comparePath, compareAudience])).toBe(1);
+  });
+
+  it("returns 2 for an unknown intent", () => {
+    vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const [keepPath, audiencePath] = jsonPair(cleanKeep({ intent: "audit" }));
+    expect(main([keepPath, audiencePath])).toBe(2);
+  });
+});
+
+describe("customer-check bin entry point (installed-symlink topology)", () => {
+  let binPath: string;
+  let installRoot: string;
+  const evidenceDirs: string[] = [];
+
+  beforeAll(() => {
+    const packageRoot = fileURLToPath(new URL("..", import.meta.url));
+    const compiler = fileURLToPath(new URL("../../../node_modules/typescript/bin/tsc", import.meta.url));
+    const built = spawnSync(process.execPath, [compiler, "-p", "tsconfig.json"], { cwd: packageRoot, encoding: "utf8" });
+    if (built.status !== 0) throw new Error(`customer build failed: ${built.stderr || built.stdout}`);
+    const realCli = join(packageRoot, "dist", "cli.js");
+
+    installRoot = mkdtempSync(join(tmpdir(), "customer-check-install-"));
+    const dotBin = join(installRoot, "node_modules", ".bin");
+    mkdirSync(dotBin, { recursive: true });
+    binPath = join(dotBin, "customer-check");
+    symlinkSync(realCli, binPath);
+  });
+
+  afterAll(() => {
+    rmSync(installRoot, { recursive: true, force: true });
+  });
+
+  afterEach(() => {
+    for (const dir of evidenceDirs.splice(0)) rmSync(dir, { recursive: true, force: true });
+  });
+
+  function pair(keep: unknown): [string, string] {
+    const dir = mkdtempSync(join(tmpdir(), "customer-check-bin-"));
+    evidenceDirs.push(dir);
+    const keepPath = join(dir, "keep.json");
+    const audiencePath = join(dir, "audience.json");
+    writeFileSync(keepPath, JSON.stringify(keep));
+    writeFileSync(audiencePath, JSON.stringify(audience));
+    return [keepPath, audiencePath];
+  }
+
+  it("prints usage and exits 0 for --help", () => {
+    const result = spawnSync(process.execPath, [binPath, "--help"], { encoding: "utf8" });
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain("Usage: customer-check");
+  });
+
+  it("red case: exits 1 with a violated report", () => {
+    const [keepPath, audiencePath] = pair(cleanKeep({ impressions: { ...cleanKeep().impressions, wouldIStay: "no" } }));
+    const result = spawnSync(process.execPath, [binPath, keepPath, audiencePath], { encoding: "utf8" });
+    expect(result.status).toBe(1);
+    expect(JSON.parse(result.stdout)).toMatchObject({ state: "violated" });
+  });
+
+  it("clean case: exits 0 with a satisfied report", () => {
+    const [keepPath, audiencePath] = pair(cleanKeep());
+    const result = spawnSync(process.execPath, [binPath, keepPath, audiencePath], { encoding: "utf8" });
+    expect(result.status).toBe(0);
+    expect(JSON.parse(result.stdout)).toMatchObject({ state: "satisfied" });
+  });
+});

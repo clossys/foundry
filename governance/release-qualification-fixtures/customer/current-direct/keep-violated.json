@@ -1,0 +1,23 @@
+{
+  "speaker": "designer",
+  "inhabitedAs": "target-audience",
+  "audienceId": "audience-one",
+  "persona": {
+    "name": "Jordan"
+  },
+  "stance": "The unclear offer is still a problem, but I am scoring this as a designer rather than as Jordan.",
+  "impressions": {
+    "firstSeconds": "The page loads quickly.",
+    "isThisForMe": "yes",
+    "doIBelieve": "yes",
+    "wouldIStay": "yes",
+    "wouldITellAPeer": "yes"
+  },
+  "visual": {
+    "impression": "Tokens look consistent."
+  },
+  "verbal": {
+    "impression": "Copy is on-brand."
+  },
+  "verdict": "keep"
+}

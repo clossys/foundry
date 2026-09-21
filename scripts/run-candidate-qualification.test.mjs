@@ -33,7 +33,7 @@ test("repository Trio policy, adapters, and current-candidate fixtures bind the 
   const expected = [
     ["advisor", "@clossys/advisor", "0.2.7"],
     ["starter", "@clossys/starter", "0.1.8"],
-    ["controller", "@clossys/controller", "0.9.10"],
+    ["controller", "@clossys/controller", "0.9.11"],
   ];
 
   for (const [key, name, version] of expected) {
@@ -68,7 +68,7 @@ test("repository Trio policy, adapters, and current-candidate fixtures bind the 
   assert.equal(duplicateLock.packages["node_modules/@example/consumer/node_modules/@clossys/controller"].version, "0.8.22");
 });
 
-test("all 20 publishable packages are exact-source bound to the catalogue and qualification policy", async () => {
+test("all 21 publishable packages are exact-source bound to the catalogue and qualification policy", async () => {
   const policy = await repositoryJson("governance/release-qualification-policy.json");
   const catalog = await repositoryJson("governance/release-catalog.json");
   const expectedVersions = {
@@ -78,7 +78,8 @@ test("all 20 publishable packages are exact-source bound to the catalogue and qu
     "@clossys/bouncer": "0.1.9",
     "@clossys/builder": "0.8.0",
     "@clossys/butler": "0.1.6",
-    "@clossys/controller": "0.9.10",
+    "@clossys/controller": "0.9.11",
+    "@clossys/customer": "0.1.0",
     "@clossys/designer": "0.4.7",
     "@clossys/giver": "0.1.6",
     "@clossys/influencer": "0.1.6",
@@ -96,7 +97,7 @@ test("all 20 publishable packages are exact-source bound to the catalogue and qu
   const packageKeys = (await readdir(new URL("../packages", import.meta.url))).sort();
   const manifests = await Promise.all(packageKeys.map((key) => repositoryJson(`packages/${key}/package.json`)));
   const target = catalog.targets.find((item) => item.id === catalog.defaultTarget);
-  assert.equal(manifests.filter((manifest) => manifest.private !== true).length, 20);
+  assert.equal(manifests.filter((manifest) => manifest.private !== true).length, 21);
   assert.deepEqual(Object.keys(policy.packages).sort(), Object.keys(expectedVersions).sort());
   assert.deepEqual(validateReleaseQualificationPolicy(policy), []);
   assert.deepEqual(validateReleaseQualificationPortfolio({ policy, manifests, releasePackages: target.packages }), []);
