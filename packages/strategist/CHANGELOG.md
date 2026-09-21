@@ -5,6 +5,12 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.3.2] - 2026-09-21
+
+### Fixed
+
+- `DirectionSubject.file` is a closed vocabulary of strategy record files; `facts.json` is rejected at validation. Handoff resolves `brand.json` (attribute id), `constraints.json`, and `roadmap.json` subjects.
+
 ## [0.3.1] - 2026-09-21
 
 ### Fixed

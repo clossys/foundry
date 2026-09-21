@@ -247,6 +247,20 @@ describe("validateDirectionEntity", () => {
     expect(validateDirectionEntity("vision").ok).toBe(false);
     expect(validateDirectionEntity(null).ok).toBe(false);
   });
+
+  it("rejects facts.json as a direction subject file", () => {
+    const result = validateDirectionEntity({
+      ...base,
+      subject: { file: "facts.json", id: "active-customers" },
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      const fileIssue = result.issues.find((issue) => issue.path.endsWith("subject.file"));
+      expect(fileIssue?.message).toMatch(/must be one of/);
+      expect(fileIssue?.message).toContain("audiences.json");
+      expect(fileIssue?.message).toContain("roadmap.json");
+    }
+  });
 });
 
 describe("validateDirectionEntities", () => {

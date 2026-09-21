@@ -5,7 +5,7 @@
  */
 
 import type { StrategyBundle, StrategyReadIssue } from "./reader.js";
-import type { DirectionEntity, StrategistClaim } from "./schema.js";
+import type { DirectionEntity, DirectionSubjectFile, StrategistClaim } from "./schema.js";
 
 export interface HandoffFinding {
   message: string;
@@ -26,7 +26,7 @@ function approvedClaims(claims: StrategistClaim[] | undefined): StrategistClaim[
   return (claims ?? []).filter((claim) => claim.status === "approved");
 }
 
-function resolveSubject(bundle: StrategyBundle, file: string, id: string): boolean {
+function resolveSubject(bundle: StrategyBundle, file: DirectionSubjectFile, id: string): boolean {
   switch (file) {
     case "audiences.json":
       return (bundle.audiences ?? []).some((row) => row.id === id);
@@ -36,10 +36,14 @@ function resolveSubject(bundle: StrategyBundle, file: string, id: string): boole
       return bundle.positioning !== undefined && id === "positioning";
     case "claims.json":
       return (bundle.claims ?? []).some((row) => row.id === id);
+    case "constraints.json":
+      return (bundle.constraints ?? []).some((row) => row.id === id);
+    case "brand.json":
+      return (bundle.brand?.attributes ?? []).some((row) => row.id === id);
     case "mission.json":
       return bundle.mission !== undefined && id === "mission";
-    default:
-      return false;
+    case "roadmap.json":
+      return (bundle.roadmap ?? []).some((row) => row.id === id);
   }
 }
 

@@ -683,8 +683,22 @@ export function validateStrategyConstraints(value: unknown): ValidationResult<St
 
 // --------------------------------------------------------------- direction
 
+/** Strategy files a direction `subject` may point at. `facts.json` is intentionally absent — facts are not direction subjects. */
+export const DIRECTION_SUBJECT_FILES = [
+  "audiences.json",
+  "markets.json",
+  "positioning.json",
+  "claims.json",
+  "constraints.json",
+  "brand.json",
+  "mission.json",
+  "roadmap.json",
+] as const;
+
+export type DirectionSubjectFile = (typeof DIRECTION_SUBJECT_FILES)[number];
+
 export interface DirectionSubject {
-  file: string;
+  file: DirectionSubjectFile;
   id: string;
 }
 
@@ -704,9 +718,16 @@ function readDirectionSubject(value: unknown, path: string, issues: ValidationIs
     return undefined;
   }
   const file = requireString(value.file, `${path}.file`, issues, { minLength: 1 });
+  if (file !== undefined && !(DIRECTION_SUBJECT_FILES as readonly string[]).includes(file)) {
+    pushIssue(
+      issues,
+      `${path}.file`,
+      `must be one of ${DIRECTION_SUBJECT_FILES.join(", ")}, got ${JSON.stringify(file)}`,
+    );
+  }
   const id = requireString(value.id, `${path}.id`, issues, { minLength: 1 });
   if (issues.length > start) return undefined;
-  return { file: file as string, id: id as string };
+  return { file: file as DirectionSubjectFile, id: id as string };
 }
 
 function readDirectionEntity(value: unknown, path: string, issues: ValidationIssue[]): DirectionEntity | undefined {

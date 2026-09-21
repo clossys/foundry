@@ -55,6 +55,7 @@
  */
 
 export {
+  DIRECTION_SUBJECT_FILES,
   ROADMAP_STATUSES,
   validateAudience,
   validateAudiences,
@@ -85,6 +86,7 @@ export type {
   BrandEssence,
   DirectionEntity,
   DirectionSubject,
+  DirectionSubjectFile,
   Fact,
   Market,
   Mission,

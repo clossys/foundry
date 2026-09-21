@@ -95,6 +95,71 @@ describe("checkStrategyHandoff", () => {
     expect(checkStrategyHandoff(bundle).ok).toBe(false);
   });
 
+  it("resolves a direction subject pointing at a brand attribute", () => {
+    writeHandoffReady(dir);
+    writeFileSync(
+      join(dir, "direction.json"),
+      JSON.stringify([
+        {
+          id: "direction-2026-h1",
+          subject: { file: "brand.json", id: "precise" },
+          decidedOn: "2026-01-05",
+          derivesFrom: [],
+        },
+      ]),
+    );
+    const bundle = readStrategy(dir);
+    expect(checkStrategyHandoff(bundle).ok).toBe(true);
+  });
+
+  it("resolves a direction subject pointing at a constraint", () => {
+    writeHandoffReady(dir);
+    writeFileSync(
+      join(dir, "constraints.json"),
+      JSON.stringify([
+        {
+          id: "no-hype",
+          target: "copy",
+          instruction: "Do not use superlatives without a cited fact or approved claim.",
+        },
+      ]),
+    );
+    writeFileSync(
+      join(dir, "direction.json"),
+      JSON.stringify([
+        {
+          id: "direction-2026-h1",
+          subject: { file: "constraints.json", id: "no-hype" },
+          decidedOn: "2026-01-05",
+          derivesFrom: [],
+        },
+      ]),
+    );
+    const bundle = readStrategy(dir);
+    expect(checkStrategyHandoff(bundle).ok).toBe(true);
+  });
+
+  it("resolves a direction subject pointing at a roadmap item", () => {
+    writeHandoffReady(dir);
+    writeFileSync(
+      join(dir, "roadmap.json"),
+      JSON.stringify([{ id: "self-serve-onboarding", title: "Self-serve onboarding", status: "now" }]),
+    );
+    writeFileSync(
+      join(dir, "direction.json"),
+      JSON.stringify([
+        {
+          id: "direction-2026-h1",
+          subject: { file: "roadmap.json", id: "self-serve-onboarding" },
+          decidedOn: "2026-01-05",
+          derivesFrom: [],
+        },
+      ]),
+    );
+    const bundle = readStrategy(dir);
+    expect(checkStrategyHandoff(bundle).ok).toBe(true);
+  });
+
   it("fails handoff on dangling positioning audience ids", () => {
     writeHandoffReady(dir);
     writeFileSync(
