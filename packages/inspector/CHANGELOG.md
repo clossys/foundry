@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Skill: Inspector judges declared rules, not target-audience fitness keep.
+- Skill: Inspector judges declared rules, not a synthetic-user keep.
 
 ## [0.2.6] - 2026-09-19
 

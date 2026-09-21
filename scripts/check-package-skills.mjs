@@ -96,9 +96,9 @@ const PRE_AUTH_HEADING = /^## Pre-auth page[ \t]*$/m;
 const PUBLISHER_PRE_AUTH_MARKETING_VIEW = /MarketingView/;
 const PRE_AUTH_QUALITY_REF = /PRE-AUTH-QUALITY(?:\.md)?/;
 const PRE_AUTH_EXCEPTIONAL = /\bexceptional\b/i;
-const PRE_AUTH_INDEPENDENT_QA = /independent QA/i;
+const PRE_AUTH_SYNTHETIC_USER = /synthetic user/i;
 const PRE_AUTH_NO_AUTHOR_KEEP = /does not author keep-review|do not author keep-review/i;
-const INSPECTOR_QA_BOUNDARY = /independent QA/i;
+const INSPECTOR_USER_BOUNDARY = /synthetic user/i;
 
 function validateSkillBody(packageDir, text) {
   const findings = [];
@@ -208,11 +208,11 @@ export function evaluatePackageSkills(packages) {
               message: "expression-wave skill must state that done is exceptional (5), not good (3)",
             });
           }
-          if (!PRE_AUTH_INDEPENDENT_QA.test(text)) {
+          if (!PRE_AUTH_SYNTHETIC_USER.test(text)) {
             pkgFindings.push({
-              rule: "pre-auth-independent-qa",
+              rule: "pre-auth-synthetic-user",
               packageDir,
-              message: "expression-wave skill must name independent QA as the keep, not a Designer or Writer self-review",
+              message: "expression-wave skill must name a synthetic user as the keep, not a hired QA or a self-review",
             });
           }
           if (!PRE_AUTH_NO_AUTHOR_KEEP.test(text)) {
@@ -230,11 +230,11 @@ export function evaluatePackageSkills(packages) {
             message: "publisher skill Pre-auth page section must name MarketingView as the pre-auth template",
           });
         }
-        if (packageDir === "inspector" && !INSPECTOR_QA_BOUNDARY.test(text)) {
+        if (packageDir === "inspector" && !INSPECTOR_USER_BOUNDARY.test(text)) {
           pkgFindings.push({
-            rule: "inspector-qa-boundary",
+            rule: "inspector-user-boundary",
             packageDir,
-            message: "inspector skill must cede target-audience keep to independent QA — Inspector judges rules, not fitness",
+            message: "inspector skill must cede target-audience keep to a synthetic user — Inspector judges rules, not a person landing on the page",
           });
         }
       }

@@ -12,8 +12,8 @@ All notable changes to this package are documented here. Format follows
 - `strategist-check brand-coverage --surfaces <path>`: requires do-not
   language on Designer-facing surfaces; slot N/N alone is reported as
   necessary, not sufficient.
-- Skill: Audience records are the persona source for an independent QA keep;
-  Strategist does not inhabit that persona.
+- Skill: Audience records name who the synthetic user is;
+  Strategist does not inhabit that person.
 
 ## [0.2.0] - 2026-09-19
 
