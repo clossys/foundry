@@ -480,6 +480,32 @@ no landmark role and no accessible name. Default behaviour is unchanged, and
 choosing it makes the surrounding page responsible for supplying exactly one
 `main` landmark containing this output.
 
+#### Contract holds measured in issue #756
+
+Three 0.2.1 refusals stay deliberate after the additive fixes above; they are
+not backlog slots waiting for a loosening pass.
+
+- **Required `labels` on every `status-list` section.** The section must
+  carry exactly `available`, `partial`, `planned`, and
+  `dispositions.not-offered` as `CopyRef`s. Designer `StatusList` renders
+  human-readable readiness names from this caller-localized map, so a surface
+  cannot mount a status list until it has merged reader-facing words for all
+  four axes. Omit the section when the page has no readiness posture to
+  report.
+- **Required `ordinal` as a `CopyRef` on each ordered step.** Ordinals
+  participate in copy provenance and locale like every other audience field;
+  a surface that paints step numbers visually still authors copy entries
+  (often `"1"`, `"2"`) rather than relying on presentation-only counters.
+- **Non-empty repeating arrays.** Every `items` array, status-list `groups`
+  array, group `items` array, and optional hero `actions` array must contain
+  at least one entry when present — an explicit `items: []` is refused
+  (`sectioned-view-items-shape` / `sectioned-view-status-items-shape`).
+  Unlike `MarketingView`'s repeating bindings, this document has no separate
+  "slot omitted" vs "slot empty" distinction at the section level: a section
+  kind in the wire model is a commitment to render that block with at least
+  one row. Express stated absence by omitting the section or by owning an
+  empty state outside this contract (`StructuredDocument`, host markup).
+
 The ordinary and `react-server` `@clossys/publisher/web` exports are aligned.
 The view owns section markup, source order, unique section ids, grounds, and
 the h1/h2/h3 outline; Designer owns visual tokens and block internals. Per

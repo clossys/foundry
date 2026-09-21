@@ -5,6 +5,15 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.4.19] - 2026-09-21
+
+### Changed
+
+- README: documents the three SectionedView contract holds measured in
+  issue #756 (required status-list `labels`, required step `ordinal`
+  CopyRef, non-empty repeating arrays) so adopters can convert recorded
+  refusals into upgrades or permanent local seams.
+
 ## [0.4.18] - 2026-09-21
 
 ### Added
@@ -67,6 +76,12 @@ All notable changes to this package are documented here. Format follows
 - `MarketingView` passes explicit Hero `composition` (`split` when media is
   present) and golden markup matches Designer 0.4.12 display measure
   classes.
+
+## [0.4.9] - 2026-09-21
+
+### Changed
+
+- Packed skill Pre-auth section: bounded taste pass after `designer-fold-check` is green (see PRE-AUTH-QUALITY, the brief that ships with `@clossys/designer`).
 
 ## [0.4.8] - 2026-09-21
 
