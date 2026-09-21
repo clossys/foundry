@@ -3,6 +3,24 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.1] - 2026-09-21
+
+### Added
+
+- `strategist-check --extensions <ext>` (repeatable): limits the facts gate
+  scan to the given file extensions (include the leading dot). When none are
+  given, the previous default set applies.
+- `strategist-check --skip-dirs <name>` (repeatable): adds directory names
+  to the built-in skip list during the walk; it does not replace the
+  defaults (`node_modules`, `.git`, `dist`, `build`, `coverage`).
+
+### Fixed
+
+- `facts-gate:ignore` applies only on the line where the marker appears; a
+  marker on one line never suppresses claims on following lines.
+- `facts-gate:ignore` markers no longer match the prefix
+  `facts-gate:ignoreme` — the ignore token must end at a word boundary.
+
 ## [0.2.0] - 2026-09-19
 
 ### Added

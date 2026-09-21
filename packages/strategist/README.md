@@ -367,11 +367,11 @@ comment, a block comment, a JSX comment, or a line comment all work):
   every claim on that line. Citing a key that does **not** exist in
   `facts.json` is itself a finding (`unknown-fact-citation`) — a rotted or
   misspelled key can't silently satisfy the gate.
-- `facts-gate:ignore` — suppresses every claim on that line without
-  requiring a citation. Recorded into `result.ignored`, never silently: a
-  report always shows exactly what was explicitly overridden and where, so
-  the escape hatch stays auditable rather than a quiet way to make the gate
-  stop looking.
+- `facts-gate:ignore` — suppresses every claim on **that line only**
+  without requiring a citation. It never suppresses claims on other lines.
+  Recorded into `result.ignored`, never silently: a report always shows
+  exactly what was explicitly overridden and where, so the escape hatch
+  stays auditable rather than a quiet way to make the gate stop looking.
 
 ```md
 Widgetronic is the only platform built for this. <!-- fact:only-platform-claim -->
@@ -393,6 +393,8 @@ Usage: strategist-check <strategy-dir> [scan-dir] [options]
 Options:
   --help              Print this message and exit 0.
   --facts-dir <dir>   Read facts from a directory of per-fact JSON files (each leaf a JSON array of Fact) instead of the strategy directory's flat facts.json. Mutually exclusive with facts.json — see below.
+  --extensions <ext>  File extension to scan (repeatable; include the leading dot). Default when none are given: `.md`, `.mdx`, `.ts`, `.tsx`, `.js`, `.jsx`.
+  --skip-dirs <name>  Directory name to skip during the walk (repeatable). Each name is **added** to the built-in skip list (`node_modules`, `.git`, `dist`, `build`, `coverage`); it does not replace those defaults.
 ```
 
 Exit codes — the same three-state contract `@clossys/controller/gates`'

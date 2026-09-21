@@ -65,7 +65,7 @@ import { checkFactsTraceability, type FactsGateResult } from "./facts-gate.js";
 import { readStrategyDirectory } from "./facts-dir.js";
 import { readStrategy, type StrategyBundle } from "./reader.js";
 import { validateDirectionEntities, type DirectionEntity, type Fact } from "./schema.js";
-import { scanStrategyDirectory } from "./scan.js";
+import { DEFAULT_SKIP_DIRS, scanStrategyDirectory } from "./scan.js";
 
 const USAGE = `Usage: strategist-check <strategy-dir> [scan-dir] [options]
    or: strategist-check brand-coverage <derivations-file> <brandable-slots-file>
@@ -77,6 +77,8 @@ const USAGE = `Usage: strategist-check <strategy-dir> [scan-dir] [options]
 Options:
   --help              Print this message and exit 0.
   --facts-dir <dir>   Read facts from a directory of per-fact JSON files (each leaf a JSON array of Fact, e.g. one file per fact) instead of the strategy directory's flat facts.json. The rest of the strategy bundle (mission.json, roadmap.json, ...) is not read in this mode. Mutually exclusive with the flat facts.json: a facts.json present in strategy-dir alongside --facts-dir is refused — exit 2, naming the conflict.
+  --extensions <ext>  File extension to scan (repeatable; include the leading dot, e.g. --extensions .md). When none are given, the default set is .md, .mdx, .ts, .tsx, .js, and .jsx.
+  --skip-dirs <name>  Directory name to skip during the walk (repeatable). Each name is added to the built-in skip list (node_modules, .git, dist, build, coverage); supplying --skip-dirs does not replace those defaults, so node_modules is never walked accidentally.
 
 Exit codes: 0 = clean, 1 = at least one finding, 2 = could not run (bad input, missing/invalid facts.json, nothing matched to scan, or an unreadable directory).
 
@@ -118,13 +120,27 @@ interface ParsedArgs {
   strategyDir?: string;
   scanDir?: string;
   factsDir?: string;
+  extensions: string[];
+  skipDirs: string[];
   help: boolean;
 }
 
-function parseArgs(argv: string[]): ParsedArgs {
+function parseExtensionFlag(value: string): string {
+  if (!value.startsWith(".") || value.length < 2 || value.includes("/")) {
+    throw new CliInputError(
+      'each --extensions value must include the leading dot and name only, e.g. --extensions .md (not "md" or ".")',
+    );
+  }
+  return value;
+}
+
+/** Exported for `cli.test.ts` — argv parsing for the default facts-check subcommand only. */
+export function parseArgs(argv: string[]): ParsedArgs {
   let strategyDir: string | undefined;
   let scanDir: string | undefined;
   let factsDir: string | undefined;
+  const extensions: string[] = [];
+  const skipDirs: string[] = [];
   let help = false;
 
   for (let i = 0; i < argv.length; i += 1) {
@@ -150,6 +166,40 @@ function parseArgs(argv: string[]): ParsedArgs {
       factsDir = value;
       continue;
     }
+    if (arg === "--extensions") {
+      const value = argv[i + 1];
+      if (value === undefined || value.startsWith("-")) {
+        throw new CliInputError('--extensions requires an extension argument, e.g. --extensions .md');
+      }
+      extensions.push(parseExtensionFlag(value));
+      i += 1;
+      continue;
+    }
+    if (arg.startsWith("--extensions=")) {
+      const value = arg.slice("--extensions=".length);
+      if (value.length === 0) {
+        throw new CliInputError('--extensions requires an extension argument, e.g. --extensions .md');
+      }
+      extensions.push(parseExtensionFlag(value));
+      continue;
+    }
+    if (arg === "--skip-dirs") {
+      const value = argv[i + 1];
+      if (value === undefined || value.startsWith("-")) {
+        throw new CliInputError('--skip-dirs requires a directory name argument, e.g. --skip-dirs vendor');
+      }
+      skipDirs.push(value);
+      i += 1;
+      continue;
+    }
+    if (arg.startsWith("--skip-dirs=")) {
+      const value = arg.slice("--skip-dirs=".length);
+      if (value.length === 0) {
+        throw new CliInputError('--skip-dirs requires a directory name argument, e.g. --skip-dirs vendor');
+      }
+      skipDirs.push(value);
+      continue;
+    }
     if (arg.startsWith("-")) {
       throw new CliInputError(`unknown flag "${arg}"`);
     }
@@ -162,7 +212,7 @@ function parseArgs(argv: string[]): ParsedArgs {
     }
   }
 
-  return { strategyDir, scanDir, factsDir, help };
+  return { strategyDir, scanDir, factsDir, extensions, skipDirs, help };
 }
 
 function requireDirectory(label: string, path: string): void {
@@ -711,7 +761,14 @@ export function main(argv: string[]): number {
 
   const facts = loaded.facts;
 
-  const files = scanStrategyDirectory(scanDir); // throws (fail-closed) on an unreadable directory — caught by run()
+  const scanOptions: { extensions?: string[]; skipDirs?: string[] } = {};
+  if (args.extensions.length > 0) {
+    scanOptions.extensions = args.extensions;
+  }
+  if (args.skipDirs.length > 0) {
+    scanOptions.skipDirs = [...DEFAULT_SKIP_DIRS, ...args.skipDirs];
+  }
+  const files = scanStrategyDirectory(scanDir, scanOptions); // throws (fail-closed) on an unreadable directory — caught by run()
 
   // Zero files matched is the exact failure mode this gate is built to
   // never silently pass: "nothing to scan" is not the same thing as "scanned

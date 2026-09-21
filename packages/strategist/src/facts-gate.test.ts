@@ -96,6 +96,31 @@ describe("checkFactsTraceability — escape hatch", () => {
       { file: "fixture:about", line: 1, snippet: expect.stringContaining("9,999") },
     ]);
   });
+
+  it("does not treat facts-gate:ignoreme as an ignore marker", () => {
+    const files = [
+      { path: "fixture:about", content: "Widgetronic now serves 9,999 customers. <!-- facts-gate:ignoreme -->" },
+    ];
+    const result = checkFactsTraceability(files, [customerCountFact]);
+    expect(result.ignored).toEqual([]);
+    expect(result.findings).toHaveLength(1);
+    expect(result.findings[0]?.rule).toBe("untraced-numeric-claim");
+  });
+
+  it("does not suppress a claim on the next line after a facts-gate:ignore marker", () => {
+    const content = [
+      "Widgetronic now serves 9,999 customers. <!-- facts-gate:ignore -->",
+      "Widgetronic now serves 8,888 customers.",
+    ].join("\n");
+    const result = checkFactsTraceability([{ path: "fixture:about", content }], [customerCountFact]);
+    expect(result.ignored).toHaveLength(1);
+    expect(result.ignored[0]?.line).toBe(1);
+    expect(result.findings).toHaveLength(1);
+    expect(result.findings[0]).toMatchObject({
+      rule: "untraced-numeric-claim",
+      line: 2,
+    });
+  });
 });
 
 describe("checkFactsTraceability — false-positive avoidance", () => {
