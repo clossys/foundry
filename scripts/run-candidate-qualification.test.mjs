@@ -73,14 +73,14 @@ test("all 21 publishable packages are exact-source bound to the catalogue and qu
   const catalog = await repositoryJson("governance/release-catalog.json");
   const expectedVersions = {
     "@clossys/advisor": "0.2.7",
-    "@clossys/launcher": "0.1.6",
+    "@clossys/launcher": "0.1.7",
     "@clossys/architect": "0.1.9",
     "@clossys/bouncer": "0.1.9",
     "@clossys/builder": "0.8.0",
     "@clossys/butler": "0.1.6",
     "@clossys/controller": "0.9.11",
     "@clossys/customer": "0.1.0",
-    "@clossys/designer": "0.4.7",
+    "@clossys/designer": "0.4.8",
     "@clossys/giver": "0.1.6",
     "@clossys/influencer": "0.1.6",
     "@clossys/inspector": "0.2.6",
@@ -89,10 +89,10 @@ test("all 21 publishable packages are exact-source bound to the catalogue and qu
     "@clossys/locksmith": "0.2.5",
     "@clossys/messenger": "0.1.8",
     "@clossys/observer": "0.3.0",
-    "@clossys/publisher": "0.4.5",
+    "@clossys/publisher": "0.4.6",
     "@clossys/starter": "0.1.8",
-    "@clossys/strategist": "0.2.0",
-    "@clossys/writer": "0.3.9",
+    "@clossys/strategist": "0.2.1",
+    "@clossys/writer": "0.3.10",
   };
   const packageKeys = (await readdir(new URL("../packages", import.meta.url))).sort();
   const manifests = await Promise.all(packageKeys.map((key) => repositoryJson(`packages/${key}/package.json`)));
