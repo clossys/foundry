@@ -21,6 +21,36 @@
       "issue": 833
     },
     {
+      "package": "advisor",
+      "version": "0.2.8",
+      "reason": "This machine is not the pinned release runtime (Node v24.19.0, npm 11.17.0, zlib 1.3.2.1-motley-3246f1b; this machine Node v24.15.0, npm 11.12.1). Merge acknowledgement, never publication: 0.2.8 may not be published before the record exists.",
+      "issue": 948
+    },
+    {
+      "package": "architect",
+      "version": "0.1.10",
+      "reason": "This machine is not the pinned release runtime (Node v24.19.0, npm 11.17.0, zlib 1.3.2.1-motley-3246f1b; this machine Node v24.15.0, npm 11.12.1). Merge acknowledgement, never publication: 0.1.10 may not be published before the record exists.",
+      "issue": 948
+    },
+    {
+      "package": "bouncer",
+      "version": "0.1.10",
+      "reason": "This machine is not the pinned release runtime (Node v24.19.0, npm 11.17.0, zlib 1.3.2.1-motley-3246f1b; this machine Node v24.15.0, npm 11.12.1). Merge acknowledgement, never publication: 0.1.10 may not be published before the record exists.",
+      "issue": 948
+    },
+    {
+      "package": "builder",
+      "version": "0.8.1",
+      "reason": "This machine is not the pinned release runtime (Node v24.19.0, npm 11.17.0, zlib 1.3.2.1-motley-3246f1b; this machine Node v24.15.0, npm 11.12.1). Merge acknowledgement, never publication: 0.8.1 may not be published before the record exists.",
+      "issue": 948
+    },
+    {
+      "package": "butler",
+      "version": "0.1.7",
+      "reason": "This machine is not the pinned release runtime (Node v24.19.0, npm 11.17.0, zlib 1.3.2.1-motley-3246f1b; this machine Node v24.15.0, npm 11.12.1). Merge acknowledgement, never publication: 0.1.7 may not be published before the record exists.",
+      "issue": 948
+    },
+    {
       "package": "customer",
       "version": "0.1.0",
       "reason": "This version is introduced in a cloud sandbox whose outbound HTTPS is intercepted and re-terminated (issue #833). scripts/run-candidate-qualification.mjs is owner/developer-machine work in that sandbox class: sanitizedEnv() does not forward a parent CA-trust variable, and a qualification record exists to prove exact artifact bytes rather than bytes observed through an interception path. 0.1.0 may not be published before the record exists.",
@@ -29,7 +59,91 @@
     {
       "package": "controller",
       "version": "0.9.11",
-      "reason": "The packed role-loop charter gained @clossys/customer in contracts/role-loop-archetypes.json on a machine that is not the pinned release runtime: scripts/lib/release-runtime.mjs requires Node v24.19.0, npm 11.17.0, zlib 1.3.2.1-motley-3246f1b, and this machine runs Node v24.15.0, npm 11.12.1. run-candidate-qualification.mjs must not run here; the pin is correct and a record made on a different toolchain proves different bytes. Same runtime-pin class as the controller 0.9.8 and inspector 0.2.4 deferrals under issue #948, distinct from the intercepted-egress sandbox class in #833. This acknowledges a merge, never a publication: 0.9.11 may not be published before the record exists.",
+      "reason": "The packed role-loop charter gained @clossys/customer in contracts/role-loop-archetypes.json and this release ships packed-skill and vendor-grammar changes on a machine that is not the pinned release runtime: scripts/lib/release-runtime.mjs requires Node v24.19.0, npm 11.17.0, zlib 1.3.2.1-motley-3246f1b, and this machine runs Node v24.15.0, npm 11.12.1. run-candidate-qualification.mjs must not run here; the pin is correct and a record made on a different toolchain proves different bytes. Same runtime-pin class as the controller 0.9.8 and inspector 0.2.4 deferrals under issue #948, distinct from the intercepted-egress sandbox class in #833. This acknowledges a merge, never a publication: 0.9.11 may not be published before the record exists.",
+      "issue": 948
+    },
+    {
+      "package": "designer",
+      "version": "0.4.8",
+      "reason": "This machine is not the pinned release runtime (Node v24.19.0, npm 11.17.0, zlib 1.3.2.1-motley-3246f1b; this machine Node v24.15.0, npm 11.12.1). Merge acknowledgement, never publication: 0.4.8 may not be published before the record exists.",
+      "issue": 948
+    },
+    {
+      "package": "giver",
+      "version": "0.1.7",
+      "reason": "This machine is not the pinned release runtime (Node v24.19.0, npm 11.17.0, zlib 1.3.2.1-motley-3246f1b; this machine Node v24.15.0, npm 11.12.1). Merge acknowledgement, never publication: 0.1.7 may not be published before the record exists.",
+      "issue": 948
+    },
+    {
+      "package": "influencer",
+      "version": "0.1.7",
+      "reason": "This machine is not the pinned release runtime (Node v24.19.0, npm 11.17.0, zlib 1.3.2.1-motley-3246f1b; this machine Node v24.15.0, npm 11.12.1). Merge acknowledgement, never publication: 0.1.7 may not be published before the record exists.",
+      "issue": 948
+    },
+    {
+      "package": "inspector",
+      "version": "0.2.7",
+      "reason": "This machine is not the pinned release runtime (Node v24.19.0, npm 11.17.0, zlib 1.3.2.1-motley-3246f1b; this machine Node v24.15.0, npm 11.12.1). Merge acknowledgement, never publication: 0.2.7 may not be published before the record exists.",
+      "issue": 948
+    },
+    {
+      "package": "integrator",
+      "version": "0.7.1",
+      "reason": "This machine is not the pinned release runtime (Node v24.19.0, npm 11.17.0, zlib 1.3.2.1-motley-3246f1b; this machine Node v24.15.0, npm 11.12.1). Merge acknowledgement, never publication: 0.7.1 may not be published before the record exists.",
+      "issue": 948
+    },
+    {
+      "package": "keeper",
+      "version": "0.1.7",
+      "reason": "This machine is not the pinned release runtime (Node v24.19.0, npm 11.17.0, zlib 1.3.2.1-motley-3246f1b; this machine Node v24.15.0, npm 11.12.1). Merge acknowledgement, never publication: 0.1.7 may not be published before the record exists.",
+      "issue": 948
+    },
+    {
+      "package": "launcher",
+      "version": "0.1.7",
+      "reason": "This machine is not the pinned release runtime (Node v24.19.0, npm 11.17.0, zlib 1.3.2.1-motley-3246f1b; this machine Node v24.15.0, npm 11.12.1). Merge acknowledgement, never publication: 0.1.7 may not be published before the record exists.",
+      "issue": 948
+    },
+    {
+      "package": "locksmith",
+      "version": "0.2.6",
+      "reason": "This machine is not the pinned release runtime (Node v24.19.0, npm 11.17.0, zlib 1.3.2.1-motley-3246f1b; this machine Node v24.15.0, npm 11.12.1). Merge acknowledgement, never publication: 0.2.6 may not be published before the record exists.",
+      "issue": 948
+    },
+    {
+      "package": "messenger",
+      "version": "0.1.9",
+      "reason": "This machine is not the pinned release runtime (Node v24.19.0, npm 11.17.0, zlib 1.3.2.1-motley-3246f1b; this machine Node v24.15.0, npm 11.12.1). Merge acknowledgement, never publication: 0.1.9 may not be published before the record exists.",
+      "issue": 948
+    },
+    {
+      "package": "observer",
+      "version": "0.3.1",
+      "reason": "This machine is not the pinned release runtime (Node v24.19.0, npm 11.17.0, zlib 1.3.2.1-motley-3246f1b; this machine Node v24.15.0, npm 11.12.1). Merge acknowledgement, never publication: 0.3.1 may not be published before the record exists.",
+      "issue": 948
+    },
+    {
+      "package": "publisher",
+      "version": "0.4.6",
+      "reason": "This machine is not the pinned release runtime (Node v24.19.0, npm 11.17.0, zlib 1.3.2.1-motley-3246f1b; this machine Node v24.15.0, npm 11.12.1). Merge acknowledgement, never publication: 0.4.6 may not be published before the record exists.",
+      "issue": 948
+    },
+    {
+      "package": "starter",
+      "version": "0.1.9",
+      "reason": "This machine is not the pinned release runtime (Node v24.19.0, npm 11.17.0, zlib 1.3.2.1-motley-3246f1b; this machine Node v24.15.0, npm 11.12.1). Merge acknowledgement, never publication: 0.1.9 may not be published before the record exists.",
+      "issue": 948
+    },
+    {
+      "package": "strategist",
+      "version": "0.2.1",
+      "reason": "This machine is not the pinned release runtime (Node v24.19.0, npm 11.17.0, zlib 1.3.2.1-motley-3246f1b; this machine Node v24.15.0, npm 11.12.1). Merge acknowledgement, never publication: 0.2.1 may not be published before the record exists.",
+      "issue": 948
+    },
+    {
+      "package": "writer",
+      "version": "0.3.10",
+      "reason": "This machine is not the pinned release runtime (Node v24.19.0, npm 11.17.0, zlib 1.3.2.1-motley-3246f1b; this machine Node v24.15.0, npm 11.12.1). Merge acknowledgement, never publication: 0.3.10 may not be published before the record exists.",
       "issue": 948
     },
     {

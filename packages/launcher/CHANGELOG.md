@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.8] - 2026-09-21
 
+### Added
+
+- Ships the packed Agent Skill in the tarball (`files` includes `skill`).
+
 ### Fixed
 
 - Skill compose prefers each checkout's installed `@clossys/<package>/skill/SKILL.md` when present, then falls back to the packed catalogue or sibling source.

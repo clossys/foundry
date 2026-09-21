@@ -19,6 +19,7 @@ All notable changes to this package are documented here. Format follows
   set.
 - README: documents `--extensions` and that this repository's own CLI prose
   is operator messaging, not a copy-registry subject for addressability.
+- Ships the packed Agent Skill in the tarball (`files` includes `skill`).
 
 ## [0.3.9] - 2026-09-18
 

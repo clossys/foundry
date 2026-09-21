@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Ships the packed Agent Skill in the tarball (`files` includes `skill`).
 - `AdvisorAssessment.sponsorSummary` — a derived, founder-facing one-line summary
   from the assessment `state` (`satisfied`, `violated`, or `indeterminate`).
   Callers cannot supply it.

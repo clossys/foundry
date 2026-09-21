@@ -7,6 +7,10 @@ All notable changes to this package are documented here. Format follows
 
 ## [0.4.6] - 2026-09-20
 
+### Added
+
+- Ships the packed Agent Skill in the tarball (`files` includes `skill`).
+
 ### Changed
 
 - README: `MarketingView` is the primary pre-auth marketing template;

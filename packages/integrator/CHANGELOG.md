@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   every `extra` judgment, including allowlisted foundation installs.
   `foldCurrencyDelta` accepts the same allowlist on both scopes. Omitted or
   empty `expectedExtras` preserves prior behavior.
+- Ships the packed Agent Skill in the tarball (`files` includes `skill`).
 
 ## [0.7.0] - 2026-09-19
 

@@ -28,6 +28,7 @@ All notable changes to this package are documented here. Format follows
   brand-type record schema (`--overlay` requires non-empty `--font-display`).
 - `designer-brand-check --also <path>`: refuses when an extra stylesheet
   redeclares a brandable slot with a different value than the overlay.
+- Ships the packed Agent Skill in the tarball (`files` includes `skill`).
 
 ### Changed
 

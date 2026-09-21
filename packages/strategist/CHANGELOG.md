@@ -20,6 +20,7 @@ All notable changes to this package are documented here. Format follows
   defaults (`node_modules`, `.git`, `dist`, `build`, `coverage`).
 - Skill: Audience records name who the synthetic user is;
   Strategist does not inhabit that person.
+- Ships the packed Agent Skill in the tarball (`files` includes `skill`).
 
 ### Fixed
 
