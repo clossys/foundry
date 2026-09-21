@@ -11,14 +11,17 @@
  * headers for the full account of that defect class).
  */
 
-import { readFileSync } from "node:fs";
+import { readFileSync, writeSync } from "node:fs";
 import { main } from "./cli.js";
 import type { CliPort } from "./cli.js";
 
 const port: CliPort = {
   readTextFile: (path) => readFileSync(path, "utf8"),
-  writeOut: (text) => process.stdout.write(text),
-  writeErr: (text) => process.stderr.write(text),
+  // writeSync on the stdio fds so a piped child's stdout is flushed before
+  // exit on Node 20. A buffered stream write can return before the bytes
+  // are visible to the parent.
+  writeOut: (text) => writeSync(1, text),
+  writeErr: (text) => writeSync(2, text),
 };
 
 process.exitCode = main(process.argv.slice(2), port);
