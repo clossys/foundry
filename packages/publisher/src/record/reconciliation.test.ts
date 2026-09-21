@@ -1,3 +1,4 @@
+import { describe, expect, it } from "vitest";
 import { appendEntry } from "./append.js";
 import { checkLedgerDrift } from "./drift.js";
 import {
@@ -9,7 +10,7 @@ import {
 import type { Ledger } from "./types.js";
 
 const witness = {
-  packageName: "@clossys/example",
+  packageName: "@clossys/publisher",
   version: "1.2.3",
   tarballSha256: "4e07408562bedb8b60ce05c1decfe3ad16b72230967de01f640b7e4729b49fce",
   publishedAt: "2026-08-22T12:00:00.000Z",
@@ -17,7 +18,7 @@ const witness = {
 
 describe("registryPublicationEntryId", () => {
   it("joins scoped name and version", () => {
-    expect(registryPublicationEntryId("@clossys/example", "1.2.3")).toBe("@clossys/example@1.2.3");
+    expect(registryPublicationEntryId("@clossys/publisher", "1.2.3")).toBe("@clossys/publisher@1.2.3");
   });
 });
 
@@ -26,7 +27,7 @@ describe("proposeRegistryPublicationEntry", () => {
     const first = proposeRegistryPublicationEntry({ witness, strategyRevision: "qual-abc" });
     const second = proposeRegistryPublicationEntry({ witness, strategyRevision: "qual-abc" });
     expect(first).toEqual(second);
-    expect(first.id).toBe("@clossys/example@1.2.3");
+    expect(first.id).toBe("@clossys/publisher@1.2.3");
     expect(first.channel).toBe("npm-registry");
     expect(first.contentBinding).toBeDefined();
   });

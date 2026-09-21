@@ -1182,7 +1182,9 @@ asks whether cited facts changed since publication, given a caller-supplied
 **independent witness** of what the registry (or another system of record)
 reports for the same `name@version`. Hand-writing the ledger in the same
 script that runs the check produces two records with one source; that is the
-house failure pattern `docs/LIFECYCLE.md` refuses.
+house failure pattern the Foundry repository lifecycle contract refuses (that
+document lives in the monorepo source tree and is not included in this
+package).
 
 This package now ships the producer and the comparison as pure functions:
 
@@ -1194,7 +1196,7 @@ import {
 } from "@clossys/publisher/record";
 
 const witness = {
-  packageName: "@clossys/example",
+  packageName: "@clossys/publisher",
   version: "1.0.0",
   tarballSha256: "<64-char hex from an anonymous registry read>",
   publishedAt: "2026-08-22T12:00:00.000Z",

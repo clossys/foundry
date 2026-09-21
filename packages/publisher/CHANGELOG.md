@@ -14,7 +14,7 @@ All notable changes to this package are documented here. Format follows
 
 ### Changed
 
-- README and `docs/LIFECYCLE.md` distinguish gate-loop staging evidence from
+- README distinguishes gate-loop staging evidence from
   reconciliation loops that require a publish-path ledger producer plus an
   independent witness; document that this repository's own npm publish
   reconciliation uses governance publication records, not a persisted
