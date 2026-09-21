@@ -5,6 +5,16 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.3.14] - 2026-09-21
+
+### Added
+
+- `writer-check addressability` classifies inline prose in object-literal
+  chrome config (`label`, `title`, `cta`, `caption`, `heading`, `kicker`,
+  `body`, `description`, `aria-label`, and nested `items`/`nav`/`links`
+  entries) as violations with file and key path. Allowlisted keys (`href`,
+  `to`, `path`, `icon`, …) and route-shaped values are not copy surfaces.
+
 ## [0.3.13] - 2026-09-21
 
 ### Changed
