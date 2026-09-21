@@ -9,6 +9,7 @@ import test from "node:test";
 import {
   checkAllPackageVisibility,
   checkDeclaredPackages,
+  checkInTreeDeprecatedRetention,
   fetchNpmPackageVisibility,
   fetchNpmScopePackages,
   findUndeclaredPackages,
@@ -16,6 +17,7 @@ import {
   isRetentionExpired,
   resolveActiveVisibilityTarget,
   selectRetentionDeclarations,
+  worstExitCode,
 } from "./check-package-visibility.mjs";
 import { PUBLIC_NPM_REGISTRY } from "./lib/public-npm-registry.mjs";
 import { ALL_PACKAGE_RELEASE_ORDER } from "./check-release-catalog.mjs";
@@ -245,7 +247,26 @@ test("findUndeclaredPackages: every undeclared package is reported, not just the
   assert.ok(results.every((r) => r.status === "finding" && r.direction === "undeclared"));
 });
 
-// ------------------------------------------------------ retention (unchanged shape, offline-only now)
+test("findUndeclaredPackages: a live deprecated roster package with valid retention is a pass, not a generic undeclared finding", () => {
+  const t = target({ packages: ["advisor"] });
+  const lifecycle = { packages: [{ name: "@clossys/legacy", status: "deprecated" }] };
+  const retentionByName = new Map([["@clossys/legacy", { reason: "migration path", reviewBy: "2099-01-01" }]]);
+  const results = findUndeclaredPackages(new Set(["@clossys/legacy"]), t, lifecycle, retentionByName);
+  assert.equal(results.length, 1);
+  assert.equal(results[0].status, "pass");
+  assert.match(results[0].detail, /deliberately retains it/);
+});
+
+test("findUndeclaredPackages: a live deprecated roster package with no retention entry is a finding", () => {
+  const t = target({ packages: ["advisor"] });
+  const lifecycle = { packages: [{ name: "@clossys/legacy", status: "deprecated" }] };
+  const results = findUndeclaredPackages(new Set(["@clossys/legacy"]), t, lifecycle, new Map());
+  assert.equal(results.length, 1);
+  assert.equal(results[0].status, "finding");
+  assert.match(results[0].detail, /no entry in/);
+});
+
+// ------------------------------------------------------ retention
 
 test("isRetentionExpired: strictly before today is expired, today and after are not", () => {
   const now = new Date("2026-06-15T00:00:00Z");
@@ -291,6 +312,25 @@ test("selectRetentionDeclarations: a duplicate name is an error finding, keeping
 test("selectRetentionDeclarations: a malformed document shape is fatal", () => {
   const { fatal } = selectRetentionDeclarations({ notPackages: [] });
   assert.match(fatal, /does not have the expected/);
+});
+
+test("checkInTreeDeprecatedRetention: an expired reviewBy for a deprecated lifecycle entry is a finding", () => {
+  const now = new Date("2026-06-15T00:00:00Z");
+  const { results } = checkInTreeDeprecatedRetention({
+    lifecycle: { packages: [{ name: "@clossys/copy", status: "deprecated" }] },
+    retentionByName: new Map([["@clossys/copy", { reason: "migration", reviewBy: "2026-01-01" }]]),
+    scope: "@clossys",
+    now,
+  });
+  assert.equal(results.length, 1);
+  assert.equal(results[0].status, "finding");
+  assert.match(results[0].detail, /expired/);
+});
+
+test("worstExitCode: an error dominates a finding", () => {
+  assert.equal(worstExitCode([{ status: "finding" }, { status: "error" }]), 2);
+  assert.equal(worstExitCode([{ status: "finding" }]), 1);
+  assert.equal(worstExitCode([{ status: "pass" }]), 0);
 });
 
 // ------------------------------------------------------ checkDeclaredPackages
@@ -424,6 +464,20 @@ test("checkAllPackageVisibility: a live-but-undeclared roster package is an 'und
   assert.equal(undeclared[0].status, "finding");
 });
 
+test("checkAllPackageVisibility: a live deprecated roster package with valid retention passes the undeclared direction", async () => {
+  const t = target({ packages: ["advisor"] });
+  const lifecycle = { packages: [{ name: "@clossys/legacy", status: "deprecated" }] };
+  const retentionByName = new Map([["@clossys/legacy", { reason: "migration", reviewBy: "2099-01-01" }]]);
+  const fetchImpl = queueFetch([
+    packumentFound("@clossys/advisor"),
+    jsonResponse(200, { "@clossys/advisor": "write", "@clossys/legacy": "write" }),
+  ]);
+  const outcome = await checkAllPackageVisibility({ target: t, fetchImpl, lifecycle, retentionByName });
+  assert.equal(outcome.code, 0);
+  const legacy = outcome.results.find((r) => r.package === "@clossys/legacy");
+  assert.equal(legacy?.status, "pass");
+});
+
 test("checkAllPackageVisibility: an error anywhere dominates a finding -- exit 2, not 1", async () => {
   const t = target({ packages: ["advisor", "starter"] });
   const fetchImpl = queueFetch([
@@ -474,6 +528,37 @@ test("CLI: a deprecated package under the active scope with no retention entry f
     const result = run(["--declarations-only", "--lifecycle", lifecyclePath, "--retention", retentionPath]);
     assert.equal(result.status, 1);
     assert.match(result.stdout, /FIND.*@clossys\/copy/s);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("CLI: a deprecated package with an expired retention entry fails --declarations-only", () => {
+  const dir = mkdtempSync(join(tmpdir(), "visibility-cli-"));
+  try {
+    const lifecyclePath = join(dir, "lifecycle.json");
+    const retentionPath = join(dir, "retention.json");
+    writeFileSync(lifecyclePath, JSON.stringify({ schemaVersion: 1, packages: [{ name: "@clossys/copy", status: "deprecated" }] }));
+    writeFileSync(
+      retentionPath,
+      JSON.stringify({ schemaVersion: 1, packages: [{ name: "@clossys/copy", reason: "migration path", reviewBy: "2020-01-01" }] }),
+    );
+    const result = run(["--declarations-only", "--lifecycle", lifecyclePath, "--retention", retentionPath]);
+    assert.equal(result.status, 1);
+    assert.match(result.stdout, /expired on 2020-01-01/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("CLI: a malformed retention entry fails --declarations-only with exit 2", () => {
+  const dir = mkdtempSync(join(tmpdir(), "visibility-cli-"));
+  try {
+    const retentionPath = join(dir, "retention.json");
+    writeFileSync(retentionPath, JSON.stringify({ schemaVersion: 1, packages: [{ name: "@clossys/copy", reason: "", reviewBy: "2099-01-01" }] }));
+    const result = run(["--declarations-only", "--retention", retentionPath]);
+    assert.equal(result.status, 2);
+    assert.match(result.stdout, /ERROR.*@clossys\/copy/s);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
