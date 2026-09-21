@@ -4,6 +4,13 @@ All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 
+## [0.1.8] - 2026-09-21
+
+### Fixed
+
+- Install section names `https://registry.npmjs.org` and states that
+  installing requires no authentication. (#924)
+
 ## [0.1.7] - 2026-09-21
 
 ### Added
