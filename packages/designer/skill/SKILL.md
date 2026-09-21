@@ -25,7 +25,7 @@ An engine gap or a missing check is a Foundry issue about the package that owns 
 
 ## Pre-auth page
 
-Done is exceptional (5) as defined in the pre-auth quality brief that ships with this package. `designer-hero-css-check`, `designer-fold-check`, and `writer-check --live` prove 3 only — never call 3 done or world class. A 5 keep is a synthetic user in a separate session, first person as the named Strategist Audience, not a visual score and not a checklist. This role does not author keep-review evidence and does not inhabit the persona.
+Done is exceptional (5) as defined in PRE-AUTH-QUALITY (the brief shipped at this package root). `designer-hero-css-check`, `designer-fold-check`, and `writer-check --live` prove 3 only — never call 3 done or world class. A 5 keep is a synthetic user in a separate session, first person as the named Strategist Audience, not a visual score and not a checklist. This role does not author keep-review evidence and does not inhabit the persona.
 
 ## How we work together
 
