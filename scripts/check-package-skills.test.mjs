@@ -1,7 +1,7 @@
 // Regression tests for check-package-skills.mjs.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -318,6 +318,27 @@ test("launcher catalogue drift is a finding", () => {
   ]);
   assert.equal(result.exitCode, 1);
   assert.ok(result.findings.some((f) => f.rule === "catalogue-drift"));
+});
+
+test("strategist package.json files includes skill for npm pack", () => {
+  const manifest = JSON.parse(readFileSync(join(repoRoot, "packages/strategist/package.json"), "utf8"));
+  assert.ok(Array.isArray(manifest.files), "strategist package.json must declare files");
+  assert.ok(manifest.files.includes("skill"), "strategist tarball must pack skill/SKILL.md");
+});
+
+test("strategist skill must not treat gate-green as keep", () => {
+  const result = evaluatePackageSkills([
+    {
+      packageDir: "strategist",
+      skillPath: "/tmp/ignored",
+      expectedName: "clossys-strategist",
+      skillText: validSkill("clossys-strategist", "Strategy traceability and direction currency."),
+    },
+  ]);
+  assert.equal(result.exitCode, 1);
+  assert.ok(result.findings.some((f) => f.rule === "strategist-pre-auth-quality-ref"));
+  assert.ok(result.findings.some((f) => f.rule === "strategist-no-gate-keep"));
+  assert.ok(result.findings.some((f) => f.rule === "strategist-gates-prove-3"));
 });
 
 test("live repository package skills pass", () => {

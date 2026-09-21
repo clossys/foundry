@@ -49,6 +49,11 @@ All notable changes to this package are documented here. Format follows
 
 ### Added
 
+- Ships the `clossys-strategist` Agent Skill (`skill/SKILL.md`) next to the
+  existing gate bins `strategist-check` and `strategist-rate-check`. In
+  Cursor, mention `@clossys-strategist` to invoke that voice. The skill is
+  packed with the package; it does not add runtime exports and does not
+  replace the gate CLIs.
 - `strategist-check brand-coverage --surfaces <path>`: requires do-not
   language on Designer-facing surfaces; slot N/N alone is reported as
   necessary, not sufficient.
