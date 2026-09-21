@@ -135,7 +135,9 @@ import { checkLocaleCoverage, type LocaleCoverageReport } from "./locale-coverag
 import { liveTreeExists, scanLiveCopyTrees } from "./live-copy-gate.js";
 import { checkPassageComposition, readPassageRecord, type PassageGateResult } from "./passage.js";
 import { readCopyRecord } from "./registry.js";
+import { checkRenderRegistryParity } from "./render-registry-parity.js";
 import { scanCopySourceTree, type ScanResult, type UncheckedItem } from "./scan.js";
+import { checkTreatmentWordBudgets, type TreatmentWordBudgetFinding } from "./treatment-word-budget.js";
 import { checkVoiceDerivationCoverage, parseVoiceRecord, type VoiceDerivationCoverageResult } from "./voice/index.js";
 
 const USAGE = `Usage: writer-check <record-file> [scan-dir] [options]
@@ -155,6 +157,7 @@ are separate, stricter gates; neither runs as part of this default command.
 
 Options:
   --help         Print this message and exit 0.
+  --render-registry <file>  Path the surface passes to createCopyResolver at render. When set, must be the same file as record-file (after realpath). When omitted, record-file itself must be a CopyRegistry — not a plain CopyRecord or an in-memory-only store.
   --live <dir>   Declared live-copy tree the page actually renders (repeatable). Requires --voice-record.
   --voice-record <file>  Voice record JSON for claims when --live is set.
   --format <text|json>  Output format. Defaults to text. "json" prints exactly one
@@ -209,6 +212,7 @@ export class CliInputError extends Error {}
 interface ParsedArgs {
   recordFile?: string;
   scanDir?: string;
+  renderRegistryFile?: string;
   liveTrees: string[];
   voiceRecordFile?: string;
   format: "text" | "json";
@@ -218,6 +222,7 @@ interface ParsedArgs {
 function parseArgs(argv: string[]): ParsedArgs {
   let recordFile: string | undefined;
   let scanDir: string | undefined;
+  let renderRegistryFile: string | undefined;
   const liveTrees: string[] = [];
   let voiceRecordFile: string | undefined;
   let format: "text" | "json" = "text";
@@ -227,6 +232,14 @@ function parseArgs(argv: string[]): ParsedArgs {
     const arg = argv[i] as string;
     if (arg === "--help" || arg === "-h") {
       help = true;
+      continue;
+    }
+    if (arg === "--render-registry") {
+      const value = argv[++i];
+      if (value === undefined || value.startsWith("-")) {
+        throw new CliInputError("--render-registry requires a file path");
+      }
+      renderRegistryFile = value;
       continue;
     }
     if (arg === "--format") {
@@ -265,7 +278,18 @@ function parseArgs(argv: string[]): ParsedArgs {
     throw new CliInputError("--voice-record is required when --live is declared");
   }
 
-  return { recordFile, scanDir, liveTrees, voiceRecordFile, format, help };
+  return { recordFile, scanDir, renderRegistryFile, liveTrees, voiceRecordFile, format, help };
+}
+
+function printTreatmentWordBudgetReport(findings: TreatmentWordBudgetFinding[]): void {
+  if (findings.length === 0) {
+    console.log("No treatment word-budget findings.");
+    return;
+  }
+  console.log(`\n${findings.length} treatment word-budget finding(s):`);
+  for (const f of findings) {
+    console.log(`  [${f.rule}] ${f.entryId}  ${f.message}`);
+  }
 }
 
 function requireDirectory(label: string, path: string): void {
@@ -879,6 +903,39 @@ export function main(argv: string[]): number {
     return 2;
   }
 
+  let recordRaw: unknown;
+  try {
+    recordRaw = JSON.parse(readFileSync(recordFile, "utf8"));
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    if (!jsonMode) {
+      console.error(`\nCopy record could not be re-read for registry parity: ${detail}`);
+      console.error("Refusing to report a pass without confirming the render registry store.");
+    }
+    emitJson(emptyReport(recordFile, scanDir, 2, `copy record could not be re-read: ${detail}`));
+    return 2;
+  }
+
+  const renderRegistryPath = args.renderRegistryFile ? resolve(args.renderRegistryFile) : undefined;
+  if (renderRegistryPath) requireFile("render-registry", renderRegistryPath);
+
+  const parity = checkRenderRegistryParity(recordFile, recordRaw, renderRegistryPath);
+  if (!parity.ok || !parity.registry) {
+    if (!jsonMode) {
+      console.error(`\nRender registry parity: ${parity.detail ?? parity.reason}`);
+      console.error("Refusing to report a pass when the CLI is not reading the same store createCopyResolver uses.");
+    }
+    emitJson(emptyReport(recordFile, scanDir, 2, parity.detail ?? parity.reason ?? "render registry parity failed"));
+    return 2;
+  }
+
+  const treatmentBudget = checkTreatmentWordBudgets(parity.registry);
+  if (!jsonMode && treatmentBudget.entriesChecked > 0) {
+    console.log(
+      `Treatment word budgets: ${treatmentBudget.entriesChecked} approved entr${treatmentBudget.entriesChecked === 1 ? "y" : "ies"} with a treatment checked.`,
+    );
+  }
+
   // No argv flag populates `pathExclusions` today — this CLI always calls
   // `scanCopySourceTree` with defaults (`[]`), so `scan.excludedFiles`/
   // `scan.pathExclusionFindings` are always empty in THIS binary as
@@ -967,6 +1024,9 @@ export function main(argv: string[]): number {
 
   const result = checkCopyTraceability(scan.candidates, scan.citations, read.record, scan.filesScanned, scan.unchecked);
   if (!jsonMode) printGateReport(result);
+  if (!jsonMode) printTreatmentWordBudgetReport(treatmentBudget.findings);
+
+  const hasTreatmentFindings = treatmentBudget.findings.length > 0;
 
   if (args.liveTrees.length > 0) {
     for (const livePath of args.liveTrees) {
@@ -1043,9 +1103,14 @@ export function main(argv: string[]): number {
   // the SAME object, so a consumer keying on `exitCode`/`verdict` alone
   // still fails closed exactly as this package intends, while a consumer
   // that reads further is never forced to throw away what was measured.
-  const exitCode: 0 | 1 | 2 = result.unchecked.length > 0 ? 2 : result.findings.length > 0 ? 1 : 0;
+  const exitCode: 0 | 1 | 2 =
+    result.unchecked.length > 0 ? 2 : result.findings.length > 0 || hasTreatmentFindings ? 1 : 0;
   const verdict: CopyTraceabilityReport["verdict"] =
-    result.unchecked.length > 0 ? "indeterminate" : result.findings.length > 0 ? "findings" : "clean";
+    result.unchecked.length > 0
+      ? "indeterminate"
+      : result.findings.length > 0 || hasTreatmentFindings
+        ? "findings"
+        : "clean";
   emitJson({
     recordFile,
     scanDir,
@@ -1257,8 +1322,10 @@ registry-text-match escape hatch here, unlike the default command.
 Options:
   --help         Print this message and exit 0.
   --extensions <ext>  File extension to scan, including the leading dot (repeatable; values union). When omitted, default is .ts, .tsx, .js, .jsx. When present, replaces that default.
+  --chrome <file>  Persistent chrome (site header, footer, skip link, nav labels) shell or layout file to scan in addition to scan-dir (repeatable; paths relative to scan-dir unless absolute). Each file must exist.
+  --require-chrome  Refuse to run (exit 2) when no --chrome file was declared — use when the surface mounts persistent chrome outside scan-dir.
 
-Exit codes: 0 = clean, 1 = at least one inline user-facing string found, 2 = could not run (bad input, nothing matched to scan, every matched file failed to parse, or a string position could not be confidently classified).
+Exit codes: 0 = clean, 1 = at least one inline user-facing string found, 2 = could not run (bad input, nothing matched to scan, every matched file failed to parse, a string position could not be confidently classified, a declared chrome file is missing, or --require-chrome was set without --chrome).
 `;
 
 const ADDRESSABILITY_EXTENSION_RE = /^\.[a-zA-Z0-9]+$/;
@@ -1267,19 +1334,35 @@ interface AddressabilityParsedArgs {
   scanDir?: string;
   /** Set only when the caller passed at least one `--extensions` flag. */
   extensions?: string[];
+  chromeFiles: string[];
+  requireChrome: boolean;
   help: boolean;
 }
 
 function parseAddressabilityArgs(argv: string[]): AddressabilityParsedArgs {
   let scanDir: string | undefined;
   const extensions: string[] = [];
+  const chromeFiles: string[] = [];
   let help = false;
   let sawExtensions = false;
+  let requireChrome = false;
 
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i] as string;
     if (arg === "--help" || arg === "-h") {
       help = true;
+      continue;
+    }
+    if (arg === "--require-chrome") {
+      requireChrome = true;
+      continue;
+    }
+    if (arg === "--chrome") {
+      const value = argv[++i];
+      if (value === undefined || value.startsWith("-")) {
+        throw new CliInputError("--chrome requires a file path");
+      }
+      chromeFiles.push(value);
       continue;
     }
     if (arg === "--extensions") {
@@ -1307,7 +1390,7 @@ function parseAddressabilityArgs(argv: string[]): AddressabilityParsedArgs {
     }
   }
 
-  return { scanDir, help, extensions: sawExtensions ? extensions : undefined };
+  return { scanDir, help, extensions: sawExtensions ? extensions : undefined, chromeFiles, requireChrome };
 }
 
 /**
@@ -1326,15 +1409,23 @@ export function mainAddressabilityCheck(argv: string[]): number {
   const scanDir = resolve(args.scanDir ?? process.cwd());
   requireDirectory("scan-dir", scanDir);
 
+  if (args.requireChrome && args.chromeFiles.length === 0) {
+    throw new CliInputError("--require-chrome was set but no --chrome file was declared");
+  }
+
   console.log(`Scan directory: ${scanDir}`);
+  if (args.chromeFiles.length > 0) {
+    console.log(`Chrome files: ${args.chromeFiles.join(", ")}`);
+  }
+
+  const scanOptions: { extensions?: string[]; chromeFiles?: string[] } = {};
+  if (args.extensions) scanOptions.extensions = args.extensions;
+  if (args.chromeFiles.length > 0) scanOptions.chromeFiles = args.chromeFiles;
 
   // Throws (fail-closed) on an unreadable directory, exactly like
   // `scanCopySourceTree` — caught by `runAddressabilityCheck()`'s own
   // catch-all below.
-  const scan = scanAddressabilitySources(
-    scanDir,
-    args.extensions ? { extensions: args.extensions } : {},
-  );
+  const scan = scanAddressabilitySources(scanDir, scanOptions);
   printAddressabilityAccounting(scan);
 
   const result = checkAddressability(scan);

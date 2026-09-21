@@ -166,6 +166,17 @@ export interface CopyEntry {
    * same seam, one layer over).
    */
   factRef?: string;
+  /**
+   * Named slot treatment for word-budget governance — e.g. `display-heading`,
+   * `eyebrow`, `button`. When set on an approved registry entry, `writer-check`
+   * applies `maxWords` or the built-in default for that treatment.
+   */
+  treatment?: string;
+  /**
+   * Maximum word count for this entry's `text` when `treatment` is set.
+   * Overrides the built-in default table when present.
+   */
+  maxWords?: number;
 }
 
 /**

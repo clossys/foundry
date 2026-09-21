@@ -157,8 +157,8 @@
  *     position classified, and no inline user-facing prose found.
  */
 
-import { readdirSync, readFileSync, statSync } from "node:fs";
-import { extname, join, relative, sep } from "node:path";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { extname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { extractCopyCandidates } from "./scan.js";
 import type { ParseFailure, SkippedFile } from "./scan.js";
 import {
@@ -182,6 +182,12 @@ export interface AddressabilityScanOptions {
   skipDirs?: string[];
   /** Same mechanism `scan.ts`'s `ScanOptions.pathExclusions` uses — see `path-exclusions.ts`. */
   pathExclusions?: PathExclusion[];
+  /**
+   * Consumer-declared persistent chrome (site header, footer, skip link, nav
+   * labels) — shell or layout files scanned in addition to the directory walk.
+   * Paths are relative to `root` unless absolute. Each file must exist.
+   */
+  chromeFiles?: string[];
 }
 
 const DEFAULT_EXTENSIONS = [".ts", ".tsx", ".js", ".jsx"];
@@ -316,6 +322,12 @@ export function scanAddressabilitySources(root: string, options: AddressabilityS
 
   walk(root);
 
+  if (options.chromeFiles !== undefined) {
+    for (const chromePath of options.chromeFiles) {
+      scanAddressabilityChromeFile(root, chromePath, extensions, result);
+    }
+  }
+
   for (const exclusion of pathExclusionValidation.valid) {
     if ((matchCounts.get(exclusion) ?? 0) === 0) {
       result.pathExclusionFindings.push({
@@ -328,6 +340,62 @@ export function scanAddressabilitySources(root: string, options: AddressabilityS
   }
 
   return result;
+}
+
+function scanAddressabilityChromeFile(
+  root: string,
+  chromePath: string,
+  extensions: Set<string>,
+  result: AddressabilityScanResult,
+): void {
+  const full = isAbsolute(chromePath) ? resolve(chromePath) : resolve(root, chromePath);
+  if (!existsSync(full)) {
+    throw new Error(`scanAddressabilitySources: chrome file "${chromePath}" does not exist (resolved "${full}")`);
+  }
+  let stat;
+  try {
+    stat = statSync(full);
+  } catch (error) {
+    throw new Error(
+      `scanAddressabilitySources: cannot read chrome file "${chromePath}": ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+  if (!stat.isFile()) {
+    throw new Error(`scanAddressabilitySources: chrome path "${chromePath}" is not a file`);
+  }
+
+  const relPath = relative(root, full).split(sep).join("/");
+  const displayPath = relPath.length > 0 && !relPath.startsWith("..") ? relPath : chromePath;
+  const entryName = full.slice(full.lastIndexOf(sep) + 1);
+
+  if (!extensions.has(extname(entryName).toLowerCase())) {
+    throw new Error(
+      `scanAddressabilitySources: chrome file "${chromePath}" has extension ${extname(entryName)} which is not in the scan extension set`,
+    );
+  }
+
+  if (SKIP_FILE_RE.test(entryName)) {
+    result.skippedByDesign.push({ file: displayPath, reason: "test-or-check-file" });
+    return;
+  }
+
+  let content: string;
+  try {
+    content = readFileSync(full, "utf8");
+  } catch (error) {
+    throw new Error(
+      `scanAddressabilitySources: cannot read chrome file "${full}": ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+
+  const extracted = extractAddressabilityCandidates(content, displayPath);
+  if (extracted.parseFailure) {
+    result.parseFailures.push({ file: displayPath, detail: extracted.parseFailure });
+    return;
+  }
+  result.filesScanned++;
+  result.violations.push(...extracted.violations);
+  result.unchecked.push(...extracted.unchecked);
 }
 
 // ------------------------------------------------------------- extraction

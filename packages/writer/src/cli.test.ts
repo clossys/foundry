@@ -20,9 +20,29 @@ const validRecord = {
   entries: [{ id: "pagination.no-results", text: "No results", context: "Pagination — empty state" }],
 };
 
+/** Wraps fixture copy as a CopyRegistry — writer-check now requires the render store shape. */
+function toRegistryFixture(value: unknown): unknown {
+  if (typeof value !== "object" || value === null) return value;
+  const obj = value as Record<string, unknown>;
+  if (obj.locale !== undefined) return value;
+  const entries = Array.isArray(obj.entries) ? obj.entries : [];
+  return {
+    id: obj.id ?? "test-record",
+    locale: "en",
+    revision: "rev-1",
+    source: { kind: "consumer", reference: "test-fixture" },
+    entries: entries.map((entry) => {
+      if (typeof entry === "object" && entry !== null && !("status" in entry)) {
+        return { ...entry, status: "approved" };
+      }
+      return entry;
+    }),
+  };
+}
+
 function writeRecord(value: unknown): string {
   const path = join(recordDir, "copy.json");
-  writeFileSync(path, JSON.stringify(value));
+  writeFileSync(path, JSON.stringify(toRegistryFixture(value)));
   return path;
 }
 
@@ -37,6 +57,39 @@ afterEach(() => {
   rmSync(recordDir, { recursive: true, force: true });
   rmSync(scanDir, { recursive: true, force: true });
   vi.restoreAllMocks();
+});
+
+describe("main — render registry and treatment budgets", () => {
+  it("returns 2 when record-file is only a CopyRecord, not a CopyRegistry", () => {
+    const path = join(recordDir, "plain.json");
+    writeFileSync(path, JSON.stringify(validRecord));
+    writeFileSync(join(scanDir, "Widget.tsx"), 'const x = "registered text";\n');
+    expect(main([path, scanDir])).toBe(2);
+  });
+
+  it("returns 2 when --render-registry points at a different file than record-file", () => {
+    const primary = writeRecord(validRecord);
+    const other = join(recordDir, "other.json");
+    writeFileSync(other, JSON.stringify(toRegistryFixture({ id: "other", entries: validRecord.entries })));
+    writeFileSync(join(scanDir, "Widget.tsx"), 'const x = "No results";\n');
+    expect(main([primary, scanDir, "--render-registry", other])).toBe(2);
+  });
+
+  it("returns 1 when an approved treatment entry exceeds its word budget", () => {
+    const recordFile = writeRecord({
+      id: "t",
+      entries: [
+        {
+          id: "hero.title",
+          text: "one two three four five six seven eight nine ten eleven",
+          context: "Hero",
+          treatment: "button",
+        },
+      ],
+    });
+    writeFileSync(join(scanDir, "Widget.tsx"), 'const x = "No results";\n');
+    expect(main([recordFile, scanDir])).toBe(1);
+  });
 });
 
 describe("main — argument handling", () => {

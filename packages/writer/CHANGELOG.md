@@ -5,6 +5,22 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.3.12] - 2026-09-21
+
+### Added
+
+- `writer-check addressability --chrome <file>` (repeatable): scan
+  consumer-declared persistent chrome (site header, footer, skip link, nav
+  labels) in addition to `scan-dir`. `--require-chrome` refuses to run when
+  no chrome file was declared.
+- Treatment-level word budgets: registry entries may declare `treatment` and
+  optional `maxWords`. `writer-check` fails when approved copy exceeds the
+  budget (built-in defaults for `display-heading`, `eyebrow`, and `button`).
+- `writer-check --render-registry <file>`: must be the same file as
+  `record-file` after realpath. The default command requires `record-file` to
+  be a `CopyRegistry` — the store `createCopyResolver` reads at render, not
+  a plain `CopyRecord` or a second in-memory-only store.
+
 ## [0.3.11] - 2026-09-21
 
 ### Added

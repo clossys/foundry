@@ -123,6 +123,16 @@ export type {
   AddressabilityViolation,
 } from "./addressability.js";
 
+export { checkRenderRegistryParity } from "./render-registry-parity.js";
+export type { RenderRegistryParityReason, RenderRegistryParityResult } from "./render-registry-parity.js";
+
+export { DEFAULT_TREATMENT_WORD_BUDGETS, checkTreatmentWordBudgets, countCopyWords } from "./treatment-word-budget.js";
+export type {
+  TreatmentWordBudgetFinding,
+  TreatmentWordBudgetResult,
+  TreatmentWordBudgetRule,
+} from "./treatment-word-budget.js";
+
 // Locale-coverage governance: is every declared locale covered by a source
 // locale's registry, where has a target locale drifted, has a translation
 // gone stale against an edited source (via content fingerprint), and does
