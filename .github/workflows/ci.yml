@@ -677,6 +677,9 @@ jobs:
       # valid frontmatter binding `name` to clossys-<pkg>. README and manifest
       # reads only, no build — same shallow-checkout class as the steps above.
       - run: node scripts/check-package-skills.mjs
+      # PRE-AUTH-QUALITY bounded taste pass: prose contract and deliverability
+      # fixture, not longer skills. Manifest and designer doc reads only.
+      - run: node scripts/check-pre-auth-taste-contract.mjs
 
   # Three gates over this repository's own tree that had never been invoked
   # by any workflow before this change, and that share one requirement: a

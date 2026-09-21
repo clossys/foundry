@@ -5,6 +5,13 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.4.11] - 2026-09-21
+
+### Changed
+
+- PRE-AUTH-QUALITY: bounded taste pass after floor gates are green — `designer-fold-check` precondition, screenshot inputs, separate session from the doer, at most 3 inhabit rounds or 45 minutes wall clock, no doer self-certify of exceptional keep. Deliverability of good (3) stays fixtures and CLIs, not longer skills.
+- Packed `clossys-designer` skill Pre-auth section points at that contract (Writer and Publisher skills updated in-tree; pack on their next bumps).
+
 ## [0.4.10] - 2026-09-21
 
 ### Added

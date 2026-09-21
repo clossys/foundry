@@ -100,6 +100,10 @@ const PRE_AUTH_QUALITY_REF = /PRE-AUTH-QUALITY(?:\.md)?/;
 const PRE_AUTH_EXCEPTIONAL = /\bexceptional\b/i;
 const PRE_AUTH_SYNTHETIC_USER = /synthetic user/i;
 const PRE_AUTH_NO_AUTHOR_KEEP = /does not author keep-review|do not author keep-review/i;
+const PRE_AUTH_TASTE_FOLD_GREEN = /after [`']?designer-fold-check[`']? is green|designer-fold-check[`']? is green/i;
+const PRE_AUTH_TASTE_BOUND =
+  /at most 3 inhabit rounds|3 inhabit rounds or 45 minutes|whichever first/i;
+const PRE_AUTH_NO_SELF_CERTIFY = /does not self-certify exceptional keep|do not self-certify exceptional keep/i;
 const INSPECTOR_USER_BOUNDARY = /synthetic user/i;
 
 function validateSkillBody(packageDir, text) {
@@ -231,6 +235,29 @@ export function evaluatePackageSkills(packages) {
               rule: "pre-auth-no-author-keep",
               packageDir,
               message: "expression-wave skill must say this role does not author keep-review evidence",
+            });
+          }
+          if (!PRE_AUTH_TASTE_FOLD_GREEN.test(text)) {
+            pkgFindings.push({
+              rule: "pre-auth-taste-fold-precondition",
+              packageDir,
+              message:
+                "expression-wave skill must state bounded taste starts only after designer-fold-check is green",
+            });
+          }
+          if (!PRE_AUTH_TASTE_BOUND.test(text)) {
+            pkgFindings.push({
+              rule: "pre-auth-taste-bound",
+              packageDir,
+              message:
+                "expression-wave skill must cap taste at 3 inhabit rounds or a wall-clock stop (whichever first)",
+            });
+          }
+          if (!PRE_AUTH_NO_SELF_CERTIFY.test(text)) {
+            pkgFindings.push({
+              rule: "pre-auth-no-self-certify",
+              packageDir,
+              message: "expression-wave skill must say the doer walk does not self-certify exceptional keep",
             });
           }
         }

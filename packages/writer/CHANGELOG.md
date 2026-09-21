@@ -5,6 +5,12 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.3.13] - 2026-09-21
+
+### Changed
+
+- Packed skill Pre-auth section: bounded taste pass after `designer-fold-check` is green (see PRE-AUTH-QUALITY, the brief that ships with `@clossys/designer`).
+
 ## [0.3.12] - 2026-09-21
 
 ### Added
