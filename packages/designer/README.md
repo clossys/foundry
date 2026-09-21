@@ -4173,7 +4173,7 @@ Beyond render/interaction/keyboard/ARIA tests per atom (`Button.test.tsx`,
 `DetailView.test.tsx`, `Pagination.test.tsx`, `Stat.test.tsx`,
 `Form.test.tsx`, `FieldGroup.test.tsx`, `ConfirmDialog.test.tsx`,
 `Toolbar.test.tsx`, `NavGrid.test.tsx`, `SectionHeader.test.tsx`,
-`Hero.test.tsx`, `MarketingChapter.test.tsx`, `FeatureGrid.test.tsx`, `Faq.test.tsx`,
+`Hero.test.tsx`, `FeatureGrid.test.tsx`, `Faq.test.tsx`,
 `PricingTable.test.tsx`, `Testimonial.test.tsx`, `ArticleBody.test.tsx`), per view
 (`ErrorView.test.tsx`, `AuthView.test.tsx`), per shell component
 (`Shell.test.tsx`, `Toaster.test.tsx`, `SkipLink.test.tsx`,
