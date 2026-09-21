@@ -104,6 +104,9 @@ const PRE_AUTH_TASTE_FOLD_GREEN = /after [`']?designer-fold-check[`']? is green|
 const PRE_AUTH_TASTE_BOUND =
   /at most 3 inhabit rounds|3 inhabit rounds or 45 minutes|whichever first/i;
 const PRE_AUTH_NO_SELF_CERTIFY = /does not self-certify exceptional keep|do not self-certify exceptional keep/i;
+const STRATEGIST_GATES_PROVE_3 = /prove 3 only/i;
+const STRATEGIST_NO_GATE_KEEP = /never treat gate-green as keep/i;
+const STRATEGIST_STOP_AT_3_DEFECT = /stops at 3 is a defect/i;
 const INSPECTOR_USER_BOUNDARY = /synthetic user/i;
 const STRATEGIST_BRAND_COVERAGE_NECESSARY = /necessary,\s*not sufficient/i;
 const STRATEGIST_BRAND_DO_NOT_SURFACES = /do-not language|--surfaces/i;
@@ -279,6 +282,41 @@ export function evaluatePackageSkills(packages) {
           });
         }
         if (packageDir === "strategist") {
+          if (!PRE_AUTH_QUALITY_REF.test(text)) {
+            pkgFindings.push({
+              rule: "strategist-pre-auth-quality-ref",
+              packageDir,
+              message: "strategist skill must reference PRE-AUTH-QUALITY (see packages/designer/PRE-AUTH-QUALITY.md)",
+            });
+          }
+          if (!PRE_AUTH_EXCEPTIONAL.test(text)) {
+            pkgFindings.push({
+              rule: "strategist-pre-auth-exceptional",
+              packageDir,
+              message: "strategist skill must state that done is exceptional (5), not good (3)",
+            });
+          }
+          if (!STRATEGIST_GATES_PROVE_3.test(text)) {
+            pkgFindings.push({
+              rule: "strategist-gates-prove-3",
+              packageDir,
+              message: "strategist skill must state that mechanical gates prove good (3) only",
+            });
+          }
+          if (!STRATEGIST_NO_GATE_KEEP.test(text)) {
+            pkgFindings.push({
+              rule: "strategist-no-gate-keep",
+              packageDir,
+              message: "strategist skill must say never treat gate-green as keep",
+            });
+          }
+          if (!STRATEGIST_STOP_AT_3_DEFECT.test(text)) {
+            pkgFindings.push({
+              rule: "strategist-stop-at-3-defect",
+              packageDir,
+              message: "strategist skill must say a walk that stops at 3 is a defect",
+            });
+          }
           if (!STRATEGIST_BRAND_COVERAGE_NECESSARY.test(text)) {
             pkgFindings.push({
               rule: "strategist-brand-coverage-necessary",

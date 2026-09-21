@@ -54,6 +54,11 @@ infers a surface. `strategist-check` remains the multi-mode CLI and is not
 the assessment surface. Strategist is not a required first-day role;
 Advisor remains the only required first-day assessment.
 
+This package also ships the `clossys-strategist` Agent Skill at
+`skill/SKILL.md`. In Cursor, mention `@clossys-strategist` to talk to that
+voice next to the gate bins below. The skill is a chat voice, not a second
+engine, and it does not replace `strategist-check` or `strategist-rate-check`.
+
 ## Scope: this package is strategy records AND brand derivation
 
 Before anything else: `strategy` is not only mission/positioning/markets/
