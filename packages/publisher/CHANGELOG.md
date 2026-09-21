@@ -5,6 +5,18 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.4.28] - 2026-09-21
+
+### Added
+
+- Brand-asset roster roles on top of the image/video registry: favicon SVG,
+  32px PNG, apple-touch 180, maskable 192 and 512, Open Graph 1200×630,
+  Twitter image 1200×630, and email-safe PNG 600×200. Each role requires
+  alt text and a non-empty src. A derivative reads the master SVG and the
+  roster check fails until every role exists at its required pixel size.
+- A complete roster emits favicon and apple-touch links for a publication
+  map that contains a web path.
+
 ## [0.4.23] - 2026-09-21
 
 ### Added
