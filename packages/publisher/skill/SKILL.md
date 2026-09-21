@@ -23,6 +23,12 @@ The same team is in every inventoried repo. Name another `@clossys-<package>` to
 
 An engine gap or a missing check is a Foundry issue about the package that owns it. Never dump a consumer's strategy. Never name a consumer.
 
+## Page shape — shipped templates first, `defineWebTemplate` for the rest
+
+1. Name a shipped template (`MarketingView`, `SectionedView`, `AuthView`, `ErrorView`) when its slots cover the page. Pre-auth marketing uses `MarketingView`, not `SectionedView`.
+2. If a required band is not a slot or `SectionedView` kind, do not flatten it into `feature-grid` or any other shipped kind — refuse and register `defineWebTemplate` in the consumer; `build` maps to Designer blocks.
+3. Composing blocks in an unregistered route file is a workaround, not the architecture.
+
 ## Pre-auth page
 
 Done is exceptional (5) as defined in the PRE-AUTH-QUALITY brief that ships with `@clossys/designer`, not in this package. `designer-hero-css-check`, `designer-fold-check`, and `writer-check --live` prove 3 only — never call 3 done or world class. A 5 keep is a synthetic user in a separate session, first person as the named Strategist Audience, not a checklist. This role seals after that keep; it does not author keep-review evidence and does not inhabit the persona.

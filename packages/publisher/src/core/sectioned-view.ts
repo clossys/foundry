@@ -160,7 +160,13 @@ export interface ResolvedSectionedViewDocument {
   resolutions: CopyResolution[];
 }
 
-export type SectionedViewResolutionReason = "invalid-document" | "unresolved-copy";
+export type SectionedViewResolutionReason = "invalid-document" | "unresolved-copy" | "unsupported-section-kind";
+
+const SECTION_KINDS: readonly SectionedViewSectionKind[] = ["hero", "feature-grid", "faq", "ordered-step-sequence", "status-list"];
+
+function unsupportedSectionKindMessage(path: string, kind: string): string {
+  return `${path}.kind "${kind}" is not a supported SectionedView section kind; supported kinds are ${SECTION_KINDS.join(", ")}.`;
+}
 
 export class SectionedViewResolutionError extends Error {
   constructor(readonly reason: SectionedViewResolutionReason, message: string) {
@@ -322,7 +328,7 @@ export function validateSectionedViewDocument(value: unknown): ComposeFinding[] 
         validateStatusListSection(section, path, findings);
         break;
       default:
-        findings.push(finding("sectioned-view-section-kind", `${path}.kind`, `${path}.kind must be one of hero, feature-grid, faq, ordered-step-sequence, status-list.`));
+        findings.push(finding("sectioned-view-section-kind", `${path}.kind`, unsupportedSectionKindMessage(path, section.kind)));
     }
   }
   if (heroCount > 1) findings.push(finding("sectioned-view-hero-count", "sections", "A SectionedViewDocument must contain at most one hero section."));
@@ -440,7 +446,16 @@ function validateStatusItems(value: unknown, path: string, findings: ComposeFind
 /** Resolves every audience-facing field depth-first and returns its provenance-ready CopyResolution list. */
 export function resolveSectionedViewDocument(document: SectionedViewDocument, resolver: CopyResolver): ResolvedSectionedViewDocument {
   const findings = validateSectionedViewDocument(document);
-  if (findings.length > 0) throw new SectionedViewResolutionError("invalid-document", `resolveSectionedViewDocument refused invalid document: ${findings.map((entry) => entry.message).join("; ")}`);
+  if (findings.length > 0) {
+    const unsupportedKinds = findings.filter((entry) => entry.rule === "sectioned-view-section-kind");
+    if (unsupportedKinds.length > 0) {
+      throw new SectionedViewResolutionError(
+        "unsupported-section-kind",
+        `resolveSectionedViewDocument refused invalid document: ${unsupportedKinds.map((entry) => entry.message).join("; ")}`,
+      );
+    }
+    throw new SectionedViewResolutionError("invalid-document", `resolveSectionedViewDocument refused invalid document: ${findings.map((entry) => entry.message).join("; ")}`);
+  }
   if (typeof resolver !== "function") {
     throw new SectionedViewResolutionError("unresolved-copy", `resolveSectionedViewDocument needs a CopyResolver for document "${document.id}".`);
   }
@@ -502,5 +517,10 @@ function resolveSection(section: SectionedViewSection, path: string, text: (ref:
         ...(sourceItems ? { items: sourceItems.map((item, itemIndex) => resolveStatusItem(item, `${path}.items.${itemIndex}`, text, optional)) } : {}),
       };
     }
+    default:
+      throw new SectionedViewResolutionError(
+        "unsupported-section-kind",
+        `resolveSectionedViewDocument refused section at ${path}: ${unsupportedSectionKindMessage(path, (section as { kind: string }).kind)}`,
+      );
   }
 }

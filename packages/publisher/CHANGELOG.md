@@ -5,6 +5,21 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.4.8] - 2026-09-21
+
+### Changed
+
+- `validateSectionedViewDocument` and `resolveSectionedViewDocument` refuse
+  unknown section kinds and name the unsupported kind in the finding or
+  error; there is no implicit flatten into `feature-grid` or any other
+  shipped kind.
+- `resolveSurfaceDocument` accepts optional `knownTemplates`; when set, an
+  unregistered `surface.template` refuses at resolve time with
+  `unsupported-template` and names the template.
+- README and packed skill: choose shipped templates when slots fit; register
+  `defineWebTemplate` for custom page bands; route-local block composition
+  is a workaround, not the extension path.
+
 ## [0.4.7] - 2026-09-21
 
 ### Added
