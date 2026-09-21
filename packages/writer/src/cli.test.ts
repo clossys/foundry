@@ -358,6 +358,43 @@ function writeBrandDerivedRuleIds(value: unknown): string {
   return path;
 }
 
+describe("main — live-copy trees", () => {
+  const voiceRecord = {
+    id: "acme-app",
+    rules: {
+      person: { description: "second-person", forbiddenPronouns: [] },
+      tense: { description: "present", forbiddenMarkers: [] },
+      formality: "neutral",
+      tone: [],
+    },
+    glossary: [],
+    claims: [{ id: "growth", text: "placeholder claim", matchPhrases: [], requiresSupport: true }],
+  };
+
+  function writeVoiceRecord(): string {
+    const path = join(recordDir, "voice.json");
+    writeFileSync(path, JSON.stringify(voiceRecord));
+    return path;
+  }
+
+  it("returns 2 when a declared live tree is missing", () => {
+    const recordFile = writeRecord(validRecord);
+    const voiceFile = writeVoiceRecord();
+    writeFileSync(join(scanDir, "page.ts"), 'const title = "No results";\n');
+    expect(main([recordFile, scanDir, "--live", join(scanDir, "missing-live"), "--voice-record", voiceFile])).toBe(2);
+  });
+
+  it("returns 1 when live copy contains unmarked magnitude", () => {
+    const recordFile = writeRecord(validRecord);
+    const voiceFile = writeVoiceRecord();
+    const liveDir = mkdtempSync(join(tmpdir(), "copy-cli-live-"));
+    writeFileSync(join(liveDir, "hero.tsx"), 'export const tag = "Save 50% today";\n');
+    writeFileSync(join(scanDir, "registry.ts"), 'const title = "No results";\n');
+    expect(main([recordFile, scanDir, "--live", liveDir, "--voice-record", voiceFile])).toBe(1);
+    rmSync(liveDir, { recursive: true, force: true });
+  });
+});
+
 describe("main — voice-derivation-coverage — argument handling", () => {
   it("--help returns 0 without touching either path", () => {
     expect(main(["voice-derivation-coverage", "--help"])).toBe(0);

@@ -174,6 +174,28 @@ test("expression-wave skills must name clossys-customer", () => {
   assert.ok(result.findings.some((f) => f.rule === "expression-customer-session"));
 });
 
+test("publisher pre-auth section must name MarketingView", () => {
+  const result = evaluatePackageSkills([
+    {
+      packageDir: "publisher",
+      skillPath: "/tmp/ignored",
+      expectedName: "clossys-publisher",
+      skillText: `---
+name: clossys-publisher
+description: Publisher skill.
+disable-model-invocation: true
+---
+
+## Pre-auth page
+
+SectionedView only.
+`,
+    },
+  ]);
+  assert.equal(result.exitCode, 1);
+  assert.ok(result.findings.some((f) => f.rule === "publisher-pre-auth-marketing-view"));
+});
+
 test("expression-wave skills without Pre-auth page heading fail", () => {
   const result = evaluatePackageSkills([
     {

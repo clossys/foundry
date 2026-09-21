@@ -97,6 +97,7 @@
     "designer-brand-check": "dist/tokens/cli.js",
     "designer-contrast-check": "dist/tokens/contrast-cli.js",
     "designer-environment-check": "dist/environment-conformance-cli.js",
+    "designer-hero-css-check": "dist/hero-css/hero-css-cli.js",
     "designer-rate-check": "dist/design-conformance-rate-cli.js"
   },
   "foundry": {

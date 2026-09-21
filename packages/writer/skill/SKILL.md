@@ -25,9 +25,7 @@ An engine gap or a missing check is a Foundry issue about the package that owns 
 
 ## Pre-auth page
 
-Writer fills slots on Designer blocks. One hero heading. Locked thesis or Layer-0 translations are not three stacked headings. Do not empty the copy registry onto the page. A string that is approved is allowed to be used; it is not required to appear.
-
-Done is the rendered first viewport with the Designer, not a registry dump that happens to pass `writer-check`.
+Fill the slots on Publisher `MarketingView` (or the named Designer blocks the page imports). One hero heading. Do not dump the registry onto the page. A green register over a tree the page does not render is not done — declare live trees with `writer-check --live`. Done is CLI-green on those gates, not prose approval.
 
 ## How we work together
 

@@ -55,6 +55,7 @@ import {
   type BrandCoverageResult,
   type BrandDerivation,
 } from "./brand-derivation.js";
+import { checkBrandSurfaces } from "./brand-surfaces.js";
 import {
   checkDirectionCoverage,
   checkDirectionCurrency,
@@ -83,17 +84,18 @@ Exit codes: 0 = clean, 1 = at least one finding, 2 = could not run (bad input, m
 Run "strategist-check brand-coverage --help" or "strategist-check direction --help" for those subcommands' own usage.
 `;
 
-const BRAND_COVERAGE_USAGE = `Usage: strategist-check brand-coverage <derivations-file> <brandable-slots-file>
+const BRAND_COVERAGE_USAGE = `Usage: strategist-check brand-coverage <derivations-file> <brandable-slots-file> [options]
 
   derivations-file      Path to a JSON file containing an array of BrandDerivation objects (see @clossys/strategist's README, "The brand layer"). Required.
   brandable-slots-file  Path to a JSON file containing an array of brandable token-slot name strings (the thing being checked FOR — e.g. every @example/ui/tokens entry with "brandable: true", collected by the caller since this package never imports tokens). Required.
 
 Options:
+  --surfaces <path>      Designer-facing surface file that must contain do-not language (repeatable).
   --help                 Print this message and exit 0.
 
-Checks, in both directions, whether derivations-file fully accounts for the slot names brandable-slots-file declares — see checkBrandCoverage's own doc comment (src/brand-derivation.ts, "THE CHECKER'S SEAM").
+Checks, in both directions, whether derivations-file fully accounts for the slot names brandable-slots-file declares. Full N/N slot coverage is necessary, not sufficient for keep — Designer-facing surfaces must still carry explicit do-not language when --surfaces is declared.
 
-Exit codes: 0 = satisfied, 1 = violated (a real coverage gap in either direction), 2 = indeterminate (could not run: bad input, missing/unreadable/unparseable/invalid file, zero brandable slots supplied, or zero derivations supplied).
+Exit codes: 0 = satisfied, 1 = violated (a real coverage gap in either direction, or a surface missing do-not language), 2 = indeterminate (could not run: bad input, missing/unreadable/unparseable/invalid file, zero brandable slots supplied, zero derivations supplied, or a declared --surfaces path is missing).
 `;
 
 const DIRECTION_USAGE = `Usage: strategist-check direction <direction-entities-file> <reviewed-against-file>
@@ -241,17 +243,26 @@ function printReport(result: FactsGateResult): void {
 interface BrandCoverageArgs {
   derivationsFile?: string;
   brandableSlotsFile?: string;
+  surfacePaths: string[];
   help: boolean;
 }
 
 function parseBrandCoverageArgs(argv: string[]): BrandCoverageArgs {
   let derivationsFile: string | undefined;
   let brandableSlotsFile: string | undefined;
+  const surfacePaths: string[] = [];
   let help = false;
 
-  for (const arg of argv) {
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i] as string;
     if (arg === "--help" || arg === "-h") {
       help = true;
+      continue;
+    }
+    if (arg === "--surfaces") {
+      const value = argv[++i];
+      if (value === undefined || value.startsWith("-")) throw new CliInputError("--surfaces requires a path argument");
+      surfacePaths.push(value);
       continue;
     }
     if (arg.startsWith("-")) {
@@ -266,7 +277,7 @@ function parseBrandCoverageArgs(argv: string[]): BrandCoverageArgs {
     }
   }
 
-  return { derivationsFile, brandableSlotsFile, help };
+  return { derivationsFile, brandableSlotsFile, surfacePaths, help };
 }
 
 type JsonReadResult = { ok: true; value: unknown } | { ok: false; detail: string };
@@ -319,7 +330,7 @@ function printBrandCoverageReport(result: BrandCoverageResult): void {
     for (const slot of result.unknownSlotsInDerivations) console.log(`  ${slot}`);
   }
   if (result.ok) {
-    console.log("Brand coverage: satisfied.");
+    console.log("Brand coverage: satisfied (slot N/N is necessary, not sufficient for keep).");
   } else if (result.reason === "coverage-gap") {
     console.log("Brand coverage: violated.");
   } else {
@@ -392,11 +403,32 @@ function runBrandCoverage(argv: string[]): number {
   const result = checkBrandCoverage(slotsRead.value, derivations);
   printBrandCoverageReport(result);
 
+  const surfaceTexts: { path: string; text: string }[] = [];
+  for (const surfacePath of args.surfacePaths) {
+    const resolved = resolve(surfacePath);
+    if (!existsSync(resolved)) {
+      console.error(`\nDeclared surface "${resolved}" does not exist.`);
+      return 2;
+    }
+    try {
+      surfaceTexts.push({ path: resolved, text: readFileSync(resolved, "utf8") });
+    } catch (error) {
+      console.error(`\nDeclared surface "${resolved}" could not be read: ${error instanceof Error ? error.message : String(error)}`);
+      return 2;
+    }
+  }
+  const surfaceFindings = checkBrandSurfaces(surfaceTexts);
+  if (surfaceFindings.length > 0) {
+    console.log(`\n${surfaceFindings.length} surface finding(s):`);
+    for (const f of surfaceFindings) console.log(`  [${f.rule}] ${f.path}  ${f.message}`);
+  }
+
   // Same fail-closed mapping `main()` below uses for the facts gate,
   // restated for this gate's own three-state result: an indeterminate
   // reason (nothing meaningful was compared) is `2`, never `0` and never
   // conflated with a real `1` violation.
   if (!result.ok && result.reason !== "coverage-gap") return 2;
+  if (surfaceFindings.length > 0) return 1;
   return result.ok ? 0 : 1;
 }
 

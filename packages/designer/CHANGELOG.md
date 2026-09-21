@@ -3,6 +3,22 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Unreleased
+
+### Added
+
+- `designer-hero-css-check` bin: fails when a built stylesheet is missing
+  Hero/Button utility rules (`text-display-l`, `font-display`, `bg-accent`,
+  `rounded-control`, `tablet:grid-cols-2`).
+- `designer-brand-check --also <path>`: refuses when an extra stylesheet
+  redeclares a brandable slot with a different value than the overlay.
+
+### Changed
+
+- `styles/compiled.css` is generated from `src/atoms/`, `src/blocks/`, and
+  `src/shell/` so the default `tokens.css` + `compiled.css` path styles
+  pre-auth Hero and shell without Tailwind.
+
 ## [0.4.7] - 2026-09-19
 
 ### Fixed

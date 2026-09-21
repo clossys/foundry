@@ -3,6 +3,14 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Unreleased
+
+### Added
+
+- `strategist-check brand-coverage --surfaces <path>`: requires do-not
+  language on Designer-facing surfaces; slot N/N alone is reported as
+  necessary, not sufficient.
+
 ## [0.2.0] - 2026-09-19
 
 ### Added

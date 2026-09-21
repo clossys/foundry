@@ -3,6 +3,13 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Unreleased
+
+### Changed
+
+- README: `MarketingView` is the primary pre-auth marketing template;
+  `SectionedView` is documented only for the closed five section kinds.
+
 ## [0.4.5] - 2026-09-18
 
 ### Added

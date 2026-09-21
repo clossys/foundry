@@ -93,6 +93,7 @@ const CUSTOMER_SESSION_WAVE = new Set(["designer", "writer", "publisher", "strat
 /** Expression-wave skills own the pre-auth page contract. Frontmatter-only was not enough. */
 const PRE_AUTH_EXPRESSION_WAVE = new Set(["designer", "writer", "publisher"]);
 const PRE_AUTH_HEADING = /^## Pre-auth page[ \t]*$/m;
+const PUBLISHER_PRE_AUTH_MARKETING_VIEW = /MarketingView/;
 
 function validateSkillBody(packageDir, text) {
   const findings = [];
@@ -185,6 +186,13 @@ export function evaluatePackageSkills(packages) {
             rule: "pre-auth-page-heading",
             packageDir,
             message: "expression-wave skill must contain a '## Pre-auth page' heading — the brief the packed skill carries",
+          });
+        }
+        if (packageDir === "publisher" && PRE_AUTH_HEADING.test(text) && !PUBLISHER_PRE_AUTH_MARKETING_VIEW.test(text)) {
+          pkgFindings.push({
+            rule: "publisher-pre-auth-marketing-view",
+            packageDir,
+            message: "publisher skill Pre-auth page section must name MarketingView as the pre-auth template",
           });
         }
       }

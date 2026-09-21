@@ -11,6 +11,8 @@ beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), "ui-compiled-css-cli-"));
   cpSync(join(packageRoot, "styles"), join(dir, "styles"), { recursive: true });
   cpSync(join(packageRoot, "src", "atoms"), join(dir, "src", "atoms"), { recursive: true });
+  cpSync(join(packageRoot, "src", "blocks"), join(dir, "src", "blocks"), { recursive: true });
+  cpSync(join(packageRoot, "src", "shell"), join(dir, "src", "shell"), { recursive: true });
   vi.spyOn(console, "log").mockImplementation(() => {});
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
@@ -44,16 +46,18 @@ describe("main --write", () => {
     expect(written).toContain(".bg-accent {");
   });
 
-  it("returns 2 when src/atoms/ has no matching files (nothing to derive a compiled.css from)", async () => {
-    rmSync(join(dir, "src", "atoms"), { recursive: true, force: true });
-    mkdirSync(join(dir, "src", "atoms"), { recursive: true });
-    writeFileSync(join(dir, "src", "atoms", "data.json"), "{}"); // not a .ts/.tsx file — matches zero
+  it("returns 2 when every compiled-css source dir is empty", async () => {
+    for (const sub of ["atoms", "blocks", "shell"] as const) {
+      rmSync(join(dir, "src", sub), { recursive: true, force: true });
+      mkdirSync(join(dir, "src", sub), { recursive: true });
+      writeFileSync(join(dir, "src", sub, "data.json"), "{}");
+    }
     const code = await main(["--write", "--package-root", dir]);
     expect(code).toBe(2);
   });
 
-  it("propagates a fail-closed error (as exit 2) when src/atoms/ does not exist at all", async () => {
-    rmSync(join(dir, "src", "atoms"), { recursive: true, force: true });
+  it("propagates a fail-closed error (as exit 2) when source dirs do not exist", async () => {
+    rmSync(join(dir, "src"), { recursive: true, force: true });
     const code = await main(["--write", "--package-root", dir]);
     expect(code).toBe(2);
   });

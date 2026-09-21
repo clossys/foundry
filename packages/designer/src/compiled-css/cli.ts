@@ -29,7 +29,7 @@
 import { existsSync, mkdirSync, realpathSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { scanClassCandidates } from "./class-scan.js";
+import { scanCompiledCssSources } from "./scan-sources.js";
 import { generateCompiledCss } from "./generate.js";
 import { checkCompiledCssFreshness } from "./check.js";
 
@@ -104,13 +104,14 @@ export async function main(argv: string[]): Promise<number> {
   try {
     if (args.mode === "write") {
       const stylesDir = resolve(packageRoot, "styles");
-      const atomsDir = resolve(packageRoot, "src", "atoms");
-      const scan = scanClassCandidates(atomsDir);
+      const scan = scanCompiledCssSources(packageRoot);
       if (scan.filesScanned === 0) {
-        console.error(`No files matched under "${atomsDir}" — nothing was scanned. Refusing to write a compiled.css derived from nothing.`);
+        console.error(`No files matched under src/atoms, src/blocks, or src/shell — nothing was scanned. Refusing to write a compiled.css derived from nothing.`);
         return 2;
       }
-      console.log(`Scanned ${scan.filesScanned} file(s) under ${atomsDir}, ${scan.candidates.length} class candidate(s) extracted.`);
+      console.log(
+        `Scanned ${scan.filesScanned} file(s) (atoms ${scan.byDir.atoms}, blocks ${scan.byDir.blocks}, shell ${scan.byDir.shell}), ${scan.candidates.length} class candidate(s) extracted.`,
+      );
       const generated = await generateCompiledCss({ stylesDir, candidates: scan.candidates });
       const outPath = resolve(stylesDir, "compiled.css");
       mkdirSync(dirname(outPath), { recursive: true });
@@ -128,7 +129,7 @@ export async function main(argv: string[]): Promise<number> {
     const result = await checkCompiledCssFreshness({ packageRoot });
     console.log(`Scanned ${result.filesScanned} file(s), ${result.classCount} class rule(s) in a fresh re-derivation.`);
     if (result.inSync) {
-      console.log(`${compiledCssPath} is in sync with src/atoms/.`);
+      console.log(`${compiledCssPath} is in sync with src/atoms/, src/blocks/, and src/shell/.`);
       return 0;
     }
     console.error(result.diffSummary ?? "styles/compiled.css is stale.");

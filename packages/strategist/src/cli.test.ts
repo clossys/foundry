@@ -235,6 +235,30 @@ describe("main — brand-coverage — real runs", () => {
     const slotsFile = writeBrandableSlots(strategyDir, ["--color-accent-primary", "--color-accent-secondary"]);
     expect(main(["brand-coverage", derivationsFile, slotsFile])).toBe(1);
   });
+
+  it("returns 2 when a declared --surfaces path is missing", () => {
+    const derivationsFile = writeDerivations(strategyDir, [derivation("Precise", ["--color-accent-primary"])]);
+    const slotsFile = writeBrandableSlots(strategyDir, ["--color-accent-primary"]);
+    expect(main(["brand-coverage", derivationsFile, slotsFile, "--surfaces", join(strategyDir, "nope.md")])).toBe(2);
+  });
+
+  it("returns 1 when a declared surface has no do-not language", () => {
+    const derivationsFile = writeDerivations(strategyDir, [derivation("Precise", ["--color-accent-primary"])]);
+    const slotsFile = writeBrandableSlots(strategyDir, ["--color-accent-primary"]);
+    const surface = join(strategyDir, "direction.md");
+    writeFileSync(surface, "Use accent blue for primary actions.\n");
+    expect(main(["brand-coverage", derivationsFile, slotsFile, "--surfaces", surface])).toBe(1);
+  });
+
+  it("returns 0 when slot coverage holds and surfaces include do-not language", () => {
+    const derivationsFile = writeDerivations(strategyDir, [
+      derivation("Precise", ["--color-accent-primary"], ["no-hedging"]),
+    ]);
+    const slotsFile = writeBrandableSlots(strategyDir, ["--color-accent-primary"]);
+    const surface = join(strategyDir, "direction.md");
+    writeFileSync(surface, "Do not use neon accent on body copy.\n");
+    expect(main(["brand-coverage", derivationsFile, slotsFile, "--surfaces", surface])).toBe(0);
+  });
 });
 
 // -----------------------------------------------------------------------

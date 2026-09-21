@@ -25,18 +25,11 @@ An engine gap or a missing check is a Foundry issue about the package that owns 
 
 ## Pre-auth page
 
-A pre-auth page is a composition of this package's blocks and shell (`Hero`, `FeatureGrid`, `OrderedStepSequence`, `Faq`, `StatusList`, `Stat`, `EmptyState`, `ArticleBody`, `SiteHeader`, `SiteFooter`), bound to the consumer brand overlay. Tokens → atoms → blocks is the ladder. A page that never mounts those blocks is a document, not a design.
+Default mount with Publisher: fill `MarketingView` slots. When a block is not on that template (`ArticleBody`, `Stat`, `OrderedStepSequence`, `EmptyState`, extra `Hero` sections), import the named Designer block into the page module — slot-fill of existing components, not layout invention. Do not flatten into `SectionedView`; that assembler is off the pre-auth path.
 
-Publisher `SectionedView` is a closed five-kind assembler (`hero`, `feature-grid`, `faq`, `ordered-step-sequence`, `status-list`). It is optional. `Hero` in this package has a `media` slot and an `actions` slot for `Button` atoms; `SectionedView` currently has neither media nor a statement/`Stat` kind. When the page needs a block that is not a SectionedView kind, compose the Designer block in the consumer renderer. Flattening into the five kinds so a document validates is a defect.
+Default CSS (one path only): `@import "@clossys/designer/tokens.css"` and `@import "@clossys/designer/compiled.css"` plus the brand overlay. No `@source`, no Tailwind required. Never load `compiled.css` and `theme.css` + `@source` together. Tailwind-native setup is advanced-only (README Setup).
 
-Done is the rendered first viewport, not the JSON tree:
-
-- One display heading through `Hero`, not stacked thesis lines as consecutive headings.
-- `Hero` `actions` are `Button` atoms. `media` is used when a real visual exists (screenshot, illustration, product still). Omitting media is a choice, not the default.
-- Ground (`base` / `sunken` / `inverse`) is visible as a surface change, not as extra paragraphs.
-- If a block renders as unstyled HTML, the consumer CSS pipeline is not scanning this package (README Setup: `theme.css` + `@source` on `dist`, including the Next.js `@source` pitfall). That is a Designer defect in the consumer, not a reason to hand-roll markdown.
-
-Do not treat a green copy-id test or an HTTP 200 that contains the heading string as visual acceptance. Look at the page.
+Done is CLI-green on the stylesheet the app loads (`designer-hero-css-check`), not taste. One display heading through `Hero`. `Hero` `actions` are `Button` atoms. Never put a font shorthand in a `--text-*` custom property — `font-size` needs a length.
 
 ## How we work together
 
@@ -53,6 +46,9 @@ Ask one question. Prefer the host multiple-choice control when it exists; otherw
 
 If `node_modules/@clossys/designer` is present (or this package's bins are on PATH), use the exact pin in the tree. Read `package.json` `bin` for the real command names.
 - Assessment CLI: `designer-rate-check`
+- Additional gate CLIs: `designer-brand-check`, `designer-hero-css-check`
+
+Overlay brand coverage is not every stylesheet the public surface loads — run `designer-brand-check --also` on each extra CSS file.
 
 Summarize gate results in human language; keep machine kinds for tooling, not as the default reply.
 

@@ -132,10 +132,11 @@ import {
 } from "./addressability.js";
 import { checkCopyTraceability, type CopyGateFinding, type CopyGateIgnored, type CopyGateResult } from "./copy-gate.js";
 import { checkLocaleCoverage, type LocaleCoverageReport } from "./locale-coverage.js";
+import { liveTreeExists, scanLiveCopyTrees } from "./live-copy-gate.js";
 import { checkPassageComposition, readPassageRecord, type PassageGateResult } from "./passage.js";
 import { readCopyRecord } from "./registry.js";
 import { scanCopySourceTree, type ScanResult, type UncheckedItem } from "./scan.js";
-import { checkVoiceDerivationCoverage, type VoiceDerivationCoverageResult } from "./voice/index.js";
+import { checkVoiceDerivationCoverage, parseVoiceRecord, type VoiceDerivationCoverageResult } from "./voice/index.js";
 
 const USAGE = `Usage: writer-check <record-file> [scan-dir] [options]
    or: writer-check voice-derivation-coverage <obligations-file> <brand-derived-rule-ids-file> [options]
@@ -154,6 +155,8 @@ are separate, stricter gates; neither runs as part of this default command.
 
 Options:
   --help         Print this message and exit 0.
+  --live <dir>   Declared live-copy tree the page actually renders (repeatable). Requires --voice-record.
+  --voice-record <file>  Voice record JSON for claims when --live is set.
   --format <text|json>  Output format. Defaults to text. "json" prints exactly one
                  machine-readable object to stdout (see CopyTraceabilityReport in
                  cli.ts) instead of the human-readable report — "verdict" states the
@@ -206,6 +209,8 @@ export class CliInputError extends Error {}
 interface ParsedArgs {
   recordFile?: string;
   scanDir?: string;
+  liveTrees: string[];
+  voiceRecordFile?: string;
   format: "text" | "json";
   help: boolean;
 }
@@ -213,6 +218,8 @@ interface ParsedArgs {
 function parseArgs(argv: string[]): ParsedArgs {
   let recordFile: string | undefined;
   let scanDir: string | undefined;
+  const liveTrees: string[] = [];
+  let voiceRecordFile: string | undefined;
   let format: "text" | "json" = "text";
   let help = false;
 
@@ -230,6 +237,18 @@ function parseArgs(argv: string[]): ParsedArgs {
       format = value;
       continue;
     }
+    if (arg === "--live") {
+      const value = argv[++i];
+      if (value === undefined || value.startsWith("-")) throw new CliInputError("--live requires a directory path");
+      liveTrees.push(value);
+      continue;
+    }
+    if (arg === "--voice-record") {
+      const value = argv[++i];
+      if (value === undefined || value.startsWith("-")) throw new CliInputError("--voice-record requires a file path");
+      voiceRecordFile = value;
+      continue;
+    }
     if (arg.startsWith("-")) {
       throw new CliInputError(`unknown flag "${arg}"`);
     }
@@ -242,7 +261,11 @@ function parseArgs(argv: string[]): ParsedArgs {
     }
   }
 
-  return { recordFile, scanDir, format, help };
+  if (liveTrees.length > 0 && !voiceRecordFile) {
+    throw new CliInputError("--voice-record is required when --live is declared");
+  }
+
+  return { recordFile, scanDir, liveTrees, voiceRecordFile, format, help };
 }
 
 function requireDirectory(label: string, path: string): void {
@@ -944,6 +967,63 @@ export function main(argv: string[]): number {
 
   const result = checkCopyTraceability(scan.candidates, scan.citations, read.record, scan.filesScanned, scan.unchecked);
   if (!jsonMode) printGateReport(result);
+
+  if (args.liveTrees.length > 0) {
+    for (const livePath of args.liveTrees) {
+      const resolvedLive = resolve(livePath);
+      if (!liveTreeExists(resolvedLive)) {
+        if (!jsonMode) {
+          console.error(`\nDeclared live-copy tree "${resolvedLive}" does not exist.`);
+          console.error("Refusing to report a pass without scanning every declared live tree.");
+        }
+        emitJson(emptyReport(recordFile, scanDir, 2, `declared live-copy tree missing: ${resolvedLive}`));
+        return 2;
+      }
+    }
+    const voicePath = resolve(args.voiceRecordFile as string);
+    requireFile("voice-record", voicePath);
+    let voiceRaw: unknown;
+    try {
+      voiceRaw = JSON.parse(readFileSync(voicePath, "utf8"));
+    } catch (error) {
+      if (!jsonMode) console.error(`Voice record could not be loaded: ${error instanceof Error ? error.message : String(error)}`);
+      emitJson(emptyReport(recordFile, scanDir, 2, "voice record could not be loaded"));
+      return 2;
+    }
+    let voiceRecord;
+    try {
+      voiceRecord = parseVoiceRecord(voiceRaw);
+    } catch (error) {
+      if (!jsonMode) console.error(`Voice record is invalid: ${error instanceof Error ? error.message : String(error)}`);
+      emitJson(emptyReport(recordFile, scanDir, 2, "voice record is invalid"));
+      return 2;
+    }
+    const liveScan = scanLiveCopyTrees(voiceRecord, args.liveTrees.map((p) => resolve(p)));
+    if (!jsonMode) {
+      console.log(`Live-copy trees: ${args.liveTrees.length}, ${liveScan.filesScanned} file(s) scanned.`);
+      if (liveScan.findings.length > 0) {
+        console.log(`\n${liveScan.findings.length} live-copy finding(s):`);
+        for (const f of liveScan.findings) console.log(`  [${f.rule}] ${f.file}:${f.line}  ${f.message}`);
+      }
+    }
+    if (liveScan.findings.length > 0) {
+      const exitCode: 0 | 1 | 2 = result.unchecked.length > 0 ? 2 : 1;
+      emitJson({
+        recordFile,
+        scanDir,
+        verdict: result.unchecked.length > 0 ? "indeterminate" : "findings",
+        exitCode,
+        filesScanned: scan.filesScanned,
+        candidatesScanned: result.candidatesScanned,
+        matched: result.matched,
+        findings: result.findings,
+        ignored: result.ignored,
+        unchecked: result.unchecked,
+        parseFailures: scan.parseFailures.map((p) => ({ file: p.file, detail: p.detail })),
+      });
+      return exitCode;
+    }
+  }
 
   // `unchecked` wins over everything else in the exit-code decision — see
   // this file's own top doc comment for why it is a `2`, not a `1`: it

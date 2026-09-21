@@ -138,11 +138,10 @@ const GENERATED_FILE_HEADER = `/* ═══════════════�
  * \`npm test\` — \`src/compiled-css/check.test.ts\` runs the same
  * re-derive-and-diff check as part of this package's ordinary test suite.
  *
- * Scope: this file covers \`@clossys/designer/atoms\` only — the
- * self-contained base layer that composes no other component (see
- * README.md, "Placement rules"). \`blocks\`, \`shell\`, \`charts\`, and
- * \`theme\` remain Tailwind-native only; see the introducing PR for why
- * that scope was chosen for this first framework-portable contract.
+ * Scope: \`atoms\`, \`blocks\`, and \`shell\` — enough for a pre-auth page
+ * (Hero, feature blocks, site chrome) on the default \`tokens.css\` +
+ * \`compiled.css\` path without Tailwind. \`charts\` and \`theme\` remain
+ * Tailwind-native only.
  *
  * Load this AFTER \`@clossys/designer/tokens.css\` (never instead of it —
  * every declaration below reads a token custom property this file does

@@ -35,6 +35,7 @@ import { existsSync, realpathSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { checkBrandFileCoverage, type BrandFileCoverageReport } from "./check-brand-file-coverage.js";
+import { compareBrandStylesheets } from "./compare-brand-stylesheets.js";
 import { readBrandCss, type BrandCssReadResult } from "./read-brand-css.js";
 
 const USAGE = `Usage: designer-brand-check <brand-css-file> [options]
@@ -42,7 +43,8 @@ const USAGE = `Usage: designer-brand-check <brand-css-file> [options]
   brand-css-file   Path to a brand CSS file (e.g. your project's brand.css, started from @clossys/designer/brand-template.css). Required.
 
 Options:
-  --help         Print this message and exit 0.
+  --also <path>    Additional stylesheet that must not redeclare a brandable slot with a different value than the overlay. Repeatable.
+  --help           Print this message and exit 0.
 
 Exit codes: 0 = clean, 1 = at least one finding, 2 = could not run (bad input, missing/unreadable file, or a region of the file that could not be parsed).
 `;
@@ -52,16 +54,25 @@ export class CliInputError extends Error {}
 
 interface ParsedArgs {
   brandCssFile?: string;
+  alsoFiles: string[];
   help: boolean;
 }
 
 function parseArgs(argv: string[]): ParsedArgs {
   let brandCssFile: string | undefined;
+  const alsoFiles: string[] = [];
   let help = false;
 
-  for (const arg of argv) {
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i] as string;
     if (arg === "--help" || arg === "-h") {
       help = true;
+      continue;
+    }
+    if (arg === "--also") {
+      const value = argv[++i];
+      if (value === undefined || value.startsWith("-")) throw new CliInputError("--also requires a path argument");
+      alsoFiles.push(value);
       continue;
     }
     if (arg.startsWith("-")) {
@@ -70,11 +81,11 @@ function parseArgs(argv: string[]): ParsedArgs {
     if (brandCssFile === undefined) {
       brandCssFile = arg;
     } else {
-      throw new CliInputError(`unexpected extra argument "${arg}"`);
+      alsoFiles.push(arg);
     }
   }
 
-  return { brandCssFile, help };
+  return { brandCssFile, alsoFiles, help };
 }
 
 function requireFile(label: string, path: string): void {
@@ -163,6 +174,27 @@ export function main(argv: string[]): number {
   const result = checkBrandFileCoverage(read.declarations);
   printCoverageReport(result);
 
+  const divergenceFindings: ReturnType<typeof compareBrandStylesheets> = [];
+  for (const alsoPath of args.alsoFiles) {
+    const resolvedAlso = resolve(alsoPath);
+    requireFile("also stylesheet", resolvedAlso);
+    const alsoRead = readBrandCss(resolvedAlso);
+    if (!alsoRead.complete) {
+      console.error(`\nAlso stylesheet "${resolvedAlso}" could not be read:`);
+      for (const issue of alsoRead.issues) console.error(`  [${issue.reason}] ${issue.detail}`);
+      return 2;
+    }
+    if (alsoRead.unchecked.length > 0) {
+      console.error(`Also stylesheet "${resolvedAlso}" has unparsed regions — refusing to compare.`);
+      return 2;
+    }
+    divergenceFindings.push(...compareBrandStylesheets(read.declarations, alsoRead.declarations, resolvedAlso));
+  }
+  if (divergenceFindings.length > 0) {
+    console.log(`\n${divergenceFindings.length} stylesheet divergence finding(s):`);
+    for (const f of divergenceFindings) console.log(`  [${f.rule}] ${f.slot}  ${f.message}`);
+  }
+
   // An unparsed region of the FILE (`read.unchecked`) or an unclassified
   // declaration KEY the check itself flagged (`result.unchecked`) both mean
   // the same thing: part of what should have been examined was not — see
@@ -172,6 +204,7 @@ export function main(argv: string[]): number {
   // accounted for.
   if (read.unchecked.length > 0 || result.unchecked.length > 0) return 2;
 
+  if (divergenceFindings.length > 0) return 1;
   return result.findings.length > 0 ? 1 : 0;
 }
 

@@ -3,6 +3,14 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## Unreleased
+
+### Added
+
+- `writer-check --live <dir>` (repeatable) with `--voice-record`: scans
+  declared live-copy trees for claim-shaped and magnitude-shaped prose not
+  covered by the voice claims register.
+
 ## [0.3.9] - 2026-09-18
 
 ### Added

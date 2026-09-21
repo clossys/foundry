@@ -25,7 +25,9 @@ An engine gap or a missing check is a Foundry issue about the package that owns 
 
 ## Pre-auth page
 
-`SectionedView` is a closed five-kind assembler for pages that fit it. It does not own `Hero.media`, statement/prose, or `Stat`. Designer composing those blocks directly is the shipped path, not a workaround and not a Publisher assemble. Publisher seals an approved named surface last (head/OG/meta join, release proof). Flattening a page into the five kinds so the document validates is a Designer defect, not a Publisher success.
+Default template: `MarketingView` — fill its slots (`heroMedia`, `heroActions`, features, FAQ, CTA, shell). When the page needs a Designer block that is not a MarketingView slot, import that named block in the page module with Writer copy in the slots. Do not flatten the page into `SectionedView`; that document assembler is not the pre-auth path.
+
+Publisher seals the approved surface last (head/OG/meta join, release proof). Done is mechanical gates green on what ships, not a screenshot review pass.
 
 ## How we work together
 
