@@ -1053,6 +1053,11 @@ const waived = [];
 // tsc preserves comments; #941 keys waivers under src/; with --include-built,
 // every compiled copy of the same citation would fail unless src-keyed entries
 // also waive the matching dist/ artifact (without duplicating ~124 dist/ keys).
+// The same copy also rewrites resolution: `./peer.ts` from src/index.ts ships,
+// but from dist/index.js it looks for dist/peer.ts, misses, and CLASS 1 reports
+// the src file as "not in the published set" even when that src file is packed.
+// classifyCitationViaSrcMirror maps the citing dist file back to src before
+// deciding UNREACHABLE — same stem rule as the allowlist mirror below.
 const DIST_ALLOWLIST_ARTIFACT_RE = /\.(?:d\.ts\.map|js\.map|d\.ts|js)$/;
 
 function srcRelFilesForDistArtifact(normRelFile) {
@@ -1077,6 +1082,20 @@ function allowlistEntryFor(relFile, citedPath) {
     if (viaSrc) return viaSrc;
   }
   return undefined;
+}
+
+function classifyCitationViaSrcMirror(citedPath, relFile, citingFile) {
+  const primary = classifyCitation(citedPath, citingFile);
+  if (primary.state === CITATION_SHIPS || primary.state === CITATION_IGNORE) return primary;
+  const srcCandidates = srcRelFilesForDistArtifact(relFile.split(sep).join("/"));
+  if (!srcCandidates) return primary;
+  for (const srcRel of srcCandidates) {
+    const srcAbs = join(rootAbs, srcRel);
+    if (!existsSync(srcAbs)) continue;
+    const asSrc = classifyCitation(citedPath, srcAbs);
+    if (asSrc.state === CITATION_SHIPS) return asSrc;
+  }
+  return primary;
 }
 
 // ---------------------------------------------------------------- the check
@@ -1142,7 +1161,7 @@ function checkClass1(file, lines, ext) {
       }
     }
     if (!matches.length) return;
-    const state = new Map(matches.map((t) => [t, classifyCitation(t, file)]));
+    const state = new Map(matches.map((t) => [t, classifyCitationViaSrcMirror(t, relFile, file)]));
     for (const t of matches) {
       const cited = state.get(t);
       if (cited.state === CITATION_SHIPS) continue;

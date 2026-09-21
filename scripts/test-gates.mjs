@@ -2311,6 +2311,52 @@ try {
     );
   }
 
+  // tsc copies `./peer.ts` from src/index.ts into dist/index.js. From src the
+  // relative path ships (src is packed). From dist it looks for dist/peer.ts,
+  // misses, and would report the packed src file as unreachable. The src-layout
+  // remapping treats that copy as shipping without a #941 key.
+  console.log("\n# check-contamination-classes CLASS 1: src-relative citation in dist ships via src layout");
+  {
+    const dir = join(work, "contam-class1-src-ships-dist");
+    mkdirSync(join(dir, "src"), { recursive: true });
+    mkdirSync(join(dir, "dist"), { recursive: true });
+    const citation = "// See `./peer.ts` for the helper.\nexport const x = 1;\n";
+    writeFileSync(
+      join(dir, "package.json"),
+      JSON.stringify(
+        { name: `${FIXTURE_SCOPE}/src-ships-dist`, version: "1.0.0", files: ["dist", "src"] },
+        null,
+        2,
+      ) + "\n",
+    );
+    writeFileSync(join(dir, "src", "index.ts"), citation);
+    writeFileSync(join(dir, "src", "peer.ts"), "export const peer = 1;\n");
+    writeFileSync(join(dir, "dist", "index.js"), citation);
+    writeFileSync(join(dir, "dist", "peer.js"), "export const peer = 1;\n");
+    gitInit(dir);
+    const ships = run("node", [CONTAM, dir, "--class", "1", "--include-built"]);
+    check(
+      "a tsc-copied ./peer.ts citation in dist is not CLASS 1 when src/peer.ts ships",
+      ships.code === 0 && !ships.out.includes('cites "./peer.ts"'),
+      `src-ships-dist run exited ${ships.code}: ${ships.out.slice(0, 500)}`,
+    );
+
+    writeFileSync(
+      join(dir, "package.json"),
+      JSON.stringify(
+        { name: `${FIXTURE_SCOPE}/src-ships-dist`, version: "1.0.0", files: ["dist"] },
+        null,
+        2,
+      ) + "\n",
+    );
+    const unpacked = run("node", [CONTAM, dir, "--class", "1", "--include-built"]);
+    check(
+      "a tsc-copied ./peer.ts citation in dist still fails when src/peer.ts is not packed",
+      unpacked.code === 1 && unpacked.out.includes('cites "./peer.ts"'),
+      `unpacked-src-peer run exited ${unpacked.code}: ${unpacked.out.slice(0, 500)}`,
+    );
+  }
+
   // --------------- check-contamination-classes CLASS 4: shallow clones fail closed
   // CLASS 4's git-history read for "did this repo ever publish that name" is
   // silently WRONG, not absent, on a shallow checkout: `git log` still
