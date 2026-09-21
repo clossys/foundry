@@ -152,6 +152,7 @@ disable-model-invocation: true
 ---
 
 I am the named Audience. Invoke @clossys-customer before seal. I am not a reviewer.
+Speak from the audience situation and pains only; do not author the audience record.
 Ask me for feedback, compare, refer, churn, adopt, and worth as the same person.
 `;
   const ok = evaluatePackageSkills([
@@ -339,6 +340,20 @@ test("strategist skill must not treat gate-green as keep", () => {
   assert.ok(result.findings.some((f) => f.rule === "strategist-pre-auth-quality-ref"));
   assert.ok(result.findings.some((f) => f.rule === "strategist-no-gate-keep"));
   assert.ok(result.findings.some((f) => f.rule === "strategist-gates-prove-3"));
+});
+
+test("strategist skill must list directory output files and handoff", () => {
+  const result = evaluatePackageSkills([
+    {
+      packageDir: "strategist",
+      skillPath: "/tmp/ignored",
+      expectedName: "clossys-strategist",
+      skillText: validSkill("clossys-strategist", "Strategy traceability."),
+    },
+  ]);
+  assert.equal(result.exitCode, 1);
+  assert.ok(result.findings.some((f) => f.rule === "strategist-output-files"));
+  assert.ok(result.findings.some((f) => f.rule === "strategist-handoff-subcommand"));
 });
 
 test("live repository package skills pass", () => {

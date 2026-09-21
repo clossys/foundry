@@ -111,6 +111,13 @@ const INSPECTOR_USER_BOUNDARY = /synthetic user/i;
 const STRATEGIST_BRAND_COVERAGE_NECESSARY = /necessary,\s*not sufficient/i;
 const STRATEGIST_BRAND_DO_NOT_SURFACES = /do-not language|--surfaces/i;
 const STRATEGIST_BRAND_NOT_KEEP = /\bnot keep\b/i;
+const STRATEGIST_OUTPUT_FILES =
+  /facts\.json|audiences\.json|positioning\.json|claims\.json|constraints\.json|brand\.json|direction\.json/i;
+const STRATEGIST_HANDOFF_SUBCOMMAND = /strategist-check handoff/i;
+const WRITER_CITE_HANDOFF =
+  /audience id|approved strategist claim|constraint ids|direction id|do not edit [`']?strategy\//i;
+const DESIGNER_CITE_HANDOFF = /constraint ids|derived token slot|do not add a brand attribute/i;
+const CUSTOMER_CITE_HANDOFF = /situation|pains|do not author the audience|handoff/i;
 
 function validateSkillBody(packageDir, text) {
   const findings = [];
@@ -341,6 +348,44 @@ export function evaluatePackageSkills(packages) {
                 "strategist skill must state N/N slot coverage is not keep without Designer-facing do-not language",
             });
           }
+          if (!STRATEGIST_OUTPUT_FILES.test(text)) {
+            pkgFindings.push({
+              rule: "strategist-output-files",
+              packageDir,
+              message:
+                "strategist skill must list strategy directory output files (facts, audiences, positioning, claims, constraints, brand, direction)",
+            });
+          }
+          if (!STRATEGIST_HANDOFF_SUBCOMMAND.test(text)) {
+            pkgFindings.push({
+              rule: "strategist-handoff-subcommand",
+              packageDir,
+              message: "strategist skill must name strategist-check handoff",
+            });
+          }
+        }
+        if (packageDir === "writer" && !WRITER_CITE_HANDOFF.test(text)) {
+          pkgFindings.push({
+            rule: "writer-cite-handoff",
+            packageDir,
+            message:
+              "writer skill must cite audience id, approved claim ids, constraint ids, and direction id without editing strategy/",
+          });
+        }
+        if (packageDir === "designer" && !DESIGNER_CITE_HANDOFF.test(text)) {
+          pkgFindings.push({
+            rule: "designer-cite-handoff",
+            packageDir,
+            message: "designer skill must cite constraint ids and derived slot names",
+          });
+        }
+        if (packageDir === "customer" && !CUSTOMER_CITE_HANDOFF.test(text)) {
+          pkgFindings.push({
+            rule: "customer-cite-handoff",
+            packageDir,
+            message:
+              "customer skill must speak from situation and pains and must not author the audience record",
+          });
         }
       }
       if (cataloguePath !== undefined || catalogueText !== undefined) {
