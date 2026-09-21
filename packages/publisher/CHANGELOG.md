@@ -5,6 +5,17 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.4.25] - 2026-09-21
+
+### Added
+
+- Closed `SectionedView` section kinds `pricing`, `testimonial`, and `stat`:
+  copy refs, optional eyebrow on `pricing`, `ground`, and no node escape.
+  Each kind renders through Designer `PricingTable`, `Testimonial`, and
+  `Stat` respectively; `ground` is applied with `SECTION_GROUND_CLASSES`
+  where the block does not accept it. Unknown kinds are still refused by
+  name. (#1106)
+
 ## [0.4.21] - 2026-09-21
 
 ### Fixed

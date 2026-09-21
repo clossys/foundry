@@ -355,6 +355,12 @@
       "version": "0.4.21",
       "reason": "This machine is not the pinned release runtime (Node v24.19.0, npm 11.17.0, zlib 1.3.2.1-motley-3246f1b; this machine Node v24.15.0, npm 11.12.1). Merge acknowledgement, never publication: 0.4.21 may not be published before the record exists.",
       "issue": 948
+    },
+    {
+      "package": "publisher",
+      "version": "0.4.25",
+      "reason": "This machine is not the pinned release runtime (Node v24.19.0, npm 11.17.0, zlib 1.3.2.1-motley-3246f1b; this machine Node v24.15.0, npm 11.12.1). Merge acknowledgement, never publication: 0.4.25 may not be published before the record exists.",
+      "issue": 948
     }
   ]
 }
