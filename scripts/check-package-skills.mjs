@@ -193,7 +193,7 @@ export function evaluatePackageSkills(packages) {
             message: "expression-wave skill must contain a '## Pre-auth page' heading — the brief the packed skill carries",
           });
         }
-        if (EXPRESSION_WAVE.has(packageDir) && PRE_AUTH_HEADING.test(text)) {
+        if (PRE_AUTH_EXPRESSION_WAVE.has(packageDir) && PRE_AUTH_HEADING.test(text)) {
           if (!PRE_AUTH_QUALITY_REF.test(text)) {
             pkgFindings.push({
               rule: "pre-auth-quality-ref",
