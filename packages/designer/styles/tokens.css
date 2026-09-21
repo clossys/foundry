@@ -373,7 +373,7 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   --font-body:                    ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono:                    ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 
-  /* Display signature — brandable via overlay; consumed by `.font-display` */
+  /* Display typography tuning — brandable in a consumer overlay */
   --ui-font-display-style:        normal;
   --ui-font-display-weight:       400;
   --ui-font-display-stretch:      100%;

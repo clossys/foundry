@@ -5,7 +5,7 @@ import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js"
 
 export type MarketingChapterHeadingLevel = 2 | 3;
 
-export interface MarketingChapterProps extends HTMLAttributes<HTMLElement> {
+export interface MarketingChapterProps extends Omit<HTMLAttributes<HTMLElement>, "title"> {
   /** Chapter title — marketing scale (`text-h2`), not settings `SectionHeader` scale. */
   title: ReactNode;
   /** Prose body — typically `ArticleBody` or equivalent long-form content. */
