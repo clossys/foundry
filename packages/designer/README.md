@@ -385,6 +385,12 @@ Record fold evidence (from your app or a browser script) and verify it with
 `--also path/to/mobile-fold.json` for a second viewport. Missing evidence is
 not done; the gate fails closed.
 
+Author a type brief from `templates/brand-type.template.json` (display face,
+H1 minimum, measure cap, monospace roles, orphan-word policy) and verify it
+with `designer-type-check path/to/brand-type.json` — optional
+`--overlay path/to/brand.css` to require a bound `--font-display` in overlay
+CSS. Do not invent type pairing ad hoc on a mid-tier walk.
+
 ### Tailwind-native path (advanced)
 
 When you already run Tailwind v4 and want the full token surface including

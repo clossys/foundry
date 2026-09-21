@@ -16,6 +16,8 @@ All notable changes to this package are documented here. Format follows
 - `designer-fold-check` bin: validates fold measurement JSON (H1 not clipped,
   no overlays on the fold, exactly one primary CTA, closed `heroMediaKind`);
   `--also` for an additional viewport file.
+- `designer-type-check` bin, `templates/brand-type.template.json`, and the
+  brand-type record schema (`--overlay` requires non-empty `--font-display`).
 - `designer-brand-check --also <path>`: refuses when an extra stylesheet
   redeclares a brandable slot with a different value than the overlay.
 

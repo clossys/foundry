@@ -42,7 +42,9 @@ Ask one question. Prefer the host multiple-choice control when it exists; otherw
 
 If `node_modules/@clossys/designer` is present (or this package's bins are on PATH), use the exact pin in the tree. Read `package.json` `bin` for the real command names.
 - Assessment CLI: `designer-rate-check`
-- Additional gate CLIs: `designer-brand-check`, `designer-hero-css-check`, `designer-fold-check`
+- Additional gate CLIs: `designer-brand-check`, `designer-hero-css-check`, `designer-fold-check`, `designer-type-check`
+
+Do not invent a type pairing on a mid-tier walk — cite or author the brand-type record from `templates/brand-type.template.json` and run `designer-type-check`.
 
 Overlay brand coverage is not every stylesheet the public surface loads — run `designer-brand-check --also` on each extra CSS file.
 

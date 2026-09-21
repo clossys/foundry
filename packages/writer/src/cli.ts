@@ -1256,22 +1256,45 @@ registry-text-match escape hatch here, unlike the default command.
 
 Options:
   --help         Print this message and exit 0.
+  --extensions <ext>  File extension to scan, including the leading dot (repeatable; values union). When omitted, default is .ts, .tsx, .js, .jsx. When present, replaces that default.
 
 Exit codes: 0 = clean, 1 = at least one inline user-facing string found, 2 = could not run (bad input, nothing matched to scan, every matched file failed to parse, or a string position could not be confidently classified).
 `;
 
+const ADDRESSABILITY_EXTENSION_RE = /^\.[a-zA-Z0-9]+$/;
+
 interface AddressabilityParsedArgs {
   scanDir?: string;
+  /** Set only when the caller passed at least one `--extensions` flag. */
+  extensions?: string[];
   help: boolean;
 }
 
 function parseAddressabilityArgs(argv: string[]): AddressabilityParsedArgs {
   let scanDir: string | undefined;
+  const extensions: string[] = [];
   let help = false;
+  let sawExtensions = false;
 
-  for (const arg of argv) {
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i] as string;
     if (arg === "--help" || arg === "-h") {
       help = true;
+      continue;
+    }
+    if (arg === "--extensions") {
+      sawExtensions = true;
+      const value = argv[++i];
+      if (value === undefined || value.startsWith("-")) {
+        throw new CliInputError("--extensions requires an extension such as .mjs");
+      }
+      if (!value.startsWith(".")) {
+        throw new CliInputError(`--extensions values must include the leading dot, got ${JSON.stringify(value)}`);
+      }
+      if (!ADDRESSABILITY_EXTENSION_RE.test(value)) {
+        throw new CliInputError(`invalid --extensions value ${JSON.stringify(value)}`);
+      }
+      extensions.push(value.toLowerCase());
       continue;
     }
     if (arg.startsWith("-")) {
@@ -1284,7 +1307,7 @@ function parseAddressabilityArgs(argv: string[]): AddressabilityParsedArgs {
     }
   }
 
-  return { scanDir, help };
+  return { scanDir, help, extensions: sawExtensions ? extensions : undefined };
 }
 
 /**
@@ -1308,7 +1331,10 @@ export function mainAddressabilityCheck(argv: string[]): number {
   // Throws (fail-closed) on an unreadable directory, exactly like
   // `scanCopySourceTree` — caught by `runAddressabilityCheck()`'s own
   // catch-all below.
-  const scan = scanAddressabilitySources(scanDir);
+  const scan = scanAddressabilitySources(
+    scanDir,
+    args.extensions ? { extensions: args.extensions } : {},
+  );
   printAddressabilityAccounting(scan);
 
   const result = checkAddressability(scan);

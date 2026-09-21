@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { CliInputError, main } from "./cli.js";
+import { CliInputError, main, mainAddressabilityCheck } from "./cli.js";
 
 // Hermetic: every test operates on its own pair of `mkdtemp` directories
 // (a real record.json file's directory, plus a scan directory), removed
@@ -813,4 +813,42 @@ describe("main — direct-path reachability (real compiled dist/cli.js)", () => 
     },
     20_000,
   );
+});
+
+describe("mainAddressabilityCheck — argument handling", () => {
+  let dir: string;
+
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), "copy-addressability-cli-"));
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    vi.spyOn(console, "error").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+    vi.restoreAllMocks();
+  });
+
+  it("--help returns 0 and documents --extensions", () => {
+    expect(mainAddressabilityCheck(["--help"])).toBe(0);
+    const printed = vi.mocked(console.log).mock.calls.map((c) => String(c[0])).join("\n");
+    expect(printed).toContain("--extensions");
+  });
+
+  it("throws CliInputError when --extensions has no value", () => {
+    expect(() => mainAddressabilityCheck(["--extensions"])).toThrow(CliInputError);
+  });
+
+  it("throws CliInputError when --extensions omits the leading dot", () => {
+    expect(() => mainAddressabilityCheck(["--extensions", "mjs"])).toThrow(CliInputError);
+  });
+
+  it("does not scan .mjs by default; --extensions .mjs scans inline user-facing prose", () => {
+    writeFileSync(
+      join(dir, "Widget.mjs"),
+      'export const Widget = () => <input aria-label="Search products" />;\n',
+    );
+    expect(mainAddressabilityCheck([dir])).toBe(2);
+    expect(mainAddressabilityCheck([dir, "--extensions", ".mjs"])).toBe(1);
+  });
 });

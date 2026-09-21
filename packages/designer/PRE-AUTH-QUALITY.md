@@ -103,7 +103,7 @@ These gates are the floor. They are not the synthetic user's script.
 
 Everything in **3**, plus:
 
-- A **named type record executed** — display face, H1 minimum size, measure cap, monospace only for eyebrows/data (tracked under issue #1039; not invented ad hoc on a mid-tier walk).
+- A **named type record executed** — display face, H1 minimum size, measure cap, monospace only for eyebrows/data; cite or author `templates/brand-type.template.json` and run `designer-type-check` (not invented ad hoc on a mid-tier walk).
 - **Fold copy contains a domain noun** a competitor cannot reuse — aligned with Strategist do-not language and Writer slot discipline.
 - **Fold media is the thing** — the product surface with real data, or original art of the artifact being made, at a scale that *is* the page, not a card-in-a-slot screenshot.
 - **One visual device** that is not a generic dark/light SaaS band.
