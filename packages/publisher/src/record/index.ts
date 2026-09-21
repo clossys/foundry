@@ -63,3 +63,16 @@ export type { DriftReport } from "./drift.js";
 
 export { checkJoinKeyCompleteness } from "./join-key.js";
 export type { JoinKeyIdentity, JoinKeyReport } from "./join-key.js";
+
+export {
+  asLedgerDriftSubject,
+  checkRegistryPublicationReconciliation,
+  proposeRegistryPublicationEntry,
+  registryPublicationEntryId,
+} from "./reconciliation.js";
+export type {
+  LedgerDriftSubject,
+  ProposeRegistryPublicationEntryInput,
+  RegistryPackageWitness,
+  RegistryReconciliationReport,
+} from "./reconciliation.js";

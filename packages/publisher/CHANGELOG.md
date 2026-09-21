@@ -5,6 +5,21 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+### Added
+
+- `./record` reconciliation contracts: `proposeRegistryPublicationEntry`
+  (publish-path ledger producer), `checkRegistryPublicationReconciliation`
+  (ledger vs independent registry witness), `asLedgerDriftSubject` (drift-check
+  subject pairing), and `registryPublicationEntryId`.
+
+### Changed
+
+- README and `docs/LIFECYCLE.md` distinguish gate-loop staging evidence from
+  reconciliation loops that require a publish-path ledger producer plus an
+  independent witness; document that this repository's own npm publish
+  reconciliation uses governance publication records, not a persisted
+  `./record` ledger.
+
 ## [0.4.17] - 2026-09-21
 
 ### Added

@@ -147,6 +147,17 @@ carries a failing required check, or a push to the default branch. A state
 reachable only by damaging the branch protection the gate exists to serve is
 not a state, which is the same argument that settles origin above.
 
+**Reconciliation loops are not gate loops.** A package whose job compares
+what was published against what a record says was published needs two
+independent records that can disagree — a ledger the publish path emitted,
+and a witness read without using that ledger as its source. Wiring only the
+comparison CLI, or hand-authoring the ledger in the same script that runs
+the check, produces agreement by construction and does not satisfy this
+state for that loop. Fixture evidence that the comparison discriminates is
+still valuable; it is not a substitute for a publish-path producer. See
+`packages/publisher/README.md` ("Gate loops, reconciliation loops, and what
+this repository runs") for how `@clossys/publisher` splits the two.
+
 `control` is the field most likely to be left out and the one that carries the
 proof. The first real candidate in this repository *had* a control — a second
 theme that stayed clean while the injected one failed — and its author had not

@@ -1163,6 +1163,65 @@ whether a cited fact still holds, without ever depending on
 half above — see "Why `publisher` is one package, not two," above — so there
 is no separate `npm install` line here.
 
+### Gate loops, reconciliation loops, and what this repository runs
+
+`publisher` is two loops under one version, and only one of them is a gate.
+
+**Gate loops** (`publisher-media-check`, `publisher-record-check` on a ledger
+file plus a current-values map) evaluate a subject and return a verdict.
+`npm run stage:strategist-writer-publisher` exercises both compiled CLIs
+through their `dist` paths on injected red/control fixtures. That is honest
+author-side staging evidence for the gates themselves: the executable
+discriminates real violations from clean controls.
+
+**Reconciliation loops** compare two records that can disagree. The record
+half's reconciliation is not `checkLedgerDrift` alone — that function only
+asks whether cited facts changed since publication, given a caller-supplied
+`currentValues` map. Full publication reconciliation needs (1) a ledger entry
+**emitted by the publish path** when something actually ships, and (2) an
+**independent witness** of what the registry (or another system of record)
+reports for the same `name@version`. Hand-writing the ledger in the same
+script that runs the check produces two records with one source; that is the
+house failure pattern `docs/LIFECYCLE.md` refuses.
+
+This package now ships the producer and the comparison as pure functions:
+
+```ts
+import {
+  appendEntry,
+  checkRegistryPublicationReconciliation,
+  proposeRegistryPublicationEntry,
+} from "@clossys/publisher/record";
+
+const witness = {
+  packageName: "@clossys/example",
+  version: "1.0.0",
+  tarballSha256: "<64-char hex from an anonymous registry read>",
+  publishedAt: "2026-08-22T12:00:00.000Z",
+};
+
+const entry = proposeRegistryPublicationEntry({
+  witness,
+  strategyRevision: "<opaque publish-path identity, e.g. qualification id>",
+});
+const ledger = appendEntry([], entry);
+
+const report = checkRegistryPublicationReconciliation(ledger, witness);
+```
+
+`asLedgerDriftSubject` pairs a ledger with a `currentValues` map for
+`checkLedgerDrift` — the drift-check subject for fact citations, distinct
+from registry reconciliation.
+
+**What Foundry's own publish workflow does today:** retained publication
+records plus anonymous registry parity checks compare candidate bytes against
+an independent registry read. That reconciliation uses the repository's
+governance schema, not a persisted `@clossys/publisher/record` ledger on
+disk. Wiring the publish workflow to call `proposeRegistryPublicationEntry`
+and persist the resulting ledger — or deliberately keeping `./record` as a
+consumer-only contract — is a repository integration choice; this package
+ships the contract either way and does not fake a reconciler gate in CI.
+
 ### Why this subpath exists
 
 A prior, much larger attempt at this pipeline (strategy → brand → contracts
@@ -1372,6 +1431,10 @@ partial result, visible in the counts, not an all-or-nothing gate.
 | `JoinKeyReport` | type | What `checkJoinKeyCompleteness` returns: `ok`, `liveEntriesChecked`, `completeLiveEntries`, `incompleteLiveEntries`, `identities: JoinKeyIdentity[]`, `findings: LedgerFinding[]`. Mirrors `DriftReport`'s counted shape for the same reason — "checked nothing" and "checked everything and it held" must never print as the same result. |
 | `JoinKeyIdentity` | type | `{ contentId: string; windows: Array<{ entryId, publishedAt, supersededAt? }> }` — one content identity with every window it has been published under, in `publishedAt` order. Exposed on the report so a caller can assert on the grouping directly rather than infer it from a pass or fail. |
 | `checkJoinKeyCompleteness(ledger)` | function | For everything the ledger currently says is live, is enough recorded here for someone else — an observer-shaped tier holding external engagement signals, never this package — to attribute a signal to the right revision of the right surface? Reports `"join-key-missing-identity"` (a live entry with no `contentId`), `"join-key-window-invalid"` (a `supersededAt` that does not actually close a window), and the cross-entry `"join-key-identity-churn"`. Emits and checks for a KEY only, never a verdict about whether a signal is good — see "Why this package exists". Fails closed on an invalid ledger, an empty ledger, or a ledger with zero live entries. |
+| `proposeRegistryPublicationEntry(input)` | function | Publish-path ledger producer: builds one `PublicationEntry` for a scoped `name@version` from an independent `RegistryPackageWitness`. Pure; the caller appends with `appendEntry`. |
+| `checkRegistryPublicationReconciliation(ledger, witness)` | function | Reconciliation loop for registry packages: compares the ledger entry for `witness.packageName@witness.version` against the witness tarball digest. Not a gate over arbitrary trees. |
+| `asLedgerDriftSubject(ledger, currentValues)` | function | Validates and pairs the drift-check subject (`checkLedgerDrift`'s two inputs). |
+| `registryPublicationEntryId(packageName, version)` | function | Stable entry id (`@scope/pkg@1.2.3`) used by the producer and reconciliation check. |
 
 `publisher-record-check` (the CLI, installed as a `bin` when this package is
 installed — its argv-handling `cli.ts` is deliberately not part of the
