@@ -107,6 +107,7 @@ const PRE_AUTH_NO_SELF_CERTIFY = /does not self-certify exceptional keep|do not 
 const INSPECTOR_USER_BOUNDARY = /synthetic user/i;
 const STRATEGIST_BRAND_COVERAGE_NECESSARY = /necessary,\s*not sufficient/i;
 const STRATEGIST_BRAND_DO_NOT_SURFACES = /do-not language|--surfaces/i;
+const STRATEGIST_BRAND_NOT_KEEP = /\bnot keep\b/i;
 
 function validateSkillBody(packageDir, text) {
   const findings = [];
@@ -292,6 +293,14 @@ export function evaluatePackageSkills(packages) {
               packageDir,
               message:
                 "strategist skill must name --surfaces / do-not language for Designer-facing surfaces",
+            });
+          }
+          if (!STRATEGIST_BRAND_NOT_KEEP.test(text)) {
+            pkgFindings.push({
+              rule: "strategist-brand-not-keep",
+              packageDir,
+              message:
+                "strategist skill must state N/N slot coverage is not keep without Designer-facing do-not language",
             });
           }
         }
