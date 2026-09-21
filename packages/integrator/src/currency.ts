@@ -266,7 +266,7 @@ export function optOutGaps(statuses: readonly PackageCurrency[]): readonly strin
   return names;
 }
 
-/** Installed names that are not entitled -- over-install on this one plane. */
+/** Every installed name judged `extra` -- not entitled on this plane, including allowlisted foundation installs. */
 export function extraNames(statuses: readonly PackageCurrency[]): readonly string[] {
   const names: string[] = [];
   for (const status of statuses) {
@@ -335,6 +335,27 @@ export function computeCurrencyMetric(statuses: readonly PackageCurrency[]): Cur
 /** The three verdicts every gate in this fleet folds to, named here without depending on the gate package. */
 export type CurrencyVerdict = "satisfied" | "violated" | "indeterminate";
 
+/** Optional policy for `currencyVerdict`. Omitted or empty `expectedExtras` keeps legacy behavior: every `extra` is a violation. */
+export interface CurrencyVerdictOptions {
+  /**
+   * Installed names reported as `extra` that the caller deliberately holds
+   * on this plane (for example a foundation layer alongside the catalogue).
+   * Allowlisted names remain visible in `extraNames()` but do not fold to
+   * `violated`; names not listed still do.
+   */
+  readonly expectedExtras?: readonly string[];
+}
+
+export function expectedExtraAllowlist(options?: CurrencyVerdictOptions): ReadonlySet<string> | undefined {
+  const list = options?.expectedExtras;
+  if (list === undefined || list.length === 0) return undefined;
+  return new Set(list);
+}
+
+export function extraViolatesVerdict(name: string, allowlist: ReadonlySet<string> | undefined): boolean {
+  return allowlist === undefined || !allowlist.has(name);
+}
+
 /**
  * Fold a set of `PackageCurrency` judgments into one verdict.
  *
@@ -353,7 +374,8 @@ export type CurrencyVerdict = "satisfied" | "violated" | "indeterminate";
  *                                                       informational, reported
  *                                                       but never blocking
  *   - `absent-without-reason`                       -> violated
- *   - `extra`                                       -> violated
+ *   - `extra`                                       -> violated (unless the name is
+ *                                                       on `options.expectedExtras`)
  *   - `opted-out-and-installed`                     -> violated
  *   - `indeterminate` / `unreachable` /
  *     `unauthenticated`                              -> indeterminate
@@ -376,7 +398,8 @@ export type CurrencyVerdict = "satisfied" | "violated" | "indeterminate";
  * evaluated, the run cannot honestly say the set is violated *or* clean, and it
  * must not present a partial answer as a complete one.
  */
-export function currencyVerdict(judgments: readonly PackageCurrency[]): CurrencyVerdict {
+export function currencyVerdict(judgments: readonly PackageCurrency[], options?: CurrencyVerdictOptions): CurrencyVerdict {
+  const allowlist = expectedExtraAllowlist(options);
   let violated = false;
   for (const judgment of judgments) {
     switch (judgment.state) {
@@ -385,9 +408,11 @@ export function currencyVerdict(judgments: readonly PackageCurrency[]): Currency
       case "unauthenticated":
         return "indeterminate";
       case "absent-without-reason":
-      case "extra":
       case "opted-out-and-installed":
         violated = true;
+        break;
+      case "extra":
+        if (extraViolatesVerdict(judgment.name, allowlist)) violated = true;
         break;
       case "behind":
         if (judgment.severity === "major") violated = true;
