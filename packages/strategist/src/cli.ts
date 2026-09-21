@@ -488,9 +488,14 @@ function runBrandCoverage(argv: string[]): number {
     }
   }
   const surfaceFindings = checkBrandSurfaces(surfaceTexts);
-  if (surfaceFindings.length > 0) {
-    console.log(`\n${surfaceFindings.length} surface finding(s):`);
-    for (const f of surfaceFindings) console.log(`  [${f.rule}] ${f.path}  ${f.message}`);
+  if (args.surfacePaths.length > 0) {
+    if (surfaceFindings.length > 0) {
+      console.log(`\n${surfaceFindings.length} Designer-readable brand law finding(s):`);
+      for (const f of surfaceFindings) console.log(`  [${f.rule}] ${f.path}  ${f.message}`);
+      console.log("Designer-readable brand law: violated.");
+    } else {
+      console.log("\nDesigner-readable brand law: satisfied (do-not language on declared surfaces).");
+    }
   }
 
   // Same fail-closed mapping `main()` below uses for the facts gate,

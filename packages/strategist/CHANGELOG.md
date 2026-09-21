@@ -19,6 +19,8 @@ All notable changes to this package are documented here. Format follows
   exceptional (5) and does not ship with this package. The skill names
   `strategist-check brand-coverage` slot N/N as necessary, not sufficient,
   and points at `--surfaces` for Designer-readable do-not language (#1034).
+- `strategist-check brand-coverage --surfaces`: reports Designer-readable brand
+  law separately from slot N/N coverage (#1034).
 
 ## [0.2.5] - 2026-09-21
 
