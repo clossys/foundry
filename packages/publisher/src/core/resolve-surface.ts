@@ -2,7 +2,7 @@ import type { CopyRef, CopyResolution, CopyResolver } from "@clossys/writer";
 import { isSurfaceRepeatingSlotBinding, validateSurfaceDocument } from "./validate.js";
 import type { ComposeDocument, SlotBinding, SurfaceChannelMeta, SurfaceDocument, SurfaceRepeatingSlotBinding, SurfaceRepeatingSlotFieldBinding, SurfaceSlotBindingItem } from "./types.js";
 
-export type SurfaceResolutionReason = "invalid-surface" | "unresolved-copy" | "unsupported-node";
+export type SurfaceResolutionReason = "invalid-surface" | "unresolved-copy" | "unsupported-node" | "unsupported-template";
 
 /** A canonical surface could not be safely lowered into a renderer input. */
 export class SurfaceResolutionError extends Error {
@@ -79,6 +79,15 @@ export interface ResolvedSurfaceNode {
  */
 export interface ResolveSurfaceDocumentOptions {
   nodeSlots?: Iterable<string>;
+  /**
+   * When set, `surface.template` must name a member of this set or resolution
+   * refuses with `unsupported-template` before any copy is resolved — the
+   * resolve-time complement to `renderWebDocument`'s own unknown-template
+   * refusal. Derive this from a `createWebRenderer` instance's
+   * `listWebTemplateNames()` or from the built-in registry when using the
+   * module-level renderer.
+   */
+  knownTemplates?: Iterable<string>;
 }
 
 export interface ResolvedSurfaceDocument {
@@ -173,6 +182,15 @@ export function resolveSurfaceDocument(surface: SurfaceDocument, resolver: CopyR
   }
 
   const nodeSlots = new Set(options.nodeSlots ?? []);
+  if (options.knownTemplates !== undefined) {
+    const knownTemplates = new Set(options.knownTemplates);
+    if (!knownTemplates.has(surface.template)) {
+      throw new SurfaceResolutionError(
+        "unsupported-template",
+        `resolveSurfaceDocument cannot resolve surface "${surface.id}": template "${surface.template}" is not registered. Known template(s): ${[...knownTemplates].join(", ") || "(none)"}.`,
+      );
+    }
+  }
 
   const resolutions: CopyResolution[] = [];
   const text = (ref: CopyRef, path: string): string => {

@@ -251,6 +251,30 @@ This is a breaking contract correction, so Publisher source is now the planned
 qualified nor published: an exact-head candidate and public dependency
 verification remain required before any release action.
 
+### Choosing a shipped view — closed kinds, `defineWebTemplate` for the rest
+
+Name a shipped template when its slots cover the page:
+
+- **`MarketingView`** — pre-auth marketing landing (hero, features, optional
+  FAQ, CTA).
+- **`SectionedView`** — long public pages whose sections are exactly the
+  closed five kinds (`hero`, `feature-grid`, `faq`, `ordered-step-sequence`,
+  `status-list`).
+- **`AuthView`** / **`ErrorView`** — authentication and error shells.
+
+If a required band is not a slot on any shipped template and not one of the
+five `SectionedView` kinds, **do not flatten** it into a one-item
+`feature-grid` or any other shipped kind — that produces a document that
+validates while the page is wrong. Register `defineWebTemplate` in the
+consumer instead; its `build` function maps resolved slots to Designer
+blocks. That registry path is the public custom-page extension.
+
+Composing Designer blocks directly in an unregistered route file can work as
+a one-off, but it is a workaround: it bypasses the template registry,
+`validateSurfaceDocument`/`resolveSurfaceDocument`, and copy provenance for
+that page shape. Prefer `defineWebTemplate` + `createWebRenderer` so the
+page stays provable.
+
 ### Pre-auth marketing pages — `MarketingView` first
 
 For a pre-auth marketing landing page, use `MarketingView` (header, Hero with
@@ -290,7 +314,9 @@ resolver is called.
 order and returns its ordinary `CopyResolution[]`. Pass that list directly to
 `collectCopyProvenance` or existing output-manifest helpers—there is no second
 provenance format. A missing or empty resolution fails the entire document and
-names the exact authored path. This core stage intentionally imports neither
+names the exact authored path. An unknown section kind is refused at validate
+and resolve time and names that kind — there is no implicit remap to
+`feature-grid` or any other shipped kind. This core stage intentionally imports neither
 React nor Designer and does not render a web view. The grounded web renderer
 uses Designer `0.4.0`'s server-safe site-block API, including the separate
 `not-offered` disposition and its caller-localized `labels.dispositions` map,
@@ -641,8 +667,10 @@ const acmeDashboard: SurfaceDocument = {
 };
 
 // Tell resolveSurfaceDocument which of THIS template's slots accept a
-// node — derived from the template's own declaration, never hardcoded.
+// node — derived from the template's own declaration, never hardcoded —
+// and which template names this renderer instance knows.
 const resolved = resolveSurfaceDocument(acmeDashboard, myCopyResolver, {
+  knownTemplates: renderer.listWebTemplateNames(),
   nodeSlots: Object.entries(DashboardView.slotKinds ?? {})
     .filter(([, kinds]) => kinds.includes("node"))
     .map(([slot]) => slot),

@@ -208,3 +208,21 @@ describe("resolveSurfaceDocument — single-binding node, opt-in via options.nod
     expect(JSON.stringify(resolved.resolutions)).not.toContain("consumer-widget");
   });
 });
+
+describe("resolveSurfaceDocument — knownTemplates", () => {
+  it("refuses an unregistered template name when knownTemplates is supplied", () => {
+    try {
+      resolveSurfaceDocument(singleBindingOnly, resolver, { knownTemplates: ["MarketingView", "ErrorView"] });
+      expect.unreachable();
+    } catch (error) {
+      expect(error).toBeInstanceOf(SurfaceResolutionError);
+      expect((error as SurfaceResolutionError).reason).toBe("unsupported-template");
+      expect((error as Error).message).toContain("AuthView");
+    }
+  });
+
+  it("resolves when the template is listed in knownTemplates", () => {
+    const resolved = resolveSurfaceDocument(singleBindingOnly, resolver, { knownTemplates: [singleBindingOnly.template] });
+    expect(resolved.document.template).toBe(singleBindingOnly.template);
+  });
+});
