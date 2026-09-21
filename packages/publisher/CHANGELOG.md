@@ -34,6 +34,8 @@ All notable changes to this package are documented here. Format follows
 
 ### Changed
 
+- `SectionedView` passes explicit Hero `composition` (`split` when hero media
+  is present), matching `MarketingView` and Designer 0.4.12 layout rules.
 - README and skill: six shipped `SectionedView` kinds; hero `actions` still
   render as underlined anchors into `Hero`'s `actions` slot (data-shaped
   `href` contract unchanged). `article-body` / `section-header` remain out of
