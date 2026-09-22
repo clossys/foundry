@@ -273,6 +273,41 @@ equivalent fix after.
   `packages/controller/src/catalog/build.ts` pushes every unreadable or
   unparseable path onto `skipped` instead of dropping it — the decline case
   is data, not silence.
+- **A test or README sentence that says "every" or "all" must derive that
+  set from the tree or from `package.json#exports` (or other live source),
+  never from a hand-written literal array.** This is a smaller sibling of
+  the gate-exit-code convention above (#914: a check reaching success over
+  ground it never examined) — here the ground it never examined is
+  whatever got added to the codebase after the list was last hand-updated.
+  A literal array enumerating "every module," "every field," or "every
+  value" is accurate on the day it's written and silently goes stale as the
+  codebase grows: nothing fails, the claim just quietly stops being true.
+  #907 found and fixed two instances of exactly this drift —
+  `packages/locksmith/src/no-value-escapes.test.ts`'s `NEW_VERB_MODULES`
+  had already missed a real module (`controlled-key-rate.ts`) by the time
+  it was caught — and `packages/writer/src/voice/schema.test.ts`'s "accepts
+  every `VoiceSeverity` value" test that iterated a repeated literal
+  instead of the exported `VOICE_SEVERITIES` constant.
+
+  Derive the set instead: scan the directory (`readdirSync`, filtered to
+  real source files), read it from `package.json#exports`, or import the
+  live constant/array the codebase already exports for that purpose.
+  **Also assert the derived set is non-empty.** A derivation that quietly
+  resolves to `[]` — a renamed directory, a typo'd path, an import that
+  silently returns nothing — makes every test in the loop vacuously pass
+  without checking anything, which is its own silent-success failure mode
+  and exactly as dangerous as the hand-written list it replaced.
+
+  `packages/writer/src/voice/field-coverage.test.ts` is the canonical
+  example in this repository: it derives the bindable field set from
+  `VOICE_FIELDS` (a live source in `src/fields.ts`), asserts
+  `bindable.length` is greater than zero before using it, and checks
+  coverage in both directions (every bindable field appears in the
+  template; the template names no field the package doesn't declare).
+  `packages/designer/src/internal/peer-guard-coverage.test.ts` is the same
+  idea applied to a directory scan and to `package.json#exports` instead of
+  a single constant — read its header comment for the reasoning behind
+  each derivation it makes.
 - **No `workspace:*` or `catalog:` protocols.** They are unresolvable for anyone
   outside the workspace that defines them, and the safety gate rejects them.
 - **0.x dependency ranges are minor-locked — both `^` and `~`.** Packages
