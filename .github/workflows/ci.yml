@@ -1114,6 +1114,13 @@ jobs:
       # packed-consumer, which now uses the same launch shape after a pack.
       - name: Declared bins reachable through node_modules/.bin
         run: node scripts/check-bin-reachability.mjs
+      # Every fenced ts/tsx block in a packages/*/README.md, compiled against
+      # that package's own shipped declarations (#908). Needs the build
+      # above for the same reason check-bin-reachability does: a package's
+      # .d.ts only exists once its own build, and any internal dependency's
+      # build, has run.
+      - name: README code examples typecheck against shipped declarations
+        run: npm run check:readme-examples
       # This repository's own verify-standards collector, checked against the
       # one construction that can tell a real resolution from a retargeted
       # one: a reference naming another repository (or another tracker) whose
