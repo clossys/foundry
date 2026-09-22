@@ -66,6 +66,12 @@
 // qualification record each, per `docs/LIFECYCLE.md` — and is deliberately
 // NOT bundled into the change that added this gate. Tracked at #847.
 //
+// UPDATE: #847 landed the port. butler and keeper now match canonical, and
+// ACKNOWLEDGED_EXCEPTIONS below is empty — this section is kept as the
+// historical record of what the gate found on arrival, not a description
+// of the current tree; see the REAL TREE and REAL ROSTER tests in
+// check-peer-version-assert.test.mjs for what "current" actually asserts.
+//
 // WHY THIS GATE IS GREEN ON ARRIVAL, NOT RED
 // ---------------------------------------------
 // A gate that fails the moment it lands on `main` teaches everyone to
@@ -116,9 +122,9 @@ const REPO_ROOT = new URL("..", import.meta.url).pathname;
 /** The body every other copy is measured against, and why. */
 export const CANONICAL_PATH = "packages/bouncer/src/internal/peer-version.ts";
 export const CANONICAL_REASON =
-  "carries the #389 fix (warn-and-continue on an unparseable INSTALLED version) that " +
-  "bouncer, controller, designer and publisher all share once each package's own name " +
-  "is set aside, and that butler and keeper's own tests show they never received.";
+  "carries the #389 fix (warn-and-continue on an unparseable INSTALLED version), which " +
+  "every discovered copy now shares once each package's own name is set aside — butler " +
+  "and keeper were the last two missing it, and #847 ported it into both.";
 
 /**
  * A REAL, ACKNOWLEDGED divergence — not a general amnesty. Each entry is
@@ -147,28 +153,7 @@ export const CANONICAL_REASON =
  * acknowledged instead of silently exempted or left to fail loudly on
  * arrival; every OTHER file still has zero tolerance.
  */
-export const ACKNOWLEDGED_EXCEPTIONS = Object.freeze([
-  Object.freeze({
-    file: "packages/butler/src/web/internal/peer-version.ts",
-    acknowledgedHash: "3b56a43c128a",
-    reason:
-      "missing the #389 fix (warn-and-continue on an unparseable INSTALLED peer version); still " +
-      "hard-throws, and its own test file asserts the old behaviour by name. Porting the fix is a " +
-      "real source change to a published package — a version bump and a qualification record per " +
-      "docs/LIFECYCLE.md — tracked separately so it is not bundled into the change that added this gate.",
-    issue: 847,
-  }),
-  Object.freeze({
-    file: "packages/keeper/src/web/internal/peer-version.ts",
-    acknowledgedHash: "3b56a43c128a",
-    reason:
-      "missing the #389 fix (warn-and-continue on an unparseable INSTALLED peer version); still " +
-      "hard-throws, and its own test file asserts the old behaviour by name. Porting the fix is a " +
-      "real source change to a published package — a version bump and a qualification record per " +
-      "docs/LIFECYCLE.md — tracked separately so it is not bundled into the change that added this gate.",
-    issue: 847,
-  }),
-]);
+export const ACKNOWLEDGED_EXCEPTIONS = Object.freeze([]);
 
 /**
  * Validate ACKNOWLEDGED_EXCEPTIONS the same way check-package-evidence.mjs
