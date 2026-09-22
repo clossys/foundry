@@ -62,10 +62,26 @@ export function runFirstDayOnboarding(request: unknown, options: FirstDayOnboard
   return joinFirstDayOnboarding(typed, selection, observations);
 }
 
-export { ARCHITECTURE_SUBJECTS, ASSESSMENT_INVOCATION_FAILURES, ASSESSMENT_INVOCATION_KINDS, ASSESSMENT_OUTCOMES, ASSESSMENT_SURFACE_ABSENCES, DIRECTION_SUBJECTS, NO_RULE_OPENED, SELECTION_RULES } from "./types.js";
-export type { ArchitectureSubject, AssessmentInvocationFailure, AssessmentInvocationKind, AssessmentOutcome, AssessmentSurface, AssessmentSurfaceAbsence, AssessmentSurfaceDiscovery, DirectionSubject, LedgerProposal, MutationApproval, MutationAuthorization, OnboardingEngagement, OnboardingFinding, OnboardingGap, OnboardingRequest, OnboardingRun, OnboardingState, RoleAssessmentObservation, RoleAssessmentRecord, RoleSelection, RoleSelectionOutcome, SelectionRule } from "./types.js";
+export { ARCHITECTURE_SUBJECTS, ASSESSMENT_INVOCATION_FAILURES, ASSESSMENT_INVOCATION_KINDS, ASSESSMENT_OUTCOMES, ASSESSMENT_SURFACE_ABSENCES, DIRECTION_SUBJECTS, FIT_SURFACE_ABSENCES, INTAKE_SURFACE_ABSENCES, NO_RULE_OPENED, OUTPUTS_DECLARATION_ABSENCES, SELECTION_RULES, STATUS_SURFACE_ABSENCES } from "./types.js";
+export type { ArchitectureSubject, AssessmentInvocationFailure, AssessmentInvocationKind, AssessmentOutcome, AssessmentSurface, AssessmentSurfaceAbsence, AssessmentSurfaceDiscovery, DirectionSubject, FitSurface, FitSurfaceAbsence, FitSurfaceDiscovery, IntakeSurface, IntakeSurfaceAbsence, IntakeSurfaceDiscovery, LedgerProposal, MutationApproval, MutationAuthorization, OnboardingEngagement, OnboardingFinding, OnboardingGap, OnboardingRequest, OnboardingRun, OnboardingState, OutputsDeclaration, OutputsDeclarationAbsence, OutputsDeclarationDiscovery, RoleAssessmentObservation, RoleAssessmentRecord, RoleSelection, RoleSelectionOutcome, SelectionRule, StatusSurface, StatusSurfaceAbsence, StatusSurfaceDiscovery } from "./types.js";
 export { DIRECTION_ROLE, ENGAGEMENT_BASELINE_ROLE, EXCLUSION_REASON, INDEPENDENT_OUTCOME_ROLE, OPERATING_SYSTEM_ROLE, selectRoles, validateOnboardingRequest } from "./selection.js";
-export { ASSESSMENT_DECLARATION_PATH, discoverRoleAssessmentSurface, discoverRoleAssessmentSurfaces } from "./discovery.js";
+export {
+  ASSESSMENT_DECLARATION_PATH,
+  FIT_DECLARATION_PATH,
+  INTAKE_DECLARATION_PATH,
+  OUTPUTS_DECLARATION_PATH,
+  STATUS_DECLARATION_PATH,
+  discoverRoleAssessmentSurface,
+  discoverRoleAssessmentSurfaces,
+  discoverRoleFitSurface,
+  discoverRoleFitSurfaces,
+  discoverRoleIntakeSurface,
+  discoverRoleIntakeSurfaces,
+  discoverRoleOutputsDeclaration,
+  discoverRoleOutputsDeclarations,
+  discoverRoleStatusSurface,
+  discoverRoleStatusSurfaces,
+} from "./discovery.js";
 export { DEFAULT_ASSESSMENT_TIMEOUT_MS, assessmentInputPath, nodeAssessmentInvoker, observeRoleAssessment } from "./invoke.js";
 export type { AssessmentInvoker, AssessmentProcessResult } from "./invoke.js";
 export { assertPassThroughAssessments, joinFirstDayOnboarding, onboardingExitCode } from "./join.js";

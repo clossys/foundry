@@ -83,6 +83,110 @@ export interface AssessmentSurfaceDiscovery {
 }
 
 /**
+ * The extended `foundry` manifest block (docs/contracts/package-framework.json,
+ * issue #1172): `intake`, `outputs`, `status`, and `fit`, discovered from the
+ * installed manifest exactly the way `assessment` already is -- never
+ * inferred, and an absence is reported rather than guessed.
+ */
+
+/** Why a role exposes no usable intake surface. */
+export const INTAKE_SURFACE_ABSENCES = Object.freeze([
+  "package-not-installed",
+  "manifest-unreadable",
+  "no-intake-declaration",
+  "invalid-intake-declaration",
+  "intake-file-missing",
+] as const);
+export type IntakeSurfaceAbsence = (typeof INTAKE_SURFACE_ABSENCES)[number];
+
+/** A role-owned intake-question-cards file, as the role's own installed manifest declares it. */
+export interface IntakeSurface {
+  readonly role: string;
+  readonly version: string;
+  readonly path: string;
+  readonly file: string;
+}
+
+export interface IntakeSurfaceDiscovery {
+  readonly role: string;
+  readonly surface: IntakeSurface | null;
+  readonly absence: IntakeSurfaceAbsence | null;
+}
+
+/** Why a role exposes no usable fit-signal surface. */
+export const FIT_SURFACE_ABSENCES = Object.freeze([
+  "package-not-installed",
+  "manifest-unreadable",
+  "no-fit-declaration",
+  "invalid-fit-declaration",
+  "fit-file-missing",
+] as const);
+export type FitSurfaceAbsence = (typeof FIT_SURFACE_ABSENCES)[number];
+
+/** A role-owned fit-signal-declarations file, as the role's own installed manifest declares it. */
+export interface FitSurface {
+  readonly role: string;
+  readonly version: string;
+  readonly path: string;
+  readonly file: string;
+}
+
+export interface FitSurfaceDiscovery {
+  readonly role: string;
+  readonly surface: FitSurface | null;
+  readonly absence: FitSurfaceAbsence | null;
+}
+
+/** Why a role exposes no usable status surface. Same vocabulary shape as assessment's. */
+export const STATUS_SURFACE_ABSENCES = Object.freeze([
+  "package-not-installed",
+  "manifest-unreadable",
+  "no-status-declaration",
+  "invalid-status-declaration",
+  "undeclared-status-bin",
+  "status-executable-missing",
+] as const);
+export type StatusSurfaceAbsence = (typeof STATUS_SURFACE_ABSENCES)[number];
+
+/** A role-owned read-only status probe, as the role's own installed manifest declares it. */
+export interface StatusSurface {
+  readonly role: string;
+  readonly version: string;
+  readonly bin: string;
+  readonly invocation: AssessmentInvocationKind;
+  readonly executable: string;
+}
+
+export interface StatusSurfaceDiscovery {
+  readonly role: string;
+  readonly surface: StatusSurface | null;
+  readonly absence: StatusSurfaceAbsence | null;
+}
+
+/** Why a role has no usable outputs declaration. */
+export const OUTPUTS_DECLARATION_ABSENCES = Object.freeze([
+  "package-not-installed",
+  "manifest-unreadable",
+  "no-outputs-declaration",
+  "invalid-outputs-declaration",
+  "output-path-outside-role-folder",
+] as const);
+export type OutputsDeclarationAbsence = (typeof OUTPUTS_DECLARATION_ABSENCES)[number];
+
+/** The paths a role declares it owns, all under its own `clossys/<role>/` folder (issue #1171). */
+export interface OutputsDeclaration {
+  readonly role: string;
+  readonly version: string;
+  readonly paths: readonly string[];
+}
+
+export interface OutputsDeclarationDiscovery {
+  readonly role: string;
+  readonly declaration: OutputsDeclaration | null;
+  readonly absence: OutputsDeclarationAbsence | null;
+}
+
+/**
  * One observation of a role's own assessment. `assessment` is whatever the
  * role returned, carried by reference and never rewritten.
  */

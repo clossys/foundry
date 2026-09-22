@@ -5,6 +5,28 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.13] - 2026-09-22
+
+### Added
+
+- Onboarding discovery now reads the extended `foundry` manifest block
+  (issue #1172): `intake`, `outputs`, `status`, and `fit`, alongside the
+  existing `assessment`. Each is discovered exactly the same way — read only
+  from the role's own installed manifest, never inferred, with every absence
+  reported as a determinate value (`discoverRoleIntakeSurface`,
+  `discoverRoleFitSurface`, `discoverRoleStatusSurface`,
+  `discoverRoleOutputsDeclaration`, and their plural
+  `*Surfaces`/`*Declarations` forms). `outputs` is additionally validated
+  against the role's own `clossys/<role>/` output folder (issue #1171).
+- No package in this repository declares any of these fields yet —
+  conformance is a later wave (#1172's own sequencing). This change is
+  purely additive: no existing export, type, or behavior changed.
+
+### Notes
+
+- Purely additive; qualification of `0.9.13` is deferred for the same
+  toolchain-pin reason as the other issue-948 deferral entries.
+
 ## [0.9.12] - 2026-09-21
 
 ### Added

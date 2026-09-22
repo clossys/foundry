@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "kind": "foundry-package-framework",
+  "version": 1,
+  "manifestKey": "foundry",
+  "$comment": "The extended shape of the `foundry` manifest block every role package may declare in its own package.json. `assessment` already exists (docs/DECISIONS.md and packages/controller/src/onboarding/discovery.ts); this schema version ADDS `intake`, `outputs`, `status`, and `fit` beside it, at the same key. Nothing here is inferred: @clossys/controller's onboarding discovery reads each field only from the installed package's own manifest, never from a generic template, and an absent field is reported as absent -- never guessed, never defaulted. scripts/check-package-framework.mjs is the gate that validates any of these fields a package DOES declare; it does not require any of them yet (see `enforcement`).",
+  "fields": {
+    "assessment": {
+      "status": "existing",
+      "shape": "{ bin: string, invocation: \"single-json-input\" }",
+      "meaning": "The role's first-day assessment entry point: a bin this same manifest maps, invoked with one caller-owned JSON evidence file and a 0/1/2 (satisfied/violated/indeterminate) exit.",
+      "definedBy": "packages/controller/src/onboarding/discovery.ts (ASSESSMENT_DECLARATION_PATH = foundry.assessment)"
+    },
+    "intake": {
+      "status": "new",
+      "shape": "a package-relative path string to one shipped JSON file",
+      "meaning": "What the role must know before it walks, as a set of stable, multiple-choice question cards -- the shape @clossys/advisor already uses for sponsor questions (SponsorQuestionCard, packages/advisor/src/sponsor-questions.ts). The referenced file's own shape is docs/contracts/intake-question-cards.json.",
+      "pathRule": "relative, must resolve inside the package directory (no leading '/', no '..' segment)"
+    },
+    "outputs": {
+      "status": "new",
+      "shape": "a non-empty array of package-relative path strings",
+      "meaning": "The files this role owns and may write, declared so Advisor, Launcher, and every skill can list what a role produces without reading its source. Every path must fall under this role's own `clossys/<role>/` folder, per the layout docs/contracts/consumer-layout.json defines (issue #1171). `<role>` is the manifest's own package name with its scope removed (`@clossys/advisor` -> `clossys/advisor/`).",
+      "pathRule": "relative, no leading '/', no '..' segment, first two path segments must be exactly `clossys/<role-name>`"
+    },
+    "status": {
+      "status": "new",
+      "shape": "{ bin: string, invocation: \"single-json-input\" }",
+      "meaning": "A read-only command that reports where this role currently stands in the consumer's repository -- the baseline every skill opens with before proposing anything. Same invocation contract as `assessment`, but the probe MUST NOT mutate anything it reads.",
+      "pathRule": "the named bin must be one this same manifest's `bin` field maps, exactly like `assessment`"
+    },
+    "fit": {
+      "status": "new",
+      "shape": "a package-relative path string to one shipped JSON file",
+      "meaning": "The evidence that makes this role applicable to a repository at all (for example, Publisher needs an audience-facing surface). Advisor reads these to recommend a role instead of guessing. The referenced file's own shape is docs/contracts/fit-signal-declarations.json.",
+      "pathRule": "relative, must resolve inside the package directory (no leading '/', no '..' segment)"
+    }
+  },
+  "enforcement": {
+    "mode": "report",
+    "rule": "scripts/check-package-framework.mjs runs in REPORT MODE by default: it prints a conformance table for every package in packages/*, and fails ONLY when a field a package DOES declare is malformed (wrong shape, an unmapped bin, an escaping or misplaced path). Absence of intake, outputs, status, or fit is never a failure in report mode -- it is printed and counted, the same discipline check-role-assessment-surfaces.mjs already applies to `assessment` (issue #435: a capability requiring zero targets must not grade identically to one fully covered). Pass --enforce to fail on absence too; that flag is for a later wave, once packages have had the chance to conform (issue #1172's own sequencing: the five Launch-kit packages first, then the remaining roles)."
+  },
+  "governance": {
+    "rule": "No single package owns this framework at runtime. It is supplier governance: this contract plus the gate that reads it. @clossys/controller's onboarding discovers a role's declarations at runtime and never infers one; @clossys/advisor orchestrates what discovery returns. Neither package gains a new runtime dependency on any role package to do this -- discovery reads an installed manifest, nothing else.",
+    "changeProcedure": "A framework change is exactly one pull request: it bumps this file's own top-level `version`, and brings every package this repository ships into conformance with the new shape in the same change. A package left non-conformant after that PR is a defect, not a follow-up."
+  }
+}
