@@ -381,6 +381,53 @@ lane.
 Its registry-backed replay is retained post-publication evidence only, not a
 retroactive gate, adoption, grounding, or release clearance.
 
+### The qualification runtime is pinned exactly, and your machine may not be it
+
+`scripts/lib/release-runtime.mjs` pins the exact runtime that release
+qualification must run on: `RELEASE_RUNTIME` is Node `v24.19.0`, npm
+`11.17.0`, and zlib `1.3.2.1-motley-3246f1b`. `scripts/run-candidate-
+qualification.mjs` asserts all three before it packs anything and refuses
+closed, rather than producing a record, on any mismatch.
+
+This is a separate requirement from root `package.json`'s `engines.node:
+">=20"`, and the two are not in tension: `engines` states the floor a
+*consumer* of a published package needs to run it, while the qualification
+pin states the exact toolchain a *producer* must use to generate a record
+that proves something. A qualification record binds exact tarball bytes —
+`tsc` output and gzip compression both vary with the toolchain that
+produced them — so "close enough" would prove the bytes a different
+runtime produced, not the bytes actually being qualified. This is also why
+the pin must never be relaxed: loosening it to accept whatever runtime
+happens to be at hand would turn the record from proof of exact artifact
+bytes into a record of some other, unspecified bytes, silently.
+
+**A developer machine that doesn't match this exact tuple cannot produce a
+record at all** — `run-candidate-qualification.mjs` fails closed before
+packing rather than emitting one on a different toolchain. The normal path
+onto the pinned runtime is `.github/workflows/qualify-candidate.yml`,
+dispatched by:
+
+```bash
+gh workflow run qualify-candidate.yml -f package=<pkg>
+```
+
+(pass `-f version=<version>` only to qualify something other than the
+checked-out ref's current manifest version). The workflow runs on the pinned
+`actions/setup-node` runtime, produces and retains the qualification record,
+then pushes a `claude/qualify-<pkg>-<version>` branch carrying it. GitHub
+Actions' own token cannot open a pull request against this repository, so the
+workflow pushes the branch and stops; a maintainer opens the PR for that
+branch by hand.
+
+**Until a retained record exists,** a package version that has already
+merged to `main` ahead of one carries an acknowledged, issue-referenced
+deferral entry in `governance/release-qualification-deferrals.json`
+(enforced by `scripts/check-qualification-record-required.mjs`). A deferral
+acknowledges a merge, never a publication — the version it names may not be
+published before its record exists, and the entry itself goes stale (and
+fails the gate) the instant a matching record is retained, so it is a
+countdown, not a standing exemption.
+
 ### Once a version's record is retained, any change to that package needs a new version
 
 This is the ordering rule, stated plainly because it is not obvious from
