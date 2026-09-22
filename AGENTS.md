@@ -91,6 +91,16 @@ actually possible. See [SECURITY.md](SECURITY.md) for the fuller
 explanation of the gate and [CONTRIBUTING.md](CONTRIBUTING.md) for what
 this means day to day.
 
+This repository's automated code reviewer addresses pull request authors by
+handle in its own thread replies and in an embedded "Learnings" block that
+re-emits the same handle, which the conversation-safety gate correctly flags
+as a private-identity disclosure on every thread reply. That is a written,
+standing exception (#274): the resulting red `conversation safety` runs and
+`public-safety` labels on the reviewer's own bot-authored text are expected,
+known noise, not unresolved findings. The gate is not to be silenced,
+suppressed, or exempted for them — by denylist change or otherwise — and
+human-authored text remains held to the same rule it always was.
+
 ## Cloud sessions
 
 Codex Cloud and Claude remote sessions use the same repository contract: run
