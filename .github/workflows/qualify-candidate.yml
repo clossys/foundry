@@ -178,6 +178,27 @@ jobs:
           TRANSCRIPT: ${{ runner.temp }}/qualification/${{ inputs.package }}/transcript.json
         run: node scripts/run-candidate-qualification.mjs --package "$PKG" --tarball "$TARBALL" --output "$TRANSCRIPT"
 
+      # The step above can fail two ways that print nothing useful on their
+      # own: a thrown Error (a stack trace, but no transcript on disk yet)
+      # or a graceful transcript.ok===false (process.exitCode=1, no stack,
+      # no console output at all -- the failure detail lives only in the
+      # transcript file this step writes). Without this, a run like #948's
+      # writer dispatch surfaces as a bare "exit code 1" with nothing to
+      # act on, which is exactly the failure mode candidateNotInstalledMessage()
+      # exists to prevent one layer down.
+      - name: Dump qualification transcript on failure
+        if: failure()
+        env:
+          TRANSCRIPT: ${{ runner.temp }}/qualification/${{ inputs.package }}/transcript.json
+        run: |
+          if [ -f "$TRANSCRIPT" ]; then
+            echo "::group::qualification transcript"
+            cat "$TRANSCRIPT"
+            echo "::endgroup::"
+          else
+            echo "no transcript file was written (the script failed before producing one -- see the step above for a thrown error)"
+          fi
+
       # generate-qualification-record.mjs is the retention mechanism itself:
       # it re-derives every joined digest from the git tree at HEAD, proves
       # the tarball reproduces from a clean rebuild (issue #893), and REFUSES
@@ -241,20 +262,44 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -b "$branch"
-          git add "$RECORD_PATH" governance/release-qualification-deferrals.json
 
-          message_file="$RUNNER_TEMP/qualify-candidate-commit-message.txt"
+          # Two commits, not one. scripts/lib/candidate-qualification.mjs's
+          # forward-record-paths rule requires a qualification-introduction
+          # commit to change EXACTLY the qualification record path(s) it
+          # introduces -- governance/release-qualification-deferrals.json is
+          # not a record path, so it cannot share that commit. A single
+          # "record + deferral" commit (what this step used to make) passes
+          # every check that runs before build-and-test, then fails
+          # build-and-test itself -- discovered when a consolidated batch of
+          # these records reached that job for the first time. This mirrors
+          # the two-commit shape #1156 landed by hand for the same reason.
+          record_message_file="$RUNNER_TEMP/qualify-candidate-commit-message.txt"
           {
             printf '%s\n\n' "Qualify ${name}@${VERSION} on the pinned release runtime"
             printf '%s\n' "Produced ${RECORD_PATH} by running scripts/run-candidate-qualification.mjs"
             printf '%s\n' "and scripts/generate-qualification-record.mjs on the exact runtime"
             printf '%s\n' "scripts/lib/release-runtime.mjs pins (Node v24.19.0, npm 11.17.0, zlib"
-            printf '%s\n' "1.3.2.1-motley-3246f1b), via .github/workflows/qualify-candidate.yml, and"
-            printf '%s\n\n' "removed the deferral entry it makes stale, if one was on file."
+            printf '%s\n\n' "1.3.2.1-motley-3246f1b), via .github/workflows/qualify-candidate.yml."
             printf '%s\n\n' "This acknowledges qualification only; it does not publish ${name}@${VERSION}."
             printf '%s\n' "Ref: #948"
-          } > "$message_file"
-          git commit -F "$message_file"
+          } > "$record_message_file"
+          git add "$RECORD_PATH"
+          git commit -F "$record_message_file"
+
+          if ! git diff --quiet -- governance/release-qualification-deferrals.json; then
+            deferral_message_file="$RUNNER_TEMP/qualify-candidate-deferral-commit-message.txt"
+            {
+              printf '%s\n\n' "Remove the ${name}@${VERSION} deferral entry qualification made stale"
+              printf '%s\n' "The record introduced in the previous commit makes this entry stale by"
+              printf '%s\n' "scripts/check-qualification-record-required.mjs's stale-deferral rule."
+              printf '%s\n\n' "Separate commit from the record introduction: see that commit's own"
+              printf '%s\n' "message for why governance/release-qualification-deferrals.json cannot"
+              printf '%s\n\n' "share a commit with a qualification-record path."
+              printf '%s\n' "Ref: #948"
+            } > "$deferral_message_file"
+            git add governance/release-qualification-deferrals.json
+            git commit -F "$deferral_message_file"
+          fi
 
           git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
           git push origin "$branch"
@@ -268,8 +313,39 @@ jobs:
             printf '%s\n' "Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}"
             printf '%s\n' "Ref: #948"
           } > "$body_file"
-          gh pr create \
+
+          # This repository does not permit GitHub Actions to create pull
+          # requests (a repository setting this workflow does not, and
+          # should not, change on its own) -- gh pr create fails here with
+          # "GitHub Actions is not permitted to create or approve pull
+          # requests". That is not this run's failure: the branch above is
+          # already pushed with a complete, valid, retained record. Try PR
+          # creation, and if it is refused for that specific reason, fall
+          # back to a compare-URL summary instead of failing the whole run
+          # -- a human (or a later run authorized to open PRs) can open it
+          # from the branch. Any OTHER gh pr create failure still fails the
+          # job; only this one, named reason degrades gracefully.
+          set +e
+          pr_create_output="$(gh pr create \
             --title "Qualify ${name}@${VERSION} on the pinned release runtime" \
             --base "$GITHUB_BASE_REF_OR_DEFAULT" \
             --head "$branch" \
-            --body-file "$body_file"
+            --body-file "$body_file" 2>&1)"
+          pr_create_status=$?
+          set -e
+
+          if [ "$pr_create_status" -eq 0 ]; then
+            echo "$pr_create_output"
+          elif printf '%s' "$pr_create_output" | grep -q "not permitted to create or approve pull requests"; then
+            {
+              echo "### Qualification record produced, PR not opened"
+              echo ""
+              echo "\`${name}@${VERSION}\` was qualified and the record is retained on branch \`${branch}\`, but this repository does not permit GitHub Actions to open pull requests."
+              echo ""
+              echo "Open it from: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/compare/${GITHUB_BASE_REF_OR_DEFAULT}...${branch}?expand=1"
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "PR creation was refused (Actions cannot create PRs on this repo); branch ${branch} is pushed and ready. See job summary for the compare URL."
+          else
+            echo "$pr_create_output" >&2
+            exit "$pr_create_status"
+          fi
