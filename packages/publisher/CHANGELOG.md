@@ -24,6 +24,12 @@ All notable changes to this package are documented here. Format follows
 - `SectionedViewDocument.sectionGroundRhythm` (`base-then-sunken`) fills omitted
   section grounds as `base` then `sunken` in document order; explicit
   `ground` values (including `inverse`) are never overwritten (#1105).
+- Closed `SectionedView` section kinds `pricing`, `testimonial`, and `stat`:
+  copy refs, optional eyebrow on `pricing`, `ground`, and no node escape.
+  Each kind renders through Designer `PricingTable`, `Testimonial`, and
+  `Stat` respectively; `ground` is applied with `SECTION_GROUND_CLASSES`
+  where the block does not accept it. Unknown kinds are still refused by
+  name (#1106).
 
 ### Changed
 

@@ -514,3 +514,105 @@ describe("SectionedViewDocument section ground rhythm (#1105)", () => {
     expect(validateSectionedViewDocument(missingGround).map((entry) => entry.rule)).toContain("sectioned-view-ground-required");
   });
 });
+
+describe("SectionedViewDocument pricing, testimonial, and stat (issue #1106)", () => {
+  const extendedCopy = {
+    "acme.pricing.eyebrow": "Plans",
+    "acme.pricing.heading": "Pricing",
+    "acme.pricing.description": "Fixture pricing.",
+    "acme.pricing.tier.name": "Team",
+    "acme.pricing.tier.price": "$12",
+    "acme.pricing.tier.feature": "Unlimited seats",
+    "acme.pricing.tier.cta": "Start trial",
+    "acme.testimonial.heading": "Proof",
+    "acme.testimonial.quote": "It just works.",
+    "acme.testimonial.name": "Fixture Author",
+    "acme.testimonial.role": "Customer",
+    "acme.stat.heading": "Outcomes",
+    "acme.stat.label": "Uptime",
+    "acme.stat.value": "99.9%",
+    "acme.stat.delta": "+0.1%",
+  };
+
+  const extendedRegistry: CopyRegistry = {
+    ...registry,
+    entries: [
+      ...registry.entries,
+      ...Object.entries(extendedCopy).map(([id, text]) => ({ id, text, context: "fixture", status: "approved" as const })),
+    ],
+  };
+  const extendedResolver = createCopyResolver(extendedRegistry);
+
+  const document: SectionedViewDocument = {
+    id: "acme.marketing",
+    sections: [
+      {
+        id: "pricing",
+        kind: "pricing",
+        ground: "sunken",
+        eyebrow: ref("acme.pricing.eyebrow"),
+        heading: ref("acme.pricing.heading"),
+        description: ref("acme.pricing.description"),
+        items: [{
+          id: "team",
+          name: ref("acme.pricing.tier.name"),
+          price: ref("acme.pricing.tier.price"),
+          features: [ref("acme.pricing.tier.feature")],
+          cta: ref("acme.pricing.tier.cta"),
+        }],
+      },
+      {
+        id: "proof",
+        kind: "testimonial",
+        ground: "base",
+        heading: ref("acme.testimonial.heading"),
+        items: [{
+          id: "one",
+          quote: ref("acme.testimonial.quote"),
+          attributorName: ref("acme.testimonial.name"),
+          attributorRole: ref("acme.testimonial.role"),
+        }],
+      },
+      {
+        id: "outcomes",
+        kind: "stat",
+        ground: "inverse",
+        heading: ref("acme.stat.heading"),
+        items: [{
+          id: "uptime",
+          label: ref("acme.stat.label"),
+          value: ref("acme.stat.value"),
+          delta: ref("acme.stat.delta"),
+        }],
+      },
+    ],
+  };
+
+  it("accepts the three new closed kinds and resolves every CopyRef", () => {
+    expect(validateSectionedViewDocument(document)).toEqual([]);
+    const resolved = resolveSectionedViewDocument(document, extendedResolver);
+    expect(resolved.sections[0]).toMatchObject({
+      kind: "pricing",
+      items: [{ name: "Team", price: "$12", features: ["Unlimited seats"], cta: "Start trial" }],
+    });
+    expect(resolved.sections[1]).toMatchObject({
+      kind: "testimonial",
+      items: [{ quote: "It just works.", attributorName: "Fixture Author", attributorRole: "Customer" }],
+    });
+    expect(resolved.sections[2]).toMatchObject({
+      kind: "stat",
+      items: [{ label: "Uptime", value: "99.9%", delta: "+0.1%" }],
+    });
+  });
+
+  it("allows testimonial and stat sections without a heading", () => {
+    const withoutHeadings: SectionedViewDocument = {
+      id: "acme.marketing",
+      sections: [
+        { id: "proof", kind: "testimonial", ground: "base", items: document.sections[1].items },
+        { id: "outcomes", kind: "stat", ground: "base", items: document.sections[2].items },
+      ],
+    };
+    expect(validateSectionedViewDocument(withoutHeadings)).toEqual([]);
+  });
+});

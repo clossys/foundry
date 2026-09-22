@@ -251,6 +251,59 @@ describe("SectionedView gap 2 and gap 7 relaxations", () => {
   });
 });
 
+describe("SectionedView pricing, testimonial, and stat (issue #1106)", () => {
+  it("renders the new section kinds through Designer blocks", () => {
+    const withBands: ResolvedSectionedViewDocument = {
+      id: "acme-marketing",
+      resolutions: document.resolutions,
+      sections: [
+        {
+          id: "pricing",
+          kind: "pricing",
+          ground: "sunken",
+          eyebrow: "Plans",
+          heading: "Pricing",
+          description: "Choose a tier.",
+          items: [{
+            id: "team",
+            name: "Team",
+            price: "$12",
+            features: ["Unlimited seats"],
+            cta: "Start trial",
+          }],
+        },
+        {
+          id: "proof",
+          kind: "testimonial",
+          ground: "base",
+          heading: "Proof",
+          items: [{
+            id: "one",
+            quote: "It just works.",
+            attributorName: "Fixture Author",
+            attributorRole: "Customer",
+          }],
+        },
+        {
+          id: "outcomes",
+          kind: "stat",
+          ground: "inverse",
+          heading: "Outcomes",
+          items: [{ id: "uptime", label: "Uptime", value: "99.9%", delta: "+0.1%" }],
+        },
+      ],
+    };
+    const html = renderToStaticMarkup(<SectionedView document={withBands} />);
+    expect(html).toContain("Pricing");
+    expect(html).toContain("Start trial");
+    expect(html).toContain("It just works.");
+    expect(html).toContain("Fixture Author");
+    expect(html).toContain("99.9%");
+    expect(html).toContain("bg-surface-sunken");
+    expect(html).toContain("bg-surface-inverse");
+  });
+});
+
 describe("SectionedView resolve-then-render contract", () => {
   const ref = (id: string) => ({ id });
   const statusCopy = {
