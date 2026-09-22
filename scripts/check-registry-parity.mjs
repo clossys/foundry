@@ -30,17 +30,16 @@
 // only reason it was caught at all is that someone happened to read a
 // run list.
 //
-// scripts/select-publishable-packages.mjs's `discover` job now selects by
-// registry-versus-manifest instead of by one push's diff, which makes an
-// ordinary publish self-healing: the next push that touches ANY package
-// manifest re-derives the full gap and picks up whatever was missed. But
-// "the next push" is exactly the thing that might not happen for a while —
-// if the evicted package's own manifest is the last one anybody bumps for
-// days, there is no further push to trigger that self-healing at all. This
-// gate is the independent backstop that needs no further push: run on a
-// schedule (see .github/workflows/registry-parity.yml) or on demand, it
-// re-derives the same gap from nothing but `main`'s current manifests and
-// the registry.
+// publish.yml does not self-heal that gap on the next manifest push. Its
+// only trigger is workflow_dispatch — there is no push trigger — and the
+// registry-versus-manifest discovery branch in its discover job is
+// unreachable under that trigger (see .github/workflows/publish.yml). A
+// missed publish stays missed until someone dispatches publish, or until
+// this gate reports the gap. .github/workflows/registry-parity.yml runs
+// this check on a daily schedule (`cron: "43 7 * * *"`) and on
+// workflow_dispatch only. It does not run on push. Either invocation
+// re-derives the gap from nothing but `main`'s current manifests and the
+// registry.
 //
 // THE SAME LOOKUP DISCIPLINE, NOT A SECOND ONE
 // ------------------------------------------------
