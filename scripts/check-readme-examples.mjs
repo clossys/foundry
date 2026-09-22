@@ -322,8 +322,32 @@ const DIAGNOSTIC_RE = /^(.*)\((\d+),(\d+)\): error (TS\d+): (.*)$/;
 // "Cannot find name 'X'" and its siblings — the shape a block produces when
 // it references an identifier the surrounding PROSE defines rather than the
 // block itself (see header comment, case 2). TS2552 is the "did you mean"
-// variant of the same diagnostic; TS2503 is "Cannot find namespace".
-const SKIP_CODES = new Set(["TS2304", "TS2552", "TS2503"]);
+// variant of the same diagnostic; TS2503 is "Cannot find namespace"; TS18004
+// is the same elided-identifier shape spelled as a destructuring shorthand
+// property (`{ home }` where `home` is not in scope) rather than a bare
+// reference -- measured on packages/builder/README.md:434, an
+// `applyComposedInstallation(namedPlans, fs, { backupRoot })`-style snippet
+// whose `home`/`backupRoot` are introduced several paragraphs earlier.
+const SKIP_CODES = new Set(["TS2304", "TS2552", "TS2503", "TS18004"]);
+
+// "Binding element 'X' implicitly has an 'any' type" (TS7031), "Parameter
+// 'X' implicitly has an 'any' type" (TS7006), and "'X' is of type 'unknown'"
+// (TS18046) -- NOT independently skip-eligible, because a genuinely untyped
+// or unknown-typed value used on an otherwise well-defined expression is a
+// real defect this gate should still catch. All three ARE the expected
+// cascade of an elided outer reference, though:
+// `sources.map(({ name, sourceRoot, manifest }) => ...)` produces one TS2304
+// for `sources` (skip-eligible on its own) plus one TS7031 per destructured
+// binding; `rows.map((row) => ...)` produces the same TS2304 plus one TS7006
+// for the plain parameter; `Object.values(TOKENS).filter((def) =>
+// def.brandable)` (TOKENS explicitly documented in the README's own prose as
+// "the consumer's own tokens dependency — NOT imported by this package")
+// produces TS2304 for TOKENS plus TS18046 on `def` inside the callback.
+// Either way, TS cannot infer a callback's shape from an undefined
+// collection. So none of these three codes ride along except when at least
+// one genuine SKIP_CODES diagnostic is present in the same block (see
+// partitionDiagnostics) -- never accepted in isolation.
+const CASCADE_ONLY_SKIP_CODES = new Set(["TS7031", "TS7006", "TS18046"]);
 
 const anomalies = [];
 const pass1 = new Map(); // block.index -> diags[]
@@ -363,8 +387,14 @@ function looksLikeBareObjectLiteral(body) {
 // fragment.length`) is the actual gate on whether a wrap is safe to try.
 function partitionDiagnostics(diags) {
   const fragment = diags.filter((d) => d.code === "TS2657");
-  const skip = diags.filter((d) => SKIP_CODES.has(d.code));
-  const other = diags.filter((d) => d.code !== "TS2657" && !SKIP_CODES.has(d.code));
+  const primarySkip = diags.filter((d) => SKIP_CODES.has(d.code));
+  // Cascade codes only join `skip` when a genuine elided-identifier
+  // diagnostic is also present -- otherwise a standalone TS7031 (an
+  // untyped destructure with no elided cause at all) stays in `other` and
+  // still reports as a real finding.
+  const cascade = primarySkip.length > 0 ? diags.filter((d) => CASCADE_ONLY_SKIP_CODES.has(d.code)) : [];
+  const skip = [...primarySkip, ...cascade];
+  const other = diags.filter((d) => d.code !== "TS2657" && !skip.includes(d));
   return { fragment, skip, other };
 }
 
@@ -455,7 +485,15 @@ for (const block of blocks) {
 
   const { other: otherDiags } = partitionDiagnostics(diags);
 
-  if (otherDiags.length === 0 && diags.every((d) => SKIP_CODES.has(d.code))) {
+  // otherDiags.length === 0 is the authoritative gate (see
+  // partitionDiagnostics' own comment) -- it already accounts for
+  // CASCADE_ONLY_SKIP_CODES riding along a genuine SKIP_CODES hit. A second
+  // `diags.every((d) => SKIP_CODES.has(d.code))` check here would silently
+  // re-exclude every cascade diagnostic (TS7031) from counting as skip-safe,
+  // even after partitionDiagnostics already placed it in `skip` rather than
+  // `other` -- exactly the kind of redundant, out-of-sync condition that lets
+  // a fix in one place not take effect at the point that actually reports.
+  if (otherDiags.length === 0) {
     // Reached two ways: an ordinary unwrapped block whose only diagnostics
     // are the elided-name family, OR a `fragment`-wrapped block where the
     // wrap removed every TS2657 and left only elided-name diagnostics

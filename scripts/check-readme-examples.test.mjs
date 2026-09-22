@@ -414,3 +414,99 @@ test("ONLY the ```ts and ```tsx fences are extracted — not ```typescript, ```j
   assert.equal(result.status, 0);
   assert.match(result.stdout, /0 ts\/tsx block\(s\)/);
 });
+
+test("TS18004 (shorthand property, elided): skipped, not a finding", () => {
+  // Measured on packages/builder/README.md:434 -- `{ backupRoot }` where
+  // `backupRoot` is introduced several paragraphs earlier, the same
+  // "deliberately incomplete" shape as a bare TS2304 reference, just spelled
+  // as a destructuring shorthand property instead of a plain identifier.
+  const stub = makeStubTsc();
+  const diags = [diag("TS18004", "No value exists in scope for the shorthand property 'backupRoot'. Either declare one or provide an initializer.")];
+  const readme = ["```ts", "applyComposedInstallation(namedPlans, fs, { backupRoot });", markerLine("STUB_DIAGNOSTICS", diags), "```", ""].join("\n");
+  const pkgDir = makeFixturePackage("shorthand-elided", { readme });
+  const result = run([pkgDir], { env: { FOUNDRY_README_EXAMPLES_TSC_OVERRIDE: stub } });
+  assert.equal(result.status, 0);
+  assert.match(result.stdout, /1 skipped/);
+  assert.match(result.stdout, /elided from the surrounding prose/);
+});
+
+test("TS7031 riding with a genuine elided reference: whole block skipped", () => {
+  // packages/builder/README.md:422-446's real shape: `sources.map(({ name,
+  // sourceRoot, manifest }) => ...)` where `sources` itself is undefined
+  // (TS2304), so TS cannot infer the callback's destructured parameter
+  // types (TS7031 per binding) -- a cascade of the one elided reference,
+  // not three independent untyped-parameter defects.
+  const stub = makeStubTsc();
+  const diags = [
+    diag("TS2304", "Cannot find name 'sources'."),
+    diag("TS7031", "Binding element 'name' implicitly has an 'any' type."),
+    diag("TS7031", "Binding element 'sourceRoot' implicitly has an 'any' type."),
+    diag("TS7031", "Binding element 'manifest' implicitly has an 'any' type."),
+  ];
+  const readme = [
+    "```ts",
+    "const namedPlans = sources.map(({ name, sourceRoot, manifest }) => ({ source: name }));",
+    markerLine("STUB_DIAGNOSTICS", diags),
+    "```",
+    "",
+  ].join("\n");
+  const pkgDir = makeFixturePackage("cascade-elided", { readme });
+  const result = run([pkgDir], { env: { FOUNDRY_README_EXAMPLES_TSC_OVERRIDE: stub } });
+  assert.equal(result.status, 0);
+  assert.match(result.stdout, /1 skipped/);
+  assert.match(result.stdout, /elided from the surrounding prose/);
+});
+
+test("TS7031 with NO accompanying elided reference: still a real finding", () => {
+  // The safety property CASCADE_ONLY_SKIP_CODES exists for: an untyped
+  // destructuring parameter on an otherwise well-defined value is a genuine
+  // defect, and must never be silently absorbed just because TS7031 also
+  // happens to be the code a cascade produces. No TS2304/2552/2503/18004
+  // anywhere in this block, so it must still report as a finding.
+  const stub = makeStubTsc();
+  const diags = [diag("TS7031", "Binding element 'x' implicitly has an 'any' type.")];
+  const readme = ["```ts", "const f = ({ x }) => x;", markerLine("STUB_DIAGNOSTICS", diags), "```", ""].join("\n");
+  const pkgDir = makeFixturePackage("standalone-ts7031", { readme });
+  const result = run([pkgDir], { env: { FOUNDRY_README_EXAMPLES_TSC_OVERRIDE: stub } });
+  assert.equal(result.status, 1);
+  assert.match(result.stdout, /1 finding/);
+  assert.match(result.stdout, /TS7031/);
+});
+
+test("TS18046 riding with a genuine elided reference: whole block skipped", () => {
+  // packages/strategist/README.md:638-649's real shape: `TOKENS` is
+  // explicitly documented in the README's own prose as "the consumer's own
+  // tokens dependency — NOT imported by this package," so `Object.values
+  // (TOKENS).filter((def) => def.brandable)` produces TS2304 for TOKENS
+  // plus TS18046 ("'def' is of type 'unknown'") wherever the callback
+  // touches `def` -- a cascade of the one elided reference.
+  const stub = makeStubTsc();
+  const diags = [
+    diag("TS2304", "Cannot find name 'TOKENS'."),
+    diag("TS18046", "'def' is of type 'unknown'."),
+    diag("TS18046", "'def' is of type 'unknown'."),
+  ];
+  const readme = [
+    "```ts",
+    "const brandableSlots = Object.values(TOKENS).filter((def) => def.brandable).map((def) => def.property);",
+    markerLine("STUB_DIAGNOSTICS", diags),
+    "```",
+    "",
+  ].join("\n");
+  const pkgDir = makeFixturePackage("cascade-unknown", { readme });
+  const result = run([pkgDir], { env: { FOUNDRY_README_EXAMPLES_TSC_OVERRIDE: stub } });
+  assert.equal(result.status, 0);
+  assert.match(result.stdout, /1 skipped/);
+  assert.match(result.stdout, /elided from the surrounding prose/);
+});
+
+test("TS18046 with NO accompanying elided reference: still a real finding", () => {
+  const stub = makeStubTsc();
+  const diags = [diag("TS18046", "'e' is of type 'unknown'.")];
+  const readme = ["```ts", "try { risky(); } catch (e) { console.log(e.message); }", markerLine("STUB_DIAGNOSTICS", diags), "```", ""].join("\n");
+  const pkgDir = makeFixturePackage("standalone-ts18046", { readme });
+  const result = run([pkgDir], { env: { FOUNDRY_README_EXAMPLES_TSC_OVERRIDE: stub } });
+  assert.equal(result.status, 1);
+  assert.match(result.stdout, /1 finding/);
+  assert.match(result.stdout, /TS18046/);
+});
