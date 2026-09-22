@@ -16,9 +16,10 @@
  * legitimate; failing silently when it is unmet is not, because that turns a
  * setup error into a debugging session inside somebody else's codebase.
  *
- * PORTED, NOT SHARED, from `packages/bouncer/src/internal/peer-version.ts` —
- * identical algorithm, copied rather than imported across a package boundary
- * for the structural reason that file's own header gives: that package does
+ * PORTED, NOT SHARED, from this repository's canonical `assertPeerVersion`
+ * implementation (#389, ported into this file via #847) — identical
+ * algorithm, copied rather than imported across a package boundary for the
+ * structural reason the canonical body's own header gives: that package does
  * not expose this as part of its public API surface, and even if it did,
  * `@clossys/keeper` would gain nothing by taking a real runtime
  * dependency on a sibling just to reach one shared utility, and its "zero
@@ -32,8 +33,7 @@
  * any Node-only fs-based resolver.
  *
  * THE FAILURE DIRECTION FOR AN UNPARSEABLE INSTALLED VERSION IS DELIBERATELY
- * INVERTED FROM EVERY OTHER DECLINE PATH HERE (#389, ported from
- * `packages/bouncer/src/internal/peer-version.ts`; this file previously
+ * INVERTED FROM EVERY OTHER DECLINE PATH HERE (#389; this file previously
  * lacked the fix — see #847). A peer version this guard cannot parse —
  * including one carrying a prerelease identifier, e.g. Turbopack vendoring
  * its own canary React build during SSR instead of the consumer's real,
