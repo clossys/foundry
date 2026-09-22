@@ -341,6 +341,20 @@ test("strategist skill must not treat gate-green as keep", () => {
   assert.ok(result.findings.some((f) => f.rule === "strategist-gates-prove-3"));
 });
 
+test("strategist skill must list directory output files and handoff", () => {
+  const result = evaluatePackageSkills([
+    {
+      packageDir: "strategist",
+      skillPath: "/tmp/ignored",
+      expectedName: "clossys-strategist",
+      skillText: validSkill("clossys-strategist", "Strategy traceability."),
+    },
+  ]);
+  assert.equal(result.exitCode, 1);
+  assert.ok(result.findings.some((f) => f.rule === "strategist-output-files"));
+  assert.ok(result.findings.some((f) => f.rule === "strategist-handoff-subcommand"));
+});
+
 test("live repository package skills pass", () => {
   const result = scanPackageSkills(repoRoot);
   assert.equal(result.exitCode, 0, result.findings.map((f) => `${f.packageDir}:${f.rule}`).join(", "));

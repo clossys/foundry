@@ -9,8 +9,8 @@
  * `marketingView.test.ts`'s own "real pipeline, not each half in
  * isolation" structure, for the built-ins' registry-extension counterpart.
  *
- * Fixtures are deliberately, obviously placeholder text, per this
- * repository's own public-safety rules.
+ * Issue #1103: consumer templates are data (`blocks`), not a React `build`
+ * function. A chart `node` slot renders inside a Designer frame.
  */
 
 import { createElement } from "react";
@@ -41,13 +41,6 @@ const registry: CopyRegistry = {
 
 const resolver: CopyResolver = createCopyResolver(registry);
 
-/**
- * A "non-trivial, multi-section flowed page, not a copy of AuthView" —
- * two flowed text slots, one node-kind slot for a caller-owned chart
- * widget, and one repeating slot for a stat band — proving a
- * consumer-defined template can declare and consume BOTH a rich node and
- * a repeating group, not just flowed single slots.
- */
 const DASHBOARD_TEMPLATE = defineWebTemplate({
   name: "DashboardView",
   flow: {
@@ -59,19 +52,12 @@ const DASHBOARD_TEMPLATE = defineWebTemplate({
   },
   slotKinds: { chart: ["node"] },
   repeatingSlots: [{ key: "stats" }],
-  build: (content, groups) =>
-    createElement(
-      "main",
-      null,
-      createElement("h1", null, content.heading),
-      content.chart,
-      createElement(
-        "ul",
-        null,
-        (groups.stats ?? []).map((item) => createElement("li", { key: item.index }, item.text)),
-      ),
-      content.footer ?? null,
-    ),
+  blocks: [
+    { kind: "page-header", title: "heading" },
+    { kind: "node-chapter", node: "chart" },
+    { kind: "stat-grid", repeating: "stats" },
+    { kind: "copy-footer", copy: "footer" },
+  ],
 });
 
 function dashboardSurface(bindings: SurfaceDocument["bindings"]): SurfaceDocument {
@@ -85,12 +71,8 @@ function dashboardSurface(bindings: SurfaceDocument["bindings"]): SurfaceDocumen
 }
 
 describe("a consumer-registered template — full pipeline, SurfaceDocument through to markup", () => {
-  it("renders a caller-owned chart node and a repeating stat band end to end", () => {
+  it("renders a caller-owned chart node inside a Designer frame and a stat-grid end to end", () => {
     const renderer = createWebRenderer({ templates: [DASHBOARD_TEMPLATE] });
-    // A real ReactElement the caller's own trusted code constructed — the
-    // ONLY thing a "node"-kind slot is meant to carry (see this file's own
-    // top comment and defineWebTemplate's own doc comment on rich-node
-    // slots). A raw data object would not be valid React child content.
     const chartNode = createElement("div", { "data-testid": "chart" }, "Placeholder chart of 3 points");
 
     const surface = dashboardSurface([
@@ -99,9 +81,6 @@ describe("a consumer-registered template — full pipeline, SurfaceDocument thro
       { slot: "stats", items: [{ copy: ref("acme.dashboard.stat.one") }, { copy: ref("acme.dashboard.stat.two") }] },
     ]);
 
-    // The consumer derives which slots on THIS template accept a node from
-    // the template's own declared slotKinds — never a hardcoded list — and
-    // hands that to resolveSurfaceDocument as options.nodeSlots.
     const resolved = resolveSurfaceDocument(surface, resolver, { nodeSlots: nodeSlotKeys(DASHBOARD_TEMPLATE) });
     expect(resolved.nodes).toEqual([{ slot: "chart", node: chartNode }]);
 
@@ -114,10 +93,20 @@ describe("a consumer-registered template — full pipeline, SurfaceDocument thro
     expect(html).toContain('data-testid="chart"');
     expect(html).toContain("Placeholder chart of 3 points");
     expect(head.title).toBe("Acme placeholder dashboard");
-    // The chart is a caller-owned node this test never gave any DOM shape
-    // to — resolved.document.bindings never carries it (core cannot lower
-    // a node into the legacy shape), only options.nodes does.
+    expect(html).not.toMatch(/<h1[^>]*>[\s\S]*<ul/);
+    expect(html).toContain("text-h1");
     expect(resolved.document.bindings.some((b) => b.slot === "chart")).toBe(false);
+  });
+
+  it("refuses a consumer template that tries to supply a raw build function", () => {
+    expect(() =>
+      defineWebTemplate({
+        name: "RawView",
+        flow: { slots: [{ key: "heading", required: true }] },
+        blocks: [{ kind: "page-header", title: "heading" }],
+        build: () => null,
+      } as never),
+    ).toThrow(RenderError);
   });
 
   it("still refuses a node targeting a slot resolveSurfaceDocument was not told is node-kind — core's own fail-closed default, unrelated to the web template's own opinion", () => {
@@ -125,8 +114,6 @@ describe("a consumer-registered template — full pipeline, SurfaceDocument thro
       { slot: "heading", copy: ref("acme.dashboard.heading") },
       { slot: "chart", node: { kind: "consumer-chart" } },
     ]);
-    // No nodeSlots option at all — the caller forgot to derive it from the
-    // template, or is resolving against a channel with no template concept.
     let thrown: unknown;
     try {
       resolveSurfaceDocument(surface, resolver);

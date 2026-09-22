@@ -782,6 +782,12 @@ jobs:
         with:
           node-version: 20
       - run: node scripts/check-workspace-links.mjs
+      # Does package-lock.json's own recorded version for each packages/*
+      # entry match that package's real manifest version (#917)? Same class
+      # of question as the range/link check above, plain file reads only --
+      # no npm ci, no build.
+      - name: package-lock.json workspace versions match manifests
+        run: node scripts/check-lock-workspace-versions.mjs
 
   # A merged source change with no version bump publishes nothing and says
   # nothing, whether the Publish workflow's discover job is asking "what did
@@ -1114,6 +1120,19 @@ jobs:
       # packed-consumer, which now uses the same launch shape after a pack.
       - name: Declared bins reachable through node_modules/.bin
         run: node scripts/check-bin-reachability.mjs
+      # Every fenced ts/tsx block in a packages/*/README.md, compiled against
+      # that package's own shipped declarations (#908). Needs the build
+      # above for the same reason check-bin-reachability does: a package's
+      # .d.ts only exists once its own build, and any internal dependency's
+      # build, has run.
+      - name: README code examples typecheck against shipped declarations
+        run: npm run check:readme-examples
+      # check-publication-map.mjs (#1103) imports packages/publisher's own
+      # dist/core/index.js directly, so its test file needs the build
+      # above -- it does not belong in check:gates, which runs in the
+      # dependency-free `safety` job before any workspace build exists.
+      - name: Publication map (paths and slide order)
+        run: node --test scripts/check-publication-map.test.mjs
       # This repository's own verify-standards collector, checked against the
       # one construction that can tell a real resolution from a retargeted
       # one: a reference naming another repository (or another tracker) whose
@@ -1155,6 +1174,8 @@ jobs:
       # dependency-free safety job.
       - name: Launcher help
         run: npm run check:launcher-help
+      - name: Strategist facts subject (PUBLISHING.md)
+        run: npm run check:strategist-subject
       - name: Supersession map
         run: npm run check:supersession
       # One vocabulary, two packages, no import between them (#443). The

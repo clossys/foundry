@@ -57,7 +57,7 @@ engagement sequencing for the representative Trio, not a manifest edge.
 Advisor's connector, sponsor identity, evidence store, and any repository or
 provider adapters remain consumer-owned.
 
-This graph is publication order. It is not the first-wave productization
+This graph is publication order. It is not the first-wave productization <!-- facts-gate:ignore -->
 order. Writer and designer sit before publisher here because publisher cannot
 publish without them; they do not jump the operating-control queue when the
 remaining work is "make each package honestly installable and closed-loop."
@@ -257,7 +257,7 @@ node scripts/preflight-package.mjs packages/<name> --require-denylist
 ```
 
 `preflight-package.mjs` is the single command that must pass before a publish
-is even proposed. It runs, in this order: name collision (the only failure
+is even proposed. It runs, in this order: name collision (the only failure <!-- facts-gate:ignore -->
 that can damage something *other* than this package — see below), denylist
 quality, gate regression, tree safety, and artifact safety (the actual packed
 tarball, not the tree).
@@ -352,7 +352,7 @@ must still match the blob from its own single introduction commit. A closed
 publication record continues to select the qualifications it originally bound
 by their exact retained paths and digests; it does not require the directory to
 contain only one version of each package. A later release therefore adds a new
-versioned record without rewriting or replacing the first-publication evidence.
+versioned record without rewriting or replacing the first-publication evidence. <!-- facts-gate:ignore -->
 The exact predecessor record paths present at the immutable publication-transition
 base retain their schema and introduction-time policy joins; their retained,
 introduction, and transition-base blobs must agree and they may never be touched
@@ -381,6 +381,47 @@ lane.
 Its registry-backed replay is retained post-publication evidence only, not a
 retroactive gate, adoption, grounding, or release clearance.
 
+### Once a version's record is retained, any change to that package needs a new version
+
+This is the ordering rule, stated plainly because it is not obvious from
+either gate's own name: **once a version's qualification record is retained,
+any further change to that package — packed or not — requires a new
+version.** Practically, that means fixing a test *before* generating a
+record, never after.
+
+The rule follows from two things that are both true and that neither gate
+alone states together. `scripts/check-release-readiness.mjs` compares packed
+content only — a test file excluded by `files` moving is invisible to it, by
+design (devDependencies and non-shipped files are exactly what that gate is
+right to ignore for the bump question it asks). `scripts/check-qualification-
+record-present.mjs` compares `candidate.packageTreeSha1` against the whole
+package directory, tests included, by equally deliberate design — see that
+script's own header for the prior incident (a record whose manifest digest
+still matched while its tree digest had silently drifted) that makes
+narrowing the tree hash to packed files only unsafe. A record is immutable
+once introduced, so a tree that has moved past it can never be reconciled;
+the version it was retained for can only be skipped.
+
+This cost a real version. `@clossys/architect@0.1.7` was bumped and had a
+retained, matching record. A follow-up pull request then fixed a test so it
+stopped mutating the real `dist/cli.js` in place — a test-only edit, correctly
+excluded from packed content, so `check-release-readiness.mjs` correctly
+reported no bump required. That same edit moved `packages/architect/`'s tree,
+and the 0.1.7 record — bound to the tree as it stood before the fix — went
+stale the moment the fix landed. 0.1.7 could never be published again; 0.1.8
+carries the same fix instead. See issue #920 for the full incident.
+
+`check-release-readiness.mjs` now consults the retained record for a
+package's CURRENT version whenever its own packed-content diff would
+otherwise report "no bump required," and says so explicitly when the two
+disagree — "no bump required for packed content, but the retained record for
+`<version>` is now stale; publishing requires a bump" — rather than reporting
+the permissive half alone. It does not weaken either gate: a stale record is
+still exactly what `check-qualification-record-present.mjs` alone would find
+at publish dispatch; this only means a pull request sees the same answer
+before merge, not only at the point an approval would otherwise be spent on a
+run that cannot succeed.
+
 ### The retained record's tarball must reproduce
 
 A qualification record binds exact tarball bytes and can never be rewritten,
@@ -390,7 +431,7 @@ skipped rather than fixed.
 
 Nothing in the tree can detect it. `dist/` is gitignored, so
 `packageTreeSha1` — and every other join computed from git — is blind to
-exactly the content that dominates a tarball, since `dist` is the first
+exactly the content that dominates a tarball, since `dist` is the first <!-- facts-gate:ignore -->
 entry in almost every package's `files` array. The record reads PRESENT and
 not-stale against every pull-request check right up to the real publish,
 where `validate-candidate-publish.mjs` refuses it correctly and far too
@@ -437,11 +478,11 @@ replaying a release path requires an explicit runtime tuple.
 [`governance/release-catalog.json`](../governance/release-catalog.json) is the
 fail-closed source catalogue. After W1D its active target is `clossys-npmjs`,
 and `package-scope.json` binds the same `@clossys` scope and public npm
-registry. The active release target closes over all twenty publishable
+registry. The active release target closes over all twenty-one publishable
 source manifests in a reviewed dependency order: the sealed Advisor, Starter,
 Controller prefix remains first; Builder and Inspector follow Controller; and
 Publisher follows Controller, Writer, and Designer. It never accepts `all`, a
-partial source inventory, reordering, duplication, or replacement of the first
+partial source inventory, reordering, duplication, or replacement of the first <!-- facts-gate:ignore -->
 Trio. Catalogue membership is not qualification: to be eligible, a package
 must also have a required current-direct adapter with explicit 0/1/2 behavior.
 A blocked policy entry remains ineligible even when it appears in the catalogue;
@@ -458,7 +499,7 @@ bytes. A package may have later records at distinct versions; each record is
 uniquely bound to its exact `name@version`. These later records do not alter
 the immutable first-publication Trio evidence.
 
-Catalogue closure does not make all twenty records producible in parallel:
+Catalogue closure does not make all twenty-one records producible in parallel:
 Publisher's current-direct run remains deferred until its required Writer and
 Designer versions are public and verified. A local sibling tarball or
 workspace link is diagnostic only and cannot substitute for that
@@ -534,9 +575,9 @@ expected to be credentialless. Publication trust and credentials remain a
 producer concern; a consumer token or private registry mapping must not be
 introduced for public-package reads.
 
-### The first public cohort
+### The first public cohort <!-- facts-gate:ignore -->
 
-The first `@clossys` release is one closed pre-publication cohort: `advisor`,
+The first `@clossys` release is one closed pre-publication cohort: `advisor`, <!-- facts-gate:ignore -->
 then `starter`, then `controller`. Its namespace-qualified records join an
 immutable `clossys-npmjs-trio` cohort record by raw-byte SHA-256, exact public
 registry tuple, and each candidate's SHA-1/SHA-256/SHA-512 tarball tuple. A
@@ -559,7 +600,7 @@ closed partial-failure quarantine described above may extend that sealed tail.
 
 ### Owner-present first publication, then OIDC
 
-The first identity of each Trio member is an owner-present, interactive npm
+The first identity of each Trio member is an owner-present, interactive npm <!-- facts-gate:ignore -->
 publication. It is not an npm trusted-publisher run: npm cannot bind a trusted
 publisher to a package identity that does not exist yet. The owner signs in to
 the public registry, enters npm's 2FA challenge at the terminal, and keeps the
@@ -783,7 +824,7 @@ checks are retained only for immutable predecessor evidence; W1E must prove
 the corresponding public npm namespace facts for `@clossys` before enabling
 the new lane.
 
-### Installing after the first W1E cohort
+### Installing after the first W1E cohort <!-- facts-gate:ignore -->
 
 The current Trio identities are supported through ordinary credential-free
 public npm resolution: Advisor 0.1.5, Starter 0.1.4, and Controller 0.8.23.
@@ -891,7 +932,7 @@ evidence or permission to upload.
 
 ## 8. W1E publication and installation boundary
 
-W1E, not W1D, owns the first `@clossys` public npm publications. The
+W1E, not W1D, owns the first `@clossys` public npm publications. The <!-- facts-gate:ignore -->
 owner-present first identities and the provenance-bearing current Trio releases
 are public and anonymously verified. Every current Trio package's
 token-disallow setting is also value-free verified. For each selected package,

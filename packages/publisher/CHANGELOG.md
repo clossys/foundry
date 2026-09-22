@@ -5,6 +5,67 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.4.24] - 2026-09-21
+
+### Changed
+
+- `tailwind-merge` peer and dev dependency raised to `^3.7.0` (from
+  `^3.0.0`), riding along with the same bump in `@clossys/designer` —
+  `peerDependencies` is packed content, so this repository's own
+  release-readiness gate requires this version bump even though nothing in
+  `src/` changed.
+
+## [0.4.23] - 2026-09-21
+
+### Added
+
+- Consumer `defineWebTemplate` templates are data: a `blocks` sequence of
+  Designer block kinds (`page-header`, `node-chapter`, `stat-grid`, and
+  others) this package renders. Arbitrary `build` functions are refused on
+  consumer templates; shipped views keep internal `build` implementations
+  (#1103).
+- `publisher-web-route-check` bin: fails when a publishing web route omits a
+  registered `SurfaceDocument.template` name or composes `@clossys/designer`
+  blocks directly in a route file. The route check ships as that bin for
+  adopters and CI (#1103).
+- `./core` publication-map document beside `SurfaceDocument`: path and slide
+  locations, validation against registered templates, and resolve helpers for
+  host routing (#1104).
+- `SectionedViewDocument.sectionGroundRhythm` (`base-then-sunken`) fills omitted
+  section grounds as `base` then `sunken` in document order; explicit
+  `ground` values (including `inverse`) are never overwritten (#1105).
+- Closed `SectionedView` section kinds `pricing`, `testimonial`, and `stat`:
+  copy refs, optional eyebrow on `pricing`, `ground`, and no node escape.
+  Each kind renders through Designer `PricingTable`, `Testimonial`, and
+  `Stat` respectively; `ground` is applied with `SECTION_GROUND_CLASSES`
+  where the block does not accept it. Unknown kinds are still refused by
+  name (#1106).
+- `publisher-preview` CLI: after `readBrandCss` and `checkBrandFileCoverage`
+  succeed, renders fixture documents for every shipped web view
+  (`MarketingView`, `SectionedView` including `pricing` / `testimonial` /
+  `stat`, `AuthView`, `ErrorView`, `CaptureView`, `DocumentView`,
+  `CollectionView`) into a static `gallery.html` using an in-package
+  `CopyRegistry` of approved placeholder copy (#1107).
+- Brand-asset roster roles on top of the image/video registry: favicon SVG,
+  32px PNG, apple-touch 180, maskable 192 and 512, Open Graph 1200×630,
+  Twitter image 1200×630, and email-safe PNG 600×200. Each role requires
+  alt text and a non-empty src. A derivative reads the master SVG and the
+  roster check fails until every role exists at its required pixel size
+  (#1110).
+- A complete roster emits favicon and apple-touch links for a publication
+  map that contains a web path (#1110).
+- `BrandGuideView` and `SystemAuditView` are catalog templates. `publisher-preview`
+  takes an optional third `roster.json` argument; when given and the
+  brand-asset roster is complete, it writes `guide.html` and `audit.html`
+  beside `gallery.html` from the same `brand.css` and roster after the
+  brand-file check passes. Fixture copy ships with the package. Strategist
+  facts are cited beside the tokens; this package does not change
+  Strategist (#1111).
+- Web head metadata: Open Graph URL (`og.url`), Twitter image
+  (`twitter.image`), and hreflang alternates (`hreflangAlternates`) on
+  `WebMeta` / `SurfaceWebMeta`, emitted from `buildWebHeadMetadata`
+  (#1108).
+
 ## [0.4.22] - 2026-09-21
 
 ### Changed
@@ -12,6 +73,10 @@ All notable changes to this package are documented here. Format follows
 - Web golden markup for `MarketingView` and `SectionedView` matches Designer
   0.4.16 logical inline utilities (`text-start`, `ps-lg`) and shell footer
   ink on inverse-ground plates.
+- Skill: names `publisher-web-route-check` and documents consumer templates
+  as `blocks`, not route-local `build` functions (#1103).
+- `MarketingView` passes semantic `ground` through to its hero, feature grid,
+  FAQ, and closing CTA bands (defaulting to base/sunken alternation) (#1105).
 
 ## [0.4.21] - 2026-09-21
 

@@ -5,8 +5,23 @@ import type { ComposeFinding } from "./types.js";
 /** The only grounds a section may name. Rendering maps this vocabulary to design tokens later. */
 export type SectionedViewGround = "base" | "sunken" | "inverse";
 
+/** Document-level rhythm that fills omitted section grounds in section order. `inverse` is never applied by rhythm. */
+export type SectionedViewSectionGroundRhythm = "base-then-sunken";
+
+const SECTION_GROUND_RHYTHMS: readonly SectionedViewSectionGroundRhythm[] = ["base-then-sunken"];
+const RHYTHM_GROUNDS: readonly SectionedViewGround[] = ["base", "sunken"];
+
 /** The closed block vocabulary for a long-form site page. */
-export type SectionedViewSectionKind = "hero" | "feature-grid" | "faq" | "ordered-step-sequence" | "status-list" | "stat-grid";
+export type SectionedViewSectionKind =
+  | "hero"
+  | "feature-grid"
+  | "faq"
+  | "ordered-step-sequence"
+  | "status-list"
+  | "stat-grid"
+  | "pricing"
+  | "testimonial"
+  | "stat";
 
 /** Direction a stat row's optional `delta` represents — mirrors Designer `Stat`'s closed `trend` prop. */
 export type SectionedViewStatTrend = "up" | "down" | "neutral";
@@ -37,7 +52,7 @@ export interface SectionedViewAction {
 export interface SectionedViewHeroSection {
   id: string;
   kind: "hero";
-  ground: SectionedViewGround;
+  ground?: SectionedViewGround;
   eyebrow?: CopyRef;
   heading: CopyRef;
   description?: CopyRef;
@@ -59,7 +74,7 @@ export interface SectionedViewStatItem {
 export interface SectionedViewStatGridSection {
   id: string;
   kind: "stat-grid";
-  ground: SectionedViewGround;
+  ground?: SectionedViewGround;
   eyebrow?: CopyRef;
   heading: CopyRef;
   description?: CopyRef;
@@ -75,12 +90,61 @@ export interface SectionedViewFeatureItem {
 export interface SectionedViewFeatureGridSection {
   id: string;
   kind: "feature-grid";
-  ground: SectionedViewGround;
+  ground?: SectionedViewGround;
   /** Optional label above the section heading. Optional and additive: a section without one renders exactly as it did before. */
   eyebrow?: CopyRef;
   heading: CopyRef;
   description?: CopyRef;
   items: SectionedViewFeatureItem[];
+}
+
+export interface SectionedViewPricingItem {
+  id: string;
+  name: CopyRef;
+  price: CopyRef;
+  description?: CopyRef;
+  features: CopyRef[];
+  cta?: CopyRef;
+}
+
+export interface SectionedViewPricingSection {
+  id: string;
+  kind: "pricing";
+  ground?: SectionedViewGround;
+  eyebrow?: CopyRef;
+  heading: CopyRef;
+  description?: CopyRef;
+  items: SectionedViewPricingItem[];
+}
+
+export interface SectionedViewTestimonialItem {
+  id: string;
+  quote: CopyRef;
+  attributorName: CopyRef;
+  attributorRole?: CopyRef;
+}
+
+export interface SectionedViewTestimonialSection {
+  id: string;
+  kind: "testimonial";
+  ground?: SectionedViewGround;
+  heading?: CopyRef;
+  items: SectionedViewTestimonialItem[];
+}
+
+export interface SectionedViewStatSectionItem {
+  id: string;
+  label: CopyRef;
+  value: CopyRef;
+  delta?: CopyRef;
+}
+
+export interface SectionedViewStatSection {
+  id: string;
+  kind: "stat";
+  ground?: SectionedViewGround;
+  heading?: CopyRef;
+  items: SectionedViewStatSectionItem[];
 }
 
 export interface SectionedViewFaqItem {
@@ -92,7 +156,7 @@ export interface SectionedViewFaqItem {
 export interface SectionedViewFaqSection {
   id: string;
   kind: "faq";
-  ground: SectionedViewGround;
+  ground?: SectionedViewGround;
   /** Optional label above the section heading. Optional and additive: a section without one renders exactly as it did before. */
   eyebrow?: CopyRef;
   heading: CopyRef;
@@ -111,7 +175,7 @@ export interface SectionedViewOrderedStep {
 export interface SectionedViewOrderedStepSequenceSection {
   id: string;
   kind: "ordered-step-sequence";
-  ground: SectionedViewGround;
+  ground?: SectionedViewGround;
   /** Optional label above the section heading. Optional and additive: a section without one renders exactly as it did before. */
   eyebrow?: CopyRef;
   heading: CopyRef;
@@ -142,7 +206,7 @@ export interface SectionedViewStatusGroup {
 export interface SectionedViewStatusListSection {
   id: string;
   kind: "status-list";
-  ground: SectionedViewGround;
+  ground?: SectionedViewGround;
   /** Optional label above the section heading. Optional and additive: a section without one renders exactly as it did before. */
   eyebrow?: CopyRef;
   heading: CopyRef;
@@ -165,12 +229,21 @@ export type SectionedViewSection =
   | SectionedViewFaqSection
   | SectionedViewOrderedStepSequenceSection
   | SectionedViewStatusListSection
-  | SectionedViewStatGridSection;
+  | SectionedViewStatGridSection
+  | SectionedViewPricingSection
+  | SectionedViewTestimonialSection
+  | SectionedViewStatSection;
 
 /** Canonical, Designer-independent input for a long public site page. */
 export interface SectionedViewDocument {
   id: string;
   sections: SectionedViewSection[];
+  /**
+   * When set, sections that omit `ground` receive `base` then `sunken` in
+   * document order. An explicit `ground` always wins; rhythm never applies
+   * `inverse`.
+   */
+  sectionGroundRhythm?: SectionedViewSectionGroundRhythm;
 }
 
 type ResolvedCopy = string;
@@ -184,12 +257,15 @@ export type ResolvedSectionedViewAction = Omit<SectionedViewAction, "label"> & {
 export type ResolvedSectionedViewHeroMedia = Omit<SectionedViewHeroMedia, "alt"> & { alt: ResolvedCopy };
 
 export type ResolvedSectionedViewSection =
-  | Omit<SectionedViewHeroSection, "eyebrow" | "heading" | "description" | "actions" | "media"> & { eyebrow?: ResolvedCopy; heading: ResolvedCopy; description?: ResolvedCopy; actions?: ResolvedSectionedViewAction[]; media?: ResolvedSectionedViewHeroMedia }
-  | Omit<SectionedViewFeatureGridSection, "eyebrow" | "heading" | "description" | "items"> & { eyebrow?: ResolvedCopy; heading: ResolvedCopy; description?: ResolvedCopy; items: Array<Omit<SectionedViewFeatureItem, "heading" | "description"> & { heading: ResolvedCopy; description?: ResolvedCopy }> }
-  | Omit<SectionedViewFaqSection, "eyebrow" | "heading" | "description" | "items"> & { eyebrow?: ResolvedCopy; heading: ResolvedCopy; description?: ResolvedCopy; items: Array<Omit<SectionedViewFaqItem, "question" | "answer"> & { question: ResolvedCopy; answer: ResolvedCopy }> }
-  | Omit<SectionedViewOrderedStepSequenceSection, "eyebrow" | "heading" | "description" | "items"> & { eyebrow?: ResolvedCopy; heading: ResolvedCopy; description?: ResolvedCopy; items: Array<Omit<SectionedViewOrderedStep, "ordinal" | "label" | "heading" | "description"> & { ordinal: ResolvedCopy; label?: ResolvedCopy; heading: ResolvedCopy; description?: ResolvedCopy }> }
-  | Omit<SectionedViewStatusListSection, "eyebrow" | "heading" | "description" | "labels" | "groups" | "items"> & { eyebrow?: ResolvedCopy; heading: ResolvedCopy; description?: ResolvedCopy; labels: Record<SectionedViewStatus, ResolvedCopy> & { dispositions: Record<SectionedViewStatusDisposition, ResolvedCopy> }; groups?: Array<Omit<SectionedViewStatusGroup, "heading" | "items"> & { heading: ResolvedCopy; items: ResolvedSectionedViewStatusItem[] }>; items?: ResolvedSectionedViewStatusItem[] }
-  | Omit<SectionedViewStatGridSection, "eyebrow" | "heading" | "description" | "items"> & { eyebrow?: ResolvedCopy; heading: ResolvedCopy; description?: ResolvedCopy; items: Array<Omit<SectionedViewStatItem, "label" | "value" | "delta" | "description"> & { label: ResolvedCopy; value: ResolvedCopy; delta?: ResolvedCopy; description?: ResolvedCopy }> };
+  | Omit<SectionedViewHeroSection, "eyebrow" | "heading" | "description" | "actions" | "media" | "ground"> & { ground: SectionedViewGround; eyebrow?: ResolvedCopy; heading: ResolvedCopy; description?: ResolvedCopy; actions?: ResolvedSectionedViewAction[]; media?: ResolvedSectionedViewHeroMedia }
+  | Omit<SectionedViewFeatureGridSection, "eyebrow" | "heading" | "description" | "items" | "ground"> & { ground: SectionedViewGround; eyebrow?: ResolvedCopy; heading: ResolvedCopy; description?: ResolvedCopy; items: Array<Omit<SectionedViewFeatureItem, "heading" | "description"> & { heading: ResolvedCopy; description?: ResolvedCopy }> }
+  | Omit<SectionedViewFaqSection, "eyebrow" | "heading" | "description" | "items" | "ground"> & { ground: SectionedViewGround; eyebrow?: ResolvedCopy; heading: ResolvedCopy; description?: ResolvedCopy; items: Array<Omit<SectionedViewFaqItem, "question" | "answer"> & { question: ResolvedCopy; answer: ResolvedCopy }> }
+  | Omit<SectionedViewOrderedStepSequenceSection, "eyebrow" | "heading" | "description" | "items" | "ground"> & { ground: SectionedViewGround; eyebrow?: ResolvedCopy; heading: ResolvedCopy; description?: ResolvedCopy; items: Array<Omit<SectionedViewOrderedStep, "ordinal" | "label" | "heading" | "description"> & { ordinal: ResolvedCopy; label?: ResolvedCopy; heading: ResolvedCopy; description?: ResolvedCopy }> }
+  | Omit<SectionedViewStatusListSection, "eyebrow" | "heading" | "description" | "labels" | "groups" | "items" | "ground"> & { ground: SectionedViewGround; eyebrow?: ResolvedCopy; heading: ResolvedCopy; description?: ResolvedCopy; labels: Record<SectionedViewStatus, ResolvedCopy> & { dispositions: Record<SectionedViewStatusDisposition, ResolvedCopy> }; groups?: Array<Omit<SectionedViewStatusGroup, "heading" | "items"> & { heading: ResolvedCopy; items: ResolvedSectionedViewStatusItem[] }>; items?: ResolvedSectionedViewStatusItem[] }
+  | Omit<SectionedViewStatGridSection, "eyebrow" | "heading" | "description" | "items" | "ground"> & { ground: SectionedViewGround; eyebrow?: ResolvedCopy; heading: ResolvedCopy; description?: ResolvedCopy; items: Array<Omit<SectionedViewStatItem, "label" | "value" | "delta" | "description"> & { label: ResolvedCopy; value: ResolvedCopy; delta?: ResolvedCopy; description?: ResolvedCopy }> }
+  | Omit<SectionedViewPricingSection, "eyebrow" | "heading" | "description" | "items" | "ground"> & { ground: SectionedViewGround; eyebrow?: ResolvedCopy; heading: ResolvedCopy; description?: ResolvedCopy; items: Array<Omit<SectionedViewPricingItem, "name" | "price" | "description" | "features" | "cta"> & { name: ResolvedCopy; price: ResolvedCopy; description?: ResolvedCopy; features: ResolvedCopy[]; cta?: ResolvedCopy }> }
+  | Omit<SectionedViewTestimonialSection, "heading" | "items" | "ground"> & { ground: SectionedViewGround; heading?: ResolvedCopy; items: Array<Omit<SectionedViewTestimonialItem, "quote" | "attributorName" | "attributorRole"> & { quote: ResolvedCopy; attributorName: ResolvedCopy; attributorRole?: ResolvedCopy }> }
+  | Omit<SectionedViewStatSection, "heading" | "items" | "ground"> & { ground: SectionedViewGround; heading?: ResolvedCopy; items: Array<Omit<SectionedViewStatSectionItem, "label" | "value" | "delta"> & { label: ResolvedCopy; value: ResolvedCopy; delta?: ResolvedCopy }> };
 
 export interface ResolvedSectionedViewDocument {
   id: string;
@@ -200,7 +276,17 @@ export interface ResolvedSectionedViewDocument {
 
 export type SectionedViewResolutionReason = "invalid-document" | "unresolved-copy" | "unsupported-section-kind";
 
-const SECTION_KINDS: readonly SectionedViewSectionKind[] = ["hero", "feature-grid", "faq", "ordered-step-sequence", "status-list", "stat-grid"];
+const SECTION_KINDS: readonly SectionedViewSectionKind[] = [
+  "hero",
+  "feature-grid",
+  "faq",
+  "ordered-step-sequence",
+  "status-list",
+  "stat-grid",
+  "pricing",
+  "testimonial",
+  "stat",
+];
 
 const STAT_TRENDS: readonly SectionedViewStatTrend[] = ["up", "down", "neutral"];
 
@@ -290,8 +376,37 @@ function finding(rule: string, path: string, message: string): ComposeFinding {
   return { rule, severity: "error", path, message };
 }
 
+function rhythmGroundForSectionIndex(index: number): SectionedViewGround {
+  return RHYTHM_GROUNDS[index % RHYTHM_GROUNDS.length]!;
+}
+
+function applySectionGroundRhythm(document: SectionedViewDocument): SectionedViewDocument {
+  if (document.sectionGroundRhythm === undefined) return document;
+  return {
+    ...document,
+    sections: document.sections.map((section, index) => ({
+      ...section,
+      ground: section.ground ?? rhythmGroundForSectionIndex(index),
+    })),
+  };
+}
+
 function validateCopy(value: unknown, path: string, findings: ComposeFinding[]): void {
   if (!isCopyRef(value)) findings.push(finding("sectioned-view-copy-ref-shape", path, `${path} must be a CopyRef with a non-empty id.`));
+}
+
+function validateCopyRefArray(value: unknown, path: string, findings: ComposeFinding[]): void {
+  if (!Array.isArray(value)) {
+    findings.push(finding("sectioned-view-features-shape", path, `${path} must be an array of CopyRefs.`));
+    return;
+  }
+  for (let index = 0; index < value.length; index += 1) {
+    if (!Object.hasOwn(value, index)) {
+      findings.push(finding("sectioned-view-array-hole", `${path}.${index}`, `${path}.${index} must be an authored array item; sparse arrays are not supported.`));
+      continue;
+    }
+    validateCopy(value[index], `${path}.${index}`, findings);
+  }
 }
 
 function validateItemIds(items: unknown[], path: string, findings: ComposeFinding[]): void {
@@ -308,23 +423,34 @@ function validateItemIds(items: unknown[], path: string, findings: ComposeFindin
 /** Validates the closed, CopyRef-only section model without importing React or Designer. */
 export function validateSectionedViewDocument(value: unknown): ComposeFinding[] {
   const findings: ComposeFinding[] = [];
-  if (!isPlainObject(value) || !hasOnlyOwnKeys(value, ["id", "sections"]) || !hasOwnKeys(value, ["id", "sections"])) return [finding("sectioned-view-document-shape", "$", "A SectionedViewDocument must be a plain { id, sections } object.")];
+  if (!isPlainObject(value) || !hasOnlyOwnKeys(value, ["id", "sections", "sectionGroundRhythm"]) || !hasOwnKeys(value, ["id", "sections"])) return [finding("sectioned-view-document-shape", "$", "A SectionedViewDocument must be a plain { id, sections } object.")];
   if (!isNonWhitespaceString(value.id)) findings.push(finding("sectioned-view-document-id-shape", "id", "id must be a non-whitespace string."));
+  const sectionGroundRhythm = value.sectionGroundRhythm;
+  if (sectionGroundRhythm !== undefined && !SECTION_GROUND_RHYTHMS.includes(sectionGroundRhythm as SectionedViewSectionGroundRhythm)) {
+    findings.push(finding("sectioned-view-section-ground-rhythm", "sectionGroundRhythm", `sectionGroundRhythm must be one of ${SECTION_GROUND_RHYTHMS.join(", ")}.`));
+  }
   if (!validateDenseArray(value.sections, "sections", findings, "sectioned-view-sections-shape", "sections must be a non-empty array.")) return findings;
 
   const sectionIds = new Set<string>();
+  const rhythmFillsGround = sectionGroundRhythm !== undefined;
   let heroCount = 0;
   for (let sectionIndex = 0; sectionIndex < value.sections.length; sectionIndex += 1) {
     const section = value.sections[sectionIndex];
     const path = `sections.${sectionIndex}`;
-    if (!isPlainObject(section) || !hasEnumerableOwnDataKeys(section) || !hasOwnKeys(section, ["id", "kind", "ground"]) || !isNonWhitespaceString(section.kind) || !isNonWhitespaceString(section.id) || !isNonWhitespaceString(section.ground)) {
-      findings.push(finding("sectioned-view-section-shape", path, `${path} must be a section object with id, kind, and ground.`));
+    if (!isPlainObject(section) || !hasEnumerableOwnDataKeys(section) || !hasOwnKeys(section, ["id", "kind"]) || !isNonWhitespaceString(section.kind) || !isNonWhitespaceString(section.id)) {
+      findings.push(finding("sectioned-view-section-shape", path, `${path} must be a section object with id and kind.`));
       continue;
+    }
+    const hasGround = hasOwn(section, "ground");
+    if (!hasGround && !rhythmFillsGround) {
+      findings.push(finding("sectioned-view-ground-required", `${path}.ground`, `${path}.ground is required when the document does not set sectionGroundRhythm.`));
+    }
+    if (hasGround && (!isNonWhitespaceString(section.ground) || !GROUNDS.includes(section.ground as SectionedViewGround))) {
+      findings.push(finding("sectioned-view-ground", `${path}.ground`, `${path}.ground must be one of ${GROUNDS.join(", ")}.`));
     }
     if (!FRAGMENT_ID.test(section.id)) findings.push(finding("sectioned-view-section-id-fragment", `${path}.id`, `${path}.id must be a lowercase, fragment-safe identifier (letters, digits, and hyphens; starting with a letter).`));
     if (sectionIds.has(section.id)) findings.push(finding("sectioned-view-section-id-duplicate", `${path}.id`, `${path}.id duplicates another section id.`));
     sectionIds.add(section.id);
-    if (!GROUNDS.includes(section.ground as SectionedViewGround)) findings.push(finding("sectioned-view-ground", `${path}.ground`, `${path}.ground must be one of ${GROUNDS.join(", ")}.`));
 
     switch (section.kind) {
       case "hero":
@@ -383,6 +509,35 @@ export function validateSectionedViewDocument(value: unknown): ComposeFinding[] 
         if (section.eyebrow !== undefined) validateCopy(section.eyebrow, `${path}.eyebrow`, findings);
         if (section.description !== undefined) validateCopy(section.description, `${path}.description`, findings);
         break;
+      case "pricing":
+        validateRepeatedSection(section, path, ["id", "kind", "ground", "eyebrow", "heading", "description", "items"], ["id", "name", "price", "description", "features", "cta"], findings, (item, itemPath) => {
+          validateCopy(item.name, `${itemPath}.name`, findings);
+          validateCopy(item.price, `${itemPath}.price`, findings);
+          if (item.description !== undefined) validateCopy(item.description, `${itemPath}.description`, findings);
+          if (!hasOwn(item, "features")) findings.push(finding("sectioned-view-item-shape", itemPath, `${itemPath} must include a features array.`));
+          else validateCopyRefArray(item.features, `${itemPath}.features`, findings);
+          if (item.cta !== undefined) validateCopy(item.cta, `${itemPath}.cta`, findings);
+        });
+        validateCopy(section.heading, `${path}.heading`, findings);
+        if (section.eyebrow !== undefined) validateCopy(section.eyebrow, `${path}.eyebrow`, findings);
+        if (section.description !== undefined) validateCopy(section.description, `${path}.description`, findings);
+        break;
+      case "testimonial":
+        validateRepeatedSectionOptionalHeading(section, path, ["id", "kind", "ground", "heading", "items"], ["id", "quote", "attributorName", "attributorRole"], findings, (item, itemPath) => {
+          validateCopy(item.quote, `${itemPath}.quote`, findings);
+          validateCopy(item.attributorName, `${itemPath}.attributorName`, findings);
+          if (item.attributorRole !== undefined) validateCopy(item.attributorRole, `${itemPath}.attributorRole`, findings);
+        });
+        if (section.heading !== undefined) validateCopy(section.heading, `${path}.heading`, findings);
+        break;
+      case "stat":
+        validateRepeatedSectionOptionalHeading(section, path, ["id", "kind", "ground", "heading", "items"], ["id", "label", "value", "delta"], findings, (item, itemPath) => {
+          validateCopy(item.label, `${itemPath}.label`, findings);
+          validateCopy(item.value, `${itemPath}.value`, findings);
+          if (item.delta !== undefined) validateCopy(item.delta, `${itemPath}.delta`, findings);
+        });
+        if (section.heading !== undefined) validateCopy(section.heading, `${path}.heading`, findings);
+        break;
       default:
         findings.push(finding("sectioned-view-section-kind", `${path}.kind`, unsupportedSectionKindMessage(path, section.kind)));
     }
@@ -398,7 +553,23 @@ function validateRepeatedSection(section: Record<string, unknown>, path: string,
   for (let itemIndex = 0; itemIndex < section.items.length; itemIndex += 1) {
     const item = section.items[itemIndex];
     const itemPath = `${path}.items.${itemIndex}`;
-    const requiredItemKeys = itemKeys.filter((key) => !["description", "label", "delta", "trend"].includes(key));
+    const requiredItemKeys = itemKeys.filter((key) => !["description", "label", "delta", "trend", "cta", "attributorRole"].includes(key));
+    if (!isPlainObject(item) || !hasOnlyOwnKeys(item, itemKeys) || !hasOwnKeys(item, requiredItemKeys) || !isNonWhitespaceString(item.id)) {
+      findings.push(finding("sectioned-view-item-shape", itemPath, `${itemPath} must be a plain item with a non-whitespace id and only its kind's fields.`));
+      continue;
+    }
+    validateItem(item, itemPath);
+  }
+}
+
+function validateRepeatedSectionOptionalHeading(section: Record<string, unknown>, path: string, sectionKeys: readonly string[], itemKeys: readonly string[], findings: ComposeFinding[], validateItem: (item: Record<string, unknown>, path: string) => void): void {
+  if (!hasOnlyOwnKeys(section, sectionKeys) || !hasOwn(section, "items")) findings.push(finding("sectioned-view-section-keys", path, `${path} has keys not allowed for this section kind.`));
+  if (!validateDenseArray(section.items, `${path}.items`, findings, "sectioned-view-items-shape", `${path}.items must be a non-empty array.`)) return;
+  validateItemIds(section.items, `${path}.items`, findings);
+  for (let itemIndex = 0; itemIndex < section.items.length; itemIndex += 1) {
+    const item = section.items[itemIndex];
+    const itemPath = `${path}.items.${itemIndex}`;
+    const requiredItemKeys = itemKeys.filter((key) => !["delta", "attributorRole"].includes(key));
     if (!isPlainObject(item) || !hasOnlyOwnKeys(item, itemKeys) || !hasOwnKeys(item, requiredItemKeys) || !isNonWhitespaceString(item.id)) {
       findings.push(finding("sectioned-view-item-shape", itemPath, `${itemPath} must be a plain item with a non-whitespace id and only its kind's fields.`));
       continue;
@@ -533,8 +704,16 @@ export function resolveSectionedViewDocument(document: SectionedViewDocument, re
     return resolution.text;
   };
   const optional = (ref: CopyRef | undefined, path: string): string | undefined => (ref === undefined ? undefined : text(ref, path));
-  const sections = document.sections.map((section, sectionIndex) => resolveSection(section, `sections.${sectionIndex}`, text, optional));
+  const withGrounds = applySectionGroundRhythm(document);
+  const sections = withGrounds.sections.map((section, sectionIndex) => resolveSection(assertResolvedSectionGround(section, `sections.${sectionIndex}`), `sections.${sectionIndex}`, text, optional));
   return { id: document.id, sections, resolutions };
+}
+
+function assertResolvedSectionGround(section: SectionedViewSection, path: string): SectionedViewSection & { ground: SectionedViewGround } {
+  if (section.ground === undefined) {
+    throw new SectionedViewResolutionError("invalid-document", `resolveSectionedViewDocument refused invalid document: ${path}.ground is required after section ground rhythm resolution.`);
+  }
+  return section as SectionedViewSection & { ground: SectionedViewGround };
 }
 
 /** Resolves one status item's label and optional detail; shared between a group's items and a section's flat items. */
@@ -542,7 +721,7 @@ function resolveStatusItem(item: SectionedViewStatusItem, path: string, text: (r
   return { ...item, label: text(item.label, `${path}.label`), detail: optional(item.detail, `${path}.detail`) } as ResolvedSectionedViewStatusItem;
 }
 
-function resolveSection(section: SectionedViewSection, path: string, text: (ref: CopyRef, path: string) => string, optional: (ref: CopyRef | undefined, path: string) => string | undefined): ResolvedSectionedViewSection {
+function resolveSection(section: SectionedViewSection & { ground: SectionedViewGround }, path: string, text: (ref: CopyRef, path: string) => string, optional: (ref: CopyRef | undefined, path: string) => string | undefined): ResolvedSectionedViewSection {
   switch (section.kind) {
     case "hero": {
       const { media: sourceMedia, ...heroBase } = section;
@@ -596,6 +775,43 @@ function resolveSection(section: SectionedViewSection, path: string, text: (ref:
           value: text(item.value, `${path}.items.${index}.value`),
           delta: optional(item.delta, `${path}.items.${index}.delta`),
           description: optional(item.description, `${path}.items.${index}.description`),
+        })),
+      };
+    case "pricing":
+      return {
+        ...section,
+        eyebrow: optional(section.eyebrow, `${path}.eyebrow`),
+        heading: text(section.heading, `${path}.heading`),
+        description: optional(section.description, `${path}.description`),
+        items: section.items.map((item, index) => ({
+          ...item,
+          name: text(item.name, `${path}.items.${index}.name`),
+          price: text(item.price, `${path}.items.${index}.price`),
+          description: optional(item.description, `${path}.items.${index}.description`),
+          features: item.features.map((feature, featureIndex) => text(feature, `${path}.items.${index}.features.${featureIndex}`)),
+          cta: optional(item.cta, `${path}.items.${index}.cta`),
+        })),
+      };
+    case "testimonial":
+      return {
+        ...section,
+        heading: optional(section.heading, `${path}.heading`),
+        items: section.items.map((item, index) => ({
+          ...item,
+          quote: text(item.quote, `${path}.items.${index}.quote`),
+          attributorName: text(item.attributorName, `${path}.items.${index}.attributorName`),
+          attributorRole: optional(item.attributorRole, `${path}.items.${index}.attributorRole`),
+        })),
+      };
+    case "stat":
+      return {
+        ...section,
+        heading: optional(section.heading, `${path}.heading`),
+        items: section.items.map((item, index) => ({
+          ...item,
+          label: text(item.label, `${path}.items.${index}.label`),
+          value: text(item.value, `${path}.items.${index}.value`),
+          delta: optional(item.delta, `${path}.items.${index}.delta`),
         })),
       };
     default:

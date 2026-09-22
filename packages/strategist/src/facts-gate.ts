@@ -108,6 +108,8 @@ const UNIT_WORDS = [
   "members",
 ].join("|");
 
+const CATALOGUE_COUNT_UNIT_WORDS = "packages|records";
+
 const NUMERIC_CLAIM_RE = new RegExp(
   [
     String.raw`[$€£]\s?\d[\d,]*(?:\.\d+)?\s?[kKmMbB]?\b`, // currency: $4.2M, $250,000, €99
@@ -116,6 +118,7 @@ const NUMERIC_CLAIM_RE = new RegExp(
     String.raw`\b\d{1,3}(?:,\d{3})+\b`, // grouped count: 500,000
     String.raw`\b\d+(?:\.\d+)?\s?(?:million|billion|thousand)\b`, // spelled-out magnitude
     String.raw`\b\d+(?:\.\d+)?\s?(?:${UNIT_WORDS})\b`, // count + business unit word
+    String.raw`\b(?:twenty-one|twenty|\d+)\s+(?:${CATALOGUE_COUNT_UNIT_WORDS})\b`, // catalogue-count: spelled or digit + packages/records
   ].join("|"),
   "gi",
 );

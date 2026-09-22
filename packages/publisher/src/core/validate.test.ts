@@ -305,6 +305,21 @@ describe("validateComposeDocument — WebMeta shape", () => {
     const findings = validateComposeDocument({ ...validWeb, meta: { ...validWeb.meta, jsonLd: "nope" } });
     expect(hasRule(findings, "web-json-ld-shape", "meta.jsonLd")).toBe(true);
   });
+  it("flags an empty og.url with web-og-field-shape", () => {
+    const findings = validateComposeDocument({ ...validWeb, meta: { ...validWeb.meta, og: { url: "" } } });
+    expect(hasRule(findings, "web-og-field-shape", "meta.og.url")).toBe(true);
+  });
+  it("flags an empty twitter.image with web-twitter-image-shape", () => {
+    const findings = validateComposeDocument({ ...validWeb, meta: { ...validWeb.meta, twitter: { image: "" } } });
+    expect(hasRule(findings, "web-twitter-image-shape", "meta.twitter.image")).toBe(true);
+  });
+  it("flags malformed hreflangAlternates entries with web-hreflang-alternate-entry-shape", () => {
+    const findings = validateComposeDocument({
+      ...validWeb,
+      meta: { ...validWeb.meta, hreflangAlternates: [{ hreflang: "", href: "https://example.com/" }] },
+    });
+    expect(hasRule(findings, "web-hreflang-alternate-entry-shape", "meta.hreflangAlternates[0].hreflang")).toBe(true);
+  });
 });
 
 describe("validateComposeDocument — EmailMeta shape", () => {

@@ -155,6 +155,7 @@ export interface WebHeadMetadata {
   keywords?: string[];
   openGraph?: WebOpenGraphMetadata;
   twitter?: WebTwitterMetadata;
+  hreflangAlternates?: WebHreflangAlternate[];
   /**
    * Zero or more `<script type="application/ld+json">`-ready payloads —
    * each entry is already `JSON.stringify`'d AND escaped safe for
@@ -174,11 +175,18 @@ export interface WebOpenGraphMetadata {
   description?: string;
   image?: string;
   type?: string;
+  url?: string;
 }
 
 export interface WebTwitterMetadata {
   card?: "summary" | "summary_large_image";
   site?: string;
+  image?: string;
+}
+
+export interface WebHreflangAlternate {
+  hreflang: string;
+  href: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -240,6 +248,21 @@ export interface RepeatingWebSlotFieldSpec {
   required?: boolean;
 }
 
+/**
+ * One Designer block or shell step a consumer template may declare instead of
+ * a hand-written `build` function. Each entry names only slot keys the
+ * template's own `flow` / `repeatingSlots` already declared — see
+ * `defineWebTemplate` for validation.
+ */
+export type WebTemplateBlockKind = "page-header" | "marketing-chapter" | "node-chapter" | "stat-grid" | "copy-footer";
+
+export type WebTemplateBlockSpec =
+  | { kind: "page-header"; title: string; description?: string }
+  | { kind: "marketing-chapter"; title: string; description?: string; body?: string }
+  | { kind: "node-chapter"; node: string; title?: string; description?: string }
+  | { kind: "stat-grid"; repeating: string }
+  | { kind: "copy-footer"; copy: string };
+
 /** One repeating slot key a `WebTemplate` expects to receive via `RenderWebOptions.groups`, and whether that slot must be present (not necessarily non-empty). */
 export interface RepeatingWebSlotSpec {
   key: string;
@@ -281,6 +304,12 @@ export interface WebTemplate {
    */
   slotKinds?: Record<string, WebSlotContentKind[]>;
   /**
+   * Consumer templates only: the frozen block sequence `defineWebTemplate`
+   * compiled into `build`. Shipped built-ins omit this — their `build` is
+   * authored directly in `internal/webTemplates.ts`.
+   */
+  blocks?: readonly WebTemplateBlockSpec[];
+  /**
    * Builds the real element from resolved slot content. Missing optional
    * slots are simply absent keys in `content`. `groups` carries every
    * repeating slot's resolved items, keyed by slot — absent for a
@@ -305,8 +334,11 @@ export interface DefineWebTemplateOptions {
   slotKinds?: Record<string, WebSlotContentKind[]>;
   /** See `WebTemplate.repeatingSlots`. */
   repeatingSlots?: RepeatingWebSlotSpec[];
-  /** See `WebTemplate.build`. */
-  build: (content: Record<string, ReactNode>, groups: Record<string, ResolvedWebGroupItem[]>) => ReactNode;
+  /**
+   * Designer block sequence this package renders for a consumer template.
+   * Required — `build` is not accepted on consumer templates (issue #1103).
+   */
+  blocks: WebTemplateBlockSpec[];
 }
 
 /**
