@@ -15,7 +15,10 @@
     "designer-brand-check": 0,
     "designer-contrast-check": 0,
     "designer-environment-check": 0,
-    "designer-rate-check": 0
+    "designer-rate-check": 0,
+    "designer-hero-css-check": 0,
+    "designer-fold-check": 0,
+    "designer-type-check": 0
   },
   "fixtures": ["clean/View.tsx", "violated/View.ts", "indeterminate/View.tsx"],
   "cases": [
