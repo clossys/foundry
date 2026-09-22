@@ -9,11 +9,6 @@ All notable changes to this package are documented here. Format follows
 
 ### Added
 
-- Web head metadata: Open Graph URL (`og.url`), Twitter image
-  (`twitter.image`), and hreflang alternates (`hreflangAlternates`) on
-  `WebMeta` / `SurfaceWebMeta`, emitted from `buildWebHeadMetadata`
-  (#1108).
-
 - Consumer `defineWebTemplate` templates are data: a `blocks` sequence of
   Designer block kinds (`page-header`, `node-chapter`, `stat-grid`, and
   others) this package renders. Arbitrary `build` functions are refused on
@@ -56,6 +51,10 @@ All notable changes to this package are documented here. Format follows
   brand-file check passes. Fixture copy ships with the package. Strategist
   facts are cited beside the tokens; this package does not change
   Strategist (#1111).
+- Web head metadata: Open Graph URL (`og.url`), Twitter image
+  (`twitter.image`), and hreflang alternates (`hreflangAlternates`) on
+  `WebMeta` / `SurfaceWebMeta`, emitted from `buildWebHeadMetadata`
+  (#1108).
 
 ### Changed
 
