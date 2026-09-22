@@ -129,10 +129,6 @@ jobs:
             echo "::warning title=Partial conversation-safety scan::No denylist available (expected for fork pull requests, and for any run triggered directly by Dependabot — see issue #269). Scanning in PARTIAL mode."
           fi
 
-      - name: Redact denylist
-        if: always()
-        run: rm -f "$RUNNER_TEMP/denylist.json"
-
       # DRAFT-mode (stdin) invocation, exactly the shape conversation-safety.yml
       # uses for its own `pull_request_target` case — reused, not
       # reimplemented, per #402's own instruction. Only the trigger and the
@@ -160,3 +156,7 @@ jobs:
           else
             printf '%s' "$text" | node "$GITHUB_WORKSPACE/.trusted-scripts/scripts/check-conversation-safety.mjs" --require-denylist
           fi
+
+      - name: Redact denylist
+        if: always()
+        run: rm -f "$RUNNER_TEMP/denylist.json"
