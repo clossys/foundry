@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "kind": "foundry-coverage-declaration",
+  "trackingIssues": [395, 352, 504],
+  "shape": {
+    "fields": ["schemaVersion", "repository", "declaredAbsences"],
+    "declaredAbsenceFields": ["package", "reason"],
+    "rule": "One repository writes at most one declaration about itself. schemaVersion is exactly the integer this contract's own producing package's COVERAGE_DECLARATION_SCHEMA_VERSION exports (currently 1); repository is a non-empty string identifying the repository the declaration is about, opaque to the reader; declaredAbsences is an array (may be empty) naming every package this repository has DECIDED, out loud, that it has no lane for. Each entry's package is a non-empty string and each entry's reason is a non-empty string -- an absence with no reason does not qualify as declared-absent and is read as though nothing was declared at all. A package must not appear twice in one declaration's declaredAbsences. This is the one shape @clossys/observer's coverage-declaration.ts parses (validateCoverageDeclarationShape / parseCoverageDeclaration) -- this contract describes that parser's existing rule; it does not define a second one, and the two must never diverge."
+  },
+  "declaredLocation": {
+    "path": ".foundry/coverage-declaration.json",
+    "ref": "the repository's own default branch",
+    "transport": "a plain, unauthenticated HTTP GET against the hosting provider's raw-content endpoint for that path on that ref (for example https://raw.githubusercontent.com/<owner>/<repo>/<default-branch>/.foundry/coverage-declaration.json)",
+    "rule": "Exactly one documented on-disk location, the same for every repository in the fleet, chosen so a fleet aggregate can read it with no per-account credential: not this fleet's own npm registry (GitHub Packages requires an authenticated token to read even a public package) and not the GitHub contents/GraphQL API (rate-limited without a token). A 404 at this path means the repository has never declared anything -- read as `declaration: undefined`, distinct from a declaration that was found but fails shape validation, which reads as unclassified with reason declaration-unreadable rather than as nothing declared. A GET's response body is a JSON string; the parser accepts that raw string directly, or an already-JSON.parse'd value for a caller that parsed it itself, and fails closed (a validation finding, never a thrown error) on either."
+  },
+  "installedDefinition": {
+    "decision": "any-manifest",
+    "recordedOn": "2026-09-21",
+    "statement": "A package-repository cell is `installed` when the package is pinned in ANY manifest committed anywhere in the repository -- not only a root-manifest pin. The cell records which manifest path(s), relative to the repository root, carry the pin.",
+    "reason": "Monorepo consumers legitimately pin a role inside a workspace package rather than at the repository root. #395's own 2026-08-21 comment measured two repositories where a root-pin sweep and an any-manifest sweep disagreed about the same cell -- both measurements were correct about what they measured, and the disagreement showed that `installed` was not yet a single well-defined state until the matrix said where it had to be declared. Choosing root-only would grade a real, deliberate workspace-package pin as absent; choosing any-manifest and discarding the path would grade it installed but hide exactly where -- hub-level infrastructure versus a single product package, or a pin that landed in the wrong bucket entirely -- which is the same kind of silent collapse #395 exists to refuse. Recording the manifest path(s) alongside `installed` keeps that placement visible to a reviewer and to Advisor's own placement evidence instead of discarding it once the boolean question is answered.",
+    "fields": {
+      "installedCell": ["package", "repository", "state", "installedVersion", "manifestPaths"],
+      "manifestPathsRule": "Optional; when present, a non-empty array of manifest paths relative to the repository root, each one a real manifest in that repository that pins the package. Never consulted to decide whether the cell IS installed -- only to record, once it is, where. A caller that cannot or does not track paths may omit the field entirely; the cell still resolves to installed from name/installedVersion alone."
+    }
+  },
+  "boundary": {
+    "rule": "This repository never learns and never names which competing, non-@clossys package a consuming repository installed instead. A declared-absent cell carries exactly `package` (the @clossys role package the repository has decided not to adopt) and `reason` (the repository's own prose) -- never a second package name. A fleet-coverage report built from this contract must not print, log, or otherwise surface any package name beyond the fleet's own declared catalog and the reason string the declaring repository wrote for itself.",
+    "refs": "See issue #504's owner decision (2026-09-21): the packages in this repository's scope are authoritative for the four expression roles, and a consuming repository's choice to keep a competing external package instead is that repository's own decision to declare here, with a reason -- never this repository's to discover or disclose."
+  }
+}

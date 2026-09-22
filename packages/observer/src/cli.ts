@@ -79,8 +79,10 @@ Input document shape:
                          file -- either the raw JSON string a plain HTTP GET actually returns, or
                          an already-JSON.parse'd value; both are accepted -- or omit entirely if
                          none could be found>,
-        "installed": { "packages": [{ "name": "@scope/package-a" }] }
-                        (omit entirely if the installed inventory could not be read)
+        "installed": { "packages": [{ "name": "@scope/package-a", "manifestPaths": ["package.json"] }] }
+                        (omit entirely if the installed inventory could not be read; "manifestPaths"
+                        is optional -- when supplied it names every manifest, anywhere in the
+                        repository, that pins this package, per #395's any-manifest decision)
       }
     ]
   }
@@ -229,7 +231,12 @@ export function renderReport(report: FleetCoverageReport): string {
         ? coverageCell.reason
         : coverageCell.state === "unclassified"
           ? `${coverageCell.reason}${coverageCell.detail ? ` — ${coverageCell.detail}` : ""}`
-          : (coverageCell.installedVersion ?? "");
+          : // installed -- version plus, when the caller supplied it, exactly
+            // which manifest path(s) carry the pin (#395's any-manifest
+            // decision: never hide placement behind a bare "installed").
+            [coverageCell.installedVersion, coverageCell.manifestPaths?.length ? `via ${coverageCell.manifestPaths.join(", ")}` : undefined]
+              .filter((part): part is string => part !== undefined && part !== "")
+              .join(" ");
     lines.push(`| ${cell(coverageCell.package)} | ${cell(coverageCell.repository)} | ${cell(coverageCell.state)} | ${cell(detail)} |`);
   }
   lines.push(
