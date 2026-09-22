@@ -262,20 +262,44 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git checkout -b "$branch"
-          git add "$RECORD_PATH" governance/release-qualification-deferrals.json
 
-          message_file="$RUNNER_TEMP/qualify-candidate-commit-message.txt"
+          # Two commits, not one. scripts/lib/candidate-qualification.mjs's
+          # forward-record-paths rule requires a qualification-introduction
+          # commit to change EXACTLY the qualification record path(s) it
+          # introduces -- governance/release-qualification-deferrals.json is
+          # not a record path, so it cannot share that commit. A single
+          # "record + deferral" commit (what this step used to make) passes
+          # every check that runs before build-and-test, then fails
+          # build-and-test itself -- discovered when a consolidated batch of
+          # these records reached that job for the first time. This mirrors
+          # the two-commit shape #1156 landed by hand for the same reason.
+          record_message_file="$RUNNER_TEMP/qualify-candidate-commit-message.txt"
           {
             printf '%s\n\n' "Qualify ${name}@${VERSION} on the pinned release runtime"
             printf '%s\n' "Produced ${RECORD_PATH} by running scripts/run-candidate-qualification.mjs"
             printf '%s\n' "and scripts/generate-qualification-record.mjs on the exact runtime"
             printf '%s\n' "scripts/lib/release-runtime.mjs pins (Node v24.19.0, npm 11.17.0, zlib"
-            printf '%s\n' "1.3.2.1-motley-3246f1b), via .github/workflows/qualify-candidate.yml, and"
-            printf '%s\n\n' "removed the deferral entry it makes stale, if one was on file."
+            printf '%s\n\n' "1.3.2.1-motley-3246f1b), via .github/workflows/qualify-candidate.yml."
             printf '%s\n\n' "This acknowledges qualification only; it does not publish ${name}@${VERSION}."
             printf '%s\n' "Ref: #948"
-          } > "$message_file"
-          git commit -F "$message_file"
+          } > "$record_message_file"
+          git add "$RECORD_PATH"
+          git commit -F "$record_message_file"
+
+          if ! git diff --quiet -- governance/release-qualification-deferrals.json; then
+            deferral_message_file="$RUNNER_TEMP/qualify-candidate-deferral-commit-message.txt"
+            {
+              printf '%s\n\n' "Remove the ${name}@${VERSION} deferral entry qualification made stale"
+              printf '%s\n' "The record introduced in the previous commit makes this entry stale by"
+              printf '%s\n' "scripts/check-qualification-record-required.mjs's stale-deferral rule."
+              printf '%s\n\n' "Separate commit from the record introduction: see that commit's own"
+              printf '%s\n' "message for why governance/release-qualification-deferrals.json cannot"
+              printf '%s\n\n' "share a commit with a qualification-record path."
+              printf '%s\n' "Ref: #948"
+            } > "$deferral_message_file"
+            git add governance/release-qualification-deferrals.json
+            git commit -F "$deferral_message_file"
+          fi
 
           git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
           git push origin "$branch"
