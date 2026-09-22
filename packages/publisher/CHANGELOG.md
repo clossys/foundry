@@ -30,6 +30,12 @@ All notable changes to this package are documented here. Format follows
   `Stat` respectively; `ground` is applied with `SECTION_GROUND_CLASSES`
   where the block does not accept it. Unknown kinds are still refused by
   name (#1106).
+- `publisher-preview` CLI: after `readBrandCss` and `checkBrandFileCoverage`
+  succeed, renders fixture documents for every shipped web view
+  (`MarketingView`, `SectionedView` including `pricing` / `testimonial` /
+  `stat`, `AuthView`, `ErrorView`, `CaptureView`, `DocumentView`,
+  `CollectionView`) into a static `gallery.html` using an in-package
+  `CopyRegistry` of approved placeholder copy (#1107).
 
 ### Changed
 

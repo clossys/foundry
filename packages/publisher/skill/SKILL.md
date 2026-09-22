@@ -49,6 +49,7 @@ Ask one question. Prefer the host multiple-choice control when it exists; otherw
 If `node_modules/@clossys/publisher` is present (or this package's bins are on PATH), use the exact pin in the tree. Read `package.json` `bin` for the real command names.
 - Assessment CLI: `publisher-rate-check`
 - Web route gate: `publisher-web-route-check`
+- Shipped-view preview: `publisher-preview <brand.css> <output-directory>` — runs Designer brand-file coverage first, then writes `gallery.html` with every shipped web view skinned by that brand file. Use this command; do not invent preview pages in chat.
 
 Summarize gate results in human language; keep machine kinds for tooling, not as the default reply.
 
