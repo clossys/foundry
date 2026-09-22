@@ -70,6 +70,14 @@ jobs:
       # loadDeferrals()) import node builtins and each other only -- the same
       # dependency-free discipline check-merge-policy.yml's equivalent step
       # relies on.
+      # This step always exits 0 -- the real status lives only in
+      # $GITHUB_OUTPUT, matching conversation-safety-sweep.yml's equivalent
+      # step. A default-behavior `if:` (no always()/failure()/cancelled())
+      # on the step below is SKIPPED once its predecessor fails, so a
+      # non-zero exit here would silently drop the differentiated
+      # FAIL-vs-not-applicable annotation the next step exists to emit --
+      # the job would still go red, but with GitHub's generic "Process
+      # completed with exit code 1" instead of either `::error` message.
       - name: check-qualification-deferral-issues
         id: sweep
         env:
@@ -79,7 +87,7 @@ jobs:
           npm run check:qualification-deferral-issues
           status=$?
           echo "status=$status" >> "$GITHUB_OUTPUT"
-          exit "$status"
+          exit 0
 
       - name: Reflect sweep result in job status
         if: ${{ steps.sweep.outputs.status != '0' }}
