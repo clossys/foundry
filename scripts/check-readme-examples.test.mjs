@@ -473,6 +473,40 @@ test("TS7031 with NO accompanying elided reference: still a real finding", () =>
   assert.match(result.stdout, /TS7031/);
 });
 
+test("TS7006 riding with a genuine elided reference: whole block skipped", () => {
+  // packages/designer/README.md's real shape: `rows.map((row) => ...)`
+  // where `rows` itself is undefined (TS2304), so TS cannot infer the
+  // callback's plain parameter type (TS7006) -- the same cascade as TS7031,
+  // just for an ordinary parameter instead of a destructured binding.
+  const stub = makeStubTsc();
+  const diags = [
+    diag("TS2304", "Cannot find name 'rows'."),
+    diag("TS7006", "Parameter 'row' implicitly has an 'any' type."),
+  ];
+  const readme = ["```ts", "const cells = rows.map((row) => row.id);", markerLine("STUB_DIAGNOSTICS", diags), "```", ""].join("\n");
+  const pkgDir = makeFixturePackage("cascade-ts7006", { readme });
+  const result = run([pkgDir], { env: { FOUNDRY_README_EXAMPLES_TSC_OVERRIDE: stub } });
+  assert.equal(result.status, 0);
+  assert.match(result.stdout, /1 skipped/);
+  assert.match(result.stdout, /elided from the surrounding prose/);
+});
+
+test("TS7006 with NO accompanying elided reference: still a real finding", () => {
+  // Same safety property as TS7031's standalone case: an untyped plain
+  // parameter on an otherwise well-defined value is a genuine defect and
+  // must never be silently absorbed just because TS7006 also happens to be
+  // the code a cascade produces. No TS2304/2552/2503/18004 anywhere in this
+  // block, so it must still report as a finding.
+  const stub = makeStubTsc();
+  const diags = [diag("TS7006", "Parameter 'x' implicitly has an 'any' type.")];
+  const readme = ["```ts", "const f = (x) => x;", markerLine("STUB_DIAGNOSTICS", diags), "```", ""].join("\n");
+  const pkgDir = makeFixturePackage("standalone-ts7006", { readme });
+  const result = run([pkgDir], { env: { FOUNDRY_README_EXAMPLES_TSC_OVERRIDE: stub } });
+  assert.equal(result.status, 1);
+  assert.match(result.stdout, /1 finding/);
+  assert.match(result.stdout, /TS7006/);
+});
+
 test("TS18046 riding with a genuine elided reference: whole block skipped", () => {
   // packages/strategist/README.md:638-649's real shape: `TOKENS` is
   // explicitly documented in the README's own prose as "the consumer's own
