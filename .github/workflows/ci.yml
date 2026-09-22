@@ -782,6 +782,12 @@ jobs:
         with:
           node-version: 20
       - run: node scripts/check-workspace-links.mjs
+      # Does package-lock.json's own recorded version for each packages/*
+      # entry match that package's real manifest version (#917)? Same class
+      # of question as the range/link check above, plain file reads only --
+      # no npm ci, no build.
+      - name: package-lock.json workspace versions match manifests
+        run: node scripts/check-lock-workspace-versions.mjs
 
   # A merged source change with no version bump publishes nothing and says
   # nothing, whether the Publish workflow's discover job is asking "what did
