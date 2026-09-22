@@ -7,6 +7,7 @@
 //
 //   node scripts/check-conversation-safety.mjs --issue <n>  [options]
 //   node scripts/check-conversation-safety.mjs --pr <n>     [options]
+//   node scripts/check-conversation-safety.mjs --pr <n> --review <id>  [options]
 //   node scripts/check-conversation-safety.mjs --all        [options]
 //   node scripts/check-conversation-safety.mjs --file <path>  (DRAFT mode)
 //   <text> | node scripts/check-conversation-safety.mjs        (DRAFT mode, stdin)
@@ -14,6 +15,12 @@
 //     --issue <n>           scan one issue's body + its comments
 //     --pr <n>              scan one PR's body, issue-style comments, review
 //                            comments, and review summaries
+//     --review <id>         with --pr: scan one review's summary (stdin, when
+//                            stdin is not a terminal) plus its inline comments
+//                            only (not the whole PR). GitHub may not emit
+//                            pull_request_review_comment for comments authored
+//                            inside the submitted review, so the event gate
+//                            uses this mode rather than a whole-PR --pr scan.
 //     --all                 scan every issue and PR in the repository
 //     --since <iso>         only fetch/consider items updated (--all) or
 //                            comments/reviews UPDATED — not merely created;
@@ -143,6 +150,7 @@ const USAGE = `check-conversation-safety — extend the public-safety gate to Gi
 Usage:
   node scripts/check-conversation-safety.mjs --issue <n>  [options]
   node scripts/check-conversation-safety.mjs --pr <n>     [options]
+  node scripts/check-conversation-safety.mjs --pr <n> --review <id>  [options]
   node scripts/check-conversation-safety.mjs --all        [options]
   node scripts/check-conversation-safety.mjs --file <path>  (DRAFT mode)
   <text> | node scripts/check-conversation-safety.mjs        (DRAFT mode, stdin)
@@ -151,6 +159,9 @@ Options:
   --issue <n>           scan one issue's body + its comments
   --pr <n>              scan one PR's body, issue-style comments, review
                          comments, and review summaries
+  --review <id>         with --pr: scan that review's summary (stdin, when
+                         stdin is not a terminal) and its inline comments only
+                         (not the whole pull request)
   --all                 scan every issue and PR in the repository
   --since <iso>         only fetch/consider items updated (--all) or
                          comments/reviews updated at or after this ISO 8601
@@ -184,6 +195,7 @@ const KNOWN_FLAGS = new Set([
   "--repo",
   "--denylist",
   "--require-denylist",
+  "--review",
   "--json",
   "--help",
 ]);
@@ -201,6 +213,14 @@ if (activeModeFlags.length > 1) {
 }
 if (flags.has("--file") && activeModeFlags.length) {
   die(`--file (draft mode) cannot be combined with ${activeModeFlags[0]} — a draft has no issue/PR identity yet`);
+}
+if (flags.has("--review")) {
+  if (!flags.has("--pr")) {
+    die("--review requires --pr — a review id is scoped to one pull request");
+  }
+  if (flags.has("--issue") || flags.has("--all")) {
+    die(`--review cannot be combined with ${flags.has("--issue") ? "--issue" : "--all"}`);
+  }
 }
 
 const isDraftMode = flags.has("--file") || activeModeFlags.length === 0;
@@ -400,6 +420,34 @@ function fetchPr(repo, n, sinceTs) {
   return items;
 }
 
+// Narrow mode for conversation-safety.yml's pull_request_review event: one
+// submitted review's summary (passed by the caller — the event payload, not a
+// second copy fetched from the API) plus the inline comments on THAT review.
+// Inline comments attached to a submitted review are fetched here because
+// GitHub may not emit pull_request_review_comment for them. --pr would also
+// rescan the pull request body and every other comment and review.
+//
+// The summary is included whenever it is non-empty, independent of --since,
+// the same way an issue or pull request body is. --since thins only the
+// inline comments. An empty summary plus no non-empty comment bodies stages
+// nothing; the caller then exits 0 (nothing to scan), which is a clean pass
+// rather than a failure.
+function fetchPullRequestReview(repo, prNumber, reviewId, summary, sinceTs) {
+  const reviewUrl = `https://github.com/${repo}/pull/${prNumber}#pullrequestreview-${reviewId}`;
+  const items = [bodyItem("pr-review", prNumber, reviewId, reviewUrl, summary)];
+  const rc = ghApiList(`repos/${repo}/pulls/${prNumber}/reviews/${reviewId}/comments`);
+  if (!rc.ok) {
+    die(
+      `could not fetch inline comments for review ${reviewId} on PR #${prNumber} from ${repo}: ${rc.error}\n` +
+        "  Needs an authenticated `gh` with access to this repository. Refusing to report a pass from a check that did not run.",
+    );
+  }
+  for (const c of rc.data.filter((c) => afterSince(c, sinceTs))) {
+    items.push(bodyItem("pr-review-comment", prNumber, c.id, c.html_url, c.body));
+  }
+  return items;
+}
+
 function fetchAll(repo, sinceTs, sinceRaw) {
   let path = `repos/${repo}/issues?state=all&per_page=100`;
   if (sinceRaw) path += `&since=${encodeURIComponent(sinceRaw)}`;
@@ -431,37 +479,46 @@ function fetchAll(repo, sinceTs, sinceRaw) {
 
 // -------------------------------------------------------------- fetch: draft
 
+// readFileSync(0) is the obvious way to slurp stdin and it is wrong for a
+// pipe. Once the pipe buffer drains faster than the writer refills it, the
+// underlying read(2) returns EAGAIN on a non-blocking fd and the sync call
+// throws rather than waiting — reproducible with a ~1.7 MB paste on macOS,
+// and silent for anything small enough to fit the buffer in one go, which
+// is why it survives casual testing. An uncaught throw here would also exit
+// with code 1: the code this tool reserves for "a real finding", making a
+// crash indistinguishable from a detected leak by any caller that reads
+// only the exit status. So: read in a loop, treat EAGAIN as "wait and
+// retry" rather than as failure, and route any genuine error through die()
+// so it becomes exit 2, "the gate could not run".
+function readStdinFully() {
+  const chunks = [];
+  const buf = Buffer.alloc(1 << 16);
+  while (true) {
+    let bytes;
+    try {
+      bytes = readSync(0, buf, 0, buf.length, null);
+    } catch (error) {
+      if (error.code === "EAGAIN") continue;
+      if (error.code === "EOF") break;
+      die(`could not read stdin: ${error.message}`);
+    }
+    if (!bytes) break;
+    chunks.push(Buffer.from(buf.subarray(0, bytes)));
+  }
+  return Buffer.concat(chunks).toString("utf8");
+}
+
+// A submitted review's summary is optional. The workflow pipes the event
+// body (possibly empty) so that text never becomes a shell or JS literal.
+// A terminal means the caller did not pass a summary; do not block on it.
+function readReviewSummary() {
+  if (process.stdin.isTTY) return "";
+  return readStdinFully();
+}
+
 function fetchDraft() {
   const filePath = flagValue("--file");
   let text;
-  // readFileSync(0) is the obvious way to slurp stdin and it is wrong for a
-  // pipe. Once the pipe buffer drains faster than the writer refills it, the
-  // underlying read(2) returns EAGAIN on a non-blocking fd and the sync call
-  // throws rather than waiting — reproducible with a ~1.7 MB paste on macOS,
-  // and silent for anything small enough to fit the buffer in one go, which
-  // is why it survives casual testing. An uncaught throw here would also exit
-  // with code 1: the code this tool reserves for "a real finding", making a
-  // crash indistinguishable from a detected leak by any caller that reads
-  // only the exit status. So: read in a loop, treat EAGAIN as "wait and
-  // retry" rather than as failure, and route any genuine error through die()
-  // so it becomes exit 2, "the gate could not run".
-  function readStdinFully() {
-    const chunks = [];
-    const buf = Buffer.alloc(1 << 16);
-    while (true) {
-      let bytes;
-      try {
-        bytes = readSync(0, buf, 0, buf.length, null);
-      } catch (error) {
-        if (error.code === "EAGAIN") continue;
-        if (error.code === "EOF") break;
-        die(`could not read stdin: ${error.message}`);
-      }
-      if (!bytes) break;
-      chunks.push(Buffer.from(buf.subarray(0, bytes)));
-    }
-    return Buffer.concat(chunks).toString("utf8");
-  }
 
   if (filePath) {
     if (!existsSync(filePath)) die(`--file ${filePath} does not exist`);
@@ -500,8 +557,14 @@ if (isDraftMode) {
     sourceLabel = `${repo} issue #${n}`;
   } else if (flags.has("--pr")) {
     const n = requirePositiveInt("--pr");
-    items = fetchPr(repo, n, sinceTs);
-    sourceLabel = `${repo} PR #${n}`;
+    if (flags.has("--review")) {
+      const reviewId = requirePositiveInt("--review");
+      items = fetchPullRequestReview(repo, n, reviewId, readReviewSummary(), sinceTs);
+      sourceLabel = `${repo} PR #${n} review ${reviewId}`;
+    } else {
+      items = fetchPr(repo, n, sinceTs);
+      sourceLabel = `${repo} PR #${n}`;
+    }
   } else {
     items = fetchAll(repo, sinceTs, sinceRaw);
     sourceLabel = `${repo} (all issues/PRs${sinceRaw ? ` updated since ${sinceRaw}` : ""})`;

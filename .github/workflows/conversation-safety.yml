@@ -79,17 +79,21 @@ on:
   # separate event, not that one.
   pull_request_review_comment:
     types: [created, edited]
-  # The review's own summary text (left in the "Finish your review" box),
-  # separate from any inline comments attached to it. Can be submitted with
-  # an empty body (e.g. a bare Approve) — see the empty-body handling in the
-  # gate step below.
+  # A submitted or edited review. The payload carries the summary body only.
+  # Inline comments attached to a submitted review are fetched and scanned in this run because GitHub may not emit pull_request_review_comment for them.
+  # A bare approve can have an empty summary and no inline comment text; that
+  # stays a clean pass. A comment that also arrives later as
+  # pull_request_review_comment is scanned again — scanning twice is
+  # acceptable, and that event stays subscribed.
   pull_request_review:
     types: [submitted, edited]
 
 permissions:
   # Narrowest block that still lets the job read issue/PR text (implicit via
-  # the event payload, no extra scope needed for that) and label + comment
-  # on the finding. Nothing here needs to write code, packages, or contents.
+  # the event payload) and, on pull_request_review, list that review's inline
+  # comments. pull-requests: write already includes that read. Also enough to
+  # label a finding. Nothing here needs to write code, packages, or contents,
+  # and this workflow still posts no comment.
   issues: write
   pull-requests: write
   contents: read
@@ -191,10 +195,14 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_TITLE: ${{ github.event.pull_request.title }}
           PR_TEXT: ${{ github.event.pull_request.body }}
+          # Numeric review id — safe as env; used only as a GitHub REST API path
+          # segment when pull_request_review fetches that review's inline comments.
+          REVIEW_ID: ${{ github.event.review.id }}
           # A review's summary body. Legitimately empty/null on an
           # approve-with-no-comment — handled explicitly below rather than
           # left to fall through as an empty string with no comment.
           REVIEW_TEXT: ${{ github.event.review.body }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set +e
           out_file="$RUNNER_TEMP/conversation-safety-output.txt"
@@ -223,7 +231,20 @@ jobs:
               ;;
             pull_request_review)
               target_number="$PR_NUMBER"
-              text="$REVIEW_TEXT"
+              # Inline comments attached to a submitted review are fetched and scanned in this run because GitHub may not emit pull_request_review_comment for them.
+              # The summary body stays in
+              # REVIEW_TEXT and is piped on stdin — never interpolated into
+              # this script. REVIEW_ID and PR_NUMBER are numeric; the scanner
+              # rejects anything else before using them as API path segments.
+              # An empty summary and no non-empty inline comment is exit 0, a
+              # clean pass. The pull_request_review_comment branch above still
+              # scans a comment that also arrives on its own.
+              printf '%s' "$REVIEW_TEXT" | node scripts/check-conversation-safety.mjs --pr "$PR_NUMBER" --review "$REVIEW_ID" --require-denylist > "$out_file" 2>&1
+              status=$?
+              cat "$out_file"
+              echo "status=$status" >> "$GITHUB_OUTPUT"
+              echo "target_number=$target_number" >> "$GITHUB_OUTPUT"
+              exit 0
               ;;
             *)
               echo "unhandled event: $GH_EVENT_NAME" > "$out_file"
@@ -232,25 +253,6 @@ jobs:
               exit 0
               ;;
           esac
-
-          # A review can legitimately be submitted with no summary text at
-          # all (an approve/request-changes with only inline comments, or a
-          # bare approve with neither) — GitHub then sends this event with
-          # `review.body` empty or null. That is NOT a finding and NOT a
-          # failure to run; there is simply nothing to scan for this
-          # particular event, so this short-circuits to a clean pass without
-          # invoking the scanner at all, and without ever calling it on
-          # empty stdin only to reinterpret its answer. Any inline comments
-          # that came with the same review still arrive as their own,
-          # separate pull_request_review_comment events and are scanned by
-          # the branch above regardless of this one.
-          if [ "$GH_EVENT_NAME" = "pull_request_review" ] && [ -z "$text" ]; then
-            echo "check-conversation-safety: review submitted with an empty summary body — nothing to scan." > "$out_file"
-            cat "$out_file"
-            echo "status=0" >> "$GITHUB_OUTPUT"
-            echo "target_number=$target_number" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
 
           # stdin only — see the step header for why this text never becomes
           # part of the command line or script body itself.
