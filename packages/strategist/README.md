@@ -116,7 +116,7 @@ over `unknown`, an accumulated issue list, never throws.
 ## Governed strategy contract
 
 `StrategyContract` is the portable payload downstream packages seal against.
-Consumers author one `strategy/` directory (see the skill and `readStrategy`);
+Consumers author one `clossys/strategist/` directory (see the skill and `readStrategy`);
 `projectStrategyContract` projects that bundle into a contract — do not
 maintain a parallel authored contract file. `projectAndValidateStrategyContract`
 runs the same projection and then `validateStrategyContract` in one step.
@@ -220,9 +220,13 @@ schema family, all validated the same way.
 
 `readStrategy` expects a directory shaped like this. Every file is optional
 except `facts.json` — see "Why facts.json is the one required file" below.
+The consumer-facing default is `clossys/strategist/` (see #1171); the CLI
+falls back to a retired `strategy/` directory for one release only, with a
+notice, when `clossys/strategist/` does not exist yet — see "The
+`strategist-check` CLI" below and this package's CHANGELOG.
 
 ```
-strategy/
+clossys/strategist/
   facts.json                required — an array of Fact
   mission.json                optional — a Mission
   positioning.json             optional — a Positioning
@@ -246,7 +250,7 @@ just this entity family.
 ```ts
 import { readStrategy } from "@clossys/strategist";
 
-const bundle = readStrategy("./strategy");
+const bundle = readStrategy("./clossys/strategist");
 if (!bundle.complete) {
   for (const issue of bundle.issues) {
     console.error(`[${issue.reason}] ${issue.file}: ${issue.detail}`);
@@ -332,7 +336,7 @@ anything else is reported as untraced.
 ```ts
 import { checkFactsTraceability, scanStrategyDirectory, readStrategy } from "@clossys/strategist";
 
-const bundle = readStrategy("./strategy");
+const bundle = readStrategy("./clossys/strategist");
 const files = scanStrategyDirectory("./docs"); // .md, .mdx, .ts, .tsx, .js, .jsx by default
 const result = checkFactsTraceability(files, bundle.facts);
 
@@ -388,13 +392,13 @@ Legacy copy still says 500 integrations. <!-- facts-gate:ignore -->
 ### The `strategist-check` CLI
 
 ```bash
-npx strategist-check ./strategy ./docs
+npx strategist-check ./clossys/strategist ./docs
 ```
 
 ```
 Usage: strategist-check <strategy-dir> [scan-dir] [options]
 
-  strategy-dir   Directory containing facts.json (and the rest of the strategy bundle). Required.
+  strategy-dir   Directory containing facts.json (and the rest of the strategy bundle). Optional — see "The default strategy-dir and the retired strategy/ fallback" below.
   scan-dir       Directory to scan for prose/copy claims. Defaults to the current working directory.
 
 Options:
@@ -405,6 +409,29 @@ Options:
   --exclude <glob>    Repo-relative path glob to omit (repeatable), e.g. `**/*.test.ts` or `**/fixtures/**`. Use for test/fixture **files**; use `--skip-dirs` for directory **names** such as `__tests__` or `fixtures` at any depth.
 ```
 
+#### The default strategy-dir and the retired `strategy/` fallback
+
+An explicit `strategy-dir` argument (as in every example above) always
+wins outright and is read exactly as given — this never changes. Omit it
+and `strategist-check`, `strategist-check handoff`, and `strategist-check
+apply` each resolve it the same way, anchored at the current working
+directory:
+
+1. `clossys/strategist/` exists — read it. This is the current convention
+   (#1171).
+2. `clossys/strategist/` does not exist but the retired `strategy/` does —
+   read `strategy/` instead, and print a plain-language notice to move it.
+   This bridge is read for exactly one release; see this package's
+   CHANGELOG for the release it is removed in.
+3. Both exist — refused as indeterminate (exit `2`), never a silent pick:
+   remove `strategy/` once its contents have moved to `clossys/strategist/`,
+   or pass `strategy-dir` explicitly to force a choice.
+4. Neither exists — the ordinary missing-directory error, naming
+   `clossys/strategist/`, the location a fresh consumer should create.
+
+`readStrategy` itself is unaffected: it keeps taking an explicit root and
+does none of this resolution — only the CLI's own default does.
+
 #### Audience-facing copy only (shared recipe)
 
 Advisory scans and stricter CI lanes that should check **external /
@@ -414,7 +441,7 @@ contract the package documents; consumers point `scan-dir` at the copy
 root they own.
 
 ```bash
-npx strategist-check ./strategy ./copy-root \
+npx strategist-check ./clossys/strategist ./copy-root \
   --extensions .md --extensions .mdx --extensions .html \
   --skip-dirs __tests__ --skip-dirs fixtures --skip-dirs e2e \
   --exclude '**/*.test.ts' --exclude '**/*.test.tsx' \
@@ -458,7 +485,7 @@ same in a report).
 #### `--facts-dir <dir>` — facts from a directory of leaves
 
 ```bash
-npx strategist-check ./strategy ./docs --facts-dir ./strategy/facts
+npx strategist-check ./clossys/strategist ./docs --facts-dir ./clossys/strategist/facts
 ```
 
 `--facts-dir` replaces the flat `facts.json` as the gate's ground truth:
