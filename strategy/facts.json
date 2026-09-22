@@ -1,0 +1,11 @@
+[
+  {
+    "key": "publishable-package-count",
+    "label": "Publishable package count",
+    "value": 21,
+    "unit": "packages",
+    "source": "Count of non-private package manifests under packages/ with publishConfig in this repository.",
+    "lastUpdatedAt": "2026-09-21",
+    "aliases": ["twenty-one packages", "twenty-one records"]
+  }
+]

@@ -48,6 +48,31 @@ If `node_modules/@clossys/strategist` is present (or this package's bins are on 
 
 Summarize gate results in human language; keep machine kinds for tooling, not as the default reply.
 
+## Strategy directory (this package only)
+
+Only `@clossys-strategist` edits the consumer's `strategy/` directory. Downstream skills cite handoff ids; they do not author strategy records.
+
+Author one directory. Bound fields must validate; room fields are prose storage only.
+
+| File | Bound | Room | Refused in this directory |
+| --- | --- | --- | --- |
+| `facts.json` | Fact keys, values, sources | — | not a direction subject |
+| `audiences.json` | `id`, `name`, `situation`, `pains` | `notes` | persona scripts |
+| `markets.json` | `id`, `name`, `audienceIds`, `factRefs` | `description` | optional at handoff |
+| `positioning.json` | `productName`, `category`, `audienceIds`, `weAre`, `unlike`, `claimIds` | `notes` | no `forWhom` / `reasonToBelieve` |
+| `claims.json` | `id`, `status`, `assertion`, `basis` (required when approved) | `example` | no headline copy |
+| `constraints.json` | `id`, `target`, `instruction` | `why` | empty array is valid |
+| `brand.json` | essence, attribute `id`/`statement`/`basis`, derivation slots or voice rules | derivation `rationale` | no hex colors or type pairings |
+| `mission.json` | `statement`, `vision`, value `id`/`rule` | — | optional at handoff |
+| `roadmap.json` | `id`, `title`, `status`; shipped needs `factRef` or `claimId` | `description` | optional at handoff |
+| `direction.json` | `id`, `subject`, `decidedOn`, `supersedes`, `derivesFrom` | `rationale` | no `statement`; facts are not subjects |
+
+Retired filenames: `brand-essence.json`, `brand-attributes.json`, `brand-derivations.json` — use `brand.json`.
+
+`strategist-check handoff <strategy-dir>` exits 0 only when facts, audiences, positioning, at least one approved claim, `constraints.json`, brand refs, and direction refs resolve. A facts-only directory still passes `readStrategy` and fails handoff.
+
+Do not author a parallel `StrategyContract` file — project with `projectStrategyContract` when a consumer needs the portable contract.
+
 ## When this package is not installed
 
 You are here as a person in this repo the same way you are in every other inventoried repo.
