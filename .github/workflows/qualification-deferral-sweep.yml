@@ -1,0 +1,93 @@
+name: Qualification deferral sweep
+
+# WHAT THIS WORKFLOW ADDS, AND WHY IT CANNOT LIVE IN ci.yml (issue #1136)
+# -------------------------------------------------------------------------
+# governance/release-qualification-deferrals.json's own $comment calls
+# itself "a countdown, not a standing exemption -- the gate refuses to let
+# an entry outlive its reason." scripts/check-qualification-record-required.mjs
+# enforces the RECORD half of that faithfully but never checks the ISSUE
+# half -- nothing previously confirmed that a deferral's cited tracking issue
+# was still open. That gate runs in ci.yml's dependency-free `safety` job,
+# which must stay network-free (see its own header): resolving live issue
+# state needs the GitHub API and a token, so the check moves here instead,
+# the same way check:merge-policy, check:conversation, and
+# check:package-visibility each got their own scheduled workflow rather than
+# a step bolted onto a job that cannot hold a credential (see each script's
+# own header and their .yml counterparts).
+#
+# This also cannot be only a pull-request check. A deferral's issue can close
+# days or weeks after the pull request that added the deferral has already
+# merged with every check green -- an event-time check cannot re-ask a
+# question whose answer changed later. That is the structurally identical
+# reason .github/workflows/conversation-safety-sweep.yml exists as a
+# companion to conversation-safety.yml's event gate (see that workflow's own
+# header): the only way to catch drift that happens after the triggering
+# event is to re-ask on a cadence.
+#
+# scripts/check-qualification-deferral-issues.mjs deliberately reports
+# not-applicable (exit 2), never a silent pass, when it cannot resolve an
+# issue's state -- see its own header and docs/LIFECYCLE.md's eighth value.
+# This workflow reflects that distinction in the job's own conclusion rather
+# than collapsing it into either a pass or a plain failure.
+
+on:
+  schedule:
+    # Daily, at a minute that is not the top of the hour, for the same
+    # reason conversation-safety-sweep.yml picks one: GitHub queues scheduled
+    # workflows across every repository on the platform, and :00 is the most
+    # contended slot -- and offset from that sweep's own 6:17 and
+    # merge-policy.yml's weekly 5:29 so none of them contend for the same
+    # runner minute.
+    - cron: "41 7 * * *"
+  workflow_dispatch:
+
+permissions:
+  # Read this repository's own issues to resolve a deferral's cited issue
+  # state, and nothing else. Nothing here writes code, packages, contents, or
+  # issues -- this is strictly an observer, the same posture check-merge-
+  # policy.yml holds for repository settings.
+  issues: read
+  contents: read
+
+concurrency:
+  group: qualification-deferral-sweep
+  cancel-in-progress: false
+
+jobs:
+  qualification-deferral-sweep:
+    name: qualification deferral sweep
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+
+      # No `npm ci`: scripts/check-qualification-deferral-issues.mjs and the
+      # module it reuses (check-qualification-record-required.mjs's
+      # loadDeferrals()) import node builtins and each other only -- the same
+      # dependency-free discipline check-merge-policy.yml's equivalent step
+      # relies on.
+      - name: check-qualification-deferral-issues
+        id: sweep
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set +e
+          npm run check:qualification-deferral-issues
+          status=$?
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          exit "$status"
+
+      - name: Reflect sweep result in job status
+        if: ${{ steps.sweep.outputs.status != '0' }}
+        run: |
+          status="${{ steps.sweep.outputs.status }}"
+          if [ "$status" = "2" ]; then
+            echo "::error title=Qualification deferral sweep could not run::At least one deferral's cited issue state could not be resolved -- see the N/A line(s) in the step log above. This is NOT a clean sweep; it must not be read as one."
+          else
+            echo "::error title=Qualification deferral sweep finding::At least one entry in governance/release-qualification-deferrals.json cites a CLOSED issue -- its countdown has expired. See the FAIL line(s) in the step log above; remove the stale deferral and produce the qualification record, or reopen the issue with a live reason."
+          fi
+          exit 1
