@@ -33,6 +33,11 @@
         "block": 9,
         "code": "TS2307",
         "reason": "README.md:760 imports './DashboardWidget.js', explicitly commented \"a consumer's own component\" -- a deliberately unresolvable relative import illustrating integration with code this package does not ship, not a defect in what ships — see issue #908."
+      },
+      {
+        "block": 12,
+        "code": "TS2353",
+        "reason": "README.md:1234's HelpArticleView example illustrates how a SHIPPED view defines its own template using build: -- a pattern issue #1103 deliberately refuses on the consumer-facing DefineWebTemplateOptions type ('Arbitrary build functions are refused on consumer templates; shipped views keep internal build implementations'). The example is accurate about internal behavior but type-checks against the public export, which correctly rejects build -- illustrative content, not a defect in what ships — see issue #908."
       }
     ]
   }
