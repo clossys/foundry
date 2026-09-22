@@ -5,6 +5,14 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.4.17] - 2026-09-21
+
+### Changed
+
+- README: state that `designer-environment-check` is an internal-consistency
+  check with no close condition; contract-level exemption slot blocked on
+  issue #906 (closes #447).
+
 ## [0.4.16] - 2026-09-21
 
 ### Added

@@ -4524,6 +4524,12 @@ places that resolver in `builder`, shared with a second declaration shape
 rather than being built twice. This gate is not a smaller version of that
 capability and does not pretend to be one.
 
+`designer-environment-check` is an internal-consistency check with **no
+close condition** — both sides are this package's own manifest and
+declaration, not an external measurer. A contract-level exemption slot to
+record that absence is blocked on
+[issue #906](https://github.com/clossys/foundry/issues/906).
+
 **Why a bare count comparison is the wrong tool, named explicitly rather
 than left implicit.** The obvious-looking cheaper check is: count
 `RENDER_ENVIRONMENT`'s keys, count `package.json#exports`' subpaths, and
