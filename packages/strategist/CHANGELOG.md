@@ -30,9 +30,10 @@ All notable changes to this package are documented here. Format follows
 
 - Facts gate: catalogue-count claims spelled as `twenty` or `twenty-one`, or
   as a digit run, followed by `packages` or `records`, are scanned like
-  other numeric claims. Wired against this repository's own
-  `strategy/facts.json` and `docs/PUBLISHING.md` via
-  `scripts/check-strategist-subject.mjs`. Refs: #500.
+  other numeric claims. Wired against this repository's own facts subject
+  and publishing document through a repository-level subject check; none
+  of those three files ship in this package, so they are described rather
+  than cited by path. Refs: #500.
 - `strategist-check handoff <strategy-dir>`: an opt-in gate, separate from
   `StrategyBundle.complete`, that exits 0 only when facts, audiences,
   positioning, at least one approved claim, a `constraints.json` file, and
