@@ -1,0 +1,162 @@
+name: Conversation safety (head)
+
+# WHY THIS IS A SEPARATE WORKFLOW, NOT A TRIGGER CHANGE TO conversation-safety.yml
+# ----------------------------------------------------------------------------------
+# See #402. `verify-standards` became a required status check because it
+# triggers on `pull_request` with `synchronize` in its types — a fresh,
+# head-bound passing context exists at whatever commit a merge is attempted
+# from. conversation-safety.yml has no `synchronize` in its `pull_request_target`
+# trigger (deliberately — see its own header), so under this repository's
+# strict required-checks ruleset it could never be added as a required
+# context: any PR that pushes a commit after opening would have no passing
+# context at its new head, and could never acquire one. That is a real
+# rollout hazard (see #336), not a hypothetical one — measured directly, that
+# workflow does not appear at all among a pushed-to PR's reported contexts.
+#
+# The fix is NOT to add `synchronize` to conversation-safety.yml's existing
+# trigger. `pull_request_target` runs with the BASE repository's permissions
+# and secret access even for a fork's pull request, specifically so the real
+# denylist can be used against a fork-authored body. Widening that event to
+# re-fire on every push is a fork-permission decision (should a fork's
+# unreviewed head re-trigger a write-capable, secret-bearing run on every
+# push?), not a scheduling tweak, and this change deliberately does not make
+# that call. conversation-safety.yml's trigger, permissions, and behavior are
+# UNCHANGED by this file — it keeps scanning issue/PR/comment/review text on
+# `pull_request_target`, exactly as AGENTS.md's "Conversation surface"
+# section describes.
+#
+# Instead, this is a NEW workflow on plain `pull_request` (never `_target`),
+# scanning ONLY the title and description carried directly in the
+# `pull_request` event payload — content already visible to a fork's own PR,
+# needing no elevated token and no base-repository security context. It is
+# `pull_request_target`'s narrower, re-triggering sibling, not a replacement:
+# comment and review text still has no head-bound required context, and
+# still relies on conversation-safety-sweep.yml as the lagging catch-all for
+# the gap this file does not close. See #944 for a related gap (inline
+# review comments the event model itself never delivers) this file does not
+# touch either.
+#
+# THIS DOES NOT MAKE THE CONTEXT REQUIRED
+# -----------------------------------------
+# Adding `conversation safety (head)` to the `main-required-checks` ruleset
+# is a separate, deliberate step — per #402, only after measuring that no
+# open PR lacks a run of this workflow. Merging this file only makes the
+# context available to require later; it changes no branch-protection
+# setting.
+#
+# WHY EVENT TEXT NEVER TOUCHES A SHELL EXPRESSION DIRECTLY
+# ------------------------------------------------------------
+# Same reasoning as conversation-safety.yml's header: a PR title/body is
+# attacker-controlled (more so here — a fork author fully controls both, and
+# this workflow runs their own copy of the workflow file). Untrusted text
+# reaches the script only through `env:`, then `$VAR_NAME`, never spliced
+# into a `run:` body.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+
+permissions:
+  # Read-only, and nothing else. This workflow never calls the GitHub API —
+  # it scans text already present in the event payload and reports a pass or
+  # fail via its own job status. `contents: read` is only to fetch
+  # scripts/check-conversation-safety.mjs itself (from the base ref — see
+  # below). No `issues`/`pull-requests` permission because no label is
+  # written here: the same title/body text is already labeled by
+  # conversation-safety.yml on `opened`/`edited` via its own
+  # `pull_request_target` run. Duplicating that write here would need the
+  # elevated permissions this workflow exists specifically to avoid.
+  contents: read
+
+concurrency:
+  # Bound to the ref, not to an individual comment/review id the way
+  # conversation-safety.yml's group is. Unlike that workflow, every run here
+  # scans the SAME two fields (this PR's current title and body) — a run
+  # superseded by a newer push is scanning text that no longer describes the
+  # PR's head, so cancelling it is correct, matching verify-standards.yml's
+  # group shape rather than conversation-safety.yml's.
+  group: conversation-safety-head-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  conversation-safety-head:
+    name: conversation safety (head)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # Only scripts/, and only from the PR's BASE sha — never this PR's own
+      # copy, regardless of who opened it. Same reasoning as ci.yml's
+      # "Checkout trusted scripts" step: whenever the denylist secret is in
+      # scope for this job (the non-fork branch below), a PR that modified
+      # check-conversation-safety.mjs (or check-public-safety.mjs, which it
+      # spawns from its own directory) in THIS SAME PR must not get to run
+      # its own edited copy against a real credential — that would let any
+      # internal branch, not just a fork, exfiltrate the denylist. Pinning to
+      # the base ref costs the one thing it always costs: a PR that fixes a
+      # bug in either script does not get to exercise its own fix in its own
+      # run here.
+      - name: Checkout trusted scripts (base ref only, never this PR's own copy)
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: .trusted-scripts
+          sparse-checkout: |
+            scripts
+          sparse-checkout-cone-mode: false
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+
+      # Same two-secrets-stores reasoning as ci.yml's "Materialise denylist"
+      # step (see issue #269): a fork pull request and a Dependabot-triggered
+      # run are both denied this repository's Actions secrets, for the same
+      # reason `pull_request` (not `_target`) is used here at all — the
+      # workflow that runs is this PR's own copy, so a fork (or Dependabot)
+      # PR could otherwise edit this very file to print the secret back out.
+      # Degrading to PARTIAL mode with a visible warning, rather than failing
+      # the job outright, is what lets this required-check candidate still
+      # report a real pass/fail on a fork PR instead of being permanently
+      # red for a credential it can never legitimately receive.
+      - name: Materialise denylist
+        env:
+          DENYLIST_B64: ${{ secrets.PUBLIC_SAFETY_DENYLIST_B64 }}
+        run: |
+          if [ -n "$DENYLIST_B64" ]; then
+            printf '%s' "$DENYLIST_B64" | base64 -d > "$RUNNER_TEMP/denylist.json"
+            echo "PUBLIC_SAFETY_DENYLIST=$RUNNER_TEMP/denylist.json" >> "$GITHUB_ENV"
+          else
+            echo "::warning title=Partial conversation-safety scan::No denylist available (expected for fork pull requests, and for any run triggered directly by Dependabot — see issue #269). Scanning in PARTIAL mode."
+          fi
+
+      - name: Redact denylist
+        if: always()
+        run: rm -f "$RUNNER_TEMP/denylist.json"
+
+      # DRAFT-mode (stdin) invocation, exactly the shape conversation-safety.yml
+      # uses for its own `pull_request_target` case — reused, not
+      # reimplemented, per #402's own instruction. Only the trigger and the
+      # source of the text differ: title + body come from `pull_request`'s
+      # payload instead of `pull_request_target`'s, and the script run is the
+      # base-ref copy checked out above rather than this checkout's own
+      # scripts/ (this job never checks out anything but .trusted-scripts/).
+      #
+      # `--require-denylist` only on a non-fork run: on a fork (or
+      # Dependabot) run the secret is never available (see above), so
+      # requiring it would fail every such run outright rather than degrade;
+      # on anything else, the denylist must be present, and a silent PARTIAL
+      # pass here would be exactly the "quietly weakened gate" ci.yml's own
+      # comments warn against.
+      - name: Run conversation safety gate
+        env:
+          IS_FORK: ${{ github.event.pull_request.head.repo.fork }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_TEXT: ${{ github.event.pull_request.body }}
+        run: |
+          set -o pipefail
+          text="$(printf '%s\n\n%s' "$PR_TITLE" "$PR_TEXT")"
+          if [ "$IS_FORK" = "true" ]; then
+            printf '%s' "$text" | node "$GITHUB_WORKSPACE/.trusted-scripts/scripts/check-conversation-safety.mjs"
+          else
+            printf '%s' "$text" | node "$GITHUB_WORKSPACE/.trusted-scripts/scripts/check-conversation-safety.mjs" --require-denylist
+          fi
