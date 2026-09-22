@@ -1,6 +1,6 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { mergeUiClasses } from "@clossys/designer/atoms";
-import { Faq, FeatureGrid, Hero } from "@clossys/designer/blocks";
+import { Faq, FeatureGrid, Hero, type SectionGround } from "@clossys/designer/blocks";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell";
 
 /**
@@ -46,12 +46,16 @@ export interface MarketingViewProps extends HTMLAttributes<HTMLDivElement> {
   heroActions?: ReactNode;
   /** A visual companion to the hero's text content — typically a resolved `<img>`. */
   heroMedia?: ReactNode;
+  /** Semantic ground for the hero band. @default "base" */
+  heroGround?: SectionGround;
   /** Optional heading above the feature grid. */
   featuresHeading?: ReactNode;
   /** A line of supporting copy under the features heading. */
   featuresDescription?: ReactNode;
   /** The features to render — a homogeneous repeat, bound via a `SurfaceRepeatingSlotBinding`. May be empty. */
   features: readonly MarketingFeatureItem[];
+  /** Semantic ground for the feature grid band. @default "sunken" */
+  featuresGround?: SectionGround;
   /** Optional heading above the FAQ list. */
   faqHeading?: ReactNode;
   /** A line of supporting copy under the FAQ heading. */
@@ -66,12 +70,16 @@ export interface MarketingViewProps extends HTMLAttributes<HTMLDivElement> {
    * error" contract `surface/core`'s repeating bindings already hold to.
    */
   faq?: readonly MarketingFaqItem[];
+  /** Semantic ground for the FAQ band when `faq` is present. @default "base" */
+  faqGround?: SectionGround;
   /** The closing call-to-action band's own heading. Renders as a second `Hero`-shaped section (`headingLevel={2}`) — see `@clossys/designer/blocks`' `Hero` doc comment, "a page can reasonably contain two `Hero`-shaped sections". */
   ctaHeading: ReactNode;
   /** A line of supporting copy under the CTA heading. */
   ctaDescription?: ReactNode;
   /** The CTA band's own call to action. */
   ctaAction?: ReactNode;
+  /** Semantic ground for the closing call-to-action band. @default "sunken" */
+  ctaGround?: SectionGround;
   /** The footer's secondary/legal row — passed straight through to `SiteFooter.secondary`. */
   footerSecondary?: ReactNode;
   style?: CSSProperties;
@@ -107,15 +115,19 @@ export function MarketingView({
   heroDescription,
   heroActions,
   heroMedia,
+  heroGround = "base",
   featuresHeading,
   featuresDescription,
   features,
+  featuresGround = "sunken",
   faqHeading,
   faqDescription,
   faq,
+  faqGround = "base",
   ctaHeading,
   ctaDescription,
   ctaAction,
+  ctaGround = "sunken",
   footerSecondary,
   className,
   style,
@@ -132,10 +144,11 @@ export function MarketingView({
           actions={heroActions}
           media={heroMedia}
           composition={heroMedia ? "split" : "editorial"}
+          ground={heroGround}
         />
-        <FeatureGrid heading={featuresHeading} description={featuresDescription} items={features} />
-        {faq !== undefined ? <Faq heading={faqHeading} description={faqDescription} items={faq} /> : null}
-        <Hero headingLevel={2} heading={ctaHeading} description={ctaDescription} actions={ctaAction} />
+        <FeatureGrid heading={featuresHeading} description={featuresDescription} items={features} ground={featuresGround} />
+        {faq !== undefined ? <Faq heading={faqHeading} description={faqDescription} items={faq} ground={faqGround} /> : null}
+        <Hero headingLevel={2} heading={ctaHeading} description={ctaDescription} actions={ctaAction} ground={ctaGround} />
       </main>
       <SiteFooter secondary={footerSecondary} />
     </div>
