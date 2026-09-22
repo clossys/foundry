@@ -41,7 +41,11 @@ function sourceFiles(dir: string, out: string[] = []): string[] {
 
 describe("public UI contract", () => {
   it("exports only intentional token, visual, and gate subpaths — never a root barrel or views", () => {
-    expect(Object.keys(packageJson.exports)).toEqual([JS_SUBPATHS[0], ...CSS_SUBPATHS, ...JS_SUBPATHS.slice(1)]);
+    expect(Object.keys(packageJson.exports)).toEqual([
+      JS_SUBPATHS[0],
+      ...CSS_SUBPATHS,
+      ...JS_SUBPATHS.slice(1),
+    ]);
     expect(packageJson.exports["."]).toBeUndefined();
     expect(packageJson.exports["./views"]).toBeUndefined();
 

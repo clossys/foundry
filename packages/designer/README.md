@@ -225,7 +225,11 @@ The visual contract is ordered:
    overrides. Every token has a literal primitive default.
 2. A consumer brand file copied from `brand-template.css` overrides only
    brandable roles under `:root[data-brand-bound]`.
-3. Consumer extension CSS can add product-specific values under its own
+3. A consumer master brand mark — three SVG documents (lockup, mark-only,
+   inverse), validated with `validateMasterMark` from `@clossys/designer/tokens`
+   — sits alongside the brand binding. This package does not ship a product
+   logo, favicon PNGs, or social images.
+4. Consumer extension CSS can add product-specific values under its own
    prefix; it must not redefine UI's token vocabulary.
 
 For Tailwind v4, use `theme.css` instead of importing `tokens.css`
