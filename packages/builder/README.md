@@ -580,7 +580,8 @@ of union by directory link, recorded below. Three shapes were on the table:
   collision into a report exactly the way it already folds a real
   `DestinationCollisionError` from `composeInstallationPlans` itself (a
   class-one destination colliding with an account's directory link, for
-  instance — see "destination collisions" in `report.test.ts`). Two accounts
+  instance — see the "destination collisions" test coverage for
+  `verifyMachine`, which does not ship). Two accounts
   shipping a skill with the same name is still a reported conflict, never a
   silent last-writer-wins; it is just no longer free.
 

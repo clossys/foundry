@@ -32,7 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   longer sees two sources' skills collide — each source's own directory link
   is the only destination it claims. This function enumerates every source
   tree's skill names and compares them before any link is planned, returning
-  the same `DestinationCollision` shape `../composition.ts` already defines,
+  the same `DestinationCollision` shape `src/composition.ts` already defines,
   so a same-named skill in two source trees is still a reported conflict,
   never a silent last-writer-wins — `verifyMachine` now runs it ahead of
   `composeInstallationPlans` on every run.
