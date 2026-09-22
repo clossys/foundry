@@ -1120,6 +1120,12 @@ jobs:
       # packed-consumer, which now uses the same launch shape after a pack.
       - name: Declared bins reachable through node_modules/.bin
         run: node scripts/check-bin-reachability.mjs
+      # check-publication-map.mjs (#1103) imports packages/publisher's own
+      # dist/core/index.js directly, so its test file needs the build
+      # above -- it does not belong in check:gates, which runs in the
+      # dependency-free `safety` job before any workspace build exists.
+      - name: Publication map (paths and slide order)
+        run: node --test scripts/check-publication-map.test.mjs
       # This repository's own verify-standards collector, checked against the
       # one construction that can tell a real resolution from a retargeted
       # one: a reference naming another repository (or another tracker) whose

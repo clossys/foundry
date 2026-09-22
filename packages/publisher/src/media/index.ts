@@ -38,4 +38,6 @@ export { readAssetRecord } from "./registry.js";
 export type { AssetRegistryReadIssue, AssetRegistryReadIssueReason, AssetRegistryReadResult } from "./registry.js";
 
 export { checkAssetCoverage } from "./coverage.js";
+export { BRAND_ASSET_ROLES, checkBrandAssetRoster, deriveBrandAssetRoster, requiredBrandAssetSize } from "./brand-assets.js";
+export type { BrandAssetEntry, BrandAssetFinding, BrandAssetRole } from "./brand-assets.js";
 export type { AssetCoverageReport, AssetTypeCounts } from "./coverage.js";

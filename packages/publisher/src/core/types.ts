@@ -311,8 +311,9 @@ export interface WebMeta {
   canonical?: string;
   robots?: string;
   keywords?: string[];
-  og?: { title?: string; description?: string; image?: string; type?: string };
-  twitter?: { card?: "summary" | "summary_large_image"; site?: string };
+  og?: { title?: string; description?: string; image?: string; type?: string; url?: string };
+  twitter?: { card?: "summary" | "summary_large_image"; site?: string; image?: string };
+  hreflangAlternates?: { hreflang: string; href: string }[];
   jsonLd?: Record<string, unknown>[];
 }
 
@@ -363,8 +364,9 @@ export interface SurfaceWebMeta {
   canonical?: string;
   robots?: string;
   keywords?: CopyRef[];
-  og?: { title?: CopyRef; description?: CopyRef; image?: string; type?: string };
-  twitter?: { card?: "summary" | "summary_large_image"; site?: string };
+  og?: { title?: CopyRef; description?: CopyRef; image?: string; type?: string; url?: string };
+  twitter?: { card?: "summary" | "summary_large_image"; site?: string; image?: string };
+  hreflangAlternates?: { hreflang: string; href: string }[];
   jsonLd?: Record<string, unknown>[];
 }
 

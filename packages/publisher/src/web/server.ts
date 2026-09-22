@@ -5,12 +5,18 @@
  */
 export { renderWebDocument } from "./renderWebDocument.js";
 export { buildWebHeadMetadata } from "./headMetadata.js";
+export { brandAssetHeadLinks, publicationMapEmitsBrandAssets } from "./brandAssetHead.js";
 export { listWebTemplateNames } from "./internal/webTemplates.js";
 export { defineWebTemplate } from "./internal/defineWebTemplate.js";
 export { createWebRenderer } from "./internal/createWebRenderer.js";
-export { AuthView, CaptureView, CollectionView, DocumentView, ErrorView, MarketingView, SectionedView } from "#publisher-web-views";
+export { evaluateWebRouteManifest, evaluateWebRouteManifestWithSources, scanRouteSourceForDirectComposition } from "./checkWebRoutes.js";
+export type { WebRouteCheckResult, WebRouteFinding, WebRouteManifest, WebRouteManifestEntry } from "./checkWebRoutes.js";
+export { AuthView, BrandGuideView, CaptureView, CollectionView, DocumentView, ErrorView, MarketingView, SectionedView, SystemAuditView } from "#publisher-web-views";
 export type {
   AuthViewProps,
+  BrandGuideAssetLink,
+  BrandGuideFact,
+  BrandGuideViewProps,
   CaptureViewProps,
   CollectionViewEmptyState,
   CollectionViewEntry,
@@ -25,6 +31,7 @@ export type {
   MarketingViewProps,
   SectionedViewLandmark,
   SectionedViewProps,
+  SystemAuditViewProps,
 } from "#publisher-web-views";
 
 export { RenderError } from "../internal/errors.js";
@@ -46,5 +53,7 @@ export type {
   WebRenderer,
   WebSlotContentKind,
   WebTemplate,
+  WebTemplateBlockKind,
+  WebTemplateBlockSpec,
   WebTwitterMetadata,
 } from "./types.js";

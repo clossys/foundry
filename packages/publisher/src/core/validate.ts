@@ -449,7 +449,8 @@ function validateLayoutSpecShape(value: unknown, path: string): ComposeFinding[]
 
 // Rule: web-title-shape, web-description-shape, web-canonical-shape, web-robots-shape,
 // web-keywords-shape, web-og-shape, web-og-field-shape, web-twitter-shape,
-// web-twitter-card-known, web-twitter-site-shape, web-json-ld-shape
+// web-twitter-card-known, web-twitter-site-shape, web-twitter-image-shape,
+// web-hreflang-alternates-shape, web-hreflang-alternate-entry-shape, web-json-ld-shape
 function validateWebMetaShape(meta: Record<string, unknown>, path: string): ComposeFinding[] {
   const findings: ComposeFinding[] = [];
 
@@ -460,6 +461,7 @@ function validateWebMetaShape(meta: Record<string, unknown>, path: string): Comp
   const keywords = meta.keywords;
   const og = meta.og;
   const twitter = meta.twitter;
+  const hreflangAlternates = meta.hreflangAlternates;
   const jsonLd = meta.jsonLd;
 
   if (!isNonEmptyString(title)) {
@@ -482,7 +484,7 @@ function validateWebMetaShape(meta: Record<string, unknown>, path: string): Comp
     if (!isPlainObject(og)) {
       findings.push({ rule: "web-og-shape", severity: "error", message: `${path}.og must be an object when present, got ${describe(og)}.`, path: `${path}.og` });
     } else {
-      for (const key of ["title", "description", "image", "type"] as const) {
+      for (const key of ["title", "description", "image", "type", "url"] as const) {
         const v = og[key];
         if (v !== undefined && !isNonEmptyString(v)) {
           findings.push({ rule: "web-og-field-shape", severity: "error", message: `${path}.og.${key} must be a non-empty string when present, got ${describe(v)}.`, path: `${path}.og.${key}` });
@@ -503,6 +505,32 @@ function validateWebMetaShape(meta: Record<string, unknown>, path: string): Comp
       if (site !== undefined && !isNonEmptyString(site)) {
         findings.push({ rule: "web-twitter-site-shape", severity: "error", message: `${path}.twitter.site must be a non-empty string when present, got ${describe(site)}.`, path: `${path}.twitter.site` });
       }
+      const image = twitter.image;
+      if (image !== undefined && !isNonEmptyString(image)) {
+        findings.push({ rule: "web-twitter-image-shape", severity: "error", message: `${path}.twitter.image must be a non-empty string when present, got ${describe(image)}.`, path: `${path}.twitter.image` });
+      }
+    }
+  }
+
+  if (hreflangAlternates !== undefined) {
+    if (!Array.isArray(hreflangAlternates)) {
+      findings.push({ rule: "web-hreflang-alternates-shape", severity: "error", message: `${path}.hreflangAlternates must be an array when present, got ${describe(hreflangAlternates)}.`, path: `${path}.hreflangAlternates` });
+    } else {
+      hreflangAlternates.forEach((entry, index) => {
+        const entryPath = `${path}.hreflangAlternates[${index}]`;
+        if (!isPlainObject(entry)) {
+          findings.push({ rule: "web-hreflang-alternate-entry-shape", severity: "error", message: `${entryPath} must be an object with hreflang and href, got ${describe(entry)}.`, path: entryPath });
+          return;
+        }
+        const hreflang = entry.hreflang;
+        const href = entry.href;
+        if (!isNonEmptyString(hreflang)) {
+          findings.push({ rule: "web-hreflang-alternate-entry-shape", severity: "error", message: `${entryPath}.hreflang must be a non-empty string, got ${describe(hreflang)}.`, path: `${entryPath}.hreflang` });
+        }
+        if (!isNonEmptyString(href)) {
+          findings.push({ rule: "web-hreflang-alternate-entry-shape", severity: "error", message: `${entryPath}.href must be a non-empty string, got ${describe(href)}.`, path: `${entryPath}.href` });
+        }
+      });
     }
   }
 
