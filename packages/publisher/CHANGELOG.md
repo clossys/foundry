@@ -18,6 +18,9 @@ All notable changes to this package are documented here. Format follows
   registered `SurfaceDocument.template` name or composes `@clossys/designer`
   blocks directly in a route file. The route check ships as that bin for
   adopters and CI (#1103).
+- `./core` publication-map document beside `SurfaceDocument`: path and slide
+  locations, validation against registered templates, and resolve helpers for
+  host routing (#1104).
 
 ### Changed
 
