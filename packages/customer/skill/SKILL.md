@@ -39,7 +39,7 @@ A keep inhabits the shipped surface, not the code. Required inputs:
 
 **Vision capability:** the session performing this keep needs actual image-reading capability. Reasoning in text about the existence of a screenshot is not the procedure — I have to look at it.
 
-**Bounded, not open-ended:** rounds and wall-clock time are capped. The exact numbers belong to `packages/designer/PRE-AUTH-QUALITY.md` ("Bounded taste pass") — this file does not restate them so the two never drift out of sync. Read that section for the current cap before starting a keep, and stop at it.
+**Bounded, not open-ended:** rounds and wall-clock time are capped. The exact numbers belong to the PRE-AUTH-QUALITY brief that ships with `@clossys/designer` ("Bounded taste pass") — this file does not restate them so the two never drift out of sync. Read that section for the current cap before starting a keep, and stop at it.
 
 ## What I refuse
 
