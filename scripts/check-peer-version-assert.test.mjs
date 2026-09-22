@@ -184,11 +184,11 @@ test("EXIT_CODES follow the repo's satisfied=0 / violated=1 / indeterminate=2 co
 
 // --- Against the REAL repository tree: locks in the state this gate found ---
 
-test("REAL TREE (no exceptions): reports the actual current divergence — butler and keeper violate canonical, controller/designer/messenger/publisher agree", async () => {
+test("REAL TREE (no exceptions): #847 landed — butler and keeper now agree with canonical, same as controller/designer/messenger/publisher", async () => {
   // exceptions: [] — this asserts what the RAW comparison finds, independent of the acknowledged-
-  // exception mechanism, so this test stays a true record of the underlying divergence even after
-  // #847 lands and ACKNOWLEDGED_EXCEPTIONS is emptied. See "REAL ROSTER" below for the gate's
-  // actual default-configuration behaviour (satisfied, via the acknowledged exceptions).
+  // exception mechanism. #847 ported the #389 fix into butler and keeper and emptied
+  // ACKNOWLEDGED_EXCEPTIONS (see "REAL ROSTER" below), so the raw comparison and the gate's actual
+  // default-configuration behaviour now agree: every discovered file is satisfied.
   const result = await run({ repoRoot: REPO_ROOT, exceptions: [] });
   // Nine at #518, minus the three retired in #536, plus messenger's own
   // copy added in #886 — so seven. This count is deliberately hardcoded
@@ -198,11 +198,11 @@ test("REAL TREE (no exceptions): reports the actual current divergence — butle
   // without anyone noticing is precisely what this assertion is for, so
   // it must be updated deliberately — that friction is the feature.
   assert.equal(result.files.length, 7, `expected 7 real peer-version.ts files (nine minus the three retired in #536, plus messenger's added in #886), found ${result.files.length}`);
-  assert.equal(result.verdict, "violated");
+  assert.equal(result.verdict, "satisfied");
 
   const byFile = Object.fromEntries(result.files.map((f) => [f.file, f.verdict]));
-  assert.equal(byFile["packages/butler/src/web/internal/peer-version.ts"], "violated");
-  assert.equal(byFile["packages/keeper/src/web/internal/peer-version.ts"], "violated");
+  assert.equal(byFile["packages/butler/src/web/internal/peer-version.ts"], "satisfied");
+  assert.equal(byFile["packages/keeper/src/web/internal/peer-version.ts"], "satisfied");
   assert.equal(byFile["packages/controller/src/internal/peer-version.ts"], "satisfied");
   assert.equal(byFile["packages/designer/src/internal/peer-version.ts"], "satisfied");
   assert.equal(byFile["packages/messenger/src/internal/peer-version.ts"], "satisfied");
@@ -337,18 +337,13 @@ test("MALFORMED EXCEPTION VALIDATION: missing reason, missing issue, missing ack
 
 // --- The REAL ACKNOWLEDGED_EXCEPTIONS roster, validated as data ---
 
-test("REAL ROSTER: ACKNOWLEDGED_EXCEPTIONS is well-formed and currently makes the real tree satisfied", async () => {
-  assert.equal(ACKNOWLEDGED_EXCEPTIONS.length, 2, "expected exactly the butler and keeper exceptions");
-  for (const exception of ACKNOWLEDGED_EXCEPTIONS) {
-    assert.ok(exception.reason.trim().length >= 20);
-    assert.ok(Number.isInteger(exception.issue));
-    assert.ok(typeof exception.acknowledgedHash === "string" && exception.acknowledgedHash.length > 0);
-  }
+test("REAL ROSTER: ACKNOWLEDGED_EXCEPTIONS is empty now that #847 closed the butler/keeper gap, and the real tree is satisfied outright", async () => {
+  // #847 ported the #389 fix into butler and keeper, so their exception entries are now STALE by
+  // this gate's own rule (see the module header's "THREE OUTCOMES") and had to be removed rather
+  // than left in place. An empty roster here is the expected end state, not an oversight.
+  assert.equal(ACKNOWLEDGED_EXCEPTIONS.length, 0, "expected no acknowledged exceptions now that #847 is closed");
   const result = await run({ repoRoot: REPO_ROOT });
-  assert.equal(result.verdict, "satisfied", `real tree should be satisfied via the acknowledged exceptions, got: ${JSON.stringify(result.reasons)}`);
+  assert.equal(result.verdict, "satisfied", `real tree should be satisfied outright, with no acknowledged exceptions needed, got: ${JSON.stringify(result.reasons)}`);
   const ackedFiles = result.files.filter((f) => f.verdict === "acknowledged").map((f) => f.file).sort();
-  assert.deepEqual(ackedFiles, [
-    "packages/butler/src/web/internal/peer-version.ts",
-    "packages/keeper/src/web/internal/peer-version.ts",
-  ]);
+  assert.deepEqual(ackedFiles, []);
 });
