@@ -5,6 +5,7 @@
  */
 export { renderWebDocument } from "./renderWebDocument.js";
 export { buildWebHeadMetadata } from "./headMetadata.js";
+export { brandAssetHeadLinks, publicationMapEmitsBrandAssets } from "./brandAssetHead.js";
 export { listWebTemplateNames } from "./internal/webTemplates.js";
 export { defineWebTemplate } from "./internal/defineWebTemplate.js";
 export { createWebRenderer } from "./internal/createWebRenderer.js";

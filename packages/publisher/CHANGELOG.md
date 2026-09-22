@@ -36,6 +36,14 @@ All notable changes to this package are documented here. Format follows
   `stat`, `AuthView`, `ErrorView`, `CaptureView`, `DocumentView`,
   `CollectionView`) into a static `gallery.html` using an in-package
   `CopyRegistry` of approved placeholder copy (#1107).
+- Brand-asset roster roles on top of the image/video registry: favicon SVG,
+  32px PNG, apple-touch 180, maskable 192 and 512, Open Graph 1200×630,
+  Twitter image 1200×630, and email-safe PNG 600×200. Each role requires
+  alt text and a non-empty src. A derivative reads the master SVG and the
+  roster check fails until every role exists at its required pixel size
+  (#1110).
+- A complete roster emits favicon and apple-touch links for a publication
+  map that contains a web path (#1110).
 
 ### Changed
 

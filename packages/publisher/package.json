@@ -110,7 +110,6 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "build:publication-map": "tsc -p tsconfig.publication-map.json",
     "prepublishOnly": "node ../../scripts/check-name-collision.mjs . && npm run build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run"
