@@ -68,7 +68,7 @@ describe("readStrategy", () => {
       JSON.stringify({
         statement: "We help small teams ship internal tools faster.",
         vision: "A world where every team can build its own software.",
-        values: [{ name: "Clarity", rule: "When two designs are equally good, ship the one a newcomer understands fastest." }],
+        values: [{ id: "clarity", rule: "When two designs are equally good, ship the one a newcomer understands fastest." }],
       }),
     );
     const bundle = readStrategy(dir);
@@ -96,97 +96,66 @@ describe("readStrategy", () => {
   });
 
   // ---------------------------------------------------------------------
-  // Brand — brand-essence.json / brand-attributes.json / brand-derivations.json
-  // must load exactly like every other optional file: absent costs nothing,
-  // present-but-invalid flips `complete` to `false` and lands in `issues`
-  // with the same shape as a bad mission.json/roadmap.json would.
+  // Brand — brand.json replaces the retired brand-*.json trio.
   // ---------------------------------------------------------------------
 
-  const validEssence = { statement: "Precision engineering for teams who cannot afford to guess." };
-  const validAttributes = [
-    {
-      name: "Precise",
-      description: "Every public claim we make is checkable.",
-      evidence: { basis: "Every number in our marketing traces to a facts.json entry, enforced in CI." },
-    },
-  ];
-  const validDerivations = [
-    {
-      attribute: "Precise",
-      tokenSlots: ["--color-accent-primary"],
-      voiceRules: [],
-      rationale: "Precision means the accent color must read as decisive, not soft.",
-    },
-  ];
+  const validBrand = {
+    essence: { statement: "Precision engineering for teams who cannot afford to guess." },
+    attributes: [
+      {
+        id: "precise",
+        statement: "Every public claim we make is checkable.",
+        basis: "Every number in our marketing traces to a facts.json entry, enforced in CI.",
+      },
+    ],
+    derivations: [
+      {
+        attributeId: "precise",
+        tokenSlots: ["--color-accent-primary"],
+        voiceRuleIds: [],
+        rationale: "Precision means the accent color must read as decisive, not soft.",
+      },
+    ],
+  };
 
-  it("loads a valid brand set (essence + attributes + derivations) and reports complete", () => {
+  it("loads a valid brand.json and reports complete", () => {
     writeFileSync(join(dir, "facts.json"), JSON.stringify([validFact]));
-    writeFileSync(join(dir, "brand-essence.json"), JSON.stringify(validEssence));
-    writeFileSync(join(dir, "brand-attributes.json"), JSON.stringify(validAttributes));
-    writeFileSync(join(dir, "brand-derivations.json"), JSON.stringify(validDerivations));
+    writeFileSync(join(dir, "brand.json"), JSON.stringify(validBrand));
 
     const bundle = readStrategy(dir);
 
-    expect(bundle.brandEssence).toEqual(validEssence);
-    expect(bundle.brandAttributes).toEqual(validAttributes);
-    expect(bundle.brandDerivations).toEqual(validDerivations);
+    expect(bundle.brand).toEqual(validBrand);
     expect(bundle.issues).toEqual([]);
     expect(bundle.complete).toBe(true);
   });
 
-  it("surfaces a malformed brand-essence.json in issues and flips complete to false", () => {
+  it("records retired brand-essence.json with a finding that names brand.json", () => {
     writeFileSync(join(dir, "facts.json"), JSON.stringify([validFact]));
-    writeFileSync(join(dir, "brand-essence.json"), JSON.stringify({ statement: "Fast." })); // fails minLength: 10
+    writeFileSync(join(dir, "brand-essence.json"), JSON.stringify({ statement: "Retired file should fail." }));
 
     const bundle = readStrategy(dir);
 
-    expect(bundle.brandEssence).toBeUndefined();
     expect(bundle.complete).toBe(false);
-    expect(bundle.issues).toEqual([
-      { file: "brand-essence.json", reason: "invalid-schema", detail: expect.any(String) },
-    ]);
+    expect(bundle.issues.some((issue) => issue.file === "brand-essence.json" && issue.detail.includes("brand.json"))).toBe(true);
   });
 
-  it("surfaces a malformed brand-attributes.json (bad evidence) in issues and flips complete to false", () => {
+  it("surfaces a malformed brand.json in issues and flips complete to false", () => {
     writeFileSync(join(dir, "facts.json"), JSON.stringify([validFact]));
-    writeFileSync(
-      join(dir, "brand-attributes.json"),
-      JSON.stringify([{ name: "Precise", description: "Checkable.", evidence: { basis: "too short" } }]),
-    );
+    writeFileSync(join(dir, "brand.json"), JSON.stringify({ essence: { statement: "Fast." } }));
 
     const bundle = readStrategy(dir);
 
-    expect(bundle.brandAttributes).toBeUndefined();
+    expect(bundle.brand).toBeUndefined();
     expect(bundle.complete).toBe(false);
-    expect(bundle.issues).toEqual([
-      { file: "brand-attributes.json", reason: "invalid-schema", detail: expect.any(String) },
-    ]);
+    expect(bundle.issues.find((i) => i.file === "brand.json")?.reason).toBe("invalid-schema");
   });
 
-  it("surfaces a malformed brand-derivations.json (no tokenSlots/voiceRules) in issues and flips complete to false", () => {
-    writeFileSync(join(dir, "facts.json"), JSON.stringify([validFact]));
-    writeFileSync(
-      join(dir, "brand-derivations.json"),
-      JSON.stringify([{ attribute: "Precise", tokenSlots: [], voiceRules: [], rationale: "Long enough rationale text here." }]),
-    );
-
-    const bundle = readStrategy(dir);
-
-    expect(bundle.brandDerivations).toBeUndefined();
-    expect(bundle.complete).toBe(false);
-    expect(bundle.issues).toEqual([
-      { file: "brand-derivations.json", reason: "invalid-schema", detail: expect.any(String) },
-    ]);
-  });
-
-  it("leaves all three brand fields undefined with no issue when no brand files exist at all", () => {
+  it("leaves brand undefined with no issue when brand.json is absent", () => {
     writeFileSync(join(dir, "facts.json"), JSON.stringify([validFact]));
 
     const bundle = readStrategy(dir);
 
-    expect(bundle.brandEssence).toBeUndefined();
-    expect(bundle.brandAttributes).toBeUndefined();
-    expect(bundle.brandDerivations).toBeUndefined();
+    expect(bundle.brand).toBeUndefined();
     expect(bundle.issues).toEqual([]);
     expect(bundle.complete).toBe(true);
   });

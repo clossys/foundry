@@ -1161,6 +1161,8 @@ jobs:
       # dependency-free safety job.
       - name: Launcher help
         run: npm run check:launcher-help
+      - name: Strategist facts subject (PUBLISHING.md)
+        run: npm run check:strategist-subject
       - name: Supersession map
         run: npm run check:supersession
       # One vocabulary, two packages, no import between them (#443). The

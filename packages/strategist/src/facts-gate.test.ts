@@ -212,6 +212,42 @@ describe("checkFactsTraceability — Money facts", () => {
   });
 });
 
+describe("checkFactsTraceability — catalogue-count claims (packages/records)", () => {
+  const publishablePackageCountFact: Fact = {
+    key: "publishable-package-count",
+    label: "Publishable package count",
+    value: 21,
+    unit: "packages",
+    source: "package-manifest-inventory",
+    lastUpdatedAt: "2026-09-21",
+    aliases: ["twenty-one packages", "twenty-one records"],
+  };
+
+  it('FAILS on an untraced spelled catalogue count ("twenty records")', () => {
+    const files = [{ path: "fixture:publishing", content: "The catalogue lists twenty records in closure." }];
+    const result = checkFactsTraceability(files, [publishablePackageCountFact]);
+    expect(result.findings).toHaveLength(1);
+    expect(result.findings[0]).toMatchObject({
+      rule: "untraced-numeric-claim",
+      snippet: expect.stringContaining("twenty records"),
+    });
+  });
+
+  it('PASSES when a catalogue count matches a fact alias ("twenty-one packages")', () => {
+    const files = [{ path: "fixture:publishing", content: "The active target closes over all twenty-one packages." }];
+    const result = checkFactsTraceability(files, [publishablePackageCountFact]);
+    expect(result.findings).toEqual([]);
+    expect(result.claimsScanned).toBe(1);
+  });
+
+  it('does not flag bare "twenty publishable" without a packages/records unit word', () => {
+    const files = [{ path: "fixture:publishing", content: "The active release target closes over all twenty publishable source manifests." }];
+    const result = checkFactsTraceability(files, [publishablePackageCountFact]);
+    expect(result.claimsScanned).toBe(0);
+    expect(result.findings).toEqual([]);
+  });
+});
+
 describe("checkFactsTraceability — totality", () => {
   it("never throws on empty inputs", () => {
     expect(() => checkFactsTraceability([], [])).not.toThrow();

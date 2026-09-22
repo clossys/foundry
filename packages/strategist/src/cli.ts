@@ -63,6 +63,8 @@ import {
   type DirectionCurrencyResult,
 } from "./direction-invalidation.js";
 import { checkFactsTraceability, type FactsGateResult } from "./facts-gate.js";
+import { checkStrategyHandoff, strategyDirectoryUnreadable } from "./handoff.js";
+import { checkStrategyApply } from "./markers-gate.js";
 import { readStrategyDirectory } from "./facts-dir.js";
 import { readStrategy, type StrategyBundle } from "./reader.js";
 import { validateDirectionEntities, type DirectionEntity, type Fact } from "./schema.js";
@@ -71,6 +73,8 @@ import { DEFAULT_SKIP_DIRS, scanStrategyDirectory } from "./scan.js";
 const USAGE = `Usage: strategist-check <strategy-dir> [scan-dir] [options]
    or: strategist-check brand-coverage <derivations-file> <brandable-slots-file>
    or: strategist-check direction <direction-entities-file> <reviewed-against-file>
+   or: strategist-check handoff <strategy-dir>
+   or: strategist-check apply <strategy-dir> <scan-dir> [options]
 
   strategy-dir   Directory containing facts.json (and the rest of the strategy bundle). Required.
   scan-dir       Directory to scan for prose/copy claims. Defaults to the current working directory.
@@ -81,10 +85,11 @@ Options:
   --extensions <ext>  File extension to scan (repeatable; include the leading dot, e.g. --extensions .md). When none are given, the default set is .md, .mdx, .ts, .tsx, .js, and .jsx.
   --skip-dirs <name>  Directory name to skip during the walk (repeatable). Each name is added to the built-in skip list (node_modules, .git, dist, build, coverage); supplying --skip-dirs does not replace those defaults, so node_modules is never walked accidentally.
   --exclude <glob>    Repo-relative path glob to omit from the scan (repeatable), e.g. **/*.test.ts or **/fixtures/**. Directory-name skips use --skip-dirs instead; --exclude is for file-path patterns tests and fixtures need.
+  --surfaces <path>   (apply only) Designer-facing surface file that must cite surface-target constraints (repeatable).
 
 Exit codes: 0 = clean, 1 = at least one finding, 2 = could not run (bad input, missing/invalid facts.json, nothing matched to scan, or an unreadable directory).
 
-Run "strategist-check brand-coverage --help" or "strategist-check direction --help" for those subcommands' own usage.
+Run "strategist-check brand-coverage --help", "strategist-check direction --help", "strategist-check handoff --help", or "strategist-check apply --help" for those subcommands' own usage.
 `;
 
 const BRAND_COVERAGE_USAGE = `Usage: strategist-check brand-coverage <derivations-file> <brandable-slots-file> [options]
@@ -114,6 +119,31 @@ Runs BOTH checkDirectionCoverage and checkDirectionCurrency against the same two
   - checkDirectionCurrency: does every derived artifact's reviewedAgainst name a direction-entity version that is not just present, but CURRENT (not superseded) — the check presence alone cannot do. See checkDirectionCurrency's own doc comment (src/direction-invalidation.ts).
 
 Exit codes: 0 = both checks hold on non-empty inputs, 1 = either check found a real violation (a coverage gap, or a dangling/stale reviewedAgainst), 2 = indeterminate (could not run: bad input, missing/unreadable/unparseable/invalid file, zero direction entities supplied, or zero reviewedAgainst entries supplied).
+`;
+
+const HANDOFF_USAGE = `Usage: strategist-check handoff <strategy-dir>
+
+  strategy-dir   Directory containing the strategy bundle. Required.
+
+Options:
+  --help         Print this message and exit 0.
+
+Exit codes: 0 = handoff-ready, 1 = handoff findings, 2 = could not read the directory (missing/invalid facts.json).
+`;
+
+const APPLY_USAGE = `Usage: strategist-check apply <strategy-dir> <scan-dir> [options]
+
+  strategy-dir   Directory containing claims.json and constraints.json. Required.
+  scan-dir       Directory to scan for claim: and constraint: markers. Required.
+
+Options:
+  --help              Print this message and exit 0.
+  --extensions <ext>  File extension to scan (repeatable).
+  --skip-dirs <name>  Directory name to skip during the walk (repeatable).
+  --exclude <glob>    Repo-relative path glob to omit from the scan (repeatable).
+  --surfaces <path>   Designer-facing surface file for surface-target constraints (repeatable).
+
+Exit codes: 0 = clean, 1 = at least one finding, 2 = could not run.
 `;
 
 /** Exported for `cli.test.ts` — anything wrong with the arguments themselves always maps to exit code 2, never 1. */
@@ -742,6 +772,107 @@ function readDirectoryFiles(root: string): Record<string, string> {
   return files;
 }
 
+function runHandoff(argv: string[]): number {
+  let strategyDir: string | undefined;
+  let help = false;
+  for (const arg of argv) {
+    if (arg === "--help" || arg === "-h") {
+      help = true;
+      continue;
+    }
+    if (arg.startsWith("-")) throw new CliInputError(`unknown flag "${arg}"`);
+    if (strategyDir === undefined) strategyDir = arg;
+    else throw new CliInputError(`unexpected extra argument "${arg}"`);
+  }
+  if (help) {
+    console.log(HANDOFF_USAGE);
+    return 0;
+  }
+  if (!strategyDir) throw new CliInputError("strategy-dir is required");
+  const resolved = resolve(strategyDir);
+  requireDirectory("strategy-dir", resolved);
+  const bundle = readStrategy(resolved);
+  if (strategyDirectoryUnreadable(bundle.issues)) {
+    console.error("Strategy directory could not be read (facts.json missing or invalid).");
+    return 2;
+  }
+  const result = checkStrategyHandoff(bundle);
+  if (result.ok) {
+    console.log("Strategy handoff: satisfied.");
+    return 0;
+  }
+  console.log(`Strategy handoff: ${result.findings.length} finding(s):`);
+  for (const finding of result.findings) console.log(`  ${finding.message}`);
+  return 1;
+}
+
+function runApply(argv: string[]): number {
+  const args = parseArgs(argv);
+  if (args.help) {
+    console.log(APPLY_USAGE);
+    return 0;
+  }
+  if (!args.strategyDir || !args.scanDir) throw new CliInputError("strategy-dir and scan-dir are required");
+  const strategyDir = resolve(args.strategyDir);
+  const scanDir = resolve(args.scanDir);
+  requireDirectory("strategy-dir", strategyDir);
+  requireDirectory("scan-dir", scanDir);
+
+  const bundle = readStrategy(strategyDir);
+  if (strategyDirectoryUnreadable(bundle.issues)) {
+    console.error("Strategy directory could not be read (facts.json missing or invalid).");
+    return 2;
+  }
+  if (bundle.claims === undefined) {
+    console.error("claims.json is missing or invalid — cannot check claim markers.");
+    return 2;
+  }
+  if (bundle.constraints === undefined) {
+    console.error("constraints.json is missing or invalid — cannot check constraint markers.");
+    return 2;
+  }
+
+  const scanOptions: { extensions?: string[]; skipDirs?: string[]; excludeGlobs?: string[] } = {};
+  if (args.extensions.length > 0) scanOptions.extensions = args.extensions;
+  if (args.skipDirs.length > 0) scanOptions.skipDirs = [...DEFAULT_SKIP_DIRS, ...args.skipDirs];
+  if (args.excludeGlobs.length > 0) scanOptions.excludeGlobs = args.excludeGlobs;
+  const files = scanStrategyDirectory(scanDir, scanOptions);
+  if (files.length === 0) {
+    console.error(`No files matched under "${scanDir}" — nothing was scanned.`);
+    return 2;
+  }
+
+  const surfaceFiles: { path: string; content: string }[] = [];
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i] as string;
+    if (arg === "--surfaces") {
+      const value = argv[i + 1];
+      if (value === undefined || value.startsWith("-")) throw new CliInputError("--surfaces requires a path argument");
+      const resolved = resolve(value);
+      if (!existsSync(resolved)) throw new CliInputError(`declared surface "${resolved}" does not exist`);
+      surfaceFiles.push({ path: resolved, content: readFileSync(resolved, "utf8") });
+      i += 1;
+      continue;
+    }
+    if (arg.startsWith("--surfaces=")) {
+      const resolved = resolve(arg.slice("--surfaces=".length));
+      if (!existsSync(resolved)) throw new CliInputError(`declared surface "${resolved}" does not exist`);
+      surfaceFiles.push({ path: resolved, content: readFileSync(resolved, "utf8") });
+    }
+  }
+
+  const result = checkStrategyApply(files, bundle.claims, bundle.constraints, { surfaceFiles });
+  if (result.findings.length === 0) {
+    console.log("Strategy apply: satisfied.");
+    return 0;
+  }
+  console.log(`Strategy apply: ${result.findings.length} finding(s):`);
+  for (const finding of result.findings) {
+    console.log(`  [${finding.rule}] ${finding.file}:${finding.line}  ${finding.message}`);
+  }
+  return 1;
+}
+
 /**
  * Exported (unlike a typical CLI `main`) so `cli.test.ts` can exercise the
  * whole argv-to-exit-code contract directly, against a real `mkdtemp` temp
@@ -763,6 +894,12 @@ export function main(argv: string[]): number {
   }
   if (argv[0] === "direction") {
     return runDirection(argv.slice(1));
+  }
+  if (argv[0] === "handoff") {
+    return runHandoff(argv.slice(1));
+  }
+  if (argv[0] === "apply") {
+    return runApply(argv.slice(1));
   }
 
   const args = parseArgs(argv);

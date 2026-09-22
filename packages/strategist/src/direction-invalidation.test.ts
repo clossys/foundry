@@ -15,9 +15,7 @@ const RATIONALE = "Precision means every public claim traces to something checka
 function entity(id: string, overrides: Partial<DirectionEntity> = {}): DirectionEntity {
   return {
     id,
-    kind: "mission",
-    statement: "Every public claim a team makes should trace to something checkable.",
-    rationale: RATIONALE,
+    subject: { file: "mission.json", id: "mission" },
     decidedOn: "2026-01-05",
     derivesFrom: [],
     ...overrides,
