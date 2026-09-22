@@ -225,7 +225,11 @@ The visual contract is ordered:
    overrides. Every token has a literal primitive default.
 2. A consumer brand file copied from `brand-template.css` overrides only
    brandable roles under `:root[data-brand-bound]`.
-3. Consumer extension CSS can add product-specific values under its own
+3. A consumer master brand mark — three SVG documents (lockup, mark-only,
+   inverse), validated with `validateMasterMark` from `@clossys/designer/tokens`
+   — sits alongside the brand binding. This package does not ship a product
+   logo, favicon PNGs, or social images.
+4. Consumer extension CSS can add product-specific values under its own
    prefix; it must not redefine UI's token vocabulary.
 
 For Tailwind v4, use `theme.css` instead of importing `tokens.css`
@@ -4523,6 +4527,12 @@ places that resolver in `builder`, shared with a second declaration shape
 (layering-seam conformance), specifically so the same resolver serves both
 rather than being built twice. This gate is not a smaller version of that
 capability and does not pretend to be one.
+
+`designer-environment-check` is an internal-consistency check with **no
+close condition** — both sides are this package's own manifest and
+declaration, not an external measurer. A contract-level exemption slot to
+record that absence is blocked on
+[issue #906](https://github.com/clossys/foundry/issues/906).
 
 **Why a bare count comparison is the wrong tool, named explicitly rather
 than left implicit.** The obvious-looking cheaper check is: count

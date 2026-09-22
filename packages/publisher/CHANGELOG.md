@@ -5,6 +5,16 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.4.24] - 2026-09-21
+
+### Changed
+
+- `tailwind-merge` peer and dev dependency raised to `^3.7.0` (from
+  `^3.0.0`), riding along with the same bump in `@clossys/designer` —
+  `peerDependencies` is packed content, so this repository's own
+  release-readiness gate requires this version bump even though nothing in
+  `src/` changed.
+
 ## [0.4.23] - 2026-09-21
 
 ### Added
@@ -55,6 +65,8 @@ All notable changes to this package are documented here. Format follows
   (`twitter.image`), and hreflang alternates (`hreflangAlternates`) on
   `WebMeta` / `SurfaceWebMeta`, emitted from `buildWebHeadMetadata`
   (#1108).
+
+## [0.4.22] - 2026-09-21
 
 ### Changed
 

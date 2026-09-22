@@ -5,6 +5,21 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.4.17] - 2026-09-21
+
+### Added
+
+- Master brand mark contract on `@clossys/designer/tokens`: `MasterMark`
+  (lockup, mark-only, and inverse SVG documents), `validateMasterMark`,
+  and `iconMarkSvg` aligned with the `Icon` atom and design tokens (closes
+  #1109). This package does not ship a product logo.
+
+### Changed
+
+- README: state that `designer-environment-check` is an internal-consistency
+  check with no close condition; contract-level exemption slot blocked on
+  issue #906 (closes #447).
+
 ## [0.4.16] - 2026-09-21
 
 ### Added
