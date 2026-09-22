@@ -111,6 +111,9 @@ const INSPECTOR_USER_BOUNDARY = /synthetic user/i;
 const STRATEGIST_BRAND_COVERAGE_NECESSARY = /necessary,\s*not sufficient/i;
 const STRATEGIST_BRAND_DO_NOT_SURFACES = /do-not language|--surfaces/i;
 const STRATEGIST_BRAND_NOT_KEEP = /\bnot keep\b/i;
+const STRATEGIST_OUTPUT_FILES =
+  /facts\.json|audiences\.json|positioning\.json|claims\.json|constraints\.json|brand\.json|direction\.json/i;
+const STRATEGIST_HANDOFF_SUBCOMMAND = /strategist-check handoff/i;
 
 function validateSkillBody(packageDir, text) {
   const findings = [];
@@ -339,6 +342,21 @@ export function evaluatePackageSkills(packages) {
               packageDir,
               message:
                 "strategist skill must state N/N slot coverage is not keep without Designer-facing do-not language",
+            });
+          }
+          if (!STRATEGIST_OUTPUT_FILES.test(text)) {
+            pkgFindings.push({
+              rule: "strategist-output-files",
+              packageDir,
+              message:
+                "strategist skill must list strategy directory output files (facts, audiences, positioning, claims, constraints, brand, direction)",
+            });
+          }
+          if (!STRATEGIST_HANDOFF_SUBCOMMAND.test(text)) {
+            pkgFindings.push({
+              rule: "strategist-handoff-subcommand",
+              packageDir,
+              message: "strategist skill must name strategist-check handoff",
             });
           }
         }

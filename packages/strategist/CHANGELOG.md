@@ -5,13 +5,66 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
-## [0.2.8] - 2026-09-21
+## [0.3.0] - 2026-09-21
+
+### Changed
+
+- **Breaking:** one authored `strategy/` directory replaces the retired split
+  brand files and positioning madlib fields. `readStrategy` loads
+  `facts.json`, `audiences.json`, `markets.json`, `positioning.json`,
+  `claims.json`, `constraints.json`, `brand.json`, `mission.json`,
+  `roadmap.json`, and `direction.json`. `StrategyBundle.complete` means every
+  present file validates; handoff readiness is a separate, opt-in check.
+  Refs: #1115, #1116.
+- `DirectionEntity` drops `statement` and `kind`; each record names a
+  `subject` `{ file, id }` pointing at another directory record. Facts are
+  not direction subjects, and `DirectionSubject.file` is a closed vocabulary
+  of the remaining strategy record files — handoff resolves `brand.json`
+  (attribute id), `constraints.json`, and `roadmap.json` subjects alongside
+  it. Refs: #1116.
+- Retired `forWhom` / `reasonToBelieve` and `brand-essence.json` /
+  `brand-attributes.json` / `brand-derivations.json` fail validation with
+  findings that name `audienceIds`, `claimIds`, or `brand.json`. Refs: #1116.
 
 ### Added
 
-- Facts gate: catalogue-count claims spelled as `twenty` or `twenty-one`, or as a
-  digit run, followed by `packages` or `records`, are scanned like other numeric
-  claims. Refs: #500.
+- Facts gate: catalogue-count claims spelled as `twenty` or `twenty-one`, or
+  as a digit run, followed by `packages` or `records`, are scanned like
+  other numeric claims. Wired against this repository's own
+  `strategy/facts.json` and `docs/PUBLISHING.md` via
+  `scripts/check-strategist-subject.mjs`. Refs: #500.
+- `strategist-check handoff <strategy-dir>`: an opt-in gate, separate from
+  `StrategyBundle.complete`, that exits 0 only when facts, audiences,
+  positioning, at least one approved claim, a `constraints.json` file, and
+  resolvable brand and direction refs are present and valid. An empty
+  `constraints.json` is valid; markets, mission, and roadmap stay optional.
+  A facts-only directory — including this repository's own — still passes
+  `readStrategy` and fails handoff; the catalogue-count subject above never
+  calls it. Refs: #1117.
+- `projectStrategyContract` / `projectAndValidateStrategyContract`: project
+  a portable `StrategyContract` from the strategy bundle, with provenance
+  source `strategy-directory` and evidence synthesized from each claim's
+  `basis` plus its optional fact refs, so the contract is no longer a second
+  authored original. `validateStrategyContract` and
+  `createStrategyProvenance` remain exported for adapters and Publisher
+  seals. The skill and README list each directory file, which fields are
+  bound, which are room, and the refused uses. Refs: #1118.
+- `strategist-check apply`: requires public prose `claim:<id>` markers to
+  resolve to an approved claim (a hypothesis id fails, a missing id fails),
+  and requires a designer-facing surface a `constraints.json` entry targets
+  to cite that constraint's id. The facts gate is unchanged. Refs: #1119.
+
+### Migration
+
+- Merge brand essence, attributes, and derivations into `brand.json`
+  (`essence.statement`, attributes with `id`/`statement`/`basis`,
+  derivations with `attributeId`/`tokenSlots`/`voiceRuleIds`).
+- Replace positioning `forWhom` and `reasonToBelieve` with `audienceIds` and
+  `claimIds`.
+- Replace audience `description`/`painPoints` with `situation` and `pains`.
+- Replace mission value `name` with kebab-case `id`.
+- Author `claims.json`, `constraints.json`, and `direction.json` for
+  handoff; run `strategist-check handoff` before downstream skills cite ids.
 
 ## [0.2.7] - 2026-09-21
 
