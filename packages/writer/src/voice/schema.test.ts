@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseVoiceRecord, validateVoiceRecordShape } from "./schema.js";
+import { VOICE_SEVERITIES } from "./types.js";
 import type { VoiceRecord } from "./types.js";
 
 // A minimal but complete, obviously-fictional VoiceRecord used across this
@@ -167,7 +168,11 @@ describe("validateVoiceRecordShape — pattern rules", () => {
   });
 
   it("accepts every VoiceSeverity value", () => {
-    for (const severity of ["error", "warning", "advisory"]) {
+    // Derived from VOICE_SEVERITIES (types.ts), not a hand-written literal
+    // array — see #907: a repeated literal here would silently stop being
+    // "every" the moment a new severity tier was added to that constant.
+    expect(VOICE_SEVERITIES.length).toBeGreaterThan(0);
+    for (const severity of VOICE_SEVERITIES) {
       const findings = validateVoiceRecordShape({
         ...validRecord,
         patterns: [{ ...validPatternRule, severity }],
