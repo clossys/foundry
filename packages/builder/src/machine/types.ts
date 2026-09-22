@@ -7,8 +7,10 @@ import type { SkillScope } from "@clossys/controller/conventions";
  * `report.ts` headers for the pieces built on this vocabulary, and this
  * package's README ("Machine composition") for the two decisions this whole
  * module implements: builder owns the mechanism, not controller; and
- * composition is per-skill links into one composed directory, not a
- * directory symlink or a materialized copy.
+ * composition is union by directory link — one directory link per source
+ * tree, never one link per skill, a single directory symlink, or a
+ * materialized copy (owner decision, 2026-09-21, #393, superseding an
+ * earlier per-skill-links decision).
  */
 
 /**
