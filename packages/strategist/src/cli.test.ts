@@ -167,8 +167,8 @@ describe("main — real runs", () => {
 
 const RATIONALE = "Precision means the accent color must read as decisive, not soft, and copy states facts without hedging.";
 
-function derivation(attribute: string, tokenSlots: string[], voiceRules: string[] = []) {
-  return { attribute, tokenSlots, voiceRules, rationale: RATIONALE };
+function derivation(attributeId: string, tokenSlots: string[], voiceRuleIds: string[] = []) {
+  return { attributeId, tokenSlots, voiceRuleIds, rationale: RATIONALE };
 }
 
 function writeDerivations(dir: string, value: unknown): string {
@@ -349,9 +349,7 @@ const DIRECTION_RATIONALE =
 function directionEntity(id: string, overrides: Record<string, unknown> = {}) {
   return {
     id,
-    kind: "mission",
-    statement: "Every public claim a team makes should trace to something checkable.",
-    rationale: DIRECTION_RATIONALE,
+    subject: { file: "mission.json", id: "mission" },
     decidedOn: "2026-01-05",
     derivesFrom: [],
     ...overrides,
@@ -460,7 +458,7 @@ describe("main — direction — real runs", () => {
   it("returns 1 when a direction entity has no derived artifact", () => {
     const entitiesFile = writeDirectionEntities(strategyDir, [
       directionEntity("vision-v1"),
-      directionEntity("positioning-v1", { kind: "positioning" }),
+      directionEntity("positioning-v1", { subject: { file: "positioning.json", id: "positioning" } }),
     ]);
     const reviewsFile = writeReviewedAgainst(strategyDir, ["vision-v1"]);
     expect(main(["direction", entitiesFile, reviewsFile])).toBe(1);

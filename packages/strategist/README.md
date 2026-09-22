@@ -115,12 +115,13 @@ over `unknown`, an accumulated issue list, never throws.
 
 ## Governed strategy contract
 
-`StrategyContract` is the stable handoff for a product's governed strategy.
-It is intentionally distinct from the file-oriented reader below. The reader
-validates a consumer's local authoring files; the contract is the normalized,
-directory-independent payload handed to downstream systems. A consumer may
-adapt one into the other, but they are not competing sources of truth and
-neither API silently reads or writes the other.
+`StrategyContract` is the portable payload downstream packages seal against.
+Consumers author one `strategy/` directory (see the skill and `readStrategy`);
+`projectStrategyContract` projects that bundle into a contract — do not
+maintain a parallel authored contract file. `projectAndValidateStrategyContract`
+runs the same projection and then `validateStrategyContract` in one step.
+`validateStrategyContract` and `createStrategyProvenance` remain exported for
+adapters and Publisher seals.
 
 Every record has a kebab-case `id`, semantic-version `revision`, and source
 `provenance`. The contract covers `product`, `brand`, `audience`,
@@ -185,6 +186,7 @@ that serialization. These are reproducibility aids, not signatures or a
 mechanism for approving claims automatically.
 
 The governed-contract API exports `STRATEGY_RECORD_KINDS`,
+`projectStrategyContract`, `projectAndValidateStrategyContract`,
 `validateStrategyContract`, `getApprovedClaims`,
 `serializeStrategyContract`, and `createStrategyProvenance`. Its data types
 are `StrategyContract`, `StrategyProvenance`, `StrategyRecord`,
@@ -686,41 +688,51 @@ it is now unreviewed. See [issue #374](https://github.com/clossys/foundry/issues
 for the full proposal.
 
 ```ts
+interface DirectionSubject {
+  file: DirectionSubjectFile;  // which strategy record file the decision is about
+  id: string;                  // that record's id
+}
+
 interface DirectionEntity {
   id: string;               // stable id for THIS VERSION — never reused once superseded
-  kind: "mission" | "positioning" | "market" | "audience";
-  statement: string;        // the decision itself
-  rationale: string;        // why this decision, not some other
+  subject: DirectionSubject; // which directory record this decision is about
   decidedOn: string;        // ISO date
   supersedes?: string;      // id of the DirectionEntity version this one replaces
   derivesFrom: string[];    // ids of other DirectionEntity versions this one was decided in light of
+  rationale?: string;       // room: why this decision, not some other
 }
 ```
 
 ### Why a new type, not four retrofitted ones
 
-`Mission`, `Positioning`, `Market`, and `Audience` are already this
-package's direction-bearing entities, so the instinct is to bolt the
-DAG-versioning envelope (`id`, `rationale`, `decidedOn`, `supersedes`,
-`derivesFrom`) directly onto each of them. That doesn't survive contact
-with their actual shapes: `Mission` already has both a `statement` AND a
-`vision`, `Positioning` is a six-field madlib with no single field that
-means "the statement", and `Market`/`Audience` name their content
-`description`, not `statement`. Retrofitting the same five fields onto
-four structurally incompatible shapes would mean either a breaking change
-to all four already-shipped, already-tested entities, or four
-independent, copy-pasted decisions about which existing field "counts" as
-the direction statement.
+`Audience`, `Market`, `Positioning`, `Mission`, `StrategistClaim`,
+`StrategyConstraint`, and the brand layer are already this package's
+direction-bearing records, so the instinct is to bolt the DAG-versioning
+envelope (`id`, `rationale`, `decidedOn`, `supersedes`, `derivesFrom`)
+directly onto each of them. That doesn't survive contact with their
+actual shapes: `Mission` already has both a `statement` AND a `vision`,
+`Positioning` is a six-field record with no single field that means "the
+statement", and `Market`/`Audience` name their content `situation`/
+`pains`/`description`, not `statement`. Retrofitting the same five fields
+onto every structurally incompatible shape would mean either a breaking
+change to every already-shipped, already-tested record, or one
+independent, copy-pasted decision per file about which existing field
+"counts" as the direction statement.
 
-`DirectionEntity` is instead one new, uniform envelope, and `kind` is what
-keeps it from being a parallel, disconnected system: its vocabulary is
-drawn directly from the four direction concepts this package already
-validates structurally — the same way `RoadmapItem.status` draws from
-`ROADMAP_STATUSES` instead of inventing an unrelated set of labels. A
-`DirectionEntity` names WHICH existing direction concept its `statement`
-is a dated, deliberate version of; the detailed, already-validated shape
-of an actual `Mission`/`Positioning`/`Market`/`Audience` document is
-untouched by this.
+`DirectionEntity` is instead one new, uniform envelope, and `subject` is
+what keeps it from being a parallel, disconnected system: `subject.file`
+is drawn from `DIRECTION_SUBJECT_FILES`, the closed vocabulary of the
+other strategy directory files, and `subject.id` names one real record
+inside that file — the same way `RoadmapItem.status` draws from
+`ROADMAP_STATUSES` instead of inventing an unrelated set of labels.
+`facts.json` is deliberately absent from `DIRECTION_SUBJECT_FILES`: a
+`Fact` drifts on its own, so it is never something a direction decision
+was deliberately decided about. A `DirectionEntity` names WHICH existing
+directory record its `decidedOn` date is a dated, deliberate decision
+about; the detailed, already-validated shape of the record itself is
+untouched by this, and there is no separate `statement` field to keep in
+sync with it — `rationale` is room, not a second authored copy of the
+decision.
 
 ### Versions, not mutation
 
@@ -731,8 +743,8 @@ nothing else's `supersedes` names), not a flag anyone has to remember to
 flip:
 
 ```ts
-const visionV1 = { id: "vision-v1", kind: "mission", statement: "…", rationale: "…", decidedOn: "2026-01-05", derivesFrom: [] };
-const visionV2 = { id: "vision-v2", kind: "mission", statement: "…", rationale: "…", decidedOn: "2026-07-01", derivesFrom: [], supersedes: "vision-v1" };
+const visionV1 = { id: "vision-v1", subject: { file: "mission.json", id: "vision" }, decidedOn: "2026-01-05", derivesFrom: [] };
+const visionV2 = { id: "vision-v2", subject: { file: "mission.json", id: "vision" }, decidedOn: "2026-07-01", derivesFrom: [], supersedes: "vision-v1" };
 // vision-v1 is now superseded; vision-v2 is current. Nothing about
 // vision-v1 itself changed.
 ```
@@ -805,9 +817,11 @@ them throw.
 | `ROADMAP_STATUSES` | const | `readonly RoadmapStatus[]` — `["now", "next", "later", "shipped"]`, in the order a new status would be added. Mirrors `@clossys/controller/policy`'s own `DIGEST_ALGORITHMS`. |
 | `validateBrandEssence(value)` | function | `{ statement }` — the irreducible one-line statement of what the brand is. |
 | `validateBrandAttribute(value)` / `validateBrandAttributes(value)` | function | One brand attribute / an array of them. `evidence: { basis: string; factRef?: string }` — see "The brand layer" above for why both fields exist. |
-| `validateDirectionEntity(value)` / `validateDirectionEntities(value)` | function | One `DirectionEntity` / an array of them, additionally rejecting a duplicate `id`. `id`, `kind`, `statement`, `rationale`, `decidedOn`, optional `supersedes`, `derivesFrom: string[]` — see "The direction layer" above. |
-| `DIRECTION_ENTITY_KINDS` | const | `readonly DirectionEntityKind[]` — `["mission", "positioning", "market", "audience"]`. Mirrors `ROADMAP_STATUSES`'s own pattern. |
-| `Fact`, `Money`, `Mission`, `OperatingValue`, `Positioning`, `Market`, `Audience`, `RoadmapItem`, `RoadmapStatus`, `BrandEssence`, `BrandAttribute`, `BrandEvidence`, `DirectionEntity`, `DirectionEntityKind` | types | Plain TypeScript interfaces/unions — the shape each `validate*` function above checks and returns on success. |
+| `validateStrategistClaim(value)` / `validateStrategistClaims(value)` | function | One governed claim / the `claims.json` array — `id`, `status`, `assertion`, required `basis` when `status` is `approved`, optional `example`. |
+| `validateStrategyConstraint(value)` / `validateStrategyConstraints(value)` | function | One surface-targeting constraint / the `constraints.json` array — `id`, `target`, `instruction`, optional `why`. |
+| `validateDirectionEntity(value)` / `validateDirectionEntities(value)` | function | One `DirectionEntity` / an array of them, additionally rejecting a duplicate `id`. `id`, `subject: { file, id }`, `decidedOn`, optional `supersedes`, `derivesFrom: string[]`, optional `rationale` — see "The direction layer" above. There is no `statement` field; `subject` names the directory record the decision is about. |
+| `DIRECTION_SUBJECT_FILES` | const | `readonly DirectionSubjectFile[]` — the closed vocabulary of strategy record files a direction `subject.file` may name: `audiences.json`, `markets.json`, `positioning.json`, `claims.json`, `constraints.json`, `brand.json`, `mission.json`, `roadmap.json`. `facts.json` is deliberately absent — facts are not direction subjects. |
+| `Fact`, `Money`, `Mission`, `OperatingValue`, `Positioning`, `Market`, `Audience`, `RoadmapItem`, `RoadmapStatus`, `BrandEssence`, `BrandAttribute`, `BrandEvidence`, `BrandDocument`, `StrategistClaim`, `StrategistClaimStatus`, `StrategyConstraint`, `StrategyConstraintTarget`, `DirectionEntity`, `DirectionSubject`, `DirectionSubjectFile` | types | Plain TypeScript interfaces/unions — the shape each `validate*` function above checks and returns on success. |
 
 ### Validation primitives (`validation.ts`)
 
@@ -826,9 +840,27 @@ anyone extending this package with their own entity.
 | Export | Kind | Purpose |
 | --- | --- | --- |
 | `readStrategy(root)` | function | Reads and validates a strategy directory (see "Directory shape" above). The package's one deliberate I/O surface. Never throws — see `StrategyBundle.issues`/`complete`. |
+| `brandDerivationsFromBundle(bundle)` | function | Pure. Returns `bundle.brand?.derivations` or `[]` when the brand layer is absent — the same derivations `checkBrandCoverage` expects. |
 | `StrategyBundle` | type | `{ root, facts, mission?, positioning?, markets?, audiences?, roadmap?, brandEssence?, brandAttributes?, brandDerivations?, issues, complete }`. |
 | `StrategyReadIssue` | type | `{ file, reason: StrategyReadIssueReason, detail }` — one file that did not become usable data. |
 | `StrategyReadIssueReason` | type | `"unreadable" \| "unparseable" \| "invalid-schema" \| "missing-required"`. |
+
+### Handoff (`handoff.ts`)
+
+| Export | Kind | Purpose |
+| --- | --- | --- |
+| `checkStrategyHandoff(bundle)` | function | Pure. Whether a loaded bundle has the handoff surface downstream skills cite — facts, audiences, positioning, at least one approved claim, `constraints.json`, resolvable brand and direction refs. Distinct from `StrategyBundle.complete`: a facts-only directory can be `complete` and still fail handoff. Never throws. |
+| `currentDirectionId(entities)` | function | Pure. When exactly one `DirectionEntity` is not superseded, returns its `id`; otherwise `undefined`. |
+| `strategyDirectoryUnreadable(issues)` | function | Pure. `true` when `readStrategy` reported `facts.json` as missing, unreadable, or unparseable — the same precondition `checkStrategyHandoff` treats as `reason: "unreadable"`. |
+| `HandoffFinding` | type | `{ message: string }`. |
+| `HandoffResult` | type | `{ ok, reason?: "unreadable", findings: HandoffFinding[] }`. |
+
+### Contract projection (`projector.ts`)
+
+| Export | Kind | Purpose |
+| --- | --- | --- |
+| `projectStrategyContract(bundle)` | function | Pure. Projects a validated `StrategyBundle` into a portable `StrategyContract`, synthesizing evidence records from each claim's `basis`. Consumers do not author a second contract file. |
+| `projectAndValidateStrategyContract(bundle)` | function | Pure. `projectStrategyContract` followed by `validateStrategyContract` — returns `ValidationResult<StrategyContract>`. |
 
 ### Facts directory reader (`facts-dir.ts`)
 
@@ -889,6 +921,17 @@ its own section above.
 | `DirectionCurrencyFinding` | type | `{ reviewedAgainst: string; kind: DirectionCurrencyFindingKind; supersededBy?: string }` — one per stale/dangling reference, never deduplicated (two artifacts citing the same stale version are two findings). |
 | `DirectionCurrencyFindingKind` | type | `"dangling-reference" \| "stale-review"`. |
 | `DirectionCurrencyFailureReason` | type | `"no-entities-provided" \| "no-reviews-provided" \| "currency-violation"`. |
+
+### Claim and constraint markers (`markers-gate.ts`)
+
+| Export | Kind | Purpose |
+| --- | --- | --- |
+| `checkClaimMarkers(scanFiles, claims)` | function | Pure. Scans prose for `claim:<id>` comment markers and fails on unknown or hypothesis claim ids. Never throws. |
+| `checkConstraintMarkers(scanFiles, constraints, options?)` | function | Pure. Requires declared designer-facing surface files to cite every `surface`-target constraint via `constraint:<id>` markers. Never throws. |
+| `checkStrategyApply(scanFiles, claims, constraints, options?)` | function | Pure. Runs `checkClaimMarkers` and `checkConstraintMarkers` together — the gate behind `strategist-check apply`. Never throws. |
+| `MarkersGateFinding` | type | `{ rule: MarkersGateRule; severity: "error"; file; line; message; snippet }`. |
+| `MarkersGateResult` | type | `{ findings: MarkersGateFinding[]; filesScanned: number }`. |
+| `MarkersGateRule` | type | `"unknown-claim-citation" \| "hypothesis-claim-citation" \| "missing-constraint-citation"`. |
 
 ## Non-goal: what this package never derives
 
