@@ -60,7 +60,7 @@ function writeDeclaration(repoRoot, declaration) {
   // script reads the file's own bytes rather than assuming a pre-parsed
   // object, matching @clossys/observer's own documented "raw fetched
   // string" transport.
-  writeJson(join(repoRoot, ".foundry", "coverage-declaration.json"), declaration);
+  writeJson(join(repoRoot, ".clossys", "coverage-declaration.json"), declaration);
 }
 
 test("installed-in-root: a root-manifest pin resolves to installed, recording package.json as the carrying path", () => {

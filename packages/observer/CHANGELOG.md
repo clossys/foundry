@@ -27,11 +27,11 @@ All notable changes to this package are documented here. Format follows
 ### Notes
 
 - The collector that actually walks a real checkout's manifests and
-  populates `manifestPaths` — `scripts/check-fleet-coverage.mjs` — lives in
-  this repository outside this package, on purpose: this package stays
-  zero I/O and grades whatever it is handed. See that script's own header
-  for the collection rules (every dependency block, including `overrides`
-  and `resolutions`; never learns or names a competing package).
+  populates `manifestPaths` (#395) lives in this repository outside this
+  package, on purpose: this package stays zero I/O and grades whatever it
+  is handed. See that collector's own documentation for the collection
+  rules (every dependency block, including `overrides` and `resolutions`;
+  never learns or names a competing package).
 - Qualification of `0.4.0` is deferred under #948 (this machine is not the
   pinned release runtime). This is a merge acknowledgement, never a
   publication claim.

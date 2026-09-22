@@ -29,7 +29,7 @@
  * plain HTTP GET against the hosting provider's raw-content endpoint for a
  * file already committed to that repository's own default branch (for
  * example `https://raw.githubusercontent.com/<owner>/<repo>/<default-
- * branch>/.foundry/coverage-declaration.json`). That is the transport this
+ * branch>/.clossys/coverage-declaration.json`). That is the transport this
  * contract is designed for: each repository commits ONE JSON file, at one
  * fixed, well-known path, on its own default branch; a fleet aggregate
  * fetches that one URL per repository with a bare, unauthenticated GET, and
