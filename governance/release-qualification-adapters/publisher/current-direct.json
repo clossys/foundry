@@ -13,7 +13,9 @@
   "bins": {
     "publisher-media-check": 0,
     "publisher-record-check": 0,
-    "publisher-rate-check": 0
+    "publisher-rate-check": 0,
+    "publisher-web-route-check": 0,
+    "publisher-preview": 0
   },
   "fixtures": [
     "assets.json",
