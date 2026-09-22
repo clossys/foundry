@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 // check-package-framework — validates the extended `foundry` manifest block
 // (docs/contracts/package-framework.json: `intake`, `outputs`, `status`,
-// `fit`, alongside the existing `assessment`) and, separately, validates any
-// check-output-envelope.json / role-assessment.json fixture a package
-// declares (docs/contracts/check-output-envelope.json,
+// `fit`, `solves`, `needs`, `feeds`, alongside the existing `assessment`)
+// and, separately, validates any check-output-envelope.json /
+// role-assessment.json fixture a package declares
+// (docs/contracts/check-output-envelope.json,
 // docs/contracts/role-assessment.json — issue #1174).
 //
 //   node scripts/check-package-framework.mjs [--json] [--enforce] [<repoRoot>]
@@ -11,16 +12,37 @@
 // REPORT MODE (default): prints a conformance table for every active role
 // package and fails ONLY when a field a package DOES declare is malformed --
 // wrong shape, an unmapped bin, a path that escapes the package directory or
-// (for `outputs`) does not sit under the role's own `clossys/<role>/`
-// folder, or a declared-but-missing shipped file. Absence of `intake`,
-// `outputs`, `status`, or `fit` is never a failure here and is always
+// (for `outputs`/`feeds`) does not sit under the role's own
+// `clossys/<role>/` folder, a declared-but-missing shipped file, or (for
+// `solves`) a missing field, an out-of-enum `evidence` value, or a
+// malformed `problem` id. Absence of `intake`, `outputs`, `status`, `fit`,
+// `solves`, `needs`, or `feeds` is never a failure here and is always
 // printed and counted, the same discipline check-role-assessment-surfaces.mjs
 // already applies to `assessment` (issue #435: a capability requiring zero
 // targets must not grade identically to one fully covered).
 //
 // --enforce: for a later wave, once packages have had the chance to conform
 // (issue #1172's own sequencing). Turns every absence of `intake`,
-// `outputs`, `status`, or `fit` on an active role into a finding too.
+// `outputs`, `status`, `fit`, `solves`, `needs`, or `feeds` on an active
+// role into a finding too, and additionally checks (schema version 2,
+// issue #1172's "De-risking additions to `solves`" comment):
+//   - a `solves.metric` names this role's own owned metric
+//     (docs/contracts/role-loop-archetypes.json);
+//   - a `solves.proofCase` exists in this role's own qualification adapter
+//     (governance/release-qualification-adapters/<role>/current-direct.json);
+//   - a `solves.problem` id resolves against docs/contracts/client-problems.json,
+//     once that file exists (it does not yet — #1176's Advisor lane owns it);
+//   - two roles whose `solves` entries claim the same `problem` id (a
+//     boundary decision, the #504/#505 class);
+//   - a `needs` entry matches some role's `feeds` entry, and the resulting
+//     needs/feeds handoff graph across every active role has no cycle.
+// A `solves.statement` is NOT lint-checked against @clossys/writer's own
+// voice checker here: `checkCopy()` needs a built `dist/` and a
+// consumer-owned `VoiceRecord`, neither available to this dependency-free,
+// pre-build gate (see the module doc on @clossys/writer's `./voice`
+// subpath). TODO(#1172): wire this once a repository-level voice record and
+// a post-build gate slot both exist. Until then this prints a report-mode
+// warning, in both modes, rather than silently skipping it.
 //
 // Exit 0 = no findings for the mode in effect. Exit 1 = at least one
 // finding. Exit 2 = the question could not be answered (unreadable role
@@ -35,6 +57,9 @@ import { dirname, join, isAbsolute } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
+
+const EVIDENCE_LEVELS = Object.freeze(["designed", "qualified", "proven"]);
+const PROBLEM_ID_FORMAT = /^[a-z][a-z0-9-]*$/;
 
 function isRecord(value) { return typeof value === "object" && value !== null && !Array.isArray(value); }
 function isText(value) { return typeof value === "string" && value.trim() !== ""; }
@@ -74,14 +99,25 @@ function invalidBinDeclarationRule(declaration, manifest, fieldName) {
  * `AssessmentInvoker` uses in packages/controller/src/onboarding/invoke.ts.
  */
 export function evaluatePackageFramework(activeRoles, manifestsByName, options = {}) {
-  const { requiredRoles = [], enforce = false, readPackageFile = () => { throw new Error("no reader supplied"); } } = options;
+  const {
+    requiredRoles = [],
+    enforce = false,
+    readPackageFile = () => { throw new Error("no reader supplied"); },
+    roleMetricByRole = new Map(),
+    readAdapterCases = () => null,
+    clientProblemIds = null,
+  } = options;
   const required = new Set(requiredRoles);
   const findings = [];
+  const warnings = [];
   const table = [];
+  const solvesByRole = new Map();
+  const needsByRole = new Map();
+  const feedsByRole = new Map();
 
   for (const role of [...activeRoles].sort()) {
     const manifest = manifestsByName.get(role);
-    const row = { role, assessment: "absent", intake: "absent", outputs: "absent", status: "absent", fit: "absent" };
+    const row = { role, assessment: "absent", intake: "absent", outputs: "absent", status: "absent", fit: "absent", solves: "absent", needs: "absent", feeds: "absent" };
     if (manifest === undefined) {
       table.push(row);
       continue;
@@ -155,10 +191,148 @@ export function evaluatePackageFramework(activeRoles, manifestsByName, options =
       }
     }
 
+    // solves: verifiable claims about which client problems this role solves.
+    if (foundry.solves === undefined) {
+      row.solves = "absent";
+      if (enforce && required.has(role) === false) findings.push({ rule: "required-solves-absent", role, message: "foundry.solves must declare which client problems this role solves (may be an empty array)" });
+    } else if (!Array.isArray(foundry.solves)) {
+      row.solves = "malformed";
+      findings.push({ rule: "invalid-solves-declaration", role, message: "foundry.solves must be an array (may be empty)" });
+    } else {
+      const entryFindings = [];
+      const problemIds = [];
+      let hasStatement = false;
+      for (const entry of foundry.solves) {
+        if (!isRecord(entry) || !isText(entry.problem) || !isText(entry.statement) || !isText(entry.metric) || !isText(entry.proofCase) || !EVIDENCE_LEVELS.includes(entry.evidence)) {
+          entryFindings.push({ rule: "invalid-solves-entry", role, message: `every solves entry must have problem, statement, metric, proofCase (nonempty strings) and evidence one of: ${EVIDENCE_LEVELS.join(", ")}` });
+          continue;
+        }
+        hasStatement = true;
+        if (!PROBLEM_ID_FORMAT.test(entry.problem)) {
+          entryFindings.push({ rule: "invalid-solves-problem-id-format", role, message: `solves.problem "${entry.problem}" must be lowercase kebab-case (matching ${PROBLEM_ID_FORMAT})` });
+          continue;
+        }
+        problemIds.push(entry.problem);
+        if (enforce) {
+          const ownedMetric = roleMetricByRole.get(role);
+          if (ownedMetric !== undefined && entry.metric !== ownedMetric) {
+            entryFindings.push({ rule: "solves-metric-mismatch", role, message: `solves entry for problem "${entry.problem}" names metric "${entry.metric}", but this role's own owned metric is "${ownedMetric}"` });
+          }
+          const cases = readAdapterCases(role);
+          if (cases === null || !cases.includes(entry.proofCase)) {
+            entryFindings.push({ rule: "solves-proof-case-missing", role, message: `solves entry for problem "${entry.problem}" names proofCase "${entry.proofCase}", which is not a case id in this role's own qualification adapter` });
+          }
+          if (clientProblemIds !== null && !clientProblemIds.includes(entry.problem)) {
+            entryFindings.push({ rule: "solves-problem-id-unresolved", role, message: `solves.problem "${entry.problem}" is not a declared id in docs/contracts/client-problems.json` });
+          }
+        }
+      }
+      row.solves = entryFindings.length === 0 ? "declared" : "malformed";
+      findings.push(...entryFindings);
+      if (hasStatement) {
+        warnings.push({ rule: "solves-statement-voice-lint-skipped", role, message: "TODO(#1172): statement not lint-checked against @clossys/writer's voice checker — checkCopy() needs a built dist/ and a consumer-owned VoiceRecord, neither available to this dependency-free, pre-build gate." });
+      }
+      solvesByRole.set(role, problemIds);
+    }
+
+    // needs: artifacts this role consumes from another role's own feeds.
+    if (foundry.needs === undefined) {
+      row.needs = "absent";
+      if (enforce && required.has(role) === false) findings.push({ rule: "required-needs-absent", role, message: "foundry.needs must declare artifacts this role consumes (may be an empty array)" });
+    } else if (!Array.isArray(foundry.needs) || !foundry.needs.every((item) => isRecord(item) && isText(item.producerRole) && isText(item.artifact))) {
+      row.needs = "malformed";
+      findings.push({ rule: "invalid-needs-declaration", role, message: "foundry.needs must be an array of { producerRole, artifact } (may be empty)" });
+    } else {
+      row.needs = "declared";
+      needsByRole.set(role, foundry.needs);
+    }
+
+    // feeds: artifacts this role produces for other roles, under its own clossys/<role>/ folder.
+    if (foundry.feeds === undefined) {
+      row.feeds = "absent";
+      if (enforce && required.has(role) === false) findings.push({ rule: "required-feeds-absent", role, message: "foundry.feeds must declare artifacts this role produces (may be an empty array)" });
+    } else if (!Array.isArray(foundry.feeds) || !foundry.feeds.every((item) => isRecord(item) && isText(item.artifact) && isText(item.path))) {
+      row.feeds = "malformed";
+      findings.push({ rule: "invalid-feeds-declaration", role, message: "foundry.feeds must be an array of { artifact, path } (may be empty)" });
+    } else {
+      const expectedPrefix = `clossys/${roleShortName(role)}/`;
+      const outside = foundry.feeds.filter((item) => !isSafeRelativePath(item.path) || !item.path.startsWith(expectedPrefix));
+      if (outside.length > 0) {
+        row.feeds = "malformed";
+        findings.push({ rule: "feeds-path-outside-role-folder", role, message: `every foundry.feeds path must start with "${expectedPrefix}" — found: ${outside.map((item) => item.path).join(", ")}` });
+      } else {
+        row.feeds = "declared";
+        feedsByRole.set(role, foundry.feeds);
+      }
+    }
+
     table.push(row);
   }
 
-  return { findings, table };
+  if (enforce) {
+    for (const [role, needsList] of needsByRole) {
+      for (const need of needsList) {
+        const producerFeeds = feedsByRole.get(need.producerRole);
+        const matched = producerFeeds !== undefined && producerFeeds.some((item) => item.artifact === need.artifact);
+        if (!matched) {
+          findings.push({ rule: "unmatched-need", role, message: `needs { producerRole: "${need.producerRole}", artifact: "${need.artifact}" } does not match any feeds entry declared by "${need.producerRole}"` });
+        }
+      }
+    }
+    const cycle = detectHandoffCycle(needsByRole);
+    if (cycle) findings.push({ rule: "needs-graph-cycle", role: cycle[0], message: `the needs/feeds handoff graph has a cycle: ${cycle.join(" -> ")}` });
+
+    const rolesByProblem = new Map();
+    for (const [role, ids] of solvesByRole) {
+      for (const id of ids) {
+        if (!rolesByProblem.has(id)) rolesByProblem.set(id, []);
+        rolesByProblem.get(id).push(role);
+      }
+    }
+    for (const [id, roles] of rolesByProblem) {
+      if (roles.length > 1) findings.push({ rule: "solves-problem-claimed-by-multiple-roles", path: id, message: `problem id "${id}" is claimed by multiple roles (${roles.join(", ")}) — needs a boundary decision` });
+    }
+    if (clientProblemIds !== null) {
+      for (const id of clientProblemIds) {
+        if (!rolesByProblem.has(id)) findings.push({ rule: "unclaimed-client-problem", path: id, message: `problem id "${id}" in docs/contracts/client-problems.json is claimed by no role's foundry.solves` });
+      }
+    }
+  }
+
+  return { findings, warnings, table };
+}
+
+/**
+ * Three-color DFS cycle detection over the directed `role -> need.producerRole`
+ * graph. Returns the cycle as an ordered array of roles (the repeated role
+ * appears at both ends), or null when the graph is acyclic.
+ */
+function detectHandoffCycle(needsByRole) {
+  const color = new Map();
+  const stack = [];
+  function visit(role) {
+    color.set(role, 1);
+    stack.push(role);
+    for (const need of needsByRole.get(role) ?? []) {
+      const next = need.producerRole;
+      const state = color.get(next) ?? 0;
+      if (state === 1) return stack.slice(stack.indexOf(next)).concat(next);
+      if (state === 0 && needsByRole.has(next)) {
+        const found = visit(next);
+        if (found) return found;
+      }
+    }
+    stack.pop();
+    color.set(role, 2);
+    return null;
+  }
+  for (const role of needsByRole.keys()) {
+    if ((color.get(role) ?? 0) === 0) {
+      const found = visit(role);
+      if (found) return found;
+    }
+  }
+  return null;
 }
 
 function safeRead(readPackageFile, role, relativePath) {
@@ -245,11 +419,28 @@ function requiredRolesFromScope(root) {
   return [];
 }
 
+/** docs/contracts/client-problems.json, when it exists. Owned by the Advisor lane (#1176); null (never a finding) until it lands. */
+function readClientProblemIds(root) {
+  const path = join(root, "docs/contracts/client-problems.json");
+  if (!existsSync(path)) return null;
+  try {
+    const document = readJson(path);
+    if (!isRecord(document) || !Array.isArray(document.problems)) return null;
+    const ids = document.problems.filter((item) => isRecord(item) && isText(item.id)).map((item) => item.id);
+    return ids.length === document.problems.length ? ids : null;
+  } catch { return null; }
+}
+
 function collect(root) {
   const contractPath = join(root, "packages/controller/contracts/role-loop-archetypes.json");
   if (!existsSync(contractPath)) throw new Error(`role contract not found at ${contractPath}`);
   const contract = readJson(contractPath);
   if (!isRecord(contract) || !isRecord(contract.roles)) throw new Error("role contract declares no roles");
+  const roleMetricByRole = new Map();
+  for (const [role, definition] of Object.entries(contract.roles)) {
+    const metricName = isRecord(definition) && isRecord(definition.metric) ? definition.metric.name : undefined;
+    if (isText(metricName)) roleMetricByRole.set(role, metricName);
+  }
   const manifestsByName = new Map();
   const packageDirByName = new Map();
   const packagesDir = join(root, "packages");
@@ -268,11 +459,28 @@ function collect(root) {
     if (dir === undefined) throw new Error(`no package directory for ${role}`);
     return readFileSync(join(dir, relativePath), "utf8");
   };
-  return { activeRoles: Object.keys(contract.roles), manifestsByName, requiredRoles: requiredRolesFromScope(root), readPackageFile };
+  const readAdapterCases = (role) => {
+    const adapterPath = join(root, "governance/release-qualification-adapters", roleShortName(role), "current-direct.json");
+    if (!existsSync(adapterPath)) return null;
+    try {
+      const adapter = readJson(adapterPath);
+      if (!isRecord(adapter) || !Array.isArray(adapter.cases)) return null;
+      return adapter.cases.filter((item) => isRecord(item) && isText(item.id)).map((item) => item.id);
+    } catch { return null; }
+  };
+  return {
+    activeRoles: Object.keys(contract.roles),
+    manifestsByName,
+    requiredRoles: requiredRolesFromScope(root),
+    readPackageFile,
+    roleMetricByRole,
+    readAdapterCases,
+    clientProblemIds: readClientProblemIds(root),
+  };
 }
 
 function printTable(table) {
-  const header = ["role", "assessment", "intake", "outputs", "status", "fit"];
+  const header = ["role", "assessment", "intake", "outputs", "status", "fit", "solves", "needs", "feeds"];
   console.log(header.join("  |  "));
   for (const row of table) console.log(header.map((key) => row[key]).join("  |  "));
 }
@@ -289,13 +497,22 @@ function main(argv) {
     else console.error(`check-package-framework: ${message}`);
     return 2;
   }
-  const result = evaluatePackageFramework(collected.activeRoles, collected.manifestsByName, { requiredRoles: collected.requiredRoles, enforce, readPackageFile: collected.readPackageFile });
+  const result = evaluatePackageFramework(collected.activeRoles, collected.manifestsByName, {
+    requiredRoles: collected.requiredRoles,
+    enforce,
+    readPackageFile: collected.readPackageFile,
+    roleMetricByRole: collected.roleMetricByRole,
+    readAdapterCases: collected.readAdapterCases,
+    clientProblemIds: collected.clientProblemIds,
+  });
   if (json) { console.log(JSON.stringify(result, null, 2)); return result.findings.length === 0 ? 0 : 1; }
   printTable(result.table);
   for (const item of result.findings) console.log(`FAIL ${item.rule} ${item.role ?? item.path} — ${item.message}`);
-  const declaredCounts = ["intake", "outputs", "status", "fit"].map((field) => `${field}: ${result.table.filter((row) => row[field] === "declared").length}/${result.table.length}`);
+  for (const item of result.warnings) console.log(`WARN ${item.rule} ${item.role ?? item.path} — ${item.message}`);
+  const declaredCounts = ["intake", "outputs", "status", "fit", "solves", "needs", "feeds"].map((field) => `${field}: ${result.table.filter((row) => row[field] === "declared").length}/${result.table.length}`);
   console.log(`\n${declaredCounts.join(", ")} active role(s) declare each field.`);
-  console.log(enforce ? "Running with --enforce: absence of a field on an active role is a finding." : "Report mode: absence of a field is printed and counted, never a failure. Pass --enforce for the enforcing mode.");
+  console.log(collected.clientProblemIds === null ? "docs/contracts/client-problems.json does not exist yet (#1176) — solves.problem is validated by id format only." : `docs/contracts/client-problems.json declares ${collected.clientProblemIds.length} problem id(s).`);
+  console.log(enforce ? "Running with --enforce: absence of a field, and the deeper solves/needs/feeds checks, are findings." : "Report mode: absence of a field is printed and counted, never a failure. Pass --enforce for the enforcing mode.");
   return result.findings.length === 0 ? 0 : 1;
 }
 

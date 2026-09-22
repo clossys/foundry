@@ -83,10 +83,10 @@ export interface AssessmentSurfaceDiscovery {
 }
 
 /**
- * The extended `foundry` manifest block (docs/contracts/package-framework.json,
- * issue #1172): `intake`, `outputs`, `status`, and `fit`, discovered from the
- * installed manifest exactly the way `assessment` already is -- never
- * inferred, and an absence is reported rather than guessed.
+ * The extended `foundry` manifest block, issue #1172: `intake`, `outputs`,
+ * `status`, and `fit`, discovered from the installed manifest exactly the
+ * way `assessment` already is -- never inferred, and an absence is reported
+ * rather than guessed.
  */
 
 /** Why a role exposes no usable intake surface. */
@@ -184,6 +184,103 @@ export interface OutputsDeclarationDiscovery {
   readonly role: string;
   readonly declaration: OutputsDeclaration | null;
   readonly absence: OutputsDeclarationAbsence | null;
+}
+
+/**
+ * Schema version 2 of the extended `foundry` manifest block (owner decision
+ * on issue #1176, recorded 2026-09-22): `solves`, `needs`, and `feeds`,
+ * discovered exactly the same manifest-only way as
+ * `intake`/`outputs`/`status`/`fit` above. Discovery here is shape-level
+ * only -- it does not cross-reference the role-loop charter, a
+ * qualification adapter, or the client-problem vocabulary; those deeper
+ * checks belong to this repository's own gate script, run in its
+ * `--enforce` mode, not to a runtime orchestration reading an arbitrary
+ * consumer's installed packages.
+ */
+
+export const SOLVES_EVIDENCE_LEVELS = Object.freeze(["designed", "qualified", "proven"] as const);
+export type SolvesEvidenceLevel = (typeof SOLVES_EVIDENCE_LEVELS)[number];
+
+/** One verifiable claim about a client problem this role solves. */
+export interface SolvesEntry {
+  readonly problem: string;
+  readonly statement: string;
+  readonly metric: string;
+  readonly proofCase: string;
+  readonly evidence: SolvesEvidenceLevel;
+}
+
+export const SOLVES_DECLARATION_ABSENCES = Object.freeze([
+  "package-not-installed",
+  "manifest-unreadable",
+  "no-solves-declaration",
+  "invalid-solves-declaration",
+] as const);
+export type SolvesDeclarationAbsence = (typeof SOLVES_DECLARATION_ABSENCES)[number];
+
+export interface SolvesDeclaration {
+  readonly role: string;
+  readonly version: string;
+  readonly entries: readonly SolvesEntry[];
+}
+
+export interface SolvesDeclarationDiscovery {
+  readonly role: string;
+  readonly declaration: SolvesDeclaration | null;
+  readonly absence: SolvesDeclarationAbsence | null;
+}
+
+/** One artifact this role consumes from another role's own `feeds`. */
+export interface NeedsEntry {
+  readonly producerRole: string;
+  readonly artifact: string;
+}
+
+export const NEEDS_DECLARATION_ABSENCES = Object.freeze([
+  "package-not-installed",
+  "manifest-unreadable",
+  "no-needs-declaration",
+  "invalid-needs-declaration",
+] as const);
+export type NeedsDeclarationAbsence = (typeof NEEDS_DECLARATION_ABSENCES)[number];
+
+export interface NeedsDeclaration {
+  readonly role: string;
+  readonly version: string;
+  readonly entries: readonly NeedsEntry[];
+}
+
+export interface NeedsDeclarationDiscovery {
+  readonly role: string;
+  readonly declaration: NeedsDeclaration | null;
+  readonly absence: NeedsDeclarationAbsence | null;
+}
+
+/** One artifact this role produces for other roles, under its own `clossys/<role>/` folder. */
+export interface FeedsEntry {
+  readonly artifact: string;
+  readonly path: string;
+}
+
+export const FEEDS_DECLARATION_ABSENCES = Object.freeze([
+  "package-not-installed",
+  "manifest-unreadable",
+  "no-feeds-declaration",
+  "invalid-feeds-declaration",
+  "feeds-path-outside-role-folder",
+] as const);
+export type FeedsDeclarationAbsence = (typeof FEEDS_DECLARATION_ABSENCES)[number];
+
+export interface FeedsDeclaration {
+  readonly role: string;
+  readonly version: string;
+  readonly entries: readonly FeedsEntry[];
+}
+
+export interface FeedsDeclarationDiscovery {
+  readonly role: string;
+  readonly declaration: FeedsDeclaration | null;
+  readonly absence: FeedsDeclarationAbsence | null;
 }
 
 /**

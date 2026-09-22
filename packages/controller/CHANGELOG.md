@@ -18,6 +18,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `discoverRoleOutputsDeclaration`, and their plural
   `*Surfaces`/`*Declarations` forms). `outputs` is additionally validated
   against the role's own `clossys/<role>/` output folder (issue #1171).
+- Schema version 2 of the same manifest block (owner decision on issue
+  #1176, recorded 2026-09-22) adds `solves`, `needs`, and `feeds`.
+  Discovery reads these the same manifest-only way
+  (`discoverRoleSolvesDeclaration`, `discoverRoleNeedsDeclaration`,
+  `discoverRoleFeedsDeclaration`, and their plural forms) and stays
+  shape-level only: whether a `solves.metric` names this role's own owned
+  metric, whether a `solves.proofCase` exists in a qualification adapter,
+  and whether the needs/feeds handoff graph has a cycle are this
+  repository's own dev-time questions, answered by this repository's own
+  gate script in its `--enforce` mode, not ones this runtime orchestration
+  answers for an arbitrary consumer's installed packages.
 - No package in this repository declares any of these fields yet —
   conformance is a later wave (#1172's own sequencing). This change is
   purely additive: no existing export, type, or behavior changed.

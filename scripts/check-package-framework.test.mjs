@@ -40,12 +40,16 @@ test("a fully declared, well-formed package passes with every column declared", 
       outputs: ["clossys/alpha/plan.json"],
       status: { bin: "alpha-status", invocation: "single-json-input" },
       fit: "signals.json",
+      solves: [{ problem: "cant-explain-what-we-are", statement: "We can't explain what we are.", metric: "owned-metric", proofCase: "case-1", evidence: "designed" }],
+      needs: [{ producerRole: "@scope/beta", artifact: "direction" }],
+      feeds: [{ artifact: "plan", path: "clossys/alpha/plan.json" }],
     },
   };
   const reader = readerFor({ "@scope/alpha:cards.json": JSON.stringify(VALID_CARDS), "@scope/alpha:signals.json": JSON.stringify(VALID_SIGNALS) });
   const result = evaluatePackageFramework(["@scope/alpha"], manifests([manifest]), { readPackageFile: reader });
   assert.deepEqual(result.findings, []);
-  assert.deepEqual(result.table, [{ role: "@scope/alpha", assessment: "declared", intake: "declared", outputs: "declared", status: "declared", fit: "declared" }]);
+  assert.deepEqual(result.table, [{ role: "@scope/alpha", assessment: "declared", intake: "declared", outputs: "declared", status: "declared", fit: "declared", solves: "declared", needs: "declared", feeds: "declared" }]);
+  assert.deepEqual(result.warnings.map((w) => w.rule), ["solves-statement-voice-lint-skipped"]);
 });
 
 test("a package with no foundry block at all reports every new field absent, never a failure", () => {
@@ -56,13 +60,16 @@ test("a package with no foundry block at all reports every new field absent, nev
     assert.equal(row.outputs, "absent");
     assert.equal(row.status, "absent");
     assert.equal(row.fit, "absent");
+    assert.equal(row.solves, "absent");
+    assert.equal(row.needs, "absent");
+    assert.equal(row.feeds, "absent");
   }
 });
 
 test("a role with no shipped package at all is reported absent, not dropped", () => {
   const result = evaluatePackageFramework(["@scope/missing"], manifests([]));
   assert.deepEqual(result.findings, []);
-  assert.deepEqual(result.table, [{ role: "@scope/missing", assessment: "absent", intake: "absent", outputs: "absent", status: "absent", fit: "absent" }]);
+  assert.deepEqual(result.table, [{ role: "@scope/missing", assessment: "absent", intake: "absent", outputs: "absent", status: "absent", fit: "absent", solves: "absent", needs: "absent", feeds: "absent" }]);
 });
 
 test("an intake path that escapes the package directory is a finding", () => {
@@ -135,7 +142,115 @@ test("report mode never fails on absence, but --enforce turns absence into a fin
   const reportMode = evaluatePackageFramework(["@scope/alpha"], noneDeclared);
   assert.deepEqual(reportMode.findings, []);
   const enforceMode = evaluatePackageFramework(["@scope/alpha"], noneDeclared, { enforce: true });
-  assert.deepEqual(enforceMode.findings.map((f) => f.rule).sort(), ["required-fit-absent", "required-intake-absent", "required-outputs-absent", "required-status-absent"]);
+  assert.deepEqual(enforceMode.findings.map((f) => f.rule).sort(), ["required-feeds-absent", "required-fit-absent", "required-intake-absent", "required-needs-absent", "required-outputs-absent", "required-solves-absent", "required-status-absent"]);
+});
+
+// --- solves / needs / feeds (schema version 2, issue #1172's "De-risking additions to `solves`") ---
+
+test("an empty solves/needs/feeds array is well-formed", () => {
+  const result = evaluatePackageFramework(["@scope/alpha"], manifests([{ name: "@scope/alpha", foundry: { solves: [], needs: [], feeds: [] } }]));
+  assert.deepEqual(result.findings, []);
+  assert.deepEqual(result.warnings, []);
+  const row = result.table[0];
+  assert.deepEqual([row.solves, row.needs, row.feeds], ["declared", "declared", "declared"]);
+});
+
+test("a solves entry missing a required field is a finding", () => {
+  const result = evaluatePackageFramework(["@scope/alpha"], manifests([{ name: "@scope/alpha", foundry: { solves: [{ problem: "x", statement: "y" }] } }]));
+  assert.deepEqual(result.findings.map((f) => f.rule), ["invalid-solves-entry"]);
+});
+
+test("a solves entry with an out-of-enum evidence value is a finding", () => {
+  const entry = { problem: "cant-explain-what-we-are", statement: "y", metric: "m", proofCase: "c", evidence: "definitely" };
+  const result = evaluatePackageFramework(["@scope/alpha"], manifests([{ name: "@scope/alpha", foundry: { solves: [entry] } }]));
+  assert.deepEqual(result.findings.map((f) => f.rule), ["invalid-solves-entry"]);
+});
+
+test("a solves.problem id that is not lowercase kebab-case is a finding, even in report mode", () => {
+  const entry = { problem: "Cant Explain", statement: "y", metric: "m", proofCase: "c", evidence: "designed" };
+  const result = evaluatePackageFramework(["@scope/alpha"], manifests([{ name: "@scope/alpha", foundry: { solves: [entry] } }]));
+  assert.deepEqual(result.findings.map((f) => f.rule), ["invalid-solves-problem-id-format"]);
+});
+
+test("--enforce catches a solves.metric that does not name this role's own owned metric", () => {
+  const entry = { problem: "cant-explain-what-we-are", statement: "y", metric: "wrong-metric", proofCase: "case-1", evidence: "designed" };
+  const roleMetricByRole = new Map([["@scope/alpha", "owned-metric"]]);
+  const readAdapterCases = () => ["case-1"];
+  const result = evaluatePackageFramework(["@scope/alpha"], manifests([{ name: "@scope/alpha", foundry: { solves: [entry] } }]), { enforce: true, roleMetricByRole, readAdapterCases });
+  assert.ok(result.findings.some((f) => f.rule === "solves-metric-mismatch"));
+});
+
+test("--enforce catches a solves.proofCase absent from the role's own qualification adapter", () => {
+  const entry = { problem: "cant-explain-what-we-are", statement: "y", metric: "owned-metric", proofCase: "no-such-case", evidence: "designed" };
+  const roleMetricByRole = new Map([["@scope/alpha", "owned-metric"]]);
+  const readAdapterCases = () => ["case-1"];
+  const result = evaluatePackageFramework(["@scope/alpha"], manifests([{ name: "@scope/alpha", foundry: { solves: [entry] } }]), { enforce: true, roleMetricByRole, readAdapterCases });
+  assert.deepEqual(result.findings.filter((f) => f.rule.startsWith("solves-")).map((f) => f.rule), ["solves-proof-case-missing"]);
+});
+
+test("--enforce leaves solves.problem alone when docs/contracts/client-problems.json does not exist (clientProblemIds: null)", () => {
+  const entry = { problem: "cant-explain-what-we-are", statement: "y", metric: "owned-metric", proofCase: "case-1", evidence: "designed" };
+  const roleMetricByRole = new Map([["@scope/alpha", "owned-metric"]]);
+  const readAdapterCases = () => ["case-1"];
+  const result = evaluatePackageFramework(["@scope/alpha"], manifests([{ name: "@scope/alpha", foundry: { solves: [entry] } }]), { enforce: true, roleMetricByRole, readAdapterCases, clientProblemIds: null });
+  assert.deepEqual(result.findings.filter((f) => f.rule.startsWith("solves-") || f.rule === "unclaimed-client-problem"), []);
+});
+
+test("--enforce fails a solves.problem id not declared in an existing client-problems.json", () => {
+  const entry = { problem: "not-a-real-problem", statement: "y", metric: "owned-metric", proofCase: "case-1", evidence: "designed" };
+  const roleMetricByRole = new Map([["@scope/alpha", "owned-metric"]]);
+  const readAdapterCases = () => ["case-1"];
+  const result = evaluatePackageFramework(["@scope/alpha"], manifests([{ name: "@scope/alpha", foundry: { solves: [entry] } }]), { enforce: true, roleMetricByRole, readAdapterCases, clientProblemIds: ["cant-explain-what-we-are"] });
+  assert.ok(result.findings.some((f) => f.rule === "solves-problem-id-unresolved"));
+  assert.ok(result.findings.some((f) => f.rule === "unclaimed-client-problem" && f.path === "cant-explain-what-we-are"));
+});
+
+test("--enforce flags two roles claiming the same problem id", () => {
+  const entry = { problem: "cant-explain-what-we-are", statement: "y", metric: "m", proofCase: "c", evidence: "designed" };
+  const roleMetricByRole = new Map([["@scope/alpha", "m"], ["@scope/beta", "m"]]);
+  const readAdapterCases = () => ["c"];
+  const result = evaluatePackageFramework(ROLES, manifests([
+    { name: "@scope/alpha", foundry: { solves: [entry] } },
+    { name: "@scope/beta", foundry: { solves: [entry] } },
+  ]), { enforce: true, roleMetricByRole, readAdapterCases });
+  const collision = result.findings.find((f) => f.rule === "solves-problem-claimed-by-multiple-roles");
+  assert.ok(collision);
+  assert.match(collision.message, /@scope\/alpha/);
+  assert.match(collision.message, /@scope\/beta/);
+});
+
+test("needs must be an array of { producerRole, artifact }", () => {
+  const result = evaluatePackageFramework(["@scope/alpha"], manifests([{ name: "@scope/alpha", foundry: { needs: [{ producerRole: "@scope/beta" }] } }]));
+  assert.deepEqual(result.findings.map((f) => f.rule), ["invalid-needs-declaration"]);
+});
+
+test("a feeds path outside the role's own clossys/<role>/ folder is a finding", () => {
+  const result = evaluatePackageFramework(["@scope/alpha"], manifests([{ name: "@scope/alpha", foundry: { feeds: [{ artifact: "plan", path: "clossys/beta/plan.json" }] } }]));
+  assert.deepEqual(result.findings.map((f) => f.rule), ["feeds-path-outside-role-folder"]);
+});
+
+test("--enforce matches a needs entry against another role's feeds entry", () => {
+  const result = evaluatePackageFramework(ROLES, manifests([
+    { name: "@scope/alpha", foundry: { needs: [{ producerRole: "@scope/beta", artifact: "direction" }] } },
+    { name: "@scope/beta", foundry: { feeds: [{ artifact: "direction", path: "clossys/beta/direction.json" }] } },
+  ]), { enforce: true });
+  assert.deepEqual(result.findings.filter((f) => f.rule === "unmatched-need" || f.rule === "needs-graph-cycle"), []);
+});
+
+test("--enforce fails an unmatched needs entry", () => {
+  const result = evaluatePackageFramework(ROLES, manifests([
+    { name: "@scope/alpha", foundry: { needs: [{ producerRole: "@scope/beta", artifact: "direction" }] } },
+    { name: "@scope/beta", foundry: { feeds: [{ artifact: "something-else", path: "clossys/beta/x.json" }] } },
+  ]), { enforce: true });
+  assert.deepEqual(result.findings.filter((f) => f.rule === "unmatched-need").map((f) => f.rule), ["unmatched-need"]);
+});
+
+test("--enforce fails a cycle in the needs/feeds handoff graph", () => {
+  const result = evaluatePackageFramework(ROLES, manifests([
+    { name: "@scope/alpha", foundry: { needs: [{ producerRole: "@scope/beta", artifact: "b-artifact" }], feeds: [{ artifact: "a-artifact", path: "clossys/alpha/a.json" }] } },
+    { name: "@scope/beta", foundry: { needs: [{ producerRole: "@scope/alpha", artifact: "a-artifact" }], feeds: [{ artifact: "b-artifact", path: "clossys/beta/b.json" }] } },
+  ]), { enforce: true });
+  assert.ok(result.findings.some((f) => f.rule === "needs-graph-cycle"));
 });
 
 // --- docs/contracts/check-output-envelope.json shape ---

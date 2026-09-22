@@ -62,23 +62,32 @@ export function runFirstDayOnboarding(request: unknown, options: FirstDayOnboard
   return joinFirstDayOnboarding(typed, selection, observations);
 }
 
-export { ARCHITECTURE_SUBJECTS, ASSESSMENT_INVOCATION_FAILURES, ASSESSMENT_INVOCATION_KINDS, ASSESSMENT_OUTCOMES, ASSESSMENT_SURFACE_ABSENCES, DIRECTION_SUBJECTS, FIT_SURFACE_ABSENCES, INTAKE_SURFACE_ABSENCES, NO_RULE_OPENED, OUTPUTS_DECLARATION_ABSENCES, SELECTION_RULES, STATUS_SURFACE_ABSENCES } from "./types.js";
-export type { ArchitectureSubject, AssessmentInvocationFailure, AssessmentInvocationKind, AssessmentOutcome, AssessmentSurface, AssessmentSurfaceAbsence, AssessmentSurfaceDiscovery, DirectionSubject, FitSurface, FitSurfaceAbsence, FitSurfaceDiscovery, IntakeSurface, IntakeSurfaceAbsence, IntakeSurfaceDiscovery, LedgerProposal, MutationApproval, MutationAuthorization, OnboardingEngagement, OnboardingFinding, OnboardingGap, OnboardingRequest, OnboardingRun, OnboardingState, OutputsDeclaration, OutputsDeclarationAbsence, OutputsDeclarationDiscovery, RoleAssessmentObservation, RoleAssessmentRecord, RoleSelection, RoleSelectionOutcome, SelectionRule, StatusSurface, StatusSurfaceAbsence, StatusSurfaceDiscovery } from "./types.js";
+export { ARCHITECTURE_SUBJECTS, ASSESSMENT_INVOCATION_FAILURES, ASSESSMENT_INVOCATION_KINDS, ASSESSMENT_OUTCOMES, ASSESSMENT_SURFACE_ABSENCES, DIRECTION_SUBJECTS, FEEDS_DECLARATION_ABSENCES, FIT_SURFACE_ABSENCES, INTAKE_SURFACE_ABSENCES, NEEDS_DECLARATION_ABSENCES, NO_RULE_OPENED, OUTPUTS_DECLARATION_ABSENCES, SELECTION_RULES, SOLVES_DECLARATION_ABSENCES, SOLVES_EVIDENCE_LEVELS, STATUS_SURFACE_ABSENCES } from "./types.js";
+export type { ArchitectureSubject, AssessmentInvocationFailure, AssessmentInvocationKind, AssessmentOutcome, AssessmentSurface, AssessmentSurfaceAbsence, AssessmentSurfaceDiscovery, DirectionSubject, FeedsDeclaration, FeedsDeclarationAbsence, FeedsDeclarationDiscovery, FeedsEntry, FitSurface, FitSurfaceAbsence, FitSurfaceDiscovery, IntakeSurface, IntakeSurfaceAbsence, IntakeSurfaceDiscovery, LedgerProposal, MutationApproval, MutationAuthorization, NeedsDeclaration, NeedsDeclarationAbsence, NeedsDeclarationDiscovery, NeedsEntry, OnboardingEngagement, OnboardingFinding, OnboardingGap, OnboardingRequest, OnboardingRun, OnboardingState, OutputsDeclaration, OutputsDeclarationAbsence, OutputsDeclarationDiscovery, RoleAssessmentObservation, RoleAssessmentRecord, RoleSelection, RoleSelectionOutcome, SelectionRule, SolvesDeclaration, SolvesDeclarationAbsence, SolvesDeclarationDiscovery, SolvesEntry, SolvesEvidenceLevel, StatusSurface, StatusSurfaceAbsence, StatusSurfaceDiscovery } from "./types.js";
 export { DIRECTION_ROLE, ENGAGEMENT_BASELINE_ROLE, EXCLUSION_REASON, INDEPENDENT_OUTCOME_ROLE, OPERATING_SYSTEM_ROLE, selectRoles, validateOnboardingRequest } from "./selection.js";
 export {
   ASSESSMENT_DECLARATION_PATH,
+  FEEDS_DECLARATION_PATH,
   FIT_DECLARATION_PATH,
   INTAKE_DECLARATION_PATH,
+  NEEDS_DECLARATION_PATH,
   OUTPUTS_DECLARATION_PATH,
+  SOLVES_DECLARATION_PATH,
   STATUS_DECLARATION_PATH,
   discoverRoleAssessmentSurface,
   discoverRoleAssessmentSurfaces,
+  discoverRoleFeedsDeclaration,
+  discoverRoleFeedsDeclarations,
   discoverRoleFitSurface,
   discoverRoleFitSurfaces,
   discoverRoleIntakeSurface,
   discoverRoleIntakeSurfaces,
+  discoverRoleNeedsDeclaration,
+  discoverRoleNeedsDeclarations,
   discoverRoleOutputsDeclaration,
   discoverRoleOutputsDeclarations,
+  discoverRoleSolvesDeclaration,
+  discoverRoleSolvesDeclarations,
   discoverRoleStatusSurface,
   discoverRoleStatusSurfaces,
 } from "./discovery.js";

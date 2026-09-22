@@ -20,19 +20,32 @@
 import { readFileSync, statSync } from "node:fs";
 import { isAbsolute, join, resolve } from "node:path";
 import { ASSESSMENT_INVOCATION_KINDS } from "./types.js";
+import { SOLVES_EVIDENCE_LEVELS } from "./types.js";
 import type {
   AssessmentSurface,
   AssessmentSurfaceAbsence,
   AssessmentSurfaceDiscovery,
+  FeedsDeclaration,
+  FeedsDeclarationAbsence,
+  FeedsDeclarationDiscovery,
+  FeedsEntry,
   FitSurface,
   FitSurfaceAbsence,
   FitSurfaceDiscovery,
   IntakeSurface,
   IntakeSurfaceAbsence,
   IntakeSurfaceDiscovery,
+  NeedsDeclaration,
+  NeedsDeclarationAbsence,
+  NeedsDeclarationDiscovery,
+  NeedsEntry,
   OutputsDeclaration,
   OutputsDeclarationAbsence,
   OutputsDeclarationDiscovery,
+  SolvesDeclaration,
+  SolvesDeclarationAbsence,
+  SolvesDeclarationDiscovery,
+  SolvesEntry,
   StatusSurface,
   StatusSurfaceAbsence,
   StatusSurfaceDiscovery,
@@ -82,9 +95,9 @@ export function discoverRoleAssessmentSurfaces(installRoot: string, roles: reado
 }
 
 /**
- * Discovery for the extended `foundry` manifest block
- * (docs/contracts/package-framework.json, issue #1172): `intake`, `outputs`,
- * `status`, and `fit`, alongside the `assessment` discovery above. Same
+ * Discovery for the extended `foundry` manifest block, issue #1172:
+ * `intake`, `outputs`, `status`, and `fit`, alongside the `assessment`
+ * discovery above. Same
  * discipline throughout: read only the role's own installed manifest, never
  * infer, and report absence as a determinate value rather than guessing or
  * silently skipping.
@@ -219,4 +232,98 @@ export function discoverRoleOutputsDeclaration(installRoot: string, role: string
 /** Discovers every named role's outputs declaration, preserving the caller's role order. */
 export function discoverRoleOutputsDeclarations(installRoot: string, roles: readonly string[]): readonly OutputsDeclarationDiscovery[] {
   return roles.map((role) => discoverRoleOutputsDeclaration(installRoot, role));
+}
+
+/**
+ * Discovery for schema version 2 of the extended `foundry` manifest block
+ * (owner decision on issue #1176): `solves`, `needs`, and `feeds`. Same
+ * discipline as everything above -- manifest-only, never inferred -- and
+ * shape-level only: whether a `solves.metric` names this role's own owned
+ * metric, whether a `solves.proofCase` exists in a qualification adapter,
+ * and whether the needs/feeds handoff graph has a cycle are this
+ * repository's own dev-time questions, answered by this repository's own
+ * gate script in its `--enforce` mode, not ones a runtime orchestration can
+ * answer for an arbitrary consumer.
+ */
+
+function isSolvesEntry(value: unknown): value is SolvesEntry {
+  return record(value) && text(value.problem) && text(value.statement) && text(value.metric) && text(value.proofCase) && typeof value.evidence === "string" && (SOLVES_EVIDENCE_LEVELS as readonly string[]).includes(value.evidence);
+}
+
+/** The manifest key a role uses to declare its own verifiable client-problem claims. */
+export const SOLVES_DECLARATION_PATH = "foundry.solves";
+
+/** Resolves one role's `solves` declaration from its installed manifest. */
+export function discoverRoleSolvesDeclaration(installRoot: string, role: string): SolvesDeclarationDiscovery {
+  const read = readInstalledManifest(installRoot, role);
+  if ("errorAbsence" in read) return { role, declaration: null, absence: read.errorAbsence };
+  const { manifest } = read;
+  const foundry = manifest.foundry;
+  const declared = record(foundry) ? foundry.solves : undefined;
+  if (declared === undefined) return { role, declaration: null, absence: "no-solves-declaration" };
+  if (!Array.isArray(declared) || !declared.every(isSolvesEntry)) return { role, declaration: null, absence: "invalid-solves-declaration" };
+  const declaration: SolvesDeclaration = { role, version: manifest.version as string, entries: declared as readonly SolvesEntry[] };
+  return { role, declaration, absence: null };
+}
+
+/** Discovers every named role's `solves` declaration, preserving the caller's role order. */
+export function discoverRoleSolvesDeclarations(installRoot: string, roles: readonly string[]): readonly SolvesDeclarationDiscovery[] {
+  return roles.map((role) => discoverRoleSolvesDeclaration(installRoot, role));
+}
+
+function isNeedsEntry(value: unknown): value is NeedsEntry {
+  return record(value) && text(value.producerRole) && text(value.artifact);
+}
+
+/** The manifest key a role uses to declare artifacts it consumes from another role's `feeds`. */
+export const NEEDS_DECLARATION_PATH = "foundry.needs";
+
+/** Resolves one role's `needs` declaration from its installed manifest. */
+export function discoverRoleNeedsDeclaration(installRoot: string, role: string): NeedsDeclarationDiscovery {
+  const read = readInstalledManifest(installRoot, role);
+  if ("errorAbsence" in read) return { role, declaration: null, absence: read.errorAbsence };
+  const { manifest } = read;
+  const foundry = manifest.foundry;
+  const declared = record(foundry) ? foundry.needs : undefined;
+  if (declared === undefined) return { role, declaration: null, absence: "no-needs-declaration" };
+  if (!Array.isArray(declared) || !declared.every(isNeedsEntry)) return { role, declaration: null, absence: "invalid-needs-declaration" };
+  const declaration: NeedsDeclaration = { role, version: manifest.version as string, entries: declared as readonly NeedsEntry[] };
+  return { role, declaration, absence: null };
+}
+
+/** Discovers every named role's `needs` declaration, preserving the caller's role order. */
+export function discoverRoleNeedsDeclarations(installRoot: string, roles: readonly string[]): readonly NeedsDeclarationDiscovery[] {
+  return roles.map((role) => discoverRoleNeedsDeclaration(installRoot, role));
+}
+
+/** The manifest key a role uses to declare artifacts it produces for other roles. */
+export const FEEDS_DECLARATION_PATH = "foundry.feeds";
+
+/**
+ * Resolves one role's `feeds` declaration from its installed manifest. Every
+ * path must fall under this role's own `clossys/<role>/` folder, the same
+ * rule `outputs` already applies.
+ */
+export function discoverRoleFeedsDeclaration(installRoot: string, role: string): FeedsDeclarationDiscovery {
+  const read = readInstalledManifest(installRoot, role);
+  if ("errorAbsence" in read) return { role, declaration: null, absence: read.errorAbsence };
+  const { manifest } = read;
+  const foundry = manifest.foundry;
+  const declared = record(foundry) ? foundry.feeds : undefined;
+  if (declared === undefined) return { role, declaration: null, absence: "no-feeds-declaration" };
+  if (!Array.isArray(declared) || !declared.every((item): item is FeedsEntry => record(item) && text(item.artifact) && text(item.path))) {
+    return { role, declaration: null, absence: "invalid-feeds-declaration" };
+  }
+  const entries = declared as readonly FeedsEntry[];
+  const expectedPrefix = `clossys/${roleShortName(role)}/`;
+  if (!entries.every((item) => isSafeRelativePath(item.path) && item.path.startsWith(expectedPrefix))) {
+    return { role, declaration: null, absence: "feeds-path-outside-role-folder" };
+  }
+  const declaration: FeedsDeclaration = { role, version: manifest.version as string, entries };
+  return { role, declaration, absence: null };
+}
+
+/** Discovers every named role's `feeds` declaration, preserving the caller's role order. */
+export function discoverRoleFeedsDeclarations(installRoot: string, roles: readonly string[]): readonly FeedsDeclarationDiscovery[] {
+  return roles.map((role) => discoverRoleFeedsDeclaration(installRoot, role));
 }
