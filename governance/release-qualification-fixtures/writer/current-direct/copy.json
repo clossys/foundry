@@ -1,4 +1,14 @@
 {
   "id": "qualification-copy",
-  "entries": [{ "id": "empty.no-results", "text": "No results", "context": "Empty result state" }]
+  "locale": "en",
+  "revision": "qualification-fixture-1",
+  "source": { "kind": "consumer", "reference": "qualification-fixture" },
+  "entries": [
+    {
+      "id": "empty.no-results",
+      "text": "No results",
+      "context": "Empty result state",
+      "status": "approved"
+    }
+  ]
 }
