@@ -93,7 +93,10 @@ const HelpArticleView = defineWebTemplate({
   name: "HelpArticleView",
   flow: { slots: [{ key: "heading", required: true }, { key: "body", required: true }] },
   slotKinds: { body: ["node"] },
-  build: (content) => createElement("main", null, createElement("h1", null, content.heading), content.body),
+  blocks: [
+    { kind: "page-header", title: "heading" },
+    { kind: "node-chapter", node: "body" },
+  ],
 });
 
 describe("StructuredDocument -> renderStructuredDocument -> a consumer's own node-kind web slot -> a full page", () => {
@@ -121,7 +124,7 @@ describe("StructuredDocument -> renderStructuredDocument -> a consumer's own nod
     const { element: pageElement } = HelpArticleRenderer.renderWebDocument(resolved.document, { nodes: resolved.nodes });
     const html = renderToStaticMarkup(pageElement);
 
-    expect(html).toContain("<h1>Acme help center</h1>");
+    expect(html).toContain("Acme help center");
     expect(html).toContain('<section id="overview">');
     expect(html).toContain('<section id="overview-details">');
     expect(html).toContain('<a href="#pricing">See pricing</a>');

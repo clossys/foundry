@@ -53,6 +53,29 @@ describe("buildWebHeadMetadata", () => {
     expect(head.openGraph).not.toHaveProperty("description");
     expect(head.openGraph).not.toHaveProperty("image");
     expect(head.openGraph).not.toHaveProperty("type");
+    expect(head.openGraph).not.toHaveProperty("url");
+  });
+
+  it("carries openGraph url and twitter image through when set", () => {
+    const meta: WebMeta = {
+      channel: "web",
+      title: "T",
+      description: "D",
+      og: { url: "https://example.com/p" },
+      twitter: { image: "https://example.com/card.png" },
+    };
+    const head = buildWebHeadMetadata(meta);
+    expect(head.openGraph).toEqual({ url: "https://example.com/p" });
+    expect(head.twitter).toEqual({ image: "https://example.com/card.png" });
+  });
+
+  it("copies hreflangAlternates into a new array rather than aliasing WebMeta's own", () => {
+    const hreflangAlternates = [{ hreflang: "en", href: "https://example.com/en" }];
+    const meta: WebMeta = { channel: "web", title: "T", description: "D", hreflangAlternates };
+    const head = buildWebHeadMetadata(meta);
+    expect(head.hreflangAlternates).not.toBe(hreflangAlternates);
+    expect(head.hreflangAlternates).toEqual(hreflangAlternates);
+    expect(head.hreflangAlternates![0]).not.toBe(hreflangAlternates[0]);
   });
 
   it("carries twitter through, field by field", () => {

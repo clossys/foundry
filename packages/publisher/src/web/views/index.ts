@@ -24,3 +24,9 @@ export type { CollectionViewEmptyState, CollectionViewEntry, CollectionViewLink,
 
 export { SectionedView } from "./SectionedView.js";
 export type { SectionedViewLandmark, SectionedViewProps } from "./SectionedView.js";
+
+export { BrandGuideView } from "./BrandGuideView.js";
+export type { BrandGuideAssetLink, BrandGuideFact, BrandGuideViewProps } from "./BrandGuideView.js";
+
+export { SystemAuditView } from "./SystemAuditView.js";
+export type { SystemAuditViewProps } from "./SystemAuditView.js";

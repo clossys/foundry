@@ -26,8 +26,9 @@ An engine gap or a missing check is a Foundry issue about the package that owns 
 ## Page shape — shipped templates first, `defineWebTemplate` for the rest
 
 1. Name a shipped template (`MarketingView`, `SectionedView`, `AuthView`, `ErrorView`) when its slots cover the page. Pre-auth marketing uses `MarketingView`, not `SectionedView`.
-2. If a required band is not a slot or one of the six `SectionedView` kinds (`hero`, `feature-grid`, `faq`, `ordered-step-sequence`, `status-list`, `stat-grid`), do not flatten it into `feature-grid` or any other shipped kind — refuse and register `defineWebTemplate` in the consumer; `build` maps to Designer blocks. Hero `media` uses `resolveAssetId` at render time; metrics belong in `stat-grid`, not `feature-grid`. `section-header` / `article-body` stay out of contract — compose those blocks directly.
-3. Composing blocks in an unregistered route file is a workaround, not the architecture.
+2. If a required band is not a slot or one of the six `SectionedView` kinds (`hero`, `feature-grid`, `faq`, `ordered-step-sequence`, `status-list`, `stat-grid`), do not flatten it into `feature-grid` or any other shipped kind — refuse and register `defineWebTemplate` in the consumer with a `blocks` sequence (page-header, node-chapter, stat-grid, and the other kinds this package documents). Consumer templates are data, not a React `build` function. Hero `media` uses `resolveAssetId` at render time; metrics belong in `stat-grid`, not `feature-grid`. `section-header` / `article-body` stay out of contract — register them through `defineWebTemplate` blocks, not route-local JSX.
+3. Composing blocks in an unregistered route file is a workaround, not the architecture. Run `publisher-web-route-check` on the consumer's web-route manifest in CI so every publishing route names a template from `listWebTemplateNames()` and no route composes Designer blocks directly.
+4. Run `publisher-preview` with the repo's `brand.css` and brand-asset roster (the optional third argument). It writes the public brand guide and the internal system audit alongside the shipped-view gallery. Do not invent those pages in chat.
 
 ## Pre-auth page
 
@@ -48,6 +49,8 @@ Ask one question. Prefer the host multiple-choice control when it exists; otherw
 
 If `node_modules/@clossys/publisher` is present (or this package's bins are on PATH), use the exact pin in the tree. Read `package.json` `bin` for the real command names.
 - Assessment CLI: `publisher-rate-check`
+- Web route gate: `publisher-web-route-check`
+- Shipped-view preview: `publisher-preview <brand.css> <output-directory> [roster.json]` — runs Designer brand-file coverage first, then writes `gallery.html` with every shipped web view skinned by that brand file. With the optional `roster.json` (a complete brand-asset roster), also writes `guide.html` (public brand guide) and `audit.html` (internal system audit). Use this command; do not invent preview pages in chat.
 
 Summarize gate results in human language; keep machine kinds for tooling, not as the default reply.
 
