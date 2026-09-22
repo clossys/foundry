@@ -19,13 +19,15 @@
 # It supplies the run-history half honestly: per gate, how many times it ran,
 # how many times it was skipped, and its own verdicts tallied verbatim.
 #
-# It now supplies the escape rate for exactly ONE gate: "publish safety" (the
-# job that runs gitleaks), sourced from GitHub's own secret-scanning alerts
-# via `scripts/secret-scanning-outcomes.mjs` -- a detector this workflow does
-# not run and cannot influence, which is the independence
-# `LandedChangeOutcome.violation` requires (see that script's own header).
-# `docs/LIFECYCLE.md`'s `grounded` state for that specific loop can move now;
-# it was previously unreachable for every gate (#484).
+# It now supplies the escape rate for exactly TWO gates: "publish safety"
+# (the job that runs gitleaks), sourced from GitHub's own secret-scanning
+# alerts via `scripts/secret-scanning-outcomes.mjs`, and "dependency audit"
+# (the job that runs `npm audit --audit-level=high`), sourced from GitHub's
+# own Dependabot alerts via `scripts/dependency-audit-outcomes.mjs`. Both are
+# detectors this workflow does not run and cannot influence, which is the
+# independence `LandedChangeOutcome.violation` requires (see each script's
+# own header). `docs/LIFECYCLE.md`'s `grounded` state for those two specific
+# loops can move now; it was previously unreachable for every gate (#484).
 #
 # Every OTHER gate still cannot supply an escape rate: `LandedChangeOutcome.
 # violation` must be an INDEPENDENT judgment that a landed change really
@@ -49,9 +51,11 @@ permissions:
   # The whole point: read this repository's own run history. Nothing here
   # writes, and nothing here needs package or PR scope.
   actions: read
-  # `secret-scanning-outcomes.mjs` reads this repository's own
-  # secret-scanning alerts -- GitHub's REST API requires this permission for
-  # both code-scanning and secret-scanning alert endpoints. Still read-only.
+  # `secret-scanning-outcomes.mjs` and `dependency-audit-outcomes.mjs` read
+  # this repository's own secret-scanning and Dependabot alerts --
+  # GitHub's REST API requires this permission (or, for classic PATs, the
+  # `security_events` OAuth scope) for the code-scanning, secret-scanning,
+  # AND Dependabot alert endpoints alike. Still read-only.
   security-events: read
 
 jobs:
