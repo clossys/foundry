@@ -79,15 +79,7 @@
  * only glances at `ok`.
  */
 
-import {
-  isPlainObject,
-  optionalStringArray,
-  pushIssue,
-  requireArrayOf,
-  requireString,
-  type ValidationIssue,
-  type ValidationResult,
-} from "./validation.js";
+import { isPlainObject, optionalString, optionalStringArray, pushIssue, requireArrayOf, requireString, type ValidationIssue, type ValidationResult } from "./validation.js";
 
 /**
  * One attribute's implications for the contracts a brand actually touches.
@@ -103,36 +95,41 @@ import {
  * derivation, it's just `BrandAttribute.evidence` restated.
  */
 export interface BrandDerivation {
-  attribute: string;
+  attributeId: string;
   /** CSS custom property names, e.g. `"--color-accent-primary"`. Referenced by NAME ONLY — see this file's header comment. */
   tokenSlots: string[];
   /** Voice rule ids (a consumer's own `@example/copy/voice` glossary/claim ids). Referenced by NAME ONLY — see this file's header comment. */
-  voiceRules: string[];
-  /** What about the attribute forces these specific slots/rules — the actual derivation logic, in prose. */
-  rationale: string;
+  voiceRuleIds: string[];
+  /** What about the attribute forces these specific slots/rules — room prose. */
+  rationale?: string;
 }
 
-function readBrandDerivation(value: unknown, path: string, issues: ValidationIssue[]): BrandDerivation | undefined {
+export function readBrandDerivationRecord(value: unknown, path: string, issues: ValidationIssue[]): BrandDerivation | undefined {
   const start = issues.length;
   if (!isPlainObject(value)) {
     pushIssue(issues, path, "must be an object");
     return undefined;
   }
-  const attribute = requireString(value.attribute, `${path}.attribute`, issues, { minLength: 1 });
+  const attributeId = requireString(value.attributeId ?? value.attribute, `${path}.attributeId`, issues, { minLength: 1 });
   const tokenSlots = optionalStringArray(value.tokenSlots, `${path}.tokenSlots`, issues, { itemMinLength: 1 }) ?? [];
-  const voiceRules = optionalStringArray(value.voiceRules, `${path}.voiceRules`, issues, { itemMinLength: 1 }) ?? [];
-  const rationale = requireString(value.rationale, `${path}.rationale`, issues, { minLength: 10 });
+  const voiceRuleIds =
+    optionalStringArray(value.voiceRuleIds ?? value.voiceRules, `${path}.voiceRuleIds`, issues, { itemMinLength: 1 }) ?? [];
+  const rationale = optionalString(value.rationale, `${path}.rationale`, issues);
 
-  if (issues.length === start && tokenSlots.length === 0 && voiceRules.length === 0) {
+  if (issues.length === start && tokenSlots.length === 0 && voiceRuleIds.length === 0) {
     pushIssue(
       issues,
       path,
-      "must name at least one tokenSlot or voiceRule — a derivation with no implications is not a derivation",
+      "must name at least one tokenSlot or voiceRuleId — a derivation with no implications is not a derivation",
     );
   }
 
   if (issues.length > start) return undefined;
-  return { attribute: attribute as string, tokenSlots, voiceRules, rationale: rationale as string };
+  return { attributeId: attributeId as string, tokenSlots, voiceRuleIds, rationale };
+}
+
+function readBrandDerivation(value: unknown, path: string, issues: ValidationIssue[]): BrandDerivation | undefined {
+  return readBrandDerivationRecord(value, path, issues);
 }
 
 /** Validates a single `BrandDerivation`. */

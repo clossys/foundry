@@ -7,16 +7,16 @@ import { checkBrandCoverage, validateBrandDerivation, validateBrandDerivations, 
 
 const RATIONALE = "Precision means the accent color must read as decisive, not soft, and copy states facts without hedging.";
 
-function derivation(attribute: string, tokenSlots: string[], voiceRules: string[] = []): BrandDerivation {
-  return { attribute, tokenSlots, voiceRules, rationale: RATIONALE };
+function derivation(attributeId: string, tokenSlots: string[], voiceRuleIds: string[] = []): BrandDerivation {
+  return { attributeId, tokenSlots, voiceRuleIds, rationale: RATIONALE };
 }
 
 describe("validateBrandDerivation", () => {
   it("accepts a well-formed derivation naming a tokenSlot", () => {
     const result = validateBrandDerivation({
-      attribute: "Precise",
+      attributeId: "Precise",
       tokenSlots: ["--color-accent-primary"],
-      voiceRules: [],
+      voiceRuleIds: [],
       rationale: RATIONALE,
     });
     expect(result.ok).toBe(true);
@@ -24,9 +24,9 @@ describe("validateBrandDerivation", () => {
 
   it("accepts a well-formed derivation naming only a voiceRule", () => {
     const result = validateBrandDerivation({
-      attribute: "Direct",
+      attributeId: "Direct",
       tokenSlots: [],
-      voiceRules: ["no-hedging"],
+      voiceRuleIds: ["no-hedging"],
       rationale: RATIONALE,
     });
     expect(result.ok).toBe(true);
@@ -36,29 +36,28 @@ describe("validateBrandDerivation", () => {
     const result = validateBrandDerivation({
       attribute: "Precise",
       tokenSlots: [],
-      voiceRules: [],
+      voiceRuleIds: [],
       rationale: RATIONALE,
     });
     expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.issues.some((i) => i.message.includes("at least one tokenSlot or voiceRule"))).toBe(true);
+      expect(result.issues.some((i) => i.message.includes("at least one tokenSlot or voiceRuleId"))).toBe(true);
     }
   });
 
-  it("rejects a rationale too short to be more than a restatement", () => {
+  it("accepts a derivation without rationale (room field)", () => {
     const result = validateBrandDerivation({
-      attribute: "Precise",
+      attributeId: "Precise",
       tokenSlots: ["--color-accent-primary"],
-      voiceRules: [],
-      rationale: "because",
+      voiceRuleIds: [],
     });
-    expect(result.ok).toBe(false);
+    expect(result.ok).toBe(true);
   });
 
-  it("rejects a missing attribute name", () => {
+  it("rejects a missing attribute id", () => {
     const result = validateBrandDerivation({
       tokenSlots: ["--color-accent-primary"],
-      voiceRules: [],
+      voiceRuleIds: [],
       rationale: RATIONALE,
     });
     expect(result.ok).toBe(false);
@@ -72,8 +71,8 @@ describe("validateBrandDerivation", () => {
 describe("validateBrandDerivations", () => {
   it("accepts an array of well-formed derivations", () => {
     const result = validateBrandDerivations([
-      { attribute: "Precise", tokenSlots: ["--color-accent-primary"], voiceRules: [], rationale: RATIONALE },
-      { attribute: "Direct", tokenSlots: [], voiceRules: ["no-hedging"], rationale: RATIONALE },
+      { attributeId: "Precise", tokenSlots: ["--color-accent-primary"], voiceRuleIds: [], rationale: RATIONALE },
+      { attributeId: "Direct", tokenSlots: [], voiceRuleIds: ["no-hedging"], rationale: RATIONALE },
     ]);
     expect(result.ok).toBe(true);
   });

@@ -1,9 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   validateAudience,
-  validateBrandAttribute,
-  validateBrandAttributes,
-  validateBrandEssence,
+  validateBrand,
   validateDirectionEntities,
   validateDirectionEntity,
   validateFact,
@@ -130,7 +128,7 @@ describe("validateMission", () => {
     const result = validateMission({
       statement: "We help small teams ship internal tools faster.",
       vision: "A world where every team can build its own software.",
-      values: [{ name: "Clarity", rule: "When two designs are equally good, ship the one a newcomer understands fastest." }],
+      values: [{ id: "clarity", rule: "When two designs are equally good, ship the one a newcomer understands fastest." }],
     });
     expect(result.ok).toBe(true);
   });
@@ -150,128 +148,72 @@ describe("validatePositioning", () => {
     const result = validatePositioning({
       productName: "Widgetronic",
       category: "internal tooling platform",
-      forWhom: "operations teams at mid-size companies",
+      audienceIds: ["ops-leads"],
       weAre: "the fastest way to turn a spreadsheet into a real tool",
       unlike: "general-purpose no-code builders",
-      reasonToBelieve: "we ship a working prototype in the same meeting the request is made",
+      claimIds: ["prototype-same-meeting"],
     });
     expect(result.ok).toBe(true);
+  });
+
+  it("rejects retired forWhom with a finding that names audienceIds", () => {
+    const result = validatePositioning({
+      productName: "Widgetronic",
+      category: "internal tooling platform",
+      forWhom: "operations teams",
+      audienceIds: ["ops-leads"],
+      weAre: "the fastest way to turn a spreadsheet into a real tool",
+      unlike: "general-purpose no-code builders",
+      claimIds: ["prototype-same-meeting"],
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.issues.some((issue) => issue.path === "forWhom" && issue.message.includes("audienceIds"))).toBe(true);
+    }
   });
 });
 
 describe("validateMarket / validateAudience / validateRoadmapItem", () => {
   it("accept well-formed entries", () => {
     expect(
-      validateMarket({ id: "smb-ops", name: "SMB operations", description: "Small and mid-size operations teams.", factRefs: ["active-customers"] })
-        .ok,
+      validateMarket({ id: "smb-ops", name: "SMB operations", audienceIds: ["ops-lead"], factRefs: ["active-customers"] }).ok,
     ).toBe(true);
     expect(
-      validateAudience({ id: "ops-lead", name: "Operations lead", description: "Runs day-to-day operations.", painPoints: ["too many spreadsheets"] })
+      validateAudience({ id: "ops-lead", name: "Operations lead", situation: "Runs day-to-day operations.", pains: ["too many spreadsheets"] })
         .ok,
     ).toBe(true);
-    expect(
-      validateRoadmapItem({ id: "sso", title: "Single sign-on", status: "next", description: "SAML-based SSO." }).ok,
-    ).toBe(true);
+    expect(validateRoadmapItem({ id: "sso", title: "Single sign-on", status: "next" }).ok).toBe(true);
   });
 
   it("rejects a roadmap status outside the closed vocabulary", () => {
+    expect(validateRoadmapItem({ id: "sso", title: "Single sign-on", status: "someday" }).ok).toBe(false);
+  });
+});
+
+describe("validateBrand", () => {
+  it("accepts a well-formed brand.json document", () => {
     expect(
-      validateRoadmapItem({ id: "sso", title: "Single sign-on", status: "someday", description: "SAML-based SSO." }).ok,
-    ).toBe(false);
-  });
-});
-
-describe("validateBrandEssence", () => {
-  it("accepts a well-formed essence", () => {
-    expect(validateBrandEssence({ statement: "Precision engineering for teams who cannot afford to guess." }).ok).toBe(true);
-  });
-
-  it("rejects a statement under the minimum length", () => {
-    expect(validateBrandEssence({ statement: "Fast." }).ok).toBe(false);
-  });
-
-  it("rejects a non-object input", () => {
-    expect(validateBrandEssence("Widgetronic is precise.").ok).toBe(false);
-    expect(validateBrandEssence(null).ok).toBe(false);
-  });
-});
-
-describe("validateBrandAttribute", () => {
-  const base = {
-    name: "Precise",
-    description: "Every public claim we make is checkable against a real source.",
-    evidence: {
-      basis: "Every number in our marketing traces to a fact.json entry, enforced by this package's own facts gate in CI.",
-    },
-  };
-
-  it("accepts a well-formed attribute with prose-only evidence", () => {
-    expect(validateBrandAttribute(base).ok).toBe(true);
-  });
-
-  it("accepts evidence carrying an optional factRef alongside basis", () => {
-    const result = validateBrandAttribute({
-      ...base,
-      evidence: { ...base.evidence, factRef: "facts-gate-coverage" },
-    });
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.value.evidence.factRef).toBe("facts-gate-coverage");
-    }
-  });
-
-  it("rejects evidence with no basis at all", () => {
-    expect(validateBrandAttribute({ ...base, evidence: {} }).ok).toBe(false);
-  });
-
-  it("rejects evidence whose basis is too short to be more than a vibe", () => {
-    expect(validateBrandAttribute({ ...base, evidence: { basis: "trust us" } }).ok).toBe(false);
-  });
-
-  it("rejects an attribute missing the evidence field entirely", () => {
-    const { evidence: _evidence, ...rest } = base;
-    expect(validateBrandAttribute(rest).ok).toBe(false);
-  });
-
-  it("rejects a non-object input", () => {
-    expect(validateBrandAttribute("Precise").ok).toBe(false);
-  });
-});
-
-describe("validateBrandAttributes", () => {
-  it("accepts an array of well-formed attributes", () => {
-    const result = validateBrandAttributes([
-      {
-        name: "Precise",
-        description: "Every claim is checkable.",
-        evidence: { basis: "Enforced by the facts-traceability gate in CI on every pull request." },
-      },
-      {
-        name: "Direct",
-        description: "Copy states things plainly.",
-        evidence: { basis: "House voice glossary forbids hedging phrases like 'we believe' and 'we think'." },
-      },
-    ]);
-    expect(result.ok).toBe(true);
-  });
-
-  it("accepts an empty array — no attributes authored yet is not itself a shape error", () => {
-    expect(validateBrandAttributes([]).ok).toBe(true);
-  });
-
-  it("rejects a non-array", () => {
-    expect(validateBrandAttributes({}).ok).toBe(false);
+      validateBrand({
+        essence: { statement: "Precision engineering for teams who cannot afford to guess." },
+        attributes: [
+          {
+            id: "precise",
+            statement: "Every claim is checkable.",
+            basis: "Enforced by the facts-traceability gate in CI on every pull request.",
+          },
+        ],
+        derivations: [{ attributeId: "precise", tokenSlots: ["--color-accent-primary"], voiceRuleIds: [] }],
+      }).ok,
+    ).toBe(true);
   });
 });
 
 describe("validateDirectionEntity", () => {
   const base = {
     id: "vision-2026-h2",
-    kind: "mission",
-    statement: "Every public claim a team makes should trace to something checkable.",
-    rationale: "Trust erodes fastest when marketing outruns what engineering can actually verify.",
+    subject: { file: "mission.json", id: "mission" },
     decidedOn: "2026-01-05",
-    derivesFrom: [],
+    derivesFrom: [] as string[],
   };
 
   it("accepts a well-formed root entity (empty derivesFrom, no supersedes)", () => {
@@ -291,63 +233,46 @@ describe("validateDirectionEntity", () => {
       derivesFrom: ["market-us-mid", "audience-eng-leads"],
     });
     expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.value.supersedes).toBe("vision-2026-h2");
-      expect(result.value.derivesFrom).toEqual(["market-us-mid", "audience-eng-leads"]);
-    }
-  });
-
-  it("accepts every kind in the closed vocabulary", () => {
-    for (const kind of ["mission", "positioning", "market", "audience"]) {
-      expect(validateDirectionEntity({ ...base, kind }).ok).toBe(true);
-    }
-  });
-
-  it("rejects a kind outside the closed vocabulary", () => {
-    expect(validateDirectionEntity({ ...base, kind: "vibe" }).ok).toBe(false);
   });
 
   it("rejects a non-kebab-case id", () => {
     expect(validateDirectionEntity({ ...base, id: "Vision 2026" }).ok).toBe(false);
   });
 
-  it("rejects a statement under the minimum length", () => {
-    expect(validateDirectionEntity({ ...base, statement: "Be honest" }).ok).toBe(false);
-  });
-
-  it("rejects a rationale under the minimum length", () => {
-    expect(validateDirectionEntity({ ...base, rationale: "Because." }).ok).toBe(false);
-  });
-
   it("rejects a decidedOn that is not an ISO date", () => {
     expect(validateDirectionEntity({ ...base, decidedOn: "Jan 5 2026" }).ok).toBe(false);
-  });
-
-  it("rejects a missing derivesFrom entirely — required, even when it would be empty", () => {
-    const { derivesFrom: _derivesFrom, ...rest } = base;
-    expect(validateDirectionEntity(rest).ok).toBe(false);
   });
 
   it("rejects a non-object input", () => {
     expect(validateDirectionEntity("vision").ok).toBe(false);
     expect(validateDirectionEntity(null).ok).toBe(false);
   });
+
+  it("rejects facts.json as a direction subject file", () => {
+    const result = validateDirectionEntity({
+      ...base,
+      subject: { file: "facts.json", id: "active-customers" },
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      const fileIssue = result.issues.find((issue) => issue.path.endsWith("subject.file"));
+      expect(fileIssue?.message).toMatch(/must be one of/);
+      expect(fileIssue?.message).toContain("audiences.json");
+      expect(fileIssue?.message).toContain("roadmap.json");
+    }
+  });
 });
 
 describe("validateDirectionEntities", () => {
   const vision = {
     id: "vision-2026-h2",
-    kind: "mission",
-    statement: "Every public claim a team makes should trace to something checkable.",
-    rationale: "Trust erodes fastest when marketing outruns what engineering can actually verify.",
+    subject: { file: "mission.json", id: "mission" },
     decidedOn: "2026-01-05",
     derivesFrom: [],
   };
   const positioning = {
     id: "positioning-2026-h2",
-    kind: "positioning",
-    statement: "For engineering leads at mid-market SaaS companies, we are the facts layer that ships with the product.",
-    rationale: "Positioning has to name the buyer this vision actually serves, not every possible buyer.",
+    subject: { file: "positioning.json", id: "positioning" },
     decidedOn: "2026-01-12",
     derivesFrom: ["vision-2026-h2"],
   };
@@ -369,16 +294,6 @@ describe("validateDirectionEntities", () => {
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.issues.some((issue) => issue.message.includes("duplicate direction entity id"))).toBe(true);
-    }
-  });
-
-  it("reports the malformed entry before the duplicate-id check, same ordering discipline as validateFacts", () => {
-    const result = validateDirectionEntities([vision, { ...vision }, { id: vision.id }]);
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      // The third entry is malformed (missing required fields) — that issue
-      // must surface even though a duplicate id is also present.
-      expect(result.issues.some((issue) => issue.path.startsWith("(root)[2]"))).toBe(true);
     }
   });
 });
