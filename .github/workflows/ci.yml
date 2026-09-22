@@ -1120,6 +1120,13 @@ jobs:
       # packed-consumer, which now uses the same launch shape after a pack.
       - name: Declared bins reachable through node_modules/.bin
         run: node scripts/check-bin-reachability.mjs
+      # Every fenced ts/tsx block in a packages/*/README.md, compiled against
+      # that package's own shipped declarations (#908). Needs the build
+      # above for the same reason check-bin-reachability does: a package's
+      # .d.ts only exists once its own build, and any internal dependency's
+      # build, has run.
+      - name: README code examples typecheck against shipped declarations
+        run: npm run check:readme-examples
       # check-publication-map.mjs (#1103) imports packages/publisher's own
       # dist/core/index.js directly, so its test file needs the build
       # above -- it does not belong in check:gates, which runs in the
