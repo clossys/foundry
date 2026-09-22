@@ -5,6 +5,16 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.4.23] - 2026-09-21
+
+### Changed
+
+- `tailwind-merge` peer and dev dependency raised to `^3.7.0` (from
+  `^3.0.0`), riding along with the same bump in `@clossys/designer` —
+  `peerDependencies` is packed content, so this version bump is required by
+  `scripts/check-release-readiness.mjs` even though nothing in `src/`
+  changed.
+
 ## [0.4.22] - 2026-09-21
 
 ### Changed
