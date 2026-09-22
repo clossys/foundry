@@ -178,6 +178,27 @@ jobs:
           TRANSCRIPT: ${{ runner.temp }}/qualification/${{ inputs.package }}/transcript.json
         run: node scripts/run-candidate-qualification.mjs --package "$PKG" --tarball "$TARBALL" --output "$TRANSCRIPT"
 
+      # The step above can fail two ways that print nothing useful on their
+      # own: a thrown Error (a stack trace, but no transcript on disk yet)
+      # or a graceful transcript.ok===false (process.exitCode=1, no stack,
+      # no console output at all -- the failure detail lives only in the
+      # transcript file this step writes). Without this, a run like #948's
+      # writer dispatch surfaces as a bare "exit code 1" with nothing to
+      # act on, which is exactly the failure mode candidateNotInstalledMessage()
+      # exists to prevent one layer down.
+      - name: Dump qualification transcript on failure
+        if: failure()
+        env:
+          TRANSCRIPT: ${{ runner.temp }}/qualification/${{ inputs.package }}/transcript.json
+        run: |
+          if [ -f "$TRANSCRIPT" ]; then
+            echo "::group::qualification transcript"
+            cat "$TRANSCRIPT"
+            echo "::endgroup::"
+          else
+            echo "no transcript file was written (the script failed before producing one -- see the step above for a thrown error)"
+          fi
+
       # generate-qualification-record.mjs is the retention mechanism itself:
       # it re-derives every joined digest from the git tree at HEAD, proves
       # the tarball reproduces from a clean rebuild (issue #893), and REFUSES
@@ -268,8 +289,39 @@ jobs:
             printf '%s\n' "Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}"
             printf '%s\n' "Ref: #948"
           } > "$body_file"
-          gh pr create \
+
+          # This repository does not permit GitHub Actions to create pull
+          # requests (a repository setting this workflow does not, and
+          # should not, change on its own) -- gh pr create fails here with
+          # "GitHub Actions is not permitted to create or approve pull
+          # requests". That is not this run's failure: the branch above is
+          # already pushed with a complete, valid, retained record. Try PR
+          # creation, and if it is refused for that specific reason, fall
+          # back to a compare-URL summary instead of failing the whole run
+          # -- a human (or a later run authorized to open PRs) can open it
+          # from the branch. Any OTHER gh pr create failure still fails the
+          # job; only this one, named reason degrades gracefully.
+          set +e
+          pr_create_output="$(gh pr create \
             --title "Qualify ${name}@${VERSION} on the pinned release runtime" \
             --base "$GITHUB_BASE_REF_OR_DEFAULT" \
             --head "$branch" \
-            --body-file "$body_file"
+            --body-file "$body_file" 2>&1)"
+          pr_create_status=$?
+          set -e
+
+          if [ "$pr_create_status" -eq 0 ]; then
+            echo "$pr_create_output"
+          elif printf '%s' "$pr_create_output" | grep -q "not permitted to create or approve pull requests"; then
+            {
+              echo "### Qualification record produced, PR not opened"
+              echo ""
+              echo "\`${name}@${VERSION}\` was qualified and the record is retained on branch \`${branch}\`, but this repository does not permit GitHub Actions to open pull requests."
+              echo ""
+              echo "Open it from: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/compare/${GITHUB_BASE_REF_OR_DEFAULT}...${branch}?expand=1"
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "PR creation was refused (Actions cannot create PRs on this repo); branch ${branch} is pushed and ready. See job summary for the compare URL."
+          else
+            echo "$pr_create_output" >&2
+            exit "$pr_create_status"
+          fi
