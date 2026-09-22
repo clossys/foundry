@@ -381,6 +381,47 @@ lane.
 Its registry-backed replay is retained post-publication evidence only, not a
 retroactive gate, adoption, grounding, or release clearance.
 
+### Once a version's record is retained, any change to that package needs a new version
+
+This is the ordering rule, stated plainly because it is not obvious from
+either gate's own name: **once a version's qualification record is retained,
+any further change to that package — packed or not — requires a new
+version.** Practically, that means fixing a test *before* generating a
+record, never after.
+
+The rule follows from two things that are both true and that neither gate
+alone states together. `scripts/check-release-readiness.mjs` compares packed
+content only — a test file excluded by `files` moving is invisible to it, by
+design (devDependencies and non-shipped files are exactly what that gate is
+right to ignore for the bump question it asks). `scripts/check-qualification-
+record-present.mjs` compares `candidate.packageTreeSha1` against the whole
+package directory, tests included, by equally deliberate design — see that
+script's own header for the prior incident (a record whose manifest digest
+still matched while its tree digest had silently drifted) that makes
+narrowing the tree hash to packed files only unsafe. A record is immutable
+once introduced, so a tree that has moved past it can never be reconciled;
+the version it was retained for can only be skipped.
+
+This cost a real version. `@clossys/architect@0.1.7` was bumped and had a
+retained, matching record. A follow-up pull request then fixed a test so it
+stopped mutating the real `dist/cli.js` in place — a test-only edit, correctly
+excluded from packed content, so `check-release-readiness.mjs` correctly
+reported no bump required. That same edit moved `packages/architect/`'s tree,
+and the 0.1.7 record — bound to the tree as it stood before the fix — went
+stale the moment the fix landed. 0.1.7 could never be published again; 0.1.8
+carries the same fix instead. See issue #920 for the full incident.
+
+`check-release-readiness.mjs` now consults the retained record for a
+package's CURRENT version whenever its own packed-content diff would
+otherwise report "no bump required," and says so explicitly when the two
+disagree — "no bump required for packed content, but the retained record for
+`<version>` is now stale; publishing requires a bump" — rather than reporting
+the permissive half alone. It does not weaken either gate: a stale record is
+still exactly what `check-qualification-record-present.mjs` alone would find
+at publish dispatch; this only means a pull request sees the same answer
+before merge, not only at the point an approval would otherwise be spent on a
+run that cannot succeed.
+
 ### The retained record's tarball must reproduce
 
 A qualification record binds exact tarball bytes and can never be rewritten,

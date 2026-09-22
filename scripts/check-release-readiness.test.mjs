@@ -1,11 +1,12 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { lineDigest } from "./lib/package-identity-transition.mjs";
+import { currentQualificationJoins } from "./lib/candidate-qualification.mjs";
 
 // Hermetic end-to-end coverage: every fixture is a real, throwaway git repo
 // under mkdtemp, and the real script is spawned exactly the way CI spawns
@@ -662,4 +663,105 @@ test("exits 2 (not 0) with nothing to check when no packages/ directory exists a
     assert.equal(r.code, 2, `expected exit 2, got ${r.code}: ${r.out}`);
     assert.match(r.out, /refusing to report a clean pass on an empty scan/);
   });
+});
+
+// --------------------------------------- issue #920: the retained-record join
+//
+// A fixture repo built the same way check-qualification-record-required.test.mjs
+// builds one: this repository's OWN governance/release-qualification-policy.json
+// is copied in (never re-invented, so the fixture can never drift from what
+// the real policy actually declares) and the fixture package is always named
+// "writer" against the real "@clossys/writer" policy entry. Unlike that
+// script's tests, these never bump the version relative to `--base` — the
+// whole point of issue #920 is that this gate must catch a stale record even
+// when NOTHING about the diff looks like it needs a bump.
+
+function qualificationFixtureRoot(t) {
+  const root = mkdtempSync(join(tmpdir(), "release-readiness-qualification-test-"));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  git(["init", "-q"], root);
+  mkdirSync(join(root, "governance"), { recursive: true });
+  cpSync("governance/release-qualification-policy.json", join(root, "governance/release-qualification-policy.json"));
+  mkdirSync(join(root, "governance/release-qualifications"), { recursive: true });
+  mkdirSync(join(root, "governance/release-qualification-adapters", "writer"), { recursive: true });
+  writeFileSync(join(root, "governance/release-qualification-adapters/writer/current-direct.json"), JSON.stringify({ fixtures: [] }));
+  writeFileSync(join(root, "package.json"), "{}\n");
+  writeFileSync(join(root, "package-lock.json"), "{}\n");
+  const pkgDir = join(root, "packages", "writer");
+  mkdirSync(join(pkgDir, "src"), { recursive: true });
+  writeManifest(pkgDir, {
+    name: "@clossys/writer",
+    version: "0.3.3",
+    private: false,
+    license: "MIT",
+    files: ["src", "!src/**/*.test.ts", "README.md", "LICENSE"],
+  });
+  writeFileSync(join(pkgDir, "src", "index.ts"), "export const x = 1;\n");
+  writeFileSync(join(pkgDir, "src", "index.test.ts"), "test('x', () => {});\n");
+  writeFileSync(join(pkgDir, "README.md"), "# writer\n");
+  writeFileSync(join(pkgDir, "LICENSE"), "MIT\n");
+  return { root, pkgDir };
+}
+
+function retainQualificationRecord(root) {
+  const joins = currentQualificationJoins(root, { name: "@clossys/writer", version: "0.3.3" });
+  mkdirSync(join(root, "governance/release-qualifications"), { recursive: true });
+  writeFileSync(
+    join(root, "governance/release-qualifications/clossys-writer-0.3.3.json"),
+    JSON.stringify({ candidate: { packageManifestSha256: joins.packageManifestSha256, packageTreeSha1: joins.packageTreeSha1 } }),
+  );
+}
+
+test("MUTATION (issue #920): a retained record that has gone stale forces needs-bump even though packed content is unchanged", (t) => {
+  const { root, pkgDir } = qualificationFixtureRoot(t);
+  gitCommit(root, "initial 0.3.3, not yet qualified");
+  // currentQualificationJoins()'s packageTreeSha1 is read from the COMMITTED
+  // tree at HEAD (`git rev-parse HEAD:<packageDir>`), even in its default
+  // "WORKTREE" mode — so the record must be retained, and every mutation
+  // measured against it, with a real commit in between; an uncommitted
+  // working-tree edit alone is invisible to it.
+  retainQualificationRecord(root); // computed from HEAD as it stands right now
+  const base = gitCommit(root, "retain qualification record for 0.3.3");
+
+  // The exact architect-0.1.7 shape: a test-only edit, excluded from packed
+  // content by `!src/**/*.test.ts`, with the version left untouched. This
+  // gate's own packed-content diff reports nothing changed — but the tree
+  // the record was qualified against has now moved.
+  writeFileSync(join(pkgDir, "src", "index.test.ts"), "test('x', () => { expect(x).toBe(1); });\n");
+  gitCommit(root, "test-only edit (packed content unaffected, but the tree moved)");
+
+  const r = run(["packages/writer", "--json", "--base", base], root);
+  assert.equal(r.code, 1, `expected exit 1, got ${r.code}: ${r.out}`);
+  const report = JSON.parse(r.out);
+  assert.equal(report.results[0].status, "needs-bump");
+  assert.equal(report.results[0].staleRetainedRecord, true);
+  assert.match(report.results[0].detail, /no bump required for packed content, but the retained record for 0\.3\.3.*is now stale/);
+  assert.match(report.results[0].detail, /packageTreeSha1/);
+});
+
+test("(issue #920, other direction) a retained record that still matches the tree leaves an unchanged package clean", (t) => {
+  const { root } = qualificationFixtureRoot(t);
+  gitCommit(root, "initial 0.3.3, not yet qualified");
+  retainQualificationRecord(root); // computed from HEAD as it stands right now
+  const base = gitCommit(root, "retain qualification record for 0.3.3");
+  // Nothing moves the tree after the record was retained.
+
+  const r = run(["packages/writer", "--json", "--base", base], root);
+  assert.equal(r.code, 0, `expected exit 0, got ${r.code}: ${r.out}`);
+  const report = JSON.parse(r.out);
+  assert.equal(report.results[0].status, "pass");
+  assert.equal(report.results[0].staleRetainedRecord, undefined);
+});
+
+test("(issue #920) a package with no retained record at all is not flagged — an ordinary in-progress package, not a finding", (t) => {
+  const { root } = qualificationFixtureRoot(t);
+  // No retainQualificationRecord() call at all: this version was simply
+  // never qualified yet, which is the ordinary pre-release state, not a
+  // stale-record finding.
+  const base = gitCommit(root, "0.3.3, never qualified");
+
+  const r = run(["packages/writer", "--json", "--base", base], root);
+  assert.equal(r.code, 0, `expected exit 0, got ${r.code}: ${r.out}`);
+  const report = JSON.parse(r.out);
+  assert.equal(report.results[0].status, "pass");
 });
