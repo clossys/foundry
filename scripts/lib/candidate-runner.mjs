@@ -384,6 +384,16 @@ function reachedWithEmptyOutput(result) {
   return !result.launchError && result.stdout === "" && result.stderr === "";
 }
 
+// npm's POSIX consumer topology is a symlink at node_modules/.bin/<name> whose
+// realpath is the installed target. On win32 npm instead writes shim scripts
+// (<name>.cmd, <name>.ps1, plus an extensionless POSIX shell shim for WSL/
+// git-bash) — there is no such symlink to resolve, so a POSIX realpath
+// comparison would always miss and would be indistinguishable from a genuine
+// missing-bin defect. This function is therefore only ever called off the
+// non-win32 branch below; the win32 case is its own explicit, labeled path
+// (see WINDOWS_BIN_LAUNCH_REASON) rather than a silent fall-through here.
+export const WINDOWS_BIN_LAUNCH_REASON = "not-applicable: npm on win32 installs .cmd/.ps1 shim scripts rather than a node_modules/.bin symlink; this qualification launch-shape probe does not yet invoke a platform shim (issue #916) and fails closed rather than reporting a silent pass";
+
 async function resolveInstalledBinLink(root, binName, targetPath) {
   const linkedBin = join(root, "node_modules", ".bin", binName);
   try {
@@ -900,10 +910,16 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
     }
     // Help and case probes must launch the installer-created `node_modules/.bin`
     // entry so argv[1] is the consumer-facing path, not the realpath target.
-    // A missing or redirected link is a mismatch, not a silent skip.
+    // A missing or redirected link is a mismatch, not a silent skip. win32 has
+    // no such symlink at all (npm writes shim scripts instead) — that is a
+    // distinct, self-describing `platform-unsupported:<bin>` mismatch, never
+    // folded into `installed-bin:<bin>` (a real, on-platform install defect)
+    // and never silently skipped to a pass. See WINDOWS_BIN_LAUNCH_REASON.
     const linkedBins = {};
+    const platformBinLaunchUnsupported = process.platform === "win32";
     const probeBins = new Set([...Object.keys(adapter.bins), ...adapter.cases.map((item) => item.bin)]);
     for (const bin of [...probeBins].sort()) {
+      if (platformBinLaunchUnsupported) { transcript.mismatches.push(`platform-unsupported:${bin}`); continue; }
       const linkedBin = targets[bin] ? await resolveInstalledBinLink(root, bin, targets[bin]) : null;
       if (!linkedBin) transcript.mismatches.push(`installed-bin:${bin}`);
       else linkedBins[bin] = linkedBin;
@@ -918,7 +934,7 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
       const linkedBin = linkedBins[bin];
       const result = linkedBin
         ? await runProcess(process.execPath, [linkedBin, "--help"], { cwd: root, env: sanitizedEnv(root), timeout: QUALIFICATION_PHASE_TIMEOUTS.probe })
-        : { exitCode: null, signal: null, launchError: true, stdout: "", stderr: "missing installed bin entry" };
+        : { exitCode: null, signal: null, launchError: true, stdout: "", stderr: platformBinLaunchUnsupported ? WINDOWS_BIN_LAUNCH_REASON : "missing installed bin entry" };
       transcript.observations.push(observation(root, `help:${bin}`, "help", adapter.bins[bin], result));
       if (result.exitCode !== adapter.bins[bin] || result.signal || result.launchError || reachedWithEmptyOutput(result)) transcript.mismatches.push(`help:${bin}`);
     }
@@ -959,7 +975,7 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
       const linkedBin = linkedBins[item.bin];
       const result = linkedBin
         ? await runProcess(process.execPath, [linkedBin, ...args], { cwd: root, env: sanitizedEnv(root), timeout: QUALIFICATION_PHASE_TIMEOUTS.probe })
-        : { exitCode: null, signal: null, launchError: true, stdout: "", stderr: "missing installed bin entry" };
+        : { exitCode: null, signal: null, launchError: true, stdout: "", stderr: platformBinLaunchUnsupported ? WINDOWS_BIN_LAUNCH_REASON : "missing installed bin entry" };
       if (adapter.retainRawCaseEvidence === true && linkedBin) await assertRawCaseInputsUnchanged(root, fixtureRoot, preparedCases, adapter.consumerOverlay, result.exitCode);
       const observed = observation(root, `case:${item.id}`, "case", item.exitCode, result);
       if (adapter.retainRawCaseEvidence === true && linkedBin) observed.rawCaseEvidence = rawCaseEvidence(root, linkedBin, args, snapshot, result);

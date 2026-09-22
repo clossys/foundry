@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { promisify } from "node:util";
-import { QUALIFICATION_PHASE_TIMEOUTS, assertCredentialFree, candidateNotInstalledMessage, containedRegularFile, installNpmrc, normalizedStream, packedFrameworkContexts, runCandidateQualification, runProcess, runtimeImportArguments, wildcardCapture } from "./candidate-runner.mjs";
+import { QUALIFICATION_PHASE_TIMEOUTS, WINDOWS_BIN_LAUNCH_REASON, assertCredentialFree, candidateNotInstalledMessage, containedRegularFile, installNpmrc, normalizedStream, packedFrameworkContexts, runCandidateQualification, runProcess, runtimeImportArguments, wildcardCapture } from "./candidate-runner.mjs";
 import { RELEASE_RUNTIME } from "./release-runtime.mjs";
 
 const execFile = promisify(execFileCallback);
@@ -308,6 +308,43 @@ test("a bin whose main-module guard does not realpath argv[1] is a help mismatch
   assert.equal(help.launch, "installed-bin");
   assert.equal(help.observedExitCode, 0);
   assert.equal(help.launchError, false);
+});
+
+function withPlatform(value) {
+  const original = Object.getOwnPropertyDescriptor(process, "platform");
+  Object.defineProperty(process, "platform", { value, configurable: true });
+  return () => Object.defineProperty(process, "platform", original);
+}
+
+test("win32 has no node_modules/.bin symlink: help and case probes fail closed with a distinct, self-describing mismatch rather than a silent pass", async (t) => {
+  const fixture = await syntheticPackage();
+  t.after(() => rm(fixture.root, { recursive: true, force: true }));
+  t.after(withPlatform("win32"));
+  const transcript = await runCandidateQualification(fixture);
+  assert.equal(transcript.ok, false);
+  // Distinct from `installed-bin:<bin>` (a real, on-platform install defect):
+  // this is a known platform gap, never silently folded into a pass and never
+  // reported under the same id as a genuine missing-symlink defect.
+  assert.ok(transcript.mismatches.includes("platform-unsupported:synthetic-check"));
+  assert.equal(transcript.mismatches.some((item) => item.startsWith("installed-bin:")), false);
+  assert.deepEqual(transcript.mismatches.filter((item) => item.startsWith("case:")).sort(), ["case:green", "case:indeterminate", "case:red"]);
+  const help = transcript.observations.find((item) => item.id === "help:synthetic-check");
+  assert.equal(help.launchError, true);
+  assert.equal(help.stderrSha256, sha256(WINDOWS_BIN_LAUNCH_REASON));
+  const cases = transcript.observations.filter((item) => item.kind === "case");
+  assert.equal(cases.length, 3);
+  assert.ok(cases.every((item) => item.launchError === true));
+  assert.ok(cases.every((item) => item.stderrSha256 === sha256(WINDOWS_BIN_LAUNCH_REASON)));
+});
+
+test("the win32 platform gate is scoped to win32: a genuinely working bin still passes qualification off that platform", async (t) => {
+  const fixture = await syntheticPackage();
+  t.after(() => rm(fixture.root, { recursive: true, force: true }));
+  assert.notEqual(process.platform, "win32", "this test's own runner must not already be win32 for the assertion below to be meaningful");
+  const transcript = await runCandidateQualification(fixture);
+  assert.equal(transcript.ok, true);
+  assert.equal(transcript.mismatches.some((item) => item.startsWith("platform-unsupported:")), false);
+  assert.ok(transcript.observations.filter((item) => item.kind === "help" || item.kind === "case").every((item) => item.launch === "installed-bin"));
 });
 
 test("tarball bytes, malformed candidate launch, and timeout outcomes fail closed", async (t) => {
