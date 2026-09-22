@@ -13,6 +13,23 @@
 // failure, not a verdict — the same three-way split every gate in this repo
 // uses).
 //
+// DEFAULT MODE ALSO CONSULTS THE RETAINED QUALIFICATION RECORD (issue #920)
+// ---------------------------------------------------------------------------
+// "No packed-file changes" is not the whole answer to "is a bump required."
+// A package can have no packed-content diff at all (this function's own
+// `pass` verdict) while its CURRENT version's retained qualification record
+// has already gone stale — the package directory moved (tests included) even
+// though nothing PACKED moved. That happened for real and burned
+// `@clossys/architect@0.1.7`, which could never be published: see
+// `staleRetainedRecordDetail()` below for the incident and why the two gates
+// (this one comparing packed content, check-qualification-record-present.mjs
+// comparing the whole tree) are each correct about what they measure. Both
+// `pass` returns in `evaluatePackageDiff()` consult that retained record
+// before reporting clean, and report `needs-bump` with an explicit sentence
+// when it no longer matches — the sentence this incident needed. This is
+// independent of whether THIS pull request bumped anything: it is asking
+// about the version already in the manifest, not about a diff.
+//
 // THE devDependencies EXEMPTION (default mode only — see issue #269)
 // --------------------------------------------------------------------
 // A dependency-bump pull request (Dependabot or otherwise) that touches only
@@ -141,6 +158,7 @@ import {
   planIdentityTransition,
   validateHistoryInventory,
 } from "./lib/package-identity-transition.mjs";
+import { qualificationRecordPresenceForCandidate } from "./check-qualification-record-present.mjs";
 
 function git(args, cwd) {
   return execFileSync("git", args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
@@ -496,6 +514,63 @@ function loadPackageContext(pkgDir) {
   return { absPkgDir, manifest, label, gitRoot, relPkgDir, relManifestPath };
 }
 
+// ISSUE #920 — THE RETAINED-RECORD RECONCILIATION
+// ---------------------------------------------------
+// A package can report "no bump required" by packed-content diffing alone
+// (the two `status: "pass"` returns below that this function reaches when
+// `changed.length === 0` or the change is devDependencies-only) while its
+// CURRENT version's retained qualification record has already gone stale —
+// the package directory moved (tests included; see
+// check-qualification-record-present.mjs's own header for the prior
+// incident that makes `packageTreeSha1` cover tests deliberately) even
+// though nothing PACKED moved. This gate and that one are each correct
+// about what they measure; the gap is that nothing reconciled them before
+// this function's own answer reached a contributor.
+//
+// This cost a real version: `@clossys/architect@0.1.7` was already bumped
+// and had a retained record. A follow-up pull request fixed a test so it
+// stopped mutating the real `dist/cli.js` — a test-only change, correctly
+// EXCLUDED from packed content by `files`, so this function correctly
+// reported no bump required. But that same edit moved the package's tree,
+// and qualification records are immutable (one introduction per path,
+// never corrected in place), so 0.1.7's retained record went stale the
+// moment that edit landed. Nothing said so until publish, and 0.1.7 could
+// never be published — see issue #920 for the full incident.
+//
+// This reuses check-qualification-record-present.mjs's own present/missing/
+// stale join (`qualificationRecordPresenceForCandidate`) rather than a
+// second, looser notion of "stale" invented here — the same "one join, two
+// callers" discipline check-qualification-record-required.mjs already
+// follows for the SAME function, just asked at a different moment (that
+// script asks about a version THIS pull request just bumped; this asks
+// about the version already sitting in the manifest, whether or not this
+// pull request touched it at all). The two can therefore never disagree
+// about what "stale" means, only about which candidate they're asking
+// about.
+//
+// Returns the target sentence issue #920 asks for when the CURRENT
+// version's retained record no longer matches the tree, or null when there
+// is no retained record for this version at all (an ordinary, unpublished
+// in-progress package — not a finding) or the record still matches.
+function staleRetainedRecordDetail(gitRoot, manifest) {
+  const presence = qualificationRecordPresenceForCandidate({
+    root: gitRoot,
+    candidate: { name: manifest.name, version: manifest.version },
+  });
+  if (presence.state !== "stale") return null;
+  const diagnoses = [];
+  if (presence.staleFields.includes("packageManifestSha256")) {
+    diagnoses.push(`its package.json has changed (recorded candidate.packageManifestSha256 ${presence.recordedManifestDigest}, current ${presence.currentManifestDigest})`);
+  }
+  if (presence.staleFields.includes("packageTreeSha1")) {
+    diagnoses.push(`its package directory has changed (recorded candidate.packageTreeSha1 ${presence.recordedTreeDigest}, current ${presence.currentTreeDigest})`);
+  }
+  return (
+    `no bump required for packed content, but the retained record for ${manifest.version} at ${presence.path} is now stale: ${diagnoses.join("; ")}. ` +
+    "Publishing requires a bump — once a version's record is retained, any change to that package, packed or not, requires a new version (docs/PUBLISHING.md)."
+  );
+}
+
 // DEFAULT MODE — diff-scoped against the merge base. See header comment.
 function evaluatePackageDiff(pkgDir, requestedBase) {
   const ctx = loadPackageContext(pkgDir);
@@ -579,6 +654,10 @@ function evaluatePackageDiff(pkgDir, requestedBase) {
   }
 
   if (changed.length === 0) {
+    const stale = staleRetainedRecordDetail(gitRoot, manifest);
+    if (stale) {
+      return { package: label, status: "needs-bump", staleRetainedRecord: true, detail: stale };
+    }
     return {
       package: label,
       status: "pass",
@@ -586,6 +665,10 @@ function evaluatePackageDiff(pkgDir, requestedBase) {
     };
   }
   if (isDevDependenciesOnlyChange(changed, oldFiles, newFiles)) {
+    const stale = staleRetainedRecordDetail(gitRoot, manifest);
+    if (stale) {
+      return { package: label, status: "needs-bump", staleRetainedRecord: true, detail: stale };
+    }
     return {
       package: label,
       status: "pass",
