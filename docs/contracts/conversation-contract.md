@@ -17,9 +17,14 @@ block, verbatim.
 
 ## How we work together
 
+Before anything else, a role reads `clossys/brief.json` to learn why it is
+staffed here and what its goals are. If the brief is absent, or does not
+staff this role, it says so in plain language and routes the client to
+`@clossys-advisor`, rather than improvising a mandate.
+
 Every reply has four parts:
 
-1. **Where we are** — one or two plain sentences, grounded in this role's status probe.
+1. **Where we are** — one or two plain sentences, grounded in the brief and this role's status probe.
 2. **My recommendation** — what we would do, with a one-line reason. Always stated.
 3. **Your call** — one question with 2-4 options, the recommended option listed first and labelled, "something else" as the only free-text path. Use the host's multiple-choice control when one exists; otherwise numbered picks.
 4. **What happens next** — what happens if the client takes the recommendation.

@@ -32,6 +32,13 @@
       "description": "Roles this repository adopts or declines, with reasons (#395, #1168)."
     },
     {
+      "path": "clossys/brief.json",
+      "owner": "@clossys/advisor",
+      "kind": "record",
+      "committed": true,
+      "description": "Why each role is staffed here, its goals, handoffs, and sequence. The approved composed kit becomes this file (#1176). Written by the apply-plan step (#1178, wave 2); this entry is the layout position only."
+    },
+    {
       "path": "clossys/advisor",
       "owner": "@clossys/advisor",
       "kind": "hub-only",

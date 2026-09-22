@@ -930,6 +930,38 @@ describe("skills manifest and health (#1183)", () => {
   });
 });
 
+describe("generated clossys/README.md", () => {
+  it("notes there is no engagement brief yet, then reflects clossys/brief.json once it exists", () => {
+    const directory = tempDir();
+    writeInventory(directory);
+    const applyOpts = composeApplyOptions(seedSkillCatalogue(["advisor"]));
+    applyWorkspacePlan(
+      host(directory),
+      { action: "adopt", owner: "acme", repository: "hub", directory, advisorVersion: "0.1.5" },
+      skeletonRoot,
+      applyOpts,
+    );
+    const before = readFileSync(join(directory, "clossys", "README.md"), "utf8");
+    expect(before).toContain("No engagement brief yet.");
+    expect(before).toContain("@clossys-advisor` writes `clossys/brief.json`");
+
+    // Written by the apply-plan step (#1178, wave 2) in real use; here a
+    // fixture stands in for that so this generator's own behavior is
+    // covered without depending on that unimplemented step.
+    mkdirSync(join(directory, "clossys"), { recursive: true });
+    writeFileSync(join(directory, "clossys", "brief.json"), `${JSON.stringify({ schemaVersion: 1 })}\n`);
+    applyWorkspacePlan(
+      host(directory),
+      { action: "resume", owner: "acme", repository: "hub", directory, clone: false },
+      skeletonRoot,
+      applyOpts,
+    );
+    const after = readFileSync(join(directory, "clossys", "README.md"), "utf8");
+    expect(after).toContain("`clossys/brief.json` — why each role is staffed here, its goals, handoffs, and sequence (owner: @clossys/advisor).");
+    expect(after).not.toContain("No engagement brief yet.");
+  });
+});
+
 describe("observeWorkspace", () => {
   it("treats a GitHub origin as appointable even when the directory already has files", () => {
     const directory = tempDir();
