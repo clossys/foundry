@@ -1,14 +1,16 @@
 // This package handles secret NAMES, OWNERS, AGES, STORES, ROTATION
 // POLICIES, REVOCATION RECORDS, and DIGESTS — never a secret VALUE. This
-// test is the two-part proof that custody, rotation, revocation, and
-// distribution cannot leak one:
+// test is the two-part proof that every verb module (custody, rotation,
+// revocation, distribution, credential, controlled-key-rate, and any
+// future addition) cannot leak one:
 //
-//   1. STATIC — none of the five new verb modules imports anything capable
-//      of reading a real secret (the resolution client/adapters, the
-//      Infisical subpath, `process.env`) or performing I/O (`fetch`,
-//      `readFileSync`, `console.*`). A module that never imports a way to
-//      read a value cannot leak one, no matter what its functions do with
-//      their inputs.
+//   1. STATIC — none of the verb modules (see NEW_VERB_MODULES below for
+//      how that set is derived) imports anything capable of reading a
+//      real secret (the resolution client/adapters, the Infisical
+//      subpath, `process.env`) or performing I/O (`fetch`, `readFileSync`,
+//      `console.*`). A module that never imports a way to read a value
+//      cannot leak one, no matter what its functions do with their
+//      inputs.
 //
 //   2. RUNTIME — every record these modules produce has a closed, exact set
 //      of fields. A decoy value-shaped string is passed through every free-
@@ -31,13 +33,33 @@ import { evaluateRotation } from "./rotation.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
-const NEW_VERB_MODULES = ["custody.ts", "rotation.ts", "revocation.ts", "distribution.ts", "credential.ts"];
+// DERIVED from index.ts's own export statements, not hand-listed (#907): a
+// hand-written array here silently stops covering "every verb module" the
+// moment a new one is added — which is exactly what happened before this
+// fix, when controlled-key-rate.ts shipped as a sixth verb module and was
+// never added to the list, so this test never actually checked it.
+//
+// index.ts's barrel re-exports both the small resolution/infra layer
+// (client.ts resolves a value; adapters.ts wraps env/test resolution;
+// catalog.ts wires them together; errors.ts and types.ts are pure
+// declarations) and every verb module (custody, rotation, revocation,
+// distribution, credential, controlled-key-rate, ...). The infra layer
+// legitimately needs the I/O this test forbids, so it's excluded by name;
+// everything else index.ts exports is a verb module and is checked here
+// automatically, without anyone updating a list.
+const INFRA_MODULES = new Set(["client", "adapters", "catalog", "errors", "types"]);
+
+const indexSource = readFileSync(join(here, "index.ts"), "utf8");
+const NEW_VERB_MODULES = Array.from(new Set(Array.from(indexSource.matchAll(/from\s+"\.\/([a-zA-Z0-9-]+)\.js"/g), (match) => match[1])))
+  .filter((name) => !INFRA_MODULES.has(name))
+  .map((name) => `${name}.ts`);
 
 // Anything that could put a real secret value in reach: reading the
 // environment, importing the resolution client/adapters or the Infisical
 // subpath, making a network call, reading a file, or printing. None of the
-// five new verb modules need any of these — custody, rotation, revocation,
-// distribution, and credential lifecycle are metadata operations end to end.
+// verb modules need any of these — custody, rotation, revocation,
+// distribution, credential, controlled-key-rate, and any future addition
+// are metadata operations end to end.
 const FORBIDDEN_PATTERNS: readonly RegExp[] = [
   /process\.env/,
   /from\s+["']\.\/client\.js["']/,
@@ -51,6 +73,12 @@ const FORBIDDEN_PATTERNS: readonly RegExp[] = [
 ];
 
 describe("static: no verb module imports anything capable of resolving a value", () => {
+  it("the derived verb-module set is non-empty", () => {
+    // A derivation that quietly resolved to [] would make every test below
+    // vacuously pass without checking a single file — see #907.
+    expect(NEW_VERB_MODULES.length).toBeGreaterThan(0);
+  });
+
   for (const file of NEW_VERB_MODULES) {
     it(`${file} imports no resolution/provider module and performs no I/O`, () => {
       const source = readFileSync(join(here, file), "utf8");
