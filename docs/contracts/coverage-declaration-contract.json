@@ -1,18 +1,18 @@
 {
   "schemaVersion": 1,
   "kind": "foundry-coverage-declaration",
-  "trackingIssues": [395, 352, 504],
+  "trackingIssues": [395, 352, 504, 1171],
   "shape": {
     "fields": ["schemaVersion", "repository", "declaredAbsences"],
     "declaredAbsenceFields": ["package", "reason"],
     "rule": "One repository writes at most one declaration about itself. schemaVersion is exactly the integer this contract's own producing package's COVERAGE_DECLARATION_SCHEMA_VERSION exports (currently 1); repository is a non-empty string identifying the repository the declaration is about, opaque to the reader; declaredAbsences is an array (may be empty) naming every package this repository has DECIDED, out loud, that it has no lane for. Each entry's package is a non-empty string and each entry's reason is a non-empty string -- an absence with no reason does not qualify as declared-absent and is read as though nothing was declared at all. A package must not appear twice in one declaration's declaredAbsences. This is the one shape @clossys/observer's coverage-declaration.ts parses (validateCoverageDeclarationShape / parseCoverageDeclaration) -- this contract describes that parser's existing rule; it does not define a second one, and the two must never diverge."
   },
   "declaredLocation": {
-    "path": ".clossys/coverage-declaration.json",
+    "path": "clossys/coverage.json",
     "ref": "the repository's own default branch",
-    "transport": "a plain, unauthenticated HTTP GET against the hosting provider's raw-content endpoint for that path on that ref (for example https://raw.githubusercontent.com/<owner>/<repo>/<default-branch>/.clossys/coverage-declaration.json)",
+    "transport": "a plain, unauthenticated HTTP GET against the hosting provider's raw-content endpoint for that path on that ref (for example https://raw.githubusercontent.com/<owner>/<repo>/<default-branch>/clossys/coverage.json)",
     "rule": "Exactly one documented on-disk location, the same for every repository in the fleet, chosen so a fleet aggregate can read it with no per-account credential: not this fleet's own npm registry (GitHub Packages requires an authenticated token to read even a public package) and not the GitHub contents/GraphQL API (rate-limited without a token). A 404 at this path means the repository has never declared anything -- read as `declaration: undefined`, distinct from a declaration that was found but fails shape validation, which reads as unclassified with reason declaration-unreadable rather than as nothing declared. A GET's response body is a JSON string; the parser accepts that raw string directly, or an already-JSON.parse'd value for a caller that parsed it itself, and fails closed (a validation finding, never a thrown error) on either.",
-    "note": "`.clossys/` is the same consumer-facing directory @clossys/launcher already writes to (workspace.json, inventory.json) -- a client's tree gets one dotfolder for this catalogue's own state, never a second one named after this supplier repository's own internal name."
+    "note": "Per #1171 (owner-approved 2026-09-22): the consumer layout is one visible `clossys/` folder per repository, one subfolder per role -- not a hidden `.clossys/`, which #1171 retires along with root-level `strategy/`. `coverage.json` sits at that folder's own root (beside future per-role subfolders such as `clossys/strategist/`), listed by name in #1171's proposed tree. Visible because, per #1171's own rule 2, these are the business's own records, not machine state -- only generated files live under `clossys/.state/`."
   },
   "installedDefinition": {
     "decision": "any-manifest",

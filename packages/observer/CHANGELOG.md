@@ -26,6 +26,10 @@ All notable changes to this package are documented here. Format follows
 
 ### Notes
 
+- The declaration a consuming repository writes lives at `clossys/coverage.json`
+  (a single visible `clossys/` folder, one file per repository) -- per #1171
+  (owner-approved 2026-09-22), not the hidden `.clossys/` this location
+  briefly used before that decision. Nothing shipped at the earlier path.
 - The collector that actually walks a real checkout's manifests and
   populates `manifestPaths` (#395) lives in this repository outside this
   package, on purpose: this package stays zero I/O and grades whatever it

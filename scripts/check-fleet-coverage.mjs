@@ -72,7 +72,7 @@
 // This script searches each manifest ONLY for the fleet's own declared
 // package catalog (`--packages`) -- it never enumerates a manifest's other
 // dependencies, never reports what else is installed, and never inspects
-// or prints the CONTENTS of a repository's `.clossys/coverage-declaration.json`
+// or prints the CONTENTS of a repository's `clossys/coverage.json`
 // beyond what `@clossys/observer`'s own parser already exposes (`package`
 // and `reason` -- see `renderCellDetail` below). A declared-absent cell's own
 // `reason` is the declaring repository's own prose, which this script
@@ -154,10 +154,11 @@ const IGNORED_DIRECTORIES = new Set([
 // (packages/integrator's own inventory reader) without importing it.
 const DEPENDENCY_FIELDS = ["peerDependencies", "optionalDependencies", "devDependencies", "dependencies", "resolutions", "overrides"];
 
-// .clossys/ -- the same consumer-facing directory @clossys/launcher already
-// writes to (workspace.json, inventory.json), never a second dotfolder
-// named after this supplier repository's own internal name.
-const DECLARATION_REL_PATH = ".clossys/coverage-declaration.json";
+// clossys/coverage.json -- per #1171 (owner-approved 2026-09-22), the
+// consumer layout is one VISIBLE `clossys/` folder per repository, one
+// subfolder per role, never a hidden `.clossys/`: these are the business's
+// own records, not machine state.
+const DECLARATION_REL_PATH = "clossys/coverage.json";
 
 /** Parses argv into structured options. Exported so its edge cases are testable without a process. */
 export function parseArgs(argv) {
@@ -323,7 +324,7 @@ function walkManifests(root) {
       continue; // unreadable directory: skip it, do not abort the whole walk
     }
     for (const entry of entries) {
-      if (entry.name.startsWith(".") && entry.name !== ".clossys") continue; // dotfiles/dirs other than the declaration's own home
+      if (entry.name.startsWith(".")) continue; // dotfiles/dirs -- clossys/coverage.json is no longer hidden, so no exception is needed here
       if (entry.isDirectory()) {
         if (IGNORED_DIRECTORIES.has(entry.name)) continue;
         if (depth >= MAX_DEPTH) continue;
