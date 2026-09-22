@@ -17,15 +17,19 @@ export function MarketingView({
   heroDescription,
   heroActions,
   heroMedia,
+  heroGround = "base",
   featuresHeading,
   featuresDescription,
   features,
+  featuresGround = "sunken",
   faqHeading,
   faqDescription,
   faq,
+  faqGround = "base",
   ctaHeading,
   ctaDescription,
   ctaAction,
+  ctaGround = "sunken",
   footerSecondary,
   className,
   style,
@@ -42,10 +46,11 @@ export function MarketingView({
           actions={heroActions}
           media={heroMedia}
           composition={heroMedia ? "split" : "editorial"}
+          ground={heroGround}
         />
-        <FeatureGrid heading={featuresHeading} description={featuresDescription} items={features} />
-        {faq !== undefined ? <Faq heading={faqHeading} description={faqDescription} items={faq} /> : null}
-        <Hero headingLevel={2} heading={ctaHeading} description={ctaDescription} actions={ctaAction} />
+        <FeatureGrid heading={featuresHeading} description={featuresDescription} items={features} ground={featuresGround} />
+        {faq !== undefined ? <Faq heading={faqHeading} description={faqDescription} items={faq} ground={faqGround} /> : null}
+        <Hero headingLevel={2} heading={ctaHeading} description={ctaDescription} actions={ctaAction} ground={ctaGround} />
       </main>
       <SiteFooter secondary={footerSecondary} />
     </div>

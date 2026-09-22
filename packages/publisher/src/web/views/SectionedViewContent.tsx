@@ -1,3 +1,4 @@
+import { SECTION_GROUND_CLASSES } from "@clossys/designer/blocks/server";
 import type { ReactNode } from "react";
 import type { ResolvedSectionedViewAction, ResolvedSectionedViewDocument, ResolvedSectionedViewHeroMedia, ResolvedSectionedViewSection, SectionedViewGround, SectionedViewStatTrend, SectionedViewStatus, SectionedViewStatusDisposition } from "../../core/sectioned-view.js";
 import { isRenderAsset } from "../../internal/assets.js";
@@ -18,6 +19,16 @@ export interface SectionedViewBlockSet {
   /** `groups` and `items` are each optional; the resolved document guarantees exactly one is present. */
   StatusList(props: GroundProps & { labels: Readonly<Record<SectionedViewStatus, string>> & { dispositions: Readonly<Record<SectionedViewStatusDisposition, string>> }; groups?: readonly { id: string; heading: string; items: readonly StatusListItemProps[] }[]; items?: readonly StatusListItemProps[]; legendLabel: string }): ReactNode;
   Stat(props: { id: string; label: string; value: string; delta?: string; trend?: SectionedViewStatTrend; description?: string }): ReactNode;
+  PricingTable(props: {
+    id: string;
+    eyebrow?: string;
+    heading: string;
+    description?: string;
+    items: readonly { id: string; name: string; price: string; description?: string; features: readonly string[]; cta?: string }[];
+    headingLevel: HeadingLevel;
+    ground: SectionedViewGround;
+  }): ReactNode;
+  Testimonial(props: { quote: string; attributorName: string; attributorRole?: string }): ReactNode;
 }
 
 /** Whether this view owns the page's `main` landmark or renders inside one the page already owns. */
@@ -117,6 +128,51 @@ function assertHeroMedia(value: unknown, path: string): void {
   }
 }
 
+function assertStringArray(value: unknown, path: string): void {
+  if (!Array.isArray(value)) throw new Error(`${path} must be a resolved string array.`);
+  for (let index = 0; index < value.length; index += 1) {
+    if (!Object.hasOwn(value, index)) throw new Error(`${path}.${index} is a sparse array hole.`);
+    if (!nonBlank(value[index])) throw new Error(`${path}.${index} must be resolved non-blank copy.`);
+  }
+}
+
+function assertPricingItems(value: unknown, path: string): void {
+  dense(value, path);
+  closedItems(value, path, ["id", "name", "price", "description", "features", "cta"]);
+  itemIds(value, path);
+  for (let index = 0; index < value.length; index += 1) {
+    const item = value[index] as Record<string, unknown>;
+    if (!nonBlank(item.name) || !nonBlank(item.price) || (item.description !== undefined && !nonBlank(item.description)) || (item.cta !== undefined && !nonBlank(item.cta))) {
+      throw new Error(`${path}.${index} must carry resolved non-blank name and price copy.`);
+    }
+    assertStringArray(item.features, `${path}.${index}.features`);
+  }
+}
+
+function assertTestimonialItems(value: unknown, path: string): void {
+  dense(value, path);
+  closedItems(value, path, ["id", "quote", "attributorName", "attributorRole"]);
+  itemIds(value, path);
+  for (let index = 0; index < value.length; index += 1) {
+    const item = value[index] as Record<string, unknown>;
+    if (!nonBlank(item.quote) || !nonBlank(item.attributorName) || (item.attributorRole !== undefined && !nonBlank(item.attributorRole))) {
+      throw new Error(`${path}.${index} must carry resolved non-blank quote and attributorName copy.`);
+    }
+  }
+}
+
+function assertStatSectionItems(value: unknown, path: string): void {
+  dense(value, path);
+  closedItems(value, path, ["id", "label", "value", "delta"]);
+  itemIds(value, path);
+  for (let index = 0; index < value.length; index += 1) {
+    const item = value[index] as Record<string, unknown>;
+    if (!nonBlank(item.label) || !nonBlank(item.value) || (item.delta !== undefined && !nonBlank(item.delta))) {
+      throw new Error(`${path}.${index} must carry resolved non-blank label and value copy.`);
+    }
+  }
+}
+
 function assertStatItems(value: unknown, path: string): void {
   dense(value, path);
   closedItems(value, path, ["id", "label", "value", "delta", "description", "trend"]);
@@ -181,10 +237,17 @@ export function assertRenderableSectionedViewDocument(document: unknown): assert
     if (!nonBlank(record.id) || !FRAGMENT_ID.test(record.id)) throw new Error(`${path}.id must be a unique fragment-safe id.`);
     if (sectionIds.has(record.id)) throw new Error(`${path}.id duplicates an earlier section.`);
     sectionIds.add(record.id);
-    if (typeof record.kind !== "string" || !["hero", "feature-grid", "faq", "ordered-step-sequence", "status-list", "stat-grid"].includes(record.kind)) throw new Error(`${path}.kind is not a supported SectionedView kind.`);
+    if (
+      typeof record.kind !== "string"
+      || !["hero", "feature-grid", "faq", "ordered-step-sequence", "status-list", "stat-grid", "pricing", "testimonial", "stat"].includes(record.kind)
+    ) throw new Error(`${path}.kind is not a supported SectionedView kind.`);
     if (record.kind === "hero") heroCount += 1;
     if (!GROUNDS.includes(record.ground as SectionedViewGround)) throw new Error(`${path}.ground is not a supported section ground.`);
-    copyFields(record, path, ["heading"], ["eyebrow", "description"]);
+    if (record.kind === "testimonial" || record.kind === "stat") {
+      copyFields(record, path, [], ["heading"]);
+    } else {
+      copyFields(record, path, ["heading"], ["eyebrow", "description"]);
+    }
     if (record.kind === "hero") {
       if (!closed(record, ["id", "kind", "ground", "eyebrow", "heading", "description", "actions", "media"])) throw new Error(`${path} has keys not allowed for a hero section.`);
       assertActions(record.actions, `${path}.actions`);
@@ -194,6 +257,21 @@ export function assertRenderableSectionedViewDocument(document: unknown): assert
     if (record.kind === "stat-grid") {
       if (!closed(record, ["id", "kind", "ground", "eyebrow", "heading", "description", "items"])) throw new Error(`${path} has keys not allowed for a stat-grid section.`);
       assertStatItems(record.items, `${path}.items`);
+      continue;
+    }
+    if (record.kind === "pricing") {
+      if (!closed(record, ["id", "kind", "ground", "eyebrow", "heading", "description", "items"])) throw new Error(`${path} has keys not allowed for a pricing section.`);
+      assertPricingItems(record.items, `${path}.items`);
+      continue;
+    }
+    if (record.kind === "testimonial") {
+      if (!closed(record, ["id", "kind", "ground", "heading", "items"])) throw new Error(`${path} has keys not allowed for a testimonial section.`);
+      assertTestimonialItems(record.items, `${path}.items`);
+      continue;
+    }
+    if (record.kind === "stat") {
+      if (!closed(record, ["id", "kind", "ground", "heading", "items"])) throw new Error(`${path} has keys not allowed for a stat section.`);
+      assertStatSectionItems(record.items, `${path}.items`);
       continue;
     }
     if (record.kind === "status-list") {
@@ -239,13 +317,13 @@ const SECTION_STACK = "flex flex-col gap-2xl py-2xl";
 const LANDMARKS: readonly SectionedViewLandmark[] = ["main", "none"];
 
 export function createSectionedView(blocks: SectionedViewBlockSet) {
-  const { Hero, FeatureGrid, Faq, OrderedStepSequence, StatusList, Stat } = blocks;
+  const { Hero, FeatureGrid, Faq, OrderedStepSequence, StatusList, Stat, PricingTable, Testimonial } = blocks;
   return function SectionedView({ document, landmark = "main", resolveAssetId, prefersReducedMotion }: SectionedViewProps) {
     let sections: ReactNode[];
     try {
       assertRenderableSectionedViewDocument(document);
       if (!LANDMARKS.includes(landmark)) throw new Error(`landmark must be one of ${LANDMARKS.join(", ")}.`);
-      sections = document.sections.map((section, index) => renderSection(section, index, { Hero, FeatureGrid, Faq, OrderedStepSequence, StatusList, Stat }, { resolveAssetId, prefersReducedMotion }));
+      sections = document.sections.map((section, index) => renderSection(section, index, { Hero, FeatureGrid, Faq, OrderedStepSequence, StatusList, Stat, PricingTable, Testimonial }, { resolveAssetId, prefersReducedMotion }));
     } catch (error) {
       const message = error instanceof Error ? error.message : "unknown invalid resolved model";
       throw new RenderError("resolution-failed", `SectionedView refused an invalid resolved document: ${message}`);
@@ -359,5 +437,55 @@ function renderSection(section: ResolvedSectionedViewSection, index: number, blo
     case "ordered-step-sequence": return <blocks.OrderedStepSequence key={section.id} id={section.id} eyebrow={section.eyebrow} heading={section.heading} description={section.description} items={section.items} headingLevel={2} ground={section.ground} />;
     case "status-list": return <blocks.StatusList key={section.id} id={section.id} eyebrow={section.eyebrow} heading={section.heading} description={section.description} labels={section.labels} groups={section.groups} items={section.items} legendLabel={section.heading} headingLevel={2} ground={section.ground} />;
     case "stat-grid": return renderStatGrid(section, blocks);
+    case "pricing":
+      return (
+        <blocks.PricingTable
+          key={section.id}
+          id={section.id}
+          eyebrow={section.eyebrow}
+          heading={section.heading}
+          description={section.description}
+          items={section.items}
+          headingLevel={2}
+          ground={section.ground}
+        />
+      );
+    case "testimonial": {
+      const colors = SECTION_GROUND_CLASSES[section.ground];
+      const surface = SECTION_GROUND_CLASSES[section.ground].surface;
+      return (
+        <div key={section.id} id={section.id} className={`flex flex-col gap-lg ${surface}`}>
+          {section.heading ? (
+            <h2 className={`text-h2 font-display ${colors.primary}`}>{section.heading}</h2>
+          ) : null}
+          <div className="grid grid-cols-1 gap-lg tablet:grid-cols-2">
+            {section.items.map((item) => (
+              <blocks.Testimonial
+                key={item.id}
+                quote={item.quote}
+                attributorName={item.attributorName}
+                attributorRole={item.attributorRole}
+              />
+            ))}
+          </div>
+        </div>
+      );
+    }
+    case "stat": {
+      const colors = SECTION_GROUND_CLASSES[section.ground];
+      const surface = SECTION_GROUND_CLASSES[section.ground].surface;
+      return (
+        <div key={section.id} id={section.id} className={`flex flex-col gap-lg ${surface}`}>
+          {section.heading ? (
+            <h2 className={`text-h2 font-display ${colors.primary}`}>{section.heading}</h2>
+          ) : null}
+          <div className="grid grid-cols-1 gap-lg tablet:grid-cols-2 desktop:grid-cols-4">
+            {section.items.map((item) => (
+              <blocks.Stat key={item.id} id={item.id} label={item.label} value={item.value} delta={item.delta} />
+            ))}
+          </div>
+        </div>
+      );
+    }
   }
 }

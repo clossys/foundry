@@ -1,4 +1,3 @@
-import { createElement } from "react";
 import { describe, expect, it } from "vitest";
 import { RenderError } from "../../internal/errors.js";
 import { defineWebTemplate } from "./defineWebTemplate.js";
@@ -7,7 +6,7 @@ import { nodeSlotKeys, slotKindsFor } from "./webTemplates.js";
 const minimalOptions = {
   name: "AcmeWidget",
   flow: { slots: [{ key: "heading", required: true }, { key: "caption" }] },
-  build: (content: Record<string, unknown>) => createElement("div", null, content.heading as never),
+  blocks: [{ kind: "page-header" as const, title: "heading" }],
 };
 
 function expectInvalidDefinition(fn: () => unknown): void {
@@ -49,8 +48,12 @@ describe("defineWebTemplate — happy path", () => {
   it("accepts a slot declared with more than one kind, e.g. both copy and node", () => {
     const template = defineWebTemplate({
       ...minimalOptions,
-      flow: { slots: [{ key: "widget", required: true }] },
+      flow: { slots: [{ key: "heading", required: true }, { key: "widget", required: true }] },
       slotKinds: { widget: ["copy", "node"] },
+      blocks: [
+        { kind: "page-header", title: "heading" },
+        { kind: "node-chapter", node: "widget" },
+      ],
     });
     expect(slotKindsFor(template, "widget")).toEqual(["copy", "node"]);
   });
@@ -139,7 +142,13 @@ describe("defineWebTemplate — fails closed with RenderError('invalid-template-
     expectInvalidDefinition(() => defineWebTemplate({ ...minimalOptions, repeatingSlots: [{ key: "faq", fields: [{ key: "question" }, { key: "question" }] }] }));
   });
 
-  it("rejects a non-function build", () => {
-    expectInvalidDefinition(() => defineWebTemplate({ ...minimalOptions, build: "not-a-function" as never }));
+  it("rejects a consumer-supplied build function", () => {
+    expectInvalidDefinition(() =>
+      defineWebTemplate({ ...minimalOptions, build: () => null } as never),
+    );
+  });
+
+  it("rejects an empty blocks array", () => {
+    expectInvalidDefinition(() => defineWebTemplate({ ...minimalOptions, blocks: [] }));
   });
 });

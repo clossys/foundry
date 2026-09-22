@@ -88,6 +88,9 @@ describe("MarketingView — realistic end-to-end render, every slot filled", () 
     expect(html).toContain("Placeholder feature C");
     expect(html).toContain("Placeholder CTA heading");
     expect(head.title).toBe("Acme Wordmark");
+    expect(html).toContain('class="flex flex-col gap-lg bg-surface-sunken"');
+    expect(html).toContain('class="bg-surface-sunken flex flex-col gap-xl"');
+    expect(html).not.toMatch(/class="[^"]*bg-surface-sunken[^"]*"[^>]*>[\s\S]*Placeholder hero heading/);
   });
 });
 

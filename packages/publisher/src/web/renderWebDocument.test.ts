@@ -352,7 +352,11 @@ describe("renderWebDocument — node-kind slots (options.nodes), via a consumer-
     },
     slotKinds: { widget: ["node"] },
     repeatingSlots: [{ key: "items" }],
-    build: (content) => createElement("section", null, createElement("h1", null, content.heading), content.widget, content.caption ?? null),
+    blocks: [
+      { kind: "page-header", title: "heading", description: "caption" },
+      { kind: "node-chapter", node: "widget" },
+      { kind: "stat-grid", repeating: "items" },
+    ],
   });
 
   const rendererFor = (template = WIDGET_TEMPLATE) => createWebRenderer({ templates: [template] });
@@ -480,12 +484,15 @@ describe("renderWebDocument — node-kind slots (options.nodes), via a consumer-
         name: "OptionalWidgetView",
         flow: { slots: [{ key: "heading", required: true }, { key: "widget" }] },
         slotKinds: { widget: ["node"] },
-        build: (content) => createElement("section", null, createElement("h1", null, content.heading), content.widget ?? createElement("em", null, "no widget")),
+        blocks: [
+          { kind: "page-header", title: "heading" },
+          { kind: "node-chapter", node: "widget" },
+        ],
       }),
     );
     const doc: ComposeDocument = { ...baseWidgetDoc, template: "OptionalWidgetView" };
     const { element } = renderer.renderWebDocument(doc);
-    expect(renderToStaticMarkup(element)).toContain("no widget");
+    expect(renderToStaticMarkup(element)).toContain("Acme Widget Page");
   });
 });
 
