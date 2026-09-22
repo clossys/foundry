@@ -1,0 +1,275 @@
+name: Qualify candidate
+
+# Produce and retain a pre-publication release-qualification record for one
+# already-merged package version, on the exact pinned runtime
+# scripts/lib/release-runtime.mjs requires (issue #948).
+#
+# WHY THIS WORKFLOW EXISTS
+# ------------------------
+# scripts/run-candidate-qualification.mjs refuses before it packs anything
+# unless the runtime is EXACTLY Node v24.19.0, npm 11.17.0, and zlib
+# 1.3.2.1-motley-3246f1b (scripts/lib/release-runtime.mjs). That pin is
+# correct and must not be relaxed: a qualification record exists to prove
+# exact artifact bytes, and bytes produced by a different toolchain prove
+# different bytes. A developer machine running a different Node/npm/zlib
+# tuple cannot produce a record at all, and every affected merge has instead
+# accumulated an acknowledged, issue-referenced deferral in
+# governance/release-qualification-deferrals.json — a deferral acknowledges
+# a merge, never a publication, so every one of those versions has stayed
+# unpublishable.
+#
+# ci.yml's own required `build and test` job already proves this exact
+# runtime is available for free in GitHub Actions, in its
+# "Assert qualified-directory release runtime" step: it pins the identical
+# actions/setup-node commit SHA and asserts the identical three values. This
+# workflow reuses that shape rather than inventing a second one, and is the
+# workflow #948's own close path names: "Produce the record on a machine
+# running the pinned runtime — or in the workflow that already runs it."
+#
+# CREDENTIAL-FREE QUALIFICATION, ON PURPOSE
+# ------------------------------------------
+# scripts/lib/candidate-runner.mjs's sanitizedEnv() deliberately builds the
+# qualification child's environment from a hardcoded literal rather than
+# spreading process.env, so a candidate can never inherit a parent-shell
+# credential, and assertCredentialFree() (called before qualification starts)
+# refuses an ambient NODE_AUTH_TOKEN/NPM_TOKEN/GH_PACKAGES_TOKEN/
+# GITHUB_TOKEN/GH_TOKEN outright. Every step up to and including "Run fixed
+# candidate qualification credential-free" below therefore never sets any of
+# those, this job never uses the npm-publish environment, and no step here
+# adds a CA-trust variable (NODE_EXTRA_CA_CERTS, NODE_USE_SYSTEM_CA) either.
+# AGENTS.md's "Cloud sessions" section explains the hazard that guards
+# against: in a sandbox class whose outbound HTTPS is transparently
+# intercepted and re-terminated by a policy-enforcing egress proxy, trusting
+# that proxy's CA would mean qualification — a gate whose entire purpose is
+# proving exact artifact bytes — trusting an interception path for the very
+# bytes it qualifies. That is not a call this workflow makes unilaterally,
+# so it does not forward a CA-trust variable, and instead runs on a
+# GitHub-hosted runner talking to the real, credential-free public registry.
+#
+# The later "Push branch and open pull request" step DOES use a token — the
+# ambient GITHUB_TOKEN, scoped to this repository only, to push a branch and
+# open a PR through the GitHub API. That is a version-control credential, not
+# a registry-publish one, and it is deliberately scoped to that one step's
+# own `env:` (never the job's), after qualification has already produced and
+# validated its transcript — so it can never reach assertCredentialFree()'s
+# check.
+#
+# WHAT THIS WORKFLOW DOES NOT DO
+# -------------------------------
+# It never publishes anything. Publication stays a separate, manually
+# dispatched publish.yml run, gated behind its own npm-publish environment
+# and its own preflight join against the retained record this workflow
+# produces. It never touches main directly: it pushes a branch and opens a
+# pull request for a human to review and merge, the same as any other
+# change here.
+on:
+  workflow_dispatch:
+    inputs:
+      package:
+        description: Package directory under packages/ to qualify
+        required: true
+        type: string
+      version:
+        description: >-
+          Version to qualify. Leave empty to use the checked-out ref's
+          current packages/<package>/package.json version — this workflow
+          qualifies the checked-out commit's manifest as it stands, it never
+          bumps a version itself, so an explicit value must already match
+          that manifest or the run fails closed.
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+# Serial per package, not per package+version: two dispatches for the same
+# package must never race on governance/release-qualification-deferrals.json
+# (a single shared file every dispatch reads and rewrites) or on the branch
+# name a third dispatch for a different version of the same package would
+# not collide with, but a retry of the SAME version would.
+concurrency:
+  group: qualify-candidate-${{ inputs.package }}
+  cancel-in-progress: false
+
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      # Validated FIRST, before any later step interpolates ${{ inputs.package }}
+      # into a shell path or a `working-directory:` field — the same ordering
+      # publish.yml uses for its own "Validate package input" step, and for
+      # the same reason: a workflow_dispatch string input is untrusted until
+      # shape-checked.
+      - name: Validate package input
+        env:
+          PKG: ${{ inputs.package }}
+        run: |
+          if ! [[ "$PKG" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+            echo "::error title=Invalid package input::package must match ^[a-zA-Z0-9_-]+\$ (got: $PKG)"
+            exit 1
+          fi
+          if [ ! -f "packages/$PKG/package.json" ]; then
+            echo "::error title=Unknown package::packages/$PKG/package.json does not exist."
+            exit 1
+          fi
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24.19.0
+
+      - name: Assert qualified-directory release runtime
+        run: |
+          test "$(node --version)" = 'v24.19.0'
+          test "$(npm --version)" = '11.17.0'
+          test "$(node -p 'process.versions.zlib')" = '1.3.2.1-motley-3246f1b'
+
+      # This workflow qualifies the checked-out commit's own manifest — it
+      # never bumps a version. An explicit `version` input is accepted only
+      # as a same-value confirmation, so a stale or mistaken dispatch fails
+      # closed instead of silently qualifying whatever main happens to carry.
+      - name: Resolve target version
+        id: candidate
+        env:
+          PKG: ${{ inputs.package }}
+          REQUESTED_VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          manifest_version="$(node -p "require('./packages/' + process.env.PKG + '/package.json').version")"
+          if [ -n "$REQUESTED_VERSION" ] && [ "$REQUESTED_VERSION" != "$manifest_version" ]; then
+            echo "::error title=Version mismatch::Requested version $REQUESTED_VERSION does not match packages/$PKG/package.json's current version $manifest_version. This workflow qualifies the checked-out ref's manifest version only; dispatch it on the ref whose package.json already carries the requested version."
+            exit 1
+          fi
+          echo "version=$manifest_version" >> "$GITHUB_OUTPUT"
+
+      - name: Install repository dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+
+      # Unscoped, matching publish.yml's own qualify job: a candidate package
+      # can have a first-party dependency (builder and inspector resolve
+      # through controller) whose own dist/ must exist first, and
+      # generate-qualification-record.mjs's reproducibility check below
+      # rebuilds the whole workspace from a clean dist/ anyway.
+      - name: Build
+        run: npm run build
+
+      - name: Pack one pre-publication candidate
+        working-directory: packages/${{ inputs.package }}
+        env:
+          PKG: ${{ inputs.package }}
+        run: |
+          set -euo pipefail
+          destination="$RUNNER_TEMP/qualification/$PKG"
+          mkdir -p "$destination"
+          result="$(npm pack --ignore-scripts --json --pack-destination "$destination")"
+          filename="$(node -e 'console.log(JSON.parse(process.argv[1])[0].filename)' "$result")"
+          mv "$destination/$filename" "$destination/candidate.tgz"
+
+      - name: Run fixed candidate qualification credential-free
+        env:
+          PKG: ${{ inputs.package }}
+          TARBALL: ${{ runner.temp }}/qualification/${{ inputs.package }}/candidate.tgz
+          TRANSCRIPT: ${{ runner.temp }}/qualification/${{ inputs.package }}/transcript.json
+        run: node scripts/run-candidate-qualification.mjs --package "$PKG" --tarball "$TARBALL" --output "$TRANSCRIPT"
+
+      # generate-qualification-record.mjs is the retention mechanism itself:
+      # it re-derives every joined digest from the git tree at HEAD, proves
+      # the tarball reproduces from a clean rebuild (issue #893), and REFUSES
+      # (exit 1) if governance/release-qualifications/<recordStem>-<version>.json
+      # already exists — the no-overwrite, one-introduction-per-path
+      # retention this task requires, already enforced by the script this
+      # workflow calls rather than re-implemented here.
+      - name: Generate and retain qualification record
+        id: record
+        env:
+          PKG: ${{ inputs.package }}
+          TARBALL: ${{ runner.temp }}/qualification/${{ inputs.package }}/candidate.tgz
+          TRANSCRIPT: ${{ runner.temp }}/qualification/${{ inputs.package }}/transcript.json
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          reference="github-actions-dispatch:qualify-candidate.yml;run:${RUN_ID};attempt:${RUN_ATTEMPT}"
+          node scripts/generate-qualification-record.mjs --package "$PKG" --tarball "$TARBALL" --transcript "$TRANSCRIPT" --review-reference "$reference"
+          new_files="$(git status --porcelain -- governance/release-qualifications/ | awk '{print $2}')"
+          count="$(printf '%s\n' "$new_files" | grep -c .)"
+          if [ "$count" -ne 1 ]; then
+            echo "::error title=Unexpected qualification record output::expected exactly one new file under governance/release-qualifications/, found $count."
+            exit 1
+          fi
+          echo "record_path=$new_files" >> "$GITHUB_OUTPUT"
+
+      # A retained record makes the matching deferral (if any) stale by
+      # check-qualification-record-required.mjs's own `stale-deferral` rule
+      # — removed here, in the SAME change, so this pull request does not
+      # itself fail that gate and so no separate follow-up is needed to keep
+      # governance/release-qualification-deferrals.json honest. A package
+      # qualified with no prior deferral is not an error: the script no-ops.
+      - name: Remove now-stale deferral entry, if any
+        env:
+          PKG: ${{ inputs.package }}
+          VERSION: ${{ steps.candidate.outputs.version }}
+        run: node scripts/remove-qualification-deferral.mjs --package "$PKG" --version "$VERSION"
+
+      # Cheap self-verification before spending a push and a pull request:
+      # does the record this job just wrote actually join against the
+      # candidate the way check-qualification-record-present.mjs (the same
+      # join publish.yml's own discover job uses) says it should.
+      - name: Verify the retained record now matches the candidate
+        env:
+          PKG: ${{ inputs.package }}
+        run: node scripts/check-qualification-record-present.mjs --package "$PKG"
+
+      - name: Push branch and open pull request
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PKG: ${{ inputs.package }}
+          VERSION: ${{ steps.candidate.outputs.version }}
+          RECORD_PATH: ${{ steps.record.outputs.record_path }}
+          GITHUB_BASE_REF_OR_DEFAULT: ${{ github.event.repository.default_branch }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          name="$(node -p "require('./packages/' + process.env.PKG + '/package.json').name")"
+          branch="claude/qualify-${PKG}-${VERSION}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$branch"
+          git add "$RECORD_PATH" governance/release-qualification-deferrals.json
+
+          message_file="$RUNNER_TEMP/qualify-candidate-commit-message.txt"
+          {
+            printf '%s\n\n' "Qualify ${name}@${VERSION} on the pinned release runtime"
+            printf '%s\n' "Produced ${RECORD_PATH} by running scripts/run-candidate-qualification.mjs"
+            printf '%s\n' "and scripts/generate-qualification-record.mjs on the exact runtime"
+            printf '%s\n' "scripts/lib/release-runtime.mjs pins (Node v24.19.0, npm 11.17.0, zlib"
+            printf '%s\n' "1.3.2.1-motley-3246f1b), via .github/workflows/qualify-candidate.yml, and"
+            printf '%s\n\n' "removed the deferral entry it makes stale, if one was on file."
+            printf '%s\n\n' "This acknowledges qualification only; it does not publish ${name}@${VERSION}."
+            printf '%s\n' "Ref: #948"
+          } > "$message_file"
+          git commit -F "$message_file"
+
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git push origin "$branch"
+
+          body_file="$RUNNER_TEMP/qualify-candidate-pr-body.txt"
+          {
+            printf '%s\n\n' "Qualifies \`${name}@${VERSION}\` on the exact release runtime \`scripts/lib/release-runtime.mjs\` pins (Node v24.19.0, npm 11.17.0, zlib 1.3.2.1-motley-3246f1b), produced by this workflow's own pinned \`actions/setup-node\` step — the same runtime \`ci.yml\`'s required \`build and test\` job already proves is available here."
+            printf '%s\n' "- Retains \`${RECORD_PATH}\`, refusing to overwrite it if it already existed (\`scripts/generate-qualification-record.mjs\`)."
+            printf '%s\n' "- Removes the matching entry in \`governance/release-qualification-deferrals.json\`, if this version had one, so \`scripts/check-qualification-record-required.mjs\`'s \`stale-deferral\` rule does not fail on this change."
+            printf '%s\n\n' "- Publishes nothing. A separate, manually dispatched \`publish.yml\` run is required to actually upload \`${name}@${VERSION}\`."
+            printf '%s\n' "Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}"
+            printf '%s\n' "Ref: #948"
+          } > "$body_file"
+          gh pr create \
+            --title "Qualify ${name}@${VERSION} on the pinned release runtime" \
+            --base "$GITHUB_BASE_REF_OR_DEFAULT" \
+            --head "$branch" \
+            --body-file "$body_file"
