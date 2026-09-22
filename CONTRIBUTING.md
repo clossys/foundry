@@ -450,8 +450,10 @@ equivalent fix after.
 
 ## Releasing
 
-Maintainers only. See [`docs/PUBLISHING.md`](docs/PUBLISHING.md). Before
-proposing any publish, run:
+Maintainers only. See [`docs/PUBLISHING.md`](docs/PUBLISHING.md), including
+its section on the exact release-qualification runtime pin — separate from
+this repository's `engines.node: ">=20"` consumer floor, and what to do when
+your own machine isn't it. Before proposing any publish, run:
 
 ```bash
 npm run preflight -- packages/<name>
