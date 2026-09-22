@@ -4,6 +4,21 @@ All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 
+## [0.1.9] - 2026-09-22
+
+### Fixed
+
+- `assertPeerVersion` no longer hard-throws when an installed peer's
+  version string cannot be parsed (a prerelease tag, build metadata, or
+  anything else that is not a plain `x.y.z`). That string could not be
+  read, which is not proof the peer is actually incompatible, so the
+  guard now warns once per distinct peer-and-version pair via
+  `console.warn` and lets the build proceed, instead of crashing on a
+  value it never actually evaluated. An unparseable declared range — this
+  package's own source, not external input — still throws exactly as
+  before. This brings the module in line with the fix already carried by
+  every other package's own copy of this guard. (#847, porting #389)
+
 ## [0.1.8] - 2026-09-21
 
 ### Fixed

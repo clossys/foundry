@@ -16,10 +16,11 @@
  * legitimate; failing silently when it is unmet is not, because that turns a
  * setup error into a debugging session inside somebody else's codebase.
  *
- * PORTED, NOT SHARED, from the sibling role packages that already carry it —
- * identical algorithm, copied rather than imported across a package boundary
- * for the structural reason those files give: none of them exposes this as
- * part of its public API surface, and even if one did,
+ * PORTED, NOT SHARED, from this repository's canonical `assertPeerVersion`
+ * implementation (#389, ported into this file via #847) — identical
+ * algorithm, copied rather than imported across a package boundary for the
+ * structural reason the canonical body's own header gives: that package does
+ * not expose this as part of its public API surface, and even if it did,
  * `@clossys/keeper` would gain nothing by taking a real runtime
  * dependency on a sibling just to reach one shared utility, and its "zero
  * runtime dependencies" claim would then be wrong. Keep the copies in sync by
@@ -30,6 +31,18 @@
  * is everything we hold about you" surface), not just a Node process, so the
  * version check reads `react`'s own exported `version` directly rather than
  * any Node-only fs-based resolver.
+ *
+ * THE FAILURE DIRECTION FOR AN UNPARSEABLE INSTALLED VERSION IS DELIBERATELY
+ * INVERTED FROM EVERY OTHER DECLINE PATH HERE (#389; this file previously
+ * lacked the fix — see #847). A peer version this guard cannot parse —
+ * including one carrying a prerelease identifier, e.g. Turbopack vendoring
+ * its own canary React build during SSR instead of the consumer's real,
+ * installed `react` — is not a value that FAILED this check. It is a value
+ * the checker could not form an opinion about at all: `indeterminate`,
+ * reported once via `console.warn` and never thrown as though it were a real,
+ * actionable violation. An unparseable DECLARED RANGE is unchanged — that
+ * range is this package's own source, not external input, so failing to
+ * parse it is this package's own bug and still throws.
  */
 
 // ------------------------------------------------------------- range parsing
@@ -97,24 +110,57 @@ function parseGteForm(range: string): { lower: Bound; upper: Bound | null } | nu
   return null;
 }
 
-type RangeSatisfaction = { evaluated: true; ok: boolean } | { evaluated: false; reason: string };
+type RangeSatisfaction =
+  | { evaluated: true; ok: boolean }
+  /**
+   * This package's OWN declared range failed to parse — not an external
+   * input, a defect in this package's own source. Still loud: see
+   * `assertPeerVersion`.
+   */
+  | { evaluated: false; kind: "unparseable-range"; reason: string }
+  /**
+   * The externally-supplied installed version failed to parse — including
+   * any value carrying a prerelease identifier (`19.3.0-canary-...`),
+   * build metadata (`1.99.1+build.5`), or anything else that is not a
+   * plain `x.y.z`. This is `indeterminate`, not `violated`: see this
+   * file's header and `assertPeerVersion`.
+   */
+  | { evaluated: false; kind: "unparseable-version"; reason: string };
+
+/** True when `versionStr` looks like `x.y.z-<prerelease>`, for a more specific warning. */
+function looksLikePrereleaseVersion(versionStr: string): boolean {
+  return /^\d+\.\d+\.\d+-/.test(String(versionStr).trim());
+}
 
 /**
- * Returns `{ evaluated: false, reason }` when either side could not be
- * parsed — a finding, never assumed satisfied — or `{ evaluated: true, ok
- * }` once both sides parsed cleanly.
+ * Returns `{ evaluated: false, kind, reason }` when either side could not
+ * be parsed — a finding, never assumed satisfied — or `{ evaluated: true,
+ * ok }` once both sides parsed cleanly. `kind` distinguishes an
+ * unparseable RANGE (this package's own bug — `assertPeerVersion` still
+ * throws) from an unparseable installed VERSION (an external input this
+ * guard could not read — `assertPeerVersion` warns and proceeds; see this
+ * file's header).
  */
 function satisfiesRange(versionStr: string, rangeStr: string): RangeSatisfaction {
   const bound = parsePinCaretTilde(rangeStr) ?? parseGteForm(rangeStr);
   if (!bound) {
     return {
       evaluated: false,
-      reason: `"${rangeStr}" is not a range form this guard parses (an exact pin, ^x.y.z, ~x.y.z, ">=x.y.z <a.b.c>", or ">=x.y.z" are supported)`,
+      kind: "unparseable-range",
+      reason:
+        `"${rangeStr}" is not a range form this guard parses (an exact pin, ^x.y.z, ~x.y.z, ` +
+        `">=x.y.z <a.b.c>", or ">=x.y.z" are supported)`,
     };
   }
   const version = parseVersion(versionStr);
   if (!version) {
-    return { evaluated: false, reason: `the installed version "${versionStr}" is not a plain x.y.z semver this guard can compare` };
+    return {
+      evaluated: false,
+      kind: "unparseable-version",
+      reason: looksLikePrereleaseVersion(versionStr)
+        ? `the installed version "${versionStr}" carries a prerelease identifier this guard will not guess an ordering for`
+        : `the installed version "${versionStr}" is not a plain x.y.z semver this guard can compare`,
+    };
   }
   const geLower = compareVersions(version, bound.lower) >= 0;
   const ltUpper = bound.upper === null ? true : compareVersions(version, bound.upper) < 0;
@@ -133,26 +179,74 @@ export interface AssertPeerVersionInput {
 }
 
 /**
+ * De-duplication for the "cannot parse this installed version" warning
+ * below, keyed on the exact `(peer, foundVersion)` pair. `assertPeerVersion`
+ * runs at MODULE LOAD, so a consumer that imports `./web` more than once
+ * would otherwise see the identical warning repeated — exactly how a real
+ * warning stops being read (repeated identical noise gets filtered out).
+ * Module-scoped and process-lifetime: this is a logging concern, not a
+ * correctness one, so it is never cleared.
+ */
+const warnedUnparseableVersions = new Set<string>();
+
+/**
  * Throws a named, actionable error naming the package, the declared range,
- * and the version actually found. Never returns a boolean — a guard must
- * state where control goes when it declines. A missing peer and an
- * out-of-range peer throw genuinely DIFFERENT messages — "not installed"
- * and "installed but incompatible" are different problems with different
- * fixes. An unparseable declared range or installed version is a third,
- * equally loud error, never an assumed pass.
+ * and the version actually found — for the two states that ARE actionable
+ * violations. Never returns a boolean — a guard must state where control
+ * goes when it declines. A missing peer and an out-of-range peer throw
+ * genuinely DIFFERENT messages — "not installed" and "installed but
+ * incompatible" are different problems with different fixes. An
+ * unparseable DECLARED RANGE is a third, equally loud thrown error — that
+ * range is this package's own source, not external input, so failing to
+ * parse it is this package's own bug, never an assumed pass.
+ *
+ * An unparseable, or prerelease-carrying, INSTALLED version is different:
+ * that string is supplied by whatever resolved the peer at runtime (a
+ * bundler's SSR vendoring, a monorepo hoist, …), not by this package or
+ * necessarily by the consumer either. This guard never throws for it — see
+ * this file's header for why, and for the tradeoff that choice buys
+ * (#389) — it calls `console.warn` exactly once per distinct
+ * `(peer, foundVersion)` pair (see `warnedUnparseableVersions` above), with
+ * the raw string and the reason, and returns normally.
  */
 export function assertPeerVersion(input: AssertPeerVersionInput): void {
   const { peer, declaredRange, foundVersion } = input;
 
   if (foundVersion === undefined) {
-    throw new Error(`${peer} is required for this import but is not installed. Install ${peer}@"${declaredRange}" — see this package's README for its optional-peer setup.`);
+    throw new Error(
+      `${peer} is required for this import but is not installed. Install ${peer}@"${declaredRange}" — ` +
+        `see this package's README for its optional-peer setup.`,
+    );
   }
 
   const outcome = satisfiesRange(foundVersion, declaredRange);
-  if (!outcome.evaluated) {
-    throw new Error(`Could not verify ${peer}@${foundVersion} against this package's declared range "${declaredRange}": ${outcome.reason}. Refusing to assume this is compatible.`);
+
+  if (!outcome.evaluated && outcome.kind === "unparseable-version") {
+    const warnKey = `${peer}@${foundVersion}`;
+    if (!warnedUnparseableVersions.has(warnKey)) {
+      warnedUnparseableVersions.add(warnKey);
+      console.warn(
+        `[@clossys/keeper] Could not verify ${peer}@${foundVersion} against this package's declared range ` +
+          `"${declaredRange}": ${outcome.reason}. This is not a value that failed the check — it is a value ` +
+          `assertPeerVersion could not read at all, so it is being treated as indeterminate rather than as a ` +
+          `violation. Proceeding without blocking the build; if ${peer} is genuinely incompatible that will ` +
+          `surface elsewhere.`,
+      );
+    }
+    return;
   }
+
+  if (!outcome.evaluated) {
+    throw new Error(
+      `Could not verify ${peer}@${foundVersion} against this package's declared range "${declaredRange}": ` +
+        `${outcome.reason}. Refusing to assume this is compatible.`,
+    );
+  }
+
   if (!outcome.ok) {
-    throw new Error(`${peer}@${foundVersion} is installed, but this package requires ${peer}@"${declaredRange}". Installed but incompatible — install a version of ${peer} that satisfies "${declaredRange}".`);
+    throw new Error(
+      `${peer}@${foundVersion} is installed, but this package requires ${peer}@"${declaredRange}". ` +
+        `Installed but incompatible — install a version of ${peer} that satisfies "${declaredRange}".`,
+    );
   }
 }
