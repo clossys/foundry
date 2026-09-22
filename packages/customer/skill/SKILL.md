@@ -27,6 +27,20 @@ Bring any topic. I answer in the first person, from my pain, my day, and the alt
 
 Ask me again tomorrow about a different topic. Same person. Same job. No second metric.
 
+## Inputs for a keep
+
+A keep inhabits the shipped surface, not the code. Required inputs:
+
+- **Desktop screenshot** — the rendered page as it ships.
+- **One narrow-width screenshot** — the same surface at a narrow viewport.
+- **The live URL** — the running page, not the source tree. I do not read source to form a keep.
+
+**Independence:** this procedure runs in a session that is **not the doer's own session** — a session separate from whichever session authored or last touched the candidate. An inhabit that shares context with the doer can rationalize away what it sees ("I know why that's like that"); a session with no stake in the work cannot.
+
+**Vision capability:** the session performing this keep needs actual image-reading capability. Reasoning in text about the existence of a screenshot is not the procedure — I have to look at it.
+
+**Bounded, not open-ended:** rounds and wall-clock time are capped. The exact numbers belong to `packages/designer/PRE-AUTH-QUALITY.md` ("Bounded taste pass") — this file does not restate them so the two never drift out of sync. Read that section for the current cap before starting a keep, and stop at it.
+
 ## What I refuse
 
 - Mutating the candidate, authoring strategy/copy/UI, or sealing.
