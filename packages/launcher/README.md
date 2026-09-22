@@ -8,6 +8,46 @@ The hub inventories where Foundry packages are installed and coordinates
 engagement. It is not a product application and does not receive a dump of
 the catalogue.
 
+## Layout: the `clossys/` folder
+
+Every apply writes to one visible `clossys/` folder in the target repository —
+never a hidden dot-folder for anything a person might want to see. A generated
+`README.md` at the root of `clossys/` is an index of which `clossys/<role>/` folders are active and what
+each holds; it is rewritten on every run, never hand-edited. `clossys/.state/`
+holds machine files only — the hub marker, the inventory, and the skills
+manifest (below) — visible so it is easy to find, but still not a place to
+edit by hand. Other roles' folders (`clossys/strategist/`, `clossys/writer/`,
+and so on) are written by their own packages, not by launcher.
+
+A hub created before this layout existed kept its marker and inventory under
+a hidden `.clossys/`. Resume detects that automatically and migrates both
+files to `clossys/.state/`, removing the old directory, and reports the move
+in the health report. If somehow both a `.clossys/` and a `clossys/.state/`
+hub state exist at once, launcher refuses rather than guessing which one is
+current — remove one and resume again.
+
+## Conversation contract
+
+Every composed skill carries one shared conversation contract: lead with a
+plain-language status, always state a recommendation, ask exactly one
+question with the recommended option labelled first, and say what happens
+next. Launcher packs this contract at build time and injects it into each
+composed skill in place of that skill's own "how we work together" and "one
+question at a time" sections, at the same position — so an installed or
+catalogue skill's own wording never has to drift from it.
+
+## Skills manifest and freshness
+
+Every apply writes a skills manifest recording each composed skill's source
+(`installed` or `catalogue`), version, and a content digest. The health
+report states how many composed skills are out of date against the live
+`@clossys/launcher` version (catalogue-sourced skills are only ever as fresh
+as the launcher release that packed them) and how many were retired this
+run. Retirement means: a skill this directory's own manifest previously
+listed is no longer composed (its source disappeared), so launcher removes
+its composed output and host discovery links — and only that. It never
+touches a skill it did not itself write.
+
 ## Health report and staleness
 
 After create, resume, or appoint — and on every resume — the command prints
@@ -37,13 +77,25 @@ The get-started command is the package name:
 npx @clossys/launcher
 ```
 
+`npx` caches the resolved version, so a plain `npx @clossys/launcher` can
+keep running an old one. Because a catalogue-sourced skill is only ever as
+fresh as the launcher release that packed it (see "Skills manifest and
+freshness" above), run:
+
+```bash
+npx @clossys/launcher@latest
+```
+
+when the health report says a skill is out of date, or whenever you want to
+be sure you are on the current release.
+
 Public npm reads are credentialless. Packages publish to
 `https://registry.npmjs.org`. Do not add a token or private registry
 mapping for `@clossys`. Pin an exact version once you depend on the library
 API:
 
 ```bash
-npm install --save-dev --save-exact @clossys/launcher@0.1.6
+npm install --save-dev --save-exact @clossys/launcher@0.2.0
 ```
 
 ## Talking to the team
@@ -82,8 +134,8 @@ silent fallback.
 | Current directory | What happens |
 | --- | --- |
 | Empty | Creates `{owner}/workspace` from the in-package skeleton (package name `@owner/workspace`), or clones that hub if it already exists. |
-| Already a hub (generated marker; packed template `skeleton/.clossys/workspace.json`) | Resumes. No new repository. `--inventory` here is refused with a pointer to the appointed hub's own `.clossys/inventory.json`. |
-| Any other GitHub repository you control | Appoints it as the account hub. Keeps existing product files. Refuses when the working tree has uncommitted changes (`git status --porcelain` non-empty) — the refusal names the offending remote host when the origin is not on github.com. Refuses when `CLOSSYS_OWNER` names a different account than the repository's github.com origin owner. Writes the hub marker. Pins live `@clossys/advisor` in `devDependencies`, relocating and upgrading any pin left in another bucket. A dedicated `{owner}/workspace` checkout is named `@owner/workspace`; a product repository keeps its package name. Always reads the public Advisor version (needed to pin live and to grade resume health). Refuses if the generated hub inventory is missing or empty (packed template `skeleton/.clossys/inventory.json`; that generated path does not ship) unless `--inventory <path>` supplies a populated document — or, when the on-disk inventory is already populated and `--inventory` is also supplied, merges the two by repository id (on-disk order first, new ids appended, first occurrence of an id wins). Does not rewrite the lockfile or dump the catalogue. Prints a read-only health report. |
+| Already a hub (generated marker; packed template `skeleton/clossys/.state/workspace.json`) | Resumes. No new repository. `--inventory` here is refused with a pointer to the appointed hub's own `clossys/.state/inventory.json`. A legacy `.clossys/` hub state is migrated automatically; see "Layout" above. |
+| Any other GitHub repository you control | Appoints it as the account hub. Keeps existing product files. Refuses when the working tree has uncommitted changes (`git status --porcelain` non-empty) — the refusal names the offending remote host when the origin is not on github.com. Refuses when `CLOSSYS_OWNER` names a different account than the repository's github.com origin owner. Writes the hub marker. Pins live `@clossys/advisor` in `devDependencies`, relocating and upgrading any pin left in another bucket. A dedicated `{owner}/workspace` checkout is named `@owner/workspace`; a product repository keeps its package name. Always reads the public Advisor version (needed to pin live and to grade resume health). Refuses if the generated hub inventory is missing or empty (packed template `skeleton/clossys/.state/inventory.json`; that generated path does not ship) unless `--inventory <path>` supplies a populated document — or, when the on-disk inventory is already populated and `--inventory` is also supplied, merges the two by repository id (on-disk order first, new ids appended, first occurrence of an id wins). Does not rewrite the lockfile or dump the catalogue. Prints a read-only health report. |
 
 It does not have to be a brand-new exclusive repository, and it does not
 have to already match a Foundry layout. Informal "workspace-looking" trees
@@ -125,21 +177,26 @@ Exit codes preserve the ternary:
 | Export | Description |
 | --- | --- |
 | `planWorkspace()` | Decides create, resume, or adopt from a cwd observation. Optional `{ inventoryPath }` is the only way to appoint without a populated on-disk inventory. |
-| `applyWorkspacePlan()` | Copies the in-package skeleton or hub marker through a host port and returns a `WorkspaceApplyResult` with health. Composes the same skill voices on the hub and on inventoried sibling checkouts beside it; refreshes stale hub guidance on every path, including resume. Optional `{ skillCatalogueRoot, launcherPackageRoot }` selects where skill bodies are read. |
-| `observeWorkspace()` | Reads `gh`, git remotes, cwd, inventory classification, and the public Advisor version. |
+| `applyWorkspacePlan()` | Copies the in-package skeleton or hub marker through a host port and returns a `WorkspaceApplyResult` with health. Composes the same skill voices (with the shared conversation contract injected) on the hub and on inventoried sibling checkouts beside it; refreshes stale hub guidance and the generated `clossys/` README on every path, including resume; migrates a legacy `.clossys/` hub state automatically. Optional `{ skillCatalogueRoot, launcherPackageRoot, contractPath, liveLauncherVersion }` selects where skill and contract bodies are read and grades skill-manifest staleness. |
+| `observeWorkspace()` | Reads `gh`, git remotes, cwd, inventory classification, hub-state migration status, and the public Advisor version. |
 | `readInventoryRepositories()` | Reads repository ids from a `schemaVersion: 1` inventory document. |
-| `launcherPackageRootFromModule()` | Resolves this package's root from `import.meta.url` so apply can find the packed skill catalogue. |
+| `readLiveLauncherVersion()` | Reads the public `@clossys/launcher` registry version, used only to grade catalogue-sourced skill staleness. |
+| `launcherPackageRootFromModule()` | Resolves this package's root from `import.meta.url` so apply can find the packed skill catalogue and contract. |
 | `parseGitHubRemote()` | Parses a github.com remote and rejects any other host. |
-| `isHubDocument()` | Type guard for the generated hub marker (packed template: `skeleton/.clossys/workspace.json`). |
+| `isHubDocument()` | Type guard for the generated hub marker (packed template: `skeleton/clossys/.state/workspace.json`). |
 | `inspectInventory()` | Classifies inventory JSON as missing, empty, or populated. |
-| `reportHubHealth()` | Read-only pin and inventory report. Does not install or uninstall. |
+| `reportHubHealth()` | Read-only pin, inventory, migration, and skills-manifest report. Does not install or uninstall. |
 | `formatHubHealth()` | Human lines plus a `health:` JSON line for the same report. |
 | `hasAdvisorPin()` | True when a manifest already pins Advisor in any dependency bucket. |
 | `checkInventoryEntries()` | Read-only inventory id validation through `gh repo view` (batched; skips with a note when `gh` is unavailable). |
 | `DEFAULT_REPOSITORY_NAME` | Default new-hub repository name (`workspace`). Used only when creating, never when appointing. |
+| `CLOSSYS_DIR_REL` | Relative path of the one visible per-repository Clossys folder (`clossys`). |
+| `STATE_DIR_REL` | Relative path of the machine-state folder (`clossys/.state`). |
 | `WORKSPACE_MARKER_REL` | Relative path of the hub marker. |
 | `WORKSPACE_INVENTORY_REL` | Relative path of the hub inventory. |
-| `CommandResult` / `CwdObservation` / `DependencyBucket` / `HubDocument` / `HubHealthReport` / `InventoryObservation` / `InventoryValidationEntry` / `InventoryValidationReport` / `PinFinding` / `PinGrade` / `ApplyWorkspaceOptions` / `WorkspaceApplyResult` / `WorkspaceDecision` / `WorkspaceHost` / `WorkspaceObservation` / `WorkspacePlan` / `WorkspaceRefusal` / `WorkspaceState` | Typed host, observation, plan, health, and outcome contracts. |
+| `CLOSSYS_README_REL` | Relative path of the generated index README at the root of `clossys/`. |
+| `LEGACY_STATE_DIR_REL` / `LEGACY_WORKSPACE_MARKER_REL` / `LEGACY_WORKSPACE_INVENTORY_REL` | Pre-#1171 `.clossys/` paths, kept only so resume can detect and migrate them. |
+| `CommandResult` / `CwdObservation` / `DependencyBucket` / `HubDocument` / `HubHealthReport` / `HubMigrationState` / `InventoryObservation` / `InventoryValidationEntry` / `InventoryValidationReport` / `PinFinding` / `PinGrade` / `SkillManifestDocument` / `SkillManifestEntry` / `SkillsManifestSummary` / `ApplyWorkspaceOptions` / `WorkspaceApplyResult` / `WorkspaceDecision` / `WorkspaceHost` / `WorkspaceObservation` / `WorkspacePlan` / `WorkspaceRefusal` / `WorkspaceState` | Typed host, observation, plan, health, and outcome contracts. |
 
 ## Why this is not Advisor, Starter, Builder, installer, creator, or a connector
 

@@ -1,0 +1,120 @@
+{
+  "schemaVersion": 1,
+  "$comment": "The consumer layout contract (#1171): one visible clossys/ folder per repository, one subfolder per role, replacing strategy/ at the repository root and the hidden .clossys/. Launcher scaffolds clossys/README.md and clossys/.state/, migrating its own hub marker and inventory (and the packed skeleton template that seeds them) from the pre-#1171 .clossys/ path. Other roles adopt their own clossys/<role>/ folder on their own schedule; this contract is the shared shape they converge on.",
+  "root": "clossys",
+  "readme": "clossys/README.md",
+  "stateDir": "clossys/.state",
+  "legacyStateDir": ".clossys",
+  "monorepoRootKey": {
+    "description": "A monorepo may place clossys/ inside a workspace package instead of the repository root by setting this key in its own package.json or a foundry.config.json at the repository root.",
+    "key": "clossys.root",
+    "default": "."
+  },
+  "rules": [
+    "One owner per subfolder, named for the role the client talks to (@clossys-strategist -> clossys/strategist/). No two roles write the same folder.",
+    "Visible, not hidden: these are the business's own records. Only machine files go under clossys/.state/; there is no separate .clossys/.",
+    "Removing a role removes its folder.",
+    "Monorepos: one configuration key (see monorepoRootKey) may place clossys/ inside a workspace package; the default is the repository root."
+  ],
+  "folders": [
+    {
+      "path": "clossys/README.md",
+      "owner": "@clossys/launcher",
+      "kind": "generated",
+      "committed": true,
+      "description": "Generated index: active roles, what each folder holds, last change. Rewritten on every launcher run; never hand-edited."
+    },
+    {
+      "path": "clossys/coverage.json",
+      "owner": "@clossys/observer",
+      "kind": "record",
+      "committed": true,
+      "description": "Roles this repository adopts or declines, with reasons (#395, #1168)."
+    },
+    {
+      "path": "clossys/advisor",
+      "owner": "@clossys/advisor",
+      "kind": "hub-only",
+      "committed": true,
+      "description": "Assessment input, plan, next action, PLAN.md. Exists on the account hub only, never on a product checkout."
+    },
+    {
+      "path": "clossys/strategist",
+      "owner": "@clossys/strategist",
+      "kind": "record",
+      "committed": true,
+      "description": "Facts, audiences, positioning, claims, brand, direction. Replaces strategy/ at the repository root."
+    },
+    {
+      "path": "clossys/writer",
+      "owner": "@clossys/writer",
+      "kind": "record",
+      "committed": true,
+      "description": "Copy registry, voice record."
+    },
+    {
+      "path": "clossys/designer",
+      "owner": "@clossys/designer",
+      "kind": "record",
+      "committed": true,
+      "description": "Brand bindings, type record."
+    },
+    {
+      "path": "clossys/customer",
+      "owner": "@clossys/customer",
+      "kind": "proof",
+      "committed": true,
+      "description": "Keep verdicts."
+    },
+    {
+      "path": "clossys/publisher",
+      "owner": "@clossys/publisher",
+      "kind": "proof",
+      "committed": true,
+      "description": "Route manifest, publication record. Append-only."
+    },
+    {
+      "path": "clossys/controller",
+      "owner": "@clossys/controller",
+      "kind": "record",
+      "committed": true,
+      "description": "Operating rules."
+    },
+    {
+      "path": "clossys/.state",
+      "owner": "@clossys/launcher",
+      "kind": "machine",
+      "committed": true,
+      "description": "Machine files: hub marker (workspace.json), inventory (inventory.json), skills manifest (skills.json, #1183). Not a place a person edits by hand."
+    }
+  ],
+  "gitPolicy": {
+    "description": "What gets committed, by kind of output. Launcher's .gitignore entries cover only the last row -- generated run output -- never approved records, proof, or machine state.",
+    "rows": [
+      {
+        "kind": "Approved records",
+        "examples": "strategy, copy, brand bindings, rules, plan",
+        "committed": true,
+        "note": "every change is a reviewable diff"
+      },
+      {
+        "kind": "Proof",
+        "examples": "publication record, keep verdicts",
+        "committed": true,
+        "note": "append-only"
+      },
+      {
+        "kind": "Machine state",
+        "examples": "inventory, skills manifest, hub marker",
+        "committed": true
+      },
+      {
+        "kind": "Generated run output",
+        "examples": "check reports, preview galleries, caches",
+        "committed": false,
+        "note": "launcher writes .gitignore entries; convention is clossys/<role>/.generated/"
+      }
+    ]
+  },
+  "approval": "Approval is a merged pull request, the same standing rule every skill already states -- a chat approved is not authorization. A consumer may route clossys/<role>/ through CODEOWNERS so the right person must approve each role's changes."
+}

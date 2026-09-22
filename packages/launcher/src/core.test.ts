@@ -73,6 +73,9 @@ function host(
       if (existsSync(linkPath)) rmSync(linkPath, { recursive: true, force: true });
       symlinkSync(relativeTarget, linkPath, "dir");
     },
+    remove: (path) => {
+      rmSync(path, { recursive: true, force: true });
+    },
     readDir: (path) => (existsSync(path) ? readdirSync(path) : []),
     run: (command, args) => commands[`${command} ${args.join(" ")}`] ?? { status: 1, stdout: "", stderr: "unmocked" },
     prompt: (_message, choices) => {
@@ -83,9 +86,21 @@ function host(
 }
 
 function writeInventory(directory: string, repositories: readonly unknown[] = [{ id: "app" }]): void {
-  mkdirSync(join(directory, ".clossys"), { recursive: true });
+  mkdirSync(dirname(join(directory, WORKSPACE_INVENTORY_REL)), { recursive: true });
   writeFileSync(
     join(directory, WORKSPACE_INVENTORY_REL),
+    `${JSON.stringify({ schemaVersion: 1, repositories }, null, 2)}\n`,
+  );
+}
+
+function writeLegacyHub(directory: string, owner: string, repository: string, repositories: readonly unknown[] = [{ id: "app" }]): void {
+  mkdirSync(join(directory, ".clossys"), { recursive: true });
+  writeFileSync(
+    join(directory, ".clossys", "workspace.json"),
+    `${JSON.stringify({ schemaVersion: 1, kind: "account-hub", owner, repository: `${owner}/${repository}` }, null, 2)}\n`,
+  );
+  writeFileSync(
+    join(directory, ".clossys", "inventory.json"),
     `${JSON.stringify({ schemaVersion: 1, repositories }, null, 2)}\n`,
   );
 }
@@ -588,7 +603,7 @@ describe("applyWorkspacePlan", () => {
   it("reports health on resume and composes skills plus refreshed guidance", () => {
     const parent = tempDir();
     const directory = join(parent, "hub");
-    mkdirSync(join(directory, ".clossys"), { recursive: true });
+    mkdirSync(dirname(join(directory, WORKSPACE_MARKER_REL)), { recursive: true });
     writeFileSync(
       join(directory, WORKSPACE_MARKER_REL),
       `${JSON.stringify({ schemaVersion: 1, kind: "account-hub", owner: "acme", repository: "acme/hub" }, null, 2)}\n`,
@@ -625,7 +640,7 @@ describe("applyWorkspacePlan", () => {
     const other = join(parent, "other");
     const foundry = join(parent, "foundry");
     for (const directory of [hub, app, other, foundry]) mkdirSync(directory, { recursive: true });
-    mkdirSync(join(hub, ".clossys"), { recursive: true });
+    mkdirSync(dirname(join(hub, WORKSPACE_MARKER_REL)), { recursive: true });
     writeFileSync(
       join(hub, WORKSPACE_MARKER_REL),
       `${JSON.stringify({ schemaVersion: 1, kind: "account-hub", owner: "acme", repository: "acme/hub" }, null, 2)}\n`,
@@ -800,6 +815,118 @@ describe("applyWorkspacePlan", () => {
     expect(skipped.note).toMatch(/`gh` is unavailable/);
     expect(skipped.entries).toEqual([]);
     expect(readFileSync(join(directory, WORKSPACE_INVENTORY_REL), "utf8")).toContain("acme/gone");
+  });
+});
+
+describe("legacy .clossys/ -> clossys/.state/ migration (#1171)", () => {
+  it("resumes a legacy-only hub by migrating it to clossys/.state/ and reports the migration", () => {
+    const directory = tempDir();
+    writeLegacyHub(directory, "acme", "hub", [{ id: "acme/hub" }]);
+    const observed = observeWorkspace(host(directory));
+    expect(observed.cwd.hubMigration).toBe("legacy");
+    expect(observed.cwd.hub).toMatchObject({ owner: "acme" });
+
+    const decision = planWorkspace(observed, host(directory));
+    expect(decision).toMatchObject({ action: "resume", owner: "acme", migrateFrom: "legacy" });
+    if (decision.action !== "resume") throw new Error("expected resume");
+
+    const result = applyWorkspacePlan(host(directory), decision, skeletonRoot, composeApplyOptions(seedSkillCatalogue(["advisor"])));
+    expect(existsSync(join(directory, ".clossys"))).toBe(false);
+    expect(existsSync(join(directory, WORKSPACE_MARKER_REL))).toBe(true);
+    expect(existsSync(join(directory, WORKSPACE_INVENTORY_REL))).toBe(true);
+    expect(result.health.migration).toEqual({ status: "migrated", from: ".clossys", to: "clossys/.state" });
+    expect(result.message).toMatch(/migration: moved hub state from \.clossys to clossys\/\.state/);
+  });
+
+  it("refuses as indeterminate, never silently merging, when both the current and legacy marker exist", () => {
+    const directory = tempDir();
+    writeLegacyHub(directory, "acme", "hub");
+    writeInventory(directory, [{ id: "acme/hub" }]);
+    mkdirSync(dirname(join(directory, WORKSPACE_MARKER_REL)), { recursive: true });
+    writeFileSync(
+      join(directory, WORKSPACE_MARKER_REL),
+      `${JSON.stringify({ schemaVersion: 1, kind: "account-hub", owner: "acme", repository: "acme/hub" }, null, 2)}\n`,
+    );
+    const observed = observeWorkspace(host(directory));
+    expect(observed.cwd.hubMigration).toBe("indeterminate");
+    expect(observed.cwd.hub).toBeUndefined();
+
+    const decision = planWorkspace(observed, host(directory));
+    expect(decision).toMatchObject({ action: "refuse", state: "indeterminate" });
+    if (decision.action === "refuse") {
+      expect(decision.message).toMatch(/never merges them silently/);
+    }
+    // Refusal happens at plan time; apply never runs, so nothing is touched.
+    expect(existsSync(join(directory, ".clossys"))).toBe(true);
+  });
+
+  it("plans and resumes a clean hub (current path only) exactly as before, with no migration reported", () => {
+    const directory = tempDir();
+    mkdirSync(dirname(join(directory, WORKSPACE_MARKER_REL)), { recursive: true });
+    writeFileSync(
+      join(directory, WORKSPACE_MARKER_REL),
+      `${JSON.stringify({ schemaVersion: 1, kind: "account-hub", owner: "acme", repository: "acme/hub" }, null, 2)}\n`,
+    );
+    writeInventory(directory, [{ id: "acme/hub" }]);
+    const observed = observeWorkspace(host(directory));
+    expect(observed.cwd.hubMigration).toBe("clean");
+    const decision = planWorkspace(observed, host(directory));
+    expect(decision).toMatchObject({ action: "resume" });
+    if (decision.action !== "resume") throw new Error("expected resume");
+    expect(decision).not.toHaveProperty("migrateFrom");
+    const result = applyWorkspacePlan(host(directory), decision, skeletonRoot, composeApplyOptions(seedSkillCatalogue(["advisor"])));
+    expect(result.health.migration).toBeUndefined();
+  });
+});
+
+describe("skills manifest and health (#1183)", () => {
+  it("reports a stale catalogue-sourced skill against the live launcher version, and 0 retired on a read-only inspection", () => {
+    const directory = tempDir();
+    mkdirSync(join(directory, "clossys", ".state"), { recursive: true });
+    writeFileSync(
+      join(directory, "clossys", ".state", "skills.json"),
+      `${JSON.stringify(
+        {
+          schemaVersion: 1,
+          generatedAt: "2026-09-20T00:00:00.000Z",
+          skills: [
+            { name: "advisor", source: "catalogue", version: "0.1.0", sha256: "a".repeat(64) },
+            { name: "designer", source: "installed", version: "0.4.9", sha256: "b".repeat(64) },
+          ],
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    const report = reportHubHealth(host(directory), directory, undefined, "0.2.0");
+    expect(report.skillsManifest).toEqual({ status: "present", total: 2, stale: 1, retired: 0 });
+    expect(formatHubHealth(report)).toMatch(/skills: 1 out of date, 0 retired \(2 composed\)/);
+  });
+
+  it("reports missing when no manifest has been written yet", () => {
+    const directory = tempDir();
+    const report = reportHubHealth(host(directory), directory);
+    expect(report.skillsManifest).toEqual({ status: "missing", total: 0, stale: 0, retired: 0 });
+  });
+
+  it("surfaces this run's retired skills in the health report and message", () => {
+    const directory = tempDir();
+    const catalogue = seedSkillCatalogue(["advisor", "designer"]);
+    const applyOpts = composeApplyOptions(catalogue);
+    writeInventory(directory);
+    applyWorkspacePlan(host(directory), { action: "adopt", owner: "acme", repository: "hub", directory, advisorVersion: "0.1.5" }, skeletonRoot, applyOpts);
+
+    // designer's catalogue source disappears before the next resume.
+    rmSync(join(applyOpts.skillCatalogueRoot, "designer"), { recursive: true, force: true });
+    const result = applyWorkspacePlan(
+      host(directory),
+      { action: "resume", owner: "acme", repository: "hub", directory, clone: false },
+      skeletonRoot,
+      applyOpts,
+    );
+    expect(result.health.skillComposition?.retired).toEqual(["designer"]);
+    expect(result.message).toMatch(/skills retired: clossys-designer/);
+    expect(existsSync(join(directory, ".agents", "skills", "clossys-designer"))).toBe(false);
   });
 });
 

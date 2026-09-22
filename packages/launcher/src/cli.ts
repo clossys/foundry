@@ -2,7 +2,14 @@
 import { realpathSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { applyWorkspacePlan, observeWorkspace, planWorkspace, launcherPackageRootFromModule, skeletonRootFromModule } from "./core.js";
+import {
+  applyWorkspacePlan,
+  observeWorkspace,
+  planWorkspace,
+  launcherPackageRootFromModule,
+  readLiveLauncherVersion,
+  skeletonRootFromModule,
+} from "./core.js";
 import { createNodeHost } from "./host.js";
 import type { WorkspaceHost } from "./types.js";
 
@@ -16,9 +23,10 @@ hub to appoint it — it does not have to be a new exclusive repo, and it keeps
 its current name and files.
 
 Appointing requires a populated generated hub inventory (packed template
-skeleton/.clossys/inventory.json; the generated path does not ship), or
+skeleton/clossys/.state/inventory.json; the generated path does not ship), or
 --inventory <path> pointing at one. Resume refreshes composed skills and
-stale hub guidance. Create may write an empty inventory.
+stale hub guidance, and migrates a legacy .clossys/ hub state to
+clossys/.state/ automatically. Create may write an empty inventory.
 
 GitHub-only. Owner is inferred from \`gh\` and git remotes. Public npm reads
 need no token.
@@ -62,7 +70,7 @@ export function main(argv: readonly string[], host: WorkspaceHost, skeletonRoot:
   }
   if (parsed.inventoryPath !== undefined && decision.action !== "adopt") {
     if (decision.action === "resume") {
-      console.error("launcher: this hub is already appointed; edit .clossys/inventory.json to change its inventory");
+      console.error("launcher: this hub is already appointed; edit clossys/.state/inventory.json to change its inventory");
     } else {
       console.error("launcher: --inventory is only valid when appointing a GitHub repository");
     }
@@ -70,6 +78,7 @@ export function main(argv: readonly string[], host: WorkspaceHost, skeletonRoot:
   }
   const result = applyWorkspacePlan(host, decision, skeletonRoot, {
     launcherPackageRoot: launcherPackageRootFromModule(import.meta.url),
+    liveLauncherVersion: readLiveLauncherVersion(host),
   });
   console.log(result.message);
   return 0;
