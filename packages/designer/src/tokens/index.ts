@@ -83,6 +83,11 @@
  * anything into the page. See that file's own header and the README's
  * Setup section.
  *
+ * THE MASTER BRAND MARK. Alongside `brand.css`, a consumer supplies three
+ * SVG documents — lockup, mark-only, inverse — validated by
+ * `validateMasterMark` (`master-mark.ts`). This package ships no product
+ * logo.
+ *
  * THE tailwind-merge PEER-VERSION CHECK. `react` and `react-aria-components`
  * — two more of this package's optional peers — are guarded automatically,
  * from every component subpath's own barrel (see `atoms/index.ts`'s own
@@ -158,3 +163,11 @@ export { assertTokenStylesLoaded, TOKEN_STYLES_SENTINEL_PROPERTY } from "./asser
 export type { AssertTokenStylesLoadedOptions } from "./assert-token-styles-loaded.js";
 
 export { assertTailwindMergeVersion } from "./assert-tailwind-merge-version.js";
+
+export {
+  iconMarkSvg,
+  MASTER_MARK_ICON_SHELL_STYLE,
+  MasterMarkValidationError,
+  validateMasterMark,
+} from "./master-mark.js";
+export type { MasterMark } from "./master-mark.js";

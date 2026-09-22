@@ -10,7 +10,7 @@ describe("assertTailwindMergeVersion", () => {
   it("stays silent when the real, installed tailwind-merge satisfies the declared range (prerequisite present, in range)", () => {
     // No mocking: this repository's own devDependency-installed
     // tailwind-merge is real, on disk, and within package.json's declared
-    // "^3.0.0" range.
+    // "^3.7.0" range.
     expect(() => assertTailwindMergeVersion()).not.toThrow();
   });
 
@@ -27,7 +27,7 @@ describe("assertTailwindMergeVersion", () => {
       resolveInstalledPeerVersion: () => "1.0.0",
     }));
     const { assertTailwindMergeVersion: assertWithMock } = await import("./assert-tailwind-merge-version.js");
-    expect(() => assertWithMock()).toThrow(/tailwind-merge@1\.0\.0 is installed, but this package requires tailwind-merge@"\^3\.0\.0"/);
+    expect(() => assertWithMock()).toThrow(/tailwind-merge@1\.0\.0 is installed, but this package requires tailwind-merge@"\^3\.7\.0"/);
   });
 
   // Updated for #389: assertPeerVersion no longer throws when it merely
