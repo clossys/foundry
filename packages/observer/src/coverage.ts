@@ -61,6 +61,15 @@
  *     no runtime dependency to do so. A real `InstalledInventory` value
  *     satisfies `FleetInstalledInventory` as-is -- structural typing, not
  *     a cast.
+ *   - "INSTALLED" MEANS ANY MANIFEST, NOT ONLY A ROOT ONE. #395's own
+ *     2026-08-21 comment measured two repositories where a root-pin sweep
+ *     and an any-manifest sweep DISAGREED about the same cell, and flagged
+ *     that "installed" was not yet a single well-defined state. Settled by
+ *     the owner: a pin in ANY manifest in the repository counts, because a
+ *     monorepo consumer legitimately pins a role inside a workspace package
+ *     rather than the root -- and `FleetInstalledPackage.manifestPaths`
+ *     (optional) records which manifest path(s) actually carry it, so that
+ *     placement stays visible rather than collapsing into a bare boolean.
  *   - `unclassified` FAILS CLOSED: never counted as covered, never dropped
  *     from any denominator, and always drives the aggregate verdict to
  *     `indeterminate`. This is the opposite of `assertPeerVersion`'s
@@ -89,6 +98,25 @@ export type CoverageCellState = "installed" | "declared-absent" | "unclassified"
 export interface FleetInstalledPackage {
   readonly name: string;
   readonly installedVersion?: string;
+  /**
+   * Which manifest path(s), relative to the repository root, carry this
+   * package's pin -- OPTIONAL, additive (#395's owner decision, 2026-09-21):
+   * "installed" means a pin in ANY manifest in the repository, not only a
+   * root-manifest pin, because a monorepo consumer legitimately pins a role
+   * inside a workspace package rather than the root. Recording the path(s)
+   * keeps that placement -- hub vs product, or the wrong bucket entirely --
+   * visible to a reviewer and to Advisor's own placement evidence
+   * (`placement-cells.ts`) instead of an any-manifest sweep silently hiding
+   * where the pin actually lives. A caller that cannot or does not track
+   * paths may omit this field entirely; `gradeFleetCoverage` still resolves
+   * the cell to `installed` from `installedVersion`/`name` alone. Never
+   * consulted to decide whether a package IS installed -- only to record,
+   * once it is, where. The collector that walks a real checkout's
+   * manifests and populates this field is this repository's own tooling,
+   * outside this package, kept out of it by design (#395): this package
+   * stays zero I/O and grades whatever it is handed.
+   */
+  readonly manifestPaths?: readonly string[];
 }
 
 /** Structural match for `@clossys/integrator`'s `InstalledInventory`. See `FleetInstalledPackage`. */
@@ -105,12 +133,20 @@ export const UNCLASSIFIED_REASONS = Object.freeze([
 
 export type UnclassifiedReason = (typeof UNCLASSIFIED_REASONS)[number];
 
-/** One cell resolved as `installed`: the package is a dependency and (per the caller-supplied inventory) its capabilities are wired. */
+/**
+ * One cell resolved as `installed`: the package is a dependency and (per
+ * the caller-supplied inventory) its capabilities are wired.
+ * `manifestPaths` carries forward `FleetInstalledPackage.manifestPaths`
+ * verbatim when the caller supplied it -- see that field's own doc comment
+ * for why "installed" means any manifest, not only a root one, and why the
+ * path(s) are recorded rather than discarded once a cell is known installed.
+ */
 export interface InstalledCoverageCell {
   readonly package: string;
   readonly repository: string;
   readonly state: "installed";
   readonly installedVersion?: string;
+  readonly manifestPaths?: readonly string[];
 }
 
 /** One cell resolved as `declared-absent`: this repository has no such lane, stated out loud with a reason. */
@@ -304,6 +340,9 @@ export function gradeFleetCoverage(input: FleetCoverageInput): FleetCoverageRepo
           repository: repo.repository,
           state: "installed",
           ...(installedPackage.installedVersion === undefined ? {} : { installedVersion: installedPackage.installedVersion }),
+          ...(installedPackage.manifestPaths === undefined || installedPackage.manifestPaths.length === 0
+            ? {}
+            : { manifestPaths: installedPackage.manifestPaths }),
         });
         installedCount += 1;
 
