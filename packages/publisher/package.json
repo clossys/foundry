@@ -162,7 +162,7 @@
     "tailwind-merge": "^3.0.0",
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.0",
-    "vitest": "^5.0.0"
+    "vitest": "^5.0.1"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org",
