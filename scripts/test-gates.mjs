@@ -5340,12 +5340,162 @@ try {
       );
     }
 
+    // ---- #944: pull_request_review must scan inline comments bundled with a
+    // submitted review, not only the summary body. GitHub does not always emit
+    // pull_request_review_comment for those; the live workflow uses
+    // --pr --review to fetch them. Double-scan via the separate event is fine.
+    {
+      const ghFixtureDir = join(work, "gh-review-inline-fixture");
+      mkdirSync(ghFixtureDir, { recursive: true });
+      const fakeGhPath = join(ghFixtureDir, "gh");
+      writeFileSync(
+        fakeGhPath,
+        [
+          "#!/usr/bin/env node",
+          "const args = process.argv.slice(2);",
+          'if (args[0] !== "api") { process.exit(1); }',
+          'const path = args[1] || "";',
+          'const reviewMatch = path.match(/\\/pulls\\/(\\d+)\\/reviews\\/(\\d+)(\\/comments)?$/);',
+          "if (reviewMatch) {",
+          "  const reviewId = reviewMatch[2];",
+          '  if (path.endsWith("/comments")) {',
+          '    if (reviewId === "501") {',
+          "      process.stdout.write(JSON.stringify([[{",
+          "        id: 50101,",
+          '        html_url: "https://example.invalid/pull/44#discussion_r50101",',
+          '        body: "Inline note mentions acme-corp inside the submitted review.",',
+          "      }]]));",
+          "    } else {",
+          '      process.stdout.write(JSON.stringify([[]]));',
+          "    }",
+          "  } else {",
+          '    process.stdout.write(JSON.stringify({',
+          '      id: Number(reviewId),',
+          '      html_url: "https://example.invalid/pull/44#pullrequestreview-" + reviewId,',
+          '      body: "",',
+          "    }));",
+          "  }",
+          "  process.exit(0);",
+          "}",
+          "process.exit(1);",
+        ].join("\n"),
+        "utf8",
+      );
+      chmodSync(fakeGhPath, 0o755);
+
+      const env = { ...process.env, PATH: `${ghFixtureDir}:${process.env.PATH}` };
+
+      const withInline = run(
+        "node",
+        [CONVERSATION, "--pr", "44", "--review", "501", "--repo", "x/y", "--denylist", synthPath, "--require-denylist", "--json"],
+        { env, input: "" },
+      );
+      let withInlineReport = null;
+      try {
+        withInlineReport = JSON.parse(withInline.out);
+      } catch {
+        withInlineReport = null;
+      }
+      check(
+        "#944: empty review summary plus one non-empty inline comment carrying a denylisted term is a finding",
+        withInline.code === 1 && (withInlineReport?.findings ?? []).some((f) => String(f.location).includes("50101")),
+        `expected exit 1 with a finding on review comment 50101, got exit ${withInline.code}: ${withInline.out.slice(0, 400)}`,
+      );
+      check(
+        "#944: the inline review comment finding is still never echoed",
+        !withInline.out.includes("acme-corp"),
+        `matched term leaked into --review output: ${withInline.out}`,
+      );
+
+      const noInline = run(
+        "node",
+        [CONVERSATION, "--pr", "44", "--review", "502", "--repo", "x/y", "--denylist", synthPath, "--require-denylist", "--json"],
+        { env, input: "" },
+      );
+      let noInlineReport = null;
+      try {
+        noInlineReport = JSON.parse(noInline.out);
+      } catch {
+        noInlineReport = null;
+      }
+      check(
+        "#944: empty review summary and no non-empty inline comments is not a finding",
+        noInline.code === 0 && noInlineReport?.verdict === "not-applicable" && noInlineReport?.scanned === 0,
+        `expected exit 0 not-applicable with scanned 0, got exit ${noInline.code}: ${JSON.stringify(noInlineReport)}`,
+      );
+
+      const summaryOnly = run(
+        "node",
+        [CONVERSATION, "--pr", "44", "--review", "502", "--repo", "x/y", "--denylist", synthPath, "--require-denylist", "--json"],
+        { env, input: "Review summary mentions acme-corp.\n" },
+      );
+      let summaryOnlyReport = null;
+      try {
+        summaryOnlyReport = JSON.parse(summaryOnly.out);
+      } catch {
+        summaryOnlyReport = null;
+      }
+      check(
+        "#944: a non-empty review summary is still scanned when the review has no inline comments",
+        summaryOnly.code === 1 &&
+          (summaryOnlyReport?.findings ?? []).some((f) => /review 502/.test(String(f.location)) && !/comment/.test(String(f.location))),
+        `expected exit 1 on review 502's summary, got exit ${summaryOnly.code}: ${summaryOnly.out.slice(0, 400)}`,
+      );
+      check(
+        "#944: the review summary finding is still never echoed",
+        !summaryOnly.out.includes("acme-corp"),
+        `matched term leaked into review-summary output: ${summaryOnly.out}`,
+      );
+
+      const summaryAndInline = run(
+        "node",
+        [CONVERSATION, "--pr", "44", "--review", "501", "--repo", "x/y", "--denylist", synthPath, "--require-denylist", "--json"],
+        { env, input: "An ordinary summary with nothing planted.\n" },
+      );
+      let summaryAndInlineReport = null;
+      try {
+        summaryAndInlineReport = JSON.parse(summaryAndInline.out);
+      } catch {
+        summaryAndInlineReport = null;
+      }
+      check(
+        "#944: inline comments are scanned even when the review summary is non-empty",
+        summaryAndInline.code === 1 && (summaryAndInlineReport?.findings ?? []).some((f) => String(f.location).includes("50101")),
+        `expected exit 1 on review comment 50101 alongside a clean summary, got exit ${summaryAndInline.code}: ${summaryAndInline.out.slice(0, 400)}`,
+      );
+
+      const eventWorkflowPath = join(repoRoot, ".github", "workflows", "conversation-safety.yml");
+      const eventWorkflow = readFileSync(eventWorkflowPath, "utf8");
+      const gateStep = eventWorkflow.split("name: Run conversation safety gate")[1]?.split("- name: Redact denylist")[0] ?? "";
+      const gateRun = gateStep.split("run: |")[1] ?? "";
+      check(
+        "#944: pull_request_review fetches and scans inline comments attached to a submitted review in this run",
+        /inline comments attached to a submitted review are fetched and scanned in this run/i.test(eventWorkflow) &&
+          /printf '%s' "\$REVIEW_TEXT" \| node scripts\/check-conversation-safety\.mjs --pr "\$PR_NUMBER" --review "\$REVIEW_ID"/.test(gateRun) &&
+          !/still arrive as their own/.test(eventWorkflow) &&
+          !/separate pull_request_review_comment events and are scanned by/.test(eventWorkflow),
+        "conversation-safety.yml does not fetch this review's inline comments, or it still claims they always arrive as separate events",
+      );
+      check(
+        "#944: pull_request_review_comment stays subscribed — a comment that also arrives on its own is still scanned",
+        /^ {2}pull_request_review_comment:\n {4}types: \[created, edited\]/m.test(eventWorkflow),
+        "the per-comment event was dropped from conversation-safety.yml",
+      );
+      check(
+        "#944: the gate run script does not interpolate event text via ${{ }}",
+        gateRun.length > 0 && !/\$\{\{/.test(gateRun),
+        "untrusted event text is interpolated into the gate run script",
+      );
+    }
+
     // ---- #335, second half: THE SWEEP MUST EXIST, BE SCHEDULED, AND NEVER
     // COMMENT.
     //
-    // conversation-safety.yml scans each piece of text exactly once, at the
-    // instant it is posted, against the denylist snapshot CI holds at that
-    // instant. When a term is added to the real denylist and the
+    // conversation-safety.yml scans text when it is posted, against the
+    // denylist snapshot CI holds at that instant. A pull_request_review run
+    // also fetches that review's inline comments, and a later
+    // pull_request_review_comment for the same comment may scan it again;
+    // that second scan is acceptable. When a term is added to the real denylist and the
     // PUBLIC_SAFETY_DENYLIST_B64 secret has not yet been refreshed, that gate
     // returns a correct, FULL-mode PASS for the question it was asked — and
     // nothing ever asks again, because the event is gone. The same silence
