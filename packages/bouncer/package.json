@@ -121,7 +121,7 @@
     "react-dom": "19.3.0",
     "svix": "^1.96.0",
     "typescript": "~6.0.0",
-    "vitest": "^5.0.0"
+    "vitest": "^5.0.1"
   },
   "foundryReleaseVerification": {
     "next": {
