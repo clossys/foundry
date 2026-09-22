@@ -21,6 +21,9 @@ All notable changes to this package are documented here. Format follows
 - `./core` publication-map document beside `SurfaceDocument`: path and slide
   locations, validation against registered templates, and resolve helpers for
   host routing (#1104).
+- `SectionedViewDocument.sectionGroundRhythm` (`base-then-sunken`) fills omitted
+  section grounds as `base` then `sunken` in document order; explicit
+  `ground` values (including `inverse`) are never overwritten (#1105).
 
 ### Changed
 
@@ -29,6 +32,8 @@ All notable changes to this package are documented here. Format follows
   ink on inverse-ground plates.
 - Skill: names `publisher-web-route-check` and documents consumer templates
   as `blocks`, not route-local `build` functions (#1103).
+- `MarketingView` passes semantic `ground` through to its hero, feature grid,
+  FAQ, and closing CTA bands (defaulting to base/sunken alternation) (#1105).
 
 ## [0.4.21] - 2026-09-21
 
