@@ -5,13 +5,27 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
-## [0.4.22] - 2026-09-21
+## [0.4.23] - 2026-09-21
+
+### Added
+
+- Consumer `defineWebTemplate` templates are data: a `blocks` sequence of
+  Designer block kinds (`page-header`, `node-chapter`, `stat-grid`, and
+  others) this package renders. Arbitrary `build` functions are refused on
+  consumer templates; shipped views keep internal `build` implementations
+  (#1103).
+- `publisher-web-route-check` bin: fails when a publishing web route omits a
+  registered `SurfaceDocument.template` name or composes `@clossys/designer`
+  blocks directly in a route file. The route check ships as that bin for
+  adopters and CI (#1103).
 
 ### Changed
 
 - Web golden markup for `MarketingView` and `SectionedView` matches Designer
   0.4.16 logical inline utilities (`text-start`, `ps-lg`) and shell footer
   ink on inverse-ground plates.
+- Skill: names `publisher-web-route-check` and documents consumer templates
+  as `blocks`, not route-local `build` functions (#1103).
 
 ## [0.4.21] - 2026-09-21
 

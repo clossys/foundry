@@ -1,0 +1,10 @@
+{
+  "registeredTemplates": ["MarketingView", "DashboardView"],
+  "routes": [
+    {
+      "id": "/dashboard",
+      "template": "DashboardView",
+      "file": "routes/dashboard.tsx"
+    }
+  ]
+}
