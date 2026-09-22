@@ -75,7 +75,6 @@
         "peer-guard.test.ts"
       ],
       "src/web/internal/peer-version.ts": [
-        "packages/consent/src/web/internal/peer-version.ts",
         "scripts/check-workspace-links.mjs"
       ]
     },
