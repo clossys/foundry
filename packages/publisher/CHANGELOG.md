@@ -44,6 +44,13 @@ All notable changes to this package are documented here. Format follows
   (#1110).
 - A complete roster emits favicon and apple-touch links for a publication
   map that contains a web path (#1110).
+- `BrandGuideView` and `SystemAuditView` are catalog templates. `publisher-preview`
+  takes an optional third `roster.json` argument; when given and the
+  brand-asset roster is complete, it writes `guide.html` and `audit.html`
+  beside `gallery.html` from the same `brand.css` and roster after the
+  brand-file check passes. Fixture copy ships with the package. Strategist
+  facts are cited beside the tokens; this package does not change
+  Strategist (#1111).
 
 ### Changed
 

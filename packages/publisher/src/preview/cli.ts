@@ -2,23 +2,28 @@
 /**
  * `publisher-preview` — render every shipped web view against a consumer
  * `brand.css` after Designer’s brand-file coverage check passes. Fixture
- * copy lives in this package; Writer and Strategist are unchanged.
+ * copy lives in this package; Writer and Strategist are unchanged. When a
+ * brand-asset roster JSON file is also given, and it is complete, also
+ * writes the public brand guide (`guide.html`) and the internal system
+ * audit (`audit.html`) from the same brand.css and roster (issue #1111).
  */
 
 import { existsSync, realpathSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { PREVIEW_GALLERY_FILENAME, validateBrandForPreview, writePreviewGallery } from "./render-preview-gallery.js";
+import { loadBrandAssetRoster, PREVIEW_GALLERY_FILENAME, validateBrandForPreview, writePreviewGallery } from "./render-preview-gallery.js";
 
-const USAGE = `Usage: publisher-preview <brand.css> <output-directory>
+const USAGE = `Usage: publisher-preview <brand.css> <output-directory> [roster.json]
 
   brand.css            Path to the consumer brand stylesheet. Required.
   output-directory     Directory where gallery.html and copied styles are written. Required.
+  roster.json           Path to a brand-asset roster (BrandAssetEntry[]). Optional: when given
+                        and complete, also writes guide.html and audit.html.
 
 Options:
   --help         Print this message and exit 0.
 
-Exit codes: 0 = gallery written, 1 = brand file unreadable or coverage findings (no HTML written), 2 = bad arguments or could not run.
+Exit codes: 0 = output written, 1 = brand file or roster findings (no HTML written), 2 = bad arguments or could not run.
 `;
 
 export class CliInputError extends Error {}
@@ -26,12 +31,14 @@ export class CliInputError extends Error {}
 interface ParsedArgs {
   brandCssFile?: string;
   outputDir?: string;
+  rosterFile?: string;
   help: boolean;
 }
 
 function parseArgs(argv: string[]): ParsedArgs {
   let brandCssFile: string | undefined;
   let outputDir: string | undefined;
+  let rosterFile: string | undefined;
   let help = false;
 
   for (const arg of argv) {
@@ -50,10 +57,14 @@ function parseArgs(argv: string[]): ParsedArgs {
       outputDir = arg;
       continue;
     }
+    if (rosterFile === undefined) {
+      rosterFile = arg;
+      continue;
+    }
     throw new CliInputError("too many positional arguments");
   }
 
-  return { brandCssFile, outputDir, help };
+  return { brandCssFile, outputDir, rosterFile, help };
 }
 
 function requireFile(label: string, path: string): void {
@@ -91,10 +102,25 @@ export function main(argv: string[]): number {
     return 1;
   }
 
+  let rosterPath: string | undefined;
+  if (args.rosterFile !== undefined) {
+    rosterPath = resolve(args.rosterFile);
+    requireFile("roster.json", rosterPath);
+    const roster = loadBrandAssetRoster(rosterPath);
+    if (!roster.ok) {
+      console.error(`publisher-preview: ${roster.message}`);
+      console.error("Refusing to write preview HTML until the brand-asset roster is complete.");
+      return 1;
+    }
+  }
+
   try {
-    const result = writePreviewGallery({ brandCssPath: brandPath, outputDir: resolve(args.outputDir) });
+    const result = writePreviewGallery({ brandCssPath: brandPath, outputDir: resolve(args.outputDir), rosterPath });
     console.log(`Wrote ${PREVIEW_GALLERY_FILENAME} (${result.entryCount} views) to ${resolve(args.outputDir)}`);
     console.log(`Brand file: ${result.brandCssPath}`);
+    if (result.guidePath && result.auditPath) {
+      console.log(`Wrote brand guide and system audit: ${result.guidePath}, ${result.auditPath}`);
+    }
     return 0;
   } catch (error) {
     console.error(`publisher-preview: ${error instanceof Error ? error.message : String(error)}`);

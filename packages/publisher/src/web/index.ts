@@ -17,8 +17,8 @@ export { defineWebTemplate } from "./internal/defineWebTemplate.js";
 export { createWebRenderer } from "./internal/createWebRenderer.js";
 export { evaluateWebRouteManifest, evaluateWebRouteManifestWithSources, scanRouteSourceForDirectComposition } from "./checkWebRoutes.js";
 export type { WebRouteCheckResult, WebRouteFinding, WebRouteManifest, WebRouteManifestEntry } from "./checkWebRoutes.js";
-export { AuthView, CaptureView, CollectionView, DocumentView, ErrorView, MarketingView, SectionedView } from "./views/index.js";
-export type { AuthViewProps, CaptureViewProps, CollectionViewEmptyState, CollectionViewEntry, CollectionViewLink, CollectionViewPagination, CollectionViewProps, DocumentViewEffectiveDate, DocumentViewProps, ErrorViewProps, MarketingFaqItem, MarketingFeatureItem, MarketingViewProps, SectionedViewLandmark, SectionedViewProps } from "./views/index.js";
+export { AuthView, BrandGuideView, CaptureView, CollectionView, DocumentView, ErrorView, MarketingView, SectionedView, SystemAuditView } from "./views/index.js";
+export type { AuthViewProps, BrandGuideAssetLink, BrandGuideFact, BrandGuideViewProps, CaptureViewProps, CollectionViewEmptyState, CollectionViewEntry, CollectionViewLink, CollectionViewPagination, CollectionViewProps, DocumentViewEffectiveDate, DocumentViewProps, ErrorViewProps, MarketingFaqItem, MarketingFeatureItem, MarketingViewProps, SectionedViewLandmark, SectionedViewProps, SystemAuditViewProps } from "./views/index.js";
 
 export { RenderError } from "../internal/errors.js";
 export type { RenderErrorReason } from "../internal/errors.js";
