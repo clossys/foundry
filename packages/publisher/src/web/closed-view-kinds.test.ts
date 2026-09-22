@@ -4,7 +4,6 @@
  * refuses unknown template names when knownTemplates is supplied.
  */
 
-import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import type { CopyRegistry, CopyResolver } from "@clossys/writer";
@@ -32,7 +31,7 @@ const resolver: CopyResolver = createCopyResolver(registry);
 const STATEMENT_PAGE_TEMPLATE = defineWebTemplate({
   name: "StatementPageView",
   flow: { slots: [{ key: "statement", required: true }] },
-  build: (content) => createElement("section", { "data-testid": "statement-band" }, createElement("p", null, content.statement)),
+  blocks: [{ kind: "marketing-chapter", title: "statement" }],
 });
 
 const surface: SurfaceDocument = {
@@ -60,7 +59,7 @@ describe("defineWebTemplate — statement band not expressible as a SectionedVie
     const resolved = resolveSurfaceDocument(surface, resolver, { knownTemplates: renderer.listWebTemplateNames() });
     const { element } = renderer.renderWebDocument(resolved.document, { groups: resolved.groups, nodes: resolved.nodes });
     const html = renderToStaticMarkup(element);
-    expect(html).toContain('data-testid="statement-band"');
     expect(html).toContain("Acme placeholder statement copy.");
+    expect(html).toContain("text-h2");
   });
 });
