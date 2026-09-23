@@ -5,7 +5,7 @@
 // node_modules/.bin-shaped symlink in a temp directory — not `node <real path>`.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, realpathSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -51,6 +51,19 @@ function run() {
 if (fileURLToPath(import.meta.url) === resolve(process.argv[1])) run();
 `;
 
+// os.tmpdir() on macOS resolves under /var/folders, which is itself a
+// symlink to /private/var/folders. A path built from the raw mkdtempSync()
+// result is therefore not yet canonical: a script loaded from it sees
+// import.meta.url resolved to the realpath (Node always realpaths the main
+// ESM module) while a naive `resolve(process.argv[1])` guard does not, so
+// even a "direct, no .bin symlink" invocation looks like a symlinked one.
+// Canonicalizing right after mkdtemp keeps that distinction meaningful for
+// what this suite actually tests: the node_modules/.bin symlink, not an
+// incidental ancestor symlink in $TMPDIR.
+function mkdtempRealSync(prefix) {
+  return realpathSync(mkdtempSync(join(tmpdir(), prefix)));
+}
+
 function writeCli(dir, fileName, source) {
   mkdirSync(dir, { recursive: true });
   const path = join(dir, fileName);
@@ -59,7 +72,7 @@ function writeCli(dir, fileName, source) {
 }
 
 function makePackageRepo({ name = "@gate-fixture/probe", bins, files }) {
-  const root = mkdtempSync(join(tmpdir(), "bin-reachability-repo-"));
+  const root = mkdtempRealSync("bin-reachability-repo-");
   const packageDir = join(root, "packages", "probe");
   mkdirSync(packageDir, { recursive: true });
   writeFileSync(join(packageDir, "package.json"), `${JSON.stringify({ name, bin: bins }, null, 2)}\n`);
@@ -71,7 +84,7 @@ function makePackageRepo({ name = "@gate-fixture/probe", bins, files }) {
 }
 
 test("working CLI with realpathSync both sides, invoked through a .bin symlink, --help prints text, exit 0", () => {
-  const compiledEntryPath = writeCli(mkdtempSync(join(tmpdir(), "bin-live-")), "cli.js", LIVE_CLI);
+  const compiledEntryPath = writeCli(mkdtempRealSync("bin-live-"), "cli.js", LIVE_CLI);
   const spawned = runBinThroughDotBin({ binName: "live-check", compiledEntryPath, args: ["--help"] });
   assert.equal(spawned.status, 0);
   assert.ok(spawned.stdout.length > 0, "expected --help text on stdout");
@@ -90,7 +103,7 @@ test("working CLI with realpathSync both sides, invoked through a .bin symlink, 
 });
 
 test("dead CLI without realpathSync prints nothing through a .bin symlink and is a finding", () => {
-  const compiledEntryPath = writeCli(mkdtempSync(join(tmpdir(), "bin-dead-")), "cli.js", DEAD_CLI);
+  const compiledEntryPath = writeCli(mkdtempRealSync("bin-dead-"), "cli.js", DEAD_CLI);
   const spawned = runBinThroughDotBin({ binName: "dead-check", compiledEntryPath, args: ["--help"] });
   assert.equal(spawned.status, 0);
   assert.equal(spawned.stdout, "");
@@ -110,7 +123,7 @@ test("dead CLI without realpathSync prints nothing through a .bin symlink and is
 });
 
 test("control: the same dead CLI invoked by real path still prints; the gate uses the symlink and still fails it", () => {
-  const compiledEntryPath = writeCli(mkdtempSync(join(tmpdir(), "bin-dead-control-")), "cli.js", DEAD_CLI);
+  const compiledEntryPath = writeCli(mkdtempRealSync("bin-dead-control-"), "cli.js", DEAD_CLI);
   const byRealPath = spawnSync(process.execPath, [compiledEntryPath, "--help"], { encoding: "utf8" });
   assert.equal(byRealPath.status, 0);
   assert.match(byRealPath.stdout, /Usage: dead-check/, "real-path launch still reaches run(); we are measuring launch shape");
