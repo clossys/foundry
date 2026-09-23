@@ -45,6 +45,11 @@ describe("blocker escalation", () => {
     expect(isBlockerOverdue(blocker, new Date("2026-10-02T00:00:00Z"))).toBe(true);
   });
 
+  it("is not overdue at any point during its own due day when byWhen is date-only", () => {
+    const blocker = blockerFor("cap-1", "missing-input", { who: "advisor", how: "confirm", byWhen: "2026-10-01" }, "2026-09-22T00:00:00Z");
+    expect(isBlockerOverdue(blocker, new Date("2026-10-01T12:00:00Z"))).toBe(false);
+  });
+
   it("treats an unparseable due date as already overdue rather than on schedule", () => {
     const blocker = blockerFor("cap-1", "missing-input", { who: "advisor", how: "confirm", byWhen: "not-a-date" }, "2026-09-22T00:00:00Z");
     expect(isBlockerOverdue(blocker, new Date("2026-09-22T00:00:00Z"))).toBe(true);
