@@ -6,16 +6,20 @@
 // not scale. This module builds a GENERATED capability catalogue instead —
 // one entry per role, read from docs/contracts/role-loop-archetypes.json
 // (job question, owned metric, boundary) and each package manifest's
-// `foundry` block (`solves`, `needs`, `feeds`, `fit` — added by the
-// framework lane, issue #1172, in progress on another branch). No package
-// currently carries those fields, so `buildCapabilityCatalogue` falls back
-// to evidence already in this repository for the `needs`/`feeds` handoff
-// graph: first-party `@clossys/*` runtime dependencies in package.json, and
+// `foundry` block, read in exactly the shape
+// docs/contracts/package-framework.json defines: `solves` entries
+// `{ problem, statement, metric, proofCase, evidence, capability? }`,
+// `needs` entries `{ producerRole, artifact }` with `producerRole` a scoped
+// package name, `feeds` entries `{ artifact, path }`, `fit` a path to a
+// shipped fit-signal file, and `capabilities` (for issue #1382's
+// per-capability cycle judgement). No other shape is read. A role that
+// declares no `needs` falls back to evidence already in this repository:
+// first-party `@clossys/*` runtime dependencies in package.json, and
 // `docs/contracts/first-wave-sequence.json`'s `nonRuntimeOrder` (for
 // example: customer before publisher, "seal only after a first-person
-// keep"). Every derived edge records which of the two it came from, so a
-// package adopting #1172's real fields is never silently overridden by a
-// stale fallback.
+// keep"). Every edge records which of the two it came from, so a package
+// adopting the real fields is never silently overridden by a stale
+// fallback.
 //
 // `composeKit` and `validateKitProposal` are pure: they take an
 // already-built catalogue and never touch the filesystem. This file is the
@@ -127,26 +131,49 @@ export function evidenceAtLeast(evidence, floor) {
   return evidenceRank >= floorRank;
 }
 
+/** `@clossys/<role>` -> `<role>`; anything not under this repository's scope -> null. */
+export function roleOfScopedName(scopeName) {
+  return isText(scopeName) && scopeName.startsWith(SCOPE_PREFIX) ? scopeName.slice(SCOPE_PREFIX.length) : null;
+}
+
 /**
- * `foundry.solves` once a package adopts issue #1172: each entry names a
- * `problem` id from docs/contracts/client-problems.json, the `metric` it
- * would move, a `proofCase` describing how that would be shown, and an
- * `evidence` tier (`designed`, `qualified`, or `proven`). Malformed entries
- * are dropped rather than trusted partially.
+ * `foundry.solves`, in exactly docs/contracts/package-framework.json's
+ * shape: `{ problem, statement, metric, proofCase, evidence, capability? }`,
+ * where `evidence` is one of {@link EVIDENCE_LEVELS} and `capability` (when
+ * present) names one of this role's own `capabilities[].id`. Each entry is
+ * rebuilt field by field, so the generated catalogue carries exactly the
+ * contract's fields and nothing else a manifest happens to hold. An entry
+ * missing a required field is dropped rather than trusted partially;
+ * scripts/check-package-framework.mjs is the gate that reports it.
  */
 function normalizedManifestSolves(foundry) {
   if (!isRecord(foundry) || !Array.isArray(foundry.solves)) return null;
-  return foundry.solves.filter(
-    (item) => isRecord(item) && isText(item.problem) && isText(item.metric) && isText(item.proofCase) && EVIDENCE_LEVELS.includes(item.evidence),
-  );
+  return foundry.solves
+    .filter(
+      (item) =>
+        isRecord(item)
+        && isText(item.problem)
+        && isText(item.statement)
+        && isText(item.metric)
+        && isText(item.proofCase)
+        && EVIDENCE_LEVELS.includes(item.evidence),
+    )
+    .map((item) => ({
+      problem: item.problem,
+      statement: item.statement,
+      metric: item.metric,
+      proofCase: item.proofCase,
+      evidence: item.evidence,
+      ...(isText(item.capability) ? { capability: item.capability } : {}),
+    }));
 }
 
 /**
  * Fallback `solves`, used only while a role declares no real
- * `foundry.solves` (true for every role today; issue #1172 has not
- * landed). Restates the role's own docs/contracts/role-loop-archetypes.json
- * `jobQuestion` via the matching seed entry in client-problems.json
- * (matched by that entry's `groundedInRole`), always at `designed`
+ * `foundry.solves`. Restates the role's own
+ * docs/contracts/role-loop-archetypes.json `jobQuestion` via the matching
+ * seed entry in client-problems.json (matched by that entry's
+ * `groundedInRole`, whose `statement` it reuses), always at `designed`
  * evidence and never higher -- this is a documented placeholder, not a
  * measured claim.
  */
@@ -156,6 +183,7 @@ function fallbackSolves(directory, role, clientProblems) {
   return [
     {
       problem: seed.id,
+      statement: seed.statement,
       metric: role.metric?.name ?? "",
       proofCase: `Restates ${directory}'s own jobQuestion in docs/contracts/role-loop-archetypes.json ("${role.jobQuestion ?? ""}"); no measured proof case exists yet.`,
       evidence: "designed",
@@ -163,31 +191,93 @@ function fallbackSolves(directory, role, clientProblems) {
   ];
 }
 
-function normalizedFit(foundry) {
-  if (!isRecord(foundry) || !Array.isArray(foundry.fit)) return [];
-  return foundry.fit.filter((item) => isText(item));
+/**
+ * `foundry.fit` is a package-relative path to one shipped JSON file in
+ * docs/contracts/fit-signal-declarations.json's shape. The catalogue
+ * carries that file's signal ids. A path that escapes the package, or a
+ * file that is missing, unparseable, or not that shape, yields no signals;
+ * scripts/check-package-framework.mjs is the gate that reports it.
+ */
+function fitSignalIds(foundry, directory, readPackageFile) {
+  if (!isRecord(foundry) || !isText(foundry.fit)) return [];
+  const path = foundry.fit;
+  if (path.startsWith("/") || path.split(/[\\/]/).includes("..")) return [];
+  let document;
+  try {
+    document = JSON.parse(readPackageFile(directory, path));
+  } catch {
+    return [];
+  }
+  if (!isRecord(document) || !Array.isArray(document.signals)) return [];
+  return document.signals.filter((signal) => isRecord(signal) && isText(signal.id)).map((signal) => signal.id);
 }
 
-function normalizedManifestEdges(foundry, key) {
-  if (!isRecord(foundry) || !Array.isArray(foundry[key])) return null;
-  return foundry[key]
-    .filter((item) => isRecord(item) && isText(item.artifact))
+/**
+ * `foundry.needs`, in the contract's shape: `{ producerRole, artifact }`,
+ * where `producerRole` is the producer's scoped package name. The edge
+ * keeps that name verbatim and resolves `role` to the producer's package
+ * directory, the name every other catalogue field uses. A `producerRole`
+ * outside this repository's scope resolves to no role, so composition
+ * reports it as an unsatisfied need instead of guessing.
+ */
+function normalizedManifestNeeds(foundry) {
+  if (!isRecord(foundry) || !Array.isArray(foundry.needs)) return null;
+  return foundry.needs
+    .filter((item) => isRecord(item) && isText(item.producerRole) && isText(item.artifact))
+    .map((item) => {
+      const role = roleOfScopedName(item.producerRole);
+      return { artifact: item.artifact, ...(role === null ? {} : { role }), producerRole: item.producerRole, source: "manifest" };
+    });
+}
+
+/** `foundry.feeds`, in the contract's shape: `{ artifact, path }`. The consumer is not part of it. */
+function normalizedManifestFeeds(foundry) {
+  if (!isRecord(foundry) || !Array.isArray(foundry.feeds)) return null;
+  return foundry.feeds
+    .filter((item) => isRecord(item) && isText(item.artifact) && isText(item.path))
+    .map((item) => ({ artifact: item.artifact, path: item.path, source: "manifest" }));
+}
+
+/**
+ * `foundry.capabilities`, reduced to what issue #1382's per-capability
+ * cycle judgement reads: each capability's `id`, its `inputs`
+ * (`{ producerRole, artifact }`), and its `outputs`. As in
+ * scripts/check-package-framework.mjs, an `inputs` list with any malformed
+ * entry counts as no inputs.
+ */
+function normalizedCapabilities(foundry) {
+  if (!isRecord(foundry) || !Array.isArray(foundry.capabilities)) return [];
+  const isInputList = (value) => Array.isArray(value) && value.every((item) => isRecord(item) && isText(item.producerRole) && isText(item.artifact));
+  return foundry.capabilities
+    .filter((item) => isRecord(item) && isText(item.id))
     .map((item) => ({
-      artifact: item.artifact,
-      role: isText(item.fromRole ?? item.toRole ?? item.role) ? item.fromRole ?? item.toRole ?? item.role : undefined,
-      source: "manifest",
+      id: item.id,
+      inputs: isInputList(item.inputs) ? item.inputs.map((input) => ({ producerRole: input.producerRole, artifact: input.artifact })) : [],
+      outputs: Array.isArray(item.outputs) ? item.outputs.filter(isText) : [],
     }));
 }
 
 /**
  * Builds the generated capability catalogue: one entry per role in
  * role-loop-archetypes.json, combining that role's charter with its
- * manifest's `foundry.solves`/`needs`/`feeds`/`fit` where present, and
- * falling back to runtime-dependency and non-runtime-order evidence for
- * `needs`/`feeds` where a package declares neither field yet.
+ * manifest's `foundry.solves`/`needs`/`feeds`/`fit`/`capabilities` where
+ * present, and falling back to runtime-dependency and non-runtime-order
+ * evidence for `needs` where a package declares no `needs` yet.
+ *
+ * `feeds` is always the producer's side of every resolved need: each
+ * catalogue need becomes a feeds edge on its producer naming the consumer,
+ * carrying the producer's declared `path` when its own `foundry.feeds`
+ * lists that artifact. A declared feed no role needs stays in the list
+ * with no consumer.
+ *
+ * `options.manifests` (a Map of package directory -> manifest) and
+ * `options.readPackageFile(directory, relativePath)` replace the
+ * filesystem reads, so a test can compose a real repository's catalogue
+ * with one manifest changed without writing anything to disk.
  */
-export function buildCapabilityCatalogue(repoRoot) {
-  const manifests = collectPackageManifests(repoRoot);
+export function buildCapabilityCatalogue(repoRoot, options = {}) {
+  const manifests = options.manifests ?? collectPackageManifests(repoRoot);
+  const readPackageFile = options.readPackageFile ?? ((directory, relativePath) => readFileSync(join(repoRoot, "packages", directory, relativePath), "utf8"));
   const archetypes = loadRoleArchetypes(repoRoot);
   const nonRuntimeOrder = loadNonRuntimeOrder(repoRoot);
   const clientProblems = loadClientProblems(repoRoot);
@@ -203,8 +293,7 @@ export function buildCapabilityCatalogue(repoRoot) {
     roleDirectories.add(directory);
 
     const foundry = isRecord(manifest.foundry) ? manifest.foundry : {};
-    const manifestNeeds = normalizedManifestEdges(foundry, "needs");
-    const manifestFeeds = normalizedManifestEdges(foundry, "feeds");
+    const manifestNeeds = normalizedManifestNeeds(foundry);
     const manifestSolves = normalizedManifestSolves(foundry);
 
     byDirectory.set(directory, {
@@ -221,56 +310,63 @@ export function buildCapabilityCatalogue(repoRoot) {
         excludes: Array.isArray(role.boundary?.excludes) ? role.boundary.excludes.filter(isText) : [],
       },
       solves: manifestSolves ?? fallbackSolves(directory, role, clientProblems),
-      fit: normalizedFit(foundry),
+      fit: fitSignalIds(foundry, directory, readPackageFile),
       needs: manifestNeeds ?? [],
-      feeds: manifestFeeds ?? [],
+      declaredFeeds: normalizedManifestFeeds(foundry) ?? [],
+      capabilities: normalizedCapabilities(foundry),
       usesFallbackNeeds: manifestNeeds === null,
-      usesFallbackFeeds: manifestFeeds === null,
     });
   }
 
-  // Fallback edges from first-party runtime dependencies: a consumer needs
-  // the role it imports as a library; the producer feeds it back.
+  // Fallback needs from first-party runtime dependencies: a consumer needs
+  // the role it imports as a library.
   for (const directory of roleDirectories) {
+    const consumer = byDirectory.get(directory);
+    if (!consumer.usesFallbackNeeds) continue;
     const manifest = manifests.get(directory);
     const dependencies = isRecord(manifest.dependencies) ? manifest.dependencies : {};
     for (const depName of Object.keys(dependencies)) {
-      if (!depName.startsWith(SCOPE_PREFIX)) continue;
-      const depDirectory = depName.slice(SCOPE_PREFIX.length);
-      if (!roleDirectories.has(depDirectory) || depDirectory === directory) continue;
-      const reason = `runtime dependency on ${depName} in package.json`;
-      const consumer = byDirectory.get(directory);
-      if (consumer.usesFallbackNeeds) {
-        consumer.needs.push({ artifact: `${depDirectory}-package`, role: depDirectory, source: "fallback-runtime-dependency", reason });
-      }
-      const producer = byDirectory.get(depDirectory);
-      if (producer.usesFallbackFeeds) {
-        producer.feeds.push({ artifact: `${depDirectory}-package`, role: directory, source: "fallback-runtime-dependency", reason });
-      }
+      const depDirectory = roleOfScopedName(depName);
+      if (depDirectory === null || !roleDirectories.has(depDirectory) || depDirectory === directory) continue;
+      consumer.needs.push({ artifact: `${depDirectory}-package`, role: depDirectory, source: "fallback-runtime-dependency", reason: `runtime dependency on ${depName} in package.json` });
     }
   }
 
-  // Fallback edges from the committed non-runtime closed-loop order: the
+  // Fallback needs from the committed non-runtime closed-loop order: the
   // later package needs the earlier one's handoff before it makes sense.
   for (const constraint of nonRuntimeOrder) {
     if (!roleDirectories.has(constraint.earlier) || !roleDirectories.has(constraint.later)) continue;
     const later = byDirectory.get(constraint.later);
-    if (later.usesFallbackNeeds) {
-      later.needs.push({
-        artifact: `${constraint.earlier}-sequence-gate`,
-        role: constraint.earlier,
-        source: "fallback-non-runtime-order",
-        reason: constraint.reason,
+    if (!later.usesFallbackNeeds) continue;
+    later.needs.push({
+      artifact: `${constraint.earlier}-sequence-gate`,
+      role: constraint.earlier,
+      source: "fallback-non-runtime-order",
+      reason: constraint.reason,
+    });
+  }
+
+  // Feeds: the producer's side of every need, plus declared feeds no role needs.
+  const feedsByDirectory = new Map([...roleDirectories].map((directory) => [directory, []]));
+  const consumedDeclaredFeeds = new Set();
+  for (const directory of roleDirectories) {
+    for (const need of byDirectory.get(directory).needs) {
+      if (!need.role || !roleDirectories.has(need.role) || need.role === directory) continue;
+      const producer = byDirectory.get(need.role);
+      const declared = producer.declaredFeeds.find((feed) => feed.artifact === need.artifact);
+      if (declared) consumedDeclaredFeeds.add(declared);
+      feedsByDirectory.get(need.role).push({
+        artifact: need.artifact,
+        role: directory,
+        ...(declared ? { path: declared.path } : {}),
+        source: need.source,
+        ...(need.reason ? { reason: need.reason } : {}),
       });
     }
-    const earlier = byDirectory.get(constraint.earlier);
-    if (earlier.usesFallbackFeeds) {
-      earlier.feeds.push({
-        artifact: `${constraint.earlier}-sequence-gate`,
-        role: constraint.later,
-        source: "fallback-non-runtime-order",
-        reason: constraint.reason,
-      });
+  }
+  for (const directory of roleDirectories) {
+    for (const feed of byDirectory.get(directory).declaredFeeds) {
+      if (!consumedDeclaredFeeds.has(feed)) feedsByDirectory.get(directory).push(feed);
     }
   }
 
@@ -289,68 +385,164 @@ export function buildCapabilityCatalogue(repoRoot) {
         solves: entry.solves,
         fit: entry.fit,
         needs: sortEdges(entry.needs),
-        feeds: sortEdges(entry.feeds),
+        feeds: sortEdges(feedsByDirectory.get(directory)),
+        capabilities: entry.capabilities,
       };
     });
 
   return { schemaVersion: 1, roles };
 }
 
+/** Three-color DFS over an adjacency map (the same walk as scripts/check-package-framework.mjs). Returns the first cycle found, repeated node at both ends, or null. */
+function findCycle(edges) {
+  const color = new Map();
+  const stack = [];
+  function visit(node) {
+    color.set(node, 1);
+    stack.push(node);
+    for (const next of edges.get(node) ?? []) {
+      const state = color.get(next) ?? 0;
+      if (state === 1) return stack.slice(stack.indexOf(next)).concat(next);
+      if (state === 0 && edges.has(next)) {
+        const found = visit(next);
+        if (found) return found;
+      }
+    }
+    stack.pop();
+    color.set(node, 2);
+    return null;
+  }
+  for (const node of [...edges.keys()].sort()) {
+    if ((color.get(node) ?? 0) === 0) {
+      const found = visit(node);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
+/**
+ * Issue #1382's cycle decision (docs/contracts/package-framework.json,
+ * `fields.needs.enforcedRule` and `cycleDecision`), applied to the roles of
+ * one kit. It is the same graph scripts/check-package-framework.mjs
+ * `detectNeedsCycles` judges, restricted to `roleNames`:
+ *
+ *   - Nodes are `<role>#<capability id>` for every capability a role
+ *     declares, and the bare `<role>` for a role with no capability map.
+ *   - Edges are each capability's own `inputs`, and a bare role's `needs`.
+ *     A role with capabilities is judged by their `inputs`; one of its
+ *     `needs` that no capability's `inputs` covers (same producer and
+ *     artifact, or resolving to the same node) becomes an edge from EVERY
+ *     one of its capabilities.
+ *   - `{ producer, artifact }` resolves to the producer capability whose
+ *     `id` is the artifact, else to the capability whose `outputs` holds the
+ *     producer's declared `feeds` path for it, else (for a producer with no
+ *     capability map) to the bare producer. Anything else, including a
+ *     producer outside `roleNames`, adds no edge. A catalogue fallback need
+ *     (`<role>-package`, `<role>-sequence-gate`) is resolved the same way.
+ *
+ * `capabilityCycle` is a cycle among capability nodes only: a deadlock.
+ * `unjudgedCycle` is a cycle that exists only through a bare role, which
+ * cannot be told apart from a legitimate loop. A role-level loop with
+ * neither behind it (the Customer/Publisher keep loop) is legitimate.
+ */
+export function judgeNeedsCycles({ roleNames, catalogue }) {
+  const byRole = new Map((catalogue?.roles ?? []).map((role) => [role.role, role]));
+  const inScope = new Set((roleNames ?? []).filter((role) => byRole.has(role)));
+  const capabilitiesOf = (role) => byRole.get(role)?.capabilities ?? [];
+  const resolve = (producer, artifact) => {
+    if (!producer || !inScope.has(producer)) return null;
+    const capabilities = capabilitiesOf(producer);
+    if (capabilities.length === 0) return producer;
+    const byId = capabilities.find((capability) => capability.id === artifact);
+    if (byId) return `${producer}#${byId.id}`;
+    const feed = (byRole.get(producer).feeds ?? []).find((item) => isText(item.path) && item.artifact === artifact);
+    const byOutput = feed ? capabilities.find((capability) => capability.outputs.includes(feed.path)) : undefined;
+    return byOutput ? `${producer}#${byOutput.id}` : null;
+  };
+  const resolveInput = (input) => resolve(roleOfScopedName(input.producerRole), input.artifact);
+  const resolveNeed = (need) => resolve(need.role, need.artifact);
+  const edges = new Map();
+  for (const role of [...inScope].sort()) {
+    const needs = byRole.get(role).needs ?? [];
+    const capabilities = capabilitiesOf(role);
+    if (capabilities.length === 0) {
+      edges.set(role, needs.map(resolveNeed).filter((node) => node !== null));
+      continue;
+    }
+    const covered = (need) => capabilities.some((capability) => capability.inputs.some((input) =>
+      (roleOfScopedName(input.producerRole) === need.role && input.artifact === need.artifact)
+      || (resolveInput(input) !== null && resolveInput(input) === resolveNeed(need))));
+    const uncoveredTargets = needs.filter((need) => !covered(need)).map(resolveNeed).filter((node) => node !== null);
+    for (const capability of capabilities) {
+      edges.set(`${role}#${capability.id}`, [...capability.inputs.map(resolveInput).filter((node) => node !== null), ...uncoveredTargets]);
+    }
+  }
+  const capabilityOnly = new Map([...edges].filter(([node]) => node.includes("#")).map(([node, next]) => [node, next.filter((target) => target.includes("#"))]));
+  const capabilityCycle = findCycle(capabilityOnly);
+  return { capabilityCycle, unjudgedCycle: capabilityCycle ? null : findCycle(edges) };
+}
+
 /**
  * Pure composition: given a selection of role directories and an
  * already-built catalogue, pulls in every role a `needs` edge names that
- * was not already selected, orders roles so a producer always precedes its
+ * was not already selected, orders roles so a producer precedes its
  * consumer, and reports any need that names no resolvable role plus any
  * role added purely to satisfy someone else's need. An unknown selected
- * role or a needs cycle is reported as `indeterminate`, never guessed past.
+ * role comes back `indeterminate`, never guessed past.
+ *
+ * Needs cycles follow issue #1382's decision ({@link judgeNeedsCycles}):
+ *   - a cycle among the kit's capabilities is a deadlock: `indeterminate`;
+ *   - a role-level loop with no capability cycle behind it is legitimate:
+ *     the kit composes, and the loop is listed in `roleCycles`. The
+ *     sequence cannot put every role in a loop strictly before the others,
+ *     so within a loop it is the walk order;
+ *   - a cycle only visible through a role with no capability map cannot be
+ *     judged: the kit composes (never failed) and `unjudgedCycle` names it
+ *     (never silently passed).
  */
 export function composeKit({ selectedRoles, catalogue, context } = {}) {
   const byRole = new Map((catalogue?.roles ?? []).map((role) => [role.role, role]));
   const roles = Array.isArray(selectedRoles) ? selectedRoles : [];
+  const indeterminate = (reason) => ({ state: "indeterminate", reason, roles: [], sequence: [], unsatisfiedNeeds: [], addedForDependencies: [] });
 
   for (const role of roles) {
-    if (!byRole.has(role)) {
-      return { state: "indeterminate", reason: `unknown role: ${role}`, roles: [], sequence: [], unsatisfiedNeeds: [], addedForDependencies: [] };
-    }
+    if (!byRole.has(role)) return indeterminate(`unknown role: ${role}`);
   }
 
   const included = new Set();
   const order = [];
   const unsatisfiedNeeds = [];
   const addedForDependencies = new Set();
+  const roleCycles = [];
 
   function visit(role, path) {
-    if (included.has(role)) return true;
-    if (path.has(role)) return { cycle: [...path, role] };
-    path.add(role);
+    if (included.has(role)) return;
+    const onPath = path.indexOf(role);
+    if (onPath !== -1) {
+      roleCycles.push([...path.slice(onPath), role]);
+      return;
+    }
+    path.push(role);
     const capability = byRole.get(role);
     for (const need of capability.needs) {
       if (need.role && byRole.has(need.role)) {
         if (!roles.includes(need.role)) addedForDependencies.add(need.role);
-        const result = visit(need.role, path);
-        if (result !== true) return result;
+        visit(need.role, path);
       } else {
-        unsatisfiedNeeds.push({ role, artifact: need.artifact, wantedRole: need.role ?? null });
+        unsatisfiedNeeds.push({ role, artifact: need.artifact, wantedRole: need.role ?? need.producerRole ?? null });
       }
     }
-    path.delete(role);
+    path.pop();
     included.add(role);
     order.push(role);
-    return true;
   }
 
-  for (const role of roles) {
-    const result = visit(role, new Set());
-    if (result !== true) {
-      return {
-        state: "indeterminate",
-        reason: `needs cycle: ${result.cycle.join(" -> ")}`,
-        roles: [],
-        sequence: [],
-        unsatisfiedNeeds: [],
-        addedForDependencies: [],
-      };
-    }
+  for (const role of roles) visit(role, []);
+
+  const { capabilityCycle, unjudgedCycle } = judgeNeedsCycles({ roleNames: order, catalogue });
+  if (capabilityCycle) {
+    return indeterminate(`needs cycle between capabilities, so none of them can ever run first (issue #1382): ${capabilityCycle.join(" -> ")}`);
   }
 
   const composedRoles = order.map((role) => {
@@ -377,6 +569,8 @@ export function composeKit({ selectedRoles, catalogue, context } = {}) {
     sequence: order,
     unsatisfiedNeeds,
     addedForDependencies: [...addedForDependencies],
+    roleCycles,
+    unjudgedCycle,
     context: context ?? null,
   };
 }
@@ -444,6 +638,8 @@ export function composeKitFromProblems({ confirmedProblems, catalogue, overCapRe
       reason: `composing ${roleCount} roles exceeds the first-engagement cap of ${effectiveCap}; provide overCapReason to proceed anyway`,
       roles: composed.roles.map((role) => ({ ...role, confirmedProblemIds: roleTrace.get(role.role) ?? [], isDirect: roleTrace.has(role.role) })),
       sequence: composed.sequence,
+      roleCycles: composed.roleCycles,
+      unjudgedCycle: composed.unjudgedCycle,
     };
   }
 
@@ -454,6 +650,8 @@ export function composeKitFromProblems({ confirmedProblems, catalogue, overCapRe
     sequence: composed.sequence,
     unsatisfiedNeeds: composed.unsatisfiedNeeds,
     addedForDependencies: composed.addedForDependencies,
+    roleCycles: composed.roleCycles,
+    unjudgedCycle: composed.unjudgedCycle,
     ...(isText(overCapReason) ? { overCapReason } : {}),
   };
 }
@@ -520,13 +718,12 @@ export function validateKitProposal({ proposal, confirmedProblems, catalogue }) 
 /**
  * Advisory only, not wired into scripts/check-offering-kits.mjs's exit
  * code: "presets may only include roles whose claims are at least
- * qualified" cannot be enforced as a hard gate today, because every
- * current `solves` entry is the `designed`-only fallback documented above
- * (issue #1172 has not landed real evidence for any role yet) -- enforcing
- * it now would fail every preset the owner already approved. This
+ * qualified" cannot be enforced as a hard gate yet, because most roles
+ * still carry only the `designed` fallback `solves` documented above --
+ * enforcing it now would fail presets the owner already approved. This
  * function makes the gap visible and testable so it is ready to enforce
- * the moment real evidence exists, consistent with this repository's own
- * rule that a package's state is derived from evidence, never declared
+ * once real evidence exists, consistent with this repository's own rule
+ * that a package's state is derived from evidence, never declared
  * (docs/LIFECYCLE.md).
  */
 export function presetEvidenceFindings({ presets, catalogue, floor = "qualified" }) {

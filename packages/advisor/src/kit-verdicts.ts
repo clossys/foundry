@@ -112,10 +112,9 @@ function sameRoleSet(a: readonly string[], b: readonly string[]): boolean {
  * A preset "matches" a composition when its own closure (via
  * `composeKit`) has exactly the composition's role set. This does NOT
  * gate on `presetEvidenceFindings` — that check is advisory-only by
- * design (composition.ts's own doc comment): every current `solves`
- * entry is a `designed`-only fallback until #1172 lands real evidence,
- * so gating attribution on it would make preset attribution vacuous
- * today. The skill discloses evidence level to the client separately.
+ * design (composition.ts's own doc comment): most roles still carry
+ * only the `designed` fallback `solves` entry, so gating attribution on
+ * it would make preset attribution vacuous today. The skill discloses evidence level to the client separately.
  */
 function matchingPresetId(composedRoles: readonly string[], presets: readonly KitPreset[], catalogue: CapabilityCatalogue): string | undefined {
   for (const preset of presets) {

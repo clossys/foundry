@@ -71,12 +71,49 @@ test("a preset naming an unknown role is a finding", () => {
   assert.equal(found.includes("unknown-role"), true);
 });
 
-test("a preset that does not compose because of a needs cycle is a finding", () => {
+/** Writer and Publisher needing each other at role level (fallback edges, no capability maps). */
+function roleLevelLoop() {
   const cyclic = catalogue();
   cyclic.roles.find((r) => r.role === "writer").needs = [{ artifact: "publisher-package", role: "publisher", source: "fallback-runtime-dependency" }];
-  const drifted = contract();
-  const found = rules(evaluateOfferingKits({ contract: drifted, catalogue: cyclic }));
-  assert.equal(found.includes("preset-does-not-compose"), true);
+  return cyclic;
+}
+
+/** The same loop, with capability maps whose inputs wait on each other: a deadlock (issue #1382). */
+function capabilityDeadlock() {
+  const cyclic = catalogue();
+  const writer = cyclic.roles.find((r) => r.role === "writer");
+  const publisher = cyclic.roles.find((r) => r.role === "publisher");
+  writer.needs = [{ artifact: "surfaces", role: "publisher", producerRole: "@clossys/publisher", source: "manifest" }];
+  writer.capabilities = [{ id: "copy", inputs: [{ producerRole: "@clossys/publisher", artifact: "surfaces" }], outputs: ["clossys/writer/copy.json"] }];
+  publisher.capabilities = [{ id: "surfaces", inputs: [{ producerRole: "@clossys/writer", artifact: "copy" }], outputs: ["clossys/publisher/surfaces/"] }];
+  return cyclic;
+}
+
+/** The same role-level loop, where the capabilities do not wait on each other: legitimate (issue #1382). */
+function legitimateLoop() {
+  const looped = capabilityDeadlock();
+  looped.roles.find((r) => r.role === "publisher").capabilities = [
+    { id: "surfaces", inputs: [], outputs: ["clossys/publisher/surfaces/"] },
+    { id: "seal", inputs: [{ producerRole: "@clossys/writer", artifact: "copy" }], outputs: ["clossys/publisher/record.json"] },
+  ];
+  return looped;
+}
+
+test("a preset that does not compose because its capabilities deadlock is a finding", () => {
+  const result = evaluateOfferingKits({ contract: contract(), catalogue: capabilityDeadlock() });
+  assert.equal(rules(result).includes("preset-does-not-compose"), true);
+});
+
+test("a role-level loop with no capability cycle behind it passes (issue #1382)", () => {
+  const result = evaluateOfferingKits({ contract: contract(), catalogue: legitimateLoop() });
+  assert.deepEqual(rules(result), []);
+  assert.deepEqual(result.warnings, []);
+});
+
+test("a cycle only visible through roles with no capability map is a warning, never a finding", () => {
+  const result = evaluateOfferingKits({ contract: contract(), catalogue: roleLevelLoop() });
+  assert.deepEqual(rules(result), []);
+  assert.deepEqual(result.warnings.map((warning) => warning.rule), ["needs-graph-cycle-unjudged", "needs-graph-cycle-unjudged"]);
 });
 
 test("a preset whose role has an unresolvable need is a finding, not a silent pass", () => {
@@ -117,11 +154,24 @@ test("composeKit reports an unknown selected role as indeterminate", () => {
   assert.equal(composed.state, "indeterminate");
 });
 
-test("composeKit reports a needs cycle as indeterminate", () => {
-  const cyclic = catalogue();
-  cyclic.roles.find((r) => r.role === "writer").needs = [{ artifact: "publisher-package", role: "publisher", source: "fallback-runtime-dependency" }];
-  const composed = composeKit({ selectedRoles: ["writer"], catalogue: cyclic });
+test("composeKit reports a cycle among capabilities as indeterminate", () => {
+  const composed = composeKit({ selectedRoles: ["writer"], catalogue: capabilityDeadlock() });
   assert.equal(composed.state, "indeterminate");
+  assert.match(composed.reason, /publisher#surfaces -> writer#copy -> publisher#surfaces/);
+});
+
+test("composeKit composes a legitimate role-level loop and lists it", () => {
+  const composed = composeKit({ selectedRoles: ["writer"], catalogue: legitimateLoop() });
+  assert.equal(composed.state, "composed");
+  assert.deepEqual(composed.sequence, ["designer", "publisher", "writer"]);
+  assert.deepEqual(composed.roleCycles, [["writer", "publisher", "writer"]]);
+  assert.equal(composed.unjudgedCycle, null);
+});
+
+test("composeKit composes a cycle it cannot judge, and names it rather than passing silently", () => {
+  const composed = composeKit({ selectedRoles: ["writer"], catalogue: roleLevelLoop() });
+  assert.equal(composed.state, "composed");
+  assert.deepEqual(composed.unjudgedCycle, ["publisher", "writer", "publisher"]);
 });
 
 test("composeKitFromProblems is deterministic: shuffled confirmed-problem order gives the identical result", () => {
@@ -220,6 +270,7 @@ test("buildCapabilityCatalogue over this repository produces an entry per role w
   assert.equal(roleNames.includes("publisher"), true);
   const publisher = built.roles.find((role) => role.role === "publisher");
   assert.equal(publisher.needs.every((need) => need.source.startsWith("fallback-")), true);
+  assert.equal(publisher.capabilities.some((capability) => capability.id === "sealing-and-the-publication-record"), true);
 });
 
 test("the CLI reports PASS on this repository", () => {

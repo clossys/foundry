@@ -24,12 +24,20 @@ describe("CAPABILITY_CATALOGUE and kitCatalogueDigest", () => {
     expect(roleNames.includes("publisher")).toBe(true);
   });
 
-  it("gives every role a fallback solves entry at designed evidence, grounded in client-problems.json", () => {
+  it("gives every role solves entries that follow the package-framework contract's rule", () => {
+    // The contract: `problem` is a declared client-problems.json id,
+    // `statement` a nonempty sentence, `metric` the role's OWN owned
+    // metric, `proofCase` nonempty, and `evidence` one of the three tiers
+    // -- `designed`, `qualified` or `proven`, not only `designed`.
     for (const role of CAPABILITY_CATALOGUE.roles) {
       expect(role.solves.length).toBeGreaterThan(0);
       for (const entry of role.solves) {
-        expect(entry.evidence).toBe("designed");
         expect(CLIENT_PROBLEMS.some((problem) => problem.id === entry.problem)).toBe(true);
+        expect(entry.statement.trim()).not.toBe("");
+        expect(entry.metric).toBe(role.metric.name);
+        expect(entry.proofCase.trim()).not.toBe("");
+        expect(EVIDENCE_LEVELS).toContain(entry.evidence);
+        if (entry.capability !== undefined) expect(role.capabilities.map((capability) => capability.id)).toContain(entry.capability);
       }
     }
   });
@@ -49,7 +57,10 @@ describe("KIT_PRESETS", () => {
     for (const preset of KIT_PRESETS) {
       const composed = composeKit({ selectedRoles: preset.roles, catalogue: CAPABILITY_CATALOGUE });
       expect(composed.state).toBe("composed");
-      if (composed.state === "composed") expect(composed.unsatisfiedNeeds).toHaveLength(0);
+      if (composed.state === "composed") {
+        expect(composed.unsatisfiedNeeds).toHaveLength(0);
+        expect(composed.unjudgedCycle).toBeNull();
+      }
     }
   });
 

@@ -7,8 +7,17 @@
 // current role packages, every `addOnTo` resolves to a real preset id, and
 // every preset composes cleanly against the generated capability catalogue
 // (scripts/lib/capability-catalogue.mjs#composeKit reports no unsatisfied
-// need and no cycle). Exit 1 = at least one finding. Exit 2 = the question
-// could not be answered (a missing or unparseable input).
+// need and no deadlock). Exit 1 = at least one finding. Exit 2 = the
+// question could not be answered (a missing or unparseable input).
+//
+// Needs cycles follow issue #1382's decision in
+// docs/contracts/package-framework.json (`fields.needs.cycleDecision`),
+// the same rule scripts/check-package-framework.mjs applies: a cycle among
+// capabilities is a deadlock and a finding (`preset-does-not-compose`); a
+// role-level loop with no capability cycle behind it (the Customer/
+// Publisher keep loop) is legitimate and passes; a cycle only visible
+// through a role with no capability map cannot be judged, so it is a
+// warning (`needs-graph-cycle-unjudged`) -- never a finding, never silent.
 //
 // WHY THIS EXISTS
 // ---------------
@@ -59,15 +68,16 @@ function readJson(path) {
 /** Pure evaluation over an already-read contract and an already-built catalogue. */
 export function evaluateOfferingKits({ contract, catalogue }) {
   const findings = [];
+  const warnings = [];
   const note = (rule, message, extra = {}) => findings.push({ rule, message, ...extra });
 
   if (!isRecord(contract) || contract.schemaVersion !== 1) {
     note("invalid-contract", "kit presets contract must be schemaVersion 1");
-    return { findings, presets: [] };
+    return { findings, warnings, presets: [] };
   }
   if (!Array.isArray(contract.presets) || contract.presets.length === 0) {
     note("invalid-contract", "presets must be a nonempty array");
-    return { findings, presets: [] };
+    return { findings, warnings, presets: [] };
   }
 
   const knownRoles = new Set((catalogue?.roles ?? []).map((role) => role.role));
@@ -117,7 +127,14 @@ export function evaluateOfferingKits({ contract, catalogue }) {
       const composed = composeKit({ selectedRoles: validRoles, catalogue });
       if (composed.state !== "composed") {
         note("preset-does-not-compose", `preset ${preset.id} does not compose: ${composed.reason}`, { preset: preset.id });
-      } else if (composed.unsatisfiedNeeds.length > 0) {
+      } else {
+        if (composed.unjudgedCycle) {
+          warnings.push({
+            rule: "needs-graph-cycle-unjudged",
+            message: `preset ${preset.id}: the needs graph has a cycle through a role with no capability map, so it cannot be told apart from a deadlock: ${composed.unjudgedCycle.join(" -> ")} (issue #1382)`,
+            preset: preset.id,
+          });
+        }
         for (const need of composed.unsatisfiedNeeds) {
           note(
             "unsatisfied-need",
@@ -129,7 +146,7 @@ export function evaluateOfferingKits({ contract, catalogue }) {
     }
   }
 
-  return { findings, presets: contract.presets };
+  return { findings, warnings, presets: contract.presets };
 }
 
 function defaultRoot() {
@@ -144,10 +161,9 @@ export function loadAndEvaluate(repoRoot = defaultRoot()) {
   const contract = readJson(presetsPath);
   const catalogue = buildCapabilityCatalogue(repoRoot);
   const result = evaluateOfferingKits({ contract, catalogue });
-  // Advisory only -- see presetEvidenceFindings' own doc comment. Every
-  // current `solves` claim is the `designed`-only fallback (issue #1172
-  // has not landed real evidence for any role), so this is expected to be
-  // nonempty today; it never affects the exit code.
+  // Advisory only -- see presetEvidenceFindings' own doc comment. Most
+  // roles still carry only the `designed` fallback `solves`, so this is
+  // expected to be nonempty today; it never affects the exit code.
   const evidenceAdvisories = presetEvidenceFindings({ presets: result.presets, catalogue });
   return { ...result, evidenceAdvisories };
 }
@@ -160,6 +176,9 @@ function printText(result) {
     for (const finding of result.findings) {
       console.error(`- ${finding.rule}: ${finding.message}`);
     }
+  }
+  for (const warning of result.warnings ?? []) {
+    console.log(`offering kits: warning ${warning.rule}: ${warning.message}`);
   }
   if (result.evidenceAdvisories?.length > 0) {
     console.log(
@@ -174,7 +193,7 @@ function main(argv) {
   const repoRoot = positional[0] ? positional[0] : defaultRoot();
   const result = loadAndEvaluate(repoRoot);
   if (json) {
-    console.log(JSON.stringify({ findings: result.findings, evidenceAdvisories: result.evidenceAdvisories }, null, 2));
+    console.log(JSON.stringify({ findings: result.findings, warnings: result.warnings, evidenceAdvisories: result.evidenceAdvisories }, null, 2));
   } else {
     printText(result);
   }
