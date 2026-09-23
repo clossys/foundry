@@ -3,7 +3,7 @@
 <!-- controller-role-contract:start -->
 ## Control-loop contract
 
-This block is derived from the schema-v4 role contract shipped with this
+This block is derived from the schema-v5 role contract shipped with this
 package. The consumer (the client operating the loop) owns its concrete
 setpoint and review cadence; Controller supplies neither.
 
@@ -15,7 +15,7 @@ setpoint and review cadence; Controller supplies neither.
 
 **Secondary modes.** None.
 
-**Stages.** `sense` → `judge` → `act` → `verify` → `learnOrEscalate`.
+**Stages.** `sense` → `judge` → `act` → `verify` → `learn`.
 
 **Boundary.** Owns Operating-rule grammar, identity, lifecycle, and content binding. It excludes `judging a proposed change`, `materializing declared state`, `authorizing provider mutations`.
 
@@ -188,8 +188,8 @@ different words for the same underlying position. `LIFECYCLE_STATES` (typed
 `LifecycleState`) -- `absent`, `found`, `draft`, `approved`, `verified`,
 `retired` -- and `LIFECYCLE_CONDITIONS` (typed `LifecycleCondition`) --
 `current`, `stale`, `blocked`, shared across every state -- are this
-package's own single definition, mirrored word for word by
-`docs/contracts/lifecycle.json`. This package's own loop engine (below)
+package's own single definition, mirrored word for word by this
+repository's own canonical lifecycle contract. This package's own loop engine (below)
 uses these states directly; any other package with a status-like surface
 imports them from here rather than declaring its own.
 
@@ -2171,7 +2171,7 @@ mismatch (or another binding finding), `2` when it could not run. Use
 | Export | Kind | Purpose |
 | --- | --- | --- |
 | `PACKAGE_LIFECYCLE_VERSION` | constant | Supported lifecycle schema version, currently `1`. |
-| `LIFECYCLE_STATES` / `LIFECYCLE_CONDITIONS` | constants | The one lifecycle vocabulary (issue #1228) every capability and pack item passes through: six states (`LifecycleState`) and three shared conditions (`LifecycleCondition`). Mirrored word for word by `docs/contracts/lifecycle.json`. |
+| `LIFECYCLE_STATES` / `LIFECYCLE_CONDITIONS` | constants | The one lifecycle vocabulary (issue #1228) every capability and pack item passes through: six states (`LifecycleState`) and three shared conditions (`LifecycleCondition`). Mirrored word for word by this repository's own canonical lifecycle contract. |
 | `PACK_STATUSES` / `packStatusToLifecycle(status)` | constant / function | The pack item status vocabulary (`PackStatus`) and its fixed mapping onto the lifecycle above -- `in-review` to `draft` with a pending judgment, `kept` to `approved`, `published` to `verified` -- returned as a `PackStatusLifecyclePosition`. |
 | `planNewPackage(input)` | function | Returns a deterministic, no-write private starter or repository-profiled package plan. |
 | `validatePackageLifecycle(value)` | function | Purely validates a lifecycle document without workspace I/O. |

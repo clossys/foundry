@@ -3,9 +3,9 @@
  * owner decision 2026-09-22). Before this module, the loop lifecycle
  * (issue #1195) and pack item statuses (issue #1204) were two state models
  * designed side by side, using different words for the same underlying
- * position. This module -- mirrored, word for word, by
- * `docs/contracts/lifecycle.json` -- is the single definition both
- * specialize from: this package's own loop engine (`./loop/*`) uses it
+ * position. This module -- mirrored, word for word, by this repository's own
+ * canonical lifecycle contract -- is the single definition both specialize
+ * from: this package's own loop engine (`./loop/*`) uses it
  * directly, and any package with a status-like surface (Publisher's pack
  * rendering, for one) imports it from here rather than declaring its own.
  *

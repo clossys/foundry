@@ -1,6 +1,6 @@
 /**
  * Keep Controller's public role charter in its README derived from the one
- * schema-v4 role contract it ships. A role's job, metric, loop, boundary, and
+ * schema-v5 role contract it ships. A role's job, metric, loop, boundary, and
  * close condition are operational claims; prose that merely resembles the
  * contract is not a safe second source of truth.
  */
@@ -12,7 +12,7 @@ import { fileURLToPath } from "node:url";
 const START = "<!-- controller-role-contract:start -->";
 const END = "<!-- controller-role-contract:end -->";
 const ROLE = "@clossys/controller";
-const REQUIRED_STAGES = ["sense", "judge", "act", "verify", "learnOrEscalate"];
+const REQUIRED_STAGES = ["sense", "judge", "act", "verify", "learn"];
 const REQUIRED_BINDINGS = ["setpoint", "cadence"];
 
 function requiredString(value, name) {
@@ -29,8 +29,8 @@ function requiredArray(value, name) {
 
 /** Render the README block from the canonical, shipped role charter. */
 export function renderControllerRoleBlock(contract) {
-  if (!Number.isInteger(contract?.schemaVersion) || contract.schemaVersion !== 4) {
-    throw new Error("schemaVersion must be exactly 4");
+  if (!Number.isInteger(contract?.schemaVersion) || contract.schemaVersion !== 5) {
+    throw new Error("schemaVersion must be exactly 5");
   }
   const role = contract?.roles?.[ROLE];
   if (!role || typeof role !== "object") throw new Error(`${ROLE} is missing from roles`);
@@ -54,7 +54,7 @@ export function renderControllerRoleBlock(contract) {
   return `${START}
 ## Control-loop contract
 
-This block is derived from the schema-v4 role contract shipped with this
+This block is derived from the schema-v5 role contract shipped with this
 package. The consumer (the client operating the loop) owns its concrete
 setpoint and review cadence; Controller supplies neither.
 
@@ -104,7 +104,7 @@ function main() {
       process.exitCode = 1;
       return;
     }
-    console.log("CONTROLLER README ROLE PARITY OK — job, metric, primary and secondary modes, stages, boundary, and independent close condition match schema v4.");
+    console.log("CONTROLLER README ROLE PARITY OK — job, metric, primary and secondary modes, stages, boundary, and independent close condition match schema v5.");
   } catch (error) {
     console.error(`CONTROLLER README ROLE PARITY INDETERMINATE — ${error instanceof Error ? error.message : String(error)}`);
     process.exitCode = 2;
