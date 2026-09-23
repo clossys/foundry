@@ -17,7 +17,7 @@
       "model": "unrecorded-predates-schema",
       "effort": "unrecorded-predates-schema",
       "verdict": "approve",
-      "link": "https://github.com/clossys/foundry/issues/1311"
+      "link": "https://github.com/clossys/foundry/pull/1311#issuecomment-5800389166"
     },
     {
       "role": "secondary",
@@ -26,7 +26,7 @@
       "model": "opus",
       "effort": "unrecorded-predates-schema",
       "verdict": "approve",
-      "link": "https://github.com/clossys/foundry/issues/1311#issuecomment-opus-second-opinion"
+      "link": "https://github.com/clossys/foundry/pull/1311#issuecomment-5800364990"
     }
   ],
   "status": "decided",
@@ -49,5 +49,5 @@
       "packages/inspector/src/verify.ts"
     ]
   },
-  "notes": "Backfilled from issue #1311's own body, which the recommendation/options/decision text above is drawn from almost verbatim, and its 'Changes applied per the Opus second opinion' follow-up comment. decidedBy is 'consensus' per the task's own instruction and the decision-tier rule's tier-1 path (a first reviewer plus a stronger-model second opinion, both recommending acceptance with no unresolved finding). The reviewing sessions' exact instanceId and effort were not captured at the time this decision was made (predates governance/review-tiers.json and docs/contracts/review-record.json); provider/model are reconstructed from the issue's own text ('the Opus second opinion') where stated, and left as unrecorded-predates-schema where not -- see docs/contracts/decision-record.json's note on backfilled reviews[] entries. Classified tier-1 (a change to a required check's own evaluability logic -- gate-relaxing in shape, though it removes a false positive rather than a real safeguard), which is why a sunset was considered and rejected: the change corrects a bug in the gate's own logic (a stale, non-decisive record wedging an otherwise-passing run) rather than loosening a real control, so it carries no sunset -- there is no safeguard being time-boxed away."
+  "notes": "Backfilled from PR #1311's own body, which the recommendation/options/decision text above is drawn from almost verbatim, and its consensus-tally comment (https://github.com/clossys/foundry/pull/1311#issuecomment-5800664009: 'Tier-1 consensus reached at 95f56d5b ... first reviewer: RECOMMEND ACCEPT; second opinion (Opus): RECOMMEND ACCEPT, after two rounds of fixes'). The two reviews[] entries above cite the specific final-approval comments each reviewer posted at that same head (95f56d5b), not the tally comment itself. decidedBy is 'consensus' per the decision-tier rule's tier-1 path (a first reviewer plus a stronger-model second opinion, both recommending acceptance with no unresolved finding). The reviewing sessions' exact instanceId and effort were not captured at the time this decision was made (predates governance/review-tiers.json and docs/contracts/review-record.json); provider/model are reconstructed from the comments' own bylines ('Second opinion (Opus)') where stated, and left as unrecorded-predates-schema where not -- see docs/contracts/decision-record.json's note on backfilled reviews[] entries. relaxesGateOrPolicy is false, and this is not self-contradictory (#1187 review at 8e6d97ea, should-fix 14 flagged an earlier draft of this note that called the change 'gate-relaxing in shape' while also setting this field false): the change corrects a defect in the gate's OWN evaluability logic -- a stale, non-decisive review-record finding was forcing the whole check to indeterminate even when other, current evidence could decide it on its own -- rather than loosening any real safeguard a stale record ever actually provided. A stale APPROVED review could never grant clearance before this change and still cannot after it (validateReviews already excluded it from hasApproval); what changed is only whether an otherwise-decidable run is needlessly blocked by a record that was never going to count either way. No sunset: there is no safeguard being time-boxed away."
 }

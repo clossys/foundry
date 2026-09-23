@@ -22,10 +22,9 @@
 // is a merge-train gate, not a workflow.
 
 import { execFileSync } from "node:child_process";
-import { readFileSync, readdirSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { fileURLToPath } from "node:url";
+import { validateDecisionRecordShape, isRelaxationPastSunset } from "./check-decision-records.mjs";
 
 const PERMITTED_MERGE = "merge";
 
@@ -296,14 +295,26 @@ export function parseReviewRecordComments(comments) {
   for (const comment of comments ?? []) {
     const body = typeof comment?.body === "string" ? comment.body : "";
     if (!body.includes(REVIEW_RECORD_MARKER)) continue;
+    // GitHub's REST payload (gh api .../comments) uses snake_case
+    // (created_at/updated_at); the earlier camelCase read here was always
+    // populating null. Both spellings are accepted so this also works
+    // against a GraphQL-shaped or hand-built fixture in tests.
+    const createdAt = comment.created_at ?? comment.createdAt ?? null;
+    const updatedAt = comment.updated_at ?? comment.updatedAt ?? null;
+    // A comment edited after it was posted is untrusted: this module has no
+    // way to tell "fixed a typo" from "changed the verdict after the fact"
+    // apart, so every record from an edited comment is dropped rather than
+    // silently honoured (Fable's second opinion, point 2; see docs/HITL.md's
+    // "Honour-system limits").
+    const edited = Boolean(createdAt && updatedAt && createdAt !== updatedAt);
     REVIEW_RECORD_BLOCK.lastIndex = 0;
     let match;
     while ((match = REVIEW_RECORD_BLOCK.exec(body))) {
       try {
         const parsed = JSON.parse(match[1]);
-        records.push({ ...parsed, _commentCreatedAt: comment.createdAt ?? null });
+        records.push({ ...parsed, _commentCreatedAt: createdAt, _edited: edited });
       } catch {
-        records.push({ _parseError: true, _commentCreatedAt: comment.createdAt ?? null });
+        records.push({ _parseError: true, _commentCreatedAt: createdAt, _edited: edited });
       }
     }
   }
@@ -318,16 +329,22 @@ const DEPTHS = new Set(["primary", "secondary"]);
  * docs/contracts/review-record.json's `requiredFields`. Returns `false` for
  * anything malformed rather than throwing -- an invalid record is simply
  * not counted, the same fail-closed choice `isValidReviewRecord`'s callers
- * rely on throughout this module.
+ * rely on throughout this module. A record from an edited comment
+ * (`_edited: true`, see `parseReviewRecordComments`) or an unparseable
+ * `submittedAt` is invalid too: the second because `selectCurrentReviewRecords`
+ * below must compare real instants, never lexical strings (a value like
+ * `"zzzz"` would otherwise sort after every real ISO timestamp and silently
+ * win "latest").
  * @param {Record<string, unknown>} record
  */
 export function isValidReviewRecord(record) {
-  if (!record || record._parseError) return false;
+  if (!record || record._parseError || record._edited) return false;
   if (record.schemaVersion !== 1) return false;
   if (record.role !== "author" && record.role !== "reviewer") return false;
   for (const field of ["id", "reviewerId", "instanceId", "provider", "submittedAt", "state", "headSha"]) {
     if (typeof record[field] !== "string" || record[field].length === 0) return false;
   }
+  if (!Number.isFinite(Date.parse(record.submittedAt))) return false;
   if (record.role === "author") {
     return record.state === "declared";
   }
@@ -343,7 +360,9 @@ export function isValidReviewRecord(record) {
  * `submittedAt` per (role, instanceId) pair -- an instance's later comment
  * at the same head supersedes its own earlier one, matching the staleness
  * discipline #1311 established for native GitHub reviews (docs/contracts/
- * review-record.json's own "STALENESS" note).
+ * review-record.json's own "STALENESS" note). Compares real parsed
+ * instants, not strings -- `isValidReviewRecord` already guarantees every
+ * record reaching this point has a parseable `submittedAt`.
  * @param {Array<Record<string, unknown>>} records
  * @param {string} headSha
  */
@@ -353,81 +372,154 @@ export function selectCurrentReviewRecords(records, headSha) {
   for (const r of atHead) {
     const key = `${r.role}:${r.instanceId}`;
     const prev = latest.get(key);
-    if (!prev || String(r.submittedAt) > String(prev.submittedAt)) latest.set(key, r);
+    if (!prev || Date.parse(r.submittedAt) > Date.parse(prev.submittedAt)) latest.set(key, r);
   }
   return [...latest.values()];
 }
 
 /**
  * Tier-1 independence (governance/review-tiers.json's `tier1.review`):
- * exactly the rule at #1187 comment 5800142871, applied to
- * `foundry-review-record` comments instead of native GitHub reviews (see
- * docs/contracts/review-record.json's header for why). Requires a current
- * author record; at least two current reviewer records whose `instanceId`
- * differs from the author's AND from each other's; at least one such pair
- * differing in `model` or `provider`; and that pair's `state` is neither
- * `reject` nor `changes-requested`.
+ * the rule at #1187 comment 5800142871, applied to `foundry-review-record`
+ * comments instead of native GitHub reviews (see docs/contracts/
+ * review-record.json's header for why).
+ *
+ * Requires EXACTLY ONE current author record (more than one is ambiguous
+ * and refused outright, not silently resolved to "the first one found" --
+ * a second author-role record is otherwise indistinguishable from a
+ * reviewer trying to count as the author to dodge the independence check).
+ *
+ * ANY current-head independent reviewer record whose state is `reject` or
+ * `changes-requested` refuses the merge immediately and is NEVER outvoted
+ * by other reviewers reaching a clean pair -- the decision-tier rule says
+ * "If they disagree, or either says reject, escalate to the owner with
+ * both positions" and separately lists "tier-1 reviewers disagree" under
+ * "escalate immediately, whatever the tier". This check runs before the
+ * pairing search below, not after, so a reject can never be beaten by a
+ * later approval from a third reviewer.
+ *
+ * Otherwise requires a pair of independent, `state: "approved"` records
+ * (an APPROVAL is required -- `"commented"` never counts, matching the
+ * decision-tier rule's "both recommend acceptance") whose `instanceId`
+ * differs from the author's AND from each other's, whose `depth` values
+ * are one `"primary"` and one `"secondary"` (the decision-tier rule's own
+ * "a first reviewer plus a stronger-model second opinion" pairing -- two
+ * `"primary"` records, or two `"secondary"` records, do not satisfy it),
+ * and which differ in `model` or `provider`.
  * @param {{ records: Array<Record<string, unknown>>, headSha: string }} input
  * @returns {{ ok: boolean, reason: string }}
  */
 export function evaluateTier1Independence({ records, headSha }) {
   const current = selectCurrentReviewRecords(records, headSha);
-  const author = current.find((r) => r.role === "author");
-  if (!author) {
+  const authors = current.filter((r) => r.role === "author");
+  if (authors.length === 0) {
     return {
       ok: false,
       reason:
         'no current-head role:"author" foundry-review-record found -- tier-1 independence cannot be evaluated without the author declaring their own instanceId (docs/contracts/review-record.json)',
     };
   }
+  if (authors.length > 1) {
+    return {
+      ok: false,
+      reason: `${authors.length} current-head role:"author" records found (instanceIds: ${authors.map((a) => a.instanceId).join(", ")}) -- tier-1 independence requires exactly one, not "the first one found"`,
+    };
+  }
+  const author = authors[0];
 
   const reviewers = current.filter((r) => r.role === "reviewer");
   const independent = reviewers.filter((r) => r.instanceId !== author.instanceId);
-
-  const clean = independent.filter((r) => r.state !== "reject" && r.state !== "changes-requested");
-  for (let i = 0; i < clean.length; i++) {
-    for (let j = i + 1; j < clean.length; j++) {
-      const a = clean[i];
-      const b = clean[j];
-      if (a.instanceId === b.instanceId) continue;
-      if (a.model === b.model && a.provider === b.provider) continue;
-      return { ok: true, reason: `tier-1 independence satisfied by ${a.instanceId} and ${b.instanceId}` };
-    }
-  }
 
   const rejecting = independent.filter((r) => r.state === "reject" || r.state === "changes-requested");
   if (rejecting.length > 0) {
     return {
       ok: false,
-      reason: `${rejecting.length} independent review record(s) at the current head carry state reject/changes-requested; tier-1 requires a qualifying pair with neither verdict`,
+      reason: `${rejecting.length} independent review record(s) at the current head carry state reject/changes-requested -- escalate to the owner; a reject or changes-requested verdict is never outvoted by another reviewer reaching a clean pair (${rejecting.map((r) => `${r.instanceId}:${r.state}`).join(", ")})`,
     };
+  }
+
+  const approved = independent.filter((r) => r.state === "approved");
+  for (let i = 0; i < approved.length; i++) {
+    for (let j = i + 1; j < approved.length; j++) {
+      const a = approved[i];
+      const b = approved[j];
+      if (a.instanceId === b.instanceId) continue;
+      const depthsPaired = (a.depth === "primary" && b.depth === "secondary") || (a.depth === "secondary" && b.depth === "primary");
+      if (!depthsPaired) continue;
+      if (a.model === b.model && a.provider === b.provider) continue;
+      return { ok: true, reason: `tier-1 independence satisfied by ${a.instanceId} (${a.depth}) and ${b.instanceId} (${b.depth})` };
+    }
   }
 
   return {
     ok: false,
-    reason: `tier-1 requires at least 2 independent reviewer records (distinct instanceId, distinct from the author, differing in model or provider); found ${independent.length} independent, ${current.length - independent.length - 1 >= 0 ? current.length - independent.length - 1 : 0} excluded as the author's own instance`,
+    reason: `tier-1 requires one primary and one secondary independent record, both state "approved" (distinct instanceId, distinct from the author, differing in model or provider) -- found ${approved.length} independent approved record(s); "commented" records never count`,
   };
 }
 
 /**
+ * Whether a path glob is broader than a tier-2 glob is allowed to be, when
+ * used to authorize a tier-2 change via a decision record's `links.paths`
+ * (#1187 review at 8e6d97ea, blocking finding 4: "A path glob of `**`, or
+ * any glob wider than a tier-2 glob, should be rejected"). `**` and `*`
+ * alone are always overbroad. Anything else is overbroad if it matches any
+ * of a small set of ordinary, definitely-not-tier-2 canary paths -- a glob
+ * that authorizes `README.md` or `package.json` is not a tier-2 path glob,
+ * whatever it was intended to mean.
+ * @param {string} glob
+ */
+export function isOverbroadPathGlob(glob) {
+  if (glob === "**" || glob === "*") return true;
+  const re = globToRegExp(glob);
+  return OVERBROAD_PATH_GLOB_CANARIES.some((canary) => re.test(canary));
+}
+
+const OVERBROAD_PATH_GLOB_CANARIES = Object.freeze([
+  "README.md",
+  "package.json",
+  "AGENTS.md",
+  "SECURITY.md",
+  "scripts/land-stack.mjs",
+  "docs/PUBLISHING.md",
+  "packages/controller/src/index.ts",
+]);
+
+/**
  * Tier-2 gate (governance/review-tiers.json's `tier2.requiresOwnerDecisionRecord`):
- * at least one governance/decisions/*.json record with `status: "decided"`,
- * `decidedBy: "owner"`, an `expiry` that is null or in the future, and
+ * at least one governance/decisions/*.json record that is itself schema-valid
+ * (`validateDecisionRecordShape`, scripts/check-decision-records.mjs --
+ * "Run check-decision-records inside the gate", #1187 review at 8e6d97ea
+ * blocking finding 5), `tier: "tier-2"` (a tier-1 record is never tier-2
+ * authority), `status: "decided"`, `decidedBy: "owner"`, not superseded by
+ * any other record, with an `expiry` that parses and is in the future (an
+ * unparseable `expiry` is treated as already expired, never as unexpired),
+ * not a relaxation past its own `sunset` (`isRelaxationPastSunset`), and
  * linked to this change either by pull-request number (`links.pullRequests`)
- * or by a set of path globs (`links.paths`) covering every tier-2 path the
- * pull request touches.
+ * or by a set of path globs (`links.paths`, each checked against
+ * `isOverbroadPathGlob`) covering every tier-2 path the pull request
+ * touches.
  * @param {{ decisionRecords: Array<Record<string, unknown>>, prNumber: string|number, tier2Paths: string[], now?: Date }} input
  * @returns {{ ok: boolean, reason: string }}
  */
 export function evaluateTier2Decision({ decisionRecords, prNumber, tier2Paths, now = new Date() }) {
   const nowMs = now.getTime();
-  const candidates = (decisionRecords ?? []).filter((record) => {
-    if (record?.status !== "decided") return false;
-    if (record?.decidedBy !== "owner") return false;
-    if (typeof record?.expiry === "string") {
+  const all = (decisionRecords ?? []).filter((r) => r && typeof r === "object" && !Array.isArray(r));
+
+  const supersededIds = new Set();
+  for (const r of all) {
+    for (const s of Array.isArray(r.supersedes) ? r.supersedes : []) supersededIds.add(s);
+  }
+
+  const candidates = all.filter((record) => {
+    if (validateDecisionRecordShape(record, record.id).length > 0) return false;
+    if (record.status !== "decided") return false;
+    if (record.decidedBy !== "owner") return false;
+    if (record.tier !== "tier-2") return false;
+    if (supersededIds.has(record.id)) return false;
+    if (record.expiry !== null) {
       const t = Date.parse(record.expiry);
-      if (Number.isFinite(t) && t <= nowMs) return false;
+      if (!Number.isFinite(t) || t <= nowMs) return false; // unparseable or past -- both treated as expired
     }
+    if (isRelaxationPastSunset(record, all, now)) return false;
     return true;
   });
 
@@ -437,7 +529,8 @@ export function evaluateTier2Decision({ decisionRecords, prNumber, tier2Paths, n
   }
 
   const byPaths = candidates.find((record) => {
-    const globs = (record.links?.paths ?? []).map(globToRegExp);
+    const rawGlobs = record.links?.paths ?? [];
+    const globs = rawGlobs.filter((g) => typeof g === "string" && !isOverbroadPathGlob(g)).map(globToRegExp);
     if (globs.length === 0) return false;
     return tier2Paths.every((p) => globs.some((re) => re.test(p)));
   });
@@ -448,19 +541,79 @@ export function evaluateTier2Decision({ decisionRecords, prNumber, tier2Paths, n
   return {
     ok: false,
     reason:
-      "no decided, owner-approved, unexpired governance/decisions/ record links this pull request (by PR number or by covering every tier-2 path changed) -- tier-2 requires an owner decision record",
+      "no schema-valid, decided, owner-approved, tier-2, unexpired, un-superseded governance/decisions/ record links this pull request (by PR number or by a non-overbroad path glob covering every tier-2 path changed) -- tier-2 requires an owner decision record",
   };
 }
 
 /**
- * Combines the tier-1 independence result and, for tier-2, the owner
- * decision-record result, into one verdict for a classified pull request.
- * Tier-0 always passes without fetching any review evidence at all.
+ * Validates every decision record CHANGED by this pull request (added or
+ * modified under governance/decisions/**) against its own contract, using
+ * the checkout-independent shape validator scripts/check-decision-records.mjs
+ * itself exports -- "Run check-decision-records inside the gate" (#1187
+ * review at 8e6d97ea, blocking finding 4). This runs regardless of tier
+ * (both tier-1's independence bar and tier-2's owner-decision bar are about
+ * WHO approved a change; this is about whether the changed record is even
+ * well-formed) and regardless of whether the changed record happens to also
+ * satisfy `evaluateTier2Decision` for THIS pull request -- a malformed
+ * decision record must never merge just because two reviewers approved the
+ * PR that adds it.
+ * @param {Array<{ path: string, record: unknown }>} changedDecisionRecords
+ * @returns {{ ok: boolean, reason: string }}
+ */
+export function evaluateChangedDecisionRecords(changedDecisionRecords) {
+  const problems = [];
+  for (const { path, record } of changedDecisionRecords ?? []) {
+    const idFromFilename = String(path).split("/").pop().replace(/\.json$/, "");
+    const findings = validateDecisionRecordShape(record, idFromFilename);
+    if (findings.length > 0) problems.push(`${path}: ${findings.join("; ")}`);
+  }
+  if (problems.length > 0) {
+    return { ok: false, reason: `invalid decision record(s) in this change: ${problems.join(" | ")}` };
+  }
+  return { ok: true, reason: "every changed decision record is schema-valid" };
+}
+
+/**
+ * Fails closed on an incomplete or empty changed-file list, rather than
+ * classifying an unknowable diff as tier-0 (#1187 review at 8e6d97ea,
+ * blocking finding 3). `changedFilesCount`, when known, is the pull
+ * request's own `changedFiles` count (from `gh pr view`), independent of
+ * the paginated file list this checks it against -- a mismatch means the
+ * page fetch was cut short, not that the PR genuinely touched zero files.
+ * @param {string[]} paths
+ * @param {number|undefined} changedFilesCount
+ * @returns {{ ok: boolean, reason: string }}
+ */
+export function verifyChangedFilesComplete(paths, changedFilesCount) {
+  if (!Array.isArray(paths) || paths.length === 0) {
+    return { ok: false, reason: "changed-file list is empty or unavailable; refusing to classify a tier blind (fail closed)" };
+  }
+  if (typeof changedFilesCount === "number" && paths.length !== changedFilesCount) {
+    return {
+      ok: false,
+      reason: `paginated changed-file list has ${paths.length} entries but the pull request reports changedFiles=${changedFilesCount}; refusing to classify with an incomplete list`,
+    };
+  }
+  return { ok: true, reason: "changed-file list is complete" };
+}
+
+/**
+ * Combines the tier-1 independence result, the changed-decision-record
+ * validity result, and, for tier-2, the owner decision-record result, into
+ * one verdict for a classified pull request. Tier-0 still runs
+ * `evaluateChangedDecisionRecords` (a tier-0 PR can still touch
+ * governance/decisions/** if a future tier reclassification ever allows
+ * it) but otherwise passes without fetching any review evidence at all.
  * @param {{ tier: string, tier2Paths: string[] }} classification
- * @param {{ records: Array<Record<string, unknown>>, headSha: string, decisionRecords: Array<Record<string, unknown>>, prNumber: string|number, now?: Date }} evidence
+ * @param {{ records: Array<Record<string, unknown>>, headSha: string, decisionRecords: Array<Record<string, unknown>>, changedDecisionRecords?: Array<{ path: string, record: unknown }>, prNumber: string|number, now?: Date }} evidence
  * @returns {{ ok: boolean, tier: string, reason: string }}
  */
 export function evaluateTierGate(classification, evidence) {
+  const changedRecordsCheck = evaluateChangedDecisionRecords(evidence.changedDecisionRecords ?? []);
+  if (!changedRecordsCheck.ok) {
+    return { ok: false, tier: classification.tier, reason: changedRecordsCheck.reason };
+  }
+
   if (classification.tier === "tier-0") {
     return { ok: true, tier: "tier-0", reason: "no tier-1/tier-2 paths changed" };
   }
@@ -525,15 +678,23 @@ function defaultFetchRequiredContexts(branch, { nameWithOwner = defaultNameWithO
   return extractRequiredContexts(JSON.parse(out));
 }
 
-/** Live network call: every changed-file path for a pull request, the caller's own claim (gh pr view --json files). */
-function defaultFetchPrFiles(pr) {
+/**
+ * Live network call: every changed-file path for a pull request, paginated
+ * directly against the REST Pulls API rather than `gh pr view --json files`
+ * -- that call silently truncates at 100 entries (measured directly: PR
+ * #1276 reports `changedFiles=290` and returns 100; #1260 reports 116 and
+ * returns 100). A merge-train batch PR is exactly the shape that goes over
+ * 100. #1187 review at 8e6d97ea, blocking finding 3.
+ */
+function defaultFetchPrFiles(pr, { nameWithOwner = defaultNameWithOwner } = {}) {
+  const nwo = nameWithOwner();
   const out = execFileSync(
     "gh",
-    ["pr", "view", String(pr), "--json", "files"],
-    { encoding: "utf8", maxBuffer: 16 * 1024 * 1024 },
+    ["api", `repos/${nwo}/pulls/${pr}/files`, "--paginate"],
+    { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 },
   );
-  const { files } = JSON.parse(out);
-  return (files ?? []).map((f) => f.path).filter((p) => typeof p === "string" && p.length > 0);
+  const files = JSON.parse(out);
+  return (files ?? []).map((f) => f.filename).filter((p) => typeof p === "string" && p.length > 0);
 }
 
 /**
@@ -553,10 +714,72 @@ function defaultFetchPrComments(pr, { nameWithOwner = defaultNameWithOwner } = {
   return JSON.parse(out);
 }
 
-/** Reads governance/review-tiers.json from this checkout's repository root. */
-function defaultReadReviewTierConfig() {
-  const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-  const raw = readFileSync(join(repoRoot, "governance", "review-tiers.json"), "utf8");
+/**
+ * Live network call: one file's raw content at an EXACT git ref (a base
+ * commit sha, never a branch name that could move), via the REST Contents
+ * API -- never the local checkout. #1187 review at 8e6d97ea, blocking
+ * finding 6: a checkout that itself contains the pull request under test
+ * (a merge-train or restack worktree, or this very script's own repository
+ * root) must never be trusted to grade itself; if `governance/review-tiers.json`
+ * or `governance/decisions/**` came from the local tree, a tier-1 pull
+ * request could narrow its own tier-1 globs, or a tier-2 pull request could
+ * add its own authorizing decision record, in the same diff it needs
+ * graded. `ref` MUST be queried in the URL (`?ref=`), never passed with
+ * `-f`/`-F` -- those flags force `gh api` to POST, which silently 404s a
+ * GET-only endpoint like this one (measured directly: `-F ref=` 404s even
+ * README.md on `main`; `?ref=` in the URL does not). Returns `null` for a
+ * path that does not exist at that ref (a 404), so callers can tell "not
+ * present at this ref" from a real fetch failure.
+ */
+function defaultReadFileAtRef(ref, path, { nameWithOwner = defaultNameWithOwner } = {}) {
+  const nwo = nameWithOwner();
+  let out;
+  try {
+    out = execFileSync(
+      "gh",
+      ["api", `repos/${nwo}/contents/${path}?ref=${encodeURIComponent(ref)}`, "--jq", ".content"],
+      { encoding: "utf8", maxBuffer: 16 * 1024 * 1024 },
+    );
+  } catch (error) {
+    if (/\b404\b/.test(String(error?.stderr ?? error?.message ?? ""))) return null;
+    throw error;
+  }
+  return Buffer.from(out.replace(/\s+/g, ""), "base64").toString("utf8");
+}
+
+/**
+ * Live network call: every JSON file directly inside a directory at an
+ * EXACT git ref, via the same Contents API `defaultReadFileAtRef` uses (see
+ * its own doc comment for why `ref` is a query param, and why this never
+ * reads the local checkout). Returns `[]` for a directory that does not
+ * exist at that ref.
+ */
+function defaultListDirAtRef(ref, dirPath, { nameWithOwner = defaultNameWithOwner } = {}) {
+  const nwo = nameWithOwner();
+  let out;
+  try {
+    out = execFileSync(
+      "gh",
+      ["api", `repos/${nwo}/contents/${dirPath}?ref=${encodeURIComponent(ref)}`],
+      { encoding: "utf8", maxBuffer: 16 * 1024 * 1024 },
+    );
+  } catch (error) {
+    if (/\b404\b/.test(String(error?.stderr ?? error?.message ?? ""))) return [];
+    throw error;
+  }
+  const entries = JSON.parse(out);
+  if (!Array.isArray(entries)) return [];
+  return entries
+    .filter((e) => e?.type === "file" && typeof e?.name === "string" && e.name.endsWith(".json"))
+    .map((e) => e.path);
+}
+
+/** Reads governance/review-tiers.json at an EXACT ref -- the pull request's BASE sha, never the local checkout (see `defaultReadFileAtRef`). */
+function defaultReadReviewTierConfig(ref, io = {}) {
+  const raw = defaultReadFileAtRef(ref, "governance/review-tiers.json", io);
+  if (raw === null) {
+    throw new Error(`governance/review-tiers.json does not exist at ${ref} -- refusing to classify a tier without it`);
+  }
   const config = JSON.parse(raw);
   return {
     tier1: config.tier1?.globs ?? [],
@@ -565,17 +788,36 @@ function defaultReadReviewTierConfig() {
   };
 }
 
-/** Reads every governance/decisions/*.json record from this checkout's repository root. */
-function defaultReadDecisionRecords() {
-  const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-  const dir = join(repoRoot, "governance", "decisions");
-  let files;
-  try {
-    files = readdirSync(dir).filter((f) => f.endsWith(".json"));
-  } catch {
-    return [];
-  }
-  return files.map((file) => JSON.parse(readFileSync(join(dir, file), "utf8")));
+/** Reads every governance/decisions/*.json record at an EXACT ref -- the pull request's BASE sha, never the local checkout (see `defaultReadFileAtRef`). */
+function defaultReadDecisionRecords(ref, io = {}) {
+  const files = defaultListDirAtRef(ref, "governance/decisions", io);
+  return files.map((path) => JSON.parse(defaultReadFileAtRef(ref, path, io)));
+}
+
+/**
+ * Reads every `governance/decisions/**.json` path in `paths` at an EXACT
+ * ref -- the pull request's HEAD sha -- for `evaluateChangedDecisionRecords`.
+ * Unlike the base-ref readers above, this deliberately reads the PULL
+ * REQUEST'S OWN proposed content: the whole point is to validate the record
+ * this PR is trying to add or change, not what already exists on the base
+ * branch.
+ */
+function defaultReadChangedDecisionRecords(ref, paths, io = {}) {
+  const decisionPaths = (paths ?? []).filter((p) => p.startsWith("governance/decisions/") && p.endsWith(".json"));
+  return decisionPaths.map((path) => {
+    const raw = defaultReadFileAtRef(ref, path, io);
+    let record;
+    if (raw === null) {
+      record = { __deletedOrUnreadable: true };
+    } else {
+      try {
+        record = JSON.parse(raw);
+      } catch {
+        record = { __parseError: true };
+      }
+    }
+    return { path, record };
+  });
 }
 
 function prViewToCanMergeInput(view, requiredContexts) {
@@ -603,6 +845,7 @@ function runStatus(
     fetchPrComments = defaultFetchPrComments,
     readReviewTierConfig = defaultReadReviewTierConfig,
     readDecisionRecords = defaultReadDecisionRecords,
+    readChangedDecisionRecords = defaultReadChangedDecisionRecords,
   } = {},
 ) {
   const view = ghPrView(pr, [
@@ -613,21 +856,34 @@ function runStatus(
     "headRefName",
     "baseRefName",
     "headRefOid",
+    "baseRefOid",
+    "changedFiles",
   ]);
   const requiredContexts = fetchRequiredContexts(view.baseRefName || "main");
   const mergeVerdict = canMerge(prViewToCanMergeInput(view, requiredContexts));
 
   const paths = fetchPrFiles(pr);
-  const classification = classifyTier(paths, readReviewTierConfig());
-  const tierVerdict =
-    classification.tier === "tier-0"
-      ? evaluateTierGate(classification, {})
-      : evaluateTierGate(classification, {
-          records: parseReviewRecordComments(fetchPrComments(pr)),
-          headSha: view.headRefOid,
-          decisionRecords: readDecisionRecords(),
-          prNumber: pr,
-        });
+  const completeness = verifyChangedFilesComplete(paths, view.changedFiles);
+  if (!completeness.ok) {
+    const reason = mergeVerdict.ok ? completeness.reason : `${mergeVerdict.reason}; ${completeness.reason}`;
+    return { pr: Number(pr), headRefName: view.headRefName, ok: false, reason, tier: "unknown" };
+  }
+
+  // Tier config and prior decision records are read from the pull request's
+  // BASE commit -- never the local checkout, and never the pull request's
+  // own head -- so a tier-1 or tier-2 pull request can never narrow its own
+  // globs or add its own authorizing decision record in the same diff it
+  // needs graded (#1187 review at 8e6d97ea, blocking finding 6).
+  const baseRef = view.baseRefOid || view.baseRefName || "main";
+  const classification = classifyTier(paths, readReviewTierConfig(baseRef));
+  const changedDecisionRecords = readChangedDecisionRecords(view.headRefOid, paths);
+  const tierVerdict = evaluateTierGate(classification, {
+    records: parseReviewRecordComments(fetchPrComments(pr)),
+    headSha: view.headRefOid,
+    decisionRecords: readDecisionRecords(baseRef),
+    changedDecisionRecords,
+    prNumber: pr,
+  });
 
   const ok = mergeVerdict.ok && tierVerdict.ok;
   const reason = mergeVerdict.ok
@@ -636,7 +892,7 @@ function runStatus(
       ? mergeVerdict.reason
       : `${mergeVerdict.reason}; ${tierVerdict.reason}`;
 
-  return { pr: Number(pr), headRefName: view.headRefName, ok, reason, tier: classification.tier };
+  return { pr: Number(pr), headRefName: view.headRefName, headRefOid: view.headRefOid, ok, reason, tier: classification.tier };
 }
 
 function runMerge(
@@ -648,6 +904,7 @@ function runMerge(
     fetchPrComments = defaultFetchPrComments,
     readReviewTierConfig = defaultReadReviewTierConfig,
     readDecisionRecords = defaultReadDecisionRecords,
+    readChangedDecisionRecords = defaultReadChangedDecisionRecords,
     ghExec = execFileSync,
   } = {},
 ) {
@@ -658,13 +915,22 @@ function runMerge(
     fetchPrComments,
     readReviewTierConfig,
     readDecisionRecords,
+    readChangedDecisionRecords,
   });
   if (!status.ok) {
     console.error(status.reason);
     process.exitCode = 1;
     return status;
   }
-  ghExec("gh", ["pr", "merge", String(pr), "--merge"], { encoding: "utf8", stdio: "inherit" });
+  // --match-head-commit closes the TOCTOU window between this status check
+  // and the merge call itself: without it, a push landing in that window
+  // merges a head no review record or tier classification above ever
+  // covered (#1187 review at 8e6d97ea, should-fix 8).
+  ghExec(
+    "gh",
+    ["pr", "merge", String(pr), "--merge", "--match-head-commit", status.headRefOid],
+    { encoding: "utf8", stdio: "inherit" },
+  );
   return status;
 }
 

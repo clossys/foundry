@@ -11,30 +11,39 @@
   "recommendation": "Option 1, confidence high: the owner has already classified both packages this way in their own package.json descriptions, READMEs, and docs/contracts/first-wave-sequence.json's wave kind: \"executable-tooling\" entries and job text (\"without treating executable tooling as a role\" / \"without treating the scaffolder as a role\"); docs/contracts/scope-migration.md's own count is 19 roles across 21 packages, with starter and launcher as executable tooling; neither package has an owned metric under role-loop-archetypes.json's own qualificationVerdicts (every loop either appears to run is already owned by an existing role, yielding extend or compose, never create); and launcher's real output paths (clossys/README.md, etc.) would fail package-framework.json's outputs.pathRule (clossys/<role>/...) by construction if it were graded as a role.",
   "reviews": [
     {
-      "role": "secondary",
+      "role": "primary",
       "instance": "unrecorded-predates-schema",
       "provider": "anthropic",
       "model": "opus",
       "effort": "unrecorded-predates-schema",
       "verdict": "approve",
       "link": "https://github.com/clossys/foundry/issues/1187#issuecomment-5800189482"
+    },
+    {
+      "role": "secondary",
+      "instance": "unrecorded-predates-schema",
+      "provider": "unrecorded-predates-schema",
+      "model": "unrecorded-predates-schema",
+      "effort": "unrecorded-predates-schema",
+      "verdict": "changes",
+      "link": "https://github.com/clossys/foundry/pull/1318#issuecomment-5800994982"
     }
   ],
-  "status": "decided",
-  "decidedBy": "consensus",
-  "decision": "Implemented per the Opus recommendation at #1187 comment 5800189482 (Decision 1). Added scripts/package-classification.mjs, which classifies every packages/* manifest against role-loop-archetypes.json's roles map and package-evidence.json's category: \"executable-tooling\" field (reused as-is). A role package is evaluated exactly as before; a tooling package is reported as an excluded: executable-tooling row (report mode, not enforced yet) on both check-package-conformance.mjs and check-loop-matrix.mjs; a package in neither set, or in both, is now always a finding (package-not-classified / package-double-classified) in report mode and --enforce alike. Verified on main: launcher and starter are already category: \"executable-tooling\" in package-evidence.json, so no manifest change was needed. Tracked on issue #1318.",
+  "status": "open",
+  "decidedBy": null,
+  "decision": null,
   "relaxesGateOrPolicy": false,
   "sunset": null,
-  "expiry": null,
+  "expiry": "2026-10-23T00:00:00Z",
   "supersedes": [],
   "links": {
-    "pullRequests": [],
-    "issues": ["1318", "1187", "1015", "505", "511"],
+    "pullRequests": ["1318"],
+    "issues": ["1187", "1015", "505", "511"],
     "paths": [
       "scripts/package-classification.mjs",
       "scripts/check-package-conformance.mjs",
       "scripts/check-loop-matrix.mjs"
     ]
   },
-  "notes": "Backfilled from issue #1318's own body and the Opus scoping-recommendation comment it implements (#1187 comment 5800189482, 'Decision 1: are launcher and starter roles? ... Tier: 1. Agents can settle this by consensus: the change is reversible, and the owner has already classified both packages this way'). decidedBy is 'consensus' because the recommendation itself states the tier-1 consensus path applies (reversible, matches an existing owner classification) rather than requiring owner sign-off. relaxesGateOrPolicy is false: this makes a previously silent gap (a package absent from roles disappearing from both gates with no finding) into an explicit, gate-reported classification -- a tightening, not a relaxation. The reviewing session's exact instanceId and effort were not captured at the time; model is reconstructed from the comment's own byline ('Scoping recommendations (Opus)')."
+  "notes": "NOT DECIDED (#1187 review at 8e6d97ea, blocking finding 7 -- an earlier draft of this record wrongly marked it status: \"decided\"/decidedBy: \"consensus\" and said implementation was complete; corrected here). PR #1318 implements option 1 per the Opus recommendation at #1187 comment 5800189482 ('Decision 1'), which recommended the tier-1 consensus path as reversible and matching an existing owner classification -- that recommendation is recorded as the 'primary' review above, verdict approve. An independent review at commit e039cb7b (https://github.com/clossys/foundry/pull/1318#issuecomment-5800994982) returned BLOCKING, not approve: it verified the role-row and enforcement claims held, but found a real, reproduced gap -- a packages/*/package.json with a missing, empty, or non-string \"name\" still silently disappears from both gates with zero finding, exactly the defect this PR exists to close, in the one case (an unreadable manifest name) its own new classification logic does not cover. That is recorded as the 'secondary' review above, verdict changes (a tier-1 disagreement, per the decision-tier rule's 'if they disagree ... escalate'). As of this record's own writing, a further PR comment (https://github.com/clossys/foundry/pull/1318#issuecomment-5801069249, posted after the blocking review) claims the flagged gap is fixed at commit 5db390f8 and asks for a fresh independent review -- but no such re-review had posted yet, so #1318 remains open and this decision remains open too. `decidedBy` and `decision` are null because nothing has been decided; `expiry` is set to 30 days out (2026-10-23) as a working default for revisiting an open tier-1 item, not a claim about when #1318 will actually resolve. Once a genuine tier-1 consensus (or an owner ruling, if the reviewers still disagree) is reached, this record should be superseded by a new, decided record -- not edited in place."
 }

@@ -4,41 +4,23 @@
   "tier": "tier-2",
   "question": "What release cadence should this repository run on, and how should out-of-band (mid-week urgent) releases be authorized?",
   "options": [
-    "Weekly calendar: Mon-Fri merge window (closes Friday), Saturday release day, Sunday consumer-adoption day, timezone America/Los_Angeles (governance/release-calendar.json). Versioning stays plain semver. A weekend merge attempt is blocked unless it is the release PR itself or carries the owner-only release:out-of-band label. Out-of-band releases are allowed on any day, for any urgent update the owner approves (not only security fixes), release only release:out-of-band-flagged changesets, default to patch-only, and allow a minor bump only when the changeset also carries owner-approved: minor; major is never allowed out of band.",
-    "CalVer scheme YY.WW.N (ISO week-year/week plus a same-week counter).",
-    "CalVer scheme 0.YYWW.N (the same, kept pre-1.0).",
+    "Weekly wave: merges wrap up Friday, release happens Saturday, consumer adoption happens Sunday, so every Monday starts fresh. Out-of-band releases are allowed on any day, for any urgent update the owner approves (not only security fixes), and only the owner applies the release:out-of-band label -- agents never do.",
+    "CalVer scheme YY.WW.N (ISO week-year/week plus a same-week counter), or 0.YYWW.N (the same, kept pre-1.0).",
     "No fixed cadence; release whenever a change lands."
   ],
-  "recommendation": "Option 1 (weekly calendar, plain semver, owner-only out-of-band label).",
-  "reviews": [
-    {
-      "role": "secondary",
-      "instance": "unrecorded-predates-schema",
-      "provider": "unrecorded-predates-schema",
-      "model": "unrecorded-predates-schema",
-      "effort": "unrecorded-predates-schema",
-      "verdict": "changes",
-      "link": "https://github.com/clossys/foundry/pull/1316"
-    }
-  ],
-  "status": "decided",
-  "decidedBy": "owner",
-  "decision": "Adopted: weekly release calendar (Mon-Fri merge window, Saturday release, Sunday consumer adoption, America/Los_Angeles), plain semver (both proposed CalVer options rejected -- a version that moves on a clock rather than on a real content change is not a useful signal), and an owner-only release:out-of-band label permitting an urgent release on any day (widened from 'security fixes and broken releases only' to any urgent update the owner approves, per the follow-up owner decision at #1187 comment 5800369031 item 2). Standing cadence rule stated by the owner at #1187 comment 5799002037. Implementation (governance/release-calendar.json, scripts/lib/release-calendar.mjs, .github/workflows/release-calendar.yml) is tracked on PR #1316, stacked on #1265/#1266; the check is not yet a required status context -- PR #1316's own 'Rollout' section runs it report-only for one week first, and the owner makes it required as the final rollout step.",
+  "recommendation": "Option 1 (weekly wave, owner-only out-of-band label); CalVer rejected in favor of plain semver during PR #1316's own drafting, per that PR's own account of two owner-directed revisions.",
+  "reviews": [],
+  "status": "open",
+  "decidedBy": null,
+  "decision": "The owner has stated the weekly wave shape directly, twice: 'All weekly merges wrap up on a Friday, all releases happen on Saturday, all consumer adoptions happen on Sunday, so every Monday starts fresh' (#1187 comment 5799002037), and that an out-of-band release is allowed on any day, for any urgent update the owner approves, releasing only release:out-of-band-flagged changesets, with only the owner ever applying that label (#1187 comment 5800369031, item 2). PR #1316's own body separately states the owner directed two revisions to its draft implementation (moving versioning from a proposed CalVer scheme to plain semver; applying a second-opinion review's findings in full, including a follow-up owner decision widening the out-of-band policy to match the comment above) -- those two specific choices are owner-directed. THE REMAINDER OF #1316 IS NOT YET OWNER-AUTHORIZED: its own body states plainly, 'Nothing here merges until the owner signs off,' and its 'Owner steps' section lists 'Sign off on this design' as step 1, not yet taken as of this record's writing. This decision record covers only the cadence SHAPE and the out-of-band SCOPE the owner has stated directly; it does not authorize PR #1316's mechanical implementation (governance/release-calendar.json's exact timezone value, the patch-only/owner-approved:minor mechanics, or making the check a required status context) to merge on its own strength.",
   "relaxesGateOrPolicy": false,
   "sunset": null,
-  "expiry": null,
+  "expiry": "2026-10-23T00:00:00Z",
   "supersedes": [],
   "links": {
-    "pullRequests": [
-      "1316"
-    ],
-    "issues": [
-      "1187",
-      "1265",
-      "1266",
-      "1263"
-    ],
+    "pullRequests": [],
+    "issues": ["1187", "1265", "1266", "1263"],
     "paths": []
   },
-  "notes": "Backfilled from the owner's standing cadence rule (#1187 comment 5799002037), the owner's follow-up widening of out-of-band scope (#1187 comment 5800369031, item 2), and PR #1316's own body, which the owner has revised twice by direct decision (moving versioning from a proposed CalVer scheme to plain semver, and applying a second-opinion review's findings in full). PR #1316 was still open, not yet merged, at the time this record was written (2026-09-23) -- the cadence POLICY itself is decided; its code implementation and required-check rollout are in progress per the PR's own 'Rollout' section. Classified tier-2 (business/priority trade-off and release-calendar enforcement the owner ultimately makes required), decidedBy owner. The reviewing session's exact instance/provider/model identity for the PR's own second-opinion review was not captured at the time; see docs/contracts/decision-record.json's note on backfilled reviews[] entries."
+  "notes": "NOT A PR #1316 AUTHORIZATION (#1187 review at 8e6d97ea, blocking finding 7 -- an earlier draft of this record set status: \"decided\" and links.pullRequests: [\"1316\"], which would have let scripts/land-stack.mjs's evaluateTier2Decision treat this record as owner sign-off for #1316 through the pull-request-number match, even though #1316's own body says explicitly that nothing in it merges until the owner signs off. Both corrected here: links.pullRequests is now empty, and status is \"open\" rather than \"decided\"). Backfilled from the owner's standing cadence rule (#1187 comment 5799002037), the owner's follow-up widening of out-of-band scope (#1187 comment 5800369031, item 2), and PR #1316's own body (https://github.com/clossys/foundry/pull/1316), which was still OPEN, not yet merged or owner-signed-off, at the time this record was written (2026-09-23) -- its own 'Rollout' section runs the calendar check report-only for one week before the owner is asked to make it required, and its 'Owner steps' section lists sign-off as the first still-outstanding step. `reviews` is empty: the cadence shape and out-of-band scope came from the owner directly in standing-rule comments, not from a prior agent recommendation the owner then approved. Once the owner actually signs off on #1316, this record should be superseded by a new, decided record whose links.pullRequests names #1316 -- not edited in place."
 }
