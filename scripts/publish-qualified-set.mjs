@@ -222,8 +222,27 @@ function formatSummary(outcomes) {
   return lines.join("\n");
 }
 
+const USAGE = `Usage: node scripts/publish-qualified-set.mjs [--publish] [--denylist <path>]
+
+  (no flag)         plan only: prints the same report plan-qualified-publish-set.mjs
+                    prints, then stops. Publishes nothing.
+  --publish         run the owner-present publish loop for every eligible
+                    package, in dependency order, on the pinned release
+                    runtime. One interactive npm prompt per package.
+  --denylist <path> public-safety denylist for preflight; defaults to
+                    $PUBLIC_SAFETY_DENYLIST. Required with --publish.
+  --help            print this message and exit 0.
+
+Exit codes: 0 if every attempted publish succeeded (or in plan mode), 1 if
+any attempted package failed.
+`;
+
 async function main() {
   const argv = process.argv.slice(2);
+  if (argv.includes("--help") || argv.includes("-h")) {
+    process.stdout.write(USAGE);
+    return;
+  }
   const doPublish = argv.includes("--publish");
   const denylistIndex = argv.indexOf("--denylist");
   const denylist = denylistIndex === -1 ? process.env.PUBLIC_SAFETY_DENYLIST : argv[denylistIndex + 1];

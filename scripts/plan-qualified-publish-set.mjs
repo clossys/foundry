@@ -212,8 +212,26 @@ export async function planQualifiedPublishSet({ fetchImpl = fetch } = {}) {
   });
 }
 
+const USAGE = `Usage: node scripts/plan-qualified-publish-set.mjs [--json|--report-json]
+
+  (no flag)       human-readable report: every non-private package, whether
+                  it would publish, and why the rest would not.
+  --json          the eligible, dependency-ordered matrix only (as
+                  { package }[] JSON), for a caller that just needs the list.
+  --report-json   the full per-package report (as JSON), including every
+                  reason.
+  --help          print this message and exit 0.
+
+Exit codes: 0 on a completed plan (even with zero eligible packages), 1 if
+the registry or the release catalogue could not be resolved at all.
+`;
+
 async function main() {
   const argv = process.argv.slice(2);
+  if (argv.includes("--help") || argv.includes("-h")) {
+    process.stdout.write(USAGE);
+    return;
+  }
   const asJson = argv.includes("--json");
   const asReportJson = argv.includes("--report-json");
   if (asJson && asReportJson) die("--json and --report-json are mutually exclusive");
