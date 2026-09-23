@@ -70,6 +70,9 @@ test("recordPublicationEvidence wires the measured manifest, registry time, and 
     return { path: "governance/release-publications/later/strategist-0.1.1.json", record: { schemaVersion: 2 } };
   };
 
+  let verifyProvenanceOptions;
+  const verifyProvenance = async (options) => { verifyProvenanceOptions = options; };
+
   const result = await recordPublicationEvidence({
     root: "/repo",
     packageKey: "strategist",
@@ -82,6 +85,7 @@ test("recordPublicationEvidence wires the measured manifest, registry time, and 
     writeOutput,
     makeTempDir: () => "/tmp/publication-evidence-test",
     createRecord,
+    verifyProvenance,
   });
 
   assert.equal(result.path, "governance/release-publications/later/strategist-0.1.1.json");
@@ -90,6 +94,13 @@ test("recordPublicationEvidence wires the measured manifest, registry time, and 
   assert.equal(createRecordOptions.qualificationPath, "governance/release-qualifications/clossys-strategist-0.1.1.json");
   assert.equal(createRecordOptions.fetch, true);
   assert.deepEqual(createRecordOptions.env, { PATH: process.env.PATH ?? "/usr/bin:/bin" });
+
+  // B2 (2026-09-23 security review): the direct join must not be attempted
+  // (let alone written) until verifyProvenance — the npm SLSA attestation
+  // cross-check — has run against exactly this package/version/commit.
+  assert.equal(verifyProvenanceOptions.name, "@clossys/strategist");
+  assert.equal(verifyProvenanceOptions.version, "0.1.1");
+  assert.equal(verifyProvenanceOptions.sourceSha, sourceSha);
 });
 
 test("recordPublicationEvidence refuses a manifest with no name/version before making any network call", async () => {
@@ -104,5 +115,33 @@ test("recordPublicationEvidence refuses a manifest with no name/version before m
       readManifest: () => ({}),
     }),
     /has no name\/version/,
+  );
+});
+
+test("recordPublicationEvidence never writes a record when verifyProvenance and the replay fallback both refuse", async () => {
+  const writeOutput = () => {};
+  const fetchImpl = async (url) => {
+    if (url === "https://registry.npmjs.org/%40clossys%2Fstrategist") {
+      return { ok: true, status: 200, json: async () => ({ time: { "0.1.1": "2026-09-23T18:11:07.143Z" } }) };
+    }
+    throw new Error(`unexpected fetch ${url}`);
+  };
+  await assert.rejects(
+    recordPublicationEvidence({
+      root: "/repo",
+      packageKey: "strategist",
+      runId: 999,
+      runAttempt: 1,
+      sourceSha,
+      fetchImpl,
+      githubToken: undefined,
+      readManifest: () => ({ name: "@clossys/strategist", version: "0.1.1" }),
+      writeOutput,
+      makeTempDir: () => "/tmp/publication-evidence-test-2",
+      verifyProvenance: async () => { throw new Error("attestation does not corroborate this run"); },
+      findArtifact: async () => { throw new Error("no such artifact"); },
+      createRecord: async () => { throw new Error("must not be called — findArtifact fails before either path reaches it"); },
+    }),
+    /direct publication evidence failed.*replay fallback could not locate the qualified-candidate artifact/s,
   );
 });

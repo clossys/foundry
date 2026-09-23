@@ -27,10 +27,13 @@
 // tries the plain join first (cheap, no extra GitHub API calls) and only
 // reaches for that same run's own qualify artifact when it fails — it never
 // pre-guesses which path applies.
+import { execFileSync } from "node:child_process";
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { createLaterPublicationRecord } from "../record-later-publication.mjs";
+import { createLaterPublicationRecord, verifiedAnonymousAudit } from "../record-later-publication.mjs";
+import { inspectPublicNpmProvenance } from "../check-public-npm-provenance.mjs";
+import { decodePayload, SLSA_PROVENANCE } from "./provenance-join.mjs";
 import { PUBLIC_NPM_REGISTRY } from "./public-npm-registry.mjs";
 
 const RUN_ROOT = "https://github.com/clossys/foundry/actions/runs";
@@ -96,14 +99,69 @@ export async function downloadArtifactZip({ fetchImpl, artifactId }) {
   return Buffer.from(await response.arrayBuffer());
 }
 
-/** The measured npm registry publish instant for one version — never Date.now(). */
-export async function fetchPublishedAt({ fetchImpl, name, version }) {
+/** The full public npm packument for one package — the raw fetch behind both `fetchPublishedAt` and `verifyPublicationProvenance`. */
+export async function fetchPackument({ fetchImpl, name }) {
   const response = await fetchImpl(`${PUBLIC_NPM_REGISTRY}/${encodeURIComponent(name)}`);
   if (!response?.ok) throw new Error(`public npm metadata for ${name} is unavailable (${response?.status ?? "no response"})`);
-  const packument = await response.json();
-  const publishedAt = packument?.time?.[version];
+  return response.json();
+}
+
+/** The measured npm registry publish instant for one version — never Date.now(). */
+export async function fetchPublishedAt({ fetchImpl, name, version, packument }) {
+  const resolved = packument ?? (await fetchPackument({ fetchImpl, name }));
+  const publishedAt = resolved?.time?.[version];
   if (typeof publishedAt !== "string") throw new Error(`public npm metadata has no measured publish time for ${name}@${version}`);
   return publishedAt;
+}
+
+/** The exact invocation URL the version's verified SLSA statement names, or null if it cannot be located/decoded. `inspectPublicNpmProvenance` only checks this string's SHAPE (issue #1346 correctness review, B2) — it has no expected value to compare against, because it is never told what a caller intends to claim. This decodes the same bundle to read the actual value. */
+function attestedInvocationUrl(audit, name, version) {
+  const verified = (audit?.verified ?? []).find((entry) => entry?.name === name && entry?.version === version);
+  const bundle = (verified?.attestationBundles ?? []).find((item) => item?.predicateType === SLSA_PROVENANCE);
+  const statement = bundle ? decodePayload(bundle) : null;
+  const invocationId = statement?.predicate?.runDetails?.metadata?.invocationId;
+  return typeof invocationId === "string" ? invocationId : null;
+}
+
+/**
+ * Cross-check EVERY provenance field the record is about to claim — not
+ * just the source commit — against the version's own npm SLSA provenance
+ * attestation, before writing anything.
+ *
+ * `inspectPublicNpmProvenance()` (the same join `record-later-
+ * publication.mjs`'s `buildReplay()` already runs for the schema-3 replay
+ * path) verifies that the attestation is internally well-formed and binds
+ * the EXACT `sourceSha` supplied — but it has no notion of "the run and
+ * attempt this record is about to claim": it only checks the invocation
+ * URL's *shape*, never its value, because it is never given one to compare
+ * against. A record naming the correct commit but the wrong run or the
+ * wrong attempt (for example after a job was individually re-run — see
+ * `publish.yml`'s own "Re-run failed jobs" path) would still pass that
+ * check alone. This function closes that gap by additionally decoding the
+ * verified statement itself and requiring its `invocationId` to equal
+ * exactly `https://github.com/clossys/foundry/actions/runs/<runId>/attempts/<runAttempt>`
+ * — the same identity `buildPublicationEvidenceInput` is about to embed as
+ * `provenance.invocation` (issue #1346 correctness review, B2). The schema-2
+ * direct join previously ran none of this at all; the schema-3 replay path
+ * keeps its own equivalent internal check inside `buildReplay()`, so it is
+ * not duplicated here. Throws — writing nothing — on any mismatch.
+ */
+export async function verifyPublicationProvenance({ fetchImpl, name, version, sourceSha, runId, runAttempt, auditRun = execFileSync, env, packument }) {
+  if (!/^[a-f0-9]{40}$/.test(sourceSha ?? "")) throw new Error("sourceSha must be a full 40-character commit hash");
+  if (!Number.isSafeInteger(runId) || runId < 1) throw new Error("runId must be a positive integer");
+  if (!Number.isSafeInteger(runAttempt) || runAttempt < 1) throw new Error("runAttempt must be a positive integer");
+  const resolvedPackument = packument ?? (await fetchPackument({ fetchImpl, name }));
+  const audit = verifiedAnonymousAudit(name, version, auditRun, env);
+  const result = inspectPublicNpmProvenance({ name, version, sourceSha, audit, packument: resolvedPackument });
+  if (result.code !== 0) {
+    throw new Error(`measured npm SLSA provenance attestation does not corroborate this run (${(result.failures ?? []).join("; ") || "unknown mismatch"})`);
+  }
+  const expectedInvocation = `https://github.com/clossys/foundry/actions/runs/${runId}/attempts/${runAttempt}`;
+  const actualInvocation = attestedInvocationUrl(audit, name, version);
+  if (actualInvocation !== expectedInvocation) {
+    throw new Error(`measured npm SLSA provenance attestation names a different run/attempt than this record claims (attested ${actualInvocation ?? "<none>"}, claimed ${expectedInvocation})`);
+  }
+  return { packument: resolvedPackument, audit };
 }
 
 /**
@@ -113,6 +171,11 @@ export async function fetchPublishedAt({ fetchImpl, name, version }) {
  * messages if neither path validates — the caller must not write a file or
  * open a pull request on that throw (issue #1346's "fail visibly, open no
  * PR" requirement).
+ *
+ * The direct attempt is gated on `verifyPublicationProvenance` succeeding
+ * first (see that function's own header for why); the replay attempt keeps
+ * its own equivalent internal check inside `record-later-publication.mjs`'s
+ * `buildReplay()`, so it is not duplicated here.
  */
 export async function buildPublicationRecordWithFallback({
   root,
@@ -122,14 +185,21 @@ export async function buildPublicationRecordWithFallback({
   fetchImpl,
   env,
   runId,
+  runAttempt,
+  name,
+  version,
+  sourceSha,
+  auditRun,
   tempDir,
   findArtifact = findQualifiedCandidateArtifact,
   downloadZip = downloadArtifactZip,
   createRecord = createLaterPublicationRecord,
   writeFile = writeFileSync,
+  verifyProvenance = verifyPublicationProvenance,
 }) {
   let directError;
   try {
+    await verifyProvenance({ fetchImpl, name, version, sourceSha, runId, runAttempt, auditRun, env });
     return await createRecord({ root, packageKey, qualificationPath, publicationPath, fetch: true, env, fetchImpl });
   } catch (error) {
     directError = error instanceof Error ? error : new Error(String(error));

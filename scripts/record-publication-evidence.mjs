@@ -16,16 +16,24 @@
 // of the one path that must stay credential-free per
 // scripts/lib/candidate-runner.mjs's assertCredentialFree().
 //
-// GITHUB_TOKEN, if present, is used ONLY to authenticate this script's own
-// GitHub API reads (the workflow run's artifact list, and the replay
-// fallback's artifact download) — never passed into
-// createLaterPublicationRecord's `env`, which must stay credential-free.
+// PUBLICATION_EVIDENCE_GITHUB_TOKEN, if present, is used ONLY to authenticate
+// this script's own GitHub API reads (the workflow run's artifact list, and
+// the replay fallback's artifact download) — never passed into
+// createLaterPublicationRecord's `env`, which must stay credential-free. It
+// is deliberately NOT named GITHUB_TOKEN or GH_TOKEN: those exact names are
+// what `git`, `tar`, and `unzip` subprocesses spawned deeper in this call
+// chain would inherit by default (Node inherits the parent environment
+// unless a subprocess call overrides it), and several of those calls do not
+// override it. Naming this variable something no tool auto-detects keeps
+// the token out of every subprocess this script's own dependencies spawn,
+// not just the ones that already sanitize their environment explicitly
+// (2026-09-23 security review, N2).
 import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
 import { parseStrictJson } from "./lib/candidate-qualification.mjs";
-import { buildPublicationEvidenceInput, buildPublicationRecordWithFallback, fetchPublishedAt } from "./lib/publication-evidence-run.mjs";
+import { buildPublicationEvidenceInput, buildPublicationRecordWithFallback, fetchPackument, fetchPublishedAt } from "./lib/publication-evidence-run.mjs";
 
 const USAGE = "Usage: --package <key> --run-id <n> --run-attempt <n> --source-sha <sha>";
 const KEY = /^[a-z0-9][a-z0-9-]{0,63}$/;
@@ -65,13 +73,15 @@ export async function recordPublicationEvidence({
   runAttempt,
   sourceSha,
   fetchImpl = fetch,
-  githubToken = process.env.GITHUB_TOKEN,
+  githubToken = process.env.PUBLICATION_EVIDENCE_GITHUB_TOKEN,
   readManifest = (path) => parseStrictJson(readFileSync(path, "utf8")),
   writeOutput = writeFileSync,
   makeTempDir = () => mkdtempSync(join(tmpdir(), "foundry-publication-evidence-")),
   findArtifact,
   downloadZip,
   createRecord,
+  verifyProvenance,
+  auditRun,
 } = {}) {
   const absoluteRoot = resolve(root);
   const manifest = readManifest(join(absoluteRoot, "packages", packageKey, "package.json"));
@@ -79,7 +89,8 @@ export async function recordPublicationEvidence({
   if (typeof name !== "string" || typeof version !== "string") throw new Error(`packages/${packageKey}/package.json has no name/version`);
 
   const authenticatedFetch = githubAuthenticatedFetch(githubToken, fetchImpl);
-  const publishedAt = await fetchPublishedAt({ fetchImpl: authenticatedFetch, name, version });
+  const packument = await fetchPackument({ fetchImpl: authenticatedFetch, name });
+  const publishedAt = await fetchPublishedAt({ fetchImpl: authenticatedFetch, name, version, packument });
   const publication = buildPublicationEvidenceInput({ runId, runAttempt, sourceSha, publishedAt, name, version });
 
   const tempDir = makeTempDir();
@@ -90,8 +101,9 @@ export async function recordPublicationEvidence({
   const env = { PATH: process.env.PATH ?? "/usr/bin:/bin" };
 
   return buildPublicationRecordWithFallback({
-    root: absoluteRoot, packageKey, qualificationPath, publicationPath, fetchImpl: authenticatedFetch, env, runId, tempDir, writeFile: writeOutput,
+    root: absoluteRoot, packageKey, qualificationPath, publicationPath, fetchImpl: authenticatedFetch, env, runId, runAttempt, name, version, sourceSha, tempDir, writeFile: writeOutput,
     ...(findArtifact ? { findArtifact } : {}), ...(downloadZip ? { downloadZip } : {}), ...(createRecord ? { createRecord } : {}),
+    ...(verifyProvenance ? { verifyProvenance } : {}), ...(auditRun ? { auditRun } : {}),
   });
 }
 
