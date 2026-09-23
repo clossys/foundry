@@ -348,59 +348,157 @@ export function findUnclassifiedWorkflowPaths(workflowText, tierGlobs) {
 }
 
 const REVIEW_RECORD_MARKER = "foundry-review-record";
-const REVIEW_RECORD_BLOCK = /<!--\s*foundry-review-record\s*([\s\S]*?)-->/g;
 
 /**
- * Strips content a `foundry-review-record` marker must NOT be recognized
- * inside: triple-backtick/tilde fenced code blocks, inline code spans
- * (single or double backticks), blockquoted lines, and classic
- * 4-space/tab-indented code blocks. #1187 review round 4, blocking finding
- * 2 (second part): a review comment that merely QUOTES or ILLUSTRATES the
- * marker syntax -- exactly what this thread's own review comments do, and
- * what `docs/contracts/review-record.json`'s own header example does --
- * must never be treated as a real record, whether that quoting is by an
- * authorized account or not. The real, load-bearing convention
- * (docs/contracts/review-record.json) is a bare HTML comment directly in
- * the comment body -- never fenced, quoted, or indented -- so stripping
- * these forms costs nothing against a genuine record and removes an entire
- * class of accidental self-DoS.
- * @param {string} body
+ * Positive-grammar scan for `foundry-review-record` blocks (#1187 review
+ * round 5, blocking finding 2, both reviewers -- REPLACES the round-4
+ * strip-then-regex approach entirely, which both reviewers independently
+ * broke: 4-space/tab-indented JSON had its field lines deleted by the
+ * indented-code-block rule, leaving `{}` -- a clean parse that matched
+ * nothing, so a real reject silently vanished; a fenced or quoted reject
+ * was silently dropped with no signal; and editing a reject INTO a fence
+ * or quote bypassed the edited-at-head check entirely, since no record
+ * survived stripping to be checked in the first place).
+ *
+ * A block counts ONLY when:
+ *   - its `<!-- foundry-review-record` opener line starts at column 0 --
+ *     no leading whitespace at all. This alone excludes every blockquote
+ *     line (always prefixed `>`) and every classic indented-code-block
+ *     line (4+ leading spaces or a tab), with no separate "strip indented
+ *     lines" pass needed -- and unlike stripping, it never touches or
+ *     deletes the JSON body between the markers, so ANY indentation
+ *     inside a genuine block survives untouched.
+ *   - it is not inside an open fenced code block (``` or ~~~, tracked line
+ *     by line, CommonMark-style: 0-3 leading spaces before the fence
+ *     marker) or an open `<details>`/`<pre>` region (tracked the same way).
+ *   - a closing `-->` is actually found (on the opener line itself, or on
+ *     a later line) before the comment body ends -- "closer intact".
+ *
+ * The JSON body is EVERYTHING between the two markers, taken byte-for-byte
+ * with no markdown-aware rewriting at all, and handed directly to
+ * `JSON.parse` -- arbitrary indentation is fine because JSON.parse itself
+ * does not care about whitespace ("Parse the JSON body with a real JSON
+ * parser, so any indentation works"). Nothing here can delete or reassemble
+ * text the way regex stripping could (closing the inline-code-span
+ * reassembly attack one review round-5 review raised, by construction: this
+ * function never removes or rejoins any text at all).
+ * @param {string} rawBody
+ * @returns {Array<{ raw: string|null, valid: boolean }>} `valid: true` with
+ *   `raw` set to the inner text when a genuine opener AND a closer were
+ *   both found; `valid: false` (`raw: null`) when a genuine opener was
+ *   found but the comment body ended with no closer -- a malformed,
+ *   truncated block that must still be reported, never silently ignored.
  */
-export function stripQuotedAndFencedContent(body) {
-  let s = String(body ?? "");
-  s = s.replace(/(^|\n)```[\s\S]*?```/g, "$1");
-  s = s.replace(/(^|\n)~~~[\s\S]*?~~~/g, "$1");
-  s = s.replace(/``[^`\n]*``/g, "");
-  s = s.replace(/`[^`\n]*`/g, "");
-  s = s
-    .split("\n")
-    .filter((line) => !/^\s*>/.test(line) && !/^(?: {4}|\t)/.test(line))
-    .join("\n");
-  return s;
+export function findReviewRecordBlocks(rawBody) {
+  const lines = String(rawBody ?? "").split("\n");
+  const blocks = [];
+  let fenceChar = null;
+  let fenceLen = 0;
+  let detailsDepth = 0;
+  let preDepth = 0;
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+    if (fenceChar) {
+      const closeMatch = line.match(/^ {0,3}(`{3,}|~{3,})\s*$/);
+      if (closeMatch && closeMatch[1][0] === fenceChar && closeMatch[1].length >= fenceLen) {
+        fenceChar = null;
+        fenceLen = 0;
+      }
+      i++;
+      continue;
+    }
+    const openFence = line.match(/^ {0,3}(`{3,}|~{3,})/);
+    if (openFence) {
+      fenceChar = openFence[1][0];
+      fenceLen = openFence[1].length;
+      i++;
+      continue;
+    }
+    if (/^\s*<details\b/i.test(line)) {
+      detailsDepth++;
+      i++;
+      continue;
+    }
+    if (/^\s*<\/details>/i.test(line)) {
+      detailsDepth = Math.max(0, detailsDepth - 1);
+      i++;
+      continue;
+    }
+    if (/^\s*<pre\b/i.test(line)) {
+      preDepth++;
+      i++;
+      continue;
+    }
+    if (/^\s*<\/pre>/i.test(line)) {
+      preDepth = Math.max(0, preDepth - 1);
+      i++;
+      continue;
+    }
+    if (detailsDepth === 0 && preDepth === 0 && /^<!--\s*foundry-review-record\b/.test(line)) {
+      const sameLineRest = line.replace(/^<!--\s*foundry-review-record\b/, "");
+      if (sameLineRest.includes("-->")) {
+        blocks.push({ raw: sameLineRest.slice(0, sameLineRest.indexOf("-->")), valid: true });
+        i++;
+        continue;
+      }
+      const bodyLines = [sameLineRest];
+      let j = i + 1;
+      let closed = false;
+      while (j < lines.length) {
+        const inner = lines[j];
+        if (inner.includes("-->")) {
+          bodyLines.push(inner.slice(0, inner.indexOf("-->")));
+          closed = true;
+          j++;
+          break;
+        }
+        bodyLines.push(inner);
+        j++;
+      }
+      if (closed) {
+        blocks.push({ raw: bodyLines.join("\n"), valid: true });
+        i = j;
+      } else {
+        blocks.push({ raw: null, valid: false });
+        i = lines.length;
+      }
+      continue;
+    }
+    i++;
+  }
+  return blocks;
 }
 
 /**
- * Extracts every `foundry-review-record` block (docs/contracts/review-record.json)
- * from a set of PR comment bodies, after removing any quoted, fenced,
- * inline-code, or indented occurrence of the marker (`stripQuotedAndFencedContent`).
- * A block that is not valid JSON is kept as `{ _parseError: true }` so
- * callers can report it rather than silently dropping malformed input.
+ * Extracts every `foundry-review-record` block from a set of PR comment
+ * bodies via `findReviewRecordBlocks`'s positive grammar. A block that is
+ * not valid JSON, OR that was never a genuine column-0/unfenced block at
+ * all despite the marker text appearing SOMEWHERE in the comment
+ * (fenced, quoted, indented, mid-sentence, malformed -- #1187 review round
+ * 5, blocking finding 2: "Any authorized comment containing a record-like
+ * marker ... that doesn't parse as a valid record must REFUSE the gate,
+ * never be silently dropped. That covers fenced, quoted, indented and
+ * malformed markers"), is kept as `{ _parseError: true }` so
+ * `findSuspiciousRecordComments` can refuse the gate over it rather than
+ * silently treating the comment as having said nothing. This is a real,
+ * accepted trade-off, not a bug: an AUTHORIZED comment that merely
+ * illustrates or discusses the marker syntax (this very review thread's
+ * own comments, or this repository's own contract example) now also
+ * refuses the gate. Under `governance/review-tiers.json`'s
+ * `"report-only"` default `enforcement` mode, that refusal is reported,
+ * not enforced -- see `applyEnforcement`.
  *
  * `comments` must already carry an `authorization` field per comment, one
  * of `"authorized"`, `"unauthorized"`, or `"unknown"` (set by
  * `defaultAnnotateCommentAuthorization` or an equivalent caller) -- this
  * function stays pure and never makes the authorization call itself; it
  * only reads the value the caller resolved. A comment with no
- * `authorization` field at all (an older-shaped fixture, or a caller that
- * forgot the annotation step) is treated as `"unauthorized"`, not trusted
+ * `authorization` field at all is treated as `"unauthorized"`, not trusted
  * by default. `"unknown"` (the permission LOOKUP itself failed) is
- * DELIBERATELY DISTINCT from `"unauthorized"` (the lookup succeeded and
- * said no): #1187 review round 4, blocking finding 3a -- collapsing a
- * failed lookup into "unauthorized" silently DROPS a genuine reject from
- * an account this module simply could not confirm, which fails open for
- * exactly the record that must never be dropped. `findSuspiciousRecordComments`
- * below refuses the whole gate on `"unknown"`, for any record, rather than
- * guessing either direction.
+ * deliberately distinct from `"unauthorized"` (the lookup succeeded and
+ * said no) -- `findSuspiciousRecordComments` refuses the whole gate on
+ * `"unknown"`, for any record, rather than guessing either direction.
  * @param {Array<{ body?: string, created_at?: string, updated_at?: string, authorization?: "authorized"|"unauthorized"|"unknown" }>} comments
  * @returns {Array<Record<string, unknown>>}
  */
@@ -409,7 +507,6 @@ export function parseReviewRecordComments(comments) {
   for (const comment of comments ?? []) {
     const rawBody = typeof comment?.body === "string" ? comment.body : "";
     if (!rawBody.includes(REVIEW_RECORD_MARKER)) continue;
-    const body = stripQuotedAndFencedContent(rawBody);
     // GitHub's REST payload (gh api .../comments) uses snake_case
     // (created_at/updated_at); the earlier camelCase read here was always
     // populating null. Both spellings are accepted so this also works
@@ -422,14 +519,30 @@ export function parseReviewRecordComments(comments) {
     // though: `findStickyRejections` and `findSuspiciousRecordComments`
     // below both need to see it, because an edited comment containing a
     // reject must still block, and an edited comment at all refuses the
-    // whole gate rather than being silently ignored.
+    // whole gate rather than being silently ignored. KNOWN LIMITATION: this
+    // only detects an edit whose CURRENT body still shows `updated_at !==
+    // created_at`; a comment edited to remove the marker text entirely is
+    // indistinguishable, from this API response alone, from one that never
+    // had it -- reconstructing that would need GitHub's comment revision
+    // history, which this slice does not fetch. See docs/HITL.md.
     const edited = Boolean(createdAt && updatedAt && createdAt !== updatedAt);
     const authorization = ["authorized", "unauthorized", "unknown"].includes(comment.authorization) ? comment.authorization : "unauthorized";
-    REVIEW_RECORD_BLOCK.lastIndex = 0;
-    let match;
-    while ((match = REVIEW_RECORD_BLOCK.exec(body))) {
+
+    const blocks = findReviewRecordBlocks(rawBody);
+    if (blocks.length === 0) {
+      // The marker text is present somewhere in the raw body (the
+      // `.includes(REVIEW_RECORD_MARKER)` check above already confirmed
+      // that), but never as a genuine column-0, unfenced, closed block.
+      records.push({ _parseError: true, _commentCreatedAt: createdAt, _edited: edited, _authorization: authorization });
+      continue;
+    }
+    for (const block of blocks) {
+      if (!block.valid) {
+        records.push({ _parseError: true, _commentCreatedAt: createdAt, _edited: edited, _authorization: authorization });
+        continue;
+      }
       try {
-        const parsed = JSON.parse(match[1]);
+        const parsed = JSON.parse(block.raw);
         records.push({ ...parsed, _commentCreatedAt: createdAt, _edited: edited, _authorization: authorization });
       } catch {
         records.push({ _parseError: true, _commentCreatedAt: createdAt, _edited: edited, _authorization: authorization });
@@ -530,6 +643,30 @@ export function isCurrentHeadShaForReject(candidateHeadSha, currentHeadSha) {
 }
 
 /**
+ * Normalizes a `state` value for spelling-insensitive comparison:
+ * lowercase, underscores folded to hyphens (so GitHub's own
+ * `changes_requested` spelling compares equal to this repository's
+ * `changes-requested`). #1187 review round 5, should-fix 3.
+ * @param {unknown} state
+ */
+function normalizeStateSpelling(state) {
+  return String(state ?? "").toLowerCase().replace(/_/g, "-");
+}
+
+/**
+ * Every spelling this module recognizes as a REJECT, after
+ * `normalizeStateSpelling` -- `"reject"`, `"rejected"` (a natural English
+ * variant), and `"changes-requested"` (which also covers GitHub's own
+ * `changes_requested` once normalized). #1187 review round 5, should-fix 3:
+ * "Also accept the reject spellings changes_requested, changes-requested
+ * and rejected, case-insensitively."
+ */
+const REJECT_STATE_SPELLINGS = new Set(["reject", "rejected", "changes-requested"]);
+
+/** Every `state` spelling this module recognizes at all (approval-path values plus every reject spelling), after `normalizeStateSpelling`. */
+const KNOWN_STATE_SPELLINGS = new Set(["approved", "commented", ...REJECT_STATE_SPELLINGS]);
+
+/**
  * ANY record block from an AUTHORIZED comment that could not be trusted as
  * an ordinary approval/author record -- an unparseable JSON block, a
  * well-formed one from a comment edited after posting, or a reject/
@@ -580,8 +717,19 @@ export function findSuspiciousRecordComments(records, headSha) {
     if (r._authorization !== "authorized") return false; // confirmed unauthorized: NEVER suspicious, whatever it contains
     if (r._parseError) return true;
     if (r._edited && r.headSha === headSha) return true;
-    const state = String(r?.state ?? "").toLowerCase();
-    if ((state === "reject" || state === "changes-requested") && (typeof r.headSha !== "string" || r.headSha.length === 0)) {
+    const state = normalizeStateSpelling(r?.state);
+    if (REJECT_STATE_SPELLINGS.has(state) && (typeof r.headSha !== "string" || r.headSha.length === 0)) {
+      return true;
+    }
+    // A reviewer-role record whose state is NEITHER a known approval-path
+    // value NOR a recognized reject spelling, at (or near) the current
+    // head, is ambiguous -- #1187 review round 5, should-fix 3: "Treat any
+    // unrecognized state at the head as suspicious." Matched with the same
+    // lenient, case-insensitive, 7+-character-prefix headSha rule
+    // `findStickyRejections` uses for rejects, since an unrecognized
+    // spelling could plausibly BE a reject typo, and erring toward
+    // suspicion is the safe direction either way.
+    if (r.role === "reviewer" && state.length > 0 && !KNOWN_STATE_SPELLINGS.has(state) && isCurrentHeadShaForReject(r.headSha, headSha)) {
       return true;
     }
     return false;
@@ -624,8 +772,7 @@ export function findStickyRejections(records, headSha) {
   return (records ?? []).filter((r) => {
     if (!r || r._parseError) return false;
     if (r._authorization !== "authorized") return false;
-    const state = String(r?.state ?? "").toLowerCase();
-    if (state !== "reject" && state !== "changes-requested") return false;
+    if (!REJECT_STATE_SPELLINGS.has(normalizeStateSpelling(r?.state))) return false;
     return isCurrentHeadShaForReject(r.headSha, headSha);
   });
 }
@@ -754,13 +901,23 @@ export function isOverbroadPathGlob(glob, tierConfig) {
  * (`isRelaxationPastSunset`), and linked to this change either by:
  *
  * - pull-request number (`links.pullRequests`) PLUS a matching entry in
- *   `links.headShas` (case-insensitive) equal to `headSha` -- a PR-scoped
- *   authorization with NO `headShas` at all never matches anything (#1187
- *   review round 4, should-fix: "a PR-scoped one must pin a head sha").
- *   Without this, `links.pullRequests: ["1316"]` with `expiry: null`
- *   authorizes WHATEVER head #1316 happens to carry at merge time, which a
- *   pull request's own branch can move to after the owner's sign-off names
- *   one specific commit.
+ *   `links.patchIds` (case-insensitive) equal to `patchId` -- the pull
+ *   request's own net-diff patch id (`git patch-id --stable` of its
+ *   three-dot diff against its base, computed fresh at evaluation time --
+ *   see `defaultFetchPatchId`), NOT a pinned head sha. #1187 review round
+ *   5, blocking finding 2 (reviewer 2): pinning a head sha, as an earlier
+ *   draft of this function did, could NEVER be satisfied on a repository
+ *   whose branch protection requires the base branch to be current --
+ *   landing the record itself moves `main`, which makes the very PR it
+ *   authorizes `BEHIND` and forces a restack, producing a new head the
+ *   pin no longer matches, every single time. A patch id is invariant to
+ *   a pure merge-from-base or restack (the merge commit contributes
+ *   nothing to the three-dot diff) and changes only when the PR's OWN
+ *   content changes -- so an authorization pinned to a patch id survives
+ *   exactly the operations (restacks, merge-train rebasing) that made a
+ *   head-sha pin unsatisfiable, while still breaking the instant real
+ *   content changes. A PR-scoped authorization with NO `patchIds` at all
+ *   never matches anything.
  * - a set of path globs (`links.paths`, each checked against
  *   `isOverbroadPathGlob` against THIS SAME `tierConfig`) covering every
  *   tier-2 path the pull request touches -- but ONLY when the record's own
@@ -782,16 +939,20 @@ export function isOverbroadPathGlob(glob, tierConfig) {
  * KNOWN LIMITATION, DOCUMENTED RATHER THAN SOLVED (#1187 review round 4,
  * should-fix: "A merge-train batch is authorized when its constituent PR
  * and head are authorized"): a merge-train batch pull request carries a
- * DIFFERENT PR number and a DIFFERENT head sha than any original
- * constituent PR a decision record might name. This function has no notion
- * of "constituent PRs" and does not attempt to resolve one PR's
+ * DIFFERENT PR number, and its own net diff is the union of every
+ * constituent's changes, so it also carries a DIFFERENT patch id than any
+ * original constituent PR a decision record might name. This function has
+ * no notion of "constituent PRs" and does not attempt to resolve one PR's
  * authorization through another's -- a batch containing a tier-2 change
  * needs its OWN decision record (or its own fresh review), even when the
- * original constituent PR was already authorized. See docs/HITL.md.
- * @param {{ decisionRecords: Array<Record<string, unknown>>, prNumber: string|number, headSha?: string, tier2Paths: string[], tierConfig: { tier2?: string[] }, now?: Date }} input
+ * original constituent PR was already authorized. A future slice could
+ * check each constituent's OWN patch id against its OWN prior
+ * authorization, but that needs land-stack to know which PRs a batch
+ * carries at all, which nothing in this slice resolves. See docs/HITL.md.
+ * @param {{ decisionRecords: Array<Record<string, unknown>>, prNumber: string|number, patchId?: string, tier2Paths: string[], tierConfig: { tier2?: string[] }, now?: Date }} input
  * @returns {{ ok: boolean, reason: string }}
  */
-export function evaluateTier2Decision({ decisionRecords, prNumber, headSha, tier2Paths, tierConfig, now = new Date() }) {
+export function evaluateTier2Decision({ decisionRecords, prNumber, patchId, tier2Paths, tierConfig, now = new Date() }) {
   const nowMs = now.getTime();
   const all = (decisionRecords ?? []).filter((r) => r && typeof r === "object" && !Array.isArray(r));
 
@@ -818,13 +979,13 @@ export function evaluateTier2Decision({ decisionRecords, prNumber, headSha, tier
 
   const byPr = candidates.filter((record) => {
     if (!(record.links?.pullRequests ?? []).map(String).includes(String(prNumber))) return false;
-    const headShas = (record.links?.headShas ?? []).filter((h) => typeof h === "string" && h.length > 0);
-    if (headShas.length === 0) return false; // PR-scoped authorization MUST pin at least one head sha
-    if (typeof headSha !== "string" || headSha.length === 0) return false;
-    return headShas.some((h) => h.toLowerCase() === headSha.toLowerCase());
+    const patchIds = (record.links?.patchIds ?? []).filter((p) => typeof p === "string" && p.length > 0);
+    if (patchIds.length === 0) return false; // PR-scoped authorization MUST pin at least one patch id
+    if (typeof patchId !== "string" || patchId.length === 0) return false;
+    return patchIds.some((p) => p.toLowerCase() === patchId.toLowerCase());
   });
   if (byPr.length > 0) {
-    return { ok: true, reason: `tier-2 authorized by decision record ${byPr[0].id} (linked to PR #${prNumber} at head ${headSha})` };
+    return { ok: true, reason: `tier-2 authorized by decision record ${byPr[0].id} (linked to PR #${prNumber}, patch id ${patchId})` };
   }
 
   const byPaths = candidates.find((record) => {
@@ -980,6 +1141,57 @@ export function isNoOpHeadCommit(headCommitFileCount) {
 }
 
 /**
+ * Whether the current head's TREE sha is byte-identical to any of a set of
+ * previously-rejected heads' own tree shas -- #1187 review round 5,
+ * should-fix: "Compare the git tree of the rejected head with the current
+ * head, so a change-then-revert can't clear a reject." `isNoOpHeadCommit`
+ * alone only catches a head commit that changes literally zero files; a
+ * commit that changes a line and a second commit that reverts it (or a
+ * whitespace-only change) is not a no-op commit by that measure, but its
+ * TREE can still be exactly what a rejected head's tree already was --
+ * the same underlying fact, reached a different way.
+ * @param {string|null} currentTreeSha
+ * @param {string[]} rejectedTreeShas
+ */
+export function isTreeIdenticalToRejectedHead(currentTreeSha, rejectedTreeShas) {
+  if (typeof currentTreeSha !== "string" || currentTreeSha.length === 0) return false;
+  return (rejectedTreeShas ?? []).some((t) => typeof t === "string" && t.toLowerCase() === currentTreeSha.toLowerCase());
+}
+
+/**
+ * Applies `governance/review-tiers.json`'s `enforcement` switch
+ * (`"report-only"` | `"enforce"`, defaulting to `"report-only"`) to a raw
+ * tier verdict (#1187 review round 5, item 1 -- coordinator decision,
+ * "matching this repo's report-then-enforce pattern"). Under `"enforce"`,
+ * the verdict passes through completely unchanged -- this is the FULL
+ * logic every earlier round built, doing exactly what it always did. Under
+ * `"report-only"` (the default), a REFUSING verdict is rewritten to `ok:
+ * true`, with its original reason prefixed and preserved verbatim, so the
+ * refusal is still computed, still returned, and still visible in
+ * `land-stack.mjs --status`'s JSON output -- "computes and prints ... but
+ * does not block merging." A verdict that was already `ok: true` is
+ * returned unchanged in either mode; there is nothing to soften.
+ *
+ * Changing `enforcement` to `"enforce"` is itself a tier-2 change (the
+ * whole of `governance/review-tiers.json` is tier-2 -- see that file's own
+ * header), so flipping the switch on needs the same owner-approved bar as
+ * any other change to the enforcement surface. See docs/HITL.md for the
+ * observe-then-flip rollout plan.
+ * @param {{ ok: boolean, tier: string, reason: string }} verdict
+ * @param {"report-only"|"enforce"|undefined} enforcement
+ * @returns {{ ok: boolean, tier: string, reason: string }}
+ */
+export function applyEnforcement(verdict, enforcement) {
+  const mode = enforcement === "enforce" ? "enforce" : "report-only";
+  if (mode === "enforce" || verdict.ok) return verdict;
+  return {
+    ok: true,
+    tier: verdict.tier,
+    reason: `[report-only; would refuse under enforce mode] ${verdict.reason}`,
+  };
+}
+
+/**
  * Combines the tier-1 independence result, the changed-decision-record
  * validity result, and, for tier-2, the owner decision-record result, into
  * one verdict for a classified pull request. Tier-0 still runs
@@ -987,7 +1199,7 @@ export function isNoOpHeadCommit(headCommitFileCount) {
  * governance/decisions/** if a future tier reclassification ever allows
  * it) but otherwise passes without fetching any review evidence at all.
  * @param {{ tier: string, tier2Paths: string[] }} classification
- * @param {{ records: Array<Record<string, unknown>>, headSha: string, decisionRecords: Array<Record<string, unknown>>, changedDecisionRecords?: Array<{ path: string, record: unknown }>, prNumber: string|number, tierConfig?: { tier2?: string[] }, now?: Date }} evidence
+ * @param {{ records: Array<Record<string, unknown>>, headSha: string, patchId?: string, decisionRecords: Array<Record<string, unknown>>, changedDecisionRecords?: Array<{ path: string, record: unknown }>, prNumber: string|number, tierConfig?: { tier2?: string[] }, now?: Date }} evidence
  * @returns {{ ok: boolean, tier: string, reason: string }}
  */
 export function evaluateTierGate(classification, evidence) {
@@ -1009,7 +1221,7 @@ export function evaluateTierGate(classification, evidence) {
     const decision = evaluateTier2Decision({
       decisionRecords: evidence.decisionRecords,
       prNumber: evidence.prNumber,
-      headSha: evidence.headSha,
+      patchId: evidence.patchId,
       tier2Paths: classification.tier2Paths,
       tierConfig: evidence.tierConfig,
       now: evidence.now,
@@ -1111,6 +1323,73 @@ function defaultFetchHeadCommitFileCount(sha, { nameWithOwner = defaultNameWithO
     return Number.isFinite(n) ? n : 1;
   } catch {
     return 1;
+  }
+}
+
+/**
+ * Live network call: one commit's own TREE sha, via
+ * `repos/{owner}/{repo}/commits/{sha}`'s own `.commit.tree.sha`. Used by
+ * `isTreeIdenticalToRejectedHead` (see its own doc comment) to catch a
+ * change-then-revert commit that clears a sticky rejection without
+ * `isNoOpHeadCommit` ever seeing an empty commit. Returns `null` on any
+ * error, or on a response that is not a real 40-character hex sha -- never
+ * a value that could accidentally match another tree sha by coincidence.
+ * @param {string} sha
+ * @returns {string|null}
+ */
+function defaultFetchCommitTreeSha(sha, { nameWithOwner = defaultNameWithOwner } = {}) {
+  try {
+    const nwo = nameWithOwner();
+    const out = execFileSync(
+      "gh",
+      ["api", `repos/${nwo}/commits/${encodeURIComponent(sha)}`, "--jq", ".commit.tree.sha"],
+      { encoding: "utf8", maxBuffer: 65536 },
+    );
+    const t = out.trim();
+    return /^[0-9a-f]{40}$/i.test(t) ? t : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Live network call: the pull request's own net-diff `git patch-id
+ * --stable`, computed fresh at evaluation time, used by
+ * `evaluateTier2Decision` to check a PR-scoped decision record's
+ * `links.patchIds` (#1187 review round 5, blocking finding 2, reviewer 2).
+ * Fetches the raw unified diff for the THREE-DOT compare
+ * `base...head` (`repos/{owner}/{repo}/compare/{base}...{head}` with the
+ * `application/vnd.github.v3.diff` media type) -- the three-dot form is
+ * exactly "what HEAD changed since it diverged from BASE", i.e. the PR's
+ * own net diff against its merge base, which is what stays invariant
+ * across a pure restack or merge-from-base. That raw diff text is piped
+ * directly into `git patch-id --stable`, a stateless plumbing command that
+ * hashes diff TEXT with no repository access at all -- this never touches
+ * or depends on the local checkout, the same discipline every other
+ * base-ref read in this module already follows. `base` should be the pull
+ * request's own `baseRefName` (its real target branch, which may not be
+ * `main` for a stacked PR), never a fixed sha, so a restack that merges
+ * newer base-branch commits into the PR branch does not itself change what
+ * the three-dot diff reports. Returns `null` on any error (network,
+ * `gh`/`git` failure) -- never a value that could accidentally match a
+ * pinned patch id.
+ * @param {string} base
+ * @param {string} head
+ * @returns {string|null}
+ */
+function defaultFetchPatchId(base, head, { nameWithOwner = defaultNameWithOwner, gitExec = execFileSync } = {}) {
+  try {
+    const nwo = nameWithOwner();
+    const diff = execFileSync(
+      "gh",
+      ["api", `repos/${nwo}/compare/${encodeURIComponent(base)}...${encodeURIComponent(head)}`, "-H", "Accept: application/vnd.github.v3.diff"],
+      { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 },
+    );
+    const out = gitExec("git", ["patch-id", "--stable"], { input: diff, encoding: "utf8", maxBuffer: 1024 * 1024 });
+    const patchId = out.trim().split(/\s+/)[0];
+    return patchId && /^[0-9a-f]{40}$/i.test(patchId) ? patchId : null;
+  } catch {
+    return null;
   }
 }
 
@@ -1313,6 +1592,10 @@ function defaultReadReviewTierConfig(ref, io = {}) {
     tier1: config.tier1?.globs ?? [],
     tier1RecordExempt: config.tier1RecordExempt?.globs ?? [],
     tier2: config.tier2?.globs ?? [],
+    // "report-only" | "enforce", defaulting to "report-only" -- #1187
+    // review round 5, item 1. Anything other than the literal string
+    // "enforce" reads as report-only, the safe default direction.
+    enforcement: config.enforcement === "enforce" ? "enforce" : "report-only",
   };
 }
 
@@ -1399,7 +1682,17 @@ function prViewToCanMergeInput(view, requiredContexts) {
   };
 }
 
-function runStatus(
+/**
+ * Exported for `scripts/land-stack.test.mjs` (#1187 review round 5,
+ * coordinator instruction: "the tests must exercise enforce mode" —
+ * `applyEnforcement`'s own unit tests cover both modes in isolation, but a
+ * wiring bug that left the `"enforce"` path unreachable from here would not
+ * be caught by those alone). Every dependency is injectable, the same
+ * pattern `runMerge` below already follows; production code (the CLI at the
+ * bottom of this file) calls this with no second argument, using every
+ * `default*` I/O function.
+ */
+export function runStatus(
   pr,
   {
     ghPrView = defaultGhPrView,
@@ -1411,6 +1704,8 @@ function runStatus(
     readDecisionRecords = defaultReadDecisionRecords,
     readChangedDecisionRecords = defaultReadChangedDecisionRecords,
     fetchHeadCommitFileCount = defaultFetchHeadCommitFileCount,
+    fetchCommitTreeSha = defaultFetchCommitTreeSha,
+    fetchPatchId = defaultFetchPatchId,
   } = {},
 ) {
   const view = ghPrView(pr, [
@@ -1449,6 +1744,7 @@ function runStatus(
   // it is what DETERMINES the tier in the first place.
   const baseRef = view.baseRefOid || view.baseRefName || "main";
   const tierConfig = readReviewTierConfig(baseRef);
+  const enforcement = tierConfig.enforcement === "enforce" ? "enforce" : "report-only";
   const classification = classifyTier(classificationPaths, tierConfig);
 
   // Everything below -- fetching PR comments, resolving each commenter's
@@ -1464,9 +1760,9 @@ function runStatus(
   // governance/decisions/ would otherwise make `--status` throw for EVERY
   // pull request, tier-0 included, and that cost only grows as the log
   // grows.
-  let tierVerdict;
+  let rawTierVerdict;
   if (classification.tier === "tier-0") {
-    tierVerdict = evaluateTierGate(classification, {});
+    rawTierVerdict = evaluateTierGate(classification, {});
   } else if (isNoOpHeadCommit(fetchHeadCommitFileCount(view.headRefOid))) {
     // A no-op head commit (most commonly `git commit --allow-empty`) gives
     // an otherwise-identical PR a brand-new headSha, which alone would be
@@ -1476,7 +1772,7 @@ function runStatus(
     // actually changes files". Refused unconditionally for any tier-1/
     // tier-2 pull request; see `isNoOpHeadCommit`'s own doc comment for
     // what this does and does not detect.
-    tierVerdict = {
+    rawTierVerdict = {
       ok: false,
       tier: classification.tier,
       reason: "the pull request's head commit changes zero files -- a no-op commit cannot advance review state or clear a prior rejection; push a real change instead",
@@ -1486,19 +1782,69 @@ function runStatus(
     // Only an admin/write collaborator's comment may ever supply a
     // foundry-review-record -- #1187 review at df15ab87, blocking finding 2.
     const annotatedComments = annotateCommentAuthorization(fetchPrComments(pr));
-    // Base-branch decision records are read only when tier-2 authority is
-    // actually needed to evaluate them against -- a tier-1 PR's own
-    // evaluateTierGate call never reaches evaluateTier2Decision at all.
-    const decisionRecords = classification.tier === "tier-2" ? readDecisionRecords(baseRef) : [];
-    tierVerdict = evaluateTierGate(classification, {
-      records: parseReviewRecordComments(annotatedComments),
-      headSha: view.headRefOid,
-      decisionRecords,
-      changedDecisionRecords,
-      prNumber: pr,
-      tierConfig,
-    });
+    const records = parseReviewRecordComments(annotatedComments);
+
+    // Round 5 should-fix: `isNoOpHeadCommit` alone only catches a head
+    // commit that changes literally zero files. A commit that changes a
+    // line and a second commit that reverts it (or a whitespace-only
+    // change) is NOT a no-op commit, but the resulting TREE can still be
+    // byte-identical to a previously-rejected head's tree -- the same
+    // "nothing really changed" fact `isNoOpHeadCommit` exists to catch,
+    // just reached a different way. Compare the current head's tree to
+    // every DISTINCT prior AUTHORIZED reject's own (now-stale) head tree;
+    // capped at 10 distinct prior heads to bound the extra API calls.
+    const priorRejectHeadShas = [
+      ...new Set(
+        records
+          .filter(
+            (r) =>
+              r &&
+              r._authorization === "authorized" &&
+              !r._parseError &&
+              REJECT_STATE_SPELLINGS.has(normalizeStateSpelling(r.state)) &&
+              typeof r.headSha === "string" &&
+              r.headSha.length > 0 &&
+              r.headSha !== view.headRefOid,
+          )
+          .map((r) => r.headSha),
+      ),
+    ].slice(0, 10);
+    const rejectedTreeShas = priorRejectHeadShas.map((sha) => fetchCommitTreeSha(sha)).filter((t) => t !== null);
+    const currentTreeSha = rejectedTreeShas.length > 0 ? fetchCommitTreeSha(view.headRefOid) : null;
+
+    if (isTreeIdenticalToRejectedHead(currentTreeSha, rejectedTreeShas)) {
+      rawTierVerdict = {
+        ok: false,
+        tier: classification.tier,
+        reason: "the pull request's current head has the exact same tree as a previously-rejected head -- a change-then-revert (or whitespace-only) commit cannot clear a prior rejection; push a real, different change instead",
+      };
+    } else {
+      // Base-branch decision records are read only when tier-2 authority is
+      // actually needed to evaluate them against -- a tier-1 PR's own
+      // evaluateTierGate call never reaches evaluateTier2Decision at all.
+      const decisionRecords = classification.tier === "tier-2" ? readDecisionRecords(baseRef) : [];
+      // The PR's own patch id (net diff against its base) is only needed
+      // for tier-2's PR-scoped authorization check -- computed lazily, one
+      // extra `gh`+`git` round trip, only when tier-2 might need it.
+      const patchId = classification.tier === "tier-2" ? fetchPatchId(view.baseRefName || "main", view.headRefOid) : undefined;
+      rawTierVerdict = evaluateTierGate(classification, {
+        records,
+        headSha: view.headRefOid,
+        patchId,
+        decisionRecords,
+        changedDecisionRecords,
+        prNumber: pr,
+        tierConfig,
+      });
+    }
   }
+
+  // Report-only by default (#1187 review round 5, item 1: "land-stack
+  // computes and prints the tier verdict and every refusal reason, but
+  // does not block merging unless enforcement is on"). See
+  // `applyEnforcement`'s own doc comment for what this does and does not
+  // change.
+  const tierVerdict = applyEnforcement(rawTierVerdict, enforcement);
 
   const ok = mergeVerdict.ok && tierVerdict.ok;
   const reason = mergeVerdict.ok
@@ -1507,7 +1853,7 @@ function runStatus(
       ? mergeVerdict.reason
       : `${mergeVerdict.reason}; ${tierVerdict.reason}`;
 
-  return { pr: Number(pr), headRefName: view.headRefName, headRefOid: view.headRefOid, ok, reason, tier: classification.tier };
+  return { pr: Number(pr), headRefName: view.headRefName, headRefOid: view.headRefOid, ok, reason, tier: classification.tier, enforcement };
 }
 
 function runMerge(
@@ -1521,6 +1867,9 @@ function runMerge(
     readReviewTierConfig = defaultReadReviewTierConfig,
     readDecisionRecords = defaultReadDecisionRecords,
     readChangedDecisionRecords = defaultReadChangedDecisionRecords,
+    fetchHeadCommitFileCount = defaultFetchHeadCommitFileCount,
+    fetchCommitTreeSha = defaultFetchCommitTreeSha,
+    fetchPatchId = defaultFetchPatchId,
     ghExec = execFileSync,
   } = {},
 ) {
@@ -1533,6 +1882,9 @@ function runMerge(
     readReviewTierConfig,
     readDecisionRecords,
     readChangedDecisionRecords,
+    fetchHeadCommitFileCount,
+    fetchCommitTreeSha,
+    fetchPatchId,
   });
   if (!status.ok) {
     console.error(status.reason);

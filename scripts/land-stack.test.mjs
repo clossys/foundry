@@ -17,7 +17,7 @@ import {
   changedFilePathsForClassification,
   extractWorkflowReferencedPaths,
   findUnclassifiedWorkflowPaths,
-  stripQuotedAndFencedContent,
+  findReviewRecordBlocks,
   parseReviewRecordComments,
   isValidReviewRecord,
   selectCurrentReviewRecords,
@@ -32,7 +32,10 @@ import {
   evaluateChangedDecisionRecords,
   verifyChangedFilesComplete,
   isNoOpHeadCommit,
+  isTreeIdenticalToRejectedHead,
+  applyEnforcement,
   evaluateTierGate,
+  runStatus,
 } from "./land-stack.mjs";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
@@ -315,13 +318,54 @@ test("classifyTier against the real governance/review-tiers.json: the enforcemen
   assert.equal(classifyTier([".github/verify-standards-policy.json"], tierGlobs).tier, "tier-1");
   assert.equal(classifyTier([".root-entry-policy.json"], tierGlobs).tier, "tier-1");
   assert.equal(classifyTier(["scripts/push-tree-identical.mjs"], tierGlobs).tier, "tier-1");
-  // The publish path is tier-2 -- it can perform an irreversible external action.
+  // THE PUBLISH/DEPRECATE PATH IS TIER-2, NAMED EXACTLY (#1187 review round
+  // 5, both reviewers, measured): only the literal scripts that themselves
+  // run `npm publish`/`npm deprecate` -- and the three workflow files that
+  // run them -- are tier-2.
   assert.equal(classifyTier(["scripts/publish-qualified-directory.mjs"], tierGlobs).tier, "tier-2");
   assert.equal(classifyTier(["scripts/publish-qualified-set.mjs"], tierGlobs).tier, "tier-2");
-  assert.equal(classifyTier(["scripts/validate-candidate-publish.mjs"], tierGlobs).tier, "tier-2");
-  assert.equal(classifyTier(["scripts/select-publishable-packages.mjs"], tierGlobs).tier, "tier-2");
-  assert.equal(classifyTier(["scripts/run-candidate-qualification.mjs"], tierGlobs).tier, "tier-2");
-  assert.equal(classifyTier(["scripts/set-scope.mjs"], tierGlobs).tier, "tier-2");
+  assert.equal(classifyTier(["scripts/deprecate-registry-version.mjs"], tierGlobs).tier, "tier-2");
+  assert.equal(classifyTier(["scripts/deprecate-legacy-packages.mjs"], tierGlobs).tier, "tier-2");
+  assert.equal(classifyTier([".github/workflows/publish.yml"], tierGlobs).tier, "tier-2");
+  assert.equal(classifyTier([".github/workflows/deprecate-registry-version.yml"], tierGlobs).tier, "tier-2");
+  assert.equal(classifyTier([".github/workflows/deprecate-legacy-packages.yml"], tierGlobs).tier, "tier-2");
+
+  // ROUND-4'S WILDCARD GLOBS ARE GONE (#1187 review round 5, both
+  // reviewers, blocking): these four scripts gate publish ELIGIBILITY but
+  // never themselves run `npm publish`/`deprecate`/`unpublish` -- grepped
+  // directly, none of them contains that literal invocation -- so they are
+  // tier-1 (via the broad scripts/** glob), not tier-2, same as any other
+  // ordinary script.
+  assert.equal(classifyTier(["scripts/validate-candidate-publish.mjs"], tierGlobs).tier, "tier-1");
+  assert.equal(classifyTier(["scripts/select-publishable-packages.mjs"], tierGlobs).tier, "tier-1");
+  assert.equal(classifyTier(["scripts/run-candidate-qualification.mjs"], tierGlobs).tier, "tier-1");
+  assert.equal(classifyTier(["scripts/set-scope.mjs"], tierGlobs).tier, "tier-1");
+
+  // A round-4 regression, measured directly: a trailing `*` wildcard on
+  // e.g. `scripts/publish-*.mjs` also matched every `*.test.mjs` sibling of
+  // the actual publish/deprecate scripts, pushing an ordinary test-file
+  // edit to tier-2 (owner-only). Round 5's literal filenames name only the
+  // executable; the sibling test file is not listed, so it classifies
+  // tier-1 via the broad scripts/** glob like any other test file.
+  assert.equal(classifyTier(["scripts/publish-qualified-directory.test.mjs"], tierGlobs).tier, "tier-1");
+  assert.equal(classifyTier(["scripts/publish-qualified-set.test.mjs"], tierGlobs).tier, "tier-1");
+  assert.equal(classifyTier(["scripts/publish-workflow.test.mjs"], tierGlobs).tier, "tier-1");
+  assert.equal(classifyTier(["scripts/deprecate-registry-version.test.mjs"], tierGlobs).tier, "tier-1");
+  assert.equal(classifyTier(["scripts/deprecate-legacy-packages.test.mjs"], tierGlobs).tier, "tier-1");
+  assert.equal(classifyTier(["scripts/validate-candidate-publish.test.mjs"], tierGlobs).tier, "tier-1");
+  assert.equal(classifyTier(["scripts/select-publishable-packages.test.mjs"], tierGlobs).tier, "tier-1");
+  assert.equal(classifyTier(["scripts/run-candidate-qualification.test.mjs"], tierGlobs).tier, "tier-1");
+  assert.equal(classifyTier(["scripts/set-scope.test.mjs"], tierGlobs).tier, "tier-1");
+});
+
+test("classifyTier: the enforcement switch itself, governance/review-tiers.json's `enforcement` field, is covered by the same self-inclusion rule as the rest of the file -- flipping it to enforce is a tier-2 change (#1187 review round 5, item 1)", () => {
+  const config = JSON.parse(readFileSync(join(repoRoot, "governance", "review-tiers.json"), "utf8"));
+  const tierGlobs = { tier1: config.tier1.globs, tier1RecordExempt: config.tier1RecordExempt.globs, tier2: config.tier2.globs };
+  assert.equal(config.enforcement, "report-only", "this gate must ship with enforcement defaulted to report-only");
+  // governance/review-tiers.json is already a literal tier-2 entry -- any
+  // change to it, including flipping "enforcement", classifies tier-2 as a
+  // whole-file change; classifyTier operates on paths, not field-level diffs.
+  assert.equal(classifyTier(["governance/review-tiers.json"], tierGlobs).tier, "tier-2");
 });
 
 test("changedFilePathsForClassification includes both the new and previous filename, so a rename out of a tier-1/tier-2 path is still classified (#1187 review at df15ab87, blocking finding 1)", () => {
@@ -426,6 +470,7 @@ function recordComment(record, { createdAt = "2026-09-23T00:00:00Z", updatedAt =
 }
 
 const HEAD = "a".repeat(40);
+const PATCH_ID = "9".repeat(40);
 
 // Direct-construction helpers below build a record as `parseReviewRecordComments`
 // would have produced it -- including `_authorization: "authorized"` and a
@@ -721,49 +766,130 @@ test("evaluateTier1Independence end-to-end: case-insensitive state, short-SHA re
   assert.equal(withMissingHeadShaReject.ok, false, "an authorized reject with no headSha at all must refuse the gate, not be silently dropped");
 });
 
-test("stripQuotedAndFencedContent removes fenced code blocks, inline code spans, blockquotes, and indented code blocks", () => {
-  assert.equal(stripQuotedAndFencedContent("plain text, no markers").includes("plain text"), true);
+test("findReviewRecordBlocks: a genuine column-0, unfenced block parses regardless of the JSON body's own indentation (#1187 review round 5, blocking finding 2: 'parse the JSON body with a real JSON parser, so any indentation works')", () => {
+  const flat = `<!-- foundry-review-record\n${JSON.stringify(authorRecord("x"))}\n-->`;
+  const flatBlocks = findReviewRecordBlocks(flat);
+  assert.equal(flatBlocks.length, 1);
+  assert.equal(flatBlocks[0].valid, true);
+  assert.deepEqual(JSON.parse(flatBlocks[0].raw), authorRecord("x"));
 
-  const fenced = "before\n```\n<!-- foundry-review-record\n{\"state\":\"reject\"}\n-->\n```\nafter";
-  assert.equal(stripQuotedAndFencedContent(fenced).includes("foundry-review-record"), false);
+  // The JSON body itself is 4-space indented -- a regex-based stripper
+  // choked on this (deleted the indented field lines, leaving "{}"); a real
+  // JSON.parse does not care.
+  const indentedBody = [
+    "<!-- foundry-review-record",
+    "    {",
+    '      "schemaVersion": 1,',
+    '      "role": "reviewer",',
+    '      "state": "reject"',
+    "    }",
+    "-->",
+  ].join("\n");
+  const indentedBlocks = findReviewRecordBlocks(indentedBody);
+  assert.equal(indentedBlocks.length, 1);
+  assert.equal(indentedBlocks[0].valid, true);
+  assert.deepEqual(JSON.parse(indentedBlocks[0].raw), { schemaVersion: 1, role: "reviewer", state: "reject" });
 
-  const inlineCode = "posts `<!-- foundry-review-record not json -->`, which is bad.";
-  assert.equal(stripQuotedAndFencedContent(inlineCode).includes("foundry-review-record"), false);
-
-  const blockquoted = "> <!-- foundry-review-record\n> {\"state\":\"reject\"}\n> -->";
-  assert.equal(stripQuotedAndFencedContent(blockquoted).includes("foundry-review-record"), false);
-
-  const indented = "Example:\n\n    <!-- foundry-review-record\n    { \"schemaVersion\": 1 }\n    -->\n";
-  assert.equal(stripQuotedAndFencedContent(indented).includes("foundry-review-record"), false);
-
-  // A genuine, unfenced, unquoted, unindented block survives untouched.
-  const real = `<!-- foundry-review-record\n${JSON.stringify(authorRecord("x"))}\n-->`;
-  assert.equal(stripQuotedAndFencedContent(real).includes("foundry-review-record"), true);
+  // Same-line opener and closer.
+  const oneLine = '<!-- foundry-review-record {"schemaVersion":1} -->';
+  assert.equal(findReviewRecordBlocks(oneLine)[0].valid, true);
 });
 
-test("MUST NOT BRICK THE PR: a review comment that merely QUOTES the marker syntax (fenced, inline-code, or blockquoted) is never treated as a real or suspicious record (#1187 review round 4, blocking finding 2, second part)", () => {
-  const illustrativeInlineCode = {
-    body: "The attack: an unauthorized account posts `<!-- foundry-review-record not json -->`, or similar.",
-    created_at: "2026-09-23T00:00:00Z",
-    updated_at: "2026-09-23T00:00:00Z",
-    authorization: "authorized", // even from an AUTHORIZED reviewer discussing the syntax
-  };
-  const illustrativeFence = {
+test("findReviewRecordBlocks: a marker inside a fenced code block (backtick or tilde, any indent), inside <details>/<pre>, or with no closer at all is never a genuine block -- the opener must be at literal column 0, unfenced", () => {
+  const fenced = "before\n```\n<!-- foundry-review-record\n{\"state\":\"reject\"}\n-->\n```\nafter";
+  assert.deepEqual(findReviewRecordBlocks(fenced), [], "a marker inside a ``` fence is invisible to the grammar entirely");
+
+  const tildeFenced = "before\n~~~\n<!-- foundry-review-record\n{\"state\":\"reject\"}\n-->\n~~~\nafter";
+  assert.deepEqual(findReviewRecordBlocks(tildeFenced), [], "a tilde fence is recognized the same as a backtick fence");
+
+  // CommonMark tolerates up to 3 leading spaces on a fence delimiter itself
+  // (not 4, which would make the delimiter line an indented code block
+  // instead) -- the fence tracker recognizes a 2-space-indented ``` the
+  // same as an unindented one.
+  const indentedFence = "Example:\n\n  ```\n  <!-- foundry-review-record\n  {\"schemaVersion\":1}\n  -->\n  ```\n";
+  assert.deepEqual(findReviewRecordBlocks(indentedFence), [], "a fence delimiter indented by up to 3 spaces is still recognized as a fence");
+
+  const insideDetailsPre = "<details>\n<pre>\n<!-- foundry-review-record\n{\"schemaVersion\":1}\n-->\n</pre>\n</details>";
+  assert.deepEqual(findReviewRecordBlocks(insideDetailsPre), [], "a marker inside <details><pre> is invisible, the same as inside a fence");
+
+  // The opener itself must start the line -- an opener appearing mid-line
+  // (e.g. inside inline code, or after other prose) is not column 0 and is
+  // never recognized as a genuine opener at all.
+  const midLine = "posts `<!-- foundry-review-record not json -->`, which is bad.";
+  assert.deepEqual(findReviewRecordBlocks(midLine), [], "an opener not at the start of its own line is never a genuine block");
+
+  // A classic 4-space-indented opener (a Markdown indented code block) is
+  // likewise never column 0.
+  const indentedOpener = "Example:\n\n    <!-- foundry-review-record\n    { \"schemaVersion\": 1 }\n    -->\n";
+  assert.deepEqual(findReviewRecordBlocks(indentedOpener), [], "an indented opener line is never column 0");
+
+  // A genuine column-0 opener with NO closer at all is reported as an
+  // invalid (truncated) block, not silently dropped -- REFUSING THE GATE,
+  // never silence.
+  const noCloser = "<!-- foundry-review-record\n{\"schemaVersion\":1}\nno closer here";
+  const truncated = findReviewRecordBlocks(noCloser);
+  assert.equal(truncated.length, 1);
+  assert.equal(truncated[0].valid, false);
+  assert.equal(truncated[0].raw, null);
+});
+
+test("MUST REFUSE, NOT SILENTLY DROP: an AUTHORIZED comment whose marker text never resolves to a genuine block -- fenced, quoted/inline, indented, or malformed JSON -- produces a _parseError record, never nothing at all (#1187 review round 5, blocking finding 2)", () => {
+  const fencedMarker = {
     body: "Example block:\n\n```\n<!-- foundry-review-record\n{ \"schemaVersion\": 1, \"role\": \"reviewer\", ... }\n-->\n```\n",
     created_at: "2026-09-23T00:00:00Z",
     updated_at: "2026-09-23T00:00:00Z",
     authorization: "authorized",
   };
-  const records = parseReviewRecordComments([illustrativeInlineCode, illustrativeFence]);
-  assert.deepEqual(records, [], "neither illustrative comment should produce any record at all");
+  const inlineCodeMarker = {
+    body: "The attack: an unauthorized account posts `<!-- foundry-review-record not json -->`, or similar.",
+    created_at: "2026-09-23T00:00:00Z",
+    updated_at: "2026-09-23T00:00:00Z",
+    authorization: "authorized",
+  };
+  const malformedJson = {
+    body: "<!-- foundry-review-record\nnot valid json at all\n-->",
+    created_at: "2026-09-23T00:00:00Z",
+    updated_at: "2026-09-23T00:00:00Z",
+    authorization: "authorized",
+  };
+  for (const comment of [fencedMarker, inlineCodeMarker, malformedJson]) {
+    const records = parseReviewRecordComments([comment]);
+    assert.equal(records.length, 1);
+    assert.equal(records[0]._parseError, true, `expected a _parseError record for: ${comment.body}`);
+  }
 
-  // And the full independence check, given an otherwise-clean pair PLUS
-  // these two illustrative comments, must still pass -- not be bricked.
+  // This is an accepted trade-off (round 5), not an oversight: an
+  // AUTHORIZED comment that merely illustrates the marker syntax now also
+  // refuses the tier-1 gate under `evaluateTier1Independence`, the same as
+  // a genuinely malformed real record would -- because nothing here can
+  // distinguish "illustrating the syntax" from "a genuine record someone
+  // botched the formatting of" without silently dropping the latter, which
+  // is exactly the round-4 regression this replaced. The mitigation is
+  // `governance/review-tiers.json`'s `"report-only"` default `enforcement`
+  // mode (see `applyEnforcement`): this refusal is reported, not enforced,
+  // until the owner flips the switch.
+  const fencedRecords = parseReviewRecordComments([fencedMarker]);
   const result = evaluateTier1Independence({
-    records: [authorRecord("author-1"), ...qualifyingPair(), ...records],
+    records: [authorRecord("author-1"), ...qualifyingPair(), ...fencedRecords],
     headSha: HEAD,
   });
-  assert.equal(result.ok, true);
+  assert.equal(result.ok, false, "an illustrative fenced marker from an authorized comment now refuses the gate, by design");
+});
+
+test("MUST REFUSE: editing a comment INTO a fence (so no valid record survives) still refuses the gate over the edit itself, not silence (#1187 review round 5, blocking finding 2: 'editing a comment that ever contained a marker refuses the gate')", () => {
+  const editedIntoFence = {
+    body: "```\n<!-- foundry-review-record\n{\"state\":\"reject\"}\n-->\n```",
+    created_at: "2026-09-23T00:00:00Z",
+    updated_at: "2026-09-23T01:00:00Z", // edited after posting
+    authorization: "authorized",
+  };
+  const records = parseReviewRecordComments([editedIntoFence]);
+  assert.equal(records.length, 1);
+  assert.equal(records[0]._parseError, true);
+  assert.equal(records[0]._edited, true, "the edit is recorded even though no valid block survived parsing");
+
+  const suspicious = findSuspiciousRecordComments(records, HEAD);
+  assert.equal(suspicious.length, 1, "a _parseError record is always suspicious, regardless of headSha or edit status");
 });
 
 test("selectCurrentReviewRecords drops stale (different head) records, keeps latest per (role, instanceId) by the COMMENT'S created_at, not the self-declared submittedAt", () => {
@@ -1019,13 +1145,14 @@ test("MUST REFUSE: no current-head author record at all is refused", () => {
 });
 
 test("MUST REFUSE: tier-2 without an owner decision record is refused", () => {
-  const noDecisions = evaluateTier2Decision({ decisionRecords: [], prNumber: 42, tier2Paths: ["governance/model-qualifications/allowlist.json"], tierConfig: SAMPLE_TIER_CONFIG });
+  const noDecisions = evaluateTier2Decision({ decisionRecords: [], prNumber: 42, patchId: PATCH_ID, tier2Paths: ["governance/model-qualifications/allowlist.json"], tierConfig: SAMPLE_TIER_CONFIG });
   assert.equal(noDecisions.ok, false);
   assert.match(noDecisions.reason, /requires an owner decision record/);
 
   const wrongDecider = evaluateTier2Decision({
     decisionRecords: [decisionRecord({ decidedBy: "consensus", links: { pullRequests: ["42"] } })],
     prNumber: 42,
+    patchId: PATCH_ID,
     tier2Paths: ["governance/model-qualifications/allowlist.json"],
     tierConfig: SAMPLE_TIER_CONFIG,
   });
@@ -1034,16 +1161,17 @@ test("MUST REFUSE: tier-2 without an owner decision record is refused", () => {
   const expired = evaluateTier2Decision({
     decisionRecords: [decisionRecord({ expiry: "2000-01-01T00:00:00Z", links: { pullRequests: ["42"] } })],
     prNumber: 42,
+    patchId: PATCH_ID,
     tier2Paths: ["governance/model-qualifications/allowlist.json"],
     tierConfig: SAMPLE_TIER_CONFIG,
   });
   assert.equal(expired.ok, false);
 
-  // A decision record linked to this exact PR AND pinned to its exact head authorizes it.
+  // A decision record linked to this exact PR AND pinned to its exact patch id authorizes it.
   const linkedByPr = evaluateTier2Decision({
-    decisionRecords: [decisionRecord({ id: "d1", links: { pullRequests: ["42"], headShas: [HEAD] } })],
+    decisionRecords: [decisionRecord({ id: "d1", links: { pullRequests: ["42"], patchIds: [PATCH_ID] } })],
     prNumber: 42,
-    headSha: HEAD,
+    patchId: PATCH_ID,
     tier2Paths: ["governance/model-qualifications/allowlist.json"],
     tierConfig: SAMPLE_TIER_CONFIG,
   });
@@ -1060,33 +1188,73 @@ test("MUST REFUSE: tier-2 without an owner decision record is refused", () => {
   assert.equal(linkedByPath.ok, true);
 });
 
-test("MUST REFUSE: a PR-scoped tier-2 authorization with no pinned head sha, or a head sha that does not match, is refused (#1187 review round 4, blocking finding 4 / should-fix)", () => {
-  const noHeadShasAtAll = evaluateTier2Decision({
-    decisionRecords: [decisionRecord({ id: "d1", links: { pullRequests: ["42"] } })], // no headShas at all
+test("MUST REFUSE: a PR-scoped tier-2 authorization with no pinned patch id, or a patch id that does not match, is refused (#1187 review round 5, blocking finding 2, reviewer 2: pin the change content, not the head sha)", () => {
+  const noPatchIdsAtAll = evaluateTier2Decision({
+    decisionRecords: [decisionRecord({ id: "d1", links: { pullRequests: ["42"] } })], // no patchIds at all
     prNumber: 42,
-    headSha: HEAD,
+    patchId: PATCH_ID,
     tier2Paths: ["governance/model-qualifications/allowlist.json"],
     tierConfig: SAMPLE_TIER_CONFIG,
   });
-  assert.equal(noHeadShasAtAll.ok, false, "a PR-scoped authorization with no pinned head at all must never authorize any head of that PR");
+  assert.equal(noPatchIdsAtAll.ok, false, "a PR-scoped authorization with no pinned patch id at all must never authorize any content of that PR");
 
-  const wrongHead = evaluateTier2Decision({
-    decisionRecords: [decisionRecord({ id: "d1", links: { pullRequests: ["42"], headShas: ["b".repeat(40)] } })],
+  const wrongPatchId = evaluateTier2Decision({
+    decisionRecords: [decisionRecord({ id: "d1", links: { pullRequests: ["42"], patchIds: ["b".repeat(40)] } })],
     prNumber: 42,
-    headSha: HEAD, // does not match the pinned "b".repeat(40)
+    patchId: PATCH_ID, // does not match the pinned "b".repeat(40)
     tier2Paths: ["governance/model-qualifications/allowlist.json"],
     tierConfig: SAMPLE_TIER_CONFIG,
   });
-  assert.equal(wrongHead.ok, false, "a pull request that has moved past the pinned head must not be authorized by a stale pin");
+  assert.equal(wrongPatchId.ok, false, "a pull request whose content differs from the pinned patch id must not be authorized by a stale pin");
 
-  const matchingHeadCaseInsensitive = evaluateTier2Decision({
-    decisionRecords: [decisionRecord({ id: "d1", links: { pullRequests: ["42"], headShas: [HEAD.toUpperCase()] } })],
+  const matchingPatchIdCaseInsensitive = evaluateTier2Decision({
+    decisionRecords: [decisionRecord({ id: "d1", links: { pullRequests: ["42"], patchIds: [PATCH_ID.toUpperCase()] } })],
     prNumber: 42,
-    headSha: HEAD,
+    patchId: PATCH_ID,
     tier2Paths: ["governance/model-qualifications/allowlist.json"],
     tierConfig: SAMPLE_TIER_CONFIG,
   });
-  assert.equal(matchingHeadCaseInsensitive.ok, true, "the head-sha pin match is case-insensitive");
+  assert.equal(matchingPatchIdCaseInsensitive.ok, true, "the patch-id pin match is case-insensitive");
+});
+
+test("MUST ALLOW: a patch-id-pinned PR-scoped authorization survives a restack (same patch id, different head sha -- #1187 review round 5, reviewer 2)", () => {
+  // The whole point of pinning content instead of position: the decision
+  // record names a patchId, never a headSha at all, so a restack (which
+  // changes the head sha but not the diff's own content) does not touch
+  // whether this authorization still matches.
+  const record = decisionRecord({ id: "d1", links: { pullRequests: ["1316"], patchIds: [PATCH_ID] } });
+  const beforeRestack = evaluateTier2Decision({
+    decisionRecords: [record],
+    prNumber: "1316",
+    patchId: PATCH_ID,
+    tier2Paths: ["governance/model-qualifications/allowlist.json"],
+    tierConfig: SAMPLE_TIER_CONFIG,
+  });
+  assert.equal(beforeRestack.ok, true);
+
+  // After a restack, the PR's head sha is different, but land-stack.mjs
+  // never reads a head sha for this check at all -- only recomputes the
+  // patch id, which a pure merge-forward/restack does not change.
+  const afterRestack = evaluateTier2Decision({
+    decisionRecords: [record],
+    prNumber: "1316",
+    patchId: PATCH_ID, // unchanged: the restack did not touch the diff's own content
+    tier2Paths: ["governance/model-qualifications/allowlist.json"],
+    tierConfig: SAMPLE_TIER_CONFIG,
+  });
+  assert.equal(afterRestack.ok, true, "a restack (content-preserving) must not break a patch-id-pinned authorization");
+
+  // A genuine content change AFTER the record landed produces a different
+  // patch id and must break the authorization, exactly as a stale head-sha
+  // pin was meant to.
+  const afterContentChange = evaluateTier2Decision({
+    decisionRecords: [record],
+    prNumber: "1316",
+    patchId: "c".repeat(40), // the diff's actual content changed
+    tier2Paths: ["governance/model-qualifications/allowlist.json"],
+    tierConfig: SAMPLE_TIER_CONFIG,
+  });
+  assert.equal(afterContentChange.ok, false, "a genuine content change must break the patch-id pin");
 });
 
 test("MUST REFUSE: a path-scoped tier-2 authorization with expiry: null is a standing blank cheque and must be refused (#1187 review round 4, should-fix)", () => {
@@ -1166,9 +1334,9 @@ test("evaluateTier2Decision validates a record's id against _idFromFilename when
   assert.equal(mismatched.ok, false, "id (d1) not matching its real filename (some-other-filename) must be caught, not vacuously self-approved");
 
   const matched = evaluateTier2Decision({
-    decisionRecords: [{ ...decisionRecord({ id: "d1" }), _idFromFilename: "d1", links: { pullRequests: ["1"], headShas: [HEAD] } }],
+    decisionRecords: [{ ...decisionRecord({ id: "d1" }), _idFromFilename: "d1", links: { pullRequests: ["1"], patchIds: [PATCH_ID] } }],
     prNumber: 1,
-    headSha: HEAD,
+    patchId: PATCH_ID,
     tier2Paths: ["governance/model-qualifications/allowlist.json"],
     tierConfig: SAMPLE_TIER_CONFIG,
   });
@@ -1305,7 +1473,8 @@ test("evaluateTierGate: tier-0 passes without any review evidence; tier-1 and ti
     {
       records: [authorRecord("author-1"), ...qualifyingPair()],
       headSha: HEAD,
-      decisionRecords: [decisionRecord({ id: "d1", links: { pullRequests: ["1"], headShas: [HEAD] } })],
+      patchId: PATCH_ID,
+      decisionRecords: [decisionRecord({ id: "d1", links: { pullRequests: ["1"], patchIds: [PATCH_ID] } })],
       prNumber: 1,
       tierConfig: SAMPLE_TIER_CONFIG,
     },
@@ -1319,4 +1488,116 @@ test("evaluateTierGate: tier-0 passes without any review evidence; tier-1 and ti
     { changedDecisionRecords: [{ path: "governance/decisions/bad.json", record: { id: "bad" } }] },
   );
   assert.equal(malformedDecisionRecordBlocksEvenTier0.ok, false);
+});
+
+test("applyEnforcement: report-only rewrites a refusal to ok:true with the original reason preserved and prefixed; leaves an ok:true verdict untouched (#1187 review round 5, item 1)", () => {
+  const refusal = { ok: false, tier: "tier-1", reason: "tier-1 review requirement not met: no author record" };
+  const reportOnly = applyEnforcement(refusal, "report-only");
+  assert.equal(reportOnly.ok, true, "report-only must never actually block a merge");
+  assert.equal(reportOnly.tier, "tier-1");
+  assert.match(reportOnly.reason, /^\[report-only; would refuse under enforce mode\] /);
+  assert.match(reportOnly.reason, /tier-1 review requirement not met: no author record/, "the original refusal reason must be preserved verbatim, not summarized away");
+
+  // The default: a missing or unrecognized enforcement value behaves as report-only.
+  assert.equal(applyEnforcement(refusal, undefined).ok, true);
+  assert.equal(applyEnforcement(refusal, "").ok, true);
+  assert.equal(applyEnforcement(refusal, "ENFORCE").ok, true, "only the exact lowercase string \"enforce\" turns enforcement on");
+  assert.equal(applyEnforcement(refusal, "on").ok, true);
+
+  // An already-passing verdict is returned completely unchanged in either mode.
+  const pass = { ok: true, tier: "tier-1", reason: "tier-1 independence satisfied by r1 (primary) and r2 (secondary)" };
+  assert.deepEqual(applyEnforcement(pass, "report-only"), pass);
+  assert.deepEqual(applyEnforcement(pass, "enforce"), pass);
+});
+
+test("applyEnforcement: enforce mode passes every verdict through completely unchanged, whether it passes or refuses (#1187 review round 5, coordinator instruction: tests must exercise enforce mode)", () => {
+  const refusal = { ok: false, tier: "tier-2", reason: "tier-2 owner-decision requirement not met: no schema-valid record" };
+  assert.deepEqual(applyEnforcement(refusal, "enforce"), refusal, "enforce mode must not rewrite, prefix, or soften a refusal in any way");
+
+  const pass = { ok: true, tier: "tier-2", reason: "tier-2 authorized by decision record d1" };
+  assert.deepEqual(applyEnforcement(pass, "enforce"), pass);
+});
+
+test("isTreeIdenticalToRejectedHead: a change-then-revert head, whose tree matches a previously-rejected head's tree, is caught even though the head commit itself is non-empty (#1187 review round 5, should-fix)", () => {
+  const rejectedTree1 = "1".repeat(40);
+  const rejectedTree2 = "2".repeat(40);
+  assert.equal(isTreeIdenticalToRejectedHead(rejectedTree1, [rejectedTree1, rejectedTree2]), true);
+  assert.equal(isTreeIdenticalToRejectedHead(rejectedTree1.toUpperCase(), [rejectedTree1]), true, "tree comparison is case-insensitive, matching every other sha comparison in this module");
+  assert.equal(isTreeIdenticalToRejectedHead("3".repeat(40), [rejectedTree1, rejectedTree2]), false, "a genuinely different tree must never be flagged");
+  assert.equal(isTreeIdenticalToRejectedHead("3".repeat(40), []), false, "no prior rejects at all means nothing to compare against");
+  assert.equal(isTreeIdenticalToRejectedHead(null, [rejectedTree1]), false, "a missing current tree sha (fetch failure) must fail closed to 'not identical', never crash or false-positive");
+  assert.equal(isTreeIdenticalToRejectedHead("", [rejectedTree1]), false);
+});
+
+test("reject-spelling normalization: changes_requested (underscore), changes-requested (hyphen), reject, and rejected all count as the same sticky reject, case-insensitively (#1187 review round 5, should-fix 3)", () => {
+  const base = [authorRecord("author-1"), ...qualifyingPair()];
+  for (const spelling of ["reject", "Reject", "REJECTED", "changes-requested", "Changes-Requested", "changes_requested", "CHANGES_REQUESTED"]) {
+    const records = [...base, reviewerRecord("d", { model: "fable", state: spelling, depth: "secondary", headSha: HEAD })];
+    const sticky = findStickyRejections(records, HEAD);
+    assert.equal(sticky.length, 1, `expected "${spelling}" to be recognized as a reject spelling`);
+
+    const result = evaluateTier1Independence({ records, headSha: HEAD });
+    assert.equal(result.ok, false, `expected "${spelling}" to refuse the merge as a sticky reject`);
+  }
+
+  // A state that is neither a known approval value nor any recognized
+  // reject spelling, at the current head, is itself suspicious rather than
+  // silently ignored (#1187 review round 5, should-fix 3: "treat any
+  // unrecognized state at the head as suspicious").
+  const unrecognized = [...base, reviewerRecord("d", { model: "fable", state: "declined", depth: "secondary", headSha: HEAD })];
+  assert.equal(findStickyRejections(unrecognized, HEAD).length, 0, "an unrecognized spelling is not itself a sticky reject");
+  const suspicious = findSuspiciousRecordComments(unrecognized, HEAD);
+  assert.equal(suspicious.length, 1, "an unrecognized state at the current head must be treated as suspicious, not silently passed");
+});
+
+test("runStatus end-to-end: a refusal is reported but does not block under enforcement: \"report-only\" (the default), and actually blocks under enforcement: \"enforce\" (#1187 review round 5, coordinator instruction: tests must exercise enforce mode, not just applyEnforcement in isolation)", () => {
+  const greenView = {
+    mergeable: "MERGEABLE",
+    mergeStateStatus: "CLEAN",
+    isDraft: false,
+    statusCheckRollup: [{ name: "safety", status: "COMPLETED", conclusion: "SUCCESS" }],
+    headRefName: "feature",
+    baseRefName: "main",
+    headRefOid: HEAD,
+    baseRefOid: "base".padEnd(40, "0"),
+    changedFiles: 1,
+  };
+  const fakeIo = (enforcement) => ({
+    ghPrView: () => greenView,
+    fetchRequiredContexts: () => ["safety"],
+    fetchPrFiles: () => [{ filename: "scripts/some-script.mjs" }], // tier-1 path
+    fetchPrComments: () => [], // no review records at all -- independence must fail
+    annotateCommentAuthorization: (comments) => comments,
+    readReviewTierConfig: () => ({ tier1: ["scripts/**"], tier1RecordExempt: [], tier2: [], enforcement }),
+    readDecisionRecords: () => {
+      throw new Error("must not be called for a tier-1 pull request");
+    },
+    readChangedDecisionRecords: () => [],
+    fetchHeadCommitFileCount: () => 1, // non-zero: not a no-op commit
+    fetchCommitTreeSha: () => {
+      throw new Error("must not be called when there are no prior authorized rejects to compare against");
+    },
+    fetchPatchId: () => {
+      throw new Error("must not be called for a tier-1 pull request");
+    },
+  });
+
+  const reportOnlyResult = runStatus(1, fakeIo("report-only"));
+  assert.equal(reportOnlyResult.tier, "tier-1");
+  assert.equal(reportOnlyResult.enforcement, "report-only");
+  assert.equal(reportOnlyResult.ok, true, "report-only must not block the merge even though the underlying tier-1 check would refuse");
+  assert.match(reportOnlyResult.reason, /\[report-only; would refuse under enforce mode\]/);
+  assert.match(reportOnlyResult.reason, /tier-1 review requirement not met/);
+
+  const enforceResult = runStatus(1, fakeIo("enforce"));
+  assert.equal(enforceResult.tier, "tier-1");
+  assert.equal(enforceResult.enforcement, "enforce");
+  assert.equal(enforceResult.ok, false, "enforce mode must actually block the merge on the same underlying refusal");
+  assert.match(enforceResult.reason, /tier-1 review requirement not met/);
+  assert.doesNotMatch(enforceResult.reason, /report-only/, "enforce mode's reason must not carry the report-only prefix at all");
+
+  // The default (a missing or unrecognized enforcement value) behaves as report-only.
+  const defaultResult = runStatus(1, fakeIo(undefined));
+  assert.equal(defaultResult.enforcement, "report-only");
+  assert.equal(defaultResult.ok, true);
 });

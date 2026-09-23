@@ -55,7 +55,7 @@ const KNOWN_FIELDS = Object.freeze([
 ]);
 
 const REVIEW_FIELDS = Object.freeze(["role", "instance", "provider", "model", "effort", "verdict", "link"]);
-const LINKS_FIELDS = Object.freeze(["pullRequests", "issues", "paths", "headShas"]);
+const LINKS_FIELDS = Object.freeze(["pullRequests", "issues", "paths", "patchIds"]);
 
 function isNonEmptyString(value) {
   return typeof value === "string" && value.length > 0;
@@ -179,14 +179,20 @@ export function validateDecisionRecordShape(record, idFromFilename) {
       // needs.
       const isLiveTier2Authorization = record.tier === "tier-2" && record.status === "decided";
       if (isLiveTier2Authorization) {
-        // A PR-scoped authorization must pin at least one head sha --
+        // A PR-scoped authorization must pin at least one patch-id --
         // without it, links.pullRequests alone authorizes whatever head
-        // that PR happens to carry at merge time, not the exact commit the
-        // record was actually decided about (#1187 review round 4,
-        // should-fix: "a PR-scoped one must pin a head sha").
+        // that PR happens to carry at merge time, not the exact change
+        // content the record was actually decided about. A head-sha pin
+        // (this repository's earlier design) is unsatisfiable under strict,
+        // up-to-date branch protection: landing the record itself advances
+        // main, forcing the authorized PR into a restack that changes its
+        // head sha every time. `git patch-id --stable` of the PR's net diff
+        // against its merge base survives a pure restack or merge-forward
+        // and only changes when the actual patch content changes (#1187
+        // review round 5, blocking, reviewer 2: "pin the change content").
         if (Array.isArray(record.links.pullRequests) && record.links.pullRequests.length > 0) {
-          if (!Array.isArray(record.links.headShas) || record.links.headShas.length === 0) {
-            findings.push("links.headShas must be a non-empty array when links.pullRequests is non-empty on a decided tier-2 record (a PR-scoped authorization must pin a head sha)");
+          if (!Array.isArray(record.links.patchIds) || record.links.patchIds.length === 0) {
+            findings.push("links.patchIds must be a non-empty array when links.pullRequests is non-empty on a decided tier-2 record (a PR-scoped authorization must pin a patch-id, not a head sha)");
           }
         }
         // A path-scoped authorization must be bounded by a real expiry --
