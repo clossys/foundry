@@ -11,12 +11,18 @@
 // Exit 0 = valid contract (and, if supplied, valid candidate assessment).
 // Exit 1 = readable contract or candidate assessment violates the schema.
 // Exit 2 = an input cannot be read or has an unusable top-level shape.
+//
+// Schema version 5 (issue #1194, owner decision 2026-09-22): the fifth
+// universal stage is named `learn`, not `learnOrEscalate`. Escalation is
+// one of learn's own outcomes -- handing an unresolved problem to the
+// enclosing loop -- not a separate stage; each mode's own stageActivities
+// entry for `learn` says what that mode escalates and when.
 
 import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-export const UNIVERSAL_STAGES = ["sense", "judge", "act", "verify", "learnOrEscalate"];
+export const UNIVERSAL_STAGES = ["sense", "judge", "act", "verify", "learn"];
 
 export const CONSUMER_BINDINGS = [
   "businessMetricPath",
@@ -145,8 +151,8 @@ export function evaluateRoleLoopArchetypes({ contract }) {
     findings.push(finding("unreadable-role-loop-contract", "docs/contracts/role-loop-archetypes.json", "the contract must contain exactly `schemaVersion`, `universalStages`, `consumerBindings`, `modes`, `metricVocabulary`, `qualificationVerdicts`, and `roles`", true));
     return { findings };
   }
-  if (contract.schemaVersion !== 4 || !Array.isArray(contract.universalStages) || !Array.isArray(contract.consumerBindings) || !isRecord(contract.modes) || !isRecord(contract.roles)) {
-    findings.push(finding("unreadable-role-loop-contract", "docs/contracts/role-loop-archetypes.json", "schema version 4 requires arrays `universalStages` and `consumerBindings`, and objects `modes` and `roles`", true));
+  if (contract.schemaVersion !== 5 || !Array.isArray(contract.universalStages) || !Array.isArray(contract.consumerBindings) || !isRecord(contract.modes) || !isRecord(contract.roles)) {
+    findings.push(finding("unreadable-role-loop-contract", "docs/contracts/role-loop-archetypes.json", "schema version 5 requires arrays `universalStages` and `consumerBindings`, and objects `modes` and `roles`", true));
     return { findings };
   }
 

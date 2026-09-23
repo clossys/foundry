@@ -40,7 +40,7 @@ const positions = (input.surfaces ?? []).map((surface, index) => ({
   guardrails: ["No live action in the synthetic fixture."],
   escalationPath: ["Escalate to " + input.decisionOwner + "."],
   workerComponents: [{ kind: "deterministic", responsibility: "Re-read the retained evidence." }],
-  stageBindings: { sense: "Read evidence.", judge: "Compare against setpoint.", act: "Report.", verify: "Re-read evidence.", learnOrEscalate: "Escalate." },
+  stageBindings: { sense: "Read evidence.", judge: "Compare against setpoint.", act: "Report.", verify: "Re-read evidence.", learn: "Escalate." },
   firstDayAssessment: { gaps: ["No independent outcome observed yet."], target: "Reach the declared setpoint.", openQuestions: ["Who retains the evidence?"], criticalPath: ["Retain evidence", "Install position"], deferredWork: [], recommendation: "install", evidenceRefs: [input.evidenceRef] },
 }));
 console.log(JSON.stringify({ state: "satisfied", baseline: "written by " + input.role, proposedPositions: positions }));
