@@ -188,7 +188,26 @@ jobs:
         if: (github.event_name != 'schedule' || steps.gate.outputs.proceed == 'true') && steps.apply.outputs.applied_count == '0'
         run: echo "No pending changesets -- nothing to release this run."
 
-      - name: Push branch and open pull request
+      # KNOWN GAP, OWNER-FACING (second-opinion review item 6,
+      # https://github.com/clossys/foundry/pull/1316#issuecomment-5800188207;
+      # full explanation in docs/RELEASING.md's "Opening the release PR"):
+      # this step pushes the release branch with GITHUB_TOKEN and stops --
+      # it deliberately does NOT call `gh pr create`. A pull request opened
+      # with GITHUB_TOKEN does not trigger this repository's own
+      # pull_request-scoped checks (GitHub's loop-prevention rule), which
+      # would mean the release PR never runs release-pr-shape or, once
+      # required, release calendar (merge window) -- the exact checks it
+      # most needs to run. Push (branch creation) is unaffected by that
+      # rule and stays automated here; opening the PR needs an
+      # owner-authenticated actor instead (in practice, the orchestrator's
+      # agent using the owner's own `gh` session) -- see the step below and
+      # docs/RELEASING.md for the two owner-setup alternatives that would
+      # let this step open the PR itself again (a GitHub App installation
+      # token, or a fine-grained PAT stored as a repository secret; neither
+      # is implemented here, since both need owner action this workflow
+      # cannot perform on its own).
+      - name: Compute, validate, and push the release commit
+        id: push
         if: (github.event_name != 'schedule' || steps.gate.outputs.proceed == 'true') && steps.apply.outputs.applied_count != '0'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -197,6 +216,7 @@ jobs:
           SUMMARY_PATH: ${{ runner.temp }}/release-summary.md
           BREAKING_PATH: ${{ runner.temp }}/release-breaking.md
           OUT_OF_BAND: ${{ steps.apply.outputs.out_of_band }}
+          MATERIALS_DIR: ${{ runner.temp }}/release-pr-materials
         run: |
           set -euo pipefail
           branch="claude/release-$(date -u +%Y-%m-%d)-${RUN_ID}"
@@ -214,10 +234,23 @@ jobs:
             printf '\n%s\n' "Ref: #1255, #1187"
           } > "$message_file"
           git commit -F "$message_file"
+
+          # VALIDATE before pushing: this release commit must itself be
+          # release-PR shaped against the branch it will target, the same
+          # question scripts/check-release-pr-shape.mjs's own CI job asks
+          # of every pull request. A failure here means a bug in
+          # scripts/apply-release-changesets.mjs produced something its own
+          # sibling gate would reject -- fail loudly now, before pushing
+          # anything, rather than push a branch whose PR would fail its own
+          # required check.
+          node scripts/check-release-pr-shape.mjs --base "origin/${GITHUB_BASE_REF_OR_DEFAULT}"
+
           git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
           git push origin "$branch"
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
 
-          body_file="$RUNNER_TEMP/release-pr-body.txt"
+          mkdir -p "$MATERIALS_DIR"
+          body_file="$MATERIALS_DIR/body.txt"
           {
             printf '%s\n\n' "The periodic/on-demand release PR (issue #1255): applies every pending \`.changesets/*.md\` file. Opened on the weekly release calendar's Saturday release day (docs/RELEASING.md) -- the calendar decides *when* this runs, not what version anything gets; versions stay plain semver, bumped by each changeset's own patch/minor/major level."
             printf '%s\n\n' "## Bumps"
@@ -240,46 +273,69 @@ jobs:
           # header has the full reasoning and the residual risk it does not
           # eliminate). release:out-of-band is added on top when this run
           # consumed at least one out-of-band changeset, which is what lets
-          # THIS pull request land outside the Mon-Fri merge window or off
-          # the usual Saturday. `gh label create` is idempotent here
-          # (already-exists is swallowed) since this step cannot assume
-          # either label predates this run.
+          # THIS pull request land on any day, not only the Saturday/merge-
+          # window shape an ordinary release PR needs. Labels are created
+          # here (idempotent -- already-exists is swallowed) even though
+          # the PR itself is not, since label creation carries none of this
+          # step's GITHUB_TOKEN PR-creation concern and the owner-
+          # authenticated step below needs both labels to already exist.
           gh label create "release:weekly" --color "0e8a16" \
             --description "The weekly release PR (docs/RELEASING.md). Combined with its file-change shape, proves it may land outside the Mon-Fri merge window on release day." \
             >/dev/null 2>&1 || true
-          label_args=(--label "release:weekly")
+          labels="release:weekly"
           if [ "$OUT_OF_BAND" = "true" ]; then
             gh label create "release:out-of-band" --color "d73a4a" \
-              --description "Admitted outside the weekly merge window (docs/RELEASING.md) -- security fix or a fix for a broken published release only. Owner-applied only, standing rule." \
+              --description "Admitted any day, outside the weekly merge window too (docs/RELEASING.md) -- security fix, a fix for a broken published release, or an owner-approved urgent update only. Owner-applied only, standing rule." \
               >/dev/null 2>&1 || true
-            label_args+=(--label "release:out-of-band")
+            labels="release:weekly,release:out-of-band"
           fi
+          echo "labels=$labels" >> "$GITHUB_OUTPUT"
 
-          # Same graceful-degradation shape as qualify-candidate.yml's
-          # identical step: if this repository ever reverts "Actions may
-          # open pull requests", the branch is still pushed and ready.
-          set +e
-          pr_create_output="$(gh pr create \
-            --title "Release: apply pending changesets" \
-            --base "$GITHUB_BASE_REF_OR_DEFAULT" \
-            --head "$branch" \
-            --body-file "$body_file" \
-            "${label_args[@]}" 2>&1)"
-          pr_create_status=$?
-          set -e
+          node -e '
+            const fs = require("node:fs");
+            const [, , materialsDir, branchArg, baseArg, labelsArg] = process.argv;
+            fs.writeFileSync(materialsDir + "/manifest.json", JSON.stringify({
+              branch: branchArg,
+              base: baseArg,
+              title: "Release: apply pending changesets",
+              labels: labelsArg.split(","),
+              bodyFile: "body.txt",
+            }, null, 2) + "\n");
+          ' "$MATERIALS_DIR" "$branch" "$GITHUB_BASE_REF_OR_DEFAULT" "$labels"
 
-          if [ "$pr_create_status" -eq 0 ]; then
-            echo "$pr_create_output"
-          elif printf '%s' "$pr_create_output" | grep -q "not permitted to create or approve pull requests"; then
-            {
-              echo "### Release changes pushed, PR not opened"
-              echo ""
-              echo "The release commit is pushed to \`${branch}\`, but this repository does not permit GitHub Actions to open pull requests."
-              echo ""
-              echo "Open it from: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/compare/${GITHUB_BASE_REF_OR_DEFAULT}...${branch}?expand=1"
-            } >> "$GITHUB_STEP_SUMMARY"
-            echo "PR creation was refused (Actions cannot create PRs on this repo); branch ${branch} is pushed and ready. See job summary for the compare URL."
-          else
-            echo "$pr_create_output" >&2
-            exit "$pr_create_status"
-          fi
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        if: (github.event_name != 'schedule' || steps.gate.outputs.proceed == 'true') && steps.apply.outputs.applied_count != '0'
+        with:
+          name: release-pr-materials
+          path: ${{ runner.temp }}/release-pr-materials
+          if-no-files-found: error
+
+      # OWNER ACTION REQUIRED -- see docs/RELEASING.md's "Opening the
+      # release PR" for the full explanation and the two unimplemented
+      # automation alternatives. This step never fails the job; it only
+      # makes the required follow-up impossible to miss in the run summary.
+      - name: OWNER ACTION REQUIRED -- open the release PR
+        if: (github.event_name != 'schedule' || steps.gate.outputs.proceed == 'true') && steps.apply.outputs.applied_count != '0'
+        env:
+          BRANCH: ${{ steps.push.outputs.branch }}
+          LABELS: ${{ steps.push.outputs.labels }}
+          GITHUB_BASE_REF_OR_DEFAULT: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+          {
+            echo "## OWNER ACTION REQUIRED: open the release PR"
+            echo ""
+            echo "Branch \`${BRANCH}\` is pushed and validated (scripts/check-release-pr-shape.mjs passed), but this workflow deliberately did NOT open the pull request -- see docs/RELEASING.md's \"Opening the release PR\"."
+            echo ""
+            echo "An owner-authenticated \`gh\` session (not this workflow's GITHUB_TOKEN) must run:"
+            echo ""
+            echo '```'
+            echo "gh pr create --repo ${GITHUB_REPOSITORY} --base ${GITHUB_BASE_REF_OR_DEFAULT} --head ${BRANCH} \\"
+            echo "  --title \"Release: apply pending changesets\" \\"
+            echo "  --body-file body.txt \\"
+            echo "  --label \"${LABELS}\""
+            echo '```'
+            echo ""
+            echo "\`body.txt\` is in this run's \`release-pr-materials\` artifact, alongside \`manifest.json\` (the same facts as structured JSON)."
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "OWNER ACTION REQUIRED: open the release PR for branch ${BRANCH} -- see job summary and the release-pr-materials artifact."
