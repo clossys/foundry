@@ -35,19 +35,35 @@
 // comment 5799141814) found the #920 fix violated that rule, because
 // `packageTreeSha1` covers the whole package tree, so a test-only edit alone
 // staled the record and forced a changeset for content nobody was
-// publishing. The resolution (docs/PUBLISHING.md's "Once a version's record
-// is retained..." section): keep the record's own definition of staleness
-// exactly as it was (this script never changes how a record is computed or
-// validated) but stop treating unpacked-only staleness as a BUMP question —
-// it is reported in the `detail` string, with `staleRetainedRecord: true`,
-// so the operator still sees it, but `evaluatePackageDiff()` no longer fails
-// on it when this pull request's own packed-content diff is empty (or
-// devDependencies-only — see below). A stale record still refuses to
-// publish: check-qualification-record-present.mjs and publish.yml's
-// record-join are untouched and still compare the retained record against
-// the whole tree at dispatch time, so nothing unqualified can ship — this
-// change only decides whether a PR that never touched packed content has to
-// carry a changeset for someone else's future publish attempt.
+// publishing. The resolution (docs/PUBLISHING.md's "A retained record binds
+// the whole tree..." section) keeps the record's own definition of
+// staleness exactly as it was (this script never changes how a record is
+// computed or validated) but narrows when unpacked-only staleness is a BUMP
+// question, scoped to a second-opinion review's correction of this PR's
+// first pass: it is reported in the `detail` string, with
+// `staleRetainedRecord: true`, so the operator always sees it, but
+// `evaluatePackageDiff()` only stops failing on it (`pass` instead of
+// `needs-bump`) when `hasLocalPublicationEvidence()` shows the CURRENT
+// version has ALREADY been published. For a qualified-but-unpublished
+// version — most of them, today; publication is gated off entirely pre-W1E
+// — this stays exactly as strict as #920's original fix, because an
+// unpacked-only change to one of THOSE would otherwise silently and
+// permanently strand a queued release with nothing forcing the new version
+// that alone could recover it (records are immutable — see
+// `staleRetainedRecordDiagnosis()` below). A stale record never lets
+// anything ship either way: check-qualification-record-present.mjs and
+// publish.yml's record-join are untouched and still compare the retained
+// record against the whole tree at dispatch time.
+//
+// BUILD INPUTS COUNT AS PACKED (owner decision #1187/#1265, point 2)
+// --------------------------------------------------------------------
+// "No packed-file changes" is ALSO not the whole answer to "did the
+// compiled output change" — `npm pack` never ships `tsconfig.json`, but
+// every package here builds with `tsc -p tsconfig.json`, so a build-config
+// edit (or a `typescript` devDependency bump) can change `dist/` with zero
+// packed-source difference. See `buildInputFiles()` and
+// `BUILD_TOOLCHAIN_DEV_DEPENDENCIES` below for the two places this is
+// checked.
 //
 // THE devDependencies EXEMPTION (default mode only — see issue #269)
 // --------------------------------------------------------------------
@@ -179,6 +195,13 @@ import {
 } from "./lib/package-identity-transition.mjs";
 import { qualificationRecordPresenceForCandidate } from "./check-qualification-record-present.mjs";
 import { changesetsForPackage, loadChangesets } from "./collect-changesets.mjs";
+// Only the path CONSTANTS are imported here, never the heavy validators
+// these two modules also export (`readValidatedLaterPublishedPackages`,
+// and `check-package-evidence.mjs`'s `readValidatedPublishedPackages` which
+// composes both) — see `hasLocalPublicationEvidence()` below for why this
+// gate cannot afford to run that full proof chain.
+import { TRIO_PUBLICATION_PATH } from "./lib/release-publication-cohort.mjs";
+import { LATER_PUBLICATION_DIRECTORY } from "./lib/release-later-publication.mjs";
 
 function git(args, cwd) {
   return execFileSync("git", args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
@@ -222,10 +245,13 @@ function packedFiles(dir) {
 }
 
 // Snapshots `relPkgDir` as it stood at `commit` into a throwaway extraction
-// and packs THAT, purely so `npm pack --dry-run` can be pointed at it — see
-// header comment for why the comparison happens at the pack layer rather
-// than by hand-walking `files` globs. Cleans up its own temp dir.
-function packedFilesAtCommit(gitRoot, relPkgDir, commit) {
+// and hands the extracted package directory to `read(dir)` — shared by
+// `packedFilesAtCommit()` (reads via `npm pack --dry-run`) and
+// `buildInputFilesAtCommit()` (reads tsconfig*.json directly) below, so a
+// commit is archived and extracted once per caller rather than duplicating
+// the tar dance for each kind of file this script now diffs. Cleans up its
+// own temp dir before returning.
+function extractedPackageAtCommit(gitRoot, relPkgDir, commit, read) {
   const workDir = mkdtempSync(join(tmpdir(), "release-readiness-"));
   try {
     const archivePath = join(workDir, "archive.tar");
@@ -237,10 +263,54 @@ function packedFilesAtCommit(gitRoot, relPkgDir, commit) {
     if (!existsSync(join(oldPkgDir, "package.json"))) {
       throw new Error(`${relPkgDir || "."} had no package.json at ${commit.slice(0, 12)}`);
     }
-    return packedFiles(oldPkgDir);
+    return read(oldPkgDir);
   } finally {
     rmSync(workDir, { recursive: true, force: true });
   }
+}
+
+// Purely so `npm pack --dry-run` can be pointed at a historical commit — see
+// header comment for why the comparison happens at the pack layer rather
+// than by hand-walking `files` globs.
+function packedFilesAtCommit(gitRoot, relPkgDir, commit) {
+  return extractedPackageAtCommit(gitRoot, relPkgDir, commit, packedFiles);
+}
+
+// BUILD INPUTS COUNT AS PACKED (owner decision #1187/#1265, point 2)
+// --------------------------------------------------------------------
+// `packedFiles()` above is deliberately source-level and trusts `npm pack`'s
+// own file list — but that list, by design, never includes `tsconfig.json`
+// (or a sibling `tsconfig.*.json`): it drives the build, it is not shipped.
+// Every package here builds with `tsc -p tsconfig.json` (verified directly
+// against every `packages/*/package.json`'s own `scripts.build`), so a
+// `tsconfig.json` edit — `target`, `module`, `lib`, `strict`, anything the
+// compiler reads — can change the compiled `dist/` a consumer receives with
+// `src/` completely untouched, which is exactly the "dist/ is deterministic
+// output of src/" premise the header comment's dist/-exclusion rests on. It
+// breaks silently: `diffPackedFiles()` sees nothing, because nothing packed
+// moved. So a build input is read and diffed as its own axis, independent of
+// `packedFiles()`, and `evaluatePackageDiff()` below treats any difference
+// on it exactly like a packed-content change for the bump question — see
+// `isDevDependenciesOnlyChange()`'s `BUILD_TOOLCHAIN_DEV_DEPENDENCIES` carve-out
+// for the parallel case (a build-TOOL version, not a build-config file).
+function buildInputFiles(dir) {
+  const out = new Map();
+  let entries;
+  try {
+    entries = readdirSync(dir, { withFileTypes: true });
+  } catch {
+    return out;
+  }
+  for (const entry of entries) {
+    if (!entry.isFile()) continue;
+    if (!/^tsconfig(\.[\w-]+)?\.json$/.test(entry.name)) continue;
+    out.set(entry.name, readFileSync(join(dir, entry.name)));
+  }
+  return out;
+}
+
+function buildInputFilesAtCommit(gitRoot, relPkgDir, commit) {
+  return extractedPackageAtCommit(gitRoot, relPkgDir, commit, buildInputFiles);
 }
 
 // Structural equality, key-order independent — used below to compare two
@@ -276,6 +346,23 @@ function deepEqual(a, b) {
 // what changed, never who changed it, matching the working rule this issue
 // records.
 //
+// BUILD-TOOLCHAIN CARVE-OUT (owner decision #1187/#1265, point 2)
+// -------------------------------------------------------------------
+// The devDependencies exemption above assumes "how the package is built"
+// and "what a consumer receives" are independent — true for a test runner
+// or a lint config, false for the compiler itself. Every package here
+// builds with `tsc -p tsconfig.json` (see `buildInputFiles()`'s header
+// comment for the same measurement), so a `typescript` version bump can
+// change the compiled `dist/` a consumer receives — a stricter or looser
+// default under a new TypeScript release is exactly this shape — with
+// `src/` and every other packed file untouched. Enumerated directly from
+// what every package's own build script invokes, not guessed: only the
+// compiler binary itself changes emitted output; a type-only package like
+// `@types/node` affects type-CHECKING, never what `tsc` emits. A
+// devDependency named here disqualifies the whole change from the
+// exemption, the same fail-closed way a `dependencies` edit already does.
+const BUILD_TOOLCHAIN_DEV_DEPENDENCIES = new Set(["typescript"]);
+
 // Returns true only when `changed` names package.json and NOTHING else, and
 // the two manifests are structurally identical except for
 // `devDependencies` (which must itself actually differ — a package.json that
@@ -283,10 +370,11 @@ function deepEqual(a, b) {
 // something this function is asked to classify; `changed` already being
 // non-empty means diffPackedFiles() saw different bytes, so in practice this
 // only returns false there for a change this function correctly refuses to
-// call devDependencies-only). Returns false for every other shape,
-// INCLUDING when the manifests fail to parse as JSON — a parse failure is
-// "cannot prove this is exempt," not "assume it is," so the caller falls
-// through to requiring a bump, the fail-closed side.
+// call devDependencies-only), and none of the devDependencies that actually
+// changed are in `BUILD_TOOLCHAIN_DEV_DEPENDENCIES`. Returns false for every
+// other shape, INCLUDING when the manifests fail to parse as JSON — a parse
+// failure is "cannot prove this is exempt," not "assume it is," so the
+// caller falls through to requiring a bump, the fail-closed side.
 function isDevDependenciesOnlyChange(changed, oldFiles, newFiles) {
   if (changed.length !== 1 || changed[0] !== "modified: package.json") return false;
 
@@ -304,7 +392,15 @@ function isDevDependenciesOnlyChange(changed, oldFiles, newFiles) {
   const { devDependencies: newDevDeps, ...newRest } = newManifest;
   if (!deepEqual(oldRest, newRest)) return false;
 
-  return !deepEqual(oldDevDeps ?? {}, newDevDeps ?? {});
+  const oldDD = oldDevDeps ?? {};
+  const newDD = newDevDeps ?? {};
+  if (deepEqual(oldDD, newDD)) return false;
+
+  const changedDevDependencyNames = new Set([...Object.keys(oldDD), ...Object.keys(newDD)].filter((name) => oldDD[name] !== newDD[name]));
+  for (const name of changedDevDependencyNames) {
+    if (BUILD_TOOLCHAIN_DEV_DEPENDENCIES.has(name)) return false;
+  }
+  return true;
 }
 
 // Set-compares two packedFiles() maps (path -> file content Buffer) and
@@ -534,6 +630,79 @@ function loadPackageContext(pkgDir) {
   return { absPkgDir, manifest, label, gitRoot, relPkgDir, relManifestPath };
 }
 
+// IS THE CURRENT VERSION ALREADY PUBLISHED? (owner decision #1187/#1265,
+// point 1 — the second-opinion review's correction to this PR's first pass)
+// -------------------------------------------------------------------------
+// The first version of this change relaxed `needs-bump` to `pass` for EVERY
+// unpacked-only staleness. That reopens exactly the case issue #920 exists
+// to catch: MOST retained current-version records belong to versions that
+// have never been published (`package-scope.json` gates publication off
+// entirely pre-W1E) — qualified, staged, waiting. For one of those, an
+// unpacked-only change still permanently strands the version (records are
+// immutable), and silently skipping the changeset that alone would move the
+// package off it compounds the damage under #1265's changesets flow. The
+// relaxation is only correct once the version has ALREADY shipped: nothing
+// will ever try to publish it again, so a stale record for it is
+// historical, not a stranding in progress.
+//
+// This asks that question from LOCAL, git-tracked evidence only — never the
+// live registry (this gate has no network budget; see the header comment)
+// — using the same two stores `docs/LIFECYCLE.md`'s `published` state and
+// `check-package-evidence.mjs`'s `readValidatedPublishedPackages()` treat as
+// authoritative: the sealed Trio first-publication record
+// (`governance/release-publications/clossys-npmjs-trio.json`) and a later
+// publication's own evidence file
+// (`governance/release-publications/later/<key>-<version>.json`, named
+// after the exact identity it proves — see that file's own header). This
+// deliberately does NOT run `readValidatedPublishedPackages()` itself: that
+// function replays the full cryptographic proof chain (candidate joins,
+// catalogue closure, provenance, registry-proof) for every retained record,
+// measured at roughly 70 SECONDS against this repository's current evidence
+// set — utterly incompatible with a gate that must answer on every pull
+// request in seconds, before build. Instead this reads each evidence file's
+// own declared `candidate.name`/`candidate.version` — an existence-and-identity
+// check, not a re-proof. That is a deliberately narrower guarantee, and it is
+// safe to be narrower here: this signal only ever softens THIS gate's own
+// advisory note. It is never read by check-qualification-record-present.mjs,
+// by publish.yml's record-join, or by validate-candidate-publish.mjs's
+// tarball reverification — none of which are in this diff — and
+// check-package-evidence.mjs independently fails on any evidence file that
+// does not survive ITS full validation. A forged or stale file here can only
+// wrongly skip one pull request's advisory note; it can never let anything
+// unqualified ship, and a real audit of it (check-package-evidence.mjs, or a
+// human) catches it on its own separate gate regardless.
+function hasLocalPublicationEvidence(gitRoot, name, version) {
+  const key = name.includes("/") ? name.slice(name.indexOf("/") + 1) : name;
+  const laterPath = resolve(gitRoot, LATER_PUBLICATION_DIRECTORY, `${key}-${version}.json`);
+  if (existsSync(laterPath)) {
+    try {
+      const record = JSON.parse(readFileSync(laterPath, "utf8"));
+      if (record?.candidate?.name === name && record?.candidate?.version === version) return true;
+    } catch {
+      // Unreadable or malformed — fall through to the Trio check; a
+      // separate gate (check-package-evidence.mjs) is where a genuinely
+      // broken evidence file gets reported as a finding, not here.
+    }
+  }
+  const trioPath = resolve(gitRoot, TRIO_PUBLICATION_PATH);
+  if (!existsSync(trioPath)) return false;
+  try {
+    const trio = JSON.parse(readFileSync(trioPath, "utf8"));
+    for (const member of trio?.members ?? []) {
+      const qualPath = member?.qualification?.path;
+      if (typeof qualPath !== "string") continue;
+      const qualAbs = resolve(gitRoot, qualPath);
+      if (!existsSync(qualAbs)) continue;
+      const record = JSON.parse(readFileSync(qualAbs, "utf8"));
+      if (record?.candidate?.name === name && record?.candidate?.version === version) return true;
+    }
+  } catch {
+    // Same reasoning as above — an unreadable Trio publication file is a
+    // finding for a different gate, not evidence of publication here.
+  }
+  return false;
+}
+
 // ISSUE #920 — THE RETAINED-RECORD RECONCILIATION (scope narrowed by the
 // #1187 / #1265 owner decision — see the header comment above)
 // ---------------------------------------------------
@@ -558,15 +727,17 @@ function loadPackageContext(pkgDir) {
 // the moment that edit landed. Nothing said so until publish, and 0.1.7
 // could never be published — see issue #920 for the full incident.
 //
-// #920's own fix reported that staleness as `needs-bump`, which is what PR
-// #1265's verification found violates the owner cadence rule at #1187: a
-// test-only change (exactly the architect 0.1.7 shape) then forces a
-// changeset every time, for content nobody is about to publish. This
-// function keeps computing the identical diagnosis — it does not change
-// what "stale" means, or weaken check-qualification-record-present.mjs's own
-// whole-tree comparison at publish time — it only stops handing back a
-// bump-shaped sentence, so the two call sites below can report the same
-// finding without treating it as blocking.
+// #920's own fix reported that staleness as `needs-bump` UNCONDITIONALLY,
+// which is what PR #1265's verification found violates the owner cadence
+// rule at #1187: a test-only change (exactly the architect 0.1.7 shape)
+// forces a changeset every time, for content nobody is about to publish.
+// This function keeps computing the identical diagnosis — it does not
+// change what "stale" means, or weaken check-qualification-record-present.mjs's
+// own whole-tree comparison at publish time — but now ALSO reports whether
+// the current version is already published (`hasLocalPublicationEvidence()`
+// above), so the two call sites below can tell the harmless case (already
+// shipped; a stale record is historical) from the one #920 exists to catch
+// (still queued; a stale record silently strands it).
 //
 // This reuses check-qualification-record-present.mjs's own present/missing/
 // stale join (`qualificationRecordPresenceForCandidate`) rather than a
@@ -579,10 +750,10 @@ function loadPackageContext(pkgDir) {
 // about what "stale" means, only about which candidate they're asking
 // about.
 //
-// Returns `{ path, version, diagnoses }` when the CURRENT version's retained
-// record no longer matches the tree, or null when there is no retained
-// record for this version at all (an ordinary, unpublished in-progress
-// package — not a finding) or the record still matches.
+// Returns `{ path, version, diagnoses, published }` when the CURRENT
+// version's retained record no longer matches the tree, or null when there
+// is no retained record for this version at all (an ordinary, unpublished
+// in-progress package — not a finding) or the record still matches.
 function staleRetainedRecordDiagnosis(gitRoot, manifest) {
   const presence = qualificationRecordPresenceForCandidate({
     root: gitRoot,
@@ -596,7 +767,8 @@ function staleRetainedRecordDiagnosis(gitRoot, manifest) {
   if (presence.staleFields.includes("packageTreeSha1")) {
     diagnoses.push(`its package directory has changed (recorded candidate.packageTreeSha1 ${presence.recordedTreeDigest}, current ${presence.currentTreeDigest})`);
   }
-  return { path: presence.path, version: manifest.version, diagnoses };
+  const published = hasLocalPublicationEvidence(gitRoot, manifest.name, manifest.version);
+  return { path: presence.path, version: manifest.version, diagnoses, published };
 }
 
 // ISSUE #1255 — A PENDING CHANGESET IS AN ALTERNATIVE TO BUMPING DIRECTLY
@@ -689,11 +861,15 @@ function evaluatePackageDiff(pkgDir, requestedBase) {
     };
   }
 
-  let changed, oldFiles, newFiles;
+  let changed, oldFiles, newFiles, buildInputsChanged;
   try {
     oldFiles = packedFilesAtCommit(gitRoot, relPkgDir, mergeBase);
     newFiles = packedFiles(absPkgDir);
     changed = diffPackedFiles(oldFiles, newFiles);
+    // See buildInputFiles()'s header comment: tsconfig*.json never appears
+    // in `changed` above (npm never packs it) but can still change compiled
+    // dist/ output, so it is read and diffed on its own axis.
+    buildInputsChanged = diffPackedFiles(buildInputFilesAtCommit(gitRoot, relPkgDir, mergeBase), buildInputFiles(absPkgDir));
   } catch (error) {
     return { package: label, status: "error", detail: error.message };
   }
@@ -711,18 +887,41 @@ function evaluatePackageDiff(pkgDir, requestedBase) {
     identityTransitionFailure = transition.detail;
   }
 
+  // A build-input-only change (tsconfig*.json — see buildInputFiles()'s
+  // header) is treated exactly like a packed-content change: it can move
+  // compiled dist/ output with `changed` reporting nothing. No record-
+  // staleness question applies here — this is the ordinary "content moved,
+  // version didn't" finding, on a different input than usual.
+  if (changed.length === 0 && buildInputsChanged.length > 0) {
+    const pendingChangeset = pendingChangesetDetail(gitRoot, relPkgDir);
+    if (pendingChangeset) {
+      return {
+        package: label,
+        status: "pass",
+        detail: `${buildInputsChanged.length} build input file(s) (tsconfig) changed since merge-base ${mergeBase.slice(0, 12)} (base ${baseRef}) while version stayed ${manifest.version}, but ${pendingChangeset}`,
+      };
+    }
+    return {
+      package: label,
+      status: "needs-bump",
+      buildInputsChanged: true,
+      detail:
+        `${buildInputsChanged.length} build input file(s) changed since merge-base ${mergeBase.slice(0, 12)} (base ${baseRef}) while version stayed ${manifest.version} ` +
+        "— tsconfig drives what tsc emits into dist/, so this can change what a consumer receives with no packed-file trace " +
+        "(bump the version, or add a .changesets/<slug>.md naming this package instead — see issue #1255)",
+      changed: buildInputsChanged,
+    };
+  }
   if (changed.length === 0) {
     const stale = staleRetainedRecordDiagnosis(gitRoot, manifest);
-    if (stale) {
+    if (stale && stale.published) {
       // Packed content is unaffected by construction (changed.length === 0),
-      // so under the #1187 / #1265 owner decision this is never a bump
-      // question — only unpacked drift (tests, CI, docs) can be the cause,
-      // and that carries no changeset. Reported, not failed: `pass` with
+      // and the current version is ALREADY published (owner decision
+      // #1187/#1265, point 1) — nothing will ever try to publish
+      // ${stale.version} again, so its now-stale record is historical, not
+      // a stranding in progress. Reported, not failed: `pass` with
       // `staleRetainedRecord: true` so the finding stays visible without
       // blocking a merge that changes nothing a consumer would receive.
-      // check-qualification-record-present.mjs and publish.yml's
-      // record-join still refuse to publish ${stale.version} against this
-      // stale record until it is re-qualified — see this file's header.
       return {
         package: label,
         status: "pass",
@@ -731,8 +930,27 @@ function evaluatePackageDiff(pkgDir, requestedBase) {
           `no packed-file changes since merge-base ${mergeBase.slice(0, 12)} (base ${baseRef}, version ${manifest.version}) — ` +
           "packed content is unaffected, so no version bump or changeset is required for this pull request. " +
           `Note: the retained qualification record for ${stale.version} at ${stale.path} is stale (${stale.diagnoses.join("; ")}); ` +
-          `this is unpacked-only drift, expected for a test/CI/docs-only change under the owner cadence rule (issue #1187), and does not block merge. ` +
-          `Re-qualify before dispatching a publish of ${stale.version} — publish.yml's record-join will refuse it until then (see docs/PUBLISHING.md).`,
+          `this is unpacked-only drift, expected for a test/CI/docs-only change under the owner cadence rule (issue #1187). ` +
+          `${stale.version} is already published, so this is harmless: records are immutable and this one can never be brought back in sync, but nothing will ever try to publish ${stale.version} again.`,
+      };
+    }
+    if (stale) {
+      // The current version has NOT been shown to be published locally —
+      // this is exactly the architect 0.1.7 / issue #920 shape: an
+      // unpacked-only edit staling a record for a version still queued to
+      // ship. Records are immutable (never corrected in place), so
+      // ${stale.version} itself can never be published with a matching
+      // record again — the only remedy is a NEW version, which nothing
+      // forces unless this stays a failing gate. Kept strict on purpose.
+      return {
+        package: label,
+        status: "needs-bump",
+        staleRetainedRecord: true,
+        detail:
+          `no packed-file changes since merge-base ${mergeBase.slice(0, 12)} (base ${baseRef}, version ${manifest.version}), but the retained qualification ` +
+          `record for ${stale.version} at ${stale.path} is now stale (${stale.diagnoses.join("; ")}) and ${stale.version} has no local publication evidence — ` +
+          `it is still queued to ship. Records are immutable, so ${stale.version} can no longer be published as qualified; the remedy is a new version ` +
+          `(bump the version, or add a .changesets/<slug>.md naming this package — see issue #1255), not a re-qualification of ${stale.version} itself.`,
       };
     }
     return {
@@ -741,14 +959,20 @@ function evaluatePackageDiff(pkgDir, requestedBase) {
       detail: `no packed-file changes since merge-base ${mergeBase.slice(0, 12)} (base ${baseRef}, version ${manifest.version})`,
     };
   }
-  if (isDevDependenciesOnlyChange(changed, oldFiles, newFiles)) {
+  // buildInputsChanged.length === 0 is required here too: a devDependencies-
+  // only packed change (package.json, nothing else packed) alongside an
+  // UNPACKED tsconfig edit must not ride through on the devDependencies
+  // exemption — the tsconfig edit alone is enough to change dist/ output
+  // (see buildInputFiles()'s header comment), independent of whether the
+  // devDependency that changed was a build-toolchain one.
+  if (buildInputsChanged.length === 0 && isDevDependenciesOnlyChange(changed, oldFiles, newFiles)) {
     const stale = staleRetainedRecordDiagnosis(gitRoot, manifest);
-    if (stale) {
+    if (stale && stale.published) {
       // Same reasoning as the changed.length === 0 branch above: a
       // devDependencies-only edit is already exempt from the bump
-      // requirement (issue #269), so record staleness it causes or
-      // uncovers — packed-invisible by definition — is reported, not
-      // failed, for the identical owner-decision reason.
+      // requirement (issue #269), and ${stale.version} is already
+      // published, so record staleness it causes or uncovers is reported,
+      // not failed.
       return {
         package: label,
         status: "pass",
@@ -758,7 +982,19 @@ function evaluatePackageDiff(pkgDir, requestedBase) {
           `version ${manifest.version}) — devDependencies do not affect what consumers receive when they install this ` +
           "package, so this is exempt from the version-bump requirement (see issue #269). " +
           `Note: the retained qualification record for ${stale.version} at ${stale.path} is stale (${stale.diagnoses.join("; ")}); ` +
-          `re-qualify before dispatching a publish of ${stale.version} — publish.yml's record-join will refuse it until then (see docs/PUBLISHING.md).`,
+          `${stale.version} is already published, so this is harmless — records are immutable, but nothing will ever try to publish ${stale.version} again.`,
+      };
+    }
+    if (stale) {
+      return {
+        package: label,
+        status: "needs-bump",
+        staleRetainedRecord: true,
+        detail:
+          `only devDependencies changed in package.json since merge-base ${mergeBase.slice(0, 12)} (base ${baseRef}, version ${manifest.version}), but the ` +
+          `retained qualification record for ${stale.version} at ${stale.path} is now stale (${stale.diagnoses.join("; ")}) and ${stale.version} has no local ` +
+          `publication evidence — it is still queued to ship. Records are immutable, so ${stale.version} can no longer be published as qualified; the remedy ` +
+          `is a new version (bump the version, or add a .changesets/<slug>.md naming this package — see issue #1255), not a re-qualification of ${stale.version} itself.`,
       };
     }
     return {

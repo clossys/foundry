@@ -468,12 +468,16 @@ test("default mode: a devDependencies-only package.json change is exempt from th
   withRepo((root) => {
     const pkgDir = makeFixture(root);
     const manifest = readManifest(pkgDir);
-    manifest.devDependencies = { typescript: "5.4.0" };
+    // Deliberately NOT `typescript` — that devDependency is carved OUT of
+    // this exemption by the owner decision (#1187/#1265, point 2); see the
+    // dedicated test below. This one exercises the general rule with a
+    // devDependency the build script never invokes.
+    manifest.devDependencies = { "some-lint-tool": "5.4.0" };
     writeManifest(pkgDir, manifest);
     const base = gitCommit(root, "initial release at 1.0.0, with devDependencies");
 
     const bumped = readManifest(pkgDir);
-    bumped.devDependencies = { typescript: "5.5.0" };
+    bumped.devDependencies = { "some-lint-tool": "5.5.0" };
     writeManifest(pkgDir, bumped);
 
     const r = run(["--json", "--base", base, pkgDir]);
@@ -481,6 +485,69 @@ test("default mode: a devDependencies-only package.json change is exempt from th
     assert.equal(r.code, 0, `expected exit 0, got ${r.code}: ${r.out}`);
     assert.equal(report.results[0].status, "pass");
     assert.match(report.results[0].detail, /devDependencies/);
+  });
+});
+
+// OWNER DECISION (#1187/#1265, point 2): a build-TOOLCHAIN devDependency is
+// carved out of the exemption above, because it can change dist/ output
+// (what a consumer receives) with zero packed-file trace — the opposite of
+// the "devDependencies never affect what ships" premise the exemption rests
+// on. Every package here builds with `tsc -p tsconfig.json`, so `typescript`
+// is exactly that case.
+test("a typescript devDependency-only bump is NOT exempt — it can change compiled dist/ output (owner decision, point 2)", () => {
+  withRepo((root) => {
+    const pkgDir = makeFixture(root);
+    const manifest = readManifest(pkgDir);
+    manifest.devDependencies = { typescript: "5.4.0" };
+    writeManifest(pkgDir, manifest);
+    const base = gitCommit(root, "initial release at 1.0.0, with a typescript devDependency");
+
+    const bumped = readManifest(pkgDir);
+    bumped.devDependencies = { typescript: "5.5.0" };
+    writeManifest(pkgDir, bumped);
+
+    const r = run(["--json", "--base", base, pkgDir]);
+    const report = JSON.parse(r.out);
+    assert.equal(r.code, 1, `expected exit 1, got ${r.code}: ${r.out}`);
+    assert.equal(report.results[0].status, "needs-bump");
+  });
+});
+
+// OWNER DECISION (#1187/#1265, point 2): tsconfig.json drives `tsc`'s
+// emitted output and is never part of what `npm pack` ships, so a change to
+// it is invisible to the packed-content diff — but not to a consumer, whose
+// installed dist/ reflects whatever the compiler options said. Treated like
+// a packed change for the bump question.
+test("a tsconfig.json target change is treated like a packed change (owner decision, point 2)", () => {
+  withRepo((root) => {
+    const pkgDir = makeFixture(root);
+    writeFileSync(join(pkgDir, "tsconfig.json"), JSON.stringify({ compilerOptions: { target: "ES2022" } }));
+    const base = gitCommit(root, "initial release at 1.0.0, with tsconfig.json");
+
+    writeFileSync(join(pkgDir, "tsconfig.json"), JSON.stringify({ compilerOptions: { target: "ES5" } }));
+
+    const r = run(["--json", "--base", base, pkgDir]);
+    const report = JSON.parse(r.out);
+    assert.equal(r.code, 1, `expected exit 1, got ${r.code}: ${r.out}`);
+    assert.equal(report.results[0].status, "needs-bump");
+    assert.equal(report.results[0].buildInputsChanged, true);
+    assert.match(report.results[0].detail, /build input file\(s\)/);
+  });
+});
+
+// The build-input diff must not fire when tsconfig.json never changes — a
+// plain regression guard alongside the two positive cases above.
+test("a tsconfig.json that never changes does not spuriously require a bump", () => {
+  withRepo((root) => {
+    const pkgDir = makeFixture(root);
+    writeFileSync(join(pkgDir, "tsconfig.json"), JSON.stringify({ compilerOptions: { target: "ES2022" } }));
+    const base = gitCommit(root, "initial release at 1.0.0, with tsconfig.json");
+    // No edit at all before the check.
+
+    const r = run(["--json", "--base", base, pkgDir]);
+    const report = JSON.parse(r.out);
+    assert.equal(r.code, 0, `expected exit 0, got ${r.code}: ${r.out}`);
+    assert.equal(report.results[0].status, "pass");
   });
 });
 
@@ -762,21 +829,58 @@ function retainQualificationRecord(root) {
   );
 }
 
-// OWNER DECISION (issues #1187 / #1265, narrowing issue #920): a test-only
-// edit is exactly the architect-0.1.7 shape — excluded from packed content,
-// so this gate's own packed-content diff reports nothing changed — and the
-// owner cadence rule (#1187 comment 5799002037) says a test/CI/docs-only
-// change carries no changeset and causes no release. PR #1265's verification
-// (comment 5799141814) found the ORIGINAL #920 fix violated that rule: it
-// failed this gate with `needs-bump` purely because `packageTreeSha1`
-// (whole package tree, by deliberate design — see
-// check-qualification-record-present.mjs's own header) also covers test
-// files. This test now asserts the corrected behavior: the finding is still
-// surfaced (`staleRetainedRecord: true` and a `detail` explaining why), but
-// it no longer blocks the pull request. The companion test directly below
-// proves the other half of the owner decision: the same stale record still
-// refuses to let 0.3.3 publish.
-test("a test-only change on a qualified package passes, with no changeset required (owner decision narrowing issue #920)", (t) => {
+// Minimal local publication evidence for `hasLocalPublicationEvidence()` —
+// deliberately NOT the full `foundry-trusted-publication-v2` shape real
+// evidence files carry (registry proof, provenance, tarball digests): this
+// gate's own function reads only `candidate.name`/`candidate.version` from
+// this file (see its header for why it stops short of the full
+// cryptographic proof chain), so that is all a fixture needs to supply.
+function markLocallyPublished(root, name, version) {
+  const key = name.slice(name.indexOf("/") + 1);
+  mkdirSync(join(root, "governance/release-publications/later"), { recursive: true });
+  writeFileSync(join(root, "governance/release-publications/later", `${key}-${version}.json`), JSON.stringify({ candidate: { name, version } }));
+}
+
+// OWNER DECISION (issues #1187 / #1265, narrowing issue #920), POINT 1: the
+// relaxation below applies ONLY when the current version is already
+// published. This test is the case the second-opinion review found the
+// first pass of this PR reopened: MOST retained current-version records
+// belong to versions that have never shipped (`package-scope.json` gates
+// publication off pre-W1E). For one of those, an unpacked-only edit must
+// still fail exactly as #920's original fix did — records are immutable, so
+// a version whose record goes stale while still queued can never be
+// published as qualified, and nothing else would force the new version
+// that alone could recover it.
+test("a test-only change on a QUALIFIED-BUT-UNPUBLISHED package still requires a bump (owner decision point 1 — the #920 case stays strict)", (t) => {
+  const { root, pkgDir } = qualificationFixtureRoot(t);
+  gitCommit(root, "initial 0.3.3, not yet qualified");
+  retainQualificationRecord(root); // no markLocallyPublished() — this version has not shipped
+  const base = gitCommit(root, "retain qualification record for 0.3.3");
+
+  // The exact architect-0.1.7 shape: a test-only edit, excluded from packed
+  // content by `!src/**/*.test.ts`, with the version left untouched.
+  writeFileSync(join(pkgDir, "src", "index.test.ts"), "test('x', () => { expect(x).toBe(1); });\n");
+  gitCommit(root, "test-only edit (packed content unaffected, but the tree moved)");
+
+  const r = run(["packages/writer", "--json", "--base", base], root);
+  assert.equal(r.code, 1, `expected exit 1 (still needs-bump — unpublished), got ${r.code}: ${r.out}`);
+  const report = JSON.parse(r.out);
+  assert.equal(report.results[0].status, "needs-bump");
+  assert.equal(report.results[0].staleRetainedRecord, true);
+  assert.match(report.results[0].detail, /is now stale/);
+  assert.match(report.results[0].detail, /has no local publication evidence/);
+  // Point 3: the remedy is a NEW version, never "re-qualify" — a stale
+  // record is immutable and can never be replaced at the same version.
+  assert.doesNotMatch(report.results[0].detail, /[Rr]e-qualify/);
+  assert.match(report.results[0].detail, /can no longer be published as qualified/);
+  assert.match(report.results[0].detail, /remedy is a new version/);
+});
+
+// The companion case: once the SAME shape of record is shown locally
+// published, nothing will ever try to publish 0.3.3 again, so the
+// relaxation is safe — the pull request passes with no changeset, and the
+// finding is still reported for visibility.
+test("a test-only change on an ALREADY-PUBLISHED package passes, with no changeset required (owner decision point 1)", (t) => {
   const { root, pkgDir } = qualificationFixtureRoot(t);
   gitCommit(root, "initial 0.3.3, not yet qualified");
   // currentQualificationJoins()'s packageTreeSha1 is read from the COMMITTED
@@ -785,7 +889,8 @@ test("a test-only change on a qualified package passes, with no changeset requir
   // measured against it, with a real commit in between; an uncommitted
   // working-tree edit alone is invisible to it.
   retainQualificationRecord(root); // computed from HEAD as it stands right now
-  const base = gitCommit(root, "retain qualification record for 0.3.3");
+  markLocallyPublished(root, "@clossys/writer", "0.3.3");
+  const base = gitCommit(root, "retain qualification record for 0.3.3, and mark it published");
 
   // The exact architect-0.1.7 shape: a test-only edit, excluded from packed
   // content by `!src/**/*.test.ts`, with the version left untouched. This
@@ -802,20 +907,82 @@ test("a test-only change on a qualified package passes, with no changeset requir
   assert.match(report.results[0].detail, /packed content is unaffected, so no version bump or changeset is required/);
   assert.match(report.results[0].detail, /retained qualification record for 0\.3\.3.*is stale/);
   assert.match(report.results[0].detail, /packageTreeSha1/);
-  assert.match(report.results[0].detail, /Re-qualify before dispatching a publish/);
+  assert.match(report.results[0].detail, /already published/);
+  // Point 3: the remedy language must never claim a stale record can be
+  // re-qualified — it cannot, at any version, ever.
+  assert.doesNotMatch(report.results[0].detail, /[Rr]e-qualify/);
 });
 
-// The other half of the owner decision: this gate no longer failing the pull
-// request must NOT mean the stale 0.3.3 record could ever ship. It uses the
-// exact same join `validate-candidate-publish.mjs` and publish.yml's
-// record-join rely on at dispatch time — `qualificationRecordPresenceForCandidate`
-// — completely independent of this script, and proves it still reports
-// "stale" for the identical tree this gate above just passed.
-test("a publish can never go out with a record that doesn't match the shipped bytes, even after the owner-decision pass above", (t) => {
+// Missing coverage the second-opinion review flagged directly: until now
+// only the `changed.length === 0` branch above was exercised. This mirrors
+// it for the OTHER branch that consults record staleness — a
+// devDependencies-only edit — for both the unpublished (strict) and
+// published (relaxed) cases.
+test("a devDependencies-only change on a QUALIFIED-BUT-UNPUBLISHED package still requires a bump", (t) => {
+  const { root, pkgDir } = qualificationFixtureRoot(t);
+  const manifest = readManifest(pkgDir);
+  manifest.devDependencies = { "some-lint-tool": "1.0.0" };
+  writeManifest(pkgDir, manifest);
+  gitCommit(root, "initial 0.3.3, with a devDependency, not yet qualified");
+  retainQualificationRecord(root);
+  const base = gitCommit(root, "retain qualification record for 0.3.3");
+
+  const bumped = readManifest(pkgDir);
+  bumped.devDependencies = { "some-lint-tool": "1.1.0" };
+  writeManifest(pkgDir, bumped);
+  gitCommit(root, "devDependencies-only edit (packed content unaffected, but the tree moved)");
+
+  const r = run(["packages/writer", "--json", "--base", base], root);
+  assert.equal(r.code, 1, `expected exit 1 (still needs-bump — unpublished), got ${r.code}: ${r.out}`);
+  const report = JSON.parse(r.out);
+  assert.equal(report.results[0].status, "needs-bump");
+  assert.equal(report.results[0].staleRetainedRecord, true);
+  assert.match(report.results[0].detail, /only devDependencies changed/);
+  assert.match(report.results[0].detail, /has no local publication evidence/);
+  assert.doesNotMatch(report.results[0].detail, /[Rr]e-qualify/);
+});
+
+test("a devDependencies-only change on an ALREADY-PUBLISHED package passes, with no changeset required", (t) => {
+  const { root, pkgDir } = qualificationFixtureRoot(t);
+  const manifest = readManifest(pkgDir);
+  manifest.devDependencies = { "some-lint-tool": "1.0.0" };
+  writeManifest(pkgDir, manifest);
+  gitCommit(root, "initial 0.3.3, with a devDependency, not yet qualified");
+  retainQualificationRecord(root);
+  markLocallyPublished(root, "@clossys/writer", "0.3.3");
+  const base = gitCommit(root, "retain qualification record for 0.3.3, and mark it published");
+
+  const bumped = readManifest(pkgDir);
+  bumped.devDependencies = { "some-lint-tool": "1.1.0" };
+  writeManifest(pkgDir, bumped);
+  gitCommit(root, "devDependencies-only edit (packed content unaffected, but the tree moved)");
+
+  const r = run(["packages/writer", "--json", "--base", base], root);
+  assert.equal(r.code, 0, `expected exit 0, got ${r.code}: ${r.out}`);
+  const report = JSON.parse(r.out);
+  assert.equal(report.results[0].status, "pass");
+  assert.equal(report.results[0].staleRetainedRecord, true);
+  assert.match(report.results[0].detail, /only devDependencies changed/);
+  assert.match(report.results[0].detail, /already published/);
+  assert.doesNotMatch(report.results[0].detail, /[Rr]e-qualify/);
+});
+
+// This gate no longer failing the pull request must NOT mean the stale
+// 0.3.3 record could ever ship. This test exercises the exact same
+// tree/manifest join `check-qualification-record-present.mjs` uses at
+// publish dispatch (`qualificationRecordPresenceForCandidate`), completely
+// independent of this script, and proves it still reports "stale" for the
+// identical tree the two passing tests above just accepted. Named narrowly:
+// this proves the RECORD JOIN still refuses a mismatched candidate — the
+// actual shipped-BYTES guarantee is a separate property, proven by
+// `validate-candidate-publish.mjs`'s tarball reverification immediately
+// before upload, which is untouched by this PR and not exercised here.
+test("the tree/manifest join a real publish dispatch relies on still reports this record as stale, even after the owner-decision passes above", (t) => {
   const { root, pkgDir } = qualificationFixtureRoot(t);
   gitCommit(root, "initial 0.3.3, not yet qualified");
   retainQualificationRecord(root);
-  gitCommit(root, "retain qualification record for 0.3.3");
+  markLocallyPublished(root, "@clossys/writer", "0.3.3");
+  gitCommit(root, "retain qualification record for 0.3.3, and mark it published");
 
   writeFileSync(join(pkgDir, "src", "index.test.ts"), "test('x', () => { expect(x).toBe(1); });\n");
   gitCommit(root, "test-only edit (packed content unaffected, but the tree moved)");

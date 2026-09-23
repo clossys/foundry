@@ -486,27 +486,68 @@ The owner decision (issues #1187, #1265, #920) keeps the record's own
 definition of staleness exactly as it was above — nothing about how a record
 is computed or validated changed, and every existing retained record still
 validates under the identical join it always has — but narrows what
-**`check-release-readiness.mjs`** does with that finding. It still consults
-the retained record for a package's CURRENT version whenever its own
-packed-content diff reports "no bump required" (including a devDependencies-
-only change, exempt for the same reason since issue #269), and it still
-surfaces a stale record in its `detail` with `staleRetainedRecord: true` —
-but it now only fails the gate (`needs-bump`) when PACKED content changed. An
-unpacked-only staleness — a test file, in the architect 0.1.7 shape — is
-reported, not failed: the pull request passes with no changeset, and the
-detail names the stale record and says to re-qualify before any future
-publish dispatch of that version.
+**`check-release-readiness.mjs`** does with that finding, and ONLY for a
+version that has already shipped.
+
+It still consults the retained record for a package's CURRENT version
+whenever its own packed-content diff reports "no bump required" (including a
+devDependencies-only change, exempt for the same reason since issue #269),
+and it still surfaces a stale record in its `detail` with
+`staleRetainedRecord: true`. It fails the gate (`needs-bump`) exactly as
+#920's original fix did — unconditionally — UNLESS the current version is
+already shown, from local git-tracked evidence (a sealed Trio
+first-publication record, or a later publication's own evidence file under
+`governance/release-publications/later/`), to have been published. That
+scoping matters because most retained current-version records belong to
+versions that have NOT been published yet — publication is gated off
+entirely pre-W1E — and for one of those, an unpacked-only change silently
+passing would strand it exactly as #920 describes, with nothing left to
+force the new version that alone could recover it (a pending changeset is
+never required for a change this gate now treats as clean). Only once a
+version has genuinely shipped is a stale record for it purely historical:
+nothing will ever try to publish that exact version again, so the relaxation
+cannot reopen a stranding.
+
+When the gate does relax, its `detail` never tells anyone to re-qualify — a
+stale record cannot be replaced at the same version, full stop, so the
+correct and only remedy is a new version, and the message says exactly that
+when it still fails. When it passes, the note instead says the version is
+already published, so the staleness is expected and harmless.
 
 This narrows, but does not remove, the safety net: `check-qualification-
 record-present.mjs` and `publish.yml`'s record-join are untouched. They
 still compare the retained record against the whole tree immediately before
 a publish is allowed to proceed, so a version whose record has gone stale —
-for any reason, packed or not — still can never ship until it is
-re-qualified. The only thing that changed is which question `check-release-
-readiness.mjs` answers with that same finding: not "does this pull request
-need a changeset," but "will a publish of this version succeed right now,"
-which is a fact for the operator to act on, not a merge-blocking one for
-every unrelated contributor who happens to touch this package's tests next.
+for any reason, packed or not — still can never ship again. The only thing
+that changed is which question `check-release-readiness.mjs` answers with
+that same finding: not "does this pull request need a changeset," but "is
+there a pending release this pull request would silently strand" — a
+question the gate can now answer correctly instead of treating every stale
+record the same regardless of whether anything is actually still queued.
+
+### Build inputs count as packed content too
+
+`check-release-readiness.mjs`'s packed-content comparison is deliberately
+source-level (see that script's own header): `dist/` is excluded because it
+is gitignored and therefore has no history to diff against, on the premise
+that "`dist/` is deterministic output of `src/`, so a real change to what
+would ship is caught upstream, in `src/`, every time." That premise fails
+for a change to the BUILD ITSELF rather than to `src/`. Every package here
+builds with `tsc -p tsconfig.json`, and `tsconfig.json` is never part of
+what `npm pack` ships — a `target`, `module`, `lib`, or `strict` edit can
+change compiled `dist/` output with zero packed-file trace. The same is true
+of a `typescript` devDependency bump, which the devDependencies exemption
+above would otherwise wave through on the theory that devDependencies never
+affect what a consumer receives — true for a test runner or a linter, false
+for the compiler itself.
+
+`check-release-readiness.mjs` therefore treats both as packed content for
+the bump question: a `tsconfig*.json` change is diffed on its own axis and
+requires a bump (or a changeset) exactly like a packed-source change would,
+and `typescript` is carved out of the devDependencies exemption by name
+(`BUILD_TOOLCHAIN_DEV_DEPENDENCIES`). Neither of these interacts with the
+retained-record relaxation above — they are packed-content findings, so they
+fail regardless of whether the current version has been published.
 
 ### The retained record's tarball must reproduce
 
