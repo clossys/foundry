@@ -12,16 +12,19 @@ not declared yet.
 
 Per-capability proof cases (issue #1272). The retained qualification adapter
 gains twelve cases across `strategist-check handoff`, `brand-coverage`,
-`direction` and `apply`, each with its own fixture. Every capability that
-cited `facts-clean` only as a placeholder now cites a case that exercises
-it: audience understanding, market definition, positioning, brand
-derivation, roadmap, and constraints stay `built`. Four capabilities move
-to `partial`:
+`direction` and `apply`, each with its own fixture. No capability cites
+`facts-clean` as a placeholder any more. `evidence-base` keeps it as its own
+genuine case. Audience understanding, market definition, positioning, brand
+derivation, roadmap, and constraints now cite a case that exercises them,
+and stay `built`. Three capabilities cite their own case but move to
+`partial`:
 
 - `claims`: an approved claim still validates with no fact reference.
 - `direction-currency`: `strategist-check direction` still reports a
   coverage gap for a superseded entity that no current artifact reviews.
 - `strategy-brief`: `handoff` checks readiness, but no command writes the
   projected contract.
-- `mission-and-values`: no command checks `mission.json`, so it keeps the
-  disclosed `facts-clean` anchor.
+
+`mission-and-values` moves to `planned` with no proof case. `readStrategy`
+reads and validates `mission.json`, but no command checks it, so no
+qualification case can exercise it yet.

@@ -164,8 +164,8 @@
         "outputs": [
           "clossys/strategist/mission.json"
         ],
-        "proofCase": "facts-clean",
-        "maturity": "partial",
+        "proofCase": null,
+        "maturity": "planned",
         "v0": false,
         "businessLifecycleStage": "define"
       },
