@@ -10,6 +10,7 @@ import {
   CAPABILITY_MATURITIES,
   buildCapabilityCatalogue,
   evaluateCapabilityMaps,
+  validateAllowlist,
   validateCapabilityShape,
 } from "./check-capability-maps.mjs";
 
@@ -75,7 +76,8 @@ test("validateCapabilityShape rejects an output path outside the role's own fold
 
 test("validateCapabilityShape accepts every declared maturity and rejects businessLifecycleStage outside the fixed vocabulary", () => {
   for (const maturity of CAPABILITY_MATURITIES) {
-    assert.deepEqual(validateCapabilityShape(capability({ maturity }), "@scope/alpha"), []);
+    const proofCase = maturity === "planned" ? null : "case-1";
+    assert.deepEqual(validateCapabilityShape(capability({ maturity, proofCase }), "@scope/alpha"), []);
   }
   const findings = validateCapabilityShape(capability({ businessLifecycleStage: "scale" }), "@scope/alpha");
   assert.ok(findings.some((f) => f.rule === "invalid-capability-business-lifecycle-stage"));
@@ -205,6 +207,198 @@ test("report mode does not check the feeds/capability match", () => {
   assert.deepEqual(result.findings, []);
 });
 
+test("validateCapabilityShape rejects a planned capability with a non-null proofCase", () => {
+  const findings = validateCapabilityShape(capability({ maturity: "planned", proofCase: "case-1" }), "@scope/alpha");
+  assert.ok(findings.some((f) => f.rule === "invalid-capability-proof-case"));
+});
+
+test("validateCapabilityShape accepts a planned capability with proofCase: null", () => {
+  assert.deepEqual(validateCapabilityShape(capability({ maturity: "planned", proofCase: null }), "@scope/alpha"), []);
+});
+
+test("validateCapabilityShape rejects a built capability with proofCase: null", () => {
+  const findings = validateCapabilityShape(capability({ maturity: "built", proofCase: null }), "@scope/alpha");
+  assert.ok(findings.some((f) => f.rule === "invalid-capability-proof-case"));
+});
+
+test("validateCapabilityShape resolves proofCase against a supplied known-case-id set", () => {
+  const known = new Set(["case-1"]);
+  assert.deepEqual(validateCapabilityShape(capability({ proofCase: "case-1" }), "@scope/alpha", known), []);
+  const findings = validateCapabilityShape(capability({ proofCase: "case-99" }), "@scope/alpha", known);
+  assert.ok(findings.some((f) => f.rule === "unresolved-capability-proof-case"));
+});
+
+test("validateCapabilityShape skips proofCase resolution when no known-case-id set is supplied", () => {
+  assert.deepEqual(validateCapabilityShape(capability({ proofCase: "anything" }), "@scope/alpha"), []);
+});
+
+test("evaluateCapabilityMaps threads proofCaseIdsByRole into per-capability resolution", () => {
+  const result = evaluateCapabilityMaps(["@scope/alpha"], manifests([
+    { name: "@scope/alpha", foundry: { capabilities: [capability({ proofCase: "unknown-case" })] } },
+  ]), { proofCaseIdsByRole: new Map([["@scope/alpha", new Set(["case-1"])]]) });
+  assert.ok(result.findings.some((f) => f.rule === "unresolved-capability-proof-case"));
+});
+
+test("capability-input resolution runs in report mode (no --enforce needed)", () => {
+  const result = evaluateCapabilityMaps(["@scope/alpha", "@scope/beta"], manifests([
+    { name: "@scope/alpha", foundry: { capabilities: [capability({ id: "produced", outputs: ["clossys/alpha/x.json"] })] } },
+    { name: "@scope/beta", foundry: { capabilities: [capability({
+      id: "consumer", outputs: ["clossys/beta/y.json"],
+      inputs: [{ producerRole: "@scope/alpha", artifact: "produced" }],
+    })] } },
+  ]));
+  assert.deepEqual(result.findings.filter((f) => f.rule === "unresolved-capability-input"), []);
+});
+
+test("capability-input resolution flags an unresolved input in report mode", () => {
+  const result = evaluateCapabilityMaps(["@scope/alpha", "@scope/beta"], manifests([
+    { name: "@scope/alpha", foundry: { capabilities: [capability({ id: "produced", outputs: ["clossys/alpha/x.json"] })] } },
+    { name: "@scope/beta", foundry: { capabilities: [capability({
+      id: "consumer", outputs: ["clossys/beta/y.json"],
+      inputs: [{ producerRole: "@scope/alpha", artifact: "nonexistent" }],
+    })] } },
+  ]));
+  assert.ok(result.findings.some((f) => f.rule === "unresolved-capability-input"));
+});
+
+test("--enforce also resolves a capability input against the producer role's own capability id (same result as report mode)", () => {
+  const result = evaluateCapabilityMaps(["@scope/alpha", "@scope/beta"], manifests([
+    { name: "@scope/alpha", foundry: { capabilities: [capability({ id: "produced", outputs: ["clossys/alpha/x.json"] })] } },
+    { name: "@scope/beta", foundry: { capabilities: [capability({
+      id: "consumer", outputs: ["clossys/beta/y.json"],
+      inputs: [{ producerRole: "@scope/alpha", artifact: "produced" }],
+    })] } },
+  ]), { enforce: true });
+  assert.deepEqual(result.findings.filter((f) => f.rule === "unresolved-capability-input"), []);
+});
+
+test("--enforce also flags a capability input that names no real capability id on the producer role", () => {
+  const result = evaluateCapabilityMaps(["@scope/alpha", "@scope/beta"], manifests([
+    { name: "@scope/alpha", foundry: { capabilities: [capability({ id: "produced", outputs: ["clossys/alpha/x.json"] })] } },
+    { name: "@scope/beta", foundry: { capabilities: [capability({
+      id: "consumer", outputs: ["clossys/beta/y.json"],
+      inputs: [{ producerRole: "@scope/alpha", artifact: "nonexistent" }],
+    })] } },
+  ]), { enforce: true });
+  assert.ok(result.findings.some((f) => f.rule === "unresolved-capability-input"));
+});
+
+test("an unresolved capability input naming an allowlisted producer role is forgiven in either mode", () => {
+  const manifestsFixture = manifests([
+    { name: "@scope/beta", foundry: { capabilities: [capability({
+      id: "consumer", outputs: ["clossys/beta/y.json"],
+      inputs: [{ producerRole: "@scope/alpha", artifact: "anything" }],
+    })] } },
+  ]);
+  const reportResult = evaluateCapabilityMaps(["@scope/alpha", "@scope/beta"], manifestsFixture, { allowlistedRoles: ["@scope/alpha"] });
+  assert.deepEqual(reportResult.findings.filter((f) => f.rule === "unresolved-capability-input"), []);
+  const enforceResult = evaluateCapabilityMaps(["@scope/alpha", "@scope/beta"], manifestsFixture, { enforce: true, allowlistedRoles: ["@scope/alpha"] });
+  assert.deepEqual(enforceResult.findings.filter((f) => f.rule === "unresolved-capability-input"), []);
+});
+
+// Issue #1279: a capability input naming a NON-allowlisted producer role
+// that simply has no capability map at all yet (the role's own manifest
+// carries no `foundry.capabilities`, or no manifest at all) must never fail
+// report mode -- that is absence, the same thing `required-capabilities-
+// absent` already forgives for that producer directly, not a genuine
+// mismatch. It is reported as a warning instead. The prior version of this
+// test asserted the opposite (a report-mode failure) -- that was exactly
+// the bug the reviewer reproduced on PR #1258 with a mutated Keeper input
+// (see issue #1279's own repro).
+test("report mode never fails on a capability input naming a producer role with no capability map at all — reported as a warning instead", () => {
+  const result = evaluateCapabilityMaps(["@scope/alpha", "@scope/beta"], manifests([
+    { name: "@scope/beta", foundry: { capabilities: [capability({
+      id: "consumer", outputs: ["clossys/beta/y.json"],
+      inputs: [{ producerRole: "@scope/alpha", artifact: "anything" }],
+    })] } },
+  ]));
+  assert.deepEqual(result.findings.filter((f) => f.rule === "unresolved-capability-input"), []);
+  assert.ok(result.warnings.some((w) => w.rule === "capability-input-producer-absent" && w.role === "@scope/beta"));
+});
+
+// The same absence, under --enforce, stays a failure -- report mode's
+// forgiveness above must not leak into --enforce, the same split
+// `required-capabilities-absent` already draws for the producer directly.
+test("--enforce still fails a capability input naming a NON-allowlisted producer role with no capability map at all", () => {
+  const result = evaluateCapabilityMaps(["@scope/alpha", "@scope/beta"], manifests([
+    { name: "@scope/beta", foundry: { capabilities: [capability({
+      id: "consumer", outputs: ["clossys/beta/y.json"],
+      inputs: [{ producerRole: "@scope/alpha", artifact: "anything" }],
+    })] } },
+  ]), { enforce: true });
+  assert.ok(result.findings.some((f) => f.rule === "unresolved-capability-input" && f.role === "@scope/beta"));
+});
+
+// Issue #1321: distinct from #1279's absence-of-map case above, a
+// producerRole that is not even a currently active role at all -- a typo
+// (e.g. "@clossys/strategst"), or a retired role name -- can never resolve
+// under that name no matter how long report mode waits. That is a genuine
+// mismatch, matching the header comment's "a mismatch fails in both modes"
+// rule the same as the has-a-map-but-wrong-artifact case below, and must
+// not get #1279's forgiveness, which exists only for a real active role
+// whose own map simply has not landed yet. CodeRabbit finding on PR #1258,
+// filed as #1321.
+test("report mode fails on a capability input naming a producer role that is not a currently active role at all", () => {
+  const result = evaluateCapabilityMaps(["@scope/beta"], manifests([
+    { name: "@scope/beta", foundry: { capabilities: [capability({
+      id: "consumer", outputs: ["clossys/beta/y.json"],
+      inputs: [{ producerRole: "@scope/nonexistent", artifact: "anything" }],
+    })] } },
+  ]));
+  assert.ok(result.findings.some((f) => f.rule === "unresolved-capability-input" && f.role === "@scope/beta"));
+  assert.deepEqual(result.warnings.filter((w) => w.rule === "capability-input-producer-absent"), []);
+});
+
+// The same case under --enforce: already a failure before #1321, and must
+// stay one -- #1321's bug was report mode's silence, not --enforce's.
+test("--enforce also fails a capability input naming a producer role that is not a currently active role at all", () => {
+  const result = evaluateCapabilityMaps(["@scope/beta"], manifests([
+    { name: "@scope/beta", foundry: { capabilities: [capability({
+      id: "consumer", outputs: ["clossys/beta/y.json"],
+      inputs: [{ producerRole: "@scope/nonexistent", artifact: "anything" }],
+    })] } },
+  ]), { enforce: true });
+  assert.ok(result.findings.some((f) => f.rule === "unresolved-capability-input" && f.role === "@scope/beta"));
+});
+
+// The allowlist check must still run BEFORE the new #1321 active-role
+// check, so a role that is allowlisted (its map genuinely has not landed
+// yet) stays forgiven even though it is not itself in `activeRoles` here --
+// guards against the #1321 fix accidentally shadowing the pre-existing
+// allowlist forgiveness.
+test("an allowlisted producer role is forgiven ahead of the #1321 active-role check", () => {
+  const result = evaluateCapabilityMaps(["@scope/beta"], manifests([
+    { name: "@scope/beta", foundry: { capabilities: [capability({
+      id: "consumer", outputs: ["clossys/beta/y.json"],
+      inputs: [{ producerRole: "@scope/alpha", artifact: "anything" }],
+    })] } },
+  ]), { allowlistedRoles: ["@scope/alpha"] });
+  assert.deepEqual(result.findings.filter((f) => f.rule === "unresolved-capability-input"), []);
+});
+
+// Distinct from absence: a producer role that DOES declare a capability
+// map, but none of its own capabilities produce the named artifact, is a
+// genuine mismatch -- issue #1279 does not touch this case, and it must
+// stay a failure in both modes. capability-input resolution's existing
+// "capability-input resolution flags an unresolved input in report mode"
+// and "--enforce also flags a capability input that names no real
+// capability id on the producer role" tests above already cover this; this
+// is the same case named explicitly as the #1279 control.
+test("a capability input naming a real capability on a producer role that HAS a map, but not the named one, stays a failure in both modes (not #1279's absence case)", () => {
+  const manifestsFixture = manifests([
+    { name: "@scope/alpha", foundry: { capabilities: [capability({ id: "produced", outputs: ["clossys/alpha/x.json"] })] } },
+    { name: "@scope/beta", foundry: { capabilities: [capability({
+      id: "consumer", outputs: ["clossys/beta/y.json"],
+      inputs: [{ producerRole: "@scope/alpha", artifact: "nonexistent" }],
+    })] } },
+  ]);
+  const reportResult = evaluateCapabilityMaps(["@scope/alpha", "@scope/beta"], manifestsFixture);
+  assert.ok(reportResult.findings.some((f) => f.rule === "unresolved-capability-input"));
+  assert.deepEqual(reportResult.warnings.filter((w) => w.rule === "capability-input-producer-absent"), []);
+  const enforceResult = evaluateCapabilityMaps(["@scope/alpha", "@scope/beta"], manifestsFixture, { enforce: true });
+  assert.ok(enforceResult.findings.some((f) => f.rule === "unresolved-capability-input"));
+});
+
 test("buildCapabilityCatalogue lays each capability along its declared business lifecycle stage", () => {
   const catalogue = buildCapabilityCatalogue(ROLES, manifests([
     { name: "@scope/alpha", foundry: { capabilities: [capability({ id: "a", businessLifecycleStage: "launch" })] } },
@@ -223,4 +417,30 @@ test("buildCapabilityCatalogue buckets an unassigned capability rather than drop
 test("every declared business lifecycle stage is represented in the catalogue, even with zero capabilities", () => {
   const catalogue = buildCapabilityCatalogue([], new Map());
   assert.deepEqual([...catalogue.byStage.keys()], [...BUSINESS_LIFECYCLE_STAGES]);
+});
+
+// Non-blocking finding from PR #1258's independent review: `loadAllowlist`
+// accepts any JSON array of strings with no check that each name is a
+// currently active role, so a misspelled or retired role name in an
+// `--allowlist` file would silently forgive an input naming that same
+// misspelling forever -- `evaluateCapabilityMaps`'s allowlist branch runs
+// before its own #1321 active-role check and never validates the names it
+// was given. `validateAllowlist` closes that gap; `main` calls it right
+// after `collect` and `loadAllowlist` both resolve.
+test("validateAllowlist accepts an allowlist naming only currently active roles", () => {
+  assert.doesNotThrow(() => validateAllowlist(["@scope/alpha", "@scope/beta"], ["@scope/alpha", "@scope/beta", "@scope/gamma"]));
+});
+
+test("validateAllowlist rejects an allowlist entry that is not a currently active role", () => {
+  assert.throws(
+    () => validateAllowlist(["@clossys/strategst"], ["@clossys/strategist", "@clossys/designer"]),
+    /allowlist names role\(s\) that are not currently active: @clossys\/strategst/,
+  );
+});
+
+test("validateAllowlist names every unknown entry, not just the first", () => {
+  assert.throws(
+    () => validateAllowlist(["@scope/alpha", "@scope/typo-one", "@scope/typo-two"], ["@scope/alpha"]),
+    /@scope\/typo-one, @scope\/typo-two/,
+  );
 });
