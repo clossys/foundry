@@ -194,8 +194,8 @@
       },
       {
         "id": "structure-and-fold-conformance",
-        "subQuestion": "Does every surface's heading structure, above-the-fold hero, and hero CSS conform to their declared contracts?",
-        "worldClass": "Every surface's structural ladder (heading hierarchy) is checked, and its hero renders within its declared fold and hero-CSS contract — structural conformance as one capability, checked, never eyeballed per page.",
+        "subQuestion": "Does every mount compose only one visual primitive stack, and does its above-the-fold hero conform to its declared fold and hero-CSS contract?",
+        "worldClass": "Every route/surface mount composes exactly one visual primitive stack -- never a mix of design systems assembled under one mount (`surface-ladder.ts`, issues #1055/#1060) -- and its hero renders within its declared fold and hero-CSS contract, checked, never eyeballed per page.",
         "inputs": [],
         "outputs": [
           "clossys/designer/.generated/structure-report.json"

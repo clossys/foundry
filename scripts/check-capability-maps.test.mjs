@@ -238,7 +238,29 @@ test("evaluateCapabilityMaps threads proofCaseIdsByRole into per-capability reso
   assert.ok(result.findings.some((f) => f.rule === "unresolved-capability-proof-case"));
 });
 
-test("--enforce resolves a capability input against the producer role's own capability id", () => {
+test("capability-input resolution runs in report mode (no --enforce needed)", () => {
+  const result = evaluateCapabilityMaps(["@scope/alpha", "@scope/beta"], manifests([
+    { name: "@scope/alpha", foundry: { capabilities: [capability({ id: "produced", outputs: ["clossys/alpha/x.json"] })] } },
+    { name: "@scope/beta", foundry: { capabilities: [capability({
+      id: "consumer", outputs: ["clossys/beta/y.json"],
+      inputs: [{ producerRole: "@scope/alpha", artifact: "produced" }],
+    })] } },
+  ]));
+  assert.deepEqual(result.findings.filter((f) => f.rule === "unresolved-capability-input"), []);
+});
+
+test("capability-input resolution flags an unresolved input in report mode", () => {
+  const result = evaluateCapabilityMaps(["@scope/alpha", "@scope/beta"], manifests([
+    { name: "@scope/alpha", foundry: { capabilities: [capability({ id: "produced", outputs: ["clossys/alpha/x.json"] })] } },
+    { name: "@scope/beta", foundry: { capabilities: [capability({
+      id: "consumer", outputs: ["clossys/beta/y.json"],
+      inputs: [{ producerRole: "@scope/alpha", artifact: "nonexistent" }],
+    })] } },
+  ]));
+  assert.ok(result.findings.some((f) => f.rule === "unresolved-capability-input"));
+});
+
+test("--enforce also resolves a capability input against the producer role's own capability id (same result as report mode)", () => {
   const result = evaluateCapabilityMaps(["@scope/alpha", "@scope/beta"], manifests([
     { name: "@scope/alpha", foundry: { capabilities: [capability({ id: "produced", outputs: ["clossys/alpha/x.json"] })] } },
     { name: "@scope/beta", foundry: { capabilities: [capability({
@@ -249,7 +271,7 @@ test("--enforce resolves a capability input against the producer role's own capa
   assert.deepEqual(result.findings.filter((f) => f.rule === "unresolved-capability-input"), []);
 });
 
-test("--enforce flags a capability input that names no real capability id on the producer role", () => {
+test("--enforce also flags a capability input that names no real capability id on the producer role", () => {
   const result = evaluateCapabilityMaps(["@scope/alpha", "@scope/beta"], manifests([
     { name: "@scope/alpha", foundry: { capabilities: [capability({ id: "produced", outputs: ["clossys/alpha/x.json"] })] } },
     { name: "@scope/beta", foundry: { capabilities: [capability({
@@ -260,24 +282,27 @@ test("--enforce flags a capability input that names no real capability id on the
   assert.ok(result.findings.some((f) => f.rule === "unresolved-capability-input"));
 });
 
-test("--enforce forgives a capability input naming an allowlisted producer role", () => {
-  const result = evaluateCapabilityMaps(["@scope/alpha", "@scope/beta"], manifests([
+test("an unresolved capability input naming an allowlisted producer role is forgiven in either mode", () => {
+  const manifestsFixture = manifests([
     { name: "@scope/beta", foundry: { capabilities: [capability({
       id: "consumer", outputs: ["clossys/beta/y.json"],
       inputs: [{ producerRole: "@scope/alpha", artifact: "anything" }],
     })] } },
-  ]), { enforce: true, allowlistedRoles: ["@scope/alpha"] });
-  assert.deepEqual(result.findings.filter((f) => f.rule === "unresolved-capability-input"), []);
+  ]);
+  const reportResult = evaluateCapabilityMaps(["@scope/alpha", "@scope/beta"], manifestsFixture, { allowlistedRoles: ["@scope/alpha"] });
+  assert.deepEqual(reportResult.findings.filter((f) => f.rule === "unresolved-capability-input"), []);
+  const enforceResult = evaluateCapabilityMaps(["@scope/alpha", "@scope/beta"], manifestsFixture, { enforce: true, allowlistedRoles: ["@scope/alpha"] });
+  assert.deepEqual(enforceResult.findings.filter((f) => f.rule === "unresolved-capability-input"), []);
 });
 
-test("report mode does not check capability-input resolution", () => {
+test("an unresolved capability input naming a NON-allowlisted, undeclared producer role is a finding even in report mode", () => {
   const result = evaluateCapabilityMaps(["@scope/alpha", "@scope/beta"], manifests([
     { name: "@scope/beta", foundry: { capabilities: [capability({
       id: "consumer", outputs: ["clossys/beta/y.json"],
       inputs: [{ producerRole: "@scope/alpha", artifact: "anything" }],
     })] } },
   ]));
-  assert.deepEqual(result.findings, []);
+  assert.ok(result.findings.some((f) => f.rule === "unresolved-capability-input"));
 });
 
 test("buildCapabilityCatalogue lays each capability along its declared business lifecycle stage", () => {

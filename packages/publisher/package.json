@@ -153,7 +153,7 @@
         "inputs": [
           {
             "producerRole": "@clossys/designer",
-            "artifact": "brand-kit-assembly"
+            "artifact": "token-contract-and-brand-overlay-binding"
           }
         ],
         "outputs": [
@@ -236,14 +236,14 @@
       },
       {
         "id": "route-and-visibility-governance",
-        "subQuestion": "Does every publishing web route resolve to a registered template, with its visibility declared rather than inferred?",
-        "worldClass": "Every route composes only through a registered SurfaceDocument template — never Designer blocks assembled directly in a route file — and its visibility (public, unlisted, access-protected, per #1206) is declared, never inferred.",
+        "subQuestion": "Does every publishing web route resolve to a registered template, with visibility declared as internal or public rather than inferred, and internal-only routes refused from serving?",
+        "worldClass": "Every route composes only through a registered SurfaceDocument template -- never Designer blocks assembled directly in a route file -- and declares visibility as `internal` or `public` (#1204; supersedes the earlier public/unlisted/access-protected model #1206 retired); a route serving an internal-only item is refused, never silently served. Today: `checkWebRoutes`/`publisher-web-route-check` checks only the route-to-template mapping -- no visibility declaration exists and no internal-route refusal runs yet.",
         "inputs": [],
         "outputs": [
           "clossys/publisher/routes.json"
         ],
         "proofCase": "media-satisfied",
-        "maturity": "built",
+        "maturity": "partial",
         "v0": true,
         "businessLifecycleStage": "launch"
       },
@@ -286,7 +286,7 @@
       {
         "id": "live-parity",
         "subQuestion": "Does the production URL actually serve what was sealed — head, OG, metadata, and the materials index — independent of the hosting provider's own success signal?",
-        "worldClass": "`verify` (#1209) proves the live site and materials match the sealed publication record by independently re-reading the live URL — never trusting the deploy provider's own \"success\" status. Today: the reconciliation-loop contracts (an independent witness compared against a ledger) exist; nothing yet re-reads a live production URL.",
+        "worldClass": "`verify` (#1209) proves the live site actually serves what was sealed -- head, OG, and metadata for public surfaces -- independently re-reading the live URL, never trusting the deploy provider's own \"success\" status. Scoped to public surfaces only, per #1206 (materials visibility is declared per item; an internal item is never expected to be live-servable at all). Today: the reconciliation-loop contracts (an independent witness compared against a ledger) exist; nothing yet re-reads a live production URL.",
         "inputs": [
           {
             "producerRole": "@clossys/publisher",

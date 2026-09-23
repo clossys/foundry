@@ -71,9 +71,27 @@
         "businessLifecycleStage": "build"
       },
       {
+        "id": "copy-coverage",
+        "subQuestion": "Does every user-facing string in code trace to a registered copy entry, by literal match or citation?",
+        "worldClass": "Every component string either matches a registered CopyRecord entry's text/alias or carries a copy:<id> citation -- the \"approved copy coverage rate\" metric this role owns (docs/contracts/role-loop-archetypes.json), and what writer-check's default command (copy-clean) actually proves. Distinct from `copy-registry` (is the registry entry itself valid) and from `claims-to-copy-traceability` (does a claim-SHAPED sentence cite an approved Strategist claim).",
+        "inputs": [
+          {
+            "producerRole": "@clossys/writer",
+            "artifact": "copy-registry"
+          }
+        ],
+        "outputs": [
+          "clossys/writer/.generated/copy-coverage-report.json"
+        ],
+        "proofCase": "copy-clean",
+        "maturity": "built",
+        "v0": true,
+        "businessLifecycleStage": "build"
+      },
+      {
         "id": "claims-to-copy-traceability",
         "subQuestion": "Does every claim-shaped or numeric sentence in shipped copy trace to an approved registry claim, by citation?",
-        "worldClass": "A currency amount, percentage, multiplier, or superlative sentence in live copy either matches a registered claim's text or carries a claim:<id> citation to one — checked on the COPY side; Strategist's own evidence-base checks only its own records, never scans shipped surfaces, so this is the one place that boundary is actually enforced.",
+        "worldClass": "A currency amount, percentage, multiplier, or superlative sentence in live copy either matches a registered claim's text or carries a claim:<id> citation to one -- checked on the COPY side. Whether Strategist's own facts/markers gate should stop scanning shipped surfaces at all (leaving this the one place that check happens) is a decision pending #1271, not yet a settled boundary -- today `strategist-check` still scans authored prose too (its own facts-clean fixture is an announcement.md).",
         "inputs": [
           {
             "producerRole": "@clossys/strategist",

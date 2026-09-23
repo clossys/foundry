@@ -22,35 +22,57 @@
 // capability requiring zero targets must not grade identically to one fully
 // covered).
 //
-// --enforce: for a later wave, once the per-role maps (#1198-#1202,
-// drafted in the owner's private product repository first) have landed.
-// Turns absence of `capabilities` on an active role into a finding, and
-// additionally checks the two MECE properties that need every role's own
-// manifest to answer:
+// CAPABILITY-INPUT RESOLUTION runs in BOTH modes, not just --enforce: every
+// capability's own `inputs` entry -- `{ producerRole, artifact }` -- must
+// name a capability whose own `id` is `artifact`, declared among
+// `producerRole`'s own well-formed `capabilities`, whenever `producerRole`
+// itself has a declared map. A `producerRole` that is itself allowlisted
+// (its own map has not landed yet) is forgiven, the same way absence is
+// forgiven for that role directly -- a consuming role cannot be blamed for
+// a producer that hasn't drafted yet. This runs unconditionally (not only
+// under --enforce) because CI's default check runs in report mode, and an
+// unresolved input is exactly the kind of structural defect report mode
+// already catches for everything else a role's own manifest can answer by
+// itself plus one already-declared producer -- it needs no global
+// "is every role finished" judgment the way the cross-role checks below
+// do.
+//
+// --enforce: for a later wave, once the per-role maps (#1198-#1202) have
+// landed for every active role. Turns absence of `capabilities` on an
+// active role into a finding, and additionally checks the two MECE
+// properties that need EVERY role's own manifest to answer at once (unlike
+// input resolution above, which only needs the one named producer):
 //   - ACROSS roles: no output path is claimed by more than one capability,
 //     of any role -- every capability and every output has exactly one
 //     owner;
 //   - ACROSS roles: every top-level `feeds` entry's path is claimed by
 //     exactly one capability's own `outputs` (the mechanism behind "every
-//     needs is fed by exactly one capability" -- a `needs` entry already
-//     resolves to one `feeds` entry under check-package-framework.mjs's
-//     own --enforce; this pushes that resolution one level further, to the
-//     one capability that actually produces it);
-//   - ACROSS roles: every capability's own `inputs` entry resolves --
-//     `{ producerRole, artifact }` must name a capability whose own `id`
-//     is `artifact`, declared by `producerRole`'s own well-formed
-//     `capabilities`. A `producerRole` that is itself allowlisted (its own
-//     map has not landed yet) is forgiven, the same way absence is
-//     forgiven for that role directly -- a consuming role cannot be
-//     blamed for a producer that hasn't drafted yet.
+//     needs is fed by exactly one capability" -- a top-level `needs` entry
+//     already resolves to one `feeds` entry under
+//     check-package-framework.mjs's own --enforce; this pushes that
+//     resolution one level further, to the one capability that actually
+//     produces it). This is a SEPARATE mechanism from capability-input
+//     resolution above: a capability's own `inputs` entry resolves
+//     directly against a producer's capability `id`, never against a
+//     top-level `feeds` path.
 // --allowlist <file> (or --no-allowlist, the default when omitted): a
 // JSON array of role names exempt from the "capabilities required" finding
-// AND from unresolved-input findings that name them as `producerRole`,
-// under --enforce -- for roles whose own map has not landed yet. Until
-// #1198-#1202 land, every active role is effectively allowlisted by the
-// absence-is-never-a-failure rule already in report mode; --allowlist only
-// matters once some roles have adopted and --enforce is turned on for the
-// rest.
+// under --enforce, AND from unresolved-input findings that name them as
+// `producerRole` in either mode -- for roles whose own map has not landed
+// yet. Until #1198-#1202 land, every active role is effectively
+// allowlisted by the absence-is-never-a-failure rule already in report
+// mode; --allowlist only matters once some roles have adopted and
+// --enforce is turned on for the rest.
+//
+// A capability's own `inputs` MAY form a cycle with another role's own
+// `inputs` (for example Customer's `keep-verdict` needing Publisher's
+// `surface-documents`, while Publisher's `sealing-and-the-publication-
+// record` needs Customer's `keep-verdict` back) -- a real production
+// workflow (judge a draft surface, seal only after a keep), not a defect.
+// This gate does not check for cycles at the capability-input layer, and
+// deliberately: the no-cycle rule check-package-framework.mjs enforces is
+// scoped to the TOP-LEVEL `needs`/`feeds` handoff graph (issue #1172,
+// Stage C), never to capability-level `inputs`.
 //
 // WHOLE-ROLE-QUESTION COVERAGE IS NOT CHECKED HERE. "The sub-questions
 // jointly answer the role's job question" is a judgment call -- whether a
@@ -178,8 +200,8 @@ export function validateCapabilityShape(capability, role, knownProofCaseIds) {
  * allowlist is the mechanism issue #1196 itself asks for -- "run the gate
  * ... with an empty or allowlisted set, until they land"). The same
  * allowlist also forgives an unresolved capability `input` naming one of
- * these roles as `producerRole` -- see the `--enforce` input-resolution
- * check below.
+ * these roles as `producerRole`, in EITHER mode -- see the input-resolution
+ * check below (it runs unconditionally, not only under `--enforce`).
  * `options.proofCaseIdsByRole`: optional `Map<role, Set<string> | undefined>`
  * of each role's own retained qualification adapter case ids, threaded
  * into `validateCapabilityShape` per role. Omit entirely (as every
@@ -298,30 +320,33 @@ export function evaluateCapabilityMaps(activeRoles, manifestsByName, options = {
       }
     }
 
-    // Every capability's own `inputs` entry should resolve to a real
-    // producer: `{ producerRole, artifact }` names a capability whose own
-    // `id` is `artifact`, declared among `producerRole`'s own well-formed
-    // capabilities. A `producerRole` that is itself allowlisted (its map
-    // has not landed yet) is forgiven outright -- the consuming role
-    // cannot be faulted for a producer that hasn't drafted yet, the same
-    // forgiveness `required-capabilities-absent` already extends to that
-    // producer directly.
-    for (const [role, capabilities] of capabilitiesByRole) {
-      for (const capability of capabilities) {
-        if (!Array.isArray(capability.inputs)) continue;
-        for (const input of capability.inputs) {
-          if (!isCapabilityInputEntry(input)) continue; // already reported by validateCapabilityShape
-          const { producerRole, artifact } = input;
-          if (allowlisted.has(producerRole)) continue;
-          const producerCapabilities = capabilitiesByRole.get(producerRole) ?? [];
-          const resolved = producerCapabilities.some((candidate) => candidate.id === artifact);
-          if (!resolved) {
-            findings.push({
-              rule: "unresolved-capability-input",
-              role,
-              message: `capability "${capability.id}" input { producerRole: "${producerRole}", artifact: "${artifact}" } does not resolve to any capability "${producerRole}" itself declares (artifact must name one of that role's own capability ids)`,
-            });
-          }
+  }
+
+  // Capability-input resolution runs in BOTH modes (see the header comment
+  // on why this one cross-role check is not gated behind --enforce): every
+  // capability's own `inputs` entry should resolve to a real producer --
+  // `{ producerRole, artifact }` names a capability whose own `id` is
+  // `artifact`, declared among `producerRole`'s own well-formed
+  // capabilities. A `producerRole` that is itself allowlisted (its map has
+  // not landed yet) is forgiven outright -- the consuming role cannot be
+  // faulted for a producer that hasn't drafted yet, the same forgiveness
+  // `required-capabilities-absent` already extends to that producer
+  // directly.
+  for (const [role, capabilities] of capabilitiesByRole) {
+    for (const capability of capabilities) {
+      if (!Array.isArray(capability.inputs)) continue;
+      for (const input of capability.inputs) {
+        if (!isCapabilityInputEntry(input)) continue; // already reported by validateCapabilityShape
+        const { producerRole, artifact } = input;
+        if (allowlisted.has(producerRole)) continue;
+        const producerCapabilities = capabilitiesByRole.get(producerRole) ?? [];
+        const resolved = producerCapabilities.some((candidate) => candidate.id === artifact);
+        if (!resolved) {
+          findings.push({
+            rule: "unresolved-capability-input",
+            role,
+            message: `capability "${capability.id}" input { producerRole: "${producerRole}", artifact: "${artifact}" } does not resolve to any capability "${producerRole}" itself declares (artifact must name one of that role's own capability ids)`,
+          });
         }
       }
     }
