@@ -97,7 +97,7 @@ function evaluation(
   return Object.freeze({ key, credentialClass, verdict, exitCode: EXIT_CODES[verdict], reasons: Object.freeze(copiedReasons) });
 }
 
-interface OwnDataRecord {
+export interface OwnDataRecord {
   readonly keys: readonly PropertyKey[];
   readonly values: Readonly<Record<string, unknown>>;
 }
@@ -107,7 +107,7 @@ interface OwnDataRecord {
  * not an object protocol: inherited fields, accessors, custom prototypes, and
  * proxy traps therefore cannot participate in a verdict.
  */
-function readOwnDataRecord(value: unknown): OwnDataRecord | null {
+export function readOwnDataRecord(value: unknown): OwnDataRecord | null {
   if (typeof value !== "object" || value === null || Array.isArray(value)) return null;
   if (Object.getPrototypeOf(value) !== Object.prototype) return null;
 
@@ -128,7 +128,7 @@ function isCanonicalUtcTimestamp(value: unknown): value is string {
   return !Number.isNaN(parsed.getTime()) && parsed.toISOString() === value;
 }
 
-function isNonEmptyString(value: unknown): value is string {
+export function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim() !== "";
 }
 
@@ -220,7 +220,7 @@ function inspectScope(value: unknown, credentialClass: CredentialClass): ScopeIn
   return { reason: null, values };
 }
 
-function hasOnlyFields(value: OwnDataRecord, fields: readonly string[]): boolean {
+export function hasOnlyFields(value: OwnDataRecord, fields: readonly string[]): boolean {
   if (value.keys.length > fields.length) return false;
   for (let keyIndex = 0; keyIndex < value.keys.length; keyIndex += 1) {
     const key = value.keys[keyIndex];
@@ -237,7 +237,7 @@ function hasOnlyFields(value: OwnDataRecord, fields: readonly string[]): boolean
   return true;
 }
 
-function hasField(value: OwnDataRecord, field: string): boolean {
+export function hasField(value: OwnDataRecord, field: string): boolean {
   for (let index = 0; index < value.keys.length; index += 1) {
     if (value.keys[index] === field) return true;
   }
