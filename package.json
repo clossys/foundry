@@ -134,6 +134,8 @@
     "preflight": "node scripts/preflight-package.mjs",
     "//publish-plan": "Read-only (issue #1227): lists every non-private package, whether it would publish, and why the rest would not -- \"on npm already\" and \"qualification record missing/stale\" are kept as distinct reasons. Publishes nothing.",
     "publish:plan": "node scripts/plan-qualified-publish-set.mjs",
+    "//select-unqualified": "Read-only (issue #1256): filters publish:plan's own report down to packages with NO retained qualification record for their current version (never a stale one -- see the script's own header). .github/workflows/auto-qualify.yml dispatches qualify-candidate.yml once per package this prints, on every push to main.",
+    "select:unqualified": "node scripts/select-unqualified-packages.mjs",
     "//publish-qualified-set": "The owner's one action to publish every package with a retained qualification record that is not yet on the registry (issue #1227). Defaults to the same plan as publish:plan above; add --publish to run the owner-present publish loop, on the pinned release runtime, one interactive npm prompt per package. A failure in one package does not stop the rest -- see the script's own header for why this is an owner-present loop rather than a workflow_dispatch fan-out.",
     "publish:qualified-set": "node scripts/publish-qualified-set.mjs",
     "//release-apply": "The release PR command (issue #1255): applies every pending .changesets/*.md, bumping each named package once (the highest bump level named), writing its CHANGELOG.md entry, regenerating package-lock.json, and deleting the applied changesets. --dry-run previews with no writes. Wired into .github/workflows/release-pr.yml.",

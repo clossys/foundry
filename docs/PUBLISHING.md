@@ -790,6 +790,40 @@ moving on. Neither runs `record-later-publication.mjs` — see
 `scripts/publish-qualified-set.mjs`'s header for why that stays a separate,
 optional, hand-run step.
 
+### Hands-free publishing after the first identity (issue #1256) <!-- facts-gate:ignore -->
+
+Two things this repository already had, now connected automatically:
+
+- **Auto-qualify.** `.github/workflows/auto-qualify.yml` runs on every push
+  to `main`. It runs `node scripts/select-unqualified-packages.mjs` (a thin
+  filter over `npm run publish:plan`'s own report, kept to genuinely
+  *missing* records — never a stale one, which needs a new version instead,
+  never a re-dispatch of the same one) and dispatches
+  `qualify-candidate.yml` once per package it finds. That workflow already
+  produced and retained records, and already pushed a branch and opened a
+  pull request itself once this repository's "Actions may create pull
+  requests" setting was on (see the owner decision linked at the top of
+  this document) — nothing about the qualification path itself changed.
+- **Trusted publishing.** `publish.yml`'s `publish` job already runs
+  `scripts/publish-qualified-directory.mjs --mode oidc`, already carries
+  `id-token: write` and the `npm-publish` environment gate, and already
+  runs on the pinned release runtime — see "Owner-present first
+  publication, then OIDC" above for the full path and the `npm >=11.5.1`
+  requirement it already states (the pinned release runtime, npm
+  `11.17.0`, is well above that floor). There is no separate OIDC lane to
+  add here.
+
+**What is still an owner action, once per package**, exactly as already
+documented above and unchanged by either workflow: the first identity is <!-- facts-gate:ignore -->
+still an owner-present publication (`npm run publish:qualified-set -- --publish`,
+or the per-row handoff above), because npm cannot bind a trusted publisher
+to a package identity that does not exist yet. Only after that first
+publish can the owner connect that package's npm trusted publisher (GitHub
+Actions, this repository, `publish.yml`, the `npm-publish` environment) on
+npmjs.com — the same one-time step "Owner-present first publication, then
+OIDC" already describes for the Trio, now applying to every package as its
+own first identity publishes.
+
 ### Current retained-candidate first-publication handoff
 
 The Trio section above is closed historical evidence. It neither publishes nor
