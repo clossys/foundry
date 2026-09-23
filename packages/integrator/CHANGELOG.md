@@ -5,6 +5,50 @@ All notable changes to `@clossys/integrator` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-09-22
+
+### Added
+
+- **`integrator-provenance-check`, a new bin (issue #885).** Verifies
+  registry provenance for every installed `@clossys/*` package via the
+  public `https://registry.npmjs.org/-/npm/v1/attestations/<pkg>@<version>`
+  endpoint directly, so it works under pnpm — which implements no `npm audit
+  signatures` at all, unlike the `npm audit`-shaped evidence
+  `check-public-npm-provenance.mjs` (this repository's own tooling) reads in
+  this repository's own publish workflow. Reports currency scope-aware: installed vs. each
+  package's own `dist-tags.latest`, never one hard-coded registry endpoint
+  asked to answer for every package in one run — the exact defect named in
+  #885 against the pre-existing, unrelated `check-currency.mjs` gate this
+  package does not replace. Exit `0` verified and current, `1` violated
+  (missing/mismatched provenance, or a stale pin against an optional,
+  consumer-declared currency policy), `2` indeterminate (no manifest/lockfile
+  found, a malformed policy file, an unreachable registry, a registry error,
+  or zero installed `@clossys` packages — never a vacuous pass). Indeterminate
+  wins over violated across a mixed batch, the same precedence `bouncer`,
+  `butler`, `giver`, and `keeper`'s interaction gates already use.
+- **`inspectProvenanceStatement`, `inspectPublicNpmProvenance`,
+  `inspectInstalledPackageProvenance`, and `expectedDigestFromPackument`**,
+  in a new `provenance.ts` module — the shared subject/digest/repository/
+  workflow join `check-public-npm-provenance.mjs` (this repository's
+  own producer-side, post-publish gate, not shipped in this package) and
+  `integrator-provenance-check` both need and now both import, rather than
+  each keeping its own copy that could silently drift. It imports
+  this module directly, unbuilt, by relative path — Node's native
+  TypeScript type-stripping (stable, unflagged, since Node 23.6) runs it
+  exactly as checked in, so `publish.yml`'s anonymous `verify-published` job
+  still needs no install and no build, unchanged from before this package
+  existed.
+- **`checkInstalledPackagesProvenance`**, in a new `provenance-check.ts`
+  module — the orchestration `integrator-provenance-check` runs: one
+  `Transport`-injected, concurrent check per installed package, reusing
+  `classifyCurrencyDistance` for the per-package currency grading this
+  package already owns.
+
+### Notes
+
+- This does not claim any position is closed. Qualification of `0.8.0` is
+  deferred under #948 (this machine is not the pinned release runtime).
+
 ## [0.7.3] - 2026-09-21
 
 ### Fixed

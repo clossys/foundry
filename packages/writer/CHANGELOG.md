@@ -5,7 +5,14 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
-## [0.3.17] - 2026-09-22
+## [0.3.18] - 2026-09-23
+
+Version 0.3.17 was claimed independently by this same change on the
+`claude/capability-maps-launch-pack` branch before merge; it collided with
+`main`'s own, unrelated 0.3.16 (below) → this entry moves to 0.3.18 on merge
+rather than reuse a version number `main` had already shipped different
+content under. No functional difference from what would have shipped as
+0.3.17.
 
 ### Added
 
@@ -32,6 +39,17 @@ All notable changes to this package are documented here. Format follows
   completely answer each role's own job question stays a reviewer
   judgment, never a mechanical finding. Independent review applied:
   #1258.
+
+## [0.3.16] - 2026-09-22
+
+### Added
+
+- `writer-check addressability --extensions` now also accepts a
+  comma-separated list in a single occurrence (for example
+  `--extensions .mjs,.cjs`), unioned with any repeated `--extensions`
+  flags. Every extension value must include the leading dot, and a flag
+  that resolves to zero extensions (a bare comma or an empty string) is a
+  usage error (exit `2`) rather than a silent fallback to the default set.
 
 ## [0.3.15] - 2026-09-21
 

@@ -5,6 +5,39 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-09-22
+
+### Added
+
+- The product repository standard (#1215), recorded in this repository's own docs/contracts/product-repository-layout.json (not shipped in the published package) -- `apps/*`, workspace wiring, agent pointers, and CI, extending the consumer layout. `checkCloudSessionBootstrap()` verifies the three checks a cloud agent session (browser plus GitHub only, no local setup) needs before it can install and run the team in a product repository.
+- `launcher-doctor`: a read-only command that checks git, the GitHub command-line tool, sign-in, Node.js, and npm, and names the first missing prerequisite in plain language with the one next action to take -- never a dump of everything at once (#1220).
+- Adopts an existing repository inventory instead of writing a second, diverging one, when the hub marker declares an `externalInventory`. `reportInventoryDrift()` runs automatically on every `launcher` create, resume, or appoint and prints the result in hub health output -- external-only, launcher-only, and agreeing repository ids, all three even when one is empty -- instead of silently merging them (#1216).
+- `--clone-missing`, an explicit, non-default flag on `launcher` that clones inventoried repositories not yet sitting beside the hub (#1179), reversing the previous no-clone default for exactly this one approved action. Plain invocation is unchanged: still report-only by default.
+- Every `launcher` create, resume, or appoint records which coding-agent hosts a directory could already discover skills through -- read before that same run composes skills and stamps every host's discovery path -- into `clossys/.state/hosts.json`, for the hub and every sibling clone (#1180). Codex is detected by the presence of `.agents/skills` itself -- verified against Codex's own documentation, which reads repository skills from that path directly and needs no separate discovery symlink the way Claude Code and Cursor do.
+- Ships a per-host model profile (`model-profiles/<host>.json`) mapping the fixed reasoning tiers (`light` / `standard` / `deep`) to that host's current models, and reads `clossys/preferences.json`'s budget stance to resolve within it (#1219). Packages never name a model; only this profile does.
+- `launcher-apply-plan`: validates an approved `clossys/advisor/plan.json` and an `EngagementBrief`-shaped `clossys/brief.json` against the "Plan file contract" recorded on issue #1175, then writes the brief into a staffed repository byte-identically (#1178, #1176). Multi-repository orchestration (branch creation, exact package installs, Starter's caller workflow, opening one pull request per repository) is deferred -- see the package README's "Applying an approved plan" section for why.
+
+### Changed
+
+- `README.md`: documents the new commands and exports, and updates the "does not clone" line to describe the new explicit `--clone-missing` exception.
+
+### Fixed
+
+- `detectLinkedHosts()` (#1180) and `reportInventoryDrift()` (#1216) are now called from the real `launcher` command path (`applyWorkspacePlan`, via `composeSkillRoster` / `finishHubApply`) on every create, resume, and appoint, instead of existing only as library functions nothing called. Per independent review at f2a50de707f8682c6885592f2910425c2e5a0b5f: neither had a reachable call site, so no client-run command actually recorded a linked host or reported inventory drift despite the PR body and this changelog describing both as delivered behavior.
+
+## [0.2.0] - 2026-09-22
+
+### Added
+
+- Scaffolds one visible `clossys/` folder per repository: a generated `README.md` index of active roles at the root of `clossys/`, and `clossys/.state/` for machine files (hub marker, inventory, and the new skills manifest).
+- Writes `clossys/.state/skills.json` on every apply: each composed skill's source (`installed` or `catalogue`), version, and a content digest. The health report states how many composed skills are out of date against the live `@clossys/launcher` version and how many were retired this run; retirement removes only a skill this directory's own previous manifest listed, never one launcher did not write.
+- Packs the shared conversation contract at build time and injects it into every composed skill in place of that skill's own "how we work together" and "one question at a time" sections, at the same position. No package edit is needed for this to take effect.
+
+### Changed
+
+- Moves its own hub marker and inventory from the hidden `.clossys/` to the visible `clossys/.state/`; the packed skeleton template moves with it. Resume detects a hub still on the legacy path and migrates it automatically, reporting the move in the health report. A hub with a marker at both paths is graded `indeterminate` and launcher refuses rather than merging them silently.
+- Adds a `.gitignore` entry for generated run output under `clossys/**/.generated/`. Approved records, proof, and machine state are still committed, never ignored.
+
 ## [0.1.8] - 2026-09-21
 
 ### Added

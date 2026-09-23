@@ -4,7 +4,8 @@
   "archetype": "current-direct",
   "bins": {
     "integrator-supersession-check": 0,
-    "integrator-check": 0
+    "integrator-check": 0,
+    "integrator-provenance-check": 0
   },
   "fixtures": [
     "manifest-satisfied.json",
