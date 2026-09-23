@@ -39,12 +39,30 @@
 // not. The value is one of patch/minor/major. Everything after the closing
 // `---` is the summary, trimmed, and must be non-empty -- it becomes the
 // CHANGELOG line verbatim.
+//
+// Since the calver-isoweek version scheme (docs/RELEASING.md), a bump level
+// no longer picks the next version number -- scripts/apply-release-
+// changesets.mjs computes that from governance/release-calendar.json
+// instead. `level` is kept as a purely INFORMATIONAL signal: `major` means
+// a breaking change and drives a "Breaking changes" CHANGELOG/release-notes
+// section, since CalVer no longer encodes that in the version itself.
+//
+// A reserved frontmatter key, `release`, is not a package: its only legal
+// value is `out-of-band`, flagging that this changeset is a security fix or
+// a fix for a release that already shipped broken (governance/
+// release-calendar.json's outOfBandPolicy) -- the only case
+// scripts/apply-release-changesets.mjs will bump a package a second time in
+// the same ISO week. It needs owner approval before the release PR
+// consuming it merges; this parser only records the flag, it does not
+// itself gate anything.
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 export const CHANGESETS_DIR = ".changesets";
 export const BUMP_LEVELS = ["patch", "minor", "major"];
+export const RELEASE_FLAG_KEY = "release";
+export const OUT_OF_BAND_VALUE = "out-of-band";
 const FILENAME_RE = /^[a-z0-9][a-z0-9-]*\.md$/;
 const FRONTMATTER_RE = /^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/;
 
@@ -60,10 +78,10 @@ function discoverPackageDirs(root) {
   );
 }
 
-// Parses one changeset file's text. Returns `{ packages: { [dir]: bumpLevel }, summary }`
-// on success, or `{ error }` naming exactly what is wrong -- never throws, so
-// a caller can attribute the error to the right file and keep validating
-// the rest.
+// Parses one changeset file's text. Returns
+// `{ packages: { [dir]: bumpLevel }, summary, outOfBand }` on success, or
+// `{ error }` naming exactly what is wrong -- never throws, so a caller can
+// attribute the error to the right file and keep validating the rest.
 export function parseChangesetText(text, { knownPackageDirs } = {}) {
   const match = FRONTMATTER_RE.exec(text);
   if (!match) return { error: "must open with a `---` frontmatter block naming at least one package, then `---`, then a summary" };
@@ -72,18 +90,29 @@ export function parseChangesetText(text, { knownPackageDirs } = {}) {
   if (summary.length === 0) return { error: "summary (everything after the closing `---`) must not be empty" };
 
   const packages = {};
+  let outOfBand = false;
+  let sawReleaseFlag = false;
   const lines = frontmatter.split(/\r?\n/).map((l) => l.trim()).filter((l) => l.length > 0);
   if (lines.length === 0) return { error: "frontmatter must name at least one package" };
   for (const line of lines) {
     const lineMatch = /^"?([^":]+)"?\s*:\s*(\S+)$/.exec(line);
     if (!lineMatch) return { error: `frontmatter line is not "<package>: <bump>": ${JSON.stringify(line)}` };
-    const [, pkg, bump] = lineMatch;
+    const [, key, value] = lineMatch;
+    if (key === RELEASE_FLAG_KEY) {
+      if (sawReleaseFlag) return { error: `frontmatter names "${RELEASE_FLAG_KEY}" more than once` };
+      if (value !== OUT_OF_BAND_VALUE) return { error: `frontmatter names "${RELEASE_FLAG_KEY}: ${value}" -- the only legal value is "${OUT_OF_BAND_VALUE}"` };
+      sawReleaseFlag = true;
+      outOfBand = true;
+      continue;
+    }
+    const [pkg, bump] = [key, value];
     if (knownPackageDirs && !knownPackageDirs.has(pkg)) return { error: `frontmatter names "${pkg}", which is not a packages/ directory` };
     if (!BUMP_LEVELS.includes(bump)) return { error: `frontmatter names "${pkg}: ${bump}" -- bump must be one of ${BUMP_LEVELS.join(", ")}` };
     if (Object.hasOwn(packages, pkg)) return { error: `frontmatter names "${pkg}" more than once` };
     packages[pkg] = bump;
   }
-  return { packages, summary };
+  if (Object.keys(packages).length === 0) return { error: "frontmatter must name at least one package" };
+  return { packages, summary, outOfBand };
 }
 
 // Reads every file under .changesets/ (README.md is documentation, not a
@@ -113,14 +142,14 @@ export function loadChangesets(root = process.cwd()) {
       findings.push({ severity: "error", file, message: result.error });
       continue;
     }
-    entries.push({ file, packages: result.packages, summary: result.summary });
+    entries.push({ file, packages: result.packages, summary: result.summary, outOfBand: result.outOfBand });
   }
   return { entries, findings };
 }
 
-// Every changeset entry that names `packageDir`, each paired with just that package's bump level.
+// Every changeset entry that names `packageDir`, each paired with just that package's bump level and its out-of-band flag.
 export function changesetsForPackage(entries, packageDir) {
-  return entries.filter((e) => Object.hasOwn(e.packages, packageDir)).map((e) => ({ file: e.file, bump: e.packages[packageDir], summary: e.summary }));
+  return entries.filter((e) => Object.hasOwn(e.packages, packageDir)).map((e) => ({ file: e.file, bump: e.packages[packageDir], summary: e.summary, outOfBand: e.outOfBand === true }));
 }
 
 // The highest of several bump levels (major > minor > patch). Throws on an

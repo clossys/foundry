@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
-import { changesetsForPackage, highestBumpLevel, loadChangesets, parseChangesetText } from "./collect-changesets.mjs";
+import { changesetsForPackage, highestBumpLevel, loadChangesets, OUT_OF_BAND_VALUE, parseChangesetText, RELEASE_FLAG_KEY } from "./collect-changesets.mjs";
 
 const scriptPath = resolve(dirname(fileURLToPath(import.meta.url)), "collect-changesets.mjs");
 
@@ -34,13 +34,36 @@ function run(args, cwd) {
 
 test("parseChangesetText: parses a single-package changeset", () => {
   const result = parseChangesetText("---\nalpha: minor\n---\n\nAdd a new export.\n", { knownPackageDirs: new Set(["alpha"]) });
-  assert.deepEqual(result, { packages: { alpha: "minor" }, summary: "Add a new export." });
+  assert.deepEqual(result, { packages: { alpha: "minor" }, summary: "Add a new export.", outOfBand: false });
 });
 
 test("parseChangesetText: parses several packages in one file", () => {
   const text = "---\nalpha: patch\nbeta: major\n---\n\nBody.\n";
   const result = parseChangesetText(text, { knownPackageDirs: new Set(["alpha", "beta"]) });
-  assert.deepEqual(result, { packages: { alpha: "patch", beta: "major" }, summary: "Body." });
+  assert.deepEqual(result, { packages: { alpha: "patch", beta: "major" }, summary: "Body.", outOfBand: false });
+});
+
+test("parseChangesetText: a `release: out-of-band` line flags the changeset without being treated as a package", () => {
+  assert.equal(RELEASE_FLAG_KEY, "release");
+  assert.equal(OUT_OF_BAND_VALUE, "out-of-band");
+  const text = "---\nalpha: patch\nrelease: out-of-band\n---\n\nFix the broken 26.39.0 release.\n";
+  const result = parseChangesetText(text, { knownPackageDirs: new Set(["alpha"]) });
+  assert.deepEqual(result, { packages: { alpha: "patch" }, summary: "Fix the broken 26.39.0 release.", outOfBand: true });
+});
+
+test("parseChangesetText: rejects a `release` value other than out-of-band", () => {
+  const result = parseChangesetText("---\nalpha: patch\nrelease: emergency\n---\n\nBody.\n", { knownPackageDirs: new Set(["alpha"]) });
+  assert.match(result.error, /only legal value is "out-of-band"/);
+});
+
+test("parseChangesetText: rejects a duplicate release flag", () => {
+  const result = parseChangesetText("---\nalpha: patch\nrelease: out-of-band\nrelease: out-of-band\n---\n\nBody.\n", { knownPackageDirs: new Set(["alpha"]) });
+  assert.match(result.error, /"release" more than once/);
+});
+
+test("parseChangesetText: rejects a release-flag-only changeset (no package named)", () => {
+  const result = parseChangesetText("---\nrelease: out-of-band\n---\n\nBody.\n", { knownPackageDirs: new Set(["alpha"]) });
+  assert.match(result.error, /must name at least one package/);
 });
 
 test("parseChangesetText: rejects missing frontmatter", () => {
@@ -87,6 +110,7 @@ test("loadChangesets: skips README.md and validates the rest", () => {
     assert.equal(entries.length, 1);
     assert.equal(entries[0].file, "alpha-fix.md");
     assert.deepEqual(entries[0].packages, { alpha: "patch" });
+    assert.equal(entries[0].outOfBand, false);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -107,12 +131,13 @@ test("loadChangesets: rejects a bad filename", () => {
 
 test("changesetsForPackage and highestBumpLevel combine correctly", () => {
   const entries = [
-    { file: "a.md", packages: { alpha: "patch" }, summary: "s1" },
-    { file: "b.md", packages: { alpha: "major", beta: "minor" }, summary: "s2" },
+    { file: "a.md", packages: { alpha: "patch" }, summary: "s1", outOfBand: false },
+    { file: "b.md", packages: { alpha: "major", beta: "minor" }, summary: "s2", outOfBand: true },
   ];
   const forAlpha = changesetsForPackage(entries, "alpha");
   assert.equal(forAlpha.length, 2);
   assert.equal(highestBumpLevel(forAlpha.map((e) => e.bump)), "major");
+  assert.deepEqual(forAlpha.map((e) => e.outOfBand), [false, true]);
   assert.throws(() => highestBumpLevel([]));
 });
 

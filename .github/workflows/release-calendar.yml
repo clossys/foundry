@@ -1,0 +1,107 @@
+name: Release calendar
+
+# Is today a day an ordinary pull request may merge, per governance/
+# release-calendar.json's weekly cadence (docs/RELEASING.md, owner decision
+# 2026-09-23)? Monday-Friday is the merge window; Saturday is release day
+# (only .github/workflows/release-pr.yml's own release PR, by its head ref,
+# may land); Sunday is the consumer-adoption day. Either release or
+# adoption day also admits a pull request labelled "release:out-of-band"
+# (a security fix, or a fix for a release that already shipped broken --
+# governance/release-calendar.json's outOfBandPolicy).
+#
+# DELIBERATELY NOT A REQUIRED STATUS CHECK
+# ------------------------------------------
+# This workflow only reports; it does not gate anything on its own. Making
+# `release-calendar` required is an owner action on this repository's
+# branch protection ruleset (the same kind of action AGENTS.md's
+# "Autonomous review and shipping" section reserves to the owner) -- not
+# something a workflow file can grant itself. See docs/RELEASING.md for the
+# exact step.
+#
+# pull_request AND merge_group
+# ------------------------------
+# pull_request gives this job the real PR payload directly:
+# github.event.pull_request.head.ref and .labels. merge_group (this
+# repository's merge queue) does not -- its payload's own head_ref is a
+# synthetic ref shaped `refs/heads/gh-readonly-queue/<base>/pr-<number>-
+# <sha>`, not the PR's real branch name, and it carries no labels at all.
+# The "Resolve head ref and labels" step below extracts the PR number from
+# that synthetic ref and asks `gh pr view` for the real head ref and
+# labels, so both triggers ultimately call scripts/check-release-calendar.mjs
+# with the same two facts.
+on:
+  pull_request: {}
+  merge_group: {}
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  release-calendar:
+    name: release calendar (merge window)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+
+      - name: Install repository dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+
+      - name: Resolve head ref and labels
+        id: resolve
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          EVENT_NAME: ${{ github.event_name }}
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          PR_LABELS_JSON: ${{ toJSON(github.event.pull_request.labels) }}
+          MERGE_GROUP_HEAD_REF: ${{ github.event.merge_group.head_ref }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            head_ref="$PR_HEAD_REF"
+            labels="$(node -e 'console.log(JSON.parse(process.env.PR_LABELS_JSON).map((l) => l.name).join(","))')"
+          else
+            # MERGE_GROUP_HEAD_REF looks like refs/heads/gh-readonly-queue/main/pr-123-<sha>.
+            pr_number="$(node -e '
+              const m = /\/pr-(\d+)-/.exec(process.env.MERGE_GROUP_HEAD_REF || "");
+              if (!m) { console.error("could not extract a PR number from merge_group head_ref: " + process.env.MERGE_GROUP_HEAD_REF); process.exit(1); }
+              console.log(m[1]);
+            ')"
+            pr_json="$(gh pr view "$pr_number" --repo "$GITHUB_REPOSITORY" --json headRefName,labels)"
+            head_ref="$(node -e 'console.log(JSON.parse(process.argv[1]).headRefName)' "$pr_json")"
+            labels="$(node -e 'console.log(JSON.parse(process.argv[1]).labels.map((l) => l.name).join(","))' "$pr_json")"
+          fi
+          echo "head_ref=$head_ref" >> "$GITHUB_OUTPUT"
+          echo "labels=$labels" >> "$GITHUB_OUTPUT"
+
+      - name: check-release-calendar
+        env:
+          HEAD_REF: ${{ steps.resolve.outputs.head_ref }}
+          LABELS: ${{ steps.resolve.outputs.labels }}
+        run: |
+          set -uo pipefail
+          # Captured explicitly, not via `set -e` + a bare invocation, so a
+          # FAIL (exit 1, the expected outcome on release/adoption day for
+          # an ordinary PR) still reaches the job summary below instead of
+          # aborting the step before it runs.
+          set +e
+          node scripts/check-release-calendar.mjs --json --head-ref "$HEAD_REF" --labels "$LABELS" > "$RUNNER_TEMP/release-calendar.json"
+          status=$?
+          set -e
+          cat "$RUNNER_TEMP/release-calendar.json"
+          node -e '
+            const r = JSON.parse(require("node:fs").readFileSync(process.env.RUNNER_TEMP + "/release-calendar.json", "utf8"));
+            if (r.error) { require("node:fs").writeFileSync(process.env.GITHUB_STEP_SUMMARY, `**Error:** ${r.error}\n`, { flag: "a" }); process.exit(0); }
+            const lines = [
+              `**Status:** ${r.status === "pass" ? "PASS" : "FAIL"}`,
+              `**Day type:** ${r.dayType} (${r.timezone})`,
+              `**Reason:** ${r.reason}`,
+            ];
+            if (r.nextMergeWindowStart) lines.push(`**Next merge window opens:** ${r.nextMergeWindowStart}`);
+            require("node:fs").writeFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join("\n") + "\n", { flag: "a" });
+          '
+          exit "$status"

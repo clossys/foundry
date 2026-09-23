@@ -1,23 +1,52 @@
 name: Release PR
 
 # The periodic/on-demand release PR (issue #1255): applies every pending
-# .changesets/*.md, bumping each named package once, writing its CHANGELOG
-# entry, regenerating package-lock.json, and deleting the changesets it
-# applied -- then pushes a branch and opens a pull request for a human to
-# review and merge, the same as any other change here. It never touches
-# main directly and never publishes anything; qualify-candidate.yml and
-# publish.yml stay the only paths that produce a qualification record or
+# .changesets/*.md, computing each named package's next version from the
+# weekly calendar (governance/release-calendar.json, docs/RELEASING.md,
+# owner decision 2026-09-23) rather than a semver bump level, writing its
+# CHANGELOG entry, regenerating package-lock.json, and deleting the
+# changesets it applied -- then pushes a branch and opens a pull request for
+# a human to review and merge, the same as any other change here. It never
+# touches main directly and never publishes anything; qualify-candidate.yml
+# and publish.yml stay the only paths that produce a qualification record or
 # upload a package. scripts/check-release-pr-shape.mjs is what proves, on
 # the resulting pull request, that these are the only version bumps this
 # repository accepts going forward.
 #
+# THE WEEKLY CADENCE (docs/RELEASING.md)
+# -----------------------------------------
+# Monday-Friday is the merge window; it closes Friday. This workflow's
+# release PR is what Saturday -- release day -- is for: it is the ONLY
+# pull request .github/workflows/release-calendar.yml admits on a Saturday
+# (by this workflow's own branch naming, `claude/release-<date>-<run id>`),
+# and it is expected to merge same-day so Sunday's consumer adoption has
+# something to adopt. Monday starts the next merge window fresh.
+#
 # WHY BOTH schedule AND workflow_dispatch
 # -----------------------------------------
 # "Run periodically or on demand" (issue #1255's own words): the schedule
-# batches whatever changesets accumulated over the week so lanes stop
-# colliding on the same package's next version; workflow_dispatch exists
-# for whenever a maintainer wants one sooner (e.g. right before the
-# readiness gate this tracker's #1187 comments describe).
+# opens the release PR at the start of Saturday, batching whatever
+# changesets accumulated over the week so lanes stop colliding on the same
+# package's next version; workflow_dispatch exists for whenever a
+# maintainer wants one sooner (e.g. an out-of-band release --
+# governance/release-calendar.json's outOfBandPolicy) and is NOT subject to
+# the DST guard below, which only applies to the scheduled Saturday-opening
+# runs.
+#
+# TWO CRON ENTRIES, AND THE DST GUARD THAT PICKS ONE
+# -----------------------------------------------------
+# GitHub Actions cron has no timezone concept -- it is always UTC -- but
+# "the start of Saturday" is defined in governance/release-calendar.json's
+# timezone (America/Los_Angeles), which observes DST. Converted to UTC:
+# midnight PST (winter, UTC-8) is 08:00 UTC; midnight PDT (summer, UTC-7)
+# is 07:00 UTC. Both entries below fire every Saturday regardless of the
+# season, so exactly one of them lands within the tolerance window each
+# week and the other lands roughly an hour off. The "DST guard" step is
+# what tells them apart at runtime (scripts/lib/release-calendar.mjs's
+# shouldOpenReleasePr(), the same module scripts/check-release-calendar.mjs
+# and scripts/apply-release-changesets.mjs use for the calendar itself) --
+# without it, this workflow would open two release PRs for the same week,
+# one an hour after the other.
 #
 # WHY THIS NEEDS NO CREDENTIAL-FREE CARE THE WAY qualify-candidate.yml DOES
 # -----------------------------------------------------------------------
@@ -31,10 +60,12 @@ name: Release PR
 on:
   workflow_dispatch: {}
   schedule:
-    # Weekly, Monday 09:00 UTC. A week with no pending changesets is a
-    # cheap no-op (see the "Apply pending changesets" step below) -- there
-    # is no cost to running this on a quiet week.
-    - cron: "0 9 * * 1"
+    # Saturday, midnight America/Los_Angeles -- see the DST guard comment
+    # above for why there are two entries. A week with no pending
+    # changesets is a cheap no-op (see the "Apply pending changesets" step
+    # below) -- there is no cost to running this on a quiet week.
+    - cron: "0 8 * * 6" # midnight PST (winter)
+    - cron: "0 7 * * 6" # midnight PDT (summer)
 
 permissions:
   contents: write
@@ -61,15 +92,37 @@ jobs:
       - name: Install repository dependencies without lifecycle scripts
         run: npm ci --ignore-scripts
 
+      # Only the scheduled runs need this -- workflow_dispatch is an
+      # explicit, deliberate "run one now" action (see the header comment)
+      # and always proceeds. Never fails the job either way: a "not yet"
+      # verdict is the expected outcome for whichever of the two cron
+      # entries above does not land at local midnight this week.
+      - name: Only proceed at the calendar's actual Saturday 00:00 (DST guard)
+        id: gate
+        if: github.event_name == 'schedule'
+        run: |
+          set -euo pipefail
+          node --input-type=module -e '
+            import { loadReleaseCalendar, shouldOpenReleasePr } from "./scripts/lib/release-calendar.mjs";
+            const proceed = shouldOpenReleasePr(new Date(), loadReleaseCalendar(process.cwd()));
+            process.exit(proceed ? 0 : 1);
+          ' && echo "proceed=true" >> "$GITHUB_OUTPUT" || {
+            echo "proceed=false" >> "$GITHUB_OUTPUT"
+            echo "Not the calendar's actual Saturday 00:00 America/Los_Angeles for this DST state -- the other cron entry above is the one that fires this week."
+          }
+
       # Refuses (exit 2) rather than run against a malformed changeset, and
-      # (exit 1) if a changeset names a package this checkout does not have
-      # -- both should fail this workflow loudly, not be silently skipped,
-      # so this step is NOT wrapped in `set +e`. A clean "nothing pending"
-      # run exits 0 with an empty `applied` array; the step after this one
-      # reads that array's length to decide whether there is anything left
-      # to commit.
+      # (exit 1) if a changeset names a package this checkout does not have,
+      # or if the calendar itself refuses the requested version (e.g. an
+      # out-of-band changeset for a package not released this ISO week) --
+      # all three should fail this workflow loudly, not be silently
+      # skipped, so this step is NOT wrapped in `set +e`. A clean "nothing
+      # pending" run exits 0 with an empty `applied` array; the step after
+      # this one reads that array's length to decide whether there is
+      # anything left to commit.
       - name: Apply pending changesets
         id: apply
+        if: github.event_name != 'schedule' || steps.gate.outputs.proceed == 'true'
         run: |
           set -euo pipefail
           output="$(node scripts/apply-release-changesets.mjs --json)"
@@ -78,23 +131,34 @@ jobs:
           echo "applied_count=$count" >> "$GITHUB_OUTPUT"
           node -e '
             const { applied } = JSON.parse(process.argv[1]);
-            const lines = applied.map((a) => `- \`${a.package}\`: ${a.fromVersion} -> ${a.toVersion} (${a.bump}), consuming ${a.changesetFiles.join(", ")}`);
+            const lines = applied.map((a) => {
+              const flags = [a.kind, a.breaking ? "BREAKING" : null].filter(Boolean).join(", ");
+              return `- \`${a.package}\`: ${a.fromVersion} -> ${a.toVersion} (${flags}), consuming ${a.changesetFiles.join(", ")}`;
+            });
+            const breaking = applied.flatMap((a) => a.breakingSummaries.map((s) => `- \`${a.package}\`: ${s}`));
             require("node:fs").writeFileSync(process.env.SUMMARY_PATH, lines.join("\n") + "\n");
+            require("node:fs").writeFileSync(process.env.BREAKING_PATH, breaking.join("\n") + (breaking.length > 0 ? "\n" : ""));
           ' "$output"
         env:
           SUMMARY_PATH: ${{ runner.temp }}/release-summary.md
+          BREAKING_PATH: ${{ runner.temp }}/release-breaking.md
+
+      - name: Nothing pending, or not yet this week's release instant
+        if: github.event_name == 'schedule' && steps.gate.outputs.proceed != 'true'
+        run: echo "Skipped (see the DST guard step above)."
 
       - name: Nothing pending
-        if: steps.apply.outputs.applied_count == '0'
+        if: (github.event_name != 'schedule' || steps.gate.outputs.proceed == 'true') && steps.apply.outputs.applied_count == '0'
         run: echo "No pending changesets -- nothing to release this run."
 
       - name: Push branch and open pull request
-        if: steps.apply.outputs.applied_count != '0'
+        if: (github.event_name != 'schedule' || steps.gate.outputs.proceed == 'true') && steps.apply.outputs.applied_count != '0'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_BASE_REF_OR_DEFAULT: ${{ github.event.repository.default_branch }}
           RUN_ID: ${{ github.run_id }}
           SUMMARY_PATH: ${{ runner.temp }}/release-summary.md
+          BREAKING_PATH: ${{ runner.temp }}/release-breaking.md
         run: |
           set -euo pipefail
           branch="claude/release-$(date -u +%Y-%m-%d)-${RUN_ID}"
@@ -105,11 +169,12 @@ jobs:
           message_file="$RUNNER_TEMP/release-pr-commit-message.txt"
           {
             printf '%s\n\n' "Release: apply pending changesets"
-            printf '%s\n' "Bumps each named package once, writes its CHANGELOG.md entry,"
-            printf '%s\n' "regenerates package-lock.json, and deletes the applied changesets --"
-            printf '%s\n\n' "via node scripts/apply-release-changesets.mjs, per issue #1255."
+            printf '%s\n' "Computes each named package's next version from the weekly calendar"
+            printf '%s\n' "(governance/release-calendar.json, docs/RELEASING.md), writes its"
+            printf '%s\n' "CHANGELOG.md entry, regenerates package-lock.json, and deletes the"
+            printf '%s\n\n' "applied changesets -- via node scripts/apply-release-changesets.mjs."
             cat "$SUMMARY_PATH"
-            printf '\n%s\n' "Ref: #1255"
+            printf '\n%s\n' "Ref: #1255, #1187, #1265"
           } > "$message_file"
           git commit -F "$message_file"
           git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
@@ -117,13 +182,17 @@ jobs:
 
           body_file="$RUNNER_TEMP/release-pr-body.txt"
           {
-            printf '%s\n\n' "The periodic/on-demand release PR (issue #1255): applies every pending \`.changesets/*.md\` file."
+            printf '%s\n\n' "The periodic/on-demand release PR (issue #1255): applies every pending \`.changesets/*.md\` file, versioned by the weekly calendar (docs/RELEASING.md)."
             printf '%s\n\n' "## Bumps"
             cat "$SUMMARY_PATH"
-            printf '\n%s\n' "Each package's CHANGELOG.md gained a matching entry, and the consumed changeset files are deleted -- \`scripts/check-release-pr-shape.mjs\` verifies both on this pull request itself."
+            if [ -s "$BREAKING_PATH" ]; then
+              printf '\n%s\n\n' "## Breaking changes"
+              cat "$BREAKING_PATH"
+            fi
+            printf '\n%s\n' "Each package's CHANGELOG.md gained a matching entry (with its own Breaking changes subsection where applicable), and the consumed changeset files are deleted -- \`scripts/check-release-pr-shape.mjs\` verifies both on this pull request itself."
             printf '\n%s\n' "This publishes nothing. Qualification (per package version, via \`qualify-candidate.yml\`) and publication (\`publish.yml\`) remain separate, manually-gated steps."
             printf '%s\n' "Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}"
-            printf '%s\n' "Ref: #1255"
+            printf '%s\n' "Ref: #1255, #1187, #1265"
           } > "$body_file"
 
           # Same graceful-degradation shape as qualify-candidate.yml's
