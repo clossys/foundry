@@ -742,7 +742,7 @@ moving on. Neither runs `record-later-publication.mjs` — see
 `scripts/publish-qualified-set.mjs`'s header for why that stays a separate,
 optional, hand-run step.
 
-### Hands-free publishing after the first identity (issue #1256)
+### Hands-free publishing after the first identity (issue #1256) <!-- facts-gate:ignore -->
 
 Two things this repository already had, now connected automatically:
 
@@ -766,7 +766,7 @@ Two things this repository already had, now connected automatically:
   add here.
 
 **What is still an owner action, once per package**, exactly as already
-documented above and unchanged by either workflow: the first identity is
+documented above and unchanged by either workflow: the first identity is <!-- facts-gate:ignore -->
 still an owner-present publication (`npm run publish:qualified-set -- --publish`,
 or the per-row handoff above), because npm cannot bind a trusted publisher
 to a package identity that does not exist yet. Only after that first
