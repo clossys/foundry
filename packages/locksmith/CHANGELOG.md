@@ -14,8 +14,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   fixing leaking temp fixture directories (issue #1250), and its 0.2.7
   qualification record was already retained -- once a version's record is
   retained, any further change to that package, packed or not, requires a new
-  version. Renumbered from 0.2.8: open PR #1232 also claims locksmith 0.2.8
-  for real feature work (version-collision rule, issue #1187).
+  version. Renumbered from 0.2.8: main has since shipped provider-token
+  custody (issue #1212) as 0.2.8, ahead of this test-only bump
+  (version-collision rule, issue #1187).
+
+## [0.2.8] - 2026-09-22
+
+### Added
+
+- Provider-token custody (issue #1212): `defineProviderCustody`,
+  `defineProviderCustodyManifest`, `evaluateProviderCustody`, and
+  `providerCustodyOf` judge a value-free custody declaration for a
+  Cloudflare, Vercel, or GitHub provider token -- owner, storage location
+  (never this repository), scope, a required least-privilege justification,
+  which workflow/job consumes it, and an optional rotation policy in the
+  same shape `rotation.ts` already judges. A new closed `CustodyRung` type
+  (`operator-interactive`, `scoped-environment-secret`, `federated-oidc`)
+  names the three ways a provider token may be held. Locksmith still never
+  reads, stores, or transmits a token value; it judges the declaration
+  against the definition. New CLI `clossys-locksmith-provider-custody`
+  reads one declaration document and reports `satisfied` / `violated` /
+  `indeterminate` with exit codes `0` / `1` / `2`, mirroring
+  `clossys-locksmith-credential`. `evaluateProviderCustody` shares
+  `credential.ts`'s accessor-safe, prototype-pollution-resistant record and
+  array reads (`readOwnDataRecord`, `hasOnlyFields`, exported from
+  `credential.ts`) rather than duplicating a weaker check.
+- Conformance rework (owner direction, issue #1187): `evaluateProviderCustody`'s
+  findings now use the shared `findingShape` (`{ rule, severity, message,
+  path? }`, new `ProviderCustodyFinding`/`ProviderCustodyReasonRule` types)
+  the repository contract docs/contracts/check-output-envelope.json declares
+  (that contract does not ship with this package) instead of a bare
+  `ProviderCustodyReason[]` string array -- no local copy of the contract,
+  and `verdict` was already the contract's own
+  `satisfied`/`violated`/`indeterminate` vocabulary. New
+  `providerCustodyReport(declaration, version)` builds the full envelope
+  document (`{ package, version, verdict, summary, findings, nextAction? }`);
+  the CLI's new `--json` flag prints it. A new contract-conformance test
+  (`src/check-output-envelope.test.ts`, a dev-only test not shipped with
+  this package) reads the contract file directly and validates real
+  `providerCustodyReport` output against it. The accessor-safe,
+  prototype-pollution-resistant hardening carries forward unchanged.
 
 ## [0.2.7] - 2026-09-22
 

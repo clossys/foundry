@@ -120,9 +120,11 @@ versioned packages.
 | `@clossys/controller/artifacts` | Deterministic, fail-closed verification for a consumer-owned governed artifact: declared kind + schema version, exact-content checksum, and structural provenance. |
 | `@clossys/controller/cleanup` | Pure workspace-cleanup classification: caller-normalized inventory and observations in, a typed `owned` / `safe-candidate` / `blocked` proposal out. No I/O, no deletion API. |
 | `@clossys/controller/composition` | Pure caller-owned cross-plane constraint, supply, decision, exception, and effective-value resolution. |
-| `@clossys/controller/conventions` | Account-neutral agent conventions two parties can share without either owning the other: branch provenance, skill naming, agent interoperability, routine and schedule declarations, CI gate naming, and the capability-first skill registry. Ships the documents/adapters below as defaults and enforces only their grammar — never byte-identity with its own prose. |
-| `@clossys/controller/conventions/documents/*` | The shipped convention documents themselves (`branch-provenance.md`, `skill-grammar.md`, `agent-interoperability.md`, `routine-declaration.md`, `schedule-declaration.md`, `live-state-reconciliation.md`, `skill-registry.md`, `machine-guidance.md`, `machine-baseline.md`, `gate-naming.md`, `runner-conventions.md`) as real files a provisioning step can copy or template onto a machine. |
+| `@clossys/controller/conventions` | Account-neutral agent conventions two parties can share without either owning the other: branch provenance, skill naming, agent interoperability, routine and schedule declarations, CI gate naming, CI conventions and their pure evaluator (`ci-conventions-check`), and the capability-first skill registry. Ships the documents/adapters/data/templates below as defaults and enforces only their grammar — never byte-identity with its own prose. |
+| `@clossys/controller/conventions/documents/*` | The shipped convention documents themselves (`branch-provenance.md`, `skill-grammar.md`, `agent-interoperability.md`, `routine-declaration.md`, `schedule-declaration.md`, `live-state-reconciliation.md`, `skill-registry.md`, `machine-guidance.md`, `machine-baseline.md`, `gate-naming.md`, `runner-conventions.md`, `ci-conventions.md`) as real files a provisioning step can copy or template onto a machine. |
 | `@clossys/controller/conventions/adapters/*` | The shipped adapter files (`agent-policy.rules`, `shell-integration.zsh`, `branch-provenance-hook.sh`, `heavy-cmd-hook.sh`, `scoped-main-push.sh`, `workspace-shell.zsh`) as real files, same shape as the documents above. |
+| `@clossys/controller/conventions/data/*` | Dated data files an evaluator reads as input, never hard-coded in code: `runner-pricing.json` (`asOf`, source URLs). |
+| `@clossys/controller/conventions/templates/*` | Ready-to-adopt CI workflow skeletons: `ci-workflow.yml`, which a test in this package proves passes `ci-conventions-check` as shipped. |
 | `@clossys/controller/policy` | The content-addressed `PolicyBinding` primitive: compute a digest, validate a binding's shape, verify a binding against materialized content. Zero I/O, zero dependency of its own — the primitive `./gates` and `./artifacts` bind rules and artifacts to documents with, without ever committing the document itself. |
 
 `@clossys/controller/positions` exports
@@ -297,6 +299,114 @@ from one role's loop state. The installed `foundry-loop-status
 <loop.json> <mandate.txt> [--out <STATUS document path>]` executable is the CLI
 form, on the same `0` / `2` ternary as this package's other gates (there is
 no `1`: a report is rendered or it is not).
+
+### The shared check-output-envelope (issue #1174)
+
+The repository contract `docs/contracts/check-output-envelope.json`,
+which does not ship with this package, is one JSON report shape for
+every check command's report, across every role -- shipped in Stage A with
+no real emitter yet. `buildCheckOutputEnvelope(options)` is the first one:
+it builds a `CheckOutputEnvelope` (`package`, `version`, `verdict`,
+`summary`, `findings: CheckFinding[]`, an optional `metric: CheckMetric`
+and `nextAction`, all typed from `BuildEnvelopeOptions`), refusing at
+construction time to build a non-`satisfied` verdict with an empty
+`findings` list -- a report that says something is wrong while refusing to
+say what it is. `envelopeToExitCode(envelope)` folds the envelope's own
+`verdict` onto this package's `0` / `1` / `2` exit-code convention, reusing
+the same `GateVerdict` vocabulary `./gates` already declares rather than a
+second copy. The schema-version and heartbeat checks below are its first
+two real emitters.
+
+### Schema versions and migrations for every `clossys/` record (issue #1224)
+
+Every record a package writes under `clossys/` carries a `schemaVersion`;
+this module is the deterministic migration engine every package's own
+forward migrations run through. `classifyRecordVersion(table, record)` is a
+read-only answer -- `RecordVersionClassification`: `already-current` /
+`migratable` / `future` / `no-path` -- over one record against a
+`MigrationTable` (`kind`, `currentVersion`, and an ordered list of
+`MigrationStep`s, each a pure `fromVersion` -> `toVersion` hop).
+`migrateRecord(table, record)` actually walks the chain, returning a
+`MigrationOutcome`: `AlreadyCurrentOutcome` (idempotent -- re-running this on
+an already-migrated record is a no-op), `MigratedOutcome` (every applied
+step's description, plus `backup`, the record exactly as it was before any
+step ran), or `IndeterminateOutcome` (a missing/non-numeric `schemaVersion`,
+a `schemaVersion` newer than this package knows -- **never downgraded** --
+or a gap in the step chain; the record comes back byte-identical in every
+case, never partially migrated).
+
+`createRecordKindRegistry()` returns an empty, open `RecordKindRegistry` any
+caller populates with its own tables; `defaultRecordKindRegistry()` is the
+one this package's own CLI uses, seeded with the two record kinds actually
+found under `clossys/` on `main` today -- `LOOP_STATE_KIND`
+(`clossys/<role>/loop.json`) and `COVERAGE_DECLARATION_KIND`
+(`clossys/coverage.json`) -- an extension point, not a closed list: a
+package like Strategist registers its own table into its own registry
+instance when it adopts this engine.
+
+`discoverRecords(repoRoot, locations?)` walks `<repoRoot>/clossys/` for
+files matching a known `RecordLocation` (`DEFAULT_RECORD_LOCATIONS`, the
+same two kinds above) into a list of `DiscoveredRecord`s, skipping
+`clossys/.state/` (generated files only, never a source record). `runMigrations(repoRoot, registry, options?)`
+(`RunMigrationsOptions`) classifies/migrates every discovered record into a
+`RecordMigrationReport`, and -- only with `apply: true` -- writes the
+migrated record back to its own path plus a backup of its pre-migration
+bytes at `clossys/.state/schema-backups/<relative-path>.v<oldVersion>.json`.
+The installed `foundry-schema-migrate [repoRoot] [--apply]` executable is
+the CLI form: report-only (dry run) by default, emitting one
+`CheckOutputEnvelope` (see above) -- `indeterminate` if any record could not
+be classified, `satisfied` otherwise (a migrated record still counts
+satisfied; the gate is about a record shape shipping with no migration at
+all, not about migrations never running).
+
+### Operating cadence: a zero-token heartbeat (issue #1221)
+
+A business runs continuously, but a loop only runs when a person types
+`/clossys-<role> loop`. The heartbeat closes that gap without a model:
+`computeHeartbeat(roles, now?)` deterministically finds every capability,
+across a `Readonly<Record<string, LoopState>>` of roles, that is
+`blocked-capability` (one entry per open blocker, `overdue` reused directly
+from `./blockers`'s own `isBlockerOverdue` rather than a second copy),
+`pending-decision` (stage `judge`), `stale-capability` (condition `stale`),
+or `review-waiting` (stage `learn`) -- the fixed four `HeartbeatFindingKind`s
+in `HEARTBEAT_FINDING_KINDS`, each one a `DigestEntry`, joined into one
+`HeartbeatDigest` sorted overdue-blockers-first, then pending decisions,
+then the rest, ties broken by role then capability id for determinism.
+`renderDigest(entries, now?)` is a plain, mechanical Markdown renderer, in
+the same generic-renderer style as `renderStatusDocument` above -- Advisor's
+own later wording/prioritization pass supersedes it, per this feature's own
+ownership split (engine and computation here, installing the workflow is
+Launcher's job, digest wording is Advisor's). "Nothing waiting" renders one
+plain line, never an empty file.
+
+`loadLoopStates(repoRoot)` reads every `clossys/<role>/loop.json` under a
+repository root into a `LoadedLoopStates` map, validating each with
+`isValidLoopState` and reporting an unreadable or invalid one as an
+`UnreadableLoopState` rather than throwing (a role directory with no
+`loop.json` is silently skipped -- it has not adopted the loop engine yet).
+`computeHeartbeatForRepo(repoRoot, now?)` composes that read with
+`computeHeartbeat` into one `HeartbeatRunResult`, and
+`writeHeartbeatDigest(repoRoot, digest, now?)` renders the decisions file
+into the consumer repository's own state directory, at the path named by
+the exported `HEARTBEAT_DIGEST_PATH` constant -- kept as a separate write
+step so a caller can run in report mode by simply not calling it. The installed `foundry-heartbeat [repoRoot] [--write]`
+executable is the CLI form: report mode by default, `--write` also renders
+the digest file, emitting one `CheckOutputEnvelope` -- `satisfied` whenever
+the digest computed successfully (a populated digest is not itself a
+violation), `indeterminate` only when a `loop.json` could not be read or
+validated. Never calls a model; never makes a live external change.
+
+`controllerHeartbeatSchedule(scope)` builds the reference
+`ScheduleDeclaration` (id `controller-heartbeat`, a business-days-only
+cadence, `artifact: "scripts/run-heartbeat.mjs"` -- this repository's own
+demonstration wrapper, which does not ship with this package) this
+package's existing schedule conventions already define -- "work that runs
+without a model is a schedule, never a routine." `validateHeartbeatSchedule(declaration,
+registry)` is a thin, named call to the existing
+`validateScheduleDeclaration`, so a caller never re-derives that validation
+by hand. A declaration is not a deployment: installing the workflow that
+actually runs this on a clock is a consuming repository's own job (via
+`@clossys/launcher`), not this package's.
 
 ### First-day onboarding: discovering and invoking role-owned assessments
 
@@ -1984,11 +2094,72 @@ adapter can find the shared guidance without duplicating it.
 | `GATE_VERBS` / `validateGateName` / `validateGateSet` | constant / functions | CI gate-naming grammar and its validators. |
 | `scanNeutrality` | function | Structural neutrality scan — the same scan `scripts/check-neutrality.mjs` runs against this subpath's own shipped documents/adapters. |
 | `SKILL_REGISTRY_SCHEMA_VERSION` / `validateSkillRegistry` / `computeCapabilityCoverage` / `validateRoutineCoverage` | constant / functions | The capability-first skill registry's grammar, coverage computation, and routine-coverage cross-check. |
-| `CONVENTION_DOCUMENTS` / `CONVENTION_ADAPTERS` / `DOCUMENTS_ROOT` / `ADAPTERS_ROOT` / `documentPath` / `adapterPath` / `templatedFilenames` | constants / functions | The shipped document/adapter manifest and path resolution — no I/O. |
+| `CONVENTION_DOCUMENTS` / `CONVENTION_ADAPTERS` / `DOCUMENTS_ROOT` / `ADAPTERS_ROOT` / `DATA_ROOT` / `TEMPLATES_ROOT` / `documentPath` / `adapterPath` / `dataPath` / `templatePath` / `templatedFilenames` | constants / functions | The shipped document/adapter/data/template manifest and path resolution — no I/O. |
 | `renderProductLoader` | function | Renders a small pointer file a consuming product installs to reach shared guidance without duplicating it. |
 | `sameSet` / `canonicalJson` / `sameCanonicalJson` / `nonEmptyString` / `sorted` | functions | Dependency-free comparison primitives: order-independent sequence equality, deep key-order-independent JSON equality, and a non-empty-string type guard. |
+| `evaluateCiConventions` | function | The pure evaluator for `conventions/documents/ci-conventions.md` (issue #1259) — see below. |
+| `parseYamlLite` / `YamlLiteParseError` | function / class | A small, well-tested YAML subset parser for GitHub Actions workflow files — see below. |
 | `ConventionDocument` / `ConventionAdapter` / `RoutineDeclaration` / `RoutineRegistry` / `ScheduleDeclaration` / `ScheduleRegistry` / `Finding` / `Severity` | types | Shapes shared across the validators above. |
 | `LiveStateSurfaceDeclaration` / `LiveStateSurfaceFindingKind` / `LiveStateDriftKind` / `LiveStateFinding` / `LiveStateSubjectReport` / `LiveStateReconciliationResult` / `LiveStateReconciliationReason` / `LiveStateObservation` / `LiveStateDeclarationValue` / `ReconcileLiveStateInput` | types | The `liveStateSurface` declaration, its finding vocabulary, and the shapes `reconcileLiveState` reads and returns. |
+
+#### CI conventions and `ci-conventions-check` (issue #1259)
+
+`conventions/documents/ci-conventions.md` is the MECE CI rule set (cost,
+speed, quality, security) every repository adopts, each rule with its
+reason and, where one exists, the measurement behind it.
+`runner-conventions.md` extends it with the runner-stack-by-visibility
+decision rule; its dated pricing lives in `conventions/data/
+runner-pricing.json` (`asOf`, source URLs) rather than in code.
+`evaluateCiConventions` is the pure evaluator: the caller supplies already-
+read workflow file contents, a declared ruleset, and a visibility/plan/
+budget/exceptions declaration, and it returns the shared check-output
+envelope (issue #1190/#1174) — the first export in this package to emit
+that envelope directly, rather than a local shape.
+
+```ts
+import { evaluateCiConventions } from "@clossys/controller/conventions";
+// ".github/workflows/ci.yml" below is the CALLER's own repo-relative
+// workflow path, an example value -- that path does not ship with this
+// package.
+const result = evaluateCiConventions({
+  workflowFiles: [{ path: ".github/workflows/ci.yml", content: rawYaml }],
+  ruleset: { requiredContexts: ["verify-build-and-test"], maxRetentionDays: 14 },
+  declaration: {
+    visibility: "public",
+    requiredContextWorkflows: { "verify-build-and-test": ".github/workflows/ci.yml" },
+  },
+  packageVersion: "0.9.15",
+});
+// result.verdict === "satisfied" | "violated" | "indeterminate"
+```
+
+It checks PR-only `cancel-in-progress`, `timeout-minutes`, SHA-pinned
+actions, top-level `permissions`, required contexts on both `pull_request`
+and `merge_group`, no trigger-level path filters on a required workflow,
+fan-in `if: always()` with an explicit `needs.*.result` check (never
+silently trusting `always()` alone), gate-naming grammar (delegating to
+`validateGateName`), runner label vs. visibility/tier (delegating to
+`validateRunnerLabel`), `retention-days`, and — only when the caller
+supplies `runHistoryMinutes` for a private repository — a projected-
+minutes warning against the free allowances plus a declared budget. Zero
+I/O of its own: parsing the workflow text is the one non-trivial thing it
+does internally, via `parseYamlLite`, a small YAML subset parser this
+package ships instead of a runtime dependency (`packages/controller/
+package.json` declares none) — block/flow mappings and sequences, quoted
+and bare scalars, literal/folded block scalars for `run: |` step bodies,
+and comments; anything outside that subset throws `YamlLiteParseError`
+rather than guessing.
+
+The installed `ci-conventions-check` CLI is the presentation layer: it
+reads a workflows directory (default `.github/workflows`), a ruleset JSON
+file, a declaration JSON file, and optional pricing data, prints the
+envelope as JSON, and exits 0/1/2. `--mode report` (the default) never
+exits 1, so a repository can dogfood the checker in CI before its own
+workflows are clean enough to gate on; `--mode enforce` maps the verdict
+straight through. `conventions/templates/ci-workflow.yml`, resolved by
+`templatePath("ci-workflow.yml")`, is a conforming skeleton a scaffold can
+compose into a new repository — a test in this package runs the real
+shipped file through `evaluateCiConventions` and asserts it passes.
 
 ### `./policy`: the content-addressed binding primitive
 
@@ -2333,6 +2504,13 @@ mismatch (or another binding finding), `2` when it could not run. Use
 | `SolvesEntry` / `SolvesDeclaration` / `SolvesDeclarationDiscovery` | types | One verifiable client-problem claim, a role's full `solves` declaration, and its discovery result. |
 | `NeedsEntry` / `NeedsDeclaration` / `NeedsDeclarationDiscovery` | types | One consumed artifact reference, a role's full `needs` declaration, and its discovery result. |
 | `FeedsEntry` / `FeedsDeclaration` / `FeedsDeclarationDiscovery` | types | One produced artifact reference, a role's full `feeds` declaration, and its discovery result. |
+| `buildCheckOutputEnvelope(options)` / `envelopeToExitCode(envelope)` | functions | The shared check-output-envelope (issue #1174): builds one `CheckOutputEnvelope` report (`CheckFinding`, `CheckMetric`, `BuildEnvelopeOptions`), refusing a non-`satisfied` verdict with no findings, and folds it onto this package's `0`/`1`/`2` exit-code convention. |
+| `classifyRecordVersion(table, record)` / `migrateRecord(table, record)` | functions | Schema versions and migrations for every `clossys/` record (issue #1224): read-only version classification (`RecordVersionClassification`) and the pure migration engine, returning a `MigrationTable`-driven `MigrationOutcome` (`AlreadyCurrentOutcome` / `MigratedOutcome` / `IndeterminateOutcome`) built from a kind's `MigrationStep`s. Idempotent, never downgrades a future schema version, and never partially migrates a record with a gap in its step chain. |
+| `createRecordKindRegistry()` / `defaultRecordKindRegistry()` | functions | An open per-kind `RecordKindRegistry`; the default is seeded with the two record kinds shipped today, `LOOP_STATE_KIND` and `COVERAGE_DECLARATION_KIND`. |
+| `discoverRecords(repoRoot, locations?)` / `runMigrations(repoRoot, registry, options?)` | functions | Walks a repository's `clossys/` tree for files matching a `RecordLocation` (`DEFAULT_RECORD_LOCATIONS`), and classifies/migrates each into a `RecordMigrationReport` (`RunMigrationsOptions`) — writing a migrated record and a pre-migration backup only when `apply` is set. The installed `foundry-schema-migrate [repoRoot] [--apply]` executable is the CLI form, report-only (dry run) by default. |
+| `HEARTBEAT_FINDING_KINDS` / `computeHeartbeat(roles, now?)` / `renderDigest(entries, now?)` | constants / functions | Operating cadence (issue #1221): the zero-token heartbeat. `computeHeartbeat` deterministically finds every stale, blocked, pending-decision, or review-waiting capability (`HeartbeatFindingKind`, `DigestEntry`) across a set of roles' `LoopState`s into one `HeartbeatDigest`; `renderDigest` is a plain, mechanical Markdown renderer Advisor's own wording pass supersedes later. |
+| `loadLoopStates(repoRoot)` / `computeHeartbeatForRepo(repoRoot, now?)` / `writeHeartbeatDigest(repoRoot, digest, now?)` | functions | Reads every `clossys/<role>/loop.json` under a repository root (`LoadedLoopStates`, reporting an unreadable one as `UnreadableLoopState` rather than throwing), computes the digest (`HeartbeatRunResult`), and writes the decisions file -- named by the exported `HEARTBEAT_DIGEST_PATH` constant -- into the consumer repository's own state directory. The installed `foundry-heartbeat [repoRoot] [--write]` executable is the CLI form, report mode by default; never calls a model. |
+| `controllerHeartbeatSchedule(scope)` / `validateHeartbeatSchedule(declaration, registry)` | functions | The heartbeat's reference `ScheduleDeclaration`, declarable under this package's existing schedule conventions, and its validation via the existing `validateScheduleDeclaration`. |
 
 ## Requirements
 

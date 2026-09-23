@@ -5,7 +5,7 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.9.18] - 2026-09-23
+## [0.9.22] - 2026-09-23
 
 ### Notes
 
@@ -13,10 +13,127 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   fixing leaking temp fixture directories (issue #1250), and its 0.9.12
   qualification record was already retained -- once a version's record is
   retained, any further change to that package, packed or not, requires a new
-  version. Restacked onto main after merge train 6; renumbered from 0.9.13
-  because main independently moved controller to 0.9.14, and 0.9.15/0.9.16
-  are claimed by open PRs #1275 and the controller-followups lane (version-
-  collision rule, issue #1187).
+  version. Renumbered repeatedly as main moved ahead during this restack's
+  disk-incident hold (0.9.13 -> ... -> 0.9.22): main independently reached
+  0.9.21 (advisor dependency-range widening for wave 2), and #1315 claims
+  0.9.21 as well but its content has already landed on main under that same
+  number (version-collision rule, issue #1187).
+
+## [0.9.21] - 2026-09-23
+
+### Changed
+
+- Widen the `@clossys/advisor` dependency range to `^0.4.0` to cover advisor's
+  wave-2 minor bump (plan record, kit verdicts, managed engagements,
+  next-step phrasing, budget preference).
+
+## [0.9.17] - 2026-09-23
+
+### Changed
+
+- Widen the `@clossys/advisor` dependency range to `^0.3.0` so the workspace
+  link check resolves the local advisor 0.3.0 workspace copy instead of
+  falling back to a stale published tarball. Renumbered from 0.9.13 to
+  0.9.17 on merge with `origin/main` (issue #1187's collision rule):
+  0.9.13 through 0.9.16 were already claimed by main's own loop-engine
+  landing and two other open PRs (#1275, #1287) by the time this branch
+  merged main.
+
+## [0.9.20] - 2026-09-23
+
+### Added
+
+- Schema versions and migrations for every `clossys/` record (issue
+  #1224): a deterministic migration engine under `./src/migrate/` --
+  `classifyRecordVersion` / `migrateRecord` (pure: idempotent on an
+  already-current record, never downgrades a record newer than this
+  package knows, never partially migrates a record with a gap in its
+  step chain), an open per-kind table registry
+  (`createRecordKindRegistry`, `defaultRecordKindRegistry` seeded with
+  the two record kinds shipped today -- `loop-state` and
+  `coverage-declaration`), and a thin filesystem layer
+  (`discoverRecords`, `runMigrations`) that walks a repository's
+  `clossys/` tree, classifies/migrates each record, and -- only with
+  `--apply` -- writes the migrated record back alongside a backup of its
+  pre-migration bytes under `clossys/.state/schema-backups/`. The
+  installed `foundry-schema-migrate` executable is the CLI form,
+  report-only (dry run) by default.
+- Operating cadence: a zero-token heartbeat (issue #1221) under
+  `./src/heartbeat/` -- `computeHeartbeat` deterministically finds every
+  stale, blocked, pending-decision (stage `judge`), or review-waiting
+  (stage `learn`) capability across a set of roles' `LoopState`s, reusing
+  `../loop/blockers.js`'s own `isBlockerOverdue` rather than a second
+  copy; `renderDigest` is a plain, mechanical Markdown renderer in the
+  same style as `../loop/status.js`'s `renderStatusDocument`, explicitly
+  deferring final wording/prioritization to a later Advisor pass.
+  `loadLoopStates` / `computeHeartbeatForRepo` / `writeHeartbeatDigest`
+  read every `clossys/<role>/loop.json`, skip and report an
+  unreadable/invalid one rather than throwing, and (only with
+  `--write`) render the decisions file (its path is the exported
+  `DIGEST_PATH` constant) into the consumer repository's own state
+  directory.
+  `controllerHeartbeatSchedule` is a reference `ScheduleDeclaration`
+  (business-days-only cadence, zero-token, no live external change),
+  validated with the existing `../conventions/schedules.js` validators
+  rather than a new one. The installed `foundry-heartbeat` executable is
+  the CLI form. Never calls a model.
+- The shared check-output-envelope (`docs/contracts/
+  check-output-envelope.json`, issue #1174) gets its first real emitters:
+  `buildCheckOutputEnvelope` / `envelopeToExitCode` (`./src/envelope.ts`)
+  is the one constructor both CLIs above use, reusing `GateVerdict` from
+  `./src/gates/result.ts` rather than a second copy of the
+  satisfied/violated/indeterminate vocabulary.
+
+## [0.9.15] - 2026-09-23
+
+### Added
+
+- CI conventions (issue #1259): `conventions/documents/ci-conventions.md`,
+  the MECE rule set (cost, speed, quality, security) every repository
+  adopts, each rule with its reason and, where one exists, the measurement
+  behind it -- citing foundry's own retrospective findings generically, by
+  issue number. `runner-conventions.md` gains the runner-stack-by-
+  visibility decision rule; dated pricing now lives in
+  `conventions/data/runner-pricing.json` (`asOf`, source URLs), never
+  hard-coded, resolved by the new `dataPath()` export.
+- `evaluateCiConventions` (`./conventions`): the pure evaluator for the
+  rule set above. Takes already-read workflow file contents, a declared
+  ruleset, a visibility/plan/budget/exceptions declaration, and (optional)
+  the pricing data, and emits the shared check-output envelope
+  (`package`/`version`/`verdict`/`summary`/`findings`/`metric`/
+  `nextAction`, #1190/#1174) -- the first module in this package to emit
+  that envelope directly. Checks: PR-only `cancel-in-progress`,
+  `timeout-minutes`, SHA-pinned actions, top-level `permissions`, required
+  contexts on both `pull_request` and `merge_group`, no trigger-level path
+  filters on a required workflow, fan-in `if: always()` with an explicit
+  `needs.*.result` check, gate-naming grammar (delegates to
+  `validateGateName`), runner label vs. visibility/tier (delegates to
+  `validateRunnerLabel`), `retention-days`, and a projected-monthly-minutes
+  warning against the free allowances and a declared budget, when run
+  history is supplied. Zero I/O -- parses workflow YAML itself via the new
+  `parseYamlLite`/`YamlLiteParseError` (`src/conventions/yaml-lite.ts`), a
+  small, well-tested subset parser for exactly the GitHub-Actions-workflow
+  shape this package needs (block/flow mappings and sequences, quoted and bare
+  scalars, literal/folded block scalars for `run: |` bodies, comments) --
+  this package ships zero runtime dependencies and this shape does not
+  justify adding one.
+- `ci-conventions-check` (bin): the CLI for `evaluateCiConventions`. Reads
+  a workflows directory (default `.github/workflows`), a ruleset JSON
+  file, a declaration JSON file, and optional pricing data; prints the
+  envelope as JSON; exits 0/1/2 on the package's usual contract.
+  `--mode report` (default) never exits 1, so a repository can dogfood the
+  checker before its CI is clean enough to gate on; `--mode enforce` maps
+  the verdict straight through.
+- `conventions/templates/ci-workflow.yml`: a conforming CI workflow
+  skeleton -- triggers, top-level permissions, PR-only
+  `cancel-in-progress`, SHA-pinned actions, `timeout-minutes` on every job,
+  and a worked fan-in (`verify-build`/`verify-unit-tests` into
+  `verify-build-and-test`). A test runs the real shipped file through
+  `evaluateCiConventions` and asserts it is satisfied, the same discipline
+  `documents.test.ts` already holds for this package's other shipped
+  files (that test file itself does not ship with this package).
+  `templatePath()` resolves it (not I/O; reading is the caller's
+  job, matching `documentPath`/`adapterPath`).
 
 ## [0.9.14] - 2026-09-22
 
