@@ -5,6 +5,16 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.4.25] - 2026-09-22
+
+### Changed
+
+- `@clossys/designer` dependency range raised to `^0.5.0` (from `^0.4.0`),
+  riding along with Designer's own 0.5.0 identity-kit release (issue
+  #1210) — `dependencies` is packed content, so this repository's own
+  release-readiness gate requires this version bump even though nothing
+  in `src/` changed.
+
 ## [0.4.24] - 2026-09-21
 
 ### Changed

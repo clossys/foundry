@@ -283,6 +283,10 @@ const KNOWN_NON_CLASS_MAPS = new Set([
   // selector needles already written with Tailwind's `\:` form. Lookup
   // table, not a class map the parity scanner should compile.
   "UTILITY_RULE_NEEDLES",
+  // tokens/identity-checks.ts — IdentityCheckId -> {verdict, detail} judgement
+  // record, one per identity-kit check (contrast/minimum-size/clear-space/
+  // single-colour-legibility). Report data, never a Tailwind class name.
+  "checkVerdicts",
 ]);
 
 function extractCandidateClasses(code: string): Set<string> {

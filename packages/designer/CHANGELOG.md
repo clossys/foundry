@@ -5,6 +5,22 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.5.0] - 2026-09-22
+
+### Added
+
+- Identity kit on `@clossys/designer/tokens` (closes #1210): deterministic
+  logo generation and judgement without a hired designer. `generateIdentityDirections`
+  builds three directions (a wordmark and two monogram shapes) from a brand
+  name and resolved tokens; `adoptSuppliedMark` derives the same variant set
+  from a client-supplied or human-designer SVG instead (`found` -> adopted).
+  Every direction ships the seven-role variant set `primary`/`mark`/`mono`/
+  `light`/`dark`/`favicon`/`appIcon`. `checkIdentityContrast`,
+  `checkMinimumSize`, `checkClearSpace`, and `checkSingleColourLegibility`
+  judge each variant, combined by `judgeIdentityKit` into a per-check
+  `satisfied`/`violated`/`indeterminate` verdict — an indeterminate check
+  never counts as a pass. A custom pictorial mark never blocks v0.
+
 ## [0.4.17] - 2026-09-21
 
 ### Added
