@@ -19,8 +19,12 @@ import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-export const LIFECYCLE_STATES = ["absent", "found", "draft", "approved", "verified", "retired"];
-export const CONDITIONS = ["current", "stale", "blocked"];
+import { validateCheckOutputEnvelope } from "./check-package-framework.mjs";
+
+// States and conditions are never redeclared here -- they are read from
+// docs/contracts/lifecycle.json (#1228), the one shared vocabulary every
+// package specializes rather than re-declares. See that contract's own
+// `governance.rule`.
 export const EVIDENCE_KINDS = ["interview", "support-thread", "call-summary", "survey-response", "usage-signal"];
 export const COLLECTORS = ["coding-agent", "human"];
 export const CONSENT_BASES = ["explicit-recorded-consent", "existing-support-relationship-terms", "anonymized-aggregate-no-consent-required"];
@@ -61,11 +65,21 @@ function sameKeys(value, expected) {
 }
 
 function finding(rule, subject, message, fatal = false) {
-  return { rule, subject, message, fatal };
+  return { rule, path: subject, message, severity: "error", fatal };
 }
 
-/** Pure validator for the contract's own vocabulary. */
-export function evaluateRealCustomerEvidenceContract({ contract }) {
+/** Strip the internal `fatal` control-flow flag; emit docs/contracts/check-output-envelope.json's findingShape. */
+function toEnvelopeFinding({ rule, path, message, severity }) {
+  return { rule, path, message, severity };
+}
+
+/**
+ * Pure validator for the contract's own vocabulary. `lifecycle` is
+ * docs/contracts/lifecycle.json's own parsed document -- this contract does
+ * not declare `states`/`conditions` itself, so the caller supplies the one
+ * shared source instead of this function reading a second, local copy.
+ */
+export function evaluateRealCustomerEvidenceContract({ contract, lifecycle }) {
   const findings = [];
   if (!isRecord(contract)) {
     return { findings: [finding("unreadable-evidence-contract", "docs/contracts/real-customer-evidence-contract.json", "the contract must be an object", true)] };
@@ -74,11 +88,9 @@ export function evaluateRealCustomerEvidenceContract({ contract }) {
     findings.push(finding("unreadable-evidence-contract", "schemaVersion/kind", "must declare schemaVersion 1 and kind foundry-real-customer-evidence", true));
     return { findings };
   }
-  if (!sameArray(contract.lifecycleStates, LIFECYCLE_STATES)) {
-    findings.push(finding("lifecycle-vocabulary-mismatch", "lifecycleStates", `must be exactly: ${LIFECYCLE_STATES.join(", ")} (the shared #1228 vocabulary)`));
-  }
-  if (!sameArray(contract.conditions, CONDITIONS)) {
-    findings.push(finding("condition-vocabulary-mismatch", "conditions", `must be exactly: ${CONDITIONS.join(", ")}`));
+  if (!isRecord(lifecycle) || lifecycle.kind !== "foundry-lifecycle" || !Array.isArray(lifecycle.states) || !Array.isArray(lifecycle.conditions)) {
+    findings.push(finding("unreadable-shared-lifecycle", "docs/contracts/lifecycle.json", "must be readable and declare kind foundry-lifecycle with states and conditions", true));
+    return { findings };
   }
   if (!sameArray(contract.evidenceKinds, EVIDENCE_KINDS)) {
     findings.push(finding("evidence-kind-vocabulary-mismatch", "evidenceKinds", `must be exactly: ${EVIDENCE_KINDS.join(", ")}`));
@@ -92,12 +104,12 @@ export function evaluateRealCustomerEvidenceContract({ contract }) {
   if (!sameArray(contract.weightClasses, WEIGHT_CLASSES)) {
     findings.push(finding("weight-class-vocabulary-mismatch", "weightClasses", `must be exactly: ${WEIGHT_CLASSES.join(", ")}`));
   }
-  if (!isRecord(contract.lifecycleTransitions) || !sameArray(Object.keys(contract.lifecycleTransitions).sort(), [...LIFECYCLE_STATES].sort())) {
-    findings.push(finding("lifecycle-transitions-mismatch", "lifecycleTransitions", `must declare a transition list for every state: ${LIFECYCLE_STATES.join(", ")}`));
+  if (!isRecord(contract.lifecycleTransitions) || !sameArray(Object.keys(contract.lifecycleTransitions).sort(), [...lifecycle.states].sort())) {
+    findings.push(finding("lifecycle-transitions-mismatch", "lifecycleTransitions", `must declare a transition list for every shared lifecycle state: ${lifecycle.states.join(", ")}`));
   } else {
     for (const [state, nextStates] of Object.entries(contract.lifecycleTransitions)) {
-      if (!Array.isArray(nextStates) || nextStates.some((next) => !LIFECYCLE_STATES.includes(next))) {
-        findings.push(finding("invalid-lifecycle-transition", state, "every declared next state must be a known lifecycle state"));
+      if (!Array.isArray(nextStates) || nextStates.some((next) => !lifecycle.states.includes(next))) {
+        findings.push(finding("invalid-lifecycle-transition", state, "every declared next state must be a known shared lifecycle state"));
       }
     }
   }
@@ -131,7 +143,7 @@ function collectForbiddenFieldNames(value, forbidden, path, findings) {
   if (!isRecord(value)) return;
   for (const [key, nested] of Object.entries(value)) {
     if (forbidden.has(key.toLowerCase().replace(/[_-]/g, ""))) {
-      findings.push(finding("forbidden-personal-data-field", `${path}.${key}`, `field name "${key}" is a forbidden personal-data-shaped field; hold it outside this repository and cite it only by source.pointer`, true));
+      findings.push(finding("forbidden-personal-data-field", `${path}.${key}`, `field name "${key}" is a forbidden personal-data-shaped field; hold it outside this repository and cite it only by source.pointer`));
     }
     collectForbiddenFieldNames(nested, forbidden, `${path}.${key}`, findings);
   }
@@ -147,13 +159,13 @@ function collectPersonalDataShapedValues(value, path, findings) {
     return;
   }
   if (typeof value !== "string") return;
-  if (EMAIL_RE.test(value)) findings.push(finding("personal-data-shaped-value", path, "value contains an email-address-shaped string; redact or summarize before recording", true));
-  if (PHONE_RE.test(value)) findings.push(finding("personal-data-shaped-value", path, "value contains a phone-number-shaped string; redact or summarize before recording", true));
-  if (NATIONAL_ID_RE.test(value)) findings.push(finding("personal-data-shaped-value", path, "value contains a nine-digit number shaped like a national identifier; redact or summarize before recording", true));
+  if (EMAIL_RE.test(value)) findings.push(finding("personal-data-shaped-value", path, "value contains an email-address-shaped string; redact or summarize before recording"));
+  if (PHONE_RE.test(value)) findings.push(finding("personal-data-shaped-value", path, "value contains a phone-number-shaped string; redact or summarize before recording"));
+  if (NATIONAL_ID_RE.test(value)) findings.push(finding("personal-data-shaped-value", path, "value contains a nine-digit number shaped like a national identifier; redact or summarize before recording"));
 }
 
-/** Pure validator for one evidence record. Judged against a validated contract's vocabulary. */
-export function evaluateRealCustomerEvidenceRecord({ record, contract }) {
+/** Pure validator for one evidence record. Judged against a validated contract's vocabulary and the shared docs/contracts/lifecycle.json. */
+export function evaluateRealCustomerEvidenceRecord({ record, contract, lifecycle }) {
   const findings = [];
   if (!isRecord(record)) {
     return { verdict: "indeterminate", findings: [finding("unreadable-record", "record", "the record must be an object", true)] };
@@ -202,13 +214,13 @@ export function evaluateRealCustomerEvidenceRecord({ record, contract }) {
     findings.push(finding("unreadable-lifecycle", "lifecycle", `must contain exactly: ${LIFECYCLE_FIELDS.join(", ")}`, true));
   } else {
     lifecycleState = record.lifecycle.state;
-    if (!contract.lifecycleStates.includes(lifecycleState)) {
-      findings.push(finding("invalid-lifecycle-state", "lifecycle.state", `must name one of: ${contract.lifecycleStates.join(", ")}`));
+    if (!lifecycle.states.includes(lifecycleState)) {
+      findings.push(finding("invalid-lifecycle-state", "lifecycle.state", `must name one of the shared lifecycle states: ${lifecycle.states.join(", ")}`));
     } else if (!reachable(contract.lifecycleTransitions, lifecycleState)) {
       findings.push(finding("unreachable-lifecycle-state", "lifecycle.state", `"${lifecycleState}" is not reachable from "absent" by the declared transitions`));
     }
-    if (!contract.conditions.includes(record.lifecycle.condition)) {
-      findings.push(finding("invalid-condition", "lifecycle.condition", `must name one of: ${contract.conditions.join(", ")}`));
+    if (!lifecycle.conditions.includes(record.lifecycle.condition)) {
+      findings.push(finding("invalid-condition", "lifecycle.condition", `must name one of the shared conditions: ${lifecycle.conditions.join(", ")}`));
     }
     if (!isIsoInstant(record.lifecycle.enteredAt)) {
       findings.push(finding("invalid-lifecycle-entered-at", "lifecycle.enteredAt", "must be a known-offset RFC3339 instant"));
@@ -295,24 +307,58 @@ function readJson(path, label) {
   }
 }
 
+/** Builds and validates docs/contracts/check-output-envelope.json's own shape before printing it. */
+function report({ verdict, summary, findings, nextAction }) {
+  const envelope = {
+    package: "foundry-real-customer-evidence-gate",
+    version: "1.0.0",
+    verdict,
+    summary,
+    findings: findings.map(toEnvelopeFinding),
+    ...(nextAction ? { nextAction } : {}),
+  };
+  const envelopeFindings = validateCheckOutputEnvelope(envelope, "check-real-customer-evidence report");
+  if (envelopeFindings.length > 0) {
+    for (const item of envelopeFindings) console.error(`  FAIL  ${item.rule}  ${item.path} — ${item.message}`);
+    die("this gate's own report failed docs/contracts/check-output-envelope.json's shape check");
+  }
+  console.log(JSON.stringify(envelope, null, 2));
+  return envelope;
+}
+
 async function main() {
   const [contractArg, recordArg, ...extra] = process.argv.slice(2);
   if (extra.length > 0) die("accepts at most a contract path and a record path");
   const repoRoot = resolve(fileURLToPath(new URL("..", import.meta.url)));
   const contractPath = resolve(contractArg ?? join(repoRoot, "docs/contracts/real-customer-evidence-contract.json"));
   const contract = readJson(contractPath, "the real-customer-evidence contract");
-  const contractResult = evaluateRealCustomerEvidenceContract({ contract });
+  const lifecyclePath = join(repoRoot, "docs/contracts/lifecycle.json");
+  const lifecycle = readJson(lifecyclePath, "the shared lifecycle contract");
+  const contractResult = evaluateRealCustomerEvidenceContract({ contract, lifecycle });
 
-  for (const item of contractResult.findings) console.log(`  FAIL  ${item.rule}  ${item.subject} — ${item.message}`);
-  if (contractResult.findings.length > 0) process.exit(contractResult.findings.some((item) => item.fatal) ? 2 : 1);
-  console.log("REAL-CUSTOMER-EVIDENCE CONTRACT OK");
+  if (contractResult.findings.length > 0) {
+    const fatal = contractResult.findings.some((item) => item.fatal);
+    report({
+      verdict: fatal ? "indeterminate" : "violated",
+      summary: "The real-customer-evidence contract itself does not satisfy its own or the shared lifecycle vocabulary.",
+      findings: contractResult.findings,
+      nextAction: "Fix docs/contracts/real-customer-evidence-contract.json to match docs/contracts/lifecycle.json's shared vocabulary.",
+    });
+    process.exit(fatal ? 2 : 1);
+  }
 
   const recordPath = resolve(recordArg ?? join(repoRoot, "docs/contracts/real-customer-evidence.fixture.json"));
   const record = readJson(recordPath, "the evidence record");
-  const recordResult = evaluateRealCustomerEvidenceRecord({ record, contract });
-  for (const item of recordResult.findings) console.log(`  FAIL  ${item.rule}  ${item.subject} — ${item.message}`);
-  console.log(`RECORD ${recordResult.verdict.toUpperCase()} — ${recordPath}`);
-  if (recordResult.verdict !== "satisfied") process.exit(recordResult.verdict === "indeterminate" ? 2 : 1);
+  const recordResult = evaluateRealCustomerEvidenceRecord({ record, contract, lifecycle });
+  const envelope = report({
+    verdict: recordResult.verdict,
+    summary: recordResult.verdict === "satisfied"
+      ? "The evidence record satisfies the real-customer-evidence contract."
+      : "The evidence record does not satisfy the real-customer-evidence contract.",
+    findings: recordResult.findings,
+    ...(recordResult.verdict !== "satisfied" ? { nextAction: `Fix the evidence record at ${recordPath}.` } : {}),
+  });
+  if (envelope.verdict !== "satisfied") process.exit(envelope.verdict === "indeterminate" ? 2 : 1);
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
