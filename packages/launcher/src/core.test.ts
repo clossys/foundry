@@ -8,6 +8,7 @@ import {
   CONSUMER_AGENTS_MD,
   LEGACY_CONSUMER_AGENTS_MD,
   applyWorkspacePlan,
+  cloneMissingInventoryRepositories,
   checkInventoryEntries,
   formatHubHealth,
   hasAdvisorPin,
@@ -1006,5 +1007,227 @@ describe("observeWorkspace", () => {
     expect(seen.cwd.githubOwner).toBe("acme");
     expect(seen.cwd.inventory).toEqual({ status: "missing", count: 0 });
     expect(seen.advisorVersion).toBe("0.2.6");
+  });
+});
+
+describe("cloneMissingInventoryRepositories (#1179)", () => {
+  it("clones exactly the inventory ids that resolveSisterCloneTargets skipped for 'not beside the hub', and reports the clone path", () => {
+    const directory = tempDir();
+    mkdirSync(join(directory, ".git"));
+    writeInventory(directory, [{ id: "app" }]);
+    const siblingPath = join(dirname(directory), "app");
+    const outcomes = cloneMissingInventoryRepositories(
+      host(directory, {
+        [`gh repo clone acme/app ${siblingPath}`]: { status: 0, stdout: "Cloning...\n", stderr: "" },
+      }),
+      directory,
+      "acme",
+    );
+    expect(outcomes).toEqual([{ inventoryId: "app", result: "cloned", note: `cloned to ${siblingPath}` }]);
+  });
+
+  it("never attempts a clone for an id skipped for a DIFFERENT reason (wrong account)", () => {
+    const directory = tempDir();
+    mkdirSync(join(directory, ".git"));
+    writeInventory(directory, [{ id: "other-org/app" }]);
+    const outcomes = cloneMissingInventoryRepositories(host(directory, {}), directory, "acme");
+    expect(outcomes).toEqual([{ inventoryId: "other-org/app", result: "skipped-other-reason", note: "other account; not this roster" }]);
+  });
+
+  it("reports failed, not thrown, when gh repo clone itself fails", () => {
+    const directory = tempDir();
+    mkdirSync(join(directory, ".git"));
+    writeInventory(directory, [{ id: "app" }]);
+    const siblingPath = join(dirname(directory), "app");
+    const outcomes = cloneMissingInventoryRepositories(
+      host(directory, {
+        [`gh repo clone acme/app ${siblingPath}`]: { status: 1, stdout: "", stderr: "repository not found" },
+      }),
+      directory,
+      "acme",
+    );
+    expect(outcomes).toEqual([
+      { inventoryId: "app", result: "failed", note: "gh repo clone exited 1: repository not found" },
+    ]);
+  });
+
+  it("an inventory with nothing to clone (already sibling-present, or empty) returns an empty array, not a throw", () => {
+    const directory = tempDir();
+    mkdirSync(join(directory, ".git"));
+    writeInventory(directory, []);
+    expect(cloneMissingInventoryRepositories(host(directory, {}), directory, "acme")).toEqual([]);
+  });
+});
+
+describe("host discovery recording, wired into applyWorkspacePlan (#1180)", () => {
+  it("resume records an empty linkedHosts snapshot, and hosts.json, when nothing was linked beforehand", () => {
+    const parent = tempDir();
+    const directory = join(parent, "hub");
+    mkdirSync(dirname(join(directory, WORKSPACE_MARKER_REL)), { recursive: true });
+    writeFileSync(
+      join(directory, WORKSPACE_MARKER_REL),
+      `${JSON.stringify({ schemaVersion: 1, kind: "account-hub", owner: "acme", repository: "acme/hub" }, null, 2)}\n`,
+    );
+    writeInventory(directory, [{ id: "acme/hub" }]);
+    const catalogue = seedSkillCatalogue(["advisor"]);
+    const result = applyWorkspacePlan(
+      host(directory),
+      { action: "resume", owner: "acme", repository: "hub", directory, clone: false },
+      skeletonRoot,
+      composeApplyOptions(catalogue),
+    );
+    expect(result.health.linkedHosts).toEqual([]);
+    expect(result.message).toMatch(/linked hosts: none detected/);
+    const hostsRaw = JSON.parse(readFileSync(join(directory, "clossys", ".state", "hosts.json"), "utf8"));
+    expect(hostsRaw).toMatchObject({ schemaVersion: 1, linkedHosts: [] });
+  });
+
+  it("resume records the host a client's own IDE already linked, read BEFORE compose stamps every discovery path", () => {
+    const parent = tempDir();
+    const directory = join(parent, "hub");
+    mkdirSync(dirname(join(directory, WORKSPACE_MARKER_REL)), { recursive: true });
+    writeFileSync(
+      join(directory, WORKSPACE_MARKER_REL),
+      `${JSON.stringify({ schemaVersion: 1, kind: "account-hub", owner: "acme", repository: "acme/hub" }, null, 2)}\n`,
+    );
+    writeInventory(directory, [{ id: "acme/hub" }]);
+    // Simulates a client whose coding agent already created a real .claude/skills
+    // directory before ever running launcher -- the exact signal #1180 exists to
+    // capture. If detection ran AFTER compose (which stamps every host's discovery
+    // path unconditionally), this distinction would be lost.
+    mkdirSync(join(directory, ".claude", "skills"), { recursive: true });
+    const catalogue = seedSkillCatalogue(["advisor"]);
+    const result = applyWorkspacePlan(
+      host(directory),
+      { action: "resume", owner: "acme", repository: "hub", directory, clone: false },
+      skeletonRoot,
+      composeApplyOptions(catalogue),
+    );
+    expect(result.health.linkedHosts).toEqual(["claude-code"]);
+    const hostsRaw = JSON.parse(readFileSync(join(directory, "clossys", ".state", "hosts.json"), "utf8"));
+    expect(hostsRaw.linkedHosts).toEqual(["claude-code"]);
+  });
+
+  it("records a hosts.json for a sibling clone too, not only the hub", () => {
+    const parent = tempDir();
+    const hub = join(parent, "hub");
+    const app = join(parent, "app");
+    mkdirSync(dirname(join(hub, WORKSPACE_MARKER_REL)), { recursive: true });
+    writeFileSync(
+      join(hub, WORKSPACE_MARKER_REL),
+      `${JSON.stringify({ schemaVersion: 1, kind: "account-hub", owner: "acme", repository: "acme/hub" }, null, 2)}\n`,
+    );
+    writeInventory(hub, [{ id: "acme/app" }]);
+    mkdirSync(join(app, ".git"), { recursive: true });
+    const base = host(hub);
+    const workspaceHost: WorkspaceHost = {
+      ...base,
+      run: (command, args, opts) => {
+        const cwd = opts?.cwd ?? hub;
+        if (command === "git" && args[0] === "remote" && args[1] === "get-url" && args[2] === "origin") {
+          return cwd === app
+            ? { status: 0, stdout: "git@github.com:acme/app.git\n", stderr: "" }
+            : { status: 1, stdout: "", stderr: "no remote" };
+        }
+        return base.run(command, args, opts);
+      },
+    };
+    const catalogue = seedSkillCatalogue(["advisor"]);
+    applyWorkspacePlan(
+      workspaceHost,
+      { action: "resume", owner: "acme", repository: "hub", directory: hub, clone: false },
+      skeletonRoot,
+      composeApplyOptions(catalogue),
+    );
+    expect(existsSync(join(app, "clossys", ".state", "hosts.json"))).toBe(true);
+  });
+});
+
+describe("inventory drift reporting, wired into applyWorkspacePlan (#1216)", () => {
+  it("surfaces nothing in health or message when the hub marker declares no external inventory", () => {
+    const parent = tempDir();
+    const directory = join(parent, "hub");
+    mkdirSync(dirname(join(directory, WORKSPACE_MARKER_REL)), { recursive: true });
+    writeFileSync(
+      join(directory, WORKSPACE_MARKER_REL),
+      `${JSON.stringify({ schemaVersion: 1, kind: "account-hub", owner: "acme", repository: "acme/hub" }, null, 2)}\n`,
+    );
+    writeInventory(directory, [{ id: "acme/hub" }]);
+    const catalogue = seedSkillCatalogue(["advisor"]);
+    const result = applyWorkspacePlan(
+      host(directory),
+      { action: "resume", owner: "acme", repository: "hub", directory, clone: false },
+      skeletonRoot,
+      composeApplyOptions(catalogue),
+    );
+    expect(result.health.inventoryDrift).toBeUndefined();
+    expect(result.message).not.toMatch(/inventory drift/);
+  });
+
+  it("reports reconciled drift -- external-only, launcher-only, and agreeing -- against a declared external inventory on resume", () => {
+    const parent = tempDir();
+    const directory = join(parent, "hub");
+    mkdirSync(dirname(join(directory, WORKSPACE_MARKER_REL)), { recursive: true });
+    const externalPath = join(parent, "external.json");
+    writeFileSync(
+      join(directory, WORKSPACE_MARKER_REL),
+      `${JSON.stringify(
+        {
+          schemaVersion: 1,
+          kind: "account-hub",
+          owner: "acme",
+          repository: "acme/hub",
+          externalInventory: { path: externalPath, shape: "foundry" },
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    writeInventory(directory, [{ id: "site" }, { id: "legacy" }]);
+    writeFileSync(externalPath, `${JSON.stringify({ schemaVersion: 1, repositories: [{ id: "app" }, { id: "site" }] })}\n`);
+    const catalogue = seedSkillCatalogue(["advisor"]);
+    const result = applyWorkspacePlan(
+      host(directory),
+      { action: "resume", owner: "acme", repository: "hub", directory, clone: false },
+      skeletonRoot,
+      composeApplyOptions(catalogue),
+    );
+    expect(result.health.inventoryDrift).toEqual({
+      status: "reconciled",
+      externalOnly: ["app"],
+      launcherOnly: ["legacy"],
+      agreeing: ["site"],
+    });
+    expect(result.message).toMatch(/inventory drift: external-only 1, launcher-only 1, agreeing 1/);
+  });
+
+  it("reports indeterminate, surfaced in the message, for a declared custom-shape external inventory -- never a guessed mapping", () => {
+    const parent = tempDir();
+    const directory = join(parent, "hub");
+    mkdirSync(dirname(join(directory, WORKSPACE_MARKER_REL)), { recursive: true });
+    writeFileSync(
+      join(directory, WORKSPACE_MARKER_REL),
+      `${JSON.stringify(
+        {
+          schemaVersion: 1,
+          kind: "account-hub",
+          owner: "acme",
+          repository: "acme/hub",
+          externalInventory: { path: join(parent, "external.json"), shape: "custom" },
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    writeInventory(directory, [{ id: "acme/hub" }]);
+    const catalogue = seedSkillCatalogue(["advisor"]);
+    const result = applyWorkspacePlan(
+      host(directory),
+      { action: "resume", owner: "acme", repository: "hub", directory, clone: false },
+      skeletonRoot,
+      composeApplyOptions(catalogue),
+    );
+    expect(result.health.inventoryDrift?.status).toBe("indeterminate");
+    expect(result.message).toMatch(/inventory drift: indeterminate.*no mapping/);
   });
 });

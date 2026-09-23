@@ -1,3 +1,6 @@
+import type { DiscoveredHost } from "./hosts.js";
+import type { ExternalInventoryDeclaration, InventoryDriftReport } from "./inventory-adoption.js";
+
 /** Ternary retained by the installed CLI. */
 export type WorkspaceState = "satisfied" | "violated" | "indeterminate";
 
@@ -36,6 +39,8 @@ export interface HubDocument {
   readonly kind: "account-hub";
   readonly owner: string;
   readonly repository: string;
+  /** Declares an existing external repository inventory as the source of truth (#1216). Hand-edited by the client; launcher never writes this field. */
+  readonly externalInventory?: ExternalInventoryDeclaration;
 }
 
 /**
@@ -117,6 +122,10 @@ export interface HubHealthReport {
   readonly extraClossys: readonly string[];
   readonly pinFindings: readonly PinFinding[];
   readonly degraded: boolean;
+  /** Coding-agent hosts this apply found already linked for skill discovery here, recorded before compose ran (#1180). Always present after apply. */
+  readonly linkedHosts?: readonly DiscoveredHost[];
+  /** Present only when the hub marker declares an external inventory (#1216) and there is something to say about it (i.e. not "no-external-source"). */
+  readonly inventoryDrift?: InventoryDriftReport;
   readonly skillComposition?: {
     readonly composed: readonly string[];
     readonly skipped: readonly { readonly packageDir: string; readonly note: string }[];
