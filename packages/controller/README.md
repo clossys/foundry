@@ -386,11 +386,10 @@ repository root into a `LoadedLoopStates` map, validating each with
 `loop.json` is silently skipped -- it has not adopted the loop engine yet).
 `computeHeartbeatForRepo(repoRoot, now?)` composes that read with
 `computeHeartbeat` into one `HeartbeatRunResult`, and
-`writeHeartbeatDigest(repoRoot, digest, now?)` renders it to
-`HEARTBEAT_DIGEST_PATH` -- a `decisions-waiting-for-you.md` file under the
-installing repository's own `clossys/.state/` directory -- kept as a
-separate write step so a caller can run in report mode by simply not
-calling it. The installed `foundry-heartbeat [repoRoot] [--write]`
+`writeHeartbeatDigest(repoRoot, digest, now?)` renders the decisions file
+into the consumer repository's own state directory, at the path named by
+the exported `HEARTBEAT_DIGEST_PATH` constant -- kept as a separate write
+step so a caller can run in report mode by simply not calling it. The installed `foundry-heartbeat [repoRoot] [--write]`
 executable is the CLI form: report mode by default, `--write` also renders
 the digest file, emitting one `CheckOutputEnvelope` -- `satisfied` whenever
 the digest computed successfully (a populated digest is not itself a
@@ -2510,7 +2509,7 @@ mismatch (or another binding finding), `2` when it could not run. Use
 | `createRecordKindRegistry()` / `defaultRecordKindRegistry()` | functions | An open per-kind `RecordKindRegistry`; the default is seeded with the two record kinds shipped today, `LOOP_STATE_KIND` and `COVERAGE_DECLARATION_KIND`. |
 | `discoverRecords(repoRoot, locations?)` / `runMigrations(repoRoot, registry, options?)` | functions | Walks a repository's `clossys/` tree for files matching a `RecordLocation` (`DEFAULT_RECORD_LOCATIONS`), and classifies/migrates each into a `RecordMigrationReport` (`RunMigrationsOptions`) — writing a migrated record and a pre-migration backup only when `apply` is set. The installed `foundry-schema-migrate [repoRoot] [--apply]` executable is the CLI form, report-only (dry run) by default. |
 | `HEARTBEAT_FINDING_KINDS` / `computeHeartbeat(roles, now?)` / `renderDigest(entries, now?)` | constants / functions | Operating cadence (issue #1221): the zero-token heartbeat. `computeHeartbeat` deterministically finds every stale, blocked, pending-decision, or review-waiting capability (`HeartbeatFindingKind`, `DigestEntry`) across a set of roles' `LoopState`s into one `HeartbeatDigest`; `renderDigest` is a plain, mechanical Markdown renderer Advisor's own wording pass supersedes later. |
-| `loadLoopStates(repoRoot)` / `computeHeartbeatForRepo(repoRoot, now?)` / `writeHeartbeatDigest(repoRoot, digest, now?)` | functions | Reads every `clossys/<role>/loop.json` under a repository root (`LoadedLoopStates`, reporting an unreadable one as `UnreadableLoopState` rather than throwing), computes the digest (`HeartbeatRunResult`), and writes it to `HEARTBEAT_DIGEST_PATH` -- a `decisions-waiting-for-you.md` file under the installing repository's own `clossys/.state/` directory. The installed `foundry-heartbeat [repoRoot] [--write]` executable is the CLI form, report mode by default; never calls a model. |
+| `loadLoopStates(repoRoot)` / `computeHeartbeatForRepo(repoRoot, now?)` / `writeHeartbeatDigest(repoRoot, digest, now?)` | functions | Reads every `clossys/<role>/loop.json` under a repository root (`LoadedLoopStates`, reporting an unreadable one as `UnreadableLoopState` rather than throwing), computes the digest (`HeartbeatRunResult`), and writes the decisions file -- named by the exported `HEARTBEAT_DIGEST_PATH` constant -- into the consumer repository's own state directory. The installed `foundry-heartbeat [repoRoot] [--write]` executable is the CLI form, report mode by default; never calls a model. |
 | `controllerHeartbeatSchedule(scope)` / `validateHeartbeatSchedule(declaration, registry)` | functions | The heartbeat's reference `ScheduleDeclaration`, declarable under this package's existing schedule conventions, and its validation via the existing `validateScheduleDeclaration`. |
 
 ## Requirements

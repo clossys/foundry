@@ -6,11 +6,11 @@
  * the one constructor this check and #1224's schema-version check share.
  *
  * Report mode by default: the digest is computed but never written.
- * `--write` writes a `decisions-waiting-for-you.md` file under the
- * installing repository's own `clossys/.state/` directory (see
- * `./fs.js`'s `DIGEST_PATH`). Never calls a model; never makes a
- * live external change -- this CLI only reads `clossys/*\/loop.json` and,
- * with `--write`, writes that one file.
+ * `--write` renders the decisions file -- named by `./fs.js`'s exported
+ * `DIGEST_PATH` constant -- into the consumer repository's own state
+ * directory. Never calls a model; never makes a live external change --
+ * this CLI only reads `clossys/*\/loop.json` and, with `--write`, writes
+ * that one file.
  */
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";

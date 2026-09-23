@@ -35,8 +35,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `loadLoopStates` / `computeHeartbeatForRepo` / `writeHeartbeatDigest`
   read every `clossys/<role>/loop.json`, skip and report an
   unreadable/invalid one rather than throwing, and (only with
-  `--write`) render a `decisions-waiting-for-you.md` file under the
-  installing repository's own `clossys/.state/` directory.
+  `--write`) render the decisions file (its path is the exported
+  `DIGEST_PATH` constant) into the consumer repository's own state
+  directory.
   `controllerHeartbeatSchedule` is a reference `ScheduleDeclaration`
   (business-days-only cadence, zero-token, no live external change),
   validated with the existing `../conventions/schedules.js` validators
