@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `docs/contracts/product-repository-layout.json`: the product repository standard (#1215) -- `apps/*`, workspace wiring, agent pointers, and CI, extending the consumer layout. `checkCloudSessionBootstrap()` verifies the three checks a cloud agent session (browser plus GitHub only, no local setup) needs before it can install and run the team in a product repository.
+- The product repository standard (#1215), recorded in this repository's own docs/contracts/product-repository-layout.json (not shipped in the published package) -- `apps/*`, workspace wiring, agent pointers, and CI, extending the consumer layout. `checkCloudSessionBootstrap()` verifies the three checks a cloud agent session (browser plus GitHub only, no local setup) needs before it can install and run the team in a product repository.
 - `launcher-doctor`: a read-only command that checks git, the GitHub command-line tool, sign-in, Node.js, and npm, and names the first missing prerequisite in plain language with the one next action to take -- never a dump of everything at once (#1220).
 - Adopts an existing repository inventory instead of writing a second, diverging one, when the hub marker declares one (#1216). `reportInventoryDrift()` reports drift between the two -- external-only, launcher-only, and agreeing repository ids -- instead of silently merging them.
 - `--clone-missing`, an explicit, non-default flag on `launcher` that clones inventoried repositories not yet sitting beside the hub (#1179), reversing the previous no-clone default for exactly this one approved action. Plain invocation is unchanged: still report-only by default.

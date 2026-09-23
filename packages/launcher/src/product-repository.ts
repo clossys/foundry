@@ -2,7 +2,7 @@ import { join } from "node:path";
 import type { WorkspaceHost } from "./types.js";
 
 /**
- * One check from docs/contracts/product-repository-layout.json's `cloudSessionBootstrap`.
+ * One check from this repository's own docs/contracts/product-repository-layout.json `cloudSessionBootstrap` list (that contract file does not ship in the published package).
  * Read-only: verifies a product repository has what a cloud agent session
  * (browser plus GitHub only, no local setup) needs to install and run the
  * team, without foundry's own heavy governance gates.

@@ -237,7 +237,7 @@ it.
 
 ## Product repositories
 
-`docs/contracts/product-repository-layout.json` extends the account hub's
+`docs/contracts/product-repository-layout.json` (this repository's own contract; it does not ship in the published package) extends the account hub's
 `clossys/` layout to a product repository: `apps/*`, workspace wiring so
 `@clossys/*` packages install as exact pinned versions, `AGENTS.md` /
 `CLAUDE.md` pointers, and the CI Starter proof (#1215). A cloud agent
