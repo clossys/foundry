@@ -92,6 +92,11 @@ describe("role-owned intake surface discovery (issue #1172)", () => {
     expect(discoverRoleIntakeSurface(root, "@clossys/locksmith").absence).toBe("invalid-intake-declaration");
   });
 
+  it("refuses a `..` segment written with a `\\` separator (path.join treats `\\` as a separator too)", () => {
+    install("@clossys/bouncer", { name: "@clossys/bouncer", version: "1.0.0", foundry: { intake: "..\\..\\secret.json" } });
+    expect(discoverRoleIntakeSurface(root, "@clossys/bouncer").absence).toBe("invalid-intake-declaration");
+  });
+
   it("refuses a declared path the role does not actually ship", () => {
     install("@clossys/butler", { name: "@clossys/butler", version: "1.0.0", foundry: { intake: "intake-cards.json" } });
     expect(discoverRoleIntakeSurface(root, "@clossys/butler").absence).toBe("intake-file-missing");
@@ -170,6 +175,11 @@ describe("role-owned outputs declaration discovery (issue #1172)", () => {
 
   it("refuses a path that escapes the repository", () => {
     install("@clossys/writer", { name: "@clossys/writer", version: "1.0.0", foundry: { outputs: ["../../elsewhere.json"] } });
+    expect(discoverRoleOutputsDeclaration(root, "@clossys/writer").absence).toBe("output-path-outside-role-folder");
+  });
+
+  it("refuses a role-folder escape written with a `\\` separator, even though it starts with the right prefix", () => {
+    install("@clossys/writer", { name: "@clossys/writer", version: "1.0.0", foundry: { outputs: ["clossys/writer/..\\..\\designer/x.json"] } });
     expect(discoverRoleOutputsDeclaration(root, "@clossys/writer").absence).toBe("output-path-outside-role-folder");
   });
 });
