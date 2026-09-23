@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "id": "verify-standards-stale-bot-reviews",
+  "tier": "tier-1",
+  "question": "verify-standards reports INDETERMINATE (a failing required check) whenever a pull request carries any formal review whose own commit is not the current head -- including a rate-limited CodeRabbit COMMENTED review left at an earlier head, which permanently wedged PRs #1297 and #1302 since a PR with no review at all passes cleanly. Should the review-evidence check's evaluability logic change, and if so, how?",
+  "options": [
+    "Carve stale reviews out of the evaluability set entirely; report them on a new ReviewEvidenceReport.staleReviews field instead of forcing the whole check to indeterminate. A stale check or thread finding is NOT carved out -- only a stale review-record finding.",
+    "Keep indeterminate, but only for a stale review whose state is APPROVED or CHANGES_REQUESTED; a stale COMMENTED review (CodeRabbit's actual shape) carries no verdict.",
+    "Keep as-is; treat CodeRabbit's quota as a throughput limit to buy more of, or drop verify-standards from the required-context ruleset until fixed."
+  ],
+  "recommendation": "Option 1 -- it is the most direct reading of the gate's own stated intent (a stale record folded into neither pass nor fail is indeterminate for that record, not for a run that has other, current evidence able to decide it on its own); option 2 still reproduces the exact CodeRabbit-COMMENTED failure mode and adds a second piece of state-dependent logic; option 3 fixes nothing structural and treats a defect in the check's own logic as an external capacity problem.",
+  "reviews": [
+    {
+      "role": "primary",
+      "instance": "unrecorded-predates-schema",
+      "provider": "anthropic",
+      "model": "unrecorded-predates-schema",
+      "effort": "unrecorded-predates-schema",
+      "verdict": "approve",
+      "link": "https://github.com/clossys/foundry/issues/1311"
+    },
+    {
+      "role": "secondary",
+      "instance": "unrecorded-predates-schema",
+      "provider": "anthropic",
+      "model": "opus",
+      "effort": "unrecorded-predates-schema",
+      "verdict": "approve",
+      "link": "https://github.com/clossys/foundry/issues/1311#issuecomment-opus-second-opinion"
+    }
+  ],
+  "status": "decided",
+  "decidedBy": "consensus",
+  "decision": "Implemented option 1 on claude/review-evidence-stale-policy, scoped to packages/inspector/src/review-evidence.ts and verify.ts (the vendor-neutral validator in packages/controller is untouched). A stale review-record finding is excluded from checkReviewEvidence's evaluability list and surfaced on ReviewEvidenceReport.staleReviews instead; a stale APPROVED review still never counts toward requireApproval (it was already excluded from hasApproval); a stale check or thread finding is unaffected and still reports indeterminate. Tests added in packages/inspector/src/review-evidence.test.ts; the integration test in scripts/collect-review-evidence.integration.test.mjs updated from asserting indeterminate to asserting satisfied for this exact scenario. packages/inspector bumped 0.2.8 -> 0.2.10.",
+  "relaxesGateOrPolicy": false,
+  "sunset": null,
+  "expiry": null,
+  "supersedes": [],
+  "links": {
+    "pullRequests": [],
+    "issues": [
+      "1311",
+      "1187",
+      "1297",
+      "1302"
+    ],
+    "paths": [
+      "packages/inspector/src/review-evidence.ts",
+      "packages/inspector/src/verify.ts"
+    ]
+  },
+  "notes": "Backfilled from issue #1311's own body, which the recommendation/options/decision text above is drawn from almost verbatim, and its 'Changes applied per the Opus second opinion' follow-up comment. decidedBy is 'consensus' per the task's own instruction and the decision-tier rule's tier-1 path (a first reviewer plus a stronger-model second opinion, both recommending acceptance with no unresolved finding). The reviewing sessions' exact instanceId and effort were not captured at the time this decision was made (predates governance/review-tiers.json and docs/contracts/review-record.json); provider/model are reconstructed from the issue's own text ('the Opus second opinion') where stated, and left as unrecorded-predates-schema where not -- see docs/contracts/decision-record.json's note on backfilled reviews[] entries. Classified tier-1 (a change to a required check's own evaluability logic -- gate-relaxing in shape, though it removes a false positive rather than a real safeguard), which is why a sunset was considered and rejected: the change corrects a bug in the gate's own logic (a stale, non-decisive record wedging an otherwise-passing run) rather than loosening a real control, so it carries no sunset -- there is no safeguard being time-boxed away."
+}

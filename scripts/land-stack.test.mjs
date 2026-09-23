@@ -1,5 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import {
   permittedMergeMethod,
@@ -9,7 +12,18 @@ import {
   classifyRequiredContexts,
   canMerge,
   restackCommitMessage,
+  globToRegExp,
+  classifyTier,
+  parseReviewRecordComments,
+  isValidReviewRecord,
+  selectCurrentReviewRecords,
+  evaluateTier1Independence,
+  evaluateTier2Decision,
+  evaluateTierGate,
 } from "./land-stack.mjs";
+
+const scriptDir = dirname(fileURLToPath(import.meta.url));
+const repoRoot = resolve(scriptDir, "..");
 
 // The 15 required contexts named by the `main-required-checks` ruleset, as
 // of the #1135 fix (gh api repos/clossys/foundry/rules/branches/main). Used
@@ -216,4 +230,313 @@ test("restackCommitMessage names branch and PR", () => {
     restackCommitMessage({ branch: "feat/stack", afterPr: 42 }),
     "Restack feat/stack onto origin/main after PR #42",
   );
+});
+
+// ---------------------------------------------------------------------------
+// Tier gate (HITL escalation, first slice -- issue #1187)
+// ---------------------------------------------------------------------------
+
+test("globToRegExp: ** crosses path separators, * stays within one segment", () => {
+  assert.equal(globToRegExp("governance/**").test("governance/decisions/x.json"), true);
+  assert.equal(globToRegExp("governance/**").test("governance/x.json"), true);
+  assert.equal(globToRegExp("governance/**").test("other/x.json"), false);
+  assert.equal(globToRegExp("scripts/check-*.mjs").test("scripts/check-decision-records.mjs"), true);
+  // A single "*" stays within one path segment -- it does not stop a nested
+  // path from matching (scripts/check-*.mjs matches anything under
+  // scripts/check-... ending in .mjs, dotted filename or not), but it does
+  // refuse to cross a "/" at all.
+  assert.equal(globToRegExp("scripts/check-*.mjs").test("scripts/lib/check-foo.mjs"), false);
+  assert.equal(globToRegExp("AGENTS.md").test("AGENTS.md"), true);
+  assert.equal(globToRegExp("AGENTS.md").test("packages/foo/AGENTS.md"), false);
+});
+
+test("classifyTier: union over paths, max over tiers, exemption carve-out applies only to tier1", () => {
+  const globs = {
+    tier1: ["governance/**", "scripts/check-*.mjs"],
+    tier1RecordExempt: ["governance/decisions/**"],
+    tier2: ["governance/model-qualifications/**"],
+  };
+
+  assert.equal(classifyTier(["README.md"], globs).tier, "tier-0");
+  assert.equal(classifyTier(["scripts/check-foo.mjs"], globs).tier, "tier-1");
+  // A pure record file carved out of tier1 stays tier-0 on its own.
+  assert.equal(classifyTier(["governance/decisions/x.json"], globs).tier, "tier-0");
+  // One tier-1 path and one unrelated path: still tier-1 (union).
+  assert.equal(classifyTier(["README.md", "scripts/check-foo.mjs"], globs).tier, "tier-1");
+  // A tier-2 path anywhere in the set wins over a tier-1 path elsewhere (max).
+  const mixed = classifyTier(["scripts/check-foo.mjs", "governance/model-qualifications/allowlist.json"], globs);
+  assert.equal(mixed.tier, "tier-2");
+  assert.deepEqual(mixed.tier2Paths, ["governance/model-qualifications/allowlist.json"]);
+});
+
+test("classifyTier against the real governance/review-tiers.json is self-referential (tier-1) and exempts decisions/", () => {
+  const config = JSON.parse(readFileSync(join(repoRoot, "governance", "review-tiers.json"), "utf8"));
+  const tierGlobs = {
+    tier1: config.tier1.globs,
+    tier1RecordExempt: config.tier1RecordExempt.globs,
+    tier2: config.tier2.globs,
+  };
+  assert.equal(classifyTier(["governance/review-tiers.json"], tierGlobs).tier, "tier-1");
+  assert.equal(classifyTier(["scripts/land-stack.mjs"], tierGlobs).tier, "tier-1");
+  assert.equal(classifyTier(["governance/decisions/some-decision.json"], tierGlobs).tier, "tier-0");
+  assert.equal(classifyTier(["governance/model-qualifications/allowlist.json"], tierGlobs).tier, "tier-2");
+  assert.equal(classifyTier(["packages/controller/src/index.ts"], tierGlobs).tier, "tier-0");
+});
+
+function recordComment(record, createdAt = "2026-09-23T00:00:00Z") {
+  return { body: `<!-- foundry-review-record\n${JSON.stringify(record)}\n-->`, createdAt };
+}
+
+const HEAD = "a".repeat(40);
+
+function authorRecord(instanceId, overrides = {}) {
+  return {
+    schemaVersion: 1,
+    role: "author",
+    id: "author-1",
+    reviewerId: "repository-owner-account",
+    instanceId,
+    provider: "anthropic",
+    submittedAt: "2026-09-23T00:00:00Z",
+    state: "declared",
+    headSha: HEAD,
+    ...overrides,
+  };
+}
+
+function reviewerRecord(instanceId, { model = "claude-opus-4-1", provider = "anthropic", state = "approved", depth = "secondary", id = instanceId, submittedAt = "2026-09-23T01:00:00Z" } = {}) {
+  return {
+    schemaVersion: 1,
+    role: "reviewer",
+    id,
+    reviewerId: "repository-owner-account",
+    instanceId,
+    provider,
+    model,
+    submittedAt,
+    state,
+    depth,
+    headSha: HEAD,
+  };
+}
+
+test("parseReviewRecordComments extracts well-formed blocks and flags malformed JSON", () => {
+  const comments = [
+    recordComment(authorRecord("author-instance")),
+    { body: "<!-- foundry-review-record\n{not json}\n-->" },
+    { body: "just a normal comment, no marker" },
+  ];
+  const records = parseReviewRecordComments(comments);
+  assert.equal(records.length, 2);
+  assert.equal(records[0].role, "author");
+  assert.equal(records[1]._parseError, true);
+});
+
+test("isValidReviewRecord requires the full field set per role", () => {
+  assert.equal(isValidReviewRecord(authorRecord("x")), true);
+  assert.equal(isValidReviewRecord(reviewerRecord("y")), true);
+  assert.equal(isValidReviewRecord({ role: "author" }), false);
+  const missingModel = reviewerRecord("y");
+  delete missingModel.model;
+  assert.equal(isValidReviewRecord(missingModel), false);
+  assert.equal(isValidReviewRecord({ ...reviewerRecord("y"), depth: "tertiary" }), false);
+});
+
+test("selectCurrentReviewRecords drops stale (different head) records and keeps latest per (role, instanceId)", () => {
+  const staleHead = "b".repeat(40);
+  const records = [
+    authorRecord("author-1"),
+    reviewerRecord("r1", { submittedAt: "2026-09-23T01:00:00Z", state: "commented" }),
+    reviewerRecord("r1", { submittedAt: "2026-09-23T02:00:00Z", state: "approved" }), // supersedes the one above
+    { ...reviewerRecord("r2"), headSha: staleHead }, // stale: different head, dropped
+  ];
+  const current = selectCurrentReviewRecords(records, HEAD);
+  assert.equal(current.length, 2);
+  const r1 = current.find((r) => r.instanceId === "r1");
+  assert.equal(r1.state, "approved");
+  assert.equal(current.some((r) => r.instanceId === "r2"), false);
+});
+
+test("MUST REFUSE: the author reviewing their own PR is refused", () => {
+  const records = [
+    authorRecord("shared-instance"),
+    reviewerRecord("shared-instance", { model: "claude-opus-4-1" }),
+    reviewerRecord("r2", { model: "claude-sonnet-5" }),
+  ];
+  // Only ONE independent reviewer remains once the author's own instance is
+  // excluded -- not enough for the pair the rule requires.
+  const result = evaluateTier1Independence({ records, headSha: HEAD });
+  assert.equal(result.ok, false);
+  assert.match(result.reason, /at least 2 independent reviewer records/);
+});
+
+test("MUST REFUSE: the same model (and provider) twice is refused", () => {
+  const records = [
+    authorRecord("author-1"),
+    reviewerRecord("r1", { model: "claude-sonnet-5", provider: "anthropic" }),
+    reviewerRecord("r2", { model: "claude-sonnet-5", provider: "anthropic" }),
+  ];
+  const result = evaluateTier1Independence({ records, headSha: HEAD });
+  assert.equal(result.ok, false);
+  assert.match(result.reason, /at least 2 independent reviewer records/);
+});
+
+test("MUST ALLOW: different model, or different provider, is accepted", () => {
+  const byModel = evaluateTier1Independence({
+    records: [
+      authorRecord("author-1"),
+      reviewerRecord("r1", { model: "claude-sonnet-5", provider: "anthropic" }),
+      reviewerRecord("r2", { model: "claude-opus-4-1", provider: "anthropic" }),
+    ],
+    headSha: HEAD,
+  });
+  assert.equal(byModel.ok, true);
+
+  const byProvider = evaluateTier1Independence({
+    records: [
+      authorRecord("author-1"),
+      reviewerRecord("r1", { model: "shared-model", provider: "anthropic" }),
+      reviewerRecord("r2", { model: "shared-model", provider: "fable" }),
+    ],
+    headSha: HEAD,
+  });
+  assert.equal(byProvider.ok, true);
+});
+
+test("MUST REFUSE: a reject (or changes-requested) verdict is refused", () => {
+  const rejected = evaluateTier1Independence({
+    records: [
+      authorRecord("author-1"),
+      reviewerRecord("r1", { model: "claude-sonnet-5", state: "approved" }),
+      reviewerRecord("r2", { model: "claude-opus-4-1", state: "reject" }),
+    ],
+    headSha: HEAD,
+  });
+  assert.equal(rejected.ok, false);
+
+  const changesRequested = evaluateTier1Independence({
+    records: [
+      authorRecord("author-1"),
+      reviewerRecord("r1", { model: "claude-sonnet-5", state: "approved" }),
+      reviewerRecord("r2", { model: "claude-opus-4-1", state: "changes-requested" }),
+    ],
+    headSha: HEAD,
+  });
+  assert.equal(changesRequested.ok, false);
+});
+
+test("MUST REFUSE: no current-head author record at all is refused", () => {
+  const result = evaluateTier1Independence({
+    records: [
+      reviewerRecord("r1", { model: "claude-sonnet-5" }),
+      reviewerRecord("r2", { model: "claude-opus-4-1" }),
+    ],
+    headSha: HEAD,
+  });
+  assert.equal(result.ok, false);
+  assert.match(result.reason, /no current-head role:"author"/);
+});
+
+test("MUST REFUSE: tier-2 without an owner decision record is refused", () => {
+  const independentEvidence = {
+    records: [
+      authorRecord("author-1"),
+      reviewerRecord("r1", { model: "claude-sonnet-5" }),
+      reviewerRecord("r2", { model: "claude-opus-4-1" }),
+    ],
+    headSha: HEAD,
+  };
+  const noDecisions = evaluateTier2Decision({ decisionRecords: [], prNumber: 42, tier2Paths: ["governance/model-qualifications/allowlist.json"] });
+  assert.equal(noDecisions.ok, false);
+  assert.match(noDecisions.reason, /requires an owner decision record/);
+
+  const wrongDecider = evaluateTier2Decision({
+    decisionRecords: [{ status: "decided", decidedBy: "consensus", expiry: null, links: { pullRequests: ["42"] } }],
+    prNumber: 42,
+    tier2Paths: ["governance/model-qualifications/allowlist.json"],
+  });
+  assert.equal(wrongDecider.ok, false);
+
+  const expired = evaluateTier2Decision({
+    decisionRecords: [{ status: "decided", decidedBy: "owner", expiry: "2000-01-01T00:00:00Z", links: { pullRequests: ["42"] } }],
+    prNumber: 42,
+    tier2Paths: ["governance/model-qualifications/allowlist.json"],
+  });
+  assert.equal(expired.ok, false);
+
+  // A decision record linked to this exact PR authorizes it.
+  const linkedByPr = evaluateTier2Decision({
+    decisionRecords: [{ id: "d1", status: "decided", decidedBy: "owner", expiry: null, links: { pullRequests: ["42"] } }],
+    prNumber: 42,
+    tier2Paths: ["governance/model-qualifications/allowlist.json"],
+  });
+  assert.equal(linkedByPr.ok, true);
+
+  // A decision record whose path globs cover every tier-2 path also authorizes it.
+  const linkedByPath = evaluateTier2Decision({
+    decisionRecords: [{ id: "d2", status: "decided", decidedBy: "owner", expiry: null, links: { paths: ["governance/model-qualifications/**"] } }],
+    prNumber: 999,
+    tier2Paths: ["governance/model-qualifications/allowlist.json"],
+  });
+  assert.equal(linkedByPath.ok, true);
+
+  assert.deepEqual(independentEvidence.records.length, 3); // sanity: fixture used above
+});
+
+test("evaluateTierGate: tier-0 passes without any review evidence; tier-1 and tier-2 route through the checks above", () => {
+  const tier0 = evaluateTierGate({ tier: "tier-0", tier1Paths: [], tier2Paths: [] }, {});
+  assert.equal(tier0.ok, true);
+
+  const tier1Fail = evaluateTierGate(
+    { tier: "tier-1", tier1Paths: ["scripts/check-foo.mjs"], tier2Paths: [] },
+    { records: [], headSha: HEAD, decisionRecords: [], prNumber: 1 },
+  );
+  assert.equal(tier1Fail.ok, false);
+  assert.equal(tier1Fail.tier, "tier-1");
+
+  const tier1Pass = evaluateTierGate(
+    { tier: "tier-1", tier1Paths: ["scripts/check-foo.mjs"], tier2Paths: [] },
+    {
+      records: [
+        authorRecord("author-1"),
+        reviewerRecord("r1", { model: "claude-sonnet-5" }),
+        reviewerRecord("r2", { model: "claude-opus-4-1" }),
+      ],
+      headSha: HEAD,
+      decisionRecords: [],
+      prNumber: 1,
+    },
+  );
+  assert.equal(tier1Pass.ok, true);
+
+  const tier2NoDecision = evaluateTierGate(
+    { tier: "tier-2", tier1Paths: [], tier2Paths: ["governance/model-qualifications/allowlist.json"] },
+    {
+      records: [
+        authorRecord("author-1"),
+        reviewerRecord("r1", { model: "claude-sonnet-5" }),
+        reviewerRecord("r2", { model: "claude-opus-4-1" }),
+      ],
+      headSha: HEAD,
+      decisionRecords: [],
+      prNumber: 1,
+    },
+  );
+  assert.equal(tier2NoDecision.ok, false);
+  assert.equal(tier2NoDecision.tier, "tier-2");
+
+  const tier2Pass = evaluateTierGate(
+    { tier: "tier-2", tier1Paths: [], tier2Paths: ["governance/model-qualifications/allowlist.json"] },
+    {
+      records: [
+        authorRecord("author-1"),
+        reviewerRecord("r1", { model: "claude-sonnet-5" }),
+        reviewerRecord("r2", { model: "claude-opus-4-1" }),
+      ],
+      headSha: HEAD,
+      decisionRecords: [{ id: "d1", status: "decided", decidedBy: "owner", expiry: null, links: { pullRequests: ["1"] } }],
+      prNumber: 1,
+    },
+  );
+  assert.equal(tier2Pass.ok, true);
 });

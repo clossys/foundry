@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "id": "operation-interaction-role-authority",
+  "tier": "tier-2",
+  "question": "Where a package outside this repository's catalogue answers the same job question as one of the six operation roles (#505: controller, architect, inspector, builder, locksmith, integrator, observer) or the four interaction roles (#511: bouncer, butler, messenger, giver, keeper), is the @clossys package authoritative, or does the incumbent win -- and how is that classification made per role, per consuming repository?",
+  "options": [
+    "Every dependency block is parsed structurally (including overrides/resolutions) per role per consuming repository; classify each overlap as 'competitor' (a second answer to the same job question -- the @clossys package is authoritative, and docs/LIFECYCLE.md's 'adopted' bar requires the competitor's removal or narrowing) or 'substrate' (a provider/SDK/service/tool the role gates or reconciles against, not a second answer -- it stays, and the cell remains adoptable).",
+    "Assume no overlap without measuring (the status quo before #505/#511 were filed) and let 'adopted' be claimed on installation and wiring alone.",
+    "Defer the question indefinitely and block no adoption claim on it."
+  ],
+  "recommendation": "Option 1 -- measure per role, per consuming repository, and classify each overlap as competitor or substrate rather than assuming either 0-of-N or N-of-N overlap.",
+  "reviews": [
+    {
+      "role": "primary",
+      "instance": "unrecorded-predates-schema",
+      "provider": "unrecorded-predates-schema",
+      "model": "unrecorded-predates-schema",
+      "effort": "unrecorded-predates-schema",
+      "verdict": "approve",
+      "link": "https://github.com/clossys/foundry/issues/511#issuecomment-drafted-decision"
+    }
+  ],
+  "status": "decided",
+  "decidedBy": "owner",
+  "decision": "Approved as drafted on #511 (2026-09-23): a competitor is authoritative for the @clossys package and must be removed or narrowed before a cell reads 'adopted'; a substrate stays and the cell remains adoptable. Classification is made per role, per consuming repository, by the job-question test in #511, with dependency blocks parsed structurally. Scope: controller, architect, inspector, builder, locksmith, integrator, observer, bouncer, butler, messenger, giver, keeper.",
+  "relaxesGateOrPolicy": false,
+  "sunset": null,
+  "expiry": null,
+  "supersedes": [],
+  "links": {
+    "pullRequests": [],
+    "issues": [
+      "505",
+      "511"
+    ],
+    "paths": []
+  },
+  "notes": "Backfilled from the owner's standing-rules comment (#1187 comment 5800369031, item 1: '#505 and #511, role authority. The drafted decision is approved and recorded on both issues') and the drafted-decision comment it approves, posted directly on #511 by the repository owner's account on 2026-09-23. This record combines #505 and #511 because the owner approved one drafted decision covering both. The reviewing session's exact instance/provider/model identity was not captured at the time (this decision predates governance/review-tiers.json and docs/contracts/review-record.json) and is not reconstructed here beyond what the issue comment itself shows -- see docs/contracts/decision-record.json's own note on backfilled reviews[] entries. Classified tier-2 here (not tier-1) because it sets which package is authoritative for a consuming repository -- a business/adoption-priority call under the decision-tier rule at #1187 comment 5800142871, not a gate or process change."
+}
