@@ -1117,6 +1117,110 @@ test("published x unpublished x changeset (2/4): a test-only change on a QUALIFI
   assert.match(report.results[0].detail, /pending changeset covers it/);
 });
 
+// -------------------------------------------------------- issue #1345
+//
+// pendingChangesetDetail() filters to changesets ADDED since the merge base
+// (issue #1322 item 2) — correct for the packed-content and build-input
+// paths, where the concern is a DIFFERENT, unrelated pull request's already
+// -pending changeset letting a packed-content change with no changeset of
+// its own ride through for free. But the stale-retained-record carve-out
+// (PRECEDENCE rule 2) is a different case: nothing about the package's
+// packed content changed at all, so a changeset that already names THIS
+// exact package — whether added by this pull request or already pending
+// before it branched — is not "riding through for free"; it already
+// promises the bump. pendingChangesetDetailForStaleRecord() drops the
+// merge-base filter for that carve-out only. These tests cover the four
+// cases issue #1345 calls out.
+
+test("issue #1345: a changeset already pending BEFORE this PR still rescues a test-only stale-record change for the SAME package", (t) => {
+  const { root, pkgDir } = qualificationFixtureRoot(t);
+  gitCommit(root, "initial 0.3.3, not yet qualified");
+  retainQualificationRecord(root); // no markLocallyPublished() — this version has not shipped
+  // The changeset is committed as part of the SAME commit this run's --base
+  // points at — it was already pending before this PR branched, not added
+  // by it.
+  mkdirSync(join(root, ".changesets"), { recursive: true });
+  writeFileSync(join(root, ".changesets", "writer-earlier-promise.md"), "---\nwriter: patch\n---\n\nAn earlier, unrelated pending changeset for the same package.\n");
+  const base = gitCommit(root, "retain qualification record for 0.3.3, with a pre-existing pending changeset");
+
+  // This PR's own change: test-only, packed content unaffected, no new
+  // changeset added — the pre-existing one already names "writer".
+  writeFileSync(join(pkgDir, "src", "index.test.ts"), "test('x', () => { expect(x).toBe(1); });\n");
+  gitCommit(root, "test-only edit (packed content unaffected, but the tree moved)");
+
+  const r = run(["packages/writer", "--json", "--base", base], root);
+  assert.equal(r.code, 0, `expected exit 0 (pass — the pre-existing changeset already covers this exact package), got ${r.code}: ${r.out}`);
+  const report = JSON.parse(r.out);
+  assert.equal(report.results[0].status, "pass");
+  assert.equal(report.results[0].staleRetainedRecord, true);
+  assert.match(report.results[0].detail, /is stale/);
+  assert.match(report.results[0].detail, /pending changeset covers it/);
+  assert.match(report.results[0].detail, /writer-earlier-promise\.md/);
+});
+
+test("issue #1345: a pre-existing changeset does NOT rescue a genuine packed-content change with no changeset of its own (packed-content path stays strict)", (t) => {
+  const { root, pkgDir } = qualificationFixtureRoot(t);
+  gitCommit(root, "initial 0.3.3, not yet qualified");
+  retainQualificationRecord(root);
+  mkdirSync(join(root, ".changesets"), { recursive: true });
+  writeFileSync(join(root, ".changesets", "writer-earlier-promise.md"), "---\nwriter: patch\n---\n\nAn earlier, unrelated pending changeset for the same package.\n");
+  const base = gitCommit(root, "retain qualification record for 0.3.3, with a pre-existing pending changeset");
+
+  // This PR's own change: genuine packed content moves (not just a test
+  // file), with no new changeset of its own and no version bump. The
+  // pre-existing changeset must not rescue this — that is exactly #1322
+  // item 2's case, and the fix for #1345 must not weaken it.
+  writeFileSync(join(pkgDir, "src", "index.ts"), "export const x = 2;\n");
+  gitCommit(root, "packed content changed, no new changeset, no bump");
+
+  const r = run(["packages/writer", "--json", "--base", base], root);
+  assert.equal(r.code, 1, `expected exit 1 -- the pre-existing changeset must not satisfy this PR's own packed change; got ${r.code}: ${r.out}`);
+  const report = JSON.parse(r.out);
+  assert.equal(report.results[0].status, "needs-bump");
+  assert.doesNotMatch(report.results[0].detail, /pending changeset covers it/);
+});
+
+test("issue #1345: a pending changeset naming a DIFFERENT package does not rescue a test-only stale-record change", (t) => {
+  const { root, pkgDir } = qualificationFixtureRoot(t);
+  stubPackagesDir(root, "some-other-package");
+  gitCommit(root, "initial 0.3.3, not yet qualified");
+  retainQualificationRecord(root);
+  mkdirSync(join(root, ".changesets"), { recursive: true });
+  writeFileSync(join(root, ".changesets", "other-fix.md"), "---\nsome-other-package: patch\n---\n\nUnrelated.\n");
+  const base = gitCommit(root, "retain qualification record for 0.3.3, with an unrelated package's pending changeset");
+
+  writeFileSync(join(pkgDir, "src", "index.test.ts"), "test('x', () => { expect(x).toBe(1); });\n");
+  gitCommit(root, "test-only edit (packed content unaffected, but the tree moved)");
+
+  const r = run(["packages/writer", "--json", "--base", base], root);
+  assert.equal(r.code, 1, `expected exit 1 (needs-bump — no changeset names "writer"), got ${r.code}: ${r.out}`);
+  const report = JSON.parse(r.out);
+  assert.equal(report.results[0].status, "needs-bump");
+  assert.equal(report.results[0].staleRetainedRecord, true);
+  assert.doesNotMatch(report.results[0].detail, /pending changeset covers it/);
+});
+
+test("issue #1345: an ALREADY-PUBLISHED package's stale record is unaffected by a pre-existing changeset (publication reason short-circuits first)", (t) => {
+  const { root, pkgDir } = qualificationFixtureRoot(t);
+  gitCommit(root, "initial 0.3.3, not yet qualified");
+  retainQualificationRecord(root);
+  markLocallyPublished(root, "@clossys/writer", "0.3.3");
+  mkdirSync(join(root, ".changesets"), { recursive: true });
+  writeFileSync(join(root, ".changesets", "writer-earlier-promise.md"), "---\nwriter: patch\n---\n\nAn earlier, unrelated pending changeset for the same package.\n");
+  const base = gitCommit(root, "retain qualification record for 0.3.3, mark it published, with a pre-existing pending changeset");
+
+  writeFileSync(join(pkgDir, "src", "index.test.ts"), "test('x', () => { expect(x).toBe(1); });\n");
+  gitCommit(root, "test-only edit (packed content unaffected, but the tree moved)");
+
+  const r = run(["packages/writer", "--json", "--base", base], root);
+  assert.equal(r.code, 0, `expected exit 0, got ${r.code}: ${r.out}`);
+  const report = JSON.parse(r.out);
+  assert.equal(report.results[0].status, "pass");
+  assert.equal(report.results[0].staleRetainedRecord, true);
+  assert.match(report.results[0].detail, /already published/);
+  assert.doesNotMatch(report.results[0].detail, /pending changeset covers it/);
+});
+
 // PRECEDENCE rule 1 (already published, no changeset in play): #1313's own
 // case — nothing will ever try to publish this version again, so the stale
 // record is historical, not a stranding in progress, and the pull request
@@ -1239,6 +1343,31 @@ test("a devDependencies-only change on a QUALIFIED-BUT-UNPUBLISHED package still
   assert.match(report.results[0].detail, /only devDependencies changed/);
   assert.match(report.results[0].detail, /has no local publication evidence/);
   assert.doesNotMatch(report.results[0].detail, /[Rr]e-qualify/);
+});
+
+test("issue #1345: a changeset already pending BEFORE this PR also rescues a devDependencies-only stale-record change for the SAME package", (t) => {
+  const { root, pkgDir } = qualificationFixtureRoot(t);
+  const manifest = readManifest(pkgDir);
+  manifest.devDependencies = { "some-lint-tool": "1.0.0" };
+  writeManifest(pkgDir, manifest);
+  gitCommit(root, "initial 0.3.3, with a devDependency, not yet qualified");
+  retainQualificationRecord(root);
+  mkdirSync(join(root, ".changesets"), { recursive: true });
+  writeFileSync(join(root, ".changesets", "writer-earlier-promise.md"), "---\nwriter: patch\n---\n\nAn earlier, unrelated pending changeset for the same package.\n");
+  const base = gitCommit(root, "retain qualification record for 0.3.3, with a pre-existing pending changeset");
+
+  const bumped = readManifest(pkgDir);
+  bumped.devDependencies = { "some-lint-tool": "1.1.0" };
+  writeManifest(pkgDir, bumped);
+  gitCommit(root, "devDependencies-only edit (packed content unaffected, but the tree moved)");
+
+  const r = run(["packages/writer", "--json", "--base", base], root);
+  assert.equal(r.code, 0, `expected exit 0 (pass — the pre-existing changeset already covers this exact package), got ${r.code}: ${r.out}`);
+  const report = JSON.parse(r.out);
+  assert.equal(report.results[0].status, "pass");
+  assert.equal(report.results[0].staleRetainedRecord, true);
+  assert.match(report.results[0].detail, /pending changeset covers it/);
+  assert.match(report.results[0].detail, /writer-earlier-promise\.md/);
 });
 
 test("a devDependencies-only change on an ALREADY-PUBLISHED package passes, with no changeset required", (t) => {
