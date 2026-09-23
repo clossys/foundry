@@ -98,6 +98,45 @@ describe("ci-conventions-check CLI", () => {
     expect(envelope.package).toBe("@clossys/controller");
   });
 
+  it("builds WorkflowFile.path from the repo-relative workflowsDir argument, not an absolute filesystem path, so requiredContextWorkflows mappings actually match", async () => {
+    // Regression test: readWorkflowFiles used to resolve workflowsDir to an
+    // absolute path and then build WorkflowFile.path from THAT resolved
+    // path, so a declaration's requiredContextWorkflows -- which names a
+    // workflow the way a repository would (".github/workflows/ci.yml"),
+    // never with this machine's own absolute prefix -- could never match,
+    // and every required context was misreported as ci/unmapped-required-
+    // context regardless of how correctly it was declared.
+    const root = makeRoot();
+    writeWorkflow(root, "ci.yml", CONFORMING);
+    const rulesetPath = join(root, "ruleset.json");
+    const declarationPath = join(root, "declaration.json");
+    writeFileSync(
+      rulesetPath,
+      JSON.stringify({ requiredContexts: ["verify-build"], maxRetentionDays: 14 }),
+      "utf8",
+    );
+    writeFileSync(
+      declarationPath,
+      JSON.stringify({
+        visibility: "public",
+        requiredContextWorkflows: { "verify-build": ".github/workflows/ci.yml" },
+      }),
+      "utf8",
+    );
+
+    const originalCwd = process.cwd();
+    process.chdir(root);
+    try {
+      const code = await main([".github/workflows", "--ruleset", rulesetPath, "--declaration", declarationPath]);
+      expect(code).toBe(0);
+      const printed = (logSpy.mock.calls[0]?.[0] as string) ?? "";
+      const envelope = JSON.parse(printed) as { verdict: string; findings: Array<{ rule: string }> };
+      expect(envelope.findings.map((f) => f.rule)).not.toContain("ci/unmapped-required-context");
+    } finally {
+      process.chdir(originalCwd);
+    }
+  });
+
   it("writes the envelope to --out when given", async () => {
     const root = makeRoot();
     writeWorkflow(root, "ci.yml", CONFORMING);

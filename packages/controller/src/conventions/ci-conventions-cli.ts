@@ -146,19 +146,28 @@ function readJson<T>(path: string, label: string): T {
   }
 }
 
-function readWorkflowFiles(dir: string): WorkflowFile[] {
+/**
+ * `readDir` is where files are actually opened from (absolute, so this
+ * works regardless of the caller's cwd); `displayDir` is what `WorkflowFile.
+ * path` is built from. They differ on purpose: a declaration's
+ * `requiredContextWorkflows` names workflows by their repo-relative path
+ * (e.g. ".github/workflows/ci.yml", matching how a repository would write
+ * it), and that mapping would never match if `path` carried this machine's
+ * absolute filesystem prefix instead.
+ */
+function readWorkflowFiles(readDir: string, displayDir: string): WorkflowFile[] {
   let entries: string[];
   try {
-    entries = readdirSync(dir);
+    entries = readdirSync(readDir);
   } catch (error) {
-    throw new CliInputError(`Could not read workflows directory "${dir}": ${(error as Error).message}`);
+    throw new CliInputError(`Could not read workflows directory "${readDir}": ${(error as Error).message}`);
   }
   const files: WorkflowFile[] = [];
   for (const entry of entries.sort()) {
     if (!/\.ya?ml$/.test(entry)) continue;
-    const full = join(dir, entry);
+    const full = join(readDir, entry);
     if (!statSync(full).isFile()) continue;
-    files.push({ path: `${dir}/${entry}`, content: readFileSync(full, "utf8") });
+    files.push({ path: `${displayDir}/${entry}`, content: readFileSync(full, "utf8") });
   }
   return files;
 }
@@ -202,8 +211,8 @@ export async function main(argv: string[]): Promise<number> {
     if (!args.rulesetPath) throw new CliInputError("--ruleset is required");
     if (!args.declarationPath) throw new CliInputError("--declaration is required");
 
-    const workflowsDir = isAbsolute(args.workflowsDir) ? args.workflowsDir : resolve(process.cwd(), args.workflowsDir);
-    const workflowFiles = readWorkflowFiles(workflowsDir);
+    const readDir = isAbsolute(args.workflowsDir) ? args.workflowsDir : resolve(process.cwd(), args.workflowsDir);
+    const workflowFiles = readWorkflowFiles(readDir, args.workflowsDir);
     const ruleset = readJson<CiConventionsRuleset>(args.rulesetPath, "ruleset");
     const declaration = readJson<CiConventionsDeclaration>(args.declarationPath, "declaration");
     const pricing = args.pricingPath ? readJson<RunnerPricingData>(args.pricingPath, "pricing") : undefined;
