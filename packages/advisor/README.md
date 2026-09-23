@@ -207,14 +207,23 @@ repositories that have no hub checkout. So a role never reads
 optional `context` and copies it verbatim into the brief, which is
 written to `clossys/brief.json` in every staffed repository.
 `contextFromBrief()` is how a role reads it back — a brief without a
-snapshot reads as every field `unknown`, never an invented answer. The
-snapshot is refreshed by re-applying the plan, not edited in place.
+snapshot, or a field missing from one, reads as `unknown`, never an
+invented answer — and it returns a copy. The snapshot is refreshed by
+re-applying the plan, not edited in place.
+
+The brief is committed in every staffed repository, and a product
+repository can be public when the hub is not. So a snapshot carries only
+choice-id slugs: `toEngagementBrief()` throws on a known field whose
+`value` is not a slug (for example a founder's own "something else"
+sentence), rather than copying it into the brief.
 
 The field ids double as reserved intake question ids: a role's own
 intake card may not reuse one, because that question belongs to the
-context card above. `scripts/check-package-framework.mjs` reports a
-reused id as `intake-card-duplicates-context-field` (report mode, a
-warning; `--enforce`, a finding).
+context card above. Foundry's package-framework gate reports a reused
+id as `intake-card-duplicates-context-field` (report mode, a warning;
+`--enforce`, a finding). Intake and context ids are lowercase slugs, and
+the comparison ignores case and surrounding whitespace, so `Audience` or
+` audience` is the same reserved id.
 
 ## Client problem vocabulary and confirmation
 

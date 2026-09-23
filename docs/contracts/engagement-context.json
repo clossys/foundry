@@ -10,7 +10,7 @@
     "schemaVersion": { "const": 1 },
     "fields": {
       "type": "array",
-      "description": "Exactly one entry per field id below; every id must appear, in any order.",
+      "description": "Exactly one entry per field id below; every id must appear, in any order. A reader treats a missing id as unknown (packages/advisor/src/engagement-brief.ts's contextFromBrief()), never as an error to guess past.",
       "items": { "$ref": "#/definitions/field" }
     }
   },
@@ -20,9 +20,10 @@
     },
     "field": {
       "type": "object",
-      "additionalProperties": false,
+      "description": "additionalProperties is false inside each oneOf branch, not beside the oneOf: in draft-07 a sibling additionalProperties sees only sibling properties, so at that level it would reject id, state, and value alike.",
       "oneOf": [
         {
+          "additionalProperties": false,
           "required": ["id", "state"],
           "properties": {
             "id": { "$ref": "#/definitions/fieldId" },
@@ -30,18 +31,21 @@
           }
         },
         {
+          "additionalProperties": false,
           "required": ["id", "state", "value"],
           "properties": {
             "id": { "$ref": "#/definitions/fieldId" },
             "state": { "const": "known" },
-            "value": {
-              "type": "string",
-              "minLength": 1,
-              "description": "The chosen question card's choice id (a stable slug, e.g. \"software\" or \"validate\"), never freeform prose typed directly into this record."
-            }
+            "value": { "$ref": "#/definitions/choiceId" }
           }
         }
       ]
+    },
+    "choiceId": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "not": { "enum": ["unknown", "something-else"] },
+      "description": "The chosen question card's choice id (a stable lowercase slug, e.g. \"software\" or \"validate\"), never freeform prose. The pattern is the enforcement, not only a convention: this record is copied into clossys/brief.json, which is committed in every staffed repository -- including a product repository that may be public while the hub is not (docs/DECISIONS.md decision 28). A founder's own \"something else\" sentence therefore never lands here, and \"unknown\"/\"something-else\" are not known values. packages/advisor/src/engagement-brief.ts's toEngagementBrief() applies the same check before copying a snapshot."
     }
   }
 }

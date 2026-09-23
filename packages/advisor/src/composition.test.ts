@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   CAPABILITY_CATALOGUE,
@@ -7,6 +8,7 @@ import {
   KIT_PRESETS,
   composeKit,
   composeKitFromProblems,
+  ENGAGEMENT_CONTEXT_FIELD_IDS,
   contextFromBrief,
   evidenceAtLeast,
   kitCatalogueDigest,
@@ -14,8 +16,6 @@ import {
   toEngagementBrief,
   validateKitProposal,
 } from "./index.js";
-import { readFileSync } from "node:fs";
-import { ENGAGEMENT_CONTEXT_FIELD_IDS } from "./index.js";
 import type { ComposeKitResult, EngagementContext } from "./index.js";
 
 describe("CAPABILITY_CATALOGUE and kitCatalogueDigest", () => {

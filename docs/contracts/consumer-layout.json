@@ -36,7 +36,7 @@
       "owner": "@clossys/advisor",
       "kind": "record",
       "committed": true,
-      "description": "Why each role is staffed here, its goals, handoffs, and sequence. The approved composed kit becomes this file (#1176). Written by the apply-plan step (#1178, wave 2); this entry is the layout position only."
+      "description": "Why each role is staffed here, its goals, handoffs, and sequence, plus an optional snapshot of the hub's engagement context (choice-id slugs only) so a role in a product repository reads what the founder already answered (docs/DECISIONS.md decision 28). The approved composed kit becomes this file (#1176). Written by the apply-plan step (#1178, wave 2); this entry is the layout position only."
     },
     {
       "path": "clossys/advisor",

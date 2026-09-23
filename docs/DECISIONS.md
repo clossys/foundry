@@ -2471,21 +2471,42 @@ Every role, on the hub or in a product repository, reads the context
 through the brief (`contextFromBrief()`), never from the hub path. The hub
 record stays the single source of truth and only Advisor writes it; the
 snapshot is refreshed by re-applying the plan (#1178), never edited in
-place. An absent `context` reads as every field `unknown`. The brief's
-`schemaVersion` stays `1`: the property is optional and no brief has been
-written to disk yet (writing is wave 2, #1175/#1178).
+place. An absent `context` reads as every field `unknown`, and so does any
+single field missing from a present one: `contextFromBrief()` always
+returns one entry per field id, as a copy. The brief's `schemaVersion`
+stays `1`: the property is optional and no brief has been written to disk
+yet (writing is wave 2, #1175/#1178).
+
+**The snapshot widens where the context is visible, so it carries slugs
+only.** The hub record sits under `clossys/advisor`, which the layout marks
+`hub-only`; the brief is committed in every staffed repository, and a
+product repository can be public when the hub is not. Copying the context
+into the brief therefore extends its visibility to every staffed
+repository -- the same exposure the brief's freeform `problem` already
+has. To keep that bounded, a known field's `value` must be a choice-id
+slug (`^[a-z0-9]+(-[a-z0-9]+)*$`, and never `unknown` or
+`something-else`): the contract's `choiceId` definition states it, and
+`toEngagementBrief()` throws rather than copy anything else. A founder's own
+"something else" sentence never enters the record, so it never reaches a
+product repository through the brief.
 
 **The context field ids are reserved intake question ids.** Matching is on
-stable ids only: an intake card whose `id` is exactly `business`,
-`product`, `audience`, `stage`, `intent`, or `constraints` (read from the
-contract's `fieldId` enum, not a copy) duplicates a context question. A
+stable ids only: an intake card whose `id`, trimmed and lowercased, is
+`business`, `product`, `audience`, `stage`, `intent`, or `constraints`
+(read from the contract's `fieldId` enum, not a copy) duplicates a context
+question. A case or whitespace variant is the same id, not a narrower
+question, so intake card ids must also be lowercase slugs and the shape
+check reports any other; only a genuine rename is left to review. A
 role that needs one of those answers reads it from the brief; when it is
 unknown there, the founder goes back to Advisor's own context card. A
 narrower question (which audience segment first) uses its own id and is
 not a duplicate. `scripts/check-package-framework.mjs` reports the rule as
 `intake-card-duplicates-context-field`: a WARN line in report mode, which
 is what CI runs, and a finding under `--enforce`, which arrives with the
-rest of that gate's enforce wave (#1172).
+rest of that gate's enforce wave (#1172). An unreadable context contract
+is reported the same way (`engagement-context-contract-unreadable`), so an
+enforcing run never passes on a check that did not run, and the summary
+line prints how many intake files it examined.
 
 ### Alternatives considered
 
@@ -2518,5 +2539,16 @@ rest of that gate's enforce wave (#1172).
 Writing the brief to disk, and so populating `context`, is #1178. The
 Strategist pilot reading `contextFromBrief()` first is #1173's own
 remaining item. Promoting the rule to a failure is #1172's enforce wave.
+Whether a public product repository should receive the snapshot at all is
+for #1178, the first writer of the brief, to settle.
+
+Drift detection is not decided here. The snapshot carries no digest of the
+hub record and no timestamp, so nothing can yet report that a brief's
+`context` is older than the hub's: if the founder answers a question after
+the plan is applied, a product-repository role keeps reading the older
+answer (or `unknown`) until the plan is re-applied. A later hub-side check
+would need a source digest on the snapshot; adding one belongs with the
+writer in #1178, not as a field declared ahead of anything that writes or
+reads it.
 
 Refs: #1171, #1172, #1173, #1176, #1178

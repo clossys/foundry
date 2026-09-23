@@ -42,7 +42,13 @@
 // question the shared engagement context already answers. Report mode
 // prints it as a WARN line and never fails on it; --enforce makes it a
 // finding. Matching is on stable question ids only, never prompt wording
-// (docs/contracts/intake-question-cards.json `engagementContext`).
+// (docs/contracts/intake-question-cards.json `engagementContext`). Intake
+// card ids and context field ids are both lowercase slugs (the shape check
+// reports any other card id), and the comparison is on the trimmed,
+// lowercased id, so a case or whitespace variant of a reserved id is the
+// same id, not a different question. An unreadable engagement-context
+// contract is a WARN in report mode and a finding under --enforce: the
+// check cannot run, and an enforcing pass must not claim it did.
 //
 // A `solves.statement` is NOT lint-checked against @clossys/writer's own
 // voice checker here: `checkCopy()` needs a built `dist/` and a
@@ -68,6 +74,8 @@ const scriptDir = dirname(fileURLToPath(import.meta.url));
 
 const EVIDENCE_LEVELS = Object.freeze(["designed", "qualified", "proven"]);
 const PROBLEM_ID_FORMAT = /^[a-z][a-z0-9-]*$/;
+/** Intake card ids and engagement-context field ids: lowercase slugs, the same shape as the context cards' choice ids. */
+const SLUG_ID_FORMAT = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
 function isRecord(value) { return typeof value === "object" && value !== null && !Array.isArray(value); }
 function isText(value) { return typeof value === "string" && value.trim() !== ""; }
@@ -114,11 +122,18 @@ export function evaluatePackageFramework(activeRoles, manifestsByName, options =
     roleMetricByRole = new Map(),
     readAdapterCases = () => null,
     clientProblemIds = null,
-    contextFieldIds = null,
+    // The engagement-context field ids (readContextFieldIds). Omitted
+    // (undefined): the caller did not ask for the duplicate-question check.
+    // null: the caller asked, but the contract could not be read.
+    contextFieldIds,
   } = options;
   const required = new Set(requiredRoles);
   const findings = [];
   const warnings = [];
+  if (contextFieldIds === null) {
+    (enforce ? findings : warnings).push({ rule: "engagement-context-contract-unreadable", path: "docs/contracts/engagement-context.json", message: "the engagement-context contract is missing, unparseable, or has no slug field-id enum -- the duplicate-question check (#1173) did not run" });
+  }
+  const contextCheck = { ran: Array.isArray(contextFieldIds), intakeFilesExamined: 0, duplicates: 0 };
   const table = [];
   const solvesByRole = new Map();
   const needsByRole = new Map();
@@ -150,7 +165,12 @@ export function evaluatePackageFramework(activeRoles, manifestsByName, options =
         const cardFindings = validateIntakeCardsShape(content.value, role);
         row.intake = cardFindings.length === 0 ? "declared" : "malformed";
         findings.push(...cardFindings);
-        (enforce ? findings : warnings).push(...findContextDuplicateCards(content.value, role, contextFieldIds));
+        if (contextCheck.ran) {
+          const duplicates = findContextDuplicateCards(content.value, role, contextFieldIds);
+          contextCheck.intakeFilesExamined += 1;
+          contextCheck.duplicates += duplicates.length;
+          (enforce ? findings : warnings).push(...duplicates);
+        }
       }
     }
 
@@ -309,7 +329,7 @@ export function evaluatePackageFramework(activeRoles, manifestsByName, options =
     }
   }
 
-  return { findings, warnings, table };
+  return { findings, warnings, table, contextCheck };
 }
 
 /**
@@ -363,6 +383,9 @@ export function validateIntakeCardsShape(document, role) {
       fail("invalid-intake-card", `card is missing a required field or has fewer than two choices`);
       continue;
     }
+    if (!SLUG_ID_FORMAT.test(card.id)) {
+      fail("invalid-intake-card-id", `card id ${JSON.stringify(card.id)} must be a lowercase slug (${SLUG_ID_FORMAT.source}): an id is stable vocabulary a stored answer is keyed on, and the duplicate-question check compares ids`);
+    }
     if (!card.choices.every((choice) => isRecord(choice) && isText(choice.id) && isText(choice.label))) {
       fail("invalid-intake-card-choice", `card "${card.id}" has a choice missing an id or label`);
       continue;
@@ -374,23 +397,28 @@ export function validateIntakeCardsShape(document, role) {
   return findings;
 }
 
+/** The id comparison key: case and surrounding whitespace never make a different id. */
+function idKey(id) { return id.trim().toLowerCase(); }
+
 /**
- * The duplicate-question gate (issue #1173): every intake card whose `id` is
- * exactly an engagement-context field id. Pure; returns one item per
- * duplicating card. `contextFieldIds` null (contract unreadable) or a
- * malformed document yields nothing -- shape problems are
- * validateIntakeCardsShape's to report, not this check's.
+ * The duplicate-question gate (issue #1173): every intake card whose `id`,
+ * trimmed and lowercased, is an engagement-context field id. Pure; returns
+ * one item per duplicating card. A card id that is not a slug is also
+ * reported by validateIntakeCardsShape; this check still compares it, so a
+ * variant such as "Audience" or " audience" is named as the duplicate it
+ * is. `contextFieldIds` null (contract unreadable -- reported by the
+ * caller) or a malformed document yields nothing here.
  */
 export function findContextDuplicateCards(document, role, contextFieldIds) {
   if (!Array.isArray(contextFieldIds) || contextFieldIds.length === 0) return [];
   if (!isRecord(document) || !Array.isArray(document.cards)) return [];
-  const reserved = new Set(contextFieldIds);
+  const reserved = new Set(contextFieldIds.filter(isText).map(idKey));
   return document.cards
-    .filter((card) => isRecord(card) && isText(card.id) && reserved.has(card.id))
+    .filter((card) => isRecord(card) && isText(card.id) && reserved.has(idKey(card.id)))
     .map((card) => ({
       rule: "intake-card-duplicates-context-field",
       role,
-      message: `intake card "${card.id}" reuses an engagement-context field id: the founder already answers this through Advisor's context card, so this role reads it from clossys/brief.json's context instead of asking again (docs/contracts/intake-question-cards.json engagementContext)`,
+      message: `intake card ${JSON.stringify(card.id)} reuses the engagement-context field id "${idKey(card.id)}": the founder already answers this through Advisor's context card, so this role reads it from clossys/brief.json's context instead of asking again (docs/contracts/intake-question-cards.json engagementContext)`,
     }));
 }
 
@@ -461,13 +489,18 @@ function readClientProblemIds(root) {
   } catch { return null; }
 }
 
-/** docs/contracts/engagement-context.json's field-id enum -- the reserved intake question ids. Null (never a finding) when unreadable. */
-function readContextFieldIds(root) {
+/**
+ * docs/contracts/engagement-context.json's field-id enum -- the reserved
+ * intake question ids, each a lowercase slug. Null when the contract is
+ * missing, unparseable, or its enum is empty or not all slugs; the caller
+ * reports that (a WARN in report mode, a finding under --enforce).
+ */
+export function readContextFieldIds(root) {
   const path = join(root, "docs/contracts/engagement-context.json");
   if (!existsSync(path)) return null;
   try {
     const ids = readJson(path)?.definitions?.fieldId?.enum;
-    return Array.isArray(ids) && ids.length > 0 && ids.every(isText) ? ids : null;
+    return Array.isArray(ids) && ids.length > 0 && ids.every((id) => typeof id === "string" && SLUG_ID_FORMAT.test(id)) ? ids : null;
   } catch { return null; }
 }
 
@@ -554,7 +587,9 @@ function main(argv) {
   const declaredCounts = ["intake", "outputs", "status", "fit", "solves", "needs", "feeds"].map((field) => `${field}: ${result.table.filter((row) => row[field] === "declared").length}/${result.table.length}`);
   console.log(`\n${declaredCounts.join(", ")} active role(s) declare each field.`);
   console.log(collected.clientProblemIds === null ? "docs/contracts/client-problems.json does not exist yet (#1176) — solves.problem is validated by id format only." : `docs/contracts/client-problems.json declares ${collected.clientProblemIds.length} problem id(s).`);
-  console.log(collected.contextFieldIds === null ? "docs/contracts/engagement-context.json is unreadable — the duplicate-question check (#1173) did not run." : `Duplicate-question check (#1173): no intake card may reuse an engagement-context field id (${collected.contextFieldIds.join(", ")}).`);
+  console.log(result.contextCheck.ran
+    ? `Duplicate-question check (#1173): examined ${result.contextCheck.intakeFilesExamined} intake file(s) across ${result.table.length} active role(s) against ${collected.contextFieldIds.length} reserved context id(s); ${result.contextCheck.duplicates} duplicate(s).`
+    : "docs/contracts/engagement-context.json is unreadable — the duplicate-question check (#1173) did not run.");
   console.log(enforce ? "Running with --enforce: absence of a field, the deeper solves/needs/feeds checks, and duplicate context questions are findings." : "Report mode: absence of a field is printed and counted, never a failure. Pass --enforce for the enforcing mode.");
   return result.findings.length === 0 ? 0 : 1;
 }

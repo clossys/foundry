@@ -6,9 +6,11 @@
 // exercised directly against synthetic documents.
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { fileURLToPath } from "node:url";
 import {
   evaluatePackageFramework,
   findContextDuplicateCards,
+  readContextFieldIds,
   validateCheckOutputEnvelope,
   validateFitSignalsShape,
   validateIntakeCardsShape,
@@ -163,16 +165,58 @@ test("--enforce promotes a duplicated context question to a finding", () => {
   assert.ok(!result.warnings.some((w) => w.rule === "intake-card-duplicates-context-field"));
 });
 
-test("matching is on exact stable ids only: a narrower card with its own id is not a duplicate", () => {
+test("matching is on stable ids only: a narrower card with its own id is not a duplicate", () => {
   const narrower = { ...DUPLICATING_CARDS, cards: [DUPLICATING_CARDS.cards[2]] };
   assert.deepEqual(findContextDuplicateCards(narrower, "@scope/alpha", CONTEXT_FIELD_IDS), []);
-  const caseVariant = { ...DUPLICATING_CARDS, cards: [{ ...DUPLICATING_CARDS.cards[1], id: "Audience" }] };
-  assert.deepEqual(findContextDuplicateCards(caseVariant, "@scope/alpha", CONTEXT_FIELD_IDS), []);
 });
 
-test("an unreadable engagement-context contract (contextFieldIds null) skips the check rather than guessing", () => {
+test("a case or whitespace variant of a reserved id is the same id: flagged as a duplicate, and rejected by the shape check", () => {
+  for (const variant of ["Audience", " audience", "audience ", "AUDIENCE"]) {
+    const cards = { ...DUPLICATING_CARDS, cards: [{ ...DUPLICATING_CARDS.cards[1], id: variant }] };
+    assert.deepEqual(findContextDuplicateCards(cards, "@scope/alpha", CONTEXT_FIELD_IDS).map((f) => f.rule), ["intake-card-duplicates-context-field"], `variant ${JSON.stringify(variant)}`);
+    assert.deepEqual(validateIntakeCardsShape(cards, "@scope/alpha").map((f) => f.rule), ["invalid-intake-card-id"], `variant ${JSON.stringify(variant)}`);
+  }
+});
+
+test("an intake card id must be a lowercase slug", () => {
+  for (const id of ["q1", "first-audience-segment", "a2b"]) {
+    assert.deepEqual(validateIntakeCardsShape({ ...VALID_CARDS, cards: [{ ...VALID_CARDS.cards[0], id }] }, "@scope/alpha"), [], id);
+  }
+  for (const id of ["Q1", "first_segment", "-lead", "trail-", "double--dash", "two words"]) {
+    assert.deepEqual(validateIntakeCardsShape({ ...VALID_CARDS, cards: [{ ...VALID_CARDS.cards[0], id }] }, "@scope/alpha").map((f) => f.rule), ["invalid-intake-card-id"], id);
+  }
+});
+
+test("findContextDuplicateCards yields nothing for a null contract or a malformed document", () => {
   assert.deepEqual(findContextDuplicateCards(DUPLICATING_CARDS, "@scope/alpha", null), []);
   assert.deepEqual(findContextDuplicateCards({ cards: "not-an-array" }, "@scope/alpha", CONTEXT_FIELD_IDS), []);
+});
+
+test("an unreadable engagement-context contract is a WARN in report mode and a finding under --enforce, never a silent pass", () => {
+  const reader = readerFor({ "@scope/alpha:cards.json": JSON.stringify(DUPLICATING_CARDS) });
+  const declared = manifests([{ name: "@scope/alpha", foundry: { intake: "cards.json" } }]);
+  const report = evaluatePackageFramework(["@scope/alpha"], declared, { readPackageFile: reader, contextFieldIds: null });
+  assert.deepEqual(report.warnings.map((w) => w.rule), ["engagement-context-contract-unreadable"]);
+  assert.equal(report.contextCheck.ran, false);
+  const enforced = evaluatePackageFramework(["@scope/alpha"], declared, { readPackageFile: reader, contextFieldIds: null, enforce: true });
+  assert.ok(enforced.findings.some((f) => f.rule === "engagement-context-contract-unreadable"));
+  // Omitting contextFieldIds means the caller did not ask for the check: no finding either way.
+  const omitted = evaluatePackageFramework(["@scope/alpha"], declared, { readPackageFile: reader, enforce: true });
+  assert.ok(!omitted.findings.some((f) => f.rule === "engagement-context-contract-unreadable"));
+});
+
+test("contextCheck counts the intake files it examined and the duplicates it found", () => {
+  const reader = readerFor({ "@scope/alpha:cards.json": JSON.stringify(DUPLICATING_CARDS), "@scope/beta:cards.json": JSON.stringify(VALID_CARDS) });
+  const result = evaluatePackageFramework(["@scope/alpha", "@scope/beta", "@scope/gamma"], manifests([
+    { name: "@scope/alpha", foundry: { intake: "cards.json" } },
+    { name: "@scope/beta", foundry: { intake: "cards.json" } },
+    { name: "@scope/gamma" },
+  ]), { readPackageFile: reader, contextFieldIds: CONTEXT_FIELD_IDS });
+  assert.deepEqual(result.contextCheck, { ran: true, intakeFilesExamined: 2, duplicates: 1 });
+});
+
+test("readContextFieldIds reads this repository's contract enum as slugs", () => {
+  assert.deepEqual(readContextFieldIds(fileURLToPath(new URL("..", import.meta.url))), CONTEXT_FIELD_IDS);
 });
 
 test("report mode never fails on absence, but --enforce turns absence into a finding", () => {
