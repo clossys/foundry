@@ -46,3 +46,20 @@ export type { RevocationPath, RevocationRecord } from "./revocation.js";
 
 export { defineDistributionManifest, keysFor, mayResolve, principalsFor } from "./distribution.js";
 export type { DistributionEntry, DistributionManifest, Principal } from "./distribution.js";
+
+export {
+  defineProviderCustody,
+  defineProviderCustodyManifest,
+  evaluateProviderCustody,
+  providerCustodyOf,
+} from "./provider-custody.js";
+export type {
+  CustodyRung,
+  ProviderCustodyDeclaration,
+  ProviderCustodyEvaluation,
+  ProviderCustodyExitCode,
+  ProviderCustodyManifest,
+  ProviderCustodyReason,
+  ProviderCustodyVerdict,
+  ProviderName,
+} from "./provider-custody.js";

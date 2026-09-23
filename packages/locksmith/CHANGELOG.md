@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.2.8] - 2026-09-22
+
+### Added
+
+- Provider-token custody (issue #1212): `defineProviderCustody`,
+  `defineProviderCustodyManifest`, `evaluateProviderCustody`, and
+  `providerCustodyOf` judge a value-free custody declaration for a
+  Cloudflare, Vercel, or GitHub provider token -- owner, storage location
+  (never this repository), scope, a required least-privilege justification,
+  which workflow/job consumes it, and an optional rotation policy in the
+  same shape `rotation.ts` already judges. A new closed `CustodyRung` type
+  (`operator-interactive`, `scoped-environment-secret`, `federated-oidc`)
+  names the three ways a provider token may be held. Locksmith still never
+  reads, stores, or transmits a token value; it judges the declaration
+  against the definition. New CLI `clossys-locksmith-provider-custody`
+  reads one declaration document and reports `satisfied` / `violated` /
+  `indeterminate` with exit codes `0` / `1` / `2`, mirroring
+  `clossys-locksmith-credential`.
+
 ## [0.2.7] - 2026-09-22
 
 ### Changed

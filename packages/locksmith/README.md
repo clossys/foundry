@@ -245,6 +245,91 @@ Exit codes mirror `evaluateCredential` exactly: `0` for `satisfied`, `1` for
 no flag that turns a `1` or `2` into a `0`; whether either blocks a merge is
 left to the caller.
 
+### Provider token custody
+
+`evaluateProviderCustody` defines and judges custody for a provider token —
+today Cloudflare, Vercel, or GitHub — without reading, storing, or
+transmitting its value. This is the closed custody ladder (issue #1212):
+where a token must live, its scope and least privilege, its rotation, and
+which of three rungs it uses.
+
+```ts
+import { defineProviderCustody, evaluateProviderCustody } from "@clossys/locksmith";
+
+const custody = defineProviderCustody({
+  key: "CLOUDFLARE_API_TOKEN",
+  provider: "cloudflare",
+  rung: "scoped-environment-secret",
+  owner: "team-platform",
+  store: "github-environment:deploy-cloudflare",
+  scope: ["zone:edit:example.com", "workers:deploy:foundry-site"],
+  leastPrivilegeNote:
+    "Narrowest token Cloudflare's dashboard allows: one zone, Workers deploy only, no account-wide access.",
+  usedBy: [".github/workflows/deploy.yml#deploy-cloudflare"],
+  rotationPolicy: { maxAgeDays: 90 },
+});
+
+evaluateProviderCustody(custody); // { verdict: "satisfied", exitCode: 0, ... }
+```
+
+`provider` is the closed `cloudflare` / `vercel` / `github` vocabulary;
+`rung` is the closed custody ladder itself:
+
+- `operator-interactive` — the token lives only on the human's own machine,
+  inside the provider CLI's own credential store (`wrangler login`,
+  `vercel login`, `gh auth login`). It never reaches this repository, an
+  agent-readable file, or a CI system. An agent may run the provider CLI
+  atop a session the human already established and approved — the human
+  holds intent and authority; the agent performs the generative and
+  live-system work (owner-confirmed governing principle, #1187).
+- `scoped-environment-secret` — a CI secret bound to one named,
+  reviewer-gated deployment environment (the same "environment" concept most
+  CI providers already support: a named target with its own required
+  reviewers, gating the job before it can even start), injected only into
+  the job(s)/step(s) named in `usedBy`.
+- `federated-oidc` — no static secret value exists anywhere; a workflow
+  exchanges a short-lived, provider-trusted OIDC token for provider access at
+  request time, the same shape an npm trusted-publisher upload already uses
+  for a different provider.
+
+`store` names where the value lives. A small, documented set of literal
+values that describe committing it to this repository (`"repository"`,
+`"repo"`, `".env"`, `"source"`, `"committed"`, `"git"`, case-insensitive)
+always fails with `store-is-repository` — a narrow, mechanical check for the
+most literal violations of "never the repository," not a claim to catch
+every way a value could end up there. `leastPrivilegeNote` is a required,
+non-empty justification for why this rung and this scope are the narrowest
+that still work, the same "no exception without a written reason"
+convention this repository already applies to a denylist term's
+`boundaryJustification` and a qualification deferral's `reason`.
+`rotationPolicy` is optional (`null`, or `{ maxAgeDays }`) and, when
+present, is the identical shape `rotation.ts` already judges staleness
+against — a provider token's age is judged by the same rule as every other
+key, never a second one invented here. Unknown fields are rejected without
+being returned, so a token value smuggled through an untyped caller cannot
+be silently accepted or echoed — the same discipline `evaluateCredential`
+already uses.
+
+```ts
+import { defineProviderCustodyManifest, providerCustodyOf } from "@clossys/locksmith";
+
+const manifest = defineProviderCustodyManifest([custody]);
+providerCustodyOf(manifest, "CLOUDFLARE_API_TOKEN"); // the declaration above
+```
+
+#### `clossys-locksmith-provider-custody` CLI
+
+```text
+clossys-locksmith-provider-custody ./cloudflare-custody.json
+clossys-locksmith-provider-custody --help
+```
+
+Reads one caller-assembled JSON custody declaration, judges it, and reports
+the verdict unchanged — it mints, fetches, and rotates nothing, and talks to
+no provider. Exit codes mirror `evaluateProviderCustody` exactly: `0` for
+`satisfied`, `1` for `violated`, `2` for `indeterminate` (including a
+declaration that could not be read at all).
+
 ### Revocation
 
 ```ts
@@ -428,6 +513,14 @@ authority.
 | `CredentialClass` / `CredentialProvider` / `CredentialEvidence` / `CredentialEvaluation` | types | Credential lifecycle classes, known providers, evidence union, and value-free ternary result. |
 | `CredentialVerdict` / `CredentialExitCode` / `CredentialReason` | types | Closed verdict, numeric exit-code, and safe reason vocabularies. |
 | `EphemeralJobCredentialEvidence` / `ManuallyRotatableCredentialEvidence` | types | Per-job expiry evidence and separately owner-provenanced manual-rotation evidence. |
+| `evaluateProviderCustody(declaration)` | function | Judges one value-free provider-token custody declaration (Cloudflare/Vercel/GitHub) with `satisfied` / `violated` / `indeterminate` and exit code `0` / `1` / `2`. |
+| `defineProviderCustody(declaration)` | function | Freezes a satisfied provider-custody declaration after requiring a satisfied evaluation. |
+| `defineProviderCustodyManifest(entries)` | function | Builds a frozen manifest of already-satisfied provider-custody declarations. |
+| `providerCustodyOf(manifest, key)` | function | The provider-custody declaration for one key, or `undefined` if never declared. |
+| `ProviderName` | type | The closed provider vocabulary this slice can currently judge: `cloudflare` \| `vercel` \| `github`. |
+| `CustodyRung` | type | The closed custody ladder: `operator-interactive` \| `scoped-environment-secret` \| `federated-oidc`. |
+| `ProviderCustodyDeclaration` / `ProviderCustodyManifest` / `ProviderCustodyEvaluation` | types | Provider-custody declaration, manifest, and value-free ternary result contracts. |
+| `ProviderCustodyVerdict` / `ProviderCustodyExitCode` / `ProviderCustodyReason` | types | Closed verdict, numeric exit-code, and safe reason vocabularies for provider custody. |
 | `defineRevocationPath(path)` | function | Records where revocation authority lives for a key; performs no revocation. |
 | `recordRevocation(record)` | function | Builds a frozen, value-free record that a key was revoked. |
 | `isRevoked(records, key)` | function | Whether any record revokes the given key. |
@@ -461,8 +554,9 @@ authority.
 
 ## Ownership boundary
 
-The root entry owns resolution, custody, rotation, credential-lifecycle
-judgement, and revocation record-keeping, and the distribution manifest. It has no provider SDK,
+The root entry owns resolution, custody, provider-token custody,
+rotation, credential-lifecycle judgement, and revocation record-keeping,
+and the distribution manifest. It has no provider SDK,
 network calls, authentication, global adapter registry, project identifier,
 folder convention, or repository topology. The explicit `./infisical`
 subpath owns provider integration and its value-safe operational CLI.
