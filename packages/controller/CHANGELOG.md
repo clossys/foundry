@@ -17,6 +17,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   landing and two other open PRs (#1275, #1287) by the time this branch
   merged main.
 
+## [0.9.18] - 2026-09-23
+
+### Added
+
+- Schema versions and migrations for every `clossys/` record (issue
+  #1224): a deterministic migration engine under `./src/migrate/` --
+  `classifyRecordVersion` / `migrateRecord` (pure: idempotent on an
+  already-current record, never downgrades a record newer than this
+  package knows, never partially migrates a record with a gap in its
+  step chain), an open per-kind table registry
+  (`createRecordKindRegistry`, `defaultRecordKindRegistry` seeded with
+  the two record kinds shipped today -- `loop-state` and
+  `coverage-declaration`), and a thin filesystem layer
+  (`discoverRecords`, `runMigrations`) that walks a repository's
+  `clossys/` tree, classifies/migrates each record, and -- only with
+  `--apply` -- writes the migrated record back alongside a backup of its
+  pre-migration bytes under `clossys/.state/schema-backups/`. The
+  installed `foundry-schema-migrate` executable is the CLI form,
+  report-only (dry run) by default.
+- Operating cadence: a zero-token heartbeat (issue #1221) under
+  `./src/heartbeat/` -- `computeHeartbeat` deterministically finds every
+  stale, blocked, pending-decision (stage `judge`), or review-waiting
+  (stage `learn`) capability across a set of roles' `LoopState`s, reusing
+  `../loop/blockers.js`'s own `isBlockerOverdue` rather than a second
+  copy; `renderDigest` is a plain, mechanical Markdown renderer in the
+  same style as `../loop/status.js`'s `renderStatusDocument`, explicitly
+  deferring final wording/prioritization to a later Advisor pass.
+  `loadLoopStates` / `computeHeartbeatForRepo` / `writeHeartbeatDigest`
+  read every `clossys/<role>/loop.json`, skip and report an
+  unreadable/invalid one rather than throwing, and (only with
+  `--write`) render the decisions file (its path is the exported
+  `DIGEST_PATH` constant) into the consumer repository's own state
+  directory.
+  `controllerHeartbeatSchedule` is a reference `ScheduleDeclaration`
+  (business-days-only cadence, zero-token, no live external change),
+  validated with the existing `../conventions/schedules.js` validators
+  rather than a new one. The installed `foundry-heartbeat` executable is
+  the CLI form. Never calls a model.
+- The shared check-output-envelope (`docs/contracts/
+  check-output-envelope.json`, issue #1174) gets its first real emitters:
+  `buildCheckOutputEnvelope` / `envelopeToExitCode` (`./src/envelope.ts`)
+  is the one constructor both CLIs above use, reusing `GateVerdict` from
+  `./src/gates/result.ts` rather than a second copy of the
+  satisfied/violated/indeterminate vocabulary.
+
+  Renumbered from 0.9.16 to 0.9.18 on merge with `origin/main` (issue
+  #1187's collision rule): 0.9.17 was already claimed by main's own
+  #1193 landing by the time this branch merged main, and 0.9.16 was
+  never itself published.
+
 ## [0.9.15] - 2026-09-23
 
 ### Added
