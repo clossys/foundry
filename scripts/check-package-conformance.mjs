@@ -201,10 +201,16 @@ function dependsOnController(manifest) {
  * interpolations are kept as code. Pure; a heuristic tokenizer, not a parser:
  * a `/` counts as a regex literal when the previous significant character
  * cannot end an expression.
+ *
+ * With `commentsOnly`, only comments are blanked and every literal is kept
+ * verbatim -- same tokenizing, so a `//` inside a string is still not a
+ * comment. The import scan runs on that form: an import specifier is itself a
+ * string literal, but a commented-out import is not an import (#1387 review).
  */
-export function stripNonCode(text) {
+export function stripNonCode(text, { commentsOnly = false } = {}) {
   const out = [];
-  const blank = (chunk) => chunk.replace(/[^\n]/g, " ");
+  const blankComment = (chunk) => chunk.replace(/[^\n]/g, " ");
+  const blank = commentsOnly ? (chunk) => chunk : blankComment;
   const braceStack = []; // for each open `{`: true when it opened a template interpolation
   let i = 0;
   let lastSignificant = "";
@@ -227,8 +233,8 @@ export function stripNonCode(text) {
   while (i < text.length) {
     const c = text[i];
     const next = text[i + 1];
-    if (c === "/" && next === "/") { const end = text.indexOf("\n", i); const stop = end === -1 ? text.length : end; out.push(blank(text.slice(i, stop))); i = stop; continue; }
-    if (c === "/" && next === "*") { const end = text.indexOf("*/", i + 2); const stop = end === -1 ? text.length : end + 2; out.push(blank(text.slice(i, stop))); i = stop; continue; }
+    if (c === "/" && next === "/") { const end = text.indexOf("\n", i); const stop = end === -1 ? text.length : end; out.push(blankComment(text.slice(i, stop))); i = stop; continue; }
+    if (c === "/" && next === "*") { const end = text.indexOf("*/", i + 2); const stop = end === -1 ? text.length : end + 2; out.push(blankComment(text.slice(i, stop))); i = stop; continue; }
     if (c === "\"" || c === "'") { const stop = readQuoted(c); out.push(blank(text.slice(i, stop))); i = stop; lastSignificant = "a"; continue; }
     if (c === "`" || (c === "}" && braceStack.at(-1) === true)) {
       if (c === "}") braceStack.pop();
@@ -288,7 +294,20 @@ function scanImports(text) {
   return { constructorImports, relativeSpecifiers };
 }
 
+/**
+ * A call of `local` as a bare identifier: not part of a longer name, not a
+ * property of some other object (`o.name(` -- a single `.`, so a spread
+ * `...name(` still counts), and not the name in a local `function name(`
+ * definition, which only looks like a call (#1387 review).
+ */
+function callPattern(local) {
+  return new RegExp(`(?<![\\w$])(?<!(?<!\\.)\\.\\s*)(?<!\\bfunction(?:\\s*\\*\\s*|\\s+))${local.replace(/\$/g, "\\$")}\\s*\\(`);
+}
+
 export function envelopeGap(root, packageDir, role, manifest) {
+  // Every path compared below must be absolute: resolveRelativeSource always
+  // returns one, so a relative root would never match it (#1387 review).
+  root = resolve(root);
   const packageRoot = join(root, "packages", packageDir);
   const findings = [];
   const copyPath = join(packageRoot, ENVELOPE_COPY_PATH);
@@ -307,15 +326,16 @@ export function envelopeGap(root, packageDir, role, manifest) {
   const emitters = new Set();
   const relativeImportsByFile = new Map();
   for (const file of listSourceFiles(join(packageRoot, "src"))) {
-    const text = readFileSync(file, "utf8");
-    const { constructorImports, relativeSpecifiers } = scanImports(text);
+    // Comments blanked first, so a commented-out import is never an import.
+    const code = stripNonCode(readFileSync(file, "utf8"), { commentsOnly: true });
+    const { constructorImports, relativeSpecifiers } = scanImports(code);
     relativeImportsByFile.set(file, relativeSpecifiers.map((specifier) => resolveRelativeSource(file, specifier)));
-    // Imports removed, then comments and string/template/regex literal text blanked, so a mention of the constructor in a doc comment or a string is never mistaken for a call.
-    const body = stripNonCode(text.replace(VALUE_IMPORT, ""));
+    // Imports removed, then string/template/regex literal text blanked too, so a mention of the constructor in a string is never mistaken for a call.
+    const body = stripNonCode(code.replace(VALUE_IMPORT, ""));
     for (const { local, specifier } of constructorImports) {
       const source = envelopeImportSource(root, packageRoot, file, specifier, manifest);
       if (source === null || (source === "generated-copy" && !copyCurrent)) continue;
-      if (new RegExp(`(?<![\\w$])${local.replace(/\$/g, "\\$")}\\s*\\(`).test(body)) emitters.add(file);
+      if (callPattern(local).test(body)) emitters.add(file);
     }
   }
   const evidence = [...emitters].map((file) => relative(root, file)).sort();

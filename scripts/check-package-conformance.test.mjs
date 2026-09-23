@@ -9,7 +9,7 @@ import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { evaluateConformance, NOT_APPLICABLE_TO_PRODUCER } from "./check-package-conformance.mjs";
 import { ENVELOPE_COPY_PATH, renderEnvelopeCopyFromRoot } from "./sync-envelope-copies.mjs";
@@ -234,6 +234,82 @@ test("an import that is never called or only mentioned in a comment, a type-only
   const result = evaluateConformance(root, [controllerDependent()], { enforce: false });
   assert.equal(result.table[0].outputEnvelope, "absent");
   assert.deepEqual(result.table[0].envelopeEvidence, []);
+});
+
+test("#1387 review: a commented-out import plus a hand-written local constructor is not adoption, whether or not the local one is called", (t) => {
+  const root = makeTempRoot(t);
+  const commentedImport = `// import { buildCheckOutputEnvelope } from "@clossys/controller";\n/* import { buildCheckOutputEnvelope } from "@clossys/controller"; */\n`;
+  const localDefinition = `export function buildCheckOutputEnvelope(o: unknown) { return o; }\n`;
+  writeSource(root, "src/defined-and-called.ts", `${commentedImport}${localDefinition}export const r = buildCheckOutputEnvelope({ verdict: "satisfied" });\n`);
+  writeSource(root, "src/defined-only.ts", `${commentedImport}${localDefinition}`);
+  const result = evaluateConformance(root, [controllerDependent()], { enforce: false });
+  assert.equal(result.table[0].outputEnvelope, "absent");
+  assert.deepEqual(result.table[0].envelopeEvidence, []);
+});
+
+test("#1387 review: with a real import present, a same-named method on an unrelated object is not a call of the constructor", (t) => {
+  const root = makeTempRoot(t);
+  writeSource(root, "src/method.ts", [
+    `import { buildCheckOutputEnvelope } from "@clossys/controller";`,
+    `const o = { buildCheckOutputEnvelope: () => 1 };`,
+    `export const a = o.buildCheckOutputEnvelope();`,
+    `export const b = o?.buildCheckOutputEnvelope();`,
+    `export const c = o . buildCheckOutputEnvelope();`,
+    "",
+  ].join("\n"));
+  const absent = evaluateConformance(root, [controllerDependent()], { enforce: false });
+  assert.equal(absent.table[0].outputEnvelope, "absent");
+  // A spread of a real call is still a call: only a single `.` marks a property access.
+  writeSource(root, "src/spread.ts", `import { buildCheckOutputEnvelope } from "@clossys/controller";\nexport const s = [...buildCheckOutputEnvelope({ package: "a", version: "1", verdict: "satisfied", summary: "Fine.", findings: [] }).findings];\n`);
+  const declared = evaluateConformance(root, [controllerDependent()], { enforce: false });
+  assert.equal(declared.table[0].outputEnvelope, "declared");
+  assert.deepEqual(declared.table[0].envelopeEvidence, ["packages/alpha/src/spread.ts"]);
+});
+
+test("#1387 review: a local function definition of the constructor's name, never called, is not a call even beside a real import", (t) => {
+  const root = makeTempRoot(t);
+  // Legal TypeScript: the inner declaration shadows the import inside wrap(), and nothing calls either.
+  writeSource(root, "src/shadowed.ts", [
+    `import { buildCheckOutputEnvelope } from "@clossys/controller";`,
+    `export function wrap() { function buildCheckOutputEnvelope(o: unknown) { return o; } return 1; }`,
+    `export function* gen() { function* buildCheckOutputEnvelope() { yield 1; } yield 2; }`,
+    "",
+  ].join("\n"));
+  const result = evaluateConformance(root, [controllerDependent()], { enforce: false });
+  assert.equal(result.table[0].outputEnvelope, "absent");
+  assert.deepEqual(result.table[0].envelopeEvidence, []);
+});
+
+test("#1387 review: a relative repository root gives the same item 2 verdict and evidence as the absolute one", (t) => {
+  const root = makeTempRoot(t);
+  withCanonicalEnvelope(root);
+  // Controller adopting through the canonical module by relative path, and a role adopting through its generated copy
+  // with a status probe that reaches the emitter through one relative import: every path comparison envelopeGap makes.
+  const controllerCli = join(root, "packages", "controller", "src", "heartbeat", "cli.ts");
+  mkdirSync(dirname(controllerCli), { recursive: true });
+  writeFileSync(controllerCli, EMITTER("../envelope.js"));
+  writeSource(root, ENVELOPE_COPY_PATH, renderEnvelopeCopyFromRoot(root));
+  writeSource(root, "src/report.ts", EMITTER("./generated/check-output-envelope.js"));
+  writeSource(root, "src/status.ts", `import { report } from "./report.js";\nprocess.stdout.write(JSON.stringify(report()));\n`);
+  const probeManifest = manifest({
+    bin: { "alpha-check": "dist/cli.js", "alpha-status": "dist/status.js" },
+    foundry: { assessment: { bin: "alpha-check", invocation: "single-json-input" }, status: { bin: "alpha-status", invocation: "single-json-input" } },
+  });
+  const descriptors = [
+    descriptor({ manifest: probeManifest }),
+    descriptor({ role: "@clossys/controller", packageDir: "controller", manifest: manifest({ name: "@clossys/controller" }) }),
+  ];
+  const relativeRoot = relative(process.cwd(), root);
+  assert.equal(isAbsolute(relativeRoot), false);
+  const verdicts = (result) => result.table.map((row) => ({ role: row.role, outputEnvelope: row.outputEnvelope, evidence: row.envelopeEvidence, gaps: row.gaps }));
+  const absolute = evaluateConformance(root, descriptors, { enforce: false });
+  const fromRelative = evaluateConformance(relativeRoot, descriptors, { enforce: false });
+  assert.deepEqual(verdicts(fromRelative), verdicts(absolute));
+  const row = (role) => absolute.table.find((entry) => entry.role === role);
+  assert.equal(row("@scope/alpha").outputEnvelope, "declared");
+  assert.deepEqual(row("@scope/alpha").envelopeEvidence, ["packages/alpha/src/report.ts"]);
+  assert.equal(row("@clossys/controller").outputEnvelope, "declared");
+  assert.deepEqual(row("@clossys/controller").envelopeEvidence, ["packages/controller/src/heartbeat/cli.ts"]);
 });
 
 test("an aliased import of the canonical constructor still counts when the alias is called", (t) => {

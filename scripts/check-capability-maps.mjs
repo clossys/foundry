@@ -82,10 +82,14 @@
 // `surface-documents`, while Publisher's `sealing-and-the-publication-
 // record` needs Customer's `keep-verdict` back) -- a real production
 // workflow (judge a draft surface, seal only after a keep), not a defect.
-// This gate does not check for cycles at the capability-input layer, and
-// deliberately: the no-cycle rule check-package-framework.mjs enforces is
-// scoped to the TOP-LEVEL `needs`/`feeds` handoff graph (issue #1172,
-// Stage C), never to capability-level `inputs`.
+// This gate still does not check for cycles itself: capability-input
+// cycles are judged by `detectNeedsCycles` in
+// scripts/check-package-framework.mjs, per `fields.needs.enforcedRule` in
+// docs/contracts/package-framework.json (issue #1382) -- nodes are
+// `<role>#<capability id>`, edges are each capability's own `inputs`, so
+// the keep loop above passes (nothing waits on itself) while a genuine
+// capability-level deadlock is a `needs-graph-cycle` finding under
+// --enforce.
 //
 // WHOLE-ROLE-QUESTION COVERAGE IS NOT CHECKED HERE. "The sub-questions
 // jointly answer the role's job question" is a judgment call -- whether a
