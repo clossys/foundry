@@ -98,9 +98,11 @@ const CURRENT_PUBLISHED_IDENTITIES = [
   "@clossys/advisor@0.1.6",
   "@clossys/advisor@0.2.5",
   "@clossys/advisor@0.2.6",
+  "@clossys/architect@0.1.10",
   "@clossys/architect@0.1.2",
   "@clossys/architect@0.1.3",
   "@clossys/bouncer@0.1.1",
+  "@clossys/bouncer@0.1.10",
   "@clossys/bouncer@0.1.2",
   "@clossys/bouncer@0.1.9",
   "@clossys/builder@0.7.3",
@@ -108,6 +110,7 @@ const CURRENT_PUBLISHED_IDENTITIES = [
   "@clossys/builder@0.8.0",
   "@clossys/butler@0.1.1",
   "@clossys/butler@0.1.2",
+  "@clossys/butler@0.1.9",
   "@clossys/controller@0.8.21",
   "@clossys/controller@0.8.23",
   "@clossys/controller@0.8.24",
@@ -116,32 +119,41 @@ const CURRENT_PUBLISHED_IDENTITIES = [
   "@clossys/designer@0.4.7",
   "@clossys/giver@0.1.2",
   "@clossys/giver@0.1.3",
+  "@clossys/giver@0.1.8",
   "@clossys/influencer@0.1.2",
   "@clossys/influencer@0.1.3",
+  "@clossys/influencer@0.1.7",
   "@clossys/inspector@0.1.18",
   "@clossys/inspector@0.1.19",
   "@clossys/inspector@0.2.6",
+  "@clossys/inspector@0.2.8",
   "@clossys/integrator@0.6.10",
   "@clossys/integrator@0.6.2",
   "@clossys/integrator@0.6.3",
   "@clossys/integrator@0.7.0",
+  "@clossys/integrator@0.8.0",
   "@clossys/keeper@0.1.2",
   "@clossys/keeper@0.1.3",
+  "@clossys/keeper@0.1.9",
   "@clossys/launcher@0.1.2",
   "@clossys/launcher@0.1.5",
+  "@clossys/launcher@0.3.0",
   "@clossys/locksmith@0.1.6",
   "@clossys/locksmith@0.1.7",
+  "@clossys/messenger@0.1.10",
   "@clossys/messenger@0.1.2",
   "@clossys/messenger@0.1.3",
   "@clossys/observer@0.2.3",
   "@clossys/observer@0.2.4",
   "@clossys/observer@0.3.0",
+  "@clossys/observer@0.4.0",
   "@clossys/publisher@0.1.10",
   "@clossys/publisher@0.2.1",
   "@clossys/starter@0.1.2",
   "@clossys/starter@0.1.4",
   "@clossys/starter@0.1.5",
   "@clossys/starter@0.1.8",
+  "@clossys/starter@0.1.9",
   "@clossys/strategist@0.1.1",
   "@clossys/strategist@0.1.2",
   "@clossys/strategist@0.2.0",
@@ -149,10 +161,21 @@ const CURRENT_PUBLISHED_IDENTITIES = [
   "@clossys/writer@0.3.3",
 ];
 
-// None of the identities above matches any package's CURRENT manifest
-// version — that is the exact finding #875 measured. This is the load-bearing
-// consequence of version-keying: today, zero packages satisfy `published` at
-// their current version from retained-publication evidence alone.
+// Most of the identities above still do not match any package's CURRENT
+// manifest version — that is the exact finding #875 measured, and remains
+// true for most of this list. Twelve now DO match their package's current
+// manifest version (architect@0.1.10, bouncer@0.1.10, butler@0.1.9,
+// giver@0.1.8, influencer@0.1.7, inspector@0.2.8, integrator@0.8.0,
+// keeper@0.1.9, launcher@0.3.0, messenger@0.1.10, observer@0.4.0,
+// starter@0.1.9): a backlog of trusted-publisher releases had npm
+// provenance but no retained `governance/release-publications/later/*.json`
+// record until it was backfilled from measured registry/GitHub Actions
+// evidence. #875's load-bearing consequence — that this join can only
+// narrow which identities satisfy `published`, never widen them by
+// assertion alone — is unaffected: `docs/contracts/package-evidence.json`
+// still declares each of those twelve `staged`, which `check-package-
+// evidence.mjs` permits (declaring below your evidence is allowed; only
+// declaring ahead is the defect it exists to catch).
 const CURRENT_PUBLISHED_PACKAGE_NAMES = [...new Set(CURRENT_PUBLISHED_IDENTITIES.map((identity) => identity.slice(0, identity.lastIndexOf("@"))))].sort();
 
 test("the ladder is ordered and its derivable states are a prefix of it", () => {
@@ -253,9 +276,9 @@ test("(d) a malformed later-publication record fails closed rather than silently
 
     const { names, identities, findings } = validateRetainedLaterPublications(fixtureRoot);
     assert.ok(findings.some((item) => item.rule === "retained-record"), "the malformed record must be reported, not skipped");
-    // The 51 genuine records still validate individually...
+    // The 63 genuine records still validate individually...
     assert.equal(names.size, 20);
-    assert.equal(identities.size, 51);
+    assert.equal(identities.size, 63);
     // ...but the gate is fail-closed as a whole: one invalid record among
     // many zeroes the entire published set rather than admitting the rest.
     assert.deepEqual([...readValidatedPublishedPackages(fixtureRoot)], []);
@@ -273,7 +296,7 @@ test("(e) the retained-record immutability and qualification joins still reject 
   const { findings, names, identities } = validateRetainedLaterPublications(repoRoot);
   assert.deepEqual(findings, []);
   assert.equal(names.size, 20);
-  assert.equal(identities.size, 51);
+  assert.equal(identities.size, 63);
 });
 
 test("current-scope publication rejects coherent rewrites and rewrite-restore history", () => {
