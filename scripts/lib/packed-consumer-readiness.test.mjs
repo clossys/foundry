@@ -305,9 +305,11 @@ test("Publisher's optional-peer matrix binds both default and react-server web o
     "@clossys/publisher/email",
     "@clossys/publisher/image",
     "@clossys/publisher/media",
+    "@clossys/publisher/pack",
     "@clossys/publisher/print",
     "@clossys/publisher/record",
     "@clossys/publisher/slides",
+    "@clossys/publisher/surfaces",
     "@clossys/publisher/web",
   ];
   const expected = (rejected = [], web = { default: "imports", "react-server": "imports" }) => ({
