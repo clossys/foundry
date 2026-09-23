@@ -69,6 +69,11 @@ import { readStrategyDirectory } from "./facts-dir.js";
 import { readStrategy, type StrategyBundle } from "./reader.js";
 import { validateDirectionEntities, type DirectionEntity, type Fact } from "./schema.js";
 import { DEFAULT_SKIP_DIRS, scanStrategyDirectory } from "./scan.js";
+import {
+  CURRENT_STRATEGY_DIR_SEGMENTS,
+  LEGACY_STRATEGY_DIR_SEGMENTS,
+  resolveDefaultStrategyDirectory,
+} from "./strategy-dir-default.js";
 
 const USAGE = `Usage: strategist-check <strategy-dir> [scan-dir] [options]
    or: strategist-check brand-coverage <derivations-file> <brandable-slots-file>
@@ -76,7 +81,7 @@ const USAGE = `Usage: strategist-check <strategy-dir> [scan-dir] [options]
    or: strategist-check handoff <strategy-dir>
    or: strategist-check apply <strategy-dir> <scan-dir> [options]
 
-  strategy-dir   Directory containing facts.json (and the rest of the strategy bundle). Required.
+  strategy-dir   Directory containing facts.json (and the rest of the strategy bundle). Optional — omit it and this command reads ./clossys/strategist by default (or the retired ./strategy directory when clossys/strategist does not exist yet, for one release only, with a notice; both existing at once is refused as indeterminate — see this package's CHANGELOG).
   scan-dir       Directory to scan for prose/copy claims. Defaults to the current working directory.
 
 Options:
@@ -123,7 +128,7 @@ Exit codes: 0 = both checks hold on non-empty inputs, 1 = either check found a r
 
 const HANDOFF_USAGE = `Usage: strategist-check handoff <strategy-dir>
 
-  strategy-dir   Directory containing the strategy bundle. Required.
+  strategy-dir   Directory containing the strategy bundle. Optional — defaults the same way the facts-check subcommand does (./clossys/strategist, falling back to the retired ./strategy for one release only — see the top-level usage and this package's CHANGELOG).
 
 Options:
   --help         Print this message and exit 0.
@@ -133,7 +138,7 @@ Exit codes: 0 = handoff-ready, 1 = handoff findings, 2 = could not read the dire
 
 const APPLY_USAGE = `Usage: strategist-check apply <strategy-dir> <scan-dir> [options]
 
-  strategy-dir   Directory containing claims.json and constraints.json. Required.
+  strategy-dir   Directory containing claims.json and constraints.json. Optional — defaults the same way the facts-check subcommand does (./clossys/strategist, falling back to the retired ./strategy for one release only — see the top-level usage and this package's CHANGELOG).
   scan-dir       Directory to scan for claim: and constraint: markers. Required.
 
 Options:
@@ -187,7 +192,7 @@ export function parseArgs(argv: string[]): ParsedArgs {
     if (arg === "--facts-dir") {
       const value = argv[i + 1];
       if (value === undefined || value.startsWith("-")) {
-        throw new CliInputError('--facts-dir requires a directory argument, e.g. --facts-dir ./strategy/facts');
+        throw new CliInputError('--facts-dir requires a directory argument, e.g. --facts-dir ./clossys/strategist/facts');
       }
       factsDir = value;
       i += 1;
@@ -196,7 +201,7 @@ export function parseArgs(argv: string[]): ParsedArgs {
     if (arg.startsWith("--facts-dir=")) {
       const value = arg.slice("--facts-dir=".length);
       if (value.length === 0) {
-        throw new CliInputError('--facts-dir requires a directory argument, e.g. --facts-dir ./strategy/facts');
+        throw new CliInputError('--facts-dir requires a directory argument, e.g. --facts-dir ./clossys/strategist/facts');
       }
       factsDir = value;
       continue;
@@ -287,6 +292,51 @@ function requireFile(label: string, path: string): void {
     throw new CliInputError(`cannot read ${label} "${path}": ${error instanceof Error ? error.message : String(error)}`);
   }
   if (!stat.isFile()) throw new CliInputError(`${label} "${path}" is not a file`);
+}
+
+function isExistingDirectory(path: string): boolean {
+  if (!existsSync(path)) return false;
+  try {
+    return statSync(path).isDirectory();
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Resolves the `strategy-dir` argument shared by the default facts-check
+ * subcommand, `handoff`, and `apply`. An explicit argument always wins
+ * outright — no resolution, no notice, exactly today's behavior. Omitted
+ * (`undefined`), it falls back to `resolveDefaultStrategyDirectory`
+ * (`strategy-dir-default.ts`) anchored at `process.cwd()`: the current
+ * `clossys/strategist` convention when present, the retired `strategy`
+ * directory alone for exactly one release (printed as a plain-language
+ * notice), or a refusal — printed and mapped to exit `2`, this package's
+ * usual "could not run" state — when both are present at once. See
+ * `strategy-dir-default.ts`'s own doc comment for why a silent pick between
+ * the two is refused.
+ */
+function resolveStrategyDirArgument(explicit: string | undefined): { dir: string } | { exitCode: number } {
+  if (explicit !== undefined) {
+    return { dir: resolve(explicit) };
+  }
+  const baseDir = process.cwd();
+  const currentDir = join(baseDir, ...CURRENT_STRATEGY_DIR_SEGMENTS);
+  const legacyDir = join(baseDir, ...LEGACY_STRATEGY_DIR_SEGMENTS);
+  const resolved = resolveDefaultStrategyDirectory(
+    currentDir,
+    legacyDir,
+    isExistingDirectory(currentDir),
+    isExistingDirectory(legacyDir),
+  );
+  if (resolved.reason === "indeterminate") {
+    console.error(`\n${resolved.notice}`);
+    return { exitCode: 2 };
+  }
+  if (resolved.reason === "legacy") {
+    console.log(resolved.notice);
+  }
+  return { dir: resolved.dir };
 }
 
 /**
@@ -788,8 +838,9 @@ function runHandoff(argv: string[]): number {
     console.log(HANDOFF_USAGE);
     return 0;
   }
-  if (!strategyDir) throw new CliInputError("strategy-dir is required");
-  const resolved = resolve(strategyDir);
+  const strategyDirResolution = resolveStrategyDirArgument(strategyDir);
+  if ("exitCode" in strategyDirResolution) return strategyDirResolution.exitCode;
+  const resolved = strategyDirResolution.dir;
   requireDirectory("strategy-dir", resolved);
   const bundle = readStrategy(resolved);
   if (strategyDirectoryUnreadable(bundle.issues)) {
@@ -812,8 +863,10 @@ function runApply(argv: string[]): number {
     console.log(APPLY_USAGE);
     return 0;
   }
-  if (!args.strategyDir || !args.scanDir) throw new CliInputError("strategy-dir and scan-dir are required");
-  const strategyDir = resolve(args.strategyDir);
+  if (!args.scanDir) throw new CliInputError("scan-dir is required");
+  const strategyDirResolution = resolveStrategyDirArgument(args.strategyDir);
+  if ("exitCode" in strategyDirResolution) return strategyDirResolution.exitCode;
+  const strategyDir = strategyDirResolution.dir;
   const scanDir = resolve(args.scanDir);
   requireDirectory("strategy-dir", strategyDir);
   requireDirectory("scan-dir", scanDir);
@@ -907,11 +960,10 @@ export function main(argv: string[]): number {
     console.log(USAGE);
     return 0;
   }
-  if (!args.strategyDir) {
-    throw new CliInputError("strategy-dir is required");
-  }
 
-  const strategyDir = resolve(args.strategyDir);
+  const strategyDirResolution = resolveStrategyDirArgument(args.strategyDir);
+  if ("exitCode" in strategyDirResolution) return strategyDirResolution.exitCode;
+  const strategyDir = strategyDirResolution.dir;
   const scanDir = resolve(args.scanDir ?? process.cwd());
   requireDirectory("strategy-dir", strategyDir);
   requireDirectory("scan-dir", scanDir);

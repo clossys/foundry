@@ -1027,12 +1027,190 @@ jobs:
             node scripts/check-contamination-classes.mjs "${pkg%/}"
           done
 
-  build:
-    name: build and test
+  # Split out of `build and test` (issue: CI throughput). Measured on run
+  # 35802156089 (job 106994736395, branch claude/strategist-clossys-layout):
+  # `build and test` took 2571s (42m51s) end to end, and three steps inside
+  # it were serial and independent of each other -- "Candidate qualification
+  # records" (946s), "README code examples typecheck against shipped
+  # declarations" (799s), and "Packed consumer readiness" (440s), 2185s
+  # together, 85% of the job. None of the three reads another's output, so
+  # running them as three parallel jobs instead of three serial steps cuts
+  # `build and test`'s wall time to roughly its own slowest remaining piece,
+  # not their sum. `build and test` stays the required context (that name is
+  # pinned by the `main-required-checks` ruleset, which this change does not
+  # edit) by becoming a fan-in over these three jobs' results -- see that
+  # job's own first step for the mechanics.
+  #
+  # This job specifically: needs full history (same reasoning as `build and
+  # test`'s own checkout, below) but no `npm ci` and no build --
+  # check-candidate-qualification.mjs imports only node builtins and local
+  # scripts/lib modules, the same dependency-free shape `check:gates`
+  # requires (see check-workflow-references.test.mjs). The touch-detection
+  # step is this job's own copy, not shared with `packed-consumer-readiness`
+  # below -- each split job now decides independently whether the change it
+  # is judging could have broken what it checks.
+  candidate-qualification:
+    name: candidate qualification records
     needs: [push-tree]
     if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          # Candidate records are immutable-history joins, not current-tree
+          # assertions. A shallow checkout cannot prove one introduction or
+          # compare the retained bytes with that exact introduction blob.
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+      # Decides whether ANYTHING this pull request changed could possibly
+      # affect the expensive step below. A documentation-only or
+      # other-workflow-only pull request cannot have broken it, so this lets
+      # that step skip on such a PR (issue #887 has the measurement this is
+      # answering).
+      #
+      # `continue-on-error: true` plus the downstream step's own
+      # `if: steps.touch.outputs.touches != 'false'` (never `== 'true'`) is
+      # deliberate, layered fail-safety: the ONLY way to skip is an
+      # explicit, successfully-written `touches=false` output. Any failure
+      # of this step -- including one that stops the script before it
+      # writes any output at all -- leaves `outputs.touches` unset, which
+      # is "not literally 'false'", so the expensive step still runs. See
+      # scripts/check-touches-packages.mjs's own header for the full list
+      # of conditions this treats as "uncertain, therefore run" and why an
+      # empty diff is one of them.
+      - name: Detect whether this change touches packages
+        id: touch
+        continue-on-error: true
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: node scripts/check-touches-packages.mjs
+      # Fail before the expensive install/build when a retained qualification
+      # record, its immutable history, or the pre-publication tail is invalid.
+      # This is deliberately in a job the `build and test` fan-in `needs`:
+      # a job whose result nothing required depended on would report without
+      # ever blocking main.
+      - name: Candidate qualification records
+        run: npm run check:candidate-qualification
+        if: steps.touch.outputs.touches != 'false'
+
+  # See `candidate-qualification` above for the measurement and the overall
+  # split reasoning. This job: needs `npm ci` and a real build --
+  # check-readme-examples.mjs shells out to `tsc` against each package's
+  # shipped `.d.ts`, which only exists once that package (and any internal
+  # dependency it has) has actually been built (#908).
+  readme-examples-typecheck:
+    name: README code examples typecheck against shipped declarations
+    needs: [push-tree]
+    if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      # Every fenced ts/tsx block in a packages/*/README.md, compiled against
+      # that package's own shipped declarations (#908).
+      - name: README code examples typecheck against shipped declarations
+        run: npm run check:readme-examples
+
+  # See `candidate-qualification` above for the measurement and the overall
+  # split reasoning. This job: needs `npm ci` and a real build --
+  # check-packed-consumer-readiness.mjs packs and installs each package's
+  # already-built dist/ into a disposable consumer (`--skip-build`, since
+  # the build already happened above), and its own touch-detection copy is
+  # independent of `candidate-qualification`'s for the same reason noted
+  # there.
+  packed-consumer-readiness:
+    name: packed consumer readiness
+    needs: [push-tree]
+    if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      # See `candidate-qualification` above for the full reasoning behind
+      # this gate (continue-on-error, fail-closed polarity, issue #887).
+      - name: Detect whether this change touches packages
+        id: touch
+        continue-on-error: true
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: node scripts/check-touches-packages.mjs
+      # Install every exact local tarball together in a credentialless,
+      # disposable consumer. This checks the packed public surface and the
+      # optional-peer omission contract; it does not claim publication or
+      # adoption.
+      - name: Packed consumer readiness
+        run: npm run check:packed-consumer
+        if: steps.touch.outputs.touches != 'false'
+
+  build:
+    name: build and test
+    # candidate-qualification, readme-examples-typecheck and
+    # packed-consumer-readiness (below) are this job's three former steps
+    # with the same names, split into their own parallel jobs (see the
+    # measurement in each job's own header comment). `build and test` stays
+    # the required context, but it is now a genuine fan-in over their
+    # results -- see the first step below for why `needs` alone is not
+    # enough to make that fan-in honest.
+    needs: [push-tree, candidate-qualification, readme-examples-typecheck, packed-consumer-readiness]
+    # `always()` is mandatory, not stylistic: GitHub's UNWRITTEN default for
+    # any job that `needs` other jobs is "skip unless every needed job
+    # succeeded" -- that default applies underneath this job's own `if:`
+    # condition regardless of what the condition itself says, exactly like
+    # the `credential-lifecycle` job above (see its own comment on the same
+    # point). Without `always()` here, a real failure in any of the three
+    # split jobs would make GitHub skip `build and test` outright -- and a
+    # skipped required context reports as passing, silently erasing the
+    # failure it exists to catch. `always()` forces this job to run so the
+    # explicit check in its first step can fail it honestly instead.
+    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true')
+    runs-on: ubuntu-latest
+    steps:
+      # The other half of the fan-in: `needs` only lets this job SEE the
+      # three split jobs' results, it does not act on them -- GitHub's
+      # implicit needs-gate is what `always()` above just disabled, on
+      # purpose, so nothing now fails this job automatically. This step is
+      # what does that job explicitly: `if: always()` so it runs even when
+      # an earlier split job failed outright (matching `always()` on the job
+      # itself), and it fails closed on anything other than a clean
+      # 'success' -- a 'failure', a 'skipped' (GitHub's own answer for a
+      # cancelled dependency), or a 'cancelled' result are all treated as
+      # this required context failing, never as it passing by default. Kept
+      # as the first step, before checkout, so a real failure fails fast
+      # without spending runner minutes on this job's own build and test.
+      - name: Split build-and-test jobs must all succeed
+        if: always()
+        run: |
+          status=0
+          for pair in \
+            "candidate-qualification=${{ needs.candidate-qualification.result }}" \
+            "readme-examples-typecheck=${{ needs.readme-examples-typecheck.result }}" \
+            "packed-consumer-readiness=${{ needs.packed-consumer-readiness.result }}"; do
+            name="${pair%%=*}"
+            result="${pair#*=}"
+            if [ "$result" != "success" ]; then
+              echo "::error::split job '$name' did not succeed (result: $result)"
+              status=1
+            fi
+          done
+          exit "$status"
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           # Candidate records are immutable-history joins, not current-tree
@@ -1065,27 +1243,6 @@ jobs:
             round-trip-npm-cache-${{ runner.os }}-
       - name: Point round-trip proofs at the warmed cache
         run: echo "RELEASE_ROUND_TRIP_NPM_CACHE_DIR=${{ runner.temp }}/round-trip-npm-cache" >> "$GITHUB_ENV"
-      # Decides whether ANYTHING this pull request changed could possibly
-      # affect the two expensive package-verification steps below
-      # ("Candidate qualification records" and "Packed consumer readiness",
-      # together 403s of a 619s `build and test` run -- 65% of the job, 30%
-      # of this repository's entire summed per-PR CI runner-time -- measured
-      # against run 34967120874). A documentation-only or other-workflow-only
-      # pull request cannot have broken either one, so this lets those two
-      # steps -- and only those two -- skip on such a PR (issue #887 has the
-      # measurement this is answering).
-      #
-      # `continue-on-error: true` plus both downstream steps' own
-      # `if: steps.touch.outputs.touches != 'false'` (never `== 'true'`) is
-      # deliberate, layered fail-safety: the ONLY way to skip is an
-      # explicit, successfully-written `touches=false` output. Any failure
-      # of this step -- including one that stops the script before it
-      # writes any output at all -- leaves `outputs.touches` unset, which
-      # is "not literally 'false'", so the expensive steps still run. See
-      # scripts/check-touches-packages.mjs's own header for the full list
-      # of conditions this treats as "uncertain, therefore run" and why an
-      # empty diff is one of them.
-      #
       # This job no longer waits for `safety`/`scope`. Both remain required
       # merge contexts; sequencing them ahead of this job only saved runner
       # minutes when safety failed, and on a merge train it added ~8 minutes
@@ -1097,24 +1254,13 @@ jobs:
       # tree-identical push to main so the next PR is not queued behind a
       # duplicate 18-minute job on the Free-plan 20 concurrent-job cap.
       #
-      # Every step below stays unconditional on pull_request, so "build and
-      # test" always reports for a PR, whether or not the two expensive
-      # package-verification steps ran inside it.
-      - name: Detect whether this change touches packages
-        id: touch
-        continue-on-error: true
-        env:
-          GITHUB_EVENT_NAME: ${{ github.event_name }}
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        run: node scripts/check-touches-packages.mjs
-      # Fail before the expensive install/build when a retained qualification
-      # record, its immutable history, or the pre-publication tail is invalid.
-      # This is deliberately in the already-required `build and test` context:
-      # a separate new job would report without blocking main until a later
-      # ruleset migration promoted its status name.
-      - name: Candidate qualification records
-        run: npm run check:candidate-qualification
-        if: steps.touch.outputs.touches != 'false'
+      # "Detect whether this change touches packages" and "Candidate
+      # qualification records" used to run here. They now run in the
+      # `candidate-qualification` job (see its own header for why, and for
+      # the touch-detection reasoning this job's copies of that step no
+      # longer need to repeat) -- this job's `needs` on it, above, is what
+      # keeps its result binding on this required context.
+      #
       # Later-publication records are the same kind of retained immutable
       # history join, and must fail in the already-required build context.
       - name: Later publication records
@@ -1133,13 +1279,11 @@ jobs:
       # packed-consumer, which now uses the same launch shape after a pack.
       - name: Declared bins reachable through node_modules/.bin
         run: node scripts/check-bin-reachability.mjs
-      # Every fenced ts/tsx block in a packages/*/README.md, compiled against
-      # that package's own shipped declarations (#908). Needs the build
-      # above for the same reason check-bin-reachability does: a package's
-      # .d.ts only exists once its own build, and any internal dependency's
-      # build, has run.
-      - name: README code examples typecheck against shipped declarations
-        run: npm run check:readme-examples
+      # "README code examples typecheck against shipped declarations" used
+      # to run here. It now runs in the `readme-examples-typecheck` job (see
+      # its own header for why) -- this job's `needs` on it, above, is what
+      # keeps its result binding on this required context.
+      #
       # check-publication-map.mjs (#1103) imports packages/publisher's own
       # dist/core/index.js directly, so its test file needs the build
       # above -- it does not belong in check:gates, which runs in the
@@ -1164,13 +1308,11 @@ jobs:
       # immediately above.
       - name: Review-evidence collector proves all three real verdicts
         run: node --test scripts/collect-review-evidence.integration.test.mjs
-      # Install every exact local tarball together in a credentialless,
-      # disposable consumer. This checks the packed public surface and the
-      # optional-peer omission contract; it does not claim publication or
-      # adoption.
-      - name: Packed consumer readiness
-        run: npm run check:packed-consumer
-        if: steps.touch.outputs.touches != 'false'
+      # "Packed consumer readiness" used to run here. It now runs in the
+      # `packed-consumer-readiness` job (see its own header for why, and for
+      # the touch-detection reasoning that job's own copy of that step
+      # repeats) -- this job's `needs` on it, above, is what keeps its
+      # result binding on this required context.
       - name: Installed position ledger fixture
         run: npm run check:installed-positions
       - name: Consumer completion evidence fixture
