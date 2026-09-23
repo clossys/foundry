@@ -2012,3 +2012,28 @@ test("MUST REFUSE: the foundry-review-record marker match is case-insensitive, c
   });
   assert.equal(result.ok, false, "a mixed-case reject marker must still refuse the merge, not be invisible to the parser");
 });
+
+test("MUST REFUSE (shape 5): a record with NO state field at all -- e.g. spelling the verdict \"verdict\": \"reject\" instead of \"state\" -- is unrecognized, not silently exempt (#1187 review round 6, blocking, second reviewer's follow-up at a40e1353)", () => {
+  // Exact repro: an authorized, current-head, role:"reviewer" record that
+  // misspells the field as `verdict` (the field name this repository's
+  // OWN decision records use for the same idea -- docs/contracts/
+  // decision-record.json) instead of `state`. No `state` field exists at
+  // all, so normalizeStateSpelling(undefined) reduces to "".
+  const noStateField = { role: "reviewer", instanceId: "v1", verdict: "reject", headSha: HEAD, _authorization: "authorized" };
+  const suspicious = findSuspiciousRecordComments([noStateField], HEAD);
+  assert.equal(suspicious.length, 1, "a record with no state field at all must be treated as unrecognized, not silently exempt from the ambiguous-state check");
+
+  // End to end: this must refuse the gate, not let a clean pair merge
+  // with the misspelled reject silently contributing nothing.
+  const result = evaluateTier1Independence({
+    records: [authorRecord("author-1"), ...qualifyingPair(), noStateField],
+    headSha: HEAD,
+  });
+  assert.equal(result.ok, false, "a misspelled-field reject must refuse the merge, not vanish");
+
+  // Regression guard: an author record's own state, "declared", must
+  // remain exempt (it is in APPROVAL_PATH_STATE_SPELLINGS) -- dropping
+  // the length guard must not make every legitimate author record
+  // suspicious.
+  assert.equal(findSuspiciousRecordComments([authorRecord("author-1")], HEAD).length, 0);
+});

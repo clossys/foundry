@@ -705,6 +705,16 @@ round, and should be resolved or explicitly accepted before
    missing config. Either design needs its own tests exercising the
    failure path under each resulting mode.
 
+One more worth stating plainly rather than tracking separately (round 6,
+second reviewer, non-blocking): `headSha` must always be written as the
+FULL 40-character SHA (`docs/contracts/review-record.json` says so
+explicitly); a reject posted with a SHORT prefix of an already-stale head
+can never be confirmed as a genuinely different commit, so it stays
+ambiguous and keeps refusing the gate at every later head too, not just
+its own, until the comment carrying it is edited to the full SHA or
+deleted — fail-closed, and harmless under report-only, but worth knowing
+before relying on `"enforce"`.
+
 Filed as a single tracking issue listing all four items (searched for
 duplicates first, none found): issue
 [#1350](https://github.com/clossys/foundry/issues/1350).

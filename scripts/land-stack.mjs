@@ -902,7 +902,17 @@ export function findSuspiciousRecordComments(records, headSha) {
     //     the ambiguous case, not a safe one. Deliberately no `role` check
     //     any more -- role was the exact gap that let an unrecognized
     //     state with `role` simply omitted slip through unnoticed.
-    if (state.length > 0 && !APPROVAL_PATH_STATE_SPELLINGS.has(state)) {
+    //
+    // A MISSING, EMPTY, OR NON-STRING `state` is itself unrecognized, NOT
+    // exempt (#1187 review round 6, blocking, second reviewer's follow-up:
+    // the `state.length > 0` guard this replaced let a record spelling the
+    // verdict as `"verdict": "reject"` instead of `"state"` -- a realistic
+    // mistake, since this repository's OWN decision records use `verdict`
+    // for the same idea -- vanish silently, because `normalizeStateSpelling`
+    // reduces a missing `state` to `""`, which the old guard treated as
+    // "nothing to check" rather than "unrecognized"). This is the same
+    // class of gap as the `role`-omitted shape fixed earlier this round.
+    if (!APPROVAL_PATH_STATE_SPELLINGS.has(state)) {
       const confirmedDifferent = isConfirmedDifferentHeadSha(r.headSha, headSha);
       if (REJECT_STATE_SPELLINGS.has(state)) {
         const atCurrentHead = isCurrentHeadShaForReject(r.headSha, headSha);
