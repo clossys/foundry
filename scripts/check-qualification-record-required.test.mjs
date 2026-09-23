@@ -69,9 +69,17 @@ function writeDeferrals(root, deferrals) {
   }
 }
 
-function writeRecord(root, recordPath, joins) {
+// `candidate` carries {name, version} — a real retained record always names
+// its own candidate this way (see e.g. any file under
+// governance/release-qualifications/), and qualificationRecordRetainedForVersion()
+// (used by checkStaleDeferrals() to re-check a deferral for an OLD version
+// against exactly this field, deliberately without recomputing anything from
+// the live worktree — see that function's own doc comment) depends on it
+// being present to confirm the record actually describes the candidate it
+// sits at the path for, not some other file that happens to occupy it.
+function writeRecord(root, recordPath, candidate, joins) {
   mkdirSync(dirname(join(root, recordPath)), { recursive: true });
-  writeFileSync(join(root, recordPath), JSON.stringify({ candidate: { packageManifestSha256: joins.packageManifestSha256, packageTreeSha1: joins.packageTreeSha1 } }));
+  writeFileSync(join(root, recordPath), JSON.stringify({ candidate: { name: candidate.name, version: candidate.version, packageManifestSha256: joins.packageManifestSha256, packageTreeSha1: joins.packageTreeSha1 } }));
 }
 
 // Builds a real git repo with: root package.json/package-lock.json, the real
@@ -120,7 +128,7 @@ test("MUTATION: goes green (exit 0) once the version-bumped candidate has a matc
   writeManifest(root, "writer", { version: "0.3.4" });
   gitCommit(root, "bump to 0.3.4");
   const joins = currentQualificationJoins(root, { name: "@clossys/writer", version: "0.3.4" });
-  writeRecord(root, "governance/release-qualifications/clossys-writer-0.3.4.json", joins);
+  writeRecord(root, "governance/release-qualifications/clossys-writer-0.3.4.json", { name: "@clossys/writer", version: "0.3.4" }, joins);
   gitCommit(root, "retain qualification record for 0.3.4");
 
   const r = run(["--json", "--base", base], root);
@@ -163,7 +171,7 @@ test("STALE DEFERRAL: an acknowledged deferral for a version that now HAS a reta
   writeManifest(root, "writer", { version: "0.3.4" });
   gitCommit(root, "bump to 0.3.4");
   const joins = currentQualificationJoins(root, { name: "@clossys/writer", version: "0.3.4" });
-  writeRecord(root, "governance/release-qualifications/clossys-writer-0.3.4.json", joins);
+  writeRecord(root, "governance/release-qualifications/clossys-writer-0.3.4.json", { name: "@clossys/writer", version: "0.3.4" }, joins);
   // The deferral was never removed after the record landed.
   writeDeferrals(root, [{ package: "writer", version: "0.3.4", reason: "mid publish-wave; see PR #848 precedent for controller", issue: 900 }]);
   gitCommit(root, "retain record but forget to remove the now-satisfied deferral");
@@ -174,6 +182,85 @@ test("STALE DEFERRAL: an acknowledged deferral for a version that now HAS a reta
   const stale = report.deferralFindings.find((f) => f.rule === "stale-deferral");
   assert.ok(stale, `expected a stale-deferral finding, got ${JSON.stringify(report.deferralFindings)}`);
   assert.equal(stale.subject, "writer");
+});
+
+// REGRESSION (issue #1187, item 4): the test above only proves the gate
+// catches a satisfied deferral for the CURRENT version — the exact case
+// that already worked, because qualificationRecordPresenceForCandidate()
+// recomputes digests from the live worktree, which happens to describe the
+// current version. Everything below proves the fix for the real gap: a
+// deferral for a version the package has already moved PAST.
+test("REGRESSION: a deferral for an OLD, already-superseded version that already has a retained record fails — not only the current version", (t) => {
+  const root = fixtureRoot(t);
+  const base = gitCommit(root, "initial at 0.3.3");
+  // The package has already moved on to 0.4.0. The deferral below names an
+  // older version, 0.3.4, that this package bumped straight through — its
+  // package.json no longer says 0.3.4 anywhere.
+  writeManifest(root, "writer", { version: "0.4.0" });
+  // A qualification record for that OLD 0.3.4 version WAS, in fact, later
+  // retained — the deferral that acknowledged its absence was simply never
+  // removed. Its digests are arbitrary and deliberately do not describe the
+  // CURRENT 0.4.0 tree at all: qualificationRecordRetainedForVersion() must
+  // not recompute anything from the live worktree to see this (see its own
+  // doc comment) — doing so is exactly the bug being regression-tested here,
+  // since a 0.3.4 record can never match a 0.4.0 worktree by construction.
+  writeRecord(
+    root,
+    "governance/release-qualifications/clossys-writer-0.3.4.json",
+    { name: "@clossys/writer", version: "0.3.4" },
+    { packageManifestSha256: "old-manifest-digest-0.3.4", packageTreeSha1: "old-tree-digest-0.3.4" },
+  );
+  writeDeferrals(root, [{ package: "writer", version: "0.3.4", reason: "mid publish-wave; see PR #848 precedent for controller", issue: 900 }]);
+
+  const r = run(["--json", "--base", base], root);
+  const report = JSON.parse(r.out);
+  assert.equal(r.code, 1, `expected exit 1, got ${r.code}: ${r.out}`);
+  const stale = report.deferralFindings.find((f) => f.rule === "stale-deferral");
+  assert.ok(stale, `expected a stale-deferral finding for the superseded 0.3.4 deferral, got ${JSON.stringify(report.deferralFindings)}`);
+  assert.equal(stale.subject, "writer");
+  assert.match(stale.message, /"0\.3\.4"/, `message should name the exact deferred version, got: ${stale.message}`);
+  assert.match(stale.message, /issue #900/);
+});
+
+test("REGRESSION: two deferral files that both claim the same package@version fail, even when only one is named for itself", (t) => {
+  const root = fixtureRoot(t);
+  const base = gitCommit(root, "initial at 0.3.3");
+  writeManifest(root, "writer", { version: "0.3.4" });
+  const dir = join(root, "governance/release-qualification-deferrals");
+  mkdirSync(dir, { recursive: true });
+  const entry = { package: "writer", version: "0.3.4", reason: "mid publish-wave; see PR #848 precedent for controller", issue: 900 };
+  // The correctly-named original...
+  writeFileSync(join(dir, "writer@0.3.4.json"), JSON.stringify(entry, null, 2) + "\n");
+  // ...plus a stray second copy left behind by a bad manual merge-conflict
+  // resolution: a different filename, but claiming the identical
+  // package@version underneath.
+  writeFileSync(join(dir, "writer@0.3.4-conflict-copy.json"), JSON.stringify(entry, null, 2) + "\n");
+
+  const r = run(["--json", "--base", base], root);
+  const report = JSON.parse(r.out);
+  assert.equal(r.code, 1, `expected exit 1, got ${r.code}: ${r.out}`);
+  const dup = report.deferralFindings.find((f) => f.rule === "duplicate-deferral");
+  assert.ok(dup, `expected a duplicate-deferral finding, got ${JSON.stringify(report.deferralFindings)}`);
+  assert.equal(dup.subject, "writer");
+  assert.match(dup.message, /writer@0\.3\.4\.json/);
+  assert.match(dup.message, /writer@0\.3\.4-conflict-copy\.json/);
+});
+
+test("CONTROL: a legitimate, still-unsatisfied deferral for an already-superseded version keeps passing (no false stale/duplicate finding)", (t) => {
+  const root = fixtureRoot(t);
+  const base = gitCommit(root, "initial at 0.3.3");
+  // The package has moved on to 0.4.0; the deferral names an OLDER version,
+  // 0.3.4, that was bumped through without a record — and still has none.
+  // This is exactly the ongoing, genuine debt a deferral is meant to carry,
+  // and the hardening above must not start failing it: it has neither a
+  // retained record (no false stale-deferral) nor a colliding sibling file
+  // (no false duplicate-deferral).
+  writeManifest(root, "writer", { version: "0.4.0" });
+  writeDeferrals(root, [{ package: "writer", version: "0.3.4", reason: "mid publish-wave; see PR #848 precedent for controller", issue: 900 }]);
+
+  const r = run(["--json", "--base", base], root);
+  const report = JSON.parse(r.out);
+  assert.equal(report.deferralFindings.length, 0, `expected no deferral findings for the still-open 0.3.4 deferral, got ${JSON.stringify(report.deferralFindings)}`);
 });
 
 test("a malformed deferral (no reason) is a real finding, not a silent free pass", (t) => {
