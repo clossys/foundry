@@ -125,6 +125,7 @@ concurrency:
 jobs:
   deprecate:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     # The same protected environment used for package uploads. A deprecation
     # uploads no bytes, but it is still a public registry mutation and must
     # retain the same reviewer boundary.
