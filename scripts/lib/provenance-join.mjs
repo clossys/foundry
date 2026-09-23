@@ -1,52 +1,33 @@
-/**
- * The shared subject/digest/repository/workflow join for verifying a
- * published `@clossys` package's SLSA provenance statement against this
- * repository's `publish.yml`. Two very different callers need EXACTLY this
- * join and nothing else:
- *
- *   - `check-public-npm-provenance.mjs`, a producer-side, repository-internal
- *     gate that verifies ONE package immediately after publishing
- *     it, from `npm audit signatures --json --include-attestations` evidence
- *     and the exact source commit that produced the release (it knows that
- *     commit -- it is running in the same workflow run that made it).
- *   - `integrator-provenance-check`, this package's consumer-facing bin,
- *     which verifies any already-installed `@clossys` package from a public,
- *     anonymous registry fetch. It runs under pnpm, which does not implement
- *     `npm audit signatures` at all, so it reads the same evidence straight
- *     from `GET /-/npm/v1/attestations/<name>@<version>` instead of an
- *     npm-shaped audit result. It also was not present for the publish, so
- *     it has no exact source commit to pin against -- it can only confirm
- *     the statement names A commit on this repository's protected `main`,
- *     not a SPECIFIC one.
- *
- * Both callers are asking the same question -- "does this exact
- * package/version's SLSA statement name this repository's publish workflow,
- * a GitHub-hosted builder, and a manually dispatched run?" -- so this module
- * is the one hand-maintained implementation of that join.
- *
- * `check-public-npm-provenance.mjs` does NOT import this file. It used to,
- * directly by relative path, unbuilt -- which broke `check:gates`'s
- * `safety`/`publish safety` CI job the moment this module gained even
- * type-only TypeScript syntax, because that job pins Node 20
- * (`.github/workflows/ci.yml`) and Node 20 has no native TypeScript
- * stripping at all (stable/unflagged only since Node 23.6; see
- * https://nodejs.org/api/typescript.html). `scripts/lib/provenance-join.mjs`
- * is now a dependency-free, plain-JavaScript mirror of this module that
- * script imports instead -- it needs no stripping because it is not
- * TypeScript. This module cannot import that one either: `@clossys/
- * integrator` is a published, standalone npm package built with plain `tsc`
- * (no bundler), and its `files` allowlist never ships this repository's
- * root-level `scripts/` directory, so a relative import reaching outside the
- * package would resolve in this checkout and then be unresolvable for
- * anyone who installs the published package.
- *
- * The two files are kept in lockstep by `provenance-join-parity.test.ts`
- * (in this directory), which runs the same table of statements, audit
- * results, and packuments through both and asserts identical outputs. Treat
- * that test, not code review alone, as what keeps this a single source of
- * truth despite being two files on disk. Do not edit one without the other.
- */
-
+// The shared subject/digest/repository/workflow join for verifying a
+// published `@clossys` package's SLSA provenance statement against this
+// repository's `publish.yml`.
+//
+// This is a dependency-free, plain-JavaScript mirror of the canonical,
+// richly-typed implementation in `packages/integrator/src/provenance.ts`.
+// It exists ONLY because `scripts/check-public-npm-provenance.mjs` -- the
+// producer-side gate this repository's own `check:gates` suite runs -- must
+// stay importable with zero build step on Node 20 (the `safety`/`publish
+// safety` job's pin; see `.github/workflows/ci.yml`), and Node 20 has no
+// native TypeScript stripping at all (that landed experimentally at 22.6,
+// stable/unflagged at 23.6; see https://nodejs.org/api/typescript.html).
+// `provenance.ts` cannot be imported directly from that job for exactly that
+// reason.
+//
+// This file and `packages/integrator/src/provenance.ts` are kept in
+// lockstep by `packages/integrator/src/provenance-join-parity.test.ts`,
+// which runs the same table of statements, audit results, and packuments
+// through both and asserts identical outputs. Do not edit one without the
+// other, and let that test catch drift, not review alone.
+//
+// `packages/integrator/src/provenance.ts` cannot import THIS file instead of
+// owning its own copy: `@clossys/integrator` is a published, standalone npm
+// package built with plain `tsc` (no bundler), and its `files` allowlist
+// ships only `dist`, `src`, and a few docs -- never this repository's
+// root-level `scripts/` directory. An import reaching outside the package
+// would resolve fine in this checkout and then be unresolvable for anyone
+// who installs the published package. So the package keeps its own
+// implementation, and the parity test is what stands in for "single source
+// of truth" here.
 export const PUBLIC_REGISTRY = "https://registry.npmjs.org";
 export const EXPECTED_REPOSITORY = "https://github.com/clossys/foundry";
 export const EXPECTED_WORKFLOW = ".github/workflows/publish.yml";
@@ -55,15 +36,15 @@ export const SLSA_WORKFLOW_BUILD = "https://slsa-framework.github.io/github-acti
 export const GITHUB_HOSTED_BUILDER = "https://github.com/actions/runner/github-hosted";
 export const EXPECTED_MAIN_REF = "refs/heads/main";
 
-function isRecord(value: unknown): value is Record<string, unknown> {
+function isRecord(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-export function exactSubjectName(name: string, version: string): string {
+export function exactSubjectName(name, version) {
   return `pkg:npm/${name.startsWith("@") ? `%40${name.slice(1)}` : name}@${version}`;
 }
 
-export function sha512HexFromIntegrity(integrity: unknown): string | null {
+export function sha512HexFromIntegrity(integrity) {
   if (typeof integrity !== "string" || !integrity.startsWith("sha512-")) return null;
   try {
     const bytes = Buffer.from(integrity.slice("sha512-".length), "base64");
@@ -74,7 +55,7 @@ export function sha512HexFromIntegrity(integrity: unknown): string | null {
 }
 
 /** Decodes a Sigstore bundle's DSSE envelope payload (base64 JSON) into the in-toto statement it carries. */
-export function decodePayload(bundle: unknown): unknown {
+export function decodePayload(bundle) {
   const encoded = isRecord(bundle) && isRecord(bundle.bundle) && isRecord(bundle.bundle.dsseEnvelope) ? bundle.bundle.dsseEnvelope.payload : undefined;
   if (typeof encoded !== "string" || encoded.length === 0) return null;
   try {
@@ -84,7 +65,7 @@ export function decodePayload(bundle: unknown): unknown {
   }
 }
 
-export function isExactAttestationUrl(value: unknown, name: string, version: string): boolean {
+export function isExactAttestationUrl(value, name, version) {
   if (typeof value !== "string") return false;
   try {
     const parsed = new URL(value);
@@ -104,36 +85,13 @@ export function isExactAttestationUrl(value: unknown, name: string, version: str
  * one-version response the attestations flow also accepts), the tarball
  * SHA-512 digest the SLSA subject must exactly bind, in hex.
  */
-export function expectedDigestFromPackument(packument: unknown, name: string, version: string): string | null {
+export function expectedDigestFromPackument(packument, name, version) {
   if (!isRecord(packument)) return null;
   const versions = isRecord(packument.versions) ? packument.versions : undefined;
   const packumentVersion = versions ? versions[version] : packument.name === name && packument.version === version ? packument : undefined;
   if (!isRecord(packumentVersion) || packumentVersion.name !== name || packumentVersion.version !== version) return null;
   const dist = isRecord(packumentVersion.dist) ? packumentVersion.dist : undefined;
   return sha512HexFromIntegrity(dist?.integrity);
-}
-
-export interface ProvenanceStatementJoinInput {
-  readonly name: string;
-  readonly version: string;
-  /** The tarball's SHA-512 digest in hex, from the public packument -- see `expectedDigestFromPackument`. */
-  readonly expectedDigest: string;
-  /** The decoded in-toto statement -- see `decodePayload`. */
-  readonly statement: unknown;
-  /**
-   * The exact source commit the release must have been built from, 40 lowercase
-   * hex characters. Supplied by a caller who was present for the publish (the
-   * producer gate, from `github.sha`). OMITTED by a caller who was not (a
-   * consumer verifying an already-installed package): in that case the join
-   * only confirms the statement names ONE commit on this repository's
-   * protected `main`, structurally, never a specific one it cannot know.
-   */
-  readonly sourceSha?: string;
-}
-
-export interface ProvenanceJoinResult {
-  readonly code: 0 | 1;
-  readonly failures: readonly string[];
 }
 
 /**
@@ -144,9 +102,9 @@ export interface ProvenanceJoinResult {
  * when `sourceSha` is supplied, that EXACT commit rather than merely some
  * commit on `main`.
  */
-export function inspectProvenanceStatement(input: ProvenanceStatementJoinInput): ProvenanceJoinResult {
+export function inspectProvenanceStatement(input) {
   const { name, version, expectedDigest, statement, sourceSha } = input;
-  const failures: string[] = [];
+  const failures = [];
 
   if (!isRecord(statement)) {
     return { code: 1, failures: ["verified SLSA provenance payload is not decodable JSON"] };
@@ -225,21 +183,6 @@ export function inspectProvenanceStatement(input: ProvenanceStatementJoinInput):
 // Producer path: `npm audit signatures --include-attestations`-shaped input.
 // ---------------------------------------------------------------------------
 
-export interface PublicNpmProvenanceInput {
-  readonly name: string;
-  readonly version: string;
-  readonly sourceSha: string;
-  /** The parsed `npm audit signatures --json --include-attestations` result. */
-  readonly audit: unknown;
-  /** The public packument (`GET https://registry.npmjs.org/<name>`). */
-  readonly packument: unknown;
-}
-
-export interface PublicNpmProvenanceResult {
-  readonly code: 0 | 1 | 2;
-  readonly failures: readonly string[];
-}
-
 /**
  * Verifies one exact public npm package's provenance from `npm audit
  * signatures --include-attestations` evidence -- the producer-side check
@@ -248,9 +191,9 @@ export interface PublicNpmProvenanceResult {
  * Exit 0 = exact provenance verified. Exit 1 = a concrete mismatch. Exit 2 =
  * malformed input, never silently treated as a mismatch.
  */
-export function inspectPublicNpmProvenance(input: PublicNpmProvenanceInput): PublicNpmProvenanceResult {
+export function inspectPublicNpmProvenance(input) {
   const { name, version, sourceSha, audit, packument } = input;
-  const failures: string[] = [];
+  const failures = [];
   if (typeof name !== "string" || name.length === 0) failures.push("package name must be a non-empty string");
   if (typeof version !== "string" || version.length === 0) failures.push("package version must be a non-empty string");
   if (!/^[a-f0-9]{40}$/.test(sourceSha ?? "")) failures.push("source SHA must be exactly 40 lowercase hexadecimal characters");
@@ -258,7 +201,7 @@ export function inspectPublicNpmProvenance(input: PublicNpmProvenanceInput): Pub
   if (!isRecord(packument)) failures.push("public npm packument must be an object");
   if (failures.length > 0) return { code: 2, failures };
 
-  const auditRecord = audit as Record<string, unknown>;
+  const auditRecord = audit;
   if (!Array.isArray(auditRecord.invalid) || auditRecord.invalid.length !== 0) failures.push("npm audit signatures reported invalid package signatures or attestations");
   if (!Array.isArray(auditRecord.missing) || auditRecord.missing.length !== 0) failures.push("npm audit signatures reported missing package signatures or attestations");
   if (!Array.isArray(auditRecord.verified)) failures.push("npm audit signatures did not return a verified package array");
@@ -282,7 +225,7 @@ export function inspectPublicNpmProvenance(input: PublicNpmProvenanceInput): Pub
   }
 
   const provenanceBundles = Array.isArray(verified?.attestationBundles)
-    ? (verified.attestationBundles as unknown[]).filter((bundle) => isRecord(bundle) && bundle.predicateType === SLSA_PROVENANCE)
+    ? verified.attestationBundles.filter((bundle) => isRecord(bundle) && bundle.predicateType === SLSA_PROVENANCE)
     : [];
   if (provenanceBundles.length !== 1) failures.push("npm audit signatures must return exactly one verified SLSA provenance bundle for the package");
 
@@ -299,22 +242,6 @@ export function inspectPublicNpmProvenance(input: PublicNpmProvenanceInput): Pub
 // Consumer path: `GET /-/npm/v1/attestations/<name>@<version>`-shaped input.
 // ---------------------------------------------------------------------------
 
-export interface InstalledPackageProvenanceInput {
-  readonly name: string;
-  readonly version: string;
-  /** The public packument for `name` (`GET https://registry.npmjs.org/<name>`). */
-  readonly packument: unknown;
-  /** The raw `GET /-/npm/v1/attestations/<name>@<version>` response body. */
-  readonly attestationsResponse: unknown;
-}
-
-export type InstalledPackageProvenanceState = "verified" | "violated";
-
-export interface InstalledPackageProvenanceResult {
-  readonly state: InstalledPackageProvenanceState;
-  readonly failures: readonly string[];
-}
-
 /**
  * Verifies one already-installed `@clossys` package's provenance from the
  * public attestations endpoint directly -- the shape `integrator-provenance-
@@ -323,7 +250,7 @@ export interface InstalledPackageProvenanceResult {
  * at all never calls this function in the first place (see
  * `provenance-check.ts`, which is the layer that owns that distinction).
  */
-export function inspectInstalledPackageProvenance(input: InstalledPackageProvenanceInput): InstalledPackageProvenanceResult {
+export function inspectInstalledPackageProvenance(input) {
   const { name, version, packument, attestationsResponse } = input;
   const expectedDigest = expectedDigestFromPackument(packument, name, version);
   if (expectedDigest === null) {

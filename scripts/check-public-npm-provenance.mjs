@@ -12,25 +12,29 @@
 // Exit 0 = exact provenance verified. Exit 1 = a concrete mismatch. Exit 2 =
 // malformed input or an unreadable registry answer; uncertainty never passes.
 //
-// THE JOIN ITSELF LIVES IN packages/integrator/src/provenance.ts, not here.
+// THE JOIN ITSELF LIVES IN scripts/lib/provenance-join.mjs, not here.
 // `integrator-provenance-check` (issue #885) needs exactly this same
 // subject/digest/repository/workflow join to verify an already-installed
 // package from the public attestations endpoint directly (pnpm has no `npm
-// audit signatures` to read instead), so the join is owned once, in the
-// package, and this script imports it rather than keeping a second copy that
-// could silently drift from the one a consumer actually runs.
+// audit signatures` to read instead). The canonical, richly-typed
+// implementation lives in `packages/integrator/src/provenance.ts` -- that
+// package's own published source -- and `scripts/lib/provenance-join.mjs` is
+// a dependency-free plain-JS mirror of it, kept in lockstep by
+// `packages/integrator/src/provenance-join-parity.test.ts`. This script
+// cannot import `provenance.ts` directly: this script runs inside
+// `check:gates`, which the `safety`/`publish safety` CI job pins to Node 20
+// (`.github/workflows/ci.yml`), and Node 20 has no native TypeScript
+// stripping at all (that landed experimentally at 22.6, stable/unflagged at
+// 23.6; see https://nodejs.org/api/typescript.html) -- so importing a `.ts`
+// file there throws before any test body runs. `scripts/lib/provenance-
+// join.mjs` has no such requirement: it is plain JavaScript.
 //
 // This import works with NO build step and NO `npm install` in between,
 // which matters: `publish.yml`'s `verify-published` job deliberately runs
 // this script with nothing but a checkout -- no install, no build -- to keep
-// anonymous post-publish verification cheap. That is possible only because
-// `provenance.ts` uses zero dependencies and no TypeScript syntax beyond type
-// annotations and interfaces (no enums, no namespaces, no parameter-property
-// constructors), so Node's native type-stripping (stable and unflagged since
-// Node 23.6; see https://nodejs.org/api/typescript.html) runs it exactly as
-// checked in. Do not add build-requiring syntax to that file.
+// anonymous post-publish verification cheap.
 import { readFileSync } from "node:fs";
-import { inspectPublicNpmProvenance } from "../packages/integrator/src/provenance.ts";
+import { inspectPublicNpmProvenance } from "./lib/provenance-join.mjs";
 
 export { inspectPublicNpmProvenance };
 
