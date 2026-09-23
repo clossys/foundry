@@ -1,8 +1,7 @@
 /**
  * `packages/integrator/src/provenance.ts` and `scripts/lib/provenance-
- * join.mjs` (this repository's own tooling, consumed by `scripts/check-
- * public-npm-provenance.mjs` because that script must run on Node 20 with no
- * TypeScript stripping -- see the docblocks on both files) are two files
+ * join.mjs` (a repository build/tooling script that must run on Node 20 with
+ * no TypeScript stripping -- see the docblocks on both files) are two files
  * implementing the SAME subject/digest/repository/workflow join. Nothing
  * mechanically forces them to agree; this test is that mechanism. It runs an
  * identical table of statements, npm-audit-shaped evidence, and installed-
@@ -25,7 +24,7 @@ import {
   inspectProvenanceStatement as tsInspectProvenanceStatement,
   inspectPublicNpmProvenance as tsInspectPublicNpmProvenance,
 } from "./provenance.js";
-// eslint-disable-next-line import/extensions -- deliberate cross-repo import; see the docblock above and on both files.
+// eslint-disable-next-line import/extensions -- deliberate import reaching outside this package's own directory; see the docblock above and on both files.
 import {
   EXPECTED_MAIN_REF as mjsEXPECTED_MAIN_REF,
   EXPECTED_REPOSITORY as mjsEXPECTED_REPOSITORY,
