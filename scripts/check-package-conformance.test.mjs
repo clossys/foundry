@@ -149,3 +149,72 @@ test("a malformed check-output-envelope.fixture.json always fails, in both repor
   assert.ok(enforceResult.findings.some((f) => f.rule === "envelope-findings-empty-for-non-satisfied-verdict"));
 });
 
+// --- Classification (issue #1187 comment 5800189482, Decision 1): every
+// packages/* manifest name must land in exactly one of "role" or "tooling",
+// and evaluateConformance is handed that classification per descriptor
+// rather than re-deriving it (collectDescriptors, the I/O layer, does the
+// deriving via scripts/package-classification.mjs).
+
+test("a tooling package is reported as an excluded row, not evaluated against the eight role items", (t) => {
+  const root = makeTempRoot(t);
+  const result = evaluateConformance(root, [descriptor({ classification: "tooling", role: "@clossys/launcher", packageDir: "launcher" })], { enforce: false });
+  assert.deepEqual(result.findings, []);
+  const row = result.table[0];
+  assert.equal(row.classification, "tooling");
+  assert.equal(row.excluded, "executable-tooling");
+  assert.equal(row.manifestBlock, "n/a");
+  assert.equal(row.lifecycleWords, "n/a");
+  assert.equal(row.loopSection, "n/a");
+  assert.equal(row.layout, "n/a");
+  assert.equal(row.capabilityMap, "n/a");
+  assert.equal(row.statusMd, "n/a");
+});
+
+test("a tooling row still reports the two applicable Stage B items: output envelope and the conversation-contract duplicate", (t) => {
+  const root = makeTempRoot(t);
+  mkdirSync(join(root, "packages", "launcher"), { recursive: true });
+  const fixture = { package: "@clossys/launcher", version: "0.3.0", verdict: "satisfied", summary: "Everything checked out.", findings: [] };
+  writeFileSync(join(root, "packages", "launcher", "check-output-envelope.fixture.json"), JSON.stringify(fixture));
+  const result = evaluateConformance(root, [descriptor({
+    classification: "tooling",
+    role: "@clossys/launcher",
+    packageDir: "launcher",
+    skillSource: "# Launcher\n\n## How we work together\n\nold local copy\n",
+  })], { enforce: false });
+  assert.deepEqual(result.findings, []); // not-removed alone is never a report-mode failure
+  const row = result.table[0];
+  assert.equal(row.outputEnvelope, "declared");
+  assert.equal(row.conversationContract, "not-removed");
+  assert.equal(row.gaps, 1); // only the not-removed conversation contract counts
+});
+
+test("--enforce does not yet enforce a tooling row's two applicable items (Decision 1: report only, for now)", (t) => {
+  const root = makeTempRoot(t);
+  const result = evaluateConformance(root, [descriptor({ classification: "tooling", role: "@clossys/launcher", packageDir: "launcher" })], { enforce: true });
+  assert.deepEqual(result.findings, []);
+});
+
+test("an unclassified package (in neither roles nor executable tooling) is always a finding, in report and enforce mode", (t) => {
+  const root = makeTempRoot(t);
+  const reportResult = evaluateConformance(root, [descriptor({ classification: "unclassified", role: "@scope/mystery" })], { enforce: false });
+  assert.ok(reportResult.findings.some((f) => f.rule === "package-not-classified" && f.role === "@scope/mystery"));
+  const enforceResult = evaluateConformance(root, [descriptor({ classification: "unclassified", role: "@scope/mystery" })], { enforce: true });
+  assert.ok(enforceResult.findings.some((f) => f.rule === "package-not-classified" && f.role === "@scope/mystery"));
+});
+
+test("a doubly classified package (both a role and executable tooling) is always a finding, in report and enforce mode", (t) => {
+  const root = makeTempRoot(t);
+  const reportResult = evaluateConformance(root, [descriptor({ classification: "both", role: "@scope/contradiction" })], { enforce: false });
+  assert.ok(reportResult.findings.some((f) => f.rule === "package-double-classified" && f.role === "@scope/contradiction"));
+  const enforceResult = evaluateConformance(root, [descriptor({ classification: "both", role: "@scope/contradiction" })], { enforce: true });
+  assert.ok(enforceResult.findings.some((f) => f.rule === "package-double-classified" && f.role === "@scope/contradiction"));
+});
+
+test("a role package is unchanged: an explicit classification: 'role' descriptor evaluates identically to an untagged one", (t) => {
+  const root = makeTempRoot(t);
+  const untagged = evaluateConformance(root, [descriptor()], { enforce: false });
+  const tagged = evaluateConformance(root, [descriptor({ classification: "role" })], { enforce: false });
+  assert.deepEqual(untagged.table, tagged.table);
+  assert.deepEqual(untagged.findings, tagged.findings);
+});
+

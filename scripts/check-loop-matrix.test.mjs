@@ -90,3 +90,45 @@ test("a drifted generated section ALWAYS fails, even in report mode", () => {
   assert.ok(result.findings.some((f) => f.rule === "loop-section-drifted"));
   assert.equal(result.table[0].generatedSection, "stale");
 });
+
+// --- Classification (issue #1187 comment 5800189482, Decision 1): every
+// packages/* manifest name must land in exactly one of "role" or "tooling".
+// evaluateLoopMatrix is handed that classification per descriptor rather
+// than re-deriving it (collect, the I/O layer, derives it via
+// scripts/package-classification.mjs).
+
+test("a tooling package is reported as an excluded row, with loopMatrix and generatedSection both n/a (no capability x stage loop applies)", () => {
+  const result = evaluateLoopMatrix([{ role: "@clossys/launcher", classification: "tooling", matrixDoc: null, capabilityIds: null, skillSource: null, stageActivities: null }]);
+  assert.deepEqual(result.findings, []);
+  const row = result.table[0];
+  assert.equal(row.classification, "tooling");
+  assert.equal(row.excluded, "executable-tooling");
+  assert.equal(row.loopMatrix, "n/a");
+  assert.equal(row.generatedSection, "n/a");
+});
+
+test("--enforce does not flag a tooling row (the loop matrix is not applicable to executable tooling)", () => {
+  const result = evaluateLoopMatrix([{ role: "@clossys/launcher", classification: "tooling", matrixDoc: null, capabilityIds: null, skillSource: null, stageActivities: null }], { enforce: true });
+  assert.deepEqual(result.findings, []);
+});
+
+test("an unclassified package (in neither roles nor executable tooling) is always a finding, in report and enforce mode", () => {
+  const reportResult = evaluateLoopMatrix([{ role: "@scope/mystery", classification: "unclassified", matrixDoc: null, capabilityIds: null, skillSource: null, stageActivities: null }], { enforce: false });
+  assert.ok(reportResult.findings.some((f) => f.rule === "package-not-classified" && f.role === "@scope/mystery"));
+  const enforceResult = evaluateLoopMatrix([{ role: "@scope/mystery", classification: "unclassified", matrixDoc: null, capabilityIds: null, skillSource: null, stageActivities: null }], { enforce: true });
+  assert.ok(enforceResult.findings.some((f) => f.rule === "package-not-classified" && f.role === "@scope/mystery"));
+});
+
+test("a doubly classified package (both a role and executable tooling) is always a finding, in report and enforce mode", () => {
+  const reportResult = evaluateLoopMatrix([{ role: "@scope/contradiction", classification: "both", matrixDoc: null, capabilityIds: null, skillSource: null, stageActivities: null }], { enforce: false });
+  assert.ok(reportResult.findings.some((f) => f.rule === "package-double-classified" && f.role === "@scope/contradiction"));
+  const enforceResult = evaluateLoopMatrix([{ role: "@scope/contradiction", classification: "both", matrixDoc: null, capabilityIds: null, skillSource: null, stageActivities: null }], { enforce: true });
+  assert.ok(enforceResult.findings.some((f) => f.rule === "package-double-classified" && f.role === "@scope/contradiction"));
+});
+
+test("a role package is unchanged: an explicit classification: 'role' descriptor evaluates identically to an untagged one", () => {
+  const untagged = evaluateLoopMatrix([{ role: ROLE, matrixDoc: null, capabilityIds: null, skillSource: null, stageActivities: null }]);
+  const tagged = evaluateLoopMatrix([{ role: ROLE, classification: "role", matrixDoc: null, capabilityIds: null, skillSource: null, stageActivities: null }]);
+  assert.deepEqual(untagged.table, tagged.table);
+  assert.deepEqual(untagged.findings, tagged.findings);
+});
