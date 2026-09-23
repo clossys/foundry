@@ -120,9 +120,11 @@ versioned packages.
 | `@clossys/controller/artifacts` | Deterministic, fail-closed verification for a consumer-owned governed artifact: declared kind + schema version, exact-content checksum, and structural provenance. |
 | `@clossys/controller/cleanup` | Pure workspace-cleanup classification: caller-normalized inventory and observations in, a typed `owned` / `safe-candidate` / `blocked` proposal out. No I/O, no deletion API. |
 | `@clossys/controller/composition` | Pure caller-owned cross-plane constraint, supply, decision, exception, and effective-value resolution. |
-| `@clossys/controller/conventions` | Account-neutral agent conventions two parties can share without either owning the other: branch provenance, skill naming, agent interoperability, routine and schedule declarations, CI gate naming, and the capability-first skill registry. Ships the documents/adapters below as defaults and enforces only their grammar — never byte-identity with its own prose. |
-| `@clossys/controller/conventions/documents/*` | The shipped convention documents themselves (`branch-provenance.md`, `skill-grammar.md`, `agent-interoperability.md`, `routine-declaration.md`, `schedule-declaration.md`, `live-state-reconciliation.md`, `skill-registry.md`, `machine-guidance.md`, `machine-baseline.md`, `gate-naming.md`, `runner-conventions.md`) as real files a provisioning step can copy or template onto a machine. |
+| `@clossys/controller/conventions` | Account-neutral agent conventions two parties can share without either owning the other: branch provenance, skill naming, agent interoperability, routine and schedule declarations, CI gate naming, CI conventions and their pure evaluator (`ci-conventions-check`), and the capability-first skill registry. Ships the documents/adapters/data/templates below as defaults and enforces only their grammar — never byte-identity with its own prose. |
+| `@clossys/controller/conventions/documents/*` | The shipped convention documents themselves (`branch-provenance.md`, `skill-grammar.md`, `agent-interoperability.md`, `routine-declaration.md`, `schedule-declaration.md`, `live-state-reconciliation.md`, `skill-registry.md`, `machine-guidance.md`, `machine-baseline.md`, `gate-naming.md`, `runner-conventions.md`, `ci-conventions.md`) as real files a provisioning step can copy or template onto a machine. |
 | `@clossys/controller/conventions/adapters/*` | The shipped adapter files (`agent-policy.rules`, `shell-integration.zsh`, `branch-provenance-hook.sh`, `heavy-cmd-hook.sh`, `scoped-main-push.sh`, `workspace-shell.zsh`) as real files, same shape as the documents above. |
+| `@clossys/controller/conventions/data/*` | Dated data files an evaluator reads as input, never hard-coded in code: `runner-pricing.json` (`asOf`, source URLs). |
+| `@clossys/controller/conventions/templates/*` | Ready-to-adopt CI workflow skeletons: `ci-workflow.yml`, which a test in this package proves passes `ci-conventions-check` as shipped. |
 | `@clossys/controller/policy` | The content-addressed `PolicyBinding` primitive: compute a digest, validate a binding's shape, verify a binding against materialized content. Zero I/O, zero dependency of its own — the primitive `./gates` and `./artifacts` bind rules and artifacts to documents with, without ever committing the document itself. |
 
 `@clossys/controller/positions` exports
@@ -2093,11 +2095,72 @@ adapter can find the shared guidance without duplicating it.
 | `GATE_VERBS` / `validateGateName` / `validateGateSet` | constant / functions | CI gate-naming grammar and its validators. |
 | `scanNeutrality` | function | Structural neutrality scan — the same scan `scripts/check-neutrality.mjs` runs against this subpath's own shipped documents/adapters. |
 | `SKILL_REGISTRY_SCHEMA_VERSION` / `validateSkillRegistry` / `computeCapabilityCoverage` / `validateRoutineCoverage` | constant / functions | The capability-first skill registry's grammar, coverage computation, and routine-coverage cross-check. |
-| `CONVENTION_DOCUMENTS` / `CONVENTION_ADAPTERS` / `DOCUMENTS_ROOT` / `ADAPTERS_ROOT` / `documentPath` / `adapterPath` / `templatedFilenames` | constants / functions | The shipped document/adapter manifest and path resolution — no I/O. |
+| `CONVENTION_DOCUMENTS` / `CONVENTION_ADAPTERS` / `DOCUMENTS_ROOT` / `ADAPTERS_ROOT` / `DATA_ROOT` / `TEMPLATES_ROOT` / `documentPath` / `adapterPath` / `dataPath` / `templatePath` / `templatedFilenames` | constants / functions | The shipped document/adapter/data/template manifest and path resolution — no I/O. |
 | `renderProductLoader` | function | Renders a small pointer file a consuming product installs to reach shared guidance without duplicating it. |
 | `sameSet` / `canonicalJson` / `sameCanonicalJson` / `nonEmptyString` / `sorted` | functions | Dependency-free comparison primitives: order-independent sequence equality, deep key-order-independent JSON equality, and a non-empty-string type guard. |
+| `evaluateCiConventions` | function | The pure evaluator for `conventions/documents/ci-conventions.md` (issue #1259) — see below. |
+| `parseYamlLite` / `YamlLiteParseError` | function / class | A small, well-tested YAML subset parser for GitHub Actions workflow files — see below. |
 | `ConventionDocument` / `ConventionAdapter` / `RoutineDeclaration` / `RoutineRegistry` / `ScheduleDeclaration` / `ScheduleRegistry` / `Finding` / `Severity` | types | Shapes shared across the validators above. |
 | `LiveStateSurfaceDeclaration` / `LiveStateSurfaceFindingKind` / `LiveStateDriftKind` / `LiveStateFinding` / `LiveStateSubjectReport` / `LiveStateReconciliationResult` / `LiveStateReconciliationReason` / `LiveStateObservation` / `LiveStateDeclarationValue` / `ReconcileLiveStateInput` | types | The `liveStateSurface` declaration, its finding vocabulary, and the shapes `reconcileLiveState` reads and returns. |
+
+#### CI conventions and `ci-conventions-check` (issue #1259)
+
+`conventions/documents/ci-conventions.md` is the MECE CI rule set (cost,
+speed, quality, security) every repository adopts, each rule with its
+reason and, where one exists, the measurement behind it.
+`runner-conventions.md` extends it with the runner-stack-by-visibility
+decision rule; its dated pricing lives in `conventions/data/
+runner-pricing.json` (`asOf`, source URLs) rather than in code.
+`evaluateCiConventions` is the pure evaluator: the caller supplies already-
+read workflow file contents, a declared ruleset, and a visibility/plan/
+budget/exceptions declaration, and it returns the shared check-output
+envelope (issue #1190/#1174) — the first export in this package to emit
+that envelope directly, rather than a local shape.
+
+```ts
+import { evaluateCiConventions } from "@clossys/controller/conventions";
+// ".github/workflows/ci.yml" below is the CALLER's own repo-relative
+// workflow path, an example value -- that path does not ship with this
+// package.
+const result = evaluateCiConventions({
+  workflowFiles: [{ path: ".github/workflows/ci.yml", content: rawYaml }],
+  ruleset: { requiredContexts: ["verify-build-and-test"], maxRetentionDays: 14 },
+  declaration: {
+    visibility: "public",
+    requiredContextWorkflows: { "verify-build-and-test": ".github/workflows/ci.yml" },
+  },
+  packageVersion: "0.9.15",
+});
+// result.verdict === "satisfied" | "violated" | "indeterminate"
+```
+
+It checks PR-only `cancel-in-progress`, `timeout-minutes`, SHA-pinned
+actions, top-level `permissions`, required contexts on both `pull_request`
+and `merge_group`, no trigger-level path filters on a required workflow,
+fan-in `if: always()` with an explicit `needs.*.result` check (never
+silently trusting `always()` alone), gate-naming grammar (delegating to
+`validateGateName`), runner label vs. visibility/tier (delegating to
+`validateRunnerLabel`), `retention-days`, and — only when the caller
+supplies `runHistoryMinutes` for a private repository — a projected-
+minutes warning against the free allowances plus a declared budget. Zero
+I/O of its own: parsing the workflow text is the one non-trivial thing it
+does internally, via `parseYamlLite`, a small YAML subset parser this
+package ships instead of a runtime dependency (`packages/controller/
+package.json` declares none) — block/flow mappings and sequences, quoted
+and bare scalars, literal/folded block scalars for `run: |` step bodies,
+and comments; anything outside that subset throws `YamlLiteParseError`
+rather than guessing.
+
+The installed `ci-conventions-check` CLI is the presentation layer: it
+reads a workflows directory (default `.github/workflows`), a ruleset JSON
+file, a declaration JSON file, and optional pricing data, prints the
+envelope as JSON, and exits 0/1/2. `--mode report` (the default) never
+exits 1, so a repository can dogfood the checker in CI before its own
+workflows are clean enough to gate on; `--mode enforce` maps the verdict
+straight through. `conventions/templates/ci-workflow.yml`, resolved by
+`templatePath("ci-workflow.yml")`, is a conforming skeleton a scaffold can
+compose into a new repository — a test in this package runs the real
+shipped file through `evaluateCiConventions` and asserts it passes.
 
 ### `./policy`: the content-addressed binding primitive
 

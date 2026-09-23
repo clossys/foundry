@@ -1,0 +1,23 @@
+{
+  "$comment": "Foundry's own CI conventions ruleset (issue #1259), consumed by .github/workflows/ci-conventions-check.yml in report mode. requiredContexts are this repository's REAL, current required-status-check context names (ruleset 20924588) -- the pre-grammar names, not the renamed ones -- because this file describes what exists today, and the rename sequence is deliberately not carried out yet; see the follow-up comment on #1259 for the exact old-to-new mapping and the dual-name alias sequence.",
+  "requiredContexts": [
+    "publish safety",
+    "scope drift",
+    "build and test",
+    "artifact safety (tarball)",
+    "prose quality (README parity, contamination classes)",
+    "release readiness (version bump vs. shipped content)",
+    "workspace link integrity",
+    "registry drift",
+    "controller gates (catalog, neutrality, repository-profile)",
+    "WCAG contrast gate (designer-contrast-check)",
+    "qualification record required (version bump vs. retained record)",
+    "package state (declared vs. evidence)",
+    "secret-scan (inspector judgment)",
+    "prepublish hook drift",
+    "verify-standards",
+    "role-loop archetypes"
+  ],
+  "maxRetentionDays": 14,
+  "protectedRefWorkflows": ["publish.yml"]
+}

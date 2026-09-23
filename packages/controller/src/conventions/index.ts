@@ -29,9 +29,13 @@ export {
   ADAPTERS_ROOT,
   CONVENTION_ADAPTERS,
   CONVENTION_DOCUMENTS,
+  DATA_ROOT,
   DOCUMENTS_ROOT,
+  TEMPLATES_ROOT,
   adapterPath,
+  dataPath,
   documentPath,
+  templatePath,
   templatedFilenames,
 } from "./documents.js";
 
@@ -118,3 +122,20 @@ export {
 } from "./runner.js";
 
 export { canonicalJson, nonEmptyString, sameCanonicalJson, sameSet, sorted } from "./canonical.js";
+
+export { evaluateCiConventions } from "./ci-conventions.js";
+export type {
+  CheckFinding,
+  CheckMetric,
+  CheckOutputEnvelope,
+  CiConventionsDeclaration,
+  CiConventionsRuleset,
+  CiConventionsVerdict,
+  EvaluateCiConventionsInput,
+  JustifiedException,
+  RunnerPricingData,
+  WorkflowFile,
+} from "./ci-conventions.js";
+
+export { YamlLiteParseError, parseYamlLite } from "./yaml-lite.js";
+export type { YamlValue } from "./yaml-lite.js";
