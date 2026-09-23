@@ -5,6 +5,14 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.13] - 2026-09-22
+
+### Changed
+
+- Widen the `@clossys/advisor` dependency range to `^0.3.0` so the workspace
+  link check resolves the local advisor 0.3.0 workspace copy instead of
+  falling back to a stale published tarball.
+
 ## [0.9.12] - 2026-09-21
 
 ### Added
