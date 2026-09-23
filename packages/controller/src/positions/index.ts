@@ -15,7 +15,7 @@ export interface InstalledPositionFinding { readonly rule: string; readonly path
 export interface InstalledPositionLedgerReport { readonly ok: boolean; readonly findings: readonly InstalledPositionFinding[]; readonly openRoles: number; readonly positions: number; }
 
 type RecordValue = Record<string, unknown>;
-const universalStages = ["sense", "judge", "act", "verify", "learnOrEscalate"];
+const universalStages = ["sense", "judge", "act", "verify", "learn"];
 const metricDirections = ["increase", "decrease", "maintain", "target-range"];
 const dispositionFields = ["package", "disposition", "reason", "positionIds"];
 const firstDayFields = ["gaps", "target", "openQuestions", "criticalPath", "deferredWork", "recommendation", "evidenceRefs"];
@@ -69,8 +69,8 @@ export function validateInstalledPositionLedger(ledger: unknown, roleContract: u
   try { canonicalContract = readCanonicalRoleLoopContract(); }
   catch (error) { return { ok: false, findings: [{ rule: "canonical-role-contract-unavailable", path: "contracts/role-loop-archetypes.json", message: error instanceof Error ? error.message : String(error) }], openRoles: 0, positions: 0 }; }
   if (canonical(roleContract) !== canonical(canonicalContract)) return { ok: false, findings: [{ rule: "noncanonical-role-contract", path: "roleContract", message: "must exactly match the immutable role-loop-archetypes snapshot shipped by @clossys/controller" }], openRoles: 0, positions: 0 };
-  if (!record(roleContract) || roleContract.schemaVersion !== 4 || !keys(roleContract, ["schemaVersion", "universalStages", "consumerBindings", "modes", "metricVocabulary", "qualificationVerdicts", "roles"]) || !record(roleContract.roles)) return { ok: false, findings: [{ rule: "unreadable-role-contract", path: "roles", message: "must be the complete schemaVersion 4 role contract" }], openRoles: 0, positions: 0 };
-  if (canonical(roleContract.universalStages) !== canonical(universalStages) || !record(roleContract.metricVocabulary) || canonical(roleContract.metricVocabulary.directions) !== canonical(metricDirections) || !record(roleContract.modes) || canonical(Object.keys(roleContract.modes).sort()) !== canonical(["assure", "fulfill", "interact", "optimize", "reconcile", "steward"])) return { ok: false, findings: [{ rule: "role-contract-vocabulary-drift", path: "roleContract", message: "stages, modes, and metric directions must match the shipped schemaVersion 4 contract" }], openRoles: 0, positions: 0 };
+  if (!record(roleContract) || roleContract.schemaVersion !== 5 || !keys(roleContract, ["schemaVersion", "universalStages", "consumerBindings", "modes", "metricVocabulary", "qualificationVerdicts", "roles"]) || !record(roleContract.roles)) return { ok: false, findings: [{ rule: "unreadable-role-contract", path: "roles", message: "must be the complete schemaVersion 5 role contract" }], openRoles: 0, positions: 0 };
+  if (canonical(roleContract.universalStages) !== canonical(universalStages) || !record(roleContract.metricVocabulary) || canonical(roleContract.metricVocabulary.directions) !== canonical(metricDirections) || !record(roleContract.modes) || canonical(Object.keys(roleContract.modes).sort()) !== canonical(["assure", "fulfill", "interact", "optimize", "reconcile", "steward"])) return { ok: false, findings: [{ rule: "role-contract-vocabulary-drift", path: "roleContract", message: "stages, modes, and metric directions must match the shipped schemaVersion 5 contract" }], openRoles: 0, positions: 0 };
   const roles = new Set(Object.keys(roleContract.roles));
   const roleDirections = new Map<string, string>();
   for (const [name, declaration] of Object.entries(roleContract.roles)) {
@@ -133,8 +133,8 @@ export function validateInstalledPositionLedger(ledger: unknown, roleContract: u
     if (!strings(position.guardrails, 1) || !strings(position.escalationPath, 1)) fail(findings, "invalid-constraints", path, "guardrails and escalationPath need at least one item");
     if (!Array.isArray(position.workerComponents) || position.workerComponents.length === 0 || position.workerComponents.some((worker: unknown) => !keys(worker, ["kind", "responsibility"]) || !WORKER_COMPONENT_KINDS.includes(worker.kind as never) || !text(worker.responsibility)) || new Set(position.workerComponents.map((worker: unknown) => record(worker) ? worker.kind : "")).size !== position.workerComponents.length) fail(findings, "invalid-worker-components", path, "worker components need unique declared kinds and responsibilities");
     const stageBindings = position.stageBindings;
-    if (!keys(stageBindings, universalStages)) fail(findings, "invalid-stage-bindings", path, "stageBindings needs one activity for sense, judge, act, verify, and learnOrEscalate");
-    else if (universalStages.some((stage) => !text(stageBindings[stage]))) fail(findings, "invalid-stage-bindings", path, "stageBindings needs one nonempty consumer activity for sense, judge, act, verify, and learnOrEscalate");
+    if (!keys(stageBindings, universalStages)) fail(findings, "invalid-stage-bindings", path, "stageBindings needs one activity for sense, judge, act, verify, and learn");
+    else if (universalStages.some((stage) => !text(stageBindings[stage]))) fail(findings, "invalid-stage-bindings", path, "stageBindings needs one nonempty consumer activity for sense, judge, act, verify, and learn");
     const assessment = position.firstDayAssessment;
     if (record(assessment)) rejectUnsafeReferences(assessment.evidenceRefs, `${path}.firstDayAssessment.evidenceRefs`, findings);
     if (!keys(assessment, firstDayFields) || !strings(assessment.gaps) || !text(assessment.target) || !strings(assessment.openQuestions) || !strings(assessment.criticalPath, 1) || !strings(assessment.deferredWork) || !POSITION_RECOMMENDATIONS.includes(assessment.recommendation as never) || !references(assessment.evidenceRefs, 1)) fail(findings, "invalid-first-day-assessment", path, "first-day assessment needs gaps, target, open questions, critical path, deferred work, recommendation, and value-safe evidence references; position.baseline is its single baseline");
