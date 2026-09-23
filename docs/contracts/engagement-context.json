@@ -1,0 +1,47 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/clossys/foundry/blob/main/docs/contracts/engagement-context.json",
+  "title": "Engagement context record",
+  "description": "Issue #1173: the business questions a non-technical founder answers once (business, product, audience, stage, intent, constraints), so no later role intake asks again what this record already answers. Lives at clossys/advisor/context.json in a hub (layout approved in issue #1171). Captured through Advisor's question cards (packages/advisor/src/context-questions.ts: nextContextQuestion()/applyContextChoice()), which extend the existing nextSponsorQuestion()/applySponsorChoice() pattern. An unanswered field stays unknown and is never invented. Technical facts (languages, frameworks, installed packages, hosting) never live here -- they come from reading the repository, not from asking the founder.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "fields"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "fields": {
+      "type": "array",
+      "description": "Exactly one entry per field id below; every id must appear, in any order.",
+      "items": { "$ref": "#/definitions/field" }
+    }
+  },
+  "definitions": {
+    "fieldId": {
+      "enum": ["business", "product", "audience", "stage", "intent", "constraints"]
+    },
+    "field": {
+      "type": "object",
+      "additionalProperties": false,
+      "oneOf": [
+        {
+          "required": ["id", "state"],
+          "properties": {
+            "id": { "$ref": "#/definitions/fieldId" },
+            "state": { "const": "unknown" }
+          }
+        },
+        {
+          "required": ["id", "state", "value"],
+          "properties": {
+            "id": { "$ref": "#/definitions/fieldId" },
+            "state": { "const": "known" },
+            "value": {
+              "type": "string",
+              "minLength": 1,
+              "description": "The chosen question card's choice id (a stable slug, e.g. \"software\" or \"validate\"), never freeform prose typed directly into this record."
+            }
+          }
+        }
+      ]
+    }
+  }
+}

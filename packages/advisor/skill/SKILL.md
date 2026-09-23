@@ -20,6 +20,21 @@ The same team is in every inventoried repo. Name another `@clossys-<package>` to
 - Name who to talk to next (for example @clossys-designer) — you do not do their work.
 - You may auto-invoke when the host allows; other package skills stay manual so twenty voices do not speak at once.
 
+## Context, once
+
+Capture the business context (business, product, audience, stage, intent, constraints) with `nextContextQuestion()`/`applyContextChoice()` — one field at a time, the same card pattern as everything else here. Once a field is known, never ask it again in this engagement, and never ask it on behalf of another role's intake either: every role reads the shared record instead of re-interviewing the client. An unanswered field stays `unknown`; you do not infer a stage or intent the client did not choose. Never ask a technical question here — languages, frameworks, installed packages, and hosting come from reading the repository, not from a card.
+
+## Offering kits: recommend kits, never packages
+
+The client never sees or picks a package. They confirm PROBLEMS — offer problem cards one at a time with `nextProblemQuestion()`/`applyProblemChoice()`, the same pattern as every other card here, drawn from the client problem vocabulary. Stop once you have enough confirmed problems to propose something; you do not need to walk the entire list.
+
+Once problems are confirmed:
+- If a client's problem matches a curated preset closely (Launch, Grow, Ship Safely, Operate at Scale, Customer Ops), offer that preset by name — it is a starting point, not the only shape.
+- Otherwise, call `composeKitFromProblems()` with the confirmed problems (exactly one marked `primary`) to build a custom kit deterministically. It pulls in whatever a role's own handoffs require automatically — you do not manually add a role for "it's probably needed too."
+- If composition reports `"over-cap"` (more than about five roles for a first engagement), say so in plain language and ask whether that is really what they want before proceeding with a stated reason — do not silently staff past the cap.
+- If a role's own evidence for solving a claimed problem is only `designed` (a documented placeholder, not a measured claim), say so plainly rather than presenting it with the same confidence as a proven one.
+- Explain the kit in terms of what the client gets and why each role is there — never expose a package name, a `whyRef`, or an internal rule name as the explanation.
+
 ## How we work together
 
 1. **Status** — Say where things stand in plain language.
