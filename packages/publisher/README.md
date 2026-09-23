@@ -151,6 +151,10 @@ Use explicit subpaths:
 - `@clossys/publisher/document` — the product-neutral structured-document contract (sections, paragraphs, lists, tables, callouts, safe links) and its renderer.
 - `@clossys/publisher/email`, `/print`, `/image`, `/slides` — channel renderers.
 - `@clossys/publisher/record` — the append-only, content-addressed publication ledger and its drift checker. See "`record` — the append-only publication ledger," below.
+- `@clossys/publisher/pack` — the v0 Launch pack manifest contract: types, schema validation, needs-graph readiness, and adopt-don't-override detection. See "The pack," below.
+- `@clossys/publisher/surfaces` — the one-owner-per-file contract for surface documents under `clossys/publisher/surfaces/`. See "Surface documents move to Publisher," below.
+- `@clossys/publisher/materials` — the materials mini-site (overviews, pitch decks, audience variants). See "Materials site," below.
+- `@clossys/publisher/templates` — the pack's default templates and the channel spec registry. See "Templates and channel specs," below.
 
 The package has no root export. `core` is deliberately framework-agnostic;
 the web and document subpaths have optional React peers, while `web` also
@@ -1620,7 +1624,233 @@ after its own `publishedAt`. An entry with no `contentId` cannot be grouped
 against anything, so it is always treated as live — the same fail-closed
 choice `checkLedgerDrift` makes for a citation it could not check.
 
+## The pack
+
+`@clossys/publisher/pack` is the v0 Launch pack contract (issue #1204).
+Publisher owns the pack: its definition, inventory, readiness, and sealing.
+Strategist, Designer, Writer, and Customer own the content and judgments
+that feed it. Publisher plans first — it declares each item's `needs` and
+those needs pull the required foundation and identity items from their
+owners — and seals last, once a Customer keep approves a surface.
+
+The pack is MECE by layer:
+
+| Layer | Item | Content owner |
+| --- | --- | --- |
+| Foundation | Strategy brief | Strategist |
+| Identity | Brand kit | Designer |
+| Identity | Voice and messaging | Writer |
+| Surface | Website, materials site, email kit, social kit, video-call backgrounds | assembled by Publisher |
+
+`clossys/publisher/pack.json` records, for each item: `status` and
+`condition` from the one shared lifecycle vocabulary (issue #1228 — see
+below), a `v<major>.<minor>` version, `createdAt`/`updatedAt`/`approvedAt`/
+`verifiedAt` timestamps, content-fingerprint source pins, output paths,
+where it published, and its single next action.
+
+### Lifecycle vocabulary (#1228)
+
+Pack items use the same six statuses and three conditions the loop engine
+uses, rather than a second, pack-specific vocabulary:
+
+- **Statuses:** `absent`, `found`, `draft`, `approved`, `verified`, `retired`.
+- **Conditions:** `current`, `stale`, `blocked`.
+
+The former pack-only names map onto this list directly: `in-review` is
+`draft` with a pending judgment, `kept` is `approved` (the Customer keep),
+and `published` is `verified` (sealed and verified live).
+
+`LIFECYCLE_STATUSES`/`LIFECYCLE_CONDITIONS` are a local copy in this package
+pending issue #1237 (Framework/Controller lane), which exports the same list
+from `@clossys/controller`. This repository's own `pack/lifecycle.test.ts`
+(not shipped in the published package) asserts the copy is exact; once
+#1237 lands, this package switches to importing from `@clossys/controller`
+instead of declaring its own copy.
+
+### Adopt, don't override
+
+`detectExistingPackItems` is `sense`: it fingerprints (sha256) whatever a
+candidate path already holds and registers it `found`, never assuming a
+missing item and generating over whatever is actually there. Nothing here
+deletes, overwrites, or judges quality — a caller decides what a `found`
+registration means for the surrounding manifest, and `foundPackItem` builds
+the minimal fresh item record for it.
+
+### Readiness and sealing
+
+`computePackReadiness` derives per-item readiness from the `needs` graph: an
+item is ready once every item it needs is itself `approved` or `verified`
+and none of them is `blocked` — a missing or unknown need is never silently
+treated as satisfied. `planPackOrder` gives the plan a foundation-first,
+surfaces-last topological order over the same graph. `sealableItemIds`
+answers "what may move from `approved` to `verified` right now": already
+approved, not blocked, and every needed item already verified — sealing
+itself (writing `verifiedAt` and a publication record) is the caller's job.
+
+`validatePackManifest` is the schema and contract gate: known layers,
+owners, visibilities (`internal`/`public` — see the materials site section
+below), lifecycle values, version shape, a needs graph free of unknown
+references and cycles, timestamp ordering, and no premature `approvedAt`/
+`verifiedAt`/`publishedTo` on an item that has not reached that stage yet.
+
+## Surface documents move to Publisher
+
+Issue #1205: Publisher authors the in-tree `SectionedView`/`MarketingView`
+page document — which template, which sections, which copy ids and asset
+ids, all by reference — under `clossys/publisher/surfaces/`. Designer and
+Writer own everything a surface document references (tokens, atoms, blocks,
+copy) in their own folders; they propose changes and review renders, but
+they never edit a Publisher surface file directly. Every file under
+`clossys/` now has exactly one owner.
+
+`@clossys/publisher/surfaces` exports `PUBLISHER_SURFACES_DIR` (Publisher's
+own record of the path it owns) and `validateSurfaceOwnership`, a pure
+check — the same shape as `checkWebRoutes.ts`'s `evaluateWebRouteManifest`
+— over a flat list of `{ path, owner }` ownership claims (normally assembled
+from every role's own folder manifest under `clossys/`). It flags any path
+more than one role claims, and any path under `clossys/publisher/surfaces/`
+that Publisher itself never claimed.
+
+The shared consumer layout contract this path belongs to is issue #1171
+(Launcher lane), which has not landed in this repository as of this
+package's `0.5.0` release — there is no `clossys/` layout file here to add
+`clossys/publisher/surfaces/` to yet. This section, and
+`PUBLISHER_SURFACES_DIR`, are Publisher's own record of the path it intends
+to own once that contract exists; wire the constant into the shared layout
+contract's own file when #1171 lands, rather than duplicating a second
+declaration of the path there.
+
+## Materials site
+
+`@clossys/publisher/materials` is the materials mini-site (issue #1206):
+company overviews (short/medium/long) and pitch decks (with audience
+variants), rendered as a browsable, print-friendly static HTML site. This
+subpath does not re-author document or slide content — `@clossys/
+publisher/document` and `@clossys/publisher/slides` already render a
+`StructuredDocument`/`SlidesDeckInput` to HTML/SVG. It takes their
+already-rendered output and does the work specific to the materials site:
+
+- `renderMaterialsIndexHtml(entries)` — the browsable index, listing every
+  overview and deck version with its status, condition, version, and
+  last-published time, read from the pack manifest (#1204).
+- `selectAudienceVariant(deck, selections, audience)` /
+  `declaredAudiences(selections)` — one source deck, filtered to an
+  audience's declared slide selections (#1206: "share one source and
+  differ only by declared selections"). A slide with no declared audience
+  is shown to every variant.
+- `renderPitchDeckHtml(result, options)` — wraps `renderSlidesDeck`'s own
+  rendered SVG slides into one self-contained HTML page with keyboard
+  navigation and the shared print stylesheet (one slide per printed
+  page) — #1206: "HTML slides with keyboard navigation," "no built-in PDF
+  pipeline — a print stylesheet makes browser print-to-PDF clean."
+- `materialsPrintStylesheet()` — the shared `@media print` rules both the
+  deck shell and a company-overview page use.
+- `checkMaterialsVisibility(input)` / `MATERIALS_DEFAULT_VISIBILITY` —
+  issue #1206's owner decision that materials are internal by default and
+  that committing one to a public repository publishes it ("git is a
+  publication channel too"). This is the refusal check a caller runs
+  before a commit, turning the item `blocked` rather than letting it
+  reach a public tree.
+
+**This site is never deployed and never committed to a public repository.**
+It is an internal working artifact, opened locally like a PDF and
+re-rendered by Publisher; nothing in this subpath writes to a public
+domain or a public git remote.
+
+## Templates and channel specs
+
+`@clossys/publisher/templates` is the pack's opinionated defaults (issue
+#1207), so every client starts from the same expert baseline rather than
+21 hand-made approximations:
+
+- `COMPANY_OVERVIEW_TEMPLATES` / `overviewSectionIds(length)` — the
+  default section order for the short/medium/long company overview
+  (#1206's own three lengths).
+- `PITCH_DECK_SLIDE_ORDER` / `PITCH_DECK_DEFAULT_AUDIENCE_SELECTIONS` —
+  the default slide order and a starting audience-selection map (see
+  "Materials site," above, for the selection mechanism itself).
+- `buildEmailSignatureHtml(person)` / `buildEmailSignatureText(person)` —
+  a table-based HTML signature (the same hand-built-HTML discipline
+  `@clossys/publisher/email` documents) plus its plain-text alternative,
+  from a person's name/role/company/links/logo.
+- `SOCIAL_CHANNEL_SPECS` / `getSocialChannelSpec(channel)` — image sizes
+  and text limits for LinkedIn, X, Instagram, Facebook, YouTube, TikTok,
+  and GitHub, each with a `verified` date. `OG_SHARE_CARD_SPEC` is the
+  default Open Graph card size.
+- `VIDEO_CALL_BACKGROUND_SPECS` / `getVideoCallBackgroundSpec(platform)` —
+  Zoom, Google Meet, and Microsoft Teams background dimensions.
+- `staleChannelSpecEntries(now, staleAfterDays)` — every channel spec
+  entry whose `verified` date has gone stale, so periodic re-verification
+  against each platform's current guidance (#1207's own requirement) has
+  something concrete to check.
+
+This subpath ships no PNG export command of its own yet — a real raster
+export (social, OG, video-call backgrounds) is a Publisher export command;
+left as a followup (see the PR that introduced this subpath for why).
+`publisher-preview` (see "Preview gallery," below) does render one SVG per
+entry here, but only as a rendered fixture to browse, not an export path a
+consumer's own build would call.
+
+## Site template (`apps/site`)
+
+Issue #1208: a Next.js App Router template that ships in this package's
+`templates/site/` directory (`files` includes `templates`, so it is part
+of the published tarball) — **not compiled, typechecked, or tested by
+this repository's own build**, the same way `packages/designer/templates/
+brand-type.template.json` is shipped-but-not-compiled content. Launcher
+(#1215) copies it into a product repository's own `apps/site`; see
+`templates/site/README.md`, shipped alongside it, for the full file list
+and what each page reads from that repository's own `clossys/` records.
+
+## Preview gallery (`publisher-preview`)
+
+```
+publisher-preview <brand.css> <output-directory> [roster.json]
+```
+
+The Launch pack's v0 preview: every off-the-shelf boilerplate view a
+consumer relies on until they build custom views, rendered against one
+real `brand.css` after Designer's brand-file coverage check passes, into
+one flat output directory whose `index.html` links every file written.
+Nothing here makes a network call, and the same inputs always produce
+byte-identical output. Exit codes are unchanged: `0` = output written,
+`1` = the brand file or roster failed its own check (nothing is written),
+`2` = bad arguments or an unexpected error.
+
+What it renders, all from fixture copy in `src/preview/fixture-copy-
+registry.ts` (never hardcoded in a renderer):
+
+- **Web views** (`gallery.html`) — every shipped view: `MarketingView`,
+  `SectionedView`, `AuthView`, `ErrorView`, `CaptureView`, `DocumentView`,
+  `CollectionView`.
+- **Site** (`site-*.html`) — `templates/site`'s own routes
+  (`web-route-manifest.json`), rendered through the exact template each
+  route names (`MarketingView` for home/about/contact/privacy/terms,
+  a direct `ErrorView` call for `not-found`, matching `templates/site/app/not-found.tsx`
+  itself). `templates/site/app/robots.ts`/`templates/site/app/sitemap.ts` are Next.js metadata route
+  handlers, not page components — there is no view to render for either,
+  so neither appears here.
+- **Materials** (`materials-*.html`) — the company overview at each of
+  the three lengths (`COMPANY_OVERVIEW_TEMPLATES`' own section order),
+  the pitch deck (`PITCH_DECK_SLIDE_ORDER`) plus one
+  `selectAudienceVariant`-filtered audience variant, and the materials
+  index (`renderMaterialsIndexHtml`).
+- **Email kit** (`email-*.html`) — the launch announcement, welcome, and
+  follow-up emails (`renderEmailDocument`), each shown in a 600px
+  email-width frame alongside its plain-text alternative, plus a
+  signature (`buildEmailSignatureHtml`/`Text`).
+- **Cards** (`cards-*.svg`) — one real-sized SVG per
+  `SOCIAL_CHANNEL_SPECS` image, `OG_SHARE_CARD_SPEC`, and each
+  `VIDEO_CALL_BACKGROUND_SPECS` entry (`renderImageDocument`).
+- **Brand** (`guide.html`, `audit.html`) — written only when a complete
+  `roster.json` (`BrandAssetEntry[]`) is also given (issue #1111).
+
+`index.html` links every file above by exact filename — a broken link
+there means a file this command claims to write is missing, not a
+cosmetic gap.
+
 ## API
+
 
 - `assessment`: `assessVerifiedPublicationRate` and the
   `VerifiedPublicationRateAssessment`, `VerifiedPublicationRateFinding`, and
@@ -1707,6 +1937,34 @@ choice `checkLedgerDrift` makes for a citation it could not check.
   `JoinKeyIdentity` types, plus `PolicyBinding`/`DigestAlgorithm`/
   `PolicyFinding` re-exported from `@clossys/controller/policy`. The
   CLI is `publisher-record-check`.
+- `pack`: `LIFECYCLE_STATUSES`, `LIFECYCLE_CONDITIONS`, `isLifecycleStatus`,
+  `isLifecycleCondition`, `PACK_LAYERS`, `PACK_VISIBILITIES`, `isPackLayer`,
+  `isPackVisibility`, `isPackVersionString`, `validatePackManifest`,
+  `planPackOrder`, `computePackReadiness`, `sealableItemIds`,
+  `detectExistingPackItems`, `foundPackItem`, and the `LifecycleCondition`,
+  `LifecycleStatus`, `PackLayer`, `PackVisibility`, `PackItem`,
+  `PackManifest`, `PackSourcePin`, `PackFinding`, `PackValidationResult`,
+  `PackItemReadiness`, `PackReadiness`, `PackAdoptionCandidate`, and
+  `PackAdoptionResult` types. See "The pack," above.
+- `surfaces`: `PUBLISHER_SURFACES_DIR`, `validateSurfaceOwnership`, and the
+  `SurfaceOwnershipClaim`, `SurfaceOwnershipFinding`, and
+  `SurfaceOwnershipCheckResult` types. See "Surface documents move to
+  Publisher," above.
+- `materials`: `renderMaterialsIndexHtml`, `selectAudienceVariant`,
+  `declaredAudiences`, `renderPitchDeckHtml`, `materialsPrintStylesheet`,
+  `checkMaterialsVisibility`, `MATERIALS_DEFAULT_VISIBILITY`, and the
+  `MaterialsIndexEntry`, `DeckAudienceSelections`, `AudienceVariantDeck`,
+  `RenderPitchDeckHtmlOptions`, `MaterialsVisibilityCheckInput`, and
+  `MaterialsVisibilityFinding` types. See "Materials site," above.
+- `templates`: `COMPANY_OVERVIEW_TEMPLATES`, `overviewSectionIds`,
+  `PITCH_DECK_SLIDE_ORDER`, `PITCH_DECK_DEFAULT_AUDIENCE_SELECTIONS`,
+  `buildEmailSignatureHtml`, `buildEmailSignatureText`,
+  `SOCIAL_CHANNEL_SPECS`, `getSocialChannelSpec`, `OG_SHARE_CARD_SPEC`,
+  `VIDEO_CALL_BACKGROUND_SPECS`, `getVideoCallBackgroundSpec`,
+  `staleChannelSpecEntries`, and the `CompanyOverviewLength`,
+  `EmailSignatureLink`, `EmailSignaturePerson`, `ChannelImageSpec`,
+  `ChannelTextLimit`, `SocialChannelSpec`, and `VideoCallBackgroundSpec`
+  types. See "Templates and channel specs," above.
 
 Web page-level compositions belong here, not in `designer`; they consume
 design-system primitives and accept consumer-owned copy through slots.
@@ -1720,7 +1978,7 @@ import-free of each other under one version.
 
 Node 20+. This package's own `package.json` declares runtime dependencies on
 `@clossys/writer` (`^0.3.0`), `@clossys/designer`
-(`^0.4.0`), and `@clossys/controller` (`~0.9.0`), of which this
+(`^0.5.0`), and `@clossys/controller` (`~0.9.0`), of which this
 package only imports the `./policy` subpath, `@clossys/controller/policy`,
 never `controller`'s other exports. `writer` and `designer` are caret
 ranges (both fresh `0.x` role packages); `controller` stays a tilde range,
@@ -1741,15 +1999,31 @@ because Publisher's React-server target imports the server-safe
 section-ground, `Faq`, ordered-step, and status-list exports, including the
 separate `not-offered` disposition, introduced in Designer 0.2.7, then to
 `^0.3.0` because the `eyebrow` and `actions` slots this package's
-section contract now renders into are Designer 0.3.0 additions, and then to
-the current `^0.4.0` because a `status-list` section's flat `items`
+section contract now renders into are Designer 0.3.0 additions, then to
+`^0.4.0` because a `status-list` section's flat `items`
 alternative to `groups` renders into Designer 0.4.0's new `StatusList`
-`items` prop. These ranges are independent; leaving
-either one behind would still resolve an older package without any install
+`items` prop, then to `^0.4.12` because this package's web
+templates compose Designer's `MarketingChapter` block (from
+`@clossys/designer/blocks/server`), a Designer 0.4.12 addition. A published
+package that only satisfies `^0.4.0` — for example the registry's own
+Designer 0.4.7 at the time of this release — resolves cleanly but cannot
+actually serve `@clossys/publisher/web`: `import("@clossys/publisher/web")`
+throws `SyntaxError: The requested module '@clossys/designer/blocks/server'
+does not provide an export named 'MarketingChapter'` under both its ordinary
+and `react-server` conditions. This is exactly the failure the pinned-runtime
+release-qualification run for 0.4.24 caught; see this repository's own
+`src/web/react-server-artifact.test.ts` (not shipped in the published
+package) for the regression test's fixture that reproduces it
+deterministically. And then to the current `^0.5.0` — a workspace-resolution
+bump, not a new imported contract — because Designer 0.5.0 is itself a
+minor release (the identity-kit generator and its checks, issue #1210),
+and a `^0.4.0` range does not resolve a `0.5.x` package under 0.x caret
+semver. These ranges are independent; leaving
+any one behind would still resolve an older package without any install
 failure, silently withholding a required contract.
 
 A consumer whose own policy is to pin exact versions must pin `writer` to a
-matching `0.3.x` release, `designer` to `0.4.0` or a later compatible `0.4.x`
+matching `0.3.x` release, `designer` to `0.5.0` or a later compatible `0.5.x`
 release, and
 `controller` to a matching `0.9.x` patch release — otherwise
 `publisher`'s declared ranges and the consumer's exact pin cannot both be

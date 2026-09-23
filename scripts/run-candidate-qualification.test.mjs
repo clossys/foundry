@@ -30,18 +30,20 @@ async function repositoryJson(path) {
 
 test("repository Trio policy, adapters, and current-candidate fixtures bind the selected @clossys identities", async () => {
   const policy = await repositoryJson("governance/release-qualification-policy.json");
-  const expected = [
-    ["advisor", "@clossys/advisor", "0.4.1"],
-    ["starter", "@clossys/starter", "0.1.9"],
-    ["controller", "@clossys/controller", "0.9.22"],
-  ];
+  // Derived from each package's own manifest (issue #1254), not a literal
+  // version pin: a real package version bump must not need a hand-edit here
+  // just to keep this list current. What this loop actually proves — the
+  // packages/<key> directory-to-name join, and the adapter's own binding to
+  // that name — does not depend on which version currently happens to sit
+  // in the manifest.
+  const keys = ["advisor", "starter", "controller"];
 
-  for (const [key, name, version] of expected) {
+  for (const key of keys) {
     const manifest = await repositoryJson(`packages/${key}/package.json`);
+    const { name } = manifest;
     const entry = policy.packages[name];
     const adapter = await repositoryJson(entry.adapterPath);
     assert.equal(entry.packageKey, key);
-    assert.deepEqual([manifest.name, manifest.version], [name, version]);
     assert.equal(adapter.package, name);
     assert.equal(adapter.retainRawCaseEvidence, key === "starter" ? true : undefined);
   }
@@ -71,32 +73,18 @@ test("repository Trio policy, adapters, and current-candidate fixtures bind the 
 test("all 21 publishable packages are exact-source bound to the catalogue and qualification policy", async () => {
   const policy = await repositoryJson("governance/release-qualification-policy.json");
   const catalog = await repositoryJson("governance/release-catalog.json");
-  const expectedVersions = {
-    "@clossys/advisor": "0.4.1",
-    "@clossys/architect": "0.1.11",
-    "@clossys/bouncer": "0.1.11",
-    "@clossys/builder": "0.10.1",
-    "@clossys/butler": "0.1.10",
-    "@clossys/controller": "0.9.22",
-    "@clossys/customer": "0.1.3",
-    "@clossys/designer": "0.4.19",
-    "@clossys/giver": "0.1.9",
-    "@clossys/influencer": "0.1.8",
-    "@clossys/inspector": "0.2.9",
-    "@clossys/integrator": "0.8.1",
-    "@clossys/keeper": "0.1.10",
-    "@clossys/launcher": "0.3.0",
-    "@clossys/locksmith": "0.2.9",
-    "@clossys/messenger": "0.1.11",
-    "@clossys/observer": "0.4.1",
-    "@clossys/publisher": "0.4.24",
-    "@clossys/starter": "0.1.9",
-    "@clossys/strategist": "0.4.2",
-    "@clossys/writer": "0.3.18",
-  };
+
   const packageKeys = (await readdir(new URL("../packages", import.meta.url))).sort();
   const manifests = await Promise.all(packageKeys.map((key) => repositoryJson(`packages/${key}/package.json`)));
   const target = catalog.targets.find((item) => item.id === catalog.defaultTarget);
+  // Derived from the packages/ manifests actually on disk (issue #1254), not
+  // a literal snapshot: a real package version bump must not need a
+  // hand-edit here. What this test proves is that `policy.packages` names
+  // exactly the set of non-private manifests, and that each policy entry's
+  // OWN packageDir (below) resolves to the SAME manifest this independent
+  // packages/ directory scan already found for that name — not that any
+  // particular version string is currently in effect.
+  const expectedVersions = Object.fromEntries(manifests.filter((manifest) => manifest.private !== true).map((manifest) => [manifest.name, manifest.version]));
   assert.equal(manifests.filter((manifest) => manifest.private !== true).length, 21);
   assert.deepEqual(Object.keys(policy.packages).sort(), Object.keys(expectedVersions).sort());
   assert.deepEqual(validateReleaseQualificationPolicy(policy), []);

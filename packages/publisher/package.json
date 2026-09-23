@@ -1,6 +1,6 @@
 {
   "name": "@clossys/publisher",
-  "version": "0.4.24",
+  "version": "0.6.0",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -76,6 +76,22 @@
     "./record": {
       "types": "./dist/record/index.d.ts",
       "import": "./dist/record/index.js"
+    },
+    "./pack": {
+      "types": "./dist/pack/index.d.ts",
+      "import": "./dist/pack/index.js"
+    },
+    "./surfaces": {
+      "types": "./dist/surfaces/index.d.ts",
+      "import": "./dist/surfaces/index.js"
+    },
+    "./materials": {
+      "types": "./dist/materials/index.d.ts",
+      "import": "./dist/materials/index.js"
+    },
+    "./templates": {
+      "types": "./dist/templates/index.d.ts",
+      "import": "./dist/templates/index.js"
     }
   },
   "imports": {
@@ -106,7 +122,8 @@
     "CHANGELOG.md",
     "README.md",
     "LICENSE",
-    "skill"
+    "skill",
+    "templates"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -116,7 +133,7 @@
   },
   "dependencies": {
     "@clossys/writer": "^0.3.0",
-    "@clossys/designer": "^0.4.0",
+    "@clossys/designer": "^0.5.0",
     "@clossys/controller": "~0.9.0"
   },
   "peerDependencies": {

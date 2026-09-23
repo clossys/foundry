@@ -6,15 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.2.9] - 2026-09-22
+## [0.2.10] - 2026-09-23
 
-### Notes
+0.2.9 is skipped: an in-flight pull request (#1278) already claimed it at the
+time this version was chosen, so 0.2.10 avoids the collision.
 
-- No packed content changed. This package's test suite changed as part of
-  fixing leaking temp fixture directories (issue #1250), and its 0.2.8
-  qualification record was already retained -- once a version's record is
-  retained, any further change to that package, packed or not, requires a new
-  version.
+### Fixed
+
+- `checkReviewEvidence` (`review-evidence.js`) no longer reports `indeterminate`
+  for a review record whose own `headSha` predates the evidence bundle's
+  current head. `validateReviewEvidence` (`@clossys/controller/review`)
+  already excludes a stale review from every decisive signal on its own; only
+  its accompanying `"stale-evidence"` finding was still forcing the whole
+  check to `indeterminate`, which meant one bot review left behind by a
+  single force-push blocked a required check forever, on every later push,
+  even though a pull request with no review at all passed cleanly. A stale
+  review is now reported on the new `ReviewEvidenceReport.staleReviews` field
+  instead, and can never count toward an approval, a changes-requested
+  verdict, or review presence. (#1187, #1297, #1302)
 
 ## [0.2.8] - 2026-09-21
 

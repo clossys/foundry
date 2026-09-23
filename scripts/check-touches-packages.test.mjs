@@ -196,14 +196,30 @@ function workflowJob(workflowText, name) {
 // structurally elsewhere (scripts/check-workflow-references.test.mjs's own
 // "the build-and-test fan-in genuinely fails..." test) to turn a failure in
 // either into its own failure via `always()` and an explicit result check,
-// never a silent skip. What this test proves is upstream of that: each of
-// the two split jobs still carries the SAME fail-closed shape the single
-// job used to -- a step-level `if:` on the gated step (never a job-level
-// `if:` that would stop that job's own reporting, though its own context is
-// not itself required), fail-closed polarity (`!= 'false'`, never
-// `== 'true'`), and a `continue-on-error: true` detector whose own failure
-// cannot stop the job.
-test("control (e): candidate-qualification and packed-consumer-readiness always report a real outcome on pull_request", (t) => {
+// never a silent skip. What this test proves is upstream of that.
+//
+// #1276 split `candidate-qualification` into a sharded matrix
+// (`candidate-qualification-shard`, each shard running its own copy of the
+// detector -- see the comment on that job) plus a pure fan-in
+// (`candidate-qualification`, unchanged in name and in what `build` and
+// the ruleset require it by). The property this test proves therefore now
+// spans two jobs for that side, not one:
+//   - `candidate-qualification-shard` carries the SAME fail-closed shape
+//     the single job used to -- a step-level `if:` on the gated step
+//     (never a job-level `if:` that would stop that job's own reporting),
+//     fail-closed polarity (`!= 'false'`, never `== 'true'`), and a
+//     `continue-on-error: true` detector whose own failure cannot stop
+//     the job. Same as `packed-consumer-readiness`, which was never split
+//     and keeps this shape directly.
+//   - `candidate-qualification` (the fan-in) must report a real outcome
+//     even when the shard matrix itself fails or is cancelled outright --
+//     not just when a PR happens to touch no packages -- so its own
+//     job-level `if:` carries `always()`, and it checks
+//     `needs.candidate-qualification-shard.result` explicitly in its own
+//     `if: always()` step rather than relying on GitHub's default
+//     matrix-aggregation semantics (the same #1240 pattern this file
+//     uses everywhere else).
+test("control (e): candidate-qualification-shard/candidate-qualification and packed-consumer-readiness always report a real outcome on pull_request", () => {
   const workflow = readFileSync(workflowPath, "utf8");
   const build = workflowJob(workflow, "build");
 
@@ -212,7 +228,7 @@ test("control (e): candidate-qualification and packed-consumer-readiness always 
   assert.doesNotMatch(build, /needs: \[safety, scope\]/, "build must not wait for safety/scope before starting");
 
   for (const [jobName, stepName] of [
-    ["candidate-qualification", "Candidate qualification records"],
+    ["candidate-qualification-shard", "Candidate qualification records (this shard's own slice)"],
     ["packed-consumer-readiness", "Packed consumer readiness"],
   ]) {
     const job = workflowJob(workflow, jobName);
@@ -246,4 +262,29 @@ test("control (e): candidate-qualification and packed-consumer-readiness always 
       "must not require an explicit 'true' to run — that polarity fails CLOSED on any unset/garbled output",
     );
   }
+
+  // candidate-qualification: the pure fan-in over the shard matrix above.
+  const fanIn = workflowJob(workflow, "candidate-qualification");
+  const fanInJobIf = fanIn.match(/^ {4}if: (.+)$/m);
+  assert.ok(fanInJobIf, "candidate-qualification must declare a job-level if:");
+  assert.match(
+    fanInJobIf[1],
+    /always\(\)/,
+    "candidate-qualification's job-level if must carry always(), so it still reports even when the shard matrix fails or is cancelled",
+  );
+  assert.match(
+    fanInJobIf[1],
+    /github\.event_name != 'push'/,
+    "candidate-qualification's job-level if must remain true for every pull_request",
+  );
+  assert.match(
+    fanIn,
+    /if: always\(\)\s*\n\s+run: \|\s*\n\s+result="\$\{\{ needs\.candidate-qualification-shard\.result \}\}"/,
+    "candidate-qualification must explicitly check candidate-qualification-shard's result in its own if: always() step, not rely on a bare needs:",
+  );
+  assert.match(
+    fanIn,
+    /if \[ "\$result" != "success" \]; then[\s\S]*?exit 1/,
+    "candidate-qualification's result check must actually fail the job on a non-success shard result, not just observe it",
+  );
 });

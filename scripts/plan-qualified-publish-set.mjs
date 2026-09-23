@@ -35,6 +35,23 @@
 // distinct, non-overlapping reasons (never collapsed into one generic "not
 // eligible"), because the fix for each is different: nothing to do, versus
 // qualify (or requalify) the candidate and retain its record on main.
+//
+// "MISSING" IS NOT THE SAME QUESTION AS "NEW" (issue #1286's routing sibling)
+// -----------------------------------------------------------------------
+// `select-publishable-packages.mjs`'s registry verdicts answer "does the
+// registry already have THIS EXACT version" — that is what makes a package a
+// self-healing, idempotent publish candidate at all (see that file's own
+// header). It is not the same question as "has this package NAME ever been
+// published, at any version", and conflating the two used to route every
+// version bump of an established package through the SAME owner-present
+// local `npm publish` path as a package's genuine first identity. npm cannot
+// bind a trusted publisher to an identity that does not exist yet, so that
+// path is correct only for a first-ever identity; for every other
+// already-established package it silently uploads without provenance. This
+// script now asks the narrower question too (`probePackageIdentities`
+// below) and reports an already-existing identity as `route-publish-workflow`
+// — eligible for `publish.yml`'s OIDC lane, never for a local upload —
+// instead of folding it into `eligible`.
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
@@ -42,32 +59,56 @@ import { discoverPackageManifests, orderByDependency, registryProbeOptions, sele
 import { probeVersions, resolveVersionLookups } from "./registry-version-lookup.mjs";
 import { filterPackagesForTarget, loadReleaseCatalog, readCurrentReleaseIdentity, resolveReleaseTarget } from "./check-release-catalog.mjs";
 import { qualificationRecordPresence } from "./check-qualification-record-present.mjs";
+import { fetchPublicNpmPackument, PUBLIC_NPM_REGISTRY } from "./lib/public-npm-registry.mjs";
 
 function die(message, code = 1) {
   console.error(`plan-qualified-publish-set: ${message}`);
   process.exit(code);
 }
 
+/** The exact one-line dispatch a maintainer runs for a package whose npm identity already exists — see `routeToPublishWorkflowCommand` below. */
+export function routeToPublishWorkflowCommand(packageKey) {
+  return `gh workflow run publish.yml --ref main -f package=${packageKey} -f dry_run=false -f verify_only=false`;
+}
+
 /**
  * Turns `selectMissingPackages`'s three-way registry split, plus one
- * qualification-record check per still-unpublished candidate, into a single
- * ordered report. Pure and injectable (`qualificationCheck`) so this is
- * testable without touching the filesystem or the network — the same seam
+ * qualification-record check and one registry-identity check per still-
+ * unpublished candidate, into a single ordered report. Pure and injectable
+ * (`qualificationCheck`, `identityCheck`) so this is testable without
+ * touching the filesystem or the network — the same seam
  * `select-publishable-packages.mjs` uses for its own registry probe.
+ *
+ * `identityCheck(name)` answers a narrower question than `verdicts` does:
+ * `verdicts` already tells us THIS EXACT version is missing from the
+ * registry, but says nothing about whether the package NAME has ever been
+ * published at any other version. npm cannot bind a trusted publisher
+ * (`publish.yml`'s credential-free OIDC upload) to a package identity that
+ * does not exist yet, so a first-ever identity is the only case an
+ * owner-present local `npm publish` may legitimately handle — every package
+ * whose identity already exists on the registry, even at a different
+ * version, must publish its new version through `publish.yml` instead, so
+ * that upload carries provenance. `identityCheck` returns
+ * `{ state: "new" }` (no version of this name has ever been published — safe
+ * for an owner-present local first publish), `{ state: "existing" }` (some
+ * version already exists — must route through `publish.yml`), or
+ * `{ state: "indeterminate", reason }` (the registry could not confirm
+ * either way — never guessed, always excluded).
  *
  * Returns `{ eligible, report }`:
  *   - `eligible` is `orderByDependency`'s own matrix shape (`{ package }[]`),
- *     dependency-ordered.
+ *     dependency-ordered, and contains only genuinely first-ever identities.
  *   - `report` is one entry per discovered package, in discovery order, each
- *     `{ package, name, version, status, reason, path }` with `status` one of
- *     `"eligible"`, `"on-npm-already"`, `"qualification-record-missing"`,
+ *     `{ package, name, version, status, reason, path, command? }` with
+ *     `status` one of `"eligible"`, `"route-publish-workflow"`,
+ *     `"on-npm-already"`, `"qualification-record-missing"`,
  *     `"qualification-record-stale"`, `"qualification-record-indeterminate"`,
- *     or `"registry-lookup-inconclusive"`. `path` is the record path when one
- *     was resolved (every status except `on-npm-already` and
- *     `registry-lookup-inconclusive`, and even then only once a manifest
- *     lets `qualificationPath` be derived).
+ *     `"registry-identity-indeterminate"`, or
+ *     `"registry-lookup-inconclusive"`. `path` is the record path when one
+ *     was resolved. `command` is set only for `"route-publish-workflow"` —
+ *     the exact `gh workflow run` dispatch for that package.
  */
-export function classifyPackagesForPublish({ entries, verdicts, qualificationCheck }) {
+export function classifyPackagesForPublish({ entries, verdicts, qualificationCheck, identityCheck = () => ({ state: "new" }) }) {
   const { missing, published, inconclusive } = selectMissingPackages(entries, verdicts);
   const report = [];
 
@@ -87,11 +128,34 @@ export function classifyPackagesForPublish({ entries, verdicts, qualificationChe
     const presence = qualificationCheck(entry.directory);
     const base = { package: entry.directory, name: entry.manifest.name, version: entry.manifest.version };
     if (presence.state === "present") {
+      const identity = identityCheck(entry.manifest.name);
+      if (identity.state === "existing") {
+        const command = routeToPublishWorkflowCommand(entry.directory);
+        report.push({
+          ...base,
+          status: "route-publish-workflow",
+          reason:
+            `${entry.manifest.name}'s npm identity already exists on the registry (bound to trusted publishing) — ` +
+            `an owner-present local publish cannot carry provenance for it. Dispatch the OIDC lane instead: \`${command}\``,
+          path: presence.path,
+          command,
+        });
+        continue;
+      }
+      if (identity.state !== "new") {
+        report.push({
+          ...base,
+          status: "registry-identity-indeterminate",
+          reason: `not yet confirmed missing-vs-existing on the registry, so an owner-present local publish is refused rather than guessed: ${identity.reason ?? "registry identity lookup did not return a definitive answer"}.`,
+          path: presence.path,
+        });
+        continue;
+      }
       eligibleEntries.push(entry);
       report.push({
         ...base,
         status: "eligible",
-        reason: `not yet on the registry, and a retained qualification record matches the current candidate at ${presence.path}.`,
+        reason: `not yet on the registry (a genuinely first-ever identity), and a retained qualification record matches the current candidate at ${presence.path}.`,
         path: presence.path,
       });
     } else if (presence.state === "missing") {
@@ -146,6 +210,40 @@ function listPackageDirectories(packagesRoot) {
     .filter((entry) => entry.isDirectory())
     .map((entry) => entry.name)
     .sort();
+}
+
+/**
+ * Answers `classifyPackagesForPublish`'s `identityCheck` question — has this
+ * package NAME ever been published, at any version — for every candidate
+ * `selectMissingPackages` already found missing at its OWN exact version.
+ * Reuses the exact registry module (`scripts/lib/public-npm-registry.mjs`)
+ * and `fetchImpl`/`registry` values `planQualifiedPublishSet` already
+ * resolved for its own per-version probe above; this is the SAME registry
+ * this run already queries, asked once more per candidate at the package
+ * (not version) level — never a second, differently-sourced lookup path.
+ *
+ * Only public npm's anonymous packument distinguishes "never published" from
+ * "published, just not this version" from one request (a 404 there is
+ * definitive absence, not credential ambiguity — see
+ * `lib/public-npm-registry.mjs`'s own header). The historical GitHub
+ * Packages lane already folds that distinction into `probeOneVersion` itself
+ * (a package identity `probeVersions` resolves to `missing` there was
+ * necessarily `known` first — see `registry-version-lookup.mjs`), so it is
+ * left untouched here: this lane is retained only as immutable predecessor
+ * history (see docs/PUBLISHING.md) and is not the active release target.
+ */
+export async function probePackageIdentities({ missing, registry, fetchImpl }) {
+  const results = new Map();
+  if (registry !== PUBLIC_NPM_REGISTRY || missing.length === 0) return results;
+  await Promise.all(
+    missing.map(async ({ manifest }) => {
+      const packument = await fetchPublicNpmPackument({ registry, name: manifest.name, fetchImpl });
+      if (packument.kind === "not-found") results.set(manifest.name, { state: "new" });
+      else if (packument.kind === "found") results.set(manifest.name, { state: "existing" });
+      else results.set(manifest.name, { state: "indeterminate", reason: packument.detail ?? `registry identity lookup returned "${packument.kind}"` });
+    }),
+  );
+  return results;
 }
 
 /**
@@ -205,10 +303,14 @@ export async function planQualifiedPublishSet({ fetchImpl = fetch } = {}) {
     );
   }
 
+  const { missing } = selectMissingPackages(entries, verdicts);
+  const identityResults = await probePackageIdentities({ missing, registry: probeOptions.registry, fetchImpl });
+
   return classifyPackagesForPublish({
     entries,
     verdicts,
     qualificationCheck: (packageKey) => qualificationRecordPresence({ packageKey }),
+    identityCheck: (name) => identityResults.get(name) ?? { state: "new" },
   });
 }
 

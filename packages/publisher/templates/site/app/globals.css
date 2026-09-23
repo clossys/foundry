@@ -1,0 +1,4 @@
+/* Reads the repository's own brand tokens (#1171: clossys/designer/brand.css)
+   rather than declaring a second token root. Adjust the relative path if
+   Launcher places clossys/ somewhere other than the repository root. */
+@import "../../../clossys/designer/brand.css";
