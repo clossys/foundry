@@ -6,6 +6,49 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.9.0] - 2026-09-22
+
+### Changed
+
+- **`./machine` subpath composition is now union by directory link, not
+  per-skill links (issue #393, owner decision 2026-09-21).** Each discovered
+  account workspace, and the third-party-scoped skills root, now composes
+  exactly ONE directory symlink into `composedSkillsRoot` — the whole source
+  tree, named after the source itself — instead of one symlink per skill.
+  This overturns the per-skill-links shape this subpath shipped with
+  earlier: it does not scale attribution (a large account's skill tree used
+  to flood the composed root with entries no reader could trace back to a
+  source at a glance) the way one named directory per source does.
+- `buildSkillsManifest`'s signature changed to match: it now takes
+  `{ composedSkillsRoot, linkName }` and builds a single-entry manifest,
+  rather than a list of skill names. Any caller outside this package
+  building a manifest directly (rather than going through `verifyMachine`)
+  needs to update the call site.
+
+### Added
+
+- `detectSkillNameCollisions`, exported from `./machine`. Directory-linking
+  means `composeInstallationPlans`'s own per-destination collision check no
+  longer sees two sources' skills collide — each source's own directory link
+  is the only destination it claims. This function enumerates every source
+  tree's skill names and compares them before any link is planned, returning
+  the same `DestinationCollision` shape `src/composition.ts` already defines,
+  so a same-named skill in two source trees is still a reported conflict,
+  never a silent last-writer-wins — `verifyMachine` now runs it ahead of
+  `composeInstallationPlans` on every run.
+
+### Fixed
+
+- The retirement check (`MachineVerifyInputs.previousCompositionPath`, #240)
+  now compares against directory-linked destinations, matching what
+  `verifyMachine` actually composes. It was already the mechanism the
+  retiring account-owned installer repository's own deletion depends on
+  (issue #393's "still open" gate: a `verify` run against the real machine,
+  proving every destination a retiring account owned resolves somewhere
+  else, before that account's repository is deleted) — this release keeps
+  it correct under the new composed shape rather than leaving it checked
+  against destinations this subpath no longer produces.
+
 ## [0.8.1] - 2026-09-21
 
 ### Added
