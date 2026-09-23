@@ -27,6 +27,44 @@
  * rather than a silent default in whichever direction the code happened to
  * fall.
  *
+ * ONE CARVE-OUT: A STALE REVIEW RECORD IS NEITHER
+ * -------------------------------------------------
+ * `"stale-evidence"` is, by rule, `evaluability` — the same #256 discipline:
+ * evidence about a different commit is not evidence about this one, in
+ * either direction, so folding it into a verdict would be exactly the
+ * mistake this module exists to prevent. That is correct for a stale CHECK
+ * or a stale THREAD, where it means the bundle disagrees with itself about
+ * which head it describes. It stops being correct for a stale REVIEW
+ * specifically: `validateReviews` (`@clossys/controller/review/validate`)
+ * already reads a review's own `headSha` — the exact commit that review was
+ * actually submitted against, never invented — and, on a mismatch, excludes
+ * that record from `hasApproval`, `hasChangesRequested`, and every other
+ * decisive signal on its own, `continue`-ing past it entirely. So a review
+ * left behind by a force-push is already harmless to the verdict before this
+ * module ever sees it; the `"stale-evidence"` finding attached to it adds no
+ * new fact, and forcing the WHOLE check to `indeterminate` over a record
+ * that could never have swung the decision anyway inverts this repository's
+ * own stated intent for this exact rule (see `.github/workflows/
+ * verify-standards.yml`'s "avoids folding a stale approval into either a
+ * pass or a fail" — a stale record folded into NEITHER a pass nor a fail is
+ * `indeterminate` for the record, not for the whole run). A rate-limited bot
+ * that left one `COMMENTED` review at an earlier head and cannot re-review
+ * (#1187, #1297, #1302) made this concrete: every push on a merge train
+ * marks its own review stale, and every push after that keeps the PR
+ * `indeterminate` forever, on a required check, even though a PR with NO
+ * review at all passes cleanly.
+ *
+ * So `isStaleReviewFinding` below pulls `"stale-evidence"` findings whose
+ * `path` names a `reviews[...]` entry OUT of the `evaluability` set before
+ * anything else is computed. They are reported on `ReviewEvidenceReport.
+ * staleReviews` — visible, never silently dropped — but they can never, on
+ * their own, produce `indeterminate`, and (because `RULE_CLASS` never
+ * classifies `"stale-evidence"` as `"violation"`) they can never produce
+ * `violated` either. A stale APPROVAL still can never count, because
+ * `validateReviews` already excluded it from `hasApproval` before this
+ * module runs — this carve-out changes only whether the check can answer at
+ * all, never what a stale record is worth once it does.
+ *
  * Zero I/O. Every input is caller-supplied — including the evidence bundle
  * itself, which a consumer's own workflow collects (its credentials, its
  * network) and hands over as data. `@clossys/controller/review/github`
@@ -173,11 +211,34 @@ function toFinding(finding: ReviewFinding): ReviewEvidenceFinding {
   return { rule: finding.rule, severity: "error", path: finding.path, message: finding.message };
 }
 
+/**
+ * Whether a `"stale-evidence"` finding is about a REVIEW record specifically
+ * — `path` of the shape `reviews[<index>]...` that `validateReviews` (see
+ * `@clossys/controller/review/validate`) emits — as opposed to a check or a
+ * thread. See this file's own header, "ONE CARVE-OUT: A STALE REVIEW RECORD
+ * IS NEITHER", for why only reviews get this treatment: a check or a thread
+ * stamped with a head other than the bundle's own means the bundle
+ * disagrees with itself, which stays a genuine evaluability problem.
+ */
+function isStaleReviewFinding(item: ReviewFinding): boolean {
+  return item.rule === "stale-evidence" && item.path.startsWith("reviews[");
+}
+
 /** What the check concluded. */
 export interface ReviewEvidenceReport {
   readonly result: GateResult<ReviewEvidenceFinding, ReviewEvidenceReason>;
   /** Distinct review providers observed at the current head, for the report. Never used as authority. */
   readonly providersObserved: readonly string[];
+  /**
+   * Review records excluded from the verdict because they were submitted
+   * against a commit other than the bundle's current head — a rate-limited
+   * bot's `COMMENTED` review left behind by a merge-train push is the
+   * motivating case (#1187, #1297, #1302). Reported for visibility only:
+   * `result` never depends on this list being empty, and a stale record can
+   * never count as an approval, a change request, or presence — see this
+   * file's own header.
+   */
+  readonly staleReviews: readonly ReviewEvidenceFinding[];
 }
 
 /** Evaluates one change's review evidence against a consumer-owned review policy. */
@@ -187,6 +248,7 @@ export function checkReviewEvidence(
   options: ReviewEvidenceOptions | null | undefined,
 ): ReviewEvidenceReport {
   const empty: readonly string[] = [];
+  const emptyFindings: readonly ReviewEvidenceFinding[] = [];
   // Options are validated before anything else is read, and validated as
   // data rather than trusted as a type. `requireReviewPresence` is a
   // required boolean with no default, so an options object this package
@@ -198,6 +260,7 @@ export function checkReviewEvidence(
   if (!isRecord(options) || typeof options.requireReviewPresence !== "boolean") {
     return {
       providersObserved: empty,
+      staleReviews: emptyFindings,
       result: reviewEvidenceReasons.indeterminate(
         "no-options-supplied",
         "No usable review-evidence options were supplied. requireReviewPresence must be an explicit boolean, because " +
@@ -208,6 +271,7 @@ export function checkReviewEvidence(
   if (options.headShaUnderTest !== undefined && typeof options.headShaUnderTest !== "string") {
     return {
       providersObserved: empty,
+      staleReviews: emptyFindings,
       result: reviewEvidenceReasons.indeterminate(
         "no-options-supplied",
         "headShaUnderTest was supplied and is not a string, so the commit this run claims to be about cannot be read.",
@@ -217,6 +281,7 @@ export function checkReviewEvidence(
   if (evidence === undefined || evidence === null) {
     return {
       providersObserved: empty,
+      staleReviews: emptyFindings,
       result: reviewEvidenceReasons.indeterminate(
         "no-evidence-supplied",
         "No review-evidence bundle was supplied. A change nobody collected evidence for has not been shown to be reviewed.",
@@ -226,6 +291,7 @@ export function checkReviewEvidence(
   if (policy === undefined || policy === null) {
     return {
       providersObserved: empty,
+      staleReviews: emptyFindings,
       result: reviewEvidenceReasons.indeterminate(
         "no-policy-supplied",
         "No review policy was supplied. This package holds no default review requirements.",
@@ -237,6 +303,7 @@ export function checkReviewEvidence(
   if (policyFindings.length > 0) {
     return {
       providersObserved: empty,
+      staleReviews: emptyFindings,
       result: reviewEvidenceReasons.indeterminate(
         "policy-invalid",
         `The review policy is not valid, so there is nothing to hold the evidence to: ${describe(policyFindings)}`,
@@ -245,11 +312,21 @@ export function checkReviewEvidence(
   }
 
   const evidenceFindings = validateReviewEvidence(evidence, policy as ReviewPolicy);
-  const evaluability = evidenceFindings.filter((item) => RULE_CLASS[item.rule] === "evaluability");
+  // Stale REVIEW findings are carved out of `evaluability` before anything
+  // else is computed — see this file's header, "ONE CARVE-OUT: A STALE
+  // REVIEW RECORD IS NEITHER". A stale check or thread finding is not
+  // carved out; those stay `evaluability`, via the `RULE_CLASS` lookup
+  // below, exactly as `stale-evidence` is classified there.
+  const staleReviewFindings = evidenceFindings.filter(isStaleReviewFinding);
+  const evaluability = evidenceFindings.filter(
+    (item) => RULE_CLASS[item.rule] === "evaluability" && !isStaleReviewFinding(item),
+  );
+  const staleReviews = staleReviewFindings.map(toFinding);
   if (evaluability.length > 0) {
     const first = evaluability[0] as ReviewFinding;
     return {
       providersObserved: empty,
+      staleReviews,
       result: reviewEvidenceReasons.indeterminate(
         evaluabilityReason(first.rule),
         `The evidence bundle cannot be evaluated: ${describe(evaluability)}`,
@@ -267,6 +344,7 @@ export function checkReviewEvidence(
   if (options.headShaUnderTest !== undefined && options.headShaUnderTest !== bundle.headSha) {
     return {
       providersObserved,
+      staleReviews,
       result: reviewEvidenceReasons.indeterminate(
         "evidence-head-mismatch",
         `The evidence is bound to head ${bundle.headSha} and the commit under test is ${options.headShaUnderTest}. ` +
@@ -291,7 +369,7 @@ export function checkReviewEvidence(
     }
   }
 
-  if (violations.length > 0) return { providersObserved, result: gateViolated(violations) };
+  if (violations.length > 0) return { providersObserved, staleReviews, result: gateViolated(violations) };
 
   // Coverage, stated honestly: how many discrete pieces of evidence were
   // actually read. A bundle carrying nothing at all cannot report satisfied —
@@ -301,6 +379,7 @@ export function checkReviewEvidence(
   if (evaluated === 0) {
     return {
       providersObserved,
+      staleReviews,
       result: reviewEvidenceReasons.indeterminate(
         "evidence-incomplete",
         "The evidence bundle is well-formed and completely empty: no checks, no reviews, no threads. There is nothing " +
@@ -308,7 +387,7 @@ export function checkReviewEvidence(
       ),
     };
   }
-  return { providersObserved, result: gateSatisfied(evaluated) };
+  return { providersObserved, staleReviews, result: gateSatisfied(evaluated) };
 }
 
 function describe(findings: readonly ReviewFinding[]): string {
