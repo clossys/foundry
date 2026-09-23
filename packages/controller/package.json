@@ -1,6 +1,6 @@
 {
   "name": "@clossys/controller",
-  "version": "0.9.12",
+  "version": "0.9.14",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -83,7 +83,8 @@
     "foundry-position-check": "dist/positions/bin.js",
     "foundry-onboarding-run": "dist/onboarding/bin.js",
     "foundry-completion-evidence-check": "dist/positions/completion-evidence-bin.js",
-    "singular-authority-check": "dist/release/singular-authority-bin.js"
+    "singular-authority-check": "dist/release/singular-authority-bin.js",
+    "foundry-loop-status": "dist/loop/bin.js"
   },
   "files": [
     "dist",

@@ -5,6 +5,77 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.14] - 2026-09-22
+
+### Added
+
+- One lifecycle vocabulary for every capability and pack item (issue
+  #1228): `LIFECYCLE_STATES` / `LIFECYCLE_CONDITIONS`, and
+  `packStatusToLifecycle` mapping pack item statuses onto it. Mirrored
+  word for word by this repository's own canonical lifecycle contract, so
+  Controller's own loop engine and any other package with a status-like
+  surface import one definition instead of declaring a second one.
+- The loop engine (issue #1195): the one `sense -> judge -> act -> verify
+  -> learn` loop every role runs, and the per-role
+  `clossys/<role>/loop.json` state it is re-entrant over --
+  `LOOP_STAGES`, trigger re-entry (`reentryStageForTrigger`,
+  `reentryScopeForTrigger`), blockers with a fixed owner per kind
+  (`blockerFor`, `isBlockerOverdue`, `overdueBlockers`), staleness as a
+  deterministic fingerprint comparison (`fingerprintInputs`, `isStale`,
+  `changedInputs`, `affectedCapabilities`), pure artifact-operation
+  planning for create/update/move/supersede/retire
+  (`planCreateOrUpdate`, `planMove`, `planSupersede`, `planRetire`),
+  `clossys/<role>/loop.json` validation (`validateLoopState`,
+  `resumeStage`), and a generic five-section status-document renderer
+  (`renderStatusDocument`, `renderLoopStatus`) kept generic over its
+  caller so the Advisor lane's own parallel status document can reuse it.
+  The installed `foundry-loop-status` executable is the CLI form.
+  `bindPlan`/`decidePlanExecution` are stale-plan refusal: a plan bound
+  to the fingerprint it was computed from is re-proposed as a diff,
+  never executed as written, once that fingerprint moves.
+
+### Changed
+
+- The fifth universal loop stage is now named `learn`, not
+  `learnOrEscalate` (issue #1194, role-loop-archetypes.json schema
+  version 4 -> 5): escalation was always one of learn's own outcomes, not
+  a second stage. Every role is invoked with the `loop` keyword
+  (`/clossys-<role> loop` in Claude Code, `@clossys-<role> loop` in
+  Cursor); Controller's own `SKILL.md` documents its own invocation.
+
+## [0.9.13] - 2026-09-22
+
+### Added
+
+- Onboarding discovery now reads the extended `foundry` manifest block
+  (issue #1172): `intake`, `outputs`, `status`, and `fit`, alongside the
+  existing `assessment`. Each is discovered exactly the same way — read only
+  from the role's own installed manifest, never inferred, with every absence
+  reported as a determinate value (`discoverRoleIntakeSurface`,
+  `discoverRoleFitSurface`, `discoverRoleStatusSurface`,
+  `discoverRoleOutputsDeclaration`, and their plural
+  `*Surfaces`/`*Declarations` forms). `outputs` is additionally validated
+  against the role's own `clossys/<role>/` output folder (issue #1171).
+- Schema version 2 of the same manifest block (owner decision on issue
+  #1176, recorded 2026-09-22) adds `solves`, `needs`, and `feeds`.
+  Discovery reads these the same manifest-only way
+  (`discoverRoleSolvesDeclaration`, `discoverRoleNeedsDeclaration`,
+  `discoverRoleFeedsDeclaration`, and their plural forms) and stays
+  shape-level only: whether a `solves.metric` names this role's own owned
+  metric, whether a `solves.proofCase` exists in a qualification adapter,
+  and whether the needs/feeds handoff graph has a cycle are this
+  repository's own dev-time questions, answered by this repository's own
+  gate script in its `--enforce` mode, not ones this runtime orchestration
+  answers for an arbitrary consumer's installed packages.
+- No package in this repository declares any of these fields yet —
+  conformance is a later wave (#1172's own sequencing). This change is
+  purely additive: no existing export, type, or behavior changed.
+
+### Notes
+
+- Purely additive; qualification of `0.9.13` is deferred for the same
+  toolchain-pin reason as the other issue-948 deferral entries.
+
 ## [0.9.12] - 2026-09-21
 
 ### Added

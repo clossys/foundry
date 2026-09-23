@@ -664,6 +664,19 @@ jobs:
       # also always prints the roles declaring no surface and their count, which
       # is why it belongs in a job whose log a maintainer actually reads.
       - run: node scripts/check-role-assessment-surfaces.mjs
+      # Same class again: manifest- and fixture-read only, no build. Extends
+      # the foundry block check-role-assessment-surfaces.mjs covers
+      # (assessment) to intake/outputs/status/fit (#1172) and validates any
+      # check-output-envelope.json / role-assessment.json fixture a package
+      # declares (#1174). Report mode: absence is printed and counted, never
+      # a failure, until --enforce (a later wave).
+      - run: node scripts/check-package-framework.mjs
+      # Same class again: manifest-read only, no build. Validates
+      # foundry.capabilities (#1196, package-framework version 3): a MECE
+      # capability map per role. Report mode: absence is printed and
+      # counted, never a failure, until --enforce -- the per-role maps
+      # (#1198-#1202) are drafted elsewhere first and have not landed yet.
+      - run: node scripts/check-capability-maps.mjs
       # First-wave productization order: engagement, then operational integrity,
       # then expression. Distinct from the release-catalogue upload order.
       # Reads the sequence contract plus packages/*/package.json runtime edges.
