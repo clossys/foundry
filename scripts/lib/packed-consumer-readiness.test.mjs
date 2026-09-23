@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, mkdir, readFile, rm, symlink, writeFile } from "node:fs/promises";
+import { mkdtemp, mkdir, readFile, realpath, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -18,8 +18,16 @@ import {
   validateOptionalPeerPolicy,
 } from "./packed-consumer-readiness.mjs";
 
+// os.tmpdir() on macOS resolves under /var/folders, which is itself a
+// symlink to /private/var/folders. Node always realpaths the main ESM
+// module for import.meta.url, so a fixture root built from the raw
+// mkdtemp() result makes even a plain, non-symlinked direct invocation
+// look like it went through a symlink. Canonicalizing the root right after
+// mkdtemp keeps that distinction meaningful for what these tests actually
+// probe: a deliberately introduced node_modules/.bin symlink, not an
+// incidental ancestor symlink in $TMPDIR.
 async function fixture(t) {
-  const root = await mkdtemp(join(tmpdir(), "packed-consumer-test-"));
+  const root = await realpath(await mkdtemp(join(tmpdir(), "packed-consumer-test-")));
   t.after(() => rm(root, { recursive: true, force: true }));
   return root;
 }
