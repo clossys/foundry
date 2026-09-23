@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "role": "@clossys/strategist",
+  "signals": [
+    {
+      "id": "describes-itself-to-an-audience",
+      "prompt": "The business behind this repository describes itself to an outside audience: who it serves, what it offers, or what it claims.",
+      "evidenceKind": "consumer-answer"
+    }
+  ]
+}
