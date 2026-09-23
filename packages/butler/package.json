@@ -1,6 +1,6 @@
 {
   "name": "@clossys/butler",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -41,7 +41,7 @@
       "invocation": "single-json-input"
     }
   },
-  "description": "The butler role: do we have what this person wants — this request in their own confirmation, and their standing instructions, still current? Dependency-free machinery for a consumer's own want records: a three-state standing model (absent/denied/granted) plus a stale evaluation status, structured intents carrying a confidence read against a declared floor, host-supplied storage and audit ports, an isolated ./inbound admission subpath, an optional ./web subpath whose React peer is asserted at import time, and three gates behind one butler-check bin — confirmation-completeness, which fails when an acted-on intent has no confirmation record, when it was acted on against a misread or unclear read-back, or when an intent below the declared confidence floor was acted on with no explicit hand-off; currency, which fails when a standing instruction is relied on past its declared window, after a policy version superseded it, or when nothing was on record to rely on at all; and withdrawal-parity, which fails when withdrawing takes more steps than granting or demands a contact or an account the matching grant path never required. Ships the schema and the checkers; every consumer authors its own values.",
+  "description": "The butler role: do we have what this person wants \u2014 this request in their own confirmation, and their standing instructions, still current? Dependency-free machinery for a consumer's own want records: a three-state standing model (absent/denied/granted) plus a stale evaluation status, structured intents carrying a confidence read against a declared floor, host-supplied storage and audit ports, an isolated ./inbound admission subpath, an optional ./web subpath whose React peer is asserted at import time, and three gates behind one butler-check bin \u2014 confirmation-completeness, which fails when an acted-on intent has no confirmation record, when it was acted on against a misread or unclear read-back, or when an intent below the declared confidence floor was acted on with no explicit hand-off; currency, which fails when a standing instruction is relied on past its declared window, after a policy version superseded it, or when nothing was on record to rely on at all; and withdrawal-parity, which fails when withdrawing takes more steps than granting or demands a contact or an account the matching grant path never required. Ships the schema and the checkers; every consumer authors its own values.",
   "keywords": [
     "butler",
     "consent",

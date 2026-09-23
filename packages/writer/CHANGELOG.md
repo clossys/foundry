@@ -5,6 +5,17 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.3.16] - 2026-09-22
+
+### Notes
+
+- No packed content changed. This package's test suite changed as part of
+  fixing leaking temp fixture directories (issue #1250), and its 0.3.15
+  qualification record was already retained -- once a version's record is
+  retained, any further change to that package, packed or not, requires a new
+  version (docs/PUBLISHING.md, "Once a version's record is retained, any
+  change to that package needs a new version").
+
 ## [0.3.15] - 2026-09-21
 
 ### Changed

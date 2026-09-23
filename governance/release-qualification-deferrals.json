@@ -301,6 +301,84 @@
       "version": "0.1.1",
       "reason": "This machine is not the pinned release runtime (Node v24.19.0, npm 11.17.0, zlib 1.3.2.1-motley-3246f1b; this machine Node v24.15.0, npm 11.12.1). Merge acknowledgement, never publication: 0.1.1 may not be published before the record exists.",
       "issue": 948
+    },
+    {
+      "package": "butler",
+      "version": "0.1.10",
+      "reason": "This version was cut to fix issue #1250 (leaking test fixture directories): the previous version's retained qualification record went stale the moment its test suite changed (docs/PUBLISHING.md, \"Once a version's record is retained, any change to that package needs a new version\"), a test-only, non-packed change. No candidate qualification record has been generated yet for this new version. Merge acknowledgement, never publication: this version may not be published before the record exists.",
+      "issue": 1250
+    },
+    {
+      "package": "controller",
+      "version": "0.9.13",
+      "reason": "This version was cut to fix issue #1250 (leaking test fixture directories): the previous version's retained qualification record went stale the moment its test suite changed (docs/PUBLISHING.md, \"Once a version's record is retained, any change to that package needs a new version\"), a test-only, non-packed change. No candidate qualification record has been generated yet for this new version. Merge acknowledgement, never publication: this version may not be published before the record exists.",
+      "issue": 1250
+    },
+    {
+      "package": "giver",
+      "version": "0.1.9",
+      "reason": "This version was cut to fix issue #1250 (leaking test fixture directories): the previous version's retained qualification record went stale the moment its test suite changed (docs/PUBLISHING.md, \"Once a version's record is retained, any change to that package needs a new version\"), a test-only, non-packed change. No candidate qualification record has been generated yet for this new version. Merge acknowledgement, never publication: this version may not be published before the record exists.",
+      "issue": 1250
+    },
+    {
+      "package": "influencer",
+      "version": "0.1.8",
+      "reason": "This version was cut to fix issue #1250 (leaking test fixture directories): the previous version's retained qualification record went stale the moment its test suite changed (docs/PUBLISHING.md, \"Once a version's record is retained, any change to that package needs a new version\"), a test-only, non-packed change. No candidate qualification record has been generated yet for this new version. Merge acknowledgement, never publication: this version may not be published before the record exists.",
+      "issue": 1250
+    },
+    {
+      "package": "inspector",
+      "version": "0.2.9",
+      "reason": "This version was cut to fix issue #1250 (leaking test fixture directories): the previous version's retained qualification record went stale the moment its test suite changed (docs/PUBLISHING.md, \"Once a version's record is retained, any change to that package needs a new version\"), a test-only, non-packed change. No candidate qualification record has been generated yet for this new version. Merge acknowledgement, never publication: this version may not be published before the record exists.",
+      "issue": 1250
+    },
+    {
+      "package": "integrator",
+      "version": "0.7.4",
+      "reason": "This version was cut to fix issue #1250 (leaking test fixture directories): the previous version's retained qualification record went stale the moment its test suite changed (docs/PUBLISHING.md, \"Once a version's record is retained, any change to that package needs a new version\"), a test-only, non-packed change. No candidate qualification record has been generated yet for this new version. Merge acknowledgement, never publication: this version may not be published before the record exists.",
+      "issue": 1250
+    },
+    {
+      "package": "keeper",
+      "version": "0.1.10",
+      "reason": "This version was cut to fix issue #1250 (leaking test fixture directories): the previous version's retained qualification record went stale the moment its test suite changed (docs/PUBLISHING.md, \"Once a version's record is retained, any change to that package needs a new version\"), a test-only, non-packed change. No candidate qualification record has been generated yet for this new version. Merge acknowledgement, never publication: this version may not be published before the record exists.",
+      "issue": 1250
+    },
+    {
+      "package": "locksmith",
+      "version": "0.2.8",
+      "reason": "This version was cut to fix issue #1250 (leaking test fixture directories): the previous version's retained qualification record went stale the moment its test suite changed (docs/PUBLISHING.md, \"Once a version's record is retained, any change to that package needs a new version\"), a test-only, non-packed change. No candidate qualification record has been generated yet for this new version. Merge acknowledgement, never publication: this version may not be published before the record exists.",
+      "issue": 1250
+    },
+    {
+      "package": "messenger",
+      "version": "0.1.11",
+      "reason": "This version was cut to fix issue #1250 (leaking test fixture directories): the previous version's retained qualification record went stale the moment its test suite changed (docs/PUBLISHING.md, \"Once a version's record is retained, any change to that package needs a new version\"), a test-only, non-packed change. No candidate qualification record has been generated yet for this new version. Merge acknowledgement, never publication: this version may not be published before the record exists.",
+      "issue": 1250
+    },
+    {
+      "package": "writer",
+      "version": "0.3.16",
+      "reason": "This version was cut to fix issue #1250 (leaking test fixture directories): the previous version's retained qualification record went stale the moment its test suite changed (docs/PUBLISHING.md, \"Once a version's record is retained, any change to that package needs a new version\"), a test-only, non-packed change. No candidate qualification record has been generated yet for this new version. Merge acknowledgement, never publication: this version may not be published before the record exists.",
+      "issue": 1250
+    },
+    {
+      "package": "advisor",
+      "version": "0.2.9",
+      "reason": "This version was cut to fix issue #1250 (leaking test fixture directories): the previous version's retained qualification record went stale the moment its test suite changed (docs/PUBLISHING.md, \"Once a version's record is retained, any change to that package needs a new version\"), a test-only, non-packed change. No candidate qualification record has been generated yet for this new version. Merge acknowledgement, never publication: this version may not be published before the record exists.",
+      "issue": 1250
+    },
+    {
+      "package": "architect",
+      "version": "0.1.11",
+      "reason": "This version was cut to fix issue #1250 (leaking test fixture directories): the previous version's retained qualification record went stale the moment its test suite changed (docs/PUBLISHING.md, \"Once a version's record is retained, any change to that package needs a new version\"), a test-only, non-packed change. No candidate qualification record has been generated yet for this new version. Merge acknowledgement, never publication: this version may not be published before the record exists.",
+      "issue": 1250
+    },
+    {
+      "package": "bouncer",
+      "version": "0.1.11",
+      "reason": "This version was cut to fix issue #1250 (leaking test fixture directories): the previous version's retained qualification record went stale the moment its test suite changed (docs/PUBLISHING.md, \"Once a version's record is retained, any change to that package needs a new version\"), a test-only, non-packed change. No candidate qualification record has been generated yet for this new version. Merge acknowledgement, never publication: this version may not be published before the record exists.",
+      "issue": 1250
     }
   ]
 }
