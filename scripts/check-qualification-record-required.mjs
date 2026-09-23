@@ -71,13 +71,48 @@
 // deferral names, the deferral is stale and must be removed (see
 // `stale-deferral` below), the same way check-package-evidence.mjs's
 // `stale-gap` finding forces a satisfied gap out of the file.
+//
+// ONE FILE PER DEFERRAL, NOT ONE SHARED ARRAY (issue #1254)
+// -----------------------------------------------------------
+// Every deferral used to live as one entry in a single JSON array at
+// governance/release-qualification-deferrals.json. Two unrelated pull
+// requests each bumping a different package that could not reach the
+// pinned release runtime (scripts/lib/release-runtime.mjs) both had to
+// append to that one file, so an otherwise-unrelated pair of PRs collided
+// on the same lines and conflicted on merge — a recorded, repeated hotspot
+// (issue #1187, item 3; issue #1254). Splitting the store into one file per
+// package@version — governance/release-qualification-deferrals/<package>@<version>.json —
+// removes the shared line range entirely: two PRs adding deferrals for
+// different package@version pairs now touch disjoint files and cannot
+// conflict on the file's own account. Each entry file carries only
+// {package, version, reason, issue}; the store's schemaVersion and the
+// countdown-not-a-standing-exemption $comment that used to sit at the top
+// of the single array now live once, in
+// governance/release-qualification-deferrals/README.md, since they describe
+// the store as a whole rather than any one entry.
+//
+// TRANSITION: THE OLD SINGLE-FILE PATH IS RETIRED, NOT REUSED
+// --------------------------------------------------------------
+// A pull request opened before this migration landed may still append to
+// the old governance/release-qualification-deferrals.json path. Rebasing it
+// onto a tree where that file no longer exists produces a real, one-time
+// merge conflict — expected, not a bug. What this gate refuses to do is
+// silently ignore the old file if it reappears (a conflict resolved the
+// wrong way, or a stray restore): see `legacy-deferrals-file` below, which
+// fails loudly with the new path and issue #1254 rather than letting a
+// pre-migration deferral go unread.
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { evaluatePackageDiff } from "./check-release-readiness.mjs";
 import { qualificationRecordPresenceForCandidate } from "./check-qualification-record-present.mjs";
 
-const DEFERRALS_PATH = "governance/release-qualification-deferrals.json";
+const DEFERRALS_DIR = "governance/release-qualification-deferrals";
+const LEGACY_DEFERRALS_PATH = "governance/release-qualification-deferrals.json";
+
+function deferralFilePath(packageKey, version) {
+  return `${DEFERRALS_DIR}/${packageKey}@${version}.json`;
+}
 
 // Resolved against the current working directory, matching every other
 // packages/*-iterating script here (see check-release-readiness.mjs's own
@@ -93,47 +128,116 @@ function discoverPackages() {
     .sort();
 }
 
-function loadDeferrals(root) {
-  const path = resolve(root, DEFERRALS_PATH);
-  if (!existsSync(path)) return { entries: [], findings: [] };
-  let doc;
+// Parses one entry file's raw JSON into a validated {package, version,
+// reason, issue} entry, or a finding explaining why it could not be. Never
+// throws — every failure mode here is reported as a `findings` entry
+// against the specific FILE that caused it, so one malformed file can never
+// hide the state of every other, already-valid deferral (a property the old
+// single-array file could not offer: one bad line broke the whole parse).
+function readDeferralFile(root, relPath) {
+  const fileName = basename(relPath);
+  let raw;
   try {
-    doc = JSON.parse(readFileSync(path, "utf8"));
+    raw = JSON.parse(readFileSync(resolve(root, relPath), "utf8"));
   } catch (error) {
-    return { entries: null, findings: [{ severity: "error", rule: "unreadable-deferrals-file", subject: DEFERRALS_PATH, message: `not valid JSON: ${error instanceof Error ? error.message : String(error)}` }] };
+    return { entry: null, finding: { severity: "error", rule: "unreadable-deferral-file", subject: relPath, message: `not valid JSON: ${error instanceof Error ? error.message : String(error)}` } };
   }
-  if (typeof doc !== "object" || doc === null || !Array.isArray(doc.deferrals)) {
-    return { entries: null, findings: [{ severity: "error", rule: "unreadable-deferrals-file", subject: DEFERRALS_PATH, message: "must be an object with a `deferrals` array" }] };
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
+    return { entry: null, finding: { severity: "error", rule: "unreadable-deferral-file", subject: relPath, message: "must be a JSON object with `package`, `version`, `reason`, and `issue`" } };
+  }
+  if (typeof raw.package !== "string" || raw.package === "") {
+    return { entry: null, finding: { severity: "error", rule: "unreadable-deferral", subject: relPath, message: "needs a string `package` naming its packages/ directory" } };
+  }
+  if (typeof raw.version !== "string" || raw.version === "") {
+    return { entry: null, finding: { severity: "error", rule: "deferral-without-version", subject: raw.package, message: `${relPath} needs a string \`version\` naming the exact bumped version being deferred` } };
+  }
+  if (typeof raw.reason !== "string" || raw.reason.trim().length < 20) {
+    return { entry: null, finding: { severity: "error", rule: "deferral-without-reason", subject: raw.package, message: `the deferral at "${raw.version}" (${relPath}) needs a reason saying why the record is deferred` } };
+  }
+  if (!Number.isInteger(raw.issue)) {
+    return { entry: null, finding: { severity: "error", rule: "deferral-without-issue", subject: raw.package, message: `the deferral at "${raw.version}" (${relPath}) needs an integer \`issue\` tracking it` } };
+  }
+  // The filename is not load-bearing for lookups below (entries are keyed by
+  // their own `package`/`version` fields, the same as before) but it IS the
+  // human-facing, merge-conflict-avoiding identity of the entry, so a file
+  // whose name disagrees with its own contents is a real defect: it means
+  // either the file was renamed without updating its contents, or copied
+  // from a different entry and only partly edited.
+  const expectedFileName = `${raw.package}@${raw.version}.json`;
+  if (fileName !== expectedFileName) {
+    return { entry: null, finding: { severity: "error", rule: "deferral-file-name-mismatch", subject: raw.package, message: `${relPath} names package "${raw.package}" version "${raw.version}", so it must be called ${expectedFileName}` } };
+  }
+  return { entry: { package: raw.package, version: raw.version, reason: raw.reason, issue: raw.issue }, finding: null };
+}
+
+// Loads every acknowledged deferral from governance/release-qualification-deferrals/,
+// one file per package@version. Returns `{ entries, findings }`:
+//   - `entries` is `null` only when the store as a WHOLE could not be read
+//     (the retired single-file path has reappeared, or the directory itself
+//     could not be listed) — the same "indeterminate, not empty" contract
+//     the old single-array file used for a parse failure.
+//   - Otherwise `entries` is the array of every well-formed entry found,
+//     skipping (and separately reporting, via `findings`) any individual
+//     file that failed to parse or validate — see readDeferralFile() above
+//     for why a single bad file no longer takes every other entry down
+//     with it.
+function loadDeferrals(root) {
+  if (existsSync(resolve(root, LEGACY_DEFERRALS_PATH))) {
+    return {
+      entries: null,
+      findings: [
+        {
+          severity: "error",
+          rule: "legacy-deferrals-file",
+          subject: LEGACY_DEFERRALS_PATH,
+          message: `${LEGACY_DEFERRALS_PATH} is retired — deferrals moved to ${DEFERRALS_DIR}/<package>@<version>.json, see #1254. Remove this file and add the equivalent per-version file(s) instead.`,
+        },
+      ],
+    };
+  }
+
+  const dirPath = resolve(root, DEFERRALS_DIR);
+  if (!existsSync(dirPath)) return { entries: [], findings: [] };
+
+  let fileNames;
+  try {
+    fileNames = readdirSync(dirPath, { withFileTypes: true })
+      .filter((d) => d.isFile() && d.name.endsWith(".json"))
+      .map((d) => d.name)
+      .sort();
+  } catch (error) {
+    return {
+      entries: null,
+      findings: [{ severity: "error", rule: "unreadable-deferrals-directory", subject: DEFERRALS_DIR, message: error instanceof Error ? error.message : String(error) }],
+    };
   }
 
   const findings = [];
   const entries = [];
-  const seen = new Set();
-  for (const raw of doc.deferrals) {
-    if (typeof raw !== "object" || raw === null || typeof raw.package !== "string" || raw.package === "") {
-      findings.push({ severity: "error", rule: "unreadable-deferral", subject: "(deferral)", message: "every deferral needs a string `package` naming its packages/ directory" });
+  // Kept as defense in depth, not because it is reachable today: a file
+  // only becomes an `entry` once readDeferralFile() has already confirmed
+  // its filename equals `${package}@${version}.json` (deferral-file-name-
+  // mismatch otherwise), and two files cannot share a filename on any
+  // filesystem this repository runs on -- so two ENTRIES colliding on the
+  // same package@version key is not currently reachable through this loop.
+  // Left in so a future relaxation of that filename requirement does not
+  // silently reopen the exact hazard the old single-array file's own
+  // duplicate-deferral check existed to catch.
+  const seen = new Map();
+  for (const fileName of fileNames) {
+    const relPath = `${DEFERRALS_DIR}/${fileName}`;
+    const { entry, finding } = readDeferralFile(root, relPath);
+    if (finding) {
+      findings.push(finding);
       continue;
     }
-    const { package: packageKey } = raw;
-    if (typeof raw.version !== "string" || raw.version === "") {
-      findings.push({ severity: "error", rule: "deferral-without-version", subject: packageKey, message: "needs a string `version` naming the exact bumped version being deferred" });
-      continue;
-    }
-    if (typeof raw.reason !== "string" || raw.reason.trim().length < 20) {
-      findings.push({ severity: "error", rule: "deferral-without-reason", subject: packageKey, message: `the deferral at "${raw.version}" needs a reason saying why the record is deferred` });
-      continue;
-    }
-    if (!Number.isInteger(raw.issue)) {
-      findings.push({ severity: "error", rule: "deferral-without-issue", subject: packageKey, message: `the deferral at "${raw.version}" needs an integer \`issue\` tracking it` });
-      continue;
-    }
-    const key = `${packageKey}\0${raw.version}`;
+    const key = `${entry.package}\0${entry.version}`;
     if (seen.has(key)) {
-      findings.push({ severity: "error", rule: "duplicate-deferral", subject: packageKey, message: `two deferrals declared for version "${raw.version}"` });
+      findings.push({ severity: "error", rule: "duplicate-deferral", subject: entry.package, message: `two deferral files declare version "${entry.version}": ${seen.get(key)} and ${relPath}` });
       continue;
     }
-    seen.add(key);
-    entries.push({ package: packageKey, version: raw.version, reason: raw.reason, issue: raw.issue });
+    seen.set(key, relPath);
+    entries.push(entry);
   }
   return { entries, findings };
 }
@@ -175,7 +279,7 @@ function checkStaleDeferrals(root, entries) {
         severity: "error",
         rule: "stale-deferral",
         subject: entry.package,
-        message: `the deferral at "${entry.version}" (issue #${entry.issue}) is acknowledged but a retained, matching qualification record now exists at ${presence.path} — remove the deferral and close its issue`,
+        message: `the deferral at "${entry.version}" (issue #${entry.issue}) is acknowledged but a retained, matching qualification record now exists at ${presence.path} — remove ${deferralFilePath(entry.package, entry.version)} and close its issue`,
       });
     }
   }
@@ -228,7 +332,7 @@ function evaluatePackage(pkgDir, requestedBase, deferralsByKey) {
     status: "needs-record",
     detail:
       `version bumped to ${diff.version} since merge-base ${diff.mergeBase.slice(0, 12)} (base ${diff.baseVersion} → ${diff.version}), but ${why}. ` +
-      `Qualify the candidate and retain a fresh record on this branch before merging, or add an acknowledged deferral naming an issue to ${DEFERRALS_PATH}.`,
+      `Qualify the candidate and retain a fresh record on this branch before merging, or add an acknowledged deferral naming an issue to ${deferralFilePath(packageKey, diff.version)}.`,
   };
 }
 
@@ -297,4 +401,4 @@ function main() {
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) main();
 
-export { candidateForDeferral, checkStaleDeferrals, discoverPackages, evaluatePackage, loadDeferrals };
+export { candidateForDeferral, checkStaleDeferrals, deferralFilePath, discoverPackages, evaluatePackage, loadDeferrals, DEFERRALS_DIR, LEGACY_DEFERRALS_PATH };

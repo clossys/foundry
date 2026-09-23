@@ -2,9 +2,9 @@ name: Qualification deferral sweep
 
 # WHAT THIS WORKFLOW ADDS, AND WHY IT CANNOT LIVE IN ci.yml (issue #1136)
 # -------------------------------------------------------------------------
-# governance/release-qualification-deferrals.json's own $comment calls
-# itself "a countdown, not a standing exemption -- the gate refuses to let
-# an entry outlive its reason." scripts/check-qualification-record-required.mjs
+# governance/release-qualification-deferrals/README.md's own explanation
+# calls the store "a countdown, not a standing exemption -- the gate refuses
+# to let an entry outlive its reason." scripts/check-qualification-record-required.mjs
 # enforces the RECORD half of that faithfully but never checks the ISSUE
 # half -- nothing previously confirmed that a deferral's cited tracking issue
 # was still open. That gate runs in ci.yml's dependency-free `safety` job,
@@ -96,6 +96,6 @@ jobs:
           if [ "$status" = "2" ]; then
             echo "::error title=Qualification deferral sweep could not run::At least one deferral's cited issue state could not be resolved -- see the N/A line(s) in the step log above. This is NOT a clean sweep; it must not be read as one."
           else
-            echo "::error title=Qualification deferral sweep finding::At least one entry in governance/release-qualification-deferrals.json cites a CLOSED issue -- its countdown has expired. See the FAIL line(s) in the step log above; remove the stale deferral and produce the qualification record, or reopen the issue with a live reason."
+            echo "::error title=Qualification deferral sweep finding::At least one entry under governance/release-qualification-deferrals/ cites a CLOSED issue -- its countdown has expired. See the FAIL line(s) in the step log above; remove the stale deferral and produce the qualification record, or reopen the issue with a live reason."
           fi
           exit 1

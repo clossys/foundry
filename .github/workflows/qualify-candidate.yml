@@ -13,9 +13,9 @@ name: Qualify candidate
 # exact artifact bytes, and bytes produced by a different toolchain prove
 # different bytes. A developer machine running a different Node/npm/zlib
 # tuple cannot produce a record at all, and every affected merge has instead
-# accumulated an acknowledged, issue-referenced deferral in
-# governance/release-qualification-deferrals.json — a deferral acknowledges
-# a merge, never a publication, so every one of those versions has stayed
+# accumulated an acknowledged, issue-referenced deferral file under
+# governance/release-qualification-deferrals/ — a deferral acknowledges a
+# merge, never a publication, so every one of those versions has stayed
 # unpublishable.
 #
 # ci.yml's own required `build and test` job already proves this exact
@@ -84,11 +84,15 @@ permissions:
   contents: write
   pull-requests: write
 
-# Serial per package, not per package+version: two dispatches for the same
-# package must never race on governance/release-qualification-deferrals.json
-# (a single shared file every dispatch reads and rewrites) or on the branch
-# name a third dispatch for a different version of the same package would
-# not collide with, but a retry of the SAME version would.
+# Serial per package. Earlier revisions of this workflow needed this because
+# two dispatches for the same package raced on governance/release-
+# qualification-deferrals.json, a single shared file every dispatch read and
+# rewrote -- since #1254 moved that store to one file per package@version
+# (governance/release-qualification-deferrals/<package>@<version>.json),
+# dispatches for two DIFFERENT versions of the same package no longer touch
+# the same deferral file. The group stays per-package regardless, to bound
+# how many claude/qualify-<package>-* pull requests can be open for review at
+# once; a retry of the SAME version still must not race itself.
 concurrency:
   group: qualify-candidate-${{ inputs.package }}
   cancel-in-progress: false
@@ -226,12 +230,12 @@ jobs:
           fi
           echo "record_path=$new_files" >> "$GITHUB_OUTPUT"
 
-      # A retained record makes the matching deferral (if any) stale by
+      # A retained record makes the matching deferral file (if any) stale by
       # check-qualification-record-required.mjs's own `stale-deferral` rule
       # — removed here, in the SAME change, so this pull request does not
       # itself fail that gate and so no separate follow-up is needed to keep
-      # governance/release-qualification-deferrals.json honest. A package
-      # qualified with no prior deferral is not an error: the script no-ops.
+      # governance/release-qualification-deferrals/ honest. A package qualified
+      # with no prior deferral is not an error: the script no-ops.
       - name: Remove now-stale deferral entry, if any
         env:
           PKG: ${{ inputs.package }}
@@ -266,13 +270,17 @@ jobs:
           # Two commits, not one. scripts/lib/candidate-qualification.mjs's
           # forward-record-paths rule requires a qualification-introduction
           # commit to change EXACTLY the qualification record path(s) it
-          # introduces -- governance/release-qualification-deferrals.json is
-          # not a record path, so it cannot share that commit. A single
-          # "record + deferral" commit (what this step used to make) passes
-          # every check that runs before build-and-test, then fails
-          # build-and-test itself -- discovered when a consolidated batch of
-          # these records reached that job for the first time. This mirrors
-          # the two-commit shape #1156 landed by hand for the same reason.
+          # introduces -- a deferral file under
+          # governance/release-qualification-deferrals/ is not a record path
+          # (that rule only ever recognizes paths under
+          # governance/release-qualifications/), so it cannot share that commit,
+          # the same as the old single governance/release-qualification-
+          # deferrals.json file before it (#1254). A single "record + deferral"
+          # commit (what this step used to make) passes every check that runs
+          # before build-and-test, then fails build-and-test itself --
+          # discovered when a consolidated batch of these records reached that
+          # job for the first time. This mirrors the two-commit shape #1156
+          # landed by hand for the same reason.
           record_message_file="$RUNNER_TEMP/qualify-candidate-commit-message.txt"
           {
             printf '%s\n\n' "Qualify ${name}@${VERSION} on the pinned release runtime"
@@ -286,18 +294,19 @@ jobs:
           git add "$RECORD_PATH"
           git commit -F "$record_message_file"
 
-          if ! git diff --quiet -- governance/release-qualification-deferrals.json; then
+          deferral_path="governance/release-qualification-deferrals/${PKG}@${VERSION}.json"
+          if ! git diff --quiet -- "$deferral_path"; then
             deferral_message_file="$RUNNER_TEMP/qualify-candidate-deferral-commit-message.txt"
             {
-              printf '%s\n\n' "Remove the ${name}@${VERSION} deferral entry qualification made stale"
-              printf '%s\n' "The record introduced in the previous commit makes this entry stale by"
-              printf '%s\n' "scripts/check-qualification-record-required.mjs's stale-deferral rule."
+              printf '%s\n\n' "Remove the ${name}@${VERSION} deferral qualification made stale"
+              printf '%s\n' "The record introduced in the previous commit makes ${deferral_path} stale"
+              printf '%s\n' "by scripts/check-qualification-record-required.mjs's stale-deferral rule."
               printf '%s\n\n' "Separate commit from the record introduction: see that commit's own"
-              printf '%s\n' "message for why governance/release-qualification-deferrals.json cannot"
-              printf '%s\n\n' "share a commit with a qualification-record path."
+              printf '%s\n' "message for why a deferral file cannot share a commit with a"
+              printf '%s\n\n' "qualification-record path."
               printf '%s\n' "Ref: #948"
             } > "$deferral_message_file"
-            git add governance/release-qualification-deferrals.json
+            git add "$deferral_path"
             git commit -F "$deferral_message_file"
           fi
 
@@ -308,7 +317,7 @@ jobs:
           {
             printf '%s\n\n' "Qualifies \`${name}@${VERSION}\` on the exact release runtime \`scripts/lib/release-runtime.mjs\` pins (Node v24.19.0, npm 11.17.0, zlib 1.3.2.1-motley-3246f1b), produced by this workflow's own pinned \`actions/setup-node\` step — the same runtime \`ci.yml\`'s required \`build and test\` job already proves is available here."
             printf '%s\n' "- Retains \`${RECORD_PATH}\`, refusing to overwrite it if it already existed (\`scripts/generate-qualification-record.mjs\`)."
-            printf '%s\n' "- Removes the matching entry in \`governance/release-qualification-deferrals.json\`, if this version had one, so \`scripts/check-qualification-record-required.mjs\`'s \`stale-deferral\` rule does not fail on this change."
+            printf '%s\n' "- Removes the matching deferral file under \`governance/release-qualification-deferrals/\`, if this version had one, so \`scripts/check-qualification-record-required.mjs\`'s \`stale-deferral\` rule does not fail on this change."
             printf '%s\n\n' "- Publishes nothing. A separate, manually dispatched \`publish.yml\` run is required to actually upload \`${name}@${VERSION}\`."
             printf '%s\n' "Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}"
             printf '%s\n' "Ref: #948"
