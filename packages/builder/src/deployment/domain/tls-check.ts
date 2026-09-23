@@ -13,19 +13,23 @@ import type { GateResult } from "@clossys/controller/gates";
 import type { WebSurfaceFinding } from "./types.js";
 
 /**
- * One hostname's TLS observation. `chainTrusted` and `hostnameAuthorized`
- * are independent dimensions -- a self-signed certificate can still
- * correctly name the hostname it serves, and a CA-trusted certificate can
- * still be presented for the wrong name.
+ * One hostname's TLS observation, from a real, FULLY validated handshake --
+ * chain trust, hostname match, and the validity window, all checked
+ * together by the platform's own TLS stack, exactly as a normal HTTPS
+ * client would. `"untrusted"` carries the platform's own verification
+ * failure message verbatim (never synthesized by this package), so a
+ * finding says exactly what the TLS stack itself found wrong -- expired,
+ * self-signed, wrong hostname, or any other reason it names. This
+ * deliberately does not attempt to inspect an untrusted certificate's own
+ * fields: doing so needs `rejectUnauthorized: false`, which turns off the
+ * platform's real verification rather than reporting its result, and
+ * (confirmed empirically, not assumed) `getPeerCertificate()` on a socket
+ * whose handshake was rejected returns nothing to inspect anyway -- see
+ * `node-tls.ts`'s own header.
  */
 export type TlsProbeObservation =
-  | {
-      readonly kind: "observed";
-      readonly validNow: boolean;
-      readonly notAfter: string;
-      readonly hostnameAuthorized: boolean;
-      readonly chainTrusted: boolean;
-    }
+  | { readonly kind: "trusted"; readonly notAfter: string }
+  | { readonly kind: "untrusted"; readonly reason: string }
   | { readonly kind: "unreachable"; readonly detail?: string };
 
 export type TlsCertificateProbe = (hostname: string, signal?: AbortSignal) => Promise<TlsProbeObservation>;
@@ -60,14 +64,13 @@ export async function checkTlsCertificate(
       continue;
     }
     evaluated += 1;
-    if (!observation.validNow) {
-      findings.push({ rule: "tls-certificate-expired", severity: "error", message: `TLS certificate for ${hostname} is not valid now (expires ${observation.notAfter}).`, path: hostname });
-    }
-    if (!observation.hostnameAuthorized) {
-      findings.push({ rule: "tls-certificate-hostname-mismatch", severity: "error", message: `TLS certificate for ${hostname} does not authorize this hostname.`, path: hostname });
-    }
-    if (!observation.chainTrusted) {
-      findings.push({ rule: "tls-certificate-untrusted-chain", severity: "error", message: `TLS certificate chain for ${hostname} is not trusted.`, path: hostname });
+    if (observation.kind === "untrusted") {
+      findings.push({
+        rule: "tls-certificate-untrusted",
+        severity: "error",
+        message: `TLS certificate for ${hostname} did not pass verification: ${observation.reason}`,
+        path: hostname,
+      });
     }
   }
 

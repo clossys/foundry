@@ -21,7 +21,7 @@ function declaration() {
 }
 
 const resolveDns: DnsResolver = async () => ["192.0.2.1"];
-const probeTls: TlsCertificateProbe = async () => ({ kind: "observed", validNow: true, notAfter: "2099-01-01T00:00:00.000Z", hostnameAuthorized: true, chainTrusted: true });
+const probeTls: TlsCertificateProbe = async () => ({ kind: "trusted", notAfter: "2099-01-01T00:00:00.000Z" });
 const fetch: WebSurfaceFetch = async () => new Response(null, { status: 200 });
 
 describe("verifyWebSurfaceLiveState", () => {

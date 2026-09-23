@@ -23,8 +23,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `satisfied` -- when it could not reach what it was checking (#914):
   `checkDnsRecords` (with a declared record's `proxied` flag correctly
   checked only for resolving at all, never for an exact edge-IP match),
-  `checkTlsCertificate` (certificate validity, hostname authorization, and
-  chain trust as three independent dimensions), and `checkRoutes` (HTTP
+  `checkTlsCertificate` (a real, fully-verified handshake -- chain trust,
+  hostname match, and validity window all checked together by the platform
+  itself; a rejected handshake's own verification message becomes the
+  finding, verbatim), and `checkRoutes` (HTTP
   status of the root and any declared key routes). `createNodeDnsResolver`
   and `createNodeTlsProbe` are the real `node:dns`/`node:tls` adapters a
   caller wires in; every check takes an injected port instead, so none of
