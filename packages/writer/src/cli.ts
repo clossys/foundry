@@ -1326,7 +1326,7 @@ registry-text-match escape hatch here, unlike the default command.
 
 Options:
   --help         Print this message and exit 0.
-  --extensions <ext>  File extension to scan, including the leading dot (repeatable; values union). When omitted, default is .ts, .tsx, .js, .jsx. When present, replaces that default.
+  --extensions <ext>  File extension(s) to scan, including the leading dot (for example .mjs). Repeatable, and each occurrence may itself be a comma-separated list (for example --extensions .mjs,.cjs); values union across both forms. When omitted, default is .ts, .tsx, .js, .jsx. When present, replaces that default. Every value must include the leading dot; a flag that resolves to zero extensions (for example a bare comma) is a usage error, never a vacuous pass.
   --chrome <file>  Persistent chrome (site header, footer, skip link, nav labels) shell or layout file to scan in addition to scan-dir (repeatable; paths relative to scan-dir unless absolute). Each file must exist.
   --require-chrome  Refuse to run (exit 2) when no --chrome file was declared — use when the surface mounts persistent chrome outside scan-dir.
 
@@ -1376,13 +1376,30 @@ function parseAddressabilityArgs(argv: string[]): AddressabilityParsedArgs {
       if (value === undefined || value.startsWith("-")) {
         throw new CliInputError("--extensions requires an extension such as .mjs");
       }
-      if (!value.startsWith(".")) {
-        throw new CliInputError(`--extensions values must include the leading dot, got ${JSON.stringify(value)}`);
+      // Repeatable AND comma-separated: `--extensions .mjs,.cjs` and
+      // `--extensions .mjs --extensions .cjs` union to the same set. Every
+      // token from the split is validated individually — a bare comma or a
+      // trailing/leading comma yields an empty token, which is a usage
+      // error below rather than being silently dropped (an --extensions
+      // flag that resolves to zero extensions must never fall back to the
+      // default set — that would be a vacuous pass on the caller's own
+      // explicit-but-empty request).
+      const tokens = value.split(",");
+      if (tokens.length === 0 || tokens.some((token) => token.trim().length === 0)) {
+        throw new CliInputError(
+          `--extensions requires at least one non-empty extension such as .mjs, got ${JSON.stringify(value)}`,
+        );
       }
-      if (!ADDRESSABILITY_EXTENSION_RE.test(value)) {
-        throw new CliInputError(`invalid --extensions value ${JSON.stringify(value)}`);
+      for (const rawToken of tokens) {
+        const token = rawToken.trim().toLowerCase();
+        if (!token.startsWith(".")) {
+          throw new CliInputError(`--extensions values must include the leading dot, got ${JSON.stringify(token)}`);
+        }
+        if (!ADDRESSABILITY_EXTENSION_RE.test(token)) {
+          throw new CliInputError(`invalid --extensions value ${JSON.stringify(token)}`);
+        }
+        extensions.push(token);
       }
-      extensions.push(value.toLowerCase());
       continue;
     }
     if (arg.startsWith("-")) {

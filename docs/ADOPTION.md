@@ -43,8 +43,8 @@ npx @clossys/launcher --inventory ./inventory.json
 
 The inventory is `schemaVersion: 1` with a nonempty `repositories` array
 (one `{ "id": ... }` entry per repository to track); the launcher copies it
-to `.clossys/inventory.json` on the appointed hub. The bare command above
-still covers the empty-directory create path, which needs no inventory.
+to `clossys/.state/inventory.json` on the appointed hub. The bare command
+above still covers the empty-directory create path, which needs no inventory.
 
 Launcher is executable tooling, not a role. Advisor stays the engagement
 engine. Starter stays the protected-base `decide` gate in CI after a hub
@@ -55,6 +55,70 @@ the hub or in any inventoried product repository—the launcher composes the sam
 team voices on each checkout beside the hub, not only when you open the hub.
 `@clossys-advisor` is hiring and compatibility; the npm `@clossys/advisor`
 package remains the engine behind that voice.
+
+## Provenance instead of a release-age wait
+
+**The guarantee, stated precisely, one exception named:** every `@clossys`
+package version published through this repository's `publish.yml` workflow
+carries registry provenance bound to that exact workflow, and it is
+verifiable anonymously — with one exception: a package's owner-present
+**first** identity publication, made once, outside `publish.yml`, to
+establish that identity before npm's trusted publisher can be activated for
+it, carries no such provenance. `docs/DECISIONS.md` records why: "the first
+owner-present publication and subsequent OIDC publication are separate
+evidence events" (decision 1, milestone 1E), and only after that first
+identity has registry-served digest and public visibility/access proof does
+the owner activate the trusted publisher for it — before which the package
+cannot be published through `publish.yml` at all, since that workflow
+authenticates with `id-token: write` (OIDC) only and carries no npm token of
+any kind, anywhere in it.
+
+A consumer can therefore tell these two cases apart mechanically, never by
+asking when a version shipped: **a verified provenance statement, bound to
+`https://github.com/clossys/foundry` and `.github/workflows/publish.yml`, is
+strictly stronger evidence than a release-age wait — a stolen publish token
+cannot forge it, because npm mints the attestation from GitHub's own OIDC
+identity inside the workflow run.** A release-age wall only ever bought a
+chance that a bad publish would be noticed before enough consumers installed
+it; it never verified that a specific release actually came from this
+repository. Waiting is a substitute for verification only until verification
+exists. It now does, and a consumer that verifies provenance for a specific
+`@clossys` release has already obtained what a release-age wait was a proxy
+for — it may skip the wait for that release.
+
+**What "verifiable anonymously" means, exactly.** The public npm registry
+serves `GET https://registry.npmjs.org/-/npm/v1/attestations/<pkg>@<version>`
+with no credential and no rate-limit exemption required. The SLSA v1
+provenance statement inside it names the exact package/version and public
+tarball SHA-512 digest as its `subject`, and its `predicate.buildDefinition`
+names `https://github.com/clossys/foundry`, `.github/workflows/publish.yml`,
+`refs/heads/main`, a `workflow_dispatch` event, and a GitHub-hosted builder.
+`scripts/check-public-npm-provenance.mjs` — this repository's own,
+producer-side gate — verifies exactly that join immediately after every
+publish, anonymously, in `publish.yml`'s `verify-published` job (see that
+workflow and `docs/DECISIONS.md`, "the registry — public npm published
+through trusted publishing"). This is not a claim asserted in prose; it is
+measured, every time, against the live registry.
+
+**How a consumer verifies it against an installed package**, rather than
+taking this document's word for it: `@clossys/integrator` ships
+`integrator-provenance-check` for exactly this — it reads the same public
+attestations endpoint for every installed `@clossys/*` package (works under
+pnpm, which implements no `npm audit signatures`), joins it the same way,
+and reports currency per package against the registry's own `latest`
+dist-tag rather than a hard-coded endpoint. See `@clossys/integrator`'s own
+README for the exact command and exit codes.
+
+**What this does not claim.** It is not a claim that every one of the
+catalogue's current packages has a provenance-bearing release available
+today — `docs/DECISIONS.md` records that only the representative Trio
+(Advisor, Starter, Controller) has ever cleared trusted-publisher provenance
+so far; the remaining packages reach the same guarantee as they are published
+through `publish.yml` in turn. It is not a claim about GitHub Packages, the
+legacy registry these packages moved off of — provenance of this kind is a
+public-npm, trusted-publisher fact, not a property this document extends to
+any other registry. And it is not independent adoption or grounding
+evidence — see "The two records" below for what is.
 
 ## The two records
 
@@ -170,7 +234,7 @@ flow below.
    and prove the export or CLI it actually uses from a clean install. Registry
    credentials and configuration remain consumer-local.
 5. **Wire the loop.** Connect the position's evidence source to its role's
-   `sense → judge → act → verify → learnOrEscalate` loop. The consumer decides
+   `sense → judge → act → verify → learn` loop. The consumer decides
    blocking placement, approval boundaries, provider configuration, and every
    live mutation.
 6. **Measure independently.** Record host-owned outcomes and give `observer`
