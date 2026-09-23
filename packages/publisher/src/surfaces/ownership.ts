@@ -14,12 +14,11 @@
  * `clossys/`) and flags any path more than one role claims.
  *
  * The shared consumer layout contract this path belongs to is issue #1171
- * (Launcher lane), which has not landed in this repository yet — there is
- * no `clossys/` layout file here to add `clossys/publisher/surfaces/` to.
- * `PUBLISHER_SURFACES_DIR` below is Publisher's own record of the path it
- * intends to own once that contract exists; wire it into the shared layout
- * contract's own file when #1171 lands, rather than duplicating a second
- * declaration of it there.
+ * (Launcher lane), which has landed as `docs/contracts/consumer-layout.json`
+ * — its `folders` array now carries a `clossys/publisher/surfaces` entry
+ * naming Publisher as owner (#1205). `PUBLISHER_SURFACES_DIR` below is this
+ * package's own copy of that same path for use at runtime; keep the two in
+ * sync rather than reading the shared contract file from here.
  */
 
 /** The one directory Publisher owns under a consumer's `clossys/` layout (#1171, #1205). */

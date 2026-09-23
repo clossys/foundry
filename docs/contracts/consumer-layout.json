@@ -81,6 +81,13 @@
       "description": "Route manifest, publication record. Append-only."
     },
     {
+      "path": "clossys/publisher/surfaces",
+      "owner": "@clossys/publisher",
+      "kind": "record",
+      "committed": true,
+      "description": "In-tree SectionedView/MarketingView page documents -- which template, which sections, which copy ids and asset ids, all by reference. Publisher authors and owns every file here; Designer and Writer own everything a document references and propose changes in their own folders, but never edit a surface file directly (#1205)."
+    },
+    {
       "path": "clossys/controller",
       "owner": "@clossys/controller",
       "kind": "record",
