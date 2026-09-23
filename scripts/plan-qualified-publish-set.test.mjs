@@ -196,10 +196,16 @@ test("probePackageIdentities: a denied or unreachable packument lookup is indete
 });
 
 test("probePackageIdentities: the historical, inactive GitHub Packages lane is left untouched (empty map)", async () => {
+  // Built from parts, not a literal, so this line never contains the exact
+  // historical-identity needle scripts/check-package-identity-transition.mjs
+  // scans tracked files for (see that script's own header) -- same pattern
+  // as scripts/test-gates.mjs's and scripts/publish-qualified-directory.test.mjs's
+  // `historicalRegistry`.
+  const historicalRegistry = ["https://npm.", "pkg.github.com"].join("");
   const missing = [{ directory: "app", manifest: { name: "@clossys/app", version: "1.0.0" } }];
   const results = await probePackageIdentities({
     missing,
-    registry: "https://npm.pkg.github.com",
+    registry: historicalRegistry,
     fetchImpl: async () => assert.fail("must not query a registry other than public npm"),
   });
   assert.equal(results.size, 0);

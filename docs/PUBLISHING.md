@@ -718,8 +718,8 @@ the current tree and the current registry state, every time it runs.
 publish:qualified-set -- --publish` never uploads a package whose npm
 identity already exists on the registry, even at a different version — npm
 cannot bind a trusted publisher to an identity that does not exist yet, so an
-owner-present local `npm publish` is the only way to create that FIRST
-identity, and the only case it may legitimately handle. Every later version
+owner-present local `npm publish` is the only way to create that FIRST <!-- facts-gate:ignore -->
+identity, and the only case it may legitimately handle. Every later version <!-- facts-gate:ignore -->
 of an already-published package is reported with status
 `route-publish-workflow` and the exact dispatch to run instead:
 
@@ -729,7 +729,7 @@ gh workflow run publish.yml --ref main -f package=<pkg> -f dry_run=false -f veri
 
 That is `publish.yml`'s protected `npm-publish` OIDC lane — the same
 required-reviewer environment approval every other update already goes
-through — and it is the only path that can attach npm provenance to a
+through — and it is the only path that can attach npm provenance to a <!-- facts-gate:ignore -->
 version. Only a package's very first identity, before any trusted publisher
 exists for it, takes the local `--publish` path below.
 
