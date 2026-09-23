@@ -926,6 +926,20 @@ anyone extending this package with their own entity.
 The `strategist-check` CLI (`bin`, built from `cli.ts`) is documented in
 its own section above.
 
+### Strategy directory default (`strategy-dir-default.ts`)
+
+The pure resolver behind "The default strategy-dir and the retired
+`strategy/` fallback" above — the CLI's own small adapter supplies the real
+`existsSync`/`statSync` checks and `process.cwd()`-anchored paths; this
+function does no filesystem work of its own.
+
+| Export | Kind | Purpose |
+| --- | --- | --- |
+| `resolveDefaultStrategyDirectory(currentDir, legacyDir, hasCurrentDir, hasLegacyDir)` | function | Pure. The three-outcome resolution described above: `"current"` (current dir exists, or neither does), `"legacy"` (only the retired dir exists, with a move notice), or `"indeterminate"` (both exist — refused, never a silent pick). Never throws. |
+| `CURRENT_STRATEGY_DIR_SEGMENTS` | constant | `["clossys", "strategist"]` — the current convention's path segments, repository-root-anchored. Join with `node:path` `join`. |
+| `LEGACY_STRATEGY_DIR_SEGMENTS` | constant | `["strategy"]` — the retired convention's path segments, read for one release only; see the CHANGELOG for the release the fallback is removed in. |
+| `StrategyDirectoryDefault` | type | `{ reason: "current"; dir } \| { reason: "legacy"; dir; notice } \| { reason: "indeterminate"; notice }` — `resolveDefaultStrategyDirectory`'s return shape. |
+
 ### Brand derivation and coverage (`brand-derivation.ts`)
 
 | Export | Kind | Purpose |
