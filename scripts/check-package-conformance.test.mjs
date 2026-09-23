@@ -6,7 +6,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -249,6 +249,15 @@ test("a package.json that is not valid JSON (classification: 'invalid-manifest')
   assert.ok(enforceResult.findings.some((f) => f.rule === "invalid-manifest" && f.role === "broken-json-widget"));
 });
 
+test("a symlinked package directory (classification: 'symlinked-package') is always a finding, in report and enforce mode", (t) => {
+  const root = makeTempRoot(t);
+  const invalid = descriptor({ classification: "symlinked-package", role: "symlinked-widget", packageDir: "symlinked-widget", manifest: null });
+  const reportResult = evaluateConformance(root, [invalid], { enforce: false });
+  assert.ok(reportResult.findings.some((f) => f.rule === "symlinked-package" && f.role === "symlinked-widget"));
+  const enforceResult = evaluateConformance(root, [invalid], { enforce: true });
+  assert.ok(enforceResult.findings.some((f) => f.rule === "symlinked-package" && f.role === "symlinked-widget"));
+});
+
 // --- Real collector + CLI regression (independent review on PR #1318,
 // reproducing CodeRabbit's finding): before this fix, a packages/*
 // package.json whose "name" was missing, empty, or not a string hit
@@ -356,5 +365,142 @@ test("CLI: an invalid-JSON package.json still fails under --enforce, attributed 
   assert.equal(result.status, 1);
   const parsed = JSON.parse(result.stdout);
   assert.ok(parsed.findings.some((f) => f.rule === "invalid-manifest" && f.role === "broken-json-widget"));
+});
+
+// --- Real collector + CLI regression (independent review on PR #1318,
+// round three): a package.json that parses successfully to something other
+// than a plain object -- `null`, an array, or a primitive -- is NOT caught
+// by "JSON.parse threw" (it doesn't throw). `null` specifically used to
+// crash the ENTIRE run (`manifest.name` on `null` throws an uncaught
+// TypeError, one line past the old try/catch). readManifest
+// (package-classification.mjs) is now the one place a manifest gets read,
+// and it treats every non-object JSON.parse result the same way as a parse
+// failure: a per-package invalid-manifest finding, never a crash. And a
+// packages/<dir> entry that is itself a symlink is never followed --
+// Dirent.isDirectory() is false for a symlink even when it points at a
+// real directory with a valid manifest, so a plain `isDirectory()` check
+// silently dropped it; it now gets its own symlinked-package finding.
+
+for (const [label, body] of [["null", "null"], ["an array", "[]"], ["a primitive", "\"just a string\""]]) {
+  test(`CLI: a package.json that parses to ${label} (not a plain object) is reported as invalid-manifest, not a whole-run crash (report mode)`, (t) => {
+    const root = makeFixtureRepoWithContracts(t);
+    const packageDir = join(root, "packages", "non-object-widget");
+    mkdirSync(packageDir, { recursive: true });
+    writeFileSync(join(packageDir, "package.json"), body);
+    const result = runCli(root);
+    assert.equal(result.status, 1); // fails closed on a real finding, not exit 2 and not an uncaught crash
+    const parsed = JSON.parse(result.stdout);
+    assert.ok(parsed.findings.some((f) => f.rule === "invalid-manifest" && f.role === "non-object-widget"));
+    assert.ok(parsed.table.some((row) => row.role === "non-object-widget" && row.classification === "invalid-manifest"));
+  });
+
+  test(`CLI: a package.json that parses to ${label} still fails under --enforce, attributed to that one package`, (t) => {
+    const root = makeFixtureRepoWithContracts(t);
+    const packageDir = join(root, "packages", "non-object-widget");
+    mkdirSync(packageDir, { recursive: true });
+    writeFileSync(join(packageDir, "package.json"), body);
+    const result = runCli(root, ["--enforce"]);
+    assert.equal(result.status, 1);
+    const parsed = JSON.parse(result.stdout);
+    assert.ok(parsed.findings.some((f) => f.rule === "invalid-manifest" && f.role === "non-object-widget"));
+  });
+}
+
+test("CLI: a package.json path that is itself a directory (unreadable as a file) is reported as invalid-manifest, not a crash (report mode)", (t) => {
+  // A portable, deterministic stand-in for "package.json exists but can't be
+  // read" that doesn't depend on OS permission bits (chmod is unreliable
+  // across platforms/sandboxes, and a root-owned test process ignores
+  // permissions entirely) -- readFileSync throws EISDIR here exactly the
+  // way it would throw EACCES on a genuinely unreadable file, and
+  // readManifest's catch-all handles both identically.
+  const root = makeFixtureRepoWithContracts(t);
+  const packageDir = join(root, "packages", "unreadable-widget");
+  mkdirSync(join(packageDir, "package.json"), { recursive: true }); // package.json is a directory, not a file
+  const result = runCli(root);
+  assert.equal(result.status, 1);
+  const parsed = JSON.parse(result.stdout);
+  assert.ok(parsed.findings.some((f) => f.rule === "invalid-manifest" && f.role === "unreadable-widget"));
+});
+
+test("CLI: a symlinked package directory is reported as symlinked-package and its target is never read (report mode)", (t) => {
+  const root = makeFixtureRepoWithContracts(t);
+  // The target lives OUTSIDE packages/ entirely, so it is never enumerated
+  // as its own package directory -- if the symlink were (wrongly) followed,
+  // its manifest name would leak into the output somewhere; if it is
+  // correctly never followed, there is no trace of it anywhere.
+  const targetDir = join(root, "target-outside-packages");
+  mkdirSync(targetDir, { recursive: true });
+  writeFileSync(join(targetDir, "package.json"), JSON.stringify({ name: "@scope/leaked-if-followed", version: "0.1.0" }));
+  mkdirSync(join(root, "packages"), { recursive: true });
+  symlinkSync(targetDir, join(root, "packages", "symlinked-widget"), "dir");
+  const result = runCli(root);
+  assert.equal(result.status, 1);
+  const parsed = JSON.parse(result.stdout);
+  assert.ok(parsed.findings.some((f) => f.rule === "symlinked-package" && f.role === "symlinked-widget"));
+  assert.ok(parsed.table.some((row) => row.role === "symlinked-widget" && row.classification === "symlinked-package"));
+  assert.ok(!JSON.stringify(parsed).includes("leaked-if-followed"));
+});
+
+test("CLI: a symlinked package directory still fails under --enforce, and its target is never read", (t) => {
+  const root = makeFixtureRepoWithContracts(t);
+  const targetDir = join(root, "target-outside-packages");
+  mkdirSync(targetDir, { recursive: true });
+  writeFileSync(join(targetDir, "package.json"), JSON.stringify({ name: "@scope/leaked-if-followed", version: "0.1.0" }));
+  mkdirSync(join(root, "packages"), { recursive: true });
+  symlinkSync(targetDir, join(root, "packages", "symlinked-widget"), "dir");
+  const result = runCli(root, ["--enforce"]);
+  assert.equal(result.status, 1);
+  const parsed = JSON.parse(result.stdout);
+  assert.ok(parsed.findings.some((f) => f.rule === "symlinked-package" && f.role === "symlinked-widget"));
+  assert.ok(!JSON.stringify(parsed).includes("leaked-if-followed"));
+});
+
+// --- Every OTHER way a packages/ entry could be skipped or crash the run,
+// audited (round three's third ask) rather than fixed piecemeal:
+//
+//   - a plain file directly under packages/ (neither a directory nor a
+//     symlink) -- correctly produces zero findings/rows, not a defect
+//     (confirmed by an earlier independent review round); this test pins
+//     that behavior so it can't silently regress into a "missing-manifest"
+//     or similar false positive.
+//   - a FIFO, socket, block device, or character device entry -- cannot
+//     occur in a git-tracked packages/ at all (git only ever stores blobs,
+//     trees, and symlinks; it has no object type for any of these), and
+//     Node's own fs module has no portable, cross-platform way to create
+//     one in a test fixture. Even if one existed on disk out-of-band, it is
+//     neither a directory nor a symlink, so it falls into the exact same
+//     "ignore, not a package" bucket as a plain file above -- no separate
+//     code path, so no separate defect to test for.
+//   - a directory that exists but can't be listed/read at all (EACCES) --
+//     covered by the same readManifest catch-all already exercised by the
+//     "package.json path is itself a directory" (EISDIR) test above: any
+//     read error, permission-based or otherwise, is caught uniformly and
+//     reported as invalid-manifest rather than propagating. A dedicated
+//     chmod-based fixture is deliberately not added: permission bits are
+//     unreliable across platforms/sandboxes and are ignored entirely by a
+//     root-owned test process, which would make such a test flaky rather
+//     than meaningful.
+//   - the packages/ directory itself missing or unreadable -- a
+//     structural precondition, not a specific package's defect (there is
+//     no entry list to iterate at all); readdirSync(packagesDir) throws,
+//     caught by main()'s own outer try/catch, exit 2 with an error message
+//     -- the same "the question could not be answered" contract this
+//     script already documents for its other structural reads (e.g.
+//     docs/contracts/role-loop-archetypes.json missing). Unchanged by this
+//     fix and out of scope for a per-package finding.
+//   - entry.name not being a string -- not reachable: Dirent.name is
+//     always a string by Node's own fs API contract.
+//   - manifest.name present but not a string -- already covered by the
+//     "invalid-name" classification and its round-one tests above.
+
+test("CLI: a plain file directly under packages/ (not a directory, not a symlink) produces no findings and no table row", (t) => {
+  const root = makeFixtureRepoWithContracts(t);
+  mkdirSync(join(root, "packages"), { recursive: true });
+  writeFileSync(join(root, "packages", "README.md"), "# not a package\n");
+  const result = runCli(root);
+  assert.equal(result.status, 0);
+  const parsed = JSON.parse(result.stdout);
+  assert.deepEqual(parsed.findings, []);
+  assert.deepEqual(parsed.table, []);
 });
 

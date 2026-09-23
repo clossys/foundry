@@ -49,7 +49,7 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { generateLoopSection, loadStageActivities } from "./generate-loop-section.mjs";
-import { loadToolingPackageNames, classifyPackage, classificationFinding, isInvalidClassification } from "./package-classification.mjs";
+import { loadToolingPackageNames, classifyPackage, classificationFinding, isInvalidClassification, readManifest } from "./package-classification.mjs";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const STAGES = ["sense", "judge", "act", "verify", "learn"];
@@ -151,7 +151,7 @@ export function validateLoopMatrixShape(role, matrixDoc, capabilityIds) {
  * descriptor: { role, matrixDoc: object|null, capabilityIds: string[]|null,
  *   skillSource: string|null, stageActivities: object|null,
  *   classification?: "role"|"tooling"|"unclassified"|"both"|"invalid-name"|
- *     "missing-manifest"|"invalid-manifest" }.
+ *     "missing-manifest"|"invalid-manifest"|"symlinked-package" }.
  * `stageActivities` is pre-resolved by the caller (it needs
  * role-loop-archetypes.json, a repository read) so this function stays pure.
  * `classification` defaults to "role" when omitted, so existing callers that
@@ -245,7 +245,19 @@ function collect(root) {
   const packagesDir = join(root, "packages");
   const descriptors = [];
   for (const entry of readdirSync(packagesDir, { withFileTypes: true })) {
-    if (!entry.isDirectory()) continue;
+    if (entry.isSymbolicLink()) {
+      // packages/<dir> itself is a symlink -- Dirent.isDirectory() would
+      // say false even if it points at a real directory with a valid
+      // manifest (it reflects the entry's own type, not its target's), so
+      // a plain `!entry.isDirectory()` check would silently drop this the
+      // same way a missing manifest used to. Report it directly and never
+      // follow it (scripts/package-classification.mjs's own
+      // "symlinked-package" case) -- a git-stored symlink under packages/
+      // is itself the defect, independent of wherever it points.
+      descriptors.push({ role: entry.name, matrixDoc: null, capabilityIds: null, skillSource: null, stageActivities: null, classification: "symlinked-package" });
+      continue;
+    }
+    if (!entry.isDirectory()) continue; // a plain file under packages/ -- ignored, as always; never a package
     const manifestPath = join(packagesDir, entry.name, "package.json");
     if (!existsSync(manifestPath)) {
       // The directory itself is a package this gate must account for, even
@@ -256,13 +268,14 @@ function collect(root) {
       descriptors.push({ role: entry.name, matrixDoc: null, capabilityIds: null, skillSource: null, stageActivities: null, classification: "missing-manifest" });
       continue;
     }
-    let manifest;
-    try {
-      manifest = readJson(manifestPath);
-    } catch {
-      // package.json exists but is not valid JSON -- fail closed on just
-      // this one package (scripts/package-classification.mjs's own
-      // "invalid-manifest" case) rather than aborting the entire gate run.
+    const { ok: manifestOk, manifest } = readManifest(manifestPath);
+    if (!manifestOk) {
+      // package.json exists but readManifest couldn't turn it into a usable
+      // manifest object -- unreadable, not valid JSON, or valid JSON that
+      // isn't a plain object (null, an array, a primitive). Fail closed on
+      // just this one package (scripts/package-classification.mjs's own
+      // "invalid-manifest" case) rather than crashing or aborting the
+      // entire gate run.
       descriptors.push({ role: entry.name, matrixDoc: null, capabilityIds: null, skillSource: null, stageActivities: null, classification: "invalid-manifest" });
       continue;
     }
