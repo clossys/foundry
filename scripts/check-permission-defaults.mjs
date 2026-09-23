@@ -146,6 +146,30 @@ export function evaluatePermissionDefaultsRecord({ record, contract }) {
 }
 
 /**
+ * Removes `<!-- ... -->` blocks by manual scanning rather than a regular
+ * expression: a regex-based HTML-comment stripper is a known incomplete
+ * pattern (flagged by CodeQL's bad-tag-filter query) even when, as here,
+ * the result only feeds a word-list scan and is never rendered as HTML. An
+ * unterminated `<!--` drops the remainder of the text rather than risk
+ * treating unclosed maintainer prose as client-facing.
+ */
+function stripHtmlComments(text) {
+  let result = "";
+  let index = 0;
+  for (;;) {
+    const start = text.indexOf("<!--", index);
+    if (start === -1) {
+      result += text.slice(index);
+      return result;
+    }
+    result += text.slice(index, start);
+    const end = text.indexOf("-->", start + 4);
+    if (end === -1) return result;
+    index = end + 3;
+  }
+}
+
+/**
  * Pure validator for client-facing text (#1225, #1226): no mention of
  * "Foundry" or retired vocabulary, outside an HTML comment aimed at a
  * maintainer rather than a client.
@@ -155,7 +179,7 @@ export function evaluateClientFacingText({ text, label }) {
   if (typeof text !== "string") {
     return { findings: [finding("unreadable-client-facing-text", label, "the text must be a string", true)] };
   }
-  const withoutComments = text.replace(/<!--[\s\S]*?-->/g, "");
+  const withoutComments = stripHtmlComments(text);
   for (const word of RETIRED_CLIENT_FACING_WORDS) {
     const pattern = new RegExp(`\\b${word}\\b`, "i");
     if (pattern.test(withoutComments)) {
