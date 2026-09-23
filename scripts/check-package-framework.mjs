@@ -1,11 +1,14 @@
 #!/usr/bin/env node
 // check-package-framework — validates the extended `foundry` manifest block
 // (docs/contracts/package-framework.json: `intake`, `outputs`, `status`,
-// `fit`, `solves`, `needs`, `feeds`, alongside the existing `assessment`)
-// and, separately, validates any check-output-envelope.json /
-// role-assessment.json fixture a package declares
-// (docs/contracts/check-output-envelope.json,
-// docs/contracts/role-assessment.json — issue #1174).
+// `fit`, `solves`, `needs`, `feeds`, alongside the existing `assessment`).
+// This module also exports validateCheckOutputEnvelope and
+// validateRoleAssessmentDocument (docs/contracts/check-output-envelope.json,
+// docs/contracts/role-assessment.json — issue #1174) as shared shape
+// checks other gates (check-package-conformance.mjs,
+// check-real-customer-evidence.mjs, check-permission-defaults.mjs) import
+// directly; evaluatePackageFramework itself never calls them, and no
+// package manifest declares either fixture through this gate.
 //
 //   node scripts/check-package-framework.mjs [--json] [--enforce] [<repoRoot>]
 //
