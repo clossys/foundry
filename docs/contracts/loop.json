@@ -1,0 +1,69 @@
+{
+  "schemaVersion": 1,
+  "kind": "foundry-loop-engine",
+  "$comment": "The loop engine's own rules (issue #1195, owner decision 2026-09-22). @clossys/controller (packages/controller/src/loop/*) is the one pure implementation; every staffed repository installs it as an exact dev dependency. Roles declare data -- their own clossys/<role>/loop.json -- and the engine runs them. This contract, and the code it mirrors, is the deterministic-mechanics half of the split the owner recorded on issue #1187: packages own definition, judgment, and deterministic mechanics; the coding agent does generative work and live external changes.",
+  "stages": ["sense", "judge", "act", "verify", "learn"],
+  "stageMeaning": {
+    "sense": "Measure the current state.",
+    "judge": "Compare with the setpoint, then choose. The human approval gate sits here.",
+    "act": "Change the system.",
+    "verify": "Measure the effect of this action.",
+    "learn": "Adapt the setpoint, model, or rule -- or escalate, handing the problem to the enclosing loop when this one cannot close it. Renamed from learnOrEscalate by issue #1194: escalation was always one of learn's own outcomes, not a second stage."
+  },
+  "invocation": {
+    "keyword": "loop",
+    "claudeCode": "/clossys-<role> loop",
+    "cursor": "@clossys-<role> loop",
+    "rule": "One invocation runs one iteration and stops at the approval gate inside judge. No skill in this repository is named bare `loop` -- Claude Code's own built-in /loop is for recurring runs."
+  },
+  "lifecycle": { "$ref": "./lifecycle.json" },
+  "state": {
+    "perCapability": {
+      "dimensions": ["state (six-value lifecycle)", "condition (current | stale | blocked)"],
+      "$comment": "State and condition are independent: a capability can be approved and stale at the same time. See ./lifecycle.json for both vocabularies."
+    },
+    "machineFile": "clossys/<role>/loop.json",
+    "humanFile": "clossys/<role>/STATUS.md",
+    "statusSections": ["Mandate", "Where we are", "Recommended next", "Decisions", "Blockers"],
+    "statusSectionsRule": "Exactly these five sections, in this order. The Advisor lane writes Advisor's own STATUS.md in parallel (issue #1187's plan) with the same five sections; the renderer (packages/controller/src/loop/status.ts's renderStatusDocument) is deliberately generic over its caller's section bodies so the engine can take over rendering Advisor's STATUS.md later without a shape change.",
+    "runHistory": "Git history is the run history. There are no per-run files."
+  },
+  "triggers": [
+    { "change": "inputs", "reenterAt": "sense", "scope": "affected capabilities only" },
+    { "change": "the role itself (a package upgrade, a new check)", "reenterAt": "judge", "scope": "all capabilities" },
+    { "change": "a freshness window", "reenterAt": "judge", "scope": "all capabilities" },
+    { "change": "a review window", "reenterAt": "learn", "scope": "all capabilities" },
+    { "change": "an outcome (a metric missed at review)", "reenterAt": "learn", "scope": "affected capabilities only" },
+    { "change": "a request from the client", "reenterAt": "judge", "scope": "the named capability" }
+  ],
+  "blockers": {
+    "kinds": ["missing-input", "missing-authority", "failing-evidence", "unavailable-environment", "contradiction"],
+    "owners": {
+      "missing-input": "upstream role or client",
+      "missing-authority": "sponsor",
+      "failing-evidence": "this role",
+      "unavailable-environment": "named system owner",
+      "contradiction": "advisor"
+    },
+    "rule": "A blocked capability rests with exactly one next action (who, how, by when) and escalates past its due date. Other capabilities keep running -- state is per-capability, so one capability's blocker never touches another's."
+  },
+  "staleness": {
+    "rule": "Every artifact records fingerprints of the inputs it was built from, so staleness is a deterministic comparison (packages/controller/src/loop/staleness.ts). Changes propagate only through dependents: a capability with no declared dependency on a changed input is never marked affected by it.",
+    "planBinding": "A plan is bound to the assessment it came from; if that assessment changes, the plan is re-proposed as a diff and never executed as written."
+  },
+  "artifactOperations": {
+    "kinds": ["create", "update", "move", "supersede", "retire"],
+    "rules": {
+      "create": "Own folder only (clossys/<role>/), by pull request.",
+      "update": "Own folder only, by pull request. A human's edit is detected by fingerprint and merged, never overwritten.",
+      "move": "Fixes every reference in the same pull request.",
+      "supersede": "Append-only proof gets a new entry and is never deleted.",
+      "retire": "Only files the role's own manifest lists, and only after checking dependents."
+    }
+  },
+  "resume": "An interrupted run resumes from disk and any open pull request: a capability's own recorded stage is read back exactly, never re-derived or guessed. A regression after merge triggers the work item's rollback -- an outcome signal that reaches learn, whose decision may be to act again as a rollback.",
+  "ownership": {
+    "rule": "One pure implementation in @clossys/controller (the loop, artifacts, blockers, staleness, and status-rendering modules). Roles declare data -- clossys/<role>/loop.json and, indirectly, their own manifest outputs and needs/feeds (docs/contracts/package-framework.json) -- and the engine runs them. Controller is installed in every staffed repository as an exact dev dependency named by the plan.",
+    "changeProcedure": "A change to the stages, triggers, blocker kinds, or artifact-operation rules above is exactly one pull request: it bumps this file's own schemaVersion and packages/controller/src/loop/* in the same change."
+  }
+}
