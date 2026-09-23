@@ -1,6 +1,6 @@
 {
   "name": "@clossys/publisher",
-  "version": "0.4.25",
+  "version": "0.5.0",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -76,6 +76,14 @@
     "./record": {
       "types": "./dist/record/index.d.ts",
       "import": "./dist/record/index.js"
+    },
+    "./pack": {
+      "types": "./dist/pack/index.d.ts",
+      "import": "./dist/pack/index.js"
+    },
+    "./surfaces": {
+      "types": "./dist/surfaces/index.d.ts",
+      "import": "./dist/surfaces/index.js"
     }
   },
   "imports": {

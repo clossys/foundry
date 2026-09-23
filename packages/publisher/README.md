@@ -151,6 +151,8 @@ Use explicit subpaths:
 - `@clossys/publisher/document` — the product-neutral structured-document contract (sections, paragraphs, lists, tables, callouts, safe links) and its renderer.
 - `@clossys/publisher/email`, `/print`, `/image`, `/slides` — channel renderers.
 - `@clossys/publisher/record` — the append-only, content-addressed publication ledger and its drift checker. See "`record` — the append-only publication ledger," below.
+- `@clossys/publisher/pack` — the v0 Launch pack manifest contract: types, schema validation, needs-graph readiness, and adopt-don't-override detection. See "The pack," below.
+- `@clossys/publisher/surfaces` — the one-owner-per-file contract for surface documents under `clossys/publisher/surfaces/`. See "Surface documents move to Publisher," below.
 
 The package has no root export. `core` is deliberately framework-agnostic;
 the web and document subpaths have optional React peers, while `web` also
@@ -1620,6 +1622,102 @@ after its own `publishedAt`. An entry with no `contentId` cannot be grouped
 against anything, so it is always treated as live — the same fail-closed
 choice `checkLedgerDrift` makes for a citation it could not check.
 
+## The pack
+
+`@clossys/publisher/pack` is the v0 Launch pack contract (issue #1204).
+Publisher owns the pack: its definition, inventory, readiness, and sealing.
+Strategist, Designer, Writer, and Customer own the content and judgments
+that feed it. Publisher plans first — it declares each item's `needs` and
+those needs pull the required foundation and identity items from their
+owners — and seals last, once a Customer keep approves a surface.
+
+The pack is MECE by layer:
+
+| Layer | Item | Content owner |
+| --- | --- | --- |
+| Foundation | Strategy brief | Strategist |
+| Identity | Brand kit | Designer |
+| Identity | Voice and messaging | Writer |
+| Surface | Website, materials site, email kit, social kit, video-call backgrounds | assembled by Publisher |
+
+`clossys/publisher/pack.json` records, for each item: `status` and
+`condition` from the one shared lifecycle vocabulary (issue #1228 — see
+below), a `v<major>.<minor>` version, `createdAt`/`updatedAt`/`approvedAt`/
+`verifiedAt` timestamps, content-fingerprint source pins, output paths,
+where it published, and its single next action.
+
+### Lifecycle vocabulary (#1228)
+
+Pack items use the same six statuses and three conditions the loop engine
+uses, rather than a second, pack-specific vocabulary:
+
+- **Statuses:** `absent`, `found`, `draft`, `approved`, `verified`, `retired`.
+- **Conditions:** `current`, `stale`, `blocked`.
+
+The former pack-only names map onto this list directly: `in-review` is
+`draft` with a pending judgment, `kept` is `approved` (the Customer keep),
+and `published` is `verified` (sealed and verified live).
+
+`LIFECYCLE_STATUSES`/`LIFECYCLE_CONDITIONS` are a local copy in this package
+pending issue #1237 (Framework/Controller lane), which exports the same list
+from `@clossys/controller`. This repository's own `pack/lifecycle.test.ts`
+(not shipped in the published package) asserts the copy is exact; once
+#1237 lands, this package switches to importing from `@clossys/controller`
+instead of declaring its own copy.
+
+### Adopt, don't override
+
+`detectExistingPackItems` is `sense`: it fingerprints (sha256) whatever a
+candidate path already holds and registers it `found`, never assuming a
+missing item and generating over whatever is actually there. Nothing here
+deletes, overwrites, or judges quality — a caller decides what a `found`
+registration means for the surrounding manifest, and `foundPackItem` builds
+the minimal fresh item record for it.
+
+### Readiness and sealing
+
+`computePackReadiness` derives per-item readiness from the `needs` graph: an
+item is ready once every item it needs is itself `approved` or `verified`
+and none of them is `blocked` — a missing or unknown need is never silently
+treated as satisfied. `planPackOrder` gives the plan a foundation-first,
+surfaces-last topological order over the same graph. `sealableItemIds`
+answers "what may move from `approved` to `verified` right now": already
+approved, not blocked, and every needed item already verified — sealing
+itself (writing `verifiedAt` and a publication record) is the caller's job.
+
+`validatePackManifest` is the schema and contract gate: known layers,
+owners, visibilities (`internal`/`public` — see the materials site section
+below), lifecycle values, version shape, a needs graph free of unknown
+references and cycles, timestamp ordering, and no premature `approvedAt`/
+`verifiedAt`/`publishedTo` on an item that has not reached that stage yet.
+
+## Surface documents move to Publisher
+
+Issue #1205: Publisher authors the in-tree `SectionedView`/`MarketingView`
+page document — which template, which sections, which copy ids and asset
+ids, all by reference — under `clossys/publisher/surfaces/`. Designer and
+Writer own everything a surface document references (tokens, atoms, blocks,
+copy) in their own folders; they propose changes and review renders, but
+they never edit a Publisher surface file directly. Every file under
+`clossys/` now has exactly one owner.
+
+`@clossys/publisher/surfaces` exports `PUBLISHER_SURFACES_DIR` (Publisher's
+own record of the path it owns) and `validateSurfaceOwnership`, a pure
+check — the same shape as `checkWebRoutes.ts`'s `evaluateWebRouteManifest`
+— over a flat list of `{ path, owner }` ownership claims (normally assembled
+from every role's own folder manifest under `clossys/`). It flags any path
+more than one role claims, and any path under `clossys/publisher/surfaces/`
+that Publisher itself never claimed.
+
+The shared consumer layout contract this path belongs to is issue #1171
+(Launcher lane), which has not landed in this repository as of this
+package's `0.5.0` release — there is no `clossys/` layout file here to add
+`clossys/publisher/surfaces/` to yet. This section, and
+`PUBLISHER_SURFACES_DIR`, are Publisher's own record of the path it intends
+to own once that contract exists; wire the constant into the shared layout
+contract's own file when #1171 lands, rather than duplicating a second
+declaration of the path there.
+
 ## API
 
 - `assessment`: `assessVerifiedPublicationRate` and the
@@ -1707,6 +1805,19 @@ choice `checkLedgerDrift` makes for a citation it could not check.
   `JoinKeyIdentity` types, plus `PolicyBinding`/`DigestAlgorithm`/
   `PolicyFinding` re-exported from `@clossys/controller/policy`. The
   CLI is `publisher-record-check`.
+- `pack`: `LIFECYCLE_STATUSES`, `LIFECYCLE_CONDITIONS`, `isLifecycleStatus`,
+  `isLifecycleCondition`, `PACK_LAYERS`, `PACK_VISIBILITIES`, `isPackLayer`,
+  `isPackVisibility`, `isPackVersionString`, `validatePackManifest`,
+  `planPackOrder`, `computePackReadiness`, `sealableItemIds`,
+  `detectExistingPackItems`, `foundPackItem`, and the `LifecycleCondition`,
+  `LifecycleStatus`, `PackLayer`, `PackVisibility`, `PackItem`,
+  `PackManifest`, `PackSourcePin`, `PackFinding`, `PackValidationResult`,
+  `PackItemReadiness`, `PackReadiness`, `PackAdoptionCandidate`, and
+  `PackAdoptionResult` types. See "The pack," above.
+- `surfaces`: `PUBLISHER_SURFACES_DIR`, `validateSurfaceOwnership`, and the
+  `SurfaceOwnershipClaim`, `SurfaceOwnershipFinding`, and
+  `SurfaceOwnershipCheckResult` types. See "Surface documents move to
+  Publisher," above.
 
 Web page-level compositions belong here, not in `designer`; they consume
 design-system primitives and accept consumer-owned copy through slots.
@@ -1744,12 +1855,24 @@ separate `not-offered` disposition, introduced in Designer 0.2.7, then to
 section contract now renders into are Designer 0.3.0 additions, then to
 `^0.4.0` because a `status-list` section's flat `items`
 alternative to `groups` renders into Designer 0.4.0's new `StatusList`
-`items` prop, and then to the current `^0.5.0` — a workspace-resolution
+`items` prop, then to `^0.4.12` because this package's web
+templates compose Designer's `MarketingChapter` block (from
+`@clossys/designer/blocks/server`), a Designer 0.4.12 addition. A published
+package that only satisfies `^0.4.0` — for example the registry's own
+Designer 0.4.7 at the time of this release — resolves cleanly but cannot
+actually serve `@clossys/publisher/web`: `import("@clossys/publisher/web")`
+throws `SyntaxError: The requested module '@clossys/designer/blocks/server'
+does not provide an export named 'MarketingChapter'` under both its ordinary
+and `react-server` conditions. This is exactly the failure the pinned-runtime
+release-qualification run for 0.4.24 caught; see this repository's own
+`src/web/react-server-artifact.test.ts` (not shipped in the published
+package) for the regression test's fixture that reproduces it
+deterministically. And then to the current `^0.5.0` — a workspace-resolution
 bump, not a new imported contract — because Designer 0.5.0 is itself a
 minor release (the identity-kit generator and its checks, issue #1210),
 and a `^0.4.0` range does not resolve a `0.5.x` package under 0.x caret
 semver. These ranges are independent; leaving
-either one behind would still resolve an older package without any install
+any one behind would still resolve an older package without any install
 failure, silently withholding a required contract.
 
 A consumer whose own policy is to pin exact versions must pin `writer` to a
