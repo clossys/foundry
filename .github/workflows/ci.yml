@@ -911,6 +911,15 @@ jobs:
       - name: Conflict markers gate
         run: npm run check:conflict-markers
 
+      # collect-changesets.mjs -- are the pending .changesets/*.md files
+      # scripts/apply-release-changesets.mjs's release PR (issue #1255)
+      # will apply well-formed: each names a real packages/<dir> directory,
+      # a valid patch/minor/major bump level, and a non-empty summary?
+      # Dependency-free, tree-only, so it lives in this same job as the
+      # conflict-markers gate above.
+      - name: Changeset format gate
+        run: npm run check:changesets
+
       # repository-profile-check (dist/repository/run-bin.js) — the richer,
       # three-state evaluator over the SAME governance/repository-profile.json
       # the `build` job's "Repository profile" step below already validates
@@ -1068,6 +1077,30 @@ jobs:
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
         run: node scripts/check-qualification-record-required.mjs --base "$BASE_SHA"
+
+  # check-release-pr-shape.mjs -- for any package whose version this pull
+  # request bumped, is the bump shaped like #1255's release PR (a consumed
+  # changeset whose bump level matches), or does it at least carry the
+  # CHANGELOG.md entry docs/PUBLISHING.md section 4 already documents as
+  # required? Deliberately its own job, for the same "two independently-
+  # true-or-false conditions, two different remedies" reason
+  # qualification-record-required above is its own job rather than folded
+  # into release-readiness.
+  release-pr-shape:
+    name: release PR shape (version bump vs. changeset/CHANGELOG)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+      - name: check-release-pr-shape (diffed against this PR's actual base)
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: node scripts/check-release-pr-shape.mjs --base "$BASE_SHA"
 
   # THE JOB NAME BELOW IS STILL DELIBERATELY NOT RENAMED (issue #497, phase
   # 1 of 3). It still reads "ui-contrast-check" while running designer's

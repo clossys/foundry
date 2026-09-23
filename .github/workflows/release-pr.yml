@@ -1,0 +1,155 @@
+name: Release PR
+
+# The periodic/on-demand release PR (issue #1255): applies every pending
+# .changesets/*.md, bumping each named package once, writing its CHANGELOG
+# entry, regenerating package-lock.json, and deleting the changesets it
+# applied -- then pushes a branch and opens a pull request for a human to
+# review and merge, the same as any other change here. It never touches
+# main directly and never publishes anything; qualify-candidate.yml and
+# publish.yml stay the only paths that produce a qualification record or
+# upload a package. scripts/check-release-pr-shape.mjs is what proves, on
+# the resulting pull request, that these are the only version bumps this
+# repository accepts going forward.
+#
+# WHY BOTH schedule AND workflow_dispatch
+# -----------------------------------------
+# "Run periodically or on demand" (issue #1255's own words): the schedule
+# batches whatever changesets accumulated over the week so lanes stop
+# colliding on the same package's next version; workflow_dispatch exists
+# for whenever a maintainer wants one sooner (e.g. right before the
+# readiness gate this tracker's #1187 comments describe).
+#
+# WHY THIS NEEDS NO CREDENTIAL-FREE CARE THE WAY qualify-candidate.yml DOES
+# -----------------------------------------------------------------------
+# This workflow never packs a tarball, never runs candidate qualification,
+# and never touches the pinned release runtime -- it only edits
+# package.json version fields, CHANGELOG.md files, and package-lock.json,
+# all ordinary source edits. It uses the ambient GITHUB_TOKEN, scoped to
+# this repository only, purely to push a branch and open a pull request --
+# the same version-control-only credential qualify-candidate.yml's own
+# "Push branch and open pull request" step uses, for the identical reason.
+on:
+  workflow_dispatch: {}
+  schedule:
+    # Weekly, Monday 09:00 UTC. A week with no pending changesets is a
+    # cheap no-op (see the "Apply pending changesets" step below) -- there
+    # is no cost to running this on a quiet week.
+    - cron: "0 9 * * 1"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+# Only one release PR in flight at a time: two concurrent runs applying the
+# same pending changesets would race on which one gets to delete them.
+concurrency:
+  group: release-pr
+  cancel-in-progress: false
+
+jobs:
+  release-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+
+      - name: Install repository dependencies without lifecycle scripts
+        run: npm ci --ignore-scripts
+
+      # Refuses (exit 2) rather than run against a malformed changeset, and
+      # (exit 1) if a changeset names a package this checkout does not have
+      # -- both should fail this workflow loudly, not be silently skipped,
+      # so this step is NOT wrapped in `set +e`. A clean "nothing pending"
+      # run exits 0 with an empty `applied` array; the step after this one
+      # reads that array's length to decide whether there is anything left
+      # to commit.
+      - name: Apply pending changesets
+        id: apply
+        run: |
+          set -euo pipefail
+          output="$(node scripts/apply-release-changesets.mjs --json)"
+          echo "$output"
+          count="$(node -e 'console.log(JSON.parse(process.argv[1]).applied.length)' "$output")"
+          echo "applied_count=$count" >> "$GITHUB_OUTPUT"
+          node -e '
+            const { applied } = JSON.parse(process.argv[1]);
+            const lines = applied.map((a) => `- \`${a.package}\`: ${a.fromVersion} -> ${a.toVersion} (${a.bump}), consuming ${a.changesetFiles.join(", ")}`);
+            require("node:fs").writeFileSync(process.env.SUMMARY_PATH, lines.join("\n") + "\n");
+          ' "$output"
+        env:
+          SUMMARY_PATH: ${{ runner.temp }}/release-summary.md
+
+      - name: Nothing pending
+        if: steps.apply.outputs.applied_count == '0'
+        run: echo "No pending changesets -- nothing to release this run."
+
+      - name: Push branch and open pull request
+        if: steps.apply.outputs.applied_count != '0'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_BASE_REF_OR_DEFAULT: ${{ github.event.repository.default_branch }}
+          RUN_ID: ${{ github.run_id }}
+          SUMMARY_PATH: ${{ runner.temp }}/release-summary.md
+        run: |
+          set -euo pipefail
+          branch="claude/release-$(date -u +%Y-%m-%d)-${RUN_ID}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$branch"
+          git add -A -- packages .changesets package-lock.json
+          message_file="$RUNNER_TEMP/release-pr-commit-message.txt"
+          {
+            printf '%s\n\n' "Release: apply pending changesets"
+            printf '%s\n' "Bumps each named package once, writes its CHANGELOG.md entry,"
+            printf '%s\n' "regenerates package-lock.json, and deletes the applied changesets --"
+            printf '%s\n\n' "via node scripts/apply-release-changesets.mjs, per issue #1255."
+            cat "$SUMMARY_PATH"
+            printf '\n%s\n' "Ref: #1255"
+          } > "$message_file"
+          git commit -F "$message_file"
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git push origin "$branch"
+
+          body_file="$RUNNER_TEMP/release-pr-body.txt"
+          {
+            printf '%s\n\n' "The periodic/on-demand release PR (issue #1255): applies every pending \`.changesets/*.md\` file."
+            printf '%s\n\n' "## Bumps"
+            cat "$SUMMARY_PATH"
+            printf '\n%s\n' "Each package's CHANGELOG.md gained a matching entry, and the consumed changeset files are deleted -- \`scripts/check-release-pr-shape.mjs\` verifies both on this pull request itself."
+            printf '\n%s\n' "This publishes nothing. Qualification (per package version, via \`qualify-candidate.yml\`) and publication (\`publish.yml\`) remain separate, manually-gated steps."
+            printf '%s\n' "Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}"
+            printf '%s\n' "Ref: #1255"
+          } > "$body_file"
+
+          # Same graceful-degradation shape as qualify-candidate.yml's
+          # identical step: if this repository ever reverts "Actions may
+          # open pull requests", the branch is still pushed and ready.
+          set +e
+          pr_create_output="$(gh pr create \
+            --title "Release: apply pending changesets" \
+            --base "$GITHUB_BASE_REF_OR_DEFAULT" \
+            --head "$branch" \
+            --body-file "$body_file" 2>&1)"
+          pr_create_status=$?
+          set -e
+
+          if [ "$pr_create_status" -eq 0 ]; then
+            echo "$pr_create_output"
+          elif printf '%s' "$pr_create_output" | grep -q "not permitted to create or approve pull requests"; then
+            {
+              echo "### Release changes pushed, PR not opened"
+              echo ""
+              echo "The release commit is pushed to \`${branch}\`, but this repository does not permit GitHub Actions to open pull requests."
+              echo ""
+              echo "Open it from: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/compare/${GITHUB_BASE_REF_OR_DEFAULT}...${branch}?expand=1"
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "PR creation was refused (Actions cannot create PRs on this repo); branch ${branch} is pushed and ready. See job summary for the compare URL."
+          else
+            echo "$pr_create_output" >&2
+            exit "$pr_create_status"
+          fi

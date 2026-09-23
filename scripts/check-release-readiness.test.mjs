@@ -201,6 +201,55 @@ test("default mode: flags content changed since --base with no version bump", ()
   });
 });
 
+// collect-changesets.mjs validates a changeset's frontmatter package name
+// against real packages/<dir> directories on disk (see its own
+// discoverPackageDirs()). makeFixture() puts the fixture package directly at
+// the repo root (root/probe), not under root/packages/probe, so these two
+// tests plant a minimal packages/<name>/package.json stub purely so the
+// changeset naming it is recognised as well-formed -- the stub is never
+// otherwise read by check-release-readiness.mjs itself.
+function stubPackagesDir(root, name) {
+  mkdirSync(join(root, "packages", name), { recursive: true });
+  writeFileSync(join(root, "packages", name, "package.json"), JSON.stringify({ name, version: "0.0.0" }));
+}
+
+test("default mode (issue #1255): a pending changeset naming the package is an alternative to a version bump", () => {
+  withRepo((root) => {
+    const pkgDir = makeFixture(root);
+    stubPackagesDir(root, "probe");
+    const base = gitCommit(root, "initial release at 1.0.0");
+
+    writeFileSync(join(pkgDir, "src", "index.ts"), "export const x = 2;\n");
+    mkdirSync(join(root, ".changesets"), { recursive: true });
+    writeFileSync(join(root, ".changesets", "probe-fix.md"), "---\nprobe: patch\n---\n\nFix a bug.\n");
+
+    const r = run(["--json", "--base", base, pkgDir]);
+    const report = JSON.parse(r.out);
+    assert.equal(r.code, 0, `expected exit 0, got ${r.code}: ${r.out}`);
+    assert.equal(report.results[0].status, "pass");
+    assert.match(report.results[0].detail, /pending changeset covers it/);
+    assert.match(report.results[0].detail, /probe-fix\.md/);
+  });
+});
+
+test("default mode (issue #1255): a changeset naming a DIFFERENT package does not rescue the bump requirement", () => {
+  withRepo((root) => {
+    const pkgDir = makeFixture(root);
+    stubPackagesDir(root, "probe");
+    stubPackagesDir(root, "some-other-package");
+    const base = gitCommit(root, "initial release at 1.0.0");
+
+    writeFileSync(join(pkgDir, "src", "index.ts"), "export const x = 2;\n");
+    mkdirSync(join(root, ".changesets"), { recursive: true });
+    writeFileSync(join(root, ".changesets", "other-fix.md"), "---\nsome-other-package: patch\n---\n\nUnrelated.\n");
+
+    const r = run(["--json", "--base", base, pkgDir]);
+    const report = JSON.parse(r.out);
+    assert.equal(r.code, 1, `expected exit 1, got ${r.code}: ${r.out}`);
+    assert.equal(report.results[0].status, "needs-bump");
+  });
+});
+
 test("default mode: passes content changed since --base alongside a version bump", () => {
   withRepo((root) => {
     const pkgDir = makeFixture(root);
