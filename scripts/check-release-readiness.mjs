@@ -276,6 +276,39 @@ function packedFilesAtCommit(gitRoot, relPkgDir, commit) {
   return extractedPackageAtCommit(gitRoot, relPkgDir, commit, packedFiles);
 }
 
+// Narrows a packedFiles() result down to paths git actually tracks, so a
+// local `npm run build` sitting untouched in the working tree can never be
+// mistaken for a real change. `packedFiles(absPkgDir)` — the real npm-pack
+// result — is still the only correct way to evaluate the package's `files`
+// globs/.npmignore/npm defaults, and that call stays untouched here; this
+// only prunes its output afterward. The gap it closes: a local build leaves
+// gitignored generated output sitting in the working tree — for example
+// `packages/launcher/skill-catalogue/` in this repository — and because that
+// output is declared inside the package's own `files` field (a real,
+// committed `npm pack` correctly ships it once it lands), `npm pack
+// --dry-run` picks it straight up off disk regardless of whether it is
+// committed, ignored, or merely untracked. Before this existed, that
+// surfaced as a false "packed file(s) changed" finding against a
+// developer's own uncommitted build output, not against anything actually
+// different in git. `git ls-files` (no `--others`) is exactly the list of
+// paths git's index already tracks, so this deliberately excludes both
+// genuinely-ignored files and merely-untracked-but-not-ignored ones —
+// anything not already in the index — while still keeping a file staged
+// with `git add` but not yet committed, because that IS a real,
+// about-to-be-committed change and must stay caught. Run with `cwd:
+// absPkgDir` and no extra pathspec, `git ls-files` paths come back already
+// relative to `absPkgDir`, forward-slash-joined — the same shape
+// `packedFiles()` uses as its Map keys — so no path translation is needed
+// before the set-difference.
+function packedFilesAtWorktree(absPkgDir) {
+  const files = packedFiles(absPkgDir);
+  const tracked = new Set(git(["ls-files", "-z"], absPkgDir).split("\0").filter(Boolean));
+  for (const path of files.keys()) {
+    if (!tracked.has(path)) files.delete(path);
+  }
+  return files;
+}
+
 // BUILD INPUTS COUNT AS PACKED (owner decision #1187/#1265, point 2)
 // --------------------------------------------------------------------
 // `packedFiles()` above is deliberately source-level and trusts `npm pack`'s
@@ -917,7 +950,7 @@ function evaluatePackageDiff(pkgDir, requestedBase) {
   let changed, oldFiles, newFiles, buildInputsChanged;
   try {
     oldFiles = packedFilesAtCommit(gitRoot, relPkgDir, mergeBase);
-    newFiles = packedFiles(absPkgDir);
+    newFiles = packedFilesAtWorktree(absPkgDir);
     changed = diffPackedFiles(oldFiles, newFiles);
     // See buildInputFiles()'s header comment: tsconfig*.json never appears
     // in `changed` above (npm never packs it) but can still change compiled
@@ -1106,7 +1139,7 @@ function evaluatePackageAudit(pkgDir) {
   let changed;
   try {
     const oldFiles = packedFilesAtCommit(gitRoot, relPkgDir, bump.commit);
-    const newFiles = packedFiles(absPkgDir);
+    const newFiles = packedFilesAtWorktree(absPkgDir);
     changed = diffPackedFiles(oldFiles, newFiles);
   } catch (error) {
     return { package: label, status: "error", detail: error.message };

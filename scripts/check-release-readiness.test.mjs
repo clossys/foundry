@@ -427,6 +427,61 @@ test("default mode: dist/ is excluded from the comparison on both sides", () => 
   });
 });
 
+// Regression coverage for the false positive this fix closes: a local `npm
+// run build` leaves gitignored generated output sitting in the working tree
+// (in the real repository, e.g. packages/launcher/skill-catalogue/) that
+// falls inside the package's own `files` glob. Because that output is
+// untracked, it must never show up as "added" — only git-tracked content can
+// move this gate.
+test("default mode: an untracked, gitignored generated file inside the packed glob is NOT flagged", () => {
+  withRepo((root) => {
+    const pkgDir = makeFixture(root);
+    const base = gitCommit(root, "initial release at 1.0.0");
+
+    writeFileSync(join(pkgDir, ".gitignore"), "src/generated.js\n");
+    writeFileSync(join(pkgDir, "src", "generated.js"), "export const generated = true;\n");
+    // Deliberately never `git add`ed — this simulates untracked, gitignored
+    // build output left behind by a local build, not a real change.
+
+    const r = run(["--json", "--base", base, pkgDir]);
+    const report = JSON.parse(r.out);
+    assert.equal(r.code, 0, `expected exit 0, got ${r.code}: ${r.out}`);
+    assert.equal(report.results[0].status, "pass");
+    assert.match(report.results[0].detail, /no packed-file changes/);
+    assert.ok(
+      !(report.results[0].changed ?? []).some((c) => c.includes("generated.js")),
+      `expected no mention of generated.js, got ${JSON.stringify(report.results[0].changed)}`,
+    );
+  });
+});
+
+// Control: untracked noise sitting alongside a real, genuinely tracked
+// change must not mask that real change — only the untracked file is
+// filtered out.
+test("default mode: a real tracked change is still caught even with untracked generated noise present", () => {
+  withRepo((root) => {
+    const pkgDir = makeFixture(root);
+    const base = gitCommit(root, "initial release at 1.0.0");
+
+    writeFileSync(join(pkgDir, ".gitignore"), "src/generated.js\n");
+    writeFileSync(join(pkgDir, "src", "generated.js"), "export const generated = true;\n");
+    writeFileSync(join(pkgDir, "src", "index.ts"), "export const x = 2;\n");
+
+    const r = run(["--json", "--base", base, pkgDir]);
+    const report = JSON.parse(r.out);
+    assert.equal(r.code, 1, `expected exit 1, got ${r.code}: ${r.out}`);
+    assert.equal(report.results[0].status, "needs-bump");
+    assert.ok(
+      report.results[0].changed.includes("modified: src/index.ts"),
+      `expected src/index.ts to be reported changed, got ${JSON.stringify(report.results[0].changed)}`,
+    );
+    assert.ok(
+      !report.results[0].changed.some((c) => c.includes("generated.js")),
+      `expected no mention of generated.js, got ${JSON.stringify(report.results[0].changed)}`,
+    );
+  });
+});
+
 test("default mode: skips a private:true package", () => {
   withRepo((root) => {
     const pkgDir = makeFixture(root);
@@ -713,6 +768,21 @@ test("--audit: passes a package whose source changed alongside a version bump", 
     const manifest = readManifest(pkgDir);
     manifest.version = "1.0.1";
     writeManifest(pkgDir, manifest);
+
+    const r = run(["--json", "--audit", pkgDir]);
+    const report = JSON.parse(r.out);
+    assert.equal(r.code, 0, `expected exit 0, got ${r.code}: ${r.out}`);
+    assert.equal(report.results[0].status, "pass");
+  });
+});
+
+test("--audit: an untracked, gitignored generated file inside the packed glob is NOT flagged", () => {
+  withRepo((root) => {
+    const pkgDir = makeFixture(root);
+    gitCommit(root, "initial release at 1.0.0");
+
+    writeFileSync(join(pkgDir, ".gitignore"), "src/generated.js\n");
+    writeFileSync(join(pkgDir, "src", "generated.js"), "export const generated = true;\n");
 
     const r = run(["--json", "--audit", pkgDir]);
     const report = JSON.parse(r.out);
