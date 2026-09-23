@@ -7,7 +7,7 @@ import { isDirectInvocation, main, USAGE } from "./cli.js";
 import type { CommandResult, WorkspaceHost } from "./types.js";
 
 const skeletonRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "skeleton");
-const WORKSPACE_MARKER_REL = ".clossys/workspace.json";
+const WORKSPACE_MARKER_REL = join("clossys", ".state", "workspace.json");
 const roots: string[] = [];
 afterEach(() => {
   vi.restoreAllMocks();
@@ -47,6 +47,9 @@ function host(directory: string, commands: Record<string, CommandResult>): Works
       mkdirSync(dirname(linkPath), { recursive: true });
       if (existsSync(linkPath)) rmSync(linkPath, { recursive: true, force: true });
       symlinkSync(relativeTarget, linkPath, "dir");
+    },
+    remove: (path) => {
+      rmSync(path, { recursive: true, force: true });
     },
     readDir: (path) => (existsSync(path) ? readdirSync(path) : []),
     run: (command, args) => commands[`${command} ${args.join(" ")}`] ?? { status: 1, stdout: "", stderr: "unmocked" },
@@ -112,7 +115,7 @@ describe("launcher CLI", () => {
   it("tells a resume run that the hub is already appointed instead of 'only valid when appointing'", () => {
     const directory = mkdtempSync(join(tmpdir(), "launcher-resume-"));
     roots.push(directory);
-    mkdirSync(join(directory, ".clossys"), { recursive: true });
+    mkdirSync(dirname(join(directory, WORKSPACE_MARKER_REL)), { recursive: true });
     writeFileSync(
       join(directory, WORKSPACE_MARKER_REL),
       `${JSON.stringify({ schemaVersion: 1, kind: "account-hub", owner: "acme", repository: "acme/hub" }, null, 2)}\n`,
@@ -120,7 +123,123 @@ describe("launcher CLI", () => {
     const err = vi.spyOn(console, "error").mockImplementation(() => {});
     const code = main(["--inventory", "elsewhere.json"], host(directory, {}), skeletonRoot);
     expect(code).toBe(1);
-    expect(String(err.mock.calls[0]?.[0])).toMatch(/already appointed; edit \.clossys\/inventory\.json/);
+    expect(String(err.mock.calls[0]?.[0])).toMatch(/already appointed; edit clossys\/\.state\/inventory\.json/);
     expect(String(err.mock.calls[0]?.[0])).not.toMatch(/only valid when appointing/);
+  });
+
+  it("resumes and migrates a legacy .clossys/ hub marker automatically, reporting the migration", () => {
+    const directory = mkdtempSync(join(tmpdir(), "launcher-legacy-resume-"));
+    roots.push(directory);
+    mkdirSync(join(directory, ".clossys"), { recursive: true });
+    writeFileSync(
+      join(directory, ".clossys", "workspace.json"),
+      `${JSON.stringify({ schemaVersion: 1, kind: "account-hub", owner: "acme", repository: "acme/hub" }, null, 2)}\n`,
+    );
+    writeFileSync(
+      join(directory, ".clossys", "inventory.json"),
+      `${JSON.stringify({ schemaVersion: 1, repositories: [{ id: "acme/hub" }] }, null, 2)}\n`,
+    );
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const code = main([], host(directory, {}), skeletonRoot);
+    expect(code).toBe(0);
+    expect(existsSync(join(directory, ".clossys"))).toBe(false);
+    expect(existsSync(join(directory, WORKSPACE_MARKER_REL))).toBe(true);
+    expect(String(log.mock.calls[0]?.[0])).toContain("moved hub state from .clossys to clossys/.state");
+  });
+
+  it("--clone-missing is only valid on resume, refused elsewhere (before any write happens)", () => {
+    const directory = mkdtempSync(join(tmpdir(), "launcher-clone-missing-create-"));
+    roots.push(directory);
+    const err = vi.spyOn(console, "error").mockImplementation(() => {});
+    const code = main(
+      ["--clone-missing"],
+      host(directory, {
+        "gh --version": { status: 0, stdout: "gh 2.0.0\n", stderr: "" },
+        "git --version": { status: 0, stdout: "git 2.0.0\n", stderr: "" },
+        "gh api user --jq .login": { status: 0, stdout: "acme\n", stderr: "" },
+        "gh org list": { status: 0, stdout: "", stderr: "" },
+        "gh repo view acme/workspace --json name": { status: 1, stdout: "", stderr: "not found" },
+        "npm view @clossys/advisor version": { status: 0, stdout: "0.2.6\n", stderr: "" },
+      }),
+      skeletonRoot,
+    );
+    expect(code).toBe(1);
+    expect(String(err.mock.calls[0]?.[0])).toMatch(/only valid on an already-appointed hub/);
+  });
+
+  it("--clone-missing on resume clones each inventoried id not yet sitting beside the hub, and reports it", () => {
+    const directory = mkdtempSync(join(tmpdir(), "launcher-clone-missing-resume-"));
+    roots.push(directory);
+    mkdirSync(dirname(join(directory, WORKSPACE_MARKER_REL)), { recursive: true });
+    writeFileSync(
+      join(directory, WORKSPACE_MARKER_REL),
+      `${JSON.stringify({ schemaVersion: 1, kind: "account-hub", owner: "acme", repository: "acme/hub" }, null, 2)}\n`,
+    );
+    const inventoryPath = join(dirname(join(directory, WORKSPACE_MARKER_REL)), "inventory.json");
+    writeFileSync(inventoryPath, `${JSON.stringify({ schemaVersion: 1, repositories: [{ id: "app" }] }, null, 2)}\n`);
+    const siblingPath = join(dirname(directory), "app");
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const code = main(
+      ["--clone-missing"],
+      host(directory, {
+        [`gh repo clone acme/app ${siblingPath}`]: { status: 0, stdout: "Cloning...\n", stderr: "" },
+      }),
+      skeletonRoot,
+    );
+    expect(code).toBe(0);
+    const logged = log.mock.calls.map((call) => String(call[0])).join("\n");
+    expect(logged).toContain("clone-missing (app): cloned");
+  });
+
+  it("the real `launcher` resume command writes clossys/.state/hosts.json, not just a library function nothing calls (#1180)", () => {
+    const directory = mkdtempSync(join(tmpdir(), "launcher-hosts-cli-"));
+    roots.push(directory);
+    mkdirSync(dirname(join(directory, WORKSPACE_MARKER_REL)), { recursive: true });
+    writeFileSync(
+      join(directory, WORKSPACE_MARKER_REL),
+      `${JSON.stringify({ schemaVersion: 1, kind: "account-hub", owner: "acme", repository: "acme/hub" }, null, 2)}\n`,
+    );
+    writeFileSync(
+      join(directory, "clossys", ".state", "inventory.json"),
+      `${JSON.stringify({ schemaVersion: 1, repositories: [{ id: "acme/hub" }] }, null, 2)}\n`,
+    );
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const code = main([], host(directory, {}), skeletonRoot);
+    expect(code).toBe(0);
+    expect(String(log.mock.calls[0]?.[0])).toMatch(/linked hosts: none detected/);
+    expect(existsSync(join(directory, "clossys", ".state", "hosts.json"))).toBe(true);
+    const record = JSON.parse(readFileSync(join(directory, "clossys", ".state", "hosts.json"), "utf8"));
+    expect(record).toMatchObject({ schemaVersion: 1, linkedHosts: [] });
+  });
+
+  it("the real `launcher` resume command surfaces inventory drift for a declared external inventory, not just a library function nothing calls (#1216)", () => {
+    const directory = mkdtempSync(join(tmpdir(), "launcher-drift-cli-"));
+    roots.push(directory);
+    const externalPath = join(directory, "..", "external-inventory.json");
+    mkdirSync(dirname(join(directory, WORKSPACE_MARKER_REL)), { recursive: true });
+    writeFileSync(
+      join(directory, WORKSPACE_MARKER_REL),
+      `${JSON.stringify(
+        {
+          schemaVersion: 1,
+          kind: "account-hub",
+          owner: "acme",
+          repository: "acme/hub",
+          externalInventory: { path: externalPath, shape: "foundry" },
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    writeFileSync(
+      join(directory, "clossys", ".state", "inventory.json"),
+      `${JSON.stringify({ schemaVersion: 1, repositories: [{ id: "legacy" }] }, null, 2)}\n`,
+    );
+    writeFileSync(externalPath, `${JSON.stringify({ schemaVersion: 1, repositories: [{ id: "app" }] })}\n`);
+    roots.push(externalPath);
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const code = main([], host(directory, {}), skeletonRoot);
+    expect(code).toBe(0);
+    expect(String(log.mock.calls[0]?.[0])).toMatch(/inventory drift: external-only 1, launcher-only 1, agreeing 0/);
   });
 });

@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "$comment": "Curated starting-point compositions (issue #1176, owner redirect 2026-09-22). These are fallbacks and best-sellers, NOT a partition of the package catalogue: the catalogue keeps growing, and a hand-grouped, mutually-exclusive table does not scale with it. A preset is what Advisor offers when a client's stated problem matches one closely; scripts/lib/capability-catalogue.mjs#composeKit is what Advisor uses for every other problem, composing a custom kit from docs/contracts/role-loop-archetypes.json plus each package's own `needs`/`feeds`. scripts/check-offering-kits.mjs only checks that every preset names real packages and composes without an unsatisfied need -- it does not require every current package to appear in a preset, and it never will.",
+  "presets": [
+    {
+      "id": "launch",
+      "label": "Launch",
+      "problem": "We can't explain what we are, and our site doesn't sell.",
+      "roles": ["strategist", "designer", "writer", "customer", "publisher"]
+    },
+    {
+      "id": "grow",
+      "label": "Grow",
+      "problem": "Get it in front of people.",
+      "addOnTo": "launch",
+      "roles": ["influencer"]
+    },
+    {
+      "id": "ship-safely",
+      "label": "Ship Safely",
+      "problem": "We ship fast and things break; secrets and dependencies sprawl.",
+      "roles": ["controller", "inspector", "integrator", "locksmith"]
+    },
+    {
+      "id": "operate-at-scale",
+      "label": "Operate at Scale",
+      "problem": "We can't see whether what we declared is what's running.",
+      "roles": ["builder", "architect", "observer"]
+    },
+    {
+      "id": "customer-ops",
+      "label": "Customer Ops",
+      "problem": "Requests fall through; we can't account for data and access we hold.",
+      "roles": ["bouncer", "butler", "giver", "keeper", "messenger"]
+    }
+  ]
+}
