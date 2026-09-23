@@ -411,7 +411,16 @@ jobs:
     needs: [push-tree]
     if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # `check:gates` now owns the ~70-suite node:test regression run the
+    # combined `publish safety` job used to run unbounded (no
+    # timeout-minutes on main): 14-24 minutes across recent successful PR
+    # runs (e.g. runs 35846913296, 35844706017, 35841178517), with the
+    # candidate-qualification-adjacent suites the slow part. 15 minutes was
+    # too tight for the real work this job does -- job 107156624117 (run
+    # 35851503439, T9 rebuild at d4105ce6) started 11:16:14, was still
+    # running past the 15-minute mark, and was cancelled at 11:31:30. Set
+    # from the measured max plus headroom, not a guess.
+    timeout-minutes: 30
     steps:
       # check:gates exercises check-contamination-classes.mjs's CLASS 4 rule
       # against THIS repo's own real git history (see that script's own
