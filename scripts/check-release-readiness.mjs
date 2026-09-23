@@ -293,6 +293,44 @@ function packedFilesAtCommit(gitRoot, relPkgDir, commit) {
 // on it exactly like a packed-content change for the bump question — see
 // `isDevDependenciesOnlyChange()`'s `BUILD_TOOLCHAIN_DEV_DEPENDENCIES` carve-out
 // for the parallel case (a build-TOOL version, not a build-config file).
+//
+// GENERAL CASE: A LOCAL SCRIPT `scripts.build` INVOKES DIRECTLY (owner
+// decision #1187/#1265, Opus re-review at 6f6372c7)
+// --------------------------------------------------------------------
+// `tsconfig.json` is not the only build input `npm pack` never ships.
+// `@clossys/launcher`'s `scripts.build` is
+// `node scripts/pack-skills.mjs && tsc -p tsconfig.json` — `pack-skills.mjs`
+// itself is not packed (`scripts/` is not in launcher's `files`), but it
+// GENERATES `skill-catalogue/`, which IS packed (and gitignored, like
+// `dist/`). So an edit to `pack-skills.mjs` alone changes what a consumer
+// installs with no packed-file trace — the identical blind spot
+// `tsconfig.json` has, one layer removed. Fixed generally, not only for
+// launcher: `buildScriptInvokedFiles()` below parses ANY package's
+// `scripts.build` for the local script files it runs directly, and those
+// are read and diffed exactly like `tsconfig*.json`.
+function buildScriptInvokedFiles(buildScript) {
+  if (typeof buildScript !== "string") return [];
+  const paths = [];
+  // Not a shell parser — split only on the boundaries a build script can
+  // safely be split on (`&&`, `;`, `|`), and recognize only a bare
+  // `node <relative-path>` invocation, which is what every build script in
+  // this repository actually uses. A build script shaped more exotically
+  // than that (a wrapper binary, an inline `-e` snippet) contributes no
+  // extra paths here — this narrows the existing tsconfig*.json check, it
+  // never claims to parse every possible build script.
+  for (const segment of buildScript.split(/&&|;|\|/)) {
+    const words = segment.trim().split(/\s+/).filter(Boolean);
+    if (words.length < 2 || words[0] !== "node") continue;
+    for (const arg of words.slice(1)) {
+      if (arg.startsWith("-")) continue; // a node flag, not a script path
+      if (arg.includes("..")) break; // never resolve outside the package directory
+      if (/\.(mjs|cjs|js|ts)$/.test(arg) && !arg.startsWith("/")) paths.push(arg);
+      break; // the first non-flag argument is the script node runs
+    }
+  }
+  return paths;
+}
+
 function buildInputFiles(dir) {
   const out = new Map();
   let entries;
@@ -305,6 +343,21 @@ function buildInputFiles(dir) {
     if (!entry.isFile()) continue;
     if (!/^tsconfig(\.[\w-]+)?\.json$/.test(entry.name)) continue;
     out.set(entry.name, readFileSync(join(dir, entry.name)));
+  }
+  let manifest = null;
+  try {
+    manifest = JSON.parse(readFileSync(join(dir, "package.json"), "utf8"));
+  } catch {
+    // No readable manifest here — buildScriptInvokedFiles(undefined) below
+    // returns [], so this just contributes tsconfig*.json, same as before.
+  }
+  for (const relPath of buildScriptInvokedFiles(manifest?.scripts?.build)) {
+    try {
+      out.set(relPath, readFileSync(join(dir, ...relPath.split("/"))));
+    } catch {
+      // Named but unreadable/absent on this side — diffPackedFiles() below
+      // reports that as added/removed itself; nothing to do here.
+    }
   }
   return out;
 }

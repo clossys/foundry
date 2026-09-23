@@ -549,6 +549,31 @@ and `typescript` is carved out of the devDependencies exemption by name
 retained-record relaxation above — they are packed-content findings, so they
 fail regardless of whether the current version has been published.
 
+`tsconfig.json` is not the only build input `npm pack` never ships.
+`@clossys/launcher`'s `scripts.build` is
+`node scripts/pack-skills.mjs && tsc -p tsconfig.json` — `pack-skills.mjs`
+itself is outside `files`, but it GENERATES `skill-catalogue/`, which IS
+packed. An edit to `pack-skills.mjs` alone therefore changed what a
+consumer received with no packed-file trace, the identical blind spot one
+layer removed — caught in re-review, after this section first shipped
+claiming coverage it did not yet have. Fixed generally rather than for
+launcher alone: `buildScriptInvokedFiles()` parses ANY package's
+`scripts.build` for the local script files it runs directly via a bare
+`node <relative-path>` invocation, and those files are read and diffed
+exactly like `tsconfig*.json`. This is not a full shell parser — a build
+script shaped more exotically than a `node`/`tsc` sequence contributes no
+extra paths — so it narrows the blind spot, it does not claim to close every
+shape a build script could take.
+
+Two related gaps remain, tracked in #1325 rather than fixed here: a
+root-level or lockfile-only `typescript` resolution change (the compiler is
+resolved at the workspace root, not per package, so no individual package
+directory shows the drift), and `pack-skills.mjs` itself reading OTHER
+packages' `skill/SKILL.md` files into launcher's tarball (a cross-package
+build input this per-package mechanism cannot see by construction). Both
+predate this section and surface only at tarball reverification during an
+actual publish attempt today.
+
 ### The retained record's tarball must reproduce
 
 A qualification record binds exact tarball bytes and can never be rewritten,

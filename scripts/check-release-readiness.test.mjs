@@ -551,6 +551,56 @@ test("a tsconfig.json that never changes does not spuriously require a bump", ()
   });
 });
 
+// OWNER DECISION (#1187/#1265, point 2), Opus re-review at 6f6372c7: the
+// real @clossys/launcher builds with
+// `node scripts/pack-skills.mjs && tsc -p tsconfig.json`. `pack-skills.mjs`
+// itself is not packed (`scripts/` is outside `files`), but it GENERATES
+// `skill-catalogue/`, which is packed — so an edit to it alone changes what
+// a consumer installs with zero packed-file trace, exactly the tsconfig.json
+// blind spot one layer removed. Fixed generally (buildScriptInvokedFiles()
+// parses ANY `scripts.build`), exercised here with launcher's own shape.
+test("a package-local script scripts.build invokes directly (launcher's pack-skills.mjs shape) is a build input, even though it isn't packed itself", () => {
+  withRepo((root) => {
+    const pkgDir = makeFixture(root, { name: "launcher" });
+    const manifest = readManifest(pkgDir);
+    manifest.scripts = { build: "node scripts/pack-skills.mjs && tsc -p tsconfig.json" };
+    writeManifest(pkgDir, manifest);
+    mkdirSync(join(pkgDir, "scripts"), { recursive: true });
+    writeFileSync(join(pkgDir, "scripts", "pack-skills.mjs"), "// packs the skill catalogue\n");
+    const base = gitCommit(root, "initial release at 1.0.0, with a pack-skills build script");
+
+    // The invoking line in package.json never changes — only the script's
+    // own body does, which is exactly the case a packed-content diff alone
+    // cannot see (scripts/ is not shipped; package.json is unchanged).
+    writeFileSync(join(pkgDir, "scripts", "pack-skills.mjs"), "// packs the skill catalogue, v2\n");
+
+    const r = run(["--json", "--base", base, pkgDir]);
+    const report = JSON.parse(r.out);
+    assert.equal(r.code, 1, `expected exit 1, got ${r.code}: ${r.out}`);
+    assert.equal(report.results[0].status, "needs-bump");
+    assert.equal(report.results[0].buildInputsChanged, true);
+    assert.match(report.results[0].detail, /build input file\(s\)/);
+  });
+});
+
+test("a package-local build script that never changes does not spuriously require a bump", () => {
+  withRepo((root) => {
+    const pkgDir = makeFixture(root, { name: "launcher" });
+    const manifest = readManifest(pkgDir);
+    manifest.scripts = { build: "node scripts/pack-skills.mjs && tsc -p tsconfig.json" };
+    writeManifest(pkgDir, manifest);
+    mkdirSync(join(pkgDir, "scripts"), { recursive: true });
+    writeFileSync(join(pkgDir, "scripts", "pack-skills.mjs"), "// packs the skill catalogue\n");
+    const base = gitCommit(root, "initial release at 1.0.0, with a pack-skills build script");
+    // No edit at all before the check.
+
+    const r = run(["--json", "--base", base, pkgDir]);
+    const report = JSON.parse(r.out);
+    assert.equal(r.code, 0, `expected exit 0, got ${r.code}: ${r.out}`);
+    assert.equal(report.results[0].status, "pass");
+  });
+});
+
 test("default mode: a runtime `dependencies` change still requires a version bump", () => {
   withRepo((root) => {
     const pkgDir = makeFixture(root);
