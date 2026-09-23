@@ -753,7 +753,8 @@ component-based way to get this timing, which is why it's a separate
 piece rather than something `ThemeProvider` does automatically:
 
 ```tsx
-// app/layout.tsx (Next.js App Router) — first thing in <head>
+// Your Next.js app's root layout (the "layout.tsx" file in the App
+// Router's "app" directory) — first thing in <head>
 import { getThemeInitScript } from "@clossys/designer/theme";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -3175,7 +3176,8 @@ toast that was queued a moment before the user clicked a link.
 ### `Shell`
 
 ```tsx
-// app/layout.tsx
+// Your Next.js app's root layout (the "layout.tsx" file in the App
+// Router's "app" directory)
 import { Shell } from "@clossys/designer/shell";
 import { Link } from "@clossys/designer/atoms";
 
@@ -3298,7 +3300,8 @@ first, and a site header/footer/nav survive it exactly the way `Shell`'s
 own regions do, which is what puts all four here rather than in `blocks`.
 
 ```tsx
-// app/layout.tsx
+// Your Next.js app's root layout (the "layout.tsx" file in the App
+// Router's "app" directory)
 import { NavShell, SiteFooter, SiteHeader, SkipLink } from "@clossys/designer/shell";
 import { Link } from "@clossys/designer/atoms";
 
@@ -3416,7 +3419,8 @@ on-screen position is fixed and independent of where in the React tree it's
 rendered, since it portals straight to `document.body`:
 
 ```tsx
-// app/layout.tsx
+// Your Next.js app's root layout (the "layout.tsx" file in the App
+// Router's "app" directory)
 import { Shell, Toaster } from "@clossys/designer/shell";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
