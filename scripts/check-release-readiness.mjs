@@ -159,6 +159,7 @@ import {
   validateHistoryInventory,
 } from "./lib/package-identity-transition.mjs";
 import { qualificationRecordPresenceForCandidate } from "./check-qualification-record-present.mjs";
+import { changesetsForPackage, loadChangesets } from "./collect-changesets.mjs";
 
 function git(args, cwd) {
   return execFileSync("git", args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
@@ -571,6 +572,36 @@ function staleRetainedRecordDetail(gitRoot, manifest) {
   );
 }
 
+// ISSUE #1255 — A PENDING CHANGESET IS AN ALTERNATIVE TO BUMPING DIRECTLY
+// --------------------------------------------------------------------------
+// A pull request that changes a package's packed content no longer needs to
+// bump that package's version itself: adding a `.changesets/<slug>.md` file
+// naming the package (see scripts/collect-changesets.mjs) is equally
+// sufficient, and lets scripts/apply-release-changesets.mjs batch the actual
+// bump into a periodic release PR instead of every content PR colliding on
+// the same package's next version. This is purely additive to the existing
+// pass conditions below (a direct version bump still passes, exactly as
+// before) — it only widens what ALSO counts as ready, so it cannot make
+// anything that passed before fail now.
+//
+// Reads the working tree's current .changesets/ (the same side of the diff
+// packedFiles(absPkgDir) itself reads), not the merge-base's — a changeset
+// added anywhere in this pull request's history, still pending at HEAD,
+// counts, matching how a direct version bump is judged by its value at HEAD
+// too.
+function pendingChangesetDetail(gitRoot, relPkgDir) {
+  const packageKey = relPkgDir.split("/").at(-1);
+  let entries;
+  try {
+    ({ entries } = loadChangesets(gitRoot));
+  } catch {
+    return null;
+  }
+  const matches = changesetsForPackage(entries, packageKey);
+  if (matches.length === 0) return null;
+  return `a pending changeset covers it: ${matches.map((m) => `${m.file} (${m.bump})`).join(", ")} — scripts/apply-release-changesets.mjs will bump it in the next release PR`;
+}
+
 // DEFAULT MODE — diff-scoped against the merge base. See header comment.
 function evaluatePackageDiff(pkgDir, requestedBase) {
   const ctx = loadPackageContext(pkgDir);
@@ -656,6 +687,10 @@ function evaluatePackageDiff(pkgDir, requestedBase) {
   if (changed.length === 0) {
     const stale = staleRetainedRecordDetail(gitRoot, manifest);
     if (stale) {
+      const pendingChangeset = pendingChangesetDetail(gitRoot, relPkgDir);
+      if (pendingChangeset) {
+        return { package: label, status: "pass", detail: `no packed-file changes, but ${stale} — however, ${pendingChangeset}` };
+      }
       return { package: label, status: "needs-bump", staleRetainedRecord: true, detail: stale };
     }
     return {
@@ -667,6 +702,10 @@ function evaluatePackageDiff(pkgDir, requestedBase) {
   if (isDevDependenciesOnlyChange(changed, oldFiles, newFiles)) {
     const stale = staleRetainedRecordDetail(gitRoot, manifest);
     if (stale) {
+      const pendingChangeset = pendingChangesetDetail(gitRoot, relPkgDir);
+      if (pendingChangeset) {
+        return { package: label, status: "pass", detail: `only devDependencies changed, but ${stale} — however, ${pendingChangeset}` };
+      }
       return { package: label, status: "needs-bump", staleRetainedRecord: true, detail: stale };
     }
     return {
@@ -678,11 +717,20 @@ function evaluatePackageDiff(pkgDir, requestedBase) {
         "package, so this is exempt from the version-bump requirement (see issue #269)",
     };
   }
+  const pendingChangeset = pendingChangesetDetail(gitRoot, relPkgDir);
+  if (pendingChangeset) {
+    return {
+      package: label,
+      status: "pass",
+      detail: `${changed.length} packed file(s) changed since merge-base ${mergeBase.slice(0, 12)} (base ${baseRef}) while version stayed ${manifest.version}, but ${pendingChangeset}`,
+    };
+  }
   return {
     package: label,
     status: "needs-bump",
     detail: `${changed.length} packed file(s) changed since merge-base ${mergeBase.slice(0, 12)} (base ${baseRef}) while version stayed ${manifest.version}` +
-      (identityTransitionFailure ? `; identity-transition exemption rejected: ${identityTransitionFailure}` : ""),
+      (identityTransitionFailure ? `; identity-transition exemption rejected: ${identityTransitionFailure}` : "") +
+      " (bump the version, or add a .changesets/<slug>.md naming this package instead — see issue #1255)",
     changed,
   };
 }
