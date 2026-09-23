@@ -167,15 +167,28 @@ export async function verifyPublicationProvenance({ fetchImpl, name, version, so
 /**
  * Build one publication record, trying the plain trusted-publisher join
  * first and falling back to a v3 replay against this exact run's own
- * qualify-job artifact only if that join fails. Throws with BOTH failure
- * messages if neither path validates — the caller must not write a file or
- * open a pull request on that throw (issue #1346's "fail visibly, open no
- * PR" requirement).
+ * qualify-job artifact only if that join fails on ROOT-HASH DRIFT — never
+ * on a provenance mismatch. Throws with BOTH failure messages if neither
+ * path validates — the caller must not write a file or open a pull request
+ * on that throw (issue #1346's "fail visibly, open no PR" requirement).
  *
- * The direct attempt is gated on `verifyPublicationProvenance` succeeding
- * first (see that function's own header for why); the replay attempt keeps
- * its own equivalent internal check inside `record-later-publication.mjs`'s
- * `buildReplay()`, so it is not duplicated here.
+ * `verifyPublicationProvenance` runs exactly ONCE, before either join is
+ * even attempted, and its failure is never treated as "try replay instead"
+ * (2026-09-23 fresh-final review, B1). An earlier revision ran it only
+ * around the direct attempt and fell through to replay on any failure —
+ * but `buildReplay()`'s own internal check
+ * (`scripts/record-later-publication.mjs`) binds only the source commit; it
+ * never checks the run or attempt at all (`invocationRunRoot()` in
+ * `scripts/lib/release-later-publication.mjs` discards the attempt number
+ * before validation ever sees it). So a record whose run or attempt this
+ * function's own provenance check correctly refused could still reach
+ * replay and be written anyway — replay is this repository's MORE COMMON
+ * path (PR #1348 measured it for 8 of 10 versions), so that was not a
+ * narrow gap. Provenance is the record's identity; a join can be retried
+ * with different git-derived evidence (root package.json/package-lock.json
+ * hashes drifting from the merge queue's own batching is the only reason
+ * either join legitimately fails), but there is no join that fixes a
+ * record naming the wrong run.
  */
 export async function buildPublicationRecordWithFallback({
   root,
@@ -197,9 +210,10 @@ export async function buildPublicationRecordWithFallback({
   writeFile = writeFileSync,
   verifyProvenance = verifyPublicationProvenance,
 }) {
+  await verifyProvenance({ fetchImpl, name, version, sourceSha, runId, runAttempt, auditRun, env });
+
   let directError;
   try {
-    await verifyProvenance({ fetchImpl, name, version, sourceSha, runId, runAttempt, auditRun, env });
     return await createRecord({ root, packageKey, qualificationPath, publicationPath, fetch: true, env, fetchImpl });
   } catch (error) {
     directError = error instanceof Error ? error : new Error(String(error));

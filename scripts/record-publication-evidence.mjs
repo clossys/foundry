@@ -19,15 +19,25 @@
 // PUBLICATION_EVIDENCE_GITHUB_TOKEN, if present, is used ONLY to authenticate
 // this script's own GitHub API reads (the workflow run's artifact list, and
 // the replay fallback's artifact download) — never passed into
-// createLaterPublicationRecord's `env`, which must stay credential-free. It
-// is deliberately NOT named GITHUB_TOKEN or GH_TOKEN: those exact names are
-// what `git`, `tar`, and `unzip` subprocesses spawned deeper in this call
-// chain would inherit by default (Node inherits the parent environment
-// unless a subprocess call overrides it), and several of those calls do not
-// override it. Naming this variable something no tool auto-detects keeps
-// the token out of every subprocess this script's own dependencies spawn,
-// not just the ones that already sanitize their environment explicitly
-// (2026-09-23 security review, N2).
+// createLaterPublicationRecord's `env`, which must stay credential-free.
+//
+// It is deliberately NOT named GITHUB_TOKEN or GH_TOKEN, so `gh` and any
+// credential helper that auto-detects a token by exactly one of those two
+// names never picks it up implicitly. That is the ONLY thing the name
+// itself buys. Renaming it does NOT, on its own, keep the token out of
+// every subprocess this call chain spawns: a Node child process inherits
+// its parent's FULL environment by default regardless of what any variable
+// in it is called, and several calls deeper in this chain (`git`, `tar`,
+// `unzip` in record-later-publication.mjs and candidate-qualification.mjs)
+// do not override that. An earlier revision's header claimed the rename
+// alone closed that gap; it does not, and the 2026-09-23 security re-review
+// measured it directly (finding N-a: a probe value survived into an
+// execFileSync child with no explicit `env`). What actually closes it is
+// `main()` below reading this variable exactly once and then deleting it
+// from `process.env` immediately — before any other work, including the
+// network calls above — so no subprocess spawned anywhere in this process
+// afterward can inherit it via full-environment inheritance, named
+// GITHUB_TOKEN or not.
 import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -73,7 +83,7 @@ export async function recordPublicationEvidence({
   runAttempt,
   sourceSha,
   fetchImpl = fetch,
-  githubToken = process.env.PUBLICATION_EVIDENCE_GITHUB_TOKEN,
+  githubToken,
   readManifest = (path) => parseStrictJson(readFileSync(path, "utf8")),
   writeOutput = writeFileSync,
   makeTempDir = () => mkdtempSync(join(tmpdir(), "foundry-publication-evidence-")),
@@ -107,13 +117,29 @@ export async function recordPublicationEvidence({
   });
 }
 
+/**
+ * Read `name` from `env` exactly once, then delete it from `env` before
+ * returning — so it is gone before any later work (including the network
+ * calls `recordPublicationEvidence` makes right after this) can spawn a
+ * child process that would otherwise inherit it via full-environment
+ * inheritance. See this file's header comment for why the variable's name
+ * alone cannot do this on its own.
+ */
+export function readAndClearEnv(name, env = process.env) {
+  const value = env[name];
+  delete env[name];
+  return value;
+}
+
 async function main() {
   const args = argsFrom(process.argv);
+  const githubToken = readAndClearEnv("PUBLICATION_EVIDENCE_GITHUB_TOKEN");
   const result = await recordPublicationEvidence({
     packageKey: args.package,
     runId: Number(args["run-id"]),
     runAttempt: Number(args["run-attempt"]),
     sourceSha: args["source-sha"],
+    githubToken,
   });
   const manifest = parseStrictJson(readFileSync(join(process.cwd(), "packages", args.package, "package.json"), "utf8"));
   process.stdout.write(`publication evidence recorded: ${result.path}\n`);

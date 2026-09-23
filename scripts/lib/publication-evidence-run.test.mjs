@@ -239,30 +239,33 @@ test("verifyPublicationProvenance fetches the packument itself when the caller d
 // into the REAL validateLaterPublication(). These two tests close that gap.
 test("buildPublicationEvidenceInput exactly reproduces a real retained record's publication block", () => {
   // governance/release-publications/later/integrator-0.6.10.json, retained
-  // on this branch already — a real schema-2 (direct join) record.
+  // on this branch already — a real schema-2 (direct join) record. Read
+  // from disk, never hand-typed: a hand-typed expected value is exactly how
+  // an earlier revision of this test carried its own %40-vs-@ encoding typo
+  // undetected (2026-09-23 correctness re-review).
+  const retained = JSON.parse(readFileSync(new URL("../../governance/release-publications/later/integrator-0.6.10.json", import.meta.url), "utf8"));
   const rebuilt = buildPublicationEvidenceInput({
     runId: 35463996575,
     runAttempt: 1,
-    sourceSha: "9f35bc2ed7f8f69bd32771ae4d56a5d29e86580b",
-    publishedAt: "2026-09-19T19:32:23.500Z",
-    name: "@clossys/integrator",
-    version: "0.6.10",
+    sourceSha: retained.publication.provenance.sourceSha,
+    publishedAt: retained.publication.publishedAt,
+    name: retained.candidate.name,
+    version: retained.candidate.version,
   });
-  assert.deepEqual(rebuilt, {
-    mode: "trusted-publisher",
-    publishedAt: "2026-09-19T19:32:23.500Z",
-    reference: "https://github.com/clossys/foundry/actions/runs/35463996575",
-    provenance: {
-      repository: "https://github.com/clossys/foundry",
-      workflow: ".github/workflows/publish.yml",
-      ref: "refs/heads/main",
-      event: "workflow_dispatch",
-      sourceSha: "9f35bc2ed7f8f69bd32771ae4d56a5d29e86580b",
-      builder: "https://github.com/actions/runner/github-hosted",
-      invocation: "https://github.com/clossys/foundry/actions/runs/35463996575/attempts/1",
-      attestationUrl: "https://registry.npmjs.org/-/npm/v1/attestations/%40clossys%2Fintegrator@0.6.10",
-    },
-  });
+  // Every field except attestationUrl compares byte-for-byte. attestationUrl
+  // is compared by DECODED identity, not raw bytes: this retained file
+  // happens to fully percent-encode the URL (%40...%40...), while this
+  // module's own attestationUrl() (matching the newer PR #1348-era records)
+  // leaves the name/version separator "@" literal — both decode to the
+  // identical URL, which is the only thing exactAttestationUrl() in
+  // scripts/lib/provenance-join.mjs actually compares (it decodes both
+  // sides via decodeURIComponent before checking equality), so this is not
+  // a functional difference, and asserting raw-byte equality here would be
+  // a stricter, wrong requirement this test does not need.
+  const { attestationUrl: rebuiltUrl, ...rebuiltRest } = rebuilt.provenance;
+  const { attestationUrl: retainedUrl, ...retainedRest } = retained.publication.provenance;
+  assert.deepEqual({ ...rebuilt, provenance: rebuiltRest }, { ...retained.publication, provenance: retainedRest });
+  assert.equal(decodeURIComponent(rebuiltUrl), decodeURIComponent(retainedUrl));
 });
 
 test("a publication block buildPublicationEvidenceInput builds is accepted by the real validateLaterPublication()", () => {
@@ -336,30 +339,68 @@ test("buildPublicationRecordWithFallback returns the direct join once verifyProv
   assert.equal(calls.downloadZip, 0);
 });
 
-test("buildPublicationRecordWithFallback never calls createRecord's direct join when verifyProvenance itself rejects, and falls back to replay", async () => {
-  const attempts = [];
+// 2026-09-23 fresh-final review, B1 (and its own correctness re-review, R1):
+// an earlier revision fell through to the replay path whenever
+// verifyProvenance rejected, INCLUDING on an exact run/attempt mismatch —
+// the precise thing verifyProvenance exists to catch. buildReplay()'s own
+// internal check (record-later-publication.mjs) binds only the source
+// commit; invocationRunRoot() (release-later-publication.mjs) discards the
+// attempt number before validation ever sees it. So a provenance mismatch
+// that correctly refused the direct join could still reach replay and be
+// written anyway — and replay is this repository's MORE COMMON path (PR
+// #1348 measured it for 8 of 10 versions), so this was not a narrow gap.
+// Neither createRecord call may ever be reached when provenance itself is
+// wrong; only createRecord's OWN failure (root-hash drift) may fall back.
+test("buildPublicationRecordWithFallback never calls createRecord — direct OR replay — when verifyProvenance itself rejects", async () => {
+  const calls = { createRecord: 0, findArtifact: 0, downloadZip: 0 };
   const verifyProvenance = async () => { throw new Error("attestation does not corroborate this run"); };
-  const root = mkdtempSync(join(tmpdir(), "publication-evidence-verify-fallback-"));
-  const createRecord = async (options) => {
-    attempts.push(options);
-    assert.equal(options.artifactArchivePath, join(root, "qualified-candidate.zip"));
-    return { path: "governance/release-publications/later/strategist-0.1.1.json", record: { schemaVersion: 3 } };
-  };
-  const findArtifact = async () => ({ id: 42, name: "qualified-candidate-strategist" });
-  const downloadZip = async () => Buffer.from("zip bytes");
-  try {
-    const result = await buildPublicationRecordWithFallback({
-      root: "/repo", packageKey: "strategist", qualificationPath: "q.json", publicationPath: "p.json", fetchImpl: async () => {}, env: {}, runId: 1, tempDir: root,
+  const createRecord = async () => { calls.createRecord += 1; throw new Error("must not be called — provenance never passed"); };
+  const findArtifact = async () => { calls.findArtifact += 1; throw new Error("must not be called — provenance never passed"); };
+  const downloadZip = async () => { calls.downloadZip += 1; throw new Error("must not be called — provenance never passed"); };
+
+  await assert.rejects(
+    buildPublicationRecordWithFallback({
+      root: "/repo", packageKey: "strategist", qualificationPath: "q.json", publicationPath: "p.json", fetchImpl: async () => {}, env: {}, runId: 1, tempDir: "/tmp/x",
       name: "strategist-name", version: "0.1.1", sourceSha,
       findArtifact, downloadZip, createRecord, verifyProvenance,
-    });
-    assert.equal(result.record.schemaVersion, 3);
-    // createRecord is only ever called once here — the direct attempt never
-    // reached it, because verifyProvenance rejected before createRecord ran.
-    assert.equal(attempts.length, 1);
-  } finally {
-    rmSync(root, { recursive: true, force: true });
-  }
+    }),
+    /attestation does not corroborate this run/,
+  );
+  assert.equal(calls.createRecord, 0);
+  assert.equal(calls.findArtifact, 0);
+  assert.equal(calls.downloadZip, 0);
+});
+
+// The concrete case the correctness re-review asked to be pinned down:
+// @clossys/messenger@0.1.10, published through run 35835576561 whose real
+// attestation names attempt 1 (measured by the correctness reviewer's own
+// reproduction — that version's real record is a schema-3 REPLAY, not a
+// direct join, which is exactly the point: a wrong attempt must be refused
+// before EITHER join is attempted, not only the direct one). Claiming
+// attempt 2 for that same run and commit must be refused before either
+// createRecord call, even though the commit itself is correct.
+test("a wrong run/attempt is refused before either join, for a package whose real record is a replay (messenger@0.1.10, run 35835576561)", async () => {
+  const name = "@clossys/messenger";
+  const version = "0.1.10";
+  const realSourceSha = "8".repeat(40);
+  const { packument, audit } = provenanceFixture({ name, version, sourceSha: realSourceSha, runId: 35835576561, runAttempt: 1 });
+  const auditRun = () => JSON.stringify(audit);
+
+  const calls = { createRecord: 0 };
+  const createRecord = async () => { calls.createRecord += 1; throw new Error("must not be called — provenance never passed"); };
+  const findArtifact = async () => { throw new Error("must not be called — provenance never passed"); };
+  const downloadZip = async () => { throw new Error("must not be called — provenance never passed"); };
+  const verifyProvenance = (options) => verifyPublicationProvenance({ ...options, auditRun, packument });
+
+  await assert.rejects(
+    buildPublicationRecordWithFallback({
+      root: "/repo", packageKey: "messenger", qualificationPath: "q.json", publicationPath: "p.json", fetchImpl: async () => { throw new Error("must not be called — packument was already supplied"); }, env: {}, runId: 35835576561, runAttempt: 2, tempDir: "/tmp/x",
+      name, version, sourceSha: realSourceSha,
+      findArtifact, downloadZip, createRecord, verifyProvenance,
+    }),
+    /measured npm SLSA provenance attestation names a different run\/attempt than this record claims/,
+  );
+  assert.equal(calls.createRecord, 0);
 });
 
 test("buildPublicationRecordWithFallback falls back to a replay build using this exact run's own qualify artifact when the direct join fails", async () => {

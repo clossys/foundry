@@ -337,21 +337,33 @@ jobs:
       # the whole fetch/stage/commit/push cycle on a non-fast-forward
       # rejection rather than relying on being the only writer.
       #
-      # Branch selection (security review B3; correctness review B3): reuse
-      # an already-open evidence pull request ONLY if it is same-repository,
-      # authored by github-actions[bot], and carries the RESERVED prefix
-      # below — never a prefix that also matches this repository's ordinary
-      # `claude/*` agent-branch namespace (this PR's own head branch,
-      # `claude/publication-evidence-automation`, is exactly the collision
-      # the correctness review measured). `--limit` is set well above this
-      # repository's current open-PR count so the lookup cannot silently
-      # miss the evidence PR under pagination (correctness review S4).
-      # Additionally, every commit past the merge-base with the default
-      # branch must be bot-authored and touch ONLY
-      # governance/release-publications/later/ — if that check fails (a
-      # human or another process touched the branch), a fresh, uniquely
-      # named branch is used instead of pushing onto branch content this
-      # workflow never wrote.
+      # scripts/lib/publication-evidence-branch.sh's verify_branch_is_ours()
+      # is the ownership check this whole step depends on — see that file's
+      # own header for exactly what it checks and why the author half of it
+      # is defence in depth while the path-confinement half is the real
+      # guard. EVERY adoption of a branch this step did not just create
+      # itself, in this run, calls it again right before writing anything —
+      # including inside the retry loop's own re-fetch, not only the
+      # initial candidate lookup (2026-09-23 security re-review, finding
+      # "B3-residual": the loop's own fetch was exactly the path that had
+      # never been re-checked, and was reproduced as a real attack against
+      # an earlier revision of this step). A branch that fails verification,
+      # at any point, is abandoned — never built on — in favor of a fresh
+      # branch named from this run's ID plus a random suffix from the
+      # runner's own entropy source, never a predictable name an attacker
+      # could pre-create ahead of a push (same finding: the previous
+      # fallback name, `${BRANCH_PREFIX}${RUN_ID}`, was guessable from the
+      # publish run's own public ID).
+      #
+      # Every PR this step ever touches is edited by NUMBER, looked up
+      # fresh — same-repository and bot-authored — at the moment it is
+      # about to be used, never resolved by branch name (security re-review,
+      # same finding: `gh pr edit <branch>` resolves by head-branch name
+      # alone, which a same-named fork PR could also satisfy, and which can
+      # resolve to an already-merged PR if this branch's evidence PR merged
+      # during this very run — 2026-09-23 fresh-final review, S1). The
+      # lookup happens AFTER this run's own push lands, not before, so a
+      # PR that merged mid-run is never mistaken for one still open.
       - name: Push branch and open or update the publication-evidence pull request
         if: steps.idempotency.outputs.already-recorded != 'true'
         env:
@@ -362,6 +374,7 @@ jobs:
           GITHUB_BASE_REF_OR_DEFAULT: ${{ github.event.repository.default_branch }}
         run: |
           set -euo pipefail
+          source scripts/lib/publication-evidence-branch.sh
           BRANCH_PREFIX="automation/publication-evidence/"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -370,52 +383,44 @@ jobs:
 
           # A safe, non-git copy of the exact bytes this run built. Every
           # retry below re-stages FROM this copy, never from whatever the
-          # working tree happens to contain after a `checkout -B` reset
-          # (which deletes an already-committed file that the new base does
-          # not itself carry).
+          # working tree happens to contain after a `checkout -B` reset.
+          # The working-tree copy is then REMOVED (not merely overwritten):
+          # `git checkout -B` refuses to switch onto a target tree that
+          # would need to create a path an UNTRACKED file already occupies,
+          # which turned this exact idempotent no-op case (the same run
+          # firing again while its evidence branch already carries this
+          # record) into a red run instead of a clean one (2026-09-23
+          # fresh-final review, S2, reproduced with identical bytes).
           safe_copy="$RUNNER_TEMP/publication-evidence-record.json"
           cp "$RECORD_PATH" "$safe_copy"
+          rm -f "$RECORD_PATH"
 
-          # Every commit this workflow ever makes on an adopted branch must
-          # be exactly this identity and touch only the later-publications
-          # directory. A branch whose history fails that check is not ours
-          # to write to, however its title or prefix looks.
-          verify_branch_is_ours() {
-            local ref="$1" merge_base commit author files
-            merge_base="$(git merge-base "origin/${GITHUB_BASE_REF_OR_DEFAULT}" "$ref")" || return 1
-            for commit in $(git rev-list "${merge_base}..${ref}"); do
-              author="$(git show -s --format='%an <%ae>' "$commit")"
-              if [ "$author" != "github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>" ]; then
-                return 1
-              fi
-              files="$(git show --name-only --format= "$commit")"
-              if printf '%s\n' "$files" | grep -qv '^governance/release-publications/later/'; then
-                return 1
-              fi
-            done
-            return 0
+          random_suffix() {
+            od -An -N4 -tx1 /dev/urandom | tr -d ' \n'
+          }
+          fresh_branch_name() {
+            echo "${BRANCH_PREFIX}${RUN_ID}-$(random_suffix)"
           }
 
-          select_reusable_branch() {
+          select_candidate_branch() {
             gh pr list --state open --base "$GITHUB_BASE_REF_OR_DEFAULT" --limit 500 \
               --json number,headRefName,isCrossRepository,author \
               --jq "[.[] | select(.isCrossRepository|not) | select(.author.login==\"app/github-actions\") | select(.headRefName|startswith(\"${BRANCH_PREFIX}\"))] | sort_by(.number) | last | .headRefName // empty"
           }
 
           branch=""
-          candidate_branch="$(select_reusable_branch)"
-          if [ -n "$candidate_branch" ]; then
-            git fetch origin "$candidate_branch"
-            if verify_branch_is_ours "origin/${candidate_branch}"; then
+          candidate_branch="$(select_candidate_branch)"
+          if [ -n "$candidate_branch" ] && git fetch origin "$candidate_branch" 2>/dev/null; then
+            if verify_branch_is_ours "origin/${candidate_branch}" "origin/${GITHUB_BASE_REF_OR_DEFAULT}"; then
               branch="$candidate_branch"
             else
-              echo "::warning title=Refusing to adopt an unverified branch::${candidate_branch} matched the reserved prefix and filters but its history contains a non-bot commit or a path outside governance/release-publications/later/. Starting a fresh branch instead."
+              echo "::warning title=Refusing to adopt an unverified branch::${candidate_branch} matched the reserved prefix and filters but its history contains a non-bot commit or a path outside governance/release-publications/later/. Starting a fresh, unguessable branch instead."
             fi
           fi
           reused=true
           if [ -z "$branch" ]; then
             reused=false
-            branch="${BRANCH_PREFIX}${RUN_ID}"
+            branch="$(fresh_branch_name)"
           fi
 
           max_attempts=10
@@ -424,12 +429,23 @@ jobs:
           while [ "$landed" != true ]; do
             attempt=$((attempt + 1))
             if [ "$attempt" -gt "$max_attempts" ]; then
-              echo "::error title=Could not land publication evidence::exhausted $max_attempts attempts to push ${RECORD_PATH} onto ${branch} without a race."
+              echo "::error title=Could not land publication evidence::exhausted $max_attempts attempts to push ${RECORD_PATH} without a race."
               exit 1
             fi
 
             if [ "$reused" = true ]; then
-              git fetch origin "$branch"
+              if ! git fetch origin "$branch" 2>/dev/null || ! verify_branch_is_ours "origin/${branch}" "origin/${GITHUB_BASE_REF_OR_DEFAULT}"; then
+                # Re-verified on EVERY fetch, including this retry loop's
+                # own — never only the initial candidate lookup. A branch
+                # that no longer fetches (deleted, e.g. by an intervening
+                # merge) or no longer verifies is abandoned outright: a
+                # fresh, unguessable name is used instead, and nothing is
+                # ever built on top of unverified content.
+                echo "::warning title=Abandoning an unusable branch::${branch} could not be re-fetched or re-verified as bot-authored and path-confined. Starting a fresh, unguessable branch instead."
+                branch="$(fresh_branch_name)"
+                reused=false
+                continue
+              fi
               git checkout -B work "origin/${branch}"
             else
               git checkout -B work "origin/${GITHUB_BASE_REF_OR_DEFAULT}"
@@ -466,7 +482,7 @@ jobs:
               landed=true
             else
               cat "$RUNNER_TEMP/publication-evidence-push-error.log" >&2
-              reused=true # a fresh branch that just raced another fresh push is now a reuse candidate too
+              reused=true # re-verified again at the top of the next iteration before anything is built on it
               sleep "$(( (RANDOM % 4) + attempt ))"
             fi
           done
@@ -490,6 +506,20 @@ jobs:
             printf '%s\n' "Ref: #1346"
           } > "$body_file"
 
+          # One authoritative, freshly-looked-up PR NUMBER for the branch
+          # this run just landed on — looked up AFTER the push, not before
+          # (fresh-final review S1: a PR that merged during this run's own
+          # retry loop must never be mistaken for one still open), and
+          # filtered the same way branch adoption is (same-repository,
+          # bot-authored) before it is ever passed to `gh pr edit`.
+          open_pr="$(gh pr list --state open --base "$GITHUB_BASE_REF_OR_DEFAULT" --head "$branch" --limit 10 \
+            --json number,isCrossRepository,author \
+            --jq '[.[] | select(.isCrossRepository|not) | select(.author.login=="app/github-actions")] | first')"
+          pr_number=""
+          if [ -n "$open_pr" ] && [ "$open_pr" != "null" ]; then
+            pr_number="$(node -e 'console.log(JSON.parse(process.argv[1]).number)' "$open_pr")"
+          fi
+
           # A transient gh failure here must not permanently split the batch
           # (correctness review S3): the branch above is already pushed and
           # safe, so retry opening/updating the PR itself a few times before
@@ -501,15 +531,9 @@ jobs:
           while :; do
             gh_attempt=$((gh_attempt + 1))
             set +e
-            if [ "$reused" = true ]; then
-              pr_output="$(gh pr edit "$branch" --title "$title" --body-file "$body_file" 2>&1)"
+            if [ -n "$pr_number" ]; then
+              pr_output="$(gh pr edit "$pr_number" --title "$title" --body-file "$body_file" 2>&1)"
               pr_status=$?
-              if [ "$pr_status" -ne 0 ] && printf '%s' "$pr_output" | grep -qi "no pull requests found"; then
-                # The branch existed with no OPEN PR (S3's own failure mode
-                # from an earlier run) — open one now instead of editing.
-                pr_output="$(gh pr create --title "$title" --base "$GITHUB_BASE_REF_OR_DEFAULT" --head "$branch" --body-file "$body_file" 2>&1)"
-                pr_status=$?
-              fi
             else
               pr_output="$(gh pr create --title "$title" --base "$GITHUB_BASE_REF_OR_DEFAULT" --head "$branch" --body-file "$body_file" 2>&1)"
               pr_status=$?
@@ -524,7 +548,7 @@ jobs:
               {
                 echo "### Publication evidence pushed, PR not opened"
                 echo ""
-                echo "\`${RECORD_PATH}\` is committed on branch \`${branch}\`, but this repository does not permit GitHub Actions to open pull requests."
+                echo "\`${RECORD_PATH}\` is committed on branch \`${branch}\`, but this repository does not permit GitHub Actions to open pull requests. A human must open it from the branch below — no later trigger of this workflow can do so automatically, since branch adoption only ever considers branches that already carry an open pull request."
                 echo ""
                 echo "Open it from: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/compare/${GITHUB_BASE_REF_OR_DEFAULT}...${branch}?expand=1"
               } >> "$GITHUB_STEP_SUMMARY"
@@ -533,7 +557,7 @@ jobs:
             fi
             if [ "$gh_attempt" -ge "$gh_max_attempts" ]; then
               echo "$pr_output" >&2
-              echo "::error title=Could not open or update the publication-evidence pull request::${RECORD_PATH} is committed and pushed to ${branch}, but gh pr create/edit failed ${gh_max_attempts} times. Failing loudly rather than leaving this silent -- a later trigger will find this branch as an unmerged, PR-less evidence branch and add to it in the meantime."
+              echo "::error title=Could not open or update the publication-evidence pull request::${RECORD_PATH} is committed and pushed to ${branch}, but gh pr create/edit failed ${gh_max_attempts} times. Failing loudly rather than leaving this silent -- this branch carries no open pull request afterward, so a human must open one from it directly; a later trigger of this workflow cannot discover or adopt a branch with no open PR by design (branch adoption only ever considers already-open, bot-authored, same-repository pull requests)."
               exit "$pr_status"
             fi
             echo "$pr_output" >&2

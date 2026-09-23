@@ -1230,26 +1230,50 @@ looks for an already-open pull request whose branch carries the reserved
 `automation/publication-evidence/` prefix (never this repository's ordinary
 `claude/*` agent-branch namespace, which a plain prefix match would also
 have matched), is not from a fork, and is authored by `github-actions[bot]`
-— and independently verifies that every commit on that branch past its
-merge-base with the default branch is bot-authored and touches only
-`governance/release-publications/later/` before adding to it; a branch that
-fails that check is left alone and a fresh, uniquely named branch is used
-instead. Pushing itself is retry-safe: each trigger keeps its built record
-outside git until it lands, and retries the whole fetch/stage/commit/push
-cycle on a non-fast-forward rejection rather than assuming it is the only
-writer. Only when no open pull request exists is a new branch cut. Merging
-or closing the open pull request is what starts the next one fresh.
+— and independently verifies, via `scripts/lib/publication-evidence-
+branch.sh`'s `verify_branch_is_ours`, that every commit on that branch past
+its merge-base with the default branch is bot-authored **and** touches only
+`governance/release-publications/later/`, before adding to it. The author
+check alone is not trustworthy — any write-access actor can forge a commit's
+author identity — so path confinement is the check that actually bounds an
+adopted branch's blast radius, and it is never loosened. This verification
+runs again on every fetch inside the push-retry loop, not only at the
+initial lookup, so a branch that was legitimate a moment ago but is no
+longer (someone else pushed to it in between) is abandoned mid-retry rather
+than built on. A branch that fails verification, at any point, is abandoned
+in favor of a fresh branch named from the run's ID plus a random suffix from
+the runner's own entropy source — never a predictable name (the run ID
+alone) an attacker could pre-create ahead of time. Pushing itself is
+retry-safe: each trigger keeps its built record outside git until it lands,
+and retries the whole fetch/stage/commit/push cycle on a non-fast-forward
+rejection rather than assuming it is the only writer. Once a push lands, the
+workflow looks up the branch's open pull request fresh, by exact head branch
+and the same same-repository/bot-author filters, and edits it by NUMBER —
+never by resolving a branch name at `gh pr edit` time, which can otherwise
+resolve to an unrelated same-named fork PR or to a PR that merged during
+this very run. Only when that lookup finds nothing open is a new PR opened.
+Merging or closing the open pull request is what starts the next one fresh;
+a branch left with no open PR (for example after a transient `gh` failure)
+is not later rediscovered automatically — a human must open its PR directly
+from the branch, the same graceful-degradation shape this repository already
+uses when Actions is not permitted to open pull requests at all.
 
 This workflow requires no secret beyond the ambient `GITHUB_TOKEN`: no
 `PUBLIC_SAFETY_DENYLIST`, no npm token, nothing — the same posture
-`record-later-publication.mjs` already has when run by hand. (The token this
+`record-later-publication.mjs` already has when run by hand. The token this
 workflow's build step actually reads is deliberately named something other
-than `GITHUB_TOKEN`/`GH_TOKEN`, so it is never picked up implicitly by a
-subprocess further down the call chain that inherits its parent's
-environment by default — see `scripts/record-publication-evidence.mjs`'s own
-header.) Run `npm run check:later-publications` on the resulting pull
-request exactly as for a hand-built record; nothing about how that check
-treats a record differs by how the record was produced.
+than `GITHUB_TOKEN`/`GH_TOKEN`, so no tool that auto-detects a credential by
+exactly one of those two names picks it up implicitly — but the name alone
+does **not** keep it out of a subprocess further down the call chain: a
+child process inherits its parent's full environment by default regardless
+of what any variable in it is called. What actually closes that is
+`scripts/record-publication-evidence.mjs`'s `main()` reading the variable
+exactly once and deleting it from `process.env` immediately afterward,
+before any other work — see that script's own header for the measurement
+that found the naming-alone claim was not sufficient on its own. Run
+`npm run check:later-publications` on the resulting pull request exactly as
+for a hand-built record; nothing about how that check treats a record
+differs by how the record was produced.
 
 ### Why the name-collision check runs first, always
 

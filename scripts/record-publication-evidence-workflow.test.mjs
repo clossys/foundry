@@ -117,33 +117,67 @@ test("the batching branch prefix is reserved and distinct from this repository's
 
 test("the batching PR lookup filters on same-repository and the bot's own author, and is paginated with no default limit (security review B3; correctness review S4)", () => {
   const recordEvidence = job("record-evidence");
-  const selectFn = recordEvidence.slice(recordEvidence.indexOf("select_reusable_branch()"), recordEvidence.indexOf("branch=\"\""));
+  const selectFn = recordEvidence.slice(recordEvidence.indexOf("select_candidate_branch()"), recordEvidence.indexOf("branch=\"\""));
   assert.match(selectFn, /isCrossRepository/, "must filter out cross-repository (fork) pull requests");
   assert.match(selectFn, /author\.login==\\"app\/github-actions\\"/, "must filter to only the bot's own pull requests");
   assert.match(selectFn, /--limit 500/, "must not rely on gh pr list's default 30-result limit");
 });
 
-test("an adopted branch's history is independently verified as bot-authored and scoped to the later-publications directory before it is written to (security review B3)", () => {
+test("verify_branch_is_ours is sourced from the shared, independently-tested script — not redefined inline — and is called before every adoption, including inside the retry loop's own re-fetch (security re-review, finding B3-residual)", () => {
   const recordEvidence = job("record-evidence");
-  const verifyFn = recordEvidence.slice(recordEvidence.indexOf("verify_branch_is_ours()"), recordEvidence.indexOf("select_reusable_branch()"));
-  assert.match(verifyFn, /github-actions\[bot\] <41898282\+github-actions\[bot\]@users\.noreply\.github\.com>/);
-  assert.match(verifyFn, /\^governance\/release-publications\/later\//);
-  assert.match(recordEvidence, /Refusing to adopt an unverified branch/, "a branch that fails verification must fall back to a fresh branch, not be written to");
+  const pushStep = recordEvidence.slice(recordEvidence.indexOf("- name: Push branch"));
+  assert.match(pushStep, /source scripts\/lib\/publication-evidence-branch\.sh/);
+  // The initial candidate lookup verifies once...
+  assert.match(pushStep, /if verify_branch_is_ours "origin\/\$\{candidate_branch\}" "origin\/\$\{GITHUB_BASE_REF_OR_DEFAULT\}"; then/);
+  // ...and the retry loop's OWN fetch verifies again, every iteration — this
+  // second call site is exactly the path the security re-review found never
+  // re-checked in the earlier revision, and reproduced a real planted-branch
+  // attack against.
+  assert.match(pushStep, /\|\| ! verify_branch_is_ours "origin\/\$\{branch\}" "origin\/\$\{GITHUB_BASE_REF_OR_DEFAULT\}"; then/);
+  assert.match(pushStep, /Abandoning an unusable branch/, "a branch that fails re-verification mid-loop must be abandoned, not built on");
 });
 
-test("the push loop keeps a non-git copy of the built record and retries on conflict instead of failing outright (correctness review B1)", () => {
+test("a fresh branch name includes an unguessable random component, never just the publicly-known run id (security re-review, finding B3-residual)", () => {
+  const recordEvidence = job("record-evidence");
+  const pushStep = recordEvidence.slice(recordEvidence.indexOf("- name: Push branch"));
+  assert.match(pushStep, /random_suffix\(\)\s*\{\s*\n\s*od -An -N4 -tx1 \/dev\/urandom/, "must derive randomness from the runner's own entropy source");
+  assert.match(pushStep, /fresh_branch_name\(\)\s*\{\s*\n\s*echo "\$\{BRANCH_PREFIX\}\$\{RUN_ID\}-\$\(random_suffix\)"/, "the fresh-branch name must combine the run id with a random suffix, not the run id alone");
+  assert.doesNotMatch(pushStep, /branch="\$\{BRANCH_PREFIX\}\$\{RUN_ID\}"\s*$/m, "must never fall back to the predictable BRANCH_PREFIX+RUN_ID name alone");
+});
+
+test("the push loop keeps a non-git copy of the built record, removes the working-tree copy before the first checkout, and retries on conflict instead of failing outright (correctness review B1; fresh-final review S2)", () => {
   const recordEvidence = job("record-evidence");
   const pushStep = recordEvidence.slice(recordEvidence.indexOf("- name: Push branch"));
   assert.match(pushStep, /safe_copy="\$RUNNER_TEMP\/publication-evidence-record\.json"/);
+  assert.match(pushStep, /cp "\$RECORD_PATH" "\$safe_copy"\n\s*rm -f "\$RECORD_PATH"/, "the untracked working-tree copy must be removed before checkout -B is ever called, or a re-run whose branch already carries this record goes red instead of no-op");
   assert.match(pushStep, /max_attempts=10/);
-  assert.match(pushStep, /reused=true # a fresh branch that just raced another fresh push is now a reuse candidate too/);
 });
 
-test("a failed PR creation fails the job visibly after bounded retries, rather than silently splitting the batch (correctness review S3)", () => {
+test("PRs are edited by NUMBER, looked up fresh after the push lands — never resolved by branch name (security re-review, finding B3-residual; fresh-final review S1)", () => {
+  const recordEvidence = job("record-evidence");
+  const pushStep = recordEvidence.slice(recordEvidence.indexOf("- name: Push branch"));
+  const openPrLookupIndex = pushStep.indexOf('open_pr="$(gh pr list');
+  const loopEndIndex = pushStep.indexOf("done\n\n          record_files");
+  assert.ok(openPrLookupIndex !== -1, "expected a fresh open_pr lookup");
+  assert.ok(loopEndIndex === -1 || openPrLookupIndex > pushStep.indexOf("while [ \"$landed\" != true ]"), "the PR lookup must happen after the push loop, not before it");
+  const lookup = pushStep.slice(openPrLookupIndex, pushStep.indexOf("gh_attempt=0"));
+  assert.match(lookup, /--head "\$branch"/, "must look up by this exact branch, freshly, after the push");
+  assert.match(lookup, /isCrossRepository/);
+  assert.match(lookup, /author\.login=="app\/github-actions"/);
+  assert.doesNotMatch(pushStep, /gh pr edit "\$branch"/, "must never edit a PR by resolving branch name — a fork PR with the same head-branch name, or an already-merged PR, can both resolve that way");
+  assert.match(pushStep, /gh pr edit "\$pr_number"/, "must edit by the freshly-looked-up PR number");
+});
+
+test("a failed PR creation fails the job visibly after bounded retries, and the error message does not promise a pickup the branch-adoption lookup cannot perform (correctness review S3; fresh-final review S4)", () => {
   const recordEvidence = job("record-evidence");
   const pushStep = recordEvidence.slice(recordEvidence.indexOf("- name: Push branch"));
   assert.match(pushStep, /gh_max_attempts=3/);
   assert.match(pushStep, /::error title=Could not open or update the publication-evidence pull request/);
+  // The lookup only ever considers OPEN pull requests, so a branch left
+  // with no PR can never be rediscovered automatically — the message must
+  // say so, not promise a later trigger will "add to it".
+  assert.doesNotMatch(pushStep, /a later trigger will find this branch/i);
+  assert.match(pushStep, /a human must open one from it directly/);
 });
 
 test("idempotency is checked before any build work: an already-recorded version is a clean no-op (correctness review S2)", () => {

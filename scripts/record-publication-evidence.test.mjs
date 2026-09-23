@@ -1,9 +1,29 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { argsFrom, githubAuthenticatedFetch, recordPublicationEvidence } from "./record-publication-evidence.mjs";
+import { argsFrom, githubAuthenticatedFetch, readAndClearEnv, recordPublicationEvidence } from "./record-publication-evidence.mjs";
 
 const sourceSha = "6".repeat(40);
+
+// 2026-09-23 security re-review, N-a: renaming the token off GITHUB_TOKEN/
+// GH_TOKEN only stops auto-detection by name; a child process spawned with
+// no explicit `env` still inherits the FULL parent environment regardless
+// of what any variable in it is called (measured directly: a probe value
+// survived into an execFileSync child). What actually keeps it out of any
+// later subprocess in this same process is main() reading it exactly once
+// and deleting it immediately — this is that read-then-delete primitive,
+// tested directly rather than only by inspecting main()'s source.
+test("readAndClearEnv reads a variable once and deletes it, so a second read finds nothing", () => {
+  const env = { PUBLICATION_EVIDENCE_GITHUB_TOKEN: "probe-value", OTHER: "untouched" };
+  const value = readAndClearEnv("PUBLICATION_EVIDENCE_GITHUB_TOKEN", env);
+  assert.equal(value, "probe-value");
+  assert.equal(Object.hasOwn(env, "PUBLICATION_EVIDENCE_GITHUB_TOKEN"), false);
+  assert.equal(env.OTHER, "untouched");
+
+  // A variable that was never set reads as undefined and deleting an
+  // already-absent key is a harmless no-op.
+  assert.equal(readAndClearEnv("NEVER_SET", env), undefined);
+});
 
 test("argsFrom parses exactly the four required flags and rejects everything else", () => {
   assert.deepEqual(
@@ -118,7 +138,13 @@ test("recordPublicationEvidence refuses a manifest with no name/version before m
   );
 });
 
-test("recordPublicationEvidence never writes a record when verifyProvenance and the replay fallback both refuse", async () => {
+// 2026-09-23 fresh-final review, B1: a provenance failure must never reach
+// EITHER createRecord call — not the direct join, and not the replay
+// fallback either. findArtifact/createRecord below are not called at all;
+// if they were, they would throw and (before this fix) that throw would
+// have been swallowed into a "replay also failed" message that hid the
+// real, more serious defect.
+test("recordPublicationEvidence never writes a record, and never reaches either join, when verifyProvenance refuses", async () => {
   const writeOutput = () => {};
   const fetchImpl = async (url) => {
     if (url === "https://registry.npmjs.org/%40clossys%2Fstrategist") {
@@ -139,9 +165,9 @@ test("recordPublicationEvidence never writes a record when verifyProvenance and 
       writeOutput,
       makeTempDir: () => "/tmp/publication-evidence-test-2",
       verifyProvenance: async () => { throw new Error("attestation does not corroborate this run"); },
-      findArtifact: async () => { throw new Error("no such artifact"); },
-      createRecord: async () => { throw new Error("must not be called — findArtifact fails before either path reaches it"); },
+      findArtifact: async () => { throw new Error("must not be called — provenance never passed"); },
+      createRecord: async () => { throw new Error("must not be called — provenance never passed"); },
     }),
-    /direct publication evidence failed.*replay fallback could not locate the qualified-candidate artifact/s,
+    /attestation does not corroborate this run/,
   );
 });
