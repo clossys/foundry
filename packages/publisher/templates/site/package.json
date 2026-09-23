@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@clossys/designer": "^0.4.12",
-    "@clossys/publisher": "^0.5.0",
+    "@clossys/publisher": "^0.6.0",
     "next": "^15.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"

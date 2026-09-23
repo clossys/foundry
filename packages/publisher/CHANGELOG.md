@@ -5,6 +5,33 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.6.0] - 2026-09-23
+
+### Added
+
+- `@clossys/publisher/materials`: the materials mini-site (#1206) —
+  `renderMaterialsIndexHtml` (the browsable index, from the pack
+  manifest), `selectAudienceVariant`/`declaredAudiences` (one source
+  deck, filtered to declared per-slide audience selections),
+  `renderPitchDeckHtml` (wraps `renderSlidesDeck`'s own rendered SVG
+  slides into a self-contained HTML deck with keyboard navigation and the
+  shared print stylesheet), `materialsPrintStylesheet`, and
+  `checkMaterialsVisibility`/`MATERIALS_DEFAULT_VISIBILITY` (materials
+  are internal by default; committing one to a public repository
+  publishes it, and this is the refusal check for that).
+- `@clossys/publisher/templates`: the pack's default templates and
+  channel spec registry (#1207) — company overview and pitch deck
+  defaults, an email signature builder (HTML and plain text),
+  `SOCIAL_CHANNEL_SPECS`/`getSocialChannelSpec` (LinkedIn, X, Instagram,
+  Facebook, YouTube, TikTok, GitHub), `OG_SHARE_CARD_SPEC`,
+  `VIDEO_CALL_BACKGROUND_SPECS`/`getVideoCallBackgroundSpec` (Zoom,
+  Google Meet, Microsoft Teams), and `staleChannelSpecEntries` for
+  periodic re-verification.
+- `templates/site/`: a Next.js App Router template for `apps/site`
+  (#1208), shipped in the published tarball (`files` now includes
+  `templates`) but not built, typechecked, or tested by this
+  repository's own workspace.
+
 ## [0.5.0] - 2026-09-22
 
 ### Fixed
