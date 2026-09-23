@@ -20,8 +20,9 @@ import type { AdvisorFinding } from "./types.js";
  * work may carry no local copy of a shared definition once that
  * definition is on `main`): `AdvisorPlanBlocker` is field-for-field the
  * same shape as the Controller role's own `Blocker` record, defined for
- * issue #1237 in Controller's own loop module (its shared contract is
- * `docs/contracts/loop.json`, not yet in this repository's tree) --
+ * issue #1237 in Controller's own loop module (its shared contract,
+ * `docs/contracts/loop.json`, is a real file in this repository's tree
+ * but does not ship with this package) --
  * `capabilityId`, `kind`, `owner`, `nextAction: { who, how, byWhen }`,
  * `since` -- so `clossys/advisor/plan.json`'s blocker records and
  * `clossys/<role>/loop.json`'s are the same shape read two ways, never
@@ -34,12 +35,15 @@ import type { AdvisorFinding } from "./types.js";
  * owner-per-kind mapping, so this file has nothing further to keep in
  * sync if Controller's own mapping ever changes.
  *
- * `docs/contracts/loop.json` is not yet in this repository's `main` (it
- * ships with #1237, still open) or on this branch, so the check below
- * cannot read it directly and instead checks the shape #1237's PR
- * verified against the real file. Once #1237 lands, this should be
- * replaced with a direct read of `docs/contracts/loop.json` -- tracked
- * in the #1175 plan-file-contract follow-up.
+ * #1237 has since landed on `main` (the loop engine, issues
+ * #1195/#1194/#1228), so `docs/contracts/loop.json` now exists in this
+ * repository's tree -- but it is not shipped with this package (it is
+ * not part of `packages/advisor`'s own `files` allowlist), so the check
+ * below still cannot read it from an installed copy and instead checks
+ * the shape against the literal fields above. Replacing this with a
+ * build- or test-time structural comparison against the real,
+ * not-shipped `docs/contracts/loop.json` remains open, tracked in the
+ * #1175 plan-file-contract follow-up.
  */
 
 /** Reuses #1195's own five blocker kinds verbatim, so a later migration to loop.json is a rename, not a redesign. */
