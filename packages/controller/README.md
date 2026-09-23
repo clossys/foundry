@@ -202,6 +202,90 @@ resolves each one to its `PackStatusLifecyclePosition`: `in-review` is
 `published` is `verified`, sealed and live; the other three map onto the
 identically-named state with no extra meaning.
 
+### The loop engine: `sense` / `judge` / `act` / `verify` / `learn` (issue #1195)
+
+One pure implementation of the loop every role runs, installed in every
+staffed repository as an exact dev dependency. Roles declare data -- their
+own `clossys/<role>/loop.json` -- and this package runs them: per issue
+#1187's own "who does what" split, packages own definition, judgment, and
+deterministic mechanics, and this engine is the deterministic-mechanics
+half. `LOOP_STAGES` (typed `LoopStage`) is the fixed five: `sense`,
+`judge`, `act`, `verify`, `learn` -- `learn` was named `learnOrEscalate`
+before issue #1194's rename; escalation is one of learn's own outcomes,
+handing an unresolved problem to the enclosing loop, not a separate stage.
+Every role is invoked with `loop` (`/clossys-<role> loop` in Claude Code,
+`@clossys-<role> loop` in Cursor); one invocation runs one iteration and
+stops at the approval gate inside `judge`.
+
+**Triggers.** `TRIGGER_KINDS` (typed `TriggerKind`) names what can change --
+`inputs-changed`, `role-changed`, `freshness-window`, `review-window`,
+`outcome-missed`, `client-request` -- and `reentryStageForTrigger(trigger)`
+/ `reentryScopeForTrigger(trigger)` (`TRIGGER_SCOPES`, typed
+`TriggerScope`) are the fixed, total maps from each one to where the loop
+re-enters and how much of the role's own capability set that touches. A
+freshness window re-enters at `judge` (the evidence might be stale;
+re-decide before acting on it); a review window re-enters at `learn` (it is
+time to adapt or close). `isTriggerKind(value)` narrows an unknown value.
+
+**Blockers.** `BLOCKER_KINDS` (typed `BlockerKind`) is the fixed five --
+`missing-input`, `missing-authority`, `failing-evidence`,
+`unavailable-environment`, `contradiction` -- each with exactly one owner
+in `BLOCKER_OWNERS`. `blockerFor(capabilityId, kind, nextAction, since)`
+builds one `Blocker` record with its owner always derived from `kind`, never
+caller-assigned. `isBlockerOverdue(blocker, now?)` and
+`overdueBlockers(blockers, now?)` are the escalation check: an unparseable
+`nextAction.byWhen` counts as already overdue, never as on schedule. A
+blocked capability's own state never touches another capability's --
+blocking is per capability, so the rest of a role's loop keeps running.
+
+**Staleness.** `fingerprintInputs(inputs)` (each a `FingerprintInput`) hashes
+every supplied input's content into a `Fingerprint` (path -> sha256 digest,
+reusing this package's own content-addressed primitive from `./policy`
+rather than a second hashing scheme). `isStale(recorded, current)` is a
+deterministic comparison over two fingerprints -- a changed digest, a
+dropped path, or an added path are all staleness. `changedInputs(recorded,
+current)` names exactly which paths changed. `affectedCapabilities(changedPaths,
+capabilityInputPaths)` is change propagation: only a capability that
+declared a changed path as its own input is ever affected by it.
+
+**Artifact operations.** `isOwnedByRole(role, path)` is the one boundary
+every operation below shares: a path must fall under that role's own
+`clossys/<role>/` folder. `planCreateOrUpdate(input)` returns a
+`CreateOrUpdatePlan` (or a `RefusedPlan` for a path outside the role's own
+folder) -- an update whose file no longer matches this role's own last
+write comes back `requiresMerge: true`, the mechanism behind "a human's
+edit is detected by fingerprint and merged, never overwritten."
+`planMove(input)` returns a `MovePlan` naming every other file whose
+content cites the old path, so a move's references are fixed in the same
+pull request. `planSupersede(input)` returns a `SupersedePlan`: a new entry
+is added, the superseded one is named, nothing is proposed for deletion.
+`planRetire(input)` returns a `RetirePlan` only when the path is one the
+role's own manifest lists as an output and nothing depends on it; a listed
+path with a live dependent comes back `blocked` (a `BlockedRetirePlan`
+naming every dependent), and an unlisted path is refused outright rather
+than guessed at. Every planning function only ever computes what should
+change from already-read state; none of them write a file or open a pull
+request -- that is the coding agent's own work, applying an approved plan,
+the same boundary `@clossys/launcher` already draws for composing skills.
+
+**State and status.** `validateLoopState(value)` validates a parsed
+`clossys/<role>/loop.json` document (a `LoopState`, keyed by capability id
+to a `LoopCapabilityState`) and returns every `LoopStateFinding`;
+`isValidLoopState(value)` narrows. `resumeStage(capability)` returns a
+capability's own recorded `stage` exactly as written -- an interrupted run
+resumes from disk, never from re-derived or guessed position.
+`renderStatusDocument(role, sections)` is the generic five-section
+renderer -- `StatusSections`: Mandate / Where we are / Recommended next /
+Decisions / Blockers, in that fixed order -- deliberately decoupled from
+`LoopState` so the Advisor lane's own parallel `STATUS document` (written in the
+same wave, with the same five sections) stays compatible with this
+renderer taking it over later. `renderLoopStatus(role, state, mandate,
+now?)` is this package's own use of it, building those five section bodies
+from one role's loop state. The installed `foundry-loop-status
+<loop.json> <mandate.txt> [--out <STATUS document path>]` executable is the CLI
+form, on the same `0` / `2` ternary as this package's other gates (there is
+no `1`: a report is rendered or it is not).
+
 ### First-day onboarding: discovering and invoking role-owned assessments
 
 One parameterized workflow that **discovers and invokes role-owned
@@ -2173,6 +2257,19 @@ mismatch (or another binding finding), `2` when it could not run. Use
 | `PACKAGE_LIFECYCLE_VERSION` | constant | Supported lifecycle schema version, currently `1`. |
 | `LIFECYCLE_STATES` / `LIFECYCLE_CONDITIONS` | constants | The one lifecycle vocabulary (issue #1228) every capability and pack item passes through: six states (`LifecycleState`) and three shared conditions (`LifecycleCondition`). Mirrored word for word by this repository's own canonical lifecycle contract. |
 | `PACK_STATUSES` / `packStatusToLifecycle(status)` | constant / function | The pack item status vocabulary (`PackStatus`) and its fixed mapping onto the lifecycle above -- `in-review` to `draft` with a pending judgment, `kept` to `approved`, `published` to `verified` -- returned as a `PackStatusLifecyclePosition`. |
+| `LOOP_STAGES` | constant | The loop engine's fixed five stages (issue #1195), typed `LoopStage`: `sense`, `judge`, `act`, `verify`, `learn`. |
+| `TRIGGER_KINDS` / `TRIGGER_SCOPES` | constants | What can re-enter the loop (`TriggerKind`) and how much of a role's capability set that touches (`TriggerScope`). |
+| `reentryStageForTrigger(trigger)` / `reentryScopeForTrigger(trigger)` / `isTriggerKind(value)` | functions | The fixed, total trigger -> stage and trigger -> scope maps, and a type guard over `TriggerKind`. |
+| `BLOCKER_KINDS` / `BLOCKER_OWNERS` | constants | The loop engine's five blocker kinds (`BlockerKind`) and their one fixed owner each. |
+| `blockerFor(capabilityId, kind, nextAction, since)` | function | Builds one `Blocker` record (`NextAction`) with its owner always derived from `kind`. |
+| `isBlockerOverdue(blocker, now?)` / `overdueBlockers(blockers, now?)` | functions | The escalation check: whether one blocker is past its own due date, and which of a list are. |
+| `fingerprintInputs(inputs)` / `isStale(recorded, current)` / `changedInputs(recorded, current)` | functions | Content-addressed input fingerprinting (`FingerprintInput`, `Fingerprint`), staleness as a deterministic comparison, and exactly which paths changed. |
+| `affectedCapabilities(changedPaths, capabilityInputPaths)` | function | Change propagation: only a capability that declared a changed path as its own input is affected by it. |
+| `isOwnedByRole(role, path)` | function | The one folder boundary every artifact operation below shares. |
+| `planCreateOrUpdate(input)` / `planMove(input)` / `planSupersede(input)` / `planRetire(input)` | functions | Pure artifact-operation planning (issue #1195): create/update with human-edit merge detection (`CreateOrUpdatePlan`), move with every citing reference named (`MovePlan`), append-only supersession (`SupersedePlan`), and manifest- and dependent-checked retirement (`RetirePlan` / `BlockedRetirePlan`), each refusing outside the role's own folder as a `RefusedPlan`. |
+| `validateLoopState(value)` / `isValidLoopState(value)` | functions | Validates a parsed `clossys/<role>/loop.json` document (`LoopState`, `LoopCapabilityState`) and returns every `LoopStateFinding`. |
+| `resumeStage(capability)` | function | A capability's own recorded stage, read back exactly -- how an interrupted run resumes from disk. |
+| `renderStatusDocument(role, sections)` / `renderLoopStatus(role, state, mandate, now?)` | functions | The generic five-section `STATUS document` renderer (`StatusSections`: Mandate / Where we are / Recommended next / Decisions / Blockers) and this package's own use of it over a `LoopState`. |
 | `planNewPackage(input)` | function | Returns a deterministic, no-write private starter or repository-profiled package plan. |
 | `validatePackageLifecycle(value)` | function | Purely validates a lifecycle document without workspace I/O. |
 | `evaluateLifecycleCoverage(value, packageNames, packageVersions?)` | function | Validates a lifecycle document, checks it names exactly the supplied packages, and — when `packageVersions` is supplied — flags a terminal entry whose declared `replacement.range` no longer covers the replacement's actual version. |

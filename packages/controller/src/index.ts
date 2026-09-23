@@ -20,6 +20,47 @@ export type {
   PackStatus,
   PackStatusLifecyclePosition,
 } from "./loop/lifecycle.js";
+
+// The loop engine (issue #1195): the one sense -> judge -> act -> verify ->
+// learn loop every role runs, and the per-role clossys/<role>/loop.json
+// state it is re-entrant over. Root-exported for the same canary-matrix
+// reason as the lifecycle vocabulary directly above -- see that comment.
+export { LOOP_STAGES, TRIGGER_KINDS, TRIGGER_SCOPES, BLOCKER_KINDS, BLOCKER_OWNERS } from "./loop/types.js";
+export type {
+  LoopStage,
+  TriggerKind,
+  TriggerScope,
+  BlockerKind,
+  NextAction,
+  Blocker,
+  Decision,
+  Fingerprint,
+  LoopCapabilityState,
+  LoopState,
+} from "./loop/types.js";
+export { reentryStageForTrigger, reentryScopeForTrigger, isTriggerKind } from "./loop/triggers.js";
+export { blockerFor, isBlockerOverdue, overdueBlockers } from "./loop/blockers.js";
+export { fingerprintInputs, isStale, changedInputs, affectedCapabilities } from "./loop/staleness.js";
+export type { FingerprintInput } from "./loop/staleness.js";
+export {
+  isOwnedByRole,
+  planCreateOrUpdate,
+  planMove,
+  planSupersede,
+  planRetire,
+} from "./loop/artifacts.js";
+export type {
+  CreateOrUpdatePlan,
+  RefusedPlan,
+  MovePlan,
+  SupersedePlan,
+  RetirePlan,
+  BlockedRetirePlan,
+} from "./loop/artifacts.js";
+export { validateLoopState, isValidLoopState, resumeStage } from "./loop/state.js";
+export type { LoopStateFinding } from "./loop/state.js";
+export { renderStatusDocument, renderLoopStatus } from "./loop/status.js";
+export type { StatusSections } from "./loop/status.js";
 export type {
   DeclaredRule,
   GovernedPreflightOptions,

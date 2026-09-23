@@ -72,5 +72,9 @@
   "lifecycle": {
     "$ref": "./lifecycle.json",
     "$comment": "The one lifecycle vocabulary for every capability and pack item (issue #1228), exported in code as packages/controller/src/loop/lifecycle.ts. Not itself a `fields` entry -- no manifest key declares it -- because it is the shared state model the loop engine (docs/contracts/loop.json, issue #1195) and pack items (issue #1204) each specialize, not a per-role declaration."
+  },
+  "loop": {
+    "$ref": "./loop.json",
+    "$comment": "The loop engine (issue #1195): one sense -> judge -> act -> verify -> learn loop every role runs, implemented once in @clossys/controller (packages/controller/src/loop/*). Not a fields entry -- no manifest key declares it -- because every active role runs the same engine; there is nothing role-specific to declare here beyond the outputs/feeds this contract already covers."
   }
 }
