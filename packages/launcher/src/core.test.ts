@@ -8,6 +8,7 @@ import {
   CONSUMER_AGENTS_MD,
   LEGACY_CONSUMER_AGENTS_MD,
   applyWorkspacePlan,
+  cloneMissingInventoryRepositories,
   checkInventoryEntries,
   formatHubHealth,
   hasAdvisorPin,
@@ -1006,5 +1007,54 @@ describe("observeWorkspace", () => {
     expect(seen.cwd.githubOwner).toBe("acme");
     expect(seen.cwd.inventory).toEqual({ status: "missing", count: 0 });
     expect(seen.advisorVersion).toBe("0.2.6");
+  });
+});
+
+describe("cloneMissingInventoryRepositories (#1179)", () => {
+  it("clones exactly the inventory ids that resolveSisterCloneTargets skipped for 'not beside the hub', and reports the clone path", () => {
+    const directory = tempDir();
+    mkdirSync(join(directory, ".git"));
+    writeInventory(directory, [{ id: "app" }]);
+    const siblingPath = join(dirname(directory), "app");
+    const outcomes = cloneMissingInventoryRepositories(
+      host(directory, {
+        [`gh repo clone acme/app ${siblingPath}`]: { status: 0, stdout: "Cloning...\n", stderr: "" },
+      }),
+      directory,
+      "acme",
+    );
+    expect(outcomes).toEqual([{ inventoryId: "app", result: "cloned", note: `cloned to ${siblingPath}` }]);
+  });
+
+  it("never attempts a clone for an id skipped for a DIFFERENT reason (wrong account)", () => {
+    const directory = tempDir();
+    mkdirSync(join(directory, ".git"));
+    writeInventory(directory, [{ id: "other-org/app" }]);
+    const outcomes = cloneMissingInventoryRepositories(host(directory, {}), directory, "acme");
+    expect(outcomes).toEqual([{ inventoryId: "other-org/app", result: "skipped-other-reason", note: "other account; not this roster" }]);
+  });
+
+  it("reports failed, not thrown, when gh repo clone itself fails", () => {
+    const directory = tempDir();
+    mkdirSync(join(directory, ".git"));
+    writeInventory(directory, [{ id: "app" }]);
+    const siblingPath = join(dirname(directory), "app");
+    const outcomes = cloneMissingInventoryRepositories(
+      host(directory, {
+        [`gh repo clone acme/app ${siblingPath}`]: { status: 1, stdout: "", stderr: "repository not found" },
+      }),
+      directory,
+      "acme",
+    );
+    expect(outcomes).toEqual([
+      { inventoryId: "app", result: "failed", note: "gh repo clone exited 1: repository not found" },
+    ]);
+  });
+
+  it("an inventory with nothing to clone (already sibling-present, or empty) returns an empty array, not a throw", () => {
+    const directory = tempDir();
+    mkdirSync(join(directory, ".git"));
+    writeInventory(directory, []);
+    expect(cloneMissingInventoryRepositories(host(directory, {}), directory, "acme")).toEqual([]);
   });
 });

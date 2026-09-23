@@ -993,6 +993,55 @@ function resolveSisterCloneTargets(
   return { targets, skipped };
 }
 
+export interface CloneMissingOutcome {
+  readonly inventoryId: string;
+  readonly result: "cloned" | "skipped-other-reason" | "failed";
+  readonly note: string;
+}
+
+/**
+ * Explicit, approved action (#1179, the #1045 pattern): clones every
+ * inventoried repository that resolveSisterCloneTargets's own skip pass
+ * identified as "just needs a clone" (CLONE_NOT_BESIDE_HUB_NOTE), and only
+ * those -- every other skip reason (wrong account, foundry supplier tree,
+ * origin mismatch, invalid slug) is left exactly as skipped, never
+ * attempted. Never called from resume's default path; only from the
+ * --clone-missing flag. Reverses the launcher README's own no-clone
+ * default for exactly this one approved action.
+ */
+export function cloneMissingInventoryRepositories(
+  host: WorkspaceHost,
+  hubDirectory: string,
+  hubOwner: string,
+): readonly CloneMissingOutcome[] {
+  const { skipped } = resolveSisterCloneTargets(host, hubDirectory, hubOwner);
+  const parent = dirname(resolve(hubDirectory));
+  const outcomes: CloneMissingOutcome[] = [];
+  for (const skip of skipped) {
+    if (skip.note !== CLONE_NOT_BESIDE_HUB_NOTE) {
+      outcomes.push({ inventoryId: skip.inventoryId, result: "skipped-other-reason", note: skip.note });
+      continue;
+    }
+    const parsed = parseInventoryRepositoryId(skip.inventoryId, hubOwner);
+    if (parsed === null) {
+      outcomes.push({ inventoryId: skip.inventoryId, result: "failed", note: "inventory id is not a valid repository slug" });
+      continue;
+    }
+    const siblingPath = join(parent, parsed.repository);
+    const result = host.run("gh", ["repo", "clone", `${hubOwner}/${parsed.repository}`, siblingPath]);
+    if (result.status === 0) {
+      outcomes.push({ inventoryId: skip.inventoryId, result: "cloned", note: `cloned to ${siblingPath}` });
+    } else {
+      outcomes.push({
+        inventoryId: skip.inventoryId,
+        result: "failed",
+        note: `gh repo clone exited ${result.status ?? "null"}: ${result.stderr.trim() || "no stderr"}`,
+      });
+    }
+  }
+  return outcomes;
+}
+
 function hubRosterId(host: WorkspaceHost, hubDirectory: string, hubOwner: string, hubRepository: string): string {
   const document = readHub(host, hubDirectory);
   if (document !== undefined) return document.repository;

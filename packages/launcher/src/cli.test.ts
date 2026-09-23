@@ -146,4 +146,48 @@ describe("launcher CLI", () => {
     expect(existsSync(join(directory, WORKSPACE_MARKER_REL))).toBe(true);
     expect(String(log.mock.calls[0]?.[0])).toContain("moved hub state from .clossys to clossys/.state");
   });
+
+  it("--clone-missing is only valid on resume, refused elsewhere (before any write happens)", () => {
+    const directory = mkdtempSync(join(tmpdir(), "launcher-clone-missing-create-"));
+    roots.push(directory);
+    const err = vi.spyOn(console, "error").mockImplementation(() => {});
+    const code = main(
+      ["--clone-missing"],
+      host(directory, {
+        "gh --version": { status: 0, stdout: "gh 2.0.0\n", stderr: "" },
+        "git --version": { status: 0, stdout: "git 2.0.0\n", stderr: "" },
+        "gh api user --jq .login": { status: 0, stdout: "acme\n", stderr: "" },
+        "gh org list": { status: 0, stdout: "", stderr: "" },
+        "gh repo view acme/workspace --json name": { status: 1, stdout: "", stderr: "not found" },
+        "npm view @clossys/advisor version": { status: 0, stdout: "0.2.6\n", stderr: "" },
+      }),
+      skeletonRoot,
+    );
+    expect(code).toBe(1);
+    expect(String(err.mock.calls[0]?.[0])).toMatch(/only valid on an already-appointed hub/);
+  });
+
+  it("--clone-missing on resume clones each inventoried id not yet sitting beside the hub, and reports it", () => {
+    const directory = mkdtempSync(join(tmpdir(), "launcher-clone-missing-resume-"));
+    roots.push(directory);
+    mkdirSync(dirname(join(directory, WORKSPACE_MARKER_REL)), { recursive: true });
+    writeFileSync(
+      join(directory, WORKSPACE_MARKER_REL),
+      `${JSON.stringify({ schemaVersion: 1, kind: "account-hub", owner: "acme", repository: "acme/hub" }, null, 2)}\n`,
+    );
+    const inventoryPath = join(dirname(join(directory, WORKSPACE_MARKER_REL)), "inventory.json");
+    writeFileSync(inventoryPath, `${JSON.stringify({ schemaVersion: 1, repositories: [{ id: "app" }] }, null, 2)}\n`);
+    const siblingPath = join(dirname(directory), "app");
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const code = main(
+      ["--clone-missing"],
+      host(directory, {
+        [`gh repo clone acme/app ${siblingPath}`]: { status: 0, stdout: "Cloning...\n", stderr: "" },
+      }),
+      skeletonRoot,
+    );
+    expect(code).toBe(0);
+    const logged = log.mock.calls.map((call) => String(call[0])).join("\n");
+    expect(logged).toContain("clone-missing (app): cloned");
+  });
 });
