@@ -116,12 +116,25 @@ test("ADVERSARIAL isPackageManifestVersionOnlyChange: a brand-new dependency ent
   assert.equal(isPackageManifestVersionOnlyChange(CONSUMER_BASE, consumerHeadWithRange("^0.10.0", { "@x/evil": "^1.0.0" }), bumped), false);
 });
 
-// ADVERSARIAL (widened rule): a devDependencies change
-test("ADVERSARIAL isPackageManifestVersionOnlyChange: the identical rewrite in devDependencies (not one of the three allowed fields) fails", () => {
+// devDependencies now gets the identical exception too (decision + fix,
+// re-review, https://github.com/clossys/foundry/pull/1353#issuecomment-5803457726
+// item 3) -- for a package that IS bumped for its own reason, a
+// devDependencies rewrite to exactly ^<the proven new version> is allowed
+// the same way dependencies/peerDependencies/optionalDependencies already are.
+test("isPackageManifestVersionOnlyChange: the identical rewrite in devDependencies, alongside the package's OWN version bump, now passes too", () => {
   const bumped = { "@x/core": "0.10.0" };
   const base = JSON.stringify({ name: "@x/consumer", version: "1.0.0", devDependencies: { "@x/core": "^0.9.0" } });
   const head = JSON.stringify({ name: "@x/consumer", version: "1.0.1", devDependencies: { "@x/core": "^0.10.0" } });
-  assert.equal(isPackageManifestVersionOnlyChange(base, head, bumped), false);
+  assert.equal(isPackageManifestVersionOnlyChange(base, head, bumped), true);
+});
+
+// ADVERSARIAL: the SAME devDependencies rewrite is still refused when
+// nothing proves @x/core was really bumped -- devDependencies is subject
+// to the identical isAllowedDependencyRangeChange() rule, not unconditionally allowed.
+test("ADVERSARIAL isPackageManifestVersionOnlyChange: a devDependencies rewrite for a package this diff never proved was bumped still fails", () => {
+  const base = JSON.stringify({ name: "@x/consumer", version: "1.0.0", devDependencies: { "@x/core": "^0.9.0" } });
+  const head = JSON.stringify({ name: "@x/consumer", version: "1.0.1", devDependencies: { "@x/core": "^0.10.0" } });
+  assert.equal(isPackageManifestVersionOnlyChange(base, head), false); // no bumpedVersionsByName argument at all
 });
 
 // ADVERSARIAL (widened rule): a removed dependency
@@ -158,6 +171,45 @@ test("isChangelogPureNewSection: a clean single new section at the top, matching
 test("isChangelogPureNewSection: a brand-new file (no base) passes when it opens with the expected version heading, after the title line", () => {
   const head = "# Changelog\n\n## 0.1.0 - 2026-09-22\n\n- First release.\n";
   assert.equal(isChangelogPureNewSection(null, head, "0.1.0"), true);
+});
+
+// A CHANGELOG with a title but no version headings yet is the SAME "no
+// heading" case as a brand-new file, not a split-point mismatch (fix,
+// re-review, https://github.com/clossys/foundry/pull/1353#issuecomment-5803457726
+// item 5). Every one of these matches what scripts/apply-release-
+// changesets.mjs's own prependChangelogEntry() actually produces for the
+// SAME base -- these are producer OUTPUT shapes, not hand-picked to pass.
+test("isChangelogPureNewSection: a title-only base with no releases yet, ending in a single newline, passes with the producer's real output", () => {
+  const base = "# Changelog\n";
+  const head = "# Changelog\n\n## 1.0.1 - 2026-09-24\n\n- Fix a bug.\n";
+  assert.equal(isChangelogPureNewSection(base, head, "1.0.1"), true);
+});
+
+test("isChangelogPureNewSection: a title-only base with NO trailing newline at all passes with the producer's real output", () => {
+  const base = "# Changelog";
+  const head = "# Changelog\n\n## 1.0.1 - 2026-09-24\n\n- Fix a bug.\n";
+  assert.equal(isChangelogPureNewSection(base, head, "1.0.1"), true);
+});
+
+test("isChangelogPureNewSection: a title-only base with EXTRA trailing blank lines passes with the producer's real output", () => {
+  const base = "# Changelog\n\n\n";
+  const head = "# Changelog\n\n## 1.0.1 - 2026-09-24\n\n- Fix a bug.\n";
+  assert.equal(isChangelogPureNewSection(base, head, "1.0.1"), true);
+});
+
+// ADVERSARIAL: the title-only, no-heading case must stay exactly as
+// strict as the with-heading case about everything BUT trailing
+// whitespace -- a rewritten title, or a duplicate heading, still fails.
+test("ADVERSARIAL isChangelogPureNewSection: a title-only base whose title line itself was rewritten (not just trailing whitespace) still fails", () => {
+  const base = "# Changelog\n";
+  const head = "# Change Log\n\n## 1.0.1 - 2026-09-24\n\n- Fix a bug.\n"; // title text itself altered
+  assert.equal(isChangelogPureNewSection(base, head, "1.0.1"), false);
+});
+
+test("ADVERSARIAL isChangelogPureNewSection: a title-only base with the wrong version heading still fails", () => {
+  const base = "# Changelog\n";
+  const head = "# Changelog\n\n## 9.9.9 - 2026-09-24\n\n- Fix a bug.\n";
+  assert.equal(isChangelogPureNewSection(base, head, "1.0.1"), false);
 });
 
 test("isChangelogPureNewSection: no growth at all fails", () => {
@@ -240,12 +292,20 @@ function lockWithAlphaBumped(version) {
   return JSON.stringify(parsed);
 }
 
-test("isLockfilePureVersionBump: an UNCHANGED tree (head identical to base) passes", () => {
-  assert.equal(isLockfilePureVersionBump(LOCK_BASE, LOCK_BASE, ["alpha"]), true);
+// The manifest cross-check data (re-review, https://github.com/clossys/foundry/pull/1353#issuecomment-5803457726)
+// matching a legitimate "@clossys/alpha" 1.0.0 -> 1.0.1 bump with no
+// dependency fields of its own (LOCK_BASE's own "packages/alpha" entry
+// carries none) -- reused across every test below so each one keeps
+// isolating the SPECIFIC defect it names, rather than incidentally also
+// tripping the (independent) lockfile-vs-manifest cross-check.
+const ALPHA_BUMPED_MANIFEST = { "@clossys/alpha": { version: "1.0.1" } };
+
+test("isLockfilePureVersionBump: an UNCHANGED tree (head identical to base), with nothing claimed bumped, passes", () => {
+  assert.equal(isLockfilePureVersionBump(LOCK_BASE, LOCK_BASE, []), true);
 });
 
 test("isLockfilePureVersionBump: a legitimate bump (only the bumped workspace package's version changes) passes", () => {
-  assert.equal(isLockfilePureVersionBump(LOCK_BASE, lockWithAlphaBumped("1.0.1"), ["alpha"]), true);
+  assert.equal(isLockfilePureVersionBump(LOCK_BASE, lockWithAlphaBumped("1.0.1"), ["alpha"], {}, ALPHA_BUMPED_MANIFEST), true);
 });
 
 test("isLockfilePureVersionBump: a legitimate bump where the matching node_modules link entry ALSO records a version passes", () => {
@@ -255,7 +315,7 @@ test("isLockfilePureVersionBump: a legitimate bump where the matching node_modul
   head.packages["packages/alpha"].version = "1.0.1";
   head.packages["node_modules/@clossys/alpha"].version = "1.0.1";
   head.packages["node_modules/@clossys/alpha"].resolved = "packages/alpha";
-  assert.equal(isLockfilePureVersionBump(JSON.stringify(base), JSON.stringify(head), ["alpha"]), true);
+  assert.equal(isLockfilePureVersionBump(JSON.stringify(base), JSON.stringify(head), ["alpha"], {}, ALPHA_BUMPED_MANIFEST), true);
 });
 
 // ADVERSARIAL (fix 1): a resolved/integrity tamper
@@ -263,14 +323,14 @@ test("ADVERSARIAL isLockfilePureVersionBump: a tampered resolved/integrity field
   const base = JSON.parse(LOCK_BASE);
   const head = JSON.parse(lockWithAlphaBumped("1.0.1"));
   head.packages["node_modules/foo"].resolved = "https://evil.example/foo.tgz";
-  assert.equal(isLockfilePureVersionBump(JSON.stringify(base), JSON.stringify(head), ["alpha"]), false);
+  assert.equal(isLockfilePureVersionBump(JSON.stringify(base), JSON.stringify(head), ["alpha"], {}, ALPHA_BUMPED_MANIFEST), false);
 });
 
 test("ADVERSARIAL isLockfilePureVersionBump: a tampered resolved/integrity field on the BUMPED workspace entry itself also fails (only version may change there)", () => {
   const base = JSON.parse(LOCK_BASE);
   const head = JSON.parse(lockWithAlphaBumped("1.0.1"));
   head.packages["packages/alpha"].license = "GPL-3.0"; // not a version change, and not even a real resolved/integrity field on a workspace entry -- any non-version field changing is the point
-  assert.equal(isLockfilePureVersionBump(JSON.stringify(base), JSON.stringify(head), ["alpha"]), false);
+  assert.equal(isLockfilePureVersionBump(JSON.stringify(base), JSON.stringify(head), ["alpha"], {}, ALPHA_BUMPED_MANIFEST), false);
 });
 
 // ADVERSARIAL (fix 1): an added dependency
@@ -278,7 +338,7 @@ test("ADVERSARIAL isLockfilePureVersionBump: an added dependency (a whole new pa
   const base = JSON.parse(LOCK_BASE);
   const head = JSON.parse(lockWithAlphaBumped("1.0.1"));
   head.packages["node_modules/evil"] = { version: "9.9.9", resolved: "https://registry.npmjs.org/evil/-/evil-9.9.9.tgz", integrity: "sha512-evil" };
-  assert.equal(isLockfilePureVersionBump(JSON.stringify(base), JSON.stringify(head), ["alpha"]), false);
+  assert.equal(isLockfilePureVersionBump(JSON.stringify(base), JSON.stringify(head), ["alpha"], {}, ALPHA_BUMPED_MANIFEST), false);
 });
 
 // ADVERSARIAL (fix 1): a version change on a non-bumped package
@@ -286,8 +346,66 @@ test("ADVERSARIAL isLockfilePureVersionBump: a version change on a package NOT i
   const base = JSON.parse(LOCK_BASE);
   const head = JSON.parse(lockWithAlphaBumped("1.0.1"));
   head.packages["node_modules/foo"].version = "3.0.0"; // foo was never bumped by this PR's package.json changes
-  assert.equal(isLockfilePureVersionBump(JSON.stringify(base), JSON.stringify(head), ["alpha"]), false);
+  assert.equal(isLockfilePureVersionBump(JSON.stringify(base), JSON.stringify(head), ["alpha"], {}, ALPHA_BUMPED_MANIFEST), false);
 });
+
+// ---------------------------------------------------------------- isLockfilePureVersionBump: THE LOCKFILE MUST MIRROR THE MANIFEST (re-review, blocking item 2)
+//
+// https://github.com/clossys/foundry/pull/1353#issuecomment-5803457726 --
+// every case above proved the lockfile diff LOOKS like an allowed shape
+// relative to ITSELF; none of them proved it matches the real manifest
+// this diff actually bumped. These four are the reviewer's own four tamper
+// cases, each starting from a legitimate lockfile bump/rewrite and
+// diverging ONLY from the manifest, never from internal lockfile shape.
+
+test("ADVERSARIAL isLockfilePureVersionBump: a lockfile version that does not match the manifest's real new version fails, even though it is still a plain version change", () => {
+  const head = lockWithAlphaBumped("9.9.9"); // manifest really bumped to 1.0.1, not 9.9.9
+  assert.equal(isLockfilePureVersionBump(LOCK_BASE, head, ["alpha"], {}, ALPHA_BUMPED_MANIFEST), false);
+});
+
+test("ADVERSARIAL isLockfilePureVersionBump: a bumped workspace entry with its version field deleted entirely fails", () => {
+  const head = JSON.parse(LOCK_BASE);
+  delete head.packages["packages/alpha"].version;
+  assert.equal(isLockfilePureVersionBump(LOCK_BASE, JSON.stringify(head), ["alpha"], {}, ALPHA_BUMPED_MANIFEST), false);
+});
+
+test("ADVERSARIAL isLockfilePureVersionBump: a bumped workspace entry left at its BASE version (never actually bumped in the lockfile) fails", () => {
+  assert.equal(isLockfilePureVersionBump(LOCK_BASE, LOCK_BASE, ["alpha"], {}, ALPHA_BUMPED_MANIFEST), false);
+});
+
+test("ADVERSARIAL isLockfilePureVersionBump: a dependent range in the lockfile that disagrees with the manifest's own range fails, in either direction", () => {
+  const base = realLockfileFixtureFor2({ dependencies: { "@x/core": "^0.9.0" } });
+  const headLockfileStale = realLockfileFixtureFor2({ version: "1.0.1", dependencies: { "@x/core": "^0.9.0" } }); // lockfile keeps the stale range
+  const manifestRewritten = { "@x/consumer": { version: "1.0.1", dependencies: { "@x/core": "^0.10.0" } } }; // manifest rewrote it
+  assert.equal(isLockfilePureVersionBump(base, headLockfileStale, ["consumer"], { "@x/core": "0.10.0" }, manifestRewritten), false);
+
+  const headLockfileRewritten = realLockfileFixtureFor2({ version: "1.0.1", dependencies: { "@x/core": "^0.10.0" } }); // lockfile rewrites it
+  const manifestStale = { "@x/consumer": { version: "1.0.1", dependencies: { "@x/core": "^0.9.0" } } }; // manifest kept the stale range (reverse mismatch)
+  assert.equal(isLockfilePureVersionBump(base, headLockfileRewritten, ["consumer"], { "@x/core": "0.10.0" }, manifestStale), false);
+});
+
+// Minimal single-workspace-entry lockfile fixture for the dependent-range
+// mismatch test above -- deliberately NOT LOCK_BASE/realLockfileFixture
+// (those model "@clossys/alpha" and "@clossys/publisher"), so this reads
+// as a self-contained "consumer" scenario matching the manifest names used
+// in the assertions right above it.
+function realLockfileFixtureFor2(consumerEntryOverrides) {
+  return (
+    JSON.stringify(
+      {
+        name: "fixture-root",
+        lockfileVersion: 3,
+        requires: true,
+        packages: {
+          "": { name: "fixture-root", workspaces: ["packages/*"] },
+          "packages/consumer": { name: "@x/consumer", version: "1.0.0", license: "MIT", ...consumerEntryOverrides },
+        },
+      },
+      null,
+      2,
+    ) + "\n"
+  );
+}
 
 test("isLockfilePureVersionBump: malformed JSON, or a missing packages map, fails rather than throwing", () => {
   assert.equal(isLockfilePureVersionBump("not json", LOCK_BASE, ["alpha"]), false);
@@ -297,12 +415,17 @@ test("isLockfilePureVersionBump: malformed JSON, or a missing packages map, fail
 
 // ---------------------------------------------------------------- isChangesetDeletionLegitimate
 
-test("isChangesetDeletionLegitimate: a changeset naming only bumped packages is legitimate", () => {
-  assert.equal(isChangesetDeletionLegitimate("---\nalpha: patch\n---\n\nFix a bug.\n", ["alpha"]), true);
+test("isChangesetDeletionLegitimate: a changeset naming only bumped packages, whose summary landed in that package's new CHANGELOG section, is legitimate", () => {
+  const sections = { alpha: "## 1.0.1 - 2026-09-24\n\n- Fix a bug.\n" };
+  assert.equal(isChangesetDeletionLegitimate("---\nalpha: patch\n---\n\nFix a bug.\n", ["alpha"], sections), true);
 });
 
-test("isChangesetDeletionLegitimate: a changeset naming several packages, ALL bumped, is legitimate", () => {
-  assert.equal(isChangesetDeletionLegitimate("---\nalpha: patch\nbeta: minor\n---\n\nShared fix.\n", ["alpha", "beta"]), true);
+test("isChangesetDeletionLegitimate: a changeset naming several packages, ALL bumped, whose summary landed in EVERY named package's new section, is legitimate", () => {
+  const sections = {
+    alpha: "## 1.0.1 - 2026-09-24\n\n- Shared fix.\n",
+    beta: "## 1.1.0 - 2026-09-24\n\n- Shared fix.\n",
+  };
+  assert.equal(isChangesetDeletionLegitimate("---\nalpha: patch\nbeta: minor\n---\n\nShared fix.\n", ["alpha", "beta"], sections), true);
 });
 
 // ADVERSARIAL (fix 4): deleting an unrelated pending changeset
@@ -312,6 +435,24 @@ test("ADVERSARIAL isChangesetDeletionLegitimate: a changeset naming a package NO
 
 test("ADVERSARIAL isChangesetDeletionLegitimate: a changeset naming BOTH a bumped and an unrelated package is not legitimate (partial consumption is not consumption)", () => {
   assert.equal(isChangesetDeletionLegitimate("---\nalpha: patch\nbeta: minor\n---\n\nMixed.\n", ["alpha"]), false);
+});
+
+// ADVERSARIAL (item 4, re-review https://github.com/clossys/foundry/pull/1353#issuecomment-5803457726):
+// membership in the bumped set alone is NOT enough -- a package bumped
+// only as a DEPENDENT (e.g. a sibling-range rewrite's own patch bump,
+// issue #1332) never consumes any changeset at all, so a genuinely
+// unrelated, still-pending changeset that happens to also name that
+// package must still be refused, even though the package IS in the
+// bumped set.
+test("ADVERSARIAL isChangesetDeletionLegitimate: a package that IS bumped (as a dependent, not via this changeset) but whose new CHANGELOG section does not contain THIS changeset's summary is not legitimate", () => {
+  // consumer's real new section only has the auto-generated dependency-update
+  // bullet -- never "An unrelated pending change.", the pending changeset's own text.
+  const sections = { consumer: "## 1.0.1 - 2026-09-24\n\n- Updated dependency @x/core to ^0.10.0\n" };
+  assert.equal(isChangesetDeletionLegitimate("---\nconsumer: patch\n---\n\nAn unrelated pending change.\n", ["consumer"], sections), false);
+});
+
+test("ADVERSARIAL isChangesetDeletionLegitimate: with no changelogSectionsByDir supplied at all (the default), even an otherwise-legitimate deletion fails closed", () => {
+  assert.equal(isChangesetDeletionLegitimate("---\nalpha: patch\n---\n\nFix a bug.\n", ["alpha"]), false);
 });
 
 test("isChangesetDeletionLegitimate: a malformed changeset fails rather than throwing", () => {
@@ -326,7 +467,10 @@ function manifestPair(version1, version2, extra = {}) {
 }
 
 test("evaluateReleasePrFootprint: a clean release PR (bump + changelog + lockfile + a legitimately-consumed changeset) passes", () => {
-  const [base, head] = manifestPair("1.0.0", "1.0.1");
+  // name must match LOCK_BASE's "packages/alpha" entry ("@clossys/alpha")
+  // now that the lockfile check cross-references the real manifest by name
+  // (re-review, https://github.com/clossys/foundry/pull/1353#issuecomment-5803457726).
+  const [base, head] = manifestPair("1.0.0", "1.0.1", { name: "@clossys/alpha" });
   const result = evaluateReleasePrFootprint({
     files: [
       { path: "packages/alpha/package.json", status: "modified", baseContent: base, headContent: head },
@@ -380,7 +524,7 @@ test("evaluateReleasePrFootprint: an unrelated pending changeset deleted alongsi
     ],
   });
   assert.equal(result.ok, false);
-  assert.match(result.reason, /does not name only packages bumped/);
+  assert.match(result.reason, /does not name only packages this diff actually consumed it for/);
 });
 
 test("evaluateReleasePrFootprint: no lockfile in the diff at all is fine -- nothing to check there", () => {
@@ -496,6 +640,92 @@ test("END TO END: a real apply-release-changesets.mjs patch release, against a C
       { path: "packages/alpha/CHANGELOG.md", status: "modified", baseContent: baseChangelog, headContent: headChangelogText },
       { path: "package-lock.json", status: "modified", baseContent: baseLockfileText, headContent: headLockfileText },
       { path: ".changesets/alpha-fix.md", status: "removed", baseContent: changesetText },
+    ];
+
+    const footprint = evaluateReleasePrFootprint({ files });
+    assert.equal(footprint.ok, true, footprint.reason);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// A real apply-release-changesets.mjs run whose ONLY sibling effect is a
+// devDependencies-only rewrite (issue found in #1353 review, item 3 --
+// packages/controller's real @clossys/advisor devDependency) must pass the
+// full footprint check with NO version bump, NO CHANGELOG.md, and NO
+// applied entry for the devDependencies-only package -- proving the
+// producer and the footprint check agree on this shape end to end, not
+// just via each side's own unit tests.
+test("END TO END: a real apply-release-changesets.mjs run with a devDependencies-only sibling rewrite (no bump, no changelog) passes the full footprint check", () => {
+  const root = mkdtempSync(join(tmpdir(), "release-pr-footprint-devdep-e2e-test-"));
+  try {
+    const advisorDir = join(root, "packages", "advisor");
+    mkdirSync(advisorDir, { recursive: true });
+    const advisorBaseManifest = { name: "@clossys/advisor", version: "0.4.0", license: "MIT" };
+    writeFileSync(join(advisorDir, "package.json"), JSON.stringify(advisorBaseManifest, null, 2) + "\n");
+    const advisorBaseChangelog = "# Changelog\n\n## 0.4.0\n\n- Initial release.\n";
+    writeFileSync(join(advisorDir, "CHANGELOG.md"), advisorBaseChangelog);
+
+    const controllerDir = join(root, "packages", "controller");
+    mkdirSync(controllerDir, { recursive: true });
+    const controllerBaseManifest = { name: "@clossys/controller", version: "1.0.0", license: "MIT", devDependencies: { "@clossys/advisor": "^0.4.0" } };
+    const controllerBaseManifestText = JSON.stringify(controllerBaseManifest, null, 2) + "\n";
+    writeFileSync(join(controllerDir, "package.json"), controllerBaseManifestText);
+
+    const baseLockfile = {
+      name: "foundry",
+      lockfileVersion: 3,
+      packages: {
+        "": { name: "foundry" },
+        "packages/advisor": { name: "@clossys/advisor", version: "0.4.0", license: "MIT" },
+        "node_modules/@clossys/advisor": { resolved: "packages/advisor", link: true },
+        "packages/controller": { ...controllerBaseManifest },
+        "node_modules/@clossys/controller": { resolved: "packages/controller", link: true },
+      },
+    };
+    writeFileSync(join(root, "package-lock.json"), JSON.stringify(baseLockfile, null, 2) + "\n");
+
+    mkdirSync(join(root, ".changesets"), { recursive: true });
+    const changesetText = "---\nadvisor: minor\n---\n\nAdd a feature.\n";
+    writeFileSync(join(root, ".changesets", "advisor-feature.md"), changesetText);
+
+    const baseLockfileText = readFileSync(join(root, "package-lock.json"), "utf8");
+
+    const result = applyReleaseChangesets({
+      root,
+      today: () => "2026-09-24",
+      // Mirrors what a real `npm install --package-lock-only` would do:
+      // bump the released package's own lockfile entry AND mirror its
+      // dependent's rewritten devDependencies range there too.
+      runNpmInstall: (scratchRoot) => {
+        const advisorManifest = JSON.parse(readFileSync(join(scratchRoot, "packages", "advisor", "package.json"), "utf8"));
+        const controllerManifest = JSON.parse(readFileSync(join(scratchRoot, "packages", "controller", "package.json"), "utf8"));
+        const lock = JSON.parse(readFileSync(join(scratchRoot, "package-lock.json"), "utf8"));
+        lock.packages["packages/advisor"].version = advisorManifest.version;
+        lock.packages["packages/controller"] = { ...controllerManifest };
+        writeFileSync(join(scratchRoot, "package-lock.json"), JSON.stringify(lock, null, 2) + "\n");
+      },
+    });
+
+    assert.equal(result.findings.length, 0, JSON.stringify(result.findings));
+    assert.deepEqual(
+      result.applied.map((a) => a.package),
+      ["advisor"],
+    );
+
+    const controllerHeadManifestText = readFileSync(join(controllerDir, "package.json"), "utf8");
+    const headLockfileText = readFileSync(join(root, "package-lock.json"), "utf8");
+    assert.equal(existsSync(join(controllerDir, "CHANGELOG.md")), false);
+
+    const advisorHeadManifestText = readFileSync(join(advisorDir, "package.json"), "utf8");
+    const advisorHeadChangelogText = readFileSync(join(advisorDir, "CHANGELOG.md"), "utf8");
+
+    const files = [
+      { path: "packages/advisor/package.json", status: "modified", baseContent: JSON.stringify(advisorBaseManifest, null, 2) + "\n", headContent: advisorHeadManifestText },
+      { path: "packages/advisor/CHANGELOG.md", status: "modified", baseContent: advisorBaseChangelog, headContent: advisorHeadChangelogText },
+      { path: "packages/controller/package.json", status: "modified", baseContent: controllerBaseManifestText, headContent: controllerHeadManifestText },
+      { path: "package-lock.json", status: "modified", baseContent: baseLockfileText, headContent: headLockfileText },
+      { path: ".changesets/advisor-feature.md", status: "removed", baseContent: changesetText },
     ];
 
     const footprint = evaluateReleasePrFootprint({ files });
@@ -715,62 +945,98 @@ function realLockfileFixture(publisherEntryOverrides) {
   );
 }
 
+// Builds the manifest cross-check data for "@clossys/publisher" matching
+// the SAME `overrides` object used to build a `realLockfileFixture(...)`
+// head -- so a test that deliberately tampers the LOCKFILE's own internal
+// shape (an added/removed/reordered dependency, a devDependencies move) can
+// still supply manifest data that mirrors the lockfile's own (tampered)
+// state, keeping the pre-existing per-field checks -- not this new
+// lockfile-vs-manifest cross-check -- the ones isolating each test's own
+// named defect. Only the four fields the cross-check reads are extracted.
+function publisherManifestFor(overrides) {
+  const merged = { ...REAL_PUBLISHER_LOCKFILE_ENTRY_BASE, ...overrides };
+  return {
+    "@clossys/publisher": {
+      version: merged.version,
+      dependencies: merged.dependencies,
+      peerDependencies: merged.peerDependencies,
+      optionalDependencies: merged.optionalDependencies,
+      devDependencies: merged.devDependencies,
+    },
+  };
+}
+
 test("isLockfilePureVersionBump: a real publisher lockfile entry's dependencies range rewritten to exactly ^<bumped version> of a package this diff bumps passes", () => {
   const base = realLockfileFixture({ version: "0.4.24" });
-  const head = realLockfileFixture({ version: "0.4.25", dependencies: { ...REAL_PUBLISHER_LOCKFILE_ENTRY_BASE.dependencies, "@clossys/designer": "^0.5.0" } });
-  const result = isLockfilePureVersionBump(base, head, ["publisher"], { "@clossys/designer": "0.5.0" });
+  const overrides = { version: "0.4.25", dependencies: { ...REAL_PUBLISHER_LOCKFILE_ENTRY_BASE.dependencies, "@clossys/designer": "^0.5.0" } };
+  const head = realLockfileFixture(overrides);
+  const result = isLockfilePureVersionBump(base, head, ["publisher"], { "@clossys/designer": "0.5.0" }, publisherManifestFor(overrides));
   assert.equal(result, true);
 });
 
 test("ADVERSARIAL isLockfilePureVersionBump: a real publisher lockfile entry's peerDependencies range rewritten to exactly ^<bumped version> passes too (all three dependent-range fields are covered, not just dependencies)", () => {
   const base = realLockfileFixture({ version: "0.4.24" });
-  const head = realLockfileFixture({
-    version: "0.4.25",
-    peerDependencies: { ...REAL_PUBLISHER_LOCKFILE_ENTRY_BASE.peerDependencies, next: "^0.5.0" },
-  });
-  const result = isLockfilePureVersionBump(base, head, ["publisher"], { next: "0.5.0" });
+  const overrides = { version: "0.4.25", peerDependencies: { ...REAL_PUBLISHER_LOCKFILE_ENTRY_BASE.peerDependencies, next: "^0.5.0" } };
+  const head = realLockfileFixture(overrides);
+  const result = isLockfilePureVersionBump(base, head, ["publisher"], { next: "0.5.0" }, publisherManifestFor(overrides));
   assert.equal(result, true);
 });
 
 test("ADVERSARIAL isLockfilePureVersionBump: rewriting a dependency range for a package this diff does NOT bump still fails, even though the syntactic shape (a dependency-field range change) matches an allowed one", () => {
   const base = realLockfileFixture({ version: "0.4.24" });
-  const head = realLockfileFixture({
-    version: "0.4.25",
-    // @clossys/writer is not in bumpedVersionsByName -- nothing in this diff bumped it.
-    dependencies: { ...REAL_PUBLISHER_LOCKFILE_ENTRY_BASE.dependencies, "@clossys/writer": "^0.4.0" },
-  });
-  const result = isLockfilePureVersionBump(base, head, ["publisher"], {});
+  // @clossys/writer is not in bumpedVersionsByName -- nothing in this diff bumped it.
+  const overrides = { version: "0.4.25", dependencies: { ...REAL_PUBLISHER_LOCKFILE_ENTRY_BASE.dependencies, "@clossys/writer": "^0.4.0" } };
+  const head = realLockfileFixture(overrides);
+  const result = isLockfilePureVersionBump(base, head, ["publisher"], {}, publisherManifestFor(overrides));
   assert.equal(result, false);
 });
 
 test("ADVERSARIAL isLockfilePureVersionBump: rewriting a dependency range to a version OTHER than the bumped version fails", () => {
   const base = realLockfileFixture({ version: "0.4.24" });
-  const head = realLockfileFixture({
-    version: "0.4.25",
-    dependencies: { ...REAL_PUBLISHER_LOCKFILE_ENTRY_BASE.dependencies, "@clossys/designer": "^0.6.0" },
-  });
+  const overrides = { version: "0.4.25", dependencies: { ...REAL_PUBLISHER_LOCKFILE_ENTRY_BASE.dependencies, "@clossys/designer": "^0.6.0" } };
+  const head = realLockfileFixture(overrides);
   // designer was actually bumped to 0.5.0, not 0.6.0 -- the lockfile entry disagrees.
-  const result = isLockfilePureVersionBump(base, head, ["publisher"], { "@clossys/designer": "0.5.0" });
+  const result = isLockfilePureVersionBump(base, head, ["publisher"], { "@clossys/designer": "0.5.0" }, publisherManifestFor(overrides));
   assert.equal(result, false);
 });
 
 test("ADVERSARIAL isLockfilePureVersionBump: adding a brand-new dependency entry fails", () => {
   const base = realLockfileFixture({ version: "0.4.24" });
-  const head = realLockfileFixture({
-    version: "0.4.25",
-    dependencies: { ...REAL_PUBLISHER_LOCKFILE_ENTRY_BASE.dependencies, "@clossys/new-package": "^1.0.0" },
-  });
-  const result = isLockfilePureVersionBump(base, head, ["publisher"], {});
+  const overrides = { version: "0.4.25", dependencies: { ...REAL_PUBLISHER_LOCKFILE_ENTRY_BASE.dependencies, "@clossys/new-package": "^1.0.0" } };
+  const head = realLockfileFixture(overrides);
+  const result = isLockfilePureVersionBump(base, head, ["publisher"], {}, publisherManifestFor(overrides));
   assert.equal(result, false);
 });
 
-test("ADVERSARIAL isLockfilePureVersionBump: a devDependencies range change fails, even for a genuinely bumped package -- only dependencies/peerDependencies/optionalDependencies are allowed to move", () => {
+// devDependencies is now scanned and rewritten too (decision + fix,
+// re-review, https://github.com/clossys/foundry/pull/1353#issuecomment-5803457726
+// item 3: the workspace's OWN `npm install --package-lock-only` DOES
+// resolve devDependencies, unlike a published consumer's install) -- for
+// a genuinely bumped package, a devDependencies rewrite to exactly
+// `^<the proven new version>` is allowed the identical way dependencies/
+// peerDependencies/optionalDependencies already are.
+test("isLockfilePureVersionBump: a real publisher lockfile entry's devDependencies range rewritten to exactly ^<bumped version> of a package this diff bumps passes too, for a genuinely bumped package", () => {
   const base = realLockfileFixture({ version: "0.4.24" });
-  const head = realLockfileFixture({
-    version: "0.4.25",
-    devDependencies: { ...REAL_PUBLISHER_LOCKFILE_ENTRY_BASE.devDependencies, "@internationalized/date": "^4.0.0" },
-  });
-  const result = isLockfilePureVersionBump(base, head, ["publisher"], { "@internationalized/date": "4.0.0" });
+  const overrides = { version: "0.4.25", devDependencies: { ...REAL_PUBLISHER_LOCKFILE_ENTRY_BASE.devDependencies, "@internationalized/date": "^4.0.0" } };
+  const head = realLockfileFixture(overrides);
+  const result = isLockfilePureVersionBump(base, head, ["publisher"], { "@internationalized/date": "4.0.0" }, publisherManifestFor(overrides));
+  assert.equal(result, true);
+});
+
+test("ADVERSARIAL isLockfilePureVersionBump: a devDependencies range rewritten to a version OTHER than the bumped version fails, same as the other three fields", () => {
+  const base = realLockfileFixture({ version: "0.4.24" });
+  const overrides = { version: "0.4.25", devDependencies: { ...REAL_PUBLISHER_LOCKFILE_ENTRY_BASE.devDependencies, "@internationalized/date": "^4.0.0" } };
+  const head = realLockfileFixture(overrides);
+  // @internationalized/date was actually bumped to 5.0.0, not 4.0.0 -- the lockfile entry disagrees.
+  const result = isLockfilePureVersionBump(base, head, ["publisher"], { "@internationalized/date": "5.0.0" }, publisherManifestFor(overrides));
+  assert.equal(result, false);
+});
+
+test("ADVERSARIAL isLockfilePureVersionBump: a devDependencies range rewritten for a package this diff does NOT bump still fails", () => {
+  const base = realLockfileFixture({ version: "0.4.24" });
+  const overrides = { version: "0.4.25", devDependencies: { ...REAL_PUBLISHER_LOCKFILE_ENTRY_BASE.devDependencies, "@internationalized/date": "^4.0.0" } };
+  const head = realLockfileFixture(overrides);
+  const result = isLockfilePureVersionBump(base, head, ["publisher"], {}, publisherManifestFor(overrides));
   assert.equal(result, false);
 });
 
@@ -795,20 +1061,21 @@ test("ADVERSARIAL isLockfilePureVersionBump: removing a dependency entry fails",
       null,
       2,
     ) + "\n";
-  const result = isLockfilePureVersionBump(base, head, ["publisher"], {});
+  const result = isLockfilePureVersionBump(base, head, ["publisher"], {}, publisherManifestFor({ version: headEntry.version, dependencies: headEntry.dependencies }));
   assert.equal(result, false);
 });
 
 test("ADVERSARIAL isLockfilePureVersionBump: reordering the dependencies map (same keys and values, different order) fails, consistent with the manifest rule's key-order sensitivity", () => {
   const base = realLockfileFixture({ version: "0.4.24" });
+  const reorderedDependencies = {
+    "@clossys/writer": "^0.3.0",
+    "@clossys/designer": "^0.4.0",
+    "@clossys/controller": "~0.9.0",
+  };
   const headEntry = {
     ...REAL_PUBLISHER_LOCKFILE_ENTRY_BASE,
     version: "0.4.25",
-    dependencies: {
-      "@clossys/writer": "^0.3.0",
-      "@clossys/designer": "^0.4.0",
-      "@clossys/controller": "~0.9.0",
-    },
+    dependencies: reorderedDependencies,
   };
   const head =
     JSON.stringify(
@@ -827,7 +1094,11 @@ test("ADVERSARIAL isLockfilePureVersionBump: reordering the dependencies map (sa
       null,
       2,
     ) + "\n";
-  const result = isLockfilePureVersionBump(base, head, ["publisher"], {});
+  // The manifest cross-check reads the SAME reordered map, key-for-key in
+  // the SAME order, so it is not what catches this defect -- the
+  // pre-existing key-order-sensitive REST comparison inside
+  // compareRestAllowingDependencyRangeBumps() is.
+  const result = isLockfilePureVersionBump(base, head, ["publisher"], {}, publisherManifestFor({ version: "0.4.25", dependencies: reorderedDependencies }));
   assert.equal(result, false);
 });
 

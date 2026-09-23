@@ -340,6 +340,80 @@ owner-approved out-of-band minor, its dependent's in-band patch bump and
 range rewrite, and an unrelated ordinary changeset for a third package left
 untouched).
 
+### Four defects fixed by independent review of PR #1353
+
+A fresh, blind reviewer of PR #1353 (composing #1316 + #1338/#1339) found
+four real defects this composition inherited or introduced, all fixed in
+the same round — https://github.com/clossys/foundry/pull/1353#issuecomment-5803457726:
+
+1. **A changeset naming several packages crashed the write phase.**
+   `scripts/collect-changesets.mjs`'s own documented shape (its header's
+   `controller: minor` / `writer: patch` example) lets one file name
+   several packages. Each named package's own `planned` step carried that
+   SAME shared changeset file in its `changesetFiles`, so the write phase
+   deleted it once per named package — the second `rmSync` threw `ENOENT`
+   AFTER every manifest and CHANGELOG had already been written, breaking
+   the all-or-nothing contract. Fixed by collecting every changeset file
+   into a `Set` before deleting anything (restoring #1316's own approach,
+   inside #1338's all-or-nothing phases).
+2. **The footprint check never cross-checked the lockfile against the
+   manifests.** `isLockfilePureVersionBump()` proved a bumped entry's
+   diff was an internally-consistent SHAPE, but never that its `version`
+   or dependent-range fields actually MATCHED the real package.json this
+   diff bumped — a wrong version, a deleted version field, a version left
+   at the base value, or a dependent range that disagreed with the
+   manifest (in either direction) all still passed. Fixed by cross-
+   checking every bumped `packages/<dir>` lockfile entry against the SAME
+   parsed manifest JSON `evaluateReleasePrFootprint()` already validated.
+3. **`devDependencies` is now scanned and rewritten too, but never
+   triggers its own bump.** `packages/controller`'s real `devDependencies`
+   on `@clossys/advisor` is exactly the case an earlier draft's
+   `devDependencies`-exclusion missed: THIS repository's own workspace
+   `npm install --package-lock-only` (unlike a published consumer's
+   install) resolves every workspace member's `devDependencies` too, so a
+   stale range there breaks the workspace install the identical way issue
+   #1332 already fixed for `dependencies`/`peerDependencies`/
+   `optionalDependencies`. Decision: `devDependencies` is scanned and
+   rewritten the same way, but a devDependencies-only rewrite NEVER
+   triggers a dependent-only version bump or CHANGELOG entry —
+   `devDependencies` is not published or consumer-facing, so there is
+   nothing for a version bump to communicate outside this repository, and
+   bumping a package for a purely internal dev-environment detail would be
+   actively misleading. `scripts/check-workspace-links.mjs`'s own
+   pre-existing sibling-range gate still scans only `dependencies` (issue
+   #1340) — not extended here; that gate and this rewriter are allowed to
+   disagree on scope without disagreeing on meaning.
+4. **A still-pending changeset for a dependent-only-bumped package could
+   be deleted silently.** `isChangesetDeletionLegitimate()` previously only
+   checked that every package a deleted changeset named was SOMEWHERE in
+   the bumped set — but a dependent-only bump (item 3 above, or issue
+   #1332's own dependent-only patches) never consumes any changeset at
+   all, so an unrelated, genuinely still-pending changeset that happened
+   to also name that package could be deleted alongside a legitimate
+   release, discarding someone else's pending change with no trace of it
+   ever being consumed. Fixed by cross-checking that the deleted
+   changeset's own summary text actually landed in every named package's
+   new CHANGELOG section, not merely that the package's version changed
+   for some reason.
+5. **A CHANGELOG with a title but no releases yet was rejected even when
+   the producer's own output was correct.** `isChangelogPureNewSection()`
+   assumed a brand-new entry is inserted at exactly `base.length` when no
+   existing `## ` heading is found — but `prependChangelogEntry()`
+   normalizes the base's own trailing whitespace to exactly one blank line
+   before appending, so for any base not already ending in exactly two
+   newlines the two disagreed. Fixed by having the footprint check mirror
+   the identical trailing-whitespace normalization for this one case; the
+   with-heading path (a real, previously-released CHANGELOG.md) is
+   unaffected and exactly as strict as before.
+
+A residual, pre-existing #1338 gap (not fixed in this round, filed
+separately as #1377): the sibling-range rewrite is a single pass, so a
+THIRD package that exact-pins a dependent-only-bumped package can be left
+on a stale pin. It fails closed today (the structural footprint check
+refuses the resulting lockfile shape) and is not reachable with this
+repository's current package graph — see #1377 for the fix (iterate the
+scan to a fixpoint) and the full reachability analysis.
+
 ## How a release actually happens
 
 1. **Monday–Friday**: contributors merge ordinary content changes. A change

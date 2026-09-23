@@ -152,19 +152,38 @@ function isAllowedDependencyRangeChange(baseMap, headMap, bumpedVersionsByName) 
  * from this file's own claim) proves the named package was actually
  * bumped, and the new value is EXACTLY `^` plus that proven new version --
  * not a looser range, not a different package, not a value this diff
- * cannot independently verify. `devDependencies` is deliberately excluded
- * (not one of the three fields checked): npm never reads a dependency's
- * own `devDependencies` when resolving it as someone else's dependency, so
- * a stale range there cannot reproduce #1332's actual defect, and
- * scripts/check-workspace-links.mjs's own pre-existing sibling-range gate
- * already draws the same line -- keeping this the same scope means the
- * gate that catches a stale range and this check that admits a fix for one
- * can never quietly disagree about what counts as a first-party dependency
- * edge. No key may be added, removed, or reordered in any of the three
- * fields, and every OTHER field (name, license, scripts, bin, exports,
- * devDependencies, anything else) must remain fully byte-identical --
- * `bumpedVersionsByName` defaults to `{}`, so a caller that never passes it
- * gets exactly the old, unwidened behavior.
+ * cannot independently verify. No key may be added, removed, or reordered
+ * in any of the three fields, and every OTHER field (name, license,
+ * scripts, bin, exports, anything else) must remain fully byte-identical
+ * -- `bumpedVersionsByName` defaults to `{}`, so a caller that never
+ * passes it gets exactly the old, unwidened behavior.
+ *
+ * `devDependencies` GETS THE IDENTICAL EXCEPTION TOO, BUT NEVER REQUIRES A
+ * BUMP OF ITS OWN (decision + fix, re-review, https://github.com/clossys/foundry/pull/1353#issuecomment-5803457726)
+ * -------------------------------------------------------------------------
+ * An earlier draft of this exception deliberately excluded devDependencies
+ * on the reasoning that npm never reads a PUBLISHED dependency's own
+ * devDependencies when resolving it as someone else's dependency. That
+ * reasoning is correct for an external consumer, but misses that THIS
+ * repository's own `npm install --package-lock-only` (what
+ * apply-release-changesets.mjs's real `runNpmInstall` calls) resolves
+ * every workspace member's devDependencies too, same as any npm workspaces
+ * install -- a real case in this repository (`packages/controller`'s
+ * devDependencies on `@clossys/advisor` at `^0.4.0`) breaks that install
+ * the moment advisor's version moves outside the range, exactly #1332's
+ * defect via a devDependencies edge instead. `compareRestAllowingDependency-
+ * RangeBumps()` below checks `devDependencies` through the SAME
+ * `isAllowedDependencyRangeChange()` rule as the other three fields --
+ * same "exactly `^<the proven new version>`, no added/removed/reordered
+ * key" width, no separate implementation. The one real difference: a
+ * package whose package.json changes ONLY its devDependencies (no version
+ * bump at all) is NOT this function's business -- see
+ * `isDevDependenciesOnlyRewrite()` below for that separate, deliberately
+ * bump-free case, and this file's own module header for why: a
+ * devDependencies range is never published or consumer-facing, so there is
+ * nothing for a version bump to communicate outside this repository, and
+ * bumping a package whose only real change is an internal dev-environment
+ * detail would be actively misleading.
  *
  * THE BUMPED VERSION ITSELF IS VALIDATED, NOT TRUSTED (re-review,
  * https://github.com/clossys/foundry/pull/1339#issuecomment-5801890878)
@@ -198,6 +217,45 @@ export function isPackageManifestVersionOnlyChange(baseText, headText, bumpedVer
   return compareRestAllowingDependencyRangeBumps(baseRest, headRest, bumpedVersionsByName);
 }
 
+/**
+ * The devDependencies-only counterpart to isPackageManifestVersionOnlyChange()
+ * above (decision + fix, re-review, https://github.com/clossys/foundry/pull/1353#issuecomment-5803457726)
+ * -- see that function's own header, "`devDependencies` GETS THE IDENTICAL
+ * EXCEPTION TOO", for the full reasoning. Is `headText` the SAME as
+ * `baseText` except for an allowed devDependencies rewrite -- `version`
+ * UNCHANGED (never a bump; that is the OTHER function's job), and ONLY
+ * `devDependencies` differing, via the identical `isAllowedDependencyRangeChange()`
+ * rule (exactly `^<a version bumpedVersionsByName proves>`, no
+ * added/removed/reordered key)? A package.json whose `version` DID change
+ * is never this function's business -- evaluateReleasePrFootprint() below
+ * tries isSingleStepSemverBump() FIRST and only reaches this function for
+ * a package.json that did NOT bump, matching apply-release-changesets.mjs's
+ * own producer-side rule that a devDependencies-only rewrite never
+ * triggers its own version bump.
+ */
+export function isDevDependenciesOnlyRewrite(baseText, headText, bumpedVersionsByName = {}) {
+  let baseJson, headJson;
+  try {
+    baseJson = JSON.parse(baseText);
+  } catch {
+    return false;
+  }
+  try {
+    headJson = JSON.parse(headText);
+  } catch {
+    return false;
+  }
+  if (!baseJson || typeof baseJson !== "object" || !headJson || typeof headJson !== "object") return false;
+  if (typeof baseJson.version !== "string" || baseJson.version.length === 0) return false;
+  if (baseJson.version !== headJson.version) return false; // a real version change is isPackageManifestVersionOnlyChange()'s business, not this one's
+
+  const { devDependencies: baseDevDependencies, ...baseRest } = baseJson;
+  const { devDependencies: headDevDependencies, ...headRest } = headJson;
+  if (!isAllowedDependencyRangeChange(baseDevDependencies, headDevDependencies, bumpedVersionsByName)) return false;
+
+  return JSON.stringify(baseRest) === JSON.stringify(headRest);
+}
+
 // Shared by isPackageManifestVersionOnlyChange() above and
 // isLockfilePureVersionBump() below: given each side's "version"-stripped
 // rest object (a package.json with "version" removed, or one
@@ -207,8 +265,18 @@ export function isPackageManifestVersionOnlyChange(baseText, headText, bumpedVer
 // (neutralizing those fields once they've been separately validated) --
 // both call sites already own throwaway destructured objects, never the
 // original parsed manifest/lockfile, so this is safe.
+// DEPENDENT_RANGE_FIELDS plus devDependencies -- see
+// isPackageManifestVersionOnlyChange()'s own header, "`devDependencies`
+// GETS THE IDENTICAL EXCEPTION TOO", for why devDependencies is checked
+// here (in the shared helper both the manifest and lockfile bumped-entry
+// checks call) rather than folded into DEPENDENT_RANGE_FIELDS itself --
+// DEPENDENT_RANGE_FIELDS stays the three publish-relevant fields for
+// every OTHER purpose (messaging, the devDependencies-only no-bump path
+// below), and this is the one place all four are treated uniformly.
+const REWRITABLE_ENTRY_FIELDS = [...DEPENDENT_RANGE_FIELDS, "devDependencies"];
+
 function compareRestAllowingDependencyRangeBumps(baseRest, headRest, bumpedVersionsByName) {
-  for (const field of DEPENDENT_RANGE_FIELDS) {
+  for (const field of REWRITABLE_ENTRY_FIELDS) {
     if (!isAllowedDependencyRangeChange(baseRest[field], headRest[field], bumpedVersionsByName)) return false;
     // Neutralize the field in place (a plain property write on an
     // already-parsed object never moves an EXISTING key's position in
@@ -276,6 +344,28 @@ function isSingleStepSemverBump(baseVersion, headVersion) {
  * insertion", which may itself carry one leading "# ...\n" preamble line
  * (scripts/apply-release-changesets.mjs writes "# Changelog\n\n" for a
  * from-scratch file) before its own "## <newVersion>" heading.
+ *
+ * A BASE WITH A TITLE BUT NO VERSION HEADING AT ALL IS THE SAME "NO
+ * HEADING" CASE AS A BRAND-NEW FILE, NOT A SPLIT-POINT MISMATCH (fix,
+ * re-review, https://github.com/clossys/foundry/pull/1353#issuecomment-5803457726
+ * item 5) -------------------------------------------------------------
+ * `prependChangelogEntry()`'s own "no existing entry" branch does not
+ * insert at exactly `base.length` when `base` is non-empty but has no
+ * "## " heading (e.g. a fresh `"# Changelog\n"` with nothing published
+ * yet) -- it NORMALIZES `base`'s own trailing whitespace to exactly one
+ * blank line (`text.replace(/\n*$/, "\n\n")`) before appending, so the
+ * bytes strictly before the new entry are `base` with trailing whitespace
+ * TRIMMED, not `base` verbatim. Assuming `insertPos === base.length` here
+ * (as an earlier draft did) made every real producer output for this
+ * shape fail this check for any base that did not already end in exactly
+ * `"\n\n"` -- an inconsistency between what the producer writes and what
+ * this function accepts, never exercised until a package's CHANGELOG.md
+ * genuinely had a title but no releases yet. Mirrored below by trimming
+ * `base`'s own trailing whitespace the identical way before comparing,
+ * for the no-heading case only -- the WITH-heading case (a real,
+ * previously-released CHANGELOG.md, the security-relevant path with prior
+ * entries to protect) is completely unaffected, still exactly as strict
+ * as before.
  */
 export function isChangelogPureNewSection(baseText, headText, newVersion) {
   if (typeof headText !== "string" || typeof newVersion !== "string" || newVersion.length === 0) return false;
@@ -283,23 +373,43 @@ export function isChangelogPureNewSection(baseText, headText, newVersion) {
   if (headText.length <= base.length) return false;
 
   const headingMatch = /^## /m.exec(base);
-  const insertPos = headingMatch ? headingMatch.index : base.length;
-  const insertLen = headText.length - base.length;
-  const insertEnd = insertPos + insertLen;
+  let insertPos, insertEnd;
 
-  // Everything strictly before and strictly after the insertion point must
-  // be byte-for-byte the base text -- not "similar enough", not "differs
-  // only in whitespace". This is what makes the insertion point EXACT
-  // rather than a range: there is only one candidate split (base's own
-  // first-heading position), and either the surrounding text matches or it
-  // does not.
-  if (headText.slice(0, insertPos) !== base.slice(0, insertPos)) return false;
-  if (headText.slice(insertEnd) !== base.slice(insertPos)) return false;
+  if (headingMatch) {
+    insertPos = headingMatch.index;
+    const insertLen = headText.length - base.length;
+    insertEnd = insertPos + insertLen;
+
+    // Everything strictly before and strictly after the insertion point
+    // must be byte-for-byte the base text -- not "similar enough", not
+    // "differs only in whitespace". This is what makes the insertion
+    // point EXACT rather than a range: there is only one candidate split
+    // (base's own first-heading position), and either the surrounding
+    // text matches or it does not.
+    if (headText.slice(0, insertPos) !== base.slice(0, insertPos)) return false;
+    if (headText.slice(insertEnd) !== base.slice(insertPos)) return false;
+  } else {
+    // No "## " heading anywhere in base -- see this function's own header,
+    // the item-5 fix. `trimmedBase` is base with ONLY trailing whitespace
+    // removed (matching prependChangelogEntry()'s own normalization); the
+    // new entry is APPENDED after it, so nothing follows the entry at all.
+    const trimmedBase = base.replace(/\s+$/, "");
+    insertPos = trimmedBase.length;
+    insertEnd = headText.length;
+    if (headText.slice(0, insertPos) !== trimmedBase) return false;
+  }
 
   const inserted = headText.slice(insertPos, insertEnd);
   if (inserted.length === 0) return false;
 
-  const contentToCheck = base.length === 0 ? stripOneLeadingTitleLine(inserted) : inserted;
+  // `base.length === 0`: the producer's OWN default title ("# Changelog\n\n")
+  // is baked into `inserted` itself (this caller never saw it -- the file
+  // did not exist) -- strip it before checking the heading. A non-empty
+  // base with no heading already had its real title excluded via
+  // `trimmedBase` above; only the normalization whitespace remains to
+  // strip. A base WITH a heading needs neither -- `inserted` already
+  // starts exactly at the real "## " line.
+  const contentToCheck = base.length === 0 ? stripOneLeadingTitleLine(inserted) : headingMatch ? inserted : inserted.replace(/^\s+/, "");
   const escapedVersion = newVersion.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   if (!new RegExp(`^## ${escapedVersion}(?:[ \\t\\n]|$)`).test(contentToCheck)) return false;
 
@@ -389,8 +499,46 @@ function isLinkToBumpedWorkspaceEntry(entry, workspaceKeys) {
  * meet the exact same rule the manifest check enforces (see that
  * function's own header) all fail this outright. An entry added or
  * removed from the `packages` map at all also fails.
+ *
+ * THE LOCKFILE MUST MIRROR THE MANIFEST, NOT MERELY LOOK INTERNALLY
+ * CONSISTENT (re-review, https://github.com/clossys/foundry/pull/1353#issuecomment-5803457726)
+ * -------------------------------------------------------------------------
+ * Every check above this point only ever compares the lockfile against
+ * ITSELF (base vs head) -- nothing required a bumped `packages/<dir>`
+ * entry's `version` or dependency-range fields to actually MATCH the real
+ * package.json this diff bumped it from. That gap meant a real diff could
+ * carry `packages/core.version: "9.9.9"` in the lockfile while
+ * `packages/core/package.json` genuinely bumped to `"0.10.0"` (or a
+ * DELETED lockfile version, or one silently left at the base value, or a
+ * lockfile with `^0.10.0` for a dependent while its own manifest still
+ * said `^0.9.0`, or the reverse) and this function would still say `true`,
+ * because every one of those still "looked like" one of the two allowed
+ * shapes (an unconstrained version change, or an allowed-shaped range
+ * rewrite) in isolation.
+ *
+ * `bumpedManifestsByName` closes this: it maps each bumped package's npm
+ * NAME to `{ version, dependencies, peerDependencies, optionalDependencies }`
+ * taken from the SAME parsed head package.json JSON
+ * evaluateReleasePrFootprint() already validated in its own PASS 1 --
+ * never trusted from the lockfile's own content, same discipline as
+ * `bumpedVersionsByName`. For a bumped workspace entry (never a
+ * `node_modules/<name>` link entry, which carries no version or dependency
+ * fields of its own in this repository's lockfile shape): the entry's own
+ * `name` must have a `bumpedManifestsByName` record at all (a workspace
+ * entry `bumpedPackageDirs` claims is bumped, with no matching manifest
+ * data, fails closed rather than skip the cross-check); its head `version`
+ * must be EXACTLY that manifest's new version (a wrong version, a missing
+ * one, or one left at the base version are all simply "not equal" here,
+ * so all three fail the same way); and each of `dependencies`/
+ * `peerDependencies`/`optionalDependencies`, if either side has it at all,
+ * must be structurally EQUAL to the manifest's own field, not merely "a
+ * shape `isAllowedDependencyRangeChange()` would have accepted" -- that
+ * function's own check still runs too (via `compareRestAllowingDependency-
+ * RangeBumps()` below), so a rewrite must satisfy BOTH "this is a
+ * legitimate range-bump shape relative to the lockfile's own base" AND
+ * "this is what the manifest actually says".
  */
-export function isLockfilePureVersionBump(baseText, headText, bumpedPackageDirs, bumpedVersionsByName = {}) {
+export function isLockfilePureVersionBump(baseText, headText, bumpedPackageDirs, bumpedVersionsByName = {}, bumpedManifestsByName = {}, devDependencyOnlyDirs = []) {
   let baseJson, headJson;
   try {
     baseJson = JSON.parse(baseText);
@@ -415,14 +563,43 @@ export function isLockfilePureVersionBump(baseText, headText, bumpedPackageDirs,
   for (const key of baseKeys) if (!headKeySet.has(key)) return false;
 
   const workspaceKeys = new Set((bumpedPackageDirs ?? []).map((d) => `packages/${d}`));
+  const devOnlyWorkspaceKeys = new Set(Array.from(devDependencyOnlyDirs ?? []).map((d) => `packages/${d}`));
 
   for (const key of baseKeys) {
     const baseEntry = basePackages[key];
     const headEntry = headPackages[key];
     const isBumpedWorkspaceEntry = workspaceKeys.has(key);
     const isBumpedLinkEntry = isLinkToBumpedWorkspaceEntry(baseEntry, workspaceKeys) && isLinkToBumpedWorkspaceEntry(headEntry, workspaceKeys);
+    const isDevDependencyOnlyWorkspaceEntry = !isBumpedWorkspaceEntry && devOnlyWorkspaceKeys.has(key);
 
-    if (isBumpedWorkspaceEntry || isBumpedLinkEntry) {
+    if (isBumpedWorkspaceEntry) {
+      if (!baseEntry || typeof baseEntry !== "object" || !headEntry || typeof headEntry !== "object") return false;
+
+      // Cross-check against the real manifest -- see this function's own
+      // header, "THE LOCKFILE MUST MIRROR THE MANIFEST". Only the
+      // `packages/<dir>` entry itself carries a name/version/dependency
+      // fields to cross-check; a `node_modules/<name>` link entry (handled
+      // below) does not, in this repository's lockfile shape.
+      const name = typeof headEntry.name === "string" ? headEntry.name : undefined;
+      if (!name || !Object.prototype.hasOwnProperty.call(bumpedManifestsByName, name)) return false;
+      const manifestInfo = bumpedManifestsByName[name];
+      if (headEntry.version !== manifestInfo.version) return false; // wrong, missing (undefined), or left at the base version -- all "not equal", all fail
+      for (const field of REWRITABLE_ENTRY_FIELDS) {
+        const lockfileHasField = Object.prototype.hasOwnProperty.call(headEntry, field);
+        const manifestHasField = manifestInfo[field] !== undefined;
+        if (lockfileHasField !== manifestHasField) return false;
+        if (lockfileHasField && JSON.stringify(headEntry[field]) !== JSON.stringify(manifestInfo[field])) return false;
+      }
+
+      const { version: baseVersion, ...baseEntryRest } = baseEntry;
+      const { version: headVersion, ...headEntryRest } = headEntry;
+      void baseVersion;
+      void headVersion;
+      if (!compareRestAllowingDependencyRangeBumps(baseEntryRest, headEntryRest, bumpedVersionsByName)) return false;
+      continue;
+    }
+
+    if (isBumpedLinkEntry) {
       if (!baseEntry || typeof baseEntry !== "object" || !headEntry || typeof headEntry !== "object") return false;
       const { version: baseVersion, ...baseEntryRest } = baseEntry;
       const { version: headVersion, ...headEntryRest } = headEntry;
@@ -432,32 +609,94 @@ export function isLockfilePureVersionBump(baseText, headText, bumpedPackageDirs,
       continue;
     }
 
+    // DEVDEPENDENCIES-ONLY, NEVER BUMPED -- a `packages/<dir>` entry NOT
+    // in `bumpedPackageDirs` at all (its version never changed anywhere in
+    // this diff) but named in `devDependencyOnlyDirs`: only its
+    // `devDependencies` field may differ, via the identical
+    // isAllowedDependencyRangeChange() rule, and `version` must be
+    // byte-identical (never a bump -- see this file's module header and
+    // isDevDependenciesOnlyRewrite()'s own header).
+    if (isDevDependencyOnlyWorkspaceEntry) {
+      if (!baseEntry || typeof baseEntry !== "object" || !headEntry || typeof headEntry !== "object") return false;
+      if (baseEntry.version !== headEntry.version) return false;
+      const { devDependencies: baseDevDependencies, ...baseEntryRest } = baseEntry;
+      const { devDependencies: headDevDependencies, ...headEntryRest } = headEntry;
+      if (!isAllowedDependencyRangeChange(baseDevDependencies, headDevDependencies, bumpedVersionsByName)) return false;
+      if (JSON.stringify(baseEntryRest) !== JSON.stringify(headEntryRest)) return false;
+      continue;
+    }
+
     if (JSON.stringify(baseEntry) !== JSON.stringify(headEntry)) return false;
   }
 
   return true;
 }
 
+// The newly inserted CHANGELOG section's own text -- everything from the
+// top of `headText` up to (not including) the SECOND top-level "## "
+// heading, which is where the base text's own first (untouched) entry
+// begins once isChangelogPureNewSection() has already proven the head is
+// the base with exactly one new section prepended. If there is at most one
+// "## " heading at all (a brand-new file, or one whose base had no
+// existing entry), the ENTIRE text is "the new section". Used only to
+// cross-check a deleted changeset's own summary actually landed as a
+// bullet here -- see isChangesetDeletionLegitimate()'s own header.
+function extractNewestChangelogSection(headText) {
+  if (typeof headText !== "string") return "";
+  const headingRe = /^##[ \t].*$/gm;
+  const matches = [...headText.matchAll(headingRe)];
+  if (matches.length < 2) return headText;
+  return headText.slice(0, matches[1].index);
+}
+
 /**
  * Was this deleted `.changesets/<slug>.md` file (its content AT BASE,
- * before deletion) actually about a package this diff bumps -- never an
- * unrelated, still-pending changeset silently discarded alongside a
- * legitimate one? Parses `baseContent` with scripts/collect-
- * changesets.mjs's own `parseChangesetText()` (reused, not reimplemented
- * -- the SAME rules that gate what a changeset is allowed to say at all)
- * and requires every package it names to be a member of
- * `bumpedPackageDirs`. A changeset that fails to parse at all, or that
- * names zero packages, or that names even ONE package outside the bumped
- * set, is not a legitimate deletion.
+ * before deletion) actually CONSUMED by this diff -- every package it
+ * names not merely bumped SOMEWHERE in this diff, but bumped WITH this
+ * changeset's own summary landing in that package's new CHANGELOG
+ * section? Parses `baseContent` with scripts/collect-changesets.mjs's own
+ * `parseChangesetText()` (reused, not reimplemented -- the SAME rules
+ * that gate what a changeset is allowed to say at all). A changeset that
+ * fails to parse at all, that names zero packages, that names even ONE
+ * package outside the bumped set, or that names a package whose new
+ * CHANGELOG section does not actually contain this changeset's own
+ * summary text, is not a legitimate deletion.
+ *
+ * WHY MEMBERSHIP IN `bumpedPackageDirs` ALONE WAS NOT ENOUGH (re-review,
+ * https://github.com/clossys/foundry/pull/1353#issuecomment-5803457726 item 4)
+ * -------------------------------------------------------------------------
+ * `bumpedPackageDirs` includes EVERY package whose version changed in this
+ * diff for ANY reason -- a package named by its own real changeset, but
+ * also a package bumped ONLY as a dependent-only patch (issue #1332),
+ * which never consumes any changeset at all (its `changesetFiles` is
+ * always empty on the producer side). A still-pending, genuinely unrelated
+ * changeset that HAPPENS to name a dependent-only-bumped package (e.g. a
+ * stale `consumer: patch` changeset nobody ever consumed, sitting in
+ * `.changesets/` while `consumer` gets bumped anyway as a side effect of a
+ * sibling's release) could be deleted alongside a legitimate release and
+ * pass the OLD membership-only check, discarding someone else's still-
+ * pending change with no trace of it ever having been consumed --
+ * `consumer`'s real new CHANGELOG section only ever contains the
+ * auto-generated "Updated dependency ..." bullet, never that changeset's
+ * own summary. `changelogSectionsByDir` (built by evaluateReleasePrFootprint()
+ * below from the SAME CHANGELOG.md files it already validates, before any
+ * changeset in the diff is checked) closes this: a deletion is legitimate
+ * only when the changeset's summary is actually present in every named
+ * package's new section, proving this SPECIFIC changeset -- not merely
+ * some fact about that package's version -- is what the diff consumed.
  */
-export function isChangesetDeletionLegitimate(baseContent, bumpedPackageDirs) {
+export function isChangesetDeletionLegitimate(baseContent, bumpedPackageDirs, changelogSectionsByDir = {}) {
   if (typeof baseContent !== "string") return false;
   const result = parseChangesetText(baseContent, {});
   if (result.error) return false;
   const names = Object.keys(result.packages);
   if (names.length === 0) return false;
   const bumpedSet = new Set(bumpedPackageDirs ?? []);
-  return names.every((name) => bumpedSet.has(name));
+  if (!names.every((name) => bumpedSet.has(name))) return false;
+  return names.every((name) => {
+    const section = changelogSectionsByDir[name];
+    return typeof section === "string" && section.includes(result.summary);
+  });
 }
 
 /**
@@ -503,6 +742,22 @@ export function evaluateReleasePrFootprint({ files }) {
 
   const bumpedVersions = {};
   const bumpedVersionsByName = {};
+  // Maps each bumped package's npm NAME to the exact fields the lockfile
+  // check cross-references against -- see isLockfilePureVersionBump()'s own
+  // header, "THE LOCKFILE MUST MIRROR THE MANIFEST" (re-review,
+  // https://github.com/clossys/foundry/pull/1353#issuecomment-5803457726).
+  // Built from the SAME parsed headJson this loop already validated as a
+  // legitimate single-step bump -- never trusted from the lockfile itself.
+  const bumpedManifestsByName = {};
+  // packages/<dir>/package.json files that did NOT bump their own version
+  // -- deferred rather than refused immediately, because a package.json in
+  // this SHAPE is legal for exactly one reason (a devDependencies-only
+  // sibling-range rewrite, see this file's module header and
+  // isDevDependenciesOnlyRewrite()'s own header) and validating that needs
+  // `bumpedVersionsByName` fully populated from every OTHER package.json in
+  // this SAME diff first -- which this loop is still in the middle of
+  // building. Checked in a second pass below, once this loop finishes.
+  const unbumpedManifestFiles = [];
   for (const file of files) {
     const match = RELEASE_PR_FILE_PATTERNS.packageManifest.exec(file.path);
     if (!match) continue;
@@ -519,10 +774,20 @@ export function evaluateReleasePrFootprint({ files }) {
     }
     const { version: headVersion } = headJson;
     if (!isSingleStepSemverBump(baseJson.version, headVersion)) {
-      return { ok: false, reason: `"${file.path}" version did not change to a single-step patch/minor/major semver bump ("${baseJson.version}" -> "${headVersion}")` };
+      unbumpedManifestFiles.push({ file, dir: match[1] });
+      continue;
     }
     bumpedVersions[match[1]] = headVersion;
-    if (typeof headJson.name === "string" && headJson.name.length > 0) bumpedVersionsByName[headJson.name] = headVersion;
+    if (typeof headJson.name === "string" && headJson.name.length > 0) {
+      bumpedVersionsByName[headJson.name] = headVersion;
+      bumpedManifestsByName[headJson.name] = {
+        version: headVersion,
+        dependencies: headJson.dependencies,
+        peerDependencies: headJson.peerDependencies,
+        optionalDependencies: headJson.optionalDependencies,
+        devDependencies: headJson.devDependencies,
+      };
+    }
   }
 
   const bumpedDirs = Object.keys(bumpedVersions);
@@ -530,11 +795,48 @@ export function evaluateReleasePrFootprint({ files }) {
     return { ok: false, reason: "no packages/<dir>/package.json version bump present" };
   }
 
+  // DEVDEPENDENCIES-ONLY REWRITES (decision + fix, re-review,
+  // https://github.com/clossys/foundry/pull/1353#issuecomment-5803457726)
+  // -------------------------------------------------------------------------
+  // Every deferred package.json above must now prove it is a legitimate
+  // devDependencies-only rewrite -- `bumpedVersionsByName` is fully
+  // populated at this point, so isDevDependenciesOnlyRewrite() can verify
+  // any rewritten entry names a package this SAME diff really bumped.
+  // `devDependencyOnlyDirs` is threaded into isLockfilePureVersionBump()
+  // below so a NON-bumped workspace entry's lockfile record is allowed the
+  // identical devDependencies-only exception.
+  const devDependencyOnlyDirs = new Set();
+  for (const { file, dir } of unbumpedManifestFiles) {
+    if (!isDevDependenciesOnlyRewrite(file.baseContent, file.headContent, bumpedVersionsByName)) {
+      return {
+        ok: false,
+        reason: `"${file.path}" version did not change to a single-step patch/minor/major semver bump, and is not a pure devDependencies-only sibling-range rewrite either`,
+      };
+    }
+    devDependencyOnlyDirs.add(dir);
+  }
+
   for (const file of files) {
-    if (!RELEASE_PR_FILE_PATTERNS.packageManifest.test(file.path)) continue;
+    const match = RELEASE_PR_FILE_PATTERNS.packageManifest.exec(file.path);
+    if (!match) continue;
+    if (devDependencyOnlyDirs.has(match[1])) continue; // already validated above -- isPackageManifestVersionOnlyChange() requires a version bump this file deliberately does not have
     if (!isPackageManifestVersionOnlyChange(file.baseContent, file.headContent, bumpedVersionsByName)) {
       return { ok: false, reason: `"${file.path}" changes more than its own version and any allowed sibling-dependency-range rewrites` };
     }
+  }
+
+  // Built BEFORE the main per-file loop below, purely so a `.changesets/*.md`
+  // deletion can be cross-checked against its named package's new CHANGELOG
+  // section regardless of which order `files` lists them in -- see
+  // isChangesetDeletionLegitimate()'s own header, "WHY MEMBERSHIP IN
+  // `bumpedPackageDirs` ALONE WAS NOT ENOUGH". Each CHANGELOG.md's own
+  // shape is still fully validated (unchanged) in the main loop below; this
+  // pass only extracts the newly inserted section's raw text.
+  const changelogSectionsByDir = {};
+  for (const file of files) {
+    const changelogMatch = RELEASE_PR_FILE_PATTERNS.changelog.exec(file.path);
+    if (!changelogMatch) continue;
+    changelogSectionsByDir[changelogMatch[1]] = extractNewestChangelogSection(file.headContent);
   }
 
   for (const file of files) {
@@ -554,7 +856,7 @@ export function evaluateReleasePrFootprint({ files }) {
 
     if (RELEASE_PR_FILE_PATTERNS.lockfile.test(file.path)) {
       if (file.status !== "modified") return { ok: false, reason: `"${file.path}" has status "${file.status}" -- expected modified` };
-      if (!isLockfilePureVersionBump(file.baseContent, file.headContent, bumpedDirs, bumpedVersionsByName)) {
+      if (!isLockfilePureVersionBump(file.baseContent, file.headContent, bumpedDirs, bumpedVersionsByName, bumpedManifestsByName, devDependencyOnlyDirs)) {
         return { ok: false, reason: `"${file.path}" changes are not limited to the bumped workspace packages' version fields` };
       }
       continue;
@@ -562,8 +864,8 @@ export function evaluateReleasePrFootprint({ files }) {
 
     if (RELEASE_PR_FILE_PATTERNS.changeset.test(file.path)) {
       if (file.status !== "removed") return { ok: false, reason: `"${file.path}" has status "${file.status}" -- only a deletion is legal` };
-      if (!isChangesetDeletionLegitimate(file.baseContent, bumpedDirs)) {
-        return { ok: false, reason: `"${file.path}" does not name only packages bumped in this diff` };
+      if (!isChangesetDeletionLegitimate(file.baseContent, bumpedDirs, changelogSectionsByDir)) {
+        return { ok: false, reason: `"${file.path}" does not name only packages this diff actually consumed it for (membership in the bumped set alone is not enough -- see isChangesetDeletionLegitimate()'s own header)` };
       }
       continue;
     }

@@ -274,20 +274,37 @@ test("PAGINATION: the same fixture with the smuggled file removed (a genuinely c
     const pkgDir = join(root, "packages", "alpha");
     mkdirSync(pkgDir, { recursive: true });
     writeManifest(pkgDir, { name: "@x/alpha", version: "1.0.0" });
+    const changelogPath = join(pkgDir, "CHANGELOG.md");
+    writeFileSync(changelogPath, "# Changelog\n\n## 1.0.0\n\n- Initial release.\n");
     mkdirSync(join(root, ".changesets"), { recursive: true });
     const changesetNames = [];
+    const summaries = [];
     for (let i = 0; i < 120; i += 1) {
       const name = `fix-${String(i).padStart(3, "0")}.md`;
-      writeFileSync(join(root, ".changesets", name), `---\nalpha: patch\n---\n\nFix ${i}.\n`);
+      const summary = `Fix ${i}.`;
+      writeFileSync(join(root, ".changesets", name), `---\nalpha: patch\n---\n\n${summary}\n`);
       changesetNames.push(name);
+      summaries.push(summary);
     }
     const base = gitCommit(root, "base with 120 pending changesets");
 
     writeManifest(pkgDir, { name: "@x/alpha", version: "1.0.1" });
+    // The real producer's CHANGELOG bullets are every consumed changeset's
+    // own summary -- isChangesetDeletionLegitimate() now cross-checks each
+    // deleted changeset's summary landed here (re-review,
+    // https://github.com/clossys/foundry/pull/1353#issuecomment-5803457726
+    // item 4), so this fixture must include every one, matching what a
+    // real 120-changeset release would actually write.
+    const bullets = summaries.map((s) => `- ${s}`).join("\n");
+    writeFileSync(changelogPath, `# Changelog\n\n## 1.0.1 - 2026-01-10\n\n${bullets}\n\n## 1.0.0\n\n- Initial release.\n`);
     for (const name of changesetNames) rmSync(join(root, ".changesets", name));
     const head = gitCommit(root, "release consuming all 120, cleanly");
 
-    const changedFiles = [{ path: "packages/alpha/package.json", status: "modified" }, ...changesetNames.map((name) => ({ path: `.changesets/${name}`, status: "removed" }))];
+    const changedFiles = [
+      { path: "packages/alpha/package.json", status: "modified" },
+      { path: "packages/alpha/CHANGELOG.md", status: "modified" },
+      ...changesetNames.map((name) => ({ path: `.changesets/${name}`, status: "removed" })),
+    ];
     assert.ok(changedFiles.length > 100, "fixture must exceed 100 files");
 
     const r = run(["--json", "--now", SATURDAY, "--base", base, "--head", head, "--changed-files", JSON.stringify(changedFiles), "--labels", "release:weekly"], root);

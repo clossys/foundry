@@ -386,6 +386,116 @@ test("applyReleaseChangesets: a later package's failure leaves an earlier, other
   }
 });
 
+// A CHANGESET NAMING SEVERAL PACKAGES IS DELETED ONCE, NOT ONCE PER PACKAGE
+// (re-review, https://github.com/clossys/foundry/pull/1353#issuecomment-5803457726
+// item 1). collect-changesets.mjs's own documented shape (see its header)
+// lets one file name several packages (e.g. `controller: minor` / `writer:
+// patch` in the same frontmatter). Each named package gets its own
+// `namedPlans` entry, and each one carries that SAME shared changeset file
+// in its own `changesetFiles` -- before this fix, the write phase deleted
+// every step's own changesetFiles in a loop with no dedupe, so the SAME
+// file got `rmSync`'d twice and the second call threw `ENOENT` AFTER every
+// manifest and CHANGELOG had already been written, breaking the
+// all-or-nothing contract PHASE C exists to guarantee.
+test("applyReleaseChangesets: a changeset naming multiple packages applies cleanly, deleting the shared file exactly once instead of crashing on a duplicate rmSync", () => {
+  const root = makeRoot();
+  try {
+    makePackage(root, "controller", "1.0.0");
+    makePackage(root, "writer", "2.0.0");
+    // The exact documented shape from collect-changesets.mjs's own header.
+    writeChangeset(root, "shared.md", "---\ncontroller: minor\nwriter: patch\n---\n\nShip a shared update.\n");
+
+    let threw = false;
+    let result;
+    try {
+      result = applyReleaseChangesets({ root, runNpmInstall: () => {}, today: () => "2026-09-24" });
+    } catch {
+      threw = true;
+    }
+
+    assert.equal(threw, false, "applyReleaseChangesets must never throw -- a shared changeset file must be deleted exactly once");
+    assert.equal(result.findings.length, 0, JSON.stringify(result.findings));
+    assert.equal(result.applied.length, 2);
+    assert.deepEqual(
+      result.applied.map((a) => a.package).sort(),
+      ["controller", "writer"],
+    );
+    for (const a of result.applied) assert.deepEqual(a.changesetFiles, ["shared.md"]);
+
+    const controllerManifest = JSON.parse(readFileSync(join(root, "packages", "controller", "package.json"), "utf8"));
+    assert.equal(controllerManifest.version, "1.1.0");
+    const writerManifest = JSON.parse(readFileSync(join(root, "packages", "writer", "package.json"), "utf8"));
+    assert.equal(writerManifest.version, "2.0.1");
+
+    assert.equal(existsSync(join(root, ".changesets", "shared.md")), false, "the shared changeset file must be deleted exactly once, not left behind by a failed second rmSync");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// The reviewer's own follow-up case: one of the several packages a shared
+// changeset names is ALSO a dependent of the other (via issue #1332's
+// sibling-range rewriting) -- proving the shared-file dedupe and the
+// sibling-range rewrite compose correctly, not just each in isolation.
+test("applyReleaseChangesets: a changeset naming multiple packages where one depends on the other applies cleanly -- its own bump AND the sibling-range rewrite both happen from the SAME shared changeset", () => {
+  const root = makeRoot();
+  try {
+    makePackage(root, "core", "0.9.0");
+    // consumer both has its OWN entry in the SAME shared changeset file AND
+    // depends on core via a range core's minor bump breaks.
+    makePackageWithDependency(root, "consumer", "1.0.0", "@x/core", "^0.9.0");
+    writeChangeset(root, "shared.md", "---\ncore: minor\nconsumer: patch\n---\n\nShip a shared update.\n");
+
+    const result = applyReleaseChangesets({ root, runNpmInstall: () => {}, today: () => "2026-09-24" });
+
+    assert.equal(result.findings.length, 0, JSON.stringify(result.findings));
+    assert.equal(result.applied.length, 2);
+
+    const consumerApplied = result.applied.find((a) => a.package === "consumer");
+    assert.equal(consumerApplied.toVersion, "1.0.1");
+    assert.deepEqual(consumerApplied.changesetFiles, ["shared.md"]);
+    assert.deepEqual(consumerApplied.dependencyUpdates, [{ section: "dependencies", name: "@x/core", fromRange: "^0.9.0", toRange: "^0.10.0" }]);
+
+    const consumerManifest = JSON.parse(readFileSync(join(root, "packages", "consumer", "package.json"), "utf8"));
+    assert.equal(consumerManifest.dependencies["@x/core"], "^0.10.0");
+
+    assert.equal(existsSync(join(root, ".changesets", "shared.md")), false);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// All-or-nothing must still hold for a shared changeset: if ONE of the
+// several packages it names fails during planning, NOTHING gets written --
+// not even for the OTHER, otherwise-valid package the SAME file also names.
+test("applyReleaseChangesets: a multi-package changeset where one named package fails leaves EVERY file untouched, including the shared changeset itself (all-or-nothing)", () => {
+  const root = makeRoot();
+  try {
+    makePackage(root, "alpha", "1.0.0");
+    const alphaChangelog = "# Changelog\n\n## 1.0.0\n\n- Initial release.\n";
+    writeFileSync(join(root, "packages", "alpha", "CHANGELOG.md"), alphaChangelog);
+    makePackage(root, "beta", "not-a-version"); // bumpVersion() will throw for beta
+    writeChangeset(root, "shared.md", "---\nalpha: patch\nbeta: patch\n---\n\nShip a shared update.\n");
+
+    let npmInstallCalled = false;
+    const result = applyReleaseChangesets({ root, runNpmInstall: () => (npmInstallCalled = true), today: () => "2026-09-24" });
+
+    assert.equal(result.applied.length, 0, "nothing was applied -- beta's failure fails the whole shared changeset");
+    assert.equal(result.findings.length, 1);
+    assert.match(result.findings[0], /beta/);
+    assert.equal(npmInstallCalled, false);
+
+    // alpha: completely untouched on disk, even though it was named by the
+    // SAME changeset alongside beta and would otherwise have applied cleanly.
+    const alphaManifest = JSON.parse(readFileSync(join(root, "packages", "alpha", "package.json"), "utf8"));
+    assert.equal(alphaManifest.version, "1.0.0", "alpha must not be bumped just because it shares a changeset with a package that failed");
+    assert.equal(readFileSync(join(root, "packages", "alpha", "CHANGELOG.md"), "utf8"), alphaChangelog, "alpha's CHANGELOG.md must be byte-identical to before the run");
+    assert.equal(existsSync(join(root, ".changesets", "shared.md")), true, "the shared changeset file must not be deleted when the overall run did not succeed");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 // -------------------------------------------------- issue #1332: sibling dependency ranges
 
 test("bumpDependencyRangeText: rewrites only the named entry's range, byte-exact elsewhere", () => {
@@ -595,6 +705,127 @@ test("applyReleaseChangesets: a package named by its own changeset also gets its
     const consumerChangelog = readFileSync(join(root, "packages", "consumer", "CHANGELOG.md"), "utf8");
     assert.match(consumerChangelog, /Fix an unrelated bug\./);
     assert.match(consumerChangelog, /Updated dependency @x\/core to \^0\.10\.0/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// -------------------------------------------------- devDependencies: scanned and rewritten too, but never triggers a bump
+//
+// Decision + fix, re-review, https://github.com/clossys/foundry/pull/1353#issuecomment-5803457726
+// item 3: a REAL case in this repository -- packages/controller has
+// @clossys/advisor in devDependencies at ^0.4.0, so a minor bump of
+// advisor leaves that range stale, and THIS repository's own workspace
+// `npm install --package-lock-only` (unlike an external consumer's
+// install) DOES resolve devDependencies. See this file's own header for
+// the full decision: devDependencies is rewritten the same way
+// dependencies/peerDependencies/optionalDependencies are, but NEVER by
+// itself triggers a dependent-only version bump (devDependencies is not
+// published/consumer-facing).
+
+test("applyReleaseChangesets: a stale sibling devDependencies range is rewritten silently -- no version bump, no CHANGELOG entry, no applied entry of its own", () => {
+  const root = makeRoot();
+  try {
+    makePackage(root, "advisor", "0.4.0");
+    writeFileSync(join(root, "packages", "advisor", "CHANGELOG.md"), "# Changelog\n\n## 0.4.0\n\n- Initial release.\n");
+    writeChangeset(root, "advisor-feature.md", "---\nadvisor: minor\n---\n\nAdd a feature.\n");
+
+    // controller has NO changeset of its own, and NO dependencies/
+    // peerDependencies/optionalDependencies entry on advisor at all --
+    // only devDependencies, the real packages/controller shape.
+    const controllerDir = join(root, "packages", "controller");
+    mkdirSync(controllerDir, { recursive: true });
+    writeFileSync(
+      join(controllerDir, "package.json"),
+      '{\n  "name": "@x/controller",\n  "version": "1.0.0",\n  "license": "MIT",\n  "devDependencies": {\n    "@x/advisor": "^0.4.0"\n  }\n}\n',
+    );
+
+    const result = applyReleaseChangesets({ root, runNpmInstall: () => {}, today: () => "2026-09-24" });
+
+    assert.equal(result.findings.length, 0, JSON.stringify(result.findings));
+    // ONLY advisor is "applied" -- controller's devDependencies rewrite is
+    // never reported as a bump, because it is not one.
+    assert.deepEqual(
+      result.applied.map((a) => a.package),
+      ["advisor"],
+    );
+
+    const controllerManifest = JSON.parse(readFileSync(join(controllerDir, "package.json"), "utf8"));
+    assert.equal(controllerManifest.version, "1.0.0", "controller's own version must never change for a devDependencies-only rewrite");
+    assert.equal(controllerManifest.devDependencies["@x/advisor"], "^0.5.0");
+
+    // No CHANGELOG.md was ever created for controller -- a devDependencies
+    // rewrite is silent, not a release note.
+    assert.equal(existsSync(join(controllerDir, "CHANGELOG.md")), false);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("applyReleaseChangesets: a package that needs BOTH a real dependencies rewrite AND a devDependencies rewrite for the same sibling gets exactly one dependent-only bump, with only the dependencies rewrite in its CHANGELOG", () => {
+  const root = makeRoot();
+  try {
+    makePackage(root, "core", "0.9.0");
+    writeChangeset(root, "core-feature.md", "---\ncore: minor\n---\n\nAdd a feature.\n");
+
+    const consumerDir = join(root, "packages", "consumer");
+    mkdirSync(consumerDir, { recursive: true });
+    writeFileSync(
+      join(consumerDir, "package.json"),
+      '{\n  "name": "@x/consumer",\n  "version": "1.0.0",\n  "license": "MIT",\n  "dependencies": {\n    "@x/core": "^0.9.0"\n  },\n  "devDependencies": {\n    "@x/core": "^0.9.0"\n  }\n}\n',
+    );
+
+    const result = applyReleaseChangesets({ root, runNpmInstall: () => {}, today: () => "2026-09-24" });
+
+    assert.equal(result.findings.length, 0, JSON.stringify(result.findings));
+    const consumerApplied = result.applied.find((a) => a.package === "consumer");
+    assert.equal(consumerApplied.toVersion, "1.0.1", "exactly one dependent-only bump, not two");
+    assert.deepEqual(consumerApplied.dependencyUpdates, [
+      { section: "dependencies", name: "@x/core", fromRange: "^0.9.0", toRange: "^0.10.0" },
+      { section: "devDependencies", name: "@x/core", fromRange: "^0.9.0", toRange: "^0.10.0" },
+    ]);
+
+    const consumerManifest = JSON.parse(readFileSync(join(consumerDir, "package.json"), "utf8"));
+    assert.equal(consumerManifest.dependencies["@x/core"], "^0.10.0");
+    assert.equal(consumerManifest.devDependencies["@x/core"], "^0.10.0");
+
+    const consumerChangelog = readFileSync(join(consumerDir, "CHANGELOG.md"), "utf8");
+    const bulletCount = (consumerChangelog.match(/Updated dependency @x\/core to \^0\.10\.0/g) ?? []).length;
+    assert.equal(bulletCount, 1, "only the publish-relevant (dependencies) rewrite gets a CHANGELOG bullet, not the devDependencies one too");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("applyReleaseChangesets: a NAMED package's own devDependencies rewrite is folded into its own manifest write with no extra CHANGELOG bullet", () => {
+  const root = makeRoot();
+  try {
+    makePackage(root, "core", "0.9.0");
+    writeChangeset(root, "core-feature.md", "---\ncore: minor\n---\n\nAdd a feature.\n");
+
+    const controllerDir = join(root, "packages", "controller");
+    mkdirSync(controllerDir, { recursive: true });
+    writeFileSync(
+      join(controllerDir, "package.json"),
+      '{\n  "name": "@x/controller",\n  "version": "1.0.0",\n  "license": "MIT",\n  "devDependencies": {\n    "@x/core": "^0.9.0"\n  }\n}\n',
+    );
+    // controller has its OWN changeset (an unrelated reason to bump).
+    writeChangeset(root, "controller-fix.md", "---\ncontroller: patch\n---\n\nFix an unrelated bug.\n");
+
+    const result = applyReleaseChangesets({ root, runNpmInstall: () => {}, today: () => "2026-09-24" });
+
+    assert.equal(result.findings.length, 0, JSON.stringify(result.findings));
+    const controllerApplied = result.applied.find((a) => a.package === "controller");
+    assert.equal(controllerApplied.toVersion, "1.0.1");
+    assert.deepEqual(controllerApplied.changesetFiles, ["controller-fix.md"]);
+    assert.deepEqual(controllerApplied.dependencyUpdates, [{ section: "devDependencies", name: "@x/core", fromRange: "^0.9.0", toRange: "^0.10.0" }]);
+
+    const controllerManifest = JSON.parse(readFileSync(join(controllerDir, "package.json"), "utf8"));
+    assert.equal(controllerManifest.devDependencies["@x/core"], "^0.10.0");
+
+    const controllerChangelog = readFileSync(join(controllerDir, "CHANGELOG.md"), "utf8");
+    assert.match(controllerChangelog, /Fix an unrelated bug\./);
+    assert.doesNotMatch(controllerChangelog, /Updated dependency @x\/core/, "a devDependencies rewrite never gets its own CHANGELOG bullet, even for a named package");
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
