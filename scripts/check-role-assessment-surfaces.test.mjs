@@ -6,11 +6,11 @@
 // surface, or the first-wave engagement gate is a counted gap again.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { evaluateRoleAssessmentSurfaces } from "./check-role-assessment-surfaces.mjs";
+import { spawnCapture } from "./lib/spawn-capture.mjs";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const script = join(repoRoot, "scripts/check-role-assessment-surfaces.mjs");
@@ -116,8 +116,8 @@ test("every active role appears in exactly one of declared, undeclared or findin
   assert.deepEqual(result.findings.map((item) => item.rule).sort(), ["required-assessment-undeclared", "undeclared-assessment-bin"]);
 });
 
-test("the live Advisor package declares a mapped assessment surface and the gate passes", () => {
-  const run = spawnSync(process.execPath, [script, "--json", repoRoot], { encoding: "utf8" });
+test("the live Advisor package declares a mapped assessment surface and the gate passes", async () => {
+  const run = await spawnCapture(process.execPath, [script, "--json", repoRoot]);
   assert.equal(run.status, 0, run.stderr || run.stdout);
   const result = JSON.parse(run.stdout);
   const scope = JSON.parse(readFileSync(join(repoRoot, "package-scope.json"), "utf8")).scope;

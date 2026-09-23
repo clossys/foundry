@@ -1,4 +1,4 @@
-import { execFileSync, spawnSync } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -259,44 +259,64 @@ describe("main — direct-path reachability (real compiled dist/bin.js)", () => 
     return path;
   }
 
-  function runCompiledCli(args: string[]): { status: number | null; stdout: string; stderr: string } {
-    // spawnSync keeps stdout/stderr on the result for every exit code.
-    // execFileSync throws on non-zero and, under the Node 20 CI runner, has
-    // left error.stdout empty on a real exit-1 write — the in-process
-    // contract tests still pass, and Node 24 captures the same bytes.
-    const result = spawnSync(process.execPath, [binPath, ...args], { encoding: "utf8" });
-    return { status: result.status, stdout: result.stdout ?? "", stderr: result.stderr ?? "" };
+  // #1333/#1341: spawnSync's synchronous capture is its own internal poll
+  // loop outside Node's normal stream machinery, and that loop is what a
+  // heavily loaded CI runner's scheduling can starve -- the exit status
+  // lands but result.stdout comes back empty. spawn()'s stdout/stderr are
+  // ordinary Readable streams whose contract guarantees every byte written
+  // is delivered via `data` events before `end` fires, and the `close`
+  // handler below fires only after the process has exited AND both stdio
+  // streams have ended, so it cannot observe an exit code before the output
+  // that produced it has been fully read.
+  function runCompiledCli(args: string[]): Promise<{ status: number | null; stdout: string; stderr: string }> {
+    return new Promise((resolvePromise, rejectPromise) => {
+      const child = spawn(process.execPath, [binPath, ...args]);
+      let stdout = "";
+      let stderr = "";
+      child.stdout.setEncoding("utf8");
+      child.stderr.setEncoding("utf8");
+      child.stdout.on("data", (chunk: string) => {
+        stdout += chunk;
+      });
+      child.stderr.on("data", (chunk: string) => {
+        stderr += chunk;
+      });
+      child.on("error", rejectPromise);
+      child.on("close", (status) => {
+        resolvePromise({ status, stdout, stderr });
+      });
+    });
   }
 
-  it("real exit 0 on a satisfied run", () => {
+  it("real exit 0 on a satisfied run", async () => {
     const inputPath = writeFixture("satisfied.json", satisfiedInput);
-    const result = runCompiledCli(["--input", inputPath]);
+    const result = await runCompiledCli(["--input", inputPath]);
     expect(result.status).toBe(0);
     expect(result.stdout).toMatch(/SATISFIED/);
   });
 
-  it("real exit 1 on a violated run", () => {
+  it("real exit 1 on a violated run", async () => {
     const inputPath = writeFixture("violated.json", violatedInput);
-    const result = runCompiledCli(["--input", inputPath]);
+    const result = await runCompiledCli(["--input", inputPath]);
     expect(result.status).toBe(1);
     expect(result.stdout).toMatch(/VIOLATED/);
   });
 
-  it("real exit 2 on an indeterminate run (unclassified cell)", () => {
+  it("real exit 2 on an indeterminate run (unclassified cell)", async () => {
     const inputPath = writeFixture("indeterminate.json", indeterminateInput);
-    const result = runCompiledCli(["--input", inputPath]);
+    const result = await runCompiledCli(["--input", inputPath]);
     expect(result.status).toBe(2);
     expect(result.stdout).toMatch(/INDETERMINATE/);
   });
 
-  it("real exit 2, never 0, on an empty matrix -- the #338 guard against the real shipped binary", () => {
+  it("real exit 2, never 0, on an empty matrix -- the #338 guard against the real shipped binary", async () => {
     const inputPath = writeFixture("empty.json", { packages: [], repositories: [] });
-    const result = runCompiledCli(["--input", inputPath]);
+    const result = await runCompiledCli(["--input", inputPath]);
     expect(result.status).toBe(2);
   });
 
-  it("real exit 0 on --help", () => {
-    const result = runCompiledCli(["--help"]);
+  it("real exit 0 on --help", async () => {
+    const result = await runCompiledCli(["--help"]);
     expect(result.status).toBe(0);
     expect(result.stdout).toMatch(/Usage: observer-coverage-check/);
   });

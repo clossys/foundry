@@ -1,4 +1,4 @@
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { chmodSync, cpSync, mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -66,11 +66,53 @@ beforeAll(() => {
   symlinkSync(installedCliPath, binPath);
 }, 60_000);
 
-function runBin(args: string[]) {
-  const options = { encoding: "utf8" as const, timeout: 8_000 };
-  let spawned = spawnSync(binPath, args, options);
-  if (spawned.error) spawned = spawnSync(process.execPath, [binPath, ...args], options);
-  return spawned;
+/**
+ * Runs the installed CLI bin and resolves once its stdout/stderr have fully
+ * ended AND the process has exited -- never before.
+ *
+ * #1333/#1341: the equivalent `spawnSync` call flaked in CI under load with
+ * `result.status` set (the child really did exit) but `result.stdout`
+ * empty -- a report the exit code says exists but the capture missed.
+ * `spawnSync`'s synchronous capture is its own internal poll loop outside
+ * Node's normal stream machinery, and that loop is what a heavily loaded CI
+ * runner's scheduling can starve. `spawn()`'s stdout/stderr are ordinary
+ * `Readable` streams, whose contract guarantees every byte written is
+ * delivered via `data` events before `end` fires, and the `close` handler
+ * below -- which Node fires only after the process has exited AND both
+ * stdio streams have ended -- cannot observe an exit code before the output
+ * that produced it has been fully read.
+ */
+function spawnCapture(
+  command: string,
+  args: string[],
+  options: { timeout: number },
+): Promise<{ status: number | null; stdout: string; stderr: string }> {
+  return new Promise((resolvePromise, rejectPromise) => {
+    const child = spawn(command, args, options);
+    let stdout = "";
+    let stderr = "";
+    child.stdout.setEncoding("utf8");
+    child.stderr.setEncoding("utf8");
+    child.stdout.on("data", (chunk: string) => {
+      stdout += chunk;
+    });
+    child.stderr.on("data", (chunk: string) => {
+      stderr += chunk;
+    });
+    child.on("error", rejectPromise);
+    child.on("close", (status) => {
+      resolvePromise({ status, stdout, stderr });
+    });
+  });
+}
+
+async function runBin(args: string[]) {
+  const options = { timeout: 8_000 };
+  try {
+    return await spawnCapture(binPath, args, options);
+  } catch {
+    return await spawnCapture(process.execPath, [binPath, ...args], options);
+  }
 }
 
 describe("clossys-locksmith-provider-custody", () => {
@@ -111,8 +153,8 @@ describe("clossys-locksmith-provider-custody", () => {
 });
 
 describe("clossys-locksmith-provider-custody, invoked through a node_modules/.bin-shaped symlink", () => {
-  it("exits 0 with a satisfied report naming key, provider, and rung", () => {
-    const result = runBin([write("satisfied.json", satisfiedDeclaration())]);
+  it("exits 0 with a satisfied report naming key, provider, and rung", async () => {
+    const result = await runBin([write("satisfied.json", satisfiedDeclaration())]);
     expect(result.status).toBe(0);
     expect(result.stdout).toContain("key: CLOUDFLARE_API_TOKEN");
     expect(result.stdout).toContain("provider: cloudflare");
@@ -120,15 +162,15 @@ describe("clossys-locksmith-provider-custody, invoked through a node_modules/.bi
     expect(result.stdout).toContain("SATISFIED");
   });
 
-  it("exits 1 with the store-is-repository reason for a repository-store declaration", () => {
-    const result = runBin([write("violated.json", violatedDeclaration())]);
+  it("exits 1 with the store-is-repository reason for a repository-store declaration", async () => {
+    const result = await runBin([write("violated.json", violatedDeclaration())]);
     expect(result.status).toBe(1);
     expect(result.stdout).toContain("VIOLATED");
     expect(result.stdout).toContain("store-is-repository");
   });
 
-  it("exits 2 for a missing file without ever claiming SATISFIED", () => {
-    const result = runBin([join(root, "missing.json")]);
+  it("exits 2 for a missing file without ever claiming SATISFIED", async () => {
+    const result = await runBin([join(root, "missing.json")]);
     expect(result.status).toBe(2);
     expect(result.stderr).toContain("does not exist");
     expect(result.stdout).not.toContain("SATISFIED");

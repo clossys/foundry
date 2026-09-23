@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
@@ -9,6 +8,7 @@ import {
   evaluateFirstWaveSequence,
   loadAndEvaluate,
 } from "./check-first-wave-sequence.mjs";
+import { spawnCapture } from "./lib/spawn-capture.mjs";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const script = join(repoRoot, "scripts/check-first-wave-sequence.mjs");
@@ -186,8 +186,8 @@ test("weakening the priority so expression outranks operations is a finding", ()
   );
 });
 
-test("the CLI reports PASS on this repository", () => {
-  const run = spawnSync(process.execPath, [script], { encoding: "utf8", cwd: repoRoot });
+test("the CLI reports PASS on this repository", async () => {
+  const run = await spawnCapture(process.execPath, [script], { cwd: repoRoot });
   assert.equal(run.status, 0, run.stderr);
   assert.match(run.stdout, /first-wave sequence: PASS/);
   assert.match(run.stdout, /advisor -> starter -> controller/);

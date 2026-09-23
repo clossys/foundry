@@ -2,10 +2,10 @@ import assert from "node:assert/strict";
 import { chmodSync, existsSync, mkdirSync, mkdtempSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { spawnSync } from "node:child_process";
 import test from "node:test";
 
 import { defaultCleanRebuildPackage, defaultPackCandidate, publishEligibleSet, publishOnePackage } from "./publish-qualified-set.mjs";
+import { spawnCapture } from "./lib/spawn-capture.mjs";
 
 function passingDeps(overrides = {}) {
   return {
@@ -266,6 +266,19 @@ function withTempRoot(run) {
   }
 }
 
+// Async twin of withTempRoot for the two tests below that spawn the real
+// `tar` CLI and assert on its stdout (issue #1333/#1341 flake class: a
+// synchronous spawnSync capture can starve under CI load and return an
+// empty/truncated buffer even though the exit code landed correctly).
+async function withTempRootAsync(run) {
+  const root = mkdtempSync(join(tmpdir(), "clean-rebuild-"));
+  try {
+    return await run(root);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+}
+
 test("defaultCleanRebuildPackage: deletes the existing dist/ before the rebuild command runs, and the mode a stale dist/ left behind does not survive", () => {
   withTempRoot((root) => {
     const packageDir = join(root, "packages", "widget");
@@ -313,8 +326,8 @@ test("defaultCleanRebuildPackage: a failing rebuild command is reported with the
   });
 });
 
-test("defaultCleanRebuildPackage + defaultPackCandidate: a real npm pack of the rebuilt tree carries no stale executable mode — proves the packed bytes match a fresh-checkout build (issue #1286)", () => {
-  withTempRoot((root) => {
+test("defaultCleanRebuildPackage + defaultPackCandidate: a real npm pack of the rebuilt tree carries no stale executable mode — proves the packed bytes match a fresh-checkout build (issue #1286)", async () => {
+  await withTempRootAsync(async (root) => {
     const packageDir = join(root, "packages", "widget");
     mkdirSync(join(packageDir, "dist"), { recursive: true });
     writeFileSync(
@@ -341,7 +354,7 @@ test("defaultCleanRebuildPackage + defaultPackCandidate: a real npm pack of the 
 
     const candidate = defaultPackCandidate("widget", { root, stagingParent: root });
     try {
-      const listing = spawnSync("tar", ["-tvzf", candidate.path], { encoding: "utf8" });
+      const listing = await spawnCapture("tar", ["-tvzf", candidate.path]);
       assert.equal(listing.status, 0, listing.stderr);
       const binLine = listing.stdout.split("\n").find((line) => line.includes("dist/cli.js"));
       assert.ok(binLine, `expected the packed tarball to contain dist/cli.js: ${listing.stdout}`);
@@ -354,8 +367,8 @@ test("defaultCleanRebuildPackage + defaultPackCandidate: a real npm pack of the 
   });
 });
 
-test("negative control: packing a stale dist/ WITHOUT the clean rebuild really does carry the stale mode forward — this is the defect issue #1286 reports", () => {
-  withTempRoot((root) => {
+test("negative control: packing a stale dist/ WITHOUT the clean rebuild really does carry the stale mode forward — this is the defect issue #1286 reports", async () => {
+  await withTempRootAsync(async (root) => {
     const packageDir = join(root, "packages", "widget");
     mkdirSync(join(packageDir, "dist"), { recursive: true });
     writeFileSync(
@@ -370,7 +383,7 @@ test("negative control: packing a stale dist/ WITHOUT the clean rebuild really d
     // exactly what publish-qualified-set.mjs did before this fix.
     const candidate = defaultPackCandidate("widget", { root, stagingParent: root });
     try {
-      const listing = spawnSync("tar", ["-tvzf", candidate.path], { encoding: "utf8" });
+      const listing = await spawnCapture("tar", ["-tvzf", candidate.path]);
       assert.equal(listing.status, 0, listing.stderr);
       const binLine = listing.stdout.split("\n").find((line) => line.includes("dist/cli.js"));
       assert.ok(binLine, `expected the packed tarball to contain dist/cli.js: ${listing.stdout}`);

@@ -1,4 +1,4 @@
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -85,8 +85,33 @@ afterAll(() => {
   if (workDir) rmSync(workDir, { recursive: true, force: true });
 });
 
-function runBin(args: string[]) {
-  return spawnSync(process.execPath, [binPath, ...args], { encoding: "utf8", timeout: 8_000 });
+// #1333/#1341: spawnSync's synchronous capture is its own internal poll
+// loop outside Node's normal stream machinery, and that loop is what a
+// heavily loaded CI runner's scheduling can starve -- the exit status lands
+// but stdout comes back empty. spawn()'s stdout/stderr are ordinary
+// Readable streams whose contract guarantees every byte written is
+// delivered via `data` events before `end` fires, and the `close` handler
+// below fires only after the process has exited AND both stdio streams have
+// ended, so it cannot observe an exit code before the output that produced
+// it has been fully read.
+function runBin(args: string[]): Promise<{ status: number | null; stdout: string; stderr: string }> {
+  return new Promise((resolvePromise, rejectPromise) => {
+    const child = spawn(process.execPath, [binPath, ...args], { timeout: 8_000 });
+    let stdout = "";
+    let stderr = "";
+    child.stdout.setEncoding("utf8");
+    child.stderr.setEncoding("utf8");
+    child.stdout.on("data", (chunk: string) => {
+      stdout += chunk;
+    });
+    child.stderr.on("data", (chunk: string) => {
+      stderr += chunk;
+    });
+    child.on("error", rejectPromise);
+    child.on("close", (status) => {
+      resolvePromise({ status, stdout, stderr });
+    });
+  });
 }
 
 describe("inspector-check", () => {
@@ -124,17 +149,17 @@ describe("inspector-check", () => {
 });
 
 describe("inspector-check, invoked through a node_modules/.bin-shaped symlink", () => {
-  it("--help produces non-empty stdout and exits 0", () => {
-    const result = runBin(["--help"]);
+  it("--help produces non-empty stdout and exits 0", async () => {
+    const result = await runBin(["--help"]);
     expect(result.status).toBe(0);
     expect(result.stdout.length).toBeGreaterThan(0);
     expect(result.stdout).toContain("Usage: inspector-check");
     expect(result.stdout).toContain("does not compute change escape rate");
   });
 
-  it("exits 0 with a satisfied pre-landing report and no escape-rate fields", () => {
+  it("exits 0 with a satisfied pre-landing report and no escape-rate fields", async () => {
     const path = write("satisfied.json", satisfied());
-    const result = runBin([path]);
+    const result = await runBin([path]);
     expect(result.status).toBe(0);
     const report = JSON.parse(result.stdout) as Record<string, unknown>;
     expect(report).toMatchObject({ state: "satisfied", proposedPositions: [], exitCode: 0 });
@@ -142,14 +167,14 @@ describe("inspector-check, invoked through a node_modules/.bin-shaped symlink", 
     expect(report).not.toHaveProperty("rate");
   });
 
-  it("exits 1 with a violated report", () => {
-    const result = runBin([write("violated.json", violated())]);
+  it("exits 1 with a violated report", async () => {
+    const result = await runBin([write("violated.json", violated())]);
     expect(result.status).toBe(1);
     expect(JSON.parse(result.stdout)).toMatchObject({ state: "violated" });
   });
 
-  it("exits 2 for a missing file without computing a rate", () => {
-    const result = runBin([join(root, "missing.json")]);
+  it("exits 2 for a missing file without computing a rate", async () => {
+    const result = await runBin([join(root, "missing.json")]);
     expect(result.status).toBe(2);
     expect(result.stderr).toContain("does not exist");
     expect(result.stdout).not.toMatch(/"rate":/);

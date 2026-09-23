@@ -2,12 +2,12 @@
 // publishing must go red HERE, before the real publish, which is production.
 
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import { spawnCapture } from "./lib/spawn-capture.mjs";
 
 const script = join(dirname(fileURLToPath(import.meta.url)), "rehearse-publish-lifecycle.mjs");
 
@@ -20,54 +20,54 @@ function packageWith(t, scripts, { manifest } = {}) {
   return dir;
 }
 
-const rehearse = (dir) => {
-  const result = spawnSync(process.execPath, [script, dir], { encoding: "utf8" });
+const rehearse = async (dir) => {
+  const result = await spawnCapture(process.execPath, [script, dir]);
   return { code: result.status, out: `${result.stdout ?? ""}${result.stderr ?? ""}` };
 };
 
-test("a hook that succeeds is rehearsed and reported by name", (t) => {
+test("a hook that succeeds is rehearsed and reported by name", async (t) => {
   const dir = packageWith(t, { prepublishOnly: "node -e \"process.exit(0)\"" });
-  const result = rehearse(dir);
+  const result = await rehearse(dir);
   assert.equal(result.code, 0, result.out);
   assert.match(result.out, /rehearsing prepublishOnly/);
   assert.match(result.out, /REHEARSED/);
 });
 
-test("NEGATIVE CONTROL: a prepublishOnly hook that exits non-zero fails the gate (exit 1)", (t) => {
+test("NEGATIVE CONTROL: a prepublishOnly hook that exits non-zero fails the gate (exit 1)", async (t) => {
   const dir = packageWith(t, { prepublishOnly: "node -e \"process.exit(2)\"" });
-  const result = rehearse(dir);
+  const result = await rehearse(dir);
   assert.equal(result.code, 1, result.out);
   assert.match(result.out, /HOOK FAILED/);
   assert.match(result.out, /prepublishOnly/);
 });
 
-test("NEGATIVE CONTROL: every pre-upload hook is executed, not just the first", (t) => {
+test("NEGATIVE CONTROL: every pre-upload hook is executed, not just the first", async (t) => {
   const dir = packageWith(t, { prepublishOnly: "node -e \"process.exit(0)\"", prepack: "node -e \"process.exit(0)\"", prepare: "node -e \"process.exit(0)\"", postpack: "node -e \"process.exit(4)\"" });
-  const result = rehearse(dir);
+  const result = await rehearse(dir);
   assert.equal(result.code, 1, result.out);
   assert.match(result.out, /postpack/);
 });
 
-test("a hook npm fires only AFTER the upload is refused rather than silently skipped (exit 1)", (t) => {
+test("a hook npm fires only AFTER the upload is refused rather than silently skipped (exit 1)", async (t) => {
   const dir = packageWith(t, { prepublishOnly: "node -e \"process.exit(0)\"", postpublish: "node -e \"process.exit(0)\"" });
-  const result = rehearse(dir);
+  const result = await rehearse(dir);
   assert.equal(result.code, 1, result.out);
   assert.match(result.out, /CANNOT BE REHEARSED/);
   assert.match(result.out, /postpublish/);
 });
 
-test("a package that declares no publish lifecycle script passes, and says that is why", (t) => {
+test("a package that declares no publish lifecycle script passes, and says that is why", async (t) => {
   const dir = packageWith(t, { build: "node -e \"process.exit(0)\"" });
-  const result = rehearse(dir);
+  const result = await rehearse(dir);
   assert.equal(result.code, 0, result.out);
   assert.match(result.out, /declares no publish lifecycle script/);
 });
 
-test("an unreadable or absent manifest is INDETERMINATE (exit 2), never a pass", (t) => {
+test("an unreadable or absent manifest is INDETERMINATE (exit 2), never a pass", async (t) => {
   const broken = packageWith(t, {}, { manifest: "{ not json" });
-  assert.equal(rehearse(broken).code, 2);
-  assert.equal(rehearse(join(broken, "nope")).code, 2);
-  assert.equal(spawnSync(process.execPath, [script], { encoding: "utf8" }).status, 2);
+  assert.equal((await rehearse(broken)).code, 2);
+  assert.equal((await rehearse(join(broken, "nope"))).code, 2);
+  assert.equal((await spawnCapture(process.execPath, [script])).status, 2);
 });
 
 test("every publishable package in this repository passes its own rehearsal shape check", async () => {

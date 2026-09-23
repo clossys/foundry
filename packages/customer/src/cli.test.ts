@@ -1,5 +1,5 @@
 import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -118,6 +118,45 @@ describe("customer-check main()", () => {
   });
 });
 
+
+/**
+ * Runs a child process and resolves once its stdout/stderr have fully ended
+ * AND the process has exited -- never before.
+ *
+ * #1333: the equivalent `spawnSync` calls this replaces flaked in CI under
+ * load with `result.status === 1` (the child really did exit 1) but
+ * `result.stdout` empty -- a report the exit code says exists but the
+ * capture missed. `spawnSync`'s synchronous capture is implemented as its
+ * own internal poll loop outside Node's normal stream machinery, and that
+ * loop is what a heavily loaded CI runner's scheduling can starve.
+ * `spawn()`'s stdout/stderr are ordinary `Readable` streams, whose own
+ * contract (not a loop this test has to get right) guarantees every byte
+ * written is delivered via `data` events before `end` fires, and this
+ * helper's `close` handler -- which Node fires only after the process has
+ * exited AND both stdio streams have ended -- cannot observe an exit code
+ * before the output that produced it has been fully read. That ordering
+ * guarantee is the fix; it holds regardless of scheduler pressure.
+ */
+function spawnCapture(command: string, args: string[]): Promise<{ status: number | null; stdout: string; stderr: string }> {
+  return new Promise((resolvePromise, rejectPromise) => {
+    const child = spawn(command, args);
+    let stdout = "";
+    let stderr = "";
+    child.stdout.setEncoding("utf8");
+    child.stderr.setEncoding("utf8");
+    child.stdout.on("data", (chunk: string) => {
+      stdout += chunk;
+    });
+    child.stderr.on("data", (chunk: string) => {
+      stderr += chunk;
+    });
+    child.on("error", rejectPromise);
+    child.on("close", (status) => {
+      resolvePromise({ status, stdout, stderr });
+    });
+  });
+}
+
 describe("customer-check bin entry point (installed-symlink topology)", () => {
   let binPath: string;
   let installRoot: string;
@@ -155,22 +194,22 @@ describe("customer-check bin entry point (installed-symlink topology)", () => {
     return [keepPath, audiencePath];
   }
 
-  it("prints usage and exits 0 for --help", () => {
-    const result = spawnSync(process.execPath, [binPath, "--help"], { encoding: "utf8" });
+  it("prints usage and exits 0 for --help", async () => {
+    const result = await spawnCapture(process.execPath, [binPath, "--help"]);
     expect(result.status).toBe(0);
     expect(result.stdout).toContain("Usage: customer-check");
   });
 
-  it("red case: exits 1 with a violated report", () => {
+  it("red case: exits 1 with a violated report", async () => {
     const [keepPath, audiencePath] = pair(cleanKeep({ impressions: { ...cleanKeep().impressions, wouldIStay: "no" } }));
-    const result = spawnSync(process.execPath, [binPath, keepPath, audiencePath], { encoding: "utf8" });
+    const result = await spawnCapture(process.execPath, [binPath, keepPath, audiencePath]);
     expect(result.status).toBe(1);
     expect(JSON.parse(result.stdout)).toMatchObject({ state: "violated" });
   });
 
-  it("clean case: exits 0 with a satisfied report", () => {
+  it("clean case: exits 0 with a satisfied report", async () => {
     const [keepPath, audiencePath] = pair(cleanKeep());
-    const result = spawnSync(process.execPath, [binPath, keepPath, audiencePath], { encoding: "utf8" });
+    const result = await spawnCapture(process.execPath, [binPath, keepPath, audiencePath]);
     expect(result.status).toBe(0);
     expect(JSON.parse(result.stdout)).toMatchObject({ state: "satisfied" });
   });
