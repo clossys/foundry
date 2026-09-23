@@ -122,7 +122,8 @@
     "CHANGELOG.md",
     "README.md",
     "LICENSE",
-    "skill"
+    "skill",
+    "templates"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",

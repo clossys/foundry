@@ -153,6 +153,8 @@ Use explicit subpaths:
 - `@clossys/publisher/record` — the append-only, content-addressed publication ledger and its drift checker. See "`record` — the append-only publication ledger," below.
 - `@clossys/publisher/pack` — the v0 Launch pack manifest contract: types, schema validation, needs-graph readiness, and adopt-don't-override detection. See "The pack," below.
 - `@clossys/publisher/surfaces` — the one-owner-per-file contract for surface documents under `clossys/publisher/surfaces/`. See "Surface documents move to Publisher," below.
+- `@clossys/publisher/materials` — the materials mini-site (overviews, pitch decks, audience variants). See "Materials site," below.
+- `@clossys/publisher/templates` — the pack's default templates and the channel spec registry. See "Templates and channel specs," below.
 
 The package has no root export. `core` is deliberately framework-agnostic;
 the web and document subpaths have optional React peers, while `web` also
@@ -1718,7 +1720,88 @@ to own once that contract exists; wire the constant into the shared layout
 contract's own file when #1171 lands, rather than duplicating a second
 declaration of the path there.
 
+## Materials site
+
+`@clossys/publisher/materials` is the materials mini-site (issue #1206):
+company overviews (short/medium/long) and pitch decks (with audience
+variants), rendered as a browsable, print-friendly static HTML site. This
+subpath does not re-author document or slide content — `@clossys/
+publisher/document` and `@clossys/publisher/slides` already render a
+`StructuredDocument`/`SlidesDeckInput` to HTML/SVG. It takes their
+already-rendered output and does the work specific to the materials site:
+
+- `renderMaterialsIndexHtml(entries)` — the browsable index, listing every
+  overview and deck version with its status, condition, version, and
+  last-published time, read from the pack manifest (#1204).
+- `selectAudienceVariant(deck, selections, audience)` /
+  `declaredAudiences(selections)` — one source deck, filtered to an
+  audience's declared slide selections (#1206: "share one source and
+  differ only by declared selections"). A slide with no declared audience
+  is shown to every variant.
+- `renderPitchDeckHtml(result, options)` — wraps `renderSlidesDeck`'s own
+  rendered SVG slides into one self-contained HTML page with keyboard
+  navigation and the shared print stylesheet (one slide per printed
+  page) — #1206: "HTML slides with keyboard navigation," "no built-in PDF
+  pipeline — a print stylesheet makes browser print-to-PDF clean."
+- `materialsPrintStylesheet()` — the shared `@media print` rules both the
+  deck shell and a company-overview page use.
+- `checkMaterialsVisibility(input)` / `MATERIALS_DEFAULT_VISIBILITY` —
+  issue #1206's owner decision that materials are internal by default and
+  that committing one to a public repository publishes it ("git is a
+  publication channel too"). This is the refusal check a caller runs
+  before a commit, turning the item `blocked` rather than letting it
+  reach a public tree.
+
+**This site is never deployed and never committed to a public repository.**
+It is an internal working artifact, opened locally like a PDF and
+re-rendered by Publisher; nothing in this subpath writes to a public
+domain or a public git remote.
+
+## Templates and channel specs
+
+`@clossys/publisher/templates` is the pack's opinionated defaults (issue
+#1207), so every client starts from the same expert baseline rather than
+21 hand-made approximations:
+
+- `COMPANY_OVERVIEW_TEMPLATES` / `overviewSectionIds(length)` — the
+  default section order for the short/medium/long company overview
+  (#1206's own three lengths).
+- `PITCH_DECK_SLIDE_ORDER` / `PITCH_DECK_DEFAULT_AUDIENCE_SELECTIONS` —
+  the default slide order and a starting audience-selection map (see
+  "Materials site," above, for the selection mechanism itself).
+- `buildEmailSignatureHtml(person)` / `buildEmailSignatureText(person)` —
+  a table-based HTML signature (the same hand-built-HTML discipline
+  `@clossys/publisher/email` documents) plus its plain-text alternative,
+  from a person's name/role/company/links/logo.
+- `SOCIAL_CHANNEL_SPECS` / `getSocialChannelSpec(channel)` — image sizes
+  and text limits for LinkedIn, X, Instagram, Facebook, YouTube, TikTok,
+  and GitHub, each with a `verified` date. `OG_SHARE_CARD_SPEC` is the
+  default Open Graph card size.
+- `VIDEO_CALL_BACKGROUND_SPECS` / `getVideoCallBackgroundSpec(platform)` —
+  Zoom, Google Meet, and Microsoft Teams background dimensions.
+- `staleChannelSpecEntries(now, staleAfterDays)` — every channel spec
+  entry whose `verified` date has gone stale, so periodic re-verification
+  against each platform's current guidance (#1207's own requirement) has
+  something concrete to check.
+
+This subpath ships no PNG export command of its own yet — the rendered
+image assets (social, OG, video-call backgrounds) are a Publisher export
+command, the same shape as the existing `publisher-preview`; left as a
+followup (see the PR that introduced this subpath for why).
+
+## Site template (`apps/site`)
+
+Issue #1208: a Next.js App Router template that ships in this package's
+`templates/site/` directory (`files` includes `templates`, so it is part
+of the published tarball) — **not compiled, typechecked, or tested by
+this repository's own build**, the same way `packages/designer/templates/
+brand-type.template.json` is shipped-but-not-compiled content. Launcher
+(#1215) copies it into a product repository's own `apps/site`; see
+`templates/site/README.md`, shipped alongside it, for the full file list
+and what each page reads from that repository's own `clossys/` records.
+
 ## API
+
 
 - `assessment`: `assessVerifiedPublicationRate` and the
   `VerifiedPublicationRateAssessment`, `VerifiedPublicationRateFinding`, and
@@ -1818,6 +1901,21 @@ declaration of the path there.
   `SurfaceOwnershipClaim`, `SurfaceOwnershipFinding`, and
   `SurfaceOwnershipCheckResult` types. See "Surface documents move to
   Publisher," above.
+- `materials`: `renderMaterialsIndexHtml`, `selectAudienceVariant`,
+  `declaredAudiences`, `renderPitchDeckHtml`, `materialsPrintStylesheet`,
+  `checkMaterialsVisibility`, `MATERIALS_DEFAULT_VISIBILITY`, and the
+  `MaterialsIndexEntry`, `DeckAudienceSelections`, `AudienceVariantDeck`,
+  `RenderPitchDeckHtmlOptions`, `MaterialsVisibilityCheckInput`, and
+  `MaterialsVisibilityFinding` types. See "Materials site," above.
+- `templates`: `COMPANY_OVERVIEW_TEMPLATES`, `overviewSectionIds`,
+  `PITCH_DECK_SLIDE_ORDER`, `PITCH_DECK_DEFAULT_AUDIENCE_SELECTIONS`,
+  `buildEmailSignatureHtml`, `buildEmailSignatureText`,
+  `SOCIAL_CHANNEL_SPECS`, `getSocialChannelSpec`, `OG_SHARE_CARD_SPEC`,
+  `VIDEO_CALL_BACKGROUND_SPECS`, `getVideoCallBackgroundSpec`,
+  `staleChannelSpecEntries`, and the `CompanyOverviewLength`,
+  `EmailSignatureLink`, `EmailSignaturePerson`, `ChannelImageSpec`,
+  `ChannelTextLimit`, `SocialChannelSpec`, and `VideoCallBackgroundSpec`
+  types. See "Templates and channel specs," above.
 
 Web page-level compositions belong here, not in `designer`; they consume
 design-system primitives and accept consumer-owned copy through slots.
