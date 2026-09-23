@@ -30,6 +30,7 @@ import { defineDistributionManifest } from "./distribution.js";
 import { evaluateCredential } from "./credential.js";
 import { recordRevocation } from "./revocation.js";
 import { evaluateRotation } from "./rotation.js";
+import { evaluateProviderCustody } from "./provider-custody.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -144,5 +145,23 @@ describe("runtime: every produced record has a closed, exact field set", () => {
     expect(result.verdict).toBe("indeterminate");
     expect(JSON.stringify(result)).not.toContain(DECOY);
     expect(new Set(Object.keys(result))).toEqual(new Set(["key", "credentialClass", "verdict", "exitCode", "reasons"]));
+  });
+
+  it("provider-custody evaluation never echoes an injected value-shaped field", () => {
+    const result = evaluateProviderCustody({
+      key: "CLOUDFLARE_API_TOKEN",
+      provider: "cloudflare",
+      rung: "scoped-environment-secret",
+      owner: "team-platform",
+      store: "github-environment:deploy-cloudflare",
+      scope: ["zone:edit:example.com"],
+      leastPrivilegeNote: "One zone only, Workers deploy, no account-wide access.",
+      usedBy: [".github/workflows/deploy.yml#deploy-cloudflare"],
+      rotationPolicy: { maxAgeDays: 90 },
+      token: DECOY,
+    });
+    expect(result.verdict).toBe("indeterminate");
+    expect(JSON.stringify(result)).not.toContain(DECOY);
+    expect(new Set(Object.keys(result))).toEqual(new Set(["key", "provider", "rung", "verdict", "exitCode", "findings"]));
   });
 });
