@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 
 import { evaluatePublicationMapInput } from "./check-publication-map.mjs";
+import { makeTmpDirSync } from "./lib/tmp-fixture.mjs";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(scriptDir, "..");
@@ -83,8 +83,8 @@ test("failing fixture: route is absent from the publication map", async () => {
   assert.ok(result.findings.some((finding) => finding.rule === "route-missing-from-map"));
 });
 
-test("CLI exits 1 on a failing fixture file", async () => {
-  const dir = mkdtempSync(join(tmpdir(), "publication-map-"));
+test("CLI exits 1 on a failing fixture file", async (t) => {
+  const dir = makeTmpDirSync(t, "publication-map-");
   const fixturePath = join(dir, "fixture.json");
   writeFileSync(fixturePath, JSON.stringify(failingFixtureMissingRoute));
   const run = spawnSync(process.execPath, [join(scriptDir, "check-publication-map.mjs"), fixturePath], {

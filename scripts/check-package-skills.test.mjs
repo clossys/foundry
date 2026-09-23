@@ -1,13 +1,13 @@
 // Regression tests for check-package-skills.mjs.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 
 import { evaluatePackageSkills, scanPackageSkills } from "./check-package-skills.mjs";
+import { makeTmpDirSync } from "./lib/tmp-fixture.mjs";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const scriptPath = join(scriptDir, "check-package-skills.mjs");
@@ -128,8 +128,8 @@ test("skill with files entry passes packing gate", () => {
   assert.equal(result.findings.length, 0);
 });
 
-test("missing skill file is a finding", () => {
-  const temp = mkdtempSync(join(tmpdir(), "pkg-skill-"));
+test("missing skill file is a finding", (t) => {
+  const temp = makeTmpDirSync(t, "pkg-skill-");
   const pkgRoot = join(temp, "packages", "delta");
   mkdirSync(pkgRoot, { recursive: true });
   writeFileSync(join(pkgRoot, "package.json"), JSON.stringify({ name: "@scope/delta" }));

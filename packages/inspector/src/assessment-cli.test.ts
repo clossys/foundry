@@ -1,9 +1,9 @@
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, symlinkSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { InspectorCliInputError, isDirectInvocation, main } from "./assessment-cli.js";
 import { VERIFY_STANDARDS_INPUTS_VERSION } from "./verify.js";
 
@@ -14,6 +14,7 @@ const packageJson = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.me
 
 let root: string;
 let binPath: string;
+let workDir: string;
 
 function satisfied(): Record<string, unknown> {
   return {
@@ -62,19 +63,27 @@ beforeEach(() => {
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
+afterEach(() => {
+  if (root) rmSync(root, { recursive: true, force: true });
+});
+
 beforeAll(() => {
   const packageRoot = fileURLToPath(new URL("..", import.meta.url));
   const compiler = fileURLToPath(new URL("../../../node_modules/typescript/bin/tsc", import.meta.url));
   const built = spawnSync(process.execPath, [compiler, "-p", "tsconfig.json"], { cwd: packageRoot, encoding: "utf8" });
   if (built.status !== 0) throw new Error(`Inspector build failed: ${built.stderr || built.stdout}`);
 
-  const workDir = mkdtempSync(join(tmpdir(), "inspector-check-bin-"));
+  workDir = mkdtempSync(join(tmpdir(), "inspector-check-bin-"));
   const dotBin = join(workDir, "node_modules", ".bin");
   mkdirSync(dotBin, { recursive: true });
   const installedCliPath = join(packageRoot, "dist", "assessment-cli.js");
   binPath = join(dotBin, "inspector-check");
   symlinkSync(installedCliPath, binPath);
 }, 60_000);
+
+afterAll(() => {
+  if (workDir) rmSync(workDir, { recursive: true, force: true });
+});
 
 function runBin(args: string[]) {
   return spawnSync(process.execPath, [binPath, ...args], { encoding: "utf8", timeout: 8_000 });

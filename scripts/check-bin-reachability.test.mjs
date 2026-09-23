@@ -5,8 +5,7 @@
 // node_modules/.bin-shaped symlink in a temp directory — not `node <real path>`.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
@@ -17,6 +16,7 @@ import {
   runBinThroughDotBin,
   scanBinReachability,
 } from "./check-bin-reachability.mjs";
+import { makeTmpDirSync } from "./lib/tmp-fixture.mjs";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const scriptPath = join(scriptDir, "check-bin-reachability.mjs");
@@ -58,8 +58,8 @@ function writeCli(dir, fileName, source) {
   return path;
 }
 
-function makePackageRepo({ name = "@gate-fixture/probe", bins, files }) {
-  const root = mkdtempSync(join(tmpdir(), "bin-reachability-repo-"));
+function makePackageRepo(t, { name = "@gate-fixture/probe", bins, files }) {
+  const root = makeTmpDirSync(t, "bin-reachability-repo-");
   const packageDir = join(root, "packages", "probe");
   mkdirSync(packageDir, { recursive: true });
   writeFileSync(join(packageDir, "package.json"), `${JSON.stringify({ name, bin: bins }, null, 2)}\n`);
@@ -70,8 +70,8 @@ function makePackageRepo({ name = "@gate-fixture/probe", bins, files }) {
   return { root, packageDir };
 }
 
-test("working CLI with realpathSync both sides, invoked through a .bin symlink, --help prints text, exit 0", () => {
-  const compiledEntryPath = writeCli(mkdtempSync(join(tmpdir(), "bin-live-")), "cli.js", LIVE_CLI);
+test("working CLI with realpathSync both sides, invoked through a .bin symlink, --help prints text, exit 0", (t) => {
+  const compiledEntryPath = writeCli(makeTmpDirSync(t, "bin-live-"), "cli.js", LIVE_CLI);
   const spawned = runBinThroughDotBin({ binName: "live-check", compiledEntryPath, args: ["--help"] });
   assert.equal(spawned.status, 0);
   assert.ok(spawned.stdout.length > 0, "expected --help text on stdout");
@@ -89,8 +89,8 @@ test("working CLI with realpathSync both sides, invoked through a .bin symlink, 
   assert.equal(evaluated.cannotAnswer.length, 0);
 });
 
-test("dead CLI without realpathSync prints nothing through a .bin symlink and is a finding", () => {
-  const compiledEntryPath = writeCli(mkdtempSync(join(tmpdir(), "bin-dead-")), "cli.js", DEAD_CLI);
+test("dead CLI without realpathSync prints nothing through a .bin symlink and is a finding", (t) => {
+  const compiledEntryPath = writeCli(makeTmpDirSync(t, "bin-dead-"), "cli.js", DEAD_CLI);
   const spawned = runBinThroughDotBin({ binName: "dead-check", compiledEntryPath, args: ["--help"] });
   assert.equal(spawned.status, 0);
   assert.equal(spawned.stdout, "");
@@ -109,8 +109,8 @@ test("dead CLI without realpathSync prints nothing through a .bin symlink and is
   assert.deepEqual(evaluated.findings.map((item) => item.rule), ["silent-bin"]);
 });
 
-test("control: the same dead CLI invoked by real path still prints; the gate uses the symlink and still fails it", () => {
-  const compiledEntryPath = writeCli(mkdtempSync(join(tmpdir(), "bin-dead-control-")), "cli.js", DEAD_CLI);
+test("control: the same dead CLI invoked by real path still prints; the gate uses the symlink and still fails it", (t) => {
+  const compiledEntryPath = writeCli(makeTmpDirSync(t, "bin-dead-control-"), "cli.js", DEAD_CLI);
   const byRealPath = spawnSync(process.execPath, [compiledEntryPath, "--help"], { encoding: "utf8" });
   assert.equal(byRealPath.status, 0);
   assert.match(byRealPath.stdout, /Usage: dead-check/, "real-path launch still reaches run(); we are measuring launch shape");
@@ -154,8 +154,8 @@ test("a manifest bin target that escapes the package is cannot-answer, not a spa
   assert.equal(evaluated.findings.length, 0);
 });
 
-test("a missing compiled target is cannot-answer, not a pass", () => {
-  const { root } = makePackageRepo({
+test("a missing compiled target is cannot-answer, not a pass", (t) => {
+  const { root } = makePackageRepo(t, {
     bins: { "probe-check": "dist/cli.js" },
     files: {},
   });
@@ -165,7 +165,7 @@ test("a missing compiled target is cannot-answer, not a pass", () => {
   assert.equal(scanned.passed.length, 0);
 });
 
-test("bin set comes from the fixture manifest: every key is probed, a name not in bin is not", () => {
+test("bin set comes from the fixture manifest: every key is probed, a name not in bin is not", (t) => {
   const declared = declaredBinsFromManifest({
     packageName: "@gate-fixture/probe",
     packageDir: "/tmp/gate-fixture-probe",
@@ -180,7 +180,7 @@ test("bin set comes from the fixture manifest: every key is probed, a name not i
   assert.deepEqual(declared.bins.map((item) => item.binName).sort(), ["probe-check", "probe-other"]);
   assert.ok(!declared.bins.some((item) => item.binName === "unlisted-check"));
 
-  const { root } = makePackageRepo({
+  const { root } = makePackageRepo(t, {
     bins: {
       "probe-check": "dist/cli.js",
       "probe-other": "dist/other.js",
@@ -199,8 +199,8 @@ test("bin set comes from the fixture manifest: every key is probed, a name not i
   assert.ok(!probed.includes("unlisted-check"));
 });
 
-test("CLI: a tiny repo with one working bin exits 0", () => {
-  const { root } = makePackageRepo({
+test("CLI: a tiny repo with one working bin exits 0", (t) => {
+  const { root } = makePackageRepo(t, {
     bins: { "probe-check": "dist/cli.js" },
     files: { "dist/cli.js": LIVE_CLI },
   });
@@ -209,8 +209,8 @@ test("CLI: a tiny repo with one working bin exits 0", () => {
   assert.match(result.stdout, /probe-check/);
 });
 
-test("CLI: a tiny repo with a dead bin exits 1", () => {
-  const { root } = makePackageRepo({
+test("CLI: a tiny repo with a dead bin exits 1", (t) => {
+  const { root } = makePackageRepo(t, {
     bins: { "probe-check": "dist/cli.js" },
     files: { "dist/cli.js": DEAD_CLI },
   });
@@ -219,8 +219,8 @@ test("CLI: a tiny repo with a dead bin exits 1", () => {
   assert.match(result.stdout, /silent-bin/);
 });
 
-test("CLI: --json on a missing compiled target exits 2 and names cannot-answer", () => {
-  const { root } = makePackageRepo({
+test("CLI: --json on a missing compiled target exits 2 and names cannot-answer", (t) => {
+  const { root } = makePackageRepo(t, {
     bins: { "probe-check": "dist/cli.js" },
     files: {},
   });
