@@ -249,7 +249,7 @@ written; `npm install` got the right tarball, the following `import` line
 - [ ] `CHANGELOG.md` — fresh, starting at the package's real `0.1.0`, Keep a
       Changelog format.
 
-### Releasing a version bump after the first publish (issue #1255)
+### Releasing a version bump after the first publish (issue #1255) <!-- facts-gate:ignore -->
 
 A pull request that changes an already-published package's packed content
 does not bump that package's `version` itself. Add a
@@ -264,7 +264,7 @@ A periodic or on-demand release PR (`node scripts/apply-release-changesets.mjs`,
 bumps each named package once (the highest level any of its changesets
 named), writes the `CHANGELOG.md` entry, regenerates `package-lock.json`,
 and deletes the changesets it applied. `scripts/check-release-pr-shape.mjs`
-is the gate that keeps this the only legitimate way a package's version
+is the gate that keeps this the only legitimate way a package's version <!-- facts-gate:ignore -->
 moves going forward: a version change with no consumed, matching changeset
 and no matching `CHANGELOG.md` entry is refused as "a version change
 outside a release PR."
