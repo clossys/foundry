@@ -437,3 +437,44 @@ test("real candidate framework acceptance runs only after install and build in r
   assert.ok(compile !== -1, "expected the cache-aware Build step, unchanged in shape");
   assert.ok(install < compile && compile < runtime && runtime < acceptance);
 });
+
+// issue #1324 item 2: the three independent `workspace-build-cache` steps
+// (readme-examples-typecheck, packed-consumer-readiness, build) each key
+// their cache on the files a `run: npm run build` invocation can read --
+// but two packages' `build` scripts run a pre-tsc generation step BEFORE
+// compiling (packages/launcher/scripts/pack-skills.mjs,
+// packages/advisor/scripts/pack-capability-catalogue.mjs) that reads
+// inputs outside `packages/*/src/**`: pack-skills.mjs copies every OTHER
+// package's `skill/SKILL.md` and the shared `docs/contracts/conversation-
+// contract.md`; pack-capability-catalogue.mjs reads `docs/contracts/
+// kit-presets.json`. None of those paths, nor the per-package `scripts/`
+// directories the generation steps themselves live in, nor the root
+// `package.json`, were part of the cache key -- so a change to any of them
+// left the key unchanged, and a cache HIT served a `dist/` (and sibling
+// generated `skill-catalogue/`/`contracts/`) that no longer reflected the
+// real tree.
+test("every workspace-build-cache step's key covers every input npm run build can read (issue #1324 item 2)", () => {
+  const workflow = readFileSync(join(repoRoot, ".github/workflows/ci.yml"), "utf8");
+  const requiredHashedPaths = ["package.json", "package-lock.json", "packages/*/src/**", "packages/*/package.json", "packages/*/tsconfig*.json", "packages/*/scripts/**", "docs/contracts/**"];
+  const jobsWithTheCache = ["readme-examples-typecheck", "packed-consumer-readiness", "build"];
+  const keyLines = [];
+  for (const jobName of jobsWithTheCache) {
+    const job = workflowJob(workflow, jobName);
+    const cacheStepIndex = job.indexOf("- name: Restore workspace build cache");
+    assert.ok(cacheStepIndex !== -1, `${jobName} must have its own "Restore workspace build cache" step`);
+    const cacheStep = job.slice(cacheStepIndex, job.indexOf("\n      - ", cacheStepIndex + 1));
+    const keyLine = cacheStep.match(/^\s*key: workspace-build-.*$/m);
+    assert.ok(keyLine, `${jobName}'s workspace-build-cache step must declare a key:`);
+    for (const requiredPath of requiredHashedPaths) {
+      assert.ok(
+        keyLine[0].includes(`'${requiredPath}'`),
+        `${jobName}'s workspace-build-cache key is missing '${requiredPath}' -- a change there would not invalidate a stale cache hit`,
+      );
+    }
+    keyLines.push(keyLine[0]);
+  }
+  // All three jobs must key on EXACTLY the same file list -- a hit in one
+  // job while another would have missed on the identical tree is its own
+  // silent inconsistency.
+  assert.ok(keyLines.every((line) => line === keyLines[0]), `every job's workspace-build-cache key must be byte-identical: ${JSON.stringify(keyLines)}`);
+});

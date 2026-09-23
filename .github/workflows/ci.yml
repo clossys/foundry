@@ -1386,12 +1386,37 @@ jobs:
       # step below is gated on `cache-hit != 'true'`, the same fail-open-to-
       # doing-the-work polarity `check-touches-packages.mjs` already uses
       # elsewhere in this file.
+      #
+      # The key's own file list has to cover every input a `build` script
+      # can actually read, not just `src/**` -- issue #1324 item 2 (a real
+      # gap CodeRabbit found on #1297): `packages/launcher/scripts/
+      # pack-skills.mjs` and `packages/advisor/scripts/pack-capability-
+      # catalogue.mjs` are pre-tsc generation steps run BY `npm run build`
+      # itself, and neither reads only its own package's `src/`.
+      # pack-skills.mjs copies every OTHER package's `skill/SKILL.md` into
+      # launcher's own packed `skill-catalogue/`, and packs the shared
+      # `docs/contracts/conversation-contract.md` into `contracts/`;
+      # pack-capability-catalogue.mjs reads `docs/contracts/kit-presets.
+      # json` the same way. None of those paths were hashed, so a change to
+      # any of them -- another package's SKILL.md, the shared conversation
+      # contract, the shared kit-presets contract, or the prebuild script
+      # itself -- left the key unchanged, and a cache HIT then served
+      # `dist/` (and the ungenerated `skill-catalogue/`/`contracts/`
+      # siblings the same `npm run build` invocation was also responsible
+      # for) as if nothing had changed. Root `package.json` was missing
+      # too -- a build-script-affecting change there (a new build step, a
+      # changed script) wouldn't invalidate the cache either, only the
+      # lockfile's own dependency content would. `packages/*/scripts/**`
+      # and `docs/contracts/**` cover both known prebuild-script shapes
+      # (and any future one, generally, rather than naming today's two
+      # scripts specifically) without narrowing what a cache MISS already
+      # falls back to.
       - name: Restore workspace build cache
         id: workspace-build-cache
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: packages/*/dist
-          key: workspace-build-${{ runner.os }}-${{ hashFiles('package-lock.json', 'packages/*/src/**', 'packages/*/package.json', 'packages/*/tsconfig*.json') }}
+          key: workspace-build-${{ runner.os }}-${{ hashFiles('package.json', 'package-lock.json', 'packages/*/src/**', 'packages/*/package.json', 'packages/*/tsconfig*.json', 'packages/*/scripts/**', 'docs/contracts/**') }}
       - run: npm ci
       - name: Build (skipped on an exact source+lockfile cache hit)
         if: steps.workspace-build-cache.outputs.cache-hit != 'true'
@@ -1434,12 +1459,37 @@ jobs:
       # step below is gated on `cache-hit != 'true'`, the same fail-open-to-
       # doing-the-work polarity `check-touches-packages.mjs` already uses
       # elsewhere in this file.
+      #
+      # The key's own file list has to cover every input a `build` script
+      # can actually read, not just `src/**` -- issue #1324 item 2 (a real
+      # gap CodeRabbit found on #1297): `packages/launcher/scripts/
+      # pack-skills.mjs` and `packages/advisor/scripts/pack-capability-
+      # catalogue.mjs` are pre-tsc generation steps run BY `npm run build`
+      # itself, and neither reads only its own package's `src/`.
+      # pack-skills.mjs copies every OTHER package's `skill/SKILL.md` into
+      # launcher's own packed `skill-catalogue/`, and packs the shared
+      # `docs/contracts/conversation-contract.md` into `contracts/`;
+      # pack-capability-catalogue.mjs reads `docs/contracts/kit-presets.
+      # json` the same way. None of those paths were hashed, so a change to
+      # any of them -- another package's SKILL.md, the shared conversation
+      # contract, the shared kit-presets contract, or the prebuild script
+      # itself -- left the key unchanged, and a cache HIT then served
+      # `dist/` (and the ungenerated `skill-catalogue/`/`contracts/`
+      # siblings the same `npm run build` invocation was also responsible
+      # for) as if nothing had changed. Root `package.json` was missing
+      # too -- a build-script-affecting change there (a new build step, a
+      # changed script) wouldn't invalidate the cache either, only the
+      # lockfile's own dependency content would. `packages/*/scripts/**`
+      # and `docs/contracts/**` cover both known prebuild-script shapes
+      # (and any future one, generally, rather than naming today's two
+      # scripts specifically) without narrowing what a cache MISS already
+      # falls back to.
       - name: Restore workspace build cache
         id: workspace-build-cache
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: packages/*/dist
-          key: workspace-build-${{ runner.os }}-${{ hashFiles('package-lock.json', 'packages/*/src/**', 'packages/*/package.json', 'packages/*/tsconfig*.json') }}
+          key: workspace-build-${{ runner.os }}-${{ hashFiles('package.json', 'package-lock.json', 'packages/*/src/**', 'packages/*/package.json', 'packages/*/tsconfig*.json', 'packages/*/scripts/**', 'docs/contracts/**') }}
       - run: npm ci
       - name: Build (skipped on an exact source+lockfile cache hit)
         if: steps.workspace-build-cache.outputs.cache-hit != 'true'
@@ -1569,15 +1619,16 @@ jobs:
         run: npm run check:later-publications
       # #1257: same workspace build cache as readme-examples-typecheck and
       # packed-consumer-readiness (see either job's own comment for the full
-      # reasoning) -- this job independently pays the same npm run build
-      # cost for the same commit's tree, and a cache hit lets it skip that
-      # here too. A miss always falls back to a full build, never a skip.
+      # reasoning, including the issue #1324 item 2 key-completeness fix) --
+      # this job independently pays the same npm run build cost for the
+      # same commit's tree, and a cache hit lets it skip that here too. A
+      # miss always falls back to a full build, never a skip.
       - name: Restore workspace build cache
         id: workspace-build-cache
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: packages/*/dist
-          key: workspace-build-${{ runner.os }}-${{ hashFiles('package-lock.json', 'packages/*/src/**', 'packages/*/package.json', 'packages/*/tsconfig*.json') }}
+          key: workspace-build-${{ runner.os }}-${{ hashFiles('package.json', 'package-lock.json', 'packages/*/src/**', 'packages/*/package.json', 'packages/*/tsconfig*.json', 'packages/*/scripts/**', 'docs/contracts/**') }}
       - run: npm ci
       # Build first. dist/ is gitignored, so a fresh checkout has none, and
       # a package with a real internal dependency (gates on catalog and
