@@ -21,6 +21,8 @@ import type {
 } from "./types.js";
 import { composeSkills, SKILLS_MANIFEST_REL, type SkillCompositionResult } from "./skills.js";
 import { parseSkillManifest, summarizeSkillsManifest } from "./manifest.js";
+import { detectLinkedHosts, serializeHostRecord, HOSTS_REL, type DiscoveredHost } from "./hosts.js";
+import { reportInventoryDrift } from "./inventory-adoption.js";
 
 export const DEFAULT_REPOSITORY_NAME = "workspace";
 /** The one visible, per-repository Clossys folder (#1171). Every role's output lives under it. */
@@ -830,6 +832,16 @@ export function formatHubHealth(report: HubHealthReport): string {
         : `skills: ${report.skillsManifest.stale} out of date, ${report.skillsManifest.retired} retired (${report.skillsManifest.total} composed)`;
   const migrationLine =
     report.migration === undefined ? undefined : `migration: moved hub state from ${report.migration.from} to ${report.migration.to}`;
+  const linkedHostsLine =
+    report.linkedHosts === undefined
+      ? undefined
+      : `linked hosts: ${report.linkedHosts.length === 0 ? "none detected" : report.linkedHosts.join(", ")}`;
+  const inventoryDriftLine =
+    report.inventoryDrift === undefined
+      ? undefined
+      : report.inventoryDrift.status === "indeterminate"
+        ? `inventory drift: indeterminate${report.inventoryDrift.note === undefined ? "" : ` -- ${report.inventoryDrift.note}`}`
+        : `inventory drift: external-only ${report.inventoryDrift.externalOnly.length}, launcher-only ${report.inventoryDrift.launcherOnly.length}, agreeing ${report.inventoryDrift.agreeing.length}`;
   return [
     `hub marker: ${report.marker}`,
     `inventory: ${inventory}`,
@@ -839,6 +851,8 @@ export function formatHubHealth(report: HubHealthReport): string {
     `pin findings: ${findingLine}`,
     `degraded: ${report.degraded ? "yes" : "no"}`,
     ...(migrationLine === undefined ? [] : [migrationLine]),
+    ...(linkedHostsLine === undefined ? [] : [linkedHostsLine]),
+    ...(inventoryDriftLine === undefined ? [] : [inventoryDriftLine]),
     ...(skillsManifestLine === undefined ? [] : [skillsManifestLine]),
     ...(skillParts.length === 0 ? [] : skillParts),
     `health: ${JSON.stringify(report)}`,
@@ -850,15 +864,18 @@ function withHealth(
   directory: string,
   headline: string,
   liveAdvisorVersion?: string,
-  skillComposition?: SkillCompositionResult,
+  skillComposition?: SkillCompositionResult & { linkedHosts?: readonly DiscoveredHost[] },
   liveLauncherVersion?: string,
   migration?: HubHealthReport["migration"],
+  inventoryDrift?: HubHealthReport["inventoryDrift"],
 ): WorkspaceApplyResult {
   const base = reportHubHealth(host, directory, liveAdvisorVersion, liveLauncherVersion, skillComposition?.retired ?? [], migration);
   const rosterSkipped = skillComposition?.rosterSkipped ?? [];
   const health: HubHealthReport = {
     ...base,
     ...(skillComposition === undefined ? {} : { skillComposition }),
+    ...(skillComposition?.linkedHosts === undefined ? {} : { linkedHosts: skillComposition.linkedHosts }),
+    ...(inventoryDrift === undefined || inventoryDrift.status === "no-external-source" ? {} : { inventoryDrift }),
     degraded: base.degraded || rosterSkipped.length > 0,
   };
   return {
@@ -1091,6 +1108,25 @@ function writeClossysReadme(host: WorkspaceHost, directory: string): void {
   writeSkeletonFile(host, directory, CLOSSYS_README_REL, lines.join("\n"));
 }
 
+/**
+ * Reads which coding-agent hosts already had skill discovery linked in
+ * `directory` BEFORE this call, then records that snapshot to
+ * `clossys/.state/hosts.json` (#1180). Deliberately called ahead of
+ * `composeSkills`, which unconditionally stamps discovery links for every
+ * host once it runs -- reading afterward would report "all hosts" on every
+ * apply and make the record meaningless.
+ */
+function recordLinkedHosts(host: WorkspaceHost, directory: string): readonly DiscoveredHost[] {
+  const linkedHosts = detectLinkedHosts(host, directory);
+  writeSkeletonFile(
+    host,
+    directory,
+    HOSTS_REL,
+    serializeHostRecord({ schemaVersion: 1, linkedHosts, recordedAt: host.now() }),
+  );
+  return linkedHosts;
+}
+
 function composeSkillRoster(
   host: WorkspaceHost,
   hubDirectory: string,
@@ -1100,12 +1136,14 @@ function composeSkillRoster(
 ): SkillCompositionResult & {
   readonly rosterTargets: readonly string[];
   readonly rosterSkipped: readonly { readonly inventoryId: string; readonly note: string }[];
+  readonly linkedHosts: readonly DiscoveredHost[];
 } {
   const composeOptions = {
     launcherPackageRoot: options.launcherPackageRoot,
     ...(options.skillCatalogueRoot === undefined ? {} : { skillCatalogueRoot: options.skillCatalogueRoot }),
     ...(options.contractPath === undefined ? {} : { contractPath: options.contractPath }),
   };
+  const linkedHosts = recordLinkedHosts(host, hubDirectory);
   const hubSkill = composeSkills(host, hubDirectory, composeOptions);
   writeConsumerAgentsIfNeeded(host, hubDirectory);
   writeClossysReadme(host, hubDirectory);
@@ -1113,11 +1151,12 @@ function composeSkillRoster(
   const rosterTargets: string[] = [hubId];
   const { targets, skipped } = resolveSisterCloneTargets(host, hubDirectory, hubOwner);
   for (const target of targets) {
+    recordLinkedHosts(host, target.directory);
     composeSkills(host, target.directory, composeOptions);
     writeSisterConsumerAgentsIfNeeded(host, target.directory);
     rosterTargets.push(target.inventoryId);
   }
-  return { ...hubSkill, rosterTargets, rosterSkipped: skipped };
+  return { ...hubSkill, rosterTargets, rosterSkipped: skipped, linkedHosts };
 }
 
 function finishHubApply(
@@ -1138,7 +1177,11 @@ function finishHubApply(
     ...(skillCatalogueRoot === undefined ? {} : { skillCatalogueRoot }),
     ...(contractPath === undefined ? {} : { contractPath }),
   });
-  return withHealth(host, directory, headline, liveAdvisorVersion, skillComposition, liveLauncherVersion, migration);
+  // #1216: when the hub marker declares an external inventory, report drift against
+  // it on every apply (create's fresh marker never declares one, so this is a no-op there).
+  const hubDocument = readHub(host, directory);
+  const inventoryDrift = reportInventoryDrift(host, directory, hubDocument?.externalInventory, WORKSPACE_INVENTORY_REL);
+  return withHealth(host, directory, headline, liveAdvisorVersion, skillComposition, liveLauncherVersion, migration, inventoryDrift);
 }
 
 /**

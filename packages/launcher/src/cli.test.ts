@@ -190,4 +190,56 @@ describe("launcher CLI", () => {
     const logged = log.mock.calls.map((call) => String(call[0])).join("\n");
     expect(logged).toContain("clone-missing (app): cloned");
   });
+
+  it("the real `launcher` resume command writes clossys/.state/hosts.json, not just a library function nothing calls (#1180)", () => {
+    const directory = mkdtempSync(join(tmpdir(), "launcher-hosts-cli-"));
+    roots.push(directory);
+    mkdirSync(dirname(join(directory, WORKSPACE_MARKER_REL)), { recursive: true });
+    writeFileSync(
+      join(directory, WORKSPACE_MARKER_REL),
+      `${JSON.stringify({ schemaVersion: 1, kind: "account-hub", owner: "acme", repository: "acme/hub" }, null, 2)}\n`,
+    );
+    writeFileSync(
+      join(directory, "clossys", ".state", "inventory.json"),
+      `${JSON.stringify({ schemaVersion: 1, repositories: [{ id: "acme/hub" }] }, null, 2)}\n`,
+    );
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const code = main([], host(directory, {}), skeletonRoot);
+    expect(code).toBe(0);
+    expect(String(log.mock.calls[0]?.[0])).toMatch(/linked hosts: none detected/);
+    expect(existsSync(join(directory, "clossys", ".state", "hosts.json"))).toBe(true);
+    const record = JSON.parse(readFileSync(join(directory, "clossys", ".state", "hosts.json"), "utf8"));
+    expect(record).toMatchObject({ schemaVersion: 1, linkedHosts: [] });
+  });
+
+  it("the real `launcher` resume command surfaces inventory drift for a declared external inventory, not just a library function nothing calls (#1216)", () => {
+    const directory = mkdtempSync(join(tmpdir(), "launcher-drift-cli-"));
+    roots.push(directory);
+    const externalPath = join(directory, "..", "external-inventory.json");
+    mkdirSync(dirname(join(directory, WORKSPACE_MARKER_REL)), { recursive: true });
+    writeFileSync(
+      join(directory, WORKSPACE_MARKER_REL),
+      `${JSON.stringify(
+        {
+          schemaVersion: 1,
+          kind: "account-hub",
+          owner: "acme",
+          repository: "acme/hub",
+          externalInventory: { path: externalPath, shape: "foundry" },
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    writeFileSync(
+      join(directory, "clossys", ".state", "inventory.json"),
+      `${JSON.stringify({ schemaVersion: 1, repositories: [{ id: "legacy" }] }, null, 2)}\n`,
+    );
+    writeFileSync(externalPath, `${JSON.stringify({ schemaVersion: 1, repositories: [{ id: "app" }] })}\n`);
+    roots.push(externalPath);
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const code = main([], host(directory, {}), skeletonRoot);
+    expect(code).toBe(0);
+    expect(String(log.mock.calls[0]?.[0])).toMatch(/inventory drift: external-only 1, launcher-only 1, agreeing 0/);
+  });
 });

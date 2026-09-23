@@ -253,28 +253,34 @@ which of the three is missing.
 
 When an account already keeps a repository inventory in its own control
 plane, launcher reads it as the source of truth instead of writing a
-second, diverging one (#1216). `reportInventoryDrift()` compares a declared
-`ExternalInventoryDeclaration` (a path and a `"foundry"` or `"custom"`
-shape) against the launcher-written inventory at the same relative path as
-the packed template `skeleton/clossys/.state/inventory.json`, and reports
-three sets, all
-three even when one is empty: ids only in the external source, ids only in
-launcher's own inventory, and ids both agree on. A `"custom"` shape is
-reported indeterminate rather than guessed at -- launcher has no mapping
-for a non-foundry inventory shape yet. It never merges the two silently;
-writing the reconciled set is a separate, explicit apply step.
+second, diverging one (#1216). Declare it by hand-editing the hub marker (the packed template
+`skeleton/clossys/.state/workspace.json`; the generated path does not
+ship) to add an `externalInventory: { path, shape }` field (a `"foundry"`
+or `"custom"` shape). Every `launcher` run
+(create, resume, or appoint) then calls `reportInventoryDrift()`
+automatically and prints the result in hub health output when the marker
+declares one: three sets, all three even when one is empty -- ids only in
+the external source, ids only in launcher's own inventory, and ids both
+agree on. A `"custom"` shape is reported indeterminate rather than guessed
+at -- launcher has no mapping for a non-foundry inventory shape yet. It
+never merges the two silently; writing the reconciled set is left as a
+separate, explicit apply step for a follow-up.
 
 ## Hosts
 
-`detectLinkedHosts()` records which coding-agent hosts a directory can
-currently discover skills through (#1180): `claude-code` and `cursor` are
-detected by their own discovery symlink (`.claude/skills`,
-`.cursor/skills`); `codex` is detected by the presence of `.agents/skills`
-itself, since Codex reads repository skills from that path directly and
-needs no separate discovery link (verified against
-developers.openai.com/codex/skills, 2026-09-22).
-`serializeHostRecord()` / `parseHostRecord()` round-trip the result through
-`clossys/.state/hosts.json` (`HOSTS_REL`).
+Every `launcher` run (create, resume, or appoint) records which
+coding-agent hosts a directory could already discover skills through,
+*before* that run composes skills and stamps every host's discovery path
+(#1180): `claude-code` and `cursor` are detected by their own discovery
+symlink (`.claude/skills`, `.cursor/skills`); `codex` is detected by the
+presence of `.agents/skills` itself, since Codex reads repository skills
+from that path directly and needs no separate discovery link (verified
+against developers.openai.com/codex/skills, 2026-09-22). The snapshot is
+written to `clossys/.state/hosts.json` (`HOSTS_REL`, via
+`serializeHostRecord()` / `parseHostRecord()`) for the hub and for every
+sibling clone launcher composes skills into -- so a consumer such as
+Advisor's next-action phrasing can name the client's actual tool instead
+of guessing.
 
 ## Model guidance
 
