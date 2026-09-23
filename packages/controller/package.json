@@ -84,7 +84,8 @@
     "foundry-onboarding-run": "dist/onboarding/bin.js",
     "foundry-completion-evidence-check": "dist/positions/completion-evidence-bin.js",
     "singular-authority-check": "dist/release/singular-authority-bin.js",
-    "foundry-loop-status": "dist/loop/bin.js"
+    "foundry-loop-status": "dist/loop/bin.js",
+    "foundry-schema-migrate": "dist/migrate/bin.js"
   },
   "files": [
     "dist",
