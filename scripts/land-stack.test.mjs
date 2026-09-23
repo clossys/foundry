@@ -316,6 +316,18 @@ test("classifyTier against the real governance/review-tiers.json: the enforcemen
   assert.equal(classifyTier(["governance/decisions/hitl-escalation-rule.json"], tierGlobs).tier, "tier-2");
   assert.equal(classifyTier(["governance/decisions/hitl-escalation-rule-v2.json"], tierGlobs).tier, "tier-2");
   assert.equal(classifyTier(["docs/HITL.md"], tierGlobs).tier, "tier-1");
+  // The deny hook that is meant to write-protect docs/HITL-RULE.md is
+  // ALSO tier-2 (#1187 escalation-rule round 4, both reviewers, blocking):
+  // its definition (both scripts and their protected-path lists) moved
+  // out of tier-1 docs/HITL.md, where a two-ordinary-reviewer change could
+  // silently have weakened it, into docs/HITL-HOOKS.md and real, tracked
+  // scripts under scripts/hooks/ -- including their tests, matching this
+  // file's own existing precedent for scripts/land-stack.mjs/.test.mjs.
+  assert.equal(classifyTier(["docs/HITL-HOOKS.md"], tierGlobs).tier, "tier-2");
+  assert.equal(classifyTier(["scripts/hooks/deny-tier2.mjs"], tierGlobs).tier, "tier-2");
+  assert.equal(classifyTier(["scripts/hooks/deny-tier2-edit.mjs"], tierGlobs).tier, "tier-2");
+  assert.equal(classifyTier(["scripts/hooks/deny-tier2.test.mjs"], tierGlobs).tier, "tier-2");
+  assert.equal(classifyTier(["scripts/hooks/deny-tier2-edit.test.mjs"], tierGlobs).tier, "tier-2");
   // governance/decisions/** is tier-1, not tier-0 (#1187 review at 8e6d97ea,
   // blocking finding 4) -- adding or changing a decision record needs real
   // independent review, not a free pass.

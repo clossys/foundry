@@ -12,18 +12,21 @@ protection mechanism can actually name.
 This file, and any record under `governance/decisions/hitl-escalation-rule*.json`
 that supersedes the one below, are classified **tier-2** by
 `governance/review-tiers.json`'s `tier2.globs`, and are listed in the
-protected paths of the user-level deny hook described in `docs/HITL.md`'s
-"User-level deny hook" section.
+protected paths of the user-level deny hook described in
+[`docs/HITL-HOOKS.md`](HITL-HOOKS.md) (also tier-2, for the same reason
+this file is — see that file's own header).
 
 ## Escalation rule (owner-ratified 2026-09-23)
 
 The rule below **supersedes** the informal decision-tier prose this
-document opened with through round 6 (kept, unchanged, as "The three tiers"
-further down, since it is what the CODE in this slice actually classifies
-today — see "What this rule changes about the code, and what it does not"
-at the end of this section for the gap between the two, and "Implementation
-notes" right after the quoted text for where this repository is MORE
-SPECIFIC than the rule itself). The coordinator presented it for
+document opened with through round 6 (kept, unchanged, as `docs/HITL.md`'s
+"The three tiers" section — moved there in round 3 along with the rest of
+this document's non-rule content — since it is what the CODE in this
+slice actually classifies today — see "What this rule changes about the
+code, and what it does not" at the end of this section for the gap
+between the two, and "Implementation notes" right after the quoted text
+for where this repository is MORE SPECIFIC than the rule itself). The
+coordinator presented it for
 ratification in the coordinator chat on 2026-09-23 at approximately
 14:35 PDT ("Final rule for your ratification … Recommendation: ratify"),
 and the owner replied "go". That same exchange also authorized: "I'll have
@@ -140,38 +143,46 @@ states.
 - **Implementation of Accepted item 2** (mechanical tier assignment):
   `scripts/land-stack.mjs`'s `classifyTier` is path-based and
   union-over-paths/max-over-tiers (a change spread across many files never
-  classifies below what one file alone would demand — see "The three
-  tiers" below). This pull request also adds `docs/HITL.md` and
-  `governance/decisions/hitl-escalation-rule*.json` to `tier2.globs`,
-  specifically because the MECHANICAL path assignment would otherwise put
-  the rule's own living copy at tier-0 and its decision record at tier-1 —
-  see "Tier coverage for changing this rule" below.
+  classifies below what one file alone would demand — see `docs/HITL.md`'s
+  "The three tiers" section). This file (`docs/HITL-RULE.md`),
+  `docs/HITL-HOOKS.md`, and `governance/decisions/hitl-escalation-rule*.json`
+  are all in `tier2.globs`, specifically because the MECHANICAL path
+  assignment would otherwise put the rule's own living copy at tier-0, the
+  deny hook that is meant to protect it at tier-1, and the decision
+  record at tier-1 — see "Tier coverage for changing this rule" below.
 - **Implementation of the "Final rule" table's "Two reviews" row, governance/security/gate carve-out**:
   not yet implemented. `evaluateTier1Independence` enforces two
   independent reviewers but has no notion of "strong-reasoning class",
   "verdicts given before either sees the other's", or "a fresh final
   reviewer with no history on the PR" for any path, governance/security/gate
-  or otherwise. Tracked in #1350 and "Before switching to enforce" below.
+  or otherwise. Tracked in #1350 and `docs/HITL.md`'s "Before switching
+  to enforce" section.
 - **Implementation of the "Land, log and notify" mode**: not implemented
   at all. No digest, no revert-tracking, no risk-ranking, no 8-week-shrink
   logic exists anywhere in this repository.
-- **Implementation of "Changing this rule itself"**: `docs/HITL.md` and
-  `governance/decisions/hitl-escalation-rule*.json` are now in
-  `tier2.globs` (see above), and two `docs/HITL.md` deny-hook patterns
-  (documentation only — see "User-level deny hook" below) name the same
-  two paths. Neither is a verification that a change to either file was
-  actually owner-ratified; both are the path-classification and
-  documentation layer only. See "Honour-system limits" below for what
-  neither can do.
+- **Implementation of "Changing this rule itself"**: this file
+  (`docs/HITL-RULE.md`), `docs/HITL-HOOKS.md`, and
+  `governance/decisions/hitl-escalation-rule*.json` are all in
+  `tier2.globs` (see above), and both deny-hook scripts described in
+  `docs/HITL-HOOKS.md` (`scripts/hooks/deny-tier2.mjs` and
+  `scripts/hooks/deny-tier2-edit.mjs`, real and tested, not documentation
+  only) name all three paths in their protected-path lists. Neither the
+  tier classification nor the hooks are a verification that a change to
+  any of these files was actually owner-ratified; all are the
+  path-classification and best-effort protection layer only. See
+  `docs/HITL.md`'s "Honour-system limits" section for what neither can
+  do.
 
 ### What this rule changes about the code, and what it does not
 
 **Report-only mechanics are unchanged.** This ratification is a policy
 document and a decision record; it does not touch `scripts/land-stack.mjs`'s
-report-only default described below, beyond the two additions this pull
+report-only default, described in `docs/HITL.md`'s "Enforcement:
+report-only, then enforce" section, beyond the additions this pull
 request makes and documents explicitly: the `channel`-based tier-2
 authority restriction in `evaluateTier2Decision` (see "Channel enforcement"
-below), and `tier2.globs`' two new entries.
+below), and `tier2.globs`'s new entries for this file, `docs/HITL-HOOKS.md`,
+the decision record, and the deny-hook scripts.
 
 The code in this slice implements a NARROWER slice of the rule above, not
 every part of it:
@@ -180,10 +191,12 @@ every part of it:
   gate (`evaluateTier1Independence`) actually enforces today — minus the
   blind-verdict, fresh-final-reviewer, and model-diversity-record
   requirements the ratified rule adds for governance/security/gate work.
-  Tracked in #1350 (see "Before switching to enforce" below).
+  Tracked in #1350 (see `docs/HITL.md`'s "Before switching to enforce"
+  section).
 - **"Autonomous: tier-0 paths, logged"** matches the code's own tier-0
   fast path (`runStatus` skips review-evidence reads entirely for a
-  tier-0 classification — see "Where each tier is enforced" below), though
+  tier-0 classification — see `docs/HITL.md`'s "Where each tier is
+  enforced" section), though
   "logged" here means only that `land-stack.mjs --status`'s own JSON output
   reports the tier, not a durable log of every tier-0 action taken.
 - **"Your approval first"** partially maps to the existing tier-2
@@ -214,9 +227,10 @@ every part of it:
   cannot detect a session that simply declares `"owner-chat"` without one
   actually having happened. The amendment lock has NO enforcement beyond
   the path classification described in "Implementation notes" above and
-  the deny-hook's own, separately-limited protection (see "User-level
-  deny hook" below) — nothing verifies that a change to `docs/HITL.md` or
-  to the decision record was actually ratified by the owner.
+  the deny-hook's own, separately-limited protection (see
+  [`docs/HITL-HOOKS.md`](HITL-HOOKS.md)) — nothing verifies that a change
+  to this file (`docs/HITL-RULE.md`) or to the decision record was
+  actually ratified by the owner.
 - **"Your pushback changes a tier only when you explicitly reserve or
   release an area"** (Accepted item 8) has no structured "reservation" or
   "release" artifact in this repository yet — today an owner reservation
@@ -245,8 +259,9 @@ this pull request (both reviewers, blocking):
   channel cannot be checked against anything, and accepting the claim as
   though it were the verified fact it will eventually be would defeat the
   point of the field entirely. This is a temporary, infrastructure-driven
-  restriction, tracked as a future item in "Before switching to enforce"
-  below and in #1350 — not a permanent rule that `"signed-commit"` is
+  restriction, tracked as a future item in `docs/HITL.md`'s "Before
+  switching to enforce" section and in #1350 — not a permanent rule that
+  `"signed-commit"` is
   meaningless.
 - `scripts/land-stack.mjs`'s `evaluateTier2Decision` separately requires
   `record.channel === "owner-chat"` for a record to count as LIVE tier-2
@@ -260,8 +275,9 @@ this pull request (both reviewers, blocking):
   `evaluateTier2Decision` excludes every channel-less record from its
   candidate pool regardless of what the validator allows.
 - **`channel` is agent-declared and honour-system**, exactly like every
-  other self-declared field in this design (see "Honour-system limits"
-  below), UNTIL signed commits are verified. The validator can catch an
+  other self-declared field in this design (see `docs/HITL.md`'s
+  "Honour-system limits" section), UNTIL signed commits are verified. The
+  validator can catch an
   HONEST admission of `"github-comment"`; it cannot tell a genuine
   `"owner-chat"` decision from a session that simply writes that value.
   `operation-interaction-role-authority.json` illustrates the boundary:
@@ -280,17 +296,25 @@ this pull request (both reviewers, blocking):
 
 ### Tier coverage for changing this rule
 
-By `classifyTier`'s mechanical, path-based rule, `docs/HITL.md` alone
-(with no globs matching prose) would classify tier-0, and
+By `classifyTier`'s mechanical, path-based rule, this file
+(`docs/HITL-RULE.md`) alone, and `docs/HITL-HOOKS.md` alone, would each
+classify tier-0 (no glob matches prose that isn't named explicitly), and
 `governance/decisions/hitl-escalation-rule.json` alone (matched only by
 the broad `governance/**` glob, since `governance/decisions/**` carries no
 `tier1RecordExempt` carve-out) would classify tier-1 — round 2 of
 independent review on this pull request (both reviewers, blocking) found
 that this contradicted "Changing this rule itself" directly: an edit to
-the rule's own living text, or its durable record, could otherwise land
-with two ordinary reviewers, never reaching the owner. `docs/HITL.md` and
+the rule's own living text, its deny hook, or its durable record, could
+otherwise land with two ordinary reviewers, never reaching the owner.
+`docs/HITL-RULE.md`, `docs/HITL-HOOKS.md`, `scripts/hooks/deny-tier2.mjs`,
+`scripts/hooks/deny-tier2-edit.mjs`, and
 `governance/decisions/hitl-escalation-rule*.json` (a glob, covering any
 future superseding record that follows this repository's supersession
 naming convention — see `governance/review-tiers.json`'s own `$comment`
-for the full reasoning) are now in `tier2.globs`.
+for the full reasoning) are all in `tier2.globs`. `docs/HITL.md` itself
+is deliberately NOT in `tier2.globs` — it is named explicitly in
+`tier1.globs` instead (without that entry it would classify tier-0, the
+same gap this section describes for the files above), since it documents
+the gate mechanics generally and does not itself carry the rule text, the
+hook definitions, or the record.
 
