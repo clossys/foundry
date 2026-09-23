@@ -25,17 +25,25 @@
 // CAPABILITY-INPUT RESOLUTION runs in BOTH modes, not just --enforce: every
 // capability's own `inputs` entry -- `{ producerRole, artifact }` -- must
 // name a capability whose own `id` is `artifact`, declared among
-// `producerRole`'s own well-formed `capabilities`, whenever `producerRole`
-// itself has a declared map. A `producerRole` that is itself allowlisted
-// (its own map has not landed yet) is forgiven, the same way absence is
-// forgiven for that role directly -- a consuming role cannot be blamed for
-// a producer that hasn't drafted yet. This runs unconditionally (not only
-// under --enforce) because CI's default check runs in report mode, and an
-// unresolved input is exactly the kind of structural defect report mode
-// already catches for everything else a role's own manifest can answer by
-// itself plus one already-declared producer -- it needs no global
-// "is every role finished" judgment the way the cross-role checks below
-// do.
+// `producerRole`'s own well-formed `capabilities`. A `producerRole` that is
+// itself allowlisted (its own map has not landed yet) is forgiven outright,
+// in either mode -- a consuming role cannot be blamed for a producer that
+// hasn't drafted yet. Issue #1279: a `producerRole` that is NOT allowlisted
+// but simply has no capability map at all is forgiven the same way, but
+// ONLY in report mode -- printed as a warning, never a failure, since
+// report mode's whole discipline is that absence is never a failure (the
+// same rule `required-capabilities-absent` already applies to that
+// producer directly). Under --enforce, that absence stays a failure, same
+// as it would for the producer directly. Distinct from both: a
+// `producerRole` that DOES have a declared map, but none of its own
+// capabilities produce the named artifact, is a genuine mismatch, not an
+// absence, and is a failure in BOTH modes regardless of allowlist or
+// report/enforce. This runs unconditionally (not only under --enforce)
+// because CI's default check runs in report mode, and an unresolved input
+// is exactly the kind of structural defect report mode already catches for
+// everything else a role's own manifest can answer by itself plus one
+// already-declared producer -- it needs no global "is every role finished"
+// judgment the way the cross-role checks below do.
 //
 // --enforce: for a later wave, once the per-role maps (#1198-#1202) have
 // landed for every active role. Turns absence of `capabilities` on an
@@ -331,7 +339,13 @@ export function evaluateCapabilityMaps(activeRoles, manifestsByName, options = {
   // not landed yet) is forgiven outright -- the consuming role cannot be
   // faulted for a producer that hasn't drafted yet, the same forgiveness
   // `required-capabilities-absent` already extends to that producer
-  // directly.
+  // directly. Issue #1279: the same forgiveness applies, in REPORT MODE
+  // ONLY, to a `producerRole` that is not allowlisted but simply has no
+  // capability map at all yet -- that is reported as a warning, never a
+  // failure, and stays a failure under `--enforce`. A `producerRole` that
+  // DOES have a map, but none of its own capabilities produce the named
+  // artifact, is a genuine mismatch and stays a failure in both modes --
+  // see the per-branch comments below for exactly where each case splits.
   for (const [role, capabilities] of capabilitiesByRole) {
     for (const capability of capabilities) {
       if (!Array.isArray(capability.inputs)) continue;
@@ -339,7 +353,39 @@ export function evaluateCapabilityMaps(activeRoles, manifestsByName, options = {
         if (!isCapabilityInputEntry(input)) continue; // already reported by validateCapabilityShape
         const { producerRole, artifact } = input;
         if (allowlisted.has(producerRole)) continue;
-        const producerCapabilities = capabilitiesByRole.get(producerRole) ?? [];
+
+        // Issue #1279: absence of a producer's own map is a different
+        // question from a genuine mismatch, and only the mismatch is a
+        // report-mode failure. `capabilitiesByRole.has(producerRole)` is
+        // the absence check -- a role only lands in this map once its own
+        // `foundry.capabilities` was at least a non-empty array (see the
+        // per-role loop above, which sets it for "declared" AND
+        // "malformed" rows alike, and only skips "absent" ones). A
+        // producer role with no map at all cannot be faulted onto the
+        // CONSUMING role's own report-mode result -- the same forgiveness
+        // `required-capabilities-absent` already extends to that producer
+        // directly, and the same reasoning the allowlist check above
+        // already applies explicitly for a role known in advance not to
+        // have drafted one yet. `--enforce` still fails it: a producer
+        // that simply hasn't declared capabilities yet is exactly what
+        // `required-capabilities-absent` already fails under `--enforce`,
+        // and an input naming it must not read as quieter than that.
+        if (!capabilitiesByRole.has(producerRole)) {
+          const message = `capability "${capability.id}" input { producerRole: "${producerRole}", artifact: "${artifact}" } names a producer role with no capability map yet`;
+          if (enforce) {
+            findings.push({ rule: "unresolved-capability-input", role, message });
+          } else {
+            warnings.push({ rule: "capability-input-producer-absent", role, message: `${message} — never a failure in report mode` });
+          }
+          continue;
+        }
+
+        // The producer role HAS a well-formed (or malformed-but-declared)
+        // map: absence is no longer the question, and a genuine mismatch
+        // -- no capability among them produces this artifact -- is a
+        // failure in BOTH modes. This is not what issue #1279 is about,
+        // and it must not be weakened by the absence handling above.
+        const producerCapabilities = capabilitiesByRole.get(producerRole);
         const resolved = producerCapabilities.some((candidate) => candidate.id === artifact);
         if (!resolved) {
           findings.push({

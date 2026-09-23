@@ -295,14 +295,60 @@ test("an unresolved capability input naming an allowlisted producer role is forg
   assert.deepEqual(enforceResult.findings.filter((f) => f.rule === "unresolved-capability-input"), []);
 });
 
-test("an unresolved capability input naming a NON-allowlisted, undeclared producer role is a finding even in report mode", () => {
+// Issue #1279: a capability input naming a NON-allowlisted producer role
+// that simply has no capability map at all yet (the role's own manifest
+// carries no `foundry.capabilities`, or no manifest at all) must never fail
+// report mode -- that is absence, the same thing `required-capabilities-
+// absent` already forgives for that producer directly, not a genuine
+// mismatch. It is reported as a warning instead. The prior version of this
+// test asserted the opposite (a report-mode failure) -- that was exactly
+// the bug the reviewer reproduced on PR #1258 with a mutated Keeper input
+// (see issue #1279's own repro).
+test("report mode never fails on a capability input naming a producer role with no capability map at all — reported as a warning instead", () => {
   const result = evaluateCapabilityMaps(["@scope/alpha", "@scope/beta"], manifests([
     { name: "@scope/beta", foundry: { capabilities: [capability({
       id: "consumer", outputs: ["clossys/beta/y.json"],
       inputs: [{ producerRole: "@scope/alpha", artifact: "anything" }],
     })] } },
   ]));
-  assert.ok(result.findings.some((f) => f.rule === "unresolved-capability-input"));
+  assert.deepEqual(result.findings.filter((f) => f.rule === "unresolved-capability-input"), []);
+  assert.ok(result.warnings.some((w) => w.rule === "capability-input-producer-absent" && w.role === "@scope/beta"));
+});
+
+// The same absence, under --enforce, stays a failure -- report mode's
+// forgiveness above must not leak into --enforce, the same split
+// `required-capabilities-absent` already draws for the producer directly.
+test("--enforce still fails a capability input naming a NON-allowlisted producer role with no capability map at all", () => {
+  const result = evaluateCapabilityMaps(["@scope/alpha", "@scope/beta"], manifests([
+    { name: "@scope/beta", foundry: { capabilities: [capability({
+      id: "consumer", outputs: ["clossys/beta/y.json"],
+      inputs: [{ producerRole: "@scope/alpha", artifact: "anything" }],
+    })] } },
+  ]), { enforce: true });
+  assert.ok(result.findings.some((f) => f.rule === "unresolved-capability-input" && f.role === "@scope/beta"));
+});
+
+// Distinct from absence: a producer role that DOES declare a capability
+// map, but none of its own capabilities produce the named artifact, is a
+// genuine mismatch -- issue #1279 does not touch this case, and it must
+// stay a failure in both modes. capability-input resolution's existing
+// "capability-input resolution flags an unresolved input in report mode"
+// and "--enforce also flags a capability input that names no real
+// capability id on the producer role" tests above already cover this; this
+// is the same case named explicitly as the #1279 control.
+test("a capability input naming a real capability on a producer role that HAS a map, but not the named one, stays a failure in both modes (not #1279's absence case)", () => {
+  const manifestsFixture = manifests([
+    { name: "@scope/alpha", foundry: { capabilities: [capability({ id: "produced", outputs: ["clossys/alpha/x.json"] })] } },
+    { name: "@scope/beta", foundry: { capabilities: [capability({
+      id: "consumer", outputs: ["clossys/beta/y.json"],
+      inputs: [{ producerRole: "@scope/alpha", artifact: "nonexistent" }],
+    })] } },
+  ]);
+  const reportResult = evaluateCapabilityMaps(["@scope/alpha", "@scope/beta"], manifestsFixture);
+  assert.ok(reportResult.findings.some((f) => f.rule === "unresolved-capability-input"));
+  assert.deepEqual(reportResult.warnings.filter((w) => w.rule === "capability-input-producer-absent"), []);
+  const enforceResult = evaluateCapabilityMaps(["@scope/alpha", "@scope/beta"], manifestsFixture, { enforce: true });
+  assert.ok(enforceResult.findings.some((f) => f.rule === "unresolved-capability-input"));
 });
 
 test("buildCapabilityCatalogue lays each capability along its declared business lifecycle stage", () => {
