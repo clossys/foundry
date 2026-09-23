@@ -453,46 +453,60 @@ published before its record exists, and the entry itself goes stale (and
 fails the gate) the instant a matching record is retained, so it is a
 countdown, not a standing exemption.
 
-### Once a version's record is retained, any change to that package needs a new version
+### A retained record binds the whole tree; only a PACKED change forces a new version
 
-This is the ordering rule, stated plainly because it is not obvious from
-either gate's own name: **once a version's qualification record is retained,
-any further change to that package — packed or not — requires a new
-version.** Practically, that means fixing a test *before* generating a
-record, never after.
+`scripts/check-qualification-record-present.mjs` compares
+`candidate.packageTreeSha1` against the whole package directory, tests
+included, by deliberate design — see that script's own header for the prior
+incident (a record whose manifest digest still matched while its tree digest
+had silently drifted) that makes narrowing the RECORD's own tree hash to
+packed files only unsafe. A record is immutable once introduced, so a tree
+that has moved past it can never be reconciled at that version; publishing
+that exact version again will always be refused once its record has gone
+stale, packed or not.
 
-The rule follows from two things that are both true and that neither gate
-alone states together. `scripts/check-release-readiness.mjs` compares packed
-content only — a test file excluded by `files` moving is invisible to it, by
-design (devDependencies and non-shipped files are exactly what that gate is
-right to ignore for the bump question it asks). `scripts/check-qualification-
-record-present.mjs` compares `candidate.packageTreeSha1` against the whole
-package directory, tests included, by equally deliberate design — see that
-script's own header for the prior incident (a record whose manifest digest
-still matched while its tree digest had silently drifted) that makes
-narrowing the tree hash to packed files only unsafe. A record is immutable
-once introduced, so a tree that has moved past it can never be reconciled;
-the version it was retained for can only be skipped.
-
-This cost a real version. `@clossys/architect@0.1.7` was bumped and had a
-retained, matching record. A follow-up pull request then fixed a test so it
-stopped mutating the real `dist/cli.js` in place — a test-only edit, correctly
-excluded from packed content, so `check-release-readiness.mjs` correctly
-reported no bump required. That same edit moved `packages/architect/`'s tree,
-and the 0.1.7 record — bound to the tree as it stood before the fix — went
-stale the moment the fix landed. 0.1.7 could never be published again; 0.1.8
+That fact used to also decide whether a pull request needed a new version at
+all: `scripts/check-release-readiness.mjs` would fail with `needs-bump` the
+instant the retained record for a package's CURRENT version went stale for
+ANY reason, including a change to a file the package never ships. The owner
+cadence rule (issue #1187) says a test, CI, or internal-docs-only change
+carries no changeset and causes no release; PR #1265's verification found
+that the original rule above broke that promise, because
+`packageTreeSha1`'s whole-tree scope means a test-only edit stales the record
+exactly as surely as a packed one does. This was measured directly:
+`@clossys/architect@0.1.7` was bumped and had a retained, matching record. A
+follow-up pull request fixed a test so it stopped mutating the real
+`dist/cli.js` in place — a test-only edit, correctly excluded from packed
+content. That same edit moved `packages/architect/`'s tree, and the 0.1.7
+record — bound to the tree as it stood before the fix — went stale the
+moment the fix landed; 0.1.7 could never be published again, and 0.1.8
 carries the same fix instead. See issue #920 for the full incident.
 
-`check-release-readiness.mjs` now consults the retained record for a
-package's CURRENT version whenever its own packed-content diff would
-otherwise report "no bump required," and says so explicitly when the two
-disagree — "no bump required for packed content, but the retained record for
-`<version>` is now stale; publishing requires a bump" — rather than reporting
-the permissive half alone. It does not weaken either gate: a stale record is
-still exactly what `check-qualification-record-present.mjs` alone would find
-at publish dispatch; this only means a pull request sees the same answer
-before merge, not only at the point an approval would otherwise be spent on a
-run that cannot succeed.
+The owner decision (issues #1187, #1265, #920) keeps the record's own
+definition of staleness exactly as it was above — nothing about how a record
+is computed or validated changed, and every existing retained record still
+validates under the identical join it always has — but narrows what
+**`check-release-readiness.mjs`** does with that finding. It still consults
+the retained record for a package's CURRENT version whenever its own
+packed-content diff reports "no bump required" (including a devDependencies-
+only change, exempt for the same reason since issue #269), and it still
+surfaces a stale record in its `detail` with `staleRetainedRecord: true` —
+but it now only fails the gate (`needs-bump`) when PACKED content changed. An
+unpacked-only staleness — a test file, in the architect 0.1.7 shape — is
+reported, not failed: the pull request passes with no changeset, and the
+detail names the stale record and says to re-qualify before any future
+publish dispatch of that version.
+
+This narrows, but does not remove, the safety net: `check-qualification-
+record-present.mjs` and `publish.yml`'s record-join are untouched. They
+still compare the retained record against the whole tree immediately before
+a publish is allowed to proceed, so a version whose record has gone stale —
+for any reason, packed or not — still can never ship until it is
+re-qualified. The only thing that changed is which question `check-release-
+readiness.mjs` answers with that same finding: not "does this pull request
+need a changeset," but "will a publish of this version succeed right now,"
+which is a fact for the operator to act on, not a merge-blocking one for
+every unrelated contributor who happens to touch this package's tests next.
 
 ### The retained record's tarball must reproduce
 

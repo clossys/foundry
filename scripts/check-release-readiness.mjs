@@ -13,22 +13,41 @@
 // failure, not a verdict — the same three-way split every gate in this repo
 // uses).
 //
-// DEFAULT MODE ALSO CONSULTS THE RETAINED QUALIFICATION RECORD (issue #920)
+// DEFAULT MODE ALSO CONSULTS THE RETAINED QUALIFICATION RECORD (issue #920,
+// reported not enforced for unpacked-only drift as of the owner decision at
+// issues #1187 / #1265)
 // ---------------------------------------------------------------------------
-// "No packed-file changes" is not the whole answer to "is a bump required."
-// A package can have no packed-content diff at all (this function's own
-// `pass` verdict) while its CURRENT version's retained qualification record
-// has already gone stale — the package directory moved (tests included) even
-// though nothing PACKED moved. That happened for real and burned
-// `@clossys/architect@0.1.7`, which could never be published: see
-// `staleRetainedRecordDetail()` below for the incident and why the two gates
-// (this one comparing packed content, check-qualification-record-present.mjs
-// comparing the whole tree) are each correct about what they measure. Both
-// `pass` returns in `evaluatePackageDiff()` consult that retained record
-// before reporting clean, and report `needs-bump` with an explicit sentence
-// when it no longer matches — the sentence this incident needed. This is
-// independent of whether THIS pull request bumped anything: it is asking
-// about the version already in the manifest, not about a diff.
+// "No packed-file changes" is not the whole answer to "is the retained
+// record for this version still accurate." A package can have no
+// packed-content diff at all (this function's own `pass` verdict) while its
+// CURRENT version's retained qualification record has already gone stale —
+// the package directory moved (tests included) even though nothing PACKED
+// moved. That happened for real and burned `@clossys/architect@0.1.7`, which
+// could never be published: see `staleRetainedRecordDiagnosis()` below for
+// the incident and why the two gates (this one comparing packed content,
+// check-qualification-record-present.mjs comparing the whole tree) are each
+// correct about what they measure.
+//
+// Issue #920's original fix treated ANY staleness here — packed or not — as
+// a reason to fail this gate with `needs-bump`. The owner cadence rule
+// (#1187 comment 5799002037) says a test, CI, or internal-docs-only change
+// carries no changeset and causes no release; PR #1265's verification (see
+// comment 5799141814) found the #920 fix violated that rule, because
+// `packageTreeSha1` covers the whole package tree, so a test-only edit alone
+// staled the record and forced a changeset for content nobody was
+// publishing. The resolution (docs/PUBLISHING.md's "Once a version's record
+// is retained..." section): keep the record's own definition of staleness
+// exactly as it was (this script never changes how a record is computed or
+// validated) but stop treating unpacked-only staleness as a BUMP question —
+// it is reported in the `detail` string, with `staleRetainedRecord: true`,
+// so the operator still sees it, but `evaluatePackageDiff()` no longer fails
+// on it when this pull request's own packed-content diff is empty (or
+// devDependencies-only — see below). A stale record still refuses to
+// publish: check-qualification-record-present.mjs and publish.yml's
+// record-join are untouched and still compare the retained record against
+// the whole tree at dispatch time, so nothing unqualified can ship — this
+// change only decides whether a PR that never touched packed content has to
+// carry a changeset for someone else's future publish attempt.
 //
 // THE devDependencies EXEMPTION (default mode only — see issue #269)
 // --------------------------------------------------------------------
@@ -515,7 +534,8 @@ function loadPackageContext(pkgDir) {
   return { absPkgDir, manifest, label, gitRoot, relPkgDir, relManifestPath };
 }
 
-// ISSUE #920 — THE RETAINED-RECORD RECONCILIATION
+// ISSUE #920 — THE RETAINED-RECORD RECONCILIATION (scope narrowed by the
+// #1187 / #1265 owner decision — see the header comment above)
 // ---------------------------------------------------
 // A package can report "no bump required" by packed-content diffing alone
 // (the two `status: "pass"` returns below that this function reaches when
@@ -525,18 +545,28 @@ function loadPackageContext(pkgDir) {
 // check-qualification-record-present.mjs's own header for the prior
 // incident that makes `packageTreeSha1` cover tests deliberately) even
 // though nothing PACKED moved. This gate and that one are each correct
-// about what they measure; the gap is that nothing reconciled them before
-// this function's own answer reached a contributor.
+// about what they measure; the gap issue #920 closed is that nothing told a
+// contributor about the second gate's answer before this one reported
+// clean.
 //
-// This cost a real version: `@clossys/architect@0.1.7` was already bumped
-// and had a retained record. A follow-up pull request fixed a test so it
-// stopped mutating the real `dist/cli.js` — a test-only change, correctly
-// EXCLUDED from packed content by `files`, so this function correctly
-// reported no bump required. But that same edit moved the package's tree,
-// and qualification records are immutable (one introduction per path,
-// never corrected in place), so 0.1.7's retained record went stale the
-// moment that edit landed. Nothing said so until publish, and 0.1.7 could
-// never be published — see issue #920 for the full incident.
+// The incident that motivated #920: `@clossys/architect@0.1.7` was already
+// bumped and had a retained record. A follow-up pull request fixed a test so
+// it stopped mutating the real `dist/cli.js` — a test-only change, correctly
+// EXCLUDED from packed content by `files`. That same edit moved the
+// package's tree, and qualification records are immutable (one introduction
+// per path, never corrected in place), so 0.1.7's retained record went stale
+// the moment that edit landed. Nothing said so until publish, and 0.1.7
+// could never be published — see issue #920 for the full incident.
+//
+// #920's own fix reported that staleness as `needs-bump`, which is what PR
+// #1265's verification found violates the owner cadence rule at #1187: a
+// test-only change (exactly the architect 0.1.7 shape) then forces a
+// changeset every time, for content nobody is about to publish. This
+// function keeps computing the identical diagnosis — it does not change
+// what "stale" means, or weaken check-qualification-record-present.mjs's own
+// whole-tree comparison at publish time — it only stops handing back a
+// bump-shaped sentence, so the two call sites below can report the same
+// finding without treating it as blocking.
 //
 // This reuses check-qualification-record-present.mjs's own present/missing/
 // stale join (`qualificationRecordPresenceForCandidate`) rather than a
@@ -549,11 +579,11 @@ function loadPackageContext(pkgDir) {
 // about what "stale" means, only about which candidate they're asking
 // about.
 //
-// Returns the target sentence issue #920 asks for when the CURRENT
-// version's retained record no longer matches the tree, or null when there
-// is no retained record for this version at all (an ordinary, unpublished
-// in-progress package — not a finding) or the record still matches.
-function staleRetainedRecordDetail(gitRoot, manifest) {
+// Returns `{ path, version, diagnoses }` when the CURRENT version's retained
+// record no longer matches the tree, or null when there is no retained
+// record for this version at all (an ordinary, unpublished in-progress
+// package — not a finding) or the record still matches.
+function staleRetainedRecordDiagnosis(gitRoot, manifest) {
   const presence = qualificationRecordPresenceForCandidate({
     root: gitRoot,
     candidate: { name: manifest.name, version: manifest.version },
@@ -566,10 +596,7 @@ function staleRetainedRecordDetail(gitRoot, manifest) {
   if (presence.staleFields.includes("packageTreeSha1")) {
     diagnoses.push(`its package directory has changed (recorded candidate.packageTreeSha1 ${presence.recordedTreeDigest}, current ${presence.currentTreeDigest})`);
   }
-  return (
-    `no bump required for packed content, but the retained record for ${manifest.version} at ${presence.path} is now stale: ${diagnoses.join("; ")}. ` +
-    "Publishing requires a bump — once a version's record is retained, any change to that package, packed or not, requires a new version (docs/PUBLISHING.md)."
-  );
+  return { path: presence.path, version: manifest.version, diagnoses };
 }
 
 // ISSUE #1255 — A PENDING CHANGESET IS AN ALTERNATIVE TO BUMPING DIRECTLY
@@ -685,13 +712,28 @@ function evaluatePackageDiff(pkgDir, requestedBase) {
   }
 
   if (changed.length === 0) {
-    const stale = staleRetainedRecordDetail(gitRoot, manifest);
+    const stale = staleRetainedRecordDiagnosis(gitRoot, manifest);
     if (stale) {
-      const pendingChangeset = pendingChangesetDetail(gitRoot, relPkgDir);
-      if (pendingChangeset) {
-        return { package: label, status: "pass", detail: `no packed-file changes, but ${stale} — however, ${pendingChangeset}` };
-      }
-      return { package: label, status: "needs-bump", staleRetainedRecord: true, detail: stale };
+      // Packed content is unaffected by construction (changed.length === 0),
+      // so under the #1187 / #1265 owner decision this is never a bump
+      // question — only unpacked drift (tests, CI, docs) can be the cause,
+      // and that carries no changeset. Reported, not failed: `pass` with
+      // `staleRetainedRecord: true` so the finding stays visible without
+      // blocking a merge that changes nothing a consumer would receive.
+      // check-qualification-record-present.mjs and publish.yml's
+      // record-join still refuse to publish ${stale.version} against this
+      // stale record until it is re-qualified — see this file's header.
+      return {
+        package: label,
+        status: "pass",
+        staleRetainedRecord: true,
+        detail:
+          `no packed-file changes since merge-base ${mergeBase.slice(0, 12)} (base ${baseRef}, version ${manifest.version}) — ` +
+          "packed content is unaffected, so no version bump or changeset is required for this pull request. " +
+          `Note: the retained qualification record for ${stale.version} at ${stale.path} is stale (${stale.diagnoses.join("; ")}); ` +
+          `this is unpacked-only drift, expected for a test/CI/docs-only change under the owner cadence rule (issue #1187), and does not block merge. ` +
+          `Re-qualify before dispatching a publish of ${stale.version} — publish.yml's record-join will refuse it until then (see docs/PUBLISHING.md).`,
+      };
     }
     return {
       package: label,
@@ -700,13 +742,24 @@ function evaluatePackageDiff(pkgDir, requestedBase) {
     };
   }
   if (isDevDependenciesOnlyChange(changed, oldFiles, newFiles)) {
-    const stale = staleRetainedRecordDetail(gitRoot, manifest);
+    const stale = staleRetainedRecordDiagnosis(gitRoot, manifest);
     if (stale) {
-      const pendingChangeset = pendingChangesetDetail(gitRoot, relPkgDir);
-      if (pendingChangeset) {
-        return { package: label, status: "pass", detail: `only devDependencies changed, but ${stale} — however, ${pendingChangeset}` };
-      }
-      return { package: label, status: "needs-bump", staleRetainedRecord: true, detail: stale };
+      // Same reasoning as the changed.length === 0 branch above: a
+      // devDependencies-only edit is already exempt from the bump
+      // requirement (issue #269), so record staleness it causes or
+      // uncovers — packed-invisible by definition — is reported, not
+      // failed, for the identical owner-decision reason.
+      return {
+        package: label,
+        status: "pass",
+        staleRetainedRecord: true,
+        detail:
+          `only devDependencies changed in package.json since merge-base ${mergeBase.slice(0, 12)} (base ${baseRef}, ` +
+          `version ${manifest.version}) — devDependencies do not affect what consumers receive when they install this ` +
+          "package, so this is exempt from the version-bump requirement (see issue #269). " +
+          `Note: the retained qualification record for ${stale.version} at ${stale.path} is stale (${stale.diagnoses.join("; ")}); ` +
+          `re-qualify before dispatching a publish of ${stale.version} — publish.yml's record-join will refuse it until then (see docs/PUBLISHING.md).`,
+      };
     }
     return {
       package: label,

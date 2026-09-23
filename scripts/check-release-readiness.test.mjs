@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { lineDigest } from "./lib/package-identity-transition.mjs";
 import { currentQualificationJoins } from "./lib/candidate-qualification.mjs";
+import { qualificationRecordPresenceForCandidate } from "./check-qualification-record-present.mjs";
 
 // Hermetic end-to-end coverage: every fixture is a real, throwaway git repo
 // under mkdtemp, and the real script is spawned exactly the way CI spawns
@@ -761,7 +762,21 @@ function retainQualificationRecord(root) {
   );
 }
 
-test("MUTATION (issue #920): a retained record that has gone stale forces needs-bump even though packed content is unchanged", (t) => {
+// OWNER DECISION (issues #1187 / #1265, narrowing issue #920): a test-only
+// edit is exactly the architect-0.1.7 shape — excluded from packed content,
+// so this gate's own packed-content diff reports nothing changed — and the
+// owner cadence rule (#1187 comment 5799002037) says a test/CI/docs-only
+// change carries no changeset and causes no release. PR #1265's verification
+// (comment 5799141814) found the ORIGINAL #920 fix violated that rule: it
+// failed this gate with `needs-bump` purely because `packageTreeSha1`
+// (whole package tree, by deliberate design — see
+// check-qualification-record-present.mjs's own header) also covers test
+// files. This test now asserts the corrected behavior: the finding is still
+// surfaced (`staleRetainedRecord: true` and a `detail` explaining why), but
+// it no longer blocks the pull request. The companion test directly below
+// proves the other half of the owner decision: the same stale record still
+// refuses to let 0.3.3 publish.
+test("a test-only change on a qualified package passes, with no changeset required (owner decision narrowing issue #920)", (t) => {
   const { root, pkgDir } = qualificationFixtureRoot(t);
   gitCommit(root, "initial 0.3.3, not yet qualified");
   // currentQualificationJoins()'s packageTreeSha1 is read from the COMMITTED
@@ -780,12 +795,55 @@ test("MUTATION (issue #920): a retained record that has gone stale forces needs-
   gitCommit(root, "test-only edit (packed content unaffected, but the tree moved)");
 
   const r = run(["packages/writer", "--json", "--base", base], root);
+  assert.equal(r.code, 0, `expected exit 0 (pass, no changeset required), got ${r.code}: ${r.out}`);
+  const report = JSON.parse(r.out);
+  assert.equal(report.results[0].status, "pass");
+  assert.equal(report.results[0].staleRetainedRecord, true);
+  assert.match(report.results[0].detail, /packed content is unaffected, so no version bump or changeset is required/);
+  assert.match(report.results[0].detail, /retained qualification record for 0\.3\.3.*is stale/);
+  assert.match(report.results[0].detail, /packageTreeSha1/);
+  assert.match(report.results[0].detail, /Re-qualify before dispatching a publish/);
+});
+
+// The other half of the owner decision: this gate no longer failing the pull
+// request must NOT mean the stale 0.3.3 record could ever ship. It uses the
+// exact same join `validate-candidate-publish.mjs` and publish.yml's
+// record-join rely on at dispatch time — `qualificationRecordPresenceForCandidate`
+// — completely independent of this script, and proves it still reports
+// "stale" for the identical tree this gate above just passed.
+test("a publish can never go out with a record that doesn't match the shipped bytes, even after the owner-decision pass above", (t) => {
+  const { root, pkgDir } = qualificationFixtureRoot(t);
+  gitCommit(root, "initial 0.3.3, not yet qualified");
+  retainQualificationRecord(root);
+  gitCommit(root, "retain qualification record for 0.3.3");
+
+  writeFileSync(join(pkgDir, "src", "index.test.ts"), "test('x', () => { expect(x).toBe(1); });\n");
+  gitCommit(root, "test-only edit (packed content unaffected, but the tree moved)");
+
+  const presence = qualificationRecordPresenceForCandidate({ root, candidate: { name: "@clossys/writer", version: "0.3.3" } });
+  assert.equal(presence.state, "stale", `expected the publish-time join to still refuse this record, got: ${JSON.stringify(presence)}`);
+  assert.ok(presence.staleFields.includes("packageTreeSha1"));
+});
+
+// A packed change is the case the owner decision explicitly leaves alone:
+// changing what actually ships still requires a version bump (or a pending
+// changeset) exactly as it always has, with or without a retained record in
+// play at all.
+test("a packed change without a changeset still fails, unaffected by the owner decision", (t) => {
+  const { root, pkgDir } = qualificationFixtureRoot(t);
+  gitCommit(root, "initial 0.3.3, not yet qualified");
+  retainQualificationRecord(root);
+  const base = gitCommit(root, "retain qualification record for 0.3.3");
+
+  // A real packed-content edit — src/index.ts ships, unlike the test file.
+  writeFileSync(join(pkgDir, "src", "index.ts"), "export const x = 2;\n");
+  gitCommit(root, "packed edit with no version bump and no changeset");
+
+  const r = run(["packages/writer", "--json", "--base", base], root);
   assert.equal(r.code, 1, `expected exit 1, got ${r.code}: ${r.out}`);
   const report = JSON.parse(r.out);
   assert.equal(report.results[0].status, "needs-bump");
-  assert.equal(report.results[0].staleRetainedRecord, true);
-  assert.match(report.results[0].detail, /no bump required for packed content, but the retained record for 0\.3\.3.*is now stale/);
-  assert.match(report.results[0].detail, /packageTreeSha1/);
+  assert.match(report.results[0].detail, /packed file\(s\) changed/);
 });
 
 test("(issue #920, other direction) a retained record that still matches the tree leaves an unchanged package clean", (t) => {
