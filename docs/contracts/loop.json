@@ -41,10 +41,10 @@
   "blockers": {
     "kinds": ["missing-input", "missing-authority", "failing-evidence", "unavailable-environment", "contradiction"],
     "owners": {
-      "missing-input": "upstream role or client",
+      "missing-input": "upstream-role-or-client",
       "missing-authority": "sponsor",
-      "failing-evidence": "this role",
-      "unavailable-environment": "named system owner",
+      "failing-evidence": "this-role",
+      "unavailable-environment": "named-system-owner",
       "contradiction": "advisor"
     },
     "rule": "A blocked capability rests with exactly one next action (who, how, by when) and escalates past its due date. Other capabilities keep running -- state is per-capability, so one capability's blocker never touches another's."
