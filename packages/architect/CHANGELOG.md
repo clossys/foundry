@@ -13,8 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   fixing leaking temp fixture directories (issue #1250), and its 0.1.10
   qualification record was already retained -- once a version's record is
   retained, any further change to that package, packed or not, requires a new
-  version (docs/PUBLISHING.md, "Once a version's record is retained, any
-  change to that package needs a new version").
+  version.
 
 ## [0.1.10] - 2026-09-21
 
