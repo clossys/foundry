@@ -868,6 +868,89 @@ npx builder-verify-toolchain deployment-health --inputs ./deployment-health-inpu
 #             observation could be recognized at all).
 ```
 
+### Web deployment surface: domain, DNS, and hosting (`./deployment/domain` subpath, #1211)
+
+The web surface a product actually serves — one domain, its DNS records, one
+hosting project, and the environment-to-branch mapping that feeds it — is
+declared once and checked against live reality. Provider-neutral, with
+Cloudflare (DNS) and Vercel (hosting) as the first worked example; see
+`vercel-hosting.ts`'s own header for the one place that adapter is named.
+
+This follows #1187's governing "who does what" split exactly: this subpath
+**defines and verifies**. It never deploys, never calls a provider's write
+API, and never reads or stores a token — DNS resolution, the TLS handshake,
+and an HTTP request are all public, credential-free operations by
+construction. A "right deployment serving" check needs a provider credential
+(Vercel's own API), so that one dimension is never performed by this
+subpath directly: a caller runs `createVercelInspector` (`./deployment/vercel`)
+with its own injected bearer token, and folds the result in through
+`observeVercelHosting`.
+
+```ts
+import {
+  createNodeDnsResolver,
+  createNodeTlsProbe,
+  defineWebSurfaceDeclaration,
+  renderWebSurfaceSetupSteps,
+  verifyWebSurfaceLiveState,
+} from "@clossys/builder/deployment/domain";
+
+const declaration = defineWebSurfaceDeclaration({
+  schemaVersion: "1",
+  domain: "example.com",
+  dnsProvider: "cloudflare",
+  records: [
+    { type: "A", name: "@", value: "192.0.2.1" },
+    { type: "CNAME", name: "www", value: "example.com", proxied: true },
+  ],
+  hostingProvider: "vercel",
+  hostingProject: "example-site",
+  build: { command: "npm run build", outputDirectory: ".next", applicationRoot: "apps/site" },
+  environments: [{ environment: "production", hostname: "example.com", branch: "main" }],
+  routes: ["/about"],
+});
+
+// The exact configuration a coding agent reviews and applies through the
+// provider CLIs, with the human's approval. Deterministic; no I/O.
+for (const step of renderWebSurfaceSetupSteps(declaration)) console.log(step);
+
+// Live verification: read-only, and needs no provider token for DNS, TLS, or HTTP.
+void (async () => {
+  const report = await verifyWebSurfaceLiveState(declaration, {
+    resolveDns: createNodeDnsResolver(),
+    probeTls: createNodeTlsProbe(),
+    fetch,
+  });
+  console.log(report.overall.verdict); // "satisfied" | "violated" | "indeterminate"
+})();
+```
+
+Every one of the four checks is independent and every one degrades to
+`indeterminate` — never `satisfied` — when it could not reach what it was
+checking (offline, DNS timeout, an unreachable host): see #914.
+`report.overall` is `satisfied` only when DNS, TLS, HTTP, **and** a supplied
+hosting observation all are; omitting `hostingObservation` reports `hosting`
+(and therefore `overall`) `indeterminate` with reason `"hosting-not-configured"`
+rather than silently dropping that dimension from the result.
+
+A `proxied` DNS record (Cloudflare's orange-cloud, or any provider that
+terminates traffic at its own edge) is checked only for resolving at all —
+its live value is the provider's own edge address, never the declared
+origin, so an exact match is never asserted for one.
+
+| Export | Kind | Purpose |
+| --- | --- | --- |
+| `defineWebSurfaceDeclaration(definition)` / `validateWebSurfaceDeclaration(value)` / `isValidWebSurfaceDeclaration(value)` | functions | Structural validation and a detached, defaulted declaration — the same `define`/`validate` split the rest of `./deployment` already holds. |
+| `normalizeWebSurfaceDeclaration(declaration)` / `serializeWebSurfaceDeclaration(declaration)` | functions | A stable, diffable sort order and its JSON serialization. |
+| `renderWebSurfaceSetupSteps(declaration)` | function | The exact, deterministic configuration steps a coding agent reviews and applies. Zero I/O. |
+| `checkDnsRecords(declaration, ports)` / `checkTlsCertificate(hostnames, ports)` / `checkRoutes(hostname, routes, ports)` | functions | The three credential-free live checks, each returning a `GateResult` (`@clossys/controller/gates`). |
+| `createNodeDnsResolver()` / `createNodeTlsProbe()` | functions | The real `node:dns` / `node:tls` adapters a caller wires into the checks above. |
+| `observeVercelHosting(inspection, input)` | function | Folds a `createVercelInspector(...).inspect(...)` result into the "right deployment serving" dimension. Pure; touches no token. |
+| `verifyWebSurfaceLiveState(declaration, ports)` | function | The aggregate report — `dns`, `tls`, `http`, `hosting`, and `overall`. |
+| `DnsRecord` / `DnsRecordType` / `DNS_RECORD_TYPES` / `WebSurfaceDeclaration` / `WebSurfaceEnvironment` / `WebSurfaceBuildSettings` | types | The provider-neutral declaration schema. |
+| `WebSurfaceLiveVerificationReport` / `WebSurfaceVerificationPorts` | types | The live-check aggregate and the ports it takes. |
+
+
 ## Toolchain
 
 The runtime pin, the package-manager pin, and the build order, expressed and
