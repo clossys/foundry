@@ -3,8 +3,13 @@
  * "rests with exactly one next action (who, how, by when) and escalates
  * past its due date. Other capabilities keep running" -- that second
  * sentence needs no code of its own: state here is per-capability, so one
- * capability's blocker never touches another's fields. `resolveBlockers` in
- * `./engine.js` is what proves that at the run level.
+ * capability's blocker never touches another's fields. Each of this
+ * package's own loop modules (`triggers`, `blockers`, `staleness`,
+ * `artifacts`, `state`, `status`) is independently pure with no single
+ * orchestrating "run one iteration" entry point -- consistent with issue
+ * #1187's package/agent split, where the coding agent drives the loop and
+ * calls these modules directly rather than a package owning a run loop of
+ * its own.
  */
 import { BLOCKER_OWNERS, type Blocker, type BlockerKind, type NextAction } from "./types.js";
 

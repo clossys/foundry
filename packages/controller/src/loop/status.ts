@@ -12,7 +12,7 @@
  * role's `LoopState`.
  */
 import { isBlockerOverdue } from "./blockers.js";
-import type { LoopState } from "./types.js";
+import type { LoopCapabilityState, LoopState } from "./types.js";
 
 export interface StatusSections {
   readonly mandate: string;
@@ -41,9 +41,21 @@ function renderWhereWeAre(state: LoopState): string {
   return rows.length > 0 ? rows.join("\n") : "No capabilities are tracked yet.";
 }
 
+/**
+ * A capability already at a terminal, current position has nothing left to
+ * recommend: `verified` is sealed and live, `retired` is deliberately
+ * withdrawn. Neither should tell a reader to "continue" -- issue #1237's
+ * own review caught this: a `verified`/`current`/no-blockers capability
+ * rendered under "Recommended next" as if it still needed the next loop
+ * iteration, when by #1195's own vocabulary it is done.
+ */
+function hasNothingLeftToRecommend(capability: LoopCapabilityState): boolean {
+  return capability.condition === "current" && (capability.state === "verified" || capability.state === "retired");
+}
+
 function renderRecommendedNext(state: LoopState): string {
   const rows = Object.values(state.capabilities)
-    .filter((capability) => capability.blockers.length === 0)
+    .filter((capability) => capability.blockers.length === 0 && !hasNothingLeftToRecommend(capability))
     .sort((a, b) => a.id.localeCompare(b.id))
     .map((capability) => `- **${capability.id}**: continue at \`${capability.stage ?? "sense"}\`.`);
   return rows.length > 0 ? rows.join("\n") : "Nothing unblocked is waiting on a next step.";

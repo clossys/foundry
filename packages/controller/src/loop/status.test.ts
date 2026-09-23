@@ -71,6 +71,60 @@ describe("loop status rendering", () => {
     expect(doc).toContain("Nothing unblocked is waiting on a next step.");
   });
 
+  function capabilityState(id: string, overrides: Partial<LoopState["capabilities"][string]> = {}): LoopState {
+    return {
+      schemaVersion: 1,
+      role: "@clossys/advisor",
+      capabilities: {
+        [id]: {
+          id,
+          state: "draft",
+          condition: "current",
+          stage: "judge",
+          inputFingerprints: {},
+          lastWrittenFingerprints: {},
+          blockers: [],
+          decisions: [],
+          ...overrides,
+        },
+      },
+    };
+  }
+
+  it("does not recommend continuing a capability that is already verified and current -- issue #1237's review fixture", () => {
+    const done = capabilityState("approved-copy", { state: "verified", condition: "current", stage: "learn" });
+    const doc = renderLoopStatus("@clossys/advisor", done, "m");
+    expect(doc).not.toContain("continue at");
+    expect(doc).toContain("Nothing unblocked is waiting on a next step.");
+  });
+
+  it("reproduces the review's own CLI fixture through the shipped foundry-loop-status renderer", () => {
+    const doc = renderLoopStatus(
+      "@clossys/advisor",
+      capabilityState("approved-copy", { state: "verified", condition: "current", stage: "learn" }),
+      "m",
+    );
+    expect(doc).not.toMatch(/approved-copy.*continue at/);
+  });
+
+  it("does not recommend continuing a retired, current capability", () => {
+    const retired = capabilityState("legacy-copy", { state: "retired", condition: "current", stage: null });
+    const doc = renderLoopStatus("@clossys/advisor", retired, "m");
+    expect(doc).not.toContain("continue at");
+  });
+
+  it("still recommends continuing a verified capability that has gone stale", () => {
+    const stale = capabilityState("aging-copy", { state: "verified", condition: "stale", stage: "learn" });
+    const doc = renderLoopStatus("@clossys/advisor", stale, "m");
+    expect(doc).toContain("**aging-copy**: continue at `learn`.");
+  });
+
+  it("still recommends continuing a draft or approved capability with no blockers", () => {
+    const inProgress = capabilityState("in-progress", { state: "approved", condition: "current", stage: "act" });
+    const doc = renderLoopStatus("@clossys/advisor", inProgress, "m");
+    expect(doc).toContain("**in-progress**: continue at `act`.");
+  });
+
   it("marks an overdue blocker distinctly from one still on schedule", () => {
     const state = stateWith({
       blockers: [{ capabilityId: "confirm-problems", kind: "missing-authority", owner: "sponsor", nextAction: { who: "sponsor", how: "grant authority", byWhen: "2026-09-01" }, since: "2026-08-20T00:00:00Z" }],

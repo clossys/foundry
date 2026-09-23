@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "kind": "foundry-lifecycle",
-  "$comment": "One lifecycle vocabulary for every capability and pack item, issue #1228 (owner decision, 2026-09-22): before this contract, the loop lifecycle (#1195) and pack item statuses (#1204) were two state models designed side by side, using different words for the same underlying position. This contract is the single source both specialize from. @clossys/controller exports it (packages/controller/src/lifecycle.ts) so Controller's own loop engine, Publisher's pack rendering, and this repository's package-framework manifest checks all import one definition instead of re-declaring their own.",
+  "$comment": "One lifecycle vocabulary for every capability and pack item, issue #1228 (owner decision, 2026-09-22): before this contract, the loop lifecycle (#1195) and pack item statuses (#1204) were two state models designed side by side, using different words for the same underlying position. This contract is the single source both specialize from. @clossys/controller exports it (packages/controller/src/loop/lifecycle.ts) so Controller's own loop engine, Publisher's pack rendering, and this repository's package-framework manifest checks all import one definition instead of re-declaring their own.",
   "states": [
     "absent",
     "found",
@@ -39,6 +39,6 @@
   },
   "governance": {
     "rule": "No package other than @clossys/controller declares its own copy of `states` or `conditions`. A surface that needs a specialized vocabulary (like pack statuses) maps onto these six states and three conditions rather than inventing new words, and records that mapping next to its own status type.",
-    "changeProcedure": "A change to `states` or `conditions` is exactly one pull request: it bumps this file's own `schemaVersion`, updates packages/controller/src/lifecycle.ts in the same change, and brings every consumer's own mapping into conformance."
+    "changeProcedure": "A change to `states` or `conditions` is exactly one pull request: it bumps this file's own `schemaVersion`, updates packages/controller/src/loop/lifecycle.ts in the same change, and brings every consumer's own mapping into conformance."
   }
 }
