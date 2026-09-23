@@ -1,6 +1,6 @@
 // release-calendar — pure functions over governance/release-calendar.json
-// (the weekly release cadence and CalVer-by-ISO-week version scheme, owner
-// decision 2026-09-23, builds on the cadence rule at
+// (the weekly release cadence, owner decision 2026-09-23, builds on the
+// cadence rule at
 // https://github.com/clossys/foundry/issues/1187#issuecomment-5799002037).
 //
 // CADENCE
@@ -14,40 +14,25 @@
 // does its own UTC-offset arithmetic for that reason: a hand-rolled offset
 // table drifts out of sync with DST rules; Intl's IANA tzdata does not.
 //
-// VERSION SCHEME (calver-isoweek): YY.WW.N
+// VERSIONING IS UNCHANGED BY THIS CALENDAR
 // -----------------------------------------
-//   YY -- the two-digit ISO week-YEAR (ISO 8601 %G, not the calendar
-//         year). 2027-01-02 is ISO week 53 of week-year 2026, so that date
-//         is "26.53.x", not "27.1.x" -- the ISO week-year belongs to
-//         whichever week owns the Thursday closest to that date, and this
-//         is why isoWeekInfo() below anchors on the Thursday of the week
-//         rather than the date itself.
-//   WW -- the ISO week number (%V), 1-53, printed WITHOUT zero-padding
-//         (semver numeric identifiers forbid a leading zero on anything
-//         but a bare "0" -- "05" is not a legal semver number).
-//   N  -- 0 for the regular Saturday release. Incremented only for an
-//         out-of-band release later in the SAME ISO week (a security fix,
-//         or a fix for a release that shipped broken) -- see
-//         computeNextReleaseVersion() and classifyCalverBump() below.
-//
-// TRANSITION FROM 0.x.y
-// ----------------------
-// Every package here currently ships a pre-1.0 semver (e.g. 0.9.12). The
-// first release under this scheme moves a package straight from 0.x.y to
-// YY.WW.0 (e.g. 0.9.12 -> 26.39.0) in one step -- a valid forward semver
-// move (26 > 0) and, deliberately, a ONE-WAY DOOR: nothing in this
-// repository ever produces a 0.x.y version again once a package has
-// crossed it. isPreTransitionVersion() below is what both
-// computeNextReleaseVersion() (choosing N=0 for the crossing) and
-// classifyCalverBump() (validating it on review) key off of.
+// An earlier draft of this design (see this pull request's own history)
+// paired the weekly cadence with a new CalVer-by-ISO-week version scheme.
+// The owner explicitly rejected that: versions stay plain semver, bumped by
+// each changeset's own patch/minor/major level exactly as issue #1255
+// already does (scripts/apply-release-changesets.mjs,
+// scripts/check-release-pr-shape.mjs) -- because there may not be a real
+// content change every week, and a version number that moves on a clock
+// rather than on a change is not a useful signal. This module therefore
+// has no ISO-week or version-formatting logic at all; it answers exactly
+// one question, "what kind of day is this in the calendar's timezone", and
+// the merge-window gate built on top of that.
 import { existsSync, readFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { resolve } from "node:path";
 
 export const RELEASE_CALENDAR_PATH = "governance/release-calendar.json";
 export const RELEASE_PR_BRANCH_PATTERN = /^claude\/release-\d{4}-\d{2}-\d{2}-\d+$/;
 export const DEFAULT_OUT_OF_BAND_LABEL = "release:out-of-band";
-
-const WEEKDAY_ORDER = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 /** Reads and parses governance/release-calendar.json. Throws a descriptive error rather than returning null -- every caller needs a calendar to do anything. */
 export function loadReleaseCalendar(root = process.cwd()) {
@@ -91,126 +76,6 @@ export function zonedDateParts(date, timeZone) {
     second: Number(parts.second),
     weekday: parts.weekday,
   };
-}
-
-/**
- * ISO 8601 week-year and week number for the plain calendar date
- * (year, month 1-12, day). Pure date math -- no timezone involved once a
- * civil date is in hand, which is why zonedDateParts() above is the only
- * place this module talks to a timezone.
- *
- * Algorithm: the ISO week-year of a date is the calendar year of the
- * THURSDAY in that date's Mon-Sun week (ISO weeks start Monday); the week
- * number counts Thursdays from the first Thursday of that year. This is
- * what makes both week 53 and the week-year crossing fall out for free:
- * 2027-01-02 is a Saturday, its week's Thursday is 2026-12-31, so it is
- * week-year 2026 -- and 2026's last Thursday is far enough into December
- * that 2026 has 53 ISO weeks, not 52.
- */
-export function isoWeekInfo(year, month, day) {
-  const date = new Date(Date.UTC(year, month - 1, day));
-  const isoDayNum = (date.getUTCDay() + 6) % 7; // Mon=0 .. Sun=6
-  date.setUTCDate(date.getUTCDate() - isoDayNum + 3); // Thursday of this ISO week
-  const isoWeekYear = date.getUTCFullYear();
-  const firstThursday = new Date(Date.UTC(isoWeekYear, 0, 4));
-  const firstIsoDayNum = (firstThursday.getUTCDay() + 6) % 7;
-  firstThursday.setUTCDate(firstThursday.getUTCDate() - firstIsoDayNum + 3);
-  const isoWeek = 1 + Math.round((date.getTime() - firstThursday.getTime()) / (7 * 86400000));
-  return { isoWeekYear, isoWeek };
-}
-
-/** isoWeekInfo(), resolved through `timeZone` for a JS Date instant, plus the two-digit week-year the version string uses. */
-export function isoWeekYearAndWeek(date, timeZone) {
-  const { year, month, day } = zonedDateParts(date, timeZone);
-  const { isoWeekYear, isoWeek } = isoWeekInfo(year, month, day);
-  return { isoWeekYear, isoWeek, isoWeekYearTwoDigit: ((isoWeekYear % 100) + 100) % 100 };
-}
-
-/** "YY.WW.N", with WW and N unpadded (see header -- semver forbids a leading zero). */
-export function formatCalverVersion(isoWeekYearTwoDigit, isoWeek, n) {
-  return `${isoWeekYearTwoDigit}.${isoWeek}.${n}`;
-}
-
-/** Three dot-separated non-negative integers, or null. Deliberately accepts both pre-transition (0.x.y) and calver (YY.WW.N) versions -- they are the same shape. */
-export function parsePlainVersionTriple(version) {
-  const match = /^(\d+)\.(\d+)\.(\d+)$/.exec(String(version ?? ""));
-  if (!match) return null;
-  return [Number(match[1]), Number(match[2]), Number(match[3])];
-}
-
-/** Has this package never crossed into the calver scheme (major version 0)? */
-export function isPreTransitionVersion(version) {
-  const triple = parsePlainVersionTriple(version);
-  return triple !== null && triple[0] === 0;
-}
-
-/**
- * The version a package's next release should carry, given its CURRENT
- * version and the release date (a JS Date; evaluated in the calendar's own
- * timezone). This is the date-aware half of the scheme -- what
- * scripts/apply-release-changesets.mjs calls for each package with pending
- * changesets, on the day it actually runs.
- *
- * Throws (never silently guesses) when the request is not internally
- * consistent: an out-of-band release for a package that was NOT already
- * released this ISO week has nothing to patch; a non-out-of-band request
- * for a package already released this ISO week would silently collide with
- * that earlier release's own version.
- */
-export function computeNextReleaseVersion({ currentVersion, releaseDate, timeZone, outOfBand = false }) {
-  const triple = parsePlainVersionTriple(currentVersion);
-  if (!triple) throw new Error(`"${currentVersion}" is not a plain X.Y.Z version -- cannot compute its next release version`);
-  const { isoWeekYearTwoDigit, isoWeek } = isoWeekYearAndWeek(releaseDate, timeZone);
-
-  if (isPreTransitionVersion(currentVersion)) {
-    if (outOfBand) throw new Error(`"${currentVersion}" has never had a calver release -- an out-of-band release needs a prior release this ISO week to patch`);
-    return { version: formatCalverVersion(isoWeekYearTwoDigit, isoWeek, 0), kind: "transition" };
-  }
-
-  const [curYY, curWW, curN] = triple;
-  const sameWeek = curYY === isoWeekYearTwoDigit && curWW === isoWeek;
-
-  if (sameWeek) {
-    if (!outOfBand) {
-      throw new Error(
-        `"${currentVersion}" was already released this ISO week (${isoWeekYearTwoDigit}.${isoWeek}) -- a same-week re-release needs a changeset flagged "release: out-of-band"`,
-      );
-    }
-    return { version: formatCalverVersion(isoWeekYearTwoDigit, isoWeek, curN + 1), kind: "out-of-band" };
-  }
-
-  if (outOfBand) {
-    throw new Error(`an out-of-band release was requested, but "${currentVersion}" is not from this ISO week (${isoWeekYearTwoDigit}.${isoWeek}) -- nothing to patch`);
-  }
-  return { version: formatCalverVersion(isoWeekYearTwoDigit, isoWeek, 0), kind: "weekly" };
-}
-
-/**
- * Structurally classifies oldVersion -> newVersion as one of "transition",
- * "new-week", "same-week-outofband", or null (not a valid single-step
- * calver move). Deliberately date-independent -- unlike
- * computeNextReleaseVersion() above, this asks only "is this shaped like a
- * legal step of the scheme", not "is it the step for right now" -- the same
- * relationship check-release-pr-shape.mjs's use of it mirrors
- * check-release-readiness.mjs elsewhere in this repository: a structural
- * check that stays true regardless of how long a pull request sits open.
- */
-export function classifyCalverBump(oldVersion, newVersion) {
-  const oldTriple = parsePlainVersionTriple(oldVersion);
-  const newTriple = parsePlainVersionTriple(newVersion);
-  if (!oldTriple || !newTriple) return null;
-
-  if (oldTriple[0] === 0) {
-    return newTriple[0] > 0 && newTriple[2] === 0 ? "transition" : null;
-  }
-
-  const sameWeek = oldTriple[0] === newTriple[0] && oldTriple[1] === newTriple[1];
-  if (sameWeek) {
-    return newTriple[2] === oldTriple[2] + 1 ? "same-week-outofband" : null;
-  }
-
-  const movedForward = newTriple[0] > oldTriple[0] || (newTriple[0] === oldTriple[0] && newTriple[1] > oldTriple[1]);
-  return movedForward && newTriple[2] === 0 ? "new-week" : null;
 }
 
 /** "merge-window" (Mon-Fri), "release" (Saturday), or "adoption" (Sunday), per the calendar's own day names -- never a hardcoded weekday, so a calendar edit alone can move the cadence. */
@@ -286,5 +151,3 @@ export function shouldOpenReleasePr(now, calendar, toleranceMinutes = 55) {
   if (weekday !== calendar.releaseDay) return false;
   return hour === 0 && minute < toleranceMinutes;
 }
-
-export const WEEKDAY_NAMES = WEEKDAY_ORDER;

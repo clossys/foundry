@@ -40,21 +40,23 @@
 // `---` is the summary, trimmed, and must be non-empty -- it becomes the
 // CHANGELOG line verbatim.
 //
-// Since the calver-isoweek version scheme (docs/RELEASING.md), a bump level
-// no longer picks the next version number -- scripts/apply-release-
-// changesets.mjs computes that from governance/release-calendar.json
-// instead. `level` is kept as a purely INFORMATIONAL signal: `major` means
-// a breaking change and drives a "Breaking changes" CHANGELOG/release-notes
-// section, since CalVer no longer encodes that in the version itself.
+// A `major`-level changeset still bumps the version the same way it always
+// has (scripts/check-release-pr-shape.mjs's computeBumpLevel), and now also
+// drives a "Breaking changes" subsection in the CHANGELOG entry and the
+// release PR's own description (scripts/apply-release-changesets.mjs).
 //
 // A reserved frontmatter key, `release`, is not a package: its only legal
 // value is `out-of-band`, flagging that this changeset is a security fix or
 // a fix for a release that already shipped broken (governance/
-// release-calendar.json's outOfBandPolicy) -- the only case
-// scripts/apply-release-changesets.mjs will bump a package a second time in
-// the same ISO week. It needs owner approval before the release PR
-// consuming it merges; this parser only records the flag, it does not
-// itself gate anything.
+// release-calendar.json's outOfBandPolicy, docs/RELEASING.md's weekly
+// cadence -- Mon-Fri merge window, Saturday release, Sunday adoption). An
+// out-of-band changeset must bump every package it names at `patch` --
+// this parser enforces that structurally, since the policy restricts it to
+// exactly that. It needs explicit owner approval before the release PR
+// consuming it merges; this parser only records and validates the flag, it
+// does not itself gate a merge (scripts/check-release-calendar.mjs does,
+// via the `release:out-of-band` PR label .github/workflows/release-pr.yml
+// applies when it applies such a changeset).
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -112,15 +114,23 @@ export function parseChangesetText(text, { knownPackageDirs } = {}) {
     packages[pkg] = bump;
   }
   if (Object.keys(packages).length === 0) return { error: "frontmatter must name at least one package" };
+  if (outOfBand) {
+    const notPatch = Object.entries(packages).filter(([, bump]) => bump !== "patch");
+    if (notPatch.length > 0) {
+      return {
+        error: `frontmatter is flagged "${RELEASE_FLAG_KEY}: ${OUT_OF_BAND_VALUE}", which must bump every package it names at "patch" -- ${notPatch.map(([pkg, bump]) => `${pkg}: ${bump}`).join(", ")}`,
+      };
+    }
+  }
   return { packages, summary, outOfBand };
 }
 
 // Reads every file under .changesets/ (README.md is documentation, not a
 // changeset, and is skipped) and validates each. Returns
 // `{ entries, findings }`: `entries` is every well-formed changeset
-// (`{ file, packages, summary }`, sorted by file name for determinism);
-// `findings` is one `{ severity: "error", file, message }` per malformed
-// file or bad filename.
+// (`{ file, packages, summary, outOfBand }`, sorted by file name for
+// determinism); `findings` is one `{ severity: "error", file, message }`
+// per malformed file or bad filename.
 export function loadChangesets(root = process.cwd()) {
   const dir = resolve(root, CHANGESETS_DIR);
   if (!existsSync(dir)) return { entries: [], findings: [] };

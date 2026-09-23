@@ -66,6 +66,22 @@ test("parseChangesetText: rejects a release-flag-only changeset (no package name
   assert.match(result.error, /must name at least one package/);
 });
 
+test("parseChangesetText: an out-of-band changeset must bump every named package at patch", () => {
+  const result = parseChangesetText("---\nalpha: minor\nrelease: out-of-band\n---\n\nFix a security issue.\n", { knownPackageDirs: new Set(["alpha"]) });
+  assert.match(result.error, /must bump every package it names at "patch"/);
+  assert.match(result.error, /alpha: minor/);
+});
+
+test("parseChangesetText: an out-of-band changeset with several packages, all patch, is fine", () => {
+  const result = parseChangesetText("---\nalpha: patch\nbeta: patch\nrelease: out-of-band\n---\n\nFix a security issue.\n", { knownPackageDirs: new Set(["alpha", "beta"]) });
+  assert.deepEqual(result, { packages: { alpha: "patch", beta: "patch" }, summary: "Fix a security issue.", outOfBand: true });
+});
+
+test("parseChangesetText: an out-of-band changeset with one non-patch package among several is rejected", () => {
+  const result = parseChangesetText("---\nalpha: patch\nbeta: major\nrelease: out-of-band\n---\n\nFix a security issue.\n", { knownPackageDirs: new Set(["alpha", "beta"]) });
+  assert.match(result.error, /beta: major/);
+});
+
 test("parseChangesetText: rejects missing frontmatter", () => {
   const result = parseChangesetText("no frontmatter here\n", {});
   assert.ok(result.error);

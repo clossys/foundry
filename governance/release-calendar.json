@@ -7,18 +7,12 @@
   },
   "releaseDay": "Saturday",
   "adoptionDay": "Sunday",
-  "versionScheme": {
-    "name": "calver-isoweek",
-    "format": "YY.WW.N",
-    "description": "YY = the two-digit ISO week-YEAR (%G, not the calendar year -- 2027-01-02 is ISO week 53 of week-year 2026, so that date is 26.53.x). WW = the ISO week (%V), printed without zero-padding since semver forbids a leading zero. N = 0 for the Saturday release, incremented for an out-of-band release later in the same ISO week.",
-    "weekYearField": "%G",
-    "weekField": "%V"
-  },
   "outOfBandPolicy": {
     "changesetFlag": "release:out-of-band",
     "allowedReasons": ["security-fix", "fix-for-a-broken-published-release"],
+    "requiredLevel": "patch",
     "requiresOwnerApproval": true,
-    "description": "Reserved for a security fix, or a fix for a release that already shipped broken -- never for an ordinary content change that simply missed Friday's merge window. A changeset carrying `release: out-of-band` in its frontmatter needs explicit owner approval before the release PR that consumes it merges."
+    "description": "Reserved for a security fix, or a fix for a release that already shipped broken -- never for ordinary content that simply missed Friday's merge window (that waits for next Saturday). A changeset carrying `release: out-of-band` in its frontmatter must be `patch` level for every package it names (scripts/collect-changesets.mjs enforces this), and needs explicit owner approval before the release PR that consumes it merges."
   },
   "decision": "https://github.com/clossys/foundry/issues/1187#issuecomment-5799002037",
   "refs": ["#1187", "#1265", "#1266"]

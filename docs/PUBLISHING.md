@@ -261,21 +261,20 @@ accepts a pending changeset as an alternative to a same-PR version bump.
 
 A periodic or on-demand release PR (`node scripts/apply-release-changesets.mjs`,
 `.github/workflows/release-pr.yml`) applies every pending changeset: it
-bumps each named package once, writes the `CHANGELOG.md` entry, regenerates
+bumps each named package once (the highest level any of its changesets
+named), writes the `CHANGELOG.md` entry (with a "Breaking changes"
+subsection for any consumed `major`-level changeset), regenerates
 `package-lock.json`, and deletes the changesets it applied.
 `scripts/check-release-pr-shape.mjs` is the gate that keeps this the only <!-- facts-gate:ignore -->
 legitimate way a package's version moves going forward: a version change
 with no consumed, matching changeset and no matching `CHANGELOG.md` entry
 is refused as "a version change outside a release PR."
 
-**The version a release PR writes, and when it runs, are governed by the
-weekly release calendar — see [docs/RELEASING.md](RELEASING.md) for the
-full scheme.** In short: every package versions as `YY.WW.N` (the ISO
-week-year, the ISO week, and a same-week out-of-band counter), computed
-from `governance/release-calendar.json`, not from the changeset's
-`patch`/`minor`/`major` level — that level is kept only as an informational
-signal that drives a "Breaking changes" CHANGELOG/release-notes section for
-`major`. Releases happen Saturday; Monday–Friday is the merge window.
+**When a release PR is allowed to open is governed by the weekly release
+calendar — see [docs/RELEASING.md](RELEASING.md) for the full scheme.** In
+short: Monday–Friday is the merge window, Saturday is release day, Sunday
+is consumer-adoption day. The calendar decides *when*, never *what version*
+— versions stay plain semver exactly as described above.
 
 Qualification stays exactly where it was: one retained record per released
 version (`governance/release-qualifications/`), never per pull request —

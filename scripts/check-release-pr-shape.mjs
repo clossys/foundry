@@ -1,15 +1,17 @@
 #!/usr/bin/env node
 // check-release-pr-shape — for any package whose version this pull request
 // changed relative to its merge base, is that change shaped like a release
-// PR (issue #1255), under the weekly calendar / calver-isoweek version
-// scheme (docs/RELEASING.md, owner decision 2026-09-23)?
+// PR (issue #1255)? Opened on the weekly calendar's Saturday release day
+// (docs/RELEASING.md, owner decision 2026-09-23), but versioning stays
+// plain semver -- the owner explicitly kept semver bump levels rather than
+// a clock-driven version scheme.
 //
 //   node scripts/check-release-pr-shape.mjs [--json] [--base <ref>] [<packageDir> ...]
 //
 // With no positional arguments, every packages/*/package.json in this repo
 // is checked. Exit 0 = every version-bumped package's bump is either
-// justified by consumed changesets whose shape matches, or is accompanied
-// by a matching CHANGELOG.md entry (the pre-existing, documented
+// justified by consumed changesets whose bump level matches, or is
+// accompanied by a matching CHANGELOG.md entry (the pre-existing, documented
 // convention -- see docs/PUBLISHING.md section 4). Exit 1 = at least one
 // version-bumped package's bump is neither. Exit 2 = the question could not
 // be answered for at least one package (a git failure, an unreadable
@@ -32,38 +34,22 @@
 // the version actually change relative to the merge base" -- the same
 // merge-base computation and version comparison every other release gate in
 // this repository already trusts -- rather than a second implementation of
-// that join. Reuses scripts/lib/release-calendar.mjs's classifyCalverBump()
-// for "is this shaped like a legal single step of the version scheme" --
-// the date-INDEPENDENT half of that module, so this gate stays true
-// regardless of how long a pull request sits open before merging (the same
-// property the old patch/minor/major computeBumpLevel() had, and the same
-// reason it is not asked to independently re-derive "what week is it").
+// that join.
 //
 // WHAT COUNTS AS "RELEASE-PR SHAPED"
 // -----------------------------------
-// First, the version change itself must classify as one of
-// classifyCalverBump()'s three legal shapes: "transition" (the one-time
-// 0.x.y -> YY.WW.0 move), "new-week" (YY.WW.0 for a later ISO week), or
-// "same-week-outofband" (YY.WW.N -> YY.WW.(N+1)). Anything else -- skipped
-// N, a backward move, a transition that didn't land on N=0 -- fails
-// outright, before changesets or CHANGELOG.md are even consulted.
-//
-// Given a legal shape, either of two independent, mechanically checked
-// conditions justifies it:
+// Either of two independent, mechanically checked conditions:
 //
 //   1. CONSUMED CHANGESETS. At least one changeset existed in .changesets/
 //      at the merge base naming this package, and is gone from .changesets/
-//      at HEAD (this pull request applied it) -- this is the shape
-//      scripts/apply-release-changesets.mjs's release PR produces. A
-//      "same-week-outofband" shape additionally requires at least one of
-//      those consumed changesets to be flagged `release: out-of-band`
-//      (governance/release-calendar.json's outOfBandPolicy) -- an ordinary
-//      changeset can never justify a same-week re-release, or the flag
-//      would mean nothing. And if any consumed changeset for this package
-//      named `major` (still kept as a purely informational signal -- see
-//      collect-changesets.mjs's own header -- CalVer no longer encodes
-//      breakage in the version), packages/<dir>/CHANGELOG.md's entry for
-//      the new version must carry a "### Breaking changes" subsection
+//      at HEAD (this pull request applied it) -- and the highest bump level
+//      named across every such consumed changeset for this package equals
+//      the bump level the actual version change represents (patch/minor/
+//      major, computed structurally from the two version triples). This is
+//      the shape scripts/apply-release-changesets.mjs's release PR produces.
+//      If any consumed changeset for this package named `major`,
+//      packages/<dir>/CHANGELOG.md's entry for the new version must also
+//      carry a "### Breaking changes" subsection
 //      (scripts/apply-release-changesets.mjs's prependChangelogEntry()
 //      writes exactly that).
 //
@@ -85,14 +71,13 @@
 // adds a new, independently justified refusal.
 //
 // Design: https://github.com/clossys/foundry/issues/1255#issuecomment-5790113827
-// Weekly calendar / CalVer design: docs/RELEASING.md, refs #1187 #1265 #1266
+// Weekly calendar design (versioning unchanged): docs/RELEASING.md, refs #1187 #1265 #1266
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { basename, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { evaluatePackageDiff } from "./check-release-readiness.mjs";
 import { parseChangesetText, CHANGESETS_DIR } from "./collect-changesets.mjs";
-import { classifyCalverBump } from "./lib/release-calendar.mjs";
 
 function git(args, cwd) {
   return execFileSync("git", args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
@@ -111,16 +96,28 @@ function discoverPackages() {
 // Parses a version string into a [major, minor, patch] triple, or returns
 // null for anything that isn't a plain X.Y.Z (no pre-release/build
 // metadata) -- every version in this repository's manifests is currently
-// this shape (pre-transition 0.x.y and calver YY.WW.N are the same shape);
-// a package that adopts something richer needs this script extended
-// deliberately, not silently mis-measured. Kept here (rather than only in
-// scripts/lib/release-calendar.mjs) because it is used below independent of
-// the calver-specific classification, and other scripts already import it
-// from this module.
+// this shape; a package that adopts something richer needs this script
+// extended deliberately, not silently mis-measured.
 export function parseSemver(version) {
   const match = /^(\d+)\.(\d+)\.(\d+)$/.exec(version);
   if (!match) return null;
   return [Number(match[1]), Number(match[2]), Number(match[3])];
+}
+
+// Structurally classifies old -> new as exactly one of "major"/"minor"/
+// "patch", or null when it is not a clean forward bump of that shape (e.g.
+// a minor bump that didn't reset patch to 0, or a version that went
+// backwards or sideways).
+export function computeBumpLevel(oldVersion, newVersion) {
+  const oldV = parseSemver(oldVersion);
+  const newV = parseSemver(newVersion);
+  if (!oldV || !newV) return null;
+  const [oMaj, oMin, oPat] = oldV;
+  const [nMaj, nMin, nPat] = newV;
+  if (nMaj === oMaj + 1 && nMin === 0 && nPat === 0) return "major";
+  if (nMaj === oMaj && nMin === oMin + 1 && nPat === 0) return "minor";
+  if (nMaj === oMaj && nMin === oMin && nPat === oPat + 1) return "patch";
+  return null;
 }
 
 // Lists every non-README file under .changesets/ as it existed at `commit`,
@@ -204,14 +201,12 @@ function evaluatePackage(pkgDir, requestedBase) {
   }
 
   const { gitRoot, mergeBase, baseVersion, version } = diff;
-  const kind = classifyCalverBump(baseVersion, version);
-  if (kind === null) {
+  const bumpLevel = computeBumpLevel(baseVersion, version);
+  if (bumpLevel === null) {
     return {
       package: diff.package,
       status: "error",
-      detail:
-        `version changed from ${baseVersion} to ${version}, which is not a clean single step of the calver-isoweek scheme ` +
-        `(the one-time 0.x.y transition, a new ISO week landing at N=0, or a same-week out-of-band N+1) -- cannot judge its shape`,
+      detail: `version changed from ${baseVersion} to ${version}, which is not a clean single-step patch/minor/major semver bump -- cannot judge its shape`,
     };
   }
 
@@ -227,13 +222,16 @@ function evaluatePackage(pkgDir, requestedBase) {
   const consumed = baseChangesets.filter((c) => Object.hasOwn(c.packages, packageKey) && !headFiles.has(c.file));
 
   if (consumed.length > 0) {
-    if (kind === "same-week-outofband" && !consumed.some((c) => c.outOfBand)) {
+    const consumedLevel = consumed.reduce((best, c) => {
+      const level = c.packages[packageKey];
+      const order = ["patch", "minor", "major"];
+      return order.indexOf(level) > order.indexOf(best) ? level : best;
+    }, "patch");
+    if (consumedLevel !== bumpLevel) {
       return {
         package: diff.package,
         status: "not-release-shaped",
-        detail:
-          `version bumped from ${baseVersion} to ${version}, a same-week out-of-band release, but none of the consumed changeset(s) ${consumed.map((c) => c.file).join(", ")} ` +
-          'is flagged "release: out-of-band" -- an ordinary changeset cannot justify a same-week re-release',
+        detail: `version bumped from ${baseVersion} to ${version} (${bumpLevel}), but the consumed changeset(s) ${consumed.map((c) => c.file).join(", ")} specify ${consumedLevel} -- levels must match`,
       };
     }
 
@@ -251,7 +249,7 @@ function evaluatePackage(pkgDir, requestedBase) {
     return {
       package: diff.package,
       status: "pass",
-      detail: `version bumped from ${baseVersion} to ${version} (${kind}), matching the consumed changeset(s) ${consumed.map((c) => c.file).join(", ")} -- release-PR shaped`,
+      detail: `version bumped from ${baseVersion} to ${version} (${bumpLevel}), matching the consumed changeset(s) ${consumed.map((c) => c.file).join(", ")} -- release-PR shaped`,
     };
   }
 
@@ -259,7 +257,7 @@ function evaluatePackage(pkgDir, requestedBase) {
     return {
       package: diff.package,
       status: "pass",
-      detail: `version bumped from ${baseVersion} to ${version} (${kind}) with a matching CHANGELOG.md entry -- accepted under the pre-existing docs/PUBLISHING.md convention`,
+      detail: `version bumped from ${baseVersion} to ${version} (${bumpLevel}) with a matching CHANGELOG.md entry -- accepted under the pre-existing docs/PUBLISHING.md convention`,
     };
   }
 
@@ -267,7 +265,7 @@ function evaluatePackage(pkgDir, requestedBase) {
     package: diff.package,
     status: "not-release-shaped",
     detail:
-      `version bumped from ${baseVersion} to ${version} (${kind}) since merge-base ${mergeBase.slice(0, 12)}, but no changeset naming "${packageKey}" was consumed and CHANGELOG.md has no entry for ${version}. ` +
+      `version bumped from ${baseVersion} to ${version} (${bumpLevel}) since merge-base ${mergeBase.slice(0, 12)}, but no changeset naming "${packageKey}" was consumed and CHANGELOG.md has no entry for ${version}. ` +
       "A version change outside a release PR is refused (issue #1255) -- add a .changesets/<slug>.md instead of bumping directly, or add the CHANGELOG.md entry this bump requires.",
   };
 }

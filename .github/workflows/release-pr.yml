@@ -1,26 +1,32 @@
 name: Release PR
 
 # The periodic/on-demand release PR (issue #1255): applies every pending
-# .changesets/*.md, computing each named package's next version from the
-# weekly calendar (governance/release-calendar.json, docs/RELEASING.md,
-# owner decision 2026-09-23) rather than a semver bump level, writing its
-# CHANGELOG entry, regenerating package-lock.json, and deleting the
-# changesets it applied -- then pushes a branch and opens a pull request for
-# a human to review and merge, the same as any other change here. It never
-# touches main directly and never publishes anything; qualify-candidate.yml
-# and publish.yml stay the only paths that produce a qualification record or
-# upload a package. scripts/check-release-pr-shape.mjs is what proves, on
-# the resulting pull request, that these are the only version bumps this
-# repository accepts going forward.
+# .changesets/*.md, bumping each named package once by the highest semver
+# level any of its changesets named, writing its CHANGELOG entry,
+# regenerating package-lock.json, and deleting the changesets it applied --
+# then pushes a branch and opens a pull request for a human to review and
+# merge, the same as any other change here. It never touches main directly
+# and never publishes anything; qualify-candidate.yml and publish.yml stay
+# the only paths that produce a qualification record or upload a package.
+# scripts/check-release-pr-shape.mjs is what proves, on the resulting pull
+# request, that these are the only version bumps this repository accepts
+# going forward.
 #
-# THE WEEKLY CADENCE (docs/RELEASING.md)
-# -----------------------------------------
+# THE WEEKLY CADENCE (docs/RELEASING.md, owner decision 2026-09-23) --
+# VERSIONING ITSELF IS UNCHANGED
+# -------------------------------------------------------------------
 # Monday-Friday is the merge window; it closes Friday. This workflow's
 # release PR is what Saturday -- release day -- is for: it is the ONLY
 # pull request .github/workflows/release-calendar.yml admits on a Saturday
 # (by this workflow's own branch naming, `claude/release-<date>-<run id>`),
 # and it is expected to merge same-day so Sunday's consumer adoption has
-# something to adopt. Monday starts the next merge window fresh.
+# something to adopt. Monday starts the next merge window fresh. The owner
+# explicitly kept plain semver bump levels rather than a clock-driven
+# version scheme (see docs/RELEASING.md's "Options considered" section) --
+# this calendar only decides WHEN a release PR opens, never what version it
+# produces. A week with no pending changesets opens no release PR at all
+# (see "Nothing pending" below); a package with no pending changeset is not
+# touched even when a sibling package is.
 #
 # WHY BOTH schedule AND workflow_dispatch
 # -----------------------------------------
@@ -29,9 +35,9 @@ name: Release PR
 # changesets accumulated over the week so lanes stop colliding on the same
 # package's next version; workflow_dispatch exists for whenever a
 # maintainer wants one sooner (e.g. an out-of-band release --
-# governance/release-calendar.json's outOfBandPolicy) and is NOT subject to
-# the DST guard below, which only applies to the scheduled Saturday-opening
-# runs.
+# governance/release-calendar.json's outOfBandPolicy, always a `patch`) and
+# is NOT subject to the DST guard below, which only applies to the
+# scheduled Saturday-opening runs.
 #
 # TWO CRON ENTRIES, AND THE DST GUARD THAT PICKS ONE
 # -----------------------------------------------------
@@ -70,6 +76,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  issues: write # gh label create, for the release:out-of-band label an out-of-band changeset needs
 
 # Only one release PR in flight at a time: two concurrent runs applying the
 # same pending changesets would race on which one gets to delete them.
@@ -112,14 +119,14 @@ jobs:
           }
 
       # Refuses (exit 2) rather than run against a malformed changeset, and
-      # (exit 1) if a changeset names a package this checkout does not have,
-      # or if the calendar itself refuses the requested version (e.g. an
-      # out-of-band changeset for a package not released this ISO week) --
-      # all three should fail this workflow loudly, not be silently
-      # skipped, so this step is NOT wrapped in `set +e`. A clean "nothing
-      # pending" run exits 0 with an empty `applied` array; the step after
-      # this one reads that array's length to decide whether there is
-      # anything left to commit.
+      # (exit 1) if a changeset names a package this checkout does not have
+      # or whose current version is not a plain X.Y.Z -- both should fail
+      # this workflow loudly, not be silently skipped, so this step is NOT
+      # wrapped in `set +e`. A clean "nothing pending" run exits 0 with an
+      # empty `applied` array (see this repository's own apply-release-
+      # changesets.mjs header for why that is load-bearing, not
+      # incidental); the step after this one reads that array's length to
+      # decide whether there is anything left to commit.
       - name: Apply pending changesets
         id: apply
         if: github.event_name != 'schedule' || steps.gate.outputs.proceed == 'true'
@@ -129,10 +136,12 @@ jobs:
           echo "$output"
           count="$(node -e 'console.log(JSON.parse(process.argv[1]).applied.length)' "$output")"
           echo "applied_count=$count" >> "$GITHUB_OUTPUT"
+          out_of_band="$(node -e 'console.log(JSON.parse(process.argv[1]).applied.some((a) => a.outOfBand))' "$output")"
+          echo "out_of_band=$out_of_band" >> "$GITHUB_OUTPUT"
           node -e '
             const { applied } = JSON.parse(process.argv[1]);
             const lines = applied.map((a) => {
-              const flags = [a.kind, a.breaking ? "BREAKING" : null].filter(Boolean).join(", ");
+              const flags = [a.bump, a.breaking ? "BREAKING" : null, a.outOfBand ? "out-of-band" : null].filter(Boolean).join(", ");
               return `- \`${a.package}\`: ${a.fromVersion} -> ${a.toVersion} (${flags}), consuming ${a.changesetFiles.join(", ")}`;
             });
             const breaking = applied.flatMap((a) => a.breakingSummaries.map((s) => `- \`${a.package}\`: ${s}`));
@@ -159,6 +168,7 @@ jobs:
           RUN_ID: ${{ github.run_id }}
           SUMMARY_PATH: ${{ runner.temp }}/release-summary.md
           BREAKING_PATH: ${{ runner.temp }}/release-breaking.md
+          OUT_OF_BAND: ${{ steps.apply.outputs.out_of_band }}
         run: |
           set -euo pipefail
           branch="claude/release-$(date -u +%Y-%m-%d)-${RUN_ID}"
@@ -169,12 +179,11 @@ jobs:
           message_file="$RUNNER_TEMP/release-pr-commit-message.txt"
           {
             printf '%s\n\n' "Release: apply pending changesets"
-            printf '%s\n' "Computes each named package's next version from the weekly calendar"
-            printf '%s\n' "(governance/release-calendar.json, docs/RELEASING.md), writes its"
-            printf '%s\n' "CHANGELOG.md entry, regenerates package-lock.json, and deletes the"
-            printf '%s\n\n' "applied changesets -- via node scripts/apply-release-changesets.mjs."
+            printf '%s\n' "Bumps each named package once, writes its CHANGELOG.md entry,"
+            printf '%s\n' "regenerates package-lock.json, and deletes the applied changesets --"
+            printf '%s\n\n' "via node scripts/apply-release-changesets.mjs, per issue #1255."
             cat "$SUMMARY_PATH"
-            printf '\n%s\n' "Ref: #1255, #1187, #1265"
+            printf '\n%s\n' "Ref: #1255, #1187"
           } > "$message_file"
           git commit -F "$message_file"
           git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
@@ -182,7 +191,7 @@ jobs:
 
           body_file="$RUNNER_TEMP/release-pr-body.txt"
           {
-            printf '%s\n\n' "The periodic/on-demand release PR (issue #1255): applies every pending \`.changesets/*.md\` file, versioned by the weekly calendar (docs/RELEASING.md)."
+            printf '%s\n\n' "The periodic/on-demand release PR (issue #1255): applies every pending \`.changesets/*.md\` file. Opened on the weekly release calendar's Saturday release day (docs/RELEASING.md) -- the calendar decides *when* this runs, not what version anything gets; versions stay plain semver, bumped by each changeset's own patch/minor/major level."
             printf '%s\n\n' "## Bumps"
             cat "$SUMMARY_PATH"
             if [ -s "$BREAKING_PATH" ]; then
@@ -192,8 +201,24 @@ jobs:
             printf '\n%s\n' "Each package's CHANGELOG.md gained a matching entry (with its own Breaking changes subsection where applicable), and the consumed changeset files are deleted -- \`scripts/check-release-pr-shape.mjs\` verifies both on this pull request itself."
             printf '\n%s\n' "This publishes nothing. Qualification (per package version, via \`qualify-candidate.yml\`) and publication (\`publish.yml\`) remain separate, manually-gated steps."
             printf '%s\n' "Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}"
-            printf '%s\n' "Ref: #1255, #1187, #1265"
+            printf '%s\n' "Ref: #1255, #1187"
           } > "$body_file"
+
+          # An out-of-band changeset (governance/release-calendar.json's
+          # outOfBandPolicy -- always `patch`) is the one case this PR may
+          # need to land outside the Mon-Fri merge window or off the usual
+          # Saturday; the `release:out-of-band` label is what
+          # .github/workflows/release-calendar.yml admits past its
+          # otherwise-closed weekend gate. `gh label create` is idempotent
+          # here (already-exists is swallowed) since this step cannot
+          # assume the label predates this run.
+          label_args=()
+          if [ "$OUT_OF_BAND" = "true" ]; then
+            gh label create "release:out-of-band" --color "d73a4a" \
+              --description "Admitted outside the weekly merge window (docs/RELEASING.md) -- security fix or a fix for a broken published release only." \
+              >/dev/null 2>&1 || true
+            label_args=(--label "release:out-of-band")
+          fi
 
           # Same graceful-degradation shape as qualify-candidate.yml's
           # identical step: if this repository ever reverts "Actions may
@@ -203,7 +228,8 @@ jobs:
             --title "Release: apply pending changesets" \
             --base "$GITHUB_BASE_REF_OR_DEFAULT" \
             --head "$branch" \
-            --body-file "$body_file" 2>&1)"
+            --body-file "$body_file" \
+            "${label_args[@]:-}" 2>&1)"
           pr_create_status=$?
           set -e
 
