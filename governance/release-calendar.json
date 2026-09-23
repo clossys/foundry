@@ -21,7 +21,7 @@
   },
   "releasePrPolicy": {
     "label": "release:weekly",
-    "description": "Applied by .github/workflows/release-pr.yml to every release PR it prepares, regardless of whether it also carries release:out-of-band. scripts/lib/release-calendar.mjs's evaluateReleaseCalendarGate() requires BOTH this label AND a STRUCTURALLY VERIFIED release-PR-shaped diff (content, not just paths -- scripts/check-release-calendar.mjs, via scripts/lib/release-pr-footprint.mjs's evaluateReleasePrFootprint() and a package-lock.json regeneration check) before exempting a pull request from the Saturday/Sunday merge-window gate -- a branch name or a bare path list alone is not sufficient (see release-pr-footprint.mjs's own header for the full reasoning and the residual risk this does not eliminate)."
+    "description": "Applied by .github/workflows/release-pr.yml to every release PR it prepares, regardless of whether it also carries release:out-of-band. scripts/lib/release-calendar.mjs's evaluateReleaseCalendarGate() requires BOTH this label AND a STRUCTURALLY VERIFIED release-PR-shaped diff (content, not just paths, computed without ever invoking npm -- scripts/check-release-calendar.mjs, via scripts/lib/release-pr-footprint.mjs's fully pure evaluateReleasePrFootprint(), including a pure base-vs-head package-lock.json diff rather than an npm-regeneration comparison) before exempting a pull request from the Saturday/Sunday merge-window gate -- a branch name or a bare path list alone is not sufficient (see release-pr-footprint.mjs's own header for the full reasoning and the residual risk this does not eliminate)."
   },
   "decision": "https://github.com/clossys/foundry/issues/1187#issuecomment-5799002037",
   "refs": ["#1187", "#1265", "#1266"]

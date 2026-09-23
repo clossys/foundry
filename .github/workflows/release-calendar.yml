@@ -79,17 +79,20 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Provides `node` and `npm` on PATH -- scripts/check-release-
-      # calendar.mjs shells out to `npm install --package-lock-only
-      # --ignore-scripts` itself when verifying a changed package-
-      # lock.json. Deliberately NO `npm ci` step: nothing this workflow
-      # runs (scripts/lib/release-calendar.mjs, scripts/lib/release-pr-
-      # footprint.mjs, scripts/check-release-calendar.mjs) imports an
-      # external package -- node builtins only, the same discipline
-      # scripts/check-workflow-references.test.mjs's "every suite in
-      # check:gates imports only node builtins and local scripts" test
-      # enforces elsewhere -- so this repository's own node_modules were
-      # never actually needed here.
+      # Provides `node` on PATH to run scripts/check-release-calendar.mjs
+      # itself. Deliberately NO `npm ci` step, and no npm invocation
+      # anywhere in this job at all: scripts/lib/release-pr-footprint.mjs's
+      # package-lock.json check is a pure base-vs-head diff, not an `npm
+      # install` regeneration (see that module's own header for why a
+      # regeneration-based check was replaced -- it could drift from an
+      # already-committed lockfile even on an unchanged tree). Nothing this
+      # workflow runs (scripts/lib/release-calendar.mjs, scripts/lib/
+      # release-pr-footprint.mjs, scripts/check-release-calendar.mjs)
+      # imports an external package either -- node builtins only, the same
+      # discipline scripts/check-workflow-references.test.mjs's "every
+      # suite in check:gates imports only node builtins and local scripts"
+      # test enforces elsewhere -- so this repository's own node_modules
+      # were never actually needed here.
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 20

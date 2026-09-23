@@ -1,49 +1,60 @@
 // release-pr-footprint — STRUCTURAL (content-level) proof that a set of
 // changed files is exactly the shape scripts/apply-release-changesets.mjs's
-// release PR produces (second re-review of #1316,
-// https://github.com/clossys/foundry/pull/1316#issuecomment-5800566625,
-// item 1).
+// release PR produces. Third pass, after two rounds of re-review on #1316:
+//   - https://github.com/clossys/foundry/pull/1316#issuecomment-5800566625
+//     (path-and-status alone is not enough -- introduced this module)
+//   - https://github.com/clossys/foundry/pull/1316#issuecomment-5800871586
+//     (this module's own first draft had three further defects, fixed
+//     here -- see each section below for exactly what and why)
 //
-// WHY PATH-AND-STATUS ALONE WAS NOT ENOUGH
-// -------------------------------------------
-// An earlier version of this exemption (scripts/lib/release-calendar.mjs's
-// isReleasePrFootprint(), now removed) only checked each changed file's
-// PATH and git STATUS (added/removed/modified) -- e.g. "packages/x/
-// package.json, modified" passed regardless of WHAT changed inside it. A
-// release PR whose package.json also added a dependency, a postinstall
-// script, or any other field; whose CHANGELOG.md also rewrote an old
-// entry; whose package-lock.json was hand-edited to point at a different
-// tarball; or whose .changesets/ deletion was paired with a smuggled-in
-// NEW changeset -- all of those passed the old check as long as the PATHS
-// looked right. This module replaces "the path looks right" with "the
-// CONTENT is exactly what the release PR command would have produced."
+// FULLY PURE -- NO npm, NO NETWORK, NO FILESYSTEM
+// ---------------------------------------------------
+// Every function in this module takes already-fetched text content and
+// returns a plain boolean or `{ ok, reason }`. The first draft's lockfile
+// check ran `npm install --package-lock-only` in a scratch directory and
+// compared byte-for-byte -- which sounds robust but is NOT deterministic
+// against an already-committed lockfile: a real regeneration drifts from
+// what is actually committed (transitive resolution details an npm run
+// years apart, or even the same day on a different registry state, does
+// not reproduce identically), so that check could FAIL ON AN UNCHANGED
+// TREE -- the exemption could never pass, ever, which is a defect in the
+// opposite direction of the one this module exists to close (fails open
+// on a stricter design, but was actually failing shut on EVERYTHING,
+// including the legitimate case). isLockfilePureVersionBump() below
+// replaces it with a pure base-vs-head DIFF instead of a regeneration:
+// no npm invocation, so nothing here can ever drift from what a real npm
+// run happens to produce today.
 //
 // WHAT EACH FILE CLASS MUST PROVE
 // ----------------------------------
 //   packages/<dir>/package.json  -- status "modified"; parsed as JSON on
-//     both sides; every key OTHER than "version" is deep-equal (this
-//     covers dependencies, scripts, bin, exports, and anything else in one
-//     generic check, rather than an enumerated list of "watched" keys);
-//     "version" itself must actually have changed.
-//   packages/<dir>/CHANGELOG.md  -- status "modified" or "added"; the head
-//     text must be the base text with ONE contiguous block of new text
-//     INSERTED (isChangelogPurePrepend()) -- nothing in the base text may
-//     be removed or altered, and the inserted block must itself open with
-//     a "## " heading (a new version section).
-//   package-lock.json  -- status "modified". Its CONTENT is not judged
-//     file-by-file here (a lockfile is one file covering every package at
-//     once, not a per-package unit) -- see verifyLockfileRegeneration()
-//     below and this module's own evaluateReleasePrFootprint(), which
-//     requires that separate proof whenever a lockfile change is present.
-//   .changesets/<slug>.md  -- status "removed" ONLY. A git status of
-//     "added" here is exactly "a new changeset smuggled in" and fails
-//     immediately -- this module does not need to know what package a
-//     changeset named to reject an added one on sight.
+//     both sides; every key OTHER than "version" is compared with ITS
+//     ORIGINAL KEY ORDER PRESERVED (isPackageManifestVersionOnlyChange()
+//     -- see its own header for why sorting keys before comparing, this
+//     module's own first-draft mistake, is actively wrong for a field
+//     like `exports`, whose condition order is resolution-significant,
+//     not cosmetic); "version" itself must actually have changed.
+//   packages/<dir>/CHANGELOG.md  -- status "modified" or "added"; must
+//     contain EXACTLY ONE new section, inserted immediately before the
+//     base text's first existing version heading (after any preamble),
+//     whose own heading is the bumped package's own new version -- see
+//     isChangelogPureNewSection()'s own header for the exact shape and
+//     why "a valid split range" (this module's own first-draft approach)
+//     was not strict enough.
+//   package-lock.json  -- status "modified"; isLockfilePureVersionBump()
+//     -- see above and that function's own header.
+//   .changesets/<slug>.md  -- status "removed" ONLY, AND its content AT
+//     BASE must name only packages this diff actually bumps -- deleting
+//     an unrelated PENDING changeset (one that names some other package
+//     entirely) is not "consuming" it, it is silently discarding someone
+//     else's still-pending change, which is exactly what a release PR
+//     must never do. isChangesetDeletionLegitimate() checks this by
+//     parsing the changeset's own base content with scripts/collect-
+//     changesets.mjs's own parser (reused, not reimplemented) and
+//     requiring every package it names to be among this diff's bumped
+//     set.
 //   anything else -- fails outright, regardless of status.
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
-import { execFileSync } from "node:child_process";
+import { parseChangesetText } from "../collect-changesets.mjs";
 
 export const RELEASE_PR_FILE_PATTERNS = {
   packageManifest: /^packages\/([^/]+)\/package\.json$/,
@@ -52,28 +63,22 @@ export const RELEASE_PR_FILE_PATTERNS = {
   changeset: /^\.changesets\/[a-z0-9][a-z0-9-]*\.md$/,
 };
 
-// Deep-equal via a canonical (keys sorted, recursively) JSON string --
-// good enough for package.json's plain-data shape (no functions, no
-// cycles, no Dates) and immune to key-order noise a formatter might
-// introduce.
-function canonicalJson(value) {
-  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
-  if (value && typeof value === "object") {
-    return `{${Object.keys(value)
-      .sort()
-      .map((k) => `${JSON.stringify(k)}:${canonicalJson(value[k])}`)
-      .join(",")}}`;
-  }
-  return JSON.stringify(value);
-}
-
 /**
  * Is the ONLY difference between these two package.json texts the
- * top-level "version" field? Parses both as JSON (a parse failure on
- * either side is itself a failure -- this proves nothing about malformed
- * input), strips "version" from each, and requires the rest to be
- * deep-equal. Also requires "version" to have actually changed -- a
- * no-op "change" is not a release PR either.
+ * top-level "version" field? Parses both as JSON, strips "version" from
+ * each, and compares the rest via plain `JSON.stringify` -- deliberately
+ * NOT a key-sorted "canonical" comparison. An earlier draft of this
+ * function sorted object keys before comparing, reasoning that key order
+ * was "formatter noise"; it is not, for every field: `exports`' condition
+ * order is part of how Node resolves it (`{"import":...,"require":...}`
+ * is not the same export map as `{"require":...,"import":...}` to a
+ * resolver that returns the first matching condition), so silently
+ * tolerating a reordered `exports` block would have let a real behavior
+ * change ride through this check unnoticed. `JSON.stringify` on a value
+ * parsed straight from JSON.parse already preserves each object's original
+ * key insertion order at every nesting level, so comparing the stringified
+ * form is exactly "same structure, same order, same values" with no
+ * separate canonicalization step needed.
  */
 export function isPackageManifestVersionOnlyChange(baseText, headText) {
   let baseJson, headJson;
@@ -92,180 +97,268 @@ export function isPackageManifestVersionOnlyChange(baseText, headText) {
   const { version: headVersion, ...headRest } = headJson;
   if (baseVersion === headVersion) return false;
   if (typeof headVersion !== "string" || headVersion.length === 0) return false;
-  return canonicalJson(baseRest) === canonicalJson(headRest);
+  return JSON.stringify(baseRest) === JSON.stringify(headRest);
 }
 
 /**
- * Is `headText` exactly `baseText` with ONE contiguous, non-empty block of
- * new text inserted somewhere -- nothing from `baseText` removed, nothing
- * altered? `baseText` may be `null`/`undefined` for a brand-new
- * CHANGELOG.md (git status "added"), treated as empty.
+ * Does `headText` contain EXACTLY ONE new CHANGELOG section, inserted
+ * immediately before `baseText`'s first existing version heading (after
+ * any preamble -- a "# Changelog" title, blank lines, anything above the
+ * first "## " line), whose own heading opens with `## <newVersion>`, with
+ * NOTHING else in the document changed and no duplicate heading line
+ * anywhere in the result?
  *
- * THE SPLIT POINT IS A RANGE, NOT A SINGLE GREEDY GUESS
- * ---------------------------------------------------------
- * The naive version of this check -- take the longest common prefix, take
- * the longest common suffix, require they cover all of `baseText` between
- * them -- is not safe on its own: a real changelog's OLD and NEW entries
- * routinely share a run of identical characters right at the boundary
- * (e.g. inserting "## 1.0.1" directly above an existing "## 1.0.0" shares
- * the literal text "## 1.0." across both), which makes a single greedy
- * prefix walk overshoot PAST the true insertion point and misread the
- * split. Instead: compute the longest common prefix length and the
- * longest common suffix length independently (each bounded only by
- * `baseText`'s own length); every insertion point `i` with
- * `base.length - suffixLen <= i <= prefixLen` is mathematically a VALID
- * decomposition (`head === base.slice(0, i) + <insertLen bytes> +
- * base.slice(i)`, with `base` fully, byte-identically preserved either
- * side -- provable directly from what "common prefix"/"common suffix"
- * mean, independent of which point in that range is picked). If that
- * range is empty, no pure insertion exists and this returns false --
- * something in the middle of `baseText` was genuinely removed or altered.
- * If the range is non-empty, this accepts the input as long as AT LEAST
- * ONE point in that range yields an inserted block that itself opens with
- * a "## " heading -- a new version section, not arbitrary text prepended
- * above one. Every candidate in the range preserves `baseText` exactly by
- * construction, so trying more than one is not a laxer check, only a
- * correct read of a genuinely ambiguous (repeated-text) boundary.
+ * This replaced an earlier "valid split range" version of this check
+ * (search every position a pure insertion COULD have happened, accept if
+ * any of them looks like a heading) with a single, EXACT expected
+ * insertion point instead: scripts/apply-release-changesets.mjs's
+ * prependChangelogEntry() only ever inserts at one place -- directly
+ * before the first "## " heading in the pre-existing file (or at the end
+ * of a from-scratch file's title, if there is no prior heading at all) --
+ * so there is exactly one legitimate insertion point, not a range of
+ * them, and checking a range was strictly more permissive than the real
+ * release PR command ever produces. Requiring the inserted heading to
+ * equal the SPECIFIC version this diff's own package.json bumped to
+ * (`newVersion`, supplied by the caller -- see evaluateReleasePrFootprint()
+ * below, which cross-references each CHANGELOG.md against its own
+ * package's version bump) closes the remaining gap: a structurally clean
+ * insertion for the WRONG version number is not this package's release
+ * note.
+ *
+ * `baseText` may be `null`/`undefined` for a brand-new CHANGELOG.md (git
+ * status "added"), treated as empty -- the whole head text is then "the
+ * insertion", which may itself carry one leading "# ...\n" preamble line
+ * (scripts/apply-release-changesets.mjs writes "# Changelog\n\n" for a
+ * from-scratch file) before its own "## <newVersion>" heading.
  */
-export function isChangelogPurePrepend(baseText, headText) {
-  if (typeof headText !== "string" || headText.length === 0) return false;
-  if (baseText === null || baseText === undefined) {
-    // Brand-new file (git status "added"): there is no prior content to
-    // preserve, so "pure insertion" is vacuous -- the only thing left to
-    // require is that the file actually opens with a version heading,
-    // optionally after the one-line "# Changelog" title
-    // scripts/apply-release-changesets.mjs's prependChangelogEntry() writes
-    // for a from-scratch file.
-    return /^(#[^\n]*\n+)?##[ \t]/.test(headText);
-  }
-
-  const base = baseText;
+export function isChangelogPureNewSection(baseText, headText, newVersion) {
+  if (typeof headText !== "string" || typeof newVersion !== "string" || newVersion.length === 0) return false;
+  const base = baseText ?? "";
   if (headText.length <= base.length) return false;
+
+  const headingMatch = /^## /m.exec(base);
+  const insertPos = headingMatch ? headingMatch.index : base.length;
   const insertLen = headText.length - base.length;
+  const insertEnd = insertPos + insertLen;
 
-  let prefixLen = 0;
-  while (prefixLen < base.length && base[prefixLen] === headText[prefixLen]) prefixLen += 1;
+  // Everything strictly before and strictly after the insertion point must
+  // be byte-for-byte the base text -- not "similar enough", not "differs
+  // only in whitespace". This is what makes the insertion point EXACT
+  // rather than a range: there is only one candidate split (base's own
+  // first-heading position), and either the surrounding text matches or it
+  // does not.
+  if (headText.slice(0, insertPos) !== base.slice(0, insertPos)) return false;
+  if (headText.slice(insertEnd) !== base.slice(insertPos)) return false;
 
-  let suffixLen = 0;
-  while (suffixLen < base.length && base[base.length - 1 - suffixLen] === headText[headText.length - 1 - suffixLen]) suffixLen += 1;
+  const inserted = headText.slice(insertPos, insertEnd);
+  if (inserted.length === 0) return false;
 
-  const loI = Math.max(0, base.length - suffixLen);
-  const hiI = Math.min(prefixLen, base.length);
-  if (loI > hiI) return false; // no valid split -- something in the middle of base was removed or altered
+  const contentToCheck = base.length === 0 ? stripOneLeadingTitleLine(inserted) : inserted;
+  const escapedVersion = newVersion.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  if (!new RegExp(`^## ${escapedVersion}(?:[ \\t\\n]|$)`).test(contentToCheck)) return false;
 
-  for (let i = loI; i <= hiI; i += 1) {
-    const inserted = headText.slice(i, i + insertLen);
-    if (/^##[ \t]/.test(inserted)) return true;
+  // "Exactly one new section" -- the inserted block must carry precisely
+  // one "## " heading line (its own), never a second one smuggled in
+  // alongside it (which would otherwise pass the pure-insertion check
+  // above while quietly duplicating or shadowing some other version's
+  // entry inside the very same insertion).
+  const insertedHeadingCount = (inserted.match(/^##[ \t]/gm) ?? []).length;
+  if (insertedHeadingCount !== 1) return false;
+
+  // Defense in depth: no two "## " heading LINES anywhere in the final
+  // document may be textually identical -- a fake duplicate heading that
+  // shadows a real one (whether or not it could have snuck past the
+  // checks above) is refused outright.
+  const allHeadingLines = headText.match(/^##.*$/gm) ?? [];
+  const seenHeadingLines = new Set();
+  for (const line of allHeadingLines) {
+    if (seenHeadingLines.has(line)) return false;
+    seenHeadingLines.add(line);
   }
-  return false;
+
+  return true;
+}
+
+function stripOneLeadingTitleLine(text) {
+  const m = /^#[^\n]*\n+/.exec(text);
+  return m ? text.slice(m[0].length) : text;
+}
+
+// True if `entry` (a package-lock.json "packages" map value, or
+// undefined) is a "link" pointer at a bumped workspace package -- npm
+// writes one `node_modules/<name>` entry per workspace member alongside
+// its real `packages/<dir>` entry, pointing back at it via `resolved`.
+function isLinkToBumpedWorkspaceEntry(entry, workspaceKeys) {
+  return Boolean(entry && typeof entry === "object" && typeof entry.resolved === "string" && workspaceKeys.has(entry.resolved));
 }
 
 /**
- * Classifies ONE changed file against the release-PR shape. `status` is
- * the GitHub "list pull request files" vocabulary (added/removed/
- * modified/renamed/copied/changed/unchanged). `baseContent`/`headContent`
- * are that file's full text at the base and head commits respectively
- * (undefined/null where the file did not exist on that side -- e.g. a
- * brand-new CHANGELOG.md has no baseContent).
+ * Is `headText` a plain base-vs-head DIFF of `baseText` (both
+ * package-lock.json, lockfileVersion 3 shape: a top-level `packages`
+ * object keyed by path) where the ONLY changes anywhere are the `version`
+ * field of each bumped workspace package's own `packages/<dir>` entry and
+ * its matching `node_modules/<name>` link entry (if npm wrote one)? No
+ * npm is ever invoked -- see this module's own header for why a
+ * regeneration-based check was replaced with this pure comparison.
  *
- * package-lock.json is deliberately judged on path+status ONLY here --
- * see this module's header for why its content is verified separately,
- * by evaluateReleasePrFootprint()/verifyLockfileRegeneration() below, not
- * per-file.
+ * `bumpedPackageDirs` is the list of `packages/<dir>` directory names this
+ * diff's package.json changes actually bumped (computed by
+ * evaluateReleasePrFootprint() below from the SAME diff, never trusted
+ * from the lockfile's own content). Every other packages-map entry --
+ * every third-party dependency, every non-bumped workspace member, the
+ * lockfile's own top-level fields (name, lockfileVersion, `requires`,
+ * anything else) -- must be byte-for-byte identical; a changed `resolved`,
+ * `integrity`, added `dependencies` entry, or a version bump on anything
+ * NOT in `bumpedPackageDirs` all fail this outright. An entry added or
+ * removed from the `packages` map at all also fails.
  */
-export function classifyReleasePrFile({ path, status, baseContent, headContent }) {
-  if (RELEASE_PR_FILE_PATTERNS.packageManifest.test(path)) {
-    return status === "modified" && isPackageManifestVersionOnlyChange(baseContent, headContent);
+export function isLockfilePureVersionBump(baseText, headText, bumpedPackageDirs) {
+  let baseJson, headJson;
+  try {
+    baseJson = JSON.parse(baseText);
+  } catch {
+    return false;
   }
-  if (RELEASE_PR_FILE_PATTERNS.changelog.test(path)) {
-    return (status === "modified" || status === "added") && isChangelogPurePrepend(status === "added" ? null : baseContent, headContent);
+  try {
+    headJson = JSON.parse(headText);
+  } catch {
+    return false;
   }
-  if (RELEASE_PR_FILE_PATTERNS.lockfile.test(path)) {
-    return status === "modified";
+  if (!baseJson || typeof baseJson !== "object" || !headJson || typeof headJson !== "object") return false;
+  if (!baseJson.packages || typeof baseJson.packages !== "object" || !headJson.packages || typeof headJson.packages !== "object") return false;
+
+  const { packages: basePackages, ...baseRest } = baseJson;
+  const { packages: headPackages, ...headRest } = headJson;
+  if (JSON.stringify(baseRest) !== JSON.stringify(headRest)) return false;
+
+  const baseKeys = Object.keys(basePackages);
+  const headKeySet = new Set(Object.keys(headPackages));
+  if (baseKeys.length !== headKeySet.size) return false;
+  for (const key of baseKeys) if (!headKeySet.has(key)) return false;
+
+  const workspaceKeys = new Set((bumpedPackageDirs ?? []).map((d) => `packages/${d}`));
+
+  for (const key of baseKeys) {
+    const baseEntry = basePackages[key];
+    const headEntry = headPackages[key];
+    const isBumpedWorkspaceEntry = workspaceKeys.has(key);
+    const isBumpedLinkEntry = isLinkToBumpedWorkspaceEntry(baseEntry, workspaceKeys) && isLinkToBumpedWorkspaceEntry(headEntry, workspaceKeys);
+
+    if (isBumpedWorkspaceEntry || isBumpedLinkEntry) {
+      if (!baseEntry || typeof baseEntry !== "object" || !headEntry || typeof headEntry !== "object") return false;
+      const { version: baseVersion, ...baseEntryRest } = baseEntry;
+      const { version: headVersion, ...headEntryRest } = headEntry;
+      void baseVersion;
+      void headVersion;
+      if (JSON.stringify(baseEntryRest) !== JSON.stringify(headEntryRest)) return false;
+      continue;
+    }
+
+    if (JSON.stringify(baseEntry) !== JSON.stringify(headEntry)) return false;
   }
-  if (RELEASE_PR_FILE_PATTERNS.changeset.test(path)) {
-    return status === "removed";
-  }
-  return false;
+
+  return true;
 }
 
 /**
- * The full verdict over every changed file, PLUS the separate lockfile-
- * regeneration proof when a lockfile change is present. `files` is
- * `{ path, status, baseContent, headContent }[]`. `lockfileVerified` is
- * `null` when no package-lock.json appears in `files` (nothing to verify);
- * otherwise it is the boolean verifyLockfileRegeneration() (or an
- * equivalent) already computed -- this function does not itself touch npm
- * or the filesystem, keeping it a plain, fast, fully unit-testable
- * decision once content and the lockfile verdict are both in hand.
- *
- * Fails closed on every axis: an empty file list, a file that fails its
- * own classification, no package.json touched at all, or a present-but-
- * unverified lockfile all return `{ ok: false }` -- never a default pass.
+ * Was this deleted `.changesets/<slug>.md` file (its content AT BASE,
+ * before deletion) actually about a package this diff bumps -- never an
+ * unrelated, still-pending changeset silently discarded alongside a
+ * legitimate one? Parses `baseContent` with scripts/collect-
+ * changesets.mjs's own `parseChangesetText()` (reused, not reimplemented
+ * -- the SAME rules that gate what a changeset is allowed to say at all)
+ * and requires every package it names to be a member of
+ * `bumpedPackageDirs`. A changeset that fails to parse at all, or that
+ * names zero packages, or that names even ONE package outside the bumped
+ * set, is not a legitimate deletion.
  */
-export function evaluateReleasePrFootprint({ files, lockfileVerified = null }) {
+export function isChangesetDeletionLegitimate(baseContent, bumpedPackageDirs) {
+  if (typeof baseContent !== "string") return false;
+  const result = parseChangesetText(baseContent, {});
+  if (result.error) return false;
+  const names = Object.keys(result.packages);
+  if (names.length === 0) return false;
+  const bumpedSet = new Set(bumpedPackageDirs ?? []);
+  return names.every((name) => bumpedSet.has(name));
+}
+
+/**
+ * The full verdict over every changed file in a candidate release PR.
+ * `files` is `{ path, status, baseContent, headContent }[]` -- the caller
+ * (scripts/check-release-calendar.mjs) is responsible for fetching every
+ * file's content; this function touches no filesystem, git, or network
+ * itself, and is fully synchronous and deterministic given its input.
+ *
+ * Two passes: first, every `packages/<dir>/package.json` is validated and
+ * its new version recorded (`bumpedVersions`); a diff with no such bump at
+ * all is refused immediately (nothing to release). Second, every OTHER
+ * changed file is validated against that now-known bumped set -- a
+ * CHANGELOG.md is checked against ITS OWN package's specific new version
+ * (not just "some version-shaped heading"), the lockfile is checked
+ * against the full set of bumped directories at once (it is one file
+ * covering every package), and a deleted changeset must name only bumped
+ * packages. Any file that is not one of these four classes, or fails its
+ * own class's check, fails the whole PR immediately.
+ */
+export function evaluateReleasePrFootprint({ files }) {
   if (!Array.isArray(files) || files.length === 0) {
     return { ok: false, reason: "no changed files -- nothing to release" };
   }
 
-  let touchedPackageManifest = false;
-  let touchedLockfile = false;
+  const bumpedVersions = {};
   for (const file of files) {
-    if (!classifyReleasePrFile(file)) {
-      return { ok: false, reason: `"${file.path}" (${file.status}) is not a release-PR-shaped change` };
+    const match = RELEASE_PR_FILE_PATTERNS.packageManifest.exec(file.path);
+    if (!match) continue;
+    if (file.status !== "modified" || !isPackageManifestVersionOnlyChange(file.baseContent, file.headContent)) {
+      return { ok: false, reason: `"${file.path}" (${file.status}) is not a pure version-only package.json change` };
     }
-    if (RELEASE_PR_FILE_PATTERNS.packageManifest.test(file.path)) touchedPackageManifest = true;
-    if (RELEASE_PR_FILE_PATTERNS.lockfile.test(file.path)) touchedLockfile = true;
+    let headJson;
+    try {
+      headJson = JSON.parse(file.headContent);
+    } catch {
+      return { ok: false, reason: `"${file.path}" head content is not valid JSON` };
+    }
+    bumpedVersions[match[1]] = headJson.version;
   }
 
-  if (!touchedPackageManifest) {
+  const bumpedDirs = Object.keys(bumpedVersions);
+  if (bumpedDirs.length === 0) {
     return { ok: false, reason: "no packages/<dir>/package.json version bump present" };
   }
-  if (touchedLockfile && lockfileVerified !== true) {
-    return { ok: false, reason: "package-lock.json changed but its regeneration could not be verified byte-for-byte" };
+
+  for (const file of files) {
+    if (RELEASE_PR_FILE_PATTERNS.packageManifest.test(file.path)) continue; // already validated above
+
+    const changelogMatch = RELEASE_PR_FILE_PATTERNS.changelog.exec(file.path);
+    if (changelogMatch) {
+      const dir = changelogMatch[1];
+      const expectedVersion = bumpedVersions[dir];
+      if (!expectedVersion) return { ok: false, reason: `"${file.path}" changed, but packages/${dir} was not bumped in this diff` };
+      if (file.status !== "modified" && file.status !== "added") return { ok: false, reason: `"${file.path}" has status "${file.status}" -- expected modified or added` };
+      if (!isChangelogPureNewSection(file.status === "added" ? null : file.baseContent, file.headContent, expectedVersion)) {
+        return { ok: false, reason: `"${file.path}" is not exactly one new "${expectedVersion}" section, cleanly inserted at the top` };
+      }
+      continue;
+    }
+
+    if (RELEASE_PR_FILE_PATTERNS.lockfile.test(file.path)) {
+      if (file.status !== "modified") return { ok: false, reason: `"${file.path}" has status "${file.status}" -- expected modified` };
+      if (!isLockfilePureVersionBump(file.baseContent, file.headContent, bumpedDirs)) {
+        return { ok: false, reason: `"${file.path}" changes are not limited to the bumped workspace packages' version fields` };
+      }
+      continue;
+    }
+
+    if (RELEASE_PR_FILE_PATTERNS.changeset.test(file.path)) {
+      if (file.status !== "removed") return { ok: false, reason: `"${file.path}" has status "${file.status}" -- only a deletion is legal` };
+      if (!isChangesetDeletionLegitimate(file.baseContent, bumpedDirs)) {
+        return { ok: false, reason: `"${file.path}" does not name only packages bumped in this diff` };
+      }
+      continue;
+    }
+
+    return { ok: false, reason: `"${file.path}" (${file.status}) is not a release-PR-shaped change` };
   }
 
   return { ok: true, reason: "every changed file is release-PR shaped" };
-}
-
-const defaultRunNpmInstall = (root) => execFileSync("npm", ["install", "--package-lock-only", "--ignore-scripts"], { cwd: root, stdio: "inherit" });
-
-/**
- * Does `expectedLockfileText` byte-for-byte equal what `npm install
- * --package-lock-only --ignore-scripts` produces from `rootManifestText`
- * (this workspace's root package.json) and `packageManifestTexts`
- * (`{ [packages/<dir>]: package.json text }` for every workspace member)?
- * Builds a throwaway scratch directory containing only those manifests
- * (no source, no existing lockfile), runs the injected `runNpmInstall`
- * there, and compares. `runNpmInstall` defaults to the real `npm` CLI;
- * tests inject a fake that writes a canned lockfile instead of touching
- * the network.
- *
- * FAILS CLOSED: any error (a malformed manifest, npm itself failing --
- * network, a missing binary, anything) is caught and reported as
- * NOT verified (`false`), never thrown past this function -- callers
- * (evaluateReleasePrFootprint()) already treat `lockfileVerified !== true`
- * as a hard refusal, so "could not check" and "checked and it does not
- * match" have the identical, safe outcome.
- */
-export function verifyLockfileRegeneration({ rootManifestText, packageManifestTexts, expectedLockfileText, runNpmInstall = defaultRunNpmInstall }) {
-  let scratchRoot;
-  try {
-    scratchRoot = mkdtempSync(join(tmpdir(), "release-pr-footprint-lockfile-"));
-    writeFileSync(join(scratchRoot, "package.json"), rootManifestText);
-    for (const [pkgPath, text] of Object.entries(packageManifestTexts ?? {})) {
-      const manifestPath = join(scratchRoot, pkgPath);
-      mkdirSync(dirname(manifestPath), { recursive: true });
-      writeFileSync(manifestPath, text);
-    }
-    runNpmInstall(scratchRoot);
-    const lockPath = join(scratchRoot, "package-lock.json");
-    if (!existsSync(lockPath)) return false;
-    const regenerated = readFileSync(lockPath, "utf8");
-    return regenerated === expectedLockfileText;
-  } catch {
-    return false;
-  } finally {
-    if (scratchRoot) rmSync(scratchRoot, { recursive: true, force: true });
-  }
 }

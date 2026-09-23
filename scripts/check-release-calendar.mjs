@@ -26,21 +26,23 @@
 // calendar.mjs's own header for the full reasoning, what the current
 // two-part proof establishes, and the residual risk it does not eliminate.
 //
-// THIS SCRIPT NOW DOES THE STRUCTURAL VERIFICATION ITSELF
-// -----------------------------------------------------------
+// THIS SCRIPT NOW DOES THE STRUCTURAL VERIFICATION ITSELF -- NO npm
+// -----------------------------------------------------------------
 // On a day the footprint actually matters (release/adoption day, and the
 // pull request is not already out-of-band labelled -- see "COST" below),
 // this script fetches every changed file's CONTENT at `--base`/`--head`
 // via local `git show` (the checkout must have enough history for both
 // refs to resolve -- see .github/workflows/release-calendar.yml's
-// fetch-depth), classifies each file with scripts/lib/release-pr-
-// footprint.mjs's evaluateReleasePrFootprint(), and -- if package-lock.json
-// is among the changed files -- separately verifies it byte-for-byte
-// against a fresh `npm install --package-lock-only --ignore-scripts`
-// regeneration (verifyLockfileRegeneration()). ANY failure along this path
-// (a file that doesn't classify, an unreadable ref, npm itself failing)
-// makes `footprintVerified` false, which is a normal, expected FAIL
-// outcome here -- never a silent pass.
+// fetch-depth) and hands it to scripts/lib/release-pr-footprint.mjs's
+// evaluateReleasePrFootprint(), which is fully pure -- no npm invocation,
+// no network, no filesystem beyond what this script already fetched (an
+// earlier draft regenerated package-lock.json via a real `npm install`
+// and compared byte-for-byte, which drifts from what is actually
+// committed even on an UNCHANGED tree and could never pass -- see that
+// module's own header for the fix). ANY failure along this path (a file
+// that doesn't classify, an unreadable ref) makes `footprintVerified`
+// false, which is a normal, expected FAIL outcome here -- never a silent
+// pass.
 //
 // --changed-files IS A PAGINATED REST RESULT -- FAIL CLOSED IF IT ISN'T
 // COMPLETE
@@ -57,10 +59,10 @@
 // read and something in it fails" reach the identical FAIL outcome.
 //
 // COST: this is skipped entirely on an ordinary merge-window weekday (no
-// git/npm work happens) and whenever the pull request already carries the
+// git work happens) and whenever the pull request already carries the
 // out-of-band label (which does not depend on the footprint at all) -- the
-// expensive path only runs on the days, and for the pull requests, where
-// the answer actually matters.
+// git-fetching path only runs on the days, and for the pull requests,
+// where the answer actually matters.
 //
 // --changed-files is a JSON array of `{ "path": string, "status": one of
 // "added"/"removed"/"modified"/"renamed"/"copied"/"changed"/"unchanged" }`
@@ -87,14 +89,15 @@
 //
 // Pure decision logic lives in scripts/lib/release-calendar.mjs's
 // evaluateReleaseCalendarGate() and scripts/lib/release-pr-footprint.mjs's
-// evaluateReleasePrFootprint() -- this file is argv parsing, the git/npm
-// integration those pure functions deliberately do not have, and process
-// exit-code plumbing, the same split every other check-* script in this
-// repository uses.
+// evaluateReleasePrFootprint() -- this file is argv parsing, the local git
+// content-fetching those pure functions deliberately do not have (neither
+// touches npm, network, or the filesystem at all), and process exit-code
+// plumbing, the same split every other check-* script in this repository
+// uses.
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { DEFAULT_OUT_OF_BAND_LABEL, dayTypeFor, evaluateReleaseCalendarGate, loadReleaseCalendar } from "./lib/release-calendar.mjs";
-import { evaluateReleasePrFootprint, verifyLockfileRegeneration } from "./lib/release-pr-footprint.mjs";
+import { evaluateReleasePrFootprint } from "./lib/release-pr-footprint.mjs";
 
 function git(args, cwd) {
   return execFileSync("git", args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
@@ -112,25 +115,10 @@ function contentAt(root, ref, path) {
   }
 }
 
-// Every `packages/<dir>/package.json` path that exists at `ref`.
-function discoverPackageManifestPaths(root, ref) {
-  let out;
-  try {
-    out = git(["ls-tree", "-r", "--name-only", ref, "--", "packages"], root);
-  } catch {
-    return null;
-  }
-  return out
-    .split("\n")
-    .filter((p) => /^packages\/[^/]+\/package\.json$/.test(p));
-}
-
-// The git/npm integration evaluateReleasePrFootprint() and
-// verifyLockfileRegeneration() deliberately do not have: fetches every
-// changed file's base/head content locally, and -- only if
-// package-lock.json is among the changed files -- regenerates a lockfile
-// from HEAD's manifests and compares it. Returns the same
-// `{ ok, reason }` shape evaluateReleasePrFootprint() does.
+// The only git integration the footprint check needs: fetch every changed
+// file's base/head content locally, then hand it straight to the fully
+// pure evaluateReleasePrFootprint() -- no npm, no scratch directories, no
+// network. Returns the same `{ ok, reason }` shape that function does.
 function computeFootprint({ root, base, head, changedFiles }) {
   const files = changedFiles.map(({ path, status }) => ({
     path,
@@ -138,31 +126,7 @@ function computeFootprint({ root, base, head, changedFiles }) {
     baseContent: status === "added" ? null : contentAt(root, base, path),
     headContent: status === "removed" ? null : contentAt(root, head, path),
   }));
-
-  const touchesLockfile = files.some((f) => f.path === "package-lock.json");
-  let lockfileVerified = null;
-  if (touchesLockfile) {
-    const expectedLockfileText = contentAt(root, head, "package-lock.json");
-    const rootManifestText = contentAt(root, head, "package.json");
-    const pkgPaths = expectedLockfileText !== null && rootManifestText !== null ? discoverPackageManifestPaths(root, head) : null;
-    if (expectedLockfileText === null || rootManifestText === null || pkgPaths === null) {
-      lockfileVerified = false; // could not even read what a regeneration should be compared against
-    } else {
-      const packageManifestTexts = {};
-      let allReadable = true;
-      for (const p of pkgPaths) {
-        const text = contentAt(root, head, p);
-        if (text === null) {
-          allReadable = false;
-          break;
-        }
-        packageManifestTexts[p] = text;
-      }
-      lockfileVerified = allReadable && verifyLockfileRegeneration({ rootManifestText, packageManifestTexts, expectedLockfileText });
-    }
-  }
-
-  return evaluateReleasePrFootprint({ files, lockfileVerified });
+  return evaluateReleasePrFootprint({ files });
 }
 
 function parseArgs(argv) {
@@ -214,7 +178,7 @@ function main() {
   // The footprint is only ever relevant on a day it could change the
   // verdict: merge-window days pass regardless, and an out-of-band-
   // labelled PR passes regardless of its footprint (see docs/RELEASING.md's
-  // out-of-band section). Skipping git/npm work outside that narrow case
+  // out-of-band section). Skipping git work outside that narrow case
   // is a cost optimization only -- it changes nothing about correctness,
   // since evaluateReleaseCalendarGate() would reach the identical verdict
   // either way for those two cases.

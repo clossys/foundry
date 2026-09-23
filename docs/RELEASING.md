@@ -61,23 +61,36 @@ branch or shaping a file list:
    `releasePrPolicy.label`), applied only by `.github/workflows/release-pr.yml`'s
    own automation.
 2. **A STRUCTURALLY VERIFIED release-PR-shaped diff** — content, not just
-   paths (`scripts/check-release-calendar.mjs`, using `scripts/lib/release-pr-footprint.mjs`'s
-   `evaluateReleasePrFootprint()`): for every changed
-   `packages/<dir>/package.json`, the ONLY difference from its base
-   version is the `version` field itself — parsed and deep-compared, so a
-   smuggled dependency, script, `bin`, or `exports` change fails
-   immediately, whatever it's called. Every changed `CHANGELOG.md` must be
-   the base text with one contiguous block of new text inserted — nothing
-   existing removed or altered — and that inserted block must open with a
-   new `## ` version heading. A changed `package-lock.json` must be
-   byte-identical to what `npm install --package-lock-only --ignore-scripts`
-   regenerates from the PR's own manifests. A `.changesets/*.md` file may
-   only be *deleted*, never added — a new changeset cannot be smuggled in
-   alongside a legitimate one being consumed. ANY other file in the diff,
-   or a `--changed-files` read that could not be completed in full (see
-   "Fail closed on pagination" in `.github/workflows/release-calendar.yml`'s
-   own header), fails the whole check. This is a structural check only;
-   `scripts/check-release-pr-shape.mjs` (a separate, pre-existing gate that
+   paths, and computed WITHOUT ever invoking `npm`
+   (`scripts/check-release-calendar.mjs`, using `scripts/lib/release-pr-footprint.mjs`'s
+   `evaluateReleasePrFootprint()`, a fully pure function): for every
+   changed `packages/<dir>/package.json`, the ONLY difference from its
+   base version is the `version` field itself — parsed and compared with
+   key order preserved (never sorted: a reordered `exports` block is a
+   real behavioral change, since Node resolves its conditions in listed
+   order, so silently tolerating a reorder was itself a defect an earlier
+   draft of this check had), so a smuggled dependency, script, `bin`,
+   `exports` reorder, or any other field changing fails immediately.
+   Every changed `CHANGELOG.md` must contain EXACTLY ONE new section,
+   inserted immediately before the base text's first existing version
+   heading (after any preamble), whose own heading is that SPECIFIC
+   package's new version — nothing existing removed, altered, or
+   duplicated elsewhere in the file. A changed `package-lock.json` must be
+   a pure base-vs-head diff whose only changes are the `version` fields of
+   the bumped workspace packages (and their matching `node_modules` link
+   entries) — an earlier draft of this check instead regenerated the
+   lockfile with a real `npm install --package-lock-only` and compared
+   byte-for-byte, which drifts from what is actually committed even on an
+   unchanged tree and could never pass; the pure diff has no such
+   dependency on what a live npm run happens to produce. A `.changesets/*.md`
+   file may only be *deleted*, never added, AND its content at the base
+   commit must name only packages this diff actually bumps — deleting an
+   unrelated, still-pending changeset is not "consuming" it. ANY other
+   file in the diff, or a `--changed-files` read that could not be
+   completed in full (see "Fail closed on pagination" in
+   `.github/workflows/release-calendar.yml`'s own header), fails the whole
+   check. This is a structural check only; `scripts/check-release-pr-shape.mjs`
+   (a separate, pre-existing gate that
    runs on every pull request) is what validates that the version bumps
    *inside* that shape are themselves legitimate (backed by a consumed
    changeset or a matching `CHANGELOG.md` entry).

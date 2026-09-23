@@ -9,16 +9,14 @@ import test from "node:test";
 // CLI-level coverage. scripts/lib/release-calendar.test.mjs and
 // scripts/lib/release-pr-footprint.test.mjs already cover the pure logic
 // exhaustively (DST, the label+footprint combination, every adversarial
-// content-level case); this file proves the git/npm integration and the
-// argv/exit-code/JSON wrapper around them are wired correctly -- real git
-// repos under mkdtemp, matching scripts/check-release-pr-shape.test.mjs's
-// own hermetic pattern. None of these tests touch the network: every
-// fixture that includes a package-lock.json change is deliberately absent
-// here (verifyLockfileRegeneration's own unit coverage lives in
-// scripts/lib/release-pr-footprint.test.mjs, with an injected fake npm) --
-// this file only needs to prove that when a lockfile IS present in a real
-// diff, the CLI treats it as "unverified" and fails closed, which needs no
-// real npm run to demonstrate.
+// content-level case, including the lockfile pure-diff check's own full
+// coverage with an injected fixture lockfile); this file proves the git
+// content-fetching integration and the argv/exit-code/JSON wrapper around
+// them are wired correctly -- real git repos under mkdtemp, matching
+// scripts/check-release-pr-shape.test.mjs's own hermetic pattern. Nothing
+// here touches the network or npm at all -- the footprint check is fully
+// pure (scripts/lib/release-pr-footprint.mjs's own header explains why an
+// earlier npm-regeneration-based design was replaced).
 
 const scriptPath = resolve(dirname(fileURLToPath(import.meta.url)), "check-release-calendar.mjs");
 
@@ -165,16 +163,49 @@ test("ADVERSARIAL: a new (added) changeset smuggled in among an otherwise-clean 
   });
 });
 
-test("a lockfile change present in the diff is unverified (no real npm run) and fails closed even with the label", () => {
+function lockfileText(alphaVersion, extra = {}) {
+  return JSON.stringify({
+    name: "root",
+    lockfileVersion: 3,
+    packages: {
+      "": { name: "root" },
+      "packages/alpha": { name: "@x/alpha", version: alphaVersion },
+      ...extra,
+    },
+  });
+}
+
+test("a legitimate package-lock.json bump (pure diff, no npm) passes alongside the manifest bump", () => {
   withGitRoot((root) => {
     const pkgDir = join(root, "packages", "alpha");
     mkdirSync(pkgDir, { recursive: true });
     writeManifest(pkgDir, { name: "@x/alpha", version: "1.0.0" });
-    writeFileSync(join(root, "package-lock.json"), '{"lockfileVersion":3}\n');
+    writeFileSync(join(root, "package-lock.json"), lockfileText("1.0.0"));
     const base = gitCommit(root, "base");
 
     writeManifest(pkgDir, { name: "@x/alpha", version: "1.0.1" });
-    writeFileSync(join(root, "package-lock.json"), '{"lockfileVersion":3,"changed":true}\n');
+    writeFileSync(join(root, "package-lock.json"), lockfileText("1.0.1"));
+    const head = gitCommit(root, "release");
+
+    const changedFiles = [
+      { path: "packages/alpha/package.json", status: "modified" },
+      { path: "package-lock.json", status: "modified" },
+    ];
+    const r = run(["--json", "--now", SATURDAY, "--base", base, "--head", head, "--changed-files", JSON.stringify(changedFiles), "--labels", "release:weekly"], root);
+    assert.equal(r.code, 0, r.out);
+  });
+});
+
+test("ADVERSARIAL: a lockfile change that touches more than the bumped package's version (a resolved/integrity tamper) fails closed even with the label", () => {
+  withGitRoot((root) => {
+    const pkgDir = join(root, "packages", "alpha");
+    mkdirSync(pkgDir, { recursive: true });
+    writeManifest(pkgDir, { name: "@x/alpha", version: "1.0.0" });
+    writeFileSync(join(root, "package-lock.json"), lockfileText("1.0.0", { "node_modules/foo": { version: "2.0.0", resolved: "https://registry.npmjs.org/foo/-/foo-2.0.0.tgz", integrity: "sha512-real" } }));
+    const base = gitCommit(root, "base");
+
+    writeManifest(pkgDir, { name: "@x/alpha", version: "1.0.1" });
+    writeFileSync(join(root, "package-lock.json"), lockfileText("1.0.1", { "node_modules/foo": { version: "2.0.0", resolved: "https://evil.example/foo.tgz", integrity: "sha512-real" } }));
     const head = gitCommit(root, "release");
 
     const changedFiles = [
