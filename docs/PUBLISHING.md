@@ -1105,7 +1105,80 @@ immutable qualification record but no publication record. Do not prepare a
 0.1.11 trusted-publisher/OIDC upload until its fresh exact-head candidate has
 passed the required qualification and FULL release checks. After upload,
 require anonymous registry and provenance verification before treating 0.1.11
-as published.
+as published. (0.1.11's own trusted-publisher upload, once it happens through
+`publish.yml`, gains its publication record automatically — see the next
+section — so this hand-run recorder stays reserved for the owner-present case
+above and for backfilling any gap the automated flow could not itself close.)
+
+### Automatic publication evidence after a trusted-publisher release (issue #1346)
+
+Every version `publish.yml`'s OIDC lane actually uploads gets its
+`governance/release-publications/later/<key>-<version>.json` record
+automatically, with no hand-run recorder step. `.github/workflows/record-
+publication-evidence.yml` runs on `workflow_run`, once per completed
+`publish.yml` run, and does nothing at all unless that run's `publish
+(<key>)` job concluded `success` — a `dry_run` or `verify_only` dispatch
+never reaches that job, so this workflow correctly stays a no-op for either.
+
+**Separation of duties.** This is a second, separate workflow, not a step
+added to `publish.yml` itself. `publish.yml`'s `publish` job keeps exactly
+`contents: read` plus `id-token: write` for the npm OIDC exchange — nothing
+about issue #1346 widens that. The follow-up workflow's own `record-evidence`
+job carries only `actions: read` (to read this run's own job and artifact
+metadata), `contents: write`, and `pull-requests: write` — read-only plus a
+version-control write, never `id-token: write` or any registry credential.
+It never pushes to `main`; it
+pushes a branch and opens (or updates) a pull request, the same review-gated
+shape `qualify-candidate.yml` and `release-pr.yml` already use for their own
+automated pull requests, and that pull request goes through the same review
+every other change here does.
+
+**Measured data only, or no pull request at all.**
+`scripts/record-publication-evidence.mjs` (via
+`scripts/lib/publication-evidence-run.mjs`) builds the record by calling
+`scripts/record-later-publication.mjs`'s own exported functions —
+`createLaterPublicationRecord` and, through it,
+`buildLaterPublicationRecord`/`validateLaterPublication` — the identical
+building blocks the section above documents for hand use, and the same ones
+PR #1348 called directly to backfill this exact evidence gap for versions
+that predate this workflow. Every field comes from the public npm registry
+(`--fetch`, anonymous), the version's SLSA provenance attestation, and this
+exact GitHub Actions run's own metadata; nothing is invented, and nothing is
+generated locally that a reader could not independently re-derive. If any
+field cannot be measured, the build throws, the workflow step fails, and
+every later step — including opening a pull request — is skipped entirely.
+
+**Two joins, tried in order, never guessed.** This repository's merge queue
+routinely batches a package's publish with unrelated root
+`package.json`/`package-lock.json` churn from other packages, so the
+straightforward join (`foundry-trusted-publication-v2`, schema 2) fails
+whenever the publish run's source commit no longer matches the qualification
+record's retained root hashes — PR #1348 measured this for 8 of 10
+trusted-publisher versions it backfilled. `scripts/lib/publication-evidence-
+run.mjs`'s `buildPublicationRecordWithFallback` tries the schema-2 join
+first and, only if that fails, falls back to a schema-3 replay
+(`foundry-trusted-publication-replay-v3`) built from this exact run's own
+`qualified-candidate-<key>` artifact — the same artifact `publish.yml`'s
+`qualify` job already uploaded earlier in the same run, rather than a
+separately triggered re-qualification. If both joins fail, the combined
+failure from each is reported and, again, no file is written and no pull
+request opens.
+
+**Batching.** `publish.yml` dispatches exactly one package per run, so "N
+packages published the same day" means N separate triggers of this workflow.
+Rather than open N separate pull requests, each trigger reuses whatever
+`claude/publication-evidence-*` branch already has an open pull request
+against the default branch — adding its one record and updating the title
+and body to list every record now on that branch — and only cuts a new
+branch when none is open. Merging or closing that pull request is what
+starts the next one fresh.
+
+This workflow requires no secret beyond the ambient `GITHUB_TOKEN`: no
+`PUBLIC_SAFETY_DENYLIST`, no npm token, nothing — the same posture
+`record-later-publication.mjs` already has when run by hand. Run
+`npm run check:later-publications` on the resulting pull request exactly as
+for a hand-built record; nothing about how that check treats a record
+differs by how the record was produced.
 
 ### Why the name-collision check runs first, always
 

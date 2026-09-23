@@ -1,0 +1,244 @@
+name: Record publication evidence
+
+# Issue #1346: publish.yml's trusted-publisher OIDC lane uploads a version
+# with npm provenance but never writes the matching
+# governance/release-publications/later/<key>-<version>.json record --
+# nobody does, automatically. scripts/check-release-readiness.mjs's
+# hasLocalPublicationEvidence() reads exactly that directory to decide
+# whether a package's already-shipped current version can tolerate a
+# test-only tree change without demanding a needless version bump; without
+# this workflow, every trusted-publisher release stays invisible to that
+# relaxation until someone notices and backfills it by hand (see PR #1348,
+# which did exactly that for the 12 versions this gap had already produced).
+#
+# SEPARATION OF DUTIES, ON PURPOSE
+# ---------------------------------
+# This is a SEPARATE workflow from publish.yml, triggered only after it
+# completes, specifically so the upload job never gains the write
+# permissions this one needs. publish.yml's `publish` job keeps exactly
+# `contents: read` + `id-token: write` (for the npm OIDC exchange) and
+# nothing else; this workflow's `record-evidence` job carries only
+# `actions: read` (to read this run's own job/artifact metadata),
+# `contents: write`, and `pull-requests: write` -- read-only plus
+# version-control write, and NOTHING resembling `id-token: write` or a
+# registry credential. It never pushes to `main` --
+# it pushes a branch and opens (or updates) a pull request, the same
+# review-gated shape qualify-candidate.yml and release-pr.yml already use
+# for their own automated pull requests.
+#
+# MEASURED DATA ONLY, OR NO PR AT ALL
+# -------------------------------------
+# scripts/record-publication-evidence.mjs (via
+# scripts/lib/publication-evidence-run.mjs) builds the record from the
+# public npm registry, this exact GitHub Actions run's own metadata, and the
+# already-retained qualification record -- by calling
+# scripts/record-later-publication.mjs's own exported, self-validating
+# functions, the identical building blocks PR #1348 called by hand to
+# backfill this same evidence gap. If any field cannot be measured, that
+# call throws, the "Build publication evidence record" step fails, and every
+# later step in this job is skipped -- no file is written, no branch is
+# pushed, no PR is opened.
+#
+# WHICH RUN OF publish.yml THIS ACTUALLY FIRES FOR
+# ---------------------------------------------------
+# `workflow_run` fires for EVERY completed publish.yml run, including a
+# dry_run or verify_only dispatch that never reaches its `publish` job at
+# all (see that job's own `if:` gate). Rather than re-deriving `dry_run`/
+# `verify_only` here, "Find this run's exact published package" below asks
+# the one question that already implies both are false: did a job literally
+# named `publish (<package>)` conclude `success` on this run? Only
+# publish.yml's real upload job is ever named that way, and it only runs
+# when `!inputs.dry_run && !inputs.verify_only` -- so a dry-run or
+# verify-only dispatch naturally yields no match, `package` stays empty, and
+# `record-evidence` never starts.
+on:
+  workflow_run:
+    workflows: ["Publish"]
+    types: [completed]
+
+permissions: {}
+
+# One publication-evidence pull request in flight at a time: two follow-up
+# runs racing to push the same batching branch (see "Push branch and open or
+# update..." below) must not interleave their git operations.
+concurrency:
+  group: record-publication-evidence
+  cancel-in-progress: false
+
+jobs:
+  determine-package:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read
+    outputs:
+      package: ${{ steps.package.outputs.package }}
+    steps:
+      - name: Find this run's exact published package
+        id: package
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          set -euo pipefail
+          jobs_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}/jobs?per_page=100")"
+          package="$(node -e '
+            const jobs = JSON.parse(process.argv[1]).jobs ?? [];
+            const match = jobs.find((job) => job?.conclusion === "success" && /^publish \([a-z0-9_-]+\)$/.test(job?.name ?? ""));
+            process.stdout.write(match ? match.name.slice("publish (".length, -1) : "");
+          ' "$jobs_json")"
+          echo "package=$package" >> "$GITHUB_OUTPUT"
+
+  record-evidence:
+    needs: determine-package
+    if: ${{ needs.determine-package.outputs.package != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      actions: read
+      contents: write
+      pull-requests: write
+    steps:
+      # The exact commit publish.yml's matched job ran against -- never the
+      # default branch's current tip, which may have moved since. fetch-depth
+      # 0 is required: record-later-publication.mjs's join proves ancestry
+      # between the qualification's introduction commit, this source SHA, and
+      # HEAD via `git merge-base --is-ancestor`, which needs full history.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      # Record construction runs createLaterPublicationRecord(), which calls
+      # record-later-publication.mjs's assertReleaseRuntime() unconditionally
+      # -- the exact pinned tuple qualify/publish already assert on this same
+      # publish run, reused here rather than relaxed.
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24.19.0
+
+      - name: Assert release runtime
+        run: |
+          test "$(node --version)" = 'v24.19.0'
+          test "$(npm --version)" = '11.17.0'
+          test "$(node -p 'process.versions.zlib')" = '1.3.2.1-motley-3246f1b'
+
+      # GITHUB_TOKEN here authenticates only this script's OWN GitHub API
+      # reads (the run's qualify-job artifact list, and the replay
+      # fallback's artifact download) -- scripts/record-publication-
+      # evidence.mjs never forwards it into createLaterPublicationRecord's
+      # `env`, which scripts/lib/candidate-runner.mjs's
+      # assertCredentialFree() requires to stay credential-free. This step
+      # writes governance/release-publications/later/<key>-<version>.json
+      # directly into the checked-out tree (record-later-publication.mjs's
+      # own no-overwrite writer) and nothing else -- no git, no push, no PR.
+      - name: Build publication evidence record
+        id: build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PKG: ${{ needs.determine-package.outputs.package }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+          RUN_ATTEMPT: ${{ github.event.workflow_run.run_attempt }}
+          SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: node scripts/record-publication-evidence.mjs --package "$PKG" --run-id "$RUN_ID" --run-attempt "$RUN_ATTEMPT" --source-sha "$SOURCE_SHA"
+
+      # Batching (issue #1346: "one Saturday run publishing N packages opens
+      # ONE PR with N records"): publish.yml dispatches exactly one package
+      # per run, so N packages published the same day means N separate
+      # triggers of this workflow. Rather than a date-keyed branch name
+      # (which has its own awkward midnight-boundary edge case), this reuses
+      # whatever `claude/publication-evidence-*` branch already has an OPEN
+      # pull request against the default branch, and only cuts a new one
+      # when none does -- so the branch and its PR grow by one record per
+      # trigger until a human merges or closes it, then the next trigger
+      # starts a fresh one.
+      - name: Push branch and open or update the publication-evidence pull request
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RECORD_PATH: ${{ steps.build.outputs.record-path }}
+          PKG_NAME: ${{ steps.build.outputs.name }}
+          PKG_VERSION: ${{ steps.build.outputs.version }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+          GITHUB_BASE_REF_OR_DEFAULT: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git fetch origin "$GITHUB_BASE_REF_OR_DEFAULT"
+
+          existing_branch="$(gh pr list --state open --base "$GITHUB_BASE_REF_OR_DEFAULT" --json number,headRefName --jq '[.[] | select(.headRefName | startswith("claude/publication-evidence-"))] | sort_by(.number) | last | .headRefName // empty')"
+
+          if [ -n "$existing_branch" ]; then
+            branch="$existing_branch"
+            git fetch origin "$branch"
+            git checkout -B "$branch" "origin/$branch"
+          else
+            branch="claude/publication-evidence-${RUN_ID}"
+            git checkout -b "$branch"
+          fi
+
+          git add "$RECORD_PATH"
+          message_file="$RUNNER_TEMP/publication-evidence-commit-message.txt"
+          {
+            printf '%s\n\n' "Record publication evidence for ${PKG_NAME}@${PKG_VERSION}"
+            printf '%s\n' "Built by scripts/record-publication-evidence.mjs from measured data"
+            printf '%s\n' "only -- the public npm registry, the SLSA provenance attestation, and"
+            printf '%s\n' "this exact GitHub Actions run's own metadata -- reusing"
+            printf '%s\n\n' "scripts/record-later-publication.mjs's own exported, self-validating builder."
+            printf '%s\n' "Publish run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}"
+            printf '%s\n' "Ref: #1346"
+          } > "$message_file"
+          git commit -F "$message_file"
+          git push origin "HEAD:$branch"
+
+          record_files="$(git diff --name-only "origin/${GITHUB_BASE_REF_OR_DEFAULT}...HEAD" -- governance/release-publications/later/ | sort)"
+          record_count="$(printf '%s\n' "$record_files" | grep -c .)"
+          if [ "$record_count" -eq 1 ]; then
+            title="Record publication evidence for ${PKG_NAME}@${PKG_VERSION}"
+          else
+            title="Record publication evidence for ${record_count} packages ($(date -u +%Y-%m-%d))"
+          fi
+
+          body_file="$RUNNER_TEMP/publication-evidence-pr-body.txt"
+          {
+            printf '%s\n\n' "Publication evidence opened automatically after a successful \`publish.yml\` run -- issue #1346."
+            printf '%s\n' "## Records"
+            printf '%s\n' "$record_files" | while IFS= read -r record_file; do printf -- "- \`%s\`\n" "$record_file"; done
+            printf '\n%s\n' "Every field is measured, never invented: the public npm registry (integrity, shasum, tarball, publish time), the version's SLSA provenance attestation, and this repository's own GitHub Actions run/job/artifact metadata -- the same sources, and the same \`scripts/record-later-publication.mjs\` builder, PR #1348 called directly by hand to backfill this identical evidence gap. Each record self-validates via \`validateLaterPublication()\` before being written; a record that cannot be fully measured is never produced, and this pull request would not exist."
+            printf '\n%s\n' "This workflow never pushes to \`${GITHUB_BASE_REF_OR_DEFAULT}\` and carries no elevated permissions beyond \`contents: write\`/\`pull-requests: write\` on this one follow-up job -- \`publish.yml\`'s own upload job is unchanged."
+            printf '%s\n' "Latest publish run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}"
+            printf '%s\n' "Ref: #1346"
+          } > "$body_file"
+
+          # Same graceful-degradation shape as qualify-candidate.yml's and
+          # release-pr.yml's identical steps: if this repository ever
+          # reverts "Actions may open pull requests", the branch is still
+          # pushed and ready.
+          set +e
+          if [ -n "$existing_branch" ]; then
+            pr_output="$(gh pr edit "$branch" --title "$title" --body-file "$body_file" 2>&1)"
+            pr_status=$?
+          else
+            pr_output="$(gh pr create --title "$title" --base "$GITHUB_BASE_REF_OR_DEFAULT" --head "$branch" --body-file "$body_file" 2>&1)"
+            pr_status=$?
+          fi
+          set -e
+
+          if [ "$pr_status" -eq 0 ]; then
+            echo "$pr_output"
+          elif printf '%s' "$pr_output" | grep -q "not permitted to create or approve pull requests"; then
+            {
+              echo "### Publication evidence pushed, PR not opened"
+              echo ""
+              echo "\`${RECORD_PATH}\` is committed on branch \`${branch}\`, but this repository does not permit GitHub Actions to open pull requests."
+              echo ""
+              echo "Open it from: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/compare/${GITHUB_BASE_REF_OR_DEFAULT}...${branch}?expand=1"
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "PR creation was refused (Actions cannot create PRs on this repo); branch ${branch} is pushed and ready. See job summary for the compare URL."
+          else
+            echo "$pr_output" >&2
+            exit "$pr_status"
+          fi
