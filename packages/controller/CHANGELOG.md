@@ -5,6 +5,18 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.17] - 2026-09-23
+
+### Changed
+
+- Widen the `@clossys/advisor` dependency range to `^0.3.0` so the workspace
+  link check resolves the local advisor 0.3.0 workspace copy instead of
+  falling back to a stale published tarball. Renumbered from 0.9.13 to
+  0.9.17 on merge with `origin/main` (issue #1187's collision rule):
+  0.9.13 through 0.9.16 were already claimed by main's own loop-engine
+  landing and two other open PRs (#1275, #1287) by the time this branch
+  merged main.
+
 ## [0.9.15] - 2026-09-23
 
 ### Added
