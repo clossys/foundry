@@ -37,7 +37,7 @@
       "guardrails": ["No live action."],
       "escalationPath": ["Fixture escalation only."],
       "workerComponents": [{ "kind": "deterministic", "responsibility": "Validate fixture syntax." }],
-      "stageBindings": { "sense": "Read fixture evidence.", "judge": "Compare fixture values.", "act": "Report fixture result.", "verify": "Re-read fixture evidence.", "learnOrEscalate": "Escalate fixture failure." },
+      "stageBindings": { "sense": "Read fixture evidence.", "judge": "Compare fixture values.", "act": "Report fixture result.", "verify": "Re-read fixture evidence.", "learn": "Escalate fixture failure." },
       "firstDayAssessment": { "gaps": [], "target": "Synthetic target state.", "openQuestions": [], "criticalPath": ["Validate the fixture."], "deferredWork": [], "recommendation": "install", "evidenceRefs": ["fixture-baseline", "fixture-setpoint"] }
     }
   ]

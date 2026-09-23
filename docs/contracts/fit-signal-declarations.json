@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "kind": "foundry-fit-signal-declarations",
+  "declaredBy": "foundry.fit (docs/contracts/package-framework.json)",
+  "$comment": "The file shape behind a role's foundry.fit declaration: the evidence that makes this role applicable to a repository at all (for example, Publisher needs an audience-facing surface). @clossys/advisor reads these to recommend a role instead of guessing one. This is a DECLARATION of what evidence would count, never the evidence itself and never a verdict -- a role package ships the question; only a consumer's own repository can answer it.",
+  "topLevelShape": "{ schemaVersion: 1, role: string, signals: FitSignalDeclaration[] }",
+  "signalShape": {
+    "id": "string -- stable, unique within the role",
+    "prompt": "string -- one sentence describing the condition that must hold for this role to apply",
+    "evidenceKind": "one of: \"repository-structure\", \"declared-fact\", \"consumer-answer\", \"external-observation\" -- where the supporting evidence would come from, not the evidence itself"
+  },
+  "rule": "A role with zero declared fit signals is universally applicable and MUST say so explicitly by shipping an empty `signals` array, never by omitting `foundry.fit` -- omission means undeclared, not unconditional. `id` is stable across versions for the same reason a question card's id is: a consumer-recorded answer to a fit signal is stored against its id."
+}

@@ -1,11 +1,11 @@
 {
-  "schemaVersion": 4,
+  "schemaVersion": 5,
   "universalStages": [
     "sense",
     "judge",
     "act",
     "verify",
-    "learnOrEscalate"
+    "learn"
   ],
   "consumerBindings": [
     "businessMetricPath",
@@ -31,7 +31,7 @@
         "judge": "Compare the candidate with every applicable rule and preserve indeterminacy.",
         "act": "Block, allow, or hand off according to the judgment.",
         "verify": "Observe independent downstream outcomes after the decision.",
-        "learnOrEscalate": "Revise an ineffective rule or escalate an unresolved evidence gap."
+        "learn": "Revise an ineffective rule or escalate an unresolved evidence gap."
       }
     },
     "reconcile": {
@@ -41,7 +41,7 @@
         "judge": "Classify the delta without treating an unreadable observation as agreement.",
         "act": "Correct the delta or hand it to the declared authority.",
         "verify": "Reobserve actual state after correction.",
-        "learnOrEscalate": "Close on the setpoint, revise a faulty declaration, or escalate a persistent delta."
+        "learn": "Close on the setpoint, revise a faulty declaration, or escalate a persistent delta."
       }
     },
     "fulfill": {
@@ -51,7 +51,7 @@
         "judge": "Validate the intent, authority, budget, and guardrails.",
         "act": "Materialize the authorized intent through the configured mechanism.",
         "verify": "Observe the actual outcome rather than provider acceptance alone.",
-        "learnOrEscalate": "Retry, compensate, adjust, or escalate when the outcome misses its setpoint."
+        "learn": "Retry, compensate, adjust, or escalate when the outcome misses its setpoint."
       }
     },
     "interact": {
@@ -61,7 +61,7 @@
         "judge": "Authorize the request and confirm the intended meaning.",
         "act": "Fulfil, refuse, or hand off the confirmed intent.",
         "verify": "Read the interpretation or outcome back to the subject.",
-        "learnOrEscalate": "Reconcile change or withdrawal, or escalate an unresolved request."
+        "learn": "Reconcile change or withdrawal, or escalate an unresolved request."
       }
     },
     "steward": {
@@ -71,7 +71,7 @@
         "judge": "Evaluate whether custody remains justified, current, and inside policy.",
         "act": "Protect, correct, rotate, disclose, revoke, or dispose as authorized.",
         "verify": "Observe the resulting custody or disposal state independently.",
-        "learnOrEscalate": "Update the lifecycle rule or escalate an unresolved custody gap."
+        "learn": "Update the lifecycle rule or escalate an unresolved custody gap."
       }
     },
     "optimize": {
@@ -81,7 +81,7 @@
         "judge": "Normalize the signals and compare the metric with its setpoint.",
         "act": "Report the measured result and propose the bounded adjustment.",
         "verify": "Measure again after the adjustment using the declared evidence source.",
-        "learnOrEscalate": "Update the model or escalate a persistent blind spot or miss."
+        "learn": "Update the model or escalate a persistent blind spot or miss."
       }
     }
   },

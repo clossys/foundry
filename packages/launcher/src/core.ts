@@ -19,12 +19,25 @@ import type {
   WorkspacePlanCreate,
   WorkspaceRefusal,
 } from "./types.js";
-import { composeSkills, type SkillCompositionResult } from "./skills.js";
+import { composeSkills, SKILLS_MANIFEST_REL, type SkillCompositionResult } from "./skills.js";
+import { parseSkillManifest, summarizeSkillsManifest } from "./manifest.js";
+import { detectLinkedHosts, serializeHostRecord, HOSTS_REL, type DiscoveredHost } from "./hosts.js";
+import { reportInventoryDrift } from "./inventory-adoption.js";
 
 export const DEFAULT_REPOSITORY_NAME = "workspace";
-export const WORKSPACE_MARKER_REL = ".clossys/workspace.json";
-export const WORKSPACE_INVENTORY_REL = ".clossys/inventory.json";
+/** The one visible, per-repository Clossys folder (#1171). Every role's output lives under it. */
+export const CLOSSYS_DIR_REL = "clossys";
+/** Machine files only: hub marker, inventory, skills manifest. Visible (not dot-hidden) so it is easy to find, but not a place a person edits by hand. */
+export const STATE_DIR_REL = join(CLOSSYS_DIR_REL, ".state");
+export const WORKSPACE_MARKER_REL = join(STATE_DIR_REL, "workspace.json");
+export const WORKSPACE_INVENTORY_REL = join(STATE_DIR_REL, "inventory.json");
+export const CLOSSYS_README_REL = join(CLOSSYS_DIR_REL, "README.md");
+/** Pre-#1171 machine-state directory. Resume migrates it automatically; see `locateHub`. */
+export const LEGACY_STATE_DIR_REL = ".clossys";
+export const LEGACY_WORKSPACE_MARKER_REL = join(LEGACY_STATE_DIR_REL, "workspace.json");
+export const LEGACY_WORKSPACE_INVENTORY_REL = join(LEGACY_STATE_DIR_REL, "inventory.json");
 export const ADVISOR_PACKAGE = "@clossys/advisor";
+export const LAUNCHER_PACKAGE = "@clossys/launcher";
 
 const DEPENDENCY_BUCKETS: readonly DependencyBucket[] = [
   "dependencies",
@@ -186,8 +199,8 @@ export function isHubDocument(value: unknown): value is HubDocument {
   return true;
 }
 
-function readHub(host: WorkspaceHost, directory: string): HubDocument | undefined {
-  const raw = host.readText(join(directory, WORKSPACE_MARKER_REL));
+function readHubAt(host: WorkspaceHost, path: string): HubDocument | undefined {
+  const raw = host.readText(path);
   if (raw === null) return undefined;
   try {
     const parsed: unknown = JSON.parse(raw);
@@ -197,7 +210,31 @@ function readHub(host: WorkspaceHost, directory: string): HubDocument | undefine
   }
 }
 
-/** Classifies a generated hub inventory (packed template skeleton/.clossys/inventory.json; the generated path does not ship) without inventing repositories. */
+/**
+ * Locates the hub marker across the `.clossys/` -> `clossys/.state/`
+ * migration (#1171). `clean`: only the current path has a marker. `legacy`:
+ * only the old path does; resume migrates it (see `migrateLegacyHubState`).
+ * `indeterminate`: both paths carry a parseable marker; launcher never
+ * merges them silently, so `planWorkspace` refuses instead. `none`: neither
+ * path has one.
+ */
+function locateHub(
+  host: WorkspaceHost,
+  directory: string,
+): { document?: HubDocument; migration: "clean" | "legacy" | "indeterminate" | "none" } {
+  const current = readHubAt(host, join(directory, WORKSPACE_MARKER_REL));
+  const legacy = readHubAt(host, join(directory, LEGACY_WORKSPACE_MARKER_REL));
+  if (current !== undefined && legacy !== undefined) return { migration: "indeterminate" };
+  if (current !== undefined) return { document: current, migration: "clean" };
+  if (legacy !== undefined) return { document: legacy, migration: "legacy" };
+  return { migration: "none" };
+}
+
+function readHub(host: WorkspaceHost, directory: string): HubDocument | undefined {
+  return locateHub(host, directory).document;
+}
+
+/** Classifies a generated hub inventory (packed template skeleton/clossys/.state/inventory.json; the generated path does not ship) without inventing repositories. */
 export function inspectInventory(raw: string | null): InventoryObservation {
   if (raw === null) return { status: "missing", count: 0 };
   try {
@@ -251,6 +288,17 @@ export function hasAdvisorPin(manifest: unknown): boolean {
 }
 
 /** Collects GitHub owner, cwd shape, default-hub presence, and the public Advisor pin. */
+/**
+ * Reads the public `@clossys/launcher` registry version, used only to grade
+ * catalogue-sourced skill staleness in the health report (#1183). A missing
+ * or unparseable read leaves staleness ungraded rather than refusing.
+ */
+export function readLiveLauncherVersion(host: WorkspaceHost): string | undefined {
+  const viewed = host.run("npm", ["view", LAUNCHER_PACKAGE, "version"]);
+  const version = viewed.stdout.trim();
+  return viewed.status === 0 && /^\d+\.\d+\.\d+$/.test(version) ? version : undefined;
+}
+
 export function observeWorkspace(host: WorkspaceHost): WorkspaceObservation {
   const cwd = host.cwd;
   const ghAvailable = commandAvailable(host, "gh");
@@ -291,15 +339,24 @@ export function observeWorkspace(host: WorkspaceHost): WorkspaceObservation {
   const version = viewedAdvisor.stdout.trim();
   if (viewedAdvisor.status === 0 && /^\d+\.\d+\.\d+$/.test(version)) advisorVersion = version;
 
+  const hubLocation = locateHub(host, cwd);
+  // While only the legacy `.clossys/` marker exists, its sibling inventory is
+  // the one resume will migrate; read from there so planning sees it too.
+  const inventoryRaw =
+    hubLocation.migration === "legacy"
+      ? host.readText(join(cwd, LEGACY_WORKSPACE_INVENTORY_REL))
+      : host.readText(join(cwd, WORKSPACE_INVENTORY_REL));
+
   const cwdObservation: CwdObservation = {
     absolutePath: cwd,
     empty: isEffectivelyEmpty(entries),
     git,
     ...(githubOwner === undefined ? {} : { githubOwner }),
     ...(githubRepository === undefined ? {} : { githubRepository }),
-    ...(readHub(host, cwd) === undefined ? {} : { hub: readHub(host, cwd) }),
+    ...(hubLocation.document === undefined ? {} : { hub: hubLocation.document }),
+    ...(hubLocation.migration === "none" ? {} : { hubMigration: hubLocation.migration }),
     looksLikeFoundry: looksLikeFoundry(host, cwd),
-    inventory: inspectInventory(host.readText(join(cwd, WORKSPACE_INVENTORY_REL))),
+    inventory: inspectInventory(inventoryRaw),
   };
 
   return {
@@ -369,7 +426,7 @@ function resolveAdoptInventory(
   if (!onDiskPopulated && !trimmed) {
     return refuse(
       "violated",
-      "appointing requires a populated generated hub inventory (packed template skeleton/.clossys/inventory.json; the generated path does not ship), or --inventory <path> to a populated inventory document",
+      "appointing requires a populated generated hub inventory (packed template skeleton/clossys/.state/inventory.json; the generated path does not ship), or --inventory <path> to a populated inventory document",
     );
   }
   if (!trimmed) return {};
@@ -405,6 +462,12 @@ export function planWorkspace(
   options: { inventoryPath?: string } = {},
 ): WorkspaceDecision {
   const { cwd } = observation;
+  if (cwd.hubMigration === "indeterminate") {
+    return refuse(
+      "indeterminate",
+      `both ${WORKSPACE_MARKER_REL} and the legacy ${LEGACY_WORKSPACE_MARKER_REL} are present; launcher never merges them silently -- remove one before resuming`,
+    );
+  }
   const envOwner = observation.envOwner ?? (host.env.CLOSSYS_OWNER?.trim() || undefined);
   if (
     envOwner !== undefined &&
@@ -433,6 +496,7 @@ export function planWorkspace(
       directory: cwd.absolutePath,
       clone: false,
       ...(observation.advisorVersion === undefined ? {} : { advisorVersion: observation.advisorVersion }),
+      ...(cwd.hubMigration === "legacy" ? { migrateFrom: "legacy" as const } : {}),
     };
   }
   if (cwd.git && cwd.githubOwner && cwd.githubRepository) {
@@ -661,7 +725,14 @@ function requireZero(result: CommandResult, label: string): void {
  * registry version, marking a pin older than live as a stale-pin finding and a
  * degraded report.
  */
-export function reportHubHealth(host: WorkspaceHost, directory: string, liveAdvisorVersion?: string): HubHealthReport {
+export function reportHubHealth(
+  host: WorkspaceHost,
+  directory: string,
+  liveAdvisorVersion?: string,
+  liveLauncherVersion?: string,
+  retiredThisRun: readonly string[] = [],
+  migration?: HubHealthReport["migration"],
+): HubHealthReport {
   const extra = new Set<string>();
   const pins: Partial<Record<DependencyBucket, string>> = {};
   const manifestRaw = host.readText(join(directory, "package.json"));
@@ -688,6 +759,11 @@ export function reportHubHealth(host: WorkspaceHost, directory: string, liveAdvi
       ? [{ bucket: bucket as DependencyBucket, pinned, grade: "stale", note: `pinned ${pinned} is older than live ${liveAdvisorVersion}` }]
       : [];
   });
+  const skillsManifest = summarizeSkillsManifest(
+    parseSkillManifest(host.readText(join(directory, SKILLS_MANIFEST_REL))),
+    liveLauncherVersion,
+    retiredThisRun,
+  );
   return {
     marker: readHub(host, directory) === undefined ? "missing" : "present",
     inventory: inspectInventory(host.readText(join(directory, WORKSPACE_INVENTORY_REL))),
@@ -708,6 +784,8 @@ export function reportHubHealth(host: WorkspaceHost, directory: string, liveAdvi
       pins.dependencies !== undefined ||
       pins.optionalDependencies !== undefined ||
       pins.peerDependencies !== undefined,
+    ...(migration === undefined ? {} : { migration }),
+    skillsManifest,
   };
 }
 
@@ -742,7 +820,28 @@ export function formatHubHealth(report: HubHealthReport): string {
     for (const skip of report.skillComposition.rosterSkipped ?? []) {
       skillParts.push(`skill roster skipped (${skip.inventoryId}): ${skip.note}`);
     }
+    if (report.skillComposition.retired !== undefined && report.skillComposition.retired.length > 0) {
+      skillParts.push(`skills retired: ${report.skillComposition.retired.map((name) => `clossys-${name}`).join(", ")}`);
+    }
   }
+  const skillsManifestLine =
+    report.skillsManifest === undefined
+      ? undefined
+      : report.skillsManifest.status === "missing"
+        ? "skills manifest: missing"
+        : `skills: ${report.skillsManifest.stale} out of date, ${report.skillsManifest.retired} retired (${report.skillsManifest.total} composed)`;
+  const migrationLine =
+    report.migration === undefined ? undefined : `migration: moved hub state from ${report.migration.from} to ${report.migration.to}`;
+  const linkedHostsLine =
+    report.linkedHosts === undefined
+      ? undefined
+      : `linked hosts: ${report.linkedHosts.length === 0 ? "none detected" : report.linkedHosts.join(", ")}`;
+  const inventoryDriftLine =
+    report.inventoryDrift === undefined
+      ? undefined
+      : report.inventoryDrift.status === "indeterminate"
+        ? `inventory drift: indeterminate${report.inventoryDrift.note === undefined ? "" : ` -- ${report.inventoryDrift.note}`}`
+        : `inventory drift: external-only ${report.inventoryDrift.externalOnly.length}, launcher-only ${report.inventoryDrift.launcherOnly.length}, agreeing ${report.inventoryDrift.agreeing.length}`;
   return [
     `hub marker: ${report.marker}`,
     `inventory: ${inventory}`,
@@ -751,6 +850,10 @@ export function formatHubHealth(report: HubHealthReport): string {
     `extra @clossys/*: ${extra}`,
     `pin findings: ${findingLine}`,
     `degraded: ${report.degraded ? "yes" : "no"}`,
+    ...(migrationLine === undefined ? [] : [migrationLine]),
+    ...(linkedHostsLine === undefined ? [] : [linkedHostsLine]),
+    ...(inventoryDriftLine === undefined ? [] : [inventoryDriftLine]),
+    ...(skillsManifestLine === undefined ? [] : [skillsManifestLine]),
     ...(skillParts.length === 0 ? [] : skillParts),
     `health: ${JSON.stringify(report)}`,
   ].join("\n");
@@ -761,13 +864,18 @@ function withHealth(
   directory: string,
   headline: string,
   liveAdvisorVersion?: string,
-  skillComposition?: SkillCompositionResult,
+  skillComposition?: SkillCompositionResult & { linkedHosts?: readonly DiscoveredHost[] },
+  liveLauncherVersion?: string,
+  migration?: HubHealthReport["migration"],
+  inventoryDrift?: HubHealthReport["inventoryDrift"],
 ): WorkspaceApplyResult {
-  const base = reportHubHealth(host, directory, liveAdvisorVersion);
+  const base = reportHubHealth(host, directory, liveAdvisorVersion, liveLauncherVersion, skillComposition?.retired ?? [], migration);
   const rosterSkipped = skillComposition?.rosterSkipped ?? [];
   const health: HubHealthReport = {
     ...base,
     ...(skillComposition === undefined ? {} : { skillComposition }),
+    ...(skillComposition?.linkedHosts === undefined ? {} : { linkedHosts: skillComposition.linkedHosts }),
+    ...(inventoryDrift === undefined || inventoryDrift.status === "no-external-source" ? {} : { inventoryDrift }),
     degraded: base.degraded || rosterSkipped.length > 0,
   };
   return {
@@ -902,10 +1010,121 @@ function resolveSisterCloneTargets(
   return { targets, skipped };
 }
 
+export interface CloneMissingOutcome {
+  readonly inventoryId: string;
+  readonly result: "cloned" | "skipped-other-reason" | "failed";
+  readonly note: string;
+}
+
+/**
+ * Explicit, approved action (#1179, the #1045 pattern): clones every
+ * inventoried repository that resolveSisterCloneTargets's own skip pass
+ * identified as "just needs a clone" (CLONE_NOT_BESIDE_HUB_NOTE), and only
+ * those -- every other skip reason (wrong account, foundry supplier tree,
+ * origin mismatch, invalid slug) is left exactly as skipped, never
+ * attempted. Never called from resume's default path; only from the
+ * --clone-missing flag. Reverses the launcher README's own no-clone
+ * default for exactly this one approved action.
+ */
+export function cloneMissingInventoryRepositories(
+  host: WorkspaceHost,
+  hubDirectory: string,
+  hubOwner: string,
+): readonly CloneMissingOutcome[] {
+  const { skipped } = resolveSisterCloneTargets(host, hubDirectory, hubOwner);
+  const parent = dirname(resolve(hubDirectory));
+  const outcomes: CloneMissingOutcome[] = [];
+  for (const skip of skipped) {
+    if (skip.note !== CLONE_NOT_BESIDE_HUB_NOTE) {
+      outcomes.push({ inventoryId: skip.inventoryId, result: "skipped-other-reason", note: skip.note });
+      continue;
+    }
+    const parsed = parseInventoryRepositoryId(skip.inventoryId, hubOwner);
+    if (parsed === null) {
+      outcomes.push({ inventoryId: skip.inventoryId, result: "failed", note: "inventory id is not a valid repository slug" });
+      continue;
+    }
+    const siblingPath = join(parent, parsed.repository);
+    const result = host.run("gh", ["repo", "clone", `${hubOwner}/${parsed.repository}`, siblingPath]);
+    if (result.status === 0) {
+      outcomes.push({ inventoryId: skip.inventoryId, result: "cloned", note: `cloned to ${siblingPath}` });
+    } else {
+      outcomes.push({
+        inventoryId: skip.inventoryId,
+        result: "failed",
+        note: `gh repo clone exited ${result.status ?? "null"}: ${result.stderr.trim() || "no stderr"}`,
+      });
+    }
+  }
+  return outcomes;
+}
+
 function hubRosterId(host: WorkspaceHost, hubDirectory: string, hubOwner: string, hubRepository: string): string {
   const document = readHub(host, hubDirectory);
   if (document !== undefined) return document.repository;
   return `${hubOwner}/${hubRepository}`;
+}
+
+/**
+ * Regenerates the generated `README.md` at the root of `clossys/`: an index of which `clossys/<role>/`
+ * folders are active here, and what `.state/` holds. Written on every apply
+ * so it never drifts from what is actually on disk (#1171).
+ */
+function writeClossysReadme(host: WorkspaceHost, directory: string): void {
+  const root = join(directory, CLOSSYS_DIR_REL);
+  const roles = host
+    .isDirectory(root)
+    ? host
+        .readDir(root)
+        .filter((name) => name !== ".state" && name !== "README.md" && host.isDirectory(join(root, name)))
+        .sort((a, b) => a.localeCompare(b))
+    : [];
+  const hasBrief = host.exists(join(root, "brief.json"));
+  const lines = [
+    "# clossys/",
+    "",
+    "Generated by `@clossys/launcher`. This file is rewritten on every launcher",
+    `run to reflect what is active here; do not edit it by hand. Last generated: ${host.now()}.`,
+    "",
+    "## Engagement brief",
+    "",
+    ...(hasBrief
+      ? ["`clossys/brief.json` — why each role is staffed here, its goals, handoffs, and sequence (owner: @clossys/advisor)."]
+      : ["No engagement brief yet. `@clossys-advisor` writes `clossys/brief.json` once a plan is approved."]),
+    "",
+    "## Active roles",
+    "",
+    ...(roles.length === 0
+      ? ["No role folder is active here yet."]
+      : roles.map((role) => `- \`clossys/${role}/\` — @clossys-${role}`)),
+    "",
+    "## Machine state",
+    "",
+    "`clossys/.state/` holds machine files only: the hub marker, the inventory,",
+    "and the skills manifest. It is visible so it is easy to find, but it is not",
+    "a place a person edits by hand.",
+    "",
+  ];
+  writeSkeletonFile(host, directory, CLOSSYS_README_REL, lines.join("\n"));
+}
+
+/**
+ * Reads which coding-agent hosts already had skill discovery linked in
+ * `directory` BEFORE this call, then records that snapshot to
+ * `clossys/.state/hosts.json` (#1180). Deliberately called ahead of
+ * `composeSkills`, which unconditionally stamps discovery links for every
+ * host once it runs -- reading afterward would report "all hosts" on every
+ * apply and make the record meaningless.
+ */
+function recordLinkedHosts(host: WorkspaceHost, directory: string): readonly DiscoveredHost[] {
+  const linkedHosts = detectLinkedHosts(host, directory);
+  writeSkeletonFile(
+    host,
+    directory,
+    HOSTS_REL,
+    serializeHostRecord({ schemaVersion: 1, linkedHosts, recordedAt: host.now() }),
+  );
+  return linkedHosts;
 }
 
 function composeSkillRoster(
@@ -913,28 +1132,31 @@ function composeSkillRoster(
   hubDirectory: string,
   hubOwner: string,
   hubRepository: string,
-  options: { launcherPackageRoot: string; skillCatalogueRoot?: string },
+  options: { launcherPackageRoot: string; skillCatalogueRoot?: string; contractPath?: string },
 ): SkillCompositionResult & {
   readonly rosterTargets: readonly string[];
   readonly rosterSkipped: readonly { readonly inventoryId: string; readonly note: string }[];
+  readonly linkedHosts: readonly DiscoveredHost[];
 } {
-  const hubSkill = composeSkills(host, hubDirectory, {
+  const composeOptions = {
     launcherPackageRoot: options.launcherPackageRoot,
     ...(options.skillCatalogueRoot === undefined ? {} : { skillCatalogueRoot: options.skillCatalogueRoot }),
-  });
+    ...(options.contractPath === undefined ? {} : { contractPath: options.contractPath }),
+  };
+  const linkedHosts = recordLinkedHosts(host, hubDirectory);
+  const hubSkill = composeSkills(host, hubDirectory, composeOptions);
   writeConsumerAgentsIfNeeded(host, hubDirectory);
+  writeClossysReadme(host, hubDirectory);
   const hubId = hubRosterId(host, hubDirectory, hubOwner, hubRepository);
   const rosterTargets: string[] = [hubId];
   const { targets, skipped } = resolveSisterCloneTargets(host, hubDirectory, hubOwner);
   for (const target of targets) {
-    composeSkills(host, target.directory, {
-      launcherPackageRoot: options.launcherPackageRoot,
-      ...(options.skillCatalogueRoot === undefined ? {} : { skillCatalogueRoot: options.skillCatalogueRoot }),
-    });
+    recordLinkedHosts(host, target.directory);
+    composeSkills(host, target.directory, composeOptions);
     writeSisterConsumerAgentsIfNeeded(host, target.directory);
     rosterTargets.push(target.inventoryId);
   }
-  return { ...hubSkill, rosterTargets, rosterSkipped: skipped };
+  return { ...hubSkill, rosterTargets, rosterSkipped: skipped, linkedHosts };
 }
 
 function finishHubApply(
@@ -946,12 +1168,40 @@ function finishHubApply(
   hubRepository: string,
   liveAdvisorVersion?: string,
   skillCatalogueRoot?: string,
+  contractPath?: string,
+  liveLauncherVersion?: string,
+  migration?: HubHealthReport["migration"],
 ): WorkspaceApplyResult {
   const skillComposition = composeSkillRoster(host, directory, hubOwner, hubRepository, {
     launcherPackageRoot,
     ...(skillCatalogueRoot === undefined ? {} : { skillCatalogueRoot }),
+    ...(contractPath === undefined ? {} : { contractPath }),
   });
-  return withHealth(host, directory, headline, liveAdvisorVersion, skillComposition);
+  // #1216: when the hub marker declares an external inventory, report drift against
+  // it on every apply (create's fresh marker never declares one, so this is a no-op there).
+  const hubDocument = readHub(host, directory);
+  const inventoryDrift = reportInventoryDrift(host, directory, hubDocument?.externalInventory, WORKSPACE_INVENTORY_REL);
+  return withHealth(host, directory, headline, liveAdvisorVersion, skillComposition, liveLauncherVersion, migration, inventoryDrift);
+}
+
+/**
+ * Migrates a legacy `.clossys/` hub marker (and its sibling inventory, when
+ * present) to `clossys/.state/`, then removes the old directory. Called only
+ * when `locateHub` found the marker at the legacy path and nowhere else
+ * (`plan.migrateFrom === "legacy"`); a hub with markers at both paths is
+ * refused by `planWorkspace` before apply ever runs, so this never merges
+ * two hub states.
+ */
+function migrateLegacyHubState(host: WorkspaceHost, directory: string): HubHealthReport["migration"] {
+  const markerRaw = host.readText(join(directory, LEGACY_WORKSPACE_MARKER_REL));
+  if (markerRaw === null) return undefined;
+  writeSkeletonFile(host, directory, WORKSPACE_MARKER_REL, markerRaw.endsWith("\n") ? markerRaw : `${markerRaw}\n`);
+  const inventoryRaw = host.readText(join(directory, LEGACY_WORKSPACE_INVENTORY_REL));
+  if (inventoryRaw !== null) {
+    writeSkeletonFile(host, directory, WORKSPACE_INVENTORY_REL, inventoryRaw.endsWith("\n") ? inventoryRaw : `${inventoryRaw}\n`);
+  }
+  host.remove(join(directory, LEGACY_STATE_DIR_REL));
+  return { status: "migrated", from: LEGACY_STATE_DIR_REL, to: STATE_DIR_REL };
 }
 
 /** Applies a create, resume, or adopt plan through the host. Resume refreshes composed skills and stale AGENTS.md guidance. */
@@ -963,6 +1213,8 @@ export function applyWorkspacePlan(
 ): WorkspaceApplyResult {
   const launcherPackageRoot = options.launcherPackageRoot ?? resolve(skeletonRoot, "..");
   const skillCatalogueRoot = options.skillCatalogueRoot;
+  const contractPath = options.contractPath;
+  const liveLauncherVersion = options.liveLauncherVersion;
   if (plan.action === "resume") {
     if (plan.clone) {
       requireZero(
@@ -970,6 +1222,7 @@ export function applyWorkspacePlan(
         "gh repo clone",
       );
     }
+    const migration = plan.migrateFrom === "legacy" ? migrateLegacyHubState(host, plan.directory) : undefined;
     return finishHubApply(
       host,
       plan.directory,
@@ -979,6 +1232,9 @@ export function applyWorkspacePlan(
       plan.repository,
       plan.advisorVersion,
       skillCatalogueRoot,
+      contractPath,
+      liveLauncherVersion,
+      migration,
     );
   }
   if (plan.action === "create") {
@@ -1000,6 +1256,8 @@ export function applyWorkspacePlan(
       plan.repository,
       plan.advisorVersion,
       skillCatalogueRoot,
+      contractPath,
+      liveLauncherVersion,
     );
   }
   adoptHubFiles(host, skeletonRoot, plan);
@@ -1012,6 +1270,8 @@ export function applyWorkspacePlan(
     plan.repository,
     plan.advisorVersion,
     skillCatalogueRoot,
+    contractPath,
+    liveLauncherVersion,
   );
 }
 
