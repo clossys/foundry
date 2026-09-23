@@ -7,6 +7,18 @@
 //     [--policy <path>] [--merge <path>]
 //     [--required-checks-from-ruleset] [--require-review-presence]
 //
+//   node scripts/collect-review-evidence.mjs \
+//     --merge-group-head-ref <refs/heads/gh-readonly-queue/base/pr-N-sha> \
+//     [--repo <owner>/<name>] [--branch <base-branch>] [--merge <path>] ...
+//
+// The second form is a merge-group run's own way of naming --pr/--head: a
+// `merge_group` event carries no `pull_request` object at all, only its own
+// synthetic `head_ref` (see `parseMergeGroupQueueRef`'s own doc comment).
+// Passing it resolves the queued PR's real number and head sha from that
+// ref and uses those — a malformed ref refuses to collect evidence rather
+// than guessing. `--merge-group-head-ref` always overrides `--pr`/`--head`
+// when both are given.
+//
 // Prints a `VerifyStandardsInputs`-shaped JSON document (see
 // packages/inspector/src/verify.ts) carrying a populated `reviewEvidence`
 // section, ready to feed `packages/inspector/dist/bin.js --checks
@@ -133,6 +145,64 @@ export const EXCLUDED_SELF_CONTEXTS = Object.freeze(["verify-standards"]);
 
 function isSha(value) {
   return typeof value === "string" && SHA.test(value);
+}
+
+/**
+ * A `merge_group` event names no PR directly — `pull_request.number` and
+ * `pull_request.head.sha` simply do not exist on that payload. What it
+ * carries instead is `head_ref`, the queue's own synthetic ref: GitHub
+ * shapes it `refs/heads/gh-readonly-queue/<base>/pr-<number>-<sha>`, where
+ * `<sha>` is the queued PR's OWN head commit — not the merge group's
+ * synthetic test commit (`merge_group.head_sha`), which is a different
+ * commit (base merged with every entry ahead of this one in the group) and
+ * was never reviewed by anyone. This is what lets a merge-group run ask
+ * "whose PR is this, and which commit did a reviewer actually look at".
+ *
+ * Returns `null` for anything that does not match the exact shape —
+ * `refs/heads/` is optional (some contexts hand this value over without it)
+ * but everything else is fixed — rather than guessing. `main`'s own caller
+ * turns `null` into a loud failure (see `resolvePrAndHead` below): a
+ * malformed or unrecognized ref must refuse to collect evidence at all,
+ * never fall back to reviewing the wrong commit, or no commit.
+ */
+export function parseMergeGroupQueueRef(headRef) {
+  if (typeof headRef !== "string") return null;
+  const match = /^(?:refs\/heads\/)?gh-readonly-queue\/[^/]+\/pr-(\d+)-([0-9a-f]{40})$/.exec(headRef.trim());
+  if (!match) return null;
+  return { number: Number(match[1]), headSha: match[2] };
+}
+
+/**
+ * Resolves the `--pr`/`--head` this run collects evidence for, folding in an
+ * optional `--merge-group-head-ref`. Pure — it returns a result object
+ * rather than exiting the process — so every way a merge-group run can
+ * arrive at (or fail to arrive at) a target commit is directly testable
+ * without touching `gh` or `process.exit`; see this file's own test suite,
+ * in particular the four cases the CI-speed PR's own brief calls out by
+ * name: an approved head, a head reviewed at a different sha, a BLOCKING
+ * (changes-requested) review, and a malformed ref. `main` is the only
+ * caller that turns an `error` into a process exit.
+ *
+ * `mergeGroupHeadRef`, when supplied, always wins over `pr`/`head` — a
+ * merge-group run's own `--pr`/`--head` flags (if the caller passed them
+ * too) would otherwise silently name a different commit than the one the
+ * queue ref actually identifies.
+ */
+export function resolvePrAndHead({ pr, head, mergeGroupHeadRef } = {}) {
+  if (typeof mergeGroupHeadRef === "string" && mergeGroupHeadRef.length > 0) {
+    const resolved = parseMergeGroupQueueRef(mergeGroupHeadRef);
+    if (!resolved) {
+      return {
+        error:
+          `--merge-group-head-ref ${JSON.stringify(mergeGroupHeadRef)} does not match ` +
+          "gh-readonly-queue/<base>/pr-<number>-<40-lowercase-hex-sha> — refusing to guess which PR or commit this run is about",
+      };
+    }
+    return { pr: String(resolved.number), head: resolved.headSha };
+  }
+  if (!pr) return { error: "--pr <number> is required" };
+  if (!head || !isSha(head)) return { error: "--head <40-lowercase-hex-sha> is required — the exact commit this run is testing" };
+  return { pr, head };
 }
 
 // ---------------------------------------------------------------------------
@@ -506,11 +576,14 @@ export function main(
       merge: { type: "string" },
       "required-checks-from-ruleset": { type: "boolean", default: false },
       "require-review-presence": { type: "boolean", default: false },
+      "merge-group-head-ref": { type: "string" },
     },
   });
 
-  if (!values.pr) fail("--pr <number> is required");
-  if (!values.head || !isSha(values.head)) fail("--head <40-lowercase-hex-sha> is required — the exact commit this run is testing");
+  const resolved = resolvePrAndHead({ pr: values.pr, head: values.head, mergeGroupHeadRef: values["merge-group-head-ref"] });
+  if (resolved.error) fail(resolved.error);
+  const prNumber = resolved.pr;
+  const headSha = resolved.head;
 
   let repo = values.repo || process.env.GITHUB_REPOSITORY;
   if (!repo) {
@@ -525,11 +598,11 @@ export function main(
 
   let pullRequest;
   try {
-    pullRequest = fetchPullRequest({ owner, name, number: Number(values.pr) });
+    pullRequest = fetchPullRequest({ owner, name, number: Number(prNumber) });
   } catch (error) {
-    fail(`could not fetch pull request #${values.pr}: ${error.message}`);
+    fail(`could not fetch pull request #${prNumber}: ${error.message}`);
   }
-  if (!pullRequest) fail(`pull request #${values.pr} was not found in ${owner}/${name}`);
+  if (!pullRequest) fail(`pull request #${prNumber} was not found in ${owner}/${name}`);
 
   let requiredChecksFromRuleset;
   if (values["required-checks-from-ruleset"]) {
@@ -545,7 +618,7 @@ export function main(
   const evidence = buildReviewEvidenceBundle(pullRequest);
   const policy = buildReviewPolicy(policyRaw, { requiredChecksFromRuleset });
   const options = buildReviewEvidenceOptions({
-    headShaUnderTest: values.head,
+    headShaUnderTest: headSha,
     requireReviewPresence: values["require-review-presence"],
   });
   const section = buildReviewEvidenceSection({ evidence, policy, options });

@@ -98,6 +98,43 @@ On a pull request from a fork, the safety checks run in PARTIAL mode —
 repository secrets are unavailable to forks by design. This is expected and is
 not something you need to fix. A maintainer re-runs FULL mode before merge.
 
+## Merge queue
+
+`main` is protected by GitHub's native merge queue (ruleset `main-required-checks`),
+not by hand-merging or a bespoke merge train. Once your pull request has every
+required context green and an APPROVE with no later blocking review at its
+exact head, a maintainer adds it to the queue (the "Merge when ready" button,
+or `gh pr merge --queue`). From there:
+
+1. GitHub forms a merge group: your pull request's head merged with `main`
+   plus whatever else is already queued ahead of it, on a temporary ref
+   shaped `gh-readonly-queue/main/pr-<number>-<sha>` — `<sha>` there is your
+   pull request's own head commit, not the group's synthetic test commit.
+2. Every required context re-runs against that merge group, under the
+   `merge_group` event rather than `pull_request`. This is deliberately
+   stricter than a plain "branch is up to date" check: it tests the exact
+   tree that would land, including every entry ahead of yours, not just your
+   branch rebased in your head.
+3. `verify-standards`'s review-evidence check does not ask you to re-request
+   review for the merge group. It parses the merge group's own ref back into
+   your pull request's number and head sha (`scripts/collect-review-evidence.mjs
+   --merge-group-head-ref`) and evaluates the review recorded at THAT
+   commit — the same APPROVE-with-no-later-blocking-review requirement as an
+   ordinary pull request, just read from the right place. A review posted
+   against a different sha (a stale replay, or a push that landed in
+   between) does not count; a malformed or unrecognizable ref refuses to
+   collect evidence at all, rather than guessing.
+4. If everything is green, GitHub merges your commit into `main` with a
+   merge commit and your pull request is marked merged automatically. If
+   anything in the group fails, GitHub identifies which entry caused it,
+   drops that one, and re-forms the group from the rest — your own commit is
+   never touched or rewritten by this process.
+
+Nothing here changes what you do before the queue: push a head you've
+verified locally, post `Ready for independent review at <sha>.`, wait for an
+APPROVE, and let CI run. The queue only changes what happens after both of
+those are true.
+
 ## Conversation surface
 
 Everything above runs against files. None of it runs against an issue, a

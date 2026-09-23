@@ -46,6 +46,14 @@ name: Verify standards
 on:
   pull_request:
     types: [opened, synchronize, reopened, edited]
+  # A merge-group run's whole point is to test the tree that will actually
+  # land -- the base plus every entry ahead of this one in the queue -- so
+  # `verify-standards` (a required context on main, ruleset 20924588) must
+  # also produce a result under `merge_group`, or a required check that
+  # never reports for a merge-group commit would wedge every queue. GitHub
+  # names one type today (`checks_requested`); left unqualified so a future
+  # type is not silently excluded.
+  merge_group:
 
 permissions:
   contents: read
@@ -146,19 +154,41 @@ jobs:
       # about making review itself mandatory — see
       # .github/verify-standards-review-policy.json's own header for that
       # decision and why `requiredChecks` there is empty for now too.
+      # `merge_group` names no `pull_request` object at all -- only its own
+      # synthetic `head_ref`, `gh-readonly-queue/<base>/pr-<number>-<sha>`.
+      # scripts/collect-review-evidence.mjs's own `--merge-group-head-ref`
+      # resolves that into the queued PR's real number and head sha (a
+      # malformed ref refuses rather than guessing -- see that script's own
+      # header and `resolvePrAndHead`'s tests), so this step's two branches
+      # differ only in which flag names the commit under test; everything
+      # after is identical.
       - name: Collect review evidence
         id: review-evidence
         continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          node scripts/collect-review-evidence.mjs \
-            --pr "${{ github.event.pull_request.number }}" \
-            --head "${{ github.event.pull_request.head.sha }}" \
-            --repo "${{ github.repository }}" \
-            --branch "${{ github.event.pull_request.base.ref }}" \
-            --merge verify-inputs.json \
-            > verify-inputs.next.json
+          BASE_REF="${{ github.event.pull_request.base.ref }}"
+          if [ -z "$BASE_REF" ]; then
+            BASE_REF="${{ github.event.merge_group.base_ref }}"
+            BASE_REF="${BASE_REF#refs/heads/}"
+          fi
+          if [ "${{ github.event_name }}" = "merge_group" ]; then
+            node scripts/collect-review-evidence.mjs \
+              --merge-group-head-ref "${{ github.event.merge_group.head_ref }}" \
+              --repo "${{ github.repository }}" \
+              --branch "$BASE_REF" \
+              --merge verify-inputs.json \
+              > verify-inputs.next.json
+          else
+            node scripts/collect-review-evidence.mjs \
+              --pr "${{ github.event.pull_request.number }}" \
+              --head "${{ github.event.pull_request.head.sha }}" \
+              --repo "${{ github.repository }}" \
+              --branch "$BASE_REF" \
+              --merge verify-inputs.json \
+              > verify-inputs.next.json
+          fi
           mv verify-inputs.next.json verify-inputs.json
 
       # ---- DECIDE ----------------------------------------------------------
@@ -199,12 +229,29 @@ jobs:
           # re-raising that captured status. `exit "$status"` is load-bearing
           # too — without it the step's status is the last `cat`'s, which is
           # always 0.
+          #
+          # `task-record` is narrowed OUT for a `merge_group` run.
+          # `.github/verify-standards-policy.json`'s `applicableEventKinds`
+          # is `["pull_request"]`, so on a `merge_group` event that check
+          # would self-report `not-applicable-event` — which is
+          # INDETERMINATE, and bin.js treats indeterminate as exit 2, a hard
+          # failure ("An indeterminate result is a failure, not a warning").
+          # Evaluating it again here would wedge every merge-group run on a
+          # check that already ran, and passed or failed, when this exact PR
+          # was last opened/synchronized/edited — re-asking it here answers
+          # nothing new. `review-evidence` is the only check this workflow
+          # collects for that a merge-group run can usefully re-answer (see
+          # the "Collect review evidence" step above).
           set -o pipefail
           report="$RUNNER_TEMP/verify-standards-report.txt"
           status=0
+          CHECKS="task-record,review-evidence"
+          if [ "${{ github.event_name }}" = "merge_group" ]; then
+            CHECKS="review-evidence"
+          fi
           node packages/inspector/dist/bin.js \
             --inputs verify-inputs.json \
-            --checks task-record,review-evidence \
+            --checks "$CHECKS" \
             > "$report" || status=$?
           cat "$report"
           cat "$report" >> "$GITHUB_STEP_SUMMARY"
