@@ -34,6 +34,38 @@ describe("gradeFleetCoverage — the three-state classification", () => {
     expect(report.result).toEqual({ verdict: "satisfied", evaluated: 2 });
   });
 
+  it("carries a caller-supplied manifestPaths through to the installed cell, verbatim (#395's any-manifest decision)", () => {
+    const input: FleetCoverageInput = {
+      packages: [...PACKAGES],
+      repositories: [
+        repo({
+          repository: "repo-a",
+          installed: {
+            packages: [
+              { name: "@clossys/observer", manifestPaths: ["packages/product/package.json"] },
+              { name: "@clossys/controller" },
+            ],
+          },
+        }),
+      ],
+    };
+    const report = gradeFleetCoverage(input);
+    const observerCell = report.cells.find((cell) => cell.package === "@clossys/observer");
+    expect(observerCell).toMatchObject({ state: "installed", manifestPaths: ["packages/product/package.json"] });
+    const controllerCell = report.cells.find((cell) => cell.package === "@clossys/controller");
+    expect(controllerCell).toMatchObject({ state: "installed" });
+    expect(controllerCell && "manifestPaths" in controllerCell).toBe(false);
+  });
+
+  it("omits manifestPaths from the installed cell entirely when the caller supplies an empty array", () => {
+    const input: FleetCoverageInput = {
+      packages: ["@clossys/observer"],
+      repositories: [repo({ repository: "repo-a", installed: { packages: [{ name: "@clossys/observer", manifestPaths: [] }] } })],
+    };
+    const report = gradeFleetCoverage(input);
+    expect(report.cells[0] && "manifestPaths" in report.cells[0]).toBe(false);
+  });
+
   it("classifies a validly declared-absent package as declared-absent, carrying the stated reason", () => {
     const input: FleetCoverageInput = {
       packages: [...PACKAGES],

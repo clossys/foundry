@@ -1140,6 +1140,17 @@ jobs:
       # real assembler and the real inspector bin.
       - name: Verify-inputs assembler aims lookups at the named repository
         run: npm run check:verify-inputs
+      # scripts/collect-review-evidence.mjs's OWN pure functions are already
+      # proven pre-build in check:gates (scripts/collect-review-evidence.
+      # test.mjs), but that suite cannot import the built validator it feeds
+      # (see that file's own header). This is the companion that closes the
+      # gap: it hands collector-built fixtures to the REAL, compiled
+      # checkReviewEvidence (issue #403) and asserts on the real
+      # satisfied/violated/indeterminate verdict, the same
+      # "needs the build above" reasoning as check-publication-map.test.mjs
+      # immediately above.
+      - name: Review-evidence collector proves all three real verdicts
+        run: node --test scripts/collect-review-evidence.integration.test.mjs
       # Install every exact local tarball together in a credentialless,
       # disposable consumer. This checks the packed public surface and the
       # optional-peer omission contract; it does not claim publication or
@@ -1254,6 +1265,18 @@ jobs:
       # the property the verification had established.
       - name: Gate run-history reader
         run: node --test scripts/gate-run-history.test.mjs
+      # scripts/check-fleet-coverage.test.mjs (node:test, not check:gates --
+      # same reason as the "Gate run-history reader" step directly above):
+      # the script it exercises imports @clossys/observer by bare specifier,
+      # exactly like scripts/gate-run-history.mjs already does, so it needs
+      # this job's `npm ci` (for the workspace symlink) and the `npm run
+      # build` above (for observer's real dist/) -- neither exists in the
+      # dependency-free `safety` job check:gates runs in. This is the
+      # collector #395/#504 need: it walks real repository checkouts and
+      # builds the caller-supplied input @clossys/observer's own
+      # `gradeFleetCoverage` requires, rather than assembling one by hand.
+      - name: Fleet coverage collector
+        run: node --test scripts/check-fleet-coverage.test.mjs
       # Publishes this repository's own half of the observation-bundle
       # transport this repository's own packages/builder ships
       # (writeObservationBundle) and packages/controller ships
