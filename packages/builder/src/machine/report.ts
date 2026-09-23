@@ -6,7 +6,8 @@ import { createRuntimeContext, planInstallation } from "../runtime.js";
 import type { FileSystemPort, Finding } from "../types.js";
 import { discoverAccountWorkspaces, resolveWorkspacesRoot } from "./discovery.js";
 import { CLASS_ONE_SOURCE, loadClassOnePolicy, resolveClassOneDeclarationPath } from "./machine-layer.js";
-import { buildSkillsManifest } from "./skills-manifest.js";
+import { buildSkillsManifest, detectSkillNameCollisions } from "./skills-manifest.js";
+import type { SkillNameSource } from "./skills-manifest.js";
 import { loadThirdPartySkills, resolveThirdPartyRoot } from "./third-party.js";
 import type { DiscoveryPort } from "./types.js";
 
@@ -28,6 +29,17 @@ import type { DiscoveryPort } from "./types.js";
  * indeterminate too — see the `composition` row's `sources-indeterminate`
  * branch. A caller reading only `overall` therefore can never mistake "half
  * the machine verified clean" for "the machine verified clean."
+ *
+ * Composition is UNION BY DIRECTORY LINK (owner decision, 2026-09-21, #393):
+ * each account workspace and the third-party source compose ONE directory
+ * link apiece into `composedSkillsRoot`, never one link per skill. That
+ * shape means `composeInstallationPlans`'s own per-destination collision
+ * check no longer sees a same-named skill living in two source trees — two
+ * different sources never share a literal destination path under
+ * directory-linking, by design. So a same-named-skill collision is detected
+ * explicitly, BEFORE any link is planned, by
+ * `skills-manifest.ts`'s `detectSkillNameCollisions` — see the `composition`
+ * block below, and that module's header for the full reasoning.
  */
 
 export const MACHINE_VERIFY_INPUTS_VERSION = 1 as const;
@@ -36,7 +48,7 @@ export interface MachineVerifyInputs {
   readonly schemaVersion: typeof MACHINE_VERIFY_INPUTS_VERSION;
   /** The operator's home directory. Passed through to `createRuntimeContext`; never inferred. */
   readonly home: string;
-  /** Where every composed per-skill link is written. */
+  /** Where every composed source-tree directory link is written — one link per account workspace, plus one for third-party. */
   readonly composedSkillsRoot: string;
   /** Overrides the `BUILDER_MACHINE_WORKSPACES_ROOT` environment variable. */
   readonly accountWorkspacesRoot?: string;
@@ -122,14 +134,18 @@ function parseInputs(raw: unknown): MachineVerifyInputs | undefined {
   };
 }
 
+/**
+ * One source tree, one directory link: `linkName` is always `source` itself
+ * (an account's declared `account`, or the literal `"third-party"`) — see
+ * `skills-manifest.ts`'s header for why the two must match.
+ */
 function buildNamedPlan(
   source: string,
   sourceRoot: string,
-  skillNames: readonly string[],
   home: string,
   composedSkillsRoot: string,
 ): NamedSourcePlan {
-  const manifest = buildSkillsManifest(skillNames, { composedSkillsRoot });
+  const manifest = buildSkillsManifest({ composedSkillsRoot, linkName: source });
   const runtime = createRuntimeContext(manifest, { home, sourceRoot, workspaceRoot: home });
   return { source, plan: planInstallation(manifest, runtime) };
 }
@@ -164,6 +180,11 @@ export function verifyMachine(
 
   const rows: MachineVerifyRow[] = [];
   const namedPlans: NamedSourcePlan[] = [];
+  // Gathered alongside `namedPlans`, for the pre-link collision check below —
+  // see `skills-manifest.ts`'s `detectSkillNameCollisions` and this
+  // function's header. One entry per source that actually composes a
+  // directory link, never per skill.
+  const skillNameSources: SkillNameSource[] = [];
 
   // -- account workspaces -----------------------------------------------------
   const accountRoot = resolveWorkspacesRoot({ root: inputs.accountWorkspacesRoot, env: options.env });
@@ -184,11 +205,11 @@ export function verifyMachine(
           row: `account-workspace:${candidate.account}`,
           result: gateSatisfied(evaluatedCount(candidate.skillNames.length)),
         });
-        if (candidate.skillNames.length > 0) {
-          namedPlans.push(
-            buildNamedPlan(candidate.account, candidate.skillsPath, candidate.skillNames, inputs.home, inputs.composedSkillsRoot),
-          );
-        }
+        // One directory link per discovered workspace, unconditionally — an
+        // account with zero skills today still gets its (empty) tree linked,
+        // so a skill added later needs no re-composition to become visible.
+        namedPlans.push(buildNamedPlan(candidate.account, candidate.skillsPath, inputs.home, inputs.composedSkillsRoot));
+        skillNameSources.push({ name: candidate.account, skillNames: candidate.skillNames });
       } else {
         rows.push({
           row: `account-workspace:${candidate.account ?? candidate.path}`,
@@ -218,17 +239,13 @@ export function verifyMachine(
         row: "third-party-skills",
         result: gateSatisfied(evaluatedCount(thirdPartyResult.skills.length)),
       });
-      if (thirdPartyResult.skills.length > 0) {
-        namedPlans.push(
-          buildNamedPlan(
-            "third-party",
-            thirdPartyRoot,
-            thirdPartyResult.skills.map((skill) => skill.name),
-            inputs.home,
-            inputs.composedSkillsRoot,
-          ),
-        );
-      }
+      // Same unconditional rule as account workspaces, just above: one
+      // directory link for the third-party root regardless of skill count.
+      namedPlans.push(buildNamedPlan("third-party", thirdPartyRoot, inputs.home, inputs.composedSkillsRoot));
+      skillNameSources.push({
+        name: "third-party",
+        skillNames: thirdPartyResult.skills.map((skill) => skill.name),
+      });
     }
   }
 
@@ -279,11 +296,23 @@ export function verifyMachine(
       row: "composition",
       result: machineVerifyReasons.indeterminate(
         "no-sources-found",
-        "No account workspace or third-party source contributed any skill to compose. An empty composition is not evidence of a correctly composed machine.",
+        "No account workspace or third-party source was found to compose. An empty composition is not evidence of a correctly composed machine.",
       ),
     });
   } else {
     try {
+      // Enumerate every source's skills and compare BEFORE creating any
+      // link — directory-linking means `composeInstallationPlans` itself
+      // never sees two sources claim the same skill name (each source's
+      // only destination is its own directory), so this collision is not a
+      // side effect of link creation the way per-skill linking made it.
+      // Reuses `DestinationCollisionError` unmodified: the `catch` branch
+      // just below already knows how to fold one into a report.
+      const skillCollisions = detectSkillNameCollisions(skillNameSources, {
+        composedSkillsRoot: inputs.composedSkillsRoot,
+      });
+      if (skillCollisions.length > 0) throw new DestinationCollisionError(skillCollisions);
+
       const composed = composeInstallationPlans(namedPlans);
       composedOperations = composed.operations;
       const findings = verifyComposedInstallation(namedPlans, fs);

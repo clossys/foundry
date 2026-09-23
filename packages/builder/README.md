@@ -538,11 +538,13 @@ particular machine's destination paths into a public, account-neutral
 package. That composition — which document goes to which absolute path on
 which real machine — is local machine state, never checked in here.
 
-### Decision 2: composition is per-skill links, not a directory symlink or a copy
+### Decision 2: composition is union by directory link, not per-skill links or a copy
 
 `~/.agents/skills` (or wherever a caller composes skills to) must present the
-union of several accounts' skill trees plus a third-party tree. Three shapes
-were on the table:
+union of several accounts' skill trees plus a third-party tree. This decision
+was made twice. The first pass (documented in this package's history) adopted
+per-skill links; **the owner overturned that on 2026-09-21 (#393)** in favor
+of union by directory link, recorded below. Three shapes were on the table:
 
 - **A single directory symlink** — the mechanism this replaces used. Rejected:
   a symlink can only point at one source, so it cannot union N accounts' trees
@@ -553,20 +555,35 @@ were on the table:
   link-not-copy everywhere else it applies (see `links` vs. `copies` in
   `../types.ts`) — inventing a copy-based exception here for skills alone
   would be a second policy this package does not need.
-- **Per-skill links into one composed directory.** Adopted. Each discovered
-  source (`./discovery.ts`'s account workspaces, `./third-party.ts`'s
-  vendored skills) becomes one named `Plan` carrying one `links` entry per
-  skill it owns, all destined inside the same composed directory
-  (`./skills-manifest.ts`'s `buildSkillsManifest`). This is the only shape of
-  the three where `composeInstallationPlans`'s EXISTING per-destination
-  collision check (documented above, under "Multi-source composition") works
-  completely unmodified: two accounts shipping a skill with the same name
-  both produce a `links` entry destined at
-  `<composedSkillsRoot>/<name>`, and composing them throws
-  `DestinationCollisionError` — naming both accounts — for free. No new
-  collision logic was written for this subpath, because the existing one
-  already generalizes to "one entry per unit of content," and a skill is
-  exactly that unit.
+- **Union by directory link.** Adopted. Each discovered source
+  (`./discovery.ts`'s account workspaces, `./third-party.ts`'s vendored
+  skills) becomes one named `Plan` carrying exactly ONE `links` entry — the
+  whole source tree, linked as a single directory into
+  `<composedSkillsRoot>/<sourceName>` (`./skills-manifest.ts`'s
+  `buildSkillsManifest`) — never one entry per skill. `sourceName` is the
+  same identifier the source already composes under (an account's declared
+  `account`, or the literal `"third-party"`), so `composedSkillsRoot`'s
+  immediate children are always attributable to exactly one source at a
+  glance.
+
+  This was NOT the first shape tried, and the reversal has a real cost worth
+  naming: per-skill links let `composeInstallationPlans`'s EXISTING
+  per-destination collision check catch a same-named skill across two
+  sources as a side effect of link creation, for free. Directory-linking
+  gives up that side effect — two sources' directory links never share a
+  literal destination, by design, so the built-in check no longer sees a
+  same-named-skill collision at all. `./skills-manifest.ts`'s
+  `detectSkillNameCollisions` closes that gap explicitly: it enumerates the
+  skill names in every source tree and compares them BEFORE any link is
+  planned, returning `../composition.ts`'s own `DestinationCollision` shape —
+  never a second collision vocabulary — so `report.ts` folds a skill-name
+  collision into a report exactly the way it already folds a real
+  `DestinationCollisionError` from `composeInstallationPlans` itself (a
+  class-one destination colliding with an account's directory link, for
+  instance — see the "destination collisions" test coverage for
+  `verifyMachine`, which does not ship). Two accounts
+  shipping a skill with the same name is still a reported conflict, never a
+  silent last-writer-wins; it is just no longer free.
 
 ### Class 1: package-owned, account-neutral conventions, and where its destination map lives (#410)
 
@@ -630,46 +647,57 @@ already use, tagged `"package-conventions"`, so a destination it shares with
 an account workspace or a third-party skill is a reported
 `DestinationCollisionError` like any other, never a silent last-writer-wins.
 
-### The single-directory-symlink to per-skill-links transition (#240)
+### The single-directory-symlink to per-source-directory-links transition (#240)
 
 On the machine this replaces, `~/.agents/skills` (`composedSkillsRoot`) is
 today a single directory symlink into the repository being retired. This
-subpath's own composed shape is per-skill links (decision 2, above) — a
-different shape at the exact same path. #240's own reproduction records that
-transition crashing `applyInstallation` on a stale dangling link: the old
-symlink no longer resolves, and the generic engine's own recursive `mkdir`
-(called while preparing to write the first per-skill link) throws an opaque,
+subpath's own composed shape is one directory link per source (decision 2,
+above) — many links, each scoped under a real, non-symlinked
+`composedSkillsRoot`, rather than one symlink standing in for the whole
+union. #240's own reproduction records the naive transition crashing
+`applyInstallation` on a stale dangling link: the old symlink no longer
+resolves, and the generic engine's own recursive `mkdir` (called while
+preparing to write the first source's directory link) throws an opaque,
 unrelated `ENOENT` deep inside `apply.ts`'s `replace()` — never a clear,
 actionable finding. The non-dangling case is just as unsafe in the other
 direction: a symlink still pointing at a directory that still exists lets
-`mkdir` walk straight through it, silently writing the new per-skill link
+`mkdir` walk straight through it, silently writing the new directory link
 INSIDE the old repository's tree instead of into a real, machine-owned
 directory.
 
 `./skills-manifest.ts`'s `buildSkillsManifest` closes both cases by declaring
 `composedSkillsRoot` itself as a `privateDirectories` entry (`create: true`)
-on every source's manifest, ahead of that source's per-skill `links` — no new
-engine mechanism, reusing the existing safety `apply.ts`'s
-`applyPrivateDirectory` and `verify.ts`'s `verifyPrivateDirectory` already
-enforce for every other private directory this engine manages: a destination
-that is a symlink (dangling or not) is refused with a named, actionable error
-before anything is touched, and multiple sources declaring the identical
-private directory is not a collision — `composeInstallationPlans` already
-exempts `private-directory` operations from collision detection (see "Multi-source
-composition," above), which is exactly the shape needed here since every
-account, third-party, and class-one source shares the one composed root.
+on every source's manifest, ahead of that source's own single directory
+`links` entry — no new engine mechanism, reusing the existing safety
+`apply.ts`'s `applyPrivateDirectory` and `verify.ts`'s `verifyPrivateDirectory`
+already enforce for every other private directory this engine manages: a
+destination that is a symlink (dangling or not) is refused with a named,
+actionable error before anything is touched, and multiple sources declaring
+the identical private directory is not a collision — `composeInstallationPlans`
+already exempts `private-directory` operations from collision detection (see
+"Multi-source composition," above), which is exactly the shape needed here
+since every account, third-party, and class-one source shares the one
+composed root. This refusal stays scoped to `composedSkillsRoot` ITSELF —
+never to its children, where a directory symlink per source
+(`composedSkillsRoot/<sourceName>`) is now the entire, intended output.
 `./skills-manifest.test.ts` reproduces the exact transition #240 recorded —
-a dangling directory symlink at `composedSkillsRoot`, replaced by per-skill
-links — and asserts it fails with a named error, leaves the stale symlink
-completely untouched, and never crashes.
+a dangling directory symlink at `composedSkillsRoot`, replaced by per-source
+directory links — and asserts it fails with a named error, leaves the stale
+symlink completely untouched, and never crashes.
 
 ### Explicit retirement of a dropped destination (#240)
 
-When a source stops contributing a destination it used to manage — an
-account workspace loses a skill, a workspace disappears entirely because its
-repository was deleted, a class-one convention id is dropped from the
-machine layer declaration — that destination must be retired explicitly,
-never left silently orphaned on the machine. `../composition.ts`'s
+When a source stops contributing a destination it used to manage — a
+workspace disappears entirely because its repository was deleted, the
+third-party root is unconfigured, a class-one convention id is dropped from
+the machine layer declaration — that destination must be retired explicitly,
+never left silently orphaned on the machine. Under union-by-directory-link
+(decision 2, above), an account workspace losing an individual skill is NOT
+one of these triggers: the account's own destination
+(`composedSkillsRoot/<account>`) is the whole source tree's directory link,
+unaffected by which skills currently live inside it, so retirement here is a
+statement about SOURCES disappearing, never about individual skills.
+`../composition.ts`'s
 `diffRetiredDestinations` is the pure comparison this needs: given the
 destinations a PRIOR run's composition managed and the CURRENT run's actual
 composed operations, it returns a `RetirementReport` naming every destination
