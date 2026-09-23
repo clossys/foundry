@@ -232,4 +232,75 @@ test("check-contamination-classes: multi-directory / non-existent-path regressio
     assert.equal(allowlistMissing.code, 2, `expected exit 2, got ${allowlistMissing.code}: ${allowlistMissing.out}`);
     assert.match(allowlistMissing.out, /--allowlist requires a value/);
   });
+
+  // Issue #1342: the equals form (`--class=N`, `--allowlist=<path>`) was
+  // silently ignored — flagValue()'s old exact-string `argv.indexOf("--class")`
+  // lookup could never match the literal token `"--class=1"`, so the value
+  // was never read: `classFilter`/`explicit` stayed `undefined`, no error
+  // printed, and the flag had no effect (every class scanned, or the
+  // default allowlist used instead of the one named).
+
+  await t.test("--class=N (equals form): the value is consumed as the class filter, same as the space form", () => {
+    const dir = dualClassDir(work, "class-equals-dir");
+    const r = run([dir, "--class=1"]);
+    assert.equal(r.code, 1, `expected exit 1, got ${r.code}: ${r.out}`);
+    assert.doesNotMatch(r.out, /no such directory/, "\"--class=1\" must never be treated as a directory argument");
+    assert.match(r.out, /CLASS 1/, "the class-1 finding must still be reported");
+    assert.doesNotMatch(r.out, /CLASS 2/, "the class-2 finding must be filtered out by --class=1, proving the value actually reached the filter");
+  });
+
+  await t.test("--class=N before the directory: same behavior regardless of order", () => {
+    const dir = dualClassDir(work, "class-equals-before-dir");
+    const r = run(["--class=2", dir]);
+    assert.equal(r.code, 1, `expected exit 1, got ${r.code}: ${r.out}`);
+    assert.doesNotMatch(r.out, /no such directory/);
+    assert.match(r.out, /CLASS 2/, "the class-2 finding must be reported under --class=2");
+    assert.doesNotMatch(r.out, /CLASS 1 —/, "the class-1 finding must be filtered out by --class=2");
+  });
+
+  await t.test("--allowlist=<path> (equals form): the value is used as the allowlist file, not the default", () => {
+    const dir = dirtyDir(work, "allowlist-equals-target");
+    const allowlistPath = join(work, "custom-allowlist-equals.json");
+    writeFileSync(
+      allowlistPath,
+      JSON.stringify({ issue: "#1", packages: { "allowlist-equals-target": { "note.md": ["KIT-CONVENTIONS.md"] } } }),
+    );
+
+    const withoutAllowlist = run([dir]);
+    assert.equal(withoutAllowlist.code, 1, "sanity check: the citation is a live finding without the allowlist");
+
+    const withAllowlist = run([dir, `--allowlist=${allowlistPath}`]);
+    assert.equal(withAllowlist.code, 0, `expected exit 0 (waived), got ${withAllowlist.code}: ${withAllowlist.out}`);
+    assert.match(withAllowlist.out, /KNOWN, WAIVED/);
+    assert.doesNotMatch(withAllowlist.out, /no such directory/, "the allowlist path must never be treated as a directory argument");
+  });
+
+  await t.test("--class= (equals form, empty value) fails closed with exit 2, never silently 'no filter'", () => {
+    const dir = cleanDir(work, "class-equals-empty-dir");
+    const r = run([dir, "--class="]);
+    assert.equal(r.code, 2, `expected exit 2, got ${r.code}: ${r.out}`);
+    assert.match(r.out, /--class requires a value/);
+  });
+
+  await t.test("--allowlist= (equals form, empty value) fails closed with exit 2, never silently falls back to the default allowlist", () => {
+    const dir = cleanDir(work, "allowlist-equals-empty-dir");
+    const r = run([dir, "--allowlist="]);
+    assert.equal(r.code, 2, `expected exit 2, got ${r.code}: ${r.out}`);
+    assert.match(r.out, /--allowlist requires a value/);
+  });
+
+  await t.test("multiple directories mixed with the equals form: the class filter still applies inside multi-directory dispatch", () => {
+    const a = cleanDir(work, "mixed-equals-a-clean");
+    const b = dualClassDir(work, "mixed-equals-b-dual");
+    const c = cleanDir(work, "mixed-equals-c-clean");
+
+    const r = run([a, "--class=1", b, "--json", c]);
+    assert.equal(r.code, 1, `expected exit 1, got ${r.code}: ${r.out}`);
+    const parsed = JSON.parse(r.out);
+    assert.ok(Array.isArray(parsed));
+    assert.equal(parsed.length, 3, "all three directories must be scanned, none swallowed as a flag value");
+    assert.equal(parsed[1].root, b);
+    assert.ok(parsed[1].findings.some((f) => f.class === 1), "the class-1 finding in the middle directory must be reported");
+    assert.ok(!parsed[1].findings.some((f) => f.class === 2), "the class-2 finding must be filtered out by --class=1, even inside multi-directory dispatch");
+  });
 });

@@ -930,6 +930,15 @@ function changesetFilesAtMergeBase(gitRoot, mergeBase) {
 // pending at HEAD, counts" (the rule this header always stated) -- the
 // merge-base filter below is what actually enforces "added ... in this
 // pull request's history", not just "present at HEAD".
+//
+// This strict, PR-added-only form is for the packed-content path (this
+// function's original #1265 use) and the build-input path (PRECEDENCE rule
+// 4 in evaluatePackageDiff's header comment) ONLY -- both are exactly the
+// case #1322 item 2 protects against: a change with no changeset of its OWN
+// must not ride through on someone ELSE's unrelated, already-pending
+// changeset for the same package. See pendingChangesetDetailForStaleRecord
+// below for the narrower, different case (issue #1345) where this strict
+// filter is wrong.
 function pendingChangesetDetail(gitRoot, relPkgDir, mergeBase) {
   const packageKey = relPkgDir.split("/").at(-1);
   let entries;
@@ -944,6 +953,40 @@ function pendingChangesetDetail(gitRoot, relPkgDir, mergeBase) {
   const addedMatches = matches.filter((m) => !baseFiles.has(m.file));
   if (addedMatches.length === 0) return null;
   return `a pending changeset covers it: ${addedMatches.map((m) => `${m.file} (${m.bump})`).join(", ")} — scripts/apply-release-changesets.mjs will bump it in the next release PR`;
+}
+
+// ISSUE #1345 — the stale-retained-record carve-out (PRECEDENCE rule 2, in
+// evaluatePackageDiff's changed.length === 0 and devDependencies-only
+// branches) is NOT the case #1322 item 2 protects against, even though it
+// calls into the same "is there a pending changeset" question. #1322's
+// concern is a DIFFERENT pull request's unrelated, already-pending
+// changeset rescuing a packed-content change that has no changeset of its
+// own. Here there is no "different pull request" -- the changeset in
+// question names the exact SAME package the retained record just went
+// stale for, so whether THIS pull request happened to be the one that
+// added it is irrelevant: an already-pending changeset, from any point in
+// this package's history, is already scripts/apply-release-changesets.mjs's
+// promise that this exact package gets a real bump in the next release PR.
+// Requiring a second, redundant changeset naming the same package produces
+// pure churn (see issue #1345) with no security benefit -- unlike #1322's
+// case, there is no "someone else's change riding through for free" here,
+// because nothing about the package's packed content changed at all.
+//
+// So, unlike pendingChangesetDetail above, this omits the merge-base
+// filter entirely: ANY changeset pending at HEAD that names this package
+// counts, whether this pull request added it or it was already pending
+// before this pull request branched.
+function pendingChangesetDetailForStaleRecord(gitRoot, relPkgDir) {
+  const packageKey = relPkgDir.split("/").at(-1);
+  let entries;
+  try {
+    ({ entries } = loadChangesets(gitRoot));
+  } catch {
+    return null;
+  }
+  const matches = changesetsForPackage(entries, packageKey);
+  if (matches.length === 0) return null;
+  return `a pending changeset covers it: ${matches.map((m) => `${m.file} (${m.bump})`).join(", ")} — scripts/apply-release-changesets.mjs will bump it in the next release PR`;
 }
 
 // DEFAULT MODE — diff-scoped against the merge base. See header comment.
@@ -1081,10 +1124,17 @@ function evaluatePackageDiff(pkgDir, requestedBase) {
     }
     if (stale) {
       // PRECEDENCE rule 2: unpublished, so fall back to #1265's own
-      // carve-out — a pending changeset this pull request's own history
-      // added is the promise that a real bump follows in the batched
-      // release PR, which is what actually recovers the package.
-      const pendingChangeset = pendingChangesetDetail(gitRoot, relPkgDir, mergeBase);
+      // carve-out — a pending changeset naming this package, however it
+      // got there, is the promise that a real bump follows in the batched
+      // release PR, which is what actually recovers the package. Issue
+      // #1345: unlike the packed-content and build-input paths, this is
+      // NOT the "someone else's unrelated changeset" case #1322 item 2
+      // guards against — nothing about this package's packed content
+      // changed at all, so a changeset already pending before this pull
+      // request branched is not "riding through for free"; it already
+      // names this exact package and already promises the bump. Use the
+      // unfiltered helper, not the merge-base-filtered one.
+      const pendingChangeset = pendingChangesetDetailForStaleRecord(gitRoot, relPkgDir);
       if (pendingChangeset) {
         return {
           package: label,
@@ -1142,9 +1192,10 @@ function evaluatePackageDiff(pkgDir, requestedBase) {
       };
     }
     if (stale) {
-      // PRECEDENCE rule 2, same as above, for the devDependencies-only
-      // branch.
-      const pendingChangeset = pendingChangesetDetail(gitRoot, relPkgDir, mergeBase);
+      // PRECEDENCE rule 2, same as above (issue #1345: unfiltered helper,
+      // not the merge-base-filtered one — see the comment on that branch),
+      // for the devDependencies-only branch.
+      const pendingChangeset = pendingChangesetDetailForStaleRecord(gitRoot, relPkgDir);
       if (pendingChangeset) {
         return {
           package: label,
