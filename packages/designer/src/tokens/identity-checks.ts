@@ -43,8 +43,33 @@ export const IDENTITY_MIN_CONTRAST = 3; // WCAG 1.4.11 non-text contrast floor �
 const MIN_STROKE_VIEWBOX_RATIO = 0.03;
 const MIN_CLEAR_SPACE_RATIO = 0.15;
 
+/**
+ * The verdict vocabulary, machine for machine, the repository contract
+ * docs/contracts/check-output-envelope.json's own `verdicts` (issue
+ * #1174/#1190; that contract does not ship with this package). This module
+ * does not declare a second, independently-invented ternary here — see this
+ * package's own `check-output-envelope.test.ts` (also not shipped; a
+ * dev-only test), whose contract-sync test reads that file directly and
+ * fails if this union and its own `verdicts` array ever diverge.
+ */
 export type IdentityVerdict = "satisfied" | "violated" | "indeterminate";
 export type IdentityCheckId = "contrast" | "minimum-size" | "clear-space" | "single-colour-legibility";
+
+/**
+ * One reportable problem, in exactly the shape the repository contract
+ * docs/contracts/check-output-envelope.json's `findingShape` declares (that
+ * contract does not ship with this package): `rule` (stable machine id,
+ * here always the {@link IdentityCheckId} that produced it), `severity`,
+ * `message` (human-readable), and an optional `path` naming the variant the
+ * finding is about. Every finding this module produces is `severity:
+ * "error"` — an identity kit is judged, not merely advised.
+ */
+export interface IdentityFinding {
+  readonly rule: IdentityCheckId;
+  readonly severity: "error";
+  readonly message: string;
+  readonly path?: string;
+}
 
 // -----------------------------------------------------------------------
 // Contrast
@@ -216,15 +241,43 @@ export function checkSingleColourLegibility(svg: string): SingleColourLegibility
 // Judgement
 // -----------------------------------------------------------------------
 
+/**
+ * One check's verdict plus its findings, in exactly the repository
+ * contract docs/contracts/check-output-envelope.json's `findingShape`
+ * (that contract does not ship with this package) — `findings` is empty
+ * only when `verdict` is `"satisfied"`, the same rule the contract itself
+ * states.
+ */
 export interface IdentityCheckJudgement {
   verdict: IdentityVerdict;
-  detail: string;
+  findings: readonly IdentityFinding[];
 }
 
 export interface IdentityKitJudgement {
   direction: string;
   checks: Record<IdentityCheckId, IdentityCheckJudgement>;
+  verdict: IdentityVerdict;
+  findings: readonly IdentityFinding[];
   ok: boolean;
+}
+
+/**
+ * The full shape the repository contract docs/contracts/check-output-
+ * envelope.json declares (it does not ship with this package) for one
+ * judgement run: `{ package, version, verdict, summary, findings,
+ * nextAction? }`. `identityKitReport` builds this from one direction; the
+ * CLI/caller boundary that eventually emits it as this package's own
+ * "check command['s] JSON report" is Publisher's own integration, not yet
+ * built here (#1210 explicitly leaves file writing and registration to
+ * callers).
+ */
+export interface IdentityKitReport {
+  readonly package: "@clossys/designer";
+  readonly version: string;
+  readonly verdict: IdentityVerdict;
+  readonly summary: string;
+  readonly findings: readonly IdentityFinding[];
+  readonly nextAction?: string;
 }
 
 function verdictOf(indeterminate: boolean, ok: boolean): IdentityVerdict {
@@ -232,10 +285,17 @@ function verdictOf(indeterminate: boolean, ok: boolean): IdentityVerdict {
   return ok ? "satisfied" : "violated";
 }
 
+function findingsFor(checkId: IdentityCheckId, verdict: IdentityVerdict, messages: readonly string[]): readonly IdentityFinding[] {
+  if (verdict === "satisfied") return [];
+  const path = checkId === "contrast" ? undefined : checkId;
+  return messages.map((message) => Object.freeze({ rule: checkId, severity: "error" as const, message, ...(path === undefined ? {} : { path }) }));
+}
+
 /**
  * Runs all four checks against one {@link IdentityDirection} and returns
- * a per-check verdict plus an overall `ok`, `true` only when every check
- * is `satisfied` — an `indeterminate` check never counts as a pass.
+ * a per-check verdict/findings breakdown plus an overall `verdict` and
+ * flattened `findings`, and `ok`, `true` only when every check is
+ * `satisfied` — an `indeterminate` check never counts as a pass.
  */
 export function judgeIdentityKit(direction: IdentityDirection, tokens: IdentityTokenInput): IdentityKitJudgement {
   const { variants } = direction;
@@ -244,27 +304,69 @@ export function judgeIdentityKit(direction: IdentityDirection, tokens: IdentityT
   const clearSpace = checkClearSpace(variants.primary);
   const singleColour = checkSingleColourLegibility(variants.mono);
 
+  const contrastVerdict = verdictOf(contrast.indeterminate, contrast.ok);
+  const minimumSizeVerdict = verdictOf(minimumSize.indeterminate, minimumSize.ok);
+  const clearSpaceVerdict = verdictOf(clearSpace.indeterminate, clearSpace.ok);
+  const singleColourVerdict = verdictOf(false, singleColour.ok);
+
   const checkVerdicts: Record<IdentityCheckId, IdentityCheckJudgement> = {
     contrast: {
-      verdict: verdictOf(contrast.indeterminate, contrast.ok),
-      detail: contrast.findings.length > 0 ? contrast.findings.map((f) => f.message).join("; ") : `${contrast.checked.length} pair(s) checked, all >= ${IDENTITY_MIN_CONTRAST}:1`,
+      verdict: contrastVerdict,
+      findings:
+        contrastVerdict === "satisfied"
+          ? []
+          : contrast.findings.map((f) => Object.freeze({ rule: "contrast" as const, severity: "error" as const, message: f.message, path: f.variant })),
     },
     "minimum-size": {
-      verdict: verdictOf(minimumSize.indeterminate, minimumSize.ok),
-      detail: minimumSize.reason ?? `finest stroke is ${((minimumSize.ratio ?? 0) * 100).toFixed(1)}% of the viewBox`,
+      verdict: minimumSizeVerdict,
+      findings: findingsFor("minimum-size", minimumSizeVerdict, minimumSize.reason ? [minimumSize.reason] : []),
     },
     "clear-space": {
-      verdict: verdictOf(clearSpace.indeterminate, clearSpace.ok),
-      detail: clearSpace.reason ?? `declared clear space ${clearSpace.declared}`,
+      verdict: clearSpaceVerdict,
+      findings: findingsFor("clear-space", clearSpaceVerdict, clearSpace.reason ? [clearSpace.reason] : []),
     },
     "single-colour-legibility": {
-      verdict: verdictOf(false, singleColour.ok),
-      detail: singleColour.reason ?? "mono variant uses currentColor only",
+      verdict: singleColourVerdict,
+      findings: findingsFor("single-colour-legibility", singleColourVerdict, singleColour.reason ? [singleColour.reason] : []),
     },
   };
 
-  const ok = Object.values(checkVerdicts).every((c) => c.verdict === "satisfied");
-  return { direction: direction.id, checks: checkVerdicts, ok };
+  const checkList = Object.values(checkVerdicts);
+  const ok = checkList.every((c) => c.verdict === "satisfied");
+  const verdict: IdentityVerdict = checkList.some((c) => c.verdict === "indeterminate")
+    ? "indeterminate"
+    : checkList.some((c) => c.verdict === "violated")
+      ? "violated"
+      : "satisfied";
+  const findings = checkList.flatMap((c) => c.findings);
+  return { direction: direction.id, checks: checkVerdicts, verdict, findings, ok };
+}
+
+/** One plain-language sentence for the envelope's required `summary` field — the ONLY field a non-technical reader may be shown without translation. */
+function summaryFor(direction: string, judgement: IdentityKitJudgement): string {
+  if (judgement.verdict === "satisfied") return `The "${direction}" identity kit satisfies all four checks (contrast, minimum size, clear space, single-colour legibility).`;
+  if (judgement.verdict === "indeterminate") return `The "${direction}" identity kit could not be fully evaluated (${judgement.findings.length} finding(s)).`;
+  return `The "${direction}" identity kit does not satisfy every check (${judgement.findings.length} finding(s)).`;
+}
+
+/** Builds the full report shape the repository contract docs/contracts/check-output-envelope.json declares (not shipped with this package) for one direction. `packageVersion` is caller-supplied (this package's own `package.json` `version`), never read from disk here. */
+export function identityKitReport(direction: IdentityDirection, tokens: IdentityTokenInput, packageVersion: string): IdentityKitReport {
+  const judgement = judgeIdentityKit(direction, tokens);
+  const report: IdentityKitReport = {
+    package: "@clossys/designer",
+    version: packageVersion,
+    verdict: judgement.verdict,
+    summary: summaryFor(direction.id, judgement),
+    findings: judgement.findings,
+  };
+  if (judgement.verdict === "satisfied") return Object.freeze(report);
+  return Object.freeze({
+    ...report,
+    nextAction:
+      judgement.verdict === "indeterminate"
+        ? "Provide the missing viewBox/data-clear-space/colour declarations so every check can evaluate, then re-run this check."
+        : "Resolve every listed finding in the generated or adopted identity kit, then re-run this check.",
+  });
 }
 
 /** Exported for callers building a report over a variant set without a full {@link IdentityDirection} wrapper. */

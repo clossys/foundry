@@ -199,6 +199,7 @@ export {
   checkMinimumSize,
   checkSingleColourLegibility,
   IDENTITY_MIN_CONTRAST,
+  identityKitReport,
   judgeIdentityKit,
 } from "./identity-checks.js";
 export type {
@@ -208,7 +209,9 @@ export type {
   IdentityContrastFinding,
   IdentityContrastResult,
   IdentityContrastVariant,
+  IdentityFinding,
   IdentityKitJudgement,
+  IdentityKitReport,
   IdentityVerdict,
   MinimumSizeResult,
   SingleColourLegibilityResult,

@@ -4528,13 +4528,21 @@ repository holds every gate to:
 | `checkMinimumSize(svg)` | function | A declared-geometry PROXY for legibility at small sizes: the finest `stroke-width` in `svg` as a fraction of its own `viewBox`'s shorter side. This package does not rasterize, so this is a heuristic signal, not a rendered measurement — see the function's own header. |
 | `checkClearSpace(svg)` | function | Reads the `data-clear-space` ratio every generated/adopted variant declares on its root `<svg>` and checks it against a minimum. Declared, not measured, for the same reason as minimum size. |
 | `checkSingleColourLegibility(svg)` | function | Structural: the `mono` variant must paint through `currentColor` alone, with no other explicit `fill`/`stroke` colour literal left over. |
-| `judgeIdentityKit(direction, tokens)` | function | Runs all four against one `IdentityDirection` and returns a per-check `"satisfied" \| "violated" \| "indeterminate"` verdict plus an overall `ok` — `true` only when every check is `satisfied`; an `indeterminate` check never counts as a pass. |
+| `judgeIdentityKit(direction, tokens)` | function | Runs all four against one `IdentityDirection` and returns a per-check `{ verdict, findings }` plus an overall `verdict`, flattened `findings`, and `ok` — `true` only when every check is `satisfied`; an `indeterminate` check never counts as a pass, and any `indeterminate` check makes the overall `verdict` `indeterminate` too (fails closed), even alongside a `violated` one. |
+| `identityKitReport(direction, tokens, version)` | function | Builds the full report shape the repository contract docs/contracts/check-output-envelope.json declares (not shipped with this package) — `{ package, version, verdict, summary, findings, nextAction? }` — for one direction. |
 
 An `indeterminate` verdict is never a silent pass: a check that could not
 actually evaluate its input (no `viewBox`, no `data-clear-space` declared at
 all) reports that plainly, the same "a gate that passes because it checked
 nothing is worse than no gate" discipline the WCAG contrast gate above
 holds to.
+
+`IdentityVerdict` (`satisfied`/`violated`/`indeterminate`) and
+`IdentityFinding` (`{ rule, severity, message, path? }`) are this package's
+own instance of the shared vocabulary the repository contract docs/contracts/
+check-output-envelope.json declares (issue #1174/#1190; that contract does
+not ship with this package) — not a second, locally-invented verdict or
+finding shape.
 
 **Outputs and the asset roster.** This package does not write files or
 register anything itself — `generateIdentityDirections`/`adoptSuppliedMark`
@@ -4550,6 +4558,7 @@ raster roles this package does not produce.
 ```ts
 import {
   generateIdentityDirections,
+  identityKitReport,
   judgeIdentityKit,
   type IdentityTokenInput,
 } from "@clossys/designer/tokens";
@@ -4565,7 +4574,20 @@ const tokens: IdentityTokenInput = {
 };
 
 const [wordmark, circle, square] = generateIdentityDirections({ name: "Acme Rockets" }, tokens);
-const judgement = judgeIdentityKit(wordmark, tokens); // { ok, checks: { contrast, "minimum-size", "clear-space", "single-colour-legibility" } }
+const judgement = judgeIdentityKit(wordmark, tokens); // { ok, verdict, findings, checks: { contrast, "minimum-size", "clear-space", "single-colour-legibility" } }
+```
+
+```ts
+import { identityKitReport } from "@clossys/designer/tokens";
+
+identityKitReport(wordmark, tokens, "0.5.0");
+// {
+//   package: "@clossys/designer",
+//   version: "0.5.0",
+//   verdict: "satisfied",
+//   summary: "The \"wordmark\" identity kit satisfies all four checks (contrast, minimum size, clear space, single-colour legibility).",
+//   findings: [],
+// }
 ```
 
 ## Environment-declaration-consistency gate (`@clossys/designer/gate`, `designer-environment-check`)

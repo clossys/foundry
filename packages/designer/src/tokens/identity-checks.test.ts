@@ -5,6 +5,7 @@ import {
   checkMinimumSize,
   checkSingleColourLegibility,
   IDENTITY_MIN_CONTRAST,
+  identityKitReport,
   judgeIdentityKit,
 } from "./identity-checks.js";
 import { generateIdentityDirections, type IdentityTokenInput } from "./identity-kit.js";
@@ -121,15 +122,50 @@ describe("judgeIdentityKit", () => {
     const [direction] = generateIdentityDirections({ name: "Acme Rockets" }, PASSING_TOKENS);
     const judgement = judgeIdentityKit(direction!, PASSING_TOKENS);
     expect(judgement.ok).toBe(true);
+    expect(judgement.verdict).toBe("satisfied");
+    expect(judgement.findings).toEqual([]);
     for (const check of Object.values(judgement.checks)) {
       expect(check.verdict).toBe("satisfied");
+      expect(check.findings).toEqual([]);
     }
   });
 
-  it("reports contrast as violated (not indeterminate) when the pairing genuinely fails", () => {
+  it("reports contrast as violated (not indeterminate) when the pairing genuinely fails, and rolls it up into the overall verdict/findings", () => {
     const [direction] = generateIdentityDirections({ name: "Acme Rockets" }, FAILING_TOKENS);
     const judgement = judgeIdentityKit(direction!, FAILING_TOKENS);
     expect(judgement.ok).toBe(false);
     expect(judgement.checks.contrast.verdict).toBe("violated");
+    expect(judgement.verdict).toBe("violated");
+    expect(judgement.findings.length).toBeGreaterThan(0);
+    for (const finding of judgement.findings) {
+      expect(finding.severity).toBe("error");
+      expect(typeof finding.message).toBe("string");
+    }
+    expect(judgement.checks.contrast.findings.every((f) => f.rule === "contrast")).toBe(true);
+  });
+
+  it("overall verdict is indeterminate whenever any check is indeterminate, even alongside a violated one", () => {
+    const [direction] = generateIdentityDirections({ name: "Acme Rockets" }, FAILING_TOKENS);
+    const judgement = judgeIdentityKit(direction!, { ...FAILING_TOKENS, ink: "not-a-colour" });
+    expect(judgement.checks.contrast.verdict).toBe("indeterminate");
+    expect(judgement.verdict).toBe("indeterminate");
+  });
+});
+
+describe("identityKitReport", () => {
+  it("builds a satisfied report with no findings for a generated direction and passing tokens", () => {
+    const [direction] = generateIdentityDirections({ name: "Acme Rockets" }, PASSING_TOKENS);
+    const report = identityKitReport(direction!, PASSING_TOKENS, "0.5.0");
+    expect(report).toMatchObject({ package: "@clossys/designer", version: "0.5.0", verdict: "satisfied", findings: [] });
+    expect(report.nextAction).toBeUndefined();
+    expect(typeof report.summary).toBe("string");
+  });
+
+  it("carries a nextAction and non-empty findings for a violated direction", () => {
+    const [direction] = generateIdentityDirections({ name: "Acme Rockets" }, FAILING_TOKENS);
+    const report = identityKitReport(direction!, FAILING_TOKENS, "0.5.0");
+    expect(report.verdict).toBe("violated");
+    expect(report.findings.length).toBeGreaterThan(0);
+    expect(typeof report.nextAction).toBe("string");
   });
 });
