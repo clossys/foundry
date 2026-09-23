@@ -30,6 +30,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`renderStatusDocument`, `renderLoopStatus`) kept generic over its
   caller so the Advisor lane's own parallel status document can reuse it.
   The installed `foundry-loop-status` executable is the CLI form.
+  `bindPlan`/`decidePlanExecution` are stale-plan refusal: a plan bound
+  to the fingerprint it was computed from is re-proposed as a diff,
+  never executed as written, once that fingerprint moves.
 
 ### Changed
 
