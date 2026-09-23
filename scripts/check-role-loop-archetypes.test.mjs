@@ -65,7 +65,7 @@ function coverage(role) {
 }
 
 test("the canonical stages, bindings, modes, metric vocabulary, and verdict vocabulary are finite", () => {
-  assert.deepEqual(UNIVERSAL_STAGES, ["sense", "judge", "act", "verify", "learnOrEscalate"]);
+  assert.deepEqual(UNIVERSAL_STAGES, ["sense", "judge", "act", "verify", "learn"]);
   assert.deepEqual(CONSUMER_BINDINGS, ["businessMetricPath", "causalHypothesis", "baseline", "setpoint", "operatingScope", "authority", "evidenceSource", "cadence", "budget", "guardrails", "escalationPath", "workerComponents", "stageBindings", "firstDayAssessment"]);
   assert.deepEqual(MODE_NAMES, ["assure", "reconcile", "fulfill", "interact", "steward", "optimize"]);
   assert.deepEqual(METRIC_UNITS, ["ratio", "count", "duration", "currency", "rate"]);

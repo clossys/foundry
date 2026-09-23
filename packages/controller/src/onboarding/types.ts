@@ -83,6 +83,207 @@ export interface AssessmentSurfaceDiscovery {
 }
 
 /**
+ * The extended `foundry` manifest block, issue #1172: `intake`, `outputs`,
+ * `status`, and `fit`, discovered from the installed manifest exactly the
+ * way `assessment` already is -- never inferred, and an absence is reported
+ * rather than guessed.
+ */
+
+/** Why a role exposes no usable intake surface. */
+export const INTAKE_SURFACE_ABSENCES = Object.freeze([
+  "package-not-installed",
+  "manifest-unreadable",
+  "no-intake-declaration",
+  "invalid-intake-declaration",
+  "intake-file-missing",
+] as const);
+export type IntakeSurfaceAbsence = (typeof INTAKE_SURFACE_ABSENCES)[number];
+
+/** A role-owned intake-question-cards file, as the role's own installed manifest declares it. */
+export interface IntakeSurface {
+  readonly role: string;
+  readonly version: string;
+  readonly path: string;
+  readonly file: string;
+}
+
+export interface IntakeSurfaceDiscovery {
+  readonly role: string;
+  readonly surface: IntakeSurface | null;
+  readonly absence: IntakeSurfaceAbsence | null;
+}
+
+/** Why a role exposes no usable fit-signal surface. */
+export const FIT_SURFACE_ABSENCES = Object.freeze([
+  "package-not-installed",
+  "manifest-unreadable",
+  "no-fit-declaration",
+  "invalid-fit-declaration",
+  "fit-file-missing",
+] as const);
+export type FitSurfaceAbsence = (typeof FIT_SURFACE_ABSENCES)[number];
+
+/** A role-owned fit-signal-declarations file, as the role's own installed manifest declares it. */
+export interface FitSurface {
+  readonly role: string;
+  readonly version: string;
+  readonly path: string;
+  readonly file: string;
+}
+
+export interface FitSurfaceDiscovery {
+  readonly role: string;
+  readonly surface: FitSurface | null;
+  readonly absence: FitSurfaceAbsence | null;
+}
+
+/** Why a role exposes no usable status surface. Same vocabulary shape as assessment's. */
+export const STATUS_SURFACE_ABSENCES = Object.freeze([
+  "package-not-installed",
+  "manifest-unreadable",
+  "no-status-declaration",
+  "invalid-status-declaration",
+  "undeclared-status-bin",
+  "status-executable-missing",
+] as const);
+export type StatusSurfaceAbsence = (typeof STATUS_SURFACE_ABSENCES)[number];
+
+/** A role-owned read-only status probe, as the role's own installed manifest declares it. */
+export interface StatusSurface {
+  readonly role: string;
+  readonly version: string;
+  readonly bin: string;
+  readonly invocation: AssessmentInvocationKind;
+  readonly executable: string;
+}
+
+export interface StatusSurfaceDiscovery {
+  readonly role: string;
+  readonly surface: StatusSurface | null;
+  readonly absence: StatusSurfaceAbsence | null;
+}
+
+/** Why a role has no usable outputs declaration. */
+export const OUTPUTS_DECLARATION_ABSENCES = Object.freeze([
+  "package-not-installed",
+  "manifest-unreadable",
+  "no-outputs-declaration",
+  "invalid-outputs-declaration",
+  "output-path-outside-role-folder",
+] as const);
+export type OutputsDeclarationAbsence = (typeof OUTPUTS_DECLARATION_ABSENCES)[number];
+
+/** The paths a role declares it owns, all under its own `clossys/<role>/` folder (issue #1171). */
+export interface OutputsDeclaration {
+  readonly role: string;
+  readonly version: string;
+  readonly paths: readonly string[];
+}
+
+export interface OutputsDeclarationDiscovery {
+  readonly role: string;
+  readonly declaration: OutputsDeclaration | null;
+  readonly absence: OutputsDeclarationAbsence | null;
+}
+
+/**
+ * Schema version 2 of the extended `foundry` manifest block (owner decision
+ * on issue #1176, recorded 2026-09-22): `solves`, `needs`, and `feeds`,
+ * discovered exactly the same manifest-only way as
+ * `intake`/`outputs`/`status`/`fit` above. Discovery here is shape-level
+ * only -- it does not cross-reference the role-loop charter, a
+ * qualification adapter, or the client-problem vocabulary; those deeper
+ * checks belong to this repository's own gate script, run in its
+ * `--enforce` mode, not to a runtime orchestration reading an arbitrary
+ * consumer's installed packages.
+ */
+
+export const SOLVES_EVIDENCE_LEVELS = Object.freeze(["designed", "qualified", "proven"] as const);
+export type SolvesEvidenceLevel = (typeof SOLVES_EVIDENCE_LEVELS)[number];
+
+/** One verifiable claim about a client problem this role solves. */
+export interface SolvesEntry {
+  readonly problem: string;
+  readonly statement: string;
+  readonly metric: string;
+  readonly proofCase: string;
+  readonly evidence: SolvesEvidenceLevel;
+}
+
+export const SOLVES_DECLARATION_ABSENCES = Object.freeze([
+  "package-not-installed",
+  "manifest-unreadable",
+  "no-solves-declaration",
+  "invalid-solves-declaration",
+] as const);
+export type SolvesDeclarationAbsence = (typeof SOLVES_DECLARATION_ABSENCES)[number];
+
+export interface SolvesDeclaration {
+  readonly role: string;
+  readonly version: string;
+  readonly entries: readonly SolvesEntry[];
+}
+
+export interface SolvesDeclarationDiscovery {
+  readonly role: string;
+  readonly declaration: SolvesDeclaration | null;
+  readonly absence: SolvesDeclarationAbsence | null;
+}
+
+/** One artifact this role consumes from another role's own `feeds`. */
+export interface NeedsEntry {
+  readonly producerRole: string;
+  readonly artifact: string;
+}
+
+export const NEEDS_DECLARATION_ABSENCES = Object.freeze([
+  "package-not-installed",
+  "manifest-unreadable",
+  "no-needs-declaration",
+  "invalid-needs-declaration",
+] as const);
+export type NeedsDeclarationAbsence = (typeof NEEDS_DECLARATION_ABSENCES)[number];
+
+export interface NeedsDeclaration {
+  readonly role: string;
+  readonly version: string;
+  readonly entries: readonly NeedsEntry[];
+}
+
+export interface NeedsDeclarationDiscovery {
+  readonly role: string;
+  readonly declaration: NeedsDeclaration | null;
+  readonly absence: NeedsDeclarationAbsence | null;
+}
+
+/** One artifact this role produces for other roles, under its own `clossys/<role>/` folder. */
+export interface FeedsEntry {
+  readonly artifact: string;
+  readonly path: string;
+}
+
+export const FEEDS_DECLARATION_ABSENCES = Object.freeze([
+  "package-not-installed",
+  "manifest-unreadable",
+  "no-feeds-declaration",
+  "invalid-feeds-declaration",
+  "feeds-path-outside-role-folder",
+] as const);
+export type FeedsDeclarationAbsence = (typeof FEEDS_DECLARATION_ABSENCES)[number];
+
+export interface FeedsDeclaration {
+  readonly role: string;
+  readonly version: string;
+  readonly entries: readonly FeedsEntry[];
+}
+
+export interface FeedsDeclarationDiscovery {
+  readonly role: string;
+  readonly declaration: FeedsDeclaration | null;
+  readonly absence: FeedsDeclarationAbsence | null;
+}
+
+/**
  * One observation of a role's own assessment. `assessment` is whatever the
  * role returned, carried by reference and never rewritten.
  */

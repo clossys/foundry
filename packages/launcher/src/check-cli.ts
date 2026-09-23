@@ -120,6 +120,9 @@ export function planningHost(): WorkspaceHost {
     symlink: () => {
       throw new Error("launcher-check does not write");
     },
+    remove: () => {
+      throw new Error("launcher-check does not write");
+    },
     readDir: () => [],
     run: () => unused(),
     prompt: () => null,

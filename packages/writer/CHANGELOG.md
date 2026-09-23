@@ -5,7 +5,7 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
-## [0.3.16] - 2026-09-22
+## [0.3.18] - 2026-09-23
 
 ### Notes
 
@@ -13,7 +13,21 @@ All notable changes to this package are documented here. Format follows
   fixing leaking temp fixture directories (issue #1250), and its 0.3.15
   qualification record was already retained -- once a version's record is
   retained, any further change to that package, packed or not, requires a new
-  version.
+  version. Restacked onto main after merge train 6; renumbered from 0.3.16
+  because main independently shipped `writer@0.3.16` for the addressability
+  extensions feature below, and 0.3.17 is claimed by open PR #1258
+  (version-collision rule, issue #1187).
+
+## [0.3.16] - 2026-09-22
+
+### Added
+
+- `writer-check addressability --extensions` now also accepts a
+  comma-separated list in a single occurrence (for example
+  `--extensions .mjs,.cjs`), unioned with any repeated `--extensions`
+  flags. Every extension value must include the leading dot, and a flag
+  that resolves to zero extensions (a bare comma or an empty string) is a
+  usage error (exit `2`) rather than a silent fallback to the default set.
 
 ## [0.3.15] - 2026-09-21
 

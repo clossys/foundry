@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "$comment": "The product repository standard (#1215): every product repository managed by Clossys has the same shape, so agents, roles, and people always know where things go. Extends docs/contracts/consumer-layout.json's clossys/ tree with the surrounding repository layout a product needs: apps/, workspace wiring, agent pointers, and CI. A product repository is any repository Launcher scaffolds or appoints for building and shipping a client's own product, as distinct from the account hub (which coordinates engagement but does not itself ship a product).",
+  "extends": "docs/contracts/consumer-layout.json",
+  "entries": [
+    {
+      "path": "clossys",
+      "owner": "@clossys/launcher",
+      "kind": "record",
+      "committed": true,
+      "description": "Team records, brief.json, coverage.json, .state/ -- see consumer-layout.json for the full shape (#1171)."
+    },
+    {
+      "path": "apps/site",
+      "owner": "consumer",
+      "kind": "application",
+      "committed": true,
+      "description": "The marketing site (#1208). Hosting application root -- the deployment provider points here. Directory and workspace entry only; Launcher never generates application content."
+    },
+    {
+      "path": "apps/app",
+      "owner": "consumer",
+      "kind": "application",
+      "committed": false,
+      "description": "The product application. Layout position reserved; not scaffolded until a later wave builds it."
+    },
+    {
+      "path": "apps/admin",
+      "owner": "consumer",
+      "kind": "application",
+      "committed": false,
+      "description": "The admin application. Layout position reserved; not scaffolded until a later wave builds it."
+    },
+    {
+      "path": "package.json",
+      "owner": "consumer",
+      "kind": "record",
+      "committed": true,
+      "description": "Declares npm workspaces for every apps/* entry actually present. @clossys/* packages an approved plan names are pinned as exact devDependencies (#1178) -- never a caret or tilde range, so an install is reproducible byte-for-byte with what the plan approved."
+    },
+    {
+      "path": "AGENTS.md",
+      "owner": "@clossys/launcher",
+      "kind": "generated",
+      "committed": true,
+      "description": "Pointers to clossys/ and the loop -- generated, not hand-authored prose, so it never drifts from what launcher actually scaffolded here."
+    },
+    {
+      "path": "CLAUDE.md",
+      "owner": "@clossys/launcher",
+      "kind": "generated",
+      "committed": true,
+      "description": "A thin compatibility loader that imports AGENTS.md, matching the pattern this repository's own root CLAUDE.md uses."
+    },
+    {
+      "path": ".agents/skills",
+      "owner": "@clossys/launcher",
+      "kind": "generated",
+      "committed": true,
+      "description": "clossys-<package> skill sources, composed by Launcher. Host-specific discovery links (.claude/skills, .cursor/skills, and any other verified host path) point here; this is the single real copy."
+    },
+    {
+      "path": ".github/workflows",
+      "owner": "consumer",
+      "kind": "generated",
+      "committed": true,
+      "description": "CI: Starter's caller workflow (proves the plan's installs in CI, added on the first apply-plan pull request -- #1178) plus any role-specific checks a staffed package's own onboarding adds."
+    }
+  ],
+  "cloudSessionBootstrap": {
+    "description": "Owner decision on #1220: the product repository standard includes a cloud-session bootstrap, so a cloud agent session (browser plus GitHub only, no local setup) can install and run the team. Distinct from this foundry repository's own scripts/agent-cloud.mjs, which exists to satisfy foundry's own heavy governance gates (full git history, npm workspace) -- a product repository carries none of those, so its bootstrap is the much smaller 'can this session run npm ci and find its own records' check, not a copy of foundry's own script.",
+    "checks": [
+      "package.json and package-lock.json are both present and npm ci resolves cleanly",
+      "AGENTS.md exists at the repository root and points at clossys/",
+      "clossys/.state/workspace.json (the hub marker) or an equivalent product-repo marker is present"
+    ]
+  }
+}
