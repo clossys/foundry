@@ -109,29 +109,78 @@
 import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
 import { join, relative, extname, resolve, dirname, basename, sep } from "node:path";
 import { fileURLToPath } from "node:url";
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 
 const argv = process.argv.slice(2);
 const flags = new Set(argv.filter((a) => a.startsWith("--")));
 const positional = argv.filter((a) => !a.startsWith("--"));
-const root = positional[0];
 
 function flagValue(name) {
   const i = argv.indexOf(name);
   return i >= 0 ? argv[i + 1] : undefined;
 }
 
-if (!root) {
+if (positional.length === 0) {
   console.error(
-    "usage: check-contamination-classes.mjs <dir> [--json] [--class N] [--include-built]\n" +
+    "usage: check-contamination-classes.mjs <dir> [<dir> ...] [--json] [--class N] [--include-built]\n" +
       "                                        [--allowlist <file>] [--no-allowlist]",
   );
   process.exit(2);
 }
-if (!existsSync(root)) {
-  console.error(`check-contamination-classes: no such directory: ${root}`);
-  process.exit(2);
+
+// Every positional argument names a directory to scan — not just the first
+// one (#1328). Validated up front, before any scanning starts, so a typo in
+// the Nth directory of an 18-package merge-train invocation is reported as a
+// clear "could not run" failure rather than silently ignored, or discovered
+// only after the other 17 were needlessly scanned.
+for (const dir of positional) {
+  if (!existsSync(dir)) {
+    console.error(`check-contamination-classes: no such directory: ${dir}`);
+    process.exit(2);
+  }
 }
+
+// More than one directory: re-invoke this same script once per directory —
+// exactly what CI's own per-package shell loop already does today (see
+// package.json's "check:contamination" and .github/workflows/ci.yml) — so
+// scanning N directories in one invocation has the same behavior and cost as
+// N separate ones, and every directory is actually scanned rather than only
+// positional[0] silently winning. Each child's own report is preserved in
+// full; the parent only aggregates the exit code (worst of: 2 beats 1 beats
+// 0, matching the single-directory precedence below) and, for --json, the
+// per-directory objects into one array rather than concatenated raw JSON.
+if (positional.length > 1) {
+  const selfPath = fileURLToPath(import.meta.url);
+  const passthroughArgs = argv.filter((a) => a.startsWith("--"));
+  const asJson = flags.has("--json");
+  const jsonResults = [];
+  let worstExit = 0;
+  for (const dir of positional) {
+    const result = spawnSync(process.execPath, [selfPath, dir, ...passthroughArgs], {
+      encoding: "utf8",
+    });
+    const code = result.status ?? 2;
+    if (asJson) {
+      let parsed;
+      try {
+        parsed = JSON.parse(result.stdout);
+      } catch {
+        parsed = { root: resolve(dir), parseError: true, exitCode: code, stdout: result.stdout, stderr: result.stderr };
+      }
+      jsonResults.push(parsed);
+    } else {
+      console.log(`=== ${dir} ===`);
+      if (result.stdout) process.stdout.write(result.stdout);
+      if (result.stderr) process.stderr.write(result.stderr);
+    }
+    if (code === 2) worstExit = 2;
+    else if (code === 1 && worstExit !== 2) worstExit = 1;
+  }
+  if (asJson) console.log(JSON.stringify(jsonResults, null, 2));
+  process.exit(worstExit);
+}
+
+const root = positional[0];
 
 const classFilter = flagValue("--class") ? Number(flagValue("--class")) : null;
 if (classFilter !== null && (!Number.isInteger(classFilter) || classFilter < 1 || classFilter > 6)) {
