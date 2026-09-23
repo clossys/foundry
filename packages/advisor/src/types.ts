@@ -54,7 +54,9 @@ export interface PreWorkItem {
 /** Opaque, content-addressed references used to bind a decision to exact material. */
 export interface AssessmentBasis { snapshotDigest: string; grantDigest: string; catalogDigest: string; planDigest: string; blockerDigest: string; clearanceDigest: string; conflictDigest: string; baselineDigest: string; completionDefinitionDigest: string; assessedAt: string; freshUntil: string; }
 export type EngagementStatus = "active" | "closed";
-interface EngagementRecordBase { id: string; assessmentBasis: AssessmentBasis; executionAuthorization?: ExecutionAuthorization; }
+/** Self-serve (omitted) or a managed engagement, where a non-Advisor operator prepares the next action for the sponsor to approve (issue #1044). Never a private consumer identity or tier list; this package still does no network, filesystem, or install work in either mode. */
+export type EngagementMode = "self-serve" | "managed";
+interface EngagementRecordBase { id: string; assessmentBasis: AssessmentBasis; executionAuthorization?: ExecutionAuthorization; engagementMode?: EngagementMode; operatorRef?: string; }
 export type EngagementRecord = (EngagementRecordBase & { status: "active"; nextAction: EngagementNextAction }) | (EngagementRecordBase & { status: "closed"; nextAction?: never });
 export type EngagementActionDisposition = "current" | "reassess-required" | "closed";
 
