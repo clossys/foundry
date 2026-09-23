@@ -178,6 +178,20 @@ describe("renderReport", () => {
     expect(rendered).toMatch(/SATISFIED/);
   });
 
+  it("renders manifestPaths for an installed cell, when the caller supplied them", () => {
+    const report = gradeFleetCoverage({
+      packages: ["@clossys/observer"],
+      repositories: [
+        {
+          repository: "repo-a",
+          declaration: undefined,
+          installed: { packages: [{ name: "@clossys/observer", manifestPaths: ["packages/product/package.json"] }] },
+        },
+      ],
+    });
+    expect(renderReport(report)).toMatch(/via packages\/product\/package\.json/);
+  });
+
   it("renders contradictions when present", () => {
     const report = gradeFleetCoverage({
       packages: violatedInput.packages,

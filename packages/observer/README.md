@@ -143,7 +143,16 @@ that consumes it — is only gradeable when every cell resolves to one of
 exactly three states:
 
 - **`installed`** — the package is a dependency and its capabilities are
-  wired, per a caller-supplied installed inventory.
+  wired, per a caller-supplied installed inventory. "Installed" means a pin
+  in **any manifest in the repository**, not only a root-manifest pin —
+  settled by the owner (2026-09-21) after #395's own 2026-08-21 comment
+  measured two repositories where a root-only sweep and an any-manifest
+  sweep disagreed about the same cell. A monorepo consumer legitimately
+  pins a role inside a workspace package rather than the root, so
+  `FleetInstalledPackage.manifestPaths` (optional) lets a caller record
+  which manifest path(s) actually carry the pin, and `InstalledCoverageCell`
+  carries that same field forward — keeping that placement visible instead
+  of collapsing it into a bare boolean.
 - **`declared-absent`** — this repository has stated, out loud and with a
   **required reason**, that it has no lane for this package.
 - **`unclassified`** — neither of the above. **Fails closed**: never
