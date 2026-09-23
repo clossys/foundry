@@ -55,19 +55,28 @@ jobs:
         id: select
         run: node scripts/select-unqualified-packages.mjs --json > "$RUNNER_TEMP/unqualified.json"
 
+      # Issue #1324 item 1: without this, every candidate above gets
+      # re-dispatched on every push to main, even one still mid-flight or
+      # already fully qualified from an earlier run whose record has not
+      # yet landed (a rerun's own selection above cannot see a branch that
+      # is not merged) -- see filter-qualification-dispatch.mjs's own
+      # header for exactly what this does and does not close.
+      - name: Filter out packages that already have a qualification branch pushed
+        run: node scripts/filter-qualification-dispatch.mjs "$RUNNER_TEMP/unqualified.json" --json > "$RUNNER_TEMP/pending-dispatch.json"
+
       - name: Dispatch qualify-candidate.yml for each
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          count="$(node -e 'console.log(JSON.parse(require("fs").readFileSync(process.argv[1],"utf8")).length)' "$RUNNER_TEMP/unqualified.json")"
+          count="$(node -e 'console.log(JSON.parse(require("fs").readFileSync(process.argv[1],"utf8")).length)' "$RUNNER_TEMP/pending-dispatch.json")"
           if [ "$count" -eq 0 ]; then
-            echo "Every non-private package on the active release target already has a retained qualification record. Nothing to dispatch."
+            echo "Every non-private package on the active release target already has a retained qualification record, or already has a qualification branch pushed. Nothing to dispatch."
             exit 0
           fi
           echo "Dispatching qualify-candidate.yml for $count package(s):"
-          node -e 'for (const p of JSON.parse(require("fs").readFileSync(process.argv[1],"utf8"))) console.log(p.package + " -- " + p.name + "@" + p.version)' "$RUNNER_TEMP/unqualified.json"
-          for pkg in $(node -e 'for (const p of JSON.parse(require("fs").readFileSync(process.argv[1],"utf8"))) console.log(p.package)' "$RUNNER_TEMP/unqualified.json"); do
+          node -e 'for (const p of JSON.parse(require("fs").readFileSync(process.argv[1],"utf8"))) console.log(p.package + " -- " + p.name + "@" + p.version)' "$RUNNER_TEMP/pending-dispatch.json"
+          for pkg in $(node -e 'for (const p of JSON.parse(require("fs").readFileSync(process.argv[1],"utf8"))) console.log(p.package)' "$RUNNER_TEMP/pending-dispatch.json"); do
             echo "::group::dispatch qualify-candidate.yml -f package=$pkg"
             gh workflow run qualify-candidate.yml -f "package=$pkg"
             echo "::endgroup::"
