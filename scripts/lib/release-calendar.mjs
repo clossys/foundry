@@ -94,6 +94,45 @@ export const RELEASE_PR_BRANCH_PATTERN = /^claude\/release-\d{4}-\d{2}-\d{2}-\d+
 export const DEFAULT_OUT_OF_BAND_LABEL = "release:out-of-band";
 export const DEFAULT_RELEASE_PR_LABEL = "release:weekly";
 
+/**
+ * Given raw `git ls-remote --heads origin 'claude/release-*'` output
+ * (tab-separated `<sha>\trefs/heads/<name>` lines), returns just the
+ * branch names that are ACTUALLY a release-PR branch, per
+ * `RELEASE_PR_BRANCH_PATTERN` above -- not merely ones the server-side
+ * glob happened to match.
+ *
+ * WHY THE GLOB ALONE IS NOT ENOUGH (fix, re-review, https://github.com/clossys/foundry/pull/1353#issuecomment-5803894960
+ * blocking item 3) -------------------------------------------------------
+ * `.github/workflows/release-pr.yml`'s scheduled-run guard uses
+ * `git ls-remote --heads origin 'claude/release-*'` to ask "is a release
+ * already in progress" (a branch pushed but no PR opened for it yet --
+ * see that workflow's own comment for why open-PR count alone is not
+ * enough). That glob is a coarse, SERVER-SIDE prefilter, not a proof: it
+ * also matches any OTHER `claude/release-...` branch this repository's own
+ * agent workflow happens to name that way -- a feature branch, never a
+ * release branch at all. `claude/release-footprint-dependent-ranges`
+ * (issue #1339's own branch) and `claude/release-readiness-tracked-only-v2`
+ * both matched it on the remote at the time this was found. Left
+ * unfiltered, "a release is in progress" reads as true essentially
+ * always, and the scheduled run can never proceed -- the failure mode is
+ * silent (no error, just an empty `proceed=false` every day), which is
+ * exactly why it went unnoticed until an end-to-end dry run caught it.
+ *
+ * This function is the single source of truth both the workflow (via a
+ * thin `node --input-type=module -e` wrapper) and this module's own tests
+ * call, so the two can never quietly disagree about what counts as a real
+ * release-PR branch -- the same discipline `RELEASE_PR_BRANCH_PATTERN`
+ * itself already documents.
+ */
+export function filterReleasePrBranchRefs(lsRemoteOutput) {
+  return (lsRemoteOutput ?? "")
+    .split("\n")
+    .map((line) => line.split("\t")[1])
+    .filter((ref) => typeof ref === "string" && ref.length > 0)
+    .map((ref) => ref.replace(/^refs\/heads\//, ""))
+    .filter((name) => RELEASE_PR_BRANCH_PATTERN.test(name));
+}
+
 /** Reads and parses governance/release-calendar.json. Throws a descriptive error rather than returning null -- every caller needs a calendar to do anything. */
 export function loadReleaseCalendar(root = process.cwd()) {
   const path = resolve(root, RELEASE_CALENDAR_PATH);

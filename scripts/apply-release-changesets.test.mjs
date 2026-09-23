@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 import {
   applyReleaseChangesets,
   bumpDependencyRangeText,
@@ -13,6 +15,8 @@ import {
   namedPackages,
   prependChangelogEntry,
 } from "./apply-release-changesets.mjs";
+
+const scriptPath = resolve(dirname(fileURLToPath(import.meta.url)), "apply-release-changesets.mjs");
 
 function makeRoot() {
   const root = mkdtempSync(join(tmpdir(), "apply-release-changesets-test-"));
@@ -955,6 +959,52 @@ test("COMPOSITION (mixed run): an owner-approved out-of-band minor releases, its
     const standaloneManifest = JSON.parse(readFileSync(join(root, "packages", "standalone", "package.json"), "utf8"));
     assert.equal(standaloneManifest.version, "3.0.0");
     assert.equal(existsSync(join(root, ".changesets", "standalone-feature.md")), true);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// -------------------------------------------------- CLI: --json output must be pure JSON, even with real npm running
+//
+// Re-review, https://github.com/clossys/foundry/pull/1353#issuecomment-5803894960
+// blocking item 2: `runNpmInstall`'s default implementation used
+// `stdio: "inherit"`, so real npm's own stdout chatter ("up to date,
+// audited N packages...") interleaved into THIS process's stdout -- the
+// SAME stream `main()` writes `--json` output to. `.github/workflows/
+// release-pr.yml`'s `output="$(node ... --json)"; ... JSON.parse(...)`
+// then throws on every release that actually applies something, already
+// true on `main`. Every OTHER test in this file injects `runNpmInstall`
+// (so it never touches real npm at all) -- this is the one test that
+// spawns the REAL CLI as a subprocess with REAL npm, so it is the only
+// one that could have caught this bug.
+test("CLI: `node apply-release-changesets.mjs --json` produces stdout that is valid JSON, with real npm actually running", () => {
+  const root = mkdtempSync(join(tmpdir(), "apply-release-changesets-cli-json-test-"));
+  try {
+    writeFileSync(join(root, "package.json"), JSON.stringify({ name: "fixture-root", private: true, workspaces: ["packages/*"] }, null, 2) + "\n");
+    const pkgDir = join(root, "packages", "alpha");
+    mkdirSync(pkgDir, { recursive: true });
+    writeFileSync(join(pkgDir, "package.json"), JSON.stringify({ name: "@x/alpha", version: "1.0.0", license: "MIT" }, null, 2) + "\n");
+    writeFileSync(join(pkgDir, "CHANGELOG.md"), "# Changelog\n\n## 1.0.0\n\n- Initial release.\n");
+    // A genuine base lockfile, from real npm -- offline, since the fixture
+    // has no external dependency for it to resolve.
+    execFileSync("npm", ["install", "--package-lock-only", "--offline"], { cwd: root, stdio: "ignore" });
+
+    mkdirSync(join(root, ".changesets"), { recursive: true });
+    writeFileSync(join(root, ".changesets", "alpha-fix.md"), "---\nalpha: patch\n---\n\nFix a bug.\n");
+
+    const stdout = execFileSync(process.execPath, [scriptPath, "--json"], { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+
+    let parsed;
+    let threw = false;
+    try {
+      parsed = JSON.parse(stdout);
+    } catch {
+      threw = true;
+    }
+    assert.equal(threw, false, `stdout was not valid JSON -- real npm's own output likely leaked into it:\n${stdout}`);
+    assert.equal(parsed.applied.length, 1);
+    assert.equal(parsed.applied[0].package, "alpha");
+    assert.equal(parsed.applied[0].toVersion, "1.0.1");
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

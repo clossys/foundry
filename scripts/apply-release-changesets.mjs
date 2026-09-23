@@ -473,7 +473,21 @@ function applyDependencyRewrites(text, updates) {
   return result;
 }
 
-const defaultRunNpmInstall = (root) => execFileSync("npm", ["install", "--package-lock-only"], { cwd: root, stdio: "inherit" });
+// `npm install`'s own stdout ("up to date, audited N packages...", or far
+// more under a real registry install) is sent to OUR OWN STDERR (fd 2),
+// never our own stdout -- NOT `stdio: "inherit"` (fix, re-review,
+// https://github.com/clossys/foundry/pull/1353#issuecomment-5803894960
+// blocking item 2). `main()` below writes `--json` output to stdout with a
+// single `console.log(JSON.stringify(...))`; `stdio: "inherit"` let npm's
+// own chatter interleave into that SAME stdout stream, so
+// `.github/workflows/release-pr.yml`'s `output="$(node ... --json)"; ...
+// JSON.parse(process.argv[1])` (and this repository's own two callers of
+// that pattern) throw on every release that actually has something to
+// apply -- already true on `main`, reproduced with the workflow's own
+// exact shell pattern. npm's stderr still goes to our stderr, so nothing
+// about a real failure gets silently swallowed; only stdout stays pure
+// JSON.
+const defaultRunNpmInstall = (root) => execFileSync("npm", ["install", "--package-lock-only"], { cwd: root, stdio: ["ignore", 2, 2] });
 
 // Every packages/<dir> directory that has its own package.json, sorted --
 // deterministic order for both the dependency scan and any resulting
@@ -829,8 +843,29 @@ export function applyReleaseChangesets({
       if (step.changelogPath) writeFileSync(step.changelogPath, step.newChangelog);
       for (const file of step.changesetFiles) toDelete.add(file);
     }
-    for (const file of toDelete) rmSync(join(root, ".changesets", file));
+    // npm RUNS BEFORE CHANGESETS ARE DELETED (should-fix, re-review,
+    // https://github.com/clossys/foundry/pull/1353#issuecomment-5803894960)
+    // -----------------------------------------------------------------------
+    // `runNpmInstall()` shells out to real npm and can genuinely fail
+    // (network, registry, a locally-broken npm) -- `execFileSync` throws on
+    // a non-zero exit, and this function does not (and, short of a much
+    // larger redesign, cannot cheaply) catch that and roll back the
+    // manifests/CHANGELOGs already written above. Deleting the changesets
+    // BEFORE that possible failure would leave every one of them gone from
+    // `.changesets/` with `package-lock.json` never actually regenerated --
+    // a rerun (this repository's own local recovery path; CI is ephemeral
+    // and simply retries the whole job) would then see NOTHING pending for
+    // these packages and silently do nothing, even though the manifests
+    // were bumped without a matching lockfile. Deleting them AFTER a
+    // successful npm run means the same failure instead leaves the
+    // changesets still present -- a rerun still re-plans and re-bumps the
+    // SAME manifests (issue #1322's own residual, not new here), but at
+    // least does not lose track of what was pending. This does not make
+    // the write phase fully atomic against an npm failure; it only avoids
+    // discarding the one piece of state (the changeset files) a human
+    // fixing a broken local run would otherwise have to reconstruct by hand.
     if (applied.length > 0) runNpmInstall(root);
+    for (const file of toDelete) rmSync(join(root, ".changesets", file));
   }
 
   return { applied, findings: [], changesetFindings: [] };

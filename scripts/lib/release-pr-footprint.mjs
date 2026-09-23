@@ -62,6 +62,7 @@
 //   anything else -- fails outright, regardless of status.
 import { parseChangesetText } from "../collect-changesets.mjs";
 import { computeBumpLevel } from "../check-release-pr-shape.mjs";
+import { DEPENDENCY_RANGE_SECTIONS, prependChangelogEntry } from "../apply-release-changesets.mjs";
 
 export const RELEASE_PR_FILE_PATTERNS = {
   packageManifest: /^packages\/([^/]+)\/package\.json$/,
@@ -274,6 +275,38 @@ export function isDevDependenciesOnlyRewrite(baseText, headText, bumpedVersionsB
 // every OTHER purpose (messaging, the devDependencies-only no-bump path
 // below), and this is the one place all four are treated uniformly.
 const REWRITABLE_ENTRY_FIELDS = [...DEPENDENT_RANGE_FIELDS, "devDependencies"];
+
+// Same key set, same values -- but, deliberately UNLIKE
+// isAllowedDependencyRangeChange() above, key ORDER does not matter (fix,
+// re-review, https://github.com/clossys/foundry/pull/1353#issuecomment-5803894960
+// blocking item 1). This is used ONLY to cross-check a lockfile entry's
+// dependency map against the REAL manifest's own map -- two independently
+// formatted representations of conceptually the same data, where
+// `npm install --package-lock-only` writes each `packages/<dir>` entry's
+// maps in SORTED key order regardless of what order the source
+// package.json declared them in (confirmed against this repository's own
+// real `packages/publisher` -- unsorted `dependencies`/`devDependencies`
+// -- and `packages/designer` -- unsorted `peerDependencies`). Requiring
+// identical key order here, the same way isAllowedDependencyRangeChange()
+// correctly does for a base-vs-head REWRITE within the lockfile's own
+// history, made every real release that bumps either package fail this
+// check outright -- not a security relaxation, a correction: the fields
+// being compared here were never claimed to preserve source order in the
+// first place, only to carry the same facts.
+function isSameDependencyMapIgnoringKeyOrder(a, b) {
+  if (a === undefined && b === undefined) return true;
+  if (a === undefined || b === undefined) return false;
+  if (typeof a !== "object" || a === null || Array.isArray(a)) return false;
+  if (typeof b !== "object" || b === null || Array.isArray(b)) return false;
+  const aKeys = Object.keys(a);
+  const bKeys = Object.keys(b);
+  if (aKeys.length !== bKeys.length) return false;
+  for (const key of aKeys) {
+    if (!Object.prototype.hasOwnProperty.call(b, key)) return false;
+    if (a[key] !== b[key]) return false;
+  }
+  return true;
+}
 
 function compareRestAllowingDependencyRangeBumps(baseRest, headRest, bumpedVersionsByName) {
   for (const field of REWRITABLE_ENTRY_FIELDS) {
@@ -538,7 +571,7 @@ function isLinkToBumpedWorkspaceEntry(entry, workspaceKeys) {
  * legitimate range-bump shape relative to the lockfile's own base" AND
  * "this is what the manifest actually says".
  */
-export function isLockfilePureVersionBump(baseText, headText, bumpedPackageDirs, bumpedVersionsByName = {}, bumpedManifestsByName = {}, devDependencyOnlyDirs = []) {
+export function isLockfilePureVersionBump(baseText, headText, bumpedPackageDirs, bumpedVersionsByName = {}, bumpedManifestsByName = {}, devDependencyOnlyDirs = [], devDependencyOnlyManifestsByName = {}) {
   let baseJson, headJson;
   try {
     baseJson = JSON.parse(baseText);
@@ -585,10 +618,7 @@ export function isLockfilePureVersionBump(baseText, headText, bumpedPackageDirs,
       const manifestInfo = bumpedManifestsByName[name];
       if (headEntry.version !== manifestInfo.version) return false; // wrong, missing (undefined), or left at the base version -- all "not equal", all fail
       for (const field of REWRITABLE_ENTRY_FIELDS) {
-        const lockfileHasField = Object.prototype.hasOwnProperty.call(headEntry, field);
-        const manifestHasField = manifestInfo[field] !== undefined;
-        if (lockfileHasField !== manifestHasField) return false;
-        if (lockfileHasField && JSON.stringify(headEntry[field]) !== JSON.stringify(manifestInfo[field])) return false;
+        if (!isSameDependencyMapIgnoringKeyOrder(headEntry[field], manifestInfo[field])) return false;
       }
 
       const { version: baseVersion, ...baseEntryRest } = baseEntry;
@@ -601,6 +631,22 @@ export function isLockfilePureVersionBump(baseText, headText, bumpedPackageDirs,
 
     if (isBumpedLinkEntry) {
       if (!baseEntry || typeof baseEntry !== "object" || !headEntry || typeof headEntry !== "object") return false;
+
+      // A link entry's own `version` field, if it has one at all, must
+      // match the REAL workspace entry it `resolved` points at -- never an
+      // arbitrary, unconstrained value (should-fix, re-review,
+      // https://github.com/clossys/foundry/pull/1353#issuecomment-5803457726
+      // and https://github.com/clossys/foundry/pull/1353#issuecomment-5803894960).
+      // This repository's own real lockfile link entries carry no
+      // `version` at all (see this module's own header); some other npm
+      // version might still write one, so if either side HAS one, it must
+      // be provably correct rather than merely ignored.
+      if (typeof headEntry.resolved === "string") {
+        const resolvedWorkspaceEntry = headPackages[headEntry.resolved];
+        const expectedVersion = resolvedWorkspaceEntry && typeof resolvedWorkspaceEntry === "object" ? resolvedWorkspaceEntry.version : undefined;
+        if (Object.prototype.hasOwnProperty.call(headEntry, "version") && headEntry.version !== expectedVersion) return false;
+      }
+
       const { version: baseVersion, ...baseEntryRest } = baseEntry;
       const { version: headVersion, ...headEntryRest } = headEntry;
       void baseVersion;
@@ -615,10 +661,24 @@ export function isLockfilePureVersionBump(baseText, headText, bumpedPackageDirs,
     // `devDependencies` field may differ, via the identical
     // isAllowedDependencyRangeChange() rule, and `version` must be
     // byte-identical (never a bump -- see this file's module header and
-    // isDevDependenciesOnlyRewrite()'s own header).
+    // isDevDependenciesOnlyRewrite()'s own header). Also cross-checked
+    // against the real manifest (re-review,
+    // https://github.com/clossys/foundry/pull/1353#issuecomment-5803457726
+    // should-fix, closed here): an earlier round only proved this entry
+    // was an internally-consistent devDependencies-only diff, never that
+    // its rewritten range actually matched the manifest's own -- a
+    // lockfile left at the stale range while the manifest was correctly
+    // rewritten (or the reverse) both passed.
     if (isDevDependencyOnlyWorkspaceEntry) {
       if (!baseEntry || typeof baseEntry !== "object" || !headEntry || typeof headEntry !== "object") return false;
       if (baseEntry.version !== headEntry.version) return false;
+
+      const name = typeof headEntry.name === "string" ? headEntry.name : undefined;
+      if (!name || !Object.prototype.hasOwnProperty.call(devDependencyOnlyManifestsByName, name)) return false;
+      const manifestInfo = devDependencyOnlyManifestsByName[name];
+      if (headEntry.version !== manifestInfo.version) return false;
+      if (!isSameDependencyMapIgnoringKeyOrder(headEntry.devDependencies, manifestInfo.devDependencies)) return false;
+
       const { devDependencies: baseDevDependencies, ...baseEntryRest } = baseEntry;
       const { devDependencies: headDevDependencies, ...headEntryRest } = headEntry;
       if (!isAllowedDependencyRangeChange(baseDevDependencies, headDevDependencies, bumpedVersionsByName)) return false;
@@ -632,71 +692,120 @@ export function isLockfilePureVersionBump(baseText, headText, bumpedPackageDirs,
   return true;
 }
 
-// The newly inserted CHANGELOG section's own text -- everything from the
-// top of `headText` up to (not including) the SECOND top-level "## "
-// heading, which is where the base text's own first (untouched) entry
-// begins once isChangelogPureNewSection() has already proven the head is
-// the base with exactly one new section prepended. If there is at most one
-// "## " heading at all (a brand-new file, or one whose base had no
-// existing entry), the ENTIRE text is "the new section". Used only to
-// cross-check a deleted changeset's own summary actually landed as a
-// bullet here -- see isChangesetDeletionLegitimate()'s own header.
-function extractNewestChangelogSection(headText) {
-  if (typeof headText !== "string") return "";
-  const headingRe = /^##[ \t].*$/gm;
-  const matches = [...headText.matchAll(headingRe)];
-  if (matches.length < 2) return headText;
-  return headText.slice(0, matches[1].index);
-}
-
 /**
  * Was this deleted `.changesets/<slug>.md` file (its content AT BASE,
- * before deletion) actually CONSUMED by this diff -- every package it
- * names not merely bumped SOMEWHERE in this diff, but bumped WITH this
- * changeset's own summary landing in that package's new CHANGELOG
- * section? Parses `baseContent` with scripts/collect-changesets.mjs's own
+ * before deletion) at least a CANDIDATE for legitimate consumption --
+ * every package it names is a member of `bumpedPackageDirs`? Parses
+ * `baseContent` with scripts/collect-changesets.mjs's own
  * `parseChangesetText()` (reused, not reimplemented -- the SAME rules
  * that gate what a changeset is allowed to say at all). A changeset that
- * fails to parse at all, that names zero packages, that names even ONE
- * package outside the bumped set, or that names a package whose new
- * CHANGELOG section does not actually contain this changeset's own
- * summary text, is not a legitimate deletion.
+ * fails to parse at all, that names zero packages, or that names even ONE
+ * package outside the bumped set, is refused outright here.
  *
- * WHY MEMBERSHIP IN `bumpedPackageDirs` ALONE WAS NOT ENOUGH (re-review,
- * https://github.com/clossys/foundry/pull/1353#issuecomment-5803457726 item 4)
+ * THIS ALONE DOES NOT PROVE THE CHANGESET WAS ACTUALLY CONSUMED (re-review,
+ * https://github.com/clossys/foundry/pull/1353#issuecomment-5803854341 --
+ * membership is necessary but not sufficient)
  * -------------------------------------------------------------------------
  * `bumpedPackageDirs` includes EVERY package whose version changed in this
- * diff for ANY reason -- a package named by its own real changeset, but
- * also a package bumped ONLY as a dependent-only patch (issue #1332),
- * which never consumes any changeset at all (its `changesetFiles` is
- * always empty on the producer side). A still-pending, genuinely unrelated
- * changeset that HAPPENS to name a dependent-only-bumped package (e.g. a
- * stale `consumer: patch` changeset nobody ever consumed, sitting in
- * `.changesets/` while `consumer` gets bumped anyway as a side effect of a
- * sibling's release) could be deleted alongside a legitimate release and
- * pass the OLD membership-only check, discarding someone else's still-
- * pending change with no trace of it ever having been consumed --
- * `consumer`'s real new CHANGELOG section only ever contains the
- * auto-generated "Updated dependency ..." bullet, never that changeset's
- * own summary. `changelogSectionsByDir` (built by evaluateReleasePrFootprint()
- * below from the SAME CHANGELOG.md files it already validates, before any
- * changeset in the diff is checked) closes this: a deletion is legitimate
- * only when the changeset's summary is actually present in every named
- * package's new section, proving this SPECIFIC changeset -- not merely
- * some fact about that package's version -- is what the diff consumed.
+ * diff for ANY reason, so membership alone cannot distinguish a genuinely
+ * consumed changeset from an unrelated, still-pending one that merely
+ * happens to name a package this diff also bumped for some other reason.
+ * An earlier round closed part of that gap with a SUBSTRING check against
+ * the package's new CHANGELOG section (`section.includes(summary)`) --
+ * itself spoofable (an identical-summary duplicate, a short summary that
+ * is a substring of the real bullet, or the producer's own auto-generated
+ * "Updated dependency ..." text reused verbatim as a fake summary all
+ * passed). The real proof now lives in
+ * reconstructExpectedChangelogText() below, called once per bumped
+ * package from evaluateReleasePrFootprint(): it REBUILDS that package's
+ * entire new CHANGELOG section, byte for byte, from EVERY deleted
+ * changeset in this diff naming that package (using
+ * apply-release-changesets.mjs's own `prependChangelogEntry()`, never a
+ * second implementation) and requires an EXACT match against the real
+ * diff. Including an illegitimate changeset in that set -- a duplicate
+ * summary, a spoofed fragment, anything not genuinely part of the real
+ * release -- changes the reconstructed bullet list and breaks the exact
+ * match, refusing the WHOLE diff (the same "any single non-conforming
+ * aspect fails everything" discipline this module uses throughout, not a
+ * per-changeset accept/reject). This function's membership check remains
+ * the fail-closed first line: a changeset naming a package OUTSIDE the
+ * bumped set is refused immediately, before reconstruction is ever
+ * attempted for anything.
  */
-export function isChangesetDeletionLegitimate(baseContent, bumpedPackageDirs, changelogSectionsByDir = {}) {
+export function isChangesetDeletionLegitimate(baseContent, bumpedPackageDirs) {
   if (typeof baseContent !== "string") return false;
   const result = parseChangesetText(baseContent, {});
   if (result.error) return false;
   const names = Object.keys(result.packages);
   if (names.length === 0) return false;
   const bumpedSet = new Set(bumpedPackageDirs ?? []);
-  if (!names.every((name) => bumpedSet.has(name))) return false;
-  return names.every((name) => {
-    const section = changelogSectionsByDir[name];
-    return typeof section === "string" && section.includes(result.summary);
-  });
+  return names.every((name) => bumpedSet.has(name));
+}
+
+// Extracts the `date` half of the newly inserted section's OWN heading
+// line ("## <version> - <date>", exactly what prependChangelogEntry()
+// writes) from `headText`. reconstructExpectedChangelogText() below has
+// no independent notion of "today" -- it reads the date the diff itself
+// already committed to and reconstructs against THAT, the same way it
+// reads `newVersion` from the manifest rather than guessing. `null` if no
+// heading for `newVersion` is found at all -- the caller then knows
+// reconstruction cannot even start, which itself becomes a refusal.
+function extractChangelogDate(headText, newVersion) {
+  if (typeof headText !== "string") return null;
+  const escapedVersion = newVersion.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const match = new RegExp(`^## ${escapedVersion} - (.+)$`, "m").exec(headText);
+  return match ? match[1] : null;
+}
+
+/**
+ * Rebuilds the EXACT bytes a bumped package's new CHANGELOG.md entry
+ * should be, using apply-release-changesets.mjs's OWN
+ * `prependChangelogEntry()` (imported, never reimplemented -- so this
+ * check and the producer that writes real releases can never quietly
+ * disagree about what a legitimate entry looks like), from:
+ *
+ *   - `ownBullets`: every DELETED changeset in this diff that names
+ *     `dir` (already proven, by isChangesetDeletionLegitimate() above, to
+ *     name only bumped packages), sorted by FILE NAME -- the identical
+ *     order scripts/collect-changesets.mjs's own loadChangesets() sorts
+ *     changeset entries in, which is the order the real producer
+ *     concatenates their summaries in;
+ *   - `breakingBullets`: the same changesets' own summaries, filtered to
+ *     `bump === "major"`;
+ *   - dependency-update bullets ("Updated dependency <name> to <range>"),
+ *     derived from comparing `dir`'s own base and head manifest
+ *     `dependencies`/`peerDependencies`/`optionalDependencies` maps field
+ *     by field, in that order, and by each field's own head-side key
+ *     order -- NEVER `devDependencies`, which never produces a bullet at
+ *     all (see this module's header on devDependencies);
+ *   - `date`, read from the diff's own new heading via
+ *     extractChangelogDate() above, not computed independently.
+ *
+ * Returns the reconstructed text, or `null` if reconstruction cannot even
+ * be attempted (no matching heading in `headText` at all) -- the caller
+ * treats a `null` result, or any mismatch against the real `headText`,
+ * identically: a refusal. See isChangesetDeletionLegitimate()'s own
+ * header for why a byte-for-byte rebuild, not a text-containment check,
+ * is what proves a changeset was genuinely consumed.
+ */
+function reconstructExpectedChangelogText({ status, baseText, headText, newVersion, deletedChangesetsForDir, baseManifestJson, headManifestJson }) {
+  const date = extractChangelogDate(headText, newVersion);
+  if (date === null) return null;
+
+  const ownBullets = deletedChangesetsForDir.map((c) => c.summary);
+  const breakingBullets = deletedChangesetsForDir.filter((c) => c.bump === "major").map((c) => c.summary);
+
+  const dependencyUpdateBullets = [];
+  for (const section of DEPENDENCY_RANGE_SECTIONS) {
+    const baseMap = (baseManifestJson && typeof baseManifestJson[section] === "object" && baseManifestJson[section]) || {};
+    const headMap = (headManifestJson && typeof headManifestJson[section] === "object" && headManifestJson[section]) || {};
+    for (const name of Object.keys(headMap)) {
+      if (baseMap[name] !== headMap[name]) dependencyUpdateBullets.push(`Updated dependency ${name} to ${headMap[name]}`);
+    }
+  }
+
+  const bullets = [...ownBullets, ...dependencyUpdateBullets];
+  return prependChangelogEntry(status === "added" ? null : baseText, { version: newVersion, date, bullets, breakingBullets });
 }
 
 /**
@@ -749,6 +858,11 @@ export function evaluateReleasePrFootprint({ files }) {
   // Built from the SAME parsed headJson this loop already validated as a
   // legitimate single-step bump -- never trusted from the lockfile itself.
   const bumpedManifestsByName = {};
+  // dir -> { baseJson, headJson } for every BUMPED packages/<dir>/package.json
+  // -- reconstructExpectedChangelogText() below reads dependency-map
+  // changes straight from these, the SAME parsed JSON this loop already
+  // validated, rather than re-parsing or trusting anything derived.
+  const manifestJsonByDir = {};
   // packages/<dir>/package.json files that did NOT bump their own version
   // -- deferred rather than refused immediately, because a package.json in
   // this SHAPE is legal for exactly one reason (a devDependencies-only
@@ -778,6 +892,7 @@ export function evaluateReleasePrFootprint({ files }) {
       continue;
     }
     bumpedVersions[match[1]] = headVersion;
+    manifestJsonByDir[match[1]] = { baseJson, headJson };
     if (typeof headJson.name === "string" && headJson.name.length > 0) {
       bumpedVersionsByName[headJson.name] = headVersion;
       bumpedManifestsByName[headJson.name] = {
@@ -806,6 +921,13 @@ export function evaluateReleasePrFootprint({ files }) {
   // below so a NON-bumped workspace entry's lockfile record is allowed the
   // identical devDependencies-only exception.
   const devDependencyOnlyDirs = new Set();
+  // name -> { version, devDependencies } for every devDependencies-only
+  // rewritten package -- threaded into isLockfilePureVersionBump() below so
+  // a NON-bumped workspace entry's lockfile record is cross-checked against
+  // the real manifest too, not merely proven internally consistent
+  // (re-review, https://github.com/clossys/foundry/pull/1353#issuecomment-5803457726
+  // should-fix, closed here).
+  const devDependencyOnlyManifestsByName = {};
   for (const { file, dir } of unbumpedManifestFiles) {
     if (!isDevDependenciesOnlyRewrite(file.baseContent, file.headContent, bumpedVersionsByName)) {
       return {
@@ -814,6 +936,10 @@ export function evaluateReleasePrFootprint({ files }) {
       };
     }
     devDependencyOnlyDirs.add(dir);
+    const headJson = JSON.parse(file.headContent); // already proven valid JSON by isDevDependenciesOnlyRewrite() above
+    if (typeof headJson.name === "string" && headJson.name.length > 0) {
+      devDependencyOnlyManifestsByName[headJson.name] = { version: headJson.version, devDependencies: headJson.devDependencies };
+    }
   }
 
   for (const file of files) {
@@ -825,18 +951,28 @@ export function evaluateReleasePrFootprint({ files }) {
     }
   }
 
-  // Built BEFORE the main per-file loop below, purely so a `.changesets/*.md`
-  // deletion can be cross-checked against its named package's new CHANGELOG
-  // section regardless of which order `files` lists them in -- see
-  // isChangesetDeletionLegitimate()'s own header, "WHY MEMBERSHIP IN
-  // `bumpedPackageDirs` ALONE WAS NOT ENOUGH". Each CHANGELOG.md's own
-  // shape is still fully validated (unchanged) in the main loop below; this
-  // pass only extracts the newly inserted section's raw text.
-  const changelogSectionsByDir = {};
-  for (const file of files) {
-    const changelogMatch = RELEASE_PR_FILE_PATTERNS.changelog.exec(file.path);
-    if (!changelogMatch) continue;
-    changelogSectionsByDir[changelogMatch[1]] = extractNewestChangelogSection(file.headContent);
+  // Built BEFORE the main per-file loop below, so a CHANGELOG.md's
+  // reconstruction check (below) can see every deleted changeset naming
+  // its package regardless of which order `files` lists them in. Sorted by
+  // FILE NAME first -- the identical order scripts/collect-changesets.mjs's
+  // own loadChangesets() sorts entries in, and therefore the order the real
+  // producer concatenates summaries in -- THEN grouped by named directory.
+  // A changeset that fails to parse, or names a package outside the bumped
+  // set, is left out here; isChangesetDeletionLegitimate() in the main loop
+  // below still refuses that specific file on its own account.
+  const deletedChangesetsByDir = {};
+  const deletedChangesetFiles = files
+    .filter((f) => RELEASE_PR_FILE_PATTERNS.changeset.test(f.path) && f.status === "removed")
+    .map((f) => ({ file: f, name: f.path.slice(f.path.lastIndexOf("/") + 1) }))
+    .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+  for (const { file, name } of deletedChangesetFiles) {
+    if (typeof file.baseContent !== "string") continue;
+    const result = parseChangesetText(file.baseContent, {});
+    if (result.error) continue;
+    for (const [dir, bump] of Object.entries(result.packages)) {
+      if (!Object.prototype.hasOwnProperty.call(bumpedVersions, dir)) continue;
+      (deletedChangesetsByDir[dir] ??= []).push({ file: name, summary: result.summary, bump });
+    }
   }
 
   for (const file of files) {
@@ -851,12 +987,32 @@ export function evaluateReleasePrFootprint({ files }) {
       if (!isChangelogPureNewSection(file.status === "added" ? null : file.baseContent, file.headContent, expectedVersion)) {
         return { ok: false, reason: `"${file.path}" is not exactly one new "${expectedVersion}" section, cleanly inserted at the top` };
       }
+      // THE STRONGER PROOF (re-review, https://github.com/clossys/foundry/pull/1353#issuecomment-5803854341):
+      // isChangelogPureNewSection() above proves the SHAPE is clean; this
+      // proves the CONTENT is exactly what this diff's own consumed
+      // changesets and dependency-range rewrites should have produced --
+      // see reconstructExpectedChangelogText()'s own header.
+      const expectedChangelog = reconstructExpectedChangelogText({
+        status: file.status,
+        baseText: file.baseContent,
+        headText: file.headContent,
+        newVersion: expectedVersion,
+        deletedChangesetsForDir: deletedChangesetsByDir[dir] ?? [],
+        baseManifestJson: manifestJsonByDir[dir]?.baseJson,
+        headManifestJson: manifestJsonByDir[dir]?.headJson,
+      });
+      if (expectedChangelog === null || expectedChangelog !== file.headContent) {
+        return {
+          ok: false,
+          reason: `"${file.path}" does not byte-for-byte match the CHANGELOG entry reconstructed from this diff's own consumed changesets and dependency-range rewrites`,
+        };
+      }
       continue;
     }
 
     if (RELEASE_PR_FILE_PATTERNS.lockfile.test(file.path)) {
       if (file.status !== "modified") return { ok: false, reason: `"${file.path}" has status "${file.status}" -- expected modified` };
-      if (!isLockfilePureVersionBump(file.baseContent, file.headContent, bumpedDirs, bumpedVersionsByName, bumpedManifestsByName, devDependencyOnlyDirs)) {
+      if (!isLockfilePureVersionBump(file.baseContent, file.headContent, bumpedDirs, bumpedVersionsByName, bumpedManifestsByName, devDependencyOnlyDirs, devDependencyOnlyManifestsByName)) {
         return { ok: false, reason: `"${file.path}" changes are not limited to the bumped workspace packages' version fields` };
       }
       continue;
@@ -864,8 +1020,8 @@ export function evaluateReleasePrFootprint({ files }) {
 
     if (RELEASE_PR_FILE_PATTERNS.changeset.test(file.path)) {
       if (file.status !== "removed") return { ok: false, reason: `"${file.path}" has status "${file.status}" -- only a deletion is legal` };
-      if (!isChangesetDeletionLegitimate(file.baseContent, bumpedDirs, changelogSectionsByDir)) {
-        return { ok: false, reason: `"${file.path}" does not name only packages this diff actually consumed it for (membership in the bumped set alone is not enough -- see isChangesetDeletionLegitimate()'s own header)` };
+      if (!isChangesetDeletionLegitimate(file.baseContent, bumpedDirs)) {
+        return { ok: false, reason: `"${file.path}" does not name only packages bumped in this diff` };
       }
       continue;
     }

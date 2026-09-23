@@ -106,8 +106,12 @@ branch or shaping a file list:
    change, but only to exactly `^<newVersion>`, and only when it names a
    package this SAME diff's own package.json changes prove was actually
    bumped to that version — a range change naming a non-bumped package, a
-   wrong version, an added or removed entry, a `devDependencies` change, or
-   a reordered dependency map all still fail. This is what lets a release
+   wrong version, an added or removed entry, or a reordered dependency map
+   all still fail. (A `devDependencies` change is now ALSO covered by this
+   same exception, alongside `dependencies`/`peerDependencies`/
+   `optionalDependencies` — see [Four defects fixed by independent review
+   of PR #1353](#four-defects-fixed-by-independent-review-of-pr-1353),
+   item 3, below.) This is what lets a release
    PR rewrite a sibling's now-out-of-range `^0.N.0` dependency in the same
    commit as that sibling's own dependent patch bump, without opening the
    check up to anything wider.
@@ -340,10 +344,10 @@ owner-approved out-of-band minor, its dependent's in-band patch bump and
 range rewrite, and an unrelated ordinary changeset for a third package left
 untouched).
 
-### Four defects fixed by independent review of PR #1353
+### Five defects fixed by independent review of PR #1353
 
 A fresh, blind reviewer of PR #1353 (composing #1316 + #1338/#1339) found
-four real defects this composition inherited or introduced, all fixed in
+five real defects this composition inherited or introduced, all fixed in
 the same round — https://github.com/clossys/foundry/pull/1353#issuecomment-5803457726:
 
 1. **A changeset naming several packages crashed the write phase.**
@@ -391,10 +395,10 @@ the same round — https://github.com/clossys/foundry/pull/1353#issuecomment-580
    all, so an unrelated, genuinely still-pending changeset that happened
    to also name that package could be deleted alongside a legitimate
    release, discarding someone else's pending change with no trace of it
-   ever being consumed. Fixed by cross-checking that the deleted
-   changeset's own summary text actually landed in every named package's
-   new CHANGELOG section, not merely that the package's version changed
-   for some reason.
+   ever being consumed. That round's fix (a substring check against the
+   package's new CHANGELOG section) was itself found spoofable one round
+   later — see [Three more blocking defects](#three-more-blocking-defects-fixed-by-a-second-independent-review-round)
+   below, item 1, for the real fix.
 5. **A CHANGELOG with a title but no releases yet was rejected even when
    the producer's own output was correct.** `isChangelogPureNewSection()`
    assumed a brand-new entry is inserted at exactly `base.length` when no
@@ -413,6 +417,82 @@ on a stale pin. It fails closed today (the structural footprint check
 refuses the resulting lockfile shape) and is not reachable with this
 repository's current package graph — see #1377 for the fix (iterate the
 scan to a fixpoint) and the full reachability analysis.
+
+### Three more blocking defects, fixed by a second independent review round
+
+A second, fresh blind review round — https://github.com/clossys/foundry/pull/1353#issuecomment-5803854341
+and https://github.com/clossys/foundry/pull/1353#issuecomment-5803894960 —
+ran the composed producer end to end on a copy of this repository's real
+`packages/` and `package-lock.json`, with real `npm install
+--package-lock-only`, and found three more blocking defects (plus several
+cheap should-fix items) that a synthetic fixture alone had not surfaced:
+
+1. **The item-4 substring check above was itself spoofable.**
+   `isChangesetDeletionLegitimate()`'s `section.includes(summary)` accepted
+   ANY deleted changeset whose summary was a substring of (or identical
+   to) something already in the real CHANGELOG section — including the
+   producer's own auto-generated "Updated dependency ..." bullet text
+   reused verbatim as a fake summary, or a duplicate of the real consumed
+   changeset's own summary. Fixed by REBUILDING each bumped package's
+   entire new CHANGELOG section, byte for byte, using
+   `apply-release-changesets.mjs`'s own `prependChangelogEntry()` (never a
+   second implementation) from every deleted changeset naming that
+   package plus the dependency-range-rewrite bullets derived from the
+   manifest diff, and requiring an EXACT match against the real diff — an
+   illegitimate extra changeset changes the bullet list (a duplicate line,
+   an extra fragment) and always breaks that match. `isChangesetDeletionLegitimate()`
+   itself is back to a plain membership check; the real proof now lives in
+   `reconstructExpectedChangelogText()`.
+2. **The lockfile-to-manifest cross-check (item 2, previous round) was
+   key-order sensitive.** `npm install --package-lock-only` writes a
+   lockfile workspace entry's dependency maps in SORTED key order,
+   regardless of the source package.json's own declaration order — this
+   repository's own real `packages/publisher` (`dependencies`,
+   `devDependencies`) and `packages/designer` (`peerDependencies`) both
+   declare theirs unsorted. Comparing with `JSON.stringify` made every
+   real release that bumps either package fail the footprint check
+   outright. Fixed with a key-order-INSENSITIVE comparison for this one
+   cross-check specifically (the lockfile's own base-vs-head rewrite check
+   stays key-order sensitive, on purpose, exactly as before).
+3. **`--json` output was mixed with real npm's own stdout.**
+   `runNpmInstall`'s default implementation used `stdio: "inherit"`, so
+   npm's own chatter ("up to date, audited N packages...") interleaved
+   into the SAME stdout stream `--json` writes its own output to --
+   `.github/workflows/release-pr.yml`'s `output="$(node ... --json)"; ...
+   JSON.parse(...)` then threw on every release that actually applied
+   something (already true on `main`, before this composition). Fixed by
+   sending npm's own stdout AND stderr to this process's stderr instead,
+   leaving stdout pure JSON.
+
+A fourth, non-blocking finding from the same round: `.github/workflows/
+release-pr.yml`'s Saturday guard counted ANY `claude/release-*` branch on
+the remote as "a release in progress," including ordinary agent feature
+branches that merely share the prefix -- fixed with `scripts/lib/release-
+calendar.mjs`'s new `filterReleasePrBranchRefs()`, filtered against the
+same `RELEASE_PR_BRANCH_PATTERN` the rest of this module already uses as
+its single source of truth.
+
+Also closed as cheap should-fix items from both rounds: the lockfile
+cross-check now also covers a devDependencies-only rewrite's own entry
+(previously proven only internally consistent, never against the real
+manifest); a `node_modules/<name>` link entry's own `version` field, if it
+has one at all, must now match the real workspace entry it resolves to,
+never an arbitrary value; and `.github/workflows/release-calendar.yml`'s
+`pull_request` trigger now includes `labeled`/`unlabeled`, so an
+owner-applied `release:out-of-band` label (or `gh pr create --label`'s own
+second API call) re-runs the check instead of leaving a stale verdict from
+the PR's `opened` event.
+
+**Not changed, deliberately:** the reviewer also noted that
+`evaluateReleaseCalendarGate()`'s `release:out-of-band` label exemption
+skips footprint verification entirely, even for an ordinary Saturday run
+that merely happens to consume an out-of-band-flagged changeset alongside
+its normal batch. That exemption is a cited, documented owner decision (see
+[Out-of-band releases](#out-of-band-releases) above, and the calendar gate
+test named for it) — not a defect introduced by this composition — and
+changing it would be a real calendar-semantics change, which this PR's own
+standing instruction is to leave alone. Left as a residual, non-blocking,
+documented risk for the owner to decide on separately.
 
 ## How a release actually happens
 

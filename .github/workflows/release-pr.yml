@@ -142,21 +142,30 @@ jobs:
           # there is a real window where the branch exists and no PR is
           # open for it yet. Checking open PRs alone would read that window
           # as "nothing in progress" and push a SECOND release branch the
-          # very next day. `claude/release-*` is this workflow's own
-          # branch-naming convention (informational, not a trust boundary
-          # -- see scripts/lib/release-calendar.mjs's header for why this
-          # naming is never used to PROVE anything, only to ask "does one
-          # already exist").
-          branch_count="$(git ls-remote --heads origin 'claude/release-*' | wc -l | tr -d ' ')"
-          proceed="$(OPEN_COUNT="$open_count" BRANCH_COUNT="$branch_count" node --input-type=module -e '
-            import { loadReleaseCalendar, shouldOpenReleasePr } from "./scripts/lib/release-calendar.mjs";
+          # very next day.
+          #
+          # `git ls-remote --heads origin 'claude/release-*'` is a coarse,
+          # SERVER-SIDE prefilter only -- it also matches any OTHER
+          # `claude/release-...` branch this repository's own agent
+          # workflow happens to name that way (a feature branch, not a
+          # release branch at all -- re-review,
+          # https://github.com/clossys/foundry/pull/1353#issuecomment-5803894960
+          # blocking item 3). `filterReleasePrBranchRefs()` (`scripts/lib/
+          # release-calendar.mjs`) is the single source of truth for
+          # narrowing that down to real release-PR branches, per
+          # `RELEASE_PR_BRANCH_PATTERN` -- see that function's own header.
+          branch_refs="$(git ls-remote --heads origin 'claude/release-*')"
+          proceed="$(OPEN_COUNT="$open_count" BRANCH_REFS="$branch_refs" node --input-type=module -e '
+            import { loadReleaseCalendar, shouldOpenReleasePr, filterReleasePrBranchRefs } from "./scripts/lib/release-calendar.mjs";
             const calendar = loadReleaseCalendar(process.cwd());
-            const hasReleaseInProgress = Number(process.env.OPEN_COUNT) > 0 || Number(process.env.BRANCH_COUNT) > 0;
+            const matchingBranches = filterReleasePrBranchRefs(process.env.BRANCH_REFS);
+            console.error(`matched ${matchingBranches.length} real release-PR branch(es) among the claude/release-* candidates on the remote`);
+            const hasReleaseInProgress = Number(process.env.OPEN_COUNT) > 0 || matchingBranches.length > 0;
             console.log(shouldOpenReleasePr({ now: new Date(), calendar, hasReleaseInProgress }));
           ')"
           echo "proceed=$proceed" >> "$GITHUB_OUTPUT"
           if [ "$proceed" != "true" ]; then
-            echo "Not proceeding today: release day is Saturday, calendar timezone America/Los_Angeles (governance/release-calendar.json); currently open release:weekly PR(s): $open_count; pushed claude/release-* branch(es): $branch_count."
+            echo "Not proceeding today: release day is Saturday, calendar timezone America/Los_Angeles (governance/release-calendar.json); currently open release:weekly PR(s): $open_count."
           fi
 
       # Refuses (exit 2) rather than run against a malformed changeset, and

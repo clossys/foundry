@@ -58,7 +58,18 @@ name: Release calendar
 # which refuses the exemption outright rather than judging an incomplete
 # read as if it were the whole truth.
 on:
-  pull_request: {}
+  # `labeled`/`unlabeled` alongside the default types (should-fix,
+  # re-review, https://github.com/clossys/foundry/pull/1353#issuecomment-5803894960):
+  # `gh pr create --label` applies a label in a SECOND API call after the
+  # PR's own `opened` event already fired, and an owner applying
+  # `release:out-of-band` later (the whole point of that label -- see
+  # docs/RELEASING.md's out-of-band section) is *also* a label change with
+  # no new push. Without these two types, this check keeps showing
+  # whatever verdict it computed at `opened`/`synchronize` time, stale,
+  # until some other push re-triggers it -- exactly during the report-only
+  # rollout week this repeatedly needs to be watched.
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
   merge_group: {}
 
 permissions:

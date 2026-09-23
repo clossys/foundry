@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { dayTypeFor, evaluateReleaseCalendarGate, nextMergeWindowStart, shouldOpenReleasePr, zonedDateParts } from "./release-calendar.mjs";
+import { dayTypeFor, evaluateReleaseCalendarGate, filterReleasePrBranchRefs, nextMergeWindowStart, shouldOpenReleasePr, zonedDateParts } from "./release-calendar.mjs";
 
 const TZ = "America/Los_Angeles";
 
@@ -136,4 +136,41 @@ test("shouldOpenReleasePr: false on any non-Saturday day, regardless of in-progr
   const wednesday = new Date(Date.UTC(2026, 0, 7, 20, 0, 0));
   assert.equal(shouldOpenReleasePr({ now: sunday, calendar: CALENDAR, hasReleaseInProgress: false }), false);
   assert.equal(shouldOpenReleasePr({ now: wednesday, calendar: CALENDAR, hasReleaseInProgress: false }), false);
+});
+
+// -------------------------------------------------- filterReleasePrBranchRefs
+//
+// Fix, re-review, https://github.com/clossys/foundry/pull/1353#issuecomment-5803894960
+// blocking item 3: .github/workflows/release-pr.yml's Saturday guard used
+// to count EVERY `claude/release-*` branch `git ls-remote` returned as "a
+// release in progress" -- including ordinary agent feature branches that
+// merely happen to start with that prefix, never a real release-PR
+// branch. Two real ones (`claude/release-footprint-dependent-ranges` from
+// #1339, and `claude/release-readiness-tracked-only-v2` from closed #1330)
+// were both on the remote at the time this was found.
+
+test("filterReleasePrBranchRefs: a real release-PR branch ref is matched", () => {
+  const refs = "abc123\trefs/heads/claude/release-2027-01-09-12\n";
+  assert.deepEqual(filterReleasePrBranchRefs(refs), ["claude/release-2027-01-09-12"]);
+});
+
+test("ADVERSARIAL filterReleasePrBranchRefs: an ordinary agent feature branch that merely starts with claude/release- is NOT matched", () => {
+  const refs = ["def456\trefs/heads/claude/release-footprint-dependent-ranges", "ghi789\trefs/heads/claude/release-readiness-tracked-only-v2"].join("\n");
+  assert.deepEqual(filterReleasePrBranchRefs(refs), []);
+});
+
+test("filterReleasePrBranchRefs: a mix of real release-PR branches and unrelated agent branches keeps only the real ones", () => {
+  const refs = [
+    "abc123\trefs/heads/claude/release-2027-01-09-12",
+    "def456\trefs/heads/claude/release-footprint-dependent-ranges",
+    "ghi789\trefs/heads/claude/release-2027-01-16-3",
+    "jkl012\trefs/heads/claude/release-readiness-tracked-only-v2",
+  ].join("\n");
+  assert.deepEqual(filterReleasePrBranchRefs(refs), ["claude/release-2027-01-09-12", "claude/release-2027-01-16-3"]);
+});
+
+test("filterReleasePrBranchRefs: empty, missing, or malformed input returns no matches rather than throwing", () => {
+  assert.deepEqual(filterReleasePrBranchRefs(""), []);
+  assert.deepEqual(filterReleasePrBranchRefs(undefined), []);
+  assert.deepEqual(filterReleasePrBranchRefs("not a git ls-remote line at all\n"), []);
 });

@@ -110,7 +110,10 @@ test("passes a real release-shaped diff on release day -- label AND a verified f
     const base = gitCommit(root, "base");
 
     writeManifest(pkgDir, { name: "@x/alpha", version: "1.0.1" });
-    writeFileSync(join(pkgDir, "CHANGELOG.md"), "# Changelog\n\n## 1.0.1\n\n- Fix a bug.\n\n## 1.0.0\n\n- Initial release.\n");
+    // The heading needs a " - <date>" suffix and the exact consumed
+    // changeset's own bullet -- evaluateReleasePrFootprint() now rebuilds
+    // this byte for byte (re-review, https://github.com/clossys/foundry/pull/1353#issuecomment-5803854341).
+    writeFileSync(join(pkgDir, "CHANGELOG.md"), "# Changelog\n\n## 1.0.1 - 2026-01-10\n\n- Fix a bug.\n\n## 1.0.0\n\n- Initial release.\n");
     rmSync(join(root, ".changesets", "alpha-fix.md"));
     const head = gitCommit(root, "release");
 
