@@ -70,7 +70,33 @@
 // once a retained, matching record exists for the exact package@version a
 // deferral names, the deferral is stale and must be removed (see
 // `stale-deferral` below), the same way check-package-evidence.mjs's
-// `stale-gap` finding forces a satisfied gap out of the file.
+// `stale-gap` finding forces a satisfied gap out of the file. This check is
+// FOR ANY VERSION a deferral names, not only whichever version happens to be
+// current in packages/<key>/package.json right now — a deferral for an
+// already-superseded old version is exactly as satisfiable, and exactly as
+// much of a hazard left unremoved, as one for the current version (issue
+// #1187, item 4). checkStaleDeferrals() below deliberately calls
+// qualificationRecordRetainedForVersion() rather than
+// qualificationRecordPresenceForCandidate() for this reason: the latter
+// recomputes digests from the live WORKTREE, which only describes the
+// package's CURRENT version, so it silently could never answer "present" for
+// an old, superseded one — masking precisely the satisfied-but-unremoved
+// deferral this check exists to catch.
+//
+// DUPLICATE DEFERRALS
+// --------------------
+// Two deferral files that both claim the same package@version — most often
+// left behind by a manual merge-conflict resolution that kept a stray copy
+// under a second filename instead of reconciling to one (issue #1187, item
+// 4) — are exactly as much a hazard as a stale one: whichever file is read
+// last silently wins the lookup in evaluatePackage() below, so the other
+// looks abandoned even though it is still sitting on the tree making the
+// same acknowledgement. loadDeferrals() computes each file's
+// package@version key as soon as `package` and `version` are known valid —
+// before it even checks whether that file's OWN name matches its content —
+// so a duplicate is caught by `duplicate-deferral` regardless of which of
+// the two files (if either) happens to be named correctly for itself; see
+// readDeferralFile() below.
 //
 // ONE FILE PER DEFERRAL, NOT ONE SHARED ARRAY (issue #1254)
 // -----------------------------------------------------------
@@ -105,7 +131,7 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { evaluatePackageDiff } from "./check-release-readiness.mjs";
-import { qualificationRecordPresenceForCandidate } from "./check-qualification-record-present.mjs";
+import { qualificationRecordPresenceForCandidate, qualificationRecordRetainedForVersion } from "./check-qualification-record-present.mjs";
 
 const DEFERRALS_DIR = "governance/release-qualification-deferrals";
 const LEGACY_DEFERRALS_PATH = "governance/release-qualification-deferrals.json";
@@ -134,28 +160,44 @@ function discoverPackages() {
 // against the specific FILE that caused it, so one malformed file can never
 // hide the state of every other, already-valid deferral (a property the old
 // single-array file could not offer: one bad line broke the whole parse).
+//
+// Returns `{ entry, key, finding }`. `key` is the file's `package\0version`
+// pair, returned as soon as BOTH fields are known to be valid, independent
+// of whatever else this function goes on to find wrong with the file (a
+// missing reason, a missing issue, or — critically — a filename that does
+// not match). The caller (loadDeferrals() below) checks `key` for a
+// collision against every other file BEFORE it acts on `finding`, because a
+// duplicate can involve a file whose own name is *not* what its content
+// would imply (the realistic shape a manual merge-conflict resolution
+// leaves behind: a correctly-named original plus a stray, differently-named
+// copy with the same package@version inside it) — gating duplicate
+// detection on the filename check already having passed would make it
+// unreachable in exactly that case.
 function readDeferralFile(root, relPath) {
   const fileName = basename(relPath);
   let raw;
   try {
     raw = JSON.parse(readFileSync(resolve(root, relPath), "utf8"));
   } catch (error) {
-    return { entry: null, finding: { severity: "error", rule: "unreadable-deferral-file", subject: relPath, message: `not valid JSON: ${error instanceof Error ? error.message : String(error)}` } };
+    return { entry: null, key: null, finding: { severity: "error", rule: "unreadable-deferral-file", subject: relPath, message: `not valid JSON: ${error instanceof Error ? error.message : String(error)}` } };
   }
   if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
-    return { entry: null, finding: { severity: "error", rule: "unreadable-deferral-file", subject: relPath, message: "must be a JSON object with `package`, `version`, `reason`, and `issue`" } };
+    return { entry: null, key: null, finding: { severity: "error", rule: "unreadable-deferral-file", subject: relPath, message: "must be a JSON object with `package`, `version`, `reason`, and `issue`" } };
   }
   if (typeof raw.package !== "string" || raw.package === "") {
-    return { entry: null, finding: { severity: "error", rule: "unreadable-deferral", subject: relPath, message: "needs a string `package` naming its packages/ directory" } };
+    return { entry: null, key: null, finding: { severity: "error", rule: "unreadable-deferral", subject: relPath, message: "needs a string `package` naming its packages/ directory" } };
   }
   if (typeof raw.version !== "string" || raw.version === "") {
-    return { entry: null, finding: { severity: "error", rule: "deferral-without-version", subject: raw.package, message: `${relPath} needs a string \`version\` naming the exact bumped version being deferred` } };
+    return { entry: null, key: null, finding: { severity: "error", rule: "deferral-without-version", subject: raw.package, message: `${relPath} needs a string \`version\` naming the exact bumped version being deferred` } };
   }
+
+  const key = `${raw.package}\0${raw.version}`;
+
   if (typeof raw.reason !== "string" || raw.reason.trim().length < 20) {
-    return { entry: null, finding: { severity: "error", rule: "deferral-without-reason", subject: raw.package, message: `the deferral at "${raw.version}" (${relPath}) needs a reason saying why the record is deferred` } };
+    return { entry: null, key, finding: { severity: "error", rule: "deferral-without-reason", subject: raw.package, message: `the deferral at "${raw.version}" (${relPath}) needs a reason saying why the record is deferred` } };
   }
   if (!Number.isInteger(raw.issue)) {
-    return { entry: null, finding: { severity: "error", rule: "deferral-without-issue", subject: raw.package, message: `the deferral at "${raw.version}" (${relPath}) needs an integer \`issue\` tracking it` } };
+    return { entry: null, key, finding: { severity: "error", rule: "deferral-without-issue", subject: raw.package, message: `the deferral at "${raw.version}" (${relPath}) needs an integer \`issue\` tracking it` } };
   }
   // The filename is not load-bearing for lookups below (entries are keyed by
   // their own `package`/`version` fields, the same as before) but it IS the
@@ -165,9 +207,9 @@ function readDeferralFile(root, relPath) {
   // from a different entry and only partly edited.
   const expectedFileName = `${raw.package}@${raw.version}.json`;
   if (fileName !== expectedFileName) {
-    return { entry: null, finding: { severity: "error", rule: "deferral-file-name-mismatch", subject: raw.package, message: `${relPath} names package "${raw.package}" version "${raw.version}", so it must be called ${expectedFileName}` } };
+    return { entry: null, key, finding: { severity: "error", rule: "deferral-file-name-mismatch", subject: raw.package, message: `${relPath} names package "${raw.package}" version "${raw.version}", so it must be called ${expectedFileName}` } };
   }
-  return { entry: { package: raw.package, version: raw.version, reason: raw.reason, issue: raw.issue }, finding: null };
+  return { entry: { package: raw.package, version: raw.version, reason: raw.reason, issue: raw.issue }, key, finding: null };
 }
 
 // Loads every acknowledged deferral from governance/release-qualification-deferrals/,
@@ -214,29 +256,37 @@ function loadDeferrals(root) {
 
   const findings = [];
   const entries = [];
-  // Kept as defense in depth, not because it is reachable today: a file
-  // only becomes an `entry` once readDeferralFile() has already confirmed
-  // its filename equals `${package}@${version}.json` (deferral-file-name-
-  // mismatch otherwise), and two files cannot share a filename on any
-  // filesystem this repository runs on -- so two ENTRIES colliding on the
-  // same package@version key is not currently reachable through this loop.
-  // Left in so a future relaxation of that filename requirement does not
-  // silently reopen the exact hazard the old single-array file's own
-  // duplicate-deferral check existed to catch.
+  // Keyed on each file's OWN `package\0version` content — not on filename —
+  // so a duplicate is caught even when one (or both) of the colliding files
+  // is itself misnamed. A truly identical filename can never appear twice in
+  // one directory listing, so the only way two files reach this loop
+  // claiming the same package@version is with at least one of them NOT
+  // matching the `<package>@<version>.json` convention — exactly the shape a
+  // manual merge-conflict resolution leaves behind (issue #1187, item 4).
+  // Checking `key` before acting on `finding` (below) is what makes this
+  // reachable: readDeferralFile() computes `key` as soon as `package` and
+  // `version` are individually valid, before it even looks at the filename.
   const seen = new Map();
   for (const fileName of fileNames) {
     const relPath = `${DEFERRALS_DIR}/${fileName}`;
-    const { entry, finding } = readDeferralFile(root, relPath);
+    const { entry, key, finding } = readDeferralFile(root, relPath);
+    if (key !== null) {
+      if (seen.has(key)) {
+        const [pkg, version] = key.split("\0");
+        findings.push({
+          severity: "error",
+          rule: "duplicate-deferral",
+          subject: pkg,
+          message: `two deferral files both claim ${pkg}@${version}: ${seen.get(key)} and ${relPath} — remove one`,
+        });
+        continue;
+      }
+      seen.set(key, relPath);
+    }
     if (finding) {
       findings.push(finding);
       continue;
     }
-    const key = `${entry.package}\0${entry.version}`;
-    if (seen.has(key)) {
-      findings.push({ severity: "error", rule: "duplicate-deferral", subject: entry.package, message: `two deferral files declare version "${entry.version}": ${seen.get(key)} and ${relPath}` });
-      continue;
-    }
-    seen.set(key, relPath);
     entries.push(entry);
   }
   return { entries, findings };
@@ -259,7 +309,19 @@ function candidateForDeferral(root, entry) {
 }
 
 // Re-checks every declared deferral against the record store, independent of
-// this run's diffed target set — see STALE DEFERRALS above.
+// this run's diffed target set — see STALE DEFERRALS above. Deliberately
+// uses qualificationRecordRetainedForVersion(), NOT
+// qualificationRecordPresenceForCandidate(): a deferral names an OLD version
+// the package has typically already moved past, and
+// qualificationRecordPresenceForCandidate() answers "does the record still
+// match the CURRENT worktree" — a question with no meaningful answer for a
+// version that isn't current, since the worktree describes a different
+// candidate entirely. Using it here made this loop functionally unable to
+// ever report "present" for anything but the current version, which is the
+// exact gap issue #1187 (item 4) named: a satisfied deferral for an OLD
+// version stayed unflagged. See qualificationRecordRetainedForVersion()'s
+// own doc comment in check-qualification-record-present.mjs for the full
+// reasoning.
 function checkStaleDeferrals(root, entries) {
   const findings = [];
   for (const entry of entries) {
@@ -273,7 +335,7 @@ function checkStaleDeferrals(root, entries) {
       });
       continue;
     }
-    const presence = qualificationRecordPresenceForCandidate({ root, candidate });
+    const presence = qualificationRecordRetainedForVersion({ root, candidate });
     if (presence.state === "present") {
       findings.push({
         severity: "error",

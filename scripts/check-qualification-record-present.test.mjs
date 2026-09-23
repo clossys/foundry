@@ -4,7 +4,7 @@ import { execFileSync } from "node:child_process";
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, cpSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { qualificationRecordPresence } from "./check-qualification-record-present.mjs";
+import { qualificationRecordPresence, qualificationRecordRetainedForVersion } from "./check-qualification-record-present.mjs";
 import { currentQualificationJoins } from "./lib/candidate-qualification.mjs";
 
 // The gate reads the real policy to derive a record's path, so a fixture root
@@ -258,6 +258,65 @@ test("is indeterminate, never a pass, when the current manifest digest cannot be
   );
   const result = qualificationRecordPresence({ root, packageKey: "writer" });
   assert.equal(result.state, "indeterminate");
+});
+
+// --- qualificationRecordRetainedForVersion() — used by
+// scripts/check-qualification-record-required.mjs's checkStaleDeferrals() to
+// re-check a DEFERRAL, which names a version the package has typically
+// already moved past. It deliberately asks a narrower question than
+// qualificationRecordPresence() above: not "does the record still match
+// what's on disk right now" (meaningless for an old version — the worktree
+// describes a different, later candidate), but "was a record ever retained
+// for this EXACT package@version." No WORKTREE recomputation, no
+// packages/<key>/package.json read at all — this is a pure lookup keyed on
+// the caller's own {name, version}.
+
+test("qualificationRecordRetainedForVersion: present when a record exists at the expected path and names this exact candidate", (t) => {
+  const root = fixtureRoot(t);
+  writeFileSync(
+    join(root, "governance/release-qualifications/clossys-writer-0.3.4.json"),
+    JSON.stringify({ candidate: { name: "@clossys/writer", version: "0.3.4", packageManifestSha256: "irrelevant-digest", packageTreeSha1: "irrelevant-digest" } }),
+  );
+  const result = qualificationRecordRetainedForVersion({ root, candidate: { name: "@clossys/writer", version: "0.3.4" } });
+  assert.equal(result.state, "present");
+  assert.equal(result.path, "governance/release-qualifications/clossys-writer-0.3.4.json");
+});
+
+test("qualificationRecordRetainedForVersion: present even though the record's digests do not match anything about the CURRENT package — no worktree recomputation happens", (t) => {
+  const root = fixtureRoot(t);
+  // No packages/writer manifest exists in this fixture at all — the package
+  // may have long since bumped to a different version. That must not matter:
+  // this function never reads packages/<key>/package.json or recomputes a
+  // digest, unlike qualificationRecordPresence()/qualificationRecordPresenceForCandidate().
+  writeFileSync(
+    join(root, "governance/release-qualifications/clossys-writer-0.3.4.json"),
+    JSON.stringify({ candidate: { name: "@clossys/writer", version: "0.3.4", packageManifestSha256: "stale-on-purpose", packageTreeSha1: "stale-on-purpose" } }),
+  );
+  const result = qualificationRecordRetainedForVersion({ root, candidate: { name: "@clossys/writer", version: "0.3.4" } });
+  assert.equal(result.state, "present");
+});
+
+test("qualificationRecordRetainedForVersion: missing when no record file exists at that version's path", (t) => {
+  const root = fixtureRoot(t);
+  const result = qualificationRecordRetainedForVersion({ root, candidate: { name: "@clossys/writer", version: "0.3.4" } });
+  assert.equal(result.state, "missing");
+  assert.equal(result.path, "governance/release-qualifications/clossys-writer-0.3.4.json");
+});
+
+test("qualificationRecordRetainedForVersion: indeterminate, never a false present, when the file at that path describes a different candidate", (t) => {
+  const root = fixtureRoot(t);
+  // Same path a "writer" 0.3.4 record would occupy, but its own declared
+  // candidate says otherwise — must not be trusted as evidence for writer@0.3.4.
+  writeFileSync(
+    join(root, "governance/release-qualifications/clossys-writer-0.3.4.json"),
+    JSON.stringify({ candidate: { name: "@clossys/writer", version: "0.3.5", packageManifestSha256: "x", packageTreeSha1: "y" } }),
+  );
+  const result = qualificationRecordRetainedForVersion({ root, candidate: { name: "@clossys/writer", version: "0.3.4" } });
+  assert.equal(result.state, "indeterminate");
+});
+
+test("qualificationRecordRetainedForVersion: indeterminate, never a pass, when no candidate is given", () => {
+  assert.equal(qualificationRecordRetainedForVersion({}).state, "indeterminate");
 });
 
 // Live-data check (not a synthetic fixture): does this gate's mechanism find
