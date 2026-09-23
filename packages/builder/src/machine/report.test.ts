@@ -177,7 +177,7 @@ describe("verifyMachine — idempotent verification against an applied machine",
     expect(before.exitCode).toBe(1);
 
     // Apply exactly what verifyMachine itself would have composed.
-    const manifest = buildSkillsManifest(["greet"], { composedSkillsRoot });
+    const manifest = buildSkillsManifest({ composedSkillsRoot, linkName: "alpha-account" });
     const runtime = createRuntimeContext(manifest, {
       home,
       sourceRoot: `${accountsRoot}/alpha/skills`,
@@ -191,7 +191,8 @@ describe("verifyMachine — idempotent verification against an applied machine",
     );
     // Two operations, not one: the private-directory guard on
     // composedSkillsRoot itself (#240's migration-hazard fix, see
-    // skills-manifest.ts) plus the one skill link.
+    // skills-manifest.ts) plus the one directory link for the whole
+    // alpha-account source tree.
     expect(applied.changed).toHaveLength(2);
 
     const afterFirstApply = verifyMachine(discovery, fs, inputs);
@@ -277,16 +278,22 @@ describe("verifyMachine — class one: package-owned, account-neutral convention
     }
   });
 
-  it("reports a destination collision between class one and an account workspace, never last-writer-wins", () => {
+  it("reports a destination collision between class one and an account workspace's whole directory link, never last-writer-wins", () => {
     const discovery = createMemoryDiscoveryFileSystem();
     discovery.setFile(`${accountsRoot}/alpha/${WORKSPACE_MARKER_FILENAME}`, workspaceMarker("alpha-account"));
     discovery.setDirectory(`${accountsRoot}/alpha/skills/greet`);
-    // A pathological account skill literally named to collide with the class-one destination.
+    // A pathological class-one destination literally named to collide with
+    // account alpha's own directory link (`composedSkillsRoot/alpha-account`)
+    // — under directory-linking, this is the only kind of destination two
+    // sources can still collide on directly; an individual skill name
+    // (`.agents/skills/greet`) is no longer its own destination at all, so a
+    // same-named-skill collision is caught by `detectSkillNameCollisions`
+    // instead (see "destination collisions", above).
     discovery.setFile(
       classOneDeclarationPath,
       JSON.stringify({
         schemaVersion: 1,
-        destinations: [{ id: "branch-provenance", install: "link", destination: ".agents/skills/greet" }],
+        destinations: [{ id: "branch-provenance", install: "link", destination: ".agents/skills/alpha-account" }],
       }),
     );
     const fs = createMemoryFileSystem();
@@ -297,6 +304,7 @@ describe("verifyMachine — class one: package-owned, account-neutral convention
     if (composition?.result.verdict === "violated") {
       expect(composition.result.findings[0]?.rule).toBe("machine/skill-collision");
       expect(composition.result.findings[0]?.message).toContain("package-conventions");
+      expect(composition.result.findings[0]?.message).toContain("alpha-account");
     } else {
       throw new Error("expected composition row to be violated");
     }
@@ -358,7 +366,9 @@ describe("verifyMachine — retirement of a dropped destination (#240)", () => {
       previousCompositionPath,
       JSON.stringify({
         schemaVersion: 1,
-        operations: [{ destinationPath: `${composedSkillsRoot}/greet`, source: "alpha-account", kind: "link" }],
+        // Directory-linking: the previously managed destination is the whole
+        // source tree's own link, not an individual skill's.
+        operations: [{ destinationPath: `${composedSkillsRoot}/alpha-account`, source: "alpha-account", kind: "link" }],
       }),
     );
     const fs = createMemoryFileSystem();
@@ -377,8 +387,10 @@ describe("verifyMachine — retirement of a dropped destination (#240)", () => {
       JSON.stringify({
         schemaVersion: 1,
         operations: [
-          { destinationPath: `${composedSkillsRoot}/greet`, source: "alpha-account", kind: "link" },
-          { destinationPath: `${composedSkillsRoot}/retired-skill`, source: "beta-account", kind: "link" },
+          { destinationPath: `${composedSkillsRoot}/alpha-account`, source: "alpha-account", kind: "link" },
+          // beta-account's whole source tree — no longer discovered at all
+          // (its own account workspace, and its repository, are gone).
+          { destinationPath: `${composedSkillsRoot}/beta-account`, source: "beta-account", kind: "link" },
         ],
       }),
     );
@@ -390,11 +402,16 @@ describe("verifyMachine — retirement of a dropped destination (#240)", () => {
     if (retirement?.result.verdict === "violated") {
       expect(retirement.result.findings).toHaveLength(1);
       expect(retirement.result.findings[0]?.rule).toBe("machine/destination-retired");
-      expect(retirement.result.findings[0]?.message).toContain(`${composedSkillsRoot}/retired-skill`);
+      expect(retirement.result.findings[0]?.message).toContain(`${composedSkillsRoot}/beta-account`);
       expect(retirement.result.findings[0]?.message).toContain("beta-account");
     }
-    // Reporting only -- nothing here ever calls a filesystem mutation.
-    expect(fs.lstat(`${composedSkillsRoot}/retired-skill`)).toBeUndefined();
+    // Reporting only -- nothing here ever calls a filesystem mutation. This
+    // is the acceptance evidence a retiring account repository is genuinely
+    // unreferenced (#393's own `verify` requirement): a real run against
+    // `verifyMachine`, with the retiring account's previous composed
+    // operations supplied as `previousCompositionPath`, must name every
+    // destination that account still owns before its repository is deleted.
+    expect(fs.lstat(`${composedSkillsRoot}/beta-account`)).toBeUndefined();
   });
 
   it("is indeterminate when the previous-composition file cannot be read", () => {
