@@ -31,6 +31,21 @@ All notable changes to this package are documented here. Format follows
   (#1208), shipped in the published tarball (`files` now includes
   `templates`) but not built, typechecked, or tested by this
   repository's own workspace.
+- `publisher-preview` now renders the whole Launch pack, not just the
+  shipped web views: `templates/site`'s own routes (rendered through the
+  same `MarketingView`/`ErrorView` templates `apps/site` itself uses —
+  the two Next.js metadata route handlers, `robots.ts`/`sitemap.ts`,
+  have no view to render and are called out in `index.html` instead), the
+  materials mini-site (company overviews at all three lengths, the
+  default pitch deck, and one `selectAudienceVariant` filtered variant),
+  the email kit (launch announcement, welcome, follow-up, and a
+  signature, each in an email-width frame), and one SVG per
+  `SOCIAL_CHANNEL_SPECS`/`OG_SHARE_CARD_SPEC`/`VIDEO_CALL_BACKGROUND_SPECS`
+  entry — all from the same validated `brand.css`, all deterministic, and
+  every string of prose sourced from the extended fixture copy registry
+  (never hardcoded in a renderer). A new `index.html` links every file
+  the command writes. The CLI's arguments and exit-code contract are
+  unchanged.
 
 ## [0.5.0] - 2026-09-22
 
