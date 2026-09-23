@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import test from "node:test";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { applyReleaseChangesets } from "../apply-release-changesets.mjs";
 import {
   evaluateReleasePrFootprint,
@@ -57,6 +59,94 @@ test("isPackageManifestVersionOnlyChange: malformed JSON on either side fails ra
 test("isPackageManifestVersionOnlyChange: no version change at all fails even with identical rest", () => {
   const text = JSON.stringify({ name: "@x/alpha", version: "1.0.0" });
   assert.equal(isPackageManifestVersionOnlyChange(text, text), false);
+});
+
+// ---------------------------------------------------------------- isPackageManifestVersionOnlyChange, THE WIDENED RULE (issue #1332, PR #1338)
+//
+// A release PR may ALSO rewrite a sibling dependency's range to
+// `^<newVersion>`, in the SAME package.json as that sibling's own patch
+// bump, when `bumpedVersionsByName` proves the named package was bumped to
+// exactly that version by this same diff.
+
+const CONSUMER_BASE = JSON.stringify({ name: "@x/consumer", version: "1.0.0", license: "MIT", dependencies: { "@x/core": "^0.9.0" } });
+
+function consumerHeadWithRange(range, extra = {}) {
+  return JSON.stringify({ name: "@x/consumer", version: "1.0.1", license: "MIT", dependencies: { "@x/core": range, ...extra } });
+}
+
+test("isPackageManifestVersionOnlyChange: a sibling range rewritten to exactly ^<the proven new version> passes", () => {
+  const bumped = { "@x/core": "0.10.0" };
+  assert.equal(isPackageManifestVersionOnlyChange(CONSUMER_BASE, consumerHeadWithRange("^0.10.0"), bumped), true);
+});
+
+test("isPackageManifestVersionOnlyChange: the same rewrite in peerDependencies or optionalDependencies is allowed too, not only dependencies", () => {
+  const bumped = { "@x/core": "0.10.0" };
+  const base = JSON.stringify({ name: "@x/consumer", version: "1.0.0", peerDependencies: { "@x/core": "^0.9.0" } });
+  const head = JSON.stringify({ name: "@x/consumer", version: "1.0.1", peerDependencies: { "@x/core": "^0.10.0" } });
+  assert.equal(isPackageManifestVersionOnlyChange(base, head, bumped), true);
+
+  const baseOpt = JSON.stringify({ name: "@x/consumer", version: "1.0.0", optionalDependencies: { "@x/core": "^0.9.0" } });
+  const headOpt = JSON.stringify({ name: "@x/consumer", version: "1.0.1", optionalDependencies: { "@x/core": "^0.10.0" } });
+  assert.equal(isPackageManifestVersionOnlyChange(baseOpt, headOpt, bumped), true);
+});
+
+test("isPackageManifestVersionOnlyChange: with no bumpedVersionsByName argument at all, a range rewrite is refused exactly as before (unwidened default)", () => {
+  assert.equal(isPackageManifestVersionOnlyChange(CONSUMER_BASE, consumerHeadWithRange("^0.10.0")), false);
+});
+
+// ADVERSARIAL (widened rule): a range pointed at a non-bumped package
+test("ADVERSARIAL isPackageManifestVersionOnlyChange: a range rewritten for a package this diff never proved was bumped fails", () => {
+  const bumped = { "@x/something-else": "9.9.9" }; // @x/core is not in the bumped set at all
+  assert.equal(isPackageManifestVersionOnlyChange(CONSUMER_BASE, consumerHeadWithRange("^0.10.0"), bumped), false);
+});
+
+// ADVERSARIAL (widened rule): a range rewritten to a different version than the one actually bumped
+test("ADVERSARIAL isPackageManifestVersionOnlyChange: a range rewritten to the WRONG version fails, even though @x/core really was bumped", () => {
+  const bumped = { "@x/core": "0.10.0" };
+  assert.equal(isPackageManifestVersionOnlyChange(CONSUMER_BASE, consumerHeadWithRange("^0.99.0"), bumped), false);
+});
+
+test("ADVERSARIAL isPackageManifestVersionOnlyChange: a range rewritten to a range shape other than a bare caret (e.g. still a caret but with extra text, or a tilde) fails", () => {
+  const bumped = { "@x/core": "0.10.0" };
+  assert.equal(isPackageManifestVersionOnlyChange(CONSUMER_BASE, consumerHeadWithRange("~0.10.0"), bumped), false);
+  assert.equal(isPackageManifestVersionOnlyChange(CONSUMER_BASE, consumerHeadWithRange(">=0.10.0"), bumped), false);
+});
+
+// ADVERSARIAL (widened rule): an added dependency
+test("ADVERSARIAL isPackageManifestVersionOnlyChange: a brand-new dependency entry added alongside a legitimate rewrite fails", () => {
+  const bumped = { "@x/core": "0.10.0", "@x/evil": "1.0.0" };
+  assert.equal(isPackageManifestVersionOnlyChange(CONSUMER_BASE, consumerHeadWithRange("^0.10.0", { "@x/evil": "^1.0.0" }), bumped), false);
+});
+
+// ADVERSARIAL (widened rule): a devDependencies change
+test("ADVERSARIAL isPackageManifestVersionOnlyChange: the identical rewrite in devDependencies (not one of the three allowed fields) fails", () => {
+  const bumped = { "@x/core": "0.10.0" };
+  const base = JSON.stringify({ name: "@x/consumer", version: "1.0.0", devDependencies: { "@x/core": "^0.9.0" } });
+  const head = JSON.stringify({ name: "@x/consumer", version: "1.0.1", devDependencies: { "@x/core": "^0.10.0" } });
+  assert.equal(isPackageManifestVersionOnlyChange(base, head, bumped), false);
+});
+
+// ADVERSARIAL (widened rule): a removed dependency
+test("ADVERSARIAL isPackageManifestVersionOnlyChange: a dependency entry removed entirely (even one naming a bumped package) fails", () => {
+  const bumped = { "@x/core": "0.10.0" };
+  const base = JSON.stringify({ name: "@x/consumer", version: "1.0.0", dependencies: { "@x/core": "^0.9.0", "@x/other": "^1.0.0" } });
+  const head = JSON.stringify({ name: "@x/consumer", version: "1.0.1", dependencies: { "@x/core": "^0.10.0" } }); // "@x/other" is gone
+  assert.equal(isPackageManifestVersionOnlyChange(base, head, bumped), false);
+});
+
+// ADVERSARIAL (widened rule): a reordered dependency map
+test("ADVERSARIAL isPackageManifestVersionOnlyChange: the SAME entries, SAME values, but reordered within the dependencies map fails", () => {
+  const bumped = { "@x/core": "0.10.0" };
+  const base = JSON.stringify({ name: "@x/consumer", version: "1.0.0", dependencies: { "@x/core": "^0.10.0", "@x/other": "^1.0.0" } });
+  const head = JSON.stringify({ name: "@x/consumer", version: "1.0.1", dependencies: { "@x/other": "^1.0.0", "@x/core": "^0.10.0" } }); // same two entries, swapped order, and @x/core already matches -- still a reorder
+  assert.equal(isPackageManifestVersionOnlyChange(base, head, bumped), false);
+});
+
+test("isPackageManifestVersionOnlyChange: a legitimate rewrite alongside an untouched sibling entry in the SAME map passes", () => {
+  const bumped = { "@x/core": "0.10.0" };
+  const base = JSON.stringify({ name: "@x/consumer", version: "1.0.0", dependencies: { "@x/core": "^0.9.0", "@x/other": "^1.0.0" } });
+  const head = JSON.stringify({ name: "@x/consumer", version: "1.0.1", dependencies: { "@x/core": "^0.10.0", "@x/other": "^1.0.0" } });
+  assert.equal(isPackageManifestVersionOnlyChange(base, head, bumped), true);
 });
 
 // ---------------------------------------------------------------- isChangelogPureNewSection
@@ -414,5 +504,122 @@ test("END TO END: a real apply-release-changesets.mjs patch release, against a C
     assert.equal(footprint.ok, true, footprint.reason);
   } finally {
     rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// ---------------------------------------------------------------- end-to-end: a #1338-shaped sibling-dependency-range release (hand-built)
+//
+// PR #1338 (fix for #1332) makes a release PR rewrite a dependent
+// package's dependencies/peerDependencies/optionalDependencies range to
+// ^<newVersion> alongside that dependent's own patch bump, when a bumped
+// sibling's new version falls outside the dependent's declared range on
+// it (the classic 0.x minor-lock case). This fixture mirrors #1338's own
+// "a 0.x minor bump rewrites a sibling's ^0.N.0 dependency range and
+// gives the sibling a dependent patch bump" test byte-for-byte (same
+// package names, same versions, same ranges, same CHANGELOG bullet text)
+// so this test is checking the SAME shape that script actually produces,
+// not a shape merely similar to it.
+test("END TO END (#1338 shape, hand-built): core's 0.x minor bump + consumer's dependent patch bump and rewritten ^0.N.0 range together pass the full footprint check", () => {
+  const coreBase = JSON.stringify({ name: "@x/core", version: "0.9.0", license: "MIT" });
+  const coreHead = JSON.stringify({ name: "@x/core", version: "0.10.0", license: "MIT" });
+  const coreChangelogBase = "# Changelog\n\n## 0.9.0\n\n- Initial release.\n";
+  const coreChangelogHead = "# Changelog\n\n## 0.10.0\n\n- Add a feature.\n\n## 0.9.0\n\n- Initial release.\n";
+
+  const consumerBase = JSON.stringify({ name: "@x/consumer", version: "1.0.0", license: "MIT", dependencies: { "@x/core": "^0.9.0" } });
+  const consumerHead = JSON.stringify({ name: "@x/consumer", version: "1.0.1", license: "MIT", dependencies: { "@x/core": "^0.10.0" } });
+  const consumerChangelogBase = "# Changelog\n\n## 1.0.0\n\n- Initial release.\n";
+  const consumerChangelogHead = "# Changelog\n\n## 1.0.1 - 2026-09-22\n\n- Updated dependency @x/core to ^0.10.0\n\n## 1.0.0\n\n- Initial release.\n";
+
+  const result = evaluateReleasePrFootprint({
+    files: [
+      { path: "packages/core/package.json", status: "modified", baseContent: coreBase, headContent: coreHead },
+      { path: "packages/core/CHANGELOG.md", status: "modified", baseContent: coreChangelogBase, headContent: coreChangelogHead },
+      { path: "packages/consumer/package.json", status: "modified", baseContent: consumerBase, headContent: consumerHead },
+      { path: "packages/consumer/CHANGELOG.md", status: "modified", baseContent: consumerChangelogBase, headContent: consumerChangelogHead },
+      { path: ".changesets/core-feature.md", status: "removed", baseContent: "---\ncore: minor\n---\n\nAdd a feature.\n" },
+      // consumer is NOT named by any changeset -- its own bump is entirely a
+      // consequence of core's minor bump moving outside its declared range,
+      // so there is no consumer changeset to delete, matching #1338's own test.
+    ],
+  });
+  assert.equal(result.ok, true, result.reason);
+});
+
+// ---------------------------------------------------------------- end-to-end: the REAL #1338 apply-release-changesets.mjs output (best-effort)
+//
+// Runs the ACTUAL apply-release-changesets.mjs from PR #1338
+// (branch claude/changesets-sibling-ranges, fetched at test time) through
+// the full footprint check -- not a hand-built approximation of what it
+// produces. That branch changes only scripts/apply-release-changesets.mjs
+// itself (scripts/collect-changesets.mjs, scripts/check-release-pr-shape.mjs,
+// and scripts/check-workspace-links.mjs, which the fetched script imports,
+// are unchanged there, so this repository's own current copies of those
+// three are used unmodified). The fetched file is written to a THROWAWAY
+// path inside scripts/ only so its relative imports resolve, dynamically
+// imported once, and deleted immediately after -- never committed.
+//
+// Best-effort: if `claude/changesets-sibling-ranges` is not fetchable
+// (already merged and deleted, this checkout has no network access, or
+// anything else), this test SKIPS with a clear reason rather than failing
+// the suite -- the hand-built test above already covers this exact shape
+// hermetically and permanently, so this one is a bonus proof against the
+// real thing when available, not a load-bearing requirement.
+test("END TO END (real PR #1338 output, best-effort)", async (t) => {
+  const REMOTE_REF = "origin/claude/changesets-sibling-ranges";
+  const REMOTE_PATH = "scripts/apply-release-changesets.mjs";
+  let fetchedText;
+  try {
+    fetchedText = execFileSync("git", ["show", `${REMOTE_REF}:${REMOTE_PATH}`], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+  } catch {
+    t.skip(`could not read ${REMOTE_REF}:${REMOTE_PATH} in this checkout (branch not fetched, already merged and deleted, or no network) -- see the hand-built #1338-shape test above for permanent, hermetic coverage of the same scenario`);
+    return;
+  }
+
+  const scriptsDir = join(dirname(fileURLToPath(import.meta.url)), "..");
+  const fixturePath = join(scriptsDir, `.tmp-pr-1338-apply-release-changesets-${process.pid}.mjs`);
+  const root = mkdtempSync(join(tmpdir(), "release-pr-footprint-real-1338-e2e-test-"));
+  try {
+    writeFileSync(fixturePath, fetchedText);
+    const { applyReleaseChangesets: realApplyReleaseChangesets } = await import(pathToFileURL(fixturePath).href);
+
+    const coreDir = join(root, "packages", "core");
+    mkdirSync(coreDir, { recursive: true });
+    writeFileSync(join(coreDir, "package.json"), '{\n  "name": "@x/core",\n  "version": "0.9.0",\n  "license": "MIT"\n}\n');
+    const coreChangelogBase = "# Changelog\n\n## 0.9.0\n\n- Initial release.\n";
+    writeFileSync(join(coreDir, "CHANGELOG.md"), coreChangelogBase);
+
+    const consumerDir = join(root, "packages", "consumer");
+    mkdirSync(consumerDir, { recursive: true });
+    const consumerBase = '{\n  "name": "@x/consumer",\n  "version": "1.0.0",\n  "license": "MIT",\n  "dependencies": {\n    "@x/core": "^0.9.0"\n  }\n}\n';
+    writeFileSync(join(consumerDir, "package.json"), consumerBase);
+    const consumerChangelogBase = "# Changelog\n\n## 1.0.0\n\n- Initial release.\n";
+    writeFileSync(join(consumerDir, "CHANGELOG.md"), consumerChangelogBase);
+
+    mkdirSync(join(root, ".changesets"), { recursive: true });
+    const changesetText = "---\ncore: minor\n---\n\nAdd a feature.\n";
+    writeFileSync(join(root, ".changesets", "core-feature.md"), changesetText);
+
+    const result = realApplyReleaseChangesets({ root, runNpmInstall: () => {}, today: () => "2026-09-22" });
+    assert.equal(result.findings.length, 0, JSON.stringify(result.findings));
+    assert.equal(result.applied.length, 2);
+    const coreApplied = result.applied.find((a) => a.package === "core");
+    const consumerApplied = result.applied.find((a) => a.package === "consumer");
+    assert.equal(coreApplied.toVersion, "0.10.0");
+    assert.equal(consumerApplied.toVersion, "1.0.1");
+    assert.ok(consumerApplied.dependencyUpdates?.length > 0, "expected #1338's own script to record a dependencyUpdates entry for consumer");
+
+    const files = [
+      { path: "packages/core/package.json", status: "modified", baseContent: '{\n  "name": "@x/core",\n  "version": "0.9.0",\n  "license": "MIT"\n}\n', headContent: readFileSync(join(coreDir, "package.json"), "utf8") },
+      { path: "packages/core/CHANGELOG.md", status: "modified", baseContent: coreChangelogBase, headContent: readFileSync(join(coreDir, "CHANGELOG.md"), "utf8") },
+      { path: "packages/consumer/package.json", status: "modified", baseContent: consumerBase, headContent: readFileSync(join(consumerDir, "package.json"), "utf8") },
+      { path: "packages/consumer/CHANGELOG.md", status: "modified", baseContent: consumerChangelogBase, headContent: readFileSync(join(consumerDir, "CHANGELOG.md"), "utf8") },
+      { path: ".changesets/core-feature.md", status: "removed", baseContent: changesetText },
+    ];
+
+    const footprint = evaluateReleasePrFootprint({ files });
+    assert.equal(footprint.ok, true, footprint.reason);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+    rmSync(fixturePath, { force: true });
   }
 });

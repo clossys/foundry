@@ -63,24 +63,103 @@ export const RELEASE_PR_FILE_PATTERNS = {
   changeset: /^\.changesets\/[a-z0-9][a-z0-9-]*\.md$/,
 };
 
+// dependencies/peerDependencies/optionalDependencies -- deliberately NOT
+// devDependencies. See isPackageManifestVersionOnlyChange()'s own header,
+// "THE ONE NARROW EXCEPTION", for why.
+export const DEPENDENT_RANGE_FIELDS = ["dependencies", "peerDependencies", "optionalDependencies"];
+
+// A value both sides of a neutralized dependency-range field get set to,
+// so the generic whole-object comparison in isPackageManifestVersionOnlyChange()
+// below treats that field as equal on both sides -- WITHOUT deleting the
+// key (which would shift every later key's apparent position) and without
+// touching any OTHER field's value or position. Any concrete value works
+// here as long as it can never collide with something a real package.json
+// author's manifest legitimately uses this way; a string this improbable
+// is simplest.
+const NEUTRALIZED_DEPENDENCY_FIELD = "__release-pr-footprint: verified elsewhere__";
+
+// Does the SAME dependency-range map (`dependencies`, `peerDependencies`,
+// or `optionalDependencies`) on both sides differ ONLY by rewriting
+// existing entries' values to `^<newVersion>`, where each such entry names
+// a package `bumpedVersionsByName` proves this SAME diff actually bumped
+// to that exact version? No key may be added or removed, and no key may
+// change position -- see isPackageManifestVersionOnlyChange()'s own header
+// for why key order is checked, not just the key set.
+function isAllowedDependencyRangeChange(baseMap, headMap, bumpedVersionsByName) {
+  if (baseMap === undefined && headMap === undefined) return true;
+  if (baseMap === undefined || headMap === undefined) return false; // the field's own presence may not change
+  if (typeof baseMap !== "object" || baseMap === null || Array.isArray(baseMap)) return false;
+  if (typeof headMap !== "object" || headMap === null || Array.isArray(headMap)) return false;
+
+  const baseKeys = Object.keys(baseMap);
+  const headKeys = Object.keys(headMap);
+  if (baseKeys.length !== headKeys.length) return false;
+  for (let i = 0; i < baseKeys.length; i += 1) {
+    if (baseKeys[i] !== headKeys[i]) return false; // same keys, same order -- no add, remove, or reorder
+  }
+
+  for (const key of baseKeys) {
+    if (baseMap[key] === headMap[key]) continue; // unchanged entry -- always fine
+    const newVersion = Object.prototype.hasOwnProperty.call(bumpedVersionsByName, key) ? bumpedVersionsByName[key] : undefined;
+    if (newVersion === undefined) return false; // this diff never proved `key` was bumped -- not this diff's business to touch it
+    if (headMap[key] !== `^${newVersion}`) return false; // must land on EXACTLY ^<newVersion>, nothing looser or different
+  }
+  return true;
+}
+
 /**
  * Is the ONLY difference between these two package.json texts the
- * top-level "version" field? Parses both as JSON, strips "version" from
- * each, and compares the rest via plain `JSON.stringify` -- deliberately
- * NOT a key-sorted "canonical" comparison. An earlier draft of this
- * function sorted object keys before comparing, reasoning that key order
- * was "formatter noise"; it is not, for every field: `exports`' condition
- * order is part of how Node resolves it (`{"import":...,"require":...}`
- * is not the same export map as `{"require":...,"import":...}` to a
- * resolver that returns the first matching condition), so silently
- * tolerating a reordered `exports` block would have let a real behavior
- * change ride through this check unnoticed. `JSON.stringify` on a value
- * parsed straight from JSON.parse already preserves each object's original
- * key insertion order at every nesting level, so comparing the stringified
- * form is exactly "same structure, same order, same values" with no
- * separate canonicalization step needed.
+ * top-level "version" field -- OR "version" plus specific entries in a
+ * dependency-range map, each rewritten to point at a package THIS SAME
+ * diff also bumped (see below)? Parses both as JSON, strips "version"
+ * from each, and compares the rest via plain `JSON.stringify` --
+ * deliberately NOT a key-sorted "canonical" comparison. An earlier draft
+ * of this function sorted object keys before comparing, reasoning that
+ * key order was "formatter noise"; it is not, for every field: `exports`'
+ * condition order is part of how Node resolves it
+ * (`{"import":...,"require":...}` is not the same export map as
+ * `{"require":...,"import":...}` to a resolver that returns the first
+ * matching condition), so silently tolerating a reordered `exports` block
+ * would have let a real behavior change ride through this check
+ * unnoticed. `JSON.stringify` on a value parsed straight from JSON.parse
+ * already preserves each object's original key insertion order at every
+ * nesting level, so comparing the stringified form is exactly "same
+ * structure, same order, same values" with no separate canonicalization
+ * step needed.
+ *
+ * THE ONE NARROW EXCEPTION (issue #1332, PR #1338)
+ * ----------------------------------------------------
+ * A release PR that bumps a package outside a SIBLING workspace package's
+ * declared `dependencies`/`peerDependencies`/`optionalDependencies` range
+ * on it (the classic 0.x minor-lock case: `^0.9.0` does not cover
+ * `0.10.0`) must rewrite that sibling's own range to `^<newVersion>` in
+ * the SAME commit, or the sibling's packed manifest keeps citing a range
+ * a fresh install can no longer resolve to what it actually shipped
+ * alongside -- scripts/apply-release-changesets.mjs does exactly this,
+ * bumping the sibling's own version (a patch, if it was not already being
+ * bumped for its own reason) in the same package.json write.
+ * `isAllowedDependencyRangeChange()` above is the ENTIRE width of what
+ * this widens: a changed entry in one of the three fields is allowed ONLY
+ * when `bumpedVersionsByName` (computed by evaluateReleasePrFootprint()
+ * below from every OTHER package.json in this SAME diff, never trusted
+ * from this file's own claim) proves the named package was actually
+ * bumped, and the new value is EXACTLY `^` plus that proven new version --
+ * not a looser range, not a different package, not a value this diff
+ * cannot independently verify. `devDependencies` is deliberately excluded
+ * (not one of the three fields checked): npm never reads a dependency's
+ * own `devDependencies` when resolving it as someone else's dependency, so
+ * a stale range there cannot reproduce #1332's actual defect, and
+ * scripts/check-workspace-links.mjs's own pre-existing sibling-range gate
+ * already draws the same line -- keeping this the same scope means the
+ * gate that catches a stale range and this check that admits a fix for one
+ * can never quietly disagree about what counts as a first-party dependency
+ * edge. No key may be added, removed, or reordered in any of the three
+ * fields, and every OTHER field (name, license, scripts, bin, exports,
+ * devDependencies, anything else) must remain fully byte-identical --
+ * `bumpedVersionsByName` defaults to `{}`, so a caller that never passes it
+ * gets exactly the old, unwidened behavior.
  */
-export function isPackageManifestVersionOnlyChange(baseText, headText) {
+export function isPackageManifestVersionOnlyChange(baseText, headText, bumpedVersionsByName = {}) {
   let baseJson, headJson;
   try {
     baseJson = JSON.parse(baseText);
@@ -97,6 +176,17 @@ export function isPackageManifestVersionOnlyChange(baseText, headText) {
   const { version: headVersion, ...headRest } = headJson;
   if (baseVersion === headVersion) return false;
   if (typeof headVersion !== "string" || headVersion.length === 0) return false;
+
+  for (const field of DEPENDENT_RANGE_FIELDS) {
+    if (!isAllowedDependencyRangeChange(baseRest[field], headRest[field], bumpedVersionsByName)) return false;
+    // Neutralize the field in place (a plain property write on an
+    // already-parsed object never moves an EXISTING key's position in
+    // insertion-order iteration) so the generic comparison below no
+    // longer sees the two sides' legitimately-different values there.
+    if (Object.prototype.hasOwnProperty.call(baseRest, field)) baseRest[field] = NEUTRALIZED_DEPENDENCY_FIELD;
+    if (Object.prototype.hasOwnProperty.call(headRest, field)) headRest[field] = NEUTRALIZED_DEPENDENCY_FIELD;
+  }
+
   return JSON.stringify(baseRest) === JSON.stringify(headRest);
 }
 
@@ -295,16 +385,34 @@ export function isChangesetDeletionLegitimate(baseContent, bumpedPackageDirs) {
  * file's content; this function touches no filesystem, git, or network
  * itself, and is fully synchronous and deterministic given its input.
  *
- * Two passes: first, every `packages/<dir>/package.json` is validated and
- * its new version recorded (`bumpedVersions`); a diff with no such bump at
- * all is refused immediately (nothing to release). Second, every OTHER
- * changed file is validated against that now-known bumped set -- a
- * CHANGELOG.md is checked against ITS OWN package's specific new version
- * (not just "some version-shaped heading"), the lockfile is checked
- * against the full set of bumped directories at once (it is one file
- * covering every package), and a deleted changeset must name only bumped
- * packages. Any file that is not one of these four classes, or fails its
- * own class's check, fails the whole PR immediately.
+ * THREE passes, in order, because the second and third both need to know
+ * the FULL bumped set before they can judge anything:
+ *
+ *   1. For every `packages/<dir>/package.json`, confirm it parses on both
+ *      sides and its own "version" genuinely changed -- nothing more yet.
+ *      Record the new version keyed BOTH by directory (`bumpedVersions`,
+ *      for cross-referencing a CHANGELOG.md/changeset against ITS OWN
+ *      package) and by the manifest's own `name` field (`bumpedVersionsByName`,
+ *      since a `dependencies` entry names a package by its npm name, not
+ *      its packages/<dir> directory -- collect-changesets.mjs's own header
+ *      has the same directory-vs-name distinction). A diff with no bump at
+ *      all is refused immediately (nothing to release).
+ *   2. NOW that the full bumped set is known, each `package.json` is
+ *      re-validated in full: `isPackageManifestVersionOnlyChange()`,
+ *      passed `bumpedVersionsByName`, additionally allows a
+ *      `dependencies`/`peerDependencies`/`optionalDependencies` entry to
+ *      change ONLY when it names a package THIS SAME diff's pass 1 proved
+ *      was bumped, landing on exactly `^<that new version>` -- see that
+ *      function's own header, "THE ONE NARROW EXCEPTION" (issue #1332,
+ *      PR #1338).
+ *   3. Every OTHER changed file is validated against the bumped set from
+ *      pass 1 -- a CHANGELOG.md is checked against ITS OWN package's
+ *      specific new version (not just "some version-shaped heading"), the
+ *      lockfile is checked against the full set of bumped directories at
+ *      once (it is one file covering every package), and a deleted
+ *      changeset must name only bumped packages. Any file that is not one
+ *      of these four classes, or fails its own class's check, fails the
+ *      whole PR immediately.
  */
 export function evaluateReleasePrFootprint({ files }) {
   if (!Array.isArray(files) || files.length === 0) {
@@ -312,24 +420,39 @@ export function evaluateReleasePrFootprint({ files }) {
   }
 
   const bumpedVersions = {};
+  const bumpedVersionsByName = {};
   for (const file of files) {
     const match = RELEASE_PR_FILE_PATTERNS.packageManifest.exec(file.path);
     if (!match) continue;
-    if (file.status !== "modified" || !isPackageManifestVersionOnlyChange(file.baseContent, file.headContent)) {
-      return { ok: false, reason: `"${file.path}" (${file.status}) is not a pure version-only package.json change` };
-    }
-    let headJson;
+    if (file.status !== "modified") return { ok: false, reason: `"${file.path}" has status "${file.status}" -- expected modified` };
+    let baseJson, headJson;
     try {
+      baseJson = JSON.parse(file.baseContent);
       headJson = JSON.parse(file.headContent);
     } catch {
-      return { ok: false, reason: `"${file.path}" head content is not valid JSON` };
+      return { ok: false, reason: `"${file.path}" is not valid JSON on both sides` };
     }
-    bumpedVersions[match[1]] = headJson.version;
+    if (!baseJson || typeof baseJson !== "object" || !headJson || typeof headJson !== "object") {
+      return { ok: false, reason: `"${file.path}" is not a JSON object on both sides` };
+    }
+    const { version: headVersion } = headJson;
+    if (baseJson.version === headVersion || typeof headVersion !== "string" || headVersion.length === 0) {
+      return { ok: false, reason: `"${file.path}" (${file.status}) is not a pure version-only package.json change` };
+    }
+    bumpedVersions[match[1]] = headVersion;
+    if (typeof headJson.name === "string" && headJson.name.length > 0) bumpedVersionsByName[headJson.name] = headVersion;
   }
 
   const bumpedDirs = Object.keys(bumpedVersions);
   if (bumpedDirs.length === 0) {
     return { ok: false, reason: "no packages/<dir>/package.json version bump present" };
+  }
+
+  for (const file of files) {
+    if (!RELEASE_PR_FILE_PATTERNS.packageManifest.test(file.path)) continue;
+    if (!isPackageManifestVersionOnlyChange(file.baseContent, file.headContent, bumpedVersionsByName)) {
+      return { ok: false, reason: `"${file.path}" changes more than its own version and any allowed sibling-dependency-range rewrites` };
+    }
   }
 
   for (const file of files) {

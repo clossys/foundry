@@ -70,7 +70,17 @@ branch or shaping a file list:
    real behavioral change, since Node resolves its conditions in listed
    order, so silently tolerating a reorder was itself a defect an earlier
    draft of this check had), so a smuggled dependency, script, `bin`,
-   `exports` reorder, or any other field changing fails immediately.
+   `exports` reorder, or any other field changing fails immediately. **One
+   narrow, additional exception** (issue #1332, PR #1338): a
+   `dependencies`/`peerDependencies`/`optionalDependencies` entry may ALSO
+   change, but only to exactly `^<newVersion>`, and only when it names a
+   package this SAME diff's own package.json changes prove was actually
+   bumped to that version — a range change naming a non-bumped package, a
+   wrong version, an added or removed entry, a `devDependencies` change, or
+   a reordered dependency map all still fail. This is what lets a release
+   PR rewrite a sibling's now-out-of-range `^0.N.0` dependency in the same
+   commit as that sibling's own dependent patch bump, without opening the
+   check up to anything wider.
    Every changed `CHANGELOG.md` must contain EXACTLY ONE new section,
    inserted immediately before the base text's first existing version
    heading (after any preamble), whose own heading is that SPECIFIC
