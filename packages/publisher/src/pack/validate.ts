@@ -1,4 +1,4 @@
-import { isLifecycleCondition, isLifecycleStatus } from "./lifecycle.js";
+import { LIFECYCLE_CONDITIONS, PACK_STATUSES, packStatusToLifecycle, type PackStatus } from "@clossys/controller";
 import { isPackLayer, isPackVersionString, isPackVisibility, type PackItem, type PackManifest } from "./types.js";
 
 export interface PackFinding {
@@ -17,6 +17,14 @@ const FINGERPRINT_RE = /^[0-9a-f]{64}$/;
 
 function isIsoTimestamp(value: unknown): value is string {
   return typeof value === "string" && ISO_DATE_RE.test(value);
+}
+
+function isPackStatus(value: unknown): value is PackStatus {
+  return typeof value === "string" && (PACK_STATUSES as readonly string[]).includes(value);
+}
+
+function isLifecycleCondition(value: unknown): boolean {
+  return typeof value === "string" && (LIFECYCLE_CONDITIONS as readonly string[]).includes(value);
 }
 
 function timestampFields(item: PackItem): Array<readonly [string, string | null]> {
@@ -43,8 +51,8 @@ function validateItem(item: PackItem, knownIds: ReadonlySet<string>, push: (find
   if (!isPackVisibility(item.visibility)) {
     push({ rule: "invalid-visibility", itemId, message: `Item "${itemId}" has visibility ${JSON.stringify(item.visibility)}; it must declare "internal" or "public" (#1204, #1206) — visibility is never inferred.` });
   }
-  if (!isLifecycleStatus(item.status)) {
-    push({ rule: "invalid-status", itemId, message: `Item "${itemId}" has status ${JSON.stringify(item.status)}, which is not in the shared lifecycle vocabulary (#1228).` });
+  if (!isPackStatus(item.status)) {
+    push({ rule: "invalid-status", itemId, message: `Item "${itemId}" has status ${JSON.stringify(item.status)}, which is not a @clossys/controller PackStatus (#1228): ${PACK_STATUSES.join(", ")}.` });
   }
   if (!isLifecycleCondition(item.condition)) {
     push({ rule: "invalid-condition", itemId, message: `Item "${itemId}" has condition ${JSON.stringify(item.condition)}, which is not current, stale, or blocked (#1228).` });
@@ -74,13 +82,21 @@ function validateItem(item: PackItem, knownIds: ReadonlySet<string>, push: (find
   if (JSON.stringify(present) !== JSON.stringify(sorted)) {
     push({ rule: "timestamp-order", itemId, message: `Item "${itemId}"'s timestamps must be non-decreasing: createdAt <= updatedAt <= approvedAt <= verifiedAt.` });
   }
-  if (item.status === "verified" && !isIsoTimestamp(item.verifiedAt)) {
-    push({ rule: "missing-verified-at", itemId, message: `Item "${itemId}" has status "verified" but no verifiedAt timestamp.` });
+  // Every timestamp check below resolves `item.status` through
+  // `packStatusToLifecycle` rather than comparing against "approved"/
+  // "verified" string literals directly -- those are the SHARED lifecycle
+  // states, not pack status words. A pack item's own status is "kept"/
+  // "published" (issue #1228's specialization); resolving through the
+  // shared function is what keeps this file from silently drifting back
+  // into declaring its own copy of the mapping.
+  const lifecycleState = isPackStatus(item.status) ? packStatusToLifecycle(item.status).state : null;
+  if (lifecycleState === "verified" && !isIsoTimestamp(item.verifiedAt)) {
+    push({ rule: "missing-verified-at", itemId, message: `Item "${itemId}" has status "${item.status}" but no verifiedAt timestamp.` });
   }
-  if ((item.status === "approved" || item.status === "verified") && !isIsoTimestamp(item.approvedAt)) {
+  if ((lifecycleState === "approved" || lifecycleState === "verified") && !isIsoTimestamp(item.approvedAt)) {
     push({ rule: "missing-approved-at", itemId, message: `Item "${itemId}" has status "${item.status}" but no approvedAt timestamp — approval (the Customer keep) precedes verification.` });
   }
-  if ((item.status === "absent" || item.status === "found" || item.status === "draft") && (isIsoTimestamp(item.approvedAt) || isIsoTimestamp(item.verifiedAt))) {
+  if ((lifecycleState === "absent" || lifecycleState === "found" || lifecycleState === "draft") && (isIsoTimestamp(item.approvedAt) || isIsoTimestamp(item.verifiedAt))) {
     push({ rule: "premature-timestamp", itemId, message: `Item "${itemId}" has status "${item.status}" but already carries an approvedAt or verifiedAt timestamp.` });
   }
   if (!Array.isArray(item.sourcePins)) {
@@ -94,8 +110,8 @@ function validateItem(item: PackItem, knownIds: ReadonlySet<string>, push: (find
   }
   if (!Array.isArray(item.outputPaths)) push({ rule: "invalid-output-paths", itemId, message: `Item "${itemId}"'s outputPaths must be an array of strings.` });
   if (!Array.isArray(item.publishedTo)) push({ rule: "invalid-published-to", itemId, message: `Item "${itemId}"'s publishedTo must be an array of strings.` });
-  if (item.status !== "verified" && Array.isArray(item.publishedTo) && item.publishedTo.length > 0) {
-    push({ rule: "premature-published-to", itemId, message: `Item "${itemId}" has status "${item.status}" but already names a publishedTo destination; only a verified item has shipped anywhere.` });
+  if (lifecycleState !== "verified" && Array.isArray(item.publishedTo) && item.publishedTo.length > 0) {
+    push({ rule: "premature-published-to", itemId, message: `Item "${itemId}" has status "${item.status}" but already names a publishedTo destination; only a published item has shipped anywhere.` });
   }
 }
 

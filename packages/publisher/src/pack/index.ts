@@ -3,9 +3,16 @@
  * `clossys/publisher/pack.json` is the manifest this module's types and
  * functions describe. See this package's README, "The pack" section, for
  * the full MECE layer table and the pack/loop lifecycle mapping.
+ *
+ * Pack item statuses and the lifecycle they specialize (issue #1228) are
+ * NOT declared here: this package imports them from `@clossys/controller`
+ * (`docs/contracts/lifecycle.json`'s own governance rule — "No package
+ * other than @clossys/controller declares its own copy of `states` or
+ * `conditions`") and forwards them below for convenience, rather than
+ * restating them.
  */
-export { isLifecycleCondition, isLifecycleStatus, LIFECYCLE_CONDITIONS, LIFECYCLE_STATUSES } from "./lifecycle.js";
-export type { LifecycleCondition, LifecycleStatus } from "./lifecycle.js";
+export { LIFECYCLE_CONDITIONS, LIFECYCLE_STATES, PACK_STATUSES, packStatusToLifecycle } from "@clossys/controller";
+export type { LifecycleCondition, LifecycleState, PackStatus, PackStatusLifecyclePosition } from "@clossys/controller";
 
 export { isPackLayer, isPackVersionString, isPackVisibility, PACK_LAYERS, PACK_VISIBILITIES } from "./types.js";
 export type { PackItem, PackLayer, PackManifest, PackSourcePin, PackVisibility } from "./types.js";

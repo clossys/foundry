@@ -40,11 +40,21 @@ describe("validatePackManifest", () => {
   it("passes a manifest with satisfied needs and a verified item", () => {
     const result = validatePackManifest(
       manifest([
-        item({ id: "strategy-brief", status: "verified", approvedAt: NOW, verifiedAt: LATER, publishedTo: ["internal-record"] }),
+        item({ id: "strategy-brief", status: "published", approvedAt: NOW, verifiedAt: LATER, publishedTo: ["internal-record"] }),
         item({ id: "website", layer: "surface", owner: "publisher", visibility: "public", needs: ["strategy-brief"] }),
       ]),
     );
     expect(result).toEqual({ exitCode: 0, findings: [] });
+  });
+
+  it("accepts every real @clossys/controller PackStatus word, including in-review, kept, and published", () => {
+    for (const status of ["absent", "found", "draft", "in-review", "kept", "published"] as const) {
+      const overrides: Partial<PackItem> = { id: `status-${status}`, status };
+      if (status === "kept" || status === "published") overrides.approvedAt = NOW;
+      if (status === "published") overrides.verifiedAt = LATER;
+      const result = validatePackManifest(manifest([item(overrides as Partial<PackItem> & Pick<PackItem, "id">)]));
+      expect(result.findings.filter((finding) => finding.rule === "invalid-status")).toEqual([]);
+    }
   });
 
   it("rejects a non-1 schemaVersion", () => {
@@ -66,7 +76,7 @@ describe("validatePackManifest", () => {
           layer: "nonsense" as never,
           owner: "",
           visibility: "secret" as never,
-          status: "in-review" as never,
+          status: "queued" as never,
           condition: "unknown" as never,
           version: "0.1" as never,
         }),
@@ -102,8 +112,8 @@ describe("validatePackManifest", () => {
   it("rejects verified status without verifiedAt, and approved/verified without approvedAt", () => {
     const result = validatePackManifest(
       manifest([
-        item({ id: "a", status: "verified", approvedAt: NOW }),
-        item({ id: "b", status: "approved" }),
+        item({ id: "a", status: "published", approvedAt: NOW }),
+        item({ id: "b", status: "kept" }),
       ]),
     );
     expect(result.findings).toEqual(

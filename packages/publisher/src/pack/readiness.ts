@@ -1,8 +1,9 @@
+import { packStatusToLifecycle } from "@clossys/controller";
 import type { PackItem, PackManifest } from "./types.js";
 
 export interface PackItemReadiness {
   itemId: string;
-  /** True when every item this one needs is itself approved or verified, and not blocked. */
+  /** True when every item this one needs is itself kept or published, and not blocked. */
   ready: boolean;
   /** Needed ids that are not yet satisfied — empty when ready is true. */
   blockedBy: readonly string[];
@@ -15,10 +16,16 @@ export interface PackReadiness {
   ready: boolean;
 }
 
+/** Resolves an item's pack status to the shared lifecycle state (#1228) it specializes, via `@clossys/controller`'s own mapping — never a second, local copy of it. */
+function lifecycleState(item: PackItem) {
+  return packStatusToLifecycle(item.status).state;
+}
+
 function isSatisfied(item: PackItem | undefined): boolean {
   if (!item) return false; // an unknown need is a schema defect, never treated as satisfied
   if (item.condition === "blocked") return false;
-  return item.status === "approved" || item.status === "verified";
+  const state = lifecycleState(item);
+  return state === "approved" || state === "verified";
 }
 
 /**
@@ -50,9 +57,9 @@ export function planPackOrder(manifest: PackManifest): readonly string[] {
 
 /**
  * Readiness computed from the `needs` graph (#1204's "Done when" list): an
- * item is ready once every item it needs is itself approved or verified,
- * and none of them is blocked. A missing dependency is never silently
- * treated as satisfied.
+ * item is ready once every item it needs resolves (via `packStatusToLifecycle`)
+ * to the shared `approved` or `verified` state, and none of them is
+ * blocked. A missing dependency is never silently treated as satisfied.
  */
 export function computePackReadiness(manifest: PackManifest): PackReadiness {
   const byId = new Map(manifest.items.map((item) => [item.id, item]));
@@ -67,15 +74,19 @@ export function computePackReadiness(manifest: PackManifest): PackReadiness {
 
 /**
  * "Publisher ... seals last" (#1204): the ids eligible to move from
- * `approved` to `verified` right now — already approved, not blocked, and
- * every item they need is itself already verified. Sealing is the caller's
- * job (it writes `verifiedAt` and a publication record); this only answers
+ * `kept` to `published` right now — already `kept` (the shared `approved`
+ * state), not blocked, and every item they need is itself already
+ * `published` (the shared `verified` state). Sealing is the caller's job
+ * (it writes `verifiedAt` and a publication record); this only answers
  * "what may be sealed."
  */
 export function sealableItemIds(manifest: PackManifest): readonly string[] {
   const byId = new Map(manifest.items.map((item) => [item.id, item]));
   return manifest.items
-    .filter((item) => item.status === "approved" && item.condition !== "blocked")
-    .filter((item) => (item.needs ?? []).every((need) => byId.get(need)?.status === "verified"))
+    .filter((item) => item.status === "kept" && item.condition !== "blocked")
+    .filter((item) => (item.needs ?? []).every((need) => {
+      const needed = byId.get(need);
+      return needed !== undefined && lifecycleState(needed) === "verified";
+    }))
     .map((item) => item.id);
 }

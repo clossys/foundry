@@ -63,10 +63,10 @@ describe("computePackReadiness", () => {
   });
 
   it("is ready when a need is approved, and also when verified", () => {
-    for (const status of ["approved", "verified"] as const) {
+    for (const status of ["kept", "published"] as const) {
       const readiness = computePackReadiness(
         manifest([
-          item({ id: "strategy-brief", status, approvedAt: NOW, verifiedAt: status === "verified" ? NOW : null }),
+          item({ id: "strategy-brief", status, approvedAt: NOW, verifiedAt: status === "published" ? NOW : null }),
           item({ id: "website", layer: "surface", needs: ["strategy-brief"] }),
         ]),
       );
@@ -77,7 +77,7 @@ describe("computePackReadiness", () => {
   it("treats a blocked need as unsatisfied even if approved", () => {
     const readiness = computePackReadiness(
       manifest([
-        item({ id: "strategy-brief", status: "approved", approvedAt: NOW, condition: "blocked" }),
+        item({ id: "strategy-brief", status: "kept", approvedAt: NOW, condition: "blocked" }),
         item({ id: "website", layer: "surface", needs: ["strategy-brief"] }),
       ]),
     );
@@ -92,15 +92,15 @@ describe("computePackReadiness", () => {
 
 describe("sealableItemIds", () => {
   it("returns an approved item with no needs", () => {
-    const ids = sealableItemIds(manifest([item({ id: "strategy-brief", status: "approved", approvedAt: NOW })]));
+    const ids = sealableItemIds(manifest([item({ id: "strategy-brief", status: "kept", approvedAt: NOW })]));
     expect(ids).toEqual(["strategy-brief"]);
   });
 
   it("includes an approved item with no needs but excludes one whose need is not yet verified", () => {
     const ids = sealableItemIds(
       manifest([
-        item({ id: "strategy-brief", status: "approved", approvedAt: NOW }),
-        item({ id: "website", layer: "surface", status: "approved", approvedAt: NOW, needs: ["strategy-brief"] }),
+        item({ id: "strategy-brief", status: "kept", approvedAt: NOW }),
+        item({ id: "website", layer: "surface", status: "kept", approvedAt: NOW, needs: ["strategy-brief"] }),
       ]),
     );
     expect(ids).toEqual(["strategy-brief"]);
@@ -109,10 +109,10 @@ describe("sealableItemIds", () => {
   it("includes an approved item once its need is verified, and excludes a draft or blocked item", () => {
     const ids = sealableItemIds(
       manifest([
-        item({ id: "strategy-brief", status: "verified", approvedAt: NOW, verifiedAt: NOW }),
-        item({ id: "website", layer: "surface", status: "approved", approvedAt: NOW, needs: ["strategy-brief"] }),
+        item({ id: "strategy-brief", status: "published", approvedAt: NOW, verifiedAt: NOW }),
+        item({ id: "website", layer: "surface", status: "kept", approvedAt: NOW, needs: ["strategy-brief"] }),
         item({ id: "email-kit", layer: "surface", status: "draft" }),
-        item({ id: "social-kit", layer: "surface", status: "approved", approvedAt: NOW, condition: "blocked" }),
+        item({ id: "social-kit", layer: "surface", status: "kept", approvedAt: NOW, condition: "blocked" }),
       ]),
     );
     expect(ids).toEqual(["website"]);

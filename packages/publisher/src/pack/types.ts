@@ -1,4 +1,4 @@
-import type { LifecycleCondition, LifecycleStatus } from "./lifecycle.js";
+import type { LifecycleCondition, PackStatus } from "@clossys/controller";
 
 /**
  * The v0 Launch pack's MECE layers (issue #1204's own table). `foundation`
@@ -29,20 +29,30 @@ export interface PackItem {
   visibility: PackVisibility;
   /** Ids of other pack items this one needs before it can be planned as ready. */
   needs: readonly string[];
-  status: LifecycleStatus;
+  /**
+   * `PackStatus` from `@clossys/controller` (issue #1228's shared
+   * lifecycle, `docs/contracts/lifecycle.json`'s `packStatusMapping`):
+   * `absent`, `found`, `draft`, `in-review`, `kept`, `published`. This is
+   * NOT the bare six-word `LifecycleState` list — pack items keep their
+   * own specialized words, which `packStatusToLifecycle` resolves onto
+   * the shared `absent`/`found`/`draft`/`approved`/`verified`/`retired`
+   * states. See that function's own doc comment for why a specialization
+   * is not a second vocabulary.
+   */
+  status: PackStatus;
   condition: LifecycleCondition;
   /** "v0.1", "v0.2", … — bumped on every republish, independent of the owning package's own semver. */
   version: string;
   createdAt: string | null;
   updatedAt: string | null;
-  /** Set when a Customer keep approves this item (the former "kept" status). */
+  /** Set when a Customer keep approves this item (status becomes `kept`, which `packStatusToLifecycle` resolves to the shared `approved` state). */
   approvedAt: string | null;
-  /** Set when this item is sealed and verified live (the former "published" status). */
+  /** Set when this item is sealed and live (status becomes `published`, which `packStatusToLifecycle` resolves to the shared `verified` state). */
   verifiedAt: string | null;
   sourcePins: readonly PackSourcePin[];
   /** Where this item's rendered output lives, e.g. `clossys/publisher/out/website/v0.1/`. */
   outputPaths: readonly string[];
-  /** Where a verified item was actually published — a URL, a channel name, or similar. Empty until verified. */
+  /** Where a `published` item was actually published — a URL, a channel name, or similar. Empty until published. */
   publishedTo: readonly string[];
   /** The single next action a caller should take for this item, or null when there is none. */
   nextAction: string | null;
