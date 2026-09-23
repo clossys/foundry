@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "host": "claude-code",
+  "verifiedAt": "2026-09-22",
+  "tiers": {
+    "light": { "balanced": "claude-haiku-4-5" },
+    "standard": { "balanced": "claude-sonnet-5", "costConscious": "claude-haiku-4-5" },
+    "deep": { "balanced": "claude-opus-5", "costConscious": "claude-sonnet-5" }
+  }
+}

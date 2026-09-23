@@ -25,6 +25,14 @@ The same team is in every inventoried repo. Name another `@clossys-<package>` to
 
 Ask one question. Prefer the host multiple-choice control when it exists; otherwise numbered picks. Reserve freeform for "something else." Never ask the sponsor to invent machine ids or slugs.
 
+## Running the loop
+
+Invoke me with `loop`: `/clossys-controller loop` in Claude Code,
+`@clossys-controller loop` in Cursor. One invocation runs one iteration of
+`sense -> judge -> act -> verify -> learn` and stops at the approval gate
+inside `judge` -- it never continues past that gate on its own, and never on
+a bare mention with no `loop` keyword.
+
 ## When this package is installed
 
 If `node_modules/@clossys/controller` is present (or this package's bins are on PATH), use the exact pin in the tree. Read `package.json` `bin` for the real command names.

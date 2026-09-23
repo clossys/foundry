@@ -21,7 +21,21 @@ Every mode executes the same five stages:
 2. `judge`
 3. `act`
 4. `verify`
-5. `learnOrEscalate`
+5. `learn`
+
+`learn` was named `learnOrEscalate` before schema version 5 (issue #1194,
+owner decision 2026-09-22): one word, not two, because escalation was
+always one of learn's own outcomes rather than a separate stage. `learn`
+adapts the setpoint, the model, or the rule from what `verify` observed --
+or it escalates, handing an unresolved problem to the enclosing loop when
+this one cannot close it. Every mode's own `stageActivities.learn` entry
+below says which of the two applies and when.
+
+Every role is invoked the same way: `loop` (`/clossys-<role> loop` in
+Claude Code, `@clossys-<role> loop` in Cursor). One invocation runs one
+iteration and stops at the approval gate inside `judge`. No skill in this
+repository is named bare `loop` -- Claude Code's own built-in `/loop` is for
+recurring runs, and a role skill invoked as `loop` would collide with it.
 
 The mode changes the activity inside each stage. The definitive modes are:
 

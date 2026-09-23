@@ -69,6 +69,9 @@ export function createNodeHost(cwd = process.cwd(), env: NodeJS.ProcessEnv = pro
       if (existsSync(linkPath)) rmSync(linkPath, { recursive: true, force: true });
       symlinkSync(relativeTarget, linkPath, "dir");
     },
+    remove: (path) => {
+      rmSync(path, { recursive: true, force: true });
+    },
     readDir: (path) => readdirSync(path),
     run,
     prompt,
