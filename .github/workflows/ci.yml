@@ -696,6 +696,11 @@ jobs:
       # is report-mode-only until --enforce. Same class again: manifest,
       # contract, and fixture reads only.
       - run: node scripts/check-loop-matrix.mjs
+      # Same class again: contract- and fixture-read only, no build.
+      # Validates docs/contracts/real-customer-evidence-contract.json (#1222)
+      # against the shared docs/contracts/lifecycle.json vocabulary (#1228),
+      # and the shipped fixture record against the contract.
+      - run: node scripts/check-real-customer-evidence.mjs
       # First-wave productization order: engagement, then operational integrity,
       # then expression. Distinct from the release-catalogue upload order.
       # Reads the sequence contract plus packages/*/package.json runtime edges.
