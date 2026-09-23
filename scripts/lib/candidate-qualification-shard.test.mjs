@@ -46,21 +46,29 @@ test("assignedToShard treats every record as its own when no shard is given", ()
   for (let i = 0; i < 20; i++) assert.equal(assignedToShard(i, null), true);
 });
 
-test("assignedToShard partitions indices by index % shardCount === shardIndex", () => {
-  const shardCount = 8;
-  for (let index = 0; index < 40; index++) {
-    const owners = [];
-    for (let shardIndex = 0; shardIndex < shardCount; shardIndex++) {
-      if (assignedToShard(index, { shardIndex, shardCount })) owners.push(shardIndex);
+// #1276: ci.yml's CANDIDATE_QUALIFICATION_SHARDS is a single tunable value
+// (currently 4, down from an original 8 -- see that env var's own comment),
+// so this partition must stay exhaustive and deterministic for WHATEVER
+// count it is set to, not just whichever one happened to be hard-coded when
+// this test was written. Parametrized over several counts, including 4
+// (today's actual default) and 8 (the value this repository has already
+// run with), rather than asserting against one literal.
+test("assignedToShard partitions indices by index % shardCount === shardIndex, for any shardCount", () => {
+  for (const shardCount of [1, 2, 3, 4, 5, 8, 17]) {
+    for (let index = 0; index < shardCount * 5; index++) {
+      const owners = [];
+      for (let shardIndex = 0; shardIndex < shardCount; shardIndex++) {
+        if (assignedToShard(index, { shardIndex, shardCount })) owners.push(shardIndex);
+      }
+      // Exhaustive and deterministic: EXACTLY one shard owns each index, for
+      // every index -- not "at least one", not "at most one".
+      assert.deepEqual(owners, [index % shardCount], `index ${index} must be owned by exactly one shard when shardCount=${shardCount}`);
     }
-    // Exhaustive and deterministic: EXACTLY one shard owns each index, for
-    // every index -- not "at least one", not "at most one".
-    assert.deepEqual(owners, [index % shardCount], `index ${index} must be owned by exactly one shard`);
   }
 });
 
 test("assignedToShard's partition never drops an index regardless of shardCount", () => {
-  for (const shardCount of [1, 2, 3, 5, 8, 17]) {
+  for (const shardCount of [1, 2, 3, 4, 5, 8, 17]) {
     const seen = new Set();
     for (let index = 0; index < shardCount * 4; index++) {
       for (let shardIndex = 0; shardIndex < shardCount; shardIndex++) {
@@ -69,4 +77,16 @@ test("assignedToShard's partition never drops an index regardless of shardCount"
     }
     assert.equal(seen.size, shardCount * 4, `every index must be claimed by some shard when shardCount=${shardCount}`);
   }
+});
+
+test("assignedToShard at the current CI default (4 shards) matches ci.yml's CANDIDATE_QUALIFICATION_SHARDS", () => {
+  // Not a duplicate of the parametrized tests above: this one exists so a
+  // future change to ci.yml's default that is NOT also reflected here (or
+  // vice versa) is at least named in a failure message, even though the
+  // partition math itself is already proven for every count.
+  const shardCount = 4;
+  assert.deepEqual(
+    [0, 1, 2, 3, 4, 5, 6, 7].map((index) => [0, 1, 2, 3].find((shardIndex) => assignedToShard(index, { shardIndex, shardCount }))),
+    [0, 1, 2, 3, 0, 1, 2, 3],
+  );
 });

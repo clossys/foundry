@@ -45,6 +45,19 @@ concurrency:
   # there is no "superseded" merge-group run to cancel either.
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+env:
+  # #1276 review addendum: the ONE tunable controlling how many parallel
+  # legs `candidate-qualification-shard`'s matrix fans out to. Default 4,
+  # down from an original 8 -- the Free plan's 20-concurrent-job cap is the
+  # binding constraint under today's fleet-wide load
+  # (https://github.com/clossys/foundry/issues/1187#issuecomment-5790637876:
+  # 50 queued against 4 running), and this job's own share of that cap is
+  # directly CANDIDATE_QUALIFICATION_SHARDS + 1 (the fan-in). Raise it again
+  # once queue pressure eases -- a single edit here, no other job or script
+  # change needed: `push-tree` below derives the matrix's actual index list
+  # from this value, and the shard invocation step reads it directly.
+  CANDIDATE_QUALIFICATION_SHARDS: 4
+
 jobs:
   # After a merge-commit PR lands, GitHub pushes a merge commit whose tree
   # equals the PR head that just passed required checks. Re-running every
@@ -59,6 +72,7 @@ jobs:
     timeout-minutes: 5
     outputs:
       duplicate: ${{ steps.cmp.outputs.duplicate }}
+      shard-matrix: ${{ steps.shard-matrix.outputs.matrix }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -79,6 +93,14 @@ jobs:
             exit 0
           fi
           node scripts/push-tree-identical.mjs
+      # The single source `candidate-qualification-shard`'s matrix reads its
+      # index list from -- the workflow-level CANDIDATE_QUALIFICATION_SHARDS
+      # env var above is the one place to change the shard count; every
+      # `pull_request`/`push`/`merge_group` run derives its own matrix from
+      # it fresh, so there is never a second, driftable copy of the number.
+      - id: shard-matrix
+        run: |
+          node -e "console.log('matrix=' + JSON.stringify([...Array(Number(process.env.CANDIDATE_QUALIFICATION_SHARDS)).keys()]))" >> "$GITHUB_OUTPUT"
 
   # Direct tooling is part of the public-package supply chain even when it is
   # not shipped as a runtime dependency. Audit the complete locked graph and
@@ -1180,13 +1202,19 @@ jobs:
   # doing its own `git archive`/`npm pack --dry-run`/`git log --full-history`
   # work -- 946-1060s measured, "serial over packages". `--shard-index`/
   # `--shard-count` (scripts/lib/candidate-qualification-shard.mjs) split
-  # that specific per-record loop across a bounded 8-way matrix while every
-  # shard still runs the cheap, unsharded, cross-record checks (cohort/
-  # quarantine/publication consistency, the sealed-record-set check) in
-  # full -- see that file's own header for why splitting only the per-record
-  # loop is what makes this correct, not merely fast. 8, not more: the whole
-  # workflow must stay within the Free plan's 20 concurrent-job cap, and this
-  # matrix is one of several jobs already competing for it.
+  # that specific per-record loop across a bounded matrix while every shard
+  # still runs the cheap, unsharded, cross-record checks (cohort/quarantine/
+  # publication consistency, the sealed-record-set check) in full -- see
+  # that file's own header for why splitting only the per-record loop is
+  # what makes this correct, not merely fast.
+  #
+  # #1276 review addendum: the shard count is bounded by the workflow-level
+  # CANDIDATE_QUALIFICATION_SHARDS env var (top of this file), not a literal
+  # here -- `push-tree`'s own `shard-matrix` output derives this matrix's
+  # index list from it fresh on every run, so raising or lowering the count
+  # (currently 4, down from an original 8 measured against today's
+  # fleet-wide concurrent-job pressure) is a single-line change, never a
+  # second hard-coded list to keep in sync.
   candidate-qualification-shard:
     name: candidate qualification records (shard ${{ matrix.shard }})
     needs: [push-tree]
@@ -1194,9 +1222,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [0, 1, 2, 3, 4, 5, 6, 7]
+        shard: ${{ fromJSON(needs.push-tree.outputs.shard-matrix) }}
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -1239,7 +1267,7 @@ jobs:
       # ever blocking main.
       - name: Candidate qualification records (this shard's own slice)
         if: steps.touch.outputs.touches != 'false'
-        run: node scripts/check-candidate-qualification.mjs --shard-index ${{ matrix.shard }} --shard-count 8
+        run: node scripts/check-candidate-qualification.mjs --shard-index ${{ matrix.shard }} --shard-count ${{ env.CANDIDATE_QUALIFICATION_SHARDS }}
 
   # The fan-in over the matrix above. Unlike `safety` (which fans in to keep
   # a RULESET-required context name reporting), `candidate-qualification`

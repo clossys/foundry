@@ -116,7 +116,7 @@ export function candidateQualificationCiFailures(workflowText) {
   if (!fullHistoryCheckout.test(build)) failures.push("build-full-history-checkout");
   if (!fullHistoryCheckout.test(shardJob)) failures.push("candidate-full-history-checkout");
   if (
-    !/^\s+- name: Candidate qualification records \(this shard's own slice\)\n\s+if: steps\.touch\.outputs\.touches != 'false'\n\s+run: node scripts\/check-candidate-qualification\.mjs --shard-index \$\{\{ matrix\.shard \}\} --shard-count 8$/m.test(
+    !/^\s+- name: Candidate qualification records \(this shard's own slice\)\n\s+if: steps\.touch\.outputs\.touches != 'false'\n\s+run: node scripts\/check-candidate-qualification\.mjs --shard-index \$\{\{ matrix\.shard \}\} --shard-count \$\{\{ env\.CANDIDATE_QUALIFICATION_SHARDS \}\}$/m.test(
       shardJob,
     )
   )
@@ -161,7 +161,7 @@ test("the required build context fails closed on candidate qualification records
   // just one job's extracted text can no longer stand in for the whole
   // file the way it used to.
   const withoutInvocation = workflow.replace(
-    "      - name: Candidate qualification records (this shard's own slice)\n        if: steps.touch.outputs.touches != 'false'\n        run: node scripts/check-candidate-qualification.mjs --shard-index ${{ matrix.shard }} --shard-count 8\n",
+    "      - name: Candidate qualification records (this shard's own slice)\n        if: steps.touch.outputs.touches != 'false'\n        run: node scripts/check-candidate-qualification.mjs --shard-index ${{ matrix.shard }} --shard-count ${{ env.CANDIDATE_QUALIFICATION_SHARDS }}\n",
     "",
   );
   assert.deepEqual(candidateQualificationCiFailures(withoutInvocation), ["candidate-invocation"]);
@@ -200,14 +200,41 @@ test("the required build context fails closed on candidate qualification records
   assert.deepEqual(candidateQualificationCiFailures(withoutFanInAlways), ["candidate-fanin-always"]);
 });
 
-// #1257: the 8-way matrix itself -- bounded (not more, per the Free-plan
-// 20 concurrent-job cap this file's other comments already describe), and
-// the fan-in's own explicit check has the same shape #1240 established for
-// `build`/`safety`: fail closed on anything other than a clean success.
-test("candidate-qualification-shard is an 8-entry matrix and its fan-in fails closed", () => {
+// #1276 review addendum: the shard COUNT is a single tunable
+// (CANDIDATE_QUALIFICATION_SHARDS, a workflow-level env var -- currently 4,
+// down from an original 8, sized against the Free-plan 20-concurrent-job
+// cap under today's fleet-wide load), never a hard-coded matrix array. This
+// test proves the derivation chain end to end -- the env var exists with
+// today's actual value, push-tree's own step derives the matrix's index
+// list from it, the matrix job reads that derived output (not a literal),
+// and the invocation step's --shard-count reads the SAME env var, so the
+// three can never silently drift apart -- plus the fan-in's own explicit
+// check, the same shape #1240 established for `build`/`safety`: fail
+// closed on anything other than a clean success.
+test("candidate-qualification-shard's matrix count is the single CANDIDATE_QUALIFICATION_SHARDS tunable, and its fan-in fails closed", () => {
   const workflow = readFileSync(join(workflowsDir, "ci.yml"), "utf8");
+
+  assert.match(workflow, /^env:\n(?:[ \t]+#[^\n]*\n)*[ \t]+CANDIDATE_QUALIFICATION_SHARDS: 4$/m, "expected a workflow-level CANDIDATE_QUALIFICATION_SHARDS: 4");
+
+  const pushTree = workflowJob(workflow, "push-tree");
+  assert.match(pushTree, /shard-matrix: \$\{\{ steps\.shard-matrix\.outputs\.matrix \}\}/, "push-tree must output the derived shard-matrix");
+  assert.match(
+    pushTree,
+    /id: shard-matrix\n\s+run: \|\n\s+node -e "console\.log\('matrix=' \+ JSON\.stringify\(\[\.\.\.Array\(Number\(process\.env\.CANDIDATE_QUALIFICATION_SHARDS\)\)\.keys\(\)\]\)\)" >> "\$GITHUB_OUTPUT"/,
+    "push-tree's shard-matrix step must derive the index list from CANDIDATE_QUALIFICATION_SHARDS, not a literal",
+  );
+
   const shardJob = workflowJob(workflow, "candidate-qualification-shard");
-  assert.match(shardJob, /^ {4}strategy:\n {6}fail-fast: false\n {6}matrix:\n {8}shard: \[0, 1, 2, 3, 4, 5, 6, 7\]$/m);
+  assert.match(
+    shardJob,
+    /^ {4}strategy:\n {6}fail-fast: false\n {6}matrix:\n {8}shard: \$\{\{ fromJSON\(needs\.push-tree\.outputs\.shard-matrix\) \}\}$/m,
+    "the matrix must read push-tree's derived output, not a hard-coded array",
+  );
+  assert.match(
+    shardJob,
+    /run: node scripts\/check-candidate-qualification\.mjs --shard-index \$\{\{ matrix\.shard \}\} --shard-count \$\{\{ env\.CANDIDATE_QUALIFICATION_SHARDS \}\}/,
+    "the invocation's --shard-count must read the same tunable the matrix was derived from, never a separate literal",
+  );
 
   const fanInJob = workflowJob(workflow, "candidate-qualification");
   const stepStart = fanInJob.indexOf("- name: All candidate-qualification shards must succeed");
