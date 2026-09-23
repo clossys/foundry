@@ -207,7 +207,8 @@ export const OUTPUTS_DECLARATION_PATH = "foundry.outputs";
 /**
  * Resolves one role's declared output paths from its installed manifest.
  * Every path must fall under this role's own `clossys/<role>/` folder
- * (docs/contracts/consumer-layout.json, issue #1171); a path outside it is
+ * (the repository contract docs/contracts/consumer-layout.json, which does not ship
+ * with this package; issue #1171); a path outside it is
  * reported as `output-path-outside-role-folder` rather than silently kept.
  */
 export function discoverRoleOutputsDeclaration(installRoot: string, role: string): OutputsDeclarationDiscovery {
