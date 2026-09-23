@@ -389,6 +389,54 @@ describe("checkReviewEvidence", () => {
       expect(report.result.verdict).toBe("satisfied");
     });
 
+    it.each([
+      ["stale changes-requested listed first, current approval second", true],
+      ["current approval listed first, stale changes-requested second", false],
+    ])(
+      "a same-reviewer tie between a stale changes-requested and a current approval is ambiguous, never decided by array order (%s)",
+      (_label, changesRequestedFirst) => {
+        // Opus's re-review finding: `submittedAtMs >= previous.submittedAtMs`
+        // let a tie fall to whichever array entry was read last, so the SAME
+        // two records failed open or closed depending only on their order.
+        // validateReviews (@clossys/controller/review/validate) already
+        // refuses to invent an order for an equal-timestamp, different-state
+        // tie at the current head -- "review-decision-ambiguous" -- and this
+        // function must agree, across heads, regardless of array order.
+        const stale = {
+          id: "REVIEW_TIE_STALE_CHANGES",
+          reviewerId: "a-human-reviewer",
+          instanceId: "SESSION_HUMAN",
+          provider: "a-review-client",
+          submittedAt: "2026-08-17T09:00:00Z",
+          state: "changes-requested" as const,
+          depth: "primary" as const,
+          headSha: STALE_HEAD,
+        };
+        const current = {
+          id: "REVIEW_TIE_CURRENT_APPROVAL",
+          reviewerId: "a-human-reviewer",
+          instanceId: "SESSION_HUMAN",
+          provider: "a-review-client",
+          submittedAt: "2026-08-17T09:00:00Z",
+          state: "approved" as const,
+          depth: "primary" as const,
+          headSha: HEAD,
+        };
+        const report = checkReviewEvidence(
+          evidence({
+            checks: [],
+            threads: [],
+            reviews: changesRequestedFirst ? [stale, current] : [current, stale],
+          }),
+          noRequiredChecksPolicy,
+          { requireReviewPresence: false, headShaUnderTest: HEAD },
+        );
+        expect(report.result.verdict).toBe("violated");
+        if (report.result.verdict !== "violated") throw new Error("unreachable");
+        expect(report.result.findings.map((finding) => finding.rule)).toContain("review-decision-ambiguous");
+      },
+    );
+
     it("reports a review with no recorded commit as indeterminate — unknown, not stale", () => {
       // scripts/collect-review-evidence.mjs writes an empty headSha when
       // GitHub's own payload carries no commit.oid. That is a different fact

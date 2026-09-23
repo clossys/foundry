@@ -309,19 +309,36 @@ const DECISIVE_REVIEW_STATES = new Set<ReviewRecord["state"]>(["approved", "chan
  * For each review session (`instanceId`), finds that session's own LATEST
  * decisive record — by `submittedAt`, never by array position, the same
  * discipline `validateReviews` already applies at the current head — across
- * EVERY head the bundle carries. When that latest decisive record is a
- * `changes-requested` whose own `headSha` is not the bundle's current head,
- * reports a `"stale-changes-requested"` violation: see this file's header
- * for why an ordinary push must not be able to silently clear it. Only
- * called once `bundle` is known well-formed (past the evaluability gate),
- * so every candidate record's `submittedAt`, `state`, `instanceId`, and
- * `headSha` are already guaranteed valid — this performs no re-validation.
+ * EVERY head the bundle carries. Two outcomes:
+ *
+ *   - A genuine latest (a strictly later `submittedAt`, or the only decisive
+ *     record for that instance): when it is a `changes-requested` whose own
+ *     `headSha` is not the bundle's current head, reports a
+ *     `"stale-changes-requested"` violation — see this file's header for why
+ *     an ordinary push must not be able to silently clear it.
+ *   - A TIE: two decisive records for the same instance share the same
+ *     `submittedAt` and disagree on `state`. `validateReviews`
+ *     (`@clossys/controller/review/validate`) already refuses to invent an
+ *     order for exactly this shape at the current head — its own
+ *     `hasAmbiguousDecision` — reporting `"review-decision-ambiguous"`
+ *     (a `violation`, per this file's own `RULE_CLASS`) rather than letting
+ *     array position pick a winner. This function mirrors that same rule and
+ *     the same classification across every head instead of only the current
+ *     one, for the identical reason: a tie between a stale
+ *     `changes-requested` and a current `approved` must not fail OPEN merely
+ *     because of which array index happened to be read first.
+ *
+ * Only called once `bundle` is known well-formed (past the evaluability
+ * gate), so every candidate record's `submittedAt`, `state`, `instanceId`,
+ * and `headSha` are already guaranteed valid — this performs no
+ * re-validation.
  */
 function findStaleChangesRequestedViolations(bundle: ReviewEvidenceBundle): ReviewEvidenceFinding[] {
   interface LatestDecisive {
     readonly index: number;
     readonly submittedAtMs: number;
     readonly review: ReviewRecord;
+    readonly isAmbiguous: boolean;
   }
   const latestByInstance = new Map<string, LatestDecisive>();
   bundle.reviews.forEach((review, index) => {
@@ -329,12 +346,28 @@ function findStaleChangesRequestedViolations(bundle: ReviewEvidenceBundle): Revi
     const submittedAtMs = Date.parse(review.submittedAt);
     if (Number.isNaN(submittedAtMs)) return; // defensive only — already validated by this point.
     const previous = latestByInstance.get(review.instanceId);
-    if (!previous || submittedAtMs >= previous.submittedAtMs) {
-      latestByInstance.set(review.instanceId, { index, submittedAtMs, review });
+    if (!previous || submittedAtMs > previous.submittedAtMs) {
+      // A later decision is decisive even if an earlier tie was ambiguous —
+      // same precedence `validateReviews` itself uses.
+      latestByInstance.set(review.instanceId, { index, submittedAtMs, review, isAmbiguous: false });
+    } else if (submittedAtMs === previous.submittedAtMs && review.state !== previous.review.state) {
+      latestByInstance.set(review.instanceId, { ...previous, isAmbiguous: true });
     }
   });
   const findings: ReviewEvidenceFinding[] = [];
-  for (const { index, review } of latestByInstance.values()) {
+  for (const { index, review, isAmbiguous } of latestByInstance.values()) {
+    if (isAmbiguous) {
+      findings.push({
+        rule: "review-decision-ambiguous",
+        severity: "error",
+        path: `reviews[${index}]`,
+        message:
+          `Reviewer ${JSON.stringify(review.reviewerId)} has conflicting decisive reviews that share a ` +
+          "submittedAt timestamp and cannot be ordered safely -- the same rule validateReviews applies at the " +
+          "current head, applied here across every head this bundle carries. Array order never breaks the tie.",
+      });
+      continue;
+    }
     if (review.state === "changes-requested" && review.headSha !== bundle.headSha) {
       findings.push({
         rule: "stale-changes-requested",
