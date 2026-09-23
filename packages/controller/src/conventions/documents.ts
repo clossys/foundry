@@ -33,6 +33,10 @@ const packageRoot = resolve(here, "..", "..");
 
 export const DOCUMENTS_ROOT: string = join(packageRoot, "conventions", "documents");
 export const ADAPTERS_ROOT: string = join(packageRoot, "conventions", "adapters");
+/** Dated data files (e.g. `runner-pricing.json`) an evaluator reads as input -- never hard-coded in code. */
+export const DATA_ROOT: string = join(packageRoot, "conventions", "data");
+/** Ready-to-adopt CI workflow skeletons a scaffold can compose (issue #1259, #1215). */
+export const TEMPLATES_ROOT: string = join(packageRoot, "conventions", "templates");
 
 export const CONVENTION_DOCUMENTS: readonly ConventionDocument[] = Object.freeze([
   Object.freeze({
@@ -100,6 +104,12 @@ export const CONVENTION_DOCUMENTS: readonly ConventionDocument[] = Object.freeze
     id: "runner-conventions",
     filename: "runner-conventions.md",
     title: "Runner-label conventions",
+    templated: false,
+  }),
+  Object.freeze({
+    id: "ci-conventions",
+    filename: "ci-conventions.md",
+    title: "CI conventions",
     templated: false,
   }),
 ]);
@@ -185,6 +195,26 @@ export function adapterPath(id: string): string {
     );
   }
   return join(ADAPTERS_ROOT, adapter.filename);
+}
+
+/**
+ * Absolute path to a shipped dated data file under `conventions/data/`, by
+ * its filename (there is no id registry for these -- they are read as data
+ * by an evaluator, not templated or copied onto a machine the way a
+ * document or adapter is). `runner-pricing.json` is the first; resolving a
+ * path here is not I/O, same as `documentPath`/`adapterPath`.
+ */
+export function dataPath(filename: string): string {
+  return join(DATA_ROOT, filename);
+}
+
+/**
+ * Absolute path to a shipped CI workflow template under `conventions/
+ * templates/`, by its filename. A scaffold (issue #1215) composes these
+ * into a new repository; resolving a path here is not I/O.
+ */
+export function templatePath(filename: string): string {
+  return join(TEMPLATES_ROOT, filename);
 }
 
 /**

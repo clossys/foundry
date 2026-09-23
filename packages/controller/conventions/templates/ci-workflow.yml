@@ -1,0 +1,90 @@
+# A conforming CI workflow skeleton (issue #1259).
+#
+# Passes ci-conventions-check with an empty `requiredContexts` list (nothing
+# to reconcile yet) and, once a repository declares `verify-build` as a
+# required context mapped to this file, with a non-empty one too. Replace
+# the `steps:` in `verify-build`/`verify-unit-tests` with real work; every
+# convention this file demonstrates -- triggers, permissions, concurrency,
+# timeouts, SHA pins, the fan-in shape -- should stay as written.
+#
+# Launcher's product-repository scaffold (#1215) composes this file as-is
+# into a new repository's .github/workflows/ci.yml. A repository adopting
+# it directly renames the two placeholder job names to its own real jobs
+# and updates `needs:`/the fan-in step's pair list to match.
+
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  merge_group:
+
+# Least-privilege by default (ci-conventions.md, Security). A job that
+# genuinely needs more declares exactly that job-level exception.
+permissions:
+  contents: read
+
+# cancel-in-progress only for pull_request: the group key includes the
+# event name, so a push (to main) or a merge_group run is never cancelled
+# by a later pull_request run on the same ref, and a pull_request run IS
+# cancelled by its own next push -- ci-conventions.md, Cost.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  # Replace with this repository's real build/typecheck job(s). Split a
+  # long serial job into several jobs like this one plus verify-unit-tests
+  # below, fanned in by verify-build-and-test at the bottom -- see
+  # ci-conventions.md, Speed, "parallel jobs behind a fan-in".
+  verify-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+
+  verify-unit-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm test
+
+  # The fan-in: this is the required-status-check context a branch-
+  # protection ruleset actually names. `if: always()` plus the explicit
+  # needs.*.result check are both load-bearing -- see ci-conventions.md,
+  # Quality, "the fan-in uses if: always() and an explicit results check".
+  verify-build-and-test:
+    needs: [verify-build, verify-unit-tests]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Every fanned-in job must have succeeded
+        run: |
+          set +e
+          status=0
+          for pair in \
+            "verify-build=${{ needs.verify-build.result }}" \
+            "verify-unit-tests=${{ needs.verify-unit-tests.result }}"; do
+            name="${pair%%=*}"
+            result="${pair#*=}"
+            if [ "$result" != "success" ]; then
+              echo "::error::split job '$name' did not succeed (result: $result)"
+              status=1
+            fi
+          done
+          set -e
+          exit "$status"

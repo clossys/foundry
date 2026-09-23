@@ -60,6 +60,8 @@
     },
     "./conventions/documents/*": "./conventions/documents/*",
     "./conventions/adapters/*": "./conventions/adapters/*",
+    "./conventions/data/*": "./conventions/data/*",
+    "./conventions/templates/*": "./conventions/templates/*",
     "./policy": {
       "types": "./dist/policy/index.d.ts",
       "import": "./dist/policy/index.js"
@@ -84,7 +86,8 @@
     "foundry-onboarding-run": "dist/onboarding/bin.js",
     "foundry-completion-evidence-check": "dist/positions/completion-evidence-bin.js",
     "singular-authority-check": "dist/release/singular-authority-bin.js",
-    "foundry-loop-status": "dist/loop/bin.js"
+    "foundry-loop-status": "dist/loop/bin.js",
+    "ci-conventions-check": "dist/conventions/ci-conventions-cli.js"
   },
   "files": [
     "dist",
@@ -106,7 +109,7 @@
       "invocation": "single-json-input"
     }
   },
-  "description": "Owns every rule: package lifecycle and process orchestration (catalog, composition, gates, release, repository-profile, review-evidence, workspace-cleanup), account-neutral agent conventions (branch provenance, skill naming, agent interoperability, routine and schedule declarations, CI gate naming, capability-first skill registry), and the zero-I/O content-addressed policy-binding primitive that binds a rule to a document without disclosing it.",
+  "description": "Owns every rule: package lifecycle and process orchestration (catalog, composition, gates, release, repository-profile, review-evidence, workspace-cleanup), account-neutral agent conventions (branch provenance, skill naming, agent interoperability, routine and schedule declarations, CI gate naming, CI conventions and their evaluator, capability-first skill registry), and the zero-I/O content-addressed policy-binding primitive that binds a rule to a document without disclosing it.",
   "keywords": [
     "governance",
     "package-lifecycle",
