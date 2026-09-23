@@ -1,8 +1,8 @@
-import { mkdtempSync, symlinkSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { REQUIRED_FIT_CRITERIA, REQUIRED_READINESS_CRITERIA } from "./assessment.js";
 import { fileURLToPath } from "node:url";
 import { AdvisorCliInputError, isDirectInvocation, main } from "./cli.js";
@@ -25,6 +25,7 @@ function authorization(assessment: Record<string, unknown>): Record<string, unkn
 }
 function write(value: unknown): string { const path = join(root, "assessment.json"); writeFileSync(path, JSON.stringify(value)); return path; }
 beforeEach(() => { root = mkdtempSync(join(tmpdir(), "advisor-cli-")); vi.spyOn(console, "log").mockImplementation(() => {}); });
+afterEach(() => { if (root) rmSync(root, { recursive: true, force: true }); });
 beforeAll(() => {
   const packageRoot = fileURLToPath(new URL("..", import.meta.url));
   const compiler = fileURLToPath(new URL("../../../node_modules/typescript/bin/tsc", import.meta.url));

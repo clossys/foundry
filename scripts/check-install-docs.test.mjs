@@ -5,13 +5,13 @@
 // is included so a #924 regression in tree is still a red suite.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 
 import { evaluateInstallDocs, scanInstallDocs } from "./check-install-docs.mjs";
+import { makeTmpDirSync } from "./lib/tmp-fixture.mjs";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const scriptPath = join(scriptDir, "check-install-docs.mjs");
@@ -194,8 +194,8 @@ const event = {
   assert.deepEqual(result.findings, []);
 });
 
-test("CLI: a tiny repo with a blocking README exits 1", () => {
-  const root = mkdtempSync(join(tmpdir(), "install-docs-block-"));
+test("CLI: a tiny repo with a blocking README exits 1", (t) => {
+  const root = makeTmpDirSync(t, "install-docs-block-");
   mkdirSync(join(root, "packages", "alpha"), { recursive: true });
   writeFileSync(join(root, "packages", "alpha", "package.json"), JSON.stringify({ name: "@gate-fixture/alpha" }));
   writeFileSync(join(root, "packages", "alpha", "README.md"), `## Install
@@ -211,8 +211,8 @@ npm install @gate-fixture/alpha
   assert.match(result.stdout, /token-required-install/);
 });
 
-test("CLI: a tiny repo with a documented README exits 0 and lists it as documented", () => {
-  const root = mkdtempSync(join(tmpdir(), "install-docs-ok-"));
+test("CLI: a tiny repo with a documented README exits 0 and lists it as documented", (t) => {
+  const root = makeTmpDirSync(t, "install-docs-ok-");
   mkdirSync(join(root, "packages", "beta"), { recursive: true });
   writeFileSync(join(root, "packages", "beta", "package.json"), JSON.stringify({ name: "@gate-fixture/beta" }));
   writeFileSync(join(root, "packages", "beta", "README.md"), `## Install
@@ -231,8 +231,8 @@ Published to https://registry.npmjs.org. Installing it needs no authentication.
   assert.ok(Array.isArray(body.undocumented));
 });
 
-test("CLI: undocumented-only READMEs still exit 0 and are listed", () => {
-  const root = mkdtempSync(join(tmpdir(), "install-docs-undoc-"));
+test("CLI: undocumented-only READMEs still exit 0 and are listed", (t) => {
+  const root = makeTmpDirSync(t, "install-docs-undoc-");
   mkdirSync(join(root, "packages", "gamma"), { recursive: true });
   writeFileSync(join(root, "packages", "gamma", "package.json"), JSON.stringify({ name: "@gate-fixture/gamma" }));
   writeFileSync(join(root, "packages", "gamma", "README.md"), "# gamma\n\nNo install section.\n");

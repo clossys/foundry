@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
+import { makeTmpDirSync } from "./lib/tmp-fixture.mjs";
 
 // Hermetic negative controls for scripts/check-touches-packages.mjs and for
 // the two steps it gates in .github/workflows/ci.yml ("Candidate
@@ -36,8 +36,8 @@ function gitCommit(dir, message) {
 // packages/, a root package.json and package-lock.json, and a Markdown
 // file, so every control below can change exactly one of those and nothing
 // else.
-function makeRepo() {
-  const dir = mkdtempSync(join(tmpdir(), "touches-packages-"));
+function makeRepo(t) {
+  const dir = makeTmpDirSync(t, "touches-packages-");
   git(["init", "-q", "-b", "main"], dir);
   mkdirSync(join(dir, "packages", "probe", "src"), { recursive: true });
   writeFileSync(join(dir, "packages", "probe", "package.json"), '{"name":"probe","version":"1.0.0"}\n');
@@ -80,8 +80,8 @@ function runDetector(dir, { baseSha, eventName = "pull_request" } = {}) {
   return { exitStatus, stdout, touches };
 }
 
-test("the script itself always exits 0 — it is a router, never a gate", () => {
-  const { dir, baseSha } = makeRepo();
+test("the script itself always exits 0 — it is a router, never a gate", (t) => {
+  const { dir, baseSha } = makeRepo(t);
   writeFileSync(join(dir, "SECURITY.md"), "# Security\n\nUpdated.\n");
   gitCommit(dir, "docs only");
   const { exitStatus } = runDetector(dir, { baseSha });
@@ -90,8 +90,8 @@ test("the script itself always exits 0 — it is a router, never a gate", () => 
 
 // (a) A pull request touching only a Markdown file — the expensive steps
 // must be provably skippable.
-test("control (a): a Markdown-only change reports touches=false", () => {
-  const { dir, baseSha } = makeRepo();
+test("control (a): a Markdown-only change reports touches=false", (t) => {
+  const { dir, baseSha } = makeRepo(t);
   writeFileSync(join(dir, "SECURITY.md"), "# Security\n\nUpdated wording.\n");
   gitCommit(dir, "docs only");
   const { touches } = runDetector(dir, { baseSha });
@@ -99,8 +99,8 @@ test("control (a): a Markdown-only change reports touches=false", () => {
 });
 
 // (b) A pull request touching any file under packages/** — must run.
-test("control (b): a packages/** change reports touches=true", () => {
-  const { dir, baseSha } = makeRepo();
+test("control (b): a packages/** change reports touches=true", (t) => {
+  const { dir, baseSha } = makeRepo(t);
   writeFileSync(join(dir, "packages", "probe", "src", "index.ts"), "export const x = 2;\n");
   gitCommit(dir, "package source change");
   const { touches } = runDetector(dir, { baseSha });
@@ -109,24 +109,24 @@ test("control (b): a packages/** change reports touches=true", () => {
 
 // (c) A pull request touching package-lock.json — must run. (Also proves
 // root package.json is covered, by the same mechanism.)
-test("control (c): a package-lock.json change reports touches=true", () => {
-  const { dir, baseSha } = makeRepo();
+test("control (c): a package-lock.json change reports touches=true", (t) => {
+  const { dir, baseSha } = makeRepo(t);
   writeFileSync(join(dir, "package-lock.json"), '{"lockfileVersion":3,"changed":true}\n');
   gitCommit(dir, "lockfile bump");
   const { touches } = runDetector(dir, { baseSha });
   assert.equal(touches, "true");
 });
 
-test("control (c2): a root package.json change reports touches=true", () => {
-  const { dir, baseSha } = makeRepo();
+test("control (c2): a root package.json change reports touches=true", (t) => {
+  const { dir, baseSha } = makeRepo(t);
   writeFileSync(join(dir, "package.json"), '{"name":"root","private":true,"changed":true}\n');
   gitCommit(dir, "root manifest change");
   const { touches } = runDetector(dir, { baseSha });
   assert.equal(touches, "true");
 });
 
-test("control (c3): a governance/** change reports touches=true even though nothing under packages/ moved", () => {
-  const { dir, baseSha } = makeRepo();
+test("control (c3): a governance/** change reports touches=true even though nothing under packages/ moved", (t) => {
+  const { dir, baseSha } = makeRepo(t);
   mkdirSync(join(dir, "governance", "release-qualifications"), { recursive: true });
   writeFileSync(join(dir, "governance", "release-qualifications", "probe.json"), "{}\n");
   gitCommit(dir, "add qualification record");
@@ -134,8 +134,8 @@ test("control (c3): a governance/** change reports touches=true even though noth
   assert.equal(touches, "true");
 });
 
-test("control (c4): a scripts/** change reports touches=true (covers the checker scripts' own lib/ dependencies)", () => {
-  const { dir, baseSha } = makeRepo();
+test("control (c4): a scripts/** change reports touches=true (covers the checker scripts' own lib/ dependencies)", (t) => {
+  const { dir, baseSha } = makeRepo(t);
   mkdirSync(join(dir, "scripts", "lib"), { recursive: true });
   writeFileSync(join(dir, "scripts", "lib", "packed-consumer-readiness.mjs"), "export const x = 1;\n");
   gitCommit(dir, "touch a checker's own lib module");
@@ -145,16 +145,16 @@ test("control (c4): a scripts/** change reports touches=true (covers the checker
 
 // (d) The detection step failing, or producing an empty diff, must RUN —
 // never skip. Two independent ways detection can fail:
-test("control (d1): an unresolvable BASE_SHA is a detection failure — reports touches=true, still exits 0", () => {
-  const { dir } = makeRepo();
+test("control (d1): an unresolvable BASE_SHA is a detection failure — reports touches=true, still exits 0", (t) => {
+  const { dir } = makeRepo(t);
   const { exitStatus, touches, stdout } = runDetector(dir, { baseSha: "0000000000000000000000000000000000dead" });
   assert.equal(exitStatus, 0, "must never fail the job");
   assert.equal(touches, "true", "an unresolvable base must fail SAFE (run), not skip");
   assert.match(stdout, /did not resolve/);
 });
 
-test("control (d2): an empty diff against the merge base (HEAD == base) is treated as a detection failure — reports touches=true", () => {
-  const { dir, baseSha } = makeRepo();
+test("control (d2): an empty diff against the merge base (HEAD == base) is treated as a detection failure — reports touches=true", (t) => {
+  const { dir, baseSha } = makeRepo(t);
   // No further commit: HEAD is the base commit itself, so the diff between
   // merge-base and HEAD is empty. A real pull request always changes
   // something, so this shape only occurs when detection itself has gone
@@ -166,16 +166,16 @@ test("control (d2): an empty diff against the merge base (HEAD == base) is treat
   assert.match(stdout, /zero changed paths/);
 });
 
-test("control (d3): a non-pull_request event (push to main) always reports touches=true", () => {
-  const { dir, baseSha } = makeRepo();
+test("control (d3): a non-pull_request event (push to main) always reports touches=true", (t) => {
+  const { dir, baseSha } = makeRepo(t);
   writeFileSync(join(dir, "SECURITY.md"), "# Security\n\nUpdated.\n");
   gitCommit(dir, "docs only, but on push");
   const { touches } = runDetector(dir, { baseSha, eventName: "push" });
   assert.equal(touches, "true");
 });
 
-test("control (d4): a missing BASE_SHA (empty string) reports touches=true", () => {
-  const { dir } = makeRepo();
+test("control (d4): a missing BASE_SHA (empty string) reports touches=true", (t) => {
+  const { dir } = makeRepo(t);
   const { touches } = runDetector(dir, { baseSha: "" });
   assert.equal(touches, "true");
 });
@@ -203,7 +203,7 @@ function workflowJob(workflowText, name) {
 // not itself required), fail-closed polarity (`!= 'false'`, never
 // `== 'true'`), and a `continue-on-error: true` detector whose own failure
 // cannot stop the job.
-test("control (e): candidate-qualification and packed-consumer-readiness always report a real outcome on pull_request", () => {
+test("control (e): candidate-qualification and packed-consumer-readiness always report a real outcome on pull_request", (t) => {
   const workflow = readFileSync(workflowPath, "utf8");
   const build = workflowJob(workflow, "build");
 

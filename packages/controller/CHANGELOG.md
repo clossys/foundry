@@ -5,6 +5,20 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.22] - 2026-09-23
+
+### Notes
+
+- No packed content changed. This package's test suite changed as part of
+  fixing leaking temp fixture directories (issue #1250), and its 0.9.12
+  qualification record was already retained -- once a version's record is
+  retained, any further change to that package, packed or not, requires a new
+  version. Renumbered repeatedly as main moved ahead during this restack's
+  disk-incident hold (0.9.13 -> ... -> 0.9.22): main independently reached
+  0.9.21 (advisor dependency-range widening for wave 2), and #1315 claims
+  0.9.21 as well but its content has already landed on main under that same
+  number (version-collision rule, issue #1187).
+
 ## [0.9.21] - 2026-09-23
 
 ### Changed

@@ -5,8 +5,7 @@
 // node_modules/.bin-shaped symlink in a temp directory — not `node <real path>`.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, realpathSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
@@ -20,6 +19,7 @@ import {
   runBinThroughDotBin,
   scanBinReachability,
 } from "./check-bin-reachability.mjs";
+import { makeTmpDirSync } from "./lib/tmp-fixture.mjs";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const scriptPath = join(scriptDir, "check-bin-reachability.mjs");
@@ -55,18 +55,16 @@ if (fileURLToPath(import.meta.url) === resolve(process.argv[1])) run();
 `;
 
 // os.tmpdir() on macOS resolves under /var/folders, which is itself a
-// symlink to /private/var/folders. A path built from the raw mkdtempSync()
+// symlink to /private/var/folders. A path built from the raw mkdtemp()
 // result is therefore not yet canonical: a script loaded from it sees
 // import.meta.url resolved to the realpath (Node always realpaths the main
 // ESM module) while a naive `resolve(process.argv[1])` guard does not, so
 // even a "direct, no .bin symlink" invocation looks like a symlinked one.
-// Canonicalizing right after mkdtemp keeps that distinction meaningful for
-// what this suite actually tests: the node_modules/.bin symlink, not an
-// incidental ancestor symlink in $TMPDIR.
-function mkdtempRealSync(prefix) {
-  return realpathSync(mkdtempSync(join(tmpdir(), prefix)));
-}
-
+// makeTmpDirSync() (scripts/lib/tmp-fixture.mjs) canonicalizes with realpath
+// before handing the directory back, for exactly this reason (issue #1294) —
+// every fixture directory in this suite is both realpath-safe to compare
+// against import.meta.url and registered for cleanup, not a second helper
+// that would have to keep those two properties in sync by hand.
 function writeCli(dir, fileName, source) {
   mkdirSync(dir, { recursive: true });
   const path = join(dir, fileName);
@@ -74,8 +72,8 @@ function writeCli(dir, fileName, source) {
   return path;
 }
 
-function makePackageRepo({ name = "@gate-fixture/probe", bins, files, adapterBins }) {
-  const root = mkdtempRealSync("bin-reachability-repo-");
+function makePackageRepo(t, { name = "@gate-fixture/probe", bins, files, adapterBins }) {
+  const root = makeTmpDirSync(t, "bin-reachability-repo-");
   const packageDir = join(root, "packages", "probe");
   mkdirSync(packageDir, { recursive: true });
   writeFileSync(join(packageDir, "package.json"), `${JSON.stringify({ name, bin: bins }, null, 2)}\n`);
@@ -94,8 +92,8 @@ function makePackageRepo({ name = "@gate-fixture/probe", bins, files, adapterBin
   return { root, packageDir };
 }
 
-test("working CLI with realpathSync both sides, invoked through a .bin symlink, --help prints text, exit 0", () => {
-  const compiledEntryPath = writeCli(mkdtempRealSync("bin-live-"), "cli.js", LIVE_CLI);
+test("working CLI with realpathSync both sides, invoked through a .bin symlink, --help prints text, exit 0", (t) => {
+  const compiledEntryPath = writeCli(makeTmpDirSync(t, "bin-live-"), "cli.js", LIVE_CLI);
   const spawned = runBinThroughDotBin({ binName: "live-check", compiledEntryPath, args: ["--help"] });
   assert.equal(spawned.status, 0);
   assert.ok(spawned.stdout.length > 0, "expected --help text on stdout");
@@ -113,8 +111,8 @@ test("working CLI with realpathSync both sides, invoked through a .bin symlink, 
   assert.equal(evaluated.cannotAnswer.length, 0);
 });
 
-test("dead CLI without realpathSync prints nothing through a .bin symlink and is a finding", () => {
-  const compiledEntryPath = writeCli(mkdtempRealSync("bin-dead-"), "cli.js", DEAD_CLI);
+test("dead CLI without realpathSync prints nothing through a .bin symlink and is a finding", (t) => {
+  const compiledEntryPath = writeCli(makeTmpDirSync(t, "bin-dead-"), "cli.js", DEAD_CLI);
   const spawned = runBinThroughDotBin({ binName: "dead-check", compiledEntryPath, args: ["--help"] });
   assert.equal(spawned.status, 0);
   assert.equal(spawned.stdout, "");
@@ -133,8 +131,8 @@ test("dead CLI without realpathSync prints nothing through a .bin symlink and is
   assert.deepEqual(evaluated.findings.map((item) => item.rule), ["silent-bin"]);
 });
 
-test("control: the same dead CLI invoked by real path still prints; the gate uses the symlink and still fails it", () => {
-  const compiledEntryPath = writeCli(mkdtempRealSync("bin-dead-control-"), "cli.js", DEAD_CLI);
+test("control: the same dead CLI invoked by real path still prints; the gate uses the symlink and still fails it", (t) => {
+  const compiledEntryPath = writeCli(makeTmpDirSync(t, "bin-dead-control-"), "cli.js", DEAD_CLI);
   const byRealPath = spawnSync(process.execPath, [compiledEntryPath, "--help"], { encoding: "utf8" });
   assert.equal(byRealPath.status, 0);
   assert.match(byRealPath.stdout, /Usage: dead-check/, "real-path launch still reaches run(); we are measuring launch shape");
@@ -178,8 +176,8 @@ test("a manifest bin target that escapes the package is cannot-answer, not a spa
   assert.equal(evaluated.findings.length, 0);
 });
 
-test("a missing compiled target is cannot-answer, not a pass", () => {
-  const { root } = makePackageRepo({
+test("a missing compiled target is cannot-answer, not a pass", (t) => {
+  const { root } = makePackageRepo(t, {
     bins: { "probe-check": "dist/cli.js" },
     files: {},
   });
@@ -189,7 +187,7 @@ test("a missing compiled target is cannot-answer, not a pass", () => {
   assert.equal(scanned.passed.length, 0);
 });
 
-test("bin set comes from the fixture manifest: every key is probed, a name not in bin is not", () => {
+test("bin set comes from the fixture manifest: every key is probed, a name not in bin is not", (t) => {
   const declared = declaredBinsFromManifest({
     packageName: "@gate-fixture/probe",
     packageDir: "/tmp/gate-fixture-probe",
@@ -204,7 +202,7 @@ test("bin set comes from the fixture manifest: every key is probed, a name not i
   assert.deepEqual(declared.bins.map((item) => item.binName).sort(), ["probe-check", "probe-other"]);
   assert.ok(!declared.bins.some((item) => item.binName === "unlisted-check"));
 
-  const { root } = makePackageRepo({
+  const { root } = makePackageRepo(t, {
     bins: {
       "probe-check": "dist/cli.js",
       "probe-other": "dist/other.js",
@@ -223,8 +221,8 @@ test("bin set comes from the fixture manifest: every key is probed, a name not i
   assert.ok(!probed.includes("unlisted-check"));
 });
 
-test("CLI: a tiny repo with one working bin exits 0", () => {
-  const { root } = makePackageRepo({
+test("CLI: a tiny repo with one working bin exits 0", (t) => {
+  const { root } = makePackageRepo(t, {
     bins: { "probe-check": "dist/cli.js" },
     files: { "dist/cli.js": LIVE_CLI },
   });
@@ -233,8 +231,8 @@ test("CLI: a tiny repo with one working bin exits 0", () => {
   assert.match(result.stdout, /probe-check/);
 });
 
-test("CLI: a tiny repo with a dead bin exits 1", () => {
-  const { root } = makePackageRepo({
+test("CLI: a tiny repo with a dead bin exits 1", (t) => {
+  const { root } = makePackageRepo(t, {
     bins: { "probe-check": "dist/cli.js" },
     files: { "dist/cli.js": DEAD_CLI },
   });
@@ -243,8 +241,8 @@ test("CLI: a tiny repo with a dead bin exits 1", () => {
   assert.match(result.stdout, /silent-bin/);
 });
 
-test("CLI: --json on a missing compiled target exits 2 and names cannot-answer", () => {
-  const { root } = makePackageRepo({
+test("CLI: --json on a missing compiled target exits 2 and names cannot-answer", (t) => {
+  const { root } = makePackageRepo(t, {
     bins: { "probe-check": "dist/cli.js" },
     files: {},
   });
@@ -317,8 +315,8 @@ test("evaluateAdapterBinParity: an adapter file without a readable bins object i
   assert.equal(result.rule, "unreadable-adapter-bins");
 });
 
-test("adapterBinParityResult: a package with no adapter directory is skipped entirely, not a finding", () => {
-  const { root, packageDir } = makePackageRepo({
+test("adapterBinParityResult: a package with no adapter directory is skipped entirely, not a finding", (t) => {
+  const { root, packageDir } = makePackageRepo(t, {
     bins: { "probe-check": "dist/cli.js" },
     files: { "dist/cli.js": LIVE_CLI },
   });
@@ -332,8 +330,8 @@ test("adapterBinParityResult: a package with no adapter directory is skipped ent
   assert.equal(result, null);
 });
 
-test("adapterBinParityResult: an adapter directory with no current-direct.json is cannot-answer", () => {
-  const { root, packageDir } = makePackageRepo({
+test("adapterBinParityResult: an adapter directory with no current-direct.json is cannot-answer", (t) => {
+  const { root, packageDir } = makePackageRepo(t, {
     bins: { "probe-check": "dist/cli.js" },
     files: { "dist/cli.js": LIVE_CLI },
   });
@@ -349,8 +347,8 @@ test("adapterBinParityResult: an adapter directory with no current-direct.json i
   assert.equal(result.rule, "missing-adapter-file");
 });
 
-test("scanBinReachability: an adapter drifted from package.json's bin map fails the scan even though every bin is reachable", () => {
-  const { root } = makePackageRepo({
+test("scanBinReachability: an adapter drifted from package.json's bin map fails the scan even though every bin is reachable", (t) => {
+  const { root } = makePackageRepo(t, {
     bins: { "probe-check": "dist/cli.js", "probe-new": "dist/new.js" },
     files: { "dist/cli.js": LIVE_CLI, "dist/new.js": LIVE_CLI.replace("live-check", "probe-new") },
     // Drifted: the adapter was never updated when "probe-new" was added to package.json bin.
@@ -365,8 +363,8 @@ test("scanBinReachability: an adapter drifted from package.json's bin map fails 
   assert.ok(scanned.passed.some((item) => item.rule === "reachable-bin" && item.binName === "probe-check"));
 });
 
-test("scanBinReachability: an adapter that matches package.json's bin map exactly passes alongside reachable bins", () => {
-  const { root } = makePackageRepo({
+test("scanBinReachability: an adapter that matches package.json's bin map exactly passes alongside reachable bins", (t) => {
+  const { root } = makePackageRepo(t, {
     bins: { "probe-check": "dist/cli.js" },
     files: { "dist/cli.js": LIVE_CLI },
     adapterBins: { "probe-check": 0 },
@@ -376,8 +374,8 @@ test("scanBinReachability: an adapter that matches package.json's bin map exactl
   assert.ok(scanned.passed.some((item) => item.rule === "adapter-bin-parity"));
 });
 
-test("CLI: a repo whose adapter fixture drifted from package.json's bin map exits 1 and names adapter-bin-parity", () => {
-  const { root } = makePackageRepo({
+test("CLI: a repo whose adapter fixture drifted from package.json's bin map exits 1 and names adapter-bin-parity", (t) => {
+  const { root } = makePackageRepo(t, {
     bins: { "probe-check": "dist/cli.js", "probe-new": "dist/new.js" },
     files: { "dist/cli.js": LIVE_CLI, "dist/new.js": LIVE_CLI.replace("live-check", "probe-new") },
     adapterBins: { "probe-check": 0 },

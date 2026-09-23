@@ -10,6 +10,7 @@ try {
     console.log(`packed consumer readiness: EVIDENCE ${omission.package} rejects ${omission.exports.length} declared Next-context export(s) when next is omitted — ${omission.evidence}`);
   }
   console.log(`packed consumer readiness: PASS (${result.packages} package(s), ${result.runtimeImports} raw runtime import(s), ${result.frameworkExports} framework export(s), ${result.staticTargets} static target(s), ${result.bins} bin(s), ${result.omissionRows} optional-peer omission row(s))`);
+  console.log(`packed consumer readiness: peak disk used ${(result.peakKilobytes / (1024 * 1024)).toFixed(2)} GB (${result.peakKilobytes} KB)`);
   if (args.keep) console.log(`retained disposable consumer: ${result.scratch}`);
 } catch (error) {
   console.error(`packed consumer readiness: FAIL\n${error instanceof Error ? error.message : String(error)}`);
