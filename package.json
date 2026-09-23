@@ -129,6 +129,7 @@
     "check:qualification-deferral-issues": "node scripts/check-qualification-deferral-issues.mjs"
   },
   "devDependencies": {
+    "@tailwindcss/oxide": "^4.3.3",
     "pnpm": "12.4.1",
     "typescript": "~6.0.0"
   }
