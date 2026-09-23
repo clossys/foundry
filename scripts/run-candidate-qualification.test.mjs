@@ -33,7 +33,7 @@ test("repository Trio policy, adapters, and current-candidate fixtures bind the 
   const expected = [
     ["advisor", "@clossys/advisor", "0.2.8"],
     ["starter", "@clossys/starter", "0.1.9"],
-    ["controller", "@clossys/controller", "0.9.12"],
+    ["controller", "@clossys/controller", "0.9.14"],
   ];
 
   for (const [key, name, version] of expected) {
@@ -77,7 +77,7 @@ test("all 21 publishable packages are exact-source bound to the catalogue and qu
     "@clossys/bouncer": "0.1.10",
     "@clossys/builder": "0.10.0",
     "@clossys/butler": "0.1.9",
-    "@clossys/controller": "0.9.12",
+    "@clossys/controller": "0.9.14",
     "@clossys/customer": "0.1.0",
     "@clossys/designer": "0.4.17",
     "@clossys/giver": "0.1.8",
@@ -91,7 +91,7 @@ test("all 21 publishable packages are exact-source bound to the catalogue and qu
     "@clossys/observer": "0.4.0",
     "@clossys/publisher": "0.4.24",
     "@clossys/starter": "0.1.9",
-    "@clossys/strategist": "0.3.0",
+    "@clossys/strategist": "0.4.0",
     "@clossys/writer": "0.3.15",
   };
   const packageKeys = (await readdir(new URL("../packages", import.meta.url))).sort();

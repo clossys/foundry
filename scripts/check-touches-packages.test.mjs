@@ -7,11 +7,15 @@ import { fileURLToPath } from "node:url";
 import test from "node:test";
 
 // Hermetic negative controls for scripts/check-touches-packages.mjs and for
-// the two steps in .github/workflows/ci.yml's `build` job it gates
-// ("Candidate qualification records", "Packed consumer readiness"). Every
-// fixture is a real, throwaway git repo under mkdtemp; the real script is
-// spawned exactly the way the workflow spawns it, reading nothing from this
-// repository's own git history or network. Modelled on
+// the two steps it gates in .github/workflows/ci.yml ("Candidate
+// qualification records", "Packed consumer readiness"). Those two steps
+// used to live together in the `build` job; they now live in their own
+// parallel jobs, `candidate-qualification` and `packed-consumer-readiness`
+// (CI throughput -- see either job's own header comment), each running its
+// own copy of the detector rather than sharing one job-wide `id: touch`.
+// Every fixture is a real, throwaway git repo under mkdtemp; the real
+// script is spawned exactly the way the workflow spawns it, reading
+// nothing from this repository's own git history or network. Modelled on
 // scripts/check-release-readiness.test.mjs's own fixture shape.
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
@@ -176,58 +180,70 @@ test("control (d4): a missing BASE_SHA (empty string) reports touches=true", () 
   assert.equal(touches, "true");
 });
 
-// (e) The job must still REPORT its status context in the skip case — the
-// required check must never simply stop appearing. Proven structurally:
-// the two conditioned steps carry a step-level `if:`, never a job-level
-// `if:` on `build` itself (a job-level `if:` evaluating false is how a
-// required context stops reporting at all), and the polarity is
-// fail-closed (`!= 'false'`, never `== 'true'`), and the gating step itself
-// is `continue-on-error: true` so its own failure cannot stop the job
-// either.
-test("control (e): the build job always reports its required status context on pull_request", () => {
-  const workflow = readFileSync(workflowPath, "utf8");
-  const start = workflow.indexOf("  build:\n");
-  assert.notEqual(start, -1, "workflow is missing the build job");
-  const rest = workflow.slice(start + 1);
+function workflowJob(workflowText, name) {
+  const start = workflowText.indexOf(`  ${name}:\n`);
+  assert.notEqual(start, -1, `workflow is missing the ${name} job`);
+  const rest = workflowText.slice(start + 1);
   const next = rest.search(/^  [a-z][a-z0-9-]*:\n/m);
-  const build = workflow.slice(start, next === -1 ? workflow.length : start + 1 + next);
+  return workflowText.slice(start, next === -1 ? workflowText.length : start + 1 + next);
+}
+
+// (e) The required status context must still REPORT in the skip case — it
+// must never simply stop appearing. That context is `build and test` (the
+// `build` job), which since the parallel-job split no longer runs either
+// conditioned step itself -- it `needs` the two jobs that do
+// (`candidate-qualification`, `packed-consumer-readiness`) and is proven
+// structurally elsewhere (scripts/check-workflow-references.test.mjs's own
+// "the build-and-test fan-in genuinely fails..." test) to turn a failure in
+// either into its own failure via `always()` and an explicit result check,
+// never a silent skip. What this test proves is upstream of that: each of
+// the two split jobs still carries the SAME fail-closed shape the single
+// job used to -- a step-level `if:` on the gated step (never a job-level
+// `if:` that would stop that job's own reporting, though its own context is
+// not itself required), fail-closed polarity (`!= 'false'`, never
+// `== 'true'`), and a `continue-on-error: true` detector whose own failure
+// cannot stop the job.
+test("control (e): candidate-qualification and packed-consumer-readiness always report a real outcome on pull_request", () => {
+  const workflow = readFileSync(workflowPath, "utf8");
+  const build = workflowJob(workflow, "build");
 
   assert.match(build, /^\s+name: build and test$/m, "the required context name must be present");
-  // A job-level `if:` that is false on pull_request is how a required
-  // context stops reporting. Skipping a tree-identical push to main is
-  // allowed: that tree already passed on the PR head.
-  const jobIf = build.match(/^ {4}if: (.+)$/m);
-  if (jobIf) {
+  assert.match(build, /needs: \[push-tree, candidate-qualification, readme-examples-typecheck, packed-consumer-readiness\]/);
+  assert.doesNotMatch(build, /needs: \[safety, scope\]/, "build must not wait for safety/scope before starting");
+
+  for (const [jobName, stepName] of [
+    ["candidate-qualification", "Candidate qualification records"],
+    ["packed-consumer-readiness", "Packed consumer readiness"],
+  ]) {
+    const job = workflowJob(workflow, jobName);
+
+    // A job-level `if:` that is false on pull_request is how a job stops
+    // reporting at all. Skipping a tree-identical push to main is allowed:
+    // that tree already passed on the PR head.
+    const jobIf = job.match(/^ {4}if: (.+)$/m);
+    assert.ok(jobIf, `${jobName} must declare a job-level if:`);
     assert.match(
       jobIf[1],
       /github\.event_name != 'push'/,
-      "any job-level if on build must remain true for every pull_request",
+      `${jobName}'s job-level if must remain true for every pull_request`,
+    );
+
+    assert.match(
+      job,
+      /- name: Detect whether this change touches packages\n\s+id: touch\n\s+continue-on-error: true/,
+      `${jobName}'s own detector step must be continue-on-error: true, so its own failure cannot stop the job`,
+    );
+
+    const gatedStep = job.slice(job.indexOf(`- name: ${stepName}`));
+    assert.match(
+      gatedStep.split("\n      - name:")[0],
+      /if: steps\.touch\.outputs\.touches != 'false'/,
+      "must skip only on an explicit 'false', never require an explicit 'true' to run",
+    );
+    assert.doesNotMatch(
+      gatedStep.split("\n      - name:")[0],
+      /if: steps\.touch\.outputs\.touches == 'true'/,
+      "must not require an explicit 'true' to run — that polarity fails CLOSED on any unset/garbled output",
     );
   }
-
-  assert.doesNotMatch(build, /needs: \[safety, scope\]/, "build must not wait for safety/scope before starting");
-
-  assert.match(
-    build,
-    /- name: Detect whether this change touches packages\n\s+id: touch\n\s+continue-on-error: true/,
-    "the detector step must be continue-on-error: true, so its own failure cannot stop the job",
-  );
-
-  const candidateStep = build.slice(build.indexOf("- name: Candidate qualification records"));
-  assert.match(
-    candidateStep.split("\n- name:")[0],
-    /if: steps\.touch\.outputs\.touches != 'false'/,
-    "must skip only on an explicit 'false', never require an explicit 'true' to run",
-  );
-  assert.doesNotMatch(
-    candidateStep.split("\n- name:")[0],
-    /if: steps\.touch\.outputs\.touches == 'true'/,
-    "must not require an explicit 'true' to run — that polarity fails CLOSED on any unset/garbled output",
-  );
-
-  const packedStep = build.slice(build.indexOf("- name: Packed consumer readiness"));
-  assert.match(
-    packedStep.split("\n- name:")[0],
-    /if: steps\.touch\.outputs\.touches != 'false'/,
-  );
 });

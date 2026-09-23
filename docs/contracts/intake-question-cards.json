@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "kind": "foundry-intake-question-cards",
+  "declaredBy": "foundry.intake (docs/contracts/package-framework.json)",
+  "$comment": "The file shape behind a role's foundry.intake declaration. Modelled directly on @clossys/advisor's existing sponsor-question shape (SponsorQuestionCard, packages/advisor/src/sponsor-questions.ts): stable ids throughout, multiple choice only, and the recommended option listed first so a non-technical client is never asked to pick from an unordered list.",
+  "topLevelShape": "{ schemaVersion: 1, role: string, cards: IntakeQuestionCard[] }",
+  "cardShape": {
+    "id": "string -- stable across versions; a role must never reuse an id for a different question",
+    "prompt": "string -- one sentence, plain language, the client can actually answer",
+    "choices": "IntakeQuestionChoice[] -- at least two; choices[0] is the recommended option (see `rule`)",
+    "recommendedChoiceId": "string -- must equal choices[0].id; explicit so a reordering by an editor cannot silently change the recommendation",
+    "somethingElseFollowUp": "string -- the one-sentence follow-up prompt when none of the listed choices fit"
+  },
+  "choiceShape": {
+    "id": "string -- stable, unique within the card",
+    "label": "string -- the client-facing option text"
+  },
+  "rule": "A card's `choices` array is never empty and never has fewer than two entries. `recommendedChoiceId` names an id present in `choices` and equal to `choices[0].id` -- the recommended option is always presented first, never merely flagged. Every `id` (card and choice) is stable multiple-choice vocabulary: once shipped, a role package does not repurpose an id for a different meaning, because a consumer's prior answer is stored against that id and must keep meaning what it meant when it was recorded."
+}
