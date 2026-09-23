@@ -2,11 +2,19 @@
 import { realpathSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { applyWorkspacePlan, observeWorkspace, planWorkspace, launcherPackageRootFromModule, skeletonRootFromModule } from "./core.js";
+import {
+  applyWorkspacePlan,
+  cloneMissingInventoryRepositories,
+  observeWorkspace,
+  planWorkspace,
+  launcherPackageRootFromModule,
+  readLiveLauncherVersion,
+  skeletonRootFromModule,
+} from "./core.js";
 import { createNodeHost } from "./host.js";
 import type { WorkspaceHost } from "./types.js";
 
-export const USAGE = `Usage: launcher [--inventory <path>]
+export const USAGE = `Usage: launcher [--inventory <path>] [--clone-missing]
 
 Create, resume, or appoint a GitHub repository as the account workspace hub.
 
@@ -16,9 +24,15 @@ hub to appoint it — it does not have to be a new exclusive repo, and it keeps
 its current name and files.
 
 Appointing requires a populated generated hub inventory (packed template
-skeleton/.clossys/inventory.json; the generated path does not ship), or
+skeleton/clossys/.state/inventory.json; the generated path does not ship), or
 --inventory <path> pointing at one. Resume refreshes composed skills and
-stale hub guidance. Create may write an empty inventory.
+stale hub guidance, and migrates a legacy .clossys/ hub state to
+clossys/.state/ automatically. Create may write an empty inventory.
+
+By default launcher never \`gh repo clone\`s a missing inventory entry --
+that is not how you talk to the team. --clone-missing is the one explicit,
+approved exception (#1179): on resume only, it clones every inventoried
+repository not yet sitting beside the hub, and only those.
 
 GitHub-only. Owner is inferred from \`gh\` and git remotes. Public npm reads
 need no token.
@@ -31,11 +45,20 @@ function exitCodeFor(state: "satisfied" | "violated" | "indeterminate"): number 
   return state === "satisfied" ? 0 : state === "violated" ? 1 : 2;
 }
 
-export function parseLauncherArgs(argv: readonly string[]): { help: boolean; inventoryPath?: string } {
-  if (argv.length === 1 && (argv[0] === "--help" || argv[0] === "-h")) return { help: true };
-  if (argv.length === 0) return { help: false };
-  if (argv.length === 2 && argv[0] === "--inventory" && argv[1]) return { help: false, inventoryPath: argv[1] };
-  throw new LauncherInputError("launcher takes no arguments except optional --inventory <path>; run it from the directory to create or appoint");
+export function parseLauncherArgs(argv: readonly string[]): { help: boolean; inventoryPath?: string; cloneMissing: boolean } {
+  if (argv.length === 1 && (argv[0] === "--help" || argv[0] === "-h")) return { help: true, cloneMissing: false };
+  const rest = [...argv];
+  let cloneMissing = false;
+  const cloneIndex = rest.indexOf("--clone-missing");
+  if (cloneIndex !== -1) {
+    cloneMissing = true;
+    rest.splice(cloneIndex, 1);
+  }
+  if (rest.length === 0) return { help: false, cloneMissing };
+  if (rest.length === 2 && rest[0] === "--inventory" && rest[1]) return { help: false, inventoryPath: rest[1], cloneMissing };
+  throw new LauncherInputError(
+    "launcher takes no arguments except optional --inventory <path> and/or --clone-missing; run it from the directory to create or appoint",
+  );
 }
 
 /** Testable CLI dispatcher. Unknown arguments throw; the executable maps them to exit 2. */
@@ -62,16 +85,28 @@ export function main(argv: readonly string[], host: WorkspaceHost, skeletonRoot:
   }
   if (parsed.inventoryPath !== undefined && decision.action !== "adopt") {
     if (decision.action === "resume") {
-      console.error("launcher: this hub is already appointed; edit .clossys/inventory.json to change its inventory");
+      console.error("launcher: this hub is already appointed; edit clossys/.state/inventory.json to change its inventory");
     } else {
       console.error("launcher: --inventory is only valid when appointing a GitHub repository");
     }
     return 1;
   }
+  if (parsed.cloneMissing && decision.action !== "resume") {
+    console.error("launcher: --clone-missing is only valid on an already-appointed hub (resume)");
+    return 1;
+  }
   const result = applyWorkspacePlan(host, decision, skeletonRoot, {
     launcherPackageRoot: launcherPackageRootFromModule(import.meta.url),
+    liveLauncherVersion: readLiveLauncherVersion(host),
   });
   console.log(result.message);
+  if (parsed.cloneMissing && decision.action === "resume") {
+    const outcomes = cloneMissingInventoryRepositories(host, decision.directory, decision.owner);
+    for (const outcome of outcomes) {
+      if (outcome.result === "skipped-other-reason") continue;
+      console.log(`clone-missing (${outcome.inventoryId}): ${outcome.result} -- ${outcome.note}`);
+    }
+  }
   return 0;
 }
 

@@ -3,7 +3,7 @@
   "package": "@clossys/controller",
   "archetype": "current-direct",
   "peerInstall": { "typescript": "6.0.3" },
-  "bins": { "foundry-governance": 0, "foundry-check": 0, "repository-check": 0, "repository-profile-check": 0, "repository-package-adoption-check": 0, "review-check": 0, "singular-authority-check": 0, "foundry-position-check": 2, "foundry-completion-evidence-check": 2, "controller-check": 0, "foundry-onboarding-run": 0 },
+  "bins": { "foundry-governance": 0, "foundry-check": 0, "repository-check": 0, "repository-profile-check": 0, "repository-package-adoption-check": 0, "review-check": 0, "singular-authority-check": 0, "foundry-position-check": 2, "foundry-completion-evidence-check": 2, "controller-check": 0, "foundry-onboarding-run": 0, "foundry-loop-status": 0, "ci-conventions-check": 0 },
   "fixtures": ["authority-valid-package-lock.json", "authority-duplicate-package-lock.json", "authority-indeterminate-package-lock.json", "authority-declarations.json"],
   "cases": [
     { "id": "authority-valid", "bin": "singular-authority-check", "fixtureArgs": ["authority-valid-package-lock.json", "authority-declarations.json"], "exitCode": 0, "group": "authority" },

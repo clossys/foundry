@@ -1,0 +1,58 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/clossys/foundry/blob/main/docs/contracts/engagement-brief.json",
+  "title": "Engagement brief",
+  "description": "Issue #1176 (owner redirect, 2026-09-22): the kit output shape a composed or proposed kit reduces to -- the client's problem, which roles are staffed and why, what the client gets, and how the roles hand off to each other. Matches packages/advisor/src/engagement-brief.ts's EngagementBrief type and its toEngagementBrief() transform. This is a wave-1 type-and-schema contract only: writing this shape to clossys/brief.json in each staffed repository is wave 2 (issues #1175, #1178). Advisor does not write files.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "problem", "roles", "sequence", "deliverables"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "problem": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The client's problem, in their own words."
+    },
+    "roles": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/definitions/role" }
+    },
+    "sequence": {
+      "type": "array",
+      "description": "Role directories in handoff order: a producer role always precedes the consumer whose need it satisfies.",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "deliverables": {
+      "type": "array",
+      "description": "What the client gets, one line per staffed role, grounded in that role's own boundary.owns from docs/contracts/role-loop-archetypes.json -- never invented copy.",
+      "items": { "type": "string", "minLength": 1 }
+    }
+  },
+  "definitions": {
+    "role": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "why", "goal", "inputsFrom", "outputsTo"],
+      "properties": {
+        "role": { "type": "string", "minLength": 1, "description": "Package directory (short name), e.g. \"publisher\"." },
+        "why": {
+          "type": "string",
+          "minLength": 1,
+          "description": "For an explicitly chosen role, its own job question. For a role pulled in only to satisfy another role's need, a mechanical explanation naming who needed it."
+        },
+        "goal": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["metric", "direction"],
+          "properties": {
+            "metric": { "type": "string", "minLength": 1, "description": "Must match a metric.name in docs/contracts/role-loop-archetypes.json." },
+            "direction": { "enum": ["increase", "decrease", "maintain", "target-range"] }
+          }
+        },
+        "inputsFrom": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "outputsTo": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      }
+    }
+  }
+}

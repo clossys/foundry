@@ -904,4 +904,32 @@ describe("mainAddressabilityCheck — argument handling", () => {
     expect(mainAddressabilityCheck([dir])).toBe(2);
     expect(mainAddressabilityCheck([dir, "--extensions", ".mjs"])).toBe(1);
   });
+
+  it("--extensions accepts a comma-separated list in one flag", () => {
+    writeFileSync(
+      join(dir, "Widget.mjs"),
+      'export const Widget = () => <input aria-label="Search products" />;\n',
+    );
+    expect(mainAddressabilityCheck([dir, "--extensions", ".cjs,.mjs"])).toBe(1);
+  });
+
+  it("--extensions unions repeated flags and comma-separated values", () => {
+    writeFileSync(
+      join(dir, "Widget.mjs"),
+      'export const Widget = () => <input aria-label="Search products" />;\n',
+    );
+    writeFileSync(
+      join(dir, "Other.cjs"),
+      'export const Other = () => <input aria-label="Filter results" />;\n',
+    );
+    expect(
+      mainAddressabilityCheck([dir, "--extensions", ".mjs", "--extensions", ".cjs,.jsx"]),
+    ).toBe(1);
+  });
+
+  it("throws CliInputError (never a vacuous default-set fallback) when --extensions resolves to an empty set", () => {
+    expect(() => mainAddressabilityCheck([dir, "--extensions", ","])).toThrow(CliInputError);
+    expect(() => mainAddressabilityCheck([dir, "--extensions", ""])).toThrow(CliInputError);
+    expect(() => mainAddressabilityCheck([dir, "--extensions", ".mjs,,.cjs"])).toThrow(CliInputError);
+  });
 });

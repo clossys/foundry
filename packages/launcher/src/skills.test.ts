@@ -50,6 +50,9 @@ function host(directory: string): WorkspaceHost {
       if (existsSync(linkPath)) rmSync(linkPath, { recursive: true, force: true });
       symlinkSync(relativeTarget, linkPath, "dir");
     },
+    remove: (path) => {
+      rmSync(path, { recursive: true, force: true });
+    },
     readDir: (path) => (existsSync(path) ? readdirSync(path) : []),
     run: () => ({ status: 1, stdout: "", stderr: "unmocked" }),
     prompt: () => null,
@@ -119,6 +122,143 @@ describe("composeSkills", () => {
     expect(readFileSync(join(hub, ".agents", "skills", "clossys-advisor", "SKILL.md"), "utf8")).toContain(
       "catalogue-only-marker",
     );
+  });
+
+  const CONTRACT_DOC = [
+    "# Conversation contract",
+    "",
+    "Provenance prose, never injected.",
+    "",
+    "## How we work together",
+    "",
+    "1. **Where we are** — status.",
+    "2. **Your call** — a question.",
+    "",
+  ].join("\n");
+
+  function skillWithLegacySections(name: string): string {
+    return [
+      "---",
+      `name: clossys-${name}`,
+      `description: test skill for ${name}`,
+      "disable-model-invocation: true",
+      "---",
+      `# ${name}`,
+      "",
+      "Role content.",
+      "",
+      "## How we work together",
+      "",
+      "1. **Status** — old text.",
+      "",
+      "## One question at a time",
+      "",
+      "Old text.",
+      "",
+      "## When this package is installed",
+      "",
+      "Installed guidance.",
+      "",
+    ].join("\n");
+  }
+
+  it("injects the shared conversation contract in place of a skill's own legacy sections", () => {
+    const hub = tempDir();
+    const catalogue = tempDir();
+    mkdirSync(join(catalogue, "advisor"), { recursive: true });
+    writeFileSync(join(catalogue, "advisor", "SKILL.md"), skillWithLegacySections("advisor"));
+    const launcherPackageRoot = tempDir();
+    mkdirSync(join(launcherPackageRoot, "contracts"), { recursive: true });
+    writeFileSync(join(launcherPackageRoot, "contracts", "conversation-contract.md"), CONTRACT_DOC);
+
+    composeSkills(host(hub), hub, { launcherPackageRoot, skillCatalogueRoot: catalogue });
+    const composed = readFileSync(join(hub, ".agents", "skills", "clossys-advisor", "SKILL.md"), "utf8");
+    expect(composed.split("## How we work together").length - 1).toBe(1);
+    expect(composed).toContain("2. **Your call** — a question.");
+    expect(composed).not.toContain("## One question at a time");
+    expect(composed).not.toContain("1. **Status** — old text.");
+    expect(composed).toContain("## When this package is installed");
+  });
+
+  it("leaves a skill untouched when no conversation contract source resolves", () => {
+    const hub = tempDir();
+    const catalogue = tempDir();
+    mkdirSync(join(catalogue, "advisor"), { recursive: true });
+    writeFileSync(join(catalogue, "advisor", "SKILL.md"), skillWithLegacySections("advisor"));
+    const launcherPackageRoot = tempDir();
+    mkdirSync(launcherPackageRoot, { recursive: true });
+
+    composeSkills(host(hub), hub, { launcherPackageRoot, skillCatalogueRoot: catalogue });
+    const composed = readFileSync(join(hub, ".agents", "skills", "clossys-advisor", "SKILL.md"), "utf8");
+    expect(composed).toContain("## One question at a time");
+  });
+
+  it("writes clossys/.state/skills.json with source, version, and a content digest per composed skill", () => {
+    const hub = tempDir();
+    const catalogue = tempDir();
+    mkdirSync(join(catalogue, "advisor"), { recursive: true });
+    mkdirSync(join(catalogue, "designer"), { recursive: true });
+    writeFileSync(join(catalogue, "advisor", "SKILL.md"), skillFixture("advisor", "catalogue-marker"));
+    // Candidate discovery only looks at the catalogue/monorepo; an installed
+    // node_modules skill overrides the body once a package is already a
+    // candidate, so designer still needs a (unused) catalogue placeholder.
+    writeFileSync(join(catalogue, "designer", "SKILL.md"), skillFixture("designer", "unused-catalogue-marker"));
+    const installedSkill = join(hub, "node_modules", "@clossys", "designer", "skill", "SKILL.md");
+    mkdirSync(dirname(installedSkill), { recursive: true });
+    writeFileSync(installedSkill, skillFixture("designer", "installed-marker"));
+    writeFileSync(
+      join(hub, "node_modules", "@clossys", "designer", "package.json"),
+      JSON.stringify({ name: "@clossys/designer", version: "0.4.9" }),
+    );
+    const launcherPackageRoot = tempDir();
+    mkdirSync(launcherPackageRoot, { recursive: true });
+    writeFileSync(join(launcherPackageRoot, "package.json"), JSON.stringify({ name: "@clossys/launcher", version: "0.2.0" }));
+
+    composeSkills(host(hub), hub, { launcherPackageRoot, skillCatalogueRoot: catalogue });
+    const manifest = JSON.parse(readFileSync(join(hub, "clossys", ".state", "skills.json"), "utf8")) as {
+      schemaVersion: number;
+      skills: { name: string; source: string; version?: string; sha256: string }[];
+    };
+    expect(manifest.schemaVersion).toBe(1);
+    const byName = Object.fromEntries(manifest.skills.map((entry) => [entry.name, entry]));
+    expect(byName.advisor).toMatchObject({ source: "catalogue", version: "0.2.0" });
+    expect(byName.designer).toMatchObject({ source: "installed", version: "0.4.9" });
+    expect(byName.advisor?.sha256).toMatch(/^[0-9a-f]{64}$/);
+    expect(byName.designer?.sha256).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  it("retires a skill absent from this run but present in the previous manifest, and never touches a skill it did not write", () => {
+    const hub = tempDir();
+    const catalogue = tempDir();
+    mkdirSync(join(catalogue, "advisor"), { recursive: true });
+    mkdirSync(join(catalogue, "designer"), { recursive: true });
+    writeFileSync(join(catalogue, "advisor", "SKILL.md"), skillFixture("advisor", "advisor-marker"));
+    writeFileSync(join(catalogue, "designer", "SKILL.md"), skillFixture("designer", "designer-marker"));
+    const launcherPackageRoot = tempDir();
+    mkdirSync(launcherPackageRoot, { recursive: true });
+
+    // A skill directory this composition step never wrote must survive untouched.
+    const handWritten = join(hub, ".agents", "skills", "clossys-handwritten", "SKILL.md");
+    mkdirSync(dirname(handWritten), { recursive: true });
+    writeFileSync(handWritten, "hand-authored, not launcher's\n");
+
+    const first = composeSkills(host(hub), hub, { launcherPackageRoot, skillCatalogueRoot: catalogue });
+    expect(first.composed.sort()).toEqual(["advisor", "designer"]);
+    expect(first.retired).toEqual([]);
+
+    // designer's catalogue source disappears (e.g. the package was removed).
+    rmSync(join(catalogue, "designer"), { recursive: true, force: true });
+    const second = composeSkills(host(hub), hub, { launcherPackageRoot, skillCatalogueRoot: catalogue });
+    expect(second.composed).toEqual(["advisor"]);
+    expect(second.retired).toEqual(["designer"]);
+    expect(existsSync(join(hub, ".agents", "skills", "clossys-designer"))).toBe(false);
+    expect(existsSync(join(hub, ".agents", "skills", "clossys-advisor", "SKILL.md"))).toBe(true);
+    expect(readFileSync(handWritten, "utf8")).toBe("hand-authored, not launcher's\n");
+
+    const manifest = JSON.parse(readFileSync(join(hub, "clossys", ".state", "skills.json"), "utf8")) as {
+      skills: { name: string }[];
+    };
+    expect(manifest.skills.map((entry) => entry.name)).toEqual(["advisor"]);
   });
 });
 

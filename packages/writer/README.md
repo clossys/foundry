@@ -574,10 +574,16 @@ addressability cannot confirm is safe).
 
 Options:
 
-- `--extensions <ext>` (repeatable) — file extensions to scan, each
-  including the leading dot (for example `.mjs`). Values union across
-  repeats. When omitted, the default is `.ts`, `.tsx`, `.js`, and `.jsx`.
-  When any `--extensions` flag is present, that default set is replaced.
+- `--extensions <ext>` (repeatable, and each occurrence may be a
+  comma-separated list) — file extensions to scan, each including the
+  leading dot (for example `.mjs`, or `.mjs,.cjs` in one flag). Values
+  union across both repeats and comma-separated entries. When omitted, the
+  default is `.ts`, `.tsx`, `.js`, and `.jsx`. When any `--extensions` flag
+  is present, that default set is replaced. Every value must include the
+  leading dot, and a flag that resolves to zero extensions (a bare comma,
+  or an empty string) is a usage error (exit `2`) — it never falls back to
+  the default set, which would be a vacuous pass on an explicit-but-empty
+  request.
 - `--chrome <file>` (repeatable) — persistent chrome (site header, footer,
   skip link, nav labels) shell or layout file to scan in addition to
   `scan-dir`. Paths are relative to `scan-dir` unless absolute. Each file
