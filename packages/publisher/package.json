@@ -118,42 +118,6 @@
       "clossys/publisher/surfaces/"
     ],
     "fit": "fit-signals.json",
-    "solves": [
-      {
-        "problem": "publisher-verified-release",
-        "statement": "We're not sure what's actually live, or that it matches what we approved.",
-        "metric": "verified publication rate",
-        "proofCase": "rate-violated",
-        "evidence": "designed",
-        "capability": "sealing-and-the-publication-record"
-      }
-    ],
-    "needs": [
-      {
-        "producerRole": "@clossys/strategist",
-        "artifact": "strategy-brief"
-      },
-      {
-        "producerRole": "@clossys/designer",
-        "artifact": "components-and-blocks"
-      },
-      {
-        "producerRole": "@clossys/designer",
-        "artifact": "token-contract-and-brand-overlay-binding"
-      },
-      {
-        "producerRole": "@clossys/designer",
-        "artifact": "logo-and-identity-files"
-      },
-      {
-        "producerRole": "@clossys/writer",
-        "artifact": "copy-registry"
-      },
-      {
-        "producerRole": "@clossys/customer",
-        "artifact": "keep-verdict"
-      }
-    ],
     "feeds": [
       {
         "artifact": "surface-documents",
