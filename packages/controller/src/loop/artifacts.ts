@@ -99,6 +99,9 @@ export function planMove(input: {
   readonly candidateReferrers: readonly { readonly path: string; readonly content: string }[];
 }): MovePlan | RefusedPlan {
   const { role, fromPath, toPath, candidateReferrers } = input;
+  if (!isOwnedByRole(role, fromPath)) {
+    return { kind: "refused", role, path: fromPath, reason: `source is not under this role's own clossys/${role.split("/").pop()}/ folder` };
+  }
   if (!isOwnedByRole(role, toPath)) {
     return { kind: "refused", role, path: toPath, reason: `destination is not under this role's own clossys/${role.split("/").pop()}/ folder` };
   }
