@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "repository": "fixture-consumer",
+  "declaredAbsences": [
+    {
+      "package": "@clossys/observer",
+      "reason": "This repository has no telemetry lane: it ships no gate whose efficacy would be measured, so there is nothing for observer's escape-rate or unobserved-surface metrics to read. Revisit if a gate is ever added here."
+    }
+  ]
+}
