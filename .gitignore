@@ -30,5 +30,6 @@ coverage/
 # this directory as if it were part of the tree a PR proposes.
 .trusted-scripts/
 
-# Packed launcher skill catalogue (packages/launcher/scripts/pack-skills.mjs).
+# Packed launcher skill catalogue and conversation contract (packages/launcher/scripts/pack-skills.mjs).
 packages/launcher/skill-catalogue/
+packages/launcher/contracts/

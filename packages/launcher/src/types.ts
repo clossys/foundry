@@ -23,17 +23,50 @@ export interface WorkspaceHost {
   mkdirp(path: string): void;
   /** Creates a relative symlink at linkPath pointing at relativeTarget (directory link). */
   symlink(relativeTarget: string, linkPath: string): void;
+  /** Recursively removes path. A missing path is a no-op, never a throw. */
+  remove(path: string): void;
   readDir(path: string): string[];
   run(command: string, args: readonly string[], options?: { cwd?: string }): CommandResult;
   prompt(message: string, choices: readonly string[]): string | null;
 }
 
-/** On-disk hub marker generated on the consumer hub. Packed template: skeleton/.clossys/workspace.json. */
+/** On-disk hub marker generated on the consumer hub. Packed template: skeleton/clossys/.state/workspace.json. */
 export interface HubDocument {
   readonly schemaVersion: 1;
   readonly kind: "account-hub";
   readonly owner: string;
   readonly repository: string;
+}
+
+/**
+ * Where the hub marker was found relative to the `.clossys/` -> `clossys/.state/`
+ * migration (#1171): `clean` — only the current path. `legacy` — only the old
+ * `.clossys/` path; resume migrates it. `indeterminate` — both paths carry a
+ * parseable marker; launcher never merges them silently and refuses instead.
+ */
+export type HubMigrationState = "clean" | "legacy" | "indeterminate";
+
+/** One skill recorded in `clossys/.state/skills.json` (#1183). */
+export interface SkillManifestEntry {
+  readonly name: string;
+  readonly source: "installed" | "catalogue";
+  readonly version?: string;
+  readonly sha256: string;
+}
+
+/** The `clossys/.state/skills.json` document itself. */
+export interface SkillManifestDocument {
+  readonly schemaVersion: 1;
+  readonly generatedAt: string;
+  readonly skills: readonly SkillManifestEntry[];
+}
+
+/** Read-only freshness summary derived from the skills manifest for the health report. */
+export interface SkillsManifestSummary {
+  readonly status: "present" | "missing";
+  readonly total: number;
+  readonly stale: number;
+  readonly retired: number;
 }
 
 export interface InventoryObservation {
@@ -89,13 +122,22 @@ export interface HubHealthReport {
     readonly skipped: readonly { readonly packageDir: string; readonly note: string }[];
     readonly rosterTargets?: readonly string[];
     readonly rosterSkipped?: readonly { readonly inventoryId: string; readonly note: string }[];
+    readonly retired?: readonly string[];
   };
+  /** Present only on the run that performed the `.clossys/` -> `clossys/.state/` migration. */
+  readonly migration?: { readonly status: "migrated"; readonly from: string; readonly to: string };
+  /** Freshness summary derived from `clossys/.state/skills.json`, when present. */
+  readonly skillsManifest?: SkillsManifestSummary;
 }
 
 /** Optional paths for skill composition during apply. */
 export interface ApplyWorkspaceOptions {
   readonly skillCatalogueRoot?: string;
   readonly launcherPackageRoot?: string;
+  /** Overrides where the packed conversation contract is read from (tests). */
+  readonly contractPath?: string;
+  /** Live registry `@clossys/launcher` version, used only to grade catalogue-sourced skill staleness. */
+  readonly liveLauncherVersion?: string;
 }
 
 export interface CwdObservation {
@@ -107,6 +149,8 @@ export interface CwdObservation {
   readonly hub?: HubDocument;
   readonly looksLikeFoundry: boolean;
   readonly inventory?: InventoryObservation;
+  /** Present only when a hub marker was found; absent means neither path has one. */
+  readonly hubMigration?: HubMigrationState;
 }
 
 export interface WorkspaceObservation {
@@ -135,6 +179,8 @@ export interface WorkspacePlanResume {
   readonly clone: boolean;
   /** Live registry Advisor version, when observeWorkspace could read one. Used only to grade health. */
   readonly advisorVersion?: string;
+  /** Set when the hub marker was found only at the legacy `.clossys/` path; apply migrates it. */
+  readonly migrateFrom?: "legacy";
 }
 
 export interface WorkspacePlanAdopt {
