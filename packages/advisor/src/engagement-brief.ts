@@ -1,7 +1,8 @@
 import type { CapabilityCatalogue } from "./capability-catalogue.js";
 import type { ComposedRole, ComposeKitResult } from "./composition.js";
 import { ENGAGEMENT_CONTEXT_FIELD_IDS, fieldById } from "./context.js";
-import type { EngagementContext, EngagementContextField } from "./context.js";
+import type { EngagementContext, EngagementContextField, EngagementContextFieldId } from "./context.js";
+import { applyContextChoice } from "./context-questions.js";
 
 /**
  * The kit output shape (issue #1176, owner redirect 2026-09-22): the
@@ -29,11 +30,13 @@ export interface EngagementBrief {
   /** What the client gets, one line per staffed role, grounded in that role's own boundary.owns. */
   deliverables: readonly string[];
   /**
-   * A verbatim snapshot of the hub's `clossys/advisor/context.json` (issue
-   * #1173 follow-up): how a role running in a product repository, with no
-   * hub checkout, reads what the founder already answered. Refreshed by
-   * re-applying the plan; absent means every field is unknown — read it
-   * through {@link contextFromBrief}, never directly.
+   * A contract-shaped snapshot of the hub's `clossys/advisor/context.json`
+   * (issue #1173 follow-up): how a role running in a product repository,
+   * with no hub checkout, reads what the founder already answered. Exactly
+   * one entry per field id, in the fixed field order, and a known value is
+   * always one of that field's fixed choice ids. Refreshed by re-applying
+   * the plan; absent means every field is unknown — read it through
+   * {@link contextFromBrief}, never directly.
    */
   context?: EngagementContext;
 }
@@ -59,10 +62,14 @@ export function toEngagementBrief({
   composed: Extract<ComposeKitResult, { state: "composed" }>;
   catalogue: CapabilityCatalogue;
   /**
-   * The hub's engagement context, copied verbatim into the brief when
-   * supplied. Throws when a field id is not a context field id, or a known
-   * field's value is not a choice-id slug: the brief is committed in every
-   * staffed repository, which may be public, so freeform prose never goes in.
+   * The hub's engagement context, snapshotted into the brief when supplied:
+   * one entry per field id in the fixed field order, a field the context
+   * does not carry written as unknown. Throws when a field id is not a
+   * context field id or appears twice, or when a known field's value is not
+   * one of that field's fixed choice ids (`applyContextChoice()` returns
+   * `known` for it). The brief is committed in every staffed repository,
+   * which may be public, so no founder text — prose or a slugified form of
+   * it — ever goes in.
    */
   context?: EngagementContext;
 }): EngagementBrief {
@@ -82,27 +89,33 @@ export function toEngagementBrief({
 }
 
 /**
- * A context choice id: a lowercase slug, and never the "not sure yet" or
- * "something else" ids, which are not known values. Mirrors the
- * engagement-context contract's `choiceId` definition.
+ * The only writer of a brief's snapshot. A known value is accepted only when
+ * `applyContextChoice()` says it is one of that field's fixed choice ids: the
+ * vocabulary is closed, so a shape check (a lowercase slug) would still let
+ * a founder's sentence through once a caller slugified it.
  */
-const CHOICE_ID_SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
-const NOT_A_KNOWN_VALUE = new Set(["unknown", "something-else"]);
-
 function snapshotContext(context: EngagementContext): EngagementContext {
   const ids = new Set<string>(ENGAGEMENT_CONTEXT_FIELD_IDS);
-  const fields = context.fields.map((field): EngagementContextField => {
+  const byId = new Map<EngagementContextFieldId, EngagementContextField>();
+  for (const field of context.fields) {
     if (!ids.has(field.id)) {
       throw new TypeError(`engagement context field ${JSON.stringify(field.id)} is not a context field id (${ENGAGEMENT_CONTEXT_FIELD_IDS.join(", ")})`);
     }
-    if (field.state === "unknown") return { id: field.id, state: "unknown" };
-    if (field.state !== "known" || typeof field.value !== "string" || !CHOICE_ID_SLUG.test(field.value) || NOT_A_KNOWN_VALUE.has(field.value)) {
-      // The value is deliberately not echoed: it may be exactly the prose this check keeps out.
-      throw new TypeError(`engagement context field "${field.id}" must be unknown, or known with a choice-id slug value -- never freeform text, because the brief is committed in every staffed repository`);
+    if (byId.has(field.id)) {
+      throw new TypeError(`engagement context field "${field.id}" appears more than once; the contract allows exactly one entry per field id`);
     }
-    return { id: field.id, state: "known", value: field.value };
-  });
-  return { schemaVersion: 1, fields };
+    byId.set(field.id, snapshotField(field));
+  }
+  return { schemaVersion: 1, fields: ENGAGEMENT_CONTEXT_FIELD_IDS.map((id) => byId.get(id) ?? { id, state: "unknown" }) };
+}
+
+function snapshotField(field: EngagementContextField): EngagementContextField {
+  if (field.state === "unknown") return { id: field.id, state: "unknown" };
+  if (field.state !== "known" || typeof field.value !== "string" || applyContextChoice(field.id, field.value).kind !== "known") {
+    // The value is deliberately not echoed: it may be exactly the founder text this check keeps out.
+    throw new TypeError(`engagement context field "${field.id}" must be unknown, or known with one of that field's fixed choice ids -- never freeform or slugified text, because the brief is committed in every staffed repository`);
+  }
+  return { id: field.id, state: "known", value: field.value };
 }
 
 /**

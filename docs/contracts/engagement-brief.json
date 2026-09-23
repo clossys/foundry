@@ -30,7 +30,7 @@
     },
     "context": {
       "$ref": "engagement-context.json",
-      "description": "Issue #1173 follow-up (docs/DECISIONS.md decision 28): a verbatim snapshot of the hub's clossys/advisor/context.json, taken when the brief is written. The hub record stays the single source of truth and is written only by Advisor; this copy is how a role running in a product repository -- which has no hub checkout -- reads what the founder already answered. Refreshed by re-applying the plan, never edited in place. Optional: when absent, every context field is read as unknown (packages/advisor/src/engagement-brief.ts's contextFromBrief()), never invented."
+      "description": "Issue #1173 follow-up (docs/DECISIONS.md decision 28): a contract-shaped snapshot of the hub's clossys/advisor/context.json, taken when the brief is written: one entry per field id, and a known value is always one of that field's fixed choice ids, never founder text. The hub record stays the single source of truth and is written only by Advisor; this copy is how a role running in a product repository -- which has no hub checkout -- reads what the founder already answered. Refreshed by re-applying the plan, never edited in place. Optional: when absent, every context field is read as unknown (packages/advisor/src/engagement-brief.ts's contextFromBrief()), never invented."
     }
   },
   "definitions": {

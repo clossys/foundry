@@ -204,8 +204,9 @@ own freeform answer rather than inventing a stored value.
 The context record lives on the hub, but roles run in product
 repositories that have no hub checkout. So a role never reads
 `clossys/advisor/context.json` directly: `toEngagementBrief()` accepts an
-optional `context` and copies it verbatim into the brief, which is
-written to `clossys/brief.json` in every staffed repository.
+optional `context` and writes a normalized copy into the brief (one
+entry per field id, in the fixed field order), which is written to
+`clossys/brief.json` in every staffed repository.
 `contextFromBrief()` is how a role reads it back — a brief without a
 snapshot, or a field missing from one, reads as `unknown`, never an
 invented answer — and it returns a copy. The snapshot is refreshed by
@@ -213,9 +214,10 @@ re-applying the plan, not edited in place.
 
 The brief is committed in every staffed repository, and a product
 repository can be public when the hub is not. So a snapshot carries only
-choice-id slugs: `toEngagementBrief()` throws on a known field whose
-`value` is not a slug (for example a founder's own "something else"
-sentence), rather than copying it into the brief.
+each field's fixed choice ids: `toEngagementBrief()` throws on a known
+field whose `value` is not one of them (a founder's own "something else"
+sentence, or a slugified form of it), and on a field id that appears
+twice, rather than copying it into the brief.
 
 The field ids double as reserved intake question ids: a role's own
 intake card may not reuse one, because that question belongs to the

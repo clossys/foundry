@@ -2463,10 +2463,13 @@ flag and constrains every intake file from its first commit.
 
 ### Decision
 
-**The brief carries a verbatim snapshot.** `clossys/brief.json` gains an
-optional `context` property holding the hub's engagement context record
-exactly as `docs/contracts/engagement-context.json` shapes it.
-`toEngagementBrief()` takes an optional `context` and copies it in.
+**The brief carries a contract-shaped snapshot.** `clossys/brief.json`
+gains an optional `context` property holding the hub's engagement context
+record as `docs/contracts/engagement-context.json` shapes it.
+`toEngagementBrief()` takes an optional `context` and writes a normalized
+copy: exactly one entry per field id, in the fixed field order, with a
+field the supplied context lacks written as `unknown`, and it throws on a
+field id that appears twice.
 Every role, on the hub or in a product repository, reads the context
 through the brief (`contextFromBrief()`), never from the hub path. The hub
 record stays the single source of truth and only Advisor writes it; the
@@ -2477,17 +2480,22 @@ returns one entry per field id, as a copy. The brief's `schemaVersion`
 stays `1`: the property is optional and no brief has been written to disk
 yet (writing is wave 2, #1175/#1178).
 
-**The snapshot widens where the context is visible, so it carries slugs
-only.** The hub record sits under `clossys/advisor`, which the layout marks
-`hub-only`; the brief is committed in every staffed repository, and a
-product repository can be public when the hub is not. Copying the context
-into the brief therefore extends its visibility to every staffed
-repository -- the same exposure the brief's freeform `problem` already
-has. To keep that bounded, a known field's `value` must be a choice-id
-slug (`^[a-z0-9]+(-[a-z0-9]+)*$`, and never `unknown` or
-`something-else`): the contract's `choiceId` definition states it, and
-`toEngagementBrief()` throws rather than copy anything else. A founder's own
-"something else" sentence never enters the record, so it never reaches a
+**The snapshot widens where the context is visible, so it carries fixed
+choice ids only.** The hub record sits under `clossys/advisor`, which the
+layout marks `hub-only`; the brief is committed in every staffed
+repository, and a product repository can be public when the hub is not.
+Copying the context into the brief therefore extends its visibility to
+every staffed repository -- the same exposure the brief's freeform `problem` already
+has. To keep that bounded, a known field's `value` must be one of that
+field's own fixed choice ids -- the answers on its Advisor question card,
+never `unknown` or `something-else`. `toEngagementBrief()` accepts a
+value only when `applyContextChoice(field, value)` returns `known` and
+throws rather than copy anything else, and the contract lists the same ids
+as a per-field `enum`, which a test keeps equal to the cards. A shape rule
+is not enough: a lowercase-slug pattern would still admit a founder's
+sentence once a caller slugified it (`mostly-dentists-near-our-office`), at
+any length. Because the vocabulary is closed, no founder text -- a
+"something else" sentence, or a slugified form of one -- can reach a
 product repository through the brief.
 
 **The context field ids are reserved intake question ids.** Matching is on
