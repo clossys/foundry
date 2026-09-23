@@ -4489,6 +4489,107 @@ clear 3:1 on their own and carry no exception at all — if a future
 palette edit ever moved one of dark's slots under the floor, it would
 report as a genuine, unrelieved `"below-threshold"` finding.
 
+## Identity kit (`@clossys/designer/tokens`) — #1210
+
+The master brand mark contract above (`validateMasterMark`) validates a
+consumer-SUPPLIED SVG. `identity-kit.ts`/`identity-checks.ts` are the
+generative and judgement halves that produce one in the first place, per
+[#1210](https://github.com/clossys/foundry/issues/1210): every new product
+gets a usable logo set in v0 without waiting on a human designer, and a
+custom mark never blocks it.
+
+**Two ways a direction is born.** `generateIdentityDirections(brand, tokens)`
+deterministically builds three candidates — a wordmark (a roundel monogram
+plus the brand name) and two monogram-only shapes (circle, rounded square)
+— from a brand name and already-resolved token literals; the same input
+always produces byte-identical SVG, never a fresh roll. `adoptSuppliedMark(
+{ brand, suppliedSvg, tokens })` instead validates and derives the same
+variant set from a client's existing logo, or a human designer's or image
+model's output — the `found` -> adopted path #1210 names. Neither path does
+free-hand drawing: both compose the same small set of primitives (a glyph, a
+badge wrapper, `recolorSvg`), the "deterministic mechanics" split #1187's
+"who does what" table draws for this package's role.
+
+**Seven variant roles**, every direction: `primary` (the flagship lockup,
+ink-coloured, for light surfaces), `mark` (icon/monogram alone), `mono`
+(`mark` recoloured to `currentColor`, single-colour legible), `light`
+(`primary` again, its own named file), `dark` (`primary` recoloured to the
+inverse-ink token, for dark surfaces), `favicon` (`mark` via `currentColor`,
+built the same way as `mono`), and `appIcon` (`mark` composed onto an
+accent-filled rounded-square badge).
+
+**Four checks judge every direction**, mirroring the "package owns
+judgment, every check reports satisfied/violated/indeterminate" split this
+repository holds every gate to:
+
+| Export | Kind | Purpose |
+| --- | --- | --- |
+| `checkIdentityContrast(tokens)` | function | WCAG contrast (via `contrastRatio` from `color.ts`) on the four pairs a shipped kit actually composites: `primary`/`mark` (ink on the light surface), `dark` (inverse ink on the dark surface), `appIcon` (badge glyph on its accent background). Floor: `IDENTITY_MIN_CONTRAST` (`3`, WCAG 1.4.11 non-text). |
+| `checkMinimumSize(svg)` | function | A declared-geometry PROXY for legibility at small sizes: the finest `stroke-width` in `svg` as a fraction of its own `viewBox`'s shorter side. This package does not rasterize, so this is a heuristic signal, not a rendered measurement — see the function's own header. |
+| `checkClearSpace(svg)` | function | Reads the `data-clear-space` ratio every generated/adopted variant declares on its root `<svg>` and checks it against a minimum. Declared, not measured, for the same reason as minimum size. |
+| `checkSingleColourLegibility(svg)` | function | Structural: the `mono` variant must paint through `currentColor` alone, with no other explicit `fill`/`stroke` colour literal left over. |
+| `judgeIdentityKit(direction, tokens)` | function | Runs all four against one `IdentityDirection` and returns a per-check `{ verdict, findings }` plus an overall `verdict`, flattened `findings`, and `ok` — `true` only when every check is `satisfied`; an `indeterminate` check never counts as a pass, and any `indeterminate` check makes the overall `verdict` `indeterminate` too (fails closed), even alongside a `violated` one. |
+| `identityKitReport(direction, tokens, version)` | function | Builds the full report shape the repository contract docs/contracts/check-output-envelope.json declares (not shipped with this package) — `{ package, version, verdict, summary, findings, nextAction? }` — for one direction. |
+
+An `indeterminate` verdict is never a silent pass: a check that could not
+actually evaluate its input (no `viewBox`, no `data-clear-space` declared at
+all) reports that plainly, the same "a gate that passes because it checked
+nothing is worse than no gate" discipline the WCAG contrast gate above
+holds to.
+
+`IdentityVerdict` (`satisfied`/`violated`/`indeterminate`) and
+`IdentityFinding` (`{ rule, severity, message, path? }`) are this package's
+own instance of the shared vocabulary the repository contract docs/contracts/
+check-output-envelope.json declares (issue #1174/#1190; that contract does
+not ship with this package) — not a second, locally-invented verdict or
+finding shape.
+
+**Outputs and the asset roster.** This package does not write files or
+register anything itself — `generateIdentityDirections`/`adoptSuppliedMark`
+return SVG strings; a caller (the coding agent driving a real engagement,
+or Launcher's compose step) writes the chosen direction's variants to
+`clossys/designer/assets/` and, for the roles a static-asset roster names
+(`favicon-svg` at minimum, directly from a variant's SVG), registers them
+where Publisher's own asset-roster reader (`@clossys/publisher`'s
+`deriveBrandAssetRoster`/`checkBrandAssetRoster`) expects them — see that
+package's README for the full role list and required pixel sizes for the
+raster roles this package does not produce.
+
+```ts
+import {
+  generateIdentityDirections,
+  identityKitReport,
+  judgeIdentityKit,
+  type IdentityTokenInput,
+} from "@clossys/designer/tokens";
+
+const tokens: IdentityTokenInput = {
+  ink: "oklch(0.2178 0 0)",
+  onInverse: "oklch(0.9702 0 0)",
+  surfaceBase: "oklch(0.9702 0 0)",
+  surfaceInverse: "oklch(0.2178 0 0)",
+  accent: "oklch(0.4748 0 0)",
+  onAccent: "oklch(0.9702 0 0)",
+  fontFamily: "system-ui, sans-serif",
+};
+
+const [wordmark, circle, square] = generateIdentityDirections({ name: "Acme Rockets" }, tokens);
+const judgement = judgeIdentityKit(wordmark, tokens); // { ok, verdict, findings, checks: { contrast, "minimum-size", "clear-space", "single-colour-legibility" } }
+```
+
+```ts
+import { identityKitReport } from "@clossys/designer/tokens";
+
+identityKitReport(wordmark, tokens, "0.5.0");
+// {
+//   package: "@clossys/designer",
+//   version: "0.5.0",
+//   verdict: "satisfied",
+//   summary: "The \"wordmark\" identity kit satisfies all four checks (contrast, minimum size, clear space, single-colour legibility).",
+//   findings: [],
+// }
+```
+
 ## Environment-declaration-consistency gate (`@clossys/designer/gate`, `designer-environment-check`)
 
 "Server Components" above documents `RENDER_ENVIRONMENT` — a plain

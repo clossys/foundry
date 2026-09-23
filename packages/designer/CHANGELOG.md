@@ -5,6 +5,40 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.5.0] - 2026-09-22
+
+### Added
+
+- Identity kit on `@clossys/designer/tokens` (closes #1210): deterministic
+  logo generation and judgement without a hired designer. `generateIdentityDirections`
+  builds three directions (a wordmark and two monogram shapes) from a brand
+  name and resolved tokens; `adoptSuppliedMark` derives the same variant set
+  from a client-supplied or human-designer SVG instead (`found` -> adopted).
+  Every direction ships the seven-role variant set `primary`/`mark`/`mono`/
+  `light`/`dark`/`favicon`/`appIcon`. `checkIdentityContrast`,
+  `checkMinimumSize`, `checkClearSpace`, and `checkSingleColourLegibility`
+  judge each variant, combined by `judgeIdentityKit` into a per-check
+  `satisfied`/`violated`/`indeterminate` verdict — an indeterminate check
+  never counts as a pass. A custom pictorial mark never blocks v0.
+- Conformance rework (owner direction, issue #1187): `judgeIdentityKit`'s
+  per-check and overall findings now use the shared `findingShape` (`{
+  rule, severity, message, path? }`, new `IdentityFinding` type) the
+  repository contract docs/contracts/check-output-envelope.json declares
+  (that contract does not ship with this package) instead of a bare
+  `detail: string` -- no local copy of the contract, and `verdict` was
+  already the contract's own `satisfied`/`violated`/`indeterminate`
+  vocabulary. `judgeIdentityKit` now also returns an overall `verdict` and
+  flattened `findings` alongside its existing per-check `checks` and `ok`;
+  any `indeterminate` check makes the overall verdict `indeterminate` too
+  (fails closed), even alongside a `violated` one. New
+  `identityKitReport(direction, tokens, version)` builds the full envelope
+  document (`{ package, version, verdict, summary, findings, nextAction?
+  }`). A new contract-conformance test
+  (`src/tokens/check-output-envelope.test.ts`, a dev-only test not shipped
+  with this package) reads the contract file directly and validates real
+  report output against it. The prior review's SVG-attribute
+  escaping/validation fix carries forward unchanged.
+
 ## [0.4.17] - 2026-09-21
 
 ### Added

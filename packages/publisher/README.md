@@ -1720,7 +1720,7 @@ import-free of each other under one version.
 
 Node 20+. This package's own `package.json` declares runtime dependencies on
 `@clossys/writer` (`^0.3.0`), `@clossys/designer`
-(`^0.4.0`), and `@clossys/controller` (`~0.9.0`), of which this
+(`^0.5.0`), and `@clossys/controller` (`~0.9.0`), of which this
 package only imports the `./policy` subpath, `@clossys/controller/policy`,
 never `controller`'s other exports. `writer` and `designer` are caret
 ranges (both fresh `0.x` role packages); `controller` stays a tilde range,
@@ -1741,15 +1741,19 @@ because Publisher's React-server target imports the server-safe
 section-ground, `Faq`, ordered-step, and status-list exports, including the
 separate `not-offered` disposition, introduced in Designer 0.2.7, then to
 `^0.3.0` because the `eyebrow` and `actions` slots this package's
-section contract now renders into are Designer 0.3.0 additions, and then to
-the current `^0.4.0` because a `status-list` section's flat `items`
+section contract now renders into are Designer 0.3.0 additions, then to
+`^0.4.0` because a `status-list` section's flat `items`
 alternative to `groups` renders into Designer 0.4.0's new `StatusList`
-`items` prop. These ranges are independent; leaving
+`items` prop, and then to the current `^0.5.0` — a workspace-resolution
+bump, not a new imported contract — because Designer 0.5.0 is itself a
+minor release (the identity-kit generator and its checks, issue #1210),
+and a `^0.4.0` range does not resolve a `0.5.x` package under 0.x caret
+semver. These ranges are independent; leaving
 either one behind would still resolve an older package without any install
 failure, silently withholding a required contract.
 
 A consumer whose own policy is to pin exact versions must pin `writer` to a
-matching `0.3.x` release, `designer` to `0.4.0` or a later compatible `0.4.x`
+matching `0.3.x` release, `designer` to `0.5.0` or a later compatible `0.5.x`
 release, and
 `controller` to a matching `0.9.x` patch release — otherwise
 `publisher`'s declared ranges and the consumer's exact pin cannot both be
