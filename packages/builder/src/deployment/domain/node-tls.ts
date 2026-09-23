@@ -3,11 +3,20 @@
  * a test. `connect` defaults to `node:tls`'s own `connect`, kept as an
  * explicit parameter so this file's own tests never open a real socket.
  *
- * `rejectUnauthorized: false` is deliberate: this probe still WANTS to see
- * an untrusted certificate's own dates and subject rather than have the
- * handshake throw before it can inspect anything -- `chainTrusted` (read
- * from `socket.authorized`) is exactly how that fact is reported back,
- * never silently dropped.
+ * `rejectUnauthorized: false` (CodeQL js/disabling-certificate-validation,
+ * suppressed inline below with its own justification) is deliberate and
+ * measured, never a blanket "trust anything": this socket NEVER sends or
+ * receives application data -- the callback below only ever reads
+ * `getPeerCertificate()` and `socket.authorized`, and every path (`finish`)
+ * destroys the socket immediately after. An untrusted or expired
+ * certificate is exactly the finding this probe exists to report
+ * (`chainTrusted: false` / `validNow: false`, read from the real
+ * certificate rather than a placeholder), so refusing to look at an invalid
+ * one would defeat the probe's own purpose. Confirmed empirically, not
+ * assumed: with the Node default (`rejectUnauthorized: true`),
+ * `getPeerCertificate()` returns `null` once the handshake is rejected --
+ * there is no dates-and-subject-preserving way to answer "what, exactly, is
+ * wrong with this certificate" without this option.
  */
 import * as nodeTls from "node:tls";
 import type { TlsCertificateProbe, TlsProbeObservation } from "./tls-check.js";
@@ -40,7 +49,13 @@ export function createNodeTlsProbe(options: CreateNodeTlsProbeOptions = {}): Tls
         resolve(observation);
       };
 
-      const socket = connect({ host: hostname, port, servername: hostname, timeout: timeoutMs, rejectUnauthorized: false }, () => {
+      const socket = connect({
+        host: hostname,
+        port,
+        servername: hostname,
+        timeout: timeoutMs,
+        rejectUnauthorized: false, // codeql[js/disabling-certificate-validation]: read-only inspection, never a real data connection -- see this file's header.
+      }, () => {
         const cert = socket.getPeerCertificate();
         if (cert === undefined || Object.keys(cert).length === 0) {
           finish({ kind: "unreachable", detail: "no certificate was presented" });
