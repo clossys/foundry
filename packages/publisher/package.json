@@ -84,6 +84,14 @@
     "./surfaces": {
       "types": "./dist/surfaces/index.d.ts",
       "import": "./dist/surfaces/index.js"
+    },
+    "./materials": {
+      "types": "./dist/materials/index.d.ts",
+      "import": "./dist/materials/index.js"
+    },
+    "./templates": {
+      "types": "./dist/templates/index.d.ts",
+      "import": "./dist/templates/index.js"
     }
   },
   "imports": {
