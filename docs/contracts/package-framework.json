@@ -68,5 +68,9 @@
   "governance": {
     "rule": "No single package owns this framework at runtime. It is supplier governance: this contract plus the gate that reads it. @clossys/controller's onboarding discovers a role's declarations at runtime and never infers one; @clossys/advisor orchestrates what discovery returns. Neither package gains a new runtime dependency on any role package to do this -- discovery reads an installed manifest, nothing else.",
     "changeProcedure": "A framework change is exactly one pull request: it bumps this file's own top-level `version`, and brings every package this repository ships into conformance with the new shape in the same change. A package left non-conformant after that PR is a defect, not a follow-up."
+  },
+  "lifecycle": {
+    "$ref": "./lifecycle.json",
+    "$comment": "The one lifecycle vocabulary for every capability and pack item (issue #1228), exported in code as packages/controller/src/loop/lifecycle.ts. Not itself a `fields` entry -- no manifest key declares it -- because it is the shared state model the loop engine (docs/contracts/loop.json, issue #1195) and pack items (issue #1204) each specialize, not a per-role declaration."
   }
 }

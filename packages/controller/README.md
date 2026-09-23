@@ -179,6 +179,29 @@ can support a completion result.
 It never claims a provider observation is true, installs a package, or
 measures a provider itself.
 
+### The lifecycle vocabulary: `absent` / `found` / `draft` / `approved` / `verified` / `retired` (issue #1228)
+
+One lifecycle vocabulary for every capability and pack item, an owner
+decision recorded 2026-09-22: the loop lifecycle (below) and pack item
+statuses were designed as two state models side by side before this, using
+different words for the same underlying position. `LIFECYCLE_STATES` (typed
+`LifecycleState`) -- `absent`, `found`, `draft`, `approved`, `verified`,
+`retired` -- and `LIFECYCLE_CONDITIONS` (typed `LifecycleCondition`) --
+`current`, `stale`, `blocked`, shared across every state -- are this
+package's own single definition, mirrored word for word by
+`docs/contracts/lifecycle.json`. This package's own loop engine (below)
+uses these states directly; any other package with a status-like surface
+imports them from here rather than declaring its own.
+
+A surface that needs a richer vocabulary specializes this one instead of
+inventing new words. Pack item statuses are the one example so far:
+`PACK_STATUSES` (typed `PackStatus`) -- `absent`, `found`, `draft`,
+`in-review`, `kept`, `published` -- and `packStatusToLifecycle(status)`
+resolves each one to its `PackStatusLifecyclePosition`: `in-review` is
+`draft` with a pending judgment, `kept` is `approved` by the Customer keep,
+`published` is `verified`, sealed and live; the other three map onto the
+identically-named state with no extra meaning.
+
 ### First-day onboarding: discovering and invoking role-owned assessments
 
 One parameterized workflow that **discovers and invokes role-owned
@@ -2148,6 +2171,8 @@ mismatch (or another binding finding), `2` when it could not run. Use
 | Export | Kind | Purpose |
 | --- | --- | --- |
 | `PACKAGE_LIFECYCLE_VERSION` | constant | Supported lifecycle schema version, currently `1`. |
+| `LIFECYCLE_STATES` / `LIFECYCLE_CONDITIONS` | constants | The one lifecycle vocabulary (issue #1228) every capability and pack item passes through: six states (`LifecycleState`) and three shared conditions (`LifecycleCondition`). Mirrored word for word by `docs/contracts/lifecycle.json`. |
+| `PACK_STATUSES` / `packStatusToLifecycle(status)` | constant / function | The pack item status vocabulary (`PackStatus`) and its fixed mapping onto the lifecycle above -- `in-review` to `draft` with a pending judgment, `kept` to `approved`, `published` to `verified` -- returned as a `PackStatusLifecyclePosition`. |
 | `planNewPackage(input)` | function | Returns a deterministic, no-write private starter or repository-profiled package plan. |
 | `validatePackageLifecycle(value)` | function | Purely validates a lifecycle document without workspace I/O. |
 | `evaluateLifecycleCoverage(value, packageNames, packageVersions?)` | function | Validates a lifecycle document, checks it names exactly the supplied packages, and — when `packageVersions` is supplied — flags a terminal entry whose declared `replacement.range` no longer covers the replacement's actual version. |

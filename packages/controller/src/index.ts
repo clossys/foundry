@@ -1,6 +1,25 @@
 /** Read-only lifecycle governance and package-process orchestration. */
 
 export { PACKAGE_LIFECYCLE_VERSION } from "./types.js";
+
+// One lifecycle vocabulary for every capability and pack item (issue #1228).
+// Re-exported from the root entry point for the same reason onboarding is,
+// below: the frozen public-npm aggregate canary plan pins an immutable
+// optional-peer matrix keyed by export SPECIFIER, and a new subpath has
+// nowhere to be recorded against it. Named exports added to the existing
+// root specifier do not touch that matrix.
+export {
+  LIFECYCLE_CONDITIONS,
+  LIFECYCLE_STATES,
+  PACK_STATUSES,
+  packStatusToLifecycle,
+} from "./loop/lifecycle.js";
+export type {
+  LifecycleCondition,
+  LifecycleState,
+  PackStatus,
+  PackStatusLifecyclePosition,
+} from "./loop/lifecycle.js";
 export type {
   DeclaredRule,
   GovernedPreflightOptions,

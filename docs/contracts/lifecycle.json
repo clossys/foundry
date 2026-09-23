@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "kind": "foundry-lifecycle",
+  "$comment": "One lifecycle vocabulary for every capability and pack item, issue #1228 (owner decision, 2026-09-22): before this contract, the loop lifecycle (#1195) and pack item statuses (#1204) were two state models designed side by side, using different words for the same underlying position. This contract is the single source both specialize from. @clossys/controller exports it (packages/controller/src/lifecycle.ts) so Controller's own loop engine, Publisher's pack rendering, and this repository's package-framework manifest checks all import one definition instead of re-declaring their own.",
+  "states": [
+    "absent",
+    "found",
+    "draft",
+    "approved",
+    "verified",
+    "retired"
+  ],
+  "stateMeaning": {
+    "absent": "Nothing exists yet for this capability or item.",
+    "found": "It exists but is not yet managed by the loop -- adopt it, never overwrite it.",
+    "draft": "Produced by the role, not yet judged.",
+    "approved": "Judged and accepted by the accountable party (a role's own judge stage, or the Customer keep for a pack item).",
+    "verified": "Independently verified -- for a pack item, sealed and live.",
+    "retired": "Deliberately withdrawn; superseded or no longer applicable."
+  },
+  "conditions": [
+    "current",
+    "stale",
+    "blocked"
+  ],
+  "conditionMeaning": {
+    "current": "The state's own evidence still matches its declared inputs.",
+    "stale": "An input, the role itself, or a review window has moved past what produced this state; the loop re-enters per its own trigger table.",
+    "blocked": "The loop cannot advance this capability without an external resolution (see docs/contracts/loop.json's blocker kinds)."
+  },
+  "packStatusMapping": {
+    "$comment": "Pack item statuses (#1204) specialize this same vocabulary; they are not a second set of words. Every pack status maps onto exactly one lifecycle state, and the three renamed ones also carry the extra meaning the mapping states.",
+    "absent": { "state": "absent" },
+    "found": { "state": "found" },
+    "draft": { "state": "draft" },
+    "in-review": { "state": "draft", "note": "draft with a pending judgment" },
+    "kept": { "state": "approved", "note": "approved by the Customer keep" },
+    "published": { "state": "verified", "note": "sealed and verified live" }
+  },
+  "governance": {
+    "rule": "No package other than @clossys/controller declares its own copy of `states` or `conditions`. A surface that needs a specialized vocabulary (like pack statuses) maps onto these six states and three conditions rather than inventing new words, and records that mapping next to its own status type.",
+    "changeProcedure": "A change to `states` or `conditions` is exactly one pull request: it bumps this file's own `schemaVersion`, updates packages/controller/src/lifecycle.ts in the same change, and brings every consumer's own mapping into conformance."
+  }
+}
