@@ -40,12 +40,15 @@
     "  approvedAt   -- RFC 3339 date this row was approved (null while",
     "                  status is \"proposed\").",
     "  expiresAt    -- RFC 3339 date, REQUIRED, 90 days after approvedAt.",
-    "                  land-stack treats an approved row whose expiresAt has",
-    "                  passed the same as an unqualified model -- expiry here",
-    "                  is default-deny too, matching governance/decisions/'s",
+    "                  INTENDED semantics, once a future slice actually",
+    "                  reads this file (it does not today -- see this",
+    "                  file's own header above): an approved row whose",
+    "                  expiresAt has passed should read the same as an",
+    "                  unqualified model -- expiry here is meant to be",
+    "                  default-deny too, matching governance/decisions/'s",
     "                  own rule.",
     "  status       -- \"proposed\" | \"approved\". Only \"approved\" rows are",
-    "                  ever enforced.",
+    "                  MEANT to ever be enforced, once enforcement exists.",
     "",
     "WHY 90 DAYS: the Fable second opinion's point 4 ('Versioning and",
     "expiry... expire after 90 days or on any provider model change'). A",
@@ -65,7 +68,11 @@
     "inspector's or this file's -- see the Fable second opinion, point 1)."
   ],
   "schemaVersion": 1,
-  "classes": ["C1", "C2", "C3"],
+  "classes": [
+    "C1",
+    "C2",
+    "C3"
+  ],
   "entries": [
     {
       "class": "C1",

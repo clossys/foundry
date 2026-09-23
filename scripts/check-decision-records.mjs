@@ -55,7 +55,7 @@ const KNOWN_FIELDS = Object.freeze([
 ]);
 
 const REVIEW_FIELDS = Object.freeze(["role", "instance", "provider", "model", "effort", "verdict", "link"]);
-const LINKS_FIELDS = Object.freeze(["pullRequests", "issues", "paths"]);
+const LINKS_FIELDS = Object.freeze(["pullRequests", "issues", "paths", "headShas"]);
 
 function isNonEmptyString(value) {
   return typeof value === "string" && value.length > 0;
@@ -170,6 +170,31 @@ export function validateDecisionRecordShape(record, idFromFilename) {
         const value = record.links[field];
         if (value !== undefined && (!Array.isArray(value) || !value.every((v) => typeof v === "string"))) {
           findings.push(`links.${field} must be an array of strings when present`);
+        }
+      }
+      // The two rules below apply only to a record actually FUNCTIONING as
+      // tier-2 authorization (tier: "tier-2", status: "decided") -- a
+      // tier-1 record, or an open/not-yet-decided one, may cite a PR or a
+      // path for context without yet meeting the bar a live authorization
+      // needs.
+      const isLiveTier2Authorization = record.tier === "tier-2" && record.status === "decided";
+      if (isLiveTier2Authorization) {
+        // A PR-scoped authorization must pin at least one head sha --
+        // without it, links.pullRequests alone authorizes whatever head
+        // that PR happens to carry at merge time, not the exact commit the
+        // record was actually decided about (#1187 review round 4,
+        // should-fix: "a PR-scoped one must pin a head sha").
+        if (Array.isArray(record.links.pullRequests) && record.links.pullRequests.length > 0) {
+          if (!Array.isArray(record.links.headShas) || record.links.headShas.length === 0) {
+            findings.push("links.headShas must be a non-empty array when links.pullRequests is non-empty on a decided tier-2 record (a PR-scoped authorization must pin a head sha)");
+          }
+        }
+        // A path-scoped authorization must be bounded by a real expiry --
+        // otherwise one owner decision pre-authorizes every future change
+        // under that glob, forever (#1187 review round 4, should-fix: "a
+        // path-scoped authorization must carry a non-null expiry").
+        if (Array.isArray(record.links.paths) && record.links.paths.length > 0 && record.expiry === null) {
+          findings.push("expiry must not be null when links.paths is non-empty on a decided tier-2 record (a path-scoped authorization must be bounded)");
         }
       }
     }

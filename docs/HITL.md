@@ -50,12 +50,16 @@ paths that skip it entirely.
 
 | What | Where | How |
 |---|---|---|
-| Tier-1 / tier-2 path classification | `governance/review-tiers.json` | Path globs, read by `land-stack.mjs` from the pull request's **base commit** via the GitHub Contents API (`repos/{owner}/{repo}/contents/{path}?ref={baseSha}`) — never from the local checkout — so a pull request can never narrow its own tier-1 globs or add its own decision record in the same diff it needs graded. Classifies BOTH the new and previous name of a renamed file (`changedFilePathsForClassification`), so moving a tier-1/tier-2 file to an unwatched path cannot itself dodge the tier it would otherwise carry. |
+| Tier-1 / tier-2 path classification | `governance/review-tiers.json` | Path globs, read by `land-stack.mjs` from the pull request's **base commit** via the GitHub Contents API (`repos/{owner}/{repo}/contents/{path}?ref={baseSha}`) — never from the local checkout — so a pull request can never narrow its own tier-1 globs or add its own decision record in the same diff it needs graded. Classifies BOTH the new and previous name of a renamed file (`changedFilePathsForClassification`), so moving a tier-1/tier-2 file to an unwatched path cannot itself dodge the tier it would otherwise carry. `tier1.globs` is now the BROAD `scripts/**` and `.github/**` (not a hand-picked script list), and `scripts/land-stack.test.mjs` has a test, `findUnclassifiedWorkflowPaths`, that scans every real `.github/workflows/*.yml` file for a referenced script/config path and fails if any of them classifies tier-0 — a structural guard against this porousness recurring, not just a one-time fix. |
+| No-op head commit | `scripts/land-stack.mjs`'s `isNoOpHeadCommit` | Any tier-1/tier-2 pull request whose HEAD COMMIT changes zero files (most commonly `git commit --allow-empty`) refuses outright, regardless of what the rest of the diff or review evidence says — a no-op commit would otherwise be enough on its own to give a rejected PR a fresh head and clear a sticky rejection with no real change at all. |
+| Decided-record immutability | `scripts/land-stack.mjs`'s `evaluateChangedDecisionRecords` | A pull request that changes the CONTENT (by parsed value, not raw text) of a `governance/decisions/*.json` record whose base-branch version already has `status: "decided"` is refused — the only sanctioned way to change a decision is a new record whose `supersedes` names the old one. A record still `"open"` on the base branch may be freely edited. |
 | Self-inclusion | This file, `scripts/land-stack.mjs` (and its test), `docs/contracts/decision-record.json`, `scripts/check-decision-records.mjs` (and its test), `package-scope.json`, and `scripts/lib/**` are all **tier-2**, not tier-1 — a tier-1 change (two agent reviewers) could otherwise narrow `tier2.globs` (for example, drop `governance/model-qualifications/**` from it) and remove the owner-only boundary without the owner. See "Bootstrapping this gate" below for the one case this cannot cover: this pull request's own first landing. |
-| `governance/decisions/**` classification | `governance/review-tiers.json`'s `tier1RecordExempt` | **Tier-1, not tier-0.** Adding or changing any decision record needs the same two-independent-reviewer bar as any other governance path — closing a self-issue-then-spend loophole (see "What changed after the 8e6d97ea review" below). |
-| Record authorship | `scripts/land-stack.mjs`'s `defaultAnnotateCommentAuthorization` / `isAuthorizedCollaboratorPermission` | A `foundry-review-record` comment counts toward tier-1 ONLY when its author's collaborator permission on this repository (`repos/{owner}/{repo}/collaborators/{username}/permission`) is `admin` or `write`. Any other permission level, or any error resolving it (network failure, unrecognized login), is treated as unauthorized — never as authorized by default. This is a public repository; without this check, a comment from any GitHub account, with no relationship to this repository at all, satisfied tier-1 independence. |
-| Tier-1 review requirement | `scripts/land-stack.mjs`'s `evaluateTier1Independence` | Reads `foundry-review-record` comments (`docs/contracts/review-record.json`) on the pull request at its exact current head, from AUTHORIZED comments only. Refuses outright if any edited-at-head or unparseable record block exists at all (`findSuspiciousRecordComments`) — rather than silently dropping it and continuing. Refuses outright, and STICKY (never superseded by any later record, from the same `instanceId` or otherwise), if any authorized record at the current head has state `reject` or `changes-requested` (`findStickyRejections`) — regardless of what else is wrong with that record. Requires exactly one author record. Otherwise requires one `primary` and one `secondary` record, both `state: "approved"` (`"commented"` never counts), differing in model or provider, ordered by the comment's own `created_at` (not the self-declared `submittedAt`) when an instance supersedes its own earlier record. |
-| Tier-2 owner-decision requirement | `scripts/land-stack.mjs`'s `evaluateTier2Decision` | Reads decision records from the pull request's base commit for one that is itself schema-valid (checked against its real filename on the base branch, not against its own self-reported `id`), `tier: "tier-2"`, `status: "decided"`, `decidedBy: "owner"`, not superseded, not a relaxation past its sunset, unexpired (an unparseable `expiry` counts as expired), and linked to the PR by number or by a path glob that is either a literal path or exactly one of `tier2.globs` verbatim (`isOverbroadPathGlob`, computed against the real tier config). |
+| `governance/decisions/**` classification | `governance/review-tiers.json`'s `tier1.globs` (`governance/**`) | **Tier-1, not tier-0.** Deliberately NOT listed in `tier1RecordExempt` (the carve-out for pure record files) — adding or changing any decision record needs the same two-independent-reviewer bar as any other governance path — closing a self-issue-then-spend loophole (see "What changed after the 8e6d97ea review" below). |
+| Record authorship | `scripts/land-stack.mjs`'s `defaultAnnotateCommentAuthorization` / `isAuthorizedCollaboratorPermission` | A `foundry-review-record` comment counts toward tier-1 ONLY when its author's collaborator permission on this repository (`repos/{owner}/{repo}/collaborators/{username}/permission`) is `admin` or `write` (`"authorized"`). A confirmed `read`/`none`, or an unresolved login, is `"unauthorized"` — never counts toward anything, approval or rejection, and is never itself suspicious (a stranger cannot block the PR by posting garbage). A FAILED permission lookup (the check itself errored, not a confirmed "no") is the third, distinct state `"unknown"` and refuses the whole gate outright, for any record — collapsing it into `"unauthorized"` would silently drop a genuine reject this module simply could not verify. This is a public repository; without any of this, a comment from any GitHub account with no relationship to it at all satisfied tier-1 independence. |
+| Quoted/fenced marker text | `scripts/land-stack.mjs`'s `stripQuotedAndFencedContent` | A `foundry-review-record` marker inside a fenced code block, inline code span, blockquote, or classic indented code block is invisible to the parser entirely — a review comment that merely QUOTES or ILLUSTRATES the syntax (including this thread's own review comments, or this repository's own contract example) never produces a record, real or suspicious. The load-bearing convention is a bare block directly in the comment body. |
+| Tier-1 review requirement | `scripts/land-stack.mjs`'s `evaluateTier1Independence` | Reads `foundry-review-record` comments (`docs/contracts/review-record.json`) on the pull request at its exact current head, from AUTHORIZED comments only. Refuses outright if any edited-at-head, unparseable, unresolved-authorization, or headSha-less-reject record block exists at all (`findSuspiciousRecordComments`) — rather than silently dropping it and continuing. Refuses outright, and STICKY (never superseded by any later record, from the same `instanceId` or otherwise, however that later record is dated), if any authorized record at (or an unambiguous 7+ character prefix of) the current head has state `reject` or `changes-requested`, matched case-insensitively (`findStickyRejections`) — regardless of what else is wrong with that record. Requires exactly one author record. Otherwise requires one `primary` and one `secondary` record, both `state: "approved"` (`"commented"` never counts), differing in model or provider, ordered by the comment's own `created_at` (not the self-declared `submittedAt`) when an instance supersedes its own earlier record. |
+| Tier-0 fast path | `scripts/land-stack.mjs`'s `runStatus` | A genuinely tier-0 classification skips fetching PR comments, resolving any collaborator permission, and reading the base-branch decision log entirely — no path in a tier-0 diff can match `governance/decisions/**` (that glob alone is tier-1), so none of those reads would find anything to check. This also means one malformed record anywhere in the decision log no longer breaks `--status` for every pull request, tier-0 included. |
+| Tier-2 owner-decision requirement | `scripts/land-stack.mjs`'s `evaluateTier2Decision` | Reads decision records from the pull request's base commit for one that is itself schema-valid (checked against its real filename on the base branch, not against its own self-reported `id`), `tier: "tier-2"`, `status: "decided"`, `decidedBy: "owner"`, not superseded, not a relaxation past its sunset, unexpired (an unparseable `expiry` counts as expired), and linked to the PR EITHER by number PLUS a matching, pinned exact head sha (`links.pullRequests` + `links.headShas`) OR by a path glob that is either a literal path or exactly one of `tier2.globs` verbatim, on a record whose own `expiry` is non-null (`isOverbroadPathGlob`, computed against the real tier config). A PR-scoped record with no head pin, or a path-scoped record with `expiry: null`, authorizes nothing at all. **Known limitation, not solved:** a merge-train batch pull request carries a different PR number and head sha than any original constituent PR a decision record might name — this gate has no notion of "constituent PRs" and does not resolve one PR's authorization through another's. A batch containing a tier-2 change needs its own decision record or its own fresh review, even when the original PR was already authorized. |
 | Changed-decision-record validation | `scripts/land-stack.mjs`'s `evaluateChangedDecisionRecords`, reusing `scripts/check-decision-records.mjs`'s own `validateDecisionRecordShape` | Runs on **every** pull request, any tier: any `governance/decisions/**` file the PR adds, edits, deletes, or renames must be schema-valid, checked against its content at the PR's own **head** commit. A path deleted or renamed OUT of `governance/decisions/` is treated the same as a malformed record (decision records are append-only — superseded, never deleted or renamed away). |
 | Changed-file completeness | `scripts/land-stack.mjs`'s `verifyChangedFilesComplete` | Files are paginated directly against `repos/{owner}/{repo}/pulls/{n}/files` (never `gh pr view --json files`, which silently truncates at 100 entries) and cross-checked against the PR's own `changedFiles` count; an empty list, a short list, OR a non-number `changedFiles` value all refuse the merge rather than classifying blind. |
 | Merge-time head match | `gh pr merge --match-head-commit <sha>` in `runMerge` | Closes the window between the status check above and the actual merge call — a push landing in between is refused rather than silently merged uncovered by any of the checks above. |
@@ -180,6 +184,91 @@ The second review's own full text
 ([#1329 comment 5801406398](https://github.com/clossys/foundry/pull/1329#issuecomment-5801406398))
 is the authoritative account; this section summarizes it, not the reverse.
 
+## What changed after the round-4 reviews
+
+Two more independent reviews at the SAME head found a real
+denial-of-service hole in the previous round's own fix, gate-critical
+paths this repository's workflows execute with no tier coverage at all,
+and further attribution errors. Both are cited together here since they
+overlapped substantially:
+
+- **The `findSuspiciousRecordComments` fix from the previous round never
+  checked authorization at all.** Both reviews independently found the
+  SAME hole: any unauthorized (non-collaborator) account could post one
+  unparseable or edited `foundry-review-record` comment and permanently
+  refuse every tier-1/tier-2 pull request — including, as one review
+  pointed out, via the review threads' OWN illustrative example blocks.
+  Fixed two ways: `findSuspiciousRecordComments` now checks `_authorization
+  === "authorized"` before treating anything as suspicious, and
+  `stripQuotedAndFencedContent` removes fenced code, inline code, blockquoted,
+  and indented occurrences of the marker before scanning, so a comment that
+  merely QUOTES the syntax (illustrating it, discussing it, or citing this
+  contract's own example) is invisible to the parser entirely.
+- **Gate-critical paths this repository's own workflows execute were
+  tier-0.** `.github/scripts/*.mjs`, two `.github/*policy*.json` files,
+  `.root-entry-policy.json`, `scripts/push-tree-identical.mjs`, and the
+  whole publish path (`scripts/publish-*.mjs` and four more named scripts)
+  needed no review record at all under the previous, hand-maintained
+  `tier1.globs` list — the same porousness Fable's second opinion warned
+  about from the start. `tier1.globs` is now the broad `scripts/**` and
+  `.github/**`; the publish path is separately tier-2. A new test,
+  `findUnclassifiedWorkflowPaths`, scans every real workflow file for a
+  referenced script/config path and fails if any of them still classifies
+  tier-0, so this cannot silently regress.
+- **A reject still failed open three more ways.** A `reject` did not match
+  a short (7+ character) or uppercase `headSha`; a `reject` with NO
+  `headSha` at all was silently un-matched rather than refusing the gate;
+  and a failed permission lookup for a reject's author collapsed into a
+  confirmed "unauthorized" rather than refusing the gate over the
+  ambiguity. All three closed: `isCurrentHeadShaForReject` matches
+  case-insensitively and by prefix; a headSha-less authorized reject is now
+  `findSuspiciousRecordComments`-suspicious; and a third authorization
+  state, `"unknown"` (distinct from both `"authorized"` and
+  `"unauthorized"`), refuses the whole gate for any record whose permission
+  lookup itself failed.
+- **A tier-2 authorization tied to a PR number alone authorized whatever
+  head that PR carried later, and a path-scoped one with `expiry: null` was
+  a standing blank cheque.** `evaluateTier2Decision` now requires a
+  PR-scoped authorization to also pin the exact head sha it was decided
+  about (`links.headShas`), and a path-scoped one to carry a non-null
+  `expiry`. `governance/decisions/weekly-release-calendar.json` — the only
+  live tier-2 authorization in the tree — now pins the owner's sign-off to
+  its actual head, `348e385bc43b266481d5ae48d451d01a54a53e2e`, and two more
+  attribution errors in that record were corrected (the out-of-band
+  minor/major mechanics come from PR #1316's own body, not a #1187 comment;
+  the Friday/Saturday/Sunday sentence appears only in PR #1316's body,
+  citing but not quoting #1187 comment 5799002037 verbatim — the real
+  source of the day-specific calendar text is the separate comment
+  5799538912, already cited directly).
+- **A decided decision record could still be edited in place**, and a
+  no-op head commit (`git commit --allow-empty`) could clear a sticky
+  reject with no real change at all. Both closed:
+  `evaluateChangedDecisionRecords` now refuses any content change (by
+  parsed value) to a record whose base-branch version is already
+  `"decided"`, and `isNoOpHeadCommit` refuses any tier-1/tier-2 pull
+  request whose head commit changes zero files.
+- **`runStatus` did tier-2-shaped work for every pull request, tier-0
+  included** — fetching comments, resolving permissions, and reading the
+  whole base-branch decision log regardless of tier, so one malformed
+  record anywhere in the log could break status checks for every PR. Now
+  skipped entirely for a genuinely tier-0 classification, and the
+  base-branch decision log is read only when the PR is actually tier-2.
+- **Documentation drift**: `docs/contracts/review-record.json` said
+  supersession was ordered by `submittedAt` and that an edited comment was
+  simply "ignored" (both stale by two rounds); `governance/review-tiers.json`
+  and `governance/model-qualifications/allowlist.json` both still claimed
+  `land-stack.mjs` enforces the model allowlist, which it does not in this
+  slice; this document's own enforcement table named the wrong config key
+  for decision-record classification. All corrected in place, alongside two
+  more small attribution errors in `governance/decisions/verify-standards-stale-bot-reviews.json`
+  (a fabricated `provider` value) and `governance/decisions/coderabbit-advisory-reviewer.json`
+  (describing an unmerged PR's fix as already landed).
+
+Both reviews' own full text
+([#1329 comment 5801753564](https://github.com/clossys/foundry/pull/1329#issuecomment-5801753564),
+[#1329 comment 5801818986](https://github.com/clossys/foundry/pull/1329#issuecomment-5801818986))
+is the authoritative account; this section summarizes it, not the reverse.
+
 ## Bootstrapping this gate
 
 `governance/review-tiers.json` does not exist on `main` until this very
@@ -225,39 +314,59 @@ limit this design accepts on purpose, not a bug it missed.)
   primary/secondary depth pairing. Faking all of that *consistently*, across
   two records, is more work than actually running the second review — but
   it is not impossible, and this slice does not claim otherwise.
-- **An edited or unparseable record block refuses the WHOLE tier-1 gate,
-  not just that one record — but only at the current head, and only once
-  detected.** `findSuspiciousRecordComments` compares a GitHub comment's
-  `created_at` and `updated_at`; a difference at the pull request's current
-  head refuses the merge outright, forcing a human to remove or repost the
-  comment rather than the gate silently working around it. This closes the
-  specific attack the `df15ab87` review probed: editing a `reject` comment
-  no longer makes the pair around it look clean, because ANY edit refuses
-  the gate, not just the edited record's own verdict. The honest limit: it
-  is a blunt instrument (a typo fix refuses the gate exactly as hard as a
-  changed verdict would), and it only ever looks at the CURRENT head — a
+- **An edited or unparseable record block from an AUTHORIZED comment
+  refuses the WHOLE tier-1 gate, not just that one record — but only at the
+  current head, and only once detected.** `findSuspiciousRecordComments`
+  compares a GitHub comment's `created_at` and `updated_at`; a difference
+  at the pull request's current head, on a comment confirmed to be an
+  admin/write collaborator's, refuses the merge outright, forcing a human
+  to remove or repost the comment rather than the gate silently working
+  around it. An UNAUTHORIZED comment is never suspicious this way, however
+  garbled — the round-4 review found the first draft of this check ignored
+  authorization entirely, so any stranger could permanently block every
+  tier-1/tier-2 PR by posting one malformed comment. This closes the
+  specific attack the `df15ab87` review probed too: editing an authorized
+  `reject` comment no longer makes the pair around it look clean, because
+  ANY edit (from an authorized account) refuses the gate, not just the
+  edited record's own verdict. The honest limit: it is a blunt instrument
+  for an authorized comment (a typo fix refuses the gate exactly as hard as
+  a changed verdict would), and it only ever looks at the CURRENT head — a
   comment edited, then a new commit pushed, then reverted back to the same
   head, is a sequence this slice has no way to reconstruct from the
   comment's current `updated_at` alone.
 - **A `reject`/`changes-requested` record is sticky, but only for the exact
-  head it names.** `findStickyRejections` makes a reject unrecoverable by
-  any later record at that SAME head — the only ways to clear it are a
-  genuinely new head (a new commit) or an owner decision record (which this
-  slice defines no automatic override path for at all; clearing a sticky
-  reject today means pushing a new commit, full stop). This is deliberately
-  one-directional: there is no mechanism here for an owner to un-stick a
-  reject without also changing the code.
+  head it names, and only clears via a commit that actually changes
+  something.** `findStickyRejections` makes a reject unrecoverable by any
+  later record at that SAME head, matched case-insensitively and by an
+  unambiguous 7+ character SHA prefix — the only way to clear it is a
+  genuinely new head whose own commit changes at least one file
+  (`isNoOpHeadCommit` refuses a no-op commit like `git commit
+  --allow-empty` outright, for any tier-1/tier-2 PR, so a no-op push cannot
+  be used to manufacture a fresh, reject-free head on its own). There is no
+  decision-record override path defined or implemented in this slice at
+  all; clearing a sticky reject today means pushing a real change, full
+  stop, and the NEXT head then merges on two fresh approvals with no owner
+  involvement — "reject escalates to the owner" holds only within one
+  head, not across a push. This is deliberately one-directional: there is
+  no mechanism here for an owner to un-stick a reject without also changing
+  the code.
 - **`relaxesGateOrPolicy` on a decision record is self-declared.** Nothing
   verifies that a record's own characterization of its change (whether it
   loosens a real control) matches what the change actually does. A record
   can declare `false` to avoid the sunset requirement while, in substance,
   relaxing something. See `docs/contracts/decision-record.json`'s own note
   on this field for the same point.
-- **The decision log is append-only by convention, not by mechanism.**
-  Nothing outside ordinary git history prevents a session from editing a
-  past `governance/decisions/*.json` file directly. `scripts/check-decision-
-  records.mjs` validates shape, expiry, and sunset, but it does not (yet)
-  verify that a file's content matches what a prior commit actually said.
+- **The decision log is append-only through this gate, not through git
+  itself.** `land-stack.mjs`'s `evaluateChangedDecisionRecords` now refuses
+  any pull request that edits the content of an already-`"decided"`
+  record — that closes the path through the merge-train conductor. It does
+  NOT close every path: nothing outside this one gate prevents a session
+  with direct push access, or a merge performed by any other route (a
+  plain `gh pr merge`, the web UI — see above), from editing a past
+  `governance/decisions/*.json` file directly. `scripts/check-decision-
+  records.mjs` validates shape, expiry, and sunset on the committed tree,
+  but it does not verify that a file's content matches what a prior commit
+  actually said either.
 - **The tier-2 owner-decision requirement can be satisfied by a session
   writing its own decision record and claiming `decidedBy: "owner"`.**
   `governance/decisions/**` is now tier-1 (two independent reviewers), which
@@ -321,9 +430,10 @@ It blocks, tested directly against each pattern:
 - `gh api ... .../branches/<branch>/protection` — branch-protection reads or
   edits via the REST API directly, including a slash-named branch such as
   `claude/foo` (an earlier pattern stopped at the first `/` and missed this)
-- `gh api -X DELETE .../git/refs/heads/<branch>` — deleting a branch via the
-  raw Git refs API, a second path to the same end `git push --delete`
-  already covers
+- `gh api -X DELETE .../git/refs/heads/<branch>` or `gh api --method DELETE
+  .../git/refs/heads/<branch>` (both forms) — deleting a branch via the raw
+  Git refs API, a second path to the same end `git push --delete` already
+  covers
 - `gh secret set` — repository/environment secret writes
 - `gh repo edit` — repository settings edits
 - `gh pr merge ... --admin` — an admin-override merge that bypasses required
@@ -376,8 +486,10 @@ const DENY_PATTERNS = [
   // Deleting a branch via the raw Git refs API instead of `git push
   // --delete` -- a second way to the same always-tier-2 end this hook's
   // git-push patterns below do not see at all (#1187 review at df15ab87,
-  // should-fix nit).
-  /\bgh\s+api\b[^\n]*-X\s+DELETE[^\n]*\/git\/refs\/heads\/\S+/i,
+  // should-fix nit). Matches both gh's short (`-X`) and long (`--method`)
+  // form -- an earlier pattern caught only `-X DELETE` and missed `--method
+  // DELETE`, which exits 0 (#1187 review round 4, should-fix nit 8).
+  /\bgh\s+api\b[^\n]*(?:-X|--method)\s+DELETE[^\n]*\/git\/refs\/heads\/\S+/i,
   /\bgh\s+secret\s+set\b/i,
   /\bgh\s+repo\s+edit\b/i,
   /\bgh\s+pr\s+merge\b[^\n]*--admin\b/i,

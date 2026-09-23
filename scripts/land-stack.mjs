@@ -310,30 +310,106 @@ export function changedFilePathsForClassification(fileEntries) {
   return paths;
 }
 
+// Matches every scripts/**/*.mjs, .github/**/*.{mjs,cjs,js,json}, and
+// .root-entry-policy.json token anywhere in a workflow file's text -- a
+// coarse net (matches `run:` steps, `uses:` references, and comments
+// alike), the same trade-off scripts/check-workflow-references.test.mjs's
+// own detection already accepts, deliberately erring toward over-matching.
+const WORKFLOW_REFERENCED_PATH_PATTERN = /(?:\.github\/[A-Za-z0-9._-]+(?:\/[A-Za-z0-9._-]+)*\.(?:mjs|cjs|js|json)|scripts(?:\/[A-Za-z0-9._-]+)+\.mjs|\.root-entry-policy\.json)/g;
+
+/**
+ * Every gate-relevant script or JSON-config path referenced anywhere in a
+ * workflow file's text. `findUnclassifiedWorkflowPaths` below is what
+ * actually matters; this is just its raw material.
+ * @param {string} workflowText
+ * @returns {string[]}
+ */
+export function extractWorkflowReferencedPaths(workflowText) {
+  return [...new Set(String(workflowText ?? "").match(WORKFLOW_REFERENCED_PATH_PATTERN) ?? [])];
+}
+
+/**
+ * The subset of `extractWorkflowReferencedPaths`' output that `classifyTier`
+ * (against the REAL `governance/review-tiers.json`) would still call
+ * tier-0. Anything a workflow can execute or read must be reviewable code
+ * or config by definition -- a non-empty result here means this
+ * repository's own workflows can reach gate-critical code with zero review
+ * evidence required (#1187 review round 4, blocking finding 1). The
+ * `land-stack.test.mjs` test of the same name runs this against every real
+ * `.github/workflows/*.yml` file and the real tier config, so a workflow
+ * that starts invoking a new, unclassified script fails a test rather than
+ * silently landing unreviewable.
+ * @param {string} workflowText
+ * @param {{ tier1?: string[], tier1RecordExempt?: string[], tier2?: string[] }} tierGlobs
+ * @returns {string[]}
+ */
+export function findUnclassifiedWorkflowPaths(workflowText, tierGlobs) {
+  return extractWorkflowReferencedPaths(workflowText).filter((p) => classifyTier([p], tierGlobs).tier === "tier-0");
+}
+
 const REVIEW_RECORD_MARKER = "foundry-review-record";
 const REVIEW_RECORD_BLOCK = /<!--\s*foundry-review-record\s*([\s\S]*?)-->/g;
 
 /**
+ * Strips content a `foundry-review-record` marker must NOT be recognized
+ * inside: triple-backtick/tilde fenced code blocks, inline code spans
+ * (single or double backticks), blockquoted lines, and classic
+ * 4-space/tab-indented code blocks. #1187 review round 4, blocking finding
+ * 2 (second part): a review comment that merely QUOTES or ILLUSTRATES the
+ * marker syntax -- exactly what this thread's own review comments do, and
+ * what `docs/contracts/review-record.json`'s own header example does --
+ * must never be treated as a real record, whether that quoting is by an
+ * authorized account or not. The real, load-bearing convention
+ * (docs/contracts/review-record.json) is a bare HTML comment directly in
+ * the comment body -- never fenced, quoted, or indented -- so stripping
+ * these forms costs nothing against a genuine record and removes an entire
+ * class of accidental self-DoS.
+ * @param {string} body
+ */
+export function stripQuotedAndFencedContent(body) {
+  let s = String(body ?? "");
+  s = s.replace(/(^|\n)```[\s\S]*?```/g, "$1");
+  s = s.replace(/(^|\n)~~~[\s\S]*?~~~/g, "$1");
+  s = s.replace(/``[^`\n]*``/g, "");
+  s = s.replace(/`[^`\n]*`/g, "");
+  s = s
+    .split("\n")
+    .filter((line) => !/^\s*>/.test(line) && !/^(?: {4}|\t)/.test(line))
+    .join("\n");
+  return s;
+}
+
+/**
  * Extracts every `foundry-review-record` block (docs/contracts/review-record.json)
- * from a set of PR comment bodies. A block that is not valid JSON is kept
- * as `{ _parseError: true }` so callers can report it rather than silently
- * dropping malformed input. `comments` must already carry a boolean
- * `authorized` field per comment (set by `defaultAnnotateCommentAuthorization`
- * or an equivalent caller) -- this function stays pure and never makes the
- * authorization call itself; it only reads the flag the caller resolved
- * (#1187 review at df15ab87, blocking finding 2). A comment with no
- * `authorized` field at all (an older-shaped fixture, or a caller that
- * forgot the annotation step) is treated as UNAUTHORIZED, not trusted by
- * default -- the same fail-closed direction every other ambiguity in this
- * module already takes.
- * @param {Array<{ body?: string, created_at?: string, updated_at?: string, authorized?: boolean }>} comments
+ * from a set of PR comment bodies, after removing any quoted, fenced,
+ * inline-code, or indented occurrence of the marker (`stripQuotedAndFencedContent`).
+ * A block that is not valid JSON is kept as `{ _parseError: true }` so
+ * callers can report it rather than silently dropping malformed input.
+ *
+ * `comments` must already carry an `authorization` field per comment, one
+ * of `"authorized"`, `"unauthorized"`, or `"unknown"` (set by
+ * `defaultAnnotateCommentAuthorization` or an equivalent caller) -- this
+ * function stays pure and never makes the authorization call itself; it
+ * only reads the value the caller resolved. A comment with no
+ * `authorization` field at all (an older-shaped fixture, or a caller that
+ * forgot the annotation step) is treated as `"unauthorized"`, not trusted
+ * by default. `"unknown"` (the permission LOOKUP itself failed) is
+ * DELIBERATELY DISTINCT from `"unauthorized"` (the lookup succeeded and
+ * said no): #1187 review round 4, blocking finding 3a -- collapsing a
+ * failed lookup into "unauthorized" silently DROPS a genuine reject from
+ * an account this module simply could not confirm, which fails open for
+ * exactly the record that must never be dropped. `findSuspiciousRecordComments`
+ * below refuses the whole gate on `"unknown"`, for any record, rather than
+ * guessing either direction.
+ * @param {Array<{ body?: string, created_at?: string, updated_at?: string, authorization?: "authorized"|"unauthorized"|"unknown" }>} comments
  * @returns {Array<Record<string, unknown>>}
  */
 export function parseReviewRecordComments(comments) {
   const records = [];
   for (const comment of comments ?? []) {
-    const body = typeof comment?.body === "string" ? comment.body : "";
-    if (!body.includes(REVIEW_RECORD_MARKER)) continue;
+    const rawBody = typeof comment?.body === "string" ? comment.body : "";
+    if (!rawBody.includes(REVIEW_RECORD_MARKER)) continue;
+    const body = stripQuotedAndFencedContent(rawBody);
     // GitHub's REST payload (gh api .../comments) uses snake_case
     // (created_at/updated_at); the earlier camelCase read here was always
     // populating null. Both spellings are accepted so this also works
@@ -345,19 +421,18 @@ export function parseReviewRecordComments(comments) {
     // verdict after the fact" apart. It is deliberately NOT dropped here,
     // though: `findStickyRejections` and `findSuspiciousRecordComments`
     // below both need to see it, because an edited comment containing a
-    // reject must still block (#1187 review at df15ab87, blocking finding
-    // 3), and an edited comment at all refuses the whole gate rather than
-    // being silently ignored.
+    // reject must still block, and an edited comment at all refuses the
+    // whole gate rather than being silently ignored.
     const edited = Boolean(createdAt && updatedAt && createdAt !== updatedAt);
-    const authorized = comment.authorized === true;
+    const authorization = ["authorized", "unauthorized", "unknown"].includes(comment.authorization) ? comment.authorization : "unauthorized";
     REVIEW_RECORD_BLOCK.lastIndex = 0;
     let match;
     while ((match = REVIEW_RECORD_BLOCK.exec(body))) {
       try {
         const parsed = JSON.parse(match[1]);
-        records.push({ ...parsed, _commentCreatedAt: createdAt, _edited: edited, _authorized: authorized });
+        records.push({ ...parsed, _commentCreatedAt: createdAt, _edited: edited, _authorization: authorization });
       } catch {
-        records.push({ _parseError: true, _commentCreatedAt: createdAt, _edited: edited, _authorized: authorized });
+        records.push({ _parseError: true, _commentCreatedAt: createdAt, _edited: edited, _authorization: authorization });
       }
     }
   }
@@ -373,18 +448,19 @@ const DEPTHS = new Set(["primary", "secondary"]);
  * anything malformed rather than throwing -- an invalid record is simply
  * not counted, the same fail-closed choice `isValidReviewRecord`'s callers
  * rely on throughout this module. A record from an edited comment
- * (`_edited: true`), an UNAUTHORIZED comment (`_authorized` not `true` --
- * #1187 review at df15ab87, blocking finding 2: only an admin/write
- * collaborator's comment may ever count), or with an unparseable
- * `submittedAt` is invalid too. This is the gate for ORDINARY (approval /
- * author-declaration) records; a reject/changes-requested record is
- * evaluated separately by `findStickyRejections`, which deliberately does
- * NOT route through this function -- see that function's own doc comment
- * for why a malformed or edited reject must still block.
+ * (`_edited: true`), a comment whose authorization is anything other than
+ * exactly `"authorized"` (`"unauthorized"` OR `"unknown"` -- only a
+ * confirmed admin/write collaborator's comment may ever count as an
+ * approval), or with an unparseable `submittedAt` is invalid too. This is
+ * the gate for ORDINARY (approval / author-declaration) records; a
+ * reject/changes-requested record is evaluated separately by
+ * `findStickyRejections`, which deliberately does NOT route through this
+ * function -- see that function's own doc comment for why a malformed or
+ * edited reject must still block.
  * @param {Record<string, unknown>} record
  */
 export function isValidReviewRecord(record) {
-  if (!record || record._parseError || record._edited || record._authorized !== true) return false;
+  if (!record || record._parseError || record._edited || record._authorization !== "authorized") return false;
   if (record.schemaVersion !== 1) return false;
   if (record.role !== "author" && record.role !== "reviewer") return false;
   for (const field of ["id", "reviewerId", "instanceId", "provider", "submittedAt", "state", "headSha"]) {
@@ -409,12 +485,14 @@ export function isValidReviewRecord(record) {
  * discipline #1311 established for native GitHub reviews (docs/contracts/
  * review-record.json's own "STALENESS" note). Ordered by the COMMENT'S OWN
  * `_commentCreatedAt` (GitHub-assigned, not editable by the poster), never
- * by the record's self-declared `submittedAt` (#1187 review at df15ab87,
- * should-fix: "Order supersession by the comment's own created_at, not
- * submittedAt" -- a self-declared timestamp could otherwise be backdated or
- * postdated to win or lose a supersession race on purpose).
- * `isValidReviewRecord` already guarantees every record reaching this point
- * has a parseable `_commentCreatedAt`.
+ * by the record's self-declared `submittedAt` -- a self-declared timestamp
+ * could otherwise be backdated or postdated to win or lose a supersession
+ * race on purpose. `isValidReviewRecord` already guarantees every record
+ * reaching this point has a parseable `_commentCreatedAt`. This EXACT
+ * (case-sensitive, non-prefix) `headSha` match is intentionally strict --
+ * unlike `findStickyRejections`' deliberately lenient matching below, an
+ * approval that cannot be confirmed as exactly current does not count,
+ * which is the conservative direction for evidence that GRANTS clearance.
  * @param {Array<Record<string, unknown>>} records
  * @param {string} headSha
  */
@@ -430,22 +508,67 @@ export function selectCurrentReviewRecords(records, headSha) {
 }
 
 /**
- * ANY record block that could not be trusted as an ordinary approval/author
- * record -- an unparseable JSON block, or a well-formed one from a comment
- * edited after posting -- refuses the WHOLE tier-1 gate rather than being
- * silently dropped and worked around (#1187 review at df15ab87, blocking
- * finding 3: "Make an edited or unparseable record block refuse the gate
- * rather than be dropped"). Silently dropping and continuing would let a
- * tampered or garbled comment simply be out-voted by other, untouched
- * comments -- exactly the "quietly work around it" failure this check
- * exists to close.
+ * Whether a candidate `headSha` (as a reviewer might actually write it --
+ * possibly a short prefix, possibly uppercase) should be read as naming the
+ * CURRENT head, for the specific, narrow purpose of deciding whether a
+ * reject/changes-requested record is stale. Case-insensitive, and treats
+ * any candidate of 7 or more hex characters that is a genuine prefix of the
+ * current head as a match (#1187 review round 4, blocking finding 3b).
+ * This is deliberately LENIENT where `selectCurrentReviewRecords` above is
+ * strict: erring toward "this reject IS current" is the safe direction for
+ * evidence that BLOCKS a merge, the mirror image of why approval matching
+ * stays exact.
+ * @param {unknown} candidateHeadSha
+ * @param {string} currentHeadSha
+ */
+export function isCurrentHeadShaForReject(candidateHeadSha, currentHeadSha) {
+  if (typeof candidateHeadSha !== "string" || candidateHeadSha.length < 7) return false;
+  if (typeof currentHeadSha !== "string" || currentHeadSha.length === 0) return false;
+  const candidate = candidateHeadSha.toLowerCase();
+  const current = currentHeadSha.toLowerCase();
+  return current.startsWith(candidate);
+}
+
+/**
+ * ANY record block from an AUTHORIZED comment that could not be trusted as
+ * an ordinary approval/author record -- an unparseable JSON block, a
+ * well-formed one from a comment edited after posting, or a reject/
+ * changes-requested whose `headSha` is missing entirely -- refuses the
+ * WHOLE tier-1 gate rather than being silently dropped and worked around.
+ * Silently dropping and continuing would let a tampered or garbled comment
+ * simply be out-voted by other, untouched comments -- exactly the
+ * "quietly work around it" failure this check exists to close.
  *
- * A `_parseError` record carries no `headSha` at all (JSON.parse failed
- * before any field could be read), so it is always suspicious regardless of
- * head -- there is no way to know it is stale. An `_edited` record DOES
- * parse and carry a `headSha`, so it is only suspicious when it claims the
- * CURRENT head; an edit to a comment from a past, already-superseded round
- * is not this pull request's problem.
+ * AN UNAUTHORIZED COMMENT IS NEVER SUSPICIOUS, WHATEVER IT CONTAINS (#1187
+ * review round 4, blocking finding 1/2 -- BOTH independent reviewers found
+ * the SAME hole in the same place: an earlier draft of this function
+ * checked `_parseError`/`_edited` before ever looking at `_authorization`,
+ * so a stranger with no write access to this repository could permanently
+ * refuse every tier-1/tier-2 pull request by posting one malformed
+ * `foundry-review-record` comment, or by posting one and then editing it.
+ * A record whose comment is unauthorized can never count toward anything
+ * -- approval OR suspicion -- so filtering it out costs nothing and closes
+ * a denial-of-service vector on a public repository. `_authorization ===
+ * "unknown"` (the permission lookup itself failed, not a confirmed "no")
+ * is the one exception: it is ALWAYS suspicious, for every record, checked
+ * FIRST, before the authorized/unauthorized split -- #1187 review round 4,
+ * blocking finding 3a found that collapsing a failed lookup into a
+ * confirmed "no" silently dropped a genuine reject this module simply
+ * could not verify. Refusing the whole gate whenever any permission check
+ * could not be resolved is simpler and safer than reasoning per-record
+ * about which failures matter.
+ *
+ * Among AUTHORIZED records: a `_parseError` record carries no `headSha` at
+ * all (JSON.parse failed before any field could be read), so it is always
+ * suspicious regardless of head -- there is no way to know it is stale. An
+ * `_edited` record DOES parse and carry a `headSha`, so it is only
+ * suspicious when it claims the CURRENT head (exact match); an edit to a
+ * comment from a past, already-superseded round is not this pull
+ * request's problem. A reject/changes-requested with NO `headSha` at all
+ * cannot be placed at any head, current or stale (#1187 review round 4,
+ * blocking finding 3c), so it is ALSO suspicious rather than silently
+ * un-matched and dropped by `findStickyRejections`' lenient-but-still-a-
+ * match requirement below.
  * @param {Array<Record<string, unknown>>} records
  * @param {string} headSha
  * @returns {Array<Record<string, unknown>>}
@@ -453,28 +576,39 @@ export function selectCurrentReviewRecords(records, headSha) {
 export function findSuspiciousRecordComments(records, headSha) {
   return (records ?? []).filter((r) => {
     if (!r) return false;
+    if (r._authorization === "unknown") return true;
+    if (r._authorization !== "authorized") return false; // confirmed unauthorized: NEVER suspicious, whatever it contains
     if (r._parseError) return true;
     if (r._edited && r.headSha === headSha) return true;
+    const state = String(r?.state ?? "").toLowerCase();
+    if ((state === "reject" || state === "changes-requested") && (typeof r.headSha !== "string" || r.headSha.length === 0)) {
+      return true;
+    }
     return false;
   });
 }
 
 /**
- * A `reject`/`changes-requested` record from an AUTHORIZED comment
- * (`_authorized: true`) at the current head is STICKY: it blocks the merge
- * regardless of what else is wrong with the record, and cannot be
- * superseded by any later record, from the same `instanceId` or otherwise
- * (#1187 review at df15ab87, blocking finding 3). Concretely, unlike
- * `isValidReviewRecord`'s gate, this deliberately does NOT require
- * `depth`/`model`/a parseable `submittedAt`, and does NOT collapse to
- * "latest per instanceId" the way `selectCurrentReviewRecords` does for
- * ordinary records -- a `reject` is never something a later, self-declared
- * "actually never mind" from the same poster can undo. The only ways to
- * clear a sticky rejection are a genuinely new head (a new commit gives
- * every existing record, reject included, a stale `headSha`) or an
- * explicit owner decision record; this function itself implements no
- * override path, and none is wired into `evaluateTier1Independence` in
- * this slice -- see docs/HITL.md.
+ * A `reject`/`changes-requested` record (matched CASE-INSENSITIVELY -- a
+ * hand-typed `"Reject"` counts the same as `"reject"`; #1187 review round
+ * 4, blocking finding 3d) from an AUTHORIZED comment
+ * (`_authorization === "authorized"` -- exactly, never `"unknown"`, which
+ * `findSuspiciousRecordComments` above already refuses the whole gate over)
+ * at the current head -- matched via `isCurrentHeadShaForReject`'s lenient,
+ * case-insensitive, 7+-character-prefix rule, not exact equality -- is
+ * STICKY: it blocks the merge regardless of what else is wrong with the
+ * record, and cannot be superseded by any later record, from the same
+ * `instanceId` or otherwise. Concretely, unlike `isValidReviewRecord`'s
+ * gate, this deliberately does NOT require `depth`/`model`/a parseable
+ * `submittedAt`, and does NOT collapse to "latest per instanceId" the way
+ * `selectCurrentReviewRecords` does for ordinary records -- a `reject` is
+ * never something a later, self-declared "actually never mind" from the
+ * same poster can undo. The only way to clear a sticky rejection in this
+ * slice is a genuinely new head: a new commit gives every existing record,
+ * reject included, a stale `headSha`. No decision-record override path
+ * exists or is implemented here -- see docs/HITL.md's "Reject escalates to
+ * the owner, but only within one head" section for the real consequence of
+ * that.
  *
  * An UNAUTHORIZED comment's claimed reject is excluded here for the same
  * reason blocking finding 2 excludes it from approvals: on a public
@@ -487,9 +621,13 @@ export function findSuspiciousRecordComments(records, headSha) {
  * @returns {Array<Record<string, unknown>>}
  */
 export function findStickyRejections(records, headSha) {
-  return (records ?? []).filter(
-    (r) => r && !r._parseError && r._authorized === true && r.headSha === headSha && (r.state === "reject" || r.state === "changes-requested"),
-  );
+  return (records ?? []).filter((r) => {
+    if (!r || r._parseError) return false;
+    if (r._authorization !== "authorized") return false;
+    const state = String(r?.state ?? "").toLowerCase();
+    if (state !== "reject" && state !== "changes-requested") return false;
+    return isCurrentHeadShaForReject(r.headSha, headSha);
+  });
 }
 
 /**
@@ -500,15 +638,16 @@ export function findStickyRejections(records, headSha) {
  *
  * Runs three checks, IN ORDER, before ever searching for a qualifying pair:
  *
- * 1. `findSuspiciousRecordComments` -- any edited-at-head or unparseable
- *    record block refuses outright (blocking finding 3).
+ * 1. `findSuspiciousRecordComments` -- any edited-at-head, unparseable,
+ *    unresolved-authorization, or headSha-less-reject record block refuses
+ *    outright.
  * 2. `findStickyRejections` -- any authorized reject/changes-requested at
- *    the current head refuses outright, whatever else is wrong with it,
- *    and regardless of any later record claiming to supersede it (blocking
- *    finding 3). The decision-tier rule says "If they disagree, or either
- *    says reject, escalate to the owner with both positions" and lists
- *    "tier-1 reviewers disagree" under "escalate immediately, whatever the
- *    tier".
+ *    (or unambiguously prefixing) the current head refuses outright,
+ *    whatever else is wrong with it, and regardless of any later record
+ *    claiming to supersede it. The decision-tier rule says "If they
+ *    disagree, or either says reject, escalate to the owner with both
+ *    positions" and lists "tier-1 reviewers disagree" under "escalate
+ *    immediately, whatever the tier".
  * 3. Requires EXACTLY ONE current author record (more than one is
  *    ambiguous and refused outright, not silently resolved to "the first
  *    one found").
@@ -526,7 +665,7 @@ export function evaluateTier1Independence({ records, headSha }) {
   if (suspicious.length > 0) {
     return {
       ok: false,
-      reason: `${suspicious.length} edited-at-head or unparseable foundry-review-record comment(s) found -- refusing rather than silently dropping them; remove or repost the comment(s), or resolve via an owner decision record`,
+      reason: `${suspicious.length} edited-at-head, unparseable, unresolved-authorization, or headSha-less-reject foundry-review-record comment(s) found -- refusing rather than silently dropping them; remove or repost the comment(s), or retry once the permission check succeeds`,
     };
   }
 
@@ -534,7 +673,7 @@ export function evaluateTier1Independence({ records, headSha }) {
   if (stickyRejections.length > 0) {
     return {
       ok: false,
-      reason: `${stickyRejections.length} authorized review record(s) at the current head carry state reject/changes-requested -- sticky, never outvoted or superseded by a later record; only a new head or an owner decision record clears it (${stickyRejections.map((r) => `${r.instanceId ?? "?"}:${r.state}`).join(", ")})`,
+      reason: `${stickyRejections.length} authorized review record(s) at the current head carry state reject/changes-requested -- sticky, never outvoted or superseded by a later record at this same head; only a new head clears it (${stickyRejections.map((r) => `${r.instanceId ?? "?"}:${r.state}`).join(", ")})`,
     };
   }
 
@@ -612,10 +751,25 @@ export function isOverbroadPathGlob(glob, tierConfig) {
  * not superseded by any other record, with an `expiry` that parses and is
  * in the future (an unparseable `expiry` is treated as already expired,
  * never as unexpired), not a relaxation past its own `sunset`
- * (`isRelaxationPastSunset`), and linked to this change either by
- * pull-request number (`links.pullRequests`) or by a set of path globs
- * (`links.paths`, each checked against `isOverbroadPathGlob` against THIS
- * SAME `tierConfig`) covering every tier-2 path the pull request touches.
+ * (`isRelaxationPastSunset`), and linked to this change either by:
+ *
+ * - pull-request number (`links.pullRequests`) PLUS a matching entry in
+ *   `links.headShas` (case-insensitive) equal to `headSha` -- a PR-scoped
+ *   authorization with NO `headShas` at all never matches anything (#1187
+ *   review round 4, should-fix: "a PR-scoped one must pin a head sha").
+ *   Without this, `links.pullRequests: ["1316"]` with `expiry: null`
+ *   authorizes WHATEVER head #1316 happens to carry at merge time, which a
+ *   pull request's own branch can move to after the owner's sign-off names
+ *   one specific commit.
+ * - a set of path globs (`links.paths`, each checked against
+ *   `isOverbroadPathGlob` against THIS SAME `tierConfig`) covering every
+ *   tier-2 path the pull request touches -- but ONLY when the record's own
+ *   `expiry` is non-null (#1187 review round 4, should-fix: "a path-scoped
+ *   authorization must carry a non-null expiry"). A `null` expiry paired
+ *   with a path glob would otherwise pre-authorize every future change
+ *   under that glob, forever, from one single owner decision -- a standing
+ *   blank cheque, not a bounded authorization for the change it was
+ *   actually written about.
  *
  * Each record's shape is validated against its EXPECTED id, taken from
  * `record._idFromFilename` when the caller set it (the real filename it was
@@ -623,12 +777,21 @@ export function isOverbroadPathGlob(glob, tierConfig) {
  * falling back to `record.id` only when no such association exists (a
  * fixture built without one). Falling back to `record.id` unconditionally,
  * as an earlier draft of this function did, made the id-vs-filename check
- * inside `validateDecisionRecordShape` vacuous for every real record (#1187
- * review at df15ab87, should-fix nit).
- * @param {{ decisionRecords: Array<Record<string, unknown>>, prNumber: string|number, tier2Paths: string[], tierConfig: { tier2?: string[] }, now?: Date }} input
+ * inside `validateDecisionRecordShape` vacuous for every real record.
+ *
+ * KNOWN LIMITATION, DOCUMENTED RATHER THAN SOLVED (#1187 review round 4,
+ * should-fix: "A merge-train batch is authorized when its constituent PR
+ * and head are authorized"): a merge-train batch pull request carries a
+ * DIFFERENT PR number and a DIFFERENT head sha than any original
+ * constituent PR a decision record might name. This function has no notion
+ * of "constituent PRs" and does not attempt to resolve one PR's
+ * authorization through another's -- a batch containing a tier-2 change
+ * needs its OWN decision record (or its own fresh review), even when the
+ * original constituent PR was already authorized. See docs/HITL.md.
+ * @param {{ decisionRecords: Array<Record<string, unknown>>, prNumber: string|number, headSha?: string, tier2Paths: string[], tierConfig: { tier2?: string[] }, now?: Date }} input
  * @returns {{ ok: boolean, reason: string }}
  */
-export function evaluateTier2Decision({ decisionRecords, prNumber, tier2Paths, tierConfig, now = new Date() }) {
+export function evaluateTier2Decision({ decisionRecords, prNumber, headSha, tier2Paths, tierConfig, now = new Date() }) {
   const nowMs = now.getTime();
   const all = (decisionRecords ?? []).filter((r) => r && typeof r === "object" && !Array.isArray(r));
 
@@ -653,12 +816,19 @@ export function evaluateTier2Decision({ decisionRecords, prNumber, tier2Paths, t
     return true;
   });
 
-  const byPr = candidates.filter((record) => (record.links?.pullRequests ?? []).map(String).includes(String(prNumber)));
+  const byPr = candidates.filter((record) => {
+    if (!(record.links?.pullRequests ?? []).map(String).includes(String(prNumber))) return false;
+    const headShas = (record.links?.headShas ?? []).filter((h) => typeof h === "string" && h.length > 0);
+    if (headShas.length === 0) return false; // PR-scoped authorization MUST pin at least one head sha
+    if (typeof headSha !== "string" || headSha.length === 0) return false;
+    return headShas.some((h) => h.toLowerCase() === headSha.toLowerCase());
+  });
   if (byPr.length > 0) {
-    return { ok: true, reason: `tier-2 authorized by decision record ${byPr[0].id} (linked to PR #${prNumber})` };
+    return { ok: true, reason: `tier-2 authorized by decision record ${byPr[0].id} (linked to PR #${prNumber} at head ${headSha})` };
   }
 
   const byPaths = candidates.find((record) => {
+    if (record.expiry === null) return false; // a path-scoped authorization must be bounded, never a standing blank cheque
     const rawGlobs = record.links?.paths ?? [];
     const globs = rawGlobs.filter((g) => typeof g === "string" && !isOverbroadPathGlob(g, tierConfig)).map(globToRegExp);
     if (globs.length === 0) return false;
@@ -699,12 +869,27 @@ export function evaluateTier2Decision({ decisionRecords, prNumber, tier2Paths, t
  * rename out of governance/decisions/ like the deletion case"). Decision
  * records are append-only: a decision is superseded by a new record, never
  * deleted or renamed away.
- * @param {Array<{ path: string, record: unknown }>} changedDecisionRecords
+ *
+ * A DECIDED RECORD IS IMMUTABLE (#1187 review round 4, should-fix: "A
+ * decided record is immutable: edits to it are refused, and it can only be
+ * superseded by a new record"). Each entry may optionally carry
+ * `baseRecord` -- the same path's content already on the base branch, when
+ * it existed there at all (`undefined`/`null` for a genuinely new file).
+ * When `baseRecord.status === "decided"` and the pull request's own head
+ * content at that same path differs from it (by deep value, not by raw
+ * text -- a whitespace-only re-serialization changes nothing), the change
+ * is refused: a decided record's history is supposed to be exactly what it
+ * says, permanently, and the only sanctioned way to change a decision is a
+ * NEW record whose `supersedes` names the old one, never an edit in place.
+ * A record whose `baseRecord.status` is `"open"` may still be edited
+ * freely -- it has not been decided yet, so ordinary iteration is exactly
+ * what should happen.
+ * @param {Array<{ path: string, record: unknown, baseRecord?: unknown }>} changedDecisionRecords
  * @returns {{ ok: boolean, reason: string }}
  */
 export function evaluateChangedDecisionRecords(changedDecisionRecords) {
   const problems = [];
-  for (const { path, record } of changedDecisionRecords ?? []) {
+  for (const { path, record, baseRecord } of changedDecisionRecords ?? []) {
     if (record && typeof record === "object" && record.__deletedOrUnreadable) {
       problems.push(`${path}: no longer exists at this pull request's head (deleted, or renamed out of governance/decisions/) -- decision records are append-only; supersede with a new record instead`);
       continue;
@@ -712,6 +897,13 @@ export function evaluateChangedDecisionRecords(changedDecisionRecords) {
     const idFromFilename = String(path).split("/").pop().replace(/\.json$/, "");
     const findings = validateDecisionRecordShape(record, idFromFilename);
     if (findings.length > 0) problems.push(`${path}: ${findings.join("; ")}`);
+
+    if (baseRecord && typeof baseRecord === "object" && baseRecord.status === "decided") {
+      const changed = record === null || typeof record !== "object" || JSON.stringify(record) !== JSON.stringify(baseRecord);
+      if (changed) {
+        problems.push(`${path}: already status "decided" on the base branch -- a decided record is immutable; supersede it with a new record instead of editing it in place`);
+      }
+    }
   }
   if (problems.length > 0) {
     return { ok: false, reason: `invalid decision record(s) in this change: ${problems.join(" | ")}` };
@@ -757,6 +949,37 @@ export function verifyChangedFilesComplete(paths, changedFilesCount) {
 }
 
 /**
+ * Whether the pull request's own HEAD COMMIT (not the whole PR diff --
+ * `headCommitFileCount` is the number of files that specific commit
+ * changes relative to its own parent, from `repos/{owner}/{repo}/commits/{sha}`'s
+ * own `files` array) changes zero files. A no-op commit -- most commonly
+ * `git commit --allow-empty` -- gives a rejected pull request a brand-new
+ * `headSha` without changing anything a reviewer could re-review, which
+ * would otherwise be enough to clear a sticky rejection on its own (a new
+ * head makes every existing record's `headSha` stale, reject included) and
+ * let a fresh, otherwise-identical pair of approvals merge with no owner
+ * involvement (#1187 review round 4, should-fix: "require that the new
+ * approvals follow a commit that actually changes files").
+ *
+ * This is a blanket rule for any tier-1/tier-2 pull request, not
+ * conditioned on whether a reject actually existed at the prior head: this
+ * module has no cheap way to re-fetch and re-evaluate review state at a
+ * PAST head from here, so refusing every no-op head commit outright is the
+ * simpler, safe-by-construction alternative to trying to detect "was there
+ * a reject specifically" after the fact.
+ *
+ * KNOWN LIMITATION: this reads only the head commit's OWN diff against its
+ * first parent (what the Commits API reports), not the whole ANCESTRY back
+ * to the last commit real reviewers actually saw -- a chain of several
+ * no-op commits following one real change is not specially detected beyond
+ * each one individually reporting zero files.
+ * @param {number} headCommitFileCount
+ */
+export function isNoOpHeadCommit(headCommitFileCount) {
+  return headCommitFileCount === 0;
+}
+
+/**
  * Combines the tier-1 independence result, the changed-decision-record
  * validity result, and, for tier-2, the owner decision-record result, into
  * one verdict for a classified pull request. Tier-0 still runs
@@ -786,6 +1009,7 @@ export function evaluateTierGate(classification, evidence) {
     const decision = evaluateTier2Decision({
       decisionRecords: evidence.decisionRecords,
       prNumber: evidence.prNumber,
+      headSha: evidence.headSha,
       tier2Paths: classification.tier2Paths,
       tierConfig: evidence.tierConfig,
       now: evidence.now,
@@ -839,14 +1063,6 @@ function defaultFetchRequiredContexts(branch, { nameWithOwner = defaultNameWithO
 }
 
 /**
- * Live network call: every changed-file path for a pull request, paginated
- * directly against the REST Pulls API rather than `gh pr view --json files`
- * -- that call silently truncates at 100 entries (measured directly: PR
- * #1276 reports `changedFiles=290` and returns 100; #1260 reports 116 and
- * returns 100). A merge-train batch PR is exactly the shape that goes over
- * 100. #1187 review at 8e6d97ea, blocking finding 3.
- */
-/**
  * Live network call: every changed-file entry for a pull request, paginated
  * directly against the REST Pulls API rather than `gh pr view --json files`
  * -- that call silently truncates at 100 entries. Returns `{filename,
@@ -869,6 +1085,33 @@ function defaultFetchPrFiles(pr, { nameWithOwner = defaultNameWithOwner } = {}) 
       filename: f.filename,
       previousFilename: typeof f?.previous_filename === "string" && f.previous_filename.length > 0 ? f.previous_filename : null,
     }));
+}
+
+/**
+ * Live network call: the number of files the pull request's HEAD COMMIT
+ * itself changes, relative to its own first parent, via
+ * `repos/{owner}/{repo}/commits/{sha}`'s own `files` array -- used by
+ * `isNoOpHeadCommit` to refuse a no-op commit (see that function's own doc
+ * comment). On any error, returns a value `isNoOpHeadCommit` will read as
+ * NOT a no-op commit (a large sentinel), matching this module's
+ * fail-CLOSED-toward-refusing-only-when-CONFIRMED-no-op direction -- an
+ * unresolved commit lookup should not itself refuse every tier-1/tier-2 PR,
+ * unlike the review-record authorization lookups above, since a no-op
+ * commit is a narrower, additive check, not the core independence gate.
+ */
+function defaultFetchHeadCommitFileCount(sha, { nameWithOwner = defaultNameWithOwner } = {}) {
+  try {
+    const nwo = nameWithOwner();
+    const out = execFileSync(
+      "gh",
+      ["api", `repos/${nwo}/commits/${encodeURIComponent(sha)}`, "--jq", "(.files // []) | length"],
+      { encoding: "utf8", maxBuffer: 1024 * 1024 },
+    );
+    const n = Number(out.trim());
+    return Number.isFinite(n) ? n : 1;
+  } catch {
+    return 1;
+  }
 }
 
 /**
@@ -913,13 +1156,22 @@ export function isAuthorizedCollaboratorPermission(permission) {
  * df15ab87, blocking finding 2: `parseReviewRecordComments` previously
  * never looked at who posted a comment at all, so on this PUBLIC repository
  * a `foundry-review-record` from any account with `author_association:
- * "NONE"` satisfied tier-1 independence. ANY error here -- network,
- * unexpected response shape, a login `gh` cannot resolve -- returns
- * `"none"`, never throws and never guesses a permissive default: failing
- * to determine authorization is not the same fact as authorization being
- * granted.
+ * "NONE"` satisfied tier-1 independence.
+ *
+ * Returns the real permission string (`"admin"`/`"write"`/`"read"`/`"none"`)
+ * on success, or `null` on ANY error -- network, unexpected response shape,
+ * a login `gh` cannot resolve. `null` is a THIRD, DISTINCT outcome from a
+ * confirmed `"none"`: #1187 review round 4, blocking finding 3a found that
+ * collapsing a failed lookup into `"none"` (unauthorized) silently dropped
+ * a genuine reject from an account this call simply could not reach --
+ * safe for an approval (which should never count on ambiguous evidence
+ * anyway) but UNSAFE for a reject (which must never be dropped on
+ * ambiguous evidence either). This function itself never guesses a
+ * permissive default; the caller (`defaultAnnotateCommentAuthorization`)
+ * is what turns `null` into the `"unknown"` authorization state
+ * `findSuspiciousRecordComments` refuses the whole gate over.
  * @param {string} login
- * @returns {string}
+ * @returns {string|null}
  */
 function defaultCheckCollaboratorPermission(login, { nameWithOwner = defaultNameWithOwner } = {}) {
   if (!login) return "none";
@@ -932,35 +1184,44 @@ function defaultCheckCollaboratorPermission(login, { nameWithOwner = defaultName
     );
     return out.trim();
   } catch {
-    return "none";
+    return null;
   }
 }
 
 /**
- * Annotates every comment with a boolean `authorized` field, resolved from
- * the comment author's collaborator permission (`defaultCheckCollaboratorPermission`),
- * cached per login within this one call -- a PR thread often has the same
- * author posting several comments, and this keeps it to one permission
- * check per distinct login, not one per comment. This is the ONLY point in
- * this module that decides whether a `foundry-review-record` block may be
- * trusted at all; `parseReviewRecordComments` stays pure and simply reads
- * the flag this function set (documented in docs/HITL.md).
+ * Annotates every comment with an `authorization` field -- `"authorized"`,
+ * `"unauthorized"`, or `"unknown"` -- resolved from the comment author's
+ * collaborator permission (`defaultCheckCollaboratorPermission`), cached
+ * per login within this one call (a PR thread often has the same author
+ * posting several comments; this keeps it to one permission check per
+ * distinct login, not one per comment -- a cache failure for one login
+ * never poisons another). This is the ONLY point in this module that
+ * decides whether a `foundry-review-record` block may be trusted at all;
+ * `parseReviewRecordComments` stays pure and simply reads the value this
+ * function set (documented in docs/HITL.md). `null` from the permission
+ * check (an unresolved lookup, not a confirmed answer) maps to
+ * `"unknown"`, never silently to `"unauthorized"` -- see
+ * `defaultCheckCollaboratorPermission`'s own doc comment for why that
+ * distinction matters for a reject.
  */
 function defaultAnnotateCommentAuthorization(comments, { checkPermission = defaultCheckCollaboratorPermission } = {}) {
   const cache = new Map();
-  return (comments ?? []).map((comment) => {
-    const login = comment?.user?.login ?? comment?.author?.login ?? null;
-    if (!login) return { ...comment, authorized: false };
+  const resolve = (login) => {
     if (!cache.has(login)) {
       let permission;
       try {
         permission = checkPermission(login);
       } catch {
-        permission = "none";
+        permission = null;
       }
-      cache.set(login, isAuthorizedCollaboratorPermission(permission));
+      cache.set(login, permission === null ? "unknown" : isAuthorizedCollaboratorPermission(permission) ? "authorized" : "unauthorized");
     }
-    return { ...comment, authorized: cache.get(login) };
+    return cache.get(login);
+  };
+  return (comments ?? []).map((comment) => {
+    const login = comment?.user?.login ?? comment?.author?.login ?? null;
+    if (!login) return { ...comment, authorization: "unauthorized" };
+    return { ...comment, authorization: resolve(login) };
   });
 }
 
@@ -1084,8 +1345,16 @@ function defaultReadDecisionRecords(ref, io = {}) {
  * of governance/decisions/ still shows up here (at its OLD path, which no
  * longer resolves at head -- `__deletedOrUnreadable`) rather than
  * disappearing because only the new, now-irrelevant path was checked.
+ *
+ * ALSO reads each path's content at `baseRef` (the pull request's base
+ * commit) and attaches it as `baseRecord` -- `null` when the path did not
+ * exist on the base branch at all (a genuinely new record). This is what
+ * `evaluateChangedDecisionRecords`'s immutability check compares the head
+ * content against: a `baseRecord.status === "decided"` with a differing
+ * head record is refused, so a decided record can only ever be superseded
+ * by a new file, never edited in place.
  */
-function defaultReadChangedDecisionRecords(ref, paths, io = {}) {
+function defaultReadChangedDecisionRecords(ref, paths, io = {}, baseRef = undefined) {
   const decisionPaths = [...new Set((paths ?? []).filter((p) => p.startsWith("governance/decisions/") && p.endsWith(".json")))];
   return decisionPaths.map((path) => {
     const raw = defaultReadFileAtRef(ref, path, io);
@@ -1099,7 +1368,18 @@ function defaultReadChangedDecisionRecords(ref, paths, io = {}) {
         record = { __parseError: true };
       }
     }
-    return { path, record };
+    let baseRecord = null;
+    if (typeof baseRef === "string" && baseRef.length > 0) {
+      const baseRaw = defaultReadFileAtRef(baseRef, path, io);
+      if (baseRaw !== null) {
+        try {
+          baseRecord = JSON.parse(baseRaw);
+        } catch {
+          baseRecord = null; // an unparseable base record cannot be compared against; treated as "no prior decided version" -- shape-invalidity on the base branch is not this pull request's problem to fix
+        }
+      }
+    }
+    return { path, record, baseRecord };
   });
 }
 
@@ -1130,6 +1410,7 @@ function runStatus(
     readReviewTierConfig = defaultReadReviewTierConfig,
     readDecisionRecords = defaultReadDecisionRecords,
     readChangedDecisionRecords = defaultReadChangedDecisionRecords,
+    fetchHeadCommitFileCount = defaultFetchHeadCommitFileCount,
   } = {},
 ) {
   const view = ghPrView(pr, [
@@ -1160,26 +1441,64 @@ function runStatus(
   // changedFilePathsForClassification's own doc comment.
   const classificationPaths = changedFilePathsForClassification(fileEntries);
 
-  // Tier config and prior decision records are read from the pull request's
-  // BASE commit -- never the local checkout, and never the pull request's
-  // own head -- so a tier-1 or tier-2 pull request can never narrow its own
-  // globs or add its own authorizing decision record in the same diff it
-  // needs graded (#1187 review at 8e6d97ea, blocking finding 6).
+  // Tier config is read from the pull request's BASE commit -- never the
+  // local checkout, and never the pull request's own head -- so a tier-1 or
+  // tier-2 pull request can never narrow its own globs or add its own
+  // authorizing decision record in the same diff it needs graded (#1187
+  // review at 8e6d97ea, blocking finding 6). This one read is unconditional:
+  // it is what DETERMINES the tier in the first place.
   const baseRef = view.baseRefOid || view.baseRefName || "main";
   const tierConfig = readReviewTierConfig(baseRef);
   const classification = classifyTier(classificationPaths, tierConfig);
-  const changedDecisionRecords = readChangedDecisionRecords(view.headRefOid, classificationPaths);
-  // Only an admin/write collaborator's comment may ever supply a
-  // foundry-review-record -- #1187 review at df15ab87, blocking finding 2.
-  const annotatedComments = annotateCommentAuthorization(fetchPrComments(pr));
-  const tierVerdict = evaluateTierGate(classification, {
-    records: parseReviewRecordComments(annotatedComments),
-    headSha: view.headRefOid,
-    decisionRecords: readDecisionRecords(baseRef),
-    changedDecisionRecords,
-    prNumber: pr,
-    tierConfig,
-  });
+
+  // Everything below -- fetching PR comments, resolving each commenter's
+  // collaborator permission, and reading every governance/decisions/*.json
+  // record from the base branch -- is read ONLY for a tier-1 or tier-2 PR
+  // (#1187 review round 4, should-fix: "Tier-0 PRs skip decision-record and
+  // permission reads"). A genuinely tier-0 classification means no path in
+  // this diff matches governance/decisions/** either (that glob alone is
+  // tier-1, per governance/review-tiers.json), so
+  // evaluateChangedDecisionRecords has nothing to check and every one of
+  // these reads would be pure waste -- and, for the base-branch decision
+  // log specifically, a real cost: one malformed record anywhere in
+  // governance/decisions/ would otherwise make `--status` throw for EVERY
+  // pull request, tier-0 included, and that cost only grows as the log
+  // grows.
+  let tierVerdict;
+  if (classification.tier === "tier-0") {
+    tierVerdict = evaluateTierGate(classification, {});
+  } else if (isNoOpHeadCommit(fetchHeadCommitFileCount(view.headRefOid))) {
+    // A no-op head commit (most commonly `git commit --allow-empty`) gives
+    // an otherwise-identical PR a brand-new headSha, which alone would be
+    // enough to clear a sticky rejection at the OLD head and let a fresh
+    // approving pair merge with no owner involvement -- #1187 review round
+    // 4, should-fix: "require that the new approvals follow a commit that
+    // actually changes files". Refused unconditionally for any tier-1/
+    // tier-2 pull request; see `isNoOpHeadCommit`'s own doc comment for
+    // what this does and does not detect.
+    tierVerdict = {
+      ok: false,
+      tier: classification.tier,
+      reason: "the pull request's head commit changes zero files -- a no-op commit cannot advance review state or clear a prior rejection; push a real change instead",
+    };
+  } else {
+    const changedDecisionRecords = readChangedDecisionRecords(view.headRefOid, classificationPaths, {}, baseRef);
+    // Only an admin/write collaborator's comment may ever supply a
+    // foundry-review-record -- #1187 review at df15ab87, blocking finding 2.
+    const annotatedComments = annotateCommentAuthorization(fetchPrComments(pr));
+    // Base-branch decision records are read only when tier-2 authority is
+    // actually needed to evaluate them against -- a tier-1 PR's own
+    // evaluateTierGate call never reaches evaluateTier2Decision at all.
+    const decisionRecords = classification.tier === "tier-2" ? readDecisionRecords(baseRef) : [];
+    tierVerdict = evaluateTierGate(classification, {
+      records: parseReviewRecordComments(annotatedComments),
+      headSha: view.headRefOid,
+      decisionRecords,
+      changedDecisionRecords,
+      prNumber: pr,
+      tierConfig,
+    });
+  }
 
   const ok = mergeVerdict.ok && tierVerdict.ok;
   const reason = mergeVerdict.ok
