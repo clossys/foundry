@@ -172,3 +172,46 @@ test("SATISFIED — a stale review inside an otherwise-current bundle (force-pus
   // And it still never counts as a provider observed AT the current head.
   assert.deepEqual(report.providersObserved, []);
 });
+
+test("VIOLATED — a reviewer's own latest decisive review requested changes at a stale head (second opinion on #1311)", () => {
+  // The case the first pass of this fix missed: a human requests changes,
+  // then the author pushes with no new review from that reviewer. GitHub's
+  // own reviewDecision would still say CHANGES_REQUESTED, and this repository
+  // carries no branch-protection `pull_request` review rule of its own —
+  // verify-standards is the only mechanical enforcement. An ordinary push
+  // must not silently clear that objection.
+  const payload = fullGraphQlPayload({
+    reviews: {
+      pageInfo: { hasNextPage: false, hasPreviousPage: false },
+      nodes: [{ id: "R1", state: "CHANGES_REQUESTED", submittedAt: "2026-09-14T07:53:00Z", commit: { oid: OTHER_HEAD }, author: { login: "a-reviewer" } }],
+    },
+  });
+  const evidence = buildReviewEvidenceBundle(payload);
+  const policy = buildReviewPolicy({});
+  const options = buildReviewEvidenceOptions({ headShaUnderTest: HEAD, requireReviewPresence: false });
+
+  const report = checkReviewEvidence(evidence, policy, options);
+  assert.equal(report.result.verdict, "violated", JSON.stringify(report.result));
+  assert.ok(report.result.findings.some((finding) => finding.rule === "stale-changes-requested"));
+  // Still excluded from evaluability too — the carve-out and the violation
+  // are two separate facts about the same record.
+  assert.equal(report.staleReviews.length, 1);
+});
+
+test("SATISFIED — that same reviewer's later approval, at the current head, clears the stale changes-requested", () => {
+  const payload = fullGraphQlPayload({
+    reviews: {
+      pageInfo: { hasNextPage: false, hasPreviousPage: false },
+      nodes: [
+        { id: "R1", state: "CHANGES_REQUESTED", submittedAt: "2026-09-14T07:53:00Z", commit: { oid: OTHER_HEAD }, author: { login: "a-reviewer" } },
+        { id: "R2", state: "APPROVED", submittedAt: "2026-09-14T09:00:00Z", commit: { oid: HEAD }, author: { login: "a-reviewer" } },
+      ],
+    },
+  });
+  const evidence = buildReviewEvidenceBundle(payload);
+  const policy = buildReviewPolicy({});
+  const options = buildReviewEvidenceOptions({ headShaUnderTest: HEAD, requireReviewPresence: false });
+
+  const report = checkReviewEvidence(evidence, policy, options);
+  assert.equal(report.result.verdict, "satisfied", JSON.stringify(report.result));
+});

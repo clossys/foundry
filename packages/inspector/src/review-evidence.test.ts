@@ -284,6 +284,159 @@ describe("checkReviewEvidence", () => {
     });
   });
 
+  describe("a stale objection is not the same as a stale comment or a stale approval (second opinion on #1311)", () => {
+    const noRequiredChecksPolicy = { ...policy, requiredChecks: [] };
+
+    it("still fails when a reviewer's own LATEST decisive review requested changes at a stale head", () => {
+      // A push must not be able to silently clear a human reviewer's own
+      // objection just by existing. Only that reviewer's later dismissal or a
+      // newer decisive review can supersede it.
+      const report = checkReviewEvidence(
+        evidence({
+          checks: [],
+          threads: [],
+          reviews: [
+            {
+              id: "REVIEW_STALE_CHANGES",
+              reviewerId: "a-human-reviewer",
+              instanceId: "SESSION_HUMAN",
+              provider: "a-review-client",
+              submittedAt: "2026-08-17T09:00:00Z",
+              state: "changes-requested",
+              depth: "primary",
+              headSha: STALE_HEAD,
+            },
+          ],
+        }),
+        noRequiredChecksPolicy,
+        { requireReviewPresence: false, headShaUnderTest: HEAD },
+      );
+      expect(report.result.verdict).toBe("violated");
+      if (report.result.verdict !== "violated") throw new Error("unreachable");
+      expect(report.result.findings.map((finding) => finding.rule)).toContain("stale-changes-requested");
+      // Carve-out and violation are separate facts about the same record: it
+      // is still reported as excluded from evaluability too.
+      expect(report.staleReviews).toHaveLength(1);
+    });
+
+    it("a stale changes-requested is NOT cleared by that same reviewer's later COMMENTED review — only a decisive record supersedes it", () => {
+      const report = checkReviewEvidence(
+        evidence({
+          checks: [],
+          threads: [],
+          reviews: [
+            {
+              id: "REVIEW_STALE_CHANGES",
+              reviewerId: "a-human-reviewer",
+              instanceId: "SESSION_HUMAN",
+              provider: "a-review-client",
+              submittedAt: "2026-08-17T09:00:00Z",
+              state: "changes-requested",
+              depth: "primary",
+              headSha: STALE_HEAD,
+            },
+            {
+              id: "REVIEW_LATER_COMMENT",
+              reviewerId: "a-human-reviewer",
+              instanceId: "SESSION_HUMAN",
+              provider: "a-review-client",
+              submittedAt: "2026-08-17T11:00:00Z",
+              state: "commented",
+              depth: "primary",
+              headSha: HEAD,
+            },
+          ],
+        }),
+        noRequiredChecksPolicy,
+        { requireReviewPresence: false, headShaUnderTest: HEAD },
+      );
+      expect(report.result.verdict).toBe("violated");
+      if (report.result.verdict !== "violated") throw new Error("unreachable");
+      expect(report.result.findings.map((finding) => finding.rule)).toContain("stale-changes-requested");
+    });
+
+    it("a stale changes-requested IS cleared once that same reviewer approves at the current head", () => {
+      const report = checkReviewEvidence(
+        evidence({
+          checks: [],
+          threads: [],
+          reviews: [
+            {
+              id: "REVIEW_STALE_CHANGES",
+              reviewerId: "a-human-reviewer",
+              instanceId: "SESSION_HUMAN",
+              provider: "a-review-client",
+              submittedAt: "2026-08-17T09:00:00Z",
+              state: "changes-requested",
+              depth: "primary",
+              headSha: STALE_HEAD,
+            },
+            {
+              id: "REVIEW_LATER_APPROVAL",
+              reviewerId: "a-human-reviewer",
+              instanceId: "SESSION_HUMAN",
+              provider: "a-review-client",
+              submittedAt: "2026-08-17T11:00:00Z",
+              state: "approved",
+              depth: "primary",
+              headSha: HEAD,
+            },
+          ],
+        }),
+        noRequiredChecksPolicy,
+        { requireReviewPresence: false, headShaUnderTest: HEAD },
+      );
+      expect(report.result.verdict).toBe("satisfied");
+    });
+
+    it("reports a review with no recorded commit as indeterminate — unknown, not stale", () => {
+      // scripts/collect-review-evidence.mjs writes an empty headSha when
+      // GitHub's own payload carries no commit.oid. That is a different fact
+      // from "submitted against an earlier commit" and must not be carved
+      // out on the strength of a path match alone.
+      const report = checkReviewEvidence(
+        evidence({
+          reviews: [
+            {
+              id: "REVIEW_NO_COMMIT",
+              reviewerId: "a-reviewer",
+              instanceId: "SESSION_NO_COMMIT",
+              provider: "a-review-client",
+              submittedAt: "2026-08-17T09:00:00Z",
+              state: "commented",
+              depth: "primary",
+              headSha: "",
+            },
+          ],
+        }),
+        policy,
+        { requireReviewPresence: false, headShaUnderTest: HEAD },
+      );
+      expect(report.result).toMatchObject({ verdict: "indeterminate", reason: "evidence-malformed" });
+      expect(report.staleReviews).toHaveLength(0);
+    });
+
+    it("treats a bundle whose only reviews are stale exactly like an empty bundle — indeterminate when presence is not required", () => {
+      const report = checkReviewEvidence(
+        evidence({ checks: [], threads: [], reviews: [staleCommentedReview()] }),
+        noRequiredChecksPolicy,
+        { requireReviewPresence: false, headShaUnderTest: HEAD },
+      );
+      expect(report.result).toMatchObject({ verdict: "indeterminate", reason: "evidence-incomplete" });
+    });
+
+    it("treats a bundle whose only reviews are stale exactly like an empty bundle — violated on review-presence-missing when presence is required", () => {
+      const report = checkReviewEvidence(
+        evidence({ checks: [], threads: [], reviews: [staleCommentedReview()] }),
+        noRequiredChecksPolicy,
+        { requireReviewPresence: true, headShaUnderTest: HEAD },
+      );
+      expect(report.result.verdict).toBe("violated");
+      if (report.result.verdict !== "violated") throw new Error("unreachable");
+      expect(report.result.findings.map((finding) => finding.rule)).toContain("review-presence-missing");
+    });
+  });
+
   it.each([[undefined], [null], [{}], [{ requireReviewPresence: "yes" }]])(
     "is indeterminate when the options are %s",
     (broken) => {

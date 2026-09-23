@@ -27,8 +27,8 @@
  * rather than a silent default in whichever direction the code happened to
  * fall.
  *
- * ONE CARVE-OUT: A STALE REVIEW RECORD IS NEITHER
- * -------------------------------------------------
+ * ONE CARVE-OUT: A STALE REVIEW RECORD IS NEITHER, EXCEPT A STALE OBJECTION
+ * ----------------------------------------------------------------------------
  * `"stale-evidence"` is, by rule, `evaluability` — the same #256 discipline:
  * evidence about a different commit is not evidence about this one, in
  * either direction, so folding it into a verdict would be exactly the
@@ -54,16 +54,43 @@
  * `indeterminate` forever, on a required check, even though a PR with NO
  * review at all passes cleanly.
  *
- * So `isStaleReviewFinding` below pulls `"stale-evidence"` findings whose
- * `path` names a `reviews[...]` entry OUT of the `evaluability` set before
- * anything else is computed. They are reported on `ReviewEvidenceReport.
- * staleReviews` — visible, never silently dropped — but they can never, on
- * their own, produce `indeterminate`, and (because `RULE_CLASS` never
- * classifies `"stale-evidence"` as `"violation"`) they can never produce
- * `violated` either. A stale APPROVAL still can never count, because
- * `validateReviews` already excluded it from `hasApproval` before this
- * module runs — this carve-out changes only whether the check can answer at
- * all, never what a stale record is worth once it does.
+ * `staleReviewCarveOutEligible` below pulls a `"stale-evidence"` finding OUT
+ * of the `evaluability` set only when the review it names has a genuine,
+ * well-formed `headSha` that simply names a different commit — never a
+ * missing or malformed one. A review with no recorded commit (this
+ * repository's own collector, `scripts/collect-review-evidence.mjs`, writes
+ * an empty `headSha` when GitHub's own payload carries no `commit.oid`) is
+ * UNKNOWN, not stale: there is no fact to exclude it on, so it stays
+ * `evaluability` exactly as before. Carved-out findings are reported on
+ * `ReviewEvidenceReport.staleReviews` — visible, never silently dropped —
+ * and can never, by themselves, produce `indeterminate`.
+ *
+ * A stale APPROVAL still can never count, because `validateReviews` already
+ * excluded it from `hasApproval` before this module runs. A stale
+ * CHANGES_REQUESTED is different, and does NOT get the same free pass: if a
+ * reviewer's own LATEST decisive review (`approved`, `changes-requested`, or
+ * `dismissed` — `validateReviews`' own definition of "decisive", read across
+ * every head this bundle carries, not only the current one) is a
+ * changes-requested at a stale head, `findStaleChangesRequestedViolations`
+ * below reports it as a `"stale-changes-requested"` violation. An ordinary
+ * push must not be able to silently clear a human reviewer's objection —
+ * this repository's own branch ruleset carries no `pull_request` review
+ * rule, so `verify-standards` is the only mechanical enforcement of a
+ * requested change, and an agent operating under a standing autonomous-merge
+ * authorization must not be able to land a change over one just because it
+ * pushed again. Only that reviewer's own later act — approving anew,
+ * dismissing the request, or requesting changes again — can supersede it, the
+ * same "latest decisive record per review session, never by array position"
+ * rule `validateReviews` already applies at the current head; this function
+ * applies it across every head instead, because a stale objection is
+ * precisely the one stale record this module must not let a push discard.
+ *
+ * Excluding a review from `evaluability` also excludes it from
+ * `evaluated` — see `checkReviewEvidence`'s own comment on that count. A
+ * bundle whose only reviews are stale reads exactly as a bundle with no
+ * reviews at all: `satisfied` only because presence was not required, or
+ * `violated` on `"review-presence-missing"` when it was, never a false
+ * `satisfied` claiming to have evaluated a record this module just excluded.
  *
  * Zero I/O. Every input is caller-supplied — including the evidence bundle
  * itself, which a consumer's own workflow collects (its credentials, its
@@ -75,9 +102,25 @@
 import { createGateReasons, gateSatisfied, gateViolated } from "@clossys/controller/gates";
 import type { GateResult } from "@clossys/controller/gates";
 import { validateReviewEvidence, validateReviewPolicy } from "@clossys/controller/review";
-import type { ReviewEvidenceBundle, ReviewFinding, ReviewFindingRule, ReviewPolicy } from "@clossys/controller/review";
-import { isRecord } from "./shape.js";
+import type { ReviewEvidenceBundle, ReviewFinding, ReviewFindingRule, ReviewPolicy, ReviewRecord } from "@clossys/controller/review";
+import { isRecord, isRecordArray } from "./shape.js";
 import type { CheckFinding } from "./types.js";
+
+/**
+ * Mirrors `@clossys/controller/review/validate`'s own `SHA` pattern. Not
+ * imported — this package reads `@clossys/controller`'s *validated* output
+ * (`ReviewEvidenceBundle`, findings), never its internal helpers, and this
+ * check exists specifically to answer a question `validateReviewEvidence`'s
+ * own findings cannot: whether ONE `"stale-evidence"` finding names a review
+ * with a well-formed-but-different `headSha` (stale) or an absent/malformed
+ * one (unknown) — a distinction its `path` alone (`reviews[<index>].headSha`
+ * either way) does not carry.
+ */
+const REVIEW_SHA_PATTERN = /^[0-9a-f]{40}$/;
+
+function isWellFormedSha(value: unknown): value is string {
+  return typeof value === "string" && REVIEW_SHA_PATTERN.test(value);
+}
 
 /** Requirements this check adds on top of whatever the review policy already demands. */
 export interface ReviewEvidenceOptions {
@@ -113,7 +156,7 @@ export type ReviewEvidenceReason = (typeof reviewEvidenceReasons.reasons)[number
 
 /** One reportable problem with a change's review evidence. */
 export interface ReviewEvidenceFinding extends CheckFinding {
-  readonly rule: ReviewFindingRule | "review-presence-missing";
+  readonly rule: ReviewFindingRule | "review-presence-missing" | "stale-changes-requested";
 }
 
 /**
@@ -211,17 +254,101 @@ function toFinding(finding: ReviewFinding): ReviewEvidenceFinding {
   return { rule: finding.rule, severity: "error", path: finding.path, message: finding.message };
 }
 
+/** `evidence.reviews`, read defensively and without trusting its shape. */
+function rawReviews(evidence: unknown): readonly Record<string, unknown>[] {
+  if (!isRecord(evidence)) return [];
+  return isRecordArray(evidence.reviews) ? evidence.reviews : [];
+}
+
+/** `evidence.headSha`, read defensively — the reference a review's own `headSha` is compared against below. */
+function rawHeadSha(evidence: unknown): unknown {
+  return isRecord(evidence) ? evidence.headSha : undefined;
+}
+
 /**
- * Whether a `"stale-evidence"` finding is about a REVIEW record specifically
- * — `path` of the shape `reviews[<index>]...` that `validateReviews` (see
- * `@clossys/controller/review/validate`) emits — as opposed to a check or a
- * thread. See this file's own header, "ONE CARVE-OUT: A STALE REVIEW RECORD
- * IS NEITHER", for why only reviews get this treatment: a check or a thread
- * stamped with a head other than the bundle's own means the bundle
- * disagrees with itself, which stays a genuine evaluability problem.
+ * Matches a `"stale-evidence"` finding's `path` — `reviews[<index>]...` —
+ * back to that entry's own position in `evidence.reviews`, so the raw record
+ * can be read directly. `validateReviewEvidence`'s findings never carry the
+ * raw value themselves.
  */
-function isStaleReviewFinding(item: ReviewFinding): boolean {
-  return item.rule === "stale-evidence" && item.path.startsWith("reviews[");
+const REVIEW_STALE_EVIDENCE_PATH = /^reviews\[(\d+)\]\.headSha$/;
+
+/**
+ * Whether a `"stale-evidence"` finding is eligible for this file's own
+ * carve-out (see the header, "ONE CARVE-OUT: A STALE REVIEW RECORD IS
+ * NEITHER, EXCEPT A STALE OBJECTION"): the finding names a REVIEW entry
+ * specifically — never a check or a thread, which stay `evaluability` — AND
+ * that review's own `headSha` is a well-formed 40-lowercase-hex commit that
+ * simply differs from the bundle's. A missing or malformed `headSha` (this
+ * repository's own collector writes `""` when GitHub returns no
+ * `commit.oid`) is UNKNOWN, not stale, and is deliberately NOT carved out —
+ * `path` alone cannot tell the two apart, so this reads the raw record.
+ */
+function staleReviewCarveOutEligible(item: ReviewFinding, reviews: readonly Record<string, unknown>[], headSha: unknown): boolean {
+  if (item.rule !== "stale-evidence") return false;
+  const match = REVIEW_STALE_EVIDENCE_PATH.exec(item.path);
+  if (!match) return false;
+  const index = Number(match[1]);
+  const review = reviews[index];
+  const itemHeadSha = isRecord(review) ? review.headSha : undefined;
+  return isWellFormedSha(itemHeadSha) && itemHeadSha !== headSha;
+}
+
+/**
+ * `@clossys/controller/review/validate`'s own `ReviewDecision` values that
+ * count as a decisive outcome for one review session — mirrors
+ * `validateReviews`' own `state !== "approved" && state !==
+ * "changes-requested" && state !== "dismissed"` filter exactly, because
+ * `findStaleChangesRequestedViolations` below is answering the identical
+ * question (`validateReviews` does) over a wider set (every head this
+ * bundle carries, not only the current one).
+ */
+const DECISIVE_REVIEW_STATES = new Set<ReviewRecord["state"]>(["approved", "changes-requested", "dismissed"]);
+
+/**
+ * For each review session (`instanceId`), finds that session's own LATEST
+ * decisive record — by `submittedAt`, never by array position, the same
+ * discipline `validateReviews` already applies at the current head — across
+ * EVERY head the bundle carries. When that latest decisive record is a
+ * `changes-requested` whose own `headSha` is not the bundle's current head,
+ * reports a `"stale-changes-requested"` violation: see this file's header
+ * for why an ordinary push must not be able to silently clear it. Only
+ * called once `bundle` is known well-formed (past the evaluability gate),
+ * so every candidate record's `submittedAt`, `state`, `instanceId`, and
+ * `headSha` are already guaranteed valid — this performs no re-validation.
+ */
+function findStaleChangesRequestedViolations(bundle: ReviewEvidenceBundle): ReviewEvidenceFinding[] {
+  interface LatestDecisive {
+    readonly index: number;
+    readonly submittedAtMs: number;
+    readonly review: ReviewRecord;
+  }
+  const latestByInstance = new Map<string, LatestDecisive>();
+  bundle.reviews.forEach((review, index) => {
+    if (!DECISIVE_REVIEW_STATES.has(review.state)) return;
+    const submittedAtMs = Date.parse(review.submittedAt);
+    if (Number.isNaN(submittedAtMs)) return; // defensive only — already validated by this point.
+    const previous = latestByInstance.get(review.instanceId);
+    if (!previous || submittedAtMs >= previous.submittedAtMs) {
+      latestByInstance.set(review.instanceId, { index, submittedAtMs, review });
+    }
+  });
+  const findings: ReviewEvidenceFinding[] = [];
+  for (const { index, review } of latestByInstance.values()) {
+    if (review.state === "changes-requested" && review.headSha !== bundle.headSha) {
+      findings.push({
+        rule: "stale-changes-requested",
+        severity: "error",
+        path: `reviews[${index}]`,
+        message:
+          `Reviewer ${JSON.stringify(review.reviewerId)}'s latest decisive review requested changes at head ` +
+          `${review.headSha}, not the current head ${bundle.headSha}. A stale changes-requested review is never ` +
+          "silently cleared by an unrelated push -- it stands until that reviewer dismisses it or submits a newer " +
+          "decisive review.",
+      });
+    }
+  }
+  return findings;
 }
 
 /** What the check concluded. */
@@ -230,13 +357,17 @@ export interface ReviewEvidenceReport {
   /** Distinct review providers observed at the current head, for the report. Never used as authority. */
   readonly providersObserved: readonly string[];
   /**
-   * Review records excluded from the verdict because they were submitted
-   * against a commit other than the bundle's current head — a rate-limited
-   * bot's `COMMENTED` review left behind by a merge-train push is the
-   * motivating case (#1187, #1297, #1302). Reported for visibility only:
-   * `result` never depends on this list being empty, and a stale record can
-   * never count as an approval, a change request, or presence — see this
-   * file's own header.
+   * Review records excluded from `evaluability` (and, consequently, from
+   * `evaluated`) because they carry a well-formed `headSha` naming a commit
+   * other than the bundle's current head — a rate-limited bot's `COMMENTED`
+   * review left behind by a merge-train push is the motivating case (#1187,
+   * #1297, #1302). Reported for visibility only: their PRESENCE here never
+   * by itself produces `indeterminate`. It does not follow that `result`
+   * is independent of every one of them, though — a stale record that was
+   * its reviewer's own LATEST decisive `changes-requested` still produces a
+   * `"stale-changes-requested"` VIOLATION in `result.findings`; see this
+   * file's own header. A record here can never count as an approval, a
+   * current change request, or presence.
    */
   readonly staleReviews: readonly ReviewEvidenceFinding[];
 }
@@ -312,14 +443,24 @@ export function checkReviewEvidence(
   }
 
   const evidenceFindings = validateReviewEvidence(evidence, policy as ReviewPolicy);
+  // Read defensively, ahead of the evaluability gate — `staleReviewCarveOutEligible`
+  // needs each review's own raw `headSha` (never available from
+  // `evidenceFindings` alone) to tell a genuinely stale record apart from
+  // one with no recorded commit at all. See this file's header.
+  const reviewsForCarveOut = rawReviews(evidence);
+  const referenceHeadSha = rawHeadSha(evidence);
   // Stale REVIEW findings are carved out of `evaluability` before anything
   // else is computed — see this file's header, "ONE CARVE-OUT: A STALE
-  // REVIEW RECORD IS NEITHER". A stale check or thread finding is not
-  // carved out; those stay `evaluability`, via the `RULE_CLASS` lookup
-  // below, exactly as `stale-evidence` is classified there.
-  const staleReviewFindings = evidenceFindings.filter(isStaleReviewFinding);
+  // REVIEW RECORD IS NEITHER, EXCEPT A STALE OBJECTION". A stale check or
+  // thread finding is not carved out; those stay `evaluability`, via the
+  // `RULE_CLASS` lookup below, exactly as `stale-evidence` is classified
+  // there. Neither is a review with a MISSING or malformed `headSha` — only
+  // a well-formed, genuinely different one is eligible.
+  const staleReviewFindings = evidenceFindings.filter((item) =>
+    staleReviewCarveOutEligible(item, reviewsForCarveOut, referenceHeadSha),
+  );
   const evaluability = evidenceFindings.filter(
-    (item) => RULE_CLASS[item.rule] === "evaluability" && !isStaleReviewFinding(item),
+    (item) => RULE_CLASS[item.rule] === "evaluability" && !staleReviewCarveOutEligible(item, reviewsForCarveOut, referenceHeadSha),
   );
   const staleReviews = staleReviewFindings.map(toFinding);
   if (evaluability.length > 0) {
@@ -354,6 +495,11 @@ export function checkReviewEvidence(
   }
 
   const violations = evidenceFindings.filter((item) => RULE_CLASS[item.rule] === "violation").map(toFinding);
+  // A stale review is excluded from `evaluability`, never from scrutiny: if
+  // it was its own reviewer's LATEST decisive record and that record was
+  // changes-requested, it still blocks — see `findStaleChangesRequestedViolations`
+  // and this file's header.
+  violations.push(...findStaleChangesRequestedViolations(bundle));
 
   if (options.requireReviewPresence) {
     const reviewsAtHead = bundle.reviews.filter((review) => review.headSha === bundle.headSha);
@@ -374,8 +520,12 @@ export function checkReviewEvidence(
   // Coverage, stated honestly: how many discrete pieces of evidence were
   // actually read. A bundle carrying nothing at all cannot report satisfied —
   // `gateSatisfied` refuses a zero count — which is the correct outcome for
-  // an empty bundle that happens to violate nothing.
-  const evaluated = bundle.checks.length + bundle.reviews.length + bundle.threads.length;
+  // an empty bundle that happens to violate nothing. Reviews carved out of
+  // `evaluability` above are excluded here too — a bundle whose only reviews
+  // are stale must read exactly like a bundle with none, never as if this
+  // module had evaluated a record it just excluded.
+  const currentHeadReviews = bundle.reviews.filter((review) => review.headSha === bundle.headSha).length;
+  const evaluated = bundle.checks.length + currentHeadReviews + bundle.threads.length;
   if (evaluated === 0) {
     return {
       providersObserved,
