@@ -58,12 +58,16 @@
  * of the `evaluability` set only when the review it names has a genuine,
  * well-formed `headSha` that simply names a different commit — never a
  * missing or malformed one. A review with no recorded commit (this
- * repository's own collector, `scripts/collect-review-evidence.mjs`, writes
- * an empty `headSha` when GitHub's own payload carries no `commit.oid`) is
- * UNKNOWN, not stale: there is no fact to exclude it on, so it stays
- * `evaluability` exactly as before. Carved-out findings are reported on
- * `ReviewEvidenceReport.staleReviews` — visible, never silently dropped —
- * and can never, by themselves, produce `indeterminate`.
+ * repository's own collector, `scripts/collect-review-evidence.mjs` — a
+ * repository-root script that never ships with this package, the same as
+ * every other `scripts/` path, because `scripts/` is not part of any
+ * package's `files` allowlist and so is not present once a package is
+ * installed from the registry — writes an empty `headSha` when GitHub's own
+ * payload carries no `commit.oid`) is UNKNOWN, not stale: there is no fact
+ * to exclude it on, so it stays `evaluability` exactly as before.
+ * Carved-out findings are reported on `ReviewEvidenceReport.staleReviews` —
+ * visible, never silently dropped — and can never, by themselves, produce
+ * `indeterminate`.
  *
  * A stale APPROVAL still can never count, because `validateReviews` already
  * excluded it from `hasApproval` before this module runs. A stale
