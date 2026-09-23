@@ -5,6 +5,46 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.21] - 2026-09-23
+
+### Added
+
+- Weekly Sunday `@clossys/*` adoption convention for consuming repositories
+  (owner direction 2026-09-23, #1187/#1259's cadence rule), extending
+  `conventions/documents/ci-conventions.md` with a fifth, orthogonal
+  section alongside the cost/speed/quality/security MECE four: one grouped
+  `@clossys/*` dependency-update pull request per repository per week,
+  scheduled for Sunday in the repository's declared timezone, via the
+  repository's existing updater (Renovate or Dependabot -- the document now
+  shows a minimal conforming config for each); a security advisory for
+  `@clossys/*` bypasses that schedule and applies immediately; no other
+  automation may bump a `@clossys/*` range on any other day; and the
+  adoption pull request runs the repository's normal required checks plus
+  `integrator-provenance-check` (#885/#1169) before it merges. Does not
+  apply to this repository, which produces `@clossys/*` rather than
+  consuming it.
+- `evaluateWeeklyAdoption` (`./conventions/weekly-adoption.ts`): the pure
+  evaluator for the convention above. Reads an already-read Renovate
+  (`JSON.parse` -- strict JSON, not `renovate.json5`'s relaxed syntax) or
+  Dependabot (`parseYamlLite`, reusing `ci-conventions.ts`'s own YAML
+  subset parser) config, a declared timezone, and the adoption PR's
+  required contexts, and returns one `WeeklyAdoptionRuleResult` per rule --
+  `"satisfied"` / `"missing"` / `"violated"`, this convention's own
+  three-state vocabulary (distinct from `RunnerCheckState`'s
+  `"indeterminate"`: a config that does not exist yet is a gap to close,
+  not a question that could not be answered). `evaluateCiConventions`'s new
+  `CiConventionsDeclaration.weeklyAdoption` field wires it in: omitted
+  entirely (the default, and this package's own declaration), every
+  `ci/weekly-adoption-*` rule is skipped as not applicable, never reported
+  as a gap; declared with `applies: true`, each non-satisfied result folds
+  into the shared check-output envelope as an error-severity finding, the
+  same pattern `checkRunnerLabels` already uses for `validateRunnerLabel`.
+  Zero I/O, zero new runtime dependencies. Dogfooded against this
+  repository's own repo-root `governance/ci-conventions/declaration.json`
+  (that repo-root path does not ship with this package -- which declares no
+  `weeklyAdoption`, correctly -- this repository is not a consumer): 0 of
+  85 pre-existing report-mode findings are `ci/weekly-adoption-*`.
+
 ## [0.9.17] - 2026-09-23
 
 ### Changed

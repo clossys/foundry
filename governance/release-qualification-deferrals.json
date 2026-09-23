@@ -295,6 +295,12 @@
       "version": "0.9.17",
       "reason": "This machine is not the pinned release runtime (Node v24.19.0, npm 11.17.0, zlib 1.3.2.1-motley-3246f1b; this machine Node v24.15.0, npm 11.12.1). Merge acknowledgement, never publication: 0.9.17 may not be published before the record exists. Renumbered from a colliding local 0.9.13 on merge with origin/main -- see this package's own CHANGELOG entry.",
       "issue": 948
+    },
+    {
+      "package": "controller",
+      "version": "0.9.21",
+      "reason": "This machine is not the pinned release runtime (Node v24.19.0, npm 11.17.0, zlib 1.3.2.1-motley-3246f1b; this machine Node v24.15.0, npm 11.12.1). Merge acknowledgement, never publication: 0.9.21 may not be published before the record exists. Controller is still changing (T12/T14 in flight per #1187's plan of record) and ships in wave 2, not this week's release wave -- this version was selected as unclaimed against every open PR's packages/controller/package.json at the time of writing (main at 0.9.17; open claims included 0.9.18, 0.9.19, 0.9.20).",
+      "issue": 948
     }
   ]
 }

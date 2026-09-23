@@ -139,3 +139,20 @@ export type {
 
 export { YamlLiteParseError, parseYamlLite } from "./yaml-lite.js";
 export type { YamlValue } from "./yaml-lite.js";
+
+export {
+  RULE_GROUPED_SCHEDULE,
+  RULE_NO_OTHER_AUTOMATION,
+  RULE_NO_TIMEZONE_DECLARED,
+  RULE_NO_UPDATER_CONFIGURED,
+  RULE_PROVENANCE_CHECK_REQUIRED,
+  RULE_SECURITY_BYPASS,
+  evaluateWeeklyAdoption,
+} from "./weekly-adoption.js";
+export type {
+  UpdaterConfigFile,
+  UpdaterKind,
+  WeeklyAdoptionDeclaration,
+  WeeklyAdoptionRuleResult,
+  WeeklyAdoptionRuleState,
+} from "./weekly-adoption.js";
