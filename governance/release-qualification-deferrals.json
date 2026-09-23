@@ -21,6 +21,12 @@
       "issue": 833
     },
     {
+      "package": "builder",
+      "version": "0.9.0",
+      "reason": "This machine is not the pinned release runtime (Node v24.19.0, npm 11.17.0, zlib 1.3.2.1-motley-3246f1b; this machine Node v24.15.0, npm 11.12.1). Merge acknowledgement, never publication: 0.9.0 may not be published before the record exists.",
+      "issue": 948
+    },
+    {
       "package": "butler",
       "version": "0.1.7",
       "reason": "This machine is not the pinned release runtime (Node v24.19.0, npm 11.17.0, zlib 1.3.2.1-motley-3246f1b; this machine Node v24.15.0, npm 11.12.1). Merge acknowledgement, never publication: 0.1.7 may not be published before the record exists.",
@@ -177,6 +183,12 @@
       "issue": 948
     },
     {
+      "package": "strategist",
+      "version": "0.4.0",
+      "reason": "This machine is not the pinned release runtime (Node v24.19.0, npm 11.17.0, zlib 1.3.2.1-motley-3246f1b; this machine Node v24.15.0, npm 11.12.1). Merge acknowledgement, never publication: 0.4.0 may not be published before the record exists.",
+      "issue": 948
+    },
+    {
       "package": "writer",
       "version": "0.3.11",
       "reason": "This machine is not the pinned release runtime (Node v24.19.0, npm 11.17.0, zlib 1.3.2.1-motley-3246f1b; this machine Node v24.15.0, npm 11.12.1). Merge acknowledgement, never publication: 0.3.11 may not be published before the record exists.",
@@ -186,12 +198,6 @@
       "package": "writer",
       "version": "0.3.13",
       "reason": "This machine is not the pinned release runtime (Node v24.19.0, npm 11.17.0, zlib 1.3.2.1-motley-3246f1b; this machine Node v24.15.0, npm 11.12.1). Merge acknowledgement, never publication: 0.3.13 may not be published before the record exists.",
-      "issue": 948
-    },
-    {
-      "package": "writer",
-      "version": "0.3.15",
-      "reason": "This machine is not the pinned release runtime (Node v24.19.0, npm 11.17.0, zlib 1.3.2.1-motley-3246f1b; this machine Node v24.15.0, npm 11.12.1). Merge acknowledgement, never publication: 0.3.15 may not be published before the record exists.",
       "issue": 948
     },
     {

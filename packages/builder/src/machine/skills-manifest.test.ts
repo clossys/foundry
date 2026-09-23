@@ -3,7 +3,7 @@ import { applyInstallation } from "../apply.js";
 import { createMemoryFileSystem } from "../memory-fs.test-helper.js";
 import { createRuntimeContext, planInstallation } from "../runtime.js";
 import { verifyInstallation } from "../verify.js";
-import { buildSkillsManifest } from "./skills-manifest.js";
+import { buildSkillsManifest, detectSkillNameCollisions } from "./skills-manifest.js";
 
 const composedSkillsRoot = "/home/op/.agents/skills";
 const home = "/home/op";
@@ -11,46 +11,104 @@ const sourceRoot = "/code/account-a/skills";
 const backupRoot = "/home/op/.config-backups/run";
 
 describe("buildSkillsManifest", () => {
-  it("builds one links entry per skill, sorted, each destined inside the composed directory", () => {
-    const manifest = buildSkillsManifest(["zeta", "alpha"], { composedSkillsRoot });
-    expect(manifest.links).toEqual([
-      { source: "alpha", destination: `${composedSkillsRoot}/alpha` },
-      { source: "zeta", destination: `${composedSkillsRoot}/zeta` },
-    ]);
+  it("builds exactly one links entry — the whole source tree, as a directory — destined inside the composed directory", () => {
+    const manifest = buildSkillsManifest({ composedSkillsRoot, linkName: "account-a" });
+    expect(manifest.links).toEqual([{ source: ".", destination: `${composedSkillsRoot}/account-a` }]);
     expect(manifest.copies).toEqual([]);
     expect(manifest.managedBlocks).toEqual([]);
   });
 
   it("declares composedSkillsRoot itself as a private directory — the migration-hazard guard (#240)", () => {
-    const manifest = buildSkillsManifest(["alpha"], { composedSkillsRoot });
+    const manifest = buildSkillsManifest({ composedSkillsRoot, linkName: "account-a" });
     expect(manifest.privateDirectories).toEqual([{ path: composedSkillsRoot, create: true }]);
   });
 
-  it("builds a manifest loadManifest itself considers valid, for an empty skill list too", () => {
-    // loadManifest is called internally; a thrown error here would mean this
-    // module drifted from the manifest engine's own validation rules.
-    expect(() => buildSkillsManifest([], { composedSkillsRoot })).not.toThrow();
-    expect(buildSkillsManifest([], { composedSkillsRoot }).links).toEqual([]);
-    // The private-directory guard applies even with nothing to link yet.
-    expect(buildSkillsManifest([], { composedSkillsRoot }).privateDirectories).toEqual([
-      { path: composedSkillsRoot, create: true },
-    ]);
+  it("refuses a link name containing a path separator, rather than trust a hostile account identifier", () => {
+    expect(() => buildSkillsManifest({ composedSkillsRoot, linkName: "../escape" })).toThrow(/unsafe link name/);
+    expect(() => buildSkillsManifest({ composedSkillsRoot, linkName: "a/b" })).toThrow(/unsafe link name/);
   });
 
-  it("refuses a skill name containing a path separator, rather than trust a hostile readdir result", () => {
-    expect(() => buildSkillsManifest(["../escape"], { composedSkillsRoot })).toThrow(/unsafe skill name/);
-    expect(() => buildSkillsManifest(["a/b"], { composedSkillsRoot })).toThrow(/unsafe skill name/);
+  it("refuses an empty link name", () => {
+    expect(() => buildSkillsManifest({ composedSkillsRoot, linkName: "" })).toThrow(/unsafe link name/);
   });
 });
 
-describe("the single-directory-symlink to per-skill-links transition (#240)", () => {
-  function setup(skillNames: readonly string[]) {
-    const manifest = buildSkillsManifest(skillNames, { composedSkillsRoot });
+describe("detectSkillNameCollisions", () => {
+  it("reports nothing when every source's skills are unique", () => {
+    const collisions = detectSkillNameCollisions(
+      [
+        { name: "alpha-account", skillNames: ["greet"] },
+        { name: "beta-account", skillNames: ["farewell"] },
+      ],
+      { composedSkillsRoot },
+    );
+    expect(collisions).toEqual([]);
+  });
+
+  it("reports a skill name claimed by two sources, naming both, at the notional flat address", () => {
+    const collisions = detectSkillNameCollisions(
+      [
+        { name: "alpha-account", skillNames: ["shared-skill"] },
+        { name: "beta-account", skillNames: ["shared-skill"] },
+      ],
+      { composedSkillsRoot },
+    );
+    expect(collisions).toEqual([
+      { destinationPath: `${composedSkillsRoot}/shared-skill`, sources: ["alpha-account", "beta-account"] },
+    ]);
+  });
+
+  it("reports every colliding skill name, sorted by its notional destination, when more than one collides", () => {
+    const collisions = detectSkillNameCollisions(
+      [
+        { name: "alpha-account", skillNames: ["zeta-skill", "alpha-skill"] },
+        { name: "beta-account", skillNames: ["zeta-skill", "alpha-skill"] },
+      ],
+      { composedSkillsRoot },
+    );
+    expect(collisions.map((c) => c.destinationPath)).toEqual([
+      `${composedSkillsRoot}/alpha-skill`,
+      `${composedSkillsRoot}/zeta-skill`,
+    ]);
+  });
+
+  it("names all three sources when a skill name is claimed by more than two", () => {
+    const collisions = detectSkillNameCollisions(
+      [
+        { name: "alpha-account", skillNames: ["shared-skill"] },
+        { name: "beta-account", skillNames: ["shared-skill"] },
+        { name: "third-party", skillNames: ["shared-skill"] },
+      ],
+      { composedSkillsRoot },
+    );
+    expect(collisions).toHaveLength(1);
+    expect(collisions[0]?.sources).toEqual(["alpha-account", "beta-account", "third-party"]);
+  });
+
+  it("is not tripped up by a source with no skills at all", () => {
+    const collisions = detectSkillNameCollisions(
+      [
+        { name: "alpha-account", skillNames: [] },
+        { name: "beta-account", skillNames: ["greet"] },
+      ],
+      { composedSkillsRoot },
+    );
+    expect(collisions).toEqual([]);
+  });
+
+  it("returns nothing for an empty source list", () => {
+    expect(detectSkillNameCollisions([], { composedSkillsRoot })).toEqual([]);
+  });
+});
+
+describe("the single-directory-symlink to directory-link transition (#240)", () => {
+  function setup(linkName: string) {
+    const manifest = buildSkillsManifest({ composedSkillsRoot, linkName });
     const runtime = createRuntimeContext(manifest, { home, sourceRoot, workspaceRoot: home });
     return planInstallation(manifest, runtime);
   }
 
-  it("reproduces #240: a stale directory symlink at composedSkillsRoot, being replaced by per-skill links", () => {
+  it("reproduces #240: a stale directory symlink at composedSkillsRoot, being replaced by per-source directory links", () => {
     const fs = createMemoryFileSystem();
     fs.set(`${sourceRoot}/greet`, "skill contents");
     fs.setDirectory(`${sourceRoot}/greet`);
@@ -59,7 +117,7 @@ describe("the single-directory-symlink to per-skill-links transition (#240)", ()
     // now gone — a dangling link, exactly #240's own reproduction.
     fs.setSymlink(composedSkillsRoot, "/code/deleted-account-checkout/skills");
 
-    const plan = setup(["greet"]);
+    const plan = setup("account-a");
 
     // Detected and reported with a clear, named error -- never a crash on an
     // unrelated low-level ENOENT surfacing from deep inside `replace()`, and
@@ -83,20 +141,20 @@ describe("the single-directory-symlink to per-skill-links transition (#240)", ()
     fs.setDirectory(stillExistingTarget);
     fs.setSymlink(composedSkillsRoot, stillExistingTarget);
 
-    const plan = setup(["greet"]);
+    const plan = setup("account-a");
 
     expect(() => applyInstallation(plan, fs, { backupRoot })).toThrow(
       /must not be a symlink or a non-directory/,
     );
     // Never silently written into the old target through the stale link.
-    expect(fs.lstat(`${stillExistingTarget}/greet`)).toBeUndefined();
+    expect(fs.lstat(`${stillExistingTarget}/account-a`)).toBeUndefined();
   });
 
   it("verify (never applies) reports the same situation as a clean finding, never a throw", () => {
     const fs = createMemoryFileSystem();
     fs.setSymlink(composedSkillsRoot, "/code/deleted-account-checkout/skills");
 
-    const plan = setup(["greet"]);
+    const plan = setup("account-a");
     const findings = verifyInstallation(plan, fs);
     expect(findings.some((f) => f.rule === "install/private-directory-not-a-directory")).toBe(true);
   });
@@ -109,7 +167,7 @@ describe("the single-directory-symlink to per-skill-links transition (#240)", ()
     // machine that never had the old installer, or where the stale symlink
     // has already been cleared by an operator following this refusal.
 
-    const plan = setup(["greet"]);
+    const plan = setup("account-a");
     const result = applyInstallation(plan, fs, { backupRoot });
     expect(result.changed.length).toBeGreaterThan(0);
 
@@ -117,6 +175,13 @@ describe("the single-directory-symlink to per-skill-links transition (#240)", ()
     expect(rootStat?.isDirectory).toBe(true);
     expect(rootStat?.isSymbolicLink).toBe(false);
     expect(rootStat?.mode).toBe(0o700);
+
+    // The whole account-a source tree is now one directory symlink, never a
+    // per-skill link -- its individual skill ("greet") is only reachable by
+    // resolving through that directory link, not as its own destination.
+    const linkStat = fs.lstat(`${composedSkillsRoot}/account-a`);
+    expect(linkStat?.isSymbolicLink).toBe(true);
+    expect(fs.lstat(`${composedSkillsRoot}/greet`)).toBeUndefined();
 
     expect(verifyInstallation(plan, fs)).toEqual([]);
   });
