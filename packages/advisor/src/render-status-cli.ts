@@ -2,7 +2,7 @@
 import { existsSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { renderAdvisorStatus, type AdvisorPlan } from "./status.js";
+import { renderAdvisorStatus, validateAdvisorPlan, type AdvisorPlan } from "./status.js";
 
 const USAGE = `Usage: advisor-render-status <plan.json>\n\nRenders clossys/advisor/STATUS.md from an Advisor plan record.\nPrints the rendered markdown to stdout; the caller writes it verbatim.\nExit codes: 0 = rendered, 2 = unreadable or invalid input.`;
 
@@ -21,20 +21,6 @@ export function readAdvisorPlanJson(path: string): unknown {
   }
 }
 
-function isValidPlanShape(value: unknown): value is AdvisorPlan {
-  if (!value || typeof value !== "object") return false;
-  const plan = value as Record<string, unknown>;
-  return (
-    plan.schemaVersion === 1 &&
-    typeof plan.asOf === "string" &&
-    typeof plan.mandate === "object" &&
-    plan.mandate !== null &&
-    Array.isArray(plan.whereWeAre) &&
-    Array.isArray(plan.decisions) &&
-    Array.isArray(plan.blockers)
-  );
-}
-
 /** Testable CLI dispatcher. Invalid arguments or plan shape throw; the executable maps them to exit 2. */
 export function main(argv: readonly string[]): number {
   if (argv.length === 1 && (argv[0] === "--help" || argv[0] === "-h")) {
@@ -43,8 +29,11 @@ export function main(argv: readonly string[]): number {
   }
   if (argv.length !== 1) throw new AdvisorRenderStatusCliInputError("exactly one plan.json file is required");
   const value = readAdvisorPlanJson(argv[0] as string);
-  if (!isValidPlanShape(value)) throw new AdvisorRenderStatusCliInputError("plan.json does not match the AdvisorPlan shape (schemaVersion 1, mandate, whereWeAre[], decisions[], blockers[])");
-  console.log(renderAdvisorStatus(value));
+  const findings = validateAdvisorPlan(value);
+  if (findings.length > 0) {
+    throw new AdvisorRenderStatusCliInputError(`plan.json does not match the AdvisorPlan shape: ${findings.map((finding) => finding.message).join("; ")}`);
+  }
+  console.log(renderAdvisorStatus(value as AdvisorPlan));
   return 0;
 }
 

@@ -226,6 +226,22 @@ rename, not a redesign. It takes an `AdvisorPlan` record (`schemaVersion`,
 verbatim. This package performs no file I/O — the caller writes the
 rendered text.
 
+`AdvisorPlanBlocker` (`capabilityId`, `kind`, `owner`,
+`nextAction: { who, how, byWhen }`, `since`) is field-for-field the same
+shape as the Controller role's own `Blocker` record, defined for issue
+#1237 in the Controller package's own loop module: the owner direction
+on #1187 (2026-09-23) is that an order-dependent change may carry no
+local copy of a shared definition once that definition is on `main`,
+and a blocker record is exactly that kind of definition.
+`validateAdvisorPlan(value)` checks a candidate plan against this shape
+— every blocker's `capabilityId`, `owner`, `since`, and full
+`nextAction`, plus `kind` membership in `AdvisorBlockerKind`
+(`ADVISOR_BLOCKER_KINDS` lists the five values in order) — and returns
+every finding it locates, the same pattern as this package's other
+validators. This package still carries no runtime dependency on the
+Controller package: the shape is duplicated structurally, never the
+owner-per-kind mapping, which stays owned by Controller.
+
 The `advisor-render-status` CLI wraps this renderer:
 
 ```bash
@@ -233,7 +249,8 @@ advisor-render-status plan.json
 ```
 
 It prints the rendered STATUS document to stdout and exits `0`, or exits
-`2` for unreadable or malformed input.
+`2` for unreadable or malformed input (now via `validateAdvisorPlan`,
+so a blocker in the old, local shape is rejected the same way).
 
 ## Kit verdicts (issue #1177)
 

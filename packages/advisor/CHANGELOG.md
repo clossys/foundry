@@ -9,12 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `renderAdvisorStatus()` and the `advisor-render-status` CLI: a pure
-  renderer for the STATUS document at `clossys/advisor/STATUS` (a `.md`
-  file), with five fixed sections (Mandate, Where we are, Recommended
-  next, Decisions, Blockers), from an `AdvisorPlan` record. Structured
-  so Controller's loop engine (#1195) can take over rendering later
-  without a vocabulary change (issue #1175).
+- `renderAdvisorStatus()`, `validateAdvisorPlan()`, and the
+  `advisor-render-status` CLI: a pure renderer (plus its validator) for
+  the STATUS document at `clossys/advisor/STATUS` (a `.md` file), with
+  five fixed sections (Mandate, Where we are, Recommended next,
+  Decisions, Blockers), from an `AdvisorPlan` record. Structured so
+  Controller's loop engine (#1195) can take over rendering later
+  without a vocabulary change (issue #1175). `AdvisorPlanBlocker` is
+  field-for-field the same shape as Controller's own `Blocker`
+  (`capabilityId`, `kind`, `owner`, `nextAction: { who, how, byWhen }`,
+  `since`) per the owner direction on #1187 (2026-09-23) against local
+  copies of shared definitions (issue #1237).
 - `recommendKit()`: per-kit verdicts on the composed kit from #1176 —
   each role's why, confirmed-problem citations, goal, handoffs, and
   deliverable — attributing the verdict to a matching curated preset

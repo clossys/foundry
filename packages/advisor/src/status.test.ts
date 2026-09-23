@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { renderAdvisorStatus } from "./index.js";
-import type { AdvisorPlan } from "./index.js";
+import { ADVISOR_BLOCKER_KINDS, renderAdvisorStatus, validateAdvisorPlan } from "./index.js";
+import type { AdvisorPlan, AdvisorPlanBlocker } from "./index.js";
+
+const BLOCKER: AdvisorPlanBlocker = {
+  capabilityId: "engagement",
+  kind: "missing-authority",
+  owner: "sponsor",
+  nextAction: { who: "sponsor", how: "approve the plan", byWhen: "2026-09-25T00:00:00Z" },
+  since: "2026-09-20T00:00:00Z",
+};
 
 const BASE_PLAN: AdvisorPlan = {
   schemaVersion: 1,
@@ -9,7 +17,7 @@ const BASE_PLAN: AdvisorPlan = {
   whereWeAre: ["Fit and readiness both satisfied."],
   recommendedNext: { action: "Approve the first-wave plan.", owner: "sponsor", due: "2026-09-29T00:00:00Z" },
   decisions: [{ at: "2026-09-20T00:00:00Z", recommended: "compose from confirmed problems", chosen: "approved", by: "sponsor" }],
-  blockers: [{ kind: "missing-authority", description: "No sponsor grant yet.", owner: "sponsor", dueDate: "2026-09-25T00:00:00Z" }],
+  blockers: [BLOCKER],
 };
 
 describe("renderAdvisorStatus (issue #1175)", () => {
@@ -36,12 +44,60 @@ describe("renderAdvisorStatus (issue #1175)", () => {
     expect(markdown).toContain("None.");
   });
 
-  it("a blocker line names its kind, description, owner, and due date", () => {
+  it("a blocker line names its capability, kind, next action, owner, and since -- the shared Controller Blocker shape (#1237)", () => {
     const markdown = renderAdvisorStatus(BASE_PLAN);
-    expect(markdown).toContain("[missing-authority] No sponsor grant yet. (owner: sponsor, due 2026-09-25T00:00:00Z)");
+    expect(markdown).toContain("- [missing-authority] engagement — next: sponsor approve the plan by 2026-09-25T00:00:00Z (owner: sponsor, since 2026-09-20T00:00:00Z)");
   });
 
   it("is deterministic: rendering the same plan twice gives byte-identical output", () => {
     expect(renderAdvisorStatus(BASE_PLAN)).toBe(renderAdvisorStatus(BASE_PLAN));
+  });
+});
+
+describe("validateAdvisorPlan (blocker shape shared with Controller's loop.json Blocker, #1237)", () => {
+  it("a well-formed plan has no findings", () => {
+    expect(validateAdvisorPlan(BASE_PLAN)).toEqual([]);
+  });
+
+  it("rejects a non-object", () => {
+    expect(validateAdvisorPlan("not a plan").length).toBeGreaterThan(0);
+    expect(validateAdvisorPlan(null).length).toBeGreaterThan(0);
+  });
+
+  it("rejects a blocker missing capabilityId, owner, since, or nextAction", () => {
+    const blocker = { kind: "missing-input" };
+    const findings = validateAdvisorPlan({ ...BASE_PLAN, blockers: [blocker] });
+    const rules = findings.map((finding) => finding.rule);
+    expect(rules).toContain("blocker-capability-id");
+    expect(rules).toContain("blocker-owner");
+    expect(rules).toContain("blocker-since");
+    expect(rules).toContain("blocker-next-action");
+  });
+
+  it("rejects an old-shape blocker (description/dueDate) the same way -- it has no capabilityId, owner is present but nextAction/since are missing", () => {
+    const oldShapeBlocker = { kind: "missing-input", description: "no evidence yet", owner: "this-role", dueDate: "2026-09-25T00:00:00Z" };
+    const findings = validateAdvisorPlan({ ...BASE_PLAN, blockers: [oldShapeBlocker] });
+    const rules = findings.map((finding) => finding.rule);
+    expect(rules).toContain("blocker-capability-id");
+    expect(rules).toContain("blocker-since");
+    expect(rules).toContain("blocker-next-action");
+  });
+
+  it("rejects a nextAction missing who, how, or byWhen", () => {
+    const blocker = { ...BLOCKER, nextAction: { who: "sponsor" } };
+    const findings = validateAdvisorPlan({ ...BASE_PLAN, blockers: [blocker] });
+    const rules = findings.map((finding) => finding.rule);
+    expect(rules).toContain("blocker-next-action-how");
+    expect(rules).toContain("blocker-next-action-by-when");
+  });
+
+  it("rejects a kind outside the five values #1195/#1237 declare", () => {
+    const blocker = { ...BLOCKER, kind: "some-other-kind" };
+    const findings = validateAdvisorPlan({ ...BASE_PLAN, blockers: [blocker] });
+    expect(findings.some((finding) => finding.rule === "blocker-kind")).toBe(true);
+  });
+
+  it("ADVISOR_BLOCKER_KINDS is exactly Controller's own five, same order (kinds agree; only the record shape was locally divergent)", () => {
+    expect(ADVISOR_BLOCKER_KINDS).toEqual(["missing-input", "missing-authority", "failing-evidence", "unavailable-environment", "contradiction"]);
   });
 });
