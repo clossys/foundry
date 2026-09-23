@@ -51,23 +51,36 @@ status check yet** — see [Rollout](#rollout) below.
 ### How the release PR is exempted from the merge window
 
 The release PR's exemption is **not**, and was never meant to be, "a branch
-named the right way" — a branch name is just a string, and anyone who can
-open a pull request can name their branch anything. The exemption requires
-**both** of two things an ordinary contributor cannot produce merely by
-naming a branch:
+named the right way", and **not** merely "the right file paths changed" —
+a branch name is just a string, and a path list says nothing about what
+actually changed inside those files. The exemption requires **both** of
+two things an ordinary contributor cannot produce merely by naming a
+branch or shaping a file list:
 
 1. **The `release:weekly` label** (`governance/release-calendar.json`'s
    `releasePrPolicy.label`), applied only by `.github/workflows/release-pr.yml`'s
    own automation.
-2. **A release-PR-shaped diff** (`scripts/lib/release-calendar.mjs`'s
-   `isReleasePrFootprint()`): the pull request's changed files are
-   *exactly* `packages/<dir>/package.json` version bumps, matching
-   `CHANGELOG.md` entries, `package-lock.json`, and deleted
-   `.changesets/*.md` files — nothing else, not a workflow file, not a
-   source file. This is a structural check only; `scripts/check-release-pr-shape.mjs`
-   (a separate, pre-existing gate that runs on every pull request) is what
-   validates that the version bumps *inside* that shape are themselves
-   legitimate.
+2. **A STRUCTURALLY VERIFIED release-PR-shaped diff** — content, not just
+   paths (`scripts/check-release-calendar.mjs`, using `scripts/lib/release-pr-footprint.mjs`'s
+   `evaluateReleasePrFootprint()`): for every changed
+   `packages/<dir>/package.json`, the ONLY difference from its base
+   version is the `version` field itself — parsed and deep-compared, so a
+   smuggled dependency, script, `bin`, or `exports` change fails
+   immediately, whatever it's called. Every changed `CHANGELOG.md` must be
+   the base text with one contiguous block of new text inserted — nothing
+   existing removed or altered — and that inserted block must open with a
+   new `## ` version heading. A changed `package-lock.json` must be
+   byte-identical to what `npm install --package-lock-only --ignore-scripts`
+   regenerates from the PR's own manifests. A `.changesets/*.md` file may
+   only be *deleted*, never added — a new changeset cannot be smuggled in
+   alongside a legitimate one being consumed. ANY other file in the diff,
+   or a `--changed-files` read that could not be completed in full (see
+   "Fail closed on pagination" in `.github/workflows/release-calendar.yml`'s
+   own header), fails the whole check. This is a structural check only;
+   `scripts/check-release-pr-shape.mjs` (a separate, pre-existing gate that
+   runs on every pull request) is what validates that the version bumps
+   *inside* that shape are themselves legitimate (backed by a consumed
+   changeset or a matching `CHANGELOG.md` entry).
 
 **Residual risk, documented rather than solved:** both of the above are
 properties of this repository's *state* (files changed, labels applied),
@@ -322,7 +335,12 @@ sequence:
    changesets (#1265) and auto-qualify (#1266).
 2. The merge queue (#1263) is in place, since `release calendar (merge
    window)` runs on `merge_group` as well as `pull_request` and depends on
-   that queue existing to be exercised realistically.
+   that queue existing to be exercised realistically. **Until #1263 lands,
+   only the `pull_request` path is actually exercised** — `merge_group`
+   never fires with no queue enabled, so this check's own history so far
+   is entirely a `pull_request` history. This is expected, not a gap: the
+   workflow already declares both triggers so nothing needs to change here
+   once the queue exists.
 3. **One report-only week**: the check runs and reports on every pull
    request, but is not required — an observation window to confirm it
    behaves correctly (in particular, that the release PR itself passes

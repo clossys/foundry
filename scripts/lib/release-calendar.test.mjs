@@ -1,13 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import {
-  dayTypeFor,
-  evaluateReleaseCalendarGate,
-  isReleasePrFootprint,
-  nextMergeWindowStart,
-  shouldOpenReleasePr,
-  zonedDateParts,
-} from "./release-calendar.mjs";
+import { dayTypeFor, evaluateReleaseCalendarGate, nextMergeWindowStart, shouldOpenReleasePr, zonedDateParts } from "./release-calendar.mjs";
 
 const TZ = "America/Los_Angeles";
 
@@ -19,13 +12,6 @@ const CALENDAR = {
   outOfBandPolicy: { changesetFlag: "release:out-of-band" },
   releasePrPolicy: { label: "release:weekly" },
 };
-
-const RELEASE_SHAPED_FILES = [
-  { path: "packages/controller/package.json", status: "modified" },
-  { path: "packages/controller/CHANGELOG.md", status: "modified" },
-  { path: "package-lock.json", status: "modified" },
-  { path: ".changesets/controller-fix.md", status: "removed" },
-];
 
 // --- DST boundaries: America/Los_Angeles spring-forward (2027-03-14) and fall-back (2027-11-07) ---
 
@@ -60,132 +46,94 @@ test("nextMergeWindowStart: from a Saturday, the next window opens the following
   assert.equal(nextMergeWindowStart(new Date(Date.UTC(2026, 0, 3, 20, 0, 0)), TZ, CALENDAR), "2026-01-05");
 });
 
-// --- isReleasePrFootprint: the diff-shape half of the release-PR exemption ---
+// --- evaluateReleaseCalendarGate: the release-PR exemption now needs the label AND an already-verified structural footprint, never a branch name or bare path list ---
 
-test("isReleasePrFootprint: a plain release PR's diff (bumps, CHANGELOGs, lockfile, deleted changesets) passes", () => {
-  assert.equal(isReleasePrFootprint(RELEASE_SHAPED_FILES), true);
-});
-
-test("isReleasePrFootprint: several packages and changesets at once still passes", () => {
-  assert.equal(
-    isReleasePrFootprint([
-      { path: "packages/controller/package.json", status: "modified" },
-      { path: "packages/controller/CHANGELOG.md", status: "modified" },
-      { path: "packages/writer/package.json", status: "modified" },
-      { path: "packages/writer/CHANGELOG.md", status: "added" }, // a brand-new CHANGELOG.md is also legal
-      { path: "package-lock.json", status: "modified" },
-      { path: ".changesets/controller-fix.md", status: "removed" },
-      { path: ".changesets/writer-fix.md", status: "removed" },
-    ]),
-    true,
-  );
-});
-
-test("isReleasePrFootprint: rejects an empty file list -- nothing to release is not a release PR", () => {
-  assert.equal(isReleasePrFootprint([]), false);
-});
-
-test("isReleasePrFootprint: rejects a diff with no package.json change at all", () => {
-  assert.equal(isReleasePrFootprint([{ path: "package-lock.json", status: "modified" }]), false);
-});
-
-test("isReleasePrFootprint: ANY unrelated file fails the whole thing, regardless of what else is present", () => {
-  assert.equal(isReleasePrFootprint([...RELEASE_SHAPED_FILES, { path: ".github/workflows/ci.yml", status: "modified" }]), false);
-  assert.equal(isReleasePrFootprint([...RELEASE_SHAPED_FILES, { path: "packages/controller/src/index.ts", status: "modified" }]), false);
-});
-
-test("isReleasePrFootprint: the file STATUS matters, not just the path -- an added or removed package.json is not a version bump", () => {
-  assert.equal(isReleasePrFootprint([{ path: "packages/controller/package.json", status: "added" }]), false);
-  assert.equal(isReleasePrFootprint([{ path: "packages/controller/package.json", status: "removed" }]), false);
-  assert.equal(isReleasePrFootprint([{ path: ".changesets/controller-fix.md", status: "modified" }, { path: "packages/controller/package.json", status: "modified" }]), false); // a changeset must be REMOVED, not modified
-});
-
-// --- evaluateReleaseCalendarGate: the release-PR exemption now needs the label AND the shape, never a branch name alone ---
-
-test("evaluateReleaseCalendarGate: passes freely Monday-Friday, no label or shape needed", () => {
-  const result = evaluateReleaseCalendarGate({ calendar: CALENDAR, now: new Date(Date.UTC(2026, 0, 7, 20, 0, 0)), labels: [], changedFiles: [] });
+test("evaluateReleaseCalendarGate: passes freely Monday-Friday, no label or footprint needed", () => {
+  const result = evaluateReleaseCalendarGate({ calendar: CALENDAR, now: new Date(Date.UTC(2026, 0, 7, 20, 0, 0)), labels: [], footprintVerified: false });
   assert.equal(result.status, "pass");
   assert.equal(result.dayType, "merge-window");
 });
 
 test("evaluateReleaseCalendarGate: fails an ordinary PR on release day and reports the next window", () => {
-  const result = evaluateReleaseCalendarGate({ calendar: CALENDAR, now: new Date(Date.UTC(2026, 0, 3, 20, 0, 0)), labels: [], changedFiles: [] });
+  const result = evaluateReleaseCalendarGate({ calendar: CALENDAR, now: new Date(Date.UTC(2026, 0, 3, 20, 0, 0)), labels: [], footprintVerified: false });
   assert.equal(result.status, "fail");
   assert.equal(result.dayType, "release");
   assert.equal(result.nextMergeWindowStart, "2026-01-05");
 });
 
-test("evaluateReleaseCalendarGate: a branch NAMED like a release PR, with neither the label nor the shape, still fails (this is the fix)", () => {
-  const result = evaluateReleaseCalendarGate({
-    calendar: CALENDAR,
-    now: new Date(Date.UTC(2026, 0, 3, 20, 0, 0)),
-    labels: [],
-    changedFiles: [{ path: "packages/controller/src/index.ts", status: "modified" }],
-  });
+test("evaluateReleaseCalendarGate: a branch NAMED like a release PR, with neither the label nor a verified footprint, still fails", () => {
+  const result = evaluateReleaseCalendarGate({ calendar: CALENDAR, now: new Date(Date.UTC(2026, 0, 3, 20, 0, 0)), labels: [], footprintVerified: false });
   assert.equal(result.status, "fail");
 });
 
-test("evaluateReleaseCalendarGate: the label alone, without the release-PR-shaped diff, is not enough", () => {
-  const result = evaluateReleaseCalendarGate({
-    calendar: CALENDAR,
-    now: new Date(Date.UTC(2026, 0, 3, 20, 0, 0)),
-    labels: ["release:weekly"],
-    changedFiles: [{ path: "packages/controller/src/index.ts", status: "modified" }],
-  });
+test("evaluateReleaseCalendarGate: the label alone, without a verified footprint, is not enough", () => {
+  const result = evaluateReleaseCalendarGate({ calendar: CALENDAR, now: new Date(Date.UTC(2026, 0, 3, 20, 0, 0)), labels: ["release:weekly"], footprintVerified: false });
   assert.equal(result.status, "fail");
 });
 
-test("evaluateReleaseCalendarGate: the release-PR-shaped diff alone, without the label, is not enough", () => {
-  const result = evaluateReleaseCalendarGate({ calendar: CALENDAR, now: new Date(Date.UTC(2026, 0, 3, 20, 0, 0)), labels: [], changedFiles: RELEASE_SHAPED_FILES });
+test("evaluateReleaseCalendarGate: a verified footprint alone, without the label, is not enough", () => {
+  const result = evaluateReleaseCalendarGate({ calendar: CALENDAR, now: new Date(Date.UTC(2026, 0, 3, 20, 0, 0)), labels: [], footprintVerified: true });
   assert.equal(result.status, "fail");
 });
 
-test("evaluateReleaseCalendarGate: passes the release PR itself on release day -- label AND shape together", () => {
-  const result = evaluateReleaseCalendarGate({
-    calendar: CALENDAR,
-    now: new Date(Date.UTC(2026, 0, 3, 20, 0, 0)),
-    labels: ["release:weekly"],
-    changedFiles: RELEASE_SHAPED_FILES,
-  });
+test("evaluateReleaseCalendarGate: passes the release PR itself on release day -- label AND a verified footprint together", () => {
+  const result = evaluateReleaseCalendarGate({ calendar: CALENDAR, now: new Date(Date.UTC(2026, 0, 3, 20, 0, 0)), labels: ["release:weekly"], footprintVerified: true });
   assert.equal(result.status, "pass");
 });
 
-test("evaluateReleaseCalendarGate: a release:out-of-band labelled PR is exempted on ANY day -- release, adoption, AND an ordinary merge-window weekday -- independent of file shape (owner decision, #1187 comment 5800369031)", () => {
-  const releaseDayResult = evaluateReleaseCalendarGate({ calendar: CALENDAR, now: new Date(Date.UTC(2026, 0, 3, 20, 0, 0)), labels: ["release:out-of-band"], changedFiles: [{ path: "packages/controller/src/index.ts", status: "modified" }] });
+test("evaluateReleaseCalendarGate: footprintVerified must be the literal boolean true -- anything else (undefined, a truthy string, 1) is treated as NOT verified", () => {
+  for (const notTrue of [undefined, null, "true", 1, "yes"]) {
+    const result = evaluateReleaseCalendarGate({ calendar: CALENDAR, now: new Date(Date.UTC(2026, 0, 3, 20, 0, 0)), labels: ["release:weekly"], footprintVerified: notTrue });
+    assert.equal(result.status, "fail", `footprintVerified=${JSON.stringify(notTrue)} must not pass`);
+  }
+});
+
+test("evaluateReleaseCalendarGate: a release:out-of-band labelled PR is exempted on ANY day -- release, adoption, AND an ordinary merge-window weekday -- independent of footprint (owner decision, #1187 comment 5800369031)", () => {
+  const releaseDayResult = evaluateReleaseCalendarGate({ calendar: CALENDAR, now: new Date(Date.UTC(2026, 0, 3, 20, 0, 0)), labels: ["release:out-of-band"], footprintVerified: false });
   assert.equal(releaseDayResult.status, "pass");
-  const adoptionDayResult = evaluateReleaseCalendarGate({ calendar: CALENDAR, now: new Date(Date.UTC(2026, 0, 4, 20, 0, 0)), labels: ["release:out-of-band"], changedFiles: [] });
+  const adoptionDayResult = evaluateReleaseCalendarGate({ calendar: CALENDAR, now: new Date(Date.UTC(2026, 0, 4, 20, 0, 0)), labels: ["release:out-of-band"], footprintVerified: false });
   assert.equal(adoptionDayResult.status, "pass");
-  const wednesdayResult = evaluateReleaseCalendarGate({ calendar: CALENDAR, now: new Date(Date.UTC(2026, 0, 7, 20, 0, 0)), labels: ["release:out-of-band"], changedFiles: [{ path: "packages/controller/src/index.ts", status: "modified" }] });
+  const wednesdayResult = evaluateReleaseCalendarGate({ calendar: CALENDAR, now: new Date(Date.UTC(2026, 0, 7, 20, 0, 0)), labels: ["release:out-of-band"], footprintVerified: false });
   assert.equal(wednesdayResult.status, "pass");
   assert.equal(wednesdayResult.dayType, "merge-window"); // passes here regardless of the label -- the merge window is already open to everyone
 });
 
 test("evaluateReleaseCalendarGate: fails an ordinary PR on adoption day (Sunday) too", () => {
-  const result = evaluateReleaseCalendarGate({ calendar: CALENDAR, now: new Date(Date.UTC(2026, 0, 4, 20, 0, 0)), labels: [], changedFiles: [] });
+  const result = evaluateReleaseCalendarGate({ calendar: CALENDAR, now: new Date(Date.UTC(2026, 0, 4, 20, 0, 0)), labels: [], footprintVerified: false });
   assert.equal(result.status, "fail");
   assert.equal(result.dayType, "adoption");
 });
 
-// --- shouldOpenReleasePr: idempotent day-type + no-open-PR guard, replacing the old exact-hour DST window ---
+// --- shouldOpenReleasePr: idempotent day-type + "a release is already in progress" guard, replacing the old exact-hour DST window ---
 
-test("shouldOpenReleasePr: true any time during Saturday (calendar timezone) when no release PR is already open", () => {
+test("shouldOpenReleasePr: true any time during Saturday (calendar timezone) when no release is already in progress", () => {
   const earlySaturday = new Date(Date.UTC(2026, 0, 3, 8, 0, 0)); // 2026-01-03 00:00 PST
   const lateSaturday = new Date(Date.UTC(2026, 0, 4, 6, 0, 0)); // 2026-01-03 22:00 PST -- well past any old "midnight window"
-  assert.equal(shouldOpenReleasePr({ now: earlySaturday, calendar: CALENDAR, hasOpenReleasePr: false }), true);
-  assert.equal(shouldOpenReleasePr({ now: lateSaturday, calendar: CALENDAR, hasOpenReleasePr: false }), true);
+  assert.equal(shouldOpenReleasePr({ now: earlySaturday, calendar: CALENDAR, hasReleaseInProgress: false }), true);
+  assert.equal(shouldOpenReleasePr({ now: lateSaturday, calendar: CALENDAR, hasReleaseInProgress: false }), true);
 });
 
-test("shouldOpenReleasePr: idempotent -- a second (or delayed, or repeated) firing the same Saturday is a no-op once a release PR is already open", () => {
+test("shouldOpenReleasePr: idempotent -- a second (or delayed, or repeated) firing the same Saturday is a no-op once a release is already in progress", () => {
   const saturday = new Date(Date.UTC(2026, 0, 3, 20, 0, 0));
-  assert.equal(shouldOpenReleasePr({ now: saturday, calendar: CALENDAR, hasOpenReleasePr: false }), true);
+  assert.equal(shouldOpenReleasePr({ now: saturday, calendar: CALENDAR, hasReleaseInProgress: false }), true);
   // Simulates the workflow's own cron firing again later the same day, or a second concurrent run,
   // after the first run's PR is already open: this MUST be false, not a duplicate PR.
-  assert.equal(shouldOpenReleasePr({ now: saturday, calendar: CALENDAR, hasOpenReleasePr: true }), false);
+  assert.equal(shouldOpenReleasePr({ now: saturday, calendar: CALENDAR, hasReleaseInProgress: true }), false);
 });
 
-test("shouldOpenReleasePr: false on any non-Saturday day, regardless of open-PR state", () => {
+test("shouldOpenReleasePr: a pushed-but-not-yet-opened release branch (no PR open yet) still counts as in progress -- the caller folds both signals into one boolean", () => {
+  // This function has no opinion on WHICH signal (an open PR vs. a pushed-but-unopened
+  // branch) produced `hasReleaseInProgress: true` -- it only needs "something is already
+  // in flight this week" to refuse a second run. See this function's own header for why
+  // "an open PR exists" alone is not a sufficient dedupe signal since #1316 item 6 moved
+  // PR creation out of this same automated job.
+  const saturday = new Date(Date.UTC(2026, 0, 3, 20, 0, 0));
+  assert.equal(shouldOpenReleasePr({ now: saturday, calendar: CALENDAR, hasReleaseInProgress: true }), false);
+});
+
+test("shouldOpenReleasePr: false on any non-Saturday day, regardless of in-progress state", () => {
   const sunday = new Date(Date.UTC(2026, 0, 4, 20, 0, 0));
   const wednesday = new Date(Date.UTC(2026, 0, 7, 20, 0, 0));
-  assert.equal(shouldOpenReleasePr({ now: sunday, calendar: CALENDAR, hasOpenReleasePr: false }), false);
-  assert.equal(shouldOpenReleasePr({ now: wednesday, calendar: CALENDAR, hasOpenReleasePr: false }), false);
+  assert.equal(shouldOpenReleasePr({ now: sunday, calendar: CALENDAR, hasReleaseInProgress: false }), false);
+  assert.equal(shouldOpenReleasePr({ now: wednesday, calendar: CALENDAR, hasReleaseInProgress: false }), false);
 });

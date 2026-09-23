@@ -19,9 +19,10 @@ name: Release PR
 # release PR is what Saturday -- release day -- is for: it is the ONLY
 # pull request .github/workflows/release-calendar.yml admits on a Saturday
 # -- proven by BOTH the "release:weekly" label this workflow applies AND a
-# release-PR-shaped diff (scripts/lib/release-calendar.mjs's
-# isReleasePrFootprint() -- see that module's own header for why a branch
-# name alone is deliberately not enough) -- and it is expected to merge
+# STRUCTURALLY VERIFIED release-PR-shaped diff (content, not just paths --
+# scripts/check-release-calendar.mjs, via scripts/lib/release-pr-
+# footprint.mjs -- see that module's own header for why a branch name or a
+# bare path list is deliberately not enough) -- and it is expected to merge
 # same-day so Sunday's consumer adoption has something to adopt. Monday
 # starts the next merge window fresh. The owner explicitly kept plain
 # semver bump levels rather than a clock-driven version scheme (see
@@ -55,17 +56,22 @@ name: Release PR
 # workflow_dispatch is an explicit, deliberate "run one now" action and
 # always proceeds regardless of day. The guard asks two things, both
 # resolved fresh on every run: is it release day (Saturday) in the
-# calendar's timezone, and is a release PR (labelled "release:weekly")
-# already open? scripts/lib/release-calendar.mjs's shouldOpenReleasePr()
+# calendar's timezone, and is a release already IN PROGRESS -- either an
+# open `release:weekly` pull request, OR a pushed `claude/release-*`
+# branch with no PR opened for it yet (a real, ordinary state since #1316
+# item 6 moved PR creation to an owner-authenticated actor -- see "Compute,
+# validate, and push the release commit" below; a dedupe that only checked
+# for an open PR would treat that window as "nothing in progress" and push
+# a second branch). scripts/lib/release-calendar.mjs's shouldOpenReleasePr()
 # is the pure "yes/no" on top of both facts -- see that module's own header
 # for why this replaced an earlier exact-hour, DST-aware tolerance window:
 # a delayed run (a busy runner queue, a temporary Actions outage) now still
-# opens that week's release PR as long as it is still Saturday when it
-# finally runs, and a repeated or double-triggered run is a safe no-op
-# once the first run's PR is open, rather than either missing its window
-# or opening a duplicate. The cron below can therefore simply run daily; on
-# six of seven days the guard's own "not release day" answer makes the rest
-# of this job a cheap no-op.
+# proceeds as long as it is still Saturday when it finally runs, and a
+# repeated or double-triggered run is a safe no-op once a release is
+# already in progress, rather than either missing its window or opening a
+# duplicate. The cron below can therefore simply run daily; on six of seven
+# days the guard's own "not release day" answer makes the rest of this job
+# a cheap no-op.
 #
 # WHY THIS NEEDS NO CREDENTIAL-FREE CARE THE WAY qualify-candidate.yml DOES
 # -----------------------------------------------------------------------
@@ -121,7 +127,7 @@ jobs:
       # what it checks and why it replaced an exact-hour DST window. Never
       # fails the job: "not proceeding today" is an entirely ordinary
       # outcome on six of seven days.
-      - name: Only proceed on release day with no release PR already open
+      - name: Only proceed on release day with no release already in progress
         id: gate
         if: github.event_name == 'schedule'
         env:
@@ -129,15 +135,28 @@ jobs:
         run: |
           set -euo pipefail
           open_count="$(gh pr list --repo "$GITHUB_REPOSITORY" --label "release:weekly" --state open --json number --jq 'length')"
-          proceed="$(OPEN_COUNT="$open_count" node --input-type=module -e '
+          # A release is "in progress" from the moment this job PUSHES the
+          # release branch, not from the moment its PR is opened -- since
+          # #1316 item 6 moved PR creation to an owner-authenticated actor
+          # (see "Compute, validate, and push the release commit" below),
+          # there is a real window where the branch exists and no PR is
+          # open for it yet. Checking open PRs alone would read that window
+          # as "nothing in progress" and push a SECOND release branch the
+          # very next day. `claude/release-*` is this workflow's own
+          # branch-naming convention (informational, not a trust boundary
+          # -- see scripts/lib/release-calendar.mjs's header for why this
+          # naming is never used to PROVE anything, only to ask "does one
+          # already exist").
+          branch_count="$(git ls-remote --heads origin 'claude/release-*' | wc -l | tr -d ' ')"
+          proceed="$(OPEN_COUNT="$open_count" BRANCH_COUNT="$branch_count" node --input-type=module -e '
             import { loadReleaseCalendar, shouldOpenReleasePr } from "./scripts/lib/release-calendar.mjs";
             const calendar = loadReleaseCalendar(process.cwd());
-            const hasOpenReleasePr = Number(process.env.OPEN_COUNT) > 0;
-            console.log(shouldOpenReleasePr({ now: new Date(), calendar, hasOpenReleasePr }));
+            const hasReleaseInProgress = Number(process.env.OPEN_COUNT) > 0 || Number(process.env.BRANCH_COUNT) > 0;
+            console.log(shouldOpenReleasePr({ now: new Date(), calendar, hasReleaseInProgress }));
           ')"
           echo "proceed=$proceed" >> "$GITHUB_OUTPUT"
           if [ "$proceed" != "true" ]; then
-            echo "Not proceeding today: release day is Saturday, calendar timezone America/Los_Angeles (governance/release-calendar.json); currently open release:weekly PR(s): $open_count."
+            echo "Not proceeding today: release day is Saturday, calendar timezone America/Los_Angeles (governance/release-calendar.json); currently open release:weekly PR(s): $open_count; pushed claude/release-* branch(es): $branch_count."
           fi
 
       # Refuses (exit 2) rather than run against a malformed changeset, and
