@@ -9,6 +9,7 @@ import {
   isExpiredOpenDecision,
   isRelaxationPastSunset,
   validateDecisionRecords,
+  CHANNELS,
 } from "./check-decision-records.mjs";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
@@ -178,4 +179,54 @@ test("every backfilled record under governance/decisions/ is currently valid", (
 
   const results = validateDecisionRecords(entries, new Date());
   assert.deepEqual(results, {}, `unexpected findings in committed decision records: ${JSON.stringify(results, null, 2)}`);
+});
+
+test("channel is optional -- a record with no channel field at all (every pre-existing record) has no findings (escalation rule, item 6)", () => {
+  assert.equal("channel" in baseRecord(), false, "the fixture itself must not set channel, to exercise the absent-field case");
+  assert.deepEqual(validateDecisionRecordShape(baseRecord({ tier: "tier-2" }), "example-decision"), []);
+});
+
+test("channel must be one of CHANNELS when present", () => {
+  // tier-1, not tier-2 + decided + owner, so every CHANNELS value
+  // (including "github-comment") is accepted here -- the github-comment
+  // restriction is scoped narrowly and tested separately below.
+  for (const value of CHANNELS) {
+    assert.deepEqual(validateDecisionRecordShape(baseRecord({ tier: "tier-1", channel: value }), "example-decision"), []);
+  }
+  const findings = validateDecisionRecordShape(baseRecord({ channel: "slack-dm" }), "example-decision");
+  assert.ok(findings.some((f) => f.includes("channel must be one of")), `expected a channel finding, got ${JSON.stringify(findings)}`);
+});
+
+test('MUST REFUSE: channel "github-comment" can never satisfy decidedBy "owner" on a decided tier-2 record (escalation rule, item 6)', () => {
+  const findings = validateDecisionRecordShape(
+    baseRecord({ tier: "tier-2", status: "decided", decidedBy: "owner", channel: "github-comment" }),
+    "example-decision",
+  );
+  assert.ok(
+    findings.some((f) => f.includes('channel "github-comment" can never satisfy decidedBy "owner"')),
+    `expected the github-comment/tier-2/owner finding, got ${JSON.stringify(findings)}`,
+  );
+});
+
+test("channel: github-comment is NOT rejected outside the exact tier-2 + decided + owner combination", () => {
+  // tier-1, otherwise identical: not a live tier-2 authorization, so the
+  // github-comment restriction does not apply.
+  assert.deepEqual(
+    validateDecisionRecordShape(baseRecord({ tier: "tier-1", status: "decided", decidedBy: "owner", channel: "github-comment" }), "example-decision"),
+    [],
+  );
+  // tier-2, but decidedBy: "consensus", not "owner": the restriction is
+  // specifically about OWNER intent being unforgeable, not consensus records.
+  assert.deepEqual(
+    validateDecisionRecordShape(baseRecord({ tier: "tier-2", status: "decided", decidedBy: "consensus", channel: "github-comment" }), "example-decision"),
+    [],
+  );
+  // tier-2, owner, but still "open" (not yet a live authorization).
+  assert.deepEqual(
+    validateDecisionRecordShape(
+      { ...baseRecord({ tier: "tier-2", channel: "github-comment" }), status: "open", decidedBy: undefined, decision: undefined, expiry: "2099-01-01T00:00:00Z" },
+      "example-decision",
+    ),
+    [],
+  );
 });

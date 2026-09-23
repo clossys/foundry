@@ -29,10 +29,143 @@ full tier verdict for every pull request it evaluates, but does not block a
 merge unless `governance/review-tiers.json`'s `"enforcement"` field is
 `"enforce"`.
 
+## Escalation rule (owner-ratified 2026-09-23)
+
+The rule below **supersedes** the informal decision-tier prose this
+document opened with through round 6 (kept, unchanged, as "The three tiers"
+further down, since it is what the CODE in this slice actually classifies
+today — see "What this rule changes about the code, and what it does not"
+at the end of this section for the gap between the two). The coordinator
+presented it for ratification in the coordinator chat on 2026-09-23 at
+approximately 14:35 PDT ("Final rule for your ratification … Recommendation:
+ratify"), and the owner replied "go".
+[`governance/decisions/hitl-escalation-rule.json`](../governance/decisions/hitl-escalation-rule.json)
+is the durable, append-only record of that ratification — `channel:
+"owner-chat", not independently verifiable`, per the rule's own item 6,
+applied reflexively to its own adoption. What follows is reproduced from
+that record without addition or weakening; if this prose and that record
+ever disagree, the record is the source of truth (item 7 below: "agents
+propose, only the owner ratifies").
+
+1. **Owner-approve-first (blocking)** applies when any of these hold:
+   1. irreversible effects, or public text that speaks for or commits the
+      owner. That means publish, delete, money, credentials, workflow
+      secrets or permissions, announcements, commitments to third parties,
+      release notes, and messages to people. Routine safety-gated PR and
+      issue comments by agents are NOT this category.
+   2. authority changes: who decides what, a gate switching to enforce,
+      tier definitions, the model allowlist, this rule. Judge them on the
+      cumulative change since the owner last approved that gate. An
+      enforce ask must include measured report-only results (false
+      positives and misses).
+   3. changes to standing owner settings: cadence, thresholds, risk
+      appetite, budgets. One-off choices inside an existing setting belong
+      to the agents.
+   4. value disagreements, or no convergence after 3 rounds. For severity
+      disagreements, take the stricter view and fix; don't escalate.
+   5. anything the owner has reserved. The owner can also explicitly
+      release an area back to the agents.
+
+   Asks carry a recommendation, a default and a deadline, and are batched
+   to the Friday cut-off unless urgent. Before asking, apply the
+   ask-quality test: what would the agents do differently if the owner
+   said no?
+2. **Consensus + notify**: only for changes a single revert fully
+   restores, with nothing external happening in between. Two reviews,
+   then a decision-log entry. The digest holds at most 5 items, ranked by
+   risk, each with its revert. If the owner vetoes nothing for 8 weeks,
+   shrink the notify scope.
+3. **Two independent reviews** for everything else. For governance,
+   security and gate work: both reviewers strong-reasoning class,
+   verdicts formed blind (before reading the other's), and a fresh final
+   reviewer with no history on the PR. Record model diversity.
+4. **Autonomous**: tier-0 paths, logged.
+5. **Tier assignment is mechanical**, by path rules. A reviewer may raise
+   a tier, never lower it. When in doubt, the higher tier applies. The
+   coordinator doesn't pick its own tier.
+6. **Owner decisions are recorded only from channels agents can't write
+   to**: owner chat now, commits signed with an owner-only hardware key
+   later. A GitHub comment under the shared identity is never proof of
+   owner intent. Chat-sourced records say `"channel: owner-chat, not
+   independently verifiable"`.
+7. **Changing this rule**: agents propose, only the owner ratifies (chat,
+   or later a signed commit). The rule file and the deny hook are
+   write-protected from agents in the deny hook (see "User-level deny
+   hook" below). Consensus + notify NEVER applies to changes to this
+   rule. Interpretations and classification precedents count as rule
+   changes.
+8. **Owner pushback changes a tier only through an explicit reservation
+   or release.** Agents defend their classification with reasons.
+
+### What this rule changes about the code, and what it does not
+
+**Report-only mechanics are unchanged.** This ratification is a policy
+document and a decision record; it does not touch `scripts/land-stack.mjs`,
+`governance/review-tiers.json`'s classification logic, or the report-only
+default described below.
+
+The code in this slice implements a NARROWER slice of the rule above, not
+all eight items:
+
+- **Item 3 (two independent reviews)** is what `scripts/land-stack.mjs`'s
+  tier-1 gate (`evaluateTier1Independence`) actually enforces today —
+  minus the blind-verdict, fresh-final-reviewer, and model-diversity-record
+  requirements the ratified rule adds. Nothing in this codebase currently
+  checks whether a reviewer read the other's verdict first, requires a
+  THIRD, previously-uninvolved reviewer, or records model diversity as a
+  structured field. Tracked in #1350 (see "Before switching to enforce"
+  below).
+- **Item 4 (autonomous, tier-0, logged)** matches the code's own tier-0
+  fast path (`runStatus` skips review-evidence reads entirely for a
+  tier-0 classification — see "Where each tier is enforced" below), though
+  "logged" here means only that `land-stack.mjs --status`'s own JSON output
+  reports the tier, not a durable log of every tier-0 action taken.
+- **Item 1's owner-approve-first (blocking)** partially maps to the
+  existing tier-2 owner-decision-record requirement
+  (`evaluateTier2Decision`), but the code's tier-2 classification is
+  PATH-based (`governance/review-tiers.json`'s `tier2.globs`), not a
+  case-by-case judgment against the rule's five sub-categories (a)-(e).
+  A path landing in `tier2.globs` is treated as owner-approve-first; a
+  change that the RULE would put in category (a)-(e) but that touches no
+  `tier2.globs` path is not currently caught by any code in this
+  repository at all.
+- **Item 2 (consensus + notify)** has NO code implementation in this
+  slice. There is no digest, no revert-tracking, and no 8-week-shrink
+  logic anywhere in `scripts/land-stack.mjs` or elsewhere in this
+  repository. This is a genuinely new category the rule introduces beyond
+  the original tier-0/1/2 model "The three tiers" below describes; adding
+  it is future work, not claimed as done here.
+- **Item 5 (mechanical tier assignment, raise-only)** matches
+  `classifyTier`'s union-over-paths, max-over-tiers design (a change
+  spread across many files never classifies below what one file alone
+  would demand — see "The three tiers" below) in spirit, but the code has
+  no notion of "a reviewer raising a tier" as a distinct action from the
+  mechanical classification itself.
+- **Items 6 and 7 (channel-sourcing, rule amendment lock)** are
+  implemented for the DECISION-RECORD schema in this same pull request —
+  see `docs/contracts/decision-record.json`'s `channel` field and
+  `scripts/check-decision-records.mjs`'s validation — but nothing in
+  `scripts/land-stack.mjs` currently verifies that a change to THIS FILE,
+  or to the deny-hook example, was actually owner-ratified; that
+  verification, beyond the deny-hook's own text-level self-protection (see
+  "User-level deny hook" below), is honour system, the same as every
+  other self-declared field in this design (see "Honour-system limits"
+  below).
+- **Item 8 (owner pushback via reservation/release only)** has no
+  structured "reservation" or "release" artifact in this repository yet —
+  today an owner reservation or release would itself need to become a new
+  decision record (or an edit to this rule's own record, which item 7
+  reserves to ratification) to be durable.
+
 ## The three tiers
 
-The decision-tier rule (#1187 comment 5800142871) defines three tiers of
-agent decision:
+**This is the CODE-LEVEL classification `scripts/land-stack.mjs` actually
+enforces today** (kept, unchanged, from before the ratified "Escalation
+rule" above existed) — not a restatement of the ratified rule itself. The
+decision-tier rule (#1187 comment 5800142871) it derives from predates
+ratification; see "What this rule changes about the code, and what it does
+not" at the end of the Escalation rule section above for exactly how the
+two relate. It defines three tiers of agent decision:
 
 - **Tier 0 — act autonomously.** Reversible, inside established rules,
   verified by gates: ordinary code in author lanes, reviews, merges under the
@@ -715,7 +848,55 @@ its own, until the comment carrying it is edited to the full SHA or
 deleted — fail-closed, and harmless under report-only, but worth knowing
 before relying on `"enforce"`.
 
-Filed as a single tracking issue listing all four items (searched for
+The four items below are new: gaps between the owner-ratified "Escalation
+rule" above and what `scripts/land-stack.mjs` actually enforces today
+(see that section's own "What this rule changes about the code, and what
+it does not" for the full mapping). None of them is a bug in the code
+that exists — they are refinements the ratified rule ADDS on top of the
+original decision-tier rule, not yet implemented, so there is nothing to
+"fix" before enforce so much as something to BUILD. Listed here because
+the same principle applies: shipping `"enforce"` on the existing tier-1
+gate should not be read as also having shipped these.
+
+5. **The fresh-final-reviewer requirement (rule item 3) is not
+   implemented.** "For governance, security and gate work: … a fresh
+   final reviewer with no history on the PR." Nothing in
+   `scripts/land-stack.mjs` tracks which reviewer instances have already
+   posted on a given pull request, so nothing could enforce "fresh" even
+   in principle today — `evaluateTier1Independence` only checks that the
+   two independent records differ from each other and from the author, not
+   that either is new to the thread. **Needs before enforce, for
+   governance/security/gate paths specifically:** a way to identify
+   reviewer history on a PR (likely a third, distinct `role` or a
+   `historyOnPr` field on the review record) and a rule that refuses a
+   qualifying pair whose "final" record has posted before.
+6. **Blind verdicts (rule item 3) are not implemented or checkable.**
+   "verdicts formed blind (before reading the other's)" describes a
+   PROCESS constraint on how a reviewing session forms its opinion, not a
+   fact the review record's own JSON shape can carry or that
+   `land-stack.mjs` could verify after the fact from GitHub's API alone —
+   there is no timestamp-of-first-read a comment records. **Needs a
+   design before enforce**: most likely an honour-system field
+   (`blindVerdict: true`, self-declared, the same class of self-declared
+   field `docs/contracts/decision-record.json`'s own `relaxesGateOrPolicy`
+   note already discusses) rather than a mechanically-verifiable one,
+   documented as such rather than implied to be checked.
+7. **The consensus + notify digest cap of 5 items, ranked by risk, is not
+   implemented.** Rule item 2 introduces an entire category
+   ("Consensus + notify: only for changes a single revert fully
+   restores … Two reviews, then a decision-log entry. The digest holds at
+   most 5 items, ranked by risk, each with its revert.") with NO code
+   anywhere in this repository — no digest artifact, no revert-tracking,
+   no risk-ranking. **Needs before enforce (or before this category is
+   used at all):** the whole consensus + notify mechanism is new work, not
+   a fix to something existing; scope it as its own slice.
+8. **The 8-week notify-scope shrink (rule item 2) is not implemented.**
+   "If the owner vetoes nothing for 8 weeks, shrink the notify scope."
+   Depends entirely on item 7 existing first (there is no notify scope to
+   shrink without a digest), so this is downstream of that work, not a
+   separate gap to close independently.
+
+Filed as a single tracking issue listing all eight items (searched for
 duplicates first, none found): issue
 [#1350](https://github.com/clossys/foundry/issues/1350).
 
@@ -936,6 +1117,25 @@ It blocks, tested directly against each pattern:
 - `git push origin +main` (or any `+refspec` force-push shorthand)
 - `git push --delete <branch>` or `git push origin :<branch>` (including a
   branch name containing a slash, such as `claude/foo`)
+- A direct shell overwrite of
+  `governance/decisions/hitl-escalation-rule.json` — the escalation rule's
+  own append-only decision record (redirection with `>`/`>>`, `sed -i`,
+  `truncate`, or `rm`/`git rm`) — added per the ratified rule's own item 7,
+  "The rule file … [is] write-protected from agents in the deny hook."
+  This is a SEATBELT ON TOP OF, not a replacement for, the immutability
+  `scripts/land-stack.mjs`'s `evaluateChangedDecisionRecords` already
+  enforces through the normal PR flow (a `"decided"` record's content can
+  never change in place, only be superseded by a new record) — this
+  pattern instead blocks the SHELL-LEVEL bypass of that flow entirely: a
+  direct, out-of-band overwrite that never goes through a commit a
+  reviewer would see as a diff against history.
+- A direct shell overwrite of this hook's own installed script (matched
+  loosely, by any path ending `deny-tier2.mjs`, since the owner may
+  install it under a different directory than the example below) —
+  redirection, `sed -i`, `truncate`, or `rm` — added per the same rule
+  item: "and the deny hook are write-protected from agents in the deny
+  hook." A session cannot defang its own seatbelt by editing the file
+  that implements it.
 
 It does **not** block, and an owner relying on it should know this:
 
@@ -953,6 +1153,17 @@ It does **not** block, and an owner relying on it should know this:
   (see "Where each tier is enforced" above).
 - Anything typed directly into a terminal outside a Claude Code session, or
   run by a different agent or human entirely.
+- **The two new write-protection patterns above are Bash-only, like every
+  other pattern in this hook: they do not block Claude Code's own Edit or
+  Write tool**, which is how an ordinary, PR-reviewed change to either
+  file (including the one that adds this very rule) is actually made, and
+  does not shell out to a command this hook's `matcher: "Bash"` ever sees.
+  This is intentional, not a gap the hook fails to close: the NORMAL path
+  for changing either file is a commit a reviewer sees as a diff against
+  history, going through the same tier-1/tier-2 gate as everything else —
+  what these two patterns block is the SHELL-LEVEL shortcut that skips
+  that entirely, not editing through the tool a legitimate change already
+  uses.
 
 ### Example hook body
 
@@ -993,6 +1204,17 @@ const DENY_PATTERNS = [
   /\bgit\s+push\b[^\n]*\s\+\S+/,
   // "--delete <branch>", or ":branch" (including a slash-named branch).
   /\bgit\s+push\b[^\n]*(--delete\b|\s:\S+)/i,
+  // Write-protection for the ratified escalation rule's own decision
+  // record and for this hook's own installed script (the ratified rule's
+  // item 7: both are "write-protected from agents in the deny hook").
+  // Shell-level redirection/truncation/removal only -- the Edit/Write
+  // tool's own, PR-reviewed path to changing either file is untouched by
+  // a Bash-matched hook; see docs/HITL.md's "What it does and does not
+  // block" for why that split is intentional.
+  /(>>?|\bsed\s+-i\b|\btruncate\b|\brm\b|\bgit\s+rm\b)[^\n]*\bgovernance\/decisions\/hitl-escalation-rule\.json\b/i,
+  /\bgovernance\/decisions\/hitl-escalation-rule\.json\b[^\n]*(>>?|\bsed\s+-i\b)/i,
+  /(>>?|\bsed\s+-i\b|\btruncate\b|\brm\b|\bgit\s+rm\b)[^\n]*\bdeny-tier2\.mjs\b/i,
+  /\bdeny-tier2\.mjs\b[^\n]*(>>?|\bsed\s+-i\b)/i,
 ];
 
 let input = "";
@@ -1051,8 +1273,10 @@ process.stdin.on("end", () => {
    repository. It should be blocked before the command executes, with the
    reason printed above. Also try `git push origin :some/branch`, `gh repo
    edit --description x`, `gh api repos/OWNER/REPO/branches/claude/foo/protection`,
-   and `gh api -X DELETE repos/OWNER/REPO/git/refs/heads/claude/foo` to
-   confirm the slash-branch, repo-edit, and refs-DELETE cases all block.
+   `gh api -X DELETE repos/OWNER/REPO/git/refs/heads/claude/foo`, `echo x >
+   governance/decisions/hitl-escalation-rule.json`, and `sed -i s/x/y/
+   ~/.claude/hooks/deny-tier2.mjs` to confirm the slash-branch, repo-edit,
+   refs-DELETE, and the two new write-protection cases all block.
 
 If you already have other `PreToolUse` hooks configured, add this as an
 additional entry under the same `matcher` rather than replacing what is

@@ -34,6 +34,17 @@ export const STATUSES = Object.freeze(["open", "decided", "expired"]);
 export const DECIDED_BY_VALUES = Object.freeze(["owner", "consensus"]);
 export const REVIEW_VERDICTS = Object.freeze(["approve", "reject", "changes"]);
 export const REVIEW_ROLES = Object.freeze(["author", "primary", "secondary", "owner"]);
+/**
+ * Where a `decidedBy` claim can be checked, per the owner-ratified
+ * escalation rule (docs/HITL.md's "Escalation rule", item 6): `"owner-chat"`
+ * (a channel no agent can write to, not independently verifiable by anyone
+ * reading the git tree) and `"signed-commit"` (a future, hardware-key-signed
+ * commit, also not agent-writable) are both channels an agent cannot forge;
+ * `"github-comment"` is a channel every session in this repository can post
+ * to under the SAME shared account, so it is never, by itself, proof of
+ * owner intent -- see the tier-2 rule this field feeds below.
+ */
+export const CHANNELS = Object.freeze(["owner-chat", "signed-commit", "github-comment"]);
 
 const KNOWN_FIELDS = Object.freeze([
   "schemaVersion",
@@ -45,6 +56,7 @@ const KNOWN_FIELDS = Object.freeze([
   "reviews",
   "status",
   "decidedBy",
+  "channel",
   "decision",
   "relaxesGateOrPolicy",
   "sunset",
@@ -126,6 +138,28 @@ export function validateDecisionRecordShape(record, idFromFilename) {
   } else {
     if (record.decidedBy !== null && record.decidedBy !== undefined && !DECIDED_BY_VALUES.includes(record.decidedBy)) {
       findings.push(`decidedBy must be one of ${DECIDED_BY_VALUES.join(", ")} or null/absent when status is not "decided"`);
+    }
+  }
+
+  // `channel` is OPTIONAL, not required (#1187 escalation rule, item 6):
+  // this field is new, and requiring it retroactively on every existing
+  // owner-decided record would force backfilling records this rule was
+  // never meant to reach back and invalidate. When present it must be one
+  // of `CHANNELS`; a github-comment channel is a specific, hard
+  // disqualifier for exactly the case it exists to prevent -- a decided,
+  // owner-decided TIER-2 record (the shape `evaluateTier2Decision` in
+  // scripts/land-stack.mjs treats as live authorization) whose owner
+  // decision is sourced from a channel every session shares write access
+  // to. A record with NO `channel` field at all (every record predating
+  // this rule) is left alone; only an EXPLICIT `channel: "github-comment"`
+  // on a live tier-2 owner authorization is rejected.
+  if (record.channel !== undefined) {
+    if (!CHANNELS.includes(record.channel)) {
+      findings.push(`channel must be one of ${CHANNELS.join(", ")} when present, got ${JSON.stringify(record.channel)}`);
+    } else if (record.tier === "tier-2" && record.status === "decided" && record.decidedBy === "owner" && record.channel === "github-comment") {
+      findings.push(
+        'channel "github-comment" can never satisfy decidedBy "owner" for a tier-2 record -- a GitHub comment under the shared agent identity is never proof of owner intent (docs/HITL.md\'s "Escalation rule", item 6); source it from owner-chat or a signed-commit instead',
+      );
     }
   }
 
