@@ -224,3 +224,4 @@ Node 20+. ESM only. No runtime dependencies.
 ## Licence
 
 MIT
+
