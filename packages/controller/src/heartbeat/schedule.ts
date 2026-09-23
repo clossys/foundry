@@ -41,7 +41,7 @@ export function controllerHeartbeatSchedule(scope: readonly string[]): ScheduleD
   });
 }
 
-/** Validates a `controllerHeartbeatSchedule` declaration against a plane's own registry -- a thin, named call to the existing schedule-tier validator so a caller never re-derives this by hand. */
+/** Validates a `controllerHeartbeatSchedule` declaration against a plane's own registry -- a thin, named call to the existing schedule tier's own validator so a caller never re-derives this by hand. */
 export function validateHeartbeatSchedule(declaration: ScheduleDeclaration, registry: ScheduleRegistry): readonly Finding[] {
   return validateScheduleDeclaration(declaration, registry);
 }

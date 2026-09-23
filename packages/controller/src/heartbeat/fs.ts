@@ -3,7 +3,8 @@
  * `clossys/<role>/loop.json` under a repository root, validates each one
  * with `../loop/state.js`'s `isValidLoopState` (skipping and reporting an
  * unreadable/invalid file as a finding rather than throwing), and can
- * write the rendered digest to `clossys/.state/decisions-waiting-for-you.md`.
+ * write the rendered digest to a `decisions-waiting-for-you.md` file
+ * under the installing repository's own `clossys/.state/` directory.
  * Split into a read-only compute step and a separate write step so a
  * caller (`./cli.js`) can run in report mode -- compute, but never touch
  * disk -- by simply not calling the write half.
@@ -73,7 +74,7 @@ export function computeHeartbeatForRepo(repoRoot: string, now: Date = new Date()
 
 export const DIGEST_PATH = "clossys/.state/decisions-waiting-for-you.md";
 
-/** Writes the rendered digest to `clossys/.state/decisions-waiting-for-you.md` under `repoRoot`, creating the directory if needed. Returns the repository-relative path written. */
+/** Writes the rendered digest to a `decisions-waiting-for-you.md` file under `repoRoot`'s own `clossys/.state/` directory, creating it if needed. Returns the repository-relative path written. */
 export function writeHeartbeatDigest(repoRoot: string, digest: HeartbeatDigest, now: Date = new Date()): string {
   const outPath = join(repoRoot, DIGEST_PATH);
   mkdirSync(join(repoRoot, "clossys", ".state"), { recursive: true });

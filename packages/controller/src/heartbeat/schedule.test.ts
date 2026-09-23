@@ -21,7 +21,7 @@ describe("controllerHeartbeatSchedule", () => {
   });
 
   it("validateHeartbeatSchedule surfaces a scope the registry does not govern", () => {
-    const declaration = controllerHeartbeatSchedule(["some-other-repo"]);
+    const declaration = controllerHeartbeatSchedule(["an-unlisted-repository"]);
     const findings = validateHeartbeatSchedule(declaration, REGISTRY);
     expect(findings.some((finding) => finding.rule === "schedule/scope-outside-plane")).toBe(true);
   });

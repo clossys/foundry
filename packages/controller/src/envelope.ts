@@ -1,7 +1,9 @@
 /**
- * The shared check-output-envelope (`docs/contracts/check-output-envelope.json`,
- * issue #1174): one JSON report shape for every check command's report,
- * across every role. The contract itself shipped in Stage A (#1190/#1237)
+ * The shared check-output-envelope (the repository contract
+ * `docs/contracts/check-output-envelope.json`, which does not ship with
+ * this package; issue #1174): one JSON report shape for every check
+ * command's report, across every role. The contract itself shipped in
+ * Stage A (#1190/#1237)
  * with its own header noting "no package emits this envelope yet" --
  * `#1224`'s schema-version check (`./migrate/cli.js`) and `#1221`'s
  * heartbeat check (`./heartbeat/cli.js`) are the first real emitters, and
@@ -31,7 +33,7 @@ export interface CheckMetric {
   readonly direction: "increase" | "decrease" | "maintain" | "target-range";
 }
 
-/** One check command's JSON report, exactly as `docs/contracts/check-output-envelope.json` shapes it. */
+/** One check command's JSON report, exactly as the repository contract documented above shapes it. */
 export interface CheckOutputEnvelope {
   readonly package: string;
   readonly version: string;

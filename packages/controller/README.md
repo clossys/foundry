@@ -300,7 +300,8 @@ no `1`: a report is rendered or it is not).
 
 ### The shared check-output-envelope (issue #1174)
 
-`docs/contracts/check-output-envelope.json` is one JSON report shape for
+The repository contract `docs/contracts/check-output-envelope.json`,
+which does not ship with this package, is one JSON report shape for
 every check command's report, across every role -- shipped in Stage A with
 no real emitter yet. `buildCheckOutputEnvelope(options)` is the first one:
 it builds a `CheckOutputEnvelope` (`package`, `version`, `verdict`,
@@ -384,9 +385,10 @@ repository root into a `LoadedLoopStates` map, validating each with
 `computeHeartbeatForRepo(repoRoot, now?)` composes that read with
 `computeHeartbeat` into one `HeartbeatRunResult`, and
 `writeHeartbeatDigest(repoRoot, digest, now?)` renders it to
-`HEARTBEAT_DIGEST_PATH` (`clossys/.state/decisions-waiting-for-you.md`) --
-kept as a separate write step so a caller can run in report mode by simply
-not calling it. The installed `foundry-heartbeat [repoRoot] [--write]`
+`HEARTBEAT_DIGEST_PATH` -- a `decisions-waiting-for-you.md` file under the
+installing repository's own `clossys/.state/` directory -- kept as a
+separate write step so a caller can run in report mode by simply not
+calling it. The installed `foundry-heartbeat [repoRoot] [--write]`
 executable is the CLI form: report mode by default, `--write` also renders
 the digest file, emitting one `CheckOutputEnvelope` -- `satisfied` whenever
 the digest computed successfully (a populated digest is not itself a
@@ -395,9 +397,10 @@ validated. Never calls a model; never makes a live external change.
 
 `controllerHeartbeatSchedule(scope)` builds the reference
 `ScheduleDeclaration` (id `controller-heartbeat`, a business-days-only
-cadence, `artifact: "scripts/run-heartbeat.mjs"`) this package's existing
-schedule conventions already define -- "work that runs without a model is a
-schedule, never a routine." `validateHeartbeatSchedule(declaration,
+cadence, `artifact: "scripts/run-heartbeat.mjs"` -- this repository's own
+demonstration wrapper, which does not ship with this package) this
+package's existing schedule conventions already define -- "work that runs
+without a model is a schedule, never a routine." `validateHeartbeatSchedule(declaration,
 registry)` is a thin, named call to the existing
 `validateScheduleDeclaration`, so a caller never re-derives that validation
 by hand. A declaration is not a deployment: installing the workflow that
@@ -2444,7 +2447,7 @@ mismatch (or another binding finding), `2` when it could not run. Use
 | `createRecordKindRegistry()` / `defaultRecordKindRegistry()` | functions | An open per-kind `RecordKindRegistry`; the default is seeded with the two record kinds shipped today, `LOOP_STATE_KIND` and `COVERAGE_DECLARATION_KIND`. |
 | `discoverRecords(repoRoot, locations?)` / `runMigrations(repoRoot, registry, options?)` | functions | Walks a repository's `clossys/` tree for files matching a `RecordLocation` (`DEFAULT_RECORD_LOCATIONS`), and classifies/migrates each into a `RecordMigrationReport` (`RunMigrationsOptions`) — writing a migrated record and a pre-migration backup only when `apply` is set. The installed `foundry-schema-migrate [repoRoot] [--apply]` executable is the CLI form, report-only (dry run) by default. |
 | `HEARTBEAT_FINDING_KINDS` / `computeHeartbeat(roles, now?)` / `renderDigest(entries, now?)` | constants / functions | Operating cadence (issue #1221): the zero-token heartbeat. `computeHeartbeat` deterministically finds every stale, blocked, pending-decision, or review-waiting capability (`HeartbeatFindingKind`, `DigestEntry`) across a set of roles' `LoopState`s into one `HeartbeatDigest`; `renderDigest` is a plain, mechanical Markdown renderer Advisor's own wording pass supersedes later. |
-| `loadLoopStates(repoRoot)` / `computeHeartbeatForRepo(repoRoot, now?)` / `writeHeartbeatDigest(repoRoot, digest, now?)` | functions | Reads every `clossys/<role>/loop.json` under a repository root (`LoadedLoopStates`, reporting an unreadable one as `UnreadableLoopState` rather than throwing), computes the digest (`HeartbeatRunResult`), and writes it to `HEARTBEAT_DIGEST_PATH` (`clossys/.state/decisions-waiting-for-you.md`). The installed `foundry-heartbeat [repoRoot] [--write]` executable is the CLI form, report mode by default; never calls a model. |
+| `loadLoopStates(repoRoot)` / `computeHeartbeatForRepo(repoRoot, now?)` / `writeHeartbeatDigest(repoRoot, digest, now?)` | functions | Reads every `clossys/<role>/loop.json` under a repository root (`LoadedLoopStates`, reporting an unreadable one as `UnreadableLoopState` rather than throwing), computes the digest (`HeartbeatRunResult`), and writes it to `HEARTBEAT_DIGEST_PATH` -- a `decisions-waiting-for-you.md` file under the installing repository's own `clossys/.state/` directory. The installed `foundry-heartbeat [repoRoot] [--write]` executable is the CLI form, report mode by default; never calls a model. |
 | `controllerHeartbeatSchedule(scope)` / `validateHeartbeatSchedule(declaration, registry)` | functions | The heartbeat's reference `ScheduleDeclaration`, declarable under this package's existing schedule conventions, and its validation via the existing `validateScheduleDeclaration`. |
 
 ## Requirements

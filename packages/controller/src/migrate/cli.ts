@@ -2,9 +2,10 @@
  * CLI for issue #1224: schema versions and migrations for every
  * `clossys/` record. Discovers every record `defaultRecordKindRegistry`
  * knows how to classify, migrates/classifies each one, and emits ONE
- * `docs/contracts/check-output-envelope.json` report (issue #1174) --
- * see `../envelope.js`, the one constructor both this check and #1221's
- * heartbeat check share.
+ * report shaped by the repository contract
+ * `docs/contracts/check-output-envelope.json`, which does not ship with
+ * this package (issue #1174) -- see `../envelope.js`, the one constructor
+ * both this check and #1221's heartbeat check share.
  *
  * Report-only (dry run) by default: `--apply` is required to actually
  * write migrated records and their pre-migration backups.
