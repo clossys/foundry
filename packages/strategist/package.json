@@ -35,8 +35,8 @@
     "capabilities": [
       {
         "id": "evidence-base",
-        "subQuestion": "Is every material fact sourced, dated, and still current?",
-        "worldClass": "Every currency amount, percentage, multiplier, or superlative claim a role or surface makes resolves to a dated, sourced fact — never an unverifiable number.",
+        "subQuestion": "Is every material fact in this role's own facts.json sourced, dated, and still current?",
+        "worldClass": "Every currency amount, percentage, multiplier, or superlative claim recorded in this role's own facts.json is sourced, dated, and traced — never an unverifiable number left in the record.",
         "inputs": [],
         "outputs": [
           "clossys/strategist/facts.json"
@@ -69,7 +69,7 @@
         ],
         "proofCase": "facts-clean",
         "maturity": "built",
-        "v0": false,
+        "v0": true,
         "businessLifecycleStage": "define"
       },
       {
@@ -88,7 +88,7 @@
       {
         "id": "claims",
         "subQuestion": "Which claims are approved to make publicly, and do they trace to evidence?",
-        "worldClass": "Every public claim is either approved with a traceable factRef or explicitly marked hypothesis — never asserted as approved fact without one.",
+        "worldClass": "Every entry in this role's own claims record is either approved with a traceable factRef or explicitly marked hypothesis — never recorded as approved without one.",
         "inputs": [],
         "outputs": [
           "clossys/strategist/claims.json"
@@ -125,12 +125,25 @@
         "businessLifecycleStage": "define"
       },
       {
-        "id": "direction-and-roadmap-currency",
-        "subQuestion": "Is the current direction the one everything downstream was actually reviewed against?",
-        "worldClass": "Every derived artifact's reviewedAgainst names a direction entity that is not just present but current — never a superseded decision nobody stands behind.",
+        "id": "roadmap",
+        "subQuestion": "What's on the roadmap, and does every item trace to a decision?",
+        "worldClass": "The roadmap is a governed record of items, not a doc scattered across decks and issues.",
         "inputs": [],
         "outputs": [
           "clossys/strategist/roadmap.json"
+        ],
+        "proofCase": "facts-clean",
+        "maturity": "built",
+        "v0": false,
+        "businessLifecycleStage": "define"
+      },
+      {
+        "id": "direction-currency",
+        "subQuestion": "Is every derived artifact's governing decision the current one, not a superseded one?",
+        "worldClass": "Every derived artifact's reviewedAgainst names a direction entity that is not just present but current — never a superseded decision nobody stands behind.",
+        "inputs": [],
+        "outputs": [
+          "clossys/strategist/direction.json"
         ],
         "proofCase": "facts-clean",
         "maturity": "built",
@@ -151,6 +164,19 @@
         "businessLifecycleStage": "define"
       },
       {
+        "id": "strategy-brief",
+        "subQuestion": "Is the strategy directory ready to hand off as one portable, sealed brief downstream roles can build on?",
+        "worldClass": "Every approved claim, current direction, and constraint projects into one portable, versioned contract — the v0 Launch pack's Strategy brief (#1204) — and handoff readiness (every ref resolves, required surface present) is checked before any downstream role builds on it.",
+        "inputs": [],
+        "outputs": [
+          "clossys/strategist/contract.json"
+        ],
+        "proofCase": "facts-clean",
+        "maturity": "built",
+        "v0": true,
+        "businessLifecycleStage": "define"
+      },
+      {
         "id": "business-model-and-pricing-hypothesis",
         "subQuestion": "How does the business make money, and is that hypothesis tested?",
         "worldClass": "The pricing and business-model hypothesis is a governed, evidence-backed record, not a number picked once and never revisited.",
@@ -158,7 +184,7 @@
         "outputs": [
           "clossys/strategist/business-model.json"
         ],
-        "proofCase": "facts-clean",
+        "proofCase": null,
         "maturity": "planned",
         "v0": false,
         "businessLifecycleStage": "define"
@@ -171,7 +197,7 @@
         "outputs": [
           "clossys/strategist/metrics.json"
         ],
-        "proofCase": "facts-clean",
+        "proofCase": null,
         "maturity": "planned",
         "v0": false,
         "businessLifecycleStage": "operate"
@@ -184,7 +210,7 @@
         "outputs": [
           "clossys/strategist/competitive-landscape.json"
         ],
-        "proofCase": "facts-clean",
+        "proofCase": null,
         "maturity": "planned",
         "v0": false,
         "businessLifecycleStage": "define"

@@ -107,408 +107,408 @@
     "reject": "Reject a candidate that has no coherent job, one controllable metric, closed loop, durable boundary, or acceptable guardrails."
   },
   "roles": {
-      "@clossys/advisor": {
-        "jobQuestion": "Does each active engagement have a current, evidence-backed, authority-bound next decision or action?",
-        "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
-        "metric": {
-          "name": "engagement-decision-currency-rate",
-          "formula": "active engagements whose assessment basis is fresh, whose next required action has an accountable owner and due date, and whose execution authorization if any matches the exact plan and basis / active engagements evaluated",
-          "unit": "ratio",
-          "direction": "increase"
-        },
-        "primaryMode": "reconcile",
-        "secondaryModes": [
-          "interact"
-        ],
-        "boundary": {
-          "owns": "Normalized engagement state, sponsor dialogue, offering-fit/readiness/blocker/collision reconciliation, bounded recommendations, and required-next-action issuance.",
-          "excludes": [
-            "supplying sponsor or producer facts",
-            "granting authority or deciding consumer entitlement",
-            "mutating repositories or provider resources",
-            "installing packages or changing live state",
-            "measuring its own outcomes"
-          ]
-        }
+    "@clossys/advisor": {
+      "jobQuestion": "Does each active engagement have a current, evidence-backed, authority-bound next decision or action?",
+      "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
+      "metric": {
+        "name": "engagement-decision-currency-rate",
+        "formula": "active engagements whose assessment basis is fresh, whose next required action has an accountable owner and due date, and whose execution authorization if any matches the exact plan and basis / active engagements evaluated",
+        "unit": "ratio",
+        "direction": "increase"
       },
-      "@clossys/controller": {
-        "jobQuestion": "Are the business's operating rules expressible, current, and followed?",
-        "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
-        "metric": {
-          "name": "rule conformance rate",
-          "formula": "declared rules independently observed well-formed and followed / all declared rules evaluated",
-          "unit": "ratio",
-          "direction": "increase"
-        },
-        "primaryMode": "reconcile",
-        "secondaryModes": [],
-        "boundary": {
-          "owns": "Operating-rule grammar, identity, lifecycle, and content binding.",
-          "excludes": [
-            "judging a proposed change",
-            "materializing declared state",
-            "authorizing provider mutations"
-          ]
-        }
-      },
-      "@clossys/architect": {
-        "jobQuestion": "Do the business ontology and operating boundaries match how material work actually crosses the business?",
-        "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
-        "metric": {
-          "name": "architecture exception rate",
-          "formula": "observed material changes with at least one undeclared boundary crossing / all observed material changes",
-          "unit": "ratio",
-          "direction": "decrease"
-        },
-        "primaryMode": "optimize",
-        "secondaryModes": [
-          "assure"
-        ],
-        "boundary": {
-          "owns": "Provider-neutral operating topology, boundary design, and architecture-exception diagnosis.",
-          "excludes": [
-            "authorizing topology changes",
-            "creating provider resources",
-            "moving repositories or accounts"
-          ]
-        }
-      },
-      "@clossys/inspector": {
-        "jobQuestion": "Does this change satisfy every applicable rule before it lands?",
-        "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
-        "metric": {
-          "name": "change escape rate",
-          "formula": "landed changes independently found to violate an applicable rule / all landed changes evaluated",
-          "unit": "ratio",
-          "direction": "decrease"
-        },
-        "primaryMode": "assure",
-        "secondaryModes": [],
-        "boundary": {
-          "owns": "Pre-landing change judgment against caller-supplied rules and evidence.",
-          "excludes": [
-            "authoring operating rules",
-            "measuring its own historical efficacy",
-            "mutating the candidate change"
-          ]
-        }
-      },
-      "@clossys/builder": {
-        "jobQuestion": "Does independently observed live state match the declared state after authorized action?",
-        "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
-        "metric": {
-          "name": "desired-state realization rate",
-          "formula": "declared live-state subjects independently verified at their desired state / all declared live-state subjects evaluated",
-          "unit": "ratio",
-          "direction": "increase"
-        },
-        "primaryMode": "fulfill",
-        "secondaryModes": [
-          "reconcile"
-        ],
-        "boundary": {
-          "owns": "Authorized materialization and reconciliation of declared machine, platform, pipeline, and deployment state.",
-          "excludes": [
-            "inventing desired state",
-            "granting its own mutation authority",
-            "treating an offline declaration check as live proof"
-          ]
-        }
-      },
-      "@clossys/locksmith": {
-        "jobQuestion": "Is every live key owned, current, correctly distributed, and revocable?",
-        "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
-        "metric": {
-          "name": "controlled key rate",
-          "formula": "declared live keys independently observed owned, current, correctly distributed, and revocable / all declared live keys evaluated",
-          "unit": "ratio",
-          "direction": "increase"
-        },
-        "primaryMode": "steward",
-        "secondaryModes": [],
-        "boundary": {
-          "owns": "Key custody, distribution, rotation, revocation, and value-safe resolution contracts.",
-          "excludes": [
-            "reading or retaining secret values",
-            "inventing rotation policy",
-            "self-authorizing replacement or revocation"
-          ]
-        }
-      },
-      "@clossys/integrator": {
-        "jobQuestion": "Does this consuming plane hold what it declared it should hold, and is it current?",
-        "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
-        "metric": {
-          "name": "package currency rate",
-          "formula": "entitled packages installed at the current published version / all entitled packages evaluated",
-          "unit": "ratio",
-          "direction": "increase"
-        },
-        "primaryMode": "reconcile",
-        "secondaryModes": [],
-        "boundary": {
-          "owns": "Caller-owned entitlement and installed-inventory reconciliation.",
-          "excludes": [
-            "maintaining a registry of consumers",
-            "deciding a plane's entitlements",
-            "publishing or installing packages"
-          ]
-        }
-      },
-      "@clossys/observer": {
-        "jobQuestion": "Can independent evidence show what happened and whether the operating loops are observable?",
-        "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
-        "metric": {
-          "name": "unobserved outcome rate",
-          "formula": "declared outcome subjects with no readable independent observation / all declared outcome subjects evaluated",
-          "unit": "ratio",
-          "direction": "decrease"
-        },
-        "primaryMode": "optimize",
-        "secondaryModes": [],
-        "boundary": {
-          "owns": "Independent telemetry coverage, outcome measurement, and gate-efficacy measurement.",
-          "excludes": [
-            "judging the change it measures",
-            "acting on behalf of another role",
-            "using a measured role's own verdict as ground truth"
-          ]
-        }
-      },
-      "@clossys/strategist": {
-        "jobQuestion": "Is the business direction true, current, and recognizably ours?",
-        "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
-        "metric": {
-          "name": "strategy traceability rate",
-          "formula": "material strategy and brand claims with current evidence, derivation, and approval / all material strategy and brand claims evaluated",
-          "unit": "ratio",
-          "direction": "increase"
-        },
-        "primaryMode": "assure",
-        "secondaryModes": [],
-        "boundary": {
-          "owns": "Evidence-backed strategy records, direction currency, and brand derivation.",
-          "excludes": [
-            "supplying a consumer's strategy values",
-            "authoring product copy",
-            "rendering or publishing surfaces"
-          ]
-        }
-      },
-      "@clossys/writer": {
-        "jobQuestion": "Is audience-facing language approved, traceable, and well said?",
-        "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
-        "metric": {
-          "name": "approved copy coverage rate",
-          "formula": "shipped audience-facing copy resolved from approved traceable registry entries / all shipped audience-facing copy evaluated",
-          "unit": "ratio",
-          "direction": "increase"
-        },
-        "primaryMode": "assure",
-        "secondaryModes": [],
-        "boundary": {
-          "owns": "Copy registry, voice conformance, addressability, and language traceability.",
-          "excludes": [
-            "inventing strategy facts",
-            "designing interface primitives",
-            "transporting or publishing messages"
-          ]
-        }
-      },
-      "@clossys/designer": {
-        "jobQuestion": "Is the product interface well made against its declared design and accessibility constraints?",
-        "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
-        "metric": {
-          "name": "design conformance rate",
-          "formula": "evaluated interface surfaces satisfying declared token, brand, structure, and accessibility constraints / all interface surfaces evaluated",
-          "unit": "ratio",
-          "direction": "increase"
-        },
-        "primaryMode": "assure",
-        "secondaryModes": [],
-        "boundary": {
-          "owns": "Reusable design vocabulary and conformance of tokens, components, structure, and accessibility constraints.",
-          "excludes": [
-            "authoring product strategy or copy",
-            "selecting page intent",
-            "publishing or transporting rendered output"
-          ]
-        }
-      },
-      "@clossys/customer": {
-        "jobQuestion": "If I am the person this was made for, do I keep this?",
-        "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
-        "metric": {
-          "name": "customer keep rate",
-          "formula": "independently observed first-person keeps / all candidates independently inhabited before seal or land",
-          "unit": "ratio",
-          "direction": "increase"
-        },
-        "primaryMode": "assure",
-        "secondaryModes": [],
-        "boundary": {
-          "owns": "First-person inhabit of a named Audience: one keep or fail before seal, and on-demand first-person testimony as that person — lived functional and experiential feedback on any topic, comparison from their actual consideration set, what it would take to start or to refer, whether it is worth what it costs them, and what would make them leave.",
-          "excludes": [
-            "mutating the candidate",
-            "authoring strategy, copy, or UI",
-            "sealing",
-            "judging declared operating rules",
-            "becoming a reviewer",
-            "measuring its own efficacy",
-            "authoring competitive-intel or strategy documents",
-            "scoring against Designer, Writer, or Inspector rubrics"
-          ]
-        }
-      },
-      "@clossys/publisher": {
-        "jobQuestion": "Did an approved surface reach its audience, and can the exact shipped result be proved?",
-        "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
-        "metric": {
-          "name": "verified publication rate",
-          "formula": "due publication intents with independently observed audience release and matching immutable publication record / all due publication intents evaluated",
-          "unit": "ratio",
-          "direction": "increase"
-        },
-        "primaryMode": "fulfill",
-        "secondaryModes": [
-          "reconcile"
-        ],
-        "boundary": {
-          "owns": "Rendering approved named surfaces for channels and proving the exact audience release.",
-          "excludes": [
-            "selecting a template from business intent",
-            "authoring strategy or copy",
-            "transporting person-addressed messages"
-          ]
-        }
-      },
-      "@clossys/influencer": {
-        "jobQuestion": "Is this governed outbound presence producing qualified audience responses at the declared rate?",
-        "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
-        "metric": {
-          "name": "qualified response yield per thousand",
-          "formula": "1000 * independently observed qualified audience responses / independently observed eligible exposures",
-          "unit": "rate",
-          "direction": "increase"
-        },
-        "primaryMode": "optimize",
-        "secondaryModes": [
-          "fulfill"
-        ],
-        "boundary": {
-          "owns": "Governed organization or product presence, channel and cadence experiments, bounded audience engagement, and response-yield learning.",
-          "excludes": [
-            "defining audience strategy or qualified-response meaning",
-            "generating or approving content",
-            "holding credentials, impersonating a person, or buying paid media"
-          ]
-        }
-      },
-      "@clossys/bouncer": {
-        "jobQuestion": "Is this actor who they claim, and is what they are doing still inside what they were granted?",
-        "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
-        "metric": {
-          "name": "unreconciled grant rate",
-          "formula": "live grants not independently backed by their current provider of record / all live grants evaluated",
-          "unit": "ratio",
-          "direction": "decrease"
-        },
-        "primaryMode": "reconcile",
-        "secondaryModes": [
-          "interact"
-        ],
-        "boundary": {
-          "owns": "Actor identity, current authority, delegated ceilings, and provider reconciliation.",
-          "excludes": [
-            "deciding what a person wants",
-            "transporting a finished message",
-            "deciding semantic obligation discharge"
-          ]
-        }
-      },
-      "@clossys/butler": {
-        "jobQuestion": "Do we have this person's confirmed current request and standing instructions?",
-        "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
-        "metric": {
-          "name": "confirmed current intent rate",
-          "formula": "evaluated acted requests and standing-instruction uses backed by current subject confirmation / all acted requests and standing-instruction uses evaluated",
-          "unit": "ratio",
-          "direction": "increase"
-        },
-        "primaryMode": "interact",
-        "secondaryModes": [],
-        "boundary": {
-          "owns": "Inbound person-request admission, intent confirmation, and standing-instruction currency.",
-          "excludes": [
-            "transporting finished outbound messages",
-            "deciding semantic obligation discharge",
-            "holding inferred beliefs about a person"
-          ]
-        }
-      },
-      "@clossys/messenger": {
-        "jobQuestion": "Did each authorized finished communication reach its transport destination within its declared window?",
-        "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
-        "metric": {
-          "name": "timely verified delivery rate",
-          "formula": "authorized delivery intents due and independently observed delivered within their declared window / all authorized delivery intents due",
-          "unit": "ratio",
-          "direction": "increase"
-        },
-        "primaryMode": "fulfill",
-        "secondaryModes": [
-          "optimize"
-        ],
-        "boundary": {
-          "owns": "Authorized finished-message transport, retry-safe dispatch, and normalized delivery-status evidence.",
-          "excludes": [
-            "admitting inbound person requests",
-            "composing or selecting message meaning",
-            "deciding semantic obligation discharge"
-          ]
-        }
-      },
-      "@clossys/giver": {
-        "jobQuestion": "Did this person get what they asked for, or a reason, or a human, and everything owed on time?",
-        "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
-        "metric": {
-          "name": "timely semantic closure rate",
-          "formula": "due requests and obligations with independently verified delivery, refusal, or placed handoff inside the declared window / all due requests and obligations evaluated",
-          "unit": "ratio",
-          "direction": "increase"
-        },
-        "primaryMode": "fulfill",
-        "secondaryModes": [
-          "interact"
-        ],
-        "boundary": {
-          "owns": "Semantic request and obligation discharge, refusal grounds, and human handoff placement.",
-          "excludes": [
-            "admitting or interpreting an inbound request",
-            "implementing provider transport",
-            "storing person-attributable holdings"
-          ]
-        }
-      },
-      "@clossys/keeper": {
-        "jobQuestion": "Does everything held about this person trace to something they did, and can they see and correct it?",
-        "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
-        "metric": {
-          "name": "justified visible holding rate",
-          "formula": "held items with valid attribution, a subject-visible correctable route, and current retention basis / all held items evaluated",
-          "unit": "ratio",
-          "direction": "increase"
-        },
-        "primaryMode": "steward",
-        "secondaryModes": [],
-        "boundary": {
-          "owns": "Attribution, subject visibility and correction, retention judgment, and verified disposal contracts for held information.",
-          "excludes": [
-            "writing person-attributable records to git",
-            "owning host storage",
-            "turning inferred beliefs into standing instructions"
-          ]
-        }
+      "primaryMode": "reconcile",
+      "secondaryModes": [
+        "interact"
+      ],
+      "boundary": {
+        "owns": "Normalized engagement state, sponsor dialogue, offering-fit/readiness/blocker/collision reconciliation, bounded recommendations, and required-next-action issuance.",
+        "excludes": [
+          "supplying sponsor or producer facts",
+          "granting authority or deciding consumer entitlement",
+          "mutating repositories or provider resources",
+          "installing packages or changing live state",
+          "measuring its own outcomes"
+        ]
       }
+    },
+    "@clossys/controller": {
+      "jobQuestion": "Are the business's operating rules expressible, current, and followed?",
+      "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
+      "metric": {
+        "name": "rule conformance rate",
+        "formula": "declared rules independently observed well-formed and followed / all declared rules evaluated",
+        "unit": "ratio",
+        "direction": "increase"
+      },
+      "primaryMode": "reconcile",
+      "secondaryModes": [],
+      "boundary": {
+        "owns": "Operating-rule grammar, identity, lifecycle, and content binding.",
+        "excludes": [
+          "judging a proposed change",
+          "materializing declared state",
+          "authorizing provider mutations"
+        ]
+      }
+    },
+    "@clossys/architect": {
+      "jobQuestion": "Do the business ontology and operating boundaries match how material work actually crosses the business?",
+      "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
+      "metric": {
+        "name": "architecture exception rate",
+        "formula": "observed material changes with at least one undeclared boundary crossing / all observed material changes",
+        "unit": "ratio",
+        "direction": "decrease"
+      },
+      "primaryMode": "optimize",
+      "secondaryModes": [
+        "assure"
+      ],
+      "boundary": {
+        "owns": "Provider-neutral operating topology, boundary design, and architecture-exception diagnosis.",
+        "excludes": [
+          "authorizing topology changes",
+          "creating provider resources",
+          "moving repositories or accounts"
+        ]
+      }
+    },
+    "@clossys/inspector": {
+      "jobQuestion": "Does this change satisfy every applicable rule before it lands?",
+      "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
+      "metric": {
+        "name": "change escape rate",
+        "formula": "landed changes independently found to violate an applicable rule / all landed changes evaluated",
+        "unit": "ratio",
+        "direction": "decrease"
+      },
+      "primaryMode": "assure",
+      "secondaryModes": [],
+      "boundary": {
+        "owns": "Pre-landing change judgment against caller-supplied rules and evidence.",
+        "excludes": [
+          "authoring operating rules",
+          "measuring its own historical efficacy",
+          "mutating the candidate change"
+        ]
+      }
+    },
+    "@clossys/builder": {
+      "jobQuestion": "Does independently observed live state match the declared state after authorized action?",
+      "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
+      "metric": {
+        "name": "desired-state realization rate",
+        "formula": "declared live-state subjects independently verified at their desired state / all declared live-state subjects evaluated",
+        "unit": "ratio",
+        "direction": "increase"
+      },
+      "primaryMode": "fulfill",
+      "secondaryModes": [
+        "reconcile"
+      ],
+      "boundary": {
+        "owns": "Authorized materialization and reconciliation of declared machine, platform, pipeline, and deployment state.",
+        "excludes": [
+          "inventing desired state",
+          "granting its own mutation authority",
+          "treating an offline declaration check as live proof"
+        ]
+      }
+    },
+    "@clossys/locksmith": {
+      "jobQuestion": "Is every live key owned, current, correctly distributed, and revocable?",
+      "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
+      "metric": {
+        "name": "controlled key rate",
+        "formula": "declared live keys independently observed owned, current, correctly distributed, and revocable / all declared live keys evaluated",
+        "unit": "ratio",
+        "direction": "increase"
+      },
+      "primaryMode": "steward",
+      "secondaryModes": [],
+      "boundary": {
+        "owns": "Key custody, distribution, rotation, revocation, and value-safe resolution contracts.",
+        "excludes": [
+          "reading or retaining secret values",
+          "inventing rotation policy",
+          "self-authorizing replacement or revocation"
+        ]
+      }
+    },
+    "@clossys/integrator": {
+      "jobQuestion": "Does this consuming plane hold what it declared it should hold, and is it current?",
+      "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
+      "metric": {
+        "name": "package currency rate",
+        "formula": "entitled packages installed at the current published version / all entitled packages evaluated",
+        "unit": "ratio",
+        "direction": "increase"
+      },
+      "primaryMode": "reconcile",
+      "secondaryModes": [],
+      "boundary": {
+        "owns": "Caller-owned entitlement and installed-inventory reconciliation.",
+        "excludes": [
+          "maintaining a registry of consumers",
+          "deciding a plane's entitlements",
+          "publishing or installing packages"
+        ]
+      }
+    },
+    "@clossys/observer": {
+      "jobQuestion": "Can independent evidence show what happened and whether the operating loops are observable?",
+      "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
+      "metric": {
+        "name": "unobserved outcome rate",
+        "formula": "declared outcome subjects with no readable independent observation / all declared outcome subjects evaluated",
+        "unit": "ratio",
+        "direction": "decrease"
+      },
+      "primaryMode": "optimize",
+      "secondaryModes": [],
+      "boundary": {
+        "owns": "Independent telemetry coverage, outcome measurement, and gate-efficacy measurement.",
+        "excludes": [
+          "judging the change it measures",
+          "acting on behalf of another role",
+          "using a measured role's own verdict as ground truth"
+        ]
+      }
+    },
+    "@clossys/strategist": {
+      "jobQuestion": "Is the business direction true, current, and recognizably ours?",
+      "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
+      "metric": {
+        "name": "strategy traceability rate",
+        "formula": "material strategy and brand claims with current evidence, derivation, and approval / all material strategy and brand claims evaluated",
+        "unit": "ratio",
+        "direction": "increase"
+      },
+      "primaryMode": "assure",
+      "secondaryModes": [],
+      "boundary": {
+        "owns": "Evidence-backed strategy records, direction currency, and brand derivation.",
+        "excludes": [
+          "supplying a consumer's strategy values",
+          "authoring product copy",
+          "rendering or publishing surfaces"
+        ]
+      }
+    },
+    "@clossys/writer": {
+      "jobQuestion": "Is audience-facing language approved, traceable, and well said?",
+      "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
+      "metric": {
+        "name": "approved copy coverage rate",
+        "formula": "shipped audience-facing copy resolved from approved traceable registry entries / all shipped audience-facing copy evaluated",
+        "unit": "ratio",
+        "direction": "increase"
+      },
+      "primaryMode": "assure",
+      "secondaryModes": [],
+      "boundary": {
+        "owns": "Copy registry, voice conformance, addressability, and language traceability.",
+        "excludes": [
+          "inventing strategy facts",
+          "designing interface primitives",
+          "transporting or publishing messages"
+        ]
+      }
+    },
+    "@clossys/designer": {
+      "jobQuestion": "Is the product interface well made against its declared design and accessibility constraints?",
+      "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
+      "metric": {
+        "name": "design conformance rate",
+        "formula": "evaluated interface surfaces satisfying declared token, brand, structure, and accessibility constraints / all interface surfaces evaluated",
+        "unit": "ratio",
+        "direction": "increase"
+      },
+      "primaryMode": "assure",
+      "secondaryModes": [],
+      "boundary": {
+        "owns": "Reusable design vocabulary and conformance of tokens, components, structure, and accessibility constraints; product identity and the brand kit -- logo and mark set, colour and type tokens, favicon and icons, image templates, usage rules -- rendered as the brand guide page, which IS the style guide (#1204).",
+        "excludes": [
+          "authoring product strategy or copy",
+          "selecting page intent",
+          "publishing or transporting rendered output"
+        ]
+      }
+    },
+    "@clossys/customer": {
+      "jobQuestion": "If I am the person this was made for, do I keep this?",
+      "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
+      "metric": {
+        "name": "customer keep rate",
+        "formula": "independently observed first-person keeps / all candidates independently inhabited before seal or land",
+        "unit": "ratio",
+        "direction": "increase"
+      },
+      "primaryMode": "assure",
+      "secondaryModes": [],
+      "boundary": {
+        "owns": "First-person inhabit of a named Audience: one keep or fail before seal, and on-demand first-person testimony as that person — lived functional and experiential feedback on any topic, comparison from their actual consideration set, what it would take to start or to refer, whether it is worth what it costs them, and what would make them leave.",
+        "excludes": [
+          "mutating the candidate",
+          "authoring strategy, copy, or UI",
+          "sealing",
+          "judging declared operating rules",
+          "becoming a reviewer",
+          "measuring its own efficacy",
+          "authoring competitive-intel or strategy documents",
+          "scoring against Designer, Writer, or Inspector rubrics"
+        ]
+      }
+    },
+    "@clossys/publisher": {
+      "jobQuestion": "Did an approved surface reach its audience, and can the exact shipped result be proved?",
+      "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
+      "metric": {
+        "name": "verified publication rate",
+        "formula": "due publication intents with independently observed audience release and matching immutable publication record / all due publication intents evaluated",
+        "unit": "ratio",
+        "direction": "increase"
+      },
+      "primaryMode": "fulfill",
+      "secondaryModes": [
+        "reconcile"
+      ],
+      "boundary": {
+        "owns": "The v0 Launch pack's definition, inventory, and readiness (#1204); rendering approved named surfaces for channels; and sealing -- proving the exact audience release against an immutable publication record. Content and judgments (strategy, copy, identity, the keep) stay with Strategist, Designer, Writer, and Customer -- Publisher assembles and ships what they produce, never authors it.",
+        "excludes": [
+          "selecting a template from business intent",
+          "authoring strategy or copy",
+          "transporting person-addressed messages"
+        ]
+      }
+    },
+    "@clossys/influencer": {
+      "jobQuestion": "Is this governed outbound presence producing qualified audience responses at the declared rate?",
+      "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
+      "metric": {
+        "name": "qualified response yield per thousand",
+        "formula": "1000 * independently observed qualified audience responses / independently observed eligible exposures",
+        "unit": "rate",
+        "direction": "increase"
+      },
+      "primaryMode": "optimize",
+      "secondaryModes": [
+        "fulfill"
+      ],
+      "boundary": {
+        "owns": "Governed organization or product presence, channel and cadence experiments, bounded audience engagement, and response-yield learning.",
+        "excludes": [
+          "defining audience strategy or qualified-response meaning",
+          "generating or approving content",
+          "holding credentials, impersonating a person, or buying paid media"
+        ]
+      }
+    },
+    "@clossys/bouncer": {
+      "jobQuestion": "Is this actor who they claim, and is what they are doing still inside what they were granted?",
+      "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
+      "metric": {
+        "name": "unreconciled grant rate",
+        "formula": "live grants not independently backed by their current provider of record / all live grants evaluated",
+        "unit": "ratio",
+        "direction": "decrease"
+      },
+      "primaryMode": "reconcile",
+      "secondaryModes": [
+        "interact"
+      ],
+      "boundary": {
+        "owns": "Actor identity, current authority, delegated ceilings, and provider reconciliation.",
+        "excludes": [
+          "deciding what a person wants",
+          "transporting a finished message",
+          "deciding semantic obligation discharge"
+        ]
+      }
+    },
+    "@clossys/butler": {
+      "jobQuestion": "Do we have this person's confirmed current request and standing instructions?",
+      "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
+      "metric": {
+        "name": "confirmed current intent rate",
+        "formula": "evaluated acted requests and standing-instruction uses backed by current subject confirmation / all acted requests and standing-instruction uses evaluated",
+        "unit": "ratio",
+        "direction": "increase"
+      },
+      "primaryMode": "interact",
+      "secondaryModes": [],
+      "boundary": {
+        "owns": "Inbound person-request admission, intent confirmation, and standing-instruction currency.",
+        "excludes": [
+          "transporting finished outbound messages",
+          "deciding semantic obligation discharge",
+          "holding inferred beliefs about a person"
+        ]
+      }
+    },
+    "@clossys/messenger": {
+      "jobQuestion": "Did each authorized finished communication reach its transport destination within its declared window?",
+      "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
+      "metric": {
+        "name": "timely verified delivery rate",
+        "formula": "authorized delivery intents due and independently observed delivered within their declared window / all authorized delivery intents due",
+        "unit": "ratio",
+        "direction": "increase"
+      },
+      "primaryMode": "fulfill",
+      "secondaryModes": [
+        "optimize"
+      ],
+      "boundary": {
+        "owns": "Authorized finished-message transport, retry-safe dispatch, and normalized delivery-status evidence.",
+        "excludes": [
+          "admitting inbound person requests",
+          "composing or selecting message meaning",
+          "deciding semantic obligation discharge"
+        ]
+      }
+    },
+    "@clossys/giver": {
+      "jobQuestion": "Did this person get what they asked for, or a reason, or a human, and everything owed on time?",
+      "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
+      "metric": {
+        "name": "timely semantic closure rate",
+        "formula": "due requests and obligations with independently verified delivery, refusal, or placed handoff inside the declared window / all due requests and obligations evaluated",
+        "unit": "ratio",
+        "direction": "increase"
+      },
+      "primaryMode": "fulfill",
+      "secondaryModes": [
+        "interact"
+      ],
+      "boundary": {
+        "owns": "Semantic request and obligation discharge, refusal grounds, and human handoff placement.",
+        "excludes": [
+          "admitting or interpreting an inbound request",
+          "implementing provider transport",
+          "storing person-attributable holdings"
+        ]
+      }
+    },
+    "@clossys/keeper": {
+      "jobQuestion": "Does everything held about this person trace to something they did, and can they see and correct it?",
+      "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
+      "metric": {
+        "name": "justified visible holding rate",
+        "formula": "held items with valid attribution, a subject-visible correctable route, and current retention basis / all held items evaluated",
+        "unit": "ratio",
+        "direction": "increase"
+      },
+      "primaryMode": "steward",
+      "secondaryModes": [],
+      "boundary": {
+        "owns": "Attribution, subject visibility and correction, retention judgment, and verified disposal contracts for held information.",
+        "excludes": [
+          "writing person-attributable records to git",
+          "owning host storage",
+          "turning inferred beliefs into standing instructions"
+        ]
+      }
+    }
   }
 }

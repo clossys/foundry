@@ -10,13 +10,21 @@ All notable changes to this package are documented here. Format follows
 ### Added
 
 - `foundry.capabilities` (schema v3, issue #1196): a MECE capability map of
-  this role's craft — token contract and brand-overlay binding, components
-  and blocks, accessibility and contrast, type record, fold and hero
-  conformance, and brand-kit assembly, all built against the existing
-  tokens/contrast/fold/hero-css modules; logo and identity files (#1210)
-  are declared `planned` — `master-mark.ts` validates mark shape today but
-  ships no generated mark. Drafted per #1199, checked MECE across the five
-  v0 Launch-pack roles by `check-capability-maps.mjs`.
+  this role's craft — 6 capabilities `built` (token contract and
+  brand-overlay binding, token purity, component conformance, contrast,
+  type record, and structure/fold conformance including `surface-ladder.ts`);
+  logo and identity files (#1210) is `partial` — `master-mark.ts` validates
+  a supplied mark's shape today but generates nothing yet; brand-kit
+  assembly and general accessibility (beyond contrast) are `planned` — no
+  code assembles tokens/type/contrast/marks into one brand-kit record yet.
+  Every `built`/`partial` capability's `proofCase` resolves against this
+  role's own retained qualification adapter — today one retained case
+  (`token-purity-clean`), cited across every built/partial capability
+  pending dedicated per-capability cases (#1272). Drafted per #1199,
+  checked MECE across the five v0 Launch-pack roles by
+  `check-capability-maps.mjs` (report mode: 0 findings; `--enforce`, with
+  the other 14 roles allowlisted: 0 findings — output in PR #1258).
+  Independent review applied: #1258.
 
 ## [0.4.17] - 2026-09-21
 

@@ -41,12 +41,12 @@
     "capabilities": [
       {
         "id": "voice-record",
-        "subQuestion": "Does every voice claim trace to a derivation and field record, and is it internally consistent?",
-        "worldClass": "Voice is a governed record with full derivation and field coverage, never a style felt out per sentence.",
+        "subQuestion": "Is the voice record itself complete — every field bound, every rule derived from a real brand attribute?",
+        "worldClass": "The voice record is fully bound (no unedited template placeholder) and every rule traces to a brand-derivation attribute — checked as a record, before any copy is ever measured against it.",
         "inputs": [
           {
             "producerRole": "@clossys/strategist",
-            "artifact": "brand"
+            "artifact": "brand-derivation"
           }
         ],
         "outputs": [
@@ -59,8 +59,8 @@
       },
       {
         "id": "copy-registry",
-        "subQuestion": "Is every piece of audience-facing copy a validated, addressable registry entry?",
-        "worldClass": "Every shipped sentence resolves from one validated registry entry by id — never typed ad hoc into a component.",
+        "subQuestion": "Is every registry entry itself schema-valid, unique, and free of unfilled placeholders?",
+        "worldClass": "Every registry entry is schema-valid, has a unique id, and every declared placeholder is present in its own text — registry validity only; whether a component actually USES the registry by id is addressability's own question.",
         "inputs": [],
         "outputs": [
           "clossys/writer/copy-registry.json"
@@ -72,8 +72,8 @@
       },
       {
         "id": "claims-to-copy-traceability",
-        "subQuestion": "Does every claim-shaped or numeric sentence in shipped copy trace to an approved registry claim?",
-        "worldClass": "A currency amount, percentage, multiplier, or superlative sentence in live copy either matches a registered claim or carries a citation to one — never asserted bare.",
+        "subQuestion": "Does every claim-shaped or numeric sentence in shipped copy trace to an approved registry claim, by citation?",
+        "worldClass": "A currency amount, percentage, multiplier, or superlative sentence in live copy either matches a registered claim's text or carries a claim:<id> citation to one — checked on the COPY side; Strategist's own evidence-base checks only its own records, never scans shipped surfaces, so this is the one place that boundary is actually enforced.",
         "inputs": [
           {
             "producerRole": "@clossys/strategist",
@@ -81,7 +81,7 @@
           }
         ],
         "outputs": [
-          "clossys/writer/claim-citations.json"
+          "clossys/writer/.generated/claim-citations-report.json"
         ],
         "proofCase": "copy-clean",
         "maturity": "built",
@@ -94,7 +94,7 @@
         "worldClass": "Shipped copy never drifts silently from its registry source, and the above-the-fold word budget is enforced, not eyeballed.",
         "inputs": [],
         "outputs": [
-          "clossys/writer/live-copy-report.json"
+          "clossys/writer/.generated/live-copy-report.json"
         ],
         "proofCase": "copy-clean",
         "maturity": "built",
@@ -104,20 +104,51 @@
       {
         "id": "addressability",
         "subQuestion": "Is every piece of user-facing prose resolved from the registry by id, never typed directly into a component?",
-        "worldClass": "A rename is always cheap: renaming a piece of copy means editing one registry entry, never hunting every component that typed the sentence.",
+        "worldClass": "A rename is always cheap: renaming a piece of copy means editing one registry entry, never hunting every component that typed the sentence — #1208's site template reads copy by id on this guarantee.",
         "inputs": [],
         "outputs": [
-          "clossys/writer/addressability-report.json"
+          "clossys/writer/.generated/addressability-report.json"
+        ],
+        "proofCase": "copy-clean",
+        "maturity": "built",
+        "v0": true,
+        "businessLifecycleStage": "build"
+      },
+      {
+        "id": "locale-coverage",
+        "subQuestion": "Does the whole set of a project's locales actually cover the same ground, current and correctly interpolating?",
+        "worldClass": "Every target locale covers what the source locale covers, with no orphaned or stale translation — governance over WHICH locales are covered, not runtime translation itself.",
+        "inputs": [],
+        "outputs": [
+          "clossys/writer/.generated/locale-coverage-report.json"
         ],
         "proofCase": "copy-clean",
         "maturity": "built",
         "v0": false,
-        "businessLifecycleStage": "build"
+        "businessLifecycleStage": "operate"
+      },
+      {
+        "id": "voice-conformance",
+        "subQuestion": "Is shipped copy actually well said — in voice, in tense, in person, every claim supported?",
+        "worldClass": "Every mechanically detectable voice violation (forbidden term, wrong tense or person, an unsupported claim marked as requiring support) is caught against the bound voice record — the answer to \"is it well said\", not merely \"does it trace\".",
+        "inputs": [
+          {
+            "producerRole": "@clossys/writer",
+            "artifact": "voice-record"
+          }
+        ],
+        "outputs": [
+          "clossys/writer/.generated/voice-conformance-report.json"
+        ],
+        "proofCase": "copy-clean",
+        "maturity": "built",
+        "v0": false,
+        "businessLifecycleStage": "operate"
       },
       {
         "id": "messaging-kit",
         "subQuestion": "Does the product have one governed tagline, pitch-length set, boilerplate, and FAQ that everything else derives from?",
-        "worldClass": "One governed messaging kit (tagline, short/medium/long pitch, short/medium/long boilerplate, FAQ) exists and every surface's short-form copy derives from it, rather than being improvised per surface.",
+        "worldClass": "One governed messaging kit (tagline, short/medium/long pitch, short/medium/long boilerplate, FAQ) exists and every surface's short-form copy derives from it, per #1204's Identity layer, rather than being improvised per surface.",
         "inputs": [
           {
             "producerRole": "@clossys/strategist",
@@ -127,7 +158,7 @@
         "outputs": [
           "clossys/writer/messaging-kit.json"
         ],
-        "proofCase": "copy-clean",
+        "proofCase": null,
         "maturity": "planned",
         "v0": true,
         "businessLifecycleStage": "launch"

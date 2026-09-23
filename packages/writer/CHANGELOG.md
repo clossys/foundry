@@ -10,12 +10,19 @@ All notable changes to this package are documented here. Format follows
 ### Added
 
 - `foundry.capabilities` (schema v3, issue #1196): a MECE capability map of
-  this role's craft — voice record, copy registry, claims-to-copy
-  traceability, live-copy conformance, and addressability, all built
-  against the existing voice/registry/copy-gate modules; the messaging kit
-  (tagline, pitch lengths, boilerplate, FAQ) is declared `planned`, new for
-  v0. Drafted per #1200, checked MECE across the five v0 Launch-pack roles
-  by `check-capability-maps.mjs`.
+  this role's craft — 7 capabilities `built`: the voice record's own
+  structural completeness, copy-registry validity, claims-to-copy
+  traceability (the one place surface-copy citation scanning lives, per
+  independent review), live-copy conformance, addressability, locale
+  coverage, and voice conformance ("well said", `voice/checker.ts`); the
+  messaging kit (#1269) is declared `planned`. Every `built` capability's
+  `proofCase` resolves against this role's own retained qualification
+  adapter — today one retained case (`copy-clean`), cited across every
+  built capability pending dedicated per-capability cases (#1272). Drafted
+  per #1200, checked MECE across the five v0 Launch-pack roles by
+  `check-capability-maps.mjs` (report mode: 0 findings; `--enforce`, with
+  the other 14 roles allowlisted: 0 findings — output in PR #1258).
+  Independent review applied: #1258.
 
 ## [0.3.15] - 2026-09-21
 

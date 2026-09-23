@@ -10,12 +10,17 @@
 // package and fails ONLY when a role's own declared `capabilities` is
 // malformed -- a missing or wrong-typed field on one entry, an id repeated
 // within the same role, an output path outside the role's own
-// `clossys/<role>/` folder, or two capabilities in the SAME role's own
-// array claiming the same output path. Absence of `capabilities` is never
-// a failure here, the same discipline check-package-framework.mjs already
-// applies to `intake`/`outputs`/`status`/`fit`/`solves`/`needs`/`feeds`
-// (issue #435: a capability requiring zero targets must not grade
-// identically to one fully covered).
+// `clossys/<role>/` folder, a `proofCase` that is non-null while `maturity`
+// is `planned` (or null while `maturity` is `built`/`partial`), a
+// `proofCase` that does not name a case in this role's own retained
+// qualification adapter (governance/release-qualification-adapters/<role>/
+// current-direct.json, when that file exists), or two capabilities in the
+// SAME role's own array claiming the same output path. Absence of
+// `capabilities` is never a failure here, the same discipline
+// check-package-framework.mjs already applies to
+// `intake`/`outputs`/`status`/`fit`/`solves`/`needs`/`feeds` (issue #435: a
+// capability requiring zero targets must not grade identically to one fully
+// covered).
 //
 // --enforce: for a later wave, once the per-role maps (#1198-#1202,
 // drafted in the owner's private product repository first) have landed.
@@ -30,9 +35,17 @@
 //     needs is fed by exactly one capability" -- a `needs` entry already
 //     resolves to one `feeds` entry under check-package-framework.mjs's
 //     own --enforce; this pushes that resolution one level further, to the
-//     one capability that actually produces it).
+//     one capability that actually produces it);
+//   - ACROSS roles: every capability's own `inputs` entry resolves --
+//     `{ producerRole, artifact }` must name a capability whose own `id`
+//     is `artifact`, declared by `producerRole`'s own well-formed
+//     `capabilities`. A `producerRole` that is itself allowlisted (its own
+//     map has not landed yet) is forgiven, the same way absence is
+//     forgiven for that role directly -- a consuming role cannot be
+//     blamed for a producer that hasn't drafted yet.
 // --allowlist <file> (or --no-allowlist, the default when omitted): a
 // JSON array of role names exempt from the "capabilities required" finding
+// AND from unresolved-input findings that name them as `producerRole`,
 // under --enforce -- for roles whose own map has not landed yet. Until
 // #1198-#1202 land, every active role is effectively allowlisted by the
 // absence-is-never-a-failure rule already in report mode; --allowlist only
@@ -57,11 +70,16 @@
 // contract, unreadable workspace).
 //
 // This gate is manifest-read only: no build, no install, no child process.
-// It belongs in check:gates (dependency-free) alongside
+// Resolving `proofCase` reads this role's own retained qualification
+// adapter file (a small, already-committed governance JSON document, the
+// same kind of read scripts/check-qualification-record-required.mjs
+// already does) -- never a build, an install, or a child process. It
+// belongs in check:gates (dependency-free) alongside
 // check-package-framework.mjs, kept separate from it because the MECE
 // checks here (cross-role output ownership, needs/capability-output
-// matching) are their own concern, the same way check-role-assessment-
-// surfaces.mjs is kept separate from check-package-framework.mjs.
+// matching, capability-input resolution) are their own concern, the same
+// way check-role-assessment-surfaces.mjs is kept separate from
+// check-package-framework.mjs.
 
 import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { dirname, join, isAbsolute } from "node:path";
@@ -99,9 +117,14 @@ function isCapabilityInputEntry(value) {
 /**
  * Validates one `foundry.capabilities[]` entry's own shape. Pure -- no
  * cross-role, no cross-capability knowledge; that is `evaluateCapabilityMaps`'s
- * job, once every role's shape has already been read.
+ * job, once every role's shape has already been read. `knownProofCaseIds`
+ * (optional `Set<string>`) is this role's own retained qualification
+ * adapter's case ids -- pass it to also check that a non-null `proofCase`
+ * actually resolves; omit it (as every existing caller that doesn't care
+ * about resolution does) to skip that one check and keep this function
+ * usable with a hand-built fixture that names no real adapter.
  */
-export function validateCapabilityShape(capability, role) {
+export function validateCapabilityShape(capability, role, knownProofCaseIds) {
   const findings = [];
   const fail = (rule, message) => findings.push({ rule, role, message });
   if (!isRecord(capability)) { fail("invalid-capability", "must be an object"); return findings; }
@@ -118,9 +141,26 @@ export function validateCapabilityShape(capability, role) {
     const outside = capability.outputs.filter((path) => !isSafeRelativePath(path) || !path.startsWith(expectedPrefix));
     if (outside.length > 0) fail("capability-output-outside-role-folder", `capability "${capability.id}" every output must start with "${expectedPrefix}" — found: ${outside.join(", ")}`);
   }
-  if (!isText(capability.proofCase)) fail("invalid-capability-proof-case", `capability "${capability.id}" proofCase must be a nonempty string`);
+  const maturityIsPlanned = capability.maturity === "planned";
   if (typeof capability.maturity !== "string" || !CAPABILITY_MATURITIES.includes(capability.maturity)) {
     fail("invalid-capability-maturity", `capability "${capability.id}" maturity must be one of: ${CAPABILITY_MATURITIES.join(", ")}`);
+  }
+  // proofCase and maturity are a joint field (issue #1258's independent
+  // review): a capability that is not yet real has nothing a qualification
+  // case could prove, so `planned` MUST carry `proofCase: null`; `built`
+  // and `partial` (everything else, including an invalid maturity value)
+  // MUST carry a real, nonempty proofCase string. This is stricter than
+  // "some string" -- a `built`/`partial` capability with no dedicated case
+  // yet is not yet evidenced and should not claim `built`/`partial` until
+  // it has one.
+  if (maturityIsPlanned) {
+    if (capability.proofCase !== null) {
+      fail("invalid-capability-proof-case", `capability "${capability.id}" proofCase must be null — maturity is "planned", and a planned capability has no case that proves it works yet`);
+    }
+  } else if (!isText(capability.proofCase)) {
+    fail("invalid-capability-proof-case", `capability "${capability.id}" proofCase must be a nonempty string when maturity is "built" or "partial"`);
+  } else if (knownProofCaseIds !== undefined && !knownProofCaseIds.has(capability.proofCase)) {
+    fail("unresolved-capability-proof-case", `capability "${capability.id}" proofCase "${capability.proofCase}" is not a case id in this role's own retained qualification adapter`);
   }
   if (typeof capability.v0 !== "boolean") fail("invalid-capability-v0", `capability "${capability.id}" v0 must be a boolean`);
   if (capability.businessLifecycleStage !== undefined && !BUSINESS_LIFECYCLE_STAGES.includes(capability.businessLifecycleStage)) {
@@ -136,10 +176,18 @@ export function validateCapabilityShape(capability, role) {
  * `options.requiredRoles`/`options.allowlistedRoles`: role names exempt
  * from the "capabilities required" finding under `--enforce` (the
  * allowlist is the mechanism issue #1196 itself asks for -- "run the gate
- * ... with an empty or allowlisted set, until they land").
+ * ... with an empty or allowlisted set, until they land"). The same
+ * allowlist also forgives an unresolved capability `input` naming one of
+ * these roles as `producerRole` -- see the `--enforce` input-resolution
+ * check below.
+ * `options.proofCaseIdsByRole`: optional `Map<role, Set<string> | undefined>`
+ * of each role's own retained qualification adapter case ids, threaded
+ * into `validateCapabilityShape` per role. Omit entirely (as every
+ * existing caller that doesn't care about resolution does) to skip that
+ * check for every role.
  */
 export function evaluateCapabilityMaps(activeRoles, manifestsByName, options = {}) {
-  const { enforce = false, allowlistedRoles = [] } = options;
+  const { enforce = false, allowlistedRoles = [], proofCaseIdsByRole } = options;
   const allowlisted = new Set(allowlistedRoles);
   const findings = [];
   const warnings = [];
@@ -168,12 +216,13 @@ export function evaluateCapabilityMaps(activeRoles, manifestsByName, options = {
       continue;
     }
 
+    const knownProofCaseIds = proofCaseIdsByRole?.get(role);
     const entryFindings = [];
     const ids = [];
     const subQuestions = [];
     const outputPaths = [];
     for (const capability of foundry.capabilities) {
-      entryFindings.push(...validateCapabilityShape(capability, role));
+      entryFindings.push(...validateCapabilityShape(capability, role, knownProofCaseIds));
       if (isRecord(capability)) {
         if (isText(capability.id)) ids.push(capability.id);
         if (isText(capability.subQuestion)) subQuestions.push(capability.subQuestion);
@@ -248,6 +297,34 @@ export function evaluateCapabilityMaps(activeRoles, manifestsByName, options = {
         }
       }
     }
+
+    // Every capability's own `inputs` entry should resolve to a real
+    // producer: `{ producerRole, artifact }` names a capability whose own
+    // `id` is `artifact`, declared among `producerRole`'s own well-formed
+    // capabilities. A `producerRole` that is itself allowlisted (its map
+    // has not landed yet) is forgiven outright -- the consuming role
+    // cannot be faulted for a producer that hasn't drafted yet, the same
+    // forgiveness `required-capabilities-absent` already extends to that
+    // producer directly.
+    for (const [role, capabilities] of capabilitiesByRole) {
+      for (const capability of capabilities) {
+        if (!Array.isArray(capability.inputs)) continue;
+        for (const input of capability.inputs) {
+          if (!isCapabilityInputEntry(input)) continue; // already reported by validateCapabilityShape
+          const { producerRole, artifact } = input;
+          if (allowlisted.has(producerRole)) continue;
+          const producerCapabilities = capabilitiesByRole.get(producerRole) ?? [];
+          const resolved = producerCapabilities.some((candidate) => candidate.id === artifact);
+          if (!resolved) {
+            findings.push({
+              rule: "unresolved-capability-input",
+              role,
+              message: `capability "${capability.id}" input { producerRole: "${producerRole}", artifact: "${artifact}" } does not resolve to any capability "${producerRole}" itself declares (artifact must name one of that role's own capability ids)`,
+            });
+          }
+        }
+      }
+    }
   }
 
   return { findings, warnings, table };
@@ -294,6 +371,27 @@ function loadAllowlist(argv, root) {
   return parsed;
 }
 
+/**
+ * This role's own retained qualification adapter case ids
+ * (governance/release-qualification-adapters/<role-short-name>/current-direct.json,
+ * `cases[].id`), or `undefined` when the adapter file does not exist, is
+ * unreadable, or does not declare a `cases` array -- treated the same as
+ * "cannot resolve yet", never a crash: a role without a retained adapter
+ * simply gets no proofCase-resolution check, the same "absence is not a
+ * failure" discipline this whole gate already applies elsewhere.
+ */
+function loadProofCaseIds(root, role) {
+  const adapterPath = join(root, "governance", "release-qualification-adapters", roleShortName(role), "current-direct.json");
+  if (!existsSync(adapterPath)) return undefined;
+  try {
+    const adapter = readJson(adapterPath);
+    if (!isRecord(adapter) || !Array.isArray(adapter.cases)) return undefined;
+    return new Set(adapter.cases.filter((entry) => isRecord(entry) && isText(entry.id)).map((entry) => entry.id));
+  } catch {
+    return undefined;
+  }
+}
+
 function collect(root) {
   const contractPath = join(root, "packages/controller/contracts/role-loop-archetypes.json");
   if (!existsSync(contractPath)) throw new Error(`role contract not found at ${contractPath}`);
@@ -308,7 +406,9 @@ function collect(root) {
     const manifest = readJson(manifestPath);
     if (isRecord(manifest) && isText(manifest.name)) manifestsByName.set(manifest.name, manifest);
   }
-  return { activeRoles: Object.keys(contract.roles), manifestsByName };
+  const activeRoles = Object.keys(contract.roles);
+  const proofCaseIdsByRole = new Map(activeRoles.map((role) => [role, loadProofCaseIds(root, role)]));
+  return { activeRoles, manifestsByName, proofCaseIdsByRole };
 }
 
 function printTable(table) {
@@ -342,7 +442,7 @@ function main(argv) {
     else console.error(`check-capability-maps: ${message}`);
     return 2;
   }
-  const result = evaluateCapabilityMaps(collected.activeRoles, collected.manifestsByName, { enforce, allowlistedRoles });
+  const result = evaluateCapabilityMaps(collected.activeRoles, collected.manifestsByName, { enforce, allowlistedRoles, proofCaseIdsByRole: collected.proofCaseIdsByRole });
   const catalogue = buildCapabilityCatalogue(collected.activeRoles, collected.manifestsByName);
   if (json) {
     console.log(JSON.stringify({ ...result, catalogue: { byStage: Object.fromEntries(catalogue.byStage), unassigned: catalogue.unassigned } }, null, 2));
@@ -354,7 +454,7 @@ function main(argv) {
   printCatalogue(catalogue);
   const declaredCount = result.table.filter((row) => row.capabilities === "declared").length;
   console.log(`\ncapabilities: ${declaredCount}/${result.table.length} active role(s) declare a well-formed map.`);
-  console.log(enforce ? `Running with --enforce: absence of capabilities (outside ${allowlistedRoles.length} allowlisted role(s)), cross-role output ownership, and needs/capability-output matching are all findings.` : "Report mode: absence of capabilities is printed and counted, never a failure. Pass --enforce for the enforcing mode.");
+  console.log(enforce ? `Running with --enforce: absence of capabilities (outside ${allowlistedRoles.length} allowlisted role(s)), cross-role output ownership, needs/capability-output matching, and capability-input resolution are all findings.` : "Report mode: absence of capabilities is printed and counted, never a failure. Pass --enforce for the enforcing mode.");
   return result.findings.length === 0 ? 0 : 1;
 }
 

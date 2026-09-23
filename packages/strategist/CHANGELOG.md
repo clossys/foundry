@@ -10,13 +10,22 @@ All notable changes to this package are documented here. Format follows
 ### Added
 
 - `foundry.capabilities` (schema v3, issue #1196): a MECE capability map of
-  this role's craft — evidence base, audience understanding, market
-  definition, positioning, claims, brand derivation, mission and values,
-  direction and roadmap currency, and constraints, all built against
-  `strategist-check`'s existing facts/brand/direction subcommands; business
-  model and pricing hypothesis, the north-star metric tree (#533), and the
-  competitive landscape are declared `planned`. Drafted per #1198, checked
-  MECE across the five v0 Launch-pack roles by `check-capability-maps.mjs`.
+  this role's craft — 11 capabilities `built` against
+  `strategist-check`'s existing facts/brand-coverage/direction/handoff
+  subcommands and `projector.ts` (evidence base, audience understanding,
+  market definition, positioning, claims, brand derivation, mission and
+  values, the roadmap, direction currency, constraints, and the strategy
+  brief for #1204's Foundation layer); business model and pricing
+  hypothesis, the north-star metric tree (#533, #1272), and the
+  competitive landscape (#1268) are declared `planned`. Every `built`/
+  `partial` capability's `proofCase` resolves against this role's own
+  retained qualification adapter — today that adapter has one retained
+  case (`facts-clean`), cited across every built capability pending
+  dedicated per-capability cases (#1272). Drafted per #1198, checked
+  MECE across the five v0 Launch-pack roles by `check-capability-maps.mjs`
+  (report mode: 0 findings; `--enforce`, with the other 14 roles
+  allowlisted: 0 findings — output in PR #1258). Independent review
+  applied: #1258.
 
 ## [0.4.0] - 2026-09-22
 

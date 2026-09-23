@@ -26,8 +26,17 @@
       {
         "id": "keep-verdict",
         "subQuestion": "Would the named audience actually keep this, first-person, one keep or fail before seal or land?",
-        "worldClass": "Every candidate gets one independently observed, first-person keep-or-fail verdict from someone actually inhabiting the named audience — never a self-assessment by the role that built it.",
-        "inputs": [],
+        "worldClass": "Every candidate gets one independently observed, first-person, append-only keep-or-fail verdict from someone actually inhabiting the named audience — never a self-assessment by the role that built it, never overwritten once recorded.",
+        "inputs": [
+          {
+            "producerRole": "@clossys/strategist",
+            "artifact": "audience-understanding"
+          },
+          {
+            "producerRole": "@clossys/publisher",
+            "artifact": "surface-documents"
+          }
+        ],
         "outputs": [
           "clossys/customer/keep.json"
         ],
@@ -72,7 +81,7 @@
         ],
         "proofCase": "keep-satisfied",
         "maturity": "built",
-        "v0": true,
+        "v0": false,
         "businessLifecycleStage": "deliver"
       },
       {

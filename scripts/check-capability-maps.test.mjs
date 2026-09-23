@@ -75,7 +75,8 @@ test("validateCapabilityShape rejects an output path outside the role's own fold
 
 test("validateCapabilityShape accepts every declared maturity and rejects businessLifecycleStage outside the fixed vocabulary", () => {
   for (const maturity of CAPABILITY_MATURITIES) {
-    assert.deepEqual(validateCapabilityShape(capability({ maturity }), "@scope/alpha"), []);
+    const proofCase = maturity === "planned" ? null : "case-1";
+    assert.deepEqual(validateCapabilityShape(capability({ maturity, proofCase }), "@scope/alpha"), []);
   }
   const findings = validateCapabilityShape(capability({ businessLifecycleStage: "scale" }), "@scope/alpha");
   assert.ok(findings.some((f) => f.rule === "invalid-capability-business-lifecycle-stage"));
@@ -201,6 +202,80 @@ test("report mode does not check the feeds/capability match", () => {
       feeds: [{ artifact: "plan", path: "clossys/alpha/plan.json" }],
       capabilities: [capability({ id: "a", outputs: ["clossys/alpha/other.json"] })],
     } },
+  ]));
+  assert.deepEqual(result.findings, []);
+});
+
+test("validateCapabilityShape rejects a planned capability with a non-null proofCase", () => {
+  const findings = validateCapabilityShape(capability({ maturity: "planned", proofCase: "case-1" }), "@scope/alpha");
+  assert.ok(findings.some((f) => f.rule === "invalid-capability-proof-case"));
+});
+
+test("validateCapabilityShape accepts a planned capability with proofCase: null", () => {
+  assert.deepEqual(validateCapabilityShape(capability({ maturity: "planned", proofCase: null }), "@scope/alpha"), []);
+});
+
+test("validateCapabilityShape rejects a built capability with proofCase: null", () => {
+  const findings = validateCapabilityShape(capability({ maturity: "built", proofCase: null }), "@scope/alpha");
+  assert.ok(findings.some((f) => f.rule === "invalid-capability-proof-case"));
+});
+
+test("validateCapabilityShape resolves proofCase against a supplied known-case-id set", () => {
+  const known = new Set(["case-1"]);
+  assert.deepEqual(validateCapabilityShape(capability({ proofCase: "case-1" }), "@scope/alpha", known), []);
+  const findings = validateCapabilityShape(capability({ proofCase: "case-99" }), "@scope/alpha", known);
+  assert.ok(findings.some((f) => f.rule === "unresolved-capability-proof-case"));
+});
+
+test("validateCapabilityShape skips proofCase resolution when no known-case-id set is supplied", () => {
+  assert.deepEqual(validateCapabilityShape(capability({ proofCase: "anything" }), "@scope/alpha"), []);
+});
+
+test("evaluateCapabilityMaps threads proofCaseIdsByRole into per-capability resolution", () => {
+  const result = evaluateCapabilityMaps(["@scope/alpha"], manifests([
+    { name: "@scope/alpha", foundry: { capabilities: [capability({ proofCase: "unknown-case" })] } },
+  ]), { proofCaseIdsByRole: new Map([["@scope/alpha", new Set(["case-1"])]]) });
+  assert.ok(result.findings.some((f) => f.rule === "unresolved-capability-proof-case"));
+});
+
+test("--enforce resolves a capability input against the producer role's own capability id", () => {
+  const result = evaluateCapabilityMaps(["@scope/alpha", "@scope/beta"], manifests([
+    { name: "@scope/alpha", foundry: { capabilities: [capability({ id: "produced", outputs: ["clossys/alpha/x.json"] })] } },
+    { name: "@scope/beta", foundry: { capabilities: [capability({
+      id: "consumer", outputs: ["clossys/beta/y.json"],
+      inputs: [{ producerRole: "@scope/alpha", artifact: "produced" }],
+    })] } },
+  ]), { enforce: true });
+  assert.deepEqual(result.findings.filter((f) => f.rule === "unresolved-capability-input"), []);
+});
+
+test("--enforce flags a capability input that names no real capability id on the producer role", () => {
+  const result = evaluateCapabilityMaps(["@scope/alpha", "@scope/beta"], manifests([
+    { name: "@scope/alpha", foundry: { capabilities: [capability({ id: "produced", outputs: ["clossys/alpha/x.json"] })] } },
+    { name: "@scope/beta", foundry: { capabilities: [capability({
+      id: "consumer", outputs: ["clossys/beta/y.json"],
+      inputs: [{ producerRole: "@scope/alpha", artifact: "nonexistent" }],
+    })] } },
+  ]), { enforce: true });
+  assert.ok(result.findings.some((f) => f.rule === "unresolved-capability-input"));
+});
+
+test("--enforce forgives a capability input naming an allowlisted producer role", () => {
+  const result = evaluateCapabilityMaps(["@scope/alpha", "@scope/beta"], manifests([
+    { name: "@scope/beta", foundry: { capabilities: [capability({
+      id: "consumer", outputs: ["clossys/beta/y.json"],
+      inputs: [{ producerRole: "@scope/alpha", artifact: "anything" }],
+    })] } },
+  ]), { enforce: true, allowlistedRoles: ["@scope/alpha"] });
+  assert.deepEqual(result.findings.filter((f) => f.rule === "unresolved-capability-input"), []);
+});
+
+test("report mode does not check capability-input resolution", () => {
+  const result = evaluateCapabilityMaps(["@scope/alpha", "@scope/beta"], manifests([
+    { name: "@scope/beta", foundry: { capabilities: [capability({
+      id: "consumer", outputs: ["clossys/beta/y.json"],
+      inputs: [{ producerRole: "@scope/alpha", artifact: "anything" }],
+    })] } },
   ]));
   assert.deepEqual(result.findings, []);
 });

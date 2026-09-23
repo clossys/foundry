@@ -10,11 +10,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `foundry.capabilities` (schema v3, issue #1196): a MECE capability map of
-  this role's craft — the first-person keep verdict, lived feedback,
-  comparison against the person's own alternatives, refer, churn, adopt,
-  and worth, all built against `keep-form.ts`'s existing seven inhabit
-  intents. Drafted per #1201, checked MECE across the five v0 Launch-pack
-  roles by `check-capability-maps.mjs`.
+  this role's craft — all 7 capabilities `built`, against `keep-form.ts`'s
+  existing seven inhabit intents (keep, feedback, compare, refer, churn,
+  adopt, worth), each an append-only, independently-observed, first-person
+  record. `proofCase` resolves against this role's own retained
+  qualification adapter — today one retained case (`keep-satisfied`),
+  cited across every built capability pending dedicated per-capability
+  cases (#1272). Drafted per #1201, checked MECE across the five v0
+  Launch-pack roles by `check-capability-maps.mjs` (report mode: 0
+  findings; `--enforce`, with the other 14 roles allowlisted: 0 findings —
+  output in PR #1258). Independent review applied: #1258.
 
 ## [0.1.1] - 2026-09-22
 

@@ -10,14 +10,23 @@ All notable changes to this package are documented here. Format follows
 ### Added
 
 - `foundry.capabilities` (schema v3, issue #1196): a MECE capability map of
-  this role's craft — surface documents, channel rendering, templates and
-  channel specs, sealing and the publication record, and live parity, all
-  built against the existing document/email/image/print/web/slides and
-  record modules; the materials site and channel kits are declared
-  `partial` (brand-asset roster and slide rendering exist, but no
-  assembled site or packaged per-channel kit yet); v0 Launch pack planning
-  and inventory is declared `planned`. Drafted per #1202, checked MECE
-  across the five v0 Launch-pack roles by `check-capability-maps.mjs`.
+  this role's craft — 5 capabilities `built` (surface documents, channel
+  rendering, the asset roster and coverage from `media/`, and route and
+  visibility governance from `web/checkWebRoutes.ts`, and sealing —
+  which now also absorbs the citation-drift check `checkLedgerDrift`);
+  templates and channel specs, the materials site (rewritten as an
+  internal, locally opened index per #1206 — not a public site), and
+  channel kits are `partial`; v0 Launch pack planning and inventory and
+  the apps/site template (#1208) are `planned`. `live-parity` is `partial`
+  and now scoped specifically to #1209 (does the live URL match the
+  sealed record), backed by `record/reconciliation.ts`. `proofCase`
+  resolves against this role's own retained qualification adapter — today
+  one retained case (`media-satisfied`), cited across every built/partial
+  capability pending dedicated per-capability cases (#1272). Drafted per
+  #1202, checked MECE across the five v0 Launch-pack roles by
+  `check-capability-maps.mjs` (report mode: 0 findings; `--enforce`, with
+  the other 14 roles allowlisted: 0 findings — output in PR #1258).
+  Independent review applied: #1258.
 
 ## [0.4.24] - 2026-09-21
 
