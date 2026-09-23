@@ -21,7 +21,21 @@
     "assets.json",
     "references-satisfied.json",
     "references-violated.json",
-    "references-indeterminate.json"
+    "references-indeterminate.json",
+    "record-ledger.json",
+    "record-ledger-appended.json",
+    "record-ledger-rewritten.json",
+    "record-ledger-empty.json",
+    "record-values-current.json",
+    "record-values-drifted.json",
+    "routes-clean/web-route-manifest.json",
+    "routes-clean/app/page.tsx",
+    "routes-violated/web-route-manifest.json",
+    "routes-violated/app/page.tsx",
+    "brand.css",
+    "brand-uncovered.css",
+    "rate-satisfied.json",
+    "rate-violated.json"
   ],
   "cases": [
     {
@@ -53,6 +67,154 @@
       ],
       "exitCode": 2,
       "group": "media-coverage"
+    },
+    {
+      "id": "record-drift-clean",
+      "bin": "publisher-record-check",
+      "args": [
+        {
+          "fixture": "record-ledger.json"
+        },
+        {
+          "fixture": "record-values-current.json"
+        }
+      ],
+      "exitCode": 0,
+      "group": "record-drift"
+    },
+    {
+      "id": "record-drift-drifted",
+      "bin": "publisher-record-check",
+      "args": [
+        {
+          "fixture": "record-ledger.json"
+        },
+        {
+          "fixture": "record-values-drifted.json"
+        }
+      ],
+      "exitCode": 1,
+      "group": "record-drift"
+    },
+    {
+      "id": "record-drift-indeterminate",
+      "bin": "publisher-record-check",
+      "args": [
+        {
+          "fixture": "record-ledger-empty.json"
+        },
+        {
+          "fixture": "record-values-current.json"
+        }
+      ],
+      "exitCode": 2,
+      "group": "record-drift"
+    },
+    {
+      "id": "record-append-only-clean",
+      "bin": "publisher-record-check",
+      "args": [
+        {
+          "literal": "append-only"
+        },
+        {
+          "fixture": "record-ledger.json"
+        },
+        {
+          "fixture": "record-ledger-appended.json"
+        }
+      ],
+      "exitCode": 0,
+      "group": "record-append-only"
+    },
+    {
+      "id": "record-append-only-violated",
+      "bin": "publisher-record-check",
+      "args": [
+        {
+          "literal": "append-only"
+        },
+        {
+          "fixture": "record-ledger.json"
+        },
+        {
+          "fixture": "record-ledger-rewritten.json"
+        }
+      ],
+      "exitCode": 1,
+      "group": "record-append-only"
+    },
+    {
+      "id": "web-routes-clean",
+      "bin": "publisher-web-route-check",
+      "args": [
+        {
+          "fixture": "routes-clean/web-route-manifest.json"
+        }
+      ],
+      "exitCode": 0,
+      "group": "web-routes"
+    },
+    {
+      "id": "web-routes-violated",
+      "bin": "publisher-web-route-check",
+      "args": [
+        {
+          "fixture": "routes-violated/web-route-manifest.json"
+        }
+      ],
+      "exitCode": 1,
+      "group": "web-routes"
+    },
+    {
+      "id": "preview-rendered",
+      "bin": "publisher-preview",
+      "args": [
+        {
+          "fixture": "brand.css"
+        },
+        {
+          "literal": "preview-output"
+        }
+      ],
+      "exitCode": 0,
+      "group": "preview"
+    },
+    {
+      "id": "preview-brand-uncovered",
+      "bin": "publisher-preview",
+      "args": [
+        {
+          "fixture": "brand-uncovered.css"
+        },
+        {
+          "literal": "preview-output"
+        }
+      ],
+      "exitCode": 1,
+      "group": "preview"
+    },
+    {
+      "id": "rate-satisfied",
+      "bin": "publisher-rate-check",
+      "args": [
+        {
+          "fixture": "rate-satisfied.json"
+        }
+      ],
+      "exitCode": 0,
+      "group": "verified-publication-rate"
+    },
+    {
+      "id": "rate-violated",
+      "bin": "publisher-rate-check",
+      "args": [
+        {
+          "fixture": "rate-violated.json"
+        }
+      ],
+      "exitCode": 1,
+      "group": "verified-publication-rate"
     }
   ],
   "dimensionEvidence": {

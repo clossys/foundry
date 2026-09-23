@@ -113,6 +113,53 @@
       "bin": "publisher-rate-check",
       "invocation": "single-json-input"
     },
+    "outputs": [
+      "clossys/publisher/pack.json",
+      "clossys/publisher/surfaces/"
+    ],
+    "fit": "fit-signals.json",
+    "solves": [
+      {
+        "problem": "publisher-verified-release",
+        "statement": "We're not sure what's actually live, or that it matches what we approved.",
+        "metric": "verified publication rate",
+        "proofCase": "rate-violated",
+        "evidence": "designed",
+        "capability": "sealing-and-the-publication-record"
+      }
+    ],
+    "needs": [
+      {
+        "producerRole": "@clossys/strategist",
+        "artifact": "strategy-brief"
+      },
+      {
+        "producerRole": "@clossys/designer",
+        "artifact": "components-and-blocks"
+      },
+      {
+        "producerRole": "@clossys/designer",
+        "artifact": "token-contract-and-brand-overlay-binding"
+      },
+      {
+        "producerRole": "@clossys/designer",
+        "artifact": "logo-and-identity-files"
+      },
+      {
+        "producerRole": "@clossys/writer",
+        "artifact": "copy-registry"
+      },
+      {
+        "producerRole": "@clossys/customer",
+        "artifact": "keep-verdict"
+      }
+    ],
+    "feeds": [
+      {
+        "artifact": "surface-documents",
+        "path": "clossys/publisher/surfaces/"
+      }
+    ],
     "capabilities": [
       {
         "id": "v0-launch-pack-planning-and-inventory",
@@ -143,7 +190,7 @@
       {
         "id": "surface-documents",
         "subQuestion": "Is every audience-facing surface declared once as a validated document, with its template and locations resolved?",
-        "worldClass": "Every published surface is one validated SurfaceDocument resolving to a registered template and a real channel location — never a page composed ad hoc outside the document.",
+        "worldClass": "Every published surface is one validated SurfaceDocument resolving to a registered template and a real channel location — never a page composed ad hoc outside the document. Today: `validateSurfaceDocument` and `resolveSurfaceDocument` (`src/core/`) validate and resolve one document as library functions, and the shipped site template (`templates/site/app/*/page.tsx`) reads `clossys/publisher/surfaces/*.json` at build time, but no bin yet validates a consumer's own surface documents, so no qualification case exercises this capability directly (#1272).",
         "inputs": [
           {
             "producerRole": "@clossys/writer",
@@ -158,7 +205,7 @@
           "clossys/publisher/surfaces/"
         ],
         "proofCase": "media-satisfied",
-        "maturity": "built",
+        "maturity": "partial",
         "v0": true,
         "businessLifecycleStage": "launch"
       },
@@ -175,7 +222,7 @@
         "outputs": [
           "clossys/publisher/.generated/render-report.json"
         ],
-        "proofCase": "media-satisfied",
+        "proofCase": "preview-rendered",
         "maturity": "built",
         "v0": true,
         "businessLifecycleStage": "launch"
@@ -210,7 +257,7 @@
         "outputs": [
           "clossys/publisher/materials/index.json"
         ],
-        "proofCase": "media-satisfied",
+        "proofCase": "preview-rendered",
         "maturity": "partial",
         "v0": true,
         "businessLifecycleStage": "launch"
@@ -258,7 +305,7 @@
         "outputs": [
           "clossys/publisher/routes.json"
         ],
-        "proofCase": "media-satisfied",
+        "proofCase": "web-routes-clean",
         "maturity": "partial",
         "v0": true,
         "businessLifecycleStage": "launch"
@@ -294,7 +341,7 @@
         "outputs": [
           "clossys/publisher/record.json"
         ],
-        "proofCase": "media-satisfied",
+        "proofCase": "record-append-only-clean",
         "maturity": "built",
         "v0": true,
         "businessLifecycleStage": "deliver"
@@ -328,7 +375,8 @@
     "README.md",
     "LICENSE",
     "skill",
-    "templates"
+    "templates",
+    "fit-signals.json"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
