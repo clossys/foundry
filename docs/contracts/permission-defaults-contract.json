@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "kind": "foundry-permission-defaults",
+  "$comment": "Declares what a Clossys-guided agent may do unasked in a staffed repository, what always needs the client's approval, and what it never does (#1225). Validated by scripts/check-permission-defaults.mjs, wired as `npm run check:permission-defaults`. This is a contract, not enforcement: Launcher applies a repository's declaration at compose time (CODEOWNERS for `clossys/<role>/`, branch-protection guidance) -- that wiring is not part of this pull request; see the follow-up comment recorded on #1225. Enforceable authority stays with Controller (rules) and Bouncer, per #1225's own proposed change. This gate's own report is docs/contracts/check-output-envelope.json.",
+  "tiers": ["unasked", "approval", "never"],
+  "tierMeaning": {
+    "unasked": "The agent does this without asking first. Still visible afterward: a pull request, a commit, or a run log.",
+    "approval": "The agent proposes or drafts it, then waits for the client's explicit approval before it takes effect -- almost always a merged pull request.",
+    "never": "The agent does not do this at all, in this repository, regardless of what is asked. A client who wants it done does it themselves."
+  },
+  "capabilityFields": ["id", "description", "tier", "rationale"],
+  "recordFields": ["schemaVersion", "repository", "asOf", "capabilities"],
+  "requiredCapabilityIds": [
+    "read-repository-content",
+    "propose-change-as-pull-request",
+    "run-tests-build-or-lint-locally",
+    "write-internal-notes-or-drafts",
+    "comment-on-existing-issue-or-pull-request",
+    "merge-a-pull-request",
+    "push-directly-to-default-branch",
+    "force-push-or-rewrite-published-history",
+    "bypass-required-checks-or-branch-protection",
+    "handle-or-store-credentials-or-secrets",
+    "make-a-live-external-change",
+    "spend-money-or-authorize-a-purchase",
+    "send-a-message-on-the-clients-behalf-externally",
+    "delete-or-permanently-remove-data",
+    "modify-account-or-security-settings",
+    "accept-terms-or-grant-oauth-permissions"
+  ],
+  "alwaysHumanCapabilityIds": [
+    "handle-or-store-credentials-or-secrets",
+    "make-a-live-external-change",
+    "spend-money-or-authorize-a-purchase",
+    "delete-or-permanently-remove-data",
+    "modify-account-or-security-settings",
+    "accept-terms-or-grant-oauth-permissions"
+  ],
+  "rule": "One record declares one repository's own permission defaults, current `asOf` a known-offset RFC3339 instant. `capabilities` must cover every id in `requiredCapabilityIds` exactly once, each with a `tier` from `tiers` and a nonempty `rationale` written in plain language, because a default with no stated reason is indistinguishable from an oversight. Every id in `alwaysHumanCapabilityIds` must be declared `approval` or `never`, never `unasked` -- live external changes, credentials, money, permanent deletion, account or security settings, and accepting terms or granting OAuth permissions always need the human, in every repository, and no repository declaration may relax that floor. A declaration is otherwise free to set its own defaults for every other capability; a repository may, for example, declare `merge-a-pull-request` as `never` because only an independent human or reviewer merges there. A record that is missing, unreadable, or has an unusable top-level shape is indeterminate, never satisfied; a record that declares every required id, respects the always-human floor, and gives every capability a nonempty rationale is satisfied; every other rule violation is violated."
+}
