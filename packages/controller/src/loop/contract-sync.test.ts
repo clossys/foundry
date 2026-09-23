@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { LOOP_STAGES, BLOCKER_KINDS } from "./types.js";
+import { LOOP_STAGES, BLOCKER_KINDS, BLOCKER_OWNERS } from "./types.js";
 
 // docs/contracts/loop.json is the human-readable twin of this module, the
 // same reason lifecycle.test.ts checks docs/contracts/lifecycle.json:
@@ -19,8 +19,9 @@ describe("loop.json contract sync", () => {
     expect(contract.blockers.kinds).toEqual([...BLOCKER_KINDS]);
   });
 
-  it("declares an owner for every blocker kind, matching BLOCKER_OWNERS' keys", () => {
+  it("declares the same owner vocabulary as BLOCKER_OWNERS, not only the same keys", () => {
     expect(Object.keys(contract.blockers.owners).sort()).toEqual([...BLOCKER_KINDS].sort());
+    expect(contract.blockers.owners).toEqual(BLOCKER_OWNERS);
   });
 
   it("declares the same five artifact-operation kinds this module implements", () => {

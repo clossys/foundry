@@ -327,7 +327,7 @@
         "primaryMode": "assure",
         "secondaryModes": [],
         "boundary": {
-          "owns": "Reusable design vocabulary and conformance of tokens, components, structure, and accessibility constraints.",
+          "owns": "Reusable design vocabulary and conformance of tokens, components, structure, and accessibility constraints; product identity and the brand kit -- logo and mark set, colour and type tokens, favicon and app-icon image ASSETS, usage rules -- rendered as the brand guide page, which IS the style guide (#1204). Designer owns the image assets themselves (marks, icons); Publisher owns the CHANNEL TEMPLATES that place them (#1207) -- a template is not an asset.",
           "excludes": [
             "authoring product strategy or copy",
             "selecting page intent",
@@ -374,7 +374,7 @@
           "reconcile"
         ],
         "boundary": {
-          "owns": "Rendering approved named surfaces for channels and proving the exact audience release.",
+          "owns": "The v0 Launch pack's definition, inventory, and readiness (#1204); rendering approved named surfaces for channels, including the channel templates that place Designer's image assets (#1207); and sealing -- proving the exact audience release against an immutable publication record. Content and judgments (strategy, copy, identity, the keep) stay with Strategist, Designer, Writer, and Customer -- Publisher assembles and ships what they produce, never authors it.",
           "excludes": [
             "selecting a template from business intent",
             "authoring strategy or copy",

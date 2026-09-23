@@ -219,6 +219,17 @@ test("--enforce flags two roles claiming the same problem id", () => {
   assert.match(collision.message, /@scope\/beta/);
 });
 
+test("--enforce does not report a collision when one role's own two solves entries repeat the same problem id", () => {
+  const entryA = { problem: "cant-explain-what-we-are", statement: "y", metric: "m", proofCase: "c", evidence: "designed" };
+  const entryB = { problem: "cant-explain-what-we-are", statement: "z", metric: "m", proofCase: "c", evidence: "designed" };
+  const roleMetricByRole = new Map([["@scope/alpha", "m"]]);
+  const readAdapterCases = () => ["c"];
+  const result = evaluatePackageFramework(["@scope/alpha"], manifests([
+    { name: "@scope/alpha", foundry: { solves: [entryA, entryB] } },
+  ]), { enforce: true, roleMetricByRole, readAdapterCases });
+  assert.deepEqual(result.findings.filter((f) => f.rule === "solves-problem-claimed-by-multiple-roles"), []);
+});
+
 test("needs must be an array of { producerRole, artifact }", () => {
   const result = evaluatePackageFramework(["@scope/alpha"], manifests([{ name: "@scope/alpha", foundry: { needs: [{ producerRole: "@scope/beta" }] } }]));
   assert.deepEqual(result.findings.map((f) => f.rule), ["invalid-needs-declaration"]);
