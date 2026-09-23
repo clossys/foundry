@@ -82,6 +82,68 @@ files turns "surprise on next invoice" into a filed finding before the invoice
 arrives. The declaring context owns the schedule; the consumer repository owns
 the wiring.
 
+## Runner stack by repository visibility (issue #1259)
+
+The vocabulary above (labels, `defaultLabel`, `highCapacityJustifiedJobs`,
+`publicRepos`) governs which label a job may use. This section is the prior
+decision — which provider a repository defaults to in the first place —
+that the vocabulary is then declared against. Prices referenced below
+change; they live as dated data in `conventions/data/runner-pricing.json`
+(`asOf`, source URLs), read by `ci-conventions-check`'s evaluator, and are
+never hard-coded here or in code.
+
+### Decision rule
+
+1. **Public repositories use GitHub-hosted standard runners, always.**
+   They are free and unlimited (`runner-pricing.json`'s
+   `githubHosted.publicRepos`). No paid provider — adopting one creates
+   spend where there was none. No self-hosted runner — a fork PR would
+   execute untrusted code on that hardware. A larger GitHub-hosted runner
+   is paid even on a public repository, so it still needs a justified
+   `highCapacityJustifiedJobs` entry.
+2. **Private repositories default to Blacksmith, 2 vCPU** (`blacksmith-
+   2vcpu-ubuntu-2204`), on its ARM variant where the toolchain supports it
+   and x64 otherwise. It is cheaper per minute than GitHub-hosted
+   (`runner-pricing.json`'s `blacksmith.costPerMinute`) on faster hardware,
+   and its 3,000 free minutes/month stack **on top of** GitHub's own
+   included minutes — a Free-plan account gets roughly 5,000 free Linux
+   minutes/month between the two. GitHub-hosted remains the fallback for
+   any job that needs a GitHub-only runner feature. Higher-vCPU tiers are
+   `highCapacityJustifiedJobs` only, same as the base vocabulary above.
+3. **Self-hosted runners** are permitted only in a private repository with
+   no fork PRs, only with a declared justification, and only with a
+   custody entry for the runner in Locksmith (#1212).
+4. **Every private repository declares spend guardrails:** the account's
+   GitHub Actions spending limit left at $0 unless deliberately raised (so
+   overage fails closed rather than billing silently), a declared monthly
+   minutes budget, and every cost lever `ci-conventions.md`'s **Cost**
+   section already makes mandatory (PR-only `cancel-in-progress`,
+   affected-only PR tests, caching, `timeout-minutes`, short
+   `retention-days`) — the Free plan's 500 MB artifact allowance in
+   particular leaves no room for a long `retention-days` default.
+5. **Security for a third-party runner provider:** its GitHub App holds
+   repository access and runs jobs with that repository's secrets, so
+   prefer OIDC over stored secrets, declare each secret's custody (#1212),
+   and never grant the provider app access to a public repository — rule 1
+   already keeps a public repository off it entirely.
+
+### What `ci-conventions-check` evaluates for this section
+
+- Visibility against runner label: a paid-provider label on a public repo
+  is a violation (already covered by `runner/visibility-mismatch` above); a
+  GitHub-hosted label on a private repo whose projected spend exceeds its
+  declared budget is a warning, not a violation — GitHub-hosted remains a
+  legitimate fallback, so this is a cost signal, not a rule break.
+- Label tier against `highCapacityJustifiedJobs`, exactly as `runner/
+  unjustified-capacity` already does.
+- Presence of each declared cost lever from `ci-conventions.md`.
+- A projected monthly minutes figure, when the caller supplies run
+  history: the projection is compared against `runner-pricing.json`'s free
+  allowances plus the declared monthly budget, with a warning when it
+  exceeds either. No run history supplied means this check is skipped, not
+  reported as a violation or as indeterminate — a projection nobody
+  supplied is simply absent, not evidence of anything.
+
 ## Non-Goals
 
 - Provider subscription status, capacity, per-project cache/concurrency limits,

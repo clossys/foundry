@@ -1,6 +1,6 @@
 {
   "name": "@clossys/advisor",
-  "version": "0.2.8",
+  "version": "0.4.0",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -15,7 +15,8 @@
   },
   "bin": {
     "advisor-check": "dist/cli.js",
-    "advisor-execution-readiness": "dist/execution-readiness-cli.js"
+    "advisor-execution-readiness": "dist/execution-readiness-cli.js",
+    "advisor-render-status": "dist/render-status-cli.js"
   },
   "files": [
     "dist",
@@ -55,10 +56,10 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "node scripts/pack-capability-catalogue.mjs && tsc -p tsconfig.json",
     "prepublishOnly": "node ../../scripts/check-name-collision.mjs . && npm run build",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run"
+    "typecheck": "node scripts/pack-capability-catalogue.mjs && tsc -p tsconfig.json --noEmit",
+    "test": "node scripts/pack-capability-catalogue.mjs && vitest run"
   },
   "devDependencies": {
     "@types/node": "^26.5.1",

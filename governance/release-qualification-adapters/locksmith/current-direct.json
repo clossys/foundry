@@ -6,7 +6,8 @@
     "clossys-secrets-infisical": 0,
     "vespene-secrets-infisical": 0,
     "clossys-locksmith-credential": 0,
-    "locksmith-check": 0
+    "locksmith-check": 0,
+    "clossys-locksmith-provider-custody": 0
   },
   "fixtures": [
     "catalog.json",
