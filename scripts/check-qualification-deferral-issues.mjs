@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-// check-qualification-deferral-issues — for every acknowledged deferral in
-// governance/release-qualification-deferrals.json, is the tracking issue it
-// cites still OPEN?
+// check-qualification-deferral-issues — for every acknowledged deferral under
+// governance/release-qualification-deferrals/, is the tracking issue it cites
+// still OPEN?
 //
 //   node scripts/check-qualification-deferral-issues.mjs [--json]
 //
@@ -18,9 +18,9 @@
 //
 // WHY THIS EXISTS (issue #1136)
 // ------------------------------
-// governance/release-qualification-deferrals.json's own $comment says the
-// file is "a countdown, not a standing exemption -- the gate refuses to let
-// an entry outlive its reason." scripts/check-qualification-record-required.mjs
+// governance/release-qualification-deferrals/README.md's own explanation says
+// the store is "a countdown, not a standing exemption -- the gate refuses to
+// let an entry outlive its reason." scripts/check-qualification-record-required.mjs
 // enforces the RECORD half of that faithfully (a deferral goes stale once a
 // retained, matching record exists — see its checkStaleDeferrals()) but never
 // checks the ISSUE half: nothing anywhere confirms that the tracking issue a
@@ -64,7 +64,7 @@
 // -----------------------------------------------------
 // The entry set this script checks is whatever
 // check-qualification-record-required.mjs's own loadDeferrals() returns for
-// governance/release-qualification-deferrals.json at run time — reused
+// governance/release-qualification-deferrals/ at run time — reused
 // rather than re-parsed, so the two scripts can never disagree about what a
 // valid deferral entry looks like. Nothing here hard-codes a package name, a
 // version, or an issue number.
@@ -76,7 +76,7 @@ import { ghFetchJson } from "./lib/gh-api.mjs";
 
 /**
  * Pure evaluation: given the deferral entries already parsed from
- * governance/release-qualification-deferrals.json (loadDeferrals()'s own
+ * governance/release-qualification-deferrals/ (loadDeferrals()'s own
  * `entries` output) and an injectable issue fetcher, decide each entry's
  * status. No network call lives in this function — `fetchIssue` is the only
  * IO, and the CLI edge below is the only place that wires it to the real
@@ -157,7 +157,7 @@ function main() {
   }
 
   if (entries.length === 0) {
-    const message = "governance/release-qualification-deferrals.json declares no deferrals — nothing to check";
+    const message = "governance/release-qualification-deferrals/ declares no deferrals — nothing to check";
     if (json) console.log(JSON.stringify({ status: "pass", reason: message, results: [] }, null, 2));
     else console.log(`check-qualification-deferral-issues: OK — ${message}`);
     process.exit(0);

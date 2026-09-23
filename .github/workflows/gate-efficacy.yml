@@ -62,6 +62,7 @@ jobs:
   gate-efficacy:
     name: gate efficacy (run history, escape rate)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       # Full history, not the default shallow clone: `secret-scanning-
       # outcomes.mjs` resolves what each landed merge commit introduced via

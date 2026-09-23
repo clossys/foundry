@@ -7,38 +7,16 @@ All notable changes to this package are documented here. Format follows
 
 ## [0.3.18] - 2026-09-23
 
-Version 0.3.17 was claimed independently by this same change on the
-`claude/capability-maps-launch-pack` branch before merge; it collided with
-`main`'s own, unrelated 0.3.16 (below) → this entry moves to 0.3.18 on merge
-rather than reuse a version number `main` had already shipped different
-content under. No functional difference from what would have shipped as
-0.3.17.
+### Notes
 
-### Added
-
-- `foundry.capabilities` (schema v3, issue #1196): a MECE capability map of
-  this role's craft — 8 capabilities `built`: the voice record's own
-  structural completeness, copy-registry validity, copy coverage (traces
-  every component string to a registry entry by match or `copy:<id>`
-  citation — the "approved copy coverage rate" metric, and what
-  `writer-check`'s default `copy-clean` case actually proves), claims-to-
-  copy traceability (claim-shaped numeric sentences citing an approved
-  Strategist claim — whether this stays split from Strategist's own
-  facts/markers scan is a decision pending #1271), live-copy conformance,
-  addressability, locale coverage, and voice conformance ("well said",
-  `voice/checker.ts`); the messaging kit (#1269) is declared `planned`.
-  Every `built` capability's `proofCase` resolves against this role's own
-  retained qualification adapter — today one retained case (`copy-clean`),
-  genuinely proven only for `copy-coverage`, cited as a disclosed anchor
-  for the rest pending dedicated per-capability cases (#1272). Drafted per #1200, checked by `check-capability-maps.mjs` for its own
-  mechanical MECE criteria (no duplicate outputs or sub-questions within
-  a role, no cross-role output collision, every capability `inputs`
-  entry resolves) across the five v0 Launch-pack roles — report mode: 0
-  findings; `--enforce`, with the other 14 roles allowlisted: 0 findings
-  (output in PR #1258). Whether the declared sub-questions jointly and
-  completely answer each role's own job question stays a reviewer
-  judgment, never a mechanical finding. Independent review applied:
-  #1258.
+- No packed content changed. This package's test suite changed as part of
+  fixing leaking temp fixture directories (issue #1250), and its 0.3.15
+  qualification record was already retained -- once a version's record is
+  retained, any further change to that package, packed or not, requires a new
+  version. Restacked onto main after merge train 6; renumbered from 0.3.16
+  because main independently shipped `writer@0.3.16` for the addressability
+  extensions feature below, and 0.3.17 is claimed by open PR #1258
+  (version-collision rule, issue #1187).
 
 ## [0.3.16] - 2026-09-22
 

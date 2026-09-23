@@ -5,32 +5,16 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
-## [0.4.1] - 2026-09-22
+## [0.4.2] - 2026-09-23
 
-### Added
+### Notes
 
-- `foundry.capabilities` (schema v3, issue #1196): a MECE capability map of
-  this role's craft — 11 capabilities `built` against
-  `strategist-check`'s existing facts/brand-coverage/direction/handoff
-  subcommands and `projector.ts` (evidence base, audience understanding,
-  market definition, positioning, claims, brand derivation, mission and
-  values, the roadmap, direction currency, constraints, and the strategy
-  brief for #1204's Foundation layer); business model and pricing
-  hypothesis, the north-star metric tree (#533), and the
-  competitive landscape (#1268) are declared `planned`. Every `built`/
-  `partial` capability's `proofCase` resolves against this role's own
-  retained qualification adapter — today that adapter has one retained
-  case (`facts-clean`), genuinely proven only for `evidence-base`, cited
-  as a disclosed anchor for the rest pending dedicated per-capability
-  cases (#1272). Drafted per #1198, checked by `check-capability-maps.mjs` for its own
-  mechanical MECE criteria (no duplicate outputs or sub-questions within
-  a role, no cross-role output collision, every capability `inputs`
-  entry resolves) across the five v0 Launch-pack roles — report mode: 0
-  findings; `--enforce`, with the other 14 roles allowlisted: 0 findings
-  (output in PR #1258). Whether the declared sub-questions jointly and
-  completely answer each role's own job question stays a reviewer
-  judgment, never a mechanical finding. Independent review applied:
-  #1258.
+- No packed content changed. This package's test suite changed as part of
+  fixing leaking temp fixture directories (issue #1250), and its 0.4.0
+  qualification record was already retained -- once a version's record is
+  retained, any further change to that package, packed or not, requires a
+  new version. 0.4.1 is claimed by open PR #1258 for real feature work
+  (version-collision rule, issue #1187).
 
 ## [0.4.0] - 2026-09-22
 

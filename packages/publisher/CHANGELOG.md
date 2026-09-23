@@ -5,38 +5,99 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
-## [0.4.26] - 2026-09-22
+## [0.6.0] - 2026-09-23
 
 ### Added
 
-- `foundry.capabilities` (schema v3, issue #1196): a MECE capability map of
-  this role's craft — 4 capabilities `built` (surface documents, channel
-  rendering, the asset roster and coverage from `media/`, and sealing —
-  which now also absorbs the citation-drift check `checkLedgerDrift`);
-  5 `partial`: templates and channel specs (only web templates exist;
-  #1207's email/social/video-call templates and the channel spec registry
-  don't), the materials site (rewritten as an internal, locally opened
-  index per #1206 — not a public site), channel kits, route and
-  visibility governance (reworded to `visibility: internal | public` per
-  #1204, refusing routes that serve an internal-only item — today
-  `checkWebRoutes`/`publisher-web-route-check` checks only the
-  route-to-template mapping, no visibility declaration or refusal yet),
-  and live parity (now scoped specifically to #1209 — does the live URL
-  match the sealed record, for public surfaces only per #1206 — backed by
-  `record/reconciliation.ts`); v0 Launch pack planning and inventory and
-  the apps/site template (#1208) are `planned`. `proofCase` resolves
-  against this role's own retained qualification adapter — today one
-  retained case (`media-satisfied`), genuinely proven only for
-  `asset-roster-and-coverage`, cited as a disclosed anchor for the rest
-  pending dedicated per-capability cases (#1272). Drafted per #1202, checked by `check-capability-maps.mjs` for its own
-  mechanical MECE criteria (no duplicate outputs or sub-questions within
-  a role, no cross-role output collision, every capability `inputs`
-  entry resolves) across the five v0 Launch-pack roles — report mode: 0
-  findings; `--enforce`, with the other 14 roles allowlisted: 0 findings
-  (output in PR #1258). Whether the declared sub-questions jointly and
-  completely answer each role's own job question stays a reviewer
-  judgment, never a mechanical finding. Independent review applied:
-  #1258.
+- `@clossys/publisher/materials`: the materials mini-site (#1206) —
+  `renderMaterialsIndexHtml` (the browsable index, from the pack
+  manifest), `selectAudienceVariant`/`declaredAudiences` (one source
+  deck, filtered to declared per-slide audience selections),
+  `renderPitchDeckHtml` (wraps `renderSlidesDeck`'s own rendered SVG
+  slides into a self-contained HTML deck with keyboard navigation and the
+  shared print stylesheet), `materialsPrintStylesheet`, and
+  `checkMaterialsVisibility`/`MATERIALS_DEFAULT_VISIBILITY` (materials
+  are internal by default; committing one to a public repository
+  publishes it, and this is the refusal check for that).
+- `@clossys/publisher/templates`: the pack's default templates and
+  channel spec registry (#1207) — company overview and pitch deck
+  defaults, an email signature builder (HTML and plain text),
+  `SOCIAL_CHANNEL_SPECS`/`getSocialChannelSpec` (LinkedIn, X, Instagram,
+  Facebook, YouTube, TikTok, GitHub), `OG_SHARE_CARD_SPEC`,
+  `VIDEO_CALL_BACKGROUND_SPECS`/`getVideoCallBackgroundSpec` (Zoom,
+  Google Meet, Microsoft Teams), and `staleChannelSpecEntries` for
+  periodic re-verification.
+- `templates/site/`: a Next.js App Router template for `apps/site`
+  (#1208), shipped in the published tarball (`files` now includes
+  `templates`) but not built, typechecked, or tested by this
+  repository's own workspace.
+- `publisher-preview` now renders the whole Launch pack, not just the
+  shipped web views: `templates/site`'s own routes (rendered through the
+  same `MarketingView`/`ErrorView` templates `apps/site` itself uses —
+  the two Next.js metadata route handlers, `robots.ts`/`sitemap.ts`,
+  have no view to render and are called out in `index.html` instead), the
+  materials mini-site (company overviews at all three lengths, the
+  default pitch deck, and one `selectAudienceVariant` filtered variant),
+  the email kit (launch announcement, welcome, follow-up, and a
+  signature, each in an email-width frame), and one SVG per
+  `SOCIAL_CHANNEL_SPECS`/`OG_SHARE_CARD_SPEC`/`VIDEO_CALL_BACKGROUND_SPECS`
+  entry — all from the same validated `brand.css`, all deterministic, and
+  every string of prose sourced from the extended fixture copy registry
+  (never hardcoded in a renderer). A new `index.html` links every file
+  the command writes. The CLI's arguments and exit-code contract are
+  unchanged.
+
+## [0.5.0] - 2026-09-22
+
+### Changed
+
+- `@clossys/designer` dependency range further raised to `^0.5.0` (from
+  `^0.4.12`), riding along with Designer's own 0.5.0 identity-kit release
+  (issue #1210) — `dependencies` is packed content, so this repository's
+  own release-readiness gate requires this version bump even though
+  nothing in `src/` changed.
+
+### Fixed
+
+- Raised the `@clossys/designer` dependency floor from `^0.4.0` to `^0.4.12`.
+  The pinned-runtime release-qualification run for 0.4.24 caught a real
+  defect: the currently-published Designer is 0.4.7, which `^0.4.0`
+  resolves cleanly, but this package's web templates import Designer's
+  `MarketingChapter` block (a 0.4.12 addition) — so `import("@clossys/
+  publisher/web")` threw `SyntaxError: ... does not provide an export named
+  'MarketingChapter'` under both its ordinary and `react-server` conditions.
+  Added a regression test (`src/web/react-server-artifact.test.ts`, part of
+  this repository's own test suite — `*.test.ts` files are never shipped in
+  the published package) that reproduces the exact 0.4.7-shaped Designer
+  graph deterministically and proves the new floor refuses it.
+
+### Added
+
+- `@clossys/publisher/pack`: the v0 Launch pack manifest contract (#1204).
+  Publisher plans first and seals last — types, `validatePackManifest`
+  (schema, needs-graph, and lifecycle-vocabulary validation),
+  `computePackReadiness`/`planPackOrder`/`sealableItemIds` (readiness and
+  sealing derived from the `needs` graph), and `detectExistingPackItems`/
+  `foundPackItem` (adopt-don't-override detection with sha256
+  fingerprints). Pack item statuses and conditions use the one lifecycle
+  vocabulary from #1228 (`absent`/`found`/`draft`/`approved`/`verified`/
+  `retired`, `current`/`stale`/`blocked`) — a local copy pending #1237,
+  which exports the same list from `@clossys/controller`; see this
+  repository's own `pack/lifecycle.test.ts` (not shipped in the published
+  package) for the premise-guard test.
+- `@clossys/publisher/surfaces`: the one-owner-per-file contract for surface
+  documents (#1205). Surface documents (which template, which sections,
+  which copy ids and asset ids, all by reference) move from Designer/Writer
+  co-authorship to Publisher, under `clossys/publisher/surfaces/`; Designer
+  and Writer own everything a document references and propose changes and
+  review renders in their own folders, but never edit a Publisher surface
+  file directly. `validateSurfaceOwnership` is the gate: it flags any path
+  more than one role claims. Updated the Publisher, Designer, and Writer
+  skills to describe this ownership split; the shared consumer layout
+  contract (#1171) has not landed in this repository yet, so
+  `PUBLISHER_SURFACES_DIR` is this package's own record of the path pending
+  that contract, and Writer's own removal of its former document-authoring
+  role is left for a follow-up behind #1163.
 
 ## [0.4.24] - 2026-09-21
 

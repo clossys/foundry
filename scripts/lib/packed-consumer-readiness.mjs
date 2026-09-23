@@ -67,10 +67,14 @@ const publisherExports = [
   "@clossys/publisher/document",
   "@clossys/publisher/email",
   "@clossys/publisher/image",
+  "@clossys/publisher/materials",
   "@clossys/publisher/media",
+  "@clossys/publisher/pack",
   "@clossys/publisher/print",
   "@clossys/publisher/record",
   "@clossys/publisher/slides",
+  "@clossys/publisher/surfaces",
+  "@clossys/publisher/templates",
   "@clossys/publisher/web",
 ];
 
@@ -678,6 +682,40 @@ function npmExecutable() {
   return process.platform === "win32" ? "npm.cmd" : "npm";
 }
 
+// A run-root disk high-water mark, sampled with `du -sk` (fast: one process,
+// no per-file Node syscalls) rather than walking node_modules with fs.stat --
+// the trees this measures (react, next, tailwindcss, ...) run to tens of
+// thousands of files. `du` is not guaranteed on win32, so a slower pure-JS
+// walk is the fallback there, never the primary path.
+async function directoryKilobytes(path) {
+  if (process.platform !== "win32") {
+    const result = await runProcess("du", ["-sk", path], { timeout: 60_000 });
+    if (result.exitCode === 0 && !result.timedOut && !result.launchError) {
+      const kilobytes = Number.parseInt(result.stdout.trim().split(/\s+/)[0], 10);
+      if (Number.isFinite(kilobytes)) return kilobytes;
+    }
+  }
+  return walkKilobytes(path);
+}
+
+async function walkKilobytes(path) {
+  let total = 0;
+  let entries;
+  try {
+    entries = await readdir(path, { withFileTypes: true });
+  } catch (error) {
+    if (error.code === "ENOENT") return 0;
+    throw error;
+  }
+  for (const entry of entries) {
+    if (entry.isSymbolicLink()) continue;
+    const entryPath = join(path, entry.name);
+    if (entry.isDirectory()) total += await walkKilobytes(entryPath);
+    else if (entry.isFile()) total += Math.ceil((await stat(entryPath)).size / 1024);
+  }
+  return total;
+}
+
 async function npm(env, cwd, args, timeout = 180_000) {
   const result = await runProcess(npmExecutable(), args, { cwd, env, timeout });
   if (result.exitCode !== 0 || result.timedOut || result.launchError) {
@@ -803,10 +841,24 @@ export async function runPackedConsumerReadiness({ root, selected, skipBuild = f
   await writeFile(npmrc, "registry=https://registry.npmjs.org/\nalways-auth=false\nignore-scripts=true\naudit=false\nfund=false\n");
   await writeFile(globalNpmrc, "");
   const env = credentiallessEnv(process.env, npmrc, cache, globalNpmrc);
+  // A single shared npm cache (`cache`, above) covers every npm invocation
+  // this run makes -- the main consumer, every peer-omission matrix
+  // consumer, and the packing step -- so no npm call below ever repopulates
+  // it from the network. Disk pressure came from something else: as many
+  // as twenty matrix consumers (one per optional peer, each a FULL
+  // reinstall of every packed package) used to stay on disk simultaneously
+  // until the whole run finished. `peakKilobytes` below tracks the real
+  // high-water mark now that each consumer is deleted as soon as it has
+  // been judged (see the deletions below), and the CLI prints it.
+  let peakKilobytes = 0;
+  const notePeak = async () => {
+    peakKilobytes = Math.max(peakKilobytes, await directoryKilobytes(scratch));
+  };
   try {
     const packDirectory = join(scratch, "packs");
     await mkdir(packDirectory);
     const packed = await packPackages(packDirectory, packages, env);
+    await notePeak();
     const packedPackages = packed.map((entry) => ({ ...entry, manifest: entry.packedManifest }));
     const policyFindings = validateOptionalPeerPolicy(packedPackages, policy, { allowUnselected: Boolean(selected) });
     if (policyFindings.length > 0) throw new Error(`optional-peer policy is not closed:\n- ${policyFindings.join("\n- ")}`);
@@ -863,6 +915,9 @@ export async function runPackedConsumerReadiness({ root, selected, skipBuild = f
       }
     }
 
+    await notePeak();
+    if (!keep) await rm(consumer, { recursive: true, force: true });
+
     const omission = [];
     const frameworkEvaluatorOmissions = [];
     for (const entry of packed) {
@@ -872,70 +927,76 @@ export async function runPackedConsumerReadiness({ root, selected, skipBuild = f
         .map(([name]) => name)
         .sort();
       for (const peer of packagePeers) {
-        const matrixConsumer = join(scratch, `omit-${entry.directory}-${packagePeers.indexOf(peer)}`);
-        await mkdir(matrixConsumer);
-        await installConsumer(matrixConsumer, packed, env);
-        await installPeers(root, matrixConsumer, peers, env);
-        for (const packageRoot of await installedPackageRoots(join(matrixConsumer, "node_modules"), peer)) {
-          await rm(packageRoot, { recursive: true, force: true });
-        }
-        if ((await installedPackageRoots(join(matrixConsumer, "node_modules"), peer)).length > 0) {
-          throw new Error(`${entry.packedManifest.name} omission row ${peer} is false-green: the omitted peer is installed`);
-        }
-        const shape = exportsByPackage.get(entry.packedManifest.name) ?? { runtimeSpecifiers: [], runtimeTargets: [], rawRuntimeSpecifiers: [], rawRuntimeTargets: [], nextContexts: { client: [], server: [], proxy: [], all: [] } };
-        const observed = new Map();
-        for (const target of shape.rawRuntimeTargets) {
-          const result = await importSpecifier(target.specifier, matrixConsumer, env, target.condition);
-          observed.set(`${target.specifier}\u0000${target.condition}`, result.exitCode === 0 ? "imports" : "rejects");
-          if (result.timedOut || result.launchError) throw new Error(`${entry.packedManifest.name} omission row ${peer} could not evaluate ${target.condition} ${target.specifier}`);
-          if (result.exitCode !== 0 && !`${result.stderr}\n${result.stdout}`.includes(peer)) {
-            throw new Error(`${entry.packedManifest.name} omission row ${peer} makes ${target.condition} ${target.specifier} fail without naming the omitted peer`);
+        let matrixConsumer;
+        try {
+          matrixConsumer = join(scratch, `omit-${entry.directory}-${packagePeers.indexOf(peer)}`);
+          await mkdir(matrixConsumer);
+          await installConsumer(matrixConsumer, packed, env);
+          await installPeers(root, matrixConsumer, peers, env);
+          for (const packageRoot of await installedPackageRoots(join(matrixConsumer, "node_modules"), peer)) {
+            await rm(packageRoot, { recursive: true, force: true });
           }
-        }
-        if (shape.nextContexts.all.length > 0) {
-          if (peer === "next") {
-            const expectedFramework = new Set(shape.nextContexts.all.map((specifier) => rows[peer]?.[specifier]));
-            if (expectedFramework.size !== 1 || !expectedFramework.has("rejects")) {
-              throw new Error(`${entry.packedManifest.name} omission row next must fail closed for every declared Next context`);
-            }
-            for (const specifier of shape.nextContexts.all) observed.set(`${specifier}\u0000default`, "rejects");
-            frameworkEvaluatorOmissions.push({
-              package: entry.packedManifest.name,
-              peer,
-              exports: [...shape.nextContexts.all],
-              evidence: "packed Next-context declaration plus verified physical absence of the Next evaluator peer",
-            });
-          } else {
-            const expectedFramework = new Set(shape.nextContexts.all.map((specifier) => rows[peer]?.[specifier]));
-            if (expectedFramework.size !== 1 || !["imports", "rejects"].includes([...expectedFramework][0])) {
-              throw new Error(`${entry.packedManifest.name} omission row ${peer} has mixed or missing Next-context outcomes`);
-            }
-            const result = await runNextContexts(matrixConsumer, shape.nextContexts, env);
-            const outcome = result.exitCode === 0 ? "imports" : "rejects";
-            if (result.timedOut || result.launchError) throw new Error(`${entry.packedManifest.name} omission row ${peer} could not evaluate its Next contexts`);
-            if (outcome === "rejects" && !`${result.stderr}\n${result.stdout}`.includes(peer)) {
-              throw new Error(`${entry.packedManifest.name} omission row ${peer} makes its Next contexts fail without naming the omitted peer`);
-            }
-            for (const specifier of shape.nextContexts.all) observed.set(`${specifier}\u0000default`, outcome);
+          if ((await installedPackageRoots(join(matrixConsumer, "node_modules"), peer)).length > 0) {
+            throw new Error(`${entry.packedManifest.name} omission row ${peer} is false-green: the omitted peer is installed`);
           }
-        }
-        const outcomes = Object.fromEntries(shape.runtimeSpecifiers.map((specifier) => {
-          const conditions = shape.runtimeTargets.filter((item) => item.specifier === specifier).map((item) => item.condition);
-          const expectedOutcome = rows[peer]?.[specifier];
-          const values = conditions.map((condition) => [condition, observed.get(`${specifier}\u0000${condition}`)]);
-          return [specifier, typeof expectedOutcome === "string"
-            ? values.every(([, outcome]) => outcome === values[0]?.[1]) ? values[0]?.[1] : undefined
-            : Object.fromEntries(values)];
-        }));
-        omission.push({ package: entry.packedManifest.name, peer, outcomes });
-        const expected = rows[peer];
-        if (JSON.stringify(outcomes) !== JSON.stringify(expected)) {
-          throw new Error(`${entry.packedManifest.name} omission row ${peer} drifted: expected ${JSON.stringify(expected)}, received ${JSON.stringify(outcomes)}`);
+          const shape = exportsByPackage.get(entry.packedManifest.name) ?? { runtimeSpecifiers: [], runtimeTargets: [], rawRuntimeSpecifiers: [], rawRuntimeTargets: [], nextContexts: { client: [], server: [], proxy: [], all: [] } };
+          const observed = new Map();
+          for (const target of shape.rawRuntimeTargets) {
+            const result = await importSpecifier(target.specifier, matrixConsumer, env, target.condition);
+            observed.set(`${target.specifier}\u0000${target.condition}`, result.exitCode === 0 ? "imports" : "rejects");
+            if (result.timedOut || result.launchError) throw new Error(`${entry.packedManifest.name} omission row ${peer} could not evaluate ${target.condition} ${target.specifier}`);
+            if (result.exitCode !== 0 && !`${result.stderr}\n${result.stdout}`.includes(peer)) {
+              throw new Error(`${entry.packedManifest.name} omission row ${peer} makes ${target.condition} ${target.specifier} fail without naming the omitted peer`);
+            }
+          }
+          if (shape.nextContexts.all.length > 0) {
+            if (peer === "next") {
+              const expectedFramework = new Set(shape.nextContexts.all.map((specifier) => rows[peer]?.[specifier]));
+              if (expectedFramework.size !== 1 || !expectedFramework.has("rejects")) {
+                throw new Error(`${entry.packedManifest.name} omission row next must fail closed for every declared Next context`);
+              }
+              for (const specifier of shape.nextContexts.all) observed.set(`${specifier}\u0000default`, "rejects");
+              frameworkEvaluatorOmissions.push({
+                package: entry.packedManifest.name,
+                peer,
+                exports: [...shape.nextContexts.all],
+                evidence: "packed Next-context declaration plus verified physical absence of the Next evaluator peer",
+              });
+            } else {
+              const expectedFramework = new Set(shape.nextContexts.all.map((specifier) => rows[peer]?.[specifier]));
+              if (expectedFramework.size !== 1 || !["imports", "rejects"].includes([...expectedFramework][0])) {
+                throw new Error(`${entry.packedManifest.name} omission row ${peer} has mixed or missing Next-context outcomes`);
+              }
+              const result = await runNextContexts(matrixConsumer, shape.nextContexts, env);
+              const outcome = result.exitCode === 0 ? "imports" : "rejects";
+              if (result.timedOut || result.launchError) throw new Error(`${entry.packedManifest.name} omission row ${peer} could not evaluate its Next contexts`);
+              if (outcome === "rejects" && !`${result.stderr}\n${result.stdout}`.includes(peer)) {
+                throw new Error(`${entry.packedManifest.name} omission row ${peer} makes its Next contexts fail without naming the omitted peer`);
+              }
+              for (const specifier of shape.nextContexts.all) observed.set(`${specifier}\u0000default`, outcome);
+            }
+          }
+          const outcomes = Object.fromEntries(shape.runtimeSpecifiers.map((specifier) => {
+            const conditions = shape.runtimeTargets.filter((item) => item.specifier === specifier).map((item) => item.condition);
+            const expectedOutcome = rows[peer]?.[specifier];
+            const values = conditions.map((condition) => [condition, observed.get(`${specifier}\u0000${condition}`)]);
+            return [specifier, typeof expectedOutcome === "string"
+              ? values.every(([, outcome]) => outcome === values[0]?.[1]) ? values[0]?.[1] : undefined
+              : Object.fromEntries(values)];
+          }));
+          omission.push({ package: entry.packedManifest.name, peer, outcomes });
+          const expected = rows[peer];
+          if (JSON.stringify(outcomes) !== JSON.stringify(expected)) {
+            throw new Error(`${entry.packedManifest.name} omission row ${peer} drifted: expected ${JSON.stringify(expected)}, received ${JSON.stringify(outcomes)}`);
+          }
+        } finally {
+          await notePeak();
+          if (!keep) await rm(matrixConsumer, { recursive: true, force: true });
         }
       }
     }
 
-    return { scratch, packages: packed.length, staticTargets, runtimeImports, frameworkExports, bins, omissionRows: omission.length, frameworkEvaluatorOmissions };
+    return { scratch, packages: packed.length, staticTargets, runtimeImports, frameworkExports, bins, omissionRows: omission.length, frameworkEvaluatorOmissions, peakKilobytes };
   } finally {
     if (!keep) await rm(scratch, { recursive: true, force: true });
   }

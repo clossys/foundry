@@ -1,0 +1,10 @@
+{
+  "registeredTemplates": ["MarketingView"],
+  "routes": [
+    { "id": "/", "template": "MarketingView", "file": "app/page.tsx" },
+    { "id": "/about", "template": "MarketingView", "file": "app/about/page.tsx" },
+    { "id": "/contact", "template": "MarketingView", "file": "app/contact/page.tsx" },
+    { "id": "/privacy", "template": "MarketingView", "file": "app/privacy/page.tsx" },
+    { "id": "/terms", "template": "MarketingView", "file": "app/terms/page.tsx" }
+  ]
+}

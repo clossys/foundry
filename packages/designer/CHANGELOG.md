@@ -5,31 +5,67 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
-## [0.4.18] - 2026-09-22
+## [0.5.0] - 2026-09-22
 
 ### Added
 
-- `foundry.capabilities` (schema v3, issue #1196): a MECE capability map of
-  this role's craft — 6 capabilities `built` (token contract and
-  brand-overlay binding, token purity, component conformance, contrast,
-  type record, and structure/fold conformance including `surface-ladder.ts`);
-  logo and identity files (#1210) is `partial` — `master-mark.ts` validates
-  a supplied mark's shape today but generates nothing yet; brand-kit
-  assembly and general accessibility (beyond contrast) are `planned` — no
-  code assembles tokens/type/contrast/marks into one brand-kit record yet.
-  Every `built`/`partial` capability's `proofCase` resolves against this
-  role's own retained qualification adapter — today one retained case
-  (`token-purity-clean`), genuinely proven only for `token-purity`, cited
-  as a disclosed anchor for the rest pending dedicated per-capability
-  cases (#1272). Drafted per #1199, checked by `check-capability-maps.mjs` for its own
-  mechanical MECE criteria (no duplicate outputs or sub-questions within
-  a role, no cross-role output collision, every capability `inputs`
-  entry resolves) across the five v0 Launch-pack roles — report mode: 0
-  findings; `--enforce`, with the other 14 roles allowlisted: 0 findings
-  (output in PR #1258). Whether the declared sub-questions jointly and
-  completely answer each role's own job question stays a reviewer
-  judgment, never a mechanical finding. Independent review applied:
-  #1258.
+- Identity kit on `@clossys/designer/tokens` (closes #1210): deterministic
+  logo generation and judgement without a hired designer. `generateIdentityDirections`
+  builds three directions (a wordmark and two monogram shapes) from a brand
+  name and resolved tokens; `adoptSuppliedMark` derives the same variant set
+  from a client-supplied or human-designer SVG instead (`found` -> adopted).
+  Every direction ships the seven-role variant set `primary`/`mark`/`mono`/
+  `light`/`dark`/`favicon`/`appIcon`. `checkIdentityContrast`,
+  `checkMinimumSize`, `checkClearSpace`, and `checkSingleColourLegibility`
+  judge each variant, combined by `judgeIdentityKit` into a per-check
+  `satisfied`/`violated`/`indeterminate` verdict — an indeterminate check
+  never counts as a pass. A custom pictorial mark never blocks v0.
+- Conformance rework (owner direction, issue #1187): `judgeIdentityKit`'s
+  per-check and overall findings now use the shared `findingShape` (`{
+  rule, severity, message, path? }`, new `IdentityFinding` type) the
+  repository contract docs/contracts/check-output-envelope.json declares
+  (that contract does not ship with this package) instead of a bare
+  `detail: string` -- no local copy of the contract, and `verdict` was
+  already the contract's own `satisfied`/`violated`/`indeterminate`
+  vocabulary. `judgeIdentityKit` now also returns an overall `verdict` and
+  flattened `findings` alongside its existing per-check `checks` and `ok`;
+  any `indeterminate` check makes the overall verdict `indeterminate` too
+  (fails closed), even alongside a `violated` one. New
+  `identityKitReport(direction, tokens, version)` builds the full envelope
+  document (`{ package, version, verdict, summary, findings, nextAction?
+  }`). A new contract-conformance test
+  (`src/tokens/check-output-envelope.test.ts`, a dev-only test not shipped
+  with this package) reads the contract file directly and validates real
+  report output against it. The prior review's SVG-attribute
+  escaping/validation fix carries forward unchanged.
+
+### Fixed
+
+- Six CodeRabbit-found correctness gaps confirmed by independent review
+  (issue #1320): `checkMinimumSize`/`checkClearSpace` now read
+  `viewBox`/`data-clear-space` from the root `<svg>` START TAG only, never
+  a whole-document string search — a nested `<svg>` or a descendant
+  element's attribute can no longer satisfy either check when the root
+  itself declares none. `checkIdentityContrast` now takes the direction's
+  `kind`/`variants`, not just `tokens`: for an ADOPTED direction it checks
+  the `primary`/`mark` variant's own actual rendered fill/stroke colour(s),
+  not the (never-written-there) `ink` token, and is `indeterminate` — never
+  silently `satisfied` — when no explicit colour can be found.
+  `deriveInitials` now iterates by Unicode code point (`Array.from`), not
+  UTF-16 code unit, so a name containing an astral character (most emoji)
+  never produces a broken surrogate half. `isSvgDocument` now requires the
+  closing `</svg>` to be the document's final non-whitespace content, not
+  merely present somewhere in the string — `<svg>...</svg><script>...`
+  is refused, not adopted. `recolorSvg` and `checkSingleColourLegibility`
+  now share one paint-attribute pattern that matches a single-quoted or
+  spaced `fill`/`stroke` attribute and never mistakes `data-fill` for one.
+  `wrapBadge` (the `appIcon` variant) now scales and centres the source
+  mark's own viewBox into the fixed `0 0 48 48` badge instead of dropping
+  it in unscaled and top-left-aligned; a generated mark (already drawn in
+  that same viewBox) gets an identity transform, unchanged. README:
+  corrected the claim that `primary` is "ink-coloured" for every
+  direction — only true for a GENERATED one; an ADOPTED `primary`/`mark`
+  keeps the supplied SVG's own colours.
 
 ## [0.4.17] - 2026-09-21
 

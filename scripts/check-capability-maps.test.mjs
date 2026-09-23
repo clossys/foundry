@@ -328,6 +328,53 @@ test("--enforce still fails a capability input naming a NON-allowlisted producer
   assert.ok(result.findings.some((f) => f.rule === "unresolved-capability-input" && f.role === "@scope/beta"));
 });
 
+// Issue #1321: distinct from #1279's absence-of-map case above, a
+// producerRole that is not even a currently active role at all -- a typo
+// (e.g. "@clossys/strategst"), or a retired role name -- can never resolve
+// under that name no matter how long report mode waits. That is a genuine
+// mismatch, matching the header comment's "a mismatch fails in both modes"
+// rule the same as the has-a-map-but-wrong-artifact case below, and must
+// not get #1279's forgiveness, which exists only for a real active role
+// whose own map simply has not landed yet. CodeRabbit finding on PR #1258,
+// filed as #1321.
+test("report mode fails on a capability input naming a producer role that is not a currently active role at all", () => {
+  const result = evaluateCapabilityMaps(["@scope/beta"], manifests([
+    { name: "@scope/beta", foundry: { capabilities: [capability({
+      id: "consumer", outputs: ["clossys/beta/y.json"],
+      inputs: [{ producerRole: "@scope/nonexistent", artifact: "anything" }],
+    })] } },
+  ]));
+  assert.ok(result.findings.some((f) => f.rule === "unresolved-capability-input" && f.role === "@scope/beta"));
+  assert.deepEqual(result.warnings.filter((w) => w.rule === "capability-input-producer-absent"), []);
+});
+
+// The same case under --enforce: already a failure before #1321, and must
+// stay one -- #1321's bug was report mode's silence, not --enforce's.
+test("--enforce also fails a capability input naming a producer role that is not a currently active role at all", () => {
+  const result = evaluateCapabilityMaps(["@scope/beta"], manifests([
+    { name: "@scope/beta", foundry: { capabilities: [capability({
+      id: "consumer", outputs: ["clossys/beta/y.json"],
+      inputs: [{ producerRole: "@scope/nonexistent", artifact: "anything" }],
+    })] } },
+  ]), { enforce: true });
+  assert.ok(result.findings.some((f) => f.rule === "unresolved-capability-input" && f.role === "@scope/beta"));
+});
+
+// The allowlist check must still run BEFORE the new #1321 active-role
+// check, so a role that is allowlisted (its map genuinely has not landed
+// yet) stays forgiven even though it is not itself in `activeRoles` here --
+// guards against the #1321 fix accidentally shadowing the pre-existing
+// allowlist forgiveness.
+test("an allowlisted producer role is forgiven ahead of the #1321 active-role check", () => {
+  const result = evaluateCapabilityMaps(["@scope/beta"], manifests([
+    { name: "@scope/beta", foundry: { capabilities: [capability({
+      id: "consumer", outputs: ["clossys/beta/y.json"],
+      inputs: [{ producerRole: "@scope/alpha", artifact: "anything" }],
+    })] } },
+  ]), { allowlistedRoles: ["@scope/alpha"] });
+  assert.deepEqual(result.findings.filter((f) => f.rule === "unresolved-capability-input"), []);
+});
+
 // Distinct from absence: a producer role that DOES declare a capability
 // map, but none of its own capabilities produce the named artifact, is a
 // genuine mismatch -- issue #1279 does not touch this case, and it must

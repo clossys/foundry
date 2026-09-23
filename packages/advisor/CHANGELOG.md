@@ -5,6 +5,52 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2026-09-23
+
+### Notes
+
+- No packed content changed. This package's test suite changed as part of
+  fixing leaking temp fixture directories (issue #1250), and its 0.2.8
+  qualification record was already retained -- once a version's record is
+  retained, any further change to that package, packed or not, requires a new
+  version. Renumbered repeatedly as main moved ahead during this restack's
+  disk-incident hold (0.2.9 -> 0.4.1): main independently shipped advisor
+  wave 2 (STATUS renderer, kit verdicts, managed engagements, budget
+  preference) as 0.4.0, ahead of this test-only bump (version-collision
+  rule, issue #1187).
+
+## [0.4.0] - 2026-09-22
+
+### Added
+
+- `renderAdvisorStatus()`, `validateAdvisorPlan()`, and the
+  `advisor-render-status` CLI: a pure renderer (plus its validator) for
+  the STATUS document at `clossys/advisor/STATUS` (a `.md` file), with
+  five fixed sections (Mandate, Where we are, Recommended next,
+  Decisions, Blockers), from an `AdvisorPlan` record. Structured so
+  Controller's loop engine (#1195) can take over rendering later
+  without a vocabulary change (issue #1175). `AdvisorPlanBlocker` is
+  field-for-field the same shape as Controller's own `Blocker`
+  (`capabilityId`, `kind`, `owner`, `nextAction: { who, how, byWhen }`,
+  `since`) per the owner direction on #1187 (2026-09-23) against local
+  copies of shared definitions (issue #1237).
+- `recommendKit()`: per-kit verdicts on the composed kit from #1176 —
+  each role's why, confirmed-problem citations, goal, handoffs, and
+  deliverable — attributing the verdict to a matching curated preset
+  when one's own closure equals the composition (issue #1177).
+- `EngagementMode`, `validateManagedEngagement()`, and
+  `proposalReadyForClient()`: self-serve and managed as grant shapes on
+  the same engine, with the operator-review hook that holds a proposed
+  kit back from the client in managed mode until the engaged operator
+  approves it (issue #1044).
+- `nextStepInstruction()`: host-specific phrasing for opening the next
+  repository and calling the next role, for Claude Code, Cursor, and a
+  generic fallback (issue #1180, Advisor side).
+- `BUDGET_PREFERENCE_CARD`, `applyBudgetPreferenceChoice()`, and
+  `toPreferencesFile()`: the one-question budget-preference card and its
+  `clossys/preferences.json` shape, using the fixed tier names from
+  #1219. Advisor names no model anywhere (issue #1219, Advisor side).
+
 ## [0.3.0] - 2026-09-22
 
 ### Added

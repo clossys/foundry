@@ -37,6 +37,7 @@ function makeTempRepoRoot(t) {
   mkdirSync(join(root, "packages"), { recursive: true });
   const contractSource = readFileSync(join(repoRoot, "docs", "contracts", "role-loop-archetypes.json"), "utf8");
   writeFileSync(join(root, "docs", "contracts", "role-loop-archetypes.json"), contractSource);
+  writeFileSync(join(root, "docs", "contracts", "package-evidence.json"), readFileSync(join(repoRoot, "docs", "contracts", "package-evidence.json"), "utf8"));
   return root;
 }
 

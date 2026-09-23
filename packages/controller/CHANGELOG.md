@@ -5,6 +5,28 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.22] - 2026-09-23
+
+### Notes
+
+- No packed content changed. This package's test suite changed as part of
+  fixing leaking temp fixture directories (issue #1250), and its 0.9.12
+  qualification record was already retained -- once a version's record is
+  retained, any further change to that package, packed or not, requires a new
+  version. Renumbered repeatedly as main moved ahead during this restack's
+  disk-incident hold (0.9.13 -> ... -> 0.9.22): main independently reached
+  0.9.21 (advisor dependency-range widening for wave 2), and #1315 claims
+  0.9.21 as well but its content has already landed on main under that same
+  number (version-collision rule, issue #1187).
+
+## [0.9.21] - 2026-09-23
+
+### Changed
+
+- Widen the `@clossys/advisor` dependency range to `^0.4.0` to cover advisor's
+  wave-2 minor bump (plan record, kit verdicts, managed engagements,
+  next-step phrasing, budget preference).
+
 ## [0.9.17] - 2026-09-23
 
 ### Changed
@@ -16,6 +38,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   0.9.13 through 0.9.16 were already claimed by main's own loop-engine
   landing and two other open PRs (#1275, #1287) by the time this branch
   merged main.
+
+## [0.9.20] - 2026-09-23
+
+### Added
+
+- Schema versions and migrations for every `clossys/` record (issue
+  #1224): a deterministic migration engine under `./src/migrate/` --
+  `classifyRecordVersion` / `migrateRecord` (pure: idempotent on an
+  already-current record, never downgrades a record newer than this
+  package knows, never partially migrates a record with a gap in its
+  step chain), an open per-kind table registry
+  (`createRecordKindRegistry`, `defaultRecordKindRegistry` seeded with
+  the two record kinds shipped today -- `loop-state` and
+  `coverage-declaration`), and a thin filesystem layer
+  (`discoverRecords`, `runMigrations`) that walks a repository's
+  `clossys/` tree, classifies/migrates each record, and -- only with
+  `--apply` -- writes the migrated record back alongside a backup of its
+  pre-migration bytes under `clossys/.state/schema-backups/`. The
+  installed `foundry-schema-migrate` executable is the CLI form,
+  report-only (dry run) by default.
+- Operating cadence: a zero-token heartbeat (issue #1221) under
+  `./src/heartbeat/` -- `computeHeartbeat` deterministically finds every
+  stale, blocked, pending-decision (stage `judge`), or review-waiting
+  (stage `learn`) capability across a set of roles' `LoopState`s, reusing
+  `../loop/blockers.js`'s own `isBlockerOverdue` rather than a second
+  copy; `renderDigest` is a plain, mechanical Markdown renderer in the
+  same style as `../loop/status.js`'s `renderStatusDocument`, explicitly
+  deferring final wording/prioritization to a later Advisor pass.
+  `loadLoopStates` / `computeHeartbeatForRepo` / `writeHeartbeatDigest`
+  read every `clossys/<role>/loop.json`, skip and report an
+  unreadable/invalid one rather than throwing, and (only with
+  `--write`) render the decisions file (its path is the exported
+  `DIGEST_PATH` constant) into the consumer repository's own state
+  directory.
+  `controllerHeartbeatSchedule` is a reference `ScheduleDeclaration`
+  (business-days-only cadence, zero-token, no live external change),
+  validated with the existing `../conventions/schedules.js` validators
+  rather than a new one. The installed `foundry-heartbeat` executable is
+  the CLI form. Never calls a model.
+- The shared check-output-envelope (`docs/contracts/
+  check-output-envelope.json`, issue #1174) gets its first real emitters:
+  `buildCheckOutputEnvelope` / `envelopeToExitCode` (`./src/envelope.ts`)
+  is the one constructor both CLIs above use, reusing `GateVerdict` from
+  `./src/gates/result.ts` rather than a second copy of the
+  satisfied/violated/indeterminate vocabulary.
 
 ## [0.9.15] - 2026-09-23
 

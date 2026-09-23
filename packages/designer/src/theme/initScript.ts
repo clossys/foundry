@@ -33,8 +33,9 @@ export interface ThemeInitScriptOptions {
  * for a consumer to inject:
  *
  * ```tsx
- * // app/layout.tsx (Next.js App Router) — first child of <head>, before
- * // any stylesheet or other script that might paint.
+ * // Your Next.js app's root layout (the "layout.tsx" file in the App
+ * // Router's "app" directory) — first child of <head>, before any
+ * // stylesheet or other script that might paint.
  * import { getThemeInitScript } from "@clossys/designer/theme";
  *
  * export default function RootLayout({ children }: { children: React.ReactNode }) {

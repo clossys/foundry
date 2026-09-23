@@ -20,11 +20,11 @@
  * CI.
  */
 import { spawnSync } from "node:child_process";
-import { chmodSync, cpSync, mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from "node:fs";
+import { chmodSync, cpSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 let binPath: string;
 let workDir: string;
@@ -82,6 +82,10 @@ beforeAll(() => {
   chmodSync(installedCliPath, 0o755);
   binPath = join(dotBin, "architect-check");
   symlinkSync(installedCliPath, binPath);
+});
+
+afterAll(() => {
+  if (workDir) rmSync(workDir, { recursive: true, force: true });
 });
 
 function runBin(args: string[]) {

@@ -38,7 +38,12 @@
 // `producerRole` that DOES have a declared map, but none of its own
 // capabilities produce the named artifact, is a genuine mismatch, not an
 // absence, and is a failure in BOTH modes regardless of allowlist or
-// report/enforce. This runs unconditionally (not only under --enforce)
+// report/enforce. Issue #1321: so is a `producerRole` that is not even a
+// currently active role at all -- a typo, or a retired role name -- since
+// that can never resolve under that name no matter how long report mode
+// waits; this is checked BEFORE the #1279 absence forgiveness below, which
+// applies only to a real active role whose own map simply has not landed
+// yet. This runs unconditionally (not only under --enforce)
 // because CI's default check runs in report mode, and an unresolved input
 // is exactly the kind of structural defect report mode already catches for
 // everything else a role's own manifest can answer by itself plus one
@@ -219,6 +224,7 @@ export function validateCapabilityShape(capability, role, knownProofCaseIds) {
 export function evaluateCapabilityMaps(activeRoles, manifestsByName, options = {}) {
   const { enforce = false, allowlistedRoles = [], proofCaseIdsByRole } = options;
   const allowlisted = new Set(allowlistedRoles);
+  const activeRoleSet = new Set(activeRoles);
   const findings = [];
   const warnings = [];
   const table = [];
@@ -353,6 +359,28 @@ export function evaluateCapabilityMaps(activeRoles, manifestsByName, options = {
         if (!isCapabilityInputEntry(input)) continue; // already reported by validateCapabilityShape
         const { producerRole, artifact } = input;
         if (allowlisted.has(producerRole)) continue;
+
+        // Issue #1321: a producerRole that is not a currently active role
+        // at all -- a typo (e.g. "@clossys/strategst"), or a retired role
+        // name -- can never resolve under that name, no matter how long
+        // report mode waits. That is a genuine mismatch, exactly the kind
+        // the header comment's "a mismatch fails in both modes" rule
+        // already covers, and it must not get the #1279 absence-forgiveness
+        // below, which exists ONLY for a real active role whose own map
+        // simply has not landed yet. Checked against `activeRoleSet`
+        // (derived from the same role contract `required-capabilities-
+        // absent` reads), not `capabilitiesByRole`, precisely because a
+        // role that IS active but has declared no capabilities is what the
+        // #1279 branch below is for -- this branch is for a name that is
+        // not even a role.
+        if (!activeRoleSet.has(producerRole)) {
+          findings.push({
+            rule: "unresolved-capability-input",
+            role,
+            message: `capability "${capability.id}" input { producerRole: "${producerRole}", artifact: "${artifact}" } names "${producerRole}", which is not a currently active role`,
+          });
+          continue;
+        }
 
         // Issue #1279: absence of a producer's own map is a different
         // question from a genuine mismatch, and only the mismatch is a
