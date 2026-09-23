@@ -4,6 +4,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { execFileSync } from "node:child_process";
+import { validateDecisionRecordShape } from "./check-decision-records.mjs";
 
 import {
   permittedMergeMethod,
@@ -552,6 +553,7 @@ function decisionRecord(overrides = {}) {
     reviews: [],
     status: "decided",
     decidedBy: "owner",
+    channel: "owner-chat",
     decision: "Yes.",
     relaxesGateOrPolicy: false,
     sunset: null,
@@ -1257,6 +1259,39 @@ test("MUST ALLOW: a patch-id-pinned PR-scoped authorization survives a restack (
     tierConfig: SAMPLE_TIER_CONFIG,
   });
   assert.equal(afterContentChange.ok, false, "a genuine content change must break the patch-id pin");
+});
+
+test('MUST REFUSE: land-stack counts tier-2 authority only from channel "owner-chat" records -- a grandfathered, channel-less legacy record is valid AS HISTORY (it passes shape validation via LEGACY_CHANNEL_EXEMPT) but authorizes nothing (#1187 escalation-rule round 2, both reviewers, blocking)', () => {
+  // Use the REAL, committed weekly-release-calendar.json -- it is on
+  // LEGACY_CHANNEL_EXEMPT (content-hash pinned) and carries no `channel`
+  // field, so it passes shape validation cleanly (proven below), yet must
+  // still never authorize a tier-2 change through evaluateTier2Decision.
+  const realLegacyRecord = JSON.parse(readFileSync(join(repoRoot, "governance", "decisions", "weekly-release-calendar.json"), "utf8"));
+  assert.equal("channel" in realLegacyRecord, false, "fixture assumption: the real file must still have no channel field");
+  assert.deepEqual(validateDecisionRecordShape(realLegacyRecord, "weekly-release-calendar"), [], "the real record must pass shape validation via the legacy grandfather clause");
+
+  const result = evaluateTier2Decision({
+    decisionRecords: [realLegacyRecord],
+    prNumber: "1316",
+    patchId: realLegacyRecord.links.patchIds[0],
+    tier2Paths: ["governance/model-qualifications/allowlist.json"],
+    tierConfig: SAMPLE_TIER_CONFIG,
+  });
+  assert.equal(result.ok, false, "a channel-less legacy record must never authorize a tier-2 change, even one that passes shape validation via the grandfather clause");
+
+  // The positive case, for contrast: an otherwise-identical record with
+  // channel: "owner-chat" (the actual superseding record).
+  const supersedingRecord = JSON.parse(readFileSync(join(repoRoot, "governance", "decisions", "weekly-release-calendar-owner-chat.json"), "utf8"));
+  assert.equal(supersedingRecord.channel, "owner-chat");
+  const authorized = evaluateTier2Decision({
+    decisionRecords: [realLegacyRecord, supersedingRecord],
+    prNumber: "1316",
+    patchId: supersedingRecord.links.patchIds[0],
+    tier2Paths: ["governance/model-qualifications/allowlist.json"],
+    tierConfig: SAMPLE_TIER_CONFIG,
+  });
+  assert.equal(authorized.ok, true, "the owner-chat-sourced superseding record must authorize");
+  assert.match(authorized.reason, /weekly-release-calendar-owner-chat/);
 });
 
 test("MUST REFUSE: a path-scoped tier-2 authorization with expiry: null is a standing blank cheque and must be refused (#1187 review round 4, should-fix)", () => {

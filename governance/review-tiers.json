@@ -385,7 +385,34 @@
       "coverage. If a later slice finds one of these four scripts' own logic",
       "changes are themselves being waved through without adequate review,",
       "the fix is to re-add that one specific literal filename here with its",
-      "own dated rationale, not to restore a wildcard."
+      "own dated rationale, not to restore a wildcard.",
+      "",
+      "docs/HITL.md AND governance/decisions/hitl-escalation-rule*.json ARE",
+      "TIER-2 (#1187 escalation-rule round 2, both reviewers, blocking).",
+      "docs/HITL.md is the living, applied copy of the owner-ratified",
+      "escalation rule -- governance/decisions/hitl-escalation-rule.json's",
+      "own closing clause states plainly that changing the rule is an",
+      "authority change and 'legitimately your call' (the owner's), and that",
+      "'Agents can't write to the rule file or the deny hook'. Before this",
+      "entry, the MECHANICAL, path-based classification this file computes",
+      "put docs/HITL.md at tier-0 (it is prose, matched by none of the globs",
+      "above) and the decision record itself at tier-1 (via the broad",
+      "governance/** glob, since governance/decisions/** carries no",
+      "carve-out into tier1RecordExempt) -- exactly the porousness the",
+      "ratified rule's own path-mechanical assignment (Accepted item 2:",
+      "'Tiers are assigned mechanically, by the path rules') would otherwise",
+      "leave open: an edit to the rule's own living text or its durable",
+      "record could land with two ordinary reviewers, never reaching the",
+      "owner, contradicting the very rule being edited. `governance/decisions/",
+      "hitl-escalation-rule*.json` (a glob, not the one literal filename) also",
+      "covers any future SUPERSEDING record of the rule -- decision records",
+      "are append-only, so amending the rule later means a new file, not an",
+      "edit to this one, and that new file needs to classify tier-2 too,",
+      "without waiting on a separate, later addition to this list. A",
+      "superseding record must still follow this repository's naming",
+      "convention (prefixed with the id it supersedes, as",
+      "governance/decisions/weekly-release-calendar-owner-chat.json already",
+      "does for a different record) for this glob to reach it."
     ],
     "globs": [
       ".github/rulesets/**",
@@ -404,7 +431,9 @@
       "scripts/deprecate-legacy-packages.mjs",
       ".github/workflows/publish.yml",
       ".github/workflows/deprecate-registry-version.yml",
-      ".github/workflows/deprecate-legacy-packages.yml"
+      ".github/workflows/deprecate-legacy-packages.yml",
+      "docs/HITL.md",
+      "governance/decisions/hitl-escalation-rule*.json"
     ],
     "requiresOwnerDecisionRecord": {
       "$comment": [
