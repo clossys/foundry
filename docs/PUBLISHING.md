@@ -707,34 +707,57 @@ npm run publish:plan
 ```
 
 lists every non-private package, whether it would publish, and why the rest
-would not — "on npm already" and "qualification record missing/stale" are
-kept as distinct reasons, never collapsed into one generic "not eligible".
-It reads only; it packs nothing and publishes nothing. The table two rows
-above is a point-in-time snapshot and drifts as versions bump — `npm run
-publish:plan` derives the same question live, from the current tree and the
-current registry state, every time it runs.
+would not — "on npm already", "route publish workflow", and "qualification
+record missing/stale" are kept as distinct reasons, never collapsed into one
+generic "not eligible". It reads only; it packs nothing and publishes
+nothing. The table two rows above is a point-in-time snapshot and drifts as
+versions bump — `npm run publish:plan` derives the same question live, from
+the current tree and the current registry state, every time it runs.
+
+**The laptop path is for a package's first publish only.** `npm run
+publish:qualified-set -- --publish` never uploads a package whose npm
+identity already exists on the registry, even at a different version — npm
+cannot bind a trusted publisher to an identity that does not exist yet, so an
+owner-present local `npm publish` is the only way to create that FIRST <!-- facts-gate:ignore -->
+identity, and the only case it may legitimately handle. Every later version <!-- facts-gate:ignore -->
+of an already-published package is reported with status
+`route-publish-workflow` and the exact dispatch to run instead:
+
+```text
+gh workflow run publish.yml --ref main -f package=<pkg> -f dry_run=false -f verify_only=false
+```
+
+That is `publish.yml`'s protected `npm-publish` OIDC lane — the same
+required-reviewer environment approval every other update already goes
+through — and it is the only path that can attach npm provenance to a <!-- facts-gate:ignore -->
+version. Only a package's very first identity, before any trusted publisher
+exists for it, takes the local `--publish` path below.
 
 ```text
 npm run publish:qualified-set -- --publish
 ```
 
-runs the owner-present publish loop: for every eligible package, in
+runs the owner-present publish loop: for every eligible package (a genuinely
+first-ever identity, never an update to an already-existing one), in
 dependency order, it runs the exact sequence below — `preflight-package.mjs`,
-a fresh `npm pack`, a fresh `run-candidate-qualification.mjs` transcript,
-`validate-candidate-publish.mjs --mode prepublish`, then
-`publish-qualified-directory.mjs --mode owner-present` — the same gates
-`publish.yml`'s own `qualify` and `publish` jobs run for an OIDC upload, with
-an owner-present interactive `npm publish .` (one npm authentication/2FA
-prompt per package) in place of the OIDC upload only a package that already
-has a first identity can use. A failure in one package (preflight, packing,
-fresh qualification, prepublish validation, or the publish itself) stops only
-that package; every other eligible package is still attempted, and the final
-summary names every outcome. It requires `PUBLIC_SAFETY_DENYLIST` (or
-`--denylist <path>`) and the exact pinned release runtime (Node
-`v24.19.0`, npm `11.17.0`) — see `scripts/lib/release-runtime.mjs`
-— and refuses to run without either. See `scripts/publish-qualified-set.mjs`'s
-own header for the full gate-by-gate mapping and for why this is an
-owner-present loop rather than a `workflow_dispatch` fan-out.
+a clean `dist/` rebuild (delete then rebuild, so a leftover `dist/`'s stale
+file modes from an earlier `npm ci` bin-link can never survive into the
+packed tarball — issue #1286), a fresh `npm pack`, a fresh
+`run-candidate-qualification.mjs` transcript, `validate-candidate-publish.mjs
+--mode prepublish`, then `publish-qualified-directory.mjs --mode
+owner-present` — the same gates `publish.yml`'s own `qualify` and `publish`
+jobs run for an OIDC upload, with an owner-present interactive `npm publish .`
+(one npm authentication/2FA prompt per package) in place of the OIDC upload
+only a package that already has a first identity can use. A failure in one
+package (preflight, the clean rebuild, packing, fresh qualification,
+prepublish validation, or the publish itself) stops only that package; every
+other eligible package is still attempted, and the final summary names every
+outcome. It requires `PUBLIC_SAFETY_DENYLIST` (or `--denylist <path>`) and
+the exact pinned release runtime (Node `v24.19.0`, npm `11.17.0`) — see
+`scripts/lib/release-runtime.mjs` — and refuses to run without either. See
+`scripts/publish-qualified-set.mjs`'s own header for the full gate-by-gate
+mapping and for why this is an owner-present loop rather than a
+`workflow_dispatch` fan-out.
 
 Neither command replaces the per-row stop-and-verify discipline below: after
 each publish, still anonymously verify the exact published identity before
