@@ -14,11 +14,16 @@ import {
   restackCommitMessage,
   globToRegExp,
   classifyTier,
+  changedFilePathsForClassification,
   parseReviewRecordComments,
   isValidReviewRecord,
   selectCurrentReviewRecords,
+  findSuspiciousRecordComments,
+  findStickyRejections,
   evaluateTier1Independence,
   isOverbroadPathGlob,
+  isAuthorizedCollaboratorPermission,
+  encodeApiPath,
   evaluateTier2Decision,
   evaluateChangedDecisionRecords,
   verifyChangedFilesComplete,
@@ -299,24 +304,68 @@ test("classifyTier against the real governance/review-tiers.json: the enforcemen
   assert.equal(classifyTier(["packages/controller/src/index.ts"], tierGlobs).tier, "tier-0");
 });
 
-test("isOverbroadPathGlob rejects ** and * outright, and any glob matching an ordinary canary path", () => {
-  assert.equal(isOverbroadPathGlob("**"), true);
-  assert.equal(isOverbroadPathGlob("*"), true);
-  assert.equal(isOverbroadPathGlob("README.md"), true); // matches its own canary exactly
-  assert.equal(isOverbroadPathGlob("*.md"), true); // matches README.md, AGENTS.md, SECURITY.md
-  assert.equal(isOverbroadPathGlob("**/*.json"), true); // matches package.json
-  // A glob genuinely scoped to a real tier-2 area is not overbroad: it
-  // matches none of the canary (definitely-not-tier-2) paths.
-  assert.equal(isOverbroadPathGlob("governance/model-qualifications/**"), false);
-  assert.equal(isOverbroadPathGlob(".github/rulesets/**"), false);
+test("changedFilePathsForClassification includes both the new and previous filename, so a rename out of a tier-1/tier-2 path is still classified (#1187 review at df15ab87, blocking finding 1)", () => {
+  const config = JSON.parse(readFileSync(join(repoRoot, "governance", "review-tiers.json"), "utf8"));
+  const tierGlobs = { tier1: config.tier1.globs, tier1RecordExempt: config.tier1RecordExempt.globs, tier2: config.tier2.globs };
+
+  // scripts/land-stack.mjs moved to scripts/old/land-stack.mjs: the new path
+  // alone is tier-0, but the union with the old path is tier-2.
+  const renamedAway = changedFilePathsForClassification([{ filename: "scripts/old/land-stack.mjs", previousFilename: "scripts/land-stack.mjs" }]);
+  assert.deepEqual(renamedAway.sort(), ["scripts/land-stack.mjs", "scripts/old/land-stack.mjs"].sort());
+  assert.equal(classifyTier(renamedAway, tierGlobs).tier, "tier-2");
+  assert.equal(classifyTier(["scripts/old/land-stack.mjs"], tierGlobs).tier, "tier-0", "sanity: the new path ALONE really is tier-0");
+
+  // A workflow file disabled by renaming it out of .github/workflows/.
+  const disabledWorkflow = changedFilePathsForClassification([
+    { filename: ".github/conversation-safety.yml.off", previousFilename: ".github/workflows/conversation-safety.yml" },
+  ]);
+  assert.equal(classifyTier(disabledWorkflow, tierGlobs).tier, "tier-1");
+
+  // An ordinary rename with no previousFilename (a plain add) only contributes one path.
+  const plainAdd = changedFilePathsForClassification([{ filename: "README.md" }]);
+  assert.deepEqual(plainAdd, ["README.md"]);
 });
 
-function recordComment(record, { createdAt = "2026-09-23T00:00:00Z", updatedAt = createdAt } = {}) {
-  return { body: `<!-- foundry-review-record\n${JSON.stringify(record)}\n-->`, created_at: createdAt, updated_at: updatedAt };
+const SAMPLE_TIER_CONFIG = {
+  tier2: ["governance/model-qualifications/**", ".github/rulesets/**"],
+};
+
+test("isOverbroadPathGlob (#1187 review at df15ab87, blocking finding 4): computed against the real tier config, not a canary list", () => {
+  assert.equal(isOverbroadPathGlob("**", SAMPLE_TIER_CONFIG), true);
+  assert.equal(isOverbroadPathGlob("*", SAMPLE_TIER_CONFIG), true);
+  // Exactly one of tier2.globs, verbatim: accepted.
+  assert.equal(isOverbroadPathGlob("governance/model-qualifications/**", SAMPLE_TIER_CONFIG), false);
+  assert.equal(isOverbroadPathGlob(".github/rulesets/**", SAMPLE_TIER_CONFIG), false);
+  // A literal path (no glob metacharacters) is never overbroad -- it can
+  // authorize at most the one file it names.
+  assert.equal(isOverbroadPathGlob("governance/model-qualifications/allowlist.json", SAMPLE_TIER_CONFIG), false);
+  assert.equal(isOverbroadPathGlob("README.md", SAMPLE_TIER_CONFIG), false);
+  // The specific holes the prior canary-based heuristic let through: none
+  // of these equal a real tier2.globs entry, so all are rejected now, even
+  // though none of them happens to match an old canary path either.
+  assert.equal(isOverbroadPathGlob("governance/**", SAMPLE_TIER_CONFIG), true);
+  assert.equal(isOverbroadPathGlob(".github/**", SAMPLE_TIER_CONFIG), true);
+  assert.equal(isOverbroadPathGlob("scripts/lib/**", SAMPLE_TIER_CONFIG), true);
+  assert.equal(isOverbroadPathGlob("*.yml", SAMPLE_TIER_CONFIG), true);
+  // A glob that LOOKS narrower than a real tier-2 glob is still rejected --
+  // only a literal path or an exact tier2.globs entry is accepted.
+  assert.equal(isOverbroadPathGlob("governance/model-qualifications/allowlist-*.json", SAMPLE_TIER_CONFIG), true);
+});
+
+
+function recordComment(record, { createdAt = "2026-09-23T00:00:00Z", updatedAt = createdAt, authorized = true } = {}) {
+  return { body: `<!-- foundry-review-record\n${JSON.stringify(record)}\n-->`, created_at: createdAt, updated_at: updatedAt, authorized };
 }
 
 const HEAD = "a".repeat(40);
 
+// Direct-construction helpers below build a record as `parseReviewRecordComments`
+// would have produced it -- including `_authorized: true` and a parseable
+// `_commentCreatedAt` -- so tests that exercise evaluateTier1Independence /
+// selectCurrentReviewRecords directly (bypassing the comment-parsing layer)
+// still see a record `isValidReviewRecord` accepts by default. Tests that
+// specifically probe authorization or comment-editing go through
+// `recordComment` + `parseReviewRecordComments` instead (see below).
 function authorRecord(instanceId, overrides = {}) {
   return {
     schemaVersion: 1,
@@ -328,6 +377,8 @@ function authorRecord(instanceId, overrides = {}) {
     submittedAt: "2026-09-23T00:00:00Z",
     state: "declared",
     headSha: HEAD,
+    _commentCreatedAt: "2026-09-23T00:00:00Z",
+    _authorized: true,
     ...overrides,
   };
 }
@@ -335,7 +386,19 @@ function authorRecord(instanceId, overrides = {}) {
 // Two-reviewer tests below pass `depth` explicitly for both records: the
 // pairing rule requires one "primary" and one "secondary" (#1187 review at
 // 8e6d97ea, blocking finding 2), so there is no single sensible default.
-function reviewerRecord(instanceId, { model = "claude-opus-4-1", provider = "anthropic", state = "approved", depth = "primary", id = instanceId, submittedAt = "2026-09-23T01:00:00Z" } = {}) {
+function reviewerRecord(
+  instanceId,
+  {
+    model = "claude-opus-4-1",
+    provider = "anthropic",
+    state = "approved",
+    depth = "primary",
+    id = instanceId,
+    submittedAt = "2026-09-23T01:00:00Z",
+    commentCreatedAt = submittedAt,
+    authorized = true,
+  } = {},
+) {
   return {
     schemaVersion: 1,
     role: "reviewer",
@@ -348,6 +411,8 @@ function reviewerRecord(instanceId, { model = "claude-opus-4-1", provider = "ant
     state,
     depth,
     headSha: HEAD,
+    _commentCreatedAt: commentCreatedAt,
+    _authorized: authorized,
   };
 }
 
@@ -381,19 +446,43 @@ function decisionRecord(overrides = {}) {
   };
 }
 
-test("parseReviewRecordComments extracts well-formed blocks and flags malformed JSON", () => {
+test("parseReviewRecordComments extracts well-formed blocks, flags malformed JSON, and reads the authorized flag the caller set", () => {
   const comments = [
-    recordComment(authorRecord("author-instance")),
-    { body: "<!-- foundry-review-record\n{not json}\n-->", created_at: "2026-09-23T00:00:00Z", updated_at: "2026-09-23T00:00:00Z" },
+    recordComment(authorRecord("author-instance"), { authorized: true }),
+    { body: "<!-- foundry-review-record\n{not json}\n-->", created_at: "2026-09-23T00:00:00Z", updated_at: "2026-09-23T00:00:00Z", authorized: true },
     { body: "just a normal comment, no marker" },
+    recordComment(reviewerRecord("untrusted"), { authorized: false }),
   ];
   const records = parseReviewRecordComments(comments);
-  assert.equal(records.length, 2);
+  assert.equal(records.length, 3);
   assert.equal(records[0].role, "author");
+  assert.equal(records[0]._authorized, true);
   assert.equal(records[1]._parseError, true);
+  assert.equal(records[2]._authorized, false);
 });
 
-test("isValidReviewRecord requires the full field set per role", () => {
+test("parseReviewRecordComments treats a comment with no authorized field at all as unauthorized (fail closed)", () => {
+  const bareComment = { body: `<!-- foundry-review-record\n${JSON.stringify(authorRecord("x"))}\n-->`, created_at: "2026-09-23T00:00:00Z", updated_at: "2026-09-23T00:00:00Z" };
+  const [record] = parseReviewRecordComments([bareComment]);
+  assert.equal(record._authorized, false);
+});
+
+test("isAuthorizedCollaboratorPermission accepts only admin/write (#1187 review at df15ab87, blocking finding 2)", () => {
+  assert.equal(isAuthorizedCollaboratorPermission("admin"), true);
+  assert.equal(isAuthorizedCollaboratorPermission("write"), true);
+  assert.equal(isAuthorizedCollaboratorPermission("read"), false);
+  assert.equal(isAuthorizedCollaboratorPermission("none"), false);
+  assert.equal(isAuthorizedCollaboratorPermission("triage"), false);
+  assert.equal(isAuthorizedCollaboratorPermission(undefined), false);
+  assert.equal(isAuthorizedCollaboratorPermission(""), false);
+});
+
+test("encodeApiPath encodes each path segment but preserves the slash separators", () => {
+  assert.equal(encodeApiPath("governance/decisions/d1.json"), "governance/decisions/d1.json");
+  assert.equal(encodeApiPath("a b/c#d.json"), "a%20b/c%23d.json");
+});
+
+test("isValidReviewRecord requires the full field set per role, plus _authorized and a parseable _commentCreatedAt", () => {
   assert.equal(isValidReviewRecord(authorRecord("x")), true);
   assert.equal(isValidReviewRecord(reviewerRecord("y")), true);
   assert.equal(isValidReviewRecord({ role: "author" }), false);
@@ -401,6 +490,8 @@ test("isValidReviewRecord requires the full field set per role", () => {
   delete missingModel.model;
   assert.equal(isValidReviewRecord(missingModel), false);
   assert.equal(isValidReviewRecord({ ...reviewerRecord("y"), depth: "tertiary" }), false);
+  assert.equal(isValidReviewRecord({ ...authorRecord("x"), _authorized: false }), false);
+  assert.equal(isValidReviewRecord({ ...authorRecord("x"), _commentCreatedAt: "not a date" }), false);
 });
 
 test("isValidReviewRecord rejects an unparseable submittedAt (#1187 review at 8e6d97ea, should-fix 10)", () => {
@@ -427,12 +518,47 @@ test("parseReviewRecordComments marks a record from an edited comment (created_a
   assert.equal(selectCurrentReviewRecords([a, b], HEAD).length, 1);
 });
 
-test("selectCurrentReviewRecords drops stale (different head) records, keeps latest per (role, instanceId) by REAL parsed instant, not string order", () => {
+test("findSuspiciousRecordComments: an unparseable block is always suspicious; an edited block only at the current head", () => {
+  const parseError = { _parseError: true, _commentCreatedAt: "2026-09-23T00:00:00Z" };
+  assert.deepEqual(findSuspiciousRecordComments([parseError], HEAD), [parseError]);
+  assert.deepEqual(findSuspiciousRecordComments([parseError], "any-other-head"), [parseError]);
+
+  const editedAtHead = { ...authorRecord("x"), _edited: true, headSha: HEAD };
+  assert.deepEqual(findSuspiciousRecordComments([editedAtHead], HEAD), [editedAtHead]);
+  const editedAtStaleHead = { ...authorRecord("x"), _edited: true, headSha: "stale" };
+  assert.deepEqual(findSuspiciousRecordComments([editedAtStaleHead], HEAD), []);
+
+  const untouched = authorRecord("x");
+  assert.deepEqual(findSuspiciousRecordComments([untouched], HEAD), []);
+});
+
+test("findStickyRejections: authorized + current-head + reject/changes-requested, regardless of other missing fields", () => {
+  const wellFormedReject = reviewerRecord("r1", { state: "reject" });
+  assert.deepEqual(findStickyRejections([wellFormedReject], HEAD), [wellFormedReject]);
+
+  // Malformed (missing depth/model) but authorized and at head: still sticky.
+  const malformedReject = { role: "reviewer", instanceId: "r2", state: "changes-requested", headSha: HEAD, _authorized: true };
+  assert.deepEqual(findStickyRejections([malformedReject], HEAD), [malformedReject]);
+
+  // Unauthorized: excluded, even though everything else matches.
+  const unauthorizedReject = reviewerRecord("r3", { state: "reject", authorized: false });
+  assert.deepEqual(findStickyRejections([unauthorizedReject], HEAD), []);
+
+  // Stale head: excluded.
+  const staleReject = { ...reviewerRecord("r4", { state: "reject" }), headSha: "stale" };
+  assert.deepEqual(findStickyRejections([staleReject], HEAD), []);
+
+  // Approved: not a rejection at all.
+  const approved = reviewerRecord("r5", { state: "approved" });
+  assert.deepEqual(findStickyRejections([approved], HEAD), []);
+});
+
+test("selectCurrentReviewRecords drops stale (different head) records, keeps latest per (role, instanceId) by the COMMENT'S created_at, not the self-declared submittedAt", () => {
   const staleHead = "b".repeat(40);
   const records = [
     authorRecord("author-1"),
-    reviewerRecord("r1", { submittedAt: "2026-09-23T01:00:00Z", state: "commented" }),
-    reviewerRecord("r1", { submittedAt: "2026-09-23T02:00:00Z", state: "approved" }), // supersedes the one above
+    reviewerRecord("r1", { commentCreatedAt: "2026-09-23T01:00:00Z", state: "commented" }),
+    reviewerRecord("r1", { commentCreatedAt: "2026-09-23T02:00:00Z", state: "approved" }), // supersedes the one above
     { ...reviewerRecord("r2"), headSha: staleHead }, // stale: different head, dropped
   ];
   const current = selectCurrentReviewRecords(records, HEAD);
@@ -440,6 +566,22 @@ test("selectCurrentReviewRecords drops stale (different head) records, keeps lat
   const r1 = current.find((r) => r.instanceId === "r1");
   assert.equal(r1.state, "approved");
   assert.equal(current.some((r) => r.instanceId === "r2"), false);
+});
+
+test("selectCurrentReviewRecords orders by _commentCreatedAt even when submittedAt disagrees (a self-declared submittedAt cannot win or lose a supersession race on its own)", () => {
+  const earlierCommentLaterSubmittedAt = reviewerRecord("r1", {
+    state: "commented",
+    submittedAt: "2026-09-23T09:00:00Z", // self-declared as "later"
+    commentCreatedAt: "2026-09-23T01:00:00Z", // but the comment itself is EARLIER
+  });
+  const laterCommentEarlierSubmittedAt = reviewerRecord("r1", {
+    state: "approved",
+    submittedAt: "2026-09-23T00:00:00Z", // self-declared as "earlier"
+    commentCreatedAt: "2026-09-23T02:00:00Z", // but the comment itself is LATER
+  });
+  const current = selectCurrentReviewRecords([earlierCommentLaterSubmittedAt, laterCommentEarlierSubmittedAt], HEAD);
+  assert.equal(current.length, 1);
+  assert.equal(current[0].state, "approved"); // the record whose COMMENT is later wins, not the one whose submittedAt claims to be later
 });
 
 test("MUST REFUSE: the author reviewing their own PR is refused", () => {
@@ -512,6 +654,28 @@ test('MUST REFUSE: "commented" never counts as approval, even paired correctly b
   assert.match(result.reason, /"commented" records never count/);
 });
 
+test("MUST REFUSE: an unauthorized reviewer's approval never counts toward the pair, even with everything else correct (#1187 review at df15ab87, blocking finding 2)", () => {
+  const records = [
+    authorRecord("author-1"),
+    reviewerRecord("r1", { model: "claude-sonnet-5", depth: "primary" }),
+    reviewerRecord("r2", { model: "claude-opus-4-1", depth: "secondary", authorized: false }),
+  ];
+  const result = evaluateTier1Independence({ records, headSha: HEAD });
+  assert.equal(result.ok, false);
+  assert.match(result.reason, /found 1 independent approved record/);
+});
+
+test("MUST REFUSE end-to-end: two foundry-review-record comments from an unauthorized (non-collaborator) account never satisfy tier-1, even with a perfectly-formed pair", () => {
+  const comments = [
+    recordComment(authorRecord("author-1"), { authorized: true }),
+    recordComment(reviewerRecord("r1", { model: "claude-sonnet-5", depth: "primary" }), { authorized: false }),
+    recordComment(reviewerRecord("r2", { model: "claude-opus-4-1", depth: "secondary" }), { authorized: false }),
+  ];
+  const records = parseReviewRecordComments(comments);
+  const result = evaluateTier1Independence({ records, headSha: HEAD });
+  assert.equal(result.ok, false);
+});
+
 test("MUST ALLOW: different model, or different provider, is accepted (with primary/secondary depth pairing and both approved)", () => {
   const byModel = evaluateTier1Independence({
     records: [
@@ -544,7 +708,7 @@ test("MUST REFUSE: a reject (or changes-requested) verdict is refused, and is NE
     headSha: HEAD,
   });
   assert.equal(rejected.ok, false);
-  assert.match(rejected.reason, /reject or changes-requested/);
+  assert.match(rejected.reason, /sticky/);
 
   const changesRequested = evaluateTier1Independence({
     records: [
@@ -569,7 +733,67 @@ test("MUST REFUSE: a reject (or changes-requested) verdict is refused, and is NE
     headSha: HEAD,
   });
   assert.equal(outvoteAttempt.ok, false);
-  assert.match(outvoteAttempt.reason, /never outvoted/);
+  assert.match(outvoteAttempt.reason, /sticky/);
+});
+
+test("MUST REFUSE: a reject in an EDITED comment still blocks (#1187 review at df15ab87, blocking finding 3, probe 11b)", () => {
+  const comments = [
+    recordComment(authorRecord("author-1"), { authorized: true }),
+    recordComment(reviewerRecord("b", { model: "claude-sonnet-5", state: "approved", depth: "primary" }), { authorized: true }),
+    recordComment(reviewerRecord("c", { model: "claude-opus-4-1", state: "approved", depth: "secondary" }), { authorized: true }),
+    // D's reject, posted in a comment that was later edited (even just to
+    // fix whitespace) -- the prior draft dropped this entirely via _edited,
+    // leaving B+C looking like a clean, satisfying pair.
+    recordComment(reviewerRecord("d", { model: "fable", state: "reject", depth: "secondary" }), {
+      authorized: true,
+      createdAt: "2026-09-23T01:00:00Z",
+      updatedAt: "2026-09-23T01:05:00Z",
+    }),
+  ];
+  const records = parseReviewRecordComments(comments);
+  const result = evaluateTier1Independence({ records, headSha: HEAD });
+  assert.equal(result.ok, false);
+  // Refused at the "suspicious" stage (any edited-at-head block refuses the
+  // whole gate), not merely at the sticky-rejection stage -- either is a
+  // correct refusal, but the suspicious check runs first.
+  assert.match(result.reason, /edited-at-head or unparseable/);
+});
+
+test("MUST REFUSE: a reject cannot be superseded by a LATER, same-instanceId 'approved' record (#1187 review at df15ab87, blocking finding 3, probe 10b)", () => {
+  const initialReject = reviewerRecord("d", { model: "fable", state: "reject", depth: "secondary", commentCreatedAt: "2026-09-23T01:00:00Z" });
+  const laterWithdrawal = reviewerRecord("d", {
+    model: "fable",
+    state: "approved",
+    depth: "secondary",
+    commentCreatedAt: "2026-09-23T09:00:00Z", // genuinely later, not edited -- a fresh comment
+  });
+  const records = [
+    authorRecord("author-1"),
+    reviewerRecord("b", { model: "claude-sonnet-5", state: "approved", depth: "primary" }),
+    initialReject,
+    laterWithdrawal,
+  ];
+  const result = evaluateTier1Independence({ records, headSha: HEAD });
+  assert.equal(result.ok, false);
+  assert.match(result.reason, /sticky/);
+});
+
+test("MUST REFUSE: a MALFORMED reject (missing depth/model) still blocks", () => {
+  const comments = [
+    recordComment(authorRecord("author-1"), { authorized: true }),
+    recordComment(reviewerRecord("b", { model: "claude-sonnet-5", state: "approved", depth: "primary" }), { authorized: true }),
+    recordComment(reviewerRecord("c", { model: "claude-opus-4-1", state: "approved", depth: "secondary" }), { authorized: true }),
+    {
+      body: `<!-- foundry-review-record\n${JSON.stringify({ schemaVersion: 1, role: "reviewer", instanceId: "d", state: "reject", headSha: HEAD })}\n-->`,
+      created_at: "2026-09-23T01:00:00Z",
+      updated_at: "2026-09-23T01:00:00Z",
+      authorized: true,
+    },
+  ];
+  const records = parseReviewRecordComments(comments);
+  const result = evaluateTier1Independence({ records, headSha: HEAD });
+  assert.equal(result.ok, false);
+  assert.match(result.reason, /sticky/);
 });
 
 test("MUST REFUSE: no current-head author record at all is refused", () => {
@@ -582,7 +806,7 @@ test("MUST REFUSE: no current-head author record at all is refused", () => {
 });
 
 test("MUST REFUSE: tier-2 without an owner decision record is refused", () => {
-  const noDecisions = evaluateTier2Decision({ decisionRecords: [], prNumber: 42, tier2Paths: ["governance/model-qualifications/allowlist.json"] });
+  const noDecisions = evaluateTier2Decision({ decisionRecords: [], prNumber: 42, tier2Paths: ["governance/model-qualifications/allowlist.json"], tierConfig: SAMPLE_TIER_CONFIG });
   assert.equal(noDecisions.ok, false);
   assert.match(noDecisions.reason, /requires an owner decision record/);
 
@@ -590,6 +814,7 @@ test("MUST REFUSE: tier-2 without an owner decision record is refused", () => {
     decisionRecords: [decisionRecord({ decidedBy: "consensus", links: { pullRequests: ["42"] } })],
     prNumber: 42,
     tier2Paths: ["governance/model-qualifications/allowlist.json"],
+    tierConfig: SAMPLE_TIER_CONFIG,
   });
   assert.equal(wrongDecider.ok, false);
 
@@ -597,6 +822,7 @@ test("MUST REFUSE: tier-2 without an owner decision record is refused", () => {
     decisionRecords: [decisionRecord({ expiry: "2000-01-01T00:00:00Z", links: { pullRequests: ["42"] } })],
     prNumber: 42,
     tier2Paths: ["governance/model-qualifications/allowlist.json"],
+    tierConfig: SAMPLE_TIER_CONFIG,
   });
   assert.equal(expired.ok, false);
 
@@ -605,6 +831,7 @@ test("MUST REFUSE: tier-2 without an owner decision record is refused", () => {
     decisionRecords: [decisionRecord({ id: "d1", links: { pullRequests: ["42"] } })],
     prNumber: 42,
     tier2Paths: ["governance/model-qualifications/allowlist.json"],
+    tierConfig: SAMPLE_TIER_CONFIG,
   });
   assert.equal(linkedByPr.ok, true);
 
@@ -613,6 +840,7 @@ test("MUST REFUSE: tier-2 without an owner decision record is refused", () => {
     decisionRecords: [decisionRecord({ id: "d2", links: { paths: ["governance/model-qualifications/**"] } })],
     prNumber: 999,
     tier2Paths: ["governance/model-qualifications/allowlist.json"],
+    tierConfig: SAMPLE_TIER_CONFIG,
   });
   assert.equal(linkedByPath.ok, true);
 });
@@ -622,6 +850,7 @@ test("MUST REFUSE: evaluateTier2Decision rejects an unparseable expiry, an expir
     decisionRecords: [decisionRecord({ id: "d1", expiry: "not-a-date", links: { pullRequests: ["1"] } })],
     prNumber: 1,
     tier2Paths: ["governance/model-qualifications/allowlist.json"],
+    tierConfig: SAMPLE_TIER_CONFIG,
   });
   assert.equal(unparseableExpiry.ok, false);
 
@@ -631,6 +860,7 @@ test("MUST REFUSE: evaluateTier2Decision rejects an unparseable expiry, an expir
     decisionRecords: [superseded, superseder],
     prNumber: 1,
     tier2Paths: ["governance/model-qualifications/allowlist.json"],
+    tierConfig: SAMPLE_TIER_CONFIG,
   });
   assert.equal(supersededResult.ok, false, "a superseded record must grant no authority, even if it would otherwise match");
 
@@ -638,6 +868,7 @@ test("MUST REFUSE: evaluateTier2Decision rejects an unparseable expiry, an expir
     decisionRecords: [decisionRecord({ id: "d1", tier: "tier-1", links: { pullRequests: ["1"] } })],
     prNumber: 1,
     tier2Paths: ["governance/model-qualifications/allowlist.json"],
+    tierConfig: SAMPLE_TIER_CONFIG,
   });
   assert.equal(tier1Record.ok, false, "a tier-1 record is never tier-2 authority");
 
@@ -648,6 +879,7 @@ test("MUST REFUSE: evaluateTier2Decision rejects an unparseable expiry, an expir
     ],
     prNumber: 1,
     tier2Paths: ["governance/model-qualifications/allowlist.json"],
+    tierConfig: SAMPLE_TIER_CONFIG,
     now: new Date("2026-09-23T00:00:00Z"),
   });
   assert.equal(pastSunset.ok, false);
@@ -657,8 +889,27 @@ test("MUST REFUSE: evaluateTier2Decision rejects an unparseable expiry, an expir
     decisionRecords: [{ id: "d1", status: "decided", decidedBy: "owner", tier: "tier-2", expiry: null, links: { pullRequests: ["1"] } }],
     prNumber: 1,
     tier2Paths: ["governance/model-qualifications/allowlist.json"],
+    tierConfig: SAMPLE_TIER_CONFIG,
   });
   assert.equal(malformed.ok, false, "a schema-invalid record (missing question/options/recommendation/relaxesGateOrPolicy/...) must never authorize a tier-2 change");
+});
+
+test("evaluateTier2Decision validates a record's id against _idFromFilename when present, not against itself (#1187 review at df15ab87, should-fix nit)", () => {
+  const mismatched = evaluateTier2Decision({
+    decisionRecords: [{ ...decisionRecord({ id: "d1" }), _idFromFilename: "some-other-filename", links: { pullRequests: ["1"] } }],
+    prNumber: 1,
+    tier2Paths: ["governance/model-qualifications/allowlist.json"],
+    tierConfig: SAMPLE_TIER_CONFIG,
+  });
+  assert.equal(mismatched.ok, false, "id (d1) not matching its real filename (some-other-filename) must be caught, not vacuously self-approved");
+
+  const matched = evaluateTier2Decision({
+    decisionRecords: [{ ...decisionRecord({ id: "d1" }), _idFromFilename: "d1", links: { pullRequests: ["1"] } }],
+    prNumber: 1,
+    tier2Paths: ["governance/model-qualifications/allowlist.json"],
+    tierConfig: SAMPLE_TIER_CONFIG,
+  });
+  assert.equal(matched.ok, true);
 });
 
 test("MUST REFUSE: an overbroad links.paths glob never authorizes a tier-2 change (#1187 review at 8e6d97ea, blocking finding 4)", () => {
@@ -666,8 +917,19 @@ test("MUST REFUSE: an overbroad links.paths glob never authorizes a tier-2 chang
     decisionRecords: [decisionRecord({ id: "d1", links: { paths: ["**"] } })],
     prNumber: 1,
     tier2Paths: ["governance/model-qualifications/allowlist.json"],
+    tierConfig: SAMPLE_TIER_CONFIG,
   });
   assert.equal(result.ok, false);
+});
+
+test("MUST REFUSE: a links.paths glob broader than any declared tier-2 area never authorizes a tier-2 change (#1187 review at df15ab87, blocking finding 4)", () => {
+  const result = evaluateTier2Decision({
+    decisionRecords: [decisionRecord({ id: "d1", links: { paths: ["governance/**"] } })],
+    prNumber: 1,
+    tier2Paths: ["governance/model-qualifications/allowlist.json"],
+    tierConfig: SAMPLE_TIER_CONFIG,
+  });
+  assert.equal(result.ok, false, "governance/** is not exactly a tier2.globs entry and is not a literal path, so it must never authorize anything");
 });
 
 test("evaluateChangedDecisionRecords refuses a malformed changed decision record, any tier", () => {
@@ -681,11 +943,32 @@ test("evaluateChangedDecisionRecords refuses a malformed changed decision record
   assert.match(invalid.reason, /governance\/decisions\/d1\.json/);
 });
 
-test("verifyChangedFilesComplete fails closed on an empty list or a changedFiles mismatch (#1187 review at 8e6d97ea, blocking finding 3)", () => {
+test("evaluateChangedDecisionRecords refuses a decision record deleted, or renamed OUT of governance/decisions/ (#1187 review at df15ab87, blocking finding 1)", () => {
+  const deleted = evaluateChangedDecisionRecords([{ path: "governance/decisions/revoked.json", record: { __deletedOrUnreadable: true } }]);
+  assert.equal(deleted.ok, false);
+  assert.match(deleted.reason, /no longer exists/);
+
+  // A rename out: the caller feeds BOTH the old path (now unreadable at
+  // head -- __deletedOrUnreadable) and the new path (readable, but at a
+  // location evaluateChangedDecisionRecords was never even asked about,
+  // since it's no longer under governance/decisions/). The old-path entry
+  // alone must refuse.
+  const renamedAway = evaluateChangedDecisionRecords([
+    { path: "governance/decisions/revoked.json", record: { __deletedOrUnreadable: true } },
+  ]);
+  assert.equal(renamedAway.ok, false);
+});
+
+test("verifyChangedFilesComplete fails closed on an empty list, a non-number changedFiles, or a changedFiles mismatch (#1187 review at 8e6d97ea blocking finding 3; df15ab87 should-fix 8)", () => {
   assert.equal(verifyChangedFilesComplete([], 0).ok, false, "an empty list must never be read as tier-0 -- it must refuse to classify at all");
   assert.equal(verifyChangedFilesComplete(["a.txt"], 100).ok, false, "a paginated list shorter than changedFiles must refuse (truncated fetch)");
   assert.equal(verifyChangedFilesComplete(["a.txt", "b.txt"], 2).ok, true);
-  assert.equal(verifyChangedFilesComplete(["a.txt"], undefined).ok, true, "an unknown changedFiles count does not itself block a non-empty list");
+  // A non-number changedFiles -- including undefined, the shape a broken
+  // fetch would actually produce -- now REFUSES rather than skipping the
+  // cross-check (#1187 review at df15ab87, should-fix 8).
+  assert.equal(verifyChangedFilesComplete(["a.txt"], undefined).ok, false);
+  assert.equal(verifyChangedFilesComplete(["a.txt"], null).ok, false);
+  assert.equal(verifyChangedFilesComplete(["a.txt"], "1").ok, false);
 });
 
 test("evaluateTierGate: tier-0 passes without any review evidence; tier-1 and tier-2 route through the checks above", () => {
@@ -717,6 +1000,7 @@ test("evaluateTierGate: tier-0 passes without any review evidence; tier-1 and ti
       headSha: HEAD,
       decisionRecords: [],
       prNumber: 1,
+      tierConfig: SAMPLE_TIER_CONFIG,
     },
   );
   assert.equal(tier2NoDecision.ok, false);
@@ -729,6 +1013,7 @@ test("evaluateTierGate: tier-0 passes without any review evidence; tier-1 and ti
       headSha: HEAD,
       decisionRecords: [decisionRecord({ id: "d1", links: { pullRequests: ["1"] } })],
       prNumber: 1,
+      tierConfig: SAMPLE_TIER_CONFIG,
     },
   );
   assert.equal(tier2Pass.ok, true);
