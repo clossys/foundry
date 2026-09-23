@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- `src/cli.test.ts`'s "installed-symlink topology" tests captured the
+- The CLI test suite's "installed-symlink topology" tests captured the
   spawned bin's output via `spawnSync`, whose synchronous capture ran an
   internal poll loop outside Node's normal stream machinery — the loop a
   heavily loaded CI runner could starve, occasionally returning the
@@ -19,8 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   handler, whose ordering is guaranteed by the `Readable` stream
   contract. No production code changed; this bumps the version only
   because this package's retained 0.1.10 qualification record covers the
-  whole package tree, tests included, and would otherwise go stale
-  (docs/PUBLISHING.md).
+  whole package tree, tests included, and would otherwise go stale (see
+  this repository's own publishing guide).
 
 ## [0.1.10] - 2026-09-21
 

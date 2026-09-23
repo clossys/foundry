@@ -43,6 +43,20 @@ function dirtyDir(root, name) {
   return dir;
 }
 
+// A directory carrying BOTH a CLASS 1 finding (note.md, as above) and a
+// CLASS 2 finding (an internal-convention data-* attribute in a .ts file) —
+// used to prove `--class N`'s VALUE actually reached the class filter
+// (only the requested class is reported) rather than merely "the process
+// didn't crash," which a directory-mistaken-for-a-flag-value bug could
+// still pass by accident.
+function dualClassDir(root, name) {
+  const dir = join(root, name);
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, "note.md"), "See KIT-CONVENTIONS.md for the house rules.\n");
+  writeFileSync(join(dir, "component.ts"), 'export const markup = "data-xxq-value";\n');
+  return dir;
+}
+
 test("check-contamination-classes: multi-directory / non-existent-path regression (#1328)", async (t) => {
   const work = mkdtempSync(join(tmpdir(), "contam-multiarg-"));
   t.after(() => rmSync(work, { recursive: true, force: true }));
@@ -140,5 +154,82 @@ test("check-contamination-classes: multi-directory / non-existent-path regressio
     const r = run([]);
     assert.equal(r.code, 2);
     assert.match(r.out, /usage: check-contamination-classes\.mjs/);
+  });
+
+  // Regression coverage for the independent review's BLOCKING finding on
+  // e2595098: `--class N` and `--allowlist <file>` both take a bare,
+  // non-`--`-prefixed value. The multi-directory dispatch's
+  // `positional = argv.filter(a => !a.startsWith("--"))` couldn't tell that
+  // value apart from a real directory argument, so `dir --class 1` left
+  // `"1"` in the positional pool and the script tried to scan it as a
+  // second directory (`no such directory: 1`, exit 2) — a real defect in
+  // the script's own documented usage banner, not a hypothetical.
+
+  await t.test("directory then --class N: the value is consumed as the class filter, not a second directory", () => {
+    const dir = dualClassDir(work, "class-after-dir");
+    const r = run([dir, "--class", "1"]);
+    assert.equal(r.code, 1, `expected exit 1, got ${r.code}: ${r.out}`);
+    assert.doesNotMatch(r.out, /no such directory/, "the \"1\" must never be treated as a directory argument");
+    assert.match(r.out, /CLASS 1/, "the class-1 finding must still be reported");
+    assert.doesNotMatch(r.out, /CLASS 2/, "the class-2 finding must be filtered out by --class 1, proving the value actually reached the filter");
+  });
+
+  await t.test("--class N then directory: same behavior regardless of flag/positional order", () => {
+    const dir = dualClassDir(work, "class-before-dir");
+    const r = run(["--class", "2", dir]);
+    assert.equal(r.code, 1, `expected exit 1, got ${r.code}: ${r.out}`);
+    assert.doesNotMatch(r.out, /no such directory/);
+    assert.match(r.out, /CLASS 2/, "the class-2 finding must be reported under --class 2");
+    assert.doesNotMatch(r.out, /CLASS 1 —/, "the class-1 finding must be filtered out by --class 2");
+  });
+
+  await t.test("--allowlist then path: the value is used as the allowlist file, not treated as a second directory", () => {
+    const dir = dirtyDir(work, "allowlist-target");
+    const allowlistPath = join(work, "custom-allowlist.json");
+    writeFileSync(
+      allowlistPath,
+      JSON.stringify({ issue: "#1", packages: { "allowlist-target": { "note.md": ["KIT-CONVENTIONS.md"] } } }),
+    );
+
+    const withoutAllowlist = run([dir]);
+    assert.equal(withoutAllowlist.code, 1, "sanity check: the citation is a live finding without the allowlist");
+
+    const withAllowlist = run([dir, "--allowlist", allowlistPath]);
+    assert.equal(withAllowlist.code, 0, `expected exit 0 (waived), got ${withAllowlist.code}: ${withAllowlist.out}`);
+    assert.match(withAllowlist.out, /KNOWN, WAIVED/);
+    assert.doesNotMatch(withAllowlist.out, /no such directory/, "the allowlist path must never be treated as a directory argument");
+  });
+
+  await t.test("multiple directories mixed with flags: every directory is scanned and the class filter still applies to each", () => {
+    const a = cleanDir(work, "mixed-a-clean");
+    const b = dualClassDir(work, "mixed-b-dual");
+    const c = cleanDir(work, "mixed-c-clean");
+
+    const r = run([a, "--class", "1", b, "--json", c]);
+    assert.equal(r.code, 1, `expected exit 1, got ${r.code}: ${r.out}`);
+    const parsed = JSON.parse(r.out);
+    assert.ok(Array.isArray(parsed));
+    assert.equal(parsed.length, 3, "all three directories must be scanned, none swallowed as a flag value");
+    assert.equal(parsed[0].root, a);
+    assert.equal(parsed[1].root, b);
+    assert.ok(parsed[1].findings.some((f) => f.class === 1), "the class-1 finding in the middle directory must be reported");
+    assert.ok(!parsed[1].findings.some((f) => f.class === 2), "the class-2 finding must be filtered out by --class 1, even inside multi-directory dispatch");
+    assert.equal(parsed[2].root, c);
+  });
+
+  await t.test("a value-taking flag missing its value is a clear error, not a crash or a silent wrong answer", () => {
+    const dir = cleanDir(work, "missing-value-dir");
+
+    const atEnd = run([dir, "--class"]);
+    assert.equal(atEnd.code, 2, `expected exit 2, got ${atEnd.code}: ${atEnd.out}`);
+    assert.match(atEnd.out, /--class requires a value/);
+
+    const beforeAnotherFlag = run([dir, "--class", "--json"]);
+    assert.equal(beforeAnotherFlag.code, 2, `expected exit 2, got ${beforeAnotherFlag.code}: ${beforeAnotherFlag.out}`);
+    assert.match(beforeAnotherFlag.out, /--class requires a value/);
+
+    const allowlistMissing = run([dir, "--allowlist"]);
+    assert.equal(allowlistMissing.code, 2, `expected exit 2, got ${allowlistMissing.code}: ${allowlistMissing.out}`);
+    assert.match(allowlistMissing.out, /--allowlist requires a value/);
   });
 });

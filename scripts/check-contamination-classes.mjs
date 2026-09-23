@@ -111,13 +111,57 @@ import { join, relative, extname, resolve, dirname, basename, sep } from "node:p
 import { fileURLToPath } from "node:url";
 import { execFileSync, spawnSync } from "node:child_process";
 
+// Flags that consume the NEXT token as their own value, per this script's
+// own usage banner below (`--class N`, `--allowlist <file>`). Every other
+// `--`-prefixed token (`--json`, `--include-built`, `--no-allowlist`) is a
+// bare boolean switch. This distinction has to be made positionally, in one
+// left-to-right pass over `argv` — a naive `argv.filter(a =>
+// !a.startsWith("--"))` cannot tell a flag's own value apart from a real
+// directory argument, and previously didn't: `--class 1` left `"1"` in the
+// positional pool, which the multi-directory dispatch below then tried to
+// scan as a second directory (`no such directory: 1`, exit 2) — a real
+// regression this fix closes, not a hypothetical.
+const VALUE_FLAGS = new Set(["--class", "--allowlist"]);
+
 const argv = process.argv.slice(2);
-const flags = new Set(argv.filter((a) => a.startsWith("--")));
-const positional = argv.filter((a) => !a.startsWith("--"));
+const flags = new Set();
+const flagValues = new Map();
+const positional = [];
+// The exact `--`-prefixed tokens (flags AND the values they consumed, in
+// their original relative order) — everything in `argv` that is NOT a
+// directory positional. This is what the multi-directory dispatch below
+// forwards to each per-directory child invocation, so a child sees the
+// identical `--class 1` or `--allowlist <file>` its parent was given,
+// rather than losing the value the way plain `argv.filter(a =>
+// a.startsWith("--"))` would (it would forward `--class` alone, silently
+// dropping the `1` that gives it meaning).
+const nonPositionalArgs = [];
+
+for (let i = 0; i < argv.length; i++) {
+  const arg = argv[i];
+  if (!arg.startsWith("--")) {
+    positional.push(arg);
+    continue;
+  }
+  flags.add(arg);
+  nonPositionalArgs.push(arg);
+  if (!VALUE_FLAGS.has(arg)) continue;
+  const value = argv[i + 1];
+  // A value-taking flag with nothing after it, or immediately followed by
+  // another flag, has no value to consume — fail closed with a clear error
+  // rather than silently treating the next flag (or nothing) as this
+  // flag's value.
+  if (value === undefined || value.startsWith("--")) {
+    console.error(`check-contamination-classes: ${arg} requires a value`);
+    process.exit(2);
+  }
+  if (!flagValues.has(arg)) flagValues.set(arg, value); // first occurrence wins, matching the old argv.indexOf() lookup
+  nonPositionalArgs.push(value);
+  i += 1; // consume the value so it never reaches `positional`
+}
 
 function flagValue(name) {
-  const i = argv.indexOf(name);
-  return i >= 0 ? argv[i + 1] : undefined;
+  return flagValues.get(name);
 }
 
 if (positional.length === 0) {
@@ -151,7 +195,7 @@ for (const dir of positional) {
 // per-directory objects into one array rather than concatenated raw JSON.
 if (positional.length > 1) {
   const selfPath = fileURLToPath(import.meta.url);
-  const passthroughArgs = argv.filter((a) => a.startsWith("--"));
+  const passthroughArgs = nonPositionalArgs;
   const asJson = flags.has("--json");
   const jsonResults = [];
   let worstExit = 0;
