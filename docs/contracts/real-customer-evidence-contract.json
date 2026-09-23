@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "kind": "foundry-real-customer-evidence",
+  "$comment": "Defines the shape, provenance, consent, and staleness of one real-customer evidence record (#1222), and how it is weighed against Strategist's claims and Customer's synthetic keep. Evidence records hold redacted or summarized content plus a pointer to where the human holds the real material -- never the real material itself. Validated by scripts/check-real-customer-evidence.mjs, wired as `npm run check:real-customer-evidence`. States and conditions are NOT declared here: per docs/contracts/lifecycle.json's own governance rule ('No package other than @clossys/controller declares its own copy of `states` or `conditions`'), this contract reads them from docs/contracts/lifecycle.json at validation time. `lifecycleTransitions` below is a specialization of that shared vocabulary for evidence records specifically -- the same pattern lifecycle.json's own `packStatusMapping` uses for pack items -- not a second declaration of the words themselves. In that shared vocabulary: `absent` and `found` are Strategist noticing a gap or a lead before a record exists; `draft` is a collected-but-unjudged record; `approved` is Keeper's holding-and-consent judgment plus Strategist's evidence-base citation; `verified` is a record Customer has used to calibrate a persona or claim, with that calibration on record; `retired` is a record Keeper has withdrawn from holding. Package definition and judgment stay with Strategist (evidence base, citation) and Keeper (what may be held, for how long, and under what consent). Customer's persona-calibration use of a verified record is described here but is not yet wired into the customer package -- see the pull request that introduced this contract for why. This gate's own report emits docs/contracts/check-output-envelope.json rather than a local report shape, for the same reason.",
+  "lifecycleTransitions": {
+    "absent": ["found"],
+    "found": ["draft"],
+    "draft": ["approved", "retired"],
+    "approved": ["verified", "retired"],
+    "verified": ["retired"],
+    "retired": []
+  },
+  "evidenceKinds": ["interview", "support-thread", "call-summary", "survey-response", "usage-signal"],
+  "collectors": ["coding-agent", "human"],
+  "consentBases": ["explicit-recorded-consent", "existing-support-relationship-terms", "anonymized-aggregate-no-consent-required"],
+  "weightClasses": ["primary", "corroborating", "context-only"],
+  "recordFields": ["schemaVersion", "recordId", "kind", "source", "consent", "summary", "lifecycle", "weighting", "retention"],
+  "sourceFields": ["description", "collectedBy", "collectedAt", "pointer"],
+  "consentFields": ["basis", "confirmedBy", "confirmedAt", "scope"],
+  "lifecycleFields": ["state", "condition", "enteredAt", "reason"],
+  "weightingFields": ["appliesTo", "weightClass", "calibrationNote"],
+  "retentionFields": ["holder", "scheduleRef", "reviewBy"],
+  "forbiddenFieldNames": ["email", "phone", "phonenumber", "fullname", "lastname", "firstname", "ssn", "address", "transcript", "rawtranscript", "recording", "ipaddress", "dob", "dateofbirth", "creditcard", "password"],
+  "rule": "One record describes one piece of real-customer evidence gathered by the coding agent or the human -- never generated or inferred. `source.description` and `summary` hold only redacted or summarized content; `source.pointer` is an opaque reference to where the human or the client's own system holds the real interview, thread, or call, never the content itself. No field name anywhere in the record may match a forbidden personal-data field, and no string value in the record may contain an email address, a phone number, or a nine-digit number shaped like a national identifier -- a record failing that lexical check is violated, not merely flagged. `consent.basis` must be declared and `confirmedBy`/`confirmedAt`/`scope` must be recorded regardless of basis, because Keeper's holding decision, not the basis alone, is what makes holding lawful. `lifecycle.state` must be reachable from `absent` by `lifecycleTransitions`, a `blocked` condition or a `retired` state needs a nonempty `reason`, and only an `approved` or `verified` record may carry a nonempty `weighting.calibrationNote`, because an unjudged record has nothing yet to calibrate. `retention.holder` is always `keeper`: Strategist and Customer cite a record, they do not hold it. A record that is missing, unreadable, or has an unusable top-level shape is indeterminate, never satisfied; a record satisfying every field and lexical rule is satisfied; every other rule violation is violated. Real evidence never outranks Strategist's and Customer's own judgment -- `weighting.weightClass` states how a judge should weigh it, and `context-only` evidence corroborates but never substitutes for Customer's synthetic-only keep on its own."
+}

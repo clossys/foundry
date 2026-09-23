@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "repository": "clossys/foundry",
+  "asOf": "2026-09-23T00:00:00.000Z",
+  "capabilities": [
+    {
+      "id": "read-repository-content",
+      "description": "Read code, docs, issues, and pull requests in this repository.",
+      "tier": "unasked",
+      "rationale": "Reading is not a change; it needs no approval and carries no risk to the client."
+    },
+    {
+      "id": "propose-change-as-pull-request",
+      "description": "Open or update a pull request with a proposed change.",
+      "tier": "unasked",
+      "rationale": "A pull request is a proposal, not a change taking effect -- it is itself the approval mechanism this repository uses."
+    },
+    {
+      "id": "run-tests-build-or-lint-locally",
+      "description": "Run this repository's own tests, build, and checks against a proposed change.",
+      "tier": "unasked",
+      "rationale": "Local verification is required to propose a trustworthy change and touches nothing outside the agent's own working copy."
+    },
+    {
+      "id": "write-internal-notes-or-drafts",
+      "description": "Write internal notes, plans, or drafts that stay inside the repository or the pull request.",
+      "tier": "unasked",
+      "rationale": "Internal drafting carries no external effect and is ordinary preparation for a proposed change."
+    },
+    {
+      "id": "comment-on-existing-issue-or-pull-request",
+      "description": "Post a comment on an existing issue or pull request.",
+      "tier": "approval",
+      "rationale": "A comment is public and permanent on this repository; the client sees and approves its content before it posts."
+    },
+    {
+      "id": "merge-a-pull-request",
+      "description": "Merge an approved pull request into the default branch.",
+      "tier": "never",
+      "rationale": "Only an independent human or a separately reviewing agent merges here -- the proposing agent never merges its own work."
+    },
+    {
+      "id": "push-directly-to-default-branch",
+      "description": "Push a commit directly to the default branch, bypassing a pull request.",
+      "tier": "never",
+      "rationale": "Every change enters through a reviewable pull request; a direct push has no approval step at all."
+    },
+    {
+      "id": "force-push-or-rewrite-published-history",
+      "description": "Force-push or otherwise rewrite history that has already been pushed.",
+      "tier": "never",
+      "rationale": "Rewriting published history can silently discard another contributor's work and defeats the audit trail."
+    },
+    {
+      "id": "bypass-required-checks-or-branch-protection",
+      "description": "Skip a required status check, review, or branch-protection rule.",
+      "tier": "never",
+      "rationale": "Required checks are the client's own declared quality floor; bypassing them defeats the reason they exist."
+    },
+    {
+      "id": "handle-or-store-credentials-or-secrets",
+      "description": "Read, print, store, or transmit a credential, token, password, or connection string.",
+      "tier": "never",
+      "rationale": "Credentials never enter this repository; a locked-away credential broker is the only place they live."
+    },
+    {
+      "id": "make-a-live-external-change",
+      "description": "Change a live external system this repository does not itself contain -- a deployment, a DNS record, a domain purchase, or a third-party account or service setting.",
+      "tier": "approval",
+      "rationale": "A live external change has effects outside version control that a pull request alone cannot undo; the client approves it explicitly first."
+    },
+    {
+      "id": "spend-money-or-authorize-a-purchase",
+      "description": "Spend the client's money or authorize a purchase on their behalf.",
+      "tier": "approval",
+      "rationale": "Money leaving the client's control always needs their explicit, informed approval first."
+    },
+    {
+      "id": "send-a-message-on-the-clients-behalf-externally",
+      "description": "Send an email, a social post, or any other message to someone outside the team on the client's behalf.",
+      "tier": "approval",
+      "rationale": "A message sent externally cannot be recalled; the client approves its content and destination first."
+    },
+    {
+      "id": "delete-or-permanently-remove-data",
+      "description": "Permanently delete data with no recovery path -- emptying trash, hard-deleting a record, or force-removing history.",
+      "tier": "never",
+      "rationale": "An irreversible loss of the client's data is never something the agent decides to do on its own."
+    },
+    {
+      "id": "modify-account-or-security-settings",
+      "description": "Change account, authentication, or security configuration for the client or a service they use.",
+      "tier": "never",
+      "rationale": "Security and account settings are the client's own authority; changing them can lock the client out or weaken their protection."
+    },
+    {
+      "id": "accept-terms-or-grant-oauth-permissions",
+      "description": "Accept terms of service, a consent agreement, or grant an OAuth or SSO permission.",
+      "tier": "approval",
+      "rationale": "Agreements and granted permissions bind the client; they approve exactly what is being agreed to or granted before it happens."
+    }
+  ]
+}
