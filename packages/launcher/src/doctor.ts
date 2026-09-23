@@ -137,7 +137,7 @@ export function runDoctorChecks(host: DoctorCheckHost): DoctorReport {
 /** Renders one step at a time, plain language, the way a non-technical client reads it. */
 export function renderDoctorReport(report: DoctorReport): string {
   if (report.allSatisfied) {
-    return "Everything doctor checks is ready. Open this folder in your coding agent and talk to @clossys-advisor.";
+    return "Everything doctor checks is ready. Open this folder in your coding agent and talk to @clossys-advisor to get started.";
   }
   const step = report.nextToFix;
   if (step === undefined) return "Everything doctor checks is ready.";

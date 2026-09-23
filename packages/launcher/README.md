@@ -168,7 +168,7 @@ launcher --help
 launcher-check --help
 launcher-check --input observation.json
 launcher-doctor
-launcher-apply-plan --plan plan.json --brief brief.json --repo path/to/repo
+launcher-apply-plan --plan plan.json --brief brief.json --repo ./product-checkout
 ```
 
 Exit codes preserve the ternary:
