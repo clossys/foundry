@@ -5,6 +5,57 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.15] - 2026-09-23
+
+### Added
+
+- CI conventions (issue #1259): `conventions/documents/ci-conventions.md`,
+  the MECE rule set (cost, speed, quality, security) every repository
+  adopts, each rule with its reason and, where one exists, the measurement
+  behind it -- citing foundry's own retrospective findings generically, by
+  issue number. `runner-conventions.md` gains the runner-stack-by-
+  visibility decision rule; dated pricing now lives in
+  `conventions/data/runner-pricing.json` (`asOf`, source URLs), never
+  hard-coded, resolved by the new `dataPath()` export.
+- `evaluateCiConventions` (`./conventions`): the pure evaluator for the
+  rule set above. Takes already-read workflow file contents, a declared
+  ruleset, a visibility/plan/budget/exceptions declaration, and (optional)
+  the pricing data, and emits the shared check-output envelope
+  (`package`/`version`/`verdict`/`summary`/`findings`/`metric`/
+  `nextAction`, #1190/#1174) -- the first module in this package to emit
+  that envelope directly. Checks: PR-only `cancel-in-progress`,
+  `timeout-minutes`, SHA-pinned actions, top-level `permissions`, required
+  contexts on both `pull_request` and `merge_group`, no trigger-level path
+  filters on a required workflow, fan-in `if: always()` with an explicit
+  `needs.*.result` check, gate-naming grammar (delegates to
+  `validateGateName`), runner label vs. visibility/tier (delegates to
+  `validateRunnerLabel`), `retention-days`, and a projected-monthly-minutes
+  warning against the free allowances and a declared budget, when run
+  history is supplied. Zero I/O -- parses workflow YAML itself via the new
+  `parseYamlLite`/`YamlLiteParseError` (`src/conventions/yaml-lite.ts`), a
+  small, well-tested subset parser for exactly the GitHub-Actions-workflow
+  shape this package needs (block/flow mappings and sequences, quoted and bare
+  scalars, literal/folded block scalars for `run: |` bodies, comments) --
+  this package ships zero runtime dependencies and this shape does not
+  justify adding one.
+- `ci-conventions-check` (bin): the CLI for `evaluateCiConventions`. Reads
+  a workflows directory (default `.github/workflows`), a ruleset JSON
+  file, a declaration JSON file, and optional pricing data; prints the
+  envelope as JSON; exits 0/1/2 on the package's usual contract.
+  `--mode report` (default) never exits 1, so a repository can dogfood the
+  checker before its CI is clean enough to gate on; `--mode enforce` maps
+  the verdict straight through.
+- `conventions/templates/ci-workflow.yml`: a conforming CI workflow
+  skeleton -- triggers, top-level permissions, PR-only
+  `cancel-in-progress`, SHA-pinned actions, `timeout-minutes` on every job,
+  and a worked fan-in (`verify-build`/`verify-unit-tests` into
+  `verify-build-and-test`). A test runs the real shipped file through
+  `evaluateCiConventions` and asserts it is satisfied, the same discipline
+  `documents.test.ts` already holds for this package's other shipped
+  files (that test file itself does not ship with this package).
+  `templatePath()` resolves it (not I/O; reading is the caller's
+  job, matching `documentPath`/`adapterPath`).
+
 ## [0.9.14] - 2026-09-22
 
 ### Added

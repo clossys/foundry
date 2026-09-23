@@ -1,0 +1,24 @@
+{
+  "$comment": "Foundry's own declaration for ci-conventions-check (issue #1259), report mode only. No runnerConventions is declared here yet -- foundry has not adopted a third-party runner provider, so the runner-label rule is correctly indeterminate (a warning, not a violation) rather than guessing a vocabulary that does not exist. No justifiedExceptions are declared yet either: every finding in the report is a real, undeclared gap, matching the retrospective in issue #1259's own comment.",
+  "visibility": "public",
+  "repositoryIdentifier": "foundry",
+  "protectedBranches": ["main"],
+  "requiredContextWorkflows": {
+    "publish safety": ".github/workflows/ci.yml",
+    "scope drift": ".github/workflows/ci.yml",
+    "build and test": ".github/workflows/ci.yml",
+    "artifact safety (tarball)": ".github/workflows/ci.yml",
+    "prose quality (README parity, contamination classes)": ".github/workflows/ci.yml",
+    "release readiness (version bump vs. shipped content)": ".github/workflows/ci.yml",
+    "workspace link integrity": ".github/workflows/ci.yml",
+    "registry drift": ".github/workflows/ci.yml",
+    "controller gates (catalog, neutrality, repository-profile)": ".github/workflows/ci.yml",
+    "WCAG contrast gate (designer-contrast-check)": ".github/workflows/ci.yml",
+    "qualification record required (version bump vs. retained record)": ".github/workflows/ci.yml",
+    "package state (declared vs. evidence)": ".github/workflows/ci.yml",
+    "secret-scan (inspector judgment)": ".github/workflows/ci.yml",
+    "prepublish hook drift": ".github/workflows/ci.yml",
+    "verify-standards": ".github/workflows/verify-standards.yml",
+    "role-loop archetypes": ".github/workflows/ci.yml"
+  }
+}
