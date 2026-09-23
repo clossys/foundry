@@ -5,6 +5,14 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.4.18] - 2026-09-23
+
+### Changed
+
+- Packed skill: cite strategist constraint ids and derived token slot names
+  from `brand.json` derivations. Do not add a brand attribute, a color
+  value, or a type pairing inside strategy records. Refs: #1121.
+
 ## [0.4.17] - 2026-09-21
 
 ### Added

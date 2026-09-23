@@ -5,6 +5,14 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.3.16] - 2026-09-23
+
+### Changed
+
+- Packed skill: cite the strategist handoff — an audience id, approved
+  claim ids (`claim:<id>`), applicable constraint ids (`constraint:<id>`),
+  and the current direction id. Do not edit `strategy/`. Refs: #1120.
+
 ## [0.3.15] - 2026-09-21
 
 ### Changed

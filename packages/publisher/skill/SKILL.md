@@ -23,6 +23,10 @@ The same team is in every inventoried repo. Name another `@clossys-<package>` to
 
 An engine gap or a missing check is a Foundry issue about the package that owns it. Never dump a consumer's strategy. Never name a consumer.
 
+## Strategy provenance
+
+Seal surfaces against the projected strategy provenance from `@clossys/strategist` (`projectStrategyContract` / `createStrategyProvenance`). Do not author strategy records in `strategy/`.
+
 ## Page shape — shipped templates first, `defineWebTemplate` for the rest
 
 1. Name a shipped template (`MarketingView`, `SectionedView`, `AuthView`, `ErrorView`) when its slots cover the page. Pre-auth marketing uses `MarketingView`, not `SectionedView`.

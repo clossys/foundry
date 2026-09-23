@@ -5,6 +5,15 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.4.25] - 2026-09-23
+
+### Changed
+
+- Packed skill: seal surfaces against the projected strategy provenance
+  from `@clossys/strategist` (`projectStrategyContract` /
+  `createStrategyProvenance`). Do not author strategy records in
+  `strategy/`. Refs: #1123.
+
 ## [0.4.24] - 2026-09-21
 
 ### Changed
