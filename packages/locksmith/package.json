@@ -1,6 +1,6 @@
 {
   "name": "@clossys/locksmith",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -21,7 +21,8 @@
     "clossys-secrets-infisical": "dist/infisical/cli.js",
     "vespene-secrets-infisical": "dist/infisical/cli.js",
     "clossys-locksmith-credential": "dist/bin.js",
-    "locksmith-check": "dist/controlled-key-rate-cli.js"
+    "locksmith-check": "dist/controlled-key-rate-cli.js",
+    "clossys-locksmith-provider-custody": "dist/provider-custody-cli.js"
   },
   "files": [
     "dist",
