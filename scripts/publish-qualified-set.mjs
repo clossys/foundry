@@ -233,7 +233,22 @@ export async function publishOnePackage({
       return { packageKey, status: "prepublish-validation-failed", detail: findings.map((f) => `[${f.rule}] ${f.message}`).join("\n") };
     }
 
-    const result = await publish({ root, packageKey, candidatePath: candidate.path, recordPath, mode: "owner-present", env });
+    // Preflight above was already told, explicitly, which denylist to run
+    // FULL against (`--denylist`/`PUBLIC_SAFETY_DENYLIST`, resolved by the
+    // CLI into `denylist`). The actual publish step must check the exact
+    // same file, not whatever `PUBLIC_SAFETY_DENYLIST` happens to already
+    // be set to in the ambient environment -- otherwise an explicit
+    // `--denylist <path>` that differs from a stray ambient env var lets
+    // preflight and the real publish validate against two different
+    // denylists, with neither step erroring (issue #1322 item 3;
+    // publishQualifiedDirectory itself does throw on a genuinely MISSING
+    // `PUBLIC_SAFETY_DENYLIST`, so the acute risk here was a silent
+    // same-run mismatch, not a bypass). Only overridden when `denylist` was
+    // actually resolved -- a caller that never supplies one (a test, or a
+    // context where preflight itself is skipped) keeps getting `env`
+    // exactly as given, unchanged.
+    const publishEnv = denylist ? { ...env, PUBLIC_SAFETY_DENYLIST: denylist } : env;
+    const result = await publish({ root, packageKey, candidatePath: candidate.path, recordPath, mode: "owner-present", env: publishEnv });
     return { packageKey, status: "published", detail: result };
   } catch (error) {
     return { packageKey, status: "publish-failed", detail: error?.message ?? String(error) };

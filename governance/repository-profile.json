@@ -22,6 +22,7 @@
     { "id": "tool.package-manager", "scope": "repository", "constraint": { "kind": "one-of", "values": ["npm"] } }
   ],
   "rootEntries": [
+    { "name": ".changesets", "classification": "canonical", "disposition": "required" },
     { "name": ".github", "classification": "canonical", "disposition": "required" },
     { "name": ".gitignore", "classification": "canonical", "disposition": "required" },
     { "name": ".npmrc.example", "classification": "canonical", "disposition": "required" },

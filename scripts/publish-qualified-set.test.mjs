@@ -155,6 +155,53 @@ test("publishOnePackage: a clean-rebuild failure stops before packing, qualifyin
   assert.equal(touched, false);
 });
 
+// issue #1322 item 3: preflight resolves `denylist` explicitly (CLI
+// `--denylist` or `PUBLIC_SAFETY_DENYLIST`) and runs FULL against it, but
+// the actual publish call used to default `env` to the raw ambient
+// `process.env` -- so an explicit `--denylist <path>` and a DIFFERENT
+// ambient `PUBLIC_SAFETY_DENYLIST` env var would validate two different
+// files, with neither step erroring. The publish call's env must carry the
+// exact same resolved denylist preflight was told to use.
+test("publishOnePackage: the publish call's env.PUBLIC_SAFETY_DENYLIST is the resolved denylist, not a stray ambient env var (issue #1322 item 3)", async () => {
+  const seenPreflight = [];
+  let publishEnv;
+  const outcome = await publishOnePackage({
+    packageKey: "app",
+    recordPath: "governance/release-qualifications/clossys-app-1.0.0.json",
+    root: "/repo",
+    denylist: "/explicit/denylist.json",
+    env: { PUBLIC_SAFETY_DENYLIST: "/ambient/stray-denylist.json", PATH: "/usr/bin" },
+    ...passingDeps({
+      runPreflight: (packageDirectory, options) => { seenPreflight.push(options); return { ok: true, output: "PASS" }; },
+      publish: async (options) => { publishEnv = options.env; return { name: "@example/app", version: "1.0.0" }; },
+    }),
+  });
+  assert.equal(outcome.status, "published");
+  // Preflight was told the explicit denylist, as before.
+  assert.equal(seenPreflight[0].denylist, "/explicit/denylist.json");
+  // The publish call's env must resolve to the SAME denylist, not the
+  // ambient env's own (different) value -- and every other ambient env
+  // entry must still pass through unchanged.
+  assert.equal(publishEnv.PUBLIC_SAFETY_DENYLIST, "/explicit/denylist.json");
+  assert.equal(publishEnv.PATH, "/usr/bin");
+});
+
+test("publishOnePackage: with no denylist resolved, the publish call's env is passed through exactly as given", async () => {
+  let publishEnv;
+  const outcome = await publishOnePackage({
+    packageKey: "app",
+    recordPath: "governance/release-qualifications/clossys-app-1.0.0.json",
+    root: "/repo",
+    env: { PUBLIC_SAFETY_DENYLIST: "/ambient/denylist.json", PATH: "/usr/bin" },
+    ...passingDeps({
+      publish: async (options) => { publishEnv = options.env; return { name: "@example/app", version: "1.0.0" }; },
+    }),
+  });
+  assert.equal(outcome.status, "published");
+  assert.equal(publishEnv.PUBLIC_SAFETY_DENYLIST, "/ambient/denylist.json");
+  assert.equal(publishEnv.PATH, "/usr/bin");
+});
+
 // -------------------------------------------------------------------- publishEligibleSet
 
 test("publishEligibleSet: a failure in one package does not stop the batch, and every outcome is reported", async () => {
