@@ -33,3 +33,7 @@ coverage/
 # Packed launcher skill catalogue and conversation contract (packages/launcher/scripts/pack-skills.mjs).
 packages/launcher/skill-catalogue/
 packages/launcher/contracts/
+
+# Generated advisor capability catalogue and kit presets snapshot
+# (packages/advisor/scripts/pack-capability-catalogue.mjs).
+packages/advisor/src/generated/
