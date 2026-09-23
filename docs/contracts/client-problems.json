@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "$comment": "Client problem vocabulary (issue #1176, owner comment \"De-risking dynamic composition\", 2026-09-22). Advisor offers these as confirmation cards -- the client confirms a PROBLEM, never picks a package. Seeded one per role, restating that role's own jobQuestion in docs/contracts/role-loop-archetypes.json in the client's words, because no package yet declares its own foundry.solves (issue #1172, in progress on another branch). Once a role declares real solves entries, its own `problem` id there is the source of truth for scripts/lib/capability-catalogue.mjs#composeKitFromProblems; groundedInRole below only names the seed role a fallback entry was derived from and is not itself consulted at composition time. Id rule: '<role>-<two-to-four-word-slug>', chosen once and stable -- the role prefix guarantees no collision as the catalogue grows, and a rewritten `statement` is a one-line edit that never touches `id`. Do not repurpose a retired id for a different problem; add a new one instead.",
+  "problems": [
+    { "id": "advisor-worth-it", "statement": "Is this worth it for us?", "groundedInRole": "advisor" },
+    { "id": "architect-operating-boundaries-drift", "statement": "We don't know if how we actually operate still matches how we say we operate.", "groundedInRole": "architect" },
+    { "id": "bouncer-access-drift", "statement": "We're not sure who can do what anymore.", "groundedInRole": "bouncer" },
+    { "id": "builder-desired-state-drift", "statement": "We can't tell if what's running matches what we declared.", "groundedInRole": "builder" },
+    { "id": "butler-request-tracking", "statement": "Requests come in and we lose track of what people actually asked for.", "groundedInRole": "butler" },
+    { "id": "controller-rules-drift", "statement": "We ship fast and our own operating rules don't keep up.", "groundedInRole": "controller" },
+    { "id": "customer-would-they-keep-it", "statement": "We don't know if a real person would actually keep this.", "groundedInRole": "customer" },
+    { "id": "designer-interface-quality", "statement": "Our product doesn't look or feel like it was made with care.", "groundedInRole": "designer" },
+    { "id": "giver-unanswered-requests", "statement": "People ask us for things and don't hear back in time, or at all.", "groundedInRole": "giver" },
+    { "id": "influencer-audience-response", "statement": "We put things out there and don't know if the right people respond.", "groundedInRole": "influencer" },
+    { "id": "inspector-change-breaks-things", "statement": "We ship fast and things break.", "groundedInRole": "inspector" },
+    { "id": "integrator-package-currency", "statement": "We're not sure what's actually installed anymore, or whether it's current.", "groundedInRole": "integrator" },
+    { "id": "keeper-holding-accountability", "statement": "We hold data on people and can't say why, or let them see or fix it.", "groundedInRole": "keeper" },
+    { "id": "locksmith-key-custody", "statement": "We don't know who holds which keys, or how we'd take one back.", "groundedInRole": "locksmith" },
+    { "id": "messenger-delivery-confidence", "statement": "Messages go out and we don't know if they actually arrived.", "groundedInRole": "messenger" },
+    { "id": "observer-blind-spots", "statement": "We can't tell what's really happening in our own systems.", "groundedInRole": "observer" },
+    { "id": "publisher-verified-release", "statement": "We're not sure what's actually live, or that it matches what we approved.", "groundedInRole": "publisher" },
+    { "id": "strategist-unclear-direction", "statement": "We can't explain what we are.", "groundedInRole": "strategist" },
+    { "id": "writer-unapproved-copy", "statement": "Our words don't sound like us, or nobody signed off on them.", "groundedInRole": "writer" }
+  ]
+}

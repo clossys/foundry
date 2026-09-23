@@ -1,6 +1,6 @@
 {
   "name": "@clossys/controller",
-  "version": "0.9.15",
+  "version": "0.9.17",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -144,7 +144,7 @@
     "test": "vitest run"
   },
   "devDependencies": {
-    "@clossys/advisor": "^0.2.0",
+    "@clossys/advisor": "^0.3.0",
     "@types/node": "^26.5.1",
     "typescript": "~6.0.0",
     "vitest": "^5.0.0"
