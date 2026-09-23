@@ -25,7 +25,7 @@
  * verdict straight through 0/1/2.
  */
 
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readFileSync, readdirSync, realpathSync, statSync } from "node:fs";
 import { isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
@@ -151,9 +151,10 @@ function readJson<T>(path: string, label: string): T {
  * works regardless of the caller's cwd); `displayDir` is what `WorkflowFile.
  * path` is built from. They differ on purpose: a declaration's
  * `requiredContextWorkflows` names workflows by their repo-relative path
- * (e.g. ".github/workflows/ci.yml", matching how a repository would write
- * it), and that mapping would never match if `path` carried this machine's
- * absolute filesystem prefix instead.
+ * (e.g. ".github/workflows/ci.yml" -- an example of the CALLER's own path;
+ * that exact path does not ship with this package -- matching how a
+ * repository would write it), and that mapping would never match if `path`
+ * carried this machine's absolute filesystem prefix instead.
  */
 function readWorkflowFiles(readDir: string, displayDir: string): WorkflowFile[] {
   let entries: string[];
@@ -249,8 +250,31 @@ export async function main(argv: string[]): Promise<number> {
   }
 }
 
-const isDirectRun = process.argv[1] !== undefined && fileURLToPath(import.meta.url) === resolve(process.argv[1]);
-if (isDirectRun) {
+/**
+ * Both sides MUST be real-path'd before comparing -- see `../gates/cli.ts`'s
+ * own `detectMainModule` for the full account. `import.meta.url` is always
+ * already a realpath, but `process.argv[1]` is the path exactly as node was
+ * invoked with it, and a plain comparison (or `path.resolve`, which only
+ * normalises) does not follow symlinks. `npm install` publishes this CLI's
+ * `bin` as a SYMLINK at `node_modules/.bin/ci-conventions-check`, so every
+ * consumer invoking it the only way it ships hits the mismatch: `main()`
+ * never fires, nothing prints, and the process exits 0 having validated
+ * nothing. `realpathSync` throws if a path does not exist -- impossible for
+ * a module currently executing, but guarded so a throw here falls back to
+ * the plain comparison rather than crashing before `main()` is ever reached.
+ */
+function detectMainModule(): boolean {
+  const argvPath = process.argv[1];
+  if (argvPath === undefined) return false;
+  const modulePath = fileURLToPath(import.meta.url);
+  try {
+    return realpathSync(resolve(argvPath)) === realpathSync(modulePath);
+  } catch {
+    return resolve(argvPath) === modulePath;
+  }
+}
+
+if (detectMainModule()) {
   main(process.argv.slice(2)).then((code) => {
     process.exitCode = code;
   });

@@ -3,7 +3,9 @@
  * a GitHub Actions workflow file. `ci-conventions-check` (`./ci-conventions.ts`)
  * needs to read `on:`, `permissions:`, `concurrency:`, and `jobs:.*` out of a
  * workflow's raw text, and this package ships zero runtime dependencies
- * (`packages/controller/package.json` has no `dependencies` field at all) --
+ * (`packages/controller/package.json` has no `dependencies` field at all --
+ * that monorepo-relative path does not ship with this package; once
+ * installed standalone it is just this package's own root `package.json`) --
  * pulling in a full YAML implementation for that one shape is a heavier
  * dependency than the shape justifies. This module is the "small,
  * well-tested subset parser" alternative the convention explicitly allows.

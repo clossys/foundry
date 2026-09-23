@@ -151,6 +151,45 @@ test("a hyphenated handle under some other scope remains a foreign bare-scope", 
   }
 });
 
+test("a docs.github.com URL is GitHub's documentation site, not a foreign owner/repo slug", () => {
+  // The bug this guards: FORGE_URL_RE's plain `github.com` alternative used
+  // to match as a substring of ANY host ending in that apex domain, so
+  // `docs.github.com/en/billing/...` read the URL's locale segment (`en`)
+  // and product segment (`billing`) as an owner/repo pair — issue found in
+  // packages/controller/conventions/data/runner-pricing.json, which cites
+  // this exact URL as its pricing source.
+  const root = fixture({
+    extraFiles: {
+      "docs/PRICING.md":
+        "Source: https://docs.github.com/en/billing/managing-billing-for-your-products/managing-billing-for-github-actions/about-billing-for-github-actions\n",
+    },
+  });
+  try {
+    const result = run(root);
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("a github.com owner/repo URL is still a foreign-reference finding (proves the docs.github.com fix didn't just stop checking)", () => {
+  // Built from parts, like the hyphenated-handle case above, so this file's
+  // own source is not itself a finding when the real gate scans this repo.
+  const foreignSlug = ["widgetco", "private-tool"].join("/");
+  const root = fixture({
+    extraFiles: {
+      "docs/LEAK.md": `See https://github.com/${foreignSlug} for details.\n`,
+    },
+  });
+  try {
+    const result = run(root);
+    assert.equal(result.status, 1, result.stderr || result.stdout);
+    assert.match(result.stdout, new RegExp(`forge-slug ${foreignSlug.replace("/", "\\/")}`));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("a future producer scope is admitted only in an exact release-contract documentation surface", () => {
   const root = fixture({ extraFiles: { "docs/PUBLISHING.md": `planned ${futureScope}/advisor target` } });
   try {

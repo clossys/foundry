@@ -2010,7 +2010,9 @@ that envelope directly, rather than a local shape.
 
 ```ts
 import { evaluateCiConventions } from "@clossys/controller/conventions";
-
+// ".github/workflows/ci.yml" below is the CALLER's own repo-relative
+// workflow path, an example value -- that path does not ship with this
+// package.
 const result = evaluateCiConventions({
   workflowFiles: [{ path: ".github/workflows/ci.yml", content: rawYaml }],
   ruleset: { requiredContexts: ["verify-build-and-test"], maxRetentionDays: 14 },

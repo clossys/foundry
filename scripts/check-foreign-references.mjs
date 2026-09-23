@@ -596,8 +596,17 @@ const BARE_SCOPE_RE = /(?<![A-Za-z0-9._%+-])@([a-z0-9][a-z0-9._-]*)(?![A-Za-z0-9
 // The account-and-repository half of a GitHub URL — web, ssh, raw content and
 // API. A trailing `.git` is part of the clone URL, not part of the repository
 // name, and is stripped before comparison (see `normalizeRepo`).
+//
+// The `github\.com` alternative needs a left-hand guard: without one it also
+// matches as a SUBSTRING of a different host on the same apex domain, most
+// concretely `docs.github.com/en/billing/...` — GitHub's own documentation
+// site, not the repository host, with the URL's locale segment (`en`) and
+// product segment (`billing`) then misread as an owner/repo pair. The other
+// two alternatives (`raw.githubusercontent.com`, `api.github.com/repos/`)
+// don't need the same guard: each already names its own distinct host
+// in full, so neither one is a substring match of some other subdomain.
 const FORGE_URL_RE =
-  /(?:github\.com[/:]|raw\.githubusercontent\.com\/|api\.github\.com\/repos\/)([A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)\/([A-Za-z0-9][A-Za-z0-9._-]*)/g;
+  /(?:(?<![A-Za-z0-9.-])github\.com[/:]|raw\.githubusercontent\.com\/|api\.github\.com\/repos\/)([A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)\/([A-Za-z0-9][A-Za-z0-9._-]*)/g;
 
 // A workflow step's `uses:` value — `owner/repo`, `owner/repo/path`, either
 // with or without an `@<ref>` suffix.

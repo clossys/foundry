@@ -170,11 +170,12 @@ rather than repeating it under **Cost**.
   more declaring exactly that job-level exception, bounds what a compromised
   step or a malicious transitive action dependency can do with the token.
 - **Third-party actions pinned by full commit SHA.** A tag or branch
-  reference (`@v4`, `@main`) can be repointed by the action's own
-  maintainer — or, if their account is compromised, by an attacker — to a
-  different commit without the pin in this repository's workflow file ever
-  changing. A full 40-character commit SHA is the only reference GitHub
-  cannot silently repoint. This repository's own retrospective (#1259)
+  reference (`actions/checkout@v4`, `actions/checkout@main`) can be
+  repointed by the action's own maintainer — or, if their account is
+  compromised, by an attacker — to a different commit without the pin in
+  this repository's workflow file ever changing. A full 40-character commit
+  SHA is the only reference GitHub cannot silently repoint. This
+  repository's own retrospective (#1259)
   found 99 of 99 third-party `uses:` already pinned this way — the
   convention exists to keep every future repository, and every new action
   this repository adopts, at that same standard from the start.

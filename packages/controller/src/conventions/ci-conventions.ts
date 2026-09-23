@@ -13,7 +13,8 @@
  * structure this module can walk.
  *
  * The output is the shared output envelope (issue #1190 / #1174,
- * `docs/contracts/check-output-envelope.json`): `{ package, version,
+ * `docs/contracts/check-output-envelope.json` -- that repo-root contract
+ * path does not ship with this package): `{ package, version,
  * verdict, summary, findings, metric?, nextAction? }`, with `verdict` one
  * of this package's own three-state ternary (`satisfied` / `violated` /
  * `indeterminate`, `./gates/result.ts`) and each finding's `severity` one
@@ -102,7 +103,7 @@ export interface CiConventionsDeclaration {
   readonly protectedBranches?: readonly string[];
   /** Maps a required context name (`ruleset.requiredContexts` entry) to the workflow path that publishes it. */
   readonly requiredContextWorkflows?: Readonly<Record<string, string>>;
-  /** The identifier `RunnerConventions.publicRepos` exempts, e.g. the repository name. Required for the runner-label rule to resolve a public-repo exemption. */
+  /** The identifier `RunnerConventions.publicRepos` exempts, e.g. the repository name. Required for the runner-label rule to resolve a public-repository exemption. */
   readonly repositoryIdentifier?: string;
   readonly runnerConventions?: RunnerConventions;
   /** Declared monthly minutes budget. Private repositories only -- see `ci-conventions.md`. */
