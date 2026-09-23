@@ -1,6 +1,6 @@
 {
   "name": "@clossys/controller",
-  "version": "0.9.19",
+  "version": "0.9.21",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -87,7 +87,9 @@
     "foundry-completion-evidence-check": "dist/positions/completion-evidence-bin.js",
     "singular-authority-check": "dist/release/singular-authority-bin.js",
     "foundry-loop-status": "dist/loop/bin.js",
-    "ci-conventions-check": "dist/conventions/ci-conventions-cli.js"
+    "ci-conventions-check": "dist/conventions/ci-conventions-cli.js",
+    "foundry-schema-migrate": "dist/migrate/bin.js",
+    "foundry-heartbeat": "dist/heartbeat/bin.js"
   },
   "files": [
     "dist",

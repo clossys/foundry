@@ -234,3 +234,31 @@ export type {
   StatusSurfaceAbsence,
   StatusSurfaceDiscovery,
 } from "./onboarding/index.js";
+
+// The shared check-output-envelope (issue #1174, docs/contracts/
+// check-output-envelope.json): one JSON report shape for every check
+// command. Root-exported for the same frozen-canary-matrix reason as the
+// loop engine above -- see that comment -- rather than a new `./envelope`
+// subpath.
+export { buildCheckOutputEnvelope, envelopeToExitCode } from "./envelope.js";
+export type { CheckOutputEnvelope, CheckFinding, CheckMetric, BuildEnvelopeOptions } from "./envelope.js";
+
+// Schema versions and migrations for every clossys/ record (issue #1224).
+// Root-exported for the same reason as the loop engine and the envelope
+// above.
+export { classifyRecordVersion, migrateRecord } from "./migrate/runner.js";
+export type { RecordVersionClassification } from "./migrate/runner.js";
+export { createRecordKindRegistry, defaultRecordKindRegistry, LOOP_STATE_KIND, COVERAGE_DECLARATION_KIND } from "./migrate/registry.js";
+export type { RecordKindRegistry } from "./migrate/registry.js";
+export { discoverRecords, runMigrations, DEFAULT_RECORD_LOCATIONS } from "./migrate/fs.js";
+export type { RecordLocation, DiscoveredRecord, RecordMigrationReport, RunMigrationsOptions } from "./migrate/fs.js";
+export type { MigrationStep, MigrationTable, MigrationOutcome, AlreadyCurrentOutcome, MigratedOutcome, IndeterminateOutcome } from "./migrate/types.js";
+
+// Operating cadence: the zero-token heartbeat (issue #1221). Root-exported
+// for the same reason as the modules above.
+export { HEARTBEAT_FINDING_KINDS } from "./heartbeat/types.js";
+export type { HeartbeatFindingKind, DigestEntry, HeartbeatDigest } from "./heartbeat/types.js";
+export { computeHeartbeat, renderDigest } from "./heartbeat/digest.js";
+export { loadLoopStates, computeHeartbeatForRepo, writeHeartbeatDigest, DIGEST_PATH as HEARTBEAT_DIGEST_PATH } from "./heartbeat/fs.js";
+export type { LoadedLoopStates, UnreadableLoopState, HeartbeatRunResult } from "./heartbeat/fs.js";
+export { controllerHeartbeatSchedule, validateHeartbeatSchedule } from "./heartbeat/schedule.js";
