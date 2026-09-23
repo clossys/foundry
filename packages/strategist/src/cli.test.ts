@@ -40,21 +40,21 @@ afterEach(() => {
 
 describe("parseArgs", () => {
   it("collects repeatable --extensions values", () => {
-    expect(parseArgs(["./strategy", "./docs", "--extensions", ".md", "--extensions", ".txt"]).extensions).toEqual([
+    expect(parseArgs(["./clossys/strategist", "./docs", "--extensions", ".md", "--extensions", ".txt"]).extensions).toEqual([
       ".md",
       ".txt",
     ]);
   });
 
   it("collects repeatable --skip-dirs values", () => {
-    expect(parseArgs(["./strategy", "--skip-dirs", "vendor", "--skip-dirs", ".cache"]).skipDirs).toEqual([
+    expect(parseArgs(["./clossys/strategist", "--skip-dirs", "vendor", "--skip-dirs", ".cache"]).skipDirs).toEqual([
       "vendor",
       ".cache",
     ]);
   });
 
   it("collects repeatable --exclude globs", () => {
-    expect(parseArgs(["./strategy", "--exclude", "**/*.test.ts", "--exclude", "**/fixtures/**"]).excludeGlobs).toEqual(
+    expect(parseArgs(["./clossys/strategist", "--exclude", "**/*.test.ts", "--exclude", "**/fixtures/**"]).excludeGlobs).toEqual(
       ["**/*.test.ts", "**/fixtures/**"],
     );
   });
@@ -81,8 +81,16 @@ describe("main — argument handling", () => {
     expect(main(["--help"])).toBe(0);
   });
 
-  it("throws CliInputError when strategy-dir is missing", () => {
-    expect(() => main([])).toThrow(CliInputError);
+  it("throws CliInputError when strategy-dir is omitted and neither the default clossys/strategist nor the retired strategy directory exists", () => {
+    const cwd = mkdtempSync(join(tmpdir(), "strategy-cli-cwd-"));
+    const originalCwd = process.cwd();
+    process.chdir(cwd);
+    try {
+      expect(() => main([])).toThrow(CliInputError);
+    } finally {
+      process.chdir(originalCwd);
+      rmSync(cwd, { recursive: true, force: true });
+    }
   });
 
   it("throws CliInputError on an unknown flag", () => {
@@ -91,6 +99,67 @@ describe("main — argument handling", () => {
 
   it("throws CliInputError when strategy-dir does not exist", () => {
     expect(() => main([join(strategyDir, "does-not-exist"), scanDir])).toThrow(CliInputError);
+  });
+});
+
+describe("main — default strategy-dir resolution (legacy fallback, #1171)", () => {
+  let cwd: string;
+  let originalCwd: string;
+
+  beforeEach(() => {
+    cwd = mkdtempSync(join(tmpdir(), "strategy-cli-default-cwd-"));
+    originalCwd = process.cwd();
+    process.chdir(cwd);
+    // A benign scan target so the default scan-dir (also `cwd`) matches at
+    // least one file — nothing here exercises the facts gate itself.
+    writeFileSync(join(cwd, "notes.md"), "Nothing claim-shaped here.");
+  });
+
+  afterEach(() => {
+    process.chdir(originalCwd);
+    rmSync(cwd, { recursive: true, force: true });
+  });
+
+  it("reads clossys/strategist silently when only it exists (no legacy notice)", () => {
+    mkdirSync(join(cwd, "clossys", "strategist"), { recursive: true });
+    writeFileSync(join(cwd, "clossys", "strategist", "facts.json"), JSON.stringify([validFact]));
+
+    expect(main([])).toBe(0);
+    const logs = vi.mocked(console.log).mock.calls.map((call) => String(call[0]));
+    expect(logs.some((line) => line.includes("retired"))).toBe(false);
+  });
+
+  it("falls back to the retired strategy/ directory, with a notice, when clossys/strategist does not exist", () => {
+    mkdirSync(join(cwd, "strategy"), { recursive: true });
+    writeFileSync(join(cwd, "strategy", "facts.json"), JSON.stringify([validFact]));
+
+    expect(main([])).toBe(0);
+    const logs = vi.mocked(console.log).mock.calls.map((call) => String(call[0]));
+    expect(logs.some((line) => line.includes("retired") && line.includes("strategy") && line.includes("clossys/strategist"))).toBe(
+      true,
+    );
+  });
+
+  it("is indeterminate (exit 2), never a silent pick, when both clossys/strategist and strategy exist", () => {
+    mkdirSync(join(cwd, "clossys", "strategist"), { recursive: true });
+    writeFileSync(join(cwd, "clossys", "strategist", "facts.json"), JSON.stringify([validFact]));
+    mkdirSync(join(cwd, "strategy"), { recursive: true });
+    writeFileSync(join(cwd, "strategy", "facts.json"), JSON.stringify([validFact]));
+
+    expect(main([])).toBe(2);
+    const errors = vi.mocked(console.error).mock.calls.map((call) => String(call[0]));
+    expect(errors.some((line) => line.includes("Both") && line.includes("strategy") && line.includes("clossys/strategist"))).toBe(
+      true,
+    );
+  });
+
+  it("an explicit strategy-dir argument skips resolution entirely, even when both directories exist", () => {
+    mkdirSync(join(cwd, "clossys", "strategist"), { recursive: true });
+    writeFileSync(join(cwd, "clossys", "strategist", "facts.json"), JSON.stringify([validFact]));
+    mkdirSync(join(cwd, "strategy"), { recursive: true });
+    writeFileSync(join(cwd, "strategy", "facts.json"), JSON.stringify([validFact]));
+
+    expect(main([join(cwd, "clossys", "strategist"), cwd])).toBe(0);
   });
 });
 
