@@ -11,8 +11,20 @@
 //
 // See issue #1250: 5,593 leftover fixture directories, across a dozen
 // mkdtemp call sites that never called their matching rm.
-import { mkdtemp, rm } from "node:fs/promises";
-import { mkdtempSync, rmSync } from "node:fs";
+//
+// The created directory is also canonicalized with realpath before it is
+// handed back (issue #1294): os.tmpdir() on macOS resolves under
+// /var/folders, itself a symlink to /private/var/folders, so a path built
+// from the raw mkdtemp() result is not yet canonical. A script later loaded
+// from that directory sees import.meta.url resolved to the realpath (Node
+// always realpaths the main ESM module) while a naive path comparison
+// against the un-realpath'd directory does not, so even a "direct, no
+// .bin symlink" invocation can look like a symlinked one. Canonicalizing
+// here, once, means every caller gets a path safe to compare against
+// import.meta.url — and cleanup still targets the same directory, since
+// realpath only resolves symlinks in the path, not a different location.
+import { mkdtemp, realpath, rm } from "node:fs/promises";
+import { mkdtempSync, realpathSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -33,10 +45,10 @@ const RM_OPTIONS = { recursive: true, force: true, maxRetries: 5, retryDelay: 10
  *   Keep it a stable, greppable string: it is how a leftover directory is
  *   traced back to the test that created it, and it is how the leak gate
  *   (scripts/check-tmp-fixture-leaks.test.mjs) recognizes a known fixture.
- * @returns {string} the created directory's absolute path.
+ * @returns {string} the created directory's absolute, realpath'd path.
  */
 export function makeTmpDirSync(t, prefix) {
-  const dir = mkdtempSync(join(tmpdir(), prefix));
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), prefix)));
   t.after(() => rmSync(dir, RM_OPTIONS));
   return dir;
 }
@@ -50,7 +62,7 @@ export function makeTmpDirSync(t, prefix) {
  * @returns {Promise<string>}
  */
 export async function makeTmpDir(t, prefix) {
-  const dir = await mkdtemp(join(tmpdir(), prefix));
+  const dir = await realpath(await mkdtemp(join(tmpdir(), prefix)));
   t.after(() => rm(dir, RM_OPTIONS));
   return dir;
 }

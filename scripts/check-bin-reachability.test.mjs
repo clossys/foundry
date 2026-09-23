@@ -54,6 +54,17 @@ function run() {
 if (fileURLToPath(import.meta.url) === resolve(process.argv[1])) run();
 `;
 
+// os.tmpdir() on macOS resolves under /var/folders, which is itself a
+// symlink to /private/var/folders. A path built from the raw mkdtemp()
+// result is therefore not yet canonical: a script loaded from it sees
+// import.meta.url resolved to the realpath (Node always realpaths the main
+// ESM module) while a naive `resolve(process.argv[1])` guard does not, so
+// even a "direct, no .bin symlink" invocation looks like a symlinked one.
+// makeTmpDirSync() (scripts/lib/tmp-fixture.mjs) canonicalizes with realpath
+// before handing the directory back, for exactly this reason (issue #1294) —
+// every fixture directory in this suite is both realpath-safe to compare
+// against import.meta.url and registered for cleanup, not a second helper
+// that would have to keep those two properties in sync by hand.
 function writeCli(dir, fileName, source) {
   mkdirSync(dir, { recursive: true });
   const path = join(dir, fileName);
