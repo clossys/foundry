@@ -15,6 +15,12 @@
       "issue": 948
     },
     {
+      "package": "builder",
+      "version": "0.10.0",
+      "reason": "This machine is not the pinned release runtime (Node v24.19.0, npm 11.17.0, zlib 1.3.2.1-motley-3246f1b; this machine Node v24.15.0, npm 11.12.1). Merge acknowledgement, never publication: 0.10.0 may not be published before the record exists.",
+      "issue": 948
+    },
+    {
       "package": "butler",
       "version": "0.1.7",
       "reason": "This machine is not the pinned release runtime (Node v24.19.0, npm 11.17.0, zlib 1.3.2.1-motley-3246f1b; this machine Node v24.15.0, npm 11.12.1). Merge acknowledgement, never publication: 0.1.7 may not be published before the record exists.",
@@ -264,6 +270,12 @@
       "package": "publisher",
       "version": "0.4.24",
       "reason": "This machine is not the pinned release runtime (Node v24.19.0, npm 11.17.0, zlib 1.3.2.1-motley-3246f1b; this machine Node v24.15.0, npm 11.12.1). Merge acknowledgement, never publication: 0.4.24 may not be published before the record exists.",
+      "issue": 948
+    },
+    {
+      "package": "controller",
+      "version": "0.9.13",
+      "reason": "This machine is not the pinned release runtime (Node v24.19.0, npm 11.17.0, zlib 1.3.2.1-motley-3246f1b; this machine Node v24.15.0, npm 11.12.1). Merge acknowledgement, never publication: 0.9.13 may not be published before the record exists.",
       "issue": 948
     },
     {
