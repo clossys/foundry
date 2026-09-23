@@ -75,7 +75,7 @@ test("all 21 publishable packages are exact-source bound to the catalogue and qu
     "@clossys/advisor": "0.2.8",
     "@clossys/architect": "0.1.10",
     "@clossys/bouncer": "0.1.10",
-    "@clossys/builder": "0.8.1",
+    "@clossys/builder": "0.9.0",
     "@clossys/butler": "0.1.9",
     "@clossys/controller": "0.9.13",
     "@clossys/customer": "0.1.0",

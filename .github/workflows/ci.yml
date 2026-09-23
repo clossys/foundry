@@ -1147,6 +1147,17 @@ jobs:
       # real assembler and the real inspector bin.
       - name: Verify-inputs assembler aims lookups at the named repository
         run: npm run check:verify-inputs
+      # scripts/collect-review-evidence.mjs's OWN pure functions are already
+      # proven pre-build in check:gates (scripts/collect-review-evidence.
+      # test.mjs), but that suite cannot import the built validator it feeds
+      # (see that file's own header). This is the companion that closes the
+      # gap: it hands collector-built fixtures to the REAL, compiled
+      # checkReviewEvidence (issue #403) and asserts on the real
+      # satisfied/violated/indeterminate verdict, the same
+      # "needs the build above" reasoning as check-publication-map.test.mjs
+      # immediately above.
+      - name: Review-evidence collector proves all three real verdicts
+        run: node --test scripts/collect-review-evidence.integration.test.mjs
       # Install every exact local tarball together in a credentialless,
       # disposable consumer. This checks the packed public surface and the
       # optional-peer omission contract; it does not claim publication or

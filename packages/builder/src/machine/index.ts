@@ -5,9 +5,10 @@
  * a third-party-scoped skill source — issue #393. See the package README's
  * "Machine composition" section for the two decisions this subpath
  * implements (builder owns the mechanism, not controller; composition is
- * per-skill links into one composed directory), and `./report.ts` for the
- * orchestration `builder-verify-machine` (`./cli.ts` + `./bin.ts`) is built
- * on.
+ * union by directory link — one directory link per discovered account
+ * workspace, plus one for the third-party-scoped root, never one link per
+ * skill), and `./report.ts` for the orchestration `builder-verify-machine`
+ * (`./cli.ts` + `./bin.ts`) is built on.
  */
 
 export {
@@ -35,7 +36,8 @@ export {
   writeMachineLayerDeclaration,
 } from "./machine-layer.js";
 
-export { buildSkillsManifest } from "./skills-manifest.js";
+export { buildSkillsManifest, detectSkillNameCollisions } from "./skills-manifest.js";
+export type { SkillNameSource } from "./skills-manifest.js";
 
 export { createNodeDiscoveryPort } from "./node-discovery.js";
 
