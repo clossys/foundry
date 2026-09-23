@@ -5,6 +5,56 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.4.0] - 2026-09-22
+
+### Changed
+
+- **Breaking default:** the consumer-facing strategy directory moves from a
+  root `strategy/` directory to `clossys/strategist/` — the subfolder
+  `@clossys-strategist` owns inside the single visible `clossys/` folder,
+  one subfolder per role, per #1171's owner decision (approved
+  2026-09-22). Every documented default and example (the CLI's own usage
+  text, error-message examples, the skill's "Strategy directory" section,
+  and this README) now names `clossys/strategist/`. `readStrategy` and the
+  `strategy-dir` argument themselves are unchanged — they still take an
+  explicit root and do no directory-resolution of their own; only
+  `strategist-check`'s own default, used when `strategy-dir` is omitted,
+  changed. Refs: #1171, #1187.
+- `strategist-check`, `strategist-check handoff`, and `strategist-check
+  apply` no longer require `strategy-dir`: omitted, each now resolves it
+  via the fallback below. An explicit `strategy-dir` argument is unaffected
+  and always wins outright. Refs: #1171, #1187.
+
+### Added
+
+- **Legacy fallback, for exactly one release:** when `strategy-dir` is
+  omitted and `clossys/strategist/` does not exist but the retired
+  `strategy/` does, `strategist-check` reads `strategy/` instead and prints
+  a plain-language notice to move it. When both exist at once, the result
+  is `indeterminate` (exit `2`) with a notice — never a silent pick between
+  two possibly-conflicting registries. The new pure resolver
+  `resolveDefaultStrategyDirectory` (`strategy-dir-default.ts`) is
+  exported for consumers that want the same three-way resolution in their
+  own tooling. Refs: #1171, #1187.
+
+### Removal planned
+
+- **The `strategy/` fallback above is scheduled for removal in the next
+  release (0.5.0).** After 0.5.0, an absent `clossys/strategist/` is
+  reported as an ordinary missing-directory error; `strategy/` is no
+  longer consulted. Move `strategy/` to `clossys/strategist/` before then.
+  Refs: #1171, #1187.
+
+### Migration
+
+- Move a root `strategy/` directory to `clossys/strategist/`. Nothing else
+  about the directory's contents changes.
+- An explicit `strategy-dir` CLI argument, or an explicit root passed to
+  `readStrategy`, needs no change — update it whenever convenient.
+- Drop any `strategist-check ./strategy ...` invocation's directory
+  argument once the move is done, or update it to
+  `./clossys/strategist`; either continues to work.
+
 ## [0.3.0] - 2026-09-21
 
 ### Changed
