@@ -8,7 +8,13 @@ import {
   identityKitReport,
   judgeIdentityKit,
 } from "./identity-checks.js";
-import { generateIdentityDirections, type IdentityTokenInput } from "./identity-kit.js";
+import { generateIdentityDirections, type IdentityTokenInput, type IdentityVariantSet } from "./identity-kit.js";
+
+// checkIdentityContrast's primary/mark pairing only reads `variants` for an
+// "adopted" direction (it needs the adopted mark's own rendered colour);
+// for every other kind it is unused, so a non-adopted-kind test can pass an
+// empty stand-in rather than building a full variant set.
+const UNUSED_VARIANTS = {} as IdentityVariantSet;
 
 const PASSING_TOKENS: IdentityTokenInput = {
   ink: "oklch(0.2178 0 0)",
@@ -32,7 +38,7 @@ const FAILING_TOKENS: IdentityTokenInput = {
 
 describe("checkIdentityContrast", () => {
   it("is satisfied when every pair clears the floor", () => {
-    const result = checkIdentityContrast(PASSING_TOKENS);
+    const result = checkIdentityContrast("wordmark", UNUSED_VARIANTS, PASSING_TOKENS);
     expect(result.ok).toBe(true);
     expect(result.indeterminate).toBe(false);
     expect(result.checked).toHaveLength(4);
@@ -40,7 +46,7 @@ describe("checkIdentityContrast", () => {
   });
 
   it("reports a finding for every pair below the floor", () => {
-    const result = checkIdentityContrast(FAILING_TOKENS);
+    const result = checkIdentityContrast("wordmark", UNUSED_VARIANTS, FAILING_TOKENS);
     expect(result.ok).toBe(false);
     expect(result.indeterminate).toBe(false);
     expect(result.findings.length).toBeGreaterThan(0);
@@ -50,9 +56,43 @@ describe("checkIdentityContrast", () => {
   });
 
   it("is indeterminate, not a pass, when a colour cannot be parsed", () => {
-    const result = checkIdentityContrast({ ...PASSING_TOKENS, ink: "not-a-colour" });
+    const result = checkIdentityContrast("wordmark", UNUSED_VARIANTS, { ...PASSING_TOKENS, ink: "not-a-colour" });
     expect(result.indeterminate).toBe(true);
     expect(result.ok).toBe(false);
+  });
+
+  describe("for an adopted direction", () => {
+    it("uses the adopted mark's own actual rendered colour, not the ink token, and flags a real contrast failure the token pairing would hide", () => {
+      // The design tokens' own ink/surfaceBase pairing is fine (dark ink on
+      // a light surface, satisfied under the old tokens-only check). The
+      // supplied mark itself, however, is painted white -- nearly the same
+      // colour as the light surfaceBase it sits on -- which is the real
+      // defect: before this fix, checkIdentityContrast(tokens) certified
+      // contrast using tokens.ink (never actually written into an adopted
+      // primary/mark) instead of the mark's own colour, so this would have
+      // been reported "satisfied".
+      const adoptedVariants = {
+        primary: '<svg viewBox="0 0 24 24"><path fill="#ffffff" d="M0 0h24v24H0z" /></svg>',
+        mark: '<svg viewBox="0 0 24 24"><path fill="#ffffff" d="M0 0h24v24H0z" /></svg>',
+      } as IdentityVariantSet;
+      const result = checkIdentityContrast("adopted", adoptedVariants, PASSING_TOKENS);
+      expect(result.indeterminate).toBe(false);
+      expect(result.ok).toBe(false);
+      const primaryFinding = result.findings.find((f) => f.variant === "primary");
+      expect(primaryFinding).toBeDefined();
+      expect(primaryFinding!.ratio).toBeLessThan(IDENTITY_MIN_CONTRAST);
+    });
+
+    it("is indeterminate, never silently satisfied, when the adopted mark has no explicit fill/stroke colour to check", () => {
+      const adoptedVariants = {
+        primary: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M0 0h24v24H0z" /></svg>',
+        mark: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M0 0h24v24H0z" /></svg>',
+      } as IdentityVariantSet;
+      const result = checkIdentityContrast("adopted", adoptedVariants, PASSING_TOKENS);
+      expect(result.indeterminate).toBe(true);
+      expect(result.ok).toBe(false);
+      expect(result.findings.some((f) => f.variant === "primary" && Number.isNaN(f.ratio))).toBe(true);
+    });
   });
 });
 
@@ -83,6 +123,16 @@ describe("checkMinimumSize", () => {
     expect(result.indeterminate).toBe(true);
     expect(result.ok).toBe(false);
   });
+
+  it("is indeterminate for a nested <svg>'s viewBox — the root element itself declares none (issue #1320 item 1)", () => {
+    // Before the fix, `svg.match(/viewBox="..."/)` was a whole-document
+    // search: a nested <svg viewBox="0 0 480 480"> would satisfy it even
+    // though the ROOT element carries no viewBox at all.
+    const svg = '<svg><g><svg viewBox="0 0 480 480"></svg></g><circle stroke-width="2" /></svg>';
+    const result = checkMinimumSize(svg);
+    expect(result.indeterminate).toBe(true);
+    expect(result.ok).toBe(false);
+  });
 });
 
 describe("checkClearSpace", () => {
@@ -102,6 +152,17 @@ describe("checkClearSpace", () => {
     expect(result.indeterminate).toBe(true);
     expect(result.ok).toBe(false);
   });
+
+  it("is indeterminate for a nested <svg>'s or a descendant's data-clear-space — the root element itself declares none (issue #1320 item 1)", () => {
+    // Before the fix, `svg.match(/data-clear-space="..."/)` was a
+    // whole-document search: a nested <svg data-clear-space="0.2"> (or any
+    // descendant carrying the attribute) would satisfy it even though the
+    // ROOT element declares nothing.
+    const svg = '<svg><g><svg data-clear-space="0.2"></svg></g><rect data-clear-space="0.2" /></svg>';
+    const result = checkClearSpace(svg);
+    expect(result.indeterminate).toBe(true);
+    expect(result.ok).toBe(false);
+  });
 });
 
 describe("checkSingleColourLegibility", () => {
@@ -114,6 +175,12 @@ describe("checkSingleColourLegibility", () => {
     const result = checkSingleColourLegibility('<svg><path fill="#fff" /><path stroke="oklch(0.5 0 0)" /></svg>');
     expect(result.ok).toBe(false);
     expect(result.offendingColors.sort()).toEqual(["#fff", "oklch(0.5 0 0)"]);
+  });
+
+  it("catches a single-quoted or spaced fill/stroke attribute, and never mistakes data-fill for one (issue #1320 item 5)", () => {
+    const result = checkSingleColourLegibility("<svg><path fill = '#fff' data-fill=\"#000\" /></svg>");
+    expect(result.ok).toBe(false);
+    expect(result.offendingColors).toEqual(["#fff"]);
   });
 });
 

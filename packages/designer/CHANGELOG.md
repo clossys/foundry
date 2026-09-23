@@ -39,6 +39,34 @@ All notable changes to this package are documented here. Format follows
   report output against it. The prior review's SVG-attribute
   escaping/validation fix carries forward unchanged.
 
+### Fixed
+
+- Six CodeRabbit-found correctness gaps confirmed by independent review
+  (issue #1320): `checkMinimumSize`/`checkClearSpace` now read
+  `viewBox`/`data-clear-space` from the root `<svg>` START TAG only, never
+  a whole-document string search — a nested `<svg>` or a descendant
+  element's attribute can no longer satisfy either check when the root
+  itself declares none. `checkIdentityContrast` now takes the direction's
+  `kind`/`variants`, not just `tokens`: for an ADOPTED direction it checks
+  the `primary`/`mark` variant's own actual rendered fill/stroke colour(s),
+  not the (never-written-there) `ink` token, and is `indeterminate` — never
+  silently `satisfied` — when no explicit colour can be found.
+  `deriveInitials` now iterates by Unicode code point (`Array.from`), not
+  UTF-16 code unit, so a name containing an astral character (most emoji)
+  never produces a broken surrogate half. `isSvgDocument` now requires the
+  closing `</svg>` to be the document's final non-whitespace content, not
+  merely present somewhere in the string — `<svg>...</svg><script>...`
+  is refused, not adopted. `recolorSvg` and `checkSingleColourLegibility`
+  now share one paint-attribute pattern that matches a single-quoted or
+  spaced `fill`/`stroke` attribute and never mistakes `data-fill` for one.
+  `wrapBadge` (the `appIcon` variant) now scales and centres the source
+  mark's own viewBox into the fixed `0 0 48 48` badge instead of dropping
+  it in unscaled and top-left-aligned; a generated mark (already drawn in
+  that same viewBox) gets an identity transform, unchanged. README:
+  corrected the claim that `primary` is "ink-coloured" for every
+  direction — only true for a GENERATED one; an ADOPTED `primary`/`mark`
+  keeps the supplied SVG's own colours.
+
 ## [0.4.17] - 2026-09-21
 
 ### Added

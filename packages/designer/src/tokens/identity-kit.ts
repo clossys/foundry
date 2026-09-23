@@ -251,15 +251,28 @@ export function validateIdentityTokenInput(tokens: IdentityTokenInput): void {
  * the first two words, or the first two letters of a single-word name.
  * Explicit `IdentityBrandInput.initials` always wins over this — it is
  * only the fallback a caller gets by omitting it.
+ *
+ * Iterates by Unicode CODE POINT (`Array.from(word)`, which splits on
+ * `Symbol.iterator`'s code-point-aware behaviour), never by UTF-16 code
+ * unit (`.charAt`/`.slice`, which would split a surrogate pair in half).
+ * A name containing an astral character — most emoji, for one — still
+ * produces a whole, valid initial instead of a broken lone surrogate.
+ * This does not go as far as full grapheme-cluster segmentation (a
+ * multi-code-point sequence like a ZWJ emoji or a skin-tone modifier is
+ * still more than one "initial" here); code-point iteration is what fixes
+ * the concrete defect (a broken surrogate half) without requiring
+ * `Intl.Segmenter`.
  */
 export function deriveInitials(name: string): string {
   const words = name.trim().split(/\s+/).filter(Boolean);
   if (words.length === 0) return "";
   if (words.length === 1) {
-    const word = words[0]!;
-    return (word.length >= 2 ? word.slice(0, 2) : word).toUpperCase();
+    const codePoints = Array.from(words[0]!);
+    return (codePoints.length >= 2 ? codePoints.slice(0, 2) : codePoints).join("").toUpperCase();
   }
-  return (words[0]!.charAt(0) + words[1]!.charAt(0)).toUpperCase();
+  const firstCodePoint = Array.from(words[0]!)[0] ?? "";
+  const secondCodePoint = Array.from(words[1]!)[0] ?? "";
+  return (firstCodePoint + secondCodePoint).toUpperCase();
 }
 
 function buildMonogramGlyph(initials: string, shape: "circle" | "square", fontFamily: string): string {
@@ -284,10 +297,54 @@ function wrapGlyph(glyph: string, viewBox: string, color: string): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" aria-hidden="true" style="color:${escapedColor}" data-clear-space="${CLEAR_SPACE_RATIO}">${glyph}</svg>`;
 }
 
-function wrapBadge(innerContent: string, accent: string, onAccent: string): string {
+/** Parses a `viewBox="minX minY width height"` value into its four numbers, or `undefined` if it isn't one. */
+function parseViewBoxBox(viewBox: string): { minX: number; minY: number; width: number; height: number } | undefined {
+  const match = viewBox.trim().match(/^([-\d.]+)\s+([-\d.]+)\s+([\d.]+)\s+([\d.]+)$/);
+  if (!match) return undefined;
+  const minX = Number(match[1]);
+  const minY = Number(match[2]);
+  const width = Number(match[3]);
+  const height = Number(match[4]);
+  if (![minX, minY, width, height].every(Number.isFinite) || width <= 0 || height <= 0) return undefined;
+  return { minX, minY, width, height };
+}
+
+/** Rounds to 4 decimal places and drops trailing zeros — enough precision for a 48-unit badge, without long float tails in the emitted SVG. */
+function round4(value: number): number {
+  return Number(value.toFixed(4));
+}
+
+/**
+ * The `transform` that fits `sourceViewBox`'s own coordinate box into the
+ * fixed `${BADGE_SIZE}x${BADGE_SIZE}` badge canvas, scaled uniformly
+ * (never stretched) to the larger dimension and centred. For a mark whose
+ * own viewBox already equals the badge's (every generated mark: they are
+ * drawn directly in `MARK_VIEW_BOX`), this resolves to `translate(0,0)
+ * scale(1)` — a no-op, byte-different from before only in carrying an
+ * explicit identity transform. For a supplied mark with a smaller or
+ * differently-proportioned viewBox (`0 0 24 24`, say), this is what makes
+ * it fill and centre the badge instead of remaining a quarter-sized
+ * fragment pinned to the top-left corner — the defect `wrapBadge` had
+ * before this fix, since it dropped the supplied mark's inner markup
+ * straight into the fixed badge coordinate system with no reconciliation
+ * at all. Falls back to an identity transform (never throws) when
+ * `sourceViewBox` cannot be parsed — a badge that cannot be perfectly
+ * scaled is still a badge, not a generation failure.
+ */
+function badgeContentTransform(sourceViewBox: string): string {
+  const box = parseViewBoxBox(sourceViewBox);
+  if (!box) return "translate(0,0) scale(1)";
+  const scale = Math.min(BADGE_SIZE / box.width, BADGE_SIZE / box.height);
+  const tx = round4((BADGE_SIZE - box.width * scale) / 2 - box.minX * scale);
+  const ty = round4((BADGE_SIZE - box.height * scale) / 2 - box.minY * scale);
+  return `translate(${tx},${ty}) scale(${round4(scale)})`;
+}
+
+function wrapBadge(innerContent: string, accent: string, onAccent: string, sourceViewBox: string = MARK_VIEW_BOX): string {
   const escapedAccent = escapeXml(accent);
   const escapedOnAccent = escapeXml(onAccent);
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${MARK_VIEW_BOX}" aria-hidden="true" data-clear-space="${CLEAR_SPACE_RATIO}"><rect width="${BADGE_SIZE}" height="${BADGE_SIZE}" rx="10" fill="${escapedAccent}" /><g style="color:${escapedOnAccent}">${innerContent}</g></svg>`;
+  const transform = badgeContentTransform(sourceViewBox);
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${MARK_VIEW_BOX}" aria-hidden="true" data-clear-space="${CLEAR_SPACE_RATIO}"><rect width="${BADGE_SIZE}" height="${BADGE_SIZE}" rx="10" fill="${escapedAccent}" /><g style="color:${escapedOnAccent}" transform="${transform}">${innerContent}</g></svg>`;
 }
 
 function buildVariantSet(input: {
@@ -346,27 +403,50 @@ export function generateIdentityDirections(brand: IdentityBrandInput, tokens: Id
 
 const SVG_DOCUMENT_RE = /^[\s﻿]*<svg(?:\s|>)/i;
 
+/**
+ * `value` is a COMPLETE svg document: starts with a root `<svg` tag (after
+ * leading whitespace/BOM) and its closing `</svg>` is the final
+ * non-whitespace content — not merely present somewhere in the string.
+ * `trimmed` already has no trailing whitespace, so anchoring the closing
+ * tag at `$` is exactly "final non-whitespace content": a payload such as
+ * `<svg>...</svg><script>...</script>` no longer passes, because the
+ * string's actual end (`</script>`) is not `</svg>`.
+ */
 function isSvgDocument(value: string): boolean {
   const trimmed = value.trim();
   if (!SVG_DOCUMENT_RE.test(trimmed)) return false;
-  return /<\/svg\s*>/i.test(trimmed);
+  return /<\/svg\s*>$/i.test(trimmed);
 }
 
-const FILL_STROKE_ATTR_RE = /\b(fill|stroke)="([^"]*)"/g;
+/**
+ * Matches a `fill`/`stroke` PAINT ATTRIBUTE — double- or single-quoted,
+ * with or without whitespace around `=` — while excluding a differently
+ * named attribute that merely ends in "fill"/"stroke" (`data-fill`,
+ * `overflow`) via the negative lookbehind: a real attribute name is
+ * always preceded by whitespace, a quote, or the start of the tag, never
+ * by a word character or hyphen. Shared, identically, by `recolorSvg`
+ * here and `identity-checks.ts`'s `checkSingleColourLegibility` — both
+ * used to match only the double-quoted, unspaced form
+ * (`/\b(fill|stroke)="([^"]*)"/g`), which silently missed a single-quoted
+ * or spaced attribute (`fill = '#fff'`) and could match `data-fill`
+ * through `\b`'s hyphen-is-a-boundary behaviour.
+ */
+const PAINT_ATTR_RE = /(?<![\w-])(fill|stroke)\s*=\s*("([^"]*)"|'([^']*)')/g;
 
 /**
- * Best-effort structural recolour: every `fill="..."`/`stroke="..."`
- * ATTRIBUTE value that is not `none`/`transparent`/empty is replaced
- * with `color`. Deliberately narrow — it does not reach into a `style="
- * fill:#fff"` CSS declaration or a `<style>` block, since either would
- * require a real CSS parser to rewrite safely. A supplied mark that
- * paints exclusively through inline `style` attributes will not
- * recolour correctly here; that limitation is why `adoptSuppliedMark`'s
- * derived variants are a starting point for review, not a guarantee.
+ * Best-effort structural recolour: every `fill`/`stroke` PAINT ATTRIBUTE
+ * value that is not `none`/`transparent`/empty is replaced with `color`.
+ * Deliberately narrow — it does not reach into a `style="fill:#fff"` CSS
+ * declaration or a `<style>` block, since either would require a real CSS
+ * parser to rewrite safely. A supplied mark that paints exclusively
+ * through inline `style` attributes will not recolour correctly here;
+ * that limitation is why `adoptSuppliedMark`'s derived variants are a
+ * starting point for review, not a guarantee.
  */
 export function recolorSvg(svg: string, color: string): string {
   const escapedColor = escapeXml(color);
-  return svg.replace(FILL_STROKE_ATTR_RE, (match, attr: string, value: string) => {
+  return svg.replace(PAINT_ATTR_RE, (match, attr: string, _quoted: string, doubleQuoted: string | undefined, singleQuoted: string | undefined) => {
+    const value = doubleQuoted ?? singleQuoted ?? "";
     if (value === "none" || value === "transparent" || value === "") return match;
     return `${attr}="${escapedColor}"`;
   });
@@ -375,6 +455,31 @@ export function recolorSvg(svg: string, color: string): string {
 function innerMarkupOf(svg: string): string {
   const trimmed = svg.trim();
   return trimmed.replace(/^<svg\b[^>]*>/i, "").replace(/<\/svg\s*>\s*$/i, "");
+}
+
+/**
+ * The root `<svg>` START TAG only — never the whole document — so a
+ * nested `<svg viewBox="...">` or a descendant element cannot be mistaken
+ * for the root's own declaration. `svg` is assumed already validated by
+ * {@link isSvgDocument} (trimmed, starts with a root `<svg` tag).
+ */
+function rootStartTag(svg: string): string {
+  const trimmed = svg.trim();
+  const match = trimmed.match(/^<svg\b[^>]*>/i);
+  return match ? match[0] : trimmed;
+}
+
+/**
+ * The supplied mark's own root `viewBox`, read from the root `<svg>`
+ * start tag only (double- or single-quoted) — never a nested element's.
+ * Falls back to `MARK_VIEW_BOX` when the root declares none or it cannot
+ * be parsed, the same "badge still renders, never throws" fallback
+ * {@link badgeContentTransform} itself falls back to.
+ */
+function sourceViewBoxOf(svg: string): string {
+  const match = rootStartTag(svg).match(/\bviewBox\s*=\s*(?:"([^"]*)"|'([^']*)')/i);
+  const value = match ? (match[1] ?? match[2]) : undefined;
+  return value ?? MARK_VIEW_BOX;
 }
 
 export interface AdoptSuppliedMarkInput {
@@ -400,6 +505,7 @@ export function adoptSuppliedMark(input: AdoptSuppliedMarkInput): IdentityDirect
   }
   const trimmed = suppliedSvg.trim();
   const onAccentGlyph = innerMarkupOf(recolorSvg(trimmed, tokens.onAccent));
+  const sourceViewBox = sourceViewBoxOf(trimmed);
 
   return {
     id: "adopted",
@@ -412,7 +518,7 @@ export function adoptSuppliedMark(input: AdoptSuppliedMarkInput): IdentityDirect
       light: recolorSvg(trimmed, tokens.ink),
       dark: recolorSvg(trimmed, tokens.onInverse),
       favicon: recolorSvg(trimmed, "currentColor"),
-      appIcon: wrapBadge(onAccentGlyph, tokens.accent, tokens.onAccent),
+      appIcon: wrapBadge(onAccentGlyph, tokens.accent, tokens.onAccent, sourceViewBox),
     },
   };
 }

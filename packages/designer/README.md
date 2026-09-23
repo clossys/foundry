@@ -4515,12 +4515,17 @@ badge wrapper, `recolorSvg`), the "deterministic mechanics" split #1187's
 "who does what" table draws for this package's role.
 
 **Seven variant roles**, every direction: `primary` (the flagship lockup,
-ink-coloured, for light surfaces), `mark` (icon/monogram alone), `mono`
-(`mark` recoloured to `currentColor`, single-colour legible), `light`
-(`primary` again, its own named file), `dark` (`primary` recoloured to the
+for light surfaces), `mark` (icon/monogram alone), `mono` (`mark`
+recoloured to `currentColor`, single-colour legible), `light` (`primary`
+again, its own named file), `dark` (`primary` recoloured to the
 inverse-ink token, for dark surfaces), `favicon` (`mark` via `currentColor`,
 built the same way as `mono`), and `appIcon` (`mark` composed onto an
-accent-filled rounded-square badge).
+accent-filled rounded-square badge, its own viewBox scaled and centred to
+fit the badge). For a GENERATED direction, `primary`/`mark` are
+ink-coloured (drawn via `currentColor` under a `color:` style set to the
+`ink` token); for an ADOPTED direction, `primary`/`mark` are the supplied
+SVG's own colours, unchanged — only `mono`/`light`/`dark`/`favicon`/
+`appIcon` are recoloured onto token colours in both cases.
 
 **Four checks judge every direction**, mirroring the "package owns
 judgment, every check reports satisfied/violated/indeterminate" split this

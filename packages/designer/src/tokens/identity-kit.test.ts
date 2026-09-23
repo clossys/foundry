@@ -40,6 +40,20 @@ describe("deriveInitials", () => {
   it("returns an empty string for an empty/whitespace name", () => {
     expect(deriveInitials("   ")).toBe("");
   });
+
+  it("does not split an astral character (e.g. an emoji) into a broken surrogate half (issue #1320 item 3)", () => {
+    // U+1F680 ROCKET is outside the Basic Multilingual Plane: as UTF-16 it
+    // is a surrogate PAIR (`.length === 2`), so `.charAt(0)`/`.slice(0, 2)`
+    // (UTF-16-code-unit operations) would split it into one lone, invalid
+    // surrogate half instead of the whole character. Code-point iteration
+    // (`Array.from`) keeps it whole.
+    const rocket = "\u{1F680}";
+    expect(rocket.length).toBe(2); // sanity check: this really is a surrogate pair
+    expect(deriveInitials(`${rocket} Rockets`)).toBe(`${rocket}R`);
+    const twoRockets = deriveInitials(`${rocket}${rocket}Ship`);
+    expect(twoRockets).toBe(`${rocket}${rocket}`);
+    expect(twoRockets.length).toBe(4); // two whole astral characters, four UTF-16 code units — never a lone unpaired surrogate
+  });
 });
 
 describe("generateIdentityDirections", () => {
@@ -107,12 +121,23 @@ describe("generateIdentityDirections", () => {
       expect(direction.variants.appIcon).toContain(`color:${TOKENS.onAccent}`);
     }
   });
+
+  it("a generated mark (already drawn in the badge's own 0 0 48 48 viewBox) gets an identity transform, not a scaled one", () => {
+    for (const direction of directions) {
+      expect(direction.variants.appIcon).toContain('transform="translate(0,0) scale(1)"');
+    }
+  });
 });
 
 describe("recolorSvg", () => {
   it("replaces fill and stroke attribute values, leaving none/transparent untouched", () => {
     const svg = '<svg><path fill="#fff" stroke="none" /><rect fill="none" stroke="#000" /></svg>';
     expect(recolorSvg(svg, "red")).toBe('<svg><path fill="red" stroke="none" /><rect fill="none" stroke="red" /></svg>');
+  });
+
+  it("recolours a single-quoted or spaced fill/stroke attribute, and never touches data-fill (issue #1320 item 5)", () => {
+    const svg = "<svg><path fill = '#fff' data-fill=\"#000\" stroke='none' /></svg>";
+    expect(recolorSvg(svg, "red")).toBe('<svg><path fill="red" data-fill="#000" stroke=\'none\' /></svg>');
   });
 });
 
@@ -121,6 +146,15 @@ describe("adoptSuppliedMark", () => {
 
   it("throws IdentityKitValidationError for a non-svg document", () => {
     expect(() => adoptSuppliedMark({ brand: { name: "Acme" }, suppliedSvg: "<div>not svg</div>", tokens: TOKENS })).toThrow(IdentityKitValidationError);
+  });
+
+  it("throws for trailing content after the closing </svg> tag (issue #1320 item 4)", () => {
+    // Before the fix, isSvgDocument only checked that a </svg> closing tag
+    // existed SOMEWHERE in the string, not that it was the final
+    // non-whitespace content — so this payload passed as a "complete <svg>
+    // document" and its <script> would have been adopted as primary/mark.
+    const trailingContent = '<svg viewBox="0 0 24 24"><path d="M0 0h24v24H0z" /></svg><script>alert(1)</script>';
+    expect(() => adoptSuppliedMark({ brand: { name: "Acme" }, suppliedSvg: trailingContent, tokens: TOKENS })).toThrow(IdentityKitValidationError);
   });
 
   it("keeps primary/mark as the supplied SVG unchanged", () => {
@@ -142,6 +176,23 @@ describe("adoptSuppliedMark", () => {
     const direction = adoptSuppliedMark({ brand: { name: "Acme" }, suppliedSvg, tokens: TOKENS });
     expect(direction.variants.appIcon).toContain(`fill="${TOKENS.accent}"`);
     expect(direction.variants.appIcon).toContain("M0 0h24v24H0z");
+  });
+
+  it("scales and centres a supplied mark's own 0 0 24 24 viewBox to fill the fixed 0 0 48 48 badge (issue #1320 item 6)", () => {
+    // Before the fix, wrapBadge dropped the supplied mark's inner markup
+    // straight into the fixed 0 0 48 48 badge coordinate system with no
+    // reconciliation: a 0 0 24 24 mark occupied only a quarter of the
+    // badge, pinned to the top-left corner. A uniform scale of 48/24 = 2,
+    // centred (translate(0,0) here, since the source viewBox's own origin
+    // is already 0,0), fixes that.
+    const direction = adoptSuppliedMark({ brand: { name: "Acme" }, suppliedSvg, tokens: TOKENS });
+    expect(direction.variants.appIcon).toContain('transform="translate(0,0) scale(2)"');
+  });
+
+  it("falls back to an untransformed (scale-1) badge when the supplied mark declares no parseable viewBox", () => {
+    const noViewBox = '<svg xmlns="http://www.w3.org/2000/svg"><path fill="#112233" d="M0 0h24v24H0z" /></svg>';
+    const direction = adoptSuppliedMark({ brand: { name: "Acme" }, suppliedSvg: noViewBox, tokens: TOKENS });
+    expect(direction.variants.appIcon).toContain('transform="translate(0,0) scale(1)"');
   });
 });
 

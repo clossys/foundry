@@ -37,7 +37,7 @@
  */
 
 import { contrastRatio } from "./color.js";
-import type { IdentityDirection, IdentityTokenInput, IdentityVariantSet } from "./identity-kit.js";
+import type { IdentityDirection, IdentityDirectionKind, IdentityTokenInput, IdentityVariantSet } from "./identity-kit.js";
 
 export const IDENTITY_MIN_CONTRAST = 3; // WCAG 1.4.11 non-text contrast floor — a logo is a graphical object, not body text.
 const MIN_STROKE_VIEWBOX_RATIO = 0.03;
@@ -91,6 +91,40 @@ export interface IdentityContrastResult {
 }
 
 /**
+ * Matches a `fill`/`stroke` PAINT ATTRIBUTE — double- or single-quoted,
+ * with or without whitespace around `=` — while excluding a differently
+ * named attribute that merely ends in "fill"/"stroke" (`data-fill`,
+ * `overflow`) via the negative lookbehind: a real attribute name is
+ * always preceded by whitespace, a quote, or the start of the tag, never
+ * by a word character or hyphen. Shared, identically, by
+ * `checkSingleColourLegibility` below and `identity-kit.ts`'s
+ * `recolorSvg` — both used to match only the double-quoted, unspaced form
+ * (`/\b(?:fill|stroke)="([^"]*)"/g`), which silently missed a
+ * single-quoted or spaced attribute (`fill = '#fff'`) and could match
+ * `data-fill` through `\b`'s hyphen-is-a-boundary behaviour.
+ */
+const PAINT_ATTR_RE = /(?<![\w-])(?:fill|stroke)\s*=\s*("([^"]*)"|'([^']*)')/g;
+
+/**
+ * Every distinct, explicit `fill`/`stroke` colour literal `svg` actually
+ * paints with — `none`/`transparent`/empty/`currentColor` excluded, since
+ * none of those is an "actual rendered colour" a contrast ratio can be
+ * computed against on their own. Scans the WHOLE document, not just the
+ * root tag: unlike `viewBox`/`data-clear-space` (declared root metadata,
+ * see `rootStartTag`), the colour that actually renders can come from any
+ * nested element.
+ */
+function extractRenderedColors(svg: string): readonly string[] {
+  const colors = new Set<string>();
+  for (const match of svg.matchAll(PAINT_ATTR_RE)) {
+    const value = match[2] ?? match[3] ?? "";
+    if (value === "" || value === "none" || value === "transparent" || value === "currentColor") continue;
+    colors.add(value);
+  }
+  return [...colors];
+}
+
+/**
  * Checks the four foreground/background pairs a shipped identity kit
  * actually composites: `primary`/`mark` (ink on the light surface),
  * `dark` (inverse ink on the dark surface), and `appIcon` (the badge
@@ -98,33 +132,64 @@ export interface IdentityContrastResult {
  * separately checked here — they share `primary`'s ink-on-light pairing
  * (`mono`/`favicon` via `currentColor`, resolved by whatever surface a
  * consumer places them on, which this package cannot know in advance).
+ *
+ * For a GENERATED direction, `primary`/`mark` are drawn via `currentColor`
+ * under a `color:` style set to `tokens.ink` — `tokens.ink` genuinely IS
+ * their rendered colour, so checking it against `tokens.surfaceBase` is
+ * correct. For an ADOPTED direction, `primary`/`mark` are the supplied
+ * SVG's OWN colours, unchanged — `tokens.ink` is never even written into
+ * that markup, so certifying contrast against it would certify the wrong
+ * colour entirely. `variants`/`kind` (not just `tokens`) are therefore
+ * required: an adopted `primary`/`mark`'s every distinct explicit
+ * fill/stroke colour ({@link extractRenderedColors}) is checked against
+ * `tokens.surfaceBase` instead, and a mark with no explicit colour at all
+ * (paints only through inherited `currentColor`, so its real rendered
+ * colour depends on wherever a consumer places it) is `indeterminate` —
+ * fails closed, never silently `satisfied`.
  */
-export function checkIdentityContrast(tokens: IdentityTokenInput): IdentityContrastResult {
-  const pairs: [IdentityContrastVariant, string, string][] = [
-    ["primary", tokens.ink, tokens.surfaceBase],
-    ["mark", tokens.ink, tokens.surfaceBase],
-    ["dark", tokens.onInverse, tokens.surfaceInverse],
-    ["appIcon", tokens.onAccent, tokens.accent],
-  ];
-
+export function checkIdentityContrast(kind: IdentityDirectionKind, variants: IdentityVariantSet, tokens: IdentityTokenInput): IdentityContrastResult {
   const findings: IdentityContrastFinding[] = [];
   const checked: { variant: IdentityContrastVariant; ratio: number }[] = [];
   let unresolvable = 0;
 
-  for (const [variant, fg, bg] of pairs) {
+  function checkPair(variant: IdentityContrastVariant, fg: string, bg: string): void {
     let ratio: number;
     try {
       ratio = contrastRatio(fg, bg);
     } catch (error) {
       unresolvable++;
       findings.push({ variant, ratio: Number.NaN, message: `could not compute contrast for "${variant}": ${error instanceof Error ? error.message : String(error)}` });
-      continue;
+      return;
     }
     checked.push({ variant, ratio });
     if (ratio < IDENTITY_MIN_CONTRAST) {
       findings.push({ variant, ratio, message: `"${variant}" contrast ${ratio.toFixed(2)}:1 is below the ${IDENTITY_MIN_CONTRAST}:1 floor` });
     }
   }
+
+  function checkAdoptedVariant(variant: "primary" | "mark", bg: string): void {
+    const colors = extractRenderedColors(variants[variant]);
+    if (colors.length === 0) {
+      unresolvable++;
+      findings.push({
+        variant,
+        ratio: Number.NaN,
+        message: `could not determine "${variant}"'s actual rendered colour to check contrast — the adopted mark has no explicit fill/stroke colour literal (it may paint only through inherited currentColor)`,
+      });
+      return;
+    }
+    for (const color of colors) checkPair(variant, color, bg);
+  }
+
+  if (kind === "adopted") {
+    checkAdoptedVariant("primary", tokens.surfaceBase);
+    checkAdoptedVariant("mark", tokens.surfaceBase);
+  } else {
+    checkPair("primary", tokens.ink, tokens.surfaceBase);
+    checkPair("mark", tokens.ink, tokens.surfaceBase);
+  }
+  checkPair("dark", tokens.onInverse, tokens.surfaceInverse);
+  checkPair("appIcon", tokens.onAccent, tokens.accent);
 
   const indeterminate = unresolvable > 0 || checked.length === 0;
   return { ok: !indeterminate && findings.length === 0, indeterminate, findings, checked };
@@ -141,11 +206,36 @@ export interface MinimumSizeResult {
   ratio?: number;
 }
 
+/**
+ * The root `<svg>` START TAG only — never the whole document — so a
+ * nested `<svg viewBox="...">` or a descendant element's attribute cannot
+ * be mistaken for the root's own declaration. Returns `undefined` when
+ * `svg` does not even start with a root `<svg` tag (an already-invalid
+ * document — `identity-kit.ts`'s `isSvgDocument` is what normally refuses
+ * that before a variant is ever handed to this module, but this function
+ * does not assume it was called).
+ */
+function rootStartTag(svg: string): string | undefined {
+  const match = svg.trim().match(/^<svg\b[^>]*>/i);
+  return match ? match[0] : undefined;
+}
+
+/**
+ * `svg`'s root-declared `viewBox`'s shorter side — read from the root
+ * `<svg>` start tag ONLY ({@link rootStartTag}), never a whole-document
+ * search. A nested `<svg viewBox="...">` (or, before this fix, any
+ * descendant carrying that string) can no longer satisfy this when the
+ * root element itself declares no `viewBox`.
+ */
 function parseViewBoxMinSide(svg: string): number | undefined {
-  const match = svg.match(/viewBox="[-\d.]+\s+[-\d.]+\s+([\d.]+)\s+([\d.]+)"/);
-  if (!match) return undefined;
-  const width = Number(match[1]);
-  const height = Number(match[2]);
+  const startTag = rootStartTag(svg);
+  if (startTag === undefined) return undefined;
+  const match = startTag.match(/viewBox\s*=\s*(?:"([-\d.]+\s+[-\d.]+\s+[\d.]+\s+[\d.]+)"|'([-\d.]+\s+[-\d.]+\s+[\d.]+\s+[\d.]+)')/i);
+  const value = match ? (match[1] ?? match[2]) : undefined;
+  if (value === undefined) return undefined;
+  const parts = value.trim().split(/\s+/);
+  const width = Number(parts[2]);
+  const height = Number(parts[3]);
   if (!Number.isFinite(width) || !Number.isFinite(height)) return undefined;
   return Math.min(width, height);
 }
@@ -194,15 +284,27 @@ export interface ClearSpaceResult {
   declared?: number;
 }
 
-/** Reads the `data-clear-space` ratio `identity-kit.ts` declares on every root `<svg>` it emits, and checks it against `minRatio`. */
+/**
+ * Reads the `data-clear-space` ratio `identity-kit.ts` declares on every
+ * root `<svg>` it emits — from the root `<svg>` START TAG only
+ * ({@link rootStartTag}), never a whole-document search — and checks it
+ * against `minRatio`. A nested `<svg>` or a descendant element carrying a
+ * `data-clear-space` attribute can no longer satisfy this when the root
+ * element itself declares none.
+ */
 export function checkClearSpace(svg: string, minRatio: number = MIN_CLEAR_SPACE_RATIO): ClearSpaceResult {
-  const match = svg.match(/data-clear-space="([^"]*)"/);
+  const startTag = rootStartTag(svg);
+  if (startTag === undefined) {
+    return { ok: false, indeterminate: true, reason: "svg does not start with a root <svg> tag — could not evaluate" };
+  }
+  const match = startTag.match(/data-clear-space\s*=\s*(?:"([^"]*)"|'([^']*)')/i);
   if (!match) {
     return { ok: false, indeterminate: true, reason: "no data-clear-space declared on the root <svg> — could not evaluate" };
   }
-  const declared = Number(match[1]);
+  const raw = match[1] ?? match[2] ?? "";
+  const declared = Number(raw);
   if (!Number.isFinite(declared)) {
-    return { ok: false, indeterminate: true, reason: `data-clear-space="${match[1]}" is not a finite number — could not evaluate` };
+    return { ok: false, indeterminate: true, reason: `data-clear-space="${raw}" is not a finite number — could not evaluate` };
   }
   if (declared < minRatio) {
     return { ok: false, indeterminate: false, reason: `declared clear space ${declared} is below the ${minRatio} minimum`, declared };
@@ -220,16 +322,9 @@ export interface SingleColourLegibilityResult {
   reason?: string;
 }
 
-const FILL_STROKE_ATTR_RE = /\b(?:fill|stroke)="([^"]*)"/g;
-
-/** Checks that `svg` (the `mono` variant) paints only through `currentColor` — no explicit colour literal left over. */
+/** Checks that `svg` (the `mono` variant) paints only through `currentColor` — no explicit colour literal left over, single- or double-quoted, in any `fill`/`stroke` attribute ({@link PAINT_ATTR_RE}) — a `data-fill` or similarly-named attribute is never mistaken for one. */
 export function checkSingleColourLegibility(svg: string): SingleColourLegibilityResult {
-  const offending = new Set<string>();
-  for (const match of svg.matchAll(FILL_STROKE_ATTR_RE)) {
-    const value = match[1] ?? "";
-    if (value === "" || value === "none" || value === "transparent" || value === "currentColor") continue;
-    offending.add(value);
-  }
+  const offending = new Set(extractRenderedColors(svg));
   if (offending.size > 0) {
     const offendingColors = [...offending];
     return { ok: false, offendingColors, reason: `mono variant references ${offendingColors.length} explicit colour(s) besides currentColor: ${offendingColors.join(", ")}` };
@@ -299,7 +394,7 @@ function findingsFor(checkId: IdentityCheckId, verdict: IdentityVerdict, message
  */
 export function judgeIdentityKit(direction: IdentityDirection, tokens: IdentityTokenInput): IdentityKitJudgement {
   const { variants } = direction;
-  const contrast = checkIdentityContrast(tokens);
+  const contrast = checkIdentityContrast(direction.kind, variants, tokens);
   const minimumSize = checkMinimumSize(variants.mark);
   const clearSpace = checkClearSpace(variants.primary);
   const singleColour = checkSingleColourLegibility(variants.mono);
