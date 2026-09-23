@@ -5,6 +5,19 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.15] - 2026-09-22
+
+### Fixed
+
+- `discoverRoleOutputsDeclaration`'s own doc comment and the matching
+  README row cited `docs/contracts/consumer-layout.json` as if it were
+  package-relative. It is a repository-level convention document (issue
+  #1171), never shipped with this package -- the citation now says so
+  inline, the fix `scripts/check-contamination-classes.mjs`'s own CLASS 1
+  finding asked for. Surfaced only once issue #1171's layout contract and
+  issue #1195's loop engine were merged together for the first time
+  (`claude/normalization-template`, issue #1187's Stage B).
+
 ## [0.9.14] - 2026-09-22
 
 ### Added
