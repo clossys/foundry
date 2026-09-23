@@ -1087,7 +1087,7 @@ jobs:
   # PR #848 shape: declining to bump mid publish-wave, or here, declining to
   # block a merge on a re-qualification the operator has explicitly decided
   # can follow) is not treated as a defect — it must be an ACKNOWLEDGED
-  # exception naming an issue, in governance/release-qualification-deferrals.json,
+  # exception naming an issue, in governance/release-qualification-deferrals/,
   # never silence. That acknowledgement cannot outlive its reason: once a
   # matching record exists, the same job fails until the deferral is removed
   # (see the script's own STALE DEFERRALS section).

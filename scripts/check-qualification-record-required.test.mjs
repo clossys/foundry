@@ -57,9 +57,16 @@ function writeAdapter(root, key) {
   writeFileSync(join(root, "governance/release-qualification-adapters", key, "current-direct.json"), JSON.stringify({ fixtures: [] }));
 }
 
+// One file per deferral (issue #1254), matching the real
+// governance/release-qualification-deferrals/<package>@<version>.json
+// layout — each entry becomes its own file, named from its own
+// package/version fields, under an otherwise-empty directory.
 function writeDeferrals(root, deferrals) {
-  mkdirSync(join(root, "governance"), { recursive: true });
-  writeFileSync(join(root, "governance/release-qualification-deferrals.json"), JSON.stringify({ schemaVersion: 1, deferrals }, null, 2) + "\n");
+  const dir = join(root, "governance/release-qualification-deferrals");
+  mkdirSync(dir, { recursive: true });
+  for (const entry of deferrals) {
+    writeFileSync(join(dir, `${entry.package}@${entry.version}.json`), JSON.stringify(entry, null, 2) + "\n");
+  }
 }
 
 function writeRecord(root, recordPath, joins) {
@@ -200,4 +207,59 @@ test("refuses to report a clean pass on an empty scan", (t) => {
   git(["init", "-q"], root);
   const r = run(["--json"], root);
   assert.equal(r.code, 2, `expected exit 2, got ${r.code}: ${r.out}`);
+});
+
+
+// MIGRATION (issue #1254): governance/release-qualification-deferrals.json
+// no longer exists as a store — deferrals live one-file-per-package@version
+// under governance/release-qualification-deferrals/ instead. These four
+// cases are specific to that migration; every case above already proves the
+// entry-level rules (issue required, stale-once-recorded, malformed
+// entries) still hold against the new layout.
+
+test("MIGRATION: the retired single-file path fails loudly, naming the new layout and #1254, rather than being silently ignored", (t) => {
+  const root = fixtureRoot(t);
+  const base = gitCommit(root, "initial at 0.3.3");
+  writeFileSync(join(root, "governance/release-qualification-deferrals.json"), JSON.stringify({ schemaVersion: 1, deferrals: [] }, null, 2) + "\n");
+
+  const r = run(["--json", "--base", base], root);
+  const report = JSON.parse(r.out);
+  assert.equal(r.code, 1, `expected exit 1, got ${r.code}: ${r.out}`);
+  const legacy = report.deferralFindings.find((f) => f.rule === "legacy-deferrals-file");
+  assert.ok(legacy, `expected a legacy-deferrals-file finding, got ${JSON.stringify(report.deferralFindings)}`);
+  assert.match(legacy.message, /governance\/release-qualification-deferrals\/<package>@<version>\.json/);
+  assert.match(legacy.message, /#1254/);
+});
+
+test("MIGRATION: a file whose name disagrees with its own package/version contents is a real finding", (t) => {
+  const root = fixtureRoot(t);
+  const base = gitCommit(root, "initial at 0.3.3");
+  writeManifest(root, "writer", { version: "0.3.4" });
+  const dir = join(root, "governance/release-qualification-deferrals");
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, "writer@0.3.9.json"), JSON.stringify({ package: "writer", version: "0.3.4", reason: "x".repeat(25), issue: 900 }, null, 2) + "\n");
+
+  const r = run(["--json", "--base", base], root);
+  const report = JSON.parse(r.out);
+  assert.equal(r.code, 1, `expected exit 1, got ${r.code}: ${r.out}`);
+  assert.ok(report.deferralFindings.some((f) => f.rule === "deferral-file-name-mismatch"), `expected deferral-file-name-mismatch, got ${JSON.stringify(report.deferralFindings)}`);
+  // The mismatched file must not be silently accepted as if it had named writer@0.3.9 — the manifest never bumped to 0.3.9, so no result exists for that version; the real 0.3.4 bump above still shows as missing a record, not as deferred.
+  const writer = report.results.find((x) => x.package === "@clossys/writer");
+  assert.equal(writer.status, "needs-record");
+});
+
+test("MIGRATION: one malformed deferral file does not hide the state of the other, well-formed ones", (t) => {
+  const root = fixtureRoot(t);
+  const base = gitCommit(root, "initial at 0.3.3");
+  writeManifest(root, "writer", { version: "0.3.4" });
+  const dir = join(root, "governance/release-qualification-deferrals");
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, "writer@0.3.4.json"), JSON.stringify({ package: "writer", version: "0.3.4", reason: "x".repeat(25), issue: 900 }, null, 2) + "\n");
+  writeFileSync(join(dir, "broken.json"), "{ not json");
+
+  const r = run(["--json", "--base", base], root);
+  const report = JSON.parse(r.out);
+  const writer = report.results.find((x) => x.package === "@clossys/writer");
+  assert.equal(writer.status, "deferred", "the broken sibling file must not stop the well-formed writer@0.3.4 deferral from being honored");
+  assert.ok(report.deferralFindings.some((f) => f.rule === "unreadable-deferral-file" && f.subject.endsWith("broken.json")));
 });
