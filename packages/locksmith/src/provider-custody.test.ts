@@ -5,7 +5,12 @@ import {
   evaluateProviderCustody,
   providerCustodyOf,
 } from "./index.js";
-import type { ProviderCustodyDeclaration } from "./index.js";
+import type { ProviderCustodyDeclaration, ProviderCustodyEvaluation } from "./index.js";
+
+/** The stable rule ids off an evaluation's findings, in order -- what `.reasons` used to be before the check-output-envelope rework. */
+function rulesOf(evaluation: ProviderCustodyEvaluation): readonly string[] {
+  return evaluation.findings.map((finding) => finding.rule);
+}
 
 function declaration(overrides: Partial<ProviderCustodyDeclaration> = {}): ProviderCustodyDeclaration {
   return {
@@ -31,7 +36,7 @@ describe("evaluateProviderCustody", () => {
       rung: "scoped-environment-secret",
       verdict: "satisfied",
       exitCode: 0,
-      reasons: [],
+      findings: [],
     });
   });
 
@@ -48,7 +53,7 @@ describe("evaluateProviderCustody", () => {
     const { rotationPolicy: _omitted, ...withoutPolicy } = declaration();
     const result = evaluateProviderCustody(withoutPolicy);
     expect(result.verdict).toBe("violated");
-    expect(result.reasons).toContain("invalid-rotation-policy");
+    expect(rulesOf(result)).toContain("invalid-rotation-policy");
   });
 
   it("is indeterminate for a non-object, never a pass", () => {
@@ -62,28 +67,28 @@ describe("evaluateProviderCustody", () => {
   it("is indeterminate for an unsupported extra field, so a smuggled field cannot be silently accepted", () => {
     const result = evaluateProviderCustody({ ...declaration(), token: "sk_live_should_never_appear" });
     expect(result.verdict).toBe("indeterminate");
-    expect(result.reasons).toEqual(["unsupported-fields"]);
+    expect(rulesOf(result)).toEqual(["unsupported-fields"]);
     expect(JSON.stringify(result)).not.toContain("sk_live_should_never_appear");
   });
 
   it("rejects an unsupported provider", () => {
     const result = evaluateProviderCustody(declaration({ provider: "aws" as never }));
     expect(result.verdict).toBe("violated");
-    expect(result.reasons).toContain("unsupported-provider");
+    expect(rulesOf(result)).toContain("unsupported-provider");
     expect(result.provider).toBeNull();
   });
 
   it("rejects an unsupported rung", () => {
     const result = evaluateProviderCustody(declaration({ rung: "hardcoded-in-source" as never }));
     expect(result.verdict).toBe("violated");
-    expect(result.reasons).toContain("unsupported-rung");
+    expect(rulesOf(result)).toContain("unsupported-rung");
     expect(result.rung).toBeNull();
   });
 
   it("rejects a missing or empty owner", () => {
-    expect(evaluateProviderCustody(declaration({ owner: "" })).reasons).toContain("missing-owner");
+    expect(rulesOf(evaluateProviderCustody(declaration({ owner: "" })))).toContain("missing-owner");
     const { owner: _omitted, ...withoutOwner } = declaration();
-    expect(evaluateProviderCustody(withoutOwner).reasons).toContain("missing-owner");
+    expect(rulesOf(evaluateProviderCustody(withoutOwner))).toContain("missing-owner");
   });
 
   it.each(["repository", "repo", ".env", "source", "committed", "git", "REPOSITORY", "  Repo  "])(
@@ -91,7 +96,7 @@ describe("evaluateProviderCustody", () => {
     (store) => {
       const result = evaluateProviderCustody(declaration({ store }));
       expect(result.verdict).toBe("violated");
-      expect(result.reasons).toContain("store-is-repository");
+      expect(rulesOf(result)).toContain("store-is-repository");
     },
   );
 
@@ -102,21 +107,21 @@ describe("evaluateProviderCustody", () => {
   it("rejects an empty scope", () => {
     const result = evaluateProviderCustody(declaration({ scope: [] }));
     expect(result.verdict).toBe("violated");
-    expect(result.reasons).toContain("missing-scope");
+    expect(rulesOf(result)).toContain("missing-scope");
   });
 
   it("rejects a missing or empty least-privilege note", () => {
-    expect(evaluateProviderCustody(declaration({ leastPrivilegeNote: "   " })).reasons).toContain("missing-least-privilege-note");
+    expect(rulesOf(evaluateProviderCustody(declaration({ leastPrivilegeNote: "   " })))).toContain("missing-least-privilege-note");
   });
 
   it("rejects a missing or empty usedBy", () => {
-    expect(evaluateProviderCustody(declaration({ usedBy: [] })).reasons).toContain("missing-used-by");
+    expect(rulesOf(evaluateProviderCustody(declaration({ usedBy: [] })))).toContain("missing-used-by");
   });
 
   it("rejects a malformed rotation policy shape without accepting extra fields on it", () => {
-    expect(evaluateProviderCustody(declaration({ rotationPolicy: { maxAgeDays: 90, extra: true } as never })).reasons).toContain("invalid-rotation-policy");
-    expect(evaluateProviderCustody(declaration({ rotationPolicy: { maxAgeDays: -1 } })).reasons).toContain("invalid-rotation-policy");
-    expect(evaluateProviderCustody(declaration({ rotationPolicy: { maxAgeDays: 0 } })).reasons).toContain("invalid-rotation-policy");
+    expect(rulesOf(evaluateProviderCustody(declaration({ rotationPolicy: { maxAgeDays: 90, extra: true } as never })))).toContain("invalid-rotation-policy");
+    expect(rulesOf(evaluateProviderCustody(declaration({ rotationPolicy: { maxAgeDays: -1 } })))).toContain("invalid-rotation-policy");
+    expect(rulesOf(evaluateProviderCustody(declaration({ rotationPolicy: { maxAgeDays: 0 } })))).toContain("invalid-rotation-policy");
   });
 
   it("reports every violated field at once, not just the first", () => {
@@ -132,7 +137,7 @@ describe("evaluateProviderCustody", () => {
       rotationPolicy: "soon",
     });
     expect(result.verdict).toBe("violated");
-    expect(new Set(result.reasons)).toEqual(
+    expect(new Set(rulesOf(result))).toEqual(
       new Set([
         "missing-key",
         "unsupported-provider",
@@ -210,7 +215,7 @@ describe("evaluateProviderCustody: accessor-safety and prototype-pollution resis
     expect(() => evaluateProviderCustody(hostile)).not.toThrow();
     const result = evaluateProviderCustody(hostile);
     expect(result.verdict).toBe("violated");
-    expect(result.reasons).toContain("invalid-rotation-policy");
+    expect(rulesOf(result)).toContain("invalid-rotation-policy");
   });
 
   it("is not fooled by a scope/usedBy array whose Array.prototype.every and Symbol.iterator are polluted", () => {
@@ -237,7 +242,7 @@ describe("evaluateProviderCustody: accessor-safety and prototype-pollution resis
       Object.defineProperty(Array.prototype, Symbol.iterator, iteratorDescriptor);
     }
     expect(result?.verdict).toBe("violated");
-    expect(result?.reasons).toContain("missing-scope");
+    expect(rulesOf(result as ProviderCustodyEvaluation)).toContain("missing-scope");
   });
 
   it("rejects hostile scope/usedBy prototypes, accessors, and symbol-keyed entries", () => {
@@ -262,7 +267,7 @@ describe("evaluateProviderCustody: accessor-safety and prototype-pollution resis
     for (const scope of [hostilePrototype, accessorEntry, symbolEntry]) {
       const result = evaluateProviderCustody(declaration({ scope: scope as never }));
       expect(result.verdict).toBe("violated");
-      expect(result.reasons).toContain("missing-scope");
+      expect(rulesOf(result)).toContain("missing-scope");
     }
   });
 
@@ -271,7 +276,7 @@ describe("evaluateProviderCustody: accessor-safety and prototype-pollution resis
     huge.length = 0xffff_ffff;
     const result = evaluateProviderCustody(declaration({ scope: huge }));
     expect(result.verdict).toBe("violated");
-    expect(result.reasons).toContain("missing-scope");
+    expect(rulesOf(result)).toContain("missing-scope");
   });
 
   it("catches throwing proxy traps on the declaration and on an array field instead of letting them escape", () => {
@@ -297,16 +302,17 @@ describe("evaluateProviderCustody: accessor-safety and prototype-pollution resis
     // partial violated result built from whatever reasons had accumulated
     // before the throw.
     expect(result.verdict).toBe("indeterminate");
-    expect(result.reasons).toContain("invalid-declaration");
+    expect(rulesOf(result)).toContain("invalid-declaration");
   });
 
   it("rejects inherited declarations and a custom-prototype rotationPolicy", () => {
     const inherited = Object.create(declaration()) as unknown;
-    expect(evaluateProviderCustody(inherited)).toMatchObject({ verdict: "indeterminate", reasons: ["invalid-declaration"] });
+    expect(rulesOf(evaluateProviderCustody(inherited) as ProviderCustodyEvaluation)).toEqual(["invalid-declaration"]);
+    expect(evaluateProviderCustody(inherited).verdict).toBe("indeterminate");
 
     const inheritedPolicy = Object.create({ maxAgeDays: 90 }) as unknown;
     const result = evaluateProviderCustody(declaration({ rotationPolicy: inheritedPolicy as never }));
     expect(result.verdict).toBe("violated");
-    expect(result.reasons).toContain("invalid-rotation-policy");
+    expect(rulesOf(result)).toContain("invalid-rotation-policy");
   });
 });

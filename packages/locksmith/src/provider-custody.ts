@@ -90,10 +90,28 @@ export interface ProviderCustodyManifest {
   readonly entries: readonly ProviderCustodyDeclaration[];
 }
 
+/**
+ * The verdict vocabulary, machine for machine, docs/contracts/check-output-
+ * envelope.json's own `verdicts` (issue #1174/#1190) — a repository contract
+ * that does not ship with this package. This package does not declare a
+ * second, independently-invented ternary here — see this package's own
+ * `check-output-envelope.test.ts` (also not shipped; a dev-only test), whose
+ * contract-sync test reads that file directly and fails if this union and
+ * its own `verdicts` array ever diverge.
+ */
 export type ProviderCustodyVerdict = "satisfied" | "violated" | "indeterminate";
 export type ProviderCustodyExitCode = 0 | 1 | 2;
 
-export type ProviderCustodyReason =
+/**
+ * The stable rule id for one way a declaration can fail. Carried as
+ * `ProviderCustodyFinding.rule` — the `findingShape.rule` field the
+ * repository contract docs/contracts/check-output-envelope.json declares
+ * (does not ship with this package) — rather than as a bare string in a
+ * package-local reason union, so a caller reading this package's output
+ * alongside any other role's check output sees one shape, not a second one
+ * invented here.
+ */
+export type ProviderCustodyReasonRule =
   | "invalid-declaration"
   | "unsupported-fields"
   | "missing-key"
@@ -109,13 +127,47 @@ export type ProviderCustodyReason =
   | "missing-used-by"
   | "invalid-rotation-policy";
 
+/**
+ * One reportable problem with a declaration, in exactly the shape the
+ * repository contract docs/contracts/check-output-envelope.json's
+ * `findingShape` declares (that contract does not ship with this package):
+ * `rule` (stable machine id), `severity`, `message` (human-readable), and an
+ * optional `path` naming the declaration field the finding is about. Every
+ * finding this package produces is `severity: "error"` — a provider-custody
+ * declaration is judged, not merely advised, so nothing here is a
+ * non-blocking warning.
+ */
+export interface ProviderCustodyFinding {
+  readonly rule: ProviderCustodyReasonRule;
+  readonly severity: "error";
+  readonly message: string;
+  readonly path?: string;
+}
+
 export interface ProviderCustodyEvaluation {
   readonly key: SecretKey | null;
   readonly provider: ProviderName | null;
   readonly rung: CustodyRung | null;
   readonly verdict: ProviderCustodyVerdict;
   readonly exitCode: ProviderCustodyExitCode;
-  readonly reasons: readonly ProviderCustodyReason[];
+  readonly findings: readonly ProviderCustodyFinding[];
+}
+
+/**
+ * The full shape the repository contract docs/contracts/check-output-
+ * envelope.json declares (it does not ship with this package) for one
+ * evaluation run: `{ package, version, verdict, summary, findings,
+ * nextAction? }`. `providerCustodyReport` is what builds this from a raw
+ * declaration; the CLI (`provider-custody-cli.ts`) is what emits it as this
+ * package's own "check command['s] JSON report" the contract describes.
+ */
+export interface ProviderCustodyReport {
+  readonly package: "@clossys/locksmith";
+  readonly version: string;
+  readonly verdict: ProviderCustodyVerdict;
+  readonly summary: string;
+  readonly findings: readonly ProviderCustodyFinding[];
+  readonly nextAction?: string;
 }
 
 const EXIT_CODES: Readonly<Record<ProviderCustodyVerdict, ProviderCustodyExitCode>> = Object.freeze({
@@ -126,6 +178,37 @@ const EXIT_CODES: Readonly<Record<ProviderCustodyVerdict, ProviderCustodyExitCod
 
 const PROVIDERS: readonly ProviderName[] = ["cloudflare", "vercel", "github"];
 const RUNGS: readonly CustodyRung[] = ["operator-interactive", "scoped-environment-secret", "federated-oidc"];
+
+/**
+ * One fixed message (and, where a single field is at fault, its `path`) per
+ * `ProviderCustodyReasonRule` — kept as one table so `findingFor` never
+ * improvises wording per call site, and so this package's own dev-only
+ * `check-output-envelope.test.ts` (not shipped with this package) can
+ * assert every rule this module can emit has a corresponding table entry.
+ */
+const FINDING_TEXT: Readonly<Record<ProviderCustodyReasonRule, { readonly message: string; readonly path?: string }>> = Object.freeze({
+  "invalid-declaration": { message: "the declaration is not a plain, own-data object this package can safely inspect" },
+  "unsupported-fields": { message: "the declaration carries a field outside the closed provider-custody declaration shape" },
+  "missing-key": { message: "key is missing or is not a non-empty string", path: "key" },
+  "missing-provider": { message: "provider is missing", path: "provider" },
+  "unsupported-provider": { message: `provider must be one of: ${PROVIDERS.join(", ")}`, path: "provider" },
+  "missing-rung": { message: "rung is missing", path: "rung" },
+  "unsupported-rung": { message: `rung must be one of the closed custody ladder: ${RUNGS.join(", ")}`, path: "rung" },
+  "missing-owner": { message: "owner is missing or is not a non-empty string", path: "owner" },
+  "missing-store": { message: "store is missing or is not a non-empty string", path: "store" },
+  "store-is-repository": { message: "store names this repository itself, which never satisfies custody", path: "store" },
+  "missing-scope": { message: "scope is missing or is not a dense array of non-empty strings", path: "scope" },
+  "missing-least-privilege-note": { message: "leastPrivilegeNote is missing or is not a non-empty string", path: "leastPrivilegeNote" },
+  "missing-used-by": { message: "usedBy is missing or is not a dense array of non-empty strings", path: "usedBy" },
+  "invalid-rotation-policy": { message: "rotationPolicy must be null or { maxAgeDays: <finite positive number> }", path: "rotationPolicy" },
+});
+
+function findingFor(rule: ProviderCustodyReasonRule): ProviderCustodyFinding {
+  const text = FINDING_TEXT[rule];
+  return text.path === undefined
+    ? Object.freeze({ rule, severity: "error" as const, message: text.message })
+    : Object.freeze({ rule, severity: "error" as const, message: text.message, path: text.path });
+}
 
 // Case-insensitive literal stores that describe committing the value to this
 // repository's own tree. Narrow and documented on purpose — see this file's
@@ -159,12 +242,19 @@ function freezeStringArrayCopy<T extends string>(values: readonly T[]): readonly
   return Object.freeze(copy);
 }
 
+/** Same indexed-copy discipline as `freezeStringArrayCopy`, for `ProviderCustodyFinding[]`. */
+function freezeFindingsCopy(findings: readonly ProviderCustodyFinding[]): readonly ProviderCustodyFinding[] {
+  const copy: ProviderCustodyFinding[] = [];
+  for (let index = 0; index < findings.length; index += 1) copy[index] = findings[index] as ProviderCustodyFinding;
+  return Object.freeze(copy);
+}
+
 function evaluation(
   key: SecretKey | null,
   provider: ProviderName | null,
   rung: CustodyRung | null,
   verdict: ProviderCustodyVerdict,
-  reasons: readonly ProviderCustodyReason[],
+  findings: readonly ProviderCustodyFinding[],
 ): ProviderCustodyEvaluation {
   return Object.freeze({
     key,
@@ -172,7 +262,7 @@ function evaluation(
     rung,
     verdict,
     exitCode: EXIT_CODES[verdict],
-    reasons: freezeStringArrayCopy(reasons),
+    findings: freezeFindingsCopy(findings),
   });
 }
 
@@ -251,8 +341,8 @@ function inspectRotationPolicy(value: unknown): { readonly ok: boolean } {
  */
 function evaluateProviderCustodyUnchecked(declaration: unknown): ProviderCustodyEvaluation {
   const record = readOwnDataRecord(declaration);
-  if (record === null) return evaluation(null, null, null, "indeterminate", ["invalid-declaration"]);
-  if (!hasOnlyFields(record, DECLARATION_FIELDS)) return evaluation(null, null, null, "indeterminate", ["unsupported-fields"]);
+  if (record === null) return evaluation(null, null, null, "indeterminate", [findingFor("invalid-declaration")]);
+  if (!hasOnlyFields(record, DECLARATION_FIELDS)) return evaluation(null, null, null, "indeterminate", [findingFor("unsupported-fields")]);
 
   const key = isNonEmptyString(record.values.key) ? record.values.key : null;
   const provider = PROVIDERS.includes(record.values.provider as ProviderName) ? (record.values.provider as ProviderName) : null;
@@ -261,23 +351,23 @@ function evaluateProviderCustodyUnchecked(declaration: unknown): ProviderCustody
   const scope = readNonEmptyStringArray(record.values.scope);
   const usedBy = readNonEmptyStringArray(record.values.usedBy);
 
-  const reasons: ProviderCustodyReason[] = [];
-  if (key === null) reasons.push("missing-key");
-  if (!hasField(record, "provider")) reasons.push("missing-provider");
-  else if (provider === null) reasons.push("unsupported-provider");
-  if (!hasField(record, "rung")) reasons.push("missing-rung");
-  else if (rung === null) reasons.push("unsupported-rung");
-  if (!isNonEmptyString(record.values.owner)) reasons.push("missing-owner");
-  if (store === null) reasons.push("missing-store");
-  else if (isRepositoryStore(store)) reasons.push("store-is-repository");
-  if (scope === null) reasons.push("missing-scope");
-  if (!isNonEmptyString(record.values.leastPrivilegeNote)) reasons.push("missing-least-privilege-note");
-  if (usedBy === null) reasons.push("missing-used-by");
+  const findings: ProviderCustodyFinding[] = [];
+  if (key === null) findings.push(findingFor("missing-key"));
+  if (!hasField(record, "provider")) findings.push(findingFor("missing-provider"));
+  else if (provider === null) findings.push(findingFor("unsupported-provider"));
+  if (!hasField(record, "rung")) findings.push(findingFor("missing-rung"));
+  else if (rung === null) findings.push(findingFor("unsupported-rung"));
+  if (!isNonEmptyString(record.values.owner)) findings.push(findingFor("missing-owner"));
+  if (store === null) findings.push(findingFor("missing-store"));
+  else if (isRepositoryStore(store)) findings.push(findingFor("store-is-repository"));
+  if (scope === null) findings.push(findingFor("missing-scope"));
+  if (!isNonEmptyString(record.values.leastPrivilegeNote)) findings.push(findingFor("missing-least-privilege-note"));
+  if (usedBy === null) findings.push(findingFor("missing-used-by"));
   if (!hasField(record, "rotationPolicy") || !inspectRotationPolicy(record.values.rotationPolicy).ok) {
-    reasons.push("invalid-rotation-policy");
+    findings.push(findingFor("invalid-rotation-policy"));
   }
 
-  if (reasons.length > 0) return evaluation(key, provider, rung, "violated", reasons);
+  if (findings.length > 0) return evaluation(key, provider, rung, "violated", findings);
   return evaluation(key, provider, rung, "satisfied", []);
 }
 
@@ -296,12 +386,58 @@ export function evaluateProviderCustody(declaration: unknown): ProviderCustodyEv
   try {
     return evaluateProviderCustodyUnchecked(declaration);
   } catch {
-    return evaluation(null, null, null, "indeterminate", ["invalid-declaration"]);
+    return evaluation(null, null, null, "indeterminate", [findingFor("invalid-declaration")]);
   }
 }
 
-function reasonSummary(reasons: readonly ProviderCustodyReason[]): string {
-  return reasons.join(", ");
+function findingSummary(findings: readonly ProviderCustodyFinding[]): string {
+  return findings.map((finding) => finding.rule).join(", ");
+}
+
+/**
+ * One plain-language sentence for the repository contract docs/contracts/
+ * check-output-envelope.json's required `summary` field (that contract does
+ * not ship with this package) — the ONLY field a non-technical reader may be
+ * shown without translation, per that contract's own `rule`.
+ */
+function summaryFor(evaluated: ProviderCustodyEvaluation): string {
+  if (evaluated.verdict === "satisfied") {
+    return `The provider-custody declaration for ${evaluated.key ?? "this key"} satisfies the closed custody ladder.`;
+  }
+  if (evaluated.verdict === "indeterminate") {
+    return "The provider-custody declaration could not be read as one of the closed custody shapes this command judges.";
+  }
+  return `The provider-custody declaration for ${evaluated.key ?? "this key"} does not satisfy the closed custody ladder (${evaluated.findings.length} finding(s)).`;
+}
+
+/**
+ * Builds the full report shape the repository contract docs/contracts/
+ * check-output-envelope.json declares (does not ship with this package) for
+ * one declaration: `{ package, version, verdict, summary, findings,
+ * nextAction? }`. `packageVersion` is caller-supplied (this package's own
+ * `package.json` `version`, read once by the CLI) rather than read from disk
+ * here, so this function stays the same pure, dependency-free shape as
+ * `evaluateProviderCustody` itself.
+ */
+export function providerCustodyReport(declaration: unknown, packageVersion: string): ProviderCustodyReport {
+  const evaluated = evaluateProviderCustody(declaration);
+  const report: ProviderCustodyReport = {
+    package: "@clossys/locksmith",
+    version: packageVersion,
+    verdict: evaluated.verdict,
+    summary: summaryFor(evaluated),
+    findings: evaluated.findings,
+  };
+  if (evaluated.verdict !== "satisfied") {
+    return Object.freeze({
+      ...report,
+      nextAction:
+        evaluated.verdict === "indeterminate"
+          ? "Fix the declaration's shape so it can be read as a provider-custody declaration, then re-run this check."
+          : "Resolve every listed finding in the declaration, then re-run this check.",
+    });
+  }
+  return Object.freeze(report);
 }
 
 const INVALID_DEFINITION_SNAPSHOT = Symbol("invalid provider custody definition snapshot");
@@ -323,7 +459,7 @@ function rejectDefinitionSnapshot(): never {
 export function defineProviderCustody(declaration: ProviderCustodyDeclaration): ProviderCustodyDeclaration {
   const evaluated = evaluateProviderCustody(declaration);
   if (evaluated.verdict !== "satisfied") {
-    throw new RangeError(`provider custody declaration is ${evaluated.verdict}: ${reasonSummary(evaluated.reasons)}`);
+    throw new RangeError(`provider custody declaration is ${evaluated.verdict}: ${findingSummary(evaluated.findings)}`);
   }
   try {
     const record = readOwnDataRecord(declaration);

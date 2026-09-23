@@ -52,14 +52,17 @@ export {
   defineProviderCustodyManifest,
   evaluateProviderCustody,
   providerCustodyOf,
+  providerCustodyReport,
 } from "./provider-custody.js";
 export type {
   CustodyRung,
   ProviderCustodyDeclaration,
   ProviderCustodyEvaluation,
   ProviderCustodyExitCode,
+  ProviderCustodyFinding,
   ProviderCustodyManifest,
-  ProviderCustodyReason,
+  ProviderCustodyReasonRule,
+  ProviderCustodyReport,
   ProviderCustodyVerdict,
   ProviderName,
 } from "./provider-custody.js";

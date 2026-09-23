@@ -269,7 +269,7 @@ const custody = defineProviderCustody({
   rotationPolicy: { maxAgeDays: 90 },
 });
 
-evaluateProviderCustody(custody); // { verdict: "satisfied", exitCode: 0, ... }
+evaluateProviderCustody(custody); // { verdict: "satisfied", exitCode: 0, findings: [], ... }
 ```
 
 `provider` is the closed `cloudflare` / `vercel` / `github` vocabulary;
@@ -313,6 +313,27 @@ anywhere on the input cannot run) and the same prototype-pollution-resistant
 array reads (an overridden `Array.prototype.every`/`Symbol.iterator` cannot
 flip a violated `scope` or `usedBy` to satisfied).
 
+`evaluateProviderCustody`'s `verdict` (`satisfied` / `violated` /
+`indeterminate`) and its `findings` (`{ rule, severity, message, path? }`
+each) are this package's own instance of docs/contracts/check-output-
+envelope.json's shared vocabulary (issue #1174/#1190) — not a second,
+locally-invented verdict or reason shape. `providerCustodyReport(declaration,
+version)` builds the full envelope document (`{ package, version, verdict,
+summary, findings, nextAction? }`) from one evaluation:
+
+```ts
+import { providerCustodyReport } from "@clossys/locksmith";
+
+providerCustodyReport(custody, "0.2.8");
+// {
+//   package: "@clossys/locksmith",
+//   version: "0.2.8",
+//   verdict: "satisfied",
+//   summary: "The provider-custody declaration for CLOUDFLARE_API_TOKEN satisfies the closed custody ladder.",
+//   findings: [],
+// }
+```
+
 ```ts
 import { defineProviderCustodyManifest, providerCustodyOf } from "@clossys/locksmith";
 
@@ -324,6 +345,7 @@ providerCustodyOf(manifest, "CLOUDFLARE_API_TOKEN"); // the declaration above
 
 ```text
 clossys-locksmith-provider-custody ./cloudflare-custody.json
+clossys-locksmith-provider-custody --json ./cloudflare-custody.json
 clossys-locksmith-provider-custody --help
 ```
 
@@ -331,7 +353,11 @@ Reads one caller-assembled JSON custody declaration, judges it, and reports
 the verdict unchanged — it mints, fetches, and rotates nothing, and talks to
 no provider. Exit codes mirror `evaluateProviderCustody` exactly: `0` for
 `satisfied`, `1` for `violated`, `2` for `indeterminate` (including a
-declaration that could not be read at all).
+declaration that could not be read at all). `--json` prints
+`providerCustodyReport`'s report, in the shape the repository contract
+docs/contracts/check-output-envelope.json declares (that contract does not
+ship with this package), instead of the default human-readable lines; the
+default output is unchanged from before that contract existed.
 
 ### Revocation
 
@@ -520,10 +546,12 @@ authority.
 | `defineProviderCustody(declaration)` | function | Freezes a satisfied provider-custody declaration after requiring a satisfied evaluation. |
 | `defineProviderCustodyManifest(entries)` | function | Builds a frozen manifest of already-satisfied provider-custody declarations. |
 | `providerCustodyOf(manifest, key)` | function | The provider-custody declaration for one key, or `undefined` if never declared. |
+| `providerCustodyReport(declaration, version)` | function | Builds the full report shape the repository contract docs/contracts/check-output-envelope.json declares (not shipped with this package) — `{ package, version, verdict, summary, findings, nextAction? }` — for one declaration. |
 | `ProviderName` | type | The closed provider vocabulary this slice can currently judge: `cloudflare` \| `vercel` \| `github`. |
 | `CustodyRung` | type | The closed custody ladder: `operator-interactive` \| `scoped-environment-secret` \| `federated-oidc`. |
 | `ProviderCustodyDeclaration` / `ProviderCustodyManifest` / `ProviderCustodyEvaluation` | types | Provider-custody declaration, manifest, and value-free ternary result contracts. |
-| `ProviderCustodyVerdict` / `ProviderCustodyExitCode` / `ProviderCustodyReason` | types | Closed verdict, numeric exit-code, and safe reason vocabularies for provider custody. |
+| `ProviderCustodyVerdict` / `ProviderCustodyExitCode` / `ProviderCustodyReasonRule` / `ProviderCustodyFinding` | types | The verdict vocabulary, numeric exit code, stable finding-rule ids, and finding shape (`rule`/`severity`/`message`/`path?`) of the repository contract docs/contracts/check-output-envelope.json (not shipped with this package) — no locally-invented shape. |
+| `ProviderCustodyReport` | type | The full report shape the repository contract docs/contracts/check-output-envelope.json declares (not shipped with this package) for one provider-custody evaluation. |
 | `defineRevocationPath(path)` | function | Records where revocation authority lives for a key; performs no revocation. |
 | `recordRevocation(record)` | function | Builds a frozen, value-free record that a key was revoked. |
 | `isRevoked(records, key)` | function | Whether any record revokes the given key. |
@@ -571,17 +599,18 @@ on it.
 ## Hard boundaries
 
 **This value-free guarantee is scoped, not package-wide.** It covers exactly
-the five verb modules `no-value-escapes.test.ts` proves it for --
-`custody`, `rotation`, `revocation`, `distribution`, and `credential` -- 5
-of this package's 22 non-test modules. Within that scope, and only within
-it: no code path reads, logs, prints, or transports a secret **value**.
-Those five modules handle names, owners, ages, stores, rotation policies,
-credential lifecycle metadata, revocation records, and digests only, and
-the test enforces this two ways -- statically, by asserting none of the
-five imports the resolution client/adapters, the Infisical subtree, or any
-other value-reading or I/O capability; and at runtime, by asserting every
-record these modules produce has a closed, exact field set that a
-decoy value-shaped string cannot ride through.
+the six verb modules `no-value-escapes.test.ts` proves it for --
+`custody`, `rotation`, `revocation`, `distribution`, `credential`, and
+`provider-custody` -- 6 of this package's non-test modules. Within that
+scope, and only within it: no code path reads, logs, prints, or transports a
+secret **value**. Those six modules handle names, owners, ages, stores,
+rotation policies, credential lifecycle metadata, revocation records,
+provider-custody rungs, and digests only, and the test enforces this two
+ways -- statically, by asserting none of the six imports the resolution
+client/adapters, the Infisical subtree, or any other value-reading or I/O
+capability; and at runtime, by asserting every record these modules produce
+has a closed, exact field set that a decoy value-shaped string cannot ride
+through.
 
 **Everything outside that scope handles values, by design.** The root
 entry's `createSecretsClient(...).require()` / `.get()` (see

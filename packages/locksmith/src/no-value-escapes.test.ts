@@ -162,6 +162,6 @@ describe("runtime: every produced record has a closed, exact field set", () => {
     });
     expect(result.verdict).toBe("indeterminate");
     expect(JSON.stringify(result)).not.toContain(DECOY);
-    expect(new Set(Object.keys(result))).toEqual(new Set(["key", "provider", "rung", "verdict", "exitCode", "reasons"]));
+    expect(new Set(Object.keys(result))).toEqual(new Set(["key", "provider", "rung", "verdict", "exitCode", "findings"]));
   });
 });

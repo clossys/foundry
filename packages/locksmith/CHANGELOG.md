@@ -27,6 +27,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `credential.ts`'s accessor-safe, prototype-pollution-resistant record and
   array reads (`readOwnDataRecord`, `hasOnlyFields`, exported from
   `credential.ts`) rather than duplicating a weaker check.
+- Conformance rework (owner direction, issue #1187): `evaluateProviderCustody`'s
+  findings now use the shared `findingShape` (`{ rule, severity, message,
+  path? }`, new `ProviderCustodyFinding`/`ProviderCustodyReasonRule` types)
+  the repository contract docs/contracts/check-output-envelope.json declares
+  (that contract does not ship with this package) instead of a bare
+  `ProviderCustodyReason[]` string array -- no local copy of the contract,
+  and `verdict` was already the contract's own
+  `satisfied`/`violated`/`indeterminate` vocabulary. New
+  `providerCustodyReport(declaration, version)` builds the full envelope
+  document (`{ package, version, verdict, summary, findings, nextAction? }`);
+  the CLI's new `--json` flag prints it. A new contract-conformance test
+  (`src/check-output-envelope.test.ts`, a dev-only test not shipped with
+  this package) reads the contract file directly and validates real
+  `providerCustodyReport` output against it. The accessor-safe,
+  prototype-pollution-resistant hardening carries forward unchanged.
 
 ## [0.2.7] - 2026-09-22
 
