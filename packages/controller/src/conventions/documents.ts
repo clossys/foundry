@@ -102,6 +102,12 @@ export const CONVENTION_DOCUMENTS: readonly ConventionDocument[] = Object.freeze
     title: "Runner-label conventions",
     templated: false,
   }),
+  Object.freeze({
+    id: "ci-conventions",
+    filename: "ci-conventions.md",
+    title: "CI conventions",
+    templated: false,
+  }),
 ]);
 
 export const CONVENTION_ADAPTERS: readonly ConventionAdapter[] = Object.freeze([
