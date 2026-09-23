@@ -3,7 +3,16 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
-import { applyReleaseChangesets, bumpManifestText, bumpVersion, namedPackages, prependChangelogEntry } from "./apply-release-changesets.mjs";
+import {
+  applyReleaseChangesets,
+  bumpDependencyRangeText,
+  bumpManifestText,
+  bumpVersion,
+  collectDependencyUpdates,
+  forbiddenProtocolReason,
+  namedPackages,
+  prependChangelogEntry,
+} from "./apply-release-changesets.mjs";
 
 function makeRoot() {
   const root = mkdtempSync(join(tmpdir(), "apply-release-changesets-test-"));
@@ -14,6 +23,30 @@ function makePackage(root, name, version) {
   const pkgDir = join(root, "packages", name);
   mkdirSync(pkgDir, { recursive: true });
   writeFileSync(join(pkgDir, "package.json"), `{\n  "name": "@x/${name}",\n  "version": "${version}",\n  "license": "MIT"\n}\n`);
+  return pkgDir;
+}
+
+// Writes a package.json with a "dependencies" block naming other @x/*
+// packages -- the shape apply-release-changesets.mjs's sibling-range
+// rewriter (issue #1332) operates on, matching this repo's own
+// packages/*/package.json convention (2-space top-level, 4-space nested).
+function makePackageWithDependency(root, name, version, depName, depRange) {
+  const pkgDir = join(root, "packages", name);
+  mkdirSync(pkgDir, { recursive: true });
+  writeFileSync(
+    join(pkgDir, "package.json"),
+    `{\n  "name": "@x/${name}",\n  "version": "${version}",\n  "license": "MIT",\n  "dependencies": {\n    "${depName}": "${depRange}"\n  }\n}\n`,
+  );
+  return pkgDir;
+}
+
+// Writes a raw package.json text verbatim -- for shapes this script must
+// refuse (e.g. a "version" field indented by something other than this
+// repo's own two-space convention).
+function makePackageRaw(root, name, text) {
+  const pkgDir = join(root, "packages", name);
+  mkdirSync(pkgDir, { recursive: true });
+  writeFileSync(join(pkgDir, "package.json"), text);
   return pkgDir;
 }
 
@@ -199,6 +232,215 @@ test("applyReleaseChangesets: a later package's failure leaves an earlier, other
     const alphaApplied = rerun.applied.find((a) => a.package === "alpha");
     assert.equal(alphaApplied.fromVersion, "1.0.0", "alpha's version was never bumped by the failed first run, so the rerun still sees its true starting version");
     assert.equal(alphaApplied.toVersion, "1.0.1");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// -------------------------------------------------- issue #1332: sibling dependency ranges
+
+test("bumpDependencyRangeText: rewrites only the named entry's range, byte-exact elsewhere", () => {
+  const text = '{\n  "name": "@x/y",\n  "version": "1.0.0",\n  "dependencies": {\n    "@x/core": "^0.9.0",\n    "@x/other": "^2.0.0"\n  }\n}\n';
+  const result = bumpDependencyRangeText(text, "dependencies", "@x/core", "^0.10.0");
+  assert.equal(result, '{\n  "name": "@x/y",\n  "version": "1.0.0",\n  "dependencies": {\n    "@x/core": "^0.10.0",\n    "@x/other": "^2.0.0"\n  }\n}\n');
+});
+
+test("bumpDependencyRangeText: throws if the section or entry cannot be found exactly once", () => {
+  const text = '{\n  "name": "@x/y",\n  "version": "1.0.0"\n}\n';
+  assert.throws(() => bumpDependencyRangeText(text, "dependencies", "@x/core", "^0.10.0"));
+
+  const noEntry = '{\n  "name": "@x/y",\n  "version": "1.0.0",\n  "dependencies": {\n    "@x/other": "^2.0.0"\n  }\n}\n';
+  assert.throws(() => bumpDependencyRangeText(noEntry, "dependencies", "@x/core", "^0.10.0"));
+});
+
+test("forbiddenProtocolReason: refuses workspace:* and catalog:, allows everything else", () => {
+  assert.match(forbiddenProtocolReason("workspace:*"), /workspace:/);
+  assert.match(forbiddenProtocolReason("catalog:default"), /catalog:/);
+  assert.equal(forbiddenProtocolReason("^1.2.3"), null);
+});
+
+test("collectDependencyUpdates: flags a workspace:* range as an error rather than rewriting it", () => {
+  const manifest = { name: "@x/consumer", dependencies: { "@x/core": "workspace:*" } };
+  const { updates, errors } = collectDependencyUpdates("packages/consumer/package.json", manifest, { "@x/core": "0.10.0" });
+  assert.equal(updates.length, 0);
+  assert.equal(errors.length, 1);
+  assert.match(errors[0], /workspace:/);
+});
+
+test("applyReleaseChangesets: a 0.x minor bump rewrites a sibling's ^0.N.0 dependency range and gives the sibling a dependent patch bump", () => {
+  const root = makeRoot();
+  try {
+    makePackage(root, "core", "0.9.0");
+    writeFileSync(join(root, "packages", "core", "CHANGELOG.md"), "# Changelog\n\n## 0.9.0\n\n- Initial release.\n");
+    writeChangeset(root, "core-feature.md", "---\ncore: minor\n---\n\nAdd a feature.\n");
+
+    // "consumer" is NOT named by any changeset -- its own bump is entirely
+    // a consequence of core's minor bump moving outside its declared range.
+    makePackageWithDependency(root, "consumer", "1.0.0", "@x/core", "^0.9.0");
+    writeFileSync(join(root, "packages", "consumer", "CHANGELOG.md"), "# Changelog\n\n## 1.0.0\n\n- Initial release.\n");
+
+    const result = applyReleaseChangesets({ root, runNpmInstall: () => {}, today: () => "2026-09-22" });
+
+    assert.equal(result.findings.length, 0);
+    assert.equal(result.applied.length, 2);
+
+    const coreApplied = result.applied.find((a) => a.package === "core");
+    assert.deepEqual(coreApplied, {
+      package: "core",
+      fromVersion: "0.9.0",
+      toVersion: "0.10.0",
+      bump: "minor",
+      changesetFiles: ["core-feature.md"],
+    });
+
+    const consumerApplied = result.applied.find((a) => a.package === "consumer");
+    assert.equal(consumerApplied.fromVersion, "1.0.0");
+    assert.equal(consumerApplied.toVersion, "1.0.1"); // dependent patch bump
+    assert.equal(consumerApplied.bump, "patch");
+    assert.deepEqual(consumerApplied.changesetFiles, []);
+    assert.deepEqual(consumerApplied.dependencyUpdates, [{ section: "dependencies", name: "@x/core", fromRange: "^0.9.0", toRange: "^0.10.0" }]);
+
+    const consumerManifest = JSON.parse(readFileSync(join(root, "packages", "consumer", "package.json"), "utf8"));
+    assert.equal(consumerManifest.version, "1.0.1");
+    assert.equal(consumerManifest.dependencies["@x/core"], "^0.10.0");
+
+    const consumerChangelog = readFileSync(join(root, "packages", "consumer", "CHANGELOG.md"), "utf8");
+    assert.match(consumerChangelog, /## 1\.0\.1 - 2026-09-22/);
+    assert.match(consumerChangelog, /Updated dependency @x\/core to \^0\.10\.0/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("applyReleaseChangesets: a major bump rewrites a sibling's ^1.x dependency range the same way", () => {
+  const root = makeRoot();
+  try {
+    makePackage(root, "core", "1.2.3");
+    writeChangeset(root, "core-break.md", "---\ncore: major\n---\n\nBreaking change.\n");
+    makePackageWithDependency(root, "consumer", "1.0.0", "@x/core", "^1.2.0");
+
+    const result = applyReleaseChangesets({ root, runNpmInstall: () => {}, today: () => "2026-09-22" });
+
+    assert.equal(result.findings.length, 0);
+    const coreApplied = result.applied.find((a) => a.package === "core");
+    assert.equal(coreApplied.toVersion, "2.0.0");
+
+    const consumerApplied = result.applied.find((a) => a.package === "consumer");
+    assert.equal(consumerApplied.toVersion, "1.0.1");
+    assert.deepEqual(consumerApplied.dependencyUpdates, [{ section: "dependencies", name: "@x/core", fromRange: "^1.2.0", toRange: "^2.0.0" }]);
+
+    const consumerManifest = JSON.parse(readFileSync(join(root, "packages", "consumer", "package.json"), "utf8"));
+    assert.equal(consumerManifest.dependencies["@x/core"], "^2.0.0");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("applyReleaseChangesets: a range the new version still satisfies is left untouched -- no rewrite, no dependent bump", () => {
+  const root = makeRoot();
+  try {
+    makePackage(root, "core", "0.9.0");
+    writeChangeset(root, "core-fix.md", "---\ncore: patch\n---\n\nFix a bug.\n");
+    // core: 0.9.0 -> 0.9.1 is a patch bump -- still inside consumer's ^0.9.0 range.
+    makePackageWithDependency(root, "consumer", "1.0.0", "@x/core", "^0.9.0");
+
+    const result = applyReleaseChangesets({ root, runNpmInstall: () => {}, today: () => "2026-09-22" });
+
+    assert.equal(result.findings.length, 0);
+    assert.equal(result.applied.length, 1, "consumer must not appear in applied at all -- nothing about it changed");
+    assert.equal(result.applied[0].package, "core");
+
+    const consumerManifest = JSON.parse(readFileSync(join(root, "packages", "consumer", "package.json"), "utf8"));
+    assert.equal(consumerManifest.version, "1.0.0", "consumer's version is untouched");
+    assert.equal(consumerManifest.dependencies["@x/core"], "^0.9.0", "consumer's declared range is untouched");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// issue #1327: bumpManifestText()'s throw during planning must become a
+// clean finding with a non-zero exit contract (applied: [], one finding),
+// never an uncaught exception that skips the script's own --json/exit(1)
+// reporting.
+test("applyReleaseChangesets: a manifest bumpManifestText cannot safely rewrite is a clean finding, not an uncaught throw", () => {
+  const root = makeRoot();
+  try {
+    // 4-space indented "version" field -- bumpManifestText()'s regex only
+    // matches this repo's own two-space convention, so this throws.
+    makePackageRaw(root, "alpha", '{\n    "name": "@x/alpha",\n    "version": "1.0.0",\n    "license": "MIT"\n}\n');
+    writeChangeset(root, "alpha-fix.md", "---\nalpha: patch\n---\n\nFix a bug.\n");
+
+    let threw = false;
+    let result;
+    try {
+      result = applyReleaseChangesets({ root, runNpmInstall: () => {}, today: () => "2026-09-22" });
+    } catch {
+      threw = true;
+    }
+
+    assert.equal(threw, false, "applyReleaseChangesets must never throw -- every planning failure is a finding");
+    assert.equal(result.applied.length, 0);
+    assert.equal(result.findings.length, 1);
+    assert.match(result.findings[0], /alpha/);
+    assert.match(result.findings[0], /version/);
+
+    // Nothing was written or deleted: same "exit 1 = nothing applied" contract as every other finding.
+    const manifest = JSON.parse(readFileSync(join(root, "packages", "alpha", "package.json"), "utf8"));
+    assert.equal(manifest.version, "1.0.0");
+    assert.equal(existsSync(join(root, ".changesets", "alpha-fix.md")), true);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("applyReleaseChangesets: refuses a workspace:* sibling range rather than guessing", () => {
+  const root = makeRoot();
+  try {
+    makePackage(root, "core", "0.9.0");
+    writeChangeset(root, "core-feature.md", "---\ncore: minor\n---\n\nAdd a feature.\n");
+    makePackageWithDependency(root, "consumer", "1.0.0", "@x/core", "workspace:*");
+
+    const result = applyReleaseChangesets({ root, runNpmInstall: () => {}, today: () => "2026-09-22" });
+
+    assert.equal(result.applied.length, 0, "the whole run refuses -- workspace:* is forbidden outright");
+    assert.equal(result.findings.length, 1);
+    assert.match(result.findings[0], /workspace:/);
+
+    // core itself must be untouched too -- all-or-nothing.
+    const coreManifest = JSON.parse(readFileSync(join(root, "packages", "core", "package.json"), "utf8"));
+    assert.equal(coreManifest.version, "0.9.0");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("applyReleaseChangesets: a package named by its own changeset also gets its sibling range rewritten and CHANGELOG bullet appended, with no second bump", () => {
+  const root = makeRoot();
+  try {
+    makePackage(root, "core", "0.9.0");
+    writeChangeset(root, "core-feature.md", "---\ncore: minor\n---\n\nAdd a feature.\n");
+
+    // "consumer" has its OWN changeset (a patch bump for an unrelated
+    // reason) AND depends on core with a range the minor bump breaks.
+    makePackageWithDependency(root, "consumer", "1.0.0", "@x/core", "^0.9.0");
+    writeChangeset(root, "consumer-fix.md", "---\nconsumer: patch\n---\n\nFix an unrelated bug.\n");
+
+    const result = applyReleaseChangesets({ root, runNpmInstall: () => {}, today: () => "2026-09-22" });
+
+    assert.equal(result.findings.length, 0);
+    assert.equal(result.applied.length, 2);
+
+    const consumerApplied = result.applied.find((a) => a.package === "consumer");
+    // Exactly one bump -- the changeset's own patch level, not a second
+    // "dependent" bump stacked on top.
+    assert.equal(consumerApplied.toVersion, "1.0.1");
+    assert.equal(consumerApplied.bump, "patch");
+    assert.deepEqual(consumerApplied.changesetFiles, ["consumer-fix.md"]);
+    assert.deepEqual(consumerApplied.dependencyUpdates, [{ section: "dependencies", name: "@x/core", fromRange: "^0.9.0", toRange: "^0.10.0" }]);
+
+    const consumerChangelog = readFileSync(join(root, "packages", "consumer", "CHANGELOG.md"), "utf8");
+    assert.match(consumerChangelog, /Fix an unrelated bug\./);
+    assert.match(consumerChangelog, /Updated dependency @x\/core to \^0\.10\.0/);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
