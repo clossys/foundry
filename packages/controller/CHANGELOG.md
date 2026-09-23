@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   landing and two other open PRs (#1275, #1287) by the time this branch
   merged main.
 
-## [0.9.18] - 2026-09-23
+## [0.9.20] - 2026-09-23
 
 ### Added
 
@@ -62,10 +62,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `./src/gates/result.ts` rather than a second copy of the
   satisfied/violated/indeterminate vocabulary.
 
-  Renumbered from 0.9.16 to 0.9.18 on merge with `origin/main` (issue
+  Renumbered from 0.9.16 to 0.9.20 on merge with `origin/main` (issue
   #1187's collision rule): 0.9.17 was already claimed by main's own
-  #1193 landing by the time this branch merged main, and 0.9.16 was
-  never itself published.
+  #1193 landing by the time this branch merged main, 0.9.16 was never
+  itself published, and 0.9.18/0.9.19 are each already claimed by an
+  open PR (#1278, held for customer, and #1235 respectively) -- checked
+  across every open PR's `packages/controller/package.json` via REST,
+  not just against main, before picking 0.9.20 as the next unclaimed
+  version.
 
 ## [0.9.15] - 2026-09-23
 
