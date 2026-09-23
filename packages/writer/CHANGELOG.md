@@ -5,6 +5,17 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.3.16] - 2026-09-22
+
+### Added
+
+- `writer-check addressability --extensions` now also accepts a
+  comma-separated list in a single occurrence (for example
+  `--extensions .mjs,.cjs`), unioned with any repeated `--extensions`
+  flags. Every extension value must include the leading dot, and a flag
+  that resolves to zero extensions (a bare comma or an empty string) is a
+  usage error (exit `2`) rather than a silent fallback to the default set.
+
 ## [0.3.15] - 2026-09-21
 
 ### Changed
