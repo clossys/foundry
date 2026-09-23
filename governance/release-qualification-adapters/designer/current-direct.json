@@ -20,11 +20,28 @@
     "designer-fold-check": 0,
     "designer-type-check": 0
   },
-  "fixtures": ["clean/View.tsx", "violated/View.ts", "indeterminate/View.tsx"],
+  "fixtures": ["clean/View.tsx", "violated/View.ts", "indeterminate/View.tsx", "brand/satisfied.css", "brand/violated.css", "brand/indeterminate.css", "contrast/satisfied.css", "contrast/violated.css", "contrast/indeterminate.css", "type-record/satisfied.json", "type-record/violated.json", "type-record/indeterminate.json", "fold/satisfied-desktop.json", "fold/satisfied-narrow.json", "fold/violated.json", "fold/indeterminate.json", "hero-css/satisfied.css", "hero-css/violated.css", "surface/satisfied/app/page.tsx", "surface/satisfied/app/globals.css", "surface/violated/app/page.tsx", "surface/indeterminate/overview.md"],
   "cases": [
     { "id": "token-purity-clean", "bin": "designer-token-check", "args": [{ "fixtureDirectory": "clean" }], "exitCode": 0, "group": "token-purity" },
     { "id": "token-purity-violated", "bin": "designer-token-check", "args": [{ "fixtureDirectory": "violated" }], "exitCode": 1, "group": "token-purity" },
-    { "id": "token-purity-indeterminate", "bin": "designer-token-check", "args": [{ "fixtureDirectory": "indeterminate" }], "exitCode": 2, "group": "token-purity" }
+    { "id": "token-purity-indeterminate", "bin": "designer-token-check", "args": [{ "fixtureDirectory": "indeterminate" }], "exitCode": 2, "group": "token-purity" },
+    { "id": "brand-binding-clean", "bin": "designer-brand-check", "args": [{ "fixture": "brand/satisfied.css" }], "exitCode": 0, "group": "brand-binding" },
+    { "id": "brand-binding-violated", "bin": "designer-brand-check", "args": [{ "fixture": "brand/violated.css" }], "exitCode": 1, "group": "brand-binding" },
+    { "id": "brand-binding-indeterminate", "bin": "designer-brand-check", "args": [{ "fixture": "brand/indeterminate.css" }], "exitCode": 2, "group": "brand-binding" },
+    { "id": "contrast-clean", "bin": "designer-contrast-check", "args": [{ "fixture": "contrast/satisfied.css" }], "exitCode": 0, "group": "contrast" },
+    { "id": "contrast-violated", "bin": "designer-contrast-check", "args": [{ "fixture": "contrast/violated.css" }], "exitCode": 1, "group": "contrast" },
+    { "id": "contrast-indeterminate", "bin": "designer-contrast-check", "args": [{ "fixture": "contrast/indeterminate.css" }], "exitCode": 2, "group": "contrast" },
+    { "id": "type-record-clean", "bin": "designer-type-check", "args": [{ "fixture": "type-record/satisfied.json" }, { "literal": "--overlay" }, { "fixture": "brand/satisfied.css" }], "exitCode": 0, "group": "type-record" },
+    { "id": "type-record-violated", "bin": "designer-type-check", "args": [{ "fixture": "type-record/violated.json" }, { "literal": "--overlay" }, { "fixture": "brand/satisfied.css" }], "exitCode": 1, "group": "type-record" },
+    { "id": "type-record-indeterminate", "bin": "designer-type-check", "args": [{ "fixture": "type-record/indeterminate.json" }, { "literal": "--overlay" }, { "fixture": "brand/satisfied.css" }], "exitCode": 2, "group": "type-record" },
+    { "id": "fold-clean", "bin": "designer-fold-check", "args": [{ "fixture": "fold/satisfied-desktop.json" }, { "literal": "--also" }, { "fixture": "fold/satisfied-narrow.json" }], "exitCode": 0, "group": "fold" },
+    { "id": "fold-violated", "bin": "designer-fold-check", "args": [{ "fixture": "fold/violated.json" }], "exitCode": 1, "group": "fold" },
+    { "id": "fold-indeterminate", "bin": "designer-fold-check", "args": [{ "fixture": "fold/indeterminate.json" }], "exitCode": 2, "group": "fold" },
+    { "id": "hero-css-clean", "bin": "designer-hero-css-check", "args": [{ "fixture": "hero-css/satisfied.css" }], "exitCode": 0, "group": "hero-css" },
+    { "id": "hero-css-violated", "bin": "designer-hero-css-check", "args": [{ "fixture": "hero-css/violated.css" }], "exitCode": 1, "group": "hero-css" },
+    { "id": "surface-ladder-clean", "bin": "designer-environment-check", "args": [{ "literal": "surface" }, { "fixtureDirectory": "surface/satisfied" }], "exitCode": 0, "group": "surface-ladder" },
+    { "id": "surface-ladder-violated", "bin": "designer-environment-check", "args": [{ "literal": "surface" }, { "fixtureDirectory": "surface/violated" }], "exitCode": 1, "group": "surface-ladder" },
+    { "id": "surface-ladder-indeterminate", "bin": "designer-environment-check", "args": [{ "literal": "surface" }, { "fixtureDirectory": "surface/indeterminate" }], "exitCode": 2, "group": "surface-ladder" }
   ],
   "dimensionEvidence": { "rollback": "restoration", "duplicate": "token-purity" }
 }

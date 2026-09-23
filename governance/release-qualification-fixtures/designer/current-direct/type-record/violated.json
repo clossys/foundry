@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "displayFace": "REPLACE_ME",
+  "h1Minimum": "REPLACE_ME",
+  "measureCap": "REPLACE_ME",
+  "monoReservedFor": ["eyebrow", "data", "code"],
+  "wrap": { "orphanWords": "forbid-single" }
+}
