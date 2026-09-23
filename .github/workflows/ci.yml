@@ -677,6 +677,11 @@ jobs:
       # counted, never a failure, until --enforce -- the per-role maps
       # (#1198-#1202) are drafted elsewhere first and have not landed yet.
       - run: node scripts/check-capability-maps.mjs
+      # Same class again: contract- and fixture-read only, no build.
+      # Validates docs/contracts/permission-defaults-contract.json (#1225)
+      # and its fixture record, then scans docs/contracts/trust-statement.md
+      # for retired client-facing vocabulary (#1226).
+      - run: node scripts/check-permission-defaults.mjs
       # First-wave productization order: engagement, then operational integrity,
       # then expression. Distinct from the release-catalogue upload order.
       # Reads the sequence contract plus packages/*/package.json runtime edges.
