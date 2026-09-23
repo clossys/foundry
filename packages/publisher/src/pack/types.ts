@@ -31,8 +31,10 @@ export interface PackItem {
   needs: readonly string[];
   /**
    * `PackStatus` from `@clossys/controller` (issue #1228's shared
-   * lifecycle, `docs/contracts/lifecycle.json`'s `packStatusMapping`):
-   * `absent`, `found`, `draft`, `in-review`, `kept`, `published`. This is
+   * lifecycle — this repository's own `docs/contracts/lifecycle.json`
+   * (not shipped in any published package) records it as
+   * `packStatusMapping`): `absent`, `found`, `draft`, `in-review`, `kept`,
+   * `published`. This is
    * NOT the bare six-word `LifecycleState` list — pack items keep their
    * own specialized words, which `packStatusToLifecycle` resolves onto
    * the shared `absent`/`found`/`draft`/`approved`/`verified`/`retired`

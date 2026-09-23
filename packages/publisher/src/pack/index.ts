@@ -6,10 +6,11 @@
  *
  * Pack item statuses and the lifecycle they specialize (issue #1228) are
  * NOT declared here: this package imports them from `@clossys/controller`
- * (`docs/contracts/lifecycle.json`'s own governance rule — "No package
- * other than @clossys/controller declares its own copy of `states` or
- * `conditions`") and forwards them below for convenience, rather than
- * restating them.
+ * (this repository's own `docs/contracts/lifecycle.json` — not shipped in
+ * any published package, repository tooling only — states the governance
+ * rule: "No package other than @clossys/controller declares its own copy
+ * of `states` or `conditions`") and forwards them below for convenience,
+ * rather than restating them.
  */
 export { LIFECYCLE_CONDITIONS, LIFECYCLE_STATES, PACK_STATUSES, packStatusToLifecycle } from "@clossys/controller";
 export type { LifecycleCondition, LifecycleState, PackStatus, PackStatusLifecyclePosition } from "@clossys/controller";
