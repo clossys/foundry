@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "kind": "foundry-role-assessment",
+  "$comment": "The role assessment DOCUMENT shape, distinct from the check-output-envelope.json run envelope: this is `clossys/<role>/assessment.json` (docs/contracts/package-framework.json's `outputs`), the standing record of a role's own first-day assessment, using issue #533's required assessment output list verbatim. Contract only in this wave -- no package emits it yet.",
+  "path": "clossys/<role>/assessment.json, where <role> is the manifest's own package name with its scope removed",
+  "fields": ["schemaVersion", "package", "version", "role", "asOf", "baseline", "target", "gaps", "unknowns", "criticalPath", "authority", "proposedPositions"],
+  "requiredFrom533": {
+    "baseline": "current baseline and evidence quality -- { value, unit, evidenceSource, evidenceQuality: \"strong\" | \"weak\" | \"absent\", observedAt }",
+    "target": "target state and setpoint -- { setpoint, unit, direction: \"increase\" | \"decrease\" | \"maintain\" | \"target-range\", windowDays }",
+    "gaps": "material gaps and causal hypothesis -- array of { description, causalHypothesis }",
+    "unknowns": "unknowns and decision questions -- array of { question, decisionOwnerRef }",
+    "criticalPath": "critical path, dependencies, and optional refinements -- { steps: array of { description, dependsOn: string[] }, optionalRefinements: string[] }",
+    "authority": "authority, budget, guardrails, and escalation path -- { decisionOwnerRef, budget, guardrails: string[], escalationPath }",
+    "proposedPositions": "proposed installed positions and worker mix -- array of { positionId, roleRef, workerMix: string[] }"
+  },
+  "rule": "Every field in `requiredFrom533` is present; a role that has not yet formed an opinion on one records it as an explicit empty collection (`gaps: []`, `unknowns: []`) or an explicit `evidenceQuality: \"absent\"` baseline, never by omitting the field -- omission here means undeclared, not resolved, exactly as docs/contracts/check-output-envelope.json treats a missing `findings` array. `asOf` is a known-offset RFC3339 instant; a document whose `asOf` is not the most recent write is stale and must not be presented as current. This document is authored by the role itself -- @clossys/controller's onboarding orchestration never writes into it and carries it only by reference (see packages/controller/src/onboarding/types.ts, `RoleAssessmentRecord.assessment: unknown`)."
+}
