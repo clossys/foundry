@@ -154,12 +154,12 @@
       {
         "id": "components-and-blocks",
         "subQuestion": "Is every interface surface composed only from the shared, token-bound component and block library?",
-        "worldClass": "Every interface surface is composed from the shared component and block library — never a bespoke, ungoverned element built outside it. Today: the atoms, blocks, and shell libraries ship, but no bin checks that a consumer surface is composed only from them, so this capability is `partial` and cites the token-purity anchor case as a disclosed placeholder (#1272).",
+        "worldClass": "Every interface surface is composed from the shared component and block library — never a bespoke, ungoverned element built outside it. Today `designer-environment-check surface` proves one part of this: `surface-ladder-clean` passes a route composed only from Designer atoms and blocks, and `surface-ladder-violated` fails a route that mounts a second atom/token library beside Designer (`surface:dual-primitive-stack`). It does not prove the rest: a bespoke element hand-built from plain HTML with no second library import is not detected, and no bin checks that every surface uses the shared library. So this capability is `partial`. It shares the surface-ladder case group with `structure-and-fold-conformance`.",
         "inputs": [],
         "outputs": [
           "clossys/designer/.generated/component-conformance-report.json"
         ],
-        "proofCase": "token-purity-clean",
+        "proofCase": "surface-ladder-clean",
         "maturity": "partial",
         "v0": true,
         "businessLifecycleStage": "build"
@@ -237,7 +237,7 @@
       {
         "id": "logo-and-identity-files",
         "subQuestion": "Does every product get a usable, checked logo and mark variant set without waiting on a hired designer?",
-        "worldClass": "Every product ships a checked mark set (primary, mark, mono, light/dark, favicon, app icons) generated deterministically from its own tokens, or adopted from a supplied mark — contrast, minimum size, clear space, and single-colour legibility all checked, per #1210. Today: `identity-kit.ts`'s `generateIdentityDirections` builds the full seven-role variant set from a brand name and resolved tokens, and `adoptSuppliedMark` derives the same set structurally from a client-supplied SVG instead; `identity-checks.ts`'s `judgeIdentityKit` checks contrast, minimum size, clear space, and single-colour legibility against each (closes #1210). `master-mark.ts` still only validates a separately supplied mark's shape (three SVG documents). Neither generation path is yet wired into this package's checked CLI (no `designer-identity-check` bin) to produce `clossys/designer/assets/marks.json` for a real product.",
+        "worldClass": "Every product ships a checked mark set (primary, mark, mono, light/dark, favicon, app icons) generated deterministically from its own tokens, or adopted from a supplied mark — contrast, minimum size, clear space, and single-colour legibility all checked, per #1210. Today: `identity-kit.ts`'s `generateIdentityDirections` builds the full seven-role variant set from a brand name and resolved tokens, and `adoptSuppliedMark` derives the same set structurally from a client-supplied SVG instead; `identity-checks.ts`'s `judgeIdentityKit` checks contrast, minimum size, clear space, and single-colour legibility against each (closes #1210). `master-mark.ts` still only validates a separately supplied mark's shape (three SVG documents). Neither generation path is yet wired into this package's checked CLI (no `designer-identity-check` bin) to produce `clossys/designer/assets/marks.json` for a real product, so no qualification case can exercise this capability: it is `planned` with `proofCase: null` until that bin and its case exist (#1272).",
         "inputs": [
           {
             "producerRole": "@clossys/strategist",
@@ -251,8 +251,8 @@
         "outputs": [
           "clossys/designer/assets/marks.json"
         ],
-        "proofCase": "token-purity-clean",
-        "maturity": "partial",
+        "proofCase": null,
+        "maturity": "planned",
         "v0": true,
         "businessLifecycleStage": "launch"
       }

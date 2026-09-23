@@ -17,8 +17,12 @@ qualification case (`brand-binding-clean`, `contrast-clean`,
 `type-record-clean`, `fold-clean`), not the shared token-purity anchor.
 The structure capability is also backed by the `surface-ladder` and
 `hero-css` case groups. `components-and-blocks` moves from `built` to
-`partial`. The component libraries ship, but no bin checks yet that a
-consumer surface is composed only from them.
+`partial` and cites `surface-ladder-clean`: it proves a route composed
+only from Designer atoms and blocks passes and a route mounting a second
+component library fails, but no bin yet catches a bespoke element built
+without a second library. `logo-and-identity-files` moves from `partial`
+to `planned` with no proof case, because there is no identity-check
+command a qualification case could run yet.
 
 README: the API table now documents `SectionFrame`, `SectionFrameProps`,
 and `SectionMeasure`.
