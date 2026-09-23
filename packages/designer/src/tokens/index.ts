@@ -171,3 +171,42 @@ export {
   validateMasterMark,
 } from "./master-mark.js";
 export type { MasterMark } from "./master-mark.js";
+
+export {
+  adoptSuppliedMark,
+  deriveInitials,
+  generateIdentityDirections,
+  IDENTITY_VARIANT_ROLES,
+  IdentityKitValidationError,
+  recolorSvg,
+} from "./identity-kit.js";
+export type {
+  AdoptSuppliedMarkInput,
+  IdentityBrandInput,
+  IdentityDirection,
+  IdentityDirectionKind,
+  IdentityTokenInput,
+  IdentityVariantRole,
+  IdentityVariantSet,
+} from "./identity-kit.js";
+
+export {
+  checkClearSpace,
+  checkIdentityContrast,
+  checkMinimumSize,
+  checkSingleColourLegibility,
+  IDENTITY_MIN_CONTRAST,
+  judgeIdentityKit,
+} from "./identity-checks.js";
+export type {
+  ClearSpaceResult,
+  IdentityCheckId,
+  IdentityCheckJudgement,
+  IdentityContrastFinding,
+  IdentityContrastResult,
+  IdentityContrastVariant,
+  IdentityKitJudgement,
+  IdentityVerdict,
+  MinimumSizeResult,
+  SingleColourLegibilityResult,
+} from "./identity-checks.js";
