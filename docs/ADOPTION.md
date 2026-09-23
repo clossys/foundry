@@ -170,7 +170,7 @@ flow below.
    and prove the export or CLI it actually uses from a clean install. Registry
    credentials and configuration remain consumer-local.
 5. **Wire the loop.** Connect the position's evidence source to its role's
-   `sense → judge → act → verify → learnOrEscalate` loop. The consumer decides
+   `sense → judge → act → verify → learn` loop. The consumer decides
    blocking placement, approval boundaries, provider configuration, and every
    live mutation.
 6. **Measure independently.** Record host-owned outcomes and give `observer`
