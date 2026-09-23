@@ -4,7 +4,9 @@
   "archetype": "current-direct",
   "bins": {
     "launcher": 0,
-    "launcher-check": 0
+    "launcher-check": 0,
+    "launcher-doctor": 0,
+    "launcher-apply-plan": 0
   },
   "fixtures": [
     "observation-satisfied.json",
