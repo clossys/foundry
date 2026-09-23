@@ -50,7 +50,9 @@ Summarize gate results in human language; keep machine kinds for tooling, not as
 
 ## Strategy directory (this package only)
 
-Only `@clossys-strategist` edits the consumer's `strategy/` directory. Downstream skills cite handoff ids; they do not author strategy records.
+Only `@clossys-strategist` edits the consumer's `clossys/strategist/` directory. Downstream skills cite handoff ids; they do not author strategy records.
+
+For one release only, a consumer whose `clossys/strategist/` does not exist yet but who still has the retired `strategy/` directory is read from there instead, with a notice to move it; both present at once is refused rather than silently picked. See `strategist-check --help` and the package CHANGELOG.
 
 Author one directory. Bound fields must validate; room fields are prose storage only.
 

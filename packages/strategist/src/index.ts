@@ -151,6 +151,13 @@ export { scanStrategyDirectory } from "./scan.js";
 export type { ScanOptions } from "./scan.js";
 
 export {
+  CURRENT_STRATEGY_DIR_SEGMENTS,
+  LEGACY_STRATEGY_DIR_SEGMENTS,
+  resolveDefaultStrategyDirectory,
+} from "./strategy-dir-default.js";
+export type { StrategyDirectoryDefault } from "./strategy-dir-default.js";
+
+export {
   STRATEGY_RECORD_KINDS,
   createStrategyProvenance,
   getApprovedClaims,

@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 /**
- * Foundry's real strategist facts subject: strategy/facts.json checked against
- * docs/PUBLISHING.md only. Invokes the compiled strategist CLI by dist path so
- * package-evidence can count a packages/strategist/dist site.
+ * Foundry's real strategist facts subject: clossys/strategist/facts.json
+ * checked against docs/PUBLISHING.md only. Invokes the compiled strategist
+ * CLI by dist path so package-evidence can count a packages/strategist/dist
+ * site.
  */
 
 import { spawnSync } from "node:child_process";
@@ -30,7 +31,7 @@ const otherRootMarkdown = [
 
 const args = [
   strategistCli,
-  "strategy",
+  "clossys/strategist",
   scanRoot,
   "--extensions",
   ".md",
