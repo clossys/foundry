@@ -201,6 +201,21 @@ new state: a fixed choice becomes `known`, `"not sure yet"` stays
 `unknown`, and `"something else"` is captured separately as the founder's
 own freeform answer rather than inventing a stored value.
 
+The context record lives on the hub, but roles run in product
+repositories that have no hub checkout. So a role never reads
+`clossys/advisor/context.json` directly: `toEngagementBrief()` accepts an
+optional `context` and copies it verbatim into the brief, which is
+written to `clossys/brief.json` in every staffed repository.
+`contextFromBrief()` is how a role reads it back — a brief without a
+snapshot reads as every field `unknown`, never an invented answer. The
+snapshot is refreshed by re-applying the plan, not edited in place.
+
+The field ids double as reserved intake question ids: a role's own
+intake card may not reuse one, because that question belongs to the
+context card above. `scripts/check-package-framework.mjs` reports a
+reused id as `intake-card-duplicates-context-field` (report mode, a
+warning; `--enforce`, a finding).
+
 ## Client problem vocabulary and confirmation
 
 `CLIENT_PROBLEMS` is this package's own generated, build-time-frozen

@@ -36,6 +36,14 @@
 //     boundary decision, the #504/#505 class);
 //   - a `needs` entry matches some role's `feeds` entry, and the resulting
 //     needs/feeds handoff graph across every active role has no cycle.
+// Duplicate-question gate (issue #1173, docs/DECISIONS.md decision 28): an
+// intake card whose `id` is exactly one of the engagement-context field ids
+// (docs/contracts/engagement-context.json definitions.fieldId.enum) asks a
+// question the shared engagement context already answers. Report mode
+// prints it as a WARN line and never fails on it; --enforce makes it a
+// finding. Matching is on stable question ids only, never prompt wording
+// (docs/contracts/intake-question-cards.json `engagementContext`).
+//
 // A `solves.statement` is NOT lint-checked against @clossys/writer's own
 // voice checker here: `checkCopy()` needs a built `dist/` and a
 // consumer-owned `VoiceRecord`, neither available to this dependency-free,
@@ -106,6 +114,7 @@ export function evaluatePackageFramework(activeRoles, manifestsByName, options =
     roleMetricByRole = new Map(),
     readAdapterCases = () => null,
     clientProblemIds = null,
+    contextFieldIds = null,
   } = options;
   const required = new Set(requiredRoles);
   const findings = [];
@@ -141,6 +150,7 @@ export function evaluatePackageFramework(activeRoles, manifestsByName, options =
         const cardFindings = validateIntakeCardsShape(content.value, role);
         row.intake = cardFindings.length === 0 ? "declared" : "malformed";
         findings.push(...cardFindings);
+        (enforce ? findings : warnings).push(...findContextDuplicateCards(content.value, role, contextFieldIds));
       }
     }
 
@@ -364,6 +374,26 @@ export function validateIntakeCardsShape(document, role) {
   return findings;
 }
 
+/**
+ * The duplicate-question gate (issue #1173): every intake card whose `id` is
+ * exactly an engagement-context field id. Pure; returns one item per
+ * duplicating card. `contextFieldIds` null (contract unreadable) or a
+ * malformed document yields nothing -- shape problems are
+ * validateIntakeCardsShape's to report, not this check's.
+ */
+export function findContextDuplicateCards(document, role, contextFieldIds) {
+  if (!Array.isArray(contextFieldIds) || contextFieldIds.length === 0) return [];
+  if (!isRecord(document) || !Array.isArray(document.cards)) return [];
+  const reserved = new Set(contextFieldIds);
+  return document.cards
+    .filter((card) => isRecord(card) && isText(card.id) && reserved.has(card.id))
+    .map((card) => ({
+      rule: "intake-card-duplicates-context-field",
+      role,
+      message: `intake card "${card.id}" reuses an engagement-context field id: the founder already answers this through Advisor's context card, so this role reads it from clossys/brief.json's context instead of asking again (docs/contracts/intake-question-cards.json engagementContext)`,
+    }));
+}
+
 /** docs/contracts/fit-signal-declarations.json, as a shape check. */
 export function validateFitSignalsShape(document, role) {
   const findings = [];
@@ -431,6 +461,16 @@ function readClientProblemIds(root) {
   } catch { return null; }
 }
 
+/** docs/contracts/engagement-context.json's field-id enum -- the reserved intake question ids. Null (never a finding) when unreadable. */
+function readContextFieldIds(root) {
+  const path = join(root, "docs/contracts/engagement-context.json");
+  if (!existsSync(path)) return null;
+  try {
+    const ids = readJson(path)?.definitions?.fieldId?.enum;
+    return Array.isArray(ids) && ids.length > 0 && ids.every(isText) ? ids : null;
+  } catch { return null; }
+}
+
 function collect(root) {
   const contractPath = join(root, "packages/controller/contracts/role-loop-archetypes.json");
   if (!existsSync(contractPath)) throw new Error(`role contract not found at ${contractPath}`);
@@ -476,6 +516,7 @@ function collect(root) {
     roleMetricByRole,
     readAdapterCases,
     clientProblemIds: readClientProblemIds(root),
+    contextFieldIds: readContextFieldIds(root),
   };
 }
 
@@ -504,6 +545,7 @@ function main(argv) {
     roleMetricByRole: collected.roleMetricByRole,
     readAdapterCases: collected.readAdapterCases,
     clientProblemIds: collected.clientProblemIds,
+    contextFieldIds: collected.contextFieldIds,
   });
   if (json) { console.log(JSON.stringify(result, null, 2)); return result.findings.length === 0 ? 0 : 1; }
   printTable(result.table);
@@ -512,7 +554,8 @@ function main(argv) {
   const declaredCounts = ["intake", "outputs", "status", "fit", "solves", "needs", "feeds"].map((field) => `${field}: ${result.table.filter((row) => row[field] === "declared").length}/${result.table.length}`);
   console.log(`\n${declaredCounts.join(", ")} active role(s) declare each field.`);
   console.log(collected.clientProblemIds === null ? "docs/contracts/client-problems.json does not exist yet (#1176) — solves.problem is validated by id format only." : `docs/contracts/client-problems.json declares ${collected.clientProblemIds.length} problem id(s).`);
-  console.log(enforce ? "Running with --enforce: absence of a field, and the deeper solves/needs/feeds checks, are findings." : "Report mode: absence of a field is printed and counted, never a failure. Pass --enforce for the enforcing mode.");
+  console.log(collected.contextFieldIds === null ? "docs/contracts/engagement-context.json is unreadable — the duplicate-question check (#1173) did not run." : `Duplicate-question check (#1173): no intake card may reuse an engagement-context field id (${collected.contextFieldIds.join(", ")}).`);
+  console.log(enforce ? "Running with --enforce: absence of a field, the deeper solves/needs/feeds checks, and duplicate context questions are findings." : "Report mode: absence of a field is printed and counted, never a failure. Pass --enforce for the enforcing mode.");
   return result.findings.length === 0 ? 0 : 1;
 }
 

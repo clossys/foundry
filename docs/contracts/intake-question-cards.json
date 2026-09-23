@@ -15,5 +15,12 @@
     "id": "string -- stable, unique within the card",
     "label": "string -- the client-facing option text"
   },
+  "engagementContext": {
+    "contract": "docs/contracts/engagement-context.json",
+    "readFrom": "clossys/brief.json `context` (docs/contracts/engagement-brief.json) -- a snapshot of the hub's clossys/advisor/context.json, present in every staffed repository. A role reads it before presenting any intake card; an absent `context` means every field is unknown.",
+    "reservedIds": "docs/contracts/engagement-context.json definitions.fieldId.enum -- business, product, audience, stage, intent, constraints. These are Advisor's context questions, identified by field id.",
+    "duplicateRule": "A role's intake card may not ask a question the engagement context already answers. Matching is on stable question ids only: a card whose `id` is exactly one of the reserved ids duplicates that context field. A role that needs one of those answers reads it from the brief's `context`; when the field is unknown there, the founder is sent back to Advisor's own context card for it (packages/advisor/src/context-questions.ts), never re-asked under the role's own card. A card asking something narrower (for example which audience segment to address first) uses its own distinct id and is not a duplicate. Prompt wording is deliberately not compared: paraphrase is a review concern, not a gate one.",
+    "enforcement": "scripts/check-package-framework.mjs, rule `intake-card-duplicates-context-field`. Report mode (the default, and what CI runs today) prints it as a WARN line and never fails on it; --enforce promotes it to a finding, together with the rest of that gate's --enforce wave (issue #1172's sequencing)."
+  },
   "rule": "A card's `choices` array is never empty and never has fewer than two entries. `recommendedChoiceId` names an id present in `choices` and equal to `choices[0].id` -- the recommended option is always presented first, never merely flagged. Every `id` (card and choice) is stable multiple-choice vocabulary: once shipped, a role package does not repurpose an id for a different meaning, because a consumer's prior answer is stored against that id and must keep meaning what it meant when it was recorded."
 }

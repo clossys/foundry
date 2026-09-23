@@ -25,7 +25,7 @@ export { KIT_PRESETS } from "./kit-presets.js";
 export {
   composeKit, composeKitFromProblems, validateKitProposal, FIRST_ENGAGEMENT_ROLE_CAP, EVIDENCE_LEVELS, evidenceAtLeast, presetEvidenceFindings,
 } from "./composition.js";
-export { toEngagementBrief } from "./engagement-brief.js";
+export { contextFromBrief, toEngagementBrief } from "./engagement-brief.js";
 export { ENGAGEMENT_CONTEXT_FIELD_IDS, fieldById } from "./context.js";
 export { nextContextQuestion, applyContextChoice } from "./context-questions.js";
 export { CLIENT_PROBLEMS } from "./client-problems.js";

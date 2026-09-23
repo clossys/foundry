@@ -1,5 +1,7 @@
 import type { CapabilityCatalogue } from "./capability-catalogue.js";
 import type { ComposedRole, ComposeKitResult } from "./composition.js";
+import { ENGAGEMENT_CONTEXT_FIELD_IDS } from "./context.js";
+import type { EngagementContext } from "./context.js";
 
 /**
  * The kit output shape (issue #1176, owner redirect 2026-09-22): the
@@ -26,6 +28,14 @@ export interface EngagementBrief {
   sequence: readonly string[];
   /** What the client gets, one line per staffed role, grounded in that role's own boundary.owns. */
   deliverables: readonly string[];
+  /**
+   * A verbatim snapshot of the hub's `clossys/advisor/context.json` (issue
+   * #1173 follow-up): how a role running in a product repository, with no
+   * hub checkout, reads what the founder already answered. Refreshed by
+   * re-applying the plan; absent means every field is unknown — read it
+   * through {@link contextFromBrief}, never directly.
+   */
+  context?: EngagementContext;
 }
 
 function toBriefRole(role: ComposedRole): EngagementBriefRole {
@@ -43,10 +53,13 @@ export function toEngagementBrief({
   problem,
   composed,
   catalogue,
+  context,
 }: {
   problem: string;
   composed: Extract<ComposeKitResult, { state: "composed" }>;
   catalogue: CapabilityCatalogue;
+  /** The hub's engagement context, copied verbatim into the brief when supplied. */
+  context?: EngagementContext;
 }): EngagementBrief {
   const byRole = new Map(catalogue.roles.map((role) => [role.role, role]));
   const deliverables = composed.roles
@@ -59,5 +72,17 @@ export function toEngagementBrief({
     roles: composed.roles.map(toBriefRole),
     sequence: composed.sequence,
     deliverables,
+    ...(context === undefined ? {} : { context: { schemaVersion: 1, fields: context.fields.map((field) => ({ ...field })) } }),
   };
+}
+
+/**
+ * The engagement context a role reads before presenting any intake card
+ * (issue #1173). A brief written without a context snapshot yields every
+ * field unknown — never an invented answer — so the role sends the founder
+ * to Advisor's own context card rather than asking under its own.
+ */
+export function contextFromBrief(brief: Pick<EngagementBrief, "context">): EngagementContext {
+  if (brief.context !== undefined) return brief.context;
+  return { schemaVersion: 1, fields: ENGAGEMENT_CONTEXT_FIELD_IDS.map((id) => ({ id, state: "unknown" as const })) };
 }

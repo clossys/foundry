@@ -7,13 +7,16 @@ import {
   KIT_PRESETS,
   composeKit,
   composeKitFromProblems,
+  contextFromBrief,
   evidenceAtLeast,
   kitCatalogueDigest,
   presetEvidenceFindings,
   toEngagementBrief,
   validateKitProposal,
 } from "./index.js";
-import type { ComposeKitResult } from "./index.js";
+import { readFileSync } from "node:fs";
+import { ENGAGEMENT_CONTEXT_FIELD_IDS } from "./index.js";
+import type { ComposeKitResult, EngagementContext } from "./index.js";
 
 describe("CAPABILITY_CATALOGUE and kitCatalogueDigest", () => {
   it("has one entry per role, excluding executable tooling", () => {
@@ -183,5 +186,31 @@ describe("toEngagementBrief", () => {
     expect(brief.roles).toHaveLength(1);
     expect(brief.deliverables).toHaveLength(1);
     expect(brief.deliverables[0]).toBe(CAPABILITY_CATALOGUE.roles.find((role) => role.role === "writer")?.boundary.owns);
+  });
+
+  it("omits context when none is supplied, and contextFromBrief then reads every field as unknown (issue #1173)", () => {
+    const composed = composeKit({ selectedRoles: ["writer"], catalogue: CAPABILITY_CATALOGUE }) as Extract<ComposeKitResult, { state: "composed" }>;
+    const brief = toEngagementBrief({ problem: "Our words don't sound like us.", composed, catalogue: CAPABILITY_CATALOGUE });
+    expect("context" in brief).toBe(false);
+    const context = contextFromBrief(brief);
+    expect(context.fields.map((field) => field.id)).toEqual([...ENGAGEMENT_CONTEXT_FIELD_IDS]);
+    expect(context.fields.every((field) => field.state === "unknown")).toBe(true);
+  });
+
+  it("carries a verbatim, detached snapshot of the hub context when supplied", () => {
+    const composed = composeKit({ selectedRoles: ["writer"], catalogue: CAPABILITY_CATALOGUE }) as Extract<ComposeKitResult, { state: "composed" }>;
+    const hub: EngagementContext = {
+      schemaVersion: 1,
+      fields: ENGAGEMENT_CONTEXT_FIELD_IDS.map((id) => (id === "audience" ? { id, state: "known", value: "businesses" } : { id, state: "unknown" })),
+    };
+    const brief = toEngagementBrief({ problem: "Our words don't sound like us.", composed, catalogue: CAPABILITY_CATALOGUE, context: hub });
+    expect(brief.context).toEqual(hub);
+    expect(brief.context?.fields[0]).not.toBe(hub.fields[0]);
+    expect(contextFromBrief(brief)).toEqual(hub);
+  });
+
+  it("keeps ENGAGEMENT_CONTEXT_FIELD_IDS equal to the contract enum the duplicate-question gate reads", () => {
+    const contract = JSON.parse(readFileSync(new URL("../../../docs/contracts/engagement-context.json", import.meta.url), "utf8"));
+    expect(contract.definitions.fieldId.enum).toEqual([...ENGAGEMENT_CONTEXT_FIELD_IDS]);
   });
 });

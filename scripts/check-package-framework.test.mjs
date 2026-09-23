@@ -8,6 +8,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   evaluatePackageFramework,
+  findContextDuplicateCards,
   validateCheckOutputEnvelope,
   validateFitSignalsShape,
   validateIntakeCardsShape,
@@ -135,6 +136,43 @@ test("an empty signals array is well-formed — a role may be universally applic
   const emptySignals = { schemaVersion: 1, role: "@scope/alpha", signals: [] };
   const result = evaluatePackageFramework(["@scope/alpha"], manifests([{ name: "@scope/alpha", foundry: { fit: "signals.json" } }]), { readPackageFile: readerFor({ "@scope/alpha:signals.json": JSON.stringify(emptySignals) }) });
   assert.deepEqual(result.findings, []);
+});
+
+// --- duplicate-question gate (issue #1173, docs/DECISIONS.md decision 28) ---
+
+const CONTEXT_FIELD_IDS = ["business", "product", "audience", "stage", "intent", "constraints"];
+const DUPLICATING_CARDS = { schemaVersion: 1, role: "@scope/alpha", cards: [
+  VALID_CARDS.cards[0],
+  { id: "audience", prompt: "Who is it for?", choices: [{ id: "consumers", label: "Consumers." }, { id: "businesses", label: "Businesses." }], recommendedChoiceId: "consumers", somethingElseFollowUp: "Say it in one sentence." },
+  { id: "first-audience-segment", prompt: "Which segment do we address first?", choices: [{ id: "largest", label: "The largest." }, { id: "loudest", label: "The loudest." }], recommendedChoiceId: "largest", somethingElseFollowUp: "Say it in one sentence." },
+] };
+
+test("an intake card reusing an engagement-context field id is a WARN in report mode, never a failure", () => {
+  const reader = readerFor({ "@scope/alpha:cards.json": JSON.stringify(DUPLICATING_CARDS) });
+  const result = evaluatePackageFramework(["@scope/alpha"], manifests([{ name: "@scope/alpha", foundry: { intake: "cards.json" } }]), { readPackageFile: reader, contextFieldIds: CONTEXT_FIELD_IDS });
+  assert.deepEqual(result.findings, []);
+  assert.equal(result.table[0].intake, "declared");
+  assert.deepEqual(result.warnings.map((w) => [w.rule, w.role]), [["intake-card-duplicates-context-field", "@scope/alpha"]]);
+  assert.match(result.warnings[0].message, /"audience"/);
+});
+
+test("--enforce promotes a duplicated context question to a finding", () => {
+  const reader = readerFor({ "@scope/alpha:cards.json": JSON.stringify(DUPLICATING_CARDS) });
+  const result = evaluatePackageFramework(["@scope/alpha"], manifests([{ name: "@scope/alpha", foundry: { intake: "cards.json" } }]), { readPackageFile: reader, contextFieldIds: CONTEXT_FIELD_IDS, enforce: true });
+  assert.ok(result.findings.some((f) => f.rule === "intake-card-duplicates-context-field"));
+  assert.ok(!result.warnings.some((w) => w.rule === "intake-card-duplicates-context-field"));
+});
+
+test("matching is on exact stable ids only: a narrower card with its own id is not a duplicate", () => {
+  const narrower = { ...DUPLICATING_CARDS, cards: [DUPLICATING_CARDS.cards[2]] };
+  assert.deepEqual(findContextDuplicateCards(narrower, "@scope/alpha", CONTEXT_FIELD_IDS), []);
+  const caseVariant = { ...DUPLICATING_CARDS, cards: [{ ...DUPLICATING_CARDS.cards[1], id: "Audience" }] };
+  assert.deepEqual(findContextDuplicateCards(caseVariant, "@scope/alpha", CONTEXT_FIELD_IDS), []);
+});
+
+test("an unreadable engagement-context contract (contextFieldIds null) skips the check rather than guessing", () => {
+  assert.deepEqual(findContextDuplicateCards(DUPLICATING_CARDS, "@scope/alpha", null), []);
+  assert.deepEqual(findContextDuplicateCards({ cards: "not-an-array" }, "@scope/alpha", CONTEXT_FIELD_IDS), []);
 });
 
 test("report mode never fails on absence, but --enforce turns absence into a finding", () => {
