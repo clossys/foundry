@@ -1,18 +1,18 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import test from "node:test";
 
 import { isDuplicateMergeTree, reportDuplicate } from "./push-tree-identical.mjs";
+import { makeTmpDirSync } from "./lib/tmp-fixture.mjs";
 
 function git(args, cwd) {
   return execFileSync("git", args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
 }
 
-function makeRepo() {
-  const dir = mkdtempSync(join(tmpdir(), "push-tree-identical-"));
+function makeRepo(t) {
+  const dir = makeTmpDirSync(t, "push-tree-identical-");
   git(["init", "-q", "-b", "main"], dir);
   git(["config", "user.email", "test@example.invalid"], dir);
   git(["config", "user.name", "push-tree test"], dir);
@@ -28,13 +28,13 @@ test("pull_request and other events are never duplicates", () => {
   assert.equal(isDuplicateMergeTree({ eventName: "workflow_dispatch", ref: "refs/heads/main" }), false);
 });
 
-test("a single-parent push to main is not a duplicate", () => {
-  const dir = makeRepo();
+test("a single-parent push to main is not a duplicate", (t) => {
+  const dir = makeRepo(t);
   assert.equal(isDuplicateMergeTree({ eventName: "push", ref: "refs/heads/main", cwd: dir }), false);
 });
 
-test("a GitHub-shaped merge whose tree equals the second parent is a duplicate", () => {
-  const dir = makeRepo();
+test("a GitHub-shaped merge whose tree equals the second parent is a duplicate", (t) => {
+  const dir = makeRepo(t);
   git(["checkout", "-qb", "pr"], dir);
   writeFileSync(join(dir, "feature.md"), "pr\n");
   git(["add", "."], dir);
@@ -46,8 +46,8 @@ test("a GitHub-shaped merge whose tree equals the second parent is a duplicate",
   assert.equal(isDuplicateMergeTree({ eventName: "push", ref: "refs/heads/main", cwd: dir }), true);
 });
 
-test("a merge whose tree differs from the second parent is not a duplicate", () => {
-  const dir = makeRepo();
+test("a merge whose tree differs from the second parent is not a duplicate", (t) => {
+  const dir = makeRepo(t);
   git(["checkout", "-qb", "pr"], dir);
   writeFileSync(join(dir, "feature.md"), "pr\n");
   git(["add", "."], dir);

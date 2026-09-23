@@ -5,6 +5,17 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.4.2] - 2026-09-23
+
+### Notes
+
+- No packed content changed. This package's test suite changed as part of
+  fixing leaking temp fixture directories (issue #1250), and its 0.4.0
+  qualification record was already retained -- once a version's record is
+  retained, any further change to that package, packed or not, requires a
+  new version. 0.4.1 is claimed by open PR #1258 for real feature work
+  (version-collision rule, issue #1187).
+
 ## [0.4.0] - 2026-09-22
 
 ### Changed
