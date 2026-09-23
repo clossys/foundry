@@ -118,7 +118,11 @@ export function validateCapabilityShape(capability, role) {
     const outside = capability.outputs.filter((path) => !isSafeRelativePath(path) || !path.startsWith(expectedPrefix));
     if (outside.length > 0) fail("capability-output-outside-role-folder", `capability "${capability.id}" every output must start with "${expectedPrefix}" — found: ${outside.join(", ")}`);
   }
-  if (!isText(capability.proofCase)) fail("invalid-capability-proof-case", `capability "${capability.id}" proofCase must be a nonempty string`);
+  // `null` is accepted only for a `planned` capability: nothing proves a
+  // capability that does not exist yet (the pairing #1258 makes strict).
+  if (capability.proofCase === null ? capability.maturity !== "planned" : !isText(capability.proofCase)) {
+    fail("invalid-capability-proof-case", `capability "${capability.id}" proofCase must be a nonempty string, or null when maturity is "planned"`);
+  }
   if (typeof capability.maturity !== "string" || !CAPABILITY_MATURITIES.includes(capability.maturity)) {
     fail("invalid-capability-maturity", `capability "${capability.id}" maturity must be one of: ${CAPABILITY_MATURITIES.join(", ")}`);
   }

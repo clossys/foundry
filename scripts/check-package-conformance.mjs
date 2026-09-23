@@ -137,7 +137,10 @@ function frameworkAndCapabilityGaps(activeRoles, manifestsByName, extras, enforc
  * canonical constructor, `buildCheckOutputEnvelope`, imported from exactly
  * one of:
  *
- *   - `@clossys/controller` (a package that already depends on it);
+ *   - `@clossys/controller`, accepted ONLY when the package's own manifest
+ *     names it in `dependencies` or `peerDependencies` -- an undeclared
+ *     import still resolves here through workspace hoisting, but the packed
+ *     package would fail with ERR_MODULE_NOT_FOUND once installed;
  *   - packages/controller/src/envelope.ts itself (Controller's own code);
  *   - the package's own GENERATED copy at src/generated/check-output-envelope.ts
  *     (a zero-dependency package -- scripts/sync-envelope-copies.mjs), which
@@ -156,6 +159,13 @@ function frameworkAndCapabilityGaps(activeRoles, manifestsByName, extras, enforc
  * check-output-envelope.fixture.json, reports `sample-only`: counted as a
  * gap, never accepted as adoption. Absence is printed and counted, never a
  * report-mode failure.
+ *
+ * The call scan is static. Comments, string literals, and template-literal
+ * text are blanked before matching (a `${...}` interpolation is still
+ * scanned as code), so a literal "buildCheckOutputEnvelope(" never counts
+ * as a call. What it still cannot prove: that a matched call is reachable
+ * (a call in dead code such as `if (false) { ... }` counts), or that the
+ * constructed envelope is what the process actually prints.
  */
 const ENVELOPE_CONSTRUCTOR = "buildCheckOutputEnvelope";
 const CANONICAL_ENVELOPE_MODULE = "packages/controller/src/envelope.ts";
@@ -177,9 +187,84 @@ function resolveRelativeSource(fromFile, specifier) {
   return resolve(dirname(fromFile), specifier.replace(/\.js$/, ".ts"));
 }
 
+/** True when the package's own manifest declares a runtime dependency (or peer) on @clossys/controller -- the only way a bare import of it survives packing. */
+function dependsOnController(manifest) {
+  if (!isRecord(manifest)) return false;
+  return [manifest.dependencies, manifest.peerDependencies].some((block) => isRecord(block) && Object.hasOwn(block, "@clossys/controller"));
+}
+
+/**
+ * Blanks everything in TypeScript source that is not code -- line and block
+ * comments, string literals, template-literal text, and regular-expression
+ * literals -- replacing each with spaces (newlines kept), so a call pattern
+ * matched afterwards can only match real code. A template literal's `${...}`
+ * interpolations are kept as code. Pure; a heuristic tokenizer, not a parser:
+ * a `/` counts as a regex literal when the previous significant character
+ * cannot end an expression.
+ */
+export function stripNonCode(text) {
+  const out = [];
+  const blank = (chunk) => chunk.replace(/[^\n]/g, " ");
+  const braceStack = []; // for each open `{`: true when it opened a template interpolation
+  let i = 0;
+  let lastSignificant = "";
+  const readQuoted = (quote) => {
+    let j = i + 1;
+    while (j < text.length && text[j] !== quote && text[j] !== "\n") j += text[j] === "\\" ? 2 : 1;
+    return Math.min(j + 1, text.length);
+  };
+  // Reads template text from i (just after ` or }) to the next ${ or closing `; returns [end, opensInterpolation].
+  const readTemplate = (start) => {
+    let j = start;
+    while (j < text.length) {
+      if (text[j] === "\\") { j += 2; continue; }
+      if (text[j] === "`") return [j + 1, false];
+      if (text[j] === "$" && text[j + 1] === "{") return [j + 2, true];
+      j += 1;
+    }
+    return [text.length, false];
+  };
+  while (i < text.length) {
+    const c = text[i];
+    const next = text[i + 1];
+    if (c === "/" && next === "/") { const end = text.indexOf("\n", i); const stop = end === -1 ? text.length : end; out.push(blank(text.slice(i, stop))); i = stop; continue; }
+    if (c === "/" && next === "*") { const end = text.indexOf("*/", i + 2); const stop = end === -1 ? text.length : end + 2; out.push(blank(text.slice(i, stop))); i = stop; continue; }
+    if (c === "\"" || c === "'") { const stop = readQuoted(c); out.push(blank(text.slice(i, stop))); i = stop; lastSignificant = "a"; continue; }
+    if (c === "`" || (c === "}" && braceStack.at(-1) === true)) {
+      if (c === "}") braceStack.pop();
+      const [stop, opens] = readTemplate(i + 1);
+      out.push(blank(text.slice(i, stop)));
+      if (opens) braceStack.push(true);
+      i = stop; lastSignificant = opens ? "{" : "a"; continue;
+    }
+    if (c === "/" && (lastSignificant === "" || /[(,=:[!&|?{};+\-*%<>~^]/.test(lastSignificant))) {
+      let j = i + 1;
+      let inClass = false;
+      while (j < text.length && text[j] !== "\n") {
+        if (text[j] === "\\") { j += 2; continue; }
+        if (text[j] === "[") inClass = true;
+        else if (text[j] === "]") inClass = false;
+        else if (text[j] === "/" && !inClass) break;
+        j += 1;
+      }
+      if (j < text.length && text[j] === "/") {
+        const stop = j + 1;
+        out.push(blank(text.slice(i, stop)));
+        i = stop; lastSignificant = "a"; continue;
+      }
+    }
+    if (c === "{") braceStack.push(false);
+    else if (c === "}") braceStack.pop();
+    if (!/\s/.test(c)) lastSignificant = /[\w$]/.test(c) ? "a" : c;
+    out.push(c);
+    i += 1;
+  }
+  return out.join("");
+}
+
 /** Where a value import of the canonical constructor comes from, or null when the specifier is not one of the three accepted sources. */
-function envelopeImportSource(root, packageRoot, file, specifier) {
-  if (specifier === "@clossys/controller") return "@clossys/controller";
+function envelopeImportSource(root, packageRoot, file, specifier, manifest) {
+  if (specifier === "@clossys/controller") return dependsOnController(manifest) ? "@clossys/controller" : null;
   if (!specifier.startsWith(".")) return null;
   const target = resolveRelativeSource(file, specifier);
   // Only Controller's own code may import the canonical module by relative path; any other package reaching across packages/ would not survive packing.
@@ -225,10 +310,10 @@ export function envelopeGap(root, packageDir, role, manifest) {
     const text = readFileSync(file, "utf8");
     const { constructorImports, relativeSpecifiers } = scanImports(text);
     relativeImportsByFile.set(file, relativeSpecifiers.map((specifier) => resolveRelativeSource(file, specifier)));
-    // Imports and comments removed, so a mention of the constructor in a doc comment is never mistaken for a call.
-    const body = text.replace(VALUE_IMPORT, "").replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:"'`])\/\/.*$/gm, "$1");
+    // Imports removed, then comments and string/template/regex literal text blanked, so a mention of the constructor in a doc comment or a string is never mistaken for a call.
+    const body = stripNonCode(text.replace(VALUE_IMPORT, ""));
     for (const { local, specifier } of constructorImports) {
-      const source = envelopeImportSource(root, packageRoot, file, specifier);
+      const source = envelopeImportSource(root, packageRoot, file, specifier, manifest);
       if (source === null || (source === "generated-copy" && !copyCurrent)) continue;
       if (new RegExp(`(?<![\\w$])${local.replace(/\$/g, "\\$")}\\s*\\(`).test(body)) emitters.add(file);
     }

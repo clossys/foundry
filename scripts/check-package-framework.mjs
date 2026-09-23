@@ -317,9 +317,14 @@ export function evaluatePackageFramework(activeRoles, manifestsByName, options =
  * Nodes: `<role>#<capability id>` for every capability a role declares, and
  * the bare `<role>` for a role that declares no capability map (the
  * coarsest node its own manifest lets this gate see). Edges: a capability's
- * own `inputs`, and a bare role's top-level `needs` (a role that declares
- * capabilities is judged by their `inputs`; its top-level `needs` is the
- * role-level summary of them, not an extra edge). An input
+ * own `inputs`, and a bare role's top-level `needs`. A role that declares
+ * capabilities is judged by their `inputs`, and its top-level `needs` is the
+ * role-level summary of them -- but a summary entry that no capability's
+ * `inputs` covers (same producerRole and artifact, or resolving to the same
+ * node) is not dropped: it becomes an edge from EVERY capability of that
+ * role, since this gate cannot tell which one waits on it. Otherwise a map
+ * with empty `inputs` would hide a real deadlock from both the finding and
+ * the warning (review of PR #1387). An input
  * `{ producerRole, artifact }` resolves to the producer's capability whose
  * `id` is `artifact`, else to the capability whose `outputs` holds the path
  * of the producer's `feeds` entry for `artifact`, else -- when the producer
@@ -359,8 +364,17 @@ function detectNeedsCycles(activeRoles, manifestsByName, needsByRole, feedsByRol
       edges.set(role, (needsByRole.get(role) ?? []).map(resolve).filter((node) => node !== null));
       continue;
     }
+    const inputsOf = (capability) => (isInputList(capability.inputs) ? capability.inputs : []);
+    // A top-level `needs` entry that no capability's `inputs` covers is a
+    // dependency the capability map does not account for. It is never
+    // dropped: without knowing which capability waits on it, every one of
+    // the role's capabilities is conservatively treated as waiting on it.
+    const covered = (need) => capabilities.some((capability) => inputsOf(capability).some((input) =>
+      (input.producerRole === need.producerRole && input.artifact === need.artifact)
+      || (resolve(input) !== null && resolve(input) === resolve(need))));
+    const uncoveredTargets = (needsByRole.get(role) ?? []).filter((need) => !covered(need)).map(resolve).filter((node) => node !== null);
     for (const capability of capabilities) {
-      edges.set(`${role}#${capability.id}`, (isInputList(capability.inputs) ? capability.inputs : []).map(resolve).filter((node) => node !== null));
+      edges.set(`${role}#${capability.id}`, [...inputsOf(capability).map(resolve).filter((node) => node !== null), ...uncoveredTargets]);
     }
   }
   const capabilityOnly = new Map([...edges].filter(([node]) => node.includes("#")).map(([node, next]) => [node, next.filter((target) => target.includes("#"))]));

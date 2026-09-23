@@ -156,6 +156,11 @@ function writeSource(root, relativePath, text) {
   writeFileSync(target, text);
 }
 
+// A package that imports @clossys/controller must declare it: only a declared
+// dependency survives packing (review of PR #1387, B2).
+const DEPENDS_ON_CONTROLLER = { dependencies: { "@clossys/controller": "^0.1.0" } };
+const controllerDependent = () => descriptor({ manifest: manifest(DEPENDS_ON_CONTROLLER) });
+
 const EMITTER = (specifier) => `import { buildCheckOutputEnvelope } from "${specifier}";\nexport function report() { return buildCheckOutputEnvelope({ package: "a", version: "1", verdict: "satisfied", summary: "Fine.", findings: [] }); }\n`;
 
 test("a hand-written check-output-envelope.fixture.json is sample-only: a gap, never adoption, and a finding under --enforce", (t) => {
@@ -173,9 +178,46 @@ test("a hand-written check-output-envelope.fixture.json is sample-only: a gap, n
 test("source calling buildCheckOutputEnvelope imported from @clossys/controller is declared, with the emitting file as evidence", (t) => {
   const root = makeTempRoot(t);
   writeSource(root, "src/report.ts", EMITTER("@clossys/controller"));
-  const result = evaluateConformance(root, [descriptor()], { enforce: false });
+  const result = evaluateConformance(root, [controllerDependent()], { enforce: false });
   assert.equal(result.table[0].outputEnvelope, "declared");
   assert.deepEqual(result.table[0].envelopeEvidence, ["packages/alpha/src/report.ts"]);
+});
+
+test("#1387 review: an import from @clossys/controller is adoption only when the manifest declares it in dependencies or peerDependencies", (t) => {
+  const root = makeTempRoot(t);
+  writeSource(root, "src/report.ts", EMITTER("@clossys/controller"));
+  // Resolves here through workspace hoisting, but would fail with ERR_MODULE_NOT_FOUND once packed and installed.
+  for (const overrides of [{}, { devDependencies: { "@clossys/controller": "^0.1.0" } }, { dependencies: { "@clossys/other": "^0.1.0" } }]) {
+    const result = evaluateConformance(root, [descriptor({ manifest: manifest(overrides) })], { enforce: false });
+    assert.equal(result.table[0].outputEnvelope, "absent", JSON.stringify(overrides));
+    assert.deepEqual(result.table[0].envelopeEvidence, []);
+  }
+  for (const overrides of [DEPENDS_ON_CONTROLLER, { peerDependencies: { "@clossys/controller": "^0.1.0" } }]) {
+    const result = evaluateConformance(root, [descriptor({ manifest: manifest(overrides) })], { enforce: false });
+    assert.equal(result.table[0].outputEnvelope, "declared", JSON.stringify(overrides));
+  }
+});
+
+test("#1387 review: the constructor's name inside a string or template-literal text is not a call, but a call inside a template interpolation is", (t) => {
+  const root = makeTempRoot(t);
+  writeSource(root, "src/strings.ts", [
+    `import { buildCheckOutputEnvelope } from "@clossys/controller";`,
+    `export const a = "buildCheckOutputEnvelope(";`,
+    `export const b = 'it\\'s buildCheckOutputEnvelope(';`,
+    "export const c = `call buildCheckOutputEnvelope( later`;",
+    `export const d = /["']/g; export const e = "// buildCheckOutputEnvelope(";`,
+    "",
+  ].join("\n"));
+  const absent = evaluateConformance(root, [controllerDependent()], { enforce: false });
+  assert.equal(absent.table[0].outputEnvelope, "absent");
+  writeSource(root, "src/interpolated.ts", [
+    `import { buildCheckOutputEnvelope } from "@clossys/controller";`,
+    "export const f = `${JSON.stringify(buildCheckOutputEnvelope({ package: \"a\", version: \"1\", verdict: \"satisfied\", summary: \"Fine.\", findings: [] }))}`;",
+    "",
+  ].join("\n"));
+  const declared = evaluateConformance(root, [controllerDependent()], { enforce: false });
+  assert.equal(declared.table[0].outputEnvelope, "declared");
+  assert.deepEqual(declared.table[0].envelopeEvidence, ["packages/alpha/src/interpolated.ts"]);
 });
 
 test("an import that is never called or only mentioned in a comment, a type-only import, a test file, a hand-written local constructor, or a cross-package relative import is not emission evidence", (t) => {
@@ -188,7 +230,8 @@ test("an import that is never called or only mentioned in a comment, a type-only
   writeSource(root, "src/comment-only.ts", `import { buildCheckOutputEnvelope } from "@clossys/controller";\n// buildCheckOutputEnvelope({ ... }) is what we would call\n/* buildCheckOutputEnvelope( */\nexport const z = 3;\n`);
   withCanonicalEnvelope(root);
   writeSource(root, "src/reaches-across.ts", EMITTER("../../controller/src/envelope.js"));
-  const result = evaluateConformance(root, [descriptor()], { enforce: false });
+  // Declares the dependency, so each case above is judged on its own merits, not on the missing dependency.
+  const result = evaluateConformance(root, [controllerDependent()], { enforce: false });
   assert.equal(result.table[0].outputEnvelope, "absent");
   assert.deepEqual(result.table[0].envelopeEvidence, []);
 });
@@ -196,7 +239,7 @@ test("an import that is never called or only mentioned in a comment, a type-only
 test("an aliased import of the canonical constructor still counts when the alias is called", (t) => {
   const root = makeTempRoot(t);
   writeSource(root, "src/report.ts", `import { buildCheckOutputEnvelope as build } from "@clossys/controller";\nexport const r = build({ package: "a", version: "1", verdict: "satisfied", summary: "Fine.", findings: [] });\n`);
-  const result = evaluateConformance(root, [descriptor()], { enforce: false });
+  const result = evaluateConformance(root, [controllerDependent()], { enforce: false });
   assert.equal(result.table[0].outputEnvelope, "declared");
 });
 
@@ -232,6 +275,7 @@ test("a generated copy with no canonical source to verify against is a finding, 
 test("#1383: a declared status probe must itself emit the envelope (directly or through one relative import); otherwise partial", (t) => {
   const root = makeTempRoot(t);
   const probeManifest = manifest({
+    ...DEPENDS_ON_CONTROLLER,
     bin: { "alpha-check": "dist/cli.js", "alpha-status": "dist/status.js" },
     foundry: { assessment: { bin: "alpha-check", invocation: "single-json-input" }, status: { bin: "alpha-status", invocation: "single-json-input" } },
   });

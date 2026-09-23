@@ -312,6 +312,56 @@ test("#1382: a role-level cycle between roles with no capability maps cannot be 
   assert.match(warning.message, /#1382/);
 });
 
+// Review of PR #1387 (B1): a role's top-level `needs` entry that no capability's
+// `inputs` covers must not be dropped from the graph -- empty `inputs` would
+// otherwise hide a real deadlock from both the finding and the warning.
+function alphaBetaNeeds({ alphaMapped, betaMapped }) {
+  const alpha = { needs: [{ producerRole: "@scope/beta", artifact: "b" }], feeds: [{ artifact: "a", path: "clossys/alpha/a.json" }] };
+  const beta = { needs: [{ producerRole: "@scope/alpha", artifact: "a" }], feeds: [{ artifact: "b", path: "clossys/beta/b.json" }] };
+  if (alphaMapped) alpha.capabilities = [capability("make-a", [], ["clossys/alpha/a.json"])];
+  if (betaMapped) beta.capabilities = [capability("make-b", [], ["clossys/beta/b.json"])];
+  return manifests([{ name: "@scope/alpha", foundry: alpha }, { name: "@scope/beta", foundry: beta }]);
+}
+
+test("#1387 review: a top-level needs cycle behind two capability maps with empty inputs is still a needs-graph-cycle finding", () => {
+  const result = evaluatePackageFramework(ROLES, alphaBetaNeeds({ alphaMapped: true, betaMapped: true }), { enforce: true });
+  const cycle = result.findings.find((f) => f.rule === "needs-graph-cycle");
+  assert.ok(cycle, "expected a needs-graph-cycle finding");
+  assert.match(cycle.message, /@scope\/alpha#make-a/);
+  assert.match(cycle.message, /@scope\/beta#make-b/);
+});
+
+test("#1387 review: the same cycle with only one role mapped is never silent -- it is an unjudged-cycle warning", () => {
+  for (const [alphaMapped, betaMapped] of [[true, false], [false, true]]) {
+    const result = evaluatePackageFramework(ROLES, alphaBetaNeeds({ alphaMapped, betaMapped }), { enforce: true });
+    assert.equal(result.findings.some((f) => f.rule === "needs-graph-cycle"), false);
+    const warning = result.warnings.find((f) => f.rule === "needs-graph-cycle-unjudged");
+    assert.ok(warning, `expected an unjudged-cycle warning (alphaMapped=${alphaMapped}, betaMapped=${betaMapped})`);
+    assert.match(warning.message, /@scope\/alpha/);
+    assert.match(warning.message, /@scope\/beta/);
+  }
+});
+
+test("#1387 review: an uncovered top-level need becomes an edge from every capability of the role", () => {
+  const result = evaluatePackageFramework(ROLES, manifests([
+    { name: "@scope/alpha", foundry: {
+      needs: [{ producerRole: "@scope/beta", artifact: "b" }],
+      feeds: [{ artifact: "a", path: "clossys/alpha/a.json" }],
+      capabilities: [capability("first", [], ["clossys/alpha/first.json"]), capability("make-a", [], ["clossys/alpha/a.json"])],
+    } },
+    { name: "@scope/beta", foundry: {
+      needs: [],
+      feeds: [{ artifact: "b", path: "clossys/beta/b.json" }],
+      // Waits on alpha's `first`, which does not own the `a` feed -- so the
+      // cycle closes only if the uncovered need is an edge from `first` too.
+      capabilities: [capability("make-b", [{ producerRole: "@scope/alpha", artifact: "first" }], ["clossys/beta/b.json"])],
+    } },
+  ]), { enforce: true });
+  const cycle = result.findings.find((f) => f.rule === "needs-graph-cycle");
+  assert.ok(cycle, "expected a needs-graph-cycle finding");
+  assert.match(cycle.message, /@scope\/alpha#first -> @scope\/beta#make-b -> @scope\/alpha#first/);
+});
+
 test("#1382: report mode never evaluates cycles (the rule stays --enforce-only, as before)", () => {
   const result = evaluatePackageFramework(ROLES, manifests([
     { name: "@scope/alpha", foundry: { capabilities: [capability("draft", [{ producerRole: "@scope/beta", artifact: "review" }], ["clossys/alpha/draft.json"])] } },

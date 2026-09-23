@@ -67,7 +67,9 @@ export function buildScaffold({ role, shortName, roleDefinition, stageActivities
     worldClass: "A newly scaffolded package reports zero gaps against every Stage A framework definition on day one (issue #1203).",
     inputs: [],
     outputs: [`clossys/${shortName}/status.json`],
-    proofCase: "scaffold-conforms",
+    // `planned` pairs with `proofCase: null`: nothing proves a capability
+    // that does not exist yet (the joint maturity/proofCase rule, #1258).
+    proofCase: null,
     maturity: "planned",
     v0: false,
     businessLifecycleStage: "build",
@@ -81,6 +83,13 @@ export function buildScaffold({ role, shortName, roleDefinition, stageActivities
     license: "MIT",
     description: `${role}: scaffolded by scripts/scaffold-package.mjs (issue #1203). Conforming skeleton -- real capability content is added in Stage C.`,
     bin: { [`${shortName}-check`]: "dist/cli.js" },
+    // The declared bin is dist/cli.js, so the package must be able to build
+    // it: `npm run build --workspaces --if-present` compiles src/ to dist/
+    // through the tsconfig.json written beside this manifest.
+    scripts: {
+      build: "tsc -p tsconfig.json",
+      typecheck: "tsc -p tsconfig.json --noEmit",
+    },
     foundry: {
       assessment: { bin: `${shortName}-check`, invocation: "single-json-input" },
       intake: "intake-question-cards.json",
@@ -183,8 +192,37 @@ export function buildScaffold({ role, shortName, roleDefinition, stageActivities
     "",
   ].join("\n");
 
+  // Same compiler settings as the existing role packages (for example
+  // packages/writer/tsconfig.json): src/<x>.ts compiles to dist/<x>.js, the
+  // mapping the declared bin and the conformance gate's status-probe check
+  // both rely on.
+  const tsconfig = {
+    compilerOptions: {
+      target: "ES2022",
+      module: "ESNext",
+      moduleResolution: "Bundler",
+      lib: ["ES2022"],
+      declaration: true,
+      declarationMap: true,
+      sourceMap: true,
+      strict: true,
+      noUncheckedIndexedAccess: true,
+      noImplicitOverride: true,
+      esModuleInterop: true,
+      skipLibCheck: true,
+      types: ["node"],
+      isolatedModules: true,
+      verbatimModuleSyntax: false,
+      outDir: "./dist",
+      rootDir: "./src",
+    },
+    include: ["src/**/*"],
+    exclude: ["node_modules", "dist", "**/*.test.ts"],
+  };
+
   const packageFiles = new Map([
     ["package.json", `${JSON.stringify(manifest, null, 2)}\n`],
+    ["tsconfig.json", `${JSON.stringify(tsconfig, null, 2)}\n`],
     ["intake-question-cards.json", `${JSON.stringify(intakeCards, null, 2)}\n`],
     ["fit-signal-declarations.json", `${JSON.stringify(fitSignals, null, 2)}\n`],
     ["loop-matrix.json", `${JSON.stringify(loopMatrix, null, 2)}\n`],

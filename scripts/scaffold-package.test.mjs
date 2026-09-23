@@ -78,6 +78,26 @@ test("buildScaffold writes no fabricated consumer state and no hand-written enve
   assert.match(probe, /verdict: "indeterminate"/);
 });
 
+test("#1387 review: the scaffold can build its own declared status bin -- a build script and a tsconfig mapping src/cli.ts to dist/cli.js", () => {
+  const { packageFiles } = buildScaffold({ role: "@clossys/customer", shortName: "customer", roleDefinition: {}, stageActivities, envelopeCopy: renderEnvelopeCopyFromRoot(repoRoot) });
+  const manifest = JSON.parse(packageFiles.get("package.json"));
+  assert.equal(manifest.bin["customer-check"], "dist/cli.js");
+  assert.equal(manifest.foundry.status.bin, "customer-check");
+  assert.equal(manifest.scripts.build, "tsc -p tsconfig.json");
+  assert.ok(packageFiles.has("src/cli.ts"));
+  const tsconfig = JSON.parse(packageFiles.get("tsconfig.json"));
+  assert.equal(tsconfig.compilerOptions.rootDir, "./src");
+  assert.equal(tsconfig.compilerOptions.outDir, "./dist");
+  assert.deepEqual(tsconfig.include, ["src/**/*"]);
+});
+
+test("#1387 review: a planned scaffold capability carries proofCase: null (nothing proves a capability that does not exist yet)", () => {
+  const { packageFiles } = buildScaffold({ role: "@clossys/customer", shortName: "customer", roleDefinition: {}, stageActivities, envelopeCopy: renderEnvelopeCopyFromRoot(repoRoot) });
+  const [capability] = JSON.parse(packageFiles.get("package.json")).foundry.capabilities;
+  assert.equal(capability.maturity, "planned");
+  assert.equal(capability.proofCase, null);
+});
+
 test("buildScaffold refuses to run without the generated envelope copy", () => {
   assert.throws(() => buildScaffold({ role: "@clossys/customer", shortName: "customer", roleDefinition: {}, stageActivities }), /envelopeCopy/);
 });

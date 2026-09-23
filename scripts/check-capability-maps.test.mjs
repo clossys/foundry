@@ -68,6 +68,14 @@ test("validateCapabilityShape rejects an unknown maturity value", () => {
   assert.ok(findings.some((f) => f.rule === "invalid-capability-maturity"));
 });
 
+test("validateCapabilityShape accepts proofCase: null only for a planned capability (PR #1387 scaffold; #1258 makes the pairing strict)", () => {
+  assert.equal(validateCapabilityShape(capability({ proofCase: null, maturity: "planned" }), "@scope/alpha").some((f) => f.rule === "invalid-capability-proof-case"), false);
+  for (const maturity of ["built", "partial"]) {
+    assert.ok(validateCapabilityShape(capability({ proofCase: null, maturity }), "@scope/alpha").some((f) => f.rule === "invalid-capability-proof-case"), maturity);
+  }
+  assert.ok(validateCapabilityShape(capability({ proofCase: "", maturity: "planned" }), "@scope/alpha").some((f) => f.rule === "invalid-capability-proof-case"));
+});
+
 test("validateCapabilityShape rejects an output path outside the role's own folder", () => {
   const findings = validateCapabilityShape(capability({ outputs: ["clossys/beta/report.json"] }), "@scope/alpha");
   assert.ok(findings.some((f) => f.rule === "capability-output-outside-role-folder"));
