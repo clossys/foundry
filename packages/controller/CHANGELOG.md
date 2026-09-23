@@ -5,6 +5,19 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.19] - 2026-09-23
+
+### Changed
+
+- Widen the `@clossys/advisor` dependency range to `^0.4.0` to cover advisor's
+  wave-2 minor bump (plan record, kit verdicts, managed engagements,
+  next-step phrasing, budget preference). Renumbered from a colliding
+  local 0.9.14 on merge with `claude/advisor-kits-context` (issue #1187's
+  collision rule): 0.9.14 through 0.9.18 were already claimed by that
+  branch's own devDependency-widen entry (0.9.17), main's landed loop
+  engine (0.9.14), and two other open PRs (#1275 at 0.9.15, #1287 at
+  0.9.16, #1278 at 0.9.18).
+
 ## [0.9.17] - 2026-09-23
 
 ### Changed
