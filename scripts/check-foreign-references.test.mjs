@@ -190,6 +190,39 @@ test("a github.com owner/repo URL is still a foreign-reference finding (proves t
   }
 });
 
+test("a www.github.com owner/repo URL is still a foreign-reference finding (the docs.github.com guard is scoped to that one subdomain, not every subdomain)", () => {
+  const foreignSlug = ["widgetco", "private-tool"].join("/");
+  const root = fixture({
+    extraFiles: {
+      "docs/LEAK.md": `See https://www.github.com/${foreignSlug} for details.\n`,
+    },
+  });
+  try {
+    const result = run(root);
+    assert.equal(result.status, 1, result.stderr || result.stdout);
+    assert.match(result.stdout, new RegExp(`forge-slug ${foreignSlug.replace("/", "\\/")}`));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("a gist.github.com/<user>/<id> URL is still a foreign-reference finding (GitHub's own gist subdomain carries a real account handle, not documentation prose)", () => {
+  const foreignUser = "widgetco";
+  const gistId = "abc123def456";
+  const root = fixture({
+    extraFiles: {
+      "docs/LEAK.md": `See https://gist.github.com/${foreignUser}/${gistId} for details.\n`,
+    },
+  });
+  try {
+    const result = run(root);
+    assert.equal(result.status, 1, result.stderr || result.stdout);
+    assert.match(result.stdout, new RegExp(`forge-slug ${foreignUser}\\/${gistId}`));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("a future producer scope is admitted only in an exact release-contract documentation surface", () => {
   const root = fixture({ extraFiles: { "docs/PUBLISHING.md": `planned ${futureScope}/advisor target` } });
   try {

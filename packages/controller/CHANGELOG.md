@@ -32,11 +32,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `validateRunnerLabel`), `retention-days`, and a projected-monthly-minutes
   warning against the free allowances and a declared budget, when run
   history is supplied. Zero I/O -- parses workflow YAML itself via the new
-  `parseYamlLite`/`YamlLiteParseError` (`./yaml-lite.ts`; that source path
-  does not ship with this package -- only the compiled `dist/` does), a
+  `parseYamlLite`/`YamlLiteParseError` (`src/conventions/yaml-lite.ts`), a
   small, well-tested subset parser for exactly the GitHub-Actions-workflow
-  shape
-  this package needs (block/flow mappings and sequences, quoted and bare
+  shape this package needs (block/flow mappings and sequences, quoted and bare
   scalars, literal/folded block scalars for `run: |` bodies, comments) --
   this package ships zero runtime dependencies and this shape does not
   justify adding one.

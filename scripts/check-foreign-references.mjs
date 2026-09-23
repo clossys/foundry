@@ -597,16 +597,29 @@ const BARE_SCOPE_RE = /(?<![A-Za-z0-9._%+-])@([a-z0-9][a-z0-9._-]*)(?![A-Za-z0-9
 // API. A trailing `.git` is part of the clone URL, not part of the repository
 // name, and is stripped before comparison (see `normalizeRepo`).
 //
-// The `github\.com` alternative needs a left-hand guard: without one it also
-// matches as a SUBSTRING of a different host on the same apex domain, most
-// concretely `docs.github.com/en/billing/...` — GitHub's own documentation
-// site, not the repository host, with the URL's locale segment (`en`) and
-// product segment (`billing`) then misread as an owner/repo pair. The other
-// two alternatives (`raw.githubusercontent.com`, `api.github.com/repos/`)
-// don't need the same guard: each already names its own distinct host
-// in full, so neither one is a substring match of some other subdomain.
+// The `github\.com` alternative needs a left-hand guard for exactly ONE named
+// subdomain, `docs.github.com`: without a guard it also matches as a
+// SUBSTRING of that host, so `docs.github.com/en/billing/...` — GitHub's own
+// documentation site, not the repository host — has its URL's locale segment
+// (`en`) and product segment (`billing`) misread as an owner/repo pair.
+//
+// The guard is scoped to that one named label, NOT to "any subdomain" — an
+// earlier draft used a blanket `(?<![A-Za-z0-9.-])` guard, which also
+// silently stopped catching `www.github.com` (a real, valid way to reach a
+// repository) and, more seriously, `gist.github.com` (GitHub's own
+// gist-sharing subdomain, whose URLs carry a real account handle —
+// `gist.github.com/<user>/<id>` is exactly the shape of foreign-identity leak
+// this gate exists to catch, not documentation prose). Caught in review
+// (#1275) before merging. `\b` keeps the guard from also swallowing a host
+// that merely ENDS in "docs." mid-label (`xdocs.github.com`, unrealistic but
+// not what this guard is licensed to exclude either).
+//
+// The other two alternatives (`raw.githubusercontent.com`,
+// `api.github.com/repos/`) don't need a guard at all: each already names its
+// own distinct host in full, so neither is a substring match of some other
+// subdomain.
 const FORGE_URL_RE =
-  /(?:(?<![A-Za-z0-9.-])github\.com[/:]|raw\.githubusercontent\.com\/|api\.github\.com\/repos\/)([A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)\/([A-Za-z0-9][A-Za-z0-9._-]*)/g;
+  /(?:(?<!\bdocs\.)github\.com[/:]|raw\.githubusercontent\.com\/|api\.github\.com\/repos\/)([A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)\/([A-Za-z0-9][A-Za-z0-9._-]*)/g;
 
 // A workflow step's `uses:` value — `owner/repo`, `owner/repo/path`, either
 // with or without an `@<ref>` suffix.
