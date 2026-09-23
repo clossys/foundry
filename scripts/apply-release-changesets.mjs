@@ -50,27 +50,38 @@
 // deleting anything, and without invoking npm.
 //
 // --out-of-band RESTRICTS THIS RUN TO out-of-band CHANGESETS ONLY (second-
-// opinion fix, https://github.com/clossys/foundry/pull/1316#issuecomment-5800188207)
+// opinion fix, https://github.com/clossys/foundry/pull/1316#issuecomment-5800188207,
+// widened by owner decision 2026-09-23, #1187 comment 5800369031)
 // --------------------------------------------------------------------------
 // An out-of-band release (governance/release-calendar.json's
-// outOfBandPolicy -- a security fix, or a fix for a release that already
-// shipped broken, never ordinary content) must consume ONLY changesets
-// carrying `release: out-of-band` in their frontmatter. Without --out-of-band
-// this script is the ordinary Saturday release: it consumes every pending
-// changeset, out-of-band-flagged or not, same as always. WITH --out-of-band,
-// every changeset that does NOT carry the flag is filtered out entirely
-// BEFORE grouping by package -- an ordinary pending `minor` or `major`
-// changeset for the same package an out-of-band `patch` changeset also
-// names is left untouched in .changesets/, to be picked up by the next
-// regular Saturday release exactly as if this run had never happened. This
-// is also the second, defense-in-depth reason --out-of-band refuses (as a
-// finding, not a silent downgrade) if the highest level among the
-// out-of-band changesets it did consume for some package is not `patch` --
-// scripts/collect-changesets.mjs already refuses to let an out-of-band
-// changeset name anything above `patch` in the first place, so this should
-// be unreachable through this script's own public (file-based) surface;
-// it stays here anyway as the same "fail closed on a should-be-impossible
-// state" discipline this repository's other gates use throughout.
+// outOfBandPolicy -- a security fix, a fix for a release that already
+// shipped broken, or an owner-approved urgent update, never ordinary
+// content) must consume ONLY changesets carrying `release: out-of-band` in
+// their frontmatter. Without --out-of-band this script is the ordinary
+// Saturday release: it consumes every pending changeset, out-of-band-
+// flagged or not, same as always. WITH --out-of-band, every changeset that
+// does NOT carry the flag is filtered out entirely BEFORE grouping by
+// package -- an ordinary pending `minor` or `major` changeset for the same
+// package an out-of-band `patch` changeset also names is left untouched in
+// .changesets/, to be picked up by the next regular Saturday release
+// exactly as if this run had never happened.
+//
+// LEVEL: patch by default, minor only with explicit owner approval, major
+// never
+// -------------------------------------------------------------------------
+// An out-of-band changeset is patch-level by default. A `minor` bump is
+// allowed ONLY when the changeset also carries `owner-approved: minor` in
+// its frontmatter (scripts/collect-changesets.mjs enforces this per file,
+// at parse time). `major` is never allowed out of band, with or without
+// owner approval. This is also the second, defense-in-depth reason
+// --out-of-band refuses (as a finding, not a silent downgrade) if the
+// highest level among the out-of-band changesets it did consume for some
+// package is not `patch`, or is `minor` without a consumed changeset
+// carrying `owner-approved: minor` -- collect-changesets.mjs already makes
+// both cases unreachable through this script's own public (file-based)
+// surface; this check stays here anyway as the same "fail closed on a
+// should-be-impossible state" discipline this repository's other gates use
+// throughout.
 //
 // scripts/check-release-pr-shape.mjs is what proves, on the resulting pull
 // request, that this is the only way an ordinary content pull request's
@@ -195,17 +206,26 @@ export function applyReleaseChangesets({ root = process.cwd(), dryRun = false, r
     const matches = changesetsForPackage(entries, pkg);
     const bump = highestBumpLevel(matches.map((m) => m.bump));
     const outOfBand = matches.some((m) => m.outOfBand);
+    const ownerApprovedMinor = matches.some((m) => m.ownerApprovedLevel === "minor");
     const breakingBullets = matches.filter((m) => m.bump === "major").map((m) => m.summary);
 
-    if (outOfBandOnly && bump !== "patch") {
+    if (outOfBandOnly) {
       // Defense in depth -- see this file's header. Not covered by an
       // end-to-end test through the normal .changesets/ file surface
       // because scripts/collect-changesets.mjs already makes it
-      // unreachable that way; this refuses rather than silently ships a
-      // minor/major bump through the out-of-band path if that invariant
-      // is ever weakened.
-      findings.push(`packages/${pkg}: an out-of-band release must be patch-level only, but the consumed changeset(s) ${matches.map((m) => m.file).join(", ")} specify ${bump}`);
-      continue;
+      // unreachable that way (it enforces the identical patch/owner-
+      // approved-minor rule per file, before this script ever groups
+      // matches across files); this refuses rather than silently ships an
+      // unapproved bump through the out-of-band path if that invariant is
+      // ever weakened. `major` is never allowed, with or without owner
+      // approval -- there is no bump level this branch treats as escalating
+      // past `minor`.
+      const allowed = bump === "patch" || (bump === "minor" && ownerApprovedMinor);
+      if (!allowed) {
+        const reason = bump === "minor" ? 'a "minor" out-of-band bump needs a consumed changeset carrying "owner-approved: minor"' : `an out-of-band release must be "patch" (or owner-approved "minor"), not "${bump}"`;
+        findings.push(`packages/${pkg}: ${reason} -- consumed changeset(s) ${matches.map((m) => m.file).join(", ")}`);
+        continue;
+      }
     }
 
     const pkgDir = resolve(root, "packages", pkg);

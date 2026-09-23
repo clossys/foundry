@@ -217,6 +217,25 @@ test("applyReleaseChangesets: --out-of-band across two packages only touches the
   }
 });
 
+test("applyReleaseChangesets: --out-of-band applies a minor bump when the changeset carries owner-approved: minor", () => {
+  const root = makeRoot();
+  try {
+    makePackage(root, "alpha", "1.2.3");
+    writeChangeset(root, "alpha-urgent.md", "---\nalpha: minor\nrelease: out-of-band\nowner-approved: minor\n---\n\nClear an urgent update.\n");
+
+    const result = applyReleaseChangesets({ root, outOfBandOnly: true, runNpmInstall: () => {}, today: () => "2026-09-23" });
+    assert.equal(result.findings.length, 0);
+    assert.equal(result.applied.length, 1);
+    assert.equal(result.applied[0].toVersion, "1.3.0");
+    assert.equal(result.applied[0].bump, "minor");
+
+    const manifest = JSON.parse(readFileSync(join(root, "packages", "alpha", "package.json"), "utf8"));
+    assert.equal(manifest.version, "1.3.0");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("applyReleaseChangesets: --dry-run touches nothing and never calls npm", () => {
   const root = makeRoot();
   try {

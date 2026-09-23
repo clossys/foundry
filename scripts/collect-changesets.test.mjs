@@ -34,13 +34,13 @@ function run(args, cwd) {
 
 test("parseChangesetText: parses a single-package changeset", () => {
   const result = parseChangesetText("---\nalpha: minor\n---\n\nAdd a new export.\n", { knownPackageDirs: new Set(["alpha"]) });
-  assert.deepEqual(result, { packages: { alpha: "minor" }, summary: "Add a new export.", outOfBand: false });
+  assert.deepEqual(result, { packages: { alpha: "minor" }, summary: "Add a new export.", outOfBand: false, ownerApprovedLevel: null });
 });
 
 test("parseChangesetText: parses several packages in one file", () => {
   const text = "---\nalpha: patch\nbeta: major\n---\n\nBody.\n";
   const result = parseChangesetText(text, { knownPackageDirs: new Set(["alpha", "beta"]) });
-  assert.deepEqual(result, { packages: { alpha: "patch", beta: "major" }, summary: "Body.", outOfBand: false });
+  assert.deepEqual(result, { packages: { alpha: "patch", beta: "major" }, summary: "Body.", outOfBand: false, ownerApprovedLevel: null });
 });
 
 test("parseChangesetText: a `release: out-of-band` line flags the changeset without being treated as a package", () => {
@@ -48,7 +48,7 @@ test("parseChangesetText: a `release: out-of-band` line flags the changeset with
   assert.equal(OUT_OF_BAND_VALUE, "out-of-band");
   const text = "---\nalpha: patch\nrelease: out-of-band\n---\n\nFix the broken 26.39.0 release.\n";
   const result = parseChangesetText(text, { knownPackageDirs: new Set(["alpha"]) });
-  assert.deepEqual(result, { packages: { alpha: "patch" }, summary: "Fix the broken 26.39.0 release.", outOfBand: true });
+  assert.deepEqual(result, { packages: { alpha: "patch" }, summary: "Fix the broken 26.39.0 release.", outOfBand: true, ownerApprovedLevel: null });
 });
 
 test("parseChangesetText: rejects a `release` value other than out-of-band", () => {
@@ -74,12 +74,52 @@ test("parseChangesetText: an out-of-band changeset must bump every named package
 
 test("parseChangesetText: an out-of-band changeset with several packages, all patch, is fine", () => {
   const result = parseChangesetText("---\nalpha: patch\nbeta: patch\nrelease: out-of-band\n---\n\nFix a security issue.\n", { knownPackageDirs: new Set(["alpha", "beta"]) });
-  assert.deepEqual(result, { packages: { alpha: "patch", beta: "patch" }, summary: "Fix a security issue.", outOfBand: true });
+  assert.deepEqual(result, { packages: { alpha: "patch", beta: "patch" }, summary: "Fix a security issue.", outOfBand: true, ownerApprovedLevel: null });
 });
 
 test("parseChangesetText: an out-of-band changeset with one non-patch package among several is rejected", () => {
   const result = parseChangesetText("---\nalpha: patch\nbeta: major\nrelease: out-of-band\n---\n\nFix a security issue.\n", { knownPackageDirs: new Set(["alpha", "beta"]) });
   assert.match(result.error, /beta: major/);
+});
+
+// --- owner-approved: minor (owner decision 2026-09-23, #1187 comment 5800369031) ---
+
+test("parseChangesetText: a minor out-of-band bump is rejected without owner-approved: minor", () => {
+  const result = parseChangesetText("---\nalpha: minor\nrelease: out-of-band\n---\n\nClear an urgent update.\n", { knownPackageDirs: new Set(["alpha"]) });
+  assert.match(result.error, /must bump every package it names at "patch"/);
+  assert.match(result.error, /add "owner-approved: minor"/);
+});
+
+test("parseChangesetText: owner-approved: minor allows a minor out-of-band bump", () => {
+  const result = parseChangesetText("---\nalpha: minor\nrelease: out-of-band\nowner-approved: minor\n---\n\nClear an urgent update.\n", { knownPackageDirs: new Set(["alpha"]) });
+  assert.deepEqual(result, { packages: { alpha: "minor" }, summary: "Clear an urgent update.", outOfBand: true, ownerApprovedLevel: "minor" });
+});
+
+test("parseChangesetText: owner-approved: minor still allows an ordinary patch alongside a minor", () => {
+  const result = parseChangesetText("---\nalpha: patch\nbeta: minor\nrelease: out-of-band\nowner-approved: minor\n---\n\nClear an urgent update.\n", { knownPackageDirs: new Set(["alpha", "beta"]) });
+  assert.equal(result.error, undefined);
+  assert.deepEqual(result.packages, { alpha: "patch", beta: "minor" });
+});
+
+test("parseChangesetText: major is never allowed out of band, even with owner-approved: minor", () => {
+  const result = parseChangesetText("---\nalpha: major\nrelease: out-of-band\nowner-approved: minor\n---\n\nClear an urgent update.\n", { knownPackageDirs: new Set(["alpha"]) });
+  assert.match(result.error, /must bump every package it names at "patch" or "minor"/);
+  assert.match(result.error, /alpha: major/);
+});
+
+test("parseChangesetText: owner-approved only accepts the value minor", () => {
+  const result = parseChangesetText("---\nalpha: minor\nrelease: out-of-band\nowner-approved: major\n---\n\nBody.\n", { knownPackageDirs: new Set(["alpha"]) });
+  assert.match(result.error, /the only legal value is "minor"/);
+});
+
+test("parseChangesetText: owner-approved: minor without release: out-of-band is an error", () => {
+  const result = parseChangesetText("---\nalpha: minor\nowner-approved: minor\n---\n\nBody.\n", { knownPackageDirs: new Set(["alpha"]) });
+  assert.match(result.error, /without "release: out-of-band"/);
+});
+
+test("parseChangesetText: rejects a duplicate owner-approved flag", () => {
+  const result = parseChangesetText("---\nalpha: minor\nrelease: out-of-band\nowner-approved: minor\nowner-approved: minor\n---\n\nBody.\n", { knownPackageDirs: new Set(["alpha"]) });
+  assert.match(result.error, /"owner-approved" more than once/);
 });
 
 test("parseChangesetText: rejects missing frontmatter", () => {

@@ -18,10 +18,12 @@ below for the decision and why.
 
 This design also carries a documented second-opinion review
 ([#1316](https://github.com/clossys/foundry/pull/1316#issuecomment-5800188207))
-whose findings are folded into the sections below rather than kept
-separate — in particular the release-PR exemption
+and a follow-up owner decision widening the out-of-band policy
+([#1187 comment 5800369031](https://github.com/clossys/foundry/issues/1187)),
+both folded into the sections below rather than kept separate — in
+particular the release-PR exemption
 ([How the release PR is exempted](#how-the-release-pr-is-exempted-from-the-merge-window)),
-the out-of-band scope
+the out-of-band scope and level
 ([Out-of-band releases](#out-of-band-releases)), the idempotent Saturday
 guard ([How a release actually happens](#how-a-release-actually-happens)),
 and [Opening the release PR](#opening-the-release-pr), which documents a
@@ -142,12 +144,14 @@ release PR is allowed to open, never what version anything gets.
 
 ## Out-of-band releases
 
-Reserved for a **security fix**, or a fix for **a release that already
-shipped broken** — never for ordinary content that simply missed Friday's
-merge window (that just waits for next Saturday). An out-of-band release:
+Reserved for a **security fix**, a fix for **a release that already shipped
+broken**, or **an owner-approved urgent update** (owner decision,
+2026-09-23, [#1187 comment 5800369031](https://github.com/clossys/foundry/issues/1187))
+— never for ordinary content that simply missed Friday's merge window (that
+just waits for next Saturday). An out-of-band release:
 
 1. Needs a changeset carrying `release: out-of-band` in its frontmatter,
-   and must bump **every** package it names at `patch`
+   and must bump every package it names at `patch` **by default**
    (`scripts/collect-changesets.mjs` enforces this structurally — a
    security fix or a broken-release fix is, by definition, not the kind of
    change that also earns a minor or major bump), e.g.:
@@ -161,7 +165,31 @@ merge window (that just waits for next Saturday). An out-of-band release:
    Fix a crash introduced by controller's last release.
    ```
 
-2. **Consumes ONLY out-of-band-flagged changesets, never a mix.**
+2. **A `minor` bump needs explicit, per-changeset owner approval; `major`
+   is never allowed out of band, no matter what.** Add `owner-approved: minor`
+   alongside `release: out-of-band` in the same changeset to allow a
+   `minor` bump instead of `patch` — this is how the owner clears an
+   urgent update that is not a security fix or a broken-release fix, on any
+   day, without waiting for Saturday:
+
+   ```
+   ---
+   controller: minor
+   release: out-of-band
+   owner-approved: minor
+   ---
+
+   Ship the urgent config-loader change the owner approved out of band.
+   ```
+
+   There is no equivalent flag for `major` — `scripts/collect-changesets.mjs`
+   refuses a `major` bump in an out-of-band changeset unconditionally, and
+   `owner-approved` accepts no value other than `"minor"`. This widening
+   (owner decision 2026-09-23, same thread as above) sits on top of, and
+   does not relax, item 4 below: `owner-approved: minor` in a changeset's
+   frontmatter is not itself the owner's approval — the owner applying
+   `release:out-of-band` to the resulting pull request is.
+3. **Consumes ONLY out-of-band-flagged changesets, never a mix.**
    `.github/workflows/release-pr.yml`'s `workflow_dispatch` trigger has an
    `out_of_band` input that runs `scripts/apply-release-changesets.mjs --out-of-band`
    instead of the ordinary full-batch invocation: that mode filters
@@ -172,27 +200,34 @@ merge window (that just waits for next Saturday). An out-of-band release:
    never happened. `scripts/apply-release-changesets.test.mjs` covers this
    directly: one out-of-band `patch` changeset plus one ordinary pending
    `minor` changeset for the same package produces only the patch bump,
-   leaving the minor changeset in place.
-3. Needs **explicit owner approval** before the release PR consuming it
+   leaving the minor changeset in place; a separate test covers the
+   `owner-approved: minor` path producing the minor bump.
+4. Needs **explicit owner approval** before the release PR consuming it
    merges (`governance/release-calendar.json`'s `outOfBandPolicy`).
-4. **`release:out-of-band` is applied by the owner only — standing rule.**
-   Neither the `workflow_dispatch` `out_of_band` input nor the resulting
-   pull request's `release:out-of-band` label is ever triggered or applied
-   by an agent acting on its own initiative. An agent may be *asked* by the
-   owner to carry out an out-of-band release the owner has already decided
-   on and approved, but the decision to dispatch one, and the label that
-   admits its pull request past the weekend merge-window gate, are owner
-   actions. This mirrors `governance/release-calendar.json`'s own
+5. **`release:out-of-band` is applied by the owner only — standing rule.**
+   Neither the `workflow_dispatch` `out_of_band` input, nor
+   `owner-approved: minor` in a changeset, nor the resulting pull request's
+   `release:out-of-band` label, is ever triggered or applied by an agent
+   acting on its own initiative. An agent may be *asked* by the owner to
+   carry out an out-of-band release the owner has already decided on and
+   approved, but the decision to dispatch one, and the label that admits
+   its pull request past the merge-window gate, are owner actions. This
+   mirrors `governance/release-calendar.json`'s own
    `outOfBandPolicy.requiresOwnerApproval` and `ownerOnlyLabel` fields —
    the same gate stated once as workflow input and once as PR label.
-5. May be dispatched at any time, not only Saturday — `workflow_dispatch`
+6. May be dispatched at any time, not only Saturday — `workflow_dispatch`
    is explicitly exempt from the Saturday guard that gates the scheduled
    runs (see [How a release actually happens](#how-a-release-actually-happens)).
-6. Gets its resulting pull request labelled `release:out-of-band`
-   automatically by the workflow once dispatched, which is exactly what
-   `.github/workflows/release-calendar.yml`'s otherwise-closed Saturday/
-   Sunday gate admits past itself, should the PR need to land on a
-   merge-window-closed day.
+7. **Its resulting pull request is exempted from the merge-window gate on
+   ANY day, not only Saturday/Sunday** — `governance/release-calendar.json`'s
+   `outOfBandPolicy.exemptFromCalendarOnAnyDay`, mechanized by
+   `scripts/lib/release-calendar.mjs`'s `evaluateReleaseCalendarGate()`,
+   which checks the `release:out-of-band` label before it checks what day
+   it is at all. On an ordinary Monday–Friday this is moot (the merge
+   window is already open to everyone); the label's actual effect is
+   admitting the PR on Saturday or Sunday, when an ordinary pull request
+   cannot land. `.github/workflows/release-pr.yml` applies the label
+   automatically once such a run is dispatched.
 
 ## How a release actually happens
 

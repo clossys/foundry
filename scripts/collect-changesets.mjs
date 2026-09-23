@@ -46,17 +46,28 @@
 // release PR's own description (scripts/apply-release-changesets.mjs).
 //
 // A reserved frontmatter key, `release`, is not a package: its only legal
-// value is `out-of-band`, flagging that this changeset is a security fix or
-// a fix for a release that already shipped broken (governance/
-// release-calendar.json's outOfBandPolicy, docs/RELEASING.md's weekly
-// cadence -- Mon-Fri merge window, Saturday release, Sunday adoption). An
-// out-of-band changeset must bump every package it names at `patch` --
-// this parser enforces that structurally, since the policy restricts it to
-// exactly that. It needs explicit owner approval before the release PR
-// consuming it merges; this parser only records and validates the flag, it
-// does not itself gate a merge (scripts/check-release-calendar.mjs does,
-// via the `release:out-of-band` PR label .github/workflows/release-pr.yml
-// applies when it applies such a changeset).
+// value is `out-of-band`, flagging that this changeset is a security fix, a
+// fix for a release that already shipped broken, or an owner-approved
+// urgent update (governance/release-calendar.json's outOfBandPolicy,
+// docs/RELEASING.md's weekly cadence -- Mon-Fri merge window, Saturday
+// release, Sunday adoption). It needs explicit owner approval before the
+// release PR consuming it merges; this parser only records and validates
+// the flag, it does not itself gate a merge (scripts/check-release-
+// calendar.mjs does, via the `release:out-of-band` PR label
+// .github/workflows/release-pr.yml applies when it applies such a
+// changeset).
+//
+// An out-of-band changeset must bump every package it names at `patch` --
+// UNLESS it also carries a second reserved key, `owner-approved: minor`,
+// in which case `minor` is also allowed (owner decision, 2026-09-23,
+// #1187 comment 5800369031: the owner may clear an urgent update out of
+// band on any day, not only a security fix or a broken release, but that
+// widening is explicit and per-changeset, never a standing exemption from
+// the patch-only default). `major` is never allowed out of band, with or
+// without `owner-approved` -- there is no value that key accepts to permit
+// it. `owner-approved: minor` with no `release: out-of-band` in the same
+// file is itself an error: the key means nothing outside that context.
+// This parser enforces all of the above structurally.
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -65,6 +76,8 @@ export const CHANGESETS_DIR = ".changesets";
 export const BUMP_LEVELS = ["patch", "minor", "major"];
 export const RELEASE_FLAG_KEY = "release";
 export const OUT_OF_BAND_VALUE = "out-of-band";
+export const OWNER_APPROVED_KEY = "owner-approved";
+export const OWNER_APPROVED_MINOR_VALUE = "minor";
 const FILENAME_RE = /^[a-z0-9][a-z0-9-]*\.md$/;
 const FRONTMATTER_RE = /^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/;
 
@@ -81,9 +94,10 @@ function discoverPackageDirs(root) {
 }
 
 // Parses one changeset file's text. Returns
-// `{ packages: { [dir]: bumpLevel }, summary, outOfBand }` on success, or
-// `{ error }` naming exactly what is wrong -- never throws, so a caller can
-// attribute the error to the right file and keep validating the rest.
+// `{ packages: { [dir]: bumpLevel }, summary, outOfBand, ownerApprovedLevel }`
+// on success (`ownerApprovedLevel` is `"minor"` or `null`), or `{ error }`
+// naming exactly what is wrong -- never throws, so a caller can attribute
+// the error to the right file and keep validating the rest.
 export function parseChangesetText(text, { knownPackageDirs } = {}) {
   const match = FRONTMATTER_RE.exec(text);
   if (!match) return { error: "must open with a `---` frontmatter block naming at least one package, then `---`, then a summary" };
@@ -94,6 +108,8 @@ export function parseChangesetText(text, { knownPackageDirs } = {}) {
   const packages = {};
   let outOfBand = false;
   let sawReleaseFlag = false;
+  let ownerApprovedLevel = null;
+  let sawOwnerApprovedFlag = false;
   const lines = frontmatter.split(/\r?\n/).map((l) => l.trim()).filter((l) => l.length > 0);
   if (lines.length === 0) return { error: "frontmatter must name at least one package" };
   for (const line of lines) {
@@ -107,6 +123,13 @@ export function parseChangesetText(text, { knownPackageDirs } = {}) {
       outOfBand = true;
       continue;
     }
+    if (key === OWNER_APPROVED_KEY) {
+      if (sawOwnerApprovedFlag) return { error: `frontmatter names "${OWNER_APPROVED_KEY}" more than once` };
+      if (value !== OWNER_APPROVED_MINOR_VALUE) return { error: `frontmatter names "${OWNER_APPROVED_KEY}: ${value}" -- the only legal value is "${OWNER_APPROVED_MINOR_VALUE}" (a "major" out-of-band bump is never allowed, with or without owner approval)` };
+      sawOwnerApprovedFlag = true;
+      ownerApprovedLevel = value;
+      continue;
+    }
     const [pkg, bump] = [key, value];
     if (knownPackageDirs && !knownPackageDirs.has(pkg)) return { error: `frontmatter names "${pkg}", which is not a packages/ directory` };
     if (!BUMP_LEVELS.includes(bump)) return { error: `frontmatter names "${pkg}: ${bump}" -- bump must be one of ${BUMP_LEVELS.join(", ")}` };
@@ -114,23 +137,28 @@ export function parseChangesetText(text, { knownPackageDirs } = {}) {
     packages[pkg] = bump;
   }
   if (Object.keys(packages).length === 0) return { error: "frontmatter must name at least one package" };
+  if (sawOwnerApprovedFlag && !outOfBand) {
+    return { error: `frontmatter names "${OWNER_APPROVED_KEY}: ${OWNER_APPROVED_MINOR_VALUE}" without "${RELEASE_FLAG_KEY}: ${OUT_OF_BAND_VALUE}" -- that key means nothing outside an out-of-band changeset` };
+  }
   if (outOfBand) {
-    const notPatch = Object.entries(packages).filter(([, bump]) => bump !== "patch");
-    if (notPatch.length > 0) {
+    const allowedLevels = ownerApprovedLevel === OWNER_APPROVED_MINOR_VALUE ? ["patch", "minor"] : ["patch"];
+    const notAllowed = Object.entries(packages).filter(([, bump]) => !allowedLevels.includes(bump));
+    if (notAllowed.length > 0) {
+      const allowedDescription = ownerApprovedLevel === OWNER_APPROVED_MINOR_VALUE ? '"patch" or "minor" (this changeset also carries "owner-approved: minor")' : '"patch" (add "owner-approved: minor" to also allow a minor bump; "major" is never allowed out of band)';
       return {
-        error: `frontmatter is flagged "${RELEASE_FLAG_KEY}: ${OUT_OF_BAND_VALUE}", which must bump every package it names at "patch" -- ${notPatch.map(([pkg, bump]) => `${pkg}: ${bump}`).join(", ")}`,
+        error: `frontmatter is flagged "${RELEASE_FLAG_KEY}: ${OUT_OF_BAND_VALUE}", which must bump every package it names at ${allowedDescription} -- ${notAllowed.map(([pkg, bump]) => `${pkg}: ${bump}`).join(", ")}`,
       };
     }
   }
-  return { packages, summary, outOfBand };
+  return { packages, summary, outOfBand, ownerApprovedLevel };
 }
 
 // Reads every file under .changesets/ (README.md is documentation, not a
 // changeset, and is skipped) and validates each. Returns
 // `{ entries, findings }`: `entries` is every well-formed changeset
-// (`{ file, packages, summary, outOfBand }`, sorted by file name for
-// determinism); `findings` is one `{ severity: "error", file, message }`
-// per malformed file or bad filename.
+// (`{ file, packages, summary, outOfBand, ownerApprovedLevel }`, sorted by
+// file name for determinism); `findings` is one
+// `{ severity: "error", file, message }` per malformed file or bad filename.
 export function loadChangesets(root = process.cwd()) {
   const dir = resolve(root, CHANGESETS_DIR);
   if (!existsSync(dir)) return { entries: [], findings: [] };
@@ -152,14 +180,16 @@ export function loadChangesets(root = process.cwd()) {
       findings.push({ severity: "error", file, message: result.error });
       continue;
     }
-    entries.push({ file, packages: result.packages, summary: result.summary, outOfBand: result.outOfBand });
+    entries.push({ file, packages: result.packages, summary: result.summary, outOfBand: result.outOfBand, ownerApprovedLevel: result.ownerApprovedLevel ?? null });
   }
   return { entries, findings };
 }
 
-// Every changeset entry that names `packageDir`, each paired with just that package's bump level and its out-of-band flag.
+// Every changeset entry that names `packageDir`, each paired with just that package's bump level, its out-of-band flag, and its owner-approved level (if any).
 export function changesetsForPackage(entries, packageDir) {
-  return entries.filter((e) => Object.hasOwn(e.packages, packageDir)).map((e) => ({ file: e.file, bump: e.packages[packageDir], summary: e.summary, outOfBand: e.outOfBand === true }));
+  return entries
+    .filter((e) => Object.hasOwn(e.packages, packageDir))
+    .map((e) => ({ file: e.file, bump: e.packages[packageDir], summary: e.summary, outOfBand: e.outOfBand === true, ownerApprovedLevel: e.ownerApprovedLevel ?? null }));
 }
 
 // The highest of several bump levels (major > minor > patch). Throws on an

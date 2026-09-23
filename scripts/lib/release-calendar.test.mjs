@@ -150,11 +150,14 @@ test("evaluateReleaseCalendarGate: passes the release PR itself on release day -
   assert.equal(result.status, "pass");
 });
 
-test("evaluateReleaseCalendarGate: passes a release:out-of-band labelled PR on release or adoption day, independent of file shape", () => {
+test("evaluateReleaseCalendarGate: a release:out-of-band labelled PR is exempted on ANY day -- release, adoption, AND an ordinary merge-window weekday -- independent of file shape (owner decision, #1187 comment 5800369031)", () => {
   const releaseDayResult = evaluateReleaseCalendarGate({ calendar: CALENDAR, now: new Date(Date.UTC(2026, 0, 3, 20, 0, 0)), labels: ["release:out-of-band"], changedFiles: [{ path: "packages/controller/src/index.ts", status: "modified" }] });
   assert.equal(releaseDayResult.status, "pass");
   const adoptionDayResult = evaluateReleaseCalendarGate({ calendar: CALENDAR, now: new Date(Date.UTC(2026, 0, 4, 20, 0, 0)), labels: ["release:out-of-band"], changedFiles: [] });
   assert.equal(adoptionDayResult.status, "pass");
+  const wednesdayResult = evaluateReleaseCalendarGate({ calendar: CALENDAR, now: new Date(Date.UTC(2026, 0, 7, 20, 0, 0)), labels: ["release:out-of-band"], changedFiles: [{ path: "packages/controller/src/index.ts", status: "modified" }] });
+  assert.equal(wednesdayResult.status, "pass");
+  assert.equal(wednesdayResult.dayType, "merge-window"); // passes here regardless of the label -- the merge window is already open to everyone
 });
 
 test("evaluateReleaseCalendarGate: fails an ordinary PR on adoption day (Sunday) too", () => {

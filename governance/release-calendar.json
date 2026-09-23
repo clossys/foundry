@@ -9,11 +9,15 @@
   "adoptionDay": "Sunday",
   "outOfBandPolicy": {
     "changesetFlag": "release:out-of-band",
-    "allowedReasons": ["security-fix", "fix-for-a-broken-published-release"],
+    "allowedReasons": ["security-fix", "fix-for-a-broken-published-release", "owner-approved-urgent-update"],
     "requiredLevel": "patch",
+    "ownerApprovedFlag": "owner-approved",
+    "ownerApprovedFlagAllows": "minor",
+    "majorNeverAllowed": true,
     "requiresOwnerApproval": true,
     "ownerOnlyLabel": true,
-    "description": "Reserved for a security fix, or a fix for a release that already shipped broken -- never for ordinary content that simply missed Friday's merge window (that waits for next Saturday). A changeset carrying `release: out-of-band` in its frontmatter must be `patch` level for every package it names (scripts/collect-changesets.mjs enforces this). An out-of-band RELEASE (scripts/apply-release-changesets.mjs --out-of-band) consumes ONLY changesets carrying this flag -- an ordinary pending changeset stays pending for the next Saturday release, never gets swept in. The `release:out-of-band` PULL REQUEST LABEL is owner-applied only (standing rule, docs/RELEASING.md) -- an agent never applies it, the same way it never approves the release itself; this policy's `requiresOwnerApproval` and `ownerOnlyLabel` are the same gate stated twice, once for the changeset's content and once for the label that admits its PR past the weekend merge-window gate."
+    "exemptFromCalendarOnAnyDay": true,
+    "description": "Reserved for a security fix, a fix for a release that already shipped broken, or an owner-approved urgent update -- never for ordinary content that simply missed Friday's merge window (that waits for next Saturday). A changeset carrying `release: out-of-band` in its frontmatter must be `patch` level for every package it names, UNLESS it also carries `owner-approved: minor`, in which case `minor` is also allowed (owner decision 2026-09-23, #1187 comment 5800369031) -- `major` is never allowed out of band, with or without owner approval. scripts/collect-changesets.mjs enforces all of this. An out-of-band RELEASE (scripts/apply-release-changesets.mjs --out-of-band) consumes ONLY changesets carrying this flag -- an ordinary pending changeset stays pending for the next Saturday release, never gets swept in. The `release:out-of-band` PULL REQUEST LABEL is owner-applied only (standing rule, docs/RELEASING.md) -- an agent never applies it, the same way it never approves the release itself; this policy's `requiresOwnerApproval` and `ownerOnlyLabel` are the same gate stated twice, once for the changeset's content and once for the label that admits its PR past the merge-window gate on ANY day (`exemptFromCalendarOnAnyDay`) -- not only Saturday/Sunday -- scripts/lib/release-calendar.mjs's evaluateReleaseCalendarGate()."
   },
   "releasePrPolicy": {
     "label": "release:weekly",
