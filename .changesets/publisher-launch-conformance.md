@@ -14,13 +14,20 @@ the release must be proved afterwards. `needs`, `solves`, `intake`, and
 
 Per-capability proof cases (issue #1272): the qualification adapter gains
 record drift, record append-only, web route, preview, and verified
-publication rate cases. The capability map now cites them, so the anchor
-`media-satisfied` case no longer stands in for capabilities it does not
-exercise. Sealing and the publication record cites
-`record-append-only-clean`. Channel rendering and the materials site cite
-`preview-rendered`, and route and visibility governance cites
-`web-routes-clean`. Surface documents drops from `built` to `partial`,
-because no bin validates a consumer's own surface documents yet. Five
-capabilities still cite the anchor case, as a disclosed placeholder, with
-no command to exercise them yet: v0 Launch pack planning, templates and
-channel specs, channel kits, the site template, and live parity.
+publication rate cases. Every `built` or `partial` capability now cites a
+case that exercises it, and no capability cites a stand-in case.
+
+- Sealing and the publication record (`built`) cites
+  `record-append-only-clean`.
+- Channel rendering (`built`) and the materials site (`partial`) cite
+  `preview-rendered`.
+- Route and visibility governance (`partial`) cites `web-routes-clean`.
+- The asset roster and coverage (`built`) keeps `media-satisfied`.
+
+Six capabilities that no qualification case exercises yet move to
+`planned`, with no `proofCase`: surface documents (from `built`), v0 Launch
+pack planning and inventory, templates and channel specs, channel kits,
+the site template, and live parity (each from `partial`). Their code is
+unchanged; each description says what exists today. The map now counts 3
+`built`, 2 `partial`, and 6 `planned` capabilities, superseding the counts
+given when the capability map was first added.
