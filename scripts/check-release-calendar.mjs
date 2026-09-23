@@ -4,33 +4,49 @@
 // merge window, Saturday release, Sunday consumer adoption -- docs/
 // RELEASING.md, owner decision 2026-09-23)?
 //
-//   node scripts/check-release-calendar.mjs [--json] --head-ref <ref> [--labels <a,b,c>] [--now <ISO instant>]
+//   node scripts/check-release-calendar.mjs [--json] --changed-files <json> [--labels <a,b,c>] [--now <ISO instant>]
 //
 // Exit 0 = the merge window is open, OR it is release/adoption day but this
-// pull request is either the release PR itself (head ref matches
-// scripts/lib/release-calendar.mjs's RELEASE_PR_BRANCH_PATTERN, the branch
-// .github/workflows/release-pr.yml pushes) or carries the
-// "release:out-of-band" label. Exit 1 = release or adoption day, and
-// neither -- the next merge window is reported either way.
+// pull request is either the release PR itself -- proven by BOTH carrying
+// the "release:weekly" label (governance/release-calendar.json's
+// releasePrPolicy.label) AND having a release-PR-shaped diff
+// (scripts/lib/release-calendar.mjs's isReleasePrFootprint(): only version
+// bumps, CHANGELOG entries, the lockfile, and deleted changesets) -- or
+// carries the "release:out-of-band" label. Exit 1 = release or adoption
+// day, and neither -- the next merge window is reported either way.
 //
-// --head-ref and --labels are supplied by the calling workflow
-// (.github/workflows/release-calendar.yml), resolved differently per
-// trigger:
-//   - pull_request: github.event.pull_request.head.ref and
-//     github.event.pull_request.labels (both present directly on the
-//     payload).
+// A BRANCH NAME ALONE IS NOT, AND NEVER WAS SUFFICIENT ON ITS OWN
+// -------------------------------------------------------------------
+// An earlier version of this gate trusted the pull request's head branch
+// name matching a pattern. That is not a property an agent (or anyone
+// else who can open a pull request) is prevented from producing just by
+// naming their own branch, so it was replaced -- see scripts/lib/
+// release-calendar.mjs's own header for the full reasoning, what the
+// current two-part proof establishes, and the residual risk it does not
+// eliminate.
+//
+// --changed-files is a JSON array of `{ "path": string, "status": one of
+// "added"/"removed"/"modified"/"renamed"/"copied"/"changed"/"unchanged" }`
+// (the GitHub REST "list pull request files" shape) and --labels is
+// supplied by the calling workflow (.github/workflows/release-calendar.yml),
+// resolved differently per trigger:
+//   - pull_request: github.event.pull_request.labels is on the payload
+//     directly; changed files come from `gh pr view --json files` (or the
+//     files API), scoped to this exact pull request.
 //   - merge_group: there is no pull_request payload -- the workflow
 //     extracts the PR number from github.event.merge_group.head_ref
 //     (shaped like refs/heads/gh-readonly-queue/<base>/pr-<number>-<sha>)
-//     and resolves the real head ref and labels via `gh api`. See that
-//     workflow's own comments for exactly how.
+//     and resolves both labels and changed files via `gh pr view`/`gh api`
+//     against that PR number. See that workflow's own comments for exactly
+//     how.
 //
 // --now overrides "the current instant" for testing; defaults to real time.
 // This script is intentionally NOT wired into the required-checks ruleset
 // itself -- see governance policy in docs/RELEASING.md and this repository
 // AGENTS.md's autonomous-review rules: making a check required is an owner
 // action on the branch protection ruleset, not something a workflow file
-// can do on its own.
+// can do on its own. docs/RELEASING.md's rollout section also names the
+// EXACT check context string to select there once that day comes.
 //
 // Pure logic lives in scripts/lib/release-calendar.mjs's
 // evaluateReleaseCalendarGate() -- this file is only argv parsing and
@@ -45,7 +61,15 @@ function parseArgs(argv) {
     const i = argv.indexOf(flag);
     return i >= 0 ? argv[i + 1] : undefined;
   };
-  const headRef = get("--head-ref") ?? "";
+  const changedFilesRaw = get("--changed-files") ?? "[]";
+  let changedFiles;
+  try {
+    changedFiles = JSON.parse(changedFilesRaw);
+    if (!Array.isArray(changedFiles)) throw new Error("not an array");
+  } catch (error) {
+    console.error(`check-release-calendar: --changed-files is not a valid JSON array: ${error instanceof Error ? error.message : String(error)}`);
+    process.exit(2);
+  }
   const labelsRaw = get("--labels") ?? "";
   const labels = labelsRaw
     .split(",")
@@ -57,11 +81,11 @@ function parseArgs(argv) {
     console.error(`check-release-calendar: --now "${nowRaw}" is not a parseable date`);
     process.exit(2);
   }
-  return { json, headRef, labels, now };
+  return { json, changedFiles, labels, now };
 }
 
 function main() {
-  const { json, headRef, labels, now } = parseArgs(process.argv.slice(2));
+  const { json, changedFiles, labels, now } = parseArgs(process.argv.slice(2));
 
   let calendar;
   try {
@@ -74,10 +98,10 @@ function main() {
     return;
   }
 
-  const result = evaluateReleaseCalendarGate({ calendar, now, headRefName: headRef, labels });
+  const result = evaluateReleaseCalendarGate({ calendar, now, labels, changedFiles });
 
   if (json) {
-    console.log(JSON.stringify({ ...result, headRef, labels, now: now.toISOString(), timezone: calendar.timezone }, null, 2));
+    console.log(JSON.stringify({ ...result, labels, changedFileCount: changedFiles.length, now: now.toISOString(), timezone: calendar.timezone }, null, 2));
   } else if (result.status === "pass") {
     console.log(`check-release-calendar: OK -- ${result.reason}`);
   } else {

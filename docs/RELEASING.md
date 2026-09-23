@@ -16,6 +16,17 @@ proposed a week-numbered CalVer scheme; the owner rejected it and kept
 plain semver. See [Version numbers stay plain semver](#version-numbers-stay-plain-semver)
 below for the decision and why.
 
+This design also carries a documented second-opinion review
+([#1316](https://github.com/clossys/foundry/pull/1316#issuecomment-5800188207))
+whose findings are folded into the sections below rather than kept
+separate — in particular the release-PR exemption
+([How the release PR is exempted](#how-the-release-pr-is-exempted-from-the-merge-window)),
+the out-of-band scope
+([Out-of-band releases](#out-of-band-releases)), the idempotent Saturday
+guard ([How a release actually happens](#how-a-release-actually-happens)),
+and [Opening the release PR](#opening-the-release-pr), which documents a
+real defect in the original design and is not yet fully resolved.
+
 ## The cadence
 
 | Day(s)         | What it is                                                     |
@@ -31,10 +42,41 @@ whatever timezone a given CI runner happens to be in.
 `.github/workflows/release-calendar.yml` (`scripts/check-release-calendar.mjs`;
 `node --test scripts/lib/release-calendar.test.mjs` for its own coverage,
 including DST boundaries) fails any pull request that tries to merge on
-Saturday or Sunday unless it is either the release PR itself (by its head
-branch — see `.github/workflows/release-pr.yml`) or carries the
+Saturday or Sunday unless it is either the release PR itself or carries the
 `release:out-of-band` label. **This check is deliberately not a required
-status check yet** — see [Owner steps](#owner-steps) below.
+status check yet** — see [Rollout](#rollout) below.
+
+### How the release PR is exempted from the merge window
+
+The release PR's exemption is **not**, and was never meant to be, "a branch
+named the right way" — a branch name is just a string, and anyone who can
+open a pull request can name their branch anything. The exemption requires
+**both** of two things an ordinary contributor cannot produce merely by
+naming a branch:
+
+1. **The `release:weekly` label** (`governance/release-calendar.json`'s
+   `releasePrPolicy.label`), applied only by `.github/workflows/release-pr.yml`'s
+   own automation.
+2. **A release-PR-shaped diff** (`scripts/lib/release-calendar.mjs`'s
+   `isReleasePrFootprint()`): the pull request's changed files are
+   *exactly* `packages/<dir>/package.json` version bumps, matching
+   `CHANGELOG.md` entries, `package-lock.json`, and deleted
+   `.changesets/*.md` files — nothing else, not a workflow file, not a
+   source file. This is a structural check only; `scripts/check-release-pr-shape.mjs`
+   (a separate, pre-existing gate that runs on every pull request) is what
+   validates that the version bumps *inside* that shape are themselves
+   legitimate.
+
+**Residual risk, documented rather than solved:** both of the above are
+properties of this repository's *state* (files changed, labels applied),
+not of *who* can cause that state. Anyone acting through the workflow's own
+credential, or through an owner-authenticated session (see
+[Opening the release PR](#opening-the-release-pr) below), could in
+principle produce a pull request that passes both checks. That is a trust
+boundary around who holds the workflow's and the owner's credentials, not
+something a structural diff/label check can further narrow — the same
+boundary every other owner-gated step in this repository already rests on
+(docs/PUBLISHING.md's qualification and publication steps, for instance).
 
 ## A quiet week releases nothing
 
@@ -119,14 +161,35 @@ merge window (that just waits for next Saturday). An out-of-band release:
    Fix a crash introduced by controller's last release.
    ```
 
-2. Needs **explicit owner approval** before the release PR consuming it
+2. **Consumes ONLY out-of-band-flagged changesets, never a mix.**
+   `.github/workflows/release-pr.yml`'s `workflow_dispatch` trigger has an
+   `out_of_band` input that runs `scripts/apply-release-changesets.mjs --out-of-band`
+   instead of the ordinary full-batch invocation: that mode filters
+   `.changesets/` down to only `release: out-of-band` entries *before*
+   grouping by package, so an ordinary pending `minor` or `major`
+   changeset for the same package is left untouched — it stays pending for
+   the next regular Saturday release, exactly as if the out-of-band run had
+   never happened. `scripts/apply-release-changesets.test.mjs` covers this
+   directly: one out-of-band `patch` changeset plus one ordinary pending
+   `minor` changeset for the same package produces only the patch bump,
+   leaving the minor changeset in place.
+3. Needs **explicit owner approval** before the release PR consuming it
    merges (`governance/release-calendar.json`'s `outOfBandPolicy`).
-3. May be applied via `.github/workflows/release-pr.yml`'s
-   `workflow_dispatch` trigger at any time, not only Saturday — that
-   trigger is explicitly exempt from the Saturday DST guard that gates the
-   scheduled runs.
-4. Gets its resulting pull request labelled `release:out-of-band`
-   automatically (the same workflow), which is exactly what
+4. **`release:out-of-band` is applied by the owner only — standing rule.**
+   Neither the `workflow_dispatch` `out_of_band` input nor the resulting
+   pull request's `release:out-of-band` label is ever triggered or applied
+   by an agent acting on its own initiative. An agent may be *asked* by the
+   owner to carry out an out-of-band release the owner has already decided
+   on and approved, but the decision to dispatch one, and the label that
+   admits its pull request past the weekend merge-window gate, are owner
+   actions. This mirrors `governance/release-calendar.json`'s own
+   `outOfBandPolicy.requiresOwnerApproval` and `ownerOnlyLabel` fields —
+   the same gate stated once as workflow input and once as PR label.
+5. May be dispatched at any time, not only Saturday — `workflow_dispatch`
+   is explicitly exempt from the Saturday guard that gates the scheduled
+   runs (see [How a release actually happens](#how-a-release-actually-happens)).
+6. Gets its resulting pull request labelled `release:out-of-band`
+   automatically by the workflow once dispatched, which is exactly what
    `.github/workflows/release-calendar.yml`'s otherwise-closed Saturday/
    Sunday gate admits past itself, should the PR need to land on a
    merge-window-closed day.
@@ -141,17 +204,27 @@ merge window (that just waits for next Saturday). An out-of-band release:
 2. **Friday**: the merge window closes. Nothing new lands until the release
    PR merges and Monday reopens it — `release:out-of-band` is the only
    exception.
-3. **Saturday, the start of the day (`America/Los_Angeles`)**:
-   `.github/workflows/release-pr.yml`'s scheduled run applies every pending
+3. **Saturday (`America/Los_Angeles`)**: `.github/workflows/release-pr.yml`'s
+   daily scheduled run checks two things — is it release day, and is a
+   release PR (labelled `release:weekly`) already open? — via
+   `scripts/lib/release-calendar.mjs`'s `shouldOpenReleasePr()`. This is a
+   deliberately **idempotent** check, not an exact-hour window: a delayed
+   run (a busy runner queue, a temporary Actions outage) still opens that
+   week's release PR as long as it is still Saturday when it finally runs,
+   and a repeated or double-triggered run is a safe no-op once the first
+   run's PR is already open. When it proceeds, it applies every pending
    changeset (`scripts/apply-release-changesets.mjs`), bumping each named
    package by the highest level its changesets named, writing its
-   `CHANGELOG.md` entry, and opening a pull request — or opens nothing at
-   all if nothing was pending (see [above](#a-quiet-week-releases-nothing)).
+   `CHANGELOG.md` entry, and preparing a pull request — or nothing at all
+   if nothing was pending (see [above](#a-quiet-week-releases-nothing)).
    `scripts/check-release-pr-shape.mjs` verifies, on that very pull
-   request, that every version it touched is shaped exactly this way.
+   request, that every version it touched is shaped exactly this way. See
+   [Opening the release PR](#opening-the-release-pr) for who actually
+   creates the pull request and why that is not simply this same automated
+   step.
 4. **Owner step**: review and merge the release PR, on the weeks one
    opened. This is the *only* manually-gated step in the sequence above the
-   level of an ordinary code review — see [Owner steps](#owner-steps).
+   level of an ordinary code review — see [Rollout](#rollout) below.
 5. **Sunday**: downstream consumers adopt whatever shipped Saturday, on
    weeks something did.
 6. **Monday**: fresh merge window.
@@ -163,24 +236,84 @@ calendar — a release PR bumping several packages at once still needs one
 qualification per package version it produced, exactly as before
 (docs/PUBLISHING.md, section 4).
 
+## Opening the release PR
+
+**Known defect, not yet fully resolved (second-opinion review,
+[#1316](https://github.com/clossys/foundry/pull/1316#issuecomment-5800188207)):**
+`.github/workflows/release-pr.yml` authenticates as the ambient
+`GITHUB_TOKEN` to push the release branch and, in the design this section
+describes, was originally also going to use it to call `gh pr create`.
+GitHub's own loop-prevention rule means a pull request *opened* using
+`GITHUB_TOKEN` does not trigger `pull_request`-scoped workflow runs in this
+repository — including `release-pr-shape` and, once
+[required](#rollout), `release calendar (merge window)` itself. A release
+PR that never triggers its own required checks is a real defect: the
+push (branch creation) is unaffected by this rule and stays automated, but
+opening the pull request needs an **owner-authenticated actor** — in
+practice, the orchestrator's agent using the owner's own `gh` session, not
+this workflow's `GITHUB_TOKEN` — so the resulting `pull_request: opened`
+event is a normal one. The pull request's shape (title, body, base, head,
+labels) is unaffected by who calls `gh pr create` for it.
+
+Two automatable alternatives exist and are **deliberately not implemented
+here**, because both need owner setup this pull request cannot perform on
+its own:
+
+- **A GitHub App installation token.** The owner would register (or reuse)
+  a GitHub App with `pull_requests: write` on this repository, install it,
+  and wire its private key into a repository secret this workflow exchanges
+  for a short-lived token before calling `gh pr create`. App-authenticated
+  events are not subject to the same loop-prevention rule.
+- **A fine-grained personal access token, stored as a repository secret.**
+  Scoped narrowly to this repository and to pull-request creation, used in
+  place of `GITHUB_TOKEN` for the `gh pr create` call only. Simpler to set
+  up than a GitHub App, at the cost of being tied to whichever account's
+  token it is and needing manual rotation.
+
+Either would let this workflow open the PR itself again, with the checks
+firing normally. Until the owner sets one up, opening the release PR
+remains an owner-authenticated, agent-assisted step following the
+automated push.
+
+## Rollout
+
+`release calendar (merge window)` — that exact string is this check's job
+name, and the exact context a branch protection ruleset's required-checks
+list will show; the workflow's own name ("Release calendar") is not what
+appears there — is **not** a required status check today. The intended
+sequence:
+
+1. This design (#1316) merges into `claude/release-batching`, alongside
+   changesets (#1265) and auto-qualify (#1266).
+2. The merge queue (#1263) is in place, since `release calendar (merge
+   window)` runs on `merge_group` as well as `pull_request` and depends on
+   that queue existing to be exercised realistically.
+3. **One report-only week**: the check runs and reports on every pull
+   request, but is not required — an observation window to confirm it
+   behaves correctly (in particular, that the release PR itself passes
+   its own exemption) before anything can block a merge because of it.
+4. The owner makes `release calendar (merge window)` a required status
+   check on this repository's branch protection ruleset. This is an owner
+   action; see `.github/workflows/release-calendar.yml`'s own header for
+   why the workflow does not attempt it itself.
+
 ## Owner steps
 
-Two actions only the owner can take, neither of which this repository's
+Actions only the owner can take, neither of which this repository's
 automation grants itself (see `AGENTS.md`'s "Autonomous review and
 shipping" section):
 
 1. **Sign off on this design** (this pull request) before it merges into
    `claude/release-batching` and, from there, into the batch that includes
    changesets (#1265) and auto-qualify (#1266).
-2. **Make `release-calendar` a required status check**, once satisfied it
-   behaves correctly: this repository's branch protection ruleset, not a
-   workflow file, is what turns a reporting-only check into an enforced
-   one — see `.github/workflows/release-calendar.yml`'s own header for why
-   it does not attempt this itself.
-3. **Approve each out-of-band release** before its release PR merges
+2. **Carry out the rollout** in [Rollout](#rollout) above, in order.
+3. **Approve, and dispatch or ask for, each out-of-band release**
    (see [Out-of-band releases](#out-of-band-releases) above) — the
    `npm-publish` gate is where that approval is exercised in practice, at
    the same point every other qualified publish already requires an
    owner-present step (docs/PUBLISHING.md).
+4. **Open each release PR** (or delegate that single step to an
+   owner-authenticated agent session) until [Opening the release
+   PR](#opening-the-release-pr)'s automation gap is closed.
 
-Refs: #1187, #1265, #1266, #1255.
+Refs: #1187, #1265, #1266, #1255, #1263.

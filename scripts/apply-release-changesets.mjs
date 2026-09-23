@@ -7,7 +7,7 @@
 // version that moves on a date rather than on a change is not a useful
 // signal.
 //
-//   node scripts/apply-release-changesets.mjs [--json] [--dry-run]
+//   node scripts/apply-release-changesets.mjs [--json] [--dry-run] [--out-of-band]
 //
 // Reads every pending changeset under .changesets/ (scripts/collect-
 // changesets.mjs), groups them by named package, and for each named
@@ -48,6 +48,29 @@
 // --dry-run prints exactly what would change (every version bump, every
 // CHANGELOG entry, every deleted changeset file) without writing or
 // deleting anything, and without invoking npm.
+//
+// --out-of-band RESTRICTS THIS RUN TO out-of-band CHANGESETS ONLY (second-
+// opinion fix, https://github.com/clossys/foundry/pull/1316#issuecomment-5800188207)
+// --------------------------------------------------------------------------
+// An out-of-band release (governance/release-calendar.json's
+// outOfBandPolicy -- a security fix, or a fix for a release that already
+// shipped broken, never ordinary content) must consume ONLY changesets
+// carrying `release: out-of-band` in their frontmatter. Without --out-of-band
+// this script is the ordinary Saturday release: it consumes every pending
+// changeset, out-of-band-flagged or not, same as always. WITH --out-of-band,
+// every changeset that does NOT carry the flag is filtered out entirely
+// BEFORE grouping by package -- an ordinary pending `minor` or `major`
+// changeset for the same package an out-of-band `patch` changeset also
+// names is left untouched in .changesets/, to be picked up by the next
+// regular Saturday release exactly as if this run had never happened. This
+// is also the second, defense-in-depth reason --out-of-band refuses (as a
+// finding, not a silent downgrade) if the highest level among the
+// out-of-band changesets it did consume for some package is not `patch` --
+// scripts/collect-changesets.mjs already refuses to let an out-of-band
+// changeset name anything above `patch` in the first place, so this should
+// be unreachable through this script's own public (file-based) surface;
+// it stays here anyway as the same "fail closed on a should-be-impossible
+// state" discipline this repository's other gates use throughout.
 //
 // scripts/check-release-pr-shape.mjs is what proves, on the resulting pull
 // request, that this is the only way an ordinary content pull request's
@@ -145,17 +168,22 @@ const defaultRunNpmInstall = (root) => execFileSync("npm", ["install", "--packag
 // how the version is computed); .github/workflows/release-pr.yml reads it
 // to decide whether to label the resulting pull request
 // `release:out-of-band` so it can land outside the merge window.
-export function applyReleaseChangesets({ root = process.cwd(), dryRun = false, runNpmInstall = defaultRunNpmInstall, today = () => new Date().toISOString().slice(0, 10) } = {}) {
-  const { entries, findings: changesetFindings } = loadChangesets(root);
+export function applyReleaseChangesets({ root = process.cwd(), dryRun = false, runNpmInstall = defaultRunNpmInstall, today = () => new Date().toISOString().slice(0, 10), outOfBandOnly = false } = {}) {
+  const { entries: allEntries, findings: changesetFindings } = loadChangesets(root);
   if (changesetFindings.length > 0) {
     return { applied: [], findings: [], changesetFindings };
   }
+  // --out-of-band's whole enforcement is this one filter: an out-of-band
+  // run never even SEES an ordinary changeset, so it cannot accidentally
+  // group one into `namedPackages`/`changesetsForPackage` below -- see this
+  // file's header for the full reasoning.
+  const entries = outOfBandOnly ? allEntries.filter((e) => e.outOfBand === true) : allEntries;
   if (entries.length === 0) {
-    // No pending changesets anywhere -- nothing is bumped, and nothing
-    // downstream (governance/release-calendar.json included) is even
-    // read. See this file's own header for why this is load-bearing, not
-    // incidental: it is what keeps a quiet week from opening an empty
-    // release PR.
+    // No pending changesets anywhere (or, under --out-of-band, no pending
+    // out-of-band changesets) -- nothing is bumped, and nothing downstream
+    // (governance/release-calendar.json included) is even read. See this
+    // file's own header for why this is load-bearing, not incidental: it
+    // is what keeps a quiet week from opening an empty release PR.
     return { applied: [], findings: [], changesetFindings: [] };
   }
 
@@ -168,6 +196,17 @@ export function applyReleaseChangesets({ root = process.cwd(), dryRun = false, r
     const bump = highestBumpLevel(matches.map((m) => m.bump));
     const outOfBand = matches.some((m) => m.outOfBand);
     const breakingBullets = matches.filter((m) => m.bump === "major").map((m) => m.summary);
+
+    if (outOfBandOnly && bump !== "patch") {
+      // Defense in depth -- see this file's header. Not covered by an
+      // end-to-end test through the normal .changesets/ file surface
+      // because scripts/collect-changesets.mjs already makes it
+      // unreachable that way; this refuses rather than silently ships a
+      // minor/major bump through the out-of-band path if that invariant
+      // is ever weakened.
+      findings.push(`packages/${pkg}: an out-of-band release must be patch-level only, but the consumed changeset(s) ${matches.map((m) => m.file).join(", ")} specify ${bump}`);
+      continue;
+    }
 
     const pkgDir = resolve(root, "packages", pkg);
     const manifestPath = join(pkgDir, "package.json");
@@ -227,9 +266,10 @@ function main() {
   const argv = process.argv.slice(2);
   const json = argv.includes("--json");
   const dryRun = argv.includes("--dry-run");
+  const outOfBandOnly = argv.includes("--out-of-band");
   const root = process.cwd();
 
-  const { applied, findings, changesetFindings } = applyReleaseChangesets({ root, dryRun });
+  const { applied, findings, changesetFindings } = applyReleaseChangesets({ root, dryRun, outOfBandOnly });
 
   if (changesetFindings.length > 0) {
     if (json) console.log(JSON.stringify({ error: "malformed changesets", changesetFindings }, null, 2));

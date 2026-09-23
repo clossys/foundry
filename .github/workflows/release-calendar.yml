@@ -3,32 +3,41 @@ name: Release calendar
 # Is today a day an ordinary pull request may merge, per governance/
 # release-calendar.json's weekly cadence (docs/RELEASING.md, owner decision
 # 2026-09-23)? Monday-Friday is the merge window; Saturday is release day
-# (only .github/workflows/release-pr.yml's own release PR, by its head ref,
-# may land); Sunday is the consumer-adoption day. Either release or
-# adoption day also admits a pull request labelled "release:out-of-band"
+# (only .github/workflows/release-pr.yml's own release PR -- proven by
+# BOTH the "release:weekly" label it applies AND a release-PR-shaped diff,
+# never by branch name alone, see scripts/lib/release-calendar.mjs's own
+# header -- may land); Sunday is the consumer-adoption day. Either release
+# or adoption day also admits a pull request labelled "release:out-of-band"
 # (a security fix, or a fix for a release that already shipped broken --
-# governance/release-calendar.json's outOfBandPolicy).
+# governance/release-calendar.json's outOfBandPolicy; that label is
+# owner-applied only, by standing rule -- docs/RELEASING.md).
 #
-# DELIBERATELY NOT A REQUIRED STATUS CHECK
-# ------------------------------------------
+# DELIBERATELY NOT A REQUIRED STATUS CHECK (yet)
+# -------------------------------------------------
 # This workflow only reports; it does not gate anything on its own. Making
-# `release-calendar` required is an owner action on this repository's
-# branch protection ruleset (the same kind of action AGENTS.md's
-# "Autonomous review and shipping" section reserves to the owner) -- not
-# something a workflow file can grant itself. See docs/RELEASING.md for the
-# exact step.
+# `release calendar (merge window)` (this job's exact name -- that string,
+# not the workflow's own name above it, is what a branch protection
+# ruleset's required-checks list shows) required is an owner action on
+# this repository's branch protection ruleset (the same kind of action
+# AGENTS.md's "Autonomous review and shipping" section reserves to the
+# owner) -- not something a workflow file can grant itself. See
+# docs/RELEASING.md's rollout section for the exact step and its ordering.
 #
 # pull_request AND merge_group
 # ------------------------------
 # pull_request gives this job the real PR payload directly:
-# github.event.pull_request.head.ref and .labels. merge_group (this
+# github.event.pull_request.number and .labels. merge_group (this
 # repository's merge queue) does not -- its payload's own head_ref is a
 # synthetic ref shaped `refs/heads/gh-readonly-queue/<base>/pr-<number>-
-# <sha>`, not the PR's real branch name, and it carries no labels at all.
-# The "Resolve head ref and labels" step below extracts the PR number from
-# that synthetic ref and asks `gh pr view` for the real head ref and
-# labels, so both triggers ultimately call scripts/check-release-calendar.mjs
-# with the same two facts.
+# <sha>`, not the PR's real branch, and it carries no labels at all. The
+# "Resolve changed files and labels" step below extracts the PR number
+# from that synthetic ref (merge_group) or reads it directly (pull_request),
+# then asks the GitHub REST API for that PR's changed files (with each
+# file's status -- added/removed/modified/... -- which
+# scripts/lib/release-calendar.mjs's isReleasePrFootprint() needs and a
+# bare file list does not carry) and `gh pr view` for its labels, so both
+# triggers ultimately call scripts/check-release-calendar.mjs with the
+# same two facts.
 on:
   pull_request: {}
   merge_group: {}
@@ -51,18 +60,18 @@ jobs:
       - name: Install repository dependencies without lifecycle scripts
         run: npm ci --ignore-scripts
 
-      - name: Resolve head ref and labels
+      - name: Resolve changed files and labels
         id: resolve
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           EVENT_NAME: ${{ github.event_name }}
-          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_LABELS_JSON: ${{ toJSON(github.event.pull_request.labels) }}
           MERGE_GROUP_HEAD_REF: ${{ github.event.merge_group.head_ref }}
         run: |
           set -euo pipefail
           if [ "$EVENT_NAME" = "pull_request" ]; then
-            head_ref="$PR_HEAD_REF"
+            pr_number="$PR_NUMBER"
             labels="$(node -e 'console.log(JSON.parse(process.env.PR_LABELS_JSON).map((l) => l.name).join(","))')"
           else
             # MERGE_GROUP_HEAD_REF looks like refs/heads/gh-readonly-queue/main/pr-123-<sha>.
@@ -71,17 +80,31 @@ jobs:
               if (!m) { console.error("could not extract a PR number from merge_group head_ref: " + process.env.MERGE_GROUP_HEAD_REF); process.exit(1); }
               console.log(m[1]);
             ')"
-            pr_json="$(gh pr view "$pr_number" --repo "$GITHUB_REPOSITORY" --json headRefName,labels)"
-            head_ref="$(node -e 'console.log(JSON.parse(process.argv[1]).headRefName)' "$pr_json")"
-            labels="$(node -e 'console.log(JSON.parse(process.argv[1]).labels.map((l) => l.name).join(","))' "$pr_json")"
+            labels="$(gh pr view "$pr_number" --repo "$GITHUB_REPOSITORY" --json labels --jq '[.labels[].name] | join(",")')"
           fi
-          echo "head_ref=$head_ref" >> "$GITHUB_OUTPUT"
+
+          # per_page=100 is not pagination laziness: a genuine release PR's
+          # own shape (isReleasePrFootprint()) is narrow -- two files per
+          # bumped package plus the lockfile plus one deleted changeset per
+          # consumed file -- so a real release PR is never going to
+          # approach 100 changed files. A PR that somehow does is already
+          # failing the footprint check on its very first unexpected file;
+          # this cap just keeps this step itself cheap and bounded rather
+          # than chasing full pagination for a number that should stay small.
+          changed_files="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${pr_number}/files?per_page=100" --jq '[.[] | {path: .filename, status: .status}]')"
+
+          echo "pr_number=$pr_number" >> "$GITHUB_OUTPUT"
           echo "labels=$labels" >> "$GITHUB_OUTPUT"
+          {
+            echo "changed_files<<CHANGED_FILES_EOF"
+            echo "$changed_files"
+            echo "CHANGED_FILES_EOF"
+          } >> "$GITHUB_OUTPUT"
 
       - name: check-release-calendar
         env:
-          HEAD_REF: ${{ steps.resolve.outputs.head_ref }}
           LABELS: ${{ steps.resolve.outputs.labels }}
+          CHANGED_FILES: ${{ steps.resolve.outputs.changed_files }}
         run: |
           set -uo pipefail
           # Captured explicitly, not via `set -e` + a bare invocation, so a
@@ -89,7 +112,7 @@ jobs:
           # an ordinary PR) still reaches the job summary below instead of
           # aborting the step before it runs.
           set +e
-          node scripts/check-release-calendar.mjs --json --head-ref "$HEAD_REF" --labels "$LABELS" > "$RUNNER_TEMP/release-calendar.json"
+          node scripts/check-release-calendar.mjs --json --changed-files "$CHANGED_FILES" --labels "$LABELS" > "$RUNNER_TEMP/release-calendar.json"
           status=$?
           set -e
           cat "$RUNNER_TEMP/release-calendar.json"

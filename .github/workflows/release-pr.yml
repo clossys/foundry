@@ -18,41 +18,54 @@ name: Release PR
 # Monday-Friday is the merge window; it closes Friday. This workflow's
 # release PR is what Saturday -- release day -- is for: it is the ONLY
 # pull request .github/workflows/release-calendar.yml admits on a Saturday
-# (by this workflow's own branch naming, `claude/release-<date>-<run id>`),
-# and it is expected to merge same-day so Sunday's consumer adoption has
-# something to adopt. Monday starts the next merge window fresh. The owner
-# explicitly kept plain semver bump levels rather than a clock-driven
-# version scheme (see docs/RELEASING.md's "Options considered" section) --
-# this calendar only decides WHEN a release PR opens, never what version it
-# produces. A week with no pending changesets opens no release PR at all
-# (see "Nothing pending" below); a package with no pending changeset is not
-# touched even when a sibling package is.
+# -- proven by BOTH the "release:weekly" label this workflow applies AND a
+# release-PR-shaped diff (scripts/lib/release-calendar.mjs's
+# isReleasePrFootprint() -- see that module's own header for why a branch
+# name alone is deliberately not enough) -- and it is expected to merge
+# same-day so Sunday's consumer adoption has something to adopt. Monday
+# starts the next merge window fresh. The owner explicitly kept plain
+# semver bump levels rather than a clock-driven version scheme (see
+# docs/RELEASING.md's "Options considered" section) -- this calendar only
+# decides WHEN a release PR opens, never what version it produces. A week
+# with no pending changesets opens no release PR at all (see "Nothing
+# pending" below); a package with no pending changeset is not touched even
+# when a sibling package is.
 #
 # WHY BOTH schedule AND workflow_dispatch
 # -----------------------------------------
 # "Run periodically or on demand" (issue #1255's own words): the schedule
-# opens the release PR at the start of Saturday, batching whatever
-# changesets accumulated over the week so lanes stop colliding on the same
-# package's next version; workflow_dispatch exists for whenever a
-# maintainer wants one sooner (e.g. an out-of-band release --
-# governance/release-calendar.json's outOfBandPolicy, always a `patch`) and
-# is NOT subject to the DST guard below, which only applies to the
-# scheduled Saturday-opening runs.
+# opens the release PR on Saturday, batching whatever changesets
+# accumulated over the week so lanes stop colliding on the same package's
+# next version; workflow_dispatch exists for whenever a maintainer wants
+# one sooner, including an OUT-OF-BAND release (the `out_of_band` input
+# below -- governance/release-calendar.json's outOfBandPolicy: a security
+# fix, or a fix for a release that already shipped broken, always
+# `patch`-only, and consuming ONLY changesets flagged `release: out-of-band`
+# -- scripts/apply-release-changesets.mjs's own `--out-of-band` flag is
+# what enforces that an ordinary pending changeset is never swept in). Only
+# the OWNER triggers an out-of-band run (standing rule, docs/RELEASING.md)
+# -- this workflow does not itself verify who dispatched it; that trust
+# boundary is GitHub's own `workflow_dispatch` permission model
+# (`pull-requests: write`-level collaborators only), the same boundary
+# every manually-triggered workflow in this repository already rests on.
 #
-# TWO CRON ENTRIES, AND THE DST GUARD THAT PICKS ONE
-# -----------------------------------------------------
-# GitHub Actions cron has no timezone concept -- it is always UTC -- but
-# "the start of Saturday" is defined in governance/release-calendar.json's
-# timezone (America/Los_Angeles), which observes DST. Converted to UTC:
-# midnight PST (winter, UTC-8) is 08:00 UTC; midnight PDT (summer, UTC-7)
-# is 07:00 UTC. Both entries below fire every Saturday regardless of the
-# season, so exactly one of them lands within the tolerance window each
-# week and the other lands roughly an hour off. The "DST guard" step is
-# what tells them apart at runtime (scripts/lib/release-calendar.mjs's
-# shouldOpenReleasePr(), the same module scripts/check-release-calendar.mjs
-# and scripts/apply-release-changesets.mjs use for the calendar itself) --
-# without it, this workflow would open two release PRs for the same week,
-# one an hour after the other.
+# THE RELEASE-DAY GUARD IS IDEMPOTENT, NOT AN EXACT-HOUR WINDOW
+# -----------------------------------------------------------------
+# Only the scheduled runs need the "Only proceed..." guard step below --
+# workflow_dispatch is an explicit, deliberate "run one now" action and
+# always proceeds regardless of day. The guard asks two things, both
+# resolved fresh on every run: is it release day (Saturday) in the
+# calendar's timezone, and is a release PR (labelled "release:weekly")
+# already open? scripts/lib/release-calendar.mjs's shouldOpenReleasePr()
+# is the pure "yes/no" on top of both facts -- see that module's own header
+# for why this replaced an earlier exact-hour, DST-aware tolerance window:
+# a delayed run (a busy runner queue, a temporary Actions outage) now still
+# opens that week's release PR as long as it is still Saturday when it
+# finally runs, and a repeated or double-triggered run is a safe no-op
+# once the first run's PR is open, rather than either missing its window
+# or opening a duplicate. The cron below can therefore simply run daily; on
+# six of seven days the guard's own "not release day" answer makes the rest
+# of this job a cheap no-op.
 #
 # WHY THIS NEEDS NO CREDENTIAL-FREE CARE THE WAY qualify-candidate.yml DOES
 # -----------------------------------------------------------------------
@@ -64,19 +77,24 @@ name: Release PR
 # the same version-control-only credential qualify-candidate.yml's own
 # "Push branch and open pull request" step uses, for the identical reason.
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      out_of_band:
+        description: "OWNER-TRIGGERED ONLY (standing rule, docs/RELEASING.md): apply ONLY changesets flagged release: out-of-band (a security fix, or a fix for a release that already shipped broken -- always patch-only). Leave unchecked for an ordinary manual run of the full pending batch."
+        type: boolean
+        default: false
   schedule:
-    # Saturday, midnight America/Los_Angeles -- see the DST guard comment
-    # above for why there are two entries. A week with no pending
-    # changesets is a cheap no-op (see the "Apply pending changesets" step
-    # below) -- there is no cost to running this on a quiet week.
-    - cron: "0 8 * * 6" # midnight PST (winter)
-    - cron: "0 7 * * 6" # midnight PDT (summer)
+    # Daily -- see the "release-day guard is idempotent" comment above for
+    # why an exact instant no longer matters. A week with no pending
+    # changesets, or a day that is not release day, is a cheap no-op (see
+    # the guard step and "Nothing pending" step below) -- there is no cost
+    # to running this every day.
+    - cron: "0 16 * * *"
 
 permissions:
   contents: write
   pull-requests: write
-  issues: write # gh label create, for the release:out-of-band label an out-of-band changeset needs
+  issues: write # gh label create, for the release:weekly / release:out-of-band labels
 
 # Only one release PR in flight at a time: two concurrent runs applying the
 # same pending changesets would race on which one gets to delete them.
@@ -99,40 +117,49 @@ jobs:
       - name: Install repository dependencies without lifecycle scripts
         run: npm ci --ignore-scripts
 
-      # Only the scheduled runs need this -- workflow_dispatch is an
-      # explicit, deliberate "run one now" action (see the header comment)
-      # and always proceeds. Never fails the job either way: a "not yet"
-      # verdict is the expected outcome for whichever of the two cron
-      # entries above does not land at local midnight this week.
-      - name: Only proceed at the calendar's actual Saturday 00:00 (DST guard)
+      # Only the scheduled runs need this -- see the header comment for
+      # what it checks and why it replaced an exact-hour DST window. Never
+      # fails the job: "not proceeding today" is an entirely ordinary
+      # outcome on six of seven days.
+      - name: Only proceed on release day with no release PR already open
         id: gate
         if: github.event_name == 'schedule'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          node --input-type=module -e '
+          open_count="$(gh pr list --repo "$GITHUB_REPOSITORY" --label "release:weekly" --state open --json number --jq 'length')"
+          proceed="$(OPEN_COUNT="$open_count" node --input-type=module -e '
             import { loadReleaseCalendar, shouldOpenReleasePr } from "./scripts/lib/release-calendar.mjs";
-            const proceed = shouldOpenReleasePr(new Date(), loadReleaseCalendar(process.cwd()));
-            process.exit(proceed ? 0 : 1);
-          ' && echo "proceed=true" >> "$GITHUB_OUTPUT" || {
-            echo "proceed=false" >> "$GITHUB_OUTPUT"
-            echo "Not the calendar's actual Saturday 00:00 America/Los_Angeles for this DST state -- the other cron entry above is the one that fires this week."
-          }
+            const calendar = loadReleaseCalendar(process.cwd());
+            const hasOpenReleasePr = Number(process.env.OPEN_COUNT) > 0;
+            console.log(shouldOpenReleasePr({ now: new Date(), calendar, hasOpenReleasePr }));
+          ')"
+          echo "proceed=$proceed" >> "$GITHUB_OUTPUT"
+          if [ "$proceed" != "true" ]; then
+            echo "Not proceeding today: release day is Saturday, calendar timezone America/Los_Angeles (governance/release-calendar.json); currently open release:weekly PR(s): $open_count."
+          fi
 
       # Refuses (exit 2) rather than run against a malformed changeset, and
-      # (exit 1) if a changeset names a package this checkout does not have
-      # or whose current version is not a plain X.Y.Z -- both should fail
-      # this workflow loudly, not be silently skipped, so this step is NOT
-      # wrapped in `set +e`. A clean "nothing pending" run exits 0 with an
-      # empty `applied` array (see this repository's own apply-release-
-      # changesets.mjs header for why that is load-bearing, not
-      # incidental); the step after this one reads that array's length to
-      # decide whether there is anything left to commit.
+      # (exit 1) if a changeset names a package this checkout does not have,
+      # whose current version is not a plain X.Y.Z, or (under --out-of-band)
+      # would bump above patch -- all should fail this workflow loudly, not
+      # be silently skipped, so this step is NOT wrapped in `set +e`. A
+      # clean "nothing pending" run exits 0 with an empty `applied` array
+      # (see this repository's own apply-release-changesets.mjs header for
+      # why that is load-bearing, not incidental); the step after this one
+      # reads that array's length to decide whether there is anything left
+      # to commit.
       - name: Apply pending changesets
         id: apply
         if: github.event_name != 'schedule' || steps.gate.outputs.proceed == 'true'
         run: |
           set -euo pipefail
-          output="$(node scripts/apply-release-changesets.mjs --json)"
+          args=(--json)
+          if [ "$OUT_OF_BAND_INPUT" = "true" ]; then
+            args+=(--out-of-band)
+          fi
+          output="$(node scripts/apply-release-changesets.mjs "${args[@]}")"
           echo "$output"
           count="$(node -e 'console.log(JSON.parse(process.argv[1]).applied.length)' "$output")"
           echo "applied_count=$count" >> "$GITHUB_OUTPUT"
@@ -151,10 +178,11 @@ jobs:
         env:
           SUMMARY_PATH: ${{ runner.temp }}/release-summary.md
           BREAKING_PATH: ${{ runner.temp }}/release-breaking.md
+          OUT_OF_BAND_INPUT: ${{ github.event.inputs.out_of_band }}
 
-      - name: Nothing pending, or not yet this week's release instant
+      - name: Nothing pending, or not release day, or a release PR is already open
         if: github.event_name == 'schedule' && steps.gate.outputs.proceed != 'true'
-        run: echo "Skipped (see the DST guard step above)."
+        run: echo "Skipped (see the release-day/open-PR guard step above)."
 
       - name: Nothing pending
         if: (github.event_name != 'schedule' || steps.gate.outputs.proceed == 'true') && steps.apply.outputs.applied_count == '0'
@@ -204,20 +232,27 @@ jobs:
             printf '%s\n' "Ref: #1255, #1187"
           } > "$body_file"
 
-          # An out-of-band changeset (governance/release-calendar.json's
-          # outOfBandPolicy -- always `patch`) is the one case this PR may
-          # need to land outside the Mon-Fri merge window or off the usual
-          # Saturday; the `release:out-of-band` label is what
-          # .github/workflows/release-calendar.yml admits past its
-          # otherwise-closed weekend gate. `gh label create` is idempotent
-          # here (already-exists is swallowed) since this step cannot
-          # assume the label predates this run.
-          label_args=()
+          # release:weekly is applied to EVERY release PR this workflow
+          # prepares -- it is one half of the proof
+          # .github/workflows/release-calendar.yml's weekend gate requires
+          # (the other half is the diff shape itself, checked structurally,
+          # never by branch name -- scripts/lib/release-calendar.mjs's own
+          # header has the full reasoning and the residual risk it does not
+          # eliminate). release:out-of-band is added on top when this run
+          # consumed at least one out-of-band changeset, which is what lets
+          # THIS pull request land outside the Mon-Fri merge window or off
+          # the usual Saturday. `gh label create` is idempotent here
+          # (already-exists is swallowed) since this step cannot assume
+          # either label predates this run.
+          gh label create "release:weekly" --color "0e8a16" \
+            --description "The weekly release PR (docs/RELEASING.md). Combined with its file-change shape, proves it may land outside the Mon-Fri merge window on release day." \
+            >/dev/null 2>&1 || true
+          label_args=(--label "release:weekly")
           if [ "$OUT_OF_BAND" = "true" ]; then
             gh label create "release:out-of-band" --color "d73a4a" \
-              --description "Admitted outside the weekly merge window (docs/RELEASING.md) -- security fix or a fix for a broken published release only." \
+              --description "Admitted outside the weekly merge window (docs/RELEASING.md) -- security fix or a fix for a broken published release only. Owner-applied only, standing rule." \
               >/dev/null 2>&1 || true
-            label_args=(--label "release:out-of-band")
+            label_args+=(--label "release:out-of-band")
           fi
 
           # Same graceful-degradation shape as qualify-candidate.yml's
@@ -229,7 +264,7 @@ jobs:
             --base "$GITHUB_BASE_REF_OR_DEFAULT" \
             --head "$branch" \
             --body-file "$body_file" \
-            "${label_args[@]:-}" 2>&1)"
+            "${label_args[@]}" 2>&1)"
           pr_create_status=$?
           set -e
 

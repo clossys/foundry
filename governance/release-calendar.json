@@ -12,7 +12,12 @@
     "allowedReasons": ["security-fix", "fix-for-a-broken-published-release"],
     "requiredLevel": "patch",
     "requiresOwnerApproval": true,
-    "description": "Reserved for a security fix, or a fix for a release that already shipped broken -- never for ordinary content that simply missed Friday's merge window (that waits for next Saturday). A changeset carrying `release: out-of-band` in its frontmatter must be `patch` level for every package it names (scripts/collect-changesets.mjs enforces this), and needs explicit owner approval before the release PR that consumes it merges."
+    "ownerOnlyLabel": true,
+    "description": "Reserved for a security fix, or a fix for a release that already shipped broken -- never for ordinary content that simply missed Friday's merge window (that waits for next Saturday). A changeset carrying `release: out-of-band` in its frontmatter must be `patch` level for every package it names (scripts/collect-changesets.mjs enforces this). An out-of-band RELEASE (scripts/apply-release-changesets.mjs --out-of-band) consumes ONLY changesets carrying this flag -- an ordinary pending changeset stays pending for the next Saturday release, never gets swept in. The `release:out-of-band` PULL REQUEST LABEL is owner-applied only (standing rule, docs/RELEASING.md) -- an agent never applies it, the same way it never approves the release itself; this policy's `requiresOwnerApproval` and `ownerOnlyLabel` are the same gate stated twice, once for the changeset's content and once for the label that admits its PR past the weekend merge-window gate."
+  },
+  "releasePrPolicy": {
+    "label": "release:weekly",
+    "description": "Applied by .github/workflows/release-pr.yml to every release PR it prepares, regardless of whether it also carries release:out-of-band. scripts/lib/release-calendar.mjs's evaluateReleaseCalendarGate() requires BOTH this label AND a release-PR-shaped diff (isReleasePrFootprint) before exempting a pull request from the Saturday/Sunday merge-window gate -- a branch name alone is not sufficient (see that module's own header for the full reasoning and the residual risk this does not eliminate)."
   },
   "decision": "https://github.com/clossys/foundry/issues/1187#issuecomment-5799002037",
   "refs": ["#1187", "#1265", "#1266"]

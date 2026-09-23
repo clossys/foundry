@@ -156,6 +156,67 @@ test("applyReleaseChangesets: an out-of-band changeset is flagged on the applied
   }
 });
 
+test("applyReleaseChangesets: --out-of-band consumes only the out-of-band patch, leaving an ordinary pending minor changeset for the same package untouched", () => {
+  const root = makeRoot();
+  try {
+    makePackage(root, "alpha", "1.2.3");
+    writeChangeset(root, "alpha-hotfix.md", "---\nalpha: patch\nrelease: out-of-band\n---\n\nFix a security issue.\n");
+    writeChangeset(root, "alpha-feature.md", "---\nalpha: minor\n---\n\nAdd a feature (ordinary, not out-of-band).\n");
+
+    const result = applyReleaseChangesets({ root, outOfBandOnly: true, runNpmInstall: () => {}, today: () => "2026-09-23" });
+
+    assert.equal(result.findings.length, 0);
+    assert.equal(result.applied.length, 1);
+    assert.equal(result.applied[0].package, "alpha");
+    assert.equal(result.applied[0].toVersion, "1.2.4"); // patch only -- the pending minor was never consulted
+    assert.equal(result.applied[0].bump, "patch");
+    assert.deepEqual(result.applied[0].changesetFiles, ["alpha-hotfix.md"]);
+
+    const manifest = JSON.parse(readFileSync(join(root, "packages", "alpha", "package.json"), "utf8"));
+    assert.equal(manifest.version, "1.2.4");
+
+    // The ordinary minor changeset is untouched -- left pending for the next regular Saturday release.
+    assert.equal(existsSync(join(root, ".changesets", "alpha-feature.md")), true);
+    assert.equal(existsSync(join(root, ".changesets", "alpha-hotfix.md")), false);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("applyReleaseChangesets: --out-of-band with no out-of-band changesets pending is a clean no-op, even if ordinary changesets ARE pending", () => {
+  const root = makeRoot();
+  try {
+    makePackage(root, "alpha", "1.2.3");
+    writeChangeset(root, "alpha-feature.md", "---\nalpha: minor\n---\n\nAdd a feature.\n");
+
+    let npmInstallCalled = false;
+    const result = applyReleaseChangesets({ root, outOfBandOnly: true, runNpmInstall: () => (npmInstallCalled = true) });
+    assert.deepEqual(result, { applied: [], findings: [], changesetFindings: [] });
+    assert.equal(npmInstallCalled, false);
+    assert.equal(existsSync(join(root, ".changesets", "alpha-feature.md")), true); // still pending
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("applyReleaseChangesets: --out-of-band across two packages only touches the ones with an out-of-band changeset", () => {
+  const root = makeRoot();
+  try {
+    makePackage(root, "alpha", "1.2.3");
+    makePackage(root, "beta", "2.0.0");
+    writeChangeset(root, "alpha-hotfix.md", "---\nalpha: patch\nrelease: out-of-band\n---\n\nFix a security issue in alpha.\n");
+    writeChangeset(root, "beta-feature.md", "---\nbeta: minor\n---\n\nAdd a feature to beta (ordinary).\n");
+
+    const result = applyReleaseChangesets({ root, outOfBandOnly: true, runNpmInstall: () => {}, today: () => "2026-09-23" });
+    assert.deepEqual(result.applied.map((a) => a.package), ["alpha"]);
+
+    const betaManifest = JSON.parse(readFileSync(join(root, "packages", "beta", "package.json"), "utf8"));
+    assert.equal(betaManifest.version, "2.0.0"); // untouched
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("applyReleaseChangesets: --dry-run touches nothing and never calls npm", () => {
   const root = makeRoot();
   try {
