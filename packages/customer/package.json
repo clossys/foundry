@@ -22,6 +22,22 @@
       "bin": "customer-rate-check",
       "invocation": "single-json-input"
     },
+    "outputs": [
+      "clossys/customer/keep.json",
+      "clossys/customer/feedback.json",
+      "clossys/customer/compare.json",
+      "clossys/customer/refer.json",
+      "clossys/customer/churn.json",
+      "clossys/customer/adopt.json",
+      "clossys/customer/worth.json"
+    ],
+    "fit": "fit-signals.json",
+    "feeds": [
+      {
+        "artifact": "keep-verdict",
+        "path": "clossys/customer/keep.json"
+      }
+    ],
     "capabilities": [
       {
         "id": "keep-verdict",
@@ -53,7 +69,7 @@
         "outputs": [
           "clossys/customer/feedback.json"
         ],
-        "proofCase": "keep-satisfied",
+        "proofCase": "feedback-satisfied",
         "maturity": "built",
         "v0": true,
         "businessLifecycleStage": "deliver"
@@ -66,7 +82,7 @@
         "outputs": [
           "clossys/customer/compare.json"
         ],
-        "proofCase": "keep-satisfied",
+        "proofCase": "compare-satisfied",
         "maturity": "built",
         "v0": false,
         "businessLifecycleStage": "acquire"
@@ -79,7 +95,7 @@
         "outputs": [
           "clossys/customer/refer.json"
         ],
-        "proofCase": "keep-satisfied",
+        "proofCase": "refer-satisfied",
         "maturity": "built",
         "v0": false,
         "businessLifecycleStage": "deliver"
@@ -92,7 +108,7 @@
         "outputs": [
           "clossys/customer/churn.json"
         ],
-        "proofCase": "keep-satisfied",
+        "proofCase": "churn-satisfied",
         "maturity": "built",
         "v0": false,
         "businessLifecycleStage": "operate"
@@ -105,7 +121,7 @@
         "outputs": [
           "clossys/customer/adopt.json"
         ],
-        "proofCase": "keep-satisfied",
+        "proofCase": "adopt-satisfied",
         "maturity": "built",
         "v0": false,
         "businessLifecycleStage": "convert"
@@ -118,7 +134,7 @@
         "outputs": [
           "clossys/customer/worth.json"
         ],
-        "proofCase": "keep-satisfied",
+        "proofCase": "worth-satisfied",
         "maturity": "built",
         "v0": false,
         "businessLifecycleStage": "convert"
@@ -130,6 +146,7 @@
     "src",
     "!src/**/*.test.ts",
     "skill",
+    "fit-signals.json",
     "README.md",
     "CHANGELOG.md",
     "LICENSE"
