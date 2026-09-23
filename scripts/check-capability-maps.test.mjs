@@ -1,0 +1,226 @@
+// Regression tests for check-capability-maps.mjs.
+//
+// Mirrors check-package-framework.test.mjs: fixture manifests plant a
+// declaration that must be caught, or an absence that must stay visible
+// (and never fail report mode).
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import {
+  BUSINESS_LIFECYCLE_STAGES,
+  CAPABILITY_MATURITIES,
+  buildCapabilityCatalogue,
+  evaluateCapabilityMaps,
+  validateCapabilityShape,
+} from "./check-capability-maps.mjs";
+
+const ROLES = ["@scope/alpha", "@scope/beta"];
+function manifests(entries) { return new Map(entries.map((manifest) => [manifest.name, manifest])); }
+
+function capability(overrides = {}) {
+  return {
+    id: "confirm-fit",
+    subQuestion: "Is this role a fit for the client?",
+    worldClass: "Recommends only when evidence supports it.",
+    inputs: [],
+    outputs: ["clossys/alpha/fit-report.json"],
+    proofCase: "case-1",
+    maturity: "built",
+    v0: true,
+    ...overrides,
+  };
+}
+
+test("absence of capabilities is printed and counted, never a report-mode failure", () => {
+  const result = evaluateCapabilityMaps(ROLES, manifests([{ name: "@scope/alpha", foundry: {} }, { name: "@scope/beta", foundry: {} }]));
+  assert.deepEqual(result.findings, []);
+  assert.deepEqual(result.table.map((row) => row.capabilities), ["absent", "absent"]);
+});
+
+test("a well-formed capability declares cleanly with no findings", () => {
+  const result = evaluateCapabilityMaps(ROLES, manifests([
+    { name: "@scope/alpha", foundry: { capabilities: [capability()] } },
+    { name: "@scope/beta", foundry: {} },
+  ]));
+  assert.deepEqual(result.findings, []);
+  assert.equal(result.table.find((row) => row.role === "@scope/alpha").capabilities, "declared");
+  assert.equal(result.table.find((row) => row.role === "@scope/alpha").count, 1);
+});
+
+test("an empty capabilities array is malformed, not an absence", () => {
+  const result = evaluateCapabilityMaps(ROLES, manifests([{ name: "@scope/alpha", foundry: { capabilities: [] } }, { name: "@scope/beta", foundry: {} }]));
+  assert.equal(result.findings.length, 1);
+  assert.equal(result.findings[0].rule, "invalid-capabilities-declaration");
+});
+
+test("validateCapabilityShape rejects a capability missing required fields", () => {
+  const findings = validateCapabilityShape({ id: "x" }, "@scope/alpha");
+  const rules = findings.map((f) => f.rule);
+  assert.ok(rules.includes("invalid-capability-sub-question"));
+  assert.ok(rules.includes("invalid-capability-world-class"));
+  assert.ok(rules.includes("invalid-capability-outputs"));
+  assert.ok(rules.includes("invalid-capability-proof-case"));
+  assert.ok(rules.includes("invalid-capability-maturity"));
+  assert.ok(rules.includes("invalid-capability-v0"));
+});
+
+test("validateCapabilityShape rejects an unknown maturity value", () => {
+  const findings = validateCapabilityShape(capability({ maturity: "shipped" }), "@scope/alpha");
+  assert.ok(findings.some((f) => f.rule === "invalid-capability-maturity"));
+});
+
+test("validateCapabilityShape rejects an output path outside the role's own folder", () => {
+  const findings = validateCapabilityShape(capability({ outputs: ["clossys/beta/report.json"] }), "@scope/alpha");
+  assert.ok(findings.some((f) => f.rule === "capability-output-outside-role-folder"));
+});
+
+test("validateCapabilityShape accepts every declared maturity and rejects businessLifecycleStage outside the fixed vocabulary", () => {
+  for (const maturity of CAPABILITY_MATURITIES) {
+    assert.deepEqual(validateCapabilityShape(capability({ maturity }), "@scope/alpha"), []);
+  }
+  const findings = validateCapabilityShape(capability({ businessLifecycleStage: "scale" }), "@scope/alpha");
+  assert.ok(findings.some((f) => f.rule === "invalid-capability-business-lifecycle-stage"));
+});
+
+test("businessLifecycleStage is optional", () => {
+  assert.deepEqual(validateCapabilityShape(capability(), "@scope/alpha"), []);
+  assert.deepEqual(validateCapabilityShape(capability({ businessLifecycleStage: "launch" }), "@scope/alpha"), []);
+});
+
+test("within one role, no two capabilities may declare the same output", () => {
+  const result = evaluateCapabilityMaps(["@scope/alpha"], manifests([
+    { name: "@scope/alpha", foundry: { capabilities: [
+      capability({ id: "a", outputs: ["clossys/alpha/shared.json"] }),
+      capability({ id: "b", outputs: ["clossys/alpha/shared.json"] }),
+    ] } },
+  ]));
+  assert.ok(result.findings.some((f) => f.rule === "duplicate-capability-output"));
+});
+
+test("within one role, capability ids must be unique", () => {
+  const result = evaluateCapabilityMaps(["@scope/alpha"], manifests([
+    { name: "@scope/alpha", foundry: { capabilities: [capability({ id: "dup" }), capability({ id: "dup", outputs: ["clossys/alpha/other.json"] })] } },
+  ]));
+  assert.ok(result.findings.some((f) => f.rule === "duplicate-capability-id"));
+});
+
+test("duplicate sub-questions within one role are flagged — they cannot be jointly exhaustive if not distinct", () => {
+  const result = evaluateCapabilityMaps(["@scope/alpha"], manifests([
+    { name: "@scope/alpha", foundry: { capabilities: [
+      capability({ id: "a", subQuestion: "same question", outputs: ["clossys/alpha/a.json"] }),
+      capability({ id: "b", subQuestion: "same question", outputs: ["clossys/alpha/b.json"] }),
+    ] } },
+  ]));
+  assert.ok(result.findings.some((f) => f.rule === "duplicate-capability-sub-question"));
+});
+
+test("whole-question coverage is never asserted as a finding — only reported as a warning", () => {
+  const result = evaluateCapabilityMaps(["@scope/alpha"], manifests([{ name: "@scope/alpha", foundry: { capabilities: [capability()] } } ]));
+  assert.deepEqual(result.findings, []);
+  assert.ok(result.warnings.some((w) => w.rule === "capability-coverage-not-verified"));
+});
+
+// The outputs pathRule already namespaces every path under clossys/<role-short-name>/,
+// so a real cross-role collision can only happen when two DIFFERENT scoped
+// packages resolve to the same short name (e.g. @fixture-old-scope/alpha and
+// @fixture-new-scope/alpha both deriving "alpha") -- exactly the fixture below.
+const COLLIDING_ROLES = ["@fixture-old-scope/alpha", "@fixture-new-scope/alpha"];
+
+test("report mode never checks cross-role output ownership", () => {
+  const result = evaluateCapabilityMaps(COLLIDING_ROLES, manifests([
+    { name: "@fixture-old-scope/alpha", foundry: { capabilities: [capability({ id: "a", outputs: ["clossys/alpha/x.json"] })] } },
+    { name: "@fixture-new-scope/alpha", foundry: { capabilities: [capability({ id: "b", outputs: ["clossys/alpha/x.json"] })] } },
+  ]));
+  assert.deepEqual(result.findings, []);
+});
+
+test("--enforce catches an output claimed by capabilities in two different roles", () => {
+  const result = evaluateCapabilityMaps(COLLIDING_ROLES, manifests([
+    { name: "@fixture-old-scope/alpha", foundry: { capabilities: [capability({ id: "a", outputs: ["clossys/alpha/x.json"] })] } },
+    { name: "@fixture-new-scope/alpha", foundry: { capabilities: [capability({ id: "b", outputs: ["clossys/alpha/x.json"] })] } },
+  ]), { enforce: true });
+  assert.ok(result.findings.some((f) => f.rule === "capability-output-multiple-owners"));
+});
+
+test("--enforce does not flag the same capability's own path counted twice", () => {
+  const result = evaluateCapabilityMaps(["@scope/alpha"], manifests([
+    { name: "@scope/alpha", foundry: { capabilities: [capability({ id: "a", outputs: ["clossys/alpha/x.json"] })] } },
+  ]), { enforce: true });
+  assert.deepEqual(result.findings.filter((f) => f.rule === "capability-output-multiple-owners"), []);
+});
+
+test("--enforce requires capabilities on every active role unless allowlisted", () => {
+  const result = evaluateCapabilityMaps(ROLES, manifests([{ name: "@scope/alpha", foundry: {} }, { name: "@scope/beta", foundry: {} }]), { enforce: true });
+  assert.equal(result.findings.length, 2);
+  assert.ok(result.findings.every((f) => f.rule === "required-capabilities-absent"));
+});
+
+test("--allowlist exempts a named role from the required-capabilities finding", () => {
+  const result = evaluateCapabilityMaps(ROLES, manifests([{ name: "@scope/alpha", foundry: {} }, { name: "@scope/beta", foundry: {} }]), {
+    enforce: true,
+    allowlistedRoles: ["@scope/alpha", "@scope/beta"],
+  });
+  assert.deepEqual(result.findings, []);
+});
+
+test("--enforce matches a feeds entry against exactly one producing capability", () => {
+  const result = evaluateCapabilityMaps(["@scope/alpha"], manifests([
+    { name: "@scope/alpha", foundry: {
+      feeds: [{ artifact: "plan", path: "clossys/alpha/plan.json" }],
+      capabilities: [capability({ id: "a", outputs: ["clossys/alpha/plan.json"] })],
+    } },
+  ]), { enforce: true });
+  assert.deepEqual(result.findings, []);
+});
+
+test("--enforce flags a feeds entry no capability produces", () => {
+  const result = evaluateCapabilityMaps(["@scope/alpha"], manifests([
+    { name: "@scope/alpha", foundry: {
+      feeds: [{ artifact: "plan", path: "clossys/alpha/plan.json" }],
+      capabilities: [capability({ id: "a", outputs: ["clossys/alpha/other.json"] })],
+    } },
+  ]), { enforce: true });
+  assert.ok(result.findings.some((f) => f.rule === "feed-not-fed-by-any-capability"));
+});
+
+test("--enforce flags a feeds entry produced by more than one capability", () => {
+  const result = evaluateCapabilityMaps(["@scope/alpha"], manifests([
+    { name: "@scope/alpha", foundry: {
+      feeds: [{ artifact: "plan", path: "clossys/alpha/plan.json" }],
+      capabilities: [
+        capability({ id: "a", outputs: ["clossys/alpha/plan.json"] }),
+        capability({ id: "b", subQuestion: "different question", outputs: ["clossys/alpha/plan.json", "clossys/alpha/extra.json"] }),
+      ],
+    } },
+  ]), { enforce: true });
+  assert.ok(result.findings.some((f) => f.rule === "feed-fed-by-multiple-capabilities"));
+});
+
+test("report mode does not check the feeds/capability match", () => {
+  const result = evaluateCapabilityMaps(["@scope/alpha"], manifests([
+    { name: "@scope/alpha", foundry: {
+      feeds: [{ artifact: "plan", path: "clossys/alpha/plan.json" }],
+      capabilities: [capability({ id: "a", outputs: ["clossys/alpha/other.json"] })],
+    } },
+  ]));
+  assert.deepEqual(result.findings, []);
+});
+
+test("buildCapabilityCatalogue lays each capability along its declared business lifecycle stage", () => {
+  const catalogue = buildCapabilityCatalogue(ROLES, manifests([
+    { name: "@scope/alpha", foundry: { capabilities: [capability({ id: "a", businessLifecycleStage: "launch" })] } },
+    { name: "@scope/beta", foundry: { capabilities: [capability({ id: "b", businessLifecycleStage: "operate", outputs: ["clossys/beta/x.json"] })] } },
+  ]));
+  assert.deepEqual(catalogue.byStage.get("launch"), [{ role: "@scope/alpha", id: "a" }]);
+  assert.deepEqual(catalogue.byStage.get("operate"), [{ role: "@scope/beta", id: "b" }]);
+  assert.deepEqual(catalogue.unassigned, []);
+});
+
+test("buildCapabilityCatalogue buckets an unassigned capability rather than dropping it", () => {
+  const catalogue = buildCapabilityCatalogue(["@scope/alpha"], manifests([{ name: "@scope/alpha", foundry: { capabilities: [capability({ id: "a" })] } }]));
+  assert.deepEqual(catalogue.unassigned, [{ role: "@scope/alpha", id: "a" }]);
+});
+
+test("every declared business lifecycle stage is represented in the catalogue, even with zero capabilities", () => {
+  const catalogue = buildCapabilityCatalogue([], new Map());
+  assert.deepEqual([...catalogue.byStage.keys()], [...BUSINESS_LIFECYCLE_STAGES]);
+});

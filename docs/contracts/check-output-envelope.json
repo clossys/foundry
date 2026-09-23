@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "kind": "foundry-check-output-envelope",
+  "$comment": "One output shape for every check command's JSON report, across every role. Issue #1174. Check commands already share the 0/1/2 (satisfied/violated/indeterminate) exit convention; this is the JSON body behind that exit so Advisor and Launcher can render status uniformly, and in plain language, across roles they did not author. Contract only in this wave -- no package emits this envelope yet (see docs/contracts/package-framework.json's own `enforcement.mode`, which this gate mirrors: validation exists, adoption does not).",
+  "fields": ["package", "version", "verdict", "summary", "findings", "metric", "nextAction"],
+  "requiredFields": ["package", "version", "verdict", "summary", "findings"],
+  "optionalFields": ["metric", "nextAction"],
+  "verdicts": ["satisfied", "violated", "indeterminate"],
+  "fieldShapes": {
+    "package": "string -- the exact published package name that produced this report",
+    "version": "string -- exact semver of the package version that produced this report",
+    "verdict": "one of `verdicts`, and MUST match the process's own 0/1/2 exit exactly as gateResultToExitCode already folds it (packages/controller/src/gates/result.ts)",
+    "summary": "string -- exactly one sentence, plain language, written for a non-technical client to read with no other context",
+    "findings": "CheckFinding[] -- may be empty only when verdict is \"satisfied\"",
+    "metric": "optional { name: string, value: number, direction: \"increase\" | \"decrease\" | \"maintain\" | \"target-range\" } -- present only when this check owns a measured metric",
+    "nextAction": "optional string -- one sentence naming the single next accountable step, when the verdict is not \"satisfied\""
+  },
+  "findingShape": {
+    "rule": "string -- stable machine id for this exact finding kind",
+    "severity": "one of: \"error\", \"warning\"",
+    "message": "string -- human-readable, names what is wrong",
+    "path": "optional string -- the file or field the finding is about"
+  },
+  "rule": "`summary` is always exactly one sentence in plain language; it is the ONLY field Advisor and Launcher may show a non-technical client without translation. `findings` is non-empty whenever `verdict` is \"violated\" or \"indeterminate\" -- a non-satisfied verdict with no findings is itself malformed, because it reports a problem while refusing to say what it is. `metric`, when present, uses the same `direction` vocabulary docs/contracts/role-loop-archetypes.json already declares (`metricVocabulary.directions`)."
+}
