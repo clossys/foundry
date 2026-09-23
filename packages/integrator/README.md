@@ -48,6 +48,66 @@ Onboarding discovers that declaration from the installed manifest and never
 infers a surface. Integrator is not a required first-day role; Advisor
 remains the only required first-day assessment.
 
+## Provenance verification (issue #885)
+
+This repository's own consumer-adoption document states the consumer-facing
+guarantee: every `@clossys` release published through this repository's
+trusted publisher carries registry provenance bound to the publish workflow,
+verifiable anonymously — with one named exception, a package's owner-present
+first identity publication, which carries none. `integrator-provenance-check`
+verifies that guarantee against what a plane actually has installed, so a
+consumer can substitute provenance verification for a release-age wait
+instead of hand-rolling the check.
+
+It reads the installed `@clossys/*` packages from the plane's own manifest
+and EITHER lockfile format (npm or pnpm — pnpm implements no `npm audit
+signatures`, which is exactly why this bin exists rather than a wrapper
+around that command), and for each one fetches
+`https://registry.npmjs.org/-/npm/v1/attestations/<name>@<version>`
+directly and joins it against the exact package/version, tarball digest,
+repository, and workflow — the same join `check-public-npm-provenance.mjs`
+(this repository's own tooling, not shipped in this package) uses to verify
+a package immediately after publishing it, exported from this package as
+`inspectProvenanceStatement` so neither side re-implements it. Currency is
+reported per package against that package's own `dist-tags.latest` — never
+one hard-coded registry endpoint asked to answer for every package in one
+run, which is the exact defect this bin exists to not repeat.
+
+```bash
+integrator-provenance-check --cwd .
+integrator-provenance-check --cwd . --currency-policy ./currency-policy.json
+```
+
+`currency-policy.json` is optional and entirely this plane's own: `{ "pins":
+{ "<name>": "<exact expected version>" } }`. A package with no pin declared
+is still reported (installed vs. latest, and by how much), but never blocks
+on currency alone — only a declared, stale pin does.
+
+Exit codes: `0` every installed `@clossys` package's provenance verified and,
+where pinned, is current; `1` at least one package's provenance is missing or
+mismatched, or is pinned stale against the declared policy; `2`
+indeterminate — no manifest/lockfile found, a malformed policy file, an
+unreachable registry, a registry error, or **zero installed `@clossys`
+packages**, which verifies nothing and is never reported as a pass.
+Indeterminate wins over violated across a mixed batch, the same precedence
+`bouncer`, `butler`, `giver`, and `keeper`'s interaction gates already use —
+see this repository's own architecture-decision record,
+"Indeterminate-over-violated precedence".
+
+```ts
+import { checkInstalledPackagesProvenance } from "@clossys/integrator";
+
+const report = await checkInstalledPackagesProvenance({
+  packages: [{ name: "@clossys/advisor", installedVersion: "0.2.1" }],
+  transport: fetch,
+});
+```
+
+This bin verifies registry provenance and per-package currency. It does not
+replace a consuming plane's own entitlement/opt-out gate
+(`judgeCurrency`/`currencyVerdict` above) and does not itself decide policy
+beyond the currency pins a plane supplies.
+
 ## The job
 
 A plane declares what catalogue it is entitled to. Separately, and offline
@@ -714,6 +774,17 @@ at) zero.
 | `DependencyPosition` / `DEPENDENCY_POSITIONS` | type / const | Every manifest field scanned: `dependencies`, `devDependencies`, `peerDependencies`, `optionalDependencies`, `overrides`, `resolutions` |
 | `SupersededPair` | type | One confirmed conflict: the legacy name and its replacement, each with the positions they were found in |
 | `SupersessionIndeterminateReason` / `SupersessionResult` | types | The supersession detector's three-state contract |
+| `inspectProvenanceStatement(input)` | function | The shared subject/digest/repository/workflow join both `check-public-npm-provenance.mjs` (this repository's own tooling) and `integrator-provenance-check` use. `sourceSha` is optional — omitted, it confirms the statement names one protected-`main` commit structurally, never a specific one it cannot know |
+| `inspectPublicNpmProvenance(input)` | function | The producer-side check, from `npm audit signatures --include-attestations` evidence and an exact known source commit. `0` / `1` / `2` |
+| `inspectInstalledPackageProvenance(input)` | function | The consumer-side check, from the public attestations endpoint response directly. `"verified"` / `"violated"`, never indeterminate — an unreachable registry is `provenance-check.ts`'s job to report, not this pure function's |
+| `expectedDigestFromPackument(packument, name, version)` | function | The tarball SHA-512 digest, in hex, the SLSA subject must exactly bind |
+| `checkInstalledPackagesProvenance(input)` | function | Verifies provenance (and, where a policy pins one, currency) for every supplied installed `@clossys` package, concurrently. Empty input is `indeterminate`, never a vacuous `verified`. Indeterminate wins over violated across the batch |
+| `PUBLIC_REGISTRY` / `EXPECTED_REPOSITORY` / `EXPECTED_WORKFLOW` / `EXPECTED_MAIN_REF` / `SLSA_PROVENANCE` | const | The exact values every provenance statement is joined against |
+| `ProvenanceStatementJoinInput` / `ProvenanceJoinResult` | types | `inspectProvenanceStatement`'s contract |
+| `PublicNpmProvenanceInput` / `PublicNpmProvenanceResult` | types | `inspectPublicNpmProvenance`'s contract |
+| `InstalledPackageProvenanceInput` / `InstalledPackageProvenanceState` / `InstalledPackageProvenanceResult` | types | `inspectInstalledPackageProvenance`'s contract |
+| `InstalledPackageRef` / `CurrencyPolicy` / `PackageProvenanceState` / `PackageProvenanceReport` | types | `checkInstalledPackagesProvenance`'s per-package input and report |
+| `ProvenanceCheckInput` / `ProvenanceCheckState` / `ProvenanceCheckResult` | types | `checkInstalledPackagesProvenance`'s whole-run input and result |
 
 ## What it is not
 

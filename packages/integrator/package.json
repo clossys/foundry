@@ -1,6 +1,6 @@
 {
   "name": "@clossys/integrator",
-  "version": "0.7.3",
+  "version": "0.8.0",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -15,7 +15,8 @@
   },
   "bin": {
     "integrator-supersession-check": "dist/cli.js",
-    "integrator-check": "dist/package-currency-rate-cli.js"
+    "integrator-check": "dist/package-currency-rate-cli.js",
+    "integrator-provenance-check": "dist/provenance-check-cli.js"
   },
   "files": [
     "dist",
