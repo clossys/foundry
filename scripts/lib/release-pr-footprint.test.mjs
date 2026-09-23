@@ -1,5 +1,9 @@
 import assert from "node:assert/strict";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
+import { applyReleaseChangesets } from "../apply-release-changesets.mjs";
 import {
   evaluateReleasePrFootprint,
   isChangelogPureNewSection,
@@ -101,6 +105,18 @@ test("ADVERSARIAL isChangelogPureNewSection: a second heading smuggled inside th
   // The insertion contains TWO headings: the legitimate "## 1.0.1" and a duplicate/shadow "## 1.0.0".
   const head = "# Changelog\n\n## 1.0.1 - 2026-09-22\n\n- Fixed a bug.\n\n## 1.0.0\n\n- A shadow entry, not the real one below.\n\n## 1.0.0\n\n- Initial release.\n";
   assert.equal(isChangelogPureNewSection(base, head, "1.0.1"), false);
+});
+
+// REGRESSION (found by re-review, https://github.com/clossys/foundry/pull/1316#issuecomment-5801060575):
+// the duplicate-heading defense-in-depth check must count only "## "
+// (exactly two hashes) VERSION headings, never "### " (three hashes)
+// Keep-a-Changelog SUBSECTION headings like "### Added" / "### Fixed" --
+// those are legitimately repeated in every entry of a real changelog, so
+// counting them as "duplicate headings" refused every genuine release PR.
+test("REGRESSION isChangelogPureNewSection: repeated '### Added' / '### Fixed' Keep-a-Changelog subsections across entries are NOT duplicate version headings", () => {
+  const base = "# Changelog\n\n## 1.0.0\n\n### Added\n\n- Initial feature.\n\n### Fixed\n\n- An early bug.\n";
+  const head = "# Changelog\n\n## 1.0.1\n\n### Fixed\n\n- A new bug.\n\n## 1.0.0\n\n### Added\n\n- Initial feature.\n\n### Fixed\n\n- An early bug.\n";
+  assert.equal(isChangelogPureNewSection(base, head, "1.0.1"), true);
 });
 
 test("ADVERSARIAL isChangelogPureNewSection: rewriting an OLD entry alongside a legitimate new one fails", () => {
@@ -318,4 +334,85 @@ test("evaluateReleasePrFootprint: a new (added) changeset smuggled in fails", ()
     ],
   });
   assert.equal(result.ok, false);
+});
+
+// ---------------------------------------------------------------- end-to-end: REAL apply-release-changesets.mjs output through the full footprint check
+//
+// REGRESSION COVERAGE (https://github.com/clossys/foundry/pull/1316#issuecomment-5801060575):
+// this is the test that would have caught the "### Added"/"### Fixed"
+// duplicate-heading bug above BEFORE it shipped -- every package
+// CHANGELOG.md in this repository already repeats those Keep-a-Changelog
+// subsection headings entry after entry, so a synthetic fixture that never
+// used them could pass while a real release PR failed. Runs the actual,
+// unmocked applyReleaseChangesets() (only `runNpmInstall` is faked, so
+// this stays hermetic -- no real npm/network -- while still producing
+// apply-release-changesets.mjs's own real package.json/CHANGELOG.md
+// output, byte for byte) for a patch release, captures the real base/head
+// content of every file it touches, and feeds that straight into
+// evaluateReleasePrFootprint() exactly as scripts/check-release-
+// calendar.mjs would.
+test("END TO END: a real apply-release-changesets.mjs patch release, against a CHANGELOG.md using ### Added/### Fixed subsections like this repository's own packages, passes the full footprint check", () => {
+  const root = mkdtempSync(join(tmpdir(), "release-pr-footprint-e2e-test-"));
+  try {
+    const pkgDir = join(root, "packages", "alpha");
+    mkdirSync(pkgDir, { recursive: true });
+    const baseManifest = { name: "@clossys/alpha", version: "1.0.0", license: "MIT" };
+    writeFileSync(join(pkgDir, "package.json"), JSON.stringify(baseManifest, null, 2) + "\n");
+    const baseChangelog = "# Changelog\n\n## 1.0.0 - 2026-09-01\n\n### Added\n\n- Initial feature.\n\n### Fixed\n\n- An early bug.\n";
+    writeFileSync(join(pkgDir, "CHANGELOG.md"), baseChangelog);
+
+    const baseLockfile = {
+      name: "foundry",
+      lockfileVersion: 3,
+      packages: {
+        "": { name: "foundry" },
+        "packages/alpha": { name: "@clossys/alpha", version: "1.0.0", license: "MIT" },
+        "node_modules/@clossys/alpha": { resolved: "packages/alpha", link: true },
+      },
+    };
+    writeFileSync(join(root, "package-lock.json"), JSON.stringify(baseLockfile, null, 2) + "\n");
+
+    mkdirSync(join(root, ".changesets"), { recursive: true });
+    const changesetText = "---\nalpha: patch\n---\n\nFix a crash on startup.\n";
+    writeFileSync(join(root, ".changesets", "alpha-fix.md"), changesetText);
+
+    const baseManifestText = readFileSync(join(pkgDir, "package.json"), "utf8");
+    const baseLockfileText = readFileSync(join(root, "package-lock.json"), "utf8");
+
+    const result = applyReleaseChangesets({
+      root,
+      today: () => "2026-09-22",
+      // Faked so this test never touches npm/network -- still exercises
+      // apply-release-changesets.mjs's REAL manifest/CHANGELOG writing.
+      // The fake mirrors what a correct `npm install --package-lock-only`
+      // would do: bump only the released package's own lockfile entry.
+      runNpmInstall: (scratchRoot) => {
+        const manifest = JSON.parse(readFileSync(join(scratchRoot, "packages", "alpha", "package.json"), "utf8"));
+        const lock = JSON.parse(readFileSync(join(scratchRoot, "package-lock.json"), "utf8"));
+        lock.packages["packages/alpha"].version = manifest.version;
+        writeFileSync(join(scratchRoot, "package-lock.json"), JSON.stringify(lock, null, 2) + "\n");
+      },
+    });
+
+    assert.equal(result.findings.length, 0, JSON.stringify(result.findings));
+    assert.equal(result.applied.length, 1);
+    assert.equal(result.applied[0].toVersion, "1.0.1");
+
+    const headManifestText = readFileSync(join(pkgDir, "package.json"), "utf8");
+    const headChangelogText = readFileSync(join(pkgDir, "CHANGELOG.md"), "utf8");
+    const headLockfileText = readFileSync(join(root, "package-lock.json"), "utf8");
+    assert.equal(existsSync(join(root, ".changesets", "alpha-fix.md")), false);
+
+    const files = [
+      { path: "packages/alpha/package.json", status: "modified", baseContent: baseManifestText, headContent: headManifestText },
+      { path: "packages/alpha/CHANGELOG.md", status: "modified", baseContent: baseChangelog, headContent: headChangelogText },
+      { path: "package-lock.json", status: "modified", baseContent: baseLockfileText, headContent: headLockfileText },
+      { path: ".changesets/alpha-fix.md", status: "removed", baseContent: changesetText },
+    ];
+
+    const footprint = evaluateReleasePrFootprint({ files });
+    assert.equal(footprint.ok, true, footprint.reason);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });

@@ -165,11 +165,17 @@ export function isChangelogPureNewSection(baseText, headText, newVersion) {
   const insertedHeadingCount = (inserted.match(/^##[ \t]/gm) ?? []).length;
   if (insertedHeadingCount !== 1) return false;
 
-  // Defense in depth: no two "## " heading LINES anywhere in the final
-  // document may be textually identical -- a fake duplicate heading that
-  // shadows a real one (whether or not it could have snuck past the
-  // checks above) is refused outright.
-  const allHeadingLines = headText.match(/^##.*$/gm) ?? [];
+  // Defense in depth: no two VERSION heading lines ("## ", exactly two
+  // hashes) anywhere in the final document may be textually identical --
+  // a fake duplicate heading that shadows a real one (whether or not it
+  // could have snuck past the checks above) is refused outright. Matches
+  // ONLY "##[ \t]" (two hashes), never three-or-more -- an earlier draft
+  // used a bare `^##.*$`, which also matches every "### Added" / "### Fixed"
+  // Keep-a-Changelog SUBSECTION heading this repository's own CHANGELOG
+  // files already repeat entry after entry by convention, so that version
+  // refused every genuine release PR outright (found by re-review: see
+  // https://github.com/clossys/foundry/pull/1316#issuecomment-5801060575).
+  const allHeadingLines = headText.match(/^##[ \t].*$/gm) ?? [];
   const seenHeadingLines = new Set();
   for (const line of allHeadingLines) {
     if (seenHeadingLines.has(line)) return false;
