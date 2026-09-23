@@ -30,16 +30,27 @@
 //   1. `scripts/preflight-package.mjs` — name collision, denylist quality,
 //      gate regression, tree safety, artifact safety, README parity,
 //      contamination classes. Exactly `npm run preflight -- packages/<name>`.
-//   2. `npm pack --ignore-scripts` — a fresh candidate tarball from the
-//      current tree, never the tarball from whenever the record was made.
-//   3. `scripts/run-candidate-qualification.mjs` — a fresh, credential-free
+//   2. A clean `dist/` rebuild (issue #1286) — deletes the package's `dist/`
+//      and rebuilds it via its own `build` script BEFORE packing. CI always
+//      builds from a dist-less checkout; a developer machine can have a
+//      `dist/` left over from an earlier build, whose declared `bin` targets
+//      `npm ci` chmods executable when it links them. A later `tsc` run
+//      rewrites file CONTENTS but preserves that mode, and `npm pack`
+//      preserves it too, so the local tarball's sha256 silently differs from
+//      the qualified record on mode alone. Deleting `dist/` first reproduces
+//      CI's dist-less starting condition, so every file the rebuild emits
+//      gets the same mode a clean checkout would give it.
+//   3. `npm pack --ignore-scripts` — a fresh candidate tarball from the
+//      current, freshly rebuilt tree, never the tarball from whenever the
+//      record was made.
+//   4. `scripts/run-candidate-qualification.mjs` — a fresh, credential-free
 //      qualification transcript against that exact candidate (the same
 //      install-and-import round trip `publish.yml`'s `qualify` job runs).
-//   4. `scripts/validate-candidate-publish.mjs`'s `validateCandidatePublish`
+//   5. `scripts/validate-candidate-publish.mjs`'s `validateCandidatePublish`
 //      in `prepublish` mode — joins the fresh transcript against the
 //      retained record and the reviewed commit, the same join `publish.yml`'s
 //      `publish` job runs immediately before it uploads.
-//   5. `scripts/publish-qualified-directory.mjs`'s `publishQualifiedDirectory`
+//   6. `scripts/publish-qualified-directory.mjs`'s `publishQualifiedDirectory`
 //      in `owner-present` mode — re-asserts the pinned runtime, re-matches
 //      the exact qualification record, re-runs the FULL staged public-safety
 //      scan, re-packs and byte-compares a clean directory, then the one
@@ -49,6 +60,15 @@
 // eligible package is still attempted, in dependency order, and the final
 // summary names every outcome — issue #1227's own requirement, so one bad
 // package cannot silently swallow an otherwise-clean batch.
+//
+// ROUTING, NOT JUST PACKING (issue #1286's sibling defect): this script's
+// eligible set now excludes any package whose npm identity already exists on
+// the registry at another version — see plan-qualified-publish-set.mjs's
+// `identityCheck`/`route-publish-workflow` status. Only a package's genuine
+// first-ever identity may take this owner-present local path; npm cannot
+// bind a trusted publisher to an identity that does not exist yet, so every
+// later version of an already-published package must publish through
+// `publish.yml`'s OIDC lane instead, or it uploads without provenance.
 //
 // OUT OF SCOPE, ON PURPOSE: `scripts/record-later-publication.mjs`.
 // docs/PUBLISHING.md's manual owner-present handoff runs it after each
@@ -98,10 +118,38 @@ export function defaultRunPreflight(packageDirectory, { denylist, requireDenylis
   }
 }
 
+/**
+ * Deletes one package's `dist/` and rebuilds it from its own `build` script,
+ * so the tree `defaultPackCandidate` packs next can never carry a stale file
+ * mode (issue #1286). `npm ci` chmods a workspace's declared `bin` targets
+ * (0755) when it links them; on a developer checkout where `dist/` already
+ * existed from an earlier build, that chmod lands on the pre-existing files.
+ * A later `tsc` run only rewrites their CONTENTS and preserves the mode it
+ * finds, and `npm pack` preserves file mode too, so the packed tarball's
+ * sha256 differs from the qualified record even though every byte of every
+ * file's CONTENT is identical — `validate-candidate-publish.mjs`'s exact
+ * tarball comparison then fails every package this way, not just a stale
+ * one, with an opaque "tarball differs" rather than naming the cause. CI
+ * never sees this: it always builds from a dist-less checkout, so `npm ci`
+ * has nothing pre-existing to chmod. Deleting `dist/` first reproduces that
+ * same dist-less starting condition locally, so the rebuild that follows
+ * emits every file fresh, with the same mode a clean CI checkout would give
+ * it. Injectable seam (`run`) for testing without a real subprocess.
+ */
+export function defaultCleanRebuildPackage(packageKey, { run = execFileSync, root = repoRoot } = {}) {
+  const packageDir = resolve(root, "packages", packageKey);
+  rmSync(join(packageDir, "dist"), { recursive: true, force: true });
+  try {
+    run("npm", ["run", "build", "--workspace", `packages/${packageKey}`, "--if-present"], { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+  } catch (error) {
+    throw new Error(`clean dist/ rebuild failed for packages/${packageKey}: ${String(error?.stdout ?? "") + String(error?.stderr ?? "") || error?.message || error}`);
+  }
+}
+
 /** Packs a fresh candidate tarball for one package directory into a private temp directory. Injectable seam (`run`) for testing without a real subprocess. */
-export function defaultPackCandidate(packageKey, { run = execFileSync, stagingParent = tmpdir() } = {}) {
+export function defaultPackCandidate(packageKey, { run = execFileSync, stagingParent = tmpdir(), root = repoRoot } = {}) {
   const destination = mkdtempSync(join(stagingParent, "clossys-publish-set-"));
-  const packageDir = resolve(repoRoot, "packages", packageKey);
+  const packageDir = resolve(root, "packages", packageKey);
   let entries;
   try {
     const raw = run("npm", ["pack", ".", "--ignore-scripts", "--json", "--pack-destination", destination], { cwd: packageDir, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
@@ -129,13 +177,14 @@ export function defaultRunQualification(packageKey, candidatePath, { run = execF
 }
 
 /**
- * Publishes one already-eligible package: preflight, pack a fresh candidate,
- * a fresh qualification transcript, prepublish validation against the
- * retained record, then the existing owner-present publish wrapper — which
- * independently re-asserts the pinned runtime, re-matches the exact
- * qualification record, and re-runs the FULL staged public-safety scan (see
- * publish-qualified-directory.mjs). This function only sequences those
- * existing, unmodified gates for one package; it weakens none of them.
+ * Publishes one already-eligible package: preflight, a clean `dist/` rebuild,
+ * pack a fresh candidate, a fresh qualification transcript, prepublish
+ * validation against the retained record, then the existing owner-present
+ * publish wrapper — which independently re-asserts the pinned runtime,
+ * re-matches the exact qualification record, and re-runs the FULL staged
+ * public-safety scan (see publish-qualified-directory.mjs). This function
+ * only sequences those existing, unmodified gates for one package (plus the
+ * clean rebuild issue #1286 adds ahead of packing); it weakens none of them.
  */
 export async function publishOnePackage({
   packageKey,
@@ -145,6 +194,7 @@ export async function publishOnePackage({
   denylist,
   requireDenylist = true,
   runPreflight = defaultRunPreflight,
+  cleanRebuildPackage = defaultCleanRebuildPackage,
   packCandidate = defaultPackCandidate,
   runQualification = defaultRunQualification,
   validate = validateCandidatePublish,
@@ -153,9 +203,15 @@ export async function publishOnePackage({
   const preflight = runPreflight(join(root, "packages", packageKey), { denylist, requireDenylist });
   if (!preflight.ok) return { packageKey, status: "preflight-failed", detail: preflight.output };
 
+  try {
+    cleanRebuildPackage(packageKey, { root });
+  } catch (error) {
+    return { packageKey, status: "clean-rebuild-failed", detail: error?.message ?? String(error) };
+  }
+
   let candidate;
   try {
-    candidate = packCandidate(packageKey, {});
+    candidate = packCandidate(packageKey, { root });
   } catch (error) {
     return { packageKey, status: "pack-failed", detail: error?.message ?? String(error) };
   }
