@@ -753,6 +753,16 @@ export function validateTrioPublicationClosure(publication, { root = process.cwd
 export function sealedQualificationPathsAtTransitionBase(root = process.cwd(), base = TRIO_PUBLICATION_TRANSITION_BASE) {
   return new Set(git(root, ["ls-tree", "-r", "--name-only", base, "--", "governance/release-qualifications"]).split("\n").filter((path) => /^governance\/release-qualifications\/[^/]+\.json$/.test(path)));
 }
+// forward-record-paths (below) treats any path outside governance/release-
+// qualifications/ as a non-record path by construction: exactJointPaths
+// only ever collects paths qualificationPath() returns, and that always
+// resolves under governance/release-qualifications/. A deferral file --
+// whether the pre-#1254 governance/release-qualification-deferrals.json or
+// its governance/release-qualification-deferrals/<package>@<version>.json
+// replacement -- can therefore never satisfy this rule's exact-match diff,
+// which is why qualify-candidate.yml commits a deferral removal in a
+// separate commit from the record introduction it shares no commit with
+// (see that workflow's own two-commits comment).
 function validateForwardQualificationIntroduction(r, { root, head, trioRecords, sealedPaths }) {
   const a = [];
   let path, introduction;

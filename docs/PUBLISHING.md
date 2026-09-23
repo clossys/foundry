@@ -421,7 +421,7 @@ branch by hand.
 
 **Until a retained record exists,** a package version that has already
 merged to `main` ahead of one carries an acknowledged, issue-referenced
-deferral entry in `governance/release-qualification-deferrals.json`
+deferral file at `governance/release-qualification-deferrals/<package>@<version>.json`
 (enforced by `scripts/check-qualification-record-required.mjs`). A deferral
 acknowledges a merge, never a publication — the version it names may not be
 published before its record exists, and the entry itself goes stale (and
