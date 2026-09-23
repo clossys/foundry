@@ -141,6 +141,111 @@ function escapeXml(value: string): string {
     .replace(/'/g, "&apos;");
 }
 
+// -----------------------------------------------------------------------
+// Token-value validation - a plain `string`-typed public export, and
+// #1210's own design anticipates IdentityTokenInput values eventually
+// flowing from Strategist's brand attributes (client-influenced), not
+// only this repository's own trusted resolution path. `name`/`initials`
+// were already run through `escapeXml` before this fix;
+// `fontFamily`/`ink`/`onInverse`/`accent`/`onAccent` were interpolated
+// into `font-family="..."`, `style="color:..."`, and `fill="..."`
+// attribute values with no escaping and no runtime validation at all - an
+// attacker-controlled token value could break out of the attribute
+// boundary and inject an event handler or a new element. Fixed two ways,
+// applied together, not as alternatives:
+//
+//   1. FAIL CLOSED on the colour tokens. `ink`/`onInverse`/`accent`/
+//      `onAccent` are validated against `isValidCssColor` - a strict
+//      allowlist grammar (hex, `rgb()`/`hsl()`/`oklch()`/`oklab()`/
+//      `lab()`/`lch()`/`hwb()` with only numeric/percent/comma/slash
+//      arguments, or the `currentColor`/`transparent` keywords) - before
+//      `generateIdentityDirections`/`adoptSuppliedMark` generate anything.
+//      A value that isn't real colour syntax is refused outright
+//      (`IdentityKitValidationError`), never silently accepted or
+//      stripped.
+//   2. ESCAPE at every interpolation site regardless - `fontFamily`
+//      (freer syntax: comma-separated names, some quoted, so it is
+//      escaped rather than grammar-validated) and the already-validated
+//      colour tokens both go through `escapeXml` immediately before they
+//      are written into an attribute value, in every function that
+//      builds SVG text (`buildMonogramGlyph`, `buildWordmarkGlyph`,
+//      `wrapGlyph`, `wrapBadge`, and `recolorSvg`'s own `color`
+//      parameter). Escaping a colour that already passed
+//      `isValidCssColor` is a no-op - none of the allowed characters
+//      need escaping - so this is pure defense in depth, not a second,
+//      looser gate that could paper over a validation bug.
+// -----------------------------------------------------------------------
+
+const CSS_COLOR_KEYWORD_RE = /^(?:currentColor|transparent)$/i;
+const CSS_HEX_COLOR_RE = /^#(?:[0-9a-fA-F]{3,4}){1,2}$/;
+const CSS_COLOR_FUNCTION_RE = /^(?:rgb|rgba|hsl|hsla|hwb|oklch|oklab|lab|lch)\(\s*[0-9eE.%+\-\s,/]*\)$/;
+
+/**
+ * A strict allowlist, not a denylist: `true` only for the `currentColor`/
+ * `transparent` keywords, a `#`-prefixed hex colour, or one of the
+ * numeric-argument CSS colour functions this codebase's own tokens
+ * already use (`rgb`, `rgba`, `hsl`, `hsla`, `hwb`, `oklch`, `oklab`,
+ * `lab`, `lch`). No letters are permitted inside a function's
+ * parentheses, which is what keeps this grammar closed against
+ * injection - every accepted string is built only from digits, `.`,
+ * `%`, `+`, `-`, `,`, `/`, whitespace, `#`, and the function's own fixed
+ * name, none of which can close an XML attribute or open a new element.
+ */
+export function isValidCssColor(value: string): boolean {
+  if (typeof value !== "string") return false;
+  const trimmed = value.trim();
+  if (trimmed.length === 0 || trimmed.length > 200) return false;
+  return CSS_COLOR_KEYWORD_RE.test(trimmed) || CSS_HEX_COLOR_RE.test(trimmed) || CSS_COLOR_FUNCTION_RE.test(trimmed);
+}
+
+const CSS_FONT_FAMILY_RE = /^[\p{L}\p{N}\s,\-_'".]+$/u;
+
+/**
+ * A permissive but still closed allowlist for a `font-family` value: a
+ * non-empty, reasonably short string built only from letters, digits,
+ * whitespace, comma, hyphen, underscore, single/double quotes, and
+ * periods - enough to accept a real font stack such as `system-ui,
+ * ui-sans-serif, -apple-system, "Segoe UI", sans-serif`, but excluding
+ * every character an attribute-breakout or element-injection payload
+ * needs (`<`, `>`, `&`, `(`, `)`, `;`, `{`, `}`, backslash). This is
+ * looser than {@link isValidCssColor} on purpose - real font names are
+ * far less structured than colour syntax - but it is still a refusal,
+ * not just an escape: a `fontFamily` outside this charset is rejected
+ * before generation, the same fail-closed discipline as the colour
+ * tokens above.
+ */
+export function isValidCssFontFamily(value: string): boolean {
+  if (typeof value !== "string") return false;
+  const trimmed = value.trim();
+  if (trimmed.length === 0 || trimmed.length > 500) return false;
+  return CSS_FONT_FAMILY_RE.test(trimmed);
+}
+
+/**
+ * Throws {@link IdentityKitValidationError} (one reason per invalid
+ * field, never just the first) when any of `ink`/`onInverse`/`accent`/
+ * `onAccent` is not a valid CSS colour ({@link isValidCssColor}) or
+ * `fontFamily` is not a valid CSS font-family value
+ * ({@link isValidCssFontFamily}). Called at the top of both
+ * `generateIdentityDirections` and `adoptSuppliedMark` - no generated or
+ * adopted SVG is ever built from an unvalidated token.
+ */
+export function validateIdentityTokenInput(tokens: IdentityTokenInput): void {
+  const reasons: string[] = [];
+  const colorFields: (keyof IdentityTokenInput)[] = ["ink", "onInverse", "accent", "onAccent"];
+  for (const field of colorFields) {
+    if (!isValidCssColor(tokens[field])) {
+      reasons.push(`${field} is not a valid CSS colour (hex, currentColor/transparent, or an rgb/hsl/hwb/oklch/oklab/lab/lch function)`);
+    }
+  }
+  if (!isValidCssFontFamily(tokens.fontFamily)) {
+    reasons.push("fontFamily contains a character outside the allowed font-family charset (letters, digits, whitespace, comma, hyphen, underscore, quotes, period)");
+  }
+  if (reasons.length > 0) {
+    throw new IdentityKitValidationError(reasons);
+  }
+}
+
 /**
  * Pure, deterministic initials derivation: the first letter of each of
  * the first two words, or the first two letters of a single-word name.
@@ -159,25 +264,30 @@ export function deriveInitials(name: string): string {
 
 function buildMonogramGlyph(initials: string, shape: "circle" | "square", fontFamily: string): string {
   const escaped = escapeXml(initials);
+  const escapedFontFamily = escapeXml(fontFamily);
   const shapeMarkup =
     shape === "circle"
       ? `<circle cx="24" cy="24" r="22" fill="none" stroke="currentColor" stroke-width="2" />`
       : `<rect x="2" y="2" width="44" height="44" rx="10" fill="none" stroke="currentColor" stroke-width="2" />`;
-  return `${shapeMarkup}<text x="24" y="30" text-anchor="middle" font-family="${fontFamily}" font-size="18" font-weight="600" fill="currentColor">${escaped}</text>`;
+  return `${shapeMarkup}<text x="24" y="30" text-anchor="middle" font-family="${escapedFontFamily}" font-size="18" font-weight="600" fill="currentColor">${escaped}</text>`;
 }
 
 function buildWordmarkGlyph(name: string, initials: string, fontFamily: string): string {
   const escapedName = escapeXml(name);
+  const escapedFontFamily = escapeXml(fontFamily);
   const roundel = buildMonogramGlyph(initials, "circle", fontFamily);
-  return `<g>${roundel}</g><text x="56" y="30" font-family="${fontFamily}" font-size="22" font-weight="600" fill="currentColor">${escapedName}</text>`;
+  return `<g>${roundel}</g><text x="56" y="30" font-family="${escapedFontFamily}" font-size="22" font-weight="600" fill="currentColor">${escapedName}</text>`;
 }
 
 function wrapGlyph(glyph: string, viewBox: string, color: string): string {
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" aria-hidden="true" style="color:${color}" data-clear-space="${CLEAR_SPACE_RATIO}">${glyph}</svg>`;
+  const escapedColor = escapeXml(color);
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" aria-hidden="true" style="color:${escapedColor}" data-clear-space="${CLEAR_SPACE_RATIO}">${glyph}</svg>`;
 }
 
 function wrapBadge(innerContent: string, accent: string, onAccent: string): string {
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${MARK_VIEW_BOX}" aria-hidden="true" data-clear-space="${CLEAR_SPACE_RATIO}"><rect width="${BADGE_SIZE}" height="${BADGE_SIZE}" rx="10" fill="${accent}" /><g style="color:${onAccent}">${innerContent}</g></svg>`;
+  const escapedAccent = escapeXml(accent);
+  const escapedOnAccent = escapeXml(onAccent);
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${MARK_VIEW_BOX}" aria-hidden="true" data-clear-space="${CLEAR_SPACE_RATIO}"><rect width="${BADGE_SIZE}" height="${BADGE_SIZE}" rx="10" fill="${escapedAccent}" /><g style="color:${escapedOnAccent}">${innerContent}</g></svg>`;
 }
 
 function buildVariantSet(input: {
@@ -206,6 +316,7 @@ function buildVariantSet(input: {
  * #1210.
  */
 export function generateIdentityDirections(brand: IdentityBrandInput, tokens: IdentityTokenInput): [IdentityDirection, IdentityDirection, IdentityDirection] {
+  validateIdentityTokenInput(tokens);
   const initials = (brand.initials ?? deriveInitials(brand.name)).toUpperCase();
   const wordmarkGlyph = buildWordmarkGlyph(brand.name, initials, tokens.fontFamily);
   const circleGlyph = buildMonogramGlyph(initials, "circle", tokens.fontFamily);
@@ -254,9 +365,10 @@ const FILL_STROKE_ATTR_RE = /\b(fill|stroke)="([^"]*)"/g;
  * derived variants are a starting point for review, not a guarantee.
  */
 export function recolorSvg(svg: string, color: string): string {
+  const escapedColor = escapeXml(color);
   return svg.replace(FILL_STROKE_ATTR_RE, (match, attr: string, value: string) => {
     if (value === "none" || value === "transparent" || value === "") return match;
-    return `${attr}="${color}"`;
+    return `${attr}="${escapedColor}"`;
   });
 }
 
@@ -282,6 +394,7 @@ export interface AdoptSuppliedMarkInput {
  */
 export function adoptSuppliedMark(input: AdoptSuppliedMarkInput): IdentityDirection {
   const { brand, suppliedSvg, tokens } = input;
+  validateIdentityTokenInput(tokens);
   if (!isSvgDocument(suppliedSvg)) {
     throw new IdentityKitValidationError(["supplied mark must be a complete <svg>...</svg> document"]);
   }

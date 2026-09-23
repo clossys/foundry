@@ -178,7 +178,10 @@ export {
   generateIdentityDirections,
   IDENTITY_VARIANT_ROLES,
   IdentityKitValidationError,
+  isValidCssColor,
+  isValidCssFontFamily,
   recolorSvg,
+  validateIdentityTokenInput,
 } from "./identity-kit.js";
 export type {
   AdoptSuppliedMarkInput,
