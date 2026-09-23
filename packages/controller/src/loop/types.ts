@@ -3,7 +3,7 @@
  * `sense -> judge -> act -> verify -> learn` loop every role runs, and the
  * per-role state it is re-entrant over. See `./lifecycle.js` for the
  * six-state / three-condition vocabulary a capability's own position is
- * recorded in, and `docs/contracts/loop.json` for the canonical,
+ * recorded in, and this repository's own canonical loop contract for the
  * human-readable twin of everything declared here.
  */
 import type { LifecycleCondition, LifecycleState } from "./lifecycle.js";

@@ -61,6 +61,8 @@ export { validateLoopState, isValidLoopState, resumeStage } from "./loop/state.j
 export type { LoopStateFinding } from "./loop/state.js";
 export { renderStatusDocument, renderLoopStatus } from "./loop/status.js";
 export type { StatusSections } from "./loop/status.js";
+export { bindPlan, decidePlanExecution, PLAN_EXECUTION_OUTCOMES } from "./loop/plan-binding.js";
+export type { PlanBinding, PlanExecutionDecision, PlanExecutionOutcome } from "./loop/plan-binding.js";
 export type {
   DeclaredRule,
   GovernedPreflightOptions,

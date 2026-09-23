@@ -268,6 +268,18 @@ change from already-read state; none of them write a file or open a pull
 request -- that is the coding agent's own work, applying an approved plan,
 the same boundary `@clossys/launcher` already draws for composing skills.
 
+**Stale-plan refusal.** "A plan is bound to the assessment it came from;
+if that assessment changes, the plan is re-proposed as a diff and never
+executed as written." `bindPlan(plan, boundFingerprint)` attaches the
+fingerprint a plan (any of the artifact-operation plans above, or a
+caller's own) was computed from. `decidePlanExecution(binding,
+currentFingerprint)` is the one place that compares it against the
+current inputs before anything executes: `execute` carries the plan
+through, `stale-refuse` (`PLAN_EXECUTION_OUTCOMES`, typed
+`PlanExecutionOutcome`) carries `null` instead, so a caller that reads a
+stale plan's contents off the decision has necessarily skipped the check
+this module exists to enforce. Returns a `PlanExecutionDecision`.
+
 **State and status.** `validateLoopState(value)` validates a parsed
 `clossys/<role>/loop.json` document (a `LoopState`, keyed by capability id
 to a `LoopCapabilityState`) and returns every `LoopStateFinding`;
@@ -2268,6 +2280,7 @@ mismatch (or another binding finding), `2` when it could not run. Use
 | `isOwnedByRole(role, path)` | function | The one folder boundary every artifact operation below shares. |
 | `planCreateOrUpdate(input)` / `planMove(input)` / `planSupersede(input)` / `planRetire(input)` | functions | Pure artifact-operation planning (issue #1195): create/update with human-edit merge detection (`CreateOrUpdatePlan`), move with every citing reference named (`MovePlan`), append-only supersession (`SupersedePlan`), and manifest- and dependent-checked retirement (`RetirePlan` / `BlockedRetirePlan`), each refusing outside the role's own folder as a `RefusedPlan`. |
 | `validateLoopState(value)` / `isValidLoopState(value)` | functions | Validates a parsed `clossys/<role>/loop.json` document (`LoopState`, `LoopCapabilityState`) and returns every `LoopStateFinding`. |
+| `bindPlan(plan, boundFingerprint)` / `decidePlanExecution(binding, currentFingerprint)` | functions | Stale-plan refusal: binds a plan to the fingerprint it was computed from (`PlanBinding`), then decides whether it may still execute (`execute` / `stale-refuse`, `PLAN_EXECUTION_OUTCOMES`, typed `PlanExecutionOutcome`), returning a `PlanExecutionDecision` that never carries the plan through on a refusal. |
 | `resumeStage(capability)` | function | A capability's own recorded stage, read back exactly -- how an interrupted run resumes from disk. |
 | `renderStatusDocument(role, sections)` / `renderLoopStatus(role, state, mandate, now?)` | functions | The generic five-section `STATUS document` renderer (`StatusSections`: Mandate / Where we are / Recommended next / Decisions / Blockers) and this package's own use of it over a `LoopState`. |
 | `planNewPackage(input)` | function | Returns a deterministic, no-write private starter or repository-profiled package plan. |
