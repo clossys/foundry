@@ -26,7 +26,9 @@
     "humanFile": "clossys/<role>/STATUS.md",
     "statusSections": ["Mandate", "Where we are", "Recommended next", "Decisions", "Blockers"],
     "statusSectionsRule": "Exactly these five sections, in this order. The Advisor lane writes Advisor's own STATUS.md in parallel (issue #1187's plan) with the same five sections; the renderer (packages/controller/src/loop/status.ts's renderStatusDocument) is deliberately generic over its caller's section bodies so the engine can take over rendering Advisor's STATUS.md later without a shape change.",
-    "runHistory": "Git history is the run history. There are no per-run files."
+    "runHistory": "Git history is the run history. There are no per-run files.",
+    "whereWeAre": "Issue #1383: the role's status probe (docs/contracts/package-framework.json `fields.status`) is the one source of truth for \"where we are\". STATUS.md's \"Where we are\" section is a derived record rendered for humans; it is never read back as a source, and when it disagrees with the probe, STATUS.md is the stale one.",
+    "producerConformance": "Issue #1381: machineFile and humanFile are consumer state, written in a staffed repository. A role package ships neither, so the producer-side conformance gate (scripts/check-package-conformance.mjs) reports its lifecycle-words and STATUS.md items as not applicable, and nothing writes placeholder copies of either file into the producer repository."
   },
   "triggers": [
     { "change": "inputs", "reenterAt": "sense", "scope": "affected capabilities only" },

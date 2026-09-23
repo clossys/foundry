@@ -1,18 +1,21 @@
 // Regression tests for check-package-conformance.mjs — the Stage B
-// normalization-template gate (issue #1187, #1203, #1197). Exercises
-// evaluateConformance directly with in-memory descriptors, using a real
-// temporary directory only for the filesystem-backed checks (clossys/<role>/
-// layout, loop.json, STATUS.md) that this gate reads beside packages/*.
+// normalization-template gate (issue #1187, #1203, #1197, #1381, #1384).
+// Exercises evaluateConformance directly with in-memory descriptors, using a
+// real temporary directory only for the filesystem-backed checks (package
+// source for envelope emission, generated envelope copies) that this gate
+// reads under packages/*.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { evaluateConformance } from "./check-package-conformance.mjs";
+import { evaluateConformance, NOT_APPLICABLE_TO_PRODUCER } from "./check-package-conformance.mjs";
+import { ENVELOPE_COPY_PATH, renderEnvelopeCopyFromRoot } from "./sync-envelope-copies.mjs";
 
 const scriptPath = resolve(dirname(fileURLToPath(import.meta.url)), "check-package-conformance.mjs");
+const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 function manifest(overrides = {}) {
   return { name: "@scope/alpha", version: "0.1.0", foundry: { assessment: { bin: "alpha-check", invocation: "single-json-input" } }, bin: { "alpha-check": "dist/cli.js" }, ...overrides };
@@ -48,11 +51,11 @@ test("a package declaring nothing beyond assessment reports every other gap as a
   const row = result.table[0];
   assert.equal(row.manifestBlock, "partial");
   assert.equal(row.outputEnvelope, "absent");
-  assert.equal(row.lifecycleWords, "absent");
+  assert.equal(row.lifecycleWords, "n/a");
   assert.equal(row.loopSection, "absent");
   assert.equal(row.layout, "absent");
   assert.equal(row.capabilityMap, "absent");
-  assert.equal(row.statusMd, "absent");
+  assert.equal(row.statusMd, "n/a");
   assert.ok(row.gaps > 0);
 });
 
@@ -69,7 +72,7 @@ test("a skill source with no legacy heading and no clossys/ folder reports absen
   assert.equal(result.table[0].conversationContract, "declared");
 });
 
-test("--enforce fails a synthetic non-conforming package on every absent dimension", (t) => {
+test("--enforce fails a synthetic non-conforming package on every absent dimension that applies to a producer", (t) => {
   const root = makeTempRoot(t);
   const result = evaluateConformance(root, [descriptor()], { enforce: true });
   assert.ok(result.findings.length > 0, "expected --enforce to produce findings for a fully non-conforming package");
@@ -77,9 +80,10 @@ test("--enforce fails a synthetic non-conforming package on every absent dimensi
   assert.ok(rules.includes("required-intake-absent"));
   assert.ok(rules.includes("required-capabilities-absent"));
   assert.ok(rules.includes("conformance-gap-outputEnvelope"));
-  assert.ok(rules.includes("conformance-gap-lifecycleWords"));
   assert.ok(rules.includes("conformance-gap-layout"));
-  assert.ok(rules.includes("conformance-gap-statusMd"));
+  // #1381: items 3 and 8 do not apply to a producer, so --enforce never asks for them.
+  assert.equal(rules.includes("conformance-gap-lifecycleWords"), false);
+  assert.equal(rules.includes("conformance-gap-statusMd"), false);
 });
 
 test("--enforce with an allowlisted role produces no findings for that role", (t) => {
@@ -88,69 +92,160 @@ test("--enforce with an allowlisted role produces no findings for that role", (t
   assert.deepEqual(result.findings, []);
 });
 
-test("a malformed committed STATUS.md always fails, in both report and enforce mode", (t) => {
+// --- #1381: items 3 (lifecycle words) and 8 (STATUS.md) are consumer state
+// and are no longer graded from this repository's own root clossys/<role>/;
+// item 5 (layout) is graded from what the package's manifest declares.
+
+test("items 3 and 8 are n/a with a stated reason, never counted as gaps, whatever this repository's root clossys/<role>/ holds", (t) => {
   const root = makeTempRoot(t);
   mkdirSync(join(root, "clossys", "alpha"), { recursive: true });
   writeFileSync(join(root, "clossys", "alpha", "STATUS.md"), "# Status\n\n## Mandate\n\nx\n\n## Wrong Section\n\ny\n");
-  const reportResult = evaluateConformance(root, [descriptor()], { enforce: false });
-  assert.ok(reportResult.findings.some((f) => f.rule === "status-md-sections-mismatch"));
-  const enforceResult = evaluateConformance(root, [descriptor()], { enforce: true });
-  assert.ok(enforceResult.findings.some((f) => f.rule === "status-md-sections-mismatch"));
-});
-
-test("a well-formed committed STATUS.md with the exact five sections in order reports declared", (t) => {
-  const root = makeTempRoot(t);
-  mkdirSync(join(root, "clossys", "alpha"), { recursive: true });
-  const body = ["# Status", "", "## Mandate", "x", "", "## Where we are", "x", "", "## Recommended next", "x", "", "## Decisions", "x", "", "## Blockers", "x", ""].join("\n");
-  writeFileSync(join(root, "clossys", "alpha", "STATUS.md"), body);
-  const result = evaluateConformance(root, [descriptor()], { enforce: false });
-  assert.equal(result.table[0].statusMd, "declared");
-  assert.deepEqual(result.findings, []);
-});
-
-test("a non-lifecycle state word in clossys/<role>/loop.json is always a finding", (t) => {
-  const root = makeTempRoot(t);
-  mkdirSync(join(root, "clossys", "alpha"), { recursive: true });
   writeFileSync(join(root, "clossys", "alpha", "loop.json"), JSON.stringify({ capabilities: [{ id: "x", state: "in-progress", condition: "current" }] }));
-  const result = evaluateConformance(root, [descriptor()], { enforce: false });
-  assert.ok(result.findings.some((f) => f.rule === "non-lifecycle-state-word"));
+  for (const enforce of [false, true]) {
+    const result = evaluateConformance(root, [descriptor()], { enforce });
+    const row = result.table[0];
+    assert.equal(row.lifecycleWords, "n/a");
+    assert.equal(row.statusMd, "n/a");
+    assert.deepEqual(Object.keys(row.notApplicable).sort(), ["lifecycleWords", "statusMd"]);
+    for (const reason of Object.values(row.notApplicable)) assert.match(reason, /not applicable to a producer package/);
+    const rules = result.findings.map((f) => f.rule);
+    for (const rule of ["status-md-sections-mismatch", "non-lifecycle-state-word", "conformance-gap-lifecycleWords", "conformance-gap-statusMd"]) assert.equal(rules.includes(rule), false, rule);
+  }
+  assert.equal(NOT_APPLICABLE_TO_PRODUCER.lifecycleWords.includes("#1381"), true);
 });
 
-test("a valid lifecycle state/condition word in clossys/<role>/loop.json reports declared", (t) => {
+test("a clossys/<role>/ folder in this repository no longer makes layout declared -- only the manifest's declared paths do", (t) => {
   const root = makeTempRoot(t);
   mkdirSync(join(root, "clossys", "alpha"), { recursive: true });
-  writeFileSync(join(root, "clossys", "alpha", "loop.json"), JSON.stringify({ capabilities: [{ id: "x", state: "approved", condition: "current" }] }));
   const result = evaluateConformance(root, [descriptor()], { enforce: false });
-  assert.equal(result.table[0].lifecycleWords, "declared");
-  assert.deepEqual(result.findings, []);
+  assert.equal(result.table[0].layout, "absent");
 });
 
-test("presence of a clossys/<role>/ folder reports layout as declared", (t) => {
+test("layout is declared when every manifest-declared path (outputs, feeds, capability outputs) sits under clossys/<role>/", (t) => {
   const root = makeTempRoot(t);
-  mkdirSync(join(root, "clossys", "alpha"), { recursive: true });
-  const result = evaluateConformance(root, [descriptor()], { enforce: false });
+  const foundry = {
+    assessment: { bin: "alpha-check", invocation: "single-json-input" },
+    outputs: ["clossys/alpha/report.json"],
+    feeds: [{ artifact: "report", path: "clossys/alpha/report.json" }],
+  };
+  const result = evaluateConformance(root, [descriptor({ manifest: manifest({ foundry }) })], { enforce: false });
   assert.equal(result.table[0].layout, "declared");
 });
 
-test("a well-formed check-output-envelope.fixture.json reports outputEnvelope declared", (t) => {
+test("layout is malformed (a gap, reported once by the Stage A gate) when a declared path escapes clossys/<role>/", (t) => {
+  const root = makeTempRoot(t);
+  const foundry = { assessment: { bin: "alpha-check", invocation: "single-json-input" }, outputs: ["strategy/report.json"] };
+  const result = evaluateConformance(root, [descriptor({ manifest: manifest({ foundry }) })], { enforce: false });
+  assert.equal(result.table[0].layout, "malformed");
+  assert.equal(result.findings.filter((f) => f.rule === "output-path-outside-role-folder").length, 1);
+});
+
+// --- #1384: item 2 is graded on real emission through the canonical
+// constructor, never on a hand-written sample.
+
+function withCanonicalEnvelope(root) {
+  mkdirSync(join(root, "packages", "controller", "src", "gates"), { recursive: true });
+  for (const path of ["src/envelope.ts", "src/gates/result.ts"]) {
+    writeFileSync(join(root, "packages", "controller", path), readFileSync(join(repoRoot, "packages", "controller", path), "utf8"));
+  }
+}
+
+function writeSource(root, relativePath, text) {
+  const target = join(root, "packages", "alpha", relativePath);
+  mkdirSync(dirname(target), { recursive: true });
+  writeFileSync(target, text);
+}
+
+const EMITTER = (specifier) => `import { buildCheckOutputEnvelope } from "${specifier}";\nexport function report() { return buildCheckOutputEnvelope({ package: "a", version: "1", verdict: "satisfied", summary: "Fine.", findings: [] }); }\n`;
+
+test("a hand-written check-output-envelope.fixture.json is sample-only: a gap, never adoption, and a finding under --enforce", (t) => {
   const root = makeTempRoot(t);
   mkdirSync(join(root, "packages", "alpha"), { recursive: true });
   const fixture = { package: "@scope/alpha", version: "0.1.0", verdict: "satisfied", summary: "Everything checked out.", findings: [] };
   writeFileSync(join(root, "packages", "alpha", "check-output-envelope.fixture.json"), JSON.stringify(fixture));
-  const result = evaluateConformance(root, [descriptor()], { enforce: false });
-  assert.equal(result.table[0].outputEnvelope, "declared");
-  assert.deepEqual(result.findings, []);
+  const reportResult = evaluateConformance(root, [descriptor()], { enforce: false });
+  assert.equal(reportResult.table[0].outputEnvelope, "sample-only");
+  assert.deepEqual(reportResult.findings, []);
+  const enforceResult = evaluateConformance(root, [descriptor()], { enforce: true });
+  assert.ok(enforceResult.findings.some((f) => f.rule === "conformance-gap-outputEnvelope" && /sample/.test(f.message)));
 });
 
-test("a malformed check-output-envelope.fixture.json always fails, in both report and enforce mode", (t) => {
+test("source calling buildCheckOutputEnvelope imported from @clossys/controller is declared, with the emitting file as evidence", (t) => {
   const root = makeTempRoot(t);
-  mkdirSync(join(root, "packages", "alpha"), { recursive: true });
-  const fixture = { package: "@scope/alpha", version: "0.1.0", verdict: "violated", summary: "Everything checked out.", findings: [] }; // violated with no findings is malformed
-  writeFileSync(join(root, "packages", "alpha", "check-output-envelope.fixture.json"), JSON.stringify(fixture));
-  const reportResult = evaluateConformance(root, [descriptor()], { enforce: false });
-  assert.ok(reportResult.findings.some((f) => f.rule === "envelope-findings-empty-for-non-satisfied-verdict"));
-  const enforceResult = evaluateConformance(root, [descriptor()], { enforce: true });
-  assert.ok(enforceResult.findings.some((f) => f.rule === "envelope-findings-empty-for-non-satisfied-verdict"));
+  writeSource(root, "src/report.ts", EMITTER("@clossys/controller"));
+  const result = evaluateConformance(root, [descriptor()], { enforce: false });
+  assert.equal(result.table[0].outputEnvelope, "declared");
+  assert.deepEqual(result.table[0].envelopeEvidence, ["packages/alpha/src/report.ts"]);
+});
+
+test("an import that is never called or only mentioned in a comment, a type-only import, a test file, a hand-written local constructor, or a cross-package relative import is not emission evidence", (t) => {
+  const root = makeTempRoot(t);
+  writeSource(root, "src/unused.ts", `import { buildCheckOutputEnvelope } from "@clossys/controller";\nexport const x = 1;\n`);
+  writeSource(root, "src/types-only.ts", `import type { buildCheckOutputEnvelope } from "@clossys/controller";\nexport const y = buildCheckOutputEnvelope;\n`);
+  writeSource(root, "src/report.test.ts", EMITTER("@clossys/controller"));
+  writeSource(root, "src/local-envelope.ts", `export function buildCheckOutputEnvelope(x: unknown) { return x; }\n`);
+  writeSource(root, "src/uses-local.ts", EMITTER("./local-envelope.js"));
+  writeSource(root, "src/comment-only.ts", `import { buildCheckOutputEnvelope } from "@clossys/controller";\n// buildCheckOutputEnvelope({ ... }) is what we would call\n/* buildCheckOutputEnvelope( */\nexport const z = 3;\n`);
+  withCanonicalEnvelope(root);
+  writeSource(root, "src/reaches-across.ts", EMITTER("../../controller/src/envelope.js"));
+  const result = evaluateConformance(root, [descriptor()], { enforce: false });
+  assert.equal(result.table[0].outputEnvelope, "absent");
+  assert.deepEqual(result.table[0].envelopeEvidence, []);
+});
+
+test("an aliased import of the canonical constructor still counts when the alias is called", (t) => {
+  const root = makeTempRoot(t);
+  writeSource(root, "src/report.ts", `import { buildCheckOutputEnvelope as build } from "@clossys/controller";\nexport const r = build({ package: "a", version: "1", verdict: "satisfied", summary: "Fine.", findings: [] });\n`);
+  const result = evaluateConformance(root, [descriptor()], { enforce: false });
+  assert.equal(result.table[0].outputEnvelope, "declared");
+});
+
+test("a zero-dependency package emitting through a current generated copy is declared", (t) => {
+  const root = makeTempRoot(t);
+  withCanonicalEnvelope(root);
+  writeSource(root, ENVELOPE_COPY_PATH, renderEnvelopeCopyFromRoot(root));
+  writeSource(root, "src/report.ts", EMITTER("./generated/check-output-envelope.js"));
+  const result = evaluateConformance(root, [descriptor()], { enforce: false });
+  assert.deepEqual(result.findings, []);
+  assert.equal(result.table[0].outputEnvelope, "declared");
+});
+
+test("a generated copy that differs by one byte is a finding in report mode and --enforce alike, and is not evidence", (t) => {
+  const root = makeTempRoot(t);
+  withCanonicalEnvelope(root);
+  writeSource(root, ENVELOPE_COPY_PATH, `${renderEnvelopeCopyFromRoot(root)} `);
+  writeSource(root, "src/report.ts", EMITTER("./generated/check-output-envelope.js"));
+  for (const enforce of [false, true]) {
+    const result = evaluateConformance(root, [descriptor()], { enforce });
+    assert.equal(result.table[0].outputEnvelope, "drifted");
+    assert.ok(result.findings.some((f) => f.rule === "envelope-copy-drifted"));
+  }
+});
+
+test("a generated copy with no canonical source to verify against is a finding, never silently trusted", (t) => {
+  const root = makeTempRoot(t);
+  writeSource(root, ENVELOPE_COPY_PATH, "// a copy with nothing to compare against\n");
+  const result = evaluateConformance(root, [descriptor()], { enforce: false });
+  assert.ok(result.findings.some((f) => f.rule === "envelope-copy-unverifiable"));
+});
+
+test("#1383: a declared status probe must itself emit the envelope (directly or through one relative import); otherwise partial", (t) => {
+  const root = makeTempRoot(t);
+  const probeManifest = manifest({
+    bin: { "alpha-check": "dist/cli.js", "alpha-status": "dist/status.js" },
+    foundry: { assessment: { bin: "alpha-check", invocation: "single-json-input" }, status: { bin: "alpha-status", invocation: "single-json-input" } },
+  });
+  writeSource(root, "src/report.ts", EMITTER("@clossys/controller"));
+  writeSource(root, "src/status.ts", `export const nothing = 1;\n`);
+  const partial = evaluateConformance(root, [descriptor({ manifest: probeManifest })], { enforce: false });
+  assert.equal(partial.table[0].outputEnvelope, "partial");
+  assert.deepEqual(partial.findings, []);
+  const enforced = evaluateConformance(root, [descriptor({ manifest: probeManifest })], { enforce: true });
+  assert.ok(enforced.findings.some((f) => f.rule === "conformance-gap-outputEnvelope" && /status probe/.test(f.message)));
+
+  writeSource(root, "src/status.ts", `import { report } from "./report.js";\nprocess.stdout.write(JSON.stringify(report()));\n`);
+  const declared = evaluateConformance(root, [descriptor({ manifest: probeManifest })], { enforce: false });
+  assert.equal(declared.table[0].outputEnvelope, "declared");
 });
 
 // --- Classification (issue #1187 comment 5800189482, Decision 1): every
@@ -185,11 +280,11 @@ test("a tooling row still reports the two applicable Stage B items: output envel
     packageDir: "launcher",
     skillSource: "# Launcher\n\n## How we work together\n\nold local copy\n",
   })], { enforce: false });
-  assert.deepEqual(result.findings, []); // not-removed alone is never a report-mode failure
+  assert.deepEqual(result.findings, []); // sample-only and not-removed alone are never a report-mode failure
   const row = result.table[0];
-  assert.equal(row.outputEnvelope, "declared");
+  assert.equal(row.outputEnvelope, "sample-only"); // #1384: a hand-written sample is not adoption
   assert.equal(row.conversationContract, "not-removed");
-  assert.equal(row.gaps, 1); // only the not-removed conversation contract counts
+  assert.equal(row.gaps, 2);
 });
 
 test("--enforce does not yet enforce a tooling row's two applicable items (Decision 1: report only, for now)", (t) => {
