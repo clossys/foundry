@@ -14,7 +14,6 @@
       "reason": "The qualification runtime is pinned exactly (scripts/lib/release-runtime.mjs: Node v24.19.0, npm 11.17.0, zlib 1.3.2.1-motley-3246f1b) and the developer machine that produced this version runs node v24.15.0, so run-candidate-qualification.mjs refuses before it packs anything. The pin is right -- a record made on a different toolchain proves different bytes -- so the record is owed from a machine or workflow running the pinned runtime, not from a relaxed gate. Unrelated to #833, which is about intercepted egress in a cloud sandbox; here the registry is reachable and only the runtime differs.",
       "issue": 948
     },
-
     {
       "package": "butler",
       "version": "0.1.7",
@@ -267,23 +266,10 @@
       "reason": "This machine is not the pinned release runtime (Node v24.19.0, npm 11.17.0, zlib 1.3.2.1-motley-3246f1b; this machine Node v24.15.0, npm 11.12.1). Merge acknowledgement, never publication: 0.4.24 may not be published before the record exists.",
       "issue": 948
     },
-
     {
       "package": "controller",
       "version": "0.9.13",
       "reason": "This machine is not the pinned release runtime (Node v24.19.0, npm 11.17.0, zlib 1.3.2.1-motley-3246f1b; this machine Node v24.15.0, npm 11.12.1). Merge acknowledgement, never publication: 0.9.13 may not be published before the record exists.",
-      "issue": 948
-    },
-    {
-      "package": "controller",
-      "version": "0.9.14",
-      "reason": "This machine is not the pinned release runtime (Node v24.19.0, npm 11.17.0, zlib 1.3.2.1-motley-3246f1b; this machine Node v24.15.0, npm 11.12.1). Merge acknowledgement, never publication: 0.9.14 may not be published before the record exists.",
-      "issue": 948
-    },
-    {
-      "package": "launcher",
-      "version": "0.3.0",
-      "reason": "The record could not be produced on the developer machine: scripts/lib/release-runtime.mjs pins the qualification runtime exactly (Node v24.19.0, npm 11.17.0, zlib 1.3.2.1-motley-3246f1b) and this machine runs node v24.15.0, npm 11.12.1, zlib 1.2.12. The pin is correct and must not be relaxed - a qualification record exists to prove exact artifact bytes, and bytes produced by a different toolchain prove something else. The candidate packs cleanly from a clean rm -rf dist rebuild and the public registry is reachable; only the toolchain version blocks it. Same cause as issue #948. This acknowledges a merge, never a publication: 0.3.0 may not be published before the record exists.",
       "issue": 948
     }
   ]
