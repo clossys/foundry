@@ -128,8 +128,10 @@ describe("main — exit codes and reporting", () => {
     expect(code).toBe(1);
     const text = out.join("");
     expect(text).toContain("Overall: VIOLATED");
-    // The finding names the actual composed destination that disagreed.
-    expect(text).toContain(`${composedSkillsRoot}/greet`);
+    // The finding names the actual composed destination that disagreed --
+    // the whole alpha-account source tree's own directory link, not an
+    // individual skill's, under directory-linking (#393).
+    expect(text).toContain(`${composedSkillsRoot}/alpha-account`);
     expect(text).toContain("install/link-missing");
   });
 
@@ -140,7 +142,7 @@ describe("main — exit codes and reporting", () => {
     const filesystem = createMemoryFileSystem();
     filesystem.setDirectory(`${accountsRoot}/alpha/skills/greet`);
 
-    const manifest = buildSkillsManifest(["greet"], { composedSkillsRoot });
+    const manifest = buildSkillsManifest({ composedSkillsRoot, linkName: "alpha-account" });
     const runtime = createRuntimeContext(manifest, {
       home,
       sourceRoot: `${accountsRoot}/alpha/skills`,
