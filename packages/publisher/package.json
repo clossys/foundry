@@ -117,7 +117,7 @@
       {
         "id": "v0-launch-pack-planning-and-inventory",
         "subQuestion": "What does this product owe its v0 Launch pack, and what already exists versus is still needed?",
-        "worldClass": "Every new product gets one declared inventory (clossys/publisher/pack.json, #1204) of what the v0 Launch pack owes it and what state each item is actually in — status, condition, version, source pins — never assembled ad hoc per product.",
+        "worldClass": "Every new product gets one declared inventory (clossys/publisher/pack.json, #1204) of what the v0 Launch pack owes it and what state each item is actually in — status, condition, version, source pins — never assembled ad hoc per product. Today: `src/pack/` ships the manifest contract (#1204) — `validatePackManifest` (schema, needs-graph, and lifecycle-vocabulary validation), `computePackReadiness`/`planPackOrder`/`sealableItemIds` (readiness and sealing order derived from the needs graph), and `detectExistingPackItems`/`foundPackItem` (adopt-don't-override detection with sha256 fingerprints) — as library functions over `PackManifest`; no CLI yet assembles or checks a real product's `clossys/publisher/pack.json` from them.",
         "inputs": [
           {
             "producerRole": "@clossys/strategist",
@@ -135,8 +135,8 @@
         "outputs": [
           "clossys/publisher/pack.json"
         ],
-        "proofCase": null,
-        "maturity": "planned",
+        "proofCase": "media-satisfied",
+        "maturity": "partial",
         "v0": true,
         "businessLifecycleStage": "launch"
       },
@@ -183,7 +183,7 @@
       {
         "id": "templates-and-channel-specs",
         "subQuestion": "Is every channel's template and spec declared once and reused, never improvised per page?",
-        "worldClass": "A channel template is data — a declared block sequence and spec — never an arbitrary per-page build function, per #1207's full set (overview, deck, email kit, social profile, video-call backgrounds). Today: only web page templates exist; the email kit, social/video-call templates, and the channel spec registry (#1207) do not.",
+        "worldClass": "A channel template is data — a declared block sequence and spec — never an arbitrary per-page build function, per #1207's full set (overview, deck, email kit, social profile, video-call backgrounds). Today: `src/templates/` ships `overviewTemplate.ts`, `deckTemplate.ts`, `emailSignature.ts` (`buildEmailSignatureHtml`/`buildEmailSignatureText`), and `channelSpecs.ts` (`SOCIAL_CHANNEL_SPECS`, `OG_SHARE_CARD_SPEC`, `VIDEO_CALL_BACKGROUND_SPECS`, `staleChannelSpecEntries`) alongside the earlier web page templates (#1207); nothing yet assembles them into the declared `clossys/publisher/templates.json` output or checks them from a bin.",
         "inputs": [],
         "outputs": [
           "clossys/publisher/templates.json"
@@ -196,7 +196,7 @@
       {
         "id": "materials-site",
         "subQuestion": "Is there one internal, locally opened materials index a client can browse every version of?",
-        "worldClass": "One assembled, current internal index (#1206) carries every version of the company overview (short/medium/long) and pitch deck (HTML slides with audience variants), each with a print stylesheet, opened locally or handed to a client — never a scatter of one-off files assembled by hand. Not a publicly deployed site: that is #1208's separate apps/site template.",
+        "worldClass": "One assembled, current internal index (#1206) carries every version of the company overview (short/medium/long) and pitch deck (HTML slides with audience variants), each with a print stylesheet, opened locally or handed to a client — never a scatter of one-off files assembled by hand. Not a publicly deployed site: that is #1208's separate apps/site template. Today: `src/materials/` ships `renderMaterialsIndexHtml`, `renderPitchDeckHtml`, `selectAudienceVariant`, and `materialsPrintStylesheet` (#1206), but `renderMaterialsIndexHtml` takes its entries as a plain argument — nothing yet reads a product's own `clossys/publisher/pack.json` to derive them, or writes the declared `clossys/publisher/materials/index.json` output from a bin.",
         "inputs": [
           {
             "producerRole": "@clossys/writer",
@@ -253,7 +253,7 @@
       {
         "id": "route-and-visibility-governance",
         "subQuestion": "Does every publishing web route resolve to a registered template, with visibility declared as internal or public rather than inferred, and internal-only routes refused from serving?",
-        "worldClass": "Every route composes only through a registered SurfaceDocument template -- never Designer blocks assembled directly in a route file -- and declares visibility as `internal` or `public` (#1204; supersedes the earlier public/unlisted/access-protected model #1206 retired); a route serving an internal-only item is refused, never silently served. Today: `checkWebRoutes`/`publisher-web-route-check` checks only the route-to-template mapping -- no visibility declaration exists and no internal-route refusal runs yet.",
+        "worldClass": "Every route composes only through a registered SurfaceDocument template -- never Designer blocks assembled directly in a route file -- and declares visibility as `internal` or `public` (#1204; supersedes the earlier public/unlisted/access-protected model #1206 retired); a route serving an internal-only item is refused, never silently served. Today: `PACK_VISIBILITIES` (`internal`/`public`) and `checkMaterialsVisibility` declare and check visibility at the materials level (#1206), but `checkWebRoutes`/`publisher-web-route-check` still checks only the route-to-template mapping -- no route-level visibility declaration or internal-route refusal runs yet.",
         "inputs": [],
         "outputs": [
           "clossys/publisher/routes.json"
@@ -266,7 +266,7 @@
       {
         "id": "site-template",
         "subQuestion": "Does a product repository get a working marketing site wired to its team's own records from the first commit?",
-        "worldClass": "An apps/site template (#1208) renders Publisher's web views and Designer's theme, reading copy, tokens, and assets from clossys/ at build time and never copying them — routes for landing, about, contact, privacy/terms, 404, metadata, sitemap, robots, all included.",
+        "worldClass": "An apps/site template (#1208) renders Publisher's web views and Designer's theme, reading copy, tokens, and assets from clossys/ at build time and never copying them — routes for landing, about, contact, privacy/terms, 404, metadata, sitemap, robots, all included. Today: `templates/site/` ships all of the above (#1208), plus `web-route-manifest.json` for `publisher-web-route-check`, but is template content copied by Launcher (#1215) into a consumer repository, not part of this package's own npm workspace — its own README says plainly it is \"not built, typechecked, or tested\" by this repository's `npm run build`/`npm run typecheck`/`npm test`, and Launcher's own apply step (#1215) is still a follow-up.",
         "inputs": [
           {
             "producerRole": "@clossys/publisher",
@@ -276,8 +276,8 @@
         "outputs": [
           "clossys/publisher/site.json"
         ],
-        "proofCase": null,
-        "maturity": "planned",
+        "proofCase": "media-satisfied",
+        "maturity": "partial",
         "v0": true,
         "businessLifecycleStage": "launch"
       },

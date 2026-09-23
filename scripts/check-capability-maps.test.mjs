@@ -10,6 +10,7 @@ import {
   CAPABILITY_MATURITIES,
   buildCapabilityCatalogue,
   evaluateCapabilityMaps,
+  validateAllowlist,
   validateCapabilityShape,
 } from "./check-capability-maps.mjs";
 
@@ -416,4 +417,30 @@ test("buildCapabilityCatalogue buckets an unassigned capability rather than drop
 test("every declared business lifecycle stage is represented in the catalogue, even with zero capabilities", () => {
   const catalogue = buildCapabilityCatalogue([], new Map());
   assert.deepEqual([...catalogue.byStage.keys()], [...BUSINESS_LIFECYCLE_STAGES]);
+});
+
+// Non-blocking finding from PR #1258's independent review: `loadAllowlist`
+// accepts any JSON array of strings with no check that each name is a
+// currently active role, so a misspelled or retired role name in an
+// `--allowlist` file would silently forgive an input naming that same
+// misspelling forever -- `evaluateCapabilityMaps`'s allowlist branch runs
+// before its own #1321 active-role check and never validates the names it
+// was given. `validateAllowlist` closes that gap; `main` calls it right
+// after `collect` and `loadAllowlist` both resolve.
+test("validateAllowlist accepts an allowlist naming only currently active roles", () => {
+  assert.doesNotThrow(() => validateAllowlist(["@scope/alpha", "@scope/beta"], ["@scope/alpha", "@scope/beta", "@scope/gamma"]));
+});
+
+test("validateAllowlist rejects an allowlist entry that is not a currently active role", () => {
+  assert.throws(
+    () => validateAllowlist(["@clossys/strategst"], ["@clossys/strategist", "@clossys/designer"]),
+    /allowlist names role\(s\) that are not currently active: @clossys\/strategst/,
+  );
+});
+
+test("validateAllowlist names every unknown entry, not just the first", () => {
+  assert.throws(
+    () => validateAllowlist(["@scope/alpha", "@scope/typo-one", "@scope/typo-two"], ["@scope/alpha"]),
+    /@scope\/typo-one, @scope\/typo-two/,
+  );
 });

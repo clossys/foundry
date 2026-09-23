@@ -471,6 +471,30 @@ function loadAllowlist(argv, root) {
 }
 
 /**
+ * Non-blocking finding from PR #1258's independent review: `loadAllowlist`
+ * above accepts any JSON array of strings with no check that each name is
+ * a currently active role (`collect`'s `activeRoles`, read from the same
+ * role contract `evaluateCapabilityMaps`'s own #1321 active-role check
+ * reads). Left unchecked, a misspelled or retired role name in the
+ * `--allowlist` file (the same shape of typo #1321 hardens the
+ * `producerRole` input check against, e.g. `@clossys/strategst`) would
+ * silently forgive an input naming that same misspelling forever, since
+ * `evaluateCapabilityMaps`'s allowlist branch (`allowlisted.has(producerRole)`)
+ * runs BEFORE the active-role check and never itself validates the names
+ * it was given. Called from `main`, right after both `collect` and
+ * `loadAllowlist` resolve, so a bad entry fails the run the same way a
+ * missing or malformed allowlist file already does, rather than silently
+ * degrading enforcement.
+ */
+export function validateAllowlist(allowlistedRoles, activeRoles) {
+  const activeRoleSet = new Set(activeRoles);
+  const unknown = allowlistedRoles.filter((role) => !activeRoleSet.has(role));
+  if (unknown.length > 0) {
+    throw new Error(`allowlist names role(s) that are not currently active: ${unknown.join(", ")}`);
+  }
+}
+
+/**
  * This role's own retained qualification adapter case ids
  * (governance/release-qualification-adapters/<role-short-name>/current-direct.json,
  * `cases[].id`), or `undefined` when the adapter file does not exist, is
@@ -535,6 +559,7 @@ function main(argv) {
   try {
     collected = collect(root);
     allowlistedRoles = loadAllowlist(argv, root);
+    validateAllowlist(allowlistedRoles, collected.activeRoles);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     if (json) console.log(JSON.stringify({ error: message }, null, 2));
