@@ -1,0 +1,187 @@
+import { describe, expect, it } from "vitest";
+import {
+  CAPABILITY_CATALOGUE,
+  CLIENT_PROBLEMS,
+  EVIDENCE_LEVELS,
+  FIRST_ENGAGEMENT_ROLE_CAP,
+  KIT_PRESETS,
+  composeKit,
+  composeKitFromProblems,
+  evidenceAtLeast,
+  kitCatalogueDigest,
+  presetEvidenceFindings,
+  toEngagementBrief,
+  validateKitProposal,
+} from "./index.js";
+import type { ComposeKitResult } from "./index.js";
+
+describe("CAPABILITY_CATALOGUE and kitCatalogueDigest", () => {
+  it("has one entry per role, excluding executable tooling", () => {
+    const roleNames = CAPABILITY_CATALOGUE.roles.map((role) => role.role).sort();
+    expect(roleNames).toHaveLength(19);
+    expect(roleNames.includes("launcher")).toBe(false);
+    expect(roleNames.includes("starter")).toBe(false);
+    expect(roleNames.includes("publisher")).toBe(true);
+  });
+
+  it("gives every role a fallback solves entry at designed evidence, grounded in client-problems.json", () => {
+    for (const role of CAPABILITY_CATALOGUE.roles) {
+      expect(role.solves.length).toBeGreaterThan(0);
+      for (const entry of role.solves) {
+        expect(entry.evidence).toBe("designed");
+        expect(CLIENT_PROBLEMS.some((problem) => problem.id === entry.problem)).toBe(true);
+      }
+    }
+  });
+
+  it("is a deterministic sha256 hex digest", () => {
+    expect(kitCatalogueDigest).toMatch(/^[0-9a-f]{64}$/);
+  });
+});
+
+describe("KIT_PRESETS", () => {
+  it("are curated starting points, not a partition -- fewer roles than the full catalogue", () => {
+    const presetRoles = new Set(KIT_PRESETS.flatMap((preset) => preset.roles));
+    expect(presetRoles.size).toBeLessThan(CAPABILITY_CATALOGUE.roles.length);
+  });
+
+  it("every preset composes cleanly against the real catalogue", () => {
+    for (const preset of KIT_PRESETS) {
+      const composed = composeKit({ selectedRoles: preset.roles, catalogue: CAPABILITY_CATALOGUE });
+      expect(composed.state).toBe("composed");
+      if (composed.state === "composed") expect(composed.unsatisfiedNeeds).toHaveLength(0);
+    }
+  });
+
+  it("grow is an addOn to launch", () => {
+    const grow = KIT_PRESETS.find((preset) => preset.id === "grow");
+    expect(grow?.addOnTo).toBe("launch");
+  });
+});
+
+describe("composeKit", () => {
+  it("pulls in controller for publisher even when not explicitly selected", () => {
+    const composed = composeKit({ selectedRoles: ["publisher"], catalogue: CAPABILITY_CATALOGUE });
+    expect(composed.state).toBe("composed");
+    if (composed.state === "composed") {
+      expect(composed.addedForDependencies).toContain("controller");
+      expect(composed.sequence.indexOf("controller")).toBeLessThan(composed.sequence.indexOf("publisher"));
+    }
+  });
+
+  it("reports an unknown role as indeterminate", () => {
+    expect(composeKit({ selectedRoles: ["not-a-role"], catalogue: CAPABILITY_CATALOGUE }).state).toBe("indeterminate");
+  });
+});
+
+describe("composeKitFromProblems", () => {
+  it("is deterministic regardless of confirmed-problem order", () => {
+    const a = composeKitFromProblems({
+      confirmedProblems: [{ id: "writer-unapproved-copy", primary: true }, { id: "designer-interface-quality" }],
+      catalogue: CAPABILITY_CATALOGUE,
+    });
+    const b = composeKitFromProblems({
+      confirmedProblems: [{ id: "designer-interface-quality" }, { id: "writer-unapproved-copy", primary: true }],
+      catalogue: CAPABILITY_CATALOGUE,
+    });
+    expect(a).toEqual(b);
+    expect(a.state).toBe("composed");
+  });
+
+  it("requires exactly one primary confirmed problem", () => {
+    expect(composeKitFromProblems({ confirmedProblems: [{ id: "writer-unapproved-copy" }], catalogue: CAPABILITY_CATALOGUE }).state).toBe(
+      "indeterminate",
+    );
+    expect(
+      composeKitFromProblems({
+        confirmedProblems: [{ id: "writer-unapproved-copy", primary: true }, { id: "designer-interface-quality", primary: true }],
+        catalogue: CAPABILITY_CATALOGUE,
+      }).state,
+    ).toBe("indeterminate");
+  });
+
+  it("enforces the first-engagement role cap unless overCapReason is given", () => {
+    const confirmedProblems = [
+      { id: "strategist-unclear-direction", primary: true },
+      { id: "writer-unapproved-copy" },
+      { id: "designer-interface-quality" },
+      { id: "customer-would-they-keep-it" },
+      { id: "publisher-verified-release" },
+      { id: "influencer-audience-response" },
+    ];
+    const overCap = composeKitFromProblems({ confirmedProblems, catalogue: CAPABILITY_CATALOGUE });
+    expect(overCap.state).toBe("over-cap");
+    if (overCap.state === "over-cap") {
+      expect(overCap.cap).toBe(FIRST_ENGAGEMENT_ROLE_CAP);
+      expect(overCap.roleCount).toBeGreaterThan(FIRST_ENGAGEMENT_ROLE_CAP);
+    }
+    const withReason = composeKitFromProblems({ confirmedProblems, catalogue: CAPABILITY_CATALOGUE, overCapReason: "client wants the full launch+grow set" });
+    expect(withReason.state).toBe("composed");
+  });
+
+  it("comes back indeterminate rather than an empty kit when no role solves the confirmed problem", () => {
+    expect(composeKitFromProblems({ confirmedProblems: [{ id: "not-a-real-problem", primary: true }], catalogue: CAPABILITY_CATALOGUE }).state).toBe(
+      "indeterminate",
+    );
+  });
+
+  it("traces each direct role back to the confirmed problems it itself solves", () => {
+    const result = composeKitFromProblems({ confirmedProblems: [{ id: "writer-unapproved-copy", primary: true }], catalogue: CAPABILITY_CATALOGUE });
+    expect(result.state).toBe("composed");
+    if (result.state === "composed") {
+      const writer = result.roles.find((role) => role.role === "writer");
+      expect(writer?.isDirect).toBe(true);
+      expect(writer?.confirmedProblemIds).toEqual(["writer-unapproved-copy"]);
+    }
+  });
+});
+
+describe("validateKitProposal", () => {
+  const confirmedProblems = [{ id: "writer-unapproved-copy", primary: true }];
+
+  it("drops a role that links to no confirmed problem and is not needed by one that does", () => {
+    const result = validateKitProposal({
+      proposal: { problem: "Our words don't sound like us.", roles: [{ role: "writer", why: "writer job" }, { role: "strategist", why: "seemed related" }] },
+      confirmedProblems,
+      catalogue: CAPABILITY_CATALOGUE,
+    });
+    expect(result.state).toBe("indeterminate");
+    expect(result.removalCandidates).toEqual(["strategist"]);
+    expect(result.findings.some((finding) => finding.rule === "ungrounded-role" && finding.role === "strategist")).toBe(true);
+  });
+
+  it("accepts every role the deterministic composition itself justifies", () => {
+    const result = validateKitProposal({
+      proposal: { problem: "Our words don't sound like us.", roles: [{ role: "writer", problemId: "writer-unapproved-copy", why: "writer job" }] },
+      confirmedProblems,
+      catalogue: CAPABILITY_CATALOGUE,
+    });
+    expect(result.state).toBe("valid");
+    expect(result.removalCandidates).toEqual([]);
+  });
+});
+
+describe("evidence tiers and the advisory preset floor", () => {
+  it("ranks designed < qualified < proven", () => {
+    expect(EVIDENCE_LEVELS).toEqual(["designed", "qualified", "proven"]);
+    expect(evidenceAtLeast("proven", "qualified")).toBe(true);
+    expect(evidenceAtLeast("designed", "qualified")).toBe(false);
+  });
+
+  it("flags today's presets as below the qualified floor -- honest, not a hard failure", () => {
+    const findings = presetEvidenceFindings({ presets: KIT_PRESETS, catalogue: CAPABILITY_CATALOGUE });
+    expect(findings.length).toBeGreaterThan(0);
+    expect(findings.every((finding) => finding.rule === "preset-role-below-evidence-floor")).toBe(true);
+  });
+});
+
+describe("toEngagementBrief", () => {
+  it("builds deliverables from each composed role's own boundary.owns", () => {
+    const composed = composeKit({ selectedRoles: ["writer"], catalogue: CAPABILITY_CATALOGUE }) as Extract<ComposeKitResult, { state: "composed" }>;
+    const brief = toEngagementBrief({ problem: "Our words don't sound like us.", composed, catalogue: CAPABILITY_CATALOGUE });
+    expect(brief.schemaVersion).toBe(1);
+    expect(brief.roles).toHaveLength(1);
+    expect(brief.deliverables).toHaveLength(1);
+    expect(brief.deliverables[0]).toBe(CAPABILITY_CATALOGUE.roles.find((role) => role.role === "writer")?.boundary.owns);
+  });
+});

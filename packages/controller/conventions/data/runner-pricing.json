@@ -1,0 +1,50 @@
+{
+  "$comment": "Runner pricing and free-minute allowances, dated. Prices change; this file is the ONE place they are recorded, read by ci-conventions-check's evaluator as data -- never hard-coded in code. Checked 2026-09-23 against GitHub's Actions billing documentation and Blacksmith's public pricing page. Re-verify against the source URLs below before trusting this file for a decision more than a few months past asOf.",
+  "asOf": "2026-09-23",
+  "sources": [
+    "https://docs.github.com/en/billing/managing-billing-for-your-products/managing-billing-for-github-actions/about-billing-for-github-actions",
+    "https://www.blacksmith.sh/pricing"
+  ],
+  "currency": "USD",
+  "githubHosted": {
+    "publicRepos": {
+      "standardLabel": "ubuntu-latest",
+      "cost": "free",
+      "minutesLimit": "unlimited"
+    },
+    "privateRepos": {
+      "standardLabel": "ubuntu-latest",
+      "costPerMinute": {
+        "linux2core": 0.006,
+        "note": "GitHub's published per-minute rate for a standard 2-core Linux runner beyond the plan's included minutes."
+      },
+      "freeMinutesAllowance": {
+        "free": 2000,
+        "team": 3000,
+        "enterpriseCloud": 50000,
+        "note": "Minutes/month, shared across the whole account (or organization on Team/Enterprise Cloud), not per repository."
+      }
+    },
+    "storage": {
+      "freeArtifactStorageMb": 500,
+      "freeCacheStorageGb": 10,
+      "note": "Free-plan allowances. Team and Enterprise Cloud raise these; consult the billing docs directly rather than assuming a multiple."
+    }
+  },
+  "blacksmith": {
+    "label2vcpu": "blacksmith-2vcpu-ubuntu-2204",
+    "label4vcpu": "blacksmith-4vcpu-ubuntu-2204",
+    "costPerMinute": {
+      "x64_2vcpu": 0.004,
+      "arm_2vcpu": 0.0025
+    },
+    "freeMinutesAllowance": {
+      "allPlans": 3000,
+      "note": "Stacks ON TOP OF GitHub's own included minutes -- it is a separate allowance from a separate billing relationship, not a discount against GitHub's."
+    },
+    "storage": {
+      "cacheAndStickyDiskCostPerGbMonth": 0.5
+    },
+    "publicRepoDiscount": "none stated"
+  }
+}
