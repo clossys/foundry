@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "host": "codex",
+  "verifiedAt": "2026-09-22",
+  "tiers": {
+    "light": { "balanced": "gpt-5-codex-mini" },
+    "standard": { "balanced": "gpt-5-codex", "costConscious": "gpt-5-codex-mini" },
+    "deep": { "balanced": "gpt-5-codex-high" }
+  }
+}
