@@ -1,6 +1,6 @@
 # Human-in-the-loop escalation: first slice
 
-This is the first slice of the agent decision/HITL escalation design agreed
+This is an initial slice of the agent decision/HITL escalation design agreed
 at tier 1: the orchestrator's proposal at issue
 [#1187](https://github.com/clossys/foundry/issues/1187), the decision-tier
 rule at
@@ -343,12 +343,12 @@ paths that skip it entirely.
 | Tier-1 / tier-2 path classification | `governance/review-tiers.json` | Path globs, read by `land-stack.mjs` from the pull request's **base commit** via the GitHub Contents API (`repos/{owner}/{repo}/contents/{path}?ref={baseSha}`) — never from the local checkout — so a pull request can never narrow its own tier-1 globs or add its own decision record in the same diff it needs graded. Classifies BOTH the new and previous name of a renamed file (`changedFilePathsForClassification`), so moving a tier-1/tier-2 file to an unwatched path cannot itself dodge the tier it would otherwise carry. `tier1.globs` is now the BROAD `scripts/**` and `.github/**` (not a hand-picked script list), and `scripts/land-stack.test.mjs` has a test, `findUnclassifiedWorkflowPaths`, that scans every real `.github/workflows/*.yml` file for a referenced script/config path and fails if any of them classifies tier-0 — a structural guard against this porousness recurring, not just a one-time fix. |
 | No-op head commit | `scripts/land-stack.mjs`'s `isNoOpHeadCommit` | Any tier-1/tier-2 pull request whose HEAD COMMIT changes zero files (most commonly `git commit --allow-empty`) refuses outright, regardless of what the rest of the diff or review evidence says — a no-op commit would otherwise be enough on its own to give a rejected PR a fresh head and clear a sticky rejection with no real change at all. |
 | Change-then-revert past a sticky reject | `scripts/land-stack.mjs`'s `isTreeIdenticalToRejectedHead` (round 5, should-fix) | A no-op COMMIT is refused (above), but a commit that changes a file and then a LATER commit that reverts it produces a genuinely different, non-empty head commit — `isNoOpHeadCommit` alone does not catch it. `runStatus` now also fetches the git TREE sha (not the commit sha) of the current head and of every prior authorized reject's headSha (capped at 10 candidates) and refuses the merge if the current tree matches any rejected tree exactly — a content-identical head, however it was produced, never counts as "a real change" for the purpose of clearing a sticky reject. **Known limitation:** this compares whole-tree identity, not the specific files a reviewer rejected — a change-then-revert of files OUTSIDE what the reviewer actually objected to, combined with a genuine unrelated fix, produces a different tree and is not caught; this closes the pure "revert to exactly what was rejected" case, not every way to launder a rejected diff into looking new. |
-| Decided-record immutability | `scripts/land-stack.mjs`'s `evaluateChangedDecisionRecords` | A pull request that changes the CONTENT (by parsed value, not raw text) of a `governance/decisions/*.json` record whose base-branch version already has `status: "decided"` is refused — the only sanctioned way to change a decision is a new record whose `supersedes` names the old one. A record still `"open"` on the base branch may be freely edited. |
+| Decided-record immutability | `scripts/land-stack.mjs`'s `evaluateChangedDecisionRecords` | A pull request that changes the CONTENT (by parsed value, not raw text) of a `governance/decisions/*.json` record whose base-branch version already has `status: "decided"` is refused — a decision can be changed only by a new record whose `supersedes` names the old one, never by editing it in place. A record still `"open"` on the base branch may be freely edited. |
 | Self-inclusion | This file, `scripts/land-stack.mjs` (and its test), `docs/contracts/decision-record.json`, `scripts/check-decision-records.mjs` (and its test), `package-scope.json`, and `scripts/lib/**` are all **tier-2**, not tier-1 — a tier-1 change (two agent reviewers) could otherwise narrow `tier2.globs` (for example, drop `governance/model-qualifications/**` from it) and remove the owner-only boundary without the owner. See "Bootstrapping this gate" below for the one case this cannot cover: this pull request's own first landing. |
 | `governance/decisions/**` classification | `governance/review-tiers.json`'s `tier1.globs` (`governance/**`) | **Tier-1, not tier-0.** Deliberately NOT listed in `tier1RecordExempt` (the carve-out for pure record files) — adding or changing any decision record needs the same two-independent-reviewer bar as any other governance path — closing a self-issue-then-spend loophole (see "What changed after the 8e6d97ea review" below). |
 | Record authorship | `scripts/land-stack.mjs`'s `defaultAnnotateCommentAuthorization` / `isAuthorizedCollaboratorPermission` | A `foundry-review-record` comment counts toward tier-1 ONLY when its author's collaborator permission on this repository (`repos/{owner}/{repo}/collaborators/{username}/permission`) is `admin` or `write` (`"authorized"`). A confirmed `read`/`none`, or an unresolved login, is `"unauthorized"` — never counts toward anything, approval or rejection, and is never itself suspicious (a stranger cannot block the PR by posting garbage). A FAILED permission lookup (the check itself errored, not a confirmed "no") is the third, distinct state `"unknown"` and refuses the whole gate outright, for any record — collapsing it into `"unauthorized"` would silently drop a genuine reject this module simply could not verify. This is a public repository; without any of this, a comment from any GitHub account with no relationship to it at all satisfied tier-1 independence. |
 | Record block parsing | `scripts/land-stack.mjs`'s `findReviewRecordBlocks` and `hasUnaccountedMarkerContent` | A POSITIVE grammar, not a strip-then-scan regex (round 5 replaced `stripQuotedAndFencedContent` — see "What changed after the round-5 reviews" below): a record counts only when its `<!-- foundry-review-record` opener sits at literal column 0 (no leading whitespace at all — an indented opener, including one inside a classic 4-space-indented code block, never matches), outside any fenced code block (backtick or tilde, any indent), `<details>`, or `<pre>` region, with its `-->` closer present. The JSON body is parsed with `JSON.parse`, so any indentation inside the block is fine — nothing is stripped or rewritten to make it parse. A marker (`foundry-review-record`, matched CASE-INSENSITIVELY — round 6, second reviewer: a differently-cased opener was previously invisible to the parser entirely) that appears in an AUTHORIZED comment but never resolves to a valid block — fenced, quoted, indented past what the grammar accepts, malformed JSON, or JSON that parses but is not a plain object (an array, `null`, a string, or a number — round 6, blocking, first reviewer, item (c)-1: a reject wrapped in `[{ …, "state": "reject" }]` is spread by `{ ...parsed }` into index keys with no `role`/`state` at all otherwise) — REFUSES THE GATE via a `_parseError` marker, the same as an edited-at-head record does; it is never silently dropped. A reject must never vanish just because it shares a comment with an earlier genuine block (round 6, blocking, both reviewers): `hasUnaccountedMarkerContent` separately checks, for every comment that produced at least one valid block, whether the raw body still contains MORE marker-opener occurrences than `findReviewRecordBlocks` accounted for (a fenced or quoted second marker alongside a genuine one), or ends with a fence/`<details>`/`<pre>` region still open (including a ONE-LINE `<details>...</details>`, whose same-line close this module's line-based tracker never sees, silently swallowing everything after it) — either signal adds an extra `_parseError`, refusing the gate rather than treating the comment as fully accounted for. An unauthorized comment's marker is never suspicious this way (see "Honour-system limits" below for the DoS this closes). A bare-word PROSE mention of the marker name (no `<!--` opener at all) also currently refuses the gate under the same `_parseError` fallback — harmless under report-only, but listed as a must-fix before enforce (see "Before switching to enforce" below). |
-| Tier-1 review requirement | `scripts/land-stack.mjs`'s `evaluateTier1Independence` | Reads `foundry-review-record` comments (`docs/contracts/review-record.json`) on the pull request at its exact current head, from AUTHORIZED comments only. Refuses outright if any edited-at-head or unparseable record block exists at all (`findSuspiciousRecordComments`) — rather than silently dropping it and continuing. AMBIGUOUS-HEADSHA HANDLING, PRECISE (round 6, blocking, first reviewer, items (c)-2/3/4 — an earlier version of this row overclaimed the exact conditions): for any record whose state is NOT a recognized approval-path spelling (`approved`/`commented`/`declared`) — a reject spelling, or any other unrecognized value, WHATEVER its `role` — `isConfirmedDifferentHeadSha` is the only test for "safely stale, ignore it": a full, well-formed 40-character hex SHA that provably does not equal the current head. A missing `headSha`, a non-hex value, the literal string `"HEAD"`, or a prefix shorter than 7 characters is NEVER treated as stale just because it fails to match the current head. From there the two spellings split: a RECOGNIZED reject spelling that clearly matches the current head (the same lenient 7+-character-prefix rule `findStickyRejections` uses) is NOT flagged suspicious here — it is the legitimate case, handled below with its own sticky reason; a TRULY UNRECOGNIZED state is suspicious even at a clean, exact match to the current head, since nothing else in this module interprets it as meaningful evidence. Refuses outright, and STICKY (never superseded by any later record, from the same `instanceId` or otherwise, however that later record is dated), if any authorized record at (or an unambiguous 7+ character prefix of) the current head has a reject-shaped state, matched case-insensitively AND spelling-insensitively (`findStickyRejections` via `normalizeStateSpelling`: `reject`, `rejected`, `changes-requested`, and `changes_requested` all count as the same reject state — round 5, both reviewers) — regardless of what else about the record (missing `depth`, missing `model`) is wrong. Requires exactly one author record. Otherwise requires one `primary` and one `secondary` record, both `state: "approved"` (`"commented"` never counts), differing in model or provider, ordered by the comment's own `created_at` (not the self-declared `submittedAt`) when an instance supersedes its own earlier record. |
+| Tier-1 review requirement | `scripts/land-stack.mjs`'s `evaluateTier1Independence` | Reads `foundry-review-record` comments (`docs/contracts/review-record.json`) on the pull request at its exact current head, from AUTHORIZED comments only. Refuses outright if any edited-at-head or unparseable record block exists at all (`findSuspiciousRecordComments`) — rather than silently dropping it and continuing. AMBIGUOUS-HEADSHA HANDLING, PRECISE (round 6, blocking, first reviewer, items (c)-2/3/4 — an earlier version of this row overclaimed the exact conditions): for any record whose state is NOT a recognized approval-path spelling (`approved`/`commented`/`declared`) — a reject spelling, or any other unrecognized value, WHATEVER its `role` — `isConfirmedDifferentHeadSha` is the sole test for "safely stale, ignore it": a full, well-formed 40-character hex SHA that provably does not equal the current head. A missing `headSha`, a non-hex value, the literal string `"HEAD"`, or a prefix shorter than 7 characters is NEVER treated as stale just because it fails to match the current head. From there the two spellings split: a RECOGNIZED reject spelling that clearly matches the current head (the same lenient 7+-character-prefix rule `findStickyRejections` uses) is NOT flagged suspicious here — it is the legitimate case, handled below with its own sticky reason; a TRULY UNRECOGNIZED state is suspicious even at a clean, exact match to the current head, since nothing else in this module interprets it as meaningful evidence. Refuses outright, and STICKY (never superseded by any later record, from the same `instanceId` or otherwise, however that later record is dated), if any authorized record at (or an unambiguous 7+ character prefix of) the current head has a reject-shaped state, matched case-insensitively AND spelling-insensitively (`findStickyRejections` via `normalizeStateSpelling`: `reject`, `rejected`, `changes-requested`, and `changes_requested` all count as the same reject state — round 5, both reviewers) — regardless of what else about the record (missing `depth`, missing `model`) is wrong. Requires exactly one author record. Otherwise requires one `primary` and one `secondary` record, both `state: "approved"` (`"commented"` never counts), differing in model or provider, ordered by the comment's own `created_at` (not the self-declared `submittedAt`) when an instance supersedes its own earlier record. |
 | Tier-0 fast path | `scripts/land-stack.mjs`'s `runStatus` | A genuinely tier-0 classification skips fetching PR comments, resolving any collaborator permission, and reading the base-branch decision log entirely — no path in a tier-0 diff can match `governance/decisions/**` (that glob alone is tier-1), so none of those reads would find anything to check. This also means one malformed record anywhere in the decision log no longer breaks `--status` for every pull request, tier-0 included. |
 | Tier-2 owner-decision requirement | `scripts/land-stack.mjs`'s `evaluateTier2Decision` | Reads decision records from the pull request's base commit for one that is itself schema-valid (checked against its real filename on the base branch, not against its own self-reported `id`), `tier: "tier-2"`, `status: "decided"`, `decidedBy: "owner"`, not superseded, not a relaxation past its sunset, unexpired (an unparseable `expiry` counts as expired), and linked to the PR EITHER by number PLUS a matching patch-id (`links.pullRequests` + `links.patchIds`) OR by a path glob that is either a literal path or exactly one of `tier2.globs` verbatim, on a record whose own `expiry` is non-null (`isOverbroadPathGlob`, computed against the real tier config). The patch-id is `git patch-id --verbatim` of the pull request's own net diff against its merge base, recomputed fresh at gate time (never trusted from a cached value) — see "Tier-2 authorization survives restacks: patch-id, not head sha" below for why this replaced a head-sha pin in round 5. A PR-scoped record with no patch-id pin, or a path-scoped record with `expiry: null`, authorizes nothing at all. **Known limitation, not solved:** a merge-train batch pull request carries a different PR number, head sha, AND patch-id than any original constituent PR a decision record might name — this gate checks the batch PR's own single patch-id against its own single merge base; it does not decompose a batch into per-constituent patch-ids or resolve one PR's authorization through another's. A batch containing a tier-2 change needs its own decision record (naming the batch's own patch-id) or its own fresh review, even when an original constituent PR was already authorized. |
 | Changed-decision-record validation | `scripts/land-stack.mjs`'s `evaluateChangedDecisionRecords`, reusing `scripts/check-decision-records.mjs`'s own `validateDecisionRecordShape` | Runs on **every** pull request, any tier: any `governance/decisions/**` file the PR adds, edits, deletes, or renames must be schema-valid, checked against its content at the PR's own **head** commit. A path deleted or renamed OUT of `governance/decisions/` is treated the same as a malformed record (decision records are append-only — superseded, never deleted or renamed away). |
@@ -370,14 +370,14 @@ contributor runs from their own machine with their own authenticated `gh`.
 through `land-stack.mjs`, or a merge performed through the GitHub web UI,
 skips this entire gate.** Nothing in this slice prevents either — the gate
 is code a contributor chooses to run, not a server-side check GitHub itself
-enforces. The only way to make it unconditional is a required status check
+enforces. Making it unconditional would need a required status check
 computed by a workflow, which is precisely the CI-workflow shape AGENTS.md's
 rule rules out for model-review evidence; this slice accepts that trade
 rather than working around the rule it is trying to honor.
 
 ## What changed after the 8e6d97ea review
 
-An independent review found the first draft of this slice weaker than both
+An independent review found the initial draft of this slice weaker than both
 the cited decision-tier rule and this document's own text, in ways that were
 implementation bugs, not disclosed honour-system limits. Fixed in this
 revision:
@@ -522,7 +522,7 @@ overlapped substantially:
   a standing blank cheque.** `evaluateTier2Decision` now requires a
   PR-scoped authorization to also pin the exact head sha it was decided
   about (`links.headShas`), and a path-scoped one to carry a non-null
-  `expiry`. `governance/decisions/weekly-release-calendar.json` — the only
+  `expiry`. `governance/decisions/weekly-release-calendar.json` — the sole
   live tier-2 authorization in the tree — now pins the owner's sign-off to
   its actual head, `348e385bc43b266481d5ae48d451d01a54a53e2e`, and two more
   attribution errors in that record were corrected (the out-of-band
@@ -605,19 +605,23 @@ protection:
   scripts (`validate-candidate-publish.mjs`, `select-publishable-packages.mjs`,
   `run-candidate-qualification.mjs`, `set-scope.mjs`) were tier-2 despite
   none of them containing a literal `npm publish`/`deprecate`/`unpublish`
-  invocation. Measured (corrected methodology — see "What changed after the
-  round-6 reviews" below for why the round-5 disposition's own first pass at
-  this number was itself wrong): round-4's globs put roughly 167 of the
-  last 200 real landings (about 84%) at tier-2 (owner-only); round-5's
+  invocation. Measured via `git log --first-parent --merges` against the
+  last 200 real landings on `main`, each diffed against its own first
+  parent (corrected methodology — see "What changed after the round-6
+  reviews" below for why the round-5 disposition's own first pass at this
+  number was itself wrong): round-4's globs put roughly 167 of the last
+  200 real landings (about 84%, this same measurement) <!-- facts-gate:ignore -->
+  at tier-2 (owner-only); round-5's
   precise, literal globs — naming only `scripts/publish-qualified-directory.mjs`,
   `scripts/publish-qualified-set.mjs`, `scripts/deprecate-registry-version.mjs`,
   `scripts/deprecate-legacy-packages.mjs`, and the three workflow files that
-  run them — put 40 of the same 200 (20%) at tier-2, with the
+  run them — put 40 of the same 200 (20%, same measurement) <!-- facts-gate:ignore -->
+  at tier-2, with the
   eligibility-gating scripts and every `*.test.mjs` file now correctly
   landing at tier-1 via the broad `scripts/**` glob instead. See
   `governance/review-tiers.json`'s own `tier2.$comment` for the full grep
-  trail, and "Before switching to enforce" below for what still drives that
-  20%.
+  trail, and "Before switching to enforce" below for what still drives
+  that same 20% (same `git log --first-parent --merges` measurement) <!-- facts-gate:ignore -->.
 - **Reject-spelling coverage was too narrow.** `changes_requested`,
   `changes-requested` (hyphen), and `rejected` — spellings a reviewer might
   plausibly type — are now all recognized as the same reject state,
@@ -707,7 +711,8 @@ disposition (`git log --merges -n 200` without `--first-parent` counts
 "merge origin/main into this PR branch" commits as if they were landings,
 which inflated the earlier 163/53 figures); the corrected, reviewer-verified
 method (`git log --first-parent --merges` against real landings on `main`,
-diffing each merge against its own first parent) gives 167/40 (84%/20%)
+diffing each merge against its own first parent) gives 167/40, i.e.
+84%/20% by that same first-parent measurement <!-- facts-gate:ignore -->,
 for the round-4/round-5 globs respectively — see the tier-2 globs bullet
 above. The patch-id restack claim ("restacking does not change the content
 of the diff being hashed") was also too strong; corrected in "Tier-2
@@ -914,9 +919,12 @@ round, and should be resolved or explicitly accepted before
    `scripts/lib/**` alone drives most tier-2 landings.** Measured
    independently by both round-6 reviews, using two different methods that
    land close together: real landings on `main` diffed against their own
-   first parent put tier-2 at 40 of the last 200 (20%), with
+   first parent (the `git log --first-parent --merges` method) put tier-2
+   at 40 of the last 200 (20%) <!-- facts-gate:ignore -->, with
    `scripts/lib/**` alone accounting for 28 of those 40; the same 200
-   pull requests' own file lists put it at 35 of 200 (17.5%). Separately,
+   pull requests' own file lists (a second, independent method: each PR's
+   own reported file list rather than a diff-tree) put it at 35 of 200
+   (17.5%) <!-- facts-gate:ignore -->. Separately,
    the four literal tier-2 publish/deprecate scripts statically import
    seven tier-1 modules that run INSIDE the tier-2 flow
    (`validate-candidate-publish`, `select-publishable-packages`,
@@ -931,8 +939,9 @@ round, and should be resolved or explicitly accepted before
    comparison): make tier-2 the CLOSURE of the publish/deprecate roots —
    the executables plus those seven modules plus eight specific
    `scripts/lib/` files the closure actually reaches — and move the REST
-   of `scripts/lib/**` to tier-1. That measures 21 of 200 (10.5%) instead
-   of 35 of 200 (17.5%) by the same method, and covers what the tier-2
+   of `scripts/lib/**` to tier-1. That measures 21 of 200, i.e. 10.5% by the same PR-file-list method as above <!-- facts-gate:ignore -->,
+   instead of 35 of 200, i.e. 17.5% restated from above <!-- facts-gate:ignore -->,
+   and covers what the tier-2
    flow actually executes rather than a whole directory by convention.
    **Decide before enforce:** keep the current broad `scripts/lib/**`
    (simpler, more conservative, costs more owner review) or adopt the
@@ -1108,11 +1117,11 @@ tier-evaluation failure is reported as a warning and `land-stack.mjs
 **This pull request CAN now pass `land-stack.mjs --status` against
 itself**, under report-only, precisely because there is no prior tier
 config to classify it against — that absence is exactly what report-only
-is built to tolerate. The first landing of this file is therefore no
+is built to tolerate. The initial landing of this file is therefore no
 longer *necessarily* a plain `gh pr merge` bypassing this gate entirely; a
 plain `gh pr merge` remains available (the documented skip path above) and
 remains how an owner would choose to land it under enforce, but it is no
-longer the only path once report-only is what everything defaults to.
+longer the sole path once report-only is what everything defaults to.
 
 **This same fallback is an ENFORCE-MODE gap, not just a bootstrap
 convenience** (round 6, second reviewer, blocking — folded into the
@@ -1166,7 +1175,7 @@ limit this design accepts on purpose, not a bug it missed.)
   admin/write collaborator's, refuses the merge outright, forcing a human
   to remove or repost the comment rather than the gate silently working
   around it. An UNAUTHORIZED comment is never suspicious this way, however
-  garbled — the round-4 review found the first draft of this check ignored
+  garbled — the round-4 review found an earlier draft of this check ignored
   authorization entirely, so any stranger could permanently block every
   tier-1/tier-2 PR by posting one malformed comment. This closes the
   specific attack the `df15ab87` review probed too: editing an authorized
@@ -1182,7 +1191,7 @@ limit this design accepts on purpose, not a bug it missed.)
   head it names, and only clears via a commit that actually changes
   something.** `findStickyRejections` makes a reject unrecoverable by any
   later record at that SAME head, matched case-insensitively and by an
-  unambiguous 7+ character SHA prefix — the only way to clear it is a
+  unambiguous 7+ character SHA prefix — the sole way to clear it is a
   genuinely new head whose own commit changes at least one file
   (`isNoOpHeadCommit` refuses a no-op commit like `git commit
   --allow-empty` outright, for any tier-1/tier-2 PR, so a no-op push cannot
@@ -1249,7 +1258,7 @@ limit this design accepts on purpose, not a bug it missed.)
   leaves a durable, auditable trail when things go right, but it does not
   make dishonesty impossible.
 - **A direct `gh pr merge`, or the GitHub web UI, skips this gate
-  entirely.** Repeated from above because it is the largest honour-system
+  entirely.** Repeated from above because it is a major honour-system
   gap of all: nothing about this slice is a server-side enforcement
   mechanism.
 - **A user-level deny hook is a seatbelt, not a lock (see below).** It runs
@@ -1289,7 +1298,7 @@ It blocks, tested directly against each pattern:
 - `gh api .../environments` — environment configuration
 - `gh api ... .../branches/<branch>/protection` — branch-protection reads or
   edits via the REST API directly, including a slash-named branch such as
-  `claude/foo` (an earlier pattern stopped at the first `/` and missed this)
+  `claude/foo` (an earlier pattern stopped at the initial `/` and missed this)
 - `gh api -X DELETE .../git/refs/heads/<branch>` or `gh api --method DELETE
   .../git/refs/heads/<branch>` (both forms) — deleting a branch via the raw
   Git refs API, a second path to the same end `git push --delete` already
