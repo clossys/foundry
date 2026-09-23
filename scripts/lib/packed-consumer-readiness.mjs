@@ -67,12 +67,14 @@ const publisherExports = [
   "@clossys/publisher/document",
   "@clossys/publisher/email",
   "@clossys/publisher/image",
+  "@clossys/publisher/materials",
   "@clossys/publisher/media",
   "@clossys/publisher/pack",
   "@clossys/publisher/print",
   "@clossys/publisher/record",
   "@clossys/publisher/slides",
   "@clossys/publisher/surfaces",
+  "@clossys/publisher/templates",
   "@clossys/publisher/web",
 ];
 

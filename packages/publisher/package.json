@@ -1,6 +1,6 @@
 {
   "name": "@clossys/publisher",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -84,6 +84,14 @@
     "./surfaces": {
       "types": "./dist/surfaces/index.d.ts",
       "import": "./dist/surfaces/index.js"
+    },
+    "./materials": {
+      "types": "./dist/materials/index.d.ts",
+      "import": "./dist/materials/index.js"
+    },
+    "./templates": {
+      "types": "./dist/templates/index.d.ts",
+      "import": "./dist/templates/index.js"
     }
   },
   "imports": {
@@ -114,7 +122,8 @@
     "CHANGELOG.md",
     "README.md",
     "LICENSE",
-    "skill"
+    "skill",
+    "templates"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
