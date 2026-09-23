@@ -1,0 +1,22 @@
+{
+  "en": {
+    "id": "qualification-copy",
+    "locale": "en",
+    "revision": "qualification-fixture-1",
+    "source": { "kind": "consumer", "reference": "qualification-fixture" },
+    "entries": [
+      { "id": "empty.no-results", "text": "No results", "context": "Empty result state", "status": "approved" },
+      { "id": "dashboard.welcome", "text": "Welcome back", "context": "Dashboard header", "status": "approved" }
+    ]
+  },
+  "fr": {
+    "id": "qualification-copy",
+    "locale": "fr",
+    "revision": "qualification-fixture-1",
+    "source": { "kind": "consumer", "reference": "qualification-fixture" },
+    "entries": [
+      { "id": "empty.no-results", "text": "Aucun résultat", "context": "Empty result state", "status": "approved" },
+      { "id": "dashboard.welcome", "text": "Bon retour", "context": "Dashboard header", "status": "approved" }
+    ]
+  }
+}
