@@ -84,7 +84,7 @@ import { evaluatePackageFramework, validateCheckOutputEnvelope } from "./check-p
 import { evaluateCapabilityMaps } from "./check-capability-maps.mjs";
 import { evaluateLoopMatrix } from "./check-loop-matrix.mjs";
 import { loadStageActivities } from "./generate-loop-section.mjs";
-import { loadToolingPackageNames, classifyPackage, classificationFinding } from "./package-classification.mjs";
+import { loadToolingPackageNames, classifyPackage, classificationFinding, isInvalidClassification } from "./package-classification.mjs";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 
@@ -202,15 +202,18 @@ function statusMdGap(root, role) {
  * skill source, and the pre-resolved loop-matrix descriptor bundle
  * check-loop-matrix.mjs's own evaluator wants) plus the frameworkAndCapability
  * lookups, and returns the eight-column conformance report. Each descriptor
- * may carry `classification: "role"|"tooling"|"unclassified"|"both"|"invalid-name"`
- * (scripts/package-classification.mjs); it defaults to "role" when omitted,
- * so an existing caller that only ever built role descriptors keeps
- * behaving exactly as before. A "tooling" descriptor gets its own reduced
- * row (excluded: executable-tooling, only outputEnvelope and
- * conversationContract computed -- Decision 1). An "unclassified", "both",
- * or "invalid-name" descriptor always produces a classificationFinding, in
- * report mode and --enforce alike; for "invalid-name" `role` carries the
- * package's directory name, since its manifest has no usable name.
+ * may carry
+ * `classification: "role"|"tooling"|"unclassified"|"both"|"invalid-name"|
+ * "missing-manifest"|"invalid-manifest"` (scripts/package-classification.mjs);
+ * it defaults to "role" when omitted, so an existing caller that only ever
+ * built role descriptors keeps behaving exactly as before. A "tooling"
+ * descriptor gets its own reduced row (excluded: executable-tooling, only
+ * outputEnvelope and conversationContract computed -- Decision 1). Every
+ * other non-"role" classification (isInvalidClassification) always produces
+ * a classificationFinding, in report mode and --enforce alike; for all of
+ * them except "unclassified"/"both", `role` carries the package's directory
+ * name, since there is no manifest name to use (no manifest at all, an
+ * unparseable one, or one with no usable name).
  */
 export function evaluateConformance(root, descriptors, options = {}) {
   const { enforce = false, allowlist = {} } = options;
@@ -218,7 +221,7 @@ export function evaluateConformance(root, descriptors, options = {}) {
 
   const roleDescriptors = descriptors.filter((d) => (d.classification ?? "role") === "role");
   const toolingDescriptors = descriptors.filter((d) => d.classification === "tooling");
-  const invalidDescriptors = descriptors.filter((d) => d.classification === "unclassified" || d.classification === "both" || d.classification === "invalid-name");
+  const invalidDescriptors = descriptors.filter((d) => isInvalidClassification(d.classification));
 
   const findings = [];
   const table = [];
@@ -326,8 +329,25 @@ function collectDescriptors(root) {
   for (const entry of readdirSync(packagesDir, { withFileTypes: true })) {
     if (!entry.isDirectory()) continue;
     const manifestPath = join(packagesDir, entry.name, "package.json");
-    if (!existsSync(manifestPath)) continue;
-    const manifest = readJson(manifestPath);
+    if (!existsSync(manifestPath)) {
+      // The directory itself is a package this gate must account for, even
+      // with no package.json at all -- report it directly, using the
+      // directory name as the only identity available
+      // (scripts/package-classification.mjs's own "missing-manifest" case),
+      // rather than silently skipping the directory.
+      descriptors.push({ role: entry.name, packageDir: entry.name, manifest: null, skillSource: null, loopMatrixDoc: null, capabilityIds: null, stageActivities: null, classification: "missing-manifest" });
+      continue;
+    }
+    let manifest;
+    try {
+      manifest = readJson(manifestPath);
+    } catch {
+      // package.json exists but is not valid JSON -- fail closed on just
+      // this one package (scripts/package-classification.mjs's own
+      // "invalid-manifest" case) rather than aborting the entire gate run.
+      descriptors.push({ role: entry.name, packageDir: entry.name, manifest: null, skillSource: null, loopMatrixDoc: null, capabilityIds: null, stageActivities: null, classification: "invalid-manifest" });
+      continue;
+    }
     if (!isText(manifest.name)) {
       // The manifest exists but carries no usable name -- there is nothing
       // to classify, so report it directly rather than calling
@@ -368,7 +388,13 @@ function frameworkExtras(root, contract) {
     if (!entry.isDirectory()) continue;
     const manifestPath = join(packagesDir, entry.name, "package.json");
     if (!existsSync(manifestPath)) continue;
-    const manifest = readJson(manifestPath);
+    // A missing or unparseable manifest is already reported as its own
+    // finding by collectDescriptors() above (missing-manifest /
+    // invalid-manifest) -- this second, role-name-keyed lookup only needs
+    // to skip it here, not report it again, and must not let a broken
+    // package.json crash the whole run the way an unguarded readJson would.
+    let manifest;
+    try { manifest = readJson(manifestPath); } catch { continue; }
     if (isText(manifest.name)) packageDirByName.set(manifest.name, join(packagesDir, entry.name));
   }
   const readPackageFile = (role, relativePath) => {
@@ -405,7 +431,7 @@ function printTable(table) {
       console.log(`${row.role}  |  excluded: executable-tooling  |  outputEnvelope=${row.outputEnvelope}  |  conversationContract=${row.conversationContract}  |  gaps=${row.gaps}`);
       continue;
     }
-    if (row.classification === "unclassified" || row.classification === "both" || row.classification === "invalid-name") {
+    if (isInvalidClassification(row.classification)) {
       console.log(`${row.role}  |  classification: ${row.classification} — see FAIL below`);
       continue;
     }
@@ -437,7 +463,7 @@ function main(argv) {
   for (const item of result.findings) console.log(`FAIL ${item.rule} ${item.role} — ${item.message}`);
   const roleRows = result.table.filter((row) => row.classification === "role");
   const toolingRows = result.table.filter((row) => row.classification === "tooling");
-  const invalidRows = result.table.filter((row) => row.classification === "unclassified" || row.classification === "both" || row.classification === "invalid-name");
+  const invalidRows = result.table.filter((row) => isInvalidClassification(row.classification));
   const totalGaps = roleRows.reduce((sum, row) => sum + row.gaps, 0);
   console.log(`\n${roleRows.length} active role(s), ${totalGaps} total gap(s) against Stage A (0 gaps = fully conforming).`);
   if (toolingRows.length > 0) console.log(`${toolingRows.length} package(s) excluded as executable tooling: ${toolingRows.map((row) => row.role).join(", ")}.`);

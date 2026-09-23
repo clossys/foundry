@@ -32,6 +32,16 @@
 //     classifyPackage at all (there is no name to classify); it reports
 //     this classification directly, using the package's directory name as
 //     the only identity it has.
+//   - "missing-manifest": the package directory under packages/ has no
+//     package.json at all. Same defect class, one layer earlier -- a
+//     caller that only ever `readdirSync`s and then reads each manifest
+//     can silently skip a directory that never had one. Reported directly,
+//     using the directory name as identity.
+//   - "invalid-manifest": the package directory has a package.json, but it
+//     is not valid JSON. A caller must not let one broken manifest abort
+//     the whole gate run (that fails closed but reports nothing
+//     attributable) -- it catches the parse error for that one package and
+//     reports this classification instead, again keyed by directory name.
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -72,14 +82,30 @@ export function classifyPackage(name, activeRoles, toolingNames) {
   return "unclassified";
 }
 
+// Every classification value that is itself a defect, never a normal
+// outcome -- a gate always reports these, in report mode and --enforce
+// alike, unlike a "role" absence gap which report mode only counts. Shared
+// so a gate's evaluator, printTable, and summary line filter identically
+// rather than three separately-maintained OR chains that can drift apart.
+const INVALID_CLASSIFICATIONS = new Set(["unclassified", "both", "invalid-name", "missing-manifest", "invalid-manifest"]);
+
+/**
+ * True for any classification that is itself a defect (see
+ * INVALID_CLASSIFICATIONS above), false for "role" and "tooling".
+ */
+export function isInvalidClassification(classification) {
+  return INVALID_CLASSIFICATIONS.has(classification);
+}
+
 /**
  * The always-on finding for a package that classified as "unclassified",
- * "both", or "invalid-name" -- a defect the gates report in every mode,
- * never only under --enforce, because a classification gap is not an
- * adoption gap. Returns null for "role" and "tooling", which are not
- * findings. For "invalid-name", `role` is the package's directory name
- * (there is no manifest name to use), passed by the caller as the only
- * identity available.
+ * "both", "invalid-name", "missing-manifest", or "invalid-manifest" -- a
+ * defect the gates report in every mode, never only under --enforce,
+ * because a classification gap is not an adoption gap. Returns null for
+ * "role" and "tooling", which are not findings. For every invalid
+ * classification except "unclassified"/"both", `role` is the package's
+ * directory name (there is no manifest name to use), passed by the caller
+ * as the only identity available.
  */
 export function classificationFinding(role, classification) {
   if (classification === "both") {
@@ -101,6 +127,20 @@ export function classificationFinding(role, classification) {
       rule: "invalid-manifest-name",
       role,
       message: `packages/${role}/package.json has no valid "name" (missing, empty, or not a string) — every packages/* manifest must declare a usable name so it can be classified as a role (docs/contracts/role-loop-archetypes.json's own "roles" map) or executable tooling (docs/contracts/package-evidence.json's own category: "${EXECUTABLE_TOOLING_CATEGORY}").`,
+    };
+  }
+  if (classification === "missing-manifest") {
+    return {
+      rule: "missing-manifest",
+      role,
+      message: `packages/${role}/package.json does not exist — every directory under packages/ must ship a package.json so it can be classified as a role (docs/contracts/role-loop-archetypes.json's own "roles" map) or executable tooling (docs/contracts/package-evidence.json's own category: "${EXECUTABLE_TOOLING_CATEGORY}").`,
+    };
+  }
+  if (classification === "invalid-manifest") {
+    return {
+      rule: "invalid-manifest",
+      role,
+      message: `packages/${role}/package.json could not be parsed as JSON — every packages/* manifest must be readable so it can be classified as a role (docs/contracts/role-loop-archetypes.json's own "roles" map) or executable tooling (docs/contracts/package-evidence.json's own category: "${EXECUTABLE_TOOLING_CATEGORY}").`,
     };
   }
   return null;

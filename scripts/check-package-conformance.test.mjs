@@ -231,6 +231,24 @@ test("a package with no usable manifest name (classification: 'invalid-name') is
   assert.ok(enforceResult.findings.some((f) => f.rule === "invalid-manifest-name" && f.role === "mystery-widget"));
 });
 
+test("a package directory with no package.json (classification: 'missing-manifest') is always a finding, in report and enforce mode", (t) => {
+  const root = makeTempRoot(t);
+  const invalid = descriptor({ classification: "missing-manifest", role: "ghost-package", packageDir: "ghost-package", manifest: null });
+  const reportResult = evaluateConformance(root, [invalid], { enforce: false });
+  assert.ok(reportResult.findings.some((f) => f.rule === "missing-manifest" && f.role === "ghost-package"));
+  const enforceResult = evaluateConformance(root, [invalid], { enforce: true });
+  assert.ok(enforceResult.findings.some((f) => f.rule === "missing-manifest" && f.role === "ghost-package"));
+});
+
+test("a package.json that is not valid JSON (classification: 'invalid-manifest') is always a finding, in report and enforce mode", (t) => {
+  const root = makeTempRoot(t);
+  const invalid = descriptor({ classification: "invalid-manifest", role: "broken-json-widget", packageDir: "broken-json-widget", manifest: null });
+  const reportResult = evaluateConformance(root, [invalid], { enforce: false });
+  assert.ok(reportResult.findings.some((f) => f.rule === "invalid-manifest" && f.role === "broken-json-widget"));
+  const enforceResult = evaluateConformance(root, [invalid], { enforce: true });
+  assert.ok(enforceResult.findings.some((f) => f.rule === "invalid-manifest" && f.role === "broken-json-widget"));
+});
+
 // --- Real collector + CLI regression (independent review on PR #1318,
 // reproducing CodeRabbit's finding): before this fix, a packages/*
 // package.json whose "name" was missing, empty, or not a string hit
@@ -241,12 +259,17 @@ test("a package with no usable manifest name (classification: 'invalid-name') is
 // synthetic, temporary repository root), not just evaluateConformance
 // above, because that is exactly the code path the defect lived in.
 
-function makeFixtureRepo(t, packageName) {
+function makeFixtureRepoWithContracts(t) {
   const root = mkdtempSync(join(tmpdir(), "check-package-conformance-cli-"));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   mkdirSync(join(root, "docs", "contracts"), { recursive: true });
   writeFileSync(join(root, "docs", "contracts", "role-loop-archetypes.json"), JSON.stringify({ schemaVersion: 1, roles: {} }));
   writeFileSync(join(root, "docs", "contracts", "package-evidence.json"), JSON.stringify({ schemaVersion: 1, packages: [] }));
+  return root;
+}
+
+function makeFixtureRepo(t, packageName) {
+  const root = makeFixtureRepoWithContracts(t);
   const packageDir = join(root, "packages", "mystery-widget");
   mkdirSync(packageDir, { recursive: true });
   const manifest = { version: "0.1.0" };
@@ -282,4 +305,56 @@ for (const [label, name] of [["missing", undefined], ["empty", ""], ["non-string
     assert.ok(parsed.findings.some((f) => f.rule === "invalid-manifest-name" && f.role === "mystery-widget"));
   });
 }
+
+// --- Real collector + CLI regression (independent review on PR #1318, round
+// two): a packages/<dir> with no package.json at all still hit
+// `if (!existsSync(manifestPath)) continue;` unconditionally and escaped
+// both the table and the findings, exit 0. And a package.json that exists
+// but is not valid JSON hit an unguarded `readJson`, throwing uncaught and
+// aborting the ENTIRE gate run with exit 2 rather than reporting a finding
+// attributable to just that one package.
+
+test("CLI: a packages/* directory with no package.json at all is reported as missing-manifest, not silently skipped (report mode)", (t) => {
+  const root = makeFixtureRepoWithContracts(t);
+  const packageDir = join(root, "packages", "ghost-package");
+  mkdirSync(join(packageDir, "src"), { recursive: true });
+  writeFileSync(join(packageDir, "src", "index.ts"), "export {};\n"); // a real file in the directory, just no package.json
+  const result = runCli(root);
+  assert.equal(result.status, 1);
+  const parsed = JSON.parse(result.stdout);
+  assert.ok(parsed.findings.some((f) => f.rule === "missing-manifest" && f.role === "ghost-package"));
+  assert.ok(parsed.table.some((row) => row.role === "ghost-package" && row.classification === "missing-manifest"));
+});
+
+test("CLI: a packages/* directory with no package.json at all still fails under --enforce", (t) => {
+  const root = makeFixtureRepoWithContracts(t);
+  mkdirSync(join(root, "packages", "ghost-package"), { recursive: true });
+  const result = runCli(root, ["--enforce"]);
+  assert.equal(result.status, 1);
+  const parsed = JSON.parse(result.stdout);
+  assert.ok(parsed.findings.some((f) => f.rule === "missing-manifest" && f.role === "ghost-package"));
+});
+
+test("CLI: a package.json that is not valid JSON is reported as invalid-manifest for just that package, not an exit-2 abort of the whole run (report mode)", (t) => {
+  const root = makeFixtureRepoWithContracts(t);
+  const packageDir = join(root, "packages", "broken-json-widget");
+  mkdirSync(packageDir, { recursive: true });
+  writeFileSync(join(packageDir, "package.json"), "{ this is not json");
+  const result = runCli(root);
+  assert.equal(result.status, 1); // fails closed on a real finding, not exit 2
+  const parsed = JSON.parse(result.stdout);
+  assert.ok(parsed.findings.some((f) => f.rule === "invalid-manifest" && f.role === "broken-json-widget"));
+  assert.ok(parsed.table.some((row) => row.role === "broken-json-widget" && row.classification === "invalid-manifest"));
+});
+
+test("CLI: an invalid-JSON package.json still fails under --enforce, attributed to that one package", (t) => {
+  const root = makeFixtureRepoWithContracts(t);
+  const packageDir = join(root, "packages", "broken-json-widget");
+  mkdirSync(packageDir, { recursive: true });
+  writeFileSync(join(packageDir, "package.json"), "{ this is not json");
+  const result = runCli(root, ["--enforce"]);
+  assert.equal(result.status, 1);
+  const parsed = JSON.parse(result.stdout);
+  assert.ok(parsed.findings.some((f) => f.rule === "invalid-manifest" && f.role === "broken-json-widget"));
+});
 
