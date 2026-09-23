@@ -1,6 +1,0 @@
-{
-  "package": "architect",
-  "version": "0.1.11",
-  "reason": "This version was cut to fix issue #1250 (leaking test fixture directories): the previous version's retained qualification record went stale the moment its test suite changed (docs/PUBLISHING.md, \"Once a version's record is retained, any change to that package needs a new version\"), a test-only, non-packed change. No candidate qualification record has been generated yet for this new version. Merge acknowledgement, never publication: this version may not be published before the record exists.",
-  "issue": 1250
-}
