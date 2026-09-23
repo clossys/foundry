@@ -304,6 +304,18 @@ test("classifyTier against the real governance/review-tiers.json: the enforcemen
   assert.equal(classifyTier(["docs/contracts/decision-record.json"], tierGlobs).tier, "tier-2");
   assert.equal(classifyTier(["package-scope.json"], tierGlobs).tier, "tier-2");
   assert.equal(classifyTier(["scripts/lib/anything.mjs"], tierGlobs).tier, "tier-2");
+  // docs/HITL-RULE.md ("the rule file") and any hitl-escalation-rule*.json
+  // decision record are tier-2 (#1187 escalation-rule round 2/3, both
+  // reviewers, blocking) -- this is the whole point of moving the ratified
+  // rule's text out of docs/HITL.md (which classifies tier-0/tier-1 by
+  // itself, matching no glob here on its own) into its own, dedicated,
+  // tier-2 file. A successor record that follows the naming convention
+  // (prefixed with the id it supersedes) also classifies tier-2 through
+  // the same glob.
+  assert.equal(classifyTier(["docs/HITL-RULE.md"], tierGlobs).tier, "tier-2");
+  assert.equal(classifyTier(["governance/decisions/hitl-escalation-rule.json"], tierGlobs).tier, "tier-2");
+  assert.equal(classifyTier(["governance/decisions/hitl-escalation-rule-v2.json"], tierGlobs).tier, "tier-2");
+  assert.equal(classifyTier(["docs/HITL.md"], tierGlobs).tier, "tier-1");
   // governance/decisions/** is tier-1, not tier-0 (#1187 review at 8e6d97ea,
   // blocking finding 4) -- adding or changing a decision record needs real
   // independent review, not a free pass.
