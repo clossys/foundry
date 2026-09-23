@@ -1,17 +1,24 @@
 #!/usr/bin/env node
 // check-bin-reachability — every declared `bin` in packages/*/package.json
-// executes through a node_modules/.bin-shaped symlink and produces output.
+// executes through a node_modules/.bin-shaped symlink and produces output;
+// and every package with a qualification adapter directory has an adapter
+// that probes exactly that package's declared bin keys.
 //
 //   node scripts/check-bin-reachability.mjs [--json] [<repoRoot>]
 //
 // Exit 0 = every declared bin, invoked through a fresh temp node_modules/.bin
 //          symlink (never this repository's own node_modules/.bin), produced
-//          non-empty stdout or stderr.
+//          non-empty stdout or stderr; and every present adapter's `bins`
+//          keys equal its package's declared bin keys.
 // Exit 1 = at least one bin was silent (0-byte stdout and stderr) or failed
-//          to launch. Empty-and-exit-0 is the #909 dead-bin shape.
+//          to launch (Empty-and-exit-0 is the #909 dead-bin shape); or a
+//          qualification adapter's `bins` keys do not equal its package's
+//          declared bin keys (the PR-time half of #1187's "adapter must
+//          probe exactly the packed manifest bin map" refusal).
 // Exit 2 = the question could not be answered (unreadable manifest, missing
 //          compiled target because the package was not built, escaping bin
-//          path).
+//          path, an adapter directory with no current-direct.json, or an
+//          adapter file that does not parse or has no "bins" object).
 //
 // WHY THIS EXISTS
 // ---------------
@@ -35,11 +42,29 @@
 // COPY only — `npm pack` preserves mode and qualification hashes the packed
 // bytes), `node_modules/.bin/<name>` symlink, invoke so argv[1] is the symlink.
 //
+// ADAPTER BIN PARITY (#1187 follow-up)
+// -------------------------------------
+// Same class of drift, caught earlier. `runCandidateQualification` in
+// scripts/lib/candidate-runner.mjs refuses to run at all when a package's
+// qualification adapter (governance/release-qualification-adapters/<key>/
+// current-direct.json) does not declare exactly the packed manifest's bin
+// keys — "adapter must probe exactly the packed manifest bin map". That
+// refusal only fires when qualification is actually run, which can be long
+// after a PR adds a bin to package.json without touching the adapter
+// fixture (controller's `foundry-loop-status` and launcher's
+// `launcher-doctor`/`launcher-apply-plan` all shipped this way). For every
+// packages/<dir> that has a governance/release-qualification-adapters/<dir>
+// directory, this gate compares that adapter's `bins` object keys against
+// the package's own declared bin keys and fails at PR time — before build,
+// before qualification — the same way #909's dead-bin defect now does.
+//
 // WHAT THIS DOES NOT CLAIM
 // ------------------------
 // This is not qualification. It does not pack, install, or hash a tarball.
 // It does not claim any package is published, adopted, grounded, or closed.
-// A reachable bin is a reachable bin; it is not a consumer position.
+// A reachable bin is a reachable bin; it is not a consumer position. Bin-key
+// parity with an adapter is not an assertion that the adapter's probes
+// (expected --help exit codes, cases) are otherwise correct.
 
 import { spawnSync } from "node:child_process";
 import {
@@ -61,6 +86,8 @@ import { fileURLToPath } from "node:url";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const SPAWN_TIMEOUT_MS = 8000;
+const ADAPTERS_DIR = "governance/release-qualification-adapters";
+const ADAPTER_ARCHETYPE_FILE = "current-direct.json";
 
 function isRecord(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -162,6 +189,107 @@ export function declaredBinsFromManifest({ packageName, packageDir, manifest }) 
     bins.push({ packageName, packageDir, binName, target });
   }
   return { bins, findings, skipped: false };
+}
+
+/**
+ * The bin keys a package.json-shaped manifest declares, computed the same
+ * way `normalizedBins()` in scripts/lib/candidate-runner.mjs computes them
+ * from the packed npm manifest: a string `bin` resolves to one entry keyed
+ * by the manifest's own `name`, an object `bin` is used as-is. This does not
+ * validate escaping or empty targets (declaredBinsFromManifest already owns
+ * that) — it only answers "what keys would qualification's own packedBins
+ * comparison see", so the two gates agree on what "the packed bin map" is.
+ */
+export function packageManifestBinKeys(manifest) {
+  if (!isRecord(manifest)) return [];
+  if (typeof manifest.bin === "string") return isText(manifest.bin) && isText(manifest.name) ? [manifest.name] : [];
+  return isRecord(manifest.bin) ? Object.keys(manifest.bin) : [];
+}
+
+/**
+ * Compare one package's declared bin keys against its qualification
+ * adapter's `bins` map. Pure: takes the already-parsed adapter JSON, no I/O.
+ * Mirrors candidate-runner.mjs's `sameBinKeys(packedBins, adapter.bins)` —
+ * this is the PR-time half of that same refusal ("adapter must probe
+ * exactly the packed manifest bin map"), checked before qualification ever
+ * runs.
+ */
+export function evaluateAdapterBinParity({ packageName, packageDir, adapterPath, manifestBinKeys, adapterManifest }) {
+  const base = { packageName, packageDir, adapterPath };
+  if (!isRecord(adapterManifest) || !isRecord(adapterManifest.bins)) {
+    return {
+      ...base,
+      kind: "cannot-answer",
+      rule: "unreadable-adapter-bins",
+      message: `${adapterPath} has no readable "bins" object`,
+    };
+  }
+  const adapterKeys = Object.keys(adapterManifest.bins).sort();
+  const manifestKeys = [...(manifestBinKeys ?? [])].sort();
+  if (JSON.stringify(adapterKeys) === JSON.stringify(manifestKeys)) {
+    return {
+      ...base,
+      kind: "ok",
+      rule: "adapter-bin-parity",
+      message: `${adapterPath} probes exactly the packed bin map (${manifestKeys.length} bin(s))`,
+    };
+  }
+  const missing = manifestKeys.filter((key) => !adapterKeys.includes(key));
+  const extra = adapterKeys.filter((key) => !manifestKeys.includes(key));
+  const detail = [
+    missing.length > 0 ? `missing from adapter: ${missing.join(", ")}` : null,
+    extra.length > 0 ? `in adapter but not in package.json bin: ${extra.join(", ")}` : null,
+  ].filter((value) => value !== null).join("; ");
+  return {
+    ...base,
+    kind: "finding",
+    rule: "adapter-bin-parity",
+    message: `${adapterPath} does not probe exactly the packed manifest bin map (${detail})`,
+  };
+}
+
+/**
+ * For one package directory, find its qualification adapter (if any) and
+ * return zero or one result items. A package with no
+ * governance/release-qualification-adapters/<dir> directory is silently
+ * skipped — not every package is required to have an adapter, and this gate
+ * is not the place to assert that it should (governance/release-qualification-
+ * policy.json already does, via `check:candidate-qualification`).
+ */
+export function adapterBinParityResult({ repoRoot, dirName, packageName, packageDir, manifest }) {
+  const adapterDir = join(repoRoot, ADAPTERS_DIR, dirName);
+  if (!existsSync(adapterDir) || !statSync(adapterDir).isDirectory()) return null;
+  const adapterPath = join(adapterDir, ADAPTER_ARCHETYPE_FILE);
+  if (!existsSync(adapterPath)) {
+    return {
+      packageName,
+      packageDir,
+      adapterPath,
+      kind: "cannot-answer",
+      rule: "missing-adapter-file",
+      message: `${adapterDir} has no ${ADAPTER_ARCHETYPE_FILE}`,
+    };
+  }
+  let adapterManifest;
+  try {
+    adapterManifest = JSON.parse(readFileSync(adapterPath, "utf8"));
+  } catch (error) {
+    return {
+      packageName,
+      packageDir,
+      adapterPath,
+      kind: "cannot-answer",
+      rule: "unreadable-adapter",
+      message: `cannot parse ${adapterPath}: ${error instanceof Error ? error.message : String(error)}`,
+    };
+  }
+  return evaluateAdapterBinParity({
+    packageName,
+    packageDir,
+    adapterPath,
+    manifestBinKeys: packageManifestBinKeys(manifest),
+    adapterManifest,
+  });
 }
 
 /**
@@ -306,6 +434,8 @@ export function scanBinReachability(repoRoot) {
       continue;
     }
     const packageName = isText(manifest.name) ? manifest.name : dirName;
+    const adapterResult = adapterBinParityResult({ repoRoot, dirName, packageName, packageDir, manifest });
+    if (adapterResult) results.push(adapterResult);
     const declared = declaredBinsFromManifest({ packageName, packageDir, manifest });
     results.push(...declared.findings);
     for (const bin of declared.bins) {
@@ -348,7 +478,11 @@ export function scanBinReachability(repoRoot) {
 
 function printText(evaluated) {
   for (const item of evaluated.passed) {
-    console.log(`PASS ${item.packageName} ${item.binName} -> ${item.target} (exit ${item.status})`);
+    if (item.rule === "reachable-bin") {
+      console.log(`PASS ${item.packageName} ${item.binName} -> ${item.target} (exit ${item.status})`);
+    } else {
+      console.log(`PASS ${item.rule} ${item.packageName} — ${item.message}`);
+    }
   }
   for (const item of evaluated.findings) {
     console.log(`FAIL ${item.rule} ${item.packageName}${item.binName ? ` ${item.binName}` : ""} — ${item.message}`);
@@ -358,7 +492,7 @@ function printText(evaluated) {
   }
   const declared = evaluated.passed.length + evaluated.findings.length + evaluated.cannotAnswer.length;
   console.log(
-    `\n${evaluated.passed.length} of ${declared} declared bin(s) produced output through a node_modules/.bin-shaped symlink.`,
+    `\n${evaluated.passed.length} of ${declared} declared bin(s)/adapter check(s) produced output or matched through a node_modules/.bin-shaped symlink.`,
   );
   console.log("This is not qualification and does not claim publication or adoption.");
 }
