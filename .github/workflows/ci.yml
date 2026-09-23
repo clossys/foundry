@@ -413,7 +413,18 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
+      # check:gates exercises check-contamination-classes.mjs's CLASS 4 rule
+      # against THIS repo's own real git history (see that script's own
+      # header), not a fixture -- its "genuinely foreign name still flagged"
+      # regression case needs reliable history to tell a real retired
+      # package from a fabricated one. Before this job was split out of the
+      # combined `publish safety` job it inherited that job's fetch-depth: 0
+      # (needed there for gitleaks); split into its own job it defaults back
+      # to a SHALLOW checkout, which silently makes CLASS 4 unable to trust
+      # its own history and both cases fall through untested.
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0 # contamination-classes CLASS 4 reads full package-name history
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 20
