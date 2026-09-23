@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync, readdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { execFileSync } from "node:child_process";
 
 import {
   permittedMergeMethod,
@@ -18,6 +19,7 @@ import {
   extractWorkflowReferencedPaths,
   findUnclassifiedWorkflowPaths,
   findReviewRecordBlocks,
+  hasUnaccountedMarkerContent,
   parseReviewRecordComments,
   isValidReviewRecord,
   selectCurrentReviewRecords,
@@ -1600,4 +1602,322 @@ test("runStatus end-to-end: a refusal is reported but does not block under enfor
   const defaultResult = runStatus(1, fakeIo(undefined));
   assert.equal(defaultResult.enforcement, "report-only");
   assert.equal(defaultResult.ok, true);
+});
+
+test("hasUnaccountedMarkerContent + parseReviewRecordComments: a comment with one genuine block PLUS a second, fenced marker refuses the gate over the extra marker, not just accepts the genuine one (#1187 review round 6, blocking, both reviewers: 'a reject must never vanish')", () => {
+  const genuinePlusFencedReject = {
+    body: [
+      "<!-- foundry-review-record",
+      JSON.stringify({ schemaVersion: 1, role: "reviewer", instanceId: "r1", state: "commented" }),
+      "-->",
+      "",
+      "Also, for illustration, here's what a reject would look like:",
+      "```",
+      "<!-- foundry-review-record",
+      JSON.stringify({ schemaVersion: 1, role: "reviewer", instanceId: "r2", state: "reject", headSha: HEAD }),
+      "-->",
+      "```",
+    ].join("\n"),
+    created_at: "2026-09-23T00:00:00Z",
+    updated_at: "2026-09-23T00:00:00Z",
+    authorization: "authorized",
+  };
+  const blocks = findReviewRecordBlocks(genuinePlusFencedReject.body);
+  assert.equal(blocks.length, 1, "the fenced second marker is correctly invisible to findReviewRecordBlocks itself");
+  assert.equal(hasUnaccountedMarkerContent(genuinePlusFencedReject.body, blocks), true, "but the raw opener count (2) exceeds blocks found (1), so it must be flagged as unaccounted-for");
+
+  const records = parseReviewRecordComments([genuinePlusFencedReject]);
+  assert.equal(records.length, 2, "the genuine commented record, plus an extra _parseError for the unaccounted fenced marker");
+  assert.equal(records.some((r) => r._parseError === true), true);
+  assert.equal(records.some((r) => r.state === "commented"), true, "the genuine block is still parsed normally, not discarded");
+
+  const suspicious = findSuspiciousRecordComments(records, HEAD);
+  assert.equal(suspicious.length, 1, "the extra _parseError record must be suspicious, refusing the gate");
+});
+
+test("hasUnaccountedMarkerContent + parseReviewRecordComments: a genuine block followed by a ONE-LINE <details><summary>...</summary>...</details> that swallows a later genuine reject still refuses the gate (#1187 review round 6, blocking, reviewer 2)", () => {
+  const swallowedReject = {
+    body: [
+      "<!-- foundry-review-record",
+      JSON.stringify({ schemaVersion: 1, role: "reviewer", instanceId: "r1", state: "commented" }),
+      "-->",
+      "",
+      "<details><summary>Click to expand</summary>Some collapsed notes.</details>",
+      "",
+      "<!-- foundry-review-record",
+      JSON.stringify({ schemaVersion: 1, role: "reviewer", instanceId: "r2", state: "reject", headSha: HEAD }),
+      "-->",
+    ].join("\n"),
+    created_at: "2026-09-23T00:00:00Z",
+    updated_at: "2026-09-23T00:00:00Z",
+    authorization: "authorized",
+  };
+  const blocks = findReviewRecordBlocks(swallowedReject.body);
+  // The one-line <details> increments detailsDepth and its same-line close
+  // is never seen by the line-based tracker, so the second, genuine reject
+  // (which comes after it) is treated as "inside details" and never
+  // recognized as a block at all -- reproducing the exact bug.
+  assert.equal(blocks.length, 1, "only the first (pre-<details>) block is found; the second is swallowed");
+  assert.equal(hasUnaccountedMarkerContent(swallowedReject.body, blocks), true, "the unclosed-at-end-of-scan detailsDepth must be detected");
+
+  const records = parseReviewRecordComments([swallowedReject]);
+  assert.equal(records.some((r) => r._parseError === true), true, "the swallowed reject must still produce a _parseError, refusing the gate, not silently vanish");
+
+  const suspicious = findSuspiciousRecordComments(records, HEAD);
+  assert.equal(suspicious.length, 1);
+});
+
+test("hasUnaccountedMarkerContent: a genuinely UNCLOSED <details>/<pre>/fence at the very end of a comment (no same-line trick needed) is also flagged", () => {
+  const genuine = JSON.stringify({ schemaVersion: 1, role: "author", instanceId: "a1" });
+  const unclosedDetails = `<!-- foundry-review-record\n${genuine}\n-->\n<details>\nThis never closes.`;
+  const blocksA = findReviewRecordBlocks(unclosedDetails);
+  assert.equal(hasUnaccountedMarkerContent(unclosedDetails, blocksA), true);
+
+  const unclosedFence = `<!-- foundry-review-record\n${genuine}\n-->\n\`\`\`\nThis fence never closes.`;
+  const blocksB = findReviewRecordBlocks(unclosedFence);
+  assert.equal(hasUnaccountedMarkerContent(unclosedFence, blocksB), true);
+
+  // A properly closed comment with exactly one block and nothing left open
+  // must NOT be flagged -- this function must not become a blanket "always
+  // suspicious" trap.
+  const clean = `<!-- foundry-review-record\n${genuine}\n-->`;
+  const blocksC = findReviewRecordBlocks(clean);
+  assert.equal(hasUnaccountedMarkerContent(clean, blocksC), false);
+});
+
+test("git patch-id --verbatim is whitespace-sensitive where --stable is not: the '[ \"$X\"=\"true\" ]' attack changes the verbatim id but not the stable id (#1187 review round 6, blocking, reviewer 2 -- reproduced directly against real git, since defaultFetchPatchId's own gh-api call is not unit-testable)", () => {
+  // Two diffs against the SAME base line, differing only in whether the
+  // shell test has spaces around "=" -- a real, exploitable semantic
+  // change (a spaced comparison vs. an always-true non-empty-string test),
+  // not a stylistic one.
+  const spacedDiff = [
+    "diff --git a/script.sh b/script.sh",
+    "index 7a69601..80d392d 100644",
+    "--- a/script.sh",
+    "+++ b/script.sh",
+    "@@ -1 +1,4 @@",
+    " echo start",
+    '+if [ "$OWNER_APPROVED" = "true" ]; then',
+    "+  npm publish",
+    "+fi",
+    "",
+  ].join("\n");
+  const noSpaceDiff = [
+    "diff --git a/script.sh b/script.sh",
+    "index 7a69601..cf632ff 100644",
+    "--- a/script.sh",
+    "+++ b/script.sh",
+    "@@ -1 +1,4 @@",
+    " echo start",
+    '+if [ "$OWNER_APPROVED"="true" ]; then',
+    "+  npm publish",
+    "+fi",
+    "",
+  ].join("\n");
+
+  const patchId = (diff, flag) =>
+    execFileSync("git", ["patch-id", flag], { input: diff, encoding: "utf8" }).trim().split(/\s+/)[0];
+
+  const stableSpaced = patchId(spacedDiff, "--stable");
+  const stableNoSpace = patchId(noSpaceDiff, "--stable");
+  assert.equal(stableSpaced, stableNoSpace, "--stable is whitespace-blind: it must (wrongly, this is the vulnerability) treat these as the SAME patch");
+
+  const verbatimSpaced = patchId(spacedDiff, "--verbatim");
+  const verbatimNoSpace = patchId(noSpaceDiff, "--verbatim");
+  assert.notEqual(verbatimSpaced, verbatimNoSpace, "--verbatim must distinguish the two -- this is exactly why defaultFetchPatchId uses --verbatim, not --stable");
+});
+
+// ---------------------------------------------------------------------------
+// Round 6, blocking item 1: "Report-only must never block or crash a
+// landing." Each scenario below is driven through the exported `runStatus`
+// with injected fakes, in BOTH enforcement modes: report-only must turn the
+// failure into a reported, non-blocking warning (ok:true); enforce must
+// fail closed (ok:false) on the same failure.
+// ---------------------------------------------------------------------------
+
+function greenPrView(overrides = {}) {
+  return {
+    mergeable: "MERGEABLE",
+    mergeStateStatus: "CLEAN",
+    isDraft: false,
+    statusCheckRollup: [{ name: "safety", status: "COMPLETED", conclusion: "SUCCESS" }],
+    headRefName: "feature",
+    baseRefName: "main",
+    headRefOid: HEAD,
+    baseRefOid: "base".padEnd(40, "0"),
+    changedFiles: 1,
+    ...overrides,
+  };
+}
+
+/** Runs one runStatus scenario under both enforcement modes and asserts the fail-open/fail-closed contract. */
+function assertFailsOpenThenClosed(buildIo, { expectedReasonPattern } = {}) {
+  const reportOnly = runStatus(1, buildIo("report-only"));
+  assert.equal(reportOnly.ok, true, `report-only must not block: ${JSON.stringify(reportOnly)}`);
+  if (expectedReasonPattern) assert.match(reportOnly.reason, expectedReasonPattern);
+
+  const enforce = runStatus(1, buildIo("enforce"));
+  assert.equal(enforce.ok, false, `enforce must block: ${JSON.stringify(enforce)}`);
+  if (expectedReasonPattern) assert.match(enforce.reason, expectedReasonPattern);
+}
+
+test("runStatus fail-open/fail-closed: a changedFiles mismatch (or an empty file list) never blocks under report-only, and still blocks under enforce (#1187 review round 6, blocking: 'Bypasses the switch')", () => {
+  assertFailsOpenThenClosed(
+    (enforcement) => ({
+      ghPrView: () => greenPrView(),
+      fetchRequiredContexts: () => ["safety"],
+      fetchPrFiles: () => [{ filename: "scripts/a.mjs" }, { filename: "scripts/b.mjs" }], // 2 files, but changedFiles says 1
+      fetchPrComments: () => [],
+      annotateCommentAuthorization: (c) => c,
+      readReviewTierConfig: () => ({ tier1: ["scripts/**"], tier1RecordExempt: [], tier2: [], enforcement }),
+      readDecisionRecords: () => [],
+      readChangedDecisionRecords: () => [],
+      fetchHeadCommitFileCount: () => 1,
+      fetchCommitTreeSha: () => null,
+      fetchPatchId: () => null,
+    }),
+    { expectedReasonPattern: /changedFiles|changed-file/i },
+  );
+
+  // Empty file list.
+  assertFailsOpenThenClosed((enforcement) => ({
+    ghPrView: () => greenPrView({ changedFiles: 0 }),
+    fetchRequiredContexts: () => ["safety"],
+    fetchPrFiles: () => [],
+    fetchPrComments: () => [],
+    annotateCommentAuthorization: (c) => c,
+    readReviewTierConfig: () => ({ tier1: ["scripts/**"], tier1RecordExempt: [], tier2: [], enforcement }),
+    readDecisionRecords: () => [],
+    readChangedDecisionRecords: () => [],
+    fetchHeadCommitFileCount: () => 1,
+    fetchCommitTreeSha: () => null,
+    fetchPatchId: () => null,
+  }));
+});
+
+test("runStatus fail-open/fail-closed: a missing governance/review-tiers.json on the base (a stacked pull request whose base predates this file) never blocks under report-only, and blocks under enforce -- defaulting enforcement itself to report-only when the config read is what fails (#1187 review round 6, blocking)", () => {
+  const fakeIo = (enforcement) => ({
+    ghPrView: () => greenPrView(),
+    fetchRequiredContexts: () => ["safety"],
+    fetchPrFiles: () => [{ filename: "scripts/a.mjs" }],
+    fetchPrComments: () => {
+      throw new Error("must not be reached: tier config read failed before this");
+    },
+    annotateCommentAuthorization: (c) => c,
+    readReviewTierConfig: () => {
+      throw new Error("404: governance/review-tiers.json not found on base ref");
+    },
+    readDecisionRecords: () => [],
+    readChangedDecisionRecords: () => [],
+    fetchHeadCommitFileCount: () => 1,
+    fetchCommitTreeSha: () => null,
+    fetchPatchId: () => null,
+  });
+
+  // Since the config itself cannot be read, "enforcement" cannot be
+  // determined from it either -- it must default to "report-only" (the
+  // fakeIo's own `enforcement` param is therefore irrelevant here; both
+  // calls below must behave as report-only regardless of what a caller
+  // might have hoped to pass).
+  const result = runStatus(1, fakeIo("enforce"));
+  assert.equal(result.ok, true, "an unreadable base-branch tier config must fail OPEN by defaulting enforcement to report-only, never crash or block");
+  assert.equal(result.enforcement, "report-only");
+  assert.match(result.reason, /tier evaluation could not complete/i);
+});
+
+test("runStatus fail-open/fail-closed: once enforcement IS known (successfully read as \"enforce\"), a later API error (PR comments, decision records) fails closed under enforce and open under report-only (#1187 review round 6, blocking)", () => {
+  assertFailsOpenThenClosed((enforcement) => ({
+    ghPrView: () => greenPrView(),
+    fetchRequiredContexts: () => ["safety"],
+    fetchPrFiles: () => [{ filename: "scripts/a.mjs" }],
+    fetchPrComments: () => {
+      throw new Error("simulated GitHub API error fetching PR comments");
+    },
+    annotateCommentAuthorization: (c) => c,
+    readReviewTierConfig: () => ({ tier1: ["scripts/**"], tier1RecordExempt: [], tier2: [], enforcement }),
+    readDecisionRecords: () => [],
+    readChangedDecisionRecords: () => [],
+    fetchHeadCommitFileCount: () => 1,
+    fetchCommitTreeSha: () => null,
+    fetchPatchId: () => null,
+  }));
+
+  assertFailsOpenThenClosed((enforcement) => ({
+    ghPrView: () => greenPrView(),
+    fetchRequiredContexts: () => ["safety"],
+    fetchPrFiles: () => [{ filename: "scripts/a.mjs" }],
+    fetchPrComments: () => [],
+    annotateCommentAuthorization: (c) => c,
+    readReviewTierConfig: () => ({ tier1: ["scripts/**"], tier1RecordExempt: [], tier2: [], enforcement }),
+    readDecisionRecords: () => [],
+    readChangedDecisionRecords: () => {
+      throw new Error("simulated GitHub API error reading changed decision records");
+    },
+    fetchHeadCommitFileCount: () => 1,
+    fetchCommitTreeSha: () => null,
+    fetchPatchId: () => null,
+  }));
+});
+
+test("runStatus fail-open/fail-closed: a malformed decision record on the base branch (JSON.parse throws inside a real readDecisionRecords) fails closed under enforce and open under report-only, for a tier-2 pull request (#1187 review round 6, blocking)", () => {
+  assertFailsOpenThenClosed((enforcement) => ({
+    ghPrView: () => greenPrView(),
+    fetchRequiredContexts: () => ["safety"],
+    fetchPrFiles: () => [{ filename: "governance/model-qualifications/allowlist.json" }],
+    fetchPrComments: () => [],
+    annotateCommentAuthorization: (c) => c,
+    readReviewTierConfig: () => ({
+      tier1: ["governance/**"],
+      tier1RecordExempt: [],
+      tier2: ["governance/model-qualifications/**"],
+      enforcement,
+    }),
+    readDecisionRecords: () => {
+      throw new SyntaxError("Unexpected token in JSON at position 0 (simulated malformed governance/decisions/*.json)");
+    },
+    readChangedDecisionRecords: () => [],
+    fetchHeadCommitFileCount: () => 1,
+    fetchCommitTreeSha: () => null,
+    fetchPatchId: () => "f".repeat(40),
+  }));
+});
+
+test("runStatus fail-open/fail-closed: any other unexpected exception from the tier logic (fetchPrFiles itself throwing) fails closed under enforce and open under report-only (#1187 review round 6, blocking: 'any unexpected exception from the tier logic')", () => {
+  assertFailsOpenThenClosed((enforcement) => ({
+    ghPrView: () => greenPrView(),
+    fetchRequiredContexts: () => ["safety"],
+    fetchPrFiles: () => {
+      throw new Error("simulated GitHub API error fetching PR files");
+    },
+    fetchPrComments: () => [],
+    annotateCommentAuthorization: (c) => c,
+    readReviewTierConfig: () => ({ tier1: ["scripts/**"], tier1RecordExempt: [], tier2: [], enforcement }),
+    readDecisionRecords: () => [],
+    readChangedDecisionRecords: () => [],
+    fetchHeadCommitFileCount: () => 1,
+    fetchCommitTreeSha: () => null,
+    fetchPatchId: () => null,
+  }));
+});
+
+test("runStatus fail-open/fail-closed: mergeVerdict combination is preserved correctly when the tier evaluation fails open under report-only (both must be green for ok:true)", () => {
+  // A red required check plus a tier-evaluation failure: report-only must
+  // still refuse overall, because mergeVerdict itself is unrelated to
+  // enforcement -- only the TIER verdict is softened by report-only.
+  const result = runStatus(1, {
+    ghPrView: () => greenPrView({ statusCheckRollup: [{ name: "safety", status: "COMPLETED", conclusion: "FAILURE" }] }),
+    fetchRequiredContexts: () => ["safety"],
+    fetchPrFiles: () => {
+      throw new Error("simulated failure");
+    },
+    fetchPrComments: () => [],
+    annotateCommentAuthorization: (c) => c,
+    readReviewTierConfig: () => ({ tier1: ["scripts/**"], tier1RecordExempt: [], tier2: [], enforcement: "report-only" }),
+    readDecisionRecords: () => [],
+    readChangedDecisionRecords: () => [],
+    fetchHeadCommitFileCount: () => 1,
+    fetchCommitTreeSha: () => null,
+    fetchPatchId: () => null,
+  });
+  assert.equal(result.ok, false, "a red required check must still block the merge regardless of report-only mode -- report-only only softens the TIER verdict, never the merge-readiness verdict");
 });

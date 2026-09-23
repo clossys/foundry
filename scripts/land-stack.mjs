@@ -471,6 +471,81 @@ export function findReviewRecordBlocks(rawBody) {
 }
 
 /**
+ * Whether `rawBody` contains marker-opener content that `findReviewRecordBlocks`
+ * did not fully account for in `blocks` -- #1187 review round 6, blocking
+ * (both reviewers): a reject must never silently vanish just because it
+ * shares a comment with an earlier genuine block. Two independent signals
+ * from the SAME scan, either one enough to report unresolved content:
+ *
+ *   - RAW OPENER COUNT EXCEEDS BLOCKS FOUND: every line matching the
+ *     opener pattern `<!-- foundry-review-record`, counted WITHOUT regard
+ *     to fence/details/pre state (so an opener buried inside a fence is
+ *     still counted here), compared against `blocks.length`. A genuine
+ *     block (say, an author's `commented` record) plus a FENCED reject in
+ *     the same comment left `blocks.length` at 1 and the fenced reject
+ *     completely invisible -- `findReviewRecordBlocks` correctly never
+ *     treats the fenced text as a block at all, but nothing downstream
+ *     noticed a second opener existed and went unaccounted for.
+ *   - AN UNCLOSED CONTAINING REGION AT END OF SCAN: a fence, `<details>`,
+ *     or `<pre>` still "open" when the body ends. This also covers a
+ *     ONE-LINE `<details>...</details>`: `findReviewRecordBlocks`'s line
+ *     tracker increments `detailsDepth` on the opening `<details>` and
+ *     only decrements on a line that STARTS WITH `</details>`, so a
+ *     same-line close is never seen and the region reads as open for
+ *     every line after it, silently swallowing a genuine record later in
+ *     the same comment. Rather than implement full same-line HTML
+ *     open/close counting, an unclosed region at end-of-scan is simply
+ *     treated as unresolved -- the same fail-closed direction every other
+ *     ambiguity in this module takes.
+ *
+ * Deliberately a SEPARATE function from `findReviewRecordBlocks` rather
+ * than a change to its return shape: `findReviewRecordBlocks` keeps
+ * returning a plain array of blocks (its existing callers and tests are
+ * unaffected), and this function re-runs the same line-by-line tracking
+ * purely to observe whether anything was left open or uncounted at the
+ * end. Only meaningful when the marker text appears in the raw body at
+ * all -- an ordinary unclosed `<details>` with no marker anywhere is not
+ * this function's concern.
+ * @param {string} rawBody
+ * @param {Array<{ raw: string|null, valid: boolean }>} blocks
+ * @returns {boolean}
+ */
+export function hasUnaccountedMarkerContent(rawBody, blocks) {
+  const body = String(rawBody ?? "");
+  if (!body.includes(REVIEW_RECORD_MARKER)) return false;
+
+  const rawOpenerMatches = body.match(/<!--\s*foundry-review-record\b/g) ?? [];
+  if (rawOpenerMatches.length > (blocks?.length ?? 0)) return true;
+
+  const lines = body.split("\n");
+  let fenceChar = null;
+  let fenceLen = 0;
+  let detailsDepth = 0;
+  let preDepth = 0;
+  for (const line of lines) {
+    if (fenceChar) {
+      const closeMatch = line.match(/^ {0,3}(`{3,}|~{3,})\s*$/);
+      if (closeMatch && closeMatch[1][0] === fenceChar && closeMatch[1].length >= fenceLen) {
+        fenceChar = null;
+        fenceLen = 0;
+      }
+      continue;
+    }
+    const openFence = line.match(/^ {0,3}(`{3,}|~{3,})/);
+    if (openFence) {
+      fenceChar = openFence[1][0];
+      fenceLen = openFence[1].length;
+      continue;
+    }
+    if (/^\s*<details\b/i.test(line)) detailsDepth++;
+    if (/^\s*<\/details>/i.test(line)) detailsDepth = Math.max(0, detailsDepth - 1);
+    if (/^\s*<pre\b/i.test(line)) preDepth++;
+    if (/^\s*<\/pre>/i.test(line)) preDepth = Math.max(0, preDepth - 1);
+  }
+  return fenceChar !== null || detailsDepth > 0 || preDepth > 0;
+}
+
+/**
  * Extracts every `foundry-review-record` block from a set of PR comment
  * bodies via `findReviewRecordBlocks`'s positive grammar. A block that is
  * not valid JSON, OR that was never a genuine column-0/unfenced block at
@@ -547,6 +622,17 @@ export function parseReviewRecordComments(comments) {
       } catch {
         records.push({ _parseError: true, _commentCreatedAt: createdAt, _edited: edited, _authorization: authorization });
       }
+    }
+    // #1187 review round 6, blocking (both reviewers): at least one
+    // genuine block was found above, so the `blocks.length === 0` branch
+    // never fired -- but the comment can STILL contain a second,
+    // unaccounted-for marker occurrence (a fenced/quoted reject alongside
+    // an approved record, or one swallowed by an unclosed <details>/<pre>
+    // region) that `blocks` never registered at all. Push an additional
+    // _parseError so the gate refuses over it rather than treating the
+    // comment as fully accounted for.
+    if (hasUnaccountedMarkerContent(rawBody, blocks)) {
+      records.push({ _parseError: true, _commentCreatedAt: createdAt, _edited: edited, _authorization: authorization });
     }
   }
   return records;
@@ -902,7 +988,7 @@ export function isOverbroadPathGlob(glob, tierConfig) {
  *
  * - pull-request number (`links.pullRequests`) PLUS a matching entry in
  *   `links.patchIds` (case-insensitive) equal to `patchId` -- the pull
- *   request's own net-diff patch id (`git patch-id --stable` of its
+ *   request's own net-diff patch id (`git patch-id --verbatim` of its
  *   three-dot diff against its base, computed fresh at evaluation time --
  *   see `defaultFetchPatchId`), NOT a pinned head sha. #1187 review round
  *   5, blocking finding 2 (reviewer 2): pinning a head sha, as an earlier
@@ -910,13 +996,22 @@ export function isOverbroadPathGlob(glob, tierConfig) {
  *   whose branch protection requires the base branch to be current --
  *   landing the record itself moves `main`, which makes the very PR it
  *   authorizes `BEHIND` and forces a restack, producing a new head the
- *   pin no longer matches, every single time. A patch id is invariant to
- *   a pure merge-from-base or restack (the merge commit contributes
- *   nothing to the three-dot diff) and changes only when the PR's OWN
- *   content changes -- so an authorization pinned to a patch id survives
- *   exactly the operations (restacks, merge-train rebasing) that made a
- *   head-sha pin unsatisfiable, while still breaking the instant real
- *   content changes. A PR-scoped authorization with NO `patchIds` at all
+ *   pin no longer matches, every single time. `--verbatim`, not `--stable`
+ *   (#1187 review round 6, blocking, both reviewers): `--stable` ignores
+ *   whitespace when hashing, which would let a semantic whitespace-only
+ *   edit (e.g. `[ "$X" = "true" ]` -> `[ "$X"="true" ]`, a real shell
+ *   privilege-check bypass) keep a stale authorization; `--verbatim` does
+ *   not. A patch id computed this way is invariant to line-number shifts,
+ *   so a pure restack survives WHEN the base-branch changes involved stay
+ *   clear of the PR's own diff hunk context -- verified directly in a
+ *   scratch repository (round 6): an unrelated-file or far-away-line base
+ *   change leaves it unchanged, while a base change reaching into the PR's
+ *   own hunk context changes it, correctly, since the merged content then
+ *   genuinely differs from what was reviewed. An earlier draft of this
+ *   comment claimed unconditional survival across "a pure merge-from-base
+ *   or restack"; that overclaimed and is corrected here -- see
+ *   docs/HITL.md's "Tier-2 authorization survives restacks" for the full,
+ *   measured boundary. A PR-scoped authorization with NO `patchIds` at all
  *   never matches anything.
  * - a set of path globs (`links.paths`, each checked against
  *   `isOverbroadPathGlob` against THIS SAME `tierConfig`) covering every
@@ -1354,7 +1449,7 @@ function defaultFetchCommitTreeSha(sha, { nameWithOwner = defaultNameWithOwner }
 
 /**
  * Live network call: the pull request's own net-diff `git patch-id
- * --stable`, computed fresh at evaluation time, used by
+ * --verbatim`, computed fresh at evaluation time, used by
  * `evaluateTier2Decision` to check a PR-scoped decision record's
  * `links.patchIds` (#1187 review round 5, blocking finding 2, reviewer 2).
  * Fetches the raw unified diff for the THREE-DOT compare
@@ -1363,16 +1458,43 @@ function defaultFetchCommitTreeSha(sha, { nameWithOwner = defaultNameWithOwner }
  * exactly "what HEAD changed since it diverged from BASE", i.e. the PR's
  * own net diff against its merge base, which is what stays invariant
  * across a pure restack or merge-from-base. That raw diff text is piped
- * directly into `git patch-id --stable`, a stateless plumbing command that
- * hashes diff TEXT with no repository access at all -- this never touches
- * or depends on the local checkout, the same discipline every other
- * base-ref read in this module already follows. `base` should be the pull
- * request's own `baseRefName` (its real target branch, which may not be
- * `main` for a stacked PR), never a fixed sha, so a restack that merges
- * newer base-branch commits into the PR branch does not itself change what
- * the three-dot diff reports. Returns `null` on any error (network,
- * `gh`/`git` failure) -- never a value that could accidentally match a
- * pinned patch id.
+ * directly into `git patch-id --verbatim`, a stateless plumbing command
+ * that hashes diff TEXT with no repository access at all -- this never
+ * touches or depends on the local checkout, the same discipline every
+ * other base-ref read in this module already follows.
+ *
+ * `--verbatim`, NOT `--stable` (#1187 review round 6, blocking, both
+ * reviewers independently: "a semantic whitespace edit keeps the owner's
+ * authorization"). `git patch-id --stable` deliberately IGNORES whitespace
+ * differences when hashing a diff, by design (it exists to recognize "the
+ * same patch" across a rebase that only reformats context) -- which means
+ * two PRs whose net diffs are byte-different but whitespace-equivalent
+ * hash IDENTICALLY under `--stable`. Reproduced directly: a diff that adds
+ * `if [ "$OWNER_APPROVED" = "true" ]; then` and a diff that instead adds
+ * `if [ "$OWNER_APPROVED"="true" ]; then` (removing the spaces around `=`,
+ * which changes a shell `test` string-comparison into a always-true
+ * non-empty-string test -- a real, exploitable semantic change, not a
+ * stylistic one) produce the SAME `--stable` patch-id. Exactly the tier-2
+ * files this pins are YAML workflows and shell `run:` blocks, where
+ * whitespace routinely carries meaning. `--verbatim` (available since Git
+ * 2.44) hashes the diff without that whitespace-blindness -- verified
+ * directly against the same two diffs above producing two DIFFERENT ids
+ * (see `scripts/land-stack.test.mjs`'s own reproduction, which invokes
+ * `git patch-id` on both forms directly). `--verbatim` is still
+ * line-number-insensitive, the property that makes it survive an ordinary
+ * restack in the first place.
+ *
+ * `base` should be the pull request's own `baseRefName` (its real target
+ * branch, which may not be `main` for a stacked PR), never a fixed sha, so
+ * a restack that merges newer base-branch commits into the PR branch does
+ * not itself change what the three-dot diff reports EXCEPT when those
+ * base-branch commits touch a line within (or adjacent to) the PR's own
+ * diff hunks -- see docs/HITL.md's "Patch-id and restacks: what actually
+ * survives" for the measured boundary of that claim (#1187 review round 6,
+ * blocking, reviewer 1: the earlier claim that a restack never changes the
+ * patch-id was too strong). Returns `null` on any error (network, `gh`/
+ * `git` failure) -- never a value that could accidentally match a pinned
+ * patch id.
  * @param {string} base
  * @param {string} head
  * @returns {string|null}
@@ -1385,7 +1507,7 @@ function defaultFetchPatchId(base, head, { nameWithOwner = defaultNameWithOwner,
       ["api", `repos/${nwo}/compare/${encodeURIComponent(base)}...${encodeURIComponent(head)}`, "-H", "Accept: application/vnd.github.v3.diff"],
       { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 },
     );
-    const out = gitExec("git", ["patch-id", "--stable"], { input: diff, encoding: "utf8", maxBuffer: 1024 * 1024 });
+    const out = gitExec("git", ["patch-id", "--verbatim"], { input: diff, encoding: "utf8", maxBuffer: 1024 * 1024 });
     const patchId = out.trim().split(/\s+/)[0];
     return patchId && /^[0-9a-f]{40}$/i.test(patchId) ? patchId : null;
   } catch {
@@ -1721,122 +1843,164 @@ export function runStatus(
   ]);
   const requiredContexts = fetchRequiredContexts(view.baseRefName || "main");
   const mergeVerdict = canMerge(prViewToCanMergeInput(view, requiredContexts));
+  const baseRef = view.baseRefOid || view.baseRefName || "main";
 
-  const fileEntries = fetchPrFiles(pr);
-  const countPaths = fileEntries.map((f) => f.filename);
-  const completeness = verifyChangedFilesComplete(countPaths, view.changedFiles);
-  if (!completeness.ok) {
-    const reason = mergeVerdict.ok ? completeness.reason : `${mergeVerdict.reason}; ${completeness.reason}`;
-    return { pr: Number(pr), headRefName: view.headRefName, ok: false, reason, tier: "unknown" };
+  // ENFORCEMENT IS DETERMINED FIRST, OUTSIDE AND INDEPENDENTLY OF THE BIG
+  // TRY/CATCH BELOW (#1187 review round 6, blocking, both reviewers:
+  // "report-only must never block or crash a landing"). It decides whether
+  // every failure below fails OPEN (report-only) or CLOSED (enforce), so it
+  // cannot itself be a question the failure-handling logic is still trying
+  // to answer. A tier config that cannot be read AT ALL -- most commonly a
+  // stacked pull request whose base branch predates this file's own first
+  // landing (governance/review-tiers.json 404s there), but also any other
+  // read failure -- defaults `enforcement` to `"report-only"`, the exact
+  // same safe default a missing or unrecognized `enforcement` FIELD gets
+  // once the file does exist. `tierConfigError` is stashed rather than
+  // thrown immediately so the single try/catch below is the only place
+  // that decides how to report it.
+  let tierConfig;
+  let enforcement = "report-only";
+  let tierConfigError = null;
+  try {
+    tierConfig = readReviewTierConfig(baseRef);
+    enforcement = tierConfig.enforcement === "enforce" ? "enforce" : "report-only";
+  } catch (err) {
+    tierConfigError = err;
   }
 
-  // Classification (and decision-record change detection) use BOTH the new
-  // and previous name of a renamed file, never just countPaths above (#1187
-  // review at df15ab87, blocking finding 1) -- see
-  // changedFilePathsForClassification's own doc comment.
-  const classificationPaths = changedFilePathsForClassification(fileEntries);
-
-  // Tier config is read from the pull request's BASE commit -- never the
-  // local checkout, and never the pull request's own head -- so a tier-1 or
-  // tier-2 pull request can never narrow its own globs or add its own
-  // authorizing decision record in the same diff it needs graded (#1187
-  // review at 8e6d97ea, blocking finding 6). This one read is unconditional:
-  // it is what DETERMINES the tier in the first place.
-  const baseRef = view.baseRefOid || view.baseRefName || "main";
-  const tierConfig = readReviewTierConfig(baseRef);
-  const enforcement = tierConfig.enforcement === "enforce" ? "enforce" : "report-only";
-  const classification = classifyTier(classificationPaths, tierConfig);
-
-  // Everything below -- fetching PR comments, resolving each commenter's
-  // collaborator permission, and reading every governance/decisions/*.json
-  // record from the base branch -- is read ONLY for a tier-1 or tier-2 PR
-  // (#1187 review round 4, should-fix: "Tier-0 PRs skip decision-record and
-  // permission reads"). A genuinely tier-0 classification means no path in
-  // this diff matches governance/decisions/** either (that glob alone is
-  // tier-1, per governance/review-tiers.json), so
-  // evaluateChangedDecisionRecords has nothing to check and every one of
-  // these reads would be pure waste -- and, for the base-branch decision
-  // log specifically, a real cost: one malformed record anywhere in
-  // governance/decisions/ would otherwise make `--status` throw for EVERY
-  // pull request, tier-0 included, and that cost only grows as the log
-  // grows.
+  // EVERYTHING FROM HERE THROUGH THE RAW TIER VERDICT IS ONE TRY/CATCH
+  // (#1187 review round 6, blocking, both reviewers). Before this pull
+  // request, `land-stack --status`/`--merge` depended on nothing but `gh pr
+  // view` and the branch-protection ruleset above; every read below -- PR
+  // files, the changed-file completeness cross-check, PR comments,
+  // collaborator-permission resolution, decision records, tree/patch-id
+  // lookups -- is new surface this slice introduced, and under
+  // `"report-only"` none of it may become a new way for an ordinary
+  // landing to fail: not a changedFiles mismatch, not a missing base-branch
+  // tier config, not an API error, not a malformed decision record, not
+  // any other unexpected exception from the tier logic. `verifyChangedFilesComplete`'s
+  // own `ok:false` result is built into `rawTierVerdict` as an ORDINARY
+  // verdict rather than an early `return` (the round-5 shape returned
+  // early here, bypassing `applyEnforcement` entirely -- exactly the
+  // "bypasses the switch" finding both reviewers raised) so it flows
+  // through `applyEnforcement` below like every other refusal.
   let rawTierVerdict;
-  if (classification.tier === "tier-0") {
-    rawTierVerdict = evaluateTierGate(classification, {});
-  } else if (isNoOpHeadCommit(fetchHeadCommitFileCount(view.headRefOid))) {
-    // A no-op head commit (most commonly `git commit --allow-empty`) gives
-    // an otherwise-identical PR a brand-new headSha, which alone would be
-    // enough to clear a sticky rejection at the OLD head and let a fresh
-    // approving pair merge with no owner involvement -- #1187 review round
-    // 4, should-fix: "require that the new approvals follow a commit that
-    // actually changes files". Refused unconditionally for any tier-1/
-    // tier-2 pull request; see `isNoOpHeadCommit`'s own doc comment for
-    // what this does and does not detect.
+  try {
+    if (tierConfigError) {
+      throw tierConfigError;
+    }
+
+    const fileEntries = fetchPrFiles(pr);
+    const countPaths = fileEntries.map((f) => f.filename);
+    const completeness = verifyChangedFilesComplete(countPaths, view.changedFiles);
+    if (!completeness.ok) {
+      rawTierVerdict = { ok: false, tier: "unknown", reason: completeness.reason };
+    } else {
+      // Classification (and decision-record change detection) use BOTH the
+      // new and previous name of a renamed file, never just countPaths
+      // above (#1187 review at df15ab87, blocking finding 1) -- see
+      // changedFilePathsForClassification's own doc comment.
+      const classificationPaths = changedFilePathsForClassification(fileEntries);
+      const classification = classifyTier(classificationPaths, tierConfig);
+
+      // Everything below -- fetching PR comments, resolving each
+      // commenter's collaborator permission, and reading every
+      // governance/decisions/*.json record from the base branch -- is read
+      // ONLY for a tier-1 or tier-2 PR (#1187 review round 4, should-fix:
+      // "Tier-0 PRs skip decision-record and permission reads").
+      if (classification.tier === "tier-0") {
+        rawTierVerdict = evaluateTierGate(classification, {});
+      } else if (isNoOpHeadCommit(fetchHeadCommitFileCount(view.headRefOid))) {
+        // A no-op head commit (most commonly `git commit --allow-empty`)
+        // gives an otherwise-identical PR a brand-new headSha, which alone
+        // would be enough to clear a sticky rejection at the OLD head and
+        // let a fresh approving pair merge with no owner involvement
+        // (#1187 review round 4, should-fix). Refused unconditionally for
+        // any tier-1/tier-2 pull request; see `isNoOpHeadCommit`'s own doc
+        // comment for what this does and does not detect.
+        rawTierVerdict = {
+          ok: false,
+          tier: classification.tier,
+          reason: "the pull request's head commit changes zero files -- a no-op commit cannot advance review state or clear a prior rejection; push a real change instead",
+        };
+      } else {
+        const changedDecisionRecords = readChangedDecisionRecords(view.headRefOid, classificationPaths, {}, baseRef);
+        // Only an admin/write collaborator's comment may ever supply a
+        // foundry-review-record -- #1187 review at df15ab87, blocking
+        // finding 2.
+        const annotatedComments = annotateCommentAuthorization(fetchPrComments(pr));
+        const records = parseReviewRecordComments(annotatedComments);
+
+        // Round 5 should-fix: `isNoOpHeadCommit` alone only catches a head
+        // commit that changes literally zero files. A commit that changes
+        // a line and a second commit that reverts it (or a whitespace-only
+        // change) is NOT a no-op commit, but the resulting TREE can still
+        // be byte-identical to a previously-rejected head's tree -- the
+        // same "nothing really changed" fact `isNoOpHeadCommit` exists to
+        // catch, just reached a different way. Compare the current head's
+        // tree to every DISTINCT prior AUTHORIZED reject's own (now-stale)
+        // head tree; capped at 10 distinct prior heads to bound the extra
+        // API calls.
+        const priorRejectHeadShas = [
+          ...new Set(
+            records
+              .filter(
+                (r) =>
+                  r &&
+                  r._authorization === "authorized" &&
+                  !r._parseError &&
+                  REJECT_STATE_SPELLINGS.has(normalizeStateSpelling(r.state)) &&
+                  typeof r.headSha === "string" &&
+                  r.headSha.length > 0 &&
+                  r.headSha !== view.headRefOid,
+              )
+              .map((r) => r.headSha),
+          ),
+        ].slice(0, 10);
+        const rejectedTreeShas = priorRejectHeadShas.map((sha) => fetchCommitTreeSha(sha)).filter((t) => t !== null);
+        const currentTreeSha = rejectedTreeShas.length > 0 ? fetchCommitTreeSha(view.headRefOid) : null;
+
+        if (isTreeIdenticalToRejectedHead(currentTreeSha, rejectedTreeShas)) {
+          rawTierVerdict = {
+            ok: false,
+            tier: classification.tier,
+            reason: "the pull request's current head has the exact same tree as a previously-rejected head -- a change-then-revert (or whitespace-only) commit cannot clear a prior rejection; push a real, different change instead",
+          };
+        } else {
+          // Base-branch decision records are read only when tier-2
+          // authority is actually needed to evaluate them against -- a
+          // tier-1 PR's own evaluateTierGate call never reaches
+          // evaluateTier2Decision at all.
+          const decisionRecords = classification.tier === "tier-2" ? readDecisionRecords(baseRef) : [];
+          // The PR's own patch id (net diff against its base) is only
+          // needed for tier-2's PR-scoped authorization check -- computed
+          // lazily, one extra `gh`+`git` round trip, only when tier-2
+          // might need it.
+          const patchId = classification.tier === "tier-2" ? fetchPatchId(view.baseRefName || "main", view.headRefOid) : undefined;
+          rawTierVerdict = evaluateTierGate(classification, {
+            records,
+            headSha: view.headRefOid,
+            patchId,
+            decisionRecords,
+            changedDecisionRecords,
+            prNumber: pr,
+            tierConfig,
+          });
+        }
+      }
+    }
+  } catch (err) {
+    // Fail OPEN (a reported, non-blocking warning) under report-only; fail
+    // CLOSED (an actual refusal) under enforce -- `applyEnforcement` below
+    // does the report-only rewrite either way, so this branch only needs
+    // to build an ordinary `ok:false` verdict and let it flow through like
+    // any other refusal. `tier: "unknown"` because classification itself
+    // may never have completed.
     rawTierVerdict = {
       ok: false,
-      tier: classification.tier,
-      reason: "the pull request's head commit changes zero files -- a no-op commit cannot advance review state or clear a prior rejection; push a real change instead",
+      tier: "unknown",
+      reason: `tier evaluation could not complete (${enforcement === "enforce" ? "failing closed under enforce" : "failing open under report-only"}): ${err?.message ?? String(err)}`,
     };
-  } else {
-    const changedDecisionRecords = readChangedDecisionRecords(view.headRefOid, classificationPaths, {}, baseRef);
-    // Only an admin/write collaborator's comment may ever supply a
-    // foundry-review-record -- #1187 review at df15ab87, blocking finding 2.
-    const annotatedComments = annotateCommentAuthorization(fetchPrComments(pr));
-    const records = parseReviewRecordComments(annotatedComments);
-
-    // Round 5 should-fix: `isNoOpHeadCommit` alone only catches a head
-    // commit that changes literally zero files. A commit that changes a
-    // line and a second commit that reverts it (or a whitespace-only
-    // change) is NOT a no-op commit, but the resulting TREE can still be
-    // byte-identical to a previously-rejected head's tree -- the same
-    // "nothing really changed" fact `isNoOpHeadCommit` exists to catch,
-    // just reached a different way. Compare the current head's tree to
-    // every DISTINCT prior AUTHORIZED reject's own (now-stale) head tree;
-    // capped at 10 distinct prior heads to bound the extra API calls.
-    const priorRejectHeadShas = [
-      ...new Set(
-        records
-          .filter(
-            (r) =>
-              r &&
-              r._authorization === "authorized" &&
-              !r._parseError &&
-              REJECT_STATE_SPELLINGS.has(normalizeStateSpelling(r.state)) &&
-              typeof r.headSha === "string" &&
-              r.headSha.length > 0 &&
-              r.headSha !== view.headRefOid,
-          )
-          .map((r) => r.headSha),
-      ),
-    ].slice(0, 10);
-    const rejectedTreeShas = priorRejectHeadShas.map((sha) => fetchCommitTreeSha(sha)).filter((t) => t !== null);
-    const currentTreeSha = rejectedTreeShas.length > 0 ? fetchCommitTreeSha(view.headRefOid) : null;
-
-    if (isTreeIdenticalToRejectedHead(currentTreeSha, rejectedTreeShas)) {
-      rawTierVerdict = {
-        ok: false,
-        tier: classification.tier,
-        reason: "the pull request's current head has the exact same tree as a previously-rejected head -- a change-then-revert (or whitespace-only) commit cannot clear a prior rejection; push a real, different change instead",
-      };
-    } else {
-      // Base-branch decision records are read only when tier-2 authority is
-      // actually needed to evaluate them against -- a tier-1 PR's own
-      // evaluateTierGate call never reaches evaluateTier2Decision at all.
-      const decisionRecords = classification.tier === "tier-2" ? readDecisionRecords(baseRef) : [];
-      // The PR's own patch id (net diff against its base) is only needed
-      // for tier-2's PR-scoped authorization check -- computed lazily, one
-      // extra `gh`+`git` round trip, only when tier-2 might need it.
-      const patchId = classification.tier === "tier-2" ? fetchPatchId(view.baseRefName || "main", view.headRefOid) : undefined;
-      rawTierVerdict = evaluateTierGate(classification, {
-        records,
-        headSha: view.headRefOid,
-        patchId,
-        decisionRecords,
-        changedDecisionRecords,
-        prNumber: pr,
-        tierConfig,
-      });
-    }
   }
 
   // Report-only by default (#1187 review round 5, item 1: "land-stack
@@ -1853,7 +2017,7 @@ export function runStatus(
       ? mergeVerdict.reason
       : `${mergeVerdict.reason}; ${tierVerdict.reason}`;
 
-  return { pr: Number(pr), headRefName: view.headRefName, headRefOid: view.headRefOid, ok, reason, tier: classification.tier, enforcement };
+  return { pr: Number(pr), headRefName: view.headRefName, headRefOid: view.headRefOid, ok, reason, tier: tierVerdict.tier, enforcement };
 }
 
 function runMerge(
