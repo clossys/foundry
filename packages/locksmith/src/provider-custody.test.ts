@@ -184,3 +184,129 @@ describe("defineProviderCustodyManifest / providerCustodyOf", () => {
     expect(() => defineProviderCustodyManifest([declaration(), declaration({ owner: "" })])).toThrow(/missing-owner/);
   });
 });
+
+describe("evaluateProviderCustody: accessor-safety and prototype-pollution resistance (mirrors credential.test.ts)", () => {
+  it("never invokes a throwing top-level getter", () => {
+    const hostile = { ...declaration() } as Record<string, unknown>;
+    Object.defineProperty(hostile, "store", {
+      enumerable: true,
+      get() {
+        throw new Error("must not run");
+      },
+    });
+    expect(() => evaluateProviderCustody(hostile)).not.toThrow();
+    expect(evaluateProviderCustody(hostile).verdict).toBe("indeterminate");
+  });
+
+  it("never invokes a throwing getter nested inside rotationPolicy", () => {
+    const hostilePolicy = {} as Record<string, unknown>;
+    Object.defineProperty(hostilePolicy, "maxAgeDays", {
+      enumerable: true,
+      get() {
+        throw new Error("must not run");
+      },
+    });
+    const hostile = declaration({ rotationPolicy: hostilePolicy as never });
+    expect(() => evaluateProviderCustody(hostile)).not.toThrow();
+    const result = evaluateProviderCustody(hostile);
+    expect(result.verdict).toBe("violated");
+    expect(result.reasons).toContain("invalid-rotation-policy");
+  });
+
+  it("is not fooled by a scope/usedBy array whose Array.prototype.every and Symbol.iterator are polluted", () => {
+    const everyDescriptor = Object.getOwnPropertyDescriptor(Array.prototype, "every");
+    const iteratorDescriptor = Object.getOwnPropertyDescriptor(Array.prototype, Symbol.iterator);
+    if (everyDescriptor === undefined || iteratorDescriptor === undefined) throw new Error("array builtins unavailable");
+
+    let result: ReturnType<typeof evaluateProviderCustody> | undefined;
+    try {
+      Object.defineProperty(Array.prototype, "every", { configurable: true, writable: true, value: () => true });
+      Object.defineProperty(Array.prototype, Symbol.iterator, {
+        configurable: true,
+        writable: true,
+        value: function* () {
+          yield "repository:admin";
+        },
+      });
+      // An empty scope should still be rejected as missing-scope even though
+      // the polluted Array.prototype.every would report "every element
+      // passes" for any predicate -- readNonEmptyStringArray never calls it.
+      result = evaluateProviderCustody(declaration({ scope: [] }));
+    } finally {
+      Object.defineProperty(Array.prototype, "every", everyDescriptor);
+      Object.defineProperty(Array.prototype, Symbol.iterator, iteratorDescriptor);
+    }
+    expect(result?.verdict).toBe("violated");
+    expect(result?.reasons).toContain("missing-scope");
+  });
+
+  it("rejects hostile scope/usedBy prototypes, accessors, and symbol-keyed entries", () => {
+    const hostilePrototype = ["zone:edit:example.com"];
+    Object.setPrototypeOf(hostilePrototype, {
+      every: () => true,
+      [Symbol.iterator]: function* () {
+        yield "zone:edit:example.com";
+      },
+    });
+    const accessorEntry = ["zone:edit:example.com"];
+    Object.defineProperty(accessorEntry, "0", {
+      enumerable: true,
+      configurable: true,
+      get() {
+        throw new Error("must not run");
+      },
+    });
+    const symbolEntry = ["zone:edit:example.com"];
+    Object.defineProperty(symbolEntry, Symbol("hidden"), { value: "account:admin", enumerable: true });
+
+    for (const scope of [hostilePrototype, accessorEntry, symbolEntry]) {
+      const result = evaluateProviderCustody(declaration({ scope: scope as never }));
+      expect(result.verdict).toBe("violated");
+      expect(result.reasons).toContain("missing-scope");
+    }
+  });
+
+  it("bounds array length before inspecting entries or allocating from it", () => {
+    const huge: string[] = [];
+    huge.length = 0xffff_ffff;
+    const result = evaluateProviderCustody(declaration({ scope: huge }));
+    expect(result.verdict).toBe("violated");
+    expect(result.reasons).toContain("missing-scope");
+  });
+
+  it("catches throwing proxy traps on the declaration and on an array field instead of letting them escape", () => {
+    const throwingDeclaration = new Proxy({ ...declaration() }, {
+      ownKeys() {
+        throw new Error("must not escape");
+      },
+    });
+    const throwingScope = new Proxy(["zone:edit:example.com"], {
+      getOwnPropertyDescriptor() {
+        throw new Error("must not escape");
+      },
+    });
+
+    expect(() => evaluateProviderCustody(throwingDeclaration)).not.toThrow();
+    expect(evaluateProviderCustody(throwingDeclaration).verdict).toBe("indeterminate");
+
+    expect(() => evaluateProviderCustody(declaration({ scope: throwingScope as never }))).not.toThrow();
+    const result = evaluateProviderCustody(declaration({ scope: throwingScope as never }));
+    // Matches credential.ts's own convention for this exact case (see its
+    // "catches throwing proxy traps" test): the outer catch-all converts a
+    // mid-evaluation throw to indeterminate/invalid-declaration, not a
+    // partial violated result built from whatever reasons had accumulated
+    // before the throw.
+    expect(result.verdict).toBe("indeterminate");
+    expect(result.reasons).toContain("invalid-declaration");
+  });
+
+  it("rejects inherited declarations and a custom-prototype rotationPolicy", () => {
+    const inherited = Object.create(declaration()) as unknown;
+    expect(evaluateProviderCustody(inherited)).toMatchObject({ verdict: "indeterminate", reasons: ["invalid-declaration"] });
+
+    const inheritedPolicy = Object.create({ maxAgeDays: 90 }) as unknown;
+    const result = evaluateProviderCustody(declaration({ rotationPolicy: inheritedPolicy as never }));
+    expect(result.verdict).toBe("violated");
+    expect(result.reasons).toContain("invalid-rotation-policy");
+  });
+});

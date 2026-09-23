@@ -1,5 +1,7 @@
 import type { SecretKey } from "./types.js";
 import type { CustodyStore } from "./custody.js";
+import { hasField, hasOnlyFields, isNonEmptyString, readOwnDataRecord } from "./credential.js";
+import type { OwnDataRecord } from "./credential.js";
 
 /**
  * The providers this custody-ladder slice can currently judge (issue #1212).
@@ -142,6 +144,21 @@ const DECLARATION_FIELDS = [
   "rotationPolicy",
 ] as const;
 
+/**
+ * Explicit indexed copy, never `[...values]` — a spread reads through
+ * `values[Symbol.iterator]`, which is `Array.prototype[Symbol.iterator]`
+ * for any ordinary array, so a caller (or a hostile test, or a genuinely
+ * polluted dependency elsewhere in the process) that has overridden that
+ * global would make a spread silently yield different elements than the
+ * array actually holds. `credential.ts`'s own `evaluation`/`freezeScopeCopy`
+ * use the identical indexed-loop shape for the same reason.
+ */
+function freezeStringArrayCopy<T extends string>(values: readonly T[]): readonly T[] {
+  const copy: T[] = [];
+  for (let index = 0; index < values.length; index += 1) copy[index] = values[index] as T;
+  return Object.freeze(copy);
+}
+
 function evaluation(
   key: SecretKey | null,
   provider: ProviderName | null,
@@ -155,20 +172,8 @@ function evaluation(
     rung,
     verdict,
     exitCode: EXIT_CODES[verdict],
-    reasons: Object.freeze([...reasons]),
+    reasons: freezeStringArrayCopy(reasons),
   });
-}
-
-function isPlainRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value) && Object.getPrototypeOf(value) === Object.prototype;
-}
-
-function isNonEmptyString(value: unknown): value is string {
-  return typeof value === "string" && value.trim() !== "";
-}
-
-function isNonEmptyStringArray(value: unknown): value is readonly string[] {
-  return Array.isArray(value) && value.length > 0 && value.every((entry) => isNonEmptyString(entry));
 }
 
 function isRepositoryStore(store: string): boolean {
@@ -176,17 +181,57 @@ function isRepositoryStore(store: string): boolean {
   return REPOSITORY_STORE_LITERALS.has(normalized);
 }
 
-function hasOnlyDeclarationFields(record: Record<string, unknown>): boolean {
-  const keys = Object.keys(record);
-  return keys.length <= DECLARATION_FIELDS.length && keys.every((key) => (DECLARATION_FIELDS as readonly string[]).includes(key));
+/**
+ * Accessor-safe, prototype-pollution-resistant read of a dense array of
+ * non-empty strings — `scope` and `usedBy` both accept free text, so unlike
+ * `credential.ts`'s `inspectScope` this has no closed vocabulary or
+ * canonical ordering to check, but it reuses the identical safety shape:
+ * reject anything but a real `Array.prototype`-rooted array, confirm the
+ * key count matches `length` exactly (no holes, no extra own keys), and
+ * read every element through `Reflect.getOwnPropertyDescriptor` rather than
+ * indexed access, so a hostile `Array.prototype.every`/`Symbol.iterator`
+ * override or an accessor property planted at an index cannot influence the
+ * result or run caller code.
+ */
+function readNonEmptyStringArray(value: unknown): readonly string[] | null {
+  if (!Array.isArray(value) || Object.getPrototypeOf(value) !== Array.prototype) return null;
+  const lengthDescriptor = Reflect.getOwnPropertyDescriptor(value, "length");
+  if (lengthDescriptor === undefined || !("value" in lengthDescriptor)) return null;
+  const length = lengthDescriptor.value;
+  if (typeof length !== "number" || !Number.isSafeInteger(length) || length < 1) return null;
+
+  const ownKeys = Reflect.ownKeys(value);
+  if (ownKeys.length !== length + 1) return null;
+  for (const key of ownKeys) {
+    if (key === "length") continue;
+    if (typeof key !== "string" || !/^(0|[1-9]\d*)$/.test(key)) return null;
+    const index = Number(key);
+    if (!Number.isSafeInteger(index) || index < 0 || index >= length) return null;
+  }
+
+  const values: string[] = [];
+  for (let index = 0; index < length; index += 1) {
+    const descriptor = Reflect.getOwnPropertyDescriptor(value, String(index));
+    if (descriptor === undefined || !("value" in descriptor)) return null;
+    const entry = descriptor.value;
+    if (!isNonEmptyString(entry)) return null;
+    values[index] = entry;
+  }
+  return values;
 }
 
+/**
+ * Accessor-safe read of the optional `rotationPolicy` field: `null`, or a
+ * closed-field record whose sole field is a finite, positive `maxAgeDays`.
+ * Reads `record.values.maxAgeDays` from an already-`readOwnDataRecord`-safe
+ * snapshot rather than the raw nested value, so a hostile nested getter
+ * cannot run here either.
+ */
 function inspectRotationPolicy(value: unknown): { readonly ok: boolean } {
   if (value === null) return { ok: true };
-  if (!isPlainRecord(value)) return { ok: false };
-  const keys = Object.keys(value);
-  if (keys.length !== 1 || keys[0] !== "maxAgeDays") return { ok: false };
-  const maxAgeDays = value.maxAgeDays;
+  const record = readOwnDataRecord(value);
+  if (record === null || !hasOnlyFields(record, ["maxAgeDays"])) return { ok: false };
+  const maxAgeDays = record.values.maxAgeDays;
   return { ok: typeof maxAgeDays === "number" && Number.isFinite(maxAgeDays) && maxAgeDays > 0 };
 }
 
@@ -194,29 +239,41 @@ function inspectRotationPolicy(value: unknown): { readonly ok: boolean } {
  * Judges a value-free custody declaration without reading, accepting,
  * storing, or returning a token value. Unknown fields are indeterminate, so
  * a value smuggled through an untyped caller cannot be silently accepted or
- * echoed — the same discipline `credential.ts`'s `evaluateCredential` uses.
+ * echoed — the same discipline, and the same accessor-safe/prototype-
+ * pollution-resistant primitives (`readOwnDataRecord`, `hasOnlyFields`,
+ * `isNonEmptyString`), that `credential.ts`'s `evaluateCredential` uses.
+ * Every field is read from `record.values` (a `readOwnDataRecord` snapshot
+ * of own data properties only), never from `declaration` directly, so a
+ * throwing getter anywhere on the input cannot escape this function, and
+ * `scope`/`usedBy` are read through `readNonEmptyStringArray`, never
+ * `Array.prototype.every`/`.map`/iteration, so a polluted `Array.prototype`
+ * cannot flip a violated declaration to `satisfied`.
  */
-export function evaluateProviderCustody(declaration: unknown): ProviderCustodyEvaluation {
-  if (!isPlainRecord(declaration)) return evaluation(null, null, null, "indeterminate", ["invalid-declaration"]);
-  if (!hasOnlyDeclarationFields(declaration)) return evaluation(null, null, null, "indeterminate", ["unsupported-fields"]);
+function evaluateProviderCustodyUnchecked(declaration: unknown): ProviderCustodyEvaluation {
+  const record = readOwnDataRecord(declaration);
+  if (record === null) return evaluation(null, null, null, "indeterminate", ["invalid-declaration"]);
+  if (!hasOnlyFields(record, DECLARATION_FIELDS)) return evaluation(null, null, null, "indeterminate", ["unsupported-fields"]);
 
-  const key = isNonEmptyString(declaration.key) ? declaration.key : null;
-  const provider = PROVIDERS.includes(declaration.provider as ProviderName) ? (declaration.provider as ProviderName) : null;
-  const rung = RUNGS.includes(declaration.rung as CustodyRung) ? (declaration.rung as CustodyRung) : null;
+  const key = isNonEmptyString(record.values.key) ? record.values.key : null;
+  const provider = PROVIDERS.includes(record.values.provider as ProviderName) ? (record.values.provider as ProviderName) : null;
+  const rung = RUNGS.includes(record.values.rung as CustodyRung) ? (record.values.rung as CustodyRung) : null;
+  const store = isNonEmptyString(record.values.store) ? record.values.store : null;
+  const scope = readNonEmptyStringArray(record.values.scope);
+  const usedBy = readNonEmptyStringArray(record.values.usedBy);
 
   const reasons: ProviderCustodyReason[] = [];
   if (key === null) reasons.push("missing-key");
-  if (!Object.hasOwn(declaration, "provider")) reasons.push("missing-provider");
+  if (!hasField(record, "provider")) reasons.push("missing-provider");
   else if (provider === null) reasons.push("unsupported-provider");
-  if (!Object.hasOwn(declaration, "rung")) reasons.push("missing-rung");
+  if (!hasField(record, "rung")) reasons.push("missing-rung");
   else if (rung === null) reasons.push("unsupported-rung");
-  if (!isNonEmptyString(declaration.owner)) reasons.push("missing-owner");
-  if (!isNonEmptyString(declaration.store)) reasons.push("missing-store");
-  else if (isRepositoryStore(declaration.store)) reasons.push("store-is-repository");
-  if (!isNonEmptyStringArray(declaration.scope)) reasons.push("missing-scope");
-  if (!isNonEmptyString(declaration.leastPrivilegeNote)) reasons.push("missing-least-privilege-note");
-  if (!isNonEmptyStringArray(declaration.usedBy)) reasons.push("missing-used-by");
-  if (!Object.hasOwn(declaration, "rotationPolicy") || !inspectRotationPolicy(declaration.rotationPolicy).ok) {
+  if (!isNonEmptyString(record.values.owner)) reasons.push("missing-owner");
+  if (store === null) reasons.push("missing-store");
+  else if (isRepositoryStore(store)) reasons.push("store-is-repository");
+  if (scope === null) reasons.push("missing-scope");
+  if (!isNonEmptyString(record.values.leastPrivilegeNote)) reasons.push("missing-least-privilege-note");
+  if (usedBy === null) reasons.push("missing-used-by");
+  if (!hasField(record, "rotationPolicy") || !inspectRotationPolicy(record.values.rotationPolicy).ok) {
     reasons.push("invalid-rotation-policy");
   }
 
@@ -224,27 +281,87 @@ export function evaluateProviderCustody(declaration: unknown): ProviderCustodyEv
   return evaluation(key, provider, rung, "satisfied", []);
 }
 
+/**
+ * Public entry point. A hostile proxy trap (a throwing `ownKeys`,
+ * `getOwnPropertyDescriptor`, or similar) on `declaration` or on one of its
+ * fields can still make the accessor-safe reads above throw, even though
+ * none of them ever *reads a value through* such a trap -- `Reflect.ownKeys`
+ * and `Reflect.getOwnPropertyDescriptor` faithfully invoke a proxy's own
+ * traps, they just never invoke a getter. This outer boundary is the same
+ * one `credential.ts`'s public `evaluateCredential` wraps
+ * `evaluateCredentialUnchecked` in, for the identical reason: nothing here
+ * should ever throw out to a caller, only ever report `indeterminate`.
+ */
+export function evaluateProviderCustody(declaration: unknown): ProviderCustodyEvaluation {
+  try {
+    return evaluateProviderCustodyUnchecked(declaration);
+  } catch {
+    return evaluation(null, null, null, "indeterminate", ["invalid-declaration"]);
+  }
+}
+
 function reasonSummary(reasons: readonly ProviderCustodyReason[]): string {
   return reasons.join(", ");
 }
 
-/** Frozen, value-free authoring helper for callers that already have a typed declaration. Throws if it does not evaluate `satisfied`. */
+const INVALID_DEFINITION_SNAPSHOT = Symbol("invalid provider custody definition snapshot");
+
+function rejectDefinitionSnapshot(): never {
+  throw INVALID_DEFINITION_SNAPSHOT;
+}
+
+/**
+ * Frozen, value-free authoring helper for callers that already have a typed
+ * declaration. Throws if it does not evaluate `satisfied`. Mirrors
+ * `credential.ts`'s `defineCredentialEvidence`: it re-derives the frozen
+ * snapshot from a fresh `readOwnDataRecord`/`readNonEmptyStringArray` read
+ * (never from direct `declaration.field` access) and re-evaluates that exact
+ * snapshot, so a value that changed underneath this call between the first
+ * check and the read that builds the frozen result is refused rather than
+ * silently accepted.
+ */
 export function defineProviderCustody(declaration: ProviderCustodyDeclaration): ProviderCustodyDeclaration {
   const evaluated = evaluateProviderCustody(declaration);
   if (evaluated.verdict !== "satisfied") {
     throw new RangeError(`provider custody declaration is ${evaluated.verdict}: ${reasonSummary(evaluated.reasons)}`);
   }
-  return Object.freeze({
-    key: declaration.key,
-    provider: declaration.provider,
-    rung: declaration.rung,
-    owner: declaration.owner,
-    store: declaration.store,
-    scope: Object.freeze([...declaration.scope]),
-    leastPrivilegeNote: declaration.leastPrivilegeNote,
-    usedBy: Object.freeze([...declaration.usedBy]),
-    rotationPolicy: declaration.rotationPolicy === null ? null : Object.freeze({ maxAgeDays: declaration.rotationPolicy.maxAgeDays }),
-  });
+  try {
+    const record = readOwnDataRecord(declaration);
+    if (record === null) rejectDefinitionSnapshot();
+    const scope = readNonEmptyStringArray(record.values.scope);
+    const usedBy = readNonEmptyStringArray(record.values.usedBy);
+    if (scope === null || usedBy === null) rejectDefinitionSnapshot();
+    const rotationPolicyValue = record.values.rotationPolicy;
+    let rotationPolicy: { readonly maxAgeDays: number } | null;
+    if (rotationPolicyValue === null) {
+      rotationPolicy = null;
+    } else {
+      const policyRecord = readOwnDataRecord(rotationPolicyValue);
+      if (policyRecord === null || !hasOnlyFields(policyRecord, ["maxAgeDays"]) || typeof policyRecord.values.maxAgeDays !== "number") {
+        rejectDefinitionSnapshot();
+      }
+      rotationPolicy = Object.freeze({ maxAgeDays: policyRecord.values.maxAgeDays as number });
+    }
+    const snapshot: ProviderCustodyDeclaration = {
+      key: record.values.key as SecretKey,
+      provider: record.values.provider as ProviderName,
+      rung: record.values.rung as CustodyRung,
+      owner: record.values.owner as string,
+      store: record.values.store as CustodyStore,
+      scope: freezeStringArrayCopy(scope),
+      leastPrivilegeNote: record.values.leastPrivilegeNote as string,
+      usedBy: freezeStringArrayCopy(usedBy),
+      rotationPolicy,
+    };
+    const snapshotEvaluation = evaluateProviderCustody(snapshot);
+    if (snapshotEvaluation.verdict !== "satisfied") rejectDefinitionSnapshot();
+    return Object.freeze(snapshot);
+  } catch (error) {
+    if (error === INVALID_DEFINITION_SNAPSHOT) {
+      throw new RangeError("provider custody declaration changed while it was being inspected");
+    }
+    throw new RangeError("provider custody declaration could not be inspected safely");
+  }
 }
 
 /** Builds a frozen, value-free provider-custody manifest from already-satisfied declarations. Throws on the first declaration that is not `satisfied`. */

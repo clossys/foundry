@@ -23,7 +23,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   against the definition. New CLI `clossys-locksmith-provider-custody`
   reads one declaration document and reports `satisfied` / `violated` /
   `indeterminate` with exit codes `0` / `1` / `2`, mirroring
-  `clossys-locksmith-credential`.
+  `clossys-locksmith-credential`. `evaluateProviderCustody` shares
+  `credential.ts`'s accessor-safe, prototype-pollution-resistant record and
+  array reads (`readOwnDataRecord`, `hasOnlyFields`, exported from
+  `credential.ts`) rather than duplicating a weaker check.
 
 ## [0.2.7] - 2026-09-22
 

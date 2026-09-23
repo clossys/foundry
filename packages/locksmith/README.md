@@ -308,7 +308,10 @@ against — a provider token's age is judged by the same rule as every other
 key, never a second one invented here. Unknown fields are rejected without
 being returned, so a token value smuggled through an untyped caller cannot
 be silently accepted or echoed — the same discipline `evaluateCredential`
-already uses.
+already uses, down to the same accessor-safe field reads (a throwing getter
+anywhere on the input cannot run) and the same prototype-pollution-resistant
+array reads (an overridden `Array.prototype.every`/`Symbol.iterator` cannot
+flip a violated `scope` or `usedBy` to satisfied).
 
 ```ts
 import { defineProviderCustodyManifest, providerCustodyOf } from "@clossys/locksmith";

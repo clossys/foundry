@@ -57,7 +57,7 @@ beforeAll(() => {
   mkdirSync(dotBin, { recursive: true });
   const installedDistDir = join(workDir, "dist");
   mkdirSync(installedDistDir, { recursive: true });
-  for (const file of ["provider-custody-cli.js", "provider-custody.js"]) {
+  for (const file of ["provider-custody-cli.js", "provider-custody.js", "credential.js"]) {
     cpSync(join(packageRoot, "dist", file), join(installedDistDir, file));
   }
   const installedCliPath = join(installedDistDir, "provider-custody-cli.js");
