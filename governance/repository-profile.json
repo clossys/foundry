@@ -33,13 +33,13 @@
     { "name": "LICENSE", "classification": "canonical", "disposition": "required" },
     { "name": "README.md", "classification": "canonical", "disposition": "required" },
     { "name": "SECURITY.md", "classification": "canonical", "disposition": "required" },
+    { "name": "clossys", "classification": "canonical", "disposition": "required" },
     { "name": "docs", "classification": "canonical", "disposition": "required" },
     { "name": "package-lock.json", "classification": "canonical", "disposition": "required" },
     { "name": "package-scope.json", "classification": "canonical", "disposition": "required" },
     { "name": "package.json", "classification": "canonical", "disposition": "required" },
     { "name": "packages", "classification": "canonical", "disposition": "required" },
     { "name": "scripts", "classification": "canonical", "disposition": "required" },
-    { "name": "strategy", "classification": "canonical", "disposition": "required" },
     { "name": "governance", "classification": "extension", "disposition": "required" }
   ]
 }
