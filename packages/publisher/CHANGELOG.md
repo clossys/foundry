@@ -21,6 +21,34 @@ All notable changes to this package are documented here. Format follows
   the published package) that reproduces the exact 0.4.7-shaped Designer
   graph deterministically and proves the new floor refuses it.
 
+### Added
+
+- `@clossys/publisher/pack`: the v0 Launch pack manifest contract (#1204).
+  Publisher plans first and seals last — types, `validatePackManifest`
+  (schema, needs-graph, and lifecycle-vocabulary validation),
+  `computePackReadiness`/`planPackOrder`/`sealableItemIds` (readiness and
+  sealing derived from the `needs` graph), and `detectExistingPackItems`/
+  `foundPackItem` (adopt-don't-override detection with sha256
+  fingerprints). Pack item statuses and conditions use the one lifecycle
+  vocabulary from #1228 (`absent`/`found`/`draft`/`approved`/`verified`/
+  `retired`, `current`/`stale`/`blocked`) — a local copy pending #1237,
+  which exports the same list from `@clossys/controller`; see this
+  repository's own `pack/lifecycle.test.ts` (not shipped in the published
+  package) for the premise-guard test.
+- `@clossys/publisher/surfaces`: the one-owner-per-file contract for surface
+  documents (#1205). Surface documents (which template, which sections,
+  which copy ids and asset ids, all by reference) move from Designer/Writer
+  co-authorship to Publisher, under `clossys/publisher/surfaces/`; Designer
+  and Writer own everything a document references and propose changes and
+  review renders in their own folders, but never edit a Publisher surface
+  file directly. `validateSurfaceOwnership` is the gate: it flags any path
+  more than one role claims. Updated the Publisher, Designer, and Writer
+  skills to describe this ownership split; the shared consumer layout
+  contract (#1171) has not landed in this repository yet, so
+  `PUBLISHER_SURFACES_DIR` is this package's own record of the path pending
+  that contract, and Writer's own removal of its former document-authoring
+  role is left for a follow-up behind #1163.
+
 ## [0.4.24] - 2026-09-21
 
 ### Changed
