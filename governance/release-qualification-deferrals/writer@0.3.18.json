@@ -1,6 +1,0 @@
-{
-  "package": "writer",
-  "version": "0.3.18",
-  "reason": "This version was cut to fix issue #1250 (leaking test fixture directories): the previous version's retained qualification record went stale the moment its test suite changed (docs/PUBLISHING.md, \"Once a version's record is retained, any change to that package needs a new version\"), a test-only, non-packed change. No candidate qualification record has been generated yet for this new version. Renumbered from 0.3.16: main independently shipped writer@0.3.16 for the addressability extensions feature; 0.3.17 is claimed by open PR #1258 (version-collision rule, issue #1187). Merge acknowledgement, never publication: this version may not be published before the record exists.",
-  "issue": 1250
-}
