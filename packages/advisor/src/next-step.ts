@@ -7,6 +7,12 @@
  * When Launcher's recorded-host shape lands, the caller adapts it into
  * this type rather than this package growing a dependency on Launcher.
  *
+ * Every invocation carries the `loop` keyword (#1194's owner decision,
+ * 2026-09-22): "A role is invoked with `loop`: `/clossys-<role> loop` in
+ * Claude Code, `@clossys-<role> loop` in Cursor." #1194 does not specify
+ * a Codex form yet, but the same keyword contract holds regardless of
+ * host, so the fallback phrasing carries it too.
+ *
  * Codex's real skill-discovery path has not been verified (#1180's own
  * done-when item 3, owned by Launcher); its phrasing below is a
  * best-effort placeholder pending that verification, not a proven claim.
@@ -33,12 +39,12 @@ export function nextStepInstruction(role: string, host: NextStepHostContext): st
   const skill = skillSlug(role);
   switch (host.tool) {
     case "claude-code":
-      return `Open ${host.repositoryLabel} in Claude Code and type "/${skill}".`;
+      return `Open ${host.repositoryLabel} in Claude Code and type "/${skill} loop".`;
     case "cursor":
-      return `Open ${host.repositoryLabel} in Cursor and mention "@${skill}".`;
+      return `Open ${host.repositoryLabel} in Cursor and mention "@${skill} loop".`;
     case "codex":
-      return `Open ${host.repositoryLabel} in Codex and start the "${skill}" skill.`;
+      return `Open ${host.repositoryLabel} in Codex and start the "${skill}" skill with "loop".`;
     default:
-      return `Open ${host.repositoryLabel} and start the "${skill}" skill for your tool.`;
+      return `Open ${host.repositoryLabel} and start the "${skill}" skill for your tool with "loop".`;
   }
 }

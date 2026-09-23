@@ -274,6 +274,9 @@ for opening the next repository and calling the next role, correct for the
 client's own tool (`ClientTool`: `"claude-code"`, `"cursor"`, `"codex"`, or
 `"unknown"`) — Claude Code as a slash command, Cursor as an @-mention,
 anything else names the skill without inventing an unverified syntax.
+Every phrasing carries the `loop` keyword every role is invoked with
+(#1194's owner decision: `/clossys-<role> loop` in Claude Code,
+`@clossys-<role> loop` in Cursor) — never a bare skill name.
 `NextStepHostContext` is a small input type pending Launcher's own
 recorded-host shape (#1180's Launcher side); once that lands, a caller
 adapts it into this type.

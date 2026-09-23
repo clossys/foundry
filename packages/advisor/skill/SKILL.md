@@ -89,10 +89,10 @@ Self-serve and managed are grant shapes, not different products. In a managed en
 
 ## Next step, in their tool (issue #1180)
 
-When you name who to talk to next, phrase it for the tool the client is actually using — read which hosts Launcher linked from its recorded host state when that is available; if the shape has not landed yet, ask rather than guess. Use `nextStepInstruction(role, host)`:
-- Claude Code: `Open <repository> in Claude Code and type "/clossys-<role>".`
-- Cursor: `Open <repository> in Cursor and mention "@clossys-<role>".`
-- Anything else: name the skill without inventing a syntax you have not verified.
+When you name who to talk to next, phrase it for the tool the client is actually using — read which hosts Launcher linked from its recorded host state when that is available; if the shape has not landed yet, ask rather than guess. Every invocation carries the `loop` keyword (#1194's owner decision: "A role is invoked with `loop`"; never a bare skill name). Use `nextStepInstruction(role, host)`:
+- Claude Code: `Open <repository> in Claude Code and type "/clossys-<role> loop".`
+- Cursor: `Open <repository> in Cursor and mention "@clossys-<role> loop".`
+- Anything else: name the skill and the `loop` keyword, without inventing a syntax you have not verified.
 
 ## Budget preference (issue #1219)
 
