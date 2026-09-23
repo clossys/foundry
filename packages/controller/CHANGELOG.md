@@ -5,6 +5,14 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.21] - 2026-09-23
+
+### Changed
+
+- Widen the `@clossys/advisor` dependency range to `^0.4.0` to cover advisor's
+  wave-2 minor bump (plan record, kit verdicts, managed engagements,
+  next-step phrasing, budget preference).
+
 ## [0.9.17] - 2026-09-23
 
 ### Changed

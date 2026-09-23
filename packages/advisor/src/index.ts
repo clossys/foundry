@@ -30,13 +30,18 @@ export { ENGAGEMENT_CONTEXT_FIELD_IDS, fieldById } from "./context.js";
 export { nextContextQuestion, applyContextChoice } from "./context-questions.js";
 export { CLIENT_PROBLEMS } from "./client-problems.js";
 export { nextProblemQuestion, applyProblemChoice } from "./problem-questions.js";
+export { ADVISOR_BLOCKER_KINDS, renderAdvisorStatus, validateAdvisorPlan } from "./status.js";
+export { recommendKit } from "./kit-verdicts.js";
+export { nextStepInstruction } from "./next-step.js";
+export { validateManagedEngagement, proposalReadyForClient } from "./managed-engagement.js";
+export { BUDGET_PREFERENCE_CARD, applyBudgetPreferenceChoice, toPreferencesFile } from "./preferences.js";
 export type {
   AdvisorAssessment, AdvisorAssessmentInput, AdvisorCharter, AdvisorComponentAssessment, AdvisorFinding, AdvisorSession, AdvisorSessionEvent, AdvisorSessionState,
   AdvisorState, AdvisorToolContract, AdvisorToolRequest, AdvisorToolResponse, AssessmentBasis, AuthorityClearance, BaselineDefinition, CompletionDefinition, CriterionDefinition,
   EngagementActionDisposition, EngagementDecisionCurrencyAssessment, EngagementDecisionCurrencyInput, EngagementNextAction, EngagementRecord, EngagementStatus,
   ExecutionAuthorization, EvidenceReference, FirstWaveAct, FirstWaveDefinition, FirstWavePlan, FirstWavePlanState, FirstWavePlanStep, FirstWaveWorkItem, FitSignal,
   HubPlacementCell, HubPlacementCellKind, HubPlacementEvidence, ImmutablePackageRef, Initiative, InitiativeOverlap, InitiativeStatus, PreWorkItem, PreWorkKind, PreWorkStatus, ReadinessCriterion, ReadinessState,
-  ReassessmentPolicy, ReassessmentTrigger, RequiredFitCriterionId, RequiredReadinessCriterionId, RollbackDefinition, SessionClosure, SignalState,
+  ReassessmentPolicy, ReassessmentTrigger, RequiredFitCriterionId, RequiredReadinessCriterionId, RollbackDefinition, SessionClosure, SignalState, EngagementMode,
 } from "./types.js";
 export type { SponsorQuestionCard, SponsorQuestionChoice, SponsorChoiceApplyResult, SponsorQuestionInput } from "./sponsor-questions.js";
 export type { AdvisorExecutionReadiness } from "./execution-readiness.js";
@@ -53,3 +58,8 @@ export type { EngagementContext, EngagementContextField, EngagementContextFieldI
 export type { ContextChoiceApplyResult, ContextQuestionCard, ContextQuestionChoice } from "./context-questions.js";
 export type { ClientProblem } from "./client-problems.js";
 export type { ProblemChoiceApplyResult, ProblemConfirmation, ProblemConfirmationState, ProblemQuestionCard, ProblemQuestionChoice } from "./problem-questions.js";
+export type { AdvisorBlockerKind, AdvisorBlockerNextAction, AdvisorPlan, AdvisorPlanBlocker, AdvisorPlanDecision, AdvisorPlanMandate, AdvisorPlanNextAction } from "./status.js";
+export type { KitVerdict, KitVerdictCitation, KitVerdictRole, KitVerdictState, RecommendKitInput } from "./kit-verdicts.js";
+export type { ClientTool, NextStepHostContext } from "./next-step.js";
+export type { ManagedEngagementInput, OperatorReview } from "./managed-engagement.js";
+export type { AdvisorPreferences, BudgetPreference, BudgetPreferenceApplyResult, BudgetPreferenceCard, BudgetPreferenceChoice } from "./preferences.js";

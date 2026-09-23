@@ -213,6 +213,102 @@ chosen choice id to `confirmed`, `declined`, `unknown`, or
 `something-else`; `unknown` and `something-else` never invent a
 confirmation.
 
+## Plan record and the STATUS document (issue #1175)
+
+`renderAdvisorStatus(plan)` is a pure markdown renderer for the STATUS
+document at `clossys/advisor/STATUS` (a `.md` file, saved with that
+extension): five fixed sections in order — Mandate, Where we are,
+Recommended next, Decisions, Blockers — matching Controller's own
+loop-state shape (#1195) so a later migration to `loop.json` is a
+rename, not a redesign. It takes an `AdvisorPlan` record (`schemaVersion`,
+`asOf`, `mandate`, `whereWeAre`, `recommendedNext`, `decisions`,
+`blockers`); `AdvisorBlockerKind` reuses #1195's five blocker kinds
+verbatim. This package performs no file I/O — the caller writes the
+rendered text.
+
+`AdvisorPlanBlocker` (`capabilityId`, `kind`, `owner`,
+`nextAction: { who, how, byWhen }`, `since`) is field-for-field the same
+shape as the Controller role's own `Blocker` record, defined for issue
+#1237 in the Controller package's own loop module: the owner direction
+on #1187 (2026-09-23) is that an order-dependent change may carry no
+local copy of a shared definition once that definition is on `main`,
+and a blocker record is exactly that kind of definition.
+`validateAdvisorPlan(value)` checks a candidate plan against this shape
+— every blocker's `capabilityId`, `owner`, `since`, and full
+`nextAction`, plus `kind` membership in `AdvisorBlockerKind`
+(`ADVISOR_BLOCKER_KINDS` lists the five values in order) — and returns
+every finding it locates, the same pattern as this package's other
+validators. This package still carries no runtime dependency on the
+Controller package: the shape is duplicated structurally, never the
+owner-per-kind mapping, which stays owned by Controller.
+
+The `advisor-render-status` CLI wraps this renderer:
+
+```bash
+advisor-render-status plan.json
+```
+
+It prints the rendered STATUS document to stdout and exits `0`, or exits
+`2` for unreadable or malformed input (now via `validateAdvisorPlan`,
+so a blocker in the old, local shape is rejected the same way).
+
+## Kit verdicts (issue #1177)
+
+`recommendKit()` turns confirmed problems into a client-facing verdict:
+composes a kit from the confirmed problems (`composeKitFromProblems()`),
+then checks whether a curated preset's own closure exactly matches the
+resulting role set — if so, the verdict is attributed to that preset for a
+friendlier name (`source: "preset"`), while still using the composition's
+own citation trace. Each `KitVerdictRole` carries the role's `why`, the
+confirmed-problem `citations` that ground it (empty for a role pulled in
+only by a `needs` edge), its `goal`, handoffs, and `deliverable` (from the
+catalogue's own `boundary.owns`). `readyForClient` reflects the
+operator-review hook below — always `true` in self-serve mode.
+
+## Self-serve and managed engagements (issue #1044)
+
+Self-serve and managed are grant shapes on the same engine, not separate
+distributions. `EngagementRecord` carries an optional `engagementMode`
+(`"self-serve"` when omitted, or `"managed"`) and `operatorRef`.
+`validateManagedEngagement()` requires a nonempty `operatorRef` naming a
+party other than Advisor itself when the mode is `"managed"`; omitted mode
+always validates cleanly, so every existing assessment input stays valid
+unchanged. `assessAdvisorEngagement()` runs this validation automatically
+alongside execution-authorization validation.
+
+The operator-review hook: `proposalReadyForClient(engagement, review?)` is
+`true` in self-serve mode, and in managed mode only once the engaged
+operator (matching `operatorRef`) has recorded an `OperatorReview` with
+`disposition: "approved"` — the owner-approved design for a managed-mode
+operator reviewing Advisor's proposed kit before the client sees it. This
+package neither stores that review nor infers a disposition; the caller
+retains it and passes it back in.
+
+## Next-step phrasing (issue #1180)
+
+`nextStepInstruction(role, host)` renders one plain-language instruction
+for opening the next repository and calling the next role, correct for the
+client's own tool (`ClientTool`: `"claude-code"`, `"cursor"`, `"codex"`, or
+`"unknown"`) — Claude Code as a slash command, Cursor as an @-mention,
+anything else names the skill without inventing an unverified syntax.
+Every phrasing carries the `loop` keyword every role is invoked with
+(#1194's owner decision: `/clossys-<role> loop` in Claude Code,
+`@clossys-<role> loop` in Cursor) — never a bare skill name.
+`NextStepHostContext` is a small input type pending Launcher's own
+recorded-host shape (#1180's Launcher side); once that lands, a caller
+adapts it into this type.
+
+## Budget preference (issue #1219)
+
+`BUDGET_PREFERENCE_CARD` is the single one-question-at-a-time card asking
+the client's budget stance, using the fixed tier names from #1219's owner
+decision: `cost-conscious`, `balanced`, `max-quality`, or left `unknown`.
+`applyBudgetPreferenceChoice()` maps a chosen id to the outcome without
+inventing a preference the client did not choose, and `toPreferencesFile()`
+produces the exact `clossys/preferences.json` shape. Advisor never names a
+model here or anywhere else in this package; a host maps the stance to
+models through its own per-host profile.
+
 ## Evolution
 
 The package evolves through normal versioned releases. Keep source evidence and content-addressed bases in the consumer's durable control plane, then reassess when scope, evidence, initiatives, readiness observations, or cadence changes.
