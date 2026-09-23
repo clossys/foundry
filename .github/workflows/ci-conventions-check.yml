@@ -1,0 +1,51 @@
+# Dogfoods ci-conventions-check (issue #1259) against this repository's own
+# .github/workflows, in REPORT MODE ONLY. This is a NEW workflow file,
+# deliberately -- it does not edit ci.yml or any other existing workflow;
+# PR #1253/#1257's lane owns those edits right now, and #1259's own
+# retrospective comment says explicitly that the checker runs here in
+# report mode first, switching to enforce once #1253, #1257, and #1250
+# land. Report mode never fails this job on a finding (see the step below);
+# it exists to make foundry's own gaps visible in every PR, not to block
+# one, until this repository is clean enough -- or every remaining gap is
+# declared as a reasoned exception -- to flip --mode enforce.
+name: CI conventions check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-conventions-check-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  check-ci-conventions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build --workspace=packages/controller
+      - name: Run ci-conventions-check in report mode
+        run: |
+          set +e
+          npm run check:ci-conventions
+          status=$?
+          set -e
+          # Report mode's own contract (ci-conventions-cli.ts): 0 =
+          # satisfied, 2 = violated OR indeterminate -- it never exits 1.
+          # This job fails only on a status outside that pair, which means
+          # the CLI itself broke rather than reporting a real finding.
+          if [ "$status" != "0" ] && [ "$status" != "2" ]; then
+            echo "::error::ci-conventions-check exited $status, outside its own report-mode 0/2 contract"
+            exit 1
+          fi
+          echo "ci-conventions-check: report mode exited $status (0 = clean, 2 = findings above) -- this job does not fail on findings yet."
