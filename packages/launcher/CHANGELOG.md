@@ -5,6 +5,22 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-09-22
+
+### Added
+
+- `docs/contracts/product-repository-layout.json`: the product repository standard (#1215) -- `apps/*`, workspace wiring, agent pointers, and CI, extending the consumer layout. `checkCloudSessionBootstrap()` verifies the three checks a cloud agent session (browser plus GitHub only, no local setup) needs before it can install and run the team in a product repository.
+- `launcher-doctor`: a read-only command that checks git, the GitHub command-line tool, sign-in, Node.js, and npm, and names the first missing prerequisite in plain language with the one next action to take -- never a dump of everything at once (#1220).
+- Adopts an existing repository inventory instead of writing a second, diverging one, when the hub marker declares one (#1216). `reportInventoryDrift()` reports drift between the two -- external-only, launcher-only, and agreeing repository ids -- instead of silently merging them.
+- `--clone-missing`, an explicit, non-default flag on `launcher` that clones inventoried repositories not yet sitting beside the hub (#1179), reversing the previous no-clone default for exactly this one approved action. Plain invocation is unchanged: still report-only by default.
+- Records which coding-agent hosts a directory can currently discover skills through, in `clossys/.state/hosts.json` (#1180). Codex is detected by the presence of `.agents/skills` itself -- verified against Codex's own documentation, which reads repository skills from that path directly and needs no separate discovery symlink the way Claude Code and Cursor do.
+- Ships a per-host model profile (`model-profiles/<host>.json`) mapping the fixed reasoning tiers (`light` / `standard` / `deep`) to that host's current models, and reads `clossys/preferences.json`'s budget stance to resolve within it (#1219). Packages never name a model; only this profile does.
+- `launcher-apply-plan`: validates an approved `clossys/advisor/plan.json` and an `EngagementBrief`-shaped `clossys/brief.json` against the "Plan file contract" recorded on issue #1175, then writes the brief into a staffed repository byte-identically (#1178, #1176). Multi-repository orchestration (branch creation, exact package installs, Starter's caller workflow, opening one pull request per repository) is deferred -- see the package README's "Applying an approved plan" section for why.
+
+### Changed
+
+- `README.md`: documents the new commands and exports, and updates the "does not clone" line to describe the new explicit `--clone-missing` exception.
+
 ## [0.2.0] - 2026-09-22
 
 ### Added

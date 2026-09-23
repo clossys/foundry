@@ -1,6 +1,6 @@
 {
   "name": "@clossys/launcher",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -15,13 +15,16 @@
   },
   "bin": {
     "launcher": "dist/cli.js",
-    "launcher-check": "dist/check-cli.js"
+    "launcher-check": "dist/check-cli.js",
+    "launcher-doctor": "dist/doctor-cli.js",
+    "launcher-apply-plan": "dist/apply-plan-cli.js"
   },
   "files": [
     "dist",
     "src",
     "!src/**/*.test.ts",
     "skeleton",
+    "model-profiles",
     "skill-catalogue",
     "contracts",
     "README.md",
