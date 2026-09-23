@@ -295,6 +295,12 @@
       "version": "0.4.24",
       "reason": "This machine is not the pinned release runtime (Node v24.19.0, npm 11.17.0, zlib 1.3.2.1-motley-3246f1b; this machine Node v24.15.0, npm 11.12.1). Merge acknowledgement, never publication: 0.4.24 may not be published before the record exists.",
       "issue": 948
+    },
+    {
+      "package": "publisher",
+      "version": "0.5.0",
+      "reason": "This machine is not the pinned release runtime (Node v24.19.0, npm 11.17.0, zlib 1.3.2.1-motley-3246f1b; this machine Node v24.15.0, npm 11.12.1). Merge acknowledgement, never publication: 0.5.0 may not be published before the record exists. Separately, the pinned-runtime qualification run for 0.4.24 (2026-09-22) caught a real defect this version fixes: `@clossys/designer` was declared `^0.4.0`, which the currently-published Designer 0.4.7 satisfies but cannot serve — Publisher's web templates import `MarketingChapter`, a Designer 0.4.12 addition. The dependency floor is now `^0.4.12`; see packages/publisher/src/web/react-server-artifact.test.ts's regression test.",
+      "issue": 948
     }
   ]
 }

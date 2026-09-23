@@ -5,6 +5,22 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.5.0] - 2026-09-22
+
+### Fixed
+
+- Raised the `@clossys/designer` dependency floor from `^0.4.0` to `^0.4.12`.
+  The pinned-runtime release-qualification run for 0.4.24 caught a real
+  defect: the currently-published Designer is 0.4.7, which `^0.4.0`
+  resolves cleanly, but this package's web templates import Designer's
+  `MarketingChapter` block (a 0.4.12 addition) — so `import("@clossys/
+  publisher/web")` threw `SyntaxError: ... does not provide an export named
+  'MarketingChapter'` under both its ordinary and `react-server` conditions.
+  Added a regression test (`src/web/react-server-artifact.test.ts`, part of
+  this repository's own test suite — `*.test.ts` files are never shipped in
+  the published package) that reproduces the exact 0.4.7-shaped Designer
+  graph deterministically and proves the new floor refuses it.
+
 ## [0.4.24] - 2026-09-21
 
 ### Changed

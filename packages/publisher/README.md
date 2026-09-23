@@ -1720,7 +1720,7 @@ import-free of each other under one version.
 
 Node 20+. This package's own `package.json` declares runtime dependencies on
 `@clossys/writer` (`^0.3.0`), `@clossys/designer`
-(`^0.4.0`), and `@clossys/controller` (`~0.9.0`), of which this
+(`^0.4.12`), and `@clossys/controller` (`~0.9.0`), of which this
 package only imports the `./policy` subpath, `@clossys/controller/policy`,
 never `controller`'s other exports. `writer` and `designer` are caret
 ranges (both fresh `0.x` role packages); `controller` stays a tilde range,
@@ -1741,15 +1741,27 @@ because Publisher's React-server target imports the server-safe
 section-ground, `Faq`, ordered-step, and status-list exports, including the
 separate `not-offered` disposition, introduced in Designer 0.2.7, then to
 `^0.3.0` because the `eyebrow` and `actions` slots this package's
-section contract now renders into are Designer 0.3.0 additions, and then to
-the current `^0.4.0` because a `status-list` section's flat `items`
+section contract now renders into are Designer 0.3.0 additions, then to
+`^0.4.0` because a `status-list` section's flat `items`
 alternative to `groups` renders into Designer 0.4.0's new `StatusList`
-`items` prop. These ranges are independent; leaving
-either one behind would still resolve an older package without any install
+`items` prop, and then to the current `^0.4.12` because this package's web
+templates now compose Designer's `MarketingChapter` block (from
+`@clossys/designer/blocks/server`), a Designer 0.4.12 addition. A published
+package that only satisfies `^0.4.0` — for example the registry's own
+Designer 0.4.7 at the time of this release — resolves cleanly but cannot
+actually serve `@clossys/publisher/web`: `import("@clossys/publisher/web")`
+throws `SyntaxError: The requested module '@clossys/designer/blocks/server'
+does not provide an export named 'MarketingChapter'` under both its ordinary
+and `react-server` conditions. This is exactly the failure the pinned-runtime
+release-qualification run for 0.4.24 caught; see this repository's own
+`src/web/react-server-artifact.test.ts` (not shipped in the published
+package) for the regression test's fixture that reproduces it
+deterministically. These ranges are independent; leaving
+any one behind would still resolve an older package without any install
 failure, silently withholding a required contract.
 
 A consumer whose own policy is to pin exact versions must pin `writer` to a
-matching `0.3.x` release, `designer` to `0.4.0` or a later compatible `0.4.x`
+matching `0.3.x` release, `designer` to `0.4.12` or a later compatible `0.4.x`
 release, and
 `controller` to a matching `0.9.x` patch release — otherwise
 `publisher`'s declared ranges and the consumer's exact pin cannot both be
