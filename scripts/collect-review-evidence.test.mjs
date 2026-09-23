@@ -15,6 +15,8 @@ import {
   normalizeCheckConclusion,
   normalizeReviewDecision,
   normalizeStatusState,
+  parseMergeGroupQueueRef,
+  resolvePrAndHead,
 } from "./collect-review-evidence.mjs";
 
 // This suite proves the pure normalization layer only — no network, no `gh`.
@@ -388,4 +390,144 @@ test("buildReviewEvidenceSection assembles the exact VerifyStandardsInputs['revi
   const section = buildReviewEvidenceSection({ evidence: bundle, policy, options });
   assert.deepEqual(Object.keys(section), ["reviewEvidence"]);
   assert.deepEqual(Object.keys(section.reviewEvidence).sort(), ["evidence", "options", "policy"]);
+});
+
+// ---------------------------------------------------------------------------
+// merge_group support (#1253): a merge-group run names no PR directly, only
+// its own synthetic head_ref. These four cases are the ones #1253's own
+// brief calls out by name -- an approved head, a head reviewed at a
+// different sha, a BLOCKING (changes-requested) review, and a malformed
+// ref -- proven the same way as the pull_request-triggered SATISFIED/
+// VIOLATED/INDETERMINATE cases above: by asserting on the bundle and
+// options this collector actually produces, not by importing the real
+// validator (see this file's own header for why it cannot).
+// ---------------------------------------------------------------------------
+
+const QUEUE_PR_NUMBER = 1234;
+
+function queueRef(number, sha) {
+  return `refs/heads/gh-readonly-queue/main/pr-${number}-${sha}`;
+}
+
+test("parseMergeGroupQueueRef reads the queued PR's number and head sha out of a merge_group head_ref", () => {
+  assert.deepEqual(parseMergeGroupQueueRef(queueRef(QUEUE_PR_NUMBER, HEAD)), { number: QUEUE_PR_NUMBER, headSha: HEAD });
+  // The `refs/heads/` prefix is optional -- some contexts hand this value
+  // over without it -- but nothing else about the shape bends.
+  assert.deepEqual(parseMergeGroupQueueRef(`gh-readonly-queue/main/pr-${QUEUE_PR_NUMBER}-${HEAD}`), {
+    number: QUEUE_PR_NUMBER,
+    headSha: HEAD,
+  });
+});
+
+test("parseMergeGroupQueueRef refuses a malformed ref rather than guessing", () => {
+  assert.equal(parseMergeGroupQueueRef(undefined), null);
+  assert.equal(parseMergeGroupQueueRef(""), null);
+  assert.equal(parseMergeGroupQueueRef("refs/heads/main"), null); // an ordinary branch, not a queue ref
+  assert.equal(parseMergeGroupQueueRef("refs/heads/gh-readonly-queue/main/pr-not-a-number-" + HEAD), null);
+  assert.equal(parseMergeGroupQueueRef(`refs/heads/gh-readonly-queue/main/pr-${QUEUE_PR_NUMBER}-tooshort`), null); // sha not 40 hex chars
+});
+
+test("resolvePrAndHead refuses a malformed merge_group head_ref (this is the CLI's own refusal path, not process.exit)", () => {
+  const result = resolvePrAndHead({ mergeGroupHeadRef: "not-a-queue-ref" });
+  assert.equal(typeof result.error, "string");
+  assert.equal(result.pr, undefined);
+  assert.equal(result.head, undefined);
+});
+
+test("resolvePrAndHead resolves a well-formed merge_group head_ref to the queued PR's own number and head sha, overriding any --pr/--head also passed", () => {
+  const resolved = resolvePrAndHead({ pr: "999", head: OTHER_HEAD, mergeGroupHeadRef: queueRef(QUEUE_PR_NUMBER, HEAD) });
+  assert.deepEqual(resolved, { pr: String(QUEUE_PR_NUMBER), head: HEAD });
+});
+
+test("resolvePrAndHead still requires --pr and a valid --head when no merge_group ref is supplied (the ordinary pull_request path, unchanged)", () => {
+  assert.equal(typeof resolvePrAndHead({}).error, "string");
+  assert.equal(typeof resolvePrAndHead({ pr: "1" }).error, "string");
+  assert.equal(typeof resolvePrAndHead({ pr: "1", head: "not-a-sha" }).error, "string");
+  assert.deepEqual(resolvePrAndHead({ pr: "1", head: HEAD }), { pr: "1", head: HEAD });
+});
+
+test("merge-group case: an approved head -- resolved head sha matches an APPROVED review at that exact commit", () => {
+  const resolved = resolvePrAndHead({ mergeGroupHeadRef: queueRef(QUEUE_PR_NUMBER, HEAD) });
+  const payload = fullGraphQlPayload({
+    reviews: {
+      pageInfo: { hasNextPage: false, hasPreviousPage: false },
+      nodes: [{ id: "R1", state: "APPROVED", submittedAt: "2026-09-23T00:00:00Z", commit: { oid: HEAD }, author: { login: "a-reviewer" } }],
+    },
+    reviewThreads: { pageInfo: { hasNextPage: false, hasPreviousPage: false }, nodes: [] },
+  });
+  const bundle = buildReviewEvidenceBundle(payload);
+  const options = buildReviewEvidenceOptions({ headShaUnderTest: resolved.head, requireReviewPresence: false });
+
+  // Same shape as the pull_request SATISFIED case above, built from the
+  // merge-group-resolved head instead of a directly-supplied --head: no
+  // mismatch, an approval at the exact resolved commit, nothing blocking.
+  assert.equal(options.headShaUnderTest, bundle.headSha);
+  assert.equal(bundle.reviews[0].state, "approved");
+  assert.equal(bundle.reviews[0].headSha, bundle.headSha);
+});
+
+test("merge-group case: a head reviewed at a different sha is refused (evidence-head-mismatch), never silently accepted", () => {
+  const resolved = resolvePrAndHead({ mergeGroupHeadRef: queueRef(QUEUE_PR_NUMBER, HEAD) });
+  // The live query answers for a DIFFERENT commit than the one the queue ref
+  // actually named -- the same "stale replay / push landed in between"
+  // shape as the pull_request INDETERMINATE case above, reached this time
+  // through the merge-group resolution path instead of a directly-supplied
+  // --head.
+  const payload = fullGraphQlPayload({
+    headRefOid: OTHER_HEAD,
+    reviews: {
+      pageInfo: { hasNextPage: false, hasPreviousPage: false },
+      nodes: [{ id: "R1", state: "APPROVED", submittedAt: "2026-09-23T00:00:00Z", commit: { oid: OTHER_HEAD }, author: { login: "a-reviewer" } }],
+    },
+  });
+  const bundle = buildReviewEvidenceBundle(payload);
+  const options = buildReviewEvidenceOptions({ headShaUnderTest: resolved.head, requireReviewPresence: false });
+
+  assert.notEqual(options.headShaUnderTest, bundle.headSha);
+  assert.equal(options.headShaUnderTest, HEAD); // what the queue ref actually named
+  assert.equal(bundle.headSha, OTHER_HEAD); // what the live query answered instead
+});
+
+test("merge-group case: a BLOCKING (changes-requested) review at the resolved head is refused", () => {
+  const resolved = resolvePrAndHead({ mergeGroupHeadRef: queueRef(QUEUE_PR_NUMBER, HEAD) });
+  const payload = fullGraphQlPayload({
+    reviews: {
+      pageInfo: { hasNextPage: false, hasPreviousPage: false },
+      nodes: [{ id: "R1", state: "CHANGES_REQUESTED", submittedAt: "2026-09-23T00:00:00Z", commit: { oid: HEAD }, author: { login: "a-reviewer" } }],
+    },
+  });
+  const bundle = buildReviewEvidenceBundle(payload);
+  const options = buildReviewEvidenceOptions({ headShaUnderTest: resolved.head, requireReviewPresence: false });
+
+  assert.equal(options.headShaUnderTest, bundle.headSha); // right commit -- no mismatch to hide behind
+  assert.equal(bundle.reviews[0].state, "changes-requested"); // BLOCKING, unconditional per validate.ts
+  assert.equal(bundle.reviews[0].headSha, bundle.headSha);
+});
+
+test("merge-group case: an approval followed by a LATER blocking review at the same head is still refused -- 'no later BLOCKING' is evaluated by validateReviewEvidence's latest-per-reviewer rule, not by this collector reordering anything", () => {
+  const resolved = resolvePrAndHead({ mergeGroupHeadRef: queueRef(QUEUE_PR_NUMBER, HEAD) });
+  const payload = fullGraphQlPayload({
+    reviews: {
+      pageInfo: { hasNextPage: false, hasPreviousPage: false },
+      nodes: [
+        { id: "R1", state: "APPROVED", submittedAt: "2026-09-23T00:00:00Z", commit: { oid: HEAD }, author: { login: "a-reviewer" } },
+        { id: "R2", state: "CHANGES_REQUESTED", submittedAt: "2026-09-23T01:00:00Z", commit: { oid: HEAD }, author: { login: "a-reviewer" } },
+      ],
+    },
+  });
+  const bundle = buildReviewEvidenceBundle(payload);
+  const options = buildReviewEvidenceOptions({ headShaUnderTest: resolved.head, requireReviewPresence: false });
+
+  // This collector passes BOTH submissions through untouched, in the order
+  // GitHub returned them, each stamped with its own submittedAt --
+  // packages/controller/src/review/validate.ts's validateReviews is what
+  // groups by instanceId and keeps the latest submittedAt per reviewer (see
+  // that file's own "latestByInstance" comment), which is what makes the
+  // later CHANGES_REQUESTED the one that counts. Asserted here at the level
+  // this file can prove without importing the real validator.
+  assert.equal(bundle.reviews.length, 2);
+  assert.equal(bundle.reviews[0].state, "approved");
+  assert.equal(bundle.reviews[1].state, "changes-requested");
+  assert.ok(bundle.reviews[1].submittedAt > bundle.reviews[0].submittedAt);
+  assert.equal(options.headShaUnderTest, bundle.headSha);
 });

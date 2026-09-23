@@ -13,6 +13,13 @@ on:
   pull_request:
   push:
     branches: [main]
+  # Every required context in ruleset 20924588 that this workflow produces
+  # must also report under `merge_group`, or a required check that never
+  # runs for a merge-group commit would wedge the queue (GitHub treats an
+  # unreported required check as blocking, never as a silent pass — the
+  # queue simply never advances). Left unqualified (no `types:`) so a
+  # future merge_group type GitHub adds is not silently excluded.
+  merge_group:
 
 permissions:
   contents: read
@@ -214,7 +221,7 @@ jobs:
       - name: Checkout trusted scripts (base ref only, never this PR's own copy)
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
-          ref: ${{ github.event.pull_request.base.sha || github.sha }}
+          ref: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha || github.sha }}
           path: .trusted-scripts
           sparse-checkout: |
             scripts
@@ -234,6 +241,14 @@ jobs:
       # not this step's job to quietly accept a degraded scan for a PR type
       # nobody reviews line by line (the option issue #269 explicitly
       # rejected).
+      # `github.event.pull_request` does not exist on a `merge_group` event, so
+      # `github.event.pull_request.head.repo.fork` reads `null` there, and
+      # `null != true` is `true` — every fork check in this job already
+      # treats a merge-group run as "not a fork" with no edit needed. That is
+      # the correct answer, not an accident: an entry only enters the queue
+      # after its own `pull_request` run already resolved fork/non-fork and
+      # ran this same job accordingly, and a merge-group run shares this
+      # repository's own Actions secrets the same way an internal PR does.
       - name: Require FULL mode on trunk and internal PRs
         if: github.event.pull_request.head.repo.fork != true
         run: node "$GITHUB_WORKSPACE/.trusted-scripts/scripts/check-public-safety.mjs" . --allow-changelogs --require-denylist
@@ -250,8 +265,8 @@ jobs:
       - name: check-commit-messages
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha }}
           BEFORE_SHA: ${{ github.event.before }}
           IS_FORK: ${{ github.event.pull_request.head.repo.fork }}
         run: |
@@ -868,7 +883,7 @@ jobs:
   # real ancestry, not the default shallow fetch-depth: 1.
   release-readiness:
     name: release readiness (version bump vs. shipped content)
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -879,7 +894,7 @@ jobs:
           node-version: 20
       - name: check-release-readiness (diffed against this PR's actual base)
         env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
         run: node scripts/check-release-readiness.mjs --base "$BASE_SHA"
 
   # scripts/check-qualification-record-present.mjs already answers "does the
@@ -927,7 +942,7 @@ jobs:
   # solved here.
   qualification-record-required:
     name: qualification record required (version bump vs. retained record)
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -938,7 +953,7 @@ jobs:
           node-version: 20
       - name: check-qualification-record-required (diffed against this PR's actual base)
         env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
         run: node scripts/check-qualification-record-required.mjs --base "$BASE_SHA"
 
   # THE JOB NAME BELOW IS STILL DELIBERATELY NOT RENAMED (issue #497, phase
@@ -1121,7 +1136,7 @@ jobs:
         continue-on-error: true
         env:
           GITHUB_EVENT_NAME: ${{ github.event_name }}
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
         run: node scripts/check-touches-packages.mjs
       # Fail before the expensive install/build when a retained qualification
       # record, its immutable history, or the pre-publication tail is invalid.
@@ -1186,7 +1201,7 @@ jobs:
         continue-on-error: true
         env:
           GITHUB_EVENT_NAME: ${{ github.event_name }}
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
         run: node scripts/check-touches-packages.mjs
       # Install every exact local tarball together in a credentialless,
       # disposable consumer. This checks the packed public surface and the
@@ -1593,7 +1608,7 @@ jobs:
       - name: Checkout trusted scripts (base ref only, never this PR's own copy)
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
-          ref: ${{ github.event.pull_request.base.sha || github.sha }}
+          ref: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha || github.sha }}
           path: .trusted-scripts
           sparse-checkout: |
             scripts
