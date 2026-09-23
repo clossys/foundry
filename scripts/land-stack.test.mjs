@@ -1921,3 +1921,94 @@ test("runStatus fail-open/fail-closed: mergeVerdict combination is preserved cor
   });
   assert.equal(result.ok, false, "a red required check must still block the merge regardless of report-only mode -- report-only only softens the TIER verdict, never the merge-readiness verdict");
 });
+
+// ---------------------------------------------------------------------------
+// Round 6, second Opus re-review at 63db7b09 (#1329 comment 5803028965):
+// four malformed-reject shapes that still returned ok:true under enforce.
+// ---------------------------------------------------------------------------
+
+test("MUST REFUSE (shape 1): a record body that parses as valid JSON but is not a plain object -- an array, null, a string, or a number -- is a parse error, not a silently-vanished record (#1187 review round 6, blocking, first reviewer, item (c)-1)", () => {
+  const authorized = { created_at: "2026-09-23T00:00:00Z", updated_at: "2026-09-23T00:00:00Z", authorization: "authorized" };
+  const shapes = [
+    JSON.stringify([{ schemaVersion: 1, role: "reviewer", instanceId: "r1", state: "reject", headSha: HEAD }]), // array
+    "null",
+    JSON.stringify("reject everything"), // string
+    "42", // number
+  ];
+  for (const raw of shapes) {
+    const body = `<!-- foundry-review-record\n${raw}\n-->`;
+    const records = parseReviewRecordComments([{ body, ...authorized }]);
+    assert.equal(records.length, 1, `expected exactly one record for body: ${raw}`);
+    assert.equal(records[0]._parseError, true, `expected a _parseError for a non-object body: ${raw}`);
+  }
+
+  // End to end: a reject wrapped in an array must refuse the merge, not
+  // silently disappear and let a clean pair merge.
+  const arrayWrappedReject = {
+    body: `<!-- foundry-review-record\n${JSON.stringify([{ schemaVersion: 1, role: "reviewer", instanceId: "r3", state: "reject", headSha: HEAD }])}\n-->`,
+    ...authorized,
+  };
+  const records = parseReviewRecordComments([arrayWrappedReject]);
+  const result = evaluateTier1Independence({
+    records: [authorRecord("author-1"), ...qualifyingPair(), ...records],
+    headSha: HEAD,
+  });
+  assert.equal(result.ok, false, "an array-wrapped reject must refuse the gate, not vanish and let the clean pair merge");
+});
+
+test("MUST REFUSE (shape 2): an unrecognized state with role OMITTED entirely is suspicious at the current head -- role is no longer a precondition (#1187 review round 6, blocking, first reviewer, item (c)-2)", () => {
+  const roleOmitted = { instanceId: "x1", state: "request_changes", headSha: HEAD, _authorization: "authorized" }; // no `role` field at all
+  const suspicious = findSuspiciousRecordComments([roleOmitted], HEAD);
+  assert.equal(suspicious.length, 1, "an unrecognized state must be suspicious regardless of whether `role` is present");
+});
+
+test("MUST REFUSE (shape 3): an unrecognized state with NO headSha at all is ambiguous, not silently dropped as stale (#1187 review round 6, blocking, first reviewer, item (c)-3)", () => {
+  const noHeadSha = { role: "reviewer", instanceId: "x2", state: "request_changes", _authorization: "authorized" }; // headSha entirely absent
+  const suspicious = findSuspiciousRecordComments([noHeadSha], HEAD);
+  assert.equal(suspicious.length, 1, "a missing headSha must never be treated as 'safely stale' for an unrecognized state");
+});
+
+test("MUST REFUSE (shape 4): a RECOGNIZED reject whose headSha is not a real SHA -- the literal \"HEAD\", or a prefix shorter than 7 characters -- is ambiguous and refuses, never treated as stale (#1187 review round 6, blocking, first reviewer, item (c)-4)", () => {
+  const literalHead = { role: "reviewer", instanceId: "x3", state: "reject", headSha: "HEAD", _authorization: "authorized" };
+  assert.equal(findSuspiciousRecordComments([literalHead], HEAD).length, 1, 'a headSha of the literal string "HEAD" must be ambiguous, not silently dropped as a non-match');
+
+  const shortPrefix = { role: "reviewer", instanceId: "x4", state: "reject", headSha: HEAD.slice(0, 6), _authorization: "authorized" }; // 6 chars: below the 7-char unambiguous-prefix floor
+  assert.equal(findSuspiciousRecordComments([shortPrefix], HEAD).length, 1, "a 6-character prefix is too short to be unambiguous and must not be silently dropped as stale");
+
+  const nonHex = { role: "reviewer", instanceId: "x5", state: "reject", headSha: "not-a-real-sha-value", _authorization: "authorized" };
+  assert.equal(findSuspiciousRecordComments([nonHex], HEAD).length, 1, "a non-hex headSha must be ambiguous, not silently dropped");
+
+  // Regression guard: a genuinely CONFIRMED-different, well-formed 40-hex
+  // SHA is still safely treated as stale and NOT suspicious.
+  const confirmedStale = { role: "reviewer", instanceId: "x6", state: "reject", headSha: "b".repeat(40), _authorization: "authorized" };
+  assert.equal(findSuspiciousRecordComments([confirmedStale], HEAD).length, 0, "a confirmed, well-formed, genuinely different SHA must remain safely stale, not suspicious");
+
+  // Regression guard: a reject genuinely AT the current head (exact,
+  // well-formed) still routes to findStickyRejections normally, not
+  // flagged as merely "suspicious" -- the sticky-rejection reason must
+  // still surface.
+  const atHead = { role: "reviewer", instanceId: "x7", state: "reject", headSha: HEAD, _authorization: "authorized" };
+  assert.equal(findSuspiciousRecordComments([atHead], HEAD).length, 0, "a well-formed reject exactly at the current head is not 'suspicious' -- it is sticky, handled separately");
+  assert.equal(findStickyRejections([atHead], HEAD).length, 1);
+});
+
+test("MUST REFUSE: the foundry-review-record marker match is case-insensitive, closing a reject-vanishing path where a differently-cased opener was invisible to both the parser AND the suspicion check (#1187 review round 6, second reviewer, non-blocking, folded in as a code fix)", () => {
+  const mixedCaseReject = {
+    body: `<!-- FOUNDRY-REVIEW-RECORD\n${JSON.stringify({ schemaVersion: 1, role: "reviewer", instanceId: "r9", state: "reject", headSha: HEAD })}\n-->`,
+    created_at: "2026-09-23T00:00:00Z",
+    updated_at: "2026-09-23T00:00:00Z",
+    authorization: "authorized",
+  };
+  const blocks = findReviewRecordBlocks(mixedCaseReject.body);
+  assert.equal(blocks.length, 1, "a differently-cased opener must still be recognized as a genuine block");
+
+  const records = parseReviewRecordComments([mixedCaseReject]);
+  assert.equal(records.length, 1);
+  assert.equal(records[0].state, "reject");
+
+  const result = evaluateTier1Independence({
+    records: [authorRecord("author-1"), ...qualifyingPair(), ...records],
+    headSha: HEAD,
+  });
+  assert.equal(result.ok, false, "a mixed-case reject marker must still refuse the merge, not be invisible to the parser");
+});

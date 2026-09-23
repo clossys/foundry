@@ -70,8 +70,8 @@ paths that skip it entirely.
 | Self-inclusion | This file, `scripts/land-stack.mjs` (and its test), `docs/contracts/decision-record.json`, `scripts/check-decision-records.mjs` (and its test), `package-scope.json`, and `scripts/lib/**` are all **tier-2**, not tier-1 — a tier-1 change (two agent reviewers) could otherwise narrow `tier2.globs` (for example, drop `governance/model-qualifications/**` from it) and remove the owner-only boundary without the owner. See "Bootstrapping this gate" below for the one case this cannot cover: this pull request's own first landing. |
 | `governance/decisions/**` classification | `governance/review-tiers.json`'s `tier1.globs` (`governance/**`) | **Tier-1, not tier-0.** Deliberately NOT listed in `tier1RecordExempt` (the carve-out for pure record files) — adding or changing any decision record needs the same two-independent-reviewer bar as any other governance path — closing a self-issue-then-spend loophole (see "What changed after the 8e6d97ea review" below). |
 | Record authorship | `scripts/land-stack.mjs`'s `defaultAnnotateCommentAuthorization` / `isAuthorizedCollaboratorPermission` | A `foundry-review-record` comment counts toward tier-1 ONLY when its author's collaborator permission on this repository (`repos/{owner}/{repo}/collaborators/{username}/permission`) is `admin` or `write` (`"authorized"`). A confirmed `read`/`none`, or an unresolved login, is `"unauthorized"` — never counts toward anything, approval or rejection, and is never itself suspicious (a stranger cannot block the PR by posting garbage). A FAILED permission lookup (the check itself errored, not a confirmed "no") is the third, distinct state `"unknown"` and refuses the whole gate outright, for any record — collapsing it into `"unauthorized"` would silently drop a genuine reject this module simply could not verify. This is a public repository; without any of this, a comment from any GitHub account with no relationship to it at all satisfied tier-1 independence. |
-| Record block parsing | `scripts/land-stack.mjs`'s `findReviewRecordBlocks` and `hasUnaccountedMarkerContent` | A POSITIVE grammar, not a strip-then-scan regex (round 5 replaced `stripQuotedAndFencedContent` — see "What changed after the round-5 reviews" below): a record counts only when its `<!-- foundry-review-record` opener sits at literal column 0 (no leading whitespace at all — an indented opener, including one inside a classic 4-space-indented code block, never matches), outside any fenced code block (backtick or tilde, any indent), `<details>`, or `<pre>` region, with its `-->` closer present. The JSON body is parsed with `JSON.parse`, so any indentation inside the block is fine — nothing is stripped or rewritten to make it parse. A marker (`foundry-review-record`) that appears in an AUTHORIZED comment but never resolves to a valid block — fenced, quoted, indented past what the grammar accepts, or simply malformed JSON — REFUSES THE GATE via a `_parseError` marker, the same as an edited-at-head record does; it is never silently dropped. A reject must never vanish just because it shares a comment with an earlier genuine block (round 6, blocking, both reviewers): `hasUnaccountedMarkerContent` separately checks, for every comment that produced at least one valid block, whether the raw body still contains MORE marker-opener occurrences than `findReviewRecordBlocks` accounted for (a fenced or quoted second marker alongside a genuine one), or ends with a fence/`<details>`/`<pre>` region still open (including a ONE-LINE `<details>...</details>`, whose same-line close this module's line-based tracker never sees, silently swallowing everything after it) — either signal adds an extra `_parseError`, refusing the gate rather than treating the comment as fully accounted for. An unauthorized comment's marker is never suspicious this way (see "Honour-system limits" below for the DoS this closes). A bare-word PROSE mention of the marker name (no `<!--` opener at all) also currently refuses the gate under the same `_parseError` fallback — harmless under report-only, but listed as a must-fix before enforce (see "Before switching to enforce" below). |
-| Tier-1 review requirement | `scripts/land-stack.mjs`'s `evaluateTier1Independence` | Reads `foundry-review-record` comments (`docs/contracts/review-record.json`) on the pull request at its exact current head, from AUTHORIZED comments only. Refuses outright if any edited-at-head, unparseable, unresolved-authorization, or headSha-less-reject record block exists at all (`findSuspiciousRecordComments`) — rather than silently dropping it and continuing. Refuses outright, and STICKY (never superseded by any later record, from the same `instanceId` or otherwise, however that later record is dated), if any authorized record at (or an unambiguous 7+ character prefix of) the current head has a reject-shaped state, matched case-insensitively AND spelling-insensitively (`findStickyRejections` via `normalizeStateSpelling`: `reject`, `rejected`, `changes-requested`, and `changes_requested` all count as the same reject state — round 5, both reviewers) — regardless of what else is wrong with that record. A record whose state is none of the KNOWN spellings (approve/approved, comment/commented, or any reject spelling) is itself suspicious when posted at the current head (`findSuspiciousRecordComments`), so a not-quite-matching reject spelling refuses the gate rather than silently passing as an unrecognized-but-harmless value. Requires exactly one author record. Otherwise requires one `primary` and one `secondary` record, both `state: "approved"` (`"commented"` never counts), differing in model or provider, ordered by the comment's own `created_at` (not the self-declared `submittedAt`) when an instance supersedes its own earlier record. |
+| Record block parsing | `scripts/land-stack.mjs`'s `findReviewRecordBlocks` and `hasUnaccountedMarkerContent` | A POSITIVE grammar, not a strip-then-scan regex (round 5 replaced `stripQuotedAndFencedContent` — see "What changed after the round-5 reviews" below): a record counts only when its `<!-- foundry-review-record` opener sits at literal column 0 (no leading whitespace at all — an indented opener, including one inside a classic 4-space-indented code block, never matches), outside any fenced code block (backtick or tilde, any indent), `<details>`, or `<pre>` region, with its `-->` closer present. The JSON body is parsed with `JSON.parse`, so any indentation inside the block is fine — nothing is stripped or rewritten to make it parse. A marker (`foundry-review-record`, matched CASE-INSENSITIVELY — round 6, second reviewer: a differently-cased opener was previously invisible to the parser entirely) that appears in an AUTHORIZED comment but never resolves to a valid block — fenced, quoted, indented past what the grammar accepts, malformed JSON, or JSON that parses but is not a plain object (an array, `null`, a string, or a number — round 6, blocking, first reviewer, item (c)-1: a reject wrapped in `[{ …, "state": "reject" }]` is spread by `{ ...parsed }` into index keys with no `role`/`state` at all otherwise) — REFUSES THE GATE via a `_parseError` marker, the same as an edited-at-head record does; it is never silently dropped. A reject must never vanish just because it shares a comment with an earlier genuine block (round 6, blocking, both reviewers): `hasUnaccountedMarkerContent` separately checks, for every comment that produced at least one valid block, whether the raw body still contains MORE marker-opener occurrences than `findReviewRecordBlocks` accounted for (a fenced or quoted second marker alongside a genuine one), or ends with a fence/`<details>`/`<pre>` region still open (including a ONE-LINE `<details>...</details>`, whose same-line close this module's line-based tracker never sees, silently swallowing everything after it) — either signal adds an extra `_parseError`, refusing the gate rather than treating the comment as fully accounted for. An unauthorized comment's marker is never suspicious this way (see "Honour-system limits" below for the DoS this closes). A bare-word PROSE mention of the marker name (no `<!--` opener at all) also currently refuses the gate under the same `_parseError` fallback — harmless under report-only, but listed as a must-fix before enforce (see "Before switching to enforce" below). |
+| Tier-1 review requirement | `scripts/land-stack.mjs`'s `evaluateTier1Independence` | Reads `foundry-review-record` comments (`docs/contracts/review-record.json`) on the pull request at its exact current head, from AUTHORIZED comments only. Refuses outright if any edited-at-head or unparseable record block exists at all (`findSuspiciousRecordComments`) — rather than silently dropping it and continuing. AMBIGUOUS-HEADSHA HANDLING, PRECISE (round 6, blocking, first reviewer, items (c)-2/3/4 — an earlier version of this row overclaimed the exact conditions): for any record whose state is NOT a recognized approval-path spelling (`approved`/`commented`/`declared`) — a reject spelling, or any other unrecognized value, WHATEVER its `role` — `isConfirmedDifferentHeadSha` is the only test for "safely stale, ignore it": a full, well-formed 40-character hex SHA that provably does not equal the current head. A missing `headSha`, a non-hex value, the literal string `"HEAD"`, or a prefix shorter than 7 characters is NEVER treated as stale just because it fails to match the current head. From there the two spellings split: a RECOGNIZED reject spelling that clearly matches the current head (the same lenient 7+-character-prefix rule `findStickyRejections` uses) is NOT flagged suspicious here — it is the legitimate case, handled below with its own sticky reason; a TRULY UNRECOGNIZED state is suspicious even at a clean, exact match to the current head, since nothing else in this module interprets it as meaningful evidence. Refuses outright, and STICKY (never superseded by any later record, from the same `instanceId` or otherwise, however that later record is dated), if any authorized record at (or an unambiguous 7+ character prefix of) the current head has a reject-shaped state, matched case-insensitively AND spelling-insensitively (`findStickyRejections` via `normalizeStateSpelling`: `reject`, `rejected`, `changes-requested`, and `changes_requested` all count as the same reject state — round 5, both reviewers) — regardless of what else about the record (missing `depth`, missing `model`) is wrong. Requires exactly one author record. Otherwise requires one `primary` and one `secondary` record, both `state: "approved"` (`"commented"` never counts), differing in model or provider, ordered by the comment's own `created_at` (not the self-declared `submittedAt`) when an instance supersedes its own earlier record. |
 | Tier-0 fast path | `scripts/land-stack.mjs`'s `runStatus` | A genuinely tier-0 classification skips fetching PR comments, resolving any collaborator permission, and reading the base-branch decision log entirely — no path in a tier-0 diff can match `governance/decisions/**` (that glob alone is tier-1), so none of those reads would find anything to check. This also means one malformed record anywhere in the decision log no longer breaks `--status` for every pull request, tier-0 included. |
 | Tier-2 owner-decision requirement | `scripts/land-stack.mjs`'s `evaluateTier2Decision` | Reads decision records from the pull request's base commit for one that is itself schema-valid (checked against its real filename on the base branch, not against its own self-reported `id`), `tier: "tier-2"`, `status: "decided"`, `decidedBy: "owner"`, not superseded, not a relaxation past its sunset, unexpired (an unparseable `expiry` counts as expired), and linked to the PR EITHER by number PLUS a matching patch-id (`links.pullRequests` + `links.patchIds`) OR by a path glob that is either a literal path or exactly one of `tier2.globs` verbatim, on a record whose own `expiry` is non-null (`isOverbroadPathGlob`, computed against the real tier config). The patch-id is `git patch-id --verbatim` of the pull request's own net diff against its merge base, recomputed fresh at gate time (never trusted from a cached value) — see "Tier-2 authorization survives restacks: patch-id, not head sha" below for why this replaced a head-sha pin in round 5. A PR-scoped record with no patch-id pin, or a path-scoped record with `expiry: null`, authorizes nothing at all. **Known limitation, not solved:** a merge-train batch pull request carries a different PR number, head sha, AND patch-id than any original constituent PR a decision record might name — this gate checks the batch PR's own single patch-id against its own single merge base; it does not decompose a batch into per-constituent patch-ids or resolve one PR's authorization through another's. A batch containing a tier-2 change needs its own decision record (naming the batch's own patch-id) or its own fresh review, even when an original constituent PR was already authorized. |
 | Changed-decision-record validation | `scripts/land-stack.mjs`'s `evaluateChangedDecisionRecords`, reusing `scripts/check-decision-records.mjs`'s own `validateDecisionRecordShape` | Runs on **every** pull request, any tier: any `governance/decisions/**` file the PR adds, edits, deletes, or renames must be schema-valid, checked against its content at the PR's own **head** commit. A path deleted or renamed OUT of `governance/decisions/` is treated the same as a malformed record (decision records are append-only — superseded, never deleted or renamed away). |
@@ -315,10 +315,11 @@ protection:
   strict, up-to-date branch protection, forcing a restack that changes its
   head sha the moment the authorization is committed. `links.headShas` is
   replaced with `links.patchIds` (`git patch-id --verbatim` of the PR's net
-  diff against its merge base), invariant to a pure restack or
-  merge-forward. See "Tier-2 authorization survives restacks: patch-id, not
-  head sha" below, and `governance/decisions/weekly-release-calendar.json`'s
-  own `notes` for the worked example against PR #1316.
+  diff against its merge base) — round 6 corrected the claim that this
+  survives EVERY restack unconditionally; see "Tier-2 authorization
+  survives restacks: patch-id, not head sha" below for what actually
+  survives, and `governance/decisions/weekly-release-calendar.json`'s own
+  `notes` for the worked example against PR #1316.
 - **Tier-2's publish-path globs caught test files, not just the scripts
   that publish.** Both reviewers measured this directly against the last
   200 real landings on `main`: round 4's `scripts/publish-*.mjs` /
@@ -621,43 +622,46 @@ round, and should be resolved or explicitly accepted before
 1. **Prose mentions of the marker name refuse the gate.** The `_parseError`
    fallback triggers on the bare substring `foundry-review-record`
    appearing ANYWHERE in a comment body, not only on a genuine `<!--`
-   opener — round 6, reviewer 2 ran the new parser over this very pull
-   request's own review thread (every human comment treated as
-   authorized) and found 4 of 12 comments produce `_parseError`, 2 of
-   those from a comment that only NAMES the mechanism in prose, never
-   opens it. Harmless today: a `_parseError` refusal is only ever
-   REPORTED under `"report-only"`, never blocking. It would make
-   `"enforce"` unusable on any pull request whose own discussion names
-   the mechanism, which is likely to be common on this repository's own
-   governance/tooling PRs. **Fix before enforce:** trigger the fallback
-   only on the `<!--` opener sequence followed by the marker name, not on
-   the bare word.
+   opener — round 6, one of the independent reviews ran the new parser
+   over this very pull request's own review thread (every human comment
+   treated as authorized) and found 4 of 12 comments produce
+   `_parseError`, 2 of those from a comment that only NAMES the mechanism
+   in prose, never opens it. Harmless today: a `_parseError` refusal is
+   only ever REPORTED under `"report-only"`, never blocking. It would
+   make `"enforce"` unusable on any pull request whose own discussion
+   names the mechanism, which is likely to be common on this repository's
+   own governance/tooling PRs. **Fix before enforce:** trigger the
+   fallback only on the `<!--` opener sequence followed by the marker
+   name, not on the bare word.
 2. **The tier-2 publish path's import closure is only partly tier-2, while
-   `scripts/lib/**` alone drives most tier-2 landings.** Measured (round 6,
-   reviewer 2, corrected `--first-parent` methodology): tier-2 is 40 of
-   the last 200 real landings on `main` (20%), and `scripts/lib/**` alone
-   accounts for 28 of those 40. Separately, the four literal tier-2
-   publish/deprecate scripts statically import seven tier-1 modules that
-   run INSIDE the tier-2 flow (`validate-candidate-publish`,
-   `select-publishable-packages`, `plan-qualified-publish-set`,
-   `registry-version-lookup`, `verify-post-publish-public-npm-artifact`,
+   `scripts/lib/**` alone drives most tier-2 landings.** Measured
+   independently by both round-6 reviews, using two different methods that
+   land close together: real landings on `main` diffed against their own
+   first parent put tier-2 at 40 of the last 200 (20%), with
+   `scripts/lib/**` alone accounting for 28 of those 40; the same 200
+   pull requests' own file lists put it at 35 of 200 (17.5%). Separately,
+   the four literal tier-2 publish/deprecate scripts statically import
+   seven tier-1 modules that run INSIDE the tier-2 flow
+   (`validate-candidate-publish`, `select-publishable-packages`,
+   `plan-qualified-publish-set`, `registry-version-lookup`,
+   `verify-post-publish-public-npm-artifact`,
    `check-qualification-record-present`, `check-release-catalog`) — a
    tier-1 change to any of them can alter, or add to, what the tier-2 job
    holding the publish token actually does, and the "literal `npm
    publish`" grep this round ran is a one-time check, not something this
-   gate re-verifies on every PR. The reviewer's own alternative,
-   independently measured: make tier-2 the CLOSURE of the publish/deprecate
-   roots — the executables plus those seven modules plus eight specific
-   `scripts/lib/` files the closure actually reaches — and move the REST of
-   `scripts/lib/**` to tier-1. That measures 21 of 200 (10.5%) instead of
-   35 of 200 (17.5%, this reviewer's own re-measurement of the current
-   globs) and covers what the tier-2 flow actually executes rather than a
-   whole directory by convention. **Decide before enforce:** keep the
-   current broad `scripts/lib/**` (simpler, more conservative, costs more
-   owner review) or adopt the closure-based scope (cheaper, needs a guard
-   test — "a workflow-reference-style test asserting the closure stays
-   tier-2" — to keep it from silently drifting stale as the closure
-   changes).
+   gate re-verifies on every PR. An alternative, measured with the same
+   PR-file-list method as the 35/200 figure above (an apples-to-apples
+   comparison): make tier-2 the CLOSURE of the publish/deprecate roots —
+   the executables plus those seven modules plus eight specific
+   `scripts/lib/` files the closure actually reaches — and move the REST
+   of `scripts/lib/**` to tier-1. That measures 21 of 200 (10.5%) instead
+   of 35 of 200 (17.5%) by the same method, and covers what the tier-2
+   flow actually executes rather than a whole directory by convention.
+   **Decide before enforce:** keep the current broad `scripts/lib/**`
+   (simpler, more conservative, costs more owner review) or adopt the
+   closure-based scope (cheaper, needs a guard test — "a
+   workflow-reference-style test asserting the closure stays tier-2" — to
+   keep it from silently drifting stale as the closure changes).
 3. **The workflow-reference path extractor still mangles a
    `.trusted-scripts/`-relative path.** `extractWorkflowReferencedPaths`
    turns `$GITHUB_WORKSPACE/.trusted-scripts/scripts/check-*.mjs`
@@ -678,28 +682,75 @@ round, and should be resolved or explicitly accepted before
    extractor to strip a `.trusted-scripts/` (or `$GITHUB_WORKSPACE/.trusted-scripts/`)
    prefix back to the real `scripts/` path it refers to, and add a test
    fixture exercising it.
+4. **An unreadable base-branch tier config fails open even when `main`'s
+   config says `"enforce"`** (round 6, second reviewer, blocking — see
+   "Bootstrapping this gate" below for the mechanism). `runStatus`
+   determines `enforcement` before it can catch anything, so when the
+   config read itself is what fails — a transient Contents API error, or a
+   pull request whose base branch is not `main` and predates this file,
+   as PR #1316's `claude/release-batching` base currently does —
+   `enforcement` cannot be resolved from a value that never loaded and
+   defaults to `"report-only"` regardless of what `main`'s own config
+   actually says. This is a reasoned, deliberate choice for report-only
+   (nothing should crash the conductor while report-only is the default
+   for everything), but it is a real fail-open under `"enforce"` that has
+   not been designed for. **Needs a design before enforce**, for example:
+   cache the last successfully-read `enforcement` value and fall back to
+   THAT (not a hardcoded default) on a read failure, rather than always
+   falling back to `"report-only"`; or, specifically when the pull
+   request's own base branch IS `main`, treat a read failure as `"enforce"`
+   (fail closed) rather than `"report-only"` (fail open), since a
+   Contents-API error reading a file that almost certainly exists on
+   `main` is a stronger signal of a transient problem than of a genuinely
+   missing config. Either design needs its own tests exercising the
+   failure path under each resulting mode.
 
-Filed as a single tracking issue listing all three items (searched for
+Filed as a single tracking issue listing all four items (searched for
 duplicates first, none found): issue
 [#1350](https://github.com/clossys/foundry/issues/1350).
 
 ## Bootstrapping this gate
 
+**Corrected in round 6** (second reviewer, blocking): this section
+previously described `defaultReadReviewTierConfig` as throwing on a
+missing base-ref config, which was true before round 6's report-only
+fail-open fix and is no longer true. What follows is the CURRENT behavior.
+
 `governance/review-tiers.json` does not exist on `main` until this very
 pull request merges it. Every pull request `land-stack.mjs` classifies
 before that merge — including this one — reads a base ref where the file
-404s, and `defaultReadReviewTierConfig` throws rather than guessing a
-default (fail-closed, the same direction every other ambiguity in this
-gate resolves). That means THIS pull request cannot pass `land-stack.mjs
---status` against itself, by construction: there is no prior state where
-the config existed to classify it against. It is also tier-2
-(self-inclusion, above), so no decision record could pre-authorize it
-either, for the same reason — there is nothing on `main` yet to link a
-decision record to. The first landing of this file is necessarily a plain,
-owner-approved `gh pr merge` — the documented skip path above, not a gate
-this conductor can clear for its own first appearance. Every later change
-to `governance/review-tiers.json`, once a version of it exists on `main` to
-read, goes through the gate normally.
+404s. `readReviewTierConfig` still throws internally (the underlying read
+failure is not hidden), but `runStatus` now catches that throw in the same
+try/catch that wraps the whole tier evaluation (see "Enforcement:
+report-only, then enforce" above): with no config to read, `enforcement`
+cannot be determined and defaults to `"report-only"`, so the resulting
+tier-evaluation failure is reported as a warning and `land-stack.mjs
+--status`/`--merge` return `ok: true` rather than throwing or refusing.
+**This pull request CAN now pass `land-stack.mjs --status` against
+itself**, under report-only, precisely because there is no prior tier
+config to classify it against — that absence is exactly what report-only
+is built to tolerate. The first landing of this file is therefore no
+longer *necessarily* a plain `gh pr merge` bypassing this gate entirely; a
+plain `gh pr merge` remains available (the documented skip path above) and
+remains how an owner would choose to land it under enforce, but it is no
+longer the only path once report-only is what everything defaults to.
+
+**This same fallback is an ENFORCE-MODE gap, not just a bootstrap
+convenience** (round 6, second reviewer, blocking — folded into the
+"Before switching to enforce" checklist below as item 4): if
+`main`'s own `governance/review-tiers.json` says `"enforce"` but the
+Contents API read of it fails for any reason — a transient error, or a
+pull request whose base branch is not `main` and predates this file, as
+PR #1316's `claude/release-batching` base currently does — `enforcement`
+still cannot be determined from a value that never loaded, and the
+landing proceeds as report-only regardless of what `main` actually says.
+This is a deliberate, reasoned design for report-only (nothing should ever
+crash the merge-train conductor while report-only is what the whole gate
+defaults to), but it is a real, undocumented-until-now fail-open under
+enforce that needs a decision before the switch flips — see item 4 below.
+
+Every later change to `governance/review-tiers.json`, once a version of it
+exists on `main` to read, goes through the gate normally.
 
 ## Honour-system limits — stated plainly
 

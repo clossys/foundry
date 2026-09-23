@@ -348,6 +348,17 @@ export function findUnclassifiedWorkflowPaths(workflowText, tierGlobs) {
 }
 
 const REVIEW_RECORD_MARKER = "foundry-review-record";
+// Case-insensitive throughout (#1187 review round 6, second reviewer,
+// non-blocking but folded in as a code fix per coordinator instruction: "the
+// marker match is case-sensitive... it could join #1350 item 1, since that
+// fix touches the same matching"). A reject whose opener is capitalized
+// differently from the canonical marker (e.g. `<!-- FOUNDRY-REVIEW-RECORD`)
+// previously matched NEITHER the opener regex NOR even the substring
+// pre-check in `parseReviewRecordComments`, so it produced no record and no
+// `_parseError` at all -- a silent, complete disappearance, worse than any
+// of the round-6 shapes that at least produced a suspicious `_parseError`.
+const REVIEW_RECORD_OPENER_RE = /^<!--\s*foundry-review-record\b/i;
+const REVIEW_RECORD_OPENER_GLOBAL_RE = /<!--\s*foundry-review-record\b/gi;
 
 /**
  * Positive-grammar scan for `foundry-review-record` blocks (#1187 review
@@ -435,8 +446,8 @@ export function findReviewRecordBlocks(rawBody) {
       i++;
       continue;
     }
-    if (detailsDepth === 0 && preDepth === 0 && /^<!--\s*foundry-review-record\b/.test(line)) {
-      const sameLineRest = line.replace(/^<!--\s*foundry-review-record\b/, "");
+    if (detailsDepth === 0 && preDepth === 0 && REVIEW_RECORD_OPENER_RE.test(line)) {
+      const sameLineRest = line.replace(REVIEW_RECORD_OPENER_RE, "");
       if (sameLineRest.includes("-->")) {
         blocks.push({ raw: sameLineRest.slice(0, sameLineRest.indexOf("-->")), valid: true });
         i++;
@@ -512,9 +523,9 @@ export function findReviewRecordBlocks(rawBody) {
  */
 export function hasUnaccountedMarkerContent(rawBody, blocks) {
   const body = String(rawBody ?? "");
-  if (!body.includes(REVIEW_RECORD_MARKER)) return false;
+  if (!body.toLowerCase().includes(REVIEW_RECORD_MARKER)) return false;
 
-  const rawOpenerMatches = body.match(/<!--\s*foundry-review-record\b/g) ?? [];
+  const rawOpenerMatches = body.match(REVIEW_RECORD_OPENER_GLOBAL_RE) ?? [];
   if (rawOpenerMatches.length > (blocks?.length ?? 0)) return true;
 
   const lines = body.split("\n");
@@ -581,7 +592,7 @@ export function parseReviewRecordComments(comments) {
   const records = [];
   for (const comment of comments ?? []) {
     const rawBody = typeof comment?.body === "string" ? comment.body : "";
-    if (!rawBody.includes(REVIEW_RECORD_MARKER)) continue;
+    if (!rawBody.toLowerCase().includes(REVIEW_RECORD_MARKER)) continue;
     // GitHub's REST payload (gh api .../comments) uses snake_case
     // (created_at/updated_at); the earlier camelCase read here was always
     // populating null. Both spellings are accepted so this also works
@@ -618,7 +629,21 @@ export function parseReviewRecordComments(comments) {
       }
       try {
         const parsed = JSON.parse(block.raw);
-        records.push({ ...parsed, _commentCreatedAt: createdAt, _edited: edited, _authorization: authorization });
+        // #1187 review round 6, blocking (both reviewers, item (c)-1): a
+        // record body that parses as valid JSON but is NOT a plain object
+        // -- an array, `null`, a string, or a number -- is spread by `{
+        // ...parsed }` below into index keys (an array) or nothing at all
+        // (`null`/string/number), producing a record with no `role` and no
+        // `state` at all. That record then satisfies neither the sticky-
+        // reject check nor the unrecognized-state suspicion check, so a
+        // reject wrapped in `[{ ...., "state": "reject" }]` silently
+        // vanished instead of refusing the gate. Treated as a parse error,
+        // the same as malformed JSON.
+        if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+          records.push({ _parseError: true, _commentCreatedAt: createdAt, _edited: edited, _authorization: authorization });
+        } else {
+          records.push({ ...parsed, _commentCreatedAt: createdAt, _edited: edited, _authorization: authorization });
+        }
       } catch {
         records.push({ _parseError: true, _commentCreatedAt: createdAt, _edited: edited, _authorization: authorization });
       }
@@ -749,8 +774,41 @@ function normalizeStateSpelling(state) {
  */
 const REJECT_STATE_SPELLINGS = new Set(["reject", "rejected", "changes-requested"]);
 
+/**
+ * Every spelling this module recognizes as an ORDINARY, non-reject state,
+ * after `normalizeStateSpelling`: `"approved"` and `"commented"` (reviewer
+ * verdicts) and `"declared"` (the author role's own state -- #1187 review
+ * round 6, blocking, first reviewer: the unrecognized-state suspicion check
+ * below now applies "whatever its role", including `role: "author"`, so
+ * `"declared"` must be a recognized value here or every legitimate author
+ * record would itself become suspicious).
+ */
+const APPROVAL_PATH_STATE_SPELLINGS = new Set(["approved", "commented", "declared"]);
+
 /** Every `state` spelling this module recognizes at all (approval-path values plus every reject spelling), after `normalizeStateSpelling`. */
-const KNOWN_STATE_SPELLINGS = new Set(["approved", "commented", ...REJECT_STATE_SPELLINGS]);
+const KNOWN_STATE_SPELLINGS = new Set([...APPROVAL_PATH_STATE_SPELLINGS, ...REJECT_STATE_SPELLINGS]);
+
+/**
+ * Whether `headSha` is CONFIRMED to name a commit other than `currentHeadSha`
+ * -- a full, well-formed 40-character hex SHA that does not equal the
+ * current head, case-insensitively. This is the ONLY condition that counts
+ * as "genuinely stale" for the ambiguous-state suspicion rule below (#1187
+ * review round 6, blocking, first reviewer, item (c)-4): a candidate that is
+ * missing, non-hex, the literal string `"HEAD"`, or a prefix shorter than a
+ * full SHA is NOT confirmed different -- it is merely ambiguous, and
+ * ambiguous is never treated as "safely stale" here, unlike the lenient
+ * prefix matching `isCurrentHeadShaForReject` uses for the OPPOSITE
+ * question ("is this clearly the current head"). A record can be neither
+ * "clearly current" (per `isCurrentHeadShaForReject`) nor "confirmed
+ * different" (per this function) at the same time -- that gap is exactly
+ * the ambiguous case both are meant to catch, from opposite ends.
+ * @param {unknown} headSha
+ * @param {string} currentHeadSha
+ */
+function isConfirmedDifferentHeadSha(headSha, currentHeadSha) {
+  if (typeof headSha !== "string" || !/^[0-9a-f]{40}$/i.test(headSha)) return false;
+  return headSha.toLowerCase() !== String(currentHeadSha ?? "").toLowerCase();
+}
 
 /**
  * ANY record block from an AUTHORIZED comment that could not be trusted as
@@ -782,16 +840,29 @@ const KNOWN_STATE_SPELLINGS = new Set(["approved", "commented", ...REJECT_STATE_
  * about which failures matter.
  *
  * Among AUTHORIZED records: a `_parseError` record carries no `headSha` at
- * all (JSON.parse failed before any field could be read), so it is always
- * suspicious regardless of head -- there is no way to know it is stale. An
- * `_edited` record DOES parse and carry a `headSha`, so it is only
- * suspicious when it claims the CURRENT head (exact match); an edit to a
- * comment from a past, already-superseded round is not this pull
- * request's problem. A reject/changes-requested with NO `headSha` at all
- * cannot be placed at any head, current or stale (#1187 review round 4,
- * blocking finding 3c), so it is ALSO suspicious rather than silently
- * un-matched and dropped by `findStickyRejections`' lenient-but-still-a-
- * match requirement below.
+ * all (JSON.parse failed before any field could be read, or the parsed body
+ * was not a plain object -- see `parseReviewRecordComments`), so it is
+ * always suspicious regardless of head -- there is no way to know it is
+ * stale. An `_edited` record DOES parse and carry a `headSha`, so it is
+ * only suspicious when it claims the CURRENT head (exact match); an edit to
+ * a comment from a past, already-superseded round is not this pull
+ * request's problem.
+ *
+ * ANY record -- a reject spelling, or any other state that is not a
+ * recognized approval-path value, REGARDLESS OF ROLE -- whose `headSha`
+ * cannot be confidently placed as either the current head or a genuinely
+ * different, confirmed one is ALSO suspicious (#1187 review round 6,
+ * blocking, first reviewer, items (c)-2/3/4). An earlier version of this
+ * check required `role === "reviewer"` and used the same lenient
+ * `isCurrentHeadShaForReject` prefix rule for BOTH "is this current" and,
+ * by omission, "is this safely ignorable" -- which meant a reject or
+ * unrecognized state with a missing, non-hex, `"HEAD"`-literal, or
+ * too-short `headSha` failed the lenient CURRENT match and was silently
+ * treated as stale and dropped, rather than refusing the gate over the
+ * ambiguity. `isConfirmedDifferentHeadSha` (above) is deliberately a
+ * STRICTER, separate test for the opposite direction: only a full,
+ * well-formed 40-hex SHA that provably differs from the current head earns
+ * "safely stale"; everything else is ambiguous and refuses.
  * @param {Array<Record<string, unknown>>} records
  * @param {string} headSha
  * @returns {Array<Record<string, unknown>>}
@@ -804,19 +875,41 @@ export function findSuspiciousRecordComments(records, headSha) {
     if (r._parseError) return true;
     if (r._edited && r.headSha === headSha) return true;
     const state = normalizeStateSpelling(r?.state);
-    if (REJECT_STATE_SPELLINGS.has(state) && (typeof r.headSha !== "string" || r.headSha.length === 0)) {
-      return true;
-    }
-    // A reviewer-role record whose state is NEITHER a known approval-path
-    // value NOR a recognized reject spelling, at (or near) the current
-    // head, is ambiguous -- #1187 review round 5, should-fix 3: "Treat any
-    // unrecognized state at the head as suspicious." Matched with the same
-    // lenient, case-insensitive, 7+-character-prefix headSha rule
-    // `findStickyRejections` uses for rejects, since an unrecognized
-    // spelling could plausibly BE a reject typo, and erring toward
-    // suspicion is the safe direction either way.
-    if (r.role === "reviewer" && state.length > 0 && !KNOWN_STATE_SPELLINGS.has(state) && isCurrentHeadShaForReject(r.headSha, headSha)) {
-      return true;
+    // ANY record whose state is not a recognized approval-path spelling --
+    // a reject spelling, OR a truly unrecognized one -- needs its `headSha`
+    // read strictly. `isConfirmedDifferentHeadSha` (above) is the ONLY test
+    // for "safely stale, ignore it": a full, well-formed 40-hex SHA that
+    // provably does not match the current head. A missing `headSha`, a
+    // non-hex value, the literal `"HEAD"`, or a prefix too short to be
+    // unambiguous NEVER counts as stale just because it fails to match the
+    // current head (#1187 review round 6, blocking, first reviewer, items
+    // (c)-2/3/4: "whatever its role", "no headSha", "a non-hex headSha,
+    // 'HEAD', or a prefix shorter than 7 characters").
+    //
+    // The two spellings split from here, deliberately:
+    //   - A RECOGNIZED reject spelling that clearly IS at the current head
+    //     (the same lenient `isCurrentHeadShaForReject` prefix match
+    //     `findStickyRejections` uses) is NOT flagged suspicious here --
+    //     that is the legitimate, expected case, handled by
+    //     `findStickyRejections` below with its own "sticky" reason. Only
+    //     an AMBIGUOUS reject (neither clearly current nor confirmed
+    //     different) is suspicious.
+    //   - A TRULY UNRECOGNIZED state (neither approval-path nor a reject
+    //     spelling) is suspicious even when it clearly matches the current
+    //     head -- #1187 review round 5, should-fix 3's original intent:
+    //     nothing else in this module interprets an unknown state as
+    //     meaningful evidence, so a clean match to the live head is itself
+    //     the ambiguous case, not a safe one. Deliberately no `role` check
+    //     any more -- role was the exact gap that let an unrecognized
+    //     state with `role` simply omitted slip through unnoticed.
+    if (state.length > 0 && !APPROVAL_PATH_STATE_SPELLINGS.has(state)) {
+      const confirmedDifferent = isConfirmedDifferentHeadSha(r.headSha, headSha);
+      if (REJECT_STATE_SPELLINGS.has(state)) {
+        const atCurrentHead = isCurrentHeadShaForReject(r.headSha, headSha);
+        if (!atCurrentHead && !confirmedDifferent) return true;
+      } else if (!confirmedDifferent) {
+        return true;
+      }
     }
     return false;
   });
