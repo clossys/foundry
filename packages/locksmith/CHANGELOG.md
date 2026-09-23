@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.2.7] - 2026-09-22
+
+### Changed
+
+- `no-value-escapes.test.ts` now derives its verb-module set from `index.ts`'s
+  own export statements instead of a hand-written array, so a new verb
+  module (e.g. `controlled-key-rate.ts`) is covered automatically instead of
+  silently going unchecked (#907).
+
 ## [0.2.6] - 2026-09-21
 
 ### Added
