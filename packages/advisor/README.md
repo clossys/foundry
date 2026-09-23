@@ -127,6 +127,92 @@ mutation surfaces at that instant. It exits `1` for a concrete readiness or
 authorization violation, and `2` for unreadable, malformed, or indeterminate
 evidence.
 
+## Capability catalogue and kit composition
+
+`CAPABILITY_CATALOGUE` is this package's own generated, build-time-frozen
+map of every role in this repository's role-loop archetypes: each role's
+job question, primary mode, metric, boundary, `solves` claims, fit
+signals, and `needs`/`feeds` handoff edges. It is generated, never
+hand-grouped, and reading it performs no file or network I/O — it is a
+plain exported constant. `kitCatalogueDigest` is the deterministic sha256
+over that frozen catalogue (stable key order); a connector may bind it
+into `AssessmentBasis.catalogDigest` so a reassessment can detect that the
+catalogue a plan was built against has since changed.
+
+`KIT_PRESETS` is a curated set of starting-point kits — fallbacks and
+best-sellers Advisor can offer when a client's stated problem matches one
+closely — never an exhaustive partition of the package catalogue. For
+every other problem, Advisor composes a custom kit instead.
+
+`composeKit()` takes a set of `selectedRoles` and the catalogue, pulls in
+every role a selected role's `needs` edge names that was not already
+selected, orders roles so a producer always precedes its consumer, and
+reports any need that names no resolvable role. An unknown selected role
+or a needs cycle comes back `indeterminate`, never guessed past.
+
+`composeKitFromProblems()` is the problem-confirmed entry point (the
+client confirms PROBLEM cards, never picks packages): it deterministically
+maps confirmed problem ids to roles via each role's own `solves[].problem`
+entries, then reuses `composeKit()` for closure and ordering. Exactly one
+confirmed problem must be marked `primary`; a closed, composed role count
+over `FIRST_ENGAGEMENT_ROLE_CAP` (5) requires a caller-supplied
+`overCapReason`, or the result comes back `"over-cap"` instead of
+`"composed"`.
+
+`validateKitProposal()` checks a skill-proposed kit against the
+deterministic mapping `composeKitFromProblems()` itself would produce from
+the same confirmed problems. Every proposed role must trace to either a
+direct solver of a confirmed problem or a role another direct solver's
+`needs` requires; a role that traces to neither comes back as a removal
+candidate in `removalCandidates`, so the skill (or a human) makes that
+call rather than it being silently dropped.
+
+`EVIDENCE_LEVELS` is the ordered evidence-level vocabulary
+(`"designed" < "qualified" < "proven"`), and `evidenceAtLeast(evidence,
+floor)` compares one evidence level against a floor along that order.
+`presetEvidenceFindings()` checks presets against an evidence floor
+(`"qualified"` by default) and is advisory only: every current `solves`
+entry is a `designed`-only fallback until real per-role evidence lands, so
+this never fails a preset the owner already approved — it stays visible
+and testable so it is ready to enforce the moment real evidence exists.
+
+`toEngagementBrief()` turns a `composed` `ComposeKitResult` into the
+client-facing `EngagementBrief`: the client's problem, which roles the kit
+staffs and why, the handoff sequence, and one deliverable line per staffed
+role, drawn from that role's own `boundary.owns` text in the catalogue —
+never invented copy. This is a wave-1 type-and-transform export only;
+writing it to `clossys/brief.json` in each staffed repository is wave 2.
+
+## Shared engagement context
+
+`ENGAGEMENT_CONTEXT_FIELD_IDS` lists the shared engagement context fields
+in their fixed order — `business`, `product`, `audience`, `stage`,
+`intent`, `constraints` — the business questions a non-technical founder
+answers once, so no later role intake asks again what this record already
+answers. `fieldById()` looks up one field's current state (`known` with a
+chosen value, or `unknown`) on an `EngagementContext`. An unanswered field
+stays `unknown` and is never invented from anything but the founder's own
+answer; technical facts never live here.
+
+`nextContextQuestion()` returns the first unanswered context field's
+question card, in the fixed field order, or `null` once every field is
+known. `applyContextChoice()` maps a chosen choice id back to the field's
+new state: a fixed choice becomes `known`, `"not sure yet"` stays
+`unknown`, and `"something else"` is captured separately as the founder's
+own freeform answer rather than inventing a stored value.
+
+## Client problem vocabulary and confirmation
+
+`CLIENT_PROBLEMS` is this package's own generated, build-time-frozen
+client problem vocabulary. Advisor offers these as confirmation cards —
+the client confirms a problem, never picks a package.
+`nextProblemQuestion()` returns the next candidate problem card the
+client has not yet answered, in vocabulary order, or `null` once every
+candidate has a confirmation recorded. `applyProblemChoice()` maps a
+chosen choice id to `confirmed`, `declined`, `unknown`, or
+`something-else`; `unknown` and `something-else` never invent a
+confirmation.
+
 ## Evolution
 
 The package evolves through normal versioned releases. Keep source evidence and content-addressed bases in the consumer's durable control plane, then reassess when scope, evidence, initiatives, readiness observations, or cadence changes.

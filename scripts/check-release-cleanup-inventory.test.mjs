@@ -15,6 +15,7 @@ import {
   validateReleaseCleanupInventory,
 } from "./check-release-cleanup-inventory.mjs";
 import { loadTransitionPolicy } from "./lib/package-identity-transition.mjs";
+import { discoverGateTestFiles } from "./lib/gate-test-set.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const inventory = JSON.parse(readFileSync(join(root, INVENTORY_PATH), "utf8"));
@@ -64,7 +65,10 @@ test("the checked-in cleanup inventory is a sealed valid observation", () => {
 test("the inventory validator is blocking in the aggregate and CI", () => {
   const manifest = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
   assert.match(manifest.scripts.check, /npm run check:release-cleanup-inventory/);
-  assert.match(manifest.scripts["check:gates"], /scripts\/check-release-cleanup-inventory\.test\.mjs/);
+  assert.ok(
+    discoverGateTestFiles().includes("scripts/check-release-cleanup-inventory.test.mjs"),
+    "check:gates must discover and run scripts/check-release-cleanup-inventory.test.mjs",
+  );
 
   const workflow = readFileSync(join(root, ".github/workflows/ci.yml"), "utf8");
   assert.match(workflow, /- run: npm run check:release-cleanup-inventory/);

@@ -110,3 +110,35 @@ export type {
   SupersessionIndeterminateReason,
   SupersessionResult,
 } from "./supersession.js";
+
+export {
+  PUBLIC_REGISTRY,
+  EXPECTED_REPOSITORY,
+  EXPECTED_WORKFLOW,
+  EXPECTED_MAIN_REF,
+  SLSA_PROVENANCE,
+  inspectProvenanceStatement,
+  inspectPublicNpmProvenance,
+  inspectInstalledPackageProvenance,
+  expectedDigestFromPackument,
+} from "./provenance.js";
+export type {
+  ProvenanceStatementJoinInput,
+  ProvenanceJoinResult,
+  PublicNpmProvenanceInput,
+  PublicNpmProvenanceResult,
+  InstalledPackageProvenanceInput,
+  InstalledPackageProvenanceState,
+  InstalledPackageProvenanceResult,
+} from "./provenance.js";
+
+export { checkInstalledPackagesProvenance } from "./provenance-check.js";
+export type {
+  InstalledPackageRef,
+  CurrencyPolicy,
+  PackageProvenanceState,
+  PackageProvenanceReport,
+  ProvenanceCheckInput,
+  ProvenanceCheckState,
+  ProvenanceCheckResult,
+} from "./provenance-check.js";

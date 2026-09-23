@@ -677,6 +677,25 @@ jobs:
       # counted, never a failure, until --enforce -- the per-role maps
       # (#1198-#1202) are drafted elsewhere first and have not landed yet.
       - run: node scripts/check-capability-maps.mjs
+      # Stage B normalization template (issue #1187's normalization
+      # direction, #1203, #1197): for every package under packages/, reports
+      # each gap against the Stage A shared definitions above -- the manifest
+      # block, output envelope, lifecycle words, generated loop section,
+      # clossys/<role>/ layout, removed conversation duplicate, capability
+      # map, and STATUS.md shape. Report mode: a gap is printed and counted,
+      # never a failure, except a drifted generated loop section (always a
+      # failure -- see the next step). Manifest-, contract-, and
+      # fixture-read only, no build, same dependency-free class as the
+      # steps above.
+      - run: node scripts/check-package-conformance.mjs
+      # Issue #1197: each active role's own loop matrix (capability × the
+      # five loop stages) and, once a role ships one, whether its skill's
+      # generated "Run the feedback loop" section still matches what
+      # scripts/generate-loop-section.mjs produces from it today -- a
+      # mismatch always fails, in both modes. Absence of the matrix itself
+      # is report-mode-only until --enforce. Same class again: manifest,
+      # contract, and fixture reads only.
+      - run: node scripts/check-loop-matrix.mjs
       # Same class again: contract- and fixture-read only, no build.
       # Validates docs/contracts/real-customer-evidence-contract.json (#1222)
       # against the shared docs/contracts/lifecycle.json vocabulary (#1228),
@@ -698,6 +717,14 @@ jobs:
       # PRE-AUTH-QUALITY bounded taste pass: prose contract and deliverability
       # fixture, not longer skills. Manifest and designer doc reads only.
       - run: node scripts/check-pre-auth-taste-contract.mjs
+      # Shared conversation contract (#1182): every package's composed skill
+      # carries the current docs/contracts/conversation-contract.md block
+      # exactly once, with no leftover legacy heading. Reimplements the
+      # splice launcher performs at compose time (see the script's own
+      # header for why) rather than importing TypeScript — manifest and
+      # doc reads only, no build, same dependency-free class as the steps
+      # above.
+      - run: node scripts/check-conversation-contract.mjs
 
   # Three gates over this repository's own tree that had never been invoked
   # by any workflow before this change, and that share one requirement: a
