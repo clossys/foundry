@@ -288,6 +288,71 @@ baseline evidence reference or an absent action authority each refuse.
 from the role contract shipped beside this package, never from a list
 maintained in this subpath.
 
+### Extended manifest discovery: intake, outputs, status, fit, solves, needs, feeds (issues #1172, #1176)
+
+`discoverRoleAssessmentSurface` above reads one manifest key,
+`foundry.assessment`. Issue #1172 extends the same discipline to four more
+role-owned manifest keys, and issue #1176 (owner decision recorded
+2026-09-22: "kits are composed, not a fixed grouping") adds three more as
+schema version 2. Every one of these seven fields is discovered the same
+way: read only the role's own installed manifest, never infer a surface from
+what the package ships, and report absence as a named, determinate value
+rather than guessing or silently skipping.
+
+- **`foundry.intake`** (`INTAKE_DECLARATION_PATH`) — a package-relative path
+  to the role's own shipped intake-question-cards file, discovered by
+  `discoverRoleIntakeSurface` / `discoverRoleIntakeSurfaces` into an
+  `IntakeSurface`. Absence reaches the caller as one of
+  `INTAKE_SURFACE_ABSENCES` (`IntakeSurfaceAbsence`).
+- **`foundry.fit`** (`FIT_DECLARATION_PATH`) — the same shape, for the
+  role's own shipped fit-signal-declarations file. `discoverRoleFitSurface` /
+  `discoverRoleFitSurfaces` resolve a `FitSurface`; absence is one of
+  `FIT_SURFACE_ABSENCES` (`FitSurfaceAbsence`).
+- **`foundry.status`** (`STATUS_DECLARATION_PATH`) — a read-only status
+  probe, declared and resolved exactly like `assessment`: `{ bin,
+  invocation }` resolved against the manifest's own `bin` map.
+  `discoverRoleStatusSurface` / `discoverRoleStatusSurfaces` produce a
+  `StatusSurface`; absence is one of `STATUS_SURFACE_ABSENCES`
+  (`StatusSurfaceAbsence`).
+- **`foundry.outputs`** (`OUTPUTS_DECLARATION_PATH`) — the paths a role
+  declares it owns. `discoverRoleOutputsDeclaration` /
+  `discoverRoleOutputsDeclarations` resolve an `OutputsDeclaration`, and
+  enforce the one structural rule #1171's layout requires: every declared
+  path must fall under that role's own `clossys/<role>/` folder. A path
+  outside it is not silently kept — it is reported as the dedicated absence
+  `output-path-outside-role-folder` (`OUTPUTS_DECLARATION_ABSENCES`,
+  `OutputsDeclarationAbsence`).
+
+Schema version 2 (issue #1176) adds three more manifest keys, discovered the
+same manifest-only, shape-level way. None of the deeper cross-file checks —
+resolving `solves.problem` against a client-problem vocabulary, matching
+`solves.metric` or `solves.proofCase` against this role's own owned metric
+or qualification adapter, matching a `needs` entry against some role's
+`feeds` entry, or detecting a cycle in the resulting needs/feeds handoff
+graph — happen in this package. Those are this repository's own dev-time
+questions, answered by this repository's own gate script in its `--enforce`
+mode, not ones a runtime orchestration can answer for an arbitrary consumer.
+
+- **`foundry.solves`** (`SOLVES_DECLARATION_PATH`) — a list of verifiable
+  claims about the client problems this role solves, each a `SolvesEntry`
+  (`problem`, `statement`, `metric`, `proofCase`, and an `evidence` level
+  drawn from `SOLVES_EVIDENCE_LEVELS` / `SolvesEvidenceLevel`: `designed`,
+  `qualified`, `proven`). `discoverRoleSolvesDeclaration` /
+  `discoverRoleSolvesDeclarations` resolve a `SolvesDeclaration`; absence is
+  one of `SOLVES_DECLARATION_ABSENCES` (`SolvesDeclarationAbsence`).
+- **`foundry.needs`** (`NEEDS_DECLARATION_PATH`) — artifacts this role
+  consumes from another role's own `feeds`, each a `NeedsEntry`
+  (`producerRole`, `artifact`). `discoverRoleNeedsDeclaration` /
+  `discoverRoleNeedsDeclarations` resolve a `NeedsDeclaration`; absence is
+  one of `NEEDS_DECLARATION_ABSENCES` (`NeedsDeclarationAbsence`).
+- **`foundry.feeds`** (`FEEDS_DECLARATION_PATH`) — artifacts this role
+  produces for other roles, each a `FeedsEntry` (`artifact`, `path`), under
+  the same `clossys/<role>/` rule `outputs` already enforces.
+  `discoverRoleFeedsDeclaration` / `discoverRoleFeedsDeclarations` resolve a
+  `FeedsDeclaration`; a `path` outside the role's own folder is
+  `feeds-path-outside-role-folder`, and any other malformed entry is one of
+  `FEEDS_DECLARATION_ABSENCES` (`FeedsDeclarationAbsence`).
+
 ### `./artifacts`: governed artifact verification
 
 A reusable contract for verifying a consumer-owned governed artifact that
@@ -2118,6 +2183,21 @@ mismatch (or another binding finding), `2` when it could not run. Use
 | `AssessmentSurface` / `AssessmentSurfaceDiscovery` / `AssessmentProcessResult` / `AssessmentInvoker` | types | A role-declared entry point, its discovery result, one raw process observation, and the invocation seam. |
 | `RoleAssessmentObservation` / `RoleAssessmentRecord` / `OnboardingGap` / `OnboardingFinding` / `OnboardingRun` / `OnboardingState` | types | One observed role assessment, its record in the report, a selected-but-unassessed role, a join finding, the whole report, and its ternary state. |
 | `LedgerProposal` / `MutationApproval` / `MutationAuthorization` / `FirstDayOnboardingOptions` | types | The ledger proposal result, a decision owner's digest-bound approval, the authorization result, and the runner's options. |
+| `discoverRoleIntakeSurface(installRoot, role)` / `discoverRoleIntakeSurfaces(installRoot, roles)` | functions | Resolve a role's `foundry.intake` declaration (`INTAKE_DECLARATION_PATH`) against its own installed manifest: a package-relative path to that role's own shipped intake-question-cards file. Filesystem reads only. |
+| `discoverRoleFitSurface(installRoot, role)` / `discoverRoleFitSurfaces(installRoot, roles)` | functions | Resolve a role's `foundry.fit` declaration (`FIT_DECLARATION_PATH`) the same way: a package-relative path to that role's own shipped fit-signal-declarations file. |
+| `discoverRoleStatusSurface(installRoot, role)` / `discoverRoleStatusSurfaces(installRoot, roles)` | functions | Resolve a role's `foundry.status` declaration (`STATUS_DECLARATION_PATH`) -- same `{ bin, invocation }` shape and same `bin`-map resolution as `assessment` -- a read-only status probe. |
+| `discoverRoleOutputsDeclaration(installRoot, role)` / `discoverRoleOutputsDeclarations(installRoot, roles)` | functions | Resolve a role's `foundry.outputs` declaration (`OUTPUTS_DECLARATION_PATH`): the paths it owns. Every path must fall under that role's own `clossys/<role>/` folder (docs/contracts/consumer-layout.json, issue #1171); a path outside it reports `output-path-outside-role-folder` rather than being silently kept. |
+| `discoverRoleSolvesDeclaration(installRoot, role)` / `discoverRoleSolvesDeclarations(installRoot, roles)` | functions | Resolve a role's `foundry.solves` declaration (`SOLVES_DECLARATION_PATH`, schema version 2, issue #1176): verifiable claims about the client problems this role solves. Shape-level only -- whether `metric` names the role's own owned metric, whether `proofCase` exists in a qualification adapter, and whether `problem` resolves against `docs/contracts/client-problems.json` are this repository's own dev-time gate questions, answered in that gate's `--enforce` mode, not this discovery's. |
+| `discoverRoleNeedsDeclaration(installRoot, role)` / `discoverRoleNeedsDeclarations(installRoot, roles)` | functions | Resolve a role's `foundry.needs` declaration (`NEEDS_DECLARATION_PATH`, schema version 2): artifacts it consumes from another role's own `feeds`. Shape-level only; matching a `needs` entry against some role's `feeds` entry and detecting cycles in the resulting handoff graph are the gate script's job. |
+| `discoverRoleFeedsDeclaration(installRoot, role)` / `discoverRoleFeedsDeclarations(installRoot, roles)` | functions | Resolve a role's `foundry.feeds` declaration (`FEEDS_DECLARATION_PATH`, schema version 2): artifacts it produces for other roles. Every entry's `path` must fall under that role's own `clossys/<role>/` folder, the same rule `outputs` already applies; a path outside it reports `feeds-path-outside-role-folder`. |
+| `INTAKE_SURFACE_ABSENCES` / `FIT_SURFACE_ABSENCES` / `STATUS_SURFACE_ABSENCES` / `OUTPUTS_DECLARATION_ABSENCES` | constants | The complete determinate vocabularies for why a role has no usable `intake` (`IntakeSurfaceAbsence`), `fit` (`FitSurfaceAbsence`), `status` (`StatusSurfaceAbsence`), or `outputs` (`OutputsDeclarationAbsence`) surface. |
+| `SOLVES_DECLARATION_ABSENCES` / `NEEDS_DECLARATION_ABSENCES` / `FEEDS_DECLARATION_ABSENCES` | constants | The same absence vocabularies for schema version 2's `solves` (`SolvesDeclarationAbsence`), `needs` (`NeedsDeclarationAbsence`), and `feeds` (`FeedsDeclarationAbsence`). |
+| `SOLVES_EVIDENCE_LEVELS` | constant | The three-level `SolvesEvidenceLevel` vocabulary a `solves` entry's `evidence` field takes: `designed`, `qualified`, `proven` (the last promoted only by #1189's future feedback loop). |
+| `IntakeSurface` / `IntakeSurfaceDiscovery` / `FitSurface` / `FitSurfaceDiscovery` / `StatusSurface` / `StatusSurfaceDiscovery` | types | A role-declared intake/fit path or status entry point, each paired with its discovery result. |
+| `OutputsDeclaration` / `OutputsDeclarationDiscovery` | types | A role's declared owned output paths, and its discovery result. |
+| `SolvesEntry` / `SolvesDeclaration` / `SolvesDeclarationDiscovery` | types | One verifiable client-problem claim, a role's full `solves` declaration, and its discovery result. |
+| `NeedsEntry` / `NeedsDeclaration` / `NeedsDeclarationDiscovery` | types | One consumed artifact reference, a role's full `needs` declaration, and its discovery result. |
+| `FeedsEntry` / `FeedsDeclaration` / `FeedsDeclarationDiscovery` | types | One produced artifact reference, a role's full `feeds` declaration, and its discovery result. |
 
 ## Requirements
 
