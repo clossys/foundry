@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [0.2.8] - 2026-09-22
+## [0.2.9] - 2026-09-23
 
 ### Notes
 
@@ -14,7 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   fixing leaking temp fixture directories (issue #1250), and its 0.2.7
   qualification record was already retained -- once a version's record is
   retained, any further change to that package, packed or not, requires a new
-  version.
+  version. Renumbered from 0.2.8: open PR #1232 also claims locksmith 0.2.8
+  for real feature work (version-collision rule, issue #1187).
 
 ## [0.2.7] - 2026-09-22
 

@@ -4,6 +4,8 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 
+import { discoverGateTestFiles, GATE_TEST_EXCLUSIONS } from "./lib/gate-test-set.mjs";
+
 // check-workflow-references — a future `check:*` script added only to the
 // local `npm run check` aggregate, and to no workflow, is exactly issue
 // #414: this repository measured six job-shaped packages shipping eleven
@@ -254,23 +256,26 @@ test("every suite in check:gates imports only node builtins and local scripts", 
   //
   // A suite that genuinely needs a build belongs in the `build and test` job
   // as its own step, the way scripts/observation-bundle.test.mjs and
-  // scripts/gate-run-history.test.mjs already are.
-  const manifest = JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8"));
-  // The lookbehind refuses to start a match partway through a longer path —
-  // without it, `.github/scripts/collect-credential-evidence.test.mjs`
-  // matches as a bare `scripts/collect-credential-evidence.test.mjs`
-  // (silently dropping the `.github/` prefix), which then fails to open
-  // below for a file that exists, just not at that path.
-  const suites = manifest.scripts["check:gates"].match(/(?<![\w/.-])(?:\.github\/)?scripts\/[A-Za-z0-9._-]+\.test\.mjs/g) ?? [];
-  assert.ok(suites.length > 0, "expected check:gates to name at least one suite — fixture drift?");
+  // scripts/gate-run-history.test.mjs already are -- or, since issue #907,
+  // is named with that reason in scripts/lib/gate-test-set.mjs's
+  // GATE_TEST_EXCLUSIONS. `check:gates` no longer names its suites in
+  // package.json at all (a hand-listed path array was this repository's
+  // single most common merge-train conflict -- see issue #1187), so this
+  // test asks the SAME discovery function scripts/run-gate-suites.mjs
+  // actually runs, not the package.json string.
+  const suites = discoverGateTestFiles();
+  assert.ok(suites.length > 0, "expected check:gates to discover at least one suite — fixture drift?");
 
   const offenders = [];
   for (const suite of suites) {
     const source = readFileSync(join(repoRoot, suite), "utf8");
-    // Import statements only, anchored at the start of a line, so a module
-    // specifier appearing inside test FIXTURE data does not count as an
-    // import of it.
-    for (const [, specifier] of source.matchAll(/^\s*import[^"']*["']([^"']+)["']/gm)) {
+    // Import statements only, anchored at the start of a line with a word
+    // boundary after `import` (so `importMustStay.foo = "bar"` -- a plain
+    // identifier assignment, not an import -- never matches), and confined
+    // to a single line (excluding the source's own newlines from the
+    // pre-quote run) so a later, unrelated quoted string many lines below a
+    // real import statement is never mistaken for that import's specifier.
+    for (const [, specifier] of source.matchAll(/^\s*import\b[^"'\n]*["']([^"']+)["']/gm)) {
       if (!specifier.startsWith("node:") && !specifier.startsWith("./") && !specifier.startsWith("../")) {
         offenders.push(`${suite} -> ${specifier}`);
       }
@@ -280,13 +285,17 @@ test("every suite in check:gates imports only node builtins and local scripts", 
     offenders,
     [],
     `check:gates suite(s) importing something the dependency-free \`safety\` job cannot resolve: ${offenders.join(", ")}. ` +
-      "Move the suite to ci.yml's `build and test` job as its own step, next to scripts/observation-bundle.test.mjs.",
+      "Move the suite to ci.yml's `build and test` job as its own step, next to scripts/observation-bundle.test.mjs, and add it to scripts/lib/gate-test-set.mjs's GATE_TEST_EXCLUSIONS with that reason.",
   );
 });
 
 test("real candidate framework acceptance runs only after install and build in required paths", () => {
   const manifest = JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8"));
-  assert.doesNotMatch(manifest.scripts["check:gates"], /candidate-runner-acceptance/);
+  assert.ok(
+    GATE_TEST_EXCLUSIONS["scripts/lib/candidate-runner-acceptance.test.mjs"],
+    "scripts/lib/candidate-runner-acceptance.test.mjs must stay in scripts/lib/gate-test-set.mjs's GATE_TEST_EXCLUSIONS -- it needs a real build",
+  );
+  assert.ok(!discoverGateTestFiles().includes("scripts/lib/candidate-runner-acceptance.test.mjs"));
   assert.match(manifest.scripts["check:candidate-runner-acceptance"], /candidate-runner-acceptance\.test\.mjs/);
   assert.ok(manifest.scripts.check.indexOf("npm run build") < manifest.scripts.check.indexOf("npm run check:candidate-runner-acceptance"));
 
