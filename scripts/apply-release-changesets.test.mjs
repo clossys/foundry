@@ -94,6 +94,19 @@ test("prependChangelogEntry: creates a fresh changelog when none exists", () => 
   assert.equal(result, "# Changelog\n\n## 0.1.0 - 2026-09-22\n\n- First release.\n");
 });
 
+test("prependChangelogEntry: a major-level changeset produces a Breaking changes subsection above the full bullet list", () => {
+  const result = prependChangelogEntry(null, {
+    version: "2.0.0",
+    date: "2026-09-26",
+    bullets: ["Fixed a bug.", "Removed the deprecated foo() export."],
+    breakingBullets: ["Removed the deprecated foo() export."],
+  });
+  assert.equal(
+    result,
+    "# Changelog\n\n## 2.0.0 - 2026-09-26\n\n### Breaking changes\n\n- Removed the deprecated foo() export.\n\n- Fixed a bug.\n- Removed the deprecated foo() export.\n",
+  );
+});
+
 // ---------------------------------------------------------------- end-to-end coverage
 
 test("applyReleaseChangesets: bumps once per package at the highest named level, writes CHANGELOG, deletes changesets, regenerates the lock", () => {
@@ -120,6 +133,9 @@ test("applyReleaseChangesets: bumps once per package at the highest named level,
       fromVersion: "1.0.0",
       toVersion: "1.1.0", // highest of patch/minor is minor
       bump: "minor",
+      outOfBand: false,
+      breaking: false,
+      breakingSummaries: [],
       changesetFiles: ["alpha-feature.md", "alpha-fix.md"],
     });
 
@@ -135,6 +151,119 @@ test("applyReleaseChangesets: bumps once per package at the highest named level,
     assert.equal(existsSync(join(root, ".changesets", "alpha-feature.md")), false);
 
     assert.equal(npmInstallCalledWith, root);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("applyReleaseChangesets: a major-level changeset produces a breaking CHANGELOG entry and a truthy `breaking` flag", () => {
+  const root = makeRoot();
+  try {
+    makePackage(root, "alpha", "1.0.0");
+    writeChangeset(root, "alpha-break.md", "---\nalpha: major\n---\n\nRemoved the deprecated foo() export.\n");
+
+    const result = applyReleaseChangesets({ root, runNpmInstall: () => {}, today: () => "2026-09-22" });
+    assert.equal(result.applied[0].toVersion, "2.0.0");
+    assert.equal(result.applied[0].bump, "major");
+    assert.equal(result.applied[0].breaking, true);
+    assert.deepEqual(result.applied[0].breakingSummaries, ["Removed the deprecated foo() export."]);
+
+    const changelog = readFileSync(join(root, "packages", "alpha", "CHANGELOG.md"), "utf8");
+    assert.match(changelog, /### Breaking changes/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("applyReleaseChangesets: an out-of-band changeset is flagged on the applied entry (informational -- it does not change how the version is computed)", () => {
+  const root = makeRoot();
+  try {
+    makePackage(root, "alpha", "1.0.0");
+    writeChangeset(root, "alpha-hotfix.md", "---\nalpha: patch\nrelease: out-of-band\n---\n\nFix a security issue.\n");
+
+    const result = applyReleaseChangesets({ root, runNpmInstall: () => {}, today: () => "2026-09-22" });
+    assert.equal(result.applied[0].toVersion, "1.0.1"); // an ordinary patch bump, same as any other patch changeset
+    assert.equal(result.applied[0].outOfBand, true);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("applyReleaseChangesets: --out-of-band consumes only the out-of-band patch, leaving an ordinary pending minor changeset for the same package untouched", () => {
+  const root = makeRoot();
+  try {
+    makePackage(root, "alpha", "1.2.3");
+    writeChangeset(root, "alpha-hotfix.md", "---\nalpha: patch\nrelease: out-of-band\n---\n\nFix a security issue.\n");
+    writeChangeset(root, "alpha-feature.md", "---\nalpha: minor\n---\n\nAdd a feature (ordinary, not out-of-band).\n");
+
+    const result = applyReleaseChangesets({ root, outOfBandOnly: true, runNpmInstall: () => {}, today: () => "2026-09-23" });
+
+    assert.equal(result.findings.length, 0);
+    assert.equal(result.applied.length, 1);
+    assert.equal(result.applied[0].package, "alpha");
+    assert.equal(result.applied[0].toVersion, "1.2.4"); // patch only -- the pending minor was never consulted
+    assert.equal(result.applied[0].bump, "patch");
+    assert.deepEqual(result.applied[0].changesetFiles, ["alpha-hotfix.md"]);
+
+    const manifest = JSON.parse(readFileSync(join(root, "packages", "alpha", "package.json"), "utf8"));
+    assert.equal(manifest.version, "1.2.4");
+
+    // The ordinary minor changeset is untouched -- left pending for the next regular Saturday release.
+    assert.equal(existsSync(join(root, ".changesets", "alpha-feature.md")), true);
+    assert.equal(existsSync(join(root, ".changesets", "alpha-hotfix.md")), false);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("applyReleaseChangesets: --out-of-band with no out-of-band changesets pending is a clean no-op, even if ordinary changesets ARE pending", () => {
+  const root = makeRoot();
+  try {
+    makePackage(root, "alpha", "1.2.3");
+    writeChangeset(root, "alpha-feature.md", "---\nalpha: minor\n---\n\nAdd a feature.\n");
+
+    let npmInstallCalled = false;
+    const result = applyReleaseChangesets({ root, outOfBandOnly: true, runNpmInstall: () => (npmInstallCalled = true) });
+    assert.deepEqual(result, { applied: [], findings: [], changesetFindings: [] });
+    assert.equal(npmInstallCalled, false);
+    assert.equal(existsSync(join(root, ".changesets", "alpha-feature.md")), true); // still pending
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("applyReleaseChangesets: --out-of-band across two packages only touches the ones with an out-of-band changeset", () => {
+  const root = makeRoot();
+  try {
+    makePackage(root, "alpha", "1.2.3");
+    makePackage(root, "beta", "2.0.0");
+    writeChangeset(root, "alpha-hotfix.md", "---\nalpha: patch\nrelease: out-of-band\n---\n\nFix a security issue in alpha.\n");
+    writeChangeset(root, "beta-feature.md", "---\nbeta: minor\n---\n\nAdd a feature to beta (ordinary).\n");
+
+    const result = applyReleaseChangesets({ root, outOfBandOnly: true, runNpmInstall: () => {}, today: () => "2026-09-23" });
+    assert.deepEqual(result.applied.map((a) => a.package), ["alpha"]);
+
+    const betaManifest = JSON.parse(readFileSync(join(root, "packages", "beta", "package.json"), "utf8"));
+    assert.equal(betaManifest.version, "2.0.0"); // untouched
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("applyReleaseChangesets: --out-of-band applies a minor bump when the changeset carries owner-approved: minor", () => {
+  const root = makeRoot();
+  try {
+    makePackage(root, "alpha", "1.2.3");
+    writeChangeset(root, "alpha-urgent.md", "---\nalpha: minor\nrelease: out-of-band\nowner-approved: minor\n---\n\nClear an urgent update.\n");
+
+    const result = applyReleaseChangesets({ root, outOfBandOnly: true, runNpmInstall: () => {}, today: () => "2026-09-23" });
+    assert.equal(result.findings.length, 0);
+    assert.equal(result.applied.length, 1);
+    assert.equal(result.applied[0].toVersion, "1.3.0");
+    assert.equal(result.applied[0].bump, "minor");
+
+    const manifest = JSON.parse(readFileSync(join(root, "packages", "alpha", "package.json"), "utf8"));
+    assert.equal(manifest.version, "1.3.0");
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -161,6 +290,23 @@ test("applyReleaseChangesets: --dry-run touches nothing and never calls npm", ()
   }
 });
 
+test("applyReleaseChangesets: a package with no pending changeset is not touched, even when a sibling package is bumped", () => {
+  const root = makeRoot();
+  try {
+    makePackage(root, "alpha", "1.0.0");
+    makePackage(root, "beta", "3.4.0"); // no changeset names beta
+    writeChangeset(root, "alpha-fix.md", "---\nalpha: patch\n---\n\nFix a bug.\n");
+
+    const result = applyReleaseChangesets({ root, runNpmInstall: () => {}, today: () => "2026-09-22" });
+    assert.deepEqual(result.applied.map((a) => a.package), ["alpha"]);
+
+    const betaManifest = JSON.parse(readFileSync(join(root, "packages", "beta", "package.json"), "utf8"));
+    assert.equal(betaManifest.version, "3.4.0"); // untouched
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("applyReleaseChangesets: no pending changesets is a clean no-op", () => {
   const root = makeRoot();
   try {
@@ -169,6 +315,9 @@ test("applyReleaseChangesets: no pending changesets is a clean no-op", () => {
     const result = applyReleaseChangesets({ root, runNpmInstall: () => (npmInstallCalled = true) });
     assert.deepEqual(result, { applied: [], findings: [], changesetFindings: [] });
     assert.equal(npmInstallCalled, false);
+    // .github/workflows/release-pr.yml treats this exact shape (applied.length === 0) as
+    // "nothing to release this run" and skips the "Push branch and open pull request" step
+    // entirely -- a quiet week opens no pull request, not an empty one.
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -290,6 +439,9 @@ test("applyReleaseChangesets: a 0.x minor bump rewrites a sibling's ^0.N.0 depen
       fromVersion: "0.9.0",
       toVersion: "0.10.0",
       bump: "minor",
+      outOfBand: false,
+      breaking: false,
+      breakingSummaries: [],
       changesetFiles: ["core-feature.md"],
     });
 
@@ -297,6 +449,8 @@ test("applyReleaseChangesets: a 0.x minor bump rewrites a sibling's ^0.N.0 depen
     assert.equal(consumerApplied.fromVersion, "1.0.0");
     assert.equal(consumerApplied.toVersion, "1.0.1"); // dependent patch bump
     assert.equal(consumerApplied.bump, "patch");
+    assert.equal(consumerApplied.outOfBand, false);
+    assert.equal(consumerApplied.breaking, false);
     assert.deepEqual(consumerApplied.changesetFiles, []);
     assert.deepEqual(consumerApplied.dependencyUpdates, [{ section: "dependencies", name: "@x/core", fromRange: "^0.9.0", toRange: "^0.10.0" }]);
 
@@ -441,6 +595,135 @@ test("applyReleaseChangesets: a package named by its own changeset also gets its
     const consumerChangelog = readFileSync(join(root, "packages", "consumer", "CHANGELOG.md"), "utf8");
     assert.match(consumerChangelog, /Fix an unrelated bug\./);
     assert.match(consumerChangelog, /Updated dependency @x\/core to \^0\.10\.0/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// -------------------------------------------------- composition: out-of-band filtering x sibling dependency ranges
+//
+// Re-review (https://github.com/clossys/foundry/pull/1316#issuecomment-5802195430
+// -- #1316's out-of-band/breaking-change support and #1338's sibling-
+// dependency-range rewriting touched the same core loop independently; this
+// composes them, per this file's own header, "COMPOSING OUT-OF-BAND
+// FILTERING WITH SIBLING DEPENDENCY RANGES". These three tests are the
+// exact three interaction scenarios that composition review named.
+
+test("COMPOSITION: an out-of-band-ineligible major is filtered out entirely, and its dependent's range is left completely untouched", () => {
+  const root = makeRoot();
+  try {
+    // core's only pending changeset is an ordinary (non-out-of-band) major
+    // -- major is never allowed out of band at all, but more fundamentally
+    // it was never flagged `release: out-of-band` in the first place, so
+    // --out-of-band filters it out before core is ever named.
+    makePackage(root, "core", "1.2.3");
+    writeChangeset(root, "core-break.md", "---\ncore: major\n---\n\nRemoved the deprecated foo() export.\n");
+
+    // consumer depends on core via a range core's (never-applied) major
+    // bump would break -- it must never be touched, because core was never
+    // actually released this run.
+    makePackageWithDependency(root, "consumer", "1.0.0", "@x/core", "^1.2.0");
+
+    // An unrelated out-of-band patch proves this run does something, and
+    // that the filtering above is selective, not a blanket no-op.
+    makePackage(root, "unrelated", "0.1.0");
+    writeChangeset(root, "unrelated-hotfix.md", "---\nunrelated: patch\nrelease: out-of-band\n---\n\nFix a security issue.\n");
+
+    const result = applyReleaseChangesets({ root, outOfBandOnly: true, runNpmInstall: () => {}, today: () => "2026-09-23" });
+
+    assert.equal(result.findings.length, 0);
+    assert.deepEqual(result.applied.map((a) => a.package), ["unrelated"]);
+
+    // core: completely untouched -- its major changeset is still pending,
+    // to be picked up by the next ordinary Saturday release.
+    const coreManifest = JSON.parse(readFileSync(join(root, "packages", "core", "package.json"), "utf8"));
+    assert.equal(coreManifest.version, "1.2.3");
+    assert.equal(existsSync(join(root, ".changesets", "core-break.md")), true);
+
+    // consumer: never even scanned for a stale range, because core was
+    // never in bumpedVersions -- its manifest is byte-identical.
+    const consumerManifest = JSON.parse(readFileSync(join(root, "packages", "consumer", "package.json"), "utf8"));
+    assert.equal(consumerManifest.version, "1.0.0");
+    assert.equal(consumerManifest.dependencies["@x/core"], "^1.2.0");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("COMPOSITION: an ordinary in-band minor release crosses a sibling's declared range, and the dependent is rewritten exactly as it would be with no out-of-band feature involved", () => {
+  const root = makeRoot();
+  try {
+    // No --out-of-band here at all -- this is the plain weekly Saturday
+    // release path, proving the composed function's ordinary (non-filtered)
+    // behavior is unchanged from #1338's own sibling-range rewriting.
+    makePackage(root, "core", "0.9.0");
+    writeChangeset(root, "core-feature.md", "---\ncore: minor\n---\n\nAdd a feature.\n");
+    makePackageWithDependency(root, "consumer", "1.0.0", "@x/core", "^0.9.0");
+
+    const result = applyReleaseChangesets({ root, runNpmInstall: () => {}, today: () => "2026-09-22" });
+
+    assert.equal(result.findings.length, 0);
+    assert.equal(result.applied.length, 2);
+
+    const coreApplied = result.applied.find((a) => a.package === "core");
+    assert.equal(coreApplied.toVersion, "0.10.0");
+    assert.equal(coreApplied.outOfBand, false);
+
+    const consumerApplied = result.applied.find((a) => a.package === "consumer");
+    assert.equal(consumerApplied.bump, "patch");
+    assert.equal(consumerApplied.outOfBand, false, "a dependent-only bump is never out-of-band -- it did not consume an out-of-band-flagged changeset");
+    assert.deepEqual(consumerApplied.dependencyUpdates, [{ section: "dependencies", name: "@x/core", fromRange: "^0.9.0", toRange: "^0.10.0" }]);
+
+    const consumerManifest = JSON.parse(readFileSync(join(root, "packages", "consumer", "package.json"), "utf8"));
+    assert.equal(consumerManifest.dependencies["@x/core"], "^0.10.0");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("COMPOSITION (mixed run): an owner-approved out-of-band minor releases, its dependent gets an in-band dependent-only patch and range rewrite, and an unrelated ordinary changeset for a third package is left untouched", () => {
+  const root = makeRoot();
+  try {
+    // core: out-of-band, owner-approved minor -- crosses consumer's ^0.9.0
+    // range, exactly the case that needs a dependent-only bump to follow.
+    makePackage(root, "core", "0.9.0");
+    writeChangeset(root, "core-urgent.md", "---\ncore: minor\nrelease: out-of-band\nowner-approved: minor\n---\n\nClear an urgent update.\n");
+
+    // consumer: no changeset of its own -- its bump is purely a consequence
+    // of core's release, and per this file's header item 3 it must go
+    // through even though the TRIGGERING run is --out-of-band.
+    makePackageWithDependency(root, "consumer", "1.0.0", "@x/core", "^0.9.0");
+
+    // standalone: an entirely unrelated package with an ORDINARY (not
+    // out-of-band) pending minor changeset -- must be filtered out and
+    // left pending, proving the out-of-band filter and the sibling-range
+    // rewrite compose correctly in the same run rather than one silently
+    // widening the other.
+    makePackage(root, "standalone", "3.0.0");
+    writeChangeset(root, "standalone-feature.md", "---\nstandalone: minor\n---\n\nAdd a feature to standalone (ordinary).\n");
+
+    const result = applyReleaseChangesets({ root, outOfBandOnly: true, runNpmInstall: () => {}, today: () => "2026-09-23" });
+
+    assert.equal(result.findings.length, 0);
+    assert.deepEqual(result.applied.map((a) => a.package).sort(), ["consumer", "core"]);
+
+    const coreApplied = result.applied.find((a) => a.package === "core");
+    assert.equal(coreApplied.toVersion, "0.10.0");
+    assert.equal(coreApplied.bump, "minor");
+    assert.equal(coreApplied.outOfBand, true);
+
+    const consumerApplied = result.applied.find((a) => a.package === "consumer");
+    assert.equal(consumerApplied.toVersion, "1.0.1");
+    assert.equal(consumerApplied.bump, "patch");
+    assert.equal(consumerApplied.outOfBand, false, "the dependent-only bump itself never consumed an out-of-band changeset");
+    assert.deepEqual(consumerApplied.changesetFiles, []);
+    assert.deepEqual(consumerApplied.dependencyUpdates, [{ section: "dependencies", name: "@x/core", fromRange: "^0.9.0", toRange: "^0.10.0" }]);
+
+    // standalone: untouched, changeset still pending for the next ordinary
+    // Saturday release.
+    const standaloneManifest = JSON.parse(readFileSync(join(root, "packages", "standalone", "package.json"), "utf8"));
+    assert.equal(standaloneManifest.version, "3.0.0");
+    assert.equal(existsSync(join(root, ".changesets", "standalone-feature.md")), true);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

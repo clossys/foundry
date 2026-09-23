@@ -1,7 +1,13 @@
 #!/usr/bin/env node
-// apply-release-changesets — the release PR command (issue #1255).
+// apply-release-changesets — the release PR command (issue #1255), opened
+// on the weekly calendar's Saturday release day (docs/RELEASING.md, owner
+// decision 2026-09-23) but still versioning by plain semver bump level --
+// the owner explicitly kept semver rather than a clock-driven scheme,
+// because there is not necessarily a real content change every week and a
+// version that moves on a date rather than on a change is not a useful
+// signal.
 //
-//   node scripts/apply-release-changesets.mjs [--json] [--dry-run]
+//   node scripts/apply-release-changesets.mjs [--json] [--dry-run] [--out-of-band]
 //
 // Reads every pending changeset under .changesets/ (scripts/collect-
 // changesets.mjs), groups them by named package, and for each named
@@ -10,7 +16,9 @@
 //     bump level any of that package's changesets named;
 //   - prepends a packages/<dir>/CHANGELOG.md entry for the new version,
 //     concatenating that package's changeset summaries as bullet points
-//     (Keep a Changelog format, matching docs/PUBLISHING.md section 4);
+//     (Keep a Changelog format, matching docs/PUBLISHING.md section 4),
+//     with a "Breaking changes" subsection for any consumed changeset
+//     whose level was `major`;
 //   - deletes the changeset files it applied.
 // Then, for every OTHER workspace package that depends on a bumped package
 // via a range that no longer covers the new version (issue #1332), rewrites
@@ -19,6 +27,21 @@
 // regenerates package-lock.json (`npm install --package-lock-only`, skipped
 // under --dry-run) so every bumped workspace version, and every rewritten
 // sibling range, is reflected there too.
+//
+// A PACKAGE WITH NO PENDING CHANGESET IS NOT TOUCHED, AND A WEEK WITH NO
+// CHANGESETS AT ALL OPENS NO RELEASE PR
+// -------------------------------------------------------------------------
+// This script only ever bumps packages `namedPackages()` finds among
+// pending changesets -- an unrelated active package sits still, same as
+// before docs/RELEASING.md's weekly calendar existed. When there are no
+// pending changesets anywhere, `applyReleaseChangesets()` returns
+// `{ applied: [], ... }` without writing anything, without calling
+// `runNpmInstall`, and (critically) without needing governance/
+// release-calendar.json to even exist -- see the early return below. In
+// .github/workflows/release-pr.yml, an empty `applied` array is exactly
+// what makes the "Push branch and open pull request" step's `if:` skip: a
+// quiet week produces no branch, no commit, and no pull request at all, not
+// an empty one.
 //
 // Exit 0 = applied cleanly (or nothing was pending). Exit 1 = a package a
 // changeset names does not exist, its current version is not a plain
@@ -31,6 +54,107 @@
 // --dry-run prints exactly what would change (every version bump, every
 // dependency-range rewrite, every CHANGELOG entry, every deleted changeset
 // file) without writing or deleting anything, and without invoking npm.
+//
+// --out-of-band RESTRICTS THIS RUN TO out-of-band CHANGESETS ONLY (second-
+// opinion fix, https://github.com/clossys/foundry/pull/1316#issuecomment-5800188207,
+// widened by owner decision 2026-09-23, #1187 comment 5800369031)
+// --------------------------------------------------------------------------
+// An out-of-band release (governance/release-calendar.json's
+// outOfBandPolicy -- a security fix, a fix for a release that already
+// shipped broken, or an owner-approved urgent update, never ordinary
+// content) must consume ONLY changesets carrying `release: out-of-band` in
+// their frontmatter. Without --out-of-band this script is the ordinary
+// Saturday release: it consumes every pending changeset, out-of-band-
+// flagged or not, same as always. WITH --out-of-band, every changeset that
+// does NOT carry the flag is filtered out entirely BEFORE grouping by
+// package -- an ordinary pending `minor` or `major` changeset for the same
+// package an out-of-band `patch` changeset also names is left untouched in
+// .changesets/, to be picked up by the next regular Saturday release
+// exactly as if this run had never happened.
+//
+// LEVEL: patch by default, minor only with explicit owner approval, major
+// never
+// -------------------------------------------------------------------------
+// An out-of-band changeset is patch-level by default. A `minor` bump is
+// allowed ONLY when the changeset also carries `owner-approved: minor` in
+// its frontmatter (scripts/collect-changesets.mjs enforces this per file,
+// at parse time). `major` is never allowed out of band, with or without
+// owner approval. This is also the second, defense-in-depth reason
+// --out-of-band refuses (as a finding, not a silent downgrade) if the
+// highest level among the out-of-band changesets it did consume for some
+// NAMED package is not `patch`, or is `minor` without a consumed changeset
+// carrying `owner-approved: minor` -- collect-changesets.mjs already makes
+// both cases unreachable through this script's own public (file-based)
+// surface; this check stays here anyway as the same "fail closed on a
+// should-be-impossible state" discipline this repository's other gates use
+// throughout.
+//
+// scripts/check-release-pr-shape.mjs is what proves, on the resulting pull
+// request, that this is the only way an ordinary content pull request's
+// version can legitimately move — see that script's own header, and the
+// design comment linked below.
+//
+// COMPOSING OUT-OF-BAND FILTERING WITH SIBLING DEPENDENCY RANGES (re-review,
+// https://github.com/clossys/foundry/pull/1316#issuecomment-5802195430 --
+// #1316's out-of-band/breaking-change support and #1338's sibling-
+// dependency-range rewriting both touched this function's core loop
+// independently; T10's merge train dropped both rather than guess at how
+// they compose. This is that composition, made explicit)
+// -------------------------------------------------------------------------
+// The two features interact at exactly one boundary, and the ordering
+// below is the whole of that boundary:
+//
+//   1. OUT-OF-BAND FILTERING RUNS FIRST, AND DECIDES THE RELEASED SET.
+//      `entries` (the changesets this run will ever look at) is computed by
+//      filtering `allEntries` on `outOfBandOnly` BEFORE anything else --
+//      before `namedPackages()`, before PHASE A, before PHASE B's
+//      sibling-range scan. Every later phase only ever sees packages this
+//      filtered set actually names. A package whose only pending changeset
+//      was filtered out (an ordinary `minor` changeset left behind by an
+//      `--out-of-band` run) is invisible to every downstream phase, exactly
+//      as if it had never had a pending changeset at all.
+//
+//   2. SIBLING RANGE REWRITES ARE COMPUTED ONLY AGAINST RELEASED PACKAGES.
+//      PHASE B's `bumpedVersions` map (the set of "new version" facts a
+//      sibling's declared range is checked against) is built ONLY from
+//      PHASE A's `namedPlans` -- i.e. only from packages the (already
+//      out-of-band-filtered) `entries` set actually named and bumped. A
+//      package this run does NOT release can never appear in
+//      `bumpedVersions`, so a dependent can never be pointed at a version
+//      this run doesn't publish -- there is no separate "is this an
+//      out-of-band run" check needed in PHASE B at all; restricting what
+//      PHASE A ever bumps is sufficient, because PHASE B only ever reacts
+//      to what PHASE A actually did.
+//
+//   3. A DEPENDENT-ONLY PATCH BUMP COUNTS AS IN-BAND, ALWAYS -- this is the
+//      one place this composition had to make a real design decision, not
+//      just an ordering choice. A dependent-only bump (PHASE B/C's
+//      `dependentOnlyPlans`) is never itself the direct product of
+//      consuming a changeset -- it exists purely to keep a sibling's
+//      declared range from lying about what it actually resolves to once
+//      the package it depends on has been released at a new version. It is
+//      UNCONDITIONALLY capped at `bump: "patch"` (see PHASE B below,
+//      unchanged from #1338) -- the least disruptive level there is, and
+//      structurally the SAME default level an out-of-band run itself uses.
+//      So this run treats it as in-band and lets it through regardless of
+//      `outOfBandOnly`: it is exempt from the per-package out-of-band
+//      "patch, or owner-approved minor" gate PHASE A enforces on NAMED
+//      packages, because it is never itself `minor` or `major` and so could
+//      never violate that gate in the first place. It gets `outOfBand:
+//      false` and `breaking: false` on its `applied` entry (never `true`)
+//      -- it did not consume an out-of-band-flagged changeset, and it
+//      cannot be a breaking change (a breaking change is major-only, and
+//      this bump is never anything but patch) -- see PHASE C below and
+//      .github/workflows/release-pr.yml's `applied.some((a) => a.outOfBand)`
+//      labeling logic, which this leaves correct either way: an
+//      out-of-band run's OWN named entries already carry `outOfBand: true`
+//      on their own account, so the dependent-only entry's `false` never
+//      changes whether the resulting PR gets labeled `release:out-of-band`.
+//
+// scripts/lib/release-pr-footprint.mjs's `evaluateReleasePrFootprint()` is
+// what proves, on the resulting pull request, that the composed diff this
+// function produces is EXACTLY this shape and nothing more -- see that
+// module's own header.
 //
 // SIBLING DEPENDENCY RANGES (issue #1332)
 // -----------------------------------------
@@ -90,6 +214,7 @@
 // "a first-party dependency edge" means.
 //
 // Design: https://github.com/clossys/foundry/issues/1255#issuecomment-5790113827
+// Weekly calendar design (versioning unchanged): docs/RELEASING.md, refs #1187 #1265 #1266
 // Refs: #1322, #1327, #1332.
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
@@ -191,8 +316,24 @@ export function bumpDependencyRangeText(text, section, depName, newRange) {
 // "# Changelog" title and leading blank lines). If the file is brand new
 // (created fresh per docs/PUBLISHING.md section 4) or has no "## " entry
 // yet, the new entry is appended after whatever header text exists.
-export function prependChangelogEntry(existingText, { version, date, bullets }) {
-  const entryLines = [`## ${version} - ${date}`, "", ...bullets.map((b) => `- ${b}`), ""];
+//
+// `breakingBullets` (may be empty) renders as its own "### Breaking
+// changes" subsection ABOVE the full bullet list -- `bullets` still
+// includes every summary, breaking or not, so nothing is ever dropped from
+// the plain changelog reading; the subsection is a highlight, not a
+// replacement. `bullets` itself is the UNION of that package's own
+// changeset summaries and any "Updated dependency <name> to ^<newVersion>"
+// bullets a sibling dependency-range rewrite added (see this file's own
+// "SIBLING DEPENDENCY RANGES" section) -- the caller composes that union
+// before calling this function; a dependent-only bump (no changeset of its
+// own) never has breaking bullets, since a breaking change is major-only
+// and a dependent-only bump is always patch-only.
+export function prependChangelogEntry(existingText, { version, date, bullets, breakingBullets = [] }) {
+  const entryLines = [`## ${version} - ${date}`, ""];
+  if (breakingBullets.length > 0) {
+    entryLines.push("### Breaking changes", "", ...breakingBullets.map((b) => `- ${b}`), "");
+  }
+  entryLines.push(...bullets.map((b) => `- ${b}`), "");
   const entry = entryLines.join("\n");
   const text = existingText ?? "# Changelog\n\n";
   const firstEntryIndex = text.search(/^## /m);
@@ -296,50 +437,101 @@ function discoverWorkspacePackageDirs(root) {
 
 // Pure-ish core: computes and (unless dryRun) applies every bump. Returns
 // `{ applied, findings }` -- `applied` is one entry per package this run
-// changed (`{ package, fromVersion, toVersion, bump, changesetFiles,
-// dependencyUpdates? }`; `dependencyUpdates` is present only when this
-// package's own manifest also had a sibling dependency range rewritten --
-// see this file's own header). `findings` is one string per package that
-// could not be applied (unknown package directory, unreadable manifest,
-// non-semver current version, an unrewritable manifest or dependency-range
-// shape, or a dependency range this script refuses to touch). `runNpmInstall`
-// is injectable so tests never need a real npm/network round trip.
-export function applyReleaseChangesets({ root = process.cwd(), dryRun = false, runNpmInstall = defaultRunNpmInstall, today = () => new Date().toISOString().slice(0, 10) } = {}) {
-  const { entries, findings: changesetFindings } = loadChangesets(root);
+// changed (`{ package, fromVersion, toVersion, bump, outOfBand, breaking,
+// breakingSummaries, changesetFiles, dependencyUpdates? }`;
+// `dependencyUpdates` is present only when this package's own manifest also
+// had a sibling dependency range rewritten -- see this file's own header).
+// `findings` is one string per package that could not be applied (unknown
+// package directory, unreadable manifest, non-semver current version, an
+// unrewritable manifest or dependency-range shape, a dependency range this
+// script refuses to touch, or -- under `outOfBandOnly` -- a bump level an
+// out-of-band release is not allowed to ship). `runNpmInstall` is
+// injectable so tests never need a real npm/network round trip. `outOfBand`
+// on an applied entry is true when at least one consumed changeset was
+// flagged `release: out-of-band` -- purely informational here (it does not
+// change how the version is computed); .github/workflows/release-pr.yml
+// reads it to decide whether to label the resulting pull request
+// `release:out-of-band` so it can land outside the merge window. See this
+// file's own header, "COMPOSING OUT-OF-BAND FILTERING WITH SIBLING
+// DEPENDENCY RANGES", for exactly how `outOfBandOnly` interacts with the
+// sibling-range phases below.
+export function applyReleaseChangesets({
+  root = process.cwd(),
+  dryRun = false,
+  runNpmInstall = defaultRunNpmInstall,
+  today = () => new Date().toISOString().slice(0, 10),
+  outOfBandOnly = false,
+} = {}) {
+  const { entries: allEntries, findings: changesetFindings } = loadChangesets(root);
   if (changesetFindings.length > 0) {
     return { applied: [], findings: [], changesetFindings };
   }
+  // OUT-OF-BAND FILTERING RUNS FIRST, AND DECIDES THE RELEASED SET -- see
+  // this file's header, item 1. `entries` is what every phase below sees;
+  // a changeset filtered out here is invisible to namedPackages(), to PHASE
+  // A, and (transitively, since PHASE B only reacts to what PHASE A
+  // bumped) to PHASE B's sibling-range scan too.
+  const entries = outOfBandOnly ? allEntries.filter((e) => e.outOfBand === true) : allEntries;
   if (entries.length === 0) {
+    // No pending changesets anywhere (or, under --out-of-band, no pending
+    // out-of-band changesets) -- nothing is bumped, and nothing downstream
+    // (governance/release-calendar.json included) is even read. See this
+    // file's own header for why this is load-bearing, not incidental: it
+    // is what keeps a quiet week from opening an empty release PR.
     return { applied: [], findings: [], changesetFindings: [] };
   }
 
-  // Three sub-phases, all before a single byte is written -- still the
-  // same "all-or-nothing" plan-then-write shape issue #1322 established
-  // (see that issue's own comment, referenced below): PHASE A validates
-  // and computes the bump level for every package a changeset actually
-  // NAMES; PHASE B, only reachable once every named package has passed,
-  // scans EVERY workspace package (named or not) for a stale dependency
-  // range onto one of PHASE A's bumps; PHASE C, only reachable once PHASE
-  // B has found nothing it cannot safely rewrite, computes the final
-  // manifest/CHANGELOG text for every package either phase touched. Only
-  // once ALL THREE have passed does the write phase run at all -- a
-  // single-pass write-as-you-go loop that stopped partway through a later
-  // package's failure would leave EARLIER packages' package.json/
-  // CHANGELOG.md already written on disk with their changesets not yet
-  // deleted, so a rerun after fixing the failure would re-bump and
-  // duplicate those earlier packages' entries (issue #1322 item 1) -- and
-  // splitting the dependency-range rewrite into its own later phase, still
-  // gated behind the very same write phase, extends that same guarantee to
-  // issue #1332's sibling rewrites rather than introducing a second,
-  // independent all-or-nothing boundary.
+  // Three sub-phases, all before a single byte is written -- the same
+  // "all-or-nothing" plan-then-write shape issue #1322 established: PHASE A
+  // validates and computes the bump level for every package the (already
+  // out-of-band-filtered) `entries` set actually NAMES; PHASE B, only
+  // reachable once every named package has passed, scans EVERY workspace
+  // package (named or not) for a stale dependency range onto one of PHASE
+  // A's bumps; PHASE C, only reachable once PHASE B has found nothing it
+  // cannot safely rewrite, computes the final manifest/CHANGELOG text for
+  // every package either phase touched. Only once ALL THREE have passed
+  // does the write phase run at all -- a single-pass write-as-you-go loop
+  // that stopped partway through a later package's failure would leave
+  // EARLIER packages' package.json/CHANGELOG.md already written on disk
+  // with their changesets not yet deleted, so a rerun after fixing the
+  // failure would re-bump and duplicate those earlier packages' entries
+  // (issue #1322 item 1) -- and splitting the dependency-range rewrite into
+  // its own later phase, still gated behind the very same write phase,
+  // extends that same guarantee to issue #1332's sibling rewrites rather
+  // than introducing a second, independent all-or-nothing boundary.
   const findings = [];
 
   // ---------------------------------------------------------- PHASE A
-  const namedPlans = []; // { pkg, manifestPath, manifestText, manifest, newVersion, bump, ownBullets, changesetFiles, changelogPath }
+  const namedPlans = []; // { pkg, manifestPath, manifestText, manifest, newVersion, bump, outOfBand, breakingBullets, ownBullets, changesetFiles, changelogPath }
 
   for (const pkg of namedPackages(entries)) {
     const matches = changesetsForPackage(entries, pkg);
     const bump = highestBumpLevel(matches.map((m) => m.bump));
+    const outOfBand = matches.some((m) => m.outOfBand);
+    const ownerApprovedMinor = matches.some((m) => m.ownerApprovedLevel === "minor");
+    const breakingBullets = matches.filter((m) => m.bump === "major").map((m) => m.summary);
+
+    if (outOfBandOnly) {
+      // Defense in depth -- see this file's header. Not covered by an
+      // end-to-end test through the normal .changesets/ file surface
+      // because scripts/collect-changesets.mjs already makes it
+      // unreachable that way (it enforces the identical patch/owner-
+      // approved-minor rule per file, before this script ever groups
+      // matches across files); this refuses rather than silently ships an
+      // unapproved bump through the out-of-band path if that invariant is
+      // ever weakened. `major` is never allowed, with or without owner
+      // approval -- there is no bump level this branch treats as escalating
+      // past `minor`. This gate applies ONLY to a NAMED package's own bump
+      // level -- a dependent-only patch bump (PHASE B/C below) is always
+      // `patch` and is exempt, per this file's header item 3.
+      const allowed = bump === "patch" || (bump === "minor" && ownerApprovedMinor);
+      if (!allowed) {
+        const reason = bump === "minor" ? 'a "minor" out-of-band bump needs a consumed changeset carrying "owner-approved: minor"' : `an out-of-band release must be "patch" (or owner-approved "minor"), not "${bump}"`;
+        findings.push(`packages/${pkg}: ${reason} -- consumed changeset(s) ${matches.map((m) => m.file).join(", ")}`);
+        continue;
+      }
+    }
+
     const pkgDir = resolve(root, "packages", pkg);
     const manifestPath = join(pkgDir, "package.json");
     if (!existsSync(manifestPath)) {
@@ -369,6 +561,8 @@ export function applyReleaseChangesets({ root = process.cwd(), dryRun = false, r
       manifest,
       newVersion,
       bump,
+      outOfBand,
+      breakingBullets,
       ownBullets: matches.map((m) => m.summary),
       changesetFiles: matches.map((m) => m.file),
       changelogPath: join(pkgDir, "CHANGELOG.md"),
@@ -378,6 +572,13 @@ export function applyReleaseChangesets({ root = process.cwd(), dryRun = false, r
   if (findings.length > 0) return { applied: [], findings, changesetFindings: [] };
 
   // ---------------------------------------------------------- PHASE B
+  // SIBLING RANGE REWRITES ARE COMPUTED ONLY AGAINST RELEASED PACKAGES --
+  // see this file's header, item 2. `bumpedVersions` is built EXCLUSIVELY
+  // from `namedPlans`, which itself only ever contains packages the
+  // (already out-of-band-filtered) `entries` set named and PHASE A
+  // accepted. A package filtered out above (or one that failed PHASE A)
+  // can never appear here, so a dependent can never be rewritten to point
+  // at a version this run does not actually publish.
   const bumpedVersions = {};
   for (const p of namedPlans) bumpedVersions[p.manifest.name] = p.newVersion;
 
@@ -417,6 +618,12 @@ export function applyReleaseChangesets({ root = process.cwd(), dryRun = false, r
       continue;
     }
 
+    // A DEPENDENT-ONLY PATCH BUMP COUNTS AS IN-BAND, ALWAYS -- see this
+    // file's header, item 3. No `outOfBandOnly` check here: this bump is
+    // unconditionally `"patch"`, the same level an out-of-band run's own
+    // default already permits, so it can never violate the out-of-band
+    // level gate PHASE A enforces above, and it happens the same way on
+    // every run regardless of `outOfBandOnly`.
     let newVersion;
     try {
       newVersion = bumpVersion(manifest.version, "patch");
@@ -449,10 +656,19 @@ export function applyReleaseChangesets({ root = process.cwd(), dryRun = false, r
     }
     const bullets = [...p.ownBullets, ...dependencyUpdateBullets(updates)];
     const existingChangelog = existsSync(p.changelogPath) ? readFileSync(p.changelogPath, "utf8") : null;
-    const newChangelog = prependChangelogEntry(existingChangelog, { version: p.newVersion, date: today(), bullets });
+    const newChangelog = prependChangelogEntry(existingChangelog, { version: p.newVersion, date: today(), bullets, breakingBullets: p.breakingBullets });
 
     planned.push({ manifestPath: p.manifestPath, newManifestText, changelogPath: p.changelogPath, newChangelog, changesetFiles: p.changesetFiles });
-    const appliedEntry = { package: p.pkg, fromVersion: p.manifest.version, toVersion: p.newVersion, bump: p.bump, changesetFiles: p.changesetFiles };
+    const appliedEntry = {
+      package: p.pkg,
+      fromVersion: p.manifest.version,
+      toVersion: p.newVersion,
+      bump: p.bump,
+      outOfBand: p.outOfBand,
+      breaking: p.breakingBullets.length > 0,
+      breakingSummaries: p.breakingBullets,
+      changesetFiles: p.changesetFiles,
+    };
     if (updates.length > 0) appliedEntry.dependencyUpdates = updates;
     applied.push(appliedEntry);
   }
@@ -471,7 +687,21 @@ export function applyReleaseChangesets({ root = process.cwd(), dryRun = false, r
     const newChangelog = prependChangelogEntry(existingChangelog, { version: d.newVersion, date: today(), bullets: dependencyUpdateBullets(d.updates) });
 
     planned.push({ manifestPath: d.manifestPath, newManifestText, changelogPath, newChangelog, changesetFiles: [] });
-    applied.push({ package: d.pkg, fromVersion: d.manifest.version, toVersion: d.newVersion, bump: "patch", changesetFiles: [], dependencyUpdates: d.updates });
+    // outOfBand/breaking are always false here -- see this file's header,
+    // item 3: a dependent-only bump never consumes an out-of-band-flagged
+    // changeset (it consumes none at all), and it can never be breaking
+    // (breaking is major-only; this bump is always patch).
+    applied.push({
+      package: d.pkg,
+      fromVersion: d.manifest.version,
+      toVersion: d.newVersion,
+      bump: "patch",
+      outOfBand: false,
+      breaking: false,
+      breakingSummaries: [],
+      changesetFiles: [],
+      dependencyUpdates: d.updates,
+    });
   }
 
   if (findings.length > 0) return { applied: [], findings, changesetFindings: [] };
@@ -495,9 +725,10 @@ function main() {
   const argv = process.argv.slice(2);
   const json = argv.includes("--json");
   const dryRun = argv.includes("--dry-run");
+  const outOfBandOnly = argv.includes("--out-of-band");
   const root = process.cwd();
 
-  const { applied, findings, changesetFindings } = applyReleaseChangesets({ root, dryRun });
+  const { applied, findings, changesetFindings } = applyReleaseChangesets({ root, dryRun, outOfBandOnly });
 
   if (changesetFindings.length > 0) {
     if (json) console.log(JSON.stringify({ error: "malformed changesets", changesetFindings }, null, 2));
@@ -525,7 +756,8 @@ function main() {
     console.log(`apply-release-changesets: ${dryRun ? "would apply" : "applied"} ${applied.length} package bump(s):`);
     for (const a of applied) {
       const consuming = a.changesetFiles.length > 0 ? a.changesetFiles.join(", ") : "(no changeset -- sibling dependency update only)";
-      console.log(`  ${a.package}: ${a.fromVersion} -> ${a.toVersion} (${a.bump}), consuming ${consuming}`);
+      const flags = [a.breaking ? "BREAKING" : null, a.outOfBand ? "out-of-band" : null].filter(Boolean).join(", ");
+      console.log(`  ${a.package}: ${a.fromVersion} -> ${a.toVersion} (${a.bump}${flags ? `, ${flags}` : ""}), consuming ${consuming}`);
       for (const u of a.dependencyUpdates ?? []) {
         console.log(`    dependency ${u.name} (${u.section}): ${u.fromRange} -> ${u.toRange}`);
       }

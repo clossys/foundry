@@ -1,0 +1,197 @@
+name: Release calendar
+
+# Is today a day an ordinary pull request may merge, per governance/
+# release-calendar.json's weekly cadence (docs/RELEASING.md, owner decision
+# 2026-09-23)? Monday-Friday is the merge window; Saturday is release day
+# (only .github/workflows/release-pr.yml's own release PR -- proven by
+# BOTH the "release:weekly" label it applies AND a STRUCTURALLY VERIFIED
+# release-PR-shaped diff (content, not just paths), never by branch name
+# alone, see scripts/lib/release-calendar.mjs's own header -- may land);
+# Sunday is the consumer-adoption day. Either release or adoption day also
+# admits a pull request labelled "release:out-of-band" (a security fix, a
+# fix for a release that already shipped broken, or an owner-approved
+# urgent update -- governance/release-calendar.json's outOfBandPolicy;
+# that label is owner-applied only, by standing rule -- docs/RELEASING.md).
+#
+# DELIBERATELY NOT A REQUIRED STATUS CHECK (yet)
+# -------------------------------------------------
+# This workflow only reports; it does not gate anything on its own. Making
+# `release calendar (merge window)` (this job's exact name -- that string,
+# not the workflow's own name above it, is what a branch protection
+# ruleset's required-checks list shows) required is an owner action on
+# this repository's branch protection ruleset (the same kind of action
+# AGENTS.md's "Autonomous review and shipping" section reserves to the
+# owner) -- not something a workflow file can grant itself. See
+# docs/RELEASING.md's rollout section for the exact step and its ordering.
+#
+# pull_request AND merge_group -- ONLY pull_request IS ACTUALLY EXERCISED
+# TODAY
+# -------------------------------------------------------------------------
+# pull_request gives this job the real PR payload directly:
+# github.event.pull_request.number and .labels. merge_group (this
+# repository's merge queue, #1263) does not -- its payload's own head_ref
+# is a synthetic ref shaped `refs/heads/gh-readonly-queue/<base>/pr-
+# <number>-<sha>`, not the PR's real branch, and it carries no labels at
+# all. The "Resolve changed files and labels" step below extracts the PR
+# number from that synthetic ref (merge_group) or reads it directly
+# (pull_request), then asks the GitHub REST API for that PR's changed
+# files (paginated -- see below) and `gh pr view` for its labels and its
+# base/head commits, so both triggers ultimately call scripts/check-
+# release-calendar.mjs with the same facts. In practice, until #1263's
+# merge queue actually exists and is enabled, `merge_group` never fires at
+# all -- this workflow's `on:` already declares both triggers (so nothing
+# needs to change here once the queue lands), but today the pull_request
+# path is the only one this job's own history has ever actually run
+# through. This is expected, not a gap to fix now.
+#
+# FAIL CLOSED ON PAGINATION
+# -----------------------------
+# "Resolve changed files and labels" reads the PR's changed-file list via
+# `gh api --paginate`, which follows every page GitHub returns rather than
+# stopping at the first (a real release PR's own narrow shape -- a
+# handful of files -- means pagination rarely matters in the ordinary
+# case, but a WRONG or truncated read must never silently grant an
+# exemption). If that call fails for any reason (network, rate limit,
+# anything), this step does NOT fall back to a partial file list -- it
+# sets `files_unreadable=true` and passes that straight through to
+# scripts/check-release-calendar.mjs's own `--files-unreadable` flag,
+# which refuses the exemption outright rather than judging an incomplete
+# read as if it were the whole truth.
+on:
+  pull_request: {}
+  merge_group: {}
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  release-calendar:
+    name: release calendar (merge window)
+    runs-on: ubuntu-latest
+    steps:
+      # fetch-depth: 0 (not the default shallow fetch): scripts/check-
+      # release-calendar.mjs's structural footprint check needs `git show
+      # <base-sha>:<path>` and `<head-sha>:<path>` to resolve locally for
+      # every changed file, on both sides of the diff -- a shallow
+      # checkout would leave the base commit's history unreachable.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+
+      # Provides `node` on PATH to run scripts/check-release-calendar.mjs
+      # itself. Deliberately NO `npm ci` step, and no npm invocation
+      # anywhere in this job at all: scripts/lib/release-pr-footprint.mjs's
+      # package-lock.json check is a pure base-vs-head diff, not an `npm
+      # install` regeneration (see that module's own header for why a
+      # regeneration-based check was replaced -- it could drift from an
+      # already-committed lockfile even on an unchanged tree). Nothing this
+      # workflow runs (scripts/lib/release-calendar.mjs, scripts/lib/
+      # release-pr-footprint.mjs, scripts/check-release-calendar.mjs)
+      # imports an external package either -- node builtins only, the same
+      # discipline scripts/check-workflow-references.test.mjs's "every
+      # suite in check:gates imports only node builtins and local scripts"
+      # test enforces elsewhere -- so this repository's own node_modules
+      # were never actually needed here.
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+
+      - name: Resolve changed files, labels, and base/head commits
+        id: resolve
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          EVENT_NAME: ${{ github.event_name }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_LABELS_JSON: ${{ toJSON(github.event.pull_request.labels) }}
+          MERGE_GROUP_HEAD_REF: ${{ github.event.merge_group.head_ref }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            pr_number="$PR_NUMBER"
+            labels="$(node -e 'console.log(JSON.parse(process.env.PR_LABELS_JSON).map((l) => l.name).join(","))')"
+          else
+            # MERGE_GROUP_HEAD_REF looks like refs/heads/gh-readonly-queue/main/pr-123-<sha>.
+            pr_number="$(node -e '
+              const m = /\/pr-(\d+)-/.exec(process.env.MERGE_GROUP_HEAD_REF || "");
+              if (!m) { console.error("could not extract a PR number from merge_group head_ref: " + process.env.MERGE_GROUP_HEAD_REF); process.exit(1); }
+              console.log(m[1]);
+            ')"
+            labels="$(gh pr view "$pr_number" --repo "$GITHUB_REPOSITORY" --json labels --jq '[.labels[].name] | join(",")')"
+          fi
+
+          refs_json="$(gh pr view "$pr_number" --repo "$GITHUB_REPOSITORY" --json baseRefOid,headRefOid)"
+          base_sha="$(node -e 'console.log(JSON.parse(process.argv[1]).baseRefOid)' "$refs_json")"
+          head_sha="$(node -e 'console.log(JSON.parse(process.argv[1]).headRefOid)' "$refs_json")"
+          # Best-effort: the checkout above should already have both commits
+          # via fetch-depth: 0, but fetch them explicitly too so a base/head
+          # commit that landed on a ref the initial checkout's own refspec
+          # didn't happen to cover is still reachable. Failure here is not
+          # fatal on its own -- an unreachable ref surfaces later as an
+          # unreadable file (fails closed), not a crash.
+          git fetch --no-tags origin "$base_sha" "$head_sha" 2>/dev/null || true
+
+          # --paginate follows every page; see this workflow's own header
+          # ("FAIL CLOSED ON PAGINATION") for why a failed read here must
+          # never degrade to a partial changed-files list.
+          files_unreadable=false
+          if ! gh api --paginate "repos/${GITHUB_REPOSITORY}/pulls/${pr_number}/files" --jq '.[] | {path: .filename, status: .status}' \
+              > "$RUNNER_TEMP/changed-files.jsonl" 2>"$RUNNER_TEMP/changed-files.err"; then
+            files_unreadable=true
+            echo "::warning::could not fully read this pull request's changed-file list -- failing the release-PR exemption closed"
+            cat "$RUNNER_TEMP/changed-files.err" >&2
+            : > "$RUNNER_TEMP/changed-files.jsonl"
+          fi
+          changed_files="$(node -e '
+            const fs = require("node:fs");
+            const text = fs.readFileSync(process.argv[1], "utf8");
+            const lines = text.split("\n").filter((l) => l.trim().length > 0);
+            console.log(JSON.stringify(lines.map((l) => JSON.parse(l))));
+          ' "$RUNNER_TEMP/changed-files.jsonl")"
+
+          echo "pr_number=$pr_number" >> "$GITHUB_OUTPUT"
+          echo "labels=$labels" >> "$GITHUB_OUTPUT"
+          echo "base_sha=$base_sha" >> "$GITHUB_OUTPUT"
+          echo "head_sha=$head_sha" >> "$GITHUB_OUTPUT"
+          echo "files_unreadable=$files_unreadable" >> "$GITHUB_OUTPUT"
+          {
+            echo "changed_files<<CHANGED_FILES_EOF"
+            echo "$changed_files"
+            echo "CHANGED_FILES_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: check-release-calendar
+        env:
+          LABELS: ${{ steps.resolve.outputs.labels }}
+          CHANGED_FILES: ${{ steps.resolve.outputs.changed_files }}
+          BASE_SHA: ${{ steps.resolve.outputs.base_sha }}
+          HEAD_SHA: ${{ steps.resolve.outputs.head_sha }}
+          FILES_UNREADABLE: ${{ steps.resolve.outputs.files_unreadable }}
+        run: |
+          set -uo pipefail
+          extra_args=()
+          if [ "$FILES_UNREADABLE" = "true" ]; then
+            extra_args+=(--files-unreadable)
+          fi
+          # Captured explicitly, not via `set -e` + a bare invocation, so a
+          # FAIL (exit 1, the expected outcome on release/adoption day for
+          # an ordinary PR) still reaches the job summary below instead of
+          # aborting the step before it runs.
+          set +e
+          node scripts/check-release-calendar.mjs --json --changed-files "$CHANGED_FILES" --labels "$LABELS" --base "$BASE_SHA" --head "$HEAD_SHA" "${extra_args[@]}" > "$RUNNER_TEMP/release-calendar.json"
+          status=$?
+          set -e
+          cat "$RUNNER_TEMP/release-calendar.json"
+          node -e '
+            const r = JSON.parse(require("node:fs").readFileSync(process.env.RUNNER_TEMP + "/release-calendar.json", "utf8"));
+            if (r.error) { require("node:fs").writeFileSync(process.env.GITHUB_STEP_SUMMARY, `**Error:** ${r.error}\n`, { flag: "a" }); process.exit(0); }
+            const lines = [
+              `**Status:** ${r.status === "pass" ? "PASS" : "FAIL"}`,
+              `**Day type:** ${r.dayType} (${r.timezone})`,
+              `**Reason:** ${r.reason}`,
+              `**Footprint:** verified=${r.footprintVerified} -- ${r.footprintReason}`,
+            ];
+            if (r.nextMergeWindowStart) lines.push(`**Next merge window opens:** ${r.nextMergeWindowStart}`);
+            require("node:fs").writeFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join("\n") + "\n", { flag: "a" });
+          '
+          exit "$status"
