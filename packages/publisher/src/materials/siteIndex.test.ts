@@ -7,7 +7,7 @@ const entries: MaterialsIndexEntry[] = [
     id: "overview-short",
     title: "Company overview — short",
     kind: "overview",
-    status: "verified",
+    status: "published",
     condition: "current",
     version: "v0.3",
     lastPublishedAt: "2026-09-22T00:00:00.000Z",
@@ -29,7 +29,7 @@ describe("renderMaterialsIndexHtml", () => {
   it("lists every entry with its status, condition, version, and last-published time", () => {
     const html = renderMaterialsIndexHtml(entries);
     expect(html).toContain("Company overview — short");
-    expect(html).toContain('data-status="verified"');
+    expect(html).toContain('data-status="published"');
     expect(html).toContain('data-condition="current"');
     expect(html).toContain("v0.3");
     expect(html).toContain("2026-09-22T00:00:00.000Z");

@@ -1,4 +1,4 @@
-import type { LifecycleCondition, LifecycleStatus } from "../pack/lifecycle.js";
+import type { LifecycleCondition, PackStatus } from "@clossys/controller";
 import type { SlidesDeckInput } from "../slides/index.js";
 
 /**
@@ -26,8 +26,8 @@ export interface MaterialsIndexEntry {
   /** Human title shown in the index, e.g. "Company overview — short". */
   title: string;
   kind: "overview" | "deck";
-  /** From the pack manifest (#1204) — the shared lifecycle vocabulary (#1228). */
-  status: LifecycleStatus;
+  /** From the pack manifest (#1204) — @clossys/controller's PackStatus, matching PackItem.status (#1228). */
+  status: PackStatus;
   condition: LifecycleCondition;
   /** "v0.1", "v0.2", … — same shape as `PackItem.version`. */
   version: string;
