@@ -529,8 +529,8 @@ This narrows, but does not remove, the safety net: `check-qualification-
 record-present.mjs` and `publish.yml`'s record-join are untouched. They
 still compare the retained record against the whole tree immediately before
 a publish is allowed to proceed, so a version whose record has gone stale —
-for any reason, packed or not — still can never ship again. The only thing
-that changed is which question `check-release-readiness.mjs` answers with
+for any reason, packed or not — still can never ship again. What changed
+is which question `check-release-readiness.mjs` answers with
 that same finding: not "does this pull request need a changeset," but "is
 there a pending release this pull request would silently strand" — a
 question the gate can now answer correctly instead of treating every stale
@@ -562,7 +562,7 @@ they are packed-content findings, so they fail regardless of whether the
 current version has been published; only a direct bump or a pending
 changeset rescues them.
 
-`tsconfig.json` is not the only build input `npm pack` never ships.
+`tsconfig.json` is not alone as a build input `npm pack` never ships.
 `@clossys/launcher`'s `scripts.build` is
 `node scripts/pack-skills.mjs && tsc -p tsconfig.json` — `pack-skills.mjs`
 itself is outside `files`, but it GENERATES `skill-catalogue/`, which IS
@@ -589,8 +589,9 @@ actual publish attempt today.
 ### Packed-content comparison is git-tracked content only
 
 `check-release-readiness.mjs` compares a package's real `npm pack --dry-run`
-result on both sides of the diff — the only correct evaluator of `files`/
-`.npmignore` globs — but narrows the WORKING-TREE side
+result on both sides of the diff — still the correct way to evaluate
+`files`/`.npmignore` globs, not something this script reimplements by
+hand — but narrows the WORKING-TREE side
 (`packedFilesAtWorktree()`) down to paths `git ls-files` already tracks
 before diffing. Without this, gitignored or merely untracked generated
 output that happens to fall inside a package's `files` glob — for example
