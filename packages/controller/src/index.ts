@@ -253,3 +253,12 @@ export type { RecordKindRegistry } from "./migrate/registry.js";
 export { discoverRecords, runMigrations, DEFAULT_RECORD_LOCATIONS } from "./migrate/fs.js";
 export type { RecordLocation, DiscoveredRecord, RecordMigrationReport, RunMigrationsOptions } from "./migrate/fs.js";
 export type { MigrationStep, MigrationTable, MigrationOutcome, AlreadyCurrentOutcome, MigratedOutcome, IndeterminateOutcome } from "./migrate/types.js";
+
+// Operating cadence: the zero-token heartbeat (issue #1221). Root-exported
+// for the same reason as the modules above.
+export { HEARTBEAT_FINDING_KINDS } from "./heartbeat/types.js";
+export type { HeartbeatFindingKind, DigestEntry, HeartbeatDigest } from "./heartbeat/types.js";
+export { computeHeartbeat, renderDigest } from "./heartbeat/digest.js";
+export { loadLoopStates, computeHeartbeatForRepo, writeHeartbeatDigest, DIGEST_PATH as HEARTBEAT_DIGEST_PATH } from "./heartbeat/fs.js";
+export type { LoadedLoopStates, UnreadableLoopState, HeartbeatRunResult } from "./heartbeat/fs.js";
+export { controllerHeartbeatSchedule, validateHeartbeatSchedule } from "./heartbeat/schedule.js";
