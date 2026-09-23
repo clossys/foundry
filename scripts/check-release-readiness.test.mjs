@@ -250,6 +250,60 @@ test("default mode (issue #1255): a changeset naming a DIFFERENT package does no
   });
 });
 
+// issue #1322 item 2: pendingChangesetDetail() used to read the whole
+// working tree's .changesets/ with no merge-base filtering, contradicting
+// its own header's stated rule ("a changeset added ... in this pull
+// request's history"). A changeset already pending on `main` BEFORE this
+// PR's merge base -- left over from some unrelated, unmerged PR, or (as
+// here) never applied yet from an earlier release -- must not let a packed
+// -content change THIS pull request makes ride on someone else's pending
+// changeset.
+test("default mode (issue #1322 item 2): a changeset that already existed AT the merge base does not satisfy this PR's own packed change", () => {
+  withRepo((root) => {
+    const pkgDir = makeFixture(root);
+    stubPackagesDir(root, "probe");
+    // The changeset for "probe" is committed as part of the SAME commit
+    // this run's --base points at -- it existed at the merge base, not
+    // added by the PR under test.
+    mkdirSync(join(root, ".changesets"), { recursive: true });
+    writeFileSync(join(root, ".changesets", "probe-preexisting.md"), "---\nprobe: patch\n---\n\nAn earlier, unrelated pending changeset.\n");
+    const base = gitCommit(root, "initial release at 1.0.0, with a pre-existing pending changeset");
+
+    // This PR's own change: packed content moves, but it adds no changeset
+    // of its own and bumps no version.
+    writeFileSync(join(pkgDir, "src", "index.ts"), "export const x = 2;\n");
+
+    const r = run(["--json", "--base", base, pkgDir]);
+    const report = JSON.parse(r.out);
+    assert.equal(r.code, 1, `expected exit 1 -- the pre-existing changeset must not satisfy this PR's own packed change; got ${r.code}: ${r.out}`);
+    assert.equal(report.results[0].status, "needs-bump");
+    assert.doesNotMatch(report.results[0].detail, /pending changeset covers it/);
+  });
+});
+
+test("default mode (issue #1322 item 2): a changeset added by this PR itself (not present at the merge base) still satisfies the same package's packed change", () => {
+  withRepo((root) => {
+    const pkgDir = makeFixture(root);
+    stubPackagesDir(root, "probe");
+    const base = gitCommit(root, "initial release at 1.0.0");
+
+    // This PR's own change: packed content moves, AND it adds its own new
+    // changeset, committed after the merge base (so it is genuinely part of
+    // this PR's own history, not just an uncommitted working-tree file).
+    writeFileSync(join(pkgDir, "src", "index.ts"), "export const x = 2;\n");
+    mkdirSync(join(root, ".changesets"), { recursive: true });
+    writeFileSync(join(root, ".changesets", "probe-fix.md"), "---\nprobe: patch\n---\n\nFix a bug.\n");
+    gitCommit(root, "fix a bug, deferred to the next release PR");
+
+    const r = run(["--json", "--base", base, pkgDir]);
+    const report = JSON.parse(r.out);
+    assert.equal(r.code, 0, `expected exit 0, got ${r.code}: ${r.out}`);
+    assert.equal(report.results[0].status, "pass");
+    assert.match(report.results[0].detail, /pending changeset covers it/);
+    assert.match(report.results[0].detail, /probe-fix\.md/);
+  });
+});
+
 test("default mode: passes content changed since --base alongside a version bump", () => {
   withRepo((root) => {
     const pkgDir = makeFixture(root);

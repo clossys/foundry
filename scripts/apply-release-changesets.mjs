@@ -114,9 +114,17 @@ export function applyReleaseChangesets({ root = process.cwd(), dryRun = false, r
     return { applied: [], findings: [], changesetFindings: [] };
   }
 
+  // Two phases, deliberately: PLAN every package first, writing nothing;
+  // only once every named package has passed does phase two write anything
+  // at all. `exit 1` (a finding) has to mean "nothing was applied" -- a
+  // single-pass write-as-you-go loop that stops partway through a later
+  // package's failure would leave EARLIER packages' package.json/
+  // CHANGELOG.md already bumped on disk with their changesets not yet
+  // deleted, so a rerun after fixing the failure would re-bump and
+  // duplicate those earlier packages' entries (issue #1322 item 1).
   const applied = [];
   const findings = [];
-  const toDelete = new Set();
+  const planned = [];
 
   for (const pkg of namedPackages(entries)) {
     const matches = changesetsForPackage(entries, pkg);
@@ -146,20 +154,23 @@ export function applyReleaseChangesets({ root = process.cwd(), dryRun = false, r
     const changelogPath = join(pkgDir, "CHANGELOG.md");
     const existingChangelog = existsSync(changelogPath) ? readFileSync(changelogPath, "utf8") : null;
     const newChangelog = prependChangelogEntry(existingChangelog, { version: newVersion, date: today(), bullets: matches.map((m) => m.summary) });
+    const newManifestText = bumpManifestText(manifestText, newVersion);
 
-    if (!dryRun) {
-      writeFileSync(manifestPath, bumpManifestText(manifestText, newVersion));
-      writeFileSync(changelogPath, newChangelog);
-    }
-    for (const m of matches) toDelete.add(m.file);
-
+    planned.push({ manifestPath, newManifestText, changelogPath, newChangelog, changesetFiles: matches.map((m) => m.file) });
     applied.push({ package: pkg, fromVersion: manifest.version, toVersion: newVersion, bump, changesetFiles: matches.map((m) => m.file) });
   }
 
-  if (findings.length > 0) return { applied, findings, changesetFindings: [] };
+  if (findings.length > 0) return { applied: [], findings, changesetFindings: [] };
 
   if (!dryRun) {
-    for (const file of toDelete) rmSync(join(root, ".changesets", file));
+    // Every package validated: write phase. No step here can fail on a
+    // per-package basis any more -- every check that could reject a
+    // package already ran above, during planning.
+    for (const step of planned) {
+      writeFileSync(step.manifestPath, step.newManifestText);
+      writeFileSync(step.changelogPath, step.newChangelog);
+    }
+    for (const step of planned) for (const file of step.changesetFiles) rmSync(join(root, ".changesets", file));
     if (applied.length > 0) runNpmInstall(root);
   }
 

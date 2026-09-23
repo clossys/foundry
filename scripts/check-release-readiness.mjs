@@ -584,12 +584,42 @@ function staleRetainedRecordDetail(gitRoot, manifest) {
 // before) — it only widens what ALSO counts as ready, so it cannot make
 // anything that passed before fail now.
 //
+// The set of .changesets/ filenames that already existed AT the merge base
+// -- everything else currently pending is, by elimination, something this
+// pull request's own history added. `git ls-tree` on a ref that predates
+// .changesets/ entirely (or on a package with no changesets yet) throws;
+// treated the same as "nothing existed there yet" (an empty set), which is
+// the fail-OPEN-to-counting-it-as-added direction issue #1322 item 2 wants
+// -- a merge-base .changesets/ this call cannot read must never cause a
+// changeset that genuinely IS new to this PR to be silently excluded.
+function changesetFilesAtMergeBase(gitRoot, mergeBase) {
+  let out;
+  try {
+    out = git(["ls-tree", "--name-only", mergeBase, "--", ".changesets/"], gitRoot);
+  } catch {
+    return new Set();
+  }
+  return new Set(
+    out
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((path) => path.replace(/^\.changesets\//, "")),
+  );
+}
+
 // Reads the working tree's current .changesets/ (the same side of the diff
-// packedFiles(absPkgDir) itself reads), not the merge-base's — a changeset
-// added anywhere in this pull request's history, still pending at HEAD,
-// counts, matching how a direct version bump is judged by its value at HEAD
-// too.
-function pendingChangesetDetail(gitRoot, relPkgDir) {
+// packedFiles(absPkgDir) itself reads), not the merge-base's for WHICH
+// changesets are visible -- but a changeset only counts if it is also
+// ABSENT at the merge base (issue #1322 item 2): a changeset already
+// pending on `main` before this pull request branched, from some other,
+// unrelated, unmerged PR, is not something THIS pull request added, and
+// must not let a packed-content change in THIS pull request ride on it.
+// "A changeset added anywhere in this pull request's history, still
+// pending at HEAD, counts" (the rule this header always stated) -- the
+// merge-base filter below is what actually enforces "added ... in this
+// pull request's history", not just "present at HEAD".
+function pendingChangesetDetail(gitRoot, relPkgDir, mergeBase) {
   const packageKey = relPkgDir.split("/").at(-1);
   let entries;
   try {
@@ -599,7 +629,10 @@ function pendingChangesetDetail(gitRoot, relPkgDir) {
   }
   const matches = changesetsForPackage(entries, packageKey);
   if (matches.length === 0) return null;
-  return `a pending changeset covers it: ${matches.map((m) => `${m.file} (${m.bump})`).join(", ")} — scripts/apply-release-changesets.mjs will bump it in the next release PR`;
+  const baseFiles = changesetFilesAtMergeBase(gitRoot, mergeBase);
+  const addedMatches = matches.filter((m) => !baseFiles.has(m.file));
+  if (addedMatches.length === 0) return null;
+  return `a pending changeset covers it: ${addedMatches.map((m) => `${m.file} (${m.bump})`).join(", ")} — scripts/apply-release-changesets.mjs will bump it in the next release PR`;
 }
 
 // DEFAULT MODE — diff-scoped against the merge base. See header comment.
@@ -687,7 +720,7 @@ function evaluatePackageDiff(pkgDir, requestedBase) {
   if (changed.length === 0) {
     const stale = staleRetainedRecordDetail(gitRoot, manifest);
     if (stale) {
-      const pendingChangeset = pendingChangesetDetail(gitRoot, relPkgDir);
+      const pendingChangeset = pendingChangesetDetail(gitRoot, relPkgDir, mergeBase);
       if (pendingChangeset) {
         return { package: label, status: "pass", detail: `no packed-file changes, but ${stale} — however, ${pendingChangeset}` };
       }
@@ -702,7 +735,7 @@ function evaluatePackageDiff(pkgDir, requestedBase) {
   if (isDevDependenciesOnlyChange(changed, oldFiles, newFiles)) {
     const stale = staleRetainedRecordDetail(gitRoot, manifest);
     if (stale) {
-      const pendingChangeset = pendingChangesetDetail(gitRoot, relPkgDir);
+      const pendingChangeset = pendingChangesetDetail(gitRoot, relPkgDir, mergeBase);
       if (pendingChangeset) {
         return { package: label, status: "pass", detail: `only devDependencies changed, but ${stale} — however, ${pendingChangeset}` };
       }
@@ -717,7 +750,7 @@ function evaluatePackageDiff(pkgDir, requestedBase) {
         "package, so this is exempt from the version-bump requirement (see issue #269)",
     };
   }
-  const pendingChangeset = pendingChangesetDetail(gitRoot, relPkgDir);
+  const pendingChangeset = pendingChangesetDetail(gitRoot, relPkgDir, mergeBase);
   if (pendingChangeset) {
     return {
       package: label,

@@ -153,3 +153,53 @@ test("applyReleaseChangesets: refuses to run with malformed changesets present",
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+// issue #1322 item 1: a later package's own failure must leave every
+// earlier package's package.json/CHANGELOG.md/changeset file exactly as
+// they were -- "exit 1 = nothing applied" is the header's own contract,
+// and a single-pass write-as-you-go loop broke it (a rerun after fixing
+// the later package would have re-bumped the earlier one and duplicated
+// its CHANGELOG entry).
+test("applyReleaseChangesets: a later package's failure leaves an earlier, otherwise-valid package completely untouched (issue #1322 item 1)", () => {
+  const root = makeRoot();
+  try {
+    // "alpha" sorts before "beta" in .changesets/ file order, so alpha is
+    // processed -- and, before this fix, WRITTEN -- before beta's own
+    // failure is ever reached.
+    makePackage(root, "alpha", "1.0.0");
+    const alphaChangelog = "# Changelog\n\n## 1.0.0\n\n- Initial release.\n";
+    writeFileSync(join(root, "packages", "alpha", "CHANGELOG.md"), alphaChangelog);
+    writeChangeset(root, "alpha-fix.md", "---\nalpha: patch\n---\n\nFix a bug.\n");
+
+    // "beta" has a version that cannot be bumped (not a plain X.Y.Z) --
+    // bumpVersion() throws, so beta is a finding, not an applied entry.
+    makePackage(root, "beta", "not-a-version");
+    writeChangeset(root, "beta-fix.md", "---\nbeta: patch\n---\n\nFix a bug.\n");
+
+    let npmInstallCalled = false;
+    const result = applyReleaseChangesets({ root, runNpmInstall: () => (npmInstallCalled = true), today: () => "2026-09-22" });
+
+    assert.equal(result.applied.length, 0, "nothing was applied -- exit 1 means exactly that");
+    assert.equal(result.findings.length, 1);
+    assert.match(result.findings[0], /beta/);
+    assert.equal(npmInstallCalled, false);
+
+    // alpha: completely untouched on disk.
+    const alphaManifest = JSON.parse(readFileSync(join(root, "packages", "alpha", "package.json"), "utf8"));
+    assert.equal(alphaManifest.version, "1.0.0", "alpha must not be bumped just because it was processed first");
+    assert.equal(readFileSync(join(root, "packages", "alpha", "CHANGELOG.md"), "utf8"), alphaChangelog, "alpha's CHANGELOG.md must be byte-identical to before the run");
+    assert.equal(existsSync(join(root, ".changesets", "alpha-fix.md")), true, "alpha's changeset must not be deleted when the overall run did not succeed");
+
+    // A rerun after fixing beta must still see alpha's original changeset
+    // (proving it survived) and apply cleanly.
+    writeFileSync(join(root, "packages", "beta", "package.json"), '{\n  "name": "@x/beta",\n  "version": "1.0.0",\n  "license": "MIT"\n}\n');
+    const rerun = applyReleaseChangesets({ root, runNpmInstall: () => {}, today: () => "2026-09-22" });
+    assert.equal(rerun.findings.length, 0);
+    assert.equal(rerun.applied.length, 2);
+    const alphaApplied = rerun.applied.find((a) => a.package === "alpha");
+    assert.equal(alphaApplied.fromVersion, "1.0.0", "alpha's version was never bumped by the failed first run, so the rerun still sees its true starting version");
+    assert.equal(alphaApplied.toVersion, "1.0.1");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
