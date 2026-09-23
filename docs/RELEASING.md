@@ -65,7 +65,11 @@ branch or shaping a file list:
    (`scripts/check-release-calendar.mjs`, using `scripts/lib/release-pr-footprint.mjs`'s
    `evaluateReleasePrFootprint()`, a fully pure function): for every
    changed `packages/<dir>/package.json`, the ONLY difference from its
-   base version is the `version` field itself — parsed and compared with
+   base version is the `version` field itself, and that field must be a
+   validated single-step patch/minor/major semver bump — strict `X.Y.Z`,
+   no range operators, no prerelease suffix, strictly greater than the
+   base version (reusing `scripts/check-release-pr-shape.mjs`'s own
+   `computeBumpLevel()`, never a second semver implementation) — parsed and compared with
    key order preserved (never sorted: a reordered `exports` block is a
    real behavioral change, since Node resolves its conditions in listed
    order, so silently tolerating a reorder was itself a defect an earlier
@@ -92,7 +96,14 @@ branch or shaping a file list:
    lockfile with a real `npm install --package-lock-only` and compared
    byte-for-byte, which drifts from what is actually committed even on an
    unchanged tree and could never pass; the pure diff has no such
-   dependency on what a live npm run happens to produce. A `.changesets/*.md`
+   dependency on what a live npm run happens to produce. The SAME narrow
+   dependency-range exception the manifest rule allows is mirrored here too
+   (re-review, PR #1339): npm writes a rewritten dependent's range into its
+   own `packages/<dir>` entry when regenerating the lockfile, so a bumped
+   entry's `dependencies`/`peerDependencies`/`optionalDependencies` may ALSO
+   change to exactly `^<newVersion>` for a package this SAME diff bumps,
+   checked with the identical `isAllowedDependencyRangeChange()` the
+   manifest rule uses, so the two can never disagree. A `.changesets/*.md`
    file may only be *deleted*, never added, AND its content at the base
    commit must name only packages this diff actually bumps — deleting an
    unrelated, still-pending changeset is not "consuming" it. ANY other

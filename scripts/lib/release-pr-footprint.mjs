@@ -33,7 +33,13 @@
 //     -- see its own header for why sorting keys before comparing, this
 //     module's own first-draft mistake, is actively wrong for a field
 //     like `exports`, whose condition order is resolution-significant,
-//     not cosmetic); "version" itself must actually have changed.
+//     not cosmetic); "version" itself is not merely required to differ --
+//     it must be a validated single-step patch/minor/major semver bump
+//     (isSingleStepSemverBump(), reusing check-release-pr-shape.mjs's own
+//     computeBumpLevel() -- see re-review
+//     https://github.com/clossys/foundry/pull/1339#issuecomment-5801890878
+//     item 2: an earlier draft accepted ANY differing text here, including
+//     a semver range, an arbitrary jump, a prerelease, or a downgrade).
 //   packages/<dir>/CHANGELOG.md  -- status "modified" or "added"; must
 //     contain EXACTLY ONE new section, inserted immediately before the
 //     base text's first existing version heading (after any preamble),
@@ -55,6 +61,7 @@
 //     set.
 //   anything else -- fails outright, regardless of status.
 import { parseChangesetText } from "../collect-changesets.mjs";
+import { computeBumpLevel } from "../check-release-pr-shape.mjs";
 
 export const RELEASE_PR_FILE_PATTERNS = {
   packageManifest: /^packages\/([^/]+)\/package\.json$/,
@@ -158,6 +165,18 @@ function isAllowedDependencyRangeChange(baseMap, headMap, bumpedVersionsByName) 
  * devDependencies, anything else) must remain fully byte-identical --
  * `bumpedVersionsByName` defaults to `{}`, so a caller that never passes it
  * gets exactly the old, unwidened behavior.
+ *
+ * THE BUMPED VERSION ITSELF IS VALIDATED, NOT TRUSTED (re-review,
+ * https://github.com/clossys/foundry/pull/1339#issuecomment-5801890878)
+ * -------------------------------------------------------------------------
+ * `baseVersion` -> `headVersion` must be a legitimate single-step semver
+ * bump -- see isSingleStepSemverBump() below. Before this, the only check
+ * was `baseVersion !== headVersion` plus "is a non-empty string", which
+ * accepted an any-version range (`0.10.0 || >=0.0.0`), an arbitrary jump
+ * (`0.9.0` -> `9.9.9`), a prerelease (`0.10.0-evil.1`), or a downgrade as
+ * the "new version" a sibling's rewritten range would then cite via
+ * `bumpedVersionsByName` -- masked, before the widened lockfile rule
+ * below existed, only by the lockfile check's own then-total strictness.
  */
 export function isPackageManifestVersionOnlyChange(baseText, headText, bumpedVersionsByName = {}) {
   let baseJson, headJson;
@@ -174,9 +193,21 @@ export function isPackageManifestVersionOnlyChange(baseText, headText, bumpedVer
   if (!baseJson || typeof baseJson !== "object" || !headJson || typeof headJson !== "object") return false;
   const { version: baseVersion, ...baseRest } = baseJson;
   const { version: headVersion, ...headRest } = headJson;
-  if (baseVersion === headVersion) return false;
-  if (typeof headVersion !== "string" || headVersion.length === 0) return false;
+  if (!isSingleStepSemverBump(baseVersion, headVersion)) return false;
 
+  return compareRestAllowingDependencyRangeBumps(baseRest, headRest, bumpedVersionsByName);
+}
+
+// Shared by isPackageManifestVersionOnlyChange() above and
+// isLockfilePureVersionBump() below: given each side's "version"-stripped
+// rest object (a package.json with "version" removed, or one
+// package-lock.json "packages" map ENTRY with its own "version" removed),
+// is the only remaining difference an allowed dependency-range rewrite in
+// one of DEPENDENT_RANGE_FIELDS? Mutates `baseRest`/`headRest` in place
+// (neutralizing those fields once they've been separately validated) --
+// both call sites already own throwaway destructured objects, never the
+// original parsed manifest/lockfile, so this is safe.
+function compareRestAllowingDependencyRangeBumps(baseRest, headRest, bumpedVersionsByName) {
   for (const field of DEPENDENT_RANGE_FIELDS) {
     if (!isAllowedDependencyRangeChange(baseRest[field], headRest[field], bumpedVersionsByName)) return false;
     // Neutralize the field in place (a plain property write on an
@@ -186,8 +217,33 @@ export function isPackageManifestVersionOnlyChange(baseText, headText, bumpedVer
     if (Object.prototype.hasOwnProperty.call(baseRest, field)) baseRest[field] = NEUTRALIZED_DEPENDENCY_FIELD;
     if (Object.prototype.hasOwnProperty.call(headRest, field)) headRest[field] = NEUTRALIZED_DEPENDENCY_FIELD;
   }
-
   return JSON.stringify(baseRest) === JSON.stringify(headRest);
+}
+
+/**
+ * Is `headVersion` a legitimate, single-step semver bump forward from
+ * `baseVersion`? Reuses scripts/check-release-pr-shape.mjs's own
+ * `computeBumpLevel()` -- the SAME function that script's separate,
+ * pre-existing gate already uses to judge a version bump's shape -- rather
+ * than a second implementation that could quietly disagree with it about
+ * what counts as a valid bump.
+ *
+ * `computeBumpLevel()` requires both strings to match `/^(\d+)\.(\d+)\.(\d+)$/`
+ * exactly (no range operators, no build/prerelease suffix, no leading/
+ * trailing whitespace -- this repository's own versioning is plain X.Y.Z
+ * only, confirmed by that same regex being the ONLY version shape any gate
+ * in this repository accepts anywhere) and that the new triple is exactly
+ * one clean patch/minor/major step forward from the old one -- which by
+ * construction also refuses an equal version, a downgrade, and an
+ * arbitrary multi-version jump (`0.9.0` -> `9.9.9` is not a single step of
+ * anything). A `null` result (not a recognized single-step bump) is
+ * refused here; this function does not itself distinguish WHICH of
+ * patch/minor/major it was -- matching that to what the consumed
+ * changesets actually claimed is scripts/check-release-pr-shape.mjs's own,
+ * separate job (docs/RELEASING.md), deliberately not duplicated here.
+ */
+function isSingleStepSemverBump(baseVersion, headVersion) {
+  return computeBumpLevel(baseVersion, headVersion) !== null;
 }
 
 /**
@@ -292,23 +348,49 @@ function isLinkToBumpedWorkspaceEntry(entry, workspaceKeys) {
  * Is `headText` a plain base-vs-head DIFF of `baseText` (both
  * package-lock.json, lockfileVersion 3 shape: a top-level `packages`
  * object keyed by path) where the ONLY changes anywhere are the `version`
- * field of each bumped workspace package's own `packages/<dir>` entry and
- * its matching `node_modules/<name>` link entry (if npm wrote one)? No
- * npm is ever invoked -- see this module's own header for why a
- * regeneration-based check was replaced with this pure comparison.
+ * field of each bumped workspace package's own `packages/<dir>` entry, its
+ * matching `node_modules/<name>` link entry (if npm wrote one), and --
+ * mirroring isPackageManifestVersionOnlyChange()'s own "ONE NARROW
+ * EXCEPTION" -- an allowed dependency-range rewrite inside a bumped
+ * workspace entry's own `dependencies`/`peerDependencies`/
+ * `optionalDependencies` sub-object? No npm is ever invoked -- see this
+ * module's own header for why a regeneration-based check was replaced
+ * with this pure comparison.
+ *
+ * WHY THE LOCKFILE NEEDS THE SAME EXCEPTION THE MANIFEST DOES (re-review,
+ * https://github.com/clossys/foundry/pull/1339#issuecomment-5801890878)
+ * -------------------------------------------------------------------------
+ * `npm install --package-lock-only` writes each workspace package's
+ * CURRENT manifest content into its own `packages/<dir>` entry -- so when
+ * scripts/apply-release-changesets.mjs rewrites a dependent's
+ * `dependencies["@x/core"]` from `^0.9.0` to `^0.10.0` in its
+ * package.json, the regenerated lockfile's `packages/<dependent-dir>`
+ * entry carries that identical rewrite too. An earlier version of this
+ * function required every field but `version` to be byte-identical on a
+ * bumped entry, which refused every real #1332/#1338-shaped release PR at
+ * this step even after the manifest rule above was widened to accept it --
+ * the relaxation was correct but inert, since the lockfile check still
+ * blocked the exact same release. `isAllowedDependencyRangeChange()` (the
+ * SAME function the manifest rule uses, not a second implementation of it)
+ * is reused here for the identical reason both callers share: the two
+ * checks can never quietly disagree about what a legitimate rewrite looks
+ * like.
  *
  * `bumpedPackageDirs` is the list of `packages/<dir>` directory names this
- * diff's package.json changes actually bumped (computed by
- * evaluateReleasePrFootprint() below from the SAME diff, never trusted
- * from the lockfile's own content). Every other packages-map entry --
- * every third-party dependency, every non-bumped workspace member, the
+ * diff's package.json changes actually bumped, and `bumpedVersionsByName`
+ * maps each bumped package's own npm NAME to its new version (both
+ * computed by evaluateReleasePrFootprint() below from the SAME diff, never
+ * trusted from the lockfile's own content). Every other packages-map entry
+ * -- every third-party dependency, every non-bumped workspace member, the
  * lockfile's own top-level fields (name, lockfileVersion, `requires`,
- * anything else) -- must be byte-for-byte identical; a changed `resolved`,
- * `integrity`, added `dependencies` entry, or a version bump on anything
- * NOT in `bumpedPackageDirs` all fail this outright. An entry added or
+ * anything else) -- must still be byte-for-byte identical; a changed
+ * `resolved`, `integrity`, an added dependency, a version bump on anything
+ * NOT in `bumpedPackageDirs`, or a dependency-range rewrite that does not
+ * meet the exact same rule the manifest check enforces (see that
+ * function's own header) all fail this outright. An entry added or
  * removed from the `packages` map at all also fails.
  */
-export function isLockfilePureVersionBump(baseText, headText, bumpedPackageDirs) {
+export function isLockfilePureVersionBump(baseText, headText, bumpedPackageDirs, bumpedVersionsByName = {}) {
   let baseJson, headJson;
   try {
     baseJson = JSON.parse(baseText);
@@ -346,7 +428,7 @@ export function isLockfilePureVersionBump(baseText, headText, bumpedPackageDirs)
       const { version: headVersion, ...headEntryRest } = headEntry;
       void baseVersion;
       void headVersion;
-      if (JSON.stringify(baseEntryRest) !== JSON.stringify(headEntryRest)) return false;
+      if (!compareRestAllowingDependencyRangeBumps(baseEntryRest, headEntryRest, bumpedVersionsByName)) return false;
       continue;
     }
 
@@ -436,8 +518,8 @@ export function evaluateReleasePrFootprint({ files }) {
       return { ok: false, reason: `"${file.path}" is not a JSON object on both sides` };
     }
     const { version: headVersion } = headJson;
-    if (baseJson.version === headVersion || typeof headVersion !== "string" || headVersion.length === 0) {
-      return { ok: false, reason: `"${file.path}" (${file.status}) is not a pure version-only package.json change` };
+    if (!isSingleStepSemverBump(baseJson.version, headVersion)) {
+      return { ok: false, reason: `"${file.path}" version did not change to a single-step patch/minor/major semver bump ("${baseJson.version}" -> "${headVersion}")` };
     }
     bumpedVersions[match[1]] = headVersion;
     if (typeof headJson.name === "string" && headJson.name.length > 0) bumpedVersionsByName[headJson.name] = headVersion;
@@ -472,7 +554,7 @@ export function evaluateReleasePrFootprint({ files }) {
 
     if (RELEASE_PR_FILE_PATTERNS.lockfile.test(file.path)) {
       if (file.status !== "modified") return { ok: false, reason: `"${file.path}" has status "${file.status}" -- expected modified` };
-      if (!isLockfilePureVersionBump(file.baseContent, file.headContent, bumpedDirs)) {
+      if (!isLockfilePureVersionBump(file.baseContent, file.headContent, bumpedDirs, bumpedVersionsByName)) {
         return { ok: false, reason: `"${file.path}" changes are not limited to the bumped workspace packages' version fields` };
       }
       continue;

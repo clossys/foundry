@@ -1,10 +1,8 @@
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 import test from "node:test";
-import { fileURLToPath, pathToFileURL } from "node:url";
 import { applyReleaseChangesets } from "../apply-release-changesets.mjs";
 import {
   evaluateReleasePrFootprint,
@@ -507,119 +505,371 @@ test("END TO END: a real apply-release-changesets.mjs patch release, against a C
   }
 });
 
-// ---------------------------------------------------------------- end-to-end: a #1338-shaped sibling-dependency-range release (hand-built)
+// ---------------------------------------------------------------- end-to-end: a vendored capture of #1338's REAL apply-release-changesets.mjs output
 //
-// PR #1338 (fix for #1332) makes a release PR rewrite a dependent
-// package's dependencies/peerDependencies/optionalDependencies range to
-// ^<newVersion> alongside that dependent's own patch bump, when a bumped
-// sibling's new version falls outside the dependent's declared range on
-// it (the classic 0.x minor-lock case). This fixture mirrors #1338's own
-// "a 0.x minor bump rewrites a sibling's ^0.N.0 dependency range and
-// gives the sibling a dependent patch bump" test byte-for-byte (same
-// package names, same versions, same ranges, same CHANGELOG bullet text)
-// so this test is checking the SAME shape that script actually produces,
-// not a shape merely similar to it.
-test("END TO END (#1338 shape, hand-built): core's 0.x minor bump + consumer's dependent patch bump and rewritten ^0.N.0 range together pass the full footprint check", () => {
-  const coreBase = JSON.stringify({ name: "@x/core", version: "0.9.0", license: "MIT" });
-  const coreHead = JSON.stringify({ name: "@x/core", version: "0.10.0", license: "MIT" });
-  const coreChangelogBase = "# Changelog\n\n## 0.9.0\n\n- Initial release.\n";
-  const coreChangelogHead = "# Changelog\n\n## 0.10.0\n\n- Add a feature.\n\n## 0.9.0\n\n- Initial release.\n";
+// Re-review (https://github.com/clossys/foundry/pull/1339#issuecomment-5801890878)
+// replaced the previous version of this section, which had two problems:
+//
+//   1. A "hand-built" test that merely mirrored what #1338's script was
+//      believed to produce -- never actually run.
+//   2. A "best-effort" test that fetched `scripts/apply-release-changesets.mjs`
+//      from `origin/claude/changesets-sibling-ranges` with `git show` AT TEST
+//      TIME and silently `t.skip()`-ed the moment that ref was unfetchable
+//      (already merged and deleted, no network, a shallow clone, ...) --
+//      nondeterministic, and a silent skip is indistinguishable from a pass
+//      in CI output.
+//
+// This test fixes both: the base/head file contents and package-lock.json
+// below are a byte-for-byte VENDORED CAPTURE of #1338's real, unmodified
+// apply-release-changesets.mjs actually executing against a real npm
+// workspace, with REAL npm (not mocked) regenerating the lockfile. No git
+// fetch, no dynamic import, no npm invocation, and no skip path exist at
+// test time -- this test either runs and passes, or fails loudly.
+//
+// HOW TO REGENERATE (needed again if #1338's script output shape changes,
+// or once #1338 and #1339 share a base and a follow-up switches this to
+// in-tree execution per the coordinator's note):
+//
+//   1. In a scratch directory, create a minimal npm-workspaces root:
+//        { "name": "fixture-root", "private": true, "workspaces": ["packages/*"] }
+//      with two packages:
+//        packages/core/package.json     { "name": "@x/core", "version": "0.9.0", "license": "MIT" }
+//        packages/core/CHANGELOG.md     "# Changelog\n\n## 0.9.0\n\n- Initial release.\n"
+//        packages/consumer/package.json { "name": "@x/consumer", "version": "1.0.0", "license": "MIT",
+//                                          "dependencies": { "@x/core": "^0.9.0" } }
+//        packages/consumer/CHANGELOG.md "# Changelog\n\n## 1.0.0\n\n- Initial release.\n"
+//   2. Run `npm install --package-lock-only --offline` in that root to produce
+//      a genuine base package-lock.json (works fully offline: both packages
+//      are workspace-internal, no registry access needed).
+//   3. Add a pending changeset naming a minor bump for core:
+//        .changesets/core-feature.md   "---\ncore: minor\n---\n\nAdd a feature.\n"
+//   4. Copy THIS REPOSITORY'S ENTIRE scripts/ directory into the scratch
+//      location (not a hand-picked subset -- check-release-pr-shape.mjs
+//      transitively imports scripts/lib/package-identity-transition.mjs via
+//      check-release-readiness.mjs, so anything less than the full directory
+//      throws ERR_MODULE_NOT_FOUND).
+//   5. In that copy, overwrite only apply-release-changesets.mjs with PR
+//      #1338's real, unmodified script (fetched once, by hand, via
+//      `git show origin/claude/changesets-sibling-ranges:scripts/apply-release-changesets.mjs`
+//      -- this is a one-time regeneration step, not something this test does).
+//   6. Import and call `applyReleaseChangesets({ root, today: () => "2026-09-22" })`
+//      with NO `runNpmInstall` override, so it uses its real default (which
+//      shells out to real `npm install --package-lock-only`).
+//   7. Capture `result.applied` and every changed file's before/after content,
+//      and confirm the changeset file was deleted.
+const PR_1338_FIXTURE = {
+  coreBase: '{\n  "name": "@x/core",\n  "version": "0.9.0",\n  "license": "MIT"\n}\n',
+  coreHead: '{\n  "name": "@x/core",\n  "version": "0.10.0",\n  "license": "MIT"\n}\n',
+  coreChangelogBase: "# Changelog\n\n## 0.9.0\n\n- Initial release.\n",
+  coreChangelogHead: "# Changelog\n\n## 0.10.0 - 2026-09-22\n\n- Add a feature.\n\n## 0.9.0\n\n- Initial release.\n",
+  consumerBase: '{\n  "name": "@x/consumer",\n  "version": "1.0.0",\n  "license": "MIT",\n  "dependencies": {\n    "@x/core": "^0.9.0"\n  }\n}\n',
+  consumerHead: '{\n  "name": "@x/consumer",\n  "version": "1.0.1",\n  "license": "MIT",\n  "dependencies": {\n    "@x/core": "^0.10.0"\n  }\n}\n',
+  consumerChangelogBase: "# Changelog\n\n## 1.0.0\n\n- Initial release.\n",
+  consumerChangelogHead: "# Changelog\n\n## 1.0.1 - 2026-09-22\n\n- Updated dependency @x/core to ^0.10.0\n\n## 1.0.0\n\n- Initial release.\n",
+  changesetText: "---\ncore: minor\n---\n\nAdd a feature.\n",
+  lockfileBase: JSON.stringify(
+    {
+      name: "fixture-root",
+      lockfileVersion: 3,
+      requires: true,
+      packages: {
+        "": { name: "fixture-root", workspaces: ["packages/*"] },
+        "node_modules/@x/consumer": { resolved: "packages/consumer", link: true },
+        "node_modules/@x/core": { resolved: "packages/core", link: true },
+        "packages/consumer": { name: "@x/consumer", version: "1.0.0", license: "MIT", dependencies: { "@x/core": "^0.9.0" } },
+        "packages/core": { name: "@x/core", version: "0.9.0", license: "MIT" },
+      },
+    },
+    null,
+    2,
+  ) + "\n",
+  lockfileHead: JSON.stringify(
+    {
+      name: "fixture-root",
+      lockfileVersion: 3,
+      requires: true,
+      packages: {
+        "": { name: "fixture-root", workspaces: ["packages/*"] },
+        "node_modules/@x/consumer": { resolved: "packages/consumer", link: true },
+        "node_modules/@x/core": { resolved: "packages/core", link: true },
+        "packages/consumer": { name: "@x/consumer", version: "1.0.1", license: "MIT", dependencies: { "@x/core": "^0.10.0" } },
+        "packages/core": { name: "@x/core", version: "0.10.0", license: "MIT" },
+      },
+    },
+    null,
+    2,
+  ) + "\n",
+};
 
-  const consumerBase = JSON.stringify({ name: "@x/consumer", version: "1.0.0", license: "MIT", dependencies: { "@x/core": "^0.9.0" } });
-  const consumerHead = JSON.stringify({ name: "@x/consumer", version: "1.0.1", license: "MIT", dependencies: { "@x/core": "^0.10.0" } });
-  const consumerChangelogBase = "# Changelog\n\n## 1.0.0\n\n- Initial release.\n";
-  const consumerChangelogHead = "# Changelog\n\n## 1.0.1 - 2026-09-22\n\n- Updated dependency @x/core to ^0.10.0\n\n## 1.0.0\n\n- Initial release.\n";
-
+test("END TO END (vendored capture of REAL PR #1338 output, including package-lock.json): core's 0.x minor bump + consumer's dependent patch bump, rewritten ^0.N.0 range, and regenerated lockfile together pass the full footprint check", () => {
+  const f = PR_1338_FIXTURE;
   const result = evaluateReleasePrFootprint({
     files: [
-      { path: "packages/core/package.json", status: "modified", baseContent: coreBase, headContent: coreHead },
-      { path: "packages/core/CHANGELOG.md", status: "modified", baseContent: coreChangelogBase, headContent: coreChangelogHead },
-      { path: "packages/consumer/package.json", status: "modified", baseContent: consumerBase, headContent: consumerHead },
-      { path: "packages/consumer/CHANGELOG.md", status: "modified", baseContent: consumerChangelogBase, headContent: consumerChangelogHead },
-      { path: ".changesets/core-feature.md", status: "removed", baseContent: "---\ncore: minor\n---\n\nAdd a feature.\n" },
+      { path: "packages/core/package.json", status: "modified", baseContent: f.coreBase, headContent: f.coreHead },
+      { path: "packages/core/CHANGELOG.md", status: "modified", baseContent: f.coreChangelogBase, headContent: f.coreChangelogHead },
+      { path: "packages/consumer/package.json", status: "modified", baseContent: f.consumerBase, headContent: f.consumerHead },
+      { path: "packages/consumer/CHANGELOG.md", status: "modified", baseContent: f.consumerChangelogBase, headContent: f.consumerChangelogHead },
+      { path: "package-lock.json", status: "modified", baseContent: f.lockfileBase, headContent: f.lockfileHead },
+      { path: ".changesets/core-feature.md", status: "removed", baseContent: f.changesetText },
       // consumer is NOT named by any changeset -- its own bump is entirely a
       // consequence of core's minor bump moving outside its declared range,
-      // so there is no consumer changeset to delete, matching #1338's own test.
+      // so there is no consumer changeset to delete, matching #1338's own
+      // real (captured, not simulated) output.
     ],
   });
   assert.equal(result.ok, true, result.reason);
 });
 
-// ---------------------------------------------------------------- end-to-end: the REAL #1338 apply-release-changesets.mjs output (best-effort)
+// ADVERSARIAL: the same vendored capture, but with the lockfile's dependent
+// range rewritten to a WRONG version (neither the pre-bump ^0.9.0 nor the
+// actually-bumped ^0.10.0) -- proving the widened lockfile rule still
+// refuses a range that does not match exactly `^<the version this diff
+// actually bumped core to>`, exercising the same boundary
+// isAllowedDependencyRangeChange() already enforces for the manifest, now
+// against a real, npm-regenerated lockfile shape rather than a synthetic one.
+test("ADVERSARIAL END TO END (vendored #1338 capture): if the lockfile's consumer entry is rewritten to a range OTHER than ^<the version core was actually bumped to>, the footprint check fails", () => {
+  const f = PR_1338_FIXTURE;
+  const wrongRangeLockfileHead = f.lockfileHead.replace('"@x/core": "^0.10.0"', '"@x/core": "^0.99.0"');
+  const result = evaluateReleasePrFootprint({
+    files: [
+      { path: "packages/core/package.json", status: "modified", baseContent: f.coreBase, headContent: f.coreHead },
+      { path: "packages/core/CHANGELOG.md", status: "modified", baseContent: f.coreChangelogBase, headContent: f.coreChangelogHead },
+      { path: "packages/consumer/package.json", status: "modified", baseContent: f.consumerBase, headContent: f.consumerHead },
+      { path: "packages/consumer/CHANGELOG.md", status: "modified", baseContent: f.consumerChangelogBase, headContent: f.consumerChangelogHead },
+      { path: "package-lock.json", status: "modified", baseContent: f.lockfileBase, headContent: wrongRangeLockfileHead },
+      { path: ".changesets/core-feature.md", status: "removed", baseContent: f.changesetText },
+    ],
+  });
+  assert.equal(result.ok, false);
+});
+
+// ---------------------------------------------------------------- isLockfilePureVersionBump: widened dependent-range rule (real repo lockfile shapes)
 //
-// Runs the ACTUAL apply-release-changesets.mjs from PR #1338
-// (branch claude/changesets-sibling-ranges, fetched at test time) through
-// the full footprint check -- not a hand-built approximation of what it
-// produces. That branch changes only scripts/apply-release-changesets.mjs
-// itself (scripts/collect-changesets.mjs, scripts/check-release-pr-shape.mjs,
-// and scripts/check-workspace-links.mjs, which the fetched script imports,
-// are unchanged there, so this repository's own current copies of those
-// three are used unmodified). The fetched file is written to a THROWAWAY
-// path inside scripts/ only so its relative imports resolve, dynamically
-// imported once, and deleted immediately after -- never committed.
+// Re-review item 1: the lockfile check previously allowed ONLY `version`
+// fields to change inside a bumped package's `packages/<dir>` entry, so any
+// real release that also rewrites a dependent's range (as #1338 does, and as
+// npm itself does when the lockfile is regenerated) always failed. These
+// fixtures are drawn from THIS repository's own real package-lock.json
+// workspace-member shapes (packages/publisher, packages/designer), not a
+// simplified approximation, per the reviewer's explicit request.
+
+const REAL_PUBLISHER_LOCKFILE_ENTRY_BASE = {
+  name: "@clossys/publisher",
+  version: "0.4.24",
+  license: "MIT",
+  dependencies: {
+    "@clossys/controller": "~0.9.0",
+    "@clossys/designer": "^0.4.0",
+    "@clossys/writer": "^0.3.0",
+  },
+  bin: {
+    "publisher-build": "bin/build.js",
+    "publisher-dev": "bin/dev.js",
+    "publisher-init": "bin/init.js",
+    "publisher-publish": "bin/publish.js",
+    "publisher-verify": "bin/verify.js",
+  },
+  devDependencies: {
+    "@internationalized/date": "^3.5.0",
+    "@testing-library/jest-dom": "^6.4.0",
+  },
+  engines: { node: ">=20" },
+  peerDependencies: {
+    react: "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0",
+    typescript: "^5.0.0",
+    vite: "^5.0.0 || ^6.0.0",
+    webpack: "^5.0.0",
+    next: "^14.0.0 || ^15.0.0",
+  },
+  peerDependenciesMeta: {
+    react: { optional: true },
+    "react-dom": { optional: true },
+    typescript: { optional: true },
+    vite: { optional: true },
+    webpack: { optional: true },
+    next: { optional: true },
+  },
+};
+
+function realLockfileFixture(publisherEntryOverrides) {
+  return (
+    JSON.stringify(
+      {
+        name: "foundry",
+        lockfileVersion: 3,
+        requires: true,
+        packages: {
+          "": { name: "foundry", workspaces: ["packages/*"] },
+          "node_modules/@clossys/designer": { resolved: "packages/designer", link: true },
+          "node_modules/@clossys/controller": { resolved: "packages/controller", link: true },
+          "packages/designer": { name: "@clossys/designer", version: "0.4.17", license: "MIT", peerDependencies: { react: "^18.0.0 || ^19.0.0" } },
+          "packages/publisher": { ...REAL_PUBLISHER_LOCKFILE_ENTRY_BASE, ...publisherEntryOverrides },
+        },
+      },
+      null,
+      2,
+    ) + "\n"
+  );
+}
+
+test("isLockfilePureVersionBump: a real publisher lockfile entry's dependencies range rewritten to exactly ^<bumped version> of a package this diff bumps passes", () => {
+  const base = realLockfileFixture({ version: "0.4.24" });
+  const head = realLockfileFixture({ version: "0.4.25", dependencies: { ...REAL_PUBLISHER_LOCKFILE_ENTRY_BASE.dependencies, "@clossys/designer": "^0.5.0" } });
+  const result = isLockfilePureVersionBump(base, head, ["publisher"], { "@clossys/designer": "0.5.0" });
+  assert.equal(result, true);
+});
+
+test("ADVERSARIAL isLockfilePureVersionBump: a real publisher lockfile entry's peerDependencies range rewritten to exactly ^<bumped version> passes too (all three dependent-range fields are covered, not just dependencies)", () => {
+  const base = realLockfileFixture({ version: "0.4.24" });
+  const head = realLockfileFixture({
+    version: "0.4.25",
+    peerDependencies: { ...REAL_PUBLISHER_LOCKFILE_ENTRY_BASE.peerDependencies, next: "^0.5.0" },
+  });
+  const result = isLockfilePureVersionBump(base, head, ["publisher"], { next: "0.5.0" });
+  assert.equal(result, true);
+});
+
+test("ADVERSARIAL isLockfilePureVersionBump: rewriting a dependency range for a package this diff does NOT bump still fails, even though the syntactic shape (a dependency-field range change) matches an allowed one", () => {
+  const base = realLockfileFixture({ version: "0.4.24" });
+  const head = realLockfileFixture({
+    version: "0.4.25",
+    // @clossys/writer is not in bumpedVersionsByName -- nothing in this diff bumped it.
+    dependencies: { ...REAL_PUBLISHER_LOCKFILE_ENTRY_BASE.dependencies, "@clossys/writer": "^0.4.0" },
+  });
+  const result = isLockfilePureVersionBump(base, head, ["publisher"], {});
+  assert.equal(result, false);
+});
+
+test("ADVERSARIAL isLockfilePureVersionBump: rewriting a dependency range to a version OTHER than the bumped version fails", () => {
+  const base = realLockfileFixture({ version: "0.4.24" });
+  const head = realLockfileFixture({
+    version: "0.4.25",
+    dependencies: { ...REAL_PUBLISHER_LOCKFILE_ENTRY_BASE.dependencies, "@clossys/designer": "^0.6.0" },
+  });
+  // designer was actually bumped to 0.5.0, not 0.6.0 -- the lockfile entry disagrees.
+  const result = isLockfilePureVersionBump(base, head, ["publisher"], { "@clossys/designer": "0.5.0" });
+  assert.equal(result, false);
+});
+
+test("ADVERSARIAL isLockfilePureVersionBump: adding a brand-new dependency entry fails", () => {
+  const base = realLockfileFixture({ version: "0.4.24" });
+  const head = realLockfileFixture({
+    version: "0.4.25",
+    dependencies: { ...REAL_PUBLISHER_LOCKFILE_ENTRY_BASE.dependencies, "@clossys/new-package": "^1.0.0" },
+  });
+  const result = isLockfilePureVersionBump(base, head, ["publisher"], {});
+  assert.equal(result, false);
+});
+
+test("ADVERSARIAL isLockfilePureVersionBump: a devDependencies range change fails, even for a genuinely bumped package -- only dependencies/peerDependencies/optionalDependencies are allowed to move", () => {
+  const base = realLockfileFixture({ version: "0.4.24" });
+  const head = realLockfileFixture({
+    version: "0.4.25",
+    devDependencies: { ...REAL_PUBLISHER_LOCKFILE_ENTRY_BASE.devDependencies, "@internationalized/date": "^4.0.0" },
+  });
+  const result = isLockfilePureVersionBump(base, head, ["publisher"], { "@internationalized/date": "4.0.0" });
+  assert.equal(result, false);
+});
+
+test("ADVERSARIAL isLockfilePureVersionBump: removing a dependency entry fails", () => {
+  const base = realLockfileFixture({ version: "0.4.24" });
+  const headEntry = { ...REAL_PUBLISHER_LOCKFILE_ENTRY_BASE, version: "0.4.25", dependencies: { ...REAL_PUBLISHER_LOCKFILE_ENTRY_BASE.dependencies } };
+  delete headEntry.dependencies["@clossys/writer"];
+  const head =
+    JSON.stringify(
+      {
+        name: "foundry",
+        lockfileVersion: 3,
+        requires: true,
+        packages: {
+          "": { name: "foundry", workspaces: ["packages/*"] },
+          "node_modules/@clossys/designer": { resolved: "packages/designer", link: true },
+          "node_modules/@clossys/controller": { resolved: "packages/controller", link: true },
+          "packages/designer": { name: "@clossys/designer", version: "0.4.17", license: "MIT", peerDependencies: { react: "^18.0.0 || ^19.0.0" } },
+          "packages/publisher": headEntry,
+        },
+      },
+      null,
+      2,
+    ) + "\n";
+  const result = isLockfilePureVersionBump(base, head, ["publisher"], {});
+  assert.equal(result, false);
+});
+
+test("ADVERSARIAL isLockfilePureVersionBump: reordering the dependencies map (same keys and values, different order) fails, consistent with the manifest rule's key-order sensitivity", () => {
+  const base = realLockfileFixture({ version: "0.4.24" });
+  const headEntry = {
+    ...REAL_PUBLISHER_LOCKFILE_ENTRY_BASE,
+    version: "0.4.25",
+    dependencies: {
+      "@clossys/writer": "^0.3.0",
+      "@clossys/designer": "^0.4.0",
+      "@clossys/controller": "~0.9.0",
+    },
+  };
+  const head =
+    JSON.stringify(
+      {
+        name: "foundry",
+        lockfileVersion: 3,
+        requires: true,
+        packages: {
+          "": { name: "foundry", workspaces: ["packages/*"] },
+          "node_modules/@clossys/designer": { resolved: "packages/designer", link: true },
+          "node_modules/@clossys/controller": { resolved: "packages/controller", link: true },
+          "packages/designer": { name: "@clossys/designer", version: "0.4.17", license: "MIT", peerDependencies: { react: "^18.0.0 || ^19.0.0" } },
+          "packages/publisher": headEntry,
+        },
+      },
+      null,
+      2,
+    ) + "\n";
+  const result = isLockfilePureVersionBump(base, head, ["publisher"], {});
+  assert.equal(result, false);
+});
+
+// ---------------------------------------------------------------- isPackageManifestVersionOnlyChange: the bumped version itself is validated, not trusted
 //
-// Best-effort: if `claude/changesets-sibling-ranges` is not fetchable
-// (already merged and deleted, this checkout has no network access, or
-// anything else), this test SKIPS with a clear reason rather than failing
-// the suite -- the hand-built test above already covers this exact shape
-// hermetically and permanently, so this one is a bonus proof against the
-// real thing when available, not a load-bearing requirement.
-test("END TO END (real PR #1338 output, best-effort)", async (t) => {
-  const REMOTE_REF = "origin/claude/changesets-sibling-ranges";
-  const REMOTE_PATH = "scripts/apply-release-changesets.mjs";
-  let fetchedText;
-  try {
-    fetchedText = execFileSync("git", ["show", `${REMOTE_REF}:${REMOTE_PATH}`], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
-  } catch {
-    t.skip(`could not read ${REMOTE_REF}:${REMOTE_PATH} in this checkout (branch not fetched, already merged and deleted, or no network) -- see the hand-built #1338-shape test above for permanent, hermetic coverage of the same scenario`);
-    return;
-  }
+// Re-review item 2: the old version check only required the field to
+// literally change text -- it never validated that the new text was a
+// legitimate semver version at all. These prove the four named refusal
+// cases plus a legitimate accept, via the same isPackageManifestVersionOnlyChange
+// entry point actual footprint evaluation uses (reusing computeBumpLevel()
+// internally, not a second semver implementation).
 
-  const scriptsDir = join(dirname(fileURLToPath(import.meta.url)), "..");
-  const fixturePath = join(scriptsDir, `.tmp-pr-1338-apply-release-changesets-${process.pid}.mjs`);
-  const root = mkdtempSync(join(tmpdir(), "release-pr-footprint-real-1338-e2e-test-"));
-  try {
-    writeFileSync(fixturePath, fetchedText);
-    const { applyReleaseChangesets: realApplyReleaseChangesets } = await import(pathToFileURL(fixturePath).href);
+test("ADVERSARIAL isPackageManifestVersionOnlyChange: a version field set to a semver RANGE (\"0.10.0 || >=0.0.0\") instead of a single version is refused", () => {
+  const base = JSON.stringify({ name: "@x/alpha", version: "1.0.0", license: "MIT" });
+  const head = JSON.stringify({ name: "@x/alpha", version: "0.10.0 || >=0.0.0", license: "MIT" });
+  assert.equal(isPackageManifestVersionOnlyChange(base, head), false);
+});
 
-    const coreDir = join(root, "packages", "core");
-    mkdirSync(coreDir, { recursive: true });
-    writeFileSync(join(coreDir, "package.json"), '{\n  "name": "@x/core",\n  "version": "0.9.0",\n  "license": "MIT"\n}\n');
-    const coreChangelogBase = "# Changelog\n\n## 0.9.0\n\n- Initial release.\n";
-    writeFileSync(join(coreDir, "CHANGELOG.md"), coreChangelogBase);
+test("ADVERSARIAL isPackageManifestVersionOnlyChange: an arbitrary version jump (\"9.9.9\") that is not a single-step patch/minor/major bump is refused", () => {
+  const base = JSON.stringify({ name: "@x/alpha", version: "1.0.0", license: "MIT" });
+  const head = JSON.stringify({ name: "@x/alpha", version: "9.9.9", license: "MIT" });
+  assert.equal(isPackageManifestVersionOnlyChange(base, head), false);
+});
 
-    const consumerDir = join(root, "packages", "consumer");
-    mkdirSync(consumerDir, { recursive: true });
-    const consumerBase = '{\n  "name": "@x/consumer",\n  "version": "1.0.0",\n  "license": "MIT",\n  "dependencies": {\n    "@x/core": "^0.9.0"\n  }\n}\n';
-    writeFileSync(join(consumerDir, "package.json"), consumerBase);
-    const consumerChangelogBase = "# Changelog\n\n## 1.0.0\n\n- Initial release.\n";
-    writeFileSync(join(consumerDir, "CHANGELOG.md"), consumerChangelogBase);
+test("ADVERSARIAL isPackageManifestVersionOnlyChange: a downgrade (\"1.0.0\" -> \"0.8.0\") is refused", () => {
+  const base = JSON.stringify({ name: "@x/alpha", version: "1.0.0", license: "MIT" });
+  const head = JSON.stringify({ name: "@x/alpha", version: "0.8.0", license: "MIT" });
+  assert.equal(isPackageManifestVersionOnlyChange(base, head), false);
+});
 
-    mkdirSync(join(root, ".changesets"), { recursive: true });
-    const changesetText = "---\ncore: minor\n---\n\nAdd a feature.\n";
-    writeFileSync(join(root, ".changesets", "core-feature.md"), changesetText);
+test("ADVERSARIAL isPackageManifestVersionOnlyChange: an unchanged (equal) version is refused -- there is no bump to authorize", () => {
+  const base = JSON.stringify({ name: "@x/alpha", version: "1.0.0", license: "MIT" });
+  const head = JSON.stringify({ name: "@x/alpha", version: "1.0.0", license: "MIT" });
+  assert.equal(isPackageManifestVersionOnlyChange(base, head), false);
+});
 
-    const result = realApplyReleaseChangesets({ root, runNpmInstall: () => {}, today: () => "2026-09-22" });
-    assert.equal(result.findings.length, 0, JSON.stringify(result.findings));
-    assert.equal(result.applied.length, 2);
-    const coreApplied = result.applied.find((a) => a.package === "core");
-    const consumerApplied = result.applied.find((a) => a.package === "consumer");
-    assert.equal(coreApplied.toVersion, "0.10.0");
-    assert.equal(consumerApplied.toVersion, "1.0.1");
-    assert.ok(consumerApplied.dependencyUpdates?.length > 0, "expected #1338's own script to record a dependencyUpdates entry for consumer");
+test("ADVERSARIAL isPackageManifestVersionOnlyChange: a prerelease version (\"0.10.0-evil.1\") is refused -- this repository's own semver parsing (check-release-pr-shape.mjs's computeBumpLevel/parseSemver) never accepts a prerelease suffix, so none is authorized here either", () => {
+  const base = JSON.stringify({ name: "@x/alpha", version: "1.0.0", license: "MIT" });
+  const head = JSON.stringify({ name: "@x/alpha", version: "0.10.0-evil.1", license: "MIT" });
+  assert.equal(isPackageManifestVersionOnlyChange(base, head), false);
+});
 
-    const files = [
-      { path: "packages/core/package.json", status: "modified", baseContent: '{\n  "name": "@x/core",\n  "version": "0.9.0",\n  "license": "MIT"\n}\n', headContent: readFileSync(join(coreDir, "package.json"), "utf8") },
-      { path: "packages/core/CHANGELOG.md", status: "modified", baseContent: coreChangelogBase, headContent: readFileSync(join(coreDir, "CHANGELOG.md"), "utf8") },
-      { path: "packages/consumer/package.json", status: "modified", baseContent: consumerBase, headContent: readFileSync(join(consumerDir, "package.json"), "utf8") },
-      { path: "packages/consumer/CHANGELOG.md", status: "modified", baseContent: consumerChangelogBase, headContent: readFileSync(join(consumerDir, "CHANGELOG.md"), "utf8") },
-      { path: ".changesets/core-feature.md", status: "removed", baseContent: changesetText },
-    ];
-
-    const footprint = evaluateReleasePrFootprint({ files });
-    assert.equal(footprint.ok, true, footprint.reason);
-  } finally {
-    rmSync(root, { recursive: true, force: true });
-    rmSync(fixturePath, { force: true });
-  }
+test("isPackageManifestVersionOnlyChange: a legitimate single-step minor bump (\"1.0.0\" -> \"1.1.0\") is accepted", () => {
+  const base = JSON.stringify({ name: "@x/alpha", version: "1.0.0", license: "MIT" });
+  const head = JSON.stringify({ name: "@x/alpha", version: "1.1.0", license: "MIT" });
+  assert.equal(isPackageManifestVersionOnlyChange(base, head), true);
 });
