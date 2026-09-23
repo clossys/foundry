@@ -127,6 +127,188 @@ mutation surfaces at that instant. It exits `1` for a concrete readiness or
 authorization violation, and `2` for unreadable, malformed, or indeterminate
 evidence.
 
+## Capability catalogue and kit composition
+
+`CAPABILITY_CATALOGUE` is this package's own generated, build-time-frozen
+map of every role in this repository's role-loop archetypes: each role's
+job question, primary mode, metric, boundary, `solves` claims, fit
+signals, and `needs`/`feeds` handoff edges. It is generated, never
+hand-grouped, and reading it performs no file or network I/O — it is a
+plain exported constant. `kitCatalogueDigest` is the deterministic sha256
+over that frozen catalogue (stable key order); a connector may bind it
+into `AssessmentBasis.catalogDigest` so a reassessment can detect that the
+catalogue a plan was built against has since changed.
+
+`KIT_PRESETS` is a curated set of starting-point kits — fallbacks and
+best-sellers Advisor can offer when a client's stated problem matches one
+closely — never an exhaustive partition of the package catalogue. For
+every other problem, Advisor composes a custom kit instead.
+
+`composeKit()` takes a set of `selectedRoles` and the catalogue, pulls in
+every role a selected role's `needs` edge names that was not already
+selected, orders roles so a producer always precedes its consumer, and
+reports any need that names no resolvable role. An unknown selected role
+or a needs cycle comes back `indeterminate`, never guessed past.
+
+`composeKitFromProblems()` is the problem-confirmed entry point (the
+client confirms PROBLEM cards, never picks packages): it deterministically
+maps confirmed problem ids to roles via each role's own `solves[].problem`
+entries, then reuses `composeKit()` for closure and ordering. Exactly one
+confirmed problem must be marked `primary`; a closed, composed role count
+over `FIRST_ENGAGEMENT_ROLE_CAP` (5) requires a caller-supplied
+`overCapReason`, or the result comes back `"over-cap"` instead of
+`"composed"`.
+
+`validateKitProposal()` checks a skill-proposed kit against the
+deterministic mapping `composeKitFromProblems()` itself would produce from
+the same confirmed problems. Every proposed role must trace to either a
+direct solver of a confirmed problem or a role another direct solver's
+`needs` requires; a role that traces to neither comes back as a removal
+candidate in `removalCandidates`, so the skill (or a human) makes that
+call rather than it being silently dropped.
+
+`EVIDENCE_LEVELS` is the ordered evidence-level vocabulary
+(`"designed" < "qualified" < "proven"`), and `evidenceAtLeast(evidence,
+floor)` compares one evidence level against a floor along that order.
+`presetEvidenceFindings()` checks presets against an evidence floor
+(`"qualified"` by default) and is advisory only: every current `solves`
+entry is a `designed`-only fallback until real per-role evidence lands, so
+this never fails a preset the owner already approved — it stays visible
+and testable so it is ready to enforce the moment real evidence exists.
+
+`toEngagementBrief()` turns a `composed` `ComposeKitResult` into the
+client-facing `EngagementBrief`: the client's problem, which roles the kit
+staffs and why, the handoff sequence, and one deliverable line per staffed
+role, drawn from that role's own `boundary.owns` text in the catalogue —
+never invented copy. This is a wave-1 type-and-transform export only;
+writing it to `clossys/brief.json` in each staffed repository is wave 2.
+
+## Shared engagement context
+
+`ENGAGEMENT_CONTEXT_FIELD_IDS` lists the shared engagement context fields
+in their fixed order — `business`, `product`, `audience`, `stage`,
+`intent`, `constraints` — the business questions a non-technical founder
+answers once, so no later role intake asks again what this record already
+answers. `fieldById()` looks up one field's current state (`known` with a
+chosen value, or `unknown`) on an `EngagementContext`. An unanswered field
+stays `unknown` and is never invented from anything but the founder's own
+answer; technical facts never live here.
+
+`nextContextQuestion()` returns the first unanswered context field's
+question card, in the fixed field order, or `null` once every field is
+known. `applyContextChoice()` maps a chosen choice id back to the field's
+new state: a fixed choice becomes `known`, `"not sure yet"` stays
+`unknown`, and `"something else"` is captured separately as the founder's
+own freeform answer rather than inventing a stored value.
+
+## Client problem vocabulary and confirmation
+
+`CLIENT_PROBLEMS` is this package's own generated, build-time-frozen
+client problem vocabulary. Advisor offers these as confirmation cards —
+the client confirms a problem, never picks a package.
+`nextProblemQuestion()` returns the next candidate problem card the
+client has not yet answered, in vocabulary order, or `null` once every
+candidate has a confirmation recorded. `applyProblemChoice()` maps a
+chosen choice id to `confirmed`, `declined`, `unknown`, or
+`something-else`; `unknown` and `something-else` never invent a
+confirmation.
+
+## Plan record and the STATUS document (issue #1175)
+
+`renderAdvisorStatus(plan)` is a pure markdown renderer for the STATUS
+document at `clossys/advisor/STATUS` (a `.md` file, saved with that
+extension): five fixed sections in order — Mandate, Where we are,
+Recommended next, Decisions, Blockers — matching Controller's own
+loop-state shape (#1195) so a later migration to `loop.json` is a
+rename, not a redesign. It takes an `AdvisorPlan` record (`schemaVersion`,
+`asOf`, `mandate`, `whereWeAre`, `recommendedNext`, `decisions`,
+`blockers`); `AdvisorBlockerKind` reuses #1195's five blocker kinds
+verbatim. This package performs no file I/O — the caller writes the
+rendered text.
+
+`AdvisorPlanBlocker` (`capabilityId`, `kind`, `owner`,
+`nextAction: { who, how, byWhen }`, `since`) is field-for-field the same
+shape as the Controller role's own `Blocker` record, defined for issue
+#1237 in the Controller package's own loop module: the owner direction
+on #1187 (2026-09-23) is that an order-dependent change may carry no
+local copy of a shared definition once that definition is on `main`,
+and a blocker record is exactly that kind of definition.
+`validateAdvisorPlan(value)` checks a candidate plan against this shape
+— every blocker's `capabilityId`, `owner`, `since`, and full
+`nextAction`, plus `kind` membership in `AdvisorBlockerKind`
+(`ADVISOR_BLOCKER_KINDS` lists the five values in order) — and returns
+every finding it locates, the same pattern as this package's other
+validators. This package still carries no runtime dependency on the
+Controller package: the shape is duplicated structurally, never the
+owner-per-kind mapping, which stays owned by Controller.
+
+The `advisor-render-status` CLI wraps this renderer:
+
+```bash
+advisor-render-status plan.json
+```
+
+It prints the rendered STATUS document to stdout and exits `0`, or exits
+`2` for unreadable or malformed input (now via `validateAdvisorPlan`,
+so a blocker in the old, local shape is rejected the same way).
+
+## Kit verdicts (issue #1177)
+
+`recommendKit()` turns confirmed problems into a client-facing verdict:
+composes a kit from the confirmed problems (`composeKitFromProblems()`),
+then checks whether a curated preset's own closure exactly matches the
+resulting role set — if so, the verdict is attributed to that preset for a
+friendlier name (`source: "preset"`), while still using the composition's
+own citation trace. Each `KitVerdictRole` carries the role's `why`, the
+confirmed-problem `citations` that ground it (empty for a role pulled in
+only by a `needs` edge), its `goal`, handoffs, and `deliverable` (from the
+catalogue's own `boundary.owns`). `readyForClient` reflects the
+operator-review hook below — always `true` in self-serve mode.
+
+## Self-serve and managed engagements (issue #1044)
+
+Self-serve and managed are grant shapes on the same engine, not separate
+distributions. `EngagementRecord` carries an optional `engagementMode`
+(`"self-serve"` when omitted, or `"managed"`) and `operatorRef`.
+`validateManagedEngagement()` requires a nonempty `operatorRef` naming a
+party other than Advisor itself when the mode is `"managed"`; omitted mode
+always validates cleanly, so every existing assessment input stays valid
+unchanged. `assessAdvisorEngagement()` runs this validation automatically
+alongside execution-authorization validation.
+
+The operator-review hook: `proposalReadyForClient(engagement, review?)` is
+`true` in self-serve mode, and in managed mode only once the engaged
+operator (matching `operatorRef`) has recorded an `OperatorReview` with
+`disposition: "approved"` — the owner-approved design for a managed-mode
+operator reviewing Advisor's proposed kit before the client sees it. This
+package neither stores that review nor infers a disposition; the caller
+retains it and passes it back in.
+
+## Next-step phrasing (issue #1180)
+
+`nextStepInstruction(role, host)` renders one plain-language instruction
+for opening the next repository and calling the next role, correct for the
+client's own tool (`ClientTool`: `"claude-code"`, `"cursor"`, `"codex"`, or
+`"unknown"`) — Claude Code as a slash command, Cursor as an @-mention,
+anything else names the skill without inventing an unverified syntax.
+Every phrasing carries the `loop` keyword every role is invoked with
+(#1194's owner decision: `/clossys-<role> loop` in Claude Code,
+`@clossys-<role> loop` in Cursor) — never a bare skill name.
+`NextStepHostContext` is a small input type pending Launcher's own
+recorded-host shape (#1180's Launcher side); once that lands, a caller
+adapts it into this type.
+
+## Budget preference (issue #1219)
+
+`BUDGET_PREFERENCE_CARD` is the single one-question-at-a-time card asking
+the client's budget stance, using the fixed tier names from #1219's owner
+decision: `cost-conscious`, `balanced`, `max-quality`, or left `unknown`.
+`applyBudgetPreferenceChoice()` maps a chosen id to the outcome without
+inventing a preference the client did not choose, and `toPreferencesFile()`
+produces the exact `clossys/preferences.json` shape. Advisor never names a
+model here or anywhere else in this package; a host maps the stance to
+models through its own per-host profile.
+
 ## Evolution
 
 The package evolves through normal versioned releases. Keep source evidence and content-addressed bases in the consumer's durable control plane, then reassess when scope, evidence, initiatives, readiness observations, or cadence changes.

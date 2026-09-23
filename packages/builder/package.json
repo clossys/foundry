@@ -1,6 +1,6 @@
 {
   "name": "@clossys/builder",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -23,6 +23,10 @@
     "./deployment/render": {
       "types": "./dist/deployment/render/index.d.ts",
       "import": "./dist/deployment/render/index.js"
+    },
+    "./deployment/domain": {
+      "types": "./dist/deployment/domain/index.d.ts",
+      "import": "./dist/deployment/domain/index.js"
     },
     "./ci": {
       "types": "./dist/ci/index.d.ts",

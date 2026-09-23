@@ -25,7 +25,7 @@ function rolePosition(id: string, role: string): Record<string, unknown> {
     guardrails: ["No live action."],
     escalationPath: ["Escalate to the decision owner."],
     workerComponents: [{ kind: "deterministic", responsibility: "Validate synthetic input." }],
-    stageBindings: { sense: "Read evidence.", judge: "Compare values.", act: "Report result.", verify: "Re-read evidence.", learnOrEscalate: "Escalate failure." },
+    stageBindings: { sense: "Read evidence.", judge: "Compare values.", act: "Report result.", verify: "Re-read evidence.", learn: "Escalate failure." },
     firstDayAssessment: { gaps: ["synthetic gap"], target: "Synthetic target state.", openQuestions: ["synthetic question"], criticalPath: ["Validate the synthetic run."], deferredWork: ["synthetic refinement"], recommendation: "install", evidenceRefs: ["synthetic-baseline", "synthetic-setpoint"] },
   };
 }

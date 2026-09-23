@@ -836,6 +836,38 @@ jobs:
       # also always prints the roles declaring no surface and their count, which
       # is why it belongs in a job whose log a maintainer actually reads.
       - run: node scripts/check-role-assessment-surfaces.mjs
+      # Same class again: manifest- and fixture-read only, no build. Extends
+      # the foundry block check-role-assessment-surfaces.mjs covers
+      # (assessment) to intake/outputs/status/fit (#1172) and validates any
+      # check-output-envelope.json / role-assessment.json fixture a package
+      # declares (#1174). Report mode: absence is printed and counted, never
+      # a failure, until --enforce (a later wave).
+      - run: node scripts/check-package-framework.mjs
+      # Same class again: manifest-read only, no build. Validates
+      # foundry.capabilities (#1196, package-framework version 3): a MECE
+      # capability map per role. Report mode: absence is printed and
+      # counted, never a failure, until --enforce -- the per-role maps
+      # (#1198-#1202) are drafted elsewhere first and have not landed yet.
+      - run: node scripts/check-capability-maps.mjs
+      # Stage B normalization template (issue #1187's normalization
+      # direction, #1203, #1197): for every package under packages/, reports
+      # each gap against the Stage A shared definitions above -- the manifest
+      # block, output envelope, lifecycle words, generated loop section,
+      # clossys/<role>/ layout, removed conversation duplicate, capability
+      # map, and STATUS.md shape. Report mode: a gap is printed and counted,
+      # never a failure, except a drifted generated loop section (always a
+      # failure -- see the next step). Manifest-, contract-, and
+      # fixture-read only, no build, same dependency-free class as the
+      # steps above.
+      - run: node scripts/check-package-conformance.mjs
+      # Issue #1197: each active role's own loop matrix (capability × the
+      # five loop stages) and, once a role ships one, whether its skill's
+      # generated "Run the feedback loop" section still matches what
+      # scripts/generate-loop-section.mjs produces from it today -- a
+      # mismatch always fails, in both modes. Absence of the matrix itself
+      # is report-mode-only until --enforce. Same class again: manifest,
+      # contract, and fixture reads only.
+      - run: node scripts/check-loop-matrix.mjs
       # First-wave productization order: engagement, then operational integrity,
       # then expression. Distinct from the release-catalogue upload order.
       # Reads the sequence contract plus packages/*/package.json runtime edges.
@@ -852,6 +884,14 @@ jobs:
       # PRE-AUTH-QUALITY bounded taste pass: prose contract and deliverability
       # fixture, not longer skills. Manifest and designer doc reads only.
       - run: node scripts/check-pre-auth-taste-contract.mjs
+      # Shared conversation contract (#1182): every package's composed skill
+      # carries the current docs/contracts/conversation-contract.md block
+      # exactly once, with no leftover legacy heading. Reimplements the
+      # splice launcher performs at compose time (see the script's own
+      # header for why) rather than importing TypeScript — manifest and
+      # doc reads only, no build, same dependency-free class as the steps
+      # above.
+      - run: node scripts/check-conversation-contract.mjs
 
   # Three gates over this repository's own tree that had never been invoked
   # by any workflow before this change, and that share one requirement: a
@@ -1622,6 +1662,21 @@ jobs:
         run: npm run check:strategist-subject
       - name: Supersession map
         run: npm run check:supersession
+      # Schema versions and migrations for every clossys/ record (#1224):
+      # invokes controller's built migrate CLI against this repository's
+      # own clossys/ tree, report-only. Author-side dist invocation, same
+      # class as the repository-profile/locksmith/launcher/strategist
+      # steps above.
+      - name: Schema versions and migrations
+        run: npm run check:schema-versions
+      # Operating cadence (#1221): validates the reference
+      # controller-heartbeat schedule declaration and runs the heartbeat
+      # artifact in report mode against this repository's own clossys/
+      # tree -- a real, wired, green check, not dead code. Zero-token,
+      # no live external change; same dist-invocation class as the step
+      # above.
+      - name: Heartbeat digest (report mode)
+        run: npm run check:heartbeat
       # One vocabulary, two packages, no import between them (#443). The
       # duplicate is deliberate and observer's own header argues for it --
       # observer ships zero runtime dependencies, and builder's

@@ -5,6 +5,95 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-09-22
+
+### Added
+
+- `renderAdvisorStatus()`, `validateAdvisorPlan()`, and the
+  `advisor-render-status` CLI: a pure renderer (plus its validator) for
+  the STATUS document at `clossys/advisor/STATUS` (a `.md` file), with
+  five fixed sections (Mandate, Where we are, Recommended next,
+  Decisions, Blockers), from an `AdvisorPlan` record. Structured so
+  Controller's loop engine (#1195) can take over rendering later
+  without a vocabulary change (issue #1175). `AdvisorPlanBlocker` is
+  field-for-field the same shape as Controller's own `Blocker`
+  (`capabilityId`, `kind`, `owner`, `nextAction: { who, how, byWhen }`,
+  `since`) per the owner direction on #1187 (2026-09-23) against local
+  copies of shared definitions (issue #1237).
+- `recommendKit()`: per-kit verdicts on the composed kit from #1176 —
+  each role's why, confirmed-problem citations, goal, handoffs, and
+  deliverable — attributing the verdict to a matching curated preset
+  when one's own closure equals the composition (issue #1177).
+- `EngagementMode`, `validateManagedEngagement()`, and
+  `proposalReadyForClient()`: self-serve and managed as grant shapes on
+  the same engine, with the operator-review hook that holds a proposed
+  kit back from the client in managed mode until the engaged operator
+  approves it (issue #1044).
+- `nextStepInstruction()`: host-specific phrasing for opening the next
+  repository and calling the next role, for Claude Code, Cursor, and a
+  generic fallback (issue #1180, Advisor side).
+- `BUDGET_PREFERENCE_CARD`, `applyBudgetPreferenceChoice()`, and
+  `toPreferencesFile()`: the one-question budget-preference card and its
+  `clossys/preferences.json` shape, using the fixed tier names from
+  #1219. Advisor names no model anywhere (issue #1219, Advisor side).
+
+## [0.3.0] - 2026-09-22
+
+### Added
+
+- Generated capability catalogue (issue #1176): `CAPABILITY_CATALOGUE` and
+  `kitCatalogueDigest`, packed at build time (mirroring the launcher's own
+  skill-catalogue packer) from this repository's role-loop archetypes, each
+  package's own `foundry` manifest fields, and — while no package yet
+  declares them (issue #1172 is in progress) — a documented fallback over
+  first-party runtime dependencies and this repository's committed
+  non-runtime closed-loop order. Connectors may bind `kitCatalogueDigest`
+  into `AssessmentBasis.catalogDigest`.
+- `composeKit()`: pure closure-and-ordering composition over the
+  catalogue's `needs`/`feeds` graph. An unknown role or a needs cycle
+  reports `indeterminate`, never a guess.
+- `CLIENT_PROBLEMS` (issue #1176): a vocabulary of client problems the
+  client confirms — they never pick a package.
+  `nextProblemQuestion()`/`applyProblemChoice()` offer one problem card at
+  a time, reusing the same card pattern as every other question here.
+- `composeKitFromProblems()`: deterministically maps confirmed problems to
+  roles via each role's own `solves[].problem`. Guardrails: exactly one
+  confirmed problem must be `primary`; a composed role count over
+  `FIRST_ENGAGEMENT_ROLE_CAP` (5) requires a stated `overCapReason` or
+  comes back `"over-cap"` instead of silently over-staffing a first
+  engagement.
+- `validateKitProposal()`: checks a skill-proposed kit against what
+  `composeKitFromProblems()` itself would justify from the same confirmed
+  problems — every role must trace to a confirmed problem it solves, or to
+  a role that needs it; an unlinked role is reported as a removal
+  candidate, never silently kept.
+- `KIT_PRESETS` (issue #1176): curated starting compositions (Launch, Grow,
+  Ship Safely, Operate at Scale, Customer Ops) — fallbacks and
+  best-sellers Advisor can offer, never an exhaustive partition of the
+  package catalogue.
+- `EVIDENCE_LEVELS`, `evidenceAtLeast()`, `presetEvidenceFindings()`: the
+  `designed`/`qualified`/`proven` evidence tiers behind every `solves`
+  claim. Every current claim is `designed` (a documented placeholder)
+  until issue #1172 lands real evidence for a role.
+- `toEngagementBrief()` (issue #1176): the kit output shape — problem,
+  staffed roles with why and goals, handoff sequence, and deliverables
+  grounded in each role's own `boundary.owns`. Type-and-schema only in this
+  release; writing it to a repository's brief file is wave 2 (issues
+  #1175, #1178).
+- Shared engagement context (issue #1173): `EngagementContext` types, and
+  `nextContextQuestion()`/`applyContextChoice()`, extending the existing
+  `nextSponsorQuestion()`/`applySponsorChoice()` card pattern to capture
+  business, product, audience, stage, intent, and constraints once. An
+  unanswered field stays `unknown`; only questions a non-technical founder
+  can answer are asked here — technical facts come from reading the
+  repository. The duplicate-question gate against role intakes needs issue
+  #1172's intake declarations, which do not exist yet, and is
+  intentionally left out of this release.
+- This repository's own offering-kits gate (issue #1176): every preset
+  names only real, current role packages, every `addOnTo` resolves to a
+  real preset id, and every preset composes cleanly against the generated
+  catalogue.
+
 ## [0.2.8] - 2026-09-21
 
 ### Added

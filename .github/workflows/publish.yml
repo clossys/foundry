@@ -349,6 +349,58 @@ jobs:
           sha256sum "$destination/candidate.tgz"
           sha512sum "$destination/candidate.tgz"
 
+      # Issue #1184: nothing else in this workflow ever compares a skill
+      # edit against the launcher release that ships it. Two independent
+      # modes, selected by the script itself on matrix.package (see its own
+      # header):
+      #   - matrix.package == launcher: a PUBLISH GATE. Any mismatch between
+      #     the candidate tarball's packed skill-catalogue and current
+      #     packages/*/skill/SKILL.md sources FAILS this step (exit 1) --
+      #     the published launcher must carry current skills.
+      #   - any other matrix.package: a LAG REPORT against the latest
+      #     PUBLISHED @clossys/launcher tarball (fetched anonymously from
+      #     https://registry.npmjs.org). This can only ever warn, never fail
+      #     this step -- launcher must build after its sources, so a
+      #     package's own publish can never be blocked on a launcher release
+      #     it did not cause and cannot control. The script's own exit 2
+      #     ("indeterminate": could not confirm, e.g. the registry was
+      #     unreachable) is likewise downgraded to a warning here, not a
+      #     failure -- same "never a pass, never a hard failure either"
+      #     three-state handling publish.yml already gives its own bounded
+      #     post-publish visibility probes (see "Publish" and "Verify
+      #     anonymous public npm visibility and exact bytes" below).
+      - name: Launcher catalogue currency
+        env:
+          PKG: ${{ matrix.package }}
+          TARBALL: ${{ runner.temp }}/qualification/${{ matrix.package }}/candidate.tgz
+        run: |
+          set -uo pipefail
+          set +e
+          output="$(node scripts/check-launcher-catalogue-currency.mjs --package "$PKG" --tarball "$TARBALL" --json)"
+          status=$?
+          set -e
+          printf '%s\n' "$output"
+          message="$(node -e 'console.log(JSON.parse(process.argv[1]).message)' "$output")"
+          if [ "$PKG" = "launcher" ]; then
+            if [ "$status" -ne 0 ]; then
+              echo "::error title=Launcher catalogue not current::$message"
+            fi
+            exit "$status"
+          fi
+          if [ "$status" -eq 0 ]; then
+            verdict="$(node -e 'console.log(JSON.parse(process.argv[1]).status)' "$output")"
+            if [ "$verdict" = "warn" ]; then
+              echo "::warning title=Launcher release needed::$message"
+            fi
+            exit 0
+          fi
+          if [ "$status" -eq 2 ]; then
+            echo "::warning title=Launcher catalogue currency indeterminate::$message"
+            exit 0
+          fi
+          echo "::error title=Unexpected launcher catalogue currency exit code::scripts/check-launcher-catalogue-currency.mjs must only ever exit 0 or 2 for a non-launcher --package (got $status)."
+          exit 1
+
       - name: Validate anonymous public npm registry proof
         if: ${{ inputs.verify_only }}
         env:

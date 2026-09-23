@@ -692,6 +692,56 @@ Publishing access is **Require two-factor authentication and disallow tokens**.
 That setting removes the alternate granular bypass-2FA token path after the
 trusted replacement has proved it works.
 
+### Automating this handoff: one owner action for the whole backlog (issue #1227)
+
+`publish.yml` publishes one package per manual dispatch, and every package
+below still needs an owner-present, interactive first publication (npm cannot
+bind a trusted publisher to a package identity that does not exist yet — see
+"Owner-present first publication, then OIDC" above). With a growing
+qualification backlog (issue #948), running the handoff below by hand, once
+per row, does not scale. `npm run publish:plan` and
+`npm run publish:qualified-set` automate it without weakening any gate:
+
+```text
+npm run publish:plan
+```
+
+lists every non-private package, whether it would publish, and why the rest
+would not — "on npm already" and "qualification record missing/stale" are
+kept as distinct reasons, never collapsed into one generic "not eligible".
+It reads only; it packs nothing and publishes nothing. The table two rows
+above is a point-in-time snapshot and drifts as versions bump — `npm run
+publish:plan` derives the same question live, from the current tree and the
+current registry state, every time it runs.
+
+```text
+npm run publish:qualified-set -- --publish
+```
+
+runs the owner-present publish loop: for every eligible package, in
+dependency order, it runs the exact sequence below — `preflight-package.mjs`,
+a fresh `npm pack`, a fresh `run-candidate-qualification.mjs` transcript,
+`validate-candidate-publish.mjs --mode prepublish`, then
+`publish-qualified-directory.mjs --mode owner-present` — the same gates
+`publish.yml`'s own `qualify` and `publish` jobs run for an OIDC upload, with
+an owner-present interactive `npm publish .` (one npm authentication/2FA
+prompt per package) in place of the OIDC upload only a package that already
+has a first identity can use. A failure in one package (preflight, packing,
+fresh qualification, prepublish validation, or the publish itself) stops only
+that package; every other eligible package is still attempted, and the final
+summary names every outcome. It requires `PUBLIC_SAFETY_DENYLIST` (or
+`--denylist <path>`) and the exact pinned release runtime (Node
+`v24.19.0`, npm `11.17.0`) — see `scripts/lib/release-runtime.mjs`
+— and refuses to run without either. See `scripts/publish-qualified-set.mjs`'s
+own header for the full gate-by-gate mapping and for why this is an
+owner-present loop rather than a `workflow_dispatch` fan-out.
+
+Neither command replaces the per-row stop-and-verify discipline below: after
+each publish, still anonymously verify the exact published identity before
+moving on. Neither runs `record-later-publication.mjs` — see
+`scripts/publish-qualified-set.mjs`'s header for why that stays a separate,
+optional, hand-run step.
+
 ### Current retained-candidate first-publication handoff
 
 The Trio section above is closed historical evidence. It neither publishes nor
