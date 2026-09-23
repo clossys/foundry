@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "host": "cursor",
+  "verifiedAt": "2026-09-22",
+  "tiers": {
+    "light": { "balanced": "cursor-small" },
+    "standard": { "balanced": "claude-sonnet-5", "costConscious": "cursor-small" },
+    "deep": { "balanced": "claude-opus-5", "costConscious": "claude-sonnet-5" }
+  }
+}

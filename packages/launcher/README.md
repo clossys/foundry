@@ -118,8 +118,14 @@ then from the packed catalogue or a sibling monorepo source. Launcher health
 notes missing catalogue sources but apply continues.
 
 Run `npx @clossys/launcher` again from the hub for a health report and to
-refresh composed voices on sibling inventoried clones. It does not
-`gh repo clone` missing inventory entries—that is not how you talk to the team.
+refresh composed voices on sibling inventoried clones. By default it does
+not `gh repo clone` missing inventory entries -- that is not how you talk to
+the team. `launcher --clone-missing` is the one explicit, approved
+exception (#1179): on resume only, it clones every inventoried repository
+not yet sitting beside the hub, using `cloneMissingInventoryRepositories()`,
+and only those -- an id skipped for any other reason (wrong account, the
+Foundry supplier tree, a mismatched git origin) is left exactly as skipped,
+never attempted.
 
 ## How to run it
 
@@ -157,9 +163,12 @@ command resumes later.
 ```bash
 launcher
 launcher --inventory path/to/inventory.json
+launcher --clone-missing
 launcher --help
 launcher-check --help
 launcher-check --input observation.json
+launcher-doctor
+launcher-apply-plan --plan plan.json --brief brief.json --repo ./product-checkout
 ```
 
 Exit codes preserve the ternary:
@@ -197,6 +206,117 @@ Exit codes preserve the ternary:
 | `CLOSSYS_README_REL` | Relative path of the generated index README at the root of `clossys/`. |
 | `LEGACY_STATE_DIR_REL` / `LEGACY_WORKSPACE_MARKER_REL` / `LEGACY_WORKSPACE_INVENTORY_REL` | Pre-#1171 `.clossys/` paths, kept only so resume can detect and migrate them. |
 | `CommandResult` / `CwdObservation` / `DependencyBucket` / `HubDocument` / `HubHealthReport` / `HubMigrationState` / `InventoryObservation` / `InventoryValidationEntry` / `InventoryValidationReport` / `PinFinding` / `PinGrade` / `SkillManifestDocument` / `SkillManifestEntry` / `SkillsManifestSummary` / `ApplyWorkspaceOptions` / `WorkspaceApplyResult` / `WorkspaceDecision` / `WorkspaceHost` / `WorkspaceObservation` / `WorkspacePlan` / `WorkspaceRefusal` / `WorkspaceState` | Typed host, observation, plan, health, and outcome contracts. |
+| `cloneMissingInventoryRepositories()` | Explicit, approved action (#1179): clones every inventoried repository `resolveSisterCloneTargets` skipped for "not beside the hub", and only those. Returns a `CloneMissingOutcome[]`. |
+| `runDoctorChecks()` | Read-only prerequisite checks in fix-in-this-order sequence: git, `gh`, signed in, Node.js, npm, then the advisory coding-agent step. Returns a `DoctorReport`. |
+| `renderDoctorReport()` | Renders a `DoctorReport` one step at a time, the way `launcher-doctor` prints it. |
+| `checkCloudSessionBootstrap()` | Read-only: the three product-repository-layout.json cloud-session-bootstrap checks against a directory. Returns a `CloudBootstrapReport`. |
+| `reportInventoryDrift()` | Compares a declared external inventory against the launcher-written one; reports external-only, launcher-only, and agreeing repository ids. Returns an `InventoryDriftReport`. |
+| `detectLinkedHosts()` | Read-only: which of `claude-code`, `cursor`, `codex` can currently discover skills in a directory. |
+| `serializeHostRecord()` / `parseHostRecord()` | Round-trip `clossys/.state/hosts.json` (`HOSTS_REL`). |
+| `parsePreferences()` | Reads `clossys/preferences.json`'s budget stance; defaults to `"balanced"` on absence or malformed input. |
+| `readHostModelProfile()` | Reads a packed `model-profiles/<host>.json`; returns `undefined`, never throws, on a missing or malformed file. |
+| `resolveModelForTier()` | Resolves a tier and budget preference to one model name for a host, reporting `belowFloor` rather than silently substituting a weaker tier's model. |
+| `validateAdvisorPlan()` / `validateEngagementBrief()` | Shape validation against the #1175 "Plan file contract" for `clossys/advisor/plan.json` and `clossys/brief.json`. |
+| `isPlanApproved()` | True only when a plan's most recent decision (by timestamp) has `chosen === "approved"`. |
+| `applyEngagementBrief()` | Writes `clossys/brief.json` into a repository directory once both the plan and the brief validate; refuses and writes nothing otherwise. |
+| `CloneMissingOutcome` / `DoctorCheckHost` / `DoctorReport` / `DoctorStepId` / `DoctorStepResult` / `CloudBootstrapCheck` / `CloudBootstrapReport` / `ExternalInventoryDeclaration` / `InventoryDriftReport` / `DiscoveredHost` / `HostRecord` / `BudgetPreference` / `HostModelProfile` / `HostTierMapping` / `ModelResolution` / `PreferencesDocument` / `ReasoningTier` / `SupportedHost` / `AdvisorPlan` / `ApplyBriefResult` / `BlockerKind` / `EngagementBrief` / `EngagementBriefRole` / `PlanBlocker` / `PlanDecision` / `ValidationResult` | Typed contracts for the sections above. |
+
+## Doctor
+
+`launcher-doctor` (installed alongside `@clossys/launcher`) is read-only and
+never writes anything (#1220). It checks the prerequisites a client needs
+before the hub even exists -- git, the GitHub command-line tool, whether
+you are signed in, Node.js, and npm -- and reports the first thing that is
+missing, in plain language, with the one next action to take. Run it again
+after fixing that one thing; it always reports the next thing, never a dump
+of everything at once. A missing coding agent is reported but never blocks
+the verdict: `runDoctorChecks()` marks it advisory, since Launcher cannot
+detect every host and it is a one-time choice, not a step to fix in
+sequence. `renderDoctorReport()` renders the report the way the CLI prints
+it.
+
+## Product repositories
+
+`docs/contracts/product-repository-layout.json` (this repository's own contract; it does not ship in the published package) extends the account hub's
+`clossys/` layout to a product repository: `apps/*`, workspace wiring so
+`@clossys/*` packages install as exact pinned versions, `AGENTS.md` /
+`CLAUDE.md` pointers, and the CI Starter proof (#1215). A cloud agent
+session (browser plus GitHub, no local setup) can pick up a product
+repository too -- `checkCloudSessionBootstrap()` verifies exactly what that
+session needs: a resolvable `package.json` plus `package-lock.json` pair,
+an `AGENTS.md` that mentions `clossys/`, and a hub marker at the same
+relative path as the packed template `skeleton/clossys/.state/workspace.json`.
+It never runs `npm ci` itself and never mutates anything; it only reports
+which of the three is missing.
+
+## Inventory: adopting an existing source
+
+When an account already keeps a repository inventory in its own control
+plane, launcher reads it as the source of truth instead of writing a
+second, diverging one (#1216). Declare it by hand-editing the hub marker (the packed template
+`skeleton/clossys/.state/workspace.json`; the generated path does not
+ship) to add an `externalInventory: { path, shape }` field (a `"foundry"`
+or `"custom"` shape). Every `launcher` run
+(create, resume, or appoint) then calls `reportInventoryDrift()`
+automatically and prints the result in hub health output when the marker
+declares one: three sets, all three even when one is empty -- ids only in
+the external source, ids only in launcher's own inventory, and ids both
+agree on. A `"custom"` shape is reported indeterminate rather than guessed
+at -- launcher has no mapping for a non-foundry inventory shape yet. It
+never merges the two silently; writing the reconciled set is left as a
+separate, explicit apply step for a follow-up.
+
+## Hosts
+
+Every `launcher` run (create, resume, or appoint) records which
+coding-agent hosts a directory could already discover skills through,
+*before* that run composes skills and stamps every host's discovery path
+(#1180): `claude-code` and `cursor` are detected by their own discovery
+symlink (`.claude/skills`, `.cursor/skills`); `codex` is detected by the
+presence of `.agents/skills` itself, since Codex reads repository skills
+from that path directly and needs no separate discovery link (verified
+against developers.openai.com/codex/skills, 2026-09-22). The snapshot is
+written to `clossys/.state/hosts.json` (`HOSTS_REL`, via
+`serializeHostRecord()` / `parseHostRecord()`) for the hub and for every
+sibling clone launcher composes skills into -- so a consumer such as
+Advisor's next-action phrasing can name the client's actual tool instead
+of guessing.
+
+## Model guidance
+
+Packages declare what a step demands -- a reasoning tier (`light` /
+`standard` / `deep`) -- never a model name (#1219). Launcher ships the
+tier-to-model mapping per host in `model-profiles/<host>.json`, dated and
+re-verified against that host's real current models;
+`readHostModelProfile()` reads one. `parsePreferences()` reads
+`clossys/preferences.json`'s budget stance (`cost-conscious` / `balanced` /
+`max-quality`, defaulting to `balanced` when absent or malformed) --
+Advisor asks the question and writes the file; this package only resolves
+against it. `resolveModelForTier()` combines a profile, a tier, and a
+preference into one `ModelResolution`, and reports `belowFloor` rather than
+silently substituting a weaker model when a caller-supplied hard floor
+tier cannot be met.
+
+## Applying an approved plan
+
+`launcher-apply-plan --plan <plan.json> --brief <brief.json> --repo <dir>`
+writes `clossys/brief.json` into a staffed repository once the plan is
+approved (#1178). `validateAdvisorPlan()` and `validateEngagementBrief()`
+check both files against the exact shapes recorded on issue #1175's "Plan
+file contract"; `isPlanApproved()` reads a plan's most recent decision (by
+timestamp, not array position) and requires it to be `"approved"` --
+absence of any decision is never treated as approval.
+`applyEngagementBrief()` refuses, and writes nothing, unless both checks
+pass, then writes the brief byte-identically -- it never re-authors its
+prose. This package does not compute a brief's content (that is
+`@clossys/advisor`'s `EngagementBrief`, landing in #1193) and does not
+decide whether a plan should be approved (that is Advisor's job); it only
+validates the two landed shapes and writes the one file. Multi-repository
+orchestration -- branch creation, exact package installs, adding Starter's
+caller workflow, and opening one pull request per repository -- is
+deferred: the landed contract does not yet specify how a plan's approved
+roles map to inventory repository ids or to install/remove/relocate work
+items.
 
 ## Why this is not Advisor, Starter, Builder, installer, creator, or a connector
 
