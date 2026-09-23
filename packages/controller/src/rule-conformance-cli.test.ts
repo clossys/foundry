@@ -1,13 +1,14 @@
 import { spawnSync } from "node:child_process";
-import { chmodSync, cpSync, mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from "node:fs";
+import { chmodSync, cpSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { ControllerCliInputError, isDirectInvocation, main } from "./rule-conformance-cli.js";
 
 let root: string;
 let binPath: string;
+let workDir: string;
 
 function evidence(id: string) {
   return [{ id, description: "Independent observation evidence." }];
@@ -54,13 +55,17 @@ beforeEach(() => {
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
+afterEach(() => {
+  if (root) rmSync(root, { recursive: true, force: true });
+});
+
 beforeAll(() => {
   const packageRoot = fileURLToPath(new URL("..", import.meta.url));
   const compiler = fileURLToPath(new URL("../../../node_modules/typescript/bin/tsc", import.meta.url));
   const built = spawnSync(process.execPath, [compiler, "-p", "tsconfig.json"], { cwd: packageRoot, encoding: "utf8" });
   if (built.status !== 0) throw new Error(`Controller build failed: ${built.stderr || built.stdout}`);
 
-  const workDir = mkdtempSync(join(tmpdir(), "controller-check-bin-"));
+  workDir = mkdtempSync(join(tmpdir(), "controller-check-bin-"));
   const dotBin = join(workDir, "node_modules", ".bin");
   mkdirSync(dotBin, { recursive: true });
   const installedDistDir = join(workDir, "dist");
@@ -73,6 +78,10 @@ beforeAll(() => {
   binPath = join(dotBin, "controller-check");
   symlinkSync(installedCliPath, binPath);
 }, 60_000);
+
+afterAll(() => {
+  if (workDir) rmSync(workDir, { recursive: true, force: true });
+});
 
 function runBin(args: string[]) {
   const options = { encoding: "utf8" as const, timeout: 8_000 };

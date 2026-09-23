@@ -5,6 +5,19 @@ All notable changes to `@clossys/integrator` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.1] - 2026-09-23
+
+### Notes
+
+- No packed content changed. This package's test suite changed as part of
+  fixing leaking temp fixture directories (issue #1250), and its 0.7.3
+  qualification record was already retained -- once a version's record is
+  retained, any further change to that package, packed or not, requires a new
+  version. Renumbered from 0.7.4 on restack onto main after merge trains
+  7-10: main independently shipped `integrator-provenance-check` (issue
+  #885) as 0.8.0, ahead of this test-only bump (version-collision rule,
+  issue #1187).
+
 ## [0.8.0] - 2026-09-22
 
 ### Added
