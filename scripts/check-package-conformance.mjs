@@ -202,14 +202,15 @@ function statusMdGap(root, role) {
  * skill source, and the pre-resolved loop-matrix descriptor bundle
  * check-loop-matrix.mjs's own evaluator wants) plus the frameworkAndCapability
  * lookups, and returns the eight-column conformance report. Each descriptor
- * may carry `classification: "role"|"tooling"|"unclassified"|"both"`
+ * may carry `classification: "role"|"tooling"|"unclassified"|"both"|"invalid-name"`
  * (scripts/package-classification.mjs); it defaults to "role" when omitted,
  * so an existing caller that only ever built role descriptors keeps
  * behaving exactly as before. A "tooling" descriptor gets its own reduced
  * row (excluded: executable-tooling, only outputEnvelope and
- * conversationContract computed -- Decision 1). An "unclassified" or "both"
- * descriptor always produces a classificationFinding, in report mode and
- * --enforce alike.
+ * conversationContract computed -- Decision 1). An "unclassified", "both",
+ * or "invalid-name" descriptor always produces a classificationFinding, in
+ * report mode and --enforce alike; for "invalid-name" `role` carries the
+ * package's directory name, since its manifest has no usable name.
  */
 export function evaluateConformance(root, descriptors, options = {}) {
   const { enforce = false, allowlist = {} } = options;
@@ -217,7 +218,7 @@ export function evaluateConformance(root, descriptors, options = {}) {
 
   const roleDescriptors = descriptors.filter((d) => (d.classification ?? "role") === "role");
   const toolingDescriptors = descriptors.filter((d) => d.classification === "tooling");
-  const invalidDescriptors = descriptors.filter((d) => d.classification === "unclassified" || d.classification === "both");
+  const invalidDescriptors = descriptors.filter((d) => d.classification === "unclassified" || d.classification === "both" || d.classification === "invalid-name");
 
   const findings = [];
   const table = [];
@@ -327,7 +328,14 @@ function collectDescriptors(root) {
     const manifestPath = join(packagesDir, entry.name, "package.json");
     if (!existsSync(manifestPath)) continue;
     const manifest = readJson(manifestPath);
-    if (!isText(manifest.name)) continue;
+    if (!isText(manifest.name)) {
+      // The manifest exists but carries no usable name -- there is nothing
+      // to classify, so report it directly rather than calling
+      // classifyPackage. The directory name is the only identity available
+      // (scripts/package-classification.mjs's own "invalid-name" case).
+      descriptors.push({ role: entry.name, packageDir: entry.name, manifest, skillSource: null, loopMatrixDoc: null, capabilityIds: null, stageActivities: null, classification: "invalid-name" });
+      continue;
+    }
     const role = manifest.name;
     const classification = classifyPackage(role, activeRoles, toolingNames);
     const skillPath = join(packagesDir, entry.name, "skill", "SKILL.md");
@@ -397,7 +405,7 @@ function printTable(table) {
       console.log(`${row.role}  |  excluded: executable-tooling  |  outputEnvelope=${row.outputEnvelope}  |  conversationContract=${row.conversationContract}  |  gaps=${row.gaps}`);
       continue;
     }
-    if (row.classification === "unclassified" || row.classification === "both") {
+    if (row.classification === "unclassified" || row.classification === "both" || row.classification === "invalid-name") {
       console.log(`${row.role}  |  classification: ${row.classification} — see FAIL below`);
       continue;
     }
@@ -429,7 +437,7 @@ function main(argv) {
   for (const item of result.findings) console.log(`FAIL ${item.rule} ${item.role} — ${item.message}`);
   const roleRows = result.table.filter((row) => row.classification === "role");
   const toolingRows = result.table.filter((row) => row.classification === "tooling");
-  const invalidRows = result.table.filter((row) => row.classification === "unclassified" || row.classification === "both");
+  const invalidRows = result.table.filter((row) => row.classification === "unclassified" || row.classification === "both" || row.classification === "invalid-name");
   const totalGaps = roleRows.reduce((sum, row) => sum + row.gaps, 0);
   console.log(`\n${roleRows.length} active role(s), ${totalGaps} total gap(s) against Stage A (0 gaps = fully conforming).`);
   if (toolingRows.length > 0) console.log(`${toolingRows.length} package(s) excluded as executable tooling: ${toolingRows.map((row) => row.role).join(", ")}.`);

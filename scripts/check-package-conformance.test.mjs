@@ -5,10 +5,14 @@
 // layout, loop.json, STATUS.md) that this gate reads beside packages/*.
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { evaluateConformance } from "./check-package-conformance.mjs";
+
+const scriptPath = resolve(dirname(fileURLToPath(import.meta.url)), "check-package-conformance.mjs");
 
 function manifest(overrides = {}) {
   return { name: "@scope/alpha", version: "0.1.0", foundry: { assessment: { bin: "alpha-check", invocation: "single-json-input" } }, bin: { "alpha-check": "dist/cli.js" }, ...overrides };
@@ -217,4 +221,65 @@ test("a role package is unchanged: an explicit classification: 'role' descriptor
   assert.deepEqual(untagged.table, tagged.table);
   assert.deepEqual(untagged.findings, tagged.findings);
 });
+
+test("a package with no usable manifest name (classification: 'invalid-name') is always a finding, in report and enforce mode", (t) => {
+  const root = makeTempRoot(t);
+  const invalid = descriptor({ classification: "invalid-name", role: "mystery-widget", packageDir: "mystery-widget" });
+  const reportResult = evaluateConformance(root, [invalid], { enforce: false });
+  assert.ok(reportResult.findings.some((f) => f.rule === "invalid-manifest-name" && f.role === "mystery-widget"));
+  const enforceResult = evaluateConformance(root, [invalid], { enforce: true });
+  assert.ok(enforceResult.findings.some((f) => f.rule === "invalid-manifest-name" && f.role === "mystery-widget"));
+});
+
+// --- Real collector + CLI regression (independent review on PR #1318,
+// reproducing CodeRabbit's finding): before this fix, a packages/*
+// package.json whose "name" was missing, empty, or not a string hit
+// `!isText(manifest.name)` in collectDescriptors() and was silently
+// `continue`d past -- it appeared in NEITHER the table nor the findings,
+// exit 0, in both report and --enforce mode. These tests exercise the real
+// collectDescriptors() and main() (via a spawned CLI process against a
+// synthetic, temporary repository root), not just evaluateConformance
+// above, because that is exactly the code path the defect lived in.
+
+function makeFixtureRepo(t, packageName) {
+  const root = mkdtempSync(join(tmpdir(), "check-package-conformance-cli-"));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  mkdirSync(join(root, "docs", "contracts"), { recursive: true });
+  writeFileSync(join(root, "docs", "contracts", "role-loop-archetypes.json"), JSON.stringify({ schemaVersion: 1, roles: {} }));
+  writeFileSync(join(root, "docs", "contracts", "package-evidence.json"), JSON.stringify({ schemaVersion: 1, packages: [] }));
+  const packageDir = join(root, "packages", "mystery-widget");
+  mkdirSync(packageDir, { recursive: true });
+  const manifest = { version: "0.1.0" };
+  if (packageName !== undefined) manifest.name = packageName;
+  writeFileSync(join(packageDir, "package.json"), JSON.stringify(manifest));
+  return root;
+}
+
+function runCli(root, extraArgs = []) {
+  try {
+    const stdout = execFileSync(process.execPath, [scriptPath, root, "--json", ...extraArgs], { encoding: "utf8" });
+    return { status: 0, stdout };
+  } catch (error) {
+    return { status: error.status, stdout: error.stdout?.toString() ?? "" };
+  }
+}
+
+for (const [label, name] of [["missing", undefined], ["empty", ""], ["non-string", 42]]) {
+  test(`CLI: a packages/* manifest.json with a ${label} name is reported as invalid-manifest-name, not silently skipped (report mode)`, (t) => {
+    const root = makeFixtureRepo(t, name);
+    const result = runCli(root);
+    assert.equal(result.status, 1);
+    const parsed = JSON.parse(result.stdout);
+    assert.ok(parsed.findings.some((f) => f.rule === "invalid-manifest-name" && f.role === "mystery-widget"));
+    assert.ok(parsed.table.some((row) => row.role === "mystery-widget" && row.classification === "invalid-name"));
+  });
+
+  test(`CLI: a packages/* manifest.json with a ${label} name still fails under --enforce`, (t) => {
+    const root = makeFixtureRepo(t, name);
+    const result = runCli(root, ["--enforce"]);
+    assert.equal(result.status, 1);
+    const parsed = JSON.parse(result.stdout);
+    assert.ok(parsed.findings.some((f) => f.rule === "invalid-manifest-name" && f.role === "mystery-widget"));
+  });
+}
 
