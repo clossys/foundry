@@ -111,16 +111,23 @@ import { join, relative, extname, resolve, dirname, basename, sep } from "node:p
 import { fileURLToPath } from "node:url";
 import { execFileSync, spawnSync } from "node:child_process";
 
-// Flags that consume the NEXT token as their own value, per this script's
-// own usage banner below (`--class N`, `--allowlist <file>`). Every other
-// `--`-prefixed token (`--json`, `--include-built`, `--no-allowlist`) is a
-// bare boolean switch. This distinction has to be made positionally, in one
-// left-to-right pass over `argv` — a naive `argv.filter(a =>
+// Flags that consume a value, per this script's own usage banner below
+// (`--class N`, `--allowlist <file>`). Every other `--`-prefixed token
+// (`--json`, `--include-built`, `--no-allowlist`) is a bare boolean switch.
+// A value-taking flag accepts either the space-separated form (`--class 1`,
+// consumed as the NEXT token) or the equals form (`--class=1`, self-
+// contained in one token) -- issue #1342: the equals form used to be
+// silently ignored (`flagValue()`'s old exact-string `indexOf("--class")`
+// lookup could never match the literal token `"--class=1"`), leaving
+// `classFilter`/`explicit` `undefined` with no error, silently scanning
+// every class or falling back to the default allowlist instead of doing
+// what the caller asked. Both forms have to be told apart positionally, in
+// one left-to-right pass over `argv` -- a naive `argv.filter(a =>
 // !a.startsWith("--"))` cannot tell a flag's own value apart from a real
 // directory argument, and previously didn't: `--class 1` left `"1"` in the
 // positional pool, which the multi-directory dispatch below then tried to
 // scan as a second directory (`no such directory: 1`, exit 2) — a real
-// regression this fix closes, not a hypothetical.
+// regression #1341 closed for the space form; this closes the equals form.
 const VALUE_FLAGS = new Set(["--class", "--allowlist"]);
 
 const argv = process.argv.slice(2);
@@ -131,8 +138,8 @@ const positional = [];
 // their original relative order) — everything in `argv` that is NOT a
 // directory positional. This is what the multi-directory dispatch below
 // forwards to each per-directory child invocation, so a child sees the
-// identical `--class 1` or `--allowlist <file>` its parent was given,
-// rather than losing the value the way plain `argv.filter(a =>
+// identical `--class 1` / `--class=1` / `--allowlist <file>` its parent was
+// given, rather than losing the value the way plain `argv.filter(a =>
 // a.startsWith("--"))` would (it would forward `--class` alone, silently
 // dropping the `1` that gives it meaning).
 const nonPositionalArgs = [];
@@ -141,6 +148,22 @@ for (let i = 0; i < argv.length; i++) {
   const arg = argv[i];
   if (!arg.startsWith("--")) {
     positional.push(arg);
+    continue;
+  }
+  const eq = arg.indexOf("=");
+  const eqFlagName = eq === -1 ? null : arg.slice(0, eq);
+  if (eqFlagName !== null && VALUE_FLAGS.has(eqFlagName)) {
+    // Equals form: self-contained in one token, so no lookahead. An empty
+    // value (`--class=`) has just as little meaning as a missing one and
+    // must fail closed the same way, not silently become "no filter".
+    const value = arg.slice(eq + 1);
+    if (value === "") {
+      console.error(`check-contamination-classes: ${eqFlagName} requires a value`);
+      process.exit(2);
+    }
+    flags.add(eqFlagName);
+    nonPositionalArgs.push(arg); // forward the exact "--flag=value" token as given
+    if (!flagValues.has(eqFlagName)) flagValues.set(eqFlagName, value); // first occurrence wins, matching the space form below
     continue;
   }
   flags.add(arg);
