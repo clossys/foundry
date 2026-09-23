@@ -20,10 +20,11 @@
 // doc comment for the measurement). So the commit under test is resolved in
 // two independent steps: the PR's current head is read from the pull
 // request itself (a REST read, separate from the GraphQL query the evidence
-// comes from), and that head is then PROVEN to be an ancestor of the group
-// commit (`git merge-base --is-ancestor`). Both facts are handed to the
-// inspector (`options.headShaUnderTest`, `options.mergeGroup`), which fails
-// closed on either one. A malformed ref, a malformed group sha, or a head
+// comes from), and that head is then PROVEN to be exactly the group commit's
+// second parent (`git rev-parse --verify <group>^2`) -- what this entry
+// merges under the ruleset's MERGE method, not merely some ancestor. Both
+// facts are handed to the inspector (`options.headShaUnderTest`,
+// `options.mergeGroup`), which fails closed on either one. A malformed ref, a malformed group sha, or a head
 // that cannot be read refuses to collect evidence rather than guessing.
 // `--merge-group-head-ref` always overrides `--pr`/`--head` when both are
 // given.
@@ -172,7 +173,7 @@ function isSha(value) {
  *
  * So this returns the PR `number` and that `baseSha`, and deliberately
  * nothing that could be mistaken for a head: the head is resolved from the
- * pull request itself and proven to be contained in the group commit (see
+ * pull request itself and proven to be the group commit's second parent (see
  * `resolvePrAndHead` and `main`).
  *
  * Returns `null` for anything that does not match the exact shape —
@@ -199,9 +200,9 @@ export function parseMergeGroupQueueRef(headRef) {
  * On the pull_request path it returns `{ pr, head }`, exactly as before.
  *
  * On the merge-group path it returns `{ pr, mergeGroup: { headSha, baseSha } }`
- * and NO `head`: neither the queue ref nor the group commit names the PR's
- * head, so this refuses to invent one. `main` reads the PR's current head
- * and proves it is an ancestor of `mergeGroup.headSha` before using it —
+ * and NO `head`: the queue ref does not name the PR's head, so this refuses
+ * to invent one. `main` reads the PR's current head and proves it is exactly
+ * `mergeGroup.headSha`'s second parent before using it —
  * see `resolveMergeGroupHead`.
  *
  * `mergeGroupHeadRef`, when supplied, always wins over `pr`/`head` — a
@@ -241,30 +242,57 @@ export function resolvePrAndHead({ pr, head, mergeGroupHeadRef, mergeGroupHeadSh
  *     bundle comes from, so the inspector's own `evidence-head-mismatch`
  *     comparison stays a comparison between two reads, not a value compared
  *     with itself).
- *   - `isAncestor(prHead, groupHeadSha)` — `true`, `false`, or throws when
- *     the answer cannot be established.
+ *   - `readSecondParent(groupHeadSha)` — the group commit's second parent
+ *     (`git rev-parse --verify <group>^2`), or throws when it cannot be read.
+ *
+ * WHY THE SECOND PARENT, NOT "AN ANCESTOR"
+ * The ruleset's `merge_method` is MERGE, so each group commit is
+ * merge(<previous group commit or base>, <this entry's PR head>): its second
+ * parent is EXACTLY the commit this entry merges. "Is an ancestor of the
+ * group commit" is weaker: every older commit on the PR branch is also an
+ * ancestor, so a head read that raced a push after enqueue could bind
+ * approved evidence at an older commit H0 while the group actually carries an
+ * unreviewed H1. Equality with the second parent refuses that. Under SQUASH
+ * or REBASE the group commit has no second parent; the read then fails and
+ * this refuses, fail-closed, rather than guessing.
  *
  * Returns `{ headShaUnderTest, mergeGroup: { headSha, containsHeadShaUnderTest } }`
- * or `{ error }`. A PR head that is NOT an ancestor is returned, not
+ * or `{ error }`. A PR head that is NOT the second parent is returned, not
  * refused, with `containsHeadShaUnderTest: false`, so the inspector reports
- * it as a named, auditable indeterminate rather than a bare collector crash.
- * A head that cannot be read, or an ancestry question that cannot be
- * answered, is an error: nothing is established, so nothing is emitted.
+ * it as a named, auditable `merge-group-head-not-contained` rather than a
+ * bare collector crash. A head or second parent that cannot be read is an
+ * error: nothing is established, so nothing is emitted.
  */
-export function resolveMergeGroupHead({ groupHeadSha, prHead, isAncestor }) {
+export function resolveMergeGroupHead({ groupHeadSha, prHead, readSecondParent }) {
   if (!isSha(groupHeadSha)) return { error: `merge-group head sha ${JSON.stringify(groupHeadSha)} is not a 40-lowercase-hex sha` };
   const head = typeof prHead === "string" ? prHead.trim().toLowerCase() : prHead;
   if (!isSha(head)) return { error: `the pull request's current head ${JSON.stringify(prHead)} is not a 40-lowercase-hex sha` };
-  let contained;
+  let secondParent;
   try {
-    contained = isAncestor(head, groupHeadSha);
+    secondParent = readSecondParent(groupHeadSha);
   } catch (error) {
-    return { error: `could not establish whether ${head} is an ancestor of merge-group commit ${groupHeadSha}: ${error.message}` };
+    return { error: `could not read the second parent of merge-group commit ${groupHeadSha}: ${error.message}` };
   }
-  if (typeof contained !== "boolean") {
-    return { error: `ancestry of ${head} in merge-group commit ${groupHeadSha} was not answered with a boolean` };
+  secondParent = typeof secondParent === "string" ? secondParent.trim().toLowerCase() : secondParent;
+  if (!isSha(secondParent)) {
+    return { error: `the second parent of merge-group commit ${groupHeadSha} (${JSON.stringify(secondParent)}) is not a 40-lowercase-hex sha` };
   }
-  return { headShaUnderTest: head, mergeGroup: { headSha: groupHeadSha, containsHeadShaUnderTest: contained } };
+  return { headShaUnderTest: head, mergeGroup: { headSha: groupHeadSha, containsHeadShaUnderTest: secondParent === head } };
+}
+
+/**
+ * `git rev-parse --verify <group>^2` in `cwd`. Any non-zero exit (no such
+ * commit, or a commit with no second parent) throws — an unreadable parent is
+ * never read as either answer. The workflow checks out with `fetch-depth: 0`.
+ */
+export function gitSecondParentReader(cwd) {
+  return (groupHeadSha) => {
+    const result = spawnSync("git", ["rev-parse", "--verify", "--quiet", `${groupHeadSha}^2^{commit}`], { cwd, encoding: "utf8" });
+    if (result.status !== 0) {
+      throw new Error(`git rev-parse --verify ${groupHeadSha}^2 exited ${result.status ?? result.signal}: ${String(result.stderr ?? "").trim() || "no second parent"}`);
+    }
+    return result.stdout.trim();
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -618,19 +646,6 @@ function defaultFetchPullRequestHead({ owner, name, number }) {
   return execFileSync("gh", ["api", `repos/${owner}/${name}/pulls/${number}`, "--jq", ".head.sha"], { encoding: "utf8" }).trim();
 }
 
-/**
- * `git merge-base --is-ancestor`: exit 0 is "yes", exit 1 is "no", anything
- * else (an unknown object, not a repository) throws — an unanswerable
- * question is never read as either answer. The workflow checks out with
- * `fetch-depth: 0`, so every ancestor of the group commit is present locally.
- */
-function defaultIsAncestor(ancestor, descendant) {
-  const result = spawnSync("git", ["merge-base", "--is-ancestor", ancestor, descendant], { encoding: "utf8" });
-  if (result.status === 0) return true;
-  if (result.status === 1) return false;
-  throw new Error(`git merge-base exited ${result.status ?? result.signal}: ${String(result.stderr ?? "").trim()}`);
-}
-
 function defaultRepoFromGh() {
   return execFileSync("gh", ["repo", "view", "--json", "nameWithOwner", "-q", ".nameWithOwner"], { encoding: "utf8" }).trim();
 }
@@ -656,7 +671,7 @@ export function main(
     fetchBranchRules = defaultFetchBranchRules,
     repoFromGh = defaultRepoFromGh,
     fetchPullRequestHead = defaultFetchPullRequestHead,
-    isAncestor = defaultIsAncestor,
+    readSecondParent = gitSecondParentReader(process.cwd()),
     write = (text) => process.stdout.write(text),
   } = {},
 ) {
@@ -707,7 +722,8 @@ export function main(
   if (!pullRequest) fail(`pull request #${prNumber} was not found in ${owner}/${name}`);
 
   // Merge-group run: the commit under test is the queued PR's own head,
-  // read from the pull request and proven to be inside the group commit.
+  // read from the pull request and proven to be exactly the group commit's
+  // second parent -- what this entry merges (see `resolveMergeGroupHead`).
   // Never the sha embedded in the queue ref, which is the base (#1253).
   if (resolved.mergeGroup) {
     let prHead;
@@ -716,7 +732,7 @@ export function main(
     } catch (error) {
       fail(`could not read pull request #${prNumber}'s current head: ${error.message}`);
     }
-    const mg = resolveMergeGroupHead({ groupHeadSha: resolved.mergeGroup.headSha, prHead, isAncestor });
+    const mg = resolveMergeGroupHead({ groupHeadSha: resolved.mergeGroup.headSha, prHead, readSecondParent });
     if (mg.error) fail(mg.error);
     headSha = mg.headShaUnderTest;
     mergeGroup = mg.mergeGroup;

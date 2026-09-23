@@ -53,6 +53,15 @@ on:
   # never reports for a merge-group commit would wedge every queue. GitHub
   # names one type today (`checks_requested`); left unqualified so a future
   # type is not silently excluded.
+  #
+  # The review-evidence binding below assumes ONE pull request per queue
+  # entry, each with its own `gh-readonly-queue/<base>/pr-<N>-<sha>` ref and
+  # its own run, and a group commit whose SECOND PARENT is exactly that PR's
+  # head. Both hold only because main's ruleset sets the merge queue's
+  # `grouping_strategy` to ALLGREEN (every entry is checked, not just the
+  # group's head) and `merge_method` to MERGE (a true merge commit). Changing
+  # either makes the collector's second-parent check fail closed on every
+  # entry -- revisit this workflow before changing the ruleset.
   merge_group:
 
 permissions:
@@ -162,12 +171,15 @@ jobs:
       # `evidence-head-mismatch` against main's own tip (#1253, run
       # 35929488634). So `--merge-group-head-ref` supplies only the PR
       # number; the collector reads the PR's current head from the pull
-      # request itself and proves it is an ancestor of
-      # `--merge-group-head-sha` (this checkout's `fetch-depth: 0` is what
-      # makes that answerable locally). The inspector then requires both:
-      # the head is contained in the group, and the evidence is bound to
+      # request itself and proves it EQUALS the second parent of
+      # `--merge-group-head-sha` (`git rev-parse --verify <group>^2`; this
+      # checkout's `fetch-depth: 0` is what makes that answerable locally).
+      # Mere ancestry is not enough: an older commit on the PR branch is an
+      # ancestor too, so a head read racing a push could bind an unreviewed
+      # head. See the trigger comment above for the ruleset this depends on. The inspector then requires both:
+      # the group merges exactly that head, and the evidence is bound to
       # that head. A malformed ref or sha, an unreadable head, or an
-      # unanswerable ancestry question refuses rather than guessing -- see
+      # unreadable second parent refuses rather than guessing -- see
       # that script's own header and `resolveMergeGroupHead`'s tests.
       - name: Collect review evidence
         id: review-evidence

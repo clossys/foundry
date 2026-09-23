@@ -1,4 +1,8 @@
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
 
 import {
@@ -15,6 +19,7 @@ import {
   normalizeCheckConclusion,
   normalizeReviewDecision,
   normalizeStatusState,
+  gitSecondParentReader,
   main,
   parseMergeGroupQueueRef,
   resolveMergeGroupHead,
@@ -468,42 +473,106 @@ test("resolvePrAndHead still requires --pr and a valid --head when no merge_grou
   assert.deepEqual(resolvePrAndHead({ pr: "1", head: HEAD }), { pr: "1", head: HEAD });
 });
 
-test("resolveMergeGroupHead: a PR head contained in the group becomes the commit under test", () => {
+test("resolveMergeGroupHead: a PR head equal to the group commit's second parent becomes the commit under test", () => {
   const calls = [];
   const result = resolveMergeGroupHead({
     groupHeadSha: GROUP_HEAD,
     prHead: `${HEAD}\n`,
-    isAncestor: (ancestor, descendant) => {
-      calls.push([ancestor, descendant]);
-      return true;
+    readSecondParent: (group) => {
+      calls.push(group);
+      return `${HEAD}\n`;
     },
   });
   assert.deepEqual(result, { headShaUnderTest: HEAD, mergeGroup: { headSha: GROUP_HEAD, containsHeadShaUnderTest: true } });
-  assert.deepEqual(calls, [[HEAD, GROUP_HEAD]]); // ancestry asked of the PR head against the GROUP commit, never the base
+  assert.deepEqual(calls, [GROUP_HEAD]); // the GROUP commit's parent, never the queue base
 });
 
-test("resolveMergeGroupHead: a PR head NOT contained in the group is recorded as exactly that, for the inspector to refuse", () => {
-  const result = resolveMergeGroupHead({ groupHeadSha: GROUP_HEAD, prHead: HEAD, isAncestor: () => false });
+test("resolveMergeGroupHead: a PR head that is NOT the group commit's second parent is recorded as exactly that, for the inspector to refuse", () => {
+  const result = resolveMergeGroupHead({ groupHeadSha: GROUP_HEAD, prHead: HEAD, readSecondParent: () => OTHER_HEAD });
   assert.deepEqual(result, { headShaUnderTest: HEAD, mergeGroup: { headSha: GROUP_HEAD, containsHeadShaUnderTest: false } });
 });
 
-test("resolveMergeGroupHead fails closed when the head or its ancestry cannot be established", () => {
-  assert.equal(typeof resolveMergeGroupHead({ groupHeadSha: GROUP_HEAD, prHead: "", isAncestor: () => true }).error, "string");
-  assert.equal(typeof resolveMergeGroupHead({ groupHeadSha: "x", prHead: HEAD, isAncestor: () => true }).error, "string");
+test("resolveMergeGroupHead fails closed when the head or the group's second parent cannot be established", () => {
+  const second = () => HEAD;
+  assert.equal(typeof resolveMergeGroupHead({ groupHeadSha: GROUP_HEAD, prHead: "", readSecondParent: second }).error, "string");
+  assert.equal(typeof resolveMergeGroupHead({ groupHeadSha: "x", prHead: HEAD, readSecondParent: second }).error, "string");
   const thrown = resolveMergeGroupHead({
     groupHeadSha: GROUP_HEAD,
     prHead: HEAD,
-    isAncestor: () => {
-      throw new Error("fatal: Not a valid commit name");
+    readSecondParent: () => {
+      throw new Error("no second parent");
     },
   });
   assert.equal(typeof thrown.error, "string");
-  assert.equal(typeof resolveMergeGroupHead({ groupHeadSha: GROUP_HEAD, prHead: HEAD, isAncestor: () => undefined }).error, "string");
+  assert.equal(typeof resolveMergeGroupHead({ groupHeadSha: GROUP_HEAD, prHead: HEAD, readSecondParent: () => undefined }).error, "string");
+});
+
+// A REAL git fixture, not a stub: base B on main, PR commits H0 then H1, and
+// group commit G = merge(B2, H1) exactly as the MERGE-method queue builds it.
+// H0 is an ancestor of G too -- the "contained somewhere" check accepted it,
+// which let a head read that raced a push bind approved evidence at H0 while
+// G carried an unreviewed H1. Only G's own second parent may pass.
+function withGitFixture(fn) {
+  const dir = mkdtempSync(join(tmpdir(), "collect-review-evidence-git-"));
+  const git = (...args) =>
+    execFileSync("git", args, {
+      cwd: dir,
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        GIT_AUTHOR_NAME: "fixture",
+        GIT_AUTHOR_EMAIL: "fixture@example.invalid",
+        GIT_COMMITTER_NAME: "fixture",
+        GIT_COMMITTER_EMAIL: "fixture@example.invalid",
+        GIT_CONFIG_NOSYSTEM: "1",
+        GIT_CONFIG_GLOBAL: "/dev/null",
+      },
+    }).trim();
+  try {
+    git("init", "-q", "-b", "main");
+    git("commit", "-q", "--allow-empty", "-m", "B");
+    git("checkout", "-q", "-b", "pr");
+    git("commit", "-q", "--allow-empty", "-m", "H0");
+    const h0 = git("rev-parse", "HEAD");
+    git("commit", "-q", "--allow-empty", "-m", "H1");
+    const h1 = git("rev-parse", "HEAD");
+    git("checkout", "-q", "main");
+    git("commit", "-q", "--allow-empty", "-m", "B2");
+    git("merge", "-q", "--no-ff", "--no-edit", "pr");
+    const group = git("rev-parse", "HEAD");
+    const single = git("rev-parse", "HEAD^1"); // B2: a commit with no second parent (the SQUASH/REBASE shape)
+    return fn({ dir, h0, h1, group, single });
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+test("real git: an OLDER PR commit H0 (an ancestor of the group, but not what it merges) is refused; the true second parent H1 passes", () => {
+  withGitFixture(({ dir, h0, h1, group }) => {
+    const readSecondParent = gitSecondParentReader(dir);
+    assert.equal(execFileSync("git", ["merge-base", "--is-ancestor", h0, group], { cwd: dir }).length, 0); // H0 IS an ancestor
+    assert.deepEqual(resolveMergeGroupHead({ groupHeadSha: group, prHead: h0, readSecondParent }), {
+      headShaUnderTest: h0,
+      mergeGroup: { headSha: group, containsHeadShaUnderTest: false },
+    });
+    assert.deepEqual(resolveMergeGroupHead({ groupHeadSha: group, prHead: h1, readSecondParent }), {
+      headShaUnderTest: h1,
+      mergeGroup: { headSha: group, containsHeadShaUnderTest: true },
+    });
+  });
+});
+
+test("real git: a group commit with no second parent (SQUASH/REBASE shape) or an unknown commit is an error, never an answer", () => {
+  withGitFixture(({ dir, h1, single }) => {
+    const readSecondParent = gitSecondParentReader(dir);
+    assert.equal(typeof resolveMergeGroupHead({ groupHeadSha: single, prHead: h1, readSecondParent }).error, "string");
+    assert.equal(typeof resolveMergeGroupHead({ groupHeadSha: "0".repeat(40), prHead: h1, readSecondParent }).error, "string");
+  });
 });
 
 function runMergeGroupMain({ payload, prHead, contained }) {
   let written = "";
-  const ancestryAsked = [];
+  const parentsRead = [];
   main(
     [
       "--merge-group-head-ref",
@@ -524,9 +593,9 @@ function runMergeGroupMain({ payload, prHead, contained }) {
         assert.equal(number, QUEUE_PR_NUMBER);
         return prHead;
       },
-      isAncestor: (ancestor, descendant) => {
-        ancestryAsked.push([ancestor, descendant]);
-        return contained;
+      readSecondParent: (group) => {
+        parentsRead.push(group);
+        return contained ? prHead : OTHER_HEAD;
       },
       fetchBranchRules: () => {
         throw new Error("not requested");
@@ -536,7 +605,7 @@ function runMergeGroupMain({ payload, prHead, contained }) {
       },
     },
   );
-  return { document: JSON.parse(written), ancestryAsked };
+  return { document: JSON.parse(written), parentsRead };
 }
 
 const approvedAtHead = {
@@ -544,8 +613,8 @@ const approvedAtHead = {
   nodes: [{ id: "R1", state: "APPROVED", submittedAt: "2026-09-23T00:00:00Z", commit: { oid: HEAD }, author: { login: "a-reviewer" } }],
 };
 
-test("main on a merge group: the commit under test is the PR's own head (never the queue base), proven contained in the group commit", () => {
-  const { document, ancestryAsked } = runMergeGroupMain({
+test("main on a merge group: the commit under test is the PR's own head (never the queue base), proven to be the group commit's second parent", () => {
+  const { document, parentsRead } = runMergeGroupMain({
     payload: fullGraphQlPayload({ reviews: approvedAtHead }),
     prHead: HEAD,
     contained: true,
@@ -556,7 +625,7 @@ test("main on a merge group: the commit under test is the PR's own head (never t
   assert.notEqual(options.headShaUnderTest, QUEUE_BASE); // the #1253 defect
   assert.notEqual(options.headShaUnderTest, GROUP_HEAD); // the group commit was never reviewed
   assert.deepEqual(options.mergeGroup, { headSha: GROUP_HEAD, containsHeadShaUnderTest: true });
-  assert.deepEqual(ancestryAsked, [[HEAD, GROUP_HEAD]]);
+  assert.deepEqual(parentsRead, [GROUP_HEAD]);
 });
 
 test("main on a merge group: evidence bound to a different head than the PR's current head still mismatches (two independent reads)", () => {
@@ -571,7 +640,7 @@ test("main on a merge group: evidence bound to a different head than the PR's cu
   assert.notEqual(options.headShaUnderTest, evidence.headSha); // -> evidence-head-mismatch in the inspector
 });
 
-test("main on a merge group: a PR head the group does not contain is emitted as containsHeadShaUnderTest: false, never dropped", () => {
+test("main on a merge group: a PR head that is not what the group merges is emitted as containsHeadShaUnderTest: false, never dropped", () => {
   const { document } = runMergeGroupMain({
     payload: fullGraphQlPayload({ reviews: approvedAtHead }),
     prHead: HEAD,
@@ -580,15 +649,15 @@ test("main on a merge group: a PR head the group does not contain is emitted as 
   assert.deepEqual(document.reviewEvidence.options.mergeGroup, { headSha: GROUP_HEAD, containsHeadShaUnderTest: false });
 });
 
-test("main on a pull_request: unchanged -- --head is the commit under test, no mergeGroup, no ancestry question asked", () => {
+test("main on a pull_request: unchanged -- --head is the commit under test, no mergeGroup, no group parent read", () => {
   let written = "";
   main(["--pr", "7", "--head", HEAD, "--repo", "an-owner/a-repo", "--policy", "does-not-exist.review-policy.json"], {
     fetchPullRequest: () => fullGraphQlPayload(),
     fetchPullRequestHead: () => {
       throw new Error("must not be read on the pull_request path");
     },
-    isAncestor: () => {
-      throw new Error("must not be asked on the pull_request path");
+    readSecondParent: () => {
+      throw new Error("must not be read on the pull_request path");
     },
     write: (text) => {
       written += text;

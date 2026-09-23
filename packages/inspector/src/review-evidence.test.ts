@@ -525,7 +525,7 @@ describe("checkReviewEvidence on a merge-group run", () => {
     ...overrides,
   });
 
-  it("is satisfied when the PR head is contained in the group and the evidence is bound to that head", () => {
+  it("is satisfied when the group commit merges exactly the PR head and the evidence is bound to that head", () => {
     const report = checkReviewEvidence(evidence(), policy, mergeGroupOptions());
     expect(report.result.verdict).toBe("satisfied");
     expect(gateResultToExitCode(report.result)).toBe(0);
@@ -542,7 +542,7 @@ describe("checkReviewEvidence on a merge-group run", () => {
     expect(report.result).toMatchObject({ verdict: "indeterminate", reason: "evidence-head-mismatch" });
   });
 
-  it("is indeterminate (merge-group-head-not-contained) when the PR head is not an ancestor of the group commit, even with otherwise perfect evidence", () => {
+  it("is indeterminate (merge-group-head-not-contained) when the PR head is not what the group commit merges, even with otherwise perfect evidence", () => {
     const report = checkReviewEvidence(
       evidence(),
       policy,
@@ -561,7 +561,7 @@ describe("checkReviewEvidence on a merge-group run", () => {
     expect(report.result.verdict).toBe("violated");
   });
 
-  it("fails closed on an unusable mergeGroup: missing ancestry answer, malformed group sha, or no commit under test", () => {
+  it("fails closed, with its own reason, on an unusable mergeGroup: missing answer, malformed group sha, or no commit under test", () => {
     for (const bad of [
       mergeGroupOptions({ mergeGroup: { headSha: GROUP } }),
       mergeGroupOptions({ mergeGroup: { headSha: GROUP, containsHeadShaUnderTest: "true" } }),
@@ -570,7 +570,7 @@ describe("checkReviewEvidence on a merge-group run", () => {
       mergeGroupOptions({ headShaUnderTest: undefined }),
     ]) {
       const report = checkReviewEvidence(evidence(), policy, bad as never);
-      expect(report.result).toMatchObject({ verdict: "indeterminate", reason: "no-options-supplied" });
+      expect(report.result).toMatchObject({ verdict: "indeterminate", reason: "merge-group-unusable" });
     }
   });
 });
