@@ -5,6 +5,19 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.4.1] - 2026-09-22
+
+### Added
+
+- `foundry.capabilities` (schema v3, issue #1196): a MECE capability map of
+  this role's craft — evidence base, audience understanding, market
+  definition, positioning, claims, brand derivation, mission and values,
+  direction and roadmap currency, and constraints, all built against
+  `strategist-check`'s existing facts/brand/direction subcommands; business
+  model and pricing hypothesis, the north-star metric tree (#533), and the
+  competitive landscape are declared `planned`. Drafted per #1198, checked
+  MECE across the five v0 Launch-pack roles by `check-capability-maps.mjs`.
+
 ## [0.4.0] - 2026-09-22
 
 ### Changed

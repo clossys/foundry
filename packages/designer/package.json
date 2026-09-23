@@ -1,6 +1,6 @@
 {
   "name": "@clossys/designer",
-  "version": "0.4.17",
+  "version": "0.4.18",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -107,7 +107,119 @@
     "assessment": {
       "bin": "designer-rate-check",
       "invocation": "single-json-input"
-    }
+    },
+    "capabilities": [
+      {
+        "id": "token-contract-and-brand-overlay-binding",
+        "subQuestion": "Does every token slot resolve to a real, bound value in the consumer's own brand overlay?",
+        "worldClass": "Every token slot this package declares brandable is filled in the consumer's own brand.css, with no typo'd slot name and no silently-unfilled slot.",
+        "inputs": [
+          {
+            "producerRole": "@clossys/strategist",
+            "artifact": "brand"
+          }
+        ],
+        "outputs": [
+          "clossys/designer/brand.css"
+        ],
+        "proofCase": "token-purity-clean",
+        "maturity": "built",
+        "v0": true,
+        "businessLifecycleStage": "build"
+      },
+      {
+        "id": "components-and-blocks",
+        "subQuestion": "Does the shipped component and block library cover what a real interface needs, built consistently on the token contract?",
+        "worldClass": "Every interface surface is composed from the shared component and block library — never a bespoke, ungoverned element built outside it.",
+        "inputs": [],
+        "outputs": [
+          "clossys/designer/component-roster.json"
+        ],
+        "proofCase": "token-purity-clean",
+        "maturity": "built",
+        "v0": true,
+        "businessLifecycleStage": "build"
+      },
+      {
+        "id": "accessibility-and-contrast",
+        "subQuestion": "Does every token pairing and surface meet its declared contrast and accessibility constraint?",
+        "worldClass": "Every foreground/background token pairing in use passes its declared contrast ratio — checked, never assumed.",
+        "inputs": [],
+        "outputs": [
+          "clossys/designer/contrast-report.json"
+        ],
+        "proofCase": "token-purity-clean",
+        "maturity": "built",
+        "v0": true,
+        "businessLifecycleStage": "build"
+      },
+      {
+        "id": "type-record",
+        "subQuestion": "Is the type scale governed by one record every surface conforms to?",
+        "worldClass": "Every surface's type usage resolves to one governed type-record scale — never a one-off font-size picked per component.",
+        "inputs": [],
+        "outputs": [
+          "clossys/designer/type-record.json"
+        ],
+        "proofCase": "token-purity-clean",
+        "maturity": "built",
+        "v0": false,
+        "businessLifecycleStage": "build"
+      },
+      {
+        "id": "fold-and-hero-conformance",
+        "subQuestion": "Does the above-the-fold hero on every page conform to its declared layout and CSS contract?",
+        "worldClass": "Every page's hero renders within its declared fold and hero-CSS contract, checked structurally rather than eyeballed per page.",
+        "inputs": [],
+        "outputs": [
+          "clossys/designer/fold-report.json"
+        ],
+        "proofCase": "token-purity-clean",
+        "maturity": "built",
+        "v0": false,
+        "businessLifecycleStage": "build"
+      },
+      {
+        "id": "brand-kit-assembly",
+        "subQuestion": "Is there one assembled, current brand kit a consumer or Publisher can read whole?",
+        "worldClass": "The brand kit (tokens, type, contrast, components, marks) is one assembled, current record — the web style guide IS the brand kit, never a second, divergent artifact.",
+        "inputs": [
+          {
+            "producerRole": "@clossys/strategist",
+            "artifact": "brand"
+          },
+          {
+            "producerRole": "@clossys/writer",
+            "artifact": "voice"
+          }
+        ],
+        "outputs": [
+          "clossys/designer/brand-kit.json"
+        ],
+        "proofCase": "token-purity-clean",
+        "maturity": "built",
+        "v0": true,
+        "businessLifecycleStage": "launch"
+      },
+      {
+        "id": "logo-and-identity-files",
+        "subQuestion": "Does every product get a usable, checked logo and mark variant set without waiting on a hired designer?",
+        "worldClass": "Every product ships a checked mark set (primary, mark, mono, light/dark, favicon, app icons) generated deterministically from its own tokens, or adopted from a supplied mark — contrast, minimum size, clear space, and single-colour legibility all checked, per #1210.",
+        "inputs": [
+          {
+            "producerRole": "@clossys/strategist",
+            "artifact": "brand"
+          }
+        ],
+        "outputs": [
+          "clossys/designer/assets/marks.json"
+        ],
+        "proofCase": "token-purity-clean",
+        "maturity": "planned",
+        "v0": true,
+        "businessLifecycleStage": "launch"
+      }
+    ]
   },
   "files": [
     "dist",

@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.2] - 2026-09-22
+
+### Added
+
+- `foundry.capabilities` (schema v3, issue #1196): a MECE capability map of
+  this role's craft — the first-person keep verdict, lived feedback,
+  comparison against the person's own alternatives, refer, churn, adopt,
+  and worth, all built against `keep-form.ts`'s existing seven inhabit
+  intents. Drafted per #1201, checked MECE across the five v0 Launch-pack
+  roles by `check-capability-maps.mjs`.
+
 ## [0.1.1] - 2026-09-22
 
 ### Added

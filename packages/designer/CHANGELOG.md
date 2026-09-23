@@ -5,6 +5,19 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.4.18] - 2026-09-22
+
+### Added
+
+- `foundry.capabilities` (schema v3, issue #1196): a MECE capability map of
+  this role's craft — token contract and brand-overlay binding, components
+  and blocks, accessibility and contrast, type record, fold and hero
+  conformance, and brand-kit assembly, all built against the existing
+  tokens/contrast/fold/hero-css modules; logo and identity files (#1210)
+  are declared `planned` — `master-mark.ts` validates mark shape today but
+  ships no generated mark. Drafted per #1199, checked MECE across the five
+  v0 Launch-pack roles by `check-capability-maps.mjs`.
+
 ## [0.4.17] - 2026-09-21
 
 ### Added

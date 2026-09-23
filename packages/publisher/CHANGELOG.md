@@ -5,6 +5,20 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.4.26] - 2026-09-22
+
+### Added
+
+- `foundry.capabilities` (schema v3, issue #1196): a MECE capability map of
+  this role's craft — surface documents, channel rendering, templates and
+  channel specs, sealing and the publication record, and live parity, all
+  built against the existing document/email/image/print/web/slides and
+  record modules; the materials site and channel kits are declared
+  `partial` (brand-asset roster and slide rendering exist, but no
+  assembled site or packaged per-channel kit yet); v0 Launch pack planning
+  and inventory is declared `planned`. Drafted per #1202, checked MECE
+  across the five v0 Launch-pack roles by `check-capability-maps.mjs`.
+
 ## [0.4.24] - 2026-09-21
 
 ### Changed

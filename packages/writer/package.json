@@ -1,6 +1,6 @@
 {
   "name": "@clossys/writer",
-  "version": "0.3.15",
+  "version": "0.3.17",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -37,7 +37,102 @@
     "assessment": {
       "bin": "writer-rate-check",
       "invocation": "single-json-input"
-    }
+    },
+    "capabilities": [
+      {
+        "id": "voice-record",
+        "subQuestion": "Does every voice claim trace to a derivation and field record, and is it internally consistent?",
+        "worldClass": "Voice is a governed record with full derivation and field coverage, never a style felt out per sentence.",
+        "inputs": [
+          {
+            "producerRole": "@clossys/strategist",
+            "artifact": "brand"
+          }
+        ],
+        "outputs": [
+          "clossys/writer/voice.json"
+        ],
+        "proofCase": "copy-clean",
+        "maturity": "built",
+        "v0": true,
+        "businessLifecycleStage": "define"
+      },
+      {
+        "id": "copy-registry",
+        "subQuestion": "Is every piece of audience-facing copy a validated, addressable registry entry?",
+        "worldClass": "Every shipped sentence resolves from one validated registry entry by id — never typed ad hoc into a component.",
+        "inputs": [],
+        "outputs": [
+          "clossys/writer/copy-registry.json"
+        ],
+        "proofCase": "copy-clean",
+        "maturity": "built",
+        "v0": true,
+        "businessLifecycleStage": "build"
+      },
+      {
+        "id": "claims-to-copy-traceability",
+        "subQuestion": "Does every claim-shaped or numeric sentence in shipped copy trace to an approved registry claim?",
+        "worldClass": "A currency amount, percentage, multiplier, or superlative sentence in live copy either matches a registered claim or carries a citation to one — never asserted bare.",
+        "inputs": [
+          {
+            "producerRole": "@clossys/strategist",
+            "artifact": "claims"
+          }
+        ],
+        "outputs": [
+          "clossys/writer/claim-citations.json"
+        ],
+        "proofCase": "copy-clean",
+        "maturity": "built",
+        "v0": true,
+        "businessLifecycleStage": "build"
+      },
+      {
+        "id": "live-copy-conformance",
+        "subQuestion": "Does live, shipped copy still match its registry source and stay within its word-budget and fold rules?",
+        "worldClass": "Shipped copy never drifts silently from its registry source, and the above-the-fold word budget is enforced, not eyeballed.",
+        "inputs": [],
+        "outputs": [
+          "clossys/writer/live-copy-report.json"
+        ],
+        "proofCase": "copy-clean",
+        "maturity": "built",
+        "v0": false,
+        "businessLifecycleStage": "operate"
+      },
+      {
+        "id": "addressability",
+        "subQuestion": "Is every piece of user-facing prose resolved from the registry by id, never typed directly into a component?",
+        "worldClass": "A rename is always cheap: renaming a piece of copy means editing one registry entry, never hunting every component that typed the sentence.",
+        "inputs": [],
+        "outputs": [
+          "clossys/writer/addressability-report.json"
+        ],
+        "proofCase": "copy-clean",
+        "maturity": "built",
+        "v0": false,
+        "businessLifecycleStage": "build"
+      },
+      {
+        "id": "messaging-kit",
+        "subQuestion": "Does the product have one governed tagline, pitch-length set, boilerplate, and FAQ that everything else derives from?",
+        "worldClass": "One governed messaging kit (tagline, short/medium/long pitch, short/medium/long boilerplate, FAQ) exists and every surface's short-form copy derives from it, rather than being improvised per surface.",
+        "inputs": [
+          {
+            "producerRole": "@clossys/strategist",
+            "artifact": "positioning"
+          }
+        ],
+        "outputs": [
+          "clossys/writer/messaging-kit.json"
+        ],
+        "proofCase": "copy-clean",
+        "maturity": "planned",
+        "v0": true,
+        "businessLifecycleStage": "launch"
+      }
+    ]
   },
   "description": "The writer role: is it well said? A consumer-owned language system: voice rules, glossary and claims validation, addressable copy records, source traceability, locale coverage, and passage-layer composition — five gates reachable from one bin. Ships machinery and templates, never a consumer's actual copy or voice.",
   "keywords": [

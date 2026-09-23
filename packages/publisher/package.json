@@ -1,6 +1,6 @@
 {
   "name": "@clossys/publisher",
-  "version": "0.4.24",
+  "version": "0.4.26",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -96,7 +96,141 @@
     "assessment": {
       "bin": "publisher-rate-check",
       "invocation": "single-json-input"
-    }
+    },
+    "capabilities": [
+      {
+        "id": "v0-launch-pack-planning-and-inventory",
+        "subQuestion": "What does this product owe its v0 Launch pack, and what already exists versus is still needed?",
+        "worldClass": "Every new product gets one declared inventory of what the v0 Launch pack owes it and what state each item is actually in — never assembled ad hoc per product.",
+        "inputs": [],
+        "outputs": [
+          "clossys/publisher/pack.json"
+        ],
+        "proofCase": "media-satisfied",
+        "maturity": "planned",
+        "v0": true,
+        "businessLifecycleStage": "launch"
+      },
+      {
+        "id": "surface-documents",
+        "subQuestion": "Is every audience-facing surface declared once as a validated document, with its template and locations resolved?",
+        "worldClass": "Every published surface is one validated SurfaceDocument resolving to a registered template and a real channel location — never a page composed ad hoc outside the document.",
+        "inputs": [
+          {
+            "producerRole": "@clossys/writer",
+            "artifact": "copy-registry"
+          },
+          {
+            "producerRole": "@clossys/designer",
+            "artifact": "component-roster"
+          }
+        ],
+        "outputs": [
+          "clossys/publisher/surfaces.json"
+        ],
+        "proofCase": "media-satisfied",
+        "maturity": "built",
+        "v0": true,
+        "businessLifecycleStage": "launch"
+      },
+      {
+        "id": "channel-rendering",
+        "subQuestion": "Does every declared surface render correctly to its channel — web, email, image, print, document, or slides?",
+        "worldClass": "A surface document renders byte-identically to its golden fixture on every channel it declares, checked, never eyeballed per release.",
+        "inputs": [
+          {
+            "producerRole": "@clossys/designer",
+            "artifact": "brand-kit"
+          }
+        ],
+        "outputs": [
+          "clossys/publisher/render-report.json"
+        ],
+        "proofCase": "media-satisfied",
+        "maturity": "built",
+        "v0": true,
+        "businessLifecycleStage": "launch"
+      },
+      {
+        "id": "templates-and-channel-specs",
+        "subQuestion": "Is every channel's template and spec declared once and reused, never improvised per page?",
+        "worldClass": "A channel template is data — a declared block sequence and spec — never an arbitrary per-page build function.",
+        "inputs": [],
+        "outputs": [
+          "clossys/publisher/templates.json"
+        ],
+        "proofCase": "media-satisfied",
+        "maturity": "built",
+        "v0": true,
+        "businessLifecycleStage": "build"
+      },
+      {
+        "id": "materials-site",
+        "subQuestion": "Is there one public materials site a client can point a prospect at?",
+        "worldClass": "One assembled, current public site carries the product's overview, deck, and HTML-only slides — never a scatter of one-off files a client has to assemble by hand.",
+        "inputs": [
+          {
+            "producerRole": "@clossys/writer",
+            "artifact": "messaging-kit"
+          },
+          {
+            "producerRole": "@clossys/designer",
+            "artifact": "brand-kit"
+          }
+        ],
+        "outputs": [
+          "clossys/publisher/materials-site.json"
+        ],
+        "proofCase": "media-satisfied",
+        "maturity": "partial",
+        "v0": true,
+        "businessLifecycleStage": "launch"
+      },
+      {
+        "id": "channel-kits",
+        "subQuestion": "Is there one governed kit — assets, copy slots, specs — per channel a client can hand to that channel's own tool?",
+        "worldClass": "Every channel (email, social) has one governed kit of checked assets and copy slots at the exact sizes and roles that channel requires — never assembled by hand per send.",
+        "inputs": [
+          {
+            "producerRole": "@clossys/designer",
+            "artifact": "brand-kit"
+          }
+        ],
+        "outputs": [
+          "clossys/publisher/channel-kits.json"
+        ],
+        "proofCase": "media-satisfied",
+        "maturity": "partial",
+        "v0": true,
+        "businessLifecycleStage": "launch"
+      },
+      {
+        "id": "sealing-and-the-publication-record",
+        "subQuestion": "Once published, is the exact shipped result sealed into an immutable, append-only record?",
+        "worldClass": "Every publication event is appended once to an immutable record — never overwritten, never silently lost.",
+        "inputs": [],
+        "outputs": [
+          "clossys/publisher/record.json"
+        ],
+        "proofCase": "media-satisfied",
+        "maturity": "built",
+        "v0": true,
+        "businessLifecycleStage": "deliver"
+      },
+      {
+        "id": "live-parity",
+        "subQuestion": "Does what's live still match what was sealed, or has it drifted?",
+        "worldClass": "Every citation in a sealed publication is re-checked against the current source value, and drift is reported, never assumed absent.",
+        "inputs": [],
+        "outputs": [
+          "clossys/publisher/drift-report.json"
+        ],
+        "proofCase": "media-satisfied",
+        "maturity": "built",
+        "v0": false,
+        "businessLifecycleStage": "operate"
+      }
+    ]
   },
   "files": [
     "dist",

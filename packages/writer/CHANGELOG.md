@@ -5,6 +5,18 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+## [0.3.17] - 2026-09-22
+
+### Added
+
+- `foundry.capabilities` (schema v3, issue #1196): a MECE capability map of
+  this role's craft — voice record, copy registry, claims-to-copy
+  traceability, live-copy conformance, and addressability, all built
+  against the existing voice/registry/copy-gate modules; the messaging kit
+  (tagline, pitch lengths, boilerplate, FAQ) is declared `planned`, new for
+  v0. Drafted per #1200, checked MECE across the five v0 Launch-pack roles
+  by `check-capability-maps.mjs`.
+
 ## [0.3.15] - 2026-09-21
 
 ### Changed
