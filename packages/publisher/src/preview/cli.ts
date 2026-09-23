@@ -1,11 +1,17 @@
 #!/usr/bin/env node
 /**
- * `publisher-preview` — render every shipped web view against a consumer
- * `brand.css` after Designer’s brand-file coverage check passes. Fixture
- * copy lives in this package; Writer and Strategist are unchanged. When a
- * brand-asset roster JSON file is also given, and it is complete, also
- * writes the public brand guide (`guide.html`) and the internal system
- * audit (`audit.html`) from the same brand.css and roster (issue #1111).
+ * `publisher-preview` — the launch pack's v0 preview gallery: every shipped
+ * web view, the site template's own routes, the materials mini-site
+ * (company overviews and pitch deck), the email kit, and every share/
+ * social card, all rendered against a consumer `brand.css` after
+ * Designer's brand-file coverage check passes (issue #1204/#1207/#1208).
+ * Fixture copy lives in this package; Writer and Strategist are unchanged.
+ * When a brand-asset roster JSON file is also given, and it is complete,
+ * also writes the public brand guide (`guide.html`) and the internal
+ * system audit (`audit.html`) from the same brand.css and roster (issue
+ * #1111). `index.html` links every file written — see
+ * `render-launch-pack-gallery.ts` for what each section covers and what
+ * deliberately isn't rendered.
  */
 
 import { existsSync, realpathSync, statSync } from "node:fs";
@@ -121,6 +127,7 @@ export function main(argv: string[]): number {
     if (result.guidePath && result.auditPath) {
       console.log(`Wrote brand guide and system audit: ${result.guidePath}, ${result.auditPath}`);
     }
+    console.log(`Wrote the launch-pack preview (${result.writtenFiles.length} files): ${result.indexPath}`);
     return 0;
   } catch (error) {
     console.error(`publisher-preview: ${error instanceof Error ? error.message : String(error)}`);
