@@ -1784,10 +1784,12 @@ domain or a public git remote.
   against each platform's current guidance (#1207's own requirement) has
   something concrete to check.
 
-This subpath ships no PNG export command of its own yet — the rendered
-image assets (social, OG, video-call backgrounds) are a Publisher export
-command, the same shape as the existing `publisher-preview`; left as a
-followup (see the PR that introduced this subpath for why).
+This subpath ships no PNG export command of its own yet — a real raster
+export (social, OG, video-call backgrounds) is a Publisher export command;
+left as a followup (see the PR that introduced this subpath for why).
+`publisher-preview` (see "Preview gallery," below) does render one SVG per
+entry here, but only as a rendered fixture to browse, not an export path a
+consumer's own build would call.
 
 ## Site template (`apps/site`)
 
@@ -1799,6 +1801,53 @@ brand-type.template.json` is shipped-but-not-compiled content. Launcher
 (#1215) copies it into a product repository's own `apps/site`; see
 `templates/site/README.md`, shipped alongside it, for the full file list
 and what each page reads from that repository's own `clossys/` records.
+
+## Preview gallery (`publisher-preview`)
+
+```
+publisher-preview <brand.css> <output-directory> [roster.json]
+```
+
+The Launch pack's v0 preview: every off-the-shelf boilerplate view a
+consumer relies on until they build custom views, rendered against one
+real `brand.css` after Designer's brand-file coverage check passes, into
+one flat output directory whose `index.html` links every file written.
+Nothing here makes a network call, and the same inputs always produce
+byte-identical output. Exit codes are unchanged: `0` = output written,
+`1` = the brand file or roster failed its own check (nothing is written),
+`2` = bad arguments or an unexpected error.
+
+What it renders, all from fixture copy in `src/preview/fixture-copy-
+registry.ts` (never hardcoded in a renderer):
+
+- **Web views** (`gallery.html`) — every shipped view: `MarketingView`,
+  `SectionedView`, `AuthView`, `ErrorView`, `CaptureView`, `DocumentView`,
+  `CollectionView`.
+- **Site** (`site-*.html`) — `templates/site`'s own routes
+  (`web-route-manifest.json`), rendered through the exact template each
+  route names (`MarketingView` for home/about/contact/privacy/terms,
+  a direct `ErrorView` call for `not-found`, matching `templates/site/app/not-found.tsx`
+  itself). `templates/site/app/robots.ts`/`templates/site/app/sitemap.ts` are Next.js metadata route
+  handlers, not page components — there is no view to render for either,
+  so neither appears here.
+- **Materials** (`materials-*.html`) — the company overview at each of
+  the three lengths (`COMPANY_OVERVIEW_TEMPLATES`' own section order),
+  the pitch deck (`PITCH_DECK_SLIDE_ORDER`) plus one
+  `selectAudienceVariant`-filtered audience variant, and the materials
+  index (`renderMaterialsIndexHtml`).
+- **Email kit** (`email-*.html`) — the launch announcement, welcome, and
+  follow-up emails (`renderEmailDocument`), each shown in a 600px
+  email-width frame alongside its plain-text alternative, plus a
+  signature (`buildEmailSignatureHtml`/`Text`).
+- **Cards** (`cards-*.svg`) — one real-sized SVG per
+  `SOCIAL_CHANNEL_SPECS` image, `OG_SHARE_CARD_SPEC`, and each
+  `VIDEO_CALL_BACKGROUND_SPECS` entry (`renderImageDocument`).
+- **Brand** (`guide.html`, `audit.html`) — written only when a complete
+  `roster.json` (`BrandAssetEntry[]`) is also given (issue #1111).
+
+`index.html` links every file above by exact filename — a broken link
+there means a file this command claims to write is missing, not a
+cosmetic gap.
 
 ## API
 
