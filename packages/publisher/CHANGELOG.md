@@ -5,18 +5,6 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
-## [0.4.25] - 2026-09-23
-
-### Fixed
-
-- `publisher-web-route-check` bin: `main()` now returns an exit code and the
-  entry point sets `process.exitCode` instead of calling `process.exit()`
-  immediately after `console.log`/`console.error`. `process.exit()` can
-  terminate the process before an async stdio pipe write finishes, which is
-  the same "exits 1 but stdout came back empty" flake class #1333 found in
-  `@clossys/messenger`'s CLI test — fixed here defensively since this bin had
-  the identical pattern, even though no report of it flaking has come in yet.
-
 ## [0.4.24] - 2026-09-21
 
 ### Changed

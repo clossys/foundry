@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.1.11] - 2026-09-23
+
+### Fixed
+
+- `src/cli.test.ts`'s "installed-symlink topology" tests captured the
+  spawned bin's output via `spawnSync`, whose synchronous capture ran an
+  internal poll loop outside Node's normal stream machinery — the loop a
+  heavily loaded CI runner could starve, occasionally returning the
+  correct exit code with an empty `stdout` (#1333). Replaced with
+  `spawn()` plus explicit `stdout`/`stderr` accumulation and a `close`
+  handler, whose ordering is guaranteed by the `Readable` stream
+  contract. No production code changed; this bumps the version only
+  because this package's retained 0.1.10 qualification record covers the
+  whole package tree, tests included, and would otherwise go stale
+  (docs/PUBLISHING.md).
+
 ## [0.1.10] - 2026-09-21
 
 ### Fixed
