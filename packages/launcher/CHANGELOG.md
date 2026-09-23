@@ -5,6 +5,19 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-09-22
+
+### Added
+
+- Scaffolds one visible `clossys/` folder per repository: a generated `README.md` index of active roles at the root of `clossys/`, and `clossys/.state/` for machine files (hub marker, inventory, and the new skills manifest).
+- Writes `clossys/.state/skills.json` on every apply: each composed skill's source (`installed` or `catalogue`), version, and a content digest. The health report states how many composed skills are out of date against the live `@clossys/launcher` version and how many were retired this run; retirement removes only a skill this directory's own previous manifest listed, never one launcher did not write.
+- Packs the shared conversation contract at build time and injects it into every composed skill in place of that skill's own "how we work together" and "one question at a time" sections, at the same position. No package edit is needed for this to take effect.
+
+### Changed
+
+- Moves its own hub marker and inventory from the hidden `.clossys/` to the visible `clossys/.state/`; the packed skeleton template moves with it. Resume detects a hub still on the legacy path and migrates it automatically, reporting the move in the health report. A hub with a marker at both paths is graded `indeterminate` and launcher refuses rather than merging them silently.
+- Adds a `.gitignore` entry for generated run output under `clossys/**/.generated/`. Approved records, proof, and machine state are still committed, never ignored.
+
 ## [0.1.8] - 2026-09-21
 
 ### Added
