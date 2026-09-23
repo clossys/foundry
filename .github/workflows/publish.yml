@@ -372,8 +372,10 @@ jobs:
           TARBALL: ${{ runner.temp }}/qualification/${{ matrix.package }}/candidate.tgz
         run: |
           set -uo pipefail
+          set +e
           output="$(node scripts/check-launcher-catalogue-currency.mjs --package "$PKG" --tarball "$TARBALL" --json)"
           status=$?
+          set -e
           printf '%s\n' "$output"
           message="$(node -e 'console.log(JSON.parse(process.argv[1]).message)' "$output")"
           if [ "$PKG" = "launcher" ]; then
