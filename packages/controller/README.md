@@ -300,6 +300,114 @@ from one role's loop state. The installed `foundry-loop-status
 form, on the same `0` / `2` ternary as this package's other gates (there is
 no `1`: a report is rendered or it is not).
 
+### The shared check-output-envelope (issue #1174)
+
+The repository contract `docs/contracts/check-output-envelope.json`,
+which does not ship with this package, is one JSON report shape for
+every check command's report, across every role -- shipped in Stage A with
+no real emitter yet. `buildCheckOutputEnvelope(options)` is the first one:
+it builds a `CheckOutputEnvelope` (`package`, `version`, `verdict`,
+`summary`, `findings: CheckFinding[]`, an optional `metric: CheckMetric`
+and `nextAction`, all typed from `BuildEnvelopeOptions`), refusing at
+construction time to build a non-`satisfied` verdict with an empty
+`findings` list -- a report that says something is wrong while refusing to
+say what it is. `envelopeToExitCode(envelope)` folds the envelope's own
+`verdict` onto this package's `0` / `1` / `2` exit-code convention, reusing
+the same `GateVerdict` vocabulary `./gates` already declares rather than a
+second copy. The schema-version and heartbeat checks below are its first
+two real emitters.
+
+### Schema versions and migrations for every `clossys/` record (issue #1224)
+
+Every record a package writes under `clossys/` carries a `schemaVersion`;
+this module is the deterministic migration engine every package's own
+forward migrations run through. `classifyRecordVersion(table, record)` is a
+read-only answer -- `RecordVersionClassification`: `already-current` /
+`migratable` / `future` / `no-path` -- over one record against a
+`MigrationTable` (`kind`, `currentVersion`, and an ordered list of
+`MigrationStep`s, each a pure `fromVersion` -> `toVersion` hop).
+`migrateRecord(table, record)` actually walks the chain, returning a
+`MigrationOutcome`: `AlreadyCurrentOutcome` (idempotent -- re-running this on
+an already-migrated record is a no-op), `MigratedOutcome` (every applied
+step's description, plus `backup`, the record exactly as it was before any
+step ran), or `IndeterminateOutcome` (a missing/non-numeric `schemaVersion`,
+a `schemaVersion` newer than this package knows -- **never downgraded** --
+or a gap in the step chain; the record comes back byte-identical in every
+case, never partially migrated).
+
+`createRecordKindRegistry()` returns an empty, open `RecordKindRegistry` any
+caller populates with its own tables; `defaultRecordKindRegistry()` is the
+one this package's own CLI uses, seeded with the two record kinds actually
+found under `clossys/` on `main` today -- `LOOP_STATE_KIND`
+(`clossys/<role>/loop.json`) and `COVERAGE_DECLARATION_KIND`
+(`clossys/coverage.json`) -- an extension point, not a closed list: a
+package like Strategist registers its own table into its own registry
+instance when it adopts this engine.
+
+`discoverRecords(repoRoot, locations?)` walks `<repoRoot>/clossys/` for
+files matching a known `RecordLocation` (`DEFAULT_RECORD_LOCATIONS`, the
+same two kinds above) into a list of `DiscoveredRecord`s, skipping
+`clossys/.state/` (generated files only, never a source record). `runMigrations(repoRoot, registry, options?)`
+(`RunMigrationsOptions`) classifies/migrates every discovered record into a
+`RecordMigrationReport`, and -- only with `apply: true` -- writes the
+migrated record back to its own path plus a backup of its pre-migration
+bytes at `clossys/.state/schema-backups/<relative-path>.v<oldVersion>.json`.
+The installed `foundry-schema-migrate [repoRoot] [--apply]` executable is
+the CLI form: report-only (dry run) by default, emitting one
+`CheckOutputEnvelope` (see above) -- `indeterminate` if any record could not
+be classified, `satisfied` otherwise (a migrated record still counts
+satisfied; the gate is about a record shape shipping with no migration at
+all, not about migrations never running).
+
+### Operating cadence: a zero-token heartbeat (issue #1221)
+
+A business runs continuously, but a loop only runs when a person types
+`/clossys-<role> loop`. The heartbeat closes that gap without a model:
+`computeHeartbeat(roles, now?)` deterministically finds every capability,
+across a `Readonly<Record<string, LoopState>>` of roles, that is
+`blocked-capability` (one entry per open blocker, `overdue` reused directly
+from `./blockers`'s own `isBlockerOverdue` rather than a second copy),
+`pending-decision` (stage `judge`), `stale-capability` (condition `stale`),
+or `review-waiting` (stage `learn`) -- the fixed four `HeartbeatFindingKind`s
+in `HEARTBEAT_FINDING_KINDS`, each one a `DigestEntry`, joined into one
+`HeartbeatDigest` sorted overdue-blockers-first, then pending decisions,
+then the rest, ties broken by role then capability id for determinism.
+`renderDigest(entries, now?)` is a plain, mechanical Markdown renderer, in
+the same generic-renderer style as `renderStatusDocument` above -- Advisor's
+own later wording/prioritization pass supersedes it, per this feature's own
+ownership split (engine and computation here, installing the workflow is
+Launcher's job, digest wording is Advisor's). "Nothing waiting" renders one
+plain line, never an empty file.
+
+`loadLoopStates(repoRoot)` reads every `clossys/<role>/loop.json` under a
+repository root into a `LoadedLoopStates` map, validating each with
+`isValidLoopState` and reporting an unreadable or invalid one as an
+`UnreadableLoopState` rather than throwing (a role directory with no
+`loop.json` is silently skipped -- it has not adopted the loop engine yet).
+`computeHeartbeatForRepo(repoRoot, now?)` composes that read with
+`computeHeartbeat` into one `HeartbeatRunResult`, and
+`writeHeartbeatDigest(repoRoot, digest, now?)` renders the decisions file
+into the consumer repository's own state directory, at the path named by
+the exported `HEARTBEAT_DIGEST_PATH` constant -- kept as a separate write
+step so a caller can run in report mode by simply not calling it. The installed `foundry-heartbeat [repoRoot] [--write]`
+executable is the CLI form: report mode by default, `--write` also renders
+the digest file, emitting one `CheckOutputEnvelope` -- `satisfied` whenever
+the digest computed successfully (a populated digest is not itself a
+violation), `indeterminate` only when a `loop.json` could not be read or
+validated. Never calls a model; never makes a live external change.
+
+`controllerHeartbeatSchedule(scope)` builds the reference
+`ScheduleDeclaration` (id `controller-heartbeat`, a business-days-only
+cadence, `artifact: "scripts/run-heartbeat.mjs"` -- this repository's own
+demonstration wrapper, which does not ship with this package) this
+package's existing schedule conventions already define -- "work that runs
+without a model is a schedule, never a routine." `validateHeartbeatSchedule(declaration,
+registry)` is a thin, named call to the existing
+`validateScheduleDeclaration`, so a caller never re-derives that validation
+by hand. A declaration is not a deployment: installing the workflow that
+actually runs this on a clock is a consuming repository's own job (via
+`@clossys/launcher`), not this package's.
+
 ### First-day onboarding: discovering and invoking role-owned assessments
 
 One parameterized workflow that **discovers and invokes role-owned
@@ -2396,6 +2504,13 @@ mismatch (or another binding finding), `2` when it could not run. Use
 | `SolvesEntry` / `SolvesDeclaration` / `SolvesDeclarationDiscovery` | types | One verifiable client-problem claim, a role's full `solves` declaration, and its discovery result. |
 | `NeedsEntry` / `NeedsDeclaration` / `NeedsDeclarationDiscovery` | types | One consumed artifact reference, a role's full `needs` declaration, and its discovery result. |
 | `FeedsEntry` / `FeedsDeclaration` / `FeedsDeclarationDiscovery` | types | One produced artifact reference, a role's full `feeds` declaration, and its discovery result. |
+| `buildCheckOutputEnvelope(options)` / `envelopeToExitCode(envelope)` | functions | The shared check-output-envelope (issue #1174): builds one `CheckOutputEnvelope` report (`CheckFinding`, `CheckMetric`, `BuildEnvelopeOptions`), refusing a non-`satisfied` verdict with no findings, and folds it onto this package's `0`/`1`/`2` exit-code convention. |
+| `classifyRecordVersion(table, record)` / `migrateRecord(table, record)` | functions | Schema versions and migrations for every `clossys/` record (issue #1224): read-only version classification (`RecordVersionClassification`) and the pure migration engine, returning a `MigrationTable`-driven `MigrationOutcome` (`AlreadyCurrentOutcome` / `MigratedOutcome` / `IndeterminateOutcome`) built from a kind's `MigrationStep`s. Idempotent, never downgrades a future schema version, and never partially migrates a record with a gap in its step chain. |
+| `createRecordKindRegistry()` / `defaultRecordKindRegistry()` | functions | An open per-kind `RecordKindRegistry`; the default is seeded with the two record kinds shipped today, `LOOP_STATE_KIND` and `COVERAGE_DECLARATION_KIND`. |
+| `discoverRecords(repoRoot, locations?)` / `runMigrations(repoRoot, registry, options?)` | functions | Walks a repository's `clossys/` tree for files matching a `RecordLocation` (`DEFAULT_RECORD_LOCATIONS`), and classifies/migrates each into a `RecordMigrationReport` (`RunMigrationsOptions`) — writing a migrated record and a pre-migration backup only when `apply` is set. The installed `foundry-schema-migrate [repoRoot] [--apply]` executable is the CLI form, report-only (dry run) by default. |
+| `HEARTBEAT_FINDING_KINDS` / `computeHeartbeat(roles, now?)` / `renderDigest(entries, now?)` | constants / functions | Operating cadence (issue #1221): the zero-token heartbeat. `computeHeartbeat` deterministically finds every stale, blocked, pending-decision, or review-waiting capability (`HeartbeatFindingKind`, `DigestEntry`) across a set of roles' `LoopState`s into one `HeartbeatDigest`; `renderDigest` is a plain, mechanical Markdown renderer Advisor's own wording pass supersedes later. |
+| `loadLoopStates(repoRoot)` / `computeHeartbeatForRepo(repoRoot, now?)` / `writeHeartbeatDigest(repoRoot, digest, now?)` | functions | Reads every `clossys/<role>/loop.json` under a repository root (`LoadedLoopStates`, reporting an unreadable one as `UnreadableLoopState` rather than throwing), computes the digest (`HeartbeatRunResult`), and writes the decisions file -- named by the exported `HEARTBEAT_DIGEST_PATH` constant -- into the consumer repository's own state directory. The installed `foundry-heartbeat [repoRoot] [--write]` executable is the CLI form, report mode by default; never calls a model. |
+| `controllerHeartbeatSchedule(scope)` / `validateHeartbeatSchedule(declaration, registry)` | functions | The heartbeat's reference `ScheduleDeclaration`, declarable under this package's existing schedule conventions, and its validation via the existing `validateScheduleDeclaration`. |
 
 ## Requirements
 
