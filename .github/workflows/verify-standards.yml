@@ -51,6 +51,11 @@ permissions:
   contents: read
   pull-requests: read
   issues: read
+  # scripts/collect-review-evidence.mjs reads a pull request's
+  # statusCheckRollup (required-check conclusions) over GraphQL, which
+  # needs this scope even though the caller never touches the REST checks
+  # API directly.
+  checks: read
 
 concurrency:
   group: verify-standards-${{ github.ref }}
@@ -112,19 +117,62 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: node .github/scripts/assemble-verify-inputs.mjs > verify-inputs.json
 
+      # This repository's own review-evidence collector (issue #403):
+      # GitHub's own review records — approvals, requested changes, resolved
+      # and unresolved threads, required-check conclusions — at the EXACT
+      # head this run is testing, never a model reviewer and never waited
+      # on (see scripts/collect-review-evidence.mjs's own header, and
+      # AGENTS.md's "Model-assisted code review is manually initiated. Do
+      # not add a background model reviewer or make repository workflows
+      # wait for provider-specific review evidence."). `--merge` folds the
+      # result into the SAME verify-inputs.json the assemble step above
+      # just wrote, so the decide step below still reads one document.
+      # `continue-on-error`, same reasoning as the assemble step: a
+      # collector that dies still reaches decide, where its absence is
+      # `indeterminate`, never a silent clean run.
+      #
+      # `--head` is `github.event.pull_request.head.sha` — what THIS
+      # triggering event says the head is — deliberately not read back out
+      # of the live GraphQL query the collector itself makes a moment
+      # later. Those are two independent reads on purpose: if a push lands
+      # in between, or this run is a stale replay, they disagree, and
+      # `review-evidence`'s own `evidence-head-mismatch` rule reports that
+      # honestly as indeterminate rather than folding a stale approval into
+      # either a pass or a fail. See scripts/collect-review-evidence.
+      # test.mjs's and .integration.test.mjs's "different head" cases.
+      #
+      # `--require-review-presence` is deliberately NOT passed: this issue
+      # is about making review evidence collectible and checkable, not
+      # about making review itself mandatory — see
+      # .github/verify-standards-review-policy.json's own header for that
+      # decision and why `requiredChecks` there is empty for now too.
+      - name: Collect review evidence
+        id: review-evidence
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          node scripts/collect-review-evidence.mjs \
+            --pr "${{ github.event.pull_request.number }}" \
+            --head "${{ github.event.pull_request.head.sha }}" \
+            --repo "${{ github.repository }}" \
+            --branch "${{ github.event.pull_request.base.ref }}" \
+            --merge verify-inputs.json \
+            > verify-inputs.next.json
+          mv verify-inputs.next.json verify-inputs.json
+
       # ---- DECIDE ----------------------------------------------------------
       # One command. No credential, no network. Its exit code is the job's.
       #
-      # `--checks task-record` narrows to the one check this workflow actually
-      # collects for. A check on a non-applicable event returns INDETERMINATE,
-      # not 0 — there is no silent skip — so an unnarrowed run would exit 2 on
-      # every pull request forever. Narrowing is visible on the command line
-      # and in the job summary, where a reviewer can see exactly what was and
-      # was not evaluated:
+      # `--checks task-record,review-evidence` narrows to the two checks this
+      # workflow actually collects for. A check on a non-applicable event
+      # returns INDETERMINATE, not 0 — there is no silent skip — so an
+      # unnarrowed run would exit 2 on every pull request forever. Narrowing
+      # is visible on the command line and in the job summary, where a
+      # reviewer can see exactly what was and was not evaluated:
       #   - secret-scan: a scan already runs in CI's own safety job, but this
       #     workflow does not collect its record; wiring that across jobs is
       #     separate work.
-      #   - review-evidence: needs an evidence bundle nothing assembles here yet.
       #   - policy-drift: needs a live enforcement-surface read, which this
       #     job's automatic token cannot perform.
       #
@@ -156,7 +204,7 @@ jobs:
           status=0
           node packages/inspector/dist/bin.js \
             --inputs verify-inputs.json \
-            --checks task-record \
+            --checks task-record,review-evidence \
             > "$report" || status=$?
           cat "$report"
           cat "$report" >> "$GITHUB_STEP_SUMMARY"
