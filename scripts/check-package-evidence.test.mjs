@@ -167,14 +167,17 @@ const CURRENT_PUBLISHED_IDENTITIES = [
 // manifest version (architect@0.1.10, bouncer@0.1.10, butler@0.1.9,
 // giver@0.1.8, influencer@0.1.7, inspector@0.2.8, integrator@0.8.0,
 // keeper@0.1.9, launcher@0.3.0, messenger@0.1.10, observer@0.4.0,
-// starter@0.1.9): a backlog of trusted-publisher releases had npm
-// provenance but no retained `governance/release-publications/later/*.json`
-// record until it was backfilled from measured registry/GitHub Actions
-// evidence. #875's load-bearing consequence — that this join can only
-// narrow which identities satisfy `published`, never widen them by
-// assertion alone — is unaffected: `docs/contracts/package-evidence.json`
-// still declares each of those twelve `staged`, which `check-package-
-// evidence.mjs` permits (declaring below your evidence is allowed; only
+// starter@0.1.9): a backlog of releases (ten trusted-publisher, with npm
+// provenance — eight of those as schema-3 replay records; two,
+// architect@0.1.10 and bouncer@0.1.10, owner-present with no provenance)
+// had no retained `governance/release-publications/later/*.json` record
+// until it was backfilled from measured registry/GitHub Actions evidence.
+// #875's load-bearing consequence — that this join can only narrow which
+// identities satisfy `published`, never widen them by assertion alone — is
+// unaffected: `docs/contracts/package-evidence.json` still declares ten of
+// those twelve `staged` and two (launcher, starter) `implemented`, both of
+// which `check-package-evidence.mjs` permits (declaring below your
+// evidence is allowed; only
 // declaring ahead is the defect it exists to catch).
 const CURRENT_PUBLISHED_PACKAGE_NAMES = [...new Set(CURRENT_PUBLISHED_IDENTITIES.map((identity) => identity.slice(0, identity.lastIndexOf("@"))))].sort();
 
