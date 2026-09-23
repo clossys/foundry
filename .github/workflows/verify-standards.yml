@@ -155,13 +155,20 @@ jobs:
       # .github/verify-standards-review-policy.json's own header for that
       # decision and why `requiredChecks` there is empty for now too.
       # `merge_group` names no `pull_request` object at all -- only its own
-      # synthetic `head_ref`, `gh-readonly-queue/<base>/pr-<number>-<sha>`.
-      # scripts/collect-review-evidence.mjs's own `--merge-group-head-ref`
-      # resolves that into the queued PR's real number and head sha (a
-      # malformed ref refuses rather than guessing -- see that script's own
-      # header and `resolvePrAndHead`'s tests), so this step's two branches
-      # differ only in which flag names the commit under test; everything
-      # after is identical.
+      # synthetic `head_ref`, `gh-readonly-queue/<base>/pr-<number>-<sha>`,
+      # and the group commit it built, `head_sha`. The `<sha>` in that ref
+      # is the BASE the entry was queued onto, not the PR's head: reading it
+      # as the head is what made every merge-group run report
+      # `evidence-head-mismatch` against main's own tip (#1253, run
+      # 35929488634). So `--merge-group-head-ref` supplies only the PR
+      # number; the collector reads the PR's current head from the pull
+      # request itself and proves it is an ancestor of
+      # `--merge-group-head-sha` (this checkout's `fetch-depth: 0` is what
+      # makes that answerable locally). The inspector then requires both:
+      # the head is contained in the group, and the evidence is bound to
+      # that head. A malformed ref or sha, an unreadable head, or an
+      # unanswerable ancestry question refuses rather than guessing -- see
+      # that script's own header and `resolveMergeGroupHead`'s tests.
       - name: Collect review evidence
         id: review-evidence
         continue-on-error: true
@@ -176,6 +183,7 @@ jobs:
           if [ "${{ github.event_name }}" = "merge_group" ]; then
             node scripts/collect-review-evidence.mjs \
               --merge-group-head-ref "${{ github.event.merge_group.head_ref }}" \
+              --merge-group-head-sha "${{ github.event.merge_group.head_sha }}" \
               --repo "${{ github.repository }}" \
               --branch "$BASE_REF" \
               --merge verify-inputs.json \

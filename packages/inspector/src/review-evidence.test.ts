@@ -511,3 +511,66 @@ describe("checkReviewEvidence", () => {
     }
   });
 });
+
+// Merge-queue runs (#1253). The group commit is a synthetic merge nobody
+// reviewed; the commit under test is the queued PR's own head, and only
+// counts once the caller proves the group contains it.
+describe("checkReviewEvidence on a merge-group run", () => {
+  const GROUP = "d".repeat(40);
+  const QUEUE_BASE = "e".repeat(40);
+  const mergeGroupOptions = (overrides: Record<string, unknown> = {}) => ({
+    requireReviewPresence: true,
+    headShaUnderTest: HEAD,
+    mergeGroup: { headSha: GROUP, containsHeadShaUnderTest: true },
+    ...overrides,
+  });
+
+  it("is satisfied when the PR head is contained in the group and the evidence is bound to that head", () => {
+    const report = checkReviewEvidence(evidence(), policy, mergeGroupOptions());
+    expect(report.result.verdict).toBe("satisfied");
+    expect(gateResultToExitCode(report.result)).toBe(0);
+  });
+
+  it("stays indeterminate (evidence-head-mismatch) when the commit under test is the queue base rather than the PR head -- the #1253 failure, still fail-closed", () => {
+    const report = checkReviewEvidence(evidence(), policy, mergeGroupOptions({ headShaUnderTest: QUEUE_BASE }));
+    expect(report.result).toMatchObject({ verdict: "indeterminate", reason: "evidence-head-mismatch" });
+    expect(gateResultToExitCode(report.result)).toBe(2);
+  });
+
+  it("stays indeterminate when the evidence is bound to a different head than the PR's current head", () => {
+    const report = checkReviewEvidence(evidence({ headSha: STALE_HEAD, checks: [], reviews: [], threads: [] }), policy, mergeGroupOptions());
+    expect(report.result).toMatchObject({ verdict: "indeterminate", reason: "evidence-head-mismatch" });
+  });
+
+  it("is indeterminate (merge-group-head-not-contained) when the PR head is not an ancestor of the group commit, even with otherwise perfect evidence", () => {
+    const report = checkReviewEvidence(
+      evidence(),
+      policy,
+      mergeGroupOptions({ mergeGroup: { headSha: GROUP, containsHeadShaUnderTest: false } }),
+    );
+    expect(report.result).toMatchObject({ verdict: "indeterminate", reason: "merge-group-head-not-contained" });
+    expect(gateResultToExitCode(report.result)).toBe(2);
+  });
+
+  it("still reports a violation for a contained head whose evidence fails review", () => {
+    const report = checkReviewEvidence(
+      evidence({ threads: [{ id: "THREAD_1", isResolved: false, headSha: HEAD }] }),
+      policy,
+      mergeGroupOptions(),
+    );
+    expect(report.result.verdict).toBe("violated");
+  });
+
+  it("fails closed on an unusable mergeGroup: missing ancestry answer, malformed group sha, or no commit under test", () => {
+    for (const bad of [
+      mergeGroupOptions({ mergeGroup: { headSha: GROUP } }),
+      mergeGroupOptions({ mergeGroup: { headSha: GROUP, containsHeadShaUnderTest: "true" } }),
+      mergeGroupOptions({ mergeGroup: { headSha: "not-a-sha", containsHeadShaUnderTest: true } }),
+      mergeGroupOptions({ mergeGroup: null }),
+      mergeGroupOptions({ headShaUnderTest: undefined }),
+    ]) {
+      const report = checkReviewEvidence(evidence(), policy, bad as never);
+      expect(report.result).toMatchObject({ verdict: "indeterminate", reason: "no-options-supplied" });
+    }
+  });
+});

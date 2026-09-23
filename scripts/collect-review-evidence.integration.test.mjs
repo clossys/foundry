@@ -23,7 +23,12 @@ import test from "node:test";
 
 import { checkReviewEvidence } from "@clossys/inspector";
 
-import { buildReviewEvidenceBundle, buildReviewEvidenceOptions, buildReviewPolicy } from "./collect-review-evidence.mjs";
+import {
+  buildReviewEvidenceBundle,
+  buildReviewEvidenceOptions,
+  buildReviewPolicy,
+  resolveMergeGroupHead,
+} from "./collect-review-evidence.mjs";
 
 const HEAD = "a".repeat(40);
 const OTHER_HEAD = "c".repeat(40);
@@ -214,4 +219,37 @@ test("SATISFIED — that same reviewer's later approval, at the current head, cl
 
   const report = checkReviewEvidence(evidence, policy, options);
   assert.equal(report.result.verdict, "satisfied", JSON.stringify(report.result));
+});
+
+// Merge-queue runs (#1253), against the real compiled check. The commit under
+// test is the queued PR's own head, proven contained in the group commit.
+const GROUP_HEAD = "d".repeat(40);
+const QUEUE_BASE = "e".repeat(40);
+
+function mergeGroupReport({ payload, headShaUnderTest, contained }) {
+  const resolved = resolveMergeGroupHead({ groupHeadSha: GROUP_HEAD, prHead: headShaUnderTest, isAncestor: () => contained });
+  assert.equal(resolved.error, undefined);
+  const options = buildReviewEvidenceOptions({
+    headShaUnderTest: resolved.headShaUnderTest,
+    requireReviewPresence: false,
+    mergeGroup: resolved.mergeGroup,
+  });
+  return checkReviewEvidence(buildReviewEvidenceBundle(payload), buildReviewPolicy({}), options);
+}
+
+test("merge group SATISFIED — the PR head is contained in the group and the evidence is bound to it", () => {
+  const report = mergeGroupReport({ payload: fullGraphQlPayload(), headShaUnderTest: HEAD, contained: true });
+  assert.equal(report.result.verdict, "satisfied", JSON.stringify(report.result));
+});
+
+test("merge group INDETERMINATE — the queue ref's base sha as the commit under test (the #1253 defect) still mismatches", () => {
+  const report = mergeGroupReport({ payload: fullGraphQlPayload(), headShaUnderTest: QUEUE_BASE, contained: true });
+  assert.equal(report.result.verdict, "indeterminate", JSON.stringify(report.result));
+  assert.equal(report.result.reason, "evidence-head-mismatch");
+});
+
+test("merge group INDETERMINATE — a PR head the group does not contain", () => {
+  const report = mergeGroupReport({ payload: fullGraphQlPayload(), headShaUnderTest: HEAD, contained: false });
+  assert.equal(report.result.verdict, "indeterminate", JSON.stringify(report.result));
+  assert.equal(report.result.reason, "merge-group-head-not-contained");
 });
