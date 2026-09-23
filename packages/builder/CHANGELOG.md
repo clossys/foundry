@@ -6,6 +6,48 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [0.10.0] - 2026-09-22
+
+### Added
+
+- **`./deployment/domain` subpath: the web deployment surface, declared and
+  verified live (issue #1211).** One domain, its DNS records, one hosting
+  project, and the environment-to-branch mapping that feeds it, declared
+  once (`defineWebSurfaceDeclaration`, `validateWebSurfaceDeclaration`) and
+  rendered as a deterministic, reviewable setup plan
+  (`renderWebSurfaceSetupSteps`) -- per #1187's governing "who does what"
+  split, this package defines and verifies; it never deploys, and never
+  reads or stores a provider token.
+- Four independent, credential-free live checks, each a `GateResult`
+  (`@clossys/controller/gates`) that degrades to `indeterminate` -- never
+  `satisfied` -- when it could not reach what it was checking (#914):
+  `checkDnsRecords` (with a declared record's `proxied` flag correctly
+  checked only for resolving at all, never for an exact edge-IP match),
+  `checkTlsCertificate` (a real, fully-verified handshake -- chain trust,
+  hostname match, and validity window all checked together by the platform
+  itself; a rejected handshake's own verification message becomes the
+  finding, verbatim), and `checkRoutes` (HTTP
+  status of the root and any declared key routes). `createNodeDnsResolver`
+  and `createNodeTlsProbe` are the real `node:dns`/`node:tls` adapters a
+  caller wires in; every check takes an injected port instead, so none of
+  this subpath's own tests open a real socket.
+- `observeVercelHosting`: a pure adapter folding an already-computed
+  `createVercelInspector(...).inspect(...)` result into the "right
+  deployment serving" dimension -- the one place this contract's first
+  worked example (Cloudflare DNS, Vercel hosting) is named; every other
+  file in the subpath stays provider-neutral.
+- `verifyWebSurfaceLiveState`: the aggregate report (`dns`, `tls`, `http`,
+  `hosting`, `overall`). `overall` is `satisfied` only when all four are;
+  omitting a hosting observation reports `hosting` (and therefore
+  `overall`) `indeterminate` with reason `"hosting-not-configured"` rather
+  than silently dropping that dimension.
+
+### Notes
+
+- This does not claim the position is closed. Qualification of `0.10.0` is
+  deferred under #948 (this machine is not the pinned release runtime).
+
+
 ## [0.9.0] - 2026-09-22
 
 ### Changed
