@@ -285,11 +285,12 @@ export function evaluatePackageFramework(activeRoles, manifestsByName, options =
     const rolesByProblem = new Map();
     for (const [role, ids] of solvesByRole) {
       for (const id of ids) {
-        if (!rolesByProblem.has(id)) rolesByProblem.set(id, []);
-        rolesByProblem.get(id).push(role);
+        if (!rolesByProblem.has(id)) rolesByProblem.set(id, new Set());
+        rolesByProblem.get(id).add(role);
       }
     }
-    for (const [id, roles] of rolesByProblem) {
+    for (const [id, roleSet] of rolesByProblem) {
+      const roles = [...roleSet];
       if (roles.length > 1) findings.push({ rule: "solves-problem-claimed-by-multiple-roles", path: id, message: `problem id "${id}" is claimed by multiple roles (${roles.join(", ")}) — needs a boundary decision` });
     }
     if (clientProblemIds !== null) {
