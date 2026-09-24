@@ -219,6 +219,20 @@ since editing never erases a revision, an arrow pointing at the edit-history
 dropdown where the original is still readable. The label and the failed
 check carry that information to maintainers without broadcasting it.
 
+No job that holds a write token or the denylist runs code or workflow
+definitions from a pull request's tree. Review summaries and inline review
+comments are the case that needs care: for those events GitHub loads the
+workflow from the pull request's merge commit. They therefore trigger only
+`.github/workflows/conversation-safety-review-relay.yml`, which holds no
+token scope or secret, checks nothing out, and records just the review or
+comment id. `conversation-safety.yml` picks that record up through
+`workflow_run`, runs from the default branch, validates the record as
+untrusted data, fetches the text itself through the API, and scans and
+labels as for any other event. Its scan job holds the denylist with
+read-only scopes; a separate label job holds the write scopes and neither
+checks out code nor sees the denylist. A finding on review text shows as
+the label on the pull request and a failed run on the default branch.
+
 **This is detection, not prevention, and the workflow says so in its own
 header.** The text is public, and GitHub has already emailed it to every
 watcher, before this workflow's first step even starts — a check that runs

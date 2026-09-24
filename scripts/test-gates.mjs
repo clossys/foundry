@@ -5549,22 +5549,28 @@ try {
         `expected exit 1 on review comment 50101 alongside a clean summary, got exit ${summaryAndInline.code}: ${summaryAndInline.out.slice(0, 400)}`,
       );
 
+      // Review events reach conversation-safety.yml through
+      // conversation-safety-review-relay.yml and a workflow_run trigger, so
+      // the subscription is asserted on the relay and the --pr --review scan
+      // on the workflow_run branch of the gate step.
       const eventWorkflowPath = join(repoRoot, ".github", "workflows", "conversation-safety.yml");
       const eventWorkflow = readFileSync(eventWorkflowPath, "utf8");
+      const relayWorkflow = readFileSync(join(repoRoot, ".github", "workflows", "conversation-safety-review-relay.yml"), "utf8");
       const gateStep = eventWorkflow.split("name: Run conversation safety gate")[1]?.split("- name: Redact denylist")[0] ?? "";
       const gateRun = gateStep.split("run: |")[1] ?? "";
       check(
         "#944: pull_request_review fetches and scans inline comments attached to a submitted review in this run",
         /inline comments attached to a submitted review are fetched and scanned in this run/i.test(eventWorkflow) &&
-          /printf '%s' "\$REVIEW_TEXT" \| node scripts\/check-conversation-safety\.mjs --pr "\$PR_NUMBER" --review "\$REVIEW_ID"/.test(gateRun) &&
+          /node scripts\/check-conversation-safety\.mjs --pr "\$RELAY_PR_NUMBER" --review "\$RELAY_REVIEW_ID" --require-denylist < "\$text_file"/.test(gateRun) &&
+          /^ {2}pull_request_review:\n {4}types: \[submitted, edited\]/m.test(relayWorkflow) &&
           !/still arrive as their own/.test(eventWorkflow) &&
           !/separate pull_request_review_comment events and are scanned by/.test(eventWorkflow),
         "conversation-safety.yml does not fetch this review's inline comments, or it still claims they always arrive as separate events",
       );
       check(
         "#944: pull_request_review_comment stays subscribed — a comment that also arrives on its own is still scanned",
-        /^ {2}pull_request_review_comment:\n {4}types: \[created, edited\]/m.test(eventWorkflow),
-        "the per-comment event was dropped from conversation-safety.yml",
+        /^ {2}pull_request_review_comment:\n {4}types: \[created, edited\]/m.test(relayWorkflow),
+        "the per-comment event was dropped from conversation-safety-review-relay.yml",
       );
       check(
         "#944: the gate run script does not interpolate event text via ${{ }}",

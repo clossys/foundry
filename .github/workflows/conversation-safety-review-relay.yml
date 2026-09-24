@@ -1,0 +1,81 @@
+name: Conversation safety review relay
+
+# WHAT THIS IS
+# ------------
+# The first half of conversation-safety.yml's review-text scan. It records
+# WHICH review or review comment was posted — never its text — and nothing
+# else. conversation-safety.yml's `workflow_run` trigger picks the record up,
+# runs from the default branch, fetches the text itself by id through the
+# API, scans it, and labels a finding.
+#
+# WHY IT HOLDS NOTHING
+# --------------------
+# For pull_request_review and pull_request_review_comment, GitHub loads this
+# file from the pull request's merge commit, not from the default branch, so a
+# pull request can change what this workflow does. It is therefore kept
+# trivially small and credential-free: an empty token scope, no secret, no
+# checkout, and no repository code. A pull request that edits it can at most
+# change the record it uploads, and conversation-safety.yml treats that
+# record as untrusted data (scripts/validate-review-relay-event.mjs), never
+# as text to scan or as code. A fork's review events behave the same way:
+# there is nothing here a fork run is denied.
+#
+# Event identifiers reach the shell only through `env:`, never through
+# `${{ }}` inside the `run:` body.
+
+on:
+  # A submitted or edited review. conversation-safety.yml fetches its summary
+  # and the inline comments attached to it; GitHub may not emit
+  # pull_request_review_comment for comments submitted inside a review.
+  pull_request_review:
+    types: [submitted, edited]
+  # Inline code-review comments. Not delivered as `issue_comment`. A comment
+  # also reached through its review above is scanned twice; that is
+  # acceptable.
+  pull_request_review_comment:
+    types: [created, edited]
+
+# Empty on purpose. Uploading an artifact uses the runner's own runtime
+# token, not GITHUB_TOKEN, so no scope is needed.
+permissions: {}
+
+# No concurrency group: each run records a different object, and a
+# cancelled or evicted relay run would be a review that is never scanned.
+
+jobs:
+  relay:
+    name: conversation safety review relay
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Record review event identifiers
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REVIEW_ID: ${{ github.event.review.id }}
+          COMMENT_ID: ${{ github.event.comment.id }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/conversation-safety-review-event"
+          jq -n \
+            --arg event "$EVENT_NAME" \
+            --arg repository "$REPOSITORY" \
+            --arg pull_request "$PR_NUMBER" \
+            --arg review_id "$REVIEW_ID" \
+            --arg comment_id "$COMMENT_ID" \
+            '{
+              event: $event,
+              repository: $repository,
+              pull_request: ($pull_request | tonumber),
+              review_id: (if $event == "pull_request_review" then ($review_id | tonumber) else null end),
+              comment_id: (if $event == "pull_request_review_comment" then ($comment_id | tonumber) else null end)
+            }' > "$RUNNER_TEMP/conversation-safety-review-event/event.json"
+
+      - name: Upload review event record
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: conversation-safety-review-event
+          path: ${{ runner.temp }}/conversation-safety-review-event/event.json
+          if-no-files-found: error
+          retention-days: 1
