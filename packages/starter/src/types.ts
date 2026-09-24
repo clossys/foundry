@@ -123,3 +123,51 @@ export interface StarterEvaluationInput {
   readonly advisor?: ProcessObservation;
   readonly target?: ProcessObservation;
 }
+
+/** Which request identity a head-install proof names. */
+export type HeadInstallRole = "starter" | "advisor" | "target";
+
+/** One exact identity the head-install proof found installed from the pull-request head's own manifest and lockfile. */
+export interface HeadInstallIdentity extends ExactPackage {
+  readonly role: HeadInstallRole;
+  readonly bin: string;
+}
+
+/** The observed fixed `npm ci --ignore-scripts` run over the staged pull-request head. */
+export interface HeadInstallObservation {
+  readonly attempted: boolean;
+  readonly exitCode: number | null;
+  readonly timedOut?: boolean;
+}
+
+/**
+ * Inputs to the pure head-install evaluator. `request` is the protected-base
+ * request; `headRequest` is the pull-request head's copy, read only as data.
+ * `inputFindings` could not be established (indeterminate); `sourceViolations`
+ * are known lockfile or manifest refusals (violated).
+ */
+export interface HeadInstallEvaluationInput {
+  readonly request: unknown;
+  readonly headRequest: unknown;
+  readonly trustedEvent: unknown;
+  /** The commit the trusted head checkout actually holds, or null when unreadable. */
+  readonly headCommit: string | null;
+  readonly inputFindings: readonly StarterFinding[];
+  readonly sourceViolations: readonly StarterFinding[];
+  readonly install?: HeadInstallObservation;
+  readonly identityFindings?: readonly StarterFinding[];
+}
+
+/** The separate head-install proof report; it never replaces the protected-base `StarterReport`. */
+export interface HeadInstallReport {
+  readonly schemaVersion: 1;
+  readonly kind: "head-install";
+  readonly state: StarterState;
+  readonly headSha: string | null;
+  readonly baseSha: string | null;
+  /** Present only when `state` is `satisfied`. */
+  readonly proved: readonly HeadInstallIdentity[] | null;
+  /** Request identities whose head pin differs from the protected base; null when the head request is unreadable. */
+  readonly changedFromBase: readonly HeadInstallRole[] | null;
+  readonly findings: readonly StarterFinding[];
+}

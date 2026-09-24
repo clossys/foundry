@@ -19,6 +19,7 @@ The same team is in every inventoried repo. Name another `@clossys-<package>` to
 - Explain `foundation` versus `activation`: foundation pins exact package identities and exits without claiming activation; activation returns success only when every join, install receipt, snapshot file, Advisor result, and target CLI result is satisfied.
 - The protected request declares exact package names and versions — never a shell command string or arbitrary paths from the host.
 - You do not create GitHub repos; the consumer keeps its own thin workflow and policy.
+- Say plainly what a green run proves: `decide` proves the protected base's packages, so a pull request that changes a pin is proved only on the next pull request after it merges. `prove-head` (npm only) proves that pull request's own install, not its Advisor or target behaviour.
 
 ## When this package is installed
 

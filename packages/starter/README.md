@@ -13,6 +13,13 @@ rollback, cadence, and outcome measurement. See
 [`documents/caller-workflow.md`](documents/caller-workflow.md) for the
 canonical two-phase shape.
 
+A `decide` verdict is about the protected base's installed packages. A pull
+request that changes a pinned package is proved by `decide` only on the next
+pull request after it merges. For npm callers, the optional `prove-head`
+command proves the pull request's own install in the same trusted job
+family, with no credential, without running any pull-request code. See
+[Head-install proof](#head-install-proof).
+
 ## Install
 
 Pin an exact public npm version in the consumer's manifest and lockfile:
@@ -145,6 +152,46 @@ re-raise its status as the caller template does. A missing artifact or a failed
 initial native install is a visible pre-runtime workflow failure, not a
 synthetic Starter result.
 
+## Head-install proof
+
+```bash
+foundry-starter prove-head \
+  .starter/request.json \
+  .starter-head \
+  "$RUNNER_TEMP/trusted-event.json" \
+  "$RUNNER_TEMP/starter-head-install" \
+  --report "$RUNNER_TEMP/head-install-report.json"
+```
+
+`prove-head` runs from the protected base's installed Starter, after the
+caller has sparse-checked-out the authenticated `workflow_run` head commit
+into `.starter-head`. It reads the head's copy of the request (at the same
+relative path), `package.json`, and `package-lock.json` as bounded data. It
+also checks the checkout's `.git/HEAD` against the trusted head commit.
+
+Starter refuses any lockfile entry that is not a single-SHA-512 tarball from
+`https://registry.npmjs.org/`. It stages only the manifest's dependency fields
+and the lockfile into a fresh directory. It runs `npm ci --ignore-scripts`
+there under a literal environment with no token, no npmrc, and a fixed
+registry. It then checks the head request's exact Starter, Advisor, and
+target identities from installed manifests and the lockfile. It never
+executes an installed head package. The command takes four positional paths
+and an optional `--report`, and no registry, command, or package-manager
+option.
+
+The report is a separate `HeadInstallReport` (`kind: "head-install"`):
+
+| Exit | State | Meaning |
+| --- | --- | --- |
+| `0` | `satisfied` | The head's own install completed and holds the head request's exact identities (`proved`). |
+| `1` | `violated` | The head lockfile names a forbidden source, or the head request pins an identity its own install does not hold. |
+| `2` | `indeterminate` | A head file, the head commit, the base Starter's own identity, or the staging directory could not be established; the step carries a credential; the request names pnpm; or `npm ci` failed or timed out. |
+
+A `0` proves the install only. The head's Advisor readiness and target
+result are still proved by `decide` one merge later. It does not cover
+lifecycle scripts, the merge result, workspaces, pnpm, or registry mirrors.
+`changedFromBase` names the pins the pull request changes.
+
 ## Close condition
 
 Starter is executable tooling, not a role. Adoption, grounding, and closure
@@ -161,11 +208,13 @@ tests is not that evidence.
 
 | Export | Description |
 | --- | --- |
+| `evaluateHeadInstall()` | Purely derives the separate head-install `HeadInstallReport` from the base and head requests, trusted event, head commit, lockfile findings, install observation, and identity findings. |
 | `evaluateStarter()` | Purely joins typed request, snapshot, trusted event, install, and raw CLI observations into a `StarterReport`. |
 | `evaluateProcessResult()` | Checks a raw JSON `state` and exit code retain the exact `0`/`1`/`2` mapping. |
 | `isNormalizedRelativePath()` | Tests the portable relative-path grammar accepted for captured evidence. |
 | `validateStarterRequest()` | Rejects malformed request data and every untyped command or CLI surface. |
 | `StarterEvaluationInput` / `StarterFinding` / `StarterPhase` / `StarterReport` / `StarterRequest` / `StarterState` | Typed core input, report, phase, and outcome contracts. |
+| `HeadInstallEvaluationInput` / `HeadInstallIdentity` / `HeadInstallObservation` / `HeadInstallReport` / `HeadInstallRole` | Typed head-install proof input, proved identity, npm observation, report, and request-role contracts. |
 | `StarterHubEvidence` | The optional caller-supplied `hub` request object: `{ owner, repository, inventoried }`. |
 | `ExactPackage` / `InstallReceipt` / `PackageManager` / `ProcessObservation` / `SnapshotFile` / `SnapshotManifest` / `TargetPackage` / `TrustedEvent` | Typed identity, receipt, snapshot, process, target, and authenticated-event contracts. |
 
@@ -173,10 +222,15 @@ tests is not that evidence.
 
 `@clossys/starter/npm` exports `NPM_CI_IGNORE_SCRIPTS` and
 `validateNpmIdentity()`: the fixed `npm ci --ignore-scripts` adapter and exact
-npm manifest/lock identity checker. `@clossys/starter/pnpm`
+npm manifest/lock identity checker. It also exports the head-install data
+checks: `PUBLIC_NPM_REGISTRY`, `validateNpmLockfileSources()` (returns
+`NpmHeadSourceFindings`), and `stagedNpmManifest()`. `@clossys/starter/pnpm`
 exports `PNPM_INSTALL_FROZEN_IGNORE_SCRIPTS` and `validatePnpmIdentity()` for
 the fixed `pnpm install --frozen-lockfile --ignore-scripts` path. Neither
-subpath accepts a command, a package-manager path, or caller options.
+install adapter accepts a command, a package-manager path, or caller options.
+`validateNpmLockfileSources()` is a pure validator. Its optional registry
+argument defaults to the public registry, and `prove-head` never overrides
+it.
 
 ## Requirements
 
