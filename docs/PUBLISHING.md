@@ -1246,7 +1246,7 @@ the runner's own entropy source — never a predictable name (the run ID
 alone) an attacker could pre-create ahead of time. Pushing itself is
 retry-safe: each trigger keeps its built record outside git until it lands,
 and retries the whole fetch/stage/commit/push cycle on a non-fast-forward
-rejection rather than assuming it is the only writer. Once a push lands, the
+rejection rather than assuming it has exclusive write access. Once a push lands, the
 workflow looks up the branch's open pull request fresh, by exact head branch
 and the same same-repository/bot-author filters, and edits it by NUMBER —
 never by resolving a branch name at `gh pr edit` time, which can otherwise
