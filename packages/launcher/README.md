@@ -48,6 +48,35 @@ listed is no longer composed (its source disappeared), so launcher removes
 its composed output and host discovery links — and only that. It never
 touches a skill it did not itself write.
 
+The recorded digest is how launcher tells whether it still owns a composed
+skill. Before rewriting or retiring one, it compares the file on disk
+(`.agents/skills/clossys-<package>/SKILL.md`, and any real-directory copy
+at a host discovery path) with the digest it recorded when it last wrote
+that file:
+
+| On disk | Rewrite (skill still composed) | Retire (skill no longer composed) |
+| --- | --- | --- |
+| Matches the recorded digest | Rewritten | Removed, with its discovery links |
+| Edited since launcher wrote it | Left as is and reported | Left as is, with its discovery links, and reported |
+| Missing | Recreated | Retirement completes (discovery links removed) |
+| No recorded digest (first run, or an older install) | Adopted if it already equals what launcher would write; otherwise left as is and reported | Not touched: launcher only retires a skill its manifest records |
+
+A `SKILL.md` that exists but cannot be read (a permissions error, or a
+directory in its place) is treated like an edited one: left as is and
+reported. A retiring skill directory that holds files other than `SKILL.md`
+is also left as is and reported; a macOS `.DS_Store` file is ignored for
+this check. Each skill left as is appears in the health report as a
+`skill preserved` line naming the file or directory that failed the check,
+and in the report JSON under
+`skillComposition.preserved`; it marks the report degraded, and it is
+reported again on every run until resolved. Launcher recreates a missing
+composed skill because `.agents/skills` is launcher-generated output, so
+recreating it loses nothing a client wrote. That is also how to take
+launcher's version of a skill you edited: move your copy aside, delete the
+directory the `skill preserved` line names (usually
+`.agents/skills/clossys-<package>/`), and run launcher again. To keep your
+edit instead, leave the file as it is.
+
 ## Health report and staleness
 
 After create, resume, or appoint — and on every resume — the command prints
@@ -59,7 +88,9 @@ pin older than live is a `stale pin` finding and marks the report
 **degraded**. The report is also degraded when Advisor is missing, dual-pinned,
 or present in any bucket other than `devDependencies`, and when apply skipped
 one or more inventoried roster targets (missing sibling clone, origin mismatch,
-and similar — the same `skill roster skipped` lines in the report). Per-package
+and similar — the same `skill roster skipped` lines in the report), and when
+a composed skill was left as is because a client edited it (the
+`skill preserved` lines above, for the hub and every sibling clone). Per-package
 skill sources missing from the catalogue are noted but do not by themselves mark
 degraded. Exit stays 0 on resume
 (the report is advisory); adopt prints the same report and an unparseable
