@@ -91,6 +91,25 @@ export function assignedToShard(recordIndex, shard) {
 // partition of the whole set, `--package` is one record out of it, and a
 // combination has no meaning either caller needs.
 const PACKAGE_KEY = /^[a-z0-9][a-z0-9-]{0,63}$/;
+const VALUE_FLAGS = new Set(["--shard-index", "--shard-count", "--package"]);
+const BOOLEAN_FLAGS = new Set(["--allow-missing-record"]);
+
+/**
+ * The first argument that is neither one of this script's flags nor the
+ * value directly after a value-taking flag, or null. The equals form
+ * (`--package=writer`) is deliberately not a flag: accepting only one
+ * spelling keeps every caller's invocation greppable, and refusing the other
+ * means it can never be silently ignored into a full, unscoped walk. A
+ * missing or malformed VALUE is left to resolveShardArgs/resolvePackageArgs.
+ */
+export function findUnrecognisedArgument(argv) {
+  for (let index = 0; index < argv.length; index++) {
+    if (VALUE_FLAGS.has(argv[index])) { index++; continue; }
+    if (BOOLEAN_FLAGS.has(argv[index])) continue;
+    return argv[index];
+  }
+  return null;
+}
 export function resolvePackageArgs(argv) {
   const packageIdx = argv.indexOf("--package");
   const allowMissingRecord = argv.includes("--allow-missing-record");

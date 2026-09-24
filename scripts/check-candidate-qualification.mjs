@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { readFileSync, readdirSync } from "node:fs";
 import { blobOid, parseStrictJson, qualificationPath, realPathTouches, sealedQualificationPathsAtTransitionBase, validatePrepublicationPrTail, validateRetainedCandidateQualification, validateTrioPublicationClosure } from "./lib/candidate-qualification.mjs";
-import { resolvePackageArgs, resolveShardArgs, selectedForRederivation } from "./lib/candidate-qualification-shard.mjs";
+import { findUnrecognisedArgument, resolvePackageArgs, resolveShardArgs, selectedForRederivation } from "./lib/candidate-qualification-shard.mjs";
 import { loadTransitionPolicy } from "./lib/package-identity-transition.mjs";
 import { TRIO_PUBLICATION_PATH, TRIO_PUBLICATION_TRANSITION_BASE, validateTrioFirstPublication } from "./lib/release-publication-cohort.mjs";
 import { TRIO_COHORT_PATH, TRIO_QUARANTINE_PATH, validateTrioQualificationState } from "./lib/release-qualification-cohort.mjs";
@@ -15,6 +15,14 @@ import { readValidatedLaterPublishedPackages } from "./lib/release-later-publica
 // script skip RE-DERIVING a record that belongs to a different shard while
 // still counting it as present for the cross-record checks that need to see
 // every record's path.
+// An argument this script does not recognise is refused, never ignored: an
+// ignored `--package=writer` (the equals form) would silently fall back to
+// the full, unscoped walk.
+const unrecognised = findUnrecognisedArgument(process.argv.slice(2));
+if (unrecognised !== null) {
+  console.error(`check-candidate-qualification: unrecognised argument ${JSON.stringify(unrecognised)} (accepted: --shard-index <n> --shard-count <n>, or --package <key> [--allow-missing-record])`);
+  process.exit(2);
+}
 const shardResult = resolveShardArgs(process.argv.slice(2));
 if (shardResult.error) {
   console.error("check-candidate-qualification: " + shardResult.error);
@@ -69,7 +77,7 @@ if (packageScope) {
     console.error(`CANDIDATE QUALIFICATION INDETERMINATE — cannot derive the record path for --package ${packageScope.packageKey}: ` + (error instanceof Error ? error.message : "unknown error"));
     process.exit(2);
   }
-  console.log(`--package ${packageScope.packageKey}: re-deriving only ${packageRecordPath} (${candidate.name}@${candidate.version}) of ${paths.length} retained records; every other record's re-derivation is the required \`candidate qualification records\` CI check's, on this same commit. Cross-record checks run in full.`);
+  console.log(`--package ${packageScope.packageKey}: re-deriving only ${packageRecordPath} (${candidate.name}@${candidate.version}) of ${paths.length} retained records; every other record's re-derivation is CI's \`candidate qualification records\` job's, on this same commit, which the required \`build and test\` check fans in. Cross-record checks run in full.`);
 }
 const records = [];
 let failed = false;

@@ -7,7 +7,10 @@
 // script against a local clone of this repository and prove, on that record,
 // that the scoped run refuses what the unscoped walk refused: rewritten
 // retained bytes, a join that no longer matches its reviewed commit, and --
-// new here -- a missing record, unless the dry-run allowance is given.
+// new here -- a missing record, unless the dry-run allowance is given. They
+// also prove the record really is re-derived (observed through git, not the
+// script's own log line) and that an unrecognised argument is refused rather
+// than silently ignored into the full walk.
 //
 // governance/release-publications/later is set aside in the clone for every
 // run. The script validates it identically with or without --package (it is
@@ -20,7 +23,7 @@
 import assert from "node:assert/strict";
 import { execFile as execFileCallback } from "node:child_process";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
-import { mkdtemp, rename, rm, writeFile } from "node:fs/promises";
+import { chmod, mkdir, mkdtemp, rename, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -32,9 +35,9 @@ const execFile = promisify(execFileCallback);
 const SCRIPT = join(process.cwd(), "scripts/check-candidate-qualification.mjs");
 const RECORDS = "governance/release-qualifications";
 
-async function run(root, args) {
+async function run(root, args, env = process.env) {
   try {
-    const { stdout, stderr } = await execFile(process.execPath, [SCRIPT, ...args], { cwd: root, maxBuffer: 64 * 1024 * 1024 });
+    const { stdout, stderr } = await execFile(process.execPath, [SCRIPT, ...args], { cwd: root, env, maxBuffer: 64 * 1024 * 1024 });
     return { code: 0, stdout, stderr };
   } catch (error) {
     return { code: error.code, stdout: error.stdout ?? "", stderr: error.stderr ?? "" };
@@ -93,30 +96,50 @@ async function withClone(t) {
   await execFile("git", ["config", "gc.auto", "0"], { cwd: root });
   const later = join(root, "governance/release-publications/later");
   if (existsSync(later)) await rename(later, join(parent, "later.set-aside"));
-  return { root, chosen: choosePackage(root) };
+  return { parent, root, chosen: choosePackage(root) };
+}
+
+/**
+ * A `git` on PATH that appends each invocation's arguments to a log, then
+ * runs the real git. Re-deriving a record is observable from outside the
+ * script this way: `validateRetainedCandidateQualification` reads the
+ * record's introduction blob (`show <introduction commit>:<record path>`) to
+ * compare it with the retained bytes. The cross-record checks do look up
+ * other records' introduction COMMITS (`log --diff-filter=A`), so that is not
+ * evidence of re-derivation; reading the introduction blob is, and for an
+ * unsealed record nothing but the per-record loop does it (measured: under
+ * --package controller, the current record's blob was read twice and an
+ * older controller record's never).
+ */
+async function recordingGit(parent) {
+  const realGit = (await execFile("sh", ["-c", "command -v git"])).stdout.trim();
+  const bin = join(parent, "recording-bin");
+  const log = join(parent, "git-invocations.log");
+  await mkdir(bin, { recursive: true });
+  await writeFile(join(bin, "git"), `#!/bin/sh\nprintf '%s\\n' "$*" >> '${log}'\nexec '${realGit}' "$@"\n`);
+  await chmod(join(bin, "git"), 0o755);
+  return { env: { ...process.env, PATH: `${bin}:${process.env.PATH}` }, introductionBlobReads: (path) => (existsSync(log) ? readFileSync(log, "utf8") : "").split("\n").filter((line) => new RegExp(`^show [0-9a-f]{40}:${path.replace(/[.]/g, "\\.")}$`).test(line)).length };
 }
 
 // Same parsed object, different bytes: the retained blob no longer equals its
 // introduction blob, and nothing else about the record changes.
 const rewriteBytesOnly = async (file) => writeFile(file, `${JSON.stringify(JSON.parse(readFileSync(file, "utf8")))}\n`);
 
-test("--package re-derives the dispatched package's current record and passes on an untouched tree", async (t) => {
-  const { root, chosen } = await withClone(t);
-  const result = await run(root, ["--package", chosen.key]);
+test("--package re-derives the package's current record, observed through git, and leaves a rewritten older record of the same package to required CI", async (t) => {
+  const { parent, root, chosen } = await withClone(t);
+  // A rewritten older record of the same package is left to required CI: it
+  // must neither be re-derived here nor fail this run.
+  await rewriteBytesOnly(join(root, chosen.older));
+  const git = await recordingGit(parent);
+  const result = await run(root, ["--package", chosen.key], git.env);
   assert.equal(result.code, 0, result.stderr);
-  assert.match(result.stdout, new RegExp(`re-deriving only ${chosen.current.replace(/[.]/g, "\\.")} \\(`));
   assert.match(result.stdout, /CANDIDATE QUALIFICATION RECORD OK/);
+  assert.ok(git.introductionBlobReads(chosen.current) >= 1, `${chosen.current} was never re-derived`);
+  assert.equal(git.introductionBlobReads(chosen.older), 0, `${chosen.older} was re-derived under --package`);
+  assert.ok(!result.stderr.includes(chosen.older), result.stderr);
 });
 
-test("--package refuses the package's record when its retained bytes were rewritten", async (t) => {
-  const { root, chosen } = await withClone(t);
-  await rewriteBytesOnly(join(root, chosen.current));
-  const result = await run(root, ["--package", chosen.key]);
-  assert.equal(result.code, 1);
-  assert.ok(result.stderr.includes(`[record-history-join] ${chosen.current}:`), result.stderr);
-});
-
-test("--package refuses the package's record when a join no longer matches its reviewed commit", async (t) => {
+test("--package refuses the package's record when its retained bytes were rewritten and a join no longer matches its reviewed commit", async (t) => {
   const { root, chosen } = await withClone(t);
   const file = join(root, chosen.current);
   const record = JSON.parse(readFileSync(file, "utf8"));
@@ -124,6 +147,7 @@ test("--package refuses the package's record when a join no longer matches its r
   await writeFile(file, `${JSON.stringify(record, null, 2)}\n`);
   const result = await run(root, ["--package", chosen.key]);
   assert.equal(result.code, 1);
+  assert.ok(result.stderr.includes(`[record-history-join] ${chosen.current}:`), result.stderr);
   assert.ok(result.stderr.includes(`[content-join] ${chosen.current}: packageTreeSha1`), result.stderr);
 });
 
@@ -144,14 +168,6 @@ test("--package refuses a missing record for the current version unless --allow-
   assert.ok(allowed.stdout.includes(`[package-record-missing] ${missingPath}: absent, allowed`), allowed.stdout);
 });
 
-test("--package leaves every other record's re-derivation to required CI: a rewritten older record of the same package is not re-derived", async (t) => {
-  const { root, chosen } = await withClone(t);
-  await rewriteBytesOnly(join(root, chosen.older));
-  const result = await run(root, ["--package", chosen.key]);
-  assert.equal(result.code, 0, result.stderr);
-  assert.ok(!result.stderr.includes(chosen.older), result.stderr);
-});
-
 test("--package still runs the cross-record checks in full: a rewritten record a retained cohort binds is refused", async (t) => {
   const { root, chosen } = await withClone(t);
   assert.ok(chosen.cohortBound, "a retained cohort binds a qualification record's bytes");
@@ -166,4 +182,13 @@ test("--package on an unknown package directory is indeterminate, not a pass", a
   const result = await run(root, ["--package", "no-such-package"]);
   assert.equal(result.code, 2);
   assert.match(result.stderr, /CANDIDATE QUALIFICATION INDETERMINATE/);
+});
+
+test("an unrecognised argument, including the --package=<key> equals form, is refused rather than ignored into a full walk", async () => {
+  for (const args of [["--package=writer"], ["--shard-index=0", "--shard-count=4"], ["writer"], ["--package", "writer", "--dry-run"]]) {
+    const result = await run(process.cwd(), args);
+    assert.equal(result.code, 2, `${JSON.stringify(args)}: ${result.stdout}`);
+    assert.match(result.stderr, /unrecognised argument/);
+    assert.doesNotMatch(result.stdout, /CANDIDATE QUALIFICATION RECORD OK/);
+  }
 });

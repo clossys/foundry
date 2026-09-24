@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { assignedToShard, resolvePackageArgs, resolveShardArgs, selectedForRederivation } from "./candidate-qualification-shard.mjs";
+import { assignedToShard, findUnrecognisedArgument, resolvePackageArgs, resolveShardArgs, selectedForRederivation } from "./candidate-qualification-shard.mjs";
 
 test("resolveShardArgs returns shard: null when neither flag is given (unsharded, the default)", () => {
   assert.deepEqual(resolveShardArgs([]), { shard: null });
@@ -125,4 +125,19 @@ test("selectedForRederivation selects exactly the package record under --package
   assert.deepEqual(paths.filter((path, index) => selectedForRederivation(index, path, { packageRecordPath: "missing.json" })), []);
   assert.deepEqual(paths.filter((path, index) => selectedForRederivation(index, path)), paths);
   assert.deepEqual(paths.filter((path, index) => selectedForRederivation(index, path, { shard: { shardIndex: 1, shardCount: 2 } })), ["b.json", "d.json"]);
+});
+
+test("findUnrecognisedArgument accepts every invocation this repository makes and refuses anything else", () => {
+  for (const argv of [
+    [],
+    ["--shard-index", "0", "--shard-count", "4"],
+    ["--package", "writer"],
+    ["--package", "writer", "--allow-missing-record"],
+    ["--allow-missing-record", "--package", "writer"],
+  ]) assert.equal(findUnrecognisedArgument(argv), null, JSON.stringify(argv));
+  assert.equal(findUnrecognisedArgument(["--package=writer"]), "--package=writer");
+  assert.equal(findUnrecognisedArgument(["--shard-index=0", "--shard-count=4"]), "--shard-index=0");
+  assert.equal(findUnrecognisedArgument(["writer"]), "writer");
+  assert.equal(findUnrecognisedArgument(["--package", "writer", "--dry-run"]), "--dry-run");
+  assert.equal(findUnrecognisedArgument(["--package", "writer", "extra"]), "extra");
 });
