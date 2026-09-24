@@ -171,3 +171,19 @@ test("hand-editing a scaffolded package's generated envelope copy is a finding i
   assert.ok(result.findings.some((item) => item.rule === "envelope-copy-drifted" && item.role === "@clossys/customer"));
   assert.equal(result.table.find((item) => item.role === "@clossys/customer").outputEnvelope, "drifted");
 });
+
+test("buildScaffold puts the first changelog entry at docs/changelogs/<shortName>.md, never in the package", () => {
+  const { packageFiles, repoFiles } = buildScaffold({ role: "@clossys/customer", shortName: "customer", roleDefinition: {}, stageActivities, envelopeCopy: renderEnvelopeCopyFromRoot(repoRoot) });
+  assert.equal(packageFiles.has("CHANGELOG.md"), false);
+  assert.match(repoFiles.get("docs/changelogs/customer.md"), /^# Changelog\n\n## 0\.1\.0\n/);
+});
+
+test("scaffold-package.mjs keeps an existing docs/changelogs/<shortName>.md -- release history is not scaffold output", (t) => {
+  const root = makeTempRepoRoot(t);
+  mkdirSync(join(root, "docs", "changelogs"), { recursive: true });
+  const history = "# Changelog\n\n## 0.4.0 - 2026-01-01\n\n- An earlier release.\n";
+  writeFileSync(join(root, "docs", "changelogs", "customer.md"), history);
+  execFileSync(process.execPath, [join(scriptDir, "scaffold-package.mjs"), "customer", "--root", root], { stdio: "pipe" });
+  assert.equal(readFileSync(join(root, "docs", "changelogs", "customer.md"), "utf8"), history);
+  assert.equal(existsSync(join(root, "packages", "customer", "CHANGELOG.md")), false);
+});
