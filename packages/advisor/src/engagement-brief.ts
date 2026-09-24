@@ -1,6 +1,6 @@
 import type { CapabilityCatalogue } from "./capability-catalogue.js";
 import type { ComposedRole, ComposeKitResult } from "./composition.js";
-import { ENGAGEMENT_CONTEXT_FIELD_IDS, fieldById } from "./context.js";
+import { ENGAGEMENT_CONTEXT_FIELD_IDS } from "./context.js";
 import type { EngagementContext, EngagementContextField, EngagementContextFieldId } from "./context.js";
 import { applyContextChoice } from "./context-questions.js";
 
@@ -127,12 +127,32 @@ function snapshotField(field: EngagementContextField): EngagementContextField {
  * own. Returns a copy; the brief's own snapshot is never handed out.
  */
 export function contextFromBrief(brief: Pick<EngagementBrief, "context">): EngagementContext {
-  const snapshot = brief.context ?? { fields: [] };
+  // The brief is committed JSON in a product repository (`clossys/brief.json`),
+  // so a person can hand-edit it, and snapshotContext()'s rules apply only
+  // when the brief is written, not when it is read back. An entry that
+  // fails those same rules here -- an invalid or missing value, extra keys,
+  // or an id that appears more than once -- is read as unknown rather than
+  // trusted or thrown. That is safe: unknown is exactly what a field the
+  // brief never carries reads as, and it sends the founder back to
+  // Advisor's own context card instead of an invented answer. A non-array
+  // `fields` is treated the same way, as if it carried no entries at all.
+  const rawFields: readonly unknown[] = Array.isArray(brief.context?.fields) ? brief.context.fields : [];
+  const occurrences = new Map<string, number>();
+  for (const entry of rawFields) {
+    const id = typeof entry === "object" && entry !== null ? (entry as { id?: unknown }).id : undefined;
+    if (typeof id === "string") occurrences.set(id, (occurrences.get(id) ?? 0) + 1);
+  }
   return {
     schemaVersion: 1,
     fields: ENGAGEMENT_CONTEXT_FIELD_IDS.map((id): EngagementContextField => {
-      const field = fieldById(snapshot, id);
-      return field === undefined ? { id, state: "unknown" } : { ...field };
+      if (occurrences.get(id) !== 1) return { id, state: "unknown" };
+      const entry = rawFields.find((candidate) => typeof candidate === "object" && candidate !== null && (candidate as { id?: unknown }).id === id) as
+        | { state?: unknown; value?: unknown }
+        | undefined;
+      if (entry?.state === "known" && typeof entry.value === "string" && applyContextChoice(id, entry.value).kind === "known") {
+        return { id, state: "known", value: entry.value };
+      }
+      return { id, state: "unknown" };
     }),
   };
 }

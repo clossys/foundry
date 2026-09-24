@@ -9,7 +9,7 @@ import {
   nextContextQuestion,
   toEngagementBrief,
 } from "./index.js";
-import type { ComposeKitResult, EngagementContext, EngagementContextField, EngagementContextFieldId } from "./index.js";
+import type { ComposeKitResult, EngagementBrief, EngagementContext, EngagementContextField, EngagementContextFieldId } from "./index.js";
 
 /*
  * The brief and engagement-context contracts, checked against the real
@@ -331,5 +331,65 @@ describe("contextFromBrief()", () => {
     expect(read).toEqual(brief.context);
     expect(read).not.toBe(brief.context);
     expect(read.fields[0]).not.toBe(brief.context?.fields[0]);
+  });
+
+  /*
+   * `clossys/brief.json` is committed JSON in a product repository, so a
+   * person can hand-edit it and snapshotContext()'s rules never ran on the
+   * result. Each case below is a shape snapshotContext() would have
+   * rejected; contextFromBrief() must read it as unknown rather than throw
+   * or invent an answer.
+   */
+  describe("reads a hand-edited brief.context the same way snapshotContext() would have rejected", () => {
+    it("reads a known entry with a value that is not one of the field's fixed choice ids as unknown", () => {
+      const field = contextFromBrief({ context: { schemaVersion: 1, fields: [{ id: "audience", state: "known", value: "Mostly dentists near our office" }] } }).fields.find(
+        (candidate) => candidate.id === "audience",
+      );
+      expect(field).toEqual({ id: "audience", state: "unknown" });
+    });
+
+    it("reads a known entry with no value as unknown", () => {
+      const bad = { id: "audience", state: "known" } as unknown as EngagementContextField;
+      const field = contextFromBrief({ context: { schemaVersion: 1, fields: [bad] } }).fields.find((candidate) => candidate.id === "audience");
+      expect(field).toEqual({ id: "audience", state: "unknown" });
+    });
+
+    it("drops extra keys on an otherwise-valid known entry rather than copying them", () => {
+      const withExtra = JSON.parse('{"id":"audience","state":"known","value":"businesses","note":"free text"}') as EngagementContextField;
+      const field = contextFromBrief({ context: { schemaVersion: 1, fields: [withExtra] } }).fields.find((candidate) => candidate.id === "audience");
+      expect(field).toEqual({ id: "audience", state: "known", value: "businesses" });
+      expect(Object.keys(field ?? {})).toEqual(["id", "state", "value"]);
+    });
+
+    it("reads a duplicated id as unknown, keeping neither entry", () => {
+      const duplicated: EngagementContext = {
+        schemaVersion: 1,
+        fields: [
+          { id: "audience", state: "known", value: "businesses" },
+          { id: "audience", state: "known", value: "consumers" },
+        ],
+      };
+      const field = contextFromBrief({ context: duplicated }).fields.find((candidate) => candidate.id === "audience");
+      expect(field).toEqual({ id: "audience", state: "unknown" });
+    });
+
+    it("reads every field as unknown when context.fields is not an array, instead of throwing", () => {
+      const notAnArray = { context: { schemaVersion: 1, fields: "not-an-array" } } as unknown as Pick<EngagementBrief, "context">;
+      expect(() => contextFromBrief(notAnArray)).not.toThrow();
+      expect(contextFromBrief(notAnArray).fields.every((field) => field.state === "unknown")).toBe(true);
+    });
+
+    it("emits only {id, state, value} for every field, never an extra key from a malformed entry", () => {
+      const messy: EngagementContext = {
+        schemaVersion: 1,
+        fields: [
+          { id: "audience", state: "known", value: "businesses" },
+          { id: "stage", state: "known" } as unknown as EngagementContextField,
+        ],
+      };
+      for (const field of contextFromBrief({ context: messy }).fields) {
+        expect(Object.keys(field)).toEqual(field.state === "known" ? ["id", "state", "value"] : ["id", "state"]);
+      }
+    });
   });
 });
