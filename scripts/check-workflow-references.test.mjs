@@ -356,6 +356,121 @@ test("the publish-safety fan-in genuinely fails when any split job does not succ
   assert.match(judgment, /needs\.safety-gitleaks\.outputs\.gitleaks-exit-code/);
 });
 
+// Refs #1324: `publish safety / gate regression tests` (the `safety-gates`
+// job before this change) measured 27m01s end to end on run 35957368169 --
+// almost entirely one `node --test` invocation over the 98 suites
+// discoverGateTestFiles() finds, dominating `publish safety`'s own wall
+// time. Sharded the same #1257/#1276 way `candidate-qualification` already
+// was: `safety-gates-shard` (an N-way matrix doing the real, timed work)
+// behind `safety-gates` (a thin fan-in, same #1240 shape). This function
+// checks both: `safety-gates-shard` for the step itself and its own
+// full-history checkout (contamination-classes CLASS 4 needs it, same
+// reason the pre-split job already had it), `safety-gates` for the fan-in's
+// own needs/always() shape -- unlike candidateQualificationCiFailures above,
+// the fan-in job KEEPS its pre-split id and required-adjacent name
+// (`safety-gates`, "publish safety / gate regression tests") rather than
+// gaining a new one, because `safety`'s own `needs: [..., safety-gates,
+// ...]` (tested above) must not need to change at all.
+export function gateRegressionShardCiFailures(workflowText) {
+  const shardJob = workflowJob(workflowText, "safety-gates-shard");
+  const fanInJob = workflowJob(workflowText, "safety-gates");
+  const fullHistoryCheckout = /- uses: actions\/checkout@[^\n]+\n[ \t]+with:\n(?:[ \t]+#[^\n]+\n)*[ \t]+fetch-depth: 0\b/;
+  const failures = [];
+  if (!fullHistoryCheckout.test(shardJob)) failures.push("gate-shard-full-history-checkout");
+  if (!/^\s+- name: gate regression tests \(fixtures\)\n\s+run: node scripts\/test-gates\.mjs$/m.test(shardJob)) failures.push("gate-shard-fixture-invocation");
+  if (
+    !/^\s+- name: gate regression tests \(shard \$\{\{ matrix\.shard \}\} of discovered suites\)\n\s+run: node scripts\/run-gate-suites\.mjs --shard-index \$\{\{ matrix\.shard \}\} --shard-count \$\{\{ env\.GATE_TEST_SHARDS \}\}$/m.test(
+      shardJob,
+    )
+  )
+    failures.push("gate-shard-discovered-invocation");
+  // The fan-in must depend on the shard matrix and be always()-gated, the
+  // same reason every other #1240-shaped fan-in in this file needs it: a
+  // skipped needs.safety-gates.result in safety's own check must read as
+  // "not success", never silently vanish.
+  if (!/^ {4}needs: \[push-tree, safety-gates-shard\]$/m.test(fanInJob)) failures.push("gate-fanin-needs");
+  if (!/^ {4}if: always\(\) &&/m.test(fanInJob)) failures.push("gate-fanin-always");
+  return failures;
+}
+
+test("the required safety context fails closed on gate regression shards with full history and the right invocation", () => {
+  const workflow = readFileSync(join(workflowsDir, "ci.yml"), "utf8");
+  assert.deepEqual(gateRegressionShardCiFailures(workflow), []);
+
+  const withoutFixtureInvocation = workflow.replace("      - name: gate regression tests (fixtures)\n        run: node scripts/test-gates.mjs\n", "");
+  assert.deepEqual(gateRegressionShardCiFailures(withoutFixtureInvocation), ["gate-shard-fixture-invocation"]);
+
+  const withoutDiscoveredInvocation = workflow.replace(
+    "      - name: gate regression tests (shard ${{ matrix.shard }} of discovered suites)\n        run: node scripts/run-gate-suites.mjs --shard-index ${{ matrix.shard }} --shard-count ${{ env.GATE_TEST_SHARDS }}\n",
+    "",
+  );
+  assert.deepEqual(gateRegressionShardCiFailures(withoutDiscoveredInvocation), ["gate-shard-discovered-invocation"]);
+
+  const shardJob = workflowJob(workflow, "safety-gates-shard");
+  const shardShallow = workflow.replace(shardJob, shardJob.replace("          fetch-depth: 0 # contamination-classes CLASS 4 reads full package-name history\n", "          fetch-depth: 1\n"));
+  assert.deepEqual(gateRegressionShardCiFailures(shardShallow), ["gate-shard-full-history-checkout"]);
+
+  const fanInJob = workflowJob(workflow, "safety-gates");
+  const withoutFanInNeeds = workflow.replace(fanInJob, fanInJob.replace("needs: [push-tree, safety-gates-shard]", "needs: [push-tree]"));
+  assert.deepEqual(gateRegressionShardCiFailures(withoutFanInNeeds), ["gate-fanin-needs"]);
+
+  const withoutFanInAlways = workflow.replace(
+    fanInJob,
+    fanInJob.replace(
+      "if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true')",
+      "if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'",
+    ),
+  );
+  assert.deepEqual(gateRegressionShardCiFailures(withoutFanInAlways), ["gate-fanin-always"]);
+});
+
+// #1324: the shard COUNT is a single tunable (GATE_TEST_SHARDS, a
+// workflow-level env var -- currently 4, matching
+// CANDIDATE_QUALIFICATION_SHARDS for the same Free-plan concurrent-job
+// reason), never a hard-coded matrix array -- the identical shape the
+// CANDIDATE_QUALIFICATION_SHARDS test above already proves, checked here
+// against the second matrix that now uses it. Proves the derivation chain
+// end to end: the env var exists with today's actual value, push-tree's own
+// step derives the matrix's index list from it, the matrix job reads that
+// derived output (not a literal), and the invocation step's --shard-count
+// reads the SAME env var, so the three can never silently drift apart --
+// plus the fan-in's own explicit check, fail closed on anything other than
+// a clean success.
+test("safety-gates-shard's matrix count is the single GATE_TEST_SHARDS tunable, and its fan-in fails closed", () => {
+  const workflow = readFileSync(join(workflowsDir, "ci.yml"), "utf8");
+
+  assert.match(workflow, /^[ \t]+GATE_TEST_SHARDS: 4$/m, "expected a workflow-level GATE_TEST_SHARDS: 4");
+
+  const pushTree = workflowJob(workflow, "push-tree");
+  assert.match(pushTree, /gate-shard-matrix: \$\{\{ steps\.gate-shard-matrix\.outputs\.matrix \}\}/, "push-tree must output the derived gate-shard-matrix");
+  assert.match(
+    pushTree,
+    /id: gate-shard-matrix\n\s+run: \|\n\s+node -e "console\.log\('matrix=' \+ JSON\.stringify\(\[\.\.\.Array\(Number\(process\.env\.GATE_TEST_SHARDS\)\)\.keys\(\)\]\)\)" >> "\$GITHUB_OUTPUT"/,
+    "push-tree's gate-shard-matrix step must derive the index list from GATE_TEST_SHARDS, not a literal",
+  );
+
+  const shardJob = workflowJob(workflow, "safety-gates-shard");
+  assert.match(
+    shardJob,
+    /^ {4}strategy:\n {6}fail-fast: false\n {6}matrix:\n {8}shard: \$\{\{ fromJSON\(needs\.push-tree\.outputs\.gate-shard-matrix\) \}\}$/m,
+    "the matrix must read push-tree's derived output, not a hard-coded array",
+  );
+  assert.match(
+    shardJob,
+    /run: node scripts\/run-gate-suites\.mjs --shard-index \$\{\{ matrix\.shard \}\} --shard-count \$\{\{ env\.GATE_TEST_SHARDS \}\}/,
+    "the invocation's --shard-count must read the same tunable the matrix was derived from, never a separate literal",
+  );
+
+  const fanInJob = workflowJob(workflow, "safety-gates");
+  const stepStart = fanInJob.indexOf("- name: All gate-regression shards must succeed");
+  assert.notEqual(stepStart, -1, "the fan-in must have an explicit check step");
+  const stepBody = fanInJob.slice(stepStart);
+  assert.match(stepBody, /if: always\(\)/);
+  assert.match(stepBody, /needs\.safety-gates-shard\.result/);
+  assert.match(stepBody, /!= "success"/);
+  assert.match(stepBody, /exit 1/);
+});
+
 test("tree-identical main pushes skip duplicate CI without dropping the required build context on pull_request", () => {
   const workflow = readFileSync(join(workflowsDir, "ci.yml"), "utf8");
   assert.match(workflow, /^  push-tree:\n    name: push-tree identity$/m);

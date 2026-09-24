@@ -121,3 +121,72 @@ export function scanRootExists(root, scanRoot) {
     return false;
   }
 }
+
+// CI throughput (Refs: #1324): `check:gates`'s second half (this module's
+// own `discoverGateTestFiles()`, run by scripts/run-gate-suites.mjs under
+// one `node --test` invocation) measured 14-24 minutes on a 4-vCPU
+// GitHub-hosted runner (see ci.yml's own "gate regression tests" step
+// comment) and is the long pole of every `publish safety` run.
+// `partitionFilesForShard` is the split: a pure, order-preserving
+// round-robin over the SAME sorted list `discoverGateTestFiles()` already
+// returns, so a file's shard assignment depends only on its position in
+// that list, never on a wall-clock race or directory-listing order.
+//
+// Round-robin (`index % shardCount === shardIndex`), not a contiguous slice
+// (`files[0..24]`, `files[25..49]`, ...): the discovered list is
+// alphabetical, and several of the slowest suites here share an
+// alphabetical neighbourhood (`scripts/publish-qualified-directory.
+// test.mjs`, `scripts/publish-qualified-set.test.mjs`, `scripts/rehearse-
+// publish-lifecycle.test.mjs`, `scripts/run-candidate-qualification.
+// test.mjs` all sit within a few entries of each other). A contiguous slice
+// would risk stacking most of that weight onto one shard; round-robin
+// spreads consecutive files across DIFFERENT shards instead -- the same
+// partition rule scripts/lib/candidate-qualification-shard.mjs already uses
+// for sharding qualification records (see that module's own header), kept
+// identical here rather than inventing a second shard convention.
+//
+// `shardIndex` is 0-based (0 <= shardIndex < shardCount), matching that
+// same existing convention -- and, unlike it, this module's partition is
+// pure and synchronous, so a test can assert completeness (every file
+// assigned to exactly one shard, no shard empty) directly against the real
+// discovered list without spawning any child process at all -- see
+// gate-test-set.test.mjs's completeness-proof tests.
+export function partitionFilesForShard(files, shardIndex, shardCount) {
+  if (!Number.isInteger(shardCount) || shardCount < 1) {
+    throw new RangeError(`shardCount must be a positive integer, got ${shardCount}`);
+  }
+  if (!Number.isInteger(shardIndex) || shardIndex < 0 || shardIndex >= shardCount) {
+    throw new RangeError(`shardIndex must be an integer in [0, ${shardCount - 1}], got ${shardIndex}`);
+  }
+  return files.filter((_, i) => i % shardCount === shardIndex);
+}
+
+// argv parsing for scripts/run-gate-suites.mjs's `--shard-index`/
+// `--shard-count` flags -- deliberately the same shape as
+// scripts/lib/candidate-qualification-shard.mjs's `resolveShardArgs` (same
+// flag names, same "both or neither" rule, same 0-based range check), kept
+// as its own pure function for the same reason that module gives: testable
+// without executing anything else, and importable from a test without
+// running the real (multi-minute) suite. Not re-exported from that module
+// instead, despite the near-identical shape, because these two shard spaces
+// are unrelated (one partitions qualification records, this one partitions
+// test files) and must be free to diverge without one's change silently
+// affecting the other's contract.
+export function resolveGateShardArgs(argv) {
+  const shardIndexIdx = argv.indexOf("--shard-index");
+  const shardCountIdx = argv.indexOf("--shard-count");
+  if (shardIndexIdx === -1 && shardCountIdx === -1) return { shard: null };
+  if (shardIndexIdx === -1 || shardCountIdx === -1) {
+    return { error: "--shard-index and --shard-count must both be given, or neither" };
+  }
+  const shardIndexRaw = argv[shardIndexIdx + 1];
+  const shardCountRaw = argv[shardCountIdx + 1];
+  const shardIndex = Number(shardIndexRaw);
+  const shardCount = Number(shardCountRaw);
+  if (!Number.isInteger(shardIndex) || !Number.isInteger(shardCount) || shardCount < 1 || shardIndex < 0 || shardIndex >= shardCount) {
+    return {
+      error: `--shard-index/--shard-count must be integers with 0 <= shard-index < shard-count (got ${JSON.stringify(shardIndexRaw)}/${JSON.stringify(shardCountRaw)})`,
+    };
+  }
+  return { shard: { shardIndex, shardCount } };
+}

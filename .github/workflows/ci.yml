@@ -57,6 +57,13 @@ env:
   # change needed: `push-tree` below derives the matrix's actual index list
   # from this value, and the shard invocation step reads it directly.
   CANDIDATE_QUALIFICATION_SHARDS: 4
+  # Refs #1324: the same single tunable, for `safety-gates-shard`'s own
+  # matrix -- `publish safety / gate regression tests` measured 27 minutes
+  # end to end (see that job's own header), almost entirely one `node --test`
+  # invocation over 98 discovered suites. 4, matching
+  # CANDIDATE_QUALIFICATION_SHARDS, for the same Free-plan 20-concurrent-job
+  # reason that value is sized against, not a second independent guess.
+  GATE_TEST_SHARDS: 4
 
 jobs:
   # After a merge-commit PR lands, GitHub pushes a merge commit whose tree
@@ -73,6 +80,7 @@ jobs:
     outputs:
       duplicate: ${{ steps.cmp.outputs.duplicate }}
       shard-matrix: ${{ steps.shard-matrix.outputs.matrix }}
+      gate-shard-matrix: ${{ steps.gate-shard-matrix.outputs.matrix }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -101,6 +109,16 @@ jobs:
       - id: shard-matrix
         run: |
           node -e "console.log('matrix=' + JSON.stringify([...Array(Number(process.env.CANDIDATE_QUALIFICATION_SHARDS)).keys()]))" >> "$GITHUB_OUTPUT"
+      # Refs #1324: same pattern, one step down, for `safety-gates-shard`'s
+      # own matrix -- GATE_TEST_SHARDS is the single tunable, this step's
+      # own job output is the only place that reads it, and the invocation
+      # step's own --shard-count reads the SAME env var directly (never a
+      # second literal), so the three can never silently drift apart -- the
+      # identical chain scripts/check-workflow-references.test.mjs already
+      # proves end to end for CANDIDATE_QUALIFICATION_SHARDS.
+      - id: gate-shard-matrix
+        run: |
+          node -e "console.log('matrix=' + JSON.stringify([...Array(Number(process.env.GATE_TEST_SHARDS)).keys()]))" >> "$GITHUB_OUTPUT"
 
   # Direct tooling is part of the public-package supply chain even when it is
   # not shipped as a runtime dependency. Audit the complete locked graph and
@@ -380,15 +398,15 @@ jobs:
         if: always()
         run: rm -f "$RUNNER_TEMP/denylist.json"
 
-  # `npm run check:gates`, not `node scripts/test-gates.mjs` alone. The
-  # script is a compound -- the fixture-driven gate regressions AND every
-  # node:test suite over this repository's own scripts -- and before #472
-  # only the first half ran here. Most of those suites ran in no workflow at
-  # all and one only in a workflow_dispatch job, so they were enforced by
-  # `npm run check` and contributor discipline and nothing else. #468 passed
-  # every check on its pull request and turned main red at merge as a direct
-  # result: the suite that catches it exists, works, and could not run
-  # before the damage.
+  # `npm run check:gates` == `node scripts/test-gates.mjs && node
+  # scripts/run-gate-suites.mjs` -- the fixture-driven gate regressions AND
+  # every node:test suite over this repository's own scripts -- and before
+  # #472 only the first half ran here. Most of those suites ran in no
+  # workflow at all and one only in a workflow_dispatch job, so they were
+  # enforced by `npm run check` and contributor discipline and nothing else.
+  # #468 passed every check on its pull request and turned main red at merge
+  # as a direct result: the suite that catches it exists, works, and could
+  # not run before the damage.
   #
   # Invoking by script name rather than by listing the file paths is
   # deliberate -- a path list silently goes stale the moment a suite is
@@ -397,48 +415,112 @@ jobs:
   #
   # A separate job from `safety-identity` (#1257): this is a fixed,
   # independent cost regardless of what the identity steps find, dominated
-  # by ~70 suites run serially through one `node --test` invocation. Splitting
-  # it out means the wall clock is however long THIS takes, not the sum of
-  # this plus the identity checks plus gitleaks. Runs in a dependency-free
-  # job because every suite in check:gates imports only node builtins and
-  # local scripts (proven by "every suite in check:gates imports only node
-  # builtins and local scripts" in scripts/check-workflow-references.test.mjs)
-  # -- no npm ci, no build, no denylist secret: check:gates grades the gate
-  # SCRIPTS themselves against a synthetic fixture denylist
-  # (scripts/test-gates.mjs's own DL), never this repository's real one.
-  safety-gates:
-    name: publish safety / gate regression tests
+  # by the 98 suites `scripts/run-gate-suites.mjs` discovers, run through one
+  # `node --test` invocation. Splitting it out means the wall clock is
+  # however long THIS takes, not the sum of this plus the identity checks
+  # plus gitleaks. Runs in a dependency-free job because every suite in
+  # check:gates imports only node builtins and local scripts (proven by
+  # "every suite in check:gates imports only node builtins and local
+  # scripts" in scripts/check-workflow-references.test.mjs) -- no npm ci, no
+  # build, no denylist secret: check:gates grades the gate SCRIPTS
+  # themselves against a synthetic fixture denylist (scripts/test-gates.mjs's
+  # own DL), never this repository's real one.
+  #
+  # Refs #1324: sharded a second time, inside this one job -- the same
+  # #1257/#1276 shape `candidate-qualification-shard` already uses (see that
+  # job's own header). Measured on run 35957368169 (job 107498450966): the
+  # combined `npm run check:gates` step took 27m01s end to end, split
+  # 24s `node scripts/test-gates.mjs` (the fixture-driven regressions --
+  # PASS logged at 04:51:36, 24s after the step started at 04:51:12) then
+  # 26m37s `node scripts/run-gate-suites.mjs` (98 discovered suites, one
+  # `node --test` invocation, ending with the step at 05:18:13) -- so the
+  # discovered-suite run is what actually needs sharding; the fixture suite
+  # is cheap enough to just repeat, unsharded, on every shard (same trade
+  # `candidate-qualification-shard` makes for its own cheap, unsharded,
+  # cross-record checks -- see that job's own header).
+  #
+  # `--shard-index`/`--shard-count` (scripts/run-gate-suites.mjs, backed by
+  # scripts/lib/gate-test-set.mjs's `partitionFilesForShard`) select this
+  # shard's slice of the SAME sorted, discovered file list via a pure,
+  # order-preserving round-robin -- not Node's own `--test-shard` flag, so
+  # the partition is something this repository's own tests can assert on
+  # directly (gate-test-set.test.mjs's completeness-proof tests) rather than
+  # trusting an external tool's undocumented internal behaviour. The shard
+  # count is bounded by the workflow-level GATE_TEST_SHARDS env var (top of
+  # this file), never a literal here -- `push-tree`'s own `gate-shard-matrix`
+  # output derives this matrix's index list from it fresh on every run, the
+  # same single-tunable shape CANDIDATE_QUALIFICATION_SHARDS already
+  # established.
+  safety-gates-shard:
+    name: publish safety / gate regression tests (shard ${{ matrix.shard }})
     needs: [push-tree]
     if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJSON(needs.push-tree.outputs.gate-shard-matrix) }}
     runs-on: ubuntu-latest
-    # `check:gates` now owns the ~70-suite node:test regression run the
-    # combined `publish safety` job used to run unbounded (no
-    # timeout-minutes on main): 14-24 minutes across recent successful PR
-    # runs (e.g. runs 35846913296, 35844706017, 35841178517), with the
-    # candidate-qualification-adjacent suites the slow part. 15 minutes was
-    # too tight for the real work this job does -- job 107156624117 (run
-    # 35851503439, T9 rebuild at d4105ce6) started 11:16:14, was still
-    # running past the 15-minute mark, and was cancelled at 11:31:30. Set
-    # from the measured max plus headroom, not a guess.
-    timeout-minutes: 30
+    # Measured whole (unsharded) at 26m37s for the discovered-suite half
+    # alone (see this job's own header) plus 24s for the fixture suite this
+    # shard also repeats -- 27 minutes total across ~24-25 files/shard at
+    # GATE_TEST_SHARDS: 4. 15 minutes is headroom over a rough 1/4 split of
+    # that measured total, not a second independent guess; the number this
+    # job's own real per-shard timing settles at, once it has run for real,
+    # is what should replace this comment, the same "state derived from
+    # evidence" rule this repository's package lifecycle already holds
+    # itself to (docs/LIFECYCLE.md).
+    timeout-minutes: 15
     steps:
       # check:gates exercises check-contamination-classes.mjs's CLASS 4 rule
       # against THIS repo's own real git history (see that script's own
       # header), not a fixture -- its "genuinely foreign name still flagged"
       # regression case needs reliable history to tell a real retired
-      # package from a fabricated one. Before this job was split out of the
-      # combined `publish safety` job it inherited that job's fetch-depth: 0
-      # (needed there for gitleaks); split into its own job it defaults back
-      # to a SHALLOW checkout, which silently makes CLASS 4 unable to trust
-      # its own history and both cases fall through untested.
+      # package from a fabricated one. Every shard checks out full history
+      # uniformly, the same choice `candidate-qualification-shard` makes for
+      # its own per-shard checkout, rather than special-casing only the one
+      # shard that happens to draw scripts/check-contamination-classes.test.mjs
+      # this run -- which shard that is depends on discovery order and is
+      # not something this workflow should need to track.
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0 # contamination-classes CLASS 4 reads full package-name history
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 20
-      - name: gate regression tests
-        run: npm run check:gates
+      # Every shard repeats the fixture-driven regressions in full (~24s
+      # measured, see this job's own header) -- cheap enough that splitting
+      # it too would add matrix-scheduling overhead for no real wall-clock
+      # gain, and repeating it keeps every shard self-contained: no
+      # "only shard 0 covers this" special case for the fan-in below to get
+      # wrong.
+      - name: gate regression tests (fixtures)
+        run: node scripts/test-gates.mjs
+      - name: gate regression tests (shard ${{ matrix.shard }} of discovered suites)
+        run: node scripts/run-gate-suites.mjs --shard-index ${{ matrix.shard }} --shard-count ${{ env.GATE_TEST_SHARDS }}
+
+  # The fan-in over the matrix above -- the same #1240 shape `candidate-
+  # qualification` uses for its own shard, and the reason THIS job keeps the
+  # `safety-gates` name the split job used to have: `safety`'s own fan-in
+  # below already `needs: safety-gates` and reads `needs.safety-gates.result`
+  # to decide whether the required `publish safety` context can pass: a
+  # skipped, cancelled, or failed shard must never silently read as success
+  # there, and keeping this job's id unchanged means that wiring needed no
+  # edit at all -- only what feeds it did.
+  safety-gates:
+    name: publish safety / gate regression tests
+    needs: [push-tree, safety-gates-shard]
+    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: All gate-regression shards must succeed
+        if: always()
+        run: |
+          result="${{ needs.safety-gates-shard.result }}"
+          if [ "$result" != "success" ]; then
+            echo "::error::safety-gates-shard (the ${{ env.GATE_TEST_SHARDS }}-way matrix) did not succeed (result: $result)"
+            exit 1
+          fi
 
   # gitleaks the TOOL is open source; gitleaks-action the WRAPPER requires a
   # paid licence for organisation-owned repositories and fails the run
