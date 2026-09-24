@@ -12,6 +12,57 @@ const read = (path: string): unknown => JSON.parse(readFileSync(path, "utf8"));
 const fixture = () => structuredClone(read(join(repoRoot, "docs/contracts/installed-position-ledger.fixture.json")) as object) as Record<string, unknown>;
 const roleContract = () => structuredClone(read(join(repoRoot, "docs/contracts/role-loop-archetypes.json")) as object) as Record<string, unknown>;
 
+// The real 0.9.10 shape of docs/contracts/installed-position-ledger.fixture.json,
+// captured verbatim via `git show 62d9dc570c0af76cd89e49bc40002fb5b36da2ca:
+// docs/contracts/installed-position-ledger.fixture.json` (the qualified 0.9.10
+// baseline, see the compatibility audit). It differs from the current fixture
+// in exactly the two ways #1394's audit found: no @clossys/customer
+// disposition (that role shipped in 0.9.11) and `learnOrEscalate` instead of
+// `learn` in stageBindings.
+const legacyLedgerFixture090 = () => structuredClone({
+  schemaVersion: 1,
+  dispositions: [
+    { package: "@clossys/advisor", disposition: "not-applicable", reason: "Synthetic schema fixture; no consumer decision.", positionIds: [] },
+    { package: "@clossys/controller", disposition: "not-applicable", reason: "Synthetic schema fixture; no consumer decision.", positionIds: [] },
+    { package: "@clossys/architect", disposition: "not-applicable", reason: "Synthetic schema fixture; no consumer decision.", positionIds: [] },
+    { package: "@clossys/inspector", disposition: "not-applicable", reason: "Synthetic schema fixture; no consumer decision.", positionIds: [] },
+    { package: "@clossys/builder", disposition: "not-applicable", reason: "Synthetic schema fixture; no consumer decision.", positionIds: [] },
+    { package: "@clossys/locksmith", disposition: "not-applicable", reason: "Synthetic schema fixture; no consumer decision.", positionIds: [] },
+    { package: "@clossys/integrator", disposition: "open", reason: "Synthetic schema fixture; exercises a complete open position.", positionIds: ["fixture-integrator"] },
+    { package: "@clossys/observer", disposition: "not-applicable", reason: "Synthetic schema fixture; no consumer decision.", positionIds: [] },
+    { package: "@clossys/strategist", disposition: "not-applicable", reason: "Synthetic schema fixture; no consumer decision.", positionIds: [] },
+    { package: "@clossys/writer", disposition: "not-applicable", reason: "Synthetic schema fixture; no consumer decision.", positionIds: [] },
+    { package: "@clossys/designer", disposition: "not-applicable", reason: "Synthetic schema fixture; no consumer decision.", positionIds: [] },
+    { package: "@clossys/publisher", disposition: "not-applicable", reason: "Synthetic schema fixture; no consumer decision.", positionIds: [] },
+    { package: "@clossys/influencer", disposition: "not-applicable", reason: "Synthetic schema fixture; no consumer decision.", positionIds: [] },
+    { package: "@clossys/bouncer", disposition: "not-applicable", reason: "Synthetic schema fixture; no consumer decision.", positionIds: [] },
+    { package: "@clossys/butler", disposition: "not-applicable", reason: "Synthetic schema fixture; no consumer decision.", positionIds: [] },
+    { package: "@clossys/messenger", disposition: "not-applicable", reason: "Synthetic schema fixture; no consumer decision.", positionIds: [] },
+    { package: "@clossys/giver", disposition: "not-applicable", reason: "Synthetic schema fixture; no consumer decision.", positionIds: [] },
+    { package: "@clossys/keeper", disposition: "not-applicable", reason: "Synthetic schema fixture; no consumer decision.", positionIds: [] },
+  ],
+  positions: [
+    {
+      id: "fixture-integrator",
+      package: "@clossys/integrator",
+      businessMetricPath: { l1: "synthetic value", l2: "synthetic northstar", l3: "synthetic operating metric" },
+      causalHypothesis: "Synthetic fixture only; it establishes no consumer hypothesis.",
+      baseline: { value: 0.5, observedAt: "2026-08-17T00:00:00.000Z", evidenceRefs: ["fixture-baseline"] },
+      setpoint: { value: 1, evidenceRefs: ["fixture-setpoint"] },
+      operatingScope: { description: "Synthetic fixture scope.", included: ["fixture input"], excluded: ["provider mutation"] },
+      authority: { decisionOwner: "fixture owner", actionAuthority: "fixture automation" },
+      evidenceSource: { description: "Synthetic fixture evidence.", locator: "fixture" },
+      cadence: { measure: "fixture", review: "fixture" },
+      budget: { amount: 0, unit: "currency", period: "fixture" },
+      guardrails: ["No live action."],
+      escalationPath: ["Fixture escalation only."],
+      workerComponents: [{ kind: "deterministic", responsibility: "Validate fixture syntax." }],
+      stageBindings: { sense: "Read fixture evidence.", judge: "Compare fixture values.", act: "Report fixture result.", verify: "Re-read fixture evidence.", learnOrEscalate: "Escalate fixture failure." },
+      firstDayAssessment: { gaps: [], target: "Synthetic target state.", openQuestions: [], criticalPath: ["Validate the fixture."], deferredWork: [], recommendation: "install", evidenceRefs: ["fixture-baseline", "fixture-setpoint"] },
+    },
+  ],
+}) as Record<string, unknown>;
+
 describe("installed positions", () => {
   it("accepts the complete fixture and proves shipped snapshot parity", () => {
     const result = validateInstalledPositionLedger(fixture(), roleContract());
@@ -96,6 +147,59 @@ describe("installed positions", () => {
     const tooLong = fixture();
     ((tooLong.positions as Array<Record<string, Record<string, string[]>>>)[0]!.baseline).evidenceRefs[0] = "a".repeat(65_537);
     expect(validateInstalledPositionLedger(tooLong).findings).toContainEqual({ rule: "reference-length-exceeded", path: "positions[0].baseline.evidenceRefs[0]", message: "must be at most 65,536 code units" });
+  });
+
+  describe("0.9.10 legacy ledger compatibility (#1394)", () => {
+    it("accepts a real 0.9.10-shaped ledger, with advisories naming both migrations", () => {
+      const result = validateInstalledPositionLedger(legacyLedgerFixture090());
+      expect(result.ok).toBe(true);
+      expect(result.findings).toEqual([]);
+      expect(result.advisories).toContainEqual(expect.objectContaining({ rule: "legacy-stage-name", path: "positions[0].stageBindings" }));
+      expect(result.advisories).toContainEqual(expect.objectContaining({ rule: "missing-disposition-for-new-role", path: "@clossys/customer", message: expect.stringContaining("0.9.11") }));
+      expect(result.advisories).toHaveLength(2);
+      expect(result.openRoles).toBe(1);
+      expect(result.positions).toBe(1);
+    });
+
+    it("rejects stageBindings carrying both learn and learnOrEscalate", () => {
+      const ledger = legacyLedgerFixture090();
+      const positions = ledger.positions as Array<Record<string, unknown>>;
+      const stageBindings = positions[0]!.stageBindings as Record<string, string>;
+      stageBindings.learn = stageBindings.learnOrEscalate!;
+      const result = validateInstalledPositionLedger(ledger);
+      expect(result.ok).toBe(false);
+      expect(result.findings).toContainEqual(expect.objectContaining({ rule: "invalid-stage-bindings", path: "positions[0]" }));
+      expect(result.advisories.some((item) => item.rule === "legacy-stage-name")).toBe(false);
+    });
+
+    it("rejects stageBindings carrying neither learn nor learnOrEscalate", () => {
+      const ledger = legacyLedgerFixture090();
+      const positions = ledger.positions as Array<Record<string, unknown>>;
+      const stageBindings = positions[0]!.stageBindings as Record<string, string>;
+      delete stageBindings.learnOrEscalate;
+      const result = validateInstalledPositionLedger(ledger);
+      expect(result.ok).toBe(false);
+      expect(result.findings).toContainEqual(expect.objectContaining({ rule: "invalid-stage-bindings", path: "positions[0]" }));
+    });
+
+    it("still fails a missing disposition for a role that existed in 0.9.10", () => {
+      const ledger = legacyLedgerFixture090();
+      ledger.dispositions = (ledger.dispositions as Array<Record<string, unknown>>).filter((item) => item.package !== "@clossys/advisor");
+      const result = validateInstalledPositionLedger(ledger);
+      expect(result.ok).toBe(false);
+      expect(result.findings).toContainEqual(expect.objectContaining({ rule: "missing-role-disposition", path: "@clossys/advisor" }));
+      // The unrelated new-role advisory still fires; advisories never mask a real failure.
+      expect(result.advisories.some((item) => item.rule === "missing-disposition-for-new-role")).toBe(true);
+    });
+
+    it("never lets advisories change ok or findings on an otherwise-valid ledger", () => {
+      const legacy = validateInstalledPositionLedger(legacyLedgerFixture090());
+      const migrated = validateInstalledPositionLedger(fixture());
+      expect(legacy.ok).toBe(migrated.ok);
+      expect(legacy.openRoles).toBe(migrated.openRoles);
+      expect(legacy.positions).toBe(migrated.positions);
+      expect(migrated.advisories).toEqual([]);
+    });
   });
 
   it("keeps every installed-position contract vocabulary tied to the validator", () => {

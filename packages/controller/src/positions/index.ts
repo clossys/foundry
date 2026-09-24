@@ -12,10 +12,24 @@ export const REFERENCE_VALUE_RULE = "Evidence references and locators reject exp
 export const SETPOINT_VALUE_SHAPES = Object.freeze({ increase: "number", decrease: "number", maintain: "number", "target-range": "ordered two-number array" } as const);
 
 export interface InstalledPositionFinding { readonly rule: string; readonly path: string; readonly message: string; }
-export interface InstalledPositionLedgerReport { readonly ok: boolean; readonly findings: readonly InstalledPositionFinding[]; readonly openRoles: number; readonly positions: number; }
+/** A non-failing observation: the ledger is still valid, but something in it should change before the next minor. */
+export interface InstalledPositionAdvisory { readonly rule: string; readonly path: string; readonly message: string; }
+export interface InstalledPositionLedgerReport { readonly ok: boolean; readonly findings: readonly InstalledPositionFinding[]; readonly advisories: readonly InstalledPositionAdvisory[]; readonly openRoles: number; readonly positions: number; }
 
 type RecordValue = Record<string, unknown>;
 const universalStages = ["sense", "judge", "act", "verify", "learn"];
+// stageBindings shape a 0.9.10 ledger still carries: `learn` was named
+// `learnOrEscalate` before issue #1194's rename (role-loop-archetypes.json
+// schemaVersion 4 -> 5). Accepted on read as an advisory, never both at once.
+const legacyStages = ["sense", "judge", "act", "verify", "learnOrEscalate"];
+// Active roles this package added after the 0.9.10 baseline, paired with the
+// controller version that introduced each. A 0.9.10 ledger predates these
+// roles, so a missing disposition for one of them is an advisory, not a
+// failure. Extend this table when a future role is added; never special-case
+// a role name in the check below.
+const rolesAddedAfterBaseline: Readonly<Record<string, string>> = Object.freeze({
+  "@clossys/customer": "0.9.11",
+});
 const metricDirections = ["increase", "decrease", "maintain", "target-range"];
 const dispositionFields = ["package", "disposition", "reason", "positionIds"];
 const firstDayFields = ["gaps", "target", "openQuestions", "criticalPath", "deferredWork", "recommendation", "evidenceRefs"];
@@ -27,6 +41,7 @@ function keys(value: unknown, expected: readonly string[]): value is RecordValue
 function strings(value: unknown, minimum = 0): value is string[] { return Array.isArray(value) && value.length >= minimum && value.every(text) && new Set(value).size === value.length; }
 function references(value: unknown, minimum = 0): value is string[] { return Array.isArray(value) && value.length >= minimum && value.every((item) => text(item) && isValueSafeReference(item)) && new Set(value).size === value.length; }
 function fail(findings: InstalledPositionFinding[], rule: string, path: string, message: string): void { findings.push({ rule, path, message }); }
+function advise(advisories: InstalledPositionAdvisory[], rule: string, path: string, message: string): void { advisories.push({ rule, path, message }); }
 function rejectUnsafeReference(value: unknown, path: string, findings: InstalledPositionFinding[]): void {
   if (typeof value !== "string") return;
   const issue = referenceSafetyIssue(value);
@@ -63,14 +78,15 @@ export function validateInstalledPositionContract(contract: unknown = readInstal
 
 export function validateInstalledPositionLedger(ledger: unknown, roleContract: unknown = readCanonicalRoleLoopContract()): InstalledPositionLedgerReport {
   const findings: InstalledPositionFinding[] = [];
+  const advisories: InstalledPositionAdvisory[] = [];
   findings.push(...validateInstalledPositionContract());
-  if (findings.length > 0) return { ok: false, findings, openRoles: 0, positions: 0 };
+  if (findings.length > 0) return { ok: false, findings, advisories, openRoles: 0, positions: 0 };
   let canonicalContract: unknown;
   try { canonicalContract = readCanonicalRoleLoopContract(); }
-  catch (error) { return { ok: false, findings: [{ rule: "canonical-role-contract-unavailable", path: "contracts/role-loop-archetypes.json", message: error instanceof Error ? error.message : String(error) }], openRoles: 0, positions: 0 }; }
-  if (canonical(roleContract) !== canonical(canonicalContract)) return { ok: false, findings: [{ rule: "noncanonical-role-contract", path: "roleContract", message: "must exactly match the immutable role-loop-archetypes snapshot shipped by @clossys/controller" }], openRoles: 0, positions: 0 };
-  if (!record(roleContract) || roleContract.schemaVersion !== 5 || !keys(roleContract, ["schemaVersion", "universalStages", "consumerBindings", "modes", "metricVocabulary", "qualificationVerdicts", "roles"]) || !record(roleContract.roles)) return { ok: false, findings: [{ rule: "unreadable-role-contract", path: "roles", message: "must be the complete schemaVersion 5 role contract" }], openRoles: 0, positions: 0 };
-  if (canonical(roleContract.universalStages) !== canonical(universalStages) || !record(roleContract.metricVocabulary) || canonical(roleContract.metricVocabulary.directions) !== canonical(metricDirections) || !record(roleContract.modes) || canonical(Object.keys(roleContract.modes).sort()) !== canonical(["assure", "fulfill", "interact", "optimize", "reconcile", "steward"])) return { ok: false, findings: [{ rule: "role-contract-vocabulary-drift", path: "roleContract", message: "stages, modes, and metric directions must match the shipped schemaVersion 5 contract" }], openRoles: 0, positions: 0 };
+  catch (error) { return { ok: false, findings: [{ rule: "canonical-role-contract-unavailable", path: "contracts/role-loop-archetypes.json", message: error instanceof Error ? error.message : String(error) }], advisories, openRoles: 0, positions: 0 }; }
+  if (canonical(roleContract) !== canonical(canonicalContract)) return { ok: false, findings: [{ rule: "noncanonical-role-contract", path: "roleContract", message: "must exactly match the immutable role-loop-archetypes snapshot shipped by @clossys/controller" }], advisories, openRoles: 0, positions: 0 };
+  if (!record(roleContract) || roleContract.schemaVersion !== 5 || !keys(roleContract, ["schemaVersion", "universalStages", "consumerBindings", "modes", "metricVocabulary", "qualificationVerdicts", "roles"]) || !record(roleContract.roles)) return { ok: false, findings: [{ rule: "unreadable-role-contract", path: "roles", message: "must be the complete schemaVersion 5 role contract" }], advisories, openRoles: 0, positions: 0 };
+  if (canonical(roleContract.universalStages) !== canonical(universalStages) || !record(roleContract.metricVocabulary) || canonical(roleContract.metricVocabulary.directions) !== canonical(metricDirections) || !record(roleContract.modes) || canonical(Object.keys(roleContract.modes).sort()) !== canonical(["assure", "fulfill", "interact", "optimize", "reconcile", "steward"])) return { ok: false, findings: [{ rule: "role-contract-vocabulary-drift", path: "roleContract", message: "stages, modes, and metric directions must match the shipped schemaVersion 5 contract" }], advisories, openRoles: 0, positions: 0 };
   const roles = new Set(Object.keys(roleContract.roles));
   const roleDirections = new Map<string, string>();
   for (const [name, declaration] of Object.entries(roleContract.roles)) {
@@ -79,7 +95,7 @@ export function validateInstalledPositionLedger(ledger: unknown, roleContract: u
     else fail(findings, "unreadable-role-direction", name, `role metric direction must be one of: ${metricDirections.join(", ")}`);
   }
   if (!record(ledger) || !keys(ledger, ["schemaVersion", "dispositions", "positions"]) || ledger.schemaVersion !== 1 || !Array.isArray(ledger.dispositions) || !Array.isArray(ledger.positions)) {
-    return { ok: false, findings: [{ rule: "unreadable-position-ledger", path: "ledger", message: "must be schemaVersion 1 with dispositions and positions arrays" }], openRoles: 0, positions: 0 };
+    return { ok: false, findings: [{ rule: "unreadable-position-ledger", path: "ledger", message: "must be schemaVersion 1 with dispositions and positions arrays" }], advisories, openRoles: 0, positions: 0 };
   }
   const document = ledger;
   const dispositions = new Map<string, { disposition: string; ids: string[] }>();
@@ -97,7 +113,12 @@ export function validateInstalledPositionLedger(ledger: unknown, roleContract: u
     if (dispositions.has(packageName)) fail(findings, "duplicate-role-disposition", path, "each active role has exactly one disposition");
     else dispositions.set(packageName, { disposition: String(item.disposition), ids: Array.isArray(item.positionIds) ? item.positionIds.filter(text) : [] });
   }
-  for (const name of roles) if (!dispositions.has(name)) fail(findings, "missing-role-disposition", name, "every active role must be explicitly open or not-applicable");
+  for (const name of roles) {
+    if (dispositions.has(name)) continue;
+    const introducedIn = rolesAddedAfterBaseline[name];
+    if (introducedIn) advise(advisories, "missing-disposition-for-new-role", name, `${name} was added in ${introducedIn}, after this ledger's 0.9.10 baseline; add an explicit disposition before the next minor.`);
+    else fail(findings, "missing-role-disposition", name, "every active role must be explicitly open or not-applicable");
+  }
   for (const name of dispositions.keys()) if (!roles.has(name)) fail(findings, "unknown-disposition-role", name, "not an active role");
 
   const positionIds = new Set<string>();
@@ -133,8 +154,17 @@ export function validateInstalledPositionLedger(ledger: unknown, roleContract: u
     if (!strings(position.guardrails, 1) || !strings(position.escalationPath, 1)) fail(findings, "invalid-constraints", path, "guardrails and escalationPath need at least one item");
     if (!Array.isArray(position.workerComponents) || position.workerComponents.length === 0 || position.workerComponents.some((worker: unknown) => !keys(worker, ["kind", "responsibility"]) || !WORKER_COMPONENT_KINDS.includes(worker.kind as never) || !text(worker.responsibility)) || new Set(position.workerComponents.map((worker: unknown) => record(worker) ? worker.kind : "")).size !== position.workerComponents.length) fail(findings, "invalid-worker-components", path, "worker components need unique declared kinds and responsibilities");
     const stageBindings = position.stageBindings;
-    if (!keys(stageBindings, universalStages)) fail(findings, "invalid-stage-bindings", path, "stageBindings needs one activity for sense, judge, act, verify, and learn");
-    else if (universalStages.some((stage) => !text(stageBindings[stage]))) fail(findings, "invalid-stage-bindings", path, "stageBindings needs one nonempty consumer activity for sense, judge, act, verify, and learn");
+    if (keys(stageBindings, universalStages)) {
+      if (universalStages.some((stage) => !text(stageBindings[stage]))) fail(findings, "invalid-stage-bindings", path, "stageBindings needs one nonempty consumer activity for sense, judge, act, verify, and learn");
+    } else if (keys(stageBindings, legacyStages)) {
+      // Exactly the pre-#1194 shape (learnOrEscalate, no learn) -- a ledger
+      // carrying both keys, or neither, falls through to the generic failure
+      // below exactly as it always has, since `keys` requires an exact match.
+      if (legacyStages.some((stage) => !text(stageBindings[stage]))) fail(findings, "invalid-stage-bindings", path, "stageBindings needs one nonempty consumer activity for sense, judge, act, verify, and learnOrEscalate");
+      else advise(advisories, "legacy-stage-name", `${path}.stageBindings`, "learnOrEscalate was renamed to learn in issue #1194; rename this key to learn before the next minor.");
+    } else {
+      fail(findings, "invalid-stage-bindings", path, "stageBindings needs one activity for sense, judge, act, verify, and learn");
+    }
     const assessment = position.firstDayAssessment;
     if (record(assessment)) rejectUnsafeReferences(assessment.evidenceRefs, `${path}.firstDayAssessment.evidenceRefs`, findings);
     if (!keys(assessment, firstDayFields) || !strings(assessment.gaps) || !text(assessment.target) || !strings(assessment.openQuestions) || !strings(assessment.criticalPath, 1) || !strings(assessment.deferredWork) || !POSITION_RECOMMENDATIONS.includes(assessment.recommendation as never) || !references(assessment.evidenceRefs, 1)) fail(findings, "invalid-first-day-assessment", path, "first-day assessment needs gaps, target, open questions, critical path, deferred work, recommendation, and value-safe evidence references; position.baseline is its single baseline");
@@ -147,7 +177,7 @@ export function validateInstalledPositionLedger(ledger: unknown, roleContract: u
     else if (positionPackages.get(id) !== packageName) fail(findings, "wrong-position-role", packageName, `${id} belongs to a different role`);
   }
   for (const id of positionIds) if (!cited.has(id)) fail(findings, "uncited-position", id, "every position must be owned by its open role disposition");
-  return { ok: findings.length === 0, findings, openRoles: [...dispositions.values()].filter((item) => item.disposition === "open").length, positions: positionIds.size };
+  return { ok: findings.length === 0, findings, advisories, openRoles: [...dispositions.values()].filter((item) => item.disposition === "open").length, positions: positionIds.size };
 }
 
 export {

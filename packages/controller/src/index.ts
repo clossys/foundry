@@ -108,7 +108,7 @@ export {
   validateInstalledPositionContract,
   validateInstalledPositionLedger,
 } from "./positions/index.js";
-export type { CompletionEvidenceFinding, CompletionEvidenceIndeterminateReason, CompletionEvidenceReport, InstalledPositionFinding, InstalledPositionLedgerReport } from "./positions/index.js";
+export type { CompletionEvidenceFinding, CompletionEvidenceIndeterminateReason, CompletionEvidenceReport, InstalledPositionAdvisory, InstalledPositionFinding, InstalledPositionLedgerReport } from "./positions/index.js";
 
 // First-day onboarding. Re-exported from the root entry point rather than
 // given its own `./onboarding` subpath: the frozen public-npm aggregate
