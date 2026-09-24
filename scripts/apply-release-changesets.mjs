@@ -245,16 +245,18 @@
 // into that same manifest write.
 //
 // scripts/check-workspace-links.mjs's own pre-existing sibling-range gate
-// still scans only manifest.dependencies (issue #1340, not fixed here --
-// see that issue for whether extending it to all four sections is small
-// enough to do separately). That gate and this rewriter are allowed to
-// disagree on SCOPE without disagreeing on MEANING: this rewriter fixing a
-// devDependencies edge here does not depend on that gate also checking it,
-// and that gate not yet checking it does not make this rewrite wrong.
+// now imports DEPENDENCY_RANGE_SECTIONS from the same shared module this
+// file does (scripts/lib/dependency-range-sections.mjs, issue #1340) rather
+// than restating the three-section list by hand, so the two can no longer
+// silently diverge the way they did before #1340. It still deliberately
+// does NOT scan devDependencies (DEV_DEPENDENCY_RANGE_SECTIONS, this file
+// only) — that gate and this rewriter are allowed to disagree on that one
+// section without disagreeing on MEANING: this rewriter fixing a
+// devDependencies edge here does not depend on that gate also checking it.
 //
 // Design: https://github.com/clossys/foundry/issues/1255#issuecomment-5790113827
 // Weekly calendar design (versioning unchanged): docs/RELEASING.md, refs #1187 #1265 #1266
-// Refs: #1322, #1327, #1332.
+// Refs: #1322, #1327, #1332, #1340.
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -262,6 +264,7 @@ import { fileURLToPath } from "node:url";
 import { changesetsForPackage, highestBumpLevel, loadChangesets } from "./collect-changesets.mjs";
 import { parseSemver } from "./check-release-pr-shape.mjs";
 import { satisfies } from "./check-workspace-links.mjs";
+import { DEPENDENCY_RANGE_SECTIONS, DEV_DEPENDENCY_RANGE_SECTIONS } from "./lib/dependency-range-sections.mjs";
 import { changelogPath as changelogPathFor, changelogRelPath } from "./lib/changelog-location.mjs";
 
 function die(message, code = 1) {
@@ -390,13 +393,13 @@ export function prependChangelogEntry(existingText, { version, date, bullets, br
 // never-triggers-a-bump devDependencies scan, and this file's own header
 // ("devDependencies IS SCANNED AND REWRITTEN TOO...") for why the two are
 // kept separate.
-export const DEPENDENCY_RANGE_SECTIONS = ["dependencies", "peerDependencies", "optionalDependencies"];
-
-// devDependencies ALONE -- scanned and rewritten by the identical rule
-// (bumpDependencyRangeText(), forbiddenProtocolReason(), satisfies()), but
-// NEVER by itself the reason a package gets a dependent-only version bump.
-// See this file's own header for why.
-export const DEV_DEPENDENCY_RANGE_SECTIONS = ["devDependencies"];
+//
+// Both constants now live in scripts/lib/dependency-range-sections.mjs
+// (issue #1340) and are re-exported here so any existing import of this
+// module's own DEPENDENCY_RANGE_SECTIONS/DEV_DEPENDENCY_RANGE_SECTIONS
+// keeps working unchanged -- see that module's header for why the list
+// moved to a shared location instead of being restated in a second file.
+export { DEPENDENCY_RANGE_SECTIONS, DEV_DEPENDENCY_RANGE_SECTIONS };
 
 // Is `range` a protocol this repository's own AGENTS.md forbids outright
 // ("No workspace:* or catalog: dependency protocols")? If so, this script
