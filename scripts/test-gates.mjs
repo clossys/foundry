@@ -2536,6 +2536,9 @@ try {
     // inside this synthetic repo to pick up ITS history instead of the real
     // repo's -- copying the file, not just referencing CONTAM's real path.
     cpSync(CONTAM, join(srcRepo, "scripts", "check-contamination-classes.mjs"));
+    // ...along with the one module it imports (where a package changelog lives).
+    mkdirSync(join(srcRepo, "scripts", "lib"), { recursive: true });
+    cpSync(join(scriptDir, "lib", "changelog-location.mjs"), join(srcRepo, "scripts", "lib", "changelog-location.mjs"));
     writeFileSync(
       join(srcRepo, "packages", "probe-lib", "package.json"),
       JSON.stringify({ name: `${FIXTURE_SCOPE}/probe-lib`, version: "1.0.0" }, null, 2) + "\n",
