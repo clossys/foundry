@@ -31,13 +31,25 @@ function withDir(build) {
   }
 }
 
-function writePackage(root, { name, version, dependencies }) {
+function writePackage(root, { name, version, dependencies, peerDependencies, optionalDependencies, devDependencies }) {
   const shortName = name.split("/").pop();
   const pkgDir = join(root, "packages", shortName);
   mkdirSync(pkgDir, { recursive: true });
   writeFileSync(
     join(pkgDir, "package.json"),
-    JSON.stringify({ name, version, license: "MIT", ...(dependencies ? { dependencies } : {}) }, null, 2) + "\n",
+    JSON.stringify(
+      {
+        name,
+        version,
+        license: "MIT",
+        ...(dependencies ? { dependencies } : {}),
+        ...(peerDependencies ? { peerDependencies } : {}),
+        ...(optionalDependencies ? { optionalDependencies } : {}),
+        ...(devDependencies ? { devDependencies } : {}),
+      },
+      null,
+      2,
+    ) + "\n",
   );
   return pkgDir;
 }
@@ -315,4 +327,88 @@ test("this repository's own current tree passes the gate cleanly", () => {
   const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
   const r = run(["--json"], repoRoot);
   assert.equal(r.code, 0, `expected exit 0 against this repo's real tree, got ${r.code}: ${r.out}`);
+});
+
+// ------------------------------------------------------- peer/optional sections (#1340)
+
+test("link check: a peerDependencies range is scanned, not just dependencies", () => {
+  withDir((root) => {
+    writePackage(root, { name: "@scope/governance", version: "0.4.0" });
+    writePackage(root, { name: "@scope/catalog", version: "0.2.0", peerDependencies: { "@scope/governance": "^0.3.0" } });
+    writeLockfile(root, ["@scope/governance", "@scope/catalog"]);
+
+    const r = run(["--json"], root);
+    assert.equal(r.code, 1, `expected exit 1, got ${r.code}: ${r.out}`);
+    const report = JSON.parse(r.out);
+    const finding = report.results.find((x) => x.check === "link" && x.dependency === "@scope/governance");
+    assert.ok(finding, `expected a peerDependencies finding, got ${r.out}`);
+    assert.equal(finding.status, "finding");
+    assert.equal(finding.section, "peerDependencies");
+    assert.match(finding.detail, /peerDependencies/);
+  });
+});
+
+test("link check: an optionalDependencies range is scanned, not just dependencies", () => {
+  withDir((root) => {
+    writePackage(root, { name: "@scope/governance", version: "0.4.0" });
+    writePackage(root, { name: "@scope/catalog", version: "0.2.0", optionalDependencies: { "@scope/governance": "^0.3.0" } });
+    writeLockfile(root, ["@scope/governance", "@scope/catalog"]);
+
+    const r = run(["--json"], root);
+    assert.equal(r.code, 1, `expected exit 1, got ${r.code}: ${r.out}`);
+    const report = JSON.parse(r.out);
+    const finding = report.results.find((x) => x.check === "link" && x.dependency === "@scope/governance");
+    assert.ok(finding, `expected an optionalDependencies finding, got ${r.out}`);
+    assert.equal(finding.status, "finding");
+    assert.equal(finding.section, "optionalDependencies");
+  });
+});
+
+test("link check: a satisfied peerDependencies range still passes", () => {
+  withDir((root) => {
+    writePackage(root, { name: "@scope/governance", version: "0.3.0" });
+    writePackage(root, { name: "@scope/catalog", version: "0.2.0", peerDependencies: { "@scope/governance": "^0.3.0" } });
+    writeLockfile(root, ["@scope/governance", "@scope/catalog"]);
+
+    const r = run(["--json"], root);
+    assert.equal(r.code, 0, `expected exit 0, got ${r.code}: ${r.out}`);
+  });
+});
+
+test("link check: a stale devDependencies range is deliberately NOT scanned (out of scope, issue #1340)", () => {
+  withDir((root) => {
+    writePackage(root, { name: "@scope/governance", version: "0.4.0" });
+    writePackage(root, { name: "@scope/catalog", version: "0.2.0", devDependencies: { "@scope/governance": "^0.3.0" } });
+    // Only devDependencies edges exist; the link check's edge count only
+    // counts DEPENDENCY_RANGE_SECTIONS, so this is an empty scan (exit 2),
+    // not a false "satisfied" pass on a range this gate never looked at.
+    writeLockfile(root, ["@scope/governance", "@scope/catalog"]);
+
+    const r = run(["--json"], root);
+    assert.equal(r.code, 2, `expected exit 2 (empty scan: no dependencies/peerDependencies/optionalDependencies edges), got ${r.code}: ${r.out}`);
+    const report = JSON.parse(r.out);
+    const devFinding = report.results.find((x) => x.dependency === "@scope/governance" && x.check === "link");
+    assert.ok(!devFinding, `expected no link-check result for the devDependencies-only edge, got ${r.out}`);
+  });
+});
+
+test("link check: the same dependency in two sections with different ranges is evaluated independently", () => {
+  withDir((root) => {
+    writePackage(root, { name: "@scope/governance", version: "0.3.0" });
+    writePackage(root, {
+      name: "@scope/catalog",
+      version: "0.2.0",
+      dependencies: { "@scope/governance": "^0.3.0" }, // satisfied
+      peerDependencies: { "@scope/governance": "^0.2.0" }, // NOT satisfied (0.3.0 outside 0.2.x)
+    });
+    writeLockfile(root, ["@scope/governance", "@scope/catalog"]);
+
+    const r = run(["--json"], root);
+    assert.equal(r.code, 1, `expected exit 1, got ${r.code}: ${r.out}`);
+    const report = JSON.parse(r.out);
+    const depsResult = report.results.find((x) => x.check === "link" && x.section === "dependencies" && x.dependency === "@scope/governance");
+    const peerResult = report.results.find((x) => x.check === "link" && x.section === "peerDependencies" && x.dependency === "@scope/governance");
+    assert.equal(depsResult.status, "pass");
+    assert.equal(peerResult.status, "finding");
+  });
 });

@@ -41,9 +41,14 @@
 //
 // This gate checks the same defect from two directions:
 //   1. LINK CHECK — for every packages/*/package.json, for every
-//      `dependencies` entry naming a first-party sibling that exists in
-//      this workspace, does the sibling's real on-disk version satisfy the
-//      declared range?
+//      dependencies/peerDependencies/optionalDependencies entry (the three
+//      DEPENDENCY_RANGE_SECTIONS in scripts/lib/dependency-range-sections.mjs
+//      -- shared with apply-release-changesets.mjs's sibling-range rewriter
+//      so the two cannot silently diverge again, issue #1340) naming a
+//      first-party sibling that exists in this workspace, does the
+//      sibling's real on-disk version satisfy the declared range?
+//      devDependencies is deliberately excluded -- see that shared module's
+//      header for why.
 //   2. LOCKFILE CHECK — does package-lock.json resolve every first-party
 //      package as a local workspace link, never a remote registry URL? This
 //      catches the same defect from the other direction, and also catches a
@@ -80,6 +85,7 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { DEPENDENCY_RANGE_SECTIONS } from "./lib/dependency-range-sections.mjs";
 
 // ------------------------------------------------------------- range parsing
 
@@ -183,8 +189,12 @@ function loadManifest(pkgDir) {
 
 // LINK CHECK — see file header. `knownVersions` maps every successfully
 // loaded workspace package's name to its own on-disk version string; a
-// `dependencies` entry naming anything outside that map is not "a
-// first-party sibling that exists in this workspace" and is not evaluated.
+// dependency entry naming anything outside that map is not "a first-party
+// sibling that exists in this workspace" and is not evaluated. Scans every
+// section in DEPENDENCY_RANGE_SECTIONS (dependencies, peerDependencies,
+// optionalDependencies — issue #1340), not only `dependencies`; the same
+// depName can appear in more than one section with a different range, and
+// each occurrence is evaluated and reported independently.
 function evaluateLinks(loaded) {
   const results = [];
   const knownVersions = new Map();
@@ -198,55 +208,62 @@ function evaluateLinks(loaded) {
       continue;
     }
     const { manifest } = l;
-    const deps = manifest.dependencies;
-    if (!deps || typeof deps !== "object") continue;
 
-    for (const [depName, range] of Object.entries(deps)) {
-      if (depName === manifest.name) continue; // defensive: a package cannot depend on itself
-      if (!knownVersions.has(depName)) continue; // not a sibling that exists in this workspace scan
-      const actualVersion = knownVersions.get(depName);
-      const outcome = satisfies(actualVersion, range);
+    for (const section of DEPENDENCY_RANGE_SECTIONS) {
+      const deps = manifest[section];
+      if (!deps || typeof deps !== "object") continue;
 
-      if (!outcome.evaluated) {
-        results.push({
-          check: "link",
-          package: manifest.name,
-          dependency: depName,
-          range,
-          actualVersion,
-          status: "finding",
-          detail:
-            `${manifest.name} declares "${depName}": "${range}" — ${outcome.reason}. ` +
-            "A range this gate cannot evaluate is reported as a finding, not assumed satisfied.",
-        });
-      } else if (!outcome.ok) {
-        results.push({
-          check: "link",
-          package: manifest.name,
-          dependency: depName,
-          range,
-          actualVersion,
-          status: "finding",
-          detail:
-            `${manifest.name} declares "${depName}": "${range}", but ${depName}'s on-disk version is ` +
-            `${actualVersion}, which that range does not cover. In 0.x semver both ^ and ~ are minor-locked, ` +
-            `so a minor bump of ${depName} silently breaks this. npm will stop linking the local workspace ` +
-            `copy of ${depName} and fall back to resolving it from the registry instead — the tokenless CI ` +
-            "job then 401s, and an authenticated machine silently tests a stale published copy instead of " +
-            `the working tree. Fix: widen ${manifest.name}'s declared range to cover ${actualVersion} (or pin ` +
-            `${depName} back down), then bump ${manifest.name}'s own version too, since its package.json is ` +
-            "packed content and the release-readiness gate will demand it.",
-        });
-      } else {
-        results.push({
-          check: "link",
-          package: manifest.name,
-          dependency: depName,
-          range,
-          actualVersion,
-          status: "pass",
-          detail: `${manifest.name} declares "${depName}": "${range}" — satisfied by ${depName}@${actualVersion}`,
-        });
+      for (const [depName, range] of Object.entries(deps)) {
+        if (depName === manifest.name) continue; // defensive: a package cannot depend on itself
+        if (!knownVersions.has(depName)) continue; // not a sibling that exists in this workspace scan
+        const actualVersion = knownVersions.get(depName);
+        const outcome = satisfies(actualVersion, range);
+        const who = `${manifest.name} (${section})`;
+
+        if (!outcome.evaluated) {
+          results.push({
+            check: "link",
+            package: manifest.name,
+            section,
+            dependency: depName,
+            range,
+            actualVersion,
+            status: "finding",
+            detail:
+              `${who} declares "${depName}": "${range}" — ${outcome.reason}. ` +
+              "A range this gate cannot evaluate is reported as a finding, not assumed satisfied.",
+          });
+        } else if (!outcome.ok) {
+          results.push({
+            check: "link",
+            package: manifest.name,
+            section,
+            dependency: depName,
+            range,
+            actualVersion,
+            status: "finding",
+            detail:
+              `${who} declares "${depName}": "${range}", but ${depName}'s on-disk version is ` +
+              `${actualVersion}, which that range does not cover. In 0.x semver both ^ and ~ are minor-locked, ` +
+              `so a minor bump of ${depName} silently breaks this. npm will stop linking the local workspace ` +
+              `copy of ${depName} and fall back to resolving it from the registry instead — the tokenless CI ` +
+              "job then 401s, and an authenticated machine silently tests a stale published copy instead of " +
+              `the working tree. Fix: widen ${manifest.name}'s declared range to cover ${actualVersion} (or pin ` +
+              `${depName} back down), then bump ${manifest.name}'s own version too, since its package.json is ` +
+              "packed content and the release-readiness gate will demand it.",
+          });
+        } else {
+          results.push({
+            check: "link",
+            package: manifest.name,
+            section,
+            dependency: depName,
+            range,
+            actualVersion,
+            status: "pass",
+            detail: `${who} declares "${depName}": "${range}" — satisfied by ${depName}@${actualVersion}`,
+          });
+        }
       }
     }
   }
@@ -382,8 +399,9 @@ function main() {
       package: "(workspace)",
       status: "error",
       detail:
-        "discovered packages but found zero first-party dependency edges among their \"dependencies\" " +
-        "fields — refusing to report a clean pass on an empty scan (see this script's EMPTY SCAN header).",
+        "discovered packages but found zero first-party dependency edges among their dependencies/" +
+        "peerDependencies/optionalDependencies fields — refusing to report a clean pass on an empty scan " +
+        "(see this script's EMPTY SCAN header).",
     });
   }
 
