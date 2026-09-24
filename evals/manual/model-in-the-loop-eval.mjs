@@ -1,32 +1,36 @@
 #!/usr/bin/env node
-// model-in-the-loop-eval — issue #1185's optional, human-run half. Runs a
-// scripted, non-technical-founder transcript against a chosen role's real
-// skill through whatever model-backed agent CLI the owner has installed,
-// and prints the transcript so a human can grade it by eye against
+// model-in-the-loop-eval — issue #1185's optional, human-run half. This
+// script ONLY PRINTS three things: a scripted, non-technical-founder
+// persona and opening message, the exact invocation instruction
+// (`/clossys-<role> loop` for Claude Code, `@clossys-<role> loop` for
+// Cursor, per #1194), and a grading checklist drawn from
 // docs/contracts/conversation-contract.md (#1182): a recommendation listed
 // first, exactly one question per turn, no ids/paths/versions/commands
 // asked of the client, no unexplained jargon, the reply opens with status,
 // and a hard-rule violation is refused with a reason (#1187's design
 // comment on evals, and #1176's own scope addition).
 //
+// THIS SCRIPT MAKES NO MODEL CALL ITSELF. It does not read the role's
+// skill file, hold an API key, or invoke a provider SDK -- it has nothing
+// to call out with. The owner is the one who makes the model call, by
+// copying this script's printed block into their own already-authenticated
+// agent session (in a repository where the role's package is installed)
+// and reading the real reply against the printed checklist by eye. That is
+// why it is optional and human-run rather than automated: model output is
+// not reproducible run to run, so scoring it with an assertion in CI would
+// be a flaky gate wearing a deterministic one's clothes.
+//
 // THIS SCRIPT NEVER RUNS IN CI. It is not wired into any check:* script,
 // any npm script, or any .github/workflows/*.yml -- see this repository's
 // own AGENTS.md and #1185's brief: "It never runs in CI, has zero CI cost."
-// It costs a real model call every time an owner runs it by hand.
+// Because it makes no model call and holds no credential, it also cannot
+// be accidentally wired into an automated job in a way that would cost one.
 //
 // Usage (run locally, never in CI):
 //
 //   node evals/manual/model-in-the-loop-eval.mjs <role> [--host claude-code|cursor]
 //
-// <role> is a packages/*/skill directory name, e.g. "strategist". This
-// script does not itself hold an API key or invoke a provider SDK -- it
-// prints the exact scripted transcript and the exact invocation instruction
-// (`/clossys-<role> loop` for Claude Code, `@clossys-<role> loop` for
-// Cursor, per #1194) for the owner to paste into their own already
-// -authenticated agent session, then prints the grading checklist to score
-// the reply against. Keeping the model call itself out of this script means
-// it needs no credential of its own and can never be accidentally wired
-// into an automated job -- there is nothing here that calls out on its own.
+// <role> is a packages/*/skill directory name, e.g. "strategist".
 //
 // This is deliberately NOT a graded pass/fail gate: model output is not
 // reproducible run to run, so a scripted assertion over it would be

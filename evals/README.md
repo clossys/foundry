@@ -11,8 +11,8 @@ addition: kit composition scenarios", 2026-09-22).
 ## What runs in CI (deterministic, no model calls)
 
 ```bash
-node --test evals/lib/*.test.mjs   # unit tests for the harness itself
-node scripts/check-evals.mjs       # the gate
+node --test evals/lib/*.test.mjs scripts/check-evals.test.mjs   # unit tests for the harness itself
+node scripts/check-evals.mjs                                     # the gate
 ```
 
 Both are wired into `.github/workflows/ci.yml` (the same dependency-free,
@@ -52,6 +52,24 @@ through the real `composeKitFromProblems`, and scores it two ways
   itself stays deterministic. Composition is defined to be order-independent
   once problems are confirmed (#1176); any variance is a defect, not a flake.
 
+**What the 1.00 precision/recall scores are, and are not.** Every current
+scenario's `mustIncludeRoles` is exhaustive by construction, so a passing
+run always scores precision and recall at 1.00 — that is tautological, not
+independent evidence of accuracy (review #1413, reviewer B's N3). What the
+scores actually rest on: `mustIncludeRoles` is hand-authored, anchored to
+`docs/contracts/kit-presets.json` for the four preset scenarios and to
+reasoned `needs` dependency pull-ins for the rest (for example, Designer
+alone must pull in Strategist) — chosen independently of what the code
+under test happens to output. `sequence`, by contrast, is NOT independent:
+each fixture's `sequence` array is a snapshot of the engine's own output at
+authoring time, so a sequence check only proves the order hasn't drifted,
+never that the order is correct. Treat a scenario pass as "the composed
+role set still matches what a human decided it should be, and the order
+hasn't silently changed" — real regression coverage, but not a substitute
+for someone reviewing a new scenario's `mustIncludeRoles`/`sequence` against
+`docs/contracts/kit-presets.json` and the package manifests when it is
+added.
+
 Because the catalogue is built from the real tree rather than a synthetic
 fixture, a change to any package's `foundry.solves`/`needs`/`feeds`, to
 `docs/contracts/client-problems.json`, or to `docs/contracts/kit-presets.json`
@@ -63,6 +81,26 @@ Add a scenario by adding one `evals/scenarios/<id>.json` file whose `id`
 field matches its file name; every scenario is picked up automatically at
 the next run — never a hand-maintained list.
 
+### Mirror parity (`evals/manual/mirror-parity.test.mjs`)
+
+The scenarios above test `scripts/lib/capability-catalogue.mjs` — this
+repository's own dependency-free mirror of
+`packages/advisor/src/composition.ts` — not the shipped, published Advisor
+package. `evals/manual/mirror-parity.test.mjs` asserts `composeKitFromProblems`
+gives identical results in both copies, over every `evals/scenarios/*.json`
+fixture. It lives in `evals/manual/`, next to the model-in-the-loop script,
+and is **not** wired into `check:evals` or any workflow, because unlike the
+rest of this harness it needs `packages/advisor` built first (gitignored
+`dist/` output; no `packages/advisor` source file is touched):
+
+```bash
+npm run build --workspace=packages/advisor
+node --test evals/manual/mirror-parity.test.mjs
+```
+
+Run without that build, every test in the file reports skipped, not failed,
+naming the exact command above.
+
 ### Conversation-contract statics (`evals/lib/conversation-contract-checks.mjs`)
 
 `scripts/check-conversation-contract.mjs` already gates that every composed
@@ -73,7 +111,14 @@ outside that shared block) instruct the agent to do something the contract
 forbids? Three narrow, mechanical rules:
 
 - `client-facing-jargon-request` — an instruction to ask the client for an
-  id, slug, path, version, sha, command, or tool choice.
+  id, slug, path, version, sha, command, or tool. Word-bounded and
+  plural-tolerant (`\bids?\b`, `\bpaths?\b`, `\bversions?\b`, `\btools?\b`,
+  ...), so "which version", "the repository path", and "which tool" are all
+  caught, without matching "idea" or "ideal" (review #1413, B2 — the
+  earlier version of this regex was missing `version` and bare `path`/`tool`
+  entirely, and matched inside "idea"/"ideal" for lack of a trailing `\b`;
+  see `evals/lib/conversation-contract-checks.test.mjs` for the regression
+  cases both blind reviewers found).
 - `multi-question-per-turn` — an instruction to ask the client more than one
   question in a single turn.
 - `bare-loop-directive` — the word `loop`, quoted or backticked, presented
@@ -81,12 +126,16 @@ forbids? Three narrow, mechanical rules:
   `@clossys-<role>` prefix anywhere in the same sentence, and no rule-
   explaining language (`never`, `without`, `no bare`) in it either (#1194).
 
-These are heuristic text scans, not a parser — expect false negatives, not
-false positives on well-formed prose (see the module's own tests). On the
-current tree, all 21 packed skills score zero findings; because these rules
-are new and their false-positive rate is not yet proven over time, they stay
-in **report mode** by default (findings are printed and counted, never
-fail the gate — the same posture as `check:package-framework`'s own
+These are heuristic text scans, not a parser. Expect false negatives — this
+cannot prove a skill never violates the contract. False positives on
+unusual phrasing are possible too; this module's tests demonstrate that the
+specific misses review #1413 found are now caught, and that one non-ask
+control sentence and the "idea"/"ideal" case are not flagged, not an
+absence of every possible false positive. On the current tree, all 21
+packed skills score zero findings; because these rules are new and their
+false-positive rate is not proven over time beyond what the tests cover,
+they stay in **report mode** by default (findings are printed and counted,
+never fail the gate — the same posture as `check:package-framework`'s own
 `--enforce` convention) until `--enforce-contract-statics` is passed.
 
 If a run of this check ever surfaces a real defect inside a role skill, the

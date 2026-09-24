@@ -12,9 +12,15 @@
 // client:
 //
 //   - client-facing-jargon-request: an instruction telling the agent to ask
-//     the CLIENT for an id, slug, path, version, sha, or command -- the
-//     contract's own "Never ask for ids, slugs, paths, versions, commands,
-//     or tool choices."
+//     the CLIENT for an id, slug, path, version, sha, command, or tool --
+//     the contract's own "Never ask for ids, slugs, paths, versions,
+//     commands, or tool choices." Word-bounded and plural-tolerant
+//     (`\bids?\b`, `\bpaths?\b`, ...) so it matches "a version", "the
+//     repository path", or "which tool" without also matching "idea" or
+//     "ideal" (the regex's own docs/contracts substring did not have a
+//     trailing `\b` before this fix, and "version"/bare "path"/bare "tool"
+//     were missing from the alternation entirely -- see
+//     conversation-contract-checks.test.mjs for the regression cases).
 //   - multi-question-per-turn: an instruction to ask the client more than
 //     one question in the same turn -- "One decision per turn; no forms."
 //   - bare-loop-directive: the word `loop` presented, quoted or backticked,
@@ -22,8 +28,11 @@
 //     `@clossys-<role>` prefix on the same line -- #1194's "every
 //     invocation carries the loop keyword ... never a bare skill name."
 //
-// Each is a narrow, mechanical regex over plain text: false negatives are
-// expected (this cannot prove a skill NEVER violates the contract), but a
+// Each is a narrow, mechanical regex over plain text, not a parser: expect
+// false negatives (this cannot prove a skill NEVER violates the contract),
+// and false positives on unusual phrasing are possible too -- this module's
+// own tests demonstrate the specific cases this fix closes and one non-ask
+// control sentence, not an absence of every possible false positive. A
 // match is real, specific instruction text worth a human's attention -- the
 // same report-mode-first posture as check:package-framework and
 // check:package-conformance in this repository.
@@ -45,7 +54,7 @@ export function roleOwnContent(skillBody) {
   return injectContract(skillBody, "").trim();
 }
 
-const JARGON_ASK_RE = /\bask\b[^.?!\n]{0,80}\b(client|sponsor|founder)\b[^.?!\n]{0,80}\b(id|slug|file path|exit code|sha\b|command|tool choice)/i;
+const JARGON_ASK_RE = /\bask\b[^.?!\n]{0,80}\b(client|sponsor|founder)\b[^.?!\n]{0,80}\b(ids?|slugs?|paths?|versions?|shas?|commands?|tools?)\b/i;
 const MULTI_QUESTION_RE = /\bask\b[^.?!\n]{0,60}\b(both|all three|the following questions|two questions|three questions|multiple questions|several questions)\b/i;
 const BARE_LOOP_TOKEN_RE = /[`"]loop[`"]/i;
 // A sentence that ALREADY names a `clossys-<role>`/`@clossys-<role>` prefix,
@@ -85,7 +94,7 @@ export function evaluateSkillContract(packageDir, skillBody) {
     findings.push({
       rule: "client-facing-jargon-request",
       severity: "warning",
-      message: "skill text appears to instruct the agent to ask the client for a technical identifier (id, slug, path, version, sha, command, or tool choice) -- the contract forbids this",
+      message: "skill text appears to instruct the agent to ask the client for a technical identifier (id, slug, path, version, sha, command, or tool) -- the contract forbids this",
       path,
     });
   }

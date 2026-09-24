@@ -19,18 +19,30 @@
 // human-run, model-in-the-loop half.
 
 import { existsSync, readFileSync, readdirSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { buildCapabilityCatalogue, composeKitFromProblems } from "../../scripts/lib/capability-catalogue.mjs";
 import { precisionRecall, scoreScenario } from "./accuracy.mjs";
 import { checkRepeatability } from "./repeatability.mjs";
 
-export const SCENARIOS_DIR = join(new URL(".", import.meta.url).pathname, "..", "scenarios");
+// fileURLToPath, not `new URL(".", import.meta.url).pathname` -- the latter
+// is percent-encoded, so a checkout path containing a space (or any other
+// character `encodeURIComponent` escapes) resolves to a directory that does
+// not exist (review #1413, reviewer A's N3).
+export const SCENARIOS_DIR = join(dirname(fileURLToPath(import.meta.url)), "..", "scenarios");
 
-/** Reads every `evals/scenarios/*.json` fixture, sorted by file name for a deterministic run order. */
+/**
+ * Reads every `evals/scenarios/*.json` fixture, sorted by file name for a
+ * deterministic run order. Throws when the directory is missing OR holds no
+ * `*.json` fixture at all -- a zero-scenario run is not a pass (review
+ * #1413 item 7): an empty scenario set would otherwise report `satisfied`
+ * with a pass rate of 1, exactly like a real, still-covered gate.
+ */
 export function loadScenarios(scenariosDir = SCENARIOS_DIR) {
   if (!existsSync(scenariosDir)) throw new Error(`scenarios directory not found: ${scenariosDir}`);
   const files = readdirSync(scenariosDir).filter((name) => name.endsWith(".json")).sort();
+  if (files.length === 0) throw new Error(`no scenario fixtures (*.json) found in ${scenariosDir} -- a zero-scenario run cannot report a pass`);
   return files.map((name) => {
     const raw = readFileSync(join(scenariosDir, name), "utf8");
     let parsed;
