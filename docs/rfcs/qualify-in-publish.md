@@ -459,7 +459,7 @@ The owner accepted every recommendation on 2026-09-24.
 | D1. Adopt proposal C | Adopted as **phase 1** of a larger target: one release run at the merged release commit. A and B rejected; a fourth option (D in section 6) also rejected. | R1 |
 | D2. "Publish run, separate credential-free job" | Adopted. Qualify in the run, not the job. | technical recommendation |
 | D3. Remove `qualification record required` from the ruleset | Adopted: at cutover (phase 5), after one release in which it was report-only. | R10 |
-| D4. Extend `assertCredentialFree()` | Not covered by the 2026-09-24 record. The job boundary (D2) is the control either way. Any change is its own pull request. | open |
+| D4. Extend `assertCredentialFree()` | Adopted as defence in depth only: add the Actions token variables to the refused list. It makes the check stricter and nothing else; the job boundary (D2) stays the control. Its own pull request. | technical recommendation |
 | D5. Evidence carriers | The committed post-publish record only. No attestation until third-party verification is wanted. Release assets rejected. | R2; technical recommendation |
 | D6. Diagnostic qualification dispatch | Delete `qualify-candidate.yml` at the last phase. Diagnose with `publish.yml` and `dry_run: true`. | technical recommendation |
 | D7. Deferred versions | The 72 superseded deferred versions are formally abandoned. The 14 current ones publish in the first cohort run. (The draft counted 72 files, 53 superseded and 19 current, at an earlier commit; 1.2 has today's counts.) | R9 |
