@@ -50,14 +50,22 @@ function advise(advisories: InstalledPositionAdvisory[], rule: string, path: str
 // A prior-version advisory for a directly-called validator whose 0.9.10
 // return type is a plain findings array, never a report object -- so it
 // cannot grow a required `advisories` field without breaking that
-// signature. Attaching an enumerable `advisories` property to the array
-// itself is purely additive: every array method, `Array.isArray`, spread,
-// and `assert.deepEqual` against a plain array with no matching property
-// all behave exactly as before for a caller that never looks for it.
+// signature. The `advisories` property is defined non-enumerable, so it
+// is invisible to everything that walks own enumerable properties --
+// `JSON.stringify`, `{...result}`, `for...in` -- and, critically, to an
+// equality check against a plain array: `assert.deepEqual`/`deepStrictEqual`
+// and vitest `toEqual`/`toStrictEqual` against `[]` all pass exactly as
+// they did in 0.9.10, because none of those consider a non-enumerable
+// property. `Array.isArray`, `.length`, spread, and every array method
+// are unaffected regardless, since the property adds no index. A caller
+// that knows to look still reads it directly as `result.advisories`.
 // Never attached when there is nothing to advise, so the existing exact
 // current-contract-match case is untouched.
 function withAdvisories<T>(findings: readonly T[], advisories: readonly InstalledPositionAdvisory[]): readonly T[] & { readonly advisories?: readonly InstalledPositionAdvisory[] } {
-  return advisories.length === 0 ? findings : Object.assign([...findings], { advisories });
+  if (advisories.length === 0) return findings;
+  const copy = [...findings] as T[] & { advisories?: readonly InstalledPositionAdvisory[] };
+  Object.defineProperty(copy, "advisories", { value: advisories, enumerable: false, writable: false, configurable: false });
+  return copy;
 }
 function legacyContractAdvisory(path: string, kind: string, version: string): InstalledPositionAdvisory {
   return { rule: "legacy-contract-copy", path, message: `matches the ${kind} contract shipped in @clossys/controller ${version}; drop the argument to use the contract shipped inside this package, or re-copy it from this version.` };

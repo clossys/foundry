@@ -299,6 +299,21 @@ describe("installed positions", () => {
       expect(result.advisories).toContainEqual(expect.objectContaining({ rule: "legacy-contract-copy", path: "installedPositionContract", message: expect.stringContaining("0.9.10") }));
     });
 
+    it("keeps the 0.9.10 idiom of asserting a plain empty array, even with an advisory attached", () => {
+      // The `advisories` property is non-enumerable: every equality check a
+      // 0.9.10 caller could have written against a clean result -- Node's
+      // assert.deepEqual/deepStrictEqual and vitest's toEqual/toStrictEqual,
+      // all of which walk own enumerable properties -- still passes against
+      // a plain `[]`, exactly as it did in 0.9.10. `result.advisories` is
+      // still directly readable by a caller that knows to look.
+      const result = validateInstalledPositionContract(historicalInstalledPositionContract090());
+      expect(result).toEqual([]);
+      expect(result).toStrictEqual([]);
+      assert.deepEqual(result, []);
+      assert.deepStrictEqual(result, []);
+      expect(result.advisories).toContainEqual(expect.objectContaining({ rule: "legacy-contract-copy", path: "installedPositionContract", message: expect.stringContaining("0.9.10") }));
+    });
+
     it("still rejects a 0.9.10 installed-position contract with one field changed", () => {
       const contract = historicalInstalledPositionContract090();
       (contract.position as Record<string, unknown>).setpointValueRule = "modified";

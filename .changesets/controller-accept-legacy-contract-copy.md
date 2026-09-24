@@ -2,10 +2,11 @@
 controller: patch
 ---
 
-Implementation note for the prior-version contract acceptance in this
-release (see the `controller-legacy-ledger-compat` changeset for the
-consumer-facing behaviour): the recognized historical canonical contracts
-ship as real, byte-identical files under
+Implementation note: a caller's exact copy of a previously shipped
+role-loop-archetypes.json or installed-position-contract.json keeps
+validating, reporting a non-failing `legacy-contract-copy` advisory naming
+the matched version. The recognized historical canonical contracts ship
+as real, byte-identical files under
 `packages/controller/contracts/historical/<version>/` -- currently only
 0.9.10's `role-loop-archetypes.json` and `installed-position-contract.json`,
 captured verbatim from that published version via
