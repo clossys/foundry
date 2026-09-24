@@ -9,7 +9,7 @@
 // (b)'s registry calls are always exercised through an injected fake
 // `fetchImpl`.
 import assert from "node:assert/strict";
-import { execFileSync, spawnSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -26,6 +26,7 @@ import {
   parseArgs,
   readLauncherPackageName,
 } from "./check-launcher-catalogue-currency.mjs";
+import { spawnCapture } from "./lib/spawn-capture.mjs";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const scriptPath = join(scriptDir, "check-launcher-catalogue-currency.mjs");
@@ -344,14 +345,14 @@ test("evaluateLagReport is indeterminate when the resolved launcher fetch failed
 
 // ----------------------------------------------------------------- CLI
 
-test("CLI: --package is required", () => {
-  const result = spawnSync(process.execPath, [scriptPath], { encoding: "utf8" });
+test("CLI: --package is required", async () => {
+  const result = await spawnCapture(process.execPath, [scriptPath]);
   assert.equal(result.status, 2);
   assert.match(result.stderr, /Usage:/);
 });
 
-test("CLI: --package launcher requires --tarball", () => {
-  const result = spawnSync(process.execPath, [scriptPath, "--package", "launcher"], { encoding: "utf8" });
+test("CLI: --package launcher requires --tarball", async () => {
+  const result = await spawnCapture(process.execPath, [scriptPath, "--package", "launcher"]);
   assert.equal(result.status, 2);
   assert.match(result.stderr, /--tarball is required/);
 });

@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { spawnSync } from "node:child_process";
 import test from "node:test";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { tmpdir } from "node:os";
 import { ALL_PACKAGE_RELEASE_ORDER } from "./check-release-catalog.mjs";
+import { spawnCapture } from "./lib/spawn-capture.mjs";
 
 const scriptsDir = dirname(fileURLToPath(import.meta.url));
 const checker = join(scriptsDir, "check-foreign-references.mjs");
@@ -47,7 +47,7 @@ function fixture({ malformed = false, extraFiles = {} } = {}) {
 }
 
 function run(root) {
-  return spawnSync(process.execPath, [checker, root], { encoding: "utf8" });
+  return spawnCapture(process.execPath, [checker, root]);
 }
 
 function digestLine(line) {
@@ -105,35 +105,35 @@ function currentTransitionFixture(extraFiles = {}) {
   return root;
 }
 
-test("the appointed-hub placeholder scope is fictional, not a foreign account", () => {
+test("the appointed-hub placeholder scope is fictional, not a foreign account", async () => {
   const root = candidateFixture({
     extraFiles: {
       "docs/ADOPTION.md": "A dedicated hub is named @owner/workspace.\n",
     },
   });
   try {
-    const result = run(root);
+    const result = await run(root);
     assert.equal(result.status, 0, result.stderr || result.stdout);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
 });
 
-test("own-scope hyphenated Agent Skill handles are this repository, not a foreign account", () => {
+test("own-scope hyphenated Agent Skill handles are this repository, not a foreign account", async () => {
   const root = candidateFixture({
     extraFiles: {
       "docs/ADOPTION.md": "Talk with @clossys-advisor or @clossys-<package>.\n",
     },
   });
   try {
-    const result = run(root);
+    const result = await run(root);
     assert.equal(result.status, 0, result.stderr || result.stdout);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
 });
 
-test("a hyphenated handle under some other scope remains a foreign bare-scope", () => {
+test("a hyphenated handle under some other scope remains a foreign bare-scope", async () => {
   // Interpolate the `@` so this file's own source is not itself a finding.
   const foreignToken = "widgetco-advisor";
   const foreignHandle = `@${foreignToken}`;
@@ -143,7 +143,7 @@ test("a hyphenated handle under some other scope remains a foreign bare-scope", 
     },
   });
   try {
-    const result = run(root);
+    const result = await run(root);
     assert.equal(result.status, 1, result.stderr || result.stdout);
     assert.match(result.stdout, new RegExp(`bare-scope @${foreignToken}`));
   } finally {
@@ -151,7 +151,7 @@ test("a hyphenated handle under some other scope remains a foreign bare-scope", 
   }
 });
 
-test("a docs.github.com URL is GitHub's documentation site, not a foreign owner/repo slug", () => {
+test("a docs.github.com URL is GitHub's documentation site, not a foreign owner/repo slug", async () => {
   // The bug this guards: FORGE_URL_RE's plain `github.com` alternative used
   // to match as a substring of ANY host ending in that apex domain, so
   // `docs.github.com/en/billing/...` read the URL's locale segment (`en`)
@@ -165,14 +165,14 @@ test("a docs.github.com URL is GitHub's documentation site, not a foreign owner/
     },
   });
   try {
-    const result = run(root);
+    const result = await run(root);
     assert.equal(result.status, 0, result.stderr || result.stdout);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
 });
 
-test("a github.com owner/repo URL is still a foreign-reference finding (proves the docs.github.com fix didn't just stop checking)", () => {
+test("a github.com owner/repo URL is still a foreign-reference finding (proves the docs.github.com fix didn't just stop checking)", async () => {
   // Built from parts, like the hyphenated-handle case above, so this file's
   // own source is not itself a finding when the real gate scans this repo.
   const foreignSlug = ["widgetco", "private-tool"].join("/");
@@ -182,7 +182,7 @@ test("a github.com owner/repo URL is still a foreign-reference finding (proves t
     },
   });
   try {
-    const result = run(root);
+    const result = await run(root);
     assert.equal(result.status, 1, result.stderr || result.stdout);
     assert.match(result.stdout, new RegExp(`forge-slug ${foreignSlug.replace("/", "\\/")}`));
   } finally {
@@ -190,7 +190,7 @@ test("a github.com owner/repo URL is still a foreign-reference finding (proves t
   }
 });
 
-test("a www.github.com owner/repo URL is still a foreign-reference finding (the docs.github.com guard is scoped to that one subdomain, not every subdomain)", () => {
+test("a www.github.com owner/repo URL is still a foreign-reference finding (the docs.github.com guard is scoped to that one subdomain, not every subdomain)", async () => {
   const foreignSlug = ["widgetco", "private-tool"].join("/");
   const root = fixture({
     extraFiles: {
@@ -198,7 +198,7 @@ test("a www.github.com owner/repo URL is still a foreign-reference finding (the 
     },
   });
   try {
-    const result = run(root);
+    const result = await run(root);
     assert.equal(result.status, 1, result.stderr || result.stdout);
     assert.match(result.stdout, new RegExp(`forge-slug ${foreignSlug.replace("/", "\\/")}`));
   } finally {
@@ -206,7 +206,7 @@ test("a www.github.com owner/repo URL is still a foreign-reference finding (the 
   }
 });
 
-test("a gist.github.com/<user>/<id> URL is still a foreign-reference finding (GitHub's own gist subdomain carries a real account handle, not documentation prose)", () => {
+test("a gist.github.com/<user>/<id> URL is still a foreign-reference finding (GitHub's own gist subdomain carries a real account handle, not documentation prose)", async () => {
   const foreignUser = "widgetco";
   const gistId = "abc123def456";
   const root = fixture({
@@ -215,7 +215,7 @@ test("a gist.github.com/<user>/<id> URL is still a foreign-reference finding (Gi
     },
   });
   try {
-    const result = run(root);
+    const result = await run(root);
     assert.equal(result.status, 1, result.stderr || result.stdout);
     assert.match(result.stdout, new RegExp(`forge-slug ${foreignUser}\\/${gistId}`));
   } finally {
@@ -223,20 +223,20 @@ test("a gist.github.com/<user>/<id> URL is still a foreign-reference finding (Gi
   }
 });
 
-test("a future producer scope is admitted only in an exact release-contract documentation surface", () => {
+test("a future producer scope is admitted only in an exact release-contract documentation surface", async () => {
   const root = fixture({ extraFiles: { "docs/PUBLISHING.md": `planned ${futureScope}/advisor target` } });
   try {
-    const result = run(root);
+    const result = await run(root);
     assert.equal(result.status, 0, result.stderr || result.stdout);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
 });
 
-test("a future producer scope outside its release-contract surfaces is a foreign-reference finding", () => {
+test("a future producer scope outside its release-contract surfaces is a foreign-reference finding", async () => {
   const root = fixture({ extraFiles: { "src/leak.mjs": `export const leak = "${futureScope}/advisor";` } });
   try {
-    const result = run(root);
+    const result = await run(root);
     assert.equal(result.status, 1, result.stderr || result.stdout);
     assert.match(result.stdout, /FOREIGN reference/);
   } finally {
@@ -244,10 +244,10 @@ test("a future producer scope outside its release-contract surfaces is a foreign
   }
 });
 
-test("a malformed catalogue cannot grant a future producer scope exception", () => {
+test("a malformed catalogue cannot grant a future producer scope exception", async () => {
   const root = fixture({ malformed: true, extraFiles: { "docs/PUBLISHING.md": `planned ${futureScope}/advisor target` } });
   try {
-    const result = run(root);
+    const result = await run(root);
     assert.equal(result.status, 2, result.stderr || result.stdout);
     assert.match(result.stderr, /cannot validate governance\/release-catalog\.json/);
   } finally {
@@ -255,24 +255,24 @@ test("a malformed catalogue cannot grant a future producer scope exception", () 
   }
 });
 
-test("candidate state admits a retired identity only at its exact inventoried historical line", () => {
+test("candidate state admits a retired identity only at its exact inventoried historical line", async () => {
   const root = candidateFixture();
   try {
-    const result = run(root);
+    const result = await run(root);
     assert.equal(result.status, 0, result.stderr || result.stdout);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
 });
 
-test("candidate state rejects changed historical bytes and the same identity on an active source path", () => {
+test("candidate state rejects changed historical bytes and the same identity on an active source path", async () => {
   const changed = candidateFixture({ inventoryLine: "Retained prior evidence.", historicalLine: `Retained ${retiredScope}/advisor evidence.` });
   const active = candidateFixture({ extraFiles: { "src/current.mjs": `export const active = "${retiredScope}/advisor";\n` } });
   try {
-    const changedResult = run(changed);
+    const changedResult = await run(changed);
     assert.equal(changedResult.status, 1, changedResult.stderr || changedResult.stdout);
     assert.match(changedResult.stdout, /docs\/DECISIONS\.md/);
-    const activeResult = run(active);
+    const activeResult = await run(active);
     assert.equal(activeResult.status, 1, activeResult.stderr || activeResult.stdout);
     assert.match(activeResult.stdout, /src\/current\.mjs/);
   } finally {
@@ -281,13 +281,13 @@ test("candidate state rejects changed historical bytes and the same identity on 
   }
 });
 
-test("the transferred repository admits exact candidate issue trackers but not candidate source references before recut", () => {
+test("the transferred repository admits exact candidate issue trackers but not candidate source references before recut", async () => {
   const tracker = currentTransitionFixture({ "docs/DECISIONS.md": "Tracked by https://github.com/clossys/foundry/issues/593.\n" });
   const source = currentTransitionFixture({ "src/current.mjs": 'export const source = "https://github.com/clossys/foundry";\n' });
   try {
-    const trackerResult = run(tracker);
+    const trackerResult = await run(tracker);
     assert.equal(trackerResult.status, 0, trackerResult.stderr || trackerResult.stdout);
-    const sourceResult = run(source);
+    const sourceResult = await run(source);
     assert.equal(sourceResult.status, 1, sourceResult.stderr || sourceResult.stdout);
     assert.match(sourceResult.stdout, /src\/current\.mjs/);
   } finally {

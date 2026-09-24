@@ -1,11 +1,12 @@
 import assert from "node:assert/strict";
-import { execFileSync, spawnSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { packagesNeedingDispatch, qualificationBranchName } from "./filter-qualification-dispatch.mjs";
+import { spawnCapture } from "./lib/spawn-capture.mjs";
 
 const scriptPath = resolve(dirname(fileURLToPath(import.meta.url)), "filter-qualification-dispatch.mjs");
 
@@ -107,11 +108,11 @@ test("CLI: nothing on the remote yet dispatches every candidate", () => {
   }
 });
 
-test("CLI: human-readable mode names the skipped candidate on stderr and prints only what still needs dispatch on stdout", () => {
+test("CLI: human-readable mode names the skipped candidate on stderr and prints only what still needs dispatch on stdout", async () => {
   const { bareDir, seedDir } = makeBareOriginWithBranches(["claude/qualify-alpha-1.0.0"]);
   const { dir: inputDir, path: inputPath } = makeInputFile([{ package: "alpha", name: "@x/alpha", version: "1.0.0" }]);
   try {
-    const result = spawnSync(process.execPath, [scriptPath, inputPath], { cwd: seedDir, encoding: "utf8" });
+    const result = await spawnCapture(process.execPath, [scriptPath, inputPath], { cwd: seedDir });
     assert.equal(result.status, 0);
     assert.match(result.stdout, /nothing left to dispatch/);
     assert.match(result.stderr, /skipping alpha@1\.0\.0/);
