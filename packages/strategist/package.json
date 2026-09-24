@@ -24,14 +24,254 @@
     "CHANGELOG.md",
     "README.md",
     "LICENSE",
-    "skill"
+    "skill",
+    "fit-signals.json"
   ],
   "sideEffects": false,
   "foundry": {
     "assessment": {
       "bin": "strategist-rate-check",
       "invocation": "single-json-input"
-    }
+    },
+    "outputs": [
+      "clossys/strategist/facts.json",
+      "clossys/strategist/audiences.json",
+      "clossys/strategist/markets.json",
+      "clossys/strategist/positioning.json",
+      "clossys/strategist/claims.json",
+      "clossys/strategist/brand.json",
+      "clossys/strategist/mission.json",
+      "clossys/strategist/roadmap.json",
+      "clossys/strategist/direction.json",
+      "clossys/strategist/constraints.json",
+      "clossys/strategist/contract.json"
+    ],
+    "fit": "fit-signals.json",
+    "feeds": [
+      {
+        "artifact": "audience-understanding",
+        "path": "clossys/strategist/audiences.json"
+      },
+      {
+        "artifact": "positioning",
+        "path": "clossys/strategist/positioning.json"
+      },
+      {
+        "artifact": "claims",
+        "path": "clossys/strategist/claims.json"
+      },
+      {
+        "artifact": "constraints",
+        "path": "clossys/strategist/constraints.json"
+      },
+      {
+        "artifact": "brand-derivation",
+        "path": "clossys/strategist/brand.json"
+      },
+      {
+        "artifact": "direction-currency",
+        "path": "clossys/strategist/direction.json"
+      },
+      {
+        "artifact": "strategy-brief",
+        "path": "clossys/strategist/contract.json"
+      }
+    ],
+    "needs": [],
+    "solves": [
+      {
+        "problem": "strategist-unclear-direction",
+        "statement": "We can't explain what we are.",
+        "metric": "strategy traceability rate",
+        "proofCase": "handoff-positioning-unresolved",
+        "evidence": "designed",
+        "capability": "positioning"
+      }
+    ],
+    "capabilities": [
+      {
+        "id": "evidence-base",
+        "subQuestion": "Is every material fact in this role's own facts.json sourced, dated, and still current?",
+        "worldClass": "Every currency amount, percentage, multiplier, or superlative claim recorded in this role's own facts.json is sourced, dated, and traced — never an unverifiable number left in the record.",
+        "inputs": [],
+        "outputs": [
+          "clossys/strategist/facts.json"
+        ],
+        "proofCase": "facts-clean",
+        "maturity": "built",
+        "v0": true,
+        "businessLifecycleStage": "found"
+      },
+      {
+        "id": "audience-understanding",
+        "subQuestion": "Who is this for, and is that record current?",
+        "worldClass": "Every named audience is a governed record, not a guess reconstructed per surface.",
+        "inputs": [],
+        "outputs": [
+          "clossys/strategist/audiences.json"
+        ],
+        "proofCase": "handoff-audience-unrecorded",
+        "maturity": "built",
+        "v0": true,
+        "businessLifecycleStage": "found"
+      },
+      {
+        "id": "market-definition",
+        "subQuestion": "What market and category are we actually competing in?",
+        "worldClass": "The market and category the business competes in is written down once, current, and traceable to evidence.",
+        "inputs": [],
+        "outputs": [
+          "clossys/strategist/markets.json"
+        ],
+        "proofCase": "handoff-market-untraced",
+        "maturity": "built",
+        "v0": true,
+        "businessLifecycleStage": "define"
+      },
+      {
+        "id": "positioning",
+        "subQuestion": "Where do we stand relative to the alternatives, and is it still defensible?",
+        "worldClass": "The position is a governed record every downstream claim and surface derives from, not restated ad hoc.",
+        "inputs": [],
+        "outputs": [
+          "clossys/strategist/positioning.json"
+        ],
+        "proofCase": "handoff-positioning-unresolved",
+        "maturity": "built",
+        "v0": true,
+        "businessLifecycleStage": "define"
+      },
+      {
+        "id": "claims",
+        "subQuestion": "Which claims are approved to make publicly, and do they trace to evidence?",
+        "worldClass": "Every entry in this role's own claims record is either approved with a traceable factRef or explicitly marked hypothesis — never recorded as approved without one.",
+        "inputs": [],
+        "outputs": [
+          "clossys/strategist/claims.json"
+        ],
+        "proofCase": "handoff-claim-untraced",
+        "maturity": "partial",
+        "v0": true,
+        "businessLifecycleStage": "define"
+      },
+      {
+        "id": "brand-derivation",
+        "subQuestion": "Does every brand attribute trace to a decided brand record, with the token slots and voice rules it obligates?",
+        "worldClass": "A brand attribute is never decorative: it names the token slots and voice rules it obligates, and coverage is checked both directions.",
+        "inputs": [],
+        "outputs": [
+          "clossys/strategist/brand.json"
+        ],
+        "proofCase": "brand-coverage-uncovered",
+        "maturity": "built",
+        "v0": true,
+        "businessLifecycleStage": "define"
+      },
+      {
+        "id": "mission-and-values",
+        "subQuestion": "What do we stand for, and is it still what we said?",
+        "worldClass": "Mission and values are one governed record, not a paragraph copied between decks that quietly drifts.",
+        "inputs": [],
+        "outputs": [
+          "clossys/strategist/mission.json"
+        ],
+        "proofCase": null,
+        "maturity": "planned",
+        "v0": false,
+        "businessLifecycleStage": "define"
+      },
+      {
+        "id": "roadmap",
+        "subQuestion": "What's on the roadmap, and does every item trace to a decision?",
+        "worldClass": "The roadmap is a governed record of items, not a doc scattered across decks and issues.",
+        "inputs": [],
+        "outputs": [
+          "clossys/strategist/roadmap.json"
+        ],
+        "proofCase": "handoff-roadmap-untraced",
+        "maturity": "built",
+        "v0": false,
+        "businessLifecycleStage": "define"
+      },
+      {
+        "id": "direction-currency",
+        "subQuestion": "Is every derived artifact's governing decision the current one, not a superseded one?",
+        "worldClass": "Every derived artifact's reviewedAgainst names a direction entity that is not just present but current — never a superseded decision nobody stands behind.",
+        "inputs": [],
+        "outputs": [
+          "clossys/strategist/direction.json"
+        ],
+        "proofCase": "direction-superseded",
+        "maturity": "partial",
+        "v0": false,
+        "businessLifecycleStage": "define"
+      },
+      {
+        "id": "constraints",
+        "subQuestion": "What is any role or surface forbidden from doing, and why?",
+        "worldClass": "Every governance constraint on copy, surfaces, or audience protection is a named, citable record — never tribal knowledge.",
+        "inputs": [],
+        "outputs": [
+          "clossys/strategist/constraints.json"
+        ],
+        "proofCase": "apply-constraint-uncited",
+        "maturity": "built",
+        "v0": true,
+        "businessLifecycleStage": "define"
+      },
+      {
+        "id": "strategy-brief",
+        "subQuestion": "Is the strategy directory ready to hand off as one portable, sealed brief downstream roles can build on?",
+        "worldClass": "Every approved claim, current direction, and constraint projects into one portable, versioned contract — the v0 Launch pack's Strategy brief (#1204) — and handoff readiness (every ref resolves, required surface present) is checked before any downstream role builds on it.",
+        "inputs": [],
+        "outputs": [
+          "clossys/strategist/contract.json"
+        ],
+        "proofCase": "handoff-ready",
+        "maturity": "partial",
+        "v0": true,
+        "businessLifecycleStage": "define"
+      },
+      {
+        "id": "business-model-and-pricing-hypothesis",
+        "subQuestion": "How does the business make money, and is that hypothesis tested?",
+        "worldClass": "The pricing and business-model hypothesis is a governed, evidence-backed record, not a number picked once and never revisited.",
+        "inputs": [],
+        "outputs": [
+          "clossys/strategist/business-model.json"
+        ],
+        "proofCase": null,
+        "maturity": "planned",
+        "v0": false,
+        "businessLifecycleStage": "define"
+      },
+      {
+        "id": "north-star-and-metric-tree",
+        "subQuestion": "What is the one metric that matters, and what feeds it?",
+        "worldClass": "One north-star metric is declared with the tree of contributing metrics beneath it, assigned per #533.",
+        "inputs": [],
+        "outputs": [
+          "clossys/strategist/metrics.json"
+        ],
+        "proofCase": null,
+        "maturity": "planned",
+        "v0": false,
+        "businessLifecycleStage": "operate"
+      },
+      {
+        "id": "competitive-landscape",
+        "subQuestion": "Who else is competing for this audience, and how do we compare?",
+        "worldClass": "The competitive landscape is a governed, evidence-backed record Customer's own skill can route conversation to, not ad hoc research repeated per conversation.",
+        "inputs": [],
+        "outputs": [
+          "clossys/strategist/competitive-landscape.json"
+        ],
+        "proofCase": null,
+        "maturity": "planned",
+        "v0": false,
+        "businessLifecycleStage": "define"
+      }
+    ]
   },
   "description": "The strategist role: is it true, and is it us? Dependency-free validators for a consumer's own strategy records (facts, mission, positioning, markets, audiences, roadmap, brand essence/attributes/derivations), a typed reader over a consumer's strategy directory, and three gates reachable from one bin — a facts-traceability gate that fails when a numeric or superlative claim cannot be traced to a facts.json entry, a brand-coverage checker over brandable token slots, and a direction-currency check that reports a derivation still citing superseded direction. Ships the schema and the checkers; every consumer authors its own values.",
   "keywords": [

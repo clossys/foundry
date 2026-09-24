@@ -1,0 +1,22 @@
+[
+  {
+    "id": "positioning-2026-h2",
+    "subject": {
+      "file": "positioning.json",
+      "id": "positioning"
+    },
+    "decidedOn": "2026-07-01",
+    "derivesFrom": []
+  },
+  {
+    "id": "brand-2026-h2",
+    "subject": {
+      "file": "brand.json",
+      "id": "plain-spoken"
+    },
+    "decidedOn": "2026-07-01",
+    "derivesFrom": [
+      "positioning-2026-h2"
+    ]
+  }
+]

@@ -1,0 +1,13 @@
+{
+  "id": "qualification-voice",
+  "rules": {
+    "person": { "description": "second-person", "forbiddenPronouns": [] },
+    "tense": { "description": "present", "forbiddenMarkers": [] },
+    "formality": "neutral",
+    "tone": []
+  },
+  "glossary": [],
+  "claims": [
+    { "id": "fastest-setup", "text": "the fastest setup", "matchPhrases": ["the fastest setup"], "requiresSupport": true }
+  ]
+}

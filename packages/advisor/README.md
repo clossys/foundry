@@ -132,7 +132,11 @@ evidence.
 `CAPABILITY_CATALOGUE` is this package's own generated, build-time-frozen
 map of every role in this repository's role-loop archetypes: each role's
 job question, primary mode, metric, boundary, `solves` claims, fit
-signals, and `needs`/`feeds` handoff edges. It is generated, never
+signals, `needs`/`feeds` handoff edges, and declared `capabilities`. Each
+package's `needs`, `solves`, `feeds` and `fit` are read in exactly the
+shape this repository's package-framework contract defines (a `needs`
+entry names its `producerRole` by scoped package name; a `solves` entry
+carries `statement`, `metric`, `proofCase` and `evidence`). It is generated, never
 hand-grouped, and reading it performs no file or network I/O — it is a
 plain exported constant. `kitCatalogueDigest` is the deterministic sha256
 over that frozen catalogue (stable key order); a connector may bind it
@@ -147,8 +151,24 @@ every other problem, Advisor composes a custom kit instead.
 `composeKit()` takes a set of `selectedRoles` and the catalogue, pulls in
 every role a selected role's `needs` edge names that was not already
 selected, orders roles so a producer always precedes its consumer, and
-reports any need that names no resolvable role. An unknown selected role
-or a needs cycle comes back `indeterminate`, never guessed past.
+reports every need that is not met. `needIsMet()` applies the same rule as
+this repository's package-framework gate: a declared `needs` entry is met
+only when its producer declares a `feeds` entry for that artifact
+(`declaredFeeds`, kept verbatim and in declared order). An unknown
+selected role comes back `indeterminate`, never guessed past.
+
+Needs cycles are judged per capability, not per role, following the
+package-framework contract's cycle decision. `judgeNeedsCycles()` builds that
+graph for a set of roles. A cycle among capabilities is a deadlock, and
+`composeKit()` returns `indeterminate`. A role-level loop with no
+capability cycle behind it is legitimate, such as the Customer/Publisher
+keep loop. The kit composes, and `roleCycles` lists the loop. Some cycles
+the capability graph cannot account for, so they cannot be judged: a cycle
+only visible through a role with no capability map, or a role loop closed
+by an inferred fallback need that names no capability. The kit composes,
+and `unjudgedCycle` names the cycle rather than passing it silently.
+`recommendKit()` carries both `roleCycles` and `unjudgedCycle`
+into its verdict.
 
 `composeKitFromProblems()` is the problem-confirmed entry point (the
 client confirms PROBLEM cards, never picks packages): it deterministically
@@ -171,10 +191,10 @@ call rather than it being silently dropped.
 (`"designed" < "qualified" < "proven"`), and `evidenceAtLeast(evidence,
 floor)` compares one evidence level against a floor along that order.
 `presetEvidenceFindings()` checks presets against an evidence floor
-(`"qualified"` by default) and is advisory only: every current `solves`
-entry is a `designed`-only fallback until real per-role evidence lands, so
-this never fails a preset the owner already approved — it stays visible
-and testable so it is ready to enforce the moment real evidence exists.
+(`"qualified"` by default) and is advisory only: most roles still carry
+only the `designed` fallback `solves` entry, so this never fails a preset
+the owner already approved — it stays visible and testable so it is ready
+to enforce once real evidence exists.
 
 `toEngagementBrief()` turns a `composed` `ComposeKitResult` into the
 client-facing `EngagementBrief`: the client's problem, which roles the kit

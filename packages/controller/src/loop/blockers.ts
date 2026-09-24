@@ -32,7 +32,12 @@ export function blockerFor(capabilityId: string, kind: BlockerKind, nextAction: 
 export function isBlockerOverdue(blocker: Blocker, now: Date = new Date()): boolean {
   const due = new Date(blocker.nextAction.byWhen);
   if (Number.isNaN(due.getTime())) return true;
-  return due.getTime() < now.getTime();
+  // A date-only byWhen (no time part) names a whole day, not its first
+  // instant: the deadline is the end of that day, so the blocker stays on
+  // schedule for the entirety of its own due date.
+  const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(blocker.nextAction.byWhen.trim());
+  const deadline = dateOnly ? due.getTime() + 24 * 60 * 60 * 1000 : due.getTime();
+  return deadline <= now.getTime();
 }
 
 /** Every overdue blocker across every capability, each still naming which capability it blocks -- the escalation list issue #1195 asks for. */

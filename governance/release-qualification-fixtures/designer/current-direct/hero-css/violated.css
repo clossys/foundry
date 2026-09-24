@@ -1,0 +1,9 @@
+/* A consumer's built Tailwind v4 stylesheet whose @source never scanned the designer package. */
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display, system-ui, ui-sans-serif, -apple-system, "Segoe UI", sans-serif);
+  }
+  .text-display-l {
+    font-size: var(--text-display-l, 56px);
+  }
+}
