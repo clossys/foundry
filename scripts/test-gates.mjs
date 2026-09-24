@@ -337,6 +337,9 @@ try {
       "-private-var-folders-ab-cd-T-x",
       "_private_tmp_claude-1_scratchpad_x",
       "-private-tmp-claude-502-x",
+      J("-private-tmp", "x.jsonl"),
+      "-private-var",
+      "-var-folders",
       "-var-folders-ab-cdef-T-x.txt",
       "-tmp-claude-501-proj-x",
       J("private", "var", "folders", "ab", "x"),
@@ -386,7 +389,7 @@ try {
       // review B, and this suite's earlier ones
       "_home_hero_banner.scss", "-home-page-hero.md", "a-Users-list-page.tsx", J("src", "Users", "Profile", "index.tsx"),
       J("docs", "home.md"), J("src", "home", "components", "Hero.tsx"), J("app", "users", "profile", "page.tsx"),
-      "private-tmp.md", J("apps", "home", "web", "src", "x.ts"), "_Users_list.scss",
+      "private-tmp.md", "_private_tmp.py", "private-tmp-cleanup.md", J("apps", "home", "web", "src", "x.ts"), "_Users_list.scss",
       // final review
       J("src", "features", "Users", "components", "Documents", "index.tsx"),
       J("app", "home", "(marketing)", "work", "page.tsx"),
@@ -399,6 +402,8 @@ try {
     // [name, why it is not covered] — one line each.
     const HOME_WORD = "home-directory shape spelled with ordinary words: indistinguishable from app layouts";
     const MP_KNOWN_GAPS = [
+      ["-Users-someone-.claude-x", "a flattener that keeps the dot of a dot-directory (the marker is a doubled separator)"],
+      ["-Users-mary-jane", "a bare session key whose user name contains the separator"],
       ["-Users-someone-code-notes.txt", `macOS ${HOME_WORD}`],
       [J("-Users-someone-code-proj", "0b1c2d3e-aaaa-bbbb-cccc-000000000000", "scratchpad", "n.md"), `macOS ${HOME_WORD}`],
       ["_Users_someone_code_x.md", `macOS ${HOME_WORD}`],

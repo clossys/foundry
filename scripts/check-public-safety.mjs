@@ -225,8 +225,8 @@ const FORBIDDEN_EXEMPT_PATHS = new Set(["AGENTS.md", "CLAUDE.md"]);
 const MP_SEP = "(-|_|\\\\)";
 const MP_NAME = "(?:(?!\\1)[^/])+";
 const MACHINE_PATH_SEGMENT_RULES = [
-  [new RegExp(`^${MP_SEP}private\\1(?:tmp|var)\\1`), "flattened macOS temp root (private/tmp or private/var)"],
-  [new RegExp(`^${MP_SEP}var\\1folders\\1`), "flattened macOS per-user temp root (var/folders)"],
+  [new RegExp(`^${MP_SEP}private\\1(?:tmp|var)(?:\\1|$)`), "flattened macOS temp root (private/tmp or private/var)"],
+  [new RegExp(`^${MP_SEP}var\\1folders(?:\\1|$)`), "flattened macOS per-user temp root (var/folders)"],
   [new RegExp(`^${MP_SEP}tmp\\1claude-\\d+(?:\\1|$)`), "flattened agent session temp root (tmp/claude-<uid>)"],
   [
     /^(?:file%3[Aa]%2[Ff]%2[Ff])?%2[Ff](?:Users|home|mnt|private|var|tmp)%2[Ff]/,
@@ -245,6 +245,10 @@ const MACHINE_PATH_SEGMENT_RULES = [
 // mount mirrored as nested directories, which no single segment shows. A
 // mirrored `Users/<name>/` or `home/<name>/` is NOT a rule (KNOWN-GAP): both
 // are ordinary feature and route folders in a web codebase.
+// Accepted trade-off: the mirrored temp-root rules match anywhere in the path,
+// so an ordinary layout such as a `private/tmp/` or `var/folders/` subfolder, or
+// `tmp/claude-<n>/`, is refused too. Those names are rare and cheap to rename;
+// a missed copied temp tree is not.
 const MACHINE_PATH_RELPATH_RULES = [
   [/(?:^|\/)private\/tmp\//, "mirrored macOS temp root (private/tmp)"],
   [/(?:^|\/)var\/folders\//, "mirrored macOS per-user temp root (var/folders)"],
