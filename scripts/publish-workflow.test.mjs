@@ -159,7 +159,7 @@ const executableLines = (text) => text.split("\n").filter((line) => !/^\s*#/.tes
 test("qualify re-derives only the dispatched package's qualification record, never every record", () => {
   const qualify = job("qualify");
   const executable = executableLines(qualify);
-  assert.equal(executable.filter((line) => /check:candidate-qualification/.test(line)).length, 0, "the unscoped npm script re-derives every retained record; required CI already did, on this commit");
+  assert.equal(executable.filter((line) => /check:candidate-qualification/.test(line)).length, 0, "the unscoped npm script re-derives every retained record; required CI already did, on this commit or its nearest non-prose ancestor");
   const invocations = executable.filter((line) => /check-candidate-qualification\.mjs/.test(line));
   assert.equal(invocations.length, 2, "one invocation per dry_run branch");
   for (const line of invocations) assert.match(line, /^\s+node scripts\/check-candidate-qualification\.mjs --package "\$PKG"( --allow-missing-record)?$/);

@@ -77,7 +77,7 @@ if (packageScope) {
     console.error(`CANDIDATE QUALIFICATION INDETERMINATE — cannot derive the record path for --package ${packageScope.packageKey}: ` + (error instanceof Error ? error.message : "unknown error"));
     process.exit(2);
   }
-  console.log(`--package ${packageScope.packageKey}: re-deriving only ${packageRecordPath} (${candidate.name}@${candidate.version}) of ${paths.length} retained records; every other record's re-derivation is CI's \`candidate qualification records\` job's, on this same commit, which the required \`build and test\` check fans in. Cross-record checks run in full.`);
+  console.log(`--package ${packageScope.packageKey}: re-deriving only ${packageRecordPath} (${candidate.name}@${candidate.version}) of ${paths.length} retained records; every other record's re-derivation is CI's \`candidate qualification records\` job's, on this commit or its nearest non-prose ancestor, which the required \`build and test\` check fans in. Cross-record checks run in full.`);
 }
 const records = [];
 let failed = false;
@@ -118,7 +118,8 @@ for (const [index, { path, record }] of records.entries()) {
   if (!selectedForRederivation(index, path, { shard, packageRecordPath })) {
     // A DIFFERENT shard owns re-deriving this record for real (see the
     // header comment on assignedToShard above) -- or, under `--package`, the
-    // required CI shards already did on this same commit. Recording `[]` -- not
+    // required CI shards already did, on this commit or its nearest
+    // non-prose ancestor. Recording `[]` -- not
     // skipping the map entry -- is deliberate: validatedRecordPaths below
     // reads recordFindings.get(path)?.length === 0 to decide whether a path
     // counts as validated for cross-record purposes, and an ABSENT entry

@@ -2,10 +2,11 @@
 //
 // publish.yml's `qualify` job runs the script with `--package "$PKG"`, which
 // re-derives the dispatched package's current-version record and no other
-// (every retained record is re-derived by the required CI shards on the
-// merge-group commit; see the step's own comment). These tests run the real
-// script against a local clone of this repository and prove, on that record,
-// that the scoped run refuses what the unscoped walk refused: rewritten
+// (every retained record is re-derived by the required CI shards on this
+// commit or its nearest non-prose ancestor; see the step's own comment).
+// These tests run the real script against a local clone of this repository
+// and prove, on that record, that the scoped run refuses what the unscoped
+// walk refused: rewritten
 // retained bytes, a join that no longer matches its reviewed commit, and --
 // new here -- a missing record, unless the dry-run allowance is given. They
 // also prove the record really is re-derived (observed through git, not the

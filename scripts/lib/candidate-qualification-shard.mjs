@@ -71,8 +71,9 @@ export function assignedToShard(recordIndex, shard) {
 // publish.yml's `qualify` job used to run this script UNSCOPED: every
 // retained record re-derived from git history, ~25 minutes per dispatch
 // (writer run 36038887231: 18:09:03 -> 18:34:27), to re-prove on a
-// merge-queue commit what the required `candidate qualification records`
-// shards (ci.yml, `merge_group`) had already proved on that exact commit.
+// merge-queue commit what the `candidate qualification records` shards
+// (ci.yml, `merge_group`, fanned in to the required `build and test`) had
+// already proved, on this commit or its nearest non-prose ancestor.
 // Nothing in that walk depends on the dispatched package, the dispatch
 // input, or the time of the run: its inputs are the git history at HEAD,
 // the tracked tree, and the git/npm toolchain. `--package` keeps the one
