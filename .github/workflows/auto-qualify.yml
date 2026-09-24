@@ -16,6 +16,9 @@ name: Auto-qualify
 # "missing" means here, and why a package with a STALE record (as opposed
 # to a genuinely absent one) is deliberately never re-dispatched by this
 # workflow -- only a new version, via #1255's release PR, fixes that.
+# A candidate whose first-party sibling range is not yet satisfiable on the
+# public registry is held back rather than dispatched to fail (issue #1476);
+# the step summary lists every candidate's classification.
 on:
   push:
     branches: [main]
@@ -64,19 +67,30 @@ jobs:
       - name: Filter out packages that already have a qualification branch pushed
         run: node scripts/filter-qualification-dispatch.mjs "$RUNNER_TEMP/unqualified.json" --json > "$RUNNER_TEMP/pending-dispatch.json"
 
+      # Issue #1476: a candidate whose first-party sibling range has no
+      # satisfying version on the public registry yet cannot install, so its
+      # qualification run would only fail ETARGET (26 of 26 on 2026-09-24).
+      # Hold it back as blocked-on-sibling, and hold back anything the
+      # registry could not answer for as indeterminate; both are re-checked
+      # on the next push to main. See classify-qualification-dispatch.mjs's
+      # own header for exactly which ranges are resolved and why each
+      # uncertainty fails the way it does.
+      - name: Hold back candidates blocked on an unpublished first-party sibling
+        run: node scripts/classify-qualification-dispatch.mjs "$RUNNER_TEMP/unqualified.json" "$RUNNER_TEMP/pending-dispatch.json" --json --summary "$GITHUB_STEP_SUMMARY" > "$RUNNER_TEMP/dispatch.json"
+
       - name: Dispatch qualify-candidate.yml for each
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          count="$(node -e 'console.log(JSON.parse(require("fs").readFileSync(process.argv[1],"utf8")).length)' "$RUNNER_TEMP/pending-dispatch.json")"
+          count="$(node -e 'console.log(JSON.parse(require("fs").readFileSync(process.argv[1],"utf8")).length)' "$RUNNER_TEMP/dispatch.json")"
           if [ "$count" -eq 0 ]; then
-            echo "Every non-private package on the active release target already has a retained qualification record, or already has a qualification branch pushed. Nothing to dispatch."
+            echo "Nothing to dispatch: every selected package already has a retained record or a qualification branch pushed, or is blocked on an unpublished sibling / indeterminate (see the step summary)."
             exit 0
           fi
           echo "Dispatching qualify-candidate.yml for $count package(s):"
-          node -e 'for (const p of JSON.parse(require("fs").readFileSync(process.argv[1],"utf8"))) console.log(p.package + " -- " + p.name + "@" + p.version)' "$RUNNER_TEMP/pending-dispatch.json"
-          for pkg in $(node -e 'for (const p of JSON.parse(require("fs").readFileSync(process.argv[1],"utf8"))) console.log(p.package)' "$RUNNER_TEMP/pending-dispatch.json"); do
+          node -e 'for (const p of JSON.parse(require("fs").readFileSync(process.argv[1],"utf8"))) console.log(p.package + " -- " + p.name + "@" + p.version)' "$RUNNER_TEMP/dispatch.json"
+          for pkg in $(node -e 'for (const p of JSON.parse(require("fs").readFileSync(process.argv[1],"utf8"))) console.log(p.package)' "$RUNNER_TEMP/dispatch.json"); do
             echo "::group::dispatch qualify-candidate.yml -f package=$pkg"
             gh workflow run qualify-candidate.yml -f "package=$pkg"
             echo "::endgroup::"
