@@ -81,6 +81,7 @@ import { fileURLToPath } from "node:url";
 import { evaluatePackageDiff } from "./check-release-readiness.mjs";
 import { parseChangesetText, CHANGESETS_DIR } from "./collect-changesets.mjs";
 import { changelogPathForPackageDir, changelogRelPath } from "./lib/changelog-location.mjs";
+import { evaluateLockfileShape, LOCKFILE_REL_PATH } from "./lib/release-pr-lockfile-shape.mjs";
 
 function git(args, cwd) {
   return execFileSync("git", args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
@@ -204,22 +205,36 @@ function evaluatePackage(pkgDir, requestedBase) {
   }
 
   const { gitRoot, mergeBase, baseVersion, version } = diff;
+  const packageKey = basename(pkgDir);
+  // Threaded onto every return below (not just the "pass" ones) so
+  // main()'s lockfile-shape check (see evaluateLockfileShape() and its own
+  // call site) can learn every package this diff bumped -- and how --
+  // without recomputing merge-base/version-diff logic a second time. This
+  // is additive to the shape earlier callers/tests already read (`package`,
+  // `status`, `detail`); nothing existing reads these fields, so nothing
+  // existing can break by their addition.
+  const bumpFields = { versionChanged: true, dir: packageKey, gitRoot, mergeBase, baseVersion, version };
+
   const bumpLevel = computeBumpLevel(baseVersion, version);
   if (bumpLevel === null) {
     return {
       package: diff.package,
       status: "error",
       detail: `version changed from ${baseVersion} to ${version}, which is not a clean single-step patch/minor/major semver bump -- cannot judge its shape`,
+      ...bumpFields,
     };
   }
-
-  const packageKey = basename(pkgDir);
 
   let baseChangesets;
   try {
     baseChangesets = changesetsAtCommit(gitRoot, mergeBase);
   } catch (error) {
-    return { package: diff.package, status: "error", detail: `could not read ${CHANGESETS_DIR}/ at merge-base ${mergeBase.slice(0, 12)}: ${error instanceof Error ? error.message : String(error)}` };
+    return {
+      package: diff.package,
+      status: "error",
+      detail: `could not read ${CHANGESETS_DIR}/ at merge-base ${mergeBase.slice(0, 12)}: ${error instanceof Error ? error.message : String(error)}`,
+      ...bumpFields,
+    };
   }
   const headFiles = changesetFileNamesAtHead(gitRoot);
   const consumed = baseChangesets.filter((c) => Object.hasOwn(c.packages, packageKey) && !headFiles.has(c.file));
@@ -235,6 +250,7 @@ function evaluatePackage(pkgDir, requestedBase) {
         package: diff.package,
         status: "not-release-shaped",
         detail: `version bumped from ${baseVersion} to ${version} (${bumpLevel}), but the consumed changeset(s) ${consumed.map((c) => c.file).join(", ")} specify ${consumedLevel} -- levels must match`,
+        ...bumpFields,
       };
     }
 
@@ -246,6 +262,7 @@ function evaluatePackage(pkgDir, requestedBase) {
         detail:
           `version bumped from ${baseVersion} to ${version}, consuming changeset(s) flagged "major" (${breakingConsumed.map((c) => c.file).join(", ")}), ` +
           `but ${changelogRelPath(packageKey)}'s entry for ${version} has no "### Breaking changes" subsection`,
+        ...bumpFields,
       };
     }
 
@@ -253,6 +270,7 @@ function evaluatePackage(pkgDir, requestedBase) {
       package: diff.package,
       status: "pass",
       detail: `version bumped from ${baseVersion} to ${version} (${bumpLevel}), matching the consumed changeset(s) ${consumed.map((c) => c.file).join(", ")} -- release-PR shaped`,
+      ...bumpFields,
     };
   }
 
@@ -261,6 +279,7 @@ function evaluatePackage(pkgDir, requestedBase) {
       package: diff.package,
       status: "pass",
       detail: `version bumped from ${baseVersion} to ${version} (${bumpLevel}) with a matching ${changelogRelPath(packageKey)} entry -- accepted under the pre-existing docs/PUBLISHING.md convention`,
+      ...bumpFields,
     };
   }
 
@@ -270,6 +289,7 @@ function evaluatePackage(pkgDir, requestedBase) {
     detail:
       `version bumped from ${baseVersion} to ${version} (${bumpLevel}) since merge-base ${mergeBase.slice(0, 12)}, but no changeset naming "${packageKey}" was consumed and ${changelogRelPath(packageKey)} has no entry for ${version}. ` +
       "A version change outside a release PR is refused (issue #1255) -- add a .changesets/<slug>.md instead of bumping directly, or add the changelog entry this bump requires.",
+    ...bumpFields,
   };
 }
 
@@ -293,6 +313,33 @@ function main() {
   }
 
   const results = targets.map((dir) => evaluatePackage(dir, requestedBase));
+
+  // ONE lockfile-shape check across every bumped package found above --
+  // package-lock.json is a single file covering the whole tree, so it
+  // cannot be judged per-package the way the loop above judges each
+  // package's own bump. See scripts/lib/release-pr-lockfile-shape.mjs's own
+  // header for why this is a separate module reusing lib/release-pr-
+  // footprint.mjs's structural checks rather than a second implementation.
+  const bumps = [];
+  for (let i = 0; i < targets.length; i += 1) {
+    const r = results[i];
+    if (r.versionChanged !== true) continue;
+    let manifest;
+    try {
+      manifest = JSON.parse(readFileSync(join(targets[i], "package.json"), "utf8"));
+    } catch {
+      continue; // evaluatePackage() above already reports this package's own error; skip it here rather than fail twice
+    }
+    bumps.push({ dir: r.dir, name: manifest.name, version: r.version, manifest });
+  }
+  if (bumps.length > 0) {
+    // gitRoot/mergeBase are the same for every bumped package in a single
+    // invocation (one repo, one --base) -- any versionChanged result's copy
+    // of them will do.
+    const { gitRoot, mergeBase } = results.find((r) => r.versionChanged === true);
+    const lockfileVerdict = evaluateLockfileShape({ gitRoot, mergeBase, bumps });
+    results.push({ package: LOCKFILE_REL_PATH, ...lockfileVerdict });
+  }
 
   if (json) {
     console.log(JSON.stringify({ results }, null, 2));

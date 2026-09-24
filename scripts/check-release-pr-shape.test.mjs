@@ -292,3 +292,84 @@ test("a consumed major-level changeset's Breaking changes section is read from d
     assert.match(report.results[0].detail, /docs\/changelogs\/probe\.md's entry for 2\.0\.0 has no "### Breaking changes" subsection/);
   });
 });
+
+// ---------------------------------------------------------------- lockfile shape (issue #1439, defect 3)
+//
+// These run the real CLI (main()) with NO positional package argument, so
+// `targets` comes from discoverPackages() and covers every packages/<dir> --
+// the same shape release-pr.yml's own `node scripts/check-release-pr-shape.mjs
+// --base origin/<default>` invocation uses. `cwd: root` is required for that
+// discovery to find the fixture's own packages/ directory rather than this
+// repository's real one.
+
+test("a release-PR-shaped package-lock.json change (only the bumped package's version) does not affect the overall verdict", () => {
+  withRepo((root) => {
+    const pkgDir = makeFixture(root);
+    writeChangelog(pkgDir, "# Changelog\n\n## 1.0.0\n\n- Initial release.\n");
+    writeFileSync(join(root, "package-lock.json"), JSON.stringify({ name: "fixture", lockfileVersion: 3, requires: true, packages: { "": { name: "fixture" }, "packages/probe": { name: "@gate-fixture/probe", version: "1.0.0" } } }, null, 2) + "\n");
+    const base = gitCommit(root, "initial release at 1.0.0");
+
+    const manifest = readManifest(pkgDir);
+    manifest.version = "1.0.1";
+    writeManifest(pkgDir, manifest);
+    writeChangelog(pkgDir, "# Changelog\n\n## 1.0.1\n\n- Fixed a bug.\n\n## 1.0.0\n\n- Initial release.\n");
+    writeFileSync(join(root, "package-lock.json"), JSON.stringify({ name: "fixture", lockfileVersion: 3, requires: true, packages: { "": { name: "fixture" }, "packages/probe": { name: "@gate-fixture/probe", version: "1.0.1" } } }, null, 2) + "\n");
+
+    const r = run(["--json", "--base", base], root);
+    const report = JSON.parse(r.out);
+    assert.equal(r.code, 0, r.out);
+    const lockResult = report.results.find((x) => x.package === "package-lock.json");
+    assert.ok(lockResult, "expected a package-lock.json entry in the report");
+    assert.equal(lockResult.status, "pass", lockResult.detail);
+  });
+});
+
+test("a package-lock.json change that rewrites an UNRELATED entry's metadata alongside a legitimate bump fails the overall check", () => {
+  withRepo((root) => {
+    const pkgDir = makeFixture(root);
+    writeChangelog(pkgDir, "# Changelog\n\n## 1.0.0\n\n- Initial release.\n");
+    writeFileSync(
+      join(root, "package-lock.json"),
+      JSON.stringify(
+        {
+          name: "fixture",
+          lockfileVersion: 3,
+          requires: true,
+          packages: { "": { name: "fixture" }, "packages/probe": { name: "@gate-fixture/probe", version: "1.0.0" }, "node_modules/left-pad": { version: "1.3.0", resolved: "https://registry.example/left-pad-1.3.0.tgz" } },
+        },
+        null,
+        2,
+      ) + "\n",
+    );
+    const base = gitCommit(root, "initial release at 1.0.0");
+
+    const manifest = readManifest(pkgDir);
+    manifest.version = "1.0.1";
+    writeManifest(pkgDir, manifest);
+    writeChangelog(pkgDir, "# Changelog\n\n## 1.0.1\n\n- Fixed a bug.\n\n## 1.0.0\n\n- Initial release.\n");
+    writeFileSync(
+      join(root, "package-lock.json"),
+      JSON.stringify(
+        {
+          name: "fixture",
+          lockfileVersion: 3,
+          requires: true,
+          // The bump itself is fine, but a different npm also rewrote an
+          // unrelated third-party entry's resolved URL -- exactly the #1439
+          // defect-3 incident shape (26 stray "peer" flags, 14 dropped "libc"
+          // fields from a Node-20-bundled npm regenerating the whole file).
+          packages: { "": { name: "fixture" }, "packages/probe": { name: "@gate-fixture/probe", version: "1.0.1" }, "node_modules/left-pad": { version: "1.3.0", resolved: "https://evil.example/left-pad-1.3.0.tgz" } },
+        },
+        null,
+        2,
+      ) + "\n",
+    );
+
+    const r = run(["--json", "--base", base], root);
+    const report = JSON.parse(r.out);
+    assert.equal(r.code, 1, r.out);
+    const lockResult = report.results.find((x) => x.package === "package-lock.json");
+    assert.ok(lockResult, "expected a package-lock.json entry in the report");
+    assert.equal(lockResult.status, "not-release-shaped", lockResult.detail);
+  });
+});
