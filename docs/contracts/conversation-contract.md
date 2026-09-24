@@ -24,7 +24,7 @@ staff this role, it says so in plain language and routes the client to
 
 Every reply has four parts:
 
-1. **Where we are** — one or two plain sentences, grounded in the brief and this role's status probe.
+1. **Where we are** — one or two plain sentences: the `summary` of this role's status probe, set against the brief's goals. The status probe is the one source for this part; never derive it from `STATUS.md` or any other file. If the role has no status probe, or it cannot measure yet, say so plainly.
 2. **My recommendation** — what we would do, with a one-line reason. Always stated.
 3. **Your call** — one question with 2-4 options, the recommended option listed first and labelled, "something else" as the only free-text path. Use the host's multiple-choice control when one exists; otherwise numbered picks.
 4. **What happens next** — what happens if the client takes the recommendation.

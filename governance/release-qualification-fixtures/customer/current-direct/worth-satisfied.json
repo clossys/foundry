@@ -1,0 +1,16 @@
+{
+  "speaker": "customer",
+  "inhabitedAs": "target-audience",
+  "audienceId": "audience-one",
+  "persona": {
+    "name": "Jordan"
+  },
+  "stance": "With the unclear offer, I have to guess what I am paying for.",
+  "intent": "worth",
+  "familiarity": "fresh",
+  "topic": "whether this is worth what it costs me",
+  "isItWorthIt": "no",
+  "whatItCostsMe": "A monthly fee plus an evening of setup I would rather spend on my launch.",
+  "whatIGet": "A cleaner view of my next step than my spreadsheet gives me.",
+  "whatWouldMakeItWorthIt": "Setup under fifteen minutes and a clear list of what the fee covers."
+}

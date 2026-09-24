@@ -1,0 +1,13 @@
+[
+  {
+    "id": "shared-status-board",
+    "title": "Shared status board",
+    "status": "shipped",
+    "claimId": "one-place-status"
+  },
+  {
+    "id": "weekly-digest",
+    "title": "Weekly digest",
+    "status": "next"
+  }
+]

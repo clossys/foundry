@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "role": "@clossys/publisher",
+  "signals": [
+    {
+      "id": "audience-facing-surface",
+      "prompt": "The repository ships, or is about to ship, at least one audience-facing surface: a web page, an email, an image or social card, a print piece, or a slide deck.",
+      "evidenceKind": "repository-structure"
+    },
+    {
+      "id": "release-must-be-proved",
+      "prompt": "Someone needs to show afterwards exactly what reached the audience, when, and on which channel, rather than trusting the hosting provider's own success signal.",
+      "evidenceKind": "consumer-answer"
+    }
+  ]
+}

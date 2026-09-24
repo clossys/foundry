@@ -82,6 +82,11 @@ describe("move planning", () => {
     const plan = planMove({ role: "@clossys/advisor", fromPath: "clossys/advisor/a.json", toPath: "clossys/strategist/a.json", candidateReferrers: [] });
     expect(plan.kind).toBe("refused");
   });
+
+  it("refuses a source outside the role's own folder, before it ever proposes removing that file", () => {
+    const plan = planMove({ role: "@clossys/advisor", fromPath: "clossys/strategist/direction.json", toPath: "clossys/advisor/direction.json", candidateReferrers: [] });
+    expect(plan).toMatchObject({ kind: "refused", path: "clossys/strategist/direction.json" });
+  });
 });
 
 describe("supersede planning", () => {

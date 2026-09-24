@@ -1,0 +1,18 @@
+[
+  {
+    "key": "active-customers",
+    "label": "Active customers",
+    "value": 3,
+    "unit": "customers",
+    "source": "public-fixture",
+    "lastUpdatedAt": "2026-08-22"
+  },
+  {
+    "key": "pilot-teams",
+    "label": "Pilot teams",
+    "value": 2,
+    "unit": "teams",
+    "source": "public-fixture",
+    "lastUpdatedAt": "2026-08-22"
+  }
+]

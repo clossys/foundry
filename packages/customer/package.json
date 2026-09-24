@@ -21,13 +21,152 @@
     "assessment": {
       "bin": "customer-rate-check",
       "invocation": "single-json-input"
-    }
+    },
+    "outputs": [
+      "clossys/customer/keep.json",
+      "clossys/customer/feedback.json",
+      "clossys/customer/compare.json",
+      "clossys/customer/refer.json",
+      "clossys/customer/churn.json",
+      "clossys/customer/adopt.json",
+      "clossys/customer/worth.json"
+    ],
+    "fit": "fit-signals.json",
+    "feeds": [
+      {
+        "artifact": "keep-verdict",
+        "path": "clossys/customer/keep.json"
+      }
+    ],
+    "needs": [
+      {
+        "producerRole": "@clossys/strategist",
+        "artifact": "audience-understanding"
+      },
+      {
+        "producerRole": "@clossys/publisher",
+        "artifact": "surface-documents"
+      }
+    ],
+    "solves": [
+      {
+        "problem": "customer-would-they-keep-it",
+        "statement": "We can't tell whether the person we made this for would actually keep it.",
+        "metric": "customer keep rate",
+        "proofCase": "keep-satisfied",
+        "evidence": "designed",
+        "capability": "keep-verdict"
+      }
+    ],
+    "capabilities": [
+      {
+        "id": "keep-verdict",
+        "subQuestion": "Would the named audience actually keep this, first-person, one keep or fail before seal or land?",
+        "worldClass": "Every candidate gets one independently observed, first-person, append-only keep-or-fail verdict from someone actually inhabiting the named audience — never a self-assessment by the role that built it, never overwritten once recorded.",
+        "inputs": [
+          {
+            "producerRole": "@clossys/strategist",
+            "artifact": "audience-understanding"
+          },
+          {
+            "producerRole": "@clossys/publisher",
+            "artifact": "surface-documents"
+          }
+        ],
+        "outputs": [
+          "clossys/customer/keep.json"
+        ],
+        "proofCase": "keep-satisfied",
+        "maturity": "built",
+        "v0": true,
+        "businessLifecycleStage": "deliver"
+      },
+      {
+        "id": "lived-feedback",
+        "subQuestion": "What does lived, first-person feedback on this surface actually say, on any topic asked?",
+        "worldClass": "First-person feedback is functional and experiential, on-demand on any topic — never limited to a fixed rubric or a canned survey question.",
+        "inputs": [],
+        "outputs": [
+          "clossys/customer/feedback.json"
+        ],
+        "proofCase": "feedback-satisfied",
+        "maturity": "built",
+        "v0": true,
+        "businessLifecycleStage": "deliver"
+      },
+      {
+        "id": "comparison-against-alternatives",
+        "subQuestion": "How does this compare to the alternatives this person actually considered, from their own consideration set?",
+        "worldClass": "A comparison is always against the person's own real alternatives — never a generic competitor list assembled by someone else.",
+        "inputs": [],
+        "outputs": [
+          "clossys/customer/compare.json"
+        ],
+        "proofCase": "compare-satisfied",
+        "maturity": "built",
+        "v0": false,
+        "businessLifecycleStage": "acquire"
+      },
+      {
+        "id": "refer",
+        "subQuestion": "Would this person actually refer someone else, and in what words?",
+        "worldClass": "A refer verdict states, in the person's own words, whether and how they would actually refer someone — never an assumed net-promoter score.",
+        "inputs": [],
+        "outputs": [
+          "clossys/customer/refer.json"
+        ],
+        "proofCase": "refer-satisfied",
+        "maturity": "built",
+        "v0": false,
+        "businessLifecycleStage": "deliver"
+      },
+      {
+        "id": "churn",
+        "subQuestion": "What would make this person leave?",
+        "worldClass": "A churn verdict names the specific, first-person condition that would make this exact person leave — never a generic churn-risk score.",
+        "inputs": [],
+        "outputs": [
+          "clossys/customer/churn.json"
+        ],
+        "proofCase": "churn-satisfied",
+        "maturity": "built",
+        "v0": false,
+        "businessLifecycleStage": "operate"
+      },
+      {
+        "id": "adopt",
+        "subQuestion": "What would it take for this person to actually start?",
+        "worldClass": "An adopt verdict names the real, first-person condition that would move this person from considering to starting — never an assumed funnel step.",
+        "inputs": [],
+        "outputs": [
+          "clossys/customer/adopt.json"
+        ],
+        "proofCase": "adopt-satisfied",
+        "maturity": "built",
+        "v0": false,
+        "businessLifecycleStage": "convert"
+      },
+      {
+        "id": "worth",
+        "subQuestion": "Is this worth what it costs this person?",
+        "worldClass": "A worth verdict weighs the actual cost against the actual value, first-person — never a generic willingness-to-pay guess.",
+        "inputs": [],
+        "outputs": [
+          "clossys/customer/worth.json"
+        ],
+        "proofCase": "worth-satisfied",
+        "maturity": "built",
+        "v0": false,
+        "businessLifecycleStage": "convert"
+      }
+    ]
   },
   "files": [
     "dist",
     "src",
     "!src/**/*.test.ts",
     "skill",
+    "fit-signals.json",
     "README.md",
     "CHANGELOG.md",
     "LICENSE"

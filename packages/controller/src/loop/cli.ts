@@ -28,7 +28,9 @@ export function main(argv: readonly string[] = process.argv.slice(2)): number {
     return 0;
   }
   const positional = argv.filter((value, index) => !value.startsWith("--") && argv[index - 1] !== "--out");
-  if (positional.length !== 2) {
+  const outIndex = argv.indexOf("--out");
+  const outMissing = outIndex !== -1 && (argv[outIndex + 1] === undefined || argv[outIndex + 1]!.startsWith("--"));
+  if (positional.length !== 2 || outMissing) {
     console.error(USAGE);
     return 2;
   }

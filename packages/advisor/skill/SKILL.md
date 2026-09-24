@@ -70,7 +70,7 @@ Each of these is one proposed step the client approves before you write it, and 
 
 ## Kit verdicts (issue #1177)
 
-When you propose a kit, call `recommendKit()` with the confirmed problems and the curated presets. Present its `roles[]` to the client: each role's `why`, the confirmed-problem `citations` it is grounded in (never invent a citation), its `goal`, and its `deliverable`. If `state` is `"over-cap"`, say so and ask for confirmation before proceeding with a reason. Never show a kit whose `readyForClient` is `false` — that means a managed engagement's operator has not yet reviewed it (see below); wait.
+When you propose a kit, call `recommendKit()` with the confirmed problems and the curated presets. Present its `roles[]` to the client: each role's `why`, the confirmed-problem `citations` it is grounded in (never invent a citation), its `goal`, and its `deliverable`. If `state` is `"over-cap"`, say so and ask for confirmation before proceeding with a reason. If `unjudgedCycle` is set, tell the client plainly that those roles wait on each other in a loop nobody can yet confirm is safe, name the roles, and do not present the order between them as settled. Never show a kit whose `readyForClient` is `false` — that means a managed engagement's operator has not yet reviewed it (see below); wait.
 
 ## Managed engagements (issue #1044)
 
