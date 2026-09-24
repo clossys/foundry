@@ -255,19 +255,26 @@ A pull request that changes an already-published package's packed content
 does not bump that package's `version` itself. Add a
 `.changesets/<slug>.md` file instead (format and validation:
 `scripts/collect-changesets.mjs`), naming the package's `packages/<dir>`
-directory and a `patch`/`minor`/`major` bump level, with the summary that
-will become the `CHANGELOG.md` line. `scripts/check-release-readiness.mjs`
+directory and a `patch`/`minor`/`major` level, with the summary that will
+become the `CHANGELOG.md` line. `scripts/check-release-readiness.mjs`
 accepts a pending changeset as an alternative to a same-PR version bump.
 
 A periodic or on-demand release PR (`node scripts/apply-release-changesets.mjs`,
 `.github/workflows/release-pr.yml`) applies every pending changeset: it
 bumps each named package once (the highest level any of its changesets
-named), writes the `CHANGELOG.md` entry, regenerates `package-lock.json`,
-and deletes the changesets it applied. `scripts/check-release-pr-shape.mjs`
-is the gate that keeps this the only legitimate way a package's version <!-- facts-gate:ignore -->
-moves going forward: a version change with no consumed, matching changeset
-and no matching `CHANGELOG.md` entry is refused as "a version change
-outside a release PR."
+named), writes the `CHANGELOG.md` entry (with a "Breaking changes"
+subsection for any consumed `major`-level changeset), regenerates
+`package-lock.json`, and deletes the changesets it applied.
+`scripts/check-release-pr-shape.mjs` is the gate that keeps this the only <!-- facts-gate:ignore -->
+legitimate way a package's version moves going forward: a version change
+with no consumed, matching changeset and no matching `CHANGELOG.md` entry
+is refused as "a version change outside a release PR."
+
+**When a release PR is allowed to open is governed by the weekly release
+calendar — see [docs/RELEASING.md](RELEASING.md) for the full scheme.** In
+short: Monday–Friday is the merge window, Saturday is release day, Sunday
+is consumer-adoption day. The calendar decides *when*, never *what version*
+— versions stay plain semver exactly as described above.
 
 Qualification stays exactly where it was: one retained record per released
 version (`governance/release-qualifications/`), never per pull request —

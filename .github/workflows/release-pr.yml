@@ -1,23 +1,77 @@
 name: Release PR
 
 # The periodic/on-demand release PR (issue #1255): applies every pending
-# .changesets/*.md, bumping each named package once, writing its CHANGELOG
-# entry, regenerating package-lock.json, and deleting the changesets it
-# applied -- then pushes a branch and opens a pull request for a human to
-# review and merge, the same as any other change here. It never touches
-# main directly and never publishes anything; qualify-candidate.yml and
-# publish.yml stay the only paths that produce a qualification record or
-# upload a package. scripts/check-release-pr-shape.mjs is what proves, on
-# the resulting pull request, that these are the only version bumps this
-# repository accepts going forward.
+# .changesets/*.md, bumping each named package once by the highest semver
+# level any of its changesets named, writing its CHANGELOG entry,
+# regenerating package-lock.json, and deleting the changesets it applied --
+# then pushes a branch and opens a pull request for a human to review and
+# merge, the same as any other change here. It never touches main directly
+# and never publishes anything; qualify-candidate.yml and publish.yml stay
+# the only paths that produce a qualification record or upload a package.
+# scripts/check-release-pr-shape.mjs is what proves, on the resulting pull
+# request, that these are the only version bumps this repository accepts
+# going forward.
+#
+# THE WEEKLY CADENCE (docs/RELEASING.md, owner decision 2026-09-23) --
+# VERSIONING ITSELF IS UNCHANGED
+# -------------------------------------------------------------------
+# Monday-Friday is the merge window; it closes Friday. This workflow's
+# release PR is what Saturday -- release day -- is for: it is the ONLY
+# pull request .github/workflows/release-calendar.yml admits on a Saturday
+# -- proven by BOTH the "release:weekly" label this workflow applies AND a
+# STRUCTURALLY VERIFIED release-PR-shaped diff (content, not just paths --
+# scripts/check-release-calendar.mjs, via scripts/lib/release-pr-
+# footprint.mjs -- see that module's own header for why a branch name or a
+# bare path list is deliberately not enough) -- and it is expected to merge
+# same-day so Sunday's consumer adoption has something to adopt. Monday
+# starts the next merge window fresh. The owner explicitly kept plain
+# semver bump levels rather than a clock-driven version scheme (see
+# docs/RELEASING.md's "Options considered" section) -- this calendar only
+# decides WHEN a release PR opens, never what version it produces. A week
+# with no pending changesets opens no release PR at all (see "Nothing
+# pending" below); a package with no pending changeset is not touched even
+# when a sibling package is.
 #
 # WHY BOTH schedule AND workflow_dispatch
 # -----------------------------------------
 # "Run periodically or on demand" (issue #1255's own words): the schedule
-# batches whatever changesets accumulated over the week so lanes stop
-# colliding on the same package's next version; workflow_dispatch exists
-# for whenever a maintainer wants one sooner (e.g. right before the
-# readiness gate this tracker's #1187 comments describe).
+# opens the release PR on Saturday, batching whatever changesets
+# accumulated over the week so lanes stop colliding on the same package's
+# next version; workflow_dispatch exists for whenever a maintainer wants
+# one sooner, including an OUT-OF-BAND release (the `out_of_band` input
+# below -- governance/release-calendar.json's outOfBandPolicy: a security
+# fix, or a fix for a release that already shipped broken, always
+# `patch`-only, and consuming ONLY changesets flagged `release: out-of-band`
+# -- scripts/apply-release-changesets.mjs's own `--out-of-band` flag is
+# what enforces that an ordinary pending changeset is never swept in). Only
+# the OWNER triggers an out-of-band run (standing rule, docs/RELEASING.md)
+# -- this workflow does not itself verify who dispatched it; that trust
+# boundary is GitHub's own `workflow_dispatch` permission model
+# (`pull-requests: write`-level collaborators only), the same boundary
+# every manually-triggered workflow in this repository already rests on.
+#
+# THE RELEASE-DAY GUARD IS IDEMPOTENT, NOT AN EXACT-HOUR WINDOW
+# -----------------------------------------------------------------
+# Only the scheduled runs need the "Only proceed..." guard step below --
+# workflow_dispatch is an explicit, deliberate "run one now" action and
+# always proceeds regardless of day. The guard asks two things, both
+# resolved fresh on every run: is it release day (Saturday) in the
+# calendar's timezone, and is a release already IN PROGRESS -- either an
+# open `release:weekly` pull request, OR a pushed `claude/release-*`
+# branch with no PR opened for it yet (a real, ordinary state since #1316
+# item 6 moved PR creation to an owner-authenticated actor -- see "Compute,
+# validate, and push the release commit" below; a dedupe that only checked
+# for an open PR would treat that window as "nothing in progress" and push
+# a second branch). scripts/lib/release-calendar.mjs's shouldOpenReleasePr()
+# is the pure "yes/no" on top of both facts -- see that module's own header
+# for why this replaced an earlier exact-hour, DST-aware tolerance window:
+# a delayed run (a busy runner queue, a temporary Actions outage) now still
+# proceeds as long as it is still Saturday when it finally runs, and a
+# repeated or double-triggered run is a safe no-op once a release is
+# already in progress, rather than either missing its window or opening a
+# duplicate. The cron below can therefore simply run daily; on six of seven
+# days the guard's own "not release day" answer makes the rest of this job
+# a cheap no-op.
 #
 # WHY THIS NEEDS NO CREDENTIAL-FREE CARE THE WAY qualify-candidate.yml DOES
 # -----------------------------------------------------------------------
@@ -29,16 +83,24 @@ name: Release PR
 # the same version-control-only credential qualify-candidate.yml's own
 # "Push branch and open pull request" step uses, for the identical reason.
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      out_of_band:
+        description: "OWNER-TRIGGERED ONLY (standing rule, docs/RELEASING.md): apply ONLY changesets flagged release: out-of-band (a security fix, or a fix for a release that already shipped broken -- always patch-only). Leave unchecked for an ordinary manual run of the full pending batch."
+        type: boolean
+        default: false
   schedule:
-    # Weekly, Monday 09:00 UTC. A week with no pending changesets is a
-    # cheap no-op (see the "Apply pending changesets" step below) -- there
-    # is no cost to running this on a quiet week.
-    - cron: "0 9 * * 1"
+    # Daily -- see the "release-day guard is idempotent" comment above for
+    # why an exact instant no longer matters. A week with no pending
+    # changesets, or a day that is not release day, is a cheap no-op (see
+    # the guard step and "Nothing pending" step below) -- there is no cost
+    # to running this every day.
+    - cron: "0 16 * * *"
 
 permissions:
   contents: write
   pull-requests: write
+  issues: write # gh label create, for the release:weekly / release:out-of-band labels
 
 # Only one release PR in flight at a time: two concurrent runs applying the
 # same pending changesets would race on which one gets to delete them.
@@ -61,40 +123,128 @@ jobs:
       - name: Install repository dependencies without lifecycle scripts
         run: npm ci --ignore-scripts
 
+      # Only the scheduled runs need this -- see the header comment for
+      # what it checks and why it replaced an exact-hour DST window. Never
+      # fails the job: "not proceeding today" is an entirely ordinary
+      # outcome on six of seven days.
+      - name: Only proceed on release day with no release already in progress
+        id: gate
+        if: github.event_name == 'schedule'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          open_count="$(gh pr list --repo "$GITHUB_REPOSITORY" --label "release:weekly" --state open --json number --jq 'length')"
+          # A release is "in progress" from the moment this job PUSHES the
+          # release branch, not from the moment its PR is opened -- since
+          # #1316 item 6 moved PR creation to an owner-authenticated actor
+          # (see "Compute, validate, and push the release commit" below),
+          # there is a real window where the branch exists and no PR is
+          # open for it yet. Checking open PRs alone would read that window
+          # as "nothing in progress" and push a SECOND release branch the
+          # very next day.
+          #
+          # `git ls-remote --heads origin 'claude/release-*'` is a coarse,
+          # SERVER-SIDE prefilter only -- it also matches any OTHER
+          # `claude/release-...` branch this repository's own agent
+          # workflow happens to name that way (a feature branch, not a
+          # release branch at all -- re-review,
+          # https://github.com/clossys/foundry/pull/1353#issuecomment-5803894960
+          # blocking item 3). `filterReleasePrBranchRefs()` (`scripts/lib/
+          # release-calendar.mjs`) is the single source of truth for
+          # narrowing that down to real release-PR branches, per
+          # `RELEASE_PR_BRANCH_PATTERN` -- see that function's own header.
+          branch_refs="$(git ls-remote --heads origin 'claude/release-*')"
+          proceed="$(OPEN_COUNT="$open_count" BRANCH_REFS="$branch_refs" node --input-type=module -e '
+            import { loadReleaseCalendar, shouldOpenReleasePr, filterReleasePrBranchRefs } from "./scripts/lib/release-calendar.mjs";
+            const calendar = loadReleaseCalendar(process.cwd());
+            const matchingBranches = filterReleasePrBranchRefs(process.env.BRANCH_REFS);
+            console.error(`matched ${matchingBranches.length} real release-PR branch(es) among the claude/release-* candidates on the remote`);
+            const hasReleaseInProgress = Number(process.env.OPEN_COUNT) > 0 || matchingBranches.length > 0;
+            console.log(shouldOpenReleasePr({ now: new Date(), calendar, hasReleaseInProgress }));
+          ')"
+          echo "proceed=$proceed" >> "$GITHUB_OUTPUT"
+          if [ "$proceed" != "true" ]; then
+            echo "Not proceeding today: release day is Saturday, calendar timezone America/Los_Angeles (governance/release-calendar.json); currently open release:weekly PR(s): $open_count."
+          fi
+
       # Refuses (exit 2) rather than run against a malformed changeset, and
-      # (exit 1) if a changeset names a package this checkout does not have
-      # -- both should fail this workflow loudly, not be silently skipped,
-      # so this step is NOT wrapped in `set +e`. A clean "nothing pending"
-      # run exits 0 with an empty `applied` array; the step after this one
+      # (exit 1) if a changeset names a package this checkout does not have,
+      # whose current version is not a plain X.Y.Z, or (under --out-of-band)
+      # would bump above patch -- all should fail this workflow loudly, not
+      # be silently skipped, so this step is NOT wrapped in `set +e`. A
+      # clean "nothing pending" run exits 0 with an empty `applied` array
+      # (see this repository's own apply-release-changesets.mjs header for
+      # why that is load-bearing, not incidental); the step after this one
       # reads that array's length to decide whether there is anything left
       # to commit.
       - name: Apply pending changesets
         id: apply
+        if: github.event_name != 'schedule' || steps.gate.outputs.proceed == 'true'
         run: |
           set -euo pipefail
-          output="$(node scripts/apply-release-changesets.mjs --json)"
+          args=(--json)
+          if [ "$OUT_OF_BAND_INPUT" = "true" ]; then
+            args+=(--out-of-band)
+          fi
+          output="$(node scripts/apply-release-changesets.mjs "${args[@]}")"
           echo "$output"
           count="$(node -e 'console.log(JSON.parse(process.argv[1]).applied.length)' "$output")"
           echo "applied_count=$count" >> "$GITHUB_OUTPUT"
+          out_of_band="$(node -e 'console.log(JSON.parse(process.argv[1]).applied.some((a) => a.outOfBand))' "$output")"
+          echo "out_of_band=$out_of_band" >> "$GITHUB_OUTPUT"
           node -e '
             const { applied } = JSON.parse(process.argv[1]);
-            const lines = applied.map((a) => `- \`${a.package}\`: ${a.fromVersion} -> ${a.toVersion} (${a.bump}), consuming ${a.changesetFiles.join(", ")}`);
+            const lines = applied.map((a) => {
+              const flags = [a.bump, a.breaking ? "BREAKING" : null, a.outOfBand ? "out-of-band" : null].filter(Boolean).join(", ");
+              return `- \`${a.package}\`: ${a.fromVersion} -> ${a.toVersion} (${flags}), consuming ${a.changesetFiles.join(", ")}`;
+            });
+            const breaking = applied.flatMap((a) => a.breakingSummaries.map((s) => `- \`${a.package}\`: ${s}`));
             require("node:fs").writeFileSync(process.env.SUMMARY_PATH, lines.join("\n") + "\n");
+            require("node:fs").writeFileSync(process.env.BREAKING_PATH, breaking.join("\n") + (breaking.length > 0 ? "\n" : ""));
           ' "$output"
         env:
           SUMMARY_PATH: ${{ runner.temp }}/release-summary.md
+          BREAKING_PATH: ${{ runner.temp }}/release-breaking.md
+          OUT_OF_BAND_INPUT: ${{ github.event.inputs.out_of_band }}
+
+      - name: Nothing pending, or not release day, or a release PR is already open
+        if: github.event_name == 'schedule' && steps.gate.outputs.proceed != 'true'
+        run: echo "Skipped (see the release-day/open-PR guard step above)."
 
       - name: Nothing pending
-        if: steps.apply.outputs.applied_count == '0'
+        if: (github.event_name != 'schedule' || steps.gate.outputs.proceed == 'true') && steps.apply.outputs.applied_count == '0'
         run: echo "No pending changesets -- nothing to release this run."
 
-      - name: Push branch and open pull request
-        if: steps.apply.outputs.applied_count != '0'
+      # KNOWN GAP, OWNER-FACING (second-opinion review item 6,
+      # https://github.com/clossys/foundry/pull/1316#issuecomment-5800188207;
+      # full explanation in docs/RELEASING.md's "Opening the release PR"):
+      # this step pushes the release branch with GITHUB_TOKEN and stops --
+      # it deliberately does NOT call `gh pr create`. A pull request opened
+      # with GITHUB_TOKEN does not trigger this repository's own
+      # pull_request-scoped checks (GitHub's loop-prevention rule), which
+      # would mean the release PR never runs release-pr-shape or, once
+      # required, release calendar (merge window) -- the exact checks it
+      # most needs to run. Push (branch creation) is unaffected by that
+      # rule and stays automated here; opening the PR needs an
+      # owner-authenticated actor instead (in practice, the orchestrator's
+      # agent using the owner's own `gh` session) -- see the step below and
+      # docs/RELEASING.md for the two owner-setup alternatives that would
+      # let this step open the PR itself again (a GitHub App installation
+      # token, or a fine-grained PAT stored as a repository secret; neither
+      # is implemented here, since both need owner action this workflow
+      # cannot perform on its own).
+      - name: Compute, validate, and push the release commit
+        id: push
+        if: (github.event_name != 'schedule' || steps.gate.outputs.proceed == 'true') && steps.apply.outputs.applied_count != '0'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_BASE_REF_OR_DEFAULT: ${{ github.event.repository.default_branch }}
           RUN_ID: ${{ github.run_id }}
           SUMMARY_PATH: ${{ runner.temp }}/release-summary.md
+          BREAKING_PATH: ${{ runner.temp }}/release-breaking.md
+          OUT_OF_BAND: ${{ steps.apply.outputs.out_of_band }}
+          MATERIALS_DIR: ${{ runner.temp }}/release-pr-materials
         run: |
           set -euo pipefail
           branch="claude/release-$(date -u +%Y-%m-%d)-${RUN_ID}"
@@ -109,47 +259,111 @@ jobs:
             printf '%s\n' "regenerates package-lock.json, and deletes the applied changesets --"
             printf '%s\n\n' "via node scripts/apply-release-changesets.mjs, per issue #1255."
             cat "$SUMMARY_PATH"
-            printf '\n%s\n' "Ref: #1255"
+            printf '\n%s\n' "Ref: #1255, #1187"
           } > "$message_file"
           git commit -F "$message_file"
+
+          # VALIDATE before pushing: this release commit must itself be
+          # release-PR shaped against the branch it will target, the same
+          # question scripts/check-release-pr-shape.mjs's own CI job asks
+          # of every pull request. A failure here means a bug in
+          # scripts/apply-release-changesets.mjs produced something its own
+          # sibling gate would reject -- fail loudly now, before pushing
+          # anything, rather than push a branch whose PR would fail its own
+          # required check.
+          node scripts/check-release-pr-shape.mjs --base "origin/${GITHUB_BASE_REF_OR_DEFAULT}"
+
           git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
           git push origin "$branch"
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
 
-          body_file="$RUNNER_TEMP/release-pr-body.txt"
+          mkdir -p "$MATERIALS_DIR"
+          body_file="$MATERIALS_DIR/body.txt"
           {
-            printf '%s\n\n' "The periodic/on-demand release PR (issue #1255): applies every pending \`.changesets/*.md\` file."
+            printf '%s\n\n' "The periodic/on-demand release PR (issue #1255): applies every pending \`.changesets/*.md\` file. Opened on the weekly release calendar's Saturday release day (docs/RELEASING.md) -- the calendar decides *when* this runs, not what version anything gets; versions stay plain semver, bumped by each changeset's own patch/minor/major level."
             printf '%s\n\n' "## Bumps"
             cat "$SUMMARY_PATH"
-            printf '\n%s\n' "Each package's CHANGELOG.md gained a matching entry, and the consumed changeset files are deleted -- \`scripts/check-release-pr-shape.mjs\` verifies both on this pull request itself."
+            if [ -s "$BREAKING_PATH" ]; then
+              printf '\n%s\n\n' "## Breaking changes"
+              cat "$BREAKING_PATH"
+            fi
+            printf '\n%s\n' "Each package's CHANGELOG.md gained a matching entry (with its own Breaking changes subsection where applicable), and the consumed changeset files are deleted -- \`scripts/check-release-pr-shape.mjs\` verifies both on this pull request itself."
             printf '\n%s\n' "This publishes nothing. Qualification (per package version, via \`qualify-candidate.yml\`) and publication (\`publish.yml\`) remain separate, manually-gated steps."
             printf '%s\n' "Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}"
-            printf '%s\n' "Ref: #1255"
+            printf '%s\n' "Ref: #1255, #1187"
           } > "$body_file"
 
-          # Same graceful-degradation shape as qualify-candidate.yml's
-          # identical step: if this repository ever reverts "Actions may
-          # open pull requests", the branch is still pushed and ready.
-          set +e
-          pr_create_output="$(gh pr create \
-            --title "Release: apply pending changesets" \
-            --base "$GITHUB_BASE_REF_OR_DEFAULT" \
-            --head "$branch" \
-            --body-file "$body_file" 2>&1)"
-          pr_create_status=$?
-          set -e
-
-          if [ "$pr_create_status" -eq 0 ]; then
-            echo "$pr_create_output"
-          elif printf '%s' "$pr_create_output" | grep -q "not permitted to create or approve pull requests"; then
-            {
-              echo "### Release changes pushed, PR not opened"
-              echo ""
-              echo "The release commit is pushed to \`${branch}\`, but this repository does not permit GitHub Actions to open pull requests."
-              echo ""
-              echo "Open it from: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/compare/${GITHUB_BASE_REF_OR_DEFAULT}...${branch}?expand=1"
-            } >> "$GITHUB_STEP_SUMMARY"
-            echo "PR creation was refused (Actions cannot create PRs on this repo); branch ${branch} is pushed and ready. See job summary for the compare URL."
-          else
-            echo "$pr_create_output" >&2
-            exit "$pr_create_status"
+          # release:weekly is applied to EVERY release PR this workflow
+          # prepares -- it is one half of the proof
+          # .github/workflows/release-calendar.yml's weekend gate requires
+          # (the other half is the diff shape itself, checked structurally,
+          # never by branch name -- scripts/lib/release-calendar.mjs's own
+          # header has the full reasoning and the residual risk it does not
+          # eliminate). release:out-of-band is added on top when this run
+          # consumed at least one out-of-band changeset, which is what lets
+          # THIS pull request land on any day, not only the Saturday/merge-
+          # window shape an ordinary release PR needs. Labels are created
+          # here (idempotent -- already-exists is swallowed) even though
+          # the PR itself is not, since label creation carries none of this
+          # step's GITHUB_TOKEN PR-creation concern and the owner-
+          # authenticated step below needs both labels to already exist.
+          gh label create "release:weekly" --color "0e8a16" \
+            --description "The weekly release PR (docs/RELEASING.md). Combined with its file-change shape, proves it may land outside the Mon-Fri merge window on release day." \
+            >/dev/null 2>&1 || true
+          labels="release:weekly"
+          if [ "$OUT_OF_BAND" = "true" ]; then
+            gh label create "release:out-of-band" --color "d73a4a" \
+              --description "Admitted any day, outside the weekly merge window too (docs/RELEASING.md) -- security fix, a fix for a broken published release, or an owner-approved urgent update only. Owner-applied only, standing rule." \
+              >/dev/null 2>&1 || true
+            labels="release:weekly,release:out-of-band"
           fi
+          echo "labels=$labels" >> "$GITHUB_OUTPUT"
+
+          node -e '
+            const fs = require("node:fs");
+            const [, , materialsDir, branchArg, baseArg, labelsArg] = process.argv;
+            fs.writeFileSync(materialsDir + "/manifest.json", JSON.stringify({
+              branch: branchArg,
+              base: baseArg,
+              title: "Release: apply pending changesets",
+              labels: labelsArg.split(","),
+              bodyFile: "body.txt",
+            }, null, 2) + "\n");
+          ' "$MATERIALS_DIR" "$branch" "$GITHUB_BASE_REF_OR_DEFAULT" "$labels"
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        if: (github.event_name != 'schedule' || steps.gate.outputs.proceed == 'true') && steps.apply.outputs.applied_count != '0'
+        with:
+          name: release-pr-materials
+          path: ${{ runner.temp }}/release-pr-materials
+          if-no-files-found: error
+
+      # OWNER ACTION REQUIRED -- see docs/RELEASING.md's "Opening the
+      # release PR" for the full explanation and the two unimplemented
+      # automation alternatives. This step never fails the job; it only
+      # makes the required follow-up impossible to miss in the run summary.
+      - name: OWNER ACTION REQUIRED -- open the release PR
+        if: (github.event_name != 'schedule' || steps.gate.outputs.proceed == 'true') && steps.apply.outputs.applied_count != '0'
+        env:
+          BRANCH: ${{ steps.push.outputs.branch }}
+          LABELS: ${{ steps.push.outputs.labels }}
+          GITHUB_BASE_REF_OR_DEFAULT: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+          {
+            echo "## OWNER ACTION REQUIRED: open the release PR"
+            echo ""
+            echo "Branch \`${BRANCH}\` is pushed and validated (scripts/check-release-pr-shape.mjs passed), but this workflow deliberately did NOT open the pull request -- see docs/RELEASING.md's \"Opening the release PR\"."
+            echo ""
+            echo "An owner-authenticated \`gh\` session (not this workflow's GITHUB_TOKEN) must run:"
+            echo ""
+            echo '```'
+            echo "gh pr create --repo ${GITHUB_REPOSITORY} --base ${GITHUB_BASE_REF_OR_DEFAULT} --head ${BRANCH} \\"
+            echo "  --title \"Release: apply pending changesets\" \\"
+            echo "  --body-file body.txt \\"
+            echo "  --label \"${LABELS}\""
+            echo '```'
+            echo ""
+            echo "\`body.txt\` is in this run's \`release-pr-materials\` artifact, alongside \`manifest.json\` (the same facts as structured JSON)."
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "OWNER ACTION REQUIRED: open the release PR for branch ${BRANCH} -- see job summary and the release-pr-materials artifact."
