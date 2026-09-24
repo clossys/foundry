@@ -44,6 +44,42 @@ function code(text) {
   return text.split("\n").filter((line) => !/^\s*#/.test(line)).join("\n");
 }
 
+/**
+ * The steps of a job (comment lines removed), each as { name, text, run }:
+ * `run` is the step's shell body, block (`run: |`) or single-line.
+ */
+function stepsOf(selected) {
+  const body = code(selected);
+  const starts = [...body.matchAll(/^ {6}- /gm)].map((match) => match.index);
+  return starts.map((start, index) => {
+    const text = body.slice(start, starts[index + 1] ?? body.length);
+    const name = text.match(/^ {6}- name: ([^\n]+)$/m)?.[1] ?? text.match(/^ {8}name: ([^\n]+)$/m)?.[1] ?? text.match(/^ {6}- uses: ([^\n]+)$/m)?.[1];
+    const block = text.match(/^ {8}run: [|>][-+]?\n((?: {10}[^\n]*\n|\n)*)/m);
+    const single = text.match(/^ {8}run: (?![|>])([^\n]+)$/m);
+    return { name, text, run: block ? block[1] : single ? single[1] : "" };
+  });
+}
+
+/** The part of a job before its first step: needs, permissions, env, runs-on and the like. */
+function jobHeader(selected) {
+  const body = code(selected);
+  const first = body.search(/^ {4}steps:$/m);
+  assert.notEqual(first, -1, "job must declare steps");
+  return body.slice(0, first);
+}
+
+const PUSH_STEP = "Push branch and open pull request";
+const TOKEN_REFERENCE = /secrets\.|github\.token/g;
+const HANDOFF_PATH = /(?:\$RUNNER_TEMP|\$\{RUNNER_TEMP\}|\$\{\{\s*runner\.temp\s*\}\})\/handoff/g;
+// The only first arguments `node` may take anywhere in the write job: the
+// two trusted scripts it needs, and inline reads of the fresh checkout.
+const WRITER_NODE_ARGUMENTS = new Set(["-p", "--version", "scripts/accept-qualification-handoff.mjs", "scripts/remove-qualification-deferral.mjs"]);
+const WRITER_ACTIONS = [
+  "actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+  "actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+  "actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131",
+];
+
 /** A job's own permissions block as { scope: level }, or null when it declares none. */
 function permissionsOf(selected) {
   const match = selected.match(/^ {4}permissions:(.*)\n((?: {6}[a-z-]+: [a-z]+\n)*)/m);
@@ -151,15 +187,57 @@ test("the hand-off is one uploaded record file, downloaded outside the workspace
 });
 
 test("the write job reads nothing from the qualify job but its artifact", () => {
-  assert.doesNotMatch(code(job(WRITER)), /needs\.qualify\.outputs/, "the qualify job's outputs are untrusted; recompute them from the fresh checkout");
+  assert.doesNotMatch(job(QUALIFY), /^ {4}outputs:/m, "the qualify job declares no outputs at all: they would be untrusted, and the write job recomputes everything from its fresh checkout");
+  assert.doesNotMatch(stepsOf(job(WRITER)).map((s) => s.text).join(""), /\bneeds\b/, "no write-job step may read needs.* in any form");
+  assert.doesNotMatch(code(workflow), /toJSON\(\s*needs/);
 });
 
-test("only the push step sees the write token", () => {
+test("only the push step sees the write token, in any spelling", () => {
+  assert.doesNotMatch(code(workflow), /^env:/m, "no workflow-level env");
+  assert.doesNotMatch(code(job(QUALIFY)), TOKEN_REFERENCE, "the qualify job references no secret and no github.token");
+  const header = jobHeader(job(WRITER));
+  assert.doesNotMatch(header, TOKEN_REFERENCE, "no token in the write job's job-level keys");
+  assert.doesNotMatch(header, /^ {4}(?:env|defaults|container|services):/m, "no job-level env, defaults, container or services in the write job");
+
+  const steps = stepsOf(job(WRITER));
+  const push = steps.filter((s) => s.name === PUSH_STEP);
+  assert.equal(push.length, 1);
+  assert.match(push[0].text, /^ {10}GH_TOKEN: \$\{\{ secrets\.GITHUB_TOKEN \}\}$/m);
+  assert.equal((push[0].text.match(TOKEN_REFERENCE) ?? []).length, 1, "the push step names the token exactly once");
+  for (const other of steps.filter((s) => s.name !== PUSH_STEP)) {
+    assert.doesNotMatch(other.text, TOKEN_REFERENCE, `${other.name} must not reference secrets.* or github.token`);
+    assert.doesNotMatch(other.text, /^ {10}(?:github-)?token:/m, `${other.name} must not pass a token input to an action`);
+  }
+});
+
+test("the write job runs only allowlisted actions and commands, and never executes anything from the hand-off", () => {
   const writer = job(WRITER);
-  const push = step(writer, "Push branch and open pull request");
-  assert.match(push, /GH_TOKEN: \$\{\{ secrets\.GITHUB_TOKEN \}\}/);
-  assert.equal((code(workflow).match(/secrets\./g) ?? []).length, 1, "secrets.GITHUB_TOKEN appears exactly once, in the push step");
-  assert.equal((code(workflow).match(/GH_TOKEN:/g) ?? []).length, 1);
+  const steps = stepsOf(writer);
+  const uses = steps.map((s) => s.text.match(/^ {6}- uses: (\S+)|^ {8}uses: (\S+)/m)).filter(Boolean).map((m) => m[1] ?? m[2]);
+  assert.deepEqual(uses, WRITER_ACTIONS, "the write job uses exactly checkout, setup-node and download-artifact, pinned");
+  for (const s of steps) {
+    assert.doesNotMatch(s.text, /^ {8}(?:shell|working-directory):/m, `${s.name} must not override its shell or working directory`);
+    assert.doesNotMatch(s.text, /^ {10}cache(?:-dependency-path)?:/m, `${s.name} must not restore a cache`);
+    for (const [, argument] of s.run.matchAll(/(?:^|[\s;&|("'`])node\s+(\S+)/g)) {
+      const normalized = argument.replace(/[)"'`;]+$/, "");
+      assert.ok(WRITER_NODE_ARGUMENTS.has(normalized), `${s.name} runs node ${argument}; the write job may only run ${[...WRITER_NODE_ARGUMENTS].join(", ")}`);
+    }
+    // Command position: start of a line, after a separator or `$(`, or
+    // after then/do/else. Prose inside printf strings is not at one.
+    const commandPosition = String.raw`(?:^[ \t]*|[;&|(\x60][ \t]*|\$\([ \t]*|\b(?:then|do|else)[ \t]+)`;
+    assert.doesNotMatch(s.run, new RegExp(`${commandPosition}(?:bash|sh|zsh|dash|source|eval|exec|python3?|perl|ruby|deno|bun|npx|npm|yarn|pnpm|chmod|install|env)\\b`, "m"), `${s.name} must not invoke another interpreter, npm, or make anything executable`);
+    assert.doesNotMatch(s.run, new RegExp(`${commandPosition}\\.[ \t]`, "m"), `${s.name} must not source a file`);
+    assert.doesNotMatch(s.run, new RegExp(`${commandPosition}"?(?:\\$\\{?RUNNER_TEMP|\\$\\{\\{\\s*runner\\.temp|/|~)`, "m"), `${s.name} must not execute a path, least of all one under the runner temp directory`);
+    assert.doesNotMatch(s.text, /GITHUB_ENV|GITHUB_PATH/, `${s.name} must not alter later steps' environment or PATH`);
+  }
+
+  // The hand-off location appears exactly twice: where it is downloaded, and
+  // where the trusted acceptor is pointed at it. Nothing else names it.
+  const handoff = steps.flatMap((s) => (s.text.match(HANDOFF_PATH) ?? []).map(() => s.name));
+  assert.deepEqual(handoff, ["Download qualification record", "Accept qualification record hand-off"]);
+  assert.match(steps.find((s) => s.name === "Download qualification record").text, /^ {10}path: \$\{\{ runner\.temp \}\}\/handoff$/m);
+  assert.match(steps.find((s) => s.name === "Accept qualification record hand-off").run, /node scripts\/accept-qualification-handoff\.mjs [^\n]*--handoff-dir "\$RUNNER_TEMP\/handoff" /);
+  assert.doesNotMatch(code(writer), /qualification-record\.json/, "the write job never names the hand-off file itself; only the acceptor opens it");
 });
 
 test("the workflow_dispatch interface auto-qualify.yml dispatches against is unchanged", () => {

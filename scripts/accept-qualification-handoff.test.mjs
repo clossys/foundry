@@ -9,7 +9,7 @@ import { after, before, test } from "node:test";
 import { promisify } from "node:util";
 import { currentQualificationJoins, parseStrictJson, qualificationPath } from "./lib/candidate-qualification.mjs";
 import { generateQualificationRecord } from "./generate-qualification-record.mjs";
-import { ACCEPTED_SCHEMA_VERSION, HANDOFF_FILE, MAX_RECORD_BYTES, acceptQualificationHandoff, argsFrom } from "./accept-qualification-handoff.mjs";
+import { ACCEPTED_SCHEMA_VERSION, HANDOFF_FILE, MAX_RECORD_BYTES, acceptQualificationHandoff, argsFrom, quote } from "./accept-qualification-handoff.mjs";
 
 // The trusted half of qualify-candidate.yml's job split. Every refusal below
 // is a shape an untrusted qualify job could upload; the one acceptance is a
@@ -149,6 +149,46 @@ test("a symlinked or directory-shaped record file is refused", async () => {
   const nested = await handoff({});
   await mkdir(join(nested, HANDOFF_FILE));
   assert.throws(() => accept(nested), refused(/regular file/));
+});
+
+test("a symlinked hand-off directory, or a hidden extra entry beside the record, is refused", async () => {
+  const real = await handoff({ [HANDOFF_FILE]: f.text });
+  const parent = await handoff({});
+  const linkedDir = join(parent, "linked");
+  await symlink(real, linkedDir);
+  assert.throws(() => accept(linkedDir), refused(/not a plain directory/));
+
+  await expectRefused({ [HANDOFF_FILE]: f.text, ".hidden": "x" }, /exactly qualification-record\.json/);
+});
+
+test("a __proto__ key, top-level or nested, is refused and pollutes nothing", async () => {
+  const withProto = (path) => {
+    const lines = f.text.split("\n");
+    const index = lines.findIndex((line) => line === path);
+    assert.notEqual(index, -1, `fixture record has no ${path} line`);
+    const indent = path.match(/^ */)[0] + "  ";
+    lines.splice(index + 1, 0, `${indent}"__proto__": {`, `${indent}  "polluted": true`, `${indent}},`);
+    return lines.join("\n");
+  };
+  for (const text of [withProto("{"), withProto('  "candidate": {')]) {
+    const dir = await handoff({ [HANDOFF_FILE]: text });
+    assert.throws(() => accept(dir), (error) => error.constructor.name === "HandoffRefused");
+  }
+  assert.equal({}.polluted, undefined, "Object.prototype must not be polluted");
+});
+
+test("attacker-controlled names reach a refusal message only JSON-quoted, never as a raw line break", async () => {
+  const hostile = "x\n::error title=forged::not from this repository";
+  const fieldDir = await handoff({ [HANDOFF_FILE]: mutated((r) => { r[hostile] = 1; }) });
+  const entryDir = await handoff({ [HANDOFF_FILE]: f.text, [hostile]: "x" });
+  const nameDir = await handoff({ [HANDOFF_FILE]: mutated((r) => { r.candidate.name = hostile; }) });
+  for (const dir of [fieldDir, entryDir, nameDir]) {
+    let message;
+    try { accept(dir); } catch (error) { message = error.message; }
+    assert.ok(message, "the hostile hand-off must be refused");
+    assert.doesNotMatch(message, /[\r\n]/, "no raw line break may reach the log");
+    assert.ok(message.includes(quote(hostile)) || message.includes(JSON.stringify(hostile).slice(1, -1)), `the hostile value must appear only quoted: ${message}`);
+  }
 });
 
 test("an empty or oversized record file is refused before it is parsed", async () => {

@@ -76,6 +76,24 @@ const VERSION = /^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/;
 const SHA1 = /^[a-f0-9]{40}$/;
 const RECORD_PATH = /^governance\/release-qualifications\/[A-Za-z0-9._@-]+\.json$/;
 
+/**
+ * Quote an attacker-influenced value for a log line: JSON-escaped (so no raw
+ * newline can start a new line, and so no `::` workflow command can ever sit
+ * at the start of one), with the two JSON-legal line separators escaped too,
+ * and length-bounded.
+ */
+export function quote(value) {
+  let text;
+  try { text = JSON.stringify(value) ?? String(value); } catch { text = "[unserializable]"; }
+  if (text.length > 200) text = `${text.slice(0, 200)}...`;
+  return text.replace(/[\u2028\u2029]/g, (c) => `\\u${c.charCodeAt(0).toString(16)}`);
+}
+
+/** Last-line defense at the sink: escape every control character in a message before it is printed. */
+function oneLine(message) {
+  return String(message).replace(/[\u0000-\u001f\u007f\u2028\u2029]/g, (c) => `\\u${c.charCodeAt(0).toString(16).padStart(4, "0")}`);
+}
+
 export class UsageError extends Error {}
 export class HandoffRefused extends Error {}
 export class IndeterminateError extends Error {}
@@ -115,7 +133,7 @@ function readHandoffBytes(handoffDir) {
 
   const entries = readdirSync(handoffDir).sort();
   if (entries.length !== 1 || entries[0] !== HANDOFF_FILE) {
-    throw new HandoffRefused(`hand-off directory must contain exactly ${HANDOFF_FILE} and nothing else (found: ${entries.length === 0 ? "nothing" : entries.join(", ")}).`);
+    throw new HandoffRefused(`hand-off directory must contain exactly ${HANDOFF_FILE} and nothing else (found: ${entries.length === 0 ? "nothing" : entries.slice(0, 10).map(quote).join(", ")}${entries.length > 10 ? `, and ${entries.length - 10} more` : ""}).`);
   }
   const file = join(handoffDir, HANDOFF_FILE);
   const stat = lstatSync(file);
@@ -148,7 +166,7 @@ export function acceptQualificationHandoff({ root = process.cwd(), packageKey, v
   let manifest;
   try { manifest = parseStrictJson(git(root, ["show", `${reviewedCommit}:packages/${packageKey}/package.json`])); }
   catch (error) { throw new IndeterminateError(`packages/${packageKey}/package.json could not be read at ${reviewedCommit}: ${error instanceof Error ? error.message : "unknown error"}`); }
-  if (manifest?.version !== version) throw new HandoffRefused(`packages/${packageKey}/package.json declares ${manifest?.version} at ${reviewedCommit}, not ${version}.`);
+  if (manifest?.version !== version) throw new HandoffRefused(`packages/${packageKey}/package.json declares ${quote(manifest?.version)} at ${reviewedCommit}, not ${quote(version)}.`);
   const candidate = { name: manifest?.name, version };
   if (typeof candidate.name !== "string" || candidate.name === "") throw new IndeterminateError(`packages/${packageKey}/package.json declares no name at ${reviewedCommit}.`);
 
@@ -162,13 +180,13 @@ export function acceptQualificationHandoff({ root = process.cwd(), packageKey, v
   const text = readHandoffBytes(handoffDir);
   let record;
   try { record = parseStrictJson(text); }
-  catch (error) { throw new HandoffRefused(`${HANDOFF_FILE} is not strict JSON: ${error instanceof Error ? error.message : "parse error"}`); }
+  catch (error) { throw new HandoffRefused(`${HANDOFF_FILE} is not strict JSON: ${quote(error instanceof Error ? error.message : "parse error")}`); }
   if (`${JSON.stringify(record, null, 2)}\n` !== text) throw new HandoffRefused(`${HANDOFF_FILE} is not in the canonical serialization generate-qualification-record.mjs writes.`);
 
   if (record?.schemaVersion !== ACCEPTED_SCHEMA_VERSION) throw new HandoffRefused(`record schemaVersion must be ${ACCEPTED_SCHEMA_VERSION}.`);
   if (record.timing !== "pre-publication") throw new HandoffRefused("record timing must be pre-publication.");
   if (record.candidate?.name !== candidate.name || record.candidate?.version !== candidate.version) {
-    throw new HandoffRefused(`record names ${record.candidate?.name}@${record.candidate?.version}, not ${candidate.name}@${candidate.version}.`);
+    throw new HandoffRefused(`record names ${quote(record.candidate?.name)}@${quote(record.candidate?.version)}, not ${quote(candidate.name)}@${quote(candidate.version)}.`);
   }
   if (record.reviewedCommit !== reviewedCommit || record.candidateReview?.headSha !== reviewedCommit) throw new HandoffRefused(`record is not bound to reviewed commit ${reviewedCommit}.`);
   if (record.candidateReview?.reference !== reviewReference) throw new HandoffRefused("record candidateReview.reference does not match this run's review reference.");
@@ -178,7 +196,7 @@ export function acceptQualificationHandoff({ root = process.cwd(), packageKey, v
   try { joins = currentQualificationJoins(root, candidate, reviewedCommit, { schemaVersion: ACCEPTED_SCHEMA_VERSION }); }
   catch (error) { throw new IndeterminateError(`qualification joins could not be recomputed at ${reviewedCommit}: ${error instanceof Error ? error.message : "unknown error"}`); }
   const findings = validateCandidateQualification(record, { expected: { name: candidate.name, version: candidate.version, ...joins } });
-  if (findings.length > 0) throw new HandoffRefused(`record fails validation: ${findings.map((finding) => `${finding.rule} (${finding.message})`).join("; ")}.`);
+  if (findings.length > 0) throw new HandoffRefused(`record fails validation: ${findings.map((finding) => `${quote(finding.rule)} (${quote(finding.message)})`).join("; ")}.`);
 
   return { recordPath, text, candidate };
 }
@@ -198,8 +216,8 @@ function main() {
       reviewReference: args["review-reference"],
     });
   } catch (error) {
-    if (error instanceof HandoffRefused) { console.error(`HAND-OFF REFUSED — ${error.message}`); process.exit(1); }
-    console.error(`INDETERMINATE — ${error instanceof Error ? error.message : "unknown error"}`);
+    if (error instanceof HandoffRefused) { console.error(`HAND-OFF REFUSED — ${oneLine(error.message)}`); process.exit(1); }
+    console.error(`INDETERMINATE — ${oneLine(error instanceof Error ? error.message : "unknown error")}`);
     process.exit(2);
   }
 

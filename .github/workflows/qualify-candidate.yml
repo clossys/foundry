@@ -97,6 +97,18 @@ name: Qualify candidate
 # independently re-verifies the exact tarball bytes against them before any
 # upload. scripts/qualify-candidate-workflow.test.mjs pins this shape.
 #
+# Three operating constraints follow from the split:
+# - Retry with "Re-run all jobs". "Re-run failed jobs" on open-pull-request
+#   alone fails closed by design: the artifact name and the review reference
+#   the record must carry both include github.run_attempt, and a re-run
+#   attempt has no qualify job of its own.
+# - The split relies on actions/download-artifact refusing zip entries that
+#   would extract outside its download path (CVE-2024-42471, fixed in
+#   v4.1.7); the pinned 37930b1c... is v7.0.0.
+# - open-pull-request must never restore a cache: its actions/setup-node
+#   step has no `cache:` input and must not gain one, because a cache entry
+#   is a channel any earlier job on this ref could have written.
+#
 # WHAT THIS WORKFLOW DOES NOT DO
 # -------------------------------
 # It never publishes anything. Publication stays a separate, manually
