@@ -1,0 +1,16 @@
+{
+  "speaker": "customer",
+  "inhabitedAs": "target-audience",
+  "audienceId": "audience-one",
+  "persona": {
+    "name": "Jordan"
+  },
+  "stance": "The unclear offer is the main thing between me and actually starting.",
+  "intent": "adopt",
+  "familiarity": "fresh",
+  "topic": "what it would take for me to start",
+  "wouldIStart": "no",
+  "whatStopsMeStarting": "I cannot tell yet whether it replaces my spreadsheet or sits beside it.",
+  "whatItWouldTake": "A short example that uses a project like mine.",
+  "firstJobIdGiveIt": "Planning next month's launch checklist."
+}

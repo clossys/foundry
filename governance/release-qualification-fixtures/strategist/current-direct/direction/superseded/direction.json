@@ -1,0 +1,23 @@
+[
+  {
+    "id": "positioning-2026-h1",
+    "subject": {
+      "file": "positioning.json",
+      "id": "positioning"
+    },
+    "decidedOn": "2026-01-05",
+    "derivesFrom": []
+  },
+  {
+    "id": "positioning-2026-h2",
+    "subject": {
+      "file": "positioning.json",
+      "id": "positioning"
+    },
+    "decidedOn": "2026-07-01",
+    "supersedes": "positioning-2026-h1",
+    "derivesFrom": [
+      "positioning-2026-h1"
+    ]
+  }
+]

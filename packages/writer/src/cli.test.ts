@@ -745,13 +745,13 @@ describe("main — direct-path reachability (real compiled dist/cli.js)", () => 
   let cliPath: string;
 
   beforeAll(() => {
-    // Build once for this whole describe block — a real `tsc` compile of
-    // this package, not a mock. Slower than the in-process tests above by
-    // design: this block exists specifically to exercise the artifact this
-    // package ships, not a faster proxy for it.
-    execFileSync("npm", ["run", "build"], { cwd: packageDir, stdio: "pipe" });
+    // A real `tsc` compile of this package, not a mock: this block exists
+    // specifically to exercise the artifact this package ships, not a faster
+    // proxy for it. dist/ was built once, before any test file started, by
+    // the package's vitest globalSetup (scripts/lib/vitest-build-package.mjs).
+    // Never rebuild it here: a sibling test file may be executing it (#1385).
     cliPath = join(packageDir, "dist", "cli.js");
-  }, 120_000);
+  });
 
   /**
    * Runs the real compiled CLI as a child process and returns its actual

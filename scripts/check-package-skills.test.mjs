@@ -1,6 +1,5 @@
 // Regression tests for check-package-skills.mjs.
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -8,6 +7,7 @@ import test from "node:test";
 
 import { evaluatePackageSkills, scanPackageSkills } from "./check-package-skills.mjs";
 import { makeTmpDirSync } from "./lib/tmp-fixture.mjs";
+import { spawnCapture } from "./lib/spawn-capture.mjs";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const scriptPath = join(scriptDir, "check-package-skills.mjs");
@@ -361,7 +361,7 @@ test("live repository package skills pass", () => {
   assert.equal(result.passed.length, 21);
 });
 
-test("CLI exits 0 on this repository", () => {
-  const proc = spawnSync(process.execPath, [scriptPath, repoRoot], { encoding: "utf8" });
+test("CLI exits 0 on this repository", async () => {
+  const proc = await spawnCapture(process.execPath, [scriptPath, repoRoot]);
   assert.equal(proc.status, 0, proc.stderr || proc.stdout);
 });

@@ -1,5 +1,5 @@
 /** Consumer-owned installed-position ledger validation. No provider I/O. */
-import { readCanonicalRoleLoopContract, readInstalledPositionContract } from "./canonical.js";
+import { readCanonicalRoleLoopContract, readHistoricalInstalledPositionContracts, readHistoricalRoleLoopContracts, readInstalledPositionContract } from "./canonical.js";
 import { isValueSafeReference, referenceSafetyIssue } from "../internal/reference-safety.js";
 
 export const POSITION_FIELDS = Object.freeze(["id", "package", "businessMetricPath", "causalHypothesis", "baseline", "setpoint", "operatingScope", "authority", "evidenceSource", "cadence", "budget", "guardrails", "escalationPath", "workerComponents", "stageBindings", "firstDayAssessment"] as const);
@@ -12,10 +12,29 @@ export const REFERENCE_VALUE_RULE = "Evidence references and locators reject exp
 export const SETPOINT_VALUE_SHAPES = Object.freeze({ increase: "number", decrease: "number", maintain: "number", "target-range": "ordered two-number array" } as const);
 
 export interface InstalledPositionFinding { readonly rule: string; readonly path: string; readonly message: string; }
-export interface InstalledPositionLedgerReport { readonly ok: boolean; readonly findings: readonly InstalledPositionFinding[]; readonly openRoles: number; readonly positions: number; }
+/** A non-failing observation: the ledger is still valid, but something in it should change before the next minor. */
+export interface InstalledPositionAdvisory { readonly rule: string; readonly path: string; readonly message: string; }
+// `advisories` is optional in the type only so a report a caller builds or
+// mocks by hand -- one that predates this field -- still satisfies this
+// interface without a TS2741 typecheck break. Every report this function
+// itself returns always sets it, defaulting to an empty array when there
+// are no advisories; see the README for the same statement.
+export interface InstalledPositionLedgerReport { readonly ok: boolean; readonly findings: readonly InstalledPositionFinding[]; readonly advisories?: readonly InstalledPositionAdvisory[]; readonly openRoles: number; readonly positions: number; }
 
 type RecordValue = Record<string, unknown>;
 const universalStages = ["sense", "judge", "act", "verify", "learn"];
+// stageBindings shape a 0.9.10 ledger still carries: `learn` was named
+// `learnOrEscalate` before issue #1194's rename (role-loop-archetypes.json
+// schemaVersion 4 -> 5). Accepted on read as an advisory, never both at once.
+const legacyStages = ["sense", "judge", "act", "verify", "learnOrEscalate"];
+// Active roles this package added after the 0.9.10 baseline, paired with the
+// controller version that introduced each. A 0.9.10 ledger predates these
+// roles, so a missing disposition for one of them is an advisory, not a
+// failure. Extend this table when a future role is added; never special-case
+// a role name in the check below.
+const rolesAddedAfterBaseline: Readonly<Record<string, string>> = Object.freeze({
+  "@clossys/customer": "0.9.11",
+});
 const metricDirections = ["increase", "decrease", "maintain", "target-range"];
 const dispositionFields = ["package", "disposition", "reason", "positionIds"];
 const firstDayFields = ["gaps", "target", "openQuestions", "criticalPath", "deferredWork", "recommendation", "evidenceRefs"];
@@ -27,6 +46,30 @@ function keys(value: unknown, expected: readonly string[]): value is RecordValue
 function strings(value: unknown, minimum = 0): value is string[] { return Array.isArray(value) && value.length >= minimum && value.every(text) && new Set(value).size === value.length; }
 function references(value: unknown, minimum = 0): value is string[] { return Array.isArray(value) && value.length >= minimum && value.every((item) => text(item) && isValueSafeReference(item)) && new Set(value).size === value.length; }
 function fail(findings: InstalledPositionFinding[], rule: string, path: string, message: string): void { findings.push({ rule, path, message }); }
+function advise(advisories: InstalledPositionAdvisory[], rule: string, path: string, message: string): void { advisories.push({ rule, path, message }); }
+// A prior-version advisory for a directly-called validator whose 0.9.10
+// return type is a plain findings array, never a report object -- so it
+// cannot grow a required `advisories` field without breaking that
+// signature. The `advisories` property is defined non-enumerable, so it
+// is invisible to everything that walks own enumerable properties --
+// `JSON.stringify`, `{...result}`, `for...in` -- and, critically, to an
+// equality check against a plain array: `assert.deepEqual`/`deepStrictEqual`
+// and vitest `toEqual`/`toStrictEqual` against `[]` all pass exactly as
+// they did in 0.9.10, because none of those consider a non-enumerable
+// property. `Array.isArray`, `.length`, spread, and every array method
+// are unaffected regardless, since the property adds no index. A caller
+// that knows to look still reads it directly as `result.advisories`.
+// Never attached when there is nothing to advise, so the existing exact
+// current-contract-match case is untouched.
+function withAdvisories<T>(findings: readonly T[], advisories: readonly InstalledPositionAdvisory[]): readonly T[] & { readonly advisories?: readonly InstalledPositionAdvisory[] } {
+  if (advisories.length === 0) return findings;
+  const copy = [...findings] as T[] & { advisories?: readonly InstalledPositionAdvisory[] };
+  Object.defineProperty(copy, "advisories", { value: advisories, enumerable: false, writable: false, configurable: false });
+  return copy;
+}
+function legacyContractAdvisory(path: string, kind: string, version: string): InstalledPositionAdvisory {
+  return { rule: "legacy-contract-copy", path, message: `matches the ${kind} contract shipped in @clossys/controller ${version}; drop the argument to use the contract shipped inside this package, or re-copy it from this version.` };
+}
 function rejectUnsafeReference(value: unknown, path: string, findings: InstalledPositionFinding[]): void {
   if (typeof value !== "string") return;
   const issue = referenceSafetyIssue(value);
@@ -48,29 +91,60 @@ function canonical(value: unknown): string {
   return JSON.stringify(value);
 }
 
-/** Validates the machine-readable position contract against this package's one code vocabulary. */
-export function validateInstalledPositionContract(contract: unknown = readInstalledPositionContract()): readonly InstalledPositionFinding[] {
+/**
+ * Validates the machine-readable position contract against this package's
+ * one code vocabulary. A caller-supplied `contract` that is not the current
+ * shipped snapshot but exactly matches a known historical one (currently
+ * only 0.9.10's) is accepted and checked as-if it were the current
+ * snapshot, with a non-failing `legacy-contract-copy` advisory attached to
+ * the returned array (see `withAdvisories`). Anything else that drifts from
+ * the current snapshot, including a historical contract with even one field
+ * changed, still fails with `noncanonical-installed-position-contract`.
+ */
+export function validateInstalledPositionContract(contract: unknown = readInstalledPositionContract()): readonly InstalledPositionFinding[] & { readonly advisories?: readonly InstalledPositionAdvisory[] } {
   const findings: InstalledPositionFinding[] = [];
   let snapshot: unknown;
   try { snapshot = readInstalledPositionContract(); }
   catch (error) { return [{ rule: "installed-position-contract-unavailable", path: "contracts/installed-position-contract.json", message: error instanceof Error ? error.message : String(error) }]; }
-  if (canonical(contract) !== canonical(snapshot)) return [{ rule: "noncanonical-installed-position-contract", path: "installedPositionContract", message: "must exactly match the immutable installed-position-contract snapshot shipped by @clossys/controller" }];
-  if (!keys(contract, ["schemaVersion", "kind", "referenceRule", "roleDisposition", "position"]) || contract.schemaVersion !== 1 || contract.kind !== "foundry-installed-position-ledger" || !keys(contract.roleDisposition, ["fields", "dispositions", "rule"]) || !keys(contract.position, ["fields", "workerComponentKinds", "stageBindingStages", "setpointValueShapes", "firstDayAssessmentFields", "recommendations", "setpointValueRule"])) return [{ rule: "invalid-installed-position-contract", path: "installedPositionContract", message: "must be the complete schemaVersion 1 installed-position contract" }];
-  const position = contract.position;
-  if (contract.referenceRule !== REFERENCE_VALUE_RULE || canonical(contract.roleDisposition.fields) !== canonical(dispositionFields) || canonical(contract.roleDisposition.dispositions) !== canonical(ROLE_DISPOSITIONS) || contract.roleDisposition.rule !== ROLE_DISPOSITION_RULE || canonical(position.fields) !== canonical(POSITION_FIELDS) || canonical(position.workerComponentKinds) !== canonical(WORKER_COMPONENT_KINDS) || canonical(position.stageBindingStages) !== canonical(universalStages) || canonical(position.setpointValueShapes) !== canonical(SETPOINT_VALUE_SHAPES) || canonical(position.firstDayAssessmentFields) !== canonical(firstDayFields) || canonical(position.recommendations) !== canonical(POSITION_RECOMMENDATIONS) || position.setpointValueRule !== SETPOINT_VALUE_RULE) findings.push({ rule: "installed-position-contract-vocabulary-drift", path: "installedPositionContract", message: "reference rule, fields, dispositions, worker kinds, stage bindings, setpoint shapes and rule, first-day fields, and recommendations must match the validator constants" });
-  return findings;
+  let advisory: InstalledPositionAdvisory | undefined;
+  let checked = contract;
+  if (canonical(contract) !== canonical(snapshot)) {
+    const historical = readHistoricalInstalledPositionContracts().find((entry) => canonical(entry.contract) === canonical(contract));
+    if (!historical) return [{ rule: "noncanonical-installed-position-contract", path: "installedPositionContract", message: "must exactly match the immutable installed-position-contract snapshot shipped by @clossys/controller" }];
+    advisory = legacyContractAdvisory("installedPositionContract", "installed-position", historical.version);
+    checked = snapshot;
+  }
+  if (!keys(checked, ["schemaVersion", "kind", "referenceRule", "roleDisposition", "position"]) || checked.schemaVersion !== 1 || checked.kind !== "foundry-installed-position-ledger" || !keys(checked.roleDisposition, ["fields", "dispositions", "rule"]) || !keys(checked.position, ["fields", "workerComponentKinds", "stageBindingStages", "setpointValueShapes", "firstDayAssessmentFields", "recommendations", "setpointValueRule"])) return [{ rule: "invalid-installed-position-contract", path: "installedPositionContract", message: "must be the complete schemaVersion 1 installed-position contract" }];
+  const position = checked.position;
+  if (checked.referenceRule !== REFERENCE_VALUE_RULE || canonical(checked.roleDisposition.fields) !== canonical(dispositionFields) || canonical(checked.roleDisposition.dispositions) !== canonical(ROLE_DISPOSITIONS) || checked.roleDisposition.rule !== ROLE_DISPOSITION_RULE || canonical(position.fields) !== canonical(POSITION_FIELDS) || canonical(position.workerComponentKinds) !== canonical(WORKER_COMPONENT_KINDS) || canonical(position.stageBindingStages) !== canonical(universalStages) || canonical(position.setpointValueShapes) !== canonical(SETPOINT_VALUE_SHAPES) || canonical(position.firstDayAssessmentFields) !== canonical(firstDayFields) || canonical(position.recommendations) !== canonical(POSITION_RECOMMENDATIONS) || position.setpointValueRule !== SETPOINT_VALUE_RULE) findings.push({ rule: "installed-position-contract-vocabulary-drift", path: "installedPositionContract", message: "reference rule, fields, dispositions, worker kinds, stage bindings, setpoint shapes and rule, first-day fields, and recommendations must match the validator constants" });
+  return advisory ? withAdvisories(findings, [advisory]) : findings;
 }
 
 export function validateInstalledPositionLedger(ledger: unknown, roleContract: unknown = readCanonicalRoleLoopContract()): InstalledPositionLedgerReport {
   const findings: InstalledPositionFinding[] = [];
+  const advisories: InstalledPositionAdvisory[] = [];
   findings.push(...validateInstalledPositionContract());
-  if (findings.length > 0) return { ok: false, findings, openRoles: 0, positions: 0 };
+  if (findings.length > 0) return { ok: false, findings, advisories, openRoles: 0, positions: 0 };
   let canonicalContract: unknown;
   try { canonicalContract = readCanonicalRoleLoopContract(); }
-  catch (error) { return { ok: false, findings: [{ rule: "canonical-role-contract-unavailable", path: "contracts/role-loop-archetypes.json", message: error instanceof Error ? error.message : String(error) }], openRoles: 0, positions: 0 }; }
-  if (canonical(roleContract) !== canonical(canonicalContract)) return { ok: false, findings: [{ rule: "noncanonical-role-contract", path: "roleContract", message: "must exactly match the immutable role-loop-archetypes snapshot shipped by @clossys/controller" }], openRoles: 0, positions: 0 };
-  if (!record(roleContract) || roleContract.schemaVersion !== 5 || !keys(roleContract, ["schemaVersion", "universalStages", "consumerBindings", "modes", "metricVocabulary", "qualificationVerdicts", "roles"]) || !record(roleContract.roles)) return { ok: false, findings: [{ rule: "unreadable-role-contract", path: "roles", message: "must be the complete schemaVersion 5 role contract" }], openRoles: 0, positions: 0 };
-  if (canonical(roleContract.universalStages) !== canonical(universalStages) || !record(roleContract.metricVocabulary) || canonical(roleContract.metricVocabulary.directions) !== canonical(metricDirections) || !record(roleContract.modes) || canonical(Object.keys(roleContract.modes).sort()) !== canonical(["assure", "fulfill", "interact", "optimize", "reconcile", "steward"])) return { ok: false, findings: [{ rule: "role-contract-vocabulary-drift", path: "roleContract", message: "stages, modes, and metric directions must match the shipped schemaVersion 5 contract" }], openRoles: 0, positions: 0 };
+  catch (error) { return { ok: false, findings: [{ rule: "canonical-role-contract-unavailable", path: "contracts/role-loop-archetypes.json", message: error instanceof Error ? error.message : String(error) }], advisories, openRoles: 0, positions: 0 }; }
+  if (canonical(roleContract) !== canonical(canonicalContract)) {
+    // A caller-supplied role contract that is not the current shipped
+    // snapshot but exactly matches a known historical one (currently only
+    // 0.9.10's, from before issue #1194's rename and the 0.9.11
+    // @clossys/customer role) is accepted: validation proceeds against the
+    // CURRENT canonical contract's rules below -- already compatible with a
+    // 0.9.10 ledger via the advisories elsewhere in this function -- with a
+    // non-failing `legacy-contract-copy` advisory recorded here. Anything
+    // else, including a historical contract with even one field changed,
+    // still fails with `noncanonical-role-contract` exactly as before.
+    const historical = readHistoricalRoleLoopContracts().find((entry) => canonical(entry.contract) === canonical(roleContract));
+    if (!historical) return { ok: false, findings: [{ rule: "noncanonical-role-contract", path: "roleContract", message: "must exactly match the immutable role-loop-archetypes snapshot shipped by @clossys/controller" }], advisories, openRoles: 0, positions: 0 };
+    advisories.push(legacyContractAdvisory("roleContract", "role-loop-archetypes", historical.version));
+    roleContract = canonicalContract;
+  }
+  if (!record(roleContract) || roleContract.schemaVersion !== 5 || !keys(roleContract, ["schemaVersion", "universalStages", "consumerBindings", "modes", "metricVocabulary", "qualificationVerdicts", "roles"]) || !record(roleContract.roles)) return { ok: false, findings: [{ rule: "unreadable-role-contract", path: "roles", message: "must be the complete schemaVersion 5 role contract" }], advisories, openRoles: 0, positions: 0 };
+  if (canonical(roleContract.universalStages) !== canonical(universalStages) || !record(roleContract.metricVocabulary) || canonical(roleContract.metricVocabulary.directions) !== canonical(metricDirections) || !record(roleContract.modes) || canonical(Object.keys(roleContract.modes).sort()) !== canonical(["assure", "fulfill", "interact", "optimize", "reconcile", "steward"])) return { ok: false, findings: [{ rule: "role-contract-vocabulary-drift", path: "roleContract", message: "stages, modes, and metric directions must match the shipped schemaVersion 5 contract" }], advisories, openRoles: 0, positions: 0 };
   const roles = new Set(Object.keys(roleContract.roles));
   const roleDirections = new Map<string, string>();
   for (const [name, declaration] of Object.entries(roleContract.roles)) {
@@ -79,7 +153,7 @@ export function validateInstalledPositionLedger(ledger: unknown, roleContract: u
     else fail(findings, "unreadable-role-direction", name, `role metric direction must be one of: ${metricDirections.join(", ")}`);
   }
   if (!record(ledger) || !keys(ledger, ["schemaVersion", "dispositions", "positions"]) || ledger.schemaVersion !== 1 || !Array.isArray(ledger.dispositions) || !Array.isArray(ledger.positions)) {
-    return { ok: false, findings: [{ rule: "unreadable-position-ledger", path: "ledger", message: "must be schemaVersion 1 with dispositions and positions arrays" }], openRoles: 0, positions: 0 };
+    return { ok: false, findings: [{ rule: "unreadable-position-ledger", path: "ledger", message: "must be schemaVersion 1 with dispositions and positions arrays" }], advisories, openRoles: 0, positions: 0 };
   }
   const document = ledger;
   const dispositions = new Map<string, { disposition: string; ids: string[] }>();
@@ -97,7 +171,24 @@ export function validateInstalledPositionLedger(ledger: unknown, roleContract: u
     if (dispositions.has(packageName)) fail(findings, "duplicate-role-disposition", path, "each active role has exactly one disposition");
     else dispositions.set(packageName, { disposition: String(item.disposition), ids: Array.isArray(item.positionIds) ? item.positionIds.filter(text) : [] });
   }
-  for (const name of roles) if (!dispositions.has(name)) fail(findings, "missing-role-disposition", name, "every active role must be explicitly open or not-applicable");
+  // The new-role missing-disposition exemption below must apply only to a
+  // ledger that could actually have been written against 0.9.10 -- never
+  // to one written against a version that already knows about the new
+  // role. A 0.9.10-shaped ledger is exactly: no position uses the current
+  // `learn` stageBindings key, and either at least one position uses the
+  // pre-#1194 `learnOrEscalate` key, or the ledger has no positions at all
+  // (0.9.10 could still emit an all-not-applicable ledger with zero
+  // positions). A ledger with even one `learn` position is current-format
+  // for this rule, including a mixed ledger that has both -- the strict
+  // reading, since a 0.9.10 ledger could never contain a `learn` position.
+  const isLegacyFormatLedger = !positionRecords.some((position) => record(position) && record(position.stageBindings) && Object.hasOwn(position.stageBindings, "learn"))
+    && (positionRecords.length === 0 || positionRecords.some((position) => record(position) && record(position.stageBindings) && Object.hasOwn(position.stageBindings, "learnOrEscalate")));
+  for (const name of roles) {
+    if (dispositions.has(name)) continue;
+    const introducedIn = rolesAddedAfterBaseline[name];
+    if (introducedIn && isLegacyFormatLedger) advise(advisories, "missing-disposition-for-new-role", name, `${name} was added in ${introducedIn}, after this ledger's 0.9.10 baseline; add an explicit disposition before the next minor.`);
+    else fail(findings, "missing-role-disposition", name, "every active role must be explicitly open or not-applicable");
+  }
   for (const name of dispositions.keys()) if (!roles.has(name)) fail(findings, "unknown-disposition-role", name, "not an active role");
 
   const positionIds = new Set<string>();
@@ -133,8 +224,17 @@ export function validateInstalledPositionLedger(ledger: unknown, roleContract: u
     if (!strings(position.guardrails, 1) || !strings(position.escalationPath, 1)) fail(findings, "invalid-constraints", path, "guardrails and escalationPath need at least one item");
     if (!Array.isArray(position.workerComponents) || position.workerComponents.length === 0 || position.workerComponents.some((worker: unknown) => !keys(worker, ["kind", "responsibility"]) || !WORKER_COMPONENT_KINDS.includes(worker.kind as never) || !text(worker.responsibility)) || new Set(position.workerComponents.map((worker: unknown) => record(worker) ? worker.kind : "")).size !== position.workerComponents.length) fail(findings, "invalid-worker-components", path, "worker components need unique declared kinds and responsibilities");
     const stageBindings = position.stageBindings;
-    if (!keys(stageBindings, universalStages)) fail(findings, "invalid-stage-bindings", path, "stageBindings needs one activity for sense, judge, act, verify, and learn");
-    else if (universalStages.some((stage) => !text(stageBindings[stage]))) fail(findings, "invalid-stage-bindings", path, "stageBindings needs one nonempty consumer activity for sense, judge, act, verify, and learn");
+    if (keys(stageBindings, universalStages)) {
+      if (universalStages.some((stage) => !text(stageBindings[stage]))) fail(findings, "invalid-stage-bindings", path, "stageBindings needs one nonempty consumer activity for sense, judge, act, verify, and learn");
+    } else if (keys(stageBindings, legacyStages)) {
+      // Exactly the pre-#1194 shape (learnOrEscalate, no learn) -- a ledger
+      // carrying both keys, or neither, falls through to the generic failure
+      // below exactly as it always has, since `keys` requires an exact match.
+      if (legacyStages.some((stage) => !text(stageBindings[stage]))) fail(findings, "invalid-stage-bindings", path, "stageBindings needs one nonempty consumer activity for sense, judge, act, verify, and learnOrEscalate");
+      else advise(advisories, "legacy-stage-name", `${path}.stageBindings`, "learnOrEscalate was renamed to learn in issue #1194; rename this key to learn before the next minor.");
+    } else {
+      fail(findings, "invalid-stage-bindings", path, "stageBindings needs one activity for sense, judge, act, verify, and learn");
+    }
     const assessment = position.firstDayAssessment;
     if (record(assessment)) rejectUnsafeReferences(assessment.evidenceRefs, `${path}.firstDayAssessment.evidenceRefs`, findings);
     if (!keys(assessment, firstDayFields) || !strings(assessment.gaps) || !text(assessment.target) || !strings(assessment.openQuestions) || !strings(assessment.criticalPath, 1) || !strings(assessment.deferredWork) || !POSITION_RECOMMENDATIONS.includes(assessment.recommendation as never) || !references(assessment.evidenceRefs, 1)) fail(findings, "invalid-first-day-assessment", path, "first-day assessment needs gaps, target, open questions, critical path, deferred work, recommendation, and value-safe evidence references; position.baseline is its single baseline");
@@ -147,7 +247,7 @@ export function validateInstalledPositionLedger(ledger: unknown, roleContract: u
     else if (positionPackages.get(id) !== packageName) fail(findings, "wrong-position-role", packageName, `${id} belongs to a different role`);
   }
   for (const id of positionIds) if (!cited.has(id)) fail(findings, "uncited-position", id, "every position must be owned by its open role disposition");
-  return { ok: findings.length === 0, findings, openRoles: [...dispositions.values()].filter((item) => item.disposition === "open").length, positions: positionIds.size };
+  return { ok: findings.length === 0, findings, advisories, openRoles: [...dispositions.values()].filter((item) => item.disposition === "open").length, positions: positionIds.size };
 }
 
 export {

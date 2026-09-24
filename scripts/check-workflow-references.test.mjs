@@ -453,9 +453,26 @@ test("real candidate framework acceptance runs only after install and build in r
 // left the key unchanged, and a cache HIT served a `dist/` (and sibling
 // generated `skill-catalogue/`/`contracts/`) that no longer reflected the
 // real tree.
+//
+// A second, distinct gap in that same family: pack-capability-catalogue.mjs
+// also imports `scripts/lib/capability-catalogue.mjs` at the repository
+// root -- code, not a doc or a per-package script, so it falls outside
+// every one of the paths above too. A change to only that shared library
+// left the key unchanged and let a cached advisor `dist/` go stale in
+// exactly the same way. `scripts/lib/**` covers it (and any future
+// package `build` script that imports a root-level helper from there).
 test("every workspace-build-cache step's key covers every input npm run build can read (issue #1324 item 2)", () => {
   const workflow = readFileSync(join(repoRoot, ".github/workflows/ci.yml"), "utf8");
-  const requiredHashedPaths = ["package.json", "package-lock.json", "packages/*/src/**", "packages/*/package.json", "packages/*/tsconfig*.json", "packages/*/scripts/**", "docs/contracts/**"];
+  const requiredHashedPaths = [
+    "package.json",
+    "package-lock.json",
+    "packages/*/src/**",
+    "packages/*/package.json",
+    "packages/*/tsconfig*.json",
+    "packages/*/scripts/**",
+    "scripts/lib/**",
+    "docs/contracts/**",
+  ];
   const jobsWithTheCache = ["readme-examples-typecheck", "packed-consumer-readiness", "build"];
   const keyLines = [];
   for (const jobName of jobsWithTheCache) {

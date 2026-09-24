@@ -652,6 +652,14 @@ named reason rather than a partial read.
     "evidence": { "schemaVersion": 3, "headSha": "...", "baseSha": "...", "paginationComplete": true, "checks": [], "reviews": [], "threads": [] },
     "policy": { "requiredChecks": ["<a required context>"], "requireApproval": false, "requireSecondaryReview": false, "decisionUse": "advisory" },
     "options": { "requireReviewPresence": true, "headShaUnderTest": "..." }
+    // On a merge-queue run, headShaUnderTest is the queued pull request's own
+    // head (never the group commit, and never the sha embedded in the queue
+    // ref, which is the base), and options also carries
+    //   "mergeGroup": { "headSha": "<merge_group.head_sha>", "containsHeadShaUnderTest": true }
+    // where containsHeadShaUnderTest is the caller's own answer to "does the
+    // group commit merge exactly this head" (for a MERGE-method queue, is it
+    // the group commit's second parent -- mere ancestry also admits older
+    // commits on the branch). Anything but a proven true is indeterminate.
   },
 
   "policyDrift": {

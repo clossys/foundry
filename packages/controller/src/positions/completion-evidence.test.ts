@@ -14,6 +14,56 @@ const repoRoot = resolve(packageRoot, "../..");
 const read = (path: string): unknown => JSON.parse(readFileSync(path, "utf8"));
 const evidence = () => structuredClone(read(join(repoRoot, "docs/contracts/completion-evidence.fixture.json")) as object) as Record<string, unknown>;
 const ledger = () => structuredClone(read(join(repoRoot, "docs/contracts/installed-position-ledger.fixture.json")) as object) as Record<string, unknown>;
+
+// The real 0.9.10 shape of docs/contracts/installed-position-ledger.fixture.json,
+// captured verbatim via `git show 62d9dc570c0af76cd89e49bc40002fb5b36da2ca:
+// docs/contracts/installed-position-ledger.fixture.json` (see index.test.ts
+// for the same fixture and the compatibility audit it comes from). The
+// linked position ("fixture-integrator") is byte-identical to the current
+// fixture; only the disposition list and stageBindings differ.
+const legacyLedger090 = () => structuredClone({
+  schemaVersion: 1,
+  dispositions: [
+    { package: "@clossys/advisor", disposition: "not-applicable", reason: "Synthetic schema fixture; no consumer decision.", positionIds: [] },
+    { package: "@clossys/controller", disposition: "not-applicable", reason: "Synthetic schema fixture; no consumer decision.", positionIds: [] },
+    { package: "@clossys/architect", disposition: "not-applicable", reason: "Synthetic schema fixture; no consumer decision.", positionIds: [] },
+    { package: "@clossys/inspector", disposition: "not-applicable", reason: "Synthetic schema fixture; no consumer decision.", positionIds: [] },
+    { package: "@clossys/builder", disposition: "not-applicable", reason: "Synthetic schema fixture; no consumer decision.", positionIds: [] },
+    { package: "@clossys/locksmith", disposition: "not-applicable", reason: "Synthetic schema fixture; no consumer decision.", positionIds: [] },
+    { package: "@clossys/integrator", disposition: "open", reason: "Synthetic schema fixture; exercises a complete open position.", positionIds: ["fixture-integrator"] },
+    { package: "@clossys/observer", disposition: "not-applicable", reason: "Synthetic schema fixture; no consumer decision.", positionIds: [] },
+    { package: "@clossys/strategist", disposition: "not-applicable", reason: "Synthetic schema fixture; no consumer decision.", positionIds: [] },
+    { package: "@clossys/writer", disposition: "not-applicable", reason: "Synthetic schema fixture; no consumer decision.", positionIds: [] },
+    { package: "@clossys/designer", disposition: "not-applicable", reason: "Synthetic schema fixture; no consumer decision.", positionIds: [] },
+    { package: "@clossys/publisher", disposition: "not-applicable", reason: "Synthetic schema fixture; no consumer decision.", positionIds: [] },
+    { package: "@clossys/influencer", disposition: "not-applicable", reason: "Synthetic schema fixture; no consumer decision.", positionIds: [] },
+    { package: "@clossys/bouncer", disposition: "not-applicable", reason: "Synthetic schema fixture; no consumer decision.", positionIds: [] },
+    { package: "@clossys/butler", disposition: "not-applicable", reason: "Synthetic schema fixture; no consumer decision.", positionIds: [] },
+    { package: "@clossys/messenger", disposition: "not-applicable", reason: "Synthetic schema fixture; no consumer decision.", positionIds: [] },
+    { package: "@clossys/giver", disposition: "not-applicable", reason: "Synthetic schema fixture; no consumer decision.", positionIds: [] },
+    { package: "@clossys/keeper", disposition: "not-applicable", reason: "Synthetic schema fixture; no consumer decision.", positionIds: [] },
+  ],
+  positions: [
+    {
+      id: "fixture-integrator",
+      package: "@clossys/integrator",
+      businessMetricPath: { l1: "synthetic value", l2: "synthetic northstar", l3: "synthetic operating metric" },
+      causalHypothesis: "Synthetic fixture only; it establishes no consumer hypothesis.",
+      baseline: { value: 0.5, observedAt: "2026-08-17T00:00:00.000Z", evidenceRefs: ["fixture-baseline"] },
+      setpoint: { value: 1, evidenceRefs: ["fixture-setpoint"] },
+      operatingScope: { description: "Synthetic fixture scope.", included: ["fixture input"], excluded: ["provider mutation"] },
+      authority: { decisionOwner: "fixture owner", actionAuthority: "fixture automation" },
+      evidenceSource: { description: "Synthetic fixture evidence.", locator: "fixture" },
+      cadence: { measure: "fixture", review: "fixture" },
+      budget: { amount: 0, unit: "currency", period: "fixture" },
+      guardrails: ["No live action."],
+      escalationPath: ["Fixture escalation only."],
+      workerComponents: [{ kind: "deterministic", responsibility: "Validate fixture syntax." }],
+      stageBindings: { sense: "Read fixture evidence.", judge: "Compare fixture values.", act: "Report fixture result.", verify: "Re-read fixture evidence.", learnOrEscalate: "Escalate fixture failure." },
+      firstDayAssessment: { gaps: [], target: "Synthetic target state.", openQuestions: [], criticalPath: ["Validate the fixture."], deferredWork: [], recommendation: "install", evidenceRefs: ["fixture-baseline", "fixture-setpoint"] },
+    },
+  ],
+}) as Record<string, unknown>;
 const at = String.fromCharCode(64);
 const unsafeRetainedReferences = [
   "audit credential:secret-value",
@@ -70,6 +120,16 @@ const nearCapLedgerMutations = [
 ] as const;
 
 describe("completion evidence", () => {
+  it("is no longer indeterminate on invalid-position-ledger for a real 0.9.10 legacy ledger (#1394)", () => {
+    // Before the read-side compatibility fix, this same call returned
+    // `indeterminate` / `invalid-position-ledger` solely because the
+    // legacy ledger's stageBindings and missing @clossys/customer
+    // disposition failed validateInstalledPositionLedger. Neither the
+    // linked position nor the completion evidence itself changed.
+    const report = validateCompletionEvidence(evidence(), legacyLedger090());
+    expect(report.result).toEqual({ verdict: "satisfied", evaluated: 1 });
+  });
+
   it("accepts complete consumer-owned evidence and shipped contract parity", () => {
     const report = validateCompletionEvidence(evidence(), ledger());
     expect(report.result).toEqual({ verdict: "satisfied", evaluated: 1 });

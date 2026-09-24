@@ -1,0 +1,12 @@
+{
+  "id": "invalid-two-primary-problems",
+  "description": "Guardrail regression: exactly one confirmed problem must be marked primary (one primary problem per kit, #1176's de-risking comment). Two primary flags must come back indeterminate rather than silently picking one. No real company; a synthetic client for regression coverage only.",
+  "confirmedProblems": [
+    { "id": "strategist-unclear-direction", "primary": true },
+    { "id": "designer-interface-quality", "primary": true }
+  ],
+  "expect": {
+    "state": "indeterminate",
+    "reasonIncludes": "exactly one confirmed problem must be marked primary"
+  }
+}

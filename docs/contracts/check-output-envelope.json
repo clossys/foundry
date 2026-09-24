@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "kind": "foundry-check-output-envelope",
-  "$comment": "One output shape for every check command's JSON report, across every role. Issue #1174. Check commands already share the 0/1/2 (satisfied/violated/indeterminate) exit convention; this is the JSON body behind that exit so Advisor and Launcher can render status uniformly, and in plain language, across roles they did not author. Contract only in this wave -- no package emits this envelope yet (see docs/contracts/package-framework.json's own `enforcement.mode`, which this gate mirrors: validation exists, adoption does not).",
+  "$comment": "One output shape for every check command's JSON report, across every role. Issue #1174. Check commands already share the 0/1/2 (satisfied/violated/indeterminate) exit convention; this is the JSON body behind that exit so Advisor and Launcher can render status uniformly, and in plain language, across roles they did not author. The canonical TypeScript shape and constructor live in packages/controller/src/envelope.ts (`buildCheckOutputEnvelope`, `envelopeToExitCode`); how a package adopts them is the `adoption` rule below (issue #1384).",
   "fields": ["package", "version", "verdict", "summary", "findings", "metric", "nextAction"],
   "requiredFields": ["package", "version", "verdict", "summary", "findings"],
   "optionalFields": ["metric", "nextAction"],
@@ -20,6 +20,18 @@
     "severity": "one of: \"error\", \"warning\"",
     "message": "string -- human-readable, names what is wrong",
     "path": "optional string -- the file or field the finding is about"
+  },
+  "adoption": {
+    "issue": "#1384",
+    "canonicalSource": "packages/controller/src/envelope.ts",
+    "rule": "No package hand-writes a second definition of this shape. A package that depends on @clossys/controller -- names it in its own manifest's `dependencies` or `peerDependencies` -- imports `buildCheckOutputEnvelope` from it; an import of @clossys/controller without that declaration is not adoption, because it resolves here only through workspace hoisting and fails with ERR_MODULE_NOT_FOUND once the package is packed and installed. A package with no runtime dependencies carries a GENERATED copy at src/generated/check-output-envelope.ts, produced by scripts/sync-envelope-copies.mjs from the canonical source (the one transform: `GateVerdict` is inlined from packages/controller/src/gates/result.ts), and never edits it: a copy that differs by one byte from what the generator produces now is a finding in report mode and --enforce alike.",
+    "evidence": "Adoption is shown by the package's own shipped source (src/, excluding *.test.ts files, *.d.ts files, and any directory named `generated/` -- the generated copy defines the constructor, it does not call it -- or `testing/` -- test support, excluded from the packed files as @clossys/controller's `!src/testing/**` does -- at any depth) calling `buildCheckOutputEnvelope` imported from @clossys/controller, from the canonical module itself, or from a current generated copy -- the constructor enforces this contract's hard rules at construction time. A hand-written sample document (the former packages/<pkg>/check-output-envelope.fixture.json convention) is reported `sample-only` and is never accepted as adoption: it proves the shape can be typed, not that the package emits it. The call scan is static: comments and string, template-literal, and regex-literal text are blanked first, so a quoted constructor name is never a call; it cannot prove a matched call is reachable. Graded by scripts/check-package-conformance.mjs item 2, report mode first.",
+    "alternativesRejected": {
+      "zero-dependency packages take a runtime dependency on @clossys/controller": "breaks the zero-dependency install those packages promise, for a handful of types and one small function",
+      "a separate published envelope-only package": "a new package to version, qualify, and publish for one file; a generated, drift-checked copy gives the same single source with no new release surface",
+      "keep accepting a sample file": "passes a package that emits nothing"
+    },
+    "migration": "Existing hand-written local shapes (for example packages/designer/src/tokens/identity-checks.ts's IdentityVerdict / IdentityFinding) convert in each package's own lane, not in the change that set this rule."
   },
   "rule": "`summary` is always exactly one sentence in plain language; it is the ONLY field Advisor and Launcher may show a non-technical client without translation. `findings` is non-empty whenever `verdict` is \"violated\" or \"indeterminate\" -- a non-satisfied verdict with no findings is itself malformed, because it reports a problem while refusing to say what it is. `metric`, when present, uses the same `direction` vocabulary docs/contracts/role-loop-archetypes.json already declares (`metricVocabulary.directions`)."
 }

@@ -4,8 +4,8 @@
  * access here; a caller reads the file and hands this the parsed value.
  */
 import { LIFECYCLE_CONDITIONS, LIFECYCLE_STATES } from "./lifecycle.js";
-import { BLOCKER_KINDS, LOOP_STAGES } from "./types.js";
-import type { LoopCapabilityState, LoopState } from "./types.js";
+import { BLOCKER_KINDS, BLOCKER_OWNERS, LOOP_STAGES } from "./types.js";
+import type { BlockerKind, LoopCapabilityState, LoopState } from "./types.js";
 
 export interface LoopStateFinding {
   readonly rule: string;
@@ -31,14 +31,18 @@ function findingsForNextAction(nextAction: unknown, path: string): LoopStateFind
   return [];
 }
 
-function findingsForBlocker(blocker: unknown, path: string): LoopStateFinding[] {
+function findingsForBlocker(blocker: unknown, path: string, ownerId: string): LoopStateFinding[] {
   if (!isRecord(blocker)) return [{ rule: "invalid-blocker", path, message: "blocker must be an object" }];
   const findings: LoopStateFinding[] = [];
   if (!isText(blocker.capabilityId)) findings.push({ rule: "invalid-blocker", path: `${path}.capabilityId`, message: "capabilityId must be a nonempty string" });
+  else if (blocker.capabilityId !== ownerId) findings.push({ rule: "blocker-capability-mismatch", path: `${path}.capabilityId`, message: `capabilityId must equal its own capability (${ownerId})` });
   if (typeof blocker.kind !== "string" || !(BLOCKER_KINDS as readonly string[]).includes(blocker.kind)) {
     findings.push({ rule: "invalid-blocker-kind", path: `${path}.kind`, message: `kind must be one of ${BLOCKER_KINDS.join(", ")}` });
+  } else if (!isText(blocker.owner)) {
+    findings.push({ rule: "invalid-blocker", path: `${path}.owner`, message: "owner must be a nonempty string" });
+  } else if (blocker.owner !== BLOCKER_OWNERS[blocker.kind as BlockerKind]) {
+    findings.push({ rule: "blocker-owner-mismatch", path: `${path}.owner`, message: `owner must be ${BLOCKER_OWNERS[blocker.kind as BlockerKind]} for kind ${blocker.kind}` });
   }
-  if (!isText(blocker.owner)) findings.push({ rule: "invalid-blocker", path: `${path}.owner`, message: "owner must be a nonempty string" });
   if (!isIsoLike(blocker.since)) findings.push({ rule: "invalid-blocker", path: `${path}.since`, message: "since must be a readable ISO datetime" });
   findings.push(...findingsForNextAction(blocker.nextAction, `${path}.nextAction`));
   return findings;
@@ -81,7 +85,7 @@ function findingsForCapability(capability: unknown, id: string): LoopStateFindin
   findings.push(...findingsForFingerprint(capability.inputFingerprints, `${path}.inputFingerprints`));
   findings.push(...findingsForFingerprint(capability.lastWrittenFingerprints, `${path}.lastWrittenFingerprints`));
   if (!Array.isArray(capability.blockers)) findings.push({ rule: "invalid-blockers", path: `${path}.blockers`, message: "blockers must be an array" });
-  else capability.blockers.forEach((blocker, index) => findings.push(...findingsForBlocker(blocker, `${path}.blockers[${index}]`)));
+  else capability.blockers.forEach((blocker, index) => findings.push(...findingsForBlocker(blocker, `${path}.blockers[${index}]`, id)));
   if (!Array.isArray(capability.decisions)) findings.push({ rule: "invalid-decisions", path: `${path}.decisions`, message: "decisions must be an array" });
   else capability.decisions.forEach((decision, index) => findings.push(...findingsForDecision(decision, `${path}.decisions[${index}]`)));
   return findings;

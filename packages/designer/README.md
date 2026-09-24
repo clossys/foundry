@@ -3959,7 +3959,7 @@ name: find its current kebab-case name in the target version (check
 THIRD-PARTY-NOTICES.md's rename table first), copy its `<svg>` children
 into `icon-source-data.json` as `[tag, { ...attrs }]` tuples, update the
 pinned-version references in THIRD-PARTY-NOTICES.md and this package's
-CHANGELOG.md, then run `node scripts/generate-icons.mjs` and `npm test`
+changelog, then run `node scripts/generate-icons.mjs` and `npm test`
 — `src/icons/icons.test.ts` and `src/icons/tree-shake.test.ts` both
 re-verify the regenerated data. See `scripts/generate-icons.mjs`'s own
 header comment for the full procedure, including adding a genuinely new
@@ -4137,6 +4137,9 @@ not a grab-bag).
 | `TestimonialProps` | type | Props for `Testimonial`: `quote`, `attributorName`, `attributorRole`, `avatarSrc`/`avatarAlt` (a discriminated pair — both or neither), `className`, `style`, plus every native `<figure>` attribute except `children`. |
 | `ArticleBody` | component | Thin, token-styled container for pre-structured long-form content (real `<h2>`/`<p>`/`<ul>`/... children) — no markdown parsing, no content-shape schema. |
 | `ArticleBodyProps` | type | Props for `ArticleBody`: `children`, `className`, `style`, plus every native `<article>` attribute. |
+| `SectionFrame` | component | Full-bleed marketing section band: a `ground` surface, vertical section rhythm, horizontal page padding, and a measured inner column. Sets `data-designer-section-frame` on its outer `<section>`. Compose `ArticleBody`, `Stat`, and other blocks that do not own their own band inside it. |
+| `SectionFrameProps` | type | Props for `SectionFrame`: `ground` (default `"base"`), `measure` (default `"content"`), `children`, `className`, `style`, plus every native `<section>` attribute. |
+| `SectionMeasure` | type | `"content" \| "wide" \| "prose"`. How wide `SectionFrame`'s inner column is: it maps to the `--ui-width-content-max`, `--ui-width-wide-max`, or `--ui-width-prose-max` token. |
 | `mergeUiClasses` | function | Merges token-aware Tailwind utility classes with last-argument precedence; used by surface-level compositions built from UI primitives. |
 | `Shell` | component | The persistent application frame. Carries `Shell.Header`, `Shell.SideNav`, `Shell.Main`, `Shell.Rail`, `Shell.Footer`. |
 | `ShellProps` | type | Props for `Shell`: `children` (any subset of the five slots above, in any order), plus every native `<div>` attribute. |
@@ -4788,3 +4791,7 @@ a whole.
 ## Licence
 
 MIT
+
+## Changelog
+
+Release notes for every version are in the [changelog](https://github.com/clossys/foundry/blob/main/docs/changelogs/designer.md), kept in the public repository rather than in the installed package.

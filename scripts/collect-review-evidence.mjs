@@ -9,15 +9,25 @@
 //
 //   node scripts/collect-review-evidence.mjs \
 //     --merge-group-head-ref <refs/heads/gh-readonly-queue/base/pr-N-sha> \
+//     --merge-group-head-sha <merge_group.head_sha> \
 //     [--repo <owner>/<name>] [--branch <base-branch>] [--merge <path>] ...
 //
 // The second form is a merge-group run's own way of naming --pr/--head: a
 // `merge_group` event carries no `pull_request` object at all, only its own
-// synthetic `head_ref` (see `parseMergeGroupQueueRef`'s own doc comment).
-// Passing it resolves the queued PR's real number and head sha from that
-// ref and uses those — a malformed ref refuses to collect evidence rather
-// than guessing. `--merge-group-head-ref` always overrides `--pr`/`--head`
-// when both are given.
+// synthetic `head_ref` and the group commit it built (`head_sha`). The ref
+// names the queued PR's NUMBER; the sha embedded in it is the BASE the entry
+// was queued onto, never the PR's head (see `parseMergeGroupQueueRef`'s own
+// doc comment for the measurement). So the commit under test is resolved in
+// two independent steps: the PR's current head is read from the pull
+// request itself (a REST read, separate from the GraphQL query the evidence
+// comes from), and that head is then PROVEN to be exactly the group commit's
+// second parent (`git rev-parse --verify <group>^2`) -- what this entry
+// merges under the ruleset's MERGE method, not merely some ancestor. Both
+// facts are handed to the inspector (`options.headShaUnderTest`,
+// `options.mergeGroup`), which fails closed on either one. A malformed ref, a malformed group sha, or a head
+// that cannot be read refuses to collect evidence rather than guessing.
+// `--merge-group-head-ref` always overrides `--pr`/`--head` when both are
+// given.
 //
 // Prints a `VerifyStandardsInputs`-shaped JSON document (see
 // packages/inspector/src/verify.ts) carrying a populated `reviewEvidence`
@@ -127,7 +137,7 @@
 // "evidence bound to a different head" cases for exactly this constructed
 // both ways.
 
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { parseArgs } from "node:util";
 import { fileURLToPath } from "node:url";
@@ -150,45 +160,57 @@ function isSha(value) {
 /**
  * A `merge_group` event names no PR directly — `pull_request.number` and
  * `pull_request.head.sha` simply do not exist on that payload. What it
- * carries instead is `head_ref`, the queue's own synthetic ref: GitHub
- * shapes it `refs/heads/gh-readonly-queue/<base>/pr-<number>-<sha>`, where
- * `<sha>` is the queued PR's OWN head commit — not the merge group's
- * synthetic test commit (`merge_group.head_sha`), which is a different
- * commit (base merged with every entry ahead of this one in the group) and
- * was never reviewed by anyone. This is what lets a merge-group run ask
- * "whose PR is this, and which commit did a reviewer actually look at".
+ * carries instead is `head_ref`, the queue's own synthetic ref, shaped
+ * `refs/heads/gh-readonly-queue/<base>/pr-<number>-<sha>`.
+ *
+ * `<sha>` there is the BASE this entry was queued onto (the base branch's
+ * tip, or the entry ahead of it) — NOT the queued PR's own head. Measured on
+ * run 35929488634 (#1253): head_ref `gh-readonly-queue/main/pr-1374-5784ce21…`,
+ * group commit 141ba434 with parents [5784ce21 (main's tip), b7fb8925 (PR
+ * #1374's head)]. An earlier version of this function read that sha as the
+ * PR head, so every merge-group run reported `evidence-head-mismatch`
+ * against main's own tip and the queue ejected every entry.
+ *
+ * So this returns the PR `number` and that `baseSha`, and deliberately
+ * nothing that could be mistaken for a head: the head is resolved from the
+ * pull request itself and proven to be the group commit's second parent (see
+ * `resolvePrAndHead` and `main`).
  *
  * Returns `null` for anything that does not match the exact shape —
  * `refs/heads/` is optional (some contexts hand this value over without it)
- * but everything else is fixed — rather than guessing. `main`'s own caller
- * turns `null` into a loud failure (see `resolvePrAndHead` below): a
- * malformed or unrecognized ref must refuse to collect evidence at all,
- * never fall back to reviewing the wrong commit, or no commit.
+ * but everything else is fixed — rather than guessing. A malformed or
+ * unrecognized ref must refuse to collect evidence at all, never fall back
+ * to reviewing the wrong commit, or no commit.
  */
 export function parseMergeGroupQueueRef(headRef) {
   if (typeof headRef !== "string") return null;
   const match = /^(?:refs\/heads\/)?gh-readonly-queue\/[^/]+\/pr-(\d+)-([0-9a-f]{40})$/.exec(headRef.trim());
   if (!match) return null;
-  return { number: Number(match[1]), headSha: match[2] };
+  return { number: Number(match[1]), baseSha: match[2] };
 }
 
 /**
  * Resolves the `--pr`/`--head` this run collects evidence for, folding in an
- * optional `--merge-group-head-ref`. Pure — it returns a result object
- * rather than exiting the process — so every way a merge-group run can
- * arrive at (or fail to arrive at) a target commit is directly testable
- * without touching `gh` or `process.exit`; see this file's own test suite,
- * in particular the four cases the CI-speed PR's own brief calls out by
- * name: an approved head, a head reviewed at a different sha, a BLOCKING
- * (changes-requested) review, and a malformed ref. `main` is the only
+ * optional `--merge-group-head-ref`/`--merge-group-head-sha`. Pure — it
+ * returns a result object rather than exiting the process — so every way a
+ * merge-group run can arrive at (or fail to arrive at) a target is directly
+ * testable without touching `gh` or `process.exit`. `main` is the only
  * caller that turns an `error` into a process exit.
+ *
+ * On the pull_request path it returns `{ pr, head }`, exactly as before.
+ *
+ * On the merge-group path it returns `{ pr, mergeGroup: { headSha, baseSha } }`
+ * and NO `head`: the queue ref does not name the PR's head, so this refuses
+ * to invent one. `main` reads the PR's current head and proves it is exactly
+ * `mergeGroup.headSha`'s second parent before using it —
+ * see `resolveMergeGroupHead`.
  *
  * `mergeGroupHeadRef`, when supplied, always wins over `pr`/`head` — a
  * merge-group run's own `--pr`/`--head` flags (if the caller passed them
  * too) would otherwise silently name a different commit than the one the
- * queue ref actually identifies.
+ * queue actually built.
  */
-export function resolvePrAndHead({ pr, head, mergeGroupHeadRef } = {}) {
+export function resolvePrAndHead({ pr, head, mergeGroupHeadRef, mergeGroupHeadSha } = {}) {
   if (typeof mergeGroupHeadRef === "string" && mergeGroupHeadRef.length > 0) {
     const resolved = parseMergeGroupQueueRef(mergeGroupHeadRef);
     if (!resolved) {
@@ -198,11 +220,79 @@ export function resolvePrAndHead({ pr, head, mergeGroupHeadRef } = {}) {
           "gh-readonly-queue/<base>/pr-<number>-<40-lowercase-hex-sha> — refusing to guess which PR or commit this run is about",
       };
     }
-    return { pr: String(resolved.number), head: resolved.headSha };
+    if (!isSha(mergeGroupHeadSha)) {
+      return {
+        error:
+          "--merge-group-head-sha <40-lowercase-hex-sha> is required with --merge-group-head-ref — the merge-group commit " +
+          "the queued PR's head must be proven to be contained in",
+      };
+    }
+    return { pr: String(resolved.number), mergeGroup: { headSha: mergeGroupHeadSha, baseSha: resolved.baseSha } };
   }
   if (!pr) return { error: "--pr <number> is required" };
   if (!head || !isSha(head)) return { error: "--head <40-lowercase-hex-sha> is required — the exact commit this run is testing" };
   return { pr, head };
+}
+
+/**
+ * The merge-group half of head resolution. Pure over its two injected reads:
+ *
+ *   - `prHead` — the PR's CURRENT head, read from the pull request itself
+ *     (in `main`, a REST read separate from the GraphQL query the evidence
+ *     bundle comes from, so the inspector's own `evidence-head-mismatch`
+ *     comparison stays a comparison between two reads, not a value compared
+ *     with itself).
+ *   - `readSecondParent(groupHeadSha)` — the group commit's second parent
+ *     (`git rev-parse --verify <group>^2`), or throws when it cannot be read.
+ *
+ * WHY THE SECOND PARENT, NOT "AN ANCESTOR"
+ * The ruleset's `merge_method` is MERGE, so each group commit is
+ * merge(<previous group commit or base>, <this entry's PR head>): its second
+ * parent is EXACTLY the commit this entry merges. "Is an ancestor of the
+ * group commit" is weaker: every older commit on the PR branch is also an
+ * ancestor, so a head read that raced a push after enqueue could bind
+ * approved evidence at an older commit H0 while the group actually carries an
+ * unreviewed H1. Equality with the second parent refuses that. Under SQUASH
+ * or REBASE the group commit has no second parent; the read then fails and
+ * this refuses, fail-closed, rather than guessing.
+ *
+ * Returns `{ headShaUnderTest, mergeGroup: { headSha, containsHeadShaUnderTest } }`
+ * or `{ error }`. A PR head that is NOT the second parent is returned, not
+ * refused, with `containsHeadShaUnderTest: false`, so the inspector reports
+ * it as a named, auditable `merge-group-head-not-contained` rather than a
+ * bare collector crash. A head or second parent that cannot be read is an
+ * error: nothing is established, so nothing is emitted.
+ */
+export function resolveMergeGroupHead({ groupHeadSha, prHead, readSecondParent }) {
+  if (!isSha(groupHeadSha)) return { error: `merge-group head sha ${JSON.stringify(groupHeadSha)} is not a 40-lowercase-hex sha` };
+  const head = typeof prHead === "string" ? prHead.trim().toLowerCase() : prHead;
+  if (!isSha(head)) return { error: `the pull request's current head ${JSON.stringify(prHead)} is not a 40-lowercase-hex sha` };
+  let secondParent;
+  try {
+    secondParent = readSecondParent(groupHeadSha);
+  } catch (error) {
+    return { error: `could not read the second parent of merge-group commit ${groupHeadSha}: ${error.message}` };
+  }
+  secondParent = typeof secondParent === "string" ? secondParent.trim().toLowerCase() : secondParent;
+  if (!isSha(secondParent)) {
+    return { error: `the second parent of merge-group commit ${groupHeadSha} (${JSON.stringify(secondParent)}) is not a 40-lowercase-hex sha` };
+  }
+  return { headShaUnderTest: head, mergeGroup: { headSha: groupHeadSha, containsHeadShaUnderTest: secondParent === head } };
+}
+
+/**
+ * `git rev-parse --verify <group>^2` in `cwd`. Any non-zero exit (no such
+ * commit, or a commit with no second parent) throws — an unreadable parent is
+ * never read as either answer. The workflow checks out with `fetch-depth: 0`.
+ */
+export function gitSecondParentReader(cwd) {
+  return (groupHeadSha) => {
+    const result = spawnSync("git", ["rev-parse", "--verify", "--quiet", `${groupHeadSha}^2^{commit}`], { cwd, encoding: "utf8" });
+    if (result.status !== 0) {
+      throw new Error(`git rev-parse --verify ${groupHeadSha}^2 exited ${result.status ?? result.signal}: ${String(result.stderr ?? "").trim() || "no second parent"}`);
+    }
+    return result.stdout.trim();
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -462,10 +552,18 @@ export function buildReviewPolicy(raw, { requiredChecksFromRuleset } = {}) {
   };
 }
 
-/** Builds the `ReviewEvidenceOptions` half of the section this script emits. See this file's header for `headShaUnderTest`. */
-export function buildReviewEvidenceOptions({ headShaUnderTest, requireReviewPresence }) {
+/**
+ * Builds the `ReviewEvidenceOptions` half of the section this script emits.
+ * See this file's header for `headShaUnderTest`. `mergeGroup` is written only
+ * on a merge-group run (see `resolveMergeGroupHead`); the pull_request path
+ * never carries it.
+ */
+export function buildReviewEvidenceOptions({ headShaUnderTest, requireReviewPresence, mergeGroup }) {
   const options = { requireReviewPresence: requireReviewPresence === true };
   if (typeof headShaUnderTest === "string" && headShaUnderTest.length > 0) options.headShaUnderTest = headShaUnderTest;
+  if (mergeGroup !== undefined) {
+    options.mergeGroup = { headSha: mergeGroup.headSha, containsHeadShaUnderTest: mergeGroup.containsHeadShaUnderTest };
+  }
   return options;
 }
 
@@ -543,6 +641,11 @@ function defaultFetchBranchRules({ owner, name, branch }) {
   return JSON.parse(out);
 }
 
+/** The PR's current head, read over REST — deliberately a separate read from `PULL_REQUEST_QUERY`'s `headRefOid`. */
+function defaultFetchPullRequestHead({ owner, name, number }) {
+  return execFileSync("gh", ["api", `repos/${owner}/${name}/pulls/${number}`, "--jq", ".head.sha"], { encoding: "utf8" }).trim();
+}
+
 function defaultRepoFromGh() {
   return execFileSync("gh", ["repo", "view", "--json", "nameWithOwner", "-q", ".nameWithOwner"], { encoding: "utf8" }).trim();
 }
@@ -563,7 +666,14 @@ function readPolicyFile(path) {
 
 export function main(
   argv,
-  { fetchPullRequest = defaultFetchPullRequest, fetchBranchRules = defaultFetchBranchRules, repoFromGh = defaultRepoFromGh } = {},
+  {
+    fetchPullRequest = defaultFetchPullRequest,
+    fetchBranchRules = defaultFetchBranchRules,
+    repoFromGh = defaultRepoFromGh,
+    fetchPullRequestHead = defaultFetchPullRequestHead,
+    readSecondParent = gitSecondParentReader(process.cwd()),
+    write = (text) => process.stdout.write(text),
+  } = {},
 ) {
   const { values } = parseArgs({
     args: argv,
@@ -577,13 +687,20 @@ export function main(
       "required-checks-from-ruleset": { type: "boolean", default: false },
       "require-review-presence": { type: "boolean", default: false },
       "merge-group-head-ref": { type: "string" },
+      "merge-group-head-sha": { type: "string" },
     },
   });
 
-  const resolved = resolvePrAndHead({ pr: values.pr, head: values.head, mergeGroupHeadRef: values["merge-group-head-ref"] });
+  const resolved = resolvePrAndHead({
+    pr: values.pr,
+    head: values.head,
+    mergeGroupHeadRef: values["merge-group-head-ref"],
+    mergeGroupHeadSha: values["merge-group-head-sha"],
+  });
   if (resolved.error) fail(resolved.error);
   const prNumber = resolved.pr;
-  const headSha = resolved.head;
+  let headSha = resolved.head;
+  let mergeGroup;
 
   let repo = values.repo || process.env.GITHUB_REPOSITORY;
   if (!repo) {
@@ -604,6 +721,23 @@ export function main(
   }
   if (!pullRequest) fail(`pull request #${prNumber} was not found in ${owner}/${name}`);
 
+  // Merge-group run: the commit under test is the queued PR's own head,
+  // read from the pull request and proven to be exactly the group commit's
+  // second parent -- what this entry merges (see `resolveMergeGroupHead`).
+  // Never the sha embedded in the queue ref, which is the base (#1253).
+  if (resolved.mergeGroup) {
+    let prHead;
+    try {
+      prHead = fetchPullRequestHead({ owner, name, number: Number(prNumber) });
+    } catch (error) {
+      fail(`could not read pull request #${prNumber}'s current head: ${error.message}`);
+    }
+    const mg = resolveMergeGroupHead({ groupHeadSha: resolved.mergeGroup.headSha, prHead, readSecondParent });
+    if (mg.error) fail(mg.error);
+    headSha = mg.headShaUnderTest;
+    mergeGroup = mg.mergeGroup;
+  }
+
   let requiredChecksFromRuleset;
   if (values["required-checks-from-ruleset"]) {
     try {
@@ -620,6 +754,7 @@ export function main(
   const options = buildReviewEvidenceOptions({
     headShaUnderTest: headSha,
     requireReviewPresence: values["require-review-presence"],
+    mergeGroup,
   });
   const section = buildReviewEvidenceSection({ evidence, policy, options });
 
@@ -636,7 +771,7 @@ export function main(
     output = mergeReviewEvidenceIntoInputs(undefined, section);
   }
 
-  process.stdout.write(`${JSON.stringify(output, null, 2)}\n`);
+  write(`${JSON.stringify(output, null, 2)}\n`);
   return 0;
 }
 

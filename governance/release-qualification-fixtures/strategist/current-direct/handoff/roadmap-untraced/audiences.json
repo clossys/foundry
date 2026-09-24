@@ -1,0 +1,10 @@
+[
+  {
+    "id": "ops-lead",
+    "name": "Operations lead",
+    "situation": "Runs day-to-day operations for a small team.",
+    "pains": [
+      "status lives in scattered spreadsheets"
+    ]
+  }
+]

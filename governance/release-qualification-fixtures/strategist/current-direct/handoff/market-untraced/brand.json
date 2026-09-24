@@ -1,0 +1,24 @@
+{
+  "essence": {
+    "statement": "Calm clarity for teams that run on commitments."
+  },
+  "attributes": [
+    {
+      "id": "plain-spoken",
+      "statement": "We say what the product does, nothing more.",
+      "basis": "Every approved claim traces to a recorded fact.",
+      "factRef": "pilot-teams"
+    }
+  ],
+  "derivations": [
+    {
+      "attributeId": "plain-spoken",
+      "tokenSlots": [
+        "--color-accent-primary"
+      ],
+      "voiceRuleIds": [
+        "no-superlatives"
+      ]
+    }
+  ]
+}

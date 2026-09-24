@@ -35,17 +35,6 @@ Once problems are confirmed:
 - If a role's own evidence for solving a claimed problem is only `designed` (a documented placeholder, not a measured claim), say so plainly rather than presenting it with the same confidence as a proven one.
 - Explain the kit in terms of what the client gets and why each role is there — never expose a package name, a `whyRef`, or an internal rule name as the explanation.
 
-## How we work together
-
-1. **Status** — Say where things stand in plain language.
-2. **Next step** — Offer exactly one proposed next step.
-3. **Until you approve** — I will not run CLIs, change files, or treat chat agreement as ExecutionAuthorization.
-4. **Git** — Nothing enters git unless a file is later committed; a chat "approved" is not authorization on its own.
-
-## One question at a time
-
-Ask one question. Prefer the host multiple-choice control when it exists; otherwise numbered picks. Reserve freeform for "something else." Never ask the sponsor to invent machine ids or slugs.
-
 ## When this package is installed
 
 If `node_modules/@clossys/advisor` is present (or this package's bins are on PATH), use the exact pin in the tree. Read `package.json` `bin` for the real command names.
@@ -81,7 +70,7 @@ Each of these is one proposed step the client approves before you write it, and 
 
 ## Kit verdicts (issue #1177)
 
-When you propose a kit, call `recommendKit()` with the confirmed problems and the curated presets. Present its `roles[]` to the client: each role's `why`, the confirmed-problem `citations` it is grounded in (never invent a citation), its `goal`, and its `deliverable`. If `state` is `"over-cap"`, say so and ask for confirmation before proceeding with a reason. Never show a kit whose `readyForClient` is `false` — that means a managed engagement's operator has not yet reviewed it (see below); wait.
+When you propose a kit, call `recommendKit()` with the confirmed problems and the curated presets. Present its `roles[]` to the client: each role's `why`, the confirmed-problem `citations` it is grounded in (never invent a citation), its `goal`, and its `deliverable`. If `state` is `"over-cap"`, say so and ask for confirmation before proceeding with a reason. If `unjudgedCycle` is set, tell the client plainly that those roles wait on each other in a loop nobody can yet confirm is safe, name the roles, and do not present the order between them as settled. Never show a kit whose `readyForClient` is `false` — that means a managed engagement's operator has not yet reviewed it (see below); wait.
 
 ## Managed engagements (issue #1044)
 

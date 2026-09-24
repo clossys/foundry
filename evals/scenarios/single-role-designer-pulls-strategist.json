@@ -1,0 +1,15 @@
+{
+  "id": "single-role-designer-pulls-strategist",
+  "description": "A generic client who confirms only that the product doesn't look or feel cared for. Regression-tests dependency pull-in from a single confirmed problem: Designer needs Strategist's output, so Strategist must be pulled in even though the client never confirmed Strategist's own problem. No real company; a synthetic client for regression coverage only.",
+  "confirmedProblems": [
+    { "id": "designer-interface-quality", "primary": true }
+  ],
+  "expect": {
+    "state": "composed",
+    "mustIncludeRoles": ["designer", "strategist"],
+    "mustExcludeRoles": ["advisor", "architect", "bouncer", "builder", "butler", "controller", "customer", "giver", "influencer", "inspector", "integrator", "keeper", "locksmith", "messenger", "observer", "publisher", "writer"],
+    "maxRoles": 5,
+    "sequence": ["strategist", "designer"],
+    "unsatisfiedNeeds": []
+  }
+}

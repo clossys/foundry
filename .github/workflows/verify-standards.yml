@@ -53,6 +53,15 @@ on:
   # never reports for a merge-group commit would wedge every queue. GitHub
   # names one type today (`checks_requested`); left unqualified so a future
   # type is not silently excluded.
+  #
+  # The review-evidence binding below assumes ONE pull request per queue
+  # entry, each with its own `gh-readonly-queue/<base>/pr-<N>-<sha>` ref and
+  # its own run, and a group commit whose SECOND PARENT is exactly that PR's
+  # head. Both hold only because main's ruleset sets the merge queue's
+  # `grouping_strategy` to ALLGREEN (every entry is checked, not just the
+  # group's head) and `merge_method` to MERGE (a true merge commit). Changing
+  # either makes the collector's second-parent check fail closed on every
+  # entry -- revisit this workflow before changing the ruleset.
   merge_group:
 
 permissions:
@@ -155,13 +164,23 @@ jobs:
       # .github/verify-standards-review-policy.json's own header for that
       # decision and why `requiredChecks` there is empty for now too.
       # `merge_group` names no `pull_request` object at all -- only its own
-      # synthetic `head_ref`, `gh-readonly-queue/<base>/pr-<number>-<sha>`.
-      # scripts/collect-review-evidence.mjs's own `--merge-group-head-ref`
-      # resolves that into the queued PR's real number and head sha (a
-      # malformed ref refuses rather than guessing -- see that script's own
-      # header and `resolvePrAndHead`'s tests), so this step's two branches
-      # differ only in which flag names the commit under test; everything
-      # after is identical.
+      # synthetic `head_ref`, `gh-readonly-queue/<base>/pr-<number>-<sha>`,
+      # and the group commit it built, `head_sha`. The `<sha>` in that ref
+      # is the BASE the entry was queued onto, not the PR's head: reading it
+      # as the head is what made every merge-group run report
+      # `evidence-head-mismatch` against main's own tip (#1253, run
+      # 35929488634). So `--merge-group-head-ref` supplies only the PR
+      # number; the collector reads the PR's current head from the pull
+      # request itself and proves it EQUALS the second parent of
+      # `--merge-group-head-sha` (`git rev-parse --verify <group>^2`; this
+      # checkout's `fetch-depth: 0` is what makes that answerable locally).
+      # Mere ancestry is not enough: an older commit on the PR branch is an
+      # ancestor too, so a head read racing a push could bind an unreviewed
+      # head. See the trigger comment above for the ruleset this depends on. The inspector then requires both:
+      # the group merges exactly that head, and the evidence is bound to
+      # that head. A malformed ref or sha, an unreadable head, or an
+      # unreadable second parent refuses rather than guessing -- see
+      # that script's own header and `resolveMergeGroupHead`'s tests.
       - name: Collect review evidence
         id: review-evidence
         continue-on-error: true
@@ -176,6 +195,7 @@ jobs:
           if [ "${{ github.event_name }}" = "merge_group" ]; then
             node scripts/collect-review-evidence.mjs \
               --merge-group-head-ref "${{ github.event.merge_group.head_ref }}" \
+              --merge-group-head-sha "${{ github.event.merge_group.head_sha }}" \
               --repo "${{ github.repository }}" \
               --branch "$BASE_REF" \
               --merge verify-inputs.json \

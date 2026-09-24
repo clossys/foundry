@@ -1127,3 +1127,7 @@ Node.js >= 20, ESM. Runtime dependency: `@clossys/controller` (`~0.9.0`), for th
 ## Licence
 
 MIT
+
+## Changelog
+
+Release notes for every version are in the [changelog](https://github.com/clossys/foundry/blob/main/docs/changelogs/builder.md), kept in the public repository rather than in the installed package.
