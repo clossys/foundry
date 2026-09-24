@@ -2,44 +2,25 @@
 publisher: minor
 ---
 
-`foundry.capabilities` (schema v3, issue #1196): a MECE capability map of
-this role's craft — 4 capabilities `built` (surface documents, channel
-rendering, the asset roster and coverage from `media/`, and sealing —
-which now also absorbs the citation-drift check `checkLedgerDrift`); 7
-`partial`: v0 Launch pack planning and inventory (`src/pack/` ships
-`validatePackManifest`, `computePackReadiness`/`planPackOrder`/
-`sealableItemIds`, and `detectExistingPackItems`/`foundPackItem` as
-library functions over `PackManifest`, #1204 — no CLI yet assembles or
-checks a real product's `clossys/publisher/pack.json` from them),
-templates and channel specs (`src/templates/` now ships
-`overviewTemplate.ts`, `deckTemplate.ts`, `emailSignature.ts`, and
-`channelSpecs.ts` alongside the earlier web templates, #1207 — nothing
-yet assembles them into the declared `templates.json` output), the
-materials site (rewritten as an internal, locally opened index per #1206
-— `renderMaterialsIndexHtml`, `renderPitchDeckHtml`,
-`selectAudienceVariant`, and `materialsPrintStylesheet` ship, but nothing
-yet reads a product's own pack manifest to derive the index entries — not
-a public site), channel kits, route and visibility governance (reworded
-to `visibility: internal | public` per #1204 — `PACK_VISIBILITIES` and
-`checkMaterialsVisibility` declare and check visibility at the materials
-level, but `checkWebRoutes`/`publisher-web-route-check` still checks only
-the route-to-template mapping, no route-level visibility declaration or
-refusal yet), the apps/site template (`templates/site/` ships the full
-#1208 route set, but is Launcher-applied template content (#1215) outside
-this package's own build/typecheck/test, per its own README), and live
-parity (now scoped specifically to #1209 — does the live URL match the
-sealed record, for public surfaces only per #1206 — backed by
-`record/reconciliation.ts`). `proofCase` resolves against this role's own
-retained qualification adapter — today one retained case
-(`media-satisfied`), genuinely proven only for `asset-roster-and-coverage`,
-cited as a disclosed anchor for the rest pending dedicated per-capability
-cases (#1272). Checked by `check-capability-maps.mjs` for its own
-mechanical MECE criteria (no duplicate outputs or sub-questions within a
-role, no cross-role output collision, every capability `inputs` entry
-resolves) across the five v0 Launch-pack roles — report mode: 0 findings;
-`--enforce`, with the other 14 roles allowlisted: 0 findings. Whether the
-declared sub-questions jointly and completely answer each role's own job
-question stays a reviewer judgment, never a mechanical finding.
-
-Minor, not patch: this adds a new declared capability map, a new surface
-this role did not previously expose in its manifest.
+The `foundry` manifest block now declares `capabilities` (manifest schema
+version 3, #1196), a capability map of this role's craft with eleven
+capabilities: three `built`, two `partial`, and six `planned`. Every
+`built` or `partial` capability names as its `proofCase` a
+release-qualification case that exercises it (#1272). Built: channel
+rendering (`preview-rendered`), the asset roster and coverage
+(`media-satisfied`), and sealing and the publication record, which also
+covers the citation-drift check `checkLedgerDrift`
+(`record-append-only-clean`). Partial: the materials site
+(`preview-rendered`), an internal, locally opened index whose renderers
+ship but which nothing yet derives from a product's own pack manifest; and
+route and visibility governance (`web-routes-clean`), where
+`checkMaterialsVisibility` checks visibility for materials but
+`publisher-web-route-check` still checks only the route-to-template
+mapping. Planned, with no proof case because no qualification case
+exercises them yet: surface documents; v0 Launch pack planning and
+inventory (`@clossys/publisher/pack` ships `validatePackManifest`,
+`computePackReadiness`, `planPackOrder`, and `detectExistingPackItems` as
+library functions, but no command checks a real product's pack manifest
+with them); templates and channel specs; channel kits; the site template
+(shipped under `templates/site/`; Launcher does not apply it yet, #1215);
+and live parity.

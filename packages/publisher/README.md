@@ -1642,30 +1642,38 @@ The pack is MECE by layer:
 | Identity | Voice and messaging | Writer |
 | Surface | Website, materials site, email kit, social kit, video-call backgrounds | assembled by Publisher |
 
-`clossys/publisher/pack.json` records, for each item: `status` and
-`condition` from the one shared lifecycle vocabulary (issue #1228 — see
-below), a `v<major>.<minor>` version, `createdAt`/`updatedAt`/`approvedAt`/
+`clossys/publisher/pack.json` records, for each item: a pack `status` that
+specializes the one shared lifecycle, and a `condition` from it (issue
+#1228 — see below), a `v<major>.<minor>` version, `createdAt`/`updatedAt`/`approvedAt`/
 `verifiedAt` timestamps, content-fingerprint source pins, output paths,
 where it published, and its single next action.
 
 ### Lifecycle vocabulary (#1228)
 
-Pack items use the same six statuses and three conditions the loop engine
-uses, rather than a second, pack-specific vocabulary:
+Pack items do not declare a second, pack-specific lifecycle. An item's
+`status` is one of the six pack statuses, `PACK_STATUSES`, and each one
+resolves to one of the six states the loop engine uses, `LIFECYCLE_STATES`,
+through `packStatusToLifecycle`. An item's `condition` is one of the shared
+`LIFECYCLE_CONDITIONS`:
 
-- **Statuses:** `absent`, `found`, `draft`, `approved`, `verified`, `retired`.
-- **Conditions:** `current`, `stale`, `blocked`.
+- **Pack statuses (`PACK_STATUSES`):** `absent`, `found`, `draft`,
+  `in-review`, `kept`, `published`.
+- **Shared states (`LIFECYCLE_STATES`):** `absent`, `found`, `draft`,
+  `approved`, `verified`, `retired`.
+- **Conditions (`LIFECYCLE_CONDITIONS`):** `current`, `stale`, `blocked`.
 
-The former pack-only names map onto this list directly: `in-review` is
-`draft` with a pending judgment, `kept` is `approved` (the Customer keep),
-and `published` is `verified` (sealed and verified live).
+`absent`, `found`, and `draft` map onto the shared state of the same name.
+The other three specialize one: `in-review` is `draft` with a pending
+judgment, `kept` is `approved` (the Customer keep), and `published` is
+`verified` (sealed and verified live). No pack status maps to `retired`.
+Write a pack status, not a shared state, into `pack.json`:
+`validatePackManifest` reports `"approved"` as an `invalid-status` finding.
 
-`LIFECYCLE_STATUSES`/`LIFECYCLE_CONDITIONS` are a local copy in this package
-pending issue #1237 (Framework/Controller lane), which exports the same list
-from `@clossys/controller`. This repository's own `pack/lifecycle.test.ts`
-(not shipped in the published package) asserts the copy is exact; once
-#1237 lands, this package switches to importing from `@clossys/controller`
-instead of declaring its own copy.
+This package declares no copy of either list. `@clossys/publisher/pack`
+imports `PACK_STATUSES`, `LIFECYCLE_STATES`, `LIFECYCLE_CONDITIONS`, and
+`packStatusToLifecycle` from `@clossys/controller`, which first exports them
+in 0.9.14, and re-exports them unchanged. `@clossys/publisher/materials`
+also takes its `PackStatus` and `LifecycleCondition` types from there.
 
 ### Adopt, don't override
 
@@ -1936,15 +1944,18 @@ cosmetic gap.
   `JoinKeyIdentity` types, plus `PolicyBinding`/`DigestAlgorithm`/
   `PolicyFinding` re-exported from `@clossys/controller/policy`. The
   CLI is `publisher-record-check`.
-- `pack`: `LIFECYCLE_STATUSES`, `LIFECYCLE_CONDITIONS`, `isLifecycleStatus`,
-  `isLifecycleCondition`, `PACK_LAYERS`, `PACK_VISIBILITIES`, `isPackLayer`,
-  `isPackVisibility`, `isPackVersionString`, `validatePackManifest`,
-  `planPackOrder`, `computePackReadiness`, `sealableItemIds`,
-  `detectExistingPackItems`, `foundPackItem`, and the `LifecycleCondition`,
-  `LifecycleStatus`, `PackLayer`, `PackVisibility`, `PackItem`,
-  `PackManifest`, `PackSourcePin`, `PackFinding`, `PackValidationResult`,
-  `PackItemReadiness`, `PackReadiness`, `PackAdoptionCandidate`, and
-  `PackAdoptionResult` types. See "The pack," above.
+- `pack`: `PACK_STATUSES`, `LIFECYCLE_STATES`, `LIFECYCLE_CONDITIONS`, and
+  `packStatusToLifecycle` (re-exported from `@clossys/controller`),
+  `PACK_LAYERS`, `PACK_VISIBILITIES`, `isPackLayer`, `isPackVisibility`,
+  `isPackVersionString`, `validatePackManifest`, `planPackOrder`,
+  `computePackReadiness`, `sealableItemIds`, `detectExistingPackItems`,
+  `foundPackItem`, and the `PackStatus`, `LifecycleState`,
+  `LifecycleCondition`, and `PackStatusLifecyclePosition` types (also
+  re-exported from `@clossys/controller`) and the `PackLayer`,
+  `PackVisibility`, `PackItem`, `PackManifest`, `PackSourcePin`,
+  `PackFinding`, `PackValidationResult`, `PackItemReadiness`,
+  `PackReadiness`, `PackAdoptionCandidate`, and `PackAdoptionResult` types.
+  See "The pack," above.
 - `surfaces`: `PUBLISHER_SURFACES_DIR`, `validateSurfaceOwnership`, and the
   `SurfaceOwnershipClaim`, `SurfaceOwnershipFinding`, and
   `SurfaceOwnershipCheckResult` types. See "Surface documents move to
@@ -1976,22 +1987,34 @@ import-free of each other under one version.
 ## Requirements and version coupling
 
 Node 20+. This package's own `package.json` declares runtime dependencies on
-`@clossys/writer` (`^0.3.0`), `@clossys/designer`
-(`^0.5.0`), and `@clossys/controller` (`~0.9.0`), of which this
-package only imports the `./policy` subpath, `@clossys/controller/policy`,
-never `controller`'s other exports. `writer` and `designer` are caret
-ranges (both fresh `0.x` role packages); `controller` stays a tilde range,
-deliberately not a caret — a caret range on a `0.x` package is patch-only
-under semver and has broken this repository's CI before. Every declared
+`@clossys/writer`, `@clossys/designer`, and `@clossys/controller`. Read the
+exact ranges from that `package.json`, not from this README: they move
+whenever a release follows a sibling's new minor version, and a range
+restated here would go stale the moment one did. From `controller`, this
+package imports the `./policy` subpath, `@clossys/controller/policy`, for
+the publication record, and the shared lifecycle vocabulary
+(`packStatusToLifecycle`, `PACK_STATUSES`, `LIFECYCLE_CONDITIONS`, and
+`LIFECYCLE_STATES`, with their types) from the package root for
+`@clossys/publisher/pack`; `@clossys/publisher/materials` also takes the
+`PackStatus` and `LifecycleCondition` types from the root.
+Controller first exports that vocabulary in 0.9.14, so the `controller`
+range must not admit anything earlier: against an older 0.9.x release,
+importing `@clossys/publisher/pack` fails at module load. On a `0.x`
+package, caret and tilde ranges both stay within one minor version
+(`^0.4.0` and `~0.4.0` both mean `>=0.4.0 <0.5.0`), so a new minor release
+of any of the three needs a new range before it resolves. Every declared
 range is a real constraint on the dependency graph, not an install-ordering
 concern: a package manager resolves the whole graph regardless of what order
 packages are requested in, so none of this can be worked around by
-installing things in a particular sequence. `writer`'s range first moved
-from `^0.1.0` to `^0.2.0` when `writer` 0.2.0 changed `writer-check
-addressability`'s exit-code precedence (issue #407), then to the current
-`^0.3.0` when Writer added its passage layer (issue #373). Both were
-additive or behavioural minor releases rather than patches, so the older
-ranges do not resolve them (0.x ranges are minor-locked). `designer`'s range
+installing things in a particular sequence.
+
+Past range moves, kept as history (none of these is necessarily the current
+range; later moves are in the CHANGELOG): `writer`'s range first moved from
+`^0.1.0` to `^0.2.0` when `writer` 0.2.0 changed `writer-check
+addressability`'s exit-code precedence (issue #407), then to `^0.3.0` when
+Writer added its passage layer (issue #373). Both were additive or
+behavioural minor releases rather than patches, so the older ranges do not
+resolve them (0.x ranges are minor-locked). `designer`'s range
 first moved from `^0.1.0` to `^0.2.0` when Designer added the
 `designer-environment-check` gate (issue #405), then to `^0.2.7`
 because Publisher's React-server target imports the server-safe
@@ -2005,7 +2028,7 @@ alternative to `groups` renders into Designer 0.4.0's new `StatusList`
 templates compose Designer's `MarketingChapter` block (from
 `@clossys/designer/blocks/server`), a Designer 0.4.12 addition. A published
 package that only satisfies `^0.4.0` — for example the registry's own
-Designer 0.4.7 at the time of this release — resolves cleanly but cannot
+Designer 0.4.7 at the time — resolves cleanly but cannot
 actually serve `@clossys/publisher/web`: `import("@clossys/publisher/web")`
 throws `SyntaxError: The requested module '@clossys/designer/blocks/server'
 does not provide an export named 'MarketingChapter'` under both its ordinary
@@ -2013,20 +2036,20 @@ and `react-server` conditions. This is exactly the failure the pinned-runtime
 release-qualification run for 0.4.24 caught; see this repository's own
 `src/web/react-server-artifact.test.ts` (not shipped in the published
 package) for the regression test's fixture that reproduces it
-deterministically. And then to the current `^0.5.0` — a workspace-resolution
-bump, not a new imported contract — because Designer 0.5.0 is itself a
-minor release (the identity-kit generator and its checks, issue #1210),
-and a `^0.4.0` range does not resolve a `0.5.x` package under 0.x caret
-semver. These ranges are independent; leaving
-any one behind would still resolve an older package without any install
-failure, silently withholding a required contract.
+deterministically. Then to `^0.5.0`, because Designer 0.5.0 is itself a
+minor release (the identity-kit generator and its checks, issue #1210), and
+a `^0.4.0` range does not resolve a `0.5.x` package under 0.x caret semver.
+A move like that last one, which only follows a sibling's new minor release
+rather than a new imported contract, is recorded as an "Updated dependency"
+entry in this package's CHANGELOG, not here. These ranges are independent;
+leaving any one behind would still resolve an older package without any
+install failure, silently withholding a required contract.
 
-A consumer whose own policy is to pin exact versions must pin `writer` to a
-matching `0.3.x` release, `designer` to `0.5.0` or a later compatible `0.5.x`
-release, and
-`controller` to a matching `0.9.x` patch release — otherwise
-`publisher`'s declared ranges and the consumer's exact pin cannot both be
-satisfied, and the install fails with an unresolvable version conflict.
+A consumer whose own policy is to pin exact versions must pin `writer`,
+`designer`, and `controller` each to a version inside the range this
+release's `package.json` declares for it — otherwise `publisher`'s declared
+ranges and the consumer's exact pin cannot both be satisfied, and the
+install fails with an unresolvable version conflict.
 `react` and `react-dom` are optional peer dependencies (`>=18`) required only
 by the `web` and `document` subpaths' renderers. The `web` subpath also imports
 Designer surfaces, so Publisher directly repeats Designer's optional
