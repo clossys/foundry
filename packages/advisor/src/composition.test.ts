@@ -82,8 +82,8 @@ describe("composeKit", () => {
     const composed = composeKit({ selectedRoles: ["publisher"], catalogue: SYNTHETIC_CATALOGUE });
     expect(composed.state).toBe("composed");
     if (composed.state === "composed") {
-      expect([...composed.addedForDependencies].sort()).toEqual(["designer", "platform", "writer"]);
-      for (const producer of ["designer", "platform", "writer"]) {
+      expect([...composed.addedForDependencies].sort()).toEqual(["designer", "toolchain", "writer"]);
+      for (const producer of ["designer", "toolchain", "writer"]) {
         expect(composed.sequence.indexOf(producer)).toBeLessThan(composed.sequence.indexOf("publisher"));
       }
       expect(composed.unsatisfiedNeeds).toEqual([]);

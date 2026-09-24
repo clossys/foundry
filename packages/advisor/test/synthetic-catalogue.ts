@@ -8,7 +8,7 @@ import type { KitPreset } from "../src/kit-presets.js";
  * because correct data landed (review of PR #1403). This file sits outside
  * `src/`, so it is never compiled into `dist/` and never packed.
  *
- * Shape: `publisher` needs `writer`, `designer` and `platform` (which
+ * Shape: `publisher` needs `writer`, `designer` and `toolchain` (which
  * solves nothing, so it is only ever pulled in); `writer` and `designer`
  * need nothing; `strategist`, `customer` and `influencer` stand alone;
  * `inspector` and `integrator` have no capability map and need each other.
@@ -59,8 +59,8 @@ export const SYNTHETIC_CATALOGUE: CapabilityCatalogue = {
     role("influencer", { problem: "influencer-audience-response" }),
     role("inspector", { problem: "inspector-unchecked-release", needs: [need("integrator", "integration-report")], feeds: [feed("integrator", "inspection-report")], declaredFeeds: [{ artifact: "inspection-report", path: "clossys/inspector/report.json" }] }),
     role("integrator", { needs: [need("inspector", "inspection-report")], feeds: [feed("inspector", "integration-report")], declaredFeeds: [{ artifact: "integration-report", path: "clossys/integrator/report.json" }] }),
-    role("platform", { feeds: [feed("publisher", "pipeline")], declaredFeeds: [{ artifact: "pipeline", path: "clossys/platform/pipeline.json" }] }),
-    role("publisher", { problem: "publisher-verified-release", needs: [need("designer", "tokens"), need("platform", "pipeline"), need("writer", "copy")] }),
+    role("toolchain", { feeds: [feed("publisher", "pipeline")], declaredFeeds: [{ artifact: "pipeline", path: "clossys/toolchain/pipeline.json" }] }),
+    role("publisher", { problem: "publisher-verified-release", needs: [need("designer", "tokens"), need("toolchain", "pipeline"), need("writer", "copy")] }),
     role("strategist", { problem: "strategist-unclear-direction" }),
     role("writer", { problem: "writer-unapproved-copy", evidence: "qualified", feeds: [feed("publisher", "copy")], declaredFeeds: [{ artifact: "copy", path: "clossys/writer/copy.json" }] }),
   ],
@@ -70,7 +70,7 @@ export const SYNTHETIC_PRESETS: readonly KitPreset[] = [
   { id: "launch", label: "Launch", problem: "We can't explain what we are.", roles: ["strategist", "writer", "designer", "publisher"] },
 ];
 
-/** Four direct solvers: with `platform`, which `publisher` pulls in, their closure is exactly the `launch` preset's own closure. */
+/** Four direct solvers: with `toolchain`, which `publisher` pulls in, their closure is exactly the `launch` preset's own closure. */
 export const SYNTHETIC_LAUNCH_PROBLEMS = [
   { id: "strategist-unclear-direction", primary: true },
   { id: "designer-interface-quality" },

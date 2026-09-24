@@ -319,6 +319,24 @@ test("an aliased import of the canonical constructor still counts when the alias
   assert.equal(result.table[0].outputEnvelope, "declared");
 });
 
+test("an import alias containing regular-expression metacharacters never counts as adoption (CodeQL: incomplete escaping)", (t) => {
+  // A crafted binding such as `x|.*` would otherwise build a pattern that
+  // matches any call at all, so the unrelated `other(1)` below would pass.
+  for (const alias of ["x|.*", "x.*", "(x)", "x+", "[x]"]) {
+    const root = makeTempRoot(t);
+    writeSource(root, "src/report.ts", `import { buildCheckOutputEnvelope as ${alias} } from "@clossys/controller";\nexport const r = other(1);\n`);
+    const result = evaluateConformance(root, [controllerDependent()], { enforce: false });
+    assert.notEqual(result.table[0].outputEnvelope, "declared", alias);
+  }
+});
+
+test("an alias that is a valid identifier containing `$` still counts when it is called", (t) => {
+  const root = makeTempRoot(t);
+  writeSource(root, "src/report.ts", `import { buildCheckOutputEnvelope as $build$ } from "@clossys/controller";\nexport const r = $build$({ package: "a", version: "1", verdict: "satisfied", summary: "Fine.", findings: [] });\n`);
+  const result = evaluateConformance(root, [controllerDependent()], { enforce: false });
+  assert.equal(result.table[0].outputEnvelope, "declared");
+});
+
 test("a zero-dependency package emitting through a current generated copy is declared", (t) => {
   const root = makeTempRoot(t);
   withCanonicalEnvelope(root);

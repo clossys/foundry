@@ -294,14 +294,24 @@ function scanImports(text) {
   return { constructorImports, relativeSpecifiers };
 }
 
+/** A plain JavaScript identifier; the only thing an import binding can be. */
+const IDENTIFIER = /^[A-Za-z_$][\w$]*$/;
+
 /**
  * A call of `local` as a bare identifier: not part of a longer name, not a
  * property of some other object (`o.name(` -- a single `.`, so a spread
  * `...name(` still counts), and not the name in a local `function name(`
  * definition, which only looks like a call (#1387 review).
+ *
+ * `local` comes from source text, so it is untrusted: anything that is not
+ * a plain identifier (for example a crafted `x|.*`) matches nothing, and
+ * every regular-expression metacharacter is escaped as well, so no binding
+ * text can widen the pattern into a false adoption.
  */
 function callPattern(local) {
-  return new RegExp(`(?<![\\w$])(?<!(?<!\\.)\\.\\s*)(?<!\\bfunction(?:\\s*\\*\\s*|\\s+))${local.replace(/\$/g, "\\$")}\\s*\\(`);
+  if (!IDENTIFIER.test(local)) return null;
+  const escaped = local.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(?<![\\w$])(?<!(?<!\\.)\\.\\s*)(?<!\\bfunction(?:\\s*\\*\\s*|\\s+))${escaped}\\s*\\(`);
 }
 
 export function envelopeGap(root, packageDir, role, manifest) {
@@ -335,7 +345,8 @@ export function envelopeGap(root, packageDir, role, manifest) {
     for (const { local, specifier } of constructorImports) {
       const source = envelopeImportSource(root, packageRoot, file, specifier, manifest);
       if (source === null || (source === "generated-copy" && !copyCurrent)) continue;
-      if (callPattern(local).test(body)) emitters.add(file);
+      const pattern = callPattern(local);
+      if (pattern !== null && pattern.test(body)) emitters.add(file);
     }
   }
   const evidence = [...emitters].map((file) => relative(root, file)).sort();

@@ -43,9 +43,9 @@ describe("recommendKit (issue #1177)", () => {
       catalogue: CATALOGUE,
       problem: "We're not sure what's actually live.",
     });
-    const platform = verdict.roles.find((role) => role.role === "platform");
-    expect(platform).toBeDefined();
-    expect(platform?.citations).toHaveLength(0);
+    const toolchain = verdict.roles.find((role) => role.role === "toolchain");
+    expect(toolchain).toBeDefined();
+    expect(toolchain?.citations).toHaveLength(0);
   });
 
   it("deliverables come from each role's own boundary.owns, never invented copy", () => {
