@@ -240,10 +240,18 @@ function runCheck(check: StandardsCheckName, inputs: VerifyStandardsInputs | und
       // so that judgement has to live there to be worth anything.
       const section = inputs?.reviewEvidence;
       const report = checkReviewEvidence(section?.evidence, section?.policy, section?.options);
-      const note =
-        report.providersObserved.length === 0
+      const notes = [
+        report.providersObserved.length === 0 ? undefined : `providers observed: ${report.providersObserved.join(", ")}`,
+        // Visible, never silent: a stale review (its own commit predates the
+        // bundle's current head — a rate-limited bot review left behind by a
+        // merge-train push is the motivating case) can never swing this
+        // check's verdict, but it also never just vanishes from the report.
+        // See ReviewEvidenceReport.staleReviews' own doc comment.
+        report.staleReviews.length === 0
           ? undefined
-          : `providers observed: ${report.providersObserved.join(", ")}`;
+          : `stale reviews excluded from verdict: ${report.staleReviews.map((item) => item.path).join(", ")}`,
+      ].filter((value): value is string => value !== undefined);
+      const note = notes.length === 0 ? undefined : notes.join("; ");
       return { row: check, result: attribute(check, report.result), ...(note === undefined ? {} : { note }) };
     }
     case "policy-drift": {

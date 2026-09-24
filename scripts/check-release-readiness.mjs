@@ -13,22 +13,79 @@
 // failure, not a verdict — the same three-way split every gate in this repo
 // uses).
 //
-// DEFAULT MODE ALSO CONSULTS THE RETAINED QUALIFICATION RECORD (issue #920)
+// DEFAULT MODE ALSO CONSULTS THE RETAINED QUALIFICATION RECORD (issue #920,
+// reported not enforced for unpacked-only drift as of the owner decision at
+// issues #1187 / #1265 / #1313, composed here with #1265's own pending-
+// changeset carve-out — see PRECEDENCE below)
 // ---------------------------------------------------------------------------
-// "No packed-file changes" is not the whole answer to "is a bump required."
-// A package can have no packed-content diff at all (this function's own
-// `pass` verdict) while its CURRENT version's retained qualification record
-// has already gone stale — the package directory moved (tests included) even
-// though nothing PACKED moved. That happened for real and burned
-// `@clossys/architect@0.1.7`, which could never be published: see
-// `staleRetainedRecordDetail()` below for the incident and why the two gates
-// (this one comparing packed content, check-qualification-record-present.mjs
-// comparing the whole tree) are each correct about what they measure. Both
-// `pass` returns in `evaluatePackageDiff()` consult that retained record
-// before reporting clean, and report `needs-bump` with an explicit sentence
-// when it no longer matches — the sentence this incident needed. This is
-// independent of whether THIS pull request bumped anything: it is asking
-// about the version already in the manifest, not about a diff.
+// "No packed-file changes" is not the whole answer to "is the retained
+// record for this version still accurate." A package can have no
+// packed-content diff at all (this function's own `pass` verdict) while its
+// CURRENT version's retained qualification record has already gone stale —
+// the package directory moved (tests included) even though nothing PACKED
+// moved. That happened for real and burned `@clossys/architect@0.1.7`, which
+// could never be published: see `staleRetainedRecordDiagnosis()` below for
+// the incident and why the two gates (this one comparing packed content,
+// check-qualification-record-present.mjs comparing the whole tree) are each
+// correct about what they measure.
+//
+// Issue #920's original fix treated ANY staleness here — packed or not — as
+// a reason to fail this gate with `needs-bump`. The owner cadence rule
+// (#1187 comment 5799002037) says a test, CI, or internal-docs-only change
+// carries no changeset and causes no release; PR #1265's verification found
+// the #920 fix violated that rule for a package whose current version has
+// already published, and separately added its OWN carve-out — a pending
+// changeset added by this pull request — as an alternative to a direct
+// version bump for a packed-content change. PR #1313 (owner decision) added
+// a second, independent carve-out for the SAME `needs-bump` branch: a stale
+// record is harmless, not a stranding, once the current version is shown —
+// from local, git-tracked publication evidence, never a live registry call
+// this gate cannot afford — to have already shipped.
+//
+// PRECEDENCE (the two carve-outs compose in this fixed order, never guessed
+// per call — see `staleRetainedRecordDiagnosis()` and `evaluatePackageDiff()`
+// below for where each branch is decided):
+//
+//   1. Packed content unaffected (or devDependencies-only) AND the record for
+//      the CURRENT version is stale AND that version already has local
+//      publication evidence → PASS. Nothing will ever try to publish that
+//      exact version again, so a stale record for it is historical, not a
+//      stranding in progress (#1313, `hasLocalPublicationEvidence()`).
+//   2. Same shape, but the version is NOT shown published, AND this pull
+//      request's own history adds a pending `.changesets/*.md` naming the
+//      package → PASS. The changeset is scripts/apply-release-changesets.mjs's
+//      promise that a real version bump follows in the batched release PR,
+//      which is what actually recovers a package that would otherwise strand
+//      exactly like `@clossys/architect@0.1.7` did (#1265,
+//      `pendingChangesetDetail()`).
+//   3. Same shape, unpublished, no pending changeset → FAIL (`needs-bump`).
+//      This is issue #920's original strictness, unconditionally: a stale
+//      record on a still-queued version, with nothing yet promising a bump,
+//      is precisely the incident this gate exists to catch.
+//   4. Any change to PACKED content (or a build input — see below) is
+//      unaffected by any of the above: it still requires a version bump or a
+//      pending changeset exactly as it always has, independent of whether a
+//      retained record is even in play.
+//
+// Publication evidence is checked first, and by itself, never combined with
+// or gated on a pending changeset: a version that has already shipped can
+// never be published again regardless of what else this pull request adds,
+// so there is nothing for a changeset to protect there. A pending changeset
+// is only ever consulted for the unpublished case, where it is the sole
+// remaining thing standing between this pull request and a permanently
+// stranded queued version.
+//
+// BUILD INPUTS COUNT AS PACKED (owner decision #1187/#1265/#1313, point 2)
+// --------------------------------------------------------------------
+// "No packed-file changes" is ALSO not the whole answer to "did the
+// compiled output change" — `npm pack` never ships `tsconfig.json`, but
+// every package here builds with `tsc -p tsconfig.json`, so a build-config
+// edit (or a `typescript` devDependency bump) can change `dist/` with zero
+// packed-source difference. See `buildInputFiles()` and
+// `BUILD_TOOLCHAIN_DEV_DEPENDENCIES` below for the two places this is
+// checked. A build-input change is treated like packed content for
+// precedence purposes (rule 4 above): the publication/changeset carve-outs
+// above never apply to it.
 //
 // THE devDependencies EXEMPTION (default mode only — see issue #269)
 // --------------------------------------------------------------------
@@ -159,6 +216,14 @@ import {
   validateHistoryInventory,
 } from "./lib/package-identity-transition.mjs";
 import { qualificationRecordPresenceForCandidate } from "./check-qualification-record-present.mjs";
+import { changesetsForPackage, loadChangesets } from "./collect-changesets.mjs";
+// Only the path CONSTANTS are imported here, never the heavy validators
+// these two modules also export (`readValidatedLaterPublishedPackages`,
+// and `check-package-evidence.mjs`'s `readValidatedPublishedPackages` which
+// composes both) — see `hasLocalPublicationEvidence()` below for why this
+// gate cannot afford to run that full proof chain.
+import { TRIO_PUBLICATION_PATH } from "./lib/release-publication-cohort.mjs";
+import { LATER_PUBLICATION_DIRECTORY } from "./lib/release-later-publication.mjs";
 
 function git(args, cwd) {
   return execFileSync("git", args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
@@ -202,10 +267,13 @@ function packedFiles(dir) {
 }
 
 // Snapshots `relPkgDir` as it stood at `commit` into a throwaway extraction
-// and packs THAT, purely so `npm pack --dry-run` can be pointed at it — see
-// header comment for why the comparison happens at the pack layer rather
-// than by hand-walking `files` globs. Cleans up its own temp dir.
-function packedFilesAtCommit(gitRoot, relPkgDir, commit) {
+// and hands the extracted package directory to `read(dir)` — shared by
+// `packedFilesAtCommit()` (reads via `npm pack --dry-run`) and
+// `buildInputFilesAtCommit()` (reads tsconfig*.json directly) below, so a
+// commit is archived and extracted once per caller rather than duplicating
+// the tar dance for each kind of file this script now diffs. Cleans up its
+// own temp dir before returning.
+function extractedPackageAtCommit(gitRoot, relPkgDir, commit, read) {
   const workDir = mkdtempSync(join(tmpdir(), "release-readiness-"));
   try {
     const archivePath = join(workDir, "archive.tar");
@@ -217,10 +285,140 @@ function packedFilesAtCommit(gitRoot, relPkgDir, commit) {
     if (!existsSync(join(oldPkgDir, "package.json"))) {
       throw new Error(`${relPkgDir || "."} had no package.json at ${commit.slice(0, 12)}`);
     }
-    return packedFiles(oldPkgDir);
+    return read(oldPkgDir);
   } finally {
     rmSync(workDir, { recursive: true, force: true });
   }
+}
+
+// Purely so `npm pack --dry-run` can be pointed at a historical commit — see
+// header comment for why the comparison happens at the pack layer rather
+// than by hand-walking `files` globs.
+function packedFilesAtCommit(gitRoot, relPkgDir, commit) {
+  return extractedPackageAtCommit(gitRoot, relPkgDir, commit, packedFiles);
+}
+
+// Narrows a packedFiles() result down to paths git actually tracks, so a
+// local `npm run build` sitting untouched in the working tree can never be
+// mistaken for a real change. `packedFiles(absPkgDir)` — the real npm-pack
+// result — is still the only correct way to evaluate the package's `files`
+// globs/.npmignore/npm defaults, and that call stays untouched here; this
+// only prunes its output afterward. The gap it closes: a local build leaves
+// gitignored generated output sitting in the working tree — for example
+// `packages/launcher/skill-catalogue/` in this repository — and because that
+// output is declared inside the package's own `files` field (a real,
+// committed `npm pack` correctly ships it once it lands), `npm pack
+// --dry-run` picks it straight up off disk regardless of whether it is
+// committed, ignored, or merely untracked. Before this existed, that
+// surfaced as a false "packed file(s) changed" finding against a
+// developer's own uncommitted build output, not against anything actually
+// different in git. `git ls-files` (no `--others`) is exactly the list of
+// paths git's index already tracks, so this deliberately excludes both
+// genuinely-ignored files and merely-untracked-but-not-ignored ones —
+// anything not already in the index — while still keeping a file staged
+// with `git add` but not yet committed, because that IS a real,
+// about-to-be-committed change and must stay caught. Run with `cwd:
+// absPkgDir` and no extra pathspec, `git ls-files` paths come back already
+// relative to `absPkgDir`, forward-slash-joined — the same shape
+// `packedFiles()` uses as its Map keys — so no path translation is needed
+// before the set-difference.
+function packedFilesAtWorktree(absPkgDir) {
+  const files = packedFiles(absPkgDir);
+  const tracked = new Set(git(["ls-files", "-z"], absPkgDir).split("\0").filter(Boolean));
+  for (const path of files.keys()) {
+    if (!tracked.has(path)) files.delete(path);
+  }
+  return files;
+}
+
+// BUILD INPUTS COUNT AS PACKED (owner decision #1187/#1265/#1313, point 2)
+// --------------------------------------------------------------------
+// `packedFiles()` above is deliberately source-level and trusts `npm pack`'s
+// own file list — but that list, by design, never includes `tsconfig.json`
+// (or a sibling `tsconfig.*.json`): it drives the build, it is not shipped.
+// Every package here builds with `tsc -p tsconfig.json` (verified directly
+// against every `packages/*/package.json`'s own `scripts.build`), so a
+// `tsconfig.json` edit — `target`, `module`, `lib`, `strict`, anything the
+// compiler reads — can change the compiled `dist/` a consumer receives with
+// `src/` completely untouched, which is exactly the "dist/ is deterministic
+// output of src/" premise the header comment's dist/-exclusion rests on. It
+// breaks silently: `diffPackedFiles()` sees nothing, because nothing packed
+// moved. So a build input is read and diffed as its own axis, independent of
+// `packedFiles()`, and `evaluatePackageDiff()` below treats any difference
+// on it exactly like a packed-content change for the bump question — see
+// `isDevDependenciesOnlyChange()`'s `BUILD_TOOLCHAIN_DEV_DEPENDENCIES` carve-out
+// for the parallel case (a build-TOOL version, not a build-config file).
+//
+// GENERAL CASE: A LOCAL SCRIPT `scripts.build` INVOKES DIRECTLY (owner
+// decision #1187/#1265, Opus re-review at 6f6372c7)
+// --------------------------------------------------------------------
+// `tsconfig.json` is not the only build input `npm pack` never ships.
+// `@clossys/launcher`'s `scripts.build` is
+// `node scripts/pack-skills.mjs && tsc -p tsconfig.json` — `pack-skills.mjs`
+// itself is not packed (`scripts/` is not in launcher's `files`), but it
+// GENERATES `skill-catalogue/`, which IS packed (and gitignored, like
+// `dist/`). So an edit to `pack-skills.mjs` alone changes what a consumer
+// installs with no packed-file trace — the identical blind spot
+// `tsconfig.json` has, one layer removed. Fixed generally, not only for
+// launcher: `buildScriptInvokedFiles()` below parses ANY package's
+// `scripts.build` for the local script files it runs directly, and those
+// are read and diffed exactly like `tsconfig*.json`.
+function buildScriptInvokedFiles(buildScript) {
+  if (typeof buildScript !== "string") return [];
+  const paths = [];
+  // Not a shell parser — split only on the boundaries a build script can
+  // safely be split on (`&&`, `;`, `|`), and recognize only a bare
+  // `node <relative-path>` invocation, which is what every build script in
+  // this repository actually uses. A build script shaped more exotically
+  // than that (a wrapper binary, an inline `-e` snippet) contributes no
+  // extra paths here — this narrows the existing tsconfig*.json check, it
+  // never claims to parse every possible build script.
+  for (const segment of buildScript.split(/&&|;|\|/)) {
+    const words = segment.trim().split(/\s+/).filter(Boolean);
+    if (words.length < 2 || words[0] !== "node") continue;
+    for (const arg of words.slice(1)) {
+      if (arg.startsWith("-")) continue; // a node flag, not a script path
+      if (arg.includes("..")) break; // never resolve outside the package directory
+      if (/\.(mjs|cjs|js|ts)$/.test(arg) && !arg.startsWith("/")) paths.push(arg);
+      break; // the first non-flag argument is the script node runs
+    }
+  }
+  return paths;
+}
+
+function buildInputFiles(dir) {
+  const out = new Map();
+  let entries;
+  try {
+    entries = readdirSync(dir, { withFileTypes: true });
+  } catch {
+    return out;
+  }
+  for (const entry of entries) {
+    if (!entry.isFile()) continue;
+    if (!/^tsconfig(\.[\w-]+)?\.json$/.test(entry.name)) continue;
+    out.set(entry.name, readFileSync(join(dir, entry.name)));
+  }
+  let manifest = null;
+  try {
+    manifest = JSON.parse(readFileSync(join(dir, "package.json"), "utf8"));
+  } catch {
+    // No readable manifest here — buildScriptInvokedFiles(undefined) below
+    // returns [], so this just contributes tsconfig*.json, same as before.
+  }
+  for (const relPath of buildScriptInvokedFiles(manifest?.scripts?.build)) {
+    try {
+      out.set(relPath, readFileSync(join(dir, ...relPath.split("/"))));
+    } catch {
+      // Named but unreadable/absent on this side — diffPackedFiles() below
+      // reports that as added/removed itself; nothing to do here.
+    }
+  }
+  return out;
+}
+
+function buildInputFilesAtCommit(gitRoot, relPkgDir, commit) {
+  return extractedPackageAtCommit(gitRoot, relPkgDir, commit, buildInputFiles);
 }
 
 // Structural equality, key-order independent — used below to compare two
@@ -256,6 +454,23 @@ function deepEqual(a, b) {
 // what changed, never who changed it, matching the working rule this issue
 // records.
 //
+// BUILD-TOOLCHAIN CARVE-OUT (owner decision #1187/#1265/#1313, point 2)
+// -------------------------------------------------------------------
+// The devDependencies exemption above assumes "how the package is built"
+// and "what a consumer receives" are independent — true for a test runner
+// or a lint config, false for the compiler itself. Every package here
+// builds with `tsc -p tsconfig.json` (see `buildInputFiles()`'s header
+// comment for the same measurement), so a `typescript` version bump can
+// change the compiled `dist/` a consumer receives — a stricter or looser
+// default under a new TypeScript release is exactly this shape — with
+// `src/` and every other packed file untouched. Enumerated directly from
+// what every package's own build script invokes, not guessed: only the
+// compiler binary itself changes emitted output; a type-only package like
+// `@types/node` affects type-CHECKING, never what `tsc` emits. A
+// devDependency named here disqualifies the whole change from the
+// exemption, the same fail-closed way a `dependencies` edit already does.
+const BUILD_TOOLCHAIN_DEV_DEPENDENCIES = new Set(["typescript"]);
+
 // Returns true only when `changed` names package.json and NOTHING else, and
 // the two manifests are structurally identical except for
 // `devDependencies` (which must itself actually differ — a package.json that
@@ -263,10 +478,11 @@ function deepEqual(a, b) {
 // something this function is asked to classify; `changed` already being
 // non-empty means diffPackedFiles() saw different bytes, so in practice this
 // only returns false there for a change this function correctly refuses to
-// call devDependencies-only). Returns false for every other shape,
-// INCLUDING when the manifests fail to parse as JSON — a parse failure is
-// "cannot prove this is exempt," not "assume it is," so the caller falls
-// through to requiring a bump, the fail-closed side.
+// call devDependencies-only), and none of the devDependencies that actually
+// changed are in `BUILD_TOOLCHAIN_DEV_DEPENDENCIES`. Returns false for every
+// other shape, INCLUDING when the manifests fail to parse as JSON — a parse
+// failure is "cannot prove this is exempt," not "assume it is," so the
+// caller falls through to requiring a bump, the fail-closed side.
 function isDevDependenciesOnlyChange(changed, oldFiles, newFiles) {
   if (changed.length !== 1 || changed[0] !== "modified: package.json") return false;
 
@@ -284,7 +500,15 @@ function isDevDependenciesOnlyChange(changed, oldFiles, newFiles) {
   const { devDependencies: newDevDeps, ...newRest } = newManifest;
   if (!deepEqual(oldRest, newRest)) return false;
 
-  return !deepEqual(oldDevDeps ?? {}, newDevDeps ?? {});
+  const oldDD = oldDevDeps ?? {};
+  const newDD = newDevDeps ?? {};
+  if (deepEqual(oldDD, newDD)) return false;
+
+  const changedDevDependencyNames = new Set([...Object.keys(oldDD), ...Object.keys(newDD)].filter((name) => oldDD[name] !== newDD[name]));
+  for (const name of changedDevDependencyNames) {
+    if (BUILD_TOOLCHAIN_DEV_DEPENDENCIES.has(name)) return false;
+  }
+  return true;
 }
 
 // Set-compares two packedFiles() maps (path -> file content Buffer) and
@@ -514,7 +738,82 @@ function loadPackageContext(pkgDir) {
   return { absPkgDir, manifest, label, gitRoot, relPkgDir, relManifestPath };
 }
 
-// ISSUE #920 — THE RETAINED-RECORD RECONCILIATION
+// IS THE CURRENT VERSION ALREADY PUBLISHED? (owner decision #1187/#1265,
+// point 1 — the second-opinion review's correction to PR #1313's first pass)
+// -------------------------------------------------------------------------
+// The first version of this change relaxed `needs-bump` to `pass` for EVERY
+// unpacked-only staleness. That reopens exactly the case issue #920 exists
+// to catch: MOST retained current-version records belong to versions that
+// have never been published (`package-scope.json` gates publication off
+// entirely pre-W1E) — qualified, staged, waiting. For one of those, an
+// unpacked-only change still permanently strands the version (records are
+// immutable), and silently skipping the changeset that alone would move the
+// package off it compounds the damage under #1265's changesets flow. The
+// relaxation is only correct once the version has ALREADY shipped: nothing
+// will ever try to publish it again, so a stale record for it is
+// historical, not a stranding in progress.
+//
+// This asks that question from LOCAL, git-tracked evidence only — never the
+// live registry (this gate has no network budget; see the header comment)
+// — using the same two stores `docs/LIFECYCLE.md`'s `published` state and
+// `check-package-evidence.mjs`'s `readValidatedPublishedPackages()` treat as
+// authoritative: the sealed Trio first-publication record
+// (`governance/release-publications/clossys-npmjs-trio.json`) and a later
+// publication's own evidence file
+// (`governance/release-publications/later/<key>-<version>.json`, named
+// after the exact identity it proves — see that file's own header). This
+// deliberately does NOT run `readValidatedPublishedPackages()` itself: that
+// function replays the full cryptographic proof chain (candidate joins,
+// catalogue closure, provenance, registry-proof) for every retained record,
+// measured at roughly 70 SECONDS against this repository's current evidence
+// set — utterly incompatible with a gate that must answer on every pull
+// request in seconds, before build. Instead this reads each evidence file's
+// own declared `candidate.name`/`candidate.version` — an existence-and-identity
+// check, not a re-proof. That is a deliberately narrower guarantee, and it is
+// safe to be narrower here: this signal only ever softens THIS gate's own
+// advisory note. It is never read by check-qualification-record-present.mjs,
+// by publish.yml's record-join, or by validate-candidate-publish.mjs's
+// tarball reverification — none of which are in this diff — and
+// check-package-evidence.mjs independently fails on any evidence file that
+// does not survive ITS full validation. A forged or stale file here can only
+// wrongly skip one pull request's advisory note; it can never let anything
+// unqualified ship, and a real audit of it (check-package-evidence.mjs, or a
+// human) catches it on its own separate gate regardless.
+function hasLocalPublicationEvidence(gitRoot, name, version) {
+  const key = name.includes("/") ? name.slice(name.indexOf("/") + 1) : name;
+  const laterPath = resolve(gitRoot, LATER_PUBLICATION_DIRECTORY, `${key}-${version}.json`);
+  if (existsSync(laterPath)) {
+    try {
+      const record = JSON.parse(readFileSync(laterPath, "utf8"));
+      if (record?.candidate?.name === name && record?.candidate?.version === version) return true;
+    } catch {
+      // Unreadable or malformed — fall through to the Trio check; a
+      // separate gate (check-package-evidence.mjs) is where a genuinely
+      // broken evidence file gets reported as a finding, not here.
+    }
+  }
+  const trioPath = resolve(gitRoot, TRIO_PUBLICATION_PATH);
+  if (!existsSync(trioPath)) return false;
+  try {
+    const trio = JSON.parse(readFileSync(trioPath, "utf8"));
+    for (const member of trio?.members ?? []) {
+      const qualPath = member?.qualification?.path;
+      if (typeof qualPath !== "string") continue;
+      const qualAbs = resolve(gitRoot, qualPath);
+      if (!existsSync(qualAbs)) continue;
+      const record = JSON.parse(readFileSync(qualAbs, "utf8"));
+      if (record?.candidate?.name === name && record?.candidate?.version === version) return true;
+    }
+  } catch {
+    // Same reasoning as above — an unreadable Trio publication file is a
+    // finding for a different gate, not evidence of publication here.
+  }
+  return false;
+}
+
+// ISSUE #920 — THE RETAINED-RECORD RECONCILIATION (scope narrowed by the
+// #1187 / #1265 / #1313 owner decision, composed with #1265's own pending-
+// changeset carve-out — see the header comment's PRECEDENCE section above)
 // ---------------------------------------------------
 // A package can report "no bump required" by packed-content diffing alone
 // (the two `status: "pass"` returns below that this function reaches when
@@ -524,18 +823,33 @@ function loadPackageContext(pkgDir) {
 // check-qualification-record-present.mjs's own header for the prior
 // incident that makes `packageTreeSha1` cover tests deliberately) even
 // though nothing PACKED moved. This gate and that one are each correct
-// about what they measure; the gap is that nothing reconciled them before
-// this function's own answer reached a contributor.
+// about what they measure; the gap issue #920 closed is that nothing told a
+// contributor about the second gate's answer before this one reported
+// clean.
 //
-// This cost a real version: `@clossys/architect@0.1.7` was already bumped
-// and had a retained record. A follow-up pull request fixed a test so it
-// stopped mutating the real `dist/cli.js` — a test-only change, correctly
-// EXCLUDED from packed content by `files`, so this function correctly
-// reported no bump required. But that same edit moved the package's tree,
-// and qualification records are immutable (one introduction per path,
-// never corrected in place), so 0.1.7's retained record went stale the
-// moment that edit landed. Nothing said so until publish, and 0.1.7 could
-// never be published — see issue #920 for the full incident.
+// The incident that motivated #920: `@clossys/architect@0.1.7` was already
+// bumped and had a retained record. A follow-up pull request fixed a test so
+// it stopped mutating the real `dist/cli.js` — a test-only change, correctly
+// EXCLUDED from packed content by `files`. That same edit moved the
+// package's tree, and qualification records are immutable (one introduction
+// per path, never corrected in place), so 0.1.7's retained record went stale
+// the moment that edit landed. Nothing said so until publish, and 0.1.7
+// could never be published — see issue #920 for the full incident.
+//
+// #920's own fix reported that staleness as `needs-bump` UNCONDITIONALLY,
+// which is what PR #1265's verification found violates the owner cadence
+// rule at #1187: a test-only change (exactly the architect 0.1.7 shape)
+// forces a changeset every time, for content nobody is about to publish.
+// This function keeps computing the identical diagnosis — it does not
+// change what "stale" means, or weaken check-qualification-record-present.mjs's
+// own whole-tree comparison at publish time — but now ALSO reports whether
+// the current version is already published (`hasLocalPublicationEvidence()`
+// above), so the two call sites below can tell the harmless case (already
+// shipped; a stale record is historical) from the one #920 exists to catch
+// (still queued; a stale record silently strands it, unless THIS pull
+// request's own history adds a pending changeset for it — #1265's carve-out,
+// consulted only in the unpublished branch; see PRECEDENCE in the header
+// comment).
 //
 // This reuses check-qualification-record-present.mjs's own present/missing/
 // stale join (`qualificationRecordPresenceForCandidate`) rather than a
@@ -548,11 +862,11 @@ function loadPackageContext(pkgDir) {
 // about what "stale" means, only about which candidate they're asking
 // about.
 //
-// Returns the target sentence issue #920 asks for when the CURRENT
+// Returns `{ path, version, diagnoses, published }` when the CURRENT
 // version's retained record no longer matches the tree, or null when there
 // is no retained record for this version at all (an ordinary, unpublished
 // in-progress package — not a finding) or the record still matches.
-function staleRetainedRecordDetail(gitRoot, manifest) {
+function staleRetainedRecordDiagnosis(gitRoot, manifest) {
   const presence = qualificationRecordPresenceForCandidate({
     root: gitRoot,
     candidate: { name: manifest.name, version: manifest.version },
@@ -565,10 +879,114 @@ function staleRetainedRecordDetail(gitRoot, manifest) {
   if (presence.staleFields.includes("packageTreeSha1")) {
     diagnoses.push(`its package directory has changed (recorded candidate.packageTreeSha1 ${presence.recordedTreeDigest}, current ${presence.currentTreeDigest})`);
   }
-  return (
-    `no bump required for packed content, but the retained record for ${manifest.version} at ${presence.path} is now stale: ${diagnoses.join("; ")}. ` +
-    "Publishing requires a bump — once a version's record is retained, any change to that package, packed or not, requires a new version (docs/PUBLISHING.md)."
+  const published = hasLocalPublicationEvidence(gitRoot, manifest.name, manifest.version);
+  return { path: presence.path, version: manifest.version, diagnoses, published };
+}
+
+// ISSUE #1255 — A PENDING CHANGESET IS AN ALTERNATIVE TO BUMPING DIRECTLY
+// --------------------------------------------------------------------------
+// A pull request that changes a package's packed content no longer needs to
+// bump that package's version itself: adding a `.changesets/<slug>.md` file
+// naming the package (see scripts/collect-changesets.mjs) is equally
+// sufficient, and lets scripts/apply-release-changesets.mjs batch the actual
+// bump into a periodic release PR instead of every content PR colliding on
+// the same package's next version. This is purely additive to the existing
+// pass conditions below (a direct version bump still passes, exactly as
+// before) — it only widens what ALSO counts as ready, so it cannot make
+// anything that passed before fail now.
+//
+// The set of .changesets/ filenames that already existed AT the merge base
+// -- everything else currently pending is, by elimination, something this
+// pull request's own history added. `git ls-tree` on a ref that predates
+// .changesets/ entirely (or on a package with no changesets yet) throws;
+// treated the same as "nothing existed there yet" (an empty set), which is
+// the fail-OPEN-to-counting-it-as-added direction issue #1322 item 2 wants
+// -- a merge-base .changesets/ this call cannot read must never cause a
+// changeset that genuinely IS new to this PR to be silently excluded.
+function changesetFilesAtMergeBase(gitRoot, mergeBase) {
+  let out;
+  try {
+    out = git(["ls-tree", "--name-only", mergeBase, "--", ".changesets/"], gitRoot);
+  } catch {
+    return new Set();
+  }
+  return new Set(
+    out
+      .split("\n")
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((path) => path.replace(/^\.changesets\//, "")),
   );
+}
+
+// Reads the working tree's current .changesets/ (the same side of the diff
+// packedFiles(absPkgDir) itself reads), not the merge-base's for WHICH
+// changesets are visible -- but a changeset only counts if it is also
+// ABSENT at the merge base (issue #1322 item 2): a changeset already
+// pending on `main` before this pull request branched, from some other,
+// unrelated, unmerged PR, is not something THIS pull request added, and
+// must not let a packed-content change in THIS pull request ride on it.
+// "A changeset added anywhere in this pull request's history, still
+// pending at HEAD, counts" (the rule this header always stated) -- the
+// merge-base filter below is what actually enforces "added ... in this
+// pull request's history", not just "present at HEAD".
+//
+// This strict, PR-added-only form is for the packed-content path (this
+// function's original #1265 use) and the build-input path (PRECEDENCE rule
+// 4 in evaluatePackageDiff's header comment) ONLY -- both are exactly the
+// case #1322 item 2 protects against: a change with no changeset of its OWN
+// must not ride through on someone ELSE's unrelated, already-pending
+// changeset for the same package. See pendingChangesetDetailForStaleRecord
+// below for the narrower, different case (issue #1345) where this strict
+// filter is wrong.
+function pendingChangesetDetail(gitRoot, relPkgDir, mergeBase) {
+  const packageKey = relPkgDir.split("/").at(-1);
+  let entries;
+  try {
+    ({ entries } = loadChangesets(gitRoot));
+  } catch {
+    return null;
+  }
+  const matches = changesetsForPackage(entries, packageKey);
+  if (matches.length === 0) return null;
+  const baseFiles = changesetFilesAtMergeBase(gitRoot, mergeBase);
+  const addedMatches = matches.filter((m) => !baseFiles.has(m.file));
+  if (addedMatches.length === 0) return null;
+  return `a pending changeset covers it: ${addedMatches.map((m) => `${m.file} (${m.bump})`).join(", ")} — scripts/apply-release-changesets.mjs will bump it in the next release PR`;
+}
+
+// ISSUE #1345 — the stale-retained-record carve-out (PRECEDENCE rule 2, in
+// evaluatePackageDiff's changed.length === 0 and devDependencies-only
+// branches) is NOT the case #1322 item 2 protects against, even though it
+// calls into the same "is there a pending changeset" question. #1322's
+// concern is a DIFFERENT pull request's unrelated, already-pending
+// changeset rescuing a packed-content change that has no changeset of its
+// own. Here there is no "different pull request" -- the changeset in
+// question names the exact SAME package the retained record just went
+// stale for, so whether THIS pull request happened to be the one that
+// added it is irrelevant: an already-pending changeset, from any point in
+// this package's history, is already scripts/apply-release-changesets.mjs's
+// promise that this exact package gets a real bump in the next release PR.
+// Requiring a second, redundant changeset naming the same package produces
+// pure churn (see issue #1345) with no security benefit -- unlike #1322's
+// case, there is no "someone else's change riding through for free" here,
+// because nothing about the package's packed content changed at all.
+//
+// So, unlike pendingChangesetDetail above, this omits the merge-base
+// filter entirely: ANY changeset pending at HEAD that names this package
+// counts, whether this pull request added it or it was already pending
+// before this pull request branched.
+function pendingChangesetDetailForStaleRecord(gitRoot, relPkgDir) {
+  const packageKey = relPkgDir.split("/").at(-1);
+  let entries;
+  try {
+    ({ entries } = loadChangesets(gitRoot));
+  } catch {
+    return null;
+  }
+  const matches = changesetsForPackage(entries, packageKey);
+  if (matches.length === 0) return null;
+  return `a pending changeset covers it: ${matches.map((m) => `${m.file} (${m.bump})`).join(", ")} — scripts/apply-release-changesets.mjs will bump it in the next release PR`;
 }
 
 // DEFAULT MODE — diff-scoped against the merge base. See header comment.
@@ -631,11 +1049,15 @@ function evaluatePackageDiff(pkgDir, requestedBase) {
     };
   }
 
-  let changed, oldFiles, newFiles;
+  let changed, oldFiles, newFiles, buildInputsChanged;
   try {
     oldFiles = packedFilesAtCommit(gitRoot, relPkgDir, mergeBase);
-    newFiles = packedFiles(absPkgDir);
+    newFiles = packedFilesAtWorktree(absPkgDir);
     changed = diffPackedFiles(oldFiles, newFiles);
+    // See buildInputFiles()'s header comment: tsconfig*.json never appears
+    // in `changed` above (npm never packs it) but can still change compiled
+    // dist/ output, so it is read and diffed on its own axis.
+    buildInputsChanged = diffPackedFiles(buildInputFilesAtCommit(gitRoot, relPkgDir, mergeBase), buildInputFiles(absPkgDir));
   } catch (error) {
     return { package: label, status: "error", detail: error.message };
   }
@@ -653,10 +1075,89 @@ function evaluatePackageDiff(pkgDir, requestedBase) {
     identityTransitionFailure = transition.detail;
   }
 
+  // A build-input-only change (tsconfig*.json or a script scripts.build
+  // invokes directly — see buildInputFiles()'s header) is treated exactly
+  // like a packed-content change (PRECEDENCE rule 4 in the header comment):
+  // it can move compiled dist/ output with `changed` reporting nothing, so
+  // the publication carve-out below never applies to it — only a pending
+  // changeset (or a direct bump) rescues it, the same as any other packed
+  // change.
+  if (changed.length === 0 && buildInputsChanged.length > 0) {
+    const pendingChangeset = pendingChangesetDetail(gitRoot, relPkgDir, mergeBase);
+    if (pendingChangeset) {
+      return {
+        package: label,
+        status: "pass",
+        detail: `${buildInputsChanged.length} build input file(s) changed since merge-base ${mergeBase.slice(0, 12)} (base ${baseRef}) while version stayed ${manifest.version}, but ${pendingChangeset}`,
+      };
+    }
+    return {
+      package: label,
+      status: "needs-bump",
+      buildInputsChanged: true,
+      detail:
+        `${buildInputsChanged.length} build input file(s) changed since merge-base ${mergeBase.slice(0, 12)} (base ${baseRef}) while version stayed ${manifest.version} ` +
+        "— a build input (tsconfig, or a local script scripts.build invokes directly) drives what tsc/the build emits into dist/, so this can change what a consumer receives with no packed-file trace " +
+        "(bump the version, or add a .changesets/<slug>.md naming this package instead — see issue #1255)",
+      changed: buildInputsChanged,
+    };
+  }
   if (changed.length === 0) {
-    const stale = staleRetainedRecordDetail(gitRoot, manifest);
+    const stale = staleRetainedRecordDiagnosis(gitRoot, manifest);
+    // PRECEDENCE rule 1 (see header comment): publication evidence is
+    // checked first and unconditionally rescues a stale record — a version
+    // that already shipped can never be published again, so nothing else
+    // this pull request does (a changeset included) has anything left to
+    // protect.
+    if (stale && stale.published) {
+      return {
+        package: label,
+        status: "pass",
+        staleRetainedRecord: true,
+        detail:
+          `no packed-file changes since merge-base ${mergeBase.slice(0, 12)} (base ${baseRef}, version ${manifest.version}) — ` +
+          "packed content is unaffected, so no version bump or changeset is required for this pull request. " +
+          `Note: the retained qualification record for ${stale.version} at ${stale.path} is stale (${stale.diagnoses.join("; ")}); ` +
+          `this is unpacked-only drift, expected for a test/CI/docs-only change under the owner cadence rule (issue #1187). ` +
+          `${stale.version} is already published, so this is harmless: records are immutable and this one can never be brought back in sync, but nothing will ever try to publish ${stale.version} again.`,
+      };
+    }
     if (stale) {
-      return { package: label, status: "needs-bump", staleRetainedRecord: true, detail: stale };
+      // PRECEDENCE rule 2: unpublished, so fall back to #1265's own
+      // carve-out — a pending changeset naming this package, however it
+      // got there, is the promise that a real bump follows in the batched
+      // release PR, which is what actually recovers the package. Issue
+      // #1345: unlike the packed-content and build-input paths, this is
+      // NOT the "someone else's unrelated changeset" case #1322 item 2
+      // guards against — nothing about this package's packed content
+      // changed at all, so a changeset already pending before this pull
+      // request branched is not "riding through for free"; it already
+      // names this exact package and already promises the bump. Use the
+      // unfiltered helper, not the merge-base-filtered one.
+      const pendingChangeset = pendingChangesetDetailForStaleRecord(gitRoot, relPkgDir);
+      if (pendingChangeset) {
+        return {
+          package: label,
+          status: "pass",
+          staleRetainedRecord: true,
+          detail: `no packed-file changes since merge-base ${mergeBase.slice(0, 12)} (base ${baseRef}, version ${manifest.version}), but the retained qualification record for ${stale.version} at ${stale.path} is stale (${stale.diagnoses.join("; ")}) — however, ${pendingChangeset}`,
+        };
+      }
+      // PRECEDENCE rule 3: unpublished, no pending changeset — issue #920's
+      // original strictness, unconditionally. Records are immutable, so
+      // ${stale.version} itself can never be published with a matching
+      // record again — the only remedy is a NEW version, which nothing
+      // forces unless this stays a failing gate.
+      return {
+        package: label,
+        status: "needs-bump",
+        staleRetainedRecord: true,
+        detail:
+          `no packed-file changes since merge-base ${mergeBase.slice(0, 12)} (base ${baseRef}, version ${manifest.version}), but the retained qualification ` +
+          `record for ${stale.version} at ${stale.path} is now stale (${stale.diagnoses.join("; ")}) and ${stale.version} has no local publication evidence — ` +
+          `it is still queued to ship. Records are immutable, so ${stale.version} can no longer be published as qualified; the remedy is a new version ` +
+          `(bump the version, or add a .changesets/<slug>.md naming this package — see issue #1255), not a re-qualification of ${stale.version} itself.`,
+      };
     }
     return {
       package: label,
@@ -664,10 +1165,56 @@ function evaluatePackageDiff(pkgDir, requestedBase) {
       detail: `no packed-file changes since merge-base ${mergeBase.slice(0, 12)} (base ${baseRef}, version ${manifest.version})`,
     };
   }
-  if (isDevDependenciesOnlyChange(changed, oldFiles, newFiles)) {
-    const stale = staleRetainedRecordDetail(gitRoot, manifest);
+  // buildInputsChanged.length === 0 is required here too: a devDependencies-
+  // only packed change (package.json, nothing else packed) alongside an
+  // UNPACKED build-input edit must not ride through on the devDependencies
+  // exemption — the build-input edit alone is enough to change dist/ output
+  // (see buildInputFiles()'s header comment), independent of whether the
+  // devDependency that changed was a build-toolchain one.
+  if (buildInputsChanged.length === 0 && isDevDependenciesOnlyChange(changed, oldFiles, newFiles)) {
+    const stale = staleRetainedRecordDiagnosis(gitRoot, manifest);
+    if (stale && stale.published) {
+      // Same PRECEDENCE rule 1 as the changed.length === 0 branch above: a
+      // devDependencies-only edit is already exempt from the bump
+      // requirement (issue #269), and ${stale.version} is already
+      // published, so record staleness it causes or uncovers is reported,
+      // not failed.
+      return {
+        package: label,
+        status: "pass",
+        staleRetainedRecord: true,
+        detail:
+          `only devDependencies changed in package.json since merge-base ${mergeBase.slice(0, 12)} (base ${baseRef}, ` +
+          `version ${manifest.version}) — devDependencies do not affect what consumers receive when they install this ` +
+          "package, so this is exempt from the version-bump requirement (see issue #269). " +
+          `Note: the retained qualification record for ${stale.version} at ${stale.path} is stale (${stale.diagnoses.join("; ")}); ` +
+          `${stale.version} is already published, so this is harmless — records are immutable, but nothing will ever try to publish ${stale.version} again.`,
+      };
+    }
     if (stale) {
-      return { package: label, status: "needs-bump", staleRetainedRecord: true, detail: stale };
+      // PRECEDENCE rule 2, same as above (issue #1345: unfiltered helper,
+      // not the merge-base-filtered one — see the comment on that branch),
+      // for the devDependencies-only branch.
+      const pendingChangeset = pendingChangesetDetailForStaleRecord(gitRoot, relPkgDir);
+      if (pendingChangeset) {
+        return {
+          package: label,
+          status: "pass",
+          staleRetainedRecord: true,
+          detail: `only devDependencies changed in package.json since merge-base ${mergeBase.slice(0, 12)} (base ${baseRef}, version ${manifest.version}), but the retained qualification record for ${stale.version} at ${stale.path} is stale (${stale.diagnoses.join("; ")}) — however, ${pendingChangeset}`,
+        };
+      }
+      // PRECEDENCE rule 3, same as above.
+      return {
+        package: label,
+        status: "needs-bump",
+        staleRetainedRecord: true,
+        detail:
+          `only devDependencies changed in package.json since merge-base ${mergeBase.slice(0, 12)} (base ${baseRef}, version ${manifest.version}), but the ` +
+          `retained qualification record for ${stale.version} at ${stale.path} is now stale (${stale.diagnoses.join("; ")}) and ${stale.version} has no local ` +
+          `publication evidence — it is still queued to ship. Records are immutable, so ${stale.version} can no longer be published as qualified; the remedy ` +
+          `is a new version (bump the version, or add a .changesets/<slug>.md naming this package — see issue #1255), not a re-qualification of ${stale.version} itself.`,
+      };
     }
     return {
       package: label,
@@ -678,11 +1225,23 @@ function evaluatePackageDiff(pkgDir, requestedBase) {
         "package, so this is exempt from the version-bump requirement (see issue #269)",
     };
   }
+  // PRECEDENCE rule 4: a genuine packed-content change is unaffected by
+  // either carve-out above — only a pending changeset or a direct bump
+  // rescues it, exactly as it always has.
+  const pendingChangeset = pendingChangesetDetail(gitRoot, relPkgDir, mergeBase);
+  if (pendingChangeset) {
+    return {
+      package: label,
+      status: "pass",
+      detail: `${changed.length} packed file(s) changed since merge-base ${mergeBase.slice(0, 12)} (base ${baseRef}) while version stayed ${manifest.version}, but ${pendingChangeset}`,
+    };
+  }
   return {
     package: label,
     status: "needs-bump",
     detail: `${changed.length} packed file(s) changed since merge-base ${mergeBase.slice(0, 12)} (base ${baseRef}) while version stayed ${manifest.version}` +
-      (identityTransitionFailure ? `; identity-transition exemption rejected: ${identityTransitionFailure}` : ""),
+      (identityTransitionFailure ? `; identity-transition exemption rejected: ${identityTransitionFailure}` : "") +
+      " (bump the version, or add a .changesets/<slug>.md naming this package instead — see issue #1255)",
     changed,
   };
 }
@@ -716,7 +1275,7 @@ function evaluatePackageAudit(pkgDir) {
   let changed;
   try {
     const oldFiles = packedFilesAtCommit(gitRoot, relPkgDir, bump.commit);
-    const newFiles = packedFiles(absPkgDir);
+    const newFiles = packedFilesAtWorktree(absPkgDir);
     changed = diffPackedFiles(oldFiles, newFiles);
   } catch (error) {
     return { package: label, status: "error", detail: error.message };

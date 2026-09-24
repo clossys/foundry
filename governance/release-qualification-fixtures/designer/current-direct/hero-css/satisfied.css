@@ -1,0 +1,20 @@
+/* A consumer's built Tailwind v4 stylesheet whose @source scanned the designer package. */
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display, system-ui, ui-sans-serif, -apple-system, "Segoe UI", sans-serif);
+  }
+  .rounded-control {
+    border-radius: var(--radius-control, 6px);
+  }
+  .bg-accent {
+    background-color: var(--color-accent, oklch(0.4748 0 0));
+  }
+  .text-display-l {
+    font-size: var(--text-display-l, 56px);
+  }
+  .tablet\:grid-cols-2 {
+    @media (width >= 48rem) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+}

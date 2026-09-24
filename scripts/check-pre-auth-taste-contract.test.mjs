@@ -1,6 +1,5 @@
 // Regression tests for check-pre-auth-taste-contract.mjs.
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
@@ -9,6 +8,7 @@ import {
   evaluatePreAuthTasteContract,
   scanPreAuthTasteContract,
 } from "./check-pre-auth-taste-contract.mjs";
+import { spawnCapture } from "./lib/spawn-capture.mjs";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const scriptPath = join(scriptDir, "check-pre-auth-taste-contract.mjs");
@@ -35,7 +35,7 @@ test("live PRE-AUTH-QUALITY passes taste contract", () => {
   assert.equal(result.exitCode, 0, result.findings.map((f) => f.rule).join(", "));
 });
 
-test("CLI exits 0 on this repository", () => {
-  const proc = spawnSync(process.execPath, [scriptPath, repoRoot], { encoding: "utf8" });
+test("CLI exits 0 on this repository", async () => {
+  const proc = await spawnCapture(process.execPath, [scriptPath, repoRoot]);
   assert.equal(proc.status, 0, proc.stderr || proc.stdout);
 });

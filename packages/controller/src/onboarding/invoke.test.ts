@@ -22,6 +22,7 @@ process.exit(0);
 
 let evidence = "";
 let executable = "";
+let binDirectory = "";
 let surface: AssessmentSurface;
 
 const CANARY_NAME = "SYNTHETIC_CONSUMER_SIDE_CHANNEL";
@@ -29,7 +30,7 @@ const CANARY_VALUE = "do-not-inherit-me";
 
 beforeEach(() => {
   evidence = mkdtempSync(join(tmpdir(), "onboarding-invoke-evidence-"));
-  const binDirectory = mkdtempSync(join(tmpdir(), "onboarding-invoke-bin-"));
+  binDirectory = mkdtempSync(join(tmpdir(), "onboarding-invoke-bin-"));
   executable = join(binDirectory, "echo-environment.js");
   writeFileSync(executable, ECHO_ENVIRONMENT_ROLE);
   chmodSync(executable, 0o755);
@@ -45,6 +46,7 @@ beforeEach(() => {
 afterEach(() => {
   delete process.env[CANARY_NAME];
   rmSync(evidence, { recursive: true, force: true });
+  rmSync(binDirectory, { recursive: true, force: true });
 });
 
 describe("nodeAssessmentInvoker's child environment", () => {

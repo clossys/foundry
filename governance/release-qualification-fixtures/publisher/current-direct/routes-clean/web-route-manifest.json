@@ -1,0 +1,12 @@
+{
+  "registeredTemplates": [
+    "MarketingView"
+  ],
+  "routes": [
+    {
+      "id": "/",
+      "template": "MarketingView",
+      "file": "app/page.tsx"
+    }
+  ]
+}

@@ -94,6 +94,36 @@ describe("loop state validation", () => {
     expect(validateLoopState(broken).some((f) => f.rule === "invalid-next-action")).toBe(true);
   });
 
+  it("rejects a blocker whose capabilityId names a different capability than the one it is filed under", () => {
+    const state = validState();
+    const broken = {
+      ...state,
+      capabilities: {
+        ...state.capabilities,
+        "confirm-problems": {
+          ...state.capabilities["confirm-problems"]!,
+          blockers: [{ capabilityId: "some-other-capability", kind: "missing-input", owner: "upstream-role-or-client", nextAction: { who: "x", how: "y", byWhen: "2026-10-01" }, since: "2026-09-22T00:00:00Z" }],
+        },
+      },
+    };
+    expect(validateLoopState(broken).some((f) => f.rule === "blocker-capability-mismatch")).toBe(true);
+  });
+
+  it("rejects a blocker whose owner does not match BLOCKER_OWNERS for its kind", () => {
+    const state = validState();
+    const broken = {
+      ...state,
+      capabilities: {
+        ...state.capabilities,
+        "confirm-problems": {
+          ...state.capabilities["confirm-problems"]!,
+          blockers: [{ capabilityId: "confirm-problems", kind: "missing-input", owner: "the-wrong-owner", nextAction: { who: "x", how: "y", byWhen: "2026-10-01" }, since: "2026-09-22T00:00:00Z" }],
+        },
+      },
+    };
+    expect(validateLoopState(broken).some((f) => f.rule === "blocker-owner-mismatch")).toBe(true);
+  });
+
   it("rejects a decision with an unreadable when date", () => {
     const state = validState();
     const broken = {

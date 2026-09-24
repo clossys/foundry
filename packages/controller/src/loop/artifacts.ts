@@ -20,9 +20,15 @@ import { computeDigest } from "../policy/digest.js";
 
 const ROLE_FOLDER_PREFIX = (role: string): string => `clossys/${role.split("/").pop()}/`;
 
-/** A path a role is about to write falls under that role's own `clossys/<role>/` folder -- the one boundary every operation here shares. */
+/**
+ * A path a role is about to write falls under that role's own
+ * `clossys/<role>/` folder -- the one boundary every operation here shares.
+ * Backslashes count as separators too, so a Windows-style `..\` segment
+ * cannot escape the folder where a caller applies the path on Windows.
+ */
 export function isOwnedByRole(role: string, path: string): boolean {
-  return path.startsWith(ROLE_FOLDER_PREFIX(role)) && !path.split("/").includes("..");
+  const normalized = path.replace(/\\/g, "/");
+  return normalized.startsWith(ROLE_FOLDER_PREFIX(role)) && !normalized.split("/").includes("..");
 }
 
 export interface CreateOrUpdatePlan {
@@ -99,6 +105,9 @@ export function planMove(input: {
   readonly candidateReferrers: readonly { readonly path: string; readonly content: string }[];
 }): MovePlan | RefusedPlan {
   const { role, fromPath, toPath, candidateReferrers } = input;
+  if (!isOwnedByRole(role, fromPath)) {
+    return { kind: "refused", role, path: fromPath, reason: `source is not under this role's own clossys/${role.split("/").pop()}/ folder` };
+  }
   if (!isOwnedByRole(role, toPath)) {
     return { kind: "refused", role, path: toPath, reason: `destination is not under this role's own clossys/${role.split("/").pop()}/ folder` };
   }

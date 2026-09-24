@@ -1,0 +1,15 @@
+{
+  "id": "single-role-advisor-only",
+  "description": "A generic client who confirms only Advisor's own problem: whether this is worth it for them. Baseline, like single-role-strategist-only but for the engagement-gate role itself. No real company; a synthetic client for regression coverage only.",
+  "confirmedProblems": [
+    { "id": "advisor-worth-it", "primary": true }
+  ],
+  "expect": {
+    "state": "composed",
+    "mustIncludeRoles": ["advisor"],
+    "mustExcludeRoles": ["architect", "bouncer", "builder", "butler", "controller", "customer", "designer", "giver", "influencer", "inspector", "integrator", "keeper", "locksmith", "messenger", "observer", "publisher", "strategist", "writer"],
+    "maxRoles": 5,
+    "sequence": ["advisor"],
+    "unsatisfiedNeeds": []
+  }
+}

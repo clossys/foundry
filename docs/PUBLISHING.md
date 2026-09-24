@@ -249,6 +249,38 @@ written; `npm install` got the right tarball, the following `import` line
 - [ ] `CHANGELOG.md` — fresh, starting at the package's real `0.1.0`, Keep a
       Changelog format.
 
+### Releasing a version bump after the first publish (issue #1255) <!-- facts-gate:ignore -->
+
+A pull request that changes an already-published package's packed content
+does not bump that package's `version` itself. Add a
+`.changesets/<slug>.md` file instead (format and validation:
+`scripts/collect-changesets.mjs`), naming the package's `packages/<dir>`
+directory and a `patch`/`minor`/`major` level, with the summary that will
+become the `CHANGELOG.md` line. `scripts/check-release-readiness.mjs`
+accepts a pending changeset as an alternative to a same-PR version bump.
+
+A periodic or on-demand release PR (`node scripts/apply-release-changesets.mjs`,
+`.github/workflows/release-pr.yml`) applies every pending changeset: it
+bumps each named package once (the highest level any of its changesets
+named), writes the `CHANGELOG.md` entry (with a "Breaking changes"
+subsection for any consumed `major`-level changeset), regenerates
+`package-lock.json`, and deletes the changesets it applied.
+`scripts/check-release-pr-shape.mjs` is the gate that keeps this the only <!-- facts-gate:ignore -->
+legitimate way a package's version moves going forward: a version change
+with no consumed, matching changeset and no matching `CHANGELOG.md` entry
+is refused as "a version change outside a release PR."
+
+**When a release PR is allowed to open is governed by the weekly release
+calendar — see [docs/RELEASING.md](RELEASING.md) for the full scheme.** In
+short: Monday–Friday is the merge window, Saturday is release day, Sunday
+is consumer-adoption day. The calendar decides *when*, never *what version*
+— versions stay plain semver exactly as described above.
+
+Qualification stays exactly where it was: one retained record per released
+version (`governance/release-qualifications/`), never per pull request —
+a release PR bumping several packages at once still needs one qualification
+per package version it produced, unaffected by how many changesets fed it.
+
 ## 5. Verify
 
 ```bash
@@ -421,53 +453,166 @@ branch by hand.
 
 **Until a retained record exists,** a package version that has already
 merged to `main` ahead of one carries an acknowledged, issue-referenced
-deferral entry in `governance/release-qualification-deferrals.json`
+deferral file at `governance/release-qualification-deferrals/<package>@<version>.json`
 (enforced by `scripts/check-qualification-record-required.mjs`). A deferral
 acknowledges a merge, never a publication — the version it names may not be
 published before its record exists, and the entry itself goes stale (and
 fails the gate) the instant a matching record is retained, so it is a
 countdown, not a standing exemption.
 
-### Once a version's record is retained, any change to that package needs a new version
+### A retained record binds the whole tree; only a PACKED change forces a new version
 
-This is the ordering rule, stated plainly because it is not obvious from
-either gate's own name: **once a version's qualification record is retained,
-any further change to that package — packed or not — requires a new
-version.** Practically, that means fixing a test *before* generating a
-record, never after.
+`scripts/check-qualification-record-present.mjs` compares
+`candidate.packageTreeSha1` against the whole package directory, tests
+included, by deliberate design — see that script's own header for the prior
+incident (a record whose manifest digest still matched while its tree digest
+had silently drifted) that makes narrowing the RECORD's own tree hash to
+packed files only unsafe. A record is immutable once introduced, so a tree
+that has moved past it can never be reconciled at that version; publishing
+that exact version again will always be refused once its record has gone
+stale, packed or not.
 
-The rule follows from two things that are both true and that neither gate
-alone states together. `scripts/check-release-readiness.mjs` compares packed
-content only — a test file excluded by `files` moving is invisible to it, by
-design (devDependencies and non-shipped files are exactly what that gate is
-right to ignore for the bump question it asks). `scripts/check-qualification-
-record-present.mjs` compares `candidate.packageTreeSha1` against the whole
-package directory, tests included, by equally deliberate design — see that
-script's own header for the prior incident (a record whose manifest digest
-still matched while its tree digest had silently drifted) that makes
-narrowing the tree hash to packed files only unsafe. A record is immutable
-once introduced, so a tree that has moved past it can never be reconciled;
-the version it was retained for can only be skipped.
-
-This cost a real version. `@clossys/architect@0.1.7` was bumped and had a
-retained, matching record. A follow-up pull request then fixed a test so it
-stopped mutating the real `dist/cli.js` in place — a test-only edit, correctly
-excluded from packed content, so `check-release-readiness.mjs` correctly
-reported no bump required. That same edit moved `packages/architect/`'s tree,
-and the 0.1.7 record — bound to the tree as it stood before the fix — went
-stale the moment the fix landed. 0.1.7 could never be published again; 0.1.8
+That fact used to also decide whether a pull request needed a new version at
+all: `scripts/check-release-readiness.mjs` would fail with `needs-bump` the
+instant the retained record for a package's CURRENT version went stale for
+ANY reason, including a change to a file the package never ships. The owner
+cadence rule (issue #1187) says a test, CI, or internal-docs-only change
+carries no changeset and causes no release; PR #1265's verification found
+that the original rule above broke that promise, because
+`packageTreeSha1`'s whole-tree scope means a test-only edit stales the record
+exactly as surely as a packed one does. This was measured directly:
+`@clossys/architect@0.1.7` was bumped and had a retained, matching record. A
+follow-up pull request fixed a test so it stopped mutating the real
+`dist/cli.js` in place — a test-only edit, correctly excluded from packed
+content. That same edit moved `packages/architect/`'s tree, and the 0.1.7
+record — bound to the tree as it stood before the fix — went stale the
+moment the fix landed; 0.1.7 could never be published again, and 0.1.8
 carries the same fix instead. See issue #920 for the full incident.
 
-`check-release-readiness.mjs` now consults the retained record for a
-package's CURRENT version whenever its own packed-content diff would
-otherwise report "no bump required," and says so explicitly when the two
-disagree — "no bump required for packed content, but the retained record for
-`<version>` is now stale; publishing requires a bump" — rather than reporting
-the permissive half alone. It does not weaken either gate: a stale record is
-still exactly what `check-qualification-record-present.mjs` alone would find
-at publish dispatch; this only means a pull request sees the same answer
-before merge, not only at the point an approval would otherwise be spent on a
-run that cannot succeed.
+The owner decision (issues #1187, #1265, #1313, #920) keeps the record's own
+definition of staleness exactly as it was above — nothing about how a record
+is computed or validated changed, and every existing retained record still
+validates under the identical join it always has — but narrows what
+**`check-release-readiness.mjs`** does with that finding into a fixed
+precedence, composed from two independent carve-outs that were each proposed
+against the SAME `needs-bump` branch and had to be reconciled rather than
+picked between (see `scripts/check-release-readiness.mjs`'s own header
+comment for the authoritative statement):
+
+1. **Published wins outright.** When the current version already has local,
+   git-tracked publication evidence (a sealed Trio first-publication record,
+   or a later publication's own evidence file under
+   `governance/release-publications/later/`), an unpacked-only staleness is
+   reported but never fails the gate — nothing will ever try to publish that
+   exact version again, so the staleness is historical, not a stranding in
+   progress. This is checked FIRST, and unconditionally: a pending changeset
+   being present too changes nothing, because a shipped version has nothing
+   left for a changeset to protect.
+2. **A pending changeset rescues the unpublished case.** When the version
+   has NOT been shown published, the gate falls back to issue #1255's own
+   changeset mechanism: if this pull request's own history adds a
+   `.changesets/<slug>.md` naming the package, the gate passes — the
+   changeset is `scripts/apply-release-changesets.mjs`'s promise that a real
+   version bump follows in the next batched release PR, which is what
+   actually recovers the package.
+3. **Otherwise, the original #920 strictness stands.** An unpublished
+   version with no pending changeset still fails (`needs-bump`)
+   unconditionally — this is precisely the architect 0.1.7 shape: a stale
+   record on a still-queued version, with nothing yet promising a bump.
+4. **A packed-content change (or a build input — see below) is unaffected
+   by any of the above.** It always still requires a version bump or a
+   pending changeset, independent of whether a retained record is even in
+   play.
+
+When the gate fails, its `detail` never tells anyone to re-qualify — a
+stale record cannot be replaced at the same version, full stop, so the
+correct and only remedy is a new version (directly, or via a changeset), and
+the message says exactly that. When it passes for the published reason, the
+note says the version is already published; when it passes for the
+changeset reason, the note names the changeset the same way a packed-content
+change's pass note already does.
+
+This narrows, but does not remove, the safety net: `check-qualification-
+record-present.mjs` and `publish.yml`'s record-join are untouched. They
+still compare the retained record against the whole tree immediately before
+a publish is allowed to proceed, so a version whose record has gone stale —
+for any reason, packed or not — still can never ship again. What changed
+is which question `check-release-readiness.mjs` answers with
+that same finding: not "does this pull request need a changeset," but "is
+there a pending release this pull request would silently strand" — a
+question the gate can now answer correctly instead of treating every stale
+record the same regardless of whether anything is actually still queued.
+
+### Build inputs count as packed content too
+
+`check-release-readiness.mjs`'s packed-content comparison is deliberately
+source-level (see that script's own header): `dist/` is excluded because it
+is gitignored and therefore has no history to diff against, on the premise
+that "`dist/` is deterministic output of `src/`, so a real change to what
+would ship is caught upstream, in `src/`, every time." That premise fails
+for a change to the BUILD ITSELF rather than to `src/`. Every package here
+builds with `tsc -p tsconfig.json`, and `tsconfig.json` is never part of
+what `npm pack` ships — a `target`, `module`, `lib`, or `strict` edit can
+change compiled `dist/` output with zero packed-file trace. The same is true
+of a `typescript` devDependency bump, which the devDependencies exemption
+above would otherwise wave through on the theory that devDependencies never
+affect what a consumer receives — true for a test runner or a linter, false
+for the compiler itself.
+
+`check-release-readiness.mjs` therefore treats both as packed content for
+the bump question (precedence rule 4 above): a `tsconfig*.json` change is
+diffed on its own axis and requires a bump (or a changeset) exactly like a
+packed-source change would, and `typescript` is carved out of the
+devDependencies exemption by name (`BUILD_TOOLCHAIN_DEV_DEPENDENCIES`).
+Neither of these interacts with the published-version relaxation above —
+they are packed-content findings, so they fail regardless of whether the
+current version has been published; only a direct bump or a pending
+changeset rescues them.
+
+`tsconfig.json` is not alone as a build input `npm pack` never ships.
+`@clossys/launcher`'s `scripts.build` is
+`node scripts/pack-skills.mjs && tsc -p tsconfig.json` — `pack-skills.mjs`
+itself is outside `files`, but it GENERATES `skill-catalogue/`, which IS
+packed. An edit to `pack-skills.mjs` alone therefore changed what a
+consumer received with no packed-file trace, the identical blind spot one
+layer removed. Fixed generally rather than for launcher alone:
+`buildScriptInvokedFiles()` parses ANY package's `scripts.build` for the
+local script files it runs directly via a bare `node <relative-path>`
+invocation, and those files are read and diffed exactly like
+`tsconfig*.json`. This is not a full shell parser — a build script shaped
+more exotically than a `node`/`tsc` sequence contributes no extra paths —
+so it narrows the blind spot, it does not claim to close every shape a
+build script could take.
+
+Two related gaps remain, tracked in #1325 rather than fixed here: a
+root-level or lockfile-only `typescript` resolution change (the compiler is
+resolved at the workspace root, not per package, so no individual package
+directory shows the drift), and `pack-skills.mjs` itself reading OTHER
+packages' `skill/SKILL.md` files into launcher's tarball (a cross-package
+build input this per-package mechanism cannot see by construction). Both
+predate this section and surface only at tarball reverification during an
+actual publish attempt today.
+
+### Packed-content comparison is git-tracked content only
+
+`check-release-readiness.mjs` compares a package's real `npm pack --dry-run`
+result on both sides of the diff — still the correct way to evaluate
+`files`/`.npmignore` globs, not something this script reimplements by
+hand — but narrows the WORKING-TREE side
+(`packedFilesAtWorktree()`) down to paths `git ls-files` already tracks
+before diffing. Without this, gitignored or merely untracked generated
+output that happens to fall inside a package's `files` glob — for example
+`packages/launcher/skill-catalogue/` immediately after a local
+`npm run build` — was picked up as "added" content by `npm pack --dry-run`,
+which reads whatever is actually on disk regardless of git's state. That
+produced a false "packed file(s) changed" finding against a developer's own
+uncommitted local build, not against anything actually different in git. A
+file staged with `git add` but not yet committed is still tracked, so it
+stays caught; only genuinely untracked/ignored paths are dropped. This is
+purely a "what counts as a real change" fix — it changes neither the
+staleness/publication/changeset precedence above nor the build-input axis;
+it only prevents a developer's own local build artifacts from being
+mistaken for one.
 
 ### The retained record's tarball must reproduce
 
@@ -707,40 +852,97 @@ npm run publish:plan
 ```
 
 lists every non-private package, whether it would publish, and why the rest
-would not — "on npm already" and "qualification record missing/stale" are
-kept as distinct reasons, never collapsed into one generic "not eligible".
-It reads only; it packs nothing and publishes nothing. The table two rows
-above is a point-in-time snapshot and drifts as versions bump — `npm run
-publish:plan` derives the same question live, from the current tree and the
-current registry state, every time it runs.
+would not — "on npm already", "route publish workflow", and "qualification
+record missing/stale" are kept as distinct reasons, never collapsed into one
+generic "not eligible". It reads only; it packs nothing and publishes
+nothing. The table two rows above is a point-in-time snapshot and drifts as
+versions bump — `npm run publish:plan` derives the same question live, from
+the current tree and the current registry state, every time it runs.
+
+**The laptop path is for a package's first publish only.** `npm run
+publish:qualified-set -- --publish` never uploads a package whose npm
+identity already exists on the registry, even at a different version — npm
+cannot bind a trusted publisher to an identity that does not exist yet, so an
+owner-present local `npm publish` is the only way to create that FIRST <!-- facts-gate:ignore -->
+identity, and the only case it may legitimately handle. Every later version <!-- facts-gate:ignore -->
+of an already-published package is reported with status
+`route-publish-workflow` and the exact dispatch to run instead:
+
+```text
+gh workflow run publish.yml --ref main -f package=<pkg> -f dry_run=false -f verify_only=false
+```
+
+That is `publish.yml`'s protected `npm-publish` OIDC lane — the same
+required-reviewer environment approval every other update already goes
+through — and it is the only path that can attach npm provenance to a <!-- facts-gate:ignore -->
+version. Only a package's very first identity, before any trusted publisher
+exists for it, takes the local `--publish` path below.
 
 ```text
 npm run publish:qualified-set -- --publish
 ```
 
-runs the owner-present publish loop: for every eligible package, in
+runs the owner-present publish loop: for every eligible package (a genuinely
+first-ever identity, never an update to an already-existing one), in
 dependency order, it runs the exact sequence below — `preflight-package.mjs`,
-a fresh `npm pack`, a fresh `run-candidate-qualification.mjs` transcript,
-`validate-candidate-publish.mjs --mode prepublish`, then
-`publish-qualified-directory.mjs --mode owner-present` — the same gates
-`publish.yml`'s own `qualify` and `publish` jobs run for an OIDC upload, with
-an owner-present interactive `npm publish .` (one npm authentication/2FA
-prompt per package) in place of the OIDC upload only a package that already
-has a first identity can use. A failure in one package (preflight, packing,
-fresh qualification, prepublish validation, or the publish itself) stops only
-that package; every other eligible package is still attempted, and the final
-summary names every outcome. It requires `PUBLIC_SAFETY_DENYLIST` (or
-`--denylist <path>`) and the exact pinned release runtime (Node
-`v24.19.0`, npm `11.17.0`) — see `scripts/lib/release-runtime.mjs`
-— and refuses to run without either. See `scripts/publish-qualified-set.mjs`'s
-own header for the full gate-by-gate mapping and for why this is an
-owner-present loop rather than a `workflow_dispatch` fan-out.
+a clean `dist/` rebuild (delete then rebuild, so a leftover `dist/`'s stale
+file modes from an earlier `npm ci` bin-link can never survive into the
+packed tarball — issue #1286), a fresh `npm pack`, a fresh
+`run-candidate-qualification.mjs` transcript, `validate-candidate-publish.mjs
+--mode prepublish`, then `publish-qualified-directory.mjs --mode
+owner-present` — the same gates `publish.yml`'s own `qualify` and `publish`
+jobs run for an OIDC upload, with an owner-present interactive `npm publish .`
+(one npm authentication/2FA prompt per package) in place of the OIDC upload
+only a package that already has a first identity can use. A failure in one
+package (preflight, the clean rebuild, packing, fresh qualification,
+prepublish validation, or the publish itself) stops only that package; every
+other eligible package is still attempted, and the final summary names every
+outcome. It requires `PUBLIC_SAFETY_DENYLIST` (or `--denylist <path>`) and
+the exact pinned release runtime (Node `v24.19.0`, npm `11.17.0`) — see
+`scripts/lib/release-runtime.mjs` — and refuses to run without either. See
+`scripts/publish-qualified-set.mjs`'s own header for the full gate-by-gate
+mapping and for why this is an owner-present loop rather than a
+`workflow_dispatch` fan-out.
 
 Neither command replaces the per-row stop-and-verify discipline below: after
 each publish, still anonymously verify the exact published identity before
 moving on. Neither runs `record-later-publication.mjs` — see
 `scripts/publish-qualified-set.mjs`'s header for why that stays a separate,
 optional, hand-run step.
+
+### Hands-free publishing after the first identity (issue #1256) <!-- facts-gate:ignore -->
+
+Two things this repository already had, now connected automatically:
+
+- **Auto-qualify.** `.github/workflows/auto-qualify.yml` runs on every push
+  to `main`. It runs `node scripts/select-unqualified-packages.mjs` (a thin
+  filter over `npm run publish:plan`'s own report, kept to genuinely
+  *missing* records — never a stale one, which needs a new version instead,
+  never a re-dispatch of the same one) and dispatches
+  `qualify-candidate.yml` once per package it finds. That workflow already
+  produced and retained records, and already pushed a branch and opened a
+  pull request itself once this repository's "Actions may create pull
+  requests" setting was on (see the owner decision linked at the top of
+  this document) — nothing about the qualification path itself changed.
+- **Trusted publishing.** `publish.yml`'s `publish` job already runs
+  `scripts/publish-qualified-directory.mjs --mode oidc`, already carries
+  `id-token: write` and the `npm-publish` environment gate, and already
+  runs on the pinned release runtime — see "Owner-present first
+  publication, then OIDC" above for the full path and the `npm >=11.5.1`
+  requirement it already states (the pinned release runtime, npm
+  `11.17.0`, is well above that floor). There is no separate OIDC lane to
+  add here.
+
+**What is still an owner action, once per package**, exactly as already
+documented above and unchanged by either workflow: the first identity is <!-- facts-gate:ignore -->
+still an owner-present publication (`npm run publish:qualified-set -- --publish`,
+or the per-row handoff above), because npm cannot bind a trusted publisher
+to a package identity that does not exist yet. Only after that first
+publish can the owner connect that package's npm trusted publisher (GitHub
+Actions, this repository, `publish.yml`, the `npm-publish` environment) on
+npmjs.com — the same one-time step "Owner-present first publication, then
+OIDC" already describes for the Trio, now applying to every package as its
+own first identity publishes.
 
 ### Current retained-candidate first-publication handoff
 
@@ -910,7 +1112,175 @@ immutable qualification record but no publication record. Do not prepare a
 0.1.11 trusted-publisher/OIDC upload until its fresh exact-head candidate has
 passed the required qualification and FULL release checks. After upload,
 require anonymous registry and provenance verification before treating 0.1.11
-as published.
+as published. (0.1.11's own trusted-publisher upload, once it happens through
+`publish.yml`, gains its publication record automatically — see the next
+section — so this hand-run recorder stays reserved for the owner-present case
+above and for backfilling any gap the automated flow could not itself close.)
+
+### Automatic publication evidence after a trusted-publisher release (issue #1346)
+
+Every version `publish.yml`'s OIDC lane actually uploads — where the record
+build itself succeeds; see "Measured data only" below for what happens when
+it cannot — gets its `governance/release-publications/later/<key>-
+<version>.json` record automatically, with no hand-run recorder step.
+`.github/workflows/record-publication-evidence.yml` runs on `workflow_run`,
+once per completed `publish.yml` run, and does nothing at all unless that
+run's `publish (<key>)` job **itself** concluded `success` — gated on the
+matched job's own conclusion, deliberately not on the run's overall one, so
+a version that genuinely uploaded still gets its record even when a later,
+unrelated job in the same run (for example `verify-published`) fails. A
+`dry_run` or `verify_only` dispatch never produces a `publish (<key>)`
+success at all, so this workflow correctly stays a no-op for either.
+
+This file (and `scripts/record-publication-evidence.mjs` /
+`scripts/lib/publication-evidence-run.mjs` beneath it) went through two
+independent blind reviews before landing — one security-focused, one
+correctness-focused — that between them found and fixed a real "pwn
+request" trust-boundary gap, a provenance field the direct join never
+actually checked against the attestation, and a branch-adoption path that
+could have written to an unrelated pull request. The workflow file's own
+header comment maps every fix to the finding that required it; nothing
+below should be read as describing a lighter design than what is actually
+in that file.
+
+**Separation of duties.** This is a second, separate workflow, not a step
+added to `publish.yml` itself. `publish.yml`'s `publish` job keeps exactly
+`contents: read` plus `id-token: write` for the npm OIDC exchange — nothing
+about issue #1346 widens that. The follow-up workflow's own `record-evidence`
+job carries only `actions: read` (to read this run's own job and artifact
+metadata), `contents: write`, and `pull-requests: write` — read-only plus a
+version-control write, never `id-token: write` or any registry credential.
+It never pushes to `main`; it pushes a branch and opens (or updates) a pull
+request, the same review-gated shape `qualify-candidate.yml` and
+`release-pr.yml` already use for their own automated pull requests, and that
+pull request goes through the same review every other change here does. This
+exact permission grant was an explicit owner decision, recorded in
+`governance/decisions/publication-evidence-workflow-permissions.json`; every
+fix from the two reviews above narrows this workflow's trust boundary
+further and does not widen the permissions that decision covers.
+
+Before either step below runs anything from the publish run it is reacting
+to, `record-evidence` re-derives trust from this repository's OWN git
+history rather than the webhook payload alone: it checks out the default
+branch (never the event's `head_sha` directly), proves via
+`git merge-base --is-ancestor` that the publish run's source commit is
+already part of that reviewed history, and only then checks out that
+verified commit. `determine-package`'s own job-level gate independently
+refuses anything that is not literally this repository's own `publish.yml`,
+dispatched manually, with its head on this repository (never a fork) and on
+the default branch — and this workflow never restores or saves an
+`actions/cache` entry, since a `workflow_run` job runs in the default
+branch's shared cache scope regardless of its own `permissions:`.
+
+**Measured data only, or no pull request at all.**
+`scripts/record-publication-evidence.mjs` (via
+`scripts/lib/publication-evidence-run.mjs`) builds the record by calling
+`scripts/record-later-publication.mjs`'s own exported functions —
+`createLaterPublicationRecord` and, through it,
+`buildLaterPublicationRecord`/`validateLaterPublication` — the identical
+building blocks the section above documents for hand use, and the same ones
+PR #1348 called directly to backfill this exact evidence gap for versions
+that predate this workflow. Every field comes from the public npm registry
+(`--fetch`, anonymous), this exact GitHub Actions run's own metadata (read
+from the matched `publish (<key>)` job itself, including the exact attempt
+it ran in — never the run's own current attempt, which can differ after an
+unrelated job was individually re-run), and the already-retained
+qualification record; nothing is invented, and nothing is generated locally
+that a reader could not independently re-derive.
+
+Before any record is written, on **both** the direct join and the replay
+path, `scripts/lib/publication-evidence-run.mjs`'s
+`verifyPublicationProvenance` independently cross-checks every provenance
+field the record is about to claim — workflow, ref, event, source commit,
+run, and attempt — against the version's own npm SLSA provenance attestation
+(the same anonymous `npm audit signatures --include-attestations` install
+`record-later-publication.mjs`'s replay path already performed internally,
+now run for the direct join too, plus an explicit comparison of the
+attestation's decoded `invocationId` against the run/attempt this record is
+about to name). A record whose claimed run or attempt the attestation does
+not corroborate is refused before it is ever written, even though the
+git-ancestry joins alone would have accepted it. If any field cannot be
+measured or does not match, the build throws, the workflow step fails, and
+every later step — including opening a pull request — is skipped entirely.
+
+**Two joins, tried in order, never guessed.** This repository's merge queue
+routinely batches a package's publish with unrelated root
+`package.json`/`package-lock.json` churn from other packages, so the
+straightforward join (`foundry-trusted-publication-v2`, schema 2) fails
+whenever the publish run's source commit no longer matches the qualification
+record's retained root hashes — PR #1348 measured this for 8 of 10
+trusted-publisher versions it backfilled. `scripts/lib/publication-evidence-
+run.mjs`'s `buildPublicationRecordWithFallback` tries the schema-2 join
+first and, only if that fails, falls back to a schema-3 replay
+(`foundry-trusted-publication-replay-v3`) built from this exact run's own
+`qualified-candidate-<key>` artifact — the same artifact `publish.yml`'s
+`qualify` job already uploaded earlier in the same run, rather than a
+separately triggered re-qualification. If both joins fail, the combined
+failure from each is reported and, again, no file is written and no pull
+request opens.
+
+**Idempotent by construction.** Before any of the above runs at all,
+`record-evidence` checks whether the exact record path this run would
+produce already exists on the default branch — reading the package manifest
+at the verified source commit via `git show`, without switching `HEAD` — and
+exits as a clean no-op if it is already there. A redelivered `workflow_run`
+event (GitHub does occasionally redeliver webhooks) or a re-run of this
+workflow after its evidence already merged therefore never produces a red
+run or a duplicate pull request.
+
+**Batching.** `publish.yml` dispatches exactly one package per run, so "N
+packages published close together" means N separate, potentially
+*concurrent* triggers of this workflow — job scheduling does not serialize
+them (the job's own `concurrency:` group is keyed per publish run, precisely
+so it never evicts a different publish's pending follow-up). Each trigger
+looks for an already-open pull request whose branch carries the reserved
+`automation/publication-evidence/` prefix (never this repository's ordinary
+`claude/*` agent-branch namespace, which a plain prefix match would also
+have matched), is not from a fork, and is authored by `github-actions[bot]`
+— and independently verifies, via `scripts/lib/publication-evidence-
+branch.sh`'s `verify_branch_is_ours`, that every commit on that branch past
+its merge-base with the default branch is bot-authored **and** touches only
+`governance/release-publications/later/`, before adding to it. The author
+check alone is not trustworthy — any write-access actor can forge a commit's
+author identity — so path confinement is the check that actually bounds an
+adopted branch's blast radius, and it is never loosened. This verification
+runs again on every fetch inside the push-retry loop, not only at the
+initial lookup, so a branch that was legitimate a moment ago but is no
+longer (someone else pushed to it in between) is abandoned mid-retry rather
+than built on. A branch that fails verification, at any point, is abandoned
+in favor of a fresh branch named from the run's ID plus a random suffix from
+the runner's own entropy source — never a predictable name (the run ID
+alone) an attacker could pre-create ahead of time. Pushing itself is
+retry-safe: each trigger keeps its built record outside git until it lands,
+and retries the whole fetch/stage/commit/push cycle on a non-fast-forward
+rejection rather than assuming it has exclusive write access. Once a push lands, the
+workflow looks up the branch's open pull request fresh, by exact head branch
+and the same same-repository/bot-author filters, and edits it by NUMBER —
+never by resolving a branch name at `gh pr edit` time, which can otherwise
+resolve to an unrelated same-named fork PR or to a PR that merged during
+this very run. Only when that lookup finds nothing open is a new PR opened.
+Merging or closing the open pull request is what starts the next one fresh;
+a branch left with no open PR (for example after a transient `gh` failure)
+is not later rediscovered automatically — a human must open its PR directly
+from the branch, the same graceful-degradation shape this repository already
+uses when Actions is not permitted to open pull requests at all.
+
+This workflow requires no secret beyond the ambient `GITHUB_TOKEN`: no
+`PUBLIC_SAFETY_DENYLIST`, no npm token, nothing — the same posture
+`record-later-publication.mjs` already has when run by hand. The token this
+workflow's build step actually reads is deliberately named something other
+than `GITHUB_TOKEN`/`GH_TOKEN`, so no tool that auto-detects a credential by
+exactly one of those two names picks it up implicitly — but the name alone
+does **not** keep it out of a subprocess further down the call chain: a
+child process inherits its parent's full environment by default regardless
+of what any variable in it is called. What actually closes that is
+`scripts/record-publication-evidence.mjs`'s `main()` reading the variable
+exactly once and deleting it from `process.env` immediately afterward,
+before any other work — see that script's own header for the measurement
+that found the naming-alone claim was not sufficient on its own. Run
+`npm run check:later-publications` on the resulting pull request exactly as
+for a hand-built record; nothing about how that check treats a record
+differs by how the record was produced.
 
 ### Why the name-collision check runs first, always
 

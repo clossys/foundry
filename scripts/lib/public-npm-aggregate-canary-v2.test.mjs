@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdtemp, mkdir, symlink, writeFile } from "node:fs/promises";
+import { mkdir, symlink, writeFile } from "node:fs/promises";
 import { readFileSync } from "node:fs";
-import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import test from "node:test";
+import { makeTmpDir } from "./tmp-fixture.mjs";
 
 import { AggregateUnavailableError, containedRegularDirectory } from "./public-npm-aggregate-canary.mjs";
 import {
@@ -114,9 +114,9 @@ test("v2 plan history refuses every post-introduction rewrite", function () {
   }).length > 0);
 });
 
-test("v2 plan history follows real merge parents to one direct introduction", async function () {
+test("v2 plan history follows real merge parents to one direct introduction", async function (t) {
   const makeRepository = async function (prefix) {
-    const root = await mkdtemp(join(tmpdir(), prefix));
+    const root = await makeTmpDir(t, prefix);
     for (const [command, args] of [
       ["git", ["init", "-q", "-b", "main"]],
       ["git", ["config", "user.email", "v2-history@example.invalid"]],
@@ -188,8 +188,8 @@ test("v2 plan history follows real merge parents to one direct introduction", as
   assert.ok(validateAggregateV2PlanHistory({ history, parentCount: function (revision) { return parents(deleted, revision); } }).length > 0);
 });
 
-test("v2 committed reads ignore a hostile working-tree mutation", async function () {
-  const root = await mkdtemp(join(tmpdir(), "foundry-v2-head-"));
+test("v2 committed reads ignore a hostile working-tree mutation", async function (t) {
+  const root = await makeTmpDir(t, "foundry-v2-head-");
   await mkdir(join(root, "governance"), { recursive: true });
   await writeFile(join(root, "governance", "record.json"), "committed\n");
   for (const [command, args] of [
@@ -203,8 +203,8 @@ test("v2 committed reads ignore a hostile working-tree mutation", async function
   assert.equal(readAggregateV2Head(root, "governance/record.json"), "committed\n");
 });
 
-test("v2 runner defaults every evidence read to committed HEAD", async function () {
-  const root = await mkdtemp(join(tmpdir(), "foundry-v2-runner-head-"));
+test("v2 runner defaults every evidence read to committed HEAD", async function (t) {
+  const root = await makeTmpDir(t, "foundry-v2-runner-head-");
   const { generated, values } = fixture();
   values.set(AGGREGATE_V2_CANARY_PATH, JSON.stringify(plan));
   for (const [path, bytes] of values) {
@@ -232,12 +232,12 @@ test("v2 runner defaults every evidence read to committed HEAD", async function 
   }, function (error) { return error instanceof AggregateUnavailableError; });
 });
 
-test("v2 retained transcript refuses traversal and any symlinked parent", async function () {
-  const root = await mkdtemp(join(tmpdir(), "foundry-v2-containment-"));
+test("v2 retained transcript refuses traversal and any symlinked parent", async function (t) {
+  const root = await makeTmpDir(t, "foundry-v2-containment-");
   await assert.rejects(function () {
     return containedRegularDirectory(root, "../outside");
   }, /escapes the repository root/);
-  const outside = await mkdtemp(join(tmpdir(), "foundry-v2-outside-"));
+  const outside = await makeTmpDir(t, "foundry-v2-outside-");
   await symlink(outside, join(root, "governance"));
   await assert.rejects(function () {
     return retainAggregateV2Transcript({ root, transcript: { canonicalSha256: "b".repeat(64) } });

@@ -59,15 +59,18 @@ const packageVersion: string = (
 function packAndExtractInto(destDir: string): string {
   mkdirSync(destDir, { recursive: true });
   const packDest = mkdtempSync(join(tmpdir(), "designer-hero-css-pnpm-pack-"));
-  const tarballName = execSync(`npm pack --pack-destination "${packDest}"`, {
-    cwd: packageRoot,
-    encoding: "utf8",
-    stdio: ["ignore", "pipe", "pipe"],
-  }).trim();
-  execSync(`tar -xzf "${join(packDest, tarballName)}" -C "${destDir}" --strip-components=1`, {
-    encoding: "utf8",
-  });
-  rmSync(packDest, { recursive: true, force: true });
+  try {
+    const tarballName = execSync(`npm pack --pack-destination "${packDest}"`, {
+      cwd: packageRoot,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+    }).trim();
+    execSync(`tar -xzf "${join(packDest, tarballName)}" -C "${destDir}" --strip-components=1`, {
+      encoding: "utf8",
+    });
+  } finally {
+    rmSync(packDest, { recursive: true, force: true });
+  }
   return destDir;
 }
 

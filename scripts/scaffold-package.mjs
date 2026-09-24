@@ -6,8 +6,15 @@
 // scripts/check-package-conformance.mjs reports zero gaps for it on day
 // one: the manifest `foundry` block, a capability-map and loop-matrix
 // skeleton, the skill body (with its "Run the feedback loop" section
-// generated from the matrix, never hand-written), a qualification adapter
-// and fixture, and CHANGELOG/README furniture.
+// generated from the matrix, never hand-written), a status probe that
+// really emits the shared check-output envelope through a generated copy of
+// the canonical constructor (issues #1383/#1384 -- never a hand-written
+// sample), a qualification adapter, and CHANGELOG/README furniture.
+//
+// It writes NOTHING under this repository's own clossys/ folder (issue
+// #1381). clossys/<role>/STATUS.md and loop.json are consumer state the
+// loop engine writes in a staffed repository; a placeholder written here
+// would be fabricated state, and the conformance gate no longer grades it.
 //
 //   node scripts/scaffold-package.mjs <role-short-name> [--root <repoRoot>] [--force]
 //
@@ -35,6 +42,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { generateLoopSection, loadStageActivities } from "./generate-loop-section.mjs";
+import { ENVELOPE_COPY_PATH, renderEnvelopeCopyFromRoot } from "./sync-envelope-copies.mjs";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 
@@ -43,14 +51,15 @@ function writeJson(path, value) { writeFileSync(path, `${JSON.stringify(value, n
 
 /**
  * Pure: builds every file this package needs, as a Map<relativePath, string>
- * (relative to the eventual packages/<shortName>/ directory) plus the two
- * repository-root files (clossys/<shortName>/STATUS.md and loop.json) and
- * one governance file (the qualification adapter), returned separately
- * since they live outside the package directory. No filesystem access --
- * callers write the result, which is what makes this testable without
- * touching disk and safe to preview with --dry-run.
+ * (relative to the eventual packages/<shortName>/ directory) plus one
+ * governance file (the qualification adapter), returned separately since it
+ * lives outside the package directory. `envelopeCopy` is the exact text
+ * scripts/sync-envelope-copies.mjs renders from the canonical envelope
+ * source (the caller reads it; this function stays free of filesystem
+ * access, which is what makes it testable without touching disk).
  */
-export function buildScaffold({ role, shortName, roleDefinition, stageActivities }) {
+export function buildScaffold({ role, shortName, roleDefinition, stageActivities, envelopeCopy }) {
+  if (typeof envelopeCopy !== "string" || envelopeCopy.length === 0) throw new Error("buildScaffold: envelopeCopy (from scripts/sync-envelope-copies.mjs) is required");
   const capabilityId = "confirm-scaffold-conformance";
   const capability = {
     id: capabilityId,
@@ -58,7 +67,9 @@ export function buildScaffold({ role, shortName, roleDefinition, stageActivities
     worldClass: "A newly scaffolded package reports zero gaps against every Stage A framework definition on day one (issue #1203).",
     inputs: [],
     outputs: [`clossys/${shortName}/status.json`],
-    proofCase: "scaffold-conforms",
+    // `planned` pairs with `proofCase: null`: nothing proves a capability
+    // that does not exist yet (the joint maturity/proofCase rule, #1258).
+    proofCase: null,
     maturity: "planned",
     v0: false,
     businessLifecycleStage: "build",
@@ -72,6 +83,13 @@ export function buildScaffold({ role, shortName, roleDefinition, stageActivities
     license: "MIT",
     description: `${role}: scaffolded by scripts/scaffold-package.mjs (issue #1203). Conforming skeleton -- real capability content is added in Stage C.`,
     bin: { [`${shortName}-check`]: "dist/cli.js" },
+    // The declared bin is dist/cli.js, so the package must be able to build
+    // it: `npm run build --workspaces --if-present` compiles src/ to dist/
+    // through the tsconfig.json written beside this manifest.
+    scripts: {
+      build: "tsc -p tsconfig.json",
+      typecheck: "tsc -p tsconfig.json --noEmit",
+    },
     foundry: {
       assessment: { bin: `${shortName}-check`, invocation: "single-json-input" },
       intake: "intake-question-cards.json",
@@ -144,47 +162,76 @@ export function buildScaffold({ role, shortName, roleDefinition, stageActivities
     "",
   ].join("\n");
 
+  // The status probe (docs/contracts/package-framework.json fields.status,
+  // issue #1383): read-only, one check-output envelope on stdout, exit code
+  // folded from its verdict. A skeleton has nothing to measure, so it says
+  // exactly that -- `indeterminate`, with the one finding that explains why
+  // -- rather than claiming a `satisfied` it has not earned.
+  const statusProbe = [
+    "#!/usr/bin/env node",
+    `// ${role} status probe, scaffolded (issue #1203). Contract: the repository's`,
+    "// docs/contracts/package-framework.json `fields.status` (not shipped): read-only,",
+    "// exactly one check-output envelope on stdout, exit code folded from its verdict.",
+    "// Replace the body once this role has real capability content to measure.",
+    "import { readFileSync } from \"node:fs\";",
+    "import { buildCheckOutputEnvelope, envelopeToExitCode } from \"./generated/check-output-envelope.js\";",
+    "",
+    "const manifest = JSON.parse(readFileSync(new URL(\"../package.json\", import.meta.url), \"utf8\")) as { name: string; version: string };",
+    "",
+    "const envelope = buildCheckOutputEnvelope({",
+    "  package: manifest.name,",
+    "  version: manifest.version,",
+    "  verdict: \"indeterminate\",",
+    "  summary: \"This role has no capability content yet, so there is nothing to measure.\",",
+    `  findings: [{ rule: "no-capability-content", severity: "warning", message: "${role} is a scaffolded skeleton: no capability has built or partial maturity yet." }],`,
+    "  nextAction: \"Author this role's first real capability, then make this probe measure it.\",",
+    "});",
+    "",
+    "process.stdout.write(`${JSON.stringify(envelope, null, 2)}\\n`);",
+    "process.exitCode = envelopeToExitCode(envelope);",
+    "",
+  ].join("\n");
+
+  // Same compiler settings as the existing role packages (for example
+  // packages/writer/tsconfig.json): src/<x>.ts compiles to dist/<x>.js, the
+  // mapping the declared bin and the conformance gate's status-probe check
+  // both rely on.
+  const tsconfig = {
+    compilerOptions: {
+      target: "ES2022",
+      module: "ESNext",
+      moduleResolution: "Bundler",
+      lib: ["ES2022"],
+      declaration: true,
+      declarationMap: true,
+      sourceMap: true,
+      strict: true,
+      noUncheckedIndexedAccess: true,
+      noImplicitOverride: true,
+      esModuleInterop: true,
+      skipLibCheck: true,
+      types: ["node"],
+      isolatedModules: true,
+      verbatimModuleSyntax: false,
+      outDir: "./dist",
+      rootDir: "./src",
+    },
+    include: ["src/**/*"],
+    exclude: ["node_modules", "dist", "**/*.test.ts"],
+  };
+
   const packageFiles = new Map([
     ["package.json", `${JSON.stringify(manifest, null, 2)}\n`],
+    ["tsconfig.json", `${JSON.stringify(tsconfig, null, 2)}\n`],
     ["intake-question-cards.json", `${JSON.stringify(intakeCards, null, 2)}\n`],
     ["fit-signal-declarations.json", `${JSON.stringify(fitSignals, null, 2)}\n`],
     ["loop-matrix.json", `${JSON.stringify(loopMatrix, null, 2)}\n`],
-    ["check-output-envelope.fixture.json", `${JSON.stringify({ package: role, version: "0.1.0", verdict: "satisfied", summary: "This scaffolded package has no adopted checks yet, so there is nothing to report.", findings: [] }, null, 2)}\n`],
+    [ENVELOPE_COPY_PATH, envelopeCopy],
+    ["src/cli.ts", statusProbe],
     ["skill/SKILL.md", skillBody],
     ["CHANGELOG.md", changelog],
     ["README.md", readme],
   ]);
-
-  const statusMd = [
-    "# Status",
-    "",
-    "## Mandate",
-    "",
-    `Scaffolded (issue #1203); no mandate confirmed yet -- ${role} has not been staffed on a real engagement.`,
-    "",
-    "## Where we are",
-    "",
-    "Structurally conforming skeleton, no adopted capability content.",
-    "",
-    "## Recommended next",
-    "",
-    "Author this role's real capability content, then convert to full Stage C conformance.",
-    "",
-    "## Decisions",
-    "",
-    "None yet.",
-    "",
-    "## Blockers",
-    "",
-    "None.",
-    "",
-  ].join("\n");
-
-  const loopJson = {
-    schemaVersion: 1,
-    role,
-    capabilities: [{ id: capabilityId, state: "found", condition: "current" }],
-  };
 
   const adapter = {
     schemaVersion: 1,
@@ -195,8 +242,6 @@ export function buildScaffold({ role, shortName, roleDefinition, stageActivities
   return {
     packageFiles,
     repoFiles: new Map([
-      [`clossys/${shortName}/STATUS.md`, statusMd],
-      [`clossys/${shortName}/loop.json`, `${JSON.stringify(loopJson, null, 2)}\n`],
       [`governance/release-qualification-adapters/${shortName}/current-direct.json`, `${JSON.stringify(adapter, null, 2)}\n`],
     ]),
   };
@@ -234,6 +279,10 @@ function main(argv) {
   try { ({ stageActivities } = loadStageActivities(root, role)); }
   catch (error) { console.error(`scaffold-package: ${error instanceof Error ? error.message : String(error)}`); return 2; }
 
+  let envelopeCopy;
+  try { envelopeCopy = renderEnvelopeCopyFromRoot(root); }
+  catch (error) { console.error(`scaffold-package: ${error instanceof Error ? error.message : String(error)}`); return 2; }
+
   const packageDir = join(root, "packages", shortName);
   if (existsSync(packageDir)) {
     if (!force) {
@@ -243,11 +292,11 @@ function main(argv) {
     rmSync(packageDir, { recursive: true, force: true });
   }
 
-  const { packageFiles, repoFiles } = buildScaffold({ role, shortName, roleDefinition, stageActivities });
+  const { packageFiles, repoFiles } = buildScaffold({ role, shortName, roleDefinition, stageActivities, envelopeCopy });
   writeFiles(packageDir, packageFiles);
   writeFiles(root, repoFiles);
 
-  console.log(`scaffold-package: wrote packages/${shortName}/ (${packageFiles.size} file(s)) and ${repoFiles.size} repository-root file(s) for ${role}`);
+  console.log(`scaffold-package: wrote packages/${shortName}/ (${packageFiles.size} file(s)) and ${repoFiles.size} governance file(s) for ${role}`);
   return 0;
 }
 

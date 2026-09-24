@@ -81,7 +81,7 @@ export function discoverRoleAssessmentSurface(installRoot: string, role: string)
   }
   const bins = manifest.bin;
   const target = record(bins) ? bins[declaration.bin] : undefined;
-  if (!text(target) || isAbsolute(target) || target.split("/").includes("..")) return absent(role, "undeclared-assessment-bin");
+  if (!isSafeRelativePath(target)) return absent(role, "undeclared-assessment-bin");
   const executable = join(packageRoot, target);
   try { if (!statSync(executable).isFile()) return absent(role, "assessment-executable-missing"); }
   catch { return absent(role, "assessment-executable-missing"); }
@@ -117,9 +117,9 @@ function readInstalledManifest(installRoot: string, role: string): ManifestRead 
   return { packageRoot, manifest };
 }
 
-/** A package-relative path that stays inside the package directory: no leading '/', no '..' segment. */
+/** A package-relative path that stays inside the package directory: no leading '/', no '..' segment, and neither a `\`-led nor a drive-rooted Windows path (path.join treats `\` as a separator too). */
 function isSafeRelativePath(value: unknown): value is string {
-  return text(value) && !isAbsolute(value) && !value.split("/").includes("..");
+  return text(value) && !isAbsolute(value) && !value.startsWith("\\") && !/^[A-Za-z]:/.test(value) && !value.split(/[\\/]/).includes("..");
 }
 
 const roleShortName = (role: string): string => role.split("/").pop() as string;
@@ -188,7 +188,7 @@ export function discoverRoleStatusSurface(installRoot: string, role: string): St
   }
   const bins = manifest.bin;
   const target = record(bins) ? bins[declaration.bin] : undefined;
-  if (!text(target) || isAbsolute(target) || target.split("/").includes("..")) return { role, surface: null, absence: "undeclared-status-bin" };
+  if (!isSafeRelativePath(target)) return { role, surface: null, absence: "undeclared-status-bin" };
   const executable = join(packageRoot, target);
   try { if (!statSync(executable).isFile()) return { role, surface: null, absence: "status-executable-missing" }; }
   catch { return { role, surface: null, absence: "status-executable-missing" }; }

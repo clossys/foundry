@@ -14,6 +14,12 @@ describe("role ownership boundary", () => {
   it("rejects a path escaping with a .. segment", () => {
     expect(isOwnedByRole("@clossys/advisor", "clossys/advisor/../strategist/direction.json")).toBe(false);
   });
+
+  it("rejects a path escaping with a Windows-style ..\\ segment", () => {
+    expect(isOwnedByRole("@clossys/advisor", "clossys/advisor/..\\strategist\\direction.json")).toBe(false);
+    expect(isOwnedByRole("@clossys/advisor", "clossys\\advisor\\..\\strategist\\direction.json")).toBe(false);
+    expect(planMove({ role: "@clossys/advisor", fromPath: "clossys/advisor/..\\strategist\\direction.json", toPath: "clossys/advisor/direction.json", candidateReferrers: [] }).kind).toBe("refused");
+  });
 });
 
 describe("create/update planning", () => {
@@ -81,6 +87,11 @@ describe("move planning", () => {
   it("refuses a destination outside the role's own folder", () => {
     const plan = planMove({ role: "@clossys/advisor", fromPath: "clossys/advisor/a.json", toPath: "clossys/strategist/a.json", candidateReferrers: [] });
     expect(plan.kind).toBe("refused");
+  });
+
+  it("refuses a source outside the role's own folder, before it ever proposes removing that file", () => {
+    const plan = planMove({ role: "@clossys/advisor", fromPath: "clossys/strategist/direction.json", toPath: "clossys/advisor/direction.json", candidateReferrers: [] });
+    expect(plan).toMatchObject({ kind: "refused", path: "clossys/strategist/direction.json" });
   });
 });
 

@@ -1,9 +1,9 @@
 // Regression tests for check-publisher-web-routes.mjs (issue #1103).
 import assert from "node:assert/strict";
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import test from "node:test";
+import { makeTmpDirSync } from "./lib/tmp-fixture.mjs";
 
 import {
   evaluateWebRouteManifest,
@@ -28,8 +28,8 @@ test("missing template fails", () => {
   assert.equal(result.findings[0].rule, "missing-template");
 });
 
-test("fixture manifest without template fails CLI scan", () => {
-  const root = mkdtempSync(join(tmpdir(), "publisher-web-routes-"));
+test("fixture manifest without template fails CLI scan", (t) => {
+  const root = makeTmpDirSync(t, "publisher-web-routes-");
   const routesDir = join(root, "routes");
   mkdirSync(routesDir, { recursive: true });
   writeFileSync(join(routesDir, "orphan.tsx"), `export const x = 1;`);

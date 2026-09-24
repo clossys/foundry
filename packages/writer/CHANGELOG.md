@@ -3,7 +3,18 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## Unreleased
+## [0.3.18] - 2026-09-23
+
+### Notes
+
+- No packed content changed. This package's test suite changed as part of
+  fixing leaking temp fixture directories (issue #1250), and its 0.3.15
+  qualification record was already retained -- once a version's record is
+  retained, any further change to that package, packed or not, requires a new
+  version. Restacked onto main after merge train 6; renumbered from 0.3.16
+  because main independently shipped `writer@0.3.16` for the addressability
+  extensions feature below, and 0.3.17 is claimed by open PR #1258
+  (version-collision rule, issue #1187).
 
 ## [0.3.16] - 2026-09-22
 
