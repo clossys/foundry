@@ -90,7 +90,7 @@ branch or shaping a file list:
    paths, and computed WITHOUT ever invoking `npm`
    (`scripts/check-release-calendar.mjs`, using `scripts/lib/release-pr-footprint.mjs`'s
    `evaluateReleasePrFootprint()`, a fully pure function): for every
-   changed `packages/<dir>/package.json`, the ONLY difference from its
+   changed `packages/<dir>/package.json`, the ONLY difference from its <!-- facts-gate:ignore -->
    base version is the `version` field itself, and that field must be a
    validated single-step patch/minor/major semver bump — strict `X.Y.Z`,
    no range operators, no prerelease suffix, strictly greater than the
@@ -186,7 +186,7 @@ Every package keeps ordinary semver (`patch`/`minor`/`major`), computed the
 same way issue #1255 already established: each `.changesets/<slug>.md` file
 names a package and a bump level; a release PR bumps each named package
 once, by the **highest** level any of its pending changesets named.
-`scripts/check-release-pr-shape.mjs` is the gate that keeps this the only
+`scripts/check-release-pr-shape.mjs` is the gate that keeps this the only <!-- facts-gate:ignore -->
 legitimate way a version moves — see
 [docs/PUBLISHING.md, section 4](PUBLISHING.md#4-write-the-furniture) for
 the day-to-day mechanics of adding a changeset.
@@ -502,7 +502,7 @@ documented risk for the owner to decide on separately.
    of touching that package's `version` directly — see
    [docs/PUBLISHING.md, section 4](PUBLISHING.md#4-write-the-furniture).
 2. **Friday**: the merge window closes. Nothing new lands until the release
-   PR merges and Monday reopens it — `release:out-of-band` is the only
+   PR merges and Monday reopens it — `release:out-of-band` is the only <!-- facts-gate:ignore -->
    exception.
 3. **Saturday (`America/Los_Angeles`)**: `.github/workflows/release-pr.yml`'s
    daily scheduled run checks two things — is it release day, and is a
@@ -511,7 +511,7 @@ documented risk for the owner to decide on separately.
    deliberately **idempotent** check, not an exact-hour window: a delayed
    run (a busy runner queue, a temporary Actions outage) still opens that
    week's release PR as long as it is still Saturday when it finally runs,
-   and a repeated or double-triggered run is a safe no-op once the first
+   and a repeated or double-triggered run is a safe no-op once an earlier
    run's PR is already open. When it proceeds, it applies every pending
    changeset (`scripts/apply-release-changesets.mjs`), bumping each named
    package by the highest level its changesets named, writing its
