@@ -118,6 +118,11 @@ export const GATED_SCRIPT_PROSE_INPUTS = {
   "node:scripts/check-later-publications.mjs": { prose: false, reason: "validates governance/release-publications/** immutable records against git history, no docs/ or .changesets/ read" },
   "node:scripts/check-workspace-links.mjs": { prose: false, reason: "reads package.json dependency graphs only" },
   "node:scripts/check-lock-workspace-versions.mjs": { prose: false, reason: "reads package-lock.json and package.json only" },
+  "node:scripts/check-attestation-freshness.mjs": {
+    prose: false,
+    reason:
+      "as ci.yml invokes it (`node scripts/check-attestation-freshness.mjs .`, no --registry/--rulesets flags), it only scans tracked files matched by `git ls-files -- *.json` (trackedJsonFiles()) and skips any fixtures-segment path -- a glob that can never match .changesets/*.md, a root *.md file, or docs/**/*.md",
+  },
   "node:scripts/check-qualification-record-required.mjs": { prose: false, reason: "reads governance/release-qualifications/** and package.json version fields only" },
   "node:scripts/check-readme-examples.mjs": { prose: false, reason: "typechecks fenced code blocks in packages/*/README.md against shipped .d.ts -- packed-prose, not prose" },
   "node:packages/designer/dist/tokens/contrast-cli.js": { prose: false, reason: "reads packages/designer/styles/tokens.css only" },
