@@ -98,7 +98,6 @@
     "!src/testing/**",
     "conventions",
     "contracts",
-    "CHANGELOG.md",
     "README.md",
     "LICENSE",
     "skill"

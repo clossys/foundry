@@ -359,3 +359,7 @@ repository.
 ## Licence
 
 MIT.
+
+## Changelog
+
+Release notes for every version are in the [changelog](https://github.com/clossys/foundry/blob/main/docs/changelogs/launcher.md), kept in the public repository rather than in the installed package.

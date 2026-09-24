@@ -480,3 +480,7 @@ and survives across CI runs on self-hosted runners.
 ## Licence
 
 MIT. See [LICENSE](LICENSE).
+
+## Changelog
+
+Release notes for every version are in the [changelog](https://github.com/clossys/foundry/blob/main/docs/changelogs/inspector.md), kept in the public repository rather than in the installed package.
