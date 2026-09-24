@@ -6,11 +6,10 @@ import { describe, expect, it } from "vitest";
 
 // Build-time tools from this repository, not shipped code: the same
 // catalogue builder, packer and offering-kits gate the repository runs.
-// @ts-expect-error -- untyped repository script, imported by this test only
+// They are untyped .mjs files; test files are outside `tsc`'s scope and
+// vitest only transpiles, so they need no type directive here.
 import * as repositoryCatalogue from "../../../scripts/lib/capability-catalogue.mjs";
-// @ts-expect-error -- untyped repository script, imported by this test only
 import { evaluateOfferingKits } from "../../../scripts/check-offering-kits.mjs";
-// @ts-expect-error -- untyped build script, imported by this test only
 import { GENERATED_MODULE_PATH, renderOfferingModule } from "../scripts/pack-capability-catalogue.mjs";
 import { composeKit, judgeNeedsCycles } from "./composition.js";
 import { recommendKit } from "./kit-verdicts.js";
