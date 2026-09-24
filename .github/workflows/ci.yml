@@ -1041,6 +1041,51 @@ jobs:
       - name: package-lock.json workspace versions match manifests
         run: node scripts/check-lock-workspace-versions.mjs
 
+  # check-attestation-freshness.mjs (issue #856, docs/ATTESTATION-FRESHNESS.md)
+  # is an early-warning SCANNER for time-boxed governance/strategy records
+  # (freshUntil, expiresAt, _stalenessBudgetDays, ...), never a merge gate:
+  # `run()` always exits 0 once it has produced a report, however urgent a
+  # finding is -- urgency lives in each finding's own field, never in the
+  # process exit code, precisely so this cannot be wired into a REQUIRED
+  # check by habit and reproduce the exact failure mode it exists to warn
+  # about (a time-boxed record lapsing with no warning and freezing every
+  # merge, including one carrying a live security fix). Exit 2 only if the
+  # scan itself could not run at all (see that script's own header).
+  #
+  # Deliberately its OWN job rather than an extra step bolted onto
+  # `workspace-links` (a REQUIRED context named "workspace link integrity")
+  # or `safety-gates` (documented as a fixed, atomic ~70-suite cost): this
+  # sweep exists to fix gates whose own name no longer describes everything
+  # they check (see #366, #1340), and folding an unrelated, always-green
+  # governance-record scan into either of those would be a new instance of
+  # exactly that. This job is intentionally NOT added to any ruleset's
+  # required-status-check list -- see verify-standards.yml's own header for
+  # why a context that has never reported should not be made required sight
+  # unseen; that is a separate, later, owner decision.
+  #
+  # This repository has no governance/attestation-registry.json of its own
+  # yet, so every record found here reports "unregistered" (declared, not
+  # yet audited) rather than "enforced" -- issue #856 scoped BUILDING the
+  # scanner to this repository; a registry and scheduled workflow for this
+  # repository as a CONSUMER of its own tool (the shape
+  # docs/ATTESTATION-FRESHNESS.md's "scheduled workflow" section describes)
+  # is a separate, repository-specific follow-up, same as for any other
+  # consuming repository. Plain file checks only (git ls-files over the
+  # tracked tree) -- no git history needed, no npm ci, no build.
+  attestation-freshness:
+    name: attestation freshness (early warning, non-blocking)
+    needs: [push-tree]
+    if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+      - name: Attestation freshness early warning (check-attestation-freshness)
+        run: node scripts/check-attestation-freshness.mjs .
+
   # A merged source change with no version bump publishes nothing and says
   # nothing, whether the Publish workflow's discover job is asking "what did
   # this push diff?" or, as of issue #416, "what does the registry not have
