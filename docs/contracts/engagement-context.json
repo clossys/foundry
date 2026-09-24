@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/clossys/foundry/blob/main/docs/contracts/engagement-context.json",
   "title": "Engagement context record",
-  "description": "Issue #1173: the business questions a non-technical founder answers once (business, product, audience, stage, intent, constraints), so no later role intake asks again what this record already answers. Lives at clossys/advisor/context.json in a hub (layout approved in issue #1171). Captured through Advisor's question cards (packages/advisor/src/context-questions.ts: nextContextQuestion()/applyContextChoice()), which extend the existing nextSponsorQuestion()/applySponsorChoice() pattern. An unanswered field stays unknown and is never invented. Technical facts (languages, frameworks, installed packages, hosting) never live here -- they come from reading the repository, not from asking the founder.",
+  "description": "Issue #1173: the business questions a non-technical founder answers once (business, product, audience, stage, intent, constraints), so no later role intake asks again what this record already answers. Lives at clossys/advisor/context.json in a hub (layout approved in issue #1171). Captured through Advisor's question cards (packages/advisor/src/context-questions.ts: nextContextQuestion()/applyContextChoice()), which extend the existing nextSponsorQuestion()/applySponsorChoice() pattern. An unanswered field stays unknown and is never invented. Technical facts (languages, frameworks, installed packages, hosting) never live here -- they come from reading the repository, not from asking the founder. How a role reads it (docs/DECISIONS.md decision 28): never from this hub path directly -- every role, on the hub or in a product repository, reads the snapshot carried in its own repository's clossys/brief.json `context` property (docs/contracts/engagement-brief.json). The field ids below are also the reserved intake question ids: no role's intake card may reuse one (docs/contracts/intake-question-cards.json `engagementContext`).",
   "type": "object",
   "additionalProperties": false,
   "required": ["schemaVersion", "fields"],
@@ -10,8 +10,17 @@
     "schemaVersion": { "const": 1 },
     "fields": {
       "type": "array",
-      "description": "Exactly one entry per field id below; every id must appear, in any order.",
-      "items": { "$ref": "#/definitions/field" }
+      "description": "Exactly one entry per field id below; every id appears once, in any order. The schema states it without a uniqueness keyword (draft-07 has none for a property across items): at most six entries, and one entry for each of the six ids, leaves no room for a duplicate. packages/advisor/src/engagement-brief.ts's toEngagementBrief() refuses a duplicate id and writes a field the supplied context lacks as unknown. A reader treats a missing id as unknown (contextFromBrief()), never as an error to guess past.",
+      "maxItems": 6,
+      "items": { "$ref": "#/definitions/field" },
+      "allOf": [
+        { "contains": { "type": "object", "required": ["id"], "properties": { "id": { "const": "business" } } } },
+        { "contains": { "type": "object", "required": ["id"], "properties": { "id": { "const": "product" } } } },
+        { "contains": { "type": "object", "required": ["id"], "properties": { "id": { "const": "audience" } } } },
+        { "contains": { "type": "object", "required": ["id"], "properties": { "id": { "const": "stage" } } } },
+        { "contains": { "type": "object", "required": ["id"], "properties": { "id": { "const": "intent" } } } },
+        { "contains": { "type": "object", "required": ["id"], "properties": { "id": { "const": "constraints" } } } }
+      ]
     }
   },
   "definitions": {
@@ -20,25 +29,65 @@
     },
     "field": {
       "type": "object",
-      "additionalProperties": false,
+      "description": "An unknown field, or a known field whose value is one of that field's own fixed choice ids -- the recommended and alternative choices on its Advisor question card (packages/advisor/src/context-questions.ts), listed per field below. Never freeform text, and never a slug that is not one of those ids: this record is copied into clossys/brief.json, which is committed in every staffed repository -- including a product repository that may be public while the hub is not (docs/DECISIONS.md decision 28). \"unknown\" and \"something-else\" are not known values: they are not in any enum. toEngagementBrief() applies the same rule in code (applyContextChoice() must return kind \"known\") before copying a snapshot, and a test keeps these enums equal to the card choices. additionalProperties is false inside each oneOf branch, not beside the oneOf: in draft-07 a sibling additionalProperties sees only sibling properties, so at that level it would reject id, state, and value alike.",
       "oneOf": [
         {
+          "additionalProperties": false,
           "required": ["id", "state"],
+          "properties": { "id": { "$ref": "#/definitions/fieldId" }, "state": { "const": "unknown" } }
+        },
+        {
+          "additionalProperties": false,
+          "required": ["id", "state", "value"],
           "properties": {
-            "id": { "$ref": "#/definitions/fieldId" },
-            "state": { "const": "unknown" }
+            "id": { "const": "business" },
+            "state": { "const": "known" },
+            "value": { "enum": ["product-or-service", "agency-or-services"] }
           }
         },
         {
+          "additionalProperties": false,
           "required": ["id", "state", "value"],
           "properties": {
-            "id": { "$ref": "#/definitions/fieldId" },
+            "id": { "const": "product" },
             "state": { "const": "known" },
-            "value": {
-              "type": "string",
-              "minLength": 1,
-              "description": "The chosen question card's choice id (a stable slug, e.g. \"software\" or \"validate\"), never freeform prose typed directly into this record."
-            }
+            "value": { "enum": ["software", "physical-or-in-person"] }
+          }
+        },
+        {
+          "additionalProperties": false,
+          "required": ["id", "state", "value"],
+          "properties": {
+            "id": { "const": "audience" },
+            "state": { "const": "known" },
+            "value": { "enum": ["consumers", "businesses"] }
+          }
+        },
+        {
+          "additionalProperties": false,
+          "required": ["id", "state", "value"],
+          "properties": {
+            "id": { "const": "stage" },
+            "state": { "const": "known" },
+            "value": { "enum": ["building", "established"] }
+          }
+        },
+        {
+          "additionalProperties": false,
+          "required": ["id", "state", "value"],
+          "properties": {
+            "id": { "const": "intent" },
+            "state": { "const": "known" },
+            "value": { "enum": ["validate", "grow"] }
+          }
+        },
+        {
+          "additionalProperties": false,
+          "required": ["id", "state", "value"],
+          "properties": {
+            "id": { "const": "constraints" },
+            "state": { "const": "known" },
+            "value": { "enum": ["none-known", "tight-budget-or-time"] }
           }
         }
       ]

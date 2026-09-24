@@ -1,0 +1,15 @@
+{
+  "id": "single-role-strategist-only",
+  "description": "A generic client who confirms only that they can't explain what they are, and nothing else. Baseline: a single confirmed problem whose role has no upstream needs, so composition should pull in nothing extra. No real company; a synthetic client for regression coverage only.",
+  "confirmedProblems": [
+    { "id": "strategist-unclear-direction", "primary": true }
+  ],
+  "expect": {
+    "state": "composed",
+    "mustIncludeRoles": ["strategist"],
+    "mustExcludeRoles": ["advisor", "architect", "bouncer", "builder", "butler", "controller", "customer", "designer", "giver", "influencer", "inspector", "integrator", "keeper", "locksmith", "messenger", "observer", "publisher", "writer"],
+    "maxRoles": 5,
+    "sequence": ["strategist"],
+    "unsatisfiedNeeds": []
+  }
+}

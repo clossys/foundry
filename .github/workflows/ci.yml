@@ -983,6 +983,26 @@ jobs:
       # doc reads only, no build, same dependency-free class as the steps
       # above.
       - run: node scripts/check-conversation-contract.mjs
+      # Issue #1185's deterministic regression gate: composition accuracy
+      # and repeatability over evals/scenarios/*.json, scored against the
+      # real, generated capability catalogue via
+      # scripts/lib/capability-catalogue.mjs (this repository's own
+      # dependency-free mirror of packages/advisor/src/composition.ts,
+      # already used by check-offering-kits.mjs above -- no build needed),
+      # plus static conversation-contract checks over every
+      # packages/*/skill/SKILL.md's own role content. Composition scenario
+      # findings always fail this step; conversation-contract static
+      # findings are report-mode only (see evals/README.md) unless
+      # --enforce-contract-statics is passed, which this step does not do.
+      # Same dependency-free, manifest/contract/source-read-only class as
+      # every step in this job. Its own unit tests run first, same
+      # compound-script pattern as check:public-npm-aggregate-canary.
+      #
+      # NOT added to this repository's `main-required-checks` ruleset by
+      # this change, same reasoning as the jobs elsewhere in this file with
+      # that same note: a status context with no reporting history wedges a
+      # repository if it lands straight into `required_status_checks`.
+      - run: npm run check:evals
 
   # Three gates over this repository's own tree that had never been invoked
   # by any workflow before this change, and that share one requirement: a
