@@ -14,9 +14,7 @@
  * `clossys/`) and flags any path more than one role claims.
  *
  * The shared consumer layout contract (issue #1171) lists
- * `clossys/publisher/surfaces` as a Publisher-owned folder, and this
- * package's own manifest declares it under `foundry.outputs` and
- * `foundry.feeds` (Customer judges the surfaces it feeds). The layout
+ * `clossys/publisher/surfaces` as a Publisher-owned folder. The layout
  * contract is repository governance and does not ship in this package, so
  * `PUBLISHER_SURFACES_DIR` below remains the runtime value; the two must
  * name the same path.
