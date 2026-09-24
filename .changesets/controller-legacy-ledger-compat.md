@@ -22,16 +22,23 @@ here is backward compatible:
 `validateInstalledPositionLedger` -- and everything built on it,
 `foundry-position-check`, `foundry-completion-evidence-check`, and
 onboarding's `authorizeMutation` -- accepts a real 0.9.10
-installed-position ledger again (#1394). `stageBindings.learnOrEscalate`
-(renamed `learn` by issue #1194) and a ledger with no explicit disposition
-for `@clossys/customer` (a role this package added in 0.9.11, after a
-0.9.10 ledger was written) each validate as before, reported through a
-new, optional, non-failing `InstalledPositionLedgerReport.advisories`
-field -- present whenever there are advisories, defaulting to an empty
-array otherwise, and never changing `ok`, `findings`, or exit code.
-`foundry-position-check` now also prints these migration advisories, one
-`ADVISORY` line per item, to stderr; a passing ledger's stdout is
-unchanged, still exactly one `INSTALLED POSITION LEDGER OK` line. A
-ledger using both `learn` and `learnOrEscalate`, or missing a disposition
-for a role that already existed in 0.9.10, still fails exactly as it did
-before this change.
+installed-position ledger again (#1394). In a legacy-format ledger --
+precisely, one where no position uses the current `learn` stageBindings
+key, and either at least one position uses the pre-rename
+`learnOrEscalate` key or the ledger has no positions at all -- two 0.9.10
+shapes each validate as before: `stageBindings.learnOrEscalate` (renamed
+`learn` by issue #1194), and a missing disposition for `@clossys/customer`
+(a role this package added in 0.9.11, after a 0.9.10 ledger was written).
+Both are reported through a new, optional, non-failing
+`InstalledPositionLedgerReport.advisories` field -- present whenever there
+are advisories, defaulting to an empty array otherwise, and never changing
+`ok`, `findings`, or exit code. `foundry-position-check` now also prints
+these migration advisories, one `ADVISORY` line per item, to stderr; a
+passing ledger's stdout is unchanged, still exactly one
+`INSTALLED POSITION LEDGER OK` line. A ledger using both `learn` and
+`learnOrEscalate` still fails exactly as before; a missing disposition for
+a role that already existed in 0.9.10 still fails exactly as before; and a
+current-format or mixed-vocabulary ledger (any position uses `learn`)
+missing the `@clossys/customer` disposition still fails exactly as it did
+on `main` before this change -- the new-role exemption never applies to a
+ledger that could not have come from 0.9.10.

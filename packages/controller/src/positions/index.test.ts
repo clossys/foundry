@@ -200,6 +200,62 @@ describe("installed positions", () => {
       expect(legacy.positions).toBe(migrated.positions);
       expect(migrated.advisories).toEqual([]);
     });
+
+    it("fails, never advises, a current-format ledger (stageBindings.learn) missing the new-role disposition", () => {
+      // Fixture F1: a ledger this shape could never have been written
+      // against 0.9.10 -- it uses the post-rename `learn` key -- so the
+      // new-role exemption must not apply, exactly like pre-PR main.
+      const ledger = fixture();
+      ledger.dispositions = (ledger.dispositions as Array<Record<string, unknown>>).filter((item) => item.package !== "@clossys/customer");
+      const result = validateInstalledPositionLedger(ledger);
+      expect(result.ok).toBe(false);
+      expect(result.findings).toContainEqual(expect.objectContaining({ rule: "missing-role-disposition", path: "@clossys/customer" }));
+      expect((result.advisories ?? []).some((item) => item.rule === "missing-disposition-for-new-role")).toBe(false);
+    });
+
+    it("fails a mixed-vocabulary ledger (one learn position, one learnOrEscalate position) missing the new-role disposition", () => {
+      // A ledger with even one `learn` position could not have come from
+      // 0.9.10, so the strict reading treats "mixed" as current-format:
+      // the exemption still does not apply.
+      const ledger = legacyLedgerFixture090();
+      const positions = ledger.positions as Array<Record<string, unknown>>;
+      const legacyPosition = positions[0]!;
+      const currentPosition = structuredClone(legacyPosition) as Record<string, unknown>;
+      currentPosition.id = "fixture-observer";
+      currentPosition.package = "@clossys/observer";
+      const currentStageBindings = currentPosition.stageBindings as Record<string, string>;
+      currentStageBindings.learn = currentStageBindings.learnOrEscalate!;
+      delete currentStageBindings.learnOrEscalate;
+      positions.push(currentPosition);
+      const dispositions = ledger.dispositions as Array<Record<string, unknown>>;
+      const observerDisposition = dispositions.find((item) => item.package === "@clossys/observer")!;
+      observerDisposition.disposition = "open";
+      observerDisposition.reason = "Synthetic schema fixture; exercises a mixed-vocabulary ledger.";
+      observerDisposition.positionIds = ["fixture-observer"];
+      const result = validateInstalledPositionLedger(ledger);
+      expect(result.ok).toBe(false);
+      expect(result.findings).toContainEqual(expect.objectContaining({ rule: "missing-role-disposition", path: "@clossys/customer" }));
+      expect((result.advisories ?? []).some((item) => item.rule === "missing-disposition-for-new-role")).toBe(false);
+    });
+
+    it("still accepts a zero-position ledger missing the new-role disposition, the same way 0.9.10 did", () => {
+      // No position exists to carry `learn` or `learnOrEscalate`, so this
+      // ledger is indistinguishable from one 0.9.10 could have written
+      // (an all-not-applicable ledger, per the audit's finding A2) -- the
+      // exemption applies regardless.
+      const ledger = legacyLedgerFixture090();
+      const dispositions = ledger.dispositions as Array<Record<string, unknown>>;
+      const integratorDisposition = dispositions.find((item) => item.package === "@clossys/integrator")!;
+      integratorDisposition.disposition = "not-applicable";
+      integratorDisposition.reason = "Synthetic schema fixture; no consumer decision.";
+      integratorDisposition.positionIds = [];
+      ledger.positions = [];
+      const result = validateInstalledPositionLedger(ledger);
+      expect(result.ok).toBe(true);
+      expect(result.findings).toEqual([]);
+      expect(result.advisories).toContainEqual(expect.objectContaining({ rule: "missing-disposition-for-new-role", path: "@clossys/customer" }));
+      expect(result.positions).toBe(0);
+    });
   });
 
   it("keeps every installed-position contract vocabulary tied to the validator", () => {

@@ -118,10 +118,22 @@ export function validateInstalledPositionLedger(ledger: unknown, roleContract: u
     if (dispositions.has(packageName)) fail(findings, "duplicate-role-disposition", path, "each active role has exactly one disposition");
     else dispositions.set(packageName, { disposition: String(item.disposition), ids: Array.isArray(item.positionIds) ? item.positionIds.filter(text) : [] });
   }
+  // The new-role missing-disposition exemption below must apply only to a
+  // ledger that could actually have been written against 0.9.10 -- never
+  // to one written against a version that already knows about the new
+  // role. A 0.9.10-shaped ledger is exactly: no position uses the current
+  // `learn` stageBindings key, and either at least one position uses the
+  // pre-#1194 `learnOrEscalate` key, or the ledger has no positions at all
+  // (0.9.10 could still emit an all-not-applicable ledger with zero
+  // positions). A ledger with even one `learn` position is current-format
+  // for this rule, including a mixed ledger that has both -- the strict
+  // reading, since a 0.9.10 ledger could never contain a `learn` position.
+  const isLegacyFormatLedger = !positionRecords.some((position) => record(position) && record(position.stageBindings) && Object.hasOwn(position.stageBindings, "learn"))
+    && (positionRecords.length === 0 || positionRecords.some((position) => record(position) && record(position.stageBindings) && Object.hasOwn(position.stageBindings, "learnOrEscalate")));
   for (const name of roles) {
     if (dispositions.has(name)) continue;
     const introducedIn = rolesAddedAfterBaseline[name];
-    if (introducedIn) advise(advisories, "missing-disposition-for-new-role", name, `${name} was added in ${introducedIn}, after this ledger's 0.9.10 baseline; add an explicit disposition before the next minor.`);
+    if (introducedIn && isLegacyFormatLedger) advise(advisories, "missing-disposition-for-new-role", name, `${name} was added in ${introducedIn}, after this ledger's 0.9.10 baseline; add an explicit disposition before the next minor.`);
     else fail(findings, "missing-role-disposition", name, "every active role must be explicitly open or not-applicable");
   }
   for (const name of dispositions.keys()) if (!roles.has(name)) fail(findings, "unknown-disposition-role", name, "not an active role");
