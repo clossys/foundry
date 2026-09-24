@@ -91,14 +91,15 @@
 // EMPTY SCAN
 // ----------
 // Discovering zero packages, OR discovering packages but finding zero
-// first-party `dependencies` edges among them, is exit 2 — never a clean
-// 0. scripts/check-release-readiness.mjs shipped exactly the opposite
-// defect (fixed in commit 01bd520): an empty scan reported "every package
-// is release-ready" on the strength of having examined none. A check that
-// passes because it checked nothing is indistinguishable from a check that
-// cannot fail, and this repo's own packages/*/dependencies graph is never
-// actually empty, so an empty result here means the scan itself is broken,
-// not that the workspace has no first-party links.
+// first-party dependencies/peerDependencies/optionalDependencies edges
+// among them, is exit 2 — never a clean 0. scripts/check-release-readiness.mjs
+// shipped exactly the opposite defect (fixed in commit 01bd520): an empty
+// scan reported "every package is release-ready" on the strength of having
+// examined none. A check that passes because it checked nothing is
+// indistinguishable from a check that cannot fail, and this repo's own
+// packages/*/dependencies graph is never actually empty, so an empty result
+// here means the scan itself is broken, not that the workspace has no
+// first-party links.
 
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join, relative, resolve, sep } from "node:path";
@@ -486,12 +487,13 @@ function main() {
 
   const edgeCount = linkResults.filter((r) => r.status !== "error").length;
   if (edgeCount === 0) {
-    // Packages were discovered, but zero first-party `dependencies` edges
-    // were found among them (or every edge belonged to a package whose own
-    // manifest failed to load, in which case those errors already dominate
-    // the exit code below). This workspace's own packages/*/dependencies
-    // graph is never actually empty — see EMPTY SCAN in the header — so this
-    // is the same "the scan itself is broken" signal as zero packages.
+    // Packages were discovered, but zero first-party dependencies/
+    // peerDependencies/optionalDependencies edges were found among them (or
+    // every edge belonged to a package whose own manifest failed to load, in
+    // which case those errors already dominate the exit code below). This
+    // workspace's own packages/*/dependencies graph is never actually empty
+    // — see EMPTY SCAN in the header — so this is the same "the scan itself
+    // is broken" signal as zero packages.
     linkResults.push({
       check: "link",
       package: "(workspace)",

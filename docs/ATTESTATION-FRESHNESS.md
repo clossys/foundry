@@ -115,8 +115,10 @@ flagged as needing an audit, never assumed safe.
 
 ## The scheduled workflow
 
-Each consuming repository adds one scheduled workflow. It never runs on
-`pull_request`, so it structurally cannot become a merge gate:
+Each consuming repository adds one scheduled workflow like the one below,
+which never runs on `pull_request` and so structurally cannot become a merge
+gate. See "This repository's own wiring" below the example for the different,
+still-safe path this repository actually takes.
 
 ```yaml
 name: Attestation freshness watch
@@ -167,6 +169,21 @@ tracking issue, grouped `Enforced (urgent)` above `Declared (informational)`,
 and searches for an existing open issue with a fixed title before creating a
 new one, so a repository accumulates one updated issue per run rather than a
 new one every time.
+
+### This repository's own wiring
+
+Foundry runs `scripts/check-attestation-freshness.mjs` directly from
+`.github/workflows/ci.yml`'s own `attestation-freshness` job, not via the
+templated scheduled workflow above: no registry or rulesets snapshot is
+passed (this repository has no `governance/attestation-registry.json` yet,
+so every finding reports `unregistered`), and no tracking issue is filed.
+The job runs on every `pull_request`, on `merge_group`, and on `push` to
+`main` — the same triggers every other job in that workflow inherits — and
+it is deliberately NOT a required status context. Running it on every pull
+request is safe under the scanner's own CONTRACTUAL guarantee, not because
+of the trigger: `run()` always exits 0 once it produces a report, whatever
+it finds (see EXIT CODES above), so a finding here can never fail the job
+or block a merge.
 
 ## Warning lead time
 
