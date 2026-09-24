@@ -195,7 +195,7 @@ test("the required build context fails closed on candidate qualification records
   const withoutFanInAlways = workflow.replace(
     fanInJob,
     fanInJob.replace(
-      "if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && needs.classify.outputs.tier == 'full'",
+      "if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && (needs.classify.result != 'success' || needs.classify.outputs.tier != 'prose')",
       "if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'",
     ),
   );
@@ -500,15 +500,23 @@ test("every workspace-build-cache step's key covers every input npm run build ca
 // classifier itself (scripts/classify-change-tier.test.mjs) proves that any
 // changed path outside the prose/packed-prose sets -- including an empty
 // diff, an unresolvable base, or the deleted half of a rename -- makes
-// classifyChangeTier() return 'full', never a narrower tier. That proof is
-// only meaningful if 'full' is actually what every heavy job's own `if:`
-// requires to run, which is what THIS test proves: every job the charter
-// names as heavy (it "can't be affected by prose") must both `needs:
-// classify` and gate on its `tier` output, and every job the charter names
-// as a keep-running prose gate must NOT reference `classify` at all -- a
-// gate a prose-only change is supposed to still run must never be
-// accidentally skippable by tier.
-test("issue #1420: every heavy job depends on the classifier and gates on tier == 'full' (or, for the two packed-file gates, tier != 'prose')", () => {
+// classifyChangeTier() return 'full', never a narrower tier. That proof
+// alone is not enough: review round 1 found that if the `classify` JOB
+// itself fails, is cancelled, or is skipped -- a lost runner, a checkout
+// failure, the 5-minute timeout, a module-load error -- every job gating on
+// `needs.classify.outputs.tier == 'full'` reads an EMPTY string, which is
+// not 'full', and GitHub's own implicit "skip unless every needed job
+// succeeded" default skips the job outright before its `if:` is even
+// evaluated. A skipped required context reports as passing, so a classify
+// failure would have silently waved through 11 of the 16 required checks.
+// THIS test proves the fix: every gated job must (a) carry `always()`, so
+// GitHub's implicit gate cannot pre-empt its own `if:`, and (b) check
+// `needs.classify.result != 'success'` ahead of the tier comparison, so it
+// runs on anything other than a PROVEN narrow tier -- failure, cancellation,
+// skip, or an empty/garbled output all fail OPEN (run everything), never
+// silently skip. Every job the charter names as a keep-running prose gate
+// must, symmetrically, never reference `classify` at all.
+test("issue #1420: every heavy job depends on the classifier and fails OPEN (runs) unless classify proved a narrower tier", () => {
   const workflow = readFileSync(join(repoRoot, ".github/workflows/ci.yml"), "utf8");
 
   assert.match(workflow, /^  classify:\n    name: classify change tier$/m, "the classify job must exist under exactly this id");
@@ -516,12 +524,19 @@ test("issue #1420: every heavy job depends on the classifier and gates on tier =
   assert.match(classifyJob, /outputs:\n\s+tier: \$\{\{ steps\.classify\.outputs\.tier \}\}/, "classify must output tier");
   assert.match(classifyJob, /run: node scripts\/classify-change-tier\.mjs/, "classify must actually invoke the classifier script");
 
-  // "Heavy": build and test, packed consumer readiness, candidate
-  // qualification (its shard matrix and its fan-in), and everything else
-  // that cannot possibly be affected by a prose-only change -- every
-  // required or supporting job outside the five explicit keep-running
-  // gates below. Skipped entirely (tier must be 'full') for both the
-  // 'prose' and 'packed-prose' tiers.
+  // "Full-only": cannot possibly be affected by prose OR by a packed
+  // packages/*/README.md or skill/SKILL.md change (pure governance, drift,
+  // and policy gates over non-package, non-prose paths). These jobs run
+  // whenever classify did NOT prove a narrower ('prose' or 'packed-prose')
+  // tier -- on any failure/cancellation/skip, AND on a genuine 'full'
+  // classification. The skip condition is a POSITIVE enumeration of the two
+  // narrow tiers (`tier != 'prose' && tier != 'packed-prose'`), deliberately
+  // NOT a negative check against 'full' alone (`tier != 'full'`) -- an
+  // empty or garbled tier output (classify succeeded but never wrote one)
+  // is also != 'full', so a negative-only check would have skipped these
+  // jobs on exactly the "ran but produced nothing" failure mode this fix
+  // exists to close. See classify-change-tier.test.mjs's own header
+  // comment on the same distinction.
   const fullOnlyJobs = [
     "dependency-audit",
     "credential-lifecycle",
@@ -530,16 +545,11 @@ test("issue #1420: every heavy job depends on the classifier and gates on tier =
     "prepublish-hook",
     "root-entry",
     "package-evidence",
-    "role-loop-archetypes",
     "controller-gates",
     "workspace-links",
     "qualification-record-required",
     "contrast",
     "designer-contrast",
-    "candidate-qualification-shard",
-    "candidate-qualification",
-    "packed-consumer-readiness",
-    "build",
   ];
   for (const jobName of fullOnlyJobs) {
     const job = workflowJob(workflow, jobName);
@@ -551,18 +561,33 @@ test("issue #1420: every heavy job depends on the classifier and gates on tier =
     );
     const jobIf = job.match(/^ {4}if: (.+)$/m);
     assert.ok(jobIf, `${jobName} must declare if:`);
+    assert.match(jobIf[1], /^always\(\) &&/, `${jobName} must carry always(), or GitHub's implicit needs-gate skips it the moment classify fails (and a skipped required check passes)`);
     assert.match(
       jobIf[1],
-      /needs\.classify\.outputs\.tier == 'full'/,
-      `${jobName} must skip on any tier other than 'full' -- it is named as a heavy job in issue #1420 and cannot be affected by a prose-only change`,
+      /needs\.classify\.result != 'success' \|\| \(needs\.classify\.outputs\.tier != 'prose' && needs\.classify\.outputs\.tier != 'packed-prose'\)/,
+      `${jobName} must skip ONLY when classify proved a narrow tier -- a failed/cancelled/skipped classify, or one that ran but wrote no tier at all, must run it`,
     );
   }
 
-  // "Packed-file gates": still relevant to the narrower 'packed-prose'
-  // tier (a packages/*/README.md or packages/*/skill/SKILL.md change), so
-  // they gate on `tier != 'prose'` rather than `tier == 'full'` -- they run
-  // for BOTH 'full' and 'packed-prose', and skip only for pure 'prose'.
-  const packedFileGates = ["readme-examples-typecheck", "artifact"];
+  // "Packed-file gates": also relevant to the narrower 'packed-prose' tier
+  // (a packages/*/README.md or packages/*/skill/SKILL.md change) -- README
+  // code-examples typecheck and artifact safety read packed files directly;
+  // role-loop-archetypes runs check-package-skills.mjs, check-conversation-
+  // contract.mjs, check-package-conformance.mjs, and check-install-docs.mjs,
+  // all of which read a package's own README.md or skill/SKILL.md; build
+  // and test's own `npm test` exercises packages/launcher/src/{skills,
+  // core}.test.ts against the packed skill-catalogue npm run build
+  // generates from every package's SKILL.md (review round 1, reviewer B).
+  // candidate-qualification (its shard matrix and its fan-in) and packed
+  // consumer readiness are included here too, NOT because they read
+  // README/SKILL.md content themselves, but because `build`'s own fan-in
+  // step (`needs.candidate-qualification.result`, `needs.packed-consumer-
+  // readiness.result`) would otherwise see them skipped whenever `build`
+  // itself runs, and a skipped needed job's result is 'skipped', not
+  // 'success' -- exactly the failure this same fan-in step exists to
+  // detect. All seven gate on `tier != 'prose'` (never `== 'full'`): they
+  // run for BOTH 'full' and 'packed-prose', and skip only for pure 'prose'.
+  const packedFileGates = ["readme-examples-typecheck", "artifact", "role-loop-archetypes", "build", "candidate-qualification-shard", "candidate-qualification", "packed-consumer-readiness"];
   for (const jobName of packedFileGates) {
     const job = workflowJob(workflow, jobName);
     const needsLine = job.match(/^ {4}needs: \[(.+)\]$/m);
@@ -573,19 +598,34 @@ test("issue #1420: every heavy job depends on the classifier and gates on tier =
     );
     const jobIf = job.match(/^ {4}if: (.+)$/m);
     assert.ok(jobIf, `${jobName} must declare if:`);
+    assert.match(jobIf[1], /^always\(\) &&/, `${jobName} must carry always(), or GitHub's implicit needs-gate skips it the moment classify fails`);
     assert.match(
       jobIf[1],
-      /needs\.classify\.outputs\.tier != 'prose'/,
-      `${jobName} must keep running for 'packed-prose', skipping only pure 'prose'`,
+      /needs\.classify\.result != 'success' \|\| needs\.classify\.outputs\.tier != 'prose'/,
+      `${jobName} must keep running for 'packed-prose' and on any classify failure, skipping only a PROVEN pure 'prose'`,
     );
-    assert.doesNotMatch(jobIf[1], /== 'full'/, `${jobName} must not narrow to full-only -- that would also skip it for 'packed-prose'`);
+    assert.doesNotMatch(jobIf[1], /tier == 'full'/, `${jobName} must not narrow to full-only -- that would also skip it for 'packed-prose'`);
   }
 
-  // The five keep-running prose gates (public-safety's three split jobs
+  // Every full-only or packed-file-gate job above must depend on classify
+  // ONLY through `needs.classify` (never a bare success() implied by
+  // omitting always()) -- covered by the always()-prefix assertions above.
+  // This second pass proves the fan-in jobs among them (credential-
+  // lifecycle, candidate-qualification, build) keep BOTH their original
+  // fan-in reason for always() (their own split jobs failing) and the new
+  // classify-failure reason -- one always() token serves both, which is
+  // exactly why it must be the first conjunct, unconditionally.
+  for (const jobName of ["credential-lifecycle", "candidate-qualification", "build"]) {
+    const job = workflowJob(workflow, jobName);
+    const jobIf = job.match(/^ {4}if: (.+)$/m);
+    assert.match(jobIf[1], /^always\(\) && \(github\.event_name/, `${jobName}'s always() must still gate the push-tree duplicate check too, unchanged from before this fix`);
+  }
+
+  // The nine keep-running prose gates (public-safety's three split jobs
   // plus its fan-in, secret-scan, prose quality, release readiness, and
-  // release PR shape) must run on every tier -- a prose-only change is
-  // exactly the change these gates exist to judge, so none of them may
-  // reference the classifier's tier output at all.
+  // release PR shape, plus push-tree) must run on every tier -- a
+  // prose-only change is exactly the change these gates exist to judge, so
+  // none of them may reference the classifier's tier output at all.
   const alwaysRunJobs = [
     "push-tree",
     "safety-identity",
@@ -599,10 +639,158 @@ test("issue #1420: every heavy job depends on the classifier and gates on tier =
   ];
   for (const jobName of alwaysRunJobs) {
     const job = workflowJob(workflow, jobName);
-    assert.doesNotMatch(
-      job,
-      /needs\.classify\.outputs\.tier/,
-      `${jobName} must run on every tier -- it is one of issue #1420's explicit keep-running prose gates and must never be skippable by the classifier`,
-    );
+    // Checked on the job's own `needs:`/`if:` LINES only, never the whole
+    // job body -- several of these jobs' surrounding comments legitimately
+    // mention `needs.classify` in prose (e.g. explaining why a NEIGHBOURING
+    // job needs it), which must not be mistaken for this job depending on
+    // it. push-tree has neither line at all (it is the very first job, no
+    // needs), which is itself a form of "never depends on classify".
+    const needsLine = job.match(/^ {4}needs: \[(.+)\]$/m);
+    const jobIf = job.match(/^ {4}if: (.+)$/m);
+    if (needsLine) {
+      assert.doesNotMatch(needsLine[0], /classify/, `${jobName}'s needs: must not include classify -- it is one of issue #1420's explicit keep-running prose gates`);
+    }
+    if (jobIf) {
+      assert.doesNotMatch(jobIf[0], /needs\.classify/, `${jobName}'s if: must not reference the classifier -- it is one of issue #1420's explicit keep-running prose gates`);
+    }
+  }
+});
+
+// The classify-failure path itself, end to end, over EVERY gated job's `if:`
+// expression: simulates GitHub Actions' own evaluation (a JS mirror of the
+// subset of expression syntax these lines use -- `always()`, `!=`/`==`
+// string comparison, `&&`/`||`, and parenthesised grouping) against a
+// `needs` context where `classify` failed, was cancelled, or was skipped
+// outright, and against one where it succeeded with an empty/garbled tier
+// output. Proves the property the test above can only assert textually: the
+// actual boolean this expression evaluates to is `true` (run) in every one
+// of these cases, for every gated job in the workflow, not just the ones
+// this file happens to name.
+test("issue #1420: a failed, cancelled, or skipped classify job runs every gated job (simulated GitHub Actions evaluation)", () => {
+  const workflow = readFileSync(join(repoRoot, ".github/workflows/ci.yml"), "utf8");
+
+  // A tiny evaluator for exactly the expression shapes ci.yml's `if:` lines
+  // use: `always()`, `github.event_name <op> '<literal>'`,
+  // `needs.<job>.outputs.duplicate <op> '<literal>'`, `needs.classify.result
+  // <op> '<literal>'`, `needs.classify.outputs.tier <op> '<literal>'`,
+  // combined with `&&`/`||` and parentheses. Not a general GHA expression
+  // parser -- it refuses (throws) on anything it does not recognise, so a
+  // future edit that introduces a shape this evaluator cannot handle fails
+  // this test loudly rather than silently evaluating the wrong thing.
+  function evalGhaIf(expr, ctx) {
+    let i = 0;
+    function skipWs() {
+      while (expr[i] === " ") i++;
+    }
+    function parsePrimary() {
+      skipWs();
+      if (expr[i] === "(") {
+        i++;
+        const value = parseOr();
+        skipWs();
+        assert.equal(expr[i], ")", `unbalanced parens in: ${expr}`);
+        i++;
+        return value;
+      }
+      if (expr.startsWith("always()", i)) {
+        i += "always()".length;
+        return true;
+      }
+      const compareMatch = /^([A-Za-z0-9_.\-]+) (!=|==) '([^']*)'/.exec(expr.slice(i));
+      assert.ok(compareMatch, `unrecognised expression term at ${i} in: ${expr}`);
+      const [, path, op, literal] = compareMatch;
+      i += compareMatch[0].length;
+      const actual = ctx[path];
+      assert.notEqual(actual, undefined, `context has no value for ${path} (expression: ${expr})`);
+      return op === "!=" ? actual !== literal : actual === literal;
+    }
+    function parseAnd() {
+      let value = parsePrimary();
+      skipWs();
+      while (expr.startsWith("&&", i)) {
+        i += 2;
+        value = parsePrimary() && value; // evaluate both sides regardless of short-circuit, same as GHA
+        skipWs();
+      }
+      return value;
+    }
+    function parseOr() {
+      let value = parseAnd();
+      skipWs();
+      while (expr.startsWith("||", i)) {
+        i += 2;
+        value = parseAnd() || value;
+        skipWs();
+      }
+      return value;
+    }
+    const result = parseOr();
+    skipWs();
+    assert.equal(i, expr.length, `trailing unparsed text in: ${expr}`);
+    return result;
+  }
+
+  // Sanity: the evaluator itself agrees with the ORIGINAL, pre-fix
+  // (broken) polarity on the classify-failure case, so a regression in the
+  // fix does not also silently break the evaluator into always reporting
+  // "safe".
+  assert.equal(evalGhaIf("needs.classify.outputs.tier == 'full'", { "needs.classify.outputs.tier": "" }), false, "sanity: the broken pre-fix polarity really did evaluate to skip on a failed classify");
+
+  const gatedJobs = [
+    "dependency-audit",
+    "credential-lifecycle",
+    "scope",
+    "registry",
+    "prepublish-hook",
+    "root-entry",
+    "package-evidence",
+    "controller-gates",
+    "workspace-links",
+    "qualification-record-required",
+    "contrast",
+    "designer-contrast",
+    "readme-examples-typecheck",
+    "artifact",
+    "role-loop-archetypes",
+    "build",
+    "candidate-qualification-shard",
+    "candidate-qualification",
+    "packed-consumer-readiness",
+  ];
+
+  // Three ways `needs.classify.result` reads when classify did not prove an
+  // answer: GitHub sets it to the job's own conclusion for 'failure' and
+  // 'cancelled', and to 'skipped' if classify itself was skipped (e.g. a
+  // future edit gates classify on some condition). An empty tier paired
+  // with each covers "classify ran to a `success` conclusion but its own
+  // output step never wrote anything" too.
+  const classifyDidNotProve = [
+    { result: "failure", tier: "" },
+    { result: "cancelled", tier: "" },
+    { result: "skipped", tier: "" },
+    { result: "success", tier: "" }, // ran, but the output write itself failed/was skipped
+  ];
+
+  for (const jobName of gatedJobs) {
+    const job = workflowJob(workflow, jobName);
+    const jobIf = job.match(/^ {4}if: (.+)$/m);
+    assert.ok(jobIf, `${jobName} must declare if:`);
+    for (const { result, tier } of classifyDidNotProve) {
+      const ctx = {
+        "github.event_name": "pull_request",
+        "needs.push-tree.outputs.duplicate": "",
+        "github.event_name == 'pull_request'": true, // for qualification-record-required's event check, handled below
+        "needs.classify.result": result,
+        "needs.classify.outputs.tier": tier,
+      };
+      // qualification-record-required's if: uses an OR of two event checks
+      // instead of push-tree's duplicate check; evalGhaIf only understands
+      // single comparisons, so translate that one term into the same
+      // context-key shape the evaluator expects.
+      let expr = jobIf[1];
+      expr = expr.replace(/github\.event_name == 'pull_request' \|\| github\.event_name == 'merge_group'/, "github.event_name != 'push'");
+      const runs = evalGhaIf(expr, ctx);
+      assert.equal(runs, true, `${jobName} must RUN when classify.result='${result}' and tier='${tier}' (unproven) -- got ${runs}`);
+    }
   }
 });

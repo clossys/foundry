@@ -19,6 +19,24 @@ on:
   # unreported required check as blocking, never as a silent pass — the
   # queue simply never advances). Left unqualified (no `types:`) so a
   # future merge_group type GitHub adds is not silently excluded.
+  #
+  # Issue #1420's classify job (below) diffs EACH queue entry against
+  # `merge_group.base_sha`, which GitHub sets to the PREVIOUS queue entry's
+  # own head, not to main — so a prose-only PR queued behind a code PR
+  # classifies on its own small diff, `prose`, not on the code PR's changes
+  # too. That is NOT unsafe today only because this ruleset's merge_queue
+  # uses `grouping_strategy: ALLGREEN` (see the bottom of this file's
+  # ruleset reference, or `gh api repos/clossys/foundry/rulesets/20924588`):
+  # ALLGREEN requires every queued entry, including the code PR ahead of the
+  # prose one, to pass its OWN full run before ANY entry in the batch can
+  # merge — so the code PR's own `tier=full` run already re-validates
+  # everything the prose PR's `tier=prose` run skipped, on the same merge
+  # base, before the queue advances. Switching to `HEADGREEN` (which lets a
+  # later entry's green result vouch for an earlier one without an
+  # independent run) would break this: a prose entry's skipped heavy jobs
+  # would then be the ONLY signal standing in for the code PR ahead of it.
+  # Do not change `grouping_strategy` without re-deriving this classifier's
+  # merge_group safety from scratch.
   merge_group:
 
 permissions:
@@ -114,13 +132,32 @@ jobs:
   # (default, and the only tier on any event other than pull_request/
   # merge_group), `prose`, or `packed-prose`.
   #
-  # The classifier is fail-closed BY CONSTRUCTION (see its own header
-  # comment): anything it cannot prove is prose-only reports 'full', never a
-  # narrower tier -- so a classifier bug, a missing BASE_SHA, an
-  # unresolvable merge base, or a single unrecognised changed path all run
-  # everything, exactly like every other skip already in this workflow (see
-  # `push-tree` above, whose own duplicate-push skip carries the identical
-  # fail-open-to-running-everything polarity).
+  # TWO INDEPENDENT layers of fail-safety, not one:
+  #
+  #   1. The SCRIPT is fail-closed by construction (see its own header
+  #      comment): anything it cannot prove is prose-only reports 'full',
+  #      never a narrower tier -- a missing BASE_SHA, an unresolvable merge
+  #      base, or a single unrecognised changed path all report 'full'.
+  #
+  #   2. Every gated job below reads BOTH `needs.classify.result` and
+  #      `needs.classify.outputs.tier` -- never the tier alone -- and skips
+  #      only on `needs.classify.result == 'success'` AND a proven narrow
+  #      tier (`if: always() && ... && (needs.classify.result != 'success'
+  #      || needs.classify.outputs.tier == 'full')`, or `!= 'prose'` for the
+  #      handful of jobs packed-prose still needs). `always()` is mandatory
+  #      here for a reason layer 1 cannot cover: GitHub's UNWRITTEN default
+  #      for any job that `needs` another job is "skip unless every needed
+  #      job succeeded", evaluated BEFORE this job's own `if:` -- so a
+  #      classify job that FAILS outright (a lost runner, a checkout
+  #      failure, the 5-minute timeout, a module-load error) would silently
+  #      skip every job that needs it, and a skipped required context
+  #      reports as passing (see the `build` job's own `always()` comment
+  #      below for the identical mechanism against its OWN split jobs).
+  #      `always()` disables that implicit gate so the explicit `result !=
+  #      'success'` check can fail OPEN (run the job) instead. This is
+  #      issue #1420's own threat model turned back on the fix itself: a
+  #      classifier that can fail must never be trusted merely because it
+  #      ran; it must be trusted only when it PROVED an answer.
   #
   # Deliberately independent of `push-tree`: this job needs no dedup
   # decision of its own, only the diff, so it starts immediately in
@@ -156,7 +193,7 @@ jobs:
   dependency-audit:
     name: dependency audit
     needs: [push-tree, classify]
-    if: (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && needs.classify.outputs.tier == 'full'
+    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && (needs.classify.result != 'success' || (needs.classify.outputs.tier != 'prose' && needs.classify.outputs.tier != 'packed-prose'))
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -186,7 +223,7 @@ jobs:
   credential-lifecycle:
     name: credential lifecycle (dependency-audit token)
     needs: [push-tree, dependency-audit, classify]
-    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && needs.classify.outputs.tier == 'full'
+    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && (needs.classify.result != 'success' || (needs.classify.outputs.tier != 'prose' && needs.classify.outputs.tier != 'packed-prose'))
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -734,7 +771,7 @@ jobs:
   scope:
     name: scope drift
     needs: [push-tree, classify]
-    if: (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && needs.classify.outputs.tier == 'full'
+    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && (needs.classify.result != 'success' || (needs.classify.outputs.tier != 'prose' && needs.classify.outputs.tier != 'packed-prose'))
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -762,7 +799,7 @@ jobs:
   registry:
     name: registry drift
     needs: [push-tree, classify]
-    if: (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && needs.classify.outputs.tier == 'full'
+    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && (needs.classify.result != 'success' || (needs.classify.outputs.tier != 'prose' && needs.classify.outputs.tier != 'packed-prose'))
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -785,7 +822,7 @@ jobs:
   prepublish-hook:
     name: prepublish hook drift
     needs: [push-tree, classify]
-    if: (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && needs.classify.outputs.tier == 'full'
+    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && (needs.classify.result != 'success' || (needs.classify.outputs.tier != 'prose' && needs.classify.outputs.tier != 'packed-prose'))
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -814,7 +851,7 @@ jobs:
   root-entry:
     name: root entry policy drift
     needs: [push-tree, classify]
-    if: (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && needs.classify.outputs.tier == 'full'
+    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && (needs.classify.result != 'success' || (needs.classify.outputs.tier != 'prose' && needs.classify.outputs.tier != 'packed-prose'))
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -843,7 +880,7 @@ jobs:
   package-evidence:
     name: package state (declared vs. evidence)
     needs: [push-tree, classify]
-    if: (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && needs.classify.outputs.tier == 'full'
+    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && (needs.classify.result != 'success' || (needs.classify.outputs.tier != 'prose' && needs.classify.outputs.tier != 'packed-prose'))
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -867,7 +904,7 @@ jobs:
   role-loop-archetypes:
     name: role-loop archetypes
     needs: [push-tree, classify]
-    if: (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && needs.classify.outputs.tier == 'full'
+    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && (needs.classify.result != 'success' || needs.classify.outputs.tier != 'prose')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -982,7 +1019,7 @@ jobs:
   controller-gates:
     name: controller gates (catalog, neutrality, repository-profile)
     needs: [push-tree, classify]
-    if: (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && needs.classify.outputs.tier == 'full'
+    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && (needs.classify.result != 'success' || (needs.classify.outputs.tier != 'prose' && needs.classify.outputs.tier != 'packed-prose'))
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -1072,7 +1109,7 @@ jobs:
   workspace-links:
     name: workspace link integrity
     needs: [push-tree, classify]
-    if: (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && needs.classify.outputs.tier == 'full'
+    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && (needs.classify.result != 'success' || (needs.classify.outputs.tier != 'prose' && needs.classify.outputs.tier != 'packed-prose'))
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -1179,7 +1216,7 @@ jobs:
   qualification-record-required:
     name: qualification record required (version bump vs. retained record)
     needs: [classify]
-    if: (github.event_name == 'pull_request' || github.event_name == 'merge_group') && needs.classify.outputs.tier == 'full'
+    if: always() && (github.event_name == 'pull_request' || github.event_name == 'merge_group') && (needs.classify.result != 'success' || (needs.classify.outputs.tier != 'prose' && needs.classify.outputs.tier != 'packed-prose'))
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -1251,7 +1288,7 @@ jobs:
   contrast:
     name: WCAG contrast gate (ui-contrast-check)
     needs: [push-tree, classify]
-    if: (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && needs.classify.outputs.tier == 'full'
+    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && (needs.classify.result != 'success' || (needs.classify.outputs.tier != 'prose' && needs.classify.outputs.tier != 'packed-prose'))
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -1278,7 +1315,7 @@ jobs:
   designer-contrast:
     name: WCAG contrast gate (designer-contrast-check)
     needs: [push-tree, classify]
-    if: (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && needs.classify.outputs.tier == 'full'
+    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && (needs.classify.result != 'success' || (needs.classify.outputs.tier != 'prose' && needs.classify.outputs.tier != 'packed-prose'))
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -1388,7 +1425,7 @@ jobs:
   candidate-qualification-shard:
     name: candidate qualification records (shard ${{ matrix.shard }})
     needs: [push-tree, classify]
-    if: (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && needs.classify.outputs.tier == 'full'
+    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && (needs.classify.result != 'success' || needs.classify.outputs.tier != 'prose')
     strategy:
       fail-fast: false
       matrix:
@@ -1452,7 +1489,7 @@ jobs:
   candidate-qualification:
     name: candidate qualification records
     needs: [push-tree, candidate-qualification-shard, classify]
-    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && needs.classify.outputs.tier == 'full'
+    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && (needs.classify.result != 'success' || needs.classify.outputs.tier != 'prose')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -1473,7 +1510,7 @@ jobs:
   readme-examples-typecheck:
     name: README code examples typecheck against shipped declarations
     needs: [push-tree, classify]
-    if: (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && needs.classify.outputs.tier != 'prose'
+    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && (needs.classify.result != 'success' || needs.classify.outputs.tier != 'prose')
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -1546,7 +1583,7 @@ jobs:
   packed-consumer-readiness:
     name: packed consumer readiness
     needs: [push-tree, classify]
-    if: (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && needs.classify.outputs.tier == 'full'
+    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && (needs.classify.result != 'success' || needs.classify.outputs.tier != 'prose')
     runs-on: ubuntu-latest
     timeout-minutes: 18
     steps:
@@ -1641,7 +1678,7 @@ jobs:
     # skipped required context reports as passing, silently erasing the
     # failure it exists to catch. `always()` forces this job to run so the
     # explicit check in its first step can fail it honestly instead.
-    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && needs.classify.outputs.tier == 'full'
+    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && (needs.classify.result != 'success' || needs.classify.outputs.tier != 'prose')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -1979,7 +2016,7 @@ jobs:
   artifact:
     name: artifact safety (tarball)
     needs: [push-tree, classify]
-    if: (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && needs.classify.outputs.tier != 'prose'
+    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && (needs.classify.result != 'success' || needs.classify.outputs.tier != 'prose')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:

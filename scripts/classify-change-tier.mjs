@@ -1,11 +1,13 @@
 #!/usr/bin/env node
 // classify-change-tier -- decides how much of ci.yml a pull_request or
 // merge_group run actually needs, so a change that touches only prose (a
-// `.changesets/*.md` file, anything under `docs/**` including
-// `docs/changelogs/**`, a root `*.md` file -- or, narrower still, only a
-// packed `packages/*/README.md` or `packages/*/skill/SKILL.md`) can skip
-// the jobs that cannot possibly be affected by it: build and test, packed
-// consumer readiness, and the candidate-qualification shards (issue #1420).
+// `.changesets/*.md` file, a root `*.md` file, `docs/changelogs/**`, or a
+// TOP-LEVEL `docs/*.md` file other than `docs/LIFECYCLE.md` -- see
+// PROSE_PATTERNS below for exactly why that set and no wider -- or,
+// narrower still, only a packed `packages/*/README.md` or
+// `packages/*/skill/SKILL.md`) can skip the jobs that cannot possibly be
+// affected by it: build and test, packed consumer readiness, and the
+// candidate-qualification shards (issue #1420).
 //
 //   node scripts/classify-change-tier.mjs
 //
@@ -62,10 +64,47 @@ import { git, resolveBaseRef } from "./check-release-readiness.mjs";
 // A changed path is classified into exactly one tier. "full" always wins
 // when even one path in a diff falls outside the other two sets -- see
 // classifyChangeTier() below.
+//
+// PROSE_PATTERNS is an EXPLICIT ALLOWLIST, deliberately narrower than "all
+// of docs/**". An independent review of this classifier (issue #1420,
+// review round 1) found that a broad `/^docs\//` match swept in
+// `docs/contracts/**` -- 31 machine-read JSON contracts plus 3 `.md` files
+// (`conversation-contract.md`, which `packages/launcher/scripts/
+// pack-skills.mjs` packs into launcher's own tarball; `kit-presets.json`,
+// read by `packages/advisor/scripts/pack-capability-catalogue.mjs`;
+// `package-evidence.json`, graded by `scripts/check-package-evidence.mjs`,
+// the required `package state (declared vs. evidence)` gate) -- and
+// `docs/LIFECYCLE.md`, whose own generated "lifecycle position table" that
+// same gate reads and diffs against `docs/contracts/package-evidence.json`
+// (scripts/check-package-evidence.mjs's `lifecycle-position-table-drift`
+// finding). Both are required, full-only gates: a malformed
+// `docs/contracts/package-evidence.json`, or a `docs/LIFECYCLE.md` edited
+// out of sync with it, would have classified as pure prose and skipped the
+// one gate built to catch exactly that.
+//
+// The audited-safe prose set, each entry proven by grep across scripts/,
+// packages/*/scripts, packages/*/src, and .github (see
+// classify-change-tier.test.mjs's own table for one example per excluded
+// contract path, and the PR body for the full audit):
+//
+//   .changesets/*.md   -- one level only, never nested
+//   a root *.md file    -- AGENTS.md, README.md, SECURITY.md, ...
+//   docs/changelogs/**  -- generated changelog prose (any depth); nothing
+//                          reads it back except release-pr.yml's own `git
+//                          add` and the always-running `release PR shape`/
+//                          `publish safety` gates (check-release-pr-
+//                          shape.mjs, and check-changelog-location.mjs once
+//                          #1429 lands), neither of which this classifier
+//                          ever skips
+//   docs/<name>.md      -- a TOP-LEVEL docs/*.md file only (the pattern's
+//                          `[^/]+` admits no further `/`, so this can never
+//                          match anything under docs/contracts/), EXCEPT
+//                          docs/LIFECYCLE.md (see above)
 const PROSE_PATTERNS = [
   /^\.changesets\/[^/]+\.md$/, // .changesets/*.md
-  /^docs\//, // docs/** (any file, any depth -- includes docs/changelogs/**)
   /^[^/]+\.md$/, // a root-level *.md file
+  /^docs\/changelogs\//, // docs/changelogs/** (any depth) -- generated changelog prose
+  /^docs\/(?!LIFECYCLE\.md$)[^/]+\.md$/, // a top-level docs/*.md file, except docs/LIFECYCLE.md
 ];
 
 const PACKED_PROSE_PATTERNS = [
@@ -75,10 +114,13 @@ const PACKED_PROSE_PATTERNS = [
 
 /**
  * Classifies one changed path as "prose" (cannot affect anything but the
- * prose gates), "packed-prose" (a packed file: also needs the README
- * code-examples typecheck and artifact safety, since those are the gates
- * that actually read it), or "full" (anything else, including a path this
- * function does not recognise at all).
+ * prose gates), "packed-prose" (a packed file: also needs every gate that
+ * reads a package's own README.md or skill/SKILL.md -- README code-examples
+ * typecheck, artifact safety, role-loop archetypes, build and test, and,
+ * because build's own fan-in requires it, the candidate-qualification
+ * shards and packed consumer readiness that feed it -- see ci.yml's own
+ * comment on each of those jobs for why), or "full" (anything else,
+ * including a path this function does not recognise at all).
  */
 export function classifyPath(path) {
   if (PROSE_PATTERNS.some((pattern) => pattern.test(path))) return "prose";

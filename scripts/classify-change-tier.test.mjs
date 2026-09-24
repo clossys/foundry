@@ -22,13 +22,34 @@ test("classifyPath: every tier boundary", () => {
     // .changesets/*.md -- one level only.
     [".changesets/foo-bar.md", "prose"],
     [".changesets/README.md", "prose"],
-    // docs/** -- any depth, any extension (issue #1420's own charter: the
-    // whole tree, including docs/changelogs/** once it exists, and
-    // non-Markdown contract files under docs/contracts/**).
+    // A TOP-LEVEL docs/*.md file -- prose.
     ["docs/RELEASING.md", "prose"],
+    ["docs/PUBLISHING.md", "prose"],
+    // docs/changelogs/** -- any depth -- prose.
     ["docs/changelogs/advisor.md", "prose"],
-    ["docs/contracts/kit-presets.json", "prose"],
-    ["docs/a/b/c/deep.md", "prose"],
+    ["docs/changelogs/nested/advisor.md", "prose"],
+    // docs/contracts/** is EXCLUDED from prose (review round 1, #1420):
+    // machine-read contracts, not human-only prose. Every example a
+    // reviewer cited by name, each forcing 'full'.
+    ["docs/contracts/kit-presets.json", "full"], // packages/advisor/scripts/pack-capability-catalogue.mjs reads it and packs it into advisor's tarball
+    ["docs/contracts/package-evidence.json", "full"], // graded by scripts/check-package-evidence.mjs, the required `package state` gate
+    ["docs/contracts/conversation-contract.md", "full"], // packed into launcher's own tarball by packages/launcher/scripts/pack-skills.mjs
+    ["docs/contracts/role-loop-archetypes.json", "full"], // read by scripts/check-role-loop-archetypes.mjs, the required `role-loop archetypes` gate
+    ["docs/contracts/trust-statement.md", "full"], // scanned by scripts/check-permission-defaults.mjs inside `role-loop archetypes`
+    // docs/LIFECYCLE.md is excluded too: scripts/check-package-evidence.mjs
+    // reads and diffs it against docs/contracts/package-evidence.json (the
+    // `lifecycle-position-table-drift` finding) -- same required gate as
+    // package-evidence.json above, so it cannot be prose either.
+    ["docs/LIFECYCLE.md", "full"],
+    // A near-miss of the docs/LIFECYCLE.md exclusion: only the exact
+    // top-level file is excluded, not a file merely containing that name.
+    ["docs/LIFECYCLE-DRAFT.md", "prose"],
+    // A nested path can never match the top-level docs/*.md pattern at all
+    // (by construction, independent of the docs/contracts/LIFECYCLE.md
+    // exclusions above) -- any unrecognised docs/ subdirectory defaults to
+    // 'full', never a guessed 'prose'.
+    ["docs/a/b/c/deep.md", "full"],
+    ["docs/architecture/deep.md", "full"],
     // A root-level *.md file only -- no subdirectory.
     ["AGENTS.md", "prose"],
     ["CONTRIBUTING.md", "prose"],
