@@ -159,12 +159,38 @@ export interface ReviewEvidenceOptions {
    * repository's decision, not this package's.
    */
   readonly requireReviewPresence: boolean;
+  /**
+   * An earlier approval this run's COLLECTOR proved carries forward under
+   * #1428's mechanical-merge rule: every commit between the two heads
+   * (strict first parent) is a plain merge with an empty `git show
+   * --remerge-diff`, and the pull request's own patch id, taken against its
+   * merge-base with the target branch, is unchanged (see
+   * `scripts/collect-review-evidence.mjs`'s "MECHANICAL-MERGE CARRY"
+   * section for the full proof). This package performs no I/O and does not
+   * itself verify the claim — the same trust boundary `mergeGroup.
+   * containsHeadShaUnderTest` already draws. It changes nothing about the
+   * DECISION: the collector already rebinds the carried review's own
+   * `headSha` to the current head before this package ever sees the
+   * evidence bundle, so the ordinary validation path handles it exactly
+   * like a fresh current-head approval. This field exists purely to make
+   * the carry VISIBLE in `ReviewEvidenceReport.carriedApproval` and the
+   * rendered report, never silent — and a malformed value is simply
+   * dropped from the report, never turned into a check failure, because it
+   * cannot change a decision it was never consulted for.
+   */
+  readonly carriedApproval?: ReviewEvidenceCarriedApproval;
 }
 
 /** The merge-queue group a run is testing. See `ReviewEvidenceOptions.mergeGroup`. */
 export interface ReviewEvidenceMergeGroup {
   readonly headSha: string;
   readonly containsHeadShaUnderTest: boolean;
+}
+
+/** An earlier approval carried forward to the current head. See `ReviewEvidenceOptions.carriedApproval`. */
+export interface ReviewEvidenceCarriedApproval {
+  readonly fromHeadSha: string;
+  readonly toHeadSha: string;
 }
 
 /** Every reason this check can decline to answer. */
@@ -431,6 +457,16 @@ export interface ReviewEvidenceReport {
    * current change request, or presence.
    */
   readonly staleReviews: readonly ReviewEvidenceFinding[];
+  /**
+   * Set exactly when `options.carriedApproval` was supplied and well-formed
+   * (two 40-hex shas) — see `ReviewEvidenceOptions.carriedApproval`'s own
+   * doc comment for the trust boundary and why this is reporting only.
+   * Present starting once the evidence bundle itself is known well-formed
+   * (past the evaluability gate); an earlier `indeterminate` return (no
+   * evidence, an invalid policy, an unreadable bundle) never reaches far
+   * enough to say anything about a carry, so it carries no opinion here.
+   */
+  readonly carriedApproval?: ReviewEvidenceCarriedApproval;
 }
 
 /** Evaluates one change's review evidence against a consumer-owned review policy. */
@@ -562,6 +598,16 @@ export function checkReviewEvidence(
   const providersObserved = [
     ...new Set(bundle.reviews.filter((review) => review.headSha === bundle.headSha).map((review) => review.provider)),
   ].sort();
+  // Reporting only — see `ReviewEvidenceOptions.carriedApproval`'s own doc
+  // comment. A malformed value (not two well-formed shas) is silently
+  // dropped from the report rather than treated as a defect: it was never
+  // consulted for the decision, so it cannot corrupt one.
+  const carriedApproval: ReviewEvidenceCarriedApproval | undefined =
+    isRecord(options.carriedApproval) &&
+    isWellFormedSha(options.carriedApproval.fromHeadSha) &&
+    isWellFormedSha(options.carriedApproval.toHeadSha)
+      ? { fromHeadSha: options.carriedApproval.fromHeadSha, toHeadSha: options.carriedApproval.toHeadSha }
+      : undefined;
 
   // A merge-group run: the commit under test is the queued PR's head, and
   // only counts if the group commit actually contains it. Checked before the
@@ -570,6 +616,7 @@ export function checkReviewEvidence(
     return {
       providersObserved,
       staleReviews,
+      ...(carriedApproval === undefined ? {} : { carriedApproval }),
       result: reviewEvidenceReasons.indeterminate(
         "merge-group-head-not-contained",
         `The pull request head ${String(options.headShaUnderTest)} is not the commit merge-group commit ` +
@@ -583,6 +630,7 @@ export function checkReviewEvidence(
     return {
       providersObserved,
       staleReviews,
+      ...(carriedApproval === undefined ? {} : { carriedApproval }),
       result: reviewEvidenceReasons.indeterminate(
         "evidence-head-mismatch",
         `The evidence is bound to head ${bundle.headSha} and the commit under test is ${options.headShaUnderTest}. ` +
@@ -612,7 +660,9 @@ export function checkReviewEvidence(
     }
   }
 
-  if (violations.length > 0) return { providersObserved, staleReviews, result: gateViolated(violations) };
+  if (violations.length > 0) {
+    return { providersObserved, staleReviews, ...(carriedApproval === undefined ? {} : { carriedApproval }), result: gateViolated(violations) };
+  }
 
   // Coverage, stated honestly: how many discrete pieces of evidence were
   // actually read. A bundle carrying nothing at all cannot report satisfied —
@@ -627,6 +677,7 @@ export function checkReviewEvidence(
     return {
       providersObserved,
       staleReviews,
+      ...(carriedApproval === undefined ? {} : { carriedApproval }),
       result: reviewEvidenceReasons.indeterminate(
         "evidence-incomplete",
         "The evidence bundle is well-formed and completely empty: no checks, no reviews, no threads. There is nothing " +
@@ -634,7 +685,7 @@ export function checkReviewEvidence(
       ),
     };
   }
-  return { providersObserved, staleReviews, result: gateSatisfied(evaluated) };
+  return { providersObserved, staleReviews, ...(carriedApproval === undefined ? {} : { carriedApproval }), result: gateSatisfied(evaluated) };
 }
 
 function describe(findings: readonly ReviewFinding[]): string {

@@ -1,11 +1,13 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
 import {
+  applyMechanicalMergeCarry,
+  assessMechanicalMergeCarry,
   buildChecksFromRollup,
   buildReviewEvidenceBundle,
   buildReviewEvidenceOptions,
@@ -15,15 +17,23 @@ import {
   buildThreadsFromConnection,
   deriveRequiredChecksFromRuleset,
   EXCLUDED_SELF_CONTEXTS,
+  findMechanicalMergeCarry,
+  gitParentsReader,
+  gitPrPatchIdReader,
+  gitRemergeDiffIsEmptyReader,
+  latestDecisiveApprovedHeads,
   mergeReviewEvidenceIntoInputs,
   normalizeCheckConclusion,
   normalizeReviewDecision,
   normalizeStatusState,
+  patchIdsEqual,
   gitSecondParentReader,
   main,
   parseMergeGroupQueueRef,
   resolveMergeGroupHead,
   resolvePrAndHead,
+  verifyChainIsMechanical,
+  walkFirstParentChain,
 } from "./collect-review-evidence.mjs";
 
 // This suite proves the pure normalization layer only — no network, no `gh`.
@@ -687,4 +697,452 @@ test("merge-group case: a BLOCKING (changes-requested) review at the contained P
     evidence.reviews.map((review) => review.state),
     ["approved", "changes-requested"],
   );
+});
+
+// ---------------------------------------------------------------------------
+// MECHANICAL-MERGE CARRY (#1428)
+// ---------------------------------------------------------------------------
+// Unit coverage for the pure decision functions (stubbed readers), then a
+// real-git fixture proving the charter's five scenarios against ACTUAL
+// merge commits and an actual `git show --remerge-diff` / `git patch-id` —
+// a stub can assert this module calls its readers correctly, but only a
+// real repository can prove a genuinely hand-resolved conflict or a
+// genuinely unrelated edit actually produces a non-empty remerge-diff.
+
+const APPROVED = "1".repeat(40);
+const CURRENT = "2".repeat(40);
+const MID = "3".repeat(40);
+
+test("walkFirstParentChain: headSha === approvedHeadSha needs no walk at all", () => {
+  assert.deepEqual(walkFirstParentChain({ headSha: APPROVED, approvedHeadSha: APPROVED, readParents: () => assert.fail("must not be called") }), {
+    chain: [],
+  });
+});
+
+test("walkFirstParentChain: a single clean merge on top of the approved head is a one-entry chain", () => {
+  const readParents = (sha) => {
+    assert.equal(sha, CURRENT);
+    return [APPROVED, MID];
+  };
+  assert.deepEqual(walkFirstParentChain({ headSha: CURRENT, approvedHeadSha: APPROVED, readParents }), {
+    chain: [{ sha: CURRENT, parents: [APPROVED, MID] }],
+  });
+});
+
+test("walkFirstParentChain fails closed on an unreadable parent, a root reached before the approved head, and a budget exceeded", () => {
+  assert.equal(
+    typeof walkFirstParentChain({
+      headSha: CURRENT,
+      approvedHeadSha: APPROVED,
+      readParents: () => {
+        throw new Error("boom");
+      },
+    }).error,
+    "string",
+  );
+  assert.equal(
+    typeof walkFirstParentChain({ headSha: CURRENT, approvedHeadSha: APPROVED, readParents: () => [] }).error, // a root: no parents at all
+    "string",
+  );
+  let calls = 0;
+  const neverArrives = () => {
+    calls += 1;
+    return [`${calls}`.padStart(40, "0")]; // a fresh sha every step -- APPROVED is never reached
+  };
+  const result = walkFirstParentChain({ headSha: CURRENT, approvedHeadSha: APPROVED, readParents: neverArrives, maxSteps: 5 });
+  assert.equal(typeof result.error, "string");
+  assert.equal(calls, 5);
+});
+
+test("verifyChainIsMechanical: an empty chain (already at the approved head) is trivially mechanical", () => {
+  assert.deepEqual(verifyChainIsMechanical({ chain: [], remergeDiffIsEmpty: () => assert.fail("must not be called") }), { mechanical: true });
+});
+
+test("verifyChainIsMechanical refuses a non-merge commit, an octopus merge, and a non-empty remerge-diff -- never guesses", () => {
+  assert.match(
+    verifyChainIsMechanical({ chain: [{ sha: CURRENT, parents: [APPROVED] }], remergeDiffIsEmpty: () => true }).reason,
+    /not a plain two-parent merge commit/,
+  );
+  assert.match(
+    verifyChainIsMechanical({ chain: [{ sha: CURRENT, parents: [APPROVED, MID, "4".repeat(40)] }], remergeDiffIsEmpty: () => true }).reason,
+    /not a plain two-parent merge commit/,
+  );
+  assert.match(
+    verifyChainIsMechanical({ chain: [{ sha: CURRENT, parents: [APPROVED, MID] }], remergeDiffIsEmpty: () => false }).reason,
+    /non-empty remerge-diff/,
+  );
+  assert.match(
+    verifyChainIsMechanical({
+      chain: [{ sha: CURRENT, parents: [APPROVED, MID] }],
+      remergeDiffIsEmpty: () => {
+        throw new Error("git show failed");
+      },
+    }).reason,
+    /could not read the remerge-diff/,
+  );
+});
+
+test("patchIdsEqual requires two real, equal, non-empty ids -- never treats two nulls (no PR content) as a match", () => {
+  assert.equal(patchIdsEqual("abc", "abc"), true);
+  assert.equal(patchIdsEqual("abc", "def"), false);
+  assert.equal(patchIdsEqual(null, null), false);
+  assert.equal(patchIdsEqual(undefined, "abc"), false);
+  assert.equal(patchIdsEqual("", ""), false);
+});
+
+test("assessMechanicalMergeCarry refuses malformed shas and the no-op (approved head already current) case before touching any reader", () => {
+  const boom = () => assert.fail("must not be called");
+  assert.equal(
+    assessMechanicalMergeCarry({ approvedHeadSha: "not-a-sha", currentHeadSha: CURRENT, readParents: boom, remergeDiffIsEmpty: boom, readPatchId: boom })
+      .carries,
+    false,
+  );
+  assert.equal(
+    assessMechanicalMergeCarry({ approvedHeadSha: APPROVED, currentHeadSha: APPROVED, readParents: boom, remergeDiffIsEmpty: boom, readPatchId: boom })
+      .carries,
+    false,
+  );
+});
+
+test("assessMechanicalMergeCarry: a mechanical chain with a DIFFERING patch id still refuses -- check 2 is independent of check 1", () => {
+  const result = assessMechanicalMergeCarry({
+    approvedHeadSha: APPROVED,
+    currentHeadSha: CURRENT,
+    readParents: (sha) => (sha === CURRENT ? [APPROVED, MID] : []),
+    remergeDiffIsEmpty: () => true,
+    readPatchId: (sha) => (sha === APPROVED ? "patch-a" : "patch-b"),
+  });
+  assert.equal(result.carries, false);
+  assert.match(result.reason, /patch id/);
+});
+
+test("latestDecisiveApprovedHeads: excludes reviews already at the current head, non-approved latest decisions, and ambiguous ties", () => {
+  const reviews = [
+    // Reviewer A: approved at an earlier head -- a genuine carry candidate.
+    { instanceId: "A", state: "approved", submittedAt: "2026-01-01T00:00:00Z", headSha: APPROVED },
+    // Reviewer B: approved, but already AT the current head -- nothing to carry.
+    { instanceId: "B", state: "approved", submittedAt: "2026-01-01T00:00:00Z", headSha: CURRENT },
+    // Reviewer C: approved at an earlier head, but LATER requested changes at that same head -- not a candidate.
+    { instanceId: "C", state: "approved", submittedAt: "2026-01-01T00:00:00Z", headSha: MID },
+    { instanceId: "C", state: "changes-requested", submittedAt: "2026-01-02T00:00:00Z", headSha: MID },
+    // Reviewer D: two decisive records at the exact same instant that disagree -- ambiguous, excluded outright.
+    { instanceId: "D", state: "approved", submittedAt: "2026-01-03T00:00:00Z", headSha: "4".repeat(40) },
+    { instanceId: "D", state: "changes-requested", submittedAt: "2026-01-03T00:00:00Z", headSha: "4".repeat(40) },
+    // Not decisive -- never enters the grouping at all.
+    { instanceId: "E", state: "commented", submittedAt: "2026-01-04T00:00:00Z", headSha: "5".repeat(40) },
+  ];
+  assert.deepEqual(latestDecisiveApprovedHeads(reviews, CURRENT), [APPROVED]);
+});
+
+test("latestDecisiveApprovedHeads orders distinct candidate heads most-recently-approved first", () => {
+  const older = "6".repeat(40);
+  const newer = "7".repeat(40);
+  const reviews = [
+    { instanceId: "A", state: "approved", submittedAt: "2026-01-01T00:00:00Z", headSha: older },
+    { instanceId: "B", state: "approved", submittedAt: "2026-01-05T00:00:00Z", headSha: newer },
+  ];
+  assert.deepEqual(latestDecisiveApprovedHeads(reviews, CURRENT), [newer, older]);
+});
+
+test("findMechanicalMergeCarry: no candidates at all short-circuits without calling any reader", () => {
+  const boom = () => assert.fail("must not be called");
+  const result = findMechanicalMergeCarry({ reviews: [], currentHeadSha: CURRENT, readParents: boom, remergeDiffIsEmpty: boom, readPatchId: boom });
+  assert.equal(result.carries, false);
+});
+
+test("applyMechanicalMergeCarry rebinds only the carried approval's own headSha, leaving every other record untouched", () => {
+  const evidence = {
+    schemaVersion: 3,
+    headSha: CURRENT,
+    baseSha: BASE,
+    paginationComplete: true,
+    checks: [],
+    threads: [],
+    reviews: [
+      { id: "R1", reviewerId: "a", instanceId: "a", provider: "github", submittedAt: "2026-01-01T00:00:00Z", state: "approved", depth: "primary", headSha: APPROVED },
+      { id: "R2", reviewerId: "b", instanceId: "b", provider: "github", submittedAt: "2026-01-01T00:00:00Z", state: "commented", depth: "primary", headSha: APPROVED },
+    ],
+  };
+  const carried = applyMechanicalMergeCarry(evidence, { carries: true, approvedHeadSha: APPROVED, currentHeadSha: CURRENT });
+  assert.equal(carried.reviews[0].headSha, CURRENT); // the approval -- carried
+  assert.equal(carried.reviews[1].headSha, APPROVED); // a non-approval at the same old head -- untouched
+  assert.equal(applyMechanicalMergeCarry(evidence, { carries: false }), evidence); // no-op when nothing carries
+});
+
+// A REAL git fixture: main at `base` (touching shared.txt), PR branch
+// approved at `approved` (adds pr.txt AND edits shared.txt's own line, so a
+// later main edit to that SAME line can be made to conflict on purpose).
+function withMechanicalMergeFixture(fn) {
+  const dir = mkdtempSync(join(tmpdir(), "collect-review-evidence-mmc-"));
+  const git = (...args) =>
+    execFileSync("git", args, {
+      cwd: dir,
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        GIT_AUTHOR_NAME: "fixture",
+        GIT_AUTHOR_EMAIL: "fixture@example.invalid",
+        GIT_COMMITTER_NAME: "fixture",
+        GIT_COMMITTER_EMAIL: "fixture@example.invalid",
+        GIT_CONFIG_NOSYSTEM: "1",
+        GIT_CONFIG_GLOBAL: "/dev/null",
+      },
+    }).trim();
+  const write = (name, content) => writeFileSync(join(dir, name), content);
+  try {
+    git("init", "-q", "-b", "main");
+    write("shared.txt", "line one\n");
+    git("add", "-A");
+    git("commit", "-q", "-m", "base");
+    const base = git("rev-parse", "HEAD");
+
+    git("checkout", "-q", "-b", "pr");
+    write("shared.txt", "line one, edited by the PR\n");
+    write("pr.txt", "pr content\n");
+    git("add", "-A");
+    git("commit", "-q", "-m", "PR change");
+    const approved = git("rev-parse", "HEAD");
+
+    return fn({ dir, git, write, base, approved });
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+/** The three real readers, all bound to one fixture directory. */
+function fixtureReaders(dir) {
+  return { readParents: gitParentsReader(dir), remergeDiffIsEmpty: gitRemergeDiffIsEmptyReader(dir), readPrPatchId: gitPrPatchIdReader(dir) };
+}
+
+test("real git: a clean merge from the target branch -- empty remerge-diff, unchanged patch id -- carries", () => {
+  withMechanicalMergeFixture(({ dir, git, write, approved }) => {
+    git("checkout", "-q", "main");
+    write("main.txt", "main content\n"); // does not touch shared.txt -- no conflict
+    git("add", "-A");
+    git("commit", "-q", "-m", "main advance");
+    const newBase = git("rev-parse", "HEAD");
+
+    git("checkout", "-q", "pr");
+    git("merge", "-q", "--no-ff", "--no-edit", "main");
+    const current = git("rev-parse", "HEAD");
+
+    const { readParents, remergeDiffIsEmpty, readPrPatchId } = fixtureReaders(dir);
+    const assessment = assessMechanicalMergeCarry({
+      approvedHeadSha: approved,
+      currentHeadSha: current,
+      readParents,
+      remergeDiffIsEmpty,
+      readPatchId: (sha) => readPrPatchId(newBase, sha),
+    });
+    assert.deepEqual(assessment, { carries: true, approvedHeadSha: approved, currentHeadSha: current });
+  });
+});
+
+test("real git: a conflict resolved by hand (non-empty remerge-diff) never carries", () => {
+  withMechanicalMergeFixture(({ dir, git, write, approved }) => {
+    git("checkout", "-q", "main");
+    write("shared.txt", "line one, edited by main\n"); // the SAME line the PR already edited -- a real conflict
+    git("add", "-A");
+    git("commit", "-q", "-m", "main edits the same line");
+    const newBase = git("rev-parse", "HEAD");
+
+    git("checkout", "-q", "pr");
+    assert.throws(() => git("merge", "-q", "--no-ff", "main")); // the conflict itself
+    write("shared.txt", "line one, resolved by hand\n"); // a THIRD text -- an unmistakable hand resolution
+    git("add", "-A");
+    git("commit", "-q", "-m", "resolve conflict by hand");
+    const current = git("rev-parse", "HEAD");
+
+    const { readParents, remergeDiffIsEmpty, readPrPatchId } = fixtureReaders(dir);
+    const assessment = assessMechanicalMergeCarry({
+      approvedHeadSha: approved,
+      currentHeadSha: current,
+      readParents,
+      remergeDiffIsEmpty,
+      readPatchId: (sha) => readPrPatchId(newBase, sha),
+    });
+    assert.equal(assessment.carries, false);
+    assert.match(assessment.reason, /non-empty remerge-diff/);
+  });
+});
+
+test("real git: a clean merge with an unrelated edit tacked on (non-empty remerge-diff) never carries", () => {
+  withMechanicalMergeFixture(({ dir, git, write, approved }) => {
+    git("checkout", "-q", "main");
+    write("main.txt", "main content\n");
+    git("add", "-A");
+    git("commit", "-q", "-m", "main advance");
+    const newBase = git("rev-parse", "HEAD");
+
+    git("checkout", "-q", "pr");
+    git("merge", "-q", "--no-ff", "--no-commit", "main"); // clean merge, staged but not committed
+    write("extra.txt", "content nobody reviewed\n"); // tacked on inside the merge commit itself
+    git("add", "-A");
+    git("commit", "-q", "-m", "merge main, plus an unrelated edit");
+    const current = git("rev-parse", "HEAD");
+
+    const { readParents, remergeDiffIsEmpty, readPrPatchId } = fixtureReaders(dir);
+    const assessment = assessMechanicalMergeCarry({
+      approvedHeadSha: approved,
+      currentHeadSha: current,
+      readParents,
+      remergeDiffIsEmpty,
+      readPatchId: (sha) => readPrPatchId(newBase, sha),
+    });
+    assert.equal(assessment.carries, false);
+    assert.match(assessment.reason, /non-empty remerge-diff/);
+  });
+});
+
+test("real git: a genuine commit landing after the approved head (not a merge) never carries", () => {
+  withMechanicalMergeFixture(({ dir, git, write, approved }) => {
+    write("pr2.txt", "a second, unreviewed PR commit\n");
+    git("add", "-A");
+    git("commit", "-q", "-m", "unreviewed follow-up commit"); // still on `pr`, straight past `approved`
+
+    git("checkout", "-q", "main");
+    write("main.txt", "main content\n");
+    git("add", "-A");
+    git("commit", "-q", "-m", "main advance");
+    const newBase = git("rev-parse", "HEAD");
+
+    git("checkout", "-q", "pr");
+    git("merge", "-q", "--no-ff", "--no-edit", "main");
+    const current = git("rev-parse", "HEAD");
+
+    const { readParents, remergeDiffIsEmpty, readPrPatchId } = fixtureReaders(dir);
+    const assessment = assessMechanicalMergeCarry({
+      approvedHeadSha: approved,
+      currentHeadSha: current,
+      readParents,
+      remergeDiffIsEmpty,
+      readPatchId: (sha) => readPrPatchId(newBase, sha),
+    });
+    assert.equal(assessment.carries, false);
+    assert.match(assessment.reason, /not a plain two-parent merge commit/);
+  });
+});
+
+test("real git: an unreadable history (a current head this repository never heard of) fails closed, never guesses", () => {
+  withMechanicalMergeFixture(({ dir, approved }) => {
+    const unknownCurrent = "f".repeat(40); // well-formed, but no such commit exists here -- `git rev-list` itself fails
+    const { readParents, remergeDiffIsEmpty, readPrPatchId } = fixtureReaders(dir);
+    const assessment = assessMechanicalMergeCarry({
+      approvedHeadSha: approved,
+      currentHeadSha: unknownCurrent,
+      readParents,
+      remergeDiffIsEmpty,
+      readPatchId: (sha) => readPrPatchId(approved, sha),
+    });
+    assert.equal(assessment.carries, false);
+    assert.match(assessment.reason, /could not read the parents/);
+  });
+});
+
+test("real git: a first-parent walk that reaches a root before the approved head fails closed, never guesses", () => {
+  withMechanicalMergeFixture(({ dir, git, write }) => {
+    git("checkout", "-q", "main");
+    write("main.txt", "main content\n");
+    git("add", "-A");
+    git("commit", "-q", "-m", "main advance");
+    const newBase = git("rev-parse", "HEAD");
+
+    git("checkout", "-q", "pr");
+    git("merge", "-q", "--no-ff", "--no-edit", "main");
+    const current = git("rev-parse", "HEAD");
+
+    // An "approved" head this repository's PR history simply never contains
+    // (well-formed, and `git rev-list` can read every commit it actually
+    // walks through -- the walk just never reaches it, and refuses rather
+    // than silently stopping at the root).
+    const neverApproved = "f".repeat(40);
+    const { readParents, remergeDiffIsEmpty, readPrPatchId } = fixtureReaders(dir);
+    const assessment = assessMechanicalMergeCarry({
+      approvedHeadSha: neverApproved,
+      currentHeadSha: current,
+      readParents,
+      remergeDiffIsEmpty,
+      readPatchId: (sha) => readPrPatchId(newBase, sha),
+    });
+    assert.equal(assessment.carries, false);
+    assert.match(assessment.reason, /no readable first parent before reaching/);
+  });
+});
+
+test("real git, end to end through main(): a clean merge rebinds the approval's headSha and reports carriedApproval", () => {
+  withMechanicalMergeFixture(({ dir, git, write, approved }) => {
+    git("checkout", "-q", "main");
+    write("main.txt", "main content\n");
+    git("add", "-A");
+    git("commit", "-q", "-m", "main advance");
+    const newBase = git("rev-parse", "HEAD");
+
+    git("checkout", "-q", "pr");
+    git("merge", "-q", "--no-ff", "--no-edit", "main");
+    const current = git("rev-parse", "HEAD");
+
+    const { readParents, remergeDiffIsEmpty, readPrPatchId } = fixtureReaders(dir);
+    let written = "";
+    main(["--pr", "9", "--head", current, "--repo", "an-owner/a-repo", "--policy", "does-not-exist.review-policy.json"], {
+      fetchPullRequest: () =>
+        fullGraphQlPayload({
+          headRefOid: current,
+          baseRefOid: newBase,
+          reviews: {
+            pageInfo: { hasNextPage: false, hasPreviousPage: false },
+            nodes: [{ id: "R1", state: "APPROVED", submittedAt: "2026-09-23T00:00:00Z", commit: { oid: approved }, author: { login: "a-reviewer" } }],
+          },
+        }),
+      readParents,
+      remergeDiffIsEmpty,
+      readPrPatchId,
+      write: (text) => {
+        written += text;
+      },
+    });
+    const { evidence, options } = JSON.parse(written).reviewEvidence;
+    assert.equal(evidence.reviews[0].headSha, current); // rebound -- no longer stale at `approved`
+    assert.deepEqual(options.carriedApproval, { fromHeadSha: approved, toHeadSha: current });
+  });
+});
+
+test("real git, end to end through main(): an unmechanical merge (extra commit) neither rebinds nor reports a carry", () => {
+  withMechanicalMergeFixture(({ dir, git, write, approved }) => {
+    write("pr2.txt", "a second, unreviewed PR commit\n");
+    git("add", "-A");
+    git("commit", "-q", "-m", "unreviewed follow-up commit");
+
+    git("checkout", "-q", "main");
+    write("main.txt", "main content\n");
+    git("add", "-A");
+    git("commit", "-q", "-m", "main advance");
+    const newBase = git("rev-parse", "HEAD");
+
+    git("checkout", "-q", "pr");
+    git("merge", "-q", "--no-ff", "--no-edit", "main");
+    const current = git("rev-parse", "HEAD");
+
+    const { readParents, remergeDiffIsEmpty, readPrPatchId } = fixtureReaders(dir);
+    let written = "";
+    main(["--pr", "9", "--head", current, "--repo", "an-owner/a-repo", "--policy", "does-not-exist.review-policy.json"], {
+      fetchPullRequest: () =>
+        fullGraphQlPayload({
+          headRefOid: current,
+          baseRefOid: newBase,
+          reviews: {
+            pageInfo: { hasNextPage: false, hasPreviousPage: false },
+            nodes: [{ id: "R1", state: "APPROVED", submittedAt: "2026-09-23T00:00:00Z", commit: { oid: approved }, author: { login: "a-reviewer" } }],
+          },
+        }),
+      readParents,
+      remergeDiffIsEmpty,
+      readPrPatchId,
+      write: (text) => {
+        written += text;
+      },
+    });
+    const { evidence, options } = JSON.parse(written).reviewEvidence;
+    assert.equal(evidence.reviews[0].headSha, approved); // NOT rebound -- still stale, still excluded downstream
+    assert.equal(options.carriedApproval, undefined);
+  });
 });

@@ -320,9 +320,10 @@ compile error rather than a silent default.
 | --- | --- |
 | `checkReviewEvidence` | Evaluates an evidence bundle against a consumer-owned review policy. |
 | `reviewEvidenceReasons` | The declared reasons it can decline to answer. |
-| `ReviewEvidenceOptions` | Type. The commit under test, and whether review presence is required independently of the policy's verdict rules. On a merge-queue run, `mergeGroup` names the group commit and whether it merges exactly the commit under test (the queued pull request's head); anything but a proven `true` is indeterminate. |
+| `ReviewEvidenceOptions` | Type. The commit under test, and whether review presence is required independently of the policy's verdict rules. On a merge-queue run, `mergeGroup` names the group commit and whether it merges exactly the commit under test (the queued pull request's head); anything but a proven `true` is indeterminate. `carriedApproval` (#1428) names an earlier approved head a caller's own collector proved carries forward under a provably mechanical merge from the target branch — reporting only, never re-verified here, because this package performs no I/O; the decision itself already lives in the evidence bundle the collector hands over (see `scripts/collect-review-evidence.mjs`'s "MECHANICAL-MERGE CARRY" section in this repository). |
 | `ReviewEvidenceMergeGroup` | Type. The merge-queue group commit and the caller's answer to whether it merges exactly the commit under test. |
-| `ReviewEvidenceReport` | Type. The verdict, plus the distinct providers observed at head. |
+| `ReviewEvidenceCarriedApproval` | Type. The earlier head an approval was carried from, and the current head it now counts for. See `ReviewEvidenceOptions.carriedApproval`. |
+| `ReviewEvidenceReport` | Type. The verdict, the distinct providers observed at head, and (when supplied and well-formed) `carriedApproval` for the report. |
 | `ReviewEvidenceFinding` | Type. |
 | `ReviewEvidenceReason` | Type. |
 

@@ -135,6 +135,29 @@ verified locally, post `Ready for independent review at <sha>.`, wait for an
 APPROVE, and let CI run. The queue only changes what happens after both of
 those are true.
 
+### A mechanical merge from `main` does not need a fresh review (#1428)
+
+If your pull request only needs a merge from `main` — GitHub flagged it
+stale, or a sibling entry landed first — you do not need to re-request
+review, and a maintainer does not need to hand-verify an empty `git show
+--remerge-diff` and post a carry-forward comment. `review-evidence`'s
+collector proves the merge is mechanical from this repository's own git
+history and carries the earlier approval forward on its own:
+
+1. Every commit between your last-approved head and your current head,
+   walking strict first parent, must be a plain merge with an EMPTY
+   `git show --remerge-diff` — no hand-resolved conflict, nothing added on
+   top of the merge.
+2. Your pull request's own change — its diff against its merge-base with
+   `main`, reduced to one `git patch-id` — must be identical at both heads.
+
+Both must hold, or nothing carries: a hand-resolved conflict, an extra edit
+folded into the merge, or a genuine follow-up commit after the approved head
+all require a fresh review, exactly as before. When a carry does apply, the
+`verify-standards` job summary says so directly (`approval carried from
+<sha> (#1428 mechanical merge)`) — check there before assuming you need to
+ping a reviewer again.
+
 ## Conversation surface
 
 Everything above runs against files. None of it runs against an issue, a

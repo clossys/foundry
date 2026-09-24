@@ -136,6 +136,19 @@
 // `scripts/collect-review-evidence.test.mjs`'s
 // "evidence bound to a different head" cases for exactly this constructed
 // both ways.
+//
+// A MECHANICAL MERGE FROM THE TARGET BRANCH IS THE ONE NAMED EXCEPTION (#1428)
+// ------------------------------------------------------------------------------
+// The head-mismatch check above is deliberately strict, but it used to make
+// no exception at all for the one push that changes nothing a reviewer
+// looked at: a merge of the target branch into an already-approved pull
+// request, done cleanly. That case still needed a human to run `git show
+// --remerge-diff` by hand and post a carry-forward comment. This file's own
+// "MECHANICAL-MERGE CARRY" section (below, before the I/O boundary) proves
+// that shape from git history — never assumed, never asked of the caller —
+// and rebinds the carried approval's `headSha` before evidence ever reaches
+// `checkReviewEvidence`. See that section's own header for the two-part
+// proof and its threat model.
 
 import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
@@ -556,13 +569,19 @@ export function buildReviewPolicy(raw, { requiredChecksFromRuleset } = {}) {
  * Builds the `ReviewEvidenceOptions` half of the section this script emits.
  * See this file's header for `headShaUnderTest`. `mergeGroup` is written only
  * on a merge-group run (see `resolveMergeGroupHead`); the pull_request path
- * never carries it.
+ * never carries it. `carriedApproval` is written only when this run proved a
+ * #1428 mechanical-merge carry (see `findMechanicalMergeCarry`) — reporting
+ * only, since the carried review's own `headSha` is already rebound in the
+ * evidence bundle by the time this runs (`applyMechanicalMergeCarry`).
  */
-export function buildReviewEvidenceOptions({ headShaUnderTest, requireReviewPresence, mergeGroup }) {
+export function buildReviewEvidenceOptions({ headShaUnderTest, requireReviewPresence, mergeGroup, carriedApproval }) {
   const options = { requireReviewPresence: requireReviewPresence === true };
   if (typeof headShaUnderTest === "string" && headShaUnderTest.length > 0) options.headShaUnderTest = headShaUnderTest;
   if (mergeGroup !== undefined) {
     options.mergeGroup = { headSha: mergeGroup.headSha, containsHeadShaUnderTest: mergeGroup.containsHeadShaUnderTest };
+  }
+  if (carriedApproval !== undefined) {
+    options.carriedApproval = { fromHeadSha: carriedApproval.fromHeadSha, toHeadSha: carriedApproval.toHeadSha };
   }
   return options;
 }
@@ -583,6 +602,251 @@ export function buildReviewEvidenceSection({ evidence, policy, options }) {
 export function mergeReviewEvidenceIntoInputs(existingDocument, reviewEvidenceSection) {
   const base = existingDocument && typeof existingDocument === "object" && !Array.isArray(existingDocument) ? existingDocument : {};
   return { schemaVersion: VERIFY_STANDARDS_INPUTS_VERSION, ...base, ...reviewEvidenceSection };
+}
+
+// ---------------------------------------------------------------------------
+// MECHANICAL-MERGE CARRY (#1428)
+// ---------------------------------------------------------------------------
+//
+// `validateReviews` (packages/controller/src/review/validate.ts) binds every
+// review record to the EXACT head it was submitted against: the moment the
+// head moves at all, an earlier approval is `stale-evidence` and is dropped
+// before it can ever contribute to `hasApproval`. That is the right default —
+// most pushes are real content a reviewer has not seen — but it is needlessly
+// strict for exactly one shape of push: a MECHANICAL merge from the target
+// branch, where nothing a reviewer looked at actually changed and only the
+// base moved underneath it.
+//
+// A merge is "mechanical" here only when BOTH of the following hold, proven
+// against this repository's own git history, never assumed:
+//
+//   1. Every commit strictly between the approved head and the current head,
+//      walking STRICT FIRST PARENT from the current head, is a plain
+//      two-parent merge commit whose `git show --remerge-diff` is EMPTY — no
+//      hand-resolved conflict, no content quietly tacked onto an otherwise
+//      clean merge. A non-merge commit anywhere in that walk (an extra push
+//      after the approved head) refuses immediately; so does an octopus
+//      merge, which `--remerge-diff` does not reliably cover.
+//   2. The pull request's own change — its diff against its merge-base with
+//      the target branch, reduced to one `git patch-id` — is IDENTICAL at the
+//      approved head and at the current head. Independent of check 1: it
+//      re-proves, from the tree content itself rather than from the shape of
+//      the commit graph, that nothing a reviewer would have read has moved.
+//
+// Any doubt — an unreadable commit, a parent that cannot be resolved, a
+// remerge-diff or patch-id git cannot compute — refuses rather than guesses.
+// See this repository's PR for #1428 for the full charter and threat model.
+//
+// The functions below split the same way `resolveMergeGroupHead` and
+// `gitSecondParentReader` already do: the DECISION is pure, over injected
+// reader functions a test can stub with fixtures or a real temporary git
+// repository; only the three `git*Reader` factories in the I/O section below
+// touch an actual repository. `main` wires the two together and, when a
+// carry is proven, REBINDS the carried review's own `headSha` to the current
+// head (`applyMechanicalMergeCarry`) — the ordinary validation path above
+// then treats it as current-head evidence with no change to
+// `@clossys/controller` or `@clossys/inspector`'s decision logic. Those two
+// packages only gain an optional `carriedApproval` report field (see
+// packages/inspector/src/review-evidence.ts) so the carried head is VISIBLE
+// in the check's output, never silent.
+
+/** Decisive `ReviewDecision` values, mirroring `validateReviews`' own filter in packages/controller/src/review/validate.ts. */
+const DECISIVE_REVIEW_STATES = new Set(["approved", "changes-requested", "dismissed"]);
+
+/**
+ * Walks strictly by FIRST PARENT from `headSha`, collecting each commit
+ * visited together with its own parent list, until `approvedHeadSha` is
+ * reached or `maxSteps` is exhausted. A merge commit's SECOND (or later)
+ * parent is never followed — exactly the one path the pull request's own
+ * branch pointer actually took, so a commit reachable only through some
+ * OTHER path (main's own history, say) can never be mistaken for part of
+ * this chain. `readParents(sha)` returns that commit's ordered parent shas
+ * and may throw when a commit is unreadable.
+ *
+ * Returns `{ chain }` — an array of `{ sha, parents }`, `headSha` first and
+ * `approvedHeadSha` itself excluded — or `{ error }` when a parent could not
+ * be read, the walk reaches a commit with no first parent (a root) before
+ * reaching `approvedHeadSha`, or `maxSteps` is exhausted first. `headSha ===
+ * approvedHeadSha` returns an empty chain: there is nothing to walk.
+ */
+export function walkFirstParentChain({ headSha, approvedHeadSha, readParents, maxSteps = 200 }) {
+  if (headSha === approvedHeadSha) return { chain: [] };
+  const chain = [];
+  let cursor = headSha;
+  for (let step = 0; step < maxSteps; step += 1) {
+    let parents;
+    try {
+      parents = readParents(cursor);
+    } catch (error) {
+      return { error: `could not read the parents of ${cursor}: ${error.message}` };
+    }
+    const first = Array.isArray(parents) ? parents[0] : undefined;
+    if (!isSha(first)) return { error: `${cursor} has no readable first parent before reaching ${approvedHeadSha}` };
+    chain.push({ sha: cursor, parents });
+    if (first === approvedHeadSha) return { chain };
+    cursor = first;
+  }
+  return { error: `the first-parent chain from ${headSha} did not reach ${approvedHeadSha} within ${maxSteps} steps` };
+}
+
+/**
+ * Whether every commit in `chain` (as `walkFirstParentChain` returns it) is a
+ * plain two-parent merge with a verified-EMPTY `git show --remerge-diff` —
+ * see this section's own header, check 1. Fails closed at the FIRST commit
+ * that is not: a non-merge commit (something landed on the branch after the
+ * approved head), an octopus merge (more than two parents, a shape
+ * `--remerge-diff` does not reliably cover), or a merge whose remerge-diff is
+ * not empty. `remergeDiffIsEmpty(sha)` may throw when the diff cannot be
+ * computed.
+ */
+export function verifyChainIsMechanical({ chain, remergeDiffIsEmpty }) {
+  for (const { sha, parents } of chain) {
+    if (!Array.isArray(parents) || parents.length !== 2) {
+      const count = Array.isArray(parents) ? parents.length : "an unknown number of";
+      return {
+        mechanical: false,
+        reason: `${sha} is not a plain two-parent merge commit (${count} parent(s)) — a non-merge commit landed after the approved head, or the merge is an octopus this module will not grade`,
+      };
+    }
+    let empty;
+    try {
+      empty = remergeDiffIsEmpty(sha);
+    } catch (error) {
+      return { mechanical: false, reason: `could not read the remerge-diff of ${sha}: ${error.message}` };
+    }
+    if (empty !== true) {
+      return {
+        mechanical: false,
+        reason: `merge commit ${sha} has a non-empty remerge-diff — a hand-resolved conflict or content added on top of the merge, never carried`,
+      };
+    }
+  }
+  return { mechanical: true };
+}
+
+/** Both patch ids are real, non-empty, and equal — see this section's own header, check 2. Never treats two `null`/missing ids as a match. */
+export function patchIdsEqual(previous, current) {
+  return typeof previous === "string" && previous.length > 0 && previous === current;
+}
+
+/**
+ * The full decision for one candidate: does `approvedHeadSha`'s approval
+ * carry forward to `currentHeadSha`? Combines the first-parent walk, the
+ * per-merge remerge-diff proof, and the patch-id proof — ALL THREE must hold
+ * (see this section's own header). Every reader may throw; every throw is
+ * caught here and turned into `{ carries: false, reason }`, never an
+ * exception a caller has to guard against separately.
+ */
+export function assessMechanicalMergeCarry({ approvedHeadSha, currentHeadSha, readParents, remergeDiffIsEmpty, readPatchId, maxSteps }) {
+  if (!isSha(approvedHeadSha) || !isSha(currentHeadSha)) {
+    return { carries: false, reason: "both the approved head and the current head must be 40-lowercase-hex shas" };
+  }
+  if (approvedHeadSha === currentHeadSha) {
+    return { carries: false, reason: "the approved head already is the current head — there is no merge to prove mechanical" };
+  }
+  let walk;
+  try {
+    walk = walkFirstParentChain({ headSha: currentHeadSha, approvedHeadSha, readParents, maxSteps });
+  } catch (error) {
+    return { carries: false, reason: `could not walk the commit history: ${error.message}` };
+  }
+  if (walk.error) return { carries: false, reason: walk.error };
+  let verified;
+  try {
+    verified = verifyChainIsMechanical({ chain: walk.chain, remergeDiffIsEmpty });
+  } catch (error) {
+    return { carries: false, reason: `could not verify the merge chain: ${error.message}` };
+  }
+  if (!verified.mechanical) return { carries: false, reason: verified.reason };
+  let previousPatchId;
+  let currentPatchId;
+  try {
+    previousPatchId = readPatchId(approvedHeadSha);
+    currentPatchId = readPatchId(currentHeadSha);
+  } catch (error) {
+    return { carries: false, reason: `could not compute the pull request's own patch id: ${error.message}` };
+  }
+  if (!patchIdsEqual(previousPatchId, currentPatchId)) {
+    return {
+      carries: false,
+      reason:
+        "the pull request's own change (its patch id against its merge-base with the target branch) is not identical " +
+        "between the approved head and the current head",
+    };
+  }
+  return { carries: true, approvedHeadSha, currentHeadSha };
+}
+
+/**
+ * Every reviewer's own LATEST decisive review (by `submittedAt`, never array
+ * order — the same rule `validateReviews` applies at one head, generalized
+ * here across every head this bundle's reviews carry), narrowed to the ones
+ * that are `"approved"` and NOT already at `currentHeadSha`. A tie (two
+ * decisive records for one instance sharing a `submittedAt` and disagreeing
+ * on `state`) is excluded outright — an ambiguous decision never carries, the
+ * same refusal `validateReviews`' own `hasAmbiguousDecision` makes for the
+ * current head. Returns distinct candidate head shas, most recently approved
+ * first, so `findMechanicalMergeCarry` tries the freshest evidence first.
+ */
+export function latestDecisiveApprovedHeads(reviews, currentHeadSha) {
+  const latestByInstance = new Map();
+  for (const review of Array.isArray(reviews) ? reviews : []) {
+    if (!review || !DECISIVE_REVIEW_STATES.has(review.state)) continue;
+    const submittedAtMs = Date.parse(review.submittedAt);
+    if (Number.isNaN(submittedAtMs)) continue;
+    const previous = latestByInstance.get(review.instanceId);
+    if (!previous || submittedAtMs > previous.submittedAtMs) {
+      latestByInstance.set(review.instanceId, { submittedAtMs, state: review.state, headSha: review.headSha, ambiguous: false });
+    } else if (submittedAtMs === previous.submittedAtMs && review.state !== previous.state) {
+      latestByInstance.set(review.instanceId, { ...previous, ambiguous: true });
+    }
+  }
+  const bestByHead = new Map();
+  for (const entry of latestByInstance.values()) {
+    if (entry.ambiguous || entry.state !== "approved") continue;
+    if (!isSha(entry.headSha) || entry.headSha === currentHeadSha) continue;
+    const existing = bestByHead.get(entry.headSha);
+    if (existing === undefined || entry.submittedAtMs > existing) bestByHead.set(entry.headSha, entry.submittedAtMs);
+  }
+  return [...bestByHead.entries()].sort((a, b) => b[1] - a[1]).map(([sha]) => sha);
+}
+
+/**
+ * Tries every carry-eligible earlier approval, most recently approved first,
+ * returning the first `assessMechanicalMergeCarry` proves mechanical.
+ * `{ carries: false }` when there is none — no eligible approval exists at
+ * all, or none of them survived the proof. Never throws: every reader's own
+ * exceptions are caught inside `assessMechanicalMergeCarry`.
+ */
+export function findMechanicalMergeCarry({ reviews, currentHeadSha, readParents, remergeDiffIsEmpty, readPatchId, maxSteps }) {
+  if (!isSha(currentHeadSha)) return { carries: false, reason: "the current head is not a 40-lowercase-hex sha" };
+  const candidates = latestDecisiveApprovedHeads(reviews, currentHeadSha);
+  if (candidates.length === 0) {
+    return { carries: false, reason: "no approved review at an earlier head is this reviewer's own latest decisive record" };
+  }
+  for (const approvedHeadSha of candidates) {
+    const assessment = assessMechanicalMergeCarry({ approvedHeadSha, currentHeadSha, readParents, remergeDiffIsEmpty, readPatchId, maxSteps });
+    if (assessment.carries) return assessment;
+  }
+  return { carries: false, reason: `no earlier approved head (${candidates.join(", ")}) was reachable by a provably mechanical merge` };
+}
+
+/**
+ * Rebinds every `"approved"` review at `carry.approvedHeadSha` to
+ * `carry.currentHeadSha`, so the ordinary validation path
+ * (`validateReviewEvidence` → `validateReviews`) treats it as current-head
+ * evidence — no change to that package is needed. A no-op (returns `evidence`
+ * unchanged) unless `carry.carries` is `true`. Only the carried review
+ * records are touched; every other review, check, and thread is untouched.
+ */
+export function applyMechanicalMergeCarry(evidence, carry) {
+  if (!carry || carry.carries !== true) return evidence;
+  return {
+    ...evidence,
+    reviews: evidence.reviews.map((review) =>
+      review.state === "approved" && review.headSha === carry.approvedHeadSha ? { ...review, headSha: carry.currentHeadSha } : review,
+    ),
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -646,6 +910,71 @@ function defaultFetchPullRequestHead({ owner, name, number }) {
   return execFileSync("gh", ["api", `repos/${owner}/${name}/pulls/${number}`, "--jq", ".head.sha"], { encoding: "utf8" }).trim();
 }
 
+/** `git rev-list --parents -n 1 <sha>` in `cwd`, returning that commit's own parent shas in order. Throws on any non-zero exit. */
+export function gitParentsReader(cwd) {
+  return (sha) => {
+    const result = spawnSync("git", ["rev-list", "--parents", "-n", "1", sha], { cwd, encoding: "utf8" });
+    if (result.status !== 0) {
+      throw new Error(`git rev-list --parents -n 1 ${sha} exited ${result.status ?? result.signal}: ${String(result.stderr ?? "").trim()}`);
+    }
+    const tokens = result.stdout.trim().split(/\s+/).filter(Boolean);
+    return tokens.slice(1);
+  };
+}
+
+/**
+ * `git show --remerge-diff --pretty=format: <sha>` in `cwd`, true exactly
+ * when the diff half of the output is empty — see the "MECHANICAL-MERGE
+ * CARRY" section's own header. `--pretty=format:` suppresses the commit
+ * message so only the diff itself is measured. Throws on any non-zero exit,
+ * including when `sha` is not a merge commit — `--remerge-diff` refuses that
+ * shape itself.
+ */
+export function gitRemergeDiffIsEmptyReader(cwd) {
+  return (sha) => {
+    const result = spawnSync("git", ["show", "--remerge-diff", "--pretty=format:", sha], {
+      cwd,
+      encoding: "utf8",
+      maxBuffer: 64 * 1024 * 1024,
+    });
+    if (result.status !== 0) {
+      throw new Error(`git show --remerge-diff ${sha} exited ${result.status ?? result.signal}: ${String(result.stderr ?? "").trim()}`);
+    }
+    return result.stdout.trim().length === 0;
+  };
+}
+
+/**
+ * Returns a `(baseSha, sha) => patchId` reader: the pull request's own patch
+ * id at `sha`, computed as `git diff <merge-base(baseSha, sha)>...<sha> |
+ * git patch-id --stable` — isolating what `sha` itself changes relative to
+ * the target branch from whatever the target branch has done since. Returns
+ * `null` for an empty diff (a commit that, at this point, carries no content
+ * of its own — a true, comparable fact, never coerced into an empty string
+ * standing in for "unreadable"). Throws when the merge-base or either git
+ * process fails.
+ */
+export function gitPrPatchIdReader(cwd) {
+  return (baseSha, sha) => {
+    const mergeBase = spawnSync("git", ["merge-base", baseSha, sha], { cwd, encoding: "utf8" });
+    if (mergeBase.status !== 0) {
+      throw new Error(`git merge-base ${baseSha} ${sha} exited ${mergeBase.status ?? mergeBase.signal}: ${String(mergeBase.stderr ?? "").trim()}`);
+    }
+    const base = mergeBase.stdout.trim();
+    const diff = spawnSync("git", ["diff", `${base}...${sha}`], { cwd, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
+    if (diff.status !== 0) {
+      throw new Error(`git diff ${base}...${sha} exited ${diff.status ?? diff.signal}: ${String(diff.stderr ?? "").trim()}`);
+    }
+    if (diff.stdout.trim().length === 0) return null;
+    const patchId = spawnSync("git", ["patch-id", "--stable"], { cwd, input: diff.stdout, encoding: "utf8" });
+    if (patchId.status !== 0) {
+      throw new Error(`git patch-id exited ${patchId.status ?? patchId.signal}: ${String(patchId.stderr ?? "").trim()}`);
+    }
+    const [id] = patchId.stdout.trim().split(/\s+/);
+    return id || null;
+  };
+}
+
 function defaultRepoFromGh() {
   return execFileSync("gh", ["repo", "view", "--json", "nameWithOwner", "-q", ".nameWithOwner"], { encoding: "utf8" }).trim();
 }
@@ -672,6 +1001,9 @@ export function main(
     repoFromGh = defaultRepoFromGh,
     fetchPullRequestHead = defaultFetchPullRequestHead,
     readSecondParent = gitSecondParentReader(process.cwd()),
+    readParents = gitParentsReader(process.cwd()),
+    remergeDiffIsEmpty = gitRemergeDiffIsEmptyReader(process.cwd()),
+    readPrPatchId = gitPrPatchIdReader(process.cwd()),
     write = (text) => process.stdout.write(text),
   } = {},
 ) {
@@ -749,12 +1081,40 @@ export function main(
   }
 
   const policyRaw = readPolicyFile(values.policy);
-  const evidence = buildReviewEvidenceBundle(pullRequest);
+  let evidence = buildReviewEvidenceBundle(pullRequest);
   const policy = buildReviewPolicy(policyRaw, { requiredChecksFromRuleset });
+
+  // Mechanical-merge carry (#1428): an approval at an earlier head still
+  // counts here when this run's own git history PROVES the only difference
+  // since is a chain of merge commits that introduced no hand-edited content
+  // and left the pull request's own patch id unchanged. See this file's
+  // "MECHANICAL-MERGE CARRY" section for the full design. Fail-closed by
+  // construction: `findMechanicalMergeCarry` never throws, and any doubt at
+  // all resolves to `carries: false`.
+  let carry = { carries: false };
+  try {
+    carry = findMechanicalMergeCarry({
+      reviews: evidence.reviews,
+      currentHeadSha: headSha,
+      readParents,
+      remergeDiffIsEmpty,
+      readPatchId: (sha) => readPrPatchId(evidence.baseSha, sha),
+    });
+  } catch (error) {
+    carry = { carries: false, reason: `could not assess a mechanical-merge carry: ${error.message}` };
+  }
+  if (carry.carries) {
+    evidence = applyMechanicalMergeCarry(evidence, carry);
+    process.stderr.write(
+      `collect-review-evidence: carried approval from ${carry.approvedHeadSha} to ${headSha} (#1428 provably mechanical merge)\n`,
+    );
+  }
+
   const options = buildReviewEvidenceOptions({
     headShaUnderTest: headSha,
     requireReviewPresence: values["require-review-presence"],
     mergeGroup,
+    carriedApproval: carry.carries ? { fromHeadSha: carry.approvedHeadSha, toHeadSha: headSha } : undefined,
   });
   const section = buildReviewEvidenceSection({ evidence, policy, options });
 
