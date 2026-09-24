@@ -69,34 +69,50 @@ evidence_branch_name() {
 
 # classify_open_evidence_branch <ref> <base-ref> <record-path> <record-copy> <source-sha>
 # Decides what an ALREADY-OPEN evidence pull request's branch means for the
-# record this run built (issue #1468). Prints exactly one word:
-#   absent    -- <ref> does not carry <record-path>; it is unrelated.
-#   duplicate -- <ref> carries byte-identical <record-copy>, passes
-#                verify_branch_is_ours, AND forked from <base-ref> at a
-#                commit that already contains <source-sha>. Every commit on
-#                such a branch descends from the publish source, so the
-#                record's introduction descends from its qualification
-#                record's introduction (record-later-publication.mjs only
-#                builds a trusted-publisher record whose qualification
-#                introduction is an ancestor of the source). Opening a
-#                second pull request for it would add nothing.
-#   conflict  -- anything else: different bytes, a branch this workflow did
-#                not verifiably write, or one forked before the publish
-#                source (the #1461 shape, which no merge can repair).
-# Fail-closed: every git failure lands in `conflict`, never `duplicate`.
+# record this run built (issue #1468). "Current" below means the branch's
+# fork point (its merge-base with <base-ref>) already contains <source-sha>:
+# every commit on such a branch then descends from the publish source, so a
+# record introduced on it descends from its qualification record's
+# introduction (record-later-publication.mjs only builds a trusted-publisher
+# record whose qualification introduction is an ancestor of the source).
+# #1461 was a branch that was NOT current. Prints exactly one word:
+#   adoptable -- verify_branch_is_ours accepts it, it is current, and it
+#                does not carry <record-path>: safe to add this record on top.
+#   duplicate -- verified, current, and already carries byte-identical
+#                <record-copy>: nothing left to do.
+#   stale     -- verified, but NOT current (with no copy, or a byte-identical
+#                copy, of this record): never build on it; start fresh.
+#   foreign   -- does not carry this record and fails verify_branch_is_ours
+#                (or cannot be read): never build on it.
+#   conflict  -- carries <record-path> with different bytes, or carries it on
+#                a branch verify_branch_is_ours refuses: fail closed.
+# Every git failure lands in a verdict that never builds on the branch.
 classify_open_evidence_branch() {
-  local ref="$1" base="$2" path="$3" copy="$4" source_sha="$5" fork_point
-  if ! git cat-file -e "${ref}:${path}" 2>/dev/null; then
-    echo absent
+  local ref="$1" base="$2" path="$3" copy="$4" source_sha="$5" fork_point carries=false ours=false current=false
+  if ! git rev-parse -q --verify "${ref}^{commit}" >/dev/null 2>&1; then
+    echo foreign
     return 0
   fi
-  if verify_branch_is_ours "$ref" "$base" \
-    && fork_point="$(git merge-base "$base" "$ref")" \
-    && git merge-base --is-ancestor "$source_sha" "$fork_point" 2>/dev/null \
-    && git show "${ref}:${path}" | cmp -s "$copy" -; then
-    echo duplicate
+  if git cat-file -e "${ref}:${path}" 2>/dev/null; then carries=true; fi
+  if verify_branch_is_ours "$ref" "$base"; then ours=true; fi
+  if fork_point="$(git merge-base "$base" "$ref" 2>/dev/null)" \
+    && git merge-base --is-ancestor "$source_sha" "$fork_point" 2>/dev/null; then
+    current=true
+  fi
+  if [ "$carries" = true ]; then
+    if [ "$ours" != true ] || ! git show "${ref}:${path}" | cmp -s "$copy" -; then
+      echo conflict
+    elif [ "$current" = true ]; then
+      echo duplicate
+    else
+      echo stale
+    fi
+  elif [ "$ours" != true ]; then
+    echo foreign
+  elif [ "$current" = true ]; then
+    echo adoptable
   else
-    echo conflict
+    echo stale
   fi
   return 0
 }

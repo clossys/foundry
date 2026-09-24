@@ -1161,7 +1161,7 @@ about issue #1346 widens that. The follow-up workflow's own `record-evidence`
 job carries only `actions: read` (to read this run's own job and artifact
 metadata), `contents: write`, and `pull-requests: write` — read-only plus a
 version-control write, never `id-token: write` or any registry credential.
-It never pushes to `main`; it pushes a branch and opens a pull
+It never pushes to `main`; it pushes a branch and opens (or updates) a pull
 request, the same review-gated shape `qualify-candidate.yml` and
 `release-pr.yml` already use for their own automated pull requests, and that
 pull request goes through the same review every other change here does. This
@@ -1239,47 +1239,62 @@ event (GitHub does occasionally redeliver webhooks) or a re-run of this
 workflow after its evidence already merged therefore never produces a red
 run or a duplicate pull request.
 
-**One pull request per record, cut from the current default branch (issue
+**Batching, guarded by "the base contains the source" (issues #1346,
 #1468).** `publish.yml` dispatches exactly one package per run, so "N
 packages published close together" means N separate, potentially
-*concurrent* triggers of this workflow (the job's own `concurrency:` group
-is keyed per publish run, precisely so it never evicts a different
-publish's pending follow-up). An earlier revision batched them by adopting
-the newest open evidence pull request's branch and committing on top of it.
-That branch kept the base it was first cut from, so when a later record's
-qualification record merged after that cut, the later record was introduced
-on a commit that did not descend from its qualification's introduction.
-`check:later-publications` rejects exactly that, and no merge can repair
-ancestry: #1461 had to be closed and its records re-introduced as #1466.
+*concurrent* triggers of this workflow — job scheduling does not serialize
+them (the job's own `concurrency:` group is keyed per publish run, precisely
+so it never evicts a different publish's pending follow-up). To keep them in
+one pull request, each trigger lists the open pull requests whose branch
+carries the reserved `automation/publication-evidence/` prefix (never this
+repository's ordinary `claude/*` agent-branch namespace), are not from a
+fork, and are authored by `github-actions[bot]`, and classifies every one
+with `scripts/lib/publication-evidence-branch.sh`'s
+`classify_open_evidence_branch`. That calls `verify_branch_is_ours`: every
+commit on the branch past its merge-base with the default branch must be
+bot-authored **and** touch only `governance/release-publications/later/`.
+The author check alone is not trustworthy — any write-access actor can
+forge a commit's author identity — so path confinement is the check that
+actually bounds an adopted branch's blast radius, and it is never loosened.
+It also asks whether the branch's fork point already contains the publish
+run's source commit.
 
-Each trigger now checks out the default branch's tip as fetched at push
-time, proves the publish run's source commit is already in it, commits only
-its own record, runs `scripts/check-later-publications.mjs` against that
-commit, and only then pushes — to a brand-new branch named from the run's
-ID plus a random suffix from the runner's own entropy source (never a
-predictable name an attacker could pre-create), under the reserved
-`automation/publication-evidence/` prefix. It then opens a new pull request
-for that branch. It never commits on, pushes to, edits, or closes an
-earlier run's branch or pull request. The price is one pull request per
-published version instead of one per batch.
+That last question is the #1468 fix. An earlier revision adopted the newest
+open evidence branch unconditionally, and that branch keeps the base it was
+first cut from. When a later record's qualification record merged after the
+cut, the later record was introduced on a commit that did not descend from
+its qualification's introduction. `check:later-publications` rejects exactly
+that, and no merge can repair ancestry: #1461 had to be closed and its
+records re-introduced as #1466.
 
-Before writing anything, the run checks every open, same-repository,
-`github-actions[bot]`-authored pull request on that prefix for the same
-record path (`scripts/lib/publication-evidence-branch.sh`'s
-`classify_open_evidence_branch`). If one carries it byte for byte, on a
-branch `verify_branch_is_ours` accepts (every commit past its merge-base is
-bot-authored **and** touches only `governance/release-publications/later/`
-— the author check alone is forgeable, so path confinement is the real
-guard) and that was cut from a commit already containing the publish
-source, the run is a clean no-op. Any other copy — different bytes,
-unverifiable history, or a branch cut before the source (the #1461 shape) —
-fails the run without pushing anything; a human closes that pull request
-and re-runs the workflow. Open pull requests for other records are left
-alone. A pushed branch left with no open PR (for example after a transient
-`gh` failure) is not later rediscovered automatically — a human must open
-its PR directly from the branch, the same graceful-degradation shape this
-repository already uses when Actions is not permitted to open pull requests
-at all.
+| Open evidence pull requests | Action |
+| --- | --- |
+| Any one carries this record with different bytes, or on a branch `verify_branch_is_ours` refuses | Fail the run; nothing is pushed |
+| Otherwise, any one carries it byte-identically, verified, on a base containing the source | Clean no-op |
+| The newest is verified, its base contains the source, and it lacks this record | Add the record on top of it with an ordinary fast-forward push, then update that pull request |
+| The newest was cut before the source (stale), fails verification, or there is none | Cut a fresh branch from the default branch's current tip and open a new pull request |
+| Any stale one | A notice names it; it is left untouched for a human to close |
+
+A fresh branch is named from the run's ID plus a random suffix from the
+runner's own entropy source — never a predictable name an attacker could
+pre-create. Before any push, the committed result must pass the default
+branch's own `scripts/check-later-publications.mjs`; an adopted branch that
+fails it is abandoned for a fresh branch, and a fresh branch that fails it
+fails the run. Pushing is retry-safe: each trigger keeps its built record
+outside git until it lands, and on a rejected push re-fetches the adopted
+branch and re-classifies it — the ownership check runs on every attempt, not
+only at the initial lookup — before rebuilding, re-checking, and pushing
+again. This workflow never force-pushes, and never closes a pull request.
+Once a push lands, the workflow looks up the branch's open pull request
+fresh, by exact head branch and the same same-repository/bot-author filters,
+and edits it by NUMBER — never by resolving a branch name at `gh pr edit`
+time, which can otherwise resolve to an unrelated same-named fork PR or to a
+PR that merged during this very run. Only when that lookup finds nothing
+open is a new PR opened. A branch left with no open PR (for example after a
+transient `gh` failure) is not later rediscovered automatically — a human
+must open its PR directly from the branch, the same graceful-degradation
+shape this repository already uses when Actions is not permitted to open
+pull requests at all.
 
 This workflow requires no secret beyond the ambient `GITHUB_TOKEN`: no
 `PUBLIC_SAFETY_DENYLIST`, no npm token, nothing — the same posture

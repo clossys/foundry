@@ -173,52 +173,60 @@ function classify(root, ref, source, copy) {
   return runHelper(root, "classify_open_evidence_branch", [ref, "main", RECORD, copy, source]).stdout.trim();
 }
 
-test("#1468: classify_open_evidence_branch says absent for an open branch that does not carry this record", () => {
+function withIncident(fn) {
   const { root, source, copy } = incidentRepo();
   try {
-    assert.equal(classify(root, "stale", source, copy), "absent");
+    fn(root, source, copy);
   } finally {
     rmSync(root, { recursive: true, force: true });
     rmSync(copy, { force: true });
   }
+}
+
+test("#1468: classify_open_evidence_branch says adoptable for a verified bot branch cut after the source that does not carry this record", () => {
+  withIncident((root, source, copy) => {
+    git(["checkout", "-q", "-b", "current", "main"], root);
+    botCommit(root, "governance/release-publications/later/writer-0.4.0.json", "{\"writer\":1}\n");
+    assert.equal(classify(root, "current", source, copy), "adoptable");
+  });
+});
+
+test("#1468: classify_open_evidence_branch says stale for a verified branch cut BEFORE the source — the exact #1461 shape — whether or not it already carries an identical copy", () => {
+  withIncident((root, source, copy) => {
+    assert.equal(classify(root, "stale", source, copy), "stale");
+    git(["checkout", "-q", "stale"], root);
+    botCommit(root, RECORD, "{\"publisher\":1}\n");
+    assert.equal(classify(root, "stale", source, copy), "stale");
+  });
 });
 
 test("#1468: classify_open_evidence_branch says duplicate only for identical bytes, on a verified bot branch cut from a base containing the source", () => {
-  const { root, source, copy } = incidentRepo();
-  try {
+  withIncident((root, source, copy) => {
     git(["checkout", "-q", "-b", "fresh", "main"], root);
     botCommit(root, RECORD, "{\"publisher\":1}\n");
     assert.equal(classify(root, "fresh", source, copy), "duplicate");
-  } finally {
-    rmSync(root, { recursive: true, force: true });
-    rmSync(copy, { force: true });
-  }
+  });
 });
 
-test("#1468: classify_open_evidence_branch says conflict for identical bytes on a branch cut BEFORE the source — the exact #1461 shape", () => {
-  const { root, source, copy } = incidentRepo();
-  try {
-    git(["checkout", "-q", "stale"], root);
-    botCommit(root, RECORD, "{\"publisher\":1}\n");
-    assert.equal(classify(root, "stale", source, copy), "conflict");
-  } finally {
-    rmSync(root, { recursive: true, force: true });
-    rmSync(copy, { force: true });
-  }
-});
-
-test("#1468: classify_open_evidence_branch says conflict for different bytes, and for a branch verify_branch_is_ours refuses", () => {
-  const { root, source, copy } = incidentRepo();
-  try {
+test("#1468: classify_open_evidence_branch says conflict for different bytes (current or stale), and for this record on a branch verify_branch_is_ours refuses", () => {
+  withIncident((root, source, copy) => {
     git(["checkout", "-q", "-b", "different", "main"], root);
     botCommit(root, RECORD, "{\"publisher\":2}\n");
     assert.equal(classify(root, "different", source, copy), "conflict");
+    git(["checkout", "-q", "stale"], root);
+    botCommit(root, RECORD, "{\"publisher\":2}\n");
+    assert.equal(classify(root, "stale", source, copy), "conflict");
     git(["checkout", "-q", "-b", "planted", "main"], root);
     humanCommit(root, RECORD, "{\"publisher\":1}\n", "planted by a human");
     assert.equal(classify(root, "planted", source, copy), "conflict");
-    assert.equal(classify(root, "no-such-branch", source, copy), "absent", "an unreadable ref carries nothing to duplicate");
-  } finally {
-    rmSync(root, { recursive: true, force: true });
-    rmSync(copy, { force: true });
-  }
+  });
+});
+
+test("#1468: classify_open_evidence_branch says foreign — never adoptable — for an unverifiable branch without this record, or an unreadable ref", () => {
+  withIncident((root, source, copy) => {
+    git(["checkout", "-q", "-b", "planted", "main"], root);
+    humanCommit(root, "scripts-evil.sh", "echo pwned\n", "planted by a human");
+    assert.equal(classify(root, "planted", source, copy), "foreign");
+    assert.equal(classify(root, "no-such-branch", source, copy), "foreign");
+  });
 });
