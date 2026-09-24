@@ -4,7 +4,6 @@
 // repository's package READMEs; a live CLI assertion against current source
 // is included so a #924 regression in tree is still a red suite.
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -12,6 +11,7 @@ import test from "node:test";
 
 import { evaluateInstallDocs, scanInstallDocs } from "./check-install-docs.mjs";
 import { makeTmpDirSync } from "./lib/tmp-fixture.mjs";
+import { spawnCapture } from "./lib/spawn-capture.mjs";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const scriptPath = join(scriptDir, "check-install-docs.mjs");
@@ -194,7 +194,7 @@ const event = {
   assert.deepEqual(result.findings, []);
 });
 
-test("CLI: a tiny repo with a blocking README exits 1", (t) => {
+test("CLI: a tiny repo with a blocking README exits 1", async (t) => {
   const root = makeTmpDirSync(t, "install-docs-block-");
   mkdirSync(join(root, "packages", "alpha"), { recursive: true });
   writeFileSync(join(root, "packages", "alpha", "package.json"), JSON.stringify({ name: "@gate-fixture/alpha" }));
@@ -206,12 +206,12 @@ Create a classic personal access token with \`read:packages\`.
 npm install @gate-fixture/alpha
 \`\`\`
 `);
-  const result = spawnSync(process.execPath, [scriptPath, root], { encoding: "utf8" });
+  const result = await spawnCapture(process.execPath, [scriptPath, root]);
   assert.equal(result.status, 1, result.stdout + result.stderr);
   assert.match(result.stdout, /token-required-install/);
 });
 
-test("CLI: a tiny repo with a documented README exits 0 and lists it as documented", (t) => {
+test("CLI: a tiny repo with a documented README exits 0 and lists it as documented", async (t) => {
   const root = makeTmpDirSync(t, "install-docs-ok-");
   mkdirSync(join(root, "packages", "beta"), { recursive: true });
   writeFileSync(join(root, "packages", "beta", "package.json"), JSON.stringify({ name: "@gate-fixture/beta" }));
@@ -223,7 +223,7 @@ npm install @gate-fixture/beta
 
 Published to https://registry.npmjs.org. Installing it needs no authentication.
 `);
-  const json = spawnSync(process.execPath, [scriptPath, "--json", root], { encoding: "utf8" });
+  const json = await spawnCapture(process.execPath, [scriptPath, "--json", root]);
   assert.equal(json.status, 0, json.stdout + json.stderr);
   const body = JSON.parse(json.stdout);
   assert.deepEqual(body.findings, []);
@@ -231,20 +231,20 @@ Published to https://registry.npmjs.org. Installing it needs no authentication.
   assert.ok(Array.isArray(body.undocumented));
 });
 
-test("CLI: undocumented-only READMEs still exit 0 and are listed", (t) => {
+test("CLI: undocumented-only READMEs still exit 0 and are listed", async (t) => {
   const root = makeTmpDirSync(t, "install-docs-undoc-");
   mkdirSync(join(root, "packages", "gamma"), { recursive: true });
   writeFileSync(join(root, "packages", "gamma", "package.json"), JSON.stringify({ name: "@gate-fixture/gamma" }));
   writeFileSync(join(root, "packages", "gamma", "README.md"), "# gamma\n\nNo install section.\n");
-  const result = spawnSync(process.execPath, [scriptPath, "--json", root], { encoding: "utf8" });
+  const result = await spawnCapture(process.execPath, [scriptPath, "--json", root]);
   assert.equal(result.status, 0, result.stdout + result.stderr);
   const body = JSON.parse(result.stdout);
   assert.deepEqual(body.findings, []);
   assert.equal(body.undocumented[0].packageName, "@gate-fixture/gamma");
 });
 
-test("current packages/*/README.md: live CLI does not report a token-required install", () => {
-  const result = spawnSync(process.execPath, [scriptPath, "--json", repoRoot], { encoding: "utf8" });
+test("current packages/*/README.md: live CLI does not report a token-required install", async () => {
+  const result = await spawnCapture(process.execPath, [scriptPath, "--json", repoRoot]);
   assert.notEqual(result.status, 2, result.stdout + result.stderr);
   const body = JSON.parse(result.stdout);
   assert.ok(Array.isArray(body.undocumented), "undocumented list must always be present");

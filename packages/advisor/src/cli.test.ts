@@ -1,5 +1,5 @@
 import { mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
-import { spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
@@ -28,9 +28,9 @@ beforeEach(() => { root = mkdtempSync(join(tmpdir(), "advisor-cli-")); vi.spyOn(
 afterEach(() => { if (root) rmSync(root, { recursive: true, force: true }); });
 beforeAll(() => {
   const packageRoot = fileURLToPath(new URL("..", import.meta.url));
-  const compiler = fileURLToPath(new URL("../../../node_modules/typescript/bin/tsc", import.meta.url));
-  const built = spawnSync(process.execPath, [compiler, "-p", "tsconfig.json"], { cwd: packageRoot, encoding: "utf8" });
-  if (built.status !== 0) throw new Error(`Advisor build failed: ${built.stderr || built.stdout}`);
+  // dist/ was built once, before any test file started, by the package's
+  // vitest globalSetup (scripts/lib/vitest-build-package.mjs). Never rebuild
+  // it here: a sibling test file may be executing or packing it (#1385).
   executionCli = join(packageRoot, "dist", "execution-readiness-cli.js");
 });
 describe("advisor-check", () => {
@@ -61,20 +61,48 @@ describe("advisor-check", () => {
 });
 
 describe("advisor-execution-readiness compiled CLI", () => {
+  // #1333/#1341: spawnSync's synchronous capture is its own internal poll
+  // loop outside Node's normal stream machinery, and that loop is what a
+  // heavily loaded CI runner's scheduling can starve -- the exit status
+  // lands but stdout comes back empty. spawn()'s stdout/stderr are ordinary
+  // Readable streams whose contract guarantees every byte written is
+  // delivered via `data` events before `end` fires, and the `close` handler
+  // below fires only after the process has exited AND both stdio streams
+  // have ended, so it cannot observe an exit code before the output that
+  // produced it has been fully read.
+  function spawnCapture(command: string, args: string[]): Promise<{ status: number | null; stdout: string; stderr: string }> {
+    return new Promise((resolvePromise, rejectPromise) => {
+      const child = spawn(command, args);
+      let stdout = "";
+      let stderr = "";
+      child.stdout.setEncoding("utf8");
+      child.stderr.setEncoding("utf8");
+      child.stdout.on("data", (chunk: string) => {
+        stdout += chunk;
+      });
+      child.stderr.on("data", (chunk: string) => {
+        stderr += chunk;
+      });
+      child.on("error", rejectPromise);
+      child.on("close", (status) => {
+        resolvePromise({ status, stdout, stderr });
+      });
+    });
+  }
   function invoke(value: unknown, currentAsOf = "2026-08-24T12:00:00Z") {
     const assessmentPath = write(value);
-    return spawnSync(process.execPath, [executionCli, assessmentPath, currentAsOf], { encoding: "utf8" });
+    return spawnCapture(process.execPath, [executionCli, assessmentPath, currentAsOf]);
   }
-  it("uses the runner clock rather than consumer assessment.asOf", () => {
+  it("uses the runner clock rather than consumer assessment.asOf", async () => {
     const assessment = valid();
     assessment.asOf = "1900-01-01T00:00:00Z";
     const engagement = assessment.engagement as Record<string, unknown>;
     const authorizationValue = authorization(assessment);
-    const response = invoke({ ...assessment, engagement: { ...engagement, executionAuthorization: authorizationValue } });
+    const response = await invoke({ ...assessment, engagement: { ...engagement, executionAuthorization: authorizationValue } });
     expect(response.status).toBe(0);
     expect(JSON.parse(response.stdout)).toMatchObject({ state: "satisfied", assessment: { firstWavePlan: { state: "ready-for-sponsor-approval" }, preWork: { state: "satisfied" } } });
   });
-  it("returns 1 for concrete authorization and readiness violations", () => {
+  it("returns 1 for concrete authorization and readiness violations", async () => {
     const assessment = valid();
     const engagement = assessment.engagement as Record<string, unknown>;
     const exact = authorization(assessment);
@@ -90,17 +118,17 @@ describe("advisor-execution-readiness compiled CLI", () => {
     ];
     for (const [name, executionAuthorization, evidence, currentAsOf] of cases) {
       const evidenceEngagement = evidence.engagement as Record<string, unknown>;
-      const response = invoke({ ...evidence, engagement: { ...evidenceEngagement, executionAuthorization } }, currentAsOf);
+      const response = await invoke({ ...evidence, engagement: { ...evidenceEngagement, executionAuthorization } }, currentAsOf);
       expect(response.status, name).toBe(1);
     }
     const unresolved = (assessment.preWorkItems as Array<Record<string, unknown>>).map((item) => ({ ...item, status: "unresolved", clearance: undefined }));
-    expect(invoke({ ...assessment, engagement: { ...engagement, executionAuthorization: exact }, preWorkItems: unresolved }).status).toBe(1);
+    expect((await invoke({ ...assessment, engagement: { ...engagement, executionAuthorization: exact }, preWorkItems: unresolved })).status).toBe(1);
   });
-  it("returns 2 for malformed and unreadable evidence", () => {
+  it("returns 2 for malformed and unreadable evidence", async () => {
     const malformed = valid(); const engagement = malformed.engagement as Record<string, unknown>;
-    expect(invoke({ ...malformed, engagement: { ...engagement, executionAuthorization: null } }).status).toBe(2);
-    expect(invoke({ ...malformed, engagement: { ...engagement, executionAuthorization: { ...authorization(malformed), grantedAt: "not-a-time" } } }).status).toBe(2);
-    const missing = spawnSync(process.execPath, [executionCli, join(root, "missing.json"), "2026-08-24T12:00:00Z"], { encoding: "utf8" });
+    expect((await invoke({ ...malformed, engagement: { ...engagement, executionAuthorization: null } })).status).toBe(2);
+    expect((await invoke({ ...malformed, engagement: { ...engagement, executionAuthorization: { ...authorization(malformed), grantedAt: "not-a-time" } } })).status).toBe(2);
+    const missing = await spawnCapture(process.execPath, [executionCli, join(root, "missing.json"), "2026-08-24T12:00:00Z"]);
     expect(missing.status).toBe(2);
   });
 });

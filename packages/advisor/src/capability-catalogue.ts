@@ -6,40 +6,78 @@ export type MetricDirection = "increase" | "decrease" | "maintain" | "target-ran
 
 /**
  * Where a `needs`/`feeds` edge came from. `manifest` is the real thing —
- * a package's own `foundry.needs`/`foundry.feeds` declaration (issue #1172).
- * The `fallback-*` sources are evidence already in this repository, used
- * only while a package declares neither field: first-party runtime
- * dependencies, and this repository's committed non-runtime closed-loop
- * order (issue #1176). A package that adopts real manifest edges is never
- * silently overridden by a stale fallback.
+ * a package's own `foundry.needs`/`foundry.feeds` declaration, in
+ * this repository's package-framework contract shape. The `fallback-*`
+ * sources are evidence already in this repository, used only while a
+ * package declares no `needs`: first-party runtime dependencies, and this
+ * repository's committed non-runtime closed-loop order (issue #1176). A
+ * package that adopts real manifest edges is never silently overridden by
+ * a stale fallback.
  */
 export type CapabilityEdgeSource = "manifest" | "fallback-runtime-dependency" | "fallback-non-runtime-order";
 
 export interface CapabilityArtifactRef {
-  /** Stable slug for the handoff kind, e.g. "writer-package" or a nonRuntimeOrder sequence gate. */
+  /** Stable slug for the handoff kind: a manifest artifact name, "<role>-package", or a nonRuntimeOrder sequence gate. */
   artifact: string;
-  /** The other role's package directory (short name), when the source could name one. */
+  /**
+   * The other role's package directory (short name): the producer on a
+   * `needs` edge, the consumer on a `feeds` edge. Absent when a `needs`
+   * edge's `producerRole` is not a package in this repository's scope, or
+   * on a declared `feeds` entry no role needs.
+   */
   role?: string;
+  /** On a manifest `needs` edge: the declared `producerRole`, the producer's scoped package name, verbatim. */
+  producerRole?: string;
+  /** On a `feeds` edge: the producer's first declared `foundry.feeds` path for this artifact, when it declares one. */
+  path?: string;
   source: CapabilityEdgeSource;
-  /** Human-readable grounding: a manifest description, or the fallback evidence's own reason text. */
+  /** Human-readable grounding: the fallback evidence's own reason text. */
   reason?: string;
 }
 
 export type CapabilityEvidence = "designed" | "qualified" | "proven";
 
 /**
- * One `foundry.solves` claim (issue #1176): `problem` is a stable id from
- * this repository's client problem vocabulary, `metric` the role's own
- * metric it would move, `proofCase` how that would be shown, and
- * `evidence` how strongly it is currently backed. Every role's entries are
- * `designed` fallbacks today (a paraphrase of its own jobQuestion) until it
- * adopts issue #1172's real `foundry.solves` declaration.
+ * One `foundry.solves` claim, in the package-framework contract's shape:
+ * `problem` is a stable id from this repository's client problem
+ * vocabulary, `statement` the role's own one-sentence wording of it in the
+ * client's words, `metric` the role's own owned metric it would move,
+ * `proofCase` a case id from the role's own qualification adapter, and
+ * `evidence` how strongly it is currently backed. `capability`, when
+ * present, names the role's own capability that backs the claim. A role
+ * that declares no `foundry.solves` gets one `designed` fallback entry
+ * restating its own job question.
  */
 export interface CapabilitySolves {
   problem: string;
+  statement: string;
   metric: string;
   proofCase: string;
   evidence: CapabilityEvidence;
+  capability?: string;
+}
+
+/** One `foundry.feeds` entry exactly as the producer declared it. */
+export interface DeclaredFeed {
+  artifact: string;
+  path: string;
+}
+
+/** One `{ producerRole, artifact }` input of a declared capability; `producerRole` is a scoped package name. */
+export interface CapabilityInput {
+  producerRole: string;
+  artifact: string;
+}
+
+/**
+ * One entry of a role's own `foundry.capabilities` map, reduced to what
+ * the per-capability needs-cycle judgement reads (issue #1382): its id,
+ * the artifacts it waits on, and the paths it writes.
+ */
+export interface DeclaredCapability {
+  id: string;
+  inputs: readonly CapabilityInput[];
+  outputs: readonly string[];
 }
 
 /** One role's generated capability entry: its charter plus its handoff graph. */
@@ -53,9 +91,23 @@ export interface RoleCapability {
   metric: { name: string; direction: MetricDirection };
   boundary: { owns: string; excludes: readonly string[] };
   solves: readonly CapabilitySolves[];
+  /** Signal ids from the role's declared `foundry.fit` file; empty when it declares none. */
   fit: readonly string[];
   needs: readonly CapabilityArtifactRef[];
+  /**
+   * The producer's side of every MET need: one edge per consumer. A
+   * manifest need is met only when this role's `declaredFeeds` names its
+   * artifact; a fallback need whenever this role exists.
+   */
   feeds: readonly CapabilityArtifactRef[];
+  /**
+   * The role's own `foundry.feeds`, verbatim and in declared order. A
+   * lookup by artifact takes the first declared entry, as this
+   * repository's package-framework gate does.
+   */
+  declaredFeeds: readonly DeclaredFeed[];
+  /** The role's declared capability map; empty for a role that declares none. */
+  capabilities: readonly DeclaredCapability[];
 }
 
 export interface CapabilityCatalogue {

@@ -136,6 +136,22 @@ export interface ReviewEvidenceOptions {
    */
   readonly headShaUnderTest?: string;
   /**
+   * Supplied only when the run under test is a merge-queue group rather than
+   * the pull request itself. A group commit is a synthetic merge nobody
+   * reviewed, so the commit under test for review evidence is the queued
+   * pull request's own head (`headShaUnderTest`, which is then required) —
+   * and that is only meaningful if the group actually contains it.
+   *
+   * `headSha` is the group commit. `containsHeadShaUnderTest` is the
+   * caller's answer to "does this group commit merge exactly
+   * `headShaUnderTest`" (for a MERGE-method queue: is it the group commit's
+   * second parent — mere ancestry is not enough, since every older commit on
+   * the branch is an ancestor too). This package does no I/O, so it cannot
+   * compute it: anything but `true` is `indeterminate`, because evidence
+   * about a commit the group does not merge is not evidence about the group.
+   */
+  readonly mergeGroup?: ReviewEvidenceMergeGroup;
+  /**
    * Whether at least one review record at the current head is required
    * regardless of what the policy's verdict rules say. Explicit boolean, no
    * default: an advisory policy legitimately requires no approval, and
@@ -143,6 +159,12 @@ export interface ReviewEvidenceOptions {
    * repository's decision, not this package's.
    */
   readonly requireReviewPresence: boolean;
+}
+
+/** The merge-queue group a run is testing. See `ReviewEvidenceOptions.mergeGroup`. */
+export interface ReviewEvidenceMergeGroup {
+  readonly headSha: string;
+  readonly containsHeadShaUnderTest: boolean;
 }
 
 /** Every reason this check can decline to answer. */
@@ -154,6 +176,8 @@ export const reviewEvidenceReasons = createGateReasons([
   "evidence-malformed",
   "evidence-incomplete",
   "evidence-head-mismatch",
+  "merge-group-head-not-contained",
+  "merge-group-unusable",
 ] as const);
 
 export type ReviewEvidenceReason = (typeof reviewEvidenceReasons.reasons)[number];
@@ -446,6 +470,26 @@ export function checkReviewEvidence(
       ),
     };
   }
+  if (options.mergeGroup !== undefined) {
+    const mergeGroup: unknown = options.mergeGroup;
+    if (
+      !isRecord(mergeGroup) ||
+      !isWellFormedSha(mergeGroup.headSha) ||
+      typeof mergeGroup.containsHeadShaUnderTest !== "boolean" ||
+      !isWellFormedSha(options.headShaUnderTest)
+    ) {
+      return {
+        providersObserved: empty,
+        staleReviews: emptyFindings,
+        result: reviewEvidenceReasons.indeterminate(
+          "merge-group-unusable",
+          "mergeGroup was supplied but is not usable: it needs a 40-hex headSha, a boolean containsHeadShaUnderTest, and a " +
+            "40-hex headShaUnderTest naming the queued pull request's own head. Without all three, which commit this " +
+            "merge-group run's review evidence is about cannot be read.",
+        ),
+      };
+    }
+  }
   if (evidence === undefined || evidence === null) {
     return {
       providersObserved: empty,
@@ -518,6 +562,22 @@ export function checkReviewEvidence(
   const providersObserved = [
     ...new Set(bundle.reviews.filter((review) => review.headSha === bundle.headSha).map((review) => review.provider)),
   ].sort();
+
+  // A merge-group run: the commit under test is the queued PR's head, and
+  // only counts if the group commit actually contains it. Checked before the
+  // head comparison so a head outside the group is named as exactly that.
+  if (options.mergeGroup !== undefined && options.mergeGroup.containsHeadShaUnderTest !== true) {
+    return {
+      providersObserved,
+      staleReviews,
+      result: reviewEvidenceReasons.indeterminate(
+        "merge-group-head-not-contained",
+        `The pull request head ${String(options.headShaUnderTest)} is not the commit merge-group commit ` +
+          `${options.mergeGroup.headSha} merges. Review evidence about a commit the group does not merge is not ` +
+          "evidence about the group.",
+      ),
+    };
+  }
 
   if (options.headShaUnderTest !== undefined && options.headShaUnderTest !== bundle.headSha) {
     return {

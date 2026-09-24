@@ -1,7 +1,6 @@
 import type { CapabilityCatalogue, CapabilityEvidence } from "./capability-catalogue.js";
 import { composeKit, composeKitFromProblems, type ComposedFromProblemsRole, type ConfirmedProblem } from "./composition.js";
 import type { KitPreset } from "./kit-presets.js";
-import { CLIENT_PROBLEMS } from "./client-problems.js";
 import { proposalReadyForClient, type ManagedEngagementInput, type OperatorReview } from "./managed-engagement.js";
 
 /**
@@ -52,6 +51,22 @@ export interface KitVerdict {
   roles: readonly KitVerdictRole[];
   sequence: readonly string[];
   deliverables: readonly string[];
+  /**
+   * Role-level needs loops in this kit (issue #1382): none has a capability
+   * cycle behind it, so the kit still composes. All are legitimate when
+   * `unjudgedCycle` is null. Empty when there is none, and always empty on
+   * an `indeterminate` verdict.
+   */
+  roleCycles: readonly (readonly string[])[];
+  /**
+   * A needs cycle the capability graph cannot account for: one only visible
+   * through a role with no capability map, or a role loop closed by an
+   * inferred (fallback) need. It cannot be told apart from a deadlock, so
+   * it is carried here to be shown
+   * rather than passed silently: the package-framework contract's rule is
+   * "never failed and never silently passed". Null when there is none.
+   */
+  unjudgedCycle: readonly string[] | null;
   reason?: string;
   /**
    * Whether this verdict is ready to show the client: always true in
@@ -63,8 +78,6 @@ export interface KitVerdict {
   readyForClient: boolean;
 }
 
-const PROBLEM_STATEMENTS = new Map(CLIENT_PROBLEMS.map((item) => [item.id, item.statement]));
-
 function citationsFor(role: string, catalogue: CapabilityCatalogue, confirmedProblemIds: ReadonlySet<string>): readonly KitVerdictCitation[] {
   const capability = catalogue.roles.find((candidate) => candidate.role === role);
   if (!capability) return [];
@@ -72,7 +85,7 @@ function citationsFor(role: string, catalogue: CapabilityCatalogue, confirmedPro
     .filter((entry) => confirmedProblemIds.has(entry.problem))
     .map((entry) => ({
       problem: entry.problem,
-      statement: PROBLEM_STATEMENTS.get(entry.problem) ?? entry.problem,
+      statement: entry.statement,
       metric: entry.metric,
       proofCase: entry.proofCase,
       evidence: entry.evidence,
@@ -112,10 +125,9 @@ function sameRoleSet(a: readonly string[], b: readonly string[]): boolean {
  * A preset "matches" a composition when its own closure (via
  * `composeKit`) has exactly the composition's role set. This does NOT
  * gate on `presetEvidenceFindings` — that check is advisory-only by
- * design (composition.ts's own doc comment): every current `solves`
- * entry is a `designed`-only fallback until #1172 lands real evidence,
- * so gating attribution on it would make preset attribution vacuous
- * today. The skill discloses evidence level to the client separately.
+ * design (composition.ts's own doc comment): most roles still carry
+ * only the `designed` fallback `solves` entry, so gating attribution on
+ * it would make preset attribution vacuous today. The skill discloses evidence level to the client separately.
  */
 function matchingPresetId(composedRoles: readonly string[], presets: readonly KitPreset[], catalogue: CapabilityCatalogue): string | undefined {
   for (const preset of presets) {
@@ -159,6 +171,8 @@ export function recommendKit({ confirmedProblems, catalogue, problem, presets = 
       roles: [],
       sequence: [],
       deliverables: [],
+      roleCycles: [],
+      unjudgedCycle: null,
       reason: composed.reason,
       readyForClient: false,
     };
@@ -175,6 +189,8 @@ export function recommendKit({ confirmedProblems, catalogue, problem, presets = 
       roles,
       sequence: composed.sequence,
       deliverables: deliverablesOf(roles),
+      roleCycles: composed.roleCycles,
+      unjudgedCycle: composed.unjudgedCycle,
       reason: composed.reason,
       readyForClient: false,
     };
@@ -191,6 +207,8 @@ export function recommendKit({ confirmedProblems, catalogue, problem, presets = 
     roles,
     sequence: composed.sequence,
     deliverables: deliverablesOf(roles),
+    roleCycles: composed.roleCycles,
+    unjudgedCycle: composed.unjudgedCycle,
     readyForClient,
   };
 }

@@ -4,7 +4,6 @@
 // built. The topology under test is the one #909 actually missed — a
 // node_modules/.bin-shaped symlink in a temp directory — not `node <real path>`.
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -19,6 +18,7 @@ import {
   runBinThroughDotBin,
   scanBinReachability,
 } from "./check-bin-reachability.mjs";
+import { spawnCapture } from "./lib/spawn-capture.mjs";
 import { makeTmpDirSync } from "./lib/tmp-fixture.mjs";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
@@ -131,9 +131,9 @@ test("dead CLI without realpathSync prints nothing through a .bin symlink and is
   assert.deepEqual(evaluated.findings.map((item) => item.rule), ["silent-bin"]);
 });
 
-test("control: the same dead CLI invoked by real path still prints; the gate uses the symlink and still fails it", (t) => {
+test("control: the same dead CLI invoked by real path still prints; the gate uses the symlink and still fails it", async (t) => {
   const compiledEntryPath = writeCli(makeTmpDirSync(t, "bin-dead-control-"), "cli.js", DEAD_CLI);
-  const byRealPath = spawnSync(process.execPath, [compiledEntryPath, "--help"], { encoding: "utf8" });
+  const byRealPath = await spawnCapture(process.execPath, [compiledEntryPath, "--help"]);
   assert.equal(byRealPath.status, 0);
   assert.match(byRealPath.stdout, /Usage: dead-check/, "real-path launch still reaches run(); we are measuring launch shape");
 
@@ -221,32 +221,32 @@ test("bin set comes from the fixture manifest: every key is probed, a name not i
   assert.ok(!probed.includes("unlisted-check"));
 });
 
-test("CLI: a tiny repo with one working bin exits 0", (t) => {
+test("CLI: a tiny repo with one working bin exits 0", async (t) => {
   const { root } = makePackageRepo(t, {
     bins: { "probe-check": "dist/cli.js" },
     files: { "dist/cli.js": LIVE_CLI },
   });
-  const result = spawnSync(process.execPath, [scriptPath, root], { encoding: "utf8" });
+  const result = await spawnCapture(process.execPath, [scriptPath, root]);
   assert.equal(result.status, 0, result.stdout + result.stderr);
   assert.match(result.stdout, /probe-check/);
 });
 
-test("CLI: a tiny repo with a dead bin exits 1", (t) => {
+test("CLI: a tiny repo with a dead bin exits 1", async (t) => {
   const { root } = makePackageRepo(t, {
     bins: { "probe-check": "dist/cli.js" },
     files: { "dist/cli.js": DEAD_CLI },
   });
-  const result = spawnSync(process.execPath, [scriptPath, root], { encoding: "utf8" });
+  const result = await spawnCapture(process.execPath, [scriptPath, root]);
   assert.equal(result.status, 1, result.stdout + result.stderr);
   assert.match(result.stdout, /silent-bin/);
 });
 
-test("CLI: --json on a missing compiled target exits 2 and names cannot-answer", (t) => {
+test("CLI: --json on a missing compiled target exits 2 and names cannot-answer", async (t) => {
   const { root } = makePackageRepo(t, {
     bins: { "probe-check": "dist/cli.js" },
     files: {},
   });
-  const result = spawnSync(process.execPath, [scriptPath, "--json", root], { encoding: "utf8" });
+  const result = await spawnCapture(process.execPath, [scriptPath, "--json", root]);
   assert.equal(result.status, 2, result.stdout + result.stderr);
   const body = JSON.parse(result.stdout);
   assert.equal(body.cannotAnswer[0].rule, "missing-compiled-target");
@@ -374,13 +374,13 @@ test("scanBinReachability: an adapter that matches package.json's bin map exactl
   assert.ok(scanned.passed.some((item) => item.rule === "adapter-bin-parity"));
 });
 
-test("CLI: a repo whose adapter fixture drifted from package.json's bin map exits 1 and names adapter-bin-parity", (t) => {
+test("CLI: a repo whose adapter fixture drifted from package.json's bin map exits 1 and names adapter-bin-parity", async (t) => {
   const { root } = makePackageRepo(t, {
     bins: { "probe-check": "dist/cli.js", "probe-new": "dist/new.js" },
     files: { "dist/cli.js": LIVE_CLI, "dist/new.js": LIVE_CLI.replace("live-check", "probe-new") },
     adapterBins: { "probe-check": 0 },
   });
-  const result = spawnSync(process.execPath, [scriptPath, root], { encoding: "utf8" });
+  const result = await spawnCapture(process.execPath, [scriptPath, root]);
   assert.equal(result.status, 1, result.stdout + result.stderr);
   assert.match(result.stdout, /adapter-bin-parity/);
 });

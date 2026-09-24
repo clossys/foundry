@@ -301,6 +301,17 @@ test("--enforce flags two roles claiming the same problem id", () => {
   assert.match(collision.message, /@scope\/beta/);
 });
 
+test("--enforce does not report a collision when one role's own two solves entries repeat the same problem id", () => {
+  const entryA = { problem: "cant-explain-what-we-are", statement: "y", metric: "m", proofCase: "c", evidence: "designed" };
+  const entryB = { problem: "cant-explain-what-we-are", statement: "z", metric: "m", proofCase: "c", evidence: "designed" };
+  const roleMetricByRole = new Map([["@scope/alpha", "m"]]);
+  const readAdapterCases = () => ["c"];
+  const result = evaluatePackageFramework(["@scope/alpha"], manifests([
+    { name: "@scope/alpha", foundry: { solves: [entryA, entryB] } },
+  ]), { enforce: true, roleMetricByRole, readAdapterCases });
+  assert.deepEqual(result.findings.filter((f) => f.rule === "solves-problem-claimed-by-multiple-roles"), []);
+});
+
 test("needs must be an array of { producerRole, artifact }", () => {
   const result = evaluatePackageFramework(["@scope/alpha"], manifests([{ name: "@scope/alpha", foundry: { needs: [{ producerRole: "@scope/beta" }] } }]));
   assert.deepEqual(result.findings.map((f) => f.rule), ["invalid-needs-declaration"]);
@@ -327,12 +338,129 @@ test("--enforce fails an unmatched needs entry", () => {
   assert.deepEqual(result.findings.filter((f) => f.rule === "unmatched-need").map((f) => f.rule), ["unmatched-need"]);
 });
 
-test("--enforce fails a cycle in the needs/feeds handoff graph", () => {
+// --- issue #1382: cycles are judged per capability, not per role ---
+
+const KEEP_LOOP_ROLES = ["@clossys/customer", "@clossys/publisher", "@clossys/writer"];
+function capability(id, inputs, outputs) { return { id, inputs, outputs }; }
+
+test("#1382: the Customer/Publisher keep loop is a role-level cycle but not a capability cycle, so it passes --enforce with no finding and no warning", () => {
+  const result = evaluatePackageFramework(KEEP_LOOP_ROLES, manifests([
+    { name: "@clossys/customer", foundry: {
+      needs: [{ producerRole: "@clossys/publisher", artifact: "surface-documents" }],
+      feeds: [{ artifact: "keep-verdict", path: "clossys/customer/keep.json" }],
+      capabilities: [capability("keep-verdict", [{ producerRole: "@clossys/publisher", artifact: "surface-documents" }], ["clossys/customer/keep.json"])],
+    } },
+    { name: "@clossys/publisher", foundry: {
+      needs: [{ producerRole: "@clossys/customer", artifact: "keep-verdict" }, { producerRole: "@clossys/writer", artifact: "copy-registry" }],
+      feeds: [{ artifact: "surface-documents", path: "clossys/publisher/surfaces.json" }],
+      capabilities: [
+        capability("surface-documents", [{ producerRole: "@clossys/writer", artifact: "copy-registry" }], ["clossys/publisher/surfaces.json"]),
+        capability("sealing-and-the-publication-record", [{ producerRole: "@clossys/customer", artifact: "keep-verdict" }], ["clossys/publisher/record.json"]),
+      ],
+    } },
+    { name: "@clossys/writer", foundry: {
+      needs: [],
+      feeds: [{ artifact: "copy-registry", path: "clossys/writer/copy.json" }],
+      capabilities: [capability("copy-registry", [], ["clossys/writer/copy.json"])],
+    } },
+  ]), { enforce: true });
+  assert.deepEqual(result.findings.filter((f) => f.rule === "needs-graph-cycle" || f.rule === "unmatched-need"), []);
+  assert.deepEqual(result.warnings.filter((f) => f.rule === "needs-graph-cycle-unjudged"), []);
+});
+
+test("#1382: capabilities that need each other are a real deadlock and fail --enforce, naming the capability cycle", () => {
+  const result = evaluatePackageFramework(ROLES, manifests([
+    { name: "@scope/alpha", foundry: { capabilities: [capability("draft", [{ producerRole: "@scope/beta", artifact: "review" }], ["clossys/alpha/draft.json"])] } },
+    { name: "@scope/beta", foundry: { capabilities: [capability("review", [{ producerRole: "@scope/alpha", artifact: "draft" }], ["clossys/beta/review.json"])] } },
+  ]), { enforce: true });
+  const cycle = result.findings.find((f) => f.rule === "needs-graph-cycle");
+  assert.ok(cycle, "expected a needs-graph-cycle finding");
+  assert.match(cycle.message, /@scope\/alpha#draft/);
+  assert.match(cycle.message, /@scope\/beta#review/);
+});
+
+test("#1382: a capability input resolves through the producer's feeds path when it names an artifact rather than a capability id", () => {
+  const result = evaluatePackageFramework(ROLES, manifests([
+    { name: "@scope/alpha", foundry: { feeds: [{ artifact: "a-artifact", path: "clossys/alpha/a.json" }], capabilities: [capability("make-a", [{ producerRole: "@scope/beta", artifact: "b-artifact" }], ["clossys/alpha/a.json"])] } },
+    { name: "@scope/beta", foundry: { feeds: [{ artifact: "b-artifact", path: "clossys/beta/b.json" }], capabilities: [capability("make-b", [{ producerRole: "@scope/alpha", artifact: "a-artifact" }], ["clossys/beta/b.json"])] } },
+  ]), { enforce: true });
+  assert.ok(result.findings.some((f) => f.rule === "needs-graph-cycle"));
+});
+
+test("#1382: a capability that needs its own output is a self-cycle and fails --enforce", () => {
+  const result = evaluatePackageFramework(ROLES, manifests([
+    { name: "@scope/alpha", foundry: { capabilities: [capability("loop", [{ producerRole: "@scope/alpha", artifact: "loop" }], ["clossys/alpha/loop.json"])] } },
+  ]), { enforce: true });
+  assert.ok(result.findings.some((f) => f.rule === "needs-graph-cycle"));
+});
+
+test("#1382: a role-level cycle between roles with no capability maps cannot be judged, so it is a warning, not a finding", () => {
   const result = evaluatePackageFramework(ROLES, manifests([
     { name: "@scope/alpha", foundry: { needs: [{ producerRole: "@scope/beta", artifact: "b-artifact" }], feeds: [{ artifact: "a-artifact", path: "clossys/alpha/a.json" }] } },
     { name: "@scope/beta", foundry: { needs: [{ producerRole: "@scope/alpha", artifact: "a-artifact" }], feeds: [{ artifact: "b-artifact", path: "clossys/beta/b.json" }] } },
   ]), { enforce: true });
-  assert.ok(result.findings.some((f) => f.rule === "needs-graph-cycle"));
+  assert.equal(result.findings.some((f) => f.rule === "needs-graph-cycle"), false);
+  const warning = result.warnings.find((f) => f.rule === "needs-graph-cycle-unjudged");
+  assert.ok(warning, "expected an unjudged-cycle warning");
+  assert.match(warning.message, /#1382/);
+});
+
+// Review of PR #1387 (B1): a role's top-level `needs` entry that no capability's
+// `inputs` covers must not be dropped from the graph -- empty `inputs` would
+// otherwise hide a real deadlock from both the finding and the warning.
+function alphaBetaNeeds({ alphaMapped, betaMapped }) {
+  const alpha = { needs: [{ producerRole: "@scope/beta", artifact: "b" }], feeds: [{ artifact: "a", path: "clossys/alpha/a.json" }] };
+  const beta = { needs: [{ producerRole: "@scope/alpha", artifact: "a" }], feeds: [{ artifact: "b", path: "clossys/beta/b.json" }] };
+  if (alphaMapped) alpha.capabilities = [capability("make-a", [], ["clossys/alpha/a.json"])];
+  if (betaMapped) beta.capabilities = [capability("make-b", [], ["clossys/beta/b.json"])];
+  return manifests([{ name: "@scope/alpha", foundry: alpha }, { name: "@scope/beta", foundry: beta }]);
+}
+
+test("#1387 review: a top-level needs cycle behind two capability maps with empty inputs is still a needs-graph-cycle finding", () => {
+  const result = evaluatePackageFramework(ROLES, alphaBetaNeeds({ alphaMapped: true, betaMapped: true }), { enforce: true });
+  const cycle = result.findings.find((f) => f.rule === "needs-graph-cycle");
+  assert.ok(cycle, "expected a needs-graph-cycle finding");
+  assert.match(cycle.message, /@scope\/alpha#make-a/);
+  assert.match(cycle.message, /@scope\/beta#make-b/);
+});
+
+test("#1387 review: the same cycle with only one role mapped is never silent -- it is an unjudged-cycle warning", () => {
+  for (const [alphaMapped, betaMapped] of [[true, false], [false, true]]) {
+    const result = evaluatePackageFramework(ROLES, alphaBetaNeeds({ alphaMapped, betaMapped }), { enforce: true });
+    assert.equal(result.findings.some((f) => f.rule === "needs-graph-cycle"), false);
+    const warning = result.warnings.find((f) => f.rule === "needs-graph-cycle-unjudged");
+    assert.ok(warning, `expected an unjudged-cycle warning (alphaMapped=${alphaMapped}, betaMapped=${betaMapped})`);
+    assert.match(warning.message, /@scope\/alpha/);
+    assert.match(warning.message, /@scope\/beta/);
+  }
+});
+
+test("#1387 review: an uncovered top-level need becomes an edge from every capability of the role", () => {
+  const result = evaluatePackageFramework(ROLES, manifests([
+    { name: "@scope/alpha", foundry: {
+      needs: [{ producerRole: "@scope/beta", artifact: "b" }],
+      feeds: [{ artifact: "a", path: "clossys/alpha/a.json" }],
+      capabilities: [capability("first", [], ["clossys/alpha/first.json"]), capability("make-a", [], ["clossys/alpha/a.json"])],
+    } },
+    { name: "@scope/beta", foundry: {
+      needs: [],
+      feeds: [{ artifact: "b", path: "clossys/beta/b.json" }],
+      // Waits on alpha's `first`, which does not own the `a` feed -- so the
+      // cycle closes only if the uncovered need is an edge from `first` too.
+      capabilities: [capability("make-b", [{ producerRole: "@scope/alpha", artifact: "first" }], ["clossys/beta/b.json"])],
+    } },
+  ]), { enforce: true });
+  const cycle = result.findings.find((f) => f.rule === "needs-graph-cycle");
+  assert.ok(cycle, "expected a needs-graph-cycle finding");
+  assert.match(cycle.message, /@scope\/alpha#first -> @scope\/beta#make-b -> @scope\/alpha#first/);
+});
+
+test("#1382: report mode never evaluates cycles (the rule stays --enforce-only, as before)", () => {
+  const result = evaluatePackageFramework(ROLES, manifests([
+    { name: "@scope/alpha", foundry: { capabilities: [capability("draft", [{ producerRole: "@scope/beta", artifact: "review" }], ["clossys/alpha/draft.json"])] } },
+    { name: "@scope/beta", foundry: { capabilities: [capability("review", [{ producerRole: "@scope/alpha", artifact: "draft" }], ["clossys/beta/review.json"])] } },
+  ]));
+  assert.equal(result.findings.some((f) => f.rule === "needs-graph-cycle"), false);
 });
 
 // --- docs/contracts/check-output-envelope.json shape ---

@@ -12,18 +12,18 @@
 
 import assert from "node:assert/strict";
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
-import { spawnSync } from "node:child_process";
 import test from "node:test";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { tmpdir } from "node:os";
+import { spawnCapture } from "./lib/spawn-capture.mjs";
 
 const scriptsDir = dirname(fileURLToPath(import.meta.url));
 const checker = join(scriptsDir, "check-contamination-classes.mjs");
 
-function run(args) {
-  const result = spawnSync(process.execPath, [checker, ...args], { encoding: "utf8" });
-  return { code: result.status, out: (result.stdout ?? "") + (result.stderr ?? "") };
+async function run(args) {
+  const result = await spawnCapture(process.execPath, [checker, ...args]);
+  return { code: result.status, out: result.stdout + result.stderr };
 }
 
 function cleanDir(root, name) {
@@ -61,23 +61,23 @@ test("check-contamination-classes: multi-directory / non-existent-path regressio
   const work = mkdtempSync(join(tmpdir(), "contam-multiarg-"));
   t.after(() => rmSync(work, { recursive: true, force: true }));
 
-  await t.test("single directory: unchanged baseline behavior", () => {
+  await t.test("single directory: unchanged baseline behavior", async () => {
     const clean = cleanDir(work, "solo-clean");
-    const r = run([clean]);
+    const r = await run([clean]);
     assert.equal(r.code, 0, `expected exit 0, got ${r.code}: ${r.out}`);
     assert.match(r.out, /PASS — no contamination-class findings\./);
 
     const dirty = dirtyDir(work, "solo-dirty");
-    const rd = run([dirty]);
+    const rd = await run([dirty]);
     assert.equal(rd.code, 1, `expected exit 1, got ${rd.code}: ${rd.out}`);
     assert.match(rd.out, /FAIL — 1 finding\(s\)/);
   });
 
-  await t.test("two directories, second one planted with a finding: both are scanned, not just positional[0]", () => {
+  await t.test("two directories, second one planted with a finding: both are scanned, not just positional[0]", async () => {
     const first = cleanDir(work, "two-a-clean");
     const second = dirtyDir(work, "two-b-dirty");
 
-    const r = run([first, second]);
+    const r = await run([first, second]);
     // The pre-fix defect: this used to read only positional[0] (`first`,
     // clean) and report a bare PASS, silently never looking at `second` at
     // all. The fix must scan every positional argument, so the planted
@@ -88,31 +88,31 @@ test("check-contamination-classes: multi-directory / non-existent-path regressio
     assert.match(r.out, /KIT-CONVENTIONS\.md/, "the second directory's finding must actually be reported");
   });
 
-  await t.test("order independence: a finding planted in the FIRST of several directories is still caught", () => {
+  await t.test("order independence: a finding planted in the FIRST of several directories is still caught", async () => {
     const first = dirtyDir(work, "order-a-dirty");
     const second = cleanDir(work, "order-b-clean");
     const third = cleanDir(work, "order-c-clean");
 
-    const r = run([first, second, third]);
+    const r = await run([first, second, third]);
     assert.equal(r.code, 1, `expected exit 1, got ${r.code}: ${r.out}`);
     assert.match(r.out, /KIT-CONVENTIONS\.md/);
   });
 
-  await t.test("several clean directories together still pass", () => {
+  await t.test("several clean directories together still pass", async () => {
     const a = cleanDir(work, "allclean-a");
     const b = cleanDir(work, "allclean-b");
     const c = cleanDir(work, "allclean-c");
 
-    const r = run([a, b, c]);
+    const r = await run([a, b, c]);
     assert.equal(r.code, 0, `expected exit 0, got ${r.code}: ${r.out}`);
   });
 
-  await t.test("--json with several directories: one report object per directory, in order, none silently dropped", () => {
+  await t.test("--json with several directories: one report object per directory, in order, none silently dropped", async () => {
     const a = cleanDir(work, "json-a-clean");
     const b = dirtyDir(work, "json-b-dirty");
     const c = cleanDir(work, "json-c-clean");
 
-    const r = run([a, b, c, "--json"]);
+    const r = await run([a, b, c, "--json"]);
     assert.equal(r.code, 1, `expected exit 1, got ${r.code}: ${r.out}`);
     let parsed;
     assert.doesNotThrow(() => {
@@ -128,21 +128,21 @@ test("check-contamination-classes: multi-directory / non-existent-path regressio
     assert.equal(parsed[2].findings.length, 0);
   });
 
-  await t.test("--json with a single directory keeps the original flat-object shape (no breaking change for existing callers)", () => {
+  await t.test("--json with a single directory keeps the original flat-object shape (no breaking change for existing callers)", async () => {
     const clean = cleanDir(work, "json-solo-clean");
-    const r = run([clean, "--json"]);
+    const r = await run([clean, "--json"]);
     assert.equal(r.code, 0);
     const parsed = JSON.parse(r.out);
     assert.ok(!Array.isArray(parsed), "a single-directory --json report must stay a flat object, not an array");
     assert.ok("findings" in parsed && "root" in parsed);
   });
 
-  await t.test("a non-existent directory anywhere in the argument list fails closed with exit 2 and names the path", () => {
+  await t.test("a non-existent directory anywhere in the argument list fails closed with exit 2 and names the path", async () => {
     const real = cleanDir(work, "exists-clean");
     const missing = join(work, "definitely-does-not-exist-xyz");
 
     for (const args of [[missing, real], [real, missing]]) {
-      const r = run(args);
+      const r = await run(args);
       assert.equal(r.code, 2, `expected exit 2 for args ${JSON.stringify(args)}, got ${r.code}: ${r.out}`);
       assert.match(r.out, /no such directory/);
       assert.ok(r.out.includes(missing), `error output should name the missing path: ${r.out}`);
@@ -150,8 +150,8 @@ test("check-contamination-classes: multi-directory / non-existent-path regressio
     }
   });
 
-  await t.test("no positional arguments at all still prints usage and exits 2", () => {
-    const r = run([]);
+  await t.test("no positional arguments at all still prints usage and exits 2", async () => {
+    const r = await run([]);
     assert.equal(r.code, 2);
     assert.match(r.out, /usage: check-contamination-classes\.mjs/);
   });
@@ -165,25 +165,25 @@ test("check-contamination-classes: multi-directory / non-existent-path regressio
   // second directory (`no such directory: 1`, exit 2) — a real defect in
   // the script's own documented usage banner, not a hypothetical.
 
-  await t.test("directory then --class N: the value is consumed as the class filter, not a second directory", () => {
+  await t.test("directory then --class N: the value is consumed as the class filter, not a second directory", async () => {
     const dir = dualClassDir(work, "class-after-dir");
-    const r = run([dir, "--class", "1"]);
+    const r = await run([dir, "--class", "1"]);
     assert.equal(r.code, 1, `expected exit 1, got ${r.code}: ${r.out}`);
     assert.doesNotMatch(r.out, /no such directory/, "the \"1\" must never be treated as a directory argument");
     assert.match(r.out, /CLASS 1/, "the class-1 finding must still be reported");
     assert.doesNotMatch(r.out, /CLASS 2/, "the class-2 finding must be filtered out by --class 1, proving the value actually reached the filter");
   });
 
-  await t.test("--class N then directory: same behavior regardless of flag/positional order", () => {
+  await t.test("--class N then directory: same behavior regardless of flag/positional order", async () => {
     const dir = dualClassDir(work, "class-before-dir");
-    const r = run(["--class", "2", dir]);
+    const r = await run(["--class", "2", dir]);
     assert.equal(r.code, 1, `expected exit 1, got ${r.code}: ${r.out}`);
     assert.doesNotMatch(r.out, /no such directory/);
     assert.match(r.out, /CLASS 2/, "the class-2 finding must be reported under --class 2");
     assert.doesNotMatch(r.out, /CLASS 1 —/, "the class-1 finding must be filtered out by --class 2");
   });
 
-  await t.test("--allowlist then path: the value is used as the allowlist file, not treated as a second directory", () => {
+  await t.test("--allowlist then path: the value is used as the allowlist file, not treated as a second directory", async () => {
     const dir = dirtyDir(work, "allowlist-target");
     const allowlistPath = join(work, "custom-allowlist.json");
     writeFileSync(
@@ -191,21 +191,21 @@ test("check-contamination-classes: multi-directory / non-existent-path regressio
       JSON.stringify({ issue: "#1", packages: { "allowlist-target": { "note.md": ["KIT-CONVENTIONS.md"] } } }),
     );
 
-    const withoutAllowlist = run([dir]);
+    const withoutAllowlist = await run([dir]);
     assert.equal(withoutAllowlist.code, 1, "sanity check: the citation is a live finding without the allowlist");
 
-    const withAllowlist = run([dir, "--allowlist", allowlistPath]);
+    const withAllowlist = await run([dir, "--allowlist", allowlistPath]);
     assert.equal(withAllowlist.code, 0, `expected exit 0 (waived), got ${withAllowlist.code}: ${withAllowlist.out}`);
     assert.match(withAllowlist.out, /KNOWN, WAIVED/);
     assert.doesNotMatch(withAllowlist.out, /no such directory/, "the allowlist path must never be treated as a directory argument");
   });
 
-  await t.test("multiple directories mixed with flags: every directory is scanned and the class filter still applies to each", () => {
+  await t.test("multiple directories mixed with flags: every directory is scanned and the class filter still applies to each", async () => {
     const a = cleanDir(work, "mixed-a-clean");
     const b = dualClassDir(work, "mixed-b-dual");
     const c = cleanDir(work, "mixed-c-clean");
 
-    const r = run([a, "--class", "1", b, "--json", c]);
+    const r = await run([a, "--class", "1", b, "--json", c]);
     assert.equal(r.code, 1, `expected exit 1, got ${r.code}: ${r.out}`);
     const parsed = JSON.parse(r.out);
     assert.ok(Array.isArray(parsed));
@@ -217,18 +217,18 @@ test("check-contamination-classes: multi-directory / non-existent-path regressio
     assert.equal(parsed[2].root, c);
   });
 
-  await t.test("a value-taking flag missing its value is a clear error, not a crash or a silent wrong answer", () => {
+  await t.test("a value-taking flag missing its value is a clear error, not a crash or a silent wrong answer", async () => {
     const dir = cleanDir(work, "missing-value-dir");
 
-    const atEnd = run([dir, "--class"]);
+    const atEnd = await run([dir, "--class"]);
     assert.equal(atEnd.code, 2, `expected exit 2, got ${atEnd.code}: ${atEnd.out}`);
     assert.match(atEnd.out, /--class requires a value/);
 
-    const beforeAnotherFlag = run([dir, "--class", "--json"]);
+    const beforeAnotherFlag = await run([dir, "--class", "--json"]);
     assert.equal(beforeAnotherFlag.code, 2, `expected exit 2, got ${beforeAnotherFlag.code}: ${beforeAnotherFlag.out}`);
     assert.match(beforeAnotherFlag.out, /--class requires a value/);
 
-    const allowlistMissing = run([dir, "--allowlist"]);
+    const allowlistMissing = await run([dir, "--allowlist"]);
     assert.equal(allowlistMissing.code, 2, `expected exit 2, got ${allowlistMissing.code}: ${allowlistMissing.out}`);
     assert.match(allowlistMissing.out, /--allowlist requires a value/);
   });
@@ -240,25 +240,25 @@ test("check-contamination-classes: multi-directory / non-existent-path regressio
   // printed, and the flag had no effect (every class scanned, or the
   // default allowlist used instead of the one named).
 
-  await t.test("--class=N (equals form): the value is consumed as the class filter, same as the space form", () => {
+  await t.test("--class=N (equals form): the value is consumed as the class filter, same as the space form", async () => {
     const dir = dualClassDir(work, "class-equals-dir");
-    const r = run([dir, "--class=1"]);
+    const r = await run([dir, "--class=1"]);
     assert.equal(r.code, 1, `expected exit 1, got ${r.code}: ${r.out}`);
     assert.doesNotMatch(r.out, /no such directory/, "\"--class=1\" must never be treated as a directory argument");
     assert.match(r.out, /CLASS 1/, "the class-1 finding must still be reported");
     assert.doesNotMatch(r.out, /CLASS 2/, "the class-2 finding must be filtered out by --class=1, proving the value actually reached the filter");
   });
 
-  await t.test("--class=N before the directory: same behavior regardless of order", () => {
+  await t.test("--class=N before the directory: same behavior regardless of order", async () => {
     const dir = dualClassDir(work, "class-equals-before-dir");
-    const r = run(["--class=2", dir]);
+    const r = await run(["--class=2", dir]);
     assert.equal(r.code, 1, `expected exit 1, got ${r.code}: ${r.out}`);
     assert.doesNotMatch(r.out, /no such directory/);
     assert.match(r.out, /CLASS 2/, "the class-2 finding must be reported under --class=2");
     assert.doesNotMatch(r.out, /CLASS 1 —/, "the class-1 finding must be filtered out by --class=2");
   });
 
-  await t.test("--allowlist=<path> (equals form): the value is used as the allowlist file, not the default", () => {
+  await t.test("--allowlist=<path> (equals form): the value is used as the allowlist file, not the default", async () => {
     const dir = dirtyDir(work, "allowlist-equals-target");
     const allowlistPath = join(work, "custom-allowlist-equals.json");
     writeFileSync(
@@ -266,35 +266,35 @@ test("check-contamination-classes: multi-directory / non-existent-path regressio
       JSON.stringify({ issue: "#1", packages: { "allowlist-equals-target": { "note.md": ["KIT-CONVENTIONS.md"] } } }),
     );
 
-    const withoutAllowlist = run([dir]);
+    const withoutAllowlist = await run([dir]);
     assert.equal(withoutAllowlist.code, 1, "sanity check: the citation is a live finding without the allowlist");
 
-    const withAllowlist = run([dir, `--allowlist=${allowlistPath}`]);
+    const withAllowlist = await run([dir, `--allowlist=${allowlistPath}`]);
     assert.equal(withAllowlist.code, 0, `expected exit 0 (waived), got ${withAllowlist.code}: ${withAllowlist.out}`);
     assert.match(withAllowlist.out, /KNOWN, WAIVED/);
     assert.doesNotMatch(withAllowlist.out, /no such directory/, "the allowlist path must never be treated as a directory argument");
   });
 
-  await t.test("--class= (equals form, empty value) fails closed with exit 2, never silently 'no filter'", () => {
+  await t.test("--class= (equals form, empty value) fails closed with exit 2, never silently 'no filter'", async () => {
     const dir = cleanDir(work, "class-equals-empty-dir");
-    const r = run([dir, "--class="]);
+    const r = await run([dir, "--class="]);
     assert.equal(r.code, 2, `expected exit 2, got ${r.code}: ${r.out}`);
     assert.match(r.out, /--class requires a value/);
   });
 
-  await t.test("--allowlist= (equals form, empty value) fails closed with exit 2, never silently falls back to the default allowlist", () => {
+  await t.test("--allowlist= (equals form, empty value) fails closed with exit 2, never silently falls back to the default allowlist", async () => {
     const dir = cleanDir(work, "allowlist-equals-empty-dir");
-    const r = run([dir, "--allowlist="]);
+    const r = await run([dir, "--allowlist="]);
     assert.equal(r.code, 2, `expected exit 2, got ${r.code}: ${r.out}`);
     assert.match(r.out, /--allowlist requires a value/);
   });
 
-  await t.test("multiple directories mixed with the equals form: the class filter still applies inside multi-directory dispatch", () => {
+  await t.test("multiple directories mixed with the equals form: the class filter still applies inside multi-directory dispatch", async () => {
     const a = cleanDir(work, "mixed-equals-a-clean");
     const b = dualClassDir(work, "mixed-equals-b-dual");
     const c = cleanDir(work, "mixed-equals-c-clean");
 
-    const r = run([a, "--class=1", b, "--json", c]);
+    const r = await run([a, "--class=1", b, "--json", c]);
     assert.equal(r.code, 1, `expected exit 1, got ${r.code}: ${r.out}`);
     const parsed = JSON.parse(r.out);
     assert.ok(Array.isArray(parsed));

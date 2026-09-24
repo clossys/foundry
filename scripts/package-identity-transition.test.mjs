@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { execFileSync, spawnSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import { cpSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -16,6 +16,7 @@ import {
   validateHistoryInventory,
 } from "./lib/package-identity-transition.mjs";
 import { checkCandidatePublishInert, ensureFullGitHistory } from "./check-package-identity-transition.mjs";
+import { spawnCapture } from "./lib/spawn-capture.mjs";
 
 const policy = loadTransitionPolicy(new URL("../governance/package-identity-transition.json", import.meta.url));
 // Every fixture below builds the retired producer identity out of the closed
@@ -458,11 +459,11 @@ test("the release cleanup inventory classifies each retained historical alias li
   assert.deepEqual(validateHistoricalRepositoryAliases(root, policy), []);
 });
 
-test("legacy setters refuse either half of the closed W1D identity transition", () => {
+test("legacy setters refuse either half of the closed W1D identity transition", async () => {
   const root = setterFixture();
   try {
-    const scope = spawnSync(process.execPath, [join(root, "scripts", "set-scope.mjs"), "--scope", policy.candidate.scope], { cwd: root, encoding: "utf8" });
-    const registry = spawnSync(process.execPath, [join(root, "scripts", "set-registry.mjs"), "--registry", policy.candidate.registry], { cwd: root, encoding: "utf8" });
+    const scope = await spawnCapture(process.execPath, [join(root, "scripts", "set-scope.mjs"), "--scope", policy.candidate.scope], { cwd: root });
+    const registry = await spawnCapture(process.execPath, [join(root, "scripts", "set-registry.mjs"), "--registry", policy.candidate.registry], { cwd: root });
     assert.equal(scope.status, 2, scope.stderr || scope.stdout);
     assert.equal(registry.status, 2, registry.stderr || registry.stdout);
     assert.match(scope.stderr, /set-package-identity/);
@@ -471,10 +472,10 @@ test("legacy setters refuse either half of the closed W1D identity transition", 
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
-test("public npm registry checks require an explicit public access declaration", () => {
+test("public npm registry checks require an explicit public access declaration", async () => {
   const root = setterFixture({ candidate: true });
   try {
-    const result = spawnSync(process.execPath, [join(root, "scripts", "set-registry.mjs"), "--check"], { cwd: root, encoding: "utf8" });
+    const result = await spawnCapture(process.execPath, [join(root, "scripts", "set-registry.mjs"), "--check"], { cwd: root });
     assert.equal(result.status, 1, result.stderr || result.stdout);
     assert.match(result.stderr, /publishConfig\.access "public"/);
   } finally { rmSync(root, { recursive: true, force: true }); }

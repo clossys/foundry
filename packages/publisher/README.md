@@ -1711,14 +1711,13 @@ from every role's own folder manifest under `clossys/`). It flags any path
 more than one role claims, and any path under `clossys/publisher/surfaces/`
 that Publisher itself never claimed.
 
-The shared consumer layout contract this path belongs to is issue #1171
-(Launcher lane), which has not landed in this repository as of this
-package's `0.5.0` release — there is no `clossys/` layout file here to add
-`clossys/publisher/surfaces/` to yet. This section, and
-`PUBLISHER_SURFACES_DIR`, are Publisher's own record of the path it intends
-to own once that contract exists; wire the constant into the shared layout
-contract's own file when #1171 lands, rather than duplicating a second
-declaration of the path there.
+The shared consumer layout contract (issue #1171) lists
+`clossys/publisher/surfaces` as a Publisher-owned folder, and this package's
+`package.json` declares it under `foundry.outputs` and `foundry.feeds`
+(Customer judges the surfaces Publisher feeds it). `PUBLISHER_SURFACES_DIR`
+is the runtime value of the same path; the two must agree. A gate that
+checks one owner per file across every role's folder under `clossys/` is
+still a follow-up.
 
 ## Materials site
 

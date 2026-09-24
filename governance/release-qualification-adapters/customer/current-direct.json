@@ -10,7 +10,16 @@
     "audience-one.json",
     "keep-satisfied.json",
     "keep-violated.json",
-    "keep-indeterminate.json"
+    "keep-indeterminate.json",
+    "feedback-satisfied.json",
+    "feedback-violated.json",
+    "compare-satisfied.json",
+    "compare-violated.json",
+    "refer-satisfied.json",
+    "refer-violated.json",
+    "churn-satisfied.json",
+    "adopt-satisfied.json",
+    "worth-satisfied.json"
   ],
   "cases": [
     {
@@ -42,6 +51,96 @@
       ],
       "exitCode": 2,
       "group": "keep"
+    },
+    {
+      "id": "feedback-satisfied",
+      "bin": "customer-check",
+      "args": [
+        { "fixture": "feedback-satisfied.json" },
+        { "fixture": "audience-one.json" }
+      ],
+      "exitCode": 0,
+      "group": "feedback"
+    },
+    {
+      "id": "feedback-violated",
+      "bin": "customer-check",
+      "args": [
+        { "fixture": "feedback-violated.json" },
+        { "fixture": "audience-one.json" }
+      ],
+      "exitCode": 1,
+      "group": "feedback"
+    },
+    {
+      "id": "compare-satisfied",
+      "bin": "customer-check",
+      "args": [
+        { "fixture": "compare-satisfied.json" },
+        { "fixture": "audience-one.json" }
+      ],
+      "exitCode": 0,
+      "group": "compare"
+    },
+    {
+      "id": "compare-violated",
+      "bin": "customer-check",
+      "args": [
+        { "fixture": "compare-violated.json" },
+        { "fixture": "audience-one.json" }
+      ],
+      "exitCode": 1,
+      "group": "compare"
+    },
+    {
+      "id": "refer-satisfied",
+      "bin": "customer-check",
+      "args": [
+        { "fixture": "refer-satisfied.json" },
+        { "fixture": "audience-one.json" }
+      ],
+      "exitCode": 0,
+      "group": "refer"
+    },
+    {
+      "id": "refer-violated",
+      "bin": "customer-check",
+      "args": [
+        { "fixture": "refer-violated.json" },
+        { "fixture": "audience-one.json" }
+      ],
+      "exitCode": 1,
+      "group": "refer"
+    },
+    {
+      "id": "churn-satisfied",
+      "bin": "customer-check",
+      "args": [
+        { "fixture": "churn-satisfied.json" },
+        { "fixture": "audience-one.json" }
+      ],
+      "exitCode": 0,
+      "group": "churn"
+    },
+    {
+      "id": "adopt-satisfied",
+      "bin": "customer-check",
+      "args": [
+        { "fixture": "adopt-satisfied.json" },
+        { "fixture": "audience-one.json" }
+      ],
+      "exitCode": 0,
+      "group": "adopt"
+    },
+    {
+      "id": "worth-satisfied",
+      "bin": "customer-check",
+      "args": [
+        { "fixture": "worth-satisfied.json" },
+        { "fixture": "audience-one.json" }
+      ],
+      "exitCode": 0,
+      "group": "worth"
     }
   ],
   "dimensionEvidence": {

@@ -23,7 +23,7 @@ export { ADVISOR_TOOL_CONTRACTS, handleAdvisorTool } from "./tools.js";
 export { CAPABILITY_CATALOGUE, kitCatalogueDigest } from "./capability-catalogue.js";
 export { KIT_PRESETS } from "./kit-presets.js";
 export {
-  composeKit, composeKitFromProblems, validateKitProposal, FIRST_ENGAGEMENT_ROLE_CAP, EVIDENCE_LEVELS, evidenceAtLeast, presetEvidenceFindings,
+  composeKit, composeKitFromProblems, validateKitProposal, judgeNeedsCycles, needIsMet, FIRST_ENGAGEMENT_ROLE_CAP, EVIDENCE_LEVELS, evidenceAtLeast, presetEvidenceFindings,
 } from "./composition.js";
 export { contextFromBrief, toEngagementBrief } from "./engagement-brief.js";
 export { ENGAGEMENT_CONTEXT_FIELD_IDS, fieldById } from "./context.js";
@@ -46,12 +46,12 @@ export type {
 export type { SponsorQuestionCard, SponsorQuestionChoice, SponsorChoiceApplyResult, SponsorQuestionInput } from "./sponsor-questions.js";
 export type { AdvisorExecutionReadiness } from "./execution-readiness.js";
 export type {
-  CapabilityArtifactRef, CapabilityCatalogue, CapabilityEdgeSource, CapabilityEvidence, CapabilitySolves, MetricDirection, RoleCapability,
+  CapabilityArtifactRef, CapabilityCatalogue, CapabilityEdgeSource, CapabilityEvidence, CapabilityInput, CapabilitySolves, DeclaredCapability, DeclaredFeed, MetricDirection, RoleCapability,
 } from "./capability-catalogue.js";
 export type { KitPreset } from "./kit-presets.js";
 export type {
   ComposedFromProblemsRole, ComposedRole, ComposeKitFromProblemsInput, ComposeKitFromProblemsResult, ComposeKitInput, ComposeKitResult, ConfirmedProblem,
-  KitProposal, KitProposalFinding, KitProposalRoleClaim, PresetEvidenceFinding, UnsatisfiedNeed, ValidateKitProposalResult,
+  KitProposal, KitProposalFinding, KitProposalRoleClaim, NeedsCycleJudgement, PresetEvidenceFinding, UnsatisfiedNeed, ValidateKitProposalResult,
 } from "./composition.js";
 export type { EngagementBrief, EngagementBriefRole } from "./engagement-brief.js";
 export type { EngagementContext, EngagementContextField, EngagementContextFieldId } from "./context.js";

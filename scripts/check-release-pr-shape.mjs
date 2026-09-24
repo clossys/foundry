@@ -1,7 +1,10 @@
 #!/usr/bin/env node
 // check-release-pr-shape — for any package whose version this pull request
 // changed relative to its merge base, is that change shaped like a release
-// PR (issue #1255)?
+// PR (issue #1255)? Opened on the weekly calendar's Saturday release day
+// (docs/RELEASING.md, owner decision 2026-09-23), but versioning stays
+// plain semver -- the owner explicitly kept semver bump levels rather than
+// a clock-driven version scheme.
 //
 //   node scripts/check-release-pr-shape.mjs [--json] [--base <ref>] [<packageDir> ...]
 //
@@ -44,6 +47,11 @@
 //      the bump level the actual version change represents (patch/minor/
 //      major, computed structurally from the two version triples). This is
 //      the shape scripts/apply-release-changesets.mjs's release PR produces.
+//      If any consumed changeset for this package named `major`,
+//      packages/<dir>/CHANGELOG.md's entry for the new version must also
+//      carry a "### Breaking changes" subsection
+//      (scripts/apply-release-changesets.mjs's prependChangelogEntry()
+//      writes exactly that).
 //
 //   2. A MATCHING CHANGELOG ENTRY. packages/<dir>/CHANGELOG.md, at HEAD,
 //      has a heading for the new version ("## <version>" or
@@ -63,6 +71,7 @@
 // adds a new, independently justified refusal.
 //
 // Design: https://github.com/clossys/foundry/issues/1255#issuecomment-5790113827
+// Weekly calendar design (versioning unchanged): docs/RELEASING.md, refs #1187 #1265 #1266
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { basename, join } from "node:path";
@@ -114,9 +123,9 @@ export function computeBumpLevel(oldVersion, newVersion) {
 // Lists every non-README file under .changesets/ as it existed at `commit`,
 // parsed leniently (no knownPackageDirs restriction -- a historical commit's
 // package set is not this function's concern, only which packages a
-// changeset named). Returns `{ file, packages }[]`; a file that fails to
-// parse at that commit is skipped, not fatal -- collect-changesets.mjs's own
-// gate is what enforces well-formedness at HEAD.
+// changeset named). Returns `{ file, packages, outOfBand }[]`; a file that
+// fails to parse at that commit is skipped, not fatal -- collect-
+// changesets.mjs's own gate is what enforces well-formedness at HEAD.
 function changesetsAtCommit(gitRoot, commit) {
   let listing;
   try {
@@ -138,7 +147,7 @@ function changesetsAtCommit(gitRoot, commit) {
       continue;
     }
     const result = parseChangesetText(text, {});
-    if (!result.error) out.push({ file, packages: result.packages });
+    if (!result.error) out.push({ file, packages: result.packages, outOfBand: result.outOfBand === true });
   }
   return out;
 }
@@ -151,15 +160,34 @@ function changesetFileNamesAtHead(gitRoot) {
   return new Set(readdirSync(dir, { withFileTypes: true }).filter((d) => d.isFile()).map((d) => d.name));
 }
 
-// Does packages/<dir>/CHANGELOG.md, at HEAD, have a heading for `version`?
-// Accepts "## <version>" and "## [<version>] ..." (Keep a Changelog), with
-// or without a leading "v".
-function hasChangelogEntry(absPkgDir, version) {
+// The full text of packages/<dir>/CHANGELOG.md's entry for `version` (the
+// text between its "## <version>" heading and the next "## " heading, or
+// end of file), or null if there is no such heading at HEAD. Accepts
+// "## <version>" and "## [<version>] ..." (Keep a Changelog), with or
+// without a leading "v".
+function changelogEntrySection(absPkgDir, version) {
   const path = join(absPkgDir, "CHANGELOG.md");
-  if (!existsSync(path)) return false;
+  if (!existsSync(path)) return null;
   const escaped = version.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const heading = new RegExp(`^##\\s*\\[?v?${escaped}\\]?(\\s|$)`, "m");
-  return heading.test(readFileSync(path, "utf8"));
+  const headingRe = new RegExp(`^##\\s*\\[?v?${escaped}\\]?(\\s|$).*$`, "m");
+  const text = readFileSync(path, "utf8");
+  const match = headingRe.exec(text);
+  if (!match) return null;
+  const rest = text.slice(match.index + match[0].length);
+  const nextHeadingIndex = rest.search(/^## /m);
+  return nextHeadingIndex === -1 ? rest : rest.slice(0, nextHeadingIndex);
+}
+
+function hasChangelogEntry(absPkgDir, version) {
+  return changelogEntrySection(absPkgDir, version) !== null;
+}
+
+// Does packages/<dir>/CHANGELOG.md's entry for `version` carry the
+// "### Breaking changes" subsection scripts/apply-release-changesets.mjs's
+// prependChangelogEntry() writes for a consumed `major`-level changeset?
+function changelogEntryHasBreakingSection(absPkgDir, version) {
+  const section = changelogEntrySection(absPkgDir, version);
+  return section !== null && /^###\s*Breaking changes\b/m.test(section);
 }
 
 // Evaluates one package: reuses evaluatePackageDiff() for the version-change
@@ -199,17 +227,29 @@ function evaluatePackage(pkgDir, requestedBase) {
       const order = ["patch", "minor", "major"];
       return order.indexOf(level) > order.indexOf(best) ? level : best;
     }, "patch");
-    if (consumedLevel === bumpLevel) {
+    if (consumedLevel !== bumpLevel) {
       return {
         package: diff.package,
-        status: "pass",
-        detail: `version bumped from ${baseVersion} to ${version} (${bumpLevel}), matching the consumed changeset(s) ${consumed.map((c) => c.file).join(", ")} -- release-PR shaped`,
+        status: "not-release-shaped",
+        detail: `version bumped from ${baseVersion} to ${version} (${bumpLevel}), but the consumed changeset(s) ${consumed.map((c) => c.file).join(", ")} specify ${consumedLevel} -- levels must match`,
       };
     }
+
+    const breakingConsumed = consumed.filter((c) => c.packages[packageKey] === "major");
+    if (breakingConsumed.length > 0 && !changelogEntryHasBreakingSection(pkgDir, version)) {
+      return {
+        package: diff.package,
+        status: "not-release-shaped",
+        detail:
+          `version bumped from ${baseVersion} to ${version}, consuming changeset(s) flagged "major" (${breakingConsumed.map((c) => c.file).join(", ")}), ` +
+          `but CHANGELOG.md's entry for ${version} has no "### Breaking changes" subsection`,
+      };
+    }
+
     return {
       package: diff.package,
-      status: "not-release-shaped",
-      detail: `version bumped from ${baseVersion} to ${version} (${bumpLevel}), but the consumed changeset(s) ${consumed.map((c) => c.file).join(", ")} specify ${consumedLevel} -- levels must match`,
+      status: "pass",
+      detail: `version bumped from ${baseVersion} to ${version} (${bumpLevel}), matching the consumed changeset(s) ${consumed.map((c) => c.file).join(", ")} -- release-PR shaped`,
     };
   }
 
@@ -275,4 +315,4 @@ function main() {
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) main();
 
-export { changesetsAtCommit, discoverPackages, evaluatePackage, hasChangelogEntry };
+export { changesetsAtCommit, discoverPackages, evaluatePackage, hasChangelogEntry, changelogEntryHasBreakingSection };

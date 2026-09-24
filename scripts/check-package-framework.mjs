@@ -1,11 +1,14 @@
 #!/usr/bin/env node
 // check-package-framework — validates the extended `foundry` manifest block
 // (docs/contracts/package-framework.json: `intake`, `outputs`, `status`,
-// `fit`, `solves`, `needs`, `feeds`, alongside the existing `assessment`)
-// and, separately, validates any check-output-envelope.json /
-// role-assessment.json fixture a package declares
-// (docs/contracts/check-output-envelope.json,
-// docs/contracts/role-assessment.json — issue #1174).
+// `fit`, `solves`, `needs`, `feeds`, alongside the existing `assessment`).
+// This module also exports validateCheckOutputEnvelope and
+// validateRoleAssessmentDocument (docs/contracts/check-output-envelope.json,
+// docs/contracts/role-assessment.json — issue #1174) as shared shape
+// checks other gates (check-package-conformance.mjs,
+// check-real-customer-evidence.mjs, check-permission-defaults.mjs) import
+// directly; evaluatePackageFramework itself never calls them, and no
+// package manifest declares either fixture through this gate.
 //
 //   node scripts/check-package-framework.mjs [--json] [--enforce] [<repoRoot>]
 //
@@ -34,8 +37,11 @@
 //     once that file exists (it does not yet — #1176's Advisor lane owns it);
 //   - two roles whose `solves` entries claim the same `problem` id (a
 //     boundary decision, the #504/#505 class);
-//   - a `needs` entry matches some role's `feeds` entry, and the resulting
-//     needs/feeds handoff graph across every active role has no cycle.
+//   - a `needs` entry matches some role's `feeds` entry, and no set of
+//     CAPABILITIES forms a dependency cycle (issue #1382: cycles are judged
+//     per capability, so a role-level loop such as the Customer/Publisher
+//     keep loop passes; a cycle only visible through a role with no
+//     capability map is a warning, not a finding -- see detectNeedsCycles).
 // Duplicate-question gate (issue #1173, docs/DECISIONS.md decision 28): an
 // intake card whose `id` is exactly one of the engagement-context field ids
 // (docs/contracts/engagement-context.json definitions.fieldId.enum) asks a
@@ -309,17 +315,19 @@ export function evaluatePackageFramework(activeRoles, manifestsByName, options =
         }
       }
     }
-    const cycle = detectHandoffCycle(needsByRole);
-    if (cycle) findings.push({ rule: "needs-graph-cycle", role: cycle[0], message: `the needs/feeds handoff graph has a cycle: ${cycle.join(" -> ")}` });
+    const { capabilityCycle, unjudgedCycle } = detectNeedsCycles(activeRoles, manifestsByName, needsByRole, feedsByRole);
+    if (capabilityCycle) findings.push({ rule: "needs-graph-cycle", role: capabilityCycle[0].split("#")[0], message: `capabilities form a dependency cycle, so none of them can ever run first: ${capabilityCycle.join(" -> ")}` });
+    if (unjudgedCycle) warnings.push({ rule: "needs-graph-cycle-unjudged", role: unjudgedCycle[0].split("#")[0], message: `the needs graph has a cycle through a role with no capability map, so this gate cannot tell a legitimate loop from a deadlock: ${unjudgedCycle.join(" -> ")} -- declare foundry.capabilities on every role in it (issue #1382)` });
 
     const rolesByProblem = new Map();
     for (const [role, ids] of solvesByRole) {
       for (const id of ids) {
-        if (!rolesByProblem.has(id)) rolesByProblem.set(id, []);
-        rolesByProblem.get(id).push(role);
+        if (!rolesByProblem.has(id)) rolesByProblem.set(id, new Set());
+        rolesByProblem.get(id).add(role);
       }
     }
-    for (const [id, roles] of rolesByProblem) {
+    for (const [id, roleSet] of rolesByProblem) {
+      const roles = [...roleSet];
       if (roles.length > 1) findings.push({ rule: "solves-problem-claimed-by-multiple-roles", path: id, message: `problem id "${id}" is claimed by multiple roles (${roles.join(", ")}) — needs a boundary decision` });
     }
     if (clientProblemIds !== null) {
@@ -333,32 +341,103 @@ export function evaluatePackageFramework(activeRoles, manifestsByName, options =
 }
 
 /**
- * Three-color DFS cycle detection over the directed `role -> need.producerRole`
- * graph. Returns the cycle as an ordered array of roles (the repeated role
- * appears at both ends), or null when the graph is acyclic.
+ * Issue #1382's decision: cycles are judged PER CAPABILITY, where the
+ * dependency is actually known, not per role. A role-level cycle is not by
+ * itself a defect -- Customer's `keep-verdict` needs Publisher's
+ * `surface-documents` while Publisher's `sealing-and-the-publication-record`
+ * needs Customer's `keep-verdict` back, a real keep loop in which nothing
+ * waits on itself. Only a cycle among capabilities is a deadlock.
+ *
+ * Nodes: `<role>#<capability id>` for every capability a role declares, and
+ * the bare `<role>` for a role that declares no capability map (the
+ * coarsest node its own manifest lets this gate see). Edges: a capability's
+ * own `inputs`, and a bare role's top-level `needs`. A role that declares
+ * capabilities is judged by their `inputs`, and its top-level `needs` is the
+ * role-level summary of them -- but a summary entry that no capability's
+ * `inputs` covers (same producerRole and artifact, or resolving to the same
+ * node) is not dropped: it becomes an edge from EVERY capability of that
+ * role, since this gate cannot tell which one waits on it. Otherwise a map
+ * with empty `inputs` would hide a real deadlock from both the finding and
+ * the warning (review of PR #1387). An input
+ * `{ producerRole, artifact }` resolves to the producer's capability whose
+ * `id` is `artifact`, else to the capability whose `outputs` holds the path
+ * of the producer's `feeds` entry for `artifact`, else -- when the producer
+ * declares no capability map -- to the bare producer node. An input that
+ * resolves to nothing adds no edge; unresolved inputs are other rules'
+ * findings (unmatched-need here, capability-input resolution in
+ * check-capability-maps.mjs).
+ *
+ * Returns `capabilityCycle` (a cycle using capability nodes only -- a real
+ * deadlock, a finding under --enforce) and `unjudgedCycle` (a cycle that
+ * exists only through a bare role node -- reported as a warning, never
+ * failed and never silently passed, since declaring that role's capabilities
+ * is what lets it be judged). Each is an ordered array of nodes with the
+ * repeated node at both ends, or null.
  */
-function detectHandoffCycle(needsByRole) {
+function detectNeedsCycles(activeRoles, manifestsByName, needsByRole, feedsByRole) {
+  const capabilitiesByRole = new Map();
+  for (const role of activeRoles) {
+    const foundry = manifestsByName.get(role)?.foundry;
+    const capabilities = isRecord(foundry) && Array.isArray(foundry.capabilities) ? foundry.capabilities.filter((item) => isRecord(item) && isText(item.id)) : [];
+    if (capabilities.length > 0) capabilitiesByRole.set(role, capabilities);
+  }
+  const isInputList = (value) => Array.isArray(value) && value.every((item) => isRecord(item) && isText(item.producerRole) && isText(item.artifact));
+  const resolve = ({ producerRole, artifact }) => {
+    const capabilities = capabilitiesByRole.get(producerRole);
+    if (capabilities === undefined) return activeRoles.includes(producerRole) ? producerRole : null;
+    const byId = capabilities.find((item) => item.id === artifact);
+    if (byId) return `${producerRole}#${byId.id}`;
+    const feed = (feedsByRole.get(producerRole) ?? []).find((item) => item.artifact === artifact);
+    const byOutput = feed ? capabilities.find((item) => Array.isArray(item.outputs) && item.outputs.includes(feed.path)) : undefined;
+    return byOutput ? `${producerRole}#${byOutput.id}` : null;
+  };
+  const edges = new Map();
+  for (const role of activeRoles) {
+    const capabilities = capabilitiesByRole.get(role);
+    if (capabilities === undefined) {
+      edges.set(role, (needsByRole.get(role) ?? []).map(resolve).filter((node) => node !== null));
+      continue;
+    }
+    const inputsOf = (capability) => (isInputList(capability.inputs) ? capability.inputs : []);
+    // A top-level `needs` entry that no capability's `inputs` covers is a
+    // dependency the capability map does not account for. It is never
+    // dropped: without knowing which capability waits on it, every one of
+    // the role's capabilities is conservatively treated as waiting on it.
+    const covered = (need) => capabilities.some((capability) => inputsOf(capability).some((input) =>
+      (input.producerRole === need.producerRole && input.artifact === need.artifact)
+      || (resolve(input) !== null && resolve(input) === resolve(need))));
+    const uncoveredTargets = (needsByRole.get(role) ?? []).filter((need) => !covered(need)).map(resolve).filter((node) => node !== null);
+    for (const capability of capabilities) {
+      edges.set(`${role}#${capability.id}`, [...inputsOf(capability).map(resolve).filter((node) => node !== null), ...uncoveredTargets]);
+    }
+  }
+  const capabilityOnly = new Map([...edges].filter(([node]) => node.includes("#")).map(([node, next]) => [node, next.filter((target) => target.includes("#"))]));
+  const capabilityCycle = findCycle(capabilityOnly);
+  return { capabilityCycle, unjudgedCycle: capabilityCycle ? null : findCycle(edges) };
+}
+
+/** Three-color DFS over an adjacency map. Returns the first cycle found (repeated node at both ends), or null. */
+function findCycle(edges) {
   const color = new Map();
   const stack = [];
-  function visit(role) {
-    color.set(role, 1);
-    stack.push(role);
-    for (const need of needsByRole.get(role) ?? []) {
-      const next = need.producerRole;
+  function visit(node) {
+    color.set(node, 1);
+    stack.push(node);
+    for (const next of edges.get(node) ?? []) {
       const state = color.get(next) ?? 0;
       if (state === 1) return stack.slice(stack.indexOf(next)).concat(next);
-      if (state === 0 && needsByRole.has(next)) {
+      if (state === 0 && edges.has(next)) {
         const found = visit(next);
         if (found) return found;
       }
     }
     stack.pop();
-    color.set(role, 2);
+    color.set(node, 2);
     return null;
   }
-  for (const role of needsByRole.keys()) {
-    if ((color.get(role) ?? 0) === 0) {
-      const found = visit(role);
+  for (const node of [...edges.keys()].sort()) {
+    if ((color.get(node) ?? 0) === 0) {
+      const found = visit(node);
       if (found) return found;
     }
   }
