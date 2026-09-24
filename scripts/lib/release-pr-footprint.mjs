@@ -71,7 +71,7 @@
 import { parseChangesetText } from "../collect-changesets.mjs";
 import { computeBumpLevel } from "../check-release-pr-shape.mjs";
 import { DEPENDENCY_RANGE_SECTIONS, prependChangelogEntry } from "../apply-release-changesets.mjs";
-import { CHANGELOG_REL_PATH_RE } from "./changelog-location.mjs";
+import { CHANGELOG_REL_PATH_RE, changelogRelPath as changelogRelPathFor } from "./changelog-location.mjs";
 
 export const RELEASE_PR_FILE_PATTERNS = {
   packageManifest: /^packages\/([^/]+)\/package\.json$/,
@@ -1015,12 +1015,23 @@ export function evaluateReleasePrFootprint({ files }) {
   // on an absent file was indistinguishable from "nothing to object to").
   let sawLockfile = false;
 
+  // Every `dir` whose docs/changelogs/<dir>.md appears in this diff at all
+  // -- checked once, after this loop, against `bumpedDirs` (issue #1389:
+  // a release PR that deletes an unconsumed changeset for a bumped package
+  // while leaving that package's docs/changelogs/<dir>.md OUT of the diff
+  // entirely has, again, nothing here for the changelog branch below to
+  // run isChangelogPureNewSection()/reconstruction against -- the loop
+  // simply never visits a file that was never in the diff, and silence
+  // about a missing file is not the same as nothing being wrong).
+  const changelogSeenForDir = new Set();
+
   for (const file of files) {
     if (RELEASE_PR_FILE_PATTERNS.packageManifest.test(file.path)) continue; // already validated above
 
     const changelogMatch = RELEASE_PR_FILE_PATTERNS.changelog.exec(file.path);
     if (changelogMatch) {
       const dir = changelogMatch[1];
+      changelogSeenForDir.add(dir);
       const expectedVersion = bumpedVersions[dir];
       if (!expectedVersion) return { ok: false, reason: `"${file.path}" changed, but packages/${dir} was not bumped in this diff` };
       if (file.status !== "modified" && file.status !== "added") return { ok: false, reason: `"${file.path}" has status "${file.status}" -- expected modified or added` };
@@ -1094,6 +1105,28 @@ export function evaluateReleasePrFootprint({ files }) {
     return {
       ok: false,
       reason: `package-lock.json is absent from the diff, but ${bumpedDirs.map((d) => `packages/${d}`).join(", ")} bumped a version in this diff -- a release PR must regenerate the lockfile in the same diff`,
+    };
+  }
+
+  // ABSENT CHANGELOG IS A REFUSAL, NOT SILENCE (issue #1389)
+  // -----------------------------------------------------------------------
+  // Same shape as the absent-lockfile check just above: `bumpedDirs` is
+  // non-empty by construction, and apply-release-changesets.mjs -- the
+  // only producer this shape is ever checked against -- always writes a
+  // docs/changelogs/<dir>.md entry for every package it bumps, named or
+  // dependent-only alike. A dir bumped in this diff whose changelog was
+  // never touched at all (`changelogSeenForDir` stays without it) means a
+  // release PR could delete an unconsumed changeset for that package while
+  // leaving its changelog out of the diff entirely -- silently discarding
+  // the pending change with no note of it anywhere -- and every OTHER gate
+  // (isChangesetDeletionLegitimate() above included) has nothing to object
+  // to, because none of them require the changelog FILE to be present, only
+  // that IF one is present it reconstructs correctly.
+  const bumpedDirsMissingChangelog = bumpedDirs.filter((d) => !changelogSeenForDir.has(d));
+  if (bumpedDirsMissingChangelog.length > 0) {
+    return {
+      ok: false,
+      reason: `${bumpedDirsMissingChangelog.map((d) => changelogRelPathFor(d)).join(", ")} absent from the diff, but ${bumpedDirsMissingChangelog.map((d) => `packages/${d}`).join(", ")} bumped a version in this diff -- a release PR must add or update the changelog entry in the same diff`,
     };
   }
 

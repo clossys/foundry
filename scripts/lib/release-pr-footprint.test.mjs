@@ -625,6 +625,32 @@ test("evaluateReleasePrFootprint: an unrelated pending changeset deleted alongsi
 // package-lock.json in the same run whenever it applies anything, so an
 // absent lockfile is itself a structural defect in the diff, not a
 // no-op case.
+// issue #1389: a release PR that deletes an unconsumed (pending) changeset
+// for a bumped package, while leaving that package's docs/changelogs/<dir>.md
+// out of the diff entirely, used to pass the footprint check outright -- the
+// changelog branch of the per-file loop only ever runs for a file that IS in
+// the diff, and evaluateReleasePrFootprint() never separately asserted that
+// every bumped directory's changelog was among the changed files at all.
+// apply-release-changesets.mjs (the only real producer this shape is ever
+// checked against) always writes a changelog entry for every package it
+// bumps, so an absent changelog for a bumped dir is itself a structural
+// defect in the diff.
+test("evaluateReleasePrFootprint: a version bump that consumes (deletes) a changeset, but never touches docs/changelogs/<dir>.md at all, is refused (issue #1389)", () => {
+  const [base, head] = manifestPair("1.0.0", "1.0.1", { name: "@clossys/alpha" });
+  const result = evaluateReleasePrFootprint({
+    files: [
+      { path: "packages/alpha/package.json", status: "modified", baseContent: base, headContent: head },
+      { path: "package-lock.json", status: "modified", baseContent: LOCK_BASE, headContent: lockWithAlphaBumped("1.0.1") },
+      { path: ".changesets/alpha-fix.md", status: "removed", baseContent: "---\nalpha: patch\n---\n\nFix.\n" },
+      // NOTE: no docs/changelogs/alpha.md file in this diff at all -- the
+      // pending changeset is silently discarded with no release note.
+    ],
+  });
+  assert.equal(result.ok, false);
+  assert.match(result.reason, /docs\/changelogs\/alpha\.md absent from the diff/);
+  assert.match(result.reason, /packages\/alpha/);
+});
+
 test("evaluateReleasePrFootprint: a version bump with package-lock.json absent from the diff entirely is refused (issue #1331)", () => {
   const [base, head] = manifestPair("1.0.0", "1.0.1");
   const result = evaluateReleasePrFootprint({ files: [{ path: "packages/alpha/package.json", status: "modified", baseContent: base, headContent: head }] });
@@ -633,12 +659,19 @@ test("evaluateReleasePrFootprint: a version bump with package-lock.json absent f
   assert.match(result.reason, /packages\/alpha/);
 });
 
-test("evaluateReleasePrFootprint: the SAME bump, with package-lock.json present and a legitimate pure version bump, passes (package-lock.json is the only thing missing above)", () => {
+test("evaluateReleasePrFootprint: the SAME bump, with package-lock.json AND the changelog present and a legitimate pure version bump, passes (package-lock.json was the only thing missing above)", () => {
   const [base, head] = manifestPair("1.0.0", "1.0.1", { name: "@clossys/alpha" });
   const result = evaluateReleasePrFootprint({
     files: [
       { path: "packages/alpha/package.json", status: "modified", baseContent: base, headContent: head },
+      {
+        path: "docs/changelogs/alpha.md",
+        status: "modified",
+        baseContent: "# Changelog\n\n## 1.0.0\n\n- Initial.\n",
+        headContent: "# Changelog\n\n## 1.0.1 - 2026-09-24\n\n- Fix.\n\n## 1.0.0\n\n- Initial.\n",
+      },
       { path: "package-lock.json", status: "modified", baseContent: LOCK_BASE, headContent: lockWithAlphaBumped("1.0.1") },
+      { path: ".changesets/alpha-fix.md", status: "removed", baseContent: "---\nalpha: patch\n---\n\nFix.\n" },
     ],
   });
   assert.equal(result.ok, true, result.reason);

@@ -238,6 +238,26 @@ function evaluatePackage(pkgDir, requestedBase) {
       };
     }
 
+    // issue #1389: matching consumed changeset LEVELS alone does not prove a
+    // changelog entry for the new version was ever written -- a release PR
+    // that deletes an unconsumed changeset while leaving
+    // docs/changelogs/<dir>.md untouched (or reverted) used to pass this
+    // gate outright, silently discarding the pending change with no
+    // release note anywhere. apply-release-changesets.mjs always writes
+    // one for every bump it applies, named or dependent-only alike, so its
+    // absence here is a structural defect in the diff, not merely a style
+    // nit -- the SAME requirement the no-changeset path just below already
+    // enforces via hasChangelogEntry().
+    if (!hasChangelogEntry(pkgDir, version)) {
+      return {
+        package: diff.package,
+        status: "not-release-shaped",
+        detail:
+          `version bumped from ${baseVersion} to ${version} (${bumpLevel}), consuming changeset(s) ${consumed.map((c) => c.file).join(", ")}, ` +
+          `but ${changelogRelPath(packageKey)} has no entry for ${version} -- a release PR must add or update the changelog entry in the same diff`,
+      };
+    }
+
     const breakingConsumed = consumed.filter((c) => c.packages[packageKey] === "major");
     if (breakingConsumed.length > 0 && !changelogEntryHasBreakingSection(pkgDir, version)) {
       return {

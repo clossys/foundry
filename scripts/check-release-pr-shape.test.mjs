@@ -99,14 +99,44 @@ test("no version change: passes with nothing to judge", () => {
   });
 });
 
-test("version bump justified by a consumed matching-level changeset passes", () => {
+test("version bump justified by a consumed matching-level changeset, WITH a matching changelog entry, passes", () => {
   withRepo((root) => {
     const pkgDir = makeFixture(root);
     mkdirSync(join(root, ".changesets"), { recursive: true });
     writeFileSync(join(root, ".changesets", "probe-fix.md"), "---\nprobe: patch\n---\n\nFix a bug.\n");
     const base = gitCommit(root, "pending changeset for probe");
 
-    // The release PR: bump the version and delete the changeset it applied.
+    // The release PR: bump the version, delete the changeset it applied,
+    // AND write the changelog entry apply-release-changesets.mjs's own
+    // producer always writes alongside it (issue #1389 -- see the test
+    // just below for the case where this step is skipped).
+    const manifest = readManifest(pkgDir);
+    manifest.version = "1.0.1";
+    writeManifest(pkgDir, manifest);
+    rmSync(join(root, ".changesets", "probe-fix.md"));
+    writeChangelog(pkgDir, "# Changelog\n\n## 1.0.1 - 2026-09-24\n\n- Fix a bug.\n");
+
+    const r = run(["--json", "--base", base, pkgDir]);
+    const report = JSON.parse(r.out);
+    assert.equal(r.code, 0, r.out);
+    assert.equal(report.results[0].status, "pass");
+    assert.match(report.results[0].detail, /release-PR shaped/);
+  });
+});
+
+// issue #1389: matching consumed changeset LEVELS alone (the check above)
+// does not prove a changelog entry for the new version was ever written --
+// a release PR that deletes an unconsumed changeset while leaving
+// docs/changelogs/<dir>.md untouched used to pass this gate outright,
+// silently discarding the pending change with no release note anywhere.
+test("version bump justified by a consumed matching-level changeset, but with NO changelog entry at all, is refused (issue #1389)", () => {
+  withRepo((root) => {
+    const pkgDir = makeFixture(root);
+    mkdirSync(join(root, ".changesets"), { recursive: true });
+    writeFileSync(join(root, ".changesets", "probe-fix.md"), "---\nprobe: patch\n---\n\nFix a bug.\n");
+    const base = gitCommit(root, "pending changeset for probe");
+
+    // Bump and delete the changeset -- but NEVER write docs/changelogs/probe.md.
     const manifest = readManifest(pkgDir);
     manifest.version = "1.0.1";
     writeManifest(pkgDir, manifest);
@@ -114,9 +144,9 @@ test("version bump justified by a consumed matching-level changeset passes", () 
 
     const r = run(["--json", "--base", base, pkgDir]);
     const report = JSON.parse(r.out);
-    assert.equal(r.code, 0, r.out);
-    assert.equal(report.results[0].status, "pass");
-    assert.match(report.results[0].detail, /release-PR shaped/);
+    assert.equal(r.code, 1, r.out);
+    assert.equal(report.results[0].status, "not-release-shaped");
+    assert.match(report.results[0].detail, /has no entry for 1\.0\.1/);
   });
 });
 
@@ -152,7 +182,10 @@ test("a consumed major-level changeset requires a Breaking changes CHANGELOG sec
     manifest.version = "2.0.0";
     writeManifest(pkgDir, manifest);
     rmSync(join(root, ".changesets", "probe-break.md"));
-    // Deliberately NOT writing a Breaking changes section in docs/changelogs/probe.md.
+    // A changelog entry for 2.0.0 DOES exist (issue #1389 needs one present
+    // at all) -- it deliberately just has no Breaking changes subsection,
+    // isolating THIS test's own check from that one.
+    writeChangelog(pkgDir, "# Changelog\n\n## 2.0.0 - 2026-09-26\n\n- Removed the deprecated foo() export.\n");
 
     const r = run(["--json", "--base", base, pkgDir]);
     const report = JSON.parse(r.out);
@@ -281,6 +314,10 @@ test("a consumed major-level changeset's Breaking changes section is read from d
     manifest.version = "2.0.0";
     writeManifest(pkgDir, manifest);
     rmSync(join(root, ".changesets", "probe-break.md"));
+    // The REAL docs/changelogs/probe.md entry exists (issue #1389 needs one
+    // present at all) but has no Breaking changes subsection -- only the
+    // retired in-package location has one, which must not count.
+    writeChangelog(pkgDir, "# Changelog\n\n## 2.0.0 - 2026-09-26\n\n- Removed the deprecated foo() export.\n");
     writeFileSync(
       join(pkgDir, "CHANGELOG.md"),
       "# Changelog\n\n## 2.0.0 - 2026-09-26\n\n### Breaking changes\n\n- Removed the deprecated foo() export.\n\n- Removed the deprecated foo() export.\n",
