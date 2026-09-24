@@ -14,7 +14,12 @@ export const SETPOINT_VALUE_SHAPES = Object.freeze({ increase: "number", decreas
 export interface InstalledPositionFinding { readonly rule: string; readonly path: string; readonly message: string; }
 /** A non-failing observation: the ledger is still valid, but something in it should change before the next minor. */
 export interface InstalledPositionAdvisory { readonly rule: string; readonly path: string; readonly message: string; }
-export interface InstalledPositionLedgerReport { readonly ok: boolean; readonly findings: readonly InstalledPositionFinding[]; readonly advisories: readonly InstalledPositionAdvisory[]; readonly openRoles: number; readonly positions: number; }
+// `advisories` is optional in the type only so a report a caller builds or
+// mocks by hand -- one that predates this field -- still satisfies this
+// interface without a TS2741 typecheck break. Every report this function
+// itself returns always sets it, defaulting to an empty array when there
+// are no advisories; see the README for the same statement.
+export interface InstalledPositionLedgerReport { readonly ok: boolean; readonly findings: readonly InstalledPositionFinding[]; readonly advisories?: readonly InstalledPositionAdvisory[]; readonly openRoles: number; readonly positions: number; }
 
 type RecordValue = Record<string, unknown>;
 const universalStages = ["sense", "judge", "act", "verify", "learn"];

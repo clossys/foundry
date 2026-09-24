@@ -73,16 +73,40 @@ describe("foundry-position-check CLI (#1394)", () => {
     expect(main(["--help"])).toBe(2);
   });
 
-  it("exits 0 on a real 0.9.10-shaped ledger and prints its advisories, not failures", () => {
+  it("exits 0 on a real 0.9.10-shaped ledger and prints its advisories to stderr, not stdout", () => {
     const path = write("ledger.json", legacyLedger090);
     const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     expect(main([path])).toBe(0);
-    const lines = log.mock.calls.map((call) => String(call[0]));
-    expect(lines.some((line) => line.startsWith("FAIL"))).toBe(false);
-    expect(lines.some((line) => line.startsWith("ADVISORY legacy-stage-name"))).toBe(true);
-    expect(lines.some((line) => line.startsWith("ADVISORY missing-disposition-for-new-role"))).toBe(true);
-    expect(lines.some((line) => line.startsWith("INSTALLED POSITION LEDGER OK"))).toBe(true);
+    const stdoutLines = log.mock.calls.map((call) => String(call[0]));
+    const stderrLines = errorSpy.mock.calls.map((call) => String(call[0]));
+    expect(stderrLines.some((line) => line.startsWith("ADVISORY legacy-stage-name"))).toBe(true);
+    expect(stderrLines.some((line) => line.startsWith("ADVISORY missing-disposition-for-new-role"))).toBe(true);
+    expect(stdoutLines.some((line) => line.startsWith("FAIL"))).toBe(false);
+    expect(stdoutLines.some((line) => line.startsWith("ADVISORY"))).toBe(false);
+    expect(stdoutLines.some((line) => line.startsWith("INSTALLED POSITION LEDGER OK"))).toBe(true);
     log.mockRestore();
+    errorSpy.mockRestore();
+  });
+
+  it("keeps stdout byte-identical to a plain, advisory-free pass: exactly one OK line", () => {
+    // A fully-migrated ledger (current `learn` key, an explicit customer
+    // disposition) has nothing to advise on -- this proves the OK line
+    // itself is unchanged, on top of the previous test proving advisories
+    // never join it on stdout.
+    const migrated: Record<string, unknown> = JSON.parse(JSON.stringify(legacyLedger090));
+    (migrated.dispositions as Array<Record<string, unknown>>).push({ package: "@clossys/customer", disposition: "not-applicable", reason: "Synthetic schema fixture; no consumer decision.", positionIds: [] });
+    const stageBindings = ((migrated.positions as Array<Record<string, unknown>>)[0]!.stageBindings as Record<string, string>);
+    stageBindings.learn = stageBindings.learnOrEscalate!;
+    delete stageBindings.learnOrEscalate;
+    const path = write("ledger.json", migrated);
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(main([path])).toBe(0);
+    expect(log.mock.calls).toEqual([["INSTALLED POSITION LEDGER OK — 1 open role(s), 1 complete position(s). No adoption, grounding, or closure is inferred."]]);
+    expect(errorSpy.mock.calls).toEqual([]);
+    log.mockRestore();
+    errorSpy.mockRestore();
   });
 
   it("still exits 1 on a ledger missing a disposition for a role that existed in 0.9.10", () => {

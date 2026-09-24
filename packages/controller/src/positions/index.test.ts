@@ -169,7 +169,7 @@ describe("installed positions", () => {
       const result = validateInstalledPositionLedger(ledger);
       expect(result.ok).toBe(false);
       expect(result.findings).toContainEqual(expect.objectContaining({ rule: "invalid-stage-bindings", path: "positions[0]" }));
-      expect(result.advisories.some((item) => item.rule === "legacy-stage-name")).toBe(false);
+      expect((result.advisories ?? []).some((item) => item.rule === "legacy-stage-name")).toBe(false);
     });
 
     it("rejects stageBindings carrying neither learn nor learnOrEscalate", () => {
@@ -189,7 +189,7 @@ describe("installed positions", () => {
       expect(result.ok).toBe(false);
       expect(result.findings).toContainEqual(expect.objectContaining({ rule: "missing-role-disposition", path: "@clossys/advisor" }));
       // The unrelated new-role advisory still fires; advisories never mask a real failure.
-      expect(result.advisories.some((item) => item.rule === "missing-disposition-for-new-role")).toBe(true);
+      expect((result.advisories ?? []).some((item) => item.rule === "missing-disposition-for-new-role")).toBe(true);
     });
 
     it("never lets advisories change ok or findings on an otherwise-valid ledger", () => {
