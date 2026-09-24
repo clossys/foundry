@@ -162,12 +162,14 @@ export interface ReviewEvidenceOptions {
   /**
    * An earlier approval this run's COLLECTOR proved carries forward under
    * #1428's mechanical-merge rule: every commit between the two heads
-   * (strict first parent) is a plain merge with an empty `git show
-   * --remerge-diff`, and the pull request's own patch id, taken against its
-   * merge-base with the target branch, is unchanged (see
-   * `scripts/collect-review-evidence.mjs`'s "MECHANICAL-MERGE CARRY"
-   * section for the full proof). This package performs no I/O and does not
-   * itself verify the claim — the same trust boundary `mergeGroup.
+   * (strict first parent) is a plain two-parent merge whose second parent is
+   * an ancestor of the target branch's TRUE tip (resolved fresh, never from
+   * the pull request's own claimed base) and whose `git show --remerge-diff`
+   * is empty (see `scripts/collect-review-evidence.mjs`'s "MECHANICAL-MERGE
+   * CARRY" section for the full proof, and its own header for why an earlier
+   * revision's `git patch-id` comparison was dropped rather than kept
+   * alongside it). This package performs no I/O and does not itself verify
+   * the claim — the same trust boundary `mergeGroup.
    * containsHeadShaUnderTest` already draws. It changes nothing about the
    * DECISION: the collector already rebinds the carried review's own
    * `headSha` to the current head before this package ever sees the
