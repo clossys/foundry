@@ -32,8 +32,8 @@
     "routes-clean/app/page.tsx",
     "routes-violated/web-route-manifest.json",
     "routes-violated/app/page.tsx",
-    "brand.css",
-    "brand-uncovered.css",
+    "preview-brand-covered.css",
+    "preview-brand-uncovered.css",
     "rate-satisfied.json",
     "rate-violated.json"
   ],
@@ -171,7 +171,7 @@
       "bin": "publisher-preview",
       "args": [
         {
-          "fixture": "brand.css"
+          "fixture": "preview-brand-covered.css"
         },
         {
           "literal": "preview-output"
@@ -185,7 +185,7 @@
       "bin": "publisher-preview",
       "args": [
         {
-          "fixture": "brand-uncovered.css"
+          "fixture": "preview-brand-uncovered.css"
         },
         {
           "literal": "preview-output"
