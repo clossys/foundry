@@ -46,38 +46,49 @@ edit to the rule text itself does.
 ## Amendment (2026-09-23): review convergence
 
 The owner ratified a review-convergence amendment to the escalation rule
-on 2026-09-23. The verbatim ratified list is quoted in exactly one place
-in the docs,
+on 2026-09-23, and later that day set its caps and answered two
+follow-up questions. The verbatim ratified list is quoted in exactly one
+place in the docs,
 [`docs/HITL-RULE.md`'s amendment section](HITL-RULE.md#amendment-2026-09-23-review-convergence),
-and in full in its decision record,
+and in full, with the owner's answers, in its decision record,
 [`governance/decisions/hitl-review-convergence.json`](../governance/decisions/hitl-review-convergence.json).
-It is not copied here, for the same reason the rule itself is not: this
-file is tier-1, and a second copy of ratified text is one more place for
-it to drift.
+It is not copied here or anywhere else in the docs, for the same reason
+the rule itself is not: this file is tier-1, and a second copy of
+ratified text is one more place for it to drift. The charter template
+links to it for the same reason.
 
 What it means for this document (this repository's own summary, not
-ratified text; the list governs):
+ratified text; the list and the owner's answers govern):
 
 - The rule's 3-round escalation trigger is replaced by the amendment's
   round budget and triggers. This document never stated that trigger
   itself, and `scripts/land-stack.mjs` does not count review rounds.
 - Charters: [`docs/templates/pr-charter.md`](templates/pr-charter.md) holds
-  the charter fields and the five always-on clauses, for a pull request
-  body to copy.
-- None of the amendment is enforced by code yet. See the amendment
-  section's own implementation-status notes for the gaps, including the
-  fact that `scripts/check-decision-records.mjs` does not yet accept
-  `decidedBy: default`.
+  the empty charter fields for a pull request body to copy, and links to
+  item 1 for the always-on clauses.
+- The owner-set caps, the stall window, and the interim way to record a
+  deadline default (a PR or issue comment labelled `hitl:default`, which
+  never counts as authority, until #1408 adds `decidedBy: default` to
+  `scripts/check-decision-records.mjs`) are in the amendment section.
+- None of the amendment is enforced by code yet. In particular, the
+  tier-1 gate reads review records at the exact current head, so a clean
+  rebase that keeps clearance under the amendment's item 7 still needs
+  the head re-attested before the gate passes. See the amendment
+  section's implementation-status notes.
 - "The three tiers" below still describes only what the code classifies.
-  Its tier-1 wording on escalating reviewer disagreement to the owner
-  predates the ratified rule. Under both the rule and the amendment,
-  reviewers disagreeing on severity take the stricter view instead of
-  escalating; a value dispute still goes to the owner.
+  Its tier-1 wording, "if they disagree or either says reject, escalate
+  to the owner", predates the ratified rule and does not describe current
+  process. Under both the rule and the amendment, reviewers disagreeing
+  on severity take the stricter view instead of escalating, and a reject
+  leads to a fix and the next round. The owner gets the item only when
+  one of the amendment's triggers fires (budget exhausted, review-run cap
+  hit, a stall, or a value dispute).
 
 ## The three tiers
 
 **This is the CODE-LEVEL classification `scripts/land-stack.mjs` actually
-enforces today** (kept, unchanged, from before the ratified "Escalation
+enforces today** (kept, unchanged apart from one pointer added on
+2026-09-23 to the tier-1 escalation wording, from before the ratified "Escalation
 rule" ([`docs/HITL-RULE.md`](HITL-RULE.md)) existed) — not a restatement
 of the ratified rule itself. The decision-tier rule (#1187 comment
 5800142871) it derives from predates ratification; see
@@ -96,7 +107,8 @@ defines three tiers of agent decision:
   plus a stronger-model second opinion, both testing the change adversarially,
   neither the author. If both recommend acceptance with no unresolved
   finding, act; if they disagree or either says reject, escalate to the
-  owner.
+  owner. (Superseded as process by the ratified rule and its 2026-09-23
+  amendment; see "Amendment (2026-09-23): review convergence" above.)
 - **Tier 2 — owner only (HITL).** Credentials and two-factor steps,
   repository settings/rulesets/required checks/environments, irreversible
   external actions (publishing, deprecating, one-way version-scheme

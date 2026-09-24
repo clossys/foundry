@@ -26,7 +26,8 @@ for why.
 ## Escalation rule (owner-ratified 2026-09-23)
 
 The rule below **supersedes** the informal decision-tier prose this
-document opened with through round 6 (kept, unchanged, as `docs/HITL.md`'s
+document opened with through round 6 (kept, unchanged apart from one
+2026-09-23 pointer to the amendment below, as `docs/HITL.md`'s
 "The three tiers" section — moved there in round 3 along with the rest of
 this document's non-rule content — since it is what the CODE in this
 slice actually classifies today — see "What this rule changes about the
@@ -131,11 +132,14 @@ the record is the source of truth.
 
 **Amended 2026-09-23 (not part of the ratified text above).** The quoted
 text above is kept exactly as ratified, as history. Two parts of it are
-superseded by the owner-ratified review-convergence amendment: the "3
-rounds that go nowhere" trigger (Accepted item 5, and the "Your approval
-first" table row) is replaced by the amendment's round budget and
-triggers, and the table's "batched for Friday unless urgent" is replaced
-by the amendment's same-day escalation ask. See
+superseded by the owner-ratified review-convergence amendment, as its
+decision record reads it: the "3 rounds that go nowhere" trigger
+(Accepted item 5, and the "Your approval first" table row) is replaced by
+the amendment's round budget and triggers, and the table's "batched for
+Friday unless urgent" is replaced by the amendment's same-day escalation
+ask. The Friday supersession is that record's reading of item 5, not
+words the owner ratified; with no urgency exception left, urgent asks
+that are not about a review fall under the same twice-a-day limit. See
 [Amendment (2026-09-23): review convergence](#amendment-2026-09-23-review-convergence)
 below. Everything else above stands unchanged.
 
@@ -367,19 +371,28 @@ hook definition, or the record.
 
 The owner ratified this amendment in owner chat on 2026-09-23, selecting
 the answer "Ratify as written (Recommended)" to a structured question
-that asked for ratification of the list below.
+that asked for ratification of the list below. Later the same day, the
+owner answered three follow-up questions in owner chat, on the caps (Q1),
+on how the record declares `relaxesGateOrPolicy` (Q2), and on recording
+deadline defaults (Q3).
 [`governance/decisions/hitl-review-convergence.json`](../governance/decisions/hitl-review-convergence.json)
-is the durable record: it quotes the question, the answer, the selected
-option's description and the list, all verbatim, with `channel:
+is the durable record. It quotes every question, answer and selected
+option's description, and the list, all verbatim, with `channel:
 "owner-chat"`, not independently verifiable, as the rule above requires
 of every owner-chat record. That record is the source of truth if this
 section and it ever disagree. It does not edit or replace
 `governance/decisions/hitl-escalation-rule.json`: that record, and the
 rule quoted above, stay in force except for the two parts named below.
 
-**The ratified list, reproduced VERBATIM.** It is written in the
-coordinator's voice, addressed to the owner: *you* and *your* mean the
-owner, *me* and *my* mean the coordinator.
+The ratification's option description speaks of amending `docs/HITL.md`.
+The ratified text sits here instead because the rule moved from
+`docs/HITL.md` into this file in round 3 of #1354; `docs/HITL.md` links
+here.
+
+**The ratified list, reproduced VERBATIM**, with one invisible markup
+comment on one line (see "Implementation status" below). It is written in
+the coordinator's voice, addressed to the owner: *you* and *your* mean
+the owner, *me* and *my* mean the coordinator.
 
 > 1. **Charter before round 1.** Required for gate, governance, security or release paths, or over about 300 lines across the stack. It states the goal, adversary, non-goals, what "done" means, the blocking bar and the round budget. Five clauses are always on and can't be removed: harm, authority or permission effects, false claims, rule fidelity, and correctness. Reviewers first review the charter itself; they can add clauses, never remove them, and a charter defect blocks.
 > 2. **Structured findings.** Each blocking finding cites a charter clause. The reviewer, not the author, labels it a new class or a known class, and a known class must cite its earlier instance. A finding with no clause becomes an issue.
@@ -413,25 +426,56 @@ owner, *me* and *my* mean the coordinator.
 
 ### What the amendment changes in the rule above (not part of the ratified text)
 
-This subsection and the next are this repository's own explanation.
-They add no authority beyond the list above; where they seem to, the
-list governs.
+This subsection and the two after it are this repository's own
+explanation, and where they settle an ambiguity they say so. They add no
+authority beyond the list above and the owner's answers recorded in
+`governance/decisions/hitl-review-convergence.json`; where they seem to,
+those govern.
 
 - **The 3-round trigger.** Accepted item 5 ("after 3 rounds that go
   nowhere") and the "Your approval first" table row ("or 3 rounds that go
   nowhere") are superseded by the list's item 3 (the round budget) and
   item 4 (the triggers). Value disputes still go to the owner, and
   reviewer disagreement still does not; item 4 restates both.
-- **Ask timing.** The table's "batched for Friday unless urgent" is
-  superseded by item 5: an escalation ask goes out the same day, at most
-  twice a day, with related items merged. The owner saw this change
-  called out when ratifying: the amendment followed a red-team whose
-  recommendations were adopted, except that asks go same-day rather than
-  being batched to Friday.
+- **Ask timing (the record's reading).** The table's "batched for Friday
+  unless urgent" is superseded by item 5: an escalation ask goes out the
+  same day, at most twice a day, with related items merged. Because item
+  5 has no urgency exception, an urgent ask that is not about a review
+  (credentials or publishing, for example) falls under the same
+  twice-a-day limit. The owner saw the timing change called out when
+  ratifying: the amendment followed a red-team whose recommendations were
+  adopted, except that asks go same-day rather than being batched to
+  Friday.
 - **Everything else stands**, including the fresh strong-class final
   reviewer for governance, security and gate changes (item 3 keeps it),
   the channel rule, and "Changing this rule itself". The quoted rule
   text above is not edited.
+
+### Owner-set values and interim recording (owner answers, 2026-09-23)
+
+**Caps and stall window.** Set by the owner on 2026-09-23 in answer to
+Q1, as budgets and thresholds are the owner's standing settings under
+Accepted item 4. Each value is in Q1's own words:
+
+- review-run cap (item 4): "6 agent review runs per PR";
+- stall (item 4): "60 min with no new push or verdict, CI and queue time
+  excluded";
+- CI flake reruns (item 7): "capped at 1 per failing check per head, so a
+  second failure is treated as real and diagnosed";
+- rebase or merge-main churn (item 7): "capped at 2 per PR per day";
+- queue ejections (item 7): "capped at 2 per PR, after which it's
+  diagnosed before re-queueing".
+
+They apply now and are reviewed with data at the Friday cut. Changing
+them is an owner decision, like any other standing setting.
+
+**Deadline defaults, until the validator accepts `decidedBy: default`.**
+Per the owner's answer to Q3, a deadline default is recorded as a pull
+request or issue comment labelled `hitl:default`, and it never counts as
+authority. The label name is this repository's choice; the owner's answer
+says a labelled comment. Adding `decidedBy: default` to the
+decision-record validator is follow-up owner-tier work, tracked in
+#1408.
 
 ### Implementation status (not part of the ratified text)
 
@@ -440,24 +484,41 @@ list governs.
   or collects the metrics. They bind agent work as process only. The
   option the owner selected also says the coordinator will "apply the
   budget to live work immediately, starting with #1354".
+- **A clean rebase and the tier-1 gate.** Item 7 keeps review clearance
+  across a clean mechanical rebase, but the tier-1 evidence gate in
+  `scripts/land-stack.mjs` reads review records at the exact current head
+  only (see `docs/HITL.md`'s "Where each tier is enforced"). After a
+  rebase, the gate does not pass until the head is re-attested: a
+  range-diff verification comment, plus review records at the new head.
+  The code does not check the range-diff itself.
+- **Larger round budgets (this repository's reading).** Item 3 says a
+  request for more rounds is approved with the charter, and item 6 lists
+  budget grants among what is recorded. Because budgets are the owner's
+  standing settings under Accepted item 4, a larger budget is approved by
+  the owner together with the charter, and recorded as a decision record
+  under `governance/decisions/`.
+- **The fresh reviewer in the extra round (this repository's reading).**
+  A reviewer counts as fresh only if they have no history on the PR
+  before the round they join. The round-2 fresh final reviewer has
+  history by the time of item 3's one automatic extra round, so they are
+  no longer fresh then. Accepted item 6 still applies: for governance,
+  security or gate changes, the last approval has to come from a fresh
+  strong-class reviewer with no history on the PR.
 - **Charter template.** [`docs/templates/pr-charter.md`](templates/pr-charter.md)
-  holds the charter fields and the five always-on clauses from item 1,
-  for a pull request body to copy.
+  holds the empty charter fields and links to item 1 above. It does not
+  copy item 1 or the always-on clauses, so the list is quoted in one
+  place in the docs.
 - **Follow-up work, not in the pull request that added this section:**
   the `review-loop-status` script and the quote-fidelity test named in
-  item 8, and issue or pull-request template changes under `.github/`.
-- **`decidedBy: default` is not yet a valid value.**
-  `scripts/check-decision-records.mjs` accepts only `owner` and
-  `consensus` for `decidedBy`, so a deadline default cannot yet be
-  recorded under `governance/decisions/` in the form item 6 names.
-  Recording one as `decidedBy: "owner"` instead would contradict item 6,
-  which says a deadline default can never count as the owner's
-  authority.
+  item 8, issue or pull-request template changes under `.github/`, and
+  the validator change in #1408.
 - **One markup comment inside the quote.** The line quoting item 5's
   live-harm default ends with an HTML comment, `facts-gate:ignore`, so
   the strategist facts gate (`npm run check:strategist-subject`) does
   not read the ratified wording as an untraced superlative claim. It
-  renders as nothing and changes no word of the quote.
+  renders as nothing and changes no word of the quote. A byte-for-byte
+  comparison has to strip HTML comments first; the decision record's
+  copy has no comment.
 - **Tier and hook coverage of the amendment record.**
   `governance/decisions/hitl-review-convergence.json` is tier-2 through
   the `governance/decisions/**` glob in `governance/review-tiers.json`.
