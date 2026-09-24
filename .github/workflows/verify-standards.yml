@@ -8,9 +8,9 @@
 # outside a guessed scope silently never runs this, and a check that never ran
 # is a check that never failed.
 #
-# This context is NOT required to merge. Adding it to a ruleset is a separate,
-# later step: a required context that has never reported wedges the
-# repository. Merge first, watch it report, then decide.
+# This context is a required status check on main (see the merge_group note
+# below). A context must report on real pull requests before it is made
+# required, or it wedges the repository; that is how this one was introduced.
 #
 # ---------------------------------------------------------------------------
 # WHY THIS FILE IS NOT THE TEMPLATE VERBATIM — read before copying it onward
@@ -34,6 +34,12 @@
 # The gate is likewise invoked as its own compiled entry point rather than
 # through a runner indirection, matching how this repository's other packaged
 # gates are already run against their own `dist/`.
+#
+# Its triggers also differ from the template: it adds `merge_group` (it is a
+# required context) and `pull_request_review` (#1470), and its policy file
+# lists `pull_request_review` in `applicableEventKinds` to match. A consumer
+# that copies the review trigger must copy that policy entry too, or every
+# review run reports task-record as not applicable.
 name: Verify standards
 
 # The task-record check reads the pull-request DESCRIPTION, so the description
