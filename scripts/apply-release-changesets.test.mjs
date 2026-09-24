@@ -977,6 +977,91 @@ test("COMPOSITION (mixed run): an owner-approved out-of-band minor releases, its
   }
 });
 
+// -------------------------------------------------- issue #1377: PHASE B fixed point (third-level dependents)
+//
+// PHASE B's sibling-range scan used to be a single pass: `bumpedVersions`
+// was built once, from PHASE A alone, and never grew to include a
+// dependent-only patch bump THAT SAME PHASE produced. A THIRD package
+// depending on a dependent-only-bumped package via an exact pin (or any
+// range a one-step patch bump does not already cover) was left pointing at
+// the now-stale pinned version -- see the issue's own concrete case,
+// reproduced here verbatim: core (real minor bump) -> mid (dependent-only
+// patch bump, ^0.9.0 no longer covers core's 0.10.0) -> pinned (exact pin
+// on mid, "1.2.0", which a patch bump to 1.2.1 does not satisfy).
+
+test("applyReleaseChangesets: a THIRD-level dependent pinned via an EXACT VERSION on a dependent-only-bumped package is also rewritten (issue #1377)", () => {
+  const root = makeRoot();
+  try {
+    makePackage(root, "core", "0.9.0");
+    writeChangeset(root, "core-feature.md", "---\ncore: minor\n---\n\nAdd a feature.\n");
+
+    // mid: NOT named by any changeset -- depends on core via a range core's
+    // minor bump breaks, so mid gets a dependent-only patch bump.
+    makePackageWithDependency(root, "mid", "1.2.0", "@x/core", "^0.9.0");
+
+    // pinned: NOT named by any changeset -- depends on mid via an EXACT
+    // pin, "1.2.0". mid's dependent-only bump (1.2.0 -> 1.2.1) is a fact
+    // PHASE B could only discover about ITSELF in a first pass; without
+    // feeding it back in, pinned's stale reference to mid@1.2.0 was never
+    // detected or rewritten.
+    makePackageWithDependency(root, "pinned", "2.0.0", "@x/mid", "1.2.0");
+
+    const result = applyReleaseChangesets({ root, runNpmInstall: () => {}, today: () => "2026-09-24" });
+
+    assert.equal(result.findings.length, 0, JSON.stringify(result.findings));
+    assert.deepEqual(
+      result.applied.map((a) => a.package).sort(),
+      ["core", "mid", "pinned"],
+    );
+
+    const midApplied = result.applied.find((a) => a.package === "mid");
+    assert.equal(midApplied.toVersion, "1.2.1");
+    assert.deepEqual(midApplied.dependencyUpdates, [{ section: "dependencies", name: "@x/core", fromRange: "^0.9.0", toRange: "^0.10.0" }]);
+
+    const pinnedApplied = result.applied.find((a) => a.package === "pinned");
+    assert.equal(pinnedApplied.toVersion, "2.0.1", "pinned must itself get a dependent-only patch bump too");
+    assert.equal(pinnedApplied.bump, "patch");
+    assert.deepEqual(pinnedApplied.changesetFiles, []);
+    assert.deepEqual(pinnedApplied.dependencyUpdates, [{ section: "dependencies", name: "@x/mid", fromRange: "1.2.0", toRange: "^1.2.1" }]);
+
+    const pinnedManifest = JSON.parse(readFileSync(join(root, "packages", "pinned", "package.json"), "utf8"));
+    assert.equal(pinnedManifest.version, "2.0.1");
+    assert.equal(pinnedManifest.dependencies["@x/mid"], "^1.2.1");
+
+    const pinnedChangelog = readFileSync(changelogFile(root, "pinned"), "utf8");
+    assert.match(pinnedChangelog, /Updated dependency @x\/mid to \^1\.2\.1/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("applyReleaseChangesets: a FOUR-level chain of dependent-only bumps converges (each level triggered only by the previous round's bump)", () => {
+  const root = makeRoot();
+  try {
+    makePackage(root, "a", "0.9.0");
+    writeChangeset(root, "a-feature.md", "---\na: minor\n---\n\nAdd a feature.\n");
+    makePackageWithDependency(root, "b", "1.0.0", "@x/a", "^0.9.0");
+    makePackageWithDependency(root, "c", "1.0.0", "@x/b", "1.0.0"); // exact pin on b
+    makePackageWithDependency(root, "d", "1.0.0", "@x/c", "1.0.0"); // exact pin on c
+
+    const result = applyReleaseChangesets({ root, runNpmInstall: () => {}, today: () => "2026-09-24" });
+
+    assert.equal(result.findings.length, 0, JSON.stringify(result.findings));
+    assert.deepEqual(
+      result.applied.map((a) => a.package).sort(),
+      ["a", "b", "c", "d"],
+    );
+    assert.equal(result.applied.find((x) => x.package === "b").toVersion, "1.0.1");
+    assert.equal(result.applied.find((x) => x.package === "c").toVersion, "1.0.1");
+    assert.equal(result.applied.find((x) => x.package === "d").toVersion, "1.0.1");
+
+    const dManifest = JSON.parse(readFileSync(join(root, "packages", "d", "package.json"), "utf8"));
+    assert.equal(dManifest.dependencies["@x/c"], "^1.0.1");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 // -------------------------------------------------- CLI: --json output must be pure JSON, even with real npm running
 //
 // Re-review, https://github.com/clossys/foundry/pull/1353#issuecomment-5803894960

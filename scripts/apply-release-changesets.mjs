@@ -643,81 +643,169 @@ export function applyReleaseChangesets({
 
   // ---------------------------------------------------------- PHASE B
   // SIBLING RANGE REWRITES ARE COMPUTED ONLY AGAINST RELEASED PACKAGES --
-  // see this file's header, item 2. `bumpedVersions` is built EXCLUSIVELY
-  // from `namedPlans`, which itself only ever contains packages the
-  // (already out-of-band-filtered) `entries` set named and PHASE A
+  // see this file's header, item 2. `bumpedVersions` STARTS OUT built
+  // EXCLUSIVELY from `namedPlans`, which itself only ever contains packages
+  // the (already out-of-band-filtered) `entries` set named and PHASE A
   // accepted. A package filtered out above (or one that failed PHASE A)
   // can never appear here, so a dependent can never be rewritten to point
-  // at a version this run does not actually publish.
+  // at a version this run does not actually publish. It then GROWS as this
+  // phase discovers dependent-only bumps -- see the fixed-point loop below
+  // (issue #1377).
   const bumpedVersions = {};
   for (const p of namedPlans) bumpedVersions[p.manifest.name] = p.newVersion;
 
   const namedPlanByDir = new Map(namedPlans.map((p) => [p.pkg, p]));
+  const workspaceDirs = discoverWorkspacePackageDirs(root);
+
+  // A FIXED POINT OVER DEPENDENT-ONLY BUMPS (issue #1377)
+  // -----------------------------------------------------------------------
+  // A single pass over `workspaceDirs` only ever checks a sibling's range
+  // against `bumpedVersions` as PHASE A left it: a dependent-only patch
+  // bump THIS pass produces was never fed back in, so a THIRD package
+  // depending on a dependent-only-bumped package via an exact pin (or any
+  // range a one-step patch bump does not already cover) was left stale.
+  // This scans to a FIXED POINT instead: every round rescans every
+  // workspace package's ORIGINAL manifest text against the CURRENT
+  // `bumpedVersions`; a round that proves a brand-new dependent-only bump
+  // grows `bumpedVersions` (so the NEXT round can see it) and the loop
+  // runs again; a round that proves nothing new ends it. Each package's
+  // own manifest is read at most once (`manifestInfoFor()` below, cached)
+  // -- every round re-evaluates the SAME original text, never a
+  // previously-rewritten one, so a dependent-only bump decided in an
+  // earlier round is never double-applied: a dir that already has one
+  // (`dependentOnlyVersionByDir`) is never bumped a second time, it only
+  // ever accumulates MORE range-rewrite entries if a later round finds it
+  // also depends on something bumped after its own round (`updatesByDir`/
+  // `devUpdatesByDir`, keyed by section+name so rediscovering the identical
+  // update in a later round is a harmless no-op, not a duplicate).
+  const manifestInfoByDir = new Map(); // dir -> { manifestText, manifest } | null (null = unreadable, already a finding)
+  function manifestInfoFor(dir) {
+    if (manifestInfoByDir.has(dir)) return manifestInfoByDir.get(dir);
+    const namedPlan = namedPlanByDir.get(dir);
+    let info;
+    if (namedPlan) {
+      info = { manifestText: namedPlan.manifestText, manifest: namedPlan.manifest };
+    } else {
+      try {
+        const manifestText = readFileSync(join(root, "packages", dir, "package.json"), "utf8");
+        info = { manifestText, manifest: JSON.parse(manifestText) };
+      } catch (error) {
+        findings.push(`packages/${dir}/package.json is not valid JSON: ${errorMessage(error)}`);
+        info = null;
+      }
+    }
+    manifestInfoByDir.set(dir, info);
+    return info;
+  }
+
+  const updateKey = (u) => `${u.section}\u0000${u.name}`;
+  const updatesByDir = new Map(); // dir -> Map(updateKey -> update)  (dependencies/peerDependencies/optionalDependencies)
+  const devUpdatesByDir = new Map(); // dir -> Map(updateKey -> update)  (devDependencies)
+  const dependentOnlyVersionByDir = new Map(); // dir -> newVersion, assigned exactly once, the round its FIRST real update is found
+
+  // Safety bound, per issue #1377's own suggested fix: a cycle should be
+  // structurally impossible (a range can never resolve to a version of the
+  // package that declares it), and at most one NEW package can be proven
+  // bumped per round, so `workspaceDirs.length` rounds is already generous
+  // -- this fails closed with a finding rather than loop indefinitely if
+  // that assumption is ever wrong.
+  const MAX_ROUNDS = workspaceDirs.length + 1;
+  let round = 0;
+  let grew = true;
+  while (grew) {
+    round += 1;
+    if (round > MAX_ROUNDS) {
+      findings.push(`apply-release-changesets: sibling dependency-range fixed point did not converge within ${MAX_ROUNDS} round(s) -- refusing rather than loop indefinitely`);
+      break;
+    }
+    grew = false;
+
+    for (const dir of workspaceDirs) {
+      const info = manifestInfoFor(dir);
+      if (!info) continue; // unreadable manifest -- already a finding
+
+      const { updates, errors } = collectDependencyUpdates(`packages/${dir}/package.json`, info.manifest, bumpedVersions);
+      const { updates: devUpdates, errors: devErrors } = collectDependencyUpdates(`packages/${dir}/package.json`, info.manifest, bumpedVersions, DEV_DEPENDENCY_RANGE_SECTIONS);
+      if (errors.length > 0 || devErrors.length > 0) {
+        findings.push(...errors, ...devErrors);
+        continue;
+      }
+      if (updates.length === 0 && devUpdates.length === 0) continue;
+
+      if (updates.length > 0) {
+        const dirUpdates = updatesByDir.get(dir) ?? new Map();
+        for (const u of updates) dirUpdates.set(updateKey(u), u);
+        updatesByDir.set(dir, dirUpdates);
+      }
+      if (devUpdates.length > 0) {
+        const dirDevUpdates = devUpdatesByDir.get(dir) ?? new Map();
+        for (const u of devUpdates) dirDevUpdates.set(updateKey(u), u);
+        devUpdatesByDir.set(dir, dirDevUpdates);
+      }
+
+      // A DEPENDENT-ONLY PATCH BUMP COUNTS AS IN-BAND, ALWAYS -- see this
+      // file's header, item 3. No `outOfBandOnly` check here: this bump is
+      // unconditionally `"patch"`, the same level an out-of-band run's own
+      // default already permits, so it can never violate the out-of-band
+      // level gate PHASE A enforces above, and it happens the same way on
+      // every run regardless of `outOfBandOnly`. Assigned exactly once per
+      // dir -- a named package (already bumped by PHASE A) never reaches
+      // this branch at all, and a dir that already has a dependent-only
+      // version from an earlier round is skipped here (it only gained MORE
+      // update entries above, not a second bump).
+      if (!namedPlanByDir.has(dir) && updates.length > 0 && !dependentOnlyVersionByDir.has(dir)) {
+        let newVersion;
+        try {
+          newVersion = bumpVersion(info.manifest.version, "patch");
+        } catch (error) {
+          findings.push(`packages/${dir}: ${errorMessage(error)}`);
+          continue;
+        }
+        dependentOnlyVersionByDir.set(dir, newVersion);
+        bumpedVersions[info.manifest.name] = newVersion; // visible to the REST of this round, and every round after it
+        grew = true; // a later round may now find a THIRD-level dependent on THIS new version
+      }
+    }
+
+    // Same fail-closed contract as PHASE A/C -- a finding during scanning
+    // stops the run; no further round can make a finding go away.
+    if (findings.length > 0) break;
+  }
+
+  if (findings.length > 0) return { applied: [], findings, changesetFindings: [] };
+
   const namedExtraUpdates = new Map(); // pkg -> updates[] (dependencies/peerDependencies/optionalDependencies)
   const namedExtraDevUpdates = new Map(); // pkg -> updates[] (devDependencies)
   const dependentOnlyPlans = []; // { pkg, manifestPath, manifestText, manifest, newVersion, updates, devUpdates }
   const devDependencyOnlyPlans = []; // { pkg, manifestPath, manifestText, manifest, updates } -- devDependencies rewrite, no bump; see this file's header
 
-  for (const dir of discoverWorkspacePackageDirs(root)) {
-    const namedPlan = namedPlanByDir.get(dir);
-    const manifestPath = join(root, "packages", dir, "package.json");
+  for (const dir of workspaceDirs) {
+    const info = manifestInfoByDir.get(dir);
+    if (!info) continue; // unreadable manifest -- already a finding, and findings.length === 0 was just proven above, so this cannot actually happen; guarded anyway
 
-    let manifestText, manifest;
-    if (namedPlan) {
-      // Scan the ORIGINAL (pre-bump) text: this package's own dependency
-      // ranges on OTHER packages are unaffected by its own version bump.
-      manifestText = namedPlan.manifestText;
-      manifest = namedPlan.manifest;
-    } else {
-      try {
-        manifestText = readFileSync(manifestPath, "utf8");
-        manifest = JSON.parse(manifestText);
-      } catch (error) {
-        findings.push(`packages/${dir}/package.json is not valid JSON: ${errorMessage(error)}`);
-        continue;
-      }
-    }
-
-    const { updates, errors } = collectDependencyUpdates(`packages/${dir}/package.json`, manifest, bumpedVersions);
-    const { updates: devUpdates, errors: devErrors } = collectDependencyUpdates(`packages/${dir}/package.json`, manifest, bumpedVersions, DEV_DEPENDENCY_RANGE_SECTIONS);
-    if (errors.length > 0 || devErrors.length > 0) {
-      findings.push(...errors, ...devErrors);
-      continue;
-    }
+    const updates = [...(updatesByDir.get(dir)?.values() ?? [])];
+    const devUpdates = [...(devUpdatesByDir.get(dir)?.values() ?? [])];
     if (updates.length === 0 && devUpdates.length === 0) continue;
 
-    if (namedPlan) {
+    const manifestPath = join(root, "packages", dir, "package.json");
+
+    if (namedPlanByDir.has(dir)) {
       if (updates.length > 0) namedExtraUpdates.set(dir, updates);
       if (devUpdates.length > 0) namedExtraDevUpdates.set(dir, devUpdates);
       continue;
     }
 
-    if (updates.length === 0) {
+    const newVersion = dependentOnlyVersionByDir.get(dir);
+    if (newVersion) {
+      dependentOnlyPlans.push({ pkg: dir, manifestPath, manifestText: info.manifestText, manifest: info.manifest, newVersion, updates, devUpdates });
+    } else {
       // DEVDEPENDENCIES-ONLY: never triggers a dependent bump -- see this
       // file's header, "devDependencies IS SCANNED AND REWRITTEN TOO, BUT
       // NEVER TRIGGERS ITS OWN DEPENDENT BUMP". Written silently, with no
       // version change and no CHANGELOG entry, in PHASE C below.
-      devDependencyOnlyPlans.push({ pkg: dir, manifestPath, manifestText, manifest, updates: devUpdates });
-      continue;
+      devDependencyOnlyPlans.push({ pkg: dir, manifestPath, manifestText: info.manifestText, manifest: info.manifest, updates: devUpdates });
     }
-
-    // A DEPENDENT-ONLY PATCH BUMP COUNTS AS IN-BAND, ALWAYS -- see this
-    // file's header, item 3. No `outOfBandOnly` check here: this bump is
-    // unconditionally `"patch"`, the same level an out-of-band run's own
-    // default already permits, so it can never violate the out-of-band
-    // level gate PHASE A enforces above, and it happens the same way on
-    // every run regardless of `outOfBandOnly`.
-    let newVersion;
-    try {
-      newVersion = bumpVersion(manifest.version, "patch");
-    } catch (error) {
-      findings.push(`packages/${dir}: ${errorMessage(error)}`);
-      continue;
-    }
-    dependentOnlyPlans.push({ pkg: dir, manifestPath, manifestText, manifest, newVersion, updates, devUpdates });
   }
-
-  if (findings.length > 0) return { applied: [], findings, changesetFindings: [] };
 
   // ---------------------------------------------------------- PHASE C
   const applied = [];
