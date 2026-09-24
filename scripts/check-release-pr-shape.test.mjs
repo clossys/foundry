@@ -133,7 +133,51 @@ test("version bump with a consumed changeset at the WRONG level fails", () => {
   });
 });
 
-test("version bump with a matching CHANGELOG.md entry and no changeset passes (transition/direct-bump path)", () => {
+test("a consumed major-level changeset requires a Breaking changes CHANGELOG section", () => {
+  withRepo((root) => {
+    const pkgDir = makeFixture(root);
+    mkdirSync(join(root, ".changesets"), { recursive: true });
+    writeFileSync(join(root, ".changesets", "probe-break.md"), "---\nprobe: major\n---\n\nRemoved the deprecated foo() export.\n");
+    const base = gitCommit(root, "pending major changeset for probe");
+
+    const manifest = readManifest(pkgDir);
+    manifest.version = "2.0.0";
+    writeManifest(pkgDir, manifest);
+    rmSync(join(root, ".changesets", "probe-break.md"));
+    // Deliberately NOT writing a CHANGELOG.md Breaking changes section.
+
+    const r = run(["--json", "--base", base, pkgDir]);
+    const report = JSON.parse(r.out);
+    assert.equal(r.code, 1, r.out);
+    assert.equal(report.results[0].status, "not-release-shaped");
+    assert.match(report.results[0].detail, /Breaking changes/);
+  });
+});
+
+test("a consumed major-level changeset WITH a Breaking changes CHANGELOG section passes", () => {
+  withRepo((root) => {
+    const pkgDir = makeFixture(root);
+    mkdirSync(join(root, ".changesets"), { recursive: true });
+    writeFileSync(join(root, ".changesets", "probe-break.md"), "---\nprobe: major\n---\n\nRemoved the deprecated foo() export.\n");
+    const base = gitCommit(root, "pending major changeset for probe");
+
+    const manifest = readManifest(pkgDir);
+    manifest.version = "2.0.0";
+    writeManifest(pkgDir, manifest);
+    rmSync(join(root, ".changesets", "probe-break.md"));
+    writeFileSync(
+      join(pkgDir, "CHANGELOG.md"),
+      "# Changelog\n\n## 2.0.0 - 2026-09-26\n\n### Breaking changes\n\n- Removed the deprecated foo() export.\n\n- Removed the deprecated foo() export.\n",
+    );
+
+    const r = run(["--json", "--base", base, pkgDir]);
+    const report = JSON.parse(r.out);
+    assert.equal(r.code, 0, r.out);
+    assert.equal(report.results[0].status, "pass");
+  });
+});
+
+test("version bump with a matching CHANGELOG.md entry and no changeset passes (direct-bump path)", () => {
   withRepo((root) => {
     const pkgDir = makeFixture(root);
     writeFileSync(join(pkgDir, "CHANGELOG.md"), "# Changelog\n\n## 1.0.0\n\n- Initial release.\n");
