@@ -209,13 +209,57 @@ function oidcEnvironment(env = process.env, home) {
 // token, or a registry document. createOwnerPromptRelay() above only ever
 // forwards lines matching ITS OWN owner-input prompt patterns, so a plain
 // publish failure's error code was previously visible only in npm's own
-// debug log, never in this command's own output. Matches "npm error code
-// E<word characters>" exactly as npm 11 prints it; returns null (never an
-// empty string) when no such line is present, so callers can tell "found
-// nothing to relay" from "found an empty code" unambiguously.
+// debug log, never in this command's own output.
+//
+// The owner-present publish runs npm under /usr/bin/script, so npm sees a
+// PTY and colours its log prefix and draws a spinner. The real captured line
+// is `⠙ESC[1GESC[0KESC[1mnpmESC[22m ESC[31merrorESC[39m ESC[94mcodeESC[39m
+// ENEEDAUTH\r` -- never the plain text npm prints to a pipe. terminalText()
+// reduces PTY output to what the owner's terminal would visibly show: OSC and
+// CSI sequences removed, a return to column 1 (`\r` or ESC[1G, which npm's
+// spinner uses before erasing the line) discards what came before it on that
+// line, backspaces erase, and spinner glyphs and stray control bytes vanish.
+const OSC_SEQUENCE = /\u001b\][^\u0007\u001b]*(?:\u0007|\u001b\\)/g;
+const CURSOR_TO_COLUMN_ONE = /\u001b\[(?:0|1)?G/g;
+const CSI_SEQUENCE = /\u001b\[[0-?]*[ -\/]*[@-~]/g;
+const SPINNER_GLYPHS = /[\u2800-\u28ff]/g;
+const OTHER_CONTROLS = /[\u0000-\u0008\u000b-\u001f\u007f]/g;
+
+export function terminalText(text) {
+  const withoutEscapes = String(text ?? "")
+    .replace(OSC_SEQUENCE, "")
+    .replace(/\r+\n/g, "\n")
+    .replace(CURSOR_TO_COLUMN_ONE, "\r")
+    .replace(CSI_SEQUENCE, "");
+  return withoutEscapes.split("\n").map((line) => {
+    const trimmed = line.replace(/\r+$/, "");
+    const visible = [];
+    for (const character of trimmed.slice(trimmed.lastIndexOf("\r") + 1)) {
+      if (character === "\b") visible.pop();
+      else visible.push(character);
+    }
+    return visible.join("").replace(SPINNER_GLYPHS, "").replace(OTHER_CONTROLS, "");
+  }).join("\n");
+}
+
+// Only a whole line that STARTS with npm's own prefix counts, so an
+// `npm notice` file-list line that merely contains the phrase can never be
+// relayed ahead of npm's real code. The code is bounded, uppercase E plus
+// uppercase letters or digits, and must end at whitespace or end of text.
+// Returns null (never an empty string) when no such line is present, so
+// callers can tell "found nothing to relay" from "found an empty code".
+const NPM_ERROR_CODE_LINE = /(?:^|\n)npm error code (E[A-Z0-9]{1,32})(?=\s|$)/;
+
 export function extractNpmErrorCode(text) {
-  const match = /npm error code (E\w+)/.exec(text ?? "");
+  const match = NPM_ERROR_CODE_LINE.exec(terminalText(text));
   return match ? match[1] : null;
+}
+
+// stderr first, then stdout. Under the PTY both of npm's streams arrive on
+// the script utility's stdout, so the line-anchored grammar above -- not the
+// stream order -- is what keeps file-list text from being relayed.
+export function npmErrorCodeFromSession(session) {
+  return extractNpmErrorCode(session?.stderr) ?? extractNpmErrorCode(session?.stdout);
 }
 
 function runChecked(run, file, args, options, label) {
@@ -444,7 +488,7 @@ export async function publishQualifiedDirectory({
       // candidate tarball.
       const ownerSession = await interactiveRun(PTY_SCRIPT, ownerPresentPtyArgs(target.registry), { cwd: packageRoot, env: ownerPresentEnvironment(env), stdio: [process.stdin.isTTY === true ? "inherit" : "ignore", "pipe", "pipe"] }, createOwnerPromptRelay());
       if (ownerSession?.error || ownerSession?.signal || ownerSession?.status !== 0) {
-        const code = extractNpmErrorCode(`${ownerSession?.stdout ?? ""}\n${ownerSession?.stderr ?? ""}`);
+        const code = npmErrorCodeFromSession(ownerSession);
         throw new Error(code ? `owner-present npm publish failed (npm error code ${code})` : "owner-present npm publish failed");
       }
     } else {

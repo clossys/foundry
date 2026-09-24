@@ -10,7 +10,7 @@ import test from "node:test";
 import { once } from "node:events";
 import { promisify } from "node:util";
 
-import { argsFrom, createOwnerPromptRelay, extractNpmErrorCode, ownerPresentPtyArgs, publishExitCode, publishQualifiedDirectory, runInteractiveChild } from "./publish-qualified-directory.mjs";
+import { argsFrom, createOwnerPromptRelay, extractNpmErrorCode, npmErrorCodeFromSession, ownerPresentPtyArgs, publishExitCode, publishQualifiedDirectory, runInteractiveChild } from "./publish-qualified-directory.mjs";
 import { IndeterminateError } from "./verify-post-publish-public-npm-artifact.mjs";
 import { ALL_PACKAGE_RELEASE_ORDER } from "./check-release-catalog.mjs";
 
@@ -751,6 +751,62 @@ test("extractNpmErrorCode: finds npm's own \"npm error code E...\" line", () => 
   assert.equal(extractNpmErrorCode("npm error code EOTP\n"), "EOTP");
 });
 
+// FIXTURE RULE (#1462 review): every fake owner-present session below must
+// mirror what npm REALLY writes under the /usr/bin/script PTY, not what it
+// writes to a pipe. Under the PTY npm colours its "npm error code" prefix and
+// draws a spinner, and both of its streams arrive on script's stdout. The
+// first version of this relay was tested only with uncoloured fakes, so every
+// test passed while the real path never matched. The two lines below are
+// captured verbatim from real npm 11.17.0 runs through runInteractiveChild()
+// against an unreachable 127.0.0.1 registry (no real registry contacted).
+const REAL_PTY_E404_LINE = "\u001b[1mnpm\u001b[22m \u001b[31merror\u001b[39m \u001b[94mcode\u001b[39m E404";
+const REAL_PTY_ENEEDAUTH_LINE = "⠙\u001b[1G\u001b[0K\u001b[1mnpm\u001b[22m \u001b[31merror\u001b[39m \u001b[94mcode\u001b[39m ENEEDAUTH";
+// A whole real owner-present publish session's stdout, in the exact PTY shape
+// captured from npm 11.17.0 (\r\n line ends, spinner redraws, colour, the
+// ^D echo of ignored stdin); the log path is shortened to a placeholder.
+function realPtyPublishStdout(fileListLines = ["0B index.js"], code = "ENEEDAUTH") {
+  const line = (text) => `⠙\u001b[1G\u001b[0K\u001b[1mnpm\u001b[22m ${text}\r\n`;
+  const notice = (text) => line(`\u001b[96mnotice\u001b[39m${text ? ` ${text}` : ""}`);
+  return "^D\b\b" + notice("")
+    + notice("📦  @clossys/strategist@0.1.0")
+    + notice("\u001b[94mTarball Contents\u001b[39m")
+    + fileListLines.map((file) => notice(file)).join("")
+    + notice("\u001b[94mTarball Details\u001b[39m")
+    + notice("total files: 2")
+    + notice("")
+    + line(`\u001b[31merror\u001b[39m \u001b[94mcode\u001b[39m ${code}`)
+    + line("\u001b[31merror\u001b[39m \u001b[94mneed auth\u001b[39m This command requires you to be logged in to https://registry.npmjs.org/")
+    + line("\u001b[31merror\u001b[39m A complete log of this run can be found in: <log path>")
+    + "⠙\u001b[1G\u001b[0K";
+}
+
+test("extractNpmErrorCode: matches npm's REAL coloured PTY lines, captured verbatim", () => {
+  assert.equal(extractNpmErrorCode(REAL_PTY_E404_LINE), "E404");
+  assert.equal(extractNpmErrorCode(`${REAL_PTY_E404_LINE}\r\n`), "E404");
+  assert.equal(extractNpmErrorCode(REAL_PTY_ENEEDAUTH_LINE), "ENEEDAUTH");
+  assert.equal(extractNpmErrorCode(`${REAL_PTY_ENEEDAUTH_LINE}\r\n`), "ENEEDAUTH");
+  assert.equal(extractNpmErrorCode(realPtyPublishStdout()), "ENEEDAUTH");
+  assert.equal(npmErrorCodeFromSession({ status: 1, stdout: realPtyPublishStdout(), stderr: "" }), "ENEEDAUTH");
+});
+
+test("extractNpmErrorCode: rejects an unbounded, lowercase, or underscore-extended code", () => {
+  assert.equal(extractNpmErrorCode(`npm error code E${"A".repeat(5000)}\n`), null, "a 5000-char code is never relayed");
+  assert.equal(extractNpmErrorCode(`npm error code E${"A".repeat(32)}\n`), `E${"A".repeat(32)}`, "32 characters after E is the bound");
+  assert.equal(extractNpmErrorCode(`npm error code E${"A".repeat(33)}\n`), null);
+  assert.equal(extractNpmErrorCode("npm error code eneedauth\n"), null, "lowercase is rejected");
+  assert.equal(extractNpmErrorCode("npm error code Eneedauth\n"), null, "lowercase after E is rejected");
+  assert.equal(extractNpmErrorCode("npm error code ELOGIN_user_name_here\n"), null, "a code must end at whitespace, not run into other text");
+});
+
+test("extractNpmErrorCode: an npm notice file-list line containing the phrase is never relayed ahead of the real code", () => {
+  const hostile = ["0B index.js", "12B npm error code EFAKE.txt", "9B docs/npm error code EOTHER"];
+  assert.equal(extractNpmErrorCode(realPtyPublishStdout(hostile, "E403")), "E403");
+  assert.equal(npmErrorCodeFromSession({ status: 1, stdout: realPtyPublishStdout(hostile, "E403"), stderr: "" }), "E403");
+  assert.equal(extractNpmErrorCode("npm notice 12B npm error code EFAKE.txt\n"), null);
+  assert.equal(npmErrorCodeFromSession({ stdout: "npm error code E404\n", stderr: "npm error code EOTP\n" }), "EOTP", "stderr is consulted before stdout");
+  assert.equal(npmErrorCodeFromSession(undefined), null);
+});
+
 test("extractNpmErrorCode: returns null (not empty string) when there is no such line", () => {
   assert.equal(extractNpmErrorCode(""), null);
   assert.equal(extractNpmErrorCode(undefined), null);
@@ -776,9 +832,14 @@ test("a failed owner-present PTY session relays ONLY npm's own error code, never
       env: { PATH: process.env.PATH, HOME: item.root, PUBLIC_SAFETY_DENYLIST: item.denylist },
       isInteractiveTerminal: () => true,
       run,
+      // Mirrors the real PTY session (see FIXTURE RULE above): coloured, on
+      // stdout, with spinner redraws -- never an uncoloured stderr fake.
       interactiveRun: async () => ({
-        status: 1, signal: null, stdout: "",
-        stderr: "npm error code E404\nnpm error 404 Not Found - PUT https://registry.npmjs.org/@clossys%2fstrategist - Not found\nnpm error 404 This package name is not yet public: @clossys/strategist\n",
+        status: 1, signal: null, stderr: "",
+        stdout: realPtyPublishStdout(["0B index.js"], "E404").replace(
+          "This command requires you to be logged in to https://registry.npmjs.org/",
+          "404 This package name is not yet public: @clossys/strategist",
+        ),
       }),
       verify: async () => { throw new Error("verification must never run after a failed publish"); },
     }),
