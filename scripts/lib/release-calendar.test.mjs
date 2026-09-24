@@ -249,8 +249,8 @@ test("inProgressReleaseBranches: a mix keeps only the genuinely in-progress bran
   assert.deepEqual(inProgressReleaseBranches(branches, prsByBranch), ["claude/release-2027-01-01-1", "claude/release-2027-01-15-3", "claude/release-2027-01-22-4"]);
 });
 
-test("releaseBranchPrListArgs: asks gh for every PR on the head name, with the cross-repository flag", () => {
-  assert.deepEqual(releaseBranchPrListArgs("clossys/foundry", B), ["pr", "list", "--repo", "clossys/foundry", "--head", B, "--state", "all", "--json", "state,isCrossRepository"]);
+test("releaseBranchPrListArgs: asks gh for every PR on the head name (not just the default 30), with the cross-repository flag", () => {
+  assert.deepEqual(releaseBranchPrListArgs("clossys/foundry", B), ["pr", "list", "--repo", "clossys/foundry", "--head", B, "--state", "all", "--limit", "1000", "--json", "state,isCrossRepository"]);
 });
 
 test("inProgressReleaseBranches: empty/missing inputs return no matches rather than throwing", () => {

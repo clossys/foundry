@@ -167,7 +167,7 @@ export function filterReleasePrBranchRefs(lsRemoteOutput) {
  * as does any OPEN or unrecognised state and any malformed entry.
  */
 export function releaseBranchPrListArgs(repository, branch) {
-  return ["pr", "list", "--repo", repository, "--head", branch, "--state", "all", "--json", "state,isCrossRepository"];
+  return ["pr", "list", "--repo", repository, "--head", branch, "--state", "all", "--limit", "1000", "--json", "state,isCrossRepository"];
 }
 
 export function isLeftoverReleaseBranch(prs) {

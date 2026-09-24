@@ -280,7 +280,7 @@ function evaluatePackage(pkgDir, requestedBase) {
       status: "pass",
       detail: `version bumped from ${baseVersion} to ${version} (${bumpLevel}), matching the consumed changeset(s) ${consumed.map((c) => c.file).join(", ")} -- release-PR shaped`,
       ...bumpFields,
-        changesetConsumed: true,
+      changesetConsumed: true,
     };
   }
 
