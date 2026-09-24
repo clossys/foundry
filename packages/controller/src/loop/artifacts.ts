@@ -20,9 +20,15 @@ import { computeDigest } from "../policy/digest.js";
 
 const ROLE_FOLDER_PREFIX = (role: string): string => `clossys/${role.split("/").pop()}/`;
 
-/** A path a role is about to write falls under that role's own `clossys/<role>/` folder -- the one boundary every operation here shares. */
+/**
+ * A path a role is about to write falls under that role's own
+ * `clossys/<role>/` folder -- the one boundary every operation here shares.
+ * Backslashes count as separators too, so a Windows-style `..\` segment
+ * cannot escape the folder where a caller applies the path on Windows.
+ */
 export function isOwnedByRole(role: string, path: string): boolean {
-  return path.startsWith(ROLE_FOLDER_PREFIX(role)) && !path.split("/").includes("..");
+  const normalized = path.replace(/\\/g, "/");
+  return normalized.startsWith(ROLE_FOLDER_PREFIX(role)) && !normalized.split("/").includes("..");
 }
 
 export interface CreateOrUpdatePlan {
