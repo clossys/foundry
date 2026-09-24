@@ -2,7 +2,7 @@
 // hook, deny-tier2-edit.mjs.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, rmSync, symlinkSync } from "node:fs";
+import { mkdtempSync, mkdirSync, rmSync, symlinkSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
@@ -166,6 +166,81 @@ test("round-8: a dangling symlink to something UNRELATED is not blocked", () => 
     const linkPath = join(dir, "neutral3.json");
     symlinkSync("some/unrelated/not-yet-created.json", linkPath);
     assert.equal(run({ file_path: linkPath }), 0, "a dangling symlink to an unrelated path is allowed");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+// #1187 escalation-rule round 9, strong-class reviewer, blocking B1: on
+// a case-insensitive, Unicode-normalizing filesystem (APFS, macOS's
+// default), a path differing only by U+017F (LATIN SMALL LETTER LONG S,
+// "ſ") in place of "s", or U+212A (KELVIN SIGN) in place of "K", reads
+// and writes the SAME real file as the plain-ASCII spelling, but was
+// previously an unmatched, different JS string entirely.
+test("round-9 fix: a Unicode long-s (U+017F) substitution for a protected basename still blocks", () => {
+  const longS = "ſ"; // ſ
+  assert.equal(run({ file_path: `.claude/${longS}ettings.json` }), 2, ".claude/ſettings.json (long s for s)");
+  assert.equal(
+    run({ file_path: `.claude/settings.local.j${longS}on` }),
+    2,
+    ".claude/settings.local.jſon (long s for s)",
+  );
+  assert.equal(
+    run({ file_path: `governance/decisions/hitl-e${longS}calation-rule.json` }),
+    2,
+    "hitl-eſcalation-rule.json (long s for s)",
+  );
+  assert.equal(run({ file_path: `scripts/hooks/deny-tier2-edit.mj${longS}` }), 2, "deny-tier2-edit.mjſ (long s for s)");
+});
+
+test("round-9 fix: a Unicode Kelvin sign (U+212A) substitution for an ordinary K still blocks", () => {
+  const kelvin = "K"; // K (KELVIN SIGN)
+  // docs/HITL-HOOKS.md contains an ordinary "K" in "HOOKS" -- substitute
+  // the Kelvin sign for it. NFKC folds U+212A back to ordinary "K", so
+  // this should match the same protected basename.
+  assert.equal(run({ file_path: `docs/HITL-HOO${kelvin}S.md` }), 2, "docs/HITL-HOO(Kelvin)S.md");
+});
+
+test("round-9: normal Unicode text unrelated to any protected name is not blocked", () => {
+  assert.equal(run({ file_path: "docs/日本語のファイル.md" }), 0, "an unrelated non-ASCII filename is allowed");
+});
+
+// #1187 escalation-rule round 9, both reviewers, blocking B2/N1: a
+// dangling symlink whose target is reached through a SYMLINKED ANCESTOR
+// directory (as opposed to a symlinked ancestor whose target already
+// fully exists, already covered above) previously returned the
+// unresolved lexical target, missing that the alias directory itself
+// resolves to the real, protected ancestor.
+test("round-9 fix: a dangling symlink target reached through a symlinked ALIAS directory is still blocked", () => {
+  const dir = mkdtempSync(join(tmpdir(), "deny-tier2-edit-test-"));
+  try {
+    const realClaudeDir = join(dir, ".claude");
+    mkdirSync(realClaudeDir);
+    const aliasDir = join(dir, "claudealias");
+    symlinkSync(realClaudeDir, aliasDir);
+    // The dangling link points INTO the alias directory, at a file that
+    // does not exist yet -- neither "aliasDir/settings.local.json" nor
+    // ".claude/settings.local.json" exists on disk.
+    const linkPath = join(dir, "neutral4.json");
+    symlinkSync(join(aliasDir, "settings.local.json"), linkPath);
+    assert.equal(
+      run({ file_path: linkPath }),
+      2,
+      "a dangling symlink reached through a symlinked ancestor still resolves and blocks",
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("round-9: a dangling symlink through a DANGLING ancestor symlink (nothing real anywhere) is allowed", () => {
+  const dir = mkdtempSync(join(tmpdir(), "deny-tier2-edit-test-"));
+  try {
+    const danglingAliasDir = join(dir, "futurecfg"); // points at a directory that does not exist
+    symlinkSync(join(dir, ".claude-future"), danglingAliasDir);
+    const linkPath = join(dir, "neutral5.json");
+    symlinkSync(join(danglingAliasDir, "settings.local.json"), linkPath);
+    assert.equal(run({ file_path: linkPath }), 0, "nothing here resolves to a real protected path");
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

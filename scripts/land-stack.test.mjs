@@ -288,7 +288,7 @@ test("classifyTier: union over paths, max over tiers, exemption carve-out applie
   assert.deepEqual(mixed.tier2Paths, ["governance/model-qualifications/allowlist.json"]);
 });
 
-test("classifyTier against the real governance/review-tiers.json: the enforcement surface is tier-2 (self-inclusion), decisions/ is tier-1 (not tier-0)", () => {
+test("classifyTier against the real governance/review-tiers.json: the enforcement surface is tier-2 (self-inclusion), decisions/ is tier-2 (not tier-0 or tier-1)", () => {
   const config = JSON.parse(readFileSync(join(repoRoot, "governance", "review-tiers.json"), "utf8"));
   const tierGlobs = {
     tier1: config.tier1.globs,

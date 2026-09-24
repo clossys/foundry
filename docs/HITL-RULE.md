@@ -14,7 +14,14 @@ that supersedes the one below, are classified **tier-2** by
 `governance/review-tiers.json`'s `tier2.globs`, and are listed in the
 protected paths of the user-level deny hook described in
 [`docs/HITL-HOOKS.md`](HITL-HOOKS.md) (also tier-2, for the same reason
-this file is — see that file's own header).
+this file is — see that file's own header). As of round 8, `tier2.globs`
+also names the WHOLE `governance/decisions/**` directory directly (#1187
+escalation-rule round 9, fresh final reviewer, non-blocking: an earlier
+draft of this paragraph described only the narrower
+`hitl-escalation-rule*.json` glob, which by itself would miss a
+same-rule-superseding record under a name that doesn't match that
+naming convention) — see `governance/review-tiers.json`'s own `$comment`
+for why.
 
 ## Escalation rule (owner-ratified 2026-09-23)
 
@@ -153,13 +160,20 @@ states.
 - **Implementation of the "Final rule" table's "Two reviews" row, governance/security/gate carve-out**:
   not yet implemented. `evaluateTier1Independence` enforces two
   independent reviewers but has no notion of a required strong-class
-  reviewer, "verdicts given before either sees the other's", or "a fresh
-  final reviewer with no history on the PR" for any path,
+  reviewer, "verdicts given before either sees the other's", or a fresh
+  strong-class reviewer with no history on the PR (Accepted item 6's own
+  words: "the last approval has to come from a fresh strong-class
+  reviewer with no history on the PR") for any path,
   governance/security/gate or otherwise (#1187 escalation-rule round 8,
   strong-class reviewer, blocking B7: an earlier draft put "strong-class"
   in quotation marks as "strong-reasoning class" — a paraphrase, not the
-  ratified text's own term — corrected here to the exact word the rule
-  uses, unquoted where it isn't a direct quote). Tracked in #1350 and
+  ratified text's own term — corrected to the exact word the rule uses;
+  #1187 escalation-rule round 9, both reviewers, blocking: a later draft
+  of this SAME sentence then quoted "a fresh final reviewer with no
+  history on the PR", splicing the table's "a fresh final reviewer" onto
+  item 6's "with no history on the PR" as if it were one phrase from one
+  place — corrected here to item 6's own unspliced words, unquoted
+  everywhere else it isn't a direct quote). Tracked in #1350 and
   `docs/HITL.md`'s "Before switching to enforce" section.
 - **Implementation of the "Land, log and notify" mode**: not implemented
   at all. No digest, no revert-tracking, no risk-ranking, no 8-week-shrink
@@ -187,7 +201,9 @@ report-only, then enforce" section, beyond the additions this pull
 request makes and documents explicitly: the `channel`-based tier-2
 authority restriction in `evaluateTier2Decision` (see "Channel enforcement"
 below), and `tier2.globs`'s new entries for this file, `docs/HITL-HOOKS.md`,
-the decision record, and the deny-hook scripts.
+the decision record, and the deny-hook script (#1187 escalation-rule
+round 9, fresh final reviewer, non-blocking: singular as of round 8 --
+the companion Bash-matched script was removed).
 
 The code in this slice implements a NARROWER slice of the rule above, not
 every part of it:
@@ -201,11 +217,14 @@ every part of it:
   text contains no such requirement, and the phrase has been removed --
   see `docs/HITL.md` item 8, retracted for the same reason). Tracked in
   #1350 (see `docs/HITL.md`'s "Before switching to enforce" section).
-- **"Autonomous: tier-0 paths, logged"** matches the code's own tier-0
-  fast path (`runStatus` skips review-evidence reads entirely for a
-  tier-0 classification — see `docs/HITL.md`'s "Where each tier is
-  enforced" section), though
-  "logged" here means only that `land-stack.mjs --status`'s own JSON output
+- **The "Autonomous" row** ("Autonomous | Tier-0 paths | Logged" — three
+  separate table cells, not one quoted sentence; #1187 escalation-rule
+  round 9, fresh final reviewer, blocking B1: an earlier draft flattened
+  and re-cased them into a single quoted phrase, "Autonomous: tier-0
+  paths, logged") matches the code's own tier-0 fast path (`runStatus`
+  skips review-evidence reads entirely for a tier-0 classification — see
+  `docs/HITL.md`'s "Where each tier is enforced" section), though
+  "Logged" here means only that `land-stack.mjs --status`'s own JSON output
   reports the tier, not a durable log of every tier-0 action taken.
 - **"Your approval first"** partially maps to the existing tier-2
   owner-decision-record requirement (`evaluateTier2Decision`), but the

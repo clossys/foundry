@@ -32,7 +32,9 @@ import { dirname, basename, resolve, isAbsolute } from "node:path";
 // immediate ".claude/" parent, so ".vscode/settings.json",
 // "app-settings.json", "usersettings.json", and
 // "test/fixtures/settings.json" in ANY repository (these hooks are
-// user-level) are never blocked.
+// user-level) are never blocked. `.claude/settings.json` blocks in EVERY
+// repository on the machine, not only this one's -- see
+// docs/HITL-HOOKS.md for why that is the intended, documented scope.
 const PROTECTED_BASENAMES = [
   /(^|\/)hitl-escalation-rule[\w.-]*\.json$/i,
   /(^|\/)HITL-RULE\.md$/i,
@@ -42,30 +44,74 @@ const PROTECTED_BASENAMES = [
   /(^|\/)\.claude\/settings(\.local)?\.json$/i,
 ];
 
+// #1187 escalation-rule round 9, strong-class reviewer, blocking B1: the
+// patterns above only fold ASCII case (regex /i). On a case-INSENSITIVE,
+// Unicode-normalizing filesystem such as APFS (macOS's default), a path
+// that substitutes U+017F (LATIN SMALL LETTER LONG S, "ſ") for an
+// ordinary "s", or U+212A (KELVIN SIGN, "K") for an ordinary "K", reads
+// and writes the SAME on-disk file as the plain-ASCII spelling, but is a
+// DIFFERENT JavaScript string that regex /i alone does not fold --
+// ".claude/ſettings.json" (ſ, not s) passed this hook entirely
+// unmatched, while `fs.writeFileSync` on that same path silently
+// overwrote the real ".claude/settings.json". NFKC normalization maps
+// both ſ and Kelvin-K to their ordinary ASCII forms (among other
+// compatibility foldings), closing this for a not-yet-existing path too
+// -- not only one the filesystem could already resolve.
+function normalizePathForMatching(p) {
+  return p.normalize("NFKC");
+}
+
+// Walks up from `p` to the nearest ancestor directory that actually
+// exists, resolving it with realpathSync.native (following any symlinks
+// along that ancestry chain -- including a symlinked ancestor directory
+// itself, #1187 escalation-rule round 9, both reviewers, blocking B2/N1:
+// a dangling symlink's target reached through an ALIAS directory, e.g.
+// `link -> aliasDir/settings.local.json` where `aliasDir -> .claude`,
+// previously returned the un-resolved lexical target, missing that
+// `aliasDir` itself resolves to the real, protected `.claude`), then
+// re-appends whatever portion of `p` did not exist, lexically, on top of
+// that real ancestor.
+function resolveExistingAncestor(p) {
+  const tail = [];
+  let current = p;
+  for (let i = 0; i < 100; i++) {
+    try {
+      const real = realpathSync.native(current);
+      return tail.length ? `${real}/${tail.join("/")}` : real;
+    } catch {
+      const parent = dirname(current);
+      if (parent === current) return p; // reached the filesystem root with nothing resolvable
+      tail.unshift(basename(current));
+      current = parent;
+    }
+  }
+  return p;
+}
+
 // Resolves symlinks before comparing, so a symlink ALIAS to a protected
 // path (or through a symlinked ancestor directory) can't bypass basename
-// matching by presenting a different path string for the same real file.
+// matching by presenting a different path string for the same real
+// file. Uses realpathSync.native (the OS's own realpath syscall), not
+// the pure-JS realpathSync, so the CANONICAL on-disk spelling is used on
+// a case-folding/Unicode-normalizing filesystem (#1187 escalation-rule
+// round 9, strong-class reviewer, blocking B1) -- realpathSync alone
+// does not consult the filesystem for this at all, so it returns
+// whatever string it was given, unresolved to the real name.
 function resolveRealPath(targetPath) {
+  const normalized = normalizePathForMatching(targetPath);
   try {
-    return realpathSync(targetPath);
+    return realpathSync.native(normalized);
   } catch {
-    // realpathSync throws both for an ordinary not-yet-existing path AND
-    // for a DANGLING symlink (a symlink whose OWN target doesn't exist
-    // yet either -- it can never resolve one of those, no matter how
-    // much of the rest of the path exists) -- #1187 escalation-rule
-    // round 8, strong-class reviewer, blocking B2: an earlier version
-    // treated both cases the same way (resolve only the parent
-    // directory, then re-append the ORIGINAL path's own basename), which
-    // for a dangling symlink means re-appending the LINK's name, not
-    // its target -- so a symlink literally named `neutral.json` pointing
-    // at `.claude/settings.local.json` (which doesn't exist yet) was
-    // never recognized as protected at all. Follow the symlink chain
-    // manually instead: lstat (which does NOT follow the link, so it
-    // succeeds even when the target is dangling), read its target with
-    // readlink, resolve that target relative to the LINK's OWN
-    // directory (not the caller's cwd), and repeat, bounded, in case of
-    // a chain of links.
-    let current = targetPath;
+    // realpathSync.native throws both for an ordinary not-yet-existing
+    // path AND for a DANGLING symlink (a symlink whose OWN target
+    // doesn't exist yet either) -- it can never resolve one of those, no
+    // matter how much of the rest of the path exists. Follow the
+    // symlink chain manually instead: lstat (which does NOT follow the
+    // link, so it succeeds even when the target is dangling), read its
+    // target with readlink, resolve that target relative to the LINK's
+    // OWN directory (not the caller's cwd), and repeat, bounded, in case
+    // of a chain of links.
+    let current = normalized;
     for (let hop = 0; hop < 40; hop++) {
       let stat;
       try {
@@ -80,27 +126,25 @@ function resolveRealPath(targetPath) {
       } catch {
         break;
       }
-      current = isAbsolute(linkTarget) ? linkTarget : resolve(dirname(current), linkTarget);
+      const resolved = isAbsolute(linkTarget) ? linkTarget : resolve(dirname(current), linkTarget);
+      current = normalizePathForMatching(resolved);
     }
-    if (current !== targetPath) return current;
-
-    // Not a symlink (dangling or otherwise) either -- fall back to
-    // resolving only the existing portion of the path (its parent
-    // directory), so a symlinked ANCESTOR directory still can't alias a
-    // protected path for a not-yet-existing target underneath it.
-    try {
-      const realDir = realpathSync(dirname(targetPath));
-      return `${realDir}/${basename(targetPath)}`;
-    } catch {
-      return targetPath;
-    }
+    // Whether or not a symlink was followed above, resolve as much of
+    // the FINAL path's ancestry as exists -- walking up, and through any
+    // symlinked ancestor directory along the way -- then re-append
+    // whatever tail did not exist. This covers a plain not-yet-existing
+    // path, a dangling symlink whose target is a plain not-yet-existing
+    // path, AND a dangling symlink whose target is reached through a
+    // symlinked ancestor directory, uniformly, with one fallback.
+    return resolveExistingAncestor(current);
   }
 }
 
 function isProtected(targetPath) {
-  if (PROTECTED_BASENAMES.some((re) => re.test(targetPath))) return true;
+  const normalized = normalizePathForMatching(targetPath);
+  if (PROTECTED_BASENAMES.some((re) => re.test(normalized))) return true;
   const resolved = resolveRealPath(targetPath);
-  if (resolved !== targetPath && PROTECTED_BASENAMES.some((re) => re.test(resolved))) return true;
+  if (resolved !== normalized && PROTECTED_BASENAMES.some((re) => re.test(resolved))) return true;
   return false;
 }
 

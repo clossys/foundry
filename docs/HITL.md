@@ -756,8 +756,8 @@ implemented, so there is nothing to "fix" before enforce so much as
 something to BUILD. Listed here because the same principle applies:
 shipping `"enforce"` on the existing tier-1 gate should not be read as
 also having shipped these. **Item 8 has since been retracted** (see
-below, and item 12) — the numbering is kept stable rather than
-renumbered so this list's item numbers keep matching issue #1350's own.
+below) — the numbering is kept stable rather than renumbered so this
+list's item numbers keep matching issue #1350's own.
 
 5. **The fresh-final-reviewer requirement (Accepted item 6) is not
    implemented.** The ratified text: "For governance, security or gate
@@ -784,8 +784,12 @@ renumbered so this list's item numbers keep matching issue #1350's own.
    own `relaxesGateOrPolicy` note already discusses) rather than a
    mechanically-verifiable one, documented as such rather than implied to
    be checked.
-7. **"Both reviewers strong-class" (Accepted item 6, and the "Two
-   reviews" table row) is not implemented or checkable.** Nothing in
+7. **Both reviewers being strong-class (the "Two reviews" table row's
+   own "both strong-class" -- not Accepted item 6, which does not say
+   this at all) is not implemented or checkable** (#1187 escalation-rule
+   round 9, both reviewers, blocking: an earlier draft of this heading
+   quoted "Both reviewers strong-class" and cited item 6 for it; neither
+   the wording nor the citation is accurate). Nothing in
    `scripts/land-stack.mjs` or `docs/contracts/review-record.json` checks
    a reviewer's `model`/`provider` against any notion of being
    strong-class (#1187 escalation-rule round 8, strong-class reviewer,
@@ -815,7 +819,10 @@ renumbered so this list's item numbers keep matching issue #1350's own.
    not implemented.** The ratified text (Accepted item 7): "at most 5
    items per digest, ranked by risk, each with its revert" — and the
    "Land, log and notify" table row: "Two reviews, a decision-log entry,
-   and at most 5 digest items you can veto." No digest artifact, no
+   and at most 5 digest items you can veto" (#1187 escalation-rule round
+   9, strong-class reviewer, non-blocking: an earlier draft added a
+   trailing period the source's table cell does not have). No digest
+   artifact, no
    revert-tracking, and no risk-ranking exists anywhere in this
    repository. **Needs before enforce (or before this mode is used at
    all):** the whole land-log-and-notify mechanism is new work, not a fix
@@ -826,8 +833,12 @@ renumbered so this list's item numbers keep matching issue #1350's own.
     existing first (there is no notify category to narrow without a
     digest), so this is downstream of that work, not a separate gap to
     close independently.
-11. **"An enforce ask must include measured report-only results" (Accepted
-    item 3) is not automated.** The ratified text: "When you're asked to
+11. **Accepted item 3's requirement that an enforce ask include measured
+    report-only results is not automated** (#1187 escalation-rule round
+    9, both reviewers, blocking: an earlier draft of this heading put
+    that paraphrase in quotation marks as if it were the rule's own
+    words; the body immediately below already quotes item 3 correctly).
+    The ratified text: "When you're asked to
     switch a gate to enforce, the ask must show the combined change since
     you last approved that gate, plus measured results from its
     report-only run." Nothing in this repository currently generates that
@@ -1023,8 +1034,12 @@ limit this design accepts on purpose, not a bug it missed.)
 - **A user-level deny hook is a seatbelt, not a lock (see
   `docs/HITL-HOOKS.md`).** It runs in the same session it is meant to
   constrain, in a settings file that session (or any other on the same
-  machine) could in principle edit, and it covers a fixed, named list of
-  command shapes — not every way to accomplish the same end.
+  machine) could in principle edit, and it covers a fixed list of
+  protected PATHS (#1187 escalation-rule round 9, fresh final reviewer,
+  blocking B3: this sentence still described the removed Bash hook's
+  "fixed, named list of command shapes" -- the remaining Edit/Write hook
+  covers paths, not shell command shapes at all) — not every way to
+  write to one.
 
 None of this is a reason not to build the slice — the alternative is no
 structure and no trail at all. It is a reason to say, in this document,

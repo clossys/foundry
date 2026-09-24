@@ -99,8 +99,16 @@ record and any superseding successor record, matching the tier-2 glob),
 `~/.claude/settings.json`/`.claude/settings.local.json` (either of which
 can register or disable this hook -- protecting the script without
 protecting the settings file that controls it would not be real
-protection at all). Every pattern is anchored to a path boundary (start
-of string, or immediately after a `/`), so a coincidental substring match
+protection at all). **The `.claude/settings.local.json` pattern has no
+repository scope at all** (#1187 escalation-rule round 9, strong-class
+reviewer, non-blocking N2): since this hook runs at the user level, it
+blocks an `Edit`/`Write` of `.claude/settings.local.json` in EVERY
+repository on the machine, not only this one -- the same reasoning that
+already applies to `~/.claude/settings.json` (there is only ever one of
+those), stated once more here because the project-scoped file's own
+per-repository copy is what this actually stops an agent from editing,
+anywhere. Every pattern is anchored to a path boundary (start of string,
+or immediately after a `/`), so a coincidental substring match
 never counts:
 
 ```js
