@@ -6,7 +6,8 @@ name: Conversation safety review relay
 # WHICH review or review comment was posted — never its text — and nothing
 # else. conversation-safety.yml's `workflow_run` trigger picks the record up,
 # runs from the default branch, fetches the text itself by id through the
-# API, scans it, and labels a finding.
+# API together with every earlier revision in its edit history, scans it,
+# and labels a finding.
 #
 # WHY IT HOLDS NOTHING
 # --------------------

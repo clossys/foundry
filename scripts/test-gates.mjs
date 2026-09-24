@@ -5561,7 +5561,7 @@ try {
       check(
         "#944: pull_request_review fetches and scans inline comments attached to a submitted review in this run",
         /inline comments attached to a submitted review are fetched and scanned in this run/i.test(eventWorkflow) &&
-          /node scripts\/check-conversation-safety\.mjs --pr "\$RELAY_PR_NUMBER" --review "\$RELAY_REVIEW_ID" --require-denylist < "\$text_file"/.test(gateRun) &&
+          /node scripts\/check-conversation-safety\.mjs --pr "\$RELAY_PR_NUMBER" --review "\$RELAY_REVIEW_ID" --edit-history --require-denylist/.test(gateRun) &&
           /^ {2}pull_request_review:\n {4}types: \[submitted, edited\]/m.test(relayWorkflow) &&
           !/still arrive as their own/.test(eventWorkflow) &&
           !/separate pull_request_review_comment events and are scanned by/.test(eventWorkflow),

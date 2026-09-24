@@ -66,12 +66,24 @@ name: Conversation safety
 # no secret, checks out nothing, and uploads only the event's identifiers
 # (repository, pull request number, review or comment id). This workflow's
 # `workflow_run` trigger then runs from the default branch, validates that
-# record as untrusted data (scripts/validate-review-relay-event.mjs), fetches
-# the review or comment text itself by id through the API — never from the
-# record — and scans and labels exactly as for every other event. A finding
-# on review text therefore shows as the `public-safety` label on the pull
-# request plus a failed run of this workflow on the default branch, not as a
-# failed check on the pull request's head.
+# record as untrusted data (scripts/validate-review-relay-event.mjs), and
+# fetches the review or comment itself by id through the API — never from the
+# record. Because that fetch happens after the event, it returns the CURRENT
+# text rather than the text as posted, so it also reads the object's GraphQL
+# edit history (userContentEdits) and scans every earlier revision: text
+# posted with a finding and edited clean before this run is still public in
+# that history and is still labelled. For a review this covers the summary
+# and each of its inline comments. An edit history that cannot be read is
+# "could not run" (red), never a pass. Labelling is then the same as for
+# every other event. A finding on review text therefore shows as the
+# `public-safety` label on the pull request plus a failed run of this
+# workflow on the default branch, not as a failed check on the pull
+# request's head.
+#
+# A pull request can edit its own copy of the relay, and so can stop its own
+# review events from being relayed. That gains it no credential, and
+# conversation-safety-sweep.yml, which runs from the default branch and reads
+# every review and comment, remains the backstop for anything not relayed.
 
 on:
   issues:
@@ -143,18 +155,21 @@ concurrency:
 jobs:
   scan:
     name: conversation safety
-    # For workflow_run, only a successful run of the relay FILE (not merely a
-    # workflow with its display name) on one of the two review events.
+    # For workflow_run, only a run of the relay FILE (not merely a workflow
+    # with its display name) on one of the two review events. Its conclusion
+    # is deliberately not checked: a failed or cancelled relay uploads no
+    # record, so the download below fails and this run goes red instead of
+    # silently skipping a review that was never scanned.
     if: >-
       github.event_name != 'workflow_run'
-      || (github.event.workflow_run.conclusion == 'success'
-      && github.event.workflow_run.path == '.github/workflows/conversation-safety-review-relay.yml'
+      || (github.event.workflow_run.path == '.github/workflows/conversation-safety-review-relay.yml'
       && (github.event.workflow_run.event == 'pull_request_review'
       || github.event.workflow_run.event == 'pull_request_review_comment'))
     runs-on: ubuntu-latest
     timeout-minutes: 5
     # Read-only. pull-requests: read lists a review's inline comments and
-    # fetches relayed review text; actions: read downloads the relay record.
+    # fetches relayed review text and its GraphQL edit history; actions: read
+    # downloads the relay record.
     permissions:
       contents: read
       pull-requests: read
@@ -247,8 +262,9 @@ jobs:
           PR_TITLE: ${{ github.event.pull_request.title }}
           PR_TEXT: ${{ github.event.pull_request.body }}
           # workflow_run only: validated by the step above — an event name
-          # and positive integers, used only as REST API path segments. No
-          # text ever comes from the relay record.
+          # and positive integers, passed to the scanner as flag values and
+          # used only as API path segments. No text ever comes from the
+          # relay record.
           RELAY_EVENT: ${{ steps.relay.outputs.event }}
           RELAY_PR_NUMBER: ${{ steps.relay.outputs.pull_request }}
           RELAY_REVIEW_ID: ${{ steps.relay.outputs.review_id }}
@@ -276,42 +292,27 @@ jobs:
               ;;
             workflow_run)
               # Review text relayed by conversation-safety-review-relay.yml.
-              # The text is fetched here by id; the label target is the pull
-              # request the API confirms owns that review or comment.
+              # The scanner fetches the review or comment itself by id, plus
+              # every earlier revision from its edit history (see the header:
+              # the current text alone would miss text posted with a finding
+              # and edited clean before this run). Nothing is read from
+              # stdin. The label target is the pull request the scanner has
+              # confirmed owns that review or comment: a review id is looked
+              # up under this pull request, and a comment's own
+              # pull_request_url must name it, or the scanner exits 2.
               target_number="$RELAY_PR_NUMBER"
-              fetched="$RUNNER_TEMP/conversation-safety-review.json"
-              text_file="$RUNNER_TEMP/conversation-safety-review-text.txt"
               case "$RELAY_EVENT" in
                 pull_request_review)
                   # Inline comments attached to a submitted review are fetched and scanned in this run because GitHub may not emit pull_request_review_comment for them.
-                  # The review endpoint is scoped to this pull request, so a
-                  # review id from any other pull request is a 404, not a
-                  # scan. The summary (legitimately empty on a bare approve)
-                  # reaches the scanner on stdin; an empty summary and no
-                  # non-empty inline comment is exit 0, a clean pass.
-                  if gh api "repos/$GITHUB_REPOSITORY/pulls/$RELAY_PR_NUMBER/reviews/$RELAY_REVIEW_ID" > "$fetched"; then
-                    jq -j '.body // ""' "$fetched" > "$text_file"
-                    node scripts/check-conversation-safety.mjs --pr "$RELAY_PR_NUMBER" --review "$RELAY_REVIEW_ID" --require-denylist < "$text_file" > "$out_file" 2>&1
-                    status=$?
-                  else
-                    echo "could not fetch review $RELAY_REVIEW_ID on PR #$RELAY_PR_NUMBER" > "$out_file"
-                    status=2
-                  fi
+                  # Their earlier revisions are scanned too. An empty summary
+                  # (a bare approve) and no non-empty inline comment or
+                  # revision is exit 0, a clean pass.
+                  node scripts/check-conversation-safety.mjs --pr "$RELAY_PR_NUMBER" --review "$RELAY_REVIEW_ID" --edit-history --require-denylist < /dev/null > "$out_file" 2>&1
+                  status=$?
                   ;;
                 pull_request_review_comment)
-                  # The comment endpoint is repository-wide, so ownership is
-                  # checked against the API's own pull_request_url before
-                  # anything is scanned or labelled.
-                  expected_pr_url="$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/pulls/$RELAY_PR_NUMBER"
-                  if gh api "repos/$GITHUB_REPOSITORY/pulls/comments/$RELAY_COMMENT_ID" > "$fetched" \
-                    && [ "$(jq -r '.pull_request_url' "$fetched")" = "$expected_pr_url" ]; then
-                    jq -j '.body // ""' "$fetched" > "$text_file"
-                    node scripts/check-conversation-safety.mjs --require-denylist < "$text_file" > "$out_file" 2>&1
-                    status=$?
-                  else
-                    echo "could not fetch review comment $RELAY_COMMENT_ID on PR #$RELAY_PR_NUMBER" > "$out_file"
-                    status=2
-                  fi
+                  node scripts/check-conversation-safety.mjs --pr "$RELAY_PR_NUMBER" --review-comment "$RELAY_COMMENT_ID" --edit-history --require-denylist < /dev/null > "$out_file" 2>&1
+                  status=$?
                   ;;
                 *)
                   echo "unhandled relayed event" > "$out_file"
@@ -352,8 +353,10 @@ jobs:
       # job's final status.
       - name: Reflect gate result in job status
         if: ${{ steps.gate.outputs.status != '0' }}
+        env:
+          GATE_STATUS: ${{ steps.gate.outputs.status }}
         run: |
-          status="${{ steps.gate.outputs.status }}"
+          status="$GATE_STATUS"
           if [ "$status" = "2" ]; then
             echo "::error title=Conversation safety gate could not run::Denylist materialisation or scripts/check-conversation-safety.mjs itself failed — see the 'Run conversation safety gate' step log above. This is NOT a clean scan and must not be read as one; no label was applied because there is nothing confirmed to report."
           else

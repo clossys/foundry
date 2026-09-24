@@ -115,7 +115,11 @@ test("the scan job reads only, and gates workflow_run on the relay file and revi
   const granted = perms[1].trim().split("\n").map((line) => line.trim()).sort();
   assert.deepEqual(granted, ["actions: read", "contents: read", "pull-requests: read"]);
   const condition = scan.match(/^ {4}if: >-\n((?: {6}.*\n)+)/m)?.[1] ?? "";
-  assert.match(condition, /github\.event\.workflow_run\.conclusion == 'success'/);
+  // The first arm keeps issues, issue_comment and pull_request_target
+  // scanning; deleting it would silently stop every non-review scan.
+  assert.match(condition, /^\s*github\.event_name != 'workflow_run'\n\s*\|\| \(/, "non-workflow_run events must always pass the job condition");
+  // A failed or cancelled relay must reach the download and go red, not skip.
+  assert.doesNotMatch(condition, /conclusion/, "the relay's conclusion must not gate the scan");
   assert.match(condition, /github\.event\.workflow_run\.path == '\.github\/workflows\/conversation-safety-review-relay\.yml'/);
   assert.match(condition, /github\.event\.workflow_run\.event == 'pull_request_review'/);
   assert.match(condition, /github\.event\.workflow_run\.event == 'pull_request_review_comment'/);
@@ -128,7 +132,10 @@ test("the workflow_run path validates the relay record as data and fetches text 
   assert.match(download, /run-id: \$\{\{ github\.event\.workflow_run\.id \}\}/);
   assert.match(download, /path: \$\{\{ runner\.temp \}\}\//, "the record lands outside the checkout");
 
+  assert.match(download, /^ {8}if: \$\{\{ github\.event_name == 'workflow_run' \}\}$/m, "download stays gated to workflow_run");
+
   const validate = step(scan, "name: Validate review relay record");
+  assert.match(validate, /^ {8}if: \$\{\{ github\.event_name == 'workflow_run' \}\}$/m, "validation stays gated to workflow_run");
   assert.match(validate, /node scripts\/validate-review-relay-event\.mjs "\$RELAY_RECORD" --repo "\$GITHUB_REPOSITORY"/);
 
   // Ordering: untrusted record handled before the denylist exists on disk.
@@ -140,10 +147,19 @@ test("the workflow_run path validates the relay record as data and fetches text 
   assert.doesNotMatch(env, /steps\.relay\.outputs\.(body|text)/);
   const run = gate.slice(gate.indexOf("run: |"));
   assert.doesNotMatch(run, /\$\{\{/, "the gate script body interpolates nothing");
-  assert.match(run, /gh api "repos\/\$GITHUB_REPOSITORY\/pulls\/\$RELAY_PR_NUMBER\/reviews\/\$RELAY_REVIEW_ID"/);
-  assert.match(run, /gh api "repos\/\$GITHUB_REPOSITORY\/pulls\/comments\/\$RELAY_COMMENT_ID"/);
-  assert.match(run, /jq -r '\.pull_request_url' "\$fetched"\)" = "\$expected_pr_url"/, "a relayed comment must belong to the relayed pull request");
-  assert.match(run, /node scripts\/check-conversation-safety\.mjs --pr "\$RELAY_PR_NUMBER" --review "\$RELAY_REVIEW_ID" --require-denylist < "\$text_file"/);
+  // The scanner fetches the object by id (and checks it belongs to the
+  // relayed pull request) plus its whole edit history; the shell reads no
+  // text and pipes nothing in.
+  assert.match(run, /node scripts\/check-conversation-safety\.mjs --pr "\$RELAY_PR_NUMBER" --review "\$RELAY_REVIEW_ID" --edit-history --require-denylist < \/dev\/null/);
+  assert.match(run, /node scripts\/check-conversation-safety\.mjs --pr "\$RELAY_PR_NUMBER" --review-comment "\$RELAY_COMMENT_ID" --edit-history --require-denylist < \/dev\/null/);
+  const workflowRunBranch = run.slice(run.indexOf("workflow_run)"), run.indexOf("\n            *)"));
+  assert.doesNotMatch(code(workflowRunBranch), /\bgh api\b|\bjq\b/, "the relayed text is fetched by the scanner, not the shell");
+});
+
+test("the job-result step reads the recorded status through env:, never ${{ }} in run:", () => {
+  const reflect = step(job(privileged, "scan"), "name: Reflect gate result in job status");
+  assert.match(reflect, /GATE_STATUS: \$\{\{ steps\.gate\.outputs\.status \}\}/);
+  assert.doesNotMatch(reflect.slice(reflect.indexOf("run: |")), /\$\{\{/);
 });
 
 test("the concurrency group keys workflow_run by the relay run, never collapsing review scans", () => {
