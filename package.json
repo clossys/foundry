@@ -102,7 +102,7 @@
     "//check-launcher-help": "Launcher get-started help, invoked by dist path after `npm run build`. The script exists so package-evidence has a packages/launcher/dist site — the bin name `launcher` would otherwise fire invocation-by-bin-name against a clone that cites the package but has no dist-path site. Needs compiled dist/; keep out of check:gates. Wired into ci.yml's post-build job (#414).",
     "check:launcher-help": "node packages/launcher/dist/cli.js --help",
     "//check-strategist-subject": "Foundry's wired strategist facts subject (clossys/strategist/facts.json) traced against docs/PUBLISHING.md only. Invoked by packages/strategist/dist/cli.js after build; wired into ci.yml's post-build job (#500).",
-    "check:strategist-subject": "node scripts/check-strategist-subject.mjs",
+    "check:strategist-subject": "node --test scripts/check-strategist-subject.test.mjs && node scripts/check-strategist-subject.mjs",
     "//check-supersession": "Foundry's public, repository-owned donor map is evaluated against this repository's own root manifest through integrator's built CLI. It is deliberately outside publish.yml's bootstrap discovery, which runs before node_modules and dist exist (#495, #496).",
     "check:supersession": "node packages/integrator/dist/cli.js package.json governance/foundry-supersession-map.json --block",
     "//check-schema-versions": "Schema versions and migrations for every clossys/ record (#1224): invokes controller's built migrate CLI (packages/controller/dist/migrate/bin.js) against THIS repository's own clossys/ tree, report-only. Needs packages/controller/dist/; runs after npm run build, never in check:gates.",
