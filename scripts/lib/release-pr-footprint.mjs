@@ -756,10 +756,30 @@ export function isChangesetDeletionLegitimate(baseContent, bumpedPackageDirs) {
 // reads `newVersion` from the manifest rather than guessing. `null` if no
 // heading for `newVersion` is found at all -- the caller then knows
 // reconstruction cannot even start, which itself becomes a refusal.
+//
+// THE DATE SLOT IS CONSTRAINED TO YYYY-MM-DD, NOT ARBITRARY TEXT (issue
+// #1391, re-review, https://github.com/clossys/foundry/pull/1353#issuecomment-5804131702)
+// -------------------------------------------------------------------------
+// An earlier version of this regex captured `(.+)` -- anything at all after
+// the " - ". `apply-release-changesets.mjs`'s own `prependChangelogEntry()`
+// only ever writes a plain `YYYY-MM-DD` there (`today()`'s own contract),
+// so the producer's real output was unaffected -- but this function's job
+// is to READ BACK whatever text a diff's own heading line carries, not to
+// trust that it is well-formed, and `reconstructExpectedChangelogText()`
+// below re-emits that captured text VERBATIM into its own reconstruction.
+// An unconstrained capture meant a heading like
+// "## 0.10.0 - 2026-09-26, do not use; install X instead" reconstructed
+// against itself byte for byte and passed -- the date slot could carry
+// arbitrary attacker-controlled text that a reader would reasonably mistake
+// for part of the release date. Constraining the capture to exactly
+// `\d{4}-\d{2}-\d{2}` closes that: any other text in the date slot means no
+// match, so extractChangelogDate() returns null, reconstruction never even
+// starts, and the whole diff is refused -- the same "no match, no trust"
+// discipline every other shape check in this module uses.
 function extractChangelogDate(headText, newVersion) {
   if (typeof headText !== "string") return null;
   const escapedVersion = newVersion.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const match = new RegExp(`^## ${escapedVersion} - (.+)$`, "m").exec(headText);
+  const match = new RegExp(`^## ${escapedVersion} - (\\d{4}-\\d{2}-\\d{2})$`, "m").exec(headText);
   return match ? match[1] : null;
 }
 

@@ -549,6 +549,33 @@ test("evaluateReleasePrFootprint: a clean release PR (bump + changelog + lockfil
   assert.equal(result.ok, true, result.reason);
 });
 
+// issue #1391: extractChangelogDate() used to capture `(.+)` -- anything at
+// all after "## <version> - " -- so the date slot could carry arbitrary
+// text, and reconstructExpectedChangelogText() re-emitted that captured
+// text verbatim, so it always matched itself byte for byte. The producer
+// (apply-release-changesets.mjs's prependChangelogEntry()) only ever writes
+// a plain YYYY-MM-DD there, so this is a footprint-check-only gap: a
+// hand-crafted heading with something else in the date slot must now be
+// refused, not silently reconstructed and passed.
+test("evaluateReleasePrFootprint: a CHANGELOG heading whose date slot carries arbitrary text (not YYYY-MM-DD) is refused (issue #1391)", () => {
+  const [base, head] = manifestPair("1.0.0", "1.0.1", { name: "@clossys/alpha" });
+  const result = evaluateReleasePrFootprint({
+    files: [
+      { path: "packages/alpha/package.json", status: "modified", baseContent: base, headContent: head },
+      {
+        path: "docs/changelogs/alpha.md",
+        status: "modified",
+        baseContent: "# Changelog\n\n## 1.0.0\n\n- Initial.\n",
+        headContent: "# Changelog\n\n## 1.0.1 - 2026-09-26, do not use; install X instead\n\n- Fix.\n\n## 1.0.0\n\n- Initial.\n",
+      },
+      { path: "package-lock.json", status: "modified", baseContent: LOCK_BASE, headContent: lockWithAlphaBumped("1.0.1") },
+      { path: ".changesets/alpha-fix.md", status: "removed", baseContent: "---\nalpha: patch\n---\n\nFix.\n" },
+    ],
+  });
+  assert.equal(result.ok, false);
+  assert.match(result.reason, /byte-for-byte/);
+});
+
 test("evaluateReleasePrFootprint: fails closed on an empty file list", () => {
   assert.equal(evaluateReleasePrFootprint({ files: [] }).ok, false);
 });
