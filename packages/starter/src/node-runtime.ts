@@ -1,11 +1,11 @@
 import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
-import { existsSync, lstatSync, readFileSync, realpathSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, realpathSync, statSync, writeFileSync } from "node:fs";
 import { dirname, relative, resolve, sep } from "node:path";
-import { NPM_CI_IGNORE_SCRIPTS, validateNpmIdentity } from "./npm.js";
+import { NPM_CI_IGNORE_SCRIPTS, PUBLIC_NPM_REGISTRY, stagedNpmManifest, validateNpmIdentity, validateNpmLockfileSources } from "./npm.js";
 import { PNPM_INSTALL_FROZEN_IGNORE_SCRIPTS, validatePnpmIdentity } from "./pnpm.js";
-import { evaluateStarter, evaluateProcessResult, isNormalizedRelativePath, validateStarterRequest } from "./core.js";
-import type { StarterFinding, StarterReport, StarterRequest, ExactPackage, ProcessObservation, SnapshotManifest } from "./types.js";
+import { evaluateHeadInstall, evaluateStarter, evaluateProcessResult, isNormalizedRelativePath, validateStarterRequest } from "./core.js";
+import type { HeadInstallObservation, HeadInstallReport, StarterFinding, StarterReport, StarterRequest, ExactPackage, ProcessObservation } from "./types.js";
 
 const MAX_FILE_BYTES = 524_288;
 export const PROCESS_TIMEOUT_MS = 5_000;
@@ -165,3 +165,118 @@ export function decide(requestPath: string, snapshotRoot: string, trustedEventPa
 }
 
 export function decisionExitCode(report: StarterReport): number { return exitFor(report.state); }
+
+/** Fixed bounds for the pull-request head's install data. */
+export const HEAD_LOCKFILE_MAX_BYTES = 16_777_216;
+export const HEAD_INSTALL_TIMEOUT_MS = 600_000;
+const HEAD_COMMIT_PATH = ".git/HEAD";
+
+/** Internal test seams only; the CLI never passes these, so a caller cannot choose the registry, deadline, or npm path. */
+export interface HeadInstallOptions {
+  readonly registry?: string;
+  readonly timeoutMs?: number;
+  readonly invokedPath?: string;
+  /** The protected-base project whose installed Starter is running; defaults to the working directory. */
+  readonly baseRoot?: string;
+}
+
+/**
+ * The hardened npm environment for the head install. Deliberately built from
+ * a literal rather than process.env: no token, user/global npmrc, registry
+ * override, or script setting from the job reaches npm, and the staged project
+ * carries no .npmrc of its own.
+ */
+export function headInstallEnvironment(stagingRoot: string, registry: string = PUBLIC_NPM_REGISTRY): NodeJS.ProcessEnv {
+  const home = resolve(stagingRoot, "home");
+  return {
+    PATH: process.env.PATH ?? "/usr/bin:/bin",
+    HOME: home, USERPROFILE: home, TMPDIR: resolve(stagingRoot, "tmp"), TEMP: resolve(stagingRoot, "tmp"), TMP: resolve(stagingRoot, "tmp"),
+    XDG_CONFIG_HOME: resolve(home, ".config"), XDG_CACHE_HOME: resolve(home, ".cache"),
+    npm_config_userconfig: resolve(stagingRoot, "config", "user-npmrc"),
+    npm_config_globalconfig: resolve(stagingRoot, "config", "global-npmrc"),
+    npm_config_cache: resolve(stagingRoot, "cache"),
+    npm_config_registry: registry,
+    npm_config_ignore_scripts: "true",
+    npm_config_audit: "false",
+    npm_config_fund: "false",
+    npm_config_update_notifier: "false",
+  };
+}
+
+function readHeadJson(root: string, path: string, maxBytes: number, findings: StarterFinding[], rule: string): { value: unknown; bytes: Buffer | null } {
+  try { const bytes = readContainedRegularFile(root, path, maxBytes); return { value: JSON.parse(bytes.toString("utf8")), bytes }; }
+  catch (cause) { findings.push(finding(rule, `pull-request head ${path}: ${cause instanceof Error ? cause.message : String(cause)}`)); return { value: undefined, bytes: null }; }
+}
+
+function freshStaging(stagingRoot: string): void {
+  if (existsSync(stagingRoot) && (lstatSync(stagingRoot).isSymbolicLink() || !statSync(stagingRoot).isDirectory() || readdirSync(stagingRoot).length > 0)) throw new StarterInputError("head staging directory must be absent or an empty real directory");
+  for (const directory of ["project", "home", "tmp", "cache", "config"]) mkdirSync(resolve(stagingRoot, directory), { recursive: true });
+  writeFileSync(resolve(stagingRoot, "config", "user-npmrc"), "");
+  writeFileSync(resolve(stagingRoot, "config", "global-npmrc"), "");
+}
+
+function installedStarterFindings(root: string, request: StarterRequest, invokedPath: string | undefined): StarterFinding[] {
+  let manifest: unknown; let lock: unknown;
+  try { manifest = readJsonFile(resolve(root, "package.json")); lock = readJsonFile(resolve(root, NPM_CI_IGNORE_SCRIPTS.lockPath)); } catch (cause) { return [finding("starter-install", cause instanceof Error ? cause.message : String(cause))]; }
+  const findings = validateNpmIdentity(manifest, lock, request.starter).map((message) => finding("starter-install", message));
+  if (findings.length > 0 || invokedPath === undefined) return findings;
+  try {
+    if (realpathSync(resolve(invokedPath)) !== resolveInstalledBin(root, request.starter)) return [finding("starter-invocation", "the head-install executable is not the protected base's exact installed Starter bin")];
+  } catch (cause) { return [finding("starter-invocation", cause instanceof Error ? cause.message : String(cause))]; }
+  return [];
+}
+
+/**
+ * Prove the pull-request head's own npm install in the trusted base job
+ * (issue #1474) without executing any pull-request code: read the head's
+ * request, manifest, and lockfile as bounded data from a trusted checkout of
+ * the authenticated head commit, refuse non-registry sources, stage only the
+ * dependency manifest and lockfile, run the fixed `npm ci --ignore-scripts`
+ * under a literal hardened environment, and check the head request's exact
+ * identities by reading installed manifests. Nothing installed is executed.
+ */
+export function proveHeadInstall(requestPath: string, headRoot: string, trustedEventPath: string, stagingRoot: string, reportPath?: string, options: HeadInstallOptions = {}): HeadInstallReport {
+  const registry = options.registry ?? PUBLIC_NPM_REGISTRY;
+  const inputFindings: StarterFinding[] = []; const sourceViolations: StarterFinding[] = [];
+  let request: unknown; let trustedEvent: unknown;
+  try { request = readJsonFile(requestPath); trustedEvent = readJsonFile(trustedEventPath); } catch (cause) { inputFindings.push(finding("input", cause instanceof Error ? cause.message : String(cause))); }
+  let headRequest: unknown;
+  if (!isNormalizedRelativePath(requestPath)) inputFindings.push(finding("head-request-path", "the request path must be a normalized relative path so the head copy is read at the same place."));
+  else headRequest = readHeadJson(headRoot, requestPath, MAX_FILE_BYTES, inputFindings, "head-request").value;
+  let headCommit: string | null = null;
+  try { headCommit = readContainedRegularFile(headRoot, HEAD_COMMIT_PATH, 1_024).toString("utf8").trim(); } catch (cause) { inputFindings.push(finding("head-commit", cause instanceof Error ? cause.message : String(cause))); }
+  const manifest = readHeadJson(headRoot, NPM_CI_IGNORE_SCRIPTS.manifestPath, MAX_FILE_BYTES, inputFindings, "head-manifest").value;
+  const lock = readHeadJson(headRoot, NPM_CI_IGNORE_SCRIPTS.lockPath, HEAD_LOCKFILE_MAX_BYTES, inputFindings, "head-lockfile");
+  const staged = stagedNpmManifest(manifest);
+  if (manifest !== undefined) inputFindings.push(...staged.unsupported.map((message) => finding("head-manifest-unsupported", message)));
+  if (lock.bytes !== null) {
+    const sources = validateNpmLockfileSources(lock.value, registry);
+    inputFindings.push(...sources.unsupported.map((message) => finding("head-lockfile-unsupported", message)));
+    sourceViolations.push(...sources.violations.map((message) => finding("head-lockfile-source", message)));
+  }
+  inputFindings.push(...credentialFindings());
+  const parsedRequest = validateStarterRequest(request);
+  if (parsedRequest.request) inputFindings.push(...installedStarterFindings(options.baseRoot ?? process.cwd(), parsedRequest.request, options.invokedPath));
+  const done = (report: HeadInstallReport): HeadInstallReport => { writeHeadReport(reportPath, report); return report; };
+  const pre = evaluateHeadInstall({ request, headRequest, trustedEvent, headCommit, inputFindings, sourceViolations });
+  if (pre.state !== "indeterminate" || pre.findings.length !== 1 || pre.findings[0]?.rule !== "head-install-not-run") return done(pre);
+  try { freshStaging(stagingRoot); } catch (cause) { return done(evaluateHeadInstall({ request, headRequest, trustedEvent, headCommit, inputFindings: [finding("head-staging", cause instanceof Error ? cause.message : String(cause))], sourceViolations })); }
+  const project = resolve(stagingRoot, "project");
+  writeFileSync(resolve(project, NPM_CI_IGNORE_SCRIPTS.manifestPath), `${JSON.stringify(staged.manifest, null, 2)}\n`);
+  writeFileSync(resolve(project, NPM_CI_IGNORE_SCRIPTS.lockPath), lock.bytes as Buffer);
+  const child = spawnSync(NPM_CI_IGNORE_SCRIPTS.command, [...NPM_CI_IGNORE_SCRIPTS.args, "--no-audit", "--no-fund"], { cwd: project, encoding: "utf8", maxBuffer: 8_388_608, shell: false, env: headInstallEnvironment(stagingRoot, registry), timeout: options.timeoutMs ?? HEAD_INSTALL_TIMEOUT_MS, killSignal: "SIGKILL" });
+  const timedOut = (child.error as NodeJS.ErrnoException | undefined)?.code === "ETIMEDOUT";
+  const install: HeadInstallObservation = { attempted: child.error === undefined || timedOut, exitCode: child.status, timedOut };
+  const identityFindings: StarterFinding[] = [];
+  const head = validateStarterRequest(headRequest).request as StarterRequest;
+  if (install.exitCode === 0 && !timedOut) {
+    for (const expected of [head.starter, head.advisor, head.target]) {
+      identityFindings.push(...validateNpmIdentity(staged.manifest, lock.value, expected).map((message) => finding("head-identity", message)));
+      try { resolveInstalledBin(project, expected); } catch (cause) { identityFindings.push(finding("head-installed-bin", cause instanceof Error ? cause.message : String(cause))); }
+    }
+  }
+  return done(evaluateHeadInstall({ request, headRequest, trustedEvent, headCommit, inputFindings, sourceViolations, install, identityFindings }));
+}
+
+function writeHeadReport(path: string | undefined, report: HeadInstallReport): void { if (path !== undefined) writeFileSync(path, `${JSON.stringify(report, null, 2)}\n`); }
+export function headInstallExitCode(report: HeadInstallReport): number { return exitFor(report.state); }

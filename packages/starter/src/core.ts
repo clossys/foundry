@@ -1,4 +1,8 @@
 import type {
+  HeadInstallEvaluationInput,
+  HeadInstallIdentity,
+  HeadInstallReport,
+  HeadInstallRole,
   StarterEvaluationInput,
   StarterFinding,
   StarterReport,
@@ -180,4 +184,54 @@ export function evaluateStarter(input: StarterEvaluationInput): StarterReport {
   if (advisor.state !== "satisfied") return report(advisor.state, request.phase, [...advisor.findings, ...hubFindings], advisor.state, null);
   const target = evaluateProcessResult(input.target, "target");
   return report(target.state, request.phase, [...target.findings, ...hubFindings], advisor.state, target.state);
+}
+
+const HEAD_ROLES: readonly HeadInstallRole[] = ["starter", "advisor", "target"];
+function sameIdentity(left: UnknownRecord, right: UnknownRecord): boolean {
+  return left.name === right.name && left.version === right.version && left.integrity === right.integrity && left.bin === right.bin && left.invocation === right.invocation;
+}
+function headReport(state: StarterState, event: TrustedEvent | null, findings: readonly StarterFinding[], changedFromBase: readonly HeadInstallRole[] | null, proved: readonly HeadInstallIdentity[] | null = null): HeadInstallReport {
+  return { schemaVersion: 1, kind: "head-install", state, headSha: event?.sourceHeadSha ?? null, baseSha: event?.baseSha ?? null, proved, changedFromBase, findings };
+}
+
+/**
+ * Pure head-install evaluator (issue #1474). It proves only that the pull
+ * request head's own manifest and lockfile, read as data by the trusted base
+ * workflow, installed with the fixed npm command and contain the head
+ * request's exact identities. It never executes an installed head package and
+ * never changes the protected-base `decide` verdict.
+ */
+export function evaluateHeadInstall(input: HeadInstallEvaluationInput): HeadInstallReport {
+  const base = validateStarterRequest(input.request);
+  if (!base.request) return headReport("indeterminate", null, [...input.inputFindings, ...base.findings], null);
+  const request = base.request;
+  const eventValue = input.trustedEvent;
+  if (!record(eventValue) || !exactKeys(eventValue, TRUSTED_EVENT_KEYS) || eventValue.schemaVersion !== 1 || eventValue.provider !== "github-actions" || eventValue.eventName !== "workflow_run" || !validGitCommitSha1(eventValue.baseSha) || !validGitCommitSha1(eventValue.sourceHeadSha)) {
+    return headReport("indeterminate", null, [...input.inputFindings, find("trusted-event-shape", "trusted event is unreadable or is not a GitHub workflow_run record with canonical Git commit OIDs.")], null);
+  }
+  const event = eventValue as unknown as TrustedEvent;
+  const findings: StarterFinding[] = [...input.inputFindings];
+  if (event.repository !== request.snapshot.repository) findings.push(find("trusted-event-join", "trusted event does not name the protected-base request's repository."));
+  if (request.packageManager !== "npm") findings.push(find("head-manager-unsupported", "head-install proof supports only the npm caller; the protected-base request names another package manager."));
+  if (input.headCommit !== event.sourceHeadSha) findings.push(find("head-commit", "the head checkout does not hold the trusted workflow_run head commit."));
+  const head = validateStarterRequest(input.headRequest);
+  let changedFromBase: HeadInstallRole[] | null = null;
+  if (!head.request) findings.push(...head.findings.map((entry) => find(`head-${entry.rule}`, `pull-request head request: ${entry.message}`)));
+  else {
+    const headRequest = head.request;
+    changedFromBase = HEAD_ROLES.filter((role) => !sameIdentity(request[role] as unknown as UnknownRecord, headRequest[role] as unknown as UnknownRecord));
+    if (headRequest.packageManager !== "npm") findings.push(find("head-manager-unsupported", "head-install proof supports only npm; the pull-request head request names another package manager."));
+    if (headRequest.snapshot.repository !== request.snapshot.repository) findings.push(find("head-request-join", "the pull-request head request names a different repository from the protected base."));
+  }
+  if (findings.length > 0) return headReport("indeterminate", event, findings, changedFromBase);
+  if (input.sourceViolations.length > 0) return headReport("violated", event, input.sourceViolations, changedFromBase);
+  const install = input.install;
+  if (install?.timedOut === true) return headReport("indeterminate", event, [find("head-install-timeout", "the fixed head install exceeded Starter's deadline.")], changedFromBase);
+  if (install === undefined || !install.attempted || install.exitCode === null) return headReport("indeterminate", event, [find("head-install-not-run", "the fixed head install did not run; an omitted install is indeterminate.")], changedFromBase);
+  if (install.exitCode !== 0) return headReport("indeterminate", event, [find("head-install-failed", `the fixed npm ci --ignore-scripts over the pull-request head exited ${install.exitCode}.`)], changedFromBase);
+  const identityFindings = input.identityFindings ?? [];
+  if (identityFindings.length > 0) return headReport("violated", event, identityFindings, changedFromBase);
+  const headRequest = head.request as StarterRequest;
+  const proved = HEAD_ROLES.map((role) => ({ role, name: headRequest[role].name, version: headRequest[role].version, integrity: headRequest[role].integrity, bin: headRequest[role].bin }));
+  return headReport("satisfied", event, [], changedFromBase, proved);
 }

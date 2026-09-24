@@ -15,8 +15,30 @@ The design has two phases:
    artifact, performs one fixed credentialless public npm install, then runs
    Foundry Starter, Advisor, and the target gate with no registry credential.
 
-`pull_request_target` is intentionally absent. The trusted job never checks
-out or executes pull-request code.
+`pull_request_target` is intentionally absent. The trusted decision job never
+checks out or executes pull-request code.
+
+An optional third job, for the npm caller, proves the pull request's own
+install (see [Proving the pull-request head's install](#proving-the-pull-request-heads-install-npm)).
+It reads three head files as data and executes none of them.
+
+### What a green decision proves, and the one-merge lag
+
+The decision job installs from the protected **base** and runs Advisor and
+the target from that install. Its `0` is a verdict on the base's installed
+packages, joined to this pull request's evidence files. It is not a verdict
+on a package change the pull request itself proposes. A pull request that
+adds or bumps Starter, Advisor, or the target (and updates
+`.starter/request.json` to match) is proved by the decision job only on the
+next pull request after it merges. Record that pull request's pins as
+applied, not proved, until then.
+
+The optional head-install job narrows that lag for the install itself. Its
+`0` proves that the pull-request head's own `package.json` and
+`package-lock.json` install with the fixed `npm ci --ignore-scripts` from the
+public registry, and that the result holds the head request's exact Starter,
+Advisor, and target identities. It does not run the head's Advisor or target,
+so their behaviour still lags one merge.
 
 ## Repository files
 
@@ -266,6 +288,123 @@ or `pnpm` for the pnpm caller. Starter validates the matching root importer,
 exact version, and integrity in that manager's lockfile. Do not combine the
 templates or copy npm's resolver into the pnpm caller. The pnpm runtime reads
 `pnpm-lock.yaml` and never reads `package-lock.json` for a pnpm request.
+
+## Proving the pull-request head's install (npm)
+
+Add this job to the npm caller workflow beside `decide-adoption`. It is
+optional and additive: `decide-adoption` and its verdict are unchanged. It
+runs under the same `workflow_run` trigger, so the pull request cannot change
+this job or which Starter runs. Starter is the exact version the protected
+base's request and lockfile pin. Starter checks its own installed manifest,
+lockfile entry, and invoked bin before it reads the head.
+
+```yaml
+  prove-head-install:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      # The protected base again. Only this checkout's installed Starter runs.
+      - uses: actions/checkout@<FULL_COMMIT_SHA>
+        with:
+          ref: ${{ github.event.workflow_run.pull_requests[0].base.sha }}
+          persist-credentials: false
+
+      - uses: actions/setup-node@<FULL_COMMIT_SHA>
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+          scope: "@clossys"
+
+      - name: Fixed npm install
+        run: npm ci --ignore-scripts
+
+      # The authenticated pull-request head, as data only: three files, no
+      # persisted credential, nothing executed. Starter compares this
+      # checkout's .git/HEAD with the trusted workflow_run head commit.
+      - uses: actions/checkout@<FULL_COMMIT_SHA>
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          path: .starter-head
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /package.json
+            /package-lock.json
+            /.starter/request.json
+
+      - name: Write trusted event facts
+        env:
+          EVENT_JSON: ${{ toJSON(github.event.workflow_run) }}
+        run: |
+          node -e 'const fs=require("node:fs"); const run=JSON.parse(process.env.EVENT_JSON); const pull=run.pull_requests?.[0]; fs.writeFileSync(process.argv[1], JSON.stringify({schemaVersion:1,provider:"github-actions",eventName:"workflow_run",repository:process.env.GITHUB_REPOSITORY,baseSha:pull?.base?.sha ?? "",sourceWorkflowRunId:String(run.id ?? ""),sourceHeadSha:run.head_sha ?? "",artifactName:`adoption-snapshot-${String(run.id ?? "")}`,sourceConclusion:run.conclusion ?? ""}) + "\n")' "$RUNNER_TEMP/trusted-event.json"
+
+      # No credential environment is attached to this step. Starter builds
+      # npm's environment itself and ignores every ambient npm setting.
+      - name: Prove the pull-request head's install
+        run: |
+          report="$RUNNER_TEMP/head-install-report.json"
+          output="$RUNNER_TEMP/head-install.txt"
+          status=0
+          node node_modules/@clossys/starter/dist/cli.js prove-head \
+            .starter/request.json \
+            .starter-head \
+            "$RUNNER_TEMP/trusted-event.json" \
+            "$RUNNER_TEMP/starter-head-install" \
+            --report "$report" > "$output" || status=$?
+          cat "$output"
+          cat "$output" >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"
+```
+
+Everything the pull request can influence is handled like this:
+
+- **Which Starter runs, and this job.** They come from the protected base, as
+  above. Pull-request code cannot choose either.
+- **`.starter/request.json` at the head.** It is read as data and validated
+  with the same strict request contract as the base copy. It chooses only
+  which exact identities are checked. It must name the same repository and
+  the npm package manager.
+- **`package.json`.** Starter stages only its dependency fields. `scripts`,
+  `workspaces`, `packageManager`, `config`, and every other field are dropped.
+  A manifest that declares workspaces is not proved.
+- **`package-lock.json`.** It must be lockfile version 2 or 3. Every installed
+  entry must be a `https://registry.npmjs.org/` tarball with a single SHA-512
+  integrity. Git, file, link, directory, other-host, and SHA-1-only entries
+  are refused before anything installs. npm then checks every tarball against
+  that integrity.
+- **`.npmrc`, `.pnpmfile.cjs`, and other repository files.** The sparse
+  checkout does not fetch them, and Starter stages only the two files above
+  into a fresh directory.
+- **Install scripts.** Starter runs `npm ci --ignore-scripts --no-audit
+  --no-fund` in the staging directory. npm's environment is a literal: no
+  token, empty user and global npmrc files, the public registry, and
+  `ignore-scripts` set. It inherits nothing from the job except `PATH`.
+- **Installed code.** Starter reads installed manifests to check names,
+  versions, and bins. It never executes a head-installed package.
+
+The head-install report is separate from the decision report
+(`kind: "head-install"`). It has the same exit codes:
+
+- `0`: the head's own install completed, and it holds exactly the Starter,
+  Advisor, and target the head request pins. `proved` lists them.
+  `changedFromBase` lists the pins that differ from the protected base.
+- `1`: a known violation. Either the lockfile names a source this proof
+  forbids, or the head request pins an identity its own lockfile or install
+  does not hold.
+- `2`: the proof could not be established. Causes include an unreadable or
+  foreign head file, a checkout not at the trusted head commit, workspaces,
+  pnpm, a credential in the step, a non-empty staging directory, and a failed
+  or timed-out `npm ci`.
+
+It does not cover:
+
+- the head's Advisor readiness or target result
+- lifecycle scripts
+- the merge result of head and base
+- packages other than the three identities beyond npm's own integrity check
+- workspaces, pnpm, and registry mirrors
 
 ## Required result behaviour
 
