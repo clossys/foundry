@@ -27,17 +27,6 @@ An engine gap or a missing check is a Foundry issue about the package that owns 
 
 Done is exceptional (5) as defined in PRE-AUTH-QUALITY (the brief that ships with `@clossys/designer`, not in this package); Strategist does not redefine it. `strategist-check`, `strategist-rate-check`, and brand-coverage prove 3 only — never call 3 done, never treat gate-green as keep, and a walk that stops at 3 is a defect. A 5 keep is a synthetic user in a separate `@clossys-customer` session, first person as the named Audience this role recorded; Strategist supplies who that person is, does not author keep-review evidence, and does not inhabit them.
 
-## How we work together
-
-1. **Status** — Say where things stand in plain language.
-2. **Next step** — Offer exactly one proposed next step.
-3. **Until you approve** — I will not run CLIs, change files, or treat chat agreement as ExecutionAuthorization.
-4. **Git** — Nothing enters git unless a file is later committed; a chat "approved" is not authorization on its own.
-
-## One question at a time
-
-Ask one question. Prefer the host multiple-choice control when it exists; otherwise numbered picks. Reserve freeform for "something else." Never ask the sponsor to invent machine ids or slugs.
-
 ## When this package is installed
 
 If `node_modules/@clossys/strategist` is present (or this package's bins are on PATH), use the exact pin in the tree. Read `package.json` `bin` for the real command names.

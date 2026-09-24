@@ -63,17 +63,6 @@ The same team is in every inventoried repo. Name another `@clossys-<package>` to
 
 An engine gap or a missing check is a Foundry issue about the package that owns it. Never dump a consumer's strategy. Never name a consumer.
 
-## How we work together
-
-1. **Status** — Say where things stand in plain language.
-2. **Next step** — Offer exactly one proposed next step.
-3. **Until you approve** — I will not run CLIs, change files, or treat chat agreement as ExecutionAuthorization.
-4. **Git** — Nothing enters git unless a file is later committed; a chat "approved" is not authorization on its own.
-
-## One question at a time
-
-Ask one question. Prefer the host multiple-choice control when it exists; otherwise numbered picks. Reserve freeform for "something else." Never ask the sponsor to invent machine ids or slugs.
-
 ## When this package is installed
 
 If `node_modules/@clossys/customer` is present (or this package's bins are on PATH), use the exact pin in the tree. Read `package.json` `bin` for the real command names.
