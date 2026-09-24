@@ -98,9 +98,19 @@ function resolveExistingAncestor(p) {
 // does not consult the filesystem for this at all, so it returns
 // whatever string it was given, unresolved to the real name.
 function resolveRealPath(targetPath) {
-  const normalized = normalizePathForMatching(targetPath);
+  // #1187 escalation-rule round 10, strong-class reviewer, blocking R1:
+  // resolve the ORIGINAL, un-normalized path first -- not the
+  // NFKC-normalized one. NFKC folds some characters (fullwidth Latin
+  // letters, for example) that the filesystem itself does NOT fold, so
+  // normalizing before resolving names a DIFFERENT file (or nothing) on
+  // disk than the one that will actually be read from a symlink whose
+  // own NAME contains such a character, and that symlink was silently no
+  // longer followed at all. Normalization is applied only to the RESULT
+  // of resolution, for matching against the (already-normalized)
+  // protected-basename patterns -- never to steer which file gets
+  // resolved in the first place.
   try {
-    return realpathSync.native(normalized);
+    return normalizePathForMatching(realpathSync.native(targetPath));
   } catch {
     // realpathSync.native throws both for an ordinary not-yet-existing
     // path AND for a DANGLING symlink (a symlink whose OWN target
@@ -110,8 +120,10 @@ function resolveRealPath(targetPath) {
     // link, so it succeeds even when the target is dangling), read its
     // target with readlink, resolve that target relative to the LINK's
     // OWN directory (not the caller's cwd), and repeat, bounded, in case
-    // of a chain of links.
-    let current = normalized;
+    // of a chain of links -- again working with the UN-normalized path
+    // throughout, so a fullwidth-named link in the middle of the chain
+    // still resolves correctly.
+    let current = targetPath;
     for (let hop = 0; hop < 40; hop++) {
       let stat;
       try {
@@ -126,8 +138,7 @@ function resolveRealPath(targetPath) {
       } catch {
         break;
       }
-      const resolved = isAbsolute(linkTarget) ? linkTarget : resolve(dirname(current), linkTarget);
-      current = normalizePathForMatching(resolved);
+      current = isAbsolute(linkTarget) ? linkTarget : resolve(dirname(current), linkTarget);
     }
     // Whether or not a symlink was followed above, resolve as much of
     // the FINAL path's ancestry as exists -- walking up, and through any
@@ -135,8 +146,9 @@ function resolveRealPath(targetPath) {
     // whatever tail did not exist. This covers a plain not-yet-existing
     // path, a dangling symlink whose target is a plain not-yet-existing
     // path, AND a dangling symlink whose target is reached through a
-    // symlinked ancestor directory, uniformly, with one fallback.
-    return resolveExistingAncestor(current);
+    // symlinked ancestor directory, uniformly, with one fallback. Only
+    // the FINAL result is normalized, for matching.
+    return normalizePathForMatching(resolveExistingAncestor(current));
   }
 }
 

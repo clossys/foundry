@@ -2,7 +2,7 @@
 // hook, deny-tier2-edit.mjs.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, rmSync, symlinkSync } from "node:fs";
+import { mkdtempSync, mkdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
@@ -241,6 +241,48 @@ test("round-9: a dangling symlink through a DANGLING ancestor symlink (nothing r
     const linkPath = join(dir, "neutral5.json");
     symlinkSync(join(danglingAliasDir, "settings.local.json"), linkPath);
     assert.equal(run({ file_path: linkPath }), 0, "nothing here resolves to a real protected path");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+// #1187 escalation-rule round 10, strong-class reviewer, blocking R1: a
+// regression from round 9's B1 fix. NFKC folds some characters --
+// fullwidth Latin letters among them -- that the FILESYSTEM does not
+// fold. Resolving the NFKC-NORMALIZED path (round 9's mistake) names a
+// DIFFERENT file than the one a fullwidth-named symlink actually points
+// at, so the link was silently never followed at all. Resolution must
+// use the ORIGINAL path; normalization applies only to the RESULT.
+test("round-10 fix: a symlink whose own NAME contains a fullwidth character still resolves and blocks", () => {
+  const dir = mkdtempSync(join(tmpdir(), "deny-tier2-edit-test-"));
+  try {
+    const realClaudeDir = join(dir, ".claude");
+    mkdirSync(realClaudeDir);
+    const realSettingsPath = join(realClaudeDir, "settings.json");
+    writeFileSync(realSettingsPath, "{}");
+    const fullwidthA = "ａ"; // ａ (FULLWIDTH LATIN SMALL LETTER A)
+    const linkPath = join(dir, `${fullwidthA}lias.json`);
+    symlinkSync(realSettingsPath, linkPath);
+    assert.equal(run({ file_path: linkPath }), 2, "a fullwidth-named symlink alias to .claude/settings.json still blocks");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("round-10 fix: a symlinked DIRECTORY whose own name contains a fullwidth character still resolves and blocks", () => {
+  const dir = mkdtempSync(join(tmpdir(), "deny-tier2-edit-test-"));
+  try {
+    const realClaudeDir = join(dir, ".claude");
+    mkdirSync(realClaudeDir);
+    const fullwidthX = "ｘ"; // ｘ (FULLWIDTH LATIN SMALL LETTER X)
+    const aliasDir = join(dir, `${fullwidthX}dir`);
+    symlinkSync(realClaudeDir, aliasDir);
+    const aliasedFile = join(aliasDir, "settings.json");
+    assert.equal(
+      run({ file_path: aliasedFile }),
+      2,
+      "the real file under a fullwidth-named symlinked ancestor directory still resolves and blocks",
+    );
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

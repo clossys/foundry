@@ -99,17 +99,20 @@ record and any superseding successor record, matching the tier-2 glob),
 `~/.claude/settings.json`/`.claude/settings.local.json` (either of which
 can register or disable this hook -- protecting the script without
 protecting the settings file that controls it would not be real
-protection at all). **The `.claude/settings.local.json` pattern has no
-repository scope at all** (#1187 escalation-rule round 9, strong-class
-reviewer, non-blocking N2): since this hook runs at the user level, it
-blocks an `Edit`/`Write` of `.claude/settings.local.json` in EVERY
-repository on the machine, not only this one -- the same reasoning that
-already applies to `~/.claude/settings.json` (there is only ever one of
-those), stated once more here because the project-scoped file's own
-per-repository copy is what this actually stops an agent from editing,
-anywhere. Every pattern is anchored to a path boundary (start of string,
-or immediately after a `/`), so a coincidental substring match
-never counts:
+protection at all). **The `\.claude/settings(\.local)?\.json` pattern
+has no repository scope at all** (#1187 escalation-rule round 9,
+strong-class reviewer, non-blocking N2; round 10, strong-class reviewer,
+non-blocking: round 9's fix stated this for `.claude/settings.local.json`
+only -- the SAME pattern, and the same reasoning, blocks every
+repository's project-scoped `.claude/settings.json` too, not only the
+single machine-wide `~/.claude/settings.json`): since this hook runs at
+the user level, it blocks an `Edit`/`Write` of `.claude/settings.json`
+**and** `.claude/settings.local.json` in EVERY repository on the
+machine, not only this one -- stated explicitly here because each
+project's own per-repository copy of either file is what this actually
+stops an agent from editing, anywhere. Every pattern is anchored to a
+path boundary (start of string, or immediately after a `/`), so a
+coincidental substring match never counts:
 
 ```js
 const PROTECTED_BASENAMES = [
@@ -169,6 +172,16 @@ settings file with that content.
   file. Creating a hard link at all needs a shell `ln` command this
   repository no longer has any hook to catch (see "The Bash-matched hook
   was removed" above).
+- **A symlinked ANCESTOR directory whose own target does not exist
+  yet.** `resolveExistingAncestor` walks up to the nearest ancestor that
+  `realpathSync.native` can already resolve; when even the immediate
+  alias directory is itself a dangling symlink (its own target absent),
+  there is no real ancestor anywhere along that chain to resolve to, and
+  the walk gives up. Tracked as
+  [#1406](https://github.com/clossys/foundry/issues/1406) -- low
+  priority, since creating the symlinks needs the same unguarded Bash
+  access that could write the target file directly, without the
+  indirection.
 - **A protected path read or merely mentioned**, since this hook only
   ever sees the exact `file_path`/`notebook_path` Claude Code is about
   to WRITE to -- it is not consulted for a `Read` tool call, a shell
