@@ -1,0 +1,22 @@
+{
+  "decision": "publication-evidence-workflow-actions-read-confirmation",
+  "status": "decided",
+  "decidedBy": "owner",
+  "channel": "owner-chat",
+  "date": "2026-09-23",
+  "issue": 1346,
+  "supersedes": {
+    "file": "governance/decisions/publication-evidence-workflow-permissions.json",
+    "field": "scope.additionalPermissions[0].status",
+    "previousValue": "read-only, pending owner confirmation",
+    "note": "That record is left unedited, per the append-only handling this repository's decision records use once a record is treated as decided: this file supersedes only the pending-confirmation status of its actions: read entry, it does not restate or reopen the rest of that record."
+  },
+  "scope": {
+    "workflow": ".github/workflows/record-publication-evidence.yml",
+    "permission": "actions: read",
+    "grantedOn": "both jobs (determine-package, record-evidence)",
+    "status": "owner-confirmed"
+  },
+  "source": "The coordinator asked the owner in owner-chat: \"Confirm `actions: read` on the publication-records workflow. My recommendation is yes; it can't write anything.\" The owner replied: \"yes\".",
+  "note": "This confirms exactly the actions: read scope described in governance/decisions/publication-evidence-workflow-permissions.json's additionalPermissions entry — read-only, granted on both jobs of .github/workflows/record-publication-evidence.yml, for reading the triggering publish run's own jobs and (on the replay path) its qualified-candidate-<key> artifact. It confirms no other or broader permission, and does not reopen or modify the original contents: write / pull-requests: write decision, which remains recorded and unchanged in the superseded file."
+}
