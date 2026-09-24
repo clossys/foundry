@@ -39,6 +39,9 @@ passing ledger's stdout is unchanged, still exactly one
 `learnOrEscalate` still fails exactly as before; a missing disposition for
 a role that already existed in 0.9.10 still fails exactly as before; and a
 current-format or mixed-vocabulary ledger (any position uses `learn`)
-missing the `@clossys/customer` disposition still fails exactly as it did
-on `main` before this change -- the new-role exemption never applies to a
-ledger that could not have come from 0.9.10.
+missing the `@clossys/customer` disposition still fails, with the same
+verdict and the same missing-role-disposition finding it had on `main`
+before this change -- except that a mixed ledger's legacy-shaped position,
+which used to also fail there with `invalid-stage-bindings`, now reports
+only the non-failing `legacy-stage-name` advisory -- the new-role exemption
+never applies to a ledger that could not have come from 0.9.10.
