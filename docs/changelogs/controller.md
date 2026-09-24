@@ -5,6 +5,123 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.9.23 - 2026-09-24
+
+- Implementation note: a caller's exact copy of a previously shipped
+role-loop-archetypes.json or installed-position-contract.json keeps
+validating, reporting a non-failing `legacy-contract-copy` advisory naming
+the matched version. The recognized historical canonical contracts ship
+as real, byte-identical files under
+`packages/controller/contracts/historical/<version>/` -- currently only
+0.9.10's `role-loop-archetypes.json` and `installed-position-contract.json`,
+captured verbatim from that published version via
+`git show 62d9dc570c0af76cd89e49bc40002fb5b36da2ca:packages/controller/contracts/<name>`
+-- rather than a digest or a loosened comparison. `canonical.ts` exposes
+them through `readHistoricalRoleLoopContracts()` and
+`readHistoricalInstalledPositionContracts()`, each entry paired with the
+controller version it shipped in; `index.ts` matches a caller-supplied
+contract against that table with the same deep-equality `canonical()`
+helper already used for the current shipped snapshot, never a partial or
+key-subset match. Extend the table -- never replace or remove an entry --
+the next time either contract's content changes. Refs: #1394.
+- Reword the Designer and Publisher `boundary.owns` prose in
+`contracts/role-loop-archetypes.json` (packed content of this package) to
+reflect the brand kit and v0 Launch pack ownership split settled with the
+five capability maps (#1196/#1204/#1207): Designer owns the image assets
+themselves (marks, icons) and the reusable design vocabulary; Publisher
+owns the v0 Launch pack's definition, inventory, and readiness, plus the
+channel templates that place those assets. The reworded text carries no
+issue numbers or emphasis capitals, because Advisor copies it into
+client-facing deliverables. No schema or field change, but the shipped
+contract text did change: a caller that passes its own copy of the role
+contract must now match this reworded text exactly (see this release's
+Breaking note).
+- A caller-supplied role or position contract that exactly matches a
+previously shipped canonical contract keeps working across an upgrade to
+this version, in the same three call forms --
+`foundry-position-check <ledger> [role-contract.json]`'s optional second
+argument; `validateInstalledPositionLedger`'s `roleContract` argument,
+which takes a role contract; and the exported
+`validateInstalledPositionContract(contract)`, which takes a position
+contract. A caller's exact copy of either shipped contract --
+`role-loop-archetypes.json` or `installed-position-contract.json` -- from
+a version this package has actually shipped (currently only 0.9.10, npm's
+latest published version of this package) is recognized against a small,
+explicit, embedded table of historical canonical contracts, keyed by the
+version each one shipped in, matched by deep equality, never a loose
+comparison. A recognized copy validates against this version's CURRENT
+canonical contract and its rules -- already compatible with a 0.9.10
+ledger via the advisories below -- and reports a new, non-failing
+`legacy-contract-copy` advisory naming the matched shipped version and
+suggesting the caller drop the argument or re-copy it from this version;
+the same advisory channel used for everything else in this changeset.
+Anything that is not an exact match to a known shipped contract --
+including a historical copy with even one field changed, such as the
+`learn` rename below, the added `@clossys/customer` role, or the reworded
+Designer/Publisher `boundary.owns` prose -- still fails with
+`noncanonical-role-contract` or `noncanonical-installed-position-contract`,
+exactly as the exact-match rule always has. Drop the argument to use the
+contract shipped inside `@clossys/controller`, or re-copy it from this
+version. Everything else here is backward compatible:
+`validateInstalledPositionLedger` -- and everything built on it,
+`foundry-position-check`, `foundry-completion-evidence-check`, and
+onboarding's `authorizeMutation` -- accepts a real 0.9.10
+installed-position ledger again (#1394). Two 0.9.10 shapes are now
+accepted, each reported through a new, optional, non-failing
+`InstalledPositionLedgerReport.advisories` field -- present whenever there
+are advisories, defaulting to an empty array otherwise, and never changing
+`ok`, `findings`, or exit code. A position whose `stageBindings` uses the
+pre-rename `learnOrEscalate` key (renamed `learn` by issue #1194) instead
+of `learn` is now accepted in any ledger, current-format or legacy,
+including a mixed ledger where other positions already use `learn`; it
+reports a `legacy-stage-name` advisory instead of failing. Separately, and
+only in a legacy-format ledger -- precisely, one where no position uses
+the current `learn` stageBindings key, and either at least one position
+uses the pre-rename `learnOrEscalate` key or the ledger has no positions
+at all -- a missing disposition for `@clossys/customer` (a role this
+package added in 0.9.11, after a 0.9.10 ledger was written) now validates
+as before, reporting a `missing-disposition-for-new-role` advisory instead
+of failing. For a ledger that passes, `foundry-position-check` now also
+prints these migration advisories, one `ADVISORY` line per item, to
+stderr before its stdout `OK` line; a failing ledger's output is
+unchanged, since the command returns before advisories are printed. A
+passing ledger's stdout is otherwise unchanged, still exactly one
+`INSTALLED POSITION LEDGER OK` line. A position whose `stageBindings`
+carries both `learn` and `learnOrEscalate`, or neither, still fails with
+`invalid-stage-bindings` exactly as before; a missing disposition for a
+role that already existed in 0.9.10 still fails exactly as before; and
+the `@clossys/customer`
+exemption above never extends past a legacy-format ledger -- a
+current-format or mixed-vocabulary ledger (any position uses `learn`)
+missing that disposition still fails with `missing-role-disposition`,
+exactly as in 0.9.22, even when every other position in it uses the
+now-accepted legacy `learnOrEscalate` shape -- the new-role exemption
+never applies to a ledger that could not have come from 0.9.10.
+- Loop engine hardening. `isOwnedByRole` treats a backslash as a path
+separator, so a Windows-style `..\` segment can no longer escape a role's
+own `clossys/<role>/` folder. `foundry-loop-status` exits 2 with usage and
+writes nothing when `--out` is repeated or any `--out` has no path after
+it.
+- Fix three loop-engine correctness bugs found in review (#1258): `planMove`
+now refuses a source path outside the role's own folder, not only the
+destination (a move could otherwise take another role's artifact);
+`isBlockerOverdue` treats a date-only `byWhen` as due at the end of that
+day, not its first instant (a blocker was reported overdue for the rest of
+its own due day); and `validateLoopState` now checks that a blocker's
+`capabilityId` names its own parent capability and that its `owner`
+matches `BLOCKER_OWNERS` for its `kind`, so a hand-edited `loop.json` can
+no longer record a blocker under the wrong capability or with the wrong
+owner. Also fixes onboarding discovery's `isSafeRelativePath`, which now
+rejects a `..` segment written with a `\` separator and a Windows
+drive-rooted or `\`-led path, closing a package- and role-folder escape on
+Windows.
+- The changelog is no longer included in the package; it now lives in the public repository, linked from the README.
+- Remove the duplicated "How we work together" and "One question at a time"
+sections from this package's packed skill (`skill/SKILL.md`).
+`@clossys/launcher` injects the shared conversation contract when it
+composes a skill for a consumer, so the packed skill no longer carries its
+own byte-identical copy (#1182).
+
 ## [0.9.22] - 2026-09-23
 
 ### Notes

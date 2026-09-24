@@ -3,6 +3,70 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 0.6.0 - 2026-09-24
+
+- The `foundry` manifest block now declares `capabilities` (manifest schema
+version 3, #1196), a capability map of this role's craft with nine
+capabilities. Five are `built`, each naming its own release-qualification
+case as `proofCase` (#1272): the token contract and brand-overlay binding
+(`brand-binding-clean`), token purity (`token-purity-clean`), contrast
+(`contrast-clean`), the type record (`type-record-clean`), and structure and
+fold conformance (`fold-clean`, also backed by the surface-ladder and
+hero-CSS cases). Components and blocks is `partial` and cites
+`surface-ladder-clean`: a route composed only from Designer atoms and
+blocks passes, and a route that imports a second library's `atoms`,
+`tokens`, or `theme` entrypoint beside Designer fails
+(`surface:dual-primitive-stack`), but a second library imported any other
+way (a package root, `/components`, or an unscoped path), a bespoke
+element, or a surface that uses no Designer component at all is not caught
+yet. Accessibility beyond contrast, brand-kit assembly, and logo and
+identity files (#1210) are `planned`, with no proof case. For logo and
+identity files, `generateIdentityDirections`, `adoptSuppliedMark`, and
+`judgeIdentityKit` (from `@clossys/designer/tokens`) already generate and
+check a variant set, but no command wires them to a checked output a
+qualification case could run.
+- The changelog no longer carries an empty "Unreleased" heading, so each release's entry sits directly under the introduction instead of above an empty section.
+- The `foundry` manifest block now declares `outputs`
+(`clossys/designer/brand.css`, the brand bindings, and
+`clossys/designer/type-record.json`, the type record), `feeds` (the brand
+overlay, fed by the `token-contract-and-brand-overlay-binding` capability),
+and `fit`, which names a new shipped `fit-signal-declarations.json` with one
+signal: the repository ships an interface surface a person sees. `intake`
+and `status` are not declared yet. The README's API table now documents
+`SectionFrame`, `SectionFrameProps`, and `SectionMeasure`.
+- The `foundry` manifest block now declares `needs` and `solves` (package
+framework, #1172). `needs` names Strategist's `brand-derivation`, which the
+brand overlay binds to token slots. `solves` claims the
+`designer-interface-quality` problem, measured by the design conformance
+rate, backed by `token-purity` and shown by the `token-purity-violated`
+case. Its evidence is `designed`: no retained qualification record covers
+this version yet.
+- The changelog is no longer included in the package; it now lives in the public repository, linked from the README.
+- Remove the duplicated "How we work together" and "One question at a time"
+sections from this package's packed skill (`skill/SKILL.md`).
+`@clossys/launcher` injects the shared conversation contract when it
+composes a skill for a consumer, so the packed skill no longer carries its
+own byte-identical copy (#1182).
+- Packed skill: cite the strategist handoff. writer cites an audience id,
+approved claim ids (`claim:<id>`), applicable constraint ids
+(`constraint:<id>`), and the current direction id, and never edits
+`clossys/strategist/`. designer cites constraint ids and derived token slot names,
+and never adds a brand attribute, color value, or type pairing inside
+strategy records. customer speaks only from the audience
+`situation`/`pains` Strategist recorded, never authors the audience
+record, and does not inhabit until `strategist-check handoff` is green.
+publisher seals against the projected strategy provenance
+(`projectStrategyContract` / `createStrategyProvenance`) and never
+authors strategy. Refs: #1120, #1121, #1122, #1123.
+- Fix the remaining #1205 inconsistencies: Designer's and Writer's packed
+skills now say they supply the tokens, atoms, blocks, and copy ids a
+surface document cites by reference rather than co-authoring it, matching
+Publisher's skill. Publisher's surface-ownership module no longer says the
+shared consumer layout contract (#1171) has not landed; that contract now
+names Publisher as the owner of `clossys/publisher/surfaces`. Launcher's
+packed skill catalogue carries a copy of each role's skill, so it is
+released alongside the skill edits (#1184).
+
 ## [0.5.0] - 2026-09-22
 
 ### Added
