@@ -1,0 +1,126 @@
+{
+  "$comment": "The five v0 launch lanes' contract-shaped `foundry` values, held back from their own pull requests until the capability catalogue could read them: customer #1398, writer #1399, designer #1400, publisher #1401, strategist #1402. `needs` and `solves` are each lane's 'Prepared, pending catalogue fix' values verbatim, except as `excludedNeeds` records. `feeds` is what each lane's own pull request head declares, because a `needs` entry is only met when its producer feeds the artifact. Capability maps are not repeated here: this repository's are the lanes' own, except writer's new `planned` capability, which has no inputs and so adds no edge. Tests overlay these values onto the real manifests in memory; no package is edited.",
+  "lanes": {
+    "customer": {
+      "pullRequest": 1398,
+      "foundry": {
+        "needs": [
+          { "producerRole": "@clossys/strategist", "artifact": "audience-understanding" },
+          { "producerRole": "@clossys/publisher", "artifact": "surface-documents" }
+        ],
+        "solves": [
+          {
+            "problem": "customer-would-they-keep-it",
+            "statement": "We can't tell whether the person we made this for would actually keep it.",
+            "metric": "customer keep rate",
+            "proofCase": "keep-satisfied",
+            "evidence": "qualified",
+            "capability": "keep-verdict"
+          }
+        ],
+        "feeds": [
+          { "artifact": "keep-verdict", "path": "clossys/customer/keep.json" }
+        ]
+      }
+    },
+    "writer": {
+      "pullRequest": 1399,
+      "foundry": {
+        "needs": [
+          { "producerRole": "@clossys/strategist", "artifact": "brand-derivation" },
+          { "producerRole": "@clossys/strategist", "artifact": "claims" }
+        ],
+        "solves": [
+          {
+            "problem": "writer-unapproved-copy",
+            "statement": "We ship words nobody signed off on.",
+            "metric": "approved copy coverage rate",
+            "proofCase": "copy-violated",
+            "evidence": "qualified",
+            "capability": "copy-coverage"
+          }
+        ],
+        "feeds": [
+          { "artifact": "copy-registry", "path": "clossys/writer/copy-registry.json" }
+        ]
+      }
+    },
+    "designer": {
+      "pullRequest": 1400,
+      "foundry": {
+        "needs": [
+          { "producerRole": "@clossys/strategist", "artifact": "brand-derivation" }
+        ],
+        "solves": [
+          {
+            "problem": "designer-interface-quality",
+            "statement": "Our product doesn't look or feel like it was made with care.",
+            "metric": "design conformance rate",
+            "proofCase": "token-purity-violated",
+            "evidence": "qualified",
+            "capability": "token-purity"
+          }
+        ],
+        "feeds": [
+          { "artifact": "token-contract-and-brand-overlay-binding", "path": "clossys/designer/brand.css" }
+        ]
+      }
+    },
+    "publisher": {
+      "pullRequest": 1401,
+      "excludedNeeds": {
+        "$comment": "In #1401's prepared `needs` but excluded here: a data error for the later needs/solves change, not for the catalogue. Designer (#1400) feeds neither artifact. #1400 also makes `logo-and-identity-files` a `planned` capability, and #1401's own rule keeps only producers whose capability is `built` or `partial`. The framework gate reports both as `unmatched-need`, and so does kit composition.",
+        "needs": [
+          { "producerRole": "@clossys/designer", "artifact": "components-and-blocks" },
+          { "producerRole": "@clossys/designer", "artifact": "logo-and-identity-files" }
+        ]
+      },
+      "foundry": {
+        "needs": [
+          { "producerRole": "@clossys/strategist", "artifact": "strategy-brief" },
+          { "producerRole": "@clossys/designer", "artifact": "token-contract-and-brand-overlay-binding" },
+          { "producerRole": "@clossys/writer", "artifact": "copy-registry" },
+          { "producerRole": "@clossys/customer", "artifact": "keep-verdict" }
+        ],
+        "solves": [
+          {
+            "problem": "publisher-verified-release",
+            "statement": "We're not sure what's actually live, or that it matches what we approved.",
+            "metric": "verified publication rate",
+            "proofCase": "rate-violated",
+            "evidence": "designed",
+            "capability": "sealing-and-the-publication-record"
+          }
+        ],
+        "feeds": [
+          { "artifact": "surface-documents", "path": "clossys/publisher/surfaces/" }
+        ]
+      }
+    },
+    "strategist": {
+      "pullRequest": 1402,
+      "foundry": {
+        "needs": [],
+        "solves": [
+          {
+            "problem": "strategist-unclear-direction",
+            "statement": "We can't explain what we are.",
+            "metric": "strategy traceability rate",
+            "proofCase": "handoff-positioning-unresolved",
+            "evidence": "designed",
+            "capability": "positioning"
+          }
+        ],
+        "feeds": [
+          { "artifact": "audience-understanding", "path": "clossys/strategist/audiences.json" },
+          { "artifact": "positioning", "path": "clossys/strategist/positioning.json" },
+          { "artifact": "claims", "path": "clossys/strategist/claims.json" },
+          { "artifact": "constraints", "path": "clossys/strategist/constraints.json" },
+          { "artifact": "brand-derivation", "path": "clossys/strategist/brand.json" },
+          { "artifact": "direction-currency", "path": "clossys/strategist/direction.json" },
+          { "artifact": "strategy-brief", "path": "clossys/strategist/contract.json" }
+        ]
+      }
+    }
+  }
+}
