@@ -2,30 +2,23 @@
 designer: minor
 ---
 
-`foundry.capabilities` (schema v3, issue #1196): a MECE capability map of
-this role's craft — 6 capabilities `built` (token contract and
-brand-overlay binding, token purity, component conformance, contrast,
-type record, and structure/fold conformance including `surface-ladder.ts`);
-logo and identity files (#1210) is `partial` — `identity-kit.ts`'s
-`generateIdentityDirections` and `adoptSuppliedMark` generate the full
-seven-role variant set from tokens or a supplied mark, and
-`identity-checks.ts`'s `judgeIdentityKit` checks contrast, minimum size,
-clear space, and single-colour legibility against it, but neither path is
-yet wired into a checked CLI that produces `clossys/designer/assets/
-marks.json` for a real product; brand-kit assembly and general
-accessibility (beyond contrast) are `planned` — no code assembles
-tokens/type/contrast/marks into one brand-kit record yet. Every
-`built`/`partial` capability's `proofCase` resolves against this role's
-own retained qualification adapter — today one retained case
-(`token-purity-clean`), genuinely proven only for `token-purity`, cited
-as a disclosed anchor for the rest pending dedicated per-capability
-cases (#1272). Checked by `check-capability-maps.mjs` for its own
-mechanical MECE criteria (no duplicate outputs or sub-questions within a
-role, no cross-role output collision, every capability `inputs` entry
-resolves) across the five v0 Launch-pack roles — report mode: 0 findings;
-`--enforce`, with the other 14 roles allowlisted: 0 findings. Whether the
-declared sub-questions jointly and completely answer each role's own job
-question stays a reviewer judgment, never a mechanical finding.
-
-Minor, not patch: this adds a new declared capability map, a new surface
-this role did not previously expose in its manifest.
+The `foundry` manifest block now declares `capabilities` (manifest schema
+version 3, #1196), a capability map of this role's craft with nine
+capabilities. Five are `built`, each naming its own release-qualification
+case as `proofCase` (#1272): the token contract and brand-overlay binding
+(`brand-binding-clean`), token purity (`token-purity-clean`), contrast
+(`contrast-clean`), the type record (`type-record-clean`), and structure and
+fold conformance (`fold-clean`, also backed by the surface-ladder and
+hero-CSS cases). Components and blocks is `partial` and cites
+`surface-ladder-clean`: a route composed only from Designer atoms and
+blocks passes, and a route that imports a second library's `atoms`,
+`tokens`, or `theme` entrypoint beside Designer fails
+(`surface:dual-primitive-stack`), but a second library imported any other
+way (a package root, `/components`, or an unscoped path), a bespoke
+element, or a surface that uses no Designer component at all is not caught
+yet. Accessibility beyond contrast, brand-kit assembly, and logo and
+identity files (#1210) are `planned`, with no proof case. For logo and
+identity files, `generateIdentityDirections`, `adoptSuppliedMark`, and
+`judgeIdentityKit` (from `@clossys/designer/tokens`) already generate and
+check a variant set, but no command wires them to a checked output a
+qualification case could run.
