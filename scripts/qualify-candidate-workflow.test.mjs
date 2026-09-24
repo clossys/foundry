@@ -69,7 +69,7 @@ function jobHeader(selected) {
 }
 
 const PUSH_STEP = "Push branch and open pull request";
-const TOKEN_REFERENCE = /secrets\.|github\.token/g;
+const TOKEN_REFERENCE = /\bsecrets\b|\bgithub\s*(?:\.|\[\s*['"])token\b/g;
 const HANDOFF_PATH = /(?:\$RUNNER_TEMP|\$\{RUNNER_TEMP\}|\$\{\{\s*runner\.temp\s*\}\})\/handoff/g;
 // The only first arguments `node` may take anywhere in the write job: the
 // two trusted scripts it needs, and inline reads of the fresh checkout.

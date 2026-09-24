@@ -79,13 +79,9 @@ name: Qualify candidate
 # An earlier revision ran all of this in ONE job with contents: write and
 # pull-requests: write granted workflow-wide, and argued the token was safe
 # because it appeared only in the push step's own `env:`. Step-scoped env is
-# not a boundary: every step in a job shares one runner, one workspace and
-# one $HOME, so code running during qualification can leave behind
-# something a later step executes (a git hook, a modified script, a PATH
-# shim), and on a GitHub-hosted runner a step with passwordless sudo can read
-# the runner process's memory, which holds the job's GITHUB_TOKEN whatever
-# any step's env says. A job boundary gives the second job a fresh VM and a
-# token the first job never had.
+# not an isolation boundary: steps in one job share a runner, a workspace
+# and a $HOME. A job is the boundary: the second job gets a fresh runner and
+# a token the first job never had.
 #
 # The worst a malicious candidate can still achieve is a pull request
 # carrying a qualification record that passes every acceptance check above;
