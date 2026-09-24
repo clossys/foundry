@@ -1,4 +1,4 @@
-import { spawn, spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import { chmodSync, cpSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -61,9 +61,9 @@ afterEach(() => {
 
 beforeAll(() => {
   const packageRoot = fileURLToPath(new URL("..", import.meta.url));
-  const compiler = fileURLToPath(new URL("../../../node_modules/typescript/bin/tsc", import.meta.url));
-  const built = spawnSync(process.execPath, [compiler, "-p", "tsconfig.json"], { cwd: packageRoot, encoding: "utf8" });
-  if (built.status !== 0) throw new Error(`Controller build failed: ${built.stderr || built.stdout}`);
+  // dist/ was built once, before any test file started, by the package's
+  // vitest globalSetup (scripts/lib/vitest-build-package.mjs). Never rebuild
+  // it here: a sibling test file may be executing or packing it (#1385).
 
   workDir = mkdtempSync(join(tmpdir(), "controller-check-bin-"));
   const dotBin = join(workDir, "node_modules", ".bin");

@@ -1,4 +1,4 @@
-import { execFileSync, spawn } from "node:child_process";
+import { spawn } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -241,9 +241,11 @@ describe("main — direct-path reachability (real compiled dist/bin.js)", () => 
   let fixtureDir: string;
 
   beforeAll(() => {
-    execFileSync("npm", ["run", "build"], { cwd: packageDir, stdio: "pipe" });
+    // dist/ was built once, before any test file started, by the package's
+    // vitest globalSetup (scripts/lib/vitest-build-package.mjs). Never rebuild
+    // it here: a sibling test file may be executing it (#1385).
     binPath = join(packageDir, "dist", "bin.js");
-  }, 120_000);
+  });
 
   beforeEach(() => {
     fixtureDir = mkdtempSync(join(tmpdir(), "observer-cli-fixture-"));

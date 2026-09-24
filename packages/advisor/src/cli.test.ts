@@ -1,5 +1,5 @@
 import { mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
-import { spawn, spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
@@ -28,9 +28,9 @@ beforeEach(() => { root = mkdtempSync(join(tmpdir(), "advisor-cli-")); vi.spyOn(
 afterEach(() => { if (root) rmSync(root, { recursive: true, force: true }); });
 beforeAll(() => {
   const packageRoot = fileURLToPath(new URL("..", import.meta.url));
-  const compiler = fileURLToPath(new URL("../../../node_modules/typescript/bin/tsc", import.meta.url));
-  const built = spawnSync(process.execPath, [compiler, "-p", "tsconfig.json"], { cwd: packageRoot, encoding: "utf8" });
-  if (built.status !== 0) throw new Error(`Advisor build failed: ${built.stderr || built.stdout}`);
+  // dist/ was built once, before any test file started, by the package's
+  // vitest globalSetup (scripts/lib/vitest-build-package.mjs). Never rebuild
+  // it here: a sibling test file may be executing or packing it (#1385).
   executionCli = join(packageRoot, "dist", "execution-readiness-cli.js");
 });
 describe("advisor-check", () => {
