@@ -102,14 +102,61 @@ jobs:
         run: |
           node -e "console.log('matrix=' + JSON.stringify([...Array(Number(process.env.CANDIDATE_QUALIFICATION_SHARDS)).keys()]))" >> "$GITHUB_OUTPUT"
 
+  # Issue #1420: a pull_request or merge_group run whose diff touches only
+  # prose -- a `.changesets/*.md` file, anything under `docs/**` (including
+  # `docs/changelogs/**`), a root `*.md` file, or -- narrower still -- only a
+  # packed `packages/*/README.md` or `packages/*/skill/SKILL.md` -- cannot
+  # possibly be affected by the heavy jobs below it: build and test, packed
+  # consumer readiness, and the candidate-qualification shards. This job
+  # runs the classifier (scripts/classify-change-tier.mjs) once, up front,
+  # so every gated job's own `if:` can read its single `tier` output rather
+  # than each reimplementing the same diff. `tier` is one of `full`
+  # (default, and the only tier on any event other than pull_request/
+  # merge_group), `prose`, or `packed-prose`.
+  #
+  # The classifier is fail-closed BY CONSTRUCTION (see its own header
+  # comment): anything it cannot prove is prose-only reports 'full', never a
+  # narrower tier -- so a classifier bug, a missing BASE_SHA, an
+  # unresolvable merge base, or a single unrecognised changed path all run
+  # everything, exactly like every other skip already in this workflow (see
+  # `push-tree` above, whose own duplicate-push skip carries the identical
+  # fail-open-to-running-everything polarity).
+  #
+  # Deliberately independent of `push-tree`: this job needs no dedup
+  # decision of its own, only the diff, so it starts immediately in
+  # parallel rather than waiting on that job's result.
+  classify:
+    name: classify change tier
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      tier: ${{ steps.classify.outputs.tier }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          # The classifier resolves a merge-base against BASE_SHA -- the
+          # same full-history requirement every other diff-scoped job in
+          # this file already carries (release-readiness,
+          # qualification-record-required, release-pr-shape,
+          # candidate-qualification-shard, prose, ...).
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+      - id: classify
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+        run: node scripts/classify-change-tier.mjs
+
   # Direct tooling is part of the public-package supply chain even when it is
   # not shipped as a runtime dependency. Audit the complete locked graph and
   # fail on high or critical advisories; lower severities remain visible in
   # the command output and are handled through the security issue queue.
   dependency-audit:
     name: dependency audit
-    needs: [push-tree]
-    if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
+    needs: [push-tree, classify]
+    if: (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && needs.classify.outputs.tier == 'full'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -138,8 +185,8 @@ jobs:
   # lifecycle evidence does not depend on the job's own business outcome.
   credential-lifecycle:
     name: credential lifecycle (dependency-audit token)
-    needs: [push-tree, dependency-audit]
-    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true')
+    needs: [push-tree, dependency-audit, classify]
+    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && needs.classify.outputs.tier == 'full'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -686,8 +733,8 @@ jobs:
 
   scope:
     name: scope drift
-    needs: [push-tree]
-    if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
+    needs: [push-tree, classify]
+    if: (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && needs.classify.outputs.tier == 'full'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -714,8 +761,8 @@ jobs:
   # workflow prose or ambient npm configuration.
   registry:
     name: registry drift
-    needs: [push-tree]
-    if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
+    needs: [push-tree, classify]
+    if: (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && needs.classify.outputs.tier == 'full'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -737,8 +784,8 @@ jobs:
   # a lifecycle script instead of a manifest field.
   prepublish-hook:
     name: prepublish hook drift
-    needs: [push-tree]
-    if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
+    needs: [push-tree, classify]
+    if: (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && needs.classify.outputs.tier == 'full'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -766,8 +813,8 @@ jobs:
   # added there are recommended for promotion and why).
   root-entry:
     name: root entry policy drift
-    needs: [push-tree]
-    if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
+    needs: [push-tree, classify]
+    if: (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && needs.classify.outputs.tier == 'full'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -795,8 +842,8 @@ jobs:
   # straight into `required_status_checks`.
   package-evidence:
     name: package state (declared vs. evidence)
-    needs: [push-tree]
-    if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
+    needs: [push-tree, classify]
+    if: (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && needs.classify.outputs.tier == 'full'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -819,8 +866,8 @@ jobs:
   # dependency-free, shallow-checkout class as package-evidence.
   role-loop-archetypes:
     name: role-loop archetypes
-    needs: [push-tree]
-    if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
+    needs: [push-tree, classify]
+    if: (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && needs.classify.outputs.tier == 'full'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -934,8 +981,8 @@ jobs:
   # recommendation on each of the three.
   controller-gates:
     name: controller gates (catalog, neutrality, repository-profile)
-    needs: [push-tree]
-    if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
+    needs: [push-tree, classify]
+    if: (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && needs.classify.outputs.tier == 'full'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -1024,8 +1071,8 @@ jobs:
   # checkout is fine.
   workspace-links:
     name: workspace link integrity
-    needs: [push-tree]
-    if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
+    needs: [push-tree, classify]
+    if: (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && needs.classify.outputs.tier == 'full'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -1131,7 +1178,8 @@ jobs:
   # solved here.
   qualification-record-required:
     name: qualification record required (version bump vs. retained record)
-    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
+    needs: [classify]
+    if: (github.event_name == 'pull_request' || github.event_name == 'merge_group') && needs.classify.outputs.tier == 'full'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -1202,8 +1250,8 @@ jobs:
   # needed and this job does.
   contrast:
     name: WCAG contrast gate (ui-contrast-check)
-    needs: [push-tree]
-    if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
+    needs: [push-tree, classify]
+    if: (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && needs.classify.outputs.tier == 'full'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -1229,8 +1277,8 @@ jobs:
   # would mean the two contexts are no longer proof of the same thing.
   designer-contrast:
     name: WCAG contrast gate (designer-contrast-check)
-    needs: [push-tree]
-    if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
+    needs: [push-tree, classify]
+    if: (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && needs.classify.outputs.tier == 'full'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -1339,8 +1387,8 @@ jobs:
   # second hard-coded list to keep in sync.
   candidate-qualification-shard:
     name: candidate qualification records (shard ${{ matrix.shard }})
-    needs: [push-tree]
-    if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
+    needs: [push-tree, classify]
+    if: (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && needs.classify.outputs.tier == 'full'
     strategy:
       fail-fast: false
       matrix:
@@ -1403,8 +1451,8 @@ jobs:
   # in this file.
   candidate-qualification:
     name: candidate qualification records
-    needs: [push-tree, candidate-qualification-shard]
-    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true')
+    needs: [push-tree, candidate-qualification-shard, classify]
+    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && needs.classify.outputs.tier == 'full'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -1424,8 +1472,8 @@ jobs:
   # dependency it has) has actually been built (#908).
   readme-examples-typecheck:
     name: README code examples typecheck against shipped declarations
-    needs: [push-tree]
-    if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
+    needs: [push-tree, classify]
+    if: (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && needs.classify.outputs.tier != 'prose'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -1497,8 +1545,8 @@ jobs:
   # there.
   packed-consumer-readiness:
     name: packed consumer readiness
-    needs: [push-tree]
-    if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
+    needs: [push-tree, classify]
+    if: (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && needs.classify.outputs.tier == 'full'
     runs-on: ubuntu-latest
     timeout-minutes: 18
     steps:
@@ -1582,7 +1630,7 @@ jobs:
     # the required context, but it is now a genuine fan-in over their
     # results -- see the first step below for why `needs` alone is not
     # enough to make that fan-in honest.
-    needs: [push-tree, candidate-qualification, readme-examples-typecheck, packed-consumer-readiness]
+    needs: [push-tree, candidate-qualification, readme-examples-typecheck, packed-consumer-readiness, classify]
     # `always()` is mandatory, not stylistic: GitHub's UNWRITTEN default for
     # any job that `needs` other jobs is "skip unless every needed job
     # succeeded" -- that default applies underneath this job's own `if:`
@@ -1593,7 +1641,7 @@ jobs:
     # skipped required context reports as passing, silently erasing the
     # failure it exists to catch. `always()` forces this job to run so the
     # explicit check in its first step can fail it honestly instead.
-    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true')
+    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && needs.classify.outputs.tier == 'full'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -1930,8 +1978,8 @@ jobs:
   # time when it is much more expensive to unwind.
   artifact:
     name: artifact safety (tarball)
-    needs: [push-tree]
-    if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
+    needs: [push-tree, classify]
+    if: (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && needs.classify.outputs.tier != 'prose'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:

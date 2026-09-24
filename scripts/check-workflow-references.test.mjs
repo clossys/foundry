@@ -128,7 +128,7 @@ export function candidateQualificationCiFailures(workflowText) {
   // same reason every other #1240-shaped fan-in in this file needs it: a
   // skipped needs.candidate-qualification.result in build's own check must
   // read as "not success", never silently vanish.
-  if (!/^ {4}needs: \[push-tree, candidate-qualification-shard\]$/m.test(fanInJob)) failures.push("candidate-fanin-needs");
+  if (!/^ {4}needs: \[push-tree, candidate-qualification-shard, classify\]$/m.test(fanInJob)) failures.push("candidate-fanin-needs");
   if (!/^ {4}if: always\(\) &&/m.test(fanInJob)) failures.push("candidate-fanin-always");
   return failures;
 }
@@ -189,13 +189,13 @@ test("the required build context fails closed on candidate qualification records
   // The fan-in's own needs:/if: always() -- a skipped or failed matrix must
   // never silently read as success to `build`'s own downstream check.
   const fanInJob = workflowJob(workflow, "candidate-qualification");
-  const withoutFanInNeeds = workflow.replace(fanInJob, fanInJob.replace("needs: [push-tree, candidate-qualification-shard]", "needs: [push-tree]"));
+  const withoutFanInNeeds = workflow.replace(fanInJob, fanInJob.replace("needs: [push-tree, candidate-qualification-shard, classify]", "needs: [push-tree]"));
   assert.deepEqual(candidateQualificationCiFailures(withoutFanInNeeds), ["candidate-fanin-needs"]);
 
   const withoutFanInAlways = workflow.replace(
     fanInJob,
     fanInJob.replace(
-      "if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true')",
+      "if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && needs.classify.outputs.tier == 'full'",
       "if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'",
     ),
   );
@@ -494,4 +494,115 @@ test("every workspace-build-cache step's key covers every input npm run build ca
   // job while another would have missed on the identical tree is its own
   // silent inconsistency.
   assert.ok(keyLines.every((line) => line === keyLines[0]), `every job's workspace-build-cache key must be byte-identical: ${JSON.stringify(keyLines)}`);
+});
+
+// Issue #1420: the fail-closed fast path for prose-only changes. The
+// classifier itself (scripts/classify-change-tier.test.mjs) proves that any
+// changed path outside the prose/packed-prose sets -- including an empty
+// diff, an unresolvable base, or the deleted half of a rename -- makes
+// classifyChangeTier() return 'full', never a narrower tier. That proof is
+// only meaningful if 'full' is actually what every heavy job's own `if:`
+// requires to run, which is what THIS test proves: every job the charter
+// names as heavy (it "can't be affected by prose") must both `needs:
+// classify` and gate on its `tier` output, and every job the charter names
+// as a keep-running prose gate must NOT reference `classify` at all -- a
+// gate a prose-only change is supposed to still run must never be
+// accidentally skippable by tier.
+test("issue #1420: every heavy job depends on the classifier and gates on tier == 'full' (or, for the two packed-file gates, tier != 'prose')", () => {
+  const workflow = readFileSync(join(repoRoot, ".github/workflows/ci.yml"), "utf8");
+
+  assert.match(workflow, /^  classify:\n    name: classify change tier$/m, "the classify job must exist under exactly this id");
+  const classifyJob = workflowJob(workflow, "classify");
+  assert.match(classifyJob, /outputs:\n\s+tier: \$\{\{ steps\.classify\.outputs\.tier \}\}/, "classify must output tier");
+  assert.match(classifyJob, /run: node scripts\/classify-change-tier\.mjs/, "classify must actually invoke the classifier script");
+
+  // "Heavy": build and test, packed consumer readiness, candidate
+  // qualification (its shard matrix and its fan-in), and everything else
+  // that cannot possibly be affected by a prose-only change -- every
+  // required or supporting job outside the five explicit keep-running
+  // gates below. Skipped entirely (tier must be 'full') for both the
+  // 'prose' and 'packed-prose' tiers.
+  const fullOnlyJobs = [
+    "dependency-audit",
+    "credential-lifecycle",
+    "scope",
+    "registry",
+    "prepublish-hook",
+    "root-entry",
+    "package-evidence",
+    "role-loop-archetypes",
+    "controller-gates",
+    "workspace-links",
+    "qualification-record-required",
+    "contrast",
+    "designer-contrast",
+    "candidate-qualification-shard",
+    "candidate-qualification",
+    "packed-consumer-readiness",
+    "build",
+  ];
+  for (const jobName of fullOnlyJobs) {
+    const job = workflowJob(workflow, jobName);
+    const needsLine = job.match(/^ {4}needs: \[(.+)\]$/m);
+    assert.ok(needsLine, `${jobName} must declare needs:`);
+    assert.ok(
+      needsLine[1].split(",").map((entry) => entry.trim()).includes("classify"),
+      `${jobName} must need classify -- its if: cannot read a tier it never depended on`,
+    );
+    const jobIf = job.match(/^ {4}if: (.+)$/m);
+    assert.ok(jobIf, `${jobName} must declare if:`);
+    assert.match(
+      jobIf[1],
+      /needs\.classify\.outputs\.tier == 'full'/,
+      `${jobName} must skip on any tier other than 'full' -- it is named as a heavy job in issue #1420 and cannot be affected by a prose-only change`,
+    );
+  }
+
+  // "Packed-file gates": still relevant to the narrower 'packed-prose'
+  // tier (a packages/*/README.md or packages/*/skill/SKILL.md change), so
+  // they gate on `tier != 'prose'` rather than `tier == 'full'` -- they run
+  // for BOTH 'full' and 'packed-prose', and skip only for pure 'prose'.
+  const packedFileGates = ["readme-examples-typecheck", "artifact"];
+  for (const jobName of packedFileGates) {
+    const job = workflowJob(workflow, jobName);
+    const needsLine = job.match(/^ {4}needs: \[(.+)\]$/m);
+    assert.ok(needsLine, `${jobName} must declare needs:`);
+    assert.ok(
+      needsLine[1].split(",").map((entry) => entry.trim()).includes("classify"),
+      `${jobName} must need classify`,
+    );
+    const jobIf = job.match(/^ {4}if: (.+)$/m);
+    assert.ok(jobIf, `${jobName} must declare if:`);
+    assert.match(
+      jobIf[1],
+      /needs\.classify\.outputs\.tier != 'prose'/,
+      `${jobName} must keep running for 'packed-prose', skipping only pure 'prose'`,
+    );
+    assert.doesNotMatch(jobIf[1], /== 'full'/, `${jobName} must not narrow to full-only -- that would also skip it for 'packed-prose'`);
+  }
+
+  // The five keep-running prose gates (public-safety's three split jobs
+  // plus its fan-in, secret-scan, prose quality, release readiness, and
+  // release PR shape) must run on every tier -- a prose-only change is
+  // exactly the change these gates exist to judge, so none of them may
+  // reference the classifier's tier output at all.
+  const alwaysRunJobs = [
+    "push-tree",
+    "safety-identity",
+    "safety-gates",
+    "safety-gitleaks",
+    "safety",
+    "secret-scan-judgment",
+    "prose",
+    "release-readiness",
+    "release-pr-shape",
+  ];
+  for (const jobName of alwaysRunJobs) {
+    const job = workflowJob(workflow, jobName);
+    assert.doesNotMatch(
+      job,
+      /needs\.classify\.outputs\.tier/,
+      `${jobName} must run on every tier -- it is one of issue #1420's explicit keep-running prose gates and must never be skippable by the classifier`,
+    );
+  }
 });
