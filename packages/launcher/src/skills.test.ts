@@ -262,6 +262,227 @@ describe("composeSkills", () => {
   });
 });
 
+describe("composeSkills ownership check against the recorded digest (#1473)", () => {
+  interface Fixture {
+    readonly hub: string;
+    readonly catalogue: string;
+    readonly launcherPackageRoot: string;
+    compose(): ReturnType<typeof composeSkills>;
+    setSource(name: string, marker: string): void;
+    dropSource(name: string): void;
+    skillPath(name: string): string;
+    manifest(): { name: string; sha256: string }[];
+  }
+
+  function fixture(names: readonly string[]): Fixture {
+    const hub = tempDir();
+    const catalogue = tempDir();
+    const launcherPackageRoot = tempDir();
+    const setSource = (name: string, marker: string): void => {
+      mkdirSync(join(catalogue, name), { recursive: true });
+      writeFileSync(join(catalogue, name, "SKILL.md"), skillFixture(name, marker));
+    };
+    for (const name of names) setSource(name, `${name}-v1`);
+    return {
+      hub,
+      catalogue,
+      launcherPackageRoot,
+      compose: () => composeSkills(host(hub), hub, { launcherPackageRoot, skillCatalogueRoot: catalogue }),
+      setSource,
+      dropSource: (name) => rmSync(join(catalogue, name), { recursive: true, force: true }),
+      skillPath: (name) => join(hub, ".agents", "skills", `clossys-${name}`, "SKILL.md"),
+      manifest: () =>
+        (JSON.parse(readFileSync(join(hub, "clossys", ".state", "skills.json"), "utf8")) as { skills: { name: string; sha256: string }[] })
+          .skills,
+    };
+  }
+
+  const EDIT = "\nClient's own note, added by hand.\n";
+
+  // The #1473 reproduction: on the pre-fix code both hand edits below are gone after the second run.
+  it("reproduces #1473: a client's edit survives the next run, for a still-composed skill and for a retired one", () => {
+    const f = fixture(["advisor", "designer"]);
+    f.compose();
+    writeFileSync(f.skillPath("advisor"), readFileSync(f.skillPath("advisor"), "utf8") + EDIT);
+    writeFileSync(f.skillPath("designer"), readFileSync(f.skillPath("designer"), "utf8") + EDIT);
+    f.setSource("advisor", "advisor-v2");
+    f.dropSource("designer");
+
+    f.compose();
+
+    expect(readFileSync(f.skillPath("advisor"), "utf8")).toContain("Client's own note");
+    expect(readFileSync(f.skillPath("designer"), "utf8")).toContain("Client's own note");
+  });
+
+  describe("rewrite (skill still composed)", () => {
+    it("matching digest: rewrites with the new content and records the new digest", () => {
+      const f = fixture(["advisor"]);
+      f.compose();
+      const firstDigest = f.manifest()[0]?.sha256;
+      f.setSource("advisor", "advisor-v2");
+      const result = f.compose();
+      expect(result.composed).toEqual(["advisor"]);
+      expect(result.preserved).toEqual([]);
+      expect(readFileSync(f.skillPath("advisor"), "utf8")).toContain("advisor-v2");
+      expect(f.manifest()[0]?.sha256).not.toBe(firstDigest);
+    });
+
+    it("edited since Launcher wrote it: leaves it as found, reports it, and keeps the old manifest entry", () => {
+      const f = fixture(["advisor"]);
+      f.compose();
+      const recorded = f.manifest()[0];
+      const edited = readFileSync(f.skillPath("advisor"), "utf8") + EDIT;
+      writeFileSync(f.skillPath("advisor"), edited);
+      f.setSource("advisor", "advisor-v2");
+
+      const result = f.compose();
+      expect(result.composed).toEqual([]);
+      expect(result.retired).toEqual([]);
+      expect(result.preserved).toHaveLength(1);
+      expect(result.preserved[0]).toMatchObject({
+        packageDir: "advisor",
+        action: "rewrite",
+        path: join(".agents", "skills", "clossys-advisor", "SKILL.md"),
+      });
+      expect(result.preserved[0]?.note).toContain("was edited since Launcher last wrote it");
+      expect(result.preserved[0]?.note).toContain("delete `.agents/skills/clossys-advisor`, and run launcher again");
+      expect(readFileSync(f.skillPath("advisor"), "utf8")).toBe(edited);
+      expect(f.manifest()).toEqual([recorded]);
+
+      // Still reported on the next run, not forgotten after one warning.
+      expect(f.compose().preserved.map((entry) => entry.packageDir)).toEqual(["advisor"]);
+      expect(readFileSync(f.skillPath("advisor"), "utf8")).toBe(edited);
+    });
+
+    it("missing: recreates it (the documented way to accept Launcher's version after an edit)", () => {
+      const f = fixture(["advisor"]);
+      f.compose();
+      writeFileSync(f.skillPath("advisor"), readFileSync(f.skillPath("advisor"), "utf8") + EDIT);
+      f.setSource("advisor", "advisor-v2");
+      expect(f.compose().preserved).toHaveLength(1);
+
+      rmSync(dirname(f.skillPath("advisor")), { recursive: true, force: true });
+      const result = f.compose();
+      expect(result.composed).toEqual(["advisor"]);
+      expect(result.preserved).toEqual([]);
+      expect(readFileSync(f.skillPath("advisor"), "utf8")).toContain("advisor-v2");
+    });
+
+    it("no recorded digest, content equal to what this run writes: adopts it and records the digest", () => {
+      const f = fixture(["advisor"]);
+      f.compose();
+      const content = readFileSync(f.skillPath("advisor"), "utf8");
+      rmSync(join(f.hub, "clossys"), { recursive: true, force: true });
+      const result = f.compose();
+      expect(result.composed).toEqual(["advisor"]);
+      expect(result.preserved).toEqual([]);
+      expect(readFileSync(f.skillPath("advisor"), "utf8")).toBe(content);
+      expect(f.manifest().map((entry) => entry.name)).toEqual(["advisor"]);
+    });
+
+    it("no recorded digest, different content: refuses to overwrite and records no entry", () => {
+      const f = fixture(["advisor"]);
+      mkdirSync(dirname(f.skillPath("advisor")), { recursive: true });
+      writeFileSync(f.skillPath("advisor"), "an older or hand-written copy\n");
+      const result = f.compose();
+      expect(result.composed).toEqual([]);
+      expect(result.preserved[0]).toMatchObject({ packageDir: "advisor", action: "rewrite" });
+      expect(result.preserved[0]?.note).toContain("has no digest recorded");
+      expect(readFileSync(f.skillPath("advisor"), "utf8")).toBe("an older or hand-written copy\n");
+      expect(f.manifest()).toEqual([]);
+    });
+
+    it("a real directory at a host discovery path whose copy was edited is not replaced by a link", () => {
+      const f = fixture(["advisor"]);
+      f.compose();
+      const discovery = join(f.hub, ".claude", "skills", "clossys-advisor");
+      const edited = readFileSync(f.skillPath("advisor"), "utf8") + EDIT;
+      rmSync(discovery, { recursive: true, force: true });
+      mkdirSync(discovery, { recursive: true });
+      writeFileSync(join(discovery, "SKILL.md"), edited);
+
+      const result = f.compose();
+      expect(result.preserved[0]).toMatchObject({ packageDir: "advisor", path: join(".claude", "skills", "clossys-advisor", "SKILL.md") });
+      expect(result.preserved[0]?.note).toContain("delete `.claude/skills/clossys-advisor`");
+      expect(lstatSync(discovery).isSymbolicLink()).toBe(false);
+      expect(readFileSync(join(discovery, "SKILL.md"), "utf8")).toBe(edited);
+    });
+  });
+
+  describe("retire (skill no longer composed)", () => {
+    it("matching digest: removes the composed output and links, and drops the manifest entry", () => {
+      const f = fixture(["advisor", "designer"]);
+      f.compose();
+      f.dropSource("designer");
+      const result = f.compose();
+      expect(result.retired).toEqual(["designer"]);
+      expect(result.preserved).toEqual([]);
+      expect(existsSync(dirname(f.skillPath("designer")))).toBe(false);
+      expect(existsSync(join(f.hub, ".claude", "skills", "clossys-designer"))).toBe(false);
+      expect(f.manifest().map((entry) => entry.name)).toEqual(["advisor"]);
+    });
+
+    it("edited since Launcher wrote it: keeps the file and its discovery links, reports it, and keeps the entry", () => {
+      const f = fixture(["advisor", "designer"]);
+      f.compose();
+      const recorded = f.manifest().find((entry) => entry.name === "designer");
+      const edited = readFileSync(f.skillPath("designer"), "utf8") + EDIT;
+      writeFileSync(f.skillPath("designer"), edited);
+      f.dropSource("designer");
+
+      const result = f.compose();
+      expect(result.retired).toEqual([]);
+      expect(result.preserved).toHaveLength(1);
+      expect(result.preserved[0]).toMatchObject({ packageDir: "designer", action: "retire" });
+      expect(result.preserved[0]?.note).toContain("Launcher no longer composes this skill");
+      expect(readFileSync(f.skillPath("designer"), "utf8")).toBe(edited);
+      expect(lstatSync(join(f.hub, ".claude", "skills", "clossys-designer")).isSymbolicLink()).toBe(true);
+      expect(f.manifest().find((entry) => entry.name === "designer")).toEqual(recorded);
+    });
+
+    it("holding files Launcher did not write: keeps the whole directory", () => {
+      const f = fixture(["advisor", "designer"]);
+      f.compose();
+      const extra = join(dirname(f.skillPath("designer")), "notes.md");
+      writeFileSync(extra, "client notes\n");
+      f.dropSource("designer");
+
+      const result = f.compose();
+      expect(result.retired).toEqual([]);
+      expect(result.preserved[0]?.note).toContain("holds files Launcher did not write (notes.md)");
+      expect(readFileSync(extra, "utf8")).toBe("client notes\n");
+      expect(existsSync(f.skillPath("designer"))).toBe(true);
+    });
+
+    it("missing: completes the retirement, removing the discovery links and the manifest entry", () => {
+      const f = fixture(["advisor", "designer"]);
+      f.compose();
+      rmSync(dirname(f.skillPath("designer")), { recursive: true, force: true });
+      f.dropSource("designer");
+      const result = f.compose();
+      expect(result.retired).toEqual(["designer"]);
+      expect(result.preserved).toEqual([]);
+      expect(existsSync(join(f.hub, ".claude", "skills", "clossys-designer"))).toBe(false);
+      expect(f.manifest().map((entry) => entry.name)).toEqual(["advisor"]);
+    });
+
+    it("no recorded digest: never retires a skill the manifest does not record", () => {
+      const f = fixture(["advisor", "designer"]);
+      f.compose();
+      const manifestPath = join(f.hub, "clossys", ".state", "skills.json");
+      const document = JSON.parse(readFileSync(manifestPath, "utf8")) as { skills: Record<string, unknown>[] };
+      for (const entry of document.skills) if (entry.name === "designer") delete entry.sha256;
+      writeFileSync(manifestPath, JSON.stringify(document));
+      f.dropSource("designer");
+
+      const result = f.compose();
+      expect(result.retired).toEqual([]);
+      expect(result.preserved).toEqual([]);
+      expect(existsSync(f.skillPath("designer"))).toBe(true);
+    });
+  });
+});
+
 function skillFixture(name: string, bodyMarker: string): string {
   return `---\nname: clossys-${name}\ndescription: test skill for ${name}\ndisable-model-invocation: true\n---\n\n# ${name}\n\n${bodyMarker}\n`;
 }

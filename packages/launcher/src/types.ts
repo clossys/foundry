@@ -132,6 +132,18 @@ export interface HubHealthReport {
     readonly rosterTargets?: readonly string[];
     readonly rosterSkipped?: readonly { readonly inventoryId: string; readonly note: string }[];
     readonly retired?: readonly string[];
+    /**
+     * Composed skills left exactly as found because their on-disk content is not
+     * provably what Launcher last wrote (#1473) -- in the hub, or (with `target`
+     * naming the inventory id) in a sibling clone. Any entry marks the report degraded.
+     */
+    readonly preserved?: readonly {
+      readonly target?: string;
+      readonly packageDir: string;
+      readonly action: "rewrite" | "retire";
+      readonly path: string;
+      readonly note: string;
+    }[];
   };
   /** Present only on the run that performed the `.clossys/` -> `clossys/.state/` migration. */
   readonly migration?: { readonly status: "migrated"; readonly from: string; readonly to: string };

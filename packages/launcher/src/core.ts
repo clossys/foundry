@@ -19,7 +19,7 @@ import type {
   WorkspacePlanCreate,
   WorkspaceRefusal,
 } from "./types.js";
-import { composeSkills, SKILLS_MANIFEST_REL, type SkillCompositionResult } from "./skills.js";
+import { composeSkills, SKILLS_MANIFEST_REL, type SkillCompositionResult, type SkillPreservation } from "./skills.js";
 import { parseSkillManifest, summarizeSkillsManifest } from "./manifest.js";
 import { detectLinkedHosts, serializeHostRecord, HOSTS_REL, type DiscoveredHost } from "./hosts.js";
 import { reportInventoryDrift } from "./inventory-adoption.js";
@@ -823,6 +823,10 @@ export function formatHubHealth(report: HubHealthReport): string {
     if (report.skillComposition.retired !== undefined && report.skillComposition.retired.length > 0) {
       skillParts.push(`skills retired: ${report.skillComposition.retired.map((name) => `clossys-${name}`).join(", ")}`);
     }
+    for (const kept of report.skillComposition.preserved ?? []) {
+      const where = kept.target === undefined ? "" : ` in ${kept.target}`;
+      skillParts.push(`skill preserved (clossys-${kept.packageDir}${where}, not ${kept.action === "rewrite" ? "rewritten" : "retired"}): ${kept.note}`);
+    }
   }
   const skillsManifestLine =
     report.skillsManifest === undefined
@@ -864,19 +868,23 @@ function withHealth(
   directory: string,
   headline: string,
   liveAdvisorVersion?: string,
-  skillComposition?: SkillCompositionResult & { linkedHosts?: readonly DiscoveredHost[] },
+  skillComposition?: Omit<SkillCompositionResult, "preserved"> & {
+    preserved: readonly RosterSkillPreservation[];
+    linkedHosts?: readonly DiscoveredHost[];
+  },
   liveLauncherVersion?: string,
   migration?: HubHealthReport["migration"],
   inventoryDrift?: HubHealthReport["inventoryDrift"],
 ): WorkspaceApplyResult {
   const base = reportHubHealth(host, directory, liveAdvisorVersion, liveLauncherVersion, skillComposition?.retired ?? [], migration);
   const rosterSkipped = skillComposition?.rosterSkipped ?? [];
+  const preserved = skillComposition?.preserved ?? [];
   const health: HubHealthReport = {
     ...base,
     ...(skillComposition === undefined ? {} : { skillComposition }),
     ...(skillComposition?.linkedHosts === undefined ? {} : { linkedHosts: skillComposition.linkedHosts }),
     ...(inventoryDrift === undefined || inventoryDrift.status === "no-external-source" ? {} : { inventoryDrift }),
-    degraded: base.degraded || rosterSkipped.length > 0,
+    degraded: base.degraded || rosterSkipped.length > 0 || preserved.length > 0,
   };
   return {
     state: "satisfied",
@@ -1127,13 +1135,16 @@ function recordLinkedHosts(host: WorkspaceHost, directory: string): readonly Dis
   return linkedHosts;
 }
 
+type RosterSkillPreservation = SkillPreservation & { readonly target?: string };
+
 function composeSkillRoster(
   host: WorkspaceHost,
   hubDirectory: string,
   hubOwner: string,
   hubRepository: string,
   options: { launcherPackageRoot: string; skillCatalogueRoot?: string; contractPath?: string },
-): SkillCompositionResult & {
+): Omit<SkillCompositionResult, "preserved"> & {
+  readonly preserved: readonly RosterSkillPreservation[];
   readonly rosterTargets: readonly string[];
   readonly rosterSkipped: readonly { readonly inventoryId: string; readonly note: string }[];
   readonly linkedHosts: readonly DiscoveredHost[];
@@ -1149,14 +1160,17 @@ function composeSkillRoster(
   writeClossysReadme(host, hubDirectory);
   const hubId = hubRosterId(host, hubDirectory, hubOwner, hubRepository);
   const rosterTargets: string[] = [hubId];
+  const preserved: RosterSkillPreservation[] = [...hubSkill.preserved];
   const { targets, skipped } = resolveSisterCloneTargets(host, hubDirectory, hubOwner);
   for (const target of targets) {
     recordLinkedHosts(host, target.directory);
-    composeSkills(host, target.directory, composeOptions);
+    const sisterSkill = composeSkills(host, target.directory, composeOptions);
+    // #1473: a skill left as found in a sibling clone is reported, never dropped silently.
+    for (const entry of sisterSkill.preserved) preserved.push({ ...entry, target: target.inventoryId });
     writeSisterConsumerAgentsIfNeeded(host, target.directory);
     rosterTargets.push(target.inventoryId);
   }
-  return { ...hubSkill, rosterTargets, rosterSkipped: skipped, linkedHosts };
+  return { ...hubSkill, preserved, rosterTargets, rosterSkipped: skipped, linkedHosts };
 }
 
 function finishHubApply(
