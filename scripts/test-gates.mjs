@@ -323,50 +323,54 @@ try {
     // Accuracy is measured here, not argued: a data-driven table of realistic
     // machine-path names (every one must be caught), ordinary names (every one
     // must stay clean) and KNOWN-GAP shapes (deliberately not covered; asserted
-    // as currently missed so closing one is noticed). Seeded from a review's
-    // 85-name corpus plus a second review's extra negatives. Each row gets its
-    // own directory so a file and a directory of the same name can coexist.
-    // Slash-form rows are joined from segments at run time so this file never
-    // holds a literal absolute-path shape; `someone` is a placeholder.
+    // as currently missed so closing one is noticed). Seeded from three review
+    // rounds' corpora. The rule is limited to shapes only a machine produces
+    // (see MACHINE-LOCAL PATH NAMES in check-public-safety.mjs); every home-
+    // directory shape spelled with ordinary words is a KNOWN-GAP row. Each row
+    // gets its own directory so a file and a directory of the same name can
+    // coexist. Slash-form rows are joined from segments at run time so this
+    // file never holds a literal absolute-path shape; `someone` is a
+    // placeholder.
     const J = (...parts) => parts.join("/");
     const MP_POSITIVES = [
-      "-Users-someone-code-notes.txt",
-      J("-Users-someone-code-proj", "abc", "n.md"),
-      J("-Users-someone-code-proj", "0b1c2d3e-aaaa-bbbb-cccc-000000000000", "scratchpad", "n.md"),
-      "-Users-someone",
-      J("-Users-someone", "x.jsonl"),
-      "-Users-someone--claude-worktrees-x",
-      "_Users_someone_code_x.md",
-      "_Users_mary-jane_code_x.md",
-      "-Users-mary_jane-code-x.md",
-      "-home-someone-code-x",
-      "_home_someone_code_x.md",
-      "-home-someone",
-      "C--Users-someone-code",
-      "C_Users_someone_code",
-      "C\\Users\\someone\\x.txt",
-      "c--Users-someone-code",
-      "C--users-someone-code",
-      "-mnt-c-Users-someone-code-x",
-      "_mnt_c_Users_someone_code_x",
-      J("mnt", "c", "Users", "someone", "x.txt"),
+      // 1. temp roots, flattened and mirrored
       "-private-var-folders-ab-cd-T-x",
       "_private_tmp_claude-1_scratchpad_x",
       "-private-tmp-claude-502-x",
       "-var-folders-ab-cdef-T-x.txt",
       "-tmp-claude-501-proj-x",
-      "%2FUsers%2Fsomeone%2Fcode%2Fx.txt",
-      "%2fUsers%2fsomeone%2fx.txt",
-      "file%3A%2F%2F%2FUsers%2Fsomeone%2Fx",
-      "%2Fhome%2Fsomeone%2Fx",
-      J("Users", "someone", "code", "a.txt"),
       J("private", "var", "folders", "ab", "x"),
       J("mirror", "private", "tmp", "x", "a.txt"),
       J("var", "folders", "ab", "x"),
       J("tmp", "claude-1", "x"),
-      J("home", "someone", "code", "x"),
+      // 2. URL-encoded absolute paths
+      "%2FUsers%2Fsomeone%2Fcode%2Fx.txt",
+      "%2fUsers%2fsomeone%2fx.txt",
+      "file%3A%2F%2F%2FUsers%2Fsomeone%2Fx",
+      "%2Fhome%2Fsomeone%2Fx",
+      // 3. Windows drive homes
+      "C--Users-someone-code",
+      "c--Users-someone-code",
+      "C--users-someone-code",
+      "C--Users-someone-source-repos-x",
+      "C--Users-someone-AppData-Local-Temp-x",
+      "C--Users-someone-OneDrive-x",
+      "C\\Users\\someone\\x.txt",
+      // 4. WSL mounts
+      "-mnt-c-Users-someone-code-x",
+      "_mnt_c_Users_someone_code_x",
+      J("mnt", "c", "Users", "someone", "x.txt"),
+      // 5. flattened macOS homes with a machine marker, and the bare session key
+      "-Users-someone--claude-worktrees-x",
+      "_Users_someone__claude_x",
+      "-Users-someone-Library-Caches-x",
+      "-Users-someone-Desktop-notes.txt",
+      "_Users_mary-jane_Downloads_x.txt",
+      "-Users-someone",
+      J("-Users-someone", "x.jsonl"),
     ];
     const MP_NEGATIVES = [
+      // review A
       "users.md", "home.tsx", J("app", "users", "[id]", "page.tsx"), J("src", "home", "index.ts"), "_home.scss",
       "private-tmp-notes.md", "var-folders.md", "c-users-guide.md", "tmp-claude.md", "claude-3-notes.md",
       "home-page-copy.md", "users-guide.md", "Users-Guide-Intro.md", "_home-page-hero.scss", "_home_hero.scss",
@@ -379,22 +383,47 @@ try {
       J("docs", "user-home", "setup.md"), "users-home-dir.md", "the-var-folders-explained.md",
       J("src", "private", "tmp.ts"), J("lib", "private", "var", "x.ts"), "sidebar-home-link.tsx",
       "_home-someone-page.scss", "__home__.tsx", "-Users.md",
-      // second review's extra negatives, and this suite's earlier ones
+      // review B, and this suite's earlier ones
       "_home_hero_banner.scss", "-home-page-hero.md", "a-Users-list-page.tsx", J("src", "Users", "Profile", "index.tsx"),
       J("docs", "home.md"), J("src", "home", "components", "Hero.tsx"), J("app", "users", "profile", "page.tsx"),
       "private-tmp.md", J("apps", "home", "web", "src", "x.ts"), "_Users_list.scss",
+      // final review
+      J("src", "features", "Users", "components", "Documents", "index.tsx"),
+      J("app", "home", "(marketing)", "work", "page.tsx"),
+      J("src", "pages", "home", "sections", "projects", "index.tsx"),
+      J("docs", "home", "guides", "dev", "setup.md"),
+      J("app", "_home_sections", "Hero.tsx"),
+      J("_home_components", "index.ts"), J("_home_hero", "index.ts"), J("-home-work", "index.ts"),
+      J("_Users_Avatar", "index.tsx"), "-Users-List-Item.tsx",
     ];
-    // [name, why it is not covered] — low-priority shapes, one line each.
+    // [name, why it is not covered] — one line each.
+    const HOME_WORD = "home-directory shape spelled with ordinary words: indistinguishable from app layouts";
     const MP_KNOWN_GAPS = [
-      ["_home_mary-jane_x.md", "flattened Linux home with no home child after the name: same shape as a Sass partial"],
-      ["notes-tmp-claude-501-x.md", "temp root mid-name: unanchored temp rules flagged ordinary names like private-tmp-notes.md"],
+      ["-Users-someone-code-notes.txt", `macOS ${HOME_WORD}`],
+      [J("-Users-someone-code-proj", "0b1c2d3e-aaaa-bbbb-cccc-000000000000", "scratchpad", "n.md"), `macOS ${HOME_WORD}`],
+      ["_Users_someone_code_x.md", `macOS ${HOME_WORD}`],
+      ["_Users_mary-jane_code_x.md", `macOS ${HOME_WORD}`],
+      ["-Users-mary_jane-code-x.md", `macOS ${HOME_WORD}`],
+      ["-Users-someone-Documents-x", `macOS ${HOME_WORD}`],
+      [J("_Users_someone", "x.jsonl"), "bare _Users_<name>: only the dash form is an agent session key"],
+      ["\\Users\\someone", "bare backslash Users form: only the dash form is an agent session key"],
+      ["-home-someone-code-x", `Linux ${HOME_WORD}`],
+      ["_home_someone_code_x.md", `Linux ${HOME_WORD}`],
+      ["_home_mary-jane_x.md", `Linux ${HOME_WORD}`],
+      ["-home-someone", `Linux ${HOME_WORD}`],
+      ["-home-user-foundry", `cloud-sandbox Linux ${HOME_WORD}`],
+      [J("home", "someone", "code", "x"), `mirrored Linux ${HOME_WORD}`],
+      [J("Users", "someone", "code", "a.txt"), `mirrored macOS ${HOME_WORD}`],
+      [J("Users", "someone", "AppData", "Local", "x"), `mirrored ${HOME_WORD}`],
+      [J("fixtures", "Users", "someone", "a.txt"), `mirrored ${HOME_WORD}`],
+      ["C_Users_someone_code", "single-separator Windows form: same shape as A_Users_manual_v2.pdf"],
+      ["notes-tmp-claude-501-x.md", "temp root mid-name: unanchored temp rules flagged ordinary names"],
       ["-tmp-pytest-of-someone-pytest-3", "generic tmp subdirectories: no distinctive token after tmp"],
       ["-tmp-someone-session", "generic tmp subdirectories: no distinctive token after tmp"],
-      ["%Users%someone%code%x.txt.swp", "vim swap-file flattening (%): rare in a tree, not a leading-separator shape"],
+      ["%Users%someone%code%x.txt.swp", "vim swap-file flattening (%): rare in a tree"],
       ["!Users!someone!code!x.txt~", "emacs backup flattening (!): rare in a tree"],
       [".Users.someone.code.x", "dot-flattened: indistinguishable from ordinary dotted names"],
       ["-root-code-x", "root's home: `root` is an ordinary word with no anchor"],
-      [J("fixtures", "Users", "someone", "a.txt"), "mirrored home without a home child: same shape as a PascalCase feature folder"],
     ];
 
     const env = { ...process.env };

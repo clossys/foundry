@@ -193,86 +193,63 @@ const FORBIDDEN_EXEMPT_PATHS = new Set(["AGENTS.md", "CLAUDE.md"]);
 // denylist) only ever reads file CONTENTS. So a file or directory whose NAME
 // is a flattened absolute local path — the shape an agent's session or
 // scratchpad directory takes when it is copied into a tree — passed in FULL
-// and PARTIAL mode alike. A real near-miss did exactly that: directories
-// named after a flattened home path plus a session scratchpad id.
+// and PARTIAL mode alike.
 //
 // These rules are structural and hardcoded, not denylist terms: they describe
 // a SHAPE, not a secret, so they are safe to publish here, and they fire in
-// PARTIAL mode too. They are tuned for low false positives over completeness,
-// and their accuracy is MEASURED, not argued: scripts/test-gates.mjs
-// ("# machine-local path names") runs a table of realistic machine-path names
-// (every one must be caught), ordinary names (every one must stay clean), and
-// a KNOWN-GAP list of shapes deliberately not covered.
+// PARTIAL mode too. They are deliberately limited to shapes ONLY a machine
+// produces. Three review rounds showed that any rule keyed on a home
+// directory followed by an ordinary word (`home`, `Users`, `code`, `work`,
+// `projects`, `Documents`, ...) either flags real frontend layouts or misses
+// real machine paths, and adding word lists only moved the boundary. So those
+// shapes are NOT refused here; they are listed as KNOWN-GAP rows in
+// scripts/test-gates.mjs ("# machine-local path names"), whose table measures
+// every rule below against realistic positives and ordinary negatives, and
+// explicit staging plus review covers them.
 //
-// Per path segment. A flattening tool substitutes ONE separator for every
-// "/" (or "\"), so every flattened rule is anchored at the start of the name
-// on a leading separator (the flattened root), with the same separator
-// throughout (the `\1` backreference), and a name that is "anything but that
-// separator" — so `mary-jane` flattened with `_` is still one name.
-//
-// Where the root word is also an ordinary word (Linux `home`, and Windows
-// `C-Users-...`, which reads like a title), the rule additionally requires a
-// typical home-directory child after the name: a dot-directory (flattened
-// `.` becomes an empty component, i.e. a doubled separator) or one of
-// MP_HOME_CHILD, followed by a separator or the end of the name. That is the
-// principled line between `-home-someone-code-x` and `-home-page-hero.md` or
-// the Sass partial `_home_page_hero.scss`, which have the same shape and
-// differ only in what follows the name. `src` is deliberately NOT a home
-// child: it is the most common child of every ordinary folder, so it
-// discriminates nothing. macOS `Users` needs no child: a leading separator
-// plus case-exact `Users` does not begin ordinary names, and a bare
-// `-Users-<name>` is the directory an agent keys a home-directory session by.
-// A bare name is only accepted without a dot, so `-Users.md`-style files and
-// `-home-.md` stay out.
-//
-// URL-encoded slashes (`%2F`) are their own rule rather than one more
-// separator: an encoded slash never appears in an ordinary file name, so an
-// encoded absolute path needs no home-child heuristic at all.
+// A flattening tool substitutes ONE separator for every "/" (or "\"), so each
+// flattened rule is anchored at the start of the name on a leading separator
+// (the flattened root) and uses the same separator throughout (`\1`). The
+// five families:
+//   1. temp roots: `private` + `tmp`/`var`, `var` + `folders`, and
+//      `tmp` + `claude-<n>` (flattened, or mirrored as nested directories);
+//   2. URL-encoded absolute paths (`%2F`): never an ordinary name;
+//   3. Windows drive homes: a single letter then `--` (a flattened `C:\`)
+//      then `Users`, or a backslash written inside one name;
+//   4. WSL mounts: `mnt`, one drive letter, then `Users`;
+//   5. flattened macOS homes ONLY with a machine marker right after the
+//      name: a dot-directory (a flattened `.` makes a doubled separator, as
+//      in `-Users-<name>--claude-...`) or exactly `Library`, `Desktop` or
+//      `Downloads`; and a bare `-Users-<name>` (dash only, nothing after),
+//      the directory an agent keys a home-directory session by.
 const MP_SEP = "(-|_|\\\\)";
 const MP_NAME = "(?:(?!\\1)[^/])+";
-const MP_NAME_NODOT = "(?:(?!\\1)[^/.])+";
-const MP_HOME_CHILD = "(?:Library|Desktop|Documents|Downloads|code|dev|[Pp]rojects|repos|work|git)";
-const MP_AFTER_NAME = `\\1(?:\\1|\\.|${MP_HOME_CHILD}(?:\\1|$))`;
 const MACHINE_PATH_SEGMENT_RULES = [
-  [
-    new RegExp(`^${MP_SEP}(?:mnt\\1[a-z]\\1)?Users\\1(?:${MP_NAME}\\1.|${MP_NAME_NODOT}$)`),
-    "flattened macOS (or WSL) user home (Users/<name>/...)",
-  ],
-  [
-    new RegExp(`^${MP_SEP}home\\1(?:${MP_NAME}${MP_AFTER_NAME}|${MP_NAME_NODOT}$)`),
-    "flattened Linux user home (home/<name>/<home child>...)",
-  ],
-  [/^[A-Za-z]:?\\+[Uu]sers\\[^\\/]+\\./, "Windows user home written into one name (C:\\Users\\<name>\\...)"],
-  [
-    new RegExp(`^[A-Za-z]:?(-|_)\\1?[Uu]sers\\1${MP_NAME}${MP_AFTER_NAME}`),
-    "flattened Windows user home (C:\\Users\\<name>\\<home child>...)",
-  ],
   [new RegExp(`^${MP_SEP}private\\1(?:tmp|var)\\1`), "flattened macOS temp root (private/tmp or private/var)"],
   [new RegExp(`^${MP_SEP}var\\1folders\\1`), "flattened macOS per-user temp root (var/folders)"],
   [new RegExp(`^${MP_SEP}tmp\\1claude-\\d+(?:\\1|$)`), "flattened agent session temp root (tmp/claude-<uid>)"],
   [
-    /^(?:file%3[Aa]%2[Ff]%2[Ff])?%2[Ff](?:Users|home|mnt|private|var|tmp)%2[Ff]./,
-    "URL-encoded absolute path (%2FUsers%2F..., %2Fhome%2F..., %2Ftmp%2F...)",
+    /^(?:file%3[Aa]%2[Ff]%2[Ff])?%2[Ff](?:Users|home|mnt|private|var|tmp)%2[Ff]/,
+    "URL-encoded absolute path (%2FUsers%2F..., %2Ftmp%2F...)",
   ],
+  [/^[A-Za-z]--[Uu]sers-/, "flattened Windows drive home (C--Users-...)"],
+  [/^[A-Za-z]:?\\+[Uu]sers\\/, "Windows drive home written into one name (C:\\Users\\...)"],
+  [new RegExp(`^${MP_SEP}mnt\\1[a-z]\\1[Uu]sers\\1`), "flattened WSL mount home (mnt, drive letter, Users)"],
+  [
+    new RegExp(`^${MP_SEP}Users\\1${MP_NAME}\\1(?:\\1|(?:Library|Desktop|Downloads)(?:\\1|$))`),
+    "flattened macOS user home with a machine marker (a dot-directory, Library, Desktop or Downloads)",
+  ],
+  [/^-Users-[^-/.]+$/, "bare flattened macOS user home (an agent session key)"],
 ];
-// Over the whole POSIX-joined relative path: an absolute path mirrored as
-// nested directories, which no single segment shows. A `Users` or `home`
-// directory is an ordinary feature or route folder in a web codebase
-// (a PascalCase `Users` folder under `components` or `app`, or
-// `src/home/index.ts`), so
-// both mirrored home rules require a home child after the name, exactly as
-// the flattened Linux rule does; `Users` is also case-exact. The WSL mount
-// prefix (`mnt`, a one-letter drive, then `Users`) is unambiguous on its own. Only
-// `private/tmp` is a mirrored temp root: `private/var/...` is left to the
-// `var/folders` rule, because `lib/private/var/` is an ordinary layout.
-const MP_REL_HOME_CHILD = `(?:\\.[^/]+|${MP_HOME_CHILD})`;
+// Over the whole POSIX-joined relative path: the same temp roots and WSL
+// mount mirrored as nested directories, which no single segment shows. A
+// mirrored `Users/<name>/` or `home/<name>/` is NOT a rule (KNOWN-GAP): both
+// are ordinary feature and route folders in a web codebase.
 const MACHINE_PATH_RELPATH_RULES = [
-  [new RegExp(`(?:^|/)Users/[^/]+/${MP_REL_HOME_CHILD}/`), "mirrored macOS user home (Users/<name>/<home child>/)"],
-  [/(?:^|\/)mnt\/[a-z]\/Users\/[^/]+\//, "mirrored WSL user home (mnt, drive letter, then Users/<name>)"],
-  [new RegExp(`(?:^|/)home/[^/]+/${MP_REL_HOME_CHILD}/`), "mirrored Linux user home (home/<name>/<home child>/)"],
   [/(?:^|\/)private\/tmp\//, "mirrored macOS temp root (private/tmp)"],
   [/(?:^|\/)var\/folders\//, "mirrored macOS per-user temp root (var/folders)"],
   [/(?:^|\/)tmp\/claude-\d+\//, "mirrored agent session temp root (tmp/claude-<uid>/)"],
+  [/(?:^|\/)mnt\/[a-z]\/Users\//, "mirrored WSL mount home (mnt, drive letter, Users)"],
 ];
 
 // Every machine-local shape in one relative path, as `{ where, what }` —
