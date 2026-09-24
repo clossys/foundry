@@ -133,6 +133,39 @@ export function filterReleasePrBranchRefs(lsRemoteOutput) {
     .filter((name) => RELEASE_PR_BRANCH_PATTERN.test(name));
 }
 
+/**
+ * Of the real release-PR branches filterReleasePrBranchRefs() already
+ * narrowed the remote down to, which are still genuinely IN PROGRESS --
+ * i.e. should count toward `hasReleaseInProgress` -- versus LEFTOVER: a
+ * release PR that was closed WITHOUT merging, whose branch
+ * `delete_branch_on_merge` therefore never cleaned up (issue #1392,
+ * "a leftover release branch from a closed-but-unmerged release PR blocks
+ * every subsequent Saturday" -- https://github.com/clossys/foundry/pull/1353#issuecomment-5804131702).
+ * Without this, a single abandoned/superseded release PR would silently
+ * skip the release-PR guard forever, on every following Saturday, with no
+ * error and no visible cause.
+ *
+ * `prStateByBranch` is `{ [branchName]: { state: "OPEN"|"CLOSED"|"MERGED" } }`
+ * -- the caller's own already-fetched `gh pr list --state all --json
+ * headRefName,state` results (this module never does its own network I/O,
+ * matching every other function here). A branch with NO entry at all (no
+ * pull request has ever been opened for it) is treated as IN PROGRESS --
+ * that is the real, ordinary window release-pr.yml's own header describes
+ * (push the branch, then stop and wait for an owner-authenticated actor to
+ * open the PR), not a leftover. A branch whose PR is "MERGED" is also
+ * excluded -- delete_branch_on_merge should already have removed it, but
+ * this stays correct even in the instant before that deletion lands. Only
+ * "CLOSED" (closed without merging) is the leftover case this function
+ * exists to filter out.
+ */
+export function inProgressReleaseBranches(branchNames, prStateByBranch = {}) {
+  return (branchNames ?? []).filter((name) => {
+    const info = prStateByBranch?.[name];
+    if (!info) return true; // no PR opened yet -- the real, ordinary in-progress window
+    return info.state !== "CLOSED" && info.state !== "MERGED";
+  });
+}
+
 /** Reads and parses governance/release-calendar.json. Throws a descriptive error rather than returning null -- every caller needs a calendar to do anything. */
 export function loadReleaseCalendar(root = process.cwd()) {
   const path = resolve(root, RELEASE_CALENDAR_PATH);

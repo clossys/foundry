@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { dayTypeFor, evaluateReleaseCalendarGate, filterReleasePrBranchRefs, nextMergeWindowStart, shouldOpenReleasePr, zonedDateParts } from "./release-calendar.mjs";
+import { dayTypeFor, evaluateReleaseCalendarGate, filterReleasePrBranchRefs, inProgressReleaseBranches, nextMergeWindowStart, shouldOpenReleasePr, zonedDateParts } from "./release-calendar.mjs";
 
 const TZ = "America/Los_Angeles";
 
@@ -173,4 +173,52 @@ test("filterReleasePrBranchRefs: empty, missing, or malformed input returns no m
   assert.deepEqual(filterReleasePrBranchRefs(""), []);
   assert.deepEqual(filterReleasePrBranchRefs(undefined), []);
   assert.deepEqual(filterReleasePrBranchRefs("not a git ls-remote line at all\n"), []);
+});
+
+// -------------------------------------------------- inProgressReleaseBranches
+//
+// Issue #1392: "a leftover release branch from a closed-but-unmerged
+// release PR blocks every subsequent Saturday". delete_branch_on_merge only
+// deletes the branch on a real MERGE, so a release PR closed without
+// merging (superseded, abandoned) leaves its branch matching
+// RELEASE_PR_BRANCH_PATTERN on the remote forever -- without this function,
+// the guard would read that branch as "a release is in progress" every
+// single Saturday from then on, silently, with no error.
+
+test("inProgressReleaseBranches: a branch with no PR at all (the ordinary push-then-stop window) counts as in progress", () => {
+  assert.deepEqual(inProgressReleaseBranches(["claude/release-2027-01-09-12"], {}), ["claude/release-2027-01-09-12"]);
+});
+
+test("inProgressReleaseBranches: a branch whose PR is still OPEN counts as in progress", () => {
+  const branches = ["claude/release-2027-01-09-12"];
+  const prStateByBranch = { "claude/release-2027-01-09-12": { state: "OPEN" } };
+  assert.deepEqual(inProgressReleaseBranches(branches, prStateByBranch), branches);
+});
+
+test("inProgressReleaseBranches: a branch whose PR was CLOSED without merging is a leftover -- excluded", () => {
+  const branches = ["claude/release-2027-01-09-12"];
+  const prStateByBranch = { "claude/release-2027-01-09-12": { state: "CLOSED" } };
+  assert.deepEqual(inProgressReleaseBranches(branches, prStateByBranch), []);
+});
+
+test("inProgressReleaseBranches: a branch whose PR already MERGED is excluded too (delete_branch_on_merge just hasn't landed yet)", () => {
+  const branches = ["claude/release-2027-01-09-12"];
+  const prStateByBranch = { "claude/release-2027-01-09-12": { state: "MERGED" } };
+  assert.deepEqual(inProgressReleaseBranches(branches, prStateByBranch), []);
+});
+
+test("inProgressReleaseBranches: a mix keeps only the genuinely in-progress branches", () => {
+  const branches = ["claude/release-2027-01-01-1", "claude/release-2027-01-08-2", "claude/release-2027-01-15-3", "claude/release-2027-01-22-4"];
+  const prStateByBranch = {
+    "claude/release-2027-01-08-2": { state: "CLOSED" }, // leftover, abandoned
+    "claude/release-2027-01-15-3": { state: "OPEN" }, // real release PR, still under review
+    // 2027-01-01-1 has no entry at all: pushed, PR not opened yet
+    // 2027-01-22-4 has no entry either: same
+  };
+  assert.deepEqual(inProgressReleaseBranches(branches, prStateByBranch), ["claude/release-2027-01-01-1", "claude/release-2027-01-15-3", "claude/release-2027-01-22-4"]);
+});
+
+test("inProgressReleaseBranches: empty/missing inputs return no matches rather than throwing", () => {
+  assert.deepEqual(inProgressReleaseBranches([], {}), []);
+  assert.deepEqual(inProgressReleaseBranches(undefined, undefined), []);
 });
