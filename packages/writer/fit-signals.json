@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "role": "@clossys/writer",
+  "signals": [
+    {
+      "id": "ships-audience-facing-copy",
+      "prompt": "The repository ships text a person outside the team reads: interface strings, page copy, or other audience-facing prose in its source.",
+      "evidenceKind": "repository-structure"
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "speaker": "customer",
+  "inhabitedAs": "target-audience",
+  "audienceId": "audience-one",
+  "persona": {
+    "name": "Jordan"
+  },
+  "stance": "The unclear offer is why I keep weighing this against what I already use.",
+  "intent": "compare",
+  "familiarity": "fresh",
+  "topic": "this page against the spreadsheet I use today",
+  "alternatives": [],
+  "versus": "My spreadsheet is ugly but I trust it; this page looks cleaner but I am not yet sure what it replaces.",
+  "whatTheyDoBetter": "The spreadsheet never surprises me and my team already knows it.",
+  "whatThisDoesBetter": "This shows me the one next step instead of a wall of cells.",
+  "whenIReachForThem": "When I need to change something quickly with a teammate watching.",
+  "switchingCost": "An afternoon moving my data over and a week of my team asking where things went.",
+  "iWouldSwitch": "no",
+  "whatKeepsMeHere": "The spreadsheet already works well enough for my team.",
+  "whatWouldMakeMeSwitch": "Seeing my own data imported in the first five minutes."
+}

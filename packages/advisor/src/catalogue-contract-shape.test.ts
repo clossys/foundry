@@ -18,21 +18,21 @@ import type { KitPreset } from "./kit-presets.js";
 
 /**
  * End to end, PR #1398's blocker and its review on #1403: the five v0
- * launch lanes (customer #1398, writer #1399, designer #1400, publisher
- * #1401, strategist #1402) each hold contract-shaped `needs`/`solves` back
- * until this package can read them. These tests build this repository's
- * real catalogue with all five lanes' values applied
- * (scripts/fixtures/launch-lanes-needs-solves.json), in memory, and check
- * that it packs, typechecks, passes the offering-kits gate, recommends the
- * launch kit, and composes the same way here as in the repository's gate.
+ * launch roles (customer, writer, designer, publisher, strategist) declare
+ * contract-shaped `needs`/`solves` in their own package.json (#1172). These
+ * tests build this repository's real catalogue, in memory, and check that it
+ * packs, typechecks, passes the offering-kits gate, recommends the launch
+ * kit, and composes the same way here as in the repository's gate.
  */
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(here, "..", "..", "..");
-const lanes = JSON.parse(readFileSync(join(repoRoot, "scripts/fixtures/launch-lanes-needs-solves.json"), "utf8")).lanes as Record<
-  string,
-  { foundry: Record<string, unknown> & { solves: { problem: string; evidence: string }[] }; excludedNeeds?: { needs: unknown[] } }
->;
+const LAUNCH_LANES = ["customer", "writer", "designer", "publisher", "strategist"] as const;
+const realManifests = repositoryCatalogue.collectPackageManifests(repoRoot) as Map<string, { foundry?: Record<string, unknown> }>;
+/** Each launch role's own declared `foundry` block, read from its real package.json. */
+const lanes = Object.fromEntries(
+  LAUNCH_LANES.map((role) => [role, { foundry: structuredClone(realManifests.get(role)!.foundry!) as Record<string, unknown> & { solves: { problem: string; evidence: string }[] } }]),
+) as Record<(typeof LAUNCH_LANES)[number], { foundry: Record<string, unknown> & { solves: { problem: string; evidence: string }[] } }>;
 const presetsContract = JSON.parse(readFileSync(join(repoRoot, "docs/contracts/kit-presets.json"), "utf8"));
 const presets = presetsContract.presets as KitPreset[];
 const launch = presets.find((preset) => preset.id === "launch")!;
@@ -40,9 +40,19 @@ const launch = presets.find((preset) => preset.id === "launch")!;
 type Foundry = Record<string, unknown> & { capabilities?: { id: string; inputs: unknown[] }[]; needs?: unknown[] };
 type Patch = (foundry: Foundry) => Foundry;
 
-const ALL_LANES: Record<string, Patch> = Object.fromEntries(
-  Object.entries(lanes).map(([role, lane]) => [role, (foundry: Foundry) => ({ ...foundry, ...structuredClone(lane.foundry) })]),
-);
+/** The real manifests, unpatched: every launch role's values are its own declaration. */
+const ALL_LANES: Record<string, Patch> = {};
+
+/**
+ * Two needs #1401 prepared on Designer that Designer does not feed:
+ * `components-and-blocks` reaches Publisher as a package import, and
+ * `logo-and-identity-files` is `planned`. The real manifest omits both; this
+ * negative control puts them back.
+ */
+const UNFED_PUBLISHER_NEEDS = [
+  { producerRole: "@clossys/designer", artifact: "components-and-blocks" },
+  { producerRole: "@clossys/designer", artifact: "logo-and-identity-files" },
+];
 
 function allLanesWith(extra: Record<string, Patch> = {}): Record<string, Patch> {
   const patches = { ...ALL_LANES };
@@ -69,7 +79,7 @@ const publisherSurfacesWaitOnKeep: Patch = (foundry) => {
 };
 
 /** #1401's full prepared `needs`, including the two Designer does not feed. */
-const publisherUncorrected: Patch = (foundry) => ({ ...foundry, needs: [...(foundry.needs ?? []), ...lanes.publisher!.excludedNeeds!.needs] });
+const publisherUncorrected: Patch = (foundry) => ({ ...foundry, needs: [...(foundry.needs ?? []), ...UNFED_PUBLISHER_NEEDS] });
 
 /** Review of #1403 (B1): Publisher declares `doc` twice; the capability behind the FIRST path waits on Customer's keep. */
 const duplicateFeedDeadlock: Record<string, Patch> = {
@@ -161,7 +171,7 @@ function render(catalogue: CapabilityCatalogue): string {
   return renderOfferingModule({ catalogue, presets, clientProblems: repositoryCatalogue.loadClientProblems(repoRoot) });
 }
 
-describe("all five launch lanes' contract-shaped values, end to end", () => {
+describe("the five launch roles' declared contract-shaped values, end to end", () => {
   it("pack into a module that typechecks against this package's own types", () => {
     const catalogue = catalogueWith(ALL_LANES);
     for (const [role, lane] of Object.entries(lanes)) {

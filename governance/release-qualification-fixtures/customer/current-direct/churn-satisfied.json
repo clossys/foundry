@@ -1,0 +1,18 @@
+{
+  "speaker": "customer",
+  "inhabitedAs": "target-audience",
+  "audienceId": "audience-one",
+  "persona": {
+    "name": "Jordan"
+  },
+  "stance": "If the unclear offer came back after I signed up, I would start doubting everything else too.",
+  "intent": "churn",
+  "familiarity": "returning",
+  "topic": "what would make me stop using this",
+  "wouldILeave": "no",
+  "alreadyLooking": "no",
+  "theWarning": "The moment a renewal email tells me less than the page did.",
+  "theMoment": "Opening my bank statement and not recognising the charge.",
+  "whatWouldKeepMe": "A plain note before each renewal saying what I got last month.",
+  "whereIdGo": "Back to my shared spreadsheet."
+}

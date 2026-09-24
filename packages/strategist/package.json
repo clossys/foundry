@@ -24,7 +24,8 @@
     "CHANGELOG.md",
     "README.md",
     "LICENSE",
-    "skill"
+    "skill",
+    "fit-signals.json"
   ],
   "sideEffects": false,
   "foundry": {
@@ -32,6 +33,61 @@
       "bin": "strategist-rate-check",
       "invocation": "single-json-input"
     },
+    "outputs": [
+      "clossys/strategist/facts.json",
+      "clossys/strategist/audiences.json",
+      "clossys/strategist/markets.json",
+      "clossys/strategist/positioning.json",
+      "clossys/strategist/claims.json",
+      "clossys/strategist/brand.json",
+      "clossys/strategist/mission.json",
+      "clossys/strategist/roadmap.json",
+      "clossys/strategist/direction.json",
+      "clossys/strategist/constraints.json",
+      "clossys/strategist/contract.json"
+    ],
+    "fit": "fit-signals.json",
+    "feeds": [
+      {
+        "artifact": "audience-understanding",
+        "path": "clossys/strategist/audiences.json"
+      },
+      {
+        "artifact": "positioning",
+        "path": "clossys/strategist/positioning.json"
+      },
+      {
+        "artifact": "claims",
+        "path": "clossys/strategist/claims.json"
+      },
+      {
+        "artifact": "constraints",
+        "path": "clossys/strategist/constraints.json"
+      },
+      {
+        "artifact": "brand-derivation",
+        "path": "clossys/strategist/brand.json"
+      },
+      {
+        "artifact": "direction-currency",
+        "path": "clossys/strategist/direction.json"
+      },
+      {
+        "artifact": "strategy-brief",
+        "path": "clossys/strategist/contract.json"
+      }
+    ],
+    "needs": [],
+    "solves": [
+      {
+        "problem": "strategist-unclear-direction",
+        "statement": "We can't explain what we are.",
+        "metric": "strategy traceability rate",
+        "proofCase": "handoff-positioning-unresolved",
+        "evidence": "designed",
+        "capability": "positioning"
+      }
+    ],
     "capabilities": [
       {
         "id": "evidence-base",
@@ -54,7 +110,7 @@
         "outputs": [
           "clossys/strategist/audiences.json"
         ],
-        "proofCase": "facts-clean",
+        "proofCase": "handoff-audience-unrecorded",
         "maturity": "built",
         "v0": true,
         "businessLifecycleStage": "found"
@@ -67,7 +123,7 @@
         "outputs": [
           "clossys/strategist/markets.json"
         ],
-        "proofCase": "facts-clean",
+        "proofCase": "handoff-market-untraced",
         "maturity": "built",
         "v0": true,
         "businessLifecycleStage": "define"
@@ -80,7 +136,7 @@
         "outputs": [
           "clossys/strategist/positioning.json"
         ],
-        "proofCase": "facts-clean",
+        "proofCase": "handoff-positioning-unresolved",
         "maturity": "built",
         "v0": true,
         "businessLifecycleStage": "define"
@@ -93,8 +149,8 @@
         "outputs": [
           "clossys/strategist/claims.json"
         ],
-        "proofCase": "facts-clean",
-        "maturity": "built",
+        "proofCase": "handoff-claim-untraced",
+        "maturity": "partial",
         "v0": true,
         "businessLifecycleStage": "define"
       },
@@ -106,7 +162,7 @@
         "outputs": [
           "clossys/strategist/brand.json"
         ],
-        "proofCase": "facts-clean",
+        "proofCase": "brand-coverage-uncovered",
         "maturity": "built",
         "v0": true,
         "businessLifecycleStage": "define"
@@ -119,8 +175,8 @@
         "outputs": [
           "clossys/strategist/mission.json"
         ],
-        "proofCase": "facts-clean",
-        "maturity": "built",
+        "proofCase": null,
+        "maturity": "planned",
         "v0": false,
         "businessLifecycleStage": "define"
       },
@@ -132,7 +188,7 @@
         "outputs": [
           "clossys/strategist/roadmap.json"
         ],
-        "proofCase": "facts-clean",
+        "proofCase": "handoff-roadmap-untraced",
         "maturity": "built",
         "v0": false,
         "businessLifecycleStage": "define"
@@ -145,8 +201,8 @@
         "outputs": [
           "clossys/strategist/direction.json"
         ],
-        "proofCase": "facts-clean",
-        "maturity": "built",
+        "proofCase": "direction-superseded",
+        "maturity": "partial",
         "v0": false,
         "businessLifecycleStage": "define"
       },
@@ -158,7 +214,7 @@
         "outputs": [
           "clossys/strategist/constraints.json"
         ],
-        "proofCase": "facts-clean",
+        "proofCase": "apply-constraint-uncited",
         "maturity": "built",
         "v0": true,
         "businessLifecycleStage": "define"
@@ -171,8 +227,8 @@
         "outputs": [
           "clossys/strategist/contract.json"
         ],
-        "proofCase": "facts-clean",
-        "maturity": "built",
+        "proofCase": "handoff-ready",
+        "maturity": "partial",
         "v0": true,
         "businessLifecycleStage": "define"
       },

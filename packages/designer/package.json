@@ -108,6 +108,33 @@
       "bin": "designer-rate-check",
       "invocation": "single-json-input"
     },
+    "outputs": [
+      "clossys/designer/brand.css",
+      "clossys/designer/type-record.json"
+    ],
+    "fit": "fit-signal-declarations.json",
+    "feeds": [
+      {
+        "artifact": "token-contract-and-brand-overlay-binding",
+        "path": "clossys/designer/brand.css"
+      }
+    ],
+    "needs": [
+      {
+        "producerRole": "@clossys/strategist",
+        "artifact": "brand-derivation"
+      }
+    ],
+    "solves": [
+      {
+        "problem": "designer-interface-quality",
+        "statement": "Our product doesn't look or feel like it was made with care.",
+        "metric": "design conformance rate",
+        "proofCase": "token-purity-violated",
+        "evidence": "designed",
+        "capability": "token-purity"
+      }
+    ],
     "capabilities": [
       {
         "id": "token-contract-and-brand-overlay-binding",
@@ -122,7 +149,7 @@
         "outputs": [
           "clossys/designer/brand.css"
         ],
-        "proofCase": "token-purity-clean",
+        "proofCase": "brand-binding-clean",
         "maturity": "built",
         "v0": true,
         "businessLifecycleStage": "build"
@@ -143,13 +170,13 @@
       {
         "id": "components-and-blocks",
         "subQuestion": "Is every interface surface composed only from the shared, token-bound component and block library?",
-        "worldClass": "Every interface surface is composed from the shared component and block library — never a bespoke, ungoverned element built outside it.",
+        "worldClass": "Every interface surface is composed from the shared component and block library — never a bespoke, ungoverned element built outside it. Today `designer-environment-check surface` proves one slice of this: `surface-ladder-clean` passes a route composed only from Designer atoms and blocks, and `surface-ladder-violated` fails a route that imports a second library's `atoms`, `tokens`, or `theme` entrypoint (`@scope/pkg/atoms|tokens|theme`) beside a Designer primitive (`surface:dual-primitive-stack`). It does not catch a second library imported any other way (a package root such as `@example/legacy-ui`, a `/components` path, or an unscoped path), a bespoke element hand-built from plain HTML, or a surface that uses no Designer component at all, and no bin checks that every surface uses the shared library. So this capability is `partial`. It shares the surface-ladder case group with `structure-and-fold-conformance`.",
         "inputs": [],
         "outputs": [
           "clossys/designer/.generated/component-conformance-report.json"
         ],
-        "proofCase": "token-purity-clean",
-        "maturity": "built",
+        "proofCase": "surface-ladder-clean",
+        "maturity": "partial",
         "v0": true,
         "businessLifecycleStage": "build"
       },
@@ -161,7 +188,7 @@
         "outputs": [
           "clossys/designer/.generated/contrast-report.json"
         ],
-        "proofCase": "token-purity-clean",
+        "proofCase": "contrast-clean",
         "maturity": "built",
         "v0": true,
         "businessLifecycleStage": "build"
@@ -187,7 +214,7 @@
         "outputs": [
           "clossys/designer/type-record.json"
         ],
-        "proofCase": "token-purity-clean",
+        "proofCase": "type-record-clean",
         "maturity": "built",
         "v0": true,
         "businessLifecycleStage": "build"
@@ -195,12 +222,12 @@
       {
         "id": "structure-and-fold-conformance",
         "subQuestion": "Does every mount compose only one visual primitive stack, and does its above-the-fold hero conform to its declared fold and hero-CSS contract?",
-        "worldClass": "Every route/surface mount composes exactly one visual primitive stack -- never a mix of design systems assembled under one mount (`surface-ladder.ts`, issues #1055/#1060) -- and its hero renders within its declared fold and hero-CSS contract, checked, never eyeballed per page.",
+        "worldClass": "Every route/surface mount composes exactly one visual primitive stack -- never a mix of design systems assembled under one mount (`surface-ladder.ts`, issues #1055/#1060) -- and its hero renders within its declared fold and hero-CSS contract, checked, never eyeballed per page. Checked today by three bins, each with its own qualification case group: `designer-environment-check surface` (surface-ladder), `designer-fold-check` (fold), and `designer-hero-css-check` (hero-css); `proofCase` names the fold group.",
         "inputs": [],
         "outputs": [
           "clossys/designer/.generated/structure-report.json"
         ],
-        "proofCase": "token-purity-clean",
+        "proofCase": "fold-clean",
         "maturity": "built",
         "v0": false,
         "businessLifecycleStage": "build"
@@ -226,7 +253,7 @@
       {
         "id": "logo-and-identity-files",
         "subQuestion": "Does every product get a usable, checked logo and mark variant set without waiting on a hired designer?",
-        "worldClass": "Every product ships a checked mark set (primary, mark, mono, light/dark, favicon, app icons) generated deterministically from its own tokens, or adopted from a supplied mark — contrast, minimum size, clear space, and single-colour legibility all checked, per #1210. Today: `identity-kit.ts`'s `generateIdentityDirections` builds the full seven-role variant set from a brand name and resolved tokens, and `adoptSuppliedMark` derives the same set structurally from a client-supplied SVG instead; `identity-checks.ts`'s `judgeIdentityKit` checks contrast, minimum size, clear space, and single-colour legibility against each (closes #1210). `master-mark.ts` still only validates a separately supplied mark's shape (three SVG documents). Neither generation path is yet wired into this package's checked CLI (no `designer-identity-check` bin) to produce `clossys/designer/assets/marks.json` for a real product.",
+        "worldClass": "Every product ships a checked mark set (primary, mark, mono, light/dark, favicon, app icons) generated deterministically from its own tokens, or adopted from a supplied mark — contrast, minimum size, clear space, and single-colour legibility all checked, per #1210. Today: `identity-kit.ts`'s `generateIdentityDirections` builds the full seven-role variant set from a brand name and resolved tokens, and `adoptSuppliedMark` derives the same set structurally from a client-supplied SVG instead; `identity-checks.ts`'s `judgeIdentityKit` checks contrast, minimum size, clear space, and single-colour legibility against each (closes #1210). `master-mark.ts` still only validates a separately supplied mark's shape (three SVG documents). Neither generation path is yet wired into this package's checked CLI (no `designer-identity-check` bin) to produce `clossys/designer/assets/marks.json` for a real product, so no qualification case can exercise this capability: it is `planned` with `proofCase: null` until that bin and its case exist (#1272).",
         "inputs": [
           {
             "producerRole": "@clossys/strategist",
@@ -240,8 +267,8 @@
         "outputs": [
           "clossys/designer/assets/marks.json"
         ],
-        "proofCase": "token-purity-clean",
-        "maturity": "partial",
+        "proofCase": null,
+        "maturity": "planned",
         "v0": true,
         "businessLifecycleStage": "launch"
       }
@@ -260,7 +287,8 @@
     "TOKENS.md",
     "LICENSE",
     "skill",
-    "THIRD-PARTY-NOTICES.md"
+    "THIRD-PARTY-NOTICES.md",
+    "fit-signal-declarations.json"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",

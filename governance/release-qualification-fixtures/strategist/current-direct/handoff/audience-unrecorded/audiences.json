@@ -1,0 +1,10 @@
+[
+  {
+    "id": "finance-lead",
+    "name": "Finance lead",
+    "situation": "Owns the budget for operations tooling.",
+    "pains": [
+      "cannot see what was committed"
+    ]
+  }
+]

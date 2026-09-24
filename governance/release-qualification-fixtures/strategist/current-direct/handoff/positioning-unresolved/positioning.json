@@ -1,0 +1,13 @@
+{
+  "productName": "Example Product",
+  "category": "operations tooling",
+  "audienceIds": [
+    "ops-lead"
+  ],
+  "weAre": "a single place to see what the team committed to",
+  "unlike": "general-purpose spreadsheets",
+  "claimIds": [
+    "one-place-status",
+    "fastest-in-category"
+  ]
+}

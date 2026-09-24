@@ -3,11 +3,40 @@
   "package": "@clossys/writer",
   "archetype": "current-direct",
   "bins": { "writer-check": 0, "writer-rate-check": 0 },
-  "fixtures": ["copy.json", "clean/View.ts", "violated/View.ts", "invalid-copy.json"],
+  "fixtures": [
+    "copy.json",
+    "clean/View.ts",
+    "violated/View.ts",
+    "invalid-copy.json",
+    "registry-placeholder-missing.json",
+    "voice-obligations.json",
+    "voice-brand-derived.json",
+    "voice-brand-derived-gap.json",
+    "addressability-clean/Empty.tsx",
+    "addressability-violated/Empty.tsx",
+    "locales-complete.json",
+    "locales-missing.json",
+    "voice.json",
+    "live-cited/hero.ts",
+    "live-magnitude/hero.ts",
+    "live-claim/hero.ts",
+    "live-wallpaper/hero.ts"
+  ],
   "cases": [
     { "id": "copy-clean", "bin": "writer-check", "args": [{ "fixture": "copy.json" }, { "fixtureDirectory": "clean" }], "exitCode": 0, "group": "copy" },
     { "id": "copy-violated", "bin": "writer-check", "args": [{ "fixture": "copy.json" }, { "fixtureDirectory": "violated" }], "exitCode": 1, "group": "copy" },
-    { "id": "copy-indeterminate", "bin": "writer-check", "args": [{ "fixture": "invalid-copy.json" }, { "fixtureDirectory": "clean" }], "exitCode": 2, "group": "copy" }
+    { "id": "copy-indeterminate", "bin": "writer-check", "args": [{ "fixture": "invalid-copy.json" }, { "fixtureDirectory": "clean" }], "exitCode": 2, "group": "copy" },
+    { "id": "registry-placeholder-missing", "bin": "writer-check", "args": [{ "fixture": "registry-placeholder-missing.json" }, { "fixtureDirectory": "clean" }], "exitCode": 2, "group": "copy" },
+    { "id": "voice-derivation-satisfied", "bin": "writer-check", "args": [{ "literal": "voice-derivation-coverage" }, { "fixture": "voice-obligations.json" }, { "fixture": "voice-brand-derived.json" }], "exitCode": 0, "group": "voice-derivation" },
+    { "id": "voice-derivation-violated", "bin": "writer-check", "args": [{ "literal": "voice-derivation-coverage" }, { "fixture": "voice-obligations.json" }, { "fixture": "voice-brand-derived-gap.json" }], "exitCode": 1, "group": "voice-derivation" },
+    { "id": "addressability-clean", "bin": "writer-check", "args": [{ "literal": "addressability" }, { "fixtureDirectory": "addressability-clean" }], "exitCode": 0, "group": "addressability" },
+    { "id": "addressability-violated", "bin": "writer-check", "args": [{ "literal": "addressability" }, { "fixtureDirectory": "addressability-violated" }], "exitCode": 1, "group": "addressability" },
+    { "id": "locale-coverage-complete", "bin": "writer-check", "args": [{ "literal": "locale-coverage" }, { "fixture": "locales-complete.json" }, { "literal": "en" }], "exitCode": 0, "group": "locale-coverage" },
+    { "id": "locale-coverage-missing", "bin": "writer-check", "args": [{ "literal": "locale-coverage" }, { "fixture": "locales-missing.json" }, { "literal": "en" }], "exitCode": 1, "group": "locale-coverage" },
+    { "id": "live-claims-cited", "bin": "writer-check", "args": [{ "fixture": "copy.json" }, { "fixtureDirectory": "clean" }, { "literal": "--live" }, { "fixtureDirectory": "live-cited" }, { "literal": "--voice-record" }, { "fixture": "voice.json" }], "exitCode": 0, "group": "live" },
+    { "id": "live-magnitude-unmarked", "bin": "writer-check", "args": [{ "fixture": "copy.json" }, { "fixtureDirectory": "clean" }, { "literal": "--live" }, { "fixtureDirectory": "live-magnitude" }, { "literal": "--voice-record" }, { "fixture": "voice.json" }], "exitCode": 1, "group": "live" },
+    { "id": "live-claim-unsupported", "bin": "writer-check", "args": [{ "fixture": "copy.json" }, { "fixtureDirectory": "clean" }, { "literal": "--live" }, { "fixtureDirectory": "live-claim" }, { "literal": "--voice-record" }, { "fixture": "voice.json" }], "exitCode": 1, "group": "live" },
+    { "id": "live-fold-wallpaper", "bin": "writer-check", "args": [{ "fixture": "copy.json" }, { "fixtureDirectory": "clean" }, { "literal": "--live" }, { "fixtureDirectory": "live-wallpaper" }, { "literal": "--voice-record" }, { "fixture": "voice.json" }], "exitCode": 1, "group": "live" }
   ],
   "dimensionEvidence": { "rollback": "restoration", "duplicate": "copy" }
 }

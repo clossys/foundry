@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "displayFace": "Georgia",
+  "h1Minimum": 40,
+  "measureCap": "68ch",
+  "monoReservedFor": ["eyebrow", "data", "code"],
+  "wrap": { "orphanWords": "forbid-single" }
+}
