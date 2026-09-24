@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { assignedToShard, resolveShardArgs } from "./candidate-qualification-shard.mjs";
+import { assignedToShard, resolvePackageArgs, resolveShardArgs, selectedForRederivation } from "./candidate-qualification-shard.mjs";
 
 test("resolveShardArgs returns shard: null when neither flag is given (unsharded, the default)", () => {
   assert.deepEqual(resolveShardArgs([]), { shard: null });
@@ -89,4 +89,40 @@ test("assignedToShard at the current CI default (4 shards) matches ci.yml's CAND
     [0, 1, 2, 3, 4, 5, 6, 7].map((index) => [0, 1, 2, 3].find((shardIndex) => assignedToShard(index, { shardIndex, shardCount }))),
     [0, 1, 2, 3, 0, 1, 2, 3],
   );
+});
+
+test("resolvePackageArgs returns packageScope: null when --package is absent", () => {
+  assert.deepEqual(resolvePackageArgs([]), { packageScope: null });
+  assert.deepEqual(resolvePackageArgs(["--shard-index", "0", "--shard-count", "4"]), { packageScope: null });
+});
+
+test("resolvePackageArgs parses --package, with or without --allow-missing-record", () => {
+  assert.deepEqual(resolvePackageArgs(["--package", "writer"]), { packageScope: { packageKey: "writer", allowMissingRecord: false } });
+  assert.deepEqual(resolvePackageArgs(["--allow-missing-record", "--package", "design-kit"]), { packageScope: { packageKey: "design-kit", allowMissingRecord: true } });
+});
+
+test("resolvePackageArgs refuses a malformed, repeated, or shard-combined --package, and a bare --allow-missing-record", () => {
+  for (const argv of [
+    ["--package"],
+    ["--package", ""],
+    ["--package", "--allow-missing-record"],
+    ["--package", "../writer"],
+    ["--package", "Writer"],
+    ["--package", "writer", "--package", "starter"],
+    ["--package", "writer", "--shard-index", "0", "--shard-count", "4"],
+    ["--package", "writer", "--shard-count", "4"],
+    ["--allow-missing-record"],
+  ]) {
+    const result = resolvePackageArgs(argv);
+    assert.equal(typeof result.error, "string", `expected an error for ${JSON.stringify(argv)}`);
+    assert.equal(result.packageScope, undefined);
+  }
+});
+
+test("selectedForRederivation selects exactly the package record under --package, and defers to the shard otherwise", () => {
+  const paths = ["a.json", "b.json", "c.json", "d.json"];
+  assert.deepEqual(paths.filter((path, index) => selectedForRederivation(index, path, { packageRecordPath: "c.json" })), ["c.json"]);
+  assert.deepEqual(paths.filter((path, index) => selectedForRederivation(index, path, { packageRecordPath: "missing.json" })), []);
+  assert.deepEqual(paths.filter((path, index) => selectedForRederivation(index, path)), paths);
+  assert.deepEqual(paths.filter((path, index) => selectedForRederivation(index, path, { shard: { shardIndex: 1, shardCount: 2 } })), ["b.json", "d.json"]);
 });
