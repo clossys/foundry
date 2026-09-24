@@ -2045,11 +2045,21 @@ entry in this package's CHANGELOG, not here. These ranges are independent;
 leaving any one behind would still resolve an older package without any
 install failure, silently withholding a required contract.
 
-A consumer whose own policy is to pin exact versions must pin `writer`,
-`designer`, and `controller` each to a version inside the range this
-release's `package.json` declares for it — otherwise `publisher`'s declared
-ranges and the consumer's exact pin cannot both be satisfied, and the
-install fails with an unresolvable version conflict.
+`writer`, `designer`, and `controller` are regular dependencies of
+`publisher`, so a consumer whose own policy is to pin exact versions does not
+get an install failure by pinning one of them outside the range this
+release's `package.json` declares for it: npm installs a second, nested copy
+that satisfies `publisher`'s declared range alongside the consumer's pinned
+copy. A consumer should still pin each of the three inside the range this
+release declares, to avoid that duplicate copy and to make sure the copy
+`publisher` actually uses is the one they pinned. For `designer`
+specifically, an out-of-range pin is a real styling risk even though the
+install succeeds: Publisher's web views render markup from its own nested
+`designer` copy while a consumer's CSS build (`compiled.css`, or Tailwind
+`@source` scanning `node_modules/@clossys/designer`) compiles from the
+consumer's top-level pinned copy, so a version gap between the two can leave
+rendered pages unstyled or wrongly styled with no install-time or runtime
+error.
 `react` and `react-dom` are optional peer dependencies (`>=18`) required only
 by the `web` and `document` subpaths' renderers. The `web` subpath also imports
 Designer surfaces, so Publisher directly repeats Designer's optional
