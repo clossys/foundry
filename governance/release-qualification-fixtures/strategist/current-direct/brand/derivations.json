@@ -1,0 +1,12 @@
+[
+  {
+    "attributeId": "plain-spoken",
+    "tokenSlots": [
+      "--color-accent-primary",
+      "--color-surface-calm"
+    ],
+    "voiceRuleIds": [
+      "no-superlatives"
+    ]
+  }
+]

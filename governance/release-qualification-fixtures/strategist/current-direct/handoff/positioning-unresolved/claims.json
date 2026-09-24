@@ -1,0 +1,14 @@
+[
+  {
+    "id": "one-place-status",
+    "status": "approved",
+    "assertion": "Every team commitment is visible in one place.",
+    "basis": "Observed across both pilot teams during the fixture period.",
+    "factRefs": [
+      "pilot-teams"
+    ],
+    "audienceIds": [
+      "ops-lead"
+    ]
+  }
+]
