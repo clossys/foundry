@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "role": "@clossys/customer",
+  "signals": [
+    {
+      "id": "named-audience-recorded",
+      "prompt": "The repository records at least one named audience, with an id, a name, and a description, that a first-person inhabit can speak as.",
+      "evidenceKind": "repository-structure"
+    },
+    {
+      "id": "audience-facing-candidate",
+      "prompt": "There is an audience-facing candidate, such as a page, surface, or offer, that the named person can look at and keep or fail before it is sealed or landed.",
+      "evidenceKind": "repository-structure"
+    }
+  ]
+}
