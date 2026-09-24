@@ -57,6 +57,12 @@ refuses a tree that contains:
   never echoed, so the gate cannot leak a secret into a CI log.
 - **Private identity** — names, domains, handles and internal paths that
   must never become public.
+- **Machine-local path names** — a file or directory whose relative path or
+  any single name encodes an absolute local path (a macOS, Linux or Windows
+  user home, or a macOS or agent-session temp root), whether mirrored as
+  nested directories or flattened into one name with `-`, `_` or `\`. This
+  rule is structural and runs in PARTIAL mode too; the same paths inside
+  file contents are left to the denylist.
 
 A separate gate, `scripts/check-artifact-safety.mjs`, runs the same scan
 against the actual packed tarball rather than the git tree — `dist/` is

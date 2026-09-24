@@ -317,6 +317,109 @@ try {
     }
   }
 
+  // ------------------------------------------------ machine-local path names
+  console.log("\n# machine-local path names");
+  {
+    // Slash-form fixture paths are joined from segments at run time so this
+    // file never holds a literal absolute-path shape itself. `someone` is a
+    // placeholder, not a real account.
+    const p = (...parts) => parts.join("/");
+    const positives = [
+      // [label, relative file path, the segment or run the finding must name]
+      ["flattened macOS home file (dash)", "-Users-someone-code-notes.txt", "-Users-someone-code-notes.txt"],
+      ["flattened temp-root dir (underscore)", p("_private_tmp_claude-1_scratchpad_x", "a.txt"), "_private_tmp_claude-1_scratchpad_x"],
+      [
+        "flattened home dir + session scratchpad id",
+        p("-Users-someone-code-proj", "0b1c2d3e-aaaa-bbbb-cccc-000000000000", "scratchpad", "n.md"),
+        "-Users-someone-code-proj",
+      ],
+      ["flattened Linux home file (underscore)", "_home_someone_code_x.md", "_home_someone_code_x.md"],
+      ["flattened Windows home dir", p("C--Users-someone-code", "a.txt"), "C--Users-someone-code"],
+      ["Windows home with backslashes in one name", "C\\Users\\someone\\x.txt", "C\\Users\\someone\\x.txt"],
+      ["flattened per-user temp root", "-var-folders-ab-cdef-T-x.txt", "-var-folders-ab-cdef-T-x.txt"],
+      ["agent temp root mid-segment", "notes-tmp-claude-501-x.md", "notes-tmp-claude-501-x.md"],
+      ["mirrored macOS home (slash form)", p("mirror", "Users", "someone", "code", "a.txt"), p("Users", "someone", "c")],
+      ["mirrored temp root (slash form)", p("mirror", "private", "tmp", "x", "a.txt"), p("private", "tmp", "")],
+      ["mirrored per-user temp root (slash form)", p("mirror", "var", "folders", "ab", "a.txt"), p("var", "folders", "")],
+      ["mirrored agent temp root (slash form)", p("mirror", "tmp", "claude-1", "a.txt"), p("tmp", "claude-1")],
+    ];
+    const negatives = [
+      "home-page-copy.md",
+      "users-guide.md",
+      p("docs", "home.md"),
+      "Users-Guide-Intro.md",
+      "_home-page-hero.scss",
+      p("app", "users", "profile", "page.tsx"),
+      p("src", "home", "components", "Hero.tsx"),
+      "private-tmp.md",
+      "private-variables.md",
+      "var-folders.md",
+      "tmp-claude.md",
+    ];
+
+    const posDir = join(work, "machine-paths-pos");
+    for (const [, rel] of positives) {
+      mkdirSync(dirname(join(posDir, rel)), { recursive: true });
+      writeFileSync(join(posDir, rel), "hello\n");
+    }
+    gitInit(posDir);
+    const negDir = join(work, "machine-paths-neg");
+    for (const rel of negatives) {
+      mkdirSync(dirname(join(negDir, rel)), { recursive: true });
+      // The URL-path prose is a content negative: this rule reads names only.
+      writeFileSync(join(negDir, rel), `Visit ${p("", "users", "settings")} to change it.\n`);
+    }
+    gitInit(negDir);
+
+    // PARTIAL must mean no denylist at all, whatever the calling shell sets.
+    const env = { ...process.env };
+    delete env.PUBLIC_SAFETY_DENYLIST;
+    for (const [modeLabel, extra] of [["FULL", [...DL, "--require-denylist"]], ["PARTIAL", []]]) {
+      const r = run("node", [SAFETY, posDir, ...extra, "--json"], { env });
+      let report;
+      try { report = JSON.parse(r.out); } catch { report = { failures: [] }; }
+      check(`${modeLabel}: runs in ${modeLabel} mode`, report.mode === modeLabel, `mode was ${report.mode}`);
+      check(`${modeLabel}: fails on machine-local path names`, r.code === 1, `exit was ${r.code}`);
+      for (const [label, rel, where] of positives) {
+        const hit = (report.failures ?? []).some(
+          (f) => f.kind === "machine-path" && f.rel === rel && f.detail.includes(`"${where}`),
+        );
+        check(`${modeLabel}: flags ${label}`, hit, `no machine-path finding naming "${where}" for ${rel}`);
+      }
+
+      const n = run("node", [SAFETY, negDir, ...extra, "--json"], { env });
+      let nReport;
+      try { nReport = JSON.parse(n.out); } catch { nReport = { failures: [{ kind: "unparseable" }] }; }
+      for (const rel of negatives) {
+        const hit = (nReport.failures ?? []).some((f) => f.kind === "machine-path" && f.rel === rel);
+        check(`${modeLabel}: does not flag ${rel}`, !hit, `false-positive machine-path finding for ${rel}`);
+      }
+      check(`${modeLabel}: negative fixture passes clean`, n.code === 0, `exit ${n.code}: ${n.out.slice(0, 300)}`);
+    }
+
+    const human = run("node", [SAFETY, posDir], { env });
+    check("human report lists the machine-path kind", /## machine-path — \d+ finding/.test(human.out), human.out.slice(0, 300));
+
+    // KNOWN-GAP: the same shapes in file CONTENT are not matched structurally.
+    // Slash-form content paths are left to the denylist (FULL mode); a
+    // structural content backstop measured 22 new findings on this
+    // repository's own tree (placeholder home-directory test fixtures and
+    // prose about the macOS temp symlink), so it was kept out. When a content
+    // rule lands, flip this assertion.
+    const gapDir = join(work, "machine-paths-content-gap");
+    mkdirSync(gapDir, { recursive: true });
+    writeFileSync(join(gapDir, "doc.md"), `notes live at ${p("", "Users", "someone", "code", "notes.md")}\n`);
+    gitInit(gapDir);
+    const gap = run("node", [SAFETY, gapDir, "--json"], { env });
+    let gapReport;
+    try { gapReport = JSON.parse(gap.out); } catch { gapReport = { failures: [] }; }
+    check(
+      "KNOWN-GAP: PARTIAL mode does not flag a slash-form home path in content",
+      gap.code === 0 && !(gapReport.failures ?? []).some((f) => f.kind === "machine-path"),
+      `content is now flagged (exit ${gap.code}) — the gap closed; update this case`,
+    );
+  }
+
   // ------------------------------------------------------------ fail-closed
   console.log("\n# fail-closed behaviour");
   {
