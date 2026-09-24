@@ -15,8 +15,19 @@ import {
   namedPackages,
   prependChangelogEntry,
 } from "./apply-release-changesets.mjs";
+import { CHANGELOGS_DIR, changelogPath, changelogPathForPackageDir } from "./lib/changelog-location.mjs";
 
 const scriptPath = resolve(dirname(fileURLToPath(import.meta.url)), "apply-release-changesets.mjs");
+
+// The package changelog lives at docs/changelogs/<dir>.md, outside the
+// package directory (scripts/lib/changelog-location.mjs). This returns that
+// path under a fixture root, creating docs/changelogs/ so a fixture can seed
+// a prior changelog there.
+function changelogFile(root, dir) {
+  const path = changelogPath(root, dir);
+  mkdirSync(dirname(path), { recursive: true });
+  return path;
+}
 
 function makeRoot() {
   const root = mkdtempSync(join(tmpdir(), "apply-release-changesets-test-"));
@@ -117,7 +128,7 @@ test("applyReleaseChangesets: bumps once per package at the highest named level,
   const root = makeRoot();
   try {
     makePackage(root, "alpha", "1.0.0");
-    writeFileSync(join(root, "packages", "alpha", "CHANGELOG.md"), "# Changelog\n\n## 1.0.0\n\n- Initial release.\n");
+    writeFileSync(changelogFile(root, "alpha"), "# Changelog\n\n## 1.0.0\n\n- Initial release.\n");
     writeChangeset(root, "alpha-fix.md", "---\nalpha: patch\n---\n\nFix a bug.\n");
     writeChangeset(root, "alpha-feature.md", "---\nalpha: minor\n---\n\nAdd a feature.\n");
 
@@ -141,12 +152,13 @@ test("applyReleaseChangesets: bumps once per package at the highest named level,
       breaking: false,
       breakingSummaries: [],
       changesetFiles: ["alpha-feature.md", "alpha-fix.md"],
+      changelog: "docs/changelogs/alpha.md",
     });
 
     const manifest = JSON.parse(readFileSync(join(root, "packages", "alpha", "package.json"), "utf8"));
     assert.equal(manifest.version, "1.1.0");
 
-    const changelog = readFileSync(join(root, "packages", "alpha", "CHANGELOG.md"), "utf8");
+    const changelog = readFileSync(changelogFile(root, "alpha"), "utf8");
     assert.match(changelog, /## 1\.1\.0 - 2026-09-22/);
     assert.match(changelog, /Fix a bug\./);
     assert.match(changelog, /Add a feature\./);
@@ -172,7 +184,7 @@ test("applyReleaseChangesets: a major-level changeset produces a breaking CHANGE
     assert.equal(result.applied[0].breaking, true);
     assert.deepEqual(result.applied[0].breakingSummaries, ["Removed the deprecated foo() export."]);
 
-    const changelog = readFileSync(join(root, "packages", "alpha", "CHANGELOG.md"), "utf8");
+    const changelog = readFileSync(changelogFile(root, "alpha"), "utf8");
     assert.match(changelog, /### Breaking changes/);
   } finally {
     rmSync(root, { recursive: true, force: true });
@@ -354,7 +366,7 @@ test("applyReleaseChangesets: a later package's failure leaves an earlier, other
     // failure is ever reached.
     makePackage(root, "alpha", "1.0.0");
     const alphaChangelog = "# Changelog\n\n## 1.0.0\n\n- Initial release.\n";
-    writeFileSync(join(root, "packages", "alpha", "CHANGELOG.md"), alphaChangelog);
+    writeFileSync(changelogFile(root, "alpha"), alphaChangelog);
     writeChangeset(root, "alpha-fix.md", "---\nalpha: patch\n---\n\nFix a bug.\n");
 
     // "beta" has a version that cannot be bumped (not a plain X.Y.Z) --
@@ -373,7 +385,7 @@ test("applyReleaseChangesets: a later package's failure leaves an earlier, other
     // alpha: completely untouched on disk.
     const alphaManifest = JSON.parse(readFileSync(join(root, "packages", "alpha", "package.json"), "utf8"));
     assert.equal(alphaManifest.version, "1.0.0", "alpha must not be bumped just because it was processed first");
-    assert.equal(readFileSync(join(root, "packages", "alpha", "CHANGELOG.md"), "utf8"), alphaChangelog, "alpha's CHANGELOG.md must be byte-identical to before the run");
+    assert.equal(readFileSync(changelogFile(root, "alpha"), "utf8"), alphaChangelog, "alpha's CHANGELOG.md must be byte-identical to before the run");
     assert.equal(existsSync(join(root, ".changesets", "alpha-fix.md")), true, "alpha's changeset must not be deleted when the overall run did not succeed");
 
     // A rerun after fixing beta must still see alpha's original changeset
@@ -477,7 +489,7 @@ test("applyReleaseChangesets: a multi-package changeset where one named package 
   try {
     makePackage(root, "alpha", "1.0.0");
     const alphaChangelog = "# Changelog\n\n## 1.0.0\n\n- Initial release.\n";
-    writeFileSync(join(root, "packages", "alpha", "CHANGELOG.md"), alphaChangelog);
+    writeFileSync(changelogFile(root, "alpha"), alphaChangelog);
     makePackage(root, "beta", "not-a-version"); // bumpVersion() will throw for beta
     writeChangeset(root, "shared.md", "---\nalpha: patch\nbeta: patch\n---\n\nShip a shared update.\n");
 
@@ -493,7 +505,7 @@ test("applyReleaseChangesets: a multi-package changeset where one named package 
     // SAME changeset alongside beta and would otherwise have applied cleanly.
     const alphaManifest = JSON.parse(readFileSync(join(root, "packages", "alpha", "package.json"), "utf8"));
     assert.equal(alphaManifest.version, "1.0.0", "alpha must not be bumped just because it shares a changeset with a package that failed");
-    assert.equal(readFileSync(join(root, "packages", "alpha", "CHANGELOG.md"), "utf8"), alphaChangelog, "alpha's CHANGELOG.md must be byte-identical to before the run");
+    assert.equal(readFileSync(changelogFile(root, "alpha"), "utf8"), alphaChangelog, "alpha's CHANGELOG.md must be byte-identical to before the run");
     assert.equal(existsSync(join(root, ".changesets", "shared.md")), true, "the shared changeset file must not be deleted when the overall run did not succeed");
   } finally {
     rmSync(root, { recursive: true, force: true });
@@ -534,13 +546,13 @@ test("applyReleaseChangesets: a 0.x minor bump rewrites a sibling's ^0.N.0 depen
   const root = makeRoot();
   try {
     makePackage(root, "core", "0.9.0");
-    writeFileSync(join(root, "packages", "core", "CHANGELOG.md"), "# Changelog\n\n## 0.9.0\n\n- Initial release.\n");
+    writeFileSync(changelogFile(root, "core"), "# Changelog\n\n## 0.9.0\n\n- Initial release.\n");
     writeChangeset(root, "core-feature.md", "---\ncore: minor\n---\n\nAdd a feature.\n");
 
     // "consumer" is NOT named by any changeset -- its own bump is entirely
     // a consequence of core's minor bump moving outside its declared range.
     makePackageWithDependency(root, "consumer", "1.0.0", "@x/core", "^0.9.0");
-    writeFileSync(join(root, "packages", "consumer", "CHANGELOG.md"), "# Changelog\n\n## 1.0.0\n\n- Initial release.\n");
+    writeFileSync(changelogFile(root, "consumer"), "# Changelog\n\n## 1.0.0\n\n- Initial release.\n");
 
     const result = applyReleaseChangesets({ root, runNpmInstall: () => {}, today: () => "2026-09-22" });
 
@@ -557,6 +569,7 @@ test("applyReleaseChangesets: a 0.x minor bump rewrites a sibling's ^0.N.0 depen
       breaking: false,
       breakingSummaries: [],
       changesetFiles: ["core-feature.md"],
+      changelog: "docs/changelogs/core.md",
     });
 
     const consumerApplied = result.applied.find((a) => a.package === "consumer");
@@ -572,7 +585,7 @@ test("applyReleaseChangesets: a 0.x minor bump rewrites a sibling's ^0.N.0 depen
     assert.equal(consumerManifest.version, "1.0.1");
     assert.equal(consumerManifest.dependencies["@x/core"], "^0.10.0");
 
-    const consumerChangelog = readFileSync(join(root, "packages", "consumer", "CHANGELOG.md"), "utf8");
+    const consumerChangelog = readFileSync(changelogFile(root, "consumer"), "utf8");
     assert.match(consumerChangelog, /## 1\.0\.1 - 2026-09-22/);
     assert.match(consumerChangelog, /Updated dependency @x\/core to \^0\.10\.0/);
   } finally {
@@ -706,7 +719,7 @@ test("applyReleaseChangesets: a package named by its own changeset also gets its
     assert.deepEqual(consumerApplied.changesetFiles, ["consumer-fix.md"]);
     assert.deepEqual(consumerApplied.dependencyUpdates, [{ section: "dependencies", name: "@x/core", fromRange: "^0.9.0", toRange: "^0.10.0" }]);
 
-    const consumerChangelog = readFileSync(join(root, "packages", "consumer", "CHANGELOG.md"), "utf8");
+    const consumerChangelog = readFileSync(changelogFile(root, "consumer"), "utf8");
     assert.match(consumerChangelog, /Fix an unrelated bug\./);
     assert.match(consumerChangelog, /Updated dependency @x\/core to \^0\.10\.0/);
   } finally {
@@ -731,7 +744,7 @@ test("applyReleaseChangesets: a stale sibling devDependencies range is rewritten
   const root = makeRoot();
   try {
     makePackage(root, "advisor", "0.4.0");
-    writeFileSync(join(root, "packages", "advisor", "CHANGELOG.md"), "# Changelog\n\n## 0.4.0\n\n- Initial release.\n");
+    writeFileSync(changelogFile(root, "advisor"), "# Changelog\n\n## 0.4.0\n\n- Initial release.\n");
     writeChangeset(root, "advisor-feature.md", "---\nadvisor: minor\n---\n\nAdd a feature.\n");
 
     // controller has NO changeset of its own, and NO dependencies/
@@ -760,7 +773,7 @@ test("applyReleaseChangesets: a stale sibling devDependencies range is rewritten
 
     // No CHANGELOG.md was ever created for controller -- a devDependencies
     // rewrite is silent, not a release note.
-    assert.equal(existsSync(join(controllerDir, "CHANGELOG.md")), false);
+    assert.equal(existsSync(changelogPathForPackageDir(controllerDir)), false);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -793,7 +806,7 @@ test("applyReleaseChangesets: a package that needs BOTH a real dependencies rewr
     assert.equal(consumerManifest.dependencies["@x/core"], "^0.10.0");
     assert.equal(consumerManifest.devDependencies["@x/core"], "^0.10.0");
 
-    const consumerChangelog = readFileSync(join(consumerDir, "CHANGELOG.md"), "utf8");
+    const consumerChangelog = readFileSync(changelogPathForPackageDir(consumerDir), "utf8");
     const bulletCount = (consumerChangelog.match(/Updated dependency @x\/core to \^0\.10\.0/g) ?? []).length;
     assert.equal(bulletCount, 1, "only the publish-relevant (dependencies) rewrite gets a CHANGELOG bullet, not the devDependencies one too");
   } finally {
@@ -827,7 +840,7 @@ test("applyReleaseChangesets: a NAMED package's own devDependencies rewrite is f
     const controllerManifest = JSON.parse(readFileSync(join(controllerDir, "package.json"), "utf8"));
     assert.equal(controllerManifest.devDependencies["@x/core"], "^0.10.0");
 
-    const controllerChangelog = readFileSync(join(controllerDir, "CHANGELOG.md"), "utf8");
+    const controllerChangelog = readFileSync(changelogPathForPackageDir(controllerDir), "utf8");
     assert.match(controllerChangelog, /Fix an unrelated bug\./);
     assert.doesNotMatch(controllerChangelog, /Updated dependency @x\/core/, "a devDependencies rewrite never gets its own CHANGELOG bullet, even for a named package");
   } finally {
@@ -984,7 +997,7 @@ test("CLI: `node apply-release-changesets.mjs --json` produces stdout that is va
     const pkgDir = join(root, "packages", "alpha");
     mkdirSync(pkgDir, { recursive: true });
     writeFileSync(join(pkgDir, "package.json"), JSON.stringify({ name: "@x/alpha", version: "1.0.0", license: "MIT" }, null, 2) + "\n");
-    writeFileSync(join(pkgDir, "CHANGELOG.md"), "# Changelog\n\n## 1.0.0\n\n- Initial release.\n");
+    writeFileSync(changelogFile(root, "alpha"), "# Changelog\n\n## 1.0.0\n\n- Initial release.\n");
     // A genuine base lockfile, from real npm -- offline, since the fixture
     // has no external dependency for it to resolve.
     execFileSync("npm", ["install", "--package-lock-only", "--offline"], { cwd: root, stdio: "ignore" });
@@ -1008,4 +1021,80 @@ test("CLI: `node apply-release-changesets.mjs --json` produces stdout that is va
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
+});
+
+// ---------------------------------------------------------------- changelog location
+
+test("applyReleaseChangesets: writes the entry to docs/changelogs/<dir>.md, creating that directory, and never writes a changelog inside the package", () => {
+  const root = makeRoot();
+  try {
+    const pkgDir = makePackage(root, "alpha", "1.0.0");
+    writeChangeset(root, "alpha-fix.md", "---\nalpha: patch\n---\n\nFix a bug.\n");
+    assert.equal(existsSync(join(root, "docs", "changelogs")), false, "fixture precondition: no docs/changelogs yet");
+
+    const result = applyReleaseChangesets({ root, runNpmInstall: () => {}, today: () => "2026-09-22" });
+
+    assert.equal(result.findings.length, 0);
+    assert.equal(result.applied[0].changelog, "docs/changelogs/alpha.md");
+    assert.equal(
+      readFileSync(join(root, "docs", "changelogs", "alpha.md"), "utf8"),
+      "# Changelog\n\n## 1.0.1 - 2026-09-22\n\n- Fix a bug.\n",
+    );
+    assert.equal(existsSync(join(pkgDir, "CHANGELOG.md")), false, "a changelog inside the package would ship in the tarball");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("applyReleaseChangesets: a dependent-only bump's entry also goes to docs/changelogs/<dir>.md", () => {
+  const root = makeRoot();
+  try {
+    makePackage(root, "core", "0.9.0");
+    const consumerDir = join(root, "packages", "consumer");
+    mkdirSync(consumerDir, { recursive: true });
+    writeFileSync(
+      join(consumerDir, "package.json"),
+      `{\n  "name": "@x/consumer",\n  "version": "1.0.0",\n  "dependencies": {\n    "@x/core": "^0.9.0"\n  }\n}\n`,
+    );
+    writeChangeset(root, "core-minor.md", "---\ncore: minor\n---\n\nAdd a thing.\n");
+
+    const result = applyReleaseChangesets({ root, runNpmInstall: () => {}, today: () => "2026-09-22" });
+
+    assert.equal(result.findings.length, 0);
+    const consumer = result.applied.find((a) => a.package === "consumer");
+    assert.equal(consumer.changelog, "docs/changelogs/consumer.md");
+    assert.match(readFileSync(join(root, "docs", "changelogs", "consumer.md"), "utf8"), /Updated dependency @x\/core to \^0\.10\.0/);
+    assert.equal(existsSync(join(consumerDir, "CHANGELOG.md")), false);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("CLI: --dry-run names each package's docs/changelogs/<dir>.md entry and writes nothing", () => {
+  const root = makeRoot();
+  try {
+    makePackage(root, "alpha", "1.0.0");
+    writeChangeset(root, "alpha-fix.md", "---\nalpha: patch\n---\n\nFix a bug.\n");
+
+    const stdout = execFileSync(process.execPath, [scriptPath, "--dry-run"], { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+
+    assert.match(stdout, /alpha: 1\.0\.0 -> 1\.0\.1 \(patch\)/);
+    assert.match(stdout, /changelog entry: docs\/changelogs\/alpha\.md/);
+    assert.equal(existsSync(join(root, "docs", "changelogs")), false, "--dry-run must not create the changelog directory");
+    assert.equal(existsSync(join(root, ".changesets", "alpha-fix.md")), true);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("release-pr.yml stages docs/changelogs/, where this script writes every changelog entry", () => {
+  // The release workflow commits only the paths its `git add` names. A
+  // changelog entry written outside them would be left out of the release
+  // commit, silently -- so the staged set must cover the changelog location.
+  const workflow = readFileSync(resolve(dirname(scriptPath), "..", ".github", "workflows", "release-pr.yml"), "utf8");
+  const addLines = workflow.split("\n").filter((line) => /^\s*git add -A -- /.test(line));
+  assert.equal(addLines.length, 1, "expected exactly one `git add -A -- ...` line in release-pr.yml");
+  const staged = addLines[0].trim().replace(/^git add -A -- /, "").split(/\s+/);
+  assert.ok(staged.includes(CHANGELOGS_DIR), `release-pr.yml stages ${JSON.stringify(staged)}, not ${CHANGELOGS_DIR}`);
+  for (const path of ["packages", ".changesets", "package-lock.json"]) assert.ok(staged.includes(path), `release-pr.yml no longer stages ${path}`);
 });

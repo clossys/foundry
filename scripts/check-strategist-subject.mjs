@@ -11,7 +11,7 @@ import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = resolve(fileURLToPath(new URL("..", import.meta.url)));
-const strategistCli = join(repoRoot, "packages/strategist/dist/cli.js");
+export const strategistCli = join(repoRoot, "packages/strategist/dist/cli.js");
 
 const scanRoot = "docs";
 const otherRootMarkdown = [
@@ -29,19 +29,25 @@ const otherRootMarkdown = [
   "SECRETS-ARCHITECTURE.md",
 ];
 
-const args = [
-  strategistCli,
-  "clossys/strategist",
-  scanRoot,
-  "--extensions",
-  ".md",
-  "--exclude",
-  "contracts/**",
-  ...otherRootMarkdown.flatMap((name) => ["--exclude", name]),
-];
+// docs/changelogs/ holds each package's release notes, moved there from
+// packages/<dir>/CHANGELOG.md so they stay correctable without a release
+// (scripts/lib/changelog-location.mjs). This gate never scanned them at
+// their old location, and moving them under docs/ must not change its
+// scope: their historical "the first" / "the only" lines are release
+// history, not claims about the current state. The contamination and
+// public-safety gates still scan every changelog.
+const excludeGlobs = ["contracts/**", "changelogs/**", ...otherRootMarkdown];
 
-const result = spawnSync(process.execPath, args, { cwd: repoRoot, encoding: "utf8" });
-const output = `${result.stdout ?? ""}${result.stderr ?? ""}`;
-process.stdout.write(output);
-if (result.error) throw result.error;
-process.exit(result.status ?? 1);
+// The strategist CLI argv this gate runs, relative to `cwd` (the repository
+// root in real use; a fixture root in scripts/check-strategist-subject.test.mjs).
+export function strategistSubjectArgs(cli = strategistCli) {
+  return [cli, "clossys/strategist", scanRoot, "--extensions", ".md", ...excludeGlobs.flatMap((glob) => ["--exclude", glob])];
+}
+
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const result = spawnSync(process.execPath, strategistSubjectArgs(), { cwd: repoRoot, encoding: "utf8" });
+  const output = `${result.stdout ?? ""}${result.stderr ?? ""}`;
+  process.stdout.write(output);
+  if (result.error) throw result.error;
+  process.exit(result.status ?? 1);
+}

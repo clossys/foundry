@@ -2171,6 +2171,88 @@ try {
       `packages/pkg/CHANGELOG.md was flagged: ${JSON.stringify(anchorReport.findings)}`,
     );
 
+    // (b3) the package changelog at docs/changelogs/<name>.md. It no longer
+    // sits under the scanned package directory, and it must not leave this
+    // gate with it: scanning packages/<name> also scans
+    // docs/changelogs/<name>.md, judged exactly as packages/<name>/CHANGELOG.md
+    // was (same-sentence rot disclosure still exempts; a different sentence
+    // still does not), with findings reported under the real path. A bare
+    // `CHANGELOG.md` inside that changelog names the changelog itself; the
+    // same bare name in shipped package text still reports, since the
+    // tarball no longer carries it.
+    const compRepo = join(work, "contam-class1-companion-changelog");
+    const compPkg = join(compRepo, "packages", "pkg");
+    mkdirSync(join(compPkg, "src"), { recursive: true });
+    mkdirSync(join(compRepo, "docs", "changelogs"), { recursive: true });
+    writeFileSync(
+      join(compPkg, "package.json"),
+      JSON.stringify({ name: `${FIXTURE_SCOPE}/companion`, version: "1.0.0", files: ["src", "README.md"] }, null, 2) + "\n",
+    );
+    writeFileSync(join(compPkg, "src", "index.ts"), "export const companion = 1;\n");
+    writeFileSync(join(compPkg, "README.md"), "# companion\n\nRelease notes are in CHANGELOG.md.\n");
+    writeFileSync(
+      join(compRepo, "docs", "changelogs", "pkg.md"),
+      [
+        "# Changelog",
+        "",
+        "## [1.0.0] - 2026-01-01",
+        "",
+        "### Fixed",
+        "",
+        "- Dropped a citation of `packages/retired/src/gone.ts`, which no longer",
+        "  exists at any commit in this repository.",
+        "",
+        "- Dropped a second citation, of `packages/retired/src/also-gone.ts`. The",
+        "  path named in the entry above no longer exists, but that sentence says",
+        "  nothing whatever about this one.",
+        "",
+        "- Recorded this entry in `CHANGELOG.md`, as every release does.",
+        "",
+      ].join("\n"),
+    );
+    gitInit(compRepo);
+    gitRetirePackageDir(compRepo, "retired");
+    const compRun = run("node", [CONTAM, compPkg, "--class", "1", "--json"]);
+    let compReport;
+    try {
+      compReport = JSON.parse(compRun.out);
+    } catch {
+      compReport = { findings: [] };
+    }
+    const compCites = (file, path) =>
+      (compReport.findings ?? []).some((x) => x.file === file && x.detail.includes(`cites "${path}"`));
+    check(
+      "docs/changelogs/<name>.md is scanned with packages/<name>: rot in it is a finding, reported under its real path",
+      compCites("docs/changelogs/pkg.md", "packages/retired/src/also-gone.ts"),
+      `the moved changelog was not scanned: ${compRun.out.slice(0, 600)}`,
+    );
+    check(
+      "…and a same-sentence rot disclosure in it is still exempt, exactly as in packages/<name>/CHANGELOG.md",
+      !compCites("docs/changelogs/pkg.md", "packages/retired/src/gone.ts"),
+      `the same-sentence disclosure was flagged in the moved changelog: ${JSON.stringify(compReport.findings)}`,
+    );
+    check(
+      "…a bare `CHANGELOG.md` inside the moved changelog names itself and is not a finding",
+      !compCites("docs/changelogs/pkg.md", "CHANGELOG.md"),
+      `the changelog's self-reference was flagged: ${JSON.stringify(compReport.findings)}`,
+    );
+    check(
+      "…but a bare `CHANGELOG.md` in shipped package text IS a finding — the tarball no longer carries one",
+      compCites("README.md", "CHANGELOG.md"),
+      `a shipped pointer at the removed in-package changelog was not flagged: ${JSON.stringify(compReport.findings)}`,
+    );
+    check("…and the run fails", compRun.code === 1, `exit was ${compRun.code}: ${compRun.out.slice(0, 400)}`);
+
+    // Both an in-package CHANGELOG.md and docs/changelogs/<name>.md: two
+    // files claim the one changelog position — refused, never guessed.
+    writeFileSync(join(compPkg, "CHANGELOG.md"), "# Changelog\n");
+    const bothRun = run("node", [CONTAM, compPkg, "--class", "1", "--json"]);
+    check(
+      "a package with BOTH its own CHANGELOG.md and docs/changelogs/<name>.md cannot run (exit 2)",
+      bothRun.code === 2 && /a package changelog lives only at/.test(bothRun.out),
+      `exit was ${bothRun.code}: ${bothRun.out.slice(0, 400)}`,
+    );
+
     // (c) `packages/…` is a SHAPE, not proof of self-reference. A package whose
     // job is walking other repositories' `packages/` trees documents its own
     // parameters with placeholder paths that name the READER's tree — the same
@@ -2454,6 +2536,9 @@ try {
     // inside this synthetic repo to pick up ITS history instead of the real
     // repo's -- copying the file, not just referencing CONTAM's real path.
     cpSync(CONTAM, join(srcRepo, "scripts", "check-contamination-classes.mjs"));
+    // ...along with the one module it imports (where a package changelog lives).
+    mkdirSync(join(srcRepo, "scripts", "lib"), { recursive: true });
+    cpSync(join(scriptDir, "lib", "changelog-location.mjs"), join(srcRepo, "scripts", "lib", "changelog-location.mjs"));
     writeFileSync(
       join(srcRepo, "packages", "probe-lib", "package.json"),
       JSON.stringify({ name: `${FIXTURE_SCOPE}/probe-lib`, version: "1.0.0" }, null, 2) + "\n",

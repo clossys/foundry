@@ -139,7 +139,11 @@ function prefixedRel(rel) {
 // densest identity carriers measured. A changelog written fresh in this
 // repository is ordinary open-source furniture, so --allow-changelogs drops it
 // from the list and leans on content scanning instead — which is the correct
-// control once the file is authored here rather than copied in.
+// control once the file is authored here rather than copied in. This
+// repository's own package changelogs no longer carry that name: they live at
+// docs/changelogs/<dir>.md (scripts/lib/changelog-location.mjs), outside every
+// tarball, and a tree scan reads them as ordinary public text with or without
+// this flag. The flag only ever governs a file actually named CHANGELOG.md.
 const FORBIDDEN_NAMES = [
   "CLAUDE.md",
   "AGENTS.md",

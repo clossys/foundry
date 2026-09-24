@@ -104,7 +104,9 @@ test("passes a real release-shaped diff on release day -- label AND a verified f
     const pkgDir = join(root, "packages", "alpha");
     mkdirSync(pkgDir, { recursive: true });
     writeManifest(pkgDir, { name: "@x/alpha", version: "1.0.0" });
-    writeFileSync(join(pkgDir, "CHANGELOG.md"), "# Changelog\n\n## 1.0.0\n\n- Initial release.\n");
+    // The package changelog lives outside the package, at docs/changelogs/<dir>.md.
+    mkdirSync(join(root, "docs", "changelogs"), { recursive: true });
+    writeFileSync(join(root, "docs", "changelogs", "alpha.md"), "# Changelog\n\n## 1.0.0\n\n- Initial release.\n");
     mkdirSync(join(root, ".changesets"), { recursive: true });
     writeFileSync(join(root, ".changesets", "alpha-fix.md"), "---\nalpha: patch\n---\n\nFix a bug.\n");
     const base = gitCommit(root, "base");
@@ -113,13 +115,13 @@ test("passes a real release-shaped diff on release day -- label AND a verified f
     // The heading needs a " - <date>" suffix and the exact consumed
     // changeset's own bullet -- evaluateReleasePrFootprint() now rebuilds
     // this byte for byte (re-review, https://github.com/clossys/foundry/pull/1353#issuecomment-5803854341).
-    writeFileSync(join(pkgDir, "CHANGELOG.md"), "# Changelog\n\n## 1.0.1 - 2026-01-10\n\n- Fix a bug.\n\n## 1.0.0\n\n- Initial release.\n");
+    writeFileSync(join(root, "docs", "changelogs", "alpha.md"), "# Changelog\n\n## 1.0.1 - 2026-01-10\n\n- Fix a bug.\n\n## 1.0.0\n\n- Initial release.\n");
     rmSync(join(root, ".changesets", "alpha-fix.md"));
     const head = gitCommit(root, "release");
 
     const changedFiles = [
       { path: "packages/alpha/package.json", status: "modified" },
-      { path: "packages/alpha/CHANGELOG.md", status: "modified" },
+      { path: "docs/changelogs/alpha.md", status: "modified" },
       { path: ".changesets/alpha-fix.md", status: "removed" },
     ];
     const r = run(["--json", "--now", SATURDAY, "--base", base, "--head", head, "--changed-files", JSON.stringify(changedFiles), "--labels", "release:weekly"], root);
@@ -277,7 +279,8 @@ test("PAGINATION: the same fixture with the smuggled file removed (a genuinely c
     const pkgDir = join(root, "packages", "alpha");
     mkdirSync(pkgDir, { recursive: true });
     writeManifest(pkgDir, { name: "@x/alpha", version: "1.0.0" });
-    const changelogPath = join(pkgDir, "CHANGELOG.md");
+    mkdirSync(join(root, "docs", "changelogs"), { recursive: true });
+    const changelogPath = join(root, "docs", "changelogs", "alpha.md");
     writeFileSync(changelogPath, "# Changelog\n\n## 1.0.0\n\n- Initial release.\n");
     mkdirSync(join(root, ".changesets"), { recursive: true });
     const changesetNames = [];
@@ -305,7 +308,7 @@ test("PAGINATION: the same fixture with the smuggled file removed (a genuinely c
 
     const changedFiles = [
       { path: "packages/alpha/package.json", status: "modified" },
-      { path: "packages/alpha/CHANGELOG.md", status: "modified" },
+      { path: "docs/changelogs/alpha.md", status: "modified" },
       ...changesetNames.map((name) => ({ path: `.changesets/${name}`, status: "removed" })),
     ];
     assert.ok(changedFiles.length > 100, "fixture must exceed 100 files");

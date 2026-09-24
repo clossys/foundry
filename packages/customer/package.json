@@ -168,7 +168,6 @@
     "skill",
     "fit-signals.json",
     "README.md",
-    "CHANGELOG.md",
     "LICENSE"
   ],
   "sideEffects": false,

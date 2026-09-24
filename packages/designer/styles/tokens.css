@@ -183,7 +183,7 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
                                                             measured that at 4.17:1, below the 4.5:1 this
                                                             token's own comment promises. Darkened to the
                                                             minimum change that clears AA with margin
-                                                            (4.64:1); see CHANGELOG.md. */
+                                                            (4.64:1); see the changelog. */
   --color-ink-link:                oklch(0.36 0 0);
   --color-ink-on-inverse:          oklch(0.9702 0 0);
   --color-ink-on-inverse-muted:    oklch(0.7763 0 0);
@@ -230,7 +230,7 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
                                                             at 3.91:1 — below the 4.5:1 the other three
                                                             status -text/-tint pairs already clear.
                                                             Darkened to the minimum change that clears AA
-                                                            with margin (4.75:1); see CHANGELOG.md. */
+                                                            with margin (4.75:1); see the changelog. */
   --color-status-info-tint:       oklch(0.5658 0 0 / 0.08);
 
   /* ════════════════════════════════════════════════════════════════
@@ -436,7 +436,7 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
    * independently of spacing (rebind one of these three without moving
    * the padding scale everything else reads from). Deliberately three
    * steps, not a free-standing pixel scale of their own: three is what
-   * evidence supports (see this package's CHANGELOG.md) and a
+   * evidence supports (see this package's changelog) and a
    * fourth/fifth step is easy to add later without a breaking rename,
    * unlike shrinking an over-eager scale back down. --ui-icon-stroke is
    * this family's one LITERAL (non-alias) member: the glyph data itself
@@ -579,7 +579,7 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
 
     /* ── COLOR · STATUS — raised lightness, not the light-mode value ─
      * (each stays recognisable as its own role; see this file's header
-     * comment and CHANGELOG.md) ─────────────────────────────────── */
+     * comment and the changelog) ─────────────────────────────────── */
     --color-status-success:         oklch(0.72 0 0);
     --color-status-success-text:    oklch(0.80 0 0);
     --color-status-success-tint:    oklch(0.70 0 0 / 0.16);

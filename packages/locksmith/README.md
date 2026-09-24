@@ -461,7 +461,7 @@ without writing a file or printing the environment.
 The provider-specific CLI installs as `clossys-secrets-infisical`. It is also
 still installed under its previous, now **deprecated** name, which will be
 dropped a release cycle after the deprecation was announced — see the
-[changelog](CHANGELOG.md). Both names point at the same entry point, so a
+[changelog](https://github.com/clossys/foundry/blob/main/docs/changelogs/locksmith.md). Both names point at the same entry point, so a
 consumer already invoking the old one keeps working and can switch on its own
 schedule.
 
@@ -632,3 +632,7 @@ CLI dependency.
 ## Licence
 
 MIT
+
+## Changelog
+
+Release notes for every version are in the [changelog](https://github.com/clossys/foundry/blob/main/docs/changelogs/locksmith.md), kept in the public repository rather than in the installed package.

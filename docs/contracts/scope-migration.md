@@ -127,7 +127,7 @@ confusion when reading the changelog:
    `0.1.0` was formed by merging `@vespeneventures/governance` (`0.15.0`),
    `@vespeneventures/conventions` (`0.8.0`), and `@vespeneventures/policy`
    (`0.1.0`) into one package. Evidence:
-   [`packages/controller/CHANGELOG.md`](../../packages/controller/CHANGELOG.md)
+   [`docs/changelogs/controller.md`](../changelogs/controller.md)
    lines 793 to 823. The changelog states every subpath previously reachable
    under the three old names resolves unchanged, and that this was "a rename and
    a merge, not a rewrite".
