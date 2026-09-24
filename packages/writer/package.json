@@ -28,7 +28,6 @@
     "!src/**/*.test.ts",
     "templates",
     "fit-signals.json",
-    "CHANGELOG.md",
     "README.md",
     "LICENSE",
     "skill"

@@ -732,3 +732,7 @@ root and from `@clossys/writer/voice`, including the rule-vocabulary
 additions: `PatternRule`, `VoicePattern`, `VoiceSeverity`, `VOICE_SEVERITIES`,
 `VoiceChannel`, `isCiBlockingSeverity`, `checkPatternSafety`,
 `PatternSafetyIssue`, and `PatternSafetyResult`.
+
+## Changelog
+
+Release notes for every version are in the [changelog](https://github.com/clossys/foundry/blob/main/docs/changelogs/writer.md), kept in the public repository rather than in the installed package.

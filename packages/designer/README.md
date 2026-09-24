@@ -3959,7 +3959,7 @@ name: find its current kebab-case name in the target version (check
 THIRD-PARTY-NOTICES.md's rename table first), copy its `<svg>` children
 into `icon-source-data.json` as `[tag, { ...attrs }]` tuples, update the
 pinned-version references in THIRD-PARTY-NOTICES.md and this package's
-CHANGELOG.md, then run `node scripts/generate-icons.mjs` and `npm test`
+changelog, then run `node scripts/generate-icons.mjs` and `npm test`
 — `src/icons/icons.test.ts` and `src/icons/tree-shake.test.ts` both
 re-verify the regenerated data. See `scripts/generate-icons.mjs`'s own
 header comment for the full procedure, including adding a genuinely new
@@ -4791,3 +4791,7 @@ a whole.
 ## Licence
 
 MIT
+
+## Changelog
+
+Release notes for every version are in the [changelog](https://github.com/clossys/foundry/blob/main/docs/changelogs/designer.md), kept in the public repository rather than in the installed package.

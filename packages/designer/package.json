@@ -281,7 +281,6 @@
     "!src/**/*.test.tsx",
     "styles",
     "templates",
-    "CHANGELOG.md",
     "README.md",
     "PRE-AUTH-QUALITY.md",
     "TOKENS.md",

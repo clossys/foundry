@@ -48,7 +48,6 @@
     "!src/**/*.test.ts",
     "!src/**/*.test-helper.ts",
     "documents",
-    "CHANGELOG.md",
     "README.md",
     "LICENSE",
     "skill"

@@ -260,3 +260,7 @@ evidence separate from a measured violation.
 | `ValidationFinding` | type | Structured validation finding |
 
 Node 20 or newer. Zero runtime dependencies. MIT licensed.
+
+## Changelog
+
+Release notes for every version are in the [changelog](https://github.com/clossys/foundry/blob/main/docs/changelogs/influencer.md), kept in the public repository rather than in the installed package.

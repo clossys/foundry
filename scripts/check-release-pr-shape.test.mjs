@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { computeBumpLevel, parseSemver } from "./check-release-pr-shape.mjs";
@@ -38,6 +38,14 @@ function makeFixture(root, { name = "probe", version = "1.0.0" } = {}) {
   writeFileSync(join(pkgDir, "README.md"), `# ${name}\n`);
   writeFileSync(join(pkgDir, "LICENSE"), "MIT\n");
   return pkgDir;
+}
+
+// The package changelog lives at docs/changelogs/<dir>.md, outside the
+// package (scripts/lib/changelog-location.mjs).
+function writeChangelog(pkgDir, text) {
+  const path = join(pkgDir, "..", "..", "docs", "changelogs", `${basename(pkgDir)}.md`);
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, text);
 }
 
 function run(args, cwd) {
@@ -144,7 +152,7 @@ test("a consumed major-level changeset requires a Breaking changes CHANGELOG sec
     manifest.version = "2.0.0";
     writeManifest(pkgDir, manifest);
     rmSync(join(root, ".changesets", "probe-break.md"));
-    // Deliberately NOT writing a CHANGELOG.md Breaking changes section.
+    // Deliberately NOT writing a Breaking changes section in docs/changelogs/probe.md.
 
     const r = run(["--json", "--base", base, pkgDir]);
     const report = JSON.parse(r.out);
@@ -165,8 +173,8 @@ test("a consumed major-level changeset WITH a Breaking changes CHANGELOG section
     manifest.version = "2.0.0";
     writeManifest(pkgDir, manifest);
     rmSync(join(root, ".changesets", "probe-break.md"));
-    writeFileSync(
-      join(pkgDir, "CHANGELOG.md"),
+    writeChangelog(
+      pkgDir,
       "# Changelog\n\n## 2.0.0 - 2026-09-26\n\n### Breaking changes\n\n- Removed the deprecated foo() export.\n\n- Removed the deprecated foo() export.\n",
     );
 
@@ -177,22 +185,22 @@ test("a consumed major-level changeset WITH a Breaking changes CHANGELOG section
   });
 });
 
-test("version bump with a matching CHANGELOG.md entry and no changeset passes (direct-bump path)", () => {
+test("version bump with a matching docs/changelogs/<dir>.md entry and no changeset passes (direct-bump path)", () => {
   withRepo((root) => {
     const pkgDir = makeFixture(root);
-    writeFileSync(join(pkgDir, "CHANGELOG.md"), "# Changelog\n\n## 1.0.0\n\n- Initial release.\n");
+    writeChangelog(pkgDir, "# Changelog\n\n## 1.0.0\n\n- Initial release.\n");
     const base = gitCommit(root, "initial release at 1.0.0");
 
     const manifest = readManifest(pkgDir);
     manifest.version = "1.0.1";
     writeManifest(pkgDir, manifest);
-    writeFileSync(join(pkgDir, "CHANGELOG.md"), "# Changelog\n\n## 1.0.1\n\n- Fixed a bug.\n\n## 1.0.0\n\n- Initial release.\n");
+    writeChangelog(pkgDir, "# Changelog\n\n## 1.0.1\n\n- Fixed a bug.\n\n## 1.0.0\n\n- Initial release.\n");
 
     const r = run(["--json", "--base", base, pkgDir]);
     const report = JSON.parse(r.out);
     assert.equal(r.code, 0, r.out);
     assert.equal(report.results[0].status, "pass");
-    assert.match(report.results[0].detail, /matching CHANGELOG\.md entry/);
+    assert.match(report.results[0].detail, /matching docs\/changelogs\/probe\.md entry/);
   });
 });
 
@@ -239,5 +247,48 @@ test("exits 2 on an empty scan rather than a silent clean pass", () => {
     gitCommit(root, "empty packages dir");
     const r = run(["--json"], root);
     assert.equal(r.code, 2, r.out);
+  });
+});
+
+test("a matching entry left in packages/<dir>/CHANGELOG.md no longer justifies a direct bump -- the changelog lives in docs/changelogs/", () => {
+  withRepo((root) => {
+    const pkgDir = makeFixture(root);
+    writeChangelog(pkgDir, "# Changelog\n\n## 1.0.0\n\n- Initial release.\n");
+    const base = gitCommit(root, "initial release at 1.0.0");
+
+    const manifest = readManifest(pkgDir);
+    manifest.version = "1.0.1";
+    writeManifest(pkgDir, manifest);
+    // The entry is written at the retired in-package location only.
+    writeFileSync(join(pkgDir, "CHANGELOG.md"), "# Changelog\n\n## 1.0.1\n\n- Fixed a bug.\n\n## 1.0.0\n\n- Initial release.\n");
+
+    const r = run(["--json", "--base", base, pkgDir]);
+    const report = JSON.parse(r.out);
+    assert.equal(r.code, 1, r.out);
+    assert.equal(report.results[0].status, "not-release-shaped");
+    assert.match(report.results[0].detail, /docs\/changelogs\/probe\.md has no entry for 1\.0\.1/);
+  });
+});
+
+test("a consumed major-level changeset's Breaking changes section is read from docs/changelogs/<dir>.md, not the package", () => {
+  withRepo((root) => {
+    const pkgDir = makeFixture(root);
+    mkdirSync(join(root, ".changesets"), { recursive: true });
+    writeFileSync(join(root, ".changesets", "probe-break.md"), "---\nprobe: major\n---\n\nRemoved the deprecated foo() export.\n");
+    const base = gitCommit(root, "pending major changeset for probe");
+
+    const manifest = readManifest(pkgDir);
+    manifest.version = "2.0.0";
+    writeManifest(pkgDir, manifest);
+    rmSync(join(root, ".changesets", "probe-break.md"));
+    writeFileSync(
+      join(pkgDir, "CHANGELOG.md"),
+      "# Changelog\n\n## 2.0.0 - 2026-09-26\n\n### Breaking changes\n\n- Removed the deprecated foo() export.\n\n- Removed the deprecated foo() export.\n",
+    );
+
+    const r = run(["--json", "--base", base, pkgDir]);
+    const report = JSON.parse(r.out);
+    assert.equal(r.code, 1, r.out);
+    assert.match(report.results[0].detail, /docs\/changelogs\/probe\.md's entry for 2\.0\.0 has no "### Breaking changes" subsection/);
   });
 });
