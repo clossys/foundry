@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -58,13 +58,21 @@ function writePackage(root, { name, version, dependencies, peerDependencies, opt
 // every given package, at both the root node_modules path AND every other
 // package's node_modules path (npm hoists everything to root in the real
 // lockfile, but the gate also matches nested paths — see the "hoisted vs.
-// nested" test below for a nested-only case). `overrides` replaces or adds
-// specific keys, used to plant a remote-URL or malformed entry.
+// nested" test below for a nested-only case). It also writes the workspace
+// member's OWN mirror entry, "packages/<shortName>", with a "version" field
+// read straight off that package's real on-disk manifest — the exact entry
+// the version-record check (checkLockVersions, issue #366) reads — so every
+// existing fixture stays clean-by-default under that check without having
+// to say so explicitly. `overrides` replaces or adds specific keys,
+// used to plant a remote-URL/malformed node_modules entry OR a drifted
+// "packages/<shortName>" version (see the version-record tests below).
 function writeLockfile(root, names, overrides = {}) {
   const packages = {};
   for (const name of names) {
     const shortName = name.split("/").pop();
     packages[`node_modules/${name}`] = { resolved: `packages/${shortName}`, link: true };
+    const manifest = JSON.parse(readFileSync(join(root, "packages", shortName, "package.json"), "utf8"));
+    packages[`packages/${shortName}`] = { name, version: manifest.version, license: manifest.license ?? "MIT" };
   }
   Object.assign(packages, overrides);
   writeFileSync(join(root, "package-lock.json"), JSON.stringify({ lockfileVersion: 3, packages }, null, 2) + "\n");
@@ -410,5 +418,94 @@ test("link check: the same dependency in two sections with different ranges is e
     const peerResult = report.results.find((x) => x.check === "link" && x.section === "peerDependencies" && x.dependency === "@scope/governance");
     assert.equal(depsResult.status, "pass");
     assert.equal(peerResult.status, "finding");
+  });
+});
+
+// --------------------------------------------------------- version-record check (#366)
+
+test("version-record check: a stale lock version is a finding EVEN when the range is satisfied and the link is local (the exact #366 falsifier)", () => {
+  withDir((root) => {
+    // `integrator` has no sibling depending on it at all -- exactly the
+    // shape #366 was filed against: the link check has no range to evaluate
+    // against it (nothing to fail), and the lockfile check sees a perfectly
+    // valid local link (nothing to fail there either). Only the
+    // version-record check can see this. `policy`/`governance` exist only
+    // so the workspace has at least one ordinary dependency edge and this
+    // tree is not itself an empty scan (issue #366's own falsifier tree was
+    // never an empty one -- `integrator` sat alongside a full workspace).
+    writePackage(root, { name: "@scope/policy", version: "0.1.0" });
+    writePackage(root, { name: "@scope/governance", version: "0.3.0", dependencies: { "@scope/policy": "^0.1.0" } });
+    writePackage(root, { name: "@scope/integrator", version: "0.4.0" });
+    writeLockfile(root, ["@scope/policy", "@scope/governance", "@scope/integrator"], {
+      "packages/integrator": { name: "@scope/integrator", version: "0.3.0", license: "MIT" },
+    });
+
+    const r = run(["--json"], root);
+    assert.equal(r.code, 1, `expected exit 1, got ${r.code}: ${r.out}`);
+    const report = JSON.parse(r.out);
+
+    const linkResult = report.results.find((x) => x.check === "link" && x.package === "@scope/integrator");
+    assert.ok(!linkResult, `expected no link-check result to exist for a package nothing depends on, got ${r.out}`);
+
+    const lockfileResult = report.results.find((x) => x.check === "lockfile" && x.package === "@scope/integrator");
+    assert.equal(lockfileResult.status, "pass", `expected the lockfile (resolution) check to still pass, got ${r.out}`);
+
+    const versionResult = report.results.find((x) => x.check === "version" && x.package === "@scope/integrator");
+    assert.ok(versionResult, `expected a version-record result, got ${r.out}`);
+    assert.equal(versionResult.status, "finding");
+    assert.match(versionResult.detail, /0\.4\.0/);
+    assert.match(versionResult.detail, /0\.3\.0/);
+  });
+});
+
+test("version-record check: a lock version matching the manifest passes (the falsifier's other tree)", () => {
+  withDir((root) => {
+    writePackage(root, { name: "@scope/policy", version: "0.1.0" });
+    writePackage(root, { name: "@scope/governance", version: "0.3.0", dependencies: { "@scope/policy": "^0.1.0" } });
+    writePackage(root, { name: "@scope/integrator", version: "0.4.0" });
+    // writeLockfile's default packages/<shortName> mirror already records
+    // 0.4.0 for integrator (read straight off the manifest just written) --
+    // no override needed to make this the "after the fix" tree from #366's
+    // own falsifier.
+    writeLockfile(root, ["@scope/policy", "@scope/governance", "@scope/integrator"]);
+
+    const r = run(["--json"], root);
+    assert.equal(r.code, 0, `expected exit 0, got ${r.code}: ${r.out}`);
+    const report = JSON.parse(r.out);
+    const versionResult = report.results.find((x) => x.check === "version" && x.package === "@scope/integrator");
+    assert.equal(versionResult.status, "pass");
+  });
+});
+
+test("version-record check: a workspace member with no \"packages/<dir>\" lock entry at all is an error, not a silent pass", () => {
+  withDir((root) => {
+    writePackage(root, { name: "@scope/integrator", version: "0.4.0" });
+    writeLockfile(root, ["@scope/integrator"], {
+      "packages/integrator": undefined, // JSON.stringify drops undefined-valued keys entirely
+    });
+
+    const r = run(["--json"], root);
+    assert.equal(r.code, 2, `expected exit 2, got ${r.code}: ${r.out}`);
+    const report = JSON.parse(r.out);
+    const versionResult = report.results.find((x) => x.check === "version" && x.package === "@scope/integrator");
+    assert.ok(versionResult, `expected a version-record result, got ${r.out}`);
+    assert.equal(versionResult.status, "error");
+    assert.match(versionResult.detail, /no "packages\/integrator" entry/);
+  });
+});
+
+test("version-record check: a \"packages/<dir>\" entry with no \"version\" field is an error, not a silent pass", () => {
+  withDir((root) => {
+    writePackage(root, { name: "@scope/integrator", version: "0.4.0" });
+    writeLockfile(root, ["@scope/integrator"], {
+      "packages/integrator": { name: "@scope/integrator", license: "MIT" }, // no "version"
+    });
+
+    const r = run(["--json"], root);
+    assert.equal(r.code, 2, `expected exit 2, got ${r.code}: ${r.out}`);
+    const report = JSON.parse(r.out);
+    const versionResult = report.results.find((x) => x.check === "version" && x.package === "@scope/integrator");
+    assert.equal(versionResult.status, "error");
+    assert.match(versionResult.detail, /no "version" field/);
   });
 });
