@@ -3,6 +3,55 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 0.5.0 - 2026-09-24
+
+- The `foundry` manifest block now declares `capabilities` (manifest schema
+version 3, #1196), a capability map of this role's craft with fourteen
+capabilities. Each `built` or `partial` capability names its own
+release-qualification case as `proofCase`, run through
+`strategist-check` (#1272). Seven are `built`: the evidence base
+(`facts-clean`), audience understanding, market definition, positioning,
+brand derivation, the roadmap, and constraints. Three are `partial`:
+claims, because an approved claim still validates with no fact reference;
+direction currency, because `strategist-check direction` still reports a
+coverage gap for a superseded entity that no current artifact reviews; and
+the strategy brief, because `strategist-check handoff` checks readiness
+but no command writes the projected contract. Four are `planned`, with no
+proof case: mission and values (`readStrategy` reads and validates
+`mission.json`, but no command checks it), the business model and pricing
+hypothesis, the north-star metric tree (#533), and the competitive
+landscape (#1268).
+- The changelog no longer carries an empty "Unreleased" heading, so each release's entry sits directly under the introduction instead of above an empty section.
+- The changelog is no longer included in the package; it now lives in the public repository, linked from the README.
+- Remove the duplicated "How we work together" and "One question at a time"
+sections from this package's packed skill (`skill/SKILL.md`).
+`@clossys/launcher` injects the shared conversation contract when it
+composes a skill for a consumer, so the packed skill no longer carries its
+own byte-identical copy (#1182).
+- Correction: the 0.4.0 CHANGELOG entry said the retired `strategy/`
+fallback was "scheduled for removal in the next release (0.5.0)". That
+removal is deferred — 0.5.0 still reads `strategy/` unchanged, with no
+code behavior change from 0.4.0. The runtime notice, README, and packed
+skill now say the fallback is still read in this release, with removal
+announced beforehand in a later minor release's CHANGELOG.
+- Fix a stale parenthetical in the packed skill's role description: the
+in-tree page document is authored and owned by Publisher, not jointly by
+Designer and Writer, since #1205.
+- The `foundry` manifest block now declares `outputs`, `feeds`, and `fit`
+(package framework, #1172). `outputs` names the eleven
+`clossys/strategist/` records this role owns. `feeds` lists the seven
+handoffs other roles consume: audiences, positioning, claims, constraints,
+brand derivations, direction, and the strategy brief. `fit` names a new
+shipped `fit-signals.json` with one consumer-answer signal: the business
+describes itself to an outside audience. `intake` and `status` are not
+declared yet.
+- The `foundry` manifest block now declares `needs` and `solves` (package
+framework, #1172). `needs` is empty, and that is a claim: no capability
+takes an input from another role. `solves` claims the
+`strategist-unclear-direction` problem, measured by the strategy
+traceability rate, backed by `positioning` and shown by the
+`handoff-positioning-unresolved` case, at `designed` evidence.
+
 ## [0.4.2] - 2026-09-23
 
 ### Notes

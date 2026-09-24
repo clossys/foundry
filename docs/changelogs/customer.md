@@ -5,6 +5,52 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.0 - 2026-09-24
+
+- The `foundry` manifest block now declares `capabilities` (manifest schema
+version 3, #1196), a capability map of this role's craft: seven
+capabilities, all `built`, one per existing inhabit intent (keep, feedback,
+compare, refer, churn, adopt, and worth, as the capabilities
+`keep-verdict`, `lived-feedback`, `comparison-against-alternatives`,
+`refer`, `churn`, `adopt`, and `worth`), each a first-person record that
+`customer-check` validates. Each capability names as its `proofCase` a
+release-qualification case that runs that intent through `customer-check`
+(`keep-satisfied`, `feedback-satisfied`, `compare-satisfied`,
+`refer-satisfied`, `churn-satisfied`, `adopt-satisfied`, and
+`worth-satisfied`), rather than one case standing in for all seven (#1272).
+- The `foundry` manifest block now declares `outputs` (the seven
+`clossys/customer/*.json` session records this role owns), `feeds` (the
+`keep-verdict` at `clossys/customer/keep.json`, which Publisher waits for
+before it seals), and `fit`, which names a new shipped `fit-signals.json`
+with two signals: a named audience to speak as, and an audience-facing
+candidate to keep or fail. `intake` and `status` are not declared yet. The
+README now documents every exported type.
+- The `foundry` manifest block now declares `needs` and `solves` (package
+framework, #1172). `needs` names Strategist's `audience-understanding` (the
+named audience a keep speaks as) and Publisher's `surface-documents` (the
+shipped surface a keep inhabits), the `keep-verdict` capability's own
+inputs. `solves` claims the `customer-would-they-keep-it` problem, measured
+by the customer keep rate, backed by `keep-verdict` and shown by the
+`keep-satisfied` case. Its evidence is `designed`: no retained
+qualification record covers this version yet.
+- The changelog is no longer included in the package; it now lives in the public repository, linked from the README.
+- Remove the duplicated "How we work together" and "One question at a time"
+sections from this package's packed skill (`skill/SKILL.md`).
+`@clossys/launcher` injects the shared conversation contract when it
+composes a skill for a consumer, so the packed skill no longer carries its
+own byte-identical copy (#1182).
+- Packed skill: cite the strategist handoff. writer cites an audience id,
+approved claim ids (`claim:<id>`), applicable constraint ids
+(`constraint:<id>`), and the current direction id, and never edits
+`clossys/strategist/`. designer cites constraint ids and derived token slot names,
+and never adds a brand attribute, color value, or type pairing inside
+strategy records. customer speaks only from the audience
+`situation`/`pains` Strategist recorded, never authors the audience
+record, and does not inhabit until `strategist-check handoff` is green.
+publisher seals against the projected strategy provenance
+(`projectStrategyContract` / `createStrategyProvenance`) and never
+authors strategy. Refs: #1120, #1121, #1122, #1123.
+
 ## [0.1.3] - 2026-09-23
 
 ### Notes

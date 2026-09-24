@@ -1,6 +1,6 @@
 {
   "name": "@clossys/locksmith",
-  "version": "0.2.9",
+  "version": "0.2.10",
   "private": false,
   "license": "MIT",
   "type": "module",

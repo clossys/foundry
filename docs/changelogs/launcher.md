@@ -5,6 +5,30 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.3.1 - 2026-09-24
+
+- The packed conversation contract now names the five loop stages (`sense`,
+`judge`, `act`, `verify`, `learn`) and the `loop` invocation keyword,
+matching Controller's role-loop archetypes contract (#1194).
+- The changelog is no longer included in the package; it now lives in the public repository, linked from the README.
+- Remove the duplicated "How we work together" and "One question at a time"
+sections from this package's packed skill (`skill/SKILL.md`).
+`@clossys/launcher` injects the shared conversation contract when it
+composes a skill for a consumer, so the packed skill no longer carries its
+own byte-identical copy (#1182).
+- The packed conversation contract now says where a skill's "Where we are"
+comes from: the role's status probe summary, and never a hand-written
+status file or any other file. If a role has no status probe, or the probe
+cannot measure yet, the skill says so plainly.
+- Fix the remaining #1205 inconsistencies: Designer's and Writer's packed
+skills now say they supply the tokens, atoms, blocks, and copy ids a
+surface document cites by reference rather than co-authoring it, matching
+Publisher's skill. Publisher's surface-ownership module no longer says the
+shared consumer layout contract (#1171) has not landed; that contract now
+names Publisher as the owner of `clossys/publisher/surfaces`. Launcher's
+packed skill catalogue carries a copy of each role's skill, so it is
+released alongside the skill edits (#1184).
+
 ## [0.3.0] - 2026-09-22
 
 ### Added

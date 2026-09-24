@@ -3,6 +3,106 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 0.7.0 - 2026-09-24
+
+- The `foundry` manifest block now declares `capabilities` (manifest schema
+version 3, #1196), a capability map of this role's craft with eleven
+capabilities: three `built`, two `partial`, and six `planned`. Every
+`built` or `partial` capability names as its `proofCase` a
+release-qualification case that exercises it (#1272). Built: channel
+rendering (`preview-rendered`), the asset roster and coverage
+(`media-satisfied`), and sealing and the publication record, which also
+covers the citation-drift check `checkLedgerDrift`
+(`record-append-only-clean`). Partial: the materials site
+(`preview-rendered`), an internal, locally opened index whose renderers
+ship but which nothing yet derives from a product's own pack manifest; and
+route and visibility governance (`web-routes-clean`), where
+`checkMaterialsVisibility` checks visibility for materials but
+`publisher-web-route-check` still checks only the route-to-template
+mapping. Planned, with no proof case because no qualification case
+exercises them yet: surface documents; v0 Launch pack planning and
+inventory (`@clossys/publisher/pack` ships `validatePackManifest`,
+`computePackReadiness`, `planPackOrder`, and `detectExistingPackItems` as
+library functions, but no command checks a real product's pack manifest
+with them); templates and channel specs; channel kits; the site template
+(shipped under `templates/site/`; Launcher does not apply it yet, #1215);
+and live parity.
+- Tighten the `@clossys/controller` dependency range from `~0.9.0` to
+`~0.9.14`. `@clossys/publisher/pack` imports `packStatusToLifecycle`,
+`PACK_STATUSES`, `LIFECYCLE_CONDITIONS`, and `LIFECYCLE_STATES` from
+`@clossys/controller`, which first exports them in 0.9.14. The old range
+also admitted earlier 0.9.x releases without them, including the 0.9.10
+release on the public registry, against which importing
+`@clossys/publisher/pack` fails at module load. The README's "Requirements
+and version coupling" section no longer restates the dependency ranges, so
+a release cannot leave it stale, and now names the root-entry imports from
+`@clossys/controller` alongside the `./policy` subpath.
+- The `foundry` manifest block now declares `outputs`, `feeds`, and `fit`
+(package framework, #1172). `outputs` names only the two
+`clossys/publisher/` paths this package's own code fixes: `pack.json` (the
+Launch pack manifest `@clossys/publisher/pack` validates) and `surfaces/`
+(read by the shipped site template, and matching `PUBLISHER_SURFACES_DIR`).
+`feeds` hands `surface-documents` to Customer. `fit` names a new shipped
+`fit-signals.json` with two signals: an audience-facing surface exists, and
+the release must be proved afterwards. `intake` and `status` are not
+declared yet.
+- The `foundry` manifest block now declares `needs` and `solves` (package
+framework, #1172). `needs` names four artifacts other roles feed:
+Strategist's `strategy-brief`, Designer's
+`token-contract-and-brand-overlay-binding`, Writer's `copy-registry`, and
+Customer's `keep-verdict`. Designer's components are not listed: they reach
+this package as imports of `@clossys/designer`, recorded in `dependencies`,
+and a `needs` entry names an artifact another role feeds, not a package
+import. Designer's logo and identity files are not listed either, because
+that capability is still `planned`. `solves` claims the
+`publisher-verified-release` problem, measured by the verified publication
+rate, backed by `sealing-and-the-publication-record` and shown by the
+`rate-violated` case, at `designed` evidence.
+- The README explains that an exact pin of Writer, Designer or Controller outside Publisher's declared range installs a second, nested copy, and why to pin inside the range.
+- README: the "Lifecycle vocabulary" section now matches the source. A pack
+item's `status` is one of `PACK_STATUSES` (`absent`, `found`, `draft`,
+`in-review`, `kept`, `published`), which `packStatusToLifecycle` maps onto
+the six shared `LIFECYCLE_STATES`; it is not one of the shared states
+itself, and `validatePackManifest` reports a shared state such as
+`approved` as `invalid-status`. The `pack` export list now names the real
+re-exports from `@clossys/controller` (`PACK_STATUSES`,
+`LIFECYCLE_STATES`, `packStatusToLifecycle`, and the `PackStatus`,
+`LifecycleState`, and `PackStatusLifecyclePosition` types) instead of
+`LIFECYCLE_STATUSES`, `isLifecycleStatus`, `isLifecycleCondition`, and
+`LifecycleStatus`, which this package does not export.
+- Fix a `process.exit()`-after-write race in `publisher-web-route-check` (the
+`checkWebRoutesCli.ts` CLI) that could truncate stdout under load; the CLI
+now sets `process.exitCode` and lets the process exit naturally, matching
+the pattern Foundry's other CLIs use.
+- The changelog is no longer included in the package; it now lives in the public repository, linked from the README.
+- The skill cites Strategist's records at `clossys/strategist/`.
+- Remove the duplicated "How we work together" and "One question at a time"
+sections from this package's packed skill (`skill/SKILL.md`).
+`@clossys/launcher` injects the shared conversation contract when it
+composes a skill for a consumer, so the packed skill no longer carries its
+own byte-identical copy (#1182).
+- Packed skill: cite the strategist handoff. writer cites an audience id,
+approved claim ids (`claim:<id>`), applicable constraint ids
+(`constraint:<id>`), and the current direction id, and never edits
+`clossys/strategist/`. designer cites constraint ids and derived token slot names,
+and never adds a brand attribute, color value, or type pairing inside
+strategy records. customer speaks only from the audience
+`situation`/`pains` Strategist recorded, never authors the audience
+record, and does not inhabit until `strategist-check handoff` is green.
+publisher seals against the projected strategy provenance
+(`projectStrategyContract` / `createStrategyProvenance`) and never
+authors strategy. Refs: #1120, #1121, #1122, #1123.
+- Fix the remaining #1205 inconsistencies: Designer's and Writer's packed
+skills now say they supply the tokens, atoms, blocks, and copy ids a
+surface document cites by reference rather than co-authoring it, matching
+Publisher's skill. Publisher's surface-ownership module no longer says the
+shared consumer layout contract (#1171) has not landed; that contract now
+names Publisher as the owner of `clossys/publisher/surfaces`. Launcher's
+packed skill catalogue carries a copy of each role's skill, so it is
+released alongside the skill edits (#1184).
+- Updated dependency @clossys/writer to ^0.4.0
+- Updated dependency @clossys/designer to ^0.6.0
+
 ## [0.6.0] - 2026-09-23
 
 ### Added

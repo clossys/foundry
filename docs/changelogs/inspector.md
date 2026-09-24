@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## 0.3.0 - 2026-09-24
+
+- Review evidence on a merge-queue run: `ReviewEvidenceOptions` gains an optional `mergeGroup` (`{ headSha, containsHeadShaUnderTest }`, exported as `ReviewEvidenceMergeGroup`). When supplied, `headShaUnderTest` must name the queued pull request's own head, and the check is `indeterminate` with the new reason `merge-group-head-not-contained` unless the caller proved the group commit merges exactly that head. An unusable `mergeGroup` is `indeterminate` with the new reason `merge-group-unusable`. Runs without `mergeGroup` are unchanged.
+- The changelog is no longer included in the package; it now lives in the public repository, linked from the README.
+- Remove the duplicated "How we work together" and "One question at a time"
+sections from this package's packed skill (`skill/SKILL.md`).
+`@clossys/launcher` injects the shared conversation contract when it
+composes a skill for a consumer, so the packed skill no longer carries its
+own byte-identical copy (#1182).
+
 ## [0.2.10] - 2026-09-23
 
 0.2.9 is skipped: an in-flight pull request (#1278) already claimed it at the

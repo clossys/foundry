@@ -5,6 +5,52 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.5.0 - 2026-09-24
+
+- `EngagementBrief` gains an optional `context` snapshot of the engagement context, `toEngagementBrief()` accepts it, and the new `contextFromBrief()` reads it back as a copy with one entry per field, treating an absent snapshot or a missing field as unknown. This is how a role running in a product repository reads what the founder already answered. Because the brief is committed in every staffed repository, `toEngagementBrief()` writes one entry per field id and throws on a duplicate field id or on a known field whose value is not one of that field's fixed choice ids, so founder text, slugified or not, never enters it. Because `clossys/brief.json` is committed JSON a person can hand-edit, `contextFromBrief()` applies that same check on read: an entry with an invalid or missing value, extra keys, a duplicated id, or a non-array `fields` reads as unknown instead of being trusted or throwing.
+- The capability catalogue now reads `needs`, `solves`, `feeds` and `fit` in
+exactly the shape the package-framework contract defines. A `solves` entry
+carries `statement` and an optional `capability`, and its `evidence` may be
+`designed`, `qualified` or `proven`. A `needs` edge carries the declared
+`producerRole` (a scoped package name). Each role exposes its own
+`declaredFeeds` verbatim and in declared order, and its declared
+`capabilities` (id, inputs, outputs). `feeds` now lists only the producer's
+side of met needs. `fit` lists the signal ids from the declared fit-signal
+file. New exported types: `CapabilityInput`, `DeclaredCapability` and
+`DeclaredFeed`. `CapabilitySolves.statement` and
+`RoleCapability.declaredFeeds` are new required fields. A declared need now
+counts as met only when its producer declares a `feeds` entry for that
+artifact, which is the framework gate's rule, so a declared need its
+producer does not feed is now unmet. `needIsMet` is exported. An unmet need
+is reported in `unsatisfiedNeeds`, and its producer is still pulled in.
+- The packed capability catalogue now carries the `needs` and `solves` that
+Customer, Writer, Designer, Publisher, and Strategist declare in their own
+manifests. Before, it used the fallbacks it derives when those fields are
+absent. Each of the five had a `solves` entry that restated the role's job
+question and cited no proof case. Publisher's edges came from its package
+dependencies and the first-wave order. The launch kit now composes from the
+declared edges, and each declared `solves` entry names its own proof case
+and capability. All five are at `designed` evidence.
+- `composeKit` now judges needs cycles per capability, following the
+contract's cycle decision, and `judgeNeedsCycles` is exported. A cycle among
+capabilities is a deadlock and stays `indeterminate`. A role-level loop with
+no capability cycle behind it, such as the Customer/Publisher keep loop,
+now composes, and its new `roleCycles` field lists the loop. A cycle the
+capability graph cannot account for now composes too, and the new
+`unjudgedCycle` field names it. That covers a cycle only visible through a
+role with no capability map, and a role loop closed by an inferred fallback
+need that names no capability; before this change, that last case was
+`indeterminate`. `composeKitFromProblems` passes both fields through. So
+does `recommendKit`: a `KitVerdict` now has `roleCycles` and
+`unjudgedCycle`, and the skill tells the client about an unjudged cycle. A
+verdict's citation `statement` is now the role's own `solves` statement.
+- The changelog is no longer included in the package; it now lives in the public repository, linked from the README.
+- Remove the duplicated "How we work together" and "One question at a time"
+sections from this package's packed skill (`skill/SKILL.md`).
+`@clossys/launcher` injects the shared conversation contract when it
+composes a skill for a consumer, so the packed skill no longer carries its
+own byte-identical copy (#1182).
+
 ## [0.4.1] - 2026-09-23
 
 ### Notes

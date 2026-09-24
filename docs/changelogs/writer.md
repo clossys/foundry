@@ -3,6 +3,62 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## 0.4.0 - 2026-09-24
+
+- The `foundry` manifest block now declares `capabilities` (manifest schema
+version 3, #1196), a capability map of this role's craft with ten
+capabilities. Each `built` or `partial` capability names its own
+release-qualification case as `proofCase` (#1272). Four are `built`: the
+copy registry, copy coverage (every component string traced to a registry
+entry by match or `copy:<id>` citation, the approved copy coverage rate),
+addressability, and locale coverage. Four are `partial`, because their
+case reaches only part of what the capability promises through the CLI:
+the voice record, claims-to-copy traceability (whether this stays separate
+from Strategist's own facts scan is pending #1271), live-copy conformance,
+and voice conformance. Two are `planned`, with no proof case: the
+messaging kit (#1269), and privacy and terms placeholders (#1270, #1213),
+placeholder text drafted from Keeper-supplied facts and labelled as not
+legal advice pending counsel review.
+- The changelog no longer carries an empty "Unreleased" heading, so each release's entry sits directly under the introduction instead of above an empty section.
+- The changelog is no longer included in the package; it now lives in the public repository, linked from the README.
+- The skill cites Strategist's records at `clossys/strategist/`.
+- Remove the duplicated "How we work together" and "One question at a time"
+sections from this package's packed skill (`skill/SKILL.md`).
+`@clossys/launcher` injects the shared conversation contract when it
+composes a skill for a consumer, so the packed skill no longer carries its
+own byte-identical copy (#1182).
+- Packed skill: cite the strategist handoff. writer cites an audience id,
+approved claim ids (`claim:<id>`), applicable constraint ids
+(`constraint:<id>`), and the current direction id, and never edits
+`clossys/strategist/`. designer cites constraint ids and derived token slot names,
+and never adds a brand attribute, color value, or type pairing inside
+strategy records. customer speaks only from the audience
+`situation`/`pains` Strategist recorded, never authors the audience
+record, and does not inhabit until `strategist-check handoff` is green.
+publisher seals against the projected strategy provenance
+(`projectStrategyContract` / `createStrategyProvenance`) and never
+authors strategy. Refs: #1120, #1121, #1122, #1123.
+- Fix the remaining #1205 inconsistencies: Designer's and Writer's packed
+skills now say they supply the tokens, atoms, blocks, and copy ids a
+surface document cites by reference rather than co-authoring it, matching
+Publisher's skill. Publisher's surface-ownership module no longer says the
+shared consumer layout contract (#1171) has not landed; that contract now
+names Publisher as the owner of `clossys/publisher/surfaces`. Launcher's
+packed skill catalogue carries a copy of each role's skill, so it is
+released alongside the skill edits (#1184).
+- The `foundry` manifest block now declares `outputs` (the copy registry and
+voice record under `clossys/writer/`), `feeds` (the copy registry, for
+Publisher), and `fit`, which names a new shipped `fit-signals.json` with
+one signal: the repository ships audience-facing copy. `intake` and
+`status` are not declared yet.
+- The `foundry` manifest block now declares `needs` and `solves` (package
+framework, #1172). `needs` names Strategist's `brand-derivation` (the voice
+record's rules derive from it) and `claims` (live copy cites approved claim
+ids). `solves` claims the `writer-unapproved-copy` problem, measured by the
+approved copy coverage rate, backed by `copy-coverage` and shown by the
+`copy-violated` case. Its evidence is `designed`: no retained qualification
+record covers this version yet.
+
 ## [0.3.18] - 2026-09-23
 
 ### Notes
