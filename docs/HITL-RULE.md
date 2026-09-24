@@ -152,23 +152,28 @@ states.
   record at tier-1 — see "Tier coverage for changing this rule" below.
 - **Implementation of the "Final rule" table's "Two reviews" row, governance/security/gate carve-out**:
   not yet implemented. `evaluateTier1Independence` enforces two
-  independent reviewers but has no notion of "strong-reasoning class",
-  "verdicts given before either sees the other's", or "a fresh final
-  reviewer with no history on the PR" for any path, governance/security/gate
-  or otherwise. Tracked in #1350 and `docs/HITL.md`'s "Before switching
-  to enforce" section.
+  independent reviewers but has no notion of a required strong-class
+  reviewer, "verdicts given before either sees the other's", or "a fresh
+  final reviewer with no history on the PR" for any path,
+  governance/security/gate or otherwise (#1187 escalation-rule round 8,
+  strong-class reviewer, blocking B7: an earlier draft put "strong-class"
+  in quotation marks as "strong-reasoning class" — a paraphrase, not the
+  ratified text's own term — corrected here to the exact word the rule
+  uses, unquoted where it isn't a direct quote). Tracked in #1350 and
+  `docs/HITL.md`'s "Before switching to enforce" section.
 - **Implementation of the "Land, log and notify" mode**: not implemented
   at all. No digest, no revert-tracking, no risk-ranking, no 8-week-shrink
   logic exists anywhere in this repository.
 - **Implementation of "Changing this rule itself"**: this file
   (`docs/HITL-RULE.md`), `docs/HITL-HOOKS.md`, and
   `governance/decisions/hitl-escalation-rule*.json` are all in
-  `tier2.globs` (see above), and both deny-hook scripts described in
-  `docs/HITL-HOOKS.md` (`scripts/hooks/deny-tier2.mjs` and
-  `scripts/hooks/deny-tier2-edit.mjs`, real and tested, not documentation
-  only) name all three paths in their protected-path lists. Neither the
-  tier classification nor the hooks are a verification that a change to
-  any of these files was actually owner-ratified; all are the
+  `tier2.globs` (see above), and the deny-hook script described in
+  `docs/HITL-HOOKS.md` (`scripts/hooks/deny-tier2-edit.mjs`, real and
+  tested, not documentation only -- the companion Bash-matched hook was
+  removed by owner decision in round 8; see `docs/HITL-HOOKS.md`'s own
+  history section) names all three paths in its protected-path list.
+  Neither the tier classification nor the hook is a verification that a
+  change to any of these files was actually owner-ratified; both are the
   path-classification and best-effort protection layer only. See
   `docs/HITL.md`'s "Honour-system limits" section for what neither can
   do.
@@ -189,10 +194,13 @@ every part of it:
 
 - **The "Two reviews" mode** is what `scripts/land-stack.mjs`'s tier-1
   gate (`evaluateTier1Independence`) actually enforces today — minus the
-  blind-verdict, fresh-final-reviewer, and model-diversity-record
-  requirements the ratified rule adds for governance/security/gate work.
-  Tracked in #1350 (see `docs/HITL.md`'s "Before switching to enforce"
-  section).
+  blind-verdict and fresh-final-reviewer requirements the ratified rule
+  adds for governance/security/gate work (#1187 escalation-rule round 8,
+  strong-class reviewer, blocking B7: an earlier draft of this bullet
+  also named a "model-diversity-record" requirement here; the ratified
+  text contains no such requirement, and the phrase has been removed --
+  see `docs/HITL.md` item 8, retracted for the same reason). Tracked in
+  #1350 (see `docs/HITL.md`'s "Before switching to enforce" section).
 - **"Autonomous: tier-0 paths, logged"** matches the code's own tier-0
   fast path (`runStatus` skips review-evidence reads entirely for a
   tier-0 classification — see `docs/HITL.md`'s "Where each tier is
@@ -306,15 +314,20 @@ independent review on this pull request (both reviewers, blocking) found
 that this contradicted "Changing this rule itself" directly: an edit to
 the rule's own living text, its deny hook, or its durable record, could
 otherwise land with two ordinary reviewers, never reaching the owner.
-`docs/HITL-RULE.md`, `docs/HITL-HOOKS.md`, `scripts/hooks/deny-tier2.mjs`,
-`scripts/hooks/deny-tier2-edit.mjs`, and
-`governance/decisions/hitl-escalation-rule*.json` (a glob, covering any
-future superseding record that follows this repository's supersession
-naming convention — see `governance/review-tiers.json`'s own `$comment`
-for the full reasoning) are all in `tier2.globs`. `docs/HITL.md` itself
-is deliberately NOT in `tier2.globs` — it is named explicitly in
+`docs/HITL-RULE.md`, `docs/HITL-HOOKS.md`, and
+`scripts/hooks/deny-tier2-edit.mjs` are all in `tier2.globs` directly (the
+companion Bash-matched `deny-tier2.mjs` named here in earlier rounds was
+removed by owner decision in round 8; see `docs/HITL-HOOKS.md`'s own
+history section). `governance/decisions/hitl-escalation-rule*.json` was
+also named directly, and round 8 additionally made the WHOLE
+`governance/decisions/**` directory tier-2 (see `governance/review-tiers.json`'s
+own `$comment` for the full reasoning on both) — closing the gap where a
+DIFFERENTLY-named record, one that supersedes this rule without following
+the `hitl-escalation-rule*` naming convention the narrower glob depends
+on, would otherwise still classify tier-1. `docs/HITL.md` itself is
+deliberately NOT in `tier2.globs` — it is named explicitly in
 `tier1.globs` instead (without that entry it would classify tier-0, the
 same gap this section describes for the files above), since it documents
 the gate mechanics generally and does not itself carry the rule text, the
-hook definitions, or the record.
+hook definition, or the record.
 

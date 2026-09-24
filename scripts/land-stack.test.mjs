@@ -318,20 +318,29 @@ test("classifyTier against the real governance/review-tiers.json: the enforcemen
   assert.equal(classifyTier(["docs/HITL.md"], tierGlobs).tier, "tier-1");
   // The deny hook that is meant to write-protect docs/HITL-RULE.md is
   // ALSO tier-2 (#1187 escalation-rule round 4, both reviewers, blocking):
-  // its definition (both scripts and their protected-path lists) moved
-  // out of tier-1 docs/HITL.md, where a two-ordinary-reviewer change could
-  // silently have weakened it, into docs/HITL-HOOKS.md and real, tracked
-  // scripts under scripts/hooks/ -- including their tests, matching this
-  // file's own existing precedent for scripts/land-stack.mjs/.test.mjs.
+  // its definition (the script and its protected-path list) moved out of
+  // tier-1 docs/HITL.md, where a two-ordinary-reviewer change could
+  // silently have weakened it, into docs/HITL-HOOKS.md and a real,
+  // tracked script under scripts/hooks/ -- including its test, matching
+  // this file's own existing precedent for scripts/land-stack.mjs/.test.mjs.
+  // The companion Bash-matched deny-tier2.mjs was REMOVED in round 8
+  // (owner decision) -- only deny-tier2-edit.mjs (and its test) remain,
+  // still covered by the same scripts/hooks/** directory glob.
   assert.equal(classifyTier(["docs/HITL-HOOKS.md"], tierGlobs).tier, "tier-2");
-  assert.equal(classifyTier(["scripts/hooks/deny-tier2.mjs"], tierGlobs).tier, "tier-2");
   assert.equal(classifyTier(["scripts/hooks/deny-tier2-edit.mjs"], tierGlobs).tier, "tier-2");
-  assert.equal(classifyTier(["scripts/hooks/deny-tier2.test.mjs"], tierGlobs).tier, "tier-2");
   assert.equal(classifyTier(["scripts/hooks/deny-tier2-edit.test.mjs"], tierGlobs).tier, "tier-2");
-  // governance/decisions/** is tier-1, not tier-0 (#1187 review at 8e6d97ea,
-  // blocking finding 4) -- adding or changing a decision record needs real
-  // independent review, not a free pass.
-  assert.equal(classifyTier(["governance/decisions/some-decision.json"], tierGlobs).tier, "tier-1");
+  // governance/decisions/** is tier-2, not tier-0 or tier-1 (#1187 review
+  // at 8e6d97ea, blocking finding 4, promoted from tier-1 to tier-2 in
+  // round 8, both reviewers, blocking): adding or changing ANY decision
+  // record -- not only one matching the narrower hitl-escalation-rule*.json
+  // glob -- needs owner-decision-record authorization, since any record
+  // with decidedBy: "owner" carries real tier-2 authority regardless of
+  // which path it lives under or what it is named. This also closes the
+  // narrower gap where a record superseding the escalation rule itself,
+  // under a name that does NOT match the hitl-escalation-rule* naming
+  // convention, would otherwise fall back to a lower tier.
+  assert.equal(classifyTier(["governance/decisions/some-decision.json"], tierGlobs).tier, "tier-2");
+  assert.equal(classifyTier(["governance/decisions/hitl-rule-amendment.json"], tierGlobs).tier, "tier-2");
   // Ordinary governance record files stay exempt (tier-0).
   assert.equal(classifyTier(["governance/release-catalog.json"], tierGlobs).tier, "tier-0");
   assert.equal(classifyTier(["governance/model-qualifications/allowlist.json"], tierGlobs).tier, "tier-2");
