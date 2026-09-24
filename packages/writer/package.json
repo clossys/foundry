@@ -27,6 +27,7 @@
     "src",
     "!src/**/*.test.ts",
     "templates",
+    "fit-signals.json",
     "CHANGELOG.md",
     "README.md",
     "LICENSE",
@@ -52,8 +53,8 @@
         "outputs": [
           "clossys/writer/voice.json"
         ],
-        "proofCase": "copy-clean",
-        "maturity": "built",
+        "proofCase": "voice-derivation-violated",
+        "maturity": "partial",
         "v0": true,
         "businessLifecycleStage": "define"
       },
@@ -65,7 +66,7 @@
         "outputs": [
           "clossys/writer/copy-registry.json"
         ],
-        "proofCase": "copy-clean",
+        "proofCase": "registry-placeholder-missing",
         "maturity": "built",
         "v0": true,
         "businessLifecycleStage": "build"
@@ -101,8 +102,8 @@
         "outputs": [
           "clossys/writer/.generated/claim-citations-report.json"
         ],
-        "proofCase": "copy-clean",
-        "maturity": "built",
+        "proofCase": "live-magnitude-unmarked",
+        "maturity": "partial",
         "v0": true,
         "businessLifecycleStage": "build"
       },
@@ -114,8 +115,8 @@
         "outputs": [
           "clossys/writer/.generated/live-copy-report.json"
         ],
-        "proofCase": "copy-clean",
-        "maturity": "built",
+        "proofCase": "live-fold-wallpaper",
+        "maturity": "partial",
         "v0": false,
         "businessLifecycleStage": "operate"
       },
@@ -127,7 +128,7 @@
         "outputs": [
           "clossys/writer/.generated/addressability-report.json"
         ],
-        "proofCase": "copy-clean",
+        "proofCase": "addressability-violated",
         "maturity": "built",
         "v0": true,
         "businessLifecycleStage": "build"
@@ -140,7 +141,7 @@
         "outputs": [
           "clossys/writer/.generated/locale-coverage-report.json"
         ],
-        "proofCase": "copy-clean",
+        "proofCase": "locale-coverage-missing",
         "maturity": "built",
         "v0": false,
         "businessLifecycleStage": "operate"
@@ -158,8 +159,8 @@
         "outputs": [
           "clossys/writer/.generated/voice-conformance-report.json"
         ],
-        "proofCase": "copy-clean",
-        "maturity": "built",
+        "proofCase": "live-claim-unsupported",
+        "maturity": "partial",
         "v0": false,
         "businessLifecycleStage": "operate"
       },
@@ -180,8 +181,32 @@
         "maturity": "planned",
         "v0": true,
         "businessLifecycleStage": "launch"
+      },
+      {
+        "id": "privacy-and-terms-placeholders",
+        "subQuestion": "Do the placeholder privacy notice and terms say, in the brand's voice, only what the supplied data-holding facts support, and say plainly that they are not legal advice?",
+        "worldClass": "Placeholder privacy-notice and terms text is drafted in the brand's voice from the facts Keeper supplies (what data is held, why, and for how long), never from assumption, and each page is labelled clearly as not legal advice pending review by counsel (#1213). Legal work beyond placeholders is out of scope for this role.",
+        "inputs": [],
+        "outputs": [
+          "clossys/writer/policy-placeholders.json"
+        ],
+        "proofCase": null,
+        "maturity": "planned",
+        "v0": true,
+        "businessLifecycleStage": "launch"
       }
-    ]
+    ],
+    "outputs": [
+      "clossys/writer/copy-registry.json",
+      "clossys/writer/voice.json"
+    ],
+    "feeds": [
+      {
+        "artifact": "copy-registry",
+        "path": "clossys/writer/copy-registry.json"
+      }
+    ],
+    "fit": "fit-signals.json"
   },
   "description": "The writer role: is it well said? A consumer-owned language system: voice rules, glossary and claims validation, addressable copy records, source traceability, locale coverage, and passage-layer composition \u2014 five gates reachable from one bin. Ships machinery and templates, never a consumer's actual copy or voice.",
   "keywords": [
