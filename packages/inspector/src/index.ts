@@ -43,7 +43,13 @@ export { TASK_ITEM_LOOKUP_OUTCOMES, checkTaskRecord, extractTaskReferenceText, p
 export type { ParsedTaskReference, TaskItemLookupOutcome, TaskItemObservation, TaskRecordExemption, TaskRecordFinding, TaskRecordObservation, TaskRecordPolicy, TaskRecordReason, TaskRecordReport } from "./task-record.js";
 
 export { checkReviewEvidence, reviewEvidenceReasons } from "./review-evidence.js";
-export type { ReviewEvidenceFinding, ReviewEvidenceOptions, ReviewEvidenceReason, ReviewEvidenceReport } from "./review-evidence.js";
+export type {
+  ReviewEvidenceFinding,
+  ReviewEvidenceMergeGroup,
+  ReviewEvidenceOptions,
+  ReviewEvidenceReason,
+  ReviewEvidenceReport,
+} from "./review-evidence.js";
 
 export { checkPolicyDrift, policyDriftReasons } from "./policy-drift.js";
 export type { PolicyDocumentExpectation, PolicyDriftFinding, PolicyDriftObservation, PolicyDriftOptions, PolicyDriftReason, PolicyDriftReport, PolicyRequirement } from "./policy-drift.js";

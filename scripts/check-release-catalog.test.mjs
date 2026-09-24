@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 import { ALL_PACKAGE_RELEASE_ORDER, assertPackageAuthorized, filterPackagesForTarget, loadReleaseCatalog, readCurrentReleaseIdentity, resolveReleaseTarget } from "./check-release-catalog.mjs";
+import { spawnCapture } from "./lib/spawn-capture.mjs";
 
 // The retired GitHub Packages identity is read from the closed transition
 // policy rather than spelled out here, so this fixture cannot drift from the
@@ -47,12 +47,12 @@ function load(value) {
   return loadReleaseCatalog({ path: "catalog.json", readFile: () => JSON.stringify(value) });
 }
 
-function runCli({ catalogContents, catalogPresent = true, scopeContents, scopePresent = true } = {}) {
+async function runCli({ catalogContents, catalogPresent = true, scopeContents, scopePresent = true } = {}) {
   const root = mkdtempSync(join(tmpdir(), "release-catalog-cli-"));
   try {
     if (scopePresent) writeFileSync(join(root, "package-scope.json"), scopeContents ?? JSON.stringify(currentIdentity));
     if (catalogPresent) writeFileSync(join(root, "release-catalog.json"), catalogContents ?? JSON.stringify(catalog()));
-    return spawnSync(process.execPath, [catalogCli, "--catalog", join(root, "release-catalog.json"), "--scope-file", join(root, "package-scope.json")], { encoding: "utf8" });
+    return await spawnCapture(process.execPath, [catalogCli, "--catalog", join(root, "release-catalog.json"), "--scope-file", join(root, "package-scope.json")]);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -196,7 +196,7 @@ test("candidate catalogue rejects mixed access, broadening, partial or reordered
   );
 });
 
-test("the current target cannot be repurposed as an implicit migration lane", () => {
+test("the current target cannot be repurposed as an implicit migration lane", async () => {
   const repurposed = catalog({
     targets: [
       { id: "current-github-packages", status: "active", scope: targetIdentity.scope, registry: targetIdentity.registry, packages: "all" },
@@ -205,7 +205,7 @@ test("the current target cannot be repurposed as an implicit migration lane", ()
   });
   assert.throws(() => load(repurposed), /active all-package default target/);
 
-  const implicit = runCli({ catalogContents: JSON.stringify(repurposed), scopeContents: JSON.stringify(targetIdentity) });
+  const implicit = await runCli({ catalogContents: JSON.stringify(repurposed), scopeContents: JSON.stringify(targetIdentity) });
   assert.equal(implicit.status, 1, implicit.stderr || implicit.stdout);
   assert.match(implicit.stderr, /active all-package default target/);
 });
@@ -229,30 +229,30 @@ test("missing or malformed catalogues fail closed", () => {
   );
 });
 
-test("catalog CLI distinguishes unreadable and malformed input from a semantic violation", () => {
-  const missing = runCli({ catalogPresent: false });
+test("catalog CLI distinguishes unreadable and malformed input from a semantic violation", async () => {
+  const missing = await runCli({ catalogPresent: false });
   assert.equal(missing.status, 2, missing.stderr || missing.stdout);
   assert.match(missing.stderr, /cannot read/);
 
-  const malformed = runCli({ catalogContents: "{" });
+  const malformed = await runCli({ catalogContents: "{" });
   assert.equal(malformed.status, 2, malformed.stderr || malformed.stdout);
   assert.match(malformed.stderr, /does not parse/);
 
-  const semantic = runCli({ catalogContents: JSON.stringify(catalog({ defaultTarget: "clossys-npmjs-precutover" })) });
+  const semantic = await runCli({ catalogContents: JSON.stringify(catalog({ defaultTarget: "clossys-npmjs-precutover" })) });
   assert.equal(semantic.status, 1, semantic.stderr || semantic.stdout);
   assert.match(semantic.stderr, /active all-package default target/);
 });
 
-test("package-scope CLI input uses indeterminate exits while semantic identity drift remains violated", () => {
-  const missing = runCli({ scopePresent: false });
+test("package-scope CLI input uses indeterminate exits while semantic identity drift remains violated", async () => {
+  const missing = await runCli({ scopePresent: false });
   assert.equal(missing.status, 2, missing.stderr || missing.stdout);
   assert.match(missing.stderr, /cannot read/);
 
-  const malformed = runCli({ scopeContents: "{" });
+  const malformed = await runCli({ scopeContents: "{" });
   assert.equal(malformed.status, 2, malformed.stderr || malformed.stdout);
   assert.match(malformed.stderr, /does not parse/);
 
-  const semantic = runCli({ scopeContents: JSON.stringify({ scope: "not-an-npm-scope", registry: currentIdentity.registry }) });
+  const semantic = await runCli({ scopeContents: JSON.stringify({ scope: "not-an-npm-scope", registry: currentIdentity.registry }) });
   assert.equal(semantic.status, 1, semantic.stderr || semantic.stdout);
   assert.match(semantic.stderr, /valid npm scope/);
 });
