@@ -2437,3 +2437,126 @@ install. A first-wave consumer still opens only justified positions.
 
 Refs: #517, #533, #567, #806, #897, #906, #909, #924
 
+## 28. Roles read the engagement context from a snapshot in the brief, and intake cards may not reuse a context field id
+
+### Measurement before the decision
+
+Issue #1173 created the shared engagement context record and Advisor's
+cards for it. A follow-up triage on 2026-09-23 found three gaps, each
+checked against `main`:
+
+1. The record lives only on the hub. `docs/contracts/consumer-layout.json`
+   marks `clossys/advisor` as `hub-only` ("never on a product checkout"),
+   and `packages/advisor/src/context.ts` places the record at
+   `clossys/advisor/context.json`. Roles run in product repositories, so a
+   role there had no path to what the founder already answered.
+2. `docs/contracts/engagement-brief.json` -- the one Advisor-authored file
+   the layout places in every staffed repository (`clossys/brief.json`) --
+   had no property for the context.
+3. The duplicate-question gate #1173 lists as a done-when item was not
+   wired, and `docs/contracts/intake-question-cards.json` never referenced
+   the engagement context.
+
+`git grep '"intake"' -- 'packages/*/package.json'` returns nothing: no role
+package declares `foundry.intake` yet, so a gate added now has nothing to
+flag and constrains every intake file from its first commit.
+
+### Decision
+
+**The brief carries a contract-shaped snapshot.** `clossys/brief.json`
+gains an optional `context` property holding the hub's engagement context
+record as `docs/contracts/engagement-context.json` shapes it.
+`toEngagementBrief()` takes an optional `context` and writes a normalized
+copy: exactly one entry per field id, in the fixed field order, with a
+field the supplied context lacks written as `unknown`, and it throws on a
+field id that appears twice.
+Every role, on the hub or in a product repository, reads the context
+through the brief (`contextFromBrief()`), never from the hub path. The hub
+record stays the single source of truth and only Advisor writes it; the
+snapshot is refreshed by re-applying the plan (#1178), never edited in
+place. An absent `context` reads as every field `unknown`, and so does any
+single field missing from a present one: `contextFromBrief()` always
+returns one entry per field id, as a copy. The brief's `schemaVersion`
+stays `1`: the property is optional and no brief has been written to disk
+yet (writing is wave 2, #1175/#1178).
+
+**The snapshot widens where the context is visible, so it carries fixed
+choice ids only.** The hub record sits under `clossys/advisor`, which the
+layout marks `hub-only`; the brief is committed in every staffed
+repository, and a product repository can be public when the hub is not.
+Copying the context into the brief therefore extends its visibility to
+every staffed repository -- the same exposure the brief's freeform `problem` already
+has. To keep that bounded, a known field's `value` must be one of that
+field's own fixed choice ids -- the answers on its Advisor question card,
+never `unknown` or `something-else`. `toEngagementBrief()` accepts a
+value only when `applyContextChoice(field, value)` returns `known` and
+throws rather than copy anything else, and the contract lists the same ids
+as a per-field `enum`, which a test keeps equal to the cards. A shape rule
+is not enough: a lowercase-slug pattern would still admit a founder's
+sentence once a caller slugified it (`mostly-dentists-near-our-office`), at
+any length. Because the vocabulary is closed, no founder text -- a
+"something else" sentence, or a slugified form of one -- can reach a
+product repository through the brief.
+
+**The context field ids are reserved intake question ids.** Matching is on
+stable ids only: an intake card whose `id`, trimmed and lowercased, is
+`business`, `product`, `audience`, `stage`, `intent`, or `constraints`
+(read from the contract's `fieldId` enum, not a copy) duplicates a context
+question. A case or whitespace variant is the same id, not a narrower
+question, so intake card ids must also be lowercase slugs and the shape
+check reports any other; only a genuine rename is left to review. A
+role that needs one of those answers reads it from the brief; when it is
+unknown there, the founder goes back to Advisor's own context card. A
+narrower question (which audience segment first) uses its own id and is
+not a duplicate. `scripts/check-package-framework.mjs` reports the rule as
+`intake-card-duplicates-context-field`: a WARN line in report mode, which
+is what CI runs, and a finding under `--enforce`, which arrives with the
+rest of that gate's enforce wave (#1172). An unreadable context contract
+is reported the same way (`engagement-context-contract-unreadable`), so an
+enforcing run never passes on a check that did not run, and the summary
+line prints how many intake files it examined.
+
+### Alternatives considered
+
+- **A pointer in the brief to the hub path.** Rejected: a product checkout
+  cannot resolve a hub path, so the pointer only restates gap 1. It would
+  also make a role's intake depend on reaching a second repository at run
+  time.
+- **A hub-inventory lookup (the role asks the hub, or Launcher's hub
+  inventory resolves it).** Rejected for now: it needs a runtime channel
+  between repositories that does not exist, and adds a failure mode
+  (hub unreachable) to every intake. A snapshot degrades to `unknown`, the
+  state every field already has before the founder answers.
+- **Copying `context.json` itself into each repository.** Rejected: it
+  would put a second Advisor-owned file under a role-owned layout and
+  duplicate what the brief already is -- the one Advisor record every
+  staffed repository carries.
+- **Matching on prompt wording, or fuzzy id matching.** Rejected: prompt
+  text is edited freely and paraphrase detection produces false positives
+  a gate cannot adjudicate. Ids are the stable vocabulary a stored answer
+  is keyed on (`intake-question-cards.json`'s own `rule`), so they are
+  what "the same question" means. Paraphrase under a new id stays a review
+  concern.
+- **A runtime filter that hides a duplicating card only when the context
+  field is `known`.** Rejected as the gate: it would let a role ship its
+  own copy of a context question and ask it whenever the field is
+  unknown -- exactly the repeated interview #1173 exists to prevent.
+
+### Not decided here
+
+Writing the brief to disk, and so populating `context`, is #1178. The
+Strategist pilot reading `contextFromBrief()` first is #1173's own
+remaining item. Promoting the rule to a failure is #1172's enforce wave.
+Whether a public product repository should receive the snapshot at all is
+for #1178, the first writer of the brief, to settle.
+
+Drift detection is not decided here. The snapshot carries no digest of the
+hub record and no timestamp, so nothing can yet report that a brief's
+`context` is older than the hub's: if the founder answers a question after
+the plan is applied, a product-repository role keeps reading the older
+answer (or `unknown`) until the plan is re-applied. A later hub-side check
+would need a source digest on the snapshot; adding one belongs with the
+writer in #1178, not as a field declared ahead of anything that writes or
+reads it.
+
+Refs: #1171, #1172, #1173, #1176, #1178
