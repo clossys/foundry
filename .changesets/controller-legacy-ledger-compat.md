@@ -37,17 +37,19 @@ uses the pre-rename `learnOrEscalate` key or the ledger has no positions
 at all -- a missing disposition for `@clossys/customer` (a role this
 package added in 0.9.11, after a 0.9.10 ledger was written) now validates
 as before, reporting a `missing-disposition-for-new-role` advisory instead
-of failing. `foundry-position-check` now also prints these migration
-advisories, one `ADVISORY` line per item, to stderr; a passing ledger's
-stdout is unchanged, still exactly one `INSTALLED POSITION LEDGER OK`
-line. A position whose `stageBindings` carries both `learn` and
-`learnOrEscalate`, or neither, still fails with `invalid-stage-bindings`
-exactly as before; a missing disposition for a role that already existed
-in 0.9.10 still fails exactly as before; and the `@clossys/customer`
+of failing. For a ledger that passes, `foundry-position-check` now also
+prints these migration advisories, one `ADVISORY` line per item, to
+stderr before its stdout `OK` line; a failing ledger's output is
+unchanged, since the command returns before advisories are printed. A
+passing ledger's stdout is otherwise unchanged, still exactly one
+`INSTALLED POSITION LEDGER OK` line. A position whose `stageBindings`
+carries both `learn` and `learnOrEscalate`, or neither, still fails with
+`invalid-stage-bindings` exactly as before; a missing disposition for a
+role that already existed in 0.9.10 still fails exactly as before; and
+the `@clossys/customer`
 exemption above never extends past a legacy-format ledger -- a
 current-format or mixed-vocabulary ledger (any position uses `learn`)
-missing that disposition still fails with `missing-role-disposition`
-exactly as it did on `main` before this change, even when every other
-position in it uses the now-accepted legacy `learnOrEscalate` shape -- the
-new-role exemption never applies to a ledger that could not have come
-from 0.9.10.
+missing that disposition still fails with `missing-role-disposition`,
+exactly as in 0.9.22, even when every other position in it uses the
+now-accepted legacy `learnOrEscalate` shape -- the new-role exemption
+never applies to a ledger that could not have come from 0.9.10.
