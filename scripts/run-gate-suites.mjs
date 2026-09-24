@@ -8,8 +8,9 @@
 // (issue #907, issue #1187's merge-train conflict history).
 //
 // CI throughput (Refs: #1324): that one `node --test` invocation over the
-// full discovered list is ci.yml's own long pole -- 14-24 minutes measured
-// on a 4-vCPU runner, dominating `publish safety`'s ~27 minute wall time.
+// full discovered list is ci.yml's own long pole -- 26m37s measured on a
+// 4-vCPU runner (run 35957368169, job 107498450966), dominating
+// `publish safety`'s ~27 minute wall time.
 // `--shard-index <n> --shard-count <n>` (both or neither; omitted entirely
 // by local `npm run check`/`check:gates`, which must keep running every
 // suite in one process same as always) selects this invocation's slice of
@@ -69,6 +70,22 @@ function main() {
   process.exit(result.status ?? 1);
 }
 
-if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
-  main();
-}
+// No file imports this script (confirmed: nothing under scripts/ or
+// .github/scripts/ references "run-gate-suites.mjs" except this file
+// itself), so there is no importer for an entry-point guard to protect
+// against re-running main() as a side effect. An earlier version of this
+// file guarded the call anyway with
+// `import.meta.url === \`file://${process.argv[1]}\``, which is broken:
+// `import.meta.url` is percent-encoded and symlink-resolved by Node, while
+// `process.argv[1]` is neither, so the comparison is false -- and main()
+// silently skipped, exiting 0 having run nothing -- whenever this script is
+// reached through a symlinked directory or a path containing a space, `%`,
+// `#`, or a non-ASCII character. That is exactly the vacuous-pass failure
+// mode `--shard-index`/`--shard-count` above exist to rule out, just one
+// layer up: a shard that never even calls main() also reports success.
+// Always running main() removes the hazard outright. If this file ever
+// gains a real importer, guard with
+// `import.meta.url === pathToFileURL(realpathSync(process.argv[1])).href`
+// (both realpath-resolved AND percent-encoded), never a bare string
+// comparison against the raw argv path.
+main();

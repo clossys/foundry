@@ -358,9 +358,12 @@ test("the publish-safety fan-in genuinely fails when any split job does not succ
 
 // Refs #1324: `publish safety / gate regression tests` (the `safety-gates`
 // job before this change) measured 27m01s end to end on run 35957368169 --
-// almost entirely one `node --test` invocation over the 98 suites
-// discoverGateTestFiles() finds, dominating `publish safety`'s own wall
-// time. Sharded the same #1257/#1276 way `candidate-qualification` already
+// almost entirely one `node --test` invocation over the suites
+// discoverGateTestFiles() finds (98 of them at that specific run;
+// discoverGateTestFiles()'s own count grows over time and is never pinned
+// as a fact outside a dated measurement like this one), dominating
+// `publish safety`'s own wall time. Sharded the same #1257/#1276 way
+// `candidate-qualification` already
 // was: `safety-gates-shard` (an N-way matrix doing the real, timed work)
 // behind `safety-gates` (a thin fan-in, same #1240 shape). This function
 // checks both: `safety-gates-shard` for the step itself and its own

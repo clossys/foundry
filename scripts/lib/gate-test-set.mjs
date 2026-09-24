@@ -124,9 +124,14 @@ export function scanRootExists(root, scanRoot) {
 
 // CI throughput (Refs: #1324): `check:gates`'s second half (this module's
 // own `discoverGateTestFiles()`, run by scripts/run-gate-suites.mjs under
-// one `node --test` invocation) measured 14-24 minutes on a 4-vCPU
-// GitHub-hosted runner (see ci.yml's own "gate regression tests" step
-// comment) and is the long pole of every `publish safety` run.
+// one `node --test` invocation) measured 26m37s on a 4-vCPU GitHub-hosted
+// runner (run 35957368169, job 107498450966, over the 98 suites discovered
+// at that commit -- see ci.yml's own "gate regression tests" step comment
+// for the full breakdown) and is the long pole of every `publish safety`
+// run. The suite count itself is not pinned anywhere in this comment on
+// purpose: `discoverGateTestFiles()` is the only thing that ever needs to
+// know it, and it grows over time (99 by the time this sentence was last
+// touched).
 // `partitionFilesForShard` is the split: a pure, order-preserving
 // round-robin over the SAME sorted list `discoverGateTestFiles()` already
 // returns, so a file's shard assignment depends only on its position in
@@ -172,6 +177,19 @@ export function partitionFilesForShard(files, shardIndex, shardCount) {
 // are unrelated (one partitions qualification records, this one partitions
 // test files) and must be free to diverge without one's change silently
 // affecting the other's contract.
+// Only a bare decimal-digit string is a valid shard-index/shard-count value
+// -- `Number(raw)` alone is too permissive for a value that ends up gating
+// which tests actually run: `Number("")` is 0, `Number(" 1 ")` is 1,
+// `Number("0x1")` is 1, `Number("1e1")` is 10, and `Number("+1")`/
+// `Number("1.0")` both parse too. Every one of those is a plausible-looking
+// mistake (an empty CI expression, a copy-pasted hex literal, stray
+// whitespace) that `Number()` would silently accept and then hand to
+// `partitionFilesForShard` as if it were a clean integer. Anchored
+// `^\d+$` -- no sign, no decimal point, no exponent, no leading/trailing
+// whitespace -- rejects all of those up front, before `Number()` ever sees
+// the string.
+const DECIMAL_INTEGER = /^\d+$/;
+
 export function resolveGateShardArgs(argv) {
   const shardIndexIdx = argv.indexOf("--shard-index");
   const shardCountIdx = argv.indexOf("--shard-count");
@@ -181,11 +199,16 @@ export function resolveGateShardArgs(argv) {
   }
   const shardIndexRaw = argv[shardIndexIdx + 1];
   const shardCountRaw = argv[shardCountIdx + 1];
+  if (typeof shardIndexRaw !== "string" || !DECIMAL_INTEGER.test(shardIndexRaw) || typeof shardCountRaw !== "string" || !DECIMAL_INTEGER.test(shardCountRaw)) {
+    return {
+      error: `--shard-index/--shard-count must each be a bare decimal integer matching ${DECIMAL_INTEGER} (no sign, decimal point, exponent, or whitespace) -- got ${JSON.stringify(shardIndexRaw)}/${JSON.stringify(shardCountRaw)}`,
+    };
+  }
   const shardIndex = Number(shardIndexRaw);
   const shardCount = Number(shardCountRaw);
   if (!Number.isInteger(shardIndex) || !Number.isInteger(shardCount) || shardCount < 1 || shardIndex < 0 || shardIndex >= shardCount) {
     return {
-      error: `--shard-index/--shard-count must be integers with 0 <= shard-index < shard-count (got ${JSON.stringify(shardIndexRaw)}/${JSON.stringify(shardCountRaw)})`,
+      error: `--shard-index/--shard-count must satisfy 0 <= shard-index < shard-count (got ${JSON.stringify(shardIndexRaw)}/${JSON.stringify(shardCountRaw)})`,
     };
   }
   return { shard: { shardIndex, shardCount } };

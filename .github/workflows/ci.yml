@@ -58,9 +58,11 @@ env:
   # from this value, and the shard invocation step reads it directly.
   CANDIDATE_QUALIFICATION_SHARDS: 4
   # Refs #1324: the same single tunable, for `safety-gates-shard`'s own
-  # matrix -- `publish safety / gate regression tests` measured 27 minutes
-  # end to end (see that job's own header), almost entirely one `node --test`
-  # invocation over 98 discovered suites. 4, matching
+  # matrix -- `publish safety / gate regression tests` measured 27m01s end
+  # to end (see that job's own header), almost entirely one `node --test`
+  # invocation over every suite scripts/lib/gate-test-set.mjs's
+  # discoverGateTestFiles() finds (98 of them at that measurement; the count
+  # grows over time, so it is not pinned here). 4, matching
   # CANDIDATE_QUALIFICATION_SHARDS, for the same Free-plan 20-concurrent-job
   # reason that value is sized against, not a second independent guess.
   GATE_TEST_SHARDS: 4
@@ -415,8 +417,10 @@ jobs:
   #
   # A separate job from `safety-identity` (#1257): this is a fixed,
   # independent cost regardless of what the identity steps find, dominated
-  # by the 98 suites `scripts/run-gate-suites.mjs` discovers, run through one
-  # `node --test` invocation. Splitting it out means the wall clock is
+  # by every suite `scripts/run-gate-suites.mjs` discovers (98 of them at
+  # the measurement below; the count grows over time, so it is not pinned
+  # here), run through one `node --test` invocation. Splitting it out means
+  # the wall clock is
   # however long THIS takes, not the sum of this plus the identity checks
   # plus gitleaks. Runs in a dependency-free job because every suite in
   # check:gates imports only node builtins and local scripts (proven by
@@ -460,15 +464,25 @@ jobs:
       matrix:
         shard: ${{ fromJSON(needs.push-tree.outputs.gate-shard-matrix) }}
     runs-on: ubuntu-latest
-    # Measured whole (unsharded) at 26m37s for the discovered-suite half
-    # alone (see this job's own header) plus 24s for the fixture suite this
-    # shard also repeats -- 27 minutes total across ~24-25 files/shard at
-    # GATE_TEST_SHARDS: 4. 15 minutes is headroom over a rough 1/4 split of
-    # that measured total, not a second independent guess; the number this
-    # job's own real per-shard timing settles at, once it has run for real,
-    # is what should replace this comment, the same "state derived from
-    # evidence" rule this repository's package lifecycle already holds
-    # itself to (docs/LIFECYCLE.md).
+    # ESTIMATE, to revisit once a full run's real per-shard times are in --
+    # not a measurement of this job itself. Derived from the UNSHARDED
+    # whole: 26m37s for the discovered-suite half alone (see this job's own
+    # header) plus 24s for the fixture suite this shard also repeats -- 27
+    # minutes total across ~24-25 files/shard at GATE_TEST_SHARDS: 4. 15
+    # minutes is headroom over a rough 1/4 split of that total, not a second
+    # independent guess.
+    #
+    # Partial real evidence so far (run 35964067578, 3 of its 4 shards
+    # complete at review time, one still in progress): shard 1 ran 25/99
+    # files in ~8s of test time (449 tests, 447 pass, 2 skip), shard 0 ran
+    # 431 tests in ~46s, shard 3 ran 24 files / 365 tests in ~45s -- all
+    # three well under this budget, but three of four is not "this job has
+    # run for real" yet, and a fast partial sample is not a reason to lower
+    # a fail-closed timeout preemptively. Once a FULL run's real numbers
+    # exist for every shard, replace this comment (and reconsider the
+    # value) from that evidence, the same "state derived from evidence,
+    # never declared" rule this repository's package lifecycle already
+    # holds itself to (docs/LIFECYCLE.md) -- not from this partial sample.
     timeout-minutes: 15
     steps:
       # check:gates exercises check-contamination-classes.mjs's CLASS 4 rule

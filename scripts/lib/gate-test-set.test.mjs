@@ -105,11 +105,13 @@ test("a dotfile or dot-directory under a scan root is never discovered", () => {
 // ---------------------------------------------------------------------------
 // Refs #1324: `partitionFilesForShard`/`resolveGateShardArgs` back
 // scripts/run-gate-suites.mjs's `--shard-index`/`--shard-count`, which
-// ci.yml's `safety-gates-shard` matrix uses to split the 98-suite
-// `node --test` invocation that made `publish safety / gate regression
-// tests` this repository's single longest CI job (27 minutes measured, see
-// that job's own header in ci.yml). THE failure mode this whole change
-// exists to rule out is a shard that silently selects zero files -- a
+// ci.yml's `safety-gates-shard` matrix uses to split the discovered-suite
+// `node --test` invocation (98 suites at the 27-minute measurement, see
+// that job's own header in ci.yml -- the count itself grows over time, so
+// it is not repeated as a fact here) that made `publish safety / gate
+// regression tests` this repository's single longest CI job. THE failure
+// mode this whole change exists to rule out is a shard that silently
+// selects zero files -- a
 // skipped or vacuous shard reports as passing, exactly like any other
 // skipped required check. The tests below are the completeness proof: (a)
 // the union of every shard's selected files equals the full discovered set,
@@ -156,6 +158,41 @@ test("resolveGateShardArgs refuses a non-integer, negative, zero shard-count, or
   }
 });
 
+// `Number()` alone accepts far more than a clean decimal integer -- an
+// empty string, surrounding whitespace, a hex literal, exponent notation, a
+// leading sign, and a trailing decimal point all parse successfully under
+// plain `Number()` (some to exactly 0 or 1, which would then silently
+// select a real shard rather than erroring). None of these can come from
+// ci.yml's own `${{ matrix.shard }}`/`${{ env.GATE_TEST_SHARDS }}`
+// interpolation today, but the parser should refuse them on its own
+// evidence, not rely on the caller never sending one.
+test("resolveGateShardArgs refuses an empty string, whitespace, a hex literal, exponent notation, a leading sign, or a decimal point, even though Number() alone would accept some of them", () => {
+  for (const argv of [
+    ["--shard-index", "", "--shard-count", "4"], // Number("") === 0
+    ["--shard-index", "0", "--shard-count", ""],
+    ["--shard-index", " 1 ", "--shard-count", "4"], // Number(" 1 ") === 1
+    ["--shard-index", "1", "--shard-count", " 4 "],
+    ["--shard-index", "0x1", "--shard-count", "4"], // Number("0x1") === 1
+    ["--shard-index", "1", "--shard-count", "0x4"],
+    ["--shard-index", "1e1", "--shard-count", "4"], // Number("1e1") === 10
+    ["--shard-index", "+1", "--shard-count", "4"], // Number("+1") === 1
+    ["--shard-index", "1.0", "--shard-count", "4"], // Number("1.0") === 1
+    ["--shard-index", "1", "--shard-count", "4.0"],
+  ]) {
+    const result = resolveGateShardArgs(argv);
+    assert.equal(typeof result.error, "string", `expected an error for ${JSON.stringify(argv)}`);
+  }
+});
+
+test("resolveGateShardArgs accepts a well-formed pair including shard-index 0, which is a real, valid shard", () => {
+  // 0 is a legitimate shardIndex (the first shard), not the same failure
+  // mode as an empty string that happens to also parse to 0 -- the strict
+  // regex must not reject a genuine "0".
+  assert.deepEqual(resolveGateShardArgs(["--shard-index", "0", "--shard-count", "4"]), {
+    shard: { shardIndex: 0, shardCount: 4 },
+  });
+});
+
 test("partitionFilesForShard rejects an invalid shardCount or an out-of-range shardIndex", () => {
   const files = ["a", "b", "c"];
   assert.throws(() => partitionFilesForShard(files, 0, 0), RangeError);
@@ -178,7 +215,9 @@ test("partitionFilesForShard's round-robin is exhaustive, non-overlapping, and d
 
     // (b) no shard is empty -- true here because shardCount <= files.length
     // for every value under test, the same relationship GATE_TEST_SHARDS: 4
-    // has to the 98 real discovered files.
+    // has to the real discovered file count (whatever discoverGateTestFiles()
+    // currently returns -- see the real-corpus test below, which reads
+    // GATE_TEST_SHARDS live rather than repeating a count here).
     for (const [shardIndex, shard] of shards.entries()) {
       assert.ok(shard.length > 0, `shard ${shardIndex}/${shardCount} must not be empty`);
     }
