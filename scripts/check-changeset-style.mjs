@@ -11,7 +11,8 @@
 //
 // REPORT-ONLY, ALWAYS. This never blocks a pull request or a release: it
 // exists to surface prose worth a second look before the release PR turns
-// it into a CHANGELOG line verbatim, not to gate on wording nobody has
+// it into a release-note entry in the package's changelog at
+// docs/changelogs/<dir>.md verbatim, not to gate on wording nobody has
 // taught a machine to judge reliably. A finding here is a nudge, not a
 // verdict.
 //
