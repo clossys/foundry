@@ -319,8 +319,14 @@ test("buildCapabilityCatalogue over this repository produces an entry per role w
   assert.equal(roleNames.includes("starter"), false);
   assert.equal(roleNames.includes("publisher"), true);
   const publisher = built.roles.find((role) => role.role === "publisher");
-  assert.equal(publisher.needs.every((need) => need.source.startsWith("fallback-")), true);
+  // Publisher declares its own `needs` (#1172), so no fallback edge stands in for them.
+  assert.equal(publisher.needs.length > 0, true);
+  assert.equal(publisher.needs.every((need) => need.source === "manifest"), true);
   assert.equal(publisher.capabilities.some((capability) => capability.id === "sealing-and-the-publication-record"), true);
+  // A role that declares no `needs` still carries its committed fallback, labelled as such.
+  const influencer = built.roles.find((role) => role.role === "influencer");
+  assert.equal(influencer.needs.length > 0, true);
+  assert.equal(influencer.needs.every((need) => need.source.startsWith("fallback-")), true);
 });
 
 test("the CLI reports PASS on this repository", () => {

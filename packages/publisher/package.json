@@ -124,6 +124,34 @@
         "path": "clossys/publisher/surfaces/"
       }
     ],
+    "needs": [
+      {
+        "producerRole": "@clossys/strategist",
+        "artifact": "strategy-brief"
+      },
+      {
+        "producerRole": "@clossys/designer",
+        "artifact": "token-contract-and-brand-overlay-binding"
+      },
+      {
+        "producerRole": "@clossys/writer",
+        "artifact": "copy-registry"
+      },
+      {
+        "producerRole": "@clossys/customer",
+        "artifact": "keep-verdict"
+      }
+    ],
+    "solves": [
+      {
+        "problem": "publisher-verified-release",
+        "statement": "We're not sure what's actually live, or that it matches what we approved.",
+        "metric": "verified publication rate",
+        "proofCase": "rate-violated",
+        "evidence": "designed",
+        "capability": "sealing-and-the-publication-record"
+      }
+    ],
     "capabilities": [
       {
         "id": "v0-launch-pack-planning-and-inventory",

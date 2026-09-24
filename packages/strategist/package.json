@@ -77,6 +77,17 @@
         "path": "clossys/strategist/contract.json"
       }
     ],
+    "needs": [],
+    "solves": [
+      {
+        "problem": "strategist-unclear-direction",
+        "statement": "We can't explain what we are.",
+        "metric": "strategy traceability rate",
+        "proofCase": "handoff-positioning-unresolved",
+        "evidence": "designed",
+        "capability": "positioning"
+      }
+    ],
     "capabilities": [
       {
         "id": "evidence-base",

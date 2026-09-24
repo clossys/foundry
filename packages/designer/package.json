@@ -119,6 +119,22 @@
         "path": "clossys/designer/brand.css"
       }
     ],
+    "needs": [
+      {
+        "producerRole": "@clossys/strategist",
+        "artifact": "brand-derivation"
+      }
+    ],
+    "solves": [
+      {
+        "problem": "designer-interface-quality",
+        "statement": "Our product doesn't look or feel like it was made with care.",
+        "metric": "design conformance rate",
+        "proofCase": "token-purity-violated",
+        "evidence": "designed",
+        "capability": "token-purity"
+      }
+    ],
     "capabilities": [
       {
         "id": "token-contract-and-brand-overlay-binding",

@@ -1,11 +1,10 @@
 // Contract-shape tests for the capability catalogue (PR #1398's blocker).
 //
-// Most tests compose THIS repository's real catalogue with the five v0
-// launch lanes' contract-shaped `needs`/`solves`/`feeds` values applied
-// (scripts/fixtures/launch-lanes-needs-solves.json: customer #1398, writer
-// #1399, designer #1400, publisher #1401, strategist #1402). Manifests are
-// overlaid in memory through buildCapabilityCatalogue's `manifests` option,
-// so nothing is written to disk and no package is edited.
+// Most tests compose THIS repository's real catalogue: the five v0 launch
+// roles (customer, writer, designer, publisher, strategist) declare their
+// contract-shaped `needs`/`solves`/`feeds` in their own package.json (#1172).
+// Variants are overlaid in memory through buildCapabilityCatalogue's
+// `manifests` option, so nothing is written to disk and no package is edited.
 
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -24,7 +23,10 @@ import { evaluateOfferingKits } from "../check-offering-kits.mjs";
 import { evaluatePackageFramework } from "../check-package-framework.mjs";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
-const lanes = JSON.parse(readFileSync(join(repoRoot, "scripts/fixtures/launch-lanes-needs-solves.json"), "utf8")).lanes;
+const LAUNCH_LANES = ["customer", "writer", "designer", "publisher", "strategist"];
+const realManifests = collectPackageManifests(repoRoot);
+/** Each launch role's own declared `foundry` block, read from its real package.json. */
+const lanes = Object.fromEntries(LAUNCH_LANES.map((role) => [role, { foundry: structuredClone(realManifests.get(role).foundry) }]));
 const presetsContract = JSON.parse(readFileSync(join(repoRoot, "docs/contracts/kit-presets.json"), "utf8"));
 const launchRoles = presetsContract.presets.find((preset) => preset.id === "launch").roles;
 
@@ -38,10 +40,21 @@ function manifestsWith(patches = {}) {
   return manifests;
 }
 
-const laneValues = (role) => (foundry) => ({ ...foundry, ...structuredClone(lanes[role].foundry) });
-const ALL_LANES = Object.fromEntries(Object.keys(lanes).map((role) => [role, laneValues(role)]));
+/** The real manifests, unpatched: every launch role's values are its own declaration. */
+const ALL_LANES = {};
 
-/** Every lane applied, then `extra` patches applied on top of their result. */
+/**
+ * Two needs #1401 prepared on Designer that Designer does not feed:
+ * `components-and-blocks` reaches Publisher as a package import, and
+ * `logo-and-identity-files` is `planned`. The real manifest omits both; this
+ * negative control puts them back.
+ */
+const UNFED_PUBLISHER_NEEDS = [
+  { producerRole: "@clossys/designer", artifact: "components-and-blocks" },
+  { producerRole: "@clossys/designer", artifact: "logo-and-identity-files" },
+];
+
+/** The real manifests, then `extra` patches applied on top. */
 function allLanesWith(extra = {}) {
   const patches = { ...ALL_LANES };
   for (const [role, patch] of Object.entries(extra)) {
@@ -161,22 +174,29 @@ test("`declaredFeeds` is the role's own `foundry.feeds`, verbatim and in declare
 
 test("a need is met only when its producer feeds the artifact, the same rule as the framework gate's unmatched-need", () => {
   // Publisher's full prepared `needs` (#1401), including the two entries
-  // Designer does not feed (a data error for the later needs/solves change).
-  const uncorrected = allLanesWith({ publisher: (foundry) => ({ ...foundry, needs: [...foundry.needs, ...lanes.publisher.excludedNeeds.needs] }) });
+  // Designer does not feed, which the real manifest omits.
+  const uncorrected = allLanesWith({ publisher: (foundry) => ({ ...foundry, needs: [...foundry.needs, ...UNFED_PUBLISHER_NEEDS] }) });
   const result = verdicts(uncorrected);
   assert.deepEqual(result.kitUnsatisfied, ["publisher components-and-blocks", "publisher logo-and-identity-files"]);
   assert.deepEqual(result.kitUnsatisfied, result.gateUnmatched);
   const rules = evaluateOfferingKits({ contract: presetsContract, catalogue: catalogueWith(uncorrected) }).findings.map((finding) => finding.rule);
   assert.equal(rules.includes("unsatisfied-need"), true);
 
-  // Corrected, as in the fixture: nothing unmet on either side.
+  // As declared: nothing unmet on either side.
   const corrected = verdicts(ALL_LANES);
   assert.deepEqual(corrected.kitUnsatisfied, []);
   assert.deepEqual(corrected.gateUnmatched, []);
 
   // A producer that exists but declares no `feeds` at all does not meet a manifest need either.
-  const unfed = verdicts({ customer: laneValues("customer") }, ["customer"]);
-  assert.deepEqual(unfed.kitUnsatisfied, ["customer audience-understanding", "customer surface-documents"]);
+  // Strategist keeps its capability map but declares no `feeds`: every need on it goes unmet.
+  const unfed = verdicts({ strategist: (foundry) => ({ ...foundry, feeds: [] }) }, ["customer"]);
+  assert.deepEqual(unfed.kitUnsatisfied, [
+    "customer audience-understanding",
+    "designer brand-derivation",
+    "publisher strategy-brief",
+    "writer brand-derivation",
+    "writer claims",
+  ]);
   assert.deepEqual(unfed.kitUnsatisfied, unfed.gateUnmatched);
 });
 
@@ -196,22 +216,24 @@ test("the pre-contract edge shape (fromRole/toRole/role) is not read", () => {
 });
 
 test("`qualified` contract-shaped `solves` entries are carried field for field, `statement` and `capability` included", () => {
-  const catalogue = catalogueWith(allLanesWith({ customer: (foundry) => ({ ...foundry, solves: [{ ...foundry.solves[0], notAContractField: "dropped" }] }) }));
-  for (const role of Object.keys(lanes)) assert.deepEqual(roleOf(catalogue, role).solves, lanes[role].foundry.solves, role);
-  // The advisory preset floor now credits every `qualified` claim, and only those.
+  // Every launch role declares `designed` today (no retained record qualifies
+  // its current version), so raise Customer's claim here to cover `qualified`.
+  const qualifiedCustomer = { ...lanes.customer.foundry.solves[0], evidence: "qualified" };
+  const catalogue = catalogueWith(allLanesWith({ customer: (foundry) => ({ ...foundry, solves: [{ ...qualifiedCustomer, notAContractField: "dropped" }] }) }));
+  const expected = { ...Object.fromEntries(LAUNCH_LANES.map((role) => [role, lanes[role].foundry.solves])), customer: [qualifiedCustomer] };
+  for (const role of LAUNCH_LANES) assert.deepEqual(roleOf(catalogue, role).solves, expected[role], role);
+  // The advisory preset floor credits every `qualified` claim, and only those.
   const flagged = new Set(presetEvidenceFindings({ presets: presetsContract.presets, catalogue }).map((finding) => finding.role));
-  for (const role of Object.keys(lanes)) {
-    assert.equal(flagged.has(role), lanes[role].foundry.solves.every((entry) => entry.evidence === "designed"), role);
+  for (const role of LAUNCH_LANES) {
+    assert.equal(flagged.has(role), expected[role].every((entry) => entry.evidence === "designed"), role);
   }
 });
 
 test("a `solves` entry missing the contract's required `statement` is dropped", () => {
   const catalogue = catalogueWith({
     customer: (foundry) => {
-      const next = laneValues("customer")(foundry);
-      const { statement, ...withoutStatement } = next.solves[0];
-      next.solves = [withoutStatement];
-      return next;
+      const { statement, ...withoutStatement } = foundry.solves[0];
+      return { ...foundry, solves: [withoutStatement] };
     },
   });
   assert.deepEqual(roleOf(catalogue, "customer").solves, []);
@@ -229,7 +251,7 @@ test("`fit` is read as the contract's package-relative path to a fit-signal decl
   assert.deepEqual(roleOf(escaping, "customer").fit, []);
 });
 
-test("with all five lanes applied, every real preset passes and the Customer<->Publisher loop is legitimate (#1382)", () => {
+test("with the five launch roles as declared, every real preset passes and the Customer<->Publisher loop is legitimate (#1382)", () => {
   const catalogue = lanesCatalogue();
   const result = evaluateOfferingKits({ contract: presetsContract, catalogue });
   assert.deepEqual(result.findings, []);

@@ -9,8 +9,8 @@ Launch pack manifest `src/pack/` validates) and `surfaces/` (read by the
 shipped site template, and matching `PUBLISHER_SURFACES_DIR`). `feeds`
 hands `surface-documents` to Customer. `fit` points at a new shipped
 `fit-signals.json` with two signals: an audience-facing surface exists, and
-the release must be proved afterwards. `needs`, `solves`, `intake`, and
-`status` are not declared yet.
+the release must be proved afterwards. `intake` and `status` are not
+declared yet.
 
 Per-capability proof cases (issue #1272): the qualification adapter gains
 record drift, record append-only, web route, preview, and verified

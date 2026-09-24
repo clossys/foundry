@@ -8,8 +8,8 @@ The `foundry` manifest block now declares `outputs`
 overlay, fed by the `token-contract-and-brand-overlay-binding`
 capability), and `fit`, which names a new shipped
 `fit-signal-declarations.json`. That file holds one signal: the repository
-ships an interface surface a person sees. `intake`, `status`, `needs`, and
-`solves` are not declared yet.
+ships an interface surface a person sees. `intake` and `status` are not
+declared yet.
 
 Capability map: `token-contract-and-brand-overlay-binding`, `contrast`,
 `type-record`, and `structure-and-fold-conformance` each now cite their own

@@ -12,8 +12,8 @@ runs its own intent through `customer-check`: `feedback-satisfied`,
 `compare-satisfied`, `refer-satisfied`, `churn-satisfied`,
 `adopt-satisfied`, and `worth-satisfied`, alongside the existing
 `keep-satisfied`. Feedback, compare, and refer also have a violated
-control case that fails on that intent's own rule. `intake`, `status`,
-`needs`, and `solves` are not declared yet. The README now documents every
+control case that fails on that intent's own rule. `intake` and
+`status` are not declared yet. The README now documents every
 exported type.
 
 Minor, not patch: these are new declared manifest fields and a new shipped

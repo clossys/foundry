@@ -5,8 +5,8 @@ writer: minor
 Manifest: `foundry` now declares `outputs` (the copy registry and voice
 record under `clossys/writer/`), `feeds` (the copy registry, for
 Publisher), and `fit` (a new shipped `fit-signals.json`: the repository
-ships audience-facing copy). `needs`, `solves`, `intake` and `status` are
-not declared yet. Each capability in the map now cites its own
+ships audience-facing copy). `intake` and `status` are not
+declared yet. Each capability in the map now cites its own
 qualification case instead of the shared `copy-clean` anchor (#1272):
 `copy-registry`, `addressability` and `locale-coverage` stay `built`;
 `voice-record`, `claims-to-copy-traceability`, `live-copy-conformance` and

@@ -206,6 +206,26 @@
         "path": "clossys/writer/copy-registry.json"
       }
     ],
+    "needs": [
+      {
+        "producerRole": "@clossys/strategist",
+        "artifact": "brand-derivation"
+      },
+      {
+        "producerRole": "@clossys/strategist",
+        "artifact": "claims"
+      }
+    ],
+    "solves": [
+      {
+        "problem": "writer-unapproved-copy",
+        "statement": "We ship words nobody signed off on.",
+        "metric": "approved copy coverage rate",
+        "proofCase": "copy-violated",
+        "evidence": "designed",
+        "capability": "copy-coverage"
+      }
+    ],
     "fit": "fit-signals.json"
   },
   "description": "The writer role: is it well said? A consumer-owned language system: voice rules, glossary and claims validation, addressable copy records, source traceability, locale coverage, and passage-layer composition \u2014 five gates reachable from one bin. Ships machinery and templates, never a consumer's actual copy or voice.",

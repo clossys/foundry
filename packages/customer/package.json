@@ -38,6 +38,26 @@
         "path": "clossys/customer/keep.json"
       }
     ],
+    "needs": [
+      {
+        "producerRole": "@clossys/strategist",
+        "artifact": "audience-understanding"
+      },
+      {
+        "producerRole": "@clossys/publisher",
+        "artifact": "surface-documents"
+      }
+    ],
+    "solves": [
+      {
+        "problem": "customer-would-they-keep-it",
+        "statement": "We can't tell whether the person we made this for would actually keep it.",
+        "metric": "customer keep rate",
+        "proofCase": "keep-satisfied",
+        "evidence": "designed",
+        "capability": "keep-verdict"
+      }
+    ],
     "capabilities": [
       {
         "id": "keep-verdict",
