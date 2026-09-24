@@ -8,8 +8,9 @@ import test from "node:test";
 // Real, executable coverage for verify_branch_is_ours() in
 // scripts/lib/publication-evidence-branch.sh — the function
 // .github/workflows/record-publication-evidence.yml's "Push branch..." step
-// sources and calls before ever building on a branch it did not just create
-// itself. This is the exact function the 2026-09-23 security re-review
+// sources and, via classify_open_evidence_branch, calls before ever treating
+// an earlier run's open branch as already carrying this run's record. The
+// #1468 tests at the end cover the two helpers that step also sources. This is the exact function the 2026-09-23 security re-review
 // (finding "B3-residual") attacked directly with a hand-planted branch;
 // these tests reproduce that same planted-branch shape against a real git
 // repository rather than only asserting the workflow YAML's text.
@@ -125,5 +126,99 @@ test("verify_branch_is_ours returns false, never throws, for a ref with no commo
     assert.equal(verifies(root, "unrelated", "main"), false);
   } finally {
     rmSync(root, { recursive: true, force: true });
+  }
+});
+
+/** Run a sourced helper and return { status, stdout } — never throws. */
+function runHelper(cwd, fn, args) {
+  try {
+    const stdout = execFileSync("bash", ["-c", `set -euo pipefail; source "${scriptPath}"; ${fn} "$@"`, fn, ...args], { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
+    return { status: 0, stdout };
+  } catch (error) {
+    return { status: error.status ?? 1, stdout: error.stdout ?? "" };
+  }
+}
+
+const PREFIX = "automation/publication-evidence/";
+const RECORD = "governance/release-publications/later/publisher-0.7.0.json";
+
+test("#1468: evidence_branch_name yields <prefix><run-id>-<8 hex>, a different name on every call, and refuses a non-numeric run id", () => {
+  const first = runHelper(process.cwd(), "evidence_branch_name", [PREFIX, "36054685251"]);
+  const second = runHelper(process.cwd(), "evidence_branch_name", [PREFIX, "36054685251"]);
+  assert.equal(first.status, 0);
+  assert.match(first.stdout, /^automation\/publication-evidence\/36054685251-[0-9a-f]{8}\n$/);
+  assert.notEqual(first.stdout, second.stdout, "two runs (or two push attempts) never share a name");
+  assert.notEqual(runHelper(process.cwd(), "evidence_branch_name", [PREFIX, "36054685251; echo x"]).status, 0);
+  assert.notEqual(runHelper(process.cwd(), "evidence_branch_name", [PREFIX, ""]).status, 0);
+});
+
+/**
+ * A repository shaped like the #1461 incident: `main` has a commit `source`
+ * (the publish run's source, carrying the qualification record) that lands
+ * AFTER an older evidence branch was cut.
+ */
+function incidentRepo() {
+  const root = initRepo();
+  git(["checkout", "-q", "-b", "stale"], root);
+  botCommit(root, "governance/release-publications/later/writer-0.4.0.json", "{\"writer\":1}\n");
+  git(["checkout", "-q", "main"], root);
+  humanCommit(root, "governance/release-qualifications/clossys-publisher-0.7.0.json", "{}\n", "qualify publisher");
+  const source = git(["rev-parse", "HEAD"], root).trim();
+  const copy = join(root, "..", `${root.split("/").pop()}-record.json`);
+  writeFileSync(copy, "{\"publisher\":1}\n");
+  return { root, source, copy };
+}
+
+function classify(root, ref, source, copy) {
+  return runHelper(root, "classify_open_evidence_branch", [ref, "main", RECORD, copy, source]).stdout.trim();
+}
+
+test("#1468: classify_open_evidence_branch says absent for an open branch that does not carry this record", () => {
+  const { root, source, copy } = incidentRepo();
+  try {
+    assert.equal(classify(root, "stale", source, copy), "absent");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+    rmSync(copy, { force: true });
+  }
+});
+
+test("#1468: classify_open_evidence_branch says duplicate only for identical bytes, on a verified bot branch cut from a base containing the source", () => {
+  const { root, source, copy } = incidentRepo();
+  try {
+    git(["checkout", "-q", "-b", "fresh", "main"], root);
+    botCommit(root, RECORD, "{\"publisher\":1}\n");
+    assert.equal(classify(root, "fresh", source, copy), "duplicate");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+    rmSync(copy, { force: true });
+  }
+});
+
+test("#1468: classify_open_evidence_branch says conflict for identical bytes on a branch cut BEFORE the source — the exact #1461 shape", () => {
+  const { root, source, copy } = incidentRepo();
+  try {
+    git(["checkout", "-q", "stale"], root);
+    botCommit(root, RECORD, "{\"publisher\":1}\n");
+    assert.equal(classify(root, "stale", source, copy), "conflict");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+    rmSync(copy, { force: true });
+  }
+});
+
+test("#1468: classify_open_evidence_branch says conflict for different bytes, and for a branch verify_branch_is_ours refuses", () => {
+  const { root, source, copy } = incidentRepo();
+  try {
+    git(["checkout", "-q", "-b", "different", "main"], root);
+    botCommit(root, RECORD, "{\"publisher\":2}\n");
+    assert.equal(classify(root, "different", source, copy), "conflict");
+    git(["checkout", "-q", "-b", "planted", "main"], root);
+    humanCommit(root, RECORD, "{\"publisher\":1}\n", "planted by a human");
+    assert.equal(classify(root, "planted", source, copy), "conflict");
+    assert.equal(classify(root, "no-such-branch", source, copy), "absent", "an unreadable ref carries nothing to duplicate");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+    rmSync(copy, { force: true });
   }
 });
