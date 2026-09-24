@@ -19,7 +19,7 @@
  * what happens when a consumer runs `npx architect-check` or wires it into
  * CI.
  */
-import { spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import { chmodSync, cpSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -46,9 +46,9 @@ const validTopology = {
 
 beforeAll(() => {
   const packageRoot = fileURLToPath(new URL("..", import.meta.url));
-  const compiler = fileURLToPath(new URL("../../../node_modules/typescript/bin/tsc", import.meta.url));
-  const built = spawnSync(process.execPath, [compiler, "-p", "tsconfig.json"], { cwd: packageRoot, encoding: "utf8" });
-  if (built.status !== 0) throw new Error(`Architect build failed: ${built.stderr || built.stdout}`);
+  // dist/ was built once, before any test file started, by the package's
+  // vitest globalSetup (scripts/lib/vitest-build-package.mjs). Never rebuild
+  // it here: a sibling test file may be executing or packing it (#1385).
 
   workDir = mkdtempSync(join(tmpdir(), "architect-bin-entry-"));
   const dotBin = join(workDir, "node_modules", ".bin");
@@ -88,22 +88,47 @@ afterAll(() => {
   if (workDir) rmSync(workDir, { recursive: true, force: true });
 });
 
-function runBin(args: string[]) {
-  return spawnSync(binPath, args, { encoding: "utf8" });
+// #1333/#1341: spawnSync's synchronous capture is its own internal poll
+// loop outside Node's normal stream machinery, and that loop is what a
+// heavily loaded CI runner's scheduling can starve -- the exit status lands
+// but stdout comes back empty. spawn()'s stdout/stderr are ordinary
+// Readable streams whose contract guarantees every byte written is
+// delivered via `data` events before `end` fires, and the `close` handler
+// below fires only after the process has exited AND both stdio streams have
+// ended, so it cannot observe an exit code before the output that produced
+// it has been fully read.
+function runBin(args: string[]): Promise<{ status: number | null; stdout: string; stderr: string }> {
+  return new Promise((resolvePromise, rejectPromise) => {
+    const child = spawn(binPath, args);
+    let stdout = "";
+    let stderr = "";
+    child.stdout.setEncoding("utf8");
+    child.stderr.setEncoding("utf8");
+    child.stdout.on("data", (chunk: string) => {
+      stdout += chunk;
+    });
+    child.stderr.on("data", (chunk: string) => {
+      stderr += chunk;
+    });
+    child.on("error", rejectPromise);
+    child.on("close", (status) => {
+      resolvePromise({ status, stdout, stderr });
+    });
+  });
 }
 
 describe("architect-check, invoked through a node_modules/.bin-shaped symlink", () => {
-  it("--help produces non-empty stdout and exits 0", () => {
-    const result = runBin(["--help"]);
+  it("--help produces non-empty stdout and exits 0", async () => {
+    const result = await runBin(["--help"]);
     expect(result.status).toBe(0);
     expect(result.stdout.length).toBeGreaterThan(0);
   });
 
-  it("exits 1 with a violated report for an invalid topology", () => {
+  it("exits 1 with a violated report for an invalid topology", async () => {
     const invalidPath = join(workDir, "invalid-topology.json");
     writeFileSync(invalidPath, JSON.stringify({ ...validTopology, authorities: [] }));
 
-    const result = runBin(["topology", invalidPath]);
+    const result = await runBin(["topology", invalidPath]);
 
     expect(result.status).toBe(1);
     expect(result.stdout.length).toBeGreaterThan(0);
@@ -112,11 +137,11 @@ describe("architect-check, invoked through a node_modules/.bin-shaped symlink", 
     expect(report.findings.length).toBeGreaterThan(0);
   });
 
-  it("exits 0 with a satisfied report for a valid topology", () => {
+  it("exits 0 with a satisfied report for a valid topology", async () => {
     const validPath = join(workDir, "valid-topology.json");
     writeFileSync(validPath, JSON.stringify(validTopology));
 
-    const result = runBin(["topology", validPath]);
+    const result = await runBin(["topology", validPath]);
 
     expect(result.status).toBe(0);
     expect(result.stdout.length).toBeGreaterThan(0);
@@ -125,7 +150,7 @@ describe("architect-check, invoked through a node_modules/.bin-shaped symlink", 
     expect(report.findings).toEqual([]);
   });
 
-  it("exits 0 with a satisfied architecture-exception report from one assessment.json", () => {
+  it("exits 0 with a satisfied architecture-exception report from one assessment.json", async () => {
     const path = join(workDir, "assessment.json");
     writeFileSync(path, JSON.stringify({
       topology: validTopology,
@@ -138,7 +163,7 @@ describe("architect-check, invoked through a node_modules/.bin-shaped symlink", 
       maximumExceptionRate: 0,
     }));
 
-    const result = runBin([path]);
+    const result = await runBin([path]);
 
     expect(result.status).toBe(0);
     expect(JSON.parse(result.stdout)).toMatchObject({
@@ -148,8 +173,8 @@ describe("architect-check, invoked through a node_modules/.bin-shaped symlink", 
     });
   });
 
-  it("exits 2 for a missing assessment file without computing a zero exception rate", () => {
-    const result = runBin([join(workDir, "missing.json")]);
+  it("exits 2 for a missing assessment file without computing a zero exception rate", async () => {
+    const result = await runBin([join(workDir, "missing.json")]);
     expect(result.status).toBe(2);
     expect(result.stderr).toContain("does not exist");
     expect(result.stdout).not.toMatch(/"exceptionRate": 0/);

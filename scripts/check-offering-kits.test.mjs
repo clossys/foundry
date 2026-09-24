@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
@@ -11,6 +10,7 @@ import {
   FIRST_ENGAGEMENT_ROLE_CAP,
   validateKitProposal,
 } from "./lib/capability-catalogue.mjs";
+import { spawnCapture } from "./lib/spawn-capture.mjs";
 import { evaluateOfferingKits, loadAndEvaluate } from "./check-offering-kits.mjs";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -222,8 +222,8 @@ test("buildCapabilityCatalogue over this repository produces an entry per role w
   assert.equal(publisher.needs.every((need) => need.source.startsWith("fallback-")), true);
 });
 
-test("the CLI reports PASS on this repository", () => {
-  const run = spawnSync(process.execPath, [script], { encoding: "utf8", cwd: repoRoot });
+test("the CLI reports PASS on this repository", async () => {
+  const run = await spawnCapture(process.execPath, [script], { cwd: repoRoot });
   assert.equal(run.status, 0, run.stderr);
   assert.match(run.stdout, /offering kits: PASS/);
 });
