@@ -203,6 +203,21 @@ function oidcEnvironment(env = process.env, home) {
   return { ...base, ...Object.fromEntries(OIDC_ENV.flatMap((key) => typeof env[key] === "string" && env[key] ? [[key, env[key]]] : [])) };
 }
 
+// Issue #1462, incident 2: npm's own `npm error code E404` (or E403, EOTP,
+// ...) line is the ONE piece of its failure output worth relaying -- it is
+// a fixed-shape, non-sensitive diagnostic code, never account state, a
+// token, or a registry document. createOwnerPromptRelay() above only ever
+// forwards lines matching ITS OWN owner-input prompt patterns, so a plain
+// publish failure's error code was previously visible only in npm's own
+// debug log, never in this command's own output. Matches "npm error code
+// E<word characters>" exactly as npm 11 prints it; returns null (never an
+// empty string) when no such line is present, so callers can tell "found
+// nothing to relay" from "found an empty code" unambiguously.
+export function extractNpmErrorCode(text) {
+  const match = /npm error code (E\w+)/.exec(text ?? "");
+  return match ? match[1] : null;
+}
+
 function runChecked(run, file, args, options, label) {
   const result = run(file, args, options);
   if (result?.error || result?.signal || result?.status !== 0) throw new Error(`${label} failed`);
@@ -335,10 +350,34 @@ function assertReleaseTarget(root, packageKey, manifest) {
   return target;
 }
 
-export async function publishQualifiedDirectory({ root = process.cwd(), packageKey, candidatePath, recordPath, mode = "owner-present", dryRun = false, env = process.env, run = defaultRun, interactiveRun = runInteractiveChild, verify = verifyPostPublishPublicNpmArtifact, stagingParent = tmpdir() }) {
+export async function publishQualifiedDirectory({
+  root = process.cwd(),
+  packageKey,
+  candidatePath,
+  recordPath,
+  mode = "owner-present",
+  dryRun = false,
+  env = process.env,
+  run = defaultRun,
+  interactiveRun = runInteractiveChild,
+  verify = verifyPostPublishPublicNpmArtifact,
+  stagingParent = tmpdir(),
+  isInteractiveTerminal = () => process.stdin.isTTY === true,
+}) {
   if (!KEY.test(packageKey ?? "")) throw new Error("package key is invalid");
   if (!["owner-present", "oidc"].includes(mode) || typeof dryRun !== "boolean") throw new Error("publication mode is invalid");
   if (dryRun && mode === "owner-present") throw new Error("owner-present publication does not support dry-run");
+  // Issue #1462, incident 1: a first run from a non-TTY shell (e.g. a CI
+  // job, or an agent's own non-interactive Bash tool) ran the ENTIRE
+  // pipeline below -- runtime assertion, archive extraction, the FULL
+  // staged public-safety scan, the clean-directory repack -- only to fail
+  // deep inside runInteractiveChild(), which silently ignores stdin when
+  // `process.stdin.isTTY` is false (npm could never have prompted), leaving
+  // only the generic "owner-present npm publish failed" with no indication
+  // of WHY. Refusing up front, before any of that work starts, both saves
+  // the wasted work and gives the real cause immediately. OIDC publication
+  // is unaffected -- it never spawns an interactive child at all.
+  if (mode === "owner-present" && !isInteractiveTerminal()) throw new Error("owner-present publication requires an interactive terminal: run this from an interactive terminal");
   const absoluteRoot = resolve(root);
   const candidate = regularBytes(candidatePath, "qualified candidate");
   const recordInput = regularBytes(recordPath, "qualification record");
@@ -357,6 +396,25 @@ export async function publishQualifiedDirectory({ root = process.cwd(), packageK
     const manifest = assertStagedTree(packageRoot);
     exactRecord({ root: absoluteRoot, packageKey, recordPath: recordInput.absolute, record, manifest, candidateBytes: candidate.bytes });
     const target = assertReleaseTarget(absoluteRoot, packageKey, manifest);
+    // Issue #1462, incident 2: a SECOND run, this time from a real
+    // terminal, still failed with only "owner-present npm publish failed"
+    // -- npm was not signed in on the laptop, and an unauthenticated
+    // publish of a new scoped package returns E404, which the owner-prompt
+    // relay (it only forwards output matching its OWN prompt patterns --
+    // see createOwnerPromptRelay() above) never surfaces; it showed up only
+    // in npm's own debug log. `npm whoami` is a fast, non-interactive,
+    // read-only check of the OWNER's real login state (hence
+    // ownerPresentEnvironment(env), never credentialFreeNpm -- the whole
+    // point is to ask whether the interactive publish below would actually
+    // be authenticated), so failing here BEFORE the safety scan and repack
+    // -- both real work this run would otherwise waste -- catches the exact
+    // failure mode #1462 hit, with a clear cause instead of a generic one.
+    // "Only report the exit status" (never the username `npm whoami` prints
+    // on success, and never its own stdout/stderr on failure either).
+    if (mode === "owner-present") {
+      const whoami = run("npm", ["whoami", "--registry", target.registry], { cwd: packageRoot, env: ownerPresentEnvironment(env), stdio: "pipe", encoding: "utf8" });
+      if (whoami?.error || whoami?.signal || whoami?.status !== 0) throw new Error("not signed in to npm: run `npm login` first");
+    }
     const denylist = env.PUBLIC_SAFETY_DENYLIST;
     if (typeof denylist !== "string" || !denylist) throw new Error("FULL staged public-safety scan requires PUBLIC_SAFETY_DENYLIST");
     const safetyEnv = { PATH: env.PATH ?? "/usr/bin:/bin", PUBLIC_SAFETY_DENYLIST: denylist };
@@ -385,7 +443,10 @@ export async function publishQualifiedDirectory({ root = process.cwd(), packageK
       // or OTP, but always publishes the private clean directory, never the
       // candidate tarball.
       const ownerSession = await interactiveRun(PTY_SCRIPT, ownerPresentPtyArgs(target.registry), { cwd: packageRoot, env: ownerPresentEnvironment(env), stdio: [process.stdin.isTTY === true ? "inherit" : "ignore", "pipe", "pipe"] }, createOwnerPromptRelay());
-      if (ownerSession?.error || ownerSession?.signal || ownerSession?.status !== 0) throw new Error("owner-present npm publish failed");
+      if (ownerSession?.error || ownerSession?.signal || ownerSession?.status !== 0) {
+        const code = extractNpmErrorCode(`${ownerSession?.stdout ?? ""}\n${ownerSession?.stderr ?? ""}`);
+        throw new Error(code ? `owner-present npm publish failed (npm error code ${code})` : "owner-present npm publish failed");
+      }
     } else {
       const oidc = oidcEnvironment(env, stageRoot);
       const command = ["publish", ".", "--provenance", "--access", "public", "--ignore-scripts", "--registry", target.registry];

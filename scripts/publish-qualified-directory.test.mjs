@@ -10,7 +10,7 @@ import test from "node:test";
 import { once } from "node:events";
 import { promisify } from "node:util";
 
-import { argsFrom, createOwnerPromptRelay, ownerPresentPtyArgs, publishExitCode, publishQualifiedDirectory, runInteractiveChild } from "./publish-qualified-directory.mjs";
+import { argsFrom, createOwnerPromptRelay, extractNpmErrorCode, ownerPresentPtyArgs, publishExitCode, publishQualifiedDirectory, runInteractiveChild } from "./publish-qualified-directory.mjs";
 import { IndeterminateError } from "./verify-post-publish-public-npm-artifact.mjs";
 import { ALL_PACKAGE_RELEASE_ORDER } from "./check-release-catalog.mjs";
 
@@ -264,6 +264,7 @@ test("a nonzero owner-present PTY session aborts before anonymous verification",
   const run = (file, args) => {
     if (args[0] === "--version") return { status: 0, stdout: file === process.execPath ? "v24.19.0\n" : "11.17.0\n", stderr: "" };
     if (args[0] === "-p") return { status: 0, stdout: "1.3.2.1-motley-3246f1b\n", stderr: "" };
+    if (args[0] === "whoami") return { status: 0, stdout: "test-user\n", stderr: "" };
     if (file === process.execPath) return { status: 0, stdout: "", stderr: "" };
     if (args[0] === "pack") {
       writeFileSync(join(args.at(-1), "repacked.tgz"), item.bytes);
@@ -279,6 +280,7 @@ test("a nonzero owner-present PTY session aborts before anonymous verification",
       recordPath: item.recordPath,
       env: { PATH: process.env.PATH, HOME: item.root, PUBLIC_SAFETY_DENYLIST: item.denylist },
       run,
+      isInteractiveTerminal: () => true,
       interactiveRun: async () => { interactiveCalls += 1; return { status: 1, signal: null, stdout: "", stderr: "" }; },
       verify: async () => { verificationCalled = true; },
     }),
@@ -299,6 +301,12 @@ test("owner-present wrapper runs real pinned npm publish against a loopback regi
   const run = (file, args, options) => {
     calls.push({ file, args: [...args], cwd: options.cwd, env: { ...options.env }, stdio: options.stdio });
     if (args[0] === "--version" || args[0] === "-p") return spawnSync(file, args, { ...options, encoding: "utf8" });
+    // The whoami preflight (issue #1462) asks the OWNER's real npm login
+    // state -- never routed at the loopback registry this test stands up,
+    // so answering it for real here would depend on whatever npm account
+    // happens to be logged in on the machine running this test. Keep the
+    // fixture hermetic instead.
+    if (args[0] === "whoami") return { status: 0, stdout: "test-user\n", stderr: "" };
     if (file === process.execPath && args[0]?.endsWith("/scripts/check-public-safety.mjs")) return { status: 0, stdout: "", stderr: "" };
     return spawnSync(file, args, { ...options, encoding: "utf8" });
   };
@@ -324,7 +332,7 @@ test("owner-present wrapper runs real pinned npm publish against a loopback regi
     throw new Error(`unexpected interactive child ${file}`);
   };
   const verified = [];
-  const result = await publishQualifiedDirectory({ root: item.root, packageKey: "strategist", candidatePath: item.candidate, recordPath: item.recordPath, env: { PATH: process.env.PATH, HOME: item.root, PUBLIC_SAFETY_DENYLIST: item.denylist, NPM_TOKEN: "must-not-forward" }, run, interactiveRun, verify: async (options) => { verified.push(options); } });
+  const result = await publishQualifiedDirectory({ root: item.root, packageKey: "strategist", candidatePath: item.candidate, recordPath: item.recordPath, env: { PATH: process.env.PATH, HOME: item.root, PUBLIC_SAFETY_DENYLIST: item.denylist, NPM_TOKEN: "must-not-forward" }, run, isInteractiveTerminal: () => true, interactiveRun, verify: async (options) => { verified.push(options); } });
   assert.equal(result.tarball.sha256, hash("sha256", item.bytes));
   const publish = interactiveCalls.find((call) => call.file === "/usr/bin/script");
   assert.deepEqual(publish.args, ownerPresentPtyArgs("https://registry.npmjs.org"));
@@ -383,6 +391,7 @@ test("required Linux release runtime propagates a real PTY npm failure and suppr
   const run = (file, args) => {
     if (args[0] === "--version") return { status: 0, stdout: file === process.execPath ? "v24.19.0\n" : "11.17.0\n", stderr: "" };
     if (args[0] === "-p") return { status: 0, stdout: "1.3.2.1-motley-3246f1b\n", stderr: "" };
+    if (args[0] === "whoami") return { status: 0, stdout: "test-user\n", stderr: "" };
     if (file === process.execPath) return { status: 0, stdout: "", stderr: "" };
     if (args[0] === "pack") {
       writeFileSync(join(args.at(-1), "repacked.tgz"), item.bytes);
@@ -398,6 +407,7 @@ test("required Linux release runtime propagates a real PTY npm failure and suppr
       recordPath: item.recordPath,
       env: { PATH: `${bin}:${process.env.PATH}`, HOME: item.root, PUBLIC_SAFETY_DENYLIST: item.denylist },
       run,
+      isInteractiveTerminal: () => true,
       verify: async () => { verificationCalled = true; },
     }),
     /owner-present npm publish failed/,
@@ -545,7 +555,7 @@ test("wrapper refuses a non-release Node/npm runtime before scanning or publishi
     scanned = true;
     return { status: 0, stdout: "", stderr: "" };
   };
-  await assert.rejects(() => publishQualifiedDirectory({ root: item.root, packageKey: "strategist", candidatePath: item.candidate, recordPath: item.recordPath, env: { PATH: process.env.PATH, HOME: item.root, PUBLIC_SAFETY_DENYLIST: item.denylist }, run, verify: async () => {} }), /requires Node v24\.19\.0, npm 11\.17\.0, and zlib/);
+  await assert.rejects(() => publishQualifiedDirectory({ root: item.root, packageKey: "strategist", candidatePath: item.candidate, recordPath: item.recordPath, env: { PATH: process.env.PATH, HOME: item.root, PUBLIC_SAFETY_DENYLIST: item.denylist }, run, isInteractiveTerminal: () => true, verify: async () => {} }), /requires Node v24\.19\.0, npm 11\.17\.0, and zlib/);
   assert.equal(scanned, false);
 });
 
@@ -555,6 +565,7 @@ test("wrapper rejects transient manifest metadata, symlinks, and changed clean-d
   const run = (file, args, options) => {
     if (args[0] === "--version") return { status: 0, stdout: file === process.execPath ? "v24.19.0\n" : "11.17.0\n", stderr: "" };
     if (args[0] === "-p") return { status: 0, stdout: "1.3.2.1-motley-3246f1b\n", stderr: "" };
+    if (args[0] === "whoami") return { status: 0, stdout: "test-user\n", stderr: "" };
     if (file === process.execPath) return { status: 0, stdout: "", stderr: "" };
     if (args[0] === "pack") {
       assert.notEqual(options.env.HOME, item.root, "pack must not receive the owner npm home");
@@ -564,7 +575,7 @@ test("wrapper rejects transient manifest metadata, symlinks, and changed clean-d
     }
     throw new Error("publish must not be reached");
   };
-  await assert.rejects(() => publishQualifiedDirectory({ root: item.root, packageKey: "strategist", candidatePath: item.candidate, recordPath: item.recordPath, env: { PATH: process.env.PATH, HOME: item.root, PUBLIC_SAFETY_DENYLIST: item.denylist }, run, verify: async () => {} }), /differs from the immutable qualified candidate/);
+  await assert.rejects(() => publishQualifiedDirectory({ root: item.root, packageKey: "strategist", candidatePath: item.candidate, recordPath: item.recordPath, env: { PATH: process.env.PATH, HOME: item.root, PUBLIC_SAFETY_DENYLIST: item.denylist }, run, isInteractiveTerminal: () => true, verify: async () => {} }), /differs from the immutable qualified candidate/);
   assert.equal((await readFile(item.candidate)).equals(original), true);
 });
 
@@ -575,7 +586,7 @@ test("wrapper rejects archive symlinks and transient client manifest fields befo
   await symlink("package.json", join(archive, "linked-manifest"));
   const unsafe = join(item.root, "unsafe.tgz"); await execFile("tar", ["-czf", unsafe, "-C", join(item.root, "unsafe-archive"), "package"]);
   let called = false;
-  await assert.rejects(() => publishQualifiedDirectory({ root: item.root, packageKey: "strategist", candidatePath: unsafe, recordPath: item.recordPath, env: { PATH: process.env.PATH, HOME: item.root, PUBLIC_SAFETY_DENYLIST: item.denylist }, run: () => { called = true; return { status: 0, stdout: "", stderr: "" }; }, verify: async () => {} }), /unsafe|symlink|extended metadata|entries/);
+  await assert.rejects(() => publishQualifiedDirectory({ root: item.root, packageKey: "strategist", candidatePath: unsafe, recordPath: item.recordPath, env: { PATH: process.env.PATH, HOME: item.root, PUBLIC_SAFETY_DENYLIST: item.denylist }, run: () => { called = true; return { status: 0, stdout: "", stderr: "" }; }, isInteractiveTerminal: () => true, verify: async () => {} }), /unsafe|symlink|extended metadata|entries/);
   assert.equal(called, false);
 });
 
@@ -594,4 +605,216 @@ test("publishExitCode reports indeterminate observation windows as 2, everything
   // a corrupted upload report as merely unconfirmed.
   assert.equal(publishExitCode(new Error("published tarball mismatch: registry sha256 differs from the uploaded candidate")), 1);
   assert.equal(publishExitCode(new Error("some other publish failure")), 1);
+});
+
+// ---------------------------------------------------------------- issue #1462: owner-present preflight
+//
+// The owner-present first publish (`npm run publish:qualified-set --
+// --publish`) failed twice with only "owner-present npm publish failed" --
+// npm's own diagnosis never reached the terminal. Incident 1: a non-TTY
+// shell, where runInteractiveChild() silently ignores stdin (npm could
+// never have prompted) with no indication that TTY was the problem.
+// Incident 2: a real terminal, but npm was not signed in, so an
+// unauthenticated publish of a new scoped package returned E404 -- which
+// the owner-prompt relay never surfaces, since it only forwards output
+// matching ITS OWN prompt patterns. Both are fixed as fast, up-front
+// refusals (before the full staged public-safety scan and repack run at
+// all) rather than a failure deep inside the interactive session.
+
+test("owner-present publication refuses up front when stdin is not an interactive terminal, before any work runs", async (t) => {
+  const item = await fixture(t);
+  let runCalled = false, interactiveCalled = false;
+  await assert.rejects(
+    () => publishQualifiedDirectory({
+      root: item.root,
+      packageKey: "strategist",
+      candidatePath: item.candidate,
+      recordPath: item.recordPath,
+      env: { PATH: process.env.PATH, HOME: item.root, PUBLIC_SAFETY_DENYLIST: item.denylist },
+      isInteractiveTerminal: () => false,
+      run: () => { runCalled = true; return { status: 0, stdout: "", stderr: "" }; },
+      interactiveRun: async () => { interactiveCalled = true; return { status: 0, signal: null, stdout: "", stderr: "" }; },
+      verify: async () => {},
+    }),
+    /owner-present publication requires an interactive terminal: run this from an interactive terminal/,
+  );
+  assert.equal(runCalled, false, "no command (runtime assert, safety scan, pack, whoami) should run before the TTY refusal");
+  assert.equal(interactiveCalled, false, "the interactive PTY session must never be attempted without a TTY");
+});
+
+test("OIDC publication does not require an interactive terminal at all", async (t) => {
+  const item = await fixture(t);
+  const oidc = {
+    ACTIONS_ID_TOKEN_REQUEST_URL: "https://token.actions.githubusercontent.test/oidc",
+    ACTIONS_ID_TOKEN_REQUEST_TOKEN: "opaque-oidc-request-token",
+    GITHUB_ACTIONS: "true", GITHUB_EVENT_NAME: "workflow_dispatch",
+    GITHUB_REF: "refs/heads/main", GITHUB_REPOSITORY: "clossys/foundry", GITHUB_REPOSITORY_ID: "123",
+    GITHUB_REPOSITORY_OWNER_ID: "456", GITHUB_RUN_ATTEMPT: "1", GITHUB_RUN_ID: "42", GITHUB_SERVER_URL: "https://github.com", GITHUB_SHA: "a".repeat(40),
+    GITHUB_WORKFLOW: "Publish", GITHUB_WORKFLOW_REF: "clossys/foundry/.github/workflows/publish.yml@refs/heads/main",
+    GITHUB_WORKFLOW_SHA: "b".repeat(40), RUNNER_ENVIRONMENT: "github-hosted",
+  };
+  const run = (file, args) => {
+    if (args[0] === "--version") return { status: 0, stdout: file === process.execPath ? "v24.19.0\n" : "11.17.0\n", stderr: "" };
+    if (args[0] === "-p") return { status: 0, stdout: "1.3.2.1-motley-3246f1b\n", stderr: "" };
+    if (file === process.execPath) return { status: 0, stdout: "", stderr: "" };
+    if (args[0] === "pack") {
+      writeFileSync(join(args.at(-1), "repacked.tgz"), item.bytes);
+      return { status: 0, stdout: JSON.stringify([{ filename: "repacked.tgz" }]), stderr: "" };
+    }
+    if (args[0] === "publish") return { status: 0, stdout: "", stderr: "" };
+    throw new Error(`unexpected command ${file} ${args.join(" ")}`);
+  };
+  // isInteractiveTerminal is deliberately left at its real default (a TTY
+  // check makes no sense for the OIDC path, which never spawns an
+  // interactive child), and this still succeeds under this test runner's
+  // own non-TTY stdin -- proving the check truly only gates owner-present.
+  await publishQualifiedDirectory({
+    root: item.root, packageKey: "strategist", candidatePath: item.candidate, recordPath: item.recordPath,
+    mode: "oidc", dryRun: true,
+    env: { ...oidc, PATH: process.env.PATH, HOME: item.root, PUBLIC_SAFETY_DENYLIST: item.denylist },
+    run, interactiveRun: async () => { throw new Error("OIDC must not create an owner PTY"); }, verify: async () => {},
+  });
+});
+
+test("owner-present publication refuses before the safety scan/pack when npm whoami fails -- and never reports the exact npm output", async (t) => {
+  const item = await fixture(t);
+  let scanned = false, packed = false;
+  const run = (file, args) => {
+    if (args[0] === "--version") return { status: 0, stdout: file === process.execPath ? "v24.19.0\n" : "11.17.0\n", stderr: "" };
+    if (args[0] === "-p") return { status: 0, stdout: "1.3.2.1-motley-3246f1b\n", stderr: "" };
+    if (args[0] === "whoami") return { status: 1, stdout: "", stderr: "npm error code ENEEDAUTH\nnpm error need auth This command requires you to be logged in.\n" };
+    if (file === process.execPath) { scanned = true; return { status: 0, stdout: "", stderr: "" }; }
+    if (args[0] === "pack") { packed = true; return { status: 0, stdout: JSON.stringify([{ filename: "x.tgz" }]), stderr: "" }; }
+    throw new Error(`unexpected command ${file} ${args.join(" ")}`);
+  };
+  await assert.rejects(
+    () => publishQualifiedDirectory({
+      root: item.root, packageKey: "strategist", candidatePath: item.candidate, recordPath: item.recordPath,
+      env: { PATH: process.env.PATH, HOME: item.root, PUBLIC_SAFETY_DENYLIST: item.denylist },
+      isInteractiveTerminal: () => true,
+      run,
+      interactiveRun: async () => { throw new Error("the interactive session must never be reached when whoami already failed"); },
+      verify: async () => { throw new Error("verification must never run"); },
+    }),
+    (error) => {
+      assert.match(error.message, /^not signed in to npm: run `npm login` first$/, "the message must be exactly this, never npm's own ENEEDAUTH text or any username");
+      assert.doesNotMatch(error.message, /ENEEDAUTH/);
+      return true;
+    },
+  );
+  assert.equal(scanned, false, "the FULL staged public-safety scan must not run once whoami already failed");
+  assert.equal(packed, false, "the clean-directory repack must not run once whoami already failed");
+});
+
+test("owner-present publication proceeds past a successful npm whoami without ever surfacing the logged-in username", async (t) => {
+  const item = await fixture(t);
+  const whoamiCalls = [];
+  const run = (file, args, options) => {
+    if (args[0] === "--version") return { status: 0, stdout: file === process.execPath ? "v24.19.0\n" : "11.17.0\n", stderr: "" };
+    if (args[0] === "-p") return { status: 0, stdout: "1.3.2.1-motley-3246f1b\n", stderr: "" };
+    if (args[0] === "whoami") {
+      whoamiCalls.push({ args: [...args], env: { ...options.env } });
+      return { status: 0, stdout: "real-npm-account-name\n", stderr: "" };
+    }
+    if (file === process.execPath) return { status: 0, stdout: "", stderr: "" };
+    if (args[0] === "pack") {
+      writeFileSync(join(args.at(-1), "repacked.tgz"), item.bytes);
+      return { status: 0, stdout: JSON.stringify([{ filename: "repacked.tgz" }]), stderr: "" };
+    }
+    throw new Error(`unexpected command ${file} ${args.join(" ")}`);
+  };
+  let capturedError;
+  try {
+    await publishQualifiedDirectory({
+      root: item.root, packageKey: "strategist", candidatePath: item.candidate, recordPath: item.recordPath,
+      env: { PATH: process.env.PATH, HOME: item.root, PUBLIC_SAFETY_DENYLIST: item.denylist },
+      isInteractiveTerminal: () => true,
+      run,
+      interactiveRun: async () => ({ status: 1, signal: null, stdout: "", stderr: "" }),
+      verify: async () => {},
+    });
+  } catch (error) {
+    capturedError = error;
+  }
+  assert.ok(capturedError, "the fixture's interactive session still fails (unrelated to whoami) so this only proves whoami itself was reached and passed");
+  assert.equal(whoamiCalls.length, 1, "whoami runs exactly once, as a preflight");
+  assert.deepEqual(whoamiCalls[0].args, ["whoami", "--registry", "https://registry.npmjs.org"]);
+  assert.equal(whoamiCalls[0].env.HOME, item.root, "whoami must consult the OWNER's real npm login state, not the credential-free staging HOME");
+  assert.doesNotMatch(capturedError.message, /real-npm-account-name/, "the account name whoami printed on success must never appear in any thrown message");
+});
+
+// ---------------------------------------------------------------- issue #1462: relay npm's error CODE only
+
+test("extractNpmErrorCode: finds npm's own \"npm error code E...\" line", () => {
+  assert.equal(extractNpmErrorCode("npm error code E404\nnpm error 404 Not Found - PUT https://registry.npmjs.org/@x%2fy\n"), "E404");
+  assert.equal(extractNpmErrorCode("npm error code E403\n"), "E403");
+  assert.equal(extractNpmErrorCode("npm error code EOTP\n"), "EOTP");
+});
+
+test("extractNpmErrorCode: returns null (not empty string) when there is no such line", () => {
+  assert.equal(extractNpmErrorCode(""), null);
+  assert.equal(extractNpmErrorCode(undefined), null);
+  assert.equal(extractNpmErrorCode("some unrelated npm output\n"), null);
+});
+
+test("a failed owner-present PTY session relays ONLY npm's own error code, never the rest of its output", async (t) => {
+  const item = await fixture(t);
+  const run = (file, args) => {
+    if (args[0] === "--version") return { status: 0, stdout: file === process.execPath ? "v24.19.0\n" : "11.17.0\n", stderr: "" };
+    if (args[0] === "-p") return { status: 0, stdout: "1.3.2.1-motley-3246f1b\n", stderr: "" };
+    if (args[0] === "whoami") return { status: 0, stdout: "test-user\n", stderr: "" };
+    if (file === process.execPath) return { status: 0, stdout: "", stderr: "" };
+    if (args[0] === "pack") {
+      writeFileSync(join(args.at(-1), "repacked.tgz"), item.bytes);
+      return { status: 0, stdout: JSON.stringify([{ filename: "repacked.tgz" }]), stderr: "" };
+    }
+    throw new Error(`unexpected command ${file}`);
+  };
+  await assert.rejects(
+    () => publishQualifiedDirectory({
+      root: item.root, packageKey: "strategist", candidatePath: item.candidate, recordPath: item.recordPath,
+      env: { PATH: process.env.PATH, HOME: item.root, PUBLIC_SAFETY_DENYLIST: item.denylist },
+      isInteractiveTerminal: () => true,
+      run,
+      interactiveRun: async () => ({
+        status: 1, signal: null, stdout: "",
+        stderr: "npm error code E404\nnpm error 404 Not Found - PUT https://registry.npmjs.org/@clossys%2fstrategist - Not found\nnpm error 404 This package name is not yet public: @clossys/strategist\n",
+      }),
+      verify: async () => { throw new Error("verification must never run after a failed publish"); },
+    }),
+    (error) => {
+      assert.equal(error.message, "owner-present npm publish failed (npm error code E404)");
+      assert.doesNotMatch(error.message, /This package name is not yet public/, "only the code is relayed, never the rest of npm's own diagnostic text");
+      return true;
+    },
+  );
+});
+
+test("a failed owner-present PTY session with no recognizable npm error code keeps the original generic message", async (t) => {
+  const item = await fixture(t);
+  const run = (file, args) => {
+    if (args[0] === "--version") return { status: 0, stdout: file === process.execPath ? "v24.19.0\n" : "11.17.0\n", stderr: "" };
+    if (args[0] === "-p") return { status: 0, stdout: "1.3.2.1-motley-3246f1b\n", stderr: "" };
+    if (args[0] === "whoami") return { status: 0, stdout: "test-user\n", stderr: "" };
+    if (file === process.execPath) return { status: 0, stdout: "", stderr: "" };
+    if (args[0] === "pack") {
+      writeFileSync(join(args.at(-1), "repacked.tgz"), item.bytes);
+      return { status: 0, stdout: JSON.stringify([{ filename: "repacked.tgz" }]), stderr: "" };
+    }
+    throw new Error(`unexpected command ${file}`);
+  };
+  await assert.rejects(
+    () => publishQualifiedDirectory({
+      root: item.root, packageKey: "strategist", candidatePath: item.candidate, recordPath: item.recordPath,
+      env: { PATH: process.env.PATH, HOME: item.root, PUBLIC_SAFETY_DENYLIST: item.denylist },
+      isInteractiveTerminal: () => true,
+      run,
+      interactiveRun: async () => ({ status: null, signal: "SIGTERM", stdout: "", stderr: "" }),
+      verify: async () => { throw new Error("verification must never run after a failed publish"); },
+    }),
+    (error) => {
+      assert.equal(error.message, "owner-present npm publish failed", "with no npm error code found, the message stays exactly the original generic one");
+      return true;
+    },
+  );
 });
