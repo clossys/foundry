@@ -45,6 +45,10 @@ export const GATED_SCRIPT_PROSE_INPUTS = {
     prose: true,
     reason: "reads every .changesets/*.md file directly (issue #1420 review round 2, N1)",
   },
+  "node:scripts/check-changeset-style.mjs": {
+    prose: true,
+    reason: "reads every .changesets/*.md file via collect-changesets.mjs's loadChangesets (issue #1423)",
+  },
   "node:scripts/check-conflict-markers.mjs": {
     prose: true,
     reason: "scans the ENTIRE git tree for committed conflict markers, so every prose-tier path (and every other path) is in scope (issue #1420 review round 2, N1)",

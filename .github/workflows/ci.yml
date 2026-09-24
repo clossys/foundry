@@ -1068,16 +1068,10 @@ jobs:
       # files (`.changesets/*.md`, `docs/*.md`) those two gates exist to
       # validate. `prose quality` runs on every tier, so that is where they
       # belong now. See that job's own comment for the full reasoning.
-
-      # check-changeset-style.mjs (issue #1423) -- report-only prose lint
-      # over the same pending changeset summaries the format gate above
-      # already parses: absolute qualifiers, over-length entries, and
-      # negative-change phrasing. Never fails CI -- exit 0 with findings or
-      # not, exit 2 only if .changesets/ itself could not be read. Lives in
-      # this same dependency-free, tree-only job for the same reason as the
-      # format gate immediately above.
-      - name: Changeset style report (non-blocking)
-        run: npm run check:changeset-style
+      # check-changeset-style.mjs (issue #1423) moved to `prose quality`
+      # too, for the identical reason (issue #1432's N1 join check): it
+      # reads the same pending .changesets/*.md summaries the format gate
+      # above already parses, a prose-tier path this job is skipped on.
 
       # repository-profile-check (dist/repository/run-bin.js) — the richer,
       # three-state evaluator over the SAME governance/repository-profile.json
@@ -1413,6 +1407,20 @@ jobs:
       # a valid patch/minor/major bump level, and a non-empty summary?
       - name: Changeset format gate
         run: npm run check:changesets
+      # check-changeset-style.mjs (issue #1423) -- report-only prose lint
+      # over the same pending changeset summaries the format gate above
+      # already parses: absolute qualifiers, over-length entries, and
+      # negative-change phrasing. Never fails CI -- exit 0 with findings or
+      # not, exit 2 only if .changesets/ itself could not be read. Moved
+      # here from `controller gates` (issue #1432's N1 join check): that
+      # job is skipped on the `prose`/`packed-prose` tiers, exactly the
+      # tiers a `.changesets/*.md`-only PR falls into, which would have
+      # left this report silently skipped on the very PRs it reports on.
+      # `prose quality` runs on every tier, so that is where it belongs,
+      # same reasoning as the Conflict markers/Changeset format/Changelog
+      # location gates already here.
+      - name: Changeset style report (non-blocking)
+        run: npm run check:changeset-style
       # Moved here from `role-loop archetypes` (issue #1420 review round 3:
       # #1429 added this step reading `docs/changelogs/<dir>.md` -- a
       # prose-tier path -- to that job, which the classifier already skips
