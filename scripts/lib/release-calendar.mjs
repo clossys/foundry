@@ -133,6 +133,53 @@ export function filterReleasePrBranchRefs(lsRemoteOutput) {
     .filter((name) => RELEASE_PR_BRANCH_PATTERN.test(name));
 }
 
+/**
+ * Of the real release-PR branches filterReleasePrBranchRefs() already
+ * narrowed the remote down to, which are still genuinely IN PROGRESS --
+ * i.e. should count toward `hasReleaseInProgress` -- versus LEFTOVER: a
+ * release PR that was closed WITHOUT merging, whose branch
+ * `delete_branch_on_merge` therefore never cleaned up (issue #1392,
+ * "a leftover release branch from a closed-but-unmerged release PR blocks
+ * every subsequent Saturday" -- https://github.com/clossys/foundry/pull/1353#issuecomment-5804131702).
+ * Without this, a single abandoned/superseded release PR would silently
+ * skip the release-PR guard forever, on every following Saturday, with no
+ * error and no visible cause.
+ *
+ * `prsByBranch` is `{ [branchName]: Array<{ state, isCrossRepository }> }`
+ * -- for each branch, the caller's own already-parsed output of
+ * `gh ${releaseBranchPrListArgs(repo, branch).join(" ")}` (this module never
+ * does its own network I/O, matching every other function here).
+ *
+ * `gh pr list --head <branch>` matches by head branch NAME only, so it also
+ * returns pull requests from forks whose branch happens to share the name.
+ * This repository is public, so anyone can read a pending release branch's
+ * name, push a same-named branch to a fork, and open then close a PR from it.
+ * A fork PR therefore never decides anything here: every entry whose
+ * `isCrossRepository` is not exactly `false` is ignored. A branch is
+ * LEFTOVER -- excluded from "in progress" -- only when at least one
+ * same-repository PR exists and EVERY same-repository PR is exactly
+ * "CLOSED" (closed without merging, the leftover case this function exists
+ * for) or "MERGED" (delete_branch_on_merge should already have removed it,
+ * but this stays correct in the instant before that deletion lands). No
+ * same-repository PR at all is the real, ordinary window release-pr.yml's
+ * own header describes (push the branch, then stop and wait for an
+ * owner-authenticated actor to open the PR), so it counts as IN PROGRESS,
+ * as does any OPEN or unrecognised state and any malformed entry.
+ */
+export function releaseBranchPrListArgs(repository, branch) {
+  return ["pr", "list", "--repo", repository, "--head", branch, "--state", "all", "--limit", "1000", "--json", "state,isCrossRepository"];
+}
+
+export function isLeftoverReleaseBranch(prs) {
+  const sameRepository = (Array.isArray(prs) ? prs : []).filter((pr) => pr?.isCrossRepository === false);
+  if (sameRepository.length === 0) return false;
+  return sameRepository.every((pr) => pr.state === "CLOSED" || pr.state === "MERGED");
+}
+
+export function inProgressReleaseBranches(branchNames, prsByBranch = {}) {
+  return (branchNames ?? []).filter((name) => !isLeftoverReleaseBranch(prsByBranch?.[name]));
+}
+
 /** Reads and parses governance/release-calendar.json. Throws a descriptive error rather than returning null -- every caller needs a calendar to do anything. */
 export function loadReleaseCalendar(root = process.cwd()) {
   const path = resolve(root, RELEASE_CALENDAR_PATH);
