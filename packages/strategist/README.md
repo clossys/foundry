@@ -221,9 +221,10 @@ schema family, all validated the same way.
 `readStrategy` expects a directory shaped like this. Every file is optional
 except `facts.json` — see "Why facts.json is the one required file" below.
 The consumer-facing default is `clossys/strategist/` (see #1171); the CLI
-falls back to a retired `strategy/` directory for one release only, with a
-notice, when `clossys/strategist/` does not exist yet — see "The
-`strategist-check` CLI" below and this package's CHANGELOG.
+falls back to a retired `strategy/` directory, still read in this release,
+with a notice, when `clossys/strategist/` does not exist yet — see "The
+`strategist-check` CLI" below and this package's CHANGELOG for when the
+fallback is removed.
 
 ```
 clossys/strategist/
@@ -421,8 +422,8 @@ directory:
    (#1171).
 2. `clossys/strategist/` does not exist but the retired `strategy/` does —
    read `strategy/` instead, and print a plain-language notice to move it.
-   This bridge is read for exactly one release; see this package's
-   CHANGELOG for the release it is removed in.
+   This bridge is still read in this release; its removal will be
+   announced beforehand in this package's CHANGELOG.
 3. Both exist — refused as indeterminate (exit `2`), never a silent pick:
    remove `strategy/` once its contents have moved to `clossys/strategist/`,
    or pass `strategy-dir` explicitly to force a choice.
@@ -1001,3 +1002,7 @@ Node 20+. ESM only. No runtime dependencies.
 ## Licence
 
 MIT
+
+## Changelog
+
+Release notes for every version are in the [changelog](https://github.com/clossys/foundry/blob/main/docs/changelogs/strategist.md), kept in the public repository rather than in the installed package.

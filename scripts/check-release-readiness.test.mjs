@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { lineDigest } from "./lib/package-identity-transition.mjs";
 import { currentQualificationJoins } from "./lib/candidate-qualification.mjs";
+import { qualificationRecordPresenceForCandidate } from "./check-qualification-record-present.mjs";
 
 // Hermetic end-to-end coverage: every fixture is a real, throwaway git repo
 // under mkdtemp, and the real script is spawned exactly the way CI spawns
@@ -201,6 +202,109 @@ test("default mode: flags content changed since --base with no version bump", ()
   });
 });
 
+// collect-changesets.mjs validates a changeset's frontmatter package name
+// against real packages/<dir> directories on disk (see its own
+// discoverPackageDirs()). makeFixture() puts the fixture package directly at
+// the repo root (root/probe), not under root/packages/probe, so these two
+// tests plant a minimal packages/<name>/package.json stub purely so the
+// changeset naming it is recognised as well-formed -- the stub is never
+// otherwise read by check-release-readiness.mjs itself.
+function stubPackagesDir(root, name) {
+  mkdirSync(join(root, "packages", name), { recursive: true });
+  writeFileSync(join(root, "packages", name, "package.json"), JSON.stringify({ name, version: "0.0.0" }));
+}
+
+test("default mode (issue #1255): a pending changeset naming the package is an alternative to a version bump", () => {
+  withRepo((root) => {
+    const pkgDir = makeFixture(root);
+    stubPackagesDir(root, "probe");
+    const base = gitCommit(root, "initial release at 1.0.0");
+
+    writeFileSync(join(pkgDir, "src", "index.ts"), "export const x = 2;\n");
+    mkdirSync(join(root, ".changesets"), { recursive: true });
+    writeFileSync(join(root, ".changesets", "probe-fix.md"), "---\nprobe: patch\n---\n\nFix a bug.\n");
+
+    const r = run(["--json", "--base", base, pkgDir]);
+    const report = JSON.parse(r.out);
+    assert.equal(r.code, 0, `expected exit 0, got ${r.code}: ${r.out}`);
+    assert.equal(report.results[0].status, "pass");
+    assert.match(report.results[0].detail, /pending changeset covers it/);
+    assert.match(report.results[0].detail, /probe-fix\.md/);
+  });
+});
+
+test("default mode (issue #1255): a changeset naming a DIFFERENT package does not rescue the bump requirement", () => {
+  withRepo((root) => {
+    const pkgDir = makeFixture(root);
+    stubPackagesDir(root, "probe");
+    stubPackagesDir(root, "some-other-package");
+    const base = gitCommit(root, "initial release at 1.0.0");
+
+    writeFileSync(join(pkgDir, "src", "index.ts"), "export const x = 2;\n");
+    mkdirSync(join(root, ".changesets"), { recursive: true });
+    writeFileSync(join(root, ".changesets", "other-fix.md"), "---\nsome-other-package: patch\n---\n\nUnrelated.\n");
+
+    const r = run(["--json", "--base", base, pkgDir]);
+    const report = JSON.parse(r.out);
+    assert.equal(r.code, 1, `expected exit 1, got ${r.code}: ${r.out}`);
+    assert.equal(report.results[0].status, "needs-bump");
+  });
+});
+
+// issue #1322 item 2: pendingChangesetDetail() used to read the whole
+// working tree's .changesets/ with no merge-base filtering, contradicting
+// its own header's stated rule ("a changeset added ... in this pull
+// request's history"). A changeset already pending on `main` BEFORE this
+// PR's merge base -- left over from some unrelated, unmerged PR, or (as
+// here) never applied yet from an earlier release -- must not let a packed
+// -content change THIS pull request makes ride on someone else's pending
+// changeset.
+test("default mode (issue #1322 item 2): a changeset that already existed AT the merge base does not satisfy this PR's own packed change", () => {
+  withRepo((root) => {
+    const pkgDir = makeFixture(root);
+    stubPackagesDir(root, "probe");
+    // The changeset for "probe" is committed as part of the SAME commit
+    // this run's --base points at -- it existed at the merge base, not
+    // added by the PR under test.
+    mkdirSync(join(root, ".changesets"), { recursive: true });
+    writeFileSync(join(root, ".changesets", "probe-preexisting.md"), "---\nprobe: patch\n---\n\nAn earlier, unrelated pending changeset.\n");
+    const base = gitCommit(root, "initial release at 1.0.0, with a pre-existing pending changeset");
+
+    // This PR's own change: packed content moves, but it adds no changeset
+    // of its own and bumps no version.
+    writeFileSync(join(pkgDir, "src", "index.ts"), "export const x = 2;\n");
+
+    const r = run(["--json", "--base", base, pkgDir]);
+    const report = JSON.parse(r.out);
+    assert.equal(r.code, 1, `expected exit 1 -- the pre-existing changeset must not satisfy this PR's own packed change; got ${r.code}: ${r.out}`);
+    assert.equal(report.results[0].status, "needs-bump");
+    assert.doesNotMatch(report.results[0].detail, /pending changeset covers it/);
+  });
+});
+
+test("default mode (issue #1322 item 2): a changeset added by this PR itself (not present at the merge base) still satisfies the same package's packed change", () => {
+  withRepo((root) => {
+    const pkgDir = makeFixture(root);
+    stubPackagesDir(root, "probe");
+    const base = gitCommit(root, "initial release at 1.0.0");
+
+    // This PR's own change: packed content moves, AND it adds its own new
+    // changeset, committed after the merge base (so it is genuinely part of
+    // this PR's own history, not just an uncommitted working-tree file).
+    writeFileSync(join(pkgDir, "src", "index.ts"), "export const x = 2;\n");
+    mkdirSync(join(root, ".changesets"), { recursive: true });
+    writeFileSync(join(root, ".changesets", "probe-fix.md"), "---\nprobe: patch\n---\n\nFix a bug.\n");
+    gitCommit(root, "fix a bug, deferred to the next release PR");
+
+    const r = run(["--json", "--base", base, pkgDir]);
+    const report = JSON.parse(r.out);
+    assert.equal(r.code, 0, `expected exit 0, got ${r.code}: ${r.out}`);
+    assert.equal(report.results[0].status, "pass");
+    assert.match(report.results[0].detail, /pending changeset covers it/);
+    assert.match(report.results[0].detail, /probe-fix\.md/);
+  });
+});
+
 test("default mode: passes content changed since --base alongside a version bump", () => {
   withRepo((root) => {
     const pkgDir = makeFixture(root);
@@ -377,6 +481,61 @@ test("default mode: dist/ is excluded from the comparison on both sides", () => 
   });
 });
 
+// Regression coverage for the false positive this fix closes (#1330): a
+// local `npm run build` leaves gitignored generated output sitting in the
+// working tree (in the real repository, e.g.
+// packages/launcher/skill-catalogue/) that falls inside the package's own
+// `files` glob. Because that output is untracked, it must never show up as
+// "added" — only git-tracked content can move this gate.
+test("default mode: an untracked, gitignored generated file inside the packed glob is NOT flagged", () => {
+  withRepo((root) => {
+    const pkgDir = makeFixture(root);
+    const base = gitCommit(root, "initial release at 1.0.0");
+
+    writeFileSync(join(pkgDir, ".gitignore"), "src/generated.js\n");
+    writeFileSync(join(pkgDir, "src", "generated.js"), "export const generated = true;\n");
+    // Deliberately never `git add`ed — this simulates untracked, gitignored
+    // build output left behind by a local build, not a real change.
+
+    const r = run(["--json", "--base", base, pkgDir]);
+    const report = JSON.parse(r.out);
+    assert.equal(r.code, 0, `expected exit 0, got ${r.code}: ${r.out}`);
+    assert.equal(report.results[0].status, "pass");
+    assert.match(report.results[0].detail, /no packed-file changes/);
+    assert.ok(
+      !(report.results[0].changed ?? []).some((c) => c.includes("generated.js")),
+      `expected no mention of generated.js, got ${JSON.stringify(report.results[0].changed)}`,
+    );
+  });
+});
+
+// Control: untracked noise sitting alongside a real, genuinely tracked
+// change must not mask that real change — only the untracked file is
+// filtered out.
+test("default mode: a real tracked change is still caught even with untracked generated noise present", () => {
+  withRepo((root) => {
+    const pkgDir = makeFixture(root);
+    const base = gitCommit(root, "initial release at 1.0.0");
+
+    writeFileSync(join(pkgDir, ".gitignore"), "src/generated.js\n");
+    writeFileSync(join(pkgDir, "src", "generated.js"), "export const generated = true;\n");
+    writeFileSync(join(pkgDir, "src", "index.ts"), "export const x = 2;\n");
+
+    const r = run(["--json", "--base", base, pkgDir]);
+    const report = JSON.parse(r.out);
+    assert.equal(r.code, 1, `expected exit 1, got ${r.code}: ${r.out}`);
+    assert.equal(report.results[0].status, "needs-bump");
+    assert.ok(
+      report.results[0].changed.includes("modified: src/index.ts"),
+      `expected src/index.ts to be reported changed, got ${JSON.stringify(report.results[0].changed)}`,
+    );
+    assert.ok(
+      !report.results[0].changed.some((c) => c.includes("generated.js")),
+      `expected no mention of generated.js, got ${JSON.stringify(report.results[0].changed)}`,
+    );
+  });
+});
+
 test("default mode: skips a private:true package", () => {
   withRepo((root) => {
     const pkgDir = makeFixture(root);
@@ -418,12 +577,16 @@ test("default mode: a devDependencies-only package.json change is exempt from th
   withRepo((root) => {
     const pkgDir = makeFixture(root);
     const manifest = readManifest(pkgDir);
-    manifest.devDependencies = { typescript: "5.4.0" };
+    // Deliberately NOT `typescript` — that devDependency is carved OUT of
+    // this exemption by the owner decision (#1187/#1265/#1313, point 2); see
+    // the dedicated test below. This one exercises the general rule with a
+    // devDependency the build script never invokes.
+    manifest.devDependencies = { "some-lint-tool": "5.4.0" };
     writeManifest(pkgDir, manifest);
     const base = gitCommit(root, "initial release at 1.0.0, with devDependencies");
 
     const bumped = readManifest(pkgDir);
-    bumped.devDependencies = { typescript: "5.5.0" };
+    bumped.devDependencies = { "some-lint-tool": "5.5.0" };
     writeManifest(pkgDir, bumped);
 
     const r = run(["--json", "--base", base, pkgDir]);
@@ -431,6 +594,142 @@ test("default mode: a devDependencies-only package.json change is exempt from th
     assert.equal(r.code, 0, `expected exit 0, got ${r.code}: ${r.out}`);
     assert.equal(report.results[0].status, "pass");
     assert.match(report.results[0].detail, /devDependencies/);
+  });
+});
+
+// OWNER DECISION (#1187/#1265/#1313, point 2): a build-TOOLCHAIN
+// devDependency is carved out of the exemption above, because it can change
+// dist/ output (what a consumer receives) with zero packed-file trace — the
+// opposite of the "devDependencies never affect what ships" premise the
+// exemption rests on. Every package here builds with `tsc -p tsconfig.json`,
+// so `typescript` is exactly that case.
+test("a typescript devDependency-only bump is NOT exempt — it can change compiled dist/ output (owner decision, point 2)", () => {
+  withRepo((root) => {
+    const pkgDir = makeFixture(root);
+    const manifest = readManifest(pkgDir);
+    manifest.devDependencies = { typescript: "5.4.0" };
+    writeManifest(pkgDir, manifest);
+    const base = gitCommit(root, "initial release at 1.0.0, with a typescript devDependency");
+
+    const bumped = readManifest(pkgDir);
+    bumped.devDependencies = { typescript: "5.5.0" };
+    writeManifest(pkgDir, bumped);
+
+    const r = run(["--json", "--base", base, pkgDir]);
+    const report = JSON.parse(r.out);
+    assert.equal(r.code, 1, `expected exit 1, got ${r.code}: ${r.out}`);
+    assert.equal(report.results[0].status, "needs-bump");
+  });
+});
+
+// OWNER DECISION (#1187/#1265/#1313, point 2): tsconfig.json drives `tsc`'s
+// emitted output and is never part of what `npm pack` ships, so a change to
+// it is invisible to the packed-content diff — but not to a consumer, whose
+// installed dist/ reflects whatever the compiler options said. Treated like
+// a packed change for the bump question.
+test("a tsconfig.json target change is treated like a packed change (owner decision, point 2)", () => {
+  withRepo((root) => {
+    const pkgDir = makeFixture(root);
+    writeFileSync(join(pkgDir, "tsconfig.json"), JSON.stringify({ compilerOptions: { target: "ES2022" } }));
+    const base = gitCommit(root, "initial release at 1.0.0, with tsconfig.json");
+
+    writeFileSync(join(pkgDir, "tsconfig.json"), JSON.stringify({ compilerOptions: { target: "ES5" } }));
+
+    const r = run(["--json", "--base", base, pkgDir]);
+    const report = JSON.parse(r.out);
+    assert.equal(r.code, 1, `expected exit 1, got ${r.code}: ${r.out}`);
+    assert.equal(report.results[0].status, "needs-bump");
+    assert.equal(report.results[0].buildInputsChanged, true);
+    assert.match(report.results[0].detail, /build input file\(s\)/);
+  });
+});
+
+// The build-input diff must not fire when tsconfig.json never changes — a
+// plain regression guard alongside the two positive cases above.
+test("a tsconfig.json that never changes does not spuriously require a bump", () => {
+  withRepo((root) => {
+    const pkgDir = makeFixture(root);
+    writeFileSync(join(pkgDir, "tsconfig.json"), JSON.stringify({ compilerOptions: { target: "ES2022" } }));
+    const base = gitCommit(root, "initial release at 1.0.0, with tsconfig.json");
+    // No edit at all before the check.
+
+    const r = run(["--json", "--base", base, pkgDir]);
+    const report = JSON.parse(r.out);
+    assert.equal(r.code, 0, `expected exit 0, got ${r.code}: ${r.out}`);
+    assert.equal(report.results[0].status, "pass");
+  });
+});
+
+// OWNER DECISION (#1187/#1265/#1313, point 2), Opus re-review at 6f6372c7:
+// the real @clossys/launcher builds with
+// `node scripts/pack-skills.mjs && tsc -p tsconfig.json`. `pack-skills.mjs`
+// itself is not packed (`scripts/` is outside `files`), but it GENERATES
+// `skill-catalogue/`, which is packed — so an edit to it alone changes what
+// a consumer installs with zero packed-file trace, exactly the tsconfig.json
+// blind spot one layer removed. Fixed generally (buildScriptInvokedFiles()
+// parses ANY `scripts.build`), exercised here with launcher's own shape.
+test("a package-local script scripts.build invokes directly (launcher's pack-skills.mjs shape) is a build input, even though it isn't packed itself", () => {
+  withRepo((root) => {
+    const pkgDir = makeFixture(root, { name: "launcher" });
+    const manifest = readManifest(pkgDir);
+    manifest.scripts = { build: "node scripts/pack-skills.mjs && tsc -p tsconfig.json" };
+    writeManifest(pkgDir, manifest);
+    mkdirSync(join(pkgDir, "scripts"), { recursive: true });
+    writeFileSync(join(pkgDir, "scripts", "pack-skills.mjs"), "// packs the skill catalogue\n");
+    const base = gitCommit(root, "initial release at 1.0.0, with a pack-skills build script");
+
+    // The invoking line in package.json never changes — only the script's
+    // own body does, which is exactly the case a packed-content diff alone
+    // cannot see (scripts/ is not shipped; package.json is unchanged).
+    writeFileSync(join(pkgDir, "scripts", "pack-skills.mjs"), "// packs the skill catalogue, v2\n");
+
+    const r = run(["--json", "--base", base, pkgDir]);
+    const report = JSON.parse(r.out);
+    assert.equal(r.code, 1, `expected exit 1, got ${r.code}: ${r.out}`);
+    assert.equal(report.results[0].status, "needs-bump");
+    assert.equal(report.results[0].buildInputsChanged, true);
+    assert.match(report.results[0].detail, /build input file\(s\)/);
+  });
+});
+
+test("a package-local build script that never changes does not spuriously require a bump", () => {
+  withRepo((root) => {
+    const pkgDir = makeFixture(root, { name: "launcher" });
+    const manifest = readManifest(pkgDir);
+    manifest.scripts = { build: "node scripts/pack-skills.mjs && tsc -p tsconfig.json" };
+    writeManifest(pkgDir, manifest);
+    mkdirSync(join(pkgDir, "scripts"), { recursive: true });
+    writeFileSync(join(pkgDir, "scripts", "pack-skills.mjs"), "// packs the skill catalogue\n");
+    const base = gitCommit(root, "initial release at 1.0.0, with a pack-skills build script");
+    // No edit at all before the check.
+
+    const r = run(["--json", "--base", base, pkgDir]);
+    const report = JSON.parse(r.out);
+    assert.equal(r.code, 0, `expected exit 0, got ${r.code}: ${r.out}`);
+    assert.equal(report.results[0].status, "pass");
+  });
+});
+
+// A pending changeset (#1265) also rescues a build-input-only change: the
+// PRECEDENCE rule (see the script's header comment) treats a build input
+// exactly like packed content, so the SAME alternative-to-a-bump path
+// applies here too.
+test("a pending changeset also satisfies a build-input-only change (tsconfig)", () => {
+  withRepo((root) => {
+    const pkgDir = makeFixture(root, { name: "probe" });
+    stubPackagesDir(root, "probe");
+    writeFileSync(join(pkgDir, "tsconfig.json"), JSON.stringify({ compilerOptions: { target: "ES2022" } }));
+    const base = gitCommit(root, "initial release at 1.0.0, with tsconfig.json");
+
+    writeFileSync(join(pkgDir, "tsconfig.json"), JSON.stringify({ compilerOptions: { target: "ES5" } }));
+    mkdirSync(join(root, ".changesets"), { recursive: true });
+    writeFileSync(join(root, ".changesets", "probe-fix.md"), "---\nprobe: patch\n---\n\nFix a bug.\n");
+
+    const r = run(["--json", "--base", base, pkgDir]);
+    const report = JSON.parse(r.out);
+    assert.equal(r.code, 0, `expected exit 0, got ${r.code}: ${r.out}`);
+    assert.equal(report.results[0].status, "pass");
+    assert.match(report.results[0].detail, /pending changeset covers it/);
   });
 });
 
@@ -546,6 +845,21 @@ test("--audit: passes a package whose source changed alongside a version bump", 
     const manifest = readManifest(pkgDir);
     manifest.version = "1.0.1";
     writeManifest(pkgDir, manifest);
+
+    const r = run(["--json", "--audit", pkgDir]);
+    const report = JSON.parse(r.out);
+    assert.equal(r.code, 0, `expected exit 0, got ${r.code}: ${r.out}`);
+    assert.equal(report.results[0].status, "pass");
+  });
+});
+
+test("--audit: an untracked, gitignored generated file inside the packed glob is NOT flagged", () => {
+  withRepo((root) => {
+    const pkgDir = makeFixture(root);
+    gitCommit(root, "initial release at 1.0.0");
+
+    writeFileSync(join(pkgDir, ".gitignore"), "src/generated.js\n");
+    writeFileSync(join(pkgDir, "src", "generated.js"), "export const generated = true;\n");
 
     const r = run(["--json", "--audit", pkgDir]);
     const report = JSON.parse(r.out);
@@ -712,7 +1026,41 @@ function retainQualificationRecord(root) {
   );
 }
 
-test("MUTATION (issue #920): a retained record that has gone stale forces needs-bump even though packed content is unchanged", (t) => {
+// Minimal local publication evidence for `hasLocalPublicationEvidence()` —
+// deliberately NOT the full `foundry-trusted-publication-v2` shape real
+// evidence files carry (registry proof, provenance, tarball digests): this
+// gate's own function reads only `candidate.name`/`candidate.version` from
+// this file (see its header for why it stops short of the full
+// cryptographic proof chain), so that is all a fixture needs to supply.
+function markLocallyPublished(root, name, version) {
+  const key = name.slice(name.indexOf("/") + 1);
+  mkdirSync(join(root, "governance/release-publications/later"), { recursive: true });
+  writeFileSync(join(root, "governance/release-publications/later", `${key}-${version}.json`), JSON.stringify({ candidate: { name, version } }));
+}
+
+// Same reasoning as check-release-readiness.test.mjs's own stubPackagesDir()
+// helper above: collect-changesets.mjs's loadChangesets() validates a
+// changeset's frontmatter package name against real packages/<dir>
+// directories on disk. qualificationFixtureRoot() already puts the fixture
+// package at root/packages/writer, so a changeset naming "writer" is
+// recognised without any extra stub here.
+//
+// PRECEDENCE (see the script's own header comment for the full statement):
+// these tests exercise all four published/unpublished x changeset-present/
+// absent combinations for a test-only (packed-content-unaffected) change,
+// plus the parallel devDependencies-only combinations #1313 already covered
+// without a changeset in play, plus #1330's tracked-only packedFiles axis
+// and #1265's own packed-change-with-changeset case (already covered
+// earlier in this file), so every carve-out this gate composes has direct
+// coverage of both its own branch and its interaction with the other one.
+
+// PRECEDENCE rule 3 (unpublished, no pending changeset): issue #920's
+// original strictness, unconditionally. This is the exact architect-0.1.7
+// shape a test-only edit, excluded from packed content by
+// `!src/**/*.test.ts`, with the version left untouched — records are
+// immutable, so a stale record on a still-queued version with nothing
+// promising a bump must keep failing.
+test("published x unpublished x changeset (1/4): a test-only change on a QUALIFIED-BUT-UNPUBLISHED package with NO pending changeset still requires a bump", (t) => {
   const { root, pkgDir } = qualificationFixtureRoot(t);
   gitCommit(root, "initial 0.3.3, not yet qualified");
   // currentQualificationJoins()'s packageTreeSha1 is read from the COMMITTED
@@ -720,7 +1068,7 @@ test("MUTATION (issue #920): a retained record that has gone stale forces needs-
   // "WORKTREE" mode — so the record must be retained, and every mutation
   // measured against it, with a real commit in between; an uncommitted
   // working-tree edit alone is invisible to it.
-  retainQualificationRecord(root); // computed from HEAD as it stands right now
+  retainQualificationRecord(root); // no markLocallyPublished() — this version has not shipped
   const base = gitCommit(root, "retain qualification record for 0.3.3");
 
   // The exact architect-0.1.7 shape: a test-only edit, excluded from packed
@@ -731,12 +1079,366 @@ test("MUTATION (issue #920): a retained record that has gone stale forces needs-
   gitCommit(root, "test-only edit (packed content unaffected, but the tree moved)");
 
   const r = run(["packages/writer", "--json", "--base", base], root);
-  assert.equal(r.code, 1, `expected exit 1, got ${r.code}: ${r.out}`);
+  assert.equal(r.code, 1, `expected exit 1 (still needs-bump — unpublished, no changeset), got ${r.code}: ${r.out}`);
   const report = JSON.parse(r.out);
   assert.equal(report.results[0].status, "needs-bump");
   assert.equal(report.results[0].staleRetainedRecord, true);
-  assert.match(report.results[0].detail, /no bump required for packed content, but the retained record for 0\.3\.3.*is now stale/);
+  assert.match(report.results[0].detail, /is now stale/);
+  assert.match(report.results[0].detail, /has no local publication evidence/);
+  // Point 3: the remedy is a NEW version, never "re-qualify" — a stale
+  // record is immutable and can never be replaced at the same version.
+  assert.doesNotMatch(report.results[0].detail, /[Rr]e-qualify/);
+  assert.match(report.results[0].detail, /can no longer be published as qualified/);
+  assert.match(report.results[0].detail, /remedy is a new version/);
+});
+
+// PRECEDENCE rule 2 (unpublished, but THIS pull request's own history adds a
+// pending changeset naming the package): #1265's own carve-out, composed
+// with #1313's — the changeset is the promise that a real bump follows in
+// the batched release PR, so the pull request may pass despite the stale,
+// still-queued record.
+test("published x unpublished x changeset (2/4): a test-only change on a QUALIFIED-BUT-UNPUBLISHED package WITH a pending changeset passes", (t) => {
+  const { root, pkgDir } = qualificationFixtureRoot(t);
+  gitCommit(root, "initial 0.3.3, not yet qualified");
+  retainQualificationRecord(root); // no markLocallyPublished() — this version has not shipped
+  const base = gitCommit(root, "retain qualification record for 0.3.3");
+
+  writeFileSync(join(pkgDir, "src", "index.test.ts"), "test('x', () => { expect(x).toBe(1); });\n");
+  mkdirSync(join(root, ".changesets"), { recursive: true });
+  writeFileSync(join(root, ".changesets", "writer-fix.md"), "---\nwriter: patch\n---\n\nFix a bug.\n");
+  gitCommit(root, "test-only edit plus a pending changeset (packed content unaffected, but the tree moved)");
+
+  const r = run(["packages/writer", "--json", "--base", base], root);
+  assert.equal(r.code, 0, `expected exit 0 (pass — a pending changeset rescues the unpublished case), got ${r.code}: ${r.out}`);
+  const report = JSON.parse(r.out);
+  assert.equal(report.results[0].status, "pass");
+  assert.equal(report.results[0].staleRetainedRecord, true);
+  assert.match(report.results[0].detail, /is stale/);
+  assert.match(report.results[0].detail, /pending changeset covers it/);
+});
+
+// -------------------------------------------------------- issue #1345
+//
+// pendingChangesetDetail() filters to changesets ADDED since the merge base
+// (issue #1322 item 2) — correct for the packed-content and build-input
+// paths, where the concern is a DIFFERENT, unrelated pull request's already
+// -pending changeset letting a packed-content change with no changeset of
+// its own ride through for free. But the stale-retained-record carve-out
+// (PRECEDENCE rule 2) is a different case: nothing about the package's
+// packed content changed at all, so a changeset that already names THIS
+// exact package — whether added by this pull request or already pending
+// before it branched — is not "riding through for free"; it already
+// promises the bump. pendingChangesetDetailForStaleRecord() drops the
+// merge-base filter for that carve-out only. These tests cover the four
+// cases issue #1345 calls out.
+
+test("issue #1345: a changeset already pending BEFORE this PR still rescues a test-only stale-record change for the SAME package", (t) => {
+  const { root, pkgDir } = qualificationFixtureRoot(t);
+  gitCommit(root, "initial 0.3.3, not yet qualified");
+  retainQualificationRecord(root); // no markLocallyPublished() — this version has not shipped
+  // The changeset is committed as part of the SAME commit this run's --base
+  // points at — it was already pending before this PR branched, not added
+  // by it.
+  mkdirSync(join(root, ".changesets"), { recursive: true });
+  writeFileSync(join(root, ".changesets", "writer-earlier-promise.md"), "---\nwriter: patch\n---\n\nAn earlier, unrelated pending changeset for the same package.\n");
+  const base = gitCommit(root, "retain qualification record for 0.3.3, with a pre-existing pending changeset");
+
+  // This PR's own change: test-only, packed content unaffected, no new
+  // changeset added — the pre-existing one already names "writer".
+  writeFileSync(join(pkgDir, "src", "index.test.ts"), "test('x', () => { expect(x).toBe(1); });\n");
+  gitCommit(root, "test-only edit (packed content unaffected, but the tree moved)");
+
+  const r = run(["packages/writer", "--json", "--base", base], root);
+  assert.equal(r.code, 0, `expected exit 0 (pass — the pre-existing changeset already covers this exact package), got ${r.code}: ${r.out}`);
+  const report = JSON.parse(r.out);
+  assert.equal(report.results[0].status, "pass");
+  assert.equal(report.results[0].staleRetainedRecord, true);
+  assert.match(report.results[0].detail, /is stale/);
+  assert.match(report.results[0].detail, /pending changeset covers it/);
+  assert.match(report.results[0].detail, /writer-earlier-promise\.md/);
+});
+
+test("issue #1345: a pre-existing changeset does NOT rescue a genuine packed-content change with no changeset of its own (packed-content path stays strict)", (t) => {
+  const { root, pkgDir } = qualificationFixtureRoot(t);
+  gitCommit(root, "initial 0.3.3, not yet qualified");
+  retainQualificationRecord(root);
+  mkdirSync(join(root, ".changesets"), { recursive: true });
+  writeFileSync(join(root, ".changesets", "writer-earlier-promise.md"), "---\nwriter: patch\n---\n\nAn earlier, unrelated pending changeset for the same package.\n");
+  const base = gitCommit(root, "retain qualification record for 0.3.3, with a pre-existing pending changeset");
+
+  // This PR's own change: genuine packed content moves (not just a test
+  // file), with no new changeset of its own and no version bump. The
+  // pre-existing changeset must not rescue this — that is exactly #1322
+  // item 2's case, and the fix for #1345 must not weaken it.
+  writeFileSync(join(pkgDir, "src", "index.ts"), "export const x = 2;\n");
+  gitCommit(root, "packed content changed, no new changeset, no bump");
+
+  const r = run(["packages/writer", "--json", "--base", base], root);
+  assert.equal(r.code, 1, `expected exit 1 -- the pre-existing changeset must not satisfy this PR's own packed change; got ${r.code}: ${r.out}`);
+  const report = JSON.parse(r.out);
+  assert.equal(report.results[0].status, "needs-bump");
+  assert.doesNotMatch(report.results[0].detail, /pending changeset covers it/);
+});
+
+test("issue #1345: a pending changeset naming a DIFFERENT package does not rescue a test-only stale-record change", (t) => {
+  const { root, pkgDir } = qualificationFixtureRoot(t);
+  stubPackagesDir(root, "some-other-package");
+  gitCommit(root, "initial 0.3.3, not yet qualified");
+  retainQualificationRecord(root);
+  mkdirSync(join(root, ".changesets"), { recursive: true });
+  writeFileSync(join(root, ".changesets", "other-fix.md"), "---\nsome-other-package: patch\n---\n\nUnrelated.\n");
+  const base = gitCommit(root, "retain qualification record for 0.3.3, with an unrelated package's pending changeset");
+
+  writeFileSync(join(pkgDir, "src", "index.test.ts"), "test('x', () => { expect(x).toBe(1); });\n");
+  gitCommit(root, "test-only edit (packed content unaffected, but the tree moved)");
+
+  const r = run(["packages/writer", "--json", "--base", base], root);
+  assert.equal(r.code, 1, `expected exit 1 (needs-bump — no changeset names "writer"), got ${r.code}: ${r.out}`);
+  const report = JSON.parse(r.out);
+  assert.equal(report.results[0].status, "needs-bump");
+  assert.equal(report.results[0].staleRetainedRecord, true);
+  assert.doesNotMatch(report.results[0].detail, /pending changeset covers it/);
+});
+
+test("issue #1345: an ALREADY-PUBLISHED package's stale record is unaffected by a pre-existing changeset (publication reason short-circuits first)", (t) => {
+  const { root, pkgDir } = qualificationFixtureRoot(t);
+  gitCommit(root, "initial 0.3.3, not yet qualified");
+  retainQualificationRecord(root);
+  markLocallyPublished(root, "@clossys/writer", "0.3.3");
+  mkdirSync(join(root, ".changesets"), { recursive: true });
+  writeFileSync(join(root, ".changesets", "writer-earlier-promise.md"), "---\nwriter: patch\n---\n\nAn earlier, unrelated pending changeset for the same package.\n");
+  const base = gitCommit(root, "retain qualification record for 0.3.3, mark it published, with a pre-existing pending changeset");
+
+  writeFileSync(join(pkgDir, "src", "index.test.ts"), "test('x', () => { expect(x).toBe(1); });\n");
+  gitCommit(root, "test-only edit (packed content unaffected, but the tree moved)");
+
+  const r = run(["packages/writer", "--json", "--base", base], root);
+  assert.equal(r.code, 0, `expected exit 0, got ${r.code}: ${r.out}`);
+  const report = JSON.parse(r.out);
+  assert.equal(report.results[0].status, "pass");
+  assert.equal(report.results[0].staleRetainedRecord, true);
+  assert.match(report.results[0].detail, /already published/);
+  assert.doesNotMatch(report.results[0].detail, /pending changeset covers it/);
+});
+
+// PRECEDENCE rule 1 (already published, no changeset in play): #1313's own
+// case — nothing will ever try to publish this version again, so the stale
+// record is historical, not a stranding in progress, and the pull request
+// passes with no changeset required at all.
+test("published x unpublished x changeset (3/4): a test-only change on an ALREADY-PUBLISHED package with NO pending changeset passes, with no changeset required", (t) => {
+  const { root, pkgDir } = qualificationFixtureRoot(t);
+  gitCommit(root, "initial 0.3.3, not yet qualified");
+  retainQualificationRecord(root); // computed from HEAD as it stands right now
+  markLocallyPublished(root, "@clossys/writer", "0.3.3");
+  const base = gitCommit(root, "retain qualification record for 0.3.3, and mark it published");
+
+  writeFileSync(join(pkgDir, "src", "index.test.ts"), "test('x', () => { expect(x).toBe(1); });\n");
+  gitCommit(root, "test-only edit (packed content unaffected, but the tree moved)");
+
+  const r = run(["packages/writer", "--json", "--base", base], root);
+  assert.equal(r.code, 0, `expected exit 0 (pass, no changeset required), got ${r.code}: ${r.out}`);
+  const report = JSON.parse(r.out);
+  assert.equal(report.results[0].status, "pass");
+  assert.equal(report.results[0].staleRetainedRecord, true);
+  assert.match(report.results[0].detail, /packed content is unaffected, so no version bump or changeset is required/);
+  assert.match(report.results[0].detail, /retained qualification record for 0\.3\.3.*is stale/);
   assert.match(report.results[0].detail, /packageTreeSha1/);
+  assert.match(report.results[0].detail, /already published/);
+  // Point 3: the remedy language must never claim a stale record can be
+  // re-qualified — it cannot, at any version, ever.
+  assert.doesNotMatch(report.results[0].detail, /[Rr]e-qualify/);
+});
+
+// PRECEDENCE rule 1, with a pending changeset ALSO present: publication
+// evidence is checked first and unconditionally — a version that already
+// shipped can never be published again, so the changeset has nothing left
+// to protect and its presence must not change the outcome or the reasoning
+// reported.
+test("published x unpublished x changeset (4/4): a test-only change on an ALREADY-PUBLISHED package WITH a pending changeset still passes for the publication reason, not the changeset", (t) => {
+  const { root, pkgDir } = qualificationFixtureRoot(t);
+  gitCommit(root, "initial 0.3.3, not yet qualified");
+  retainQualificationRecord(root);
+  markLocallyPublished(root, "@clossys/writer", "0.3.3");
+  const base = gitCommit(root, "retain qualification record for 0.3.3, and mark it published");
+
+  writeFileSync(join(pkgDir, "src", "index.test.ts"), "test('x', () => { expect(x).toBe(1); });\n");
+  mkdirSync(join(root, ".changesets"), { recursive: true });
+  writeFileSync(join(root, ".changesets", "writer-fix.md"), "---\nwriter: patch\n---\n\nFix a bug.\n");
+  gitCommit(root, "test-only edit plus a pending changeset (packed content unaffected, but the tree moved)");
+
+  const r = run(["packages/writer", "--json", "--base", base], root);
+  assert.equal(r.code, 0, `expected exit 0, got ${r.code}: ${r.out}`);
+  const report = JSON.parse(r.out);
+  assert.equal(report.results[0].status, "pass");
+  assert.equal(report.results[0].staleRetainedRecord, true);
+  // The publication reasoning, not the changeset carve-out's wording, is
+  // what explains this pass — precedence rule 1 short-circuits before rule
+  // 2 (the pending changeset) is even consulted.
+  assert.match(report.results[0].detail, /already published/);
+  assert.doesNotMatch(report.results[0].detail, /pending changeset covers it/);
+});
+
+// The companion case: once the SAME shape of record is shown locally
+// published, nothing will ever try to publish 0.3.3 again, so the
+// relaxation is safe — the pull request passes with no changeset, and the
+// finding is still reported for visibility. (Kept as its own test, matching
+// #1313's original name, alongside the four combination tests above.)
+test("a test-only change on an ALREADY-PUBLISHED package passes, with no changeset required (owner decision point 1)", (t) => {
+  const { root, pkgDir } = qualificationFixtureRoot(t);
+  gitCommit(root, "initial 0.3.3, not yet qualified");
+  // currentQualificationJoins()'s packageTreeSha1 is read from the COMMITTED
+  // tree at HEAD (`git rev-parse HEAD:<packageDir>`), even in its default
+  // "WORKTREE" mode — so the record must be retained, and every mutation
+  // measured against it, with a real commit in between; an uncommitted
+  // working-tree edit alone is invisible to it.
+  retainQualificationRecord(root); // computed from HEAD as it stands right now
+  markLocallyPublished(root, "@clossys/writer", "0.3.3");
+  const base = gitCommit(root, "retain qualification record for 0.3.3, and mark it published");
+
+  // The exact architect-0.1.7 shape: a test-only edit, excluded from packed
+  // content by `!src/**/*.test.ts`, with the version left untouched. This
+  // gate's own packed-content diff reports nothing changed — but the tree
+  // the record was qualified against has now moved.
+  writeFileSync(join(pkgDir, "src", "index.test.ts"), "test('x', () => { expect(x).toBe(1); });\n");
+  gitCommit(root, "test-only edit (packed content unaffected, but the tree moved)");
+
+  const r = run(["packages/writer", "--json", "--base", base], root);
+  assert.equal(r.code, 0, `expected exit 0 (pass, no changeset required), got ${r.code}: ${r.out}`);
+  const report = JSON.parse(r.out);
+  assert.equal(report.results[0].status, "pass");
+  assert.equal(report.results[0].staleRetainedRecord, true);
+  assert.match(report.results[0].detail, /packed content is unaffected, so no version bump or changeset is required/);
+  assert.match(report.results[0].detail, /retained qualification record for 0\.3\.3.*is stale/);
+  assert.match(report.results[0].detail, /packageTreeSha1/);
+  assert.match(report.results[0].detail, /already published/);
+  // Point 3: the remedy language must never claim a stale record can be
+  // re-qualified — it cannot, at any version, ever.
+  assert.doesNotMatch(report.results[0].detail, /[Rr]e-qualify/);
+});
+
+// Missing coverage the second-opinion review flagged directly: until now
+// only the `changed.length === 0` branch above was exercised. This mirrors
+// it for the OTHER branch that consults record staleness — a
+// devDependencies-only edit — for both the unpublished (strict) and
+// published (relaxed) cases.
+test("a devDependencies-only change on a QUALIFIED-BUT-UNPUBLISHED package still requires a bump", (t) => {
+  const { root, pkgDir } = qualificationFixtureRoot(t);
+  const manifest = readManifest(pkgDir);
+  manifest.devDependencies = { "some-lint-tool": "1.0.0" };
+  writeManifest(pkgDir, manifest);
+  gitCommit(root, "initial 0.3.3, with a devDependency, not yet qualified");
+  retainQualificationRecord(root);
+  const base = gitCommit(root, "retain qualification record for 0.3.3");
+
+  const bumped = readManifest(pkgDir);
+  bumped.devDependencies = { "some-lint-tool": "1.1.0" };
+  writeManifest(pkgDir, bumped);
+  gitCommit(root, "devDependencies-only edit (packed content unaffected, but the tree moved)");
+
+  const r = run(["packages/writer", "--json", "--base", base], root);
+  assert.equal(r.code, 1, `expected exit 1 (still needs-bump — unpublished), got ${r.code}: ${r.out}`);
+  const report = JSON.parse(r.out);
+  assert.equal(report.results[0].status, "needs-bump");
+  assert.equal(report.results[0].staleRetainedRecord, true);
+  assert.match(report.results[0].detail, /only devDependencies changed/);
+  assert.match(report.results[0].detail, /has no local publication evidence/);
+  assert.doesNotMatch(report.results[0].detail, /[Rr]e-qualify/);
+});
+
+test("issue #1345: a changeset already pending BEFORE this PR also rescues a devDependencies-only stale-record change for the SAME package", (t) => {
+  const { root, pkgDir } = qualificationFixtureRoot(t);
+  const manifest = readManifest(pkgDir);
+  manifest.devDependencies = { "some-lint-tool": "1.0.0" };
+  writeManifest(pkgDir, manifest);
+  gitCommit(root, "initial 0.3.3, with a devDependency, not yet qualified");
+  retainQualificationRecord(root);
+  mkdirSync(join(root, ".changesets"), { recursive: true });
+  writeFileSync(join(root, ".changesets", "writer-earlier-promise.md"), "---\nwriter: patch\n---\n\nAn earlier, unrelated pending changeset for the same package.\n");
+  const base = gitCommit(root, "retain qualification record for 0.3.3, with a pre-existing pending changeset");
+
+  const bumped = readManifest(pkgDir);
+  bumped.devDependencies = { "some-lint-tool": "1.1.0" };
+  writeManifest(pkgDir, bumped);
+  gitCommit(root, "devDependencies-only edit (packed content unaffected, but the tree moved)");
+
+  const r = run(["packages/writer", "--json", "--base", base], root);
+  assert.equal(r.code, 0, `expected exit 0 (pass — the pre-existing changeset already covers this exact package), got ${r.code}: ${r.out}`);
+  const report = JSON.parse(r.out);
+  assert.equal(report.results[0].status, "pass");
+  assert.equal(report.results[0].staleRetainedRecord, true);
+  assert.match(report.results[0].detail, /pending changeset covers it/);
+  assert.match(report.results[0].detail, /writer-earlier-promise\.md/);
+});
+
+test("a devDependencies-only change on an ALREADY-PUBLISHED package passes, with no changeset required", (t) => {
+  const { root, pkgDir } = qualificationFixtureRoot(t);
+  const manifest = readManifest(pkgDir);
+  manifest.devDependencies = { "some-lint-tool": "1.0.0" };
+  writeManifest(pkgDir, manifest);
+  gitCommit(root, "initial 0.3.3, with a devDependency, not yet qualified");
+  retainQualificationRecord(root);
+  markLocallyPublished(root, "@clossys/writer", "0.3.3");
+  const base = gitCommit(root, "retain qualification record for 0.3.3, and mark it published");
+
+  const bumped = readManifest(pkgDir);
+  bumped.devDependencies = { "some-lint-tool": "1.1.0" };
+  writeManifest(pkgDir, bumped);
+  gitCommit(root, "devDependencies-only edit (packed content unaffected, but the tree moved)");
+
+  const r = run(["packages/writer", "--json", "--base", base], root);
+  assert.equal(r.code, 0, `expected exit 0, got ${r.code}: ${r.out}`);
+  const report = JSON.parse(r.out);
+  assert.equal(report.results[0].status, "pass");
+  assert.equal(report.results[0].staleRetainedRecord, true);
+  assert.match(report.results[0].detail, /only devDependencies changed/);
+  assert.match(report.results[0].detail, /already published/);
+  assert.doesNotMatch(report.results[0].detail, /[Rr]e-qualify/);
+});
+
+// This gate no longer failing the pull request must NOT mean the stale
+// 0.3.3 record could ever ship. This test exercises the exact same
+// tree/manifest join `check-qualification-record-present.mjs` uses at
+// publish dispatch (`qualificationRecordPresenceForCandidate`), completely
+// independent of this script, and proves it still reports "stale" for the
+// identical tree the two passing tests above just accepted. Named narrowly:
+// this proves the RECORD JOIN still refuses a mismatched candidate — the
+// actual shipped-BYTES guarantee is a separate property, proven by
+// `validate-candidate-publish.mjs`'s tarball reverification immediately
+// before upload, which is untouched by this PR and not exercised here.
+test("the tree/manifest join a real publish dispatch relies on still reports this record as stale, even after the owner-decision passes above", (t) => {
+  const { root, pkgDir } = qualificationFixtureRoot(t);
+  gitCommit(root, "initial 0.3.3, not yet qualified");
+  retainQualificationRecord(root);
+  markLocallyPublished(root, "@clossys/writer", "0.3.3");
+  gitCommit(root, "retain qualification record for 0.3.3, and mark it published");
+
+  writeFileSync(join(pkgDir, "src", "index.test.ts"), "test('x', () => { expect(x).toBe(1); });\n");
+  gitCommit(root, "test-only edit (packed content unaffected, but the tree moved)");
+
+  const presence = qualificationRecordPresenceForCandidate({ root, candidate: { name: "@clossys/writer", version: "0.3.3" } });
+  assert.equal(presence.state, "stale", `expected the publish-time join to still refuse this record, got: ${JSON.stringify(presence)}`);
+  assert.ok(presence.staleFields.includes("packageTreeSha1"));
+});
+
+// A packed change is the case the owner decision explicitly leaves alone:
+// changing what actually ships still requires a version bump (or a pending
+// changeset) exactly as it always has, with or without a retained record in
+// play at all.
+test("a packed change without a changeset still fails, unaffected by the owner decision", (t) => {
+  const { root, pkgDir } = qualificationFixtureRoot(t);
+  gitCommit(root, "initial 0.3.3, not yet qualified");
+  retainQualificationRecord(root);
+  const base = gitCommit(root, "retain qualification record for 0.3.3");
+
+  // A real packed-content edit — src/index.ts ships, unlike the test file.
+  writeFileSync(join(pkgDir, "src", "index.ts"), "export const x = 2;\n");
+  gitCommit(root, "packed edit with no version bump and no changeset");
+
+  const r = run(["packages/writer", "--json", "--base", base], root);
+  assert.equal(r.code, 1, `expected exit 1, got ${r.code}: ${r.out}`);
+  const report = JSON.parse(r.out);
+  assert.equal(report.results[0].status, "needs-bump");
+  assert.match(report.results[0].detail, /packed file\(s\) changed/);
 });
 
 test("(issue #920, other direction) a retained record that still matches the tree leaves an unchanged package clean", (t) => {

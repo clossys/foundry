@@ -2,11 +2,25 @@ import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { readFileSync, readdirSync } from "node:fs";
 import { blobOid, parseStrictJson, qualificationPath, realPathTouches, sealedQualificationPathsAtTransitionBase, validatePrepublicationPrTail, validateRetainedCandidateQualification, validateTrioPublicationClosure } from "./lib/candidate-qualification.mjs";
+import { assignedToShard, resolveShardArgs } from "./lib/candidate-qualification-shard.mjs";
 import { loadTransitionPolicy } from "./lib/package-identity-transition.mjs";
 import { TRIO_PUBLICATION_PATH, TRIO_PUBLICATION_TRANSITION_BASE, validateTrioFirstPublication } from "./lib/release-publication-cohort.mjs";
 import { TRIO_COHORT_PATH, TRIO_QUARANTINE_PATH, validateTrioQualificationState } from "./lib/release-qualification-cohort.mjs";
 import { TRIO_CONTROL_TAIL_AUTHORIZATION_PATH } from "./lib/release-qualification-trio.mjs";
 import { readValidatedLaterPublishedPackages } from "./lib/release-later-publication.mjs";
+
+// #1257: sharding support. See scripts/lib/candidate-qualification-shard.mjs's
+// own header for the full reasoning -- this script's real cost is the
+// per-record loop below, and that file's assignedToShard is what lets this
+// script skip RE-DERIVING a record that belongs to a different shard while
+// still counting it as present for the cross-record checks that need to see
+// every record's path.
+const shardResult = resolveShardArgs(process.argv.slice(2));
+if (shardResult.error) {
+  console.error("check-candidate-qualification: " + shardResult.error);
+  process.exit(2);
+}
+const shard = shardResult.shard;
 
 const transition = loadTransitionPolicy("governance/package-identity-transition.json");
 const sourceIdentity = JSON.parse(readFileSync("package-scope.json", "utf8"));
@@ -60,7 +74,21 @@ for (const sealedPath of sealedQualificationPaths) {
   failed = true;
 }
 const recordFindings = new Map();
-for (const { path, record } of records) {
+for (const [index, { path, record }] of records.entries()) {
+  if (!assignedToShard(index, shard)) {
+    // A DIFFERENT shard owns re-deriving this record for real (see the
+    // header comment on assignedToShard above). Recording `[]` -- not
+    // skipping the map entry -- is deliberate: validatedRecordPaths below
+    // reads recordFindings.get(path)?.length === 0 to decide whether a path
+    // counts as validated for cross-record purposes, and an ABSENT entry
+    // would read as "not validated" (`undefined?.length === 0` is false),
+    // which would make every OTHER shard's cross-record checks (sealed-set
+    // membership, cohort/quarantine consistency, prepublication tail
+    // chaining) fail on records that are perfectly fine, just not THIS
+    // shard's to re-derive.
+    recordFindings.set(path, []);
+    continue;
+  }
   try {
     const historical = historicalRecord(record);
     const sealedBase = sealedQualificationPaths.has(path) ? TRIO_PUBLICATION_TRANSITION_BASE : null;
@@ -105,9 +133,9 @@ if (controlTailAuthorization) {
 if (publication && publicationClosureFindings.length > 0) {
   try { immutableIntroducedBytes(publication.path); } catch (error) { console.error("[trio-publication-history] " + publication.path + ": " + error.message); failed = true; }
 }
-for (const { path, record } of records) {
+for (const [index, { path, record }] of records.entries()) {
   const findings = recordFindings.get(path) ?? [];
-  if (record.timing === "pre-publication" && record.candidate?.name?.startsWith(`${sourceIdentity.scope}/`)) findings.push(...validatePrepublicationPrTail(record, { recordPath: path, trioRecords, forwardRecords, cohort: cohort?.value, cohortBytes: cohort?.bytes, quarantine: quarantine?.value, controlTailAuthorization: controlTailAuthorization?.value, publication: publication?.value, publicationClosureValid: publicationStateValid }));
+  if (assignedToShard(index, shard) && record.timing === "pre-publication" && record.candidate?.name?.startsWith(`${sourceIdentity.scope}/`)) findings.push(...validatePrepublicationPrTail(record, { recordPath: path, trioRecords, forwardRecords, cohort: cohort?.value, cohortBytes: cohort?.bytes, quarantine: quarantine?.value, controlTailAuthorization: controlTailAuthorization?.value, publication: publication?.value, publicationClosureValid: publicationStateValid }));
   for (const finding of findings) console.error("[" + finding.rule + "] " + path + ": " + finding.message);
   failed ||= findings.length > 0;
 }

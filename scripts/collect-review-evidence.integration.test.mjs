@@ -23,7 +23,12 @@ import test from "node:test";
 
 import { checkReviewEvidence } from "@clossys/inspector";
 
-import { buildReviewEvidenceBundle, buildReviewEvidenceOptions, buildReviewPolicy } from "./collect-review-evidence.mjs";
+import {
+  buildReviewEvidenceBundle,
+  buildReviewEvidenceOptions,
+  buildReviewPolicy,
+  resolveMergeGroupHead,
+} from "./collect-review-evidence.mjs";
 
 const HEAD = "a".repeat(40);
 const OTHER_HEAD = "c".repeat(40);
@@ -141,7 +146,18 @@ test("INDETERMINATE — evidence bound to a DIFFERENT head than the one under te
   assert.notEqual(report.result.verdict, "satisfied");
 });
 
-test("INDETERMINATE — a stale review inside an otherwise-current bundle (force-push after approval), never folded into violated", () => {
+test("SATISFIED — a stale review inside an otherwise-current bundle (force-push after approval) is excluded, never folded into indeterminate", () => {
+  // This is the merge-train incident (#1187, #1297, #1302): a rate-limited
+  // bot leaves one review against an earlier push and cannot re-review. The
+  // outer headShaUnderTest matches the bundle here (unlike the DIFFERENT-
+  // head case above) — this is the INNER mismatch: one review's own headSha
+  // disagrees with the bundle's. validateReviewEvidence still reports that
+  // as "stale-evidence" (packages/controller/src/review/validate.ts is
+  // unchanged), but review-evidence.ts's checkReviewEvidence now carves a
+  // stale REVIEW finding out of its evaluability set before deciding a
+  // verdict (see that file's own header, "ONE CARVE-OUT: A STALE REVIEW
+  // RECORD IS NEITHER") rather than folding the whole check to
+  // indeterminate over one record that could never have counted anyway.
   const payload = fullGraphQlPayload({
     reviews: {
       pageInfo: { hasNextPage: false, hasPreviousPage: false },
@@ -153,14 +169,91 @@ test("INDETERMINATE — a stale review inside an otherwise-current bundle (force
   const options = buildReviewEvidenceOptions({ headShaUnderTest: HEAD, requireReviewPresence: false });
 
   const report = checkReviewEvidence(evidence, policy, options);
-  assert.equal(report.result.verdict, "indeterminate", JSON.stringify(report.result));
-  // The outer headShaUnderTest matches the bundle here (unlike the case
-  // above) — this is the INNER mismatch: one review's own headSha disagrees
-  // with the bundle's. validateReviewEvidence reports that as
-  // "stale-evidence", which review-evidence.ts's evaluabilityReason() maps
-  // to "evidence-malformed" (every evaluability rule except
-  // pagination-incomplete/required-check-indeterminate does) — still
-  // indeterminate, never violated.
-  assert.equal(report.result.reason, "evidence-malformed");
+  assert.equal(report.result.verdict, "satisfied", JSON.stringify(report.result));
   assert.ok(evidence.reviews[0].headSha !== evidence.headSha);
+  // Reported, not dropped: the stale record still shows up on its own field.
+  assert.equal(report.staleReviews.length, 1);
+  assert.equal(report.staleReviews[0].rule, "stale-evidence");
+  // And it still never counts as a provider observed AT the current head.
+  assert.deepEqual(report.providersObserved, []);
+});
+
+test("VIOLATED — a reviewer's own latest decisive review requested changes at a stale head (second opinion on #1311)", () => {
+  // The case the first pass of this fix missed: a human requests changes,
+  // then the author pushes with no new review from that reviewer. GitHub's
+  // own reviewDecision would still say CHANGES_REQUESTED, and this repository
+  // carries no branch-protection `pull_request` review rule of its own —
+  // verify-standards is the only mechanical enforcement. An ordinary push
+  // must not silently clear that objection.
+  const payload = fullGraphQlPayload({
+    reviews: {
+      pageInfo: { hasNextPage: false, hasPreviousPage: false },
+      nodes: [{ id: "R1", state: "CHANGES_REQUESTED", submittedAt: "2026-09-14T07:53:00Z", commit: { oid: OTHER_HEAD }, author: { login: "a-reviewer" } }],
+    },
+  });
+  const evidence = buildReviewEvidenceBundle(payload);
+  const policy = buildReviewPolicy({});
+  const options = buildReviewEvidenceOptions({ headShaUnderTest: HEAD, requireReviewPresence: false });
+
+  const report = checkReviewEvidence(evidence, policy, options);
+  assert.equal(report.result.verdict, "violated", JSON.stringify(report.result));
+  assert.ok(report.result.findings.some((finding) => finding.rule === "stale-changes-requested"));
+  // Still excluded from evaluability too — the carve-out and the violation
+  // are two separate facts about the same record.
+  assert.equal(report.staleReviews.length, 1);
+});
+
+test("SATISFIED — that same reviewer's later approval, at the current head, clears the stale changes-requested", () => {
+  const payload = fullGraphQlPayload({
+    reviews: {
+      pageInfo: { hasNextPage: false, hasPreviousPage: false },
+      nodes: [
+        { id: "R1", state: "CHANGES_REQUESTED", submittedAt: "2026-09-14T07:53:00Z", commit: { oid: OTHER_HEAD }, author: { login: "a-reviewer" } },
+        { id: "R2", state: "APPROVED", submittedAt: "2026-09-14T09:00:00Z", commit: { oid: HEAD }, author: { login: "a-reviewer" } },
+      ],
+    },
+  });
+  const evidence = buildReviewEvidenceBundle(payload);
+  const policy = buildReviewPolicy({});
+  const options = buildReviewEvidenceOptions({ headShaUnderTest: HEAD, requireReviewPresence: false });
+
+  const report = checkReviewEvidence(evidence, policy, options);
+  assert.equal(report.result.verdict, "satisfied", JSON.stringify(report.result));
+});
+
+// Merge-queue runs (#1253), against the real compiled check. The commit under
+// test is the queued PR's own head, proven to be the group commit's second parent.
+const GROUP_HEAD = "d".repeat(40);
+const QUEUE_BASE = "e".repeat(40);
+
+function mergeGroupReport({ payload, headShaUnderTest, contained }) {
+  const resolved = resolveMergeGroupHead({
+    groupHeadSha: GROUP_HEAD,
+    prHead: headShaUnderTest,
+    readSecondParent: () => (contained ? headShaUnderTest : OTHER_HEAD),
+  });
+  assert.equal(resolved.error, undefined);
+  const options = buildReviewEvidenceOptions({
+    headShaUnderTest: resolved.headShaUnderTest,
+    requireReviewPresence: false,
+    mergeGroup: resolved.mergeGroup,
+  });
+  return checkReviewEvidence(buildReviewEvidenceBundle(payload), buildReviewPolicy({}), options);
+}
+
+test("merge group SATISFIED — the PR head is the group commit's second parent and the evidence is bound to it", () => {
+  const report = mergeGroupReport({ payload: fullGraphQlPayload(), headShaUnderTest: HEAD, contained: true });
+  assert.equal(report.result.verdict, "satisfied", JSON.stringify(report.result));
+});
+
+test("merge group INDETERMINATE — the queue ref's base sha as the commit under test (the #1253 defect) still mismatches", () => {
+  const report = mergeGroupReport({ payload: fullGraphQlPayload(), headShaUnderTest: QUEUE_BASE, contained: true });
+  assert.equal(report.result.verdict, "indeterminate", JSON.stringify(report.result));
+  assert.equal(report.result.reason, "evidence-head-mismatch");
+});
+
+test("merge group INDETERMINATE — a PR head that is not what the group merges", () => {
+  const report = mergeGroupReport({ payload: fullGraphQlPayload(), headShaUnderTest: HEAD, contained: false });
+  assert.equal(report.result.verdict, "indeterminate", JSON.stringify(report.result));
+  assert.equal(report.result.reason, "merge-group-head-not-contained");
 });

@@ -282,3 +282,7 @@ The `./providers/resend` subpath exports `RESEND_DECLARED_RANGE`,
 `ResendClientFactory`, `ResendEmailPayload`, `ResendWebhookClientFactory`,
 `ResendWebhookEvent`, `ResendWebhookHeaders`, and
 `VerifyResendWebhookInput`.
+
+## Changelog
+
+Release notes for every version are in the [changelog](https://github.com/clossys/foundry/blob/main/docs/changelogs/messenger.md), kept in the public repository rather than in the installed package.

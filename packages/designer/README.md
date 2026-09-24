@@ -753,7 +753,8 @@ component-based way to get this timing, which is why it's a separate
 piece rather than something `ThemeProvider` does automatically:
 
 ```tsx
-// app/layout.tsx (Next.js App Router) — first thing in <head>
+// Your Next.js app's root layout (the "layout.tsx" file in the App
+// Router's "app" directory) — first thing in <head>
 import { getThemeInitScript } from "@clossys/designer/theme";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -3175,7 +3176,8 @@ toast that was queued a moment before the user clicked a link.
 ### `Shell`
 
 ```tsx
-// app/layout.tsx
+// Your Next.js app's root layout (the "layout.tsx" file in the App
+// Router's "app" directory)
 import { Shell } from "@clossys/designer/shell";
 import { Link } from "@clossys/designer/atoms";
 
@@ -3298,7 +3300,8 @@ first, and a site header/footer/nav survive it exactly the way `Shell`'s
 own regions do, which is what puts all four here rather than in `blocks`.
 
 ```tsx
-// app/layout.tsx
+// Your Next.js app's root layout (the "layout.tsx" file in the App
+// Router's "app" directory)
 import { NavShell, SiteFooter, SiteHeader, SkipLink } from "@clossys/designer/shell";
 import { Link } from "@clossys/designer/atoms";
 
@@ -3416,7 +3419,8 @@ on-screen position is fixed and independent of where in the React tree it's
 rendered, since it portals straight to `document.body`:
 
 ```tsx
-// app/layout.tsx
+// Your Next.js app's root layout (the "layout.tsx" file in the App
+// Router's "app" directory)
 import { Shell, Toaster } from "@clossys/designer/shell";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -3955,7 +3959,7 @@ name: find its current kebab-case name in the target version (check
 THIRD-PARTY-NOTICES.md's rename table first), copy its `<svg>` children
 into `icon-source-data.json` as `[tag, { ...attrs }]` tuples, update the
 pinned-version references in THIRD-PARTY-NOTICES.md and this package's
-CHANGELOG.md, then run `node scripts/generate-icons.mjs` and `npm test`
+changelog, then run `node scripts/generate-icons.mjs` and `npm test`
 — `src/icons/icons.test.ts` and `src/icons/tree-shake.test.ts` both
 re-verify the regenerated data. See `scripts/generate-icons.mjs`'s own
 header comment for the full procedure, including adding a genuinely new
@@ -4133,6 +4137,9 @@ not a grab-bag).
 | `TestimonialProps` | type | Props for `Testimonial`: `quote`, `attributorName`, `attributorRole`, `avatarSrc`/`avatarAlt` (a discriminated pair — both or neither), `className`, `style`, plus every native `<figure>` attribute except `children`. |
 | `ArticleBody` | component | Thin, token-styled container for pre-structured long-form content (real `<h2>`/`<p>`/`<ul>`/... children) — no markdown parsing, no content-shape schema. |
 | `ArticleBodyProps` | type | Props for `ArticleBody`: `children`, `className`, `style`, plus every native `<article>` attribute. |
+| `SectionFrame` | component | Full-bleed marketing section band: a `ground` surface, vertical section rhythm, horizontal page padding, and a measured inner column. Sets `data-designer-section-frame` on its outer `<section>`. Compose `ArticleBody`, `Stat`, and other blocks that do not own their own band inside it. |
+| `SectionFrameProps` | type | Props for `SectionFrame`: `ground` (default `"base"`), `measure` (default `"content"`), `children`, `className`, `style`, plus every native `<section>` attribute. |
+| `SectionMeasure` | type | `"content" \| "wide" \| "prose"`. How wide `SectionFrame`'s inner column is: it maps to the `--ui-width-content-max`, `--ui-width-wide-max`, or `--ui-width-prose-max` token. |
 | `mergeUiClasses` | function | Merges token-aware Tailwind utility classes with last-argument precedence; used by surface-level compositions built from UI primitives. |
 | `Shell` | component | The persistent application frame. Carries `Shell.Header`, `Shell.SideNav`, `Shell.Main`, `Shell.Rail`, `Shell.Footer`. |
 | `ShellProps` | type | Props for `Shell`: `children` (any subset of the five slots above, in any order), plus every native `<div>` attribute. |
@@ -4489,6 +4496,112 @@ clear 3:1 on their own and carry no exception at all — if a future
 palette edit ever moved one of dark's slots under the floor, it would
 report as a genuine, unrelieved `"below-threshold"` finding.
 
+## Identity kit (`@clossys/designer/tokens`) — #1210
+
+The master brand mark contract above (`validateMasterMark`) validates a
+consumer-SUPPLIED SVG. `identity-kit.ts`/`identity-checks.ts` are the
+generative and judgement halves that produce one in the first place, per
+[#1210](https://github.com/clossys/foundry/issues/1210): every new product
+gets a usable logo set in v0 without waiting on a human designer, and a
+custom mark never blocks it.
+
+**Two ways a direction is born.** `generateIdentityDirections(brand, tokens)`
+deterministically builds three candidates — a wordmark (a roundel monogram
+plus the brand name) and two monogram-only shapes (circle, rounded square)
+— from a brand name and already-resolved token literals; the same input
+always produces byte-identical SVG, never a fresh roll. `adoptSuppliedMark(
+{ brand, suppliedSvg, tokens })` instead validates and derives the same
+variant set from a client's existing logo, or a human designer's or image
+model's output — the `found` -> adopted path #1210 names. Neither path does
+free-hand drawing: both compose the same small set of primitives (a glyph, a
+badge wrapper, `recolorSvg`), the "deterministic mechanics" split #1187's
+"who does what" table draws for this package's role.
+
+**Seven variant roles**, every direction: `primary` (the flagship lockup,
+for light surfaces), `mark` (icon/monogram alone), `mono` (`mark`
+recoloured to `currentColor`, single-colour legible), `light` (`primary`
+again, its own named file), `dark` (`primary` recoloured to the
+inverse-ink token, for dark surfaces), `favicon` (`mark` via `currentColor`,
+built the same way as `mono`), and `appIcon` (`mark` composed onto an
+accent-filled rounded-square badge, its own viewBox scaled and centred to
+fit the badge). For a GENERATED direction, `primary`/`mark` are
+ink-coloured (drawn via `currentColor` under a `color:` style set to the
+`ink` token); for an ADOPTED direction, `primary`/`mark` are the supplied
+SVG's own colours, unchanged — only `mono`/`light`/`dark`/`favicon`/
+`appIcon` are recoloured onto token colours in both cases.
+
+**Four checks judge every direction**, mirroring the "package owns
+judgment, every check reports satisfied/violated/indeterminate" split this
+repository holds every gate to:
+
+| Export | Kind | Purpose |
+| --- | --- | --- |
+| `checkIdentityContrast(tokens)` | function | WCAG contrast (via `contrastRatio` from `color.ts`) on the four pairs a shipped kit actually composites: `primary`/`mark` (ink on the light surface), `dark` (inverse ink on the dark surface), `appIcon` (badge glyph on its accent background). Floor: `IDENTITY_MIN_CONTRAST` (`3`, WCAG 1.4.11 non-text). |
+| `checkMinimumSize(svg)` | function | A declared-geometry PROXY for legibility at small sizes: the finest `stroke-width` in `svg` as a fraction of its own `viewBox`'s shorter side. This package does not rasterize, so this is a heuristic signal, not a rendered measurement — see the function's own header. |
+| `checkClearSpace(svg)` | function | Reads the `data-clear-space` ratio every generated/adopted variant declares on its root `<svg>` and checks it against a minimum. Declared, not measured, for the same reason as minimum size. |
+| `checkSingleColourLegibility(svg)` | function | Structural: the `mono` variant must paint through `currentColor` alone, with no other explicit `fill`/`stroke` colour literal left over. |
+| `judgeIdentityKit(direction, tokens)` | function | Runs all four against one `IdentityDirection` and returns a per-check `{ verdict, findings }` plus an overall `verdict`, flattened `findings`, and `ok` — `true` only when every check is `satisfied`; an `indeterminate` check never counts as a pass, and any `indeterminate` check makes the overall `verdict` `indeterminate` too (fails closed), even alongside a `violated` one. |
+| `identityKitReport(direction, tokens, version)` | function | Builds the full report shape the repository contract docs/contracts/check-output-envelope.json declares (not shipped with this package) — `{ package, version, verdict, summary, findings, nextAction? }` — for one direction. |
+
+An `indeterminate` verdict is never a silent pass: a check that could not
+actually evaluate its input (no `viewBox`, no `data-clear-space` declared at
+all) reports that plainly, the same "a gate that passes because it checked
+nothing is worse than no gate" discipline the WCAG contrast gate above
+holds to.
+
+`IdentityVerdict` (`satisfied`/`violated`/`indeterminate`) and
+`IdentityFinding` (`{ rule, severity, message, path? }`) are this package's
+own instance of the shared vocabulary the repository contract docs/contracts/
+check-output-envelope.json declares (issue #1174/#1190; that contract does
+not ship with this package) — not a second, locally-invented verdict or
+finding shape.
+
+**Outputs and the asset roster.** This package does not write files or
+register anything itself — `generateIdentityDirections`/`adoptSuppliedMark`
+return SVG strings; a caller (the coding agent driving a real engagement,
+or Launcher's compose step) writes the chosen direction's variants to
+`clossys/designer/assets/` and, for the roles a static-asset roster names
+(`favicon-svg` at minimum, directly from a variant's SVG), registers them
+where Publisher's own asset-roster reader (`@clossys/publisher`'s
+`deriveBrandAssetRoster`/`checkBrandAssetRoster`) expects them — see that
+package's README for the full role list and required pixel sizes for the
+raster roles this package does not produce.
+
+```ts
+import {
+  generateIdentityDirections,
+  identityKitReport,
+  judgeIdentityKit,
+  type IdentityTokenInput,
+} from "@clossys/designer/tokens";
+
+const tokens: IdentityTokenInput = {
+  ink: "oklch(0.2178 0 0)",
+  onInverse: "oklch(0.9702 0 0)",
+  surfaceBase: "oklch(0.9702 0 0)",
+  surfaceInverse: "oklch(0.2178 0 0)",
+  accent: "oklch(0.4748 0 0)",
+  onAccent: "oklch(0.9702 0 0)",
+  fontFamily: "system-ui, sans-serif",
+};
+
+const [wordmark, circle, square] = generateIdentityDirections({ name: "Acme Rockets" }, tokens);
+const judgement = judgeIdentityKit(wordmark, tokens); // { ok, verdict, findings, checks: { contrast, "minimum-size", "clear-space", "single-colour-legibility" } }
+```
+
+```ts
+import { identityKitReport } from "@clossys/designer/tokens";
+
+identityKitReport(wordmark, tokens, "0.5.0");
+// {
+//   package: "@clossys/designer",
+//   version: "0.5.0",
+//   verdict: "satisfied",
+//   summary: "The \"wordmark\" identity kit satisfies all four checks (contrast, minimum size, clear space, single-colour legibility).",
+//   findings: [],
+// }
+```
+
 ## Environment-declaration-consistency gate (`@clossys/designer/gate`, `designer-environment-check`)
 
 "Server Components" above documents `RENDER_ENVIRONMENT` — a plain
@@ -4678,3 +4791,7 @@ a whole.
 ## Licence
 
 MIT
+
+## Changelog
+
+Release notes for every version are in the [changelog](https://github.com/clossys/foundry/blob/main/docs/changelogs/designer.md), kept in the public repository rather than in the installed package.

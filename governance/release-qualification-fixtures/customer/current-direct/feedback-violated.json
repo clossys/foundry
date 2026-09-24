@@ -1,0 +1,19 @@
+{
+  "speaker": "customer",
+  "inhabitedAs": "target-audience",
+  "audienceId": "audience-one",
+  "persona": {
+    "name": "Jordan"
+  },
+  "stance": "I came back because the unclear offer on my first visit left me unsure what I would get.",
+  "intent": "feedback",
+  "familiarity": "returning",
+  "topic": "signing up from the landing page",
+  "functional": [],
+  "experience": [],
+  "expectations": [],
+  "blockedMe": "no",
+  "whatIDidInstead": "I scrolled back up and found the form myself.",
+  "wantedInstead": "One click from the headline straight to the form.",
+  "stillForMe": "yes"
+}

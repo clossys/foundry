@@ -109,29 +109,146 @@
 import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
 import { join, relative, extname, resolve, dirname, basename, sep } from "node:path";
 import { fileURLToPath } from "node:url";
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
+import { changelogPathForPackageDir, changelogRelPath } from "./lib/changelog-location.mjs";
+
+// Flags that consume a value, per this script's own usage banner below
+// (`--class N`, `--allowlist <file>`). Every other `--`-prefixed token
+// (`--json`, `--include-built`, `--no-allowlist`) is a bare boolean switch.
+// A value-taking flag accepts either the space-separated form (`--class 1`,
+// consumed as the NEXT token) or the equals form (`--class=1`, self-
+// contained in one token) -- issue #1342: the equals form used to be
+// silently ignored (`flagValue()`'s old exact-string `indexOf("--class")`
+// lookup could never match the literal token `"--class=1"`), leaving
+// `classFilter`/`explicit` `undefined` with no error, silently scanning
+// every class or falling back to the default allowlist instead of doing
+// what the caller asked. Both forms have to be told apart positionally, in
+// one left-to-right pass over `argv` -- a naive `argv.filter(a =>
+// !a.startsWith("--"))` cannot tell a flag's own value apart from a real
+// directory argument, and previously didn't: `--class 1` left `"1"` in the
+// positional pool, which the multi-directory dispatch below then tried to
+// scan as a second directory (`no such directory: 1`, exit 2) — a real
+// regression #1341 closed for the space form; this closes the equals form.
+const VALUE_FLAGS = new Set(["--class", "--allowlist"]);
 
 const argv = process.argv.slice(2);
-const flags = new Set(argv.filter((a) => a.startsWith("--")));
-const positional = argv.filter((a) => !a.startsWith("--"));
-const root = positional[0];
+const flags = new Set();
+const flagValues = new Map();
+const positional = [];
+// The exact `--`-prefixed tokens (flags AND the values they consumed, in
+// their original relative order) — everything in `argv` that is NOT a
+// directory positional. This is what the multi-directory dispatch below
+// forwards to each per-directory child invocation, so a child sees the
+// identical `--class 1` / `--class=1` / `--allowlist <file>` its parent was
+// given, rather than losing the value the way plain `argv.filter(a =>
+// a.startsWith("--"))` would (it would forward `--class` alone, silently
+// dropping the `1` that gives it meaning).
+const nonPositionalArgs = [];
 
-function flagValue(name) {
-  const i = argv.indexOf(name);
-  return i >= 0 ? argv[i + 1] : undefined;
+for (let i = 0; i < argv.length; i++) {
+  const arg = argv[i];
+  if (!arg.startsWith("--")) {
+    positional.push(arg);
+    continue;
+  }
+  const eq = arg.indexOf("=");
+  const eqFlagName = eq === -1 ? null : arg.slice(0, eq);
+  if (eqFlagName !== null && VALUE_FLAGS.has(eqFlagName)) {
+    // Equals form: self-contained in one token, so no lookahead. An empty
+    // value (`--class=`) has just as little meaning as a missing one and
+    // must fail closed the same way, not silently become "no filter".
+    const value = arg.slice(eq + 1);
+    if (value === "") {
+      console.error(`check-contamination-classes: ${eqFlagName} requires a value`);
+      process.exit(2);
+    }
+    flags.add(eqFlagName);
+    nonPositionalArgs.push(arg); // forward the exact "--flag=value" token as given
+    if (!flagValues.has(eqFlagName)) flagValues.set(eqFlagName, value); // first occurrence wins, matching the space form below
+    continue;
+  }
+  flags.add(arg);
+  nonPositionalArgs.push(arg);
+  if (!VALUE_FLAGS.has(arg)) continue;
+  const value = argv[i + 1];
+  // A value-taking flag with nothing after it, or immediately followed by
+  // another flag, has no value to consume — fail closed with a clear error
+  // rather than silently treating the next flag (or nothing) as this
+  // flag's value.
+  if (value === undefined || value.startsWith("--")) {
+    console.error(`check-contamination-classes: ${arg} requires a value`);
+    process.exit(2);
+  }
+  if (!flagValues.has(arg)) flagValues.set(arg, value); // first occurrence wins, matching the old argv.indexOf() lookup
+  nonPositionalArgs.push(value);
+  i += 1; // consume the value so it never reaches `positional`
 }
 
-if (!root) {
+function flagValue(name) {
+  return flagValues.get(name);
+}
+
+if (positional.length === 0) {
   console.error(
-    "usage: check-contamination-classes.mjs <dir> [--json] [--class N] [--include-built]\n" +
+    "usage: check-contamination-classes.mjs <dir> [<dir> ...] [--json] [--class N] [--include-built]\n" +
       "                                        [--allowlist <file>] [--no-allowlist]",
   );
   process.exit(2);
 }
-if (!existsSync(root)) {
-  console.error(`check-contamination-classes: no such directory: ${root}`);
-  process.exit(2);
+
+// Every positional argument names a directory to scan — not just the first
+// one (#1328). Validated up front, before any scanning starts, so a typo in
+// the Nth directory of an 18-package merge-train invocation is reported as a
+// clear "could not run" failure rather than silently ignored, or discovered
+// only after the other 17 were needlessly scanned.
+for (const dir of positional) {
+  if (!existsSync(dir)) {
+    console.error(`check-contamination-classes: no such directory: ${dir}`);
+    process.exit(2);
+  }
 }
+
+// More than one directory: re-invoke this same script once per directory —
+// exactly what CI's own per-package shell loop already does today (see
+// package.json's "check:contamination" and .github/workflows/ci.yml) — so
+// scanning N directories in one invocation has the same behavior and cost as
+// N separate ones, and every directory is actually scanned rather than only
+// positional[0] silently winning. Each child's own report is preserved in
+// full; the parent only aggregates the exit code (worst of: 2 beats 1 beats
+// 0, matching the single-directory precedence below) and, for --json, the
+// per-directory objects into one array rather than concatenated raw JSON.
+if (positional.length > 1) {
+  const selfPath = fileURLToPath(import.meta.url);
+  const passthroughArgs = nonPositionalArgs;
+  const asJson = flags.has("--json");
+  const jsonResults = [];
+  let worstExit = 0;
+  for (const dir of positional) {
+    const result = spawnSync(process.execPath, [selfPath, dir, ...passthroughArgs], {
+      encoding: "utf8",
+    });
+    const code = result.status ?? 2;
+    if (asJson) {
+      let parsed;
+      try {
+        parsed = JSON.parse(result.stdout);
+      } catch {
+        parsed = { root: resolve(dir), parseError: true, exitCode: code, stdout: result.stdout, stderr: result.stderr };
+      }
+      jsonResults.push(parsed);
+    } else {
+      console.log(`=== ${dir} ===`);
+      if (result.stdout) process.stdout.write(result.stdout);
+      if (result.stderr) process.stderr.write(result.stderr);
+    }
+    if (code === 2) worstExit = 2;
+    else if (code === 1 && worstExit !== 2) worstExit = 1;
+  }
+  if (asJson) console.log(JSON.stringify(jsonResults, null, 2));
+  process.exit(worstExit);
+}
+
+const root = positional[0];
 
 const classFilter = flagValue("--class") ? Number(flagValue("--class")) : null;
 if (classFilter !== null && (!Number.isInteger(classFilter) || classFilter < 1 || classFilter > 6)) {
@@ -227,6 +344,54 @@ function walk(dir, out = []) {
 const rootAbs = resolve(root);
 const allFiles = walk(rootAbs);
 const scanFiles = allFiles.filter((f) => SCAN_EXT.has(extname(f).toLowerCase()));
+
+// THE PACKAGE CHANGELOG, WHICH NO LONGER SITS UNDER THE PACKAGE.
+//
+// A package's changelog lives at docs/changelogs/<dir>.md, in this public
+// repository, instead of at packages/<dir>/CHANGELOG.md inside the tarball
+// (scripts/lib/changelog-location.mjs). It is still public text, and every
+// CLASS here applied to it while it sat under the package, so moving it out
+// of the scanned directory must not quietly move it out of this gate too.
+// When the scanned directory is packages/<dir> and docs/changelogs/<dir>.md
+// exists, that file is scanned along with the package, and CLASS 1 judges it
+// EXACTLY as it judged packages/<dir>/CHANGELOG.md: citations resolve from
+// the package root against the package's own published file set, the
+// changelog-only rot exemption (CHANGELOG_FILE_RE) still applies to it, and
+// governance/known-dangling-citations.json keeps waiving its citations under
+// the same "CHANGELOG.md" key. That is what COMPANION_CHANGELOG_POSITION is:
+// the position it is judged from, never the path it is reported under --
+// findings name the real docs/changelogs/<dir>.md. It is always checked by
+// CLASS 1, even though it is not in the tarball: its reader is anyone reading
+// this repository, and a pointer at nothing misleads them just the same.
+//
+// A package that ALSO still carries its own packages/<dir>/CHANGELOG.md has
+// two files claiming that one position, so which one a waiver or finding
+// means is ambiguous -- refused as "cannot run" rather than guessed.
+const COMPANION_CHANGELOG_POSITION = join(rootAbs, "CHANGELOG.md");
+const companionChangelog = (() => {
+  if (basename(dirname(rootAbs)) !== "packages") return null;
+  const path = changelogPathForPackageDir(rootAbs);
+  return existsSync(path) ? path : null;
+})();
+if (companionChangelog) {
+  if (existsSync(COMPANION_CHANGELOG_POSITION)) {
+    console.error(
+      `check-contamination-classes: ${rootAbs} has both its own CHANGELOG.md and ${changelogRelPath(basename(rootAbs))} -- a package changelog lives only at the latter (scripts/lib/changelog-location.mjs); remove the in-package copy`,
+    );
+    process.exit(2);
+  }
+  scanFiles.push(companionChangelog);
+}
+
+// The path a finding is reported under: the real repository-relative
+// docs/changelogs/<dir>.md for the companion changelog (and for a stale
+// waiver keyed to its CHANGELOG.md position), package-relative otherwise.
+function shownPath(file) {
+  if (companionChangelog && (file === companionChangelog || file === COMPANION_CHANGELOG_POSITION)) {
+    return changelogRelPath(basename(rootAbs));
+  }
+  return relative(rootAbs, file);
+}
 
 // The repository root, found by walking up from the scanned directory looking
 // for `.git`. CLASS 1 needs it because a citation can be relative to either
@@ -354,7 +519,7 @@ function report(cls, severity, file, line, snippet, detail) {
     class: cls,
     className: CLASS_NAMES[cls],
     severity,
-    file: relative(rootAbs, file),
+    file: shownPath(file),
     line,
     snippet: snippet.trim().slice(0, 100),
     detail,
@@ -375,7 +540,7 @@ function reportIndeterminate(cls, file, line, snippet, detail) {
   indeterminate.push({
     class: cls,
     className: CLASS_NAMES[cls],
-    file: relative(rootAbs, file),
+    file: shownPath(file),
     line,
     snippet: snippet.trim().slice(0, 100),
     detail,
@@ -927,9 +1092,13 @@ const UNAVAILABILITY_RE = new RegExp(
 //
 // So the exemption is bounded twice, and each bound is measured on this tree:
 //
-//   BY FILE. Only a Markdown changelog at one of two paths can carry it:
-//   `CHANGELOG.md` at the scanned repository root, or
-//   `packages/<name>/CHANGELOG.md` where `<name>` is a single path segment.
+//   BY FILE. Only a Markdown changelog at one of three paths can carry it:
+//   `CHANGELOG.md` at the scanned repository root,
+//   `packages/<name>/CHANGELOG.md` where `<name>` is a single path segment,
+//   or `docs/changelogs/<name>.md` (never that directory's README.md), where
+//   a package changelog now lives. A package changelog scanned along with
+//   its package is judged from its `CHANGELOG.md` position (see
+//   COMPANION_CHANGELOG_POSITION), so it matches the first form.
 //   A nested path (`src/CHANGELOG.md`, `packages/<name>/src/CHANGELOG.md`),
 //   a non-markdown extension (`CHANGELOG.ts`), and a bare `CHANGELOG` cannot.
 //   A changelog is a record of what changed, so a path named in one is
@@ -956,7 +1125,7 @@ const UNAVAILABILITY_RE = new RegExp(
 // What it does guarantee is the property the block-wide search actually needs
 // — that a qualifier can never excuse a citation it is not about, and that
 // nothing a reader would follow as a live pointer can be muted by wording.
-const CHANGELOG_FILE_RE = /^(?:CHANGELOG\.md|packages\/[^/]+\/CHANGELOG\.md)$/;
+const CHANGELOG_FILE_RE = /^(?:CHANGELOG\.md|packages\/[^/]+\/CHANGELOG\.md|docs\/changelogs\/(?!README\.md$)[^/]+\.md)$/;
 
 // Split prose into sentences. A terminator counts only when it is followed by
 // whitespace, optionally through closing punctuation (`…gone."` / `…gone.**`),
@@ -1151,7 +1320,10 @@ function checkClass1(file, lines, ext) {
     const text = prose.slice(from, to + 1).join(" ");
     for (let i = from; i <= to; i++) blockText.set(i, text);
   }
-  const relFile = relative(rootAbs, file);
+  // The companion changelog is judged from its old in-package position --
+  // see COMPANION_CHANGELOG_POSITION above.
+  const citingFile = file === companionChangelog ? COMPANION_CHANGELOG_POSITION : file;
+  const relFile = relative(rootAbs, citingFile);
 
   prose.forEach((text, i) => {
     const matches = [];
@@ -1166,10 +1338,17 @@ function checkClass1(file, lines, ext) {
       }
     }
     if (!matches.length) return;
-    const state = new Map(matches.map((t) => [t, classifyCitationViaSrcMirror(t, relFile, file)]));
+    const state = new Map(matches.map((t) => [t, classifyCitationViaSrcMirror(t, relFile, citingFile)]));
     for (const t of matches) {
       const cited = state.get(t);
       if (cited.state === CITATION_SHIPS) continue;
+      // A package changelog naming the bare `CHANGELOG.md` is naming itself:
+      // its history was written while it sat at packages/<dir>/CHANGELOG.md,
+      // and the reader is already reading the file it means. Only the bare
+      // name, and only inside the companion changelog -- the same citation
+      // in shipped package text still points an installed-package reader at
+      // a file the tarball no longer carries, and still reports.
+      if (file === companionChangelog && t === "CHANGELOG.md") continue;
       // Only the BARE name is format vocabulary. A path-prefixed citation
       // (`docs/AGENTS.md`) is a real pointer at a real file, and a dangling one
       // is exactly this class's job regardless of what the file is called.
@@ -1220,7 +1399,7 @@ function checkClass1(file, lines, ext) {
       const entry = allowlistEntryFor(relFile, t);
       if (entry) {
         allowlistUsed.add(entry);
-        waived.push({ file: relFile, line: i + 1, cited: t, issue: entry.issue, state: cited.state });
+        waived.push({ file: shownPath(file), line: i + 1, cited: t, issue: entry.issue, state: cited.state });
         continue;
       }
 
@@ -1543,7 +1722,7 @@ for (const file of scanFiles) {
   const lines = contents.split("\n");
   const ext = extname(file).toLowerCase();
 
-  if (wants(1) && shipsToAReader(file)) checkClass1(file, lines, ext);
+  if (wants(1) && (file === companionChangelog || shipsToAReader(file))) checkClass1(file, lines, ext);
   if (wants(2) && CLASS2_6_EXT.has(ext)) checkClass2(file, lines);
   if (wants(3)) checkClass3(file, lines);
   if (wants(4)) checkClass4(file, lines);

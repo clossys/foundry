@@ -13,6 +13,12 @@ Runner selection by repository visibility is its own document,
 (visibility) with its own pricing data file — this document references it
 rather than repeating it under **Cost**.
 
+**Cost** through **Security** are the MECE four; **Weekly Sunday `@clossys/*`
+adoption**, at the end, is a fifth, orthogonal axis — cadence for a
+consuming repository's own dependency updates on `@clossys/*` specifically,
+not a fifth way to slice cost/speed/quality/security. It does not apply to
+this repository, which produces `@clossys/*` rather than consuming it.
+
 ## Cost
 
 - **Public repositories run on GitHub-hosted runners, which are free.**
@@ -198,3 +204,111 @@ rather than repeating it under **Cost**.
   governs. A reusable workflow (`uses: owner/repo/.github/workflows/
   x.yml@<sha>`) is the one copy; every consumer calls it rather than
   pasting its steps.
+
+## Weekly Sunday `@clossys/*` adoption (consuming repositories)
+
+This section applies only to a **consuming repository** — one that installs
+one or more `@clossys/*` packages — never to this repository itself, which
+produces them. Owner direction (2026-09-23, #1187/#1259's own cadence rule):
+this repository's own packages release on a **weekly Saturday wave**; a
+consuming repository adopts the new versions the **following Sunday**, and
+every Monday starts fresh. `evaluateWeeklyAdoption`
+(`@clossys/controller/conventions`, delegated to from `evaluateCiConventions`
+via `CiConventionsDeclaration.weeklyAdoption`) is the pure evaluator for the
+four rules below — see its own module doc for the input shape. A repository
+that does not consume `@clossys/*` at all (this one included) omits
+`weeklyAdoption` from its declaration entirely, or declares `applies:
+false`; every rule is then skipped as not applicable, never reported as a
+gap.
+
+1. **`@clossys/*` dependency updates are grouped into exactly one pull
+   request per repository per week, scheduled for Sunday in the
+   repository's declared timezone, through whichever updater the repository
+   already runs.** One grouped PR is one thing to review and merge — the
+   opposite of a stream of one-package-at-a-time bumps arriving on no
+   predictable day, which is what an ungrouped or unscheduled updater
+   produces by default. "The repository's declared timezone" matters
+   because "Sunday" is not a well-defined instant without one: a repository
+   in `Pacific/Auckland` and one in `America/Los_Angeles` are never in
+   Sunday at the same moment.
+
+   **Renovate** (minimal `.github/renovate.json`):
+
+   ```json
+   {
+     "packageRules": [
+       {
+         "matchPackagePatterns": ["^@clossys/"],
+         "groupName": "clossys weekly",
+         "schedule": ["on sunday"]
+       }
+     ]
+   }
+   ```
+
+   **Dependabot** (minimal `.github/dependabot.yml` -- an illustrative
+   repo-relative path a consuming repository's own tree would have; that
+   path does not ship with this package):
+
+   ```yaml
+   version: 2
+   updates:
+     - package-ecosystem: "npm"
+       directory: "/"
+       schedule:
+         interval: "weekly"
+         day: "sunday"
+       groups:
+         clossys:
+           patterns:
+             - "@clossys/*"
+   ```
+
+   `evaluateWeeklyAdoption` reads whichever config the repository already
+   has (never both) and reports `ci/weekly-adoption-grouped-schedule` as
+   `satisfied`, `missing` (no matching group exists at all), or `violated`
+   (a matching group exists but is ungrouped, or scheduled for a day other
+   than Sunday, or — Dependabot only — scheduled at an interval other than
+   `weekly`).
+
+2. **A security advisory for `@clossys/*` bypasses the schedule and applies
+   immediately.** A grouped weekly schedule is right for an ordinary
+   version bump; it is wrong for a fix to a vulnerability already disclosed
+   and exploitable, where every day of delay is a day the consuming
+   repository runs known-vulnerable code on purpose. Renovate applies
+   `vulnerabilityAlerts` immediately by default — `ci/weekly-adoption-
+   security-bypass` is `violated` only if `vulnerabilityAlerts.schedule` is
+   explicitly set to something that is not `["at any time"]`, i.e. the
+   repository has overridden the safe default into an unsafe one.
+   Dependabot security updates are a separate, repository-level setting
+   from `dependabot.yml`'s version-update schedule and always apply
+   immediately regardless of what this file declares, so this rule is
+   `satisfied` unconditionally for a Dependabot-configured repository.
+
+3. **No other automation bumps a `@clossys/*` range on any other day.** A
+   second, independent Renovate `packageRules` entry or Dependabot
+   `updates` entry that also matches `@clossys/*` packages — deliberately
+   or by an overly broad ecosystem match — reintroduces exactly the
+   unpredictable, un-grouped updates rule 1 exists to remove, even while
+   rule 1's own group is configured correctly. `ci/weekly-adoption-no-
+   other-automation` is `violated` when more than one Renovate rule matches
+   `@clossys/*`, or when a Dependabot `npm`-ecosystem `updates` entry other
+   than the grouped one neither groups nor `ignore`s `@clossys/*`.
+
+4. **The adoption pull request runs the repository's normal required
+   checks, plus `integrator-provenance-check` (#885/#1169), before it
+   merges.** The grouped PR still changes what the repository actually
+   runs, so it earns the same required-status-check gate every other
+   change does; `integrator-provenance-check` additionally verifies the
+   installed `@clossys/*` packages' registry provenance and currency,
+   which a plain version-range diff cannot. Most consuming repositories
+   name this required context `integrator-provenance-check` directly, after
+   the installed CLI itself — a narrow, deliberate exception to
+   `gate-naming.md`'s "a scanning tool's own name is not the gate that runs
+   it" rule, made because this is a shared, cross-repository identifier
+   every consumer recognizes on sight, not a repository's own authored
+   check. A repository that instead wraps the tool behind a conformant gate
+   name declares that name via `WeeklyAdoptionDeclaration
+   .provenanceCheckContext`. `ci/weekly-adoption-provenance-check-required`
+   is `missing` when that context is absent from the adoption PR's required
+   contexts.

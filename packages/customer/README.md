@@ -92,6 +92,20 @@ Onboarding discovers that declaration from the installed manifest and never
 infers a surface. `customer-check` remains the two-argument CLI and is not
 the assessment surface.
 
+The same `foundry` block also declares, for discovery and never for
+inference:
+
+- `outputs` — the files this role owns in a consumer repository, one per
+  session intent: `clossys/customer/keep.json`, `feedback.json`,
+  `compare.json`, `refer.json`, `churn.json`, `adopt.json`, and
+  `worth.json`. `customer-check` reads one such record at a time; nothing
+  in this package writes them.
+- `feeds` — the one artifact another role consumes: the `keep-verdict` at
+  `clossys/customer/keep.json`, which Publisher waits for before it seals.
+- `fit` — `fit-signals.json`, shipped in this package: the evidence that
+  makes this role applicable at all (a named audience to speak as, and an
+  audience-facing candidate to keep or fail).
+
 ## Inhabit form gate
 
 ```bash
@@ -111,6 +125,42 @@ verdict with any impression answered `no` is a finding. Compare with an
 empty consideration set is a finding. Speaker `designer`, `qa`, or
 `reviewer` is a finding.
 
+## Exported types
+
+Session records:
+
+| Type | What it is |
+| --- | --- |
+| `Audience` | The JSON seam `{ id, name, description, painPoints? }` a session binds to. |
+| `InhabitEnvelope` | Fields every session shares: `speaker: "customer"`, `inhabitedAs: "target-audience"`, `audienceId`, `persona.name`, `stance`, `topic`, `familiarity`, and `intent`. |
+| `InhabitRecord` | The union of every parsed session: `KeepRecord`, `FeedbackRecord`, `CompareRecord`, `ReferRecord`, `ChurnRecord`, `AdoptRecord`, or `WorthRecord`. |
+| `InhabitIntent` | `"keep"`, `"feedback"`, `"compare"`, `"refer"`, `"churn"`, `"adopt"`, or `"worth"`. |
+| `Familiarity` | `"fresh"` or `"returning"`. Required for every intent except `keep`, where it defaults to `"fresh"`. |
+| `YesNo` | `"yes"` or `"no"`, the only accepted answer to every yes/no field. |
+| `KeepVerdict` | `"keep"` or `"fail"`, the one verdict a `KeepRecord` carries. |
+| `KeepImpressions` | A keep's `firstSeconds` sentence plus its four `YesNo` answers: `isThisForMe`, `doIBelieve`, `wouldIStay`, and `wouldITellAPeer`. |
+| `KeepChannelImpression` | `{ impression }`, the shape of a keep's `visual` and `verbal` channels. |
+| `LivedFunctional` | One feedback item: what `happened` and what I `expected`. |
+| `LivedExpectation` | One feedback item: what I `assumed` and what `actually` happened. |
+| `KnownAlternative` | One entry in a compare's consideration set: `name`, `relationship`, and `whyItMatters`. |
+| `AlternativeRelationship` | `"i-use-this"`, `"a-peer-uses-this"`, or `"i-considered-this"`. |
+
+Inhabit-form results, from `checkInhabitForm` and `checkKeepForm`:
+
+| Type | What it is |
+| --- | --- |
+| `KeepFormReport` | `{ state, findings }`. |
+| `KeepFormState` | `"satisfied"`, `"violated"`, or `"indeterminate"`, matching `customer-check` exit codes `0`, `1`, and `2`. |
+| `KeepFormFinding` | `{ rule, severity: "error", message, path? }`. |
+
+Keep-rate results, from `assessCustomerKeepRate`:
+
+| Type | What it is |
+| --- | --- |
+| `CustomerKeepRateAssessment` | `{ metric: "customer keep rate", state, rate, evaluatedCandidates, keptCandidates, findings, proposedPositions }`. `rate` is `null` whenever no declared candidate has a counting independent observation, and the state is then `indeterminate`. |
+| `CustomerKeepRateState` | `"satisfied"`, `"violated"`, or `"indeterminate"`, matching `customer-rate-check` exit codes `0`, `1`, and `2`. |
+| `CustomerKeepRateFinding` | `{ rule, severity: "error", message, path? }`. |
+
 ## Metric definition
 
 ```text
@@ -120,3 +170,7 @@ customer keep rate
 ```
 
 The unit is a ratio and the desired direction is up.
+
+## Changelog
+
+Release notes for every version are in the [changelog](https://github.com/clossys/foundry/blob/main/docs/changelogs/customer.md), kept in the public repository rather than in the installed package.

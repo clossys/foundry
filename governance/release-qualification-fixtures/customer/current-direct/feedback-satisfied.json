@@ -1,0 +1,31 @@
+{
+  "speaker": "customer",
+  "inhabitedAs": "target-audience",
+  "audienceId": "audience-one",
+  "persona": {
+    "name": "Jordan"
+  },
+  "stance": "I came back because the unclear offer on my first visit left me unsure what I would get.",
+  "intent": "feedback",
+  "familiarity": "returning",
+  "topic": "signing up from the landing page",
+  "functional": [
+    {
+      "happened": "The sign-up button scrolled me to the pricing table instead of opening the form.",
+      "expected": "The form to open right where I clicked."
+    }
+  ],
+  "experience": [
+    "I felt a little lost for a moment, then relieved once I found the form."
+  ],
+  "expectations": [
+    {
+      "assumed": "Signing up would ask for a card.",
+      "actually": "It only asked for an email, which made me more willing to try."
+    }
+  ],
+  "blockedMe": "no",
+  "whatIDidInstead": "I scrolled back up and found the form myself.",
+  "wantedInstead": "One click from the headline straight to the form.",
+  "stillForMe": "yes"
+}

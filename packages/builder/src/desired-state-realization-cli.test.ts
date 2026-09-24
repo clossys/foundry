@@ -1,13 +1,14 @@
-import { spawnSync } from "node:child_process";
-import { chmodSync, cpSync, mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from "node:fs";
+import { spawn } from "node:child_process";
+import { chmodSync, cpSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { BuilderCliInputError, isDirectInvocation, main } from "./desired-state-realization-cli.js";
 
 let root: string;
 let binPath: string;
+let workDir: string;
 
 function evidence(id: string) {
   return [{ id, description: "Independent observation evidence." }];
@@ -52,13 +53,17 @@ beforeEach(() => {
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
+afterEach(() => {
+  if (root) rmSync(root, { recursive: true, force: true });
+});
+
 beforeAll(() => {
   const packageRoot = fileURLToPath(new URL("..", import.meta.url));
-  const compiler = fileURLToPath(new URL("../../../node_modules/typescript/bin/tsc", import.meta.url));
-  const built = spawnSync(process.execPath, [compiler, "-p", "tsconfig.json"], { cwd: packageRoot, encoding: "utf8" });
-  if (built.status !== 0) throw new Error(`Builder build failed: ${built.stderr || built.stdout}`);
+  // dist/ was built once, before any test file started, by the package's
+  // vitest globalSetup (scripts/lib/vitest-build-package.mjs). Never rebuild
+  // it here: a sibling test file may be executing or packing it (#1385).
 
-  const workDir = mkdtempSync(join(tmpdir(), "builder-check-bin-"));
+  workDir = mkdtempSync(join(tmpdir(), "builder-check-bin-"));
   const dotBin = join(workDir, "node_modules", ".bin");
   mkdirSync(dotBin, { recursive: true });
   const installedDistDir = join(workDir, "dist");
@@ -72,11 +77,57 @@ beforeAll(() => {
   symlinkSync(installedCliPath, binPath);
 }, 60_000);
 
-function runBin(args: string[]) {
-  const options = { encoding: "utf8" as const, timeout: 8_000 };
-  let spawned = spawnSync(binPath, args, options);
-  if (spawned.error) spawned = spawnSync(process.execPath, [binPath, ...args], options);
-  return spawned;
+afterAll(() => {
+  if (workDir) rmSync(workDir, { recursive: true, force: true });
+});
+
+/**
+ * Runs the installed CLI bin and resolves once its stdout/stderr have fully
+ * ended AND the process has exited -- never before.
+ *
+ * #1333/#1341: the equivalent `spawnSync` call flaked in CI under load with
+ * `result.status` set (the child really did exit) but `result.stdout`
+ * empty -- a report the exit code says exists but the capture missed.
+ * `spawnSync`'s synchronous capture is its own internal poll loop outside
+ * Node's normal stream machinery, and that loop is what a heavily loaded CI
+ * runner's scheduling can starve. `spawn()`'s stdout/stderr are ordinary
+ * `Readable` streams, whose contract guarantees every byte written is
+ * delivered via `data` events before `end` fires, and the `close` handler
+ * below -- which Node fires only after the process has exited AND both
+ * stdio streams have ended -- cannot observe an exit code before the output
+ * that produced it has been fully read.
+ */
+function spawnCapture(
+  command: string,
+  args: string[],
+  options: { timeout: number },
+): Promise<{ status: number | null; stdout: string; stderr: string }> {
+  return new Promise((resolvePromise, rejectPromise) => {
+    const child = spawn(command, args, options);
+    let stdout = "";
+    let stderr = "";
+    child.stdout.setEncoding("utf8");
+    child.stderr.setEncoding("utf8");
+    child.stdout.on("data", (chunk: string) => {
+      stdout += chunk;
+    });
+    child.stderr.on("data", (chunk: string) => {
+      stderr += chunk;
+    });
+    child.on("error", rejectPromise);
+    child.on("close", (status) => {
+      resolvePromise({ status, stdout, stderr });
+    });
+  });
+}
+
+async function runBin(args: string[]) {
+  const options = { timeout: 8_000 };
+  try {
+    return await spawnCapture(binPath, args, options);
+  } catch {
+    return await spawnCapture(process.execPath, [binPath, ...args], options);
+  }
 }
 
 describe("builder-check", () => {
@@ -103,37 +154,37 @@ describe("builder-check", () => {
 });
 
 describe("builder-check, invoked through a node_modules/.bin-shaped symlink", () => {
-  it("--help produces non-empty stdout and exits 0", () => {
-    const result = runBin(["--help"]);
+  it("--help produces non-empty stdout and exits 0", async () => {
+    const result = await runBin(["--help"]);
     expect(result.status).toBe(0);
     expect(result.stdout.length).toBeGreaterThan(0);
     expect(result.stdout).toContain("Usage: builder-check");
   });
 
-  it("exits 0 with a satisfied report", () => {
+  it("exits 0 with a satisfied report", async () => {
     const path = write("satisfied.json", satisfied());
-    const result = runBin([path]);
+    const result = await runBin([path]);
     expect(result.status).toBe(0);
     expect(JSON.parse(result.stdout)).toMatchObject({ state: "satisfied", metric: "desired-state realization rate", rate: 1 });
   });
 
-  it("exits 1 with a violated report", () => {
+  it("exits 1 with a violated report", async () => {
     const path = write("violated.json", violated());
-    const result = runBin([path]);
+    const result = await runBin([path]);
     expect(result.status).toBe(1);
     expect(JSON.parse(result.stdout)).toMatchObject({ state: "violated", metric: "desired-state realization rate" });
   });
 
-  it("exits 2 for a missing file without computing a rate of 1", () => {
-    const result = runBin([join(root, "missing.json")]);
+  it("exits 2 for a missing file without computing a rate of 1", async () => {
+    const result = await runBin([join(root, "missing.json")]);
     expect(result.status).toBe(2);
     expect(result.stderr).toContain("does not exist");
     expect(result.stdout).not.toMatch(/"rate": 1/);
   });
 
-  it("exits 2 for unreadable JSON without computing a rate of 1", () => {
+  it("exits 2 for unreadable JSON without computing a rate of 1", async () => {
     const path = write("broken.json", "{ not json");
-    const result = runBin([path]);
+    const result = await runBin([path]);
     expect(result.status).toBe(2);
     expect(result.stderr).toContain("unreadable JSON");
     expect(result.stdout).not.toMatch(/"rate": 1/);

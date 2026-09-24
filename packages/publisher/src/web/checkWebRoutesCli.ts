@@ -63,12 +63,25 @@ function loadSources(root: string, manifest: WebRouteManifest): Record<string, s
   return out;
 }
 
-function main(): void {
+/**
+ * Returns the exit code rather than calling `process.exit()` itself.
+ * `process.exit()` terminates the process immediately once the synchronous
+ * call stack returns to it — it does not wait for a write to stdout/stderr
+ * to actually flush, and on POSIX a write to a pipe (exactly what a spawned
+ * test harness or CI step captures through) is asynchronous. Calling
+ * `process.exit()` right after `console.log`/`console.error` can therefore
+ * race the process exiting against that write completing, which is
+ * precisely the "exits 1 with a non-empty report" flake #1333 found in
+ * `@clossys/messenger`'s CLI. Setting `process.exitCode` instead lets Node's
+ * normal shutdown path wait for pending stdio writes to drain before the
+ * process actually exits.
+ */
+function main(): number {
   try {
     const { manifestPath, root, help } = parseArgs(process.argv.slice(2));
     if (help) {
       console.log(USAGE);
-      process.exit(0);
+      return 0;
     }
     const absManifest = resolve(manifestPath);
     const manifest = loadManifest(absManifest);
@@ -79,16 +92,16 @@ function main(): void {
       const where = finding.file ? `${finding.file}: ` : "";
       console.error(`${where}${finding.message}`);
     }
-    process.exit(result.exitCode);
+    return result.exitCode;
   } catch (error) {
     if (error instanceof CliInputError) {
       console.error(`publisher-web-route-check: ${error.message}`);
       console.error(USAGE);
-      process.exit(2);
+      return 2;
     }
     console.error(`publisher-web-route-check: unexpected error: ${error instanceof Error ? error.message : String(error)}`);
-    process.exit(2);
+    return 2;
   }
 }
 
-main();
+process.exitCode = main();

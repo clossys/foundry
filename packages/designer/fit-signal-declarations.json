@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "role": "@clossys/designer",
+  "signals": [
+    {
+      "id": "interface-surface",
+      "prompt": "The repository ships at least one interface surface a person sees: a web page, an app screen, or a rendered document.",
+      "evidenceKind": "repository-structure"
+    }
+  ]
+}

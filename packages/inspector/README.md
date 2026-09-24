@@ -320,7 +320,8 @@ compile error rather than a silent default.
 | --- | --- |
 | `checkReviewEvidence` | Evaluates an evidence bundle against a consumer-owned review policy. |
 | `reviewEvidenceReasons` | The declared reasons it can decline to answer. |
-| `ReviewEvidenceOptions` | Type. The commit under test, and whether review presence is required independently of the policy's verdict rules. |
+| `ReviewEvidenceOptions` | Type. The commit under test, and whether review presence is required independently of the policy's verdict rules. On a merge-queue run, `mergeGroup` names the group commit and whether it merges exactly the commit under test (the queued pull request's head); anything but a proven `true` is indeterminate. |
+| `ReviewEvidenceMergeGroup` | Type. The merge-queue group commit and the caller's answer to whether it merges exactly the commit under test. |
 | `ReviewEvidenceReport` | Type. The verdict, plus the distinct providers observed at head. |
 | `ReviewEvidenceFinding` | Type. |
 | `ReviewEvidenceReason` | Type. |
@@ -479,3 +480,7 @@ and survives across CI runs on self-hosted runners.
 ## Licence
 
 MIT. See [LICENSE](LICENSE).
+
+## Changelog
+
+Release notes for every version are in the [changelog](https://github.com/clossys/foundry/blob/main/docs/changelogs/inspector.md), kept in the public repository rather than in the installed package.

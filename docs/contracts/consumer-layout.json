@@ -36,7 +36,7 @@
       "owner": "@clossys/advisor",
       "kind": "record",
       "committed": true,
-      "description": "Why each role is staffed here, its goals, handoffs, and sequence. The approved composed kit becomes this file (#1176). Written by the apply-plan step (#1178, wave 2); this entry is the layout position only."
+      "description": "Why each role is staffed here, its goals, handoffs, and sequence, plus an optional snapshot of the hub's engagement context (fixed choice ids only, never founder text) so a role in a product repository reads what the founder already answered (docs/DECISIONS.md decision 28). The approved composed kit becomes this file (#1176). Written by the apply-plan step (#1178, wave 2); this entry is the layout position only."
     },
     {
       "path": "clossys/advisor",
@@ -79,6 +79,13 @@
       "kind": "proof",
       "committed": true,
       "description": "Route manifest, publication record. Append-only."
+    },
+    {
+      "path": "clossys/publisher/surfaces",
+      "owner": "@clossys/publisher",
+      "kind": "record",
+      "committed": true,
+      "description": "Surface documents: which template, which sections, which copy ids and asset ids, all by reference (#1205). Publisher is the only writer; Designer and Writer own everything a document references, propose changes in their own folders, and never edit a file here. Unlike the rest of clossys/publisher, a surface document is an approved record revised by reviewable diff, not append-only proof. Matches @clossys/publisher's PUBLISHER_SURFACES_DIR and the shipped site template, which reads clossys/publisher/surfaces/*.json at build time."
     },
     {
       "path": "clossys/controller",

@@ -1,0 +1,7 @@
+{
+  "viewport": { "width": 390, "height": 844 },
+  "h1Clipped": true,
+  "overlayIntersectingFold": ["#cookie-banner"],
+  "primaryCtaCount": 2,
+  "heroMediaKind": "product-surface"
+}

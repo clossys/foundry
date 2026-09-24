@@ -8,6 +8,8 @@ export default defineConfig({
     // concurrently and leave dist/ inconsistent while a reachability
     // suite spawns dist/bin.js. In-process tests import src/ and still pass.
     fileParallelism: false,
+    // Builds dist/ once, before any test file runs; test files never rebuild it (#1385).
+    globalSetup: ["../../scripts/lib/vitest-build-package.mjs"],
     include: ["src/**/*.test.ts"],
     coverage: {
       provider: "v8",

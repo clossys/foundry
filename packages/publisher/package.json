@@ -1,6 +1,6 @@
 {
   "name": "@clossys/publisher",
-  "version": "0.4.24",
+  "version": "0.7.0",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -76,6 +76,22 @@
     "./record": {
       "types": "./dist/record/index.d.ts",
       "import": "./dist/record/index.js"
+    },
+    "./pack": {
+      "types": "./dist/pack/index.d.ts",
+      "import": "./dist/pack/index.js"
+    },
+    "./surfaces": {
+      "types": "./dist/surfaces/index.d.ts",
+      "import": "./dist/surfaces/index.js"
+    },
+    "./materials": {
+      "types": "./dist/materials/index.d.ts",
+      "import": "./dist/materials/index.js"
+    },
+    "./templates": {
+      "types": "./dist/templates/index.d.ts",
+      "import": "./dist/templates/index.js"
     }
   },
   "imports": {
@@ -96,17 +112,262 @@
     "assessment": {
       "bin": "publisher-rate-check",
       "invocation": "single-json-input"
-    }
+    },
+    "outputs": [
+      "clossys/publisher/pack.json",
+      "clossys/publisher/surfaces/"
+    ],
+    "fit": "fit-signals.json",
+    "feeds": [
+      {
+        "artifact": "surface-documents",
+        "path": "clossys/publisher/surfaces/"
+      }
+    ],
+    "needs": [
+      {
+        "producerRole": "@clossys/strategist",
+        "artifact": "strategy-brief"
+      },
+      {
+        "producerRole": "@clossys/designer",
+        "artifact": "token-contract-and-brand-overlay-binding"
+      },
+      {
+        "producerRole": "@clossys/writer",
+        "artifact": "copy-registry"
+      },
+      {
+        "producerRole": "@clossys/customer",
+        "artifact": "keep-verdict"
+      }
+    ],
+    "solves": [
+      {
+        "problem": "publisher-verified-release",
+        "statement": "We're not sure what's actually live, or that it matches what we approved.",
+        "metric": "verified publication rate",
+        "proofCase": "rate-violated",
+        "evidence": "designed",
+        "capability": "sealing-and-the-publication-record"
+      }
+    ],
+    "capabilities": [
+      {
+        "id": "v0-launch-pack-planning-and-inventory",
+        "subQuestion": "What does this product owe its v0 Launch pack, and what already exists versus is still needed?",
+        "worldClass": "Every new product gets one declared inventory (clossys/publisher/pack.json, #1204) of what the v0 Launch pack owes it and what state each item is actually in — status, condition, version, source pins — never assembled ad hoc per product. Today: `src/pack/` ships the manifest contract (#1204) — `validatePackManifest` (schema, needs-graph, and lifecycle-vocabulary validation), `computePackReadiness`/`planPackOrder`/`sealableItemIds` (readiness and sealing order derived from the needs graph), and `detectExistingPackItems`/`foundPackItem` (adopt-don't-override detection with sha256 fingerprints) — as library functions over `PackManifest`; no CLI yet assembles or checks a real product's `clossys/publisher/pack.json` from them. No qualification case exercises this capability yet, so it is `planned` with no `proofCase` (#1272).",
+        "inputs": [
+          {
+            "producerRole": "@clossys/strategist",
+            "artifact": "strategy-brief"
+          },
+          {
+            "producerRole": "@clossys/designer",
+            "artifact": "brand-kit-assembly"
+          },
+          {
+            "producerRole": "@clossys/writer",
+            "artifact": "messaging-kit"
+          }
+        ],
+        "outputs": [
+          "clossys/publisher/pack.json"
+        ],
+        "proofCase": null,
+        "maturity": "planned",
+        "v0": true,
+        "businessLifecycleStage": "launch"
+      },
+      {
+        "id": "surface-documents",
+        "subQuestion": "Is every audience-facing surface declared once as a validated document, with its template and locations resolved?",
+        "worldClass": "Every published surface is one validated SurfaceDocument resolving to a registered template and a real channel location — never a page composed ad hoc outside the document. Today: `validateSurfaceDocument` and `resolveSurfaceDocument` (`src/core/`) validate and resolve one document as library functions, and the shipped site template (`templates/site/app/*/page.tsx`) reads `clossys/publisher/surfaces/*.json` at build time, but no bin yet validates a consumer's own surface documents. No qualification case exercises this capability yet, so it is `planned` with no `proofCase` (#1272).",
+        "inputs": [
+          {
+            "producerRole": "@clossys/writer",
+            "artifact": "copy-registry"
+          },
+          {
+            "producerRole": "@clossys/designer",
+            "artifact": "components-and-blocks"
+          }
+        ],
+        "outputs": [
+          "clossys/publisher/surfaces/"
+        ],
+        "proofCase": null,
+        "maturity": "planned",
+        "v0": true,
+        "businessLifecycleStage": "launch"
+      },
+      {
+        "id": "channel-rendering",
+        "subQuestion": "Does every declared surface render correctly to its channel — web, email, image, print, document, or slides?",
+        "worldClass": "A surface document renders byte-identically to its golden fixture on every channel it declares, checked, never eyeballed per release.",
+        "inputs": [
+          {
+            "producerRole": "@clossys/designer",
+            "artifact": "token-contract-and-brand-overlay-binding"
+          }
+        ],
+        "outputs": [
+          "clossys/publisher/.generated/render-report.json"
+        ],
+        "proofCase": "preview-rendered",
+        "maturity": "built",
+        "v0": true,
+        "businessLifecycleStage": "launch"
+      },
+      {
+        "id": "templates-and-channel-specs",
+        "subQuestion": "Is every channel's template and spec declared once and reused, never improvised per page?",
+        "worldClass": "A channel template is data — a declared block sequence and spec — never an arbitrary per-page build function, per #1207's full set (overview, deck, email kit, social profile, video-call backgrounds). Today: `src/templates/` ships `overviewTemplate.ts`, `deckTemplate.ts`, `emailSignature.ts` (`buildEmailSignatureHtml`/`buildEmailSignatureText`), and `channelSpecs.ts` (`SOCIAL_CHANNEL_SPECS`, `OG_SHARE_CARD_SPEC`, `VIDEO_CALL_BACKGROUND_SPECS`, `staleChannelSpecEntries`) alongside the earlier web page templates (#1207); nothing yet assembles them into the declared `clossys/publisher/templates.json` output or checks them from a bin. `publisher-preview` renders from these templates and specs using built-in fixtures, but checks nothing about them. No qualification case exercises this capability yet, so it is `planned` with no `proofCase` (#1272).",
+        "inputs": [],
+        "outputs": [
+          "clossys/publisher/templates.json"
+        ],
+        "proofCase": null,
+        "maturity": "planned",
+        "v0": true,
+        "businessLifecycleStage": "build"
+      },
+      {
+        "id": "materials-site",
+        "subQuestion": "Is there one internal, locally opened materials index a client can browse every version of?",
+        "worldClass": "One assembled, current internal index (#1206) carries every version of the company overview (short/medium/long) and pitch deck (HTML slides with audience variants), each with a print stylesheet, opened locally or handed to a client — never a scatter of one-off files assembled by hand. Not a publicly deployed site: that is #1208's separate apps/site template. Today: `src/materials/` ships `renderMaterialsIndexHtml`, `renderPitchDeckHtml`, `selectAudienceVariant`, and `materialsPrintStylesheet` (#1206), but `renderMaterialsIndexHtml` takes its entries as a plain argument — nothing yet reads a product's own `clossys/publisher/pack.json` to derive them, or writes the declared `clossys/publisher/materials/index.json` output from a bin.",
+        "inputs": [
+          {
+            "producerRole": "@clossys/writer",
+            "artifact": "messaging-kit"
+          },
+          {
+            "producerRole": "@clossys/designer",
+            "artifact": "brand-kit-assembly"
+          }
+        ],
+        "outputs": [
+          "clossys/publisher/materials/index.json"
+        ],
+        "proofCase": "preview-rendered",
+        "maturity": "partial",
+        "v0": true,
+        "businessLifecycleStage": "launch"
+      },
+      {
+        "id": "channel-kits",
+        "subQuestion": "Is there one governed kit — assets, copy slots, specs — per channel a client can hand to that channel's own tool?",
+        "worldClass": "Every channel (email signatures, social profiles, video-call backgrounds, per #1207) has one governed kit of checked assets and copy slots at the exact sizes and roles that channel requires — never assembled by hand per send. Today: `buildEmailSignatureHtml`/`buildEmailSignatureText` and the channel spec registry (`src/templates/`) exist, and `publisher-preview` renders an email signature and social and video-call cards from built-in fixtures, but nothing assembles or checks a governed per-channel kit or writes the declared `clossys/publisher/channel-kits.json`. No qualification case exercises this capability yet, so it is `planned` with no `proofCase` (#1272).",
+        "inputs": [
+          {
+            "producerRole": "@clossys/writer",
+            "artifact": "messaging-kit"
+          },
+          {
+            "producerRole": "@clossys/designer",
+            "artifact": "logo-and-identity-files"
+          }
+        ],
+        "outputs": [
+          "clossys/publisher/channel-kits.json"
+        ],
+        "proofCase": null,
+        "maturity": "planned",
+        "v0": true,
+        "businessLifecycleStage": "launch"
+      },
+      {
+        "id": "asset-roster-and-coverage",
+        "subQuestion": "Does every asset a document references resolve to a registered, checked entry at its required role and size?",
+        "worldClass": "Every image/video asset a document binds resolves to a registered roster entry (favicon, OG, Twitter, email-safe, app icons…) at its required pixel size with alt text — checked both directions, never a broken or orphaned reference.",
+        "inputs": [],
+        "outputs": [
+          "clossys/publisher/asset-roster.json"
+        ],
+        "proofCase": "media-satisfied",
+        "maturity": "built",
+        "v0": true,
+        "businessLifecycleStage": "build"
+      },
+      {
+        "id": "route-and-visibility-governance",
+        "subQuestion": "Does every publishing web route resolve to a registered template, with visibility declared as internal or public rather than inferred, and internal-only routes refused from serving?",
+        "worldClass": "Every route composes only through a registered SurfaceDocument template -- never Designer blocks assembled directly in a route file -- and declares visibility as `internal` or `public` (#1204; supersedes the earlier public/unlisted/access-protected model #1206 retired); a route serving an internal-only item is refused, never silently served. Today: `PACK_VISIBILITIES` (`internal`/`public`) and `checkMaterialsVisibility` declare and check visibility at the materials level (#1206), but `checkWebRoutes`/`publisher-web-route-check` still checks only the route-to-template mapping -- no route-level visibility declaration or internal-route refusal runs yet.",
+        "inputs": [],
+        "outputs": [
+          "clossys/publisher/routes.json"
+        ],
+        "proofCase": "web-routes-clean",
+        "maturity": "partial",
+        "v0": true,
+        "businessLifecycleStage": "launch"
+      },
+      {
+        "id": "site-template",
+        "subQuestion": "Does a product repository get a working marketing site wired to its team's own records from the first commit?",
+        "worldClass": "An apps/site template (#1208) renders Publisher's web views and Designer's theme, reading copy, tokens, and assets from clossys/ at build time and never copying them — routes for landing, about, contact, privacy/terms, 404, metadata, sitemap, robots, all included. Today: `templates/site/` ships all of the above (#1208), plus `web-route-manifest.json` for `publisher-web-route-check`, but is template content copied by Launcher (#1215) into a consumer repository, not part of this package's own npm workspace — its own README says plainly it is \"not built, typechecked, or tested\" by this repository's `npm run build`/`npm run typecheck`/`npm test`, and Launcher's own apply step (#1215) is still a follow-up. No qualification case exercises this capability yet, so it is `planned` with no `proofCase` (#1272).",
+        "inputs": [
+          {
+            "producerRole": "@clossys/publisher",
+            "artifact": "route-and-visibility-governance"
+          }
+        ],
+        "outputs": [
+          "clossys/publisher/site.json"
+        ],
+        "proofCase": null,
+        "maturity": "planned",
+        "v0": true,
+        "businessLifecycleStage": "launch"
+      },
+      {
+        "id": "sealing-and-the-publication-record",
+        "subQuestion": "Once published, is the exact shipped result sealed into an immutable, append-only record, with every cited fact still current?",
+        "worldClass": "Every publication event is appended once to an immutable record — never overwritten, never silently lost — and every fact cited in what was sealed is re-checked against the current source value at seal time, with drift reported, never assumed absent. A surface seals only once Customer has recorded a keep.",
+        "inputs": [
+          {
+            "producerRole": "@clossys/customer",
+            "artifact": "keep-verdict"
+          }
+        ],
+        "outputs": [
+          "clossys/publisher/record.json"
+        ],
+        "proofCase": "record-append-only-clean",
+        "maturity": "built",
+        "v0": true,
+        "businessLifecycleStage": "deliver"
+      },
+      {
+        "id": "live-parity",
+        "subQuestion": "Does the production URL actually serve what was sealed — head, OG, metadata, and the materials index — independent of the hosting provider's own success signal?",
+        "worldClass": "`verify` (#1209) proves the live site actually serves what was sealed -- head, OG, and metadata for public surfaces -- independently re-reading the live URL, never trusting the deploy provider's own \"success\" status. Scoped to public surfaces only, per #1206 (materials visibility is declared per item; an internal item is never expected to be live-servable at all). Today: the reconciliation-loop contracts (an independent witness compared against a ledger) exist; nothing yet re-reads a live production URL. No qualification case exercises this capability yet, so it is `planned` with no `proofCase` (#1272).",
+        "inputs": [
+          {
+            "producerRole": "@clossys/publisher",
+            "artifact": "sealing-and-the-publication-record"
+          }
+        ],
+        "outputs": [
+          "clossys/publisher/.generated/live-parity-report.json"
+        ],
+        "proofCase": null,
+        "maturity": "planned",
+        "v0": false,
+        "businessLifecycleStage": "operate"
+      }
+    ]
   },
   "files": [
     "dist",
     "src",
     "!src/**/*.test.ts",
     "!src/**/*.test.tsx",
-    "CHANGELOG.md",
     "README.md",
     "LICENSE",
-    "skill"
+    "skill",
+    "templates",
+    "fit-signals.json"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -115,9 +376,9 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@clossys/writer": "^0.3.0",
-    "@clossys/designer": "^0.4.0",
-    "@clossys/controller": "~0.9.0"
+    "@clossys/writer": "^0.4.0",
+    "@clossys/designer": "^0.6.0",
+    "@clossys/controller": "~0.9.14"
   },
   "peerDependencies": {
     "@internationalized/date": "^3.12.2",
