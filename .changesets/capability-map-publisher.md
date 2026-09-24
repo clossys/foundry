@@ -22,4 +22,5 @@ inventory (`@clossys/publisher/pack` ships `validatePackManifest`,
 `computePackReadiness`, `planPackOrder`, and `detectExistingPackItems` as
 library functions, but no command checks a real product's pack manifest
 with them); templates and channel specs; channel kits; the site template
-(shipped under `templates/site/` and applied by Launcher); and live parity.
+(shipped under `templates/site/`; Launcher does not apply it yet, #1215);
+and live parity.

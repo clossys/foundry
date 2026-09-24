@@ -1642,28 +1642,38 @@ The pack is MECE by layer:
 | Identity | Voice and messaging | Writer |
 | Surface | Website, materials site, email kit, social kit, video-call backgrounds | assembled by Publisher |
 
-`clossys/publisher/pack.json` records, for each item: `status` and
-`condition` from the one shared lifecycle vocabulary (issue #1228 — see
-below), a `v<major>.<minor>` version, `createdAt`/`updatedAt`/`approvedAt`/
+`clossys/publisher/pack.json` records, for each item: a pack `status` that
+specializes the one shared lifecycle, and a `condition` from it (issue
+#1228 — see below), a `v<major>.<minor>` version, `createdAt`/`updatedAt`/`approvedAt`/
 `verifiedAt` timestamps, content-fingerprint source pins, output paths,
 where it published, and its single next action.
 
 ### Lifecycle vocabulary (#1228)
 
-Pack items use the same six statuses and three conditions the loop engine
-uses, rather than a second, pack-specific vocabulary:
+Pack items do not declare a second, pack-specific lifecycle. An item's
+`status` is one of the six pack statuses, `PACK_STATUSES`, and each one
+resolves to one of the six states the loop engine uses, `LIFECYCLE_STATES`,
+through `packStatusToLifecycle`. An item's `condition` is one of the shared
+`LIFECYCLE_CONDITIONS`:
 
-- **Statuses:** `absent`, `found`, `draft`, `approved`, `verified`, `retired`.
-- **Conditions:** `current`, `stale`, `blocked`.
+- **Pack statuses (`PACK_STATUSES`):** `absent`, `found`, `draft`,
+  `in-review`, `kept`, `published`.
+- **Shared states (`LIFECYCLE_STATES`):** `absent`, `found`, `draft`,
+  `approved`, `verified`, `retired`.
+- **Conditions (`LIFECYCLE_CONDITIONS`):** `current`, `stale`, `blocked`.
 
-The former pack-only names map onto this list directly: `in-review` is
-`draft` with a pending judgment, `kept` is `approved` (the Customer keep),
-and `published` is `verified` (sealed and verified live).
+`absent`, `found`, and `draft` map onto the shared state of the same name.
+The other three specialize one: `in-review` is `draft` with a pending
+judgment, `kept` is `approved` (the Customer keep), and `published` is
+`verified` (sealed and verified live). No pack status maps to `retired`.
+Write a pack status, not a shared state, into `pack.json`:
+`validatePackManifest` reports `"approved"` as an `invalid-status` finding.
 
-This package declares no copy of that list. `@clossys/publisher/pack`
+This package declares no copy of either list. `@clossys/publisher/pack`
 imports `PACK_STATUSES`, `LIFECYCLE_STATES`, `LIFECYCLE_CONDITIONS`, and
 `packStatusToLifecycle` from `@clossys/controller`, which first exports them
-in 0.9.14, and re-exports them unchanged.
+in 0.9.14, and re-exports them unchanged. `@clossys/publisher/materials`
+also takes its `PackStatus` and `LifecycleCondition` types from there.
 
 ### Adopt, don't override
 
@@ -1934,15 +1944,18 @@ cosmetic gap.
   `JoinKeyIdentity` types, plus `PolicyBinding`/`DigestAlgorithm`/
   `PolicyFinding` re-exported from `@clossys/controller/policy`. The
   CLI is `publisher-record-check`.
-- `pack`: `LIFECYCLE_STATUSES`, `LIFECYCLE_CONDITIONS`, `isLifecycleStatus`,
-  `isLifecycleCondition`, `PACK_LAYERS`, `PACK_VISIBILITIES`, `isPackLayer`,
-  `isPackVisibility`, `isPackVersionString`, `validatePackManifest`,
-  `planPackOrder`, `computePackReadiness`, `sealableItemIds`,
-  `detectExistingPackItems`, `foundPackItem`, and the `LifecycleCondition`,
-  `LifecycleStatus`, `PackLayer`, `PackVisibility`, `PackItem`,
-  `PackManifest`, `PackSourcePin`, `PackFinding`, `PackValidationResult`,
-  `PackItemReadiness`, `PackReadiness`, `PackAdoptionCandidate`, and
-  `PackAdoptionResult` types. See "The pack," above.
+- `pack`: `PACK_STATUSES`, `LIFECYCLE_STATES`, `LIFECYCLE_CONDITIONS`, and
+  `packStatusToLifecycle` (re-exported from `@clossys/controller`),
+  `PACK_LAYERS`, `PACK_VISIBILITIES`, `isPackLayer`, `isPackVisibility`,
+  `isPackVersionString`, `validatePackManifest`, `planPackOrder`,
+  `computePackReadiness`, `sealableItemIds`, `detectExistingPackItems`,
+  `foundPackItem`, and the `PackStatus`, `LifecycleState`,
+  `LifecycleCondition`, and `PackStatusLifecyclePosition` types (also
+  re-exported from `@clossys/controller`) and the `PackLayer`,
+  `PackVisibility`, `PackItem`, `PackManifest`, `PackSourcePin`,
+  `PackFinding`, `PackValidationResult`, `PackItemReadiness`,
+  `PackReadiness`, `PackAdoptionCandidate`, and `PackAdoptionResult` types.
+  See "The pack," above.
 - `surfaces`: `PUBLISHER_SURFACES_DIR`, `validateSurfaceOwnership`, and the
   `SurfaceOwnershipClaim`, `SurfaceOwnershipFinding`, and
   `SurfaceOwnershipCheckResult` types. See "Surface documents move to
@@ -1981,7 +1994,9 @@ restated here would go stale the moment one did. From `controller`, this
 package imports the `./policy` subpath, `@clossys/controller/policy`, for
 the publication record, and the shared lifecycle vocabulary
 (`packStatusToLifecycle`, `PACK_STATUSES`, `LIFECYCLE_CONDITIONS`, and
-`LIFECYCLE_STATES`) from the package root for `@clossys/publisher/pack`.
+`LIFECYCLE_STATES`, with their types) from the package root for
+`@clossys/publisher/pack`; `@clossys/publisher/materials` also takes the
+`PackStatus` and `LifecycleCondition` types from the root.
 Controller first exports that vocabulary in 0.9.14, so the `controller`
 range must not admit anything earlier: against an older 0.9.x release,
 importing `@clossys/publisher/pack` fails at module load. On a `0.x`
