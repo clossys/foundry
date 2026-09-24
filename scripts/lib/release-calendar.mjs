@@ -145,25 +145,39 @@ export function filterReleasePrBranchRefs(lsRemoteOutput) {
  * skip the release-PR guard forever, on every following Saturday, with no
  * error and no visible cause.
  *
- * `prStateByBranch` is `{ [branchName]: { state: "OPEN"|"CLOSED"|"MERGED" } }`
- * -- the caller's own already-fetched `gh pr list --state all --json
- * headRefName,state` results (this module never does its own network I/O,
- * matching every other function here). A branch with NO entry at all (no
- * pull request has ever been opened for it) is treated as IN PROGRESS --
- * that is the real, ordinary window release-pr.yml's own header describes
- * (push the branch, then stop and wait for an owner-authenticated actor to
- * open the PR), not a leftover. A branch whose PR is "MERGED" is also
- * excluded -- delete_branch_on_merge should already have removed it, but
- * this stays correct even in the instant before that deletion lands. Only
- * "CLOSED" (closed without merging) is the leftover case this function
- * exists to filter out.
+ * `prsByBranch` is `{ [branchName]: Array<{ state, isCrossRepository }> }`
+ * -- for each branch, the caller's own already-parsed output of
+ * `gh ${releaseBranchPrListArgs(repo, branch).join(" ")}` (this module never
+ * does its own network I/O, matching every other function here).
+ *
+ * `gh pr list --head <branch>` matches by head branch NAME only, so it also
+ * returns pull requests from forks whose branch happens to share the name.
+ * This repository is public, so anyone can read a pending release branch's
+ * name, push a same-named branch to a fork, and open then close a PR from it.
+ * A fork PR therefore never decides anything here: every entry whose
+ * `isCrossRepository` is not exactly `false` is ignored. A branch is
+ * LEFTOVER -- excluded from "in progress" -- only when at least one
+ * same-repository PR exists and EVERY same-repository PR is exactly
+ * "CLOSED" (closed without merging, the leftover case this function exists
+ * for) or "MERGED" (delete_branch_on_merge should already have removed it,
+ * but this stays correct in the instant before that deletion lands). No
+ * same-repository PR at all is the real, ordinary window release-pr.yml's
+ * own header describes (push the branch, then stop and wait for an
+ * owner-authenticated actor to open the PR), so it counts as IN PROGRESS,
+ * as does any OPEN or unrecognised state and any malformed entry.
  */
-export function inProgressReleaseBranches(branchNames, prStateByBranch = {}) {
-  return (branchNames ?? []).filter((name) => {
-    const info = prStateByBranch?.[name];
-    if (!info) return true; // no PR opened yet -- the real, ordinary in-progress window
-    return info.state !== "CLOSED" && info.state !== "MERGED";
-  });
+export function releaseBranchPrListArgs(repository, branch) {
+  return ["pr", "list", "--repo", repository, "--head", branch, "--state", "all", "--json", "state,isCrossRepository"];
+}
+
+export function isLeftoverReleaseBranch(prs) {
+  const sameRepository = (Array.isArray(prs) ? prs : []).filter((pr) => pr?.isCrossRepository === false);
+  if (sameRepository.length === 0) return false;
+  return sameRepository.every((pr) => pr.state === "CLOSED" || pr.state === "MERGED");
+}
+
+export function inProgressReleaseBranches(branchNames, prsByBranch = {}) {
+  return (branchNames ?? []).filter((name) => !isLeftoverReleaseBranch(prsByBranch?.[name]));
 }
 
 /** Reads and parses governance/release-calendar.json. Throws a descriptive error rather than returning null -- every caller needs a calendar to do anything. */

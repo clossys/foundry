@@ -186,26 +186,26 @@ jobs:
           # whose release PR was closed WITHOUT merging -- delete_branch_on_
           # merge only cleans up a branch on a real merge, so that leftover
           # branch would otherwise block every subsequent Saturday, silently
-          # and permanently. Both are fixed the same way: `gh pr list --head
-          # <branch> --state all` per matched branch classifies it via
-          # inProgressReleaseBranches() (`scripts/lib/release-calendar.mjs`
-          # -- see that function's own header), and its result is printed on
-          # two stdout lines this step reads back below, rather than only to
-          # stderr.
+          # and permanently. Both are fixed the same way: every pull request
+          # `gh pr list --head <branch> --state all` returns for a matched
+          # branch is handed to inProgressReleaseBranches()
+          # (`scripts/lib/release-calendar.mjs` -- see that function's own
+          # header, which also owns the gh arguments and ignores same-named
+          # fork PRs), and its result is printed on two stdout lines this
+          # step reads back below, rather than only to stderr. A gh or API
+          # failure throws here and fails the step under `set -e`.
           result="$(OPEN_COUNT="$open_count" BRANCH_REFS="$branch_refs" GH_TOKEN="$GH_TOKEN" node --input-type=module -e '
             import { execFileSync } from "node:child_process";
-            import { loadReleaseCalendar, shouldOpenReleasePr, filterReleasePrBranchRefs, inProgressReleaseBranches } from "./scripts/lib/release-calendar.mjs";
+            import { loadReleaseCalendar, shouldOpenReleasePr, filterReleasePrBranchRefs, inProgressReleaseBranches, releaseBranchPrListArgs } from "./scripts/lib/release-calendar.mjs";
             const calendar = loadReleaseCalendar(process.cwd());
             const matchingBranches = filterReleasePrBranchRefs(process.env.BRANCH_REFS);
             console.error(`matched ${matchingBranches.length} real release-PR branch(es) among the claude/release-* candidates on the remote`);
 
-            const prStateByBranch = {};
+            const prsByBranch = {};
             for (const branch of matchingBranches) {
-              const out = execFileSync("gh", ["pr", "list", "--repo", process.env.GITHUB_REPOSITORY, "--head", branch, "--state", "all", "--json", "state"], { encoding: "utf8" });
-              const prs = JSON.parse(out);
-              if (prs.length > 0) prStateByBranch[branch] = prs[0];
+              prsByBranch[branch] = JSON.parse(execFileSync("gh", releaseBranchPrListArgs(process.env.GITHUB_REPOSITORY, branch), { encoding: "utf8" }));
             }
-            const inProgressBranches = inProgressReleaseBranches(matchingBranches, prStateByBranch);
+            const inProgressBranches = inProgressReleaseBranches(matchingBranches, prsByBranch);
             const leftoverBranches = matchingBranches.filter((b) => !inProgressBranches.includes(b));
             if (leftoverBranches.length > 0) console.error(`ignoring ${leftoverBranches.length} leftover (closed-without-merging or already-merged) release branch(es): ${leftoverBranches.join(", ")}`);
 
