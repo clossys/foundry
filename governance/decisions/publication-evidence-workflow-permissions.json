@@ -1,30 +1,25 @@
 {
-  "decision": "publication-evidence-workflow-permissions",
+  "schemaVersion": 1,
+  "id": "publication-evidence-workflow-permissions",
+  "tier": "tier-2",
+  "question": "Should a new follow-up workflow, .github/workflows/record-publication-evidence.yml (separate from publish.yml, triggered only after it completes), be granted contents: write and pull-requests: write permissions -- with no publish/registry credential and no id-token: write -- so it can open or update pull requests carrying governance/release-publications/later/ evidence records?",
+  "options": [
+    "Grant contents: write and pull-requests: write to record-publication-evidence.yml, with no publish credential, no id-token: write, never pushing to main directly, and only opening/updating pull requests carrying governance/release-publications/later/ evidence records (the coordinator's Permission decision ask, quoted in decision below)",
+    "Do not grant these permissions"
+  ],
+  "recommendation": "Grant the two write scopes as designed -- inferred from the coordinator's own ask for approval (see JUDGMENT CALLS in notes below: the old record never used the word 'recommend').",
+  "reviews": [],
   "status": "decided",
   "decidedBy": "owner",
-  "channel": "owner-chat",
-  "date": "2026-09-23",
-  "issue": 1346,
-  "scope": {
-    "workflow": ".github/workflows/record-publication-evidence.yml",
-    "description": "A separate follow-up workflow to publish.yml, triggered only after it completes.",
-    "permissions": ["contents: write", "pull-requests: write"],
-    "additionalPermissions": [
-      {
-        "permission": "actions: read",
-        "grantedOn": "both jobs (determine-package, record-evidence)",
-        "purpose": "Read the triggering publish run's own jobs (to find the matched publish (<key>) job and its run_attempt) and, on the schema-3 replay path, that run's qualified-candidate-<key> artifact list and download.",
-        "status": "read-only, pending owner confirmation",
-        "note": "This scope was added during the 2026-09-23 review rounds to make the workflow function at all (the GitHub Actions jobs/artifacts API requires it) and was not part of the original two-write-scope ask this decision's source quotes. It grants no write capability and cannot itself publish, push to main, or touch a registry credential. The owner has been separately asked to confirm it; until confirmed, treat it as a read-only addition awaiting explicit sign-off, not as covered by the original \"approved\" reply below."
-      }
-    ],
-    "excludes": ["id-token: write", "any npm/registry publish credential"],
-    "constraints": [
-      "Never pushes to the default branch (main) directly.",
-      "Only opens or updates pull requests carrying governance/release-publications/later/ evidence records.",
-      "publish.yml's own upload job (contents: read, id-token: write) is unchanged by this grant."
-    ]
+  "decision": "The owner replied \"approved\" (channel: owner-chat, date: 2026-09-23) to the coordinator's \"Permission decision\" ask about granting a separate follow-up workflow, .github/workflows/record-publication-evidence.yml (a separate follow-up workflow to publish.yml, triggered only after it completes), contents: write and pull-requests: write, with no publish credential, that never pushes to main and only opens evidence pull requests. Permissions granted: contents: write, pull-requests: write. Excludes: id-token: write, any npm/registry publish credential. Constraints: never pushes to the default branch (main) directly; only opens or updates pull requests carrying governance/release-publications/later/ evidence records; publish.yml's own upload job (contents: read, id-token: write) is unchanged by this grant. An additional permission, actions: read, was granted on both jobs (determine-package, record-evidence) during the 2026-09-23 review rounds to make the workflow function at all (the GitHub Actions jobs/artifacts API requires it) -- to read the triggering publish run's own jobs (to find the matched publish (<key>) job and its run_attempt) and, on the schema-3 replay path, that run's qualified-candidate-<key> artifact list and download. It grants no write capability and cannot itself publish, push to main, or touch a registry credential. This additional actions: read scope was not part of the original two-write-scope ask quoted above, and at the time of this decision remained read-only, pending owner confirmation (see governance/decisions/publication-evidence-workflow-permissions-actions-read-confirmation.json, which later confirms it).",
+  "relaxesGateOrPolicy": false,
+  "sunset": null,
+  "expiry": null,
+  "supersedes": [],
+  "links": {
+    "pullRequests": [],
+    "issues": ["1346"],
+    "paths": []
   },
-  "source": "The owner replied \"approved\" to the coordinator's \"Permission decision\" ask about granting a separate follow-up workflow contents: write and pull-requests: write, with no publish credential, that never pushes to main and only opens evidence pull requests.",
-  "note": "This decision is scoped to exactly the design described above: the two write scopes the source quotes. It does not authorize broadening this workflow's permissions, granting them to publish.yml itself, or granting them to any other workflow. Multiple independent blind reviews (security- and correctness-focused, 2026-09-23) subsequently required narrowing this workflow's trust boundary (trigger gating, provenance verification, branch-adoption checks) without changing the two write-scope grant itself; this decision covers that narrowed design unchanged. See additionalPermissions above for the one scope (actions: read) added since the original ask, which remains pending explicit owner confirmation."
+  "notes": "MIGRATED from this repository's earlier, pre-schemaVersion decision-record shape ({ decision, status, decidedBy, channel, date, issue, scope, source, note }) to docs/contracts/decision-record.json's schema, per the owner's direction (relayed in this migration's task) to migrate the two records scripts/check-decision-records.test.mjs's 'every backfilled record under governance/decisions/ is currently valid' test rejects, rather than delete them or leave them invalid. Every fact in the old record is carried over: decidedBy owner, channel owner-chat, date 2026-09-23 (folded into `decision` above, since this schema has no separate channel/date fields), issue 1346 (-> links.issues), and the full old `scope`/`source`/`note` content (folded into `decision` above). JUDGMENT CALLS FOR OWNER REVIEW: (1) `tier` is inferred as tier-2 -- the old record never stated a tier at all; inferred because this was an owner-only decision via owner-chat, with no prior recorded agent recommendation or consensus, granting write permissions to a new CI workflow, which reads as a security-relevant, owner-only call under the decision-tier rule (#1187 comment 5800142871), similar in kind to this branch's other owner-decided permission/priority-call records (weekly-release-calendar.json, operation-interaction-role-authority.json, both tier-2). (2) `options` restates the coordinator's ask (option 1, drawn from `source`) plus its obvious literal complement ('do not grant') -- the old record only recorded the approval, never an explicit alternatives list, so option 2 is inferred, not quoted. (3) `recommendation` is inferred from the structure of the ask itself (the coordinator asking the owner for approval implies the coordinator recommended granting it); the old record never used the word 'recommend'. (4) `relaxesGateOrPolicy` is set to false: this authorizes a brand-new workflow's initial permission grant, not a loosening of any pre-existing gate or policy -- per docs/contracts/decision-record.json's own guidance, 'a new policy... reads false'; the excludes/constraints quoted in `decision` show the grant was deliberately designed narrower than publish.yml's own credentials, not wider. (5) `expiry` is null, permitted only because relaxesGateOrPolicy is false; the old record had no expiry concept and nothing here bounds the grant's duration. (6) `links.paths` is deliberately left empty rather than naming .github/workflows/record-publication-evidence.yml: populating it on a decided tier-2 record would trigger scripts/check-decision-records.mjs's path-scoped-authorization rule requiring a non-null `expiry`, inventing a bound neither the coordinator's ask nor the owner's approval imposed. The workflow path is named in `decision` prose instead. `reviews` is empty: this was a direct owner approval of a coordinator's ask, not preceded by a recorded independent agent review -- docs/contracts/decision-record.json explicitly permits an empty reviews[] for a decidedBy: \"owner\" record made this way."
 }
