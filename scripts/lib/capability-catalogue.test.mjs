@@ -187,6 +187,16 @@ test("a `needs` edge naming a producer outside this repository's scope is unsati
   assert.deepEqual(composed.unsatisfiedNeeds, [{ role: "customer", artifact: "surface-documents", wantedRole: "publisher" }]);
 });
 
+test("an unscoped producerRole is reported as the consumer's own defect, never as the producer failing to feed it", () => {
+  // `producerRole: "publisher"` resolves to no role, although `publisher`
+  // is a package directory here and does feed `surface-documents`.
+  const catalogue = catalogueWith(allLanesWith({ customer: (foundry) => ({ ...foundry, needs: [{ producerRole: "publisher", artifact: "surface-documents" }] }) }));
+  const result = evaluateOfferingKits({ contract: { schemaVersion: 1, presets: [{ id: "keep", label: "Keep", problem: "p", roles: ["customer"] }] }, catalogue });
+  assert.deepEqual(result.findings.map((finding) => finding.message), [
+    "preset keep: role customer needs surface-documents, but no role here is publisher (a producerRole must be the producer's scoped package name, @clossys/<role>)",
+  ]);
+});
+
 test("the pre-contract edge shape (fromRole/toRole/role) is not read", () => {
   const catalogue = catalogueWith({
     customer: (foundry) => ({ ...foundry, needs: [{ fromRole: "publisher", artifact: "surface-documents" }, { role: "strategist", artifact: "audience-understanding" }] }),

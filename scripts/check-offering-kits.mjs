@@ -48,7 +48,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { buildCapabilityCatalogue, composeKit, isRecord, isText, presetEvidenceFindings } from "./lib/capability-catalogue.mjs";
+import { buildCapabilityCatalogue, composeKit, isRecord, isText, presetEvidenceFindings, SCOPE_PREFIX } from "./lib/capability-catalogue.mjs";
 
 const PRESETS_REL = "docs/contracts/kit-presets.json";
 
@@ -149,13 +149,19 @@ export function evaluateOfferingKits({ contract, catalogue }) {
             preset: preset.id,
           });
         }
+        const byRole = new Map((catalogue?.roles ?? []).map((role) => [role.role, role]));
         for (const need of composed.unsatisfiedNeeds) {
-          const producerExists = need.wantedRole !== null && knownRoles.has(need.wantedRole);
-          const why = producerExists
+          // `wantedRole` is the resolved producer role when the need edge
+          // resolved to one, and the raw declared `producerRole` otherwise.
+          // Only a resolved edge proves the producer exists: an unscoped
+          // `producerRole: "publisher"` names a directory here by accident,
+          // and the defect is then the consumer's own declaration.
+          const resolved = (byRole.get(need.role)?.needs ?? []).some((edge) => edge.artifact === need.artifact && edge.role !== undefined && edge.role === need.wantedRole);
+          const why = resolved && knownRoles.has(need.wantedRole)
             ? `role ${need.wantedRole} is in the catalogue but declares no feeds entry for it`
             : need.wantedRole === null
               ? "it names no producer role"
-              : `no role here is ${need.wantedRole}`;
+              : `no role here is ${need.wantedRole} (a producerRole must be the producer's scoped package name, ${SCOPE_PREFIX}<role>)`;
           note(
             "unsatisfied-need",
             `preset ${preset.id}: role ${need.role} needs ${need.artifact}, but ${why}`,

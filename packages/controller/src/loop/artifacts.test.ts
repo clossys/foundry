@@ -14,6 +14,12 @@ describe("role ownership boundary", () => {
   it("rejects a path escaping with a .. segment", () => {
     expect(isOwnedByRole("@clossys/advisor", "clossys/advisor/../strategist/direction.json")).toBe(false);
   });
+
+  it("rejects a path escaping with a Windows-style ..\\ segment", () => {
+    expect(isOwnedByRole("@clossys/advisor", "clossys/advisor/..\\strategist\\direction.json")).toBe(false);
+    expect(isOwnedByRole("@clossys/advisor", "clossys\\advisor\\..\\strategist\\direction.json")).toBe(false);
+    expect(planMove({ role: "@clossys/advisor", fromPath: "clossys/advisor/..\\strategist\\direction.json", toPath: "clossys/advisor/direction.json", candidateReferrers: [] }).kind).toBe("refused");
+  });
 });
 
 describe("create/update planning", () => {
