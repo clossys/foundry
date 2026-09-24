@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "id": "operation-interaction-role-authority",
+  "tier": "tier-2",
+  "question": "Where a package outside this repository's catalogue answers the same job question as one of the operation-scope roles (#505's original six: controller, inspector, builder, locksmith, integrator, observer -- plus architect, added to the decided scope before this ruling) or the interaction-scope roles (#511's original four: bouncer, butler, giver, keeper -- plus messenger, added to the decided scope before this ruling), is the @clossys package authoritative, or does the incumbent win -- and how is that classification made per role, per consuming repository?",
+  "options": [
+    "Every dependency block is parsed structurally (including overrides/resolutions) per role per consuming repository; classify each overlap as 'competitor' (a second answer to the same job question -- the @clossys package is authoritative, and docs/LIFECYCLE.md's 'adopted' bar requires the competitor's removal or narrowing) or 'substrate' (a provider/SDK/service/tool the role gates or reconciles against, not a second answer -- it stays, and the cell remains adoptable).",
+    "Assume no overlap without measuring (the status quo before #505/#511 were filed) and let 'adopted' be claimed on installation and wiring alone.",
+    "Defer the question indefinitely and block no adoption claim on it."
+  ],
+  "recommendation": "Option 1 -- measure per role, per consuming repository, and classify each overlap as competitor or substrate rather than assuming either 0-of-N or N-of-N overlap. Recommended explicitly, in the same terms, in the Opus scoping recommendation at #1187 comment 5800189482 ('Decision 2'): a flat 'ours is authoritative' statement would wrongly declare the @clossys package authoritative over the very substrates several of these roles read, gate, or reconcile against (a secrets store for locksmith, a CI provider's run history for observer, an identity SDK for bouncer, and so on), so the decision has to carry the competitor/substrate distinction rather than a single blanket rule.",
+  "reviews": [
+    {
+      "role": "primary",
+      "instance": "unrecorded-predates-schema",
+      "provider": "anthropic",
+      "model": "opus",
+      "effort": "unrecorded-predates-schema",
+      "verdict": "approve",
+      "link": "https://github.com/clossys/foundry/issues/1187#issuecomment-5800189482"
+    },
+    {
+      "role": "owner",
+      "instance": "unrecorded-predates-schema",
+      "provider": "unrecorded-predates-schema",
+      "model": "unrecorded-predates-schema",
+      "effort": "unrecorded-predates-schema",
+      "verdict": "approve",
+      "link": "https://github.com/clossys/foundry/issues/511#issuecomment-5800368649"
+    }
+  ],
+  "status": "decided",
+  "decidedBy": "owner",
+  "decision": "Posted directly on both #511 (comment 5800368649) and #505 (comment 5800368286) as \"Owner decision: authority for the operation and interaction roles (2026-09-23)\": a competitor is authoritative for the @clossys package and must be removed or narrowed before a cell reads 'adopted'; a substrate stays and the cell remains adoptable. Classification is made per role, per consuming repository, by the job-question test in #511, with dependency blocks parsed structurally, including overrides and resolutions. A contested classification leaves the cell not adopted until the owner rules; a declared non-adoption with a reason remains a legitimate answer, an empty cell does not. Scope: controller, architect, inspector, builder, locksmith, integrator, observer, bouncer, butler, messenger, giver, keeper. This is a rule, not a measurement -- #505's question 1 (does anything already installed cover this role's job?) has never been run; agents may now run that per-repository measurement and declaration work. Revisit if that measurement finds incumbents with broader coverage than the role: clause 1's default then flips back to the 2026-09-16 rule, under which the consumer decides and declares.",
+  "relaxesGateOrPolicy": false,
+  "sunset": null,
+  "expiry": null,
+  "supersedes": [],
+  "links": {
+    "pullRequests": [],
+    "issues": [
+      "505",
+      "511",
+      "1187"
+    ],
+    "paths": []
+  },
+  "notes": "Backfilled from the owner's decision comments posted identically on #511 (https://github.com/clossys/foundry/issues/511#issuecomment-5800368649) and #505 (https://github.com/clossys/foundry/issues/505#issuecomment-5800368286), both dated 2026-09-23, and the Opus scoping recommendation they approve (#1187 comment 5800189482, 'Decision 2: operation and interaction role authority'). This record combines #505 and #511 because the owner posted one identical decision covering both. #1187 review at 8e6d97ea (blocking finding 7) flagged an earlier draft of this record for citing an invented comment anchor (`#issuecomment-drafted-decision`, which does not exist) in place of the real one; both citations above were verified live against the GitHub API before being written here. The reviewing sessions' exact instance/provider/model identity was not captured at the time (this decision predates governance/review-tiers.json and docs/contracts/review-record.json) beyond what the comments' own text shows (the Opus recommendation's byline) -- see docs/contracts/decision-record.json's own note on backfilled reviews[] entries. Classified tier-2 here (not tier-1) because it sets which package is authoritative for a consuming repository -- a business/adoption-priority call under the decision-tier rule at #1187 comment 5800142871, not a gate or process change. Role counts in `question` above were also corrected (#1187 review at 8e6d97ea, should-fix 16): the original #505 body says 'six operation roles' (controller, inspector, builder, locksmith, integrator, observer) and #511 says 'four interaction roles' (bouncer, butler, giver, keeper); the owner's decided scope adds architect and messenger to those counts respectively, which an earlier draft of this record folded into the 'six'/'four' labels without updating them, producing a seven-item list still called six and a five-item list still called four."
+}

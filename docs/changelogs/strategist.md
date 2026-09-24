@@ -28,12 +28,13 @@ sections from this package's packed skill (`skill/SKILL.md`).
 `@clossys/launcher` injects the shared conversation contract when it
 composes a skill for a consumer, so the packed skill no longer carries its
 own byte-identical copy (#1182).
-- Correction: the 0.4.0 CHANGELOG entry said the retired `strategy/`
+- Correction: the 0.4.0 changelog entry said the retired `strategy/`
 fallback was "scheduled for removal in the next release (0.5.0)". That
 removal is deferred — 0.5.0 still reads `strategy/` unchanged, with no
-code behavior change from 0.4.0. The runtime notice, README, and packed
-skill now say the fallback is still read in this release, with removal
-announced beforehand in a later minor release's CHANGELOG.
+code behavior change to the `strategy/` fallback from 0.4.0. The runtime
+notice, README, and packed skill now say the fallback is still read in
+this release, with removal announced beforehand in a later minor
+release's changelog.
 - Fix a stale parenthetical in the packed skill's role description: the
 in-tree page document is authored and owned by Publisher, not jointly by
 Designer and Writer, since #1205.
