@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync } from "node:fs";
+import { readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 
 import { discoverGateTestFiles, GATE_TEST_EXCLUSIONS } from "./lib/gate-test-set.mjs";
+import { classifyPath } from "./classify-change-tier.mjs";
 
 // check-workflow-references — a future `check:*` script added only to the
 // local `npm run check` aggregate, and to no workflow, is exactly issue
@@ -793,4 +794,108 @@ test("issue #1420: a failed, cancelled, or skipped classify job runs every gated
       assert.equal(runs, true, `${jobName} must RUN when classify.result='${result}' and tier='${tier}' (unproven) -- got ${runs}`);
     }
   }
+});
+
+// Issue #1420 review round 2, finding N1: `check:changesets` and
+// `check:conflict-markers` used to run only inside `controller gates`,
+// which is skipped on the `prose` tier -- so a malformed `.changesets/*.md`
+// file, or committed conflict markers in a `docs/*.md` file, each
+// classified as pure prose, merged with the one gate built to catch it
+// silently skipped and reporting passing. Both moved to `prose quality`
+// (see its own comment).
+//
+// This is deliberately NOT a hardcoded check for those two script names --
+// a hardcoded list only ever proves THIS bug stays fixed, never catches
+// the next one. Instead it scans every job's own text for a
+// BACKTICK-QUOTED path token, the house style this entire file already
+// uses everywhere to document which literal path a step reads (see, for
+// example, the `docs/contracts/**` comments on the workspace-build-cache
+// steps, or `prose quality`'s own new comment on the two gates it gained).
+// Backtick-quoting is required to stay precise -- an unquoted, generic
+// mention like "STATUS.md shape" in a comment is not a claim that some
+// step reads a root STATUS.md file (no such file exists), and requiring
+// the quoting this file already uses for genuine path references is what
+// keeps that apart from a real signal without hand-maintaining an
+// exclusion list. Each quoted token is run through
+// scripts/classify-change-tier.mjs's OWN classifyPath() -- the same
+// function the classifier itself uses -- so a token this flags as "prose"
+// is provably one the classifier would also skip on, and a root `*.md`
+// token is checked against the REAL file list at repository root (read
+// live, not hardcoded), not a fixed name list that could drift from the
+// tree. A token is a violation only when EVERY job whose text mentions it
+// gates on `needs.classify` -- i.e. no job that runs unconditionally on
+// every tier documents reading it anywhere.
+function proseTokenGatingViolations(workflowText, { rootMdFiles }) {
+  const jobNames = [...workflowText.matchAll(/^ {2}([a-z][a-z0-9-]*):\n/gm)].map((m) => m[1]);
+
+  function isGated(jobName) {
+    const job = workflowJob(workflowText, jobName);
+    const jobIf = job.match(/^ {4}if: (.+)$/m);
+    return Boolean(jobIf && /needs\.classify/.test(jobIf[0]));
+  }
+
+  // token -> Set(jobName) whose own block mentions it, backtick-quoted.
+  // workflowJob()'s usual "a job's leading comment is attributed to the
+  // PRECEDING job" quirk (see this file's other tests) only ever makes
+  // this scan more lenient here -- crediting an always-run job with a
+  // mention that really belongs to the gated job right after it can never
+  // hide a real violation, only occasionally forgive a harmless one.
+  const tokenJobs = new Map();
+  const tokenPattern = /`([^`\s]+\.(?:md|json))`/g;
+  for (const jobName of jobNames) {
+    const job = workflowJob(workflowText, jobName);
+    for (const match of job.matchAll(tokenPattern)) {
+      const token = match[1];
+      const isBareFilename = !token.includes("/");
+      const kind = isBareFilename ? (rootMdFiles.has(token) ? "prose" : "full") : classifyPath(token);
+      if (kind !== "prose") continue; // 'packed-prose' and 'full' are out of scope for N1's three named categories
+      if (!tokenJobs.has(token)) tokenJobs.set(token, new Set());
+      tokenJobs.get(token).add(jobName);
+    }
+  }
+
+  const violations = [];
+  for (const [token, jobs] of tokenJobs) {
+    const jobList = [...jobs].sort();
+    if (jobList.every((jobName) => isGated(jobName))) {
+      violations.push(`'${token}' is documented as read only inside tier-gated job(s) [${jobList.join(", ")}] -- none of them run on the 'prose' tier`);
+    }
+  }
+  return { violations, tokenCount: tokenJobs.size };
+}
+
+test("issue #1420 (N1): no prose-tier path is documented as read ONLY inside a tier-gated job", () => {
+  const workflow = readFileSync(join(repoRoot, ".github/workflows/ci.yml"), "utf8");
+
+  // A real root-level *.md file, read from the tree itself so a future
+  // AGENTS.md-shaped file added or removed at root is picked up
+  // automatically -- never a hardcoded name list.
+  const rootMdFiles = new Set(readdirSync(repoRoot).filter((name) => /^[^.][^/]*\.md$/.test(name) && statSync(join(repoRoot, name)).isFile()));
+
+  const { violations, tokenCount } = proseTokenGatingViolations(workflow, { rootMdFiles });
+  assert.ok(tokenCount > 0, "expected at least one backtick-quoted prose-tier path token in ci.yml -- fixture drift, or the scan itself broke");
+  assert.deepEqual(violations, [], violations.join("\n"));
+
+  // Mutation proof: with `prose quality`'s own two new steps' comments
+  // deleted (simulating the pre-fix state, where check:changesets and
+  // check:conflict-markers -- and every backtick-quoted mention of
+  // `docs/*.md` in a run-unconditionally job -- lived only in
+  // `controller gates`, a tier-gated job, whose own comment on the SAME two
+  // gates still mentions `docs/*.md` today, unchanged), the scan must
+  // report `docs/*.md` as a violation. This is what proves the test above
+  // can actually fail, not merely pass by construction -- `.changesets/*.md`
+  // is deliberately NOT asserted here too: it has a second, incidental
+  // always-run mention (the `classify` job's own header comment, attributed
+  // to `push-tree` by workflowJob()'s usual boundary quirk) this mutation
+  // does not touch, so asserting it here would make this proof depend on
+  // wording that has nothing to do with N1's actual fix.
+  const proseJob = workflowJob(workflow, "prose");
+  const strippedProseJobText = proseJob.replace(/a `docs\/\*\.md` file/, "a docs file");
+  assert.notEqual(strippedProseJobText, proseJob, "the replacement above must actually match prose's real current text, or this mutation proves nothing");
+  const mutated = workflow.replace(proseJob, strippedProseJobText);
+  const { violations: mutatedViolations } = proseTokenGatingViolations(mutated, { rootMdFiles });
+  assert.ok(
+    mutatedViolations.some((v) => v.includes("'docs/*.md'")),
+    `stripping prose quality's own 'docs/*.md' mention must surface it as a violation, since controller gates' own comment on the SAME two gates (still mentioning it) is tier-gated (got: ${JSON.stringify(mutatedViolations)})`,
+  );
 });

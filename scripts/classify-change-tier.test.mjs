@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { makeTmpDirSync } from "./lib/tmp-fixture.mjs";
-import { classifyChangeTier, classifyPath } from "./classify-change-tier.mjs";
+import { classifyChangeTier, classifyPath, isNonRegularBlobMode, parseRawDiffLine } from "./classify-change-tier.mjs";
 
 // Two layers, the same split scripts/check-touches-packages.test.mjs uses:
 // a pure-function table (fast, no subprocess, exhaustive over the boundary
@@ -25,9 +25,14 @@ test("classifyPath: every tier boundary", () => {
     // A TOP-LEVEL docs/*.md file -- prose.
     ["docs/RELEASING.md", "prose"],
     ["docs/PUBLISHING.md", "prose"],
-    // docs/changelogs/** -- any depth -- prose.
+    // docs/changelogs/**/*.md -- any depth, but only a .md file (review
+    // round 2, non-blocking note 1: narrowed from a bare docs/changelogs/**
+    // that would have admitted any extension).
     ["docs/changelogs/advisor.md", "prose"],
     ["docs/changelogs/nested/advisor.md", "prose"],
+    // A near-miss of the .md narrowing: same directory, wrong extension.
+    ["docs/changelogs/advisor.json", "full"],
+    ["docs/changelogs/advisor.txt", "full"],
     // docs/contracts/** is EXCLUDED from prose (review round 1, #1420):
     // machine-read contracts, not human-only prose. Every example a
     // reviewer cited by name, each forcing 'full'.
@@ -115,6 +120,57 @@ test("classifyChangeTier: table over combinations, renames, deletions, and moves
   }
   assert.equal(classifyChangeTier(undefined), "full");
   assert.equal(classifyChangeTier(null), "full");
+});
+
+// ---------------------------------------------------------------------
+// Non-regular blob modes: a symlink or submodule gitlink under an
+// otherwise-allowlisted path must still force 'full' -- PROSE_PATTERNS
+// matches paths only, and has no way to see what a symlink points at
+// (issue #1420 review round 2, non-blocking note 1).
+// ---------------------------------------------------------------------
+
+test("isNonRegularBlobMode: ordinary files pass, symlinks and gitlinks do not", () => {
+  const table = [
+    ["100644", false], // ordinary file
+    ["100755", false], // executable file
+    ["120000", true], // symlink
+    ["160000", true], // submodule gitlink
+    ["040000", true], // tree (should never reach here from a diff, but not "regular" either)
+    ["", true],
+  ];
+  for (const [mode, expected] of table) {
+    assert.equal(isNonRegularBlobMode(mode), expected, `isNonRegularBlobMode(${JSON.stringify(mode)})`);
+  }
+});
+
+test("parseRawDiffLine: real git diff --raw shapes, and malformed lines return null", () => {
+  const table = [
+    // A modification: mode unchanged, use the new (current) mode.
+    [":100644 100644 ce01362 94954ab M\tdocs/RELEASING.md", { path: "docs/RELEASING.md", mode: "100644" }],
+    // An addition: old mode is the all-zero placeholder, use the new mode.
+    [":000000 120000 0000000 e77de85 A\tdocs/link.md", { path: "docs/link.md", mode: "120000" }],
+    // A deletion: new mode is the all-zero placeholder -- fall back to the
+    // old mode, the last mode the path actually had.
+    [":120000 000000 e77de85 0000000 D\tdocs/link.md", { path: "docs/link.md", mode: "120000" }],
+    // A path containing a literal tab is still split correctly -- the
+    // FIRST tab is the metadata/path separator, exactly matching how git
+    // itself never puts a tab inside the metadata portion.
+    [":100644 100644 aaa bbb M\tdocs/weird\tname.md", { path: "docs/weird\tname.md", mode: "100644" }],
+  ];
+  for (const [line, expected] of table) {
+    assert.deepEqual(parseRawDiffLine(line), expected, `parseRawDiffLine(${JSON.stringify(line)})`);
+  }
+
+  const malformed = [
+    "", // empty
+    "no tab here at all",
+    ":100644 100644 aaa bbb M", // no tab, so no path
+    ":1 1 aaa bbb M\tpath", // modes not six digits
+    ":100644 100644 aaa bbb M\t", // empty path after the tab
+  ];
+  for (const line of malformed) {
+    assert.equal(parseRawDiffLine(line), null, `parseRawDiffLine(${JSON.stringify(line)}) must return null, not throw or guess`);
+  }
 });
 
 // ---------------------------------------------------------------------
@@ -236,6 +292,28 @@ test("CLI: deleting a docs file only reports tier=prose", (t) => {
   gitCommit(dir, "remove a doc");
   const { tier } = runClassifier(dir, { baseSha });
   assert.equal(tier, "prose");
+});
+
+// A real symlink, added under an otherwise-allowlisted docs/*.md path,
+// forces 'full' -- end to end through the actual `git diff --raw` call, not
+// just the pure parseRawDiffLine()/isNonRegularBlobMode() table above
+// (issue #1420 review round 2, non-blocking note 1).
+test("CLI: a symlink added under docs/ reports tier=full, even with a prose-shaped name", (t) => {
+  const { dir, baseSha } = makeRepo(t);
+  symlinkSync("/etc/passwd", join(dir, "docs", "LINKED.md"));
+  gitCommit(dir, "add a symlink named like a doc");
+  const { tier, stdout } = runClassifier(dir, { baseSha });
+  assert.equal(tier, "full");
+  assert.match(stdout, /non-regular blob mode/);
+});
+
+test("CLI: a symlink REPLACING a prose file's content also forces full, not just its addition", (t) => {
+  const { dir, baseSha } = makeRepo(t);
+  rmSync(join(dir, "docs", "GUIDE.md"));
+  symlinkSync("../AGENTS.md", join(dir, "docs", "GUIDE.md"));
+  gitCommit(dir, "turn a doc into a symlink");
+  const { tier } = runClassifier(dir, { baseSha });
+  assert.equal(tier, "full");
 });
 
 test("CLI control (a): an unresolvable BASE_SHA is a detection failure -- reports tier=full, still exits 0", (t) => {

@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // classify-change-tier -- decides how much of ci.yml a pull_request or
 // merge_group run actually needs, so a change that touches only prose (a
-// `.changesets/*.md` file, a root `*.md` file, `docs/changelogs/**`, or a
-// TOP-LEVEL `docs/*.md` file other than `docs/LIFECYCLE.md` -- see
+// `.changesets/*.md` file, a root `*.md` file, `docs/changelogs/**/*.md`,
+// or a TOP-LEVEL `docs/*.md` file other than `docs/LIFECYCLE.md` -- see
 // PROSE_PATTERNS below for exactly why that set and no wider -- or,
 // narrower still, only a packed `packages/*/README.md` or
 // `packages/*/skill/SKILL.md`) can skip the jobs that cannot possibly be
@@ -40,6 +40,10 @@
 //     that nothing changed. Treated identically to every other detection
 //     failure -- the same polarity check-touches-packages.mjs already uses
 //     for its own empty-diff case.
+//   - a raw diff line that does not parse as `:<mode> <mode> <sha> <sha>
+//     <status>\t<path>` (parseRawDiffLine() returns null)
+//   - a changed path whose blob mode is not an ordinary file (a symlink or
+//     submodule gitlink -- isNonRegularBlobMode())
 //   - a single changed path this script does not recognise as prose or
 //     packed-prose
 //   - any other exception anywhere in this script
@@ -51,6 +55,18 @@
 // the deleted source entirely. `--no-renames` always reports a rename as a
 // delete and an add, so both the old and the new path are classified
 // independently, and the old, non-prose path forces 'full' on its own.
+//
+// `--raw` instead of `--name-only` is equally deliberate (issue #1420
+// review round 2, non-blocking note 1): it is the only diff form that also
+// reports each path's git blob MODE, which is how a symlink (120000) or a
+// submodule gitlink (160000) under an otherwise-allowlisted path -- say
+// `docs/RELEASING.md` replaced with a symlink to somewhere entirely outside
+// this repository -- is told apart from an ordinary file (100644/100755).
+// PROSE_PATTERNS matches PATHS only; it has no way to see what a symlink
+// actually points at, which could be a script, a secret, or a path outside
+// the checkout altogether. Any non-regular mode anywhere in the diff forces
+// 'full' before PROSE_PATTERNS is even consulted -- see
+// isNonRegularBlobMode() and its call site in main() below.
 //
 // Reuses check-release-readiness.mjs's own `git` helper and
 // `resolveBaseRef()` merge-base resolution -- the same two
@@ -87,23 +103,31 @@ import { git, resolveBaseRef } from "./check-release-readiness.mjs";
 // classify-change-tier.test.mjs's own table for one example per excluded
 // contract path, and the PR body for the full audit):
 //
-//   .changesets/*.md   -- one level only, never nested
-//   a root *.md file    -- AGENTS.md, README.md, SECURITY.md, ...
-//   docs/changelogs/**  -- generated changelog prose (any depth); nothing
-//                          reads it back except release-pr.yml's own `git
-//                          add` and the always-running `release PR shape`/
-//                          `publish safety` gates (check-release-pr-
-//                          shape.mjs, and check-changelog-location.mjs once
-//                          #1429 lands), neither of which this classifier
-//                          ever skips
-//   docs/<name>.md      -- a TOP-LEVEL docs/*.md file only (the pattern's
-//                          `[^/]+` admits no further `/`, so this can never
-//                          match anything under docs/contracts/), EXCEPT
-//                          docs/LIFECYCLE.md (see above)
+//   .changesets/*.md       -- one level only, never nested
+//   a root *.md file        -- AGENTS.md, README.md, SECURITY.md, ...
+//   docs/changelogs/**/*.md -- generated changelog prose (any depth, but
+//                              only a `.md` file -- issue #1420 review
+//                              round 2, non-blocking note 1: the tree has
+//                              no files under docs/changelogs/ today (it
+//                              lands with #1429), so a broader `docs/
+//                              changelogs/**` admitting any extension would
+//                              lose nothing narrowing to `.md` doesn't also
+//                              lose). Nothing reads a changelog file back
+//                              except release-pr.yml's own `git add` and
+//                              the always-running `release PR shape`/
+//                              `publish safety` gates (check-release-pr-
+//                              shape.mjs, and check-changelog-location.mjs
+//                              once #1429 lands), neither of which this
+//                              classifier ever skips
+//   docs/<name>.md          -- a TOP-LEVEL docs/*.md file only (the
+//                              pattern's `[^/]+` admits no further `/`, so
+//                              this can never match anything under
+//                              docs/contracts/), EXCEPT docs/LIFECYCLE.md
+//                              (see above)
 const PROSE_PATTERNS = [
   /^\.changesets\/[^/]+\.md$/, // .changesets/*.md
   /^[^/]+\.md$/, // a root-level *.md file
-  /^docs\/changelogs\//, // docs/changelogs/** (any depth) -- generated changelog prose
+  /^docs\/changelogs\/.+\.md$/, // docs/changelogs/**/*.md -- any depth, but only a .md file
   /^docs\/(?!LIFECYCLE\.md$)[^/]+\.md$/, // a top-level docs/*.md file, except docs/LIFECYCLE.md
 ];
 
@@ -111,6 +135,40 @@ const PACKED_PROSE_PATTERNS = [
   /^packages\/[^/]+\/README\.md$/, // a package's own README
   /^packages\/[^/]+\/skill\/SKILL\.md$/, // a package's own packed skill
 ];
+
+// A git blob mode that is not an ordinary file (100644) or an executable
+// one (100755) -- almost always a symlink (120000) or a submodule gitlink
+// (160000). Exported so classify-change-tier.test.mjs can table-test it
+// directly, without needing a real git repo for every mode value.
+export function isNonRegularBlobMode(mode) {
+  return mode !== "100644" && mode !== "100755";
+}
+
+/**
+ * Parses one line of `git diff --no-renames --raw`'s output --
+ * `:<old-mode> <new-mode> <old-sha> <new-sha> <status>\t<path>` -- into
+ * `{ path, mode }`. `mode` is the CURRENT-side mode: the new mode, unless
+ * this is a deletion (new mode `000000`, meaning the path no longer
+ * exists), in which case the old mode -- the last mode the path actually
+ * had, which is what a deleted symlink's own entry should still be judged
+ * by. Returns null for a line this does not recognise (no tab, fewer than
+ * five metadata fields, a mode field that is not six digits) -- the caller
+ * treats that exactly like any other diff-parsing failure: fail closed to
+ * 'full', never guess.
+ */
+export function parseRawDiffLine(line) {
+  const tabIndex = line.indexOf("\t");
+  if (tabIndex === -1) return null;
+  const meta = line.slice(0, tabIndex).trim();
+  const path = line.slice(tabIndex + 1);
+  const fields = meta.split(/\s+/);
+  if (fields.length < 5) return null;
+  const oldMode = fields[0].replace(/^:/, "");
+  const newMode = fields[1];
+  if (!/^\d{6}$/.test(oldMode) || !/^\d{6}$/.test(newMode)) return null;
+  if (!path) return null;
+  return { path, mode: newMode !== "000000" ? newMode : oldMode };
+}
 
 /**
  * Classifies one changed path as "prose" (cannot affect anything but the
@@ -191,21 +249,40 @@ function main() {
 
   let diffOutput;
   try {
-    // --no-renames: see the header comment above for why a moved file must
-    // always be seen as its own delete + add, never collapsed to one line.
-    diffOutput = git(["diff", "--no-renames", "--name-only", mergeBase, "HEAD"], gitRoot);
+    // --no-renames, --raw: see the header comment above for both -- a moved
+    // file must always be seen as its own delete + add, and --raw is the
+    // only diff form that also reports each path's blob mode, which is how
+    // a symlink or submodule gitlink is told apart from an ordinary file.
+    diffOutput = git(["diff", "--no-renames", "--raw", mergeBase, "HEAD"], gitRoot);
   } catch (error) {
     report("full", `git diff failed: ${error instanceof Error ? error.message : String(error)}`);
     return;
   }
 
-  const changed = diffOutput
+  const diffLines = diffOutput
     .split("\n")
     .map((line) => line.trim())
     .filter(Boolean);
 
-  if (changed.length === 0) {
+  if (diffLines.length === 0) {
     report("full", "diff reported zero changed paths -- treated as a detection failure, not a genuinely empty change");
+    return;
+  }
+
+  const changed = [];
+  let nonRegular;
+  for (const line of diffLines) {
+    const parsed = parseRawDiffLine(line);
+    if (!parsed) {
+      report("full", `a diff line did not parse as a raw diff entry: ${JSON.stringify(line)}`);
+      return;
+    }
+    changed.push(parsed.path);
+    if (!nonRegular && isNonRegularBlobMode(parsed.mode)) nonRegular = parsed.path;
+  }
+
+  if (nonRegular) {
+    report("full", `${changed.length} changed path(s) since merge-base ${mergeBase.slice(0, 12)} include a non-regular blob mode (a symlink or submodule gitlink), which no PROSE_PATTERNS regex can see through: ${nonRegular}`);
     return;
   }
 

@@ -1055,22 +1055,14 @@ jobs:
       # cheap structural checks in `scope`/`registry`/`root-entry`.
       - name: Structural neutrality gate (check:neutrality)
         run: npm run check:neutrality
-      # An unresolved merge committed into a tracked file. Lives in this
-      # dependency-free job on purpose: it reads the git tree and nothing
-      # else, so it runs on fork pull requests too, and it is the cheapest
-      # possible check for a failure that reached main of a public
-      # repository once already.
-      - name: Conflict markers gate
-        run: npm run check:conflict-markers
-
-      # collect-changesets.mjs -- are the pending .changesets/*.md files
-      # scripts/apply-release-changesets.mjs's release PR (issue #1255)
-      # will apply well-formed: each names a real packages/<dir> directory,
-      # a valid patch/minor/major bump level, and a non-empty summary?
-      # Dependency-free, tree-only, so it lives in this same job as the
-      # conflict-markers gate above.
-      - name: Changeset format gate
-        run: npm run check:changesets
+      # The conflict-markers and changeset-format gates that used to run
+      # here moved to `prose quality` (issue #1420 review round 2, finding
+      # N1): both are dependency-free, tree-only scripts that never needed
+      # this job's controller build, and this job is SKIPPED on the
+      # `prose`/`packed-prose` tiers -- exactly the tiers whose own changed
+      # files (`.changesets/*.md`, `docs/*.md`) those two gates exist to
+      # validate. `prose quality` runs on every tier, so that is where they
+      # belong now. See that job's own comment for the full reasoning.
 
       # repository-profile-check (dist/repository/run-bin.js) — the richer,
       # three-state evaluator over the SAME governance/repository-profile.json
@@ -1379,6 +1371,32 @@ jobs:
           for pkg in "${pkgs[@]}"; do
             node scripts/check-contamination-classes.mjs "${pkg%/}"
           done
+      # Moved here from `controller gates` (issue #1420 review round 2,
+      # finding N1): both gates below read only the git tree (no npm
+      # dependency, no build -- see each script's own header), and this job
+      # is the one place in this file that already runs unconditionally on
+      # every tier, including `prose` and `packed-prose`. Leaving them in
+      # `controller gates` -- which is skipped on those tiers -- meant a
+      # malformed `.changesets/*.md` file, or committed conflict markers in
+      # a `docs/*.md` file, each classified as pure prose by
+      # scripts/classify-change-tier.mjs, would merge with the ONE gate
+      # built to catch it silently skipped and reporting passing. Removed
+      # from `controller gates` entirely rather than duplicated there: same
+      # script, same tree-read, so running both there and here would only
+      # cost runner minutes twice for identical coverage.
+      #
+      # An unresolved merge committed into a tracked file. Reads the git
+      # tree and nothing else, so it runs on fork pull requests too, and it
+      # is the cheapest possible check for a failure that reached main of a
+      # public repository once already.
+      - name: Conflict markers gate
+        run: npm run check:conflict-markers
+      # collect-changesets.mjs -- are the pending .changesets/*.md files
+      # scripts/apply-release-changesets.mjs's release PR (issue #1255)
+      # will apply well-formed: each names a real packages/<dir> directory,
+      # a valid patch/minor/major bump level, and a non-empty summary?
+      - name: Changeset format gate
+        run: npm run check:changesets
 
   # Split out of `build and test` (issue: CI throughput). Measured on run
   # 35802156089 (job 106994736395, branch claude/strategist-clossys-layout):
