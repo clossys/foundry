@@ -58,6 +58,8 @@ export const GATE_TEST_EXCLUSIONS = Object.freeze({
     "imports the real, built @clossys/observer package by bare specifier -- needs `npm run build` first. Wired as its own `node --test` step in ci.yml's build job, after build.",
   "scripts/check-fleet-coverage.test.mjs":
     "imports the real, built @clossys/observer package by bare specifier, same as gate-run-history.test.mjs above -- needs `npm run build` first (see the file's own header: 'it is not part of check:gates, which runs in the dependency-free safety job before any workspace build exists'). Wired as its own `node --test` step in ci.yml's build job.",
+  "scripts/check-strategist-subject.test.mjs":
+    "runs the real, compiled packages/strategist/dist/cli.js against fixture docs trees -- needs `npm run build` first. Run by `npm run check:strategist-subject` itself (the test, then the gate), which ci.yml's build job invokes after build.",
   "scripts/check-publication-map.test.mjs":
     "imports packages/publisher's own built entry point -- needs `npm run build` first. Wired as its own `node --test` step in ci.yml's build job, after build.",
   "scripts/collect-review-evidence.integration.test.mjs":

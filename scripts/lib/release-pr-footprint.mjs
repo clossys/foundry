@@ -40,7 +40,9 @@
 //     https://github.com/clossys/foundry/pull/1339#issuecomment-5801890878
 //     item 2: an earlier draft accepted ANY differing text here, including
 //     a semver range, an arbitrary jump, a prerelease, or a downgrade).
-//   packages/<dir>/CHANGELOG.md  -- status "modified" or "added"; must
+//   docs/changelogs/<dir>.md  -- the package changelog, kept in this
+//     public repository rather than the tarball (scripts/lib/changelog-
+//     location.mjs); status "modified" or "added"; must
 //     contain EXACTLY ONE new section, inserted immediately before the
 //     base text's first existing version heading (after any preamble),
 //     whose own heading is the bumped package's own new version -- see
@@ -63,10 +65,14 @@
 import { parseChangesetText } from "../collect-changesets.mjs";
 import { computeBumpLevel } from "../check-release-pr-shape.mjs";
 import { DEPENDENCY_RANGE_SECTIONS, prependChangelogEntry } from "../apply-release-changesets.mjs";
+import { CHANGELOG_REL_PATH_RE } from "./changelog-location.mjs";
 
 export const RELEASE_PR_FILE_PATTERNS = {
   packageManifest: /^packages\/([^/]+)\/package\.json$/,
-  changelog: /^packages\/([^/]+)\/CHANGELOG\.md$/,
+  // docs/changelogs/<dir>.md (never docs/changelogs/README.md). A
+  // packages/<dir>/CHANGELOG.md matches no pattern here, so a release PR
+  // that writes one fails as "not a release-PR-shaped change".
+  changelog: CHANGELOG_REL_PATH_RE,
   lockfile: /^package-lock\.json$/,
   changeset: /^\.changesets\/[a-z0-9][a-z0-9-]*\.md$/,
 };
@@ -367,12 +373,12 @@ function isSingleStepSemverBump(baseVersion, headVersion) {
  * release PR command ever produces. Requiring the inserted heading to
  * equal the SPECIFIC version this diff's own package.json bumped to
  * (`newVersion`, supplied by the caller -- see evaluateReleasePrFootprint()
- * below, which cross-references each CHANGELOG.md against its own
+ * below, which cross-references each changelog against its own
  * package's version bump) closes the remaining gap: a structurally clean
  * insertion for the WRONG version number is not this package's release
  * note.
  *
- * `baseText` may be `null`/`undefined` for a brand-new CHANGELOG.md (git
+ * `baseText` may be `null`/`undefined` for a brand-new changelog (git
  * status "added"), treated as empty -- the whole head text is then "the
  * insertion", which may itself carry one leading "# ...\n" preamble line
  * (scripts/apply-release-changesets.mjs writes "# Changelog\n\n" for a
@@ -392,11 +398,11 @@ function isSingleStepSemverBump(baseVersion, headVersion) {
  * (as an earlier draft did) made every real producer output for this
  * shape fail this check for any base that did not already end in exactly
  * `"\n\n"` -- an inconsistency between what the producer writes and what
- * this function accepts, never exercised until a package's CHANGELOG.md
+ * this function accepts, never exercised until a package's changelog
  * genuinely had a title but no releases yet. Mirrored below by trimming
  * `base`'s own trailing whitespace the identical way before comparing,
  * for the no-heading case only -- the WITH-heading case (a real,
- * previously-released CHANGELOG.md, the security-relevant path with prior
+ * previously-released changelog, the security-relevant path with prior
  * entries to protect) is completely unaffected, still exactly as strict
  * as before.
  */
@@ -758,7 +764,7 @@ function extractChangelogDate(headText, newVersion) {
 }
 
 /**
- * Rebuilds the EXACT bytes a bumped package's new CHANGELOG.md entry
+ * Rebuilds the EXACT bytes a bumped package's new changelog entry
  * should be, using apply-release-changesets.mjs's OWN
  * `prependChangelogEntry()` (imported, never reimplemented -- so this
  * check and the producer that writes real releases can never quietly
@@ -821,7 +827,7 @@ function reconstructExpectedChangelogText({ status, baseText, headText, newVersi
  *   1. For every `packages/<dir>/package.json`, confirm it parses on both
  *      sides and its own "version" genuinely changed -- nothing more yet.
  *      Record the new version keyed BOTH by directory (`bumpedVersions`,
- *      for cross-referencing a CHANGELOG.md/changeset against ITS OWN
+ *      for cross-referencing a changelog/changeset against ITS OWN
  *      package) and by the manifest's own `name` field (`bumpedVersionsByName`,
  *      since a `dependencies` entry names a package by its npm name, not
  *      its packages/<dir> directory -- collect-changesets.mjs's own header
@@ -836,7 +842,7 @@ function reconstructExpectedChangelogText({ status, baseText, headText, newVersi
  *      function's own header, "THE ONE NARROW EXCEPTION" (issue #1332,
  *      PR #1338).
  *   3. Every OTHER changed file is validated against the bumped set from
- *      pass 1 -- a CHANGELOG.md is checked against ITS OWN package's
+ *      pass 1 -- a changelog is checked against ITS OWN package's
  *      specific new version (not just "some version-shaped heading"), the
  *      lockfile is checked against the full set of bumped directories at
  *      once (it is one file covering every package), and a deleted
@@ -951,7 +957,7 @@ export function evaluateReleasePrFootprint({ files }) {
     }
   }
 
-  // Built BEFORE the main per-file loop below, so a CHANGELOG.md's
+  // Built BEFORE the main per-file loop below, so a changelog's
   // reconstruction check (below) can see every deleted changeset naming
   // its package regardless of which order `files` lists them in. Sorted by
   // FILE NAME first -- the identical order scripts/collect-changesets.mjs's

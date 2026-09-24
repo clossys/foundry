@@ -366,3 +366,7 @@ Node 20+. ESM only. No runtime dependencies.
 ## Licence
 
 MIT
+
+## Changelog
+
+Release notes for every version are in the [changelog](https://github.com/clossys/foundry/blob/main/docs/changelogs/advisor.md), kept in the public repository rather than in the installed package.

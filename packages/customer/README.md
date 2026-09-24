@@ -170,3 +170,7 @@ customer keep rate
 ```
 
 The unit is a ratio and the desired direction is up.
+
+## Changelog
+
+Release notes for every version are in the [changelog](https://github.com/clossys/foundry/blob/main/docs/changelogs/customer.md), kept in the public repository rather than in the installed package.

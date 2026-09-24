@@ -26,7 +26,7 @@ An engine gap or a missing check is a Foundry issue about the package that owns 
 
 ## Strategy provenance
 
-Seal surfaces against the projected strategy provenance from `@clossys/strategist` (`projectStrategyContract` / `createStrategyProvenance`). Do not author strategy records in `strategy/`.
+Seal surfaces against the projected strategy provenance from `@clossys/strategist` (`projectStrategyContract` / `createStrategyProvenance`). Do not author strategy records in `clossys/strategist/`.
 
 ## Page shape — shipped templates first, `defineWebTemplate` for the rest
 

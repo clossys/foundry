@@ -137,7 +137,7 @@ let warnedAbsent = false;
  * still would not "work" without the peer, only fail more legibly), and
  * the issue's own resolution explicitly asked for the render to succeed,
  * not merely to fail more clearly. See the README's tailwind-merge
- * section and `CHANGELOG.md` for the consumer-facing version of this.
+ * section and this package's changelog for the consumer-facing version of this.
  *
  * The only alternative degrade-free behavior would be to make
  * `tailwind-merge` non-optional, which is the wrong direction (see #749):

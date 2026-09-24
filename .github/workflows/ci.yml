@@ -886,6 +886,12 @@ jobs:
       # package is a blocking defect (#924). Missing public-npm claims are
       # printed and counted, never a silent pass. README text only, no build.
       - run: node scripts/check-install-docs.mjs
+      # Release notes live in this public repository, never in a tarball:
+      # every package has docs/changelogs/<dir>.md with an entry for its
+      # current version, no in-package changelog, no changelog in "files",
+      # and a README link to the changelog's public URL. Manifest, README
+      # and docs reads only, no build -- same class as the steps above.
+      - run: node scripts/check-changelog-location.mjs
       # Packed Agent Skills: every publishable package ships skill/SKILL.md with
       # valid frontmatter binding `name` to clossys-<pkg>. README and manifest
       # reads only, no build — same shallow-checkout class as the steps above.
@@ -1149,7 +1155,8 @@ jobs:
   # check-release-pr-shape.mjs -- for any package whose version this pull
   # request bumped, is the bump shaped like #1255's release PR (a consumed
   # changeset whose bump level matches), or does it at least carry the
-  # CHANGELOG.md entry docs/PUBLISHING.md section 4 already documents as
+  # changelog entry (docs/changelogs/<dir>.md) docs/PUBLISHING.md section 4
+  # already documents as
   # required? Deliberately its own job, for the same "two independently-
   # true-or-false conditions, two different remedies" reason
   # qualification-record-required above is its own job rather than folded

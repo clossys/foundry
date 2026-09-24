@@ -69,6 +69,6 @@
     "governance/release-qualification-adapters/",
     "governance/release-qualification-fixtures/",
     "governance/release-qualifications/",
-    "packages/*/CHANGELOG.md"
+    "docs/changelogs/*.md"
   ]
 }

@@ -110,6 +110,7 @@ import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
 import { join, relative, extname, resolve, dirname, basename, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { execFileSync, spawnSync } from "node:child_process";
+import { changelogPathForPackageDir, changelogRelPath } from "./lib/changelog-location.mjs";
 
 // Flags that consume a value, per this script's own usage banner below
 // (`--class N`, `--allowlist <file>`). Every other `--`-prefixed token
@@ -344,6 +345,54 @@ const rootAbs = resolve(root);
 const allFiles = walk(rootAbs);
 const scanFiles = allFiles.filter((f) => SCAN_EXT.has(extname(f).toLowerCase()));
 
+// THE PACKAGE CHANGELOG, WHICH NO LONGER SITS UNDER THE PACKAGE.
+//
+// A package's changelog lives at docs/changelogs/<dir>.md, in this public
+// repository, instead of at packages/<dir>/CHANGELOG.md inside the tarball
+// (scripts/lib/changelog-location.mjs). It is still public text, and every
+// CLASS here applied to it while it sat under the package, so moving it out
+// of the scanned directory must not quietly move it out of this gate too.
+// When the scanned directory is packages/<dir> and docs/changelogs/<dir>.md
+// exists, that file is scanned along with the package, and CLASS 1 judges it
+// EXACTLY as it judged packages/<dir>/CHANGELOG.md: citations resolve from
+// the package root against the package's own published file set, the
+// changelog-only rot exemption (CHANGELOG_FILE_RE) still applies to it, and
+// governance/known-dangling-citations.json keeps waiving its citations under
+// the same "CHANGELOG.md" key. That is what COMPANION_CHANGELOG_POSITION is:
+// the position it is judged from, never the path it is reported under --
+// findings name the real docs/changelogs/<dir>.md. It is always checked by
+// CLASS 1, even though it is not in the tarball: its reader is anyone reading
+// this repository, and a pointer at nothing misleads them just the same.
+//
+// A package that ALSO still carries its own packages/<dir>/CHANGELOG.md has
+// two files claiming that one position, so which one a waiver or finding
+// means is ambiguous -- refused as "cannot run" rather than guessed.
+const COMPANION_CHANGELOG_POSITION = join(rootAbs, "CHANGELOG.md");
+const companionChangelog = (() => {
+  if (basename(dirname(rootAbs)) !== "packages") return null;
+  const path = changelogPathForPackageDir(rootAbs);
+  return existsSync(path) ? path : null;
+})();
+if (companionChangelog) {
+  if (existsSync(COMPANION_CHANGELOG_POSITION)) {
+    console.error(
+      `check-contamination-classes: ${rootAbs} has both its own CHANGELOG.md and ${changelogRelPath(basename(rootAbs))} -- a package changelog lives only at the latter (scripts/lib/changelog-location.mjs); remove the in-package copy`,
+    );
+    process.exit(2);
+  }
+  scanFiles.push(companionChangelog);
+}
+
+// The path a finding is reported under: the real repository-relative
+// docs/changelogs/<dir>.md for the companion changelog (and for a stale
+// waiver keyed to its CHANGELOG.md position), package-relative otherwise.
+function shownPath(file) {
+  if (companionChangelog && (file === companionChangelog || file === COMPANION_CHANGELOG_POSITION)) {
+    return changelogRelPath(basename(rootAbs));
+  }
+  return relative(rootAbs, file);
+}
+
 // The repository root, found by walking up from the scanned directory looking
 // for `.git`. CLASS 1 needs it because a citation can be relative to either
 // the package being scanned or the repository that contains it, and a path
@@ -470,7 +519,7 @@ function report(cls, severity, file, line, snippet, detail) {
     class: cls,
     className: CLASS_NAMES[cls],
     severity,
-    file: relative(rootAbs, file),
+    file: shownPath(file),
     line,
     snippet: snippet.trim().slice(0, 100),
     detail,
@@ -491,7 +540,7 @@ function reportIndeterminate(cls, file, line, snippet, detail) {
   indeterminate.push({
     class: cls,
     className: CLASS_NAMES[cls],
-    file: relative(rootAbs, file),
+    file: shownPath(file),
     line,
     snippet: snippet.trim().slice(0, 100),
     detail,
@@ -1043,9 +1092,13 @@ const UNAVAILABILITY_RE = new RegExp(
 //
 // So the exemption is bounded twice, and each bound is measured on this tree:
 //
-//   BY FILE. Only a Markdown changelog at one of two paths can carry it:
-//   `CHANGELOG.md` at the scanned repository root, or
-//   `packages/<name>/CHANGELOG.md` where `<name>` is a single path segment.
+//   BY FILE. Only a Markdown changelog at one of three paths can carry it:
+//   `CHANGELOG.md` at the scanned repository root,
+//   `packages/<name>/CHANGELOG.md` where `<name>` is a single path segment,
+//   or `docs/changelogs/<name>.md` (never that directory's README.md), where
+//   a package changelog now lives. A package changelog scanned along with
+//   its package is judged from its `CHANGELOG.md` position (see
+//   COMPANION_CHANGELOG_POSITION), so it matches the first form.
 //   A nested path (`src/CHANGELOG.md`, `packages/<name>/src/CHANGELOG.md`),
 //   a non-markdown extension (`CHANGELOG.ts`), and a bare `CHANGELOG` cannot.
 //   A changelog is a record of what changed, so a path named in one is
@@ -1072,7 +1125,7 @@ const UNAVAILABILITY_RE = new RegExp(
 // What it does guarantee is the property the block-wide search actually needs
 // — that a qualifier can never excuse a citation it is not about, and that
 // nothing a reader would follow as a live pointer can be muted by wording.
-const CHANGELOG_FILE_RE = /^(?:CHANGELOG\.md|packages\/[^/]+\/CHANGELOG\.md)$/;
+const CHANGELOG_FILE_RE = /^(?:CHANGELOG\.md|packages\/[^/]+\/CHANGELOG\.md|docs\/changelogs\/(?!README\.md$)[^/]+\.md)$/;
 
 // Split prose into sentences. A terminator counts only when it is followed by
 // whitespace, optionally through closing punctuation (`…gone."` / `…gone.**`),
@@ -1267,7 +1320,10 @@ function checkClass1(file, lines, ext) {
     const text = prose.slice(from, to + 1).join(" ");
     for (let i = from; i <= to; i++) blockText.set(i, text);
   }
-  const relFile = relative(rootAbs, file);
+  // The companion changelog is judged from its old in-package position --
+  // see COMPANION_CHANGELOG_POSITION above.
+  const citingFile = file === companionChangelog ? COMPANION_CHANGELOG_POSITION : file;
+  const relFile = relative(rootAbs, citingFile);
 
   prose.forEach((text, i) => {
     const matches = [];
@@ -1282,10 +1338,17 @@ function checkClass1(file, lines, ext) {
       }
     }
     if (!matches.length) return;
-    const state = new Map(matches.map((t) => [t, classifyCitationViaSrcMirror(t, relFile, file)]));
+    const state = new Map(matches.map((t) => [t, classifyCitationViaSrcMirror(t, relFile, citingFile)]));
     for (const t of matches) {
       const cited = state.get(t);
       if (cited.state === CITATION_SHIPS) continue;
+      // A package changelog naming the bare `CHANGELOG.md` is naming itself:
+      // its history was written while it sat at packages/<dir>/CHANGELOG.md,
+      // and the reader is already reading the file it means. Only the bare
+      // name, and only inside the companion changelog -- the same citation
+      // in shipped package text still points an installed-package reader at
+      // a file the tarball no longer carries, and still reports.
+      if (file === companionChangelog && t === "CHANGELOG.md") continue;
       // Only the BARE name is format vocabulary. A path-prefixed citation
       // (`docs/AGENTS.md`) is a real pointer at a real file, and a dangling one
       // is exactly this class's job regardless of what the file is called.
@@ -1336,7 +1399,7 @@ function checkClass1(file, lines, ext) {
       const entry = allowlistEntryFor(relFile, t);
       if (entry) {
         allowlistUsed.add(entry);
-        waived.push({ file: relFile, line: i + 1, cited: t, issue: entry.issue, state: cited.state });
+        waived.push({ file: shownPath(file), line: i + 1, cited: t, issue: entry.issue, state: cited.state });
         continue;
       }
 
@@ -1659,7 +1722,7 @@ for (const file of scanFiles) {
   const lines = contents.split("\n");
   const ext = extname(file).toLowerCase();
 
-  if (wants(1) && shipsToAReader(file)) checkClass1(file, lines, ext);
+  if (wants(1) && (file === companionChangelog || shipsToAReader(file))) checkClass1(file, lines, ext);
   if (wants(2) && CLASS2_6_EXT.has(ext)) checkClass2(file, lines);
   if (wants(3)) checkClass3(file, lines);
   if (wants(4)) checkClass4(file, lines);
