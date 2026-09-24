@@ -67,6 +67,35 @@
 //     changesets.mjs's own parser (reused, not reimplemented) and
 //     requiring every package it names to be among this diff's bumped
 //     set.
+//   governance/release-qualification-deferrals/<pkg>@<version>.json
+//     (issue #1439) -- NOT written by apply-release-changesets.mjs itself;
+//     the real weekly release PR (#1438) separately adds one of these per
+//     bumped package, acknowledging that the qualification record for the
+//     new version does not exist yet (governance/release-qualification-
+//     deferrals/README.md's own "Layout" section -- schema
+//     `{ package, version, reason, issue }`, filename `<pkg>@<version>.json`
+//     where `<pkg>` is the packages/<dir> directory name). Before this,
+//     the footprint check had NO opinion on this file class at all, so it
+//     fell through to the generic "anything else fails" rule below and
+//     refused every real release PR outright -- this repository's release-
+//     calendar footprint check could never actually verify a real release.
+//     Admitted ONLY when: status is "added" (never modified or removed --
+//     a deferral is acknowledged once, and removed only by qualify-
+//     candidate.yml's own separate `remove-qualification-deferral.mjs`
+//     run, never by the release PR that created it); AT MOST ONE per
+//     bumped package (a second one for the same package@version, or one
+//     naming a package@version this diff never bumped to exactly that
+//     version, is refused, same "any single non-conforming aspect fails
+//     everything" discipline as every other file class here); and its own
+//     JSON content's `package`/`version` fields exactly match the
+//     filename. Deliberately NOT required for every bumped package --
+//     check-qualification-record-required.mjs's own contract is "a record
+//     OR a deferral", so a package that already has a retained record at
+//     release time legitimately has neither a deferral NOR a footprint
+//     opinion on one -- only presence is constrained, never absence.
+//     `governance/release-qualification-deferrals/README.md`, and every
+//     other path under `governance/`, matches no pattern here and falls
+//     through to "anything else fails" exactly as before.
 //   anything else -- fails outright, regardless of status.
 import { parseChangesetText } from "../collect-changesets.mjs";
 import { computeBumpLevel } from "../check-release-pr-shape.mjs";
@@ -75,6 +104,10 @@ import { CHANGELOG_REL_PATH_RE, changelogRelPath as changelogRelPathFor } from "
 
 export const RELEASE_PR_FILE_PATTERNS = {
   packageManifest: /^packages\/([^/]+)\/package\.json$/,
+  // <pkg>@<version>.json only -- never README.md, never a nested path
+  // (`[^/]+` before the `@` disallows a "/", so this can never match
+  // anything outside the deferrals directory itself).
+  qualificationDeferral: /^governance\/release-qualification-deferrals\/([^/@]+)@(\d+\.\d+\.\d+)\.json$/,
   // docs/changelogs/<dir>.md (never docs/changelogs/README.md). A
   // packages/<dir>/CHANGELOG.md matches no pattern here, so a release PR
   // that writes one fails as "not a release-PR-shaped change".
@@ -1025,6 +1058,12 @@ export function evaluateReleasePrFootprint({ files }) {
   // about a missing file is not the same as nothing being wrong).
   const changelogSeenForDir = new Set();
 
+  // Every `<pkg>@<version>` key a qualification-deferral file has already
+  // been accepted for -- see RELEASE_PR_FILE_PATTERNS.qualificationDeferral
+  // and its branch below (issue #1439): a second deferral for the SAME
+  // bumped package is refused as a duplicate, never silently allowed.
+  const seenDeferralKeys = new Set();
+
   for (const file of files) {
     if (RELEASE_PR_FILE_PATTERNS.packageManifest.test(file.path)) continue; // already validated above
 
@@ -1074,6 +1113,38 @@ export function evaluateReleasePrFootprint({ files }) {
       if (file.status !== "removed") return { ok: false, reason: `"${file.path}" has status "${file.status}" -- only a deletion is legal` };
       if (!isChangesetDeletionLegitimate(file.baseContent, bumpedDirs)) {
         return { ok: false, reason: `"${file.path}" does not name only packages bumped in this diff` };
+      }
+      continue;
+    }
+
+    const deferralMatch = RELEASE_PR_FILE_PATTERNS.qualificationDeferral.exec(file.path);
+    if (deferralMatch) {
+      const [, pkg, version] = deferralMatch;
+      if (file.status !== "added") {
+        return { ok: false, reason: `"${file.path}" has status "${file.status}" -- a qualification deferral may only be added, never modified or removed` };
+      }
+      if (bumpedVersions[pkg] !== version) {
+        return {
+          ok: false,
+          reason: `"${file.path}" names "${pkg}@${version}", but this diff did not bump packages/${pkg} to exactly that version`,
+        };
+      }
+      const key = `${pkg}@${version}`;
+      if (seenDeferralKeys.has(key)) {
+        return { ok: false, reason: `"${file.path}" is a SECOND qualification deferral for ${key} -- at most one is admitted` };
+      }
+      seenDeferralKeys.add(key);
+      let content;
+      try {
+        content = JSON.parse(file.headContent);
+      } catch {
+        return { ok: false, reason: `"${file.path}" is not valid JSON` };
+      }
+      if (!content || typeof content !== "object" || content.package !== pkg || content.version !== version) {
+        return {
+          ok: false,
+          reason: `"${file.path}"'s own "package"/"version" fields do not name "${pkg}"/"${version}", matching its own filename`,
+        };
       }
       continue;
     }

@@ -677,6 +677,148 @@ test("evaluateReleasePrFootprint: the SAME bump, with package-lock.json AND the 
   assert.equal(result.ok, true, result.reason);
 });
 
+// ---------------------------------------------------------------- issue #1439: qualification-deferral admission
+//
+// governance/release-qualification-deferrals/<pkg>@<version>.json is NOT
+// written by apply-release-changesets.mjs -- the real weekly release PR
+// (#1438) separately adds one per bumped package, acknowledging that the
+// new version's qualification record does not exist yet. Before this, the
+// footprint check had no opinion on this file class at all, so it fell
+// through to "anything else fails" and refused every real release PR
+// outright (confirmed by replaying `git diff 4aa89cdda975bd1a647c34dabd978d33804116c2 73ab01b6`,
+// minus the one-off packages/publisher/src/web/react-server-artifact.test.ts
+// edit, against the unmodified check: refused on
+// `"governance/release-qualification-deferrals/advisor@0.5.0.json" (added)
+// is not a release-PR-shaped change`; the SAME 103-file diff passes with
+// this fix, and the full 104-file diff -- WITH the publisher test edit --
+// still correctly refuses on that one file alone).
+
+function releasePrFilesWithDeferral(deferralFile) {
+  const [base, head] = manifestPair("1.0.0", "1.0.1", { name: "@clossys/alpha" });
+  const files = [
+    { path: "packages/alpha/package.json", status: "modified", baseContent: base, headContent: head },
+    {
+      path: "docs/changelogs/alpha.md",
+      status: "modified",
+      baseContent: "# Changelog\n\n## 1.0.0\n\n- Initial.\n",
+      headContent: "# Changelog\n\n## 1.0.1 - 2026-09-24\n\n- Fix.\n\n## 1.0.0\n\n- Initial.\n",
+    },
+    { path: "package-lock.json", status: "modified", baseContent: LOCK_BASE, headContent: lockWithAlphaBumped("1.0.1") },
+    { path: ".changesets/alpha-fix.md", status: "removed", baseContent: "---\nalpha: patch\n---\n\nFix.\n" },
+  ];
+  if (deferralFile) files.push(deferralFile);
+  return files;
+}
+
+test("evaluateReleasePrFootprint: a matching qualification-deferral file for the bumped package is admitted (issue #1439)", () => {
+  const result = evaluateReleasePrFootprint({
+    files: releasePrFilesWithDeferral({
+      path: "governance/release-qualification-deferrals/alpha@1.0.1.json",
+      status: "added",
+      headContent: JSON.stringify({ package: "alpha", version: "1.0.1", reason: "Bumped by the release PR; qualified after merge.", issue: 948 }, null, 2) + "\n",
+    }),
+  });
+  assert.equal(result.ok, true, result.reason);
+});
+
+test("evaluateReleasePrFootprint: a diff with NO deferral file at all still passes -- presence is constrained, never required (a package may already have a retained record)", () => {
+  const result = evaluateReleasePrFootprint({ files: releasePrFilesWithDeferral(null) });
+  assert.equal(result.ok, true, result.reason);
+});
+
+test("ADVERSARIAL evaluateReleasePrFootprint: a deferral file with status other than 'added' is refused", () => {
+  const result = evaluateReleasePrFootprint({
+    files: releasePrFilesWithDeferral({
+      path: "governance/release-qualification-deferrals/alpha@1.0.1.json",
+      status: "modified",
+      baseContent: JSON.stringify({ package: "alpha", version: "1.0.0", reason: "stale", issue: 1 }),
+      headContent: JSON.stringify({ package: "alpha", version: "1.0.1", reason: "Bumped by the release PR.", issue: 948 }),
+    }),
+  });
+  assert.equal(result.ok, false);
+  assert.match(result.reason, /may only be added, never modified or removed/);
+});
+
+// A real `git diff --name-status` can never list the same path twice, so
+// this is defense in depth against a malformed/duplicated `files` array
+// reaching evaluateReleasePrFootprint() from whatever assembled it (the
+// caller's own `--changed-files` JSON, ultimately) -- rather than an
+// unreachable case, since nothing upstream of this pure function actually
+// guarantees deduplication.
+test("ADVERSARIAL evaluateReleasePrFootprint: the SAME deferral path listed twice in `files` is refused as a duplicate", () => {
+  const files = releasePrFilesWithDeferral({
+    path: "governance/release-qualification-deferrals/alpha@1.0.1.json",
+    status: "added",
+    headContent: JSON.stringify({ package: "alpha", version: "1.0.1", reason: "First.", issue: 1 }),
+  });
+  files.push({
+    path: "governance/release-qualification-deferrals/alpha@1.0.1.json",
+    status: "added",
+    headContent: JSON.stringify({ package: "alpha", version: "1.0.1", reason: "Second, duplicate.", issue: 2 }),
+  });
+  const result = evaluateReleasePrFootprint({ files });
+  assert.equal(result.ok, false);
+  assert.match(result.reason, /SECOND qualification deferral/);
+});
+
+test("ADVERSARIAL evaluateReleasePrFootprint: a deferral naming a package@version this diff never bumped is refused (an extra deferral)", () => {
+  const result = evaluateReleasePrFootprint({
+    files: releasePrFilesWithDeferral({
+      path: "governance/release-qualification-deferrals/beta@2.0.0.json",
+      status: "added",
+      headContent: JSON.stringify({ package: "beta", version: "2.0.0", reason: "beta was never bumped in this diff.", issue: 1 }),
+    }),
+  });
+  assert.equal(result.ok, false);
+  assert.match(result.reason, /this diff did not bump packages\/beta to exactly that version/);
+});
+
+test("ADVERSARIAL evaluateReleasePrFootprint: a deferral naming the RIGHT package but the WRONG (pre-bump) version is refused", () => {
+  const result = evaluateReleasePrFootprint({
+    files: releasePrFilesWithDeferral({
+      path: "governance/release-qualification-deferrals/alpha@1.0.0.json",
+      status: "added",
+      headContent: JSON.stringify({ package: "alpha", version: "1.0.0", reason: "Names the OLD version, not the new one.", issue: 1 }),
+    }),
+  });
+  assert.equal(result.ok, false);
+  assert.match(result.reason, /this diff did not bump packages\/alpha to exactly that version/);
+});
+
+test("ADVERSARIAL evaluateReleasePrFootprint: a deferral whose filename matches the bump but whose own JSON content names a DIFFERENT package/version is refused (a mismatched deferral)", () => {
+  const result = evaluateReleasePrFootprint({
+    files: releasePrFilesWithDeferral({
+      path: "governance/release-qualification-deferrals/alpha@1.0.1.json",
+      status: "added",
+      headContent: JSON.stringify({ package: "evil", version: "9.9.9", reason: "Filename says alpha@1.0.1, content says something else entirely.", issue: 1 }),
+    }),
+  });
+  assert.equal(result.ok, false);
+  assert.match(result.reason, /do not name "alpha"\/"1\.0\.1", matching its own filename/);
+});
+
+test("ADVERSARIAL evaluateReleasePrFootprint: a deferral file that is not valid JSON is refused", () => {
+  const result = evaluateReleasePrFootprint({
+    files: releasePrFilesWithDeferral({
+      path: "governance/release-qualification-deferrals/alpha@1.0.1.json",
+      status: "added",
+      headContent: "not json at all",
+    }),
+  });
+  assert.equal(result.ok, false);
+  assert.match(result.reason, /is not valid JSON/);
+});
+
+test("ADVERSARIAL evaluateReleasePrFootprint: ANY other file under governance/ -- including the deferrals directory's own README.md -- is refused, never treated as a deferral", () => {
+  for (const path of ["governance/release-qualification-deferrals/README.md", "governance/release-calendar.json", "governance/release-qualification-deferrals/nested/alpha@1.0.1.json"]) {
+    const result = evaluateReleasePrFootprint({
+      files: releasePrFilesWithDeferral({ path, status: "modified", baseContent: "before\n", headContent: "after\n" }),
+    });
+    assert.equal(result.ok, false, `expected "${path}" to be refused`);
+    assert.match(result.reason, /is not a release-PR-shaped change/, `"${path}" should fall through to the generic refusal, not be treated as a deferral`);
+  }
+});
+
 test("evaluateReleasePrFootprint: a lockfile present but not a pure version bump fails", () => {
   const [base, head] = manifestPair("1.0.0", "1.0.1");
   const tamperedLock = JSON.parse(lockWithAlphaBumped("1.0.1"));
