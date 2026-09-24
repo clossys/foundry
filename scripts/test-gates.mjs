@@ -320,81 +320,128 @@ try {
   // ------------------------------------------------ machine-local path names
   console.log("\n# machine-local path names");
   {
-    // Slash-form fixture paths are joined from segments at run time so this
-    // file never holds a literal absolute-path shape itself. `someone` is a
-    // placeholder, not a real account.
-    const p = (...parts) => parts.join("/");
-    const positives = [
-      // [label, relative file path, the segment or run the finding must name]
-      ["flattened macOS home file (dash)", "-Users-someone-code-notes.txt", "-Users-someone-code-notes.txt"],
-      ["flattened temp-root dir (underscore)", p("_private_tmp_claude-1_scratchpad_x", "a.txt"), "_private_tmp_claude-1_scratchpad_x"],
-      [
-        "flattened home dir + session scratchpad id",
-        p("-Users-someone-code-proj", "0b1c2d3e-aaaa-bbbb-cccc-000000000000", "scratchpad", "n.md"),
-        "-Users-someone-code-proj",
-      ],
-      ["flattened Linux home file (underscore)", "_home_someone_code_x.md", "_home_someone_code_x.md"],
-      ["flattened Windows home dir", p("C--Users-someone-code", "a.txt"), "C--Users-someone-code"],
-      ["Windows home with backslashes in one name", "C\\Users\\someone\\x.txt", "C\\Users\\someone\\x.txt"],
-      ["flattened per-user temp root", "-var-folders-ab-cdef-T-x.txt", "-var-folders-ab-cdef-T-x.txt"],
-      ["agent temp root mid-segment", "notes-tmp-claude-501-x.md", "notes-tmp-claude-501-x.md"],
-      ["mirrored macOS home (slash form)", p("mirror", "Users", "someone", "code", "a.txt"), p("Users", "someone", "c")],
-      ["mirrored temp root (slash form)", p("mirror", "private", "tmp", "x", "a.txt"), p("private", "tmp", "")],
-      ["mirrored per-user temp root (slash form)", p("mirror", "var", "folders", "ab", "a.txt"), p("var", "folders", "")],
-      ["mirrored agent temp root (slash form)", p("mirror", "tmp", "claude-1", "a.txt"), p("tmp", "claude-1")],
+    // Accuracy is measured here, not argued: a data-driven table of realistic
+    // machine-path names (every one must be caught), ordinary names (every one
+    // must stay clean) and KNOWN-GAP shapes (deliberately not covered; asserted
+    // as currently missed so closing one is noticed). Seeded from a review's
+    // 85-name corpus plus a second review's extra negatives. Each row gets its
+    // own directory so a file and a directory of the same name can coexist.
+    // Slash-form rows are joined from segments at run time so this file never
+    // holds a literal absolute-path shape; `someone` is a placeholder.
+    const J = (...parts) => parts.join("/");
+    const MP_POSITIVES = [
+      "-Users-someone-code-notes.txt",
+      J("-Users-someone-code-proj", "abc", "n.md"),
+      J("-Users-someone-code-proj", "0b1c2d3e-aaaa-bbbb-cccc-000000000000", "scratchpad", "n.md"),
+      "-Users-someone",
+      J("-Users-someone", "x.jsonl"),
+      "-Users-someone--claude-worktrees-x",
+      "_Users_someone_code_x.md",
+      "_Users_mary-jane_code_x.md",
+      "-Users-mary_jane-code-x.md",
+      "-home-someone-code-x",
+      "_home_someone_code_x.md",
+      "-home-someone",
+      "C--Users-someone-code",
+      "C_Users_someone_code",
+      "C\\Users\\someone\\x.txt",
+      "c--Users-someone-code",
+      "C--users-someone-code",
+      "-mnt-c-Users-someone-code-x",
+      "_mnt_c_Users_someone_code_x",
+      J("mnt", "c", "Users", "someone", "x.txt"),
+      "-private-var-folders-ab-cd-T-x",
+      "_private_tmp_claude-1_scratchpad_x",
+      "-private-tmp-claude-502-x",
+      "-var-folders-ab-cdef-T-x.txt",
+      "-tmp-claude-501-proj-x",
+      "%2FUsers%2Fsomeone%2Fcode%2Fx.txt",
+      "%2fUsers%2fsomeone%2fx.txt",
+      "file%3A%2F%2F%2FUsers%2Fsomeone%2Fx",
+      "%2Fhome%2Fsomeone%2Fx",
+      J("Users", "someone", "code", "a.txt"),
+      J("private", "var", "folders", "ab", "x"),
+      J("mirror", "private", "tmp", "x", "a.txt"),
+      J("var", "folders", "ab", "x"),
+      J("tmp", "claude-1", "x"),
+      J("home", "someone", "code", "x"),
     ];
-    const negatives = [
-      "home-page-copy.md",
-      "users-guide.md",
-      p("docs", "home.md"),
-      "Users-Guide-Intro.md",
-      "_home-page-hero.scss",
-      p("app", "users", "profile", "page.tsx"),
-      p("src", "home", "components", "Hero.tsx"),
-      "private-tmp.md",
-      "private-variables.md",
-      "var-folders.md",
-      "tmp-claude.md",
+    const MP_NEGATIVES = [
+      "users.md", "home.tsx", J("app", "users", "[id]", "page.tsx"), J("src", "home", "index.ts"), "_home.scss",
+      "private-tmp-notes.md", "var-folders.md", "c-users-guide.md", "tmp-claude.md", "claude-3-notes.md",
+      "home-page-copy.md", "users-guide.md", "Users-Guide-Intro.md", "_home-page-hero.scss", "_home_hero.scss",
+      "_home_page_hero.scss", "_users_list.scss", "private-variables.md", "private_var_names.ts",
+      "no-private-var-access.md", "var-folders-guide.md", "private-tmp-dir-cleanup.test.ts",
+      "tmp-claude-3-output.json", "tmp_claude-4-transcript.json", J("tmp", "claude-3-notes.md"),
+      J("src", "components", "Users", "UserList", "index.tsx"), J("src", "features", "Users", "hooks", "useUsers.ts"),
+      J("app", "Users", "[id]", "page.tsx"), J("src", "Users", "Users.tsx"), "C-Users-Guide-intro.md",
+      "A_Users_manual_v2.pdf", "home_someone.md", "-home-.md", "_Home_Page_Hero.scss",
+      J("docs", "user-home", "setup.md"), "users-home-dir.md", "the-var-folders-explained.md",
+      J("src", "private", "tmp.ts"), J("lib", "private", "var", "x.ts"), "sidebar-home-link.tsx",
+      "_home-someone-page.scss", "__home__.tsx", "-Users.md",
+      // second review's extra negatives, and this suite's earlier ones
+      "_home_hero_banner.scss", "-home-page-hero.md", "a-Users-list-page.tsx", J("src", "Users", "Profile", "index.tsx"),
+      J("docs", "home.md"), J("src", "home", "components", "Hero.tsx"), J("app", "users", "profile", "page.tsx"),
+      "private-tmp.md", J("apps", "home", "web", "src", "x.ts"), "_Users_list.scss",
+    ];
+    // [name, why it is not covered] — low-priority shapes, one line each.
+    const MP_KNOWN_GAPS = [
+      ["_home_mary-jane_x.md", "flattened Linux home with no home child after the name: same shape as a Sass partial"],
+      ["notes-tmp-claude-501-x.md", "temp root mid-name: unanchored temp rules flagged ordinary names like private-tmp-notes.md"],
+      ["-tmp-pytest-of-someone-pytest-3", "generic tmp subdirectories: no distinctive token after tmp"],
+      ["-tmp-someone-session", "generic tmp subdirectories: no distinctive token after tmp"],
+      ["%Users%someone%code%x.txt.swp", "vim swap-file flattening (%): rare in a tree, not a leading-separator shape"],
+      ["!Users!someone!code!x.txt~", "emacs backup flattening (!): rare in a tree"],
+      [".Users.someone.code.x", "dot-flattened: indistinguishable from ordinary dotted names"],
+      ["-root-code-x", "root's home: `root` is an ordinary word with no anchor"],
+      [J("fixtures", "Users", "someone", "a.txt"), "mirrored home without a home child: same shape as a PascalCase feature folder"],
     ];
 
-    const posDir = join(work, "machine-paths-pos");
-    for (const [, rel] of positives) {
-      mkdirSync(dirname(join(posDir, rel)), { recursive: true });
-      writeFileSync(join(posDir, rel), "hello\n");
-    }
-    gitInit(posDir);
-    const negDir = join(work, "machine-paths-neg");
-    for (const rel of negatives) {
-      mkdirSync(dirname(join(negDir, rel)), { recursive: true });
-      // The URL-path prose is a content negative: this rule reads names only.
-      writeFileSync(join(negDir, rel), `Visit ${p("", "users", "settings")} to change it.\n`);
-    }
-    gitInit(negDir);
-
-    // PARTIAL must mean no denylist at all, whatever the calling shell sets.
     const env = { ...process.env };
-    delete env.PUBLIC_SAFETY_DENYLIST;
-    for (const [modeLabel, extra] of [["FULL", [...DL, "--require-denylist"]], ["PARTIAL", []]]) {
-      const r = run("node", [SAFETY, posDir, ...extra, "--json"], { env });
-      let report;
-      try { report = JSON.parse(r.out); } catch { report = { failures: [] }; }
-      check(`${modeLabel}: runs in ${modeLabel} mode`, report.mode === modeLabel, `mode was ${report.mode}`);
-      check(`${modeLabel}: fails on machine-local path names`, r.code === 1, `exit was ${r.code}`);
-      for (const [label, rel, where] of positives) {
-        const hit = (report.failures ?? []).some(
-          (f) => f.kind === "machine-path" && f.rel === rel && f.detail.includes(`"${where}`),
-        );
-        check(`${modeLabel}: flags ${label}`, hit, `no machine-path finding naming "${where}" for ${rel}`);
-      }
+    delete env.PUBLIC_SAFETY_DENYLIST; // PARTIAL must mean no denylist at all
+    const plant = (dir, names) => {
+      names.forEach((name, i) => {
+        const rel = J(`r${String(i).padStart(3, "0")}`, name);
+        mkdirSync(dirname(join(dir, rel)), { recursive: true });
+        writeFileSync(join(dir, rel), `Visit ${J("", "users", "settings")} to change it.\n`);
+      });
+      gitInit(dir);
+      return names.map((name, i) => [name, J(`r${String(i).padStart(3, "0")}`, name)]);
+    };
+    const posDir = join(work, "machine-paths-pos");
+    const posRows = plant(posDir, [...MP_POSITIVES, ...MP_KNOWN_GAPS.map(([n]) => n)]);
+    const negDir = join(work, "machine-paths-neg");
+    const negRows = plant(negDir, MP_NEGATIVES);
 
-      const n = run("node", [SAFETY, negDir, ...extra, "--json"], { env });
-      let nReport;
-      try { nReport = JSON.parse(n.out); } catch { nReport = { failures: [{ kind: "unparseable" }] }; }
-      for (const rel of negatives) {
-        const hit = (nReport.failures ?? []).some((f) => f.kind === "machine-path" && f.rel === rel);
-        check(`${modeLabel}: does not flag ${rel}`, !hit, `false-positive machine-path finding for ${rel}`);
+    for (const [modeLabel, extra] of [["FULL", [...DL, "--require-denylist"]], ["PARTIAL", []]]) {
+      const hitRels = (dir) => {
+        const r = run("node", [SAFETY, dir, ...extra, "--json"], { env });
+        let report;
+        try { report = JSON.parse(r.out); } catch { report = { mode: null, failures: [] }; }
+        return { code: r.code, mode: report.mode, rels: new Set((report.failures ?? []).filter((f) => f.kind === "machine-path").map((f) => f.rel)) };
+      };
+      const pos = hitRels(posDir);
+      check(`${modeLabel}: runs in ${modeLabel} mode`, pos.mode === modeLabel, `mode was ${pos.mode}`);
+      check(`${modeLabel}: fails on machine-local path names`, pos.code === 1, `exit was ${pos.code}`);
+      posRows.forEach(([name, rel], i) => {
+        if (i < MP_POSITIVES.length) {
+          check(`${modeLabel}: flags ${JSON.stringify(name)}`, pos.rels.has(rel), `no machine-path finding for ${rel}`);
+        } else {
+          const why = MP_KNOWN_GAPS[i - MP_POSITIVES.length][1];
+          check(
+            `${modeLabel}: KNOWN-GAP not flagged: ${JSON.stringify(name)}`,
+            !pos.rels.has(rel),
+            `${rel} is now flagged — the gap (${why}) closed; move it to MP_POSITIVES`,
+          );
+        }
+      });
+      const neg = hitRels(negDir);
+      for (const [name, rel] of negRows) {
+        check(`${modeLabel}: does not flag ${JSON.stringify(name)}`, !neg.rels.has(rel), `false-positive machine-path finding for ${rel}`);
       }
-      check(`${modeLabel}: negative fixture passes clean`, n.code === 0, `exit ${n.code}: ${n.out.slice(0, 300)}`);
+      // Not an exit-code check: A_Users_manual_v2.pdf is (correctly) refused
+      // as an unacknowledged opaque file, a different rule entirely.
+      check(`${modeLabel}: negative fixture has no machine-path finding`, neg.rels.size === 0, `flagged: ${[...neg.rels].join(", ")}`);
     }
 
     const human = run("node", [SAFETY, posDir], { env });
@@ -408,7 +455,7 @@ try {
     // rule lands, flip this assertion.
     const gapDir = join(work, "machine-paths-content-gap");
     mkdirSync(gapDir, { recursive: true });
-    writeFileSync(join(gapDir, "doc.md"), `notes live at ${p("", "Users", "someone", "code", "notes.md")}\n`);
+    writeFileSync(join(gapDir, "doc.md"), `notes live at ${J("", "Users", "someone", "code", "notes.md")}\n`);
     gitInit(gapDir);
     const gap = run("node", [SAFETY, gapDir, "--json"], { env });
     let gapReport;

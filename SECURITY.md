@@ -57,12 +57,19 @@ refuses a tree that contains:
   never echoed, so the gate cannot leak a secret into a CI log.
 - **Private identity** — names, domains, handles and internal paths that
   must never become public.
-- **Machine-local path names** — a file or directory whose relative path or
-  any single name encodes an absolute local path (a macOS, Linux or Windows
-  user home, or a macOS or agent-session temp root), whether mirrored as
-  nested directories or flattened into one name with `-`, `_` or `\`. This
-  rule is structural and runs in PARTIAL mode too; the same paths inside
-  file contents are left to the denylist.
+- **Machine-local path names** — a file or directory name that encodes an
+  absolute local path: a user home (macOS or WSL `Users`, Linux `home`,
+  Windows `Users`) or a temp root (`private/tmp`, `private/var`,
+  `var/folders`, `tmp/claude-<n>`) flattened into one name that starts with
+  a `-`, `_` or `\` separator, or URL-encoded with `%2F`; and a `Users` or
+  `home` home, a WSL path (`mnt`, a drive letter, then `Users`), or a `private/tmp`,
+  `var/folders` or `tmp/claude-<n>` root mirrored as nested directories.
+  Where the root word is also an ordinary word (a flattened Linux `home` or
+  Windows `Users`, and every mirrored home), a typical home child such as a
+  dot-directory or `code` must follow the name. The rule is structural and
+  runs in PARTIAL mode too. Shapes it deliberately does not cover are listed
+  as KNOWN-GAP cases in `scripts/test-gates.mjs`; the same paths inside file
+  contents are left to the denylist.
 
 A separate gate, `scripts/check-artifact-safety.mjs`, runs the same scan
 against the actual packed tarball rather than the git tree — `dist/` is
