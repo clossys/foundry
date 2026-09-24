@@ -1105,7 +1105,175 @@ immutable qualification record but no publication record. Do not prepare a
 0.1.11 trusted-publisher/OIDC upload until its fresh exact-head candidate has
 passed the required qualification and FULL release checks. After upload,
 require anonymous registry and provenance verification before treating 0.1.11
-as published.
+as published. (0.1.11's own trusted-publisher upload, once it happens through
+`publish.yml`, gains its publication record automatically — see the next
+section — so this hand-run recorder stays reserved for the owner-present case
+above and for backfilling any gap the automated flow could not itself close.)
+
+### Automatic publication evidence after a trusted-publisher release (issue #1346)
+
+Every version `publish.yml`'s OIDC lane actually uploads — where the record
+build itself succeeds; see "Measured data only" below for what happens when
+it cannot — gets its `governance/release-publications/later/<key>-
+<version>.json` record automatically, with no hand-run recorder step.
+`.github/workflows/record-publication-evidence.yml` runs on `workflow_run`,
+once per completed `publish.yml` run, and does nothing at all unless that
+run's `publish (<key>)` job **itself** concluded `success` — gated on the
+matched job's own conclusion, deliberately not on the run's overall one, so
+a version that genuinely uploaded still gets its record even when a later,
+unrelated job in the same run (for example `verify-published`) fails. A
+`dry_run` or `verify_only` dispatch never produces a `publish (<key>)`
+success at all, so this workflow correctly stays a no-op for either.
+
+This file (and `scripts/record-publication-evidence.mjs` /
+`scripts/lib/publication-evidence-run.mjs` beneath it) went through two
+independent blind reviews before landing — one security-focused, one
+correctness-focused — that between them found and fixed a real "pwn
+request" trust-boundary gap, a provenance field the direct join never
+actually checked against the attestation, and a branch-adoption path that
+could have written to an unrelated pull request. The workflow file's own
+header comment maps every fix to the finding that required it; nothing
+below should be read as describing a lighter design than what is actually
+in that file.
+
+**Separation of duties.** This is a second, separate workflow, not a step
+added to `publish.yml` itself. `publish.yml`'s `publish` job keeps exactly
+`contents: read` plus `id-token: write` for the npm OIDC exchange — nothing
+about issue #1346 widens that. The follow-up workflow's own `record-evidence`
+job carries only `actions: read` (to read this run's own job and artifact
+metadata), `contents: write`, and `pull-requests: write` — read-only plus a
+version-control write, never `id-token: write` or any registry credential.
+It never pushes to `main`; it pushes a branch and opens (or updates) a pull
+request, the same review-gated shape `qualify-candidate.yml` and
+`release-pr.yml` already use for their own automated pull requests, and that
+pull request goes through the same review every other change here does. This
+exact permission grant was an explicit owner decision, recorded in
+`governance/decisions/publication-evidence-workflow-permissions.json`; every
+fix from the two reviews above narrows this workflow's trust boundary
+further and does not widen the permissions that decision covers.
+
+Before either step below runs anything from the publish run it is reacting
+to, `record-evidence` re-derives trust from this repository's OWN git
+history rather than the webhook payload alone: it checks out the default
+branch (never the event's `head_sha` directly), proves via
+`git merge-base --is-ancestor` that the publish run's source commit is
+already part of that reviewed history, and only then checks out that
+verified commit. `determine-package`'s own job-level gate independently
+refuses anything that is not literally this repository's own `publish.yml`,
+dispatched manually, with its head on this repository (never a fork) and on
+the default branch — and this workflow never restores or saves an
+`actions/cache` entry, since a `workflow_run` job runs in the default
+branch's shared cache scope regardless of its own `permissions:`.
+
+**Measured data only, or no pull request at all.**
+`scripts/record-publication-evidence.mjs` (via
+`scripts/lib/publication-evidence-run.mjs`) builds the record by calling
+`scripts/record-later-publication.mjs`'s own exported functions —
+`createLaterPublicationRecord` and, through it,
+`buildLaterPublicationRecord`/`validateLaterPublication` — the identical
+building blocks the section above documents for hand use, and the same ones
+PR #1348 called directly to backfill this exact evidence gap for versions
+that predate this workflow. Every field comes from the public npm registry
+(`--fetch`, anonymous), this exact GitHub Actions run's own metadata (read
+from the matched `publish (<key>)` job itself, including the exact attempt
+it ran in — never the run's own current attempt, which can differ after an
+unrelated job was individually re-run), and the already-retained
+qualification record; nothing is invented, and nothing is generated locally
+that a reader could not independently re-derive.
+
+Before any record is written, on **both** the direct join and the replay
+path, `scripts/lib/publication-evidence-run.mjs`'s
+`verifyPublicationProvenance` independently cross-checks every provenance
+field the record is about to claim — workflow, ref, event, source commit,
+run, and attempt — against the version's own npm SLSA provenance attestation
+(the same anonymous `npm audit signatures --include-attestations` install
+`record-later-publication.mjs`'s replay path already performed internally,
+now run for the direct join too, plus an explicit comparison of the
+attestation's decoded `invocationId` against the run/attempt this record is
+about to name). A record whose claimed run or attempt the attestation does
+not corroborate is refused before it is ever written, even though the
+git-ancestry joins alone would have accepted it. If any field cannot be
+measured or does not match, the build throws, the workflow step fails, and
+every later step — including opening a pull request — is skipped entirely.
+
+**Two joins, tried in order, never guessed.** This repository's merge queue
+routinely batches a package's publish with unrelated root
+`package.json`/`package-lock.json` churn from other packages, so the
+straightforward join (`foundry-trusted-publication-v2`, schema 2) fails
+whenever the publish run's source commit no longer matches the qualification
+record's retained root hashes — PR #1348 measured this for 8 of 10
+trusted-publisher versions it backfilled. `scripts/lib/publication-evidence-
+run.mjs`'s `buildPublicationRecordWithFallback` tries the schema-2 join
+first and, only if that fails, falls back to a schema-3 replay
+(`foundry-trusted-publication-replay-v3`) built from this exact run's own
+`qualified-candidate-<key>` artifact — the same artifact `publish.yml`'s
+`qualify` job already uploaded earlier in the same run, rather than a
+separately triggered re-qualification. If both joins fail, the combined
+failure from each is reported and, again, no file is written and no pull
+request opens.
+
+**Idempotent by construction.** Before any of the above runs at all,
+`record-evidence` checks whether the exact record path this run would
+produce already exists on the default branch — reading the package manifest
+at the verified source commit via `git show`, without switching `HEAD` — and
+exits as a clean no-op if it is already there. A redelivered `workflow_run`
+event (GitHub does occasionally redeliver webhooks) or a re-run of this
+workflow after its evidence already merged therefore never produces a red
+run or a duplicate pull request.
+
+**Batching.** `publish.yml` dispatches exactly one package per run, so "N
+packages published close together" means N separate, potentially
+*concurrent* triggers of this workflow — job scheduling does not serialize
+them (the job's own `concurrency:` group is keyed per publish run, precisely
+so it never evicts a different publish's pending follow-up). Each trigger
+looks for an already-open pull request whose branch carries the reserved
+`automation/publication-evidence/` prefix (never this repository's ordinary
+`claude/*` agent-branch namespace, which a plain prefix match would also
+have matched), is not from a fork, and is authored by `github-actions[bot]`
+— and independently verifies, via `scripts/lib/publication-evidence-
+branch.sh`'s `verify_branch_is_ours`, that every commit on that branch past
+its merge-base with the default branch is bot-authored **and** touches only
+`governance/release-publications/later/`, before adding to it. The author
+check alone is not trustworthy — any write-access actor can forge a commit's
+author identity — so path confinement is the check that actually bounds an
+adopted branch's blast radius, and it is never loosened. This verification
+runs again on every fetch inside the push-retry loop, not only at the
+initial lookup, so a branch that was legitimate a moment ago but is no
+longer (someone else pushed to it in between) is abandoned mid-retry rather
+than built on. A branch that fails verification, at any point, is abandoned
+in favor of a fresh branch named from the run's ID plus a random suffix from
+the runner's own entropy source — never a predictable name (the run ID
+alone) an attacker could pre-create ahead of time. Pushing itself is
+retry-safe: each trigger keeps its built record outside git until it lands,
+and retries the whole fetch/stage/commit/push cycle on a non-fast-forward
+rejection rather than assuming it has exclusive write access. Once a push lands, the
+workflow looks up the branch's open pull request fresh, by exact head branch
+and the same same-repository/bot-author filters, and edits it by NUMBER —
+never by resolving a branch name at `gh pr edit` time, which can otherwise
+resolve to an unrelated same-named fork PR or to a PR that merged during
+this very run. Only when that lookup finds nothing open is a new PR opened.
+Merging or closing the open pull request is what starts the next one fresh;
+a branch left with no open PR (for example after a transient `gh` failure)
+is not later rediscovered automatically — a human must open its PR directly
+from the branch, the same graceful-degradation shape this repository already
+uses when Actions is not permitted to open pull requests at all.
+
+This workflow requires no secret beyond the ambient `GITHUB_TOKEN`: no
+`PUBLIC_SAFETY_DENYLIST`, no npm token, nothing — the same posture
+`record-later-publication.mjs` already has when run by hand. The token this
+workflow's build step actually reads is deliberately named something other
+than `GITHUB_TOKEN`/`GH_TOKEN`, so no tool that auto-detects a credential by
+exactly one of those two names picks it up implicitly — but the name alone
+does **not** keep it out of a subprocess further down the call chain: a
+child process inherits its parent's full environment by default regardless
+of what any variable in it is called. What actually closes that is
+`scripts/record-publication-evidence.mjs`'s `main()` reading the variable
+exactly once and deleting it from `process.env` immediately afterward,
+before any other work — see that script's own header for the measurement
+that found the naming-alone claim was not sufficient on its own. Run
+`npm run check:later-publications` on the resulting pull request exactly as
+for a hand-built record; nothing about how that check treats a record
+differs by how the record was produced.
 
 ### Why the name-collision check runs first, always
 
