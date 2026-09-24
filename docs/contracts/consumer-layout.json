@@ -85,7 +85,7 @@
       "owner": "@clossys/publisher",
       "kind": "record",
       "committed": true,
-      "description": "In-tree SectionedView/MarketingView page documents -- which template, which sections, which copy ids and asset ids, all by reference. Publisher authors and owns every file here; Designer and Writer own everything a document references and propose changes in their own folders, but never edit a surface file directly (#1205)."
+      "description": "Surface documents: which template, which sections, which copy ids and asset ids, all by reference (#1205). Publisher is the only writer; Designer and Writer own everything a document references, propose changes in their own folders, and never edit a file here. Unlike the rest of clossys/publisher, a surface document is an approved record revised by reviewable diff, not append-only proof. Matches @clossys/publisher's PUBLISHER_SURFACES_DIR and the shipped site template, which reads clossys/publisher/surfaces/*.json at build time."
     },
     {
       "path": "clossys/controller",
