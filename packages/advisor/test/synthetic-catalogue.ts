@@ -70,7 +70,7 @@ export const SYNTHETIC_PRESETS: readonly KitPreset[] = [
   { id: "launch", label: "Launch", problem: "We can't explain what we are.", roles: ["strategist", "writer", "designer", "publisher"] },
 ];
 
-/** Five direct solvers whose closure is exactly the `launch` preset's own closure (plus `platform`, pulled in by `publisher`). */
+/** Four direct solvers: with `platform`, which `publisher` pulls in, their closure is exactly the `launch` preset's own closure. */
 export const SYNTHETIC_LAUNCH_PROBLEMS = [
   { id: "strategist-unclear-direction", primary: true },
   { id: "designer-interface-quality" },

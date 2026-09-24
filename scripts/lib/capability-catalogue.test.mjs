@@ -70,6 +70,48 @@ function customerNeedsSealing(foundry) {
   return { ...foundry, needs: [...foundry.needs, { producerRole: "@clossys/publisher", artifact: "sealing-and-the-publication-record" }] };
 }
 
+/**
+ * Review of PR #1403 (F1): an input that resolves ONLY by capability id --
+ * neither role declares `feeds` or top-level `needs` -- closes a deadlock.
+ */
+const idOnlyDeadlock = {
+  customer: () => ({ needs: [], capabilities: [{ id: "keep", inputs: [{ producerRole: "@clossys/publisher", artifact: "one" }], outputs: ["clossys/customer/keep.json"] }] }),
+  publisher: () => ({ needs: [], capabilities: [{ id: "one", inputs: [{ producerRole: "@clossys/customer", artifact: "keep" }], outputs: ["clossys/publisher/one.json"] }] }),
+};
+
+/**
+ * Review of PR #1403 (N1): Customer's summary need names Publisher's
+ * surfaces by a `feeds` alias, while `keep-verdict`'s input names the same
+ * capability by id. They resolve to the same node, so the need is covered;
+ * `surface-documents` waits only on `lived-feedback`, and nothing deadlocks.
+ * Treating the need as uncovered would invent a cycle.
+ */
+const coveredByResolution = allLanesWith({
+  customer: (foundry) => ({ ...foundry, needs: foundry.needs.map((need) => (need.artifact === "surface-documents" ? { ...need, artifact: "surfaces-alias" } : need)) }),
+  publisher: (foundry) => {
+    foundry.feeds = [...foundry.feeds, { artifact: "surfaces-alias", path: "clossys/publisher/surfaces/" }];
+    const surfaces = foundry.capabilities.find((capability) => capability.id === "surface-documents");
+    surfaces.inputs = [...surfaces.inputs, { producerRole: "@clossys/customer", artifact: "lived-feedback" }];
+    return foundry;
+  },
+});
+
+/**
+ * Review of PR #1403 (F2): Publisher's surfaces wait on Influencer's reach
+ * report, while Influencer -- no `needs` of its own, no capability map --
+ * keeps its fallback need on Publisher from the committed non-runtime order.
+ * That fallback names no Publisher capability, so it adds no edge; the loop
+ * it closes must still be reported as unjudged, never as legitimate.
+ */
+const fallbackClosedLoop = allLanesWith({
+  publisher: (foundry) => {
+    const surfaces = foundry.capabilities.find((capability) => capability.id === "surface-documents");
+    surfaces.inputs = [...surfaces.inputs, { producerRole: "@clossys/influencer", artifact: "reach-report" }];
+    return { ...foundry, needs: [...foundry.needs, { producerRole: "@clossys/influencer", artifact: "reach-report" }] };
+  },
+  influencer: (foundry) => ({ ...foundry, feeds: [{ artifact: "reach-report", path: "clossys/influencer/reach.json" }] }),
+});
+
 /** Both verdicts for the same manifests: the framework gate's (--enforce) and kit composition's. */
 function verdicts(patches, selectedRoles = launchRoles) {
   const byDirectory = manifestsWith(patches);
@@ -210,6 +252,39 @@ test("the catalogue's cycle verdict agrees with check-package-framework's --enfo
   assert.deepEqual(cycles(ALL_LANES), { gateDeadlock: false, kitDeadlock: false });
   assert.deepEqual(cycles(allLanesWith({ publisher: publisherSurfacesWaitOnKeep })), { gateDeadlock: true, kitDeadlock: true });
   assert.deepEqual(cycles(allLanesWith({ customer: customerNeedsSealing })), { gateDeadlock: true, kitDeadlock: true });
+  assert.deepEqual(cycles(idOnlyDeadlock), { gateDeadlock: true, kitDeadlock: true });
+  assert.deepEqual(cycles(coveredByResolution), { gateDeadlock: false, kitDeadlock: false });
+});
+
+test("an input resolved only by capability id closes a deadlock, as the gate reports", () => {
+  const catalogue = catalogueWith(idOnlyDeadlock);
+  assert.deepEqual(judgeNeedsCycles({ roleNames: ["customer", "publisher"], catalogue }).capabilityCycle, ["customer#keep", "publisher#one", "customer#keep"]);
+});
+
+test("a role loop closed by a fallback need that names no capability is unjudged, never legitimate (review F2)", () => {
+  const catalogue = catalogueWith(fallbackClosedLoop);
+  const influencer = roleOf(catalogue, "influencer");
+  assert.deepEqual(influencer.capabilities, []);
+  assert.deepEqual(influencer.needs.map((need) => `${need.source} ${need.role}`), ["fallback-non-runtime-order publisher"]);
+
+  const grow = composeKit({ selectedRoles: presetsContract.presets.find((preset) => preset.id === "grow").roles, catalogue });
+  assert.equal(grow.state, "composed");
+  assert.deepEqual(grow.unsatisfiedNeeds, []);
+  assert.deepEqual(grow.unjudgedCycle, ["influencer", "publisher", "influencer"]);
+  assert.equal(grow.roleCycles.some((cycle) => cycle.includes("influencer")), true);
+
+  const result = evaluateOfferingKits({ contract: presetsContract, catalogue });
+  assert.deepEqual(result.findings, []);
+  assert.deepEqual(result.warnings.map((warning) => `${warning.rule} ${warning.preset}`).sort(), ["needs-graph-cycle-unjudged grow", "needs-graph-cycle-unjudged launch"]);
+
+  // The framework gate never sees fallback evidence: no finding there either way.
+  const { gateDeadlock, kitDeadlock } = verdicts(fallbackClosedLoop);
+  assert.deepEqual({ gateDeadlock, kitDeadlock }, { gateDeadlock: false, kitDeadlock: false });
+});
+
+test("the offering-kits gate lists every legitimate role loop, so none is invisible", () => {
+  const result = evaluateOfferingKits({ contract: presetsContract, catalogue: lanesCatalogue() });
+  assert.deepEqual(result.roleLoops.filter((loop) => loop.preset === "launch"), [{ preset: "launch", cycle: ["customer", "publisher", "customer"] }]);
 });
 
 /**

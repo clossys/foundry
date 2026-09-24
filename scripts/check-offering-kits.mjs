@@ -24,9 +24,12 @@
 // the same rule scripts/check-package-framework.mjs applies: a cycle among
 // capabilities is a deadlock and a finding (`preset-does-not-compose`); a
 // role-level loop with no capability cycle behind it (the Customer/
-// Publisher keep loop) is legitimate and passes; a cycle only visible
-// through a role with no capability map cannot be judged, so it is a
-// warning (`needs-graph-cycle-unjudged`) -- never a finding, never silent.
+// Publisher keep loop) is legitimate and passes, and is printed as a
+// `roleLoops` note so it is never invisible; a cycle the capability graph
+// cannot account for -- only visible through a role with no capability
+// map, or a role loop closed by a catalogue fallback need that names no
+// capability -- cannot be judged, so it is a warning
+// (`needs-graph-cycle-unjudged`) -- never a finding, never silent.
 //
 // WHY THIS EXISTS
 // ---------------
@@ -78,15 +81,16 @@ function readJson(path) {
 export function evaluateOfferingKits({ contract, catalogue }) {
   const findings = [];
   const warnings = [];
+  const roleLoops = [];
   const note = (rule, message, extra = {}) => findings.push({ rule, message, ...extra });
 
   if (!isRecord(contract) || contract.schemaVersion !== 1) {
     note("invalid-contract", "kit presets contract must be schemaVersion 1");
-    return { findings, warnings, presets: [] };
+    return { findings, warnings, roleLoops, presets: [] };
   }
   if (!Array.isArray(contract.presets) || contract.presets.length === 0) {
     note("invalid-contract", "presets must be a nonempty array");
-    return { findings, warnings, presets: [] };
+    return { findings, warnings, roleLoops, presets: [] };
   }
 
   const knownRoles = new Set((catalogue?.roles ?? []).map((role) => role.role));
@@ -137,17 +141,24 @@ export function evaluateOfferingKits({ contract, catalogue }) {
       if (composed.state !== "composed") {
         note("preset-does-not-compose", `preset ${preset.id} does not compose: ${composed.reason}`, { preset: preset.id });
       } else {
+        for (const cycle of composed.roleCycles) roleLoops.push({ preset: preset.id, cycle });
         if (composed.unjudgedCycle) {
           warnings.push({
             rule: "needs-graph-cycle-unjudged",
-            message: `preset ${preset.id}: the needs graph has a cycle through a role with no capability map, so it cannot be told apart from a deadlock: ${composed.unjudgedCycle.join(" -> ")} (issue #1382)`,
+            message: `preset ${preset.id}: the capability graph cannot account for this needs cycle (a role with no capability map, or a loop closed by an inferred fallback need), so it cannot be told apart from a deadlock: ${composed.unjudgedCycle.join(" -> ")} (issue #1382)`,
             preset: preset.id,
           });
         }
         for (const need of composed.unsatisfiedNeeds) {
+          const producerExists = need.wantedRole !== null && knownRoles.has(need.wantedRole);
+          const why = producerExists
+            ? `role ${need.wantedRole} is in the catalogue but declares no feeds entry for it`
+            : need.wantedRole === null
+              ? "it names no producer role"
+              : `no role here is ${need.wantedRole}`;
           note(
             "unsatisfied-need",
-            `preset ${preset.id}: role ${need.role} needs ${need.artifact} which no resolvable role provides`,
+            `preset ${preset.id}: role ${need.role} needs ${need.artifact}, but ${why}`,
             { preset: preset.id, role: need.role, artifact: need.artifact },
           );
         }
@@ -155,7 +166,7 @@ export function evaluateOfferingKits({ contract, catalogue }) {
     }
   }
 
-  return { findings, warnings, presets: contract.presets };
+  return { findings, warnings, roleLoops, presets: contract.presets };
 }
 
 function defaultRoot() {
@@ -189,6 +200,9 @@ function printText(result) {
   for (const warning of result.warnings ?? []) {
     console.log(`offering kits: warning ${warning.rule}: ${warning.message}`);
   }
+  for (const loop of result.roleLoops ?? []) {
+    console.log(`offering kits: preset ${loop.preset} role loop (no capability cycle behind it): ${loop.cycle.join(" -> ")}`);
+  }
   if (result.evidenceAdvisories?.length > 0) {
     console.log(
       `offering kits: ${result.evidenceAdvisories.length} preset role(s) below "qualified" evidence (advisory only, does not fail; see presetEvidenceFindings in scripts/lib/capability-catalogue.mjs)`,
@@ -202,7 +216,7 @@ function main(argv) {
   const repoRoot = positional[0] ? positional[0] : defaultRoot();
   const result = loadAndEvaluate(repoRoot);
   if (json) {
-    console.log(JSON.stringify({ findings: result.findings, warnings: result.warnings, evidenceAdvisories: result.evidenceAdvisories }, null, 2));
+    console.log(JSON.stringify({ findings: result.findings, warnings: result.warnings, roleLoops: result.roleLoops, evidenceAdvisories: result.evidenceAdvisories }, null, 2));
   } else {
     printText(result);
   }

@@ -36,18 +36,20 @@ export type ComposeKitResult =
       unsatisfiedNeeds: readonly UnsatisfiedNeed[];
       addedForDependencies: readonly string[];
       /**
-       * Role-level needs loops inside this kit, each with the repeated role
-       * at both ends. Composition only reaches `composed` with one when no
-       * capability cycle is behind it (issue #1382), so every entry is a
-       * legitimate loop, such as the Customer/Publisher keep loop.
-       * `sequence` cannot put every role in a loop before the others, so
-       * within a loop it is the walk order.
+       * Every role-level needs loop the walk met inside this kit, each with
+       * the repeated role at both ends. No capability cycle is behind any
+       * of them (that would be `indeterminate`, issue #1382). When
+       * `unjudgedCycle` is null, every entry is a legitimate loop, such as
+       * the Customer/Publisher keep loop; otherwise at least one of them
+       * could not be judged. `sequence` cannot put every role in a loop
+       * before the others, so within a loop it is the walk order.
        */
       roleCycles: readonly (readonly string[])[];
       /**
-       * A needs cycle only visible through a role with no capability map:
-       * it cannot be told apart from a deadlock, so it is named here --
-       * never failed, never silently passed. Null when there is none.
+       * A needs cycle the capability graph cannot account for (see
+       * {@link judgeNeedsCycles}): it cannot be told apart from a
+       * deadlock, so it is named here -- never failed, never silently
+       * passed. Null when there is none.
        */
       unjudgedCycle: readonly string[] | null;
     }
@@ -63,7 +65,12 @@ export interface ComposeKitInput {
 export interface NeedsCycleJudgement {
   /** A cycle among capability nodes (`<role>#<capability id>`): a deadlock. */
   capabilityCycle: readonly string[] | null;
-  /** When there is no deadlock: a cycle that exists only through a bare role (a role with no capability map). */
+  /**
+   * When there is no deadlock: a cycle the capability graph cannot account
+   * for. Either it exists only through a bare role (a role with no
+   * capability map), or it is a role-level loop closed by a fallback need
+   * that resolves to no node.
+   */
   unjudgedCycle: readonly string[] | null;
 }
 
@@ -112,6 +119,14 @@ function findCycle(edges: ReadonlyMap<string, readonly string[]>): string[] | nu
  * declared order, as the gate reads it), else (for a producer with no
  * capability map) to the bare producer. Anything else, including a producer outside
  * `roleNames`, adds no edge.
+ *
+ * A catalogue fallback need (`<role>-package`, `<role>-sequence-gate`) is
+ * inferred evidence, never a declared capability dependency. Where its
+ * producer has a capability map it resolves to no node and adds no edge.
+ * Dropping it must not make the loop it closes look legitimate (review of
+ * PR #1403, F2), so a role-level loop closed by such a dropped fallback
+ * need is also an `unjudgedCycle`. The gate never sees fallback needs, so
+ * this never arises from declared data alone.
  */
 export function judgeNeedsCycles({ roleNames, catalogue }: { roleNames: readonly string[]; catalogue: CapabilityCatalogue }): NeedsCycleJudgement {
   const byRole = new Map<string, RoleCapability>(catalogue.roles.map((role) => [role.role, role]));
@@ -157,7 +172,58 @@ export function judgeNeedsCycles({ roleNames, catalogue }: { roleNames: readonly
     [...edges].filter(([node]) => node.includes("#")).map(([node, next]) => [node, next.filter((target) => target.includes("#"))] as const),
   );
   const capabilityCycle = findCycle(capabilityOnly);
-  return { capabilityCycle, unjudgedCycle: capabilityCycle ? null : findCycle(edges) };
+  if (capabilityCycle) return { capabilityCycle, unjudgedCycle: null };
+  return { capabilityCycle: null, unjudgedCycle: findCycle(edges) ?? loopClosedByDroppedFallback(byRole, inScope, resolveNeed) };
+}
+
+/**
+ * The first role-level loop, among `inScope` roles, that a catalogue
+ * fallback need closes although it resolved to no capability-graph node:
+ * `[consumer, producer, ..., consumer]`, or null. Deterministic: consumers,
+ * their needs, and each breadth-first frontier are walked in sorted order.
+ */
+function loopClosedByDroppedFallback(
+  byRole: ReadonlyMap<string, RoleCapability>,
+  inScope: ReadonlySet<string>,
+  resolveNeed: (need: CapabilityArtifactRef) => string | null,
+): string[] | null {
+  const roles = [...inScope].sort();
+  const next = new Map(
+    roles.map((role) => [
+      role,
+      [...new Set((byRole.get(role)?.needs ?? []).map((need) => need.role).filter((producer): producer is string => !!producer && inScope.has(producer)))].sort(),
+    ]),
+  );
+  const pathBetween = (from: string, to: string): string[] | null => {
+    const previous = new Map<string, string | null>([[from, null]]);
+    const queue = [from];
+    while (queue.length > 0) {
+      const role = queue.shift() as string;
+      if (role === to) {
+        const path: string[] = [];
+        for (let at: string | null = to; at !== null; at = previous.get(at) ?? null) path.unshift(at);
+        return path;
+      }
+      for (const producer of next.get(role) ?? []) {
+        if (!previous.has(producer)) {
+          previous.set(producer, role);
+          queue.push(producer);
+        }
+      }
+    }
+    return null;
+  };
+  for (const consumer of roles) {
+    const dropped = (byRole.get(consumer)?.needs ?? [])
+      .filter((need) => need.source !== "manifest" && !!need.role && need.role !== consumer && inScope.has(need.role) && resolveNeed(need) === null)
+      .map((need) => need.role as string)
+      .sort();
+    for (const producer of dropped) {
+      const back = pathBetween(producer, consumer);
+      if (back) return [consumer, ...back];
+    }
+  }
+  return null;
 }
 
 /**
@@ -182,9 +248,11 @@ export function needIsMet(need: CapabilityArtifactRef, producer: RoleCapability 
  *
  * Needs cycles follow issue #1382's decision ({@link judgeNeedsCycles}): a
  * cycle among the kit's capabilities is a deadlock and comes back
- * `indeterminate`; a role-level loop with no capability cycle behind it is
- * legitimate and listed in `roleCycles`; a cycle only visible through a
- * role with no capability map composes and is named in `unjudgedCycle`.
+ * `indeterminate`; every role-level loop is listed in `roleCycles`, and one
+ * with no capability cycle behind it is legitimate; a cycle the capability
+ * graph cannot account for (only visible through a role with no capability
+ * map, or closed by a dropped fallback need) composes and is named in
+ * `unjudgedCycle`.
  */
 export function composeKit({ selectedRoles, catalogue }: ComposeKitInput): ComposeKitResult {
   const byRole = new Map<string, RoleCapability>(catalogue.roles.map((role) => [role.role, role]));

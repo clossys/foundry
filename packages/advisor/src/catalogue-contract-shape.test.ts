@@ -92,6 +92,53 @@ const duplicateFeedDeadlock: Record<string, Patch> = {
   }),
 };
 
+/** A summary `needs` entry naming Publisher's sealing, which no Customer capability's `inputs` covers: every Customer capability waits on it (review of #1403, F1). */
+const customerNeedsSealing: Patch = (foundry) => ({ ...foundry, needs: [...(foundry.needs ?? []), { producerRole: "@clossys/publisher", artifact: "sealing-and-the-publication-record" }] });
+
+/** An input that resolves ONLY by capability id -- no `feeds`, no top-level `needs` -- closes a deadlock (review of #1403, F1). */
+const idOnlyDeadlock: Record<string, Patch> = {
+  customer: () => ({ needs: [], capabilities: [{ id: "keep", inputs: [{ producerRole: "@clossys/publisher", artifact: "one" }], outputs: ["clossys/customer/keep.json"] }] }),
+  publisher: () => ({ needs: [], capabilities: [{ id: "one", inputs: [{ producerRole: "@clossys/customer", artifact: "keep" }], outputs: ["clossys/publisher/one.json"] }] }),
+};
+
+/** A summary need covered only because it resolves to the same node as an input: no deadlock (review of #1403, N1). */
+const coveredByResolution = allLanesWith({
+  customer: (foundry) => ({
+    ...foundry,
+    needs: (foundry.needs as { artifact: string }[]).map((need) => (need.artifact === "surface-documents" ? { ...need, artifact: "surfaces-alias" } : need)),
+  }),
+  publisher: (foundry) => {
+    foundry.feeds = [...(foundry.feeds as unknown[]), { artifact: "surfaces-alias", path: "clossys/publisher/surfaces/" }];
+    const surfaces = foundry.capabilities!.find((capability) => capability.id === "surface-documents")!;
+    surfaces.inputs = [...surfaces.inputs, { producerRole: "@clossys/customer", artifact: "lived-feedback" }];
+    return foundry;
+  },
+});
+
+/** A role loop closed by Influencer's fallback need on Publisher, which names no Publisher capability (review of #1403, F2). */
+const fallbackClosedLoop = allLanesWith({
+  publisher: (foundry) => {
+    const surfaces = foundry.capabilities!.find((capability) => capability.id === "surface-documents")!;
+    surfaces.inputs = [...surfaces.inputs, { producerRole: "@clossys/influencer", artifact: "reach-report" }];
+    return { ...foundry, needs: [...(foundry.needs ?? []), { producerRole: "@clossys/influencer", artifact: "reach-report" }] };
+  },
+  influencer: (foundry) => ({ ...foundry, feeds: [{ artifact: "reach-report", path: "clossys/influencer/reach.json" }] }),
+});
+
+/** The selected roles plus every role their `needs` reach: the kit's full role set, even when composition comes back indeterminate. */
+function closureOf(selectedRoles: readonly string[], catalogue: CapabilityCatalogue): string[] {
+  const byRole = new Map(catalogue.roles.map((role) => [role.role, role]));
+  const seen = new Set<string>();
+  const queue = selectedRoles.filter((role) => byRole.has(role));
+  while (queue.length > 0) {
+    const role = queue.shift()!;
+    if (seen.has(role)) continue;
+    seen.add(role);
+    for (const need of byRole.get(role)!.needs) if (need.role && byRole.has(need.role)) queue.push(need.role);
+  }
+  return [...seen].sort();
+}
+
 /** Typechecks a rendered generated module against this package's own types, served in memory in place of the file `npm run build` writes. */
 function typecheckGeneratedModule(source: string): string[] {
   const configPath = join(here, "..", "tsconfig.json");
@@ -170,16 +217,36 @@ describe("the shipped composition agrees with this repository's gate", () => {
     "plus a Publisher capability that waits on the keep (deadlock)": allLanesWith({ publisher: publisherSurfacesWaitOnKeep }),
     "with #1401's two needs Designer does not feed (unmet)": allLanesWith({ publisher: publisherUncorrected }),
     "a producer that declares one artifact twice (review of #1403, B1)": duplicateFeedDeadlock,
+    "an uncovered summary need (deadlock, review of #1403, F1)": allLanesWith({ customer: customerNeedsSealing }),
+    "an input resolved only by capability id (deadlock, review of #1403, F1)": idOnlyDeadlock,
+    "a summary need covered by resolving to the same node (no deadlock, review of #1403, N1)": coveredByResolution,
+    "a role loop closed by a fallback need (unjudged, review of #1403, F2)": fallbackClosedLoop,
+  };
+
+  // Every variant must actually exercise its rule, or the parity check above it is vacuous.
+  const expectedLaunch: Record<string, string> = {
+    "all five lanes": "composed",
+    "plus a Publisher capability that waits on the keep (deadlock)": "indeterminate",
+    "with #1401's two needs Designer does not feed (unmet)": "composed",
+    "a producer that declares one artifact twice (review of #1403, B1)": "indeterminate",
+    "an uncovered summary need (deadlock, review of #1403, F1)": "indeterminate",
+    "an input resolved only by capability id (deadlock, review of #1403, F1)": "indeterminate",
+    "a summary need covered by resolving to the same node (no deadlock, review of #1403, N1)": "composed",
+    "a role loop closed by a fallback need (unjudged, review of #1403, F2)": "composed",
   };
 
   for (const [label, patches] of Object.entries(variants)) {
     it(`on every preset and on each launch role alone: ${label}`, () => {
       const catalogue = catalogueWith(patches);
       const selections = [...presets.map((preset) => preset.roles), ...launch.roles.map((role) => [role])];
+      const selectedLaunch = composeKit({ selectedRoles: launch.roles, catalogue });
+      expect(selectedLaunch.state).toBe(expectedLaunch[label]);
       for (const selectedRoles of selections) {
         const shipped = composeKit({ selectedRoles, catalogue });
         const gate = repositoryCatalogue.composeKit({ selectedRoles, catalogue });
-        expect(judgeNeedsCycles({ roleNames: gate.sequence, catalogue })).toEqual(repositoryCatalogue.judgeNeedsCycles({ roleNames: gate.sequence, catalogue }));
+        // Over the kit's FULL role set: `gate.sequence` is empty whenever the gate's result is indeterminate.
+        const roleNames = closureOf(selectedRoles, catalogue);
+        expect(judgeNeedsCycles({ roleNames, catalogue })).toEqual(repositoryCatalogue.judgeNeedsCycles({ roleNames, catalogue }));
         if (shipped.state === "composed") {
           const { context: _context, ...gateComposed } = gate;
           expect(shipped).toEqual(gateComposed);
@@ -195,6 +262,29 @@ describe("the shipped composition agrees with this repository's gate", () => {
     const composed = composeKit({ selectedRoles: ["customer"], catalogue: catalogueWith(duplicateFeedDeadlock) });
     expect(composed.state).toBe("indeterminate");
     if (composed.state === "indeterminate") expect(composed.reason).toContain("customer#keep -> publisher#one -> customer#keep");
+  });
+
+  it("rejects an uncovered summary need and an id-only input deadlock, as the gate does", () => {
+    const sealing = composeKit({ selectedRoles: launch.roles, catalogue: catalogueWith(allLanesWith({ customer: customerNeedsSealing })) });
+    expect(sealing.state).toBe("indeterminate");
+    if (sealing.state === "indeterminate") expect(sealing.reason).toContain("publisher#sealing-and-the-publication-record -> customer#keep-verdict");
+    const idOnly = composeKit({ selectedRoles: ["customer", "publisher"], catalogue: catalogueWith(idOnlyDeadlock) });
+    expect(idOnly.state).toBe("indeterminate");
+    if (idOnly.state === "indeterminate") expect(idOnly.reason).toContain("customer#keep -> publisher#one -> customer#keep");
+  });
+
+  it("does not invent a deadlock for a summary need that resolves to the same node as an input", () => {
+    const covered = composeKit({ selectedRoles: launch.roles, catalogue: catalogueWith(coveredByResolution) });
+    expect(covered.state).toBe("composed");
+  });
+
+  it("reports the grow preset's fallback-closed loop as unjudged, carried to the verdict (review of #1403, F2)", () => {
+    const catalogue = catalogueWith(fallbackClosedLoop);
+    const grow = composeKit({ selectedRoles: presets.find((preset) => preset.id === "grow")!.roles, catalogue });
+    expect(grow.state).toBe("composed");
+    if (grow.state === "composed") expect(grow.unjudgedCycle).toEqual(["influencer", "publisher", "influencer"]);
+    const verdict = recommendKit({ confirmedProblems: [{ id: "influencer-audience-response", primary: true }], catalogue, problem: "Get it in front of people.", overCapReason: "grow" });
+    expect(verdict.unjudgedCycle).toEqual(["influencer", "publisher", "influencer"]);
   });
 
   it("reports a need whose producer does not feed the artifact as unmet, as the framework gate does", () => {

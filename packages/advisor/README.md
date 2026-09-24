@@ -162,10 +162,12 @@ package-framework contract's cycle decision. `judgeNeedsCycles()` builds that
 graph for a set of roles. A cycle among capabilities is a deadlock, and
 `composeKit()` returns `indeterminate`. A role-level loop with no
 capability cycle behind it is legitimate, such as the Customer/Publisher
-keep loop. The kit composes, and `roleCycles` lists the loop. A cycle only
-visible through a role with no capability map cannot be judged. The kit
-composes, and `unjudgedCycle` names the cycle rather than passing it
-silently. `recommendKit()` carries both `roleCycles` and `unjudgedCycle`
+keep loop. The kit composes, and `roleCycles` lists the loop. Some cycles
+the capability graph cannot account for, so they cannot be judged: a cycle
+only visible through a role with no capability map, or a role loop closed
+by an inferred fallback need that names no capability. The kit composes,
+and `unjudgedCycle` names the cycle rather than passing it silently.
+`recommendKit()` carries both `roleCycles` and `unjudgedCycle`
 into its verdict.
 
 `composeKitFromProblems()` is the problem-confirmed entry point (the

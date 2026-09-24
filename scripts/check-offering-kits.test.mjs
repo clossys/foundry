@@ -90,15 +90,42 @@ function capabilityDeadlock() {
   return cyclic;
 }
 
-/** The same role-level loop, where the capabilities do not wait on each other: legitimate (issue #1382). */
+/**
+ * The same role-level loop, where the capabilities do not wait on each
+ * other: legitimate (issue #1382). Publisher's side of the loop is a
+ * DECLARED need that its `seal` capability's input covers; a fallback need
+ * on writer would name no capability, and a loop closed by one is unjudged
+ * (review of PR #1403, F2).
+ */
 function legitimateLoop() {
   const looped = capabilityDeadlock();
-  looped.roles.find((r) => r.role === "publisher").capabilities = [
+  const publisher = looped.roles.find((r) => r.role === "publisher");
+  const writer = looped.roles.find((r) => r.role === "writer");
+  publisher.capabilities = [
     { id: "surfaces", inputs: [], outputs: ["clossys/publisher/surfaces/"] },
     { id: "seal", inputs: [{ producerRole: "@clossys/writer", artifact: "copy" }], outputs: ["clossys/publisher/record.json"] },
   ];
+  publisher.needs = [
+    { artifact: "copy", role: "writer", producerRole: "@clossys/writer", source: "manifest" },
+    { artifact: "designer-package", role: "designer", source: "fallback-runtime-dependency" },
+  ];
+  writer.declaredFeeds = [{ artifact: "copy", path: "clossys/writer/copy.json" }];
   return looped;
 }
+
+test("the same loop closed by a fallback need into a role with a capability map is unjudged, a warning (review F2)", () => {
+  const closedByFallback = legitimateLoop();
+  closedByFallback.roles.find((r) => r.role === "publisher").needs = [
+    { artifact: "writer-package", role: "writer", source: "fallback-runtime-dependency" },
+    { artifact: "designer-package", role: "designer", source: "fallback-runtime-dependency" },
+  ];
+  const composed = composeKit({ selectedRoles: ["writer"], catalogue: closedByFallback });
+  assert.equal(composed.state, "composed");
+  assert.deepEqual(composed.unjudgedCycle, ["publisher", "writer", "publisher"]);
+  const result = evaluateOfferingKits({ contract: contract(), catalogue: closedByFallback });
+  assert.deepEqual(rules(result), []);
+  assert.deepEqual(result.warnings.map((warning) => warning.rule), ["needs-graph-cycle-unjudged", "needs-graph-cycle-unjudged"]);
+});
 
 test("a preset that does not compose because its capabilities deadlock is a finding", () => {
   const result = evaluateOfferingKits({ contract: contract(), catalogue: capabilityDeadlock() });
@@ -119,8 +146,18 @@ test("a cycle only visible through roles with no capability map is a warning, ne
 
 test("a preset whose role has an unresolvable need is a finding, not a silent pass", () => {
   const drifted = contract({ presets: [{ id: "launch", label: "Launch", problem: "p", roles: ["orphan"] }] });
-  const found = rules(evaluateOfferingKits({ contract: drifted, catalogue: catalogue() }));
-  assert.equal(found.includes("unsatisfied-need"), true);
+  const result = evaluateOfferingKits({ contract: drifted, catalogue: catalogue() });
+  assert.equal(rules(result).includes("unsatisfied-need"), true);
+  assert.match(result.findings[0].message, /needs missing-thing, but it names no producer role/);
+});
+
+test("a legitimate role loop is listed in roleLoops, and printed", () => {
+  const result = evaluateOfferingKits({ contract: contract(), catalogue: legitimateLoop() });
+  assert.deepEqual(result.warnings, []);
+  assert.deepEqual(result.roleLoops, [
+    { preset: "launch", cycle: ["writer", "publisher", "writer"] },
+    { preset: "grow", cycle: ["publisher", "writer", "publisher"] },
+  ]);
 });
 
 test("addOnTo naming a preset id outside the contract is a finding", () => {
@@ -157,8 +194,9 @@ test("composeKit counts a manifest need as met only when its producer declares a
   assert.equal(composed.state, "composed");
   assert.deepEqual(composed.sequence.includes("publisher"), true);
   assert.deepEqual(composed.unsatisfiedNeeds, [{ role: "writer", artifact: "surfaces", wantedRole: "publisher" }]);
-  const found = rules(evaluateOfferingKits({ contract: contract({ presets: [{ id: "launch", label: "Launch", problem: "p", roles: ["writer"] }] }), catalogue: unfed }));
-  assert.deepEqual(found, ["unsatisfied-need"]);
+  const result = evaluateOfferingKits({ contract: contract({ presets: [{ id: "launch", label: "Launch", problem: "p", roles: ["writer"] }] }), catalogue: unfed });
+  assert.deepEqual(rules(result), ["unsatisfied-need"]);
+  assert.match(result.findings[0].message, /role writer needs surfaces, but role publisher is in the catalogue but declares no feeds entry for it/);
 });
 
 test("composeKit reports an unknown selected role as indeterminate", () => {

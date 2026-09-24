@@ -52,14 +52,17 @@ export interface KitVerdict {
   sequence: readonly string[];
   deliverables: readonly string[];
   /**
-   * Legitimate role-level needs loops in this kit (issue #1382): each has
-   * no capability cycle behind it, so the kit still composes. Empty when
-   * there is none, and always empty on an `indeterminate` verdict.
+   * Role-level needs loops in this kit (issue #1382): none has a capability
+   * cycle behind it, so the kit still composes. All are legitimate when
+   * `unjudgedCycle` is null. Empty when there is none, and always empty on
+   * an `indeterminate` verdict.
    */
   roleCycles: readonly (readonly string[])[];
   /**
-   * A needs cycle only visible through a role with no capability map. It
-   * cannot be told apart from a deadlock, so it is carried here to be shown
+   * A needs cycle the capability graph cannot account for: one only visible
+   * through a role with no capability map, or a role loop closed by an
+   * inferred (fallback) need. It cannot be told apart from a deadlock, so
+   * it is carried here to be shown
    * rather than passed silently: the package-framework contract's rule is
    * "never failed and never silently passed". Null when there is none.
    */
