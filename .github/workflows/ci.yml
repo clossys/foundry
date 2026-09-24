@@ -970,12 +970,11 @@ jobs:
       # package is a blocking defect (#924). Missing public-npm claims are
       # printed and counted, never a silent pass. README text only, no build.
       - run: node scripts/check-install-docs.mjs
-      # Release notes live in this public repository, never in a tarball:
-      # every package has docs/changelogs/<dir>.md with an entry for its
-      # current version, no in-package changelog, no changelog in "files",
-      # and a README link to the changelog's public URL. Manifest, README
-      # and docs reads only, no build -- same class as the steps above.
-      - run: node scripts/check-changelog-location.mjs
+      # check-changelog-location.mjs moved to `prose quality` (issue #1420
+      # review round 3, N1 reopened by #1429): it reads
+      # `docs/changelogs/<dir>.md`, a prose-tier path, and this job is
+      # SKIPPED on the `prose` tier -- exactly the tier a changelog-only
+      # change classifies as. See `prose quality`'s own comment.
       # Packed Agent Skills: every publishable package ships skill/SKILL.md with
       # valid frontmatter binding `name` to clossys-<pkg>. README and manifest
       # reads only, no build — same shallow-checkout class as the steps above.
@@ -1404,6 +1403,36 @@ jobs:
       # a valid patch/minor/major bump level, and a non-empty summary?
       - name: Changeset format gate
         run: npm run check:changesets
+      # Moved here from `role-loop archetypes` (issue #1420 review round 3:
+      # #1429 added this step reading `docs/changelogs/<dir>.md` -- a
+      # prose-tier path -- to that job, which the classifier already skips
+      # on the `prose` tier, reopening finding N1 the same way the two
+      # gates above originally triggered it). Release notes live in this
+      # public repository, never in a tarball: every package has
+      # `docs/changelogs/<dir>.md` with an entry for its current version,
+      # no in-package changelog, no changelog in "files", and a README link
+      # to the changelog's public URL. Manifest, README and docs reads
+      # only, no build -- same dependency-free class as the two gates
+      # above.
+      - name: Changelog location gate
+        run: npm run check:changelog-location
+      # Moved here from `build` (issue #1420 review round 3, found by the
+      # generic script-input wiring test below rather than by a reviewer):
+      # scripts/check-strategist-subject.mjs scans docs/*.md -- excluding
+      # docs/contracts/**, docs/changelogs/**, and every OTHER root-style
+      # docs/*.md filename (see the script's own exclude list) -- which in
+      # practice means only docs/PUBLISHING.md and docs/RELEASING.md, both
+      # prose-tier paths. `build` is skipped on the pure 'prose' tier, so a
+      # docs/PUBLISHING.md-only change would have merged with this gate
+      # silently skipped. Unlike the three gates above, this one needs the
+      # BUILT strategist CLI (packages/strategist/dist/cli.js) -- so, unlike
+      # them, this job pays a real `npm ci` and a single-workspace build for
+      # it, the same minimal-build shape `contrast`/`designer-contrast` use
+      # for packages/designer below.
+      - run: npm ci
+      - run: npm run build --workspace=packages/strategist
+      - name: Strategist facts subject (PUBLISHING.md)
+        run: npm run check:strategist-subject
 
   # Split out of `build and test` (issue: CI throughput). Measured on run
   # 35802156089 (job 106994736395, branch claude/strategist-clossys-layout):
@@ -1881,8 +1910,14 @@ jobs:
       # dependency-free safety job.
       - name: Launcher help
         run: npm run check:launcher-help
-      - name: Strategist facts subject (PUBLISHING.md)
-        run: npm run check:strategist-subject
+      # check:strategist-subject moved to `prose quality` (issue #1420
+      # review round 3): it scans docs/*.md (excluding docs/contracts/**,
+      # docs/changelogs/**, and every OTHER root-style docs/*.md file --
+      # see scripts/check-strategist-subject.mjs's own exclude list), which
+      # in practice means docs/PUBLISHING.md and docs/RELEASING.md, both
+      # prose-tier paths this job is SKIPPED for on the 'prose' tier. See
+      # `prose quality`'s own comment for where it moved to and why it
+      # needed its own minimal build there.
       - name: Supersession map
         run: npm run check:supersession
       # Schema versions and migrations for every clossys/ record (#1224):

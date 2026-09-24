@@ -1,11 +1,12 @@
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 
 import { discoverGateTestFiles, GATE_TEST_EXCLUSIONS } from "./lib/gate-test-set.mjs";
 import { classifyPath } from "./classify-change-tier.mjs";
+import { GATED_SCRIPT_PROSE_INPUTS, OPAQUE_NPM_SCRIPTS } from "./lib/gated-script-prose-inputs.mjs";
 
 // check-workflow-references — a future `check:*` script added only to the
 // local `npm run check` aggregate, and to no workflow, is exactly issue
@@ -796,106 +797,230 @@ test("issue #1420: a failed, cancelled, or skipped classify job runs every gated
   }
 });
 
-// Issue #1420 review round 2, finding N1: `check:changesets` and
-// `check:conflict-markers` used to run only inside `controller gates`,
-// which is skipped on the `prose` tier -- so a malformed `.changesets/*.md`
-// file, or committed conflict markers in a `docs/*.md` file, each
-// classified as pure prose, merged with the one gate built to catch it
-// silently skipped and reporting passing. Both moved to `prose quality`
-// (see its own comment).
+// Issue #1420 review round 3, finding N1 (reopened by #1429, and by the
+// round-2 wiring test's own gaps -- see review-1432a3.md and
+// review-1432b3.md): the round-2 wiring test scanned job COMMENTS for
+// backtick-quoted path mentions. #1429 added `node scripts/check-
+// changelog-location.mjs` to the gated `role-loop archetypes` job with a
+// comment that names `docs/changelogs/<dir>.md` WITHOUT backticks -- so the
+// old test missed it, and a docs/changelogs-only PR would have skipped the
+// one required gate that validates changelog location. Reviewer B also
+// deleted the moved `run:` lines outright, with their comments left in
+// place, and the old test still passed: it was proving what the comments
+// SAID, not what any job actually RAN.
 //
-// This is deliberately NOT a hardcoded check for those two script names --
-// a hardcoded list only ever proves THIS bug stays fixed, never catches
-// the next one. Instead it scans every job's own text for a
-// BACKTICK-QUOTED path token, the house style this entire file already
-// uses everywhere to document which literal path a step reads (see, for
-// example, the `docs/contracts/**` comments on the workspace-build-cache
-// steps, or `prose quality`'s own new comment on the two gates it gained).
-// Backtick-quoting is required to stay precise -- an unquoted, generic
-// mention like "STATUS.md shape" in a comment is not a claim that some
-// step reads a root STATUS.md file (no such file exists), and requiring
-// the quoting this file already uses for genuine path references is what
-// keeps that apart from a real signal without hand-maintaining an
-// exclusion list. Each quoted token is run through
-// scripts/classify-change-tier.mjs's OWN classifyPath() -- the same
-// function the classifier itself uses -- so a token this flags as "prose"
-// is provably one the classifier would also skip on, and a root `*.md`
-// token is checked against the REAL file list at repository root (read
-// live, not hardcoded), not a fixed name list that could drift from the
-// tree. A token is a violation only when EVERY job whose text mentions it
-// gates on `needs.classify` -- i.e. no job that runs unconditionally on
-// every tier documents reading it anywhere.
-function proseTokenGatingViolations(workflowText, { rootMdFiles }) {
-  const jobNames = [...workflowText.matchAll(/^ {2}([a-z][a-z0-9-]*):\n/gm)].map((m) => m[1]);
-
-  function isGated(jobName) {
-    const job = workflowJob(workflowText, jobName);
-    const jobIf = job.match(/^ {4}if: (.+)$/m);
-    return Boolean(jobIf && /needs\.classify/.test(jobIf[0]));
-  }
-
-  // token -> Set(jobName) whose own block mentions it, backtick-quoted.
-  // workflowJob()'s usual "a job's leading comment is attributed to the
-  // PRECEDING job" quirk (see this file's other tests) only ever makes
-  // this scan more lenient here -- crediting an always-run job with a
-  // mention that really belongs to the gated job right after it can never
-  // hide a real violation, only occasionally forgive a harmless one.
-  const tokenJobs = new Map();
-  const tokenPattern = /`([^`\s]+\.(?:md|json))`/g;
-  for (const jobName of jobNames) {
-    const job = workflowJob(workflowText, jobName);
-    for (const match of job.matchAll(tokenPattern)) {
-      const token = match[1];
-      const isBareFilename = !token.includes("/");
-      const kind = isBareFilename ? (rootMdFiles.has(token) ? "prose" : "full") : classifyPath(token);
-      if (kind !== "prose") continue; // 'packed-prose' and 'full' are out of scope for N1's three named categories
-      if (!tokenJobs.has(token)) tokenJobs.set(token, new Set());
-      tokenJobs.get(token).add(jobName);
-    }
-  }
-
-  const violations = [];
-  for (const [token, jobs] of tokenJobs) {
-    const jobList = [...jobs].sort();
-    if (jobList.every((jobName) => isGated(jobName))) {
-      violations.push(`'${token}' is documented as read only inside tier-gated job(s) [${jobList.join(", ")}] -- none of them run on the 'prose' tier`);
-    }
-  }
-  return { violations, tokenCount: tokenJobs.size };
+// This test is built on `run:` commands instead, exactly as both reviewers
+// asked for. It never reads a comment. It:
+//
+//   1. Parses every job in ci.yml, decides which are gated
+//      (`needs.classify` in the job's own `if:`) and which run
+//      unconditionally, and pulls every step's `run:` BODY -- with every
+//      comment line stripped first, so a step with no comment at all (or a
+//      false, misleading one) is scanned identically to one with an
+//      accurate comment.
+//   2. Extracts every script each `run:` body invokes: a direct `node
+//      <path>` (including a compiled `packages/*/dist/*.js` entry point),
+//      or an `npm run <name>` (`-s`/`--silent` included), resolved ONE
+//      level through package.json's own `scripts` map -- when that
+//      resolved body itself contains a `node <path>` invocation, THAT path
+//      is what this test keys on, not the npm script name, so `npm run
+//      check:changelog-location` and a hypothetical future direct `node
+//      scripts/check-changelog-location.mjs` step are the same fact to
+//      this test.
+//   3. Looks up every discovered script in GATED_SCRIPT_PROSE_INPUTS
+//      (scripts/lib/gated-script-prose-inputs.mjs, "a small declared table
+//      next to the classifier" -- every entry is a reviewed claim about
+//      what that script reads, not inferred). A script this test discovers
+//      being invoked ANYWHERE in ci.yml with NO entry in that table fails
+//      the test outright, by name -- there is no silent default in either
+//      direction.
+//   4. For every table entry marked `prose: true`, requires that at least
+//      one job invoking it is NOT gated on `needs.classify`. A prose-tier
+//      reader whose every invoking job gates on the classifier -- or that
+//      no job invokes at all, which is what deleting its `run:` line looks
+//      like to this scan -- is exactly issue #1420's own threat model: a
+//      skipped required job that reports as passing.
+function stripCommentLines(text) {
+  return text
+    .split("\n")
+    .filter((line) => !/^\s*#/.test(line))
+    .join("\n");
 }
 
-test("issue #1420 (N1): no prose-tier path is documented as read ONLY inside a tier-gated job", () => {
+const NODE_INVOCATION_PATTERN = /\bnode\s+(?:--test\s+)?((?:scripts|packages|\.github\/scripts|evals)\/[A-Za-z0-9._/*-]+\.(?:m?js))/g;
+const NPM_RUN_PATTERN = /\bnpm run (?:-s |--silent )?([A-Za-z0-9:_-]+)/g;
+
+/**
+ * Extracts every script identifier a `run:` body's CODE (comments already
+ * stripped by the caller) invokes -- "node:<path>" for a direct `node
+ * <path>`, or "npm:<name>" for an `npm run <name>` whose OWN resolved
+ * script body (via `npmScripts`) contains no further `node <path>`
+ * invocation. When it does, this returns the resolved `node:<path>`
+ * identifier(s) instead of the npm script name -- see this test's own
+ * header, point 2.
+ */
+export function extractScriptIds(codeText, npmScripts) {
+  const ids = new Set();
+  for (const m of codeText.matchAll(NODE_INVOCATION_PATTERN)) ids.add("node:" + m[1]);
+  for (const m of codeText.matchAll(NPM_RUN_PATTERN)) {
+    const name = m[1];
+    if (OPAQUE_NPM_SCRIPTS.has(name)) {
+      ids.add("npm:" + name);
+      continue;
+    }
+    const body = npmScripts[name];
+    if (body === undefined) {
+      ids.add(`npm:${name}:UNRESOLVED`); // package.json has no such script -- never a valid table key, so this always fails the "unmapped script" check below, which is exactly right: an npm script name ci.yml invokes that does not exist in package.json is its own bug.
+      continue;
+    }
+    const subIds = [...body.matchAll(NODE_INVOCATION_PATTERN)].map((mm) => "node:" + mm[1]);
+    if (subIds.length === 0) ids.add("npm:" + name);
+    else for (const id of subIds) ids.add(id);
+  }
+  return ids;
+}
+
+function isGatedJob(workflowText, jobName) {
+  const job = workflowJob(workflowText, jobName);
+  const jobIf = job.match(/^ {4}if: (.+)$/m);
+  return Boolean(jobIf && /needs\.classify/.test(jobIf[0]));
+}
+
+/**
+ * scriptId -> Set(jobName) across every job in the workflow (gated and
+ * always-run alike) -- the single discovery pass both the "unmapped
+ * script" check and the "prose reader needs always-run coverage" check
+ * read from.
+ */
+function discoverScriptJobs(workflowText, npmScripts) {
+  const jobNames = [...workflowText.matchAll(/^ {2}([a-z][a-z0-9-]*):\n/gm)].map((m) => m[1]);
+  const discovered = new Map();
+  for (const jobName of jobNames) {
+    const job = workflowJob(workflowText, jobName);
+    const code = stripCommentLines(job);
+    for (const id of extractScriptIds(code, npmScripts)) {
+      if (!discovered.has(id)) discovered.set(id, new Set());
+      discovered.get(id).add(jobName);
+    }
+  }
+  return discovered;
+}
+
+test("issue #1420 (N1): declared table covers every script ci.yml invokes, and every table sanity claim holds", () => {
+  // The declared table's own claims are only as good as the assumptions
+  // they lean on -- keep them honest against the real classifier, not just
+  // against each other.
+  assert.equal(classifyPath("docs/PUBLISHING.md"), "prose", "GATED_SCRIPT_PROSE_INPUTS assumes docs/PUBLISHING.md classifies 'prose'");
+  assert.equal(classifyPath("docs/changelogs/advisor.md"), "prose", "GATED_SCRIPT_PROSE_INPUTS assumes docs/changelogs/*.md classifies 'prose'");
+  assert.equal(classifyPath(".changesets/foo.md"), "prose", "GATED_SCRIPT_PROSE_INPUTS assumes .changesets/*.md classifies 'prose'");
+  assert.equal(classifyPath("docs/LIFECYCLE.md"), "full", "GATED_SCRIPT_PROSE_INPUTS assumes docs/LIFECYCLE.md classifies 'full' (excluded from prose)");
+  assert.equal(classifyPath("docs/contracts/package-evidence.json"), "full", "GATED_SCRIPT_PROSE_INPUTS assumes docs/contracts/** classifies 'full'");
+
   const workflow = readFileSync(join(repoRoot, ".github/workflows/ci.yml"), "utf8");
+  const pkg = JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8"));
+  const discovered = discoverScriptJobs(workflow, pkg.scripts);
+  assert.ok(discovered.size > 30, "expected many discovered scripts -- fixture drift, or the scan itself broke");
 
-  // A real root-level *.md file, read from the tree itself so a future
-  // AGENTS.md-shaped file added or removed at root is picked up
-  // automatically -- never a hardcoded name list.
-  const rootMdFiles = new Set(readdirSync(repoRoot).filter((name) => /^[^.][^/]*\.md$/.test(name) && statSync(join(repoRoot, name)).isFile()));
+  const unmapped = [...discovered.keys()].filter((id) => !(id in GATED_SCRIPT_PROSE_INPUTS)).sort();
+  assert.deepEqual(
+    unmapped,
+    [],
+    `script(s) ci.yml invokes with no entry in scripts/lib/gated-script-prose-inputs.mjs's GATED_SCRIPT_PROSE_INPUTS: ${unmapped.join(", ")}. ` +
+      "Add an entry (prose: true|false, reason: '...') stating what it reads, or -- for an npm script name suffixed :UNRESOLVED -- fix the ci.yml step or package.json script that produced it.",
+  );
 
-  const { violations, tokenCount } = proseTokenGatingViolations(workflow, { rootMdFiles });
-  assert.ok(tokenCount > 0, "expected at least one backtick-quoted prose-tier path token in ci.yml -- fixture drift, or the scan itself broke");
-  assert.deepEqual(violations, [], violations.join("\n"));
+  const uncoveredProseReaders = [];
+  for (const [id, entry] of Object.entries(GATED_SCRIPT_PROSE_INPUTS)) {
+    if (!entry.prose) continue;
+    const jobs = discovered.get(id);
+    const nonGatedJobs = jobs ? [...jobs].filter((jobName) => !isGatedJob(workflow, jobName)) : [];
+    if (nonGatedJobs.length === 0) {
+      const jobList = jobs && jobs.size > 0 ? [...jobs].sort().join(", ") : "(not invoked anywhere in ci.yml)";
+      uncoveredProseReaders.push(`'${id}' reads a prose-tier path (${entry.reason}) but is only invoked by tier-gated job(s), or not invoked at all: ${jobList}`);
+    }
+  }
+  assert.deepEqual(uncoveredProseReaders, []);
+});
 
-  // Mutation proof: with `prose quality`'s own two new steps' comments
-  // deleted (simulating the pre-fix state, where check:changesets and
-  // check:conflict-markers -- and every backtick-quoted mention of
-  // `docs/*.md` in a run-unconditionally job -- lived only in
-  // `controller gates`, a tier-gated job, whose own comment on the SAME two
-  // gates still mentions `docs/*.md` today, unchanged), the scan must
-  // report `docs/*.md` as a violation. This is what proves the test above
-  // can actually fail, not merely pass by construction -- `.changesets/*.md`
-  // is deliberately NOT asserted here too: it has a second, incidental
-  // always-run mention (the `classify` job's own header comment, attributed
-  // to `push-tree` by workflowJob()'s usual boundary quirk) this mutation
-  // does not touch, so asserting it here would make this proof depend on
-  // wording that has nothing to do with N1's actual fix.
+// Three mutations that must each make the test above fail -- the same
+// property review round 2's own comment-based test claimed but did not
+// actually have (reviewer B's note 1: deleting the moved `run:` lines,
+// comments left in place, still passed). Each mutation is applied to the
+// REAL current workflow text and package.json scripts, then run through
+// the exact same discoverScriptJobs()/coverage logic the test above uses
+// (duplicated inline rather than imported, so a future refactor of the
+// test above cannot silently disarm these without touching this file too).
+test("issue #1420 (N1): mutation proofs -- each of these must make the coverage check fail", () => {
+  const workflow = readFileSync(join(repoRoot, ".github/workflows/ci.yml"), "utf8");
+  const pkg = JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8"));
+
+  function coverageFailures(workflowText, npmScripts) {
+    const discovered = discoverScriptJobs(workflowText, npmScripts);
+    const unmapped = [...discovered.keys()].filter((id) => !(id in GATED_SCRIPT_PROSE_INPUTS));
+    const uncovered = [];
+    for (const [id, entry] of Object.entries(GATED_SCRIPT_PROSE_INPUTS)) {
+      if (!entry.prose) continue;
+      const jobs = discovered.get(id);
+      const nonGatedJobs = jobs ? [...jobs].filter((jobName) => !isGatedJob(workflowText, jobName)) : [];
+      if (nonGatedJobs.length === 0) uncovered.push(id);
+    }
+    return { unmapped, uncovered };
+  }
+
+  // Sanity: the real, unmutated workflow has zero failures of either kind
+  // -- otherwise every mutation "passing" below would be meaningless.
+  const baseline = coverageFailures(workflow, pkg.scripts);
+  assert.deepEqual(baseline.unmapped, []);
+  assert.deepEqual(baseline.uncovered, []);
+
+  // (a) Delete the moved `run:` lines from `prose quality` -- the exact
+  // reviewer-B mutation that the round-2 test missed. Comments are left in
+  // place on purpose, proving this test does not need them removed to
+  // notice.
   const proseJob = workflowJob(workflow, "prose");
-  const strippedProseJobText = proseJob.replace(/a `docs\/\*\.md` file/, "a docs file");
-  assert.notEqual(strippedProseJobText, proseJob, "the replacement above must actually match prose's real current text, or this mutation proves nothing");
-  const mutated = workflow.replace(proseJob, strippedProseJobText);
-  const { violations: mutatedViolations } = proseTokenGatingViolations(mutated, { rootMdFiles });
+  const proseWithoutMovedSteps = proseJob
+    .replace(/ {6}- name: Conflict markers gate\n {8}run: npm run check:conflict-markers\n/, "")
+    .replace(/ {6}- name: Changeset format gate\n {8}run: npm run check:changesets\n/, "")
+    .replace(/ {6}- name: Changelog location gate\n {8}run: npm run check:changelog-location\n/, "");
+  assert.notEqual(proseWithoutMovedSteps, proseJob, "the three replacements above must actually match prose quality's real current steps, or mutation (a) proves nothing");
+  const mutatedA = workflow.replace(proseJob, proseWithoutMovedSteps);
+  const resultA = coverageFailures(mutatedA, pkg.scripts);
   assert.ok(
-    mutatedViolations.some((v) => v.includes("'docs/*.md'")),
-    `stripping prose quality's own 'docs/*.md' mention must surface it as a violation, since controller gates' own comment on the SAME two gates (still mentioning it) is tier-gated (got: ${JSON.stringify(mutatedViolations)})`,
+    resultA.uncovered.includes("node:scripts/check-conflict-markers.mjs") &&
+      resultA.uncovered.includes("node:scripts/collect-changesets.mjs") &&
+      resultA.uncovered.includes("node:scripts/check-changelog-location.mjs"),
+    `mutation (a) (deleting the moved run: lines) must surface all three as uncovered prose readers (got uncovered: ${JSON.stringify(resultA.uncovered)})`,
+  );
+
+  // (b) Add a NEW prose-reading `node scripts/...` step to only a gated
+  // job. Uses a script name this test's table has never seen, so this also
+  // proves the "unmapped script" path independently of the coverage path.
+  const scopeJob = workflowJob(workflow, "scope");
+  const scopeWithNewStep = scopeJob.replace(/(\n {6}- run: node scripts\/set-scope\.mjs --check\n)/, "$1      - run: node scripts/check-a-hypothetical-new-prose-reader.mjs\n");
+  assert.notEqual(scopeWithNewStep, scopeJob, "the replacement above must actually match scope's real current last step, or mutation (b) proves nothing");
+  const mutatedB = workflow.replace(scopeJob, scopeWithNewStep);
+  const resultB = coverageFailures(mutatedB, pkg.scripts);
+  assert.ok(
+    resultB.unmapped.includes("node:scripts/check-a-hypothetical-new-prose-reader.mjs"),
+    `mutation (b) (a new script in a gated job, absent from the declared table) must be reported unmapped (got unmapped: ${JSON.stringify(resultB.unmapped)})`,
+  );
+
+  // (c) A step with NO comment at all: move check-changelog-location.mjs's
+  // invocation out of `prose quality` and into `scope` (gated) as a bare,
+  // uncommented `run:` line -- must still be flagged, completing the
+  // comment-independence proof (a) and (b) started: neither the REMOVED
+  // step (a, comments left in place) nor the ADDED offending step (c, no
+  // comment at all) needs a comment for this test to notice.
+  const proseWithoutChangelogLocation = proseJob.replace(/ {6}- name: Changelog location gate\n {8}run: npm run check:changelog-location\n/, "");
+  assert.notEqual(proseWithoutChangelogLocation, proseJob, "the replacement above must actually match prose quality's real current changelog-location step, or mutation (c) proves nothing");
+  let mutatedC = workflow.replace(proseJob, proseWithoutChangelogLocation);
+  const scopeJobInC = workflowJob(mutatedC, "scope");
+  const scopeWithUncommentedStep = scopeJobInC.replace(/(\n {6}- run: node scripts\/set-scope\.mjs --check\n)/, "$1      - run: node scripts/check-changelog-location.mjs\n");
+  assert.notEqual(scopeWithUncommentedStep, scopeJobInC, "the replacement above must actually match scope's real current last step, or mutation (c) proves nothing");
+  mutatedC = mutatedC.replace(scopeJobInC, scopeWithUncommentedStep);
+  const resultC = coverageFailures(mutatedC, pkg.scripts);
+  assert.ok(
+    resultC.uncovered.includes("node:scripts/check-changelog-location.mjs"),
+    `mutation (c) (an uncommented offending step, with the always-run copy also removed) must surface check-changelog-location.mjs as uncovered (got uncovered: ${JSON.stringify(resultC.uncovered)})`,
   );
 });
