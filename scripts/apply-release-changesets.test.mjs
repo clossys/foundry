@@ -1062,6 +1062,99 @@ test("applyReleaseChangesets: a FOUR-level chain of dependent-only bumps converg
   }
 });
 
+// -------------------------------------------------- issue #1390: npm failure must not leave a partial write (double-bump trap)
+//
+// The write phase used to write every bumped package's manifest and
+// CHANGELOG.md first, then call runNpmInstall(), and only delete the
+// consumed changesets after that call returned. If npm failed midway
+// (network, registry, a locally broken npm), the manifests/CHANGELOGs it
+// already wrote stayed on disk while the changesets were (deliberately)
+// left pending -- a plain rerun then re-planned from those still-pending
+// changesets and re-bumped the already-bumped manifests a second time.
+
+test("applyReleaseChangesets: when npm fails, every manifest and CHANGELOG this run would have written is rolled back to its exact pre-run state (issue #1390)", () => {
+  const root = makeRoot();
+  try {
+    makePackage(root, "alpha", "1.0.0");
+    const alphaChangelog = "# Changelog\n\n## 1.0.0\n\n- Initial release.\n";
+    writeFileSync(changelogFile(root, "alpha"), alphaChangelog);
+    writeChangeset(root, "alpha-fix.md", "---\nalpha: patch\n---\n\nFix a bug.\n");
+
+    let threw = null;
+    try {
+      applyReleaseChangesets({
+        root,
+        today: () => "2026-09-22",
+        runNpmInstall: () => {
+          throw new Error("simulated npm install --package-lock-only failure");
+        },
+      });
+    } catch (error) {
+      threw = error;
+    }
+
+    assert.ok(threw, "the npm failure must still propagate -- this is not silently swallowed");
+    assert.match(threw.message, /simulated npm install/);
+
+    // The manifest is back to its pre-run version -- not left bumped.
+    const alphaManifest = JSON.parse(readFileSync(join(root, "packages", "alpha", "package.json"), "utf8"));
+    assert.equal(alphaManifest.version, "1.0.0", "the manifest must be rolled back to its pre-run version, not left bumped");
+
+    // The CHANGELOG is back to its pre-run content -- not left with a new entry.
+    assert.equal(readFileSync(changelogFile(root, "alpha"), "utf8"), alphaChangelog, "the CHANGELOG must be rolled back to its pre-run content");
+
+    // The changeset is still pending -- deliberately unchanged (see the write phase's own comment).
+    assert.equal(existsSync(join(root, ".changesets", "alpha-fix.md")), true, "the changeset must still be pending after a failed run");
+
+    // A clean rerun (npm succeeding this time) must see the TRUE starting
+    // version, not double-bump on top of a partially-applied first attempt.
+    const rerun = applyReleaseChangesets({ root, today: () => "2026-09-22", runNpmInstall: () => {} });
+    assert.equal(rerun.findings.length, 0, JSON.stringify(rerun.findings));
+    assert.equal(rerun.applied.length, 1);
+    assert.equal(rerun.applied[0].fromVersion, "1.0.0", "a rerun after a failed run must still see the TRUE original version, not a partially-bumped one");
+    assert.equal(rerun.applied[0].toVersion, "1.0.1");
+
+    const rerunChangelog = readFileSync(changelogFile(root, "alpha"), "utf8");
+    const entryCount = (rerunChangelog.match(/^## 1\.0\.1/gm) ?? []).length;
+    assert.equal(entryCount, 1, "the rerun must produce exactly ONE 1.0.1 entry, not a double-bumped duplicate");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// A brand-new changelog (no prior file at all) must be REMOVED by the
+// rollback, not left behind as an empty/partial file -- "did not exist
+// before" and "existed with different content before" are different
+// pre-run states, and restoreBackups() must handle both.
+test("applyReleaseChangesets: when npm fails, a BRAND-NEW CHANGELOG this run would have created (no prior file) is removed by the rollback, not left behind", () => {
+  const root = makeRoot();
+  try {
+    makePackage(root, "alpha", "1.0.0"); // no pre-existing docs/changelogs/alpha.md at all
+    writeChangeset(root, "alpha-fix.md", "---\nalpha: patch\n---\n\nFix a bug.\n");
+
+    let threw = null;
+    try {
+      applyReleaseChangesets({
+        root,
+        today: () => "2026-09-22",
+        runNpmInstall: () => {
+          throw new Error("simulated npm failure");
+        },
+      });
+    } catch (error) {
+      threw = error;
+    }
+
+    assert.ok(threw);
+    assert.equal(existsSync(join(root, "docs", "changelogs", "alpha.md")), false, "a changelog this run would have CREATED must not survive a rolled-back run");
+
+    const alphaManifest = JSON.parse(readFileSync(join(root, "packages", "alpha", "package.json"), "utf8"));
+    assert.equal(alphaManifest.version, "1.0.0");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 // -------------------------------------------------- CLI: --json output must be pure JSON, even with real npm running
 //
 // Re-review, https://github.com/clossys/foundry/pull/1353#issuecomment-5803894960

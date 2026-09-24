@@ -929,40 +929,78 @@ export function applyReleaseChangesets({
     // phases, fixes both: still all-or-nothing, and a shared file is
     // deleted exactly once.
     const toDelete = new Set();
-    for (const step of planned) {
-      writeFileSync(step.manifestPath, step.newManifestText);
-      // A devDependencies-only step (see devDependencyOnlyPlans above) has
-      // no changelogPath at all -- no version bump, nothing to log.
-      if (step.changelogPath) {
-        // docs/changelogs/ may not exist yet in a fresh checkout or fixture;
-        // the changelog for a first release is created, never skipped.
-        mkdirSync(dirname(step.changelogPath), { recursive: true });
-        writeFileSync(step.changelogPath, step.newChangelog);
-      }
-      for (const file of step.changesetFiles) toDelete.add(file);
-    }
-    // npm RUNS BEFORE CHANGESETS ARE DELETED (should-fix, re-review,
-    // https://github.com/clossys/foundry/pull/1353#issuecomment-5803894960)
+
+    // THE MANIFEST/CHANGELOG WRITES ARE ATOMIC AGAINST AN NPM FAILURE
+    // (issue #1390, fix -- was previously documented here as a known,
+    // unfixed local-recovery trap)
     // -----------------------------------------------------------------------
     // `runNpmInstall()` shells out to real npm and can genuinely fail
     // (network, registry, a locally-broken npm) -- `execFileSync` throws on
-    // a non-zero exit, and this function does not (and, short of a much
-    // larger redesign, cannot cheaply) catch that and roll back the
-    // manifests/CHANGELOGs already written above. Deleting the changesets
-    // BEFORE that possible failure would leave every one of them gone from
-    // `.changesets/` with `package-lock.json` never actually regenerated --
-    // a rerun (this repository's own local recovery path; CI is ephemeral
-    // and simply retries the whole job) would then see NOTHING pending for
-    // these packages and silently do nothing, even though the manifests
-    // were bumped without a matching lockfile. Deleting them AFTER a
-    // successful npm run means the same failure instead leaves the
-    // changesets still present -- a rerun still re-plans and re-bumps the
-    // SAME manifests (issue #1322's own residual, not new here), but at
-    // least does not lose track of what was pending. This does not make
-    // the write phase fully atomic against an npm failure; it only avoids
-    // discarding the one piece of state (the changeset files) a human
-    // fixing a broken local run would otherwise have to reconstruct by hand.
-    if (applied.length > 0) runNpmInstall(root);
+    // a non-zero exit. Before this fix, that throw propagated straight out
+    // of this function with every manifest/CHANGELOG it already wrote still
+    // on disk: CI simply retries the whole job from a clean checkout, so
+    // this was invisible there, but a developer running this script by hand
+    // after a transient failure would see the manifests already bumped,
+    // rerun without noticing, and get every affected package double-bumped
+    // (two consecutive CHANGELOG entries, the version bumped twice) --
+    // `.changesets/` staying untouched on failure (deliberate, see below)
+    // did not help, because the SAME still-pending changesets re-plan
+    // against the ALREADY-bumped manifests on a naive rerun.
+    // `backupFile()`/`restoreBackups()` capture each file's PRE-WRITE state
+    // (its exact prior text, or "did not exist yet") before this loop
+    // writes anything, so a failure anywhere in the write phase -- a write
+    // itself, or `runNpmInstall()` -- restores every file this run touched
+    // to exactly what it was, and the thrown error is then RE-THROWN
+    // unchanged: the failure is still visible to the caller (nothing here
+    // papers over a real npm/network problem), it just no longer leaves the
+    // working tree in a state a plain rerun would double-bump.
+    const backups = []; // { path, existed, text }
+    function backupFile(path) {
+      const existed = existsSync(path);
+      backups.push({ path, existed, text: existed ? readFileSync(path, "utf8") : null });
+    }
+    function restoreBackups() {
+      for (const b of backups) {
+        if (b.existed) writeFileSync(b.path, b.text);
+        else rmSync(b.path, { force: true });
+      }
+    }
+
+    try {
+      for (const step of planned) {
+        backupFile(step.manifestPath);
+        writeFileSync(step.manifestPath, step.newManifestText);
+        // A devDependencies-only step (see devDependencyOnlyPlans above) has
+        // no changelogPath at all -- no version bump, nothing to log.
+        if (step.changelogPath) {
+          // docs/changelogs/ may not exist yet in a fresh checkout or
+          // fixture; the changelog for a first release is created, never
+          // skipped.
+          backupFile(step.changelogPath);
+          mkdirSync(dirname(step.changelogPath), { recursive: true });
+          writeFileSync(step.changelogPath, step.newChangelog);
+        }
+        for (const file of step.changesetFiles) toDelete.add(file);
+      }
+      // npm RUNS BEFORE CHANGESETS ARE DELETED (should-fix, re-review,
+      // https://github.com/clossys/foundry/pull/1353#issuecomment-5803894960)
+      // -----------------------------------------------------------------------
+      // Deleting the changesets BEFORE this possible failure would leave
+      // every one of them gone from `.changesets/` with `package-lock.json`
+      // never actually regenerated -- a rerun (this repository's own local
+      // recovery path; CI is ephemeral and simply retries the whole job)
+      // would then see NOTHING pending for these packages and silently do
+      // nothing, even though the manifests were bumped without a matching
+      // lockfile. Deleting them AFTER a successful npm run means a failure
+      // instead leaves the changesets still present -- combined with the
+      // rollback above, a rerun after a failure now sees EXACTLY the
+      // pre-run state (unbumped manifests, untouched changelogs, the same
+      // pending changesets) and re-plans cleanly, with no double bump.
+      if (applied.length > 0) runNpmInstall(root);
+    } catch (error) {
+      restoreBackups();
+      throw error;
+    }
     for (const file of toDelete) rmSync(join(root, ".changesets", file));
   }
 
