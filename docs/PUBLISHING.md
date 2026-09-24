@@ -246,8 +246,19 @@ written; `npm install` got the right tarball, the following `import` line
       evidence. `check-readme-parity.mjs` catches the export-drift and
       wrong-package-name classes of this mechanically, but not a wrong
       return type or a misdescribed behavior — that still needs a human read.
-- [ ] `CHANGELOG.md` — fresh, starting at the package's real `0.1.0`, Keep a
-      Changelog format.
+- [ ] A changelog at `docs/changelogs/<dir>.md` — fresh, starting at the
+      package's real `0.1.0`, Keep a Changelog format. It lives in this
+      public repository, not in the package: do not add it to `files`, and
+      do not put a `CHANGELOG.md` in `packages/<dir>/`. A release note in a
+      tarball can never be corrected after publish; one here can be
+      corrected with an ordinary docs edit, no changeset or release needed.
+      See [docs/changelogs/README.md](changelogs/README.md).
+- [ ] A "Changelog" section at the end of `README.md` linking that file by
+      its absolute public URL,
+      `https://github.com/clossys/foundry/blob/main/docs/changelogs/<dir>.md`
+      — the README ships, so it is how a reader of the installed package
+      finds the release notes. `scripts/check-changelog-location.mjs`
+      checks both items, plus an entry for the manifest's current version.
 
 ### Releasing a version bump after the first publish (issue #1255) <!-- facts-gate:ignore -->
 
@@ -256,18 +267,18 @@ does not bump that package's `version` itself. Add a
 `.changesets/<slug>.md` file instead (format and validation:
 `scripts/collect-changesets.mjs`), naming the package's `packages/<dir>`
 directory and a `patch`/`minor`/`major` level, with the summary that will
-become the `CHANGELOG.md` line. `scripts/check-release-readiness.mjs`
+become the changelog line. `scripts/check-release-readiness.mjs`
 accepts a pending changeset as an alternative to a same-PR version bump.
 
 A periodic or on-demand release PR (`node scripts/apply-release-changesets.mjs`,
 `.github/workflows/release-pr.yml`) applies every pending changeset: it
 bumps each named package once (the highest level any of its changesets
-named), writes the `CHANGELOG.md` entry (with a "Breaking changes"
+named), writes the entry in `docs/changelogs/<dir>.md` (with a "Breaking changes"
 subsection for any consumed `major`-level changeset), regenerates
 `package-lock.json`, and deletes the changesets it applied.
 `scripts/check-release-pr-shape.mjs` is the gate that keeps this the only <!-- facts-gate:ignore -->
 legitimate way a package's version moves going forward: a version change
-with no consumed, matching changeset and no matching `CHANGELOG.md` entry
+with no consumed, matching changeset and no matching `docs/changelogs/<dir>.md` entry
 is refused as "a version change outside a release PR."
 
 **When a release PR is allowed to open is governed by the weekly release

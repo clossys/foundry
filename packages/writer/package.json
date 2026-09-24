@@ -1,6 +1,6 @@
 {
   "name": "@clossys/writer",
-  "version": "0.3.18",
+  "version": "0.4.0",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -28,7 +28,6 @@
     "!src/**/*.test.ts",
     "templates",
     "fit-signals.json",
-    "CHANGELOG.md",
     "README.md",
     "LICENSE",
     "skill"

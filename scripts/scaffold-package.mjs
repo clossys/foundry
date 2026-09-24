@@ -9,7 +9,9 @@
 // generated from the matrix, never hand-written), a status probe that
 // really emits the shared check-output envelope through a generated copy of
 // the canonical constructor (issues #1383/#1384 -- never a hand-written
-// sample), a qualification adapter, and CHANGELOG/README furniture.
+// sample), a qualification adapter, README furniture, and a first
+// changelog entry at docs/changelogs/<shortName>.md -- in the repository,
+// never in the package (scripts/lib/changelog-location.mjs).
 //
 // It writes NOTHING under this repository's own clossys/ folder (issue
 // #1381). clossys/<role>/STATUS.md and loop.json are consumer state the
@@ -43,6 +45,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { generateLoopSection, loadStageActivities } from "./generate-loop-section.mjs";
 import { ENVELOPE_COPY_PATH, renderEnvelopeCopyFromRoot } from "./sync-envelope-copies.mjs";
+import { changelogRelPath } from "./lib/changelog-location.mjs";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 
@@ -229,7 +232,6 @@ export function buildScaffold({ role, shortName, roleDefinition, stageActivities
     [ENVELOPE_COPY_PATH, envelopeCopy],
     ["src/cli.ts", statusProbe],
     ["skill/SKILL.md", skillBody],
-    ["CHANGELOG.md", changelog],
     ["README.md", readme],
   ]);
 
@@ -243,6 +245,7 @@ export function buildScaffold({ role, shortName, roleDefinition, stageActivities
     packageFiles,
     repoFiles: new Map([
       [`governance/release-qualification-adapters/${shortName}/current-direct.json`, `${JSON.stringify(adapter, null, 2)}\n`],
+      [changelogRelPath(shortName), changelog],
     ]),
   };
 }
@@ -293,10 +296,16 @@ function main(argv) {
   }
 
   const { packageFiles, repoFiles } = buildScaffold({ role, shortName, roleDefinition, stageActivities, envelopeCopy });
+  // An existing docs/changelogs/<shortName>.md is release history, not
+  // scaffold output: --force replaces the package directory, never the
+  // record of what it once released. Kept as is; if it lacks an entry for
+  // the scaffolded version, scripts/check-changelog-location.mjs says so.
+  const changelogRel = changelogRelPath(shortName);
+  const repoFilesToWrite = new Map([...repoFiles].filter(([path]) => !(path === changelogRel && existsSync(join(root, path)))));
   writeFiles(packageDir, packageFiles);
-  writeFiles(root, repoFiles);
+  writeFiles(root, repoFilesToWrite);
 
-  console.log(`scaffold-package: wrote packages/${shortName}/ (${packageFiles.size} file(s)) and ${repoFiles.size} governance file(s) for ${role}`);
+  console.log(`scaffold-package: wrote packages/${shortName}/ (${packageFiles.size} file(s)) and ${repoFilesToWrite.size} repository file(s) for ${role}`);
   return 0;
 }
 

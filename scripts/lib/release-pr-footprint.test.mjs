@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import test from "node:test";
 import { applyReleaseChangesets } from "../apply-release-changesets.mjs";
 import {
@@ -11,6 +11,15 @@ import {
   isLockfilePureVersionBump,
   isPackageManifestVersionOnlyChange,
 } from "./release-pr-footprint.mjs";
+import { changelogPathForPackageDir } from "./changelog-location.mjs";
+
+// Seeds a fixture package changelog at docs/changelogs/<dir>.md (outside the
+// package, scripts/lib/changelog-location.mjs), creating the directory.
+function seedChangelog(pkgDir, text) {
+  const path = changelogPathForPackageDir(pkgDir);
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, text);
+}
 
 // ---------------------------------------------------------------- isPackageManifestVersionOnlyChange
 
@@ -524,7 +533,7 @@ test("evaluateReleasePrFootprint: a clean release PR (bump + changelog + lockfil
     files: [
       { path: "packages/alpha/package.json", status: "modified", baseContent: base, headContent: head },
       {
-        path: "packages/alpha/CHANGELOG.md",
+        path: "docs/changelogs/alpha.md",
         status: "modified",
         baseContent: "# Changelog\n\n## 1.0.0\n\n- Initial.\n",
         // The new heading must carry a " - <date>" suffix and the exact
@@ -556,7 +565,7 @@ test("evaluateReleasePrFootprint: a CHANGELOG.md for a package that was NOT bump
     files: [
       { path: "packages/alpha/package.json", status: "modified", baseContent: base, headContent: head },
       {
-        path: "packages/beta/CHANGELOG.md", // beta was never bumped
+        path: "docs/changelogs/beta.md", // beta was never bumped
         status: "modified",
         baseContent: "# Changelog\n\n## 1.0.0\n\n- Initial.\n",
         headContent: "# Changelog\n\n## 1.0.1\n\n- Fix.\n\n## 1.0.0\n\n- Initial.\n",
@@ -644,7 +653,7 @@ test("END TO END: a real apply-release-changesets.mjs patch release, against a C
     const baseManifest = { name: "@clossys/alpha", version: "1.0.0", license: "MIT" };
     writeFileSync(join(pkgDir, "package.json"), JSON.stringify(baseManifest, null, 2) + "\n");
     const baseChangelog = "# Changelog\n\n## 1.0.0 - 2026-09-01\n\n### Added\n\n- Initial feature.\n\n### Fixed\n\n- An early bug.\n";
-    writeFileSync(join(pkgDir, "CHANGELOG.md"), baseChangelog);
+    seedChangelog(pkgDir, baseChangelog);
 
     const baseLockfile = {
       name: "foundry",
@@ -684,13 +693,13 @@ test("END TO END: a real apply-release-changesets.mjs patch release, against a C
     assert.equal(result.applied[0].toVersion, "1.0.1");
 
     const headManifestText = readFileSync(join(pkgDir, "package.json"), "utf8");
-    const headChangelogText = readFileSync(join(pkgDir, "CHANGELOG.md"), "utf8");
+    const headChangelogText = readFileSync(changelogPathForPackageDir(pkgDir), "utf8");
     const headLockfileText = readFileSync(join(root, "package-lock.json"), "utf8");
     assert.equal(existsSync(join(root, ".changesets", "alpha-fix.md")), false);
 
     const files = [
       { path: "packages/alpha/package.json", status: "modified", baseContent: baseManifestText, headContent: headManifestText },
-      { path: "packages/alpha/CHANGELOG.md", status: "modified", baseContent: baseChangelog, headContent: headChangelogText },
+      { path: "docs/changelogs/alpha.md", status: "modified", baseContent: baseChangelog, headContent: headChangelogText },
       { path: "package-lock.json", status: "modified", baseContent: baseLockfileText, headContent: headLockfileText },
       { path: ".changesets/alpha-fix.md", status: "removed", baseContent: changesetText },
     ];
@@ -717,7 +726,7 @@ test("END TO END: a real apply-release-changesets.mjs run with a devDependencies
     const advisorBaseManifest = { name: "@clossys/advisor", version: "0.4.0", license: "MIT" };
     writeFileSync(join(advisorDir, "package.json"), JSON.stringify(advisorBaseManifest, null, 2) + "\n");
     const advisorBaseChangelog = "# Changelog\n\n## 0.4.0\n\n- Initial release.\n";
-    writeFileSync(join(advisorDir, "CHANGELOG.md"), advisorBaseChangelog);
+    seedChangelog(advisorDir, advisorBaseChangelog);
 
     const controllerDir = join(root, "packages", "controller");
     mkdirSync(controllerDir, { recursive: true });
@@ -768,14 +777,14 @@ test("END TO END: a real apply-release-changesets.mjs run with a devDependencies
 
     const controllerHeadManifestText = readFileSync(join(controllerDir, "package.json"), "utf8");
     const headLockfileText = readFileSync(join(root, "package-lock.json"), "utf8");
-    assert.equal(existsSync(join(controllerDir, "CHANGELOG.md")), false);
+    assert.equal(existsSync(changelogPathForPackageDir(controllerDir)), false);
 
     const advisorHeadManifestText = readFileSync(join(advisorDir, "package.json"), "utf8");
-    const advisorHeadChangelogText = readFileSync(join(advisorDir, "CHANGELOG.md"), "utf8");
+    const advisorHeadChangelogText = readFileSync(changelogPathForPackageDir(advisorDir), "utf8");
 
     const files = [
       { path: "packages/advisor/package.json", status: "modified", baseContent: JSON.stringify(advisorBaseManifest, null, 2) + "\n", headContent: advisorHeadManifestText },
-      { path: "packages/advisor/CHANGELOG.md", status: "modified", baseContent: advisorBaseChangelog, headContent: advisorHeadChangelogText },
+      { path: "docs/changelogs/advisor.md", status: "modified", baseContent: advisorBaseChangelog, headContent: advisorHeadChangelogText },
       { path: "packages/controller/package.json", status: "modified", baseContent: controllerBaseManifestText, headContent: controllerHeadManifestText },
       { path: "package-lock.json", status: "modified", baseContent: baseLockfileText, headContent: headLockfileText },
       { path: ".changesets/advisor-feature.md", status: "removed", baseContent: changesetText },
@@ -819,10 +828,10 @@ test("END TO END: a real apply-release-changesets.mjs run with a devDependencies
 //        { "name": "fixture-root", "private": true, "workspaces": ["packages/*"] }
 //      with two packages:
 //        packages/core/package.json     { "name": "@x/core", "version": "0.9.0", "license": "MIT" }
-//        packages/core/CHANGELOG.md     "# Changelog\n\n## 0.9.0\n\n- Initial release.\n"
+//        docs/changelogs/core.md        "# Changelog\n\n## 0.9.0\n\n- Initial release.\n"
 //        packages/consumer/package.json { "name": "@x/consumer", "version": "1.0.0", "license": "MIT",
 //                                          "dependencies": { "@x/core": "^0.9.0" } }
-//        packages/consumer/CHANGELOG.md "# Changelog\n\n## 1.0.0\n\n- Initial release.\n"
+//        docs/changelogs/consumer.md    "# Changelog\n\n## 1.0.0\n\n- Initial release.\n"
 //   2. Run `npm install --package-lock-only --offline` in that root to produce
 //      a genuine base package-lock.json (works fully offline: both packages
 //      are workspace-internal, no registry access needed).
@@ -891,9 +900,9 @@ test("END TO END (vendored capture of the COMPOSED apply-release-changesets.mjs 
   const result = evaluateReleasePrFootprint({
     files: [
       { path: "packages/core/package.json", status: "modified", baseContent: f.coreBase, headContent: f.coreHead },
-      { path: "packages/core/CHANGELOG.md", status: "modified", baseContent: f.coreChangelogBase, headContent: f.coreChangelogHead },
+      { path: "docs/changelogs/core.md", status: "modified", baseContent: f.coreChangelogBase, headContent: f.coreChangelogHead },
       { path: "packages/consumer/package.json", status: "modified", baseContent: f.consumerBase, headContent: f.consumerHead },
-      { path: "packages/consumer/CHANGELOG.md", status: "modified", baseContent: f.consumerChangelogBase, headContent: f.consumerChangelogHead },
+      { path: "docs/changelogs/consumer.md", status: "modified", baseContent: f.consumerChangelogBase, headContent: f.consumerChangelogHead },
       { path: "package-lock.json", status: "modified", baseContent: f.lockfileBase, headContent: f.lockfileHead },
       { path: ".changesets/core-feature.md", status: "removed", baseContent: f.changesetText },
       // consumer is NOT named by any changeset -- its own bump is entirely a
@@ -918,9 +927,9 @@ test("ADVERSARIAL END TO END (vendored composed-producer capture): if the lockfi
   const result = evaluateReleasePrFootprint({
     files: [
       { path: "packages/core/package.json", status: "modified", baseContent: f.coreBase, headContent: f.coreHead },
-      { path: "packages/core/CHANGELOG.md", status: "modified", baseContent: f.coreChangelogBase, headContent: f.coreChangelogHead },
+      { path: "docs/changelogs/core.md", status: "modified", baseContent: f.coreChangelogBase, headContent: f.coreChangelogHead },
       { path: "packages/consumer/package.json", status: "modified", baseContent: f.consumerBase, headContent: f.consumerHead },
-      { path: "packages/consumer/CHANGELOG.md", status: "modified", baseContent: f.consumerChangelogBase, headContent: f.consumerChangelogHead },
+      { path: "docs/changelogs/consumer.md", status: "modified", baseContent: f.consumerChangelogBase, headContent: f.consumerChangelogHead },
       { path: "package-lock.json", status: "modified", baseContent: f.lockfileBase, headContent: wrongRangeLockfileHead },
       { path: ".changesets/core-feature.md", status: "removed", baseContent: f.changesetText },
     ],
@@ -947,9 +956,9 @@ function footprintFilesWithExtraChangeset(extraFile) {
   const f = COMPOSED_PRODUCER_FIXTURE;
   return [
     { path: "packages/core/package.json", status: "modified", baseContent: f.coreBase, headContent: f.coreHead },
-    { path: "packages/core/CHANGELOG.md", status: "modified", baseContent: f.coreChangelogBase, headContent: f.coreChangelogHead },
+    { path: "docs/changelogs/core.md", status: "modified", baseContent: f.coreChangelogBase, headContent: f.coreChangelogHead },
     { path: "packages/consumer/package.json", status: "modified", baseContent: f.consumerBase, headContent: f.consumerHead },
-    { path: "packages/consumer/CHANGELOG.md", status: "modified", baseContent: f.consumerChangelogBase, headContent: f.consumerChangelogHead },
+    { path: "docs/changelogs/consumer.md", status: "modified", baseContent: f.consumerChangelogBase, headContent: f.consumerChangelogHead },
     { path: "package-lock.json", status: "modified", baseContent: f.lockfileBase, headContent: f.lockfileHead },
     { path: ".changesets/core-feature.md", status: "removed", baseContent: f.changesetText },
     extraFile,
@@ -1310,4 +1319,58 @@ test("isPackageManifestVersionOnlyChange: a legitimate single-step minor bump (\
   const base = JSON.stringify({ name: "@x/alpha", version: "1.0.0", license: "MIT" });
   const head = JSON.stringify({ name: "@x/alpha", version: "1.1.0", license: "MIT" });
   assert.equal(isPackageManifestVersionOnlyChange(base, head), true);
+});
+
+// ---------------------------------------------------------------- changelog location
+
+// The same clean release PR as the first evaluateReleasePrFootprint test
+// above, with its changelog entry written at `changelogPath` instead.
+function releasePrFilesWithChangelogAt(changelogPath) {
+  const [base, head] = manifestPair("1.0.0", "1.0.1", { name: "@clossys/alpha" });
+  return [
+    { path: "packages/alpha/package.json", status: "modified", baseContent: base, headContent: head },
+    {
+      path: changelogPath,
+      status: "modified",
+      baseContent: "# Changelog\n\n## 1.0.0\n\n- Initial.\n",
+      headContent: "# Changelog\n\n## 1.0.1 - 2026-09-24\n\n- Fix.\n\n## 1.0.0\n\n- Initial.\n",
+    },
+    { path: "package-lock.json", status: "modified", baseContent: LOCK_BASE, headContent: lockWithAlphaBumped("1.0.1") },
+    { path: ".changesets/alpha-fix.md", status: "removed", baseContent: "---\nalpha: patch\n---\n\nFix.\n" },
+  ];
+}
+
+test("evaluateReleasePrFootprint: the changelog entry is accepted at docs/changelogs/<dir>.md", () => {
+  const result = evaluateReleasePrFootprint({ files: releasePrFilesWithChangelogAt("docs/changelogs/alpha.md") });
+  assert.equal(result.ok, true, result.reason);
+});
+
+test("evaluateReleasePrFootprint: the same entry written inside the package (packages/<dir>/CHANGELOG.md) is not release-PR shaped", () => {
+  const result = evaluateReleasePrFootprint({ files: releasePrFilesWithChangelogAt("packages/alpha/CHANGELOG.md") });
+  assert.equal(result.ok, false);
+  assert.match(result.reason, /packages\/alpha\/CHANGELOG\.md.*is not a release-PR-shaped change/);
+});
+
+test("evaluateReleasePrFootprint: a change to docs/changelogs/README.md is not a changelog entry and is not release-PR shaped", () => {
+  const files = releasePrFilesWithChangelogAt("docs/changelogs/alpha.md");
+  files.push({ path: "docs/changelogs/README.md", status: "modified", baseContent: "# Changelogs\n", headContent: "# Changelogs\n\nEdited.\n" });
+  const result = evaluateReleasePrFootprint({ files });
+  assert.equal(result.ok, false);
+  assert.match(result.reason, /docs\/changelogs\/README\.md.*is not a release-PR-shaped change/);
+});
+
+test("evaluateReleasePrFootprint: a nested path under docs/changelogs/ is not a changelog entry", () => {
+  const files = releasePrFilesWithChangelogAt("docs/changelogs/alpha.md");
+  files.push({ path: "docs/changelogs/alpha/extra.md", status: "added", headContent: "# x\n" });
+  const result = evaluateReleasePrFootprint({ files });
+  assert.equal(result.ok, false);
+  assert.match(result.reason, /is not a release-PR-shaped change/);
+});
+
+test("evaluateReleasePrFootprint: a changelog entry that does not match the consumed changeset byte for byte still fails at the new location", () => {
+  const files = releasePrFilesWithChangelogAt("docs/changelogs/alpha.md");
+  files[1] = { ...files[1], headContent: "# Changelog\n\n## 1.0.1 - 2026-09-24\n\n- Something else.\n\n## 1.0.0\n\n- Initial.\n" };
+  const result = evaluateReleasePrFootprint({ files });
+  assert.equal(result.ok, false);
+  assert.match(result.reason, /byte-for-byte/);
 });

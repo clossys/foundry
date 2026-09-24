@@ -1,6 +1,6 @@
 {
   "name": "@clossys/publisher",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -363,7 +363,6 @@
     "src",
     "!src/**/*.test.ts",
     "!src/**/*.test.tsx",
-    "CHANGELOG.md",
     "README.md",
     "LICENSE",
     "skill",
@@ -377,8 +376,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@clossys/writer": "^0.3.0",
-    "@clossys/designer": "^0.5.0",
+    "@clossys/writer": "^0.4.0",
+    "@clossys/designer": "^0.6.0",
     "@clossys/controller": "~0.9.14"
   },
   "peerDependencies": {

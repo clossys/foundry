@@ -364,7 +364,11 @@ equivalent fix after.
   regenerate — see `scripts/check-workspace-links.mjs`'s own header for the
   full failure mode.
 - **Changelogs** follow [Keep a Changelog](https://keepachangelog.com); packages
-  are versioned with [semver](https://semver.org).
+  are versioned with [semver](https://semver.org). A package's changelog is
+  `docs/changelogs/<dir>.md`, in this repository and never in the package
+  tarball, so a wrong release note is fixed with an ordinary docs pull
+  request — no changeset, no release. New entries come from changesets via
+  the release PR; see [docs/RELEASING.md](docs/RELEASING.md).
 - **Public API changes** need the README updated in the same pull request —
   `check-readme-parity.mjs` checks this mechanically for undocumented or
   stale exports.

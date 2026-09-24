@@ -1,0 +1,864 @@
+# Changelog
+
+All notable changes to this package are documented here. Format follows
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+
+## 0.7.0 - 2026-09-24
+
+- The `foundry` manifest block now declares `capabilities` (manifest schema
+version 3, #1196), a capability map of this role's craft with eleven
+capabilities: three `built`, two `partial`, and six `planned`. Every
+`built` or `partial` capability names as its `proofCase` a
+release-qualification case that exercises it (#1272). Built: channel
+rendering (`preview-rendered`), the asset roster and coverage
+(`media-satisfied`), and sealing and the publication record, which also
+covers the citation-drift check `checkLedgerDrift`
+(`record-append-only-clean`). Partial: the materials site
+(`preview-rendered`), an internal, locally opened index whose renderers
+ship but which nothing yet derives from a product's own pack manifest; and
+route and visibility governance (`web-routes-clean`), where
+`checkMaterialsVisibility` checks visibility for materials but
+`publisher-web-route-check` still checks only the route-to-template
+mapping. Planned, with no proof case because no qualification case
+exercises them yet: surface documents; v0 Launch pack planning and
+inventory (`@clossys/publisher/pack` ships `validatePackManifest`,
+`computePackReadiness`, `planPackOrder`, and `detectExistingPackItems` as
+library functions, but no command checks a real product's pack manifest
+with them); templates and channel specs; channel kits; the site template
+(shipped under `templates/site/`; Launcher does not apply it yet, #1215);
+and live parity.
+- Tighten the `@clossys/controller` dependency range from `~0.9.0` to
+`~0.9.14`. `@clossys/publisher/pack` imports `packStatusToLifecycle`,
+`PACK_STATUSES`, `LIFECYCLE_CONDITIONS`, and `LIFECYCLE_STATES` from
+`@clossys/controller`, which first exports them in 0.9.14. The old range
+also admitted earlier 0.9.x releases without them, including the 0.9.10
+release on the public registry, against which importing
+`@clossys/publisher/pack` fails at module load. The README's "Requirements
+and version coupling" section no longer restates the dependency ranges, so
+a release cannot leave it stale, and now names the root-entry imports from
+`@clossys/controller` alongside the `./policy` subpath.
+- The `foundry` manifest block now declares `outputs`, `feeds`, and `fit`
+(package framework, #1172). `outputs` names only the two
+`clossys/publisher/` paths this package's own code fixes: `pack.json` (the
+Launch pack manifest `@clossys/publisher/pack` validates) and `surfaces/`
+(read by the shipped site template, and matching `PUBLISHER_SURFACES_DIR`).
+`feeds` hands `surface-documents` to Customer. `fit` names a new shipped
+`fit-signals.json` with two signals: an audience-facing surface exists, and
+the release must be proved afterwards. `intake` and `status` are not
+declared yet.
+- The `foundry` manifest block now declares `needs` and `solves` (package
+framework, #1172). `needs` names four artifacts other roles feed:
+Strategist's `strategy-brief`, Designer's
+`token-contract-and-brand-overlay-binding`, Writer's `copy-registry`, and
+Customer's `keep-verdict`. Designer's components are not listed: they reach
+this package as imports of `@clossys/designer`, recorded in `dependencies`,
+and a `needs` entry names an artifact another role feeds, not a package
+import. Designer's logo and identity files are not listed either, because
+that capability is still `planned`. `solves` claims the
+`publisher-verified-release` problem, measured by the verified publication
+rate, backed by `sealing-and-the-publication-record` and shown by the
+`rate-violated` case, at `designed` evidence.
+- The README explains that an exact pin of Writer, Designer or Controller outside Publisher's declared range installs a second, nested copy, and why to pin inside the range.
+- README: the "Lifecycle vocabulary" section now matches the source. A pack
+item's `status` is one of `PACK_STATUSES` (`absent`, `found`, `draft`,
+`in-review`, `kept`, `published`), which `packStatusToLifecycle` maps onto
+the six shared `LIFECYCLE_STATES`; it is not one of the shared states
+itself, and `validatePackManifest` reports a shared state such as
+`approved` as `invalid-status`. The `pack` export list now names the real
+re-exports from `@clossys/controller` (`PACK_STATUSES`,
+`LIFECYCLE_STATES`, `packStatusToLifecycle`, and the `PackStatus`,
+`LifecycleState`, and `PackStatusLifecyclePosition` types) instead of
+`LIFECYCLE_STATUSES`, `isLifecycleStatus`, `isLifecycleCondition`, and
+`LifecycleStatus`, which this package does not export.
+- Fix a `process.exit()`-after-write race in `publisher-web-route-check` (the
+`checkWebRoutesCli.ts` CLI) that could truncate stdout under load; the CLI
+now sets `process.exitCode` and lets the process exit naturally, matching
+the pattern Foundry's other CLIs use.
+- The changelog is no longer included in the package; it now lives in the public repository, linked from the README.
+- The skill cites Strategist's records at `clossys/strategist/`.
+- Remove the duplicated "How we work together" and "One question at a time"
+sections from this package's packed skill (`skill/SKILL.md`).
+`@clossys/launcher` injects the shared conversation contract when it
+composes a skill for a consumer, so the packed skill no longer carries its
+own byte-identical copy (#1182).
+- Packed skill: cite the strategist handoff. writer cites an audience id,
+approved claim ids (`claim:<id>`), applicable constraint ids
+(`constraint:<id>`), and the current direction id, and never edits
+`clossys/strategist/`. designer cites constraint ids and derived token slot names,
+and never adds a brand attribute, color value, or type pairing inside
+strategy records. customer speaks only from the audience
+`situation`/`pains` Strategist recorded, never authors the audience
+record, and does not inhabit until `strategist-check handoff` is green.
+publisher seals against the projected strategy provenance
+(`projectStrategyContract` / `createStrategyProvenance`) and never
+authors strategy. Refs: #1120, #1121, #1122, #1123.
+- Fix the remaining #1205 inconsistencies: Designer's and Writer's packed
+skills now say they supply the tokens, atoms, blocks, and copy ids a
+surface document cites by reference rather than co-authoring it, matching
+Publisher's skill. Publisher's surface-ownership module no longer says the
+shared consumer layout contract (#1171) has not landed; that contract now
+names Publisher as the owner of `clossys/publisher/surfaces`. Launcher's
+packed skill catalogue carries a copy of each role's skill, so it is
+released alongside the skill edits (#1184).
+- Updated dependency @clossys/writer to ^0.4.0
+- Updated dependency @clossys/designer to ^0.6.0
+
+## [0.6.0] - 2026-09-23
+
+### Added
+
+- `@clossys/publisher/materials`: the materials mini-site (#1206) —
+  `renderMaterialsIndexHtml` (the browsable index, from the pack
+  manifest), `selectAudienceVariant`/`declaredAudiences` (one source
+  deck, filtered to declared per-slide audience selections),
+  `renderPitchDeckHtml` (wraps `renderSlidesDeck`'s own rendered SVG
+  slides into a self-contained HTML deck with keyboard navigation and the
+  shared print stylesheet), `materialsPrintStylesheet`, and
+  `checkMaterialsVisibility`/`MATERIALS_DEFAULT_VISIBILITY` (materials
+  are internal by default; committing one to a public repository
+  publishes it, and this is the refusal check for that).
+- `@clossys/publisher/templates`: the pack's default templates and
+  channel spec registry (#1207) — company overview and pitch deck
+  defaults, an email signature builder (HTML and plain text),
+  `SOCIAL_CHANNEL_SPECS`/`getSocialChannelSpec` (LinkedIn, X, Instagram,
+  Facebook, YouTube, TikTok, GitHub), `OG_SHARE_CARD_SPEC`,
+  `VIDEO_CALL_BACKGROUND_SPECS`/`getVideoCallBackgroundSpec` (Zoom,
+  Google Meet, Microsoft Teams), and `staleChannelSpecEntries` for
+  periodic re-verification.
+- `templates/site/`: a Next.js App Router template for `apps/site`
+  (#1208), shipped in the published tarball (`files` now includes
+  `templates`) but not built, typechecked, or tested by this
+  repository's own workspace.
+- `publisher-preview` now renders the whole Launch pack, not just the
+  shipped web views: `templates/site`'s own routes (rendered through the
+  same `MarketingView`/`ErrorView` templates `apps/site` itself uses —
+  the two Next.js metadata route handlers, `robots.ts`/`sitemap.ts`,
+  have no view to render and are called out in `index.html` instead), the
+  materials mini-site (company overviews at all three lengths, the
+  default pitch deck, and one `selectAudienceVariant` filtered variant),
+  the email kit (launch announcement, welcome, follow-up, and a
+  signature, each in an email-width frame), and one SVG per
+  `SOCIAL_CHANNEL_SPECS`/`OG_SHARE_CARD_SPEC`/`VIDEO_CALL_BACKGROUND_SPECS`
+  entry — all from the same validated `brand.css`, all deterministic, and
+  every string of prose sourced from the extended fixture copy registry
+  (never hardcoded in a renderer). A new `index.html` links every file
+  the command writes. The CLI's arguments and exit-code contract are
+  unchanged.
+
+## [0.5.0] - 2026-09-22
+
+### Changed
+
+- `@clossys/designer` dependency range further raised to `^0.5.0` (from
+  `^0.4.12`), riding along with Designer's own 0.5.0 identity-kit release
+  (issue #1210) — `dependencies` is packed content, so this repository's
+  own release-readiness gate requires this version bump even though
+  nothing in `src/` changed.
+
+### Fixed
+
+- Raised the `@clossys/designer` dependency floor from `^0.4.0` to `^0.4.12`.
+  The pinned-runtime release-qualification run for 0.4.24 caught a real
+  defect: the currently-published Designer is 0.4.7, which `^0.4.0`
+  resolves cleanly, but this package's web templates import Designer's
+  `MarketingChapter` block (a 0.4.12 addition) — so `import("@clossys/
+  publisher/web")` threw `SyntaxError: ... does not provide an export named
+  'MarketingChapter'` under both its ordinary and `react-server` conditions.
+  Added a regression test (`src/web/react-server-artifact.test.ts`, part of
+  this repository's own test suite — `*.test.ts` files are never shipped in
+  the published package) that reproduces the exact 0.4.7-shaped Designer
+  graph deterministically and proves the new floor refuses it.
+
+### Added
+
+- `@clossys/publisher/pack`: the v0 Launch pack manifest contract (#1204).
+  Publisher plans first and seals last — types, `validatePackManifest`
+  (schema, needs-graph, and lifecycle-vocabulary validation),
+  `computePackReadiness`/`planPackOrder`/`sealableItemIds` (readiness and
+  sealing derived from the `needs` graph), and `detectExistingPackItems`/
+  `foundPackItem` (adopt-don't-override detection with sha256
+  fingerprints). Pack item statuses and conditions use the one lifecycle
+  vocabulary from #1228 (`absent`/`found`/`draft`/`approved`/`verified`/
+  `retired`, `current`/`stale`/`blocked`) — a local copy pending #1237,
+  which exports the same list from `@clossys/controller`; see this
+  repository's own `pack/lifecycle.test.ts` (not shipped in the published
+  package) for the premise-guard test.
+- `@clossys/publisher/surfaces`: the one-owner-per-file contract for surface
+  documents (#1205). Surface documents (which template, which sections,
+  which copy ids and asset ids, all by reference) move from Designer/Writer
+  co-authorship to Publisher, under `clossys/publisher/surfaces/`; Designer
+  and Writer own everything a document references and propose changes and
+  review renders in their own folders, but never edit a Publisher surface
+  file directly. `validateSurfaceOwnership` is the gate: it flags any path
+  more than one role claims. Updated the Publisher, Designer, and Writer
+  skills to describe this ownership split; the shared consumer layout
+  contract (#1171) has not landed in this repository yet, so
+  `PUBLISHER_SURFACES_DIR` is this package's own record of the path pending
+  that contract, and Writer's own removal of its former document-authoring
+  role is left for a follow-up behind #1163.
+
+## [0.4.24] - 2026-09-21
+
+### Changed
+
+- `tailwind-merge` peer and dev dependency raised to `^3.7.0` (from
+  `^3.0.0`), riding along with the same bump in `@clossys/designer` —
+  `peerDependencies` is packed content, so this repository's own
+  release-readiness gate requires this version bump even though nothing in
+  `src/` changed.
+
+## [0.4.23] - 2026-09-21
+
+### Added
+
+- Consumer `defineWebTemplate` templates are data: a `blocks` sequence of
+  Designer block kinds (`page-header`, `node-chapter`, `stat-grid`, and
+  others) this package renders. Arbitrary `build` functions are refused on
+  consumer templates; shipped views keep internal `build` implementations
+  (#1103).
+- `publisher-web-route-check` bin: fails when a publishing web route omits a
+  registered `SurfaceDocument.template` name or composes `@clossys/designer`
+  blocks directly in a route file. The route check ships as that bin for
+  adopters and CI (#1103).
+- `./core` publication-map document beside `SurfaceDocument`: path and slide
+  locations, validation against registered templates, and resolve helpers for
+  host routing (#1104).
+- `SectionedViewDocument.sectionGroundRhythm` (`base-then-sunken`) fills omitted
+  section grounds as `base` then `sunken` in document order; explicit
+  `ground` values (including `inverse`) are never overwritten (#1105).
+- Closed `SectionedView` section kinds `pricing`, `testimonial`, and `stat`:
+  copy refs, optional eyebrow on `pricing`, `ground`, and no node escape.
+  Each kind renders through Designer `PricingTable`, `Testimonial`, and
+  `Stat` respectively; `ground` is applied with `SECTION_GROUND_CLASSES`
+  where the block does not accept it. Unknown kinds are still refused by
+  name (#1106).
+- `publisher-preview` CLI: after `readBrandCss` and `checkBrandFileCoverage`
+  succeed, renders fixture documents for every shipped web view
+  (`MarketingView`, `SectionedView` including `pricing` / `testimonial` /
+  `stat`, `AuthView`, `ErrorView`, `CaptureView`, `DocumentView`,
+  `CollectionView`) into a static `gallery.html` using an in-package
+  `CopyRegistry` of approved placeholder copy (#1107).
+- Brand-asset roster roles on top of the image/video registry: favicon SVG,
+  32px PNG, apple-touch 180, maskable 192 and 512, Open Graph 1200×630,
+  Twitter image 1200×630, and email-safe PNG 600×200. Each role requires
+  alt text and a non-empty src. A derivative reads the master SVG and the
+  roster check fails until every role exists at its required pixel size
+  (#1110).
+- A complete roster emits favicon and apple-touch links for a publication
+  map that contains a web path (#1110).
+- `BrandGuideView` and `SystemAuditView` are catalog templates. `publisher-preview`
+  takes an optional third `roster.json` argument; when given and the
+  brand-asset roster is complete, it writes `guide.html` and `audit.html`
+  beside `gallery.html` from the same `brand.css` and roster after the
+  brand-file check passes. Fixture copy ships with the package. Strategist
+  facts are cited beside the tokens; this package does not change
+  Strategist (#1111).
+- Web head metadata: Open Graph URL (`og.url`), Twitter image
+  (`twitter.image`), and hreflang alternates (`hreflangAlternates`) on
+  `WebMeta` / `SurfaceWebMeta`, emitted from `buildWebHeadMetadata`
+  (#1108).
+
+## [0.4.22] - 2026-09-21
+
+### Changed
+
+- Web golden markup for `MarketingView` and `SectionedView` matches Designer
+  0.4.16 logical inline utilities (`text-start`, `ps-lg`) and shell footer
+  ink on inverse-ground plates.
+- Skill: names `publisher-web-route-check` and documents consumer templates
+  as `blocks`, not route-local `build` functions (#1103).
+- `MarketingView` passes semantic `ground` through to its hero, feature grid,
+  FAQ, and closing CTA bands (defaulting to base/sunken alternation) (#1105).
+
+## [0.4.21] - 2026-09-21
+
+### Fixed
+
+- Install section names `https://registry.npmjs.org` and states that
+  installing requires no authentication, without GitHub-token wording that
+  could be read as a prerequisite. Peer-install notes no longer name a
+  retired registry lane as if it were current install guidance. (#924)
+
+## [0.4.20] - 2026-09-21
+
+### Changed
+
+- README: declared escape, metric, reconciliation loop, measurer, and close
+  condition for the publisher role (#446). Names the #502 reconciler blocker
+  so unmeasured rates are not mistaken for zero escapes.
+
+## [0.4.19] - 2026-09-21
+
+### Changed
+
+- README: documents the three SectionedView contract holds measured in
+  issue #756 (required status-list `labels`, required step `ordinal`
+  CopyRef, non-empty repeating arrays) so adopters can convert recorded
+  refusals into upgrades or permanent local seams.
+
+## [0.4.18] - 2026-09-21
+
+### Added
+
+- `./record` reconciliation contracts: `proposeRegistryPublicationEntry`
+  (publish-path ledger producer), `checkRegistryPublicationReconciliation`
+  (ledger vs independent registry witness), `asLedgerDriftSubject` (drift-check
+  subject pairing), and `registryPublicationEntryId`.
+
+### Changed
+
+- README distinguishes gate-loop staging evidence from
+  reconciliation loops that require a publish-path ledger producer plus an
+  independent witness; document that this repository's own npm publish
+  reconciliation uses governance publication records, not a persisted
+  `./record` ledger.
+
+## [0.4.17] - 2026-09-21
+
+### Added
+
+- `SectionedViewDocument` hero sections may carry optional `media`
+  (`{ assetId, alt }`), with `alt` as a `CopyRef` and `assetId` resolved at
+  render time through `SectionedView`'s `resolveAssetId` — the same seam as
+  `MarketingView`'s `heroMedia`. Hero media switches Designer `Hero` to the
+  two-column layout (`tablet:grid-cols-2`).
+- A closed `stat-grid` section kind maps each row onto Designer `Stat` with
+  `CopyRef` label, value, optional delta/trend, and optional description.
+
+### Changed
+
+- `SectionedView` passes explicit Hero `composition` (`split` when hero media
+  is present), matching `MarketingView` and Designer 0.4.12 layout rules.
+- SectionedView and MarketingView golden markup match Designer 0.4.12 display
+  measure classes (`max-w-display` on Hero headings and lead copy).
+- README and skill: six shipped `SectionedView` kinds; hero `actions` still
+  render as underlined anchors into `Hero`'s `actions` slot (data-shaped
+  `href` contract unchanged). `article-body` / `section-header` remain out of
+  contract — compose those blocks in the consumer or via `defineWebTemplate`.
+
+## [0.4.16] - 2026-09-21
+
+### Changed
+
+- Packed skill: seal an approved named surface after a keep — head,
+  OG/meta join, and release proof — and verify the exact shipped result;
+  do not author the in-tree `SectionedView` or `MarketingView` page
+  document, select templates from business intent, own the app router, or
+  lock final copy. Refs: #1027.
+
+### Added
+
+- `SectionedView` resolve-then-render integration coverage for grouped
+  and flat `status-list` sections.
+
+## [0.4.10] - 2026-09-21
+
+### Changed
+
+- `MarketingView` passes explicit Hero `composition` (`split` when media is
+  present) and golden markup matches Designer 0.4.12 display measure
+  classes.
+
+## [0.4.9] - 2026-09-21
+
+### Changed
+
+- Packed skill Pre-auth section: bounded taste pass after `designer-fold-check` is green (see PRE-AUTH-QUALITY, the brief that ships with `@clossys/designer`).
+
+## [0.4.8] - 2026-09-21
+
+### Changed
+
+- `validateSectionedViewDocument` and `resolveSectionedViewDocument` refuse
+  unknown section kinds and name the unsupported kind in the finding or
+  error; there is no implicit flatten into `feature-grid` or any other
+  shipped kind.
+- `resolveSurfaceDocument` accepts optional `knownTemplates`; when set, an
+  unregistered `surface.template` refuses at resolve time with
+  `unsupported-template` and names the template.
+- README and packed skill: choose shipped templates when slots fit; register
+  `defineWebTemplate` for custom page bands; route-local block composition
+  is a workaround, not the extension path.
+
+## [0.4.7] - 2026-09-21
+
+### Added
+
+- Ships the packed Agent Skill in the tarball (`files` includes `skill`).
+
+## [0.4.6] - 2026-09-20
+
+### Added
+
+
+### Changed
+
+- README: `MarketingView` is the primary pre-auth marketing template;
+  `SectionedView` is documented only for the closed five section kinds.
+- README/skill: first-viewport `heroActions` carries one primary CTA;
+  `heroMedia` is product surface or original art, not decorative stock.
+  Publisher seals after a synthetic-user keep and does not inhabit the
+  persona.
+
+## [0.4.5] - 2026-09-18
+
+### Added
+
+- Documented installation against the public npm registry
+  (`https://registry.npmjs.org`) and that installing needs no authentication.
+- Stated the charter close condition in the README: independent consumer
+  evidence of `verified publication rate`, computed by
+  `assessVerifiedPublicationRate()`. An empty evaluated set is
+  indeterminate, never a perfect rate of 1. `publisher-media-check` and
+  `publisher-record-check` remain the gates they are; neither is this
+  rate. The record half still records and does not judge.
+- Declared `foundry.assessment` against a new mapped `publisher-rate-check`
+  bin with `invocation: "single-json-input"`. The two existing publisher
+  bins remain gates and are not the assessment surface. Advisor remains
+  the only required first-day role.
+- Public `./assessment` subpath for `assessVerifiedPublicationRate`.
+- `publisher-rate-check assessment.json`: prints the `verified publication
+  rate` report and exits on the `0` / `1` / `2` ternary.
+
+### Notes
+
+- This does not claim the position is closed. Qualification of `0.4.5` is
+  deferred under #833.
+
+## [0.4.4] - 2026-09-16
+
+### Fixed
+
+- `resolveSectionedViewDocument` no longer writes both `groups` and `items`
+  as own keys on a resolved status-list section. It previously used optional
+  chaining (`groups: section.groups?.map(...)`), which sets the VALUE to
+  `undefined` but still creates the KEY. `SectionedView` decides grouped-vs-flat
+  with `Object.hasOwn`, which is true for a key holding `undefined`, so its
+  "exactly one of groups or items" check saw both and threw — for every
+  status-list section, whether the source carried `groups`, `items`, or one of
+  each. Rendering any status-list section was impossible in 0.4.3.
+
+  The resolver now spreads each key conditionally, so exactly the one the
+  source declared survives. `groups` and `items` are also destructured out of
+  the spread base, because spreading the whole section would carry the
+  unresolved shapes alongside the resolved ones.
+
+  A test pins the resolved own-key set in both directions — grouped sections
+  carry `groups` and not `items`, flat sections the reverse.
+
+## [0.4.3] - 2026-09-14
+
+### Changed
+
+- Patch version bump only, to obtain a fresh, never-before-used
+  `governance/release-qualifications/` record path. The 0.4.2 qualification
+  record added by #811 was orphaned when that pull request was squash-merged
+  (#821) and had to be removed (#834); the immutability gate that protects
+  already-introduced record paths (`check-candidate-qualification.mjs`'s
+  single-introduction-commit invariant) means a valid record can never again
+  be introduced at the `0.4.2` path, so this package moves to `0.4.3`
+  purely to regain one. No functional or behavioral change.
+
+
+## [0.4.2] - 2026-09-09
+
+### Changed
+
+- Historical entries below now describe the previous npm scope without naming
+  the producer account this catalogue no longer publishes under, and links to
+  this repository use its current `clossys/foundry` path. No date, version,
+  or recorded fact changed — only the way the retired scope is referred to.
+
+
+## [0.4.1] - 2026-09-02
+
+### Changed
+
+- Named Clossys as copyright holder in `LICENSE` and as `author` in the
+  package manifest, so every package in the catalogue attributes identically.
+
+
+## [0.4.0] - 2026-09-02
+
+### Added
+
+- Relaxed `SectionedViewDocument`'s hero rule from "exactly one hero section,
+  and it must be first" to "at most one hero section, anywhere in the
+  document." A document with zero heroes, or with a hero that is not the
+  first section (a closing call-to-action band, say), now validates.
+  `SectionedView` was already forgiving of a hero's position when rendering
+  (`headingLevel` is 1 only at section index 0, 2 otherwise); this only
+  widens the validation and render-time assertion to match. A document
+  carrying a single leading hero — every document that validated before —
+  still validates and renders identically.
+- Made a `status-list` section's `groups` optional and added a sibling
+  `items` field: a flat, ungrouped array of the same status-item shape,
+  for the common case of a short list with nothing to group. Provide
+  exactly one of `groups` or `items`. Renders through Designer `0.4.0`'s
+  new `StatusList` `items` prop as a single definition list with no group
+  heading. A document using `groups` — every document that validated
+  before — still validates and renders identically.
+
+### Changed
+
+- Raised the runtime Designer floor from `^0.3.0` to `^0.4.0`. The
+  `status-list` `items` field above renders into Designer 0.4.0's new
+  `StatusList` `items` prop, which the older range does not resolve.
+
+Both of the additions above are optional and additive: a document that
+validated before still validates, and a document carrying a single leading
+hero with grouped status-list items — the shape every document authored
+against 0.2.1 through 0.3.1 already has — renders byte-for-byte the markup
+it always did, asserted against the same frozen captured markup this
+package's tests have used since the 0.3.0 additive round rather than merely
+described. This is a minor rather than a patch because 0.x caret and tilde
+ranges are minor-locked, so a consumer that wants either relaxation widens
+its declared range deliberately.
+
+## [0.3.1] - 2026-09-02
+
+### Changed
+
+- Widened the `@clossys/controller` runtime dependency range from `~0.8.0` to `~0.9.0` to cover controller's 0.9.0 release. No other change.
+
+## [0.3.0] - 2026-09-01
+
+### Added
+
+- Added an optional `eyebrow` `CopyRef` to the `feature-grid`, `faq`,
+  `ordered-step-sequence`, and `status-list` sections of
+  `SectionedViewDocument`. Only `hero` carried one before, so authored eyebrow
+  copy for any other section had nowhere to go.
+- Added an optional `actions` list to the `SectionedViewDocument` hero
+  section: data-only `{ id, label, href }` entries whose `href` is held to the
+  same sanctioned-target rule the other server-rendered views use, rendered
+  into the Designer `Hero` block's existing actions slot. A document could not
+  express a hero call to action at all before, even though the block beneath
+  it always had the slot.
+- Added an optional `detail` `CopyRef` to a `status-list` item, carrying that
+  row's own explanation, including the reasoning behind a `not-offered`
+  answer. That reasoning previously had to be folded into the row label or
+  left off the page.
+- Added the optional `landmark` prop to `SectionedView`. The default, `"main"`,
+  is unchanged; `"none"` renders the same sections without the view's own
+  `main` landmark, so a page can mount the subset this contract expresses and
+  keep the rest inside a landmark it owns. Partial adoption previously had to
+  choose between a second `main` landmark and leaving real content outside the
+  only one.
+
+### Changed
+
+- Raised the runtime Designer floor from `^0.2.7` to `^0.3.0`. The non-hero
+  `eyebrow` slot and the per-row `detail` slot that the new document fields
+  render into are Designer 0.3.0 additions, and 0.x caret ranges are
+  minor-locked, so the older range would resolve a Designer without them.
+
+Every one of these is optional and additive: a document that validated before
+still validates, and a document carrying none of them renders byte-for-byte
+the markup it did at 0.2.1, which is asserted against frozen captured markup
+rather than described. This is a minor rather than a patch because 0.x caret
+and tilde ranges are minor-locked, so a consumer that wants any of the four
+widens its declared range deliberately.
+
+## [0.2.1] - 2026-09-01
+
+### Fixed
+
+- Normalized both published CLI targets so npm preserves the declared
+  `publisher-media-check` and `publisher-record-check` bin map without
+  auto-correction. The unpublished 0.2.0 dry-run candidate was rejected and
+  is not publication evidence.
+
+## [0.2.0] - 2026-08-31
+
+### Added
+
+- Added the closed, provenance-preserving `SectionedView` web renderer for
+  resolved `SectionedViewDocument` models. It maps the five approved section
+  kinds to Designer 0.2.7's ground-aware server-safe blocks without opening a
+  caller-authored node or styling escape hatch.
+- Added the separate `not-offered` status disposition and its localized label,
+  keeping deliberate non-capabilities outside the readiness axis.
+
+### Changed
+
+- Raised the runtime Designer floor to `^0.2.7`, which supplies the
+  server-safe section-ground, ordered-step, and status-list blocks required by
+  `SectionedView`. This source version is intentionally unqualified and
+  unpublished; exact-head qualification remains required.
+
+## [0.1.11] - 2026-08-31
+
+### Changed
+
+- Advanced the source to the later trusted-publisher/OIDC successor after the
+  owner-present 0.1.10 first publication. This source-only change is neither
+  qualification nor publication evidence: a future 0.1.11 candidate requires
+  fresh exact-head qualification, release checks, and registry verification.
+
+## [0.1.10] - 2026-08-31
+
+### Changed
+
+- Advanced the first-publication source candidate after the immutable 0.1.9
+  qualification was quarantined as unpublished: its retained tarball was
+  produced outside the required release runtime and cannot be rewritten under
+  the append-only qualification contract. This 0.1.10 source is not yet
+  qualified or published; its future candidate must be packed and replayed
+  with the pinned release runtime.
+
+## [0.1.9] - 2026-08-31
+
+### Fixed
+
+- Declared Designer's optional `@internationalized/date`,
+  `react-aria-components`, `tailwind-merge`, and `tailwindcss` peers directly
+  and installed their exact qualification versions. A clean public-registry
+  consumer can now import both ordinary and `react-server`
+  `@clossys/publisher/web` instead of failing on Designer's absent transitive
+  optional peers. The rejected 0.1.8 candidate was never published. The
+  immutable 0.1.9 qualification is retained as quarantined evidence only;
+  the source's next first-publication candidate is 0.1.10.
+
+## [0.1.8] - 2026-08-31
+
+### Fixed
+
+- Added a `react-server` target for `@clossys/publisher/web`. Its runtime
+  exports match the ordinary target, while `MarketingView`, `AuthView`, and
+  `ErrorView` resolve only Designer's server-safe barrels and the server FAQ
+  renders as native `details`/`summary`. Ordinary imports retain the React
+  Aria FAQ. The runtime dependency floor is now `@clossys/designer ^0.2.4`,
+  the first release that exports `Faq` from its server-safe blocks barrel.
+
+## [0.1.7] - 2026-08-30
+
+### Changed
+
+- Updated the package's public repository, issue-tracker, and homepage metadata to the canonical Foundry repository. This change is not a publication or qualification claim.
+
+## [0.1.6] - 2026-08-30
+
+### Fixed
+
+- Corrected exact-pin consumer guidance to require Writer `0.3.x`, matching
+  this package's real `@clossys/writer ^0.3.0` runtime dependency, rather
+  than directing a clean consumer to the incompatible historical `0.2.x`
+  line.
+
+## [0.1.5] - 2026-08-29
+
+### Security
+
+- Replaced the ambiguous OKLCH argument and numeric-token regular expressions
+  with single-pass scanners, so hostile malformed public input is rejected in
+  linear time without changing valid color conversion behavior.
+
+## [0.1.4] - 2026-08-24
+
+### Fixed
+
+- Updated README references to the active Strategist package and corrected
+  historical donor availability with a lifecycle note.
+
+## [0.1.3] - 2026-08-21
+
+### Changed
+
+- Widened the declared `@clossys/writer` dependency range from
+  `^0.2.0` to `^0.3.0`. `writer` 0.3.0 (issue #373) added the passage
+  layer — `checkPassageComposition`, `readPassageRecord`, the
+  `writer-check passages` CLI subcommand, and their supporting types — a
+  purely additive feature, not a patch; `^0.2.0` does not resolve `0.3.0`
+  (0.x ranges are minor-locked), so the old declared range would have kept
+  this package pinned to the superseded release. No source in this
+  package imports the new passage-layer surface; this is purely picking
+  up the new range.
+
+## [0.1.2] - 2026-08-21
+
+### Changed
+
+- Widened the declared `@clossys/writer` dependency range from
+  `^0.1.0` to `^0.2.0`. `writer` 0.2.0 (issue #407) changed
+  `writer-check addressability`'s exit-code precedence — a real violation
+  now wins over an incomplete scan — which is a behavioural contract
+  change, not a patch; `^0.1.0` does not resolve `0.2.0` (0.x ranges are
+  minor-locked), so the old declared range would have kept this package
+  pinned to the superseded precedence. No source in this package imports
+  `checkAddressability` or otherwise depends on the changed behaviour
+  directly; this is purely picking up the new range.
+
+  This release is `0.1.2` rather than `0.1.1` because the `designer`
+  widening below took `0.1.1` first, on a branch developed in parallel with
+  this one. Both widenings are carried here together. Resolving that
+  collision by keeping only one side would have shipped this package with
+  the other range still pointing at a superseded version, and no gate would
+  have failed — an un-widened range still resolves against the older
+  published release, so it would simply never widen.
+
+## [0.1.1] - 2026-08-21
+
+### Changed
+
+- **Widened the `@clossys/designer` dependency range to `^0.2.0`.** A
+  runtime dependency range is shipped content, so it moves this package's
+  version even though no code here changed. See
+  [issue #405](https://github.com/clossys/foundry/issues/405), which
+  added `designer`'s `environment-conformance` gate
+  (`designer-environment-check`, `checkEnvironmentConformance`) and bumped
+  `designer` to `0.2.0`.
+
+## [0.1.0] - 2026-08-21
+
+First release. This package is the publisher role, fused from two donors in
+the previous scope — `surface` (the composer half) and `ledger`
+(the record half) — per
+[decision 10](../../docs/DECISIONS.md#10-recutting-the-expression-surface-into-role-shaped-packages).
+The role's exclusive question: *did we put it out to an audience, and can we
+prove what shipped?*
+
+This changelog starts here rather than carrying either donor's history,
+which cites decisions and issues that would mean nothing — or the wrong
+thing — to a reader who arrives at this package first.
+
+### Added
+
+- Surface composition, media registries, and channel renderers for web,
+  email, print, images, and slides, plus a product-neutral
+  structured-document contract — unchanged from the previous scope's `surface`,
+  under the same eight subpaths: `./core`, `./media`, `./web`, `./document`,
+  `./email`, `./print`, `./image`, `./slides`.
+- An append-only, content-addressed record of what was published, to which
+  channel, when, citing which facts, plus a drift checker and a join-key
+  completeness checker — unchanged from the previous scope's `ledger`, now under
+  a ninth subpath, `./record`.
+- Two bins: `publisher-media-check` (the composer's media-registry gate) and
+  `publisher-record-check` (the record's drift/append-only/join-key gates,
+  with `append-only` and `join-key` reachable as subcommands). Both dispatch
+  on `argv[0]`/`argv[1]` matching exactly — never on
+  `basename(process.argv[1])`, which would see `cli.js` and silently run the
+  wrong command wherever a gate is invoked by compiled path, the same
+  convention every other package in this repository's rename series holds
+  to.
+- **The published tarball carries this changelog.** `files` includes
+  `CHANGELOG.md`, following the convention the operation packages adopted in
+  #417. A consumer reading the installed package should not have to leave it
+  to find out what changed; a new package should be born with the current
+  convention rather than inheriting either donor's gap.
+
+### Why one package, not two
+
+`publisher` is one package, not two, for a reason stated in decision 10 and
+worth restating here: composition without a record is unprovable, and every
+time the publisher runs, the record runs — there is no publish that
+legitimately skips it. That argues for one install and one version, which
+one package with a `./record` subpath delivers.
+
+The measurement that originally argued for splitting `surface` and `ledger`
+into two packages is accommodated, not overturned: **the record shares no
+code with the composer and does not import it, in either direction.**
+`./record`'s own source imports only `@clossys/controller/policy`
+and its own relative files; nothing under `./core`, `./media`, `./web`,
+`./document`, `./email`, `./print`, `./image`, or `./slides` imports
+anything under `./record`, or vice versa. Fusing the *packaging* was never
+the same as fusing the *dependency graph*, and only the second would have
+cost anything. A publication record is a DOCUMENT the composer never
+imports.
+
+### Changed from the previous scope's `surface` and `ledger`
+
+- **The package is named for the job, not the artifact.** The role's
+  exclusive question is *did we put it out to an audience, and can we prove
+  what shipped?* A name that describes a thing rather than a doer is an
+  artifact, and an artifact belongs inside a role.
+- **Seven import specifiers repointed, verified against the real `exports`
+  maps of their new targets, not assumed:**
+  - the donor scope's `copy` → `@clossys/writer` (writer's `"."`
+    export)
+  - the donor scope's `copy/voice` → `@clossys/writer/voice`
+    (writer's `"./voice"` export)
+  - the donor scope's `ui` → `@clossys/designer` — **not actually
+    imported anywhere in the composer's source**; that donor has
+    no `"."` export either in the donor or in `designer`, and grepping
+    `surface/src` turned up zero real (non-comment) imports of the bare
+    specifier. Listed for completeness; nothing to repoint.
+  - the donor scope's `ui/atoms` → `@clossys/designer/atoms`
+    (designer's `"./atoms"` export)
+  - the donor scope's `ui/blocks` → `@clossys/designer/blocks`
+    (designer's `"./blocks"` export)
+  - the donor scope's `ui/shell` → `@clossys/designer/shell`
+    (designer's `"./shell"` export)
+  - the donor scope's `ui/tokens` → `@clossys/designer/tokens`
+    (designer's `"./tokens"` export)
+
+  All prose (doc-comment) mentions of the donor scope's `copy` and
+  `ui` — not just real `import` statements — were updated
+  the same way, the same treatment `writer` and `designer` gave their own
+  self-references.
+- **The bins are `publisher-media-check` and `publisher-record-check`, not
+  `surface-media-check` and `ledger-check`.** Same two programs, renamed to
+  match the role. `publisher-record-check` keeps `ledger-check`'s two
+  subcommands (`append-only`, `join-key`) unchanged — only the bin name
+  moved, never the dispatch logic or the subcommand names, since those name
+  what each gate checks, not who runs it.
+- **Nothing else was renamed.** `SurfaceDocument`, `ComposeDocument`,
+  `renderWebDocument`, `AssetEntry`, the whole `media`/`web`/`document`/
+  `email`/`print`/`image`/`slides` vocabulary, and — on the record side —
+  `PublicationEntry`, `Ledger`, `FactCitation`, `appendEntry`,
+  `checkLedgerDrift`, `checkAppendOnly`, `checkJoinKeyCompleteness`, all keep
+  their names. A role owns artifacts; renaming the role does not rename what
+  it composes or what it records. A sweep that also renamed the vocabulary
+  would have made the diff unreviewable while changing no behaviour.
+- Self-referential `surface` and `ledger`
+  package-name mentions in doc comments were updated to
+  `@clossys/publisher` (and, where the mention was specifically
+  about the record half, `@clossys/publisher`'s `./record`
+  subpath) — the same treatment `strategist`, `writer`, and `designer` gave
+  their own self-references. A citation of a donor BY NAME, describing
+  provenance (e.g. "recut from the previous scope's `surface`"), is left as-is —
+  that is a historical fact, not a stale specifier.
+- **Dependencies changed shape, not just name.** `surface` declared
+  the donor scope's `copy` (`~0.10.0`) and its `ui` (`~0.15.0`);
+  `ledger` declared `@clossys/controller` (`~0.8.0`). This package
+  declares `@clossys/writer` (`^0.1.0`), `@clossys/designer`
+  (`^0.1.0`), and `@clossys/controller` (`~0.8.0`, unchanged range).
+  `writer` and `designer` are caret ranges because they are fresh `0.x` role
+  packages starting at `0.1.0`; `controller` stays a tilde range, carried
+  over unchanged from `ledger` — a caret range on a `0.x` package is
+  patch-only under semver and has broken this repository's CI before.
+  `./record` continues to import only `@clossys/controller/policy`,
+  never `@clossys/controller/gates`, which drags a runtime
+  TypeScript import this package has no reason to take on.
+
+### On the donors, and why neither is deprecated yet
+
+> **Current lifecycle note:** the previous scope's `surface` and
+> `ledger` are now retired. This release note records their
+> state at 0.1.0; the lifecycle contract is the authority for current
+> availability.
+
+The previous scope's `surface` and `ledger` both stay
+`published` for now. Neither can be marked deprecated while nothing else in
+this repository has moved to depend on `publisher` instead — the donors
+deprecate together, once `publisher` is what the rest of the workspace
+actually depends on. `check:package-governance` enforces that a live
+package cannot depend on a deprecated one; deprecating either donor before
+that migration would trip it for anyone still consuming `surface` or
+`ledger` directly.
+
+This is a deferral with a trigger, not an omission.
+
+### Not included
+
+- **No forwarding stub in either donor.** The previous scope's `surface` and
+  `ledger` remain independently installable, with no
+  re-export pointing here. A stub would keep the old names importable, and a
+  supersession check could then never reach zero — the forwarding layer
+  would defeat the gate built to prove the swap completed.
+- **No new coupling between the two halves.** `./record` does not import
+  `@clossys/writer` or `@clossys/designer`; nothing under
+  `./core`, `./media`, `./web`, `./document`, `./email`, `./print`,
+  `./image`, or `./slides` imports `./record`. Fusing the packaging was a
+  decision about install/version granularity, never about the dependency
+  graph.

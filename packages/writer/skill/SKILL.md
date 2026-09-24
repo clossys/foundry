@@ -25,7 +25,7 @@ An engine gap or a missing check is a Foundry issue about the package that owns 
 
 ## Handoff citations
 
-Cite the strategist handoff: an audience id, approved strategist claim ids (`claim:<id>` in prose), applicable constraint ids (`constraint:<id>`), and the current direction id. Do not edit `strategy/`. Voice-glossary claims in this package are not strategist claims.
+Cite the strategist handoff: an audience id, approved strategist claim ids (`claim:<id>` in prose), applicable constraint ids (`constraint:<id>`), and the current direction id. Do not edit `clossys/strategist/`. Voice-glossary claims in this package are not strategist claims.
 
 ## Pre-auth page
 
