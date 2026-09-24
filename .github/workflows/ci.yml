@@ -285,16 +285,27 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-        with:
-          # check-commit-messages below needs real ancestry back to this
-          # PR's own merge base, which an old or far-diverged branch can put
-          # well outside a shallow clone's single commit.
-          fetch-depth: 0
-
+      # setup-node runs tools (node, npm, yarn) in the workspace, so it goes
+      # first, before any pull request content exists there. The pull
+      # request's tree is then checked out into pr/ as DATA: every step
+      # below that reads it runs a base-ref script from .trusted-scripts/
+      # (a sibling of pr/, never inside it) with pr/ as its working
+      # directory, and no action runs with the pull request's tree as its
+      # default working directory.
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 20
+
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          path: pr
+          # check-commit-messages below needs real ancestry back to this
+          # PR's own merge base, which an old or far-diverged branch can put
+          # well outside a shallow clone's single commit. It reads that
+          # history locally (git log / merge-base) and never fetches, so the
+          # checkout keeps no credential.
+          fetch-depth: 0
+          persist-credentials: false
 
       # Repository (Actions) secrets are unavailable in TWO distinct cases, not
       # one — see issue #269. Fork pull requests are the obvious case. The
@@ -345,17 +356,9 @@ jobs:
       # does not get to exercise its own fix in its own CI run — the same
       # trade every base-ref-pinned credentialed step makes.
       #
-      # actions/checkout refuses a destination outside $GITHUB_WORKSPACE (a
-      # deliberate guard of its own), so this lands at .trusted-scripts/
-      # INSIDE the checkout instead of beside it. That would make it part of
-      # what check-public-safety.mjs (and check-foreign-references.mjs,
-      # which shares its exact gitignore-aware walk) scans next — except
-      # .gitignore lists it, and both scripts already skip anything
-      # `git ls-files --others --ignored` reports, the same mechanism that
-      # keeps a local node_modules/ or dist/ out of every content scan. A
-      # gitignored directory is by definition never published, so a PR
-      # cannot smuggle a scanned finding into `.trusted-scripts/` to dodge
-      # the gate — the content in it is base-ref content regardless.
+      # .trusted-scripts/ is a sibling of pr/ in the workspace, not inside
+      # the scanned tree, so no content scan below ever walks it, and a pull
+      # request cannot place anything at that path.
       #
       # governance/commit-message-history-exceptions.json rides along in this
       # same sparse checkout for the same reason the scripts do: it is the
@@ -378,6 +381,7 @@ jobs:
           sparse-checkout-cone-mode: false
 
       - name: check-public-safety
+        working-directory: pr
         run: node "$GITHUB_WORKSPACE/.trusted-scripts/scripts/check-public-safety.mjs" . --allow-changelogs
 
       # On anything that is not a fork pull request the denylist must be
@@ -399,6 +403,7 @@ jobs:
       # repository's own Actions secrets the same way an internal PR does.
       - name: Require FULL mode on trunk and internal PRs
         if: github.event.pull_request.head.repo.fork != true
+        working-directory: pr
         run: node "$GITHUB_WORKSPACE/.trusted-scripts/scripts/check-public-safety.mjs" . --allow-changelogs --require-denylist
 
       # A commit message is exactly as public and exactly as permanent as any
@@ -417,6 +422,7 @@ jobs:
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha }}
           BEFORE_SHA: ${{ github.event.before }}
           IS_FORK: ${{ github.event.pull_request.head.repo.fork }}
+        working-directory: pr
         run: |
           set -e
           if [ -n "$BASE_SHA" ]; then
@@ -448,7 +454,7 @@ jobs:
       # explicitly (see the script's own header on why that flag exists).
       - name: denylist quality
         if: github.event.pull_request.head.repo.fork != true
-        run: node "$GITHUB_WORKSPACE/.trusted-scripts/scripts/check-denylist-quality.mjs" --scope-config "$GITHUB_WORKSPACE/package-scope.json"
+        run: node "$GITHUB_WORKSPACE/.trusted-scripts/scripts/check-denylist-quality.mjs" --scope-config "$GITHUB_WORKSPACE/pr/package-scope.json"
 
       - name: Redact denylist
         if: always()
@@ -511,8 +517,6 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 20
-      - name: gate regression tests
-        run: npm run check:gates
 
       # The inverse of the identity job's denylist scan, and still part of
       # `publish safety` (this job is one of that fan-in's needs). Needs no
@@ -522,9 +526,13 @@ jobs:
       # script here, in a job that holds no secret, rather than in
       # `safety-identity`, where only base-ref scripts may execute once the
       # denylist is on disk. Runs identically on a fork pull request, with no
-      # PARTIAL mode to fall back to.
+      # PARTIAL mode to fall back to. Runs before check:gates so it scans the
+      # tree exactly as checked out.
       - name: check-foreign-references
         run: node scripts/check-foreign-references.mjs
+
+      - name: gate regression tests
+        run: npm run check:gates
 
   # gitleaks the TOOL is open source; gitleaks-action the WRAPPER requires a
   # paid licence for organisation-owned repositories and fails the run
@@ -2158,6 +2166,8 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
@@ -2236,31 +2246,33 @@ jobs:
             exit 1
           fi
 
-      # This pull request's tree, as DATA only: the scan reads each
+      # setup-node runs tools (node, npm, yarn) in the workspace, so it goes
+      # first, before any pull request content exists there -- the same
+      # order and layout as `safety-identity`.
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+
+      # This pull request's tree, into pr/ as DATA only: the scan reads each
       # package's package.json, the repository's package-scope.json and
       # governance/opaque-content-exemptions.json from it, and executes
       # nothing in it.
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
+          path: pr
           persist-credentials: false
 
       # Downloaded before anything this job executes is laid down, so the
-      # base-ref checkout below is written after (and over) any data.
+      # base-ref checkout below is written after any data.
       - name: Download packed tarballs (data only)
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
         with:
           name: artifact-safety-tarballs
           path: ${{ runner.temp }}/packed
 
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version: 20
-
-      # Same shape as the `safety-identity` job's identical step (see its
-      # comment for the full argument, including why this lands at
-      # .trusted-scripts/ inside the checkout rather than beside it): every
-      # script that runs in this job is base-ref content, never this PR's own
-      # copy. check-artifact-safety.mjs shells out to its own sibling
+      # Same shape as the `safety-identity` job's identical step: every
+      # script that runs in this job is base-ref content from
+      # .trusted-scripts/ (a sibling of pr/), never this PR's own copy. check-artifact-safety.mjs shells out to its own sibling
       # check-public-safety.mjs by relative path, so pointing at the trusted
       # checkout here carries that sibling call along with it.
       - name: Checkout trusted scripts (base ref only, never this PR's own copy)
@@ -2296,6 +2308,7 @@ jobs:
       # private package exits before its tarball is read; any other package
       # whose tarball is missing fails the scan.
       - name: check-artifact-safety (per package)
+        working-directory: pr
         run: |
           set -e
           shopt -s nullglob

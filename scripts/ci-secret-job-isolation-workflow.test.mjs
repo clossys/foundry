@@ -94,6 +94,71 @@ export function secretJobIsolationFailures(workflowText) {
   return failures;
 }
 
+/** A job's steps, in order, each as its comment-stripped text. */
+export function jobSteps(jobText) {
+  const lines = codeLines(jobText);
+  const start = lines.findIndex((line) => /^ {4}steps:\s*$/.test(line));
+  assert.notEqual(start, -1, "job has no steps:");
+  const steps = [];
+  for (const line of lines.slice(start + 1)) {
+    if (/^ {6}- /.test(line)) steps.push([line]);
+    else if (steps.length > 0) steps[steps.length - 1].push(line);
+  }
+  return steps.map((step) => step.join("\n"));
+}
+
+function stepAction(stepText) {
+  const uses = stepText.match(/uses:\s*([^@\s#]+)/);
+  return uses ? uses[1] : null;
+}
+
+function isTrustedCheckout(stepText) {
+  return (
+    stepAction(stepText) === "actions/checkout" &&
+    stepText.includes(`ref: ${TRUSTED_REF}`) &&
+    new RegExp(`^\\s+path: ${TRUSTED_DIR.replace(".", "\\.")}\\s*$`, "m").test(stepText)
+  );
+}
+
+/**
+ * Step-order rules for every secret-holding job. Once this pull request's
+ * content is on disk, any action can read config from it (a tool run in the
+ * workspace honours files committed there), so:
+ *   - no action other than actions/checkout or actions/download-artifact
+ *     runs after the first checkout of pull request content;
+ *   - setup-node runs before that checkout;
+ *   - the base-ref .trusted-scripts checkout comes after the pull request
+ *     checkout and after every artifact download, so nothing lands on top
+ *     of the code this job executes.
+ */
+export function secretJobStepOrderFailures(workflowText) {
+  const failures = [];
+  const jobs = workflowJobs(workflowText);
+  for (const id of secretHoldingJobs(workflowText)) {
+    const steps = jobSteps(jobs[id]);
+    const prCheckout = steps.findIndex((step) => stepAction(step) === "actions/checkout" && !isTrustedCheckout(step));
+    const trusted = steps.map((step, index) => (isTrustedCheckout(step) ? index : -1)).filter((index) => index >= 0);
+    const downloads = steps.map((step, index) => (stepAction(step) === "actions/download-artifact" ? index : -1)).filter((index) => index >= 0);
+    const setupNode = steps.map((step, index) => (stepAction(step) === "actions/setup-node" ? index : -1)).filter((index) => index >= 0);
+    if (prCheckout !== -1) {
+      steps.slice(prCheckout + 1).forEach((step) => {
+        const action = stepAction(step);
+        if (action && action !== "actions/checkout" && action !== "actions/download-artifact") {
+          failures.push(`${id}: ${action} runs after this pull request's content is checked out`);
+        }
+      });
+      for (const index of setupNode) {
+        if (index > prCheckout) failures.push(`${id}: setup-node must run before the pull request checkout`);
+      }
+    }
+    for (const index of trusted) {
+      if (prCheckout !== -1 && index < prCheckout) failures.push(`${id}: the ${TRUSTED_DIR} checkout must come after the pull request checkout`);
+      if (downloads.some((download) => download > index)) failures.push(`${id}: the ${TRUSTED_DIR} checkout must come after every artifact download`);
+    }
+  }
+  return failures;
+}
+
 test("every ci.yml job that holds a secret runs only base-ref, install-free code", () => {
   const workflow = readFileSync(workflowPath, "utf8");
   const holders = secretHoldingJobs(workflow);
@@ -103,6 +168,17 @@ test("every ci.yml job that holds a secret runs only base-ref, install-free code
     assert.ok(holders.includes(id), `expected ${id} to be detected as holding the denylist secret`);
   }
   assert.deepEqual(secretJobIsolationFailures(workflow), []);
+});
+
+test("every ci.yml job that holds a secret orders its steps so no action runs over pull request content", () => {
+  const workflow = readFileSync(workflowPath, "utf8");
+  const jobs = workflowJobs(workflow);
+  for (const id of secretHoldingJobs(workflow)) {
+    const steps = jobSteps(jobs[id]);
+    assert.ok(steps.some((step) => stepAction(step) === "actions/checkout" && !isTrustedCheckout(step)), `${id}: expected a pull request checkout`);
+    assert.ok(steps.some(isTrustedCheckout), `${id}: expected a ${TRUSTED_DIR} checkout`);
+  }
+  assert.deepEqual(secretJobStepOrderFailures(workflow), []);
 });
 
 test("the tarball scan keeps its required context and fails closed when packing did not succeed", () => {
@@ -216,27 +292,29 @@ test("check-foreign-references runs under publish safety, in a job that holds no
     .filter(([, text]) => codeLines(text).some((line) => /node scripts\/check-foreign-references\.mjs/.test(line)))
     .map(([id]) => id);
   assert.deepEqual(runners, ["safety-gates"]);
+  const gates = jobs["safety-gates"];
+  assert.ok(
+    gates.indexOf("node scripts/check-foreign-references.mjs") < gates.indexOf("run: npm run check:gates"),
+    "check-foreign-references must scan the tree before check:gates runs in the same checkout",
+  );
   assert.match(jobs["safety"], /needs: \[[^\]]*\bsafety-gates\b/);
 });
 
 // Detection cases, so the rule above is known to fail on the shapes it exists
 // to refuse rather than only known to pass on today's ci.yml.
-function fixture(steps, { secret = true } = {}) {
-  return [
-    "name: fixture",
-    "jobs:",
-    "  scan:",
-    "    runs-on: ubuntu-latest",
-    "    steps:",
-    "      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0",
-    "      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0",
-    "        with:",
-    `          ref: ${TRUSTED_REF}`,
-    "          path: .trusted-scripts",
-    ...(secret ? ["      - env:", "          DENYLIST_B64: ${{ secrets.PUBLIC_SAFETY_DENYLIST_B64 }}", "        run: echo materialise"] : []),
-    ...steps,
-    "",
-  ].join("\n");
+const SETUP_NODE = ["      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0", "        with:", "          node-version: 20"];
+const PR_CHECKOUT = ["      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0", "        with:", "          path: pr"];
+const DOWNLOAD = ["      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7", "        with:", "          name: tarballs"];
+const TRUSTED_CHECKOUT = [
+  "      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0",
+  "        with:",
+  `          ref: ${TRUSTED_REF}`,
+  "          path: .trusted-scripts",
+];
+const SECRET = ["      - env:", "          DENYLIST_B64: ${{ secrets.PUBLIC_SAFETY_DENYLIST_B64 }}", "        run: echo materialise"];
+
+function fixture(steps, { secret = true, prefix = [...SETUP_NODE, ...PR_CHECKOUT, ...DOWNLOAD, ...TRUSTED_CHECKOUT] } = {}) {
+  return ["name: fixture", "jobs:", "  scan:", "    runs-on: ubuntu-latest", "    steps:", ...prefix, ...(secret ? SECRET : []), ...steps, ""].join("\n");
 }
 
 test("the isolation rule accepts a base-ref-only scan job", () => {
@@ -244,6 +322,26 @@ test("the isolation rule accepts a base-ref-only scan job", () => {
     '      - run: node "$GITHUB_WORKSPACE/.trusted-scripts/scripts/check-artifact-safety.mjs" packages/a --tarball "$RUNNER_TEMP/packed/a.tgz"',
   ]);
   assert.deepEqual(secretJobIsolationFailures(clean), []);
+  assert.deepEqual(secretJobStepOrderFailures(clean), []);
+});
+
+test("the step-order rule refuses each unsafe ordering in a secret-holding job", () => {
+  const cases = {
+    "setup-node after the pull request checkout": [...PR_CHECKOUT, ...SETUP_NODE, ...DOWNLOAD, ...TRUSTED_CHECKOUT],
+    "another action after the pull request checkout": [
+      ...SETUP_NODE,
+      ...PR_CHECKOUT,
+      "      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0",
+      ...DOWNLOAD,
+      ...TRUSTED_CHECKOUT,
+    ],
+    "trusted checkout before the pull request checkout": [...SETUP_NODE, ...TRUSTED_CHECKOUT, ...PR_CHECKOUT, ...DOWNLOAD],
+    "artifact download after the trusted checkout": [...SETUP_NODE, ...PR_CHECKOUT, ...TRUSTED_CHECKOUT, ...DOWNLOAD],
+  };
+  for (const [label, prefix] of Object.entries(cases)) {
+    assert.notDeepEqual(secretJobStepOrderFailures(fixture([], { prefix })), [], `${label} must be refused`);
+  }
+  assert.deepEqual(secretJobStepOrderFailures(fixture([], { prefix: [...PR_CHECKOUT, ...SETUP_NODE], secret: false })), [], "a job with no secret is out of scope");
 });
 
 test("the isolation rule refuses every untrusted-execution shape in a secret-holding job", () => {
