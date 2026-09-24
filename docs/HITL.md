@@ -805,7 +805,12 @@ list's item numbers keep matching issue #1350's own.
 5. **The fresh-final-reviewer requirement (Accepted item 6) is not
    implemented.** The ratified text: "For governance, security or gate
    changes, the last approval has to come from a fresh strong-class
-   reviewer with no history on the PR." Nothing in `scripts/land-stack.mjs`
+   reviewer with no history on the PR…" (#1187 escalation-rule round 11,
+   fresh final reviewer, non-blocking N1: an earlier draft closed this
+   quote with a period; the source continues with a comma -- "…, and
+   both verdicts are given before either sees the other's" -- so the
+   quote now ends before the punctuation instead of supplying its own).
+   Nothing in `scripts/land-stack.mjs`
    tracks which reviewer instances have already posted on a given pull
    request, so nothing could enforce "fresh" even in principle today —
    `evaluateTier1Independence` only checks that the two independent
