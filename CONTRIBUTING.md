@@ -25,9 +25,15 @@ declarations.
 
 1. Fork and branch from `main`.
 2. Keep the change focused — one concern per pull request.
-3. Add or update tests. Every package uses [Vitest](https://vitest.dev); run
+3. If the change touches an already-published package's packed content, add
+   a `.changesets/<slug>.md` file instead of bumping that package's version
+   yourself — see [`.changesets/README.md`](.changesets/README.md) for the
+   format, and its ["Style"](.changesets/README.md#style) section for the
+   one-factual-sentence, no-unproven-absolutes rule a changeset summary is
+   held to (it becomes a `CHANGELOG.md` line verbatim).
+4. Add or update tests. Every package uses [Vitest](https://vitest.dev); run
    `npm test` from the repository root.
-4. Run the checks below before pushing.
+5. Run the checks below before pushing.
 
 ```bash
 npm run typecheck

@@ -988,6 +988,16 @@ jobs:
       - name: Changeset format gate
         run: npm run check:changesets
 
+      # check-changeset-style.mjs (issue #1423) -- report-only prose lint
+      # over the same pending changeset summaries the format gate above
+      # already parses: absolute qualifiers, over-length entries, and
+      # negative-change phrasing. Never fails CI -- exit 0 with findings or
+      # not, exit 2 only if .changesets/ itself could not be read. Lives in
+      # this same dependency-free, tree-only job for the same reason as the
+      # format gate immediately above.
+      - name: Changeset style report (non-blocking)
+        run: npm run check:changeset-style
+
       # repository-profile-check (dist/repository/run-bin.js) — the richer,
       # three-state evaluator over the SAME governance/repository-profile.json
       # the `build` job's "Repository profile" step below already validates
