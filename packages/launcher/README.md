@@ -61,9 +61,13 @@ that file:
 | Missing | Recreated | Retirement completes (discovery links removed) |
 | No recorded digest (first run, or an older install) | Adopted if it already equals what launcher would write; otherwise left as is and reported | Not touched: launcher only retires a skill its manifest records |
 
-A retiring skill directory that holds files other than `SKILL.md` is also
-left as is and reported. Each skill left as is appears in the health report
-as a `skill preserved` line naming the file, and in the report JSON under
+A `SKILL.md` that exists but cannot be read (a permissions error, or a
+directory in its place) is treated like an edited one: left as is and
+reported. A retiring skill directory that holds files other than `SKILL.md`
+is also left as is and reported; a macOS `.DS_Store` file is ignored for
+this check. Each skill left as is appears in the health report as a
+`skill preserved` line naming the file or directory that failed the check,
+and in the report JSON under
 `skillComposition.preserved`; it marks the report degraded, and it is
 reported again on every run until resolved. Launcher recreates a missing
 composed skill because `.agents/skills` is launcher-generated output, so

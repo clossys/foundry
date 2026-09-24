@@ -215,14 +215,20 @@ function unownedSkillCopy(
       return { path: location.rel, location: location.rel, reason: "is not a directory Launcher wrote" };
     }
     if (removing || location.replacedWhole) {
-      const others = host.readDir(dirPath).filter((name) => name !== "SKILL.md");
+      // .DS_Store is macOS Finder metadata, written just by viewing the folder; it holds no client content.
+      const others = host.readDir(dirPath).filter((name) => name !== "SKILL.md" && name !== ".DS_Store");
       if (others.length > 0) {
         return { path: location.rel, location: location.rel, reason: `holds files Launcher did not write (${others.sort().join(", ")})` };
       }
     }
     const skillRel = join(location.rel, "SKILL.md");
-    const current = host.readText(containedPath(directory, skillRel));
-    if (current === null) continue;
+    const skillPath = containedPath(directory, skillRel);
+    const current = host.readText(skillPath);
+    if (current === null) {
+      // readText returns null for any read failure (EACCES, EISDIR, ...), not only a missing file.
+      if (!host.exists(skillPath)) continue;
+      return { path: skillRel, location: location.rel, reason: "exists but could not be read, so Launcher cannot check it against its digest" };
+    }
     if (recordedSha256 !== undefined && sha256Hex(current) === recordedSha256) continue;
     if (intendedBody !== undefined && current === intendedBody) continue;
     return {

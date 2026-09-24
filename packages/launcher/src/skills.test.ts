@@ -392,6 +392,21 @@ describe("composeSkills ownership check against the recorded digest (#1473)", ()
       expect(f.manifest()).toEqual([]);
     });
 
+    it("SKILL.md that exists but cannot be read (here, a directory): leaves it as is instead of writing", () => {
+      const f = fixture(["advisor"]);
+      f.compose();
+      rmSync(f.skillPath("advisor"), { force: true });
+      mkdirSync(f.skillPath("advisor"));
+      writeFileSync(join(f.skillPath("advisor"), "mine.txt"), "client content\n");
+      f.setSource("advisor", "advisor-v2");
+
+      const result = f.compose();
+      expect(result.composed).toEqual([]);
+      expect(result.preserved[0]).toMatchObject({ packageDir: "advisor", action: "rewrite" });
+      expect(result.preserved[0]?.note).toContain("exists but could not be read");
+      expect(readFileSync(join(f.skillPath("advisor"), "mine.txt"), "utf8")).toBe("client content\n");
+    });
+
     it("a real directory at a host discovery path whose copy was edited is not replaced by a link", () => {
       const f = fixture(["advisor"]);
       f.compose();
@@ -452,6 +467,33 @@ describe("composeSkills ownership check against the recorded digest (#1473)", ()
       expect(result.preserved[0]?.note).toContain("holds files Launcher did not write (notes.md)");
       expect(readFileSync(extra, "utf8")).toBe("client notes\n");
       expect(existsSync(f.skillPath("designer"))).toBe(true);
+    });
+
+    it("SKILL.md that exists but cannot be read (here, a directory): keeps it and everything in it", () => {
+      const f = fixture(["advisor", "designer"]);
+      f.compose();
+      rmSync(f.skillPath("designer"), { force: true });
+      mkdirSync(f.skillPath("designer"));
+      writeFileSync(join(f.skillPath("designer"), "mine.txt"), "client content\n");
+      f.dropSource("designer");
+
+      const result = f.compose();
+      expect(result.retired).toEqual([]);
+      expect(result.preserved[0]).toMatchObject({ packageDir: "designer", action: "retire" });
+      expect(result.preserved[0]?.note).toContain("exists but could not be read");
+      expect(readFileSync(join(f.skillPath("designer"), "mine.txt"), "utf8")).toBe("client content\n");
+    });
+
+    it("ignores a .DS_Store beside SKILL.md, so it does not block the retirement", () => {
+      const f = fixture(["advisor", "designer"]);
+      f.compose();
+      writeFileSync(join(dirname(f.skillPath("designer")), ".DS_Store"), "finder metadata");
+      f.dropSource("designer");
+
+      const result = f.compose();
+      expect(result.retired).toEqual(["designer"]);
+      expect(result.preserved).toEqual([]);
+      expect(existsSync(dirname(f.skillPath("designer")))).toBe(false);
     });
 
     it("missing: completes the retirement, removing the discovery links and the manifest entry", () => {
