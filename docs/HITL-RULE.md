@@ -129,6 +129,16 @@ the record is the source of truth.
 > write to the rule file or the deny hook. Landing and notifying never
 > applies to this rule.
 
+**Amended 2026-09-23 (not part of the ratified text above).** The quoted
+text above is kept exactly as ratified, as history. Two parts of it are
+superseded by the owner-ratified review-convergence amendment: the "3
+rounds that go nowhere" trigger (Accepted item 5, and the "Your approval
+first" table row) is replaced by the amendment's round budget and
+triggers, and the table's "batched for Friday unless urgent" is replaced
+by the amendment's same-day escalation ask. See
+[Amendment (2026-09-23): review convergence](#amendment-2026-09-23-review-convergence)
+below. Everything else above stands unchanged.
+
 ### Implementation notes (not part of the ratified text)
 
 Everything below is this repository's own choice about HOW to carry out
@@ -236,7 +246,10 @@ every part of it:
   path landing in `tier2.globs` is treated as owner-approve-first; a
   change the RULE would put in this row by its own judgment, but that
   touches no `tier2.globs` path, is not currently caught by any code in
-  this repository at all.
+  this repository at all. The row's 3-round trigger is superseded by the
+  review-convergence amendment's budget and triggers (see
+  [Amendment (2026-09-23): review convergence](#amendment-2026-09-23-review-convergence));
+  no code in this repository counts review rounds under either version.
 - **"Land, log and notify"** has NO code implementation in this slice —
   see "Implementation notes" above.
 - **"The coordinator shouldn't pick the tier for its own work"** (Accepted
@@ -350,3 +363,105 @@ same gap this section describes for the files above), since it documents
 the gate mechanics generally and does not itself carry the rule text, the
 hook definition, or the record.
 
+## Amendment (2026-09-23): review convergence
+
+The owner ratified this amendment in owner chat on 2026-09-23, selecting
+the answer "Ratify as written (Recommended)" to a structured question
+that asked for ratification of the list below.
+[`governance/decisions/hitl-review-convergence.json`](../governance/decisions/hitl-review-convergence.json)
+is the durable record: it quotes the question, the answer, the selected
+option's description and the list, all verbatim, with `channel:
+"owner-chat"`, not independently verifiable, as the rule above requires
+of every owner-chat record. That record is the source of truth if this
+section and it ever disagree. It does not edit or replace
+`governance/decisions/hitl-escalation-rule.json`: that record, and the
+rule quoted above, stay in force except for the two parts named below.
+
+**The ratified list, reproduced VERBATIM.** It is written in the
+coordinator's voice, addressed to the owner: *you* and *your* mean the
+owner, *me* and *my* mean the coordinator.
+
+> 1. **Charter before round 1.** Required for gate, governance, security or release paths, or over about 300 lines across the stack. It states the goal, adversary, non-goals, what "done" means, the blocking bar and the round budget. Five clauses are always on and can't be removed: harm, authority or permission effects, false claims, rule fidelity, and correctness. Reviewers first review the charter itself; they can add clauses, never remove them, and a charter defect blocks.
+> 2. **Structured findings.** Each blocking finding cites a charter clause. The reviewer, not the author, labels it a new class or a known class, and a known class must cite its earlier instance. A finding with no clause becomes an issue.
+> 3. **Budget.**
+>    - The default is 2 rounds. A charter can ask for more, and that request is approved with the charter.
+>    - In round 2, the same reviewers check their own findings, and one fresh strong-class final reviewer joins, as your rule requires. New findings block only under the always-on clauses.
+>    - One automatic extra round is allowed only when blockers strictly shrink and every blocker is a new harm-class finding. Otherwise the PR goes to you.
+> 4. **Triggers.** An item goes to you when any of these happens:
+>    - the budget is exhausted;
+>    - the review-run cap is hit;
+>    - it stalls, with no progress since the last push, CI and queue time excluded;
+>    - there's a value dispute.
+>
+>    Reviewer disagreement doesn't go to you. The stricter view wins, as your rule already says. A repeat of a known class makes me close that class by design, or document it as residual risk; it doesn't reach you either.
+> 5. **Escalation packet.** One question, with options, my recommendation, a default and a deadline. It's asked same-day, at most twice a day, with related items merged.
+>    - **Default for ordinary PRs:** park it and ship the parts that have converged.
+>    - **Authority or governance PRs:** park the whole PR, never a partial landing.
+>    - **Live-harm fixes:** ship the smallest fix and file the rest. <!-- facts-gate:ignore -->
+> 6. **Records.** Your answers, budget grants and deadline defaults are all recorded. A deadline default is recorded as `decidedBy: default`, so it can never count as your authority.
+> 7. **Beyond reviews.** CI reruns, rebase churn and queue ejections get their own caps. A clean mechanical rebase, verified by a range-diff, keeps its review clearance.
+> 8. **Tooling.** `review-loop-status` starts report-only, with its own charter. A quote-fidelity test checks that quoted rule text is word for word, and that reviewers receive the rule and charter verbatim.
+> 9. **Metrics.** Reviewed at the Friday cut:
+>    - rounds to converge;
+>    - escalations;
+>    - your decision latency;
+>    - agent runs per merged PR;
+>    - escaped defects;
+>    - park rate.
+>
+>    Pairing speed with escaped defects keeps the speed targets from pushing reviewers to approve.
+
+### What the amendment changes in the rule above (not part of the ratified text)
+
+This subsection and the next are this repository's own explanation.
+They add no authority beyond the list above; where they seem to, the
+list governs.
+
+- **The 3-round trigger.** Accepted item 5 ("after 3 rounds that go
+  nowhere") and the "Your approval first" table row ("or 3 rounds that go
+  nowhere") are superseded by the list's item 3 (the round budget) and
+  item 4 (the triggers). Value disputes still go to the owner, and
+  reviewer disagreement still does not; item 4 restates both.
+- **Ask timing.** The table's "batched for Friday unless urgent" is
+  superseded by item 5: an escalation ask goes out the same day, at most
+  twice a day, with related items merged. The owner saw this change
+  called out when ratifying: the amendment followed a red-team whose
+  recommendations were adopted, except that asks go same-day rather than
+  being batched to Friday.
+- **Everything else stands**, including the fresh strong-class final
+  reviewer for governance, security and gate changes (item 3 keeps it),
+  the channel rule, and "Changing this rule itself". The quoted rule
+  text above is not edited.
+
+### Implementation status (not part of the ratified text)
+
+- **Nothing in the list is enforced by code yet.** No script checks for a
+  charter, counts rounds, applies a trigger, caps CI reruns or rebases,
+  or collects the metrics. They bind agent work as process only. The
+  option the owner selected also says the coordinator will "apply the
+  budget to live work immediately, starting with #1354".
+- **Charter template.** [`docs/templates/pr-charter.md`](templates/pr-charter.md)
+  holds the charter fields and the five always-on clauses from item 1,
+  for a pull request body to copy.
+- **Follow-up work, not in the pull request that added this section:**
+  the `review-loop-status` script and the quote-fidelity test named in
+  item 8, and issue or pull-request template changes under `.github/`.
+- **`decidedBy: default` is not yet a valid value.**
+  `scripts/check-decision-records.mjs` accepts only `owner` and
+  `consensus` for `decidedBy`, so a deadline default cannot yet be
+  recorded under `governance/decisions/` in the form item 6 names.
+  Recording one as `decidedBy: "owner"` instead would contradict item 6,
+  which says a deadline default can never count as the owner's
+  authority.
+- **One markup comment inside the quote.** The line quoting item 5's
+  live-harm default ends with an HTML comment, `facts-gate:ignore`, so
+  the strategist facts gate (`npm run check:strategist-subject`) does
+  not read the ratified wording as an untraced superlative claim. It
+  renders as nothing and changes no word of the quote.
+- **Tier and hook coverage of the amendment record.**
+  `governance/decisions/hitl-review-convergence.json` is tier-2 through
+  the `governance/decisions/**` glob in `governance/review-tiers.json`.
+  Its name does not match the narrower `hitl-escalation-rule*.json` glob,
+  and it is not in the protected basenames of the deny hook described in
+  [`docs/HITL-HOOKS.md`](HITL-HOOKS.md). Widening the hook is a change to
+  the hook itself and is left to a separate pull request.

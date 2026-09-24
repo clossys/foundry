@@ -43,6 +43,37 @@ an ordinary edit here (fixing a typo, adding a cross-reference,
 documenting a new gate behavior) never needs owner-only review the way an
 edit to the rule text itself does.
 
+## Amendment (2026-09-23): review convergence
+
+The owner ratified a review-convergence amendment to the escalation rule
+on 2026-09-23. The verbatim ratified list is quoted in exactly one place
+in the docs,
+[`docs/HITL-RULE.md`'s amendment section](HITL-RULE.md#amendment-2026-09-23-review-convergence),
+and in full in its decision record,
+[`governance/decisions/hitl-review-convergence.json`](../governance/decisions/hitl-review-convergence.json).
+It is not copied here, for the same reason the rule itself is not: this
+file is tier-1, and a second copy of ratified text is one more place for
+it to drift.
+
+What it means for this document (this repository's own summary, not
+ratified text; the list governs):
+
+- The rule's 3-round escalation trigger is replaced by the amendment's
+  round budget and triggers. This document never stated that trigger
+  itself, and `scripts/land-stack.mjs` does not count review rounds.
+- Charters: [`docs/templates/pr-charter.md`](templates/pr-charter.md) holds
+  the charter fields and the five always-on clauses, for a pull request
+  body to copy.
+- None of the amendment is enforced by code yet. See the amendment
+  section's own implementation-status notes for the gaps, including the
+  fact that `scripts/check-decision-records.mjs` does not yet accept
+  `decidedBy: default`.
+- "The three tiers" below still describes only what the code classifies.
+  Its tier-1 wording on escalating reviewer disagreement to the owner
+  predates the ratified rule. Under both the rule and the amendment,
+  reviewers disagreeing on severity take the stricter view instead of
+  escalating; a value dispute still goes to the owner.
+
 ## The three tiers
 
 **This is the CODE-LEVEL classification `scripts/land-stack.mjs` actually
