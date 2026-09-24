@@ -616,9 +616,31 @@ test("evaluateReleasePrFootprint: an unrelated pending changeset deleted alongsi
   assert.match(result.reason, /does not name only packages bumped in this diff/);
 });
 
-test("evaluateReleasePrFootprint: no lockfile in the diff at all is fine -- nothing to check there", () => {
+// issue #1331: a version bump whose diff never touches package-lock.json at
+// all used to pass the footprint check outright -- the per-file loop simply
+// never had a lockfile FILE to run isLockfilePureVersionBump() against, so
+// its silence read as "nothing to check there" instead of "a release PR
+// must regenerate the lockfile too". apply-release-changesets.mjs (the only
+// real producer this shape is ever checked against) always regenerates
+// package-lock.json in the same run whenever it applies anything, so an
+// absent lockfile is itself a structural defect in the diff, not a
+// no-op case.
+test("evaluateReleasePrFootprint: a version bump with package-lock.json absent from the diff entirely is refused (issue #1331)", () => {
   const [base, head] = manifestPair("1.0.0", "1.0.1");
   const result = evaluateReleasePrFootprint({ files: [{ path: "packages/alpha/package.json", status: "modified", baseContent: base, headContent: head }] });
+  assert.equal(result.ok, false);
+  assert.match(result.reason, /package-lock\.json is absent from the diff/);
+  assert.match(result.reason, /packages\/alpha/);
+});
+
+test("evaluateReleasePrFootprint: the SAME bump, with package-lock.json present and a legitimate pure version bump, passes (package-lock.json is the only thing missing above)", () => {
+  const [base, head] = manifestPair("1.0.0", "1.0.1", { name: "@clossys/alpha" });
+  const result = evaluateReleasePrFootprint({
+    files: [
+      { path: "packages/alpha/package.json", status: "modified", baseContent: base, headContent: head },
+      { path: "package-lock.json", status: "modified", baseContent: LOCK_BASE, headContent: lockWithAlphaBumped("1.0.1") },
+    ],
+  });
   assert.equal(result.ok, true, result.reason);
 });
 

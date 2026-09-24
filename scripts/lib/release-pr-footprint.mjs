@@ -50,7 +50,13 @@
 //     why "a valid split range" (this module's own first-draft approach)
 //     was not strict enough.
 //   package-lock.json  -- status "modified"; isLockfilePureVersionBump()
-//     -- see above and that function's own header.
+//     -- see above and that function's own header. MUST APPEAR IN THE DIFF
+//     AT ALL whenever any packages/<dir>/package.json bumps a version
+//     (issue #1331) -- a version bump that never ran `npm install
+//     --package-lock-only` at all has nothing here for isLockfilePureVersionBump()
+//     to judge, and a footprint check that stays silent about an absent
+//     file is not "no opinion", it is a pass by omission. See the absent-
+//     lockfile check at the end of evaluateReleasePrFootprint() below.
 //   .changesets/<slug>.md  -- status "removed" ONLY, AND its content AT
 //     BASE must name only packages this diff actually bumps -- deleting
 //     an unrelated PENDING changeset (one that names some other package
@@ -1001,6 +1007,14 @@ export function evaluateReleasePrFootprint({ files }) {
     }
   }
 
+  // Set by the lockfile branch below the moment ANY file in this diff
+  // matches RELEASE_PR_FILE_PATTERNS.lockfile -- checked once, after this
+  // loop, against `bumpedDirs` (issue #1331: a version bump whose diff
+  // never touches package-lock.json at all has nothing for the lockfile
+  // branch to run against, so without this check the footprint's silence
+  // on an absent file was indistinguishable from "nothing to object to").
+  let sawLockfile = false;
+
   for (const file of files) {
     if (RELEASE_PR_FILE_PATTERNS.packageManifest.test(file.path)) continue; // already validated above
 
@@ -1037,6 +1051,7 @@ export function evaluateReleasePrFootprint({ files }) {
     }
 
     if (RELEASE_PR_FILE_PATTERNS.lockfile.test(file.path)) {
+      sawLockfile = true;
       if (file.status !== "modified") return { ok: false, reason: `"${file.path}" has status "${file.status}" -- expected modified` };
       if (!isLockfilePureVersionBump(file.baseContent, file.headContent, bumpedDirs, bumpedVersionsByName, bumpedManifestsByName, devDependencyOnlyDirs, devDependencyOnlyManifestsByName)) {
         return { ok: false, reason: `"${file.path}" changes are not limited to the bumped workspace packages' version fields` };
@@ -1053,6 +1068,33 @@ export function evaluateReleasePrFootprint({ files }) {
     }
 
     return { ok: false, reason: `"${file.path}" (${file.status}) is not a release-PR-shaped change` };
+  }
+
+  // ABSENT LOCKFILE IS A REFUSAL, NOT SILENCE (issue #1331)
+  // -----------------------------------------------------------------------
+  // `bumpedDirs` is non-empty by construction at this point (checked right
+  // after PASS 1 above). Every one of those bumps came from a real
+  // `packages/<dir>/package.json` version change this diff makes, and
+  // scripts/apply-release-changesets.mjs -- the only producer this shape is
+  // ever checked against -- always regenerates package-lock.json in the
+  // same run whenever it applies anything at all. A diff that bumps a
+  // manifest's version but never touches package-lock.json in the same
+  // diff (`sawLockfile` stays false) skipped that regeneration -- the
+  // per-file loop above had nothing to run isLockfilePureVersionBump()
+  // against, because there was no lockfile FILE to run it against, and
+  // silently having "no opinion" about a missing file is exactly the gap
+  // this closes: the footprint's whole job is to prove a diff is NOTHING
+  // MORE than the producer's shape, and a diff with no lockfile change at
+  // all is missing a piece the producer always writes, not merely quiet
+  // about one. (check-lock-workspace-versions.mjs already refuses this
+  // shape too, independently, in CI's separate "workspace link integrity"
+  // job -- this is defense in depth for the SAME gap inside this module,
+  // not the only place it is caught.)
+  if (!sawLockfile) {
+    return {
+      ok: false,
+      reason: `package-lock.json is absent from the diff, but ${bumpedDirs.map((d) => `packages/${d}`).join(", ")} bumped a version in this diff -- a release PR must regenerate the lockfile in the same diff`,
+    };
   }
 
   return { ok: true, reason: "every changed file is release-PR shaped" };
