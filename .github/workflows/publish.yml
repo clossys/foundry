@@ -256,19 +256,27 @@ jobs:
       # the tracked tree, and the git/npm toolchain; nothing in it depends on
       # the dispatched package, an input, or the time of the run. So on the
       # only ref that can upload (`publish` requires refs/heads/main) it
-      # re-proved what the required `build and test` context had already
-      # proved on this exact commit: main advances only through the merge
-      # queue (ruleset 20924588: merge_queue, no bypass actors), the
-      # merge-group commit IS the main commit, and ci.yml's
-      # `candidate-qualification-shard` matrix runs every record on every
-      # `merge_group` event (check-touches-packages never skips outside a
-      # pull_request), fanned in to `build and test`.
+      # re-proved what required CI had already proved: main advances only
+      # through the merge queue (ruleset 20924588: merge_queue, no bypass
+      # actors), the merge-group commit IS the main commit, and ci.yml's
+      # `candidate-qualification-shard` matrix, fanned in to the required
+      # `build and test`, runs every record on every non-prose merge-group
+      # commit (check-touches-packages never skips outside a pull_request;
+      # classify-change-tier skips the shards only for tier `prose`, never
+      # `packed-prose`). Prose-tier paths are disjoint from the walk's
+      # inputs: at HEAD the sharded walk reads only governance/**,
+      # package-scope.json and scripts/**, and the prose paths the trio
+      # records bind are read only at fixed historical commits once the trio
+      # publication closure is valid, as it is on main (see
+      # gated-script-prose-inputs.mjs's entry for this script). A prose-only
+      # main commit therefore relies on its nearest non-prose ancestor's
+      # proof.
       #
       # Where each invariant is now proven:
       #   - every retained record's joins, single introduction and unchanged
       #     bytes, the sealed-record set, cohort/quarantine/publication
-      #     consistency and the prepublication PR tail: required CI, on this
-      #     commit, all records;
+      #     consistency and the prepublication PR tail: required CI, all
+      #     records, on this commit or its nearest non-prose ancestor;
       #   - the same per-record invariants for THIS package's current-version
       #     record, re-derived here on the pinned publish runtime (not CI's
       #     Node 20), plus the cross-record checks in full: this step;

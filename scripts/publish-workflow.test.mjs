@@ -148,9 +148,10 @@ test("qualification is least privilege and owns candidate execution", () => {
 
 // ---------------------------------------------------------------------------
 // The qualify job re-derives only the dispatched package's retained record.
-// Every retained record is re-derived by required CI on the merge-group
-// commit, which is the commit main advances to; the unscoped walk here
-// repeated that for ~25 minutes per dispatch (writer run 36038887231).
+// Every retained record is re-derived by required CI on every non-prose
+// merge-group commit, which is the commit main advances to; the unscoped
+// walk here repeated that for ~25 minutes per dispatch (writer run
+// 36038887231).
 // ---------------------------------------------------------------------------
 
 const executableLines = (text) => text.split("\n").filter((line) => !/^\s*#/.test(line));
@@ -184,12 +185,29 @@ test("qualify re-derives only the dispatched package's qualification record, nev
   assert.ok(position(qualify, "- name: Re-derive the dispatched package's qualification record") < position(qualify, "- name: Install repository dependencies without lifecycle scripts"), "fail before the install and build");
 });
 
-test("the records qualify no longer re-derives are still required on every merge-group commit", () => {
+/** One top-level job of ci.yml, from its key to the next job key. */
+function ciJob(ci, name) {
+  const start = ci.indexOf(`\n  ${name}:\n`);
+  assert.notEqual(start, -1, `ci.yml is missing ${name} job`);
+  const rest = ci.slice(start + 1);
+  const next = rest.slice(1).search(/^  [a-z][a-z0-9-]*:\n/m);
+  return next === -1 ? rest : rest.slice(0, next + 1);
+}
+
+test("the records qualify no longer re-derives are still required on every non-prose merge-group commit", () => {
   const ci = readFileSync(".github/workflows/ci.yml", "utf8");
   assert.match(ci, /^  merge_group:$/m);
   assert.match(ci, /run: node scripts\/check-candidate-qualification\.mjs --shard-index \$\{\{ matrix\.shard \}\} --shard-count \$\{\{ env\.CANDIDATE_QUALIFICATION_SHARDS \}\}/);
-  assert.match(ci, /needs: \[push-tree, candidate-qualification, readme-examples-typecheck, packed-consumer-readiness\]/);
-  assert.match(ci, /"candidate-qualification=\$\{\{ needs\.candidate-qualification\.result \}\}"/);
+  // The shards may skip for the `prose` tier (its paths are disjoint from the
+  // walk's inputs) and for a duplicate push, and for nothing else: never for
+  // `packed-prose`, whose README/SKILL.md paths are inside package trees.
+  const shardIf = ciJob(ci, "candidate-qualification-shard").split("\n").filter((line) => /^    if: /.test(line));
+  assert.deepEqual(shardIf, ["    if: always() && (github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true') && (needs.classify.result != 'success' || needs.classify.outputs.tier != 'prose')"]);
+  assert.doesNotMatch(shardIf[0], /packed-prose/);
+  const build = ciJob(ci, "build");
+  assert.match(build, /^    name: build and test$/m);
+  assert.match(build, /^    needs: \[[^\]]*\bcandidate-qualification\b[^\]]*\]$/m);
+  assert.match(build, /"candidate-qualification=\$\{\{ needs\.candidate-qualification\.result \}\}"/);
   const touches = readFileSync("scripts/check-touches-packages.mjs", "utf8");
   assert.match(touches, /if \(eventName !== "pull_request"\) \{\n\s+report\(true,/);
 });
