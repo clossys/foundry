@@ -2,12 +2,16 @@
 
 - **Status:** draft, awaiting owner decisions. Documentation only: this file
   changes no code, contract, workflow or gate.
-- **Tracking issue:** #1178 (the M2 delivery layer). Interacts with #1334
+- **Tracking issue:** #1178 (the delivery layer). Interacts with #1334
   (inventory validation), #1173 (shared engagement context), #1215 (product
-  repository standard), #1175 (plan file contract), #1179 (clone on approval)
-  and the client-journey tracker #1187.
-- **Read against:** `origin/main` at `53d5ef68`. Every `file:line` below was
-  read at that commit.
+  repository standard), #1175 (plan file contract), #1179 (clone on approval),
+  #885 (Integrator's currency and provenance gate) and the client-journey
+  tracker #1187.
+- **Read against:** `origin/main` at `53d5ef68` for sections 1 to 11, and at
+  `b0503d1a` for section 12. `git diff 53d5ef68 b0503d1a` is empty for
+  `packages/launcher`, `packages/advisor`, `packages/starter`,
+  `packages/integrator` and `docs/contracts`, so every `file:line` below
+  holds at both commits.
 
 ## Summary
 
@@ -30,13 +34,26 @@ owners at the credential boundary:
 3. **Packages verify on both sides of the agent's step.** `verify` runs
    before the push and `status` runs after the pull request is opened. Both
    compare the pushed tree against the change-set digest. The client
-   repository's CI then proves the install (Starter) and checks that the
-   pull request touches only the declared paths.
+   repository's CI checks that the pull request touches only the declared
+   paths, and Starter proves the install once it is in the base, one merge
+   later (section 12.3).
 
 This keeps the grooming principle ("packages own the deterministic
 mechanics; the client's agent makes the live changes"). It amends it in one
 way: an agent step with no verification on both sides would let phrasing
 change the bytes, and #1178 exists to rule that out.
+
+A client does not install once. They update, re-plan, add and remove
+repositories, remove packages, and edit what was installed.
+**[Section 12](#12-the-client-lifecycle-install-update-remove-repair)**
+extends the design to that whole lifecycle with one model: a change set is
+always *desired state minus installed state*. Installed state is a ledger
+committed in each repository, joined to change sets the hub keeps, and
+checked against the tree on every run. The flow owns only bytes it wrote,
+and changes them only while they are still the bytes it wrote. A removal or
+repair refuses a file the client has edited; it never overwrites it.
+[Section 13](#13-decisions-needed-from-the-owner) lists every owner
+decision, D1 to D20.
 
 ## 1. Problem and current state
 
@@ -136,6 +153,11 @@ pull request.
   files and also pull request titles and bodies, which on a public
   repository are permanent and emailed to watchers. This repository's own
   `AGENTS.md` ("Conversation surface") records that lesson.
+- **G8.** The same model serves every later run. An update, re-plan,
+  removal or repair is a change set computed the same way, reviewed the
+  same way, and verified the same way as an initial install (section 12).
+- **G9.** No run ever overwrites or deletes bytes the flow did not write,
+  or bytes the client has changed since the flow wrote them.
 
 ### Non-goals
 
@@ -147,7 +169,9 @@ pull request.
   independent pull requests instead.
 - Deploying, provider CLIs, or application code (`apps/*`). These stay with
   the agent and Builder (#1211).
-- Detecting drift after merge. That is Integrator's job (#885).
+- Judging package currency and provenance. That is Integrator's job
+  (#885). Apply consumes Integrator's findings (section 12.4) and adds only
+  a read-only check of the files and keys it owns (section 12.6).
 - Hosting a service or holding a GitHub App credential. See alternative B.
 
 ## 3. Threat model
@@ -161,11 +185,16 @@ installed.
 | T1 | **Credential exposure.** A package handles or logs a token, or a third-party install script runs while a token is in the environment. | Any package step that calls `gh`, `git push` or `npm install`. | Package steps take no token and make no authenticated call. Materialization regenerates the lockfile with `npm install --package-lock-only --ignore-scripts` (Starter already uses `--ignore-scripts`, `caller-workflow.md:113-114`) under a sanitized environment that forwards no `*_TOKEN`. Push and pull request creation happen in the agent, under the client's session. |
 | T2 | **Blast radius across repositories.** One bad plan edits every inventoried repository, or a repository outside the approved set. | Staffing and inventory resolution. | A change set is computed only for a repository that is (a) in `executionAuthorization.permittedRepositoryIds` or, for a staffing-only set, in the approved `staffing` list, (b) present in an inventory that passes the strict validation in section 7 (#1334), and (c) a clone whose origin matches its id (existing check, `core.ts:1001-1006`). Each change set also carries its own path allow-list, and a CI check refuses any pull request touching a path outside it. |
 | T3 | **Partial application.** Some repositories get their pull request and others fail, and the run reports success. | The per-repository loop. | Results are per repository and use the ternary. The bundle is `satisfied` only when every in-scope repository is `proposed` or `applied`. Otherwise it is `indeterminate` (something could not be observed) or `violated` (a precondition failed), with a per-repository reason. Pull requests are designed to stand alone (section 6), so a partial state is safe to leave, and resuming completes it. |
-| T4 | **Replay.** A stale or superseded approval is used again, or an old change set is re-pushed after the plan has changed. | Resume, or copying a bundle to another hub. | The change-set digest covers the plan digest, the authorization's `expiresAt`, the base commit and the file set. `verify` re-runs execution readiness at the current instant, so an expired or superseded grant refuses. Branch names and pull request markers carry the digest, so a stale set is recognized as `superseded`, never merged over a newer one. |
+| T4 | **Replay.** A stale or superseded approval is used again, or an old change set is re-pushed after the plan has changed. | Resume, or copying a bundle to another hub. | The change-set digest covers the plan digest, the base commit, the ledger generation it starts from, and the file set. It does not cover the authorization (section 12.3), so re-approving the same bytes keeps the same branch. `verify` re-runs execution readiness at the current instant, so an expired or superseded grant refuses. Branch names and pull request markers carry the digest, so a stale set is recognized as `superseded`, never merged over a newer one. |
 | T5 | **Tampering between verify and push.** The agent, or anything in its session, edits files after `verify` or adds an unrelated commit. | The agent step. | `status` compares the pushed head tree with the digest after the fact. The CI path-scope check refuses undeclared paths. The digest is shown in the pull request body, so the client can see which bytes they are approving. Section 5 argues that this is enough; alternative A is the stronger option if it is not. |
 | T6 | **Privacy leak into a public repository.** Founder prose appears in `clossys/brief.json` or a pull request body in a public repository. | Brief writing, pull request rendering. | Target visibility is observed (`gh repo view --json visibility`, read-only) before materializing. The brief is validated at the write boundary with Advisor's own context rule. For a public target, free-text `problem` is refused unless the owner decides otherwise (D4). Pull request text is rendered from fixed ids and digests only, never from context or `problem`. |
 | T7 | **Supply-chain substitution.** The installed tarball differs from the one approved. | Lockfile regeneration. | The change set pins `name@version#integrity` from `ImmutablePackageRef` (`types.ts:65`). `verify` checks that the regenerated lockfile's `integrity` for that package equals the plan's SRI, and that no other top-level dependency changed. Starter then re-proves the install in CI from the protected base. |
 | T8 | **Mis-scoped inventory (#1334).** A foreign document is treated as the inventory. | `--inventory`, `externalInventory`. | Strict schema validation (section 7, V1). A `custom`-shaped external inventory stays `indeterminate`, as it already does (`packages/launcher/src/inventory-adoption.ts:59-67`). |
+
+Later runs add threats T9 to T15: ledger forgery, clobbering client edits,
+repository name reuse, update-time supply chain, downgrade replay, approval
+fatigue, and removal mistaken for erasure. Section 12.9 covers them and the
+changes to T2 to T7.
 
 Out of scope: a compromised client machine or agent session. Such a session
 already holds the client's credentials. The design only makes sure the
@@ -263,6 +292,9 @@ Notes on the shape:
   instead of by prose.
 - The digest excludes timestamps, so recomputing from the same inputs gives
   the same set (G2).
+- Every change set also writes the repository's ledger,
+  `clossys/.state/installed.json`, and records the ledger generation it
+  starts from. Section 12.2 defines both.
 
 ### 4.4 Repository states (derived, never declared)
 
@@ -278,6 +310,8 @@ from evidence each time. Nothing records "done" by assertion.
 | `superseded` | An open pull request carries an older `changeSetDigest` for the same repository. |
 | `diverged` | A pull request with the marker exists, but its head tree does not match. This is T5. |
 | `indeterminate` | The clone is missing, `gh` is unavailable, visibility cannot be read, or the base moved under a `before` hash. |
+| `proved` | `applied`, and a Starter run returned `0` on a pull request whose base contains every `after` hash. Starter proves the base, so this lags `applied` by one merge (section 12.3). |
+| `held` | The set was computed, but at least one path or key is refused because the client edited it, or an open pull request for this repository carries client commits (sections 12.5 to 12.7). Nothing is written until the client chooses. |
 
 ## 5. Division of labour: testing the principle
 
@@ -402,11 +436,16 @@ phase (section 9).
   state returns to `planned`, or drops out when the plan changes.
 - After merge: `launcher-apply-plan revert --repo <id>` materializes the
   `inverse` change set. It restores every `before` hash, or deletes a file
-  whose `before` was `null`. For package acts it uses the work item's own
-  declared `rollback` (`types.ts:67`, `:71`): `install` inverts to an exact
-  `remove`, and `relocate` inverts to relocating back. The revert is a normal
-  pull request through the same verify, CI and merge path. The default branch
-  is never rewritten.
+  whose `before` was `null`. For package acts it inverts the act itself:
+  `install` inverts to an exact `remove`, and `relocate` inverts to
+  relocating back. The work item's declared `rollback` (`types.ts:67`,
+  `:71`) is prose (`{ procedure, evidenceSource }`), so it is cited in the
+  pull request, not executed. The revert is a normal pull request through
+  the same verify, CI and merge path. The default branch is never rewritten.
+- The stored `inverse` is valid only while the tree still holds every
+  `after` hash. Once anything has changed since, the revert is recomputed
+  from the ledger and the tree, and refuses client-edited paths (section
+  12.5).
 
 ## 7. Validation before any live change
 
@@ -422,11 +461,13 @@ only and writes nothing into it.
 | V4 | **The clone is the repository, and it is clean.** Origin matches the id (existing). `git status --porcelain` is empty; this check is new for siblings. The local default-branch head equals the remote's (read-only fetch). A missing clone is `indeterminate`, and cloning stays the explicit `--clone-missing` (#1179). | `indeterminate` (missing) or `violated` (dirty, mismatched) | #1179 |
 | V5 | **Visibility and privacy.** Observe visibility. For a public target, apply the D4 rule to `problem`. Render the pull request text from ids and digests only, and scan it with the same identity rules as the brief. | `violated` | #1173, `AGENTS.md` "Conversation surface" |
 | V6 | **Dry materialization.** Materialize into a temporary worktree, compute the digest, and regenerate the lockfile with `--ignore-scripts`. Check the lockfile invariants (SRI equality, no other top-level changes) and that every changed path is in `pathAllowList`. | `violated` | T7 |
-| V7 | **Proof path exists.** For an `apply` phase, the base already carries Starter's caller workflow, and a request naming these exact packages. Otherwise the repository gets a `setup` phase set first. | Re-planned to `setup` | Starter, section 9 |
+| V7 | **Proof path exists.** For an `apply` phase, the base already carries Starter's caller workflow, Starter and Advisor pinned exactly, and a request whose packages are installed in that base. Otherwise the repository gets a `setup` phase set first. The set updates the request to name its own target, which Starter proves on the next pull request (section 12.3). | Re-planned to `setup` | Starter, section 9 |
+| V8 | **Ledger and ownership.** The ledger at the default-branch head parses, joins to change sets the hub holds, and matches the tree on every path and key the set changes. Every write is compare-and-swap: the current bytes must equal the ledger's `after`, or be absent where the ledger has nothing. | `held` for the refused paths; `indeterminate` if the ledger cannot be read | Section 12.2 |
+| V9 | **Provenance of every new version.** Each package version the set installs or updates to has registry provenance that Integrator verifies (`inspectProvenanceStatement`, #885). | `violated`, unless D20 allows the named first-publication exception | T12, section 12.4 |
 
-Only when V1 to V7 pass for a repository is its change set written to the
-bundle as `planned`. `materialize` re-runs V3 and V4, because time and the
-working tree may have moved since `plan`.
+Only when V1 to V9 pass for a repository is its change set written to the
+bundle as `planned`. `materialize` re-runs V3, V4 and V8, because time, the
+working tree and the default branch may have moved since `plan`.
 
 ## 8. How the shared context (#1173) feeds the plan
 
@@ -479,11 +520,18 @@ working tree may have moved since `plan`.
   protected base and reads the request from there
   (`caller-workflow.md:12-29`, `:141`). A pull request that introduces the
   request cannot be proved by it. So a repository's initial application is
-  two pull requests: `setup` (layout, brief, skills, caller workflow and
-  request; proved by the template CI), then `apply` (the exact package acts;
-  proved by Starter). Later applications are one pull request per
-  repository, as #1178 describes. This deviation from #1178's literal
-  wording is D3.
+  two pull requests: `setup` (layout, brief, skills, caller workflow,
+  request, and exact Starter and Advisor pins; proved by the template CI),
+  then `apply` (the exact package acts). Later applications are one pull
+  request per repository, as #1178 describes. This deviation from #1178's
+  literal wording is D3.
+- **Correction from the lifecycle review.** The trusted job also *installs*
+  from the base (`npm ci --ignore-scripts` on the base checkout,
+  `caller-workflow.md:137-142`, `:161-163`) and checks installed identities
+  in that directory (`packages/starter/src/node-runtime.ts:146-149`). So a
+  Starter run on the `apply` pull request proves `setup`, and the `apply`
+  install is proved on the next pull request after it merges. The same is
+  true of every later update. Section 12.3 and D17 deal with this.
 - **Default staffing.** A v0 client has one product repository, and every
   staffed role staffs it (#1178 comment). So in the common case the bundle
   holds one repository, and #1178's "two pull requests" done-when is met by
@@ -509,7 +557,7 @@ introduces a credential Clossys holds for client repositories, which
 contradicts "the human holds intent and authority" (#1187) and the trust
 statement (#1225). It is a hosted front door the owner has explicitly left
 unscheduled (#1220 decision). It is also a new public attack surface. Not
-recommended for M2.
+recommended.
 
 **C. The agent applies the plan from skill guidance, with no change set.**
 The skill tells the agent which versions to install and which files to
@@ -550,8 +598,11 @@ repository until step 4.
    clean clone on the named branch, including the `setup` template from
    #1215 and the exact package acts. Regenerate the lockfile with
    `--ignore-scripts` under a sanitized environment, and check the
-   invariants. The existing `--plan --brief --repo` invocation stays as a
-   compatible alias for a brief-only set. *Revert:* remove the subcommands;
+   invariants. The ledger (section 12.2) ships in this step, as a file of
+   every change set from generation 1. An initial install without it would
+   leave the client with an install no later run can safely update. The
+   existing `--plan --brief --repo` invocation stays as a compatible alias
+   for a brief-only set. *Revert:* remove the subcommands;
    still no remote effect.
 4. **`status`, the rendered pull request body, and the agent procedure in
    the Launcher skill.** This is where live pull requests start, done by the
@@ -560,17 +611,455 @@ repository until step 4.
    section; any pull requests already opened are ordinary pull requests the
    client can close.
 5. **Starter bootstrap end to end.** The setup set carries the caller
-   workflow and request, and the apply set is proved by Starter. This meets
-   #1178's done-when on the fixture hub: two repositories, two pull
-   requests, Starter activation passing on both. *Revert:* the setup
+   workflow, the request, and exact Starter and Advisor pins. Starter
+   activation then passes on each apply pull request, proving the merged
+   setup state; each apply install is proved on the next pull request
+   (section 12.3). This meets #1178's done-when on the fixture hub: two
+   repositories, two pull requests, Starter activation passing on both. *Revert:* the setup
    template drops the Starter files; apply falls back to template CI
    only.
-6. **Revert sets and retirement.** Add `launcher-apply-plan revert` from
-   `inverse`. Update the Launcher README ("Appoint does not install
-   packages" stays true; "apply-plan does, through pull requests" is added)
-   and the #1187 ownership row. *Revert:* remove the subcommand.
+6. **Revert sets and retirement.** Add `launcher-apply-plan revert`,
+   from `inverse` while the tree still matches it and recomputed from the
+   ledger otherwise (section 12.5). Update the Launcher README ("Appoint
+   does not install packages" stays true; "apply-plan does, through pull
+   requests" is added) and the #1187 ownership row. *Revert:* remove the subcommand.
 
-### Decisions needed from the owner
+## 12. The client lifecycle: install, update, remove, repair
+
+Sections 1 to 11 describe a plan's initial application. A client then
+comes back: a package has a new version, they re-plan, they add or rename a
+repository, they drop a role, or they edit what was installed. This section
+covers every later run with the same change set, the same `verify` and
+`status`, and the same agent step. Sub-sections 12.4 to 12.7 answer the
+four lifecycle questions. 12.8 and 12.9 give the failure modes and the
+threat-model deltas.
+
+### 12.1 One model: desired state minus installed state
+
+For each repository:
+
+- **Desired state** is computed from the approved plan, the inventory
+  entry, the pinned templates, and the exact package references. It is
+  what sections 4 to 9 already compute.
+- **Installed state** is the ledger at the default-branch head (12.2),
+  checked against the tree.
+- **The change set is the difference**, path by path and owned key by
+  owned key. A first install is the case where installed state is empty.
+
+Every write is compare-and-swap. The flow changes a path only when its
+current bytes equal what the ledger says the flow last wrote, or when the
+path is absent and the ledger has nothing for it.
+
+| Ledger says | Tree has | Desired says | Result |
+| --- | --- | --- | --- |
+| nothing | absent | present | **add** (`before: null`) |
+| nothing | present | present | **refuse the path** (`unowned-existing`). The flow never takes ownership of bytes it did not write. A consumer-owned path in the #1215 layout is skipped with a note instead. |
+| `after = h` | `h` | changed | **update** (`before: h`) |
+| `after = h` | `h` | absent | **remove** (`after: null`) |
+| `after = h` | other bytes | anything | **refuse the path** (`client-edited`). The repository is `held` (4.4). See 12.5 and 12.6. |
+| `after = h` | absent | present | **drift** (`deleted`). Repair is offered (12.6), never folded silently into an update. |
+| `after = h` | `h` | same | no-op |
+
+**What the flow owns.**
+
+- **Whole files** for paths the #1215 layout gives to `@clossys/launcher`
+  or `@clossys/advisor`: `clossys/brief.json`, `AGENTS.md`, `CLAUDE.md`,
+  `.agents/skills/clossys-*`, `clossys/README.md`, and machine files under
+  `clossys/.state/` (`product-repository-layout.json:8`, `:43`, `:50`,
+  `:57`; `consumer-layout.json:35-40`, `:97-103`).
+- **Keys, not files,** inside consumer-owned `package.json`
+  (`product-repository-layout.json:36`): the JSON pointer of each exact pin,
+  for example `/devDependencies/@clossys~1writer`. The client's other keys
+  never conflict with an update.
+- **Invariants, not bytes,** for the lockfile (D7).
+- **Created-only-when-absent files,** such as the Starter caller workflow
+  under consumer-owned `.github/workflows` (`:64`). The ledger records the
+  bytes the flow created. A later update touches such a file only while it
+  still holds those bytes.
+
+Ownership is recorded as digests in the ledger, never as markers inside
+files. JSON has no comments, a marker changes the bytes it describes, and a
+client can copy one into a file the flow never wrote (D10).
+
+The precedent is already in Launcher. `shouldRefreshConsumerAgents()`
+overwrites `AGENTS.md` only when it is absent or holds text Launcher is
+known to have generated (`packages/launcher/src/core.ts:923-929`). The
+ledger generalizes that rule from a few known texts to every file the flow
+writes.
+
+### 12.2 Installed state: the ledger
+
+Each target repository carries `clossys/.state/installed.json` (D9). Every
+change set writes it as one of its `files`, so it changes only through a
+merged pull request. The hub keeps every change set it has materialized,
+content-addressed and append-only, under
+`clossys/.state/apply/change-sets/<digest>.json`.
+
+```json
+{
+  "schemaVersion": 1,
+  "kind": "clossys.installed-ledger",
+  "repository": { "id": "example-owner/product", "nodeId": "R_<opaque>" },
+  "generation": 3,
+  "changeSets": ["sha256:<gen 1>", "sha256:<gen 2>", "sha256:<gen 3>"],
+  "files": [
+    { "path": "clossys/brief.json", "after": "sha256:…", "changeSet": "sha256:<gen 3>" },
+    { "path": ".agents/skills/clossys-writer/SKILL.md", "after": "sha256:…", "changeSet": "sha256:<gen 2>" }
+  ],
+  "keys": [
+    { "file": "package.json", "pointer": "/devDependencies/@clossys~1writer", "value": "0.4.1", "changeSet": "sha256:<gen 2>" }
+  ],
+  "packages": [
+    { "name": "@clossys/writer", "version": "0.4.1", "integrity": "sha512-…", "placement": "devDependencies", "planItem": "wi-3" }
+  ]
+}
+```
+
+- **Where "installed" truth lives.** For packages, the truth is the
+  manifest and the lockfile. Integrator already reads both formats and
+  reports an unreadable lockfile as `indeterminate`, never as "nothing
+  installed" (`packages/integrator/README.md:268-301`). The ledger does not
+  repeat that truth. It records which keys the flow put there, at which
+  value, and for which plan item. For files, the ledger records which paths
+  the flow wrote and the hash it wrote.
+- **How the ledger is trusted.** It is a claim, not evidence. `status`
+  trusts a row only when all of these hold:
+
+  | Check | On failure |
+  | --- | --- |
+  | The ledger parses against its contract. | `indeterminate` (`ledger-unreadable`). Never read as an empty install. |
+  | Every `changeSet` digest is one the hub holds, and the row's `after` appears in that change set's `files`. | The row is ignored as unowned (`ledger-foreign-row`). This is T9. |
+  | `generation` equals the length of `changeSets`, and the last entry is the change set of the last merged apply pull request that `status` observes. | `indeterminate` (`ledger-chain`). |
+  | `repository.nodeId` equals the observed repository's immutable id. | `indeterminate` (`identity`). This is T11. |
+
+  The ledger's own protection is the client's default-branch protection:
+  it only changes by a merge the client made.
+- **States stay derived.** `docs/LIFECYCLE.md` forbids declared state. The
+  ledger records what the flow wrote, not whether it is still there or
+  still healthy. Every state in 4.4 is still derived by comparing the
+  ledger, the tree and the pull requests on each run.
+- **Repositories Launcher touched before the ledger.** Appoint already
+  composes skills into sibling checkouts and records a `sha256` per skill in
+  `clossys/.state/skills.json` (`packages/launcher/src/skills.ts:199-205`),
+  but nothing reads that digest back. A first apply to such a repository
+  runs an adoption pass. It adopts, as generation 0, only files whose
+  current bytes provably match flow output: a skill whose bytes match its
+  `skills.json` digest, and an `AGENTS.md` that `shouldRefreshConsumerAgents()`
+  recognizes. Everything else is unowned. Adoption writes nothing on its
+  own; it rides in the generation-1 change set and is reviewed with it.
+
+### 12.3 First install, tightened
+
+The lifecycle view changes five things in sections 4 to 9.
+
+1. **The initial change set writes generation 1 of the ledger** (migration
+   step 3). If an initial install shipped without it, every early client
+   would later hold an install that no run could safely update or remove.
+2. **The flow never takes ownership of bytes it did not write.** A product
+   repository that already has its own `AGENTS.md` or `.agents/skills`
+   entry gets `unowned-existing` for that path (12.1). The path is reported
+   and left alone. The setup pull request says so.
+3. **Starter proves the base, so proof lags one merge.** Starter's trusted
+   job checks out the pull request's base, runs `npm ci --ignore-scripts`
+   there, and checks installed identities in that directory
+   (`packages/starter/documents/caller-workflow.md:137-142`, `:161-163`,
+   `:181-186`; `packages/starter/src/node-runtime.ts:146-149`). A Starter
+   verdict on any pull request is therefore a verdict on the base's
+   installed packages, joined to that pull request's evidence files. Three
+   consequences:
+   - `setup` must pin Starter and Advisor exactly, because the request
+     names both and Starter validates them from the base
+     (`packages/starter/README.md:37-70`). Those pins are package acts, so
+     they need a work item and an execution authorization. They are not
+     implied by the template, and a staffing-only bundle (D2) cannot carry
+     them.
+   - Each change set that changes a pin the request names (Starter,
+     Advisor, or the target) also updates `.starter/request.json`. The
+     Starter run on that pull request proves the *previous*
+     state. The new state is proved on the next pull request after merge.
+     `status` reports `applied` until then, and `proved` after (4.4).
+   - The request has one `target` (`packages/starter/README.md:58-64`). In
+     a repository with several pinned packages, one is Starter-proved. The
+     others are covered by the lockfile invariants (V6), provenance (V9)
+     and the template CI. D17 asks whether that is enough.
+4. **The change-set digest excludes the authorization.** Section 3 had the
+   digest cover the grant's `expiresAt`. A grant expires no later than its
+   assessment basis (`packages/advisor/src/authorization.ts:57`), so a
+   repeat user re-approves often. If the digest covered the grant, every
+   re-approval of the same bytes would open a new branch and supersede an
+   identical pull request. `verify` still checks the grant at the current
+   instant, so nothing is weaker. The T4 row now says this.
+5. **The bundle digest is defined without the authorization, too.** It is
+   the digest of the plan digest and the sorted repository change-set
+   digests. D2's `subjectDigest` binds that value. That removes a loop in
+   which the approval would have to contain its own result.
+
+### 12.4 Updates
+
+Three things can make a later change set necessary. Each has one detector,
+one path into Advisor, and one output: a change set computed by 12.1.
+
+| Trigger | Detected by | Reaches the plan as | Change set contains |
+| --- | --- | --- | --- |
+| **(a) A new version of an installed package** | Integrator's `judgeCurrency` over the repository's own manifest and lockfile (`packages/integrator/src/currency.ts:166`). `behind` carries a `severity` of `patch`, `minor` or `major` (`:45`). | A `stale` placement cell with `expectedVersion` and `expectedPlacement` (`packages/advisor/src/types.ts:76`). Advisor maps `stale` to an `install` act (`packages/advisor/src/assessment.ts:77`). | The owned key's new value, the lockfile (derived), the request's target if it is the Starter-proved package, the ledger. |
+| Same, for skills | Launcher's health report already counts catalogue skills older than the running Launcher (`packages/launcher/src/manifest.ts:77-90`). | No plan change. Skills are Launcher-owned output, not a package act. | A skills-only refresh of the owned skill files, as a normal reviewed pull request. |
+| **(b) The client re-plans** | Advisor reassessment: `scope-change`, `evidence-change`, `initiative-change`, `readiness-change` or `sponsor-request` (`types.ts:63`). | A new plan with a new `planDigest`, so a new authorization (`authorization.ts:54`). | Only the difference from the ledger. An unchanged repository is a no-op. A package the new plan drops is a `remove` act. A repository dropped from `staffing` gets a removal set for its brief and skills (12.5). A context change is a brief-only refresh (section 8). |
+| **(c) The inventory changes** | Read-only observation (table below) and #1216's drift report, which Launcher already runs on every apply (`packages/launcher/src/core.ts:1180-1183`, `packages/launcher/src/inventory-adoption.ts:50-85`). | Inventory edits go through the strict V1 validator in the hub. Staffing a new repository is a re-plan, as (b). | Depends on the event (below). |
+
+**From Integrator to Advisor.** Advisor already accepts placement cells
+from "a consumer connector" and does not read the tree itself
+(`packages/advisor/README.md:31`). That connector is not built. This RFC
+places it in Launcher, as a pure function, because the hub is the side that
+knows repository ids. Integrator's blindness rule forbids it from holding
+any (`packages/integrator/README.md:118-126`). The mapping:
+
+| Integrator state | Placement cell | Advisor act |
+| --- | --- | --- |
+| `behind` | `stale`, `expectedVersion` = the exact version the plan chooses | `install` |
+| `extra`, `opted-out-and-installed` | `over-install` | `remove` |
+| `absent-without-reason` | `missing` | `install` |
+| `indeterminate`, `unreachable`, `unauthenticated` | none; the repository is `indeterminate` | none |
+
+Integrator reports "latest". A plan never installs "latest" by name. It
+names an exact version and SRI, as every work item already must
+(`types.ts:65`, `:71`), and V9 checks that version's provenance.
+
+One shape hazard: Integrator's `emitCurrencyDelta()` writes a
+`schemaVersion: 1` document with a `repositories` array and calls it
+"launcher-consumable" (`packages/integrator/src/delta.ts:3-20`, `:112-124`).
+That is exactly the shape #1334 showed Launcher accepting as an inventory.
+V1 must refuse it as an inventory, and the connector must read it only as
+a currency delta.
+
+**Inventory events.**
+
+| Event | Observed by | Action |
+| --- | --- | --- |
+| Repository added | The inventory gains an id that passes V1. | Nothing is written until a re-plan staffs it. It then gets the initial-install path (setup, then apply). |
+| Repository renamed | `gh repo view <id> --json nameWithOwner,id` returns a different name for the same immutable id. Launcher already calls `gh repo view` per entry and discards the answer (`core.ts:893-921`). | A hub-only inventory update, proposed for approval. Target change sets stay `indeterminate` (`renamed`) until it merges. The flow never writes through a redirect, because a new repository can later take the old name (T11, D19). |
+| Repository archived | `gh repo view --json isArchived` | `indeterminate` (`archived`). No pull request is possible. The ledger stays as history. Unarchiving resumes with a drift check. |
+| Repository transferred to another owner | Owner no longer matches the hub. Launcher already skips such entries (`core.ts:986-988`). | Released: the flow stops managing it. Nothing is written. |
+| Repository removed from the inventory | The id is gone after V1. | Released by default, not uninstalled (D18). The approval sheet offers a removal set as a separate, explicit item. |
+
+**Keeping an update reviewable.**
+
+- One pull request per repository per bundle, however many items it
+  batches.
+- The body lists each item by id with `from → to` and severity, and the
+  ledger diff shows generation `n → n+1`. It is rendered from ids and
+  digests only (V5).
+- Unrelated drift is never folded in. A repair is its own line item
+  (12.6) and can be declined.
+- A downgrade is shown as a downgrade, never as an update (T13).
+
+### 12.5 Removal
+
+A removal is the inverse change set. The stored `inverse` from section 6 is
+correct only while every path still holds its `after` hash. So a removal is
+always recomputed from the ledger and the tree at the current head, with
+the 12.1 table, where "desired" is absent.
+
+| Path or key | Current bytes | Removal does |
+| --- | --- | --- |
+| Flow-created file (`before: null`) | equal to the ledger's `after` | Delete it. |
+| Flow-changed file (`before: h0`) | equal to the ledger's `after` | Restore `h0`. |
+| Owned key in `package.json` | equal to the ledger's `value` | Delete the key, or restore its earlier value; regenerate the lockfile (derived). |
+| Any owned path or key | different from the ledger | **Refuse it** (`client-edited`). The repository is `held`. The client chooses: release it (the flow drops the ledger row and leaves the bytes), or restore it first (a repair set, 12.6), or leave the removal pending. |
+| Any owned path | already absent | Drop the ledger row. Nothing to delete. |
+| Role records and proof under `clossys/<role>/` | anything | **Never touched.** The flow did not write them; the role did. |
+
+Three rules sit around the table.
+
+- **Removal never deletes a client's work.** The client-edited case is a
+  refusal, not a merge. A three-way merge would need judgement about what
+  the client meant, and removal is the one place a wrong guess destroys
+  data (D11).
+- **Role records stay.** The consumer layout says "Removing a role removes
+  its folder" (`docs/contracts/consumer-layout.json:16`). But those
+  folders hold approved records and append-only proof
+  (`consumer-layout.json:108-119`), which the role wrote over time, not
+  the flow. The removal pull request lists them as left in place. D12 asks
+  the owner to amend the layout rule to match.
+- **Removal is not erasure.** Deleting a file in a pull request leaves it
+  in history, and on a public repository that history is public. Removal
+  cannot undo T6. That is why D4 refuses by default instead of relying on
+  a later removal.
+
+Launcher has one removal today, and it does not meet this bar. Skill
+retirement deletes a composed skill that the previous `skills.json` named
+without comparing its bytes to the recorded digest
+(`packages/launcher/src/skills.ts:208-215`, via `removeComposedSkill()` at
+`:157-164`). It also overwrites each composed skill unconditionally
+(`:196`). A client who edited a composed skill loses the edit on the next
+appoint run. Migration step 8 fixes this with the same compare-and-swap
+check.
+
+### 12.6 Drift and repair
+
+**Who detects what.**
+
+- Package drift (behind, extra, opted out but installed, missing, failed
+  provenance) is Integrator's (#885). Apply consumes it through 12.4.
+- Drift in the files and keys the flow owns is found by
+  `launcher-apply-plan status`, read-only, from the ledger and the tree.
+  Nothing else can find it, because only the ledger knows what the flow
+  wrote.
+
+**Classification.** The flow cannot know intent. It classifies by evidence
+only.
+
+| Observation on an owned path or key | Class | Repair |
+| --- | --- | --- |
+| Bytes equal the ledger | `clean` | none |
+| Different bytes that still pass the file's own contract (a brief that validates, a skill that parses, a key with a valid exact version) | `client-edited` | **Never proposed on its own.** Reported. The client may release it, or ask for a restore. |
+| Different bytes that fail the file's own contract (unparseable JSON, schema-invalid brief or ledger, a symlink where a file was, a changed mode) | `corrupt` | Proposed as a repair line item, if the path is a generated file. |
+| Absent | `deleted` | Proposed for generated files. For `clossys/brief.json` it is reported, because deleting a brief can be a deliberate choice. |
+| Lockfile integrity for an owned package differs from the plan's SRI | `integrity-mismatch` | **Never proposed.** It is a supply-chain signal (T7, T12). `status` reports `violated` and stops that repository. |
+| A `clossys-*` skill or other file in an owned directory that no ledger row names | `unowned` | Never touched. Reported so the client knows it will not be updated. |
+| Ledger unreadable, foreign row, or broken chain (12.2) | `indeterminate` | Nothing is inferred and nothing is written. |
+
+**Repair is always a change set** (D13), computed by 12.1 with "desired" equal to
+the ledger's last state, and delivered as a pull request through the same
+verify, CI and merge path. The flow never writes to a default branch to
+"fix" it.
+
+**Never auto-repaired,** meaning never proposed unless the client asks, and
+never bundled into an update:
+
+- client-edited content that still passes its contract;
+- anything consumer-owned: `package.json` beyond the owned keys, workflows
+  after creation, and all of `apps/*`;
+- role records and proof;
+- lockfile integrity mismatches, which are escalated, not repaired;
+- anything in a repository whose ledger is `indeterminate`.
+
+### 12.7 Repeat-user approval
+
+**What the client sees and approves.** Each bundle renders one approval
+sheet from ids and digests only, never from context prose (V5).
+
+| Column | Content |
+| --- | --- |
+| Repository | inventory id |
+| Kind | `install`, `update`, `remove`, `refresh`, `repair`, `release` |
+| Item | plan item id, or the owned path for a refresh or repair |
+| Change | `from → to` version with Integrator's severity, or the path count |
+| Carried over | whether this replaces an unmerged pull request (below) |
+| Digest | first 12 hex of the change-set digest; the full value is in the pull request body |
+
+One approval records two things together: D2's `subjectDigest` equal to the
+bundle digest (12.3), and, when the bundle has package acts, the execution
+authorization. Its packages and repositories must equal the plan's work
+items exactly (`authorization.ts:58-61`), and those work items are the
+bundle's package acts. Then the client merges each repository's pull
+request. The merge stays the final approval, as #1187 says.
+
+**Batching.** Pending items collect until the client asks, or until
+Advisor's reassessment cadence (`ReassessmentPolicy.cadenceDays`,
+`types.ts:64`), per D15. One bundle then carries them all, with one approval and one
+pull request per repository. The client may deselect items on the sheet.
+Deselecting recomputes the bundle and its digest, so what they approve is
+always exactly what is built. Two kinds of item do not wait for the
+cadence: a failed provenance or integrity check, and an installed version
+that Integrator cannot verify. Both surface at once as report-only
+findings. They are not changes, so they need no approval to be seen.
+
+**When an update overlaps an unmerged pull request from an earlier set.**
+
+| Option | What happens | Problem |
+| --- | --- | --- |
+| **Supersede** | The new set is computed from the default branch, so it already includes whatever the earlier unmerged set did that the new plan still wants. It opens on a new branch (D6). The agent closes the old pull request with a pointer to the new one. | The client re-reviews a larger diff. The sheet marks the carried-over items, so the second review is short. |
+| Stack | The new pull request is based on the old branch. | Starter's trusted job checks out the pull request's *base* (`caller-workflow.md:137-142`). A stacked base is an unprotected feature branch, so the "trusted" install would come from bytes nobody has approved. It also couples merge order. |
+| Refuse | The new set waits until the old pull request is merged or closed. | Safe but slow. A client with one stale pull request stops getting updates. |
+
+**Recommendation: supersede** (D14). One exception: if the old branch
+carries commits the flow did not make (the client, or anyone, added work
+to it), the repository is `held`. Closing that pull request would discard
+their work. The sheet asks the client to merge or close it first.
+
+**Avoiding approval fatigue without weakening the digest binding.**
+
+- Fewer, larger, clearer asks: one approval per batch, not per package.
+- No empty asks: a bundle with nothing to change is never shown.
+- Severity is visible, so a patch batch reads differently from a major one.
+- An expired approval over unchanged bytes keeps the same digest and the
+  same pull request (12.3). The sheet says "same bytes, approval expired",
+  so re-approving is one step with nothing new to read.
+- **No standing approvals.** A rule such as "approve every patch update"
+  would approve bytes nobody has seen, and Advisor's authorization cannot
+  express it: packages must equal the approved items exactly
+  (`authorization.ts:58-61`). D16 records this.
+
+### 12.8 Failure modes
+
+| Failure | Derived result | What happens next |
+| --- | --- | --- |
+| The client edited an owned file before an update or removal | `held` (`client-edited`) | Other paths still proceed if the client approves a partial set. Otherwise the repository waits. Nothing is overwritten. |
+| The ledger is missing or malformed in a repository the hub has change sets for | `indeterminate` (`ledger-unreadable`) | No update, removal or repair. `status` offers a re-adoption pass (12.2), which is itself a reviewed change set. |
+| The approval expired before the pull request opened | `violated` at `verify` | Re-approve. The digest and branch are unchanged. |
+| A new version has no verifiable provenance | `violated` at V9 | The item is dropped from the bundle and reported. |
+| The update merged but no later pull request has run Starter | `applied`, not `proved` | Shown on the sheet as awaiting proof (D17). |
+| The repository was renamed or archived | `indeterminate` (`renamed`, `archived`) | Hub inventory update, or nothing. No writes through redirects. |
+| An open pull request from an earlier set has client commits | `held` | The client merges or closes it first. |
+| The client merged a partial or diverged pull request by hand | Derived from the tree: paths that match are `applied`, the rest `client-edited` | The ledger in that merge is checked (12.2). A ledger that does not match the tree makes the repository `indeterminate`. |
+| Two hubs manage one repository | `indeterminate` (`ledger-foreign-row`) | Refused. A repository has one managing hub. |
+
+### 12.9 Threat-model deltas
+
+Changes to existing threats:
+
+- **T2, blast radius.** A removal can do more damage than an install. The
+  compare-and-swap rule (12.1) bounds a removal to bytes the flow wrote and
+  the client has not changed.
+- **T3, partial application.** Unchanged, but `held` joins the ternary as
+  a named reason for a repository that is neither done nor failed.
+- **T4, replay.** The digest now covers the starting ledger generation.
+  A set computed against generation `n` is `superseded` once the ledger is
+  at `n+1`. That blocks replaying an old set over a newer install.
+- **T5, tampering.** Also applies to the ledger file, which is one of the
+  set's `files` and is checked like any other.
+- **T6, privacy.** Removal does not unpublish (12.5). The ledger carries
+  paths, hashes and ids only.
+- **T7, supply chain.** Updates are the main way a new version arrives, so
+  V9 adds provenance to the SRI check.
+
+New threats:
+
+| # | Threat | Where it would enter | Mitigation |
+| --- | --- | --- | --- |
+| T9 | **Ledger forgery.** Someone adds a row claiming a client file, so a removal deletes it. | A commit to the ledger outside the flow. | A row is trusted only if its `after` appears in a change set the hub holds (12.2). A removal deletes only bytes that still equal that `after`. Forging a row gains nothing the flow did not already write. |
+| T10 | **Clobbering client edits.** An update, removal or repair overwrites the client's changes. | Any write. | Compare-and-swap on every path and key (12.1). `client-edited` is refused, never merged. Existing skill retirement is fixed (12.5). |
+| T11 | **Repository name reuse.** After a rename or deletion, a new repository takes the old name, and the flow writes there. | Inventory ids are `owner/name`. | The inventory and ledger also record GitHub's immutable repository id. Every run compares it. No writes through a redirect (12.4). |
+| T12 | **Update-time substitution.** A compromised or mistaken release is picked up as an update. | 12.4 (a). | Exact version and SRI in the plan, provenance verified by Integrator (V9), severity shown, human approval per batch. |
+| T13 | **Downgrade replay.** An older set, or a plan naming a lower version, rolls a package back to a known-bad release. | Resume, re-plan. | The generation check (T4). A lower version is labelled as a downgrade on the sheet and in the body, and needs its own item. |
+| T14 | **Approval fatigue.** Frequent asks train the client to approve without reading. | 12.7. | Batching, severity, no empty asks, no standing approvals. The residual risk is accepted: the merge is still a human act on exact bytes. |
+| T15 | **Silent loss of management.** A rename, transfer or inventory edit drops a repository without anyone noticing, and it stops receiving updates. | 12.4 (c). | Every inventory event is reported by name, and a release is an explicit line on the sheet. |
+
+### 12.10 Migration additions
+
+These extend section 11. The ledger is not deferred: it lands with step 3.
+
+7. **Integrator-to-Advisor connector** (Launcher, pure). Map Integrator
+   states to placement cells (12.4). Add V9 using Integrator's exported
+   provenance join. Refuse a currency-delta document as an inventory (V1).
+   *Revert:* remove the function; updates fall back to hand-written plans.
+8. **Compare-and-swap everywhere** (Launcher). Apply the 12.1 rule to
+   `materialize`, to `revert` (recomputed, 12.5), and to appoint's existing
+   skill composition and retirement (`skills.ts:196`, `:208-215`). Add the
+   adoption pass (12.2). *Revert:* restore the old write path; ledgers
+   already written stay valid.
+9. **`status` drift classes, repair and release** (Launcher). Add 12.6's
+   classes, repair sets and release sets. *Revert:* remove the subcommands.
+10. **Approval sheet and supersede rule** (Launcher skill and rendering).
+    Render the sheet, the bundle digest of 12.3, and the D14 supersede
+    procedure in the agent's fixed skill steps. *Revert:* remove the
+    rendering; bundles still work one approval at a time.
+
+## 13. Decisions needed from the owner
+
+D1 to D8 are unchanged in number and substance. They moved here from the
+end of section 11, and D2 and D3 each gained one sentence from section
+12.3. D9 to D20 are new and come from section 12.
 
 - **D1. Adopt the split in section 5.** Packages compute, materialize and
   verify; the client's agent branches, commits, pushes and opens the pull
@@ -583,12 +1072,15 @@ repository until step 4.
   to the bundle digest, so "approved" binds bytes; (b) accept today's
   digest-free `chosen: "approved"` for staffing-only sets. Recommended: (a).
   Package acts always additionally require a current execution
-  authorization.
+  authorization. The bundle digest excludes the authorization (12.3), and a
+  `setup` set is never staffing-only, because it pins Starter and Advisor.
 - **D3. Two pull requests on a repository's initial application** (setup,
-  then apply), because Starter proves from the protected base. The
+  then apply), because Starter runs from the protected base. The
   alternative is one pull request whose install goes unproved by Starter
   until a later pull request. Recommended: two, and one per repository
-  thereafter.
+  thereafter. Section 12.3 found that Starter proves any install one merge
+  late, so two pull requests are needed to give Starter a base to run
+  from, not to prove `apply` on its own pull request.
 - **D4. Public target repositories.** Refuse to commit the brief's
   free-text `problem` into a public repository (write a fixed placeholder
   that points to the hub), or allow it with explicit per-repository
@@ -612,3 +1104,79 @@ repository until step 4.
   depends on `@clossys/advisor` and imports its validators. Recommended:
   (a). It keeps Launcher dependency-free and makes the contract the one
   definition, where today there are two drifted copies.
+- **D9. Where installed state lives** (12.2). Options: (a) a ledger
+  committed in each target at `clossys/.state/installed.json`, joined to
+  change sets the hub keeps; (b) a ledger in the hub only; (c) no ledger,
+  recomputed from plan history and the tree. Recommended: (a). It changes
+  only by a merge the client made, and it travels with the repository. With
+  (b), the hub's record and the repository can disagree with no merge to
+  show why, and a second clone of the hub has no record at all. With (c),
+  nothing can tell a file the flow wrote from one the client wrote, so no
+  removal is safe.
+- **D10. How ownership is recorded** (12.1). Options: (a) digests in the
+  ledger: whole files for Launcher- and Advisor-owned paths, JSON-pointer
+  keys inside `package.json`, invariants for the lockfile; (b) ownership
+  markers inside the files. Recommended: (a). With (b), JSON files cannot
+  carry a marker, a marker changes the bytes it describes, and a copied
+  marker would make the flow claim a client's file.
+- **D11. Removal of a client-edited file** (12.5). Options: (a) refuse that
+  path and offer release (stop managing it, keep the bytes) or restore;
+  (b) delete it anyway; (c) three-way merge. Recommended: (a). With (b),
+  the flow destroys client work. With (c), the flow guesses what the client
+  meant, in the one operation where a wrong guess loses data.
+- **D12. Role records when a role is removed** (12.5). Options: (a) leave
+  `clossys/<role>/` records and proof in place, list them in the removal
+  pull request, and amend the consumer-layout rule "Removing a role
+  removes its folder" to say generated files only; (b) delete the folder as
+  the rule says today. Recommended: (a). With (b), a removal deletes
+  approved records and append-only proof that the flow never wrote.
+- **D13. What repair may be proposed without the client asking** (12.6).
+  Options: (a) only deleted or contract-invalid generated files, each as a
+  separate line item; (b) any drift on an owned path. Recommended: (a).
+  With (b), an update keeps offering to undo the client's deliberate edits,
+  which is both fatigue and a clobbering risk.
+- **D14. An update that overlaps an unmerged earlier pull request** (12.7).
+  Options: supersede, stack, or refuse. Recommended: supersede, and hold
+  the repository instead when the old branch has commits the flow did not
+  make. Stacking makes Starter's trusted base an unapproved branch.
+  Refusing stalls every later update behind one stale pull request.
+- **D15. Batching and cadence** (12.7). Options: (a) one approval per
+  batch, at the client's request or at Advisor's reassessment cadence, with
+  integrity and provenance failures reported at once; (b) one approval per
+  update as it arrives. Recommended: (a). With (b), a client with several
+  packages approves many times for the same review effort.
+- **D16. Standing approvals for low-risk updates** (12.7). Options: (a)
+  none; every batch is approved by its digest; (b) a standing rule, for
+  example "patch updates of installed packages". Recommended: (a). With
+  (b), the client approves bytes nobody has shown them, and Advisor's
+  exact-equality authorization would need a new, weaker form.
+- **D17. How a package change is proved by Starter** (12.3). Options: (a)
+  accept that proof lags one merge, derive `proved` separately from
+  `applied`, and file a follow-up for a Starter trusted run after merge to
+  the default branch; (b) change Starter's caller workflow now, inside this
+  work; (c) describe the apply pull request as Starter-proved. Recommended:
+  (a). (b) widens this work into Starter's trust design. (c) is a state
+  claimed ahead of its evidence, which `docs/LIFECYCLE.md` calls a defect.
+  Part of (a): with one `target` per request, packages other than the
+  target rely on V6, V9 and the template CI. The owner decides whether that
+  is enough, or whether Starter's request should name several targets.
+- **D18. A repository removed from the inventory** (12.4). Options: (a)
+  release it (stop managing, leave its files) and offer removal as a
+  separate, explicit item; (b) treat it as an uninstall. Recommended: (a).
+  With (b), an inventory edit, which may be a mistake or a tidy-up, becomes
+  a destructive change in a client repository.
+- **D19. Repository identity** (12.4). Options: (a) record GitHub's
+  immutable repository id alongside `owner/name` in the inventory, change
+  sets and ledger, and compare it on every run; (b) keep `owner/name`
+  only. Recommended: (a). With (b), a rename followed by someone taking the
+  old name sends the next change set to the wrong repository.
+- **D20. Provenance for installed versions** (V9, 12.4). Integrator's
+  guarantee has one named exception: a package's owner-present first
+  identity publication carries no provenance
+  (`packages/integrator/README.md:51-60`). Options: (a) require verified
+  provenance for every version a set installs or updates to, and allow the
+  first-publication exception only on a first install, with SRI, labelled
+  on the approval sheet; (b) require it with no exception; (c) SRI only.
+  Recommended: (a). With (b), a brand-new package can never be installed.
+  With (c), an update can pick up a release that was not built by the
+  publish workflow.
