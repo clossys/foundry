@@ -46,6 +46,46 @@ name: Verify standards
 on:
   pull_request:
     types: [opened, synchronize, reopened, edited]
+  # `review-evidence` reads review threads and reviews live, so a review that
+  # lands after the last pull_request run changes the verdict without
+  # re-running it. Before this trigger, a thread opened after that run left
+  # this context green on the pull request, and the merge queue's own run
+  # ejected the pull request with `failed_checks` (#1470; measured on #1432:
+  # pull_request run 35982043999 passed at 09:34:55Z, an automated reviewer
+  # opened two threads at 09:43:55Z on the same head, merge-group run
+  # 36058946310 failed on both).
+  #
+  #   - `submitted` carries every new review comment, including a reply to a
+  #     thread (each reply is its own submitted review). It also carries a
+  #     new approval or changes-requested review.
+  #   - `dismissed` can clear a changes-requested review.
+  #   - `edited` is left out: editing a review's body changes no state this
+  #     check reads.
+  #
+  # Not subscribed, deliberately:
+  #   - `pull_request_review_comment` would add one run per inline comment
+  #     for the verdict `submitted` already re-evaluates, and GitHub does not
+  #     reliably emit it for comments bundled into a review (#944).
+  #   - `issue_comment` cannot open or resolve a review thread (#1471).
+  #   - Resolving or unresolving a thread has NO workflow trigger. GitHub
+  #     sends `pull_request_review_thread` only as a webhook, never to
+  #     Actions. Resolving a thread leaves a stale red result; re-run the
+  #     latest run, which re-reads threads live. Unresolving one after a
+  #     pass is still caught only by the merge-group run.
+  #
+  # There is no actor filter. Automated reviewers open the very threads this
+  # trigger exists for, the event payload does not say whether a review
+  # opened a thread, and a job-level `if:` would report this required
+  # context as skipped, which GitHub counts as passing.
+  #
+  # Plain `pull_request_review`, never a `_target` variant: this job runs the
+  # pull request's own code (npm ci, build, scripts), so it gets the same
+  # read-only, secret-free context a `pull_request` run does, fork or not.
+  # A review-triggered run shares the concurrency group below with the
+  # pull request's other runs (`github.ref` is `refs/pull/<n>/merge` for
+  # both), so a burst of reviews collapses to the newest run.
+  pull_request_review:
+    types: [submitted, dismissed]
   # A merge-group run's whole point is to test the tree that will actually
   # land -- the base plus every entry ahead of this one in the queue -- so
   # `verify-standards` (a required context on main, ruleset 20924588) must
@@ -250,9 +290,16 @@ jobs:
           # too — without it the step's status is the last `cat`'s, which is
           # always 0.
           #
+          # A `pull_request_review` run evaluates BOTH checks, like a
+          # `pull_request` run. Its payload carries the same pull request
+          # description, and the policy lists `pull_request_review` as
+          # applicable. Evaluating `review-evidence` alone there would let a
+          # review replace a task-record failure with a pass on the same
+          # head, and the merge queue never re-asks task-record.
+          #
           # `task-record` is narrowed OUT for a `merge_group` run.
           # `.github/verify-standards-policy.json`'s `applicableEventKinds`
-          # is `["pull_request"]`, so on a `merge_group` event that check
+          # omits `merge_group`, so on a `merge_group` event that check
           # would self-report `not-applicable-event` — which is
           # INDETERMINATE, and bin.js treats indeterminate as exit 2, a hard
           # failure ("An indeterminate result is a failure, not a warning").
