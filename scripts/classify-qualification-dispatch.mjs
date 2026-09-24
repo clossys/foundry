@@ -37,9 +37,12 @@
 // WHY THIS EXISTS (issue #1476)
 // -------------------------------
 // On 2026-09-24 every push to main re-dispatched qualification for
-// @clossys/publisher@0.7.0, which depends on @clossys/controller@~0.9.14 —
-// a version not yet published. 26 of 26 runs failed with ETARGET inside the
-// tarball round-trip install, before qualification could start, and each
+// @clossys/publisher, whose first-party sibling ranges had no published
+// match yet. All 26 runs failed with ETARGET inside the tarball round-trip
+// install, before qualification could start: 14 on designer@^0.5.0
+// (designer has never published a 0.5.x), 12 on controller@~0.9.14 (the
+// highest controller published then was 0.9.10). npm names only the first
+// unsatisfiable edge it hits; this classifier names every one. Each
 // re-dispatch carried no new information. The sibling-set redesign
 // (#1425/#1435) will later qualify siblings together; this is the phase-0
 // fix: do not dispatch a candidate the registry already proves cannot

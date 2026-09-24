@@ -69,14 +69,31 @@ jobs:
 
       # Issue #1476: a candidate whose first-party sibling range has no
       # satisfying version on the public registry yet cannot install, so its
-      # qualification run would only fail ETARGET (26 of 26 on 2026-09-24).
+      # qualification run would only fail ETARGET (2026-09-24: 26 failures,
+      # 14 on designer@^0.5.0, 12 on controller@~0.9.14).
       # Hold it back as blocked-on-sibling, and hold back anything the
       # registry could not answer for as indeterminate; both are re-checked
       # on the next push to main. See classify-qualification-dispatch.mjs's
       # own header for exactly which ranges are resolved and why each
       # uncertainty fails the way it does.
+      #
+      # An indeterminate candidate is never dispatched, so a state that
+      # persists across pushes would silently stop that package qualifying.
+      # The ::warning:: annotation below surfaces it on the run itself, not
+      # only in the step summary. It keys on the exact stderr prefix the
+      # script prints per indeterminate row (pinned by that script's test).
       - name: Hold back candidates blocked on an unpublished first-party sibling
-        run: node scripts/classify-qualification-dispatch.mjs "$RUNNER_TEMP/unqualified.json" "$RUNNER_TEMP/pending-dispatch.json" --json --summary "$GITHUB_STEP_SUMMARY" > "$RUNNER_TEMP/dispatch.json"
+        run: |
+          set -euo pipefail
+          log="$RUNNER_TEMP/classify.log"
+          status=0
+          node scripts/classify-qualification-dispatch.mjs "$RUNNER_TEMP/unqualified.json" "$RUNNER_TEMP/pending-dispatch.json" --json --summary "$GITHUB_STEP_SUMMARY" > "$RUNNER_TEMP/dispatch.json" 2> "$log" || status=$?
+          cat "$log" >&2
+          if [ "$status" -ne 0 ]; then exit "$status"; fi
+          if grep -q '^classify-qualification-dispatch: indeterminate:' "$log"; then
+            indeterminate="$(grep -c '^classify-qualification-dispatch: indeterminate:' "$log")"
+            echo "::warning title=Auto-qualify indeterminate::$indeterminate candidate(s) could not be classified (registry or manifest unreadable) and were not dispatched. If this persists across pushes, those packages are not being qualified; see the step summary."
+          fi
 
       - name: Dispatch qualify-candidate.yml for each
         env:

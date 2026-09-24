@@ -15,6 +15,8 @@ import { PUBLIC_NPM_REGISTRY } from "./lib/public-npm-registry.mjs";
 import { spawnCapture } from "./lib/spawn-capture.mjs";
 
 const scriptPath = resolve(dirname(fileURLToPath(import.meta.url)), "classify-qualification-dispatch.mjs");
+const workflowPath = resolve(dirname(fileURLToPath(import.meta.url)), "..", ".github", "workflows", "auto-qualify.yml");
+const INDETERMINATE_LOG_PREFIX = "classify-qualification-dispatch: indeterminate:";
 const SCOPE = "@clossys";
 
 // A fake public registry: `versionsByName` maps a package name to its
@@ -165,9 +167,19 @@ test("classify: candidates missing from pending are skipped-already-recorded; un
 
 // ----------------------------------------------------- 2026-09-24 replay (#1476)
 
-// @clossys/publisher@0.7.0's real manifest edges, against the registry as it
-// stood before @clossys/controller's next publish: 26 qualification runs were
-// dispatched for this exact candidate and all failed ETARGET.
+// Real publisher manifests from main on 2026-09-24, against the real public
+// registry. Version lists come from `npm view @clossys/<x> time --json`:
+// REGISTRY_1708Z keeps only versions published before 2026-09-24T17:08Z
+// (controller 0.9.23 landed 19:41Z; designer 0.6.0 and writer 0.4.0 landed
+// 18:39Z). The 26 failed runs that day were 14 ETARGET on designer@^0.5.0
+// (designer has never published a 0.5.x) and 12 on controller@~0.9.14.
+// npm names only the first unsatisfiable edge it hits; the classifier names
+// every one, so the replay asserts the edge npm failed on is among them.
+const PUBLISHER_060 = {
+  name: "@clossys/publisher",
+  version: "0.6.0",
+  dependencies: { "@clossys/writer": "^0.3.0", "@clossys/designer": "^0.5.0", "@clossys/controller": "~0.9.14" },
+};
 const PUBLISHER_070 = {
   name: "@clossys/publisher",
   version: "0.7.0",
@@ -175,22 +187,48 @@ const PUBLISHER_070 = {
   peerDependencies: { react: "^19.0.0" },
   peerDependenciesMeta: { react: { optional: true } },
 };
-const REGISTRY_2026_09_24 = {
-  "@clossys/controller": ["0.8.21", "0.8.23", "0.8.24", "0.9.2", "0.9.4", "0.9.5", "0.9.6", "0.9.7", "0.9.10", "0.9.13"],
-  "@clossys/writer": ["0.3.9", "0.4.0"],
-  "@clossys/designer": ["0.4.7", "0.6.0"],
+const REGISTRY_1708Z = {
+  "@clossys/controller": ["0.8.21", "0.8.23", "0.8.24", "0.9.2", "0.9.4", "0.9.5", "0.9.6", "0.9.7", "0.9.10"],
+  "@clossys/designer": ["0.2.4", "0.2.7", "0.4.1", "0.4.3", "0.4.4", "0.4.5", "0.4.6", "0.4.7"],
+  "@clossys/writer": ["0.3.2", "0.3.3", "0.3.4", "0.3.6", "0.3.8", "0.3.9"],
 };
+// After controller 0.9.23 (19:41Z), designer 0.6.0 and writer 0.4.0 (18:39Z).
+const REGISTRY_AFTER_1941Z = {
+  "@clossys/controller": [...REGISTRY_1708Z["@clossys/controller"], "0.9.23"],
+  "@clossys/designer": [...REGISTRY_1708Z["@clossys/designer"], "0.6.0"],
+  "@clossys/writer": [...REGISTRY_1708Z["@clossys/writer"], "0.4.0"],
+};
+const blockerTuples = (row) => row.blockers.map(({ name, range, highest }) => ({ name, range, highest }));
 
-test("replay 2026-09-24: publisher@0.7.0 needing controller ~0.9.14 with registry max 0.9.13 -> blocked-on-sibling, not dispatched", async () => {
-  const row = await classifyOne(PUBLISHER_070, REGISTRY_2026_09_24);
+test("replay 2026-09-24 (designer@^0.5.0 shape): publisher@0.6.0 -> blocked-on-sibling naming designer ^0.5.0, not dispatched", async () => {
+  const row = await classifyOne(PUBLISHER_060, REGISTRY_1708Z);
   assert.equal(row.classification, "blocked-on-sibling");
-  assert.deepEqual(row.blockers.map(({ name, range, highest }) => ({ name, range, highest })), [{ name: "@clossys/controller", range: "~0.9.14", highest: "0.9.13" }]);
-  assert.match(renderSummary([row]), /needs `@clossys\/controller@~0\.9\.14` \(highest published @clossys\/controller is 0\.9\.13\)/);
+  assert.deepEqual(blockerTuples(row), [
+    { name: "@clossys/controller", range: "~0.9.14", highest: "0.9.10" },
+    { name: "@clossys/designer", range: "^0.5.0", highest: "0.4.7" },
+  ]);
 });
 
-test("replay 2026-09-24: once controller publishes a ~0.9.14-satisfying version, the same candidate dispatches", async () => {
-  const row = await classifyOne(PUBLISHER_070, { ...REGISTRY_2026_09_24, "@clossys/controller": [...REGISTRY_2026_09_24["@clossys/controller"], "0.9.23"] });
+test("replay 2026-09-24 (controller@~0.9.14 shape): publisher@0.7.0 with registry controller max 0.9.10 -> blocked-on-sibling, not dispatched", async () => {
+  const row = await classifyOne(PUBLISHER_070, REGISTRY_1708Z);
+  assert.equal(row.classification, "blocked-on-sibling");
+  assert.deepEqual(blockerTuples(row), [
+    { name: "@clossys/controller", range: "~0.9.14", highest: "0.9.10" },
+    { name: "@clossys/designer", range: "^0.6.0", highest: "0.4.7" },
+    { name: "@clossys/writer", range: "^0.4.0", highest: "0.3.9" },
+  ]);
+  assert.match(renderSummary([row]), /`@clossys\/controller@~0\.9\.14` \(highest published @clossys\/controller is 0\.9\.10\)/);
+});
+
+test("replay 2026-09-24: once controller 0.9.23, designer 0.6.0 and writer 0.4.0 are published, publisher@0.7.0 dispatches", async () => {
+  const row = await classifyOne(PUBLISHER_070, REGISTRY_AFTER_1941Z);
   assert.equal(row.classification, "dispatch");
+});
+
+test("replay 2026-09-24: publisher@0.6.0 stays blocked even after that, on designer ^0.5.0 alone (never published)", async () => {
+  const row = await classifyOne(PUBLISHER_060, REGISTRY_AFTER_1941Z);
+  assert.equal(row.classification, "blocked-on-sibling");
+  assert.deepEqual(blockerTuples(row), [{ name: "@clossys/designer", range: "^0.5.0", highest: "0.6.0" }]);
 });
 
 // --------------------------------------------------- real registry adapter path
@@ -247,6 +285,8 @@ test("CLI: prints only dispatchable rows as JSON and writes a four-way step summ
     assert.equal(result.status, 0, result.stderr);
     assert.deepEqual(JSON.parse(result.stdout), [{ package: "leaf", name: "@clossys/leaf", version: "1.0.0" }]);
     assert.match(result.stderr, /indeterminate: `dependent`/);
+    // auto-qualify.yml's ::warning:: annotation greps for exactly this line prefix.
+    assert.match(result.stderr, new RegExp(`^${INDETERMINATE_LOG_PREFIX}`, "m"));
     const text = readFileSync(summary, "utf8");
     assert.match(text, /\| dispatch \| 1 \|/);
     assert.match(text, /\| skipped-already-recorded \| 1 \|/);
@@ -255,4 +295,14 @@ test("CLI: prints only dispatchable rows as JSON and writes a four-way step summ
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
+});
+
+test("auto-qualify.yml: raises a ::warning:: when any candidate is indeterminate, keyed on the script's own stderr prefix", () => {
+  const workflow = readFileSync(workflowPath, "utf8");
+  const step = workflow.slice(workflow.indexOf("- name: Hold back candidates blocked on an unpublished first-party sibling"), workflow.indexOf("- name: Dispatch qualify-candidate.yml for each"));
+  assert.ok(step.includes("scripts/classify-qualification-dispatch.mjs"), "classification step runs the classifier");
+  assert.ok(step.includes(`grep -q '^${INDETERMINATE_LOG_PREFIX}'`), "warning is keyed on the indeterminate stderr prefix");
+  assert.match(step, /echo "::warning title=[^"]*::/);
+  assert.match(step, /> "\$RUNNER_TEMP\/dispatch\.json"/);
+  assert.match(workflow, /Dispatch qualify-candidate\.yml for each[\s\S]*"\$RUNNER_TEMP\/dispatch\.json"/);
 });
