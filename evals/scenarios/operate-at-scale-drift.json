@@ -1,0 +1,17 @@
+{
+  "id": "operate-at-scale-drift",
+  "description": "A generic client running at scale who can no longer tell whether what they declared matches what is actually running, and has no independent view into their own systems. No real company; a synthetic client for regression coverage only. Confirms only builder, architect, and observer's problems -- controller is expected to be pulled in as a dependency, not confirmed directly, which is exactly the pull-in behavior this scenario regression-tests.",
+  "confirmedProblems": [
+    { "id": "builder-desired-state-drift", "primary": true },
+    { "id": "architect-operating-boundaries-drift" },
+    { "id": "observer-blind-spots" }
+  ],
+  "expect": {
+    "state": "composed",
+    "mustIncludeRoles": ["architect", "builder", "controller", "observer"],
+    "mustExcludeRoles": ["advisor", "bouncer", "butler", "customer", "designer", "giver", "influencer", "inspector", "integrator", "keeper", "locksmith", "messenger", "publisher", "strategist", "writer"],
+    "maxRoles": 4,
+    "sequence": ["architect", "controller", "builder", "observer"],
+    "unsatisfiedNeeds": []
+  }
+}
