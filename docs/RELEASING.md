@@ -193,7 +193,7 @@ legitimate way a version moves — see
 [docs/PUBLISHING.md, section 4](PUBLISHING.md#4-write-the-furniture) for
 the day-to-day mechanics of adding a changeset.
 
-A changeset's summary becomes a `CHANGELOG.md` line verbatim, so it is held
+A changeset's summary becomes a `docs/changelogs/<dir>.md` line verbatim, so it is held
 to a style rule: one factual sentence per change, in consumer terms, no
 absolute qualifier unless a test proves it, and no description of what did
 NOT change. See [`.changesets/README.md`](../.changesets/README.md#style)

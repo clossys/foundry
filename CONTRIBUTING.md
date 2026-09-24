@@ -30,7 +30,7 @@ declarations.
    yourself — see [`.changesets/README.md`](.changesets/README.md) for the
    format, and its ["Style"](.changesets/README.md#style) section for the
    one-factual-sentence, no-unproven-absolutes rule a changeset summary is
-   held to (it becomes a `CHANGELOG.md` line verbatim).
+   held to (it becomes a `docs/changelogs/<dir>.md` line verbatim).
 4. Add or update tests. Every package uses [Vitest](https://vitest.dev); run
    `npm test` from the repository root.
 5. Run the checks below before pushing.

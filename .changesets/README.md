@@ -73,4 +73,4 @@ configurable list, an entry past a length threshold (likely several
 sentences bundled into one changeset), and negative-change phrasing. It
 never fails a check or blocks a merge — see the script's own header for its
 exit contract — it only prints what is worth a second look before a release
-PR turns the summary into a `CHANGELOG.md` line verbatim.
+PR turns the summary into a `docs/changelogs/<dir>.md` line verbatim.
