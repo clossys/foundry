@@ -9,14 +9,38 @@ rather than containing this material itself, for the same reason
 `docs/HITL.md`'s other, considerably longer content never needs
 owner-only review the way a change to the hook's own definition does.
 
-**The control that actually matters is the tier-2 PR gate** --
-`governance/review-tiers.json`'s classification plus
+**The control that matters most, WHEN it applies, is the tier-2 PR
+gate** -- `governance/review-tiers.json`'s classification plus
 `scripts/land-stack.mjs`'s enforcement of it, documented in
-`docs/HITL.md`. A local edit only matters once it is PUSHED, and every
-push to a protected path goes through tier-2 classification and review
-regardless of whether the hook below is installed at all. This hook is
-one additional, optional layer on top of that gate, not a substitute
-for it.
+`docs/HITL.md`. But it does not cover every push today, and it never
+covers the paths this hook exists for (#1187 escalation-rule round 11,
+fresh final reviewer, blocking B1: an earlier draft of this paragraph
+claimed "every push to a protected path goes through tier-2
+classification and review regardless of whether the hook below is
+installed at all" -- that overstates what the code does):
+
+- Once `governance/review-tiers.json`'s `"enforcement"` is `"enforce"`
+  and a change lands THROUGH `land-stack.mjs`, a pull request touching a
+  protected path classifies tier-2 and needs an owner decision record.
+  **Today `"enforcement"` is `"report-only"`**: `applyEnforcement` turns
+  every tier-2 refusal into `ok: true`, so nothing actually enforces the
+  classification yet. See `docs/HITL.md`'s "Enforcement: report-only,
+  then enforce" and "Before switching to enforce" sections.
+- The gate only runs when someone actually invokes
+  `land-stack.mjs --status`/`--merge`. A plain `gh pr merge`, or a merge
+  through the GitHub web UI, **skips this entire gate** -- see
+  `docs/HITL.md`'s "Honour-system limits" section.
+- **For local-only files -- `~/.claude/settings.json` and
+  `.claude/settings.local.json` -- no PR gate ever applies at all.**
+  Neither file is ever pushed or committed to this or any repository;
+  editing one, which is how this hook itself gets disabled, is
+  invisible to `land-stack.mjs` by construction. For those two paths
+  specifically, this hook is the sole layer, not an additional one on
+  top of another.
+
+This hook is one additional, optional layer on top of whatever the tier-2
+gate provides for a given path, on a given day -- never a substitute for
+it, and, for the two local-only settings files, not backed by it at all.
 
 ## The Bash-matched hook was removed (owner decision, 2026-09-23)
 
