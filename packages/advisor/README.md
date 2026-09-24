@@ -151,8 +151,11 @@ every other problem, Advisor composes a custom kit instead.
 `composeKit()` takes a set of `selectedRoles` and the catalogue, pulls in
 every role a selected role's `needs` edge names that was not already
 selected, orders roles so a producer always precedes its consumer, and
-reports any need that names no resolvable role. An unknown selected role
-comes back `indeterminate`, never guessed past.
+reports every need that is not met. `needIsMet()` applies the same rule as
+this repository's package-framework gate: a declared `needs` entry is met
+only when its producer declares a `feeds` entry for that artifact
+(`declaredFeeds`, kept verbatim and in declared order). An unknown
+selected role comes back `indeterminate`, never guessed past.
 
 Needs cycles are judged per capability, not per role, following the
 package-framework contract's cycle decision. `judgeNeedsCycles()` builds that
@@ -162,7 +165,8 @@ capability cycle behind it is legitimate, such as the Customer/Publisher
 keep loop. The kit composes, and `roleCycles` lists the loop. A cycle only
 visible through a role with no capability map cannot be judged. The kit
 composes, and `unjudgedCycle` names the cycle rather than passing it
-silently.
+silently. `recommendKit()` carries both `roleCycles` and `unjudgedCycle`
+into its verdict.
 
 `composeKitFromProblems()` is the problem-confirmed entry point (the
 client confirms PROBLEM cards, never picks packages): it deterministically

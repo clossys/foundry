@@ -230,12 +230,33 @@ function normalizedManifestNeeds(foundry) {
     });
 }
 
-/** `foundry.feeds`, in the contract's shape: `{ artifact, path }`. The consumer is not part of it. */
+/**
+ * `foundry.feeds`, verbatim in the contract's shape `{ artifact, path }`
+ * and in DECLARED order. Order matters: like
+ * scripts/check-package-framework.mjs, a lookup by artifact takes the
+ * first declared entry, and nothing in the contract forbids a role from
+ * listing one artifact twice.
+ */
 function normalizedManifestFeeds(foundry) {
-  if (!isRecord(foundry) || !Array.isArray(foundry.feeds)) return null;
+  if (!isRecord(foundry) || !Array.isArray(foundry.feeds)) return [];
   return foundry.feeds
     .filter((item) => isRecord(item) && isText(item.artifact) && isText(item.path))
-    .map((item) => ({ artifact: item.artifact, path: item.path, source: "manifest" }));
+    .map((item) => ({ artifact: item.artifact, path: item.path }));
+}
+
+/**
+ * Whether a catalogue `needs` edge is met, by the same rule
+ * scripts/check-package-framework.mjs applies under --enforce
+ * (`unmatched-need`): a manifest need is met only when its producer is a
+ * role here AND that producer's own declared `feeds` names the artifact.
+ * A fallback need (`<role>-package`, `<role>-sequence-gate`) is evidence
+ * the catalogue derived itself, with no declared feed to match, so it is
+ * met whenever its producer is a role here.
+ */
+export function needIsMet(need, producer) {
+  if (!need.role || !producer || producer.role !== need.role) return false;
+  if (need.source !== "manifest") return true;
+  return (producer.declaredFeeds ?? []).some((feed) => feed.artifact === need.artifact);
 }
 
 /**
@@ -264,11 +285,10 @@ function normalizedCapabilities(foundry) {
  * present, and falling back to runtime-dependency and non-runtime-order
  * evidence for `needs` where a package declares no `needs` yet.
  *
- * `feeds` is always the producer's side of every resolved need: each
- * catalogue need becomes a feeds edge on its producer naming the consumer,
- * carrying the producer's declared `path` when its own `foundry.feeds`
- * lists that artifact. A declared feed no role needs stays in the list
- * with no consumer.
+ * `declaredFeeds` is the role's own `foundry.feeds`, verbatim and in
+ * declared order. `feeds` is the producer's side of every MET need (see
+ * {@link needIsMet}): one edge per consumer, naming it, and carrying the
+ * producer's first declared `path` for that artifact when it declares one.
  *
  * `options.manifests` (a Map of package directory -> manifest) and
  * `options.readPackageFile(directory, relativePath)` replace the
@@ -312,7 +332,7 @@ export function buildCapabilityCatalogue(repoRoot, options = {}) {
       solves: manifestSolves ?? fallbackSolves(directory, role, clientProblems),
       fit: fitSignalIds(foundry, directory, readPackageFile),
       needs: manifestNeeds ?? [],
-      declaredFeeds: normalizedManifestFeeds(foundry) ?? [],
+      declaredFeeds: normalizedManifestFeeds(foundry),
       capabilities: normalizedCapabilities(foundry),
       usesFallbackNeeds: manifestNeeds === null,
     });
@@ -346,15 +366,14 @@ export function buildCapabilityCatalogue(repoRoot, options = {}) {
     });
   }
 
-  // Feeds: the producer's side of every need, plus declared feeds no role needs.
+  // Feeds: the producer's side of every met need.
   const feedsByDirectory = new Map([...roleDirectories].map((directory) => [directory, []]));
-  const consumedDeclaredFeeds = new Set();
   for (const directory of roleDirectories) {
     for (const need of byDirectory.get(directory).needs) {
-      if (!need.role || !roleDirectories.has(need.role) || need.role === directory) continue;
+      if (need.role === directory) continue;
       const producer = byDirectory.get(need.role);
+      if (!needIsMet(need, producer)) continue;
       const declared = producer.declaredFeeds.find((feed) => feed.artifact === need.artifact);
-      if (declared) consumedDeclaredFeeds.add(declared);
       feedsByDirectory.get(need.role).push({
         artifact: need.artifact,
         role: directory,
@@ -362,11 +381,6 @@ export function buildCapabilityCatalogue(repoRoot, options = {}) {
         source: need.source,
         ...(need.reason ? { reason: need.reason } : {}),
       });
-    }
-  }
-  for (const directory of roleDirectories) {
-    for (const feed of byDirectory.get(directory).declaredFeeds) {
-      if (!consumedDeclaredFeeds.has(feed)) feedsByDirectory.get(directory).push(feed);
     }
   }
 
@@ -386,6 +400,7 @@ export function buildCapabilityCatalogue(repoRoot, options = {}) {
         fit: entry.fit,
         needs: sortEdges(entry.needs),
         feeds: sortEdges(feedsByDirectory.get(directory)),
+        declaredFeeds: entry.declaredFeeds,
         capabilities: entry.capabilities,
       };
     });
@@ -436,8 +451,9 @@ function findCycle(edges) {
  *     one of its capabilities.
  *   - `{ producer, artifact }` resolves to the producer capability whose
  *     `id` is the artifact, else to the capability whose `outputs` holds the
- *     producer's declared `feeds` path for it, else (for a producer with no
- *     capability map) to the bare producer. Anything else, including a
+ *     path of the producer's FIRST declared `feeds` entry for it (its
+ *     `declaredFeeds`, in declared order, as the gate reads it), else (for
+ *     a producer with no capability map) to the bare producer. Anything else, including a
  *     producer outside `roleNames`, adds no edge. A catalogue fallback need
  *     (`<role>-package`, `<role>-sequence-gate`) is resolved the same way.
  *
@@ -456,7 +472,7 @@ export function judgeNeedsCycles({ roleNames, catalogue }) {
     if (capabilities.length === 0) return producer;
     const byId = capabilities.find((capability) => capability.id === artifact);
     if (byId) return `${producer}#${byId.id}`;
-    const feed = (byRole.get(producer).feeds ?? []).find((item) => isText(item.path) && item.artifact === artifact);
+    const feed = (byRole.get(producer).declaredFeeds ?? []).find((item) => item.artifact === artifact);
     const byOutput = feed ? capabilities.find((capability) => capability.outputs.includes(feed.path)) : undefined;
     return byOutput ? `${producer}#${byOutput.id}` : null;
   };
@@ -487,9 +503,12 @@ export function judgeNeedsCycles({ roleNames, catalogue }) {
  * Pure composition: given a selection of role directories and an
  * already-built catalogue, pulls in every role a `needs` edge names that
  * was not already selected, orders roles so a producer precedes its
- * consumer, and reports any need that names no resolvable role plus any
- * role added purely to satisfy someone else's need. An unknown selected
- * role comes back `indeterminate`, never guessed past.
+ * consumer, and reports any role added purely to satisfy someone else's
+ * need. A need that is not met ({@link needIsMet}: no such role, or a
+ * manifest need whose producer declares no matching `feeds` entry) is
+ * reported in `unsatisfiedNeeds`; its producer, when it is a role here,
+ * is still pulled in. An unknown selected role comes back
+ * `indeterminate`, never guessed past.
  *
  * Needs cycles follow issue #1382's decision ({@link judgeNeedsCycles}):
  *   - a cycle among the kit's capabilities is a deadlock: `indeterminate`;
@@ -529,7 +548,8 @@ export function composeKit({ selectedRoles, catalogue, context } = {}) {
       if (need.role && byRole.has(need.role)) {
         if (!roles.includes(need.role)) addedForDependencies.add(need.role);
         visit(need.role, path);
-      } else {
+      }
+      if (!needIsMet(need, byRole.get(need.role))) {
         unsatisfiedNeeds.push({ role, artifact: need.artifact, wantedRole: need.role ?? need.producerRole ?? null });
       }
     }

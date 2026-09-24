@@ -84,6 +84,7 @@ function capabilityDeadlock() {
   const writer = cyclic.roles.find((r) => r.role === "writer");
   const publisher = cyclic.roles.find((r) => r.role === "publisher");
   writer.needs = [{ artifact: "surfaces", role: "publisher", producerRole: "@clossys/publisher", source: "manifest" }];
+  publisher.declaredFeeds = [{ artifact: "surfaces", path: "clossys/publisher/surfaces/" }];
   writer.capabilities = [{ id: "copy", inputs: [{ producerRole: "@clossys/publisher", artifact: "surfaces" }], outputs: ["clossys/writer/copy.json"] }];
   publisher.capabilities = [{ id: "surfaces", inputs: [{ producerRole: "@clossys/writer", artifact: "copy" }], outputs: ["clossys/publisher/surfaces/"] }];
   return cyclic;
@@ -147,6 +148,17 @@ test("composeKit pulls in an unselected role that a needs edge names, and report
   assert.deepEqual(composed.sequence, ["writer", "designer", "publisher"]);
   assert.deepEqual(composed.addedForDependencies.sort(), ["designer", "writer"]);
   assert.deepEqual(composed.unsatisfiedNeeds, []);
+});
+
+test("composeKit counts a manifest need as met only when its producer declares a matching feed", () => {
+  const unfed = legitimateLoop();
+  unfed.roles.find((r) => r.role === "publisher").declaredFeeds = [{ artifact: "something-else", path: "clossys/publisher/other.json" }];
+  const composed = composeKit({ selectedRoles: ["writer"], catalogue: unfed });
+  assert.equal(composed.state, "composed");
+  assert.deepEqual(composed.sequence.includes("publisher"), true);
+  assert.deepEqual(composed.unsatisfiedNeeds, [{ role: "writer", artifact: "surfaces", wantedRole: "publisher" }]);
+  const found = rules(evaluateOfferingKits({ contract: contract({ presets: [{ id: "launch", label: "Launch", problem: "p", roles: ["writer"] }] }), catalogue: unfed }));
+  assert.deepEqual(found, ["unsatisfied-need"]);
 });
 
 test("composeKit reports an unknown selected role as indeterminate", () => {

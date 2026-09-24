@@ -107,9 +107,10 @@ function findCycle(edges: ReadonlyMap<string, readonly string[]>): string[] | nu
  * capability's `inputs` covers (same producer and artifact, or resolving to
  * the same node) becomes an edge from EVERY one of its capabilities. An
  * input or need resolves to the producer capability whose `id` is the
- * artifact, else to the capability whose `outputs` holds the producer's
- * declared `feeds` path for it, else (for a producer with no capability
- * map) to the bare producer. Anything else, including a producer outside
+ * artifact, else to the capability whose `outputs` holds the path of the
+ * producer's FIRST declared `feeds` entry for it (`declaredFeeds`, in
+ * declared order, as the gate reads it), else (for a producer with no
+ * capability map) to the bare producer. Anything else, including a producer outside
  * `roleNames`, adds no edge.
  */
 export function judgeNeedsCycles({ roleNames, catalogue }: { roleNames: readonly string[]; catalogue: CapabilityCatalogue }): NeedsCycleJudgement {
@@ -124,8 +125,8 @@ export function judgeNeedsCycles({ roleNames, catalogue }: { roleNames: readonly
     if (capabilities.length === 0) return producer;
     const byId = capabilities.find((capability) => capability.id === artifact);
     if (byId) return `${producer}#${byId.id}`;
-    const feed = (byRole.get(producer)?.feeds ?? []).find((item) => typeof item.path === "string" && item.path !== "" && item.artifact === artifact);
-    const byOutput = feed?.path === undefined ? undefined : capabilities.find((capability) => capability.outputs.includes(feed.path as string));
+    const feed = (byRole.get(producer)?.declaredFeeds ?? []).find((item) => item.artifact === artifact);
+    const byOutput = feed === undefined ? undefined : capabilities.find((capability) => capability.outputs.includes(feed.path));
     return byOutput ? `${producer}#${byOutput.id}` : null;
   };
   const resolveInput = (input: CapabilityInput): string | null => resolve(roleOfScopedName(input.producerRole), input.artifact);
@@ -160,10 +161,24 @@ export function judgeNeedsCycles({ roleNames, catalogue }: { roleNames: readonly
 }
 
 /**
+ * Whether a catalogue `needs` edge is met, by the same rule this
+ * repository's package-framework gate applies (`unmatched-need`): a
+ * manifest need is met only when its producer is a role here AND that
+ * producer's own `declaredFeeds` names the artifact. A fallback need has
+ * no declared feed to match, so it is met whenever its producer exists.
+ */
+export function needIsMet(need: CapabilityArtifactRef, producer: RoleCapability | undefined): boolean {
+  if (!need.role || !producer || producer.role !== need.role) return false;
+  if (need.source !== "manifest") return true;
+  return producer.declaredFeeds.some((feed) => feed.artifact === need.artifact);
+}
+
+/**
  * Pulls in every role a selected role's `needs` edge names that was not
  * already selected, orders roles so a producer precedes its consumer, and
- * reports any need that names no resolvable role. An unknown selected role
- * comes back `indeterminate`, never guessed past.
+ * reports every need that is not met ({@link needIsMet}); a named producer
+ * that exists is still pulled in. An unknown selected role comes back
+ * `indeterminate`, never guessed past.
  *
  * Needs cycles follow issue #1382's decision ({@link judgeNeedsCycles}): a
  * cycle among the kit's capabilities is a deadlock and comes back
@@ -200,7 +215,8 @@ export function composeKit({ selectedRoles, catalogue }: ComposeKitInput): Compo
       if (need.role && byRole.has(need.role)) {
         if (!selectedRoles.includes(need.role)) addedForDependencies.add(need.role);
         visit(need.role, path);
-      } else {
+      }
+      if (!needIsMet(need, need.role ? byRole.get(need.role) : undefined)) {
         unsatisfiedNeeds.push({ role, artifact: need.artifact, wantedRole: need.role ?? need.producerRole ?? null });
       }
     }

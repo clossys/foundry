@@ -14,6 +14,13 @@ import {
   validateKitProposal,
 } from "./index.js";
 import type { ComposeKitResult } from "./index.js";
+import { SYNTHETIC_CATALOGUE } from "../test/synthetic-catalogue.js";
+
+// Tests of the generated CAPABILITY_CATALOGUE check properties that hold
+// for any correct data (the contract's solves rule, every preset
+// composing). Tests of composition behaviour use a fixed synthetic
+// catalogue, so correct `needs`/`solves` landing in a package cannot break
+// them (review of PR #1403).
 
 describe("CAPABILITY_CATALOGUE and kitCatalogueDigest", () => {
   it("has one entry per role, excluding executable tooling", () => {
@@ -71,12 +78,25 @@ describe("KIT_PRESETS", () => {
 });
 
 describe("composeKit", () => {
-  it("pulls in controller for publisher even when not explicitly selected", () => {
-    const composed = composeKit({ selectedRoles: ["publisher"], catalogue: CAPABILITY_CATALOGUE });
+  it("pulls in every role a selected role needs, each ahead of its consumer", () => {
+    const composed = composeKit({ selectedRoles: ["publisher"], catalogue: SYNTHETIC_CATALOGUE });
     expect(composed.state).toBe("composed");
     if (composed.state === "composed") {
-      expect(composed.addedForDependencies).toContain("controller");
-      expect(composed.sequence.indexOf("controller")).toBeLessThan(composed.sequence.indexOf("publisher"));
+      expect([...composed.addedForDependencies].sort()).toEqual(["designer", "platform", "writer"]);
+      for (const producer of ["designer", "platform", "writer"]) {
+        expect(composed.sequence.indexOf(producer)).toBeLessThan(composed.sequence.indexOf("publisher"));
+      }
+      expect(composed.unsatisfiedNeeds).toEqual([]);
+    }
+  });
+
+  it("pulls in every role a real catalogue role needs, each ahead of its consumer", () => {
+    for (const role of CAPABILITY_CATALOGUE.roles) {
+      const composed = composeKit({ selectedRoles: [role.role], catalogue: CAPABILITY_CATALOGUE });
+      if (composed.state !== "composed") continue;
+      for (const need of role.needs) {
+        if (need.role && composed.roleCycles.length === 0) expect(composed.sequence.indexOf(need.role)).toBeLessThan(composed.sequence.indexOf(role.role));
+      }
     }
   });
 
@@ -149,6 +169,7 @@ describe("composeKitFromProblems", () => {
 
 describe("validateKitProposal", () => {
   const confirmedProblems = [{ id: "writer-unapproved-copy", primary: true }];
+  const CAPABILITY_CATALOGUE = SYNTHETIC_CATALOGUE;
 
   it("drops a role that links to no confirmed problem and is not needed by one that does", () => {
     const result = validateKitProposal({
@@ -179,20 +200,28 @@ describe("evidence tiers and the advisory preset floor", () => {
     expect(evidenceAtLeast("designed", "qualified")).toBe(false);
   });
 
-  it("flags today's presets as below the qualified floor -- honest, not a hard failure", () => {
-    const findings = presetEvidenceFindings({ presets: KIT_PRESETS, catalogue: CAPABILITY_CATALOGUE });
-    expect(findings.length).toBeGreaterThan(0);
+  it("flags exactly the preset roles with no solves claim at or above the qualified floor", () => {
+    const presets = [{ id: "launch", roles: ["strategist", "writer", "designer", "publisher"] }];
+    const findings = presetEvidenceFindings({ presets, catalogue: SYNTHETIC_CATALOGUE });
     expect(findings.every((finding) => finding.rule === "preset-role-below-evidence-floor")).toBe(true);
+    // writer and designer are `qualified` in the synthetic catalogue; the others `designed`.
+    expect(findings.map((finding) => finding.role).sort()).toEqual(["publisher", "strategist"]);
+  });
+
+  it("is advisory against the real presets: findings name only roles whose best claim is below the floor", () => {
+    for (const finding of presetEvidenceFindings({ presets: KIT_PRESETS, catalogue: CAPABILITY_CATALOGUE })) {
+      const role = CAPABILITY_CATALOGUE.roles.find((entry) => entry.role === finding.role)!;
+      expect(role.solves.some((entry) => evidenceAtLeast(entry.evidence, "qualified"))).toBe(false);
+    }
   });
 });
 
 describe("toEngagementBrief", () => {
   it("builds deliverables from each composed role's own boundary.owns", () => {
-    const composed = composeKit({ selectedRoles: ["writer"], catalogue: CAPABILITY_CATALOGUE }) as Extract<ComposeKitResult, { state: "composed" }>;
-    const brief = toEngagementBrief({ problem: "Our words don't sound like us.", composed, catalogue: CAPABILITY_CATALOGUE });
+    const composed = composeKit({ selectedRoles: ["publisher"], catalogue: SYNTHETIC_CATALOGUE }) as Extract<ComposeKitResult, { state: "composed" }>;
+    const brief = toEngagementBrief({ problem: "We're not sure what's actually live.", composed, catalogue: SYNTHETIC_CATALOGUE });
     expect(brief.schemaVersion).toBe(1);
-    expect(brief.roles).toHaveLength(1);
-    expect(brief.deliverables).toHaveLength(1);
-    expect(brief.deliverables[0]).toBe(CAPABILITY_CATALOGUE.roles.find((role) => role.role === "writer")?.boundary.owns);
+    expect(brief.roles).toHaveLength(composed.roles.length);
+    expect(brief.deliverables).toEqual(composed.sequence.map((role) => SYNTHETIC_CATALOGUE.roles.find((entry) => entry.role === role)?.boundary.owns));
   });
 });

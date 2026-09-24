@@ -1,7 +1,6 @@
 import type { CapabilityCatalogue, CapabilityEvidence } from "./capability-catalogue.js";
 import { composeKit, composeKitFromProblems, type ComposedFromProblemsRole, type ConfirmedProblem } from "./composition.js";
 import type { KitPreset } from "./kit-presets.js";
-import { CLIENT_PROBLEMS } from "./client-problems.js";
 import { proposalReadyForClient, type ManagedEngagementInput, type OperatorReview } from "./managed-engagement.js";
 
 /**
@@ -52,6 +51,19 @@ export interface KitVerdict {
   roles: readonly KitVerdictRole[];
   sequence: readonly string[];
   deliverables: readonly string[];
+  /**
+   * Legitimate role-level needs loops in this kit (issue #1382): each has
+   * no capability cycle behind it, so the kit still composes. Empty when
+   * there is none, and always empty on an `indeterminate` verdict.
+   */
+  roleCycles: readonly (readonly string[])[];
+  /**
+   * A needs cycle only visible through a role with no capability map. It
+   * cannot be told apart from a deadlock, so it is carried here to be shown
+   * rather than passed silently: the package-framework contract's rule is
+   * "never failed and never silently passed". Null when there is none.
+   */
+  unjudgedCycle: readonly string[] | null;
   reason?: string;
   /**
    * Whether this verdict is ready to show the client: always true in
@@ -63,8 +75,6 @@ export interface KitVerdict {
   readyForClient: boolean;
 }
 
-const PROBLEM_STATEMENTS = new Map(CLIENT_PROBLEMS.map((item) => [item.id, item.statement]));
-
 function citationsFor(role: string, catalogue: CapabilityCatalogue, confirmedProblemIds: ReadonlySet<string>): readonly KitVerdictCitation[] {
   const capability = catalogue.roles.find((candidate) => candidate.role === role);
   if (!capability) return [];
@@ -72,7 +82,7 @@ function citationsFor(role: string, catalogue: CapabilityCatalogue, confirmedPro
     .filter((entry) => confirmedProblemIds.has(entry.problem))
     .map((entry) => ({
       problem: entry.problem,
-      statement: PROBLEM_STATEMENTS.get(entry.problem) ?? entry.problem,
+      statement: entry.statement,
       metric: entry.metric,
       proofCase: entry.proofCase,
       evidence: entry.evidence,
@@ -158,6 +168,8 @@ export function recommendKit({ confirmedProblems, catalogue, problem, presets = 
       roles: [],
       sequence: [],
       deliverables: [],
+      roleCycles: [],
+      unjudgedCycle: null,
       reason: composed.reason,
       readyForClient: false,
     };
@@ -174,6 +186,8 @@ export function recommendKit({ confirmedProblems, catalogue, problem, presets = 
       roles,
       sequence: composed.sequence,
       deliverables: deliverablesOf(roles),
+      roleCycles: composed.roleCycles,
+      unjudgedCycle: composed.unjudgedCycle,
       reason: composed.reason,
       readyForClient: false,
     };
@@ -190,6 +204,8 @@ export function recommendKit({ confirmedProblems, catalogue, problem, presets = 
     roles,
     sequence: composed.sequence,
     deliverables: deliverablesOf(roles),
+    roleCycles: composed.roleCycles,
+    unjudgedCycle: composed.unjudgedCycle,
     readyForClient,
   };
 }

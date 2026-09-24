@@ -1,11 +1,11 @@
 // Contract-shape tests for the capability catalogue (PR #1398's blocker).
 //
-// Every test composes THIS repository's real catalogue with one change:
-// packages/customer/package.json's `foundry` block gains the contract-shaped
-// `needs`/`solves`/`feeds` values PR #1398 prepared
-// (scripts/fixtures/customer-contract-needs-solves.json). Manifests are
+// Most tests compose THIS repository's real catalogue with the five v0
+// launch lanes' contract-shaped `needs`/`solves`/`feeds` values applied
+// (scripts/fixtures/launch-lanes-needs-solves.json: customer #1398, writer
+// #1399, designer #1400, publisher #1401, strategist #1402). Manifests are
 // overlaid in memory through buildCapabilityCatalogue's `manifests` option,
-// so nothing is written to disk.
+// so nothing is written to disk and no package is edited.
 
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -24,11 +24,11 @@ import { evaluateOfferingKits } from "../check-offering-kits.mjs";
 import { evaluatePackageFramework } from "../check-package-framework.mjs";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
-const fixture = JSON.parse(readFileSync(join(repoRoot, "scripts/fixtures/customer-contract-needs-solves.json"), "utf8"));
+const lanes = JSON.parse(readFileSync(join(repoRoot, "scripts/fixtures/launch-lanes-needs-solves.json"), "utf8")).lanes;
 const presetsContract = JSON.parse(readFileSync(join(repoRoot, "docs/contracts/kit-presets.json"), "utf8"));
 const launchRoles = presetsContract.presets.find((preset) => preset.id === "launch").roles;
 
-/** The real manifests, with `patch(directory, foundry)` applied to any package's `foundry` block. */
+/** The real manifests, with `patch(foundry)` applied to any package's `foundry` block. */
 function manifestsWith(patches = {}) {
   const manifests = collectPackageManifests(repoRoot);
   for (const [directory, patch] of Object.entries(patches)) {
@@ -38,13 +38,24 @@ function manifestsWith(patches = {}) {
   return manifests;
 }
 
-const withCustomerFixture = (foundry) => ({ ...foundry, ...structuredClone(fixture.foundry) });
+const laneValues = (role) => (foundry) => ({ ...foundry, ...structuredClone(lanes[role].foundry) });
+const ALL_LANES = Object.fromEntries(Object.keys(lanes).map((role) => [role, laneValues(role)]));
+
+/** Every lane applied, then `extra` patches applied on top of their result. */
+function allLanesWith(extra = {}) {
+  const patches = { ...ALL_LANES };
+  for (const [role, patch] of Object.entries(extra)) {
+    const base = patches[role] ?? ((foundry) => foundry);
+    patches[role] = (foundry) => patch(base(foundry));
+  }
+  return patches;
+}
 
 function catalogueWith(patches = {}, options = {}) {
   return buildCapabilityCatalogue(repoRoot, { manifests: manifestsWith(patches), ...options });
 }
 
-const customerCatalogue = () => catalogueWith({ customer: withCustomerFixture });
+const lanesCatalogue = () => catalogueWith(ALL_LANES);
 const roleOf = (catalogue, role) => catalogue.roles.find((entry) => entry.role === role);
 
 /** Publisher's `surface-documents` capability waiting on Customer's keep: a genuine deadlock. */
@@ -54,41 +65,81 @@ function publisherSurfacesWaitOnKeep(foundry) {
   return foundry;
 }
 
+/** A summary `needs` entry naming Publisher's sealing, which no Customer capability's `inputs` covers. */
+function customerNeedsSealing(foundry) {
+  return { ...foundry, needs: [...foundry.needs, { producerRole: "@clossys/publisher", artifact: "sealing-and-the-publication-record" }] };
+}
+
+/** Both verdicts for the same manifests: the framework gate's (--enforce) and kit composition's. */
+function verdicts(patches, selectedRoles = launchRoles) {
+  const byDirectory = manifestsWith(patches);
+  const manifestsByName = new Map([...byDirectory.values()].map((manifest) => [manifest.name, manifest]));
+  const gate = evaluatePackageFramework([...manifestsByName.keys()], manifestsByName, { enforce: true });
+  const catalogue = buildCapabilityCatalogue(repoRoot, { manifests: byDirectory });
+  const composed = composeKit({ selectedRoles, catalogue });
+  const kitRoles = new Set(composed.sequence.map((role) => `@clossys/${role}`));
+  return {
+    gateDeadlock: gate.findings.some((finding) => finding.rule === "needs-graph-cycle"),
+    kitDeadlock: composed.state === "indeterminate",
+    gateUnmatched: gate.findings
+      .filter((finding) => finding.rule === "unmatched-need" && kitRoles.has(finding.role))
+      .map((finding) => `${finding.role.slice("@clossys/".length)} ${finding.message.match(/artifact: "([^"]+)"/)[1]}`)
+      .sort(),
+    kitUnsatisfied: (composed.unsatisfiedNeeds ?? []).map((need) => `${need.role} ${need.artifact}`).sort(),
+  };
+}
+
 test("a contract-shaped `needs` edge resolves: producerRole's scoped name becomes the producer role", () => {
-  const catalogue = customerCatalogue();
+  const catalogue = lanesCatalogue();
   const customer = roleOf(catalogue, "customer");
   assert.deepEqual(customer.needs, [
     { artifact: "surface-documents", role: "publisher", producerRole: "@clossys/publisher", source: "manifest" },
     { artifact: "audience-understanding", role: "strategist", producerRole: "@clossys/strategist", source: "manifest" },
   ]);
-  assert.equal(customer.needs.some((need) => need.source.startsWith("fallback-")), false);
 
-  // The producer's side of the edge names its consumer.
+  // The producer's side of the met edge names its consumer and its declared path.
   assert.deepEqual(
     roleOf(catalogue, "publisher").feeds.filter((feed) => feed.role === "customer"),
-    [{ artifact: "surface-documents", role: "customer", source: "manifest" }],
+    [{ artifact: "surface-documents", role: "customer", path: "clossys/publisher/surfaces/", source: "manifest" }],
   );
 
   const composed = composeKit({ selectedRoles: ["customer"], catalogue });
   assert.equal(composed.state, "composed");
   assert.deepEqual(composed.unsatisfiedNeeds, []);
-  assert.deepEqual([...composed.addedForDependencies].sort(), ["controller", "designer", "publisher", "strategist", "writer"]);
+  assert.deepEqual([...composed.addedForDependencies].sort(), ["designer", "publisher", "strategist", "writer"]);
   assert.ok(composed.sequence.indexOf("strategist") < composed.sequence.indexOf("customer"));
   assert.deepEqual(composed.roles.find((role) => role.role === "customer").inputsFrom, ["publisher", "strategist"]);
 });
 
-test("a declared `feeds` entry carries its path; one no role needs stays listed with no consumer", () => {
-  const customer = roleOf(customerCatalogue(), "customer");
-  assert.deepEqual(
-    customer.feeds.filter((feed) => feed.source === "manifest"),
-    [{ artifact: "keep-verdict", path: "clossys/customer/keep.json", source: "manifest" }],
-  );
+test("`declaredFeeds` is the role's own `foundry.feeds`, verbatim and in declared order", () => {
+  const catalogue = lanesCatalogue();
+  assert.deepEqual(roleOf(catalogue, "strategist").declaredFeeds, lanes.strategist.foundry.feeds);
+  assert.deepEqual(roleOf(catalogue, "controller").declaredFeeds, []);
+});
+
+test("a need is met only when its producer feeds the artifact, the same rule as the framework gate's unmatched-need", () => {
+  // Publisher's full prepared `needs` (#1401), including the two entries
+  // Designer does not feed (a data error for the later needs/solves change).
+  const uncorrected = allLanesWith({ publisher: (foundry) => ({ ...foundry, needs: [...foundry.needs, ...lanes.publisher.excludedNeeds.needs] }) });
+  const result = verdicts(uncorrected);
+  assert.deepEqual(result.kitUnsatisfied, ["publisher components-and-blocks", "publisher logo-and-identity-files"]);
+  assert.deepEqual(result.kitUnsatisfied, result.gateUnmatched);
+  const rules = evaluateOfferingKits({ contract: presetsContract, catalogue: catalogueWith(uncorrected) }).findings.map((finding) => finding.rule);
+  assert.equal(rules.includes("unsatisfied-need"), true);
+
+  // Corrected, as in the fixture: nothing unmet on either side.
+  const corrected = verdicts(ALL_LANES);
+  assert.deepEqual(corrected.kitUnsatisfied, []);
+  assert.deepEqual(corrected.gateUnmatched, []);
+
+  // A producer that exists but declares no `feeds` at all does not meet a manifest need either.
+  const unfed = verdicts({ customer: laneValues("customer") }, ["customer"]);
+  assert.deepEqual(unfed.kitUnsatisfied, ["customer audience-understanding", "customer surface-documents"]);
+  assert.deepEqual(unfed.kitUnsatisfied, unfed.gateUnmatched);
 });
 
 test("a `needs` edge naming a producer outside this repository's scope is unsatisfied, never guessed", () => {
-  const catalogue = catalogueWith({
-    customer: (foundry) => ({ ...withCustomerFixture(foundry), needs: [{ producerRole: "publisher", artifact: "surface-documents" }] }),
-  });
+  const catalogue = catalogueWith(allLanesWith({ customer: (foundry) => ({ ...foundry, needs: [{ producerRole: "publisher", artifact: "surface-documents" }] }) }));
   const composed = composeKit({ selectedRoles: ["customer"], catalogue });
   assert.equal(composed.state, "composed");
   assert.deepEqual(composed.unsatisfiedNeeds, [{ role: "customer", artifact: "surface-documents", wantedRole: "publisher" }]);
@@ -102,25 +153,20 @@ test("the pre-contract edge shape (fromRole/toRole/role) is not read", () => {
   assert.deepEqual(roleOf(catalogue, "customer").needs, []);
 });
 
-test("a `qualified` contract-shaped `solves` entry is carried field for field, `statement` and `capability` included", () => {
-  const catalogue = catalogueWith({
-    customer: (foundry) => {
-      const next = withCustomerFixture(foundry);
-      next.solves = [{ ...next.solves[0], notAContractField: "dropped" }];
-      return next;
-    },
-  });
-  assert.deepEqual(roleOf(catalogue, "customer").solves, fixture.foundry.solves);
-  // The advisory preset floor now credits Customer's real claim.
-  const flagged = presetEvidenceFindings({ presets: presetsContract.presets, catalogue }).map((finding) => finding.role);
-  assert.equal(flagged.includes("customer"), false);
-  assert.equal(flagged.includes("publisher"), true);
+test("`qualified` contract-shaped `solves` entries are carried field for field, `statement` and `capability` included", () => {
+  const catalogue = catalogueWith(allLanesWith({ customer: (foundry) => ({ ...foundry, solves: [{ ...foundry.solves[0], notAContractField: "dropped" }] }) }));
+  for (const role of Object.keys(lanes)) assert.deepEqual(roleOf(catalogue, role).solves, lanes[role].foundry.solves, role);
+  // The advisory preset floor now credits every `qualified` claim, and only those.
+  const flagged = new Set(presetEvidenceFindings({ presets: presetsContract.presets, catalogue }).map((finding) => finding.role));
+  for (const role of Object.keys(lanes)) {
+    assert.equal(flagged.has(role), lanes[role].foundry.solves.every((entry) => entry.evidence === "designed"), role);
+  }
 });
 
 test("a `solves` entry missing the contract's required `statement` is dropped", () => {
   const catalogue = catalogueWith({
     customer: (foundry) => {
-      const next = withCustomerFixture(foundry);
+      const next = laneValues("customer")(foundry);
       const { statement, ...withoutStatement } = next.solves[0];
       next.solves = [withoutStatement];
       return next;
@@ -141,8 +187,8 @@ test("`fit` is read as the contract's package-relative path to a fit-signal decl
   assert.deepEqual(roleOf(escaping, "customer").fit, []);
 });
 
-test("the Customer<->Publisher role-level loop is legitimate per #1382: every real preset still passes", () => {
-  const catalogue = customerCatalogue();
+test("with all five lanes applied, every real preset passes and the Customer<->Publisher loop is legitimate (#1382)", () => {
+  const catalogue = lanesCatalogue();
   const result = evaluateOfferingKits({ contract: presetsContract, catalogue });
   assert.deepEqual(result.findings, []);
   assert.deepEqual(result.warnings, []);
@@ -150,29 +196,63 @@ test("the Customer<->Publisher role-level loop is legitimate per #1382: every re
   const launch = composeKit({ selectedRoles: launchRoles, catalogue });
   assert.equal(launch.state, "composed");
   assert.deepEqual(launch.unsatisfiedNeeds, []);
+  assert.deepEqual([...launch.sequence].sort(), [...launchRoles].sort());
   assert.equal(launch.unjudgedCycle, null);
   assert.deepEqual(launch.roleCycles, [["customer", "publisher", "customer"]]);
   assert.deepEqual(judgeNeedsCycles({ roleNames: launch.sequence, catalogue }), { capabilityCycle: null, unjudgedCycle: null });
 });
 
 test("the catalogue's cycle verdict agrees with check-package-framework's --enforce verdict", () => {
-  const verdicts = (patches) => {
-    const byDirectory = manifestsWith(patches);
-    const manifestsByName = new Map([...byDirectory.values()].map((manifest) => [manifest.name, manifest]));
-    const gate = evaluatePackageFramework([...manifestsByName.keys()], manifestsByName, { enforce: true });
-    const catalogue = buildCapabilityCatalogue(repoRoot, { manifests: byDirectory });
-    return {
-      gateDeadlock: gate.findings.some((finding) => finding.rule === "needs-graph-cycle"),
-      kitDeadlock: composeKit({ selectedRoles: launchRoles, catalogue }).state === "indeterminate",
-    };
+  const cycles = (patches) => {
+    const { gateDeadlock, kitDeadlock } = verdicts(patches);
+    return { gateDeadlock, kitDeadlock };
   };
-  assert.deepEqual(verdicts({ customer: withCustomerFixture }), { gateDeadlock: false, kitDeadlock: false });
-  assert.deepEqual(verdicts({ customer: withCustomerFixture, publisher: publisherSurfacesWaitOnKeep }), { gateDeadlock: true, kitDeadlock: true });
-  assert.deepEqual(verdicts({ customer: customerNeedsSealing }), { gateDeadlock: true, kitDeadlock: true });
+  assert.deepEqual(cycles(ALL_LANES), { gateDeadlock: false, kitDeadlock: false });
+  assert.deepEqual(cycles(allLanesWith({ publisher: publisherSurfacesWaitOnKeep })), { gateDeadlock: true, kitDeadlock: true });
+  assert.deepEqual(cycles(allLanesWith({ customer: customerNeedsSealing })), { gateDeadlock: true, kitDeadlock: true });
+});
+
+/**
+ * Review of PR #1403 (B1): Publisher's `feeds` lists `doc` twice. The gate
+ * resolves a need through the FIRST declared entry; so must the kit.
+ * `cycleThroughFirst` puts the capability that waits on Customer's keep
+ * behind the first declared path (a deadlock); otherwise behind the second
+ * (no deadlock).
+ */
+function duplicateFeedFixture(cycleThroughFirst) {
+  const waitsOnKeep = [{ producerRole: "@clossys/customer", artifact: "keep" }];
+  return {
+    customer: () => ({
+      needs: [{ producerRole: "@clossys/publisher", artifact: "doc" }],
+      feeds: [{ artifact: "keep", path: "clossys/customer/keep.json" }],
+      capabilities: [{ id: "keep", inputs: [{ producerRole: "@clossys/publisher", artifact: "doc" }], outputs: ["clossys/customer/keep.json"] }],
+    }),
+    publisher: () => ({
+      needs: [{ producerRole: "@clossys/customer", artifact: "keep" }],
+      feeds: [
+        { artifact: "doc", path: "clossys/publisher/p1.json" },
+        { artifact: "doc", path: "clossys/publisher/p2.json" },
+      ],
+      capabilities: [
+        { id: "one", inputs: cycleThroughFirst ? waitsOnKeep : [], outputs: ["clossys/publisher/p1.json"] },
+        { id: "two", inputs: cycleThroughFirst ? [] : waitsOnKeep, outputs: ["clossys/publisher/p2.json"] },
+      ],
+    }),
+  };
+}
+
+test("a producer that declares one artifact twice resolves through its first declared entry, as the gate does", () => {
+  const deadlock = verdicts(duplicateFeedFixture(true), ["customer"]);
+  assert.deepEqual({ gate: deadlock.gateDeadlock, kit: deadlock.kitDeadlock }, { gate: true, kit: true });
+  const catalogue = catalogueWith(duplicateFeedFixture(true));
+  assert.deepEqual(judgeNeedsCycles({ roleNames: ["customer", "publisher"], catalogue }).capabilityCycle, ["customer#keep", "publisher#one", "customer#keep"]);
+
+  const legitimate = verdicts(duplicateFeedFixture(false), ["customer"]);
+  assert.deepEqual({ gate: legitimate.gateDeadlock, kit: legitimate.kitDeadlock }, { gate: false, kit: false });
 });
 
 test("a cycle among capabilities is a deadlock: the kit is indeterminate and the preset a finding", () => {
-  const catalogue = catalogueWith({ customer: withCustomerFixture, publisher: publisherSurfacesWaitOnKeep });
+  const catalogue = catalogueWith(allLanesWith({ publisher: publisherSurfacesWaitOnKeep }));
   const launch = composeKit({ selectedRoles: launchRoles, catalogue });
   assert.equal(launch.state, "indeterminate");
   assert.match(launch.reason, /customer#keep-verdict -> publisher#surface-documents -> customer#keep-verdict/);
@@ -180,31 +260,25 @@ test("a cycle among capabilities is a deadlock: the kit is indeterminate and the
   assert.equal(rules.includes("preset-does-not-compose"), true);
 });
 
-/** A summary `needs` entry naming Publisher's sealing, which no Customer capability's `inputs` covers. */
-function customerNeedsSealing(foundry) {
-  const next = withCustomerFixture(foundry);
-  next.needs = [...next.needs, { producerRole: "@clossys/publisher", artifact: "sealing-and-the-publication-record" }];
-  return next;
-}
-
 test("a top-level need no capability input covers is never dropped: every capability of that role waits on it", () => {
   // Sealing waits on keep-verdict. The uncovered summary entry cannot be
   // pinned to one Customer capability, so all of them -- keep-verdict
   // included -- wait on sealing, and that is a deadlock.
-  const catalogue = catalogueWith({ customer: customerNeedsSealing });
+  const catalogue = catalogueWith(allLanesWith({ customer: customerNeedsSealing }));
   const { capabilityCycle } = judgeNeedsCycles({ roleNames: ["customer", "publisher"], catalogue });
   assert.deepEqual(capabilityCycle, ["publisher#sealing-and-the-publication-record", "customer#keep-verdict", "publisher#sealing-and-the-publication-record"]);
 });
 
 test("a cycle only visible through a role with no capability map is unjudged: composed, and named", () => {
   const catalogue = catalogueWith({
-    // Two roles with no capability map that need each other.
-    inspector: (foundry) => ({ ...foundry, needs: [{ producerRole: "@clossys/integrator", artifact: "integration-report" }] }),
-    integrator: (foundry) => ({ ...foundry, needs: [{ producerRole: "@clossys/inspector", artifact: "inspection-report" }] }),
+    // Two roles with no capability map that need, and feed, each other.
+    inspector: (foundry) => ({ ...foundry, needs: [{ producerRole: "@clossys/integrator", artifact: "integration-report" }], feeds: [{ artifact: "inspection-report", path: "clossys/inspector/report.json" }] }),
+    integrator: (foundry) => ({ ...foundry, needs: [{ producerRole: "@clossys/inspector", artifact: "inspection-report" }], feeds: [{ artifact: "integration-report", path: "clossys/integrator/report.json" }] }),
   });
   assert.deepEqual(roleOf(catalogue, "inspector").capabilities, []);
   const composed = composeKit({ selectedRoles: ["inspector"], catalogue });
   assert.equal(composed.state, "composed");
+  assert.deepEqual(composed.unsatisfiedNeeds, []);
   assert.deepEqual(composed.unjudgedCycle, ["inspector", "integrator", "inspector"]);
   const result = evaluateOfferingKits({ contract: presetsContract, catalogue });
   assert.equal(result.findings.some((finding) => finding.rule === "preset-does-not-compose"), false);

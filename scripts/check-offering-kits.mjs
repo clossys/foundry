@@ -10,6 +10,15 @@
 // need and no deadlock). Exit 1 = at least one finding. Exit 2 = the
 // question could not be answered (a missing or unparseable input).
 //
+// A need is satisfied by the same rule scripts/check-package-framework.mjs
+// applies under --enforce (`unmatched-need`): a manifest `needs` entry is
+// met only when its producer is a role here AND that producer's own
+// declared `feeds` names the artifact
+// (scripts/lib/capability-catalogue.mjs#needIsMet). An unmet need is an
+// `unsatisfied-need` finding. A fallback need (runtime dependency,
+// non-runtime order) has no declared feed to match, so it is met whenever
+// its producer role exists.
+//
 // Needs cycles follow issue #1382's decision in
 // docs/contracts/package-framework.json (`fields.needs.cycleDecision`),
 // the same rule scripts/check-package-framework.mjs applies: a cycle among
