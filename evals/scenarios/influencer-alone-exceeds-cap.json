@@ -1,0 +1,15 @@
+{
+  "id": "influencer-alone-exceeds-cap",
+  "description": "A generic client who confirms only that the right people don't respond to what they put out there. Regression-tests the first-engagement role cap (#1176): Influencer alone pulls in the whole Launch closure (strategist, customer, designer, writer, publisher) via needs, for 6 roles total -- over the cap of 5 -- so composition must report over-cap rather than silently composing. No real company; a synthetic client for regression coverage only.",
+  "confirmedProblems": [
+    { "id": "influencer-audience-response", "primary": true }
+  ],
+  "expect": {
+    "state": "over-cap",
+    "cap": 5,
+    "roleCount": 6,
+    "mustIncludeRoles": ["strategist", "customer", "designer", "writer", "publisher", "influencer"],
+    "mustExcludeRoles": ["advisor", "architect", "bouncer", "builder", "butler", "controller", "giver", "inspector", "integrator", "keeper", "locksmith", "messenger", "observer"],
+    "sequence": ["strategist", "customer", "designer", "writer", "publisher", "influencer"]
+  }
+}

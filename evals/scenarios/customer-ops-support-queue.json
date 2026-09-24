@@ -1,0 +1,19 @@
+{
+  "id": "customer-ops-support-queue",
+  "description": "A generic client whose support queue loses track of requests, and who cannot account for the data and access they hold on the people they serve. No real company; a synthetic client for regression coverage only.",
+  "confirmedProblems": [
+    { "id": "bouncer-access-drift", "primary": true },
+    { "id": "butler-request-tracking" },
+    { "id": "giver-unanswered-requests" },
+    { "id": "keeper-holding-accountability" },
+    { "id": "messenger-delivery-confidence" }
+  ],
+  "expect": {
+    "state": "composed",
+    "mustIncludeRoles": ["bouncer", "butler", "giver", "keeper", "messenger"],
+    "mustExcludeRoles": ["advisor", "architect", "builder", "controller", "customer", "designer", "influencer", "inspector", "integrator", "locksmith", "observer", "publisher", "strategist", "writer"],
+    "maxRoles": 5,
+    "sequence": ["bouncer", "butler", "giver", "keeper", "messenger"],
+    "unsatisfiedNeeds": []
+  }
+}
