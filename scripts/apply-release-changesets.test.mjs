@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import test from "node:test";
@@ -1151,6 +1151,116 @@ test("applyReleaseChangesets: when npm fails, a BRAND-NEW CHANGELOG this run wou
     const alphaManifest = JSON.parse(readFileSync(join(root, "packages", "alpha", "package.json"), "utf8"));
     assert.equal(alphaManifest.version, "1.0.0");
   } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// review A, re-review of #1390: package-lock.json itself must be backed up
+// and rolled back too -- real `npm install --package-lock-only` writes the
+// lockfile LAST, so this is unlikely with the real implementation, but
+// `runNpmInstall` is injectable (every test in this file injects one), and
+// nothing here should assume every implementation writes the lockfile only
+// at the very end.
+test("applyReleaseChangesets: when npm fails AFTER writing a partial package-lock.json, the lockfile is rolled back too (issue #1390)", () => {
+  const root = makeRoot();
+  try {
+    makePackage(root, "alpha", "1.0.0");
+    writeFileSync(changelogFile(root, "alpha"), "# Changelog\n\n## 1.0.0\n\n- Initial release.\n");
+    writeChangeset(root, "alpha-fix.md", "---\nalpha: patch\n---\n\nFix a bug.\n");
+    const originalLock = '{\n  "name": "root",\n  "lockfileVersion": 3,\n  "packages": {}\n}\n';
+    writeFileSync(join(root, "package-lock.json"), originalLock);
+
+    let threw = null;
+    try {
+      applyReleaseChangesets({
+        root,
+        today: () => "2026-09-22",
+        runNpmInstall: (r) => {
+          // Simulate a real npm process that writes (part of) the lockfile
+          // before failing partway through -- the exact shape #1390 is
+          // about: something on disk changed, then the process died.
+          writeFileSync(join(r, "package-lock.json"), "{ partially written, then npm died\n");
+          throw new Error("simulated npm install --package-lock-only failure mid-write");
+        },
+      });
+    } catch (error) {
+      threw = error;
+    }
+
+    assert.ok(threw, "the npm failure must still propagate");
+    assert.equal(readFileSync(join(root, "package-lock.json"), "utf8"), originalLock, "package-lock.json must be rolled back to its exact pre-run content, not left with npm's partial write");
+
+    // Manifest/changeset must be rolled back too, same as any other #1390 case.
+    const alphaManifest = JSON.parse(readFileSync(join(root, "packages", "alpha", "package.json"), "utf8"));
+    assert.equal(alphaManifest.version, "1.0.0");
+    assert.equal(existsSync(join(root, ".changesets", "alpha-fix.md")), true);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// review A, re-review of #1390: a restore failure must not (a) silently
+// swallow the ORIGINAL npm/network error, or (b) abandon restoring every
+// OTHER file just because one restore attempt failed. Forces a restore
+// failure deterministically (portable across permission models/sandboxes,
+// unlike chmod) by having the injected npm failure replace one already-
+// written manifest path with a DIRECTORY before throwing -- restoring that
+// path (writeFileSync of the original text) then fails with EISDIR, while
+// every other backed-up file (a second package's manifest/changelog, and
+// the lockfile) must still be fully restored around it.
+test("applyReleaseChangesets: a restore failure surfaces BOTH the original and the restore error, and still restores every OTHER file (issue #1390)", () => {
+  const root = makeRoot();
+  try {
+    makePackage(root, "alpha", "1.0.0");
+    writeFileSync(changelogFile(root, "alpha"), "# Changelog\n\n## 1.0.0\n\n- Initial release.\n");
+    writeChangeset(root, "alpha-fix.md", "---\nalpha: patch\n---\n\nFix a bug.\n");
+
+    makePackage(root, "beta", "2.0.0");
+    const betaChangelog = "# Changelog\n\n## 2.0.0\n\n- Initial release.\n";
+    writeFileSync(changelogFile(root, "beta"), betaChangelog);
+    writeChangeset(root, "beta-fix.md", "---\nbeta: patch\n---\n\nFix a bug.\n");
+
+    const alphaManifestPath = join(root, "packages", "alpha", "package.json");
+
+    let threw = null;
+    try {
+      applyReleaseChangesets({
+        root,
+        today: () => "2026-09-22",
+        runNpmInstall: () => {
+          // At this point alpha's and beta's manifests/changelogs are
+          // already written (backed up). Replace alpha's manifest PATH
+          // with a directory so restoring it (a plain writeFileSync of the
+          // backed-up original text) fails deterministically with EISDIR,
+          // regardless of file permissions or which user this runs as.
+          rmSync(alphaManifestPath, { force: true });
+          mkdirSync(alphaManifestPath);
+          throw new Error("simulated npm install --package-lock-only failure");
+        },
+      });
+    } catch (error) {
+      threw = error;
+    }
+
+    assert.ok(threw, "the failure must still propagate");
+    assert.match(threw.message, /simulated npm install/, "the ORIGINAL error's message must be visible, not swallowed by the restore failure");
+    assert.match(threw.message, /restoring the working tree afterward ALSO failed/);
+    assert.equal(threw.cause?.message, "simulated npm install --package-lock-only failure", "the original error must be reachable via `cause`");
+    assert.ok(threw.restoreError, "the restore error must be attached too, not discarded");
+    assert.ok(threw.originalError, "the original error must also be attached directly, not only via `cause`");
+
+    // beta: a DIFFERENT file than the one whose restore failed -- must
+    // still be fully rolled back, proving the failure on alpha's manifest
+    // did not abandon the rest of the restore.
+    const betaManifest = JSON.parse(readFileSync(join(root, "packages", "beta", "package.json"), "utf8"));
+    assert.equal(betaManifest.version, "2.0.0", "beta's manifest must still be restored even though alpha's restore failed");
+    assert.equal(readFileSync(changelogFile(root, "beta"), "utf8"), betaChangelog, "beta's CHANGELOG must still be restored even though alpha's restore failed");
+
+    // alpha's manifest PATH is still a directory -- the restore attempt
+    // failed as expected, and (correctly) did not corrupt it any further.
+    assert.equal(statSync(alphaManifestPath).isDirectory(), true, "the failed restore must not have silently succeeded or crashed uncontrolled");
+  } finally {
+    rmSync(join(root, "packages", "alpha", "package.json"), { recursive: true, force: true });
     rmSync(root, { recursive: true, force: true });
   }
 });

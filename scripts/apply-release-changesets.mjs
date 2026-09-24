@@ -954,16 +954,45 @@ export function applyReleaseChangesets({
     // unchanged: the failure is still visible to the caller (nothing here
     // papers over a real npm/network problem), it just no longer leaves the
     // working tree in a state a plain rerun would double-bump.
+    //
+    // package-lock.json IS BACKED UP TOO (review A, re-review of #1390) --
+    // real `npm install --package-lock-only` writes the lockfile LAST, so
+    // a plain non-zero exit from it is unlikely to have written a partial
+    // lockfile; but `runNpmInstall` is injectable (every test in this file
+    // injects one), so nothing here can assume every implementation writes
+    // the lockfile only at the very end, or writes it atomically. Backed up
+    // immediately before the call, alongside every manifest/CHANGELOG.
+    //
+    // RESTORE IS BEST-EFFORT, IN REVERSE ORDER, AND NEVER MASKS THE
+    // ORIGINAL FAILURE (review A, re-review of #1390) -- restoreBackups()
+    // used to stop at the first failed write/rmSync, silently abandoning
+    // every remaining file and letting that restore-time error propagate
+    // in place of the REAL failure that triggered the rollback (a
+    // developer would see `EACCES` from a half-finished restore, never the
+    // npm/network error that actually caused this run to fail). It now
+    // attempts every backup regardless of an earlier one failing -- undoing
+    // as much as it possibly can -- and returns the FIRST restore failure
+    // (if any) instead of throwing, so the caller below can report BOTH
+    // errors rather than picking one. Restoring in reverse-write order
+    // costs nothing here (this repository's own paths are all touched
+    // once) and stays correct if a path is ever written twice in one run.
     const backups = []; // { path, existed, text }
     function backupFile(path) {
       const existed = existsSync(path);
       backups.push({ path, existed, text: existed ? readFileSync(path, "utf8") : null });
     }
     function restoreBackups() {
-      for (const b of backups) {
-        if (b.existed) writeFileSync(b.path, b.text);
-        else rmSync(b.path, { force: true });
+      let firstRestoreError = null;
+      for (let i = backups.length - 1; i >= 0; i -= 1) {
+        const b = backups[i];
+        try {
+          if (b.existed) writeFileSync(b.path, b.text);
+          else rmSync(b.path, { force: true });
+        } catch (restoreError) {
+          if (!firstRestoreError) firstRestoreError = restoreError;
+        }
       }
+      return firstRestoreError;
     }
 
     try {
@@ -996,9 +1025,28 @@ export function applyReleaseChangesets({
       // rollback above, a rerun after a failure now sees EXACTLY the
       // pre-run state (unbumped manifests, untouched changelogs, the same
       // pending changesets) and re-plans cleanly, with no double bump.
-      if (applied.length > 0) runNpmInstall(root);
+      if (applied.length > 0) {
+        backupFile(join(root, "package-lock.json"));
+        runNpmInstall(root);
+      }
     } catch (error) {
-      restoreBackups();
+      const restoreError = restoreBackups();
+      if (restoreError) {
+        // BOTH errors matter here: the ORIGINAL failure is why this run
+        // stopped at all, and the RESTORE failure is why the working tree
+        // may still be left partially modified despite the rollback logic
+        // above -- surfacing only one would hide the other. `cause` carries
+        // the original error (the standard channel a caller's own error
+        // handling already knows to unwrap); `restoreError` is attached
+        // directly since there is no equally standard second channel.
+        const combined = new Error(
+          `apply-release-changesets: write phase failed (${errorMessage(error)}), and restoring the working tree afterward ALSO failed (${errorMessage(restoreError)}) -- some manifests/changelogs/the lockfile may be left partially written; check \`git status\` before rerunning`,
+          { cause: error },
+        );
+        combined.originalError = error;
+        combined.restoreError = restoreError;
+        throw combined;
+      }
       throw error;
     }
     for (const file of toDelete) rmSync(join(root, ".changesets", file));
