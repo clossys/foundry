@@ -2008,7 +2008,8 @@ concern: a package manager resolves the whole graph regardless of what order
 packages are requested in, so none of this can be worked around by
 installing things in a particular sequence.
 
-Past range moves, kept for the record: `writer`'s range first moved from
+Past range moves, kept as history (none of these is necessarily the current
+range; later moves are in the CHANGELOG): `writer`'s range first moved from
 `^0.1.0` to `^0.2.0` when `writer` 0.2.0 changed `writer-check
 addressability`'s exit-code precedence (issue #407), then to `^0.3.0` when
 Writer added its passage layer (issue #373). Both were additive or
