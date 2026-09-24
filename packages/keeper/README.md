@@ -421,3 +421,7 @@ Node 20 or newer. Zero runtime dependencies.
 ## Licence
 
 MIT. See [LICENSE](LICENSE).
+
+## Changelog
+
+Release notes for every version are in the [changelog](https://github.com/clossys/foundry/blob/main/docs/changelogs/keeper.md), kept in the public repository rather than in the installed package.

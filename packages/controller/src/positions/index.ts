@@ -1,5 +1,5 @@
 /** Consumer-owned installed-position ledger validation. No provider I/O. */
-import { readCanonicalRoleLoopContract, readInstalledPositionContract } from "./canonical.js";
+import { readCanonicalRoleLoopContract, readHistoricalInstalledPositionContracts, readHistoricalRoleLoopContracts, readInstalledPositionContract } from "./canonical.js";
 import { isValueSafeReference, referenceSafetyIssue } from "../internal/reference-safety.js";
 
 export const POSITION_FIELDS = Object.freeze(["id", "package", "businessMetricPath", "causalHypothesis", "baseline", "setpoint", "operatingScope", "authority", "evidenceSource", "cadence", "budget", "guardrails", "escalationPath", "workerComponents", "stageBindings", "firstDayAssessment"] as const);
@@ -47,6 +47,29 @@ function strings(value: unknown, minimum = 0): value is string[] { return Array.
 function references(value: unknown, minimum = 0): value is string[] { return Array.isArray(value) && value.length >= minimum && value.every((item) => text(item) && isValueSafeReference(item)) && new Set(value).size === value.length; }
 function fail(findings: InstalledPositionFinding[], rule: string, path: string, message: string): void { findings.push({ rule, path, message }); }
 function advise(advisories: InstalledPositionAdvisory[], rule: string, path: string, message: string): void { advisories.push({ rule, path, message }); }
+// A prior-version advisory for a directly-called validator whose 0.9.10
+// return type is a plain findings array, never a report object -- so it
+// cannot grow a required `advisories` field without breaking that
+// signature. The `advisories` property is defined non-enumerable, so it
+// is invisible to everything that walks own enumerable properties --
+// `JSON.stringify`, `{...result}`, `for...in` -- and, critically, to an
+// equality check against a plain array: `assert.deepEqual`/`deepStrictEqual`
+// and vitest `toEqual`/`toStrictEqual` against `[]` all pass exactly as
+// they did in 0.9.10, because none of those consider a non-enumerable
+// property. `Array.isArray`, `.length`, spread, and every array method
+// are unaffected regardless, since the property adds no index. A caller
+// that knows to look still reads it directly as `result.advisories`.
+// Never attached when there is nothing to advise, so the existing exact
+// current-contract-match case is untouched.
+function withAdvisories<T>(findings: readonly T[], advisories: readonly InstalledPositionAdvisory[]): readonly T[] & { readonly advisories?: readonly InstalledPositionAdvisory[] } {
+  if (advisories.length === 0) return findings;
+  const copy = [...findings] as T[] & { advisories?: readonly InstalledPositionAdvisory[] };
+  Object.defineProperty(copy, "advisories", { value: advisories, enumerable: false, writable: false, configurable: false });
+  return copy;
+}
+function legacyContractAdvisory(path: string, kind: string, version: string): InstalledPositionAdvisory {
+  return { rule: "legacy-contract-copy", path, message: `matches the ${kind} contract shipped in @clossys/controller ${version}; drop the argument to use the contract shipped inside this package, or re-copy it from this version.` };
+}
 function rejectUnsafeReference(value: unknown, path: string, findings: InstalledPositionFinding[]): void {
   if (typeof value !== "string") return;
   const issue = referenceSafetyIssue(value);
@@ -68,17 +91,33 @@ function canonical(value: unknown): string {
   return JSON.stringify(value);
 }
 
-/** Validates the machine-readable position contract against this package's one code vocabulary. */
-export function validateInstalledPositionContract(contract: unknown = readInstalledPositionContract()): readonly InstalledPositionFinding[] {
+/**
+ * Validates the machine-readable position contract against this package's
+ * one code vocabulary. A caller-supplied `contract` that is not the current
+ * shipped snapshot but exactly matches a known historical one (currently
+ * only 0.9.10's) is accepted and checked as-if it were the current
+ * snapshot, with a non-failing `legacy-contract-copy` advisory attached to
+ * the returned array (see `withAdvisories`). Anything else that drifts from
+ * the current snapshot, including a historical contract with even one field
+ * changed, still fails with `noncanonical-installed-position-contract`.
+ */
+export function validateInstalledPositionContract(contract: unknown = readInstalledPositionContract()): readonly InstalledPositionFinding[] & { readonly advisories?: readonly InstalledPositionAdvisory[] } {
   const findings: InstalledPositionFinding[] = [];
   let snapshot: unknown;
   try { snapshot = readInstalledPositionContract(); }
   catch (error) { return [{ rule: "installed-position-contract-unavailable", path: "contracts/installed-position-contract.json", message: error instanceof Error ? error.message : String(error) }]; }
-  if (canonical(contract) !== canonical(snapshot)) return [{ rule: "noncanonical-installed-position-contract", path: "installedPositionContract", message: "must exactly match the immutable installed-position-contract snapshot shipped by @clossys/controller" }];
-  if (!keys(contract, ["schemaVersion", "kind", "referenceRule", "roleDisposition", "position"]) || contract.schemaVersion !== 1 || contract.kind !== "foundry-installed-position-ledger" || !keys(contract.roleDisposition, ["fields", "dispositions", "rule"]) || !keys(contract.position, ["fields", "workerComponentKinds", "stageBindingStages", "setpointValueShapes", "firstDayAssessmentFields", "recommendations", "setpointValueRule"])) return [{ rule: "invalid-installed-position-contract", path: "installedPositionContract", message: "must be the complete schemaVersion 1 installed-position contract" }];
-  const position = contract.position;
-  if (contract.referenceRule !== REFERENCE_VALUE_RULE || canonical(contract.roleDisposition.fields) !== canonical(dispositionFields) || canonical(contract.roleDisposition.dispositions) !== canonical(ROLE_DISPOSITIONS) || contract.roleDisposition.rule !== ROLE_DISPOSITION_RULE || canonical(position.fields) !== canonical(POSITION_FIELDS) || canonical(position.workerComponentKinds) !== canonical(WORKER_COMPONENT_KINDS) || canonical(position.stageBindingStages) !== canonical(universalStages) || canonical(position.setpointValueShapes) !== canonical(SETPOINT_VALUE_SHAPES) || canonical(position.firstDayAssessmentFields) !== canonical(firstDayFields) || canonical(position.recommendations) !== canonical(POSITION_RECOMMENDATIONS) || position.setpointValueRule !== SETPOINT_VALUE_RULE) findings.push({ rule: "installed-position-contract-vocabulary-drift", path: "installedPositionContract", message: "reference rule, fields, dispositions, worker kinds, stage bindings, setpoint shapes and rule, first-day fields, and recommendations must match the validator constants" });
-  return findings;
+  let advisory: InstalledPositionAdvisory | undefined;
+  let checked = contract;
+  if (canonical(contract) !== canonical(snapshot)) {
+    const historical = readHistoricalInstalledPositionContracts().find((entry) => canonical(entry.contract) === canonical(contract));
+    if (!historical) return [{ rule: "noncanonical-installed-position-contract", path: "installedPositionContract", message: "must exactly match the immutable installed-position-contract snapshot shipped by @clossys/controller" }];
+    advisory = legacyContractAdvisory("installedPositionContract", "installed-position", historical.version);
+    checked = snapshot;
+  }
+  if (!keys(checked, ["schemaVersion", "kind", "referenceRule", "roleDisposition", "position"]) || checked.schemaVersion !== 1 || checked.kind !== "foundry-installed-position-ledger" || !keys(checked.roleDisposition, ["fields", "dispositions", "rule"]) || !keys(checked.position, ["fields", "workerComponentKinds", "stageBindingStages", "setpointValueShapes", "firstDayAssessmentFields", "recommendations", "setpointValueRule"])) return [{ rule: "invalid-installed-position-contract", path: "installedPositionContract", message: "must be the complete schemaVersion 1 installed-position contract" }];
+  const position = checked.position;
+  if (checked.referenceRule !== REFERENCE_VALUE_RULE || canonical(checked.roleDisposition.fields) !== canonical(dispositionFields) || canonical(checked.roleDisposition.dispositions) !== canonical(ROLE_DISPOSITIONS) || checked.roleDisposition.rule !== ROLE_DISPOSITION_RULE || canonical(position.fields) !== canonical(POSITION_FIELDS) || canonical(position.workerComponentKinds) !== canonical(WORKER_COMPONENT_KINDS) || canonical(position.stageBindingStages) !== canonical(universalStages) || canonical(position.setpointValueShapes) !== canonical(SETPOINT_VALUE_SHAPES) || canonical(position.firstDayAssessmentFields) !== canonical(firstDayFields) || canonical(position.recommendations) !== canonical(POSITION_RECOMMENDATIONS) || position.setpointValueRule !== SETPOINT_VALUE_RULE) findings.push({ rule: "installed-position-contract-vocabulary-drift", path: "installedPositionContract", message: "reference rule, fields, dispositions, worker kinds, stage bindings, setpoint shapes and rule, first-day fields, and recommendations must match the validator constants" });
+  return advisory ? withAdvisories(findings, [advisory]) : findings;
 }
 
 export function validateInstalledPositionLedger(ledger: unknown, roleContract: unknown = readCanonicalRoleLoopContract()): InstalledPositionLedgerReport {
@@ -89,7 +128,21 @@ export function validateInstalledPositionLedger(ledger: unknown, roleContract: u
   let canonicalContract: unknown;
   try { canonicalContract = readCanonicalRoleLoopContract(); }
   catch (error) { return { ok: false, findings: [{ rule: "canonical-role-contract-unavailable", path: "contracts/role-loop-archetypes.json", message: error instanceof Error ? error.message : String(error) }], advisories, openRoles: 0, positions: 0 }; }
-  if (canonical(roleContract) !== canonical(canonicalContract)) return { ok: false, findings: [{ rule: "noncanonical-role-contract", path: "roleContract", message: "must exactly match the immutable role-loop-archetypes snapshot shipped by @clossys/controller" }], advisories, openRoles: 0, positions: 0 };
+  if (canonical(roleContract) !== canonical(canonicalContract)) {
+    // A caller-supplied role contract that is not the current shipped
+    // snapshot but exactly matches a known historical one (currently only
+    // 0.9.10's, from before issue #1194's rename and the 0.9.11
+    // @clossys/customer role) is accepted: validation proceeds against the
+    // CURRENT canonical contract's rules below -- already compatible with a
+    // 0.9.10 ledger via the advisories elsewhere in this function -- with a
+    // non-failing `legacy-contract-copy` advisory recorded here. Anything
+    // else, including a historical contract with even one field changed,
+    // still fails with `noncanonical-role-contract` exactly as before.
+    const historical = readHistoricalRoleLoopContracts().find((entry) => canonical(entry.contract) === canonical(roleContract));
+    if (!historical) return { ok: false, findings: [{ rule: "noncanonical-role-contract", path: "roleContract", message: "must exactly match the immutable role-loop-archetypes snapshot shipped by @clossys/controller" }], advisories, openRoles: 0, positions: 0 };
+    advisories.push(legacyContractAdvisory("roleContract", "role-loop-archetypes", historical.version));
+    roleContract = canonicalContract;
+  }
   if (!record(roleContract) || roleContract.schemaVersion !== 5 || !keys(roleContract, ["schemaVersion", "universalStages", "consumerBindings", "modes", "metricVocabulary", "qualificationVerdicts", "roles"]) || !record(roleContract.roles)) return { ok: false, findings: [{ rule: "unreadable-role-contract", path: "roles", message: "must be the complete schemaVersion 5 role contract" }], advisories, openRoles: 0, positions: 0 };
   if (canonical(roleContract.universalStages) !== canonical(universalStages) || !record(roleContract.metricVocabulary) || canonical(roleContract.metricVocabulary.directions) !== canonical(metricDirections) || !record(roleContract.modes) || canonical(Object.keys(roleContract.modes).sort()) !== canonical(["assure", "fulfill", "interact", "optimize", "reconcile", "steward"])) return { ok: false, findings: [{ rule: "role-contract-vocabulary-drift", path: "roleContract", message: "stages, modes, and metric directions must match the shipped schemaVersion 5 contract" }], advisories, openRoles: 0, positions: 0 };
   const roles = new Set(Object.keys(roleContract.roles));

@@ -14,7 +14,9 @@
 // package:
 //   - bumps packages/<dir>/package.json's version once, by the HIGHEST
 //     bump level any of that package's changesets named;
-//   - prepends a packages/<dir>/CHANGELOG.md entry for the new version,
+//   - prepends an entry for the new version to docs/changelogs/<dir>.md
+//     (the package changelog, kept in this public repository rather than
+//     in the tarball -- see scripts/lib/changelog-location.mjs),
 //     concatenating that package's changeset summaries as bullet points
 //     (Keep a Changelog format, matching docs/PUBLISHING.md section 4),
 //     with a "Breaking changes" subsection for any consumed changeset
@@ -181,7 +183,7 @@
 //   - if the dependent is not itself named by any changeset, it gets its
 //     OWN version bumped by one PATCH step -- its packed manifest changed,
 //     so docs/PUBLISHING.md section 4 applies to it too -- with a
-//     CHANGELOG.md entry whose bullet reads
+//     changelog entry whose bullet reads
 //     "Updated dependency <name> to ^<newVersion>";
 //   - if the dependent IS already named by a changeset (bumping for its
 //     own, unrelated reason), the same bullet is appended to the CHANGELOG
@@ -254,12 +256,13 @@
 // Weekly calendar design (versioning unchanged): docs/RELEASING.md, refs #1187 #1265 #1266
 // Refs: #1322, #1327, #1332.
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { changesetsForPackage, highestBumpLevel, loadChangesets } from "./collect-changesets.mjs";
 import { parseSemver } from "./check-release-pr-shape.mjs";
 import { satisfies } from "./check-workspace-links.mjs";
+import { changelogPath as changelogPathFor, changelogRelPath } from "./lib/changelog-location.mjs";
 
 function die(message, code = 1) {
   console.error(`apply-release-changesets: ${message}`);
@@ -559,7 +562,7 @@ export function applyReleaseChangesets({
   // every package either phase touched. Only once ALL THREE have passed
   // does the write phase run at all -- a single-pass write-as-you-go loop
   // that stopped partway through a later package's failure would leave
-  // EARLIER packages' package.json/CHANGELOG.md already written on disk
+  // EARLIER packages' package.json/changelog already written on disk
   // with their changesets not yet deleted, so a rerun after fixing the
   // failure would re-bump and duplicate those earlier packages' entries
   // (issue #1322 item 1) -- and splitting the dependency-range rewrite into
@@ -632,7 +635,7 @@ export function applyReleaseChangesets({
       breakingBullets,
       ownBullets: matches.map((m) => m.summary),
       changesetFiles: matches.map((m) => m.file),
-      changelogPath: join(pkgDir, "CHANGELOG.md"),
+      changelogPath: changelogPathFor(root, pkg),
     });
   }
 
@@ -752,6 +755,7 @@ export function applyReleaseChangesets({
       breaking: p.breakingBullets.length > 0,
       breakingSummaries: p.breakingBullets,
       changesetFiles: p.changesetFiles,
+      changelog: changelogRelPath(p.pkg),
     };
     // `dependencyUpdates` carries BOTH kinds, for full transparency in the
     // JSON output -- only the non-dev ones ever produced a CHANGELOG
@@ -769,7 +773,7 @@ export function applyReleaseChangesets({
       findings.push(`packages/${d.pkg}: ${errorMessage(error)}`);
       continue;
     }
-    const changelogPath = join(root, "packages", d.pkg, "CHANGELOG.md");
+    const changelogPath = changelogPathFor(root, d.pkg);
     const existingChangelog = existsSync(changelogPath) ? readFileSync(changelogPath, "utf8") : null;
     // devUpdates deliberately do NOT contribute a CHANGELOG bullet -- same
     // reasoning as the named-package path just above.
@@ -790,6 +794,7 @@ export function applyReleaseChangesets({
       breakingSummaries: [],
       changesetFiles: [],
       dependencyUpdates: [...d.updates, ...d.devUpdates],
+      changelog: changelogRelPath(d.pkg),
     });
   }
 
@@ -840,7 +845,12 @@ export function applyReleaseChangesets({
       writeFileSync(step.manifestPath, step.newManifestText);
       // A devDependencies-only step (see devDependencyOnlyPlans above) has
       // no changelogPath at all -- no version bump, nothing to log.
-      if (step.changelogPath) writeFileSync(step.changelogPath, step.newChangelog);
+      if (step.changelogPath) {
+        // docs/changelogs/ may not exist yet in a fresh checkout or fixture;
+        // the changelog for a first release is created, never skipped.
+        mkdirSync(dirname(step.changelogPath), { recursive: true });
+        writeFileSync(step.changelogPath, step.newChangelog);
+      }
       for (const file of step.changesetFiles) toDelete.add(file);
     }
     // npm RUNS BEFORE CHANGESETS ARE DELETED (should-fix, re-review,
@@ -908,6 +918,7 @@ function main() {
       const consuming = a.changesetFiles.length > 0 ? a.changesetFiles.join(", ") : "(no changeset -- sibling dependency update only)";
       const flags = [a.breaking ? "BREAKING" : null, a.outOfBand ? "out-of-band" : null].filter(Boolean).join(", ");
       console.log(`  ${a.package}: ${a.fromVersion} -> ${a.toVersion} (${a.bump}${flags ? `, ${flags}` : ""}), consuming ${consuming}`);
+      console.log(`    changelog entry: ${a.changelog}`);
       for (const u of a.dependencyUpdates ?? []) {
         console.log(`    dependency ${u.name} (${u.section}): ${u.fromRange} -> ${u.toRange}`);
       }

@@ -800,3 +800,7 @@ Node.js >= 20. No runtime dependencies.
 ## Licence
 
 MIT
+
+## Changelog
+
+Release notes for every version are in the [changelog](https://github.com/clossys/foundry/blob/main/docs/changelogs/integrator.md), kept in the public repository rather than in the installed package.

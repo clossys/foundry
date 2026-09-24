@@ -11,7 +11,9 @@
 // With no positional arguments, every packages/*/package.json in this repo
 // is checked. Exit 0 = every version-bumped package's bump is either
 // justified by consumed changesets whose bump level matches, or is
-// accompanied by a matching CHANGELOG.md entry (the pre-existing, documented
+// accompanied by a matching changelog entry in docs/changelogs/<dir>.md (the
+// package changelog, kept in this public repository rather than the tarball
+// -- see scripts/lib/changelog-location.mjs; the pre-existing, documented
 // convention -- see docs/PUBLISHING.md section 4). Exit 1 = at least one
 // version-bumped package's bump is neither. Exit 2 = the question could not
 // be answered for at least one package (a git failure, an unreadable
@@ -48,12 +50,12 @@
 //      major, computed structurally from the two version triples). This is
 //      the shape scripts/apply-release-changesets.mjs's release PR produces.
 //      If any consumed changeset for this package named `major`,
-//      packages/<dir>/CHANGELOG.md's entry for the new version must also
+//      docs/changelogs/<dir>.md's entry for the new version must also
 //      carry a "### Breaking changes" subsection
 //      (scripts/apply-release-changesets.mjs's prependChangelogEntry()
 //      writes exactly that).
 //
-//   2. A MATCHING CHANGELOG ENTRY. packages/<dir>/CHANGELOG.md, at HEAD,
+//   2. A MATCHING CHANGELOG ENTRY. docs/changelogs/<dir>.md, at HEAD,
 //      has a heading for the new version ("## <version>" or
 //      "## [<version>] ..."). This is the pre-existing, already-documented
 //      requirement (docs/PUBLISHING.md section 4), which this script
@@ -78,6 +80,7 @@ import { basename, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { evaluatePackageDiff } from "./check-release-readiness.mjs";
 import { parseChangesetText, CHANGESETS_DIR } from "./collect-changesets.mjs";
+import { changelogPathForPackageDir, changelogRelPath } from "./lib/changelog-location.mjs";
 
 function git(args, cwd) {
   return execFileSync("git", args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
@@ -160,13 +163,13 @@ function changesetFileNamesAtHead(gitRoot) {
   return new Set(readdirSync(dir, { withFileTypes: true }).filter((d) => d.isFile()).map((d) => d.name));
 }
 
-// The full text of packages/<dir>/CHANGELOG.md's entry for `version` (the
+// The full text of docs/changelogs/<dir>.md's entry for `version` (the
 // text between its "## <version>" heading and the next "## " heading, or
 // end of file), or null if there is no such heading at HEAD. Accepts
 // "## <version>" and "## [<version>] ..." (Keep a Changelog), with or
 // without a leading "v".
 function changelogEntrySection(absPkgDir, version) {
-  const path = join(absPkgDir, "CHANGELOG.md");
+  const path = changelogPathForPackageDir(absPkgDir);
   if (!existsSync(path)) return null;
   const escaped = version.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const headingRe = new RegExp(`^##\\s*\\[?v?${escaped}\\]?(\\s|$).*$`, "m");
@@ -182,7 +185,7 @@ function hasChangelogEntry(absPkgDir, version) {
   return changelogEntrySection(absPkgDir, version) !== null;
 }
 
-// Does packages/<dir>/CHANGELOG.md's entry for `version` carry the
+// Does docs/changelogs/<dir>.md's entry for `version` carry the
 // "### Breaking changes" subsection scripts/apply-release-changesets.mjs's
 // prependChangelogEntry() writes for a consumed `major`-level changeset?
 function changelogEntryHasBreakingSection(absPkgDir, version) {
@@ -242,7 +245,7 @@ function evaluatePackage(pkgDir, requestedBase) {
         status: "not-release-shaped",
         detail:
           `version bumped from ${baseVersion} to ${version}, consuming changeset(s) flagged "major" (${breakingConsumed.map((c) => c.file).join(", ")}), ` +
-          `but CHANGELOG.md's entry for ${version} has no "### Breaking changes" subsection`,
+          `but ${changelogRelPath(packageKey)}'s entry for ${version} has no "### Breaking changes" subsection`,
       };
     }
 
@@ -257,7 +260,7 @@ function evaluatePackage(pkgDir, requestedBase) {
     return {
       package: diff.package,
       status: "pass",
-      detail: `version bumped from ${baseVersion} to ${version} (${bumpLevel}) with a matching CHANGELOG.md entry -- accepted under the pre-existing docs/PUBLISHING.md convention`,
+      detail: `version bumped from ${baseVersion} to ${version} (${bumpLevel}) with a matching ${changelogRelPath(packageKey)} entry -- accepted under the pre-existing docs/PUBLISHING.md convention`,
     };
   }
 
@@ -265,8 +268,8 @@ function evaluatePackage(pkgDir, requestedBase) {
     package: diff.package,
     status: "not-release-shaped",
     detail:
-      `version bumped from ${baseVersion} to ${version} (${bumpLevel}) since merge-base ${mergeBase.slice(0, 12)}, but no changeset naming "${packageKey}" was consumed and CHANGELOG.md has no entry for ${version}. ` +
-      "A version change outside a release PR is refused (issue #1255) -- add a .changesets/<slug>.md instead of bumping directly, or add the CHANGELOG.md entry this bump requires.",
+      `version bumped from ${baseVersion} to ${version} (${bumpLevel}) since merge-base ${mergeBase.slice(0, 12)}, but no changeset naming "${packageKey}" was consumed and ${changelogRelPath(packageKey)} has no entry for ${version}. ` +
+      "A version change outside a release PR is refused (issue #1255) -- add a .changesets/<slug>.md instead of bumping directly, or add the changelog entry this bump requires.",
   };
 }
 

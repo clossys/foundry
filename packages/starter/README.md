@@ -188,3 +188,7 @@ remote action or provider adapter.
 ## Licence
 
 MIT.
+
+## Changelog
+
+Release notes for every version are in the [changelog](https://github.com/clossys/foundry/blob/main/docs/changelogs/starter.md), kept in the public repository rather than in the installed package.

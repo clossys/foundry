@@ -4,7 +4,8 @@ A pull request that changes a package's packed content adds a file here
 instead of bumping the package's own `version` directly. A periodic or
 on-demand release PR (`node scripts/apply-release-changesets.mjs`, wired as
 `.github/workflows/release-pr.yml`) applies every pending changeset: it
-bumps each named package once, writes its `CHANGELOG.md` entry, regenerates
+bumps each named package once, writes its changelog entry (in
+`docs/changelogs/<dir>.md`, never inside the package), regenerates
 `package-lock.json`, and deletes the changesets it applied.
 
 See issue #1255 for the design, and `scripts/collect-changesets.mjs`'s own
@@ -27,7 +28,7 @@ Add the shared lifecycle vocabulary consumed by check-package-framework.
   npm package name.
 - The bump level is one of `patch`, `minor`, `major`.
 - Everything after the closing `---` is the summary. It becomes the
-  `CHANGELOG.md` line for that package verbatim, so write it for a reader of
+  changelog line for that package verbatim, so write it for a reader of
   the changelog, not for a reviewer of this pull request.
 
 `scripts/check-release-readiness.mjs` accepts a pending changeset naming a

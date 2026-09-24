@@ -322,3 +322,7 @@ Storage and audit are host-supplied ports. This package writes nothing, stores
 nothing, and commits no person-attributable record anywhere.
 
 **Ships the schema and the checkers; every consumer authors its own values.**
+
+## Changelog
+
+Release notes for every version are in the [changelog](https://github.com/clossys/foundry/blob/main/docs/changelogs/bouncer.md), kept in the public repository rather than in the installed package.

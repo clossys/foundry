@@ -115,7 +115,9 @@ branch or shaping a file list:
    PR rewrite a sibling's now-out-of-range `^0.N.0` dependency in the same
    commit as that sibling's own dependent patch bump, without opening the
    check up to anything wider.
-   Every changed `CHANGELOG.md` must contain EXACTLY ONE new section,
+   Every changed package changelog (`docs/changelogs/<dir>.md`; a
+   `packages/<dir>/CHANGELOG.md`, or `docs/changelogs/README.md`, is not a
+   release-PR-shaped file at all) must contain EXACTLY ONE new section,
    inserted immediately before the base text's first existing version
    heading (after any preamble), whose own heading is that SPECIFIC
    package's new version — nothing existing removed, altered, or
@@ -144,7 +146,7 @@ branch or shaping a file list:
    (a separate, pre-existing gate that
    runs on every pull request) is what validates that the version bumps
    *inside* that shape are themselves legitimate (backed by a consumed
-   changeset or a matching `CHANGELOG.md` entry).
+   changeset or a matching `docs/changelogs/<dir>.md` entry).
 
 **Residual risk, documented rather than solved:** both of the above are
 properties of this repository's *state* (files changed, labels applied),
@@ -200,10 +202,27 @@ for the rule, worked examples, and `scripts/check-changeset-style.mjs`
 #1423).
 
 One addition on top of the pre-existing #1255 behavior: a `major`-level
-changeset now also requires the release's `CHANGELOG.md` entry to carry a
+changeset now also requires the release's `docs/changelogs/<dir>.md` entry to carry a
 "### Breaking changes" subsection (`scripts/apply-release-changesets.mjs`
 writes it; `scripts/check-release-pr-shape.mjs` requires it, alongside the
 version already fully encoding the breakage the way semver always has).
+
+### Where release notes live, and how to correct one
+
+Each package's release notes are in this public repository at
+`docs/changelogs/<dir>.md`, linked from the package README by its absolute
+public URL. They are not in the package's `files` and never ship in a
+tarball (`scripts/check-changelog-location.mjs` enforces the layout). The
+release PR writes each new entry there, and `scripts/check-release-pr-shape.mjs`
+and the release PR footprint check read it there.
+
+Correcting an entry already released — a wrong claim, a typo — is an
+ordinary docs pull request. It changes nothing under `packages/<dir>`, so it
+needs no changeset, bumps no version, and moves no `packages/<dir>` tree hash
+that a qualification record binds to. Keep it out of a release PR: the
+release PR footprint accepts only one new section per bumped package,
+byte-for-byte what its consumed changesets produce, so an edit to an older
+entry there fails the check.
 
 ### Options considered, and why CalVer was rejected
 
@@ -523,7 +542,7 @@ documented risk for the owner to decide on separately.
    run's PR is already open. When it proceeds, it applies every pending
    changeset (`scripts/apply-release-changesets.mjs`), bumping each named
    package by the highest level its changesets named, writing its
-   `CHANGELOG.md` entry, and preparing a pull request — or nothing at all
+   changelog entry in `docs/changelogs/<dir>.md`, and preparing a pull request — or nothing at all
    if nothing was pending (see [above](#a-quiet-week-releases-nothing)).
    `scripts/check-release-pr-shape.mjs` verifies, on that very pull
    request, that every version it touched is shaped exactly this way. See

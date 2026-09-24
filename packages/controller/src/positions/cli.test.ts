@@ -2,6 +2,7 @@ import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { readHistoricalRoleLoopContracts } from "./canonical.js";
 import { main } from "./cli.js";
 
 // The real 0.9.10 shape of docs/contracts/installed-position-ledger.fixture.json
@@ -119,12 +120,38 @@ describe("foundry-position-check CLI (#1394)", () => {
     log.mockRestore();
   });
 
-  it("still refuses a caller-supplied 0.9.10 role contract (the one disclosed break, A3)", () => {
+  it("still refuses an arbitrary, non-shipped role contract", () => {
     const ledgerPath = write("ledger.json", legacyLedger090);
     const contractPath = write("role-contract.json", { schemaVersion: 4, notTheCurrentContract: true });
     const log = vi.spyOn(console, "log").mockImplementation(() => {});
     expect(main([ledgerPath, contractPath])).toBe(1);
     expect(log.mock.calls.some((call) => String(call[0]).startsWith("FAIL noncanonical-role-contract"))).toBe(true);
     log.mockRestore();
+  });
+
+  it("accepts a caller's exact 0.9.10 role contract file (A3): exit code and stdout still match a plain pass, advisory goes to stderr", () => {
+    // The real 0.9.10 role-loop-archetypes.json, shipped verbatim by this
+    // package under contracts/historical/0.9.10/ and read here through the
+    // same historical-contract table canonical.ts exposes to index.ts --
+    // proving the CLI's second argument now accepts a caller's own vendored
+    // copy of that exact file instead of refusing it.
+    const historicalRoleContract = readHistoricalRoleLoopContracts().find((entry) => entry.version === "0.9.10")!.contract;
+    const ledgerPath = write("ledger.json", legacyLedger090);
+    const contractPath = write("role-contract.json", historicalRoleContract);
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(main([ledgerPath, contractPath])).toBe(0);
+    const stdoutLines = log.mock.calls.map((call) => String(call[0]));
+    const stderrLines = errorSpy.mock.calls.map((call) => String(call[0]));
+    expect(stdoutLines.some((line) => line.startsWith("FAIL"))).toBe(false);
+    expect(stdoutLines.some((line) => line.startsWith("ADVISORY"))).toBe(false);
+    expect(stdoutLines).toEqual(["INSTALLED POSITION LEDGER OK — 1 open role(s), 1 complete position(s). No adoption, grounding, or closure is inferred."]);
+    expect(stderrLines.some((line) => line.startsWith("ADVISORY legacy-contract-copy") && line.includes("0.9.10"))).toBe(true);
+    // The same migration advisories a default-contract run against this
+    // ledger shape reports (see the earlier test) still fire alongside it.
+    expect(stderrLines.some((line) => line.startsWith("ADVISORY legacy-stage-name"))).toBe(true);
+    expect(stderrLines.some((line) => line.startsWith("ADVISORY missing-disposition-for-new-role"))).toBe(true);
+    log.mockRestore();
+    errorSpy.mockRestore();
   });
 });

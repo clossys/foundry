@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFileSync, readdirSync } from "node:fs";
-import { cp, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, rename, rm, writeFile } from "node:fs/promises";
 import { execFile as execFileCallback } from "node:child_process";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -821,10 +821,51 @@ test("transition-base predecessor records survive a fresh clone without dangling
 
   const retained = readFileSync(join(root, path));
   await rm(join(root, path));
-  await assert.rejects(
-    execFile(process.execPath, [join(process.cwd(), "scripts/check-candidate-qualification.mjs")], { cwd: root }),
-    (error) => error?.stderr?.includes(`[sealed-record-set] ${path}`),
-  );
+  // This assertion only needs the script's sealed-record-set check, which
+  // reads the transition-base tree and the current directory listing --
+  // O(1) work, independent of record count (see
+  // sealedQualificationPathsAtTransitionBase and its call site in
+  // check-candidate-qualification.mjs). It does NOT need every one of this
+  // clone's 180+ records individually re-derived from git history, which is
+  // the script's real per-record cost (git archive / npm pack --dry-run /
+  // git log --full-history per record -- see candidate-qualification-
+  // shard.mjs's own header, and #1257/#1419). `--shard-index`/`--shard-count`
+  // is the SAME production flag the CI matrix uses to split that per-record
+  // cost across 8 shards (ci.yml's candidate-qualification-shard job); here
+  // it is pointed at an index guaranteed to be one past the last real record
+  // (indices are stable, sorted, 0-based -- see assignedToShard's own doc
+  // comment), so it matches none of them and every record is skipped for
+  // re-derivation while still being counted present for the cross-record
+  // checks this assertion needs. That is what turns this from a ~20-minute
+  // subprocess into roughly a one-second one without touching what it
+  // asserts.
+  const remainingRecordCount = readdirSync(join(root, CONTROLLER_RECORD_DIRECTORY)).filter((name) => name.endsWith(".json")).length;
+  // The script also walks governance/release-publications/later/*.json
+  // (validateRetainedLaterPublications in scripts/lib/release-later-
+  // publication.mjs), independently of --shard-index/--shard-count -- each
+  // entry re-derives its own currentQualificationJoins the same expensive
+  // way a governance/release-qualifications record does. That check has
+  // nothing to do with this assertion (a script exercising the sealed-
+  // record-set check on a fresh clone) and is validated on its own already
+  // (e.g. release-later-publication.test.mjs); the script itself treats a
+  // missing directory as "nothing to check" rather than a failure
+  // (`existsSync(directory)` guard), so moving it out of the way for the
+  // one subprocess call below changes nothing this assertion depends on.
+  const laterPublicationDir = join(root, "governance/release-publications/later");
+  const laterPublicationDirBackup = `${laterPublicationDir}.set-aside-for-test`;
+  await rename(laterPublicationDir, laterPublicationDirBackup);
+  try {
+    await assert.rejects(
+      execFile(process.execPath, [
+        join(process.cwd(), "scripts/check-candidate-qualification.mjs"),
+        "--shard-index", String(remainingRecordCount),
+        "--shard-count", String(remainingRecordCount + 1),
+      ], { cwd: root }),
+      (error) => error?.stderr?.includes(`[sealed-record-set] ${path}`),
+    );
+  } finally {
+    await rename(laterPublicationDirBackup, laterPublicationDir);
+  }
   await writeFile(join(root, path), retained);
 
   const futurePath = "governance/release-qualifications/controller-9.9.9.json";
