@@ -152,21 +152,29 @@ test("#1468: evidence_branch_name yields <prefix><run-id>-<8 hex>, a different n
   assert.notEqual(runHelper(process.cwd(), "evidence_branch_name", [PREFIX, ""]).status, 0);
 });
 
+/** A record body carrying just enough shape for the classifier: its own publish source commit. */
+function record(sourceSha, tag) {
+  return `${JSON.stringify({ tag, publication: { provenance: { sourceSha } } })}\n`;
+}
+
 /**
  * A repository shaped like the #1461 incident: `main` has a commit `source`
  * (the publish run's source, carrying the qualification record) that lands
- * AFTER an older evidence branch was cut.
+ * AFTER an older evidence branch `predates` was cut. That older branch's own
+ * record (writer) is sourced at the root commit, inside its base, so it is a
+ * perfectly valid pull request for its own record.
  */
 function incidentRepo() {
   const root = initRepo();
-  git(["checkout", "-q", "-b", "stale"], root);
-  botCommit(root, "governance/release-publications/later/writer-0.4.0.json", "{\"writer\":1}\n");
+  const rootSha = git(["rev-parse", "HEAD"], root).trim();
+  git(["checkout", "-q", "-b", "predates"], root);
+  botCommit(root, "governance/release-publications/later/writer-0.4.0.json", record(rootSha, "writer"));
   git(["checkout", "-q", "main"], root);
   humanCommit(root, "governance/release-qualifications/clossys-publisher-0.7.0.json", "{}\n", "qualify publisher");
   const source = git(["rev-parse", "HEAD"], root).trim();
   const copy = join(root, "..", `${root.split("/").pop()}-record.json`);
-  writeFileSync(copy, "{\"publisher\":1}\n");
-  return { root, source, copy };
+  writeFileSync(copy, record(source, "publisher"));
+  return { root, rootSha, source, copy };
 }
 
 function classify(root, ref, source, copy) {
@@ -174,59 +182,111 @@ function classify(root, ref, source, copy) {
 }
 
 function withIncident(fn) {
-  const { root, source, copy } = incidentRepo();
+  const fixture = incidentRepo();
   try {
-    fn(root, source, copy);
+    fn(fixture);
   } finally {
-    rmSync(root, { recursive: true, force: true });
-    rmSync(copy, { force: true });
+    rmSync(fixture.root, { recursive: true, force: true });
+    rmSync(fixture.copy, { force: true });
   }
 }
 
-test("#1468: classify_open_evidence_branch says adoptable for a verified bot branch cut after the source that does not carry this record", () => {
-  withIncident((root, source, copy) => {
+test("verify_branch_is_ours returns false, never an empty-loop pass, when rev-list fails after merge-base succeeded", () => {
+  const root = initRepo();
+  try {
+    git(["checkout", "-q", "-b", "evidence"], root);
+    botCommit(root, "governance/release-publications/later/strategist-0.1.1.json", "{}\n");
+    let passed;
+    try {
+      execFileSync("bash", ["-c", `set -e; source "${scriptPath}"; git() { if [ "$1" = rev-list ]; then return 1; fi; command git "$@"; }; verify_branch_is_ours evidence main`], { cwd: root, stdio: "ignore" });
+      passed = true;
+    } catch {
+      passed = false;
+    }
+    assert.equal(passed, false);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("#1468: classify_open_evidence_branch says adoptable for a verified branch cut after this record's source, whose own records are sourced in its base, that lacks this record", () => {
+  withIncident(({ root, rootSha, source, copy }) => {
     git(["checkout", "-q", "-b", "current", "main"], root);
-    botCommit(root, "governance/release-publications/later/writer-0.4.0.json", "{\"writer\":1}\n");
+    botCommit(root, "governance/release-publications/later/writer-0.4.0.json", record(rootSha, "writer"));
+    botCommit(root, "governance/release-publications/later/designer-0.6.0.json", record(source, "designer"));
     assert.equal(classify(root, "current", source, copy), "adoptable");
   });
 });
 
-test("#1468: classify_open_evidence_branch says stale for a verified branch cut BEFORE the source — the exact #1461 shape — whether or not it already carries an identical copy", () => {
-  withIncident((root, source, copy) => {
-    assert.equal(classify(root, "stale", source, copy), "stale");
-    git(["checkout", "-q", "stale"], root);
-    botCommit(root, RECORD, "{\"publisher\":1}\n");
-    assert.equal(classify(root, "stale", source, copy), "stale");
+test("#1468: classify_open_evidence_branch says predates — not broken — for a valid branch cut before THIS record's source whose own records are sourced in its base", () => {
+  withIncident(({ root, source, copy }) => {
+    assert.equal(classify(root, "predates", source, copy), "predates");
   });
 });
 
-test("#1468: classify_open_evidence_branch says duplicate only for identical bytes, on a verified bot branch cut from a base containing the source", () => {
-  withIncident((root, source, copy) => {
+test("#1468: classify_open_evidence_branch says broken for a verified branch carrying a record whose OWN source is not in its base — the #1461 shape — including this very record", () => {
+  withIncident(({ root, source, copy }) => {
+    // Exactly #1461: this run's record, byte-identical, added to a branch
+    // cut before its source.
+    git(["checkout", "-q", "predates"], root);
+    botCommit(root, RECORD, record(source, "publisher"));
+    assert.equal(classify(root, "predates", source, copy), "broken");
+  });
+  withIncident(({ root, source, copy }) => {
+    // A different record whose own source landed on main after the cut.
+    git(["checkout", "-q", "-b", "current", "main"], root);
+    git(["checkout", "-q", "main"], root);
+    humanCommit(root, "later-main.txt", "x\n", "main moves on");
+    const later = git(["rev-parse", "HEAD"], root).trim();
+    git(["checkout", "-q", "current"], root);
+    botCommit(root, "governance/release-publications/later/designer-0.6.0.json", record(later, "designer"));
+    assert.equal(classify(root, "current", source, copy), "broken");
+  });
+});
+
+test("#1468: classify_open_evidence_branch says broken, fail-closed, for a modified record, unreadable JSON, or a missing sourceSha", () => {
+  withIncident(({ root, rootSha, source, copy }) => {
+    git(["checkout", "-q", "main"], root);
+    humanCommit(root, "governance/release-publications/later/advisor-0.1.5.json", record(rootSha, "advisor"), "merged record");
+    git(["checkout", "-q", "-b", "modifies", "main"], root);
+    botCommit(root, "governance/release-publications/later/advisor-0.1.5.json", record(rootSha, "advisor-changed"));
+    assert.equal(classify(root, "modifies", source, copy), "broken");
+    git(["checkout", "-q", "-b", "garbled", "main"], root);
+    botCommit(root, "governance/release-publications/later/designer-0.6.0.json", "not json\n");
+    assert.equal(classify(root, "garbled", source, copy), "broken");
+    git(["checkout", "-q", "-b", "unsourced", "main"], root);
+    botCommit(root, "governance/release-publications/later/designer-0.6.0.json", "{}\n");
+    assert.equal(classify(root, "unsourced", source, copy), "broken");
+  });
+});
+
+test("#1468: classify_open_evidence_branch says duplicate only for identical bytes, on a verified branch cut from a base containing the source", () => {
+  withIncident(({ root, source, copy }) => {
     git(["checkout", "-q", "-b", "fresh", "main"], root);
-    botCommit(root, RECORD, "{\"publisher\":1}\n");
+    botCommit(root, RECORD, record(source, "publisher"));
     assert.equal(classify(root, "fresh", source, copy), "duplicate");
   });
 });
 
-test("#1468: classify_open_evidence_branch says conflict for different bytes (current or stale), and for this record on a branch verify_branch_is_ours refuses", () => {
-  withIncident((root, source, copy) => {
+test("#1468: classify_open_evidence_branch says conflict for different bytes (current or predating), and for this record on a branch verify_branch_is_ours refuses", () => {
+  withIncident(({ root, source, copy }) => {
     git(["checkout", "-q", "-b", "different", "main"], root);
-    botCommit(root, RECORD, "{\"publisher\":2}\n");
+    botCommit(root, RECORD, record(source, "publisher-other"));
     assert.equal(classify(root, "different", source, copy), "conflict");
-    git(["checkout", "-q", "stale"], root);
-    botCommit(root, RECORD, "{\"publisher\":2}\n");
-    assert.equal(classify(root, "stale", source, copy), "conflict");
+    git(["checkout", "-q", "predates"], root);
+    botCommit(root, RECORD, record(source, "publisher-other"));
+    assert.equal(classify(root, "predates", source, copy), "conflict");
     git(["checkout", "-q", "-b", "planted", "main"], root);
-    humanCommit(root, RECORD, "{\"publisher\":1}\n", "planted by a human");
+    humanCommit(root, RECORD, record(source, "publisher"), "planted by a human");
     assert.equal(classify(root, "planted", source, copy), "conflict");
   });
 });
 
-test("#1468: classify_open_evidence_branch says foreign — never adoptable — for an unverifiable branch without this record, or an unreadable ref", () => {
-  withIncident((root, source, copy) => {
+test("#1468: classify_open_evidence_branch says foreign for an unverifiable branch without this record, and missing — a distinct verdict — for an unreadable ref", () => {
+  withIncident(({ root, source, copy }) => {
     git(["checkout", "-q", "-b", "planted", "main"], root);
     humanCommit(root, "scripts-evil.sh", "echo pwned\n", "planted by a human");
     assert.equal(classify(root, "planted", source, copy), "foreign");
-    assert.equal(classify(root, "no-such-branch", source, copy), "foreign");
+    assert.equal(classify(root, "no-such-branch", source, copy), "missing");
   });
 });

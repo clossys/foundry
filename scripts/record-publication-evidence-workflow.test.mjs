@@ -197,22 +197,27 @@ function decisionBlock(pushStep) {
   return pushStep.slice(pushStep.indexOf('conflict_pr=""'), pushStep.indexOf('message_file="$RUNNER_TEMP'));
 }
 
-test("#1468: every open evidence PR is classified; a conflict anywhere fails before a duplicate anywhere is honoured, and both precede any write", () => {
+test("#1468: every open evidence PR is classified; a conflict or broken PR anywhere fails before a duplicate anywhere is honoured, and all precede any write", () => {
   const pushStep = step(PUSH_STEP);
   const block = decisionBlock(pushStep);
   assert.match(block, /verdict="\$\(classify_open_evidence_branch "origin\/\$\{open_branch\}" "origin\/\$\{GITHUB_BASE_REF_OR_DEFAULT\}" "\$RECORD_PATH" "\$safe_copy" "\$SOURCE_SHA"\)"/);
   const conflictIndex = block.indexOf('if [ -n "$conflict_pr" ]; then');
+  const brokenIndex = block.indexOf('if [ -n "$broken_pr" ]; then');
   const duplicateIndex = block.indexOf('if [ -n "$duplicate_pr" ]; then');
-  assert.ok(conflictIndex !== -1 && duplicateIndex !== -1 && conflictIndex < duplicateIndex, "fail closed first");
-  assert.match(block.slice(conflictIndex, duplicateIndex), /::error title=Conflicting open evidence pull request[^\n]*\n\s*exit 1/);
+  assert.ok(conflictIndex !== -1 && brokenIndex !== -1 && duplicateIndex !== -1 && conflictIndex < duplicateIndex && brokenIndex < duplicateIndex, "fail closed first");
+  assert.match(block.slice(conflictIndex, brokenIndex), /::error title=Conflicting open evidence pull request[^\n]*\n\s*exit 1/);
+  assert.match(block.slice(brokenIndex, duplicateIndex), /::error title=Open evidence pull request cannot pass the retained-record gate::[^\n]*the #1461 shape[^\n]*\n\s*exit 1/, "the #1461 shape fails closed with its own message");
   assert.match(block.slice(duplicateIndex), /::notice title=Already pending[^\n]*\n\s*exit 0/);
   assert.ok(pushStep.indexOf("git commit -F") > pushStep.indexOf(block));
 });
 
-test("#1468: only the NEWEST open PR, and only when classified adoptable, is adopted; a stale PR gets a notice and is left untouched; anything else starts fresh", () => {
+test("#1468: only the NEWEST open PR, and only when classified adoptable, is adopted; a PR that predates this record's source gets a notice saying it stays valid; anything else starts fresh", () => {
   const block = decisionBlock(step(PUSH_STEP));
   assert.match(block, /if \[ "\$newest_verdict" = adoptable \]; then\n\s*branch="\$newest_branch"\n\s*reused=true/);
-  assert.match(block, /stale\) echo "::notice title=Stale publication-evidence pull request::[^"]*Left untouched/);
+  const notice = block.match(/predates\) echo "::notice title=([^"]*)"/);
+  assert.ok(notice, "a predates PR must get a notice");
+  assert.match(notice[1], /remains valid for its own records -- merge it normally/);
+  assert.doesNotMatch(notice[1], /close|#1461/i, "a PR that merely predates this record's source is valid; never tell a human to close it");
   const elseBranch = block.slice(block.indexOf("reused=true"));
   assert.match(elseBranch, /else[\s\S]*branch="\$\(evidence_branch_name "\$BRANCH_PREFIX" "\$RUN_ID"\)"\n\s*reused=false/);
 });
@@ -244,9 +249,24 @@ test("#1468: the default branch's check-later-publications gates every commit be
   assert.match(onFail, /::error title=Publication evidence fails the retained-record gate[^\n]*\n\s*exit 1/);
 });
 
-test("#1468: the file header documents the guarded batching policy", () => {
+test("#1468: the file header documents the guarded batching policy, that a predating PR stays valid, and the merge-commit dependency", () => {
   assert.match(workflow, /^# BATCHED, BUT ONLY ONTO A BASE THAT CONTAINS THE SOURCE \(#1346, #1468\)$/m);
-  assert.match(workflow, /never closes a pull request or force-pushes/);
+  const header = workflow.slice(0, workflow.indexOf("\non:"));
+  assert.match(header, /never closes a pull request or\n# force-pushes/);
+  assert.match(header, /remains\n# valid for its own records and should be merged normally/);
+  assert.match(header, /Batching relies on the merge queue creating MERGE commits/);
+  assert.doesNotMatch(header, /stale pull request/i);
+});
+
+test("#1468: a branch that cannot be fetched is reported as missing, never as a non-bot or out-of-path branch", () => {
+  const pushStep = step(PUSH_STEP);
+  assert.match(pushStep, /verdict=missing # deleted since the listing/);
+  assert.match(pushStep, /missing\) echo "::notice title=Newest evidence branch could not be fetched::/);
+  const loop = pushStep.slice(pushStep.indexOf("max_attempts=10"), pushStep.indexOf("record_files="));
+  assert.match(loop, /verdict=missing\n\s*if git fetch origin/);
+  assert.match(loop, /missing\)\n\s*echo "::notice title=Adopted branch could not be fetched::/);
+  assert.match(loop, /broken\)\n\s*echo "::error title=Open evidence pull request cannot pass the retained-record gate::[^\n]*\n\s*exit 1/);
+  assert.doesNotMatch(pushStep, /verdict=foreign/, "foreign is reserved for a branch that fetched and failed verify_branch_is_ours");
 });
 
 test("idempotency is checked before any build work: an already-recorded version is a clean no-op (correctness review S2)", () => {

@@ -46,10 +46,18 @@ name: Record publication evidence
 # branch that fails it falls back to a fresh branch. If an open evidence
 # pull request already carries this record: byte-identical on a verified,
 # current branch is a no-op; different bytes (or an unverifiable branch)
-# FAILS the run without pushing anything. A stale pull request (cut before
-# the source -- #1461's unrepairable ancestry) is named in a notice and left
-# untouched; this workflow never closes a pull request or force-pushes. See
-# the "Push branch..." step for the full decision table.
+# FAILS the run without pushing anything, as does any open evidence pull
+# request carrying a record whose OWN source commit is not in its branch's
+# base (#1461's unrepairable ancestry). An open pull request that merely
+# predates THIS record's source gets a notice and stays open: it remains
+# valid for its own records and should be merged normally, while this record
+# goes to a new pull request. This workflow never closes a pull request or
+# force-pushes. See the "Push branch..." step for the full decision table.
+#
+# Batching relies on the merge queue creating MERGE commits, which keep each
+# record's introduction commit intact. If squash merging were ever enabled,
+# a pull request recreated from a branch after a mid-run merge could
+# introduce the same record a second time.
 #
 # MEASURED DATA ONLY, OR NO PR AT ALL
 # -------------------------------------
@@ -365,7 +373,10 @@ jobs:
       # see that file's header for why path confinement, not the author
       # check, is the real guard):
       #   any `conflict` (this record with different bytes, or on an
-      #     unverifiable branch) -> fail the run before anything is pushed;
+      #     unverifiable branch) or `broken` (a verified branch carrying a
+      #     record whose own source is not in its base -- the #1461 shape,
+      #     which no merge can repair) -> fail the run before anything is
+      #     pushed;
       #   else any `duplicate` (identical bytes, verified, current base)
       #     -> clean no-op (a redelivered or re-run event; correctness
       #     review S2);
@@ -374,10 +385,12 @@ jobs:
       #     with an ordinary fast-forward push;
       #   anything else -> a fresh branch from the default branch's current
       #     tip, under a name no other run uses (run id + runner entropy;
-      #     security re-review B3-residual). Each `stale` PR (cut before the
-      #     source -- the #1461 shape) gets a notice naming it and is left
-      #     untouched: this workflow never edits a stale PR, closes any PR,
-      #     or force-pushes anything.
+      #     security re-review B3-residual). Each `predates` PR (cut before
+      #     THIS record's source, every record it carries sourced in its own
+      #     base) gets a notice naming it: it remains valid for its own
+      #     records and should be merged normally; this record simply goes
+      #     to a new pull request. This workflow never edits a `predates`
+      #     PR, closes any PR, or force-pushes anything.
       # An adopted branch is re-fetched and re-classified before EVERY
       # attempt, including inside the retry loop (security re-review,
       # finding B3-residual); one that no longer classifies adoptable is
@@ -392,9 +405,11 @@ jobs:
       # falls back to a fresh branch rather than failing; if a fresh branch
       # fails it, the run fails and nothing is pushed.
       #
-      # The helpers are sourced from the default branch's tip (the `work`
-      # checkout below), the same revision this workflow file runs from,
-      # never from the publish run's older source commit.
+      # The helpers and the gate come from the default branch's tip as
+      # fetched when this step starts (the `work` checkout and the gate
+      # worktree below) -- never from the publish run's older source commit.
+      # That tip can be newer than the revision this workflow file itself
+      # was loaded from, never older.
       #
       # Every PR this step touches is edited by NUMBER, looked up fresh --
       # same-repository and bot-authored -- AFTER this run's own push lands,
@@ -455,6 +470,7 @@ jobs:
             --json number,headRefName,isCrossRepository,author \
             --jq "[.[] | select(.isCrossRepository|not) | select(.author.login==\"app/github-actions\") | select(.headRefName|startswith(\"${BRANCH_PREFIX}\"))] | sort_by(.number) | .[] | \"\(.number) \(.headRefName)\"")"
           conflict_pr=""
+          broken_pr=""
           duplicate_pr=""
           newest_pr=""
           newest_branch=""
@@ -464,12 +480,13 @@ jobs:
             if git fetch origin "+refs/heads/${open_branch}:refs/remotes/origin/${open_branch}" 2>/dev/null; then
               verdict="$(classify_open_evidence_branch "origin/${open_branch}" "origin/${GITHUB_BASE_REF_OR_DEFAULT}" "$RECORD_PATH" "$safe_copy" "$SOURCE_SHA")"
             else
-              verdict=foreign # deleted since the listing (e.g. merged)
+              verdict=missing # deleted since the listing (e.g. merged)
             fi
             case "$verdict" in
               conflict) conflict_pr="${conflict_pr:-#${open_number} (${open_branch})}" ;;
+              broken) broken_pr="${broken_pr:-#${open_number} (${open_branch})}" ;;
               duplicate) duplicate_pr="${duplicate_pr:-#${open_number}}" ;;
-              stale) echo "::notice title=Stale publication-evidence pull request::open pull request #${open_number} (${open_branch}) was cut from ${GITHUB_BASE_REF_OR_DEFAULT} before ${SOURCE_SHA}, so this record cannot be added to it (the #1461 shape). Left untouched; close it once its own records are carried elsewhere or re-run." ;;
+              predates) echo "::notice title=Evidence pull request predates this record's source::open pull request #${open_number} (${open_branch}) was cut from ${GITHUB_BASE_REF_OR_DEFAULT} before ${SOURCE_SHA}, so this record goes to a new pull request. #${open_number} remains valid for its own records -- merge it normally." ;;
             esac
             newest_pr="$open_number"
             newest_branch="$open_branch"
@@ -478,6 +495,10 @@ jobs:
 
           if [ -n "$conflict_pr" ]; then
             echo "::error title=Conflicting open evidence pull request::open pull request ${conflict_pr} already carries ${RECORD_PATH}, but with different bytes or on a branch this workflow cannot verify as its own. Refusing to push anything. Resolve that pull request, then re-run this workflow."
+            exit 1
+          fi
+          if [ -n "$broken_pr" ]; then
+            echo "::error title=Open evidence pull request cannot pass the retained-record gate::open pull request ${broken_pr} carries a record whose own publish source commit is not in its branch's base (the #1461 shape). scripts/check-later-publications.mjs will reject it and no merge can repair it. Refusing to push anything. Close that pull request, re-introduce its records on the current default branch, then re-run this workflow."
             exit 1
           fi
           if [ -n "$duplicate_pr" ]; then
@@ -490,9 +511,10 @@ jobs:
             reused=true
             echo "Adding ${RECORD_PATH} to open pull request #${newest_pr} (${branch}), whose base contains ${SOURCE_SHA}."
           else
-            if [ "$newest_verdict" = foreign ]; then
-              echo "::warning title=Refusing to adopt an unverified branch::${newest_branch} (#${newest_pr}) matched the reserved prefix and filters but its history contains a non-bot commit or a path outside governance/release-publications/later/. Starting a fresh, unguessable branch instead."
-            fi
+            case "$newest_verdict" in
+              foreign) echo "::warning title=Refusing to adopt an unverified branch::${newest_branch} (#${newest_pr}) matched the reserved prefix and filters but its history contains a non-bot commit or a path outside governance/release-publications/later/. Starting a fresh, unguessable branch instead." ;;
+              missing) echo "::notice title=Newest evidence branch could not be fetched::${newest_branch} (#${newest_pr}) no longer fetches (for example, deleted after a merge). Starting a fresh, unguessable branch instead." ;;
+            esac
             branch="$(evidence_branch_name "$BRANCH_PREFIX" "$RUN_ID")"
             reused=false
           fi
@@ -520,7 +542,7 @@ jobs:
             if [ "$reused" = true ]; then
               # Re-verified on EVERY attempt, never only at the initial
               # lookup (security re-review, finding B3-residual).
-              verdict=foreign
+              verdict=missing
               if git fetch origin "+refs/heads/${branch}:refs/remotes/origin/${branch}" 2>/dev/null; then
                 verdict="$(classify_open_evidence_branch "origin/${branch}" "origin/${GITHUB_BASE_REF_OR_DEFAULT}" "$RECORD_PATH" "$safe_copy" "$SOURCE_SHA")"
               fi
@@ -534,8 +556,18 @@ jobs:
                   echo "::error title=Publication evidence collision::${branch} now carries a DIFFERENT ${RECORD_PATH}, or is no longer verifiable. Refusing to push anything."
                   exit 1
                   ;;
+                broken)
+                  echo "::error title=Open evidence pull request cannot pass the retained-record gate::${branch} now carries a record whose own publish source commit is not in its base (the #1461 shape). Refusing to push anything."
+                  exit 1
+                  ;;
+                missing)
+                  echo "::notice title=Adopted branch could not be fetched::${branch} no longer fetches (for example, deleted after a merge). Starting a fresh, unguessable branch instead."
+                  branch="$(evidence_branch_name "$BRANCH_PREFIX" "$RUN_ID")"
+                  reused=false
+                  continue
+                  ;;
                 *)
-                  echo "::warning title=Abandoning an unusable branch::${branch} no longer fetches or no longer classifies adoptable (${verdict}). Starting a fresh, unguessable branch instead."
+                  echo "::warning title=Abandoning an unusable branch::${branch} no longer classifies adoptable (${verdict}). Starting a fresh, unguessable branch instead."
                   branch="$(evidence_branch_name "$BRANCH_PREFIX" "$RUN_ID")"
                   reused=false
                   continue

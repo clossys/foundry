@@ -1256,8 +1256,9 @@ bot-authored **and** touch only `governance/release-publications/later/`.
 The author check alone is not trustworthy — any write-access actor can
 forge a commit's author identity — so path confinement is the check that
 actually bounds an adopted branch's blast radius, and it is never loosened.
-It also asks whether the branch's fork point already contains the publish
-run's source commit.
+It also asks whether the branch's fork point already contains this publish
+run's source commit, and whether every record already on the branch has its
+own `publication.provenance.sourceSha` in that fork point.
 
 That last question is the #1468 fix. An earlier revision adopted the newest
 open evidence branch unconditionally, and that branch keeps the base it was
@@ -1270,10 +1271,11 @@ records re-introduced as #1466.
 | Open evidence pull requests | Action |
 | --- | --- |
 | Any one carries this record with different bytes, or on a branch `verify_branch_is_ours` refuses | Fail the run; nothing is pushed |
-| Otherwise, any one carries it byte-identically, verified, on a base containing the source | Clean no-op |
-| The newest is verified, its base contains the source, and it lacks this record | Add the record on top of it with an ordinary fast-forward push, then update that pull request |
-| The newest was cut before the source (stale), fails verification, or there is none | Cut a fresh branch from the default branch's current tip and open a new pull request |
-| Any stale one | A notice names it; it is left untouched for a human to close |
+| Any verified one carries a record whose *own* source commit is not in its branch's base (the #1461 shape) | Fail the run with a distinct error; nothing is pushed. A human closes that pull request and re-introduces its records on the current default branch |
+| Otherwise, any one carries this record byte-identically, verified, on a base containing its source | Clean no-op |
+| The newest is verified, every record on it is sourced in its base, its base contains this record's source, and it lacks this record | Add the record on top of it with an ordinary fast-forward push, then update that pull request |
+| The newest predates this record's source, fails verification, cannot be fetched, or there is none | Cut a fresh branch from the default branch's current tip and open a new pull request |
+| Any one that predates this record's source | A notice names it. It stays open and remains valid for its own records — merge it normally; only this record goes to the new pull request |
 
 A fresh branch is named from the run's ID plus a random suffix from the
 runner's own entropy source — never a predictable name an attacker could
