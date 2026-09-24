@@ -71,7 +71,7 @@ test("package-lock.json changed but no package in this diff bumped a version: re
 
     const r = evaluateLockfileShape({ gitRoot: root, mergeBase: base, bumps: [] });
     assert.equal(r.status, "not-release-shaped");
-    assert.match(r.detail, /no package in this diff bumped/);
+    assert.match(r.detail, /no changeset-consumed bump was given/);
   });
 });
 
@@ -121,7 +121,7 @@ test("a lockfile change that ALSO tampers with an unrelated third-party entry is
       bumps: [{ dir: "alpha", name: "@x/alpha", version: "1.0.1", manifest: headManifest }],
     });
     assert.equal(r.status, "not-release-shaped");
-    assert.match(r.detail, /not limited to the bumped package/);
+    assert.match(r.detail, /go beyond the version fields and allowed dependency-range rewrites of this diff's changeset-consumed bump/);
   });
 });
 
@@ -186,5 +186,25 @@ test("a devDependencies-only sibling rewrite (no version bump of its own) is acc
       bumps: [{ dir: "alpha", name: "@x/alpha", version: "1.1.0", manifest: headAlpha }],
     });
     assert.equal(r.status, "pass", r.detail);
+  });
+});
+
+test("partialBumpSet: an unchanged lockfile still passes, but a CHANGED one is refused (error) rather than judged against a partial bump set", () => {
+  withRepo((root) => {
+    const manifest = { name: "@x/alpha", version: "1.0.0", license: "MIT" };
+    writeManifest(root, "alpha", manifest);
+    writeLockfile(root, { "": { name: "foundry" }, "packages/alpha": { name: "@x/alpha", version: "1.0.0", license: "MIT" } });
+    const base = gitCommit(root, "initial");
+    const headManifest = { ...manifest, version: "1.0.1" };
+    const bumps = [{ dir: "alpha", name: "@x/alpha", version: "1.0.1", manifest: headManifest }];
+
+    assert.equal(evaluateLockfileShape({ gitRoot: root, mergeBase: base, bumps, partialBumpSet: true }).status, "pass", "nothing changed, so nothing depends on the bump set");
+
+    writeManifest(root, "alpha", headManifest);
+    writeLockfile(root, { "": { name: "foundry" }, "packages/alpha": { name: "@x/alpha", version: "1.0.1", license: "MIT" } });
+    const partial = evaluateLockfileShape({ gitRoot: root, mergeBase: base, bumps, partialBumpSet: true });
+    assert.equal(partial.status, "error");
+    assert.match(partial.detail, /judged only on a full run/);
+    assert.equal(evaluateLockfileShape({ gitRoot: root, mergeBase: base, bumps }).status, "pass", "the same change passes when the full bump set is given");
   });
 });

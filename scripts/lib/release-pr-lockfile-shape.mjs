@@ -78,20 +78,24 @@ function allPackageDirNames(gitRoot) {
 }
 
 /**
- * `bumps` is `{ dir, name, version }[]` -- one entry per package
+ * `bumps` is `{ dir, name, version, manifest }[]` -- one entry per package
  * scripts/check-release-pr-shape.mjs's own evaluatePackage() already proved
- * bumped a version in this diff (its `versionChanged === true` results),
- * regardless of whether that specific bump was itself judged release-PR
- * shaped -- a lockfile is expected to track every real version bump in the
- * tree, not only the ones this gate happens to approve of for other
- * reasons.
+ * bumped a version in this diff BY CONSUMING A CHANGESET (its
+ * `versionChanged === true && changesetConsumed === true` results),
+ * regardless of whether that bump's level was itself judged correct. The
+ * caller only asks this question in the release-PR case, on a full
+ * discovery run; a direct, changelog-justified bump never reaches here, and
+ * so never justifies a lockfile edit either.
+ *
+ * `partialBumpSet: true` means the caller examined only some packages; a
+ * changed lockfile is then refused (status "error") instead of judged.
  *
  * Returns `{ status: "pass" | "not-release-shaped" | "error", detail }` --
  * the same three-way status vocabulary check-release-pr-shape.mjs's own
  * per-package results already use, so main() can fold this into the same
  * `results` array and exit-code reduction with no special-casing.
  */
-export function evaluateLockfileShape({ gitRoot, mergeBase, bumps }) {
+export function evaluateLockfileShape({ gitRoot, mergeBase, bumps, partialBumpSet = false }) {
   const lockfilePath = join(gitRoot, LOCKFILE_REL_PATH);
   if (!existsSync(lockfilePath)) {
     return { status: "pass", detail: `no ${LOCKFILE_REL_PATH} at ${gitRoot} -- nothing for this check to judge` };
@@ -113,10 +117,24 @@ export function evaluateLockfileShape({ gitRoot, mergeBase, bumps }) {
     return { status: "pass", detail: `${LOCKFILE_REL_PATH} unchanged since merge-base ${mergeBase.slice(0, 12)}` };
   }
 
+  // The lockfile changed, so the verdict now depends on the full set of
+  // bumps. A caller that only examined a subset of packages (a positional
+  // invocation of check-release-pr-shape.mjs) cannot supply that set, so it
+  // is refused rather than judged against a partial one -- which could both
+  // miss a bump that justifies an edit and accept nothing it should not.
+  if (partialBumpSet) {
+    return {
+      status: "error",
+      detail:
+        `${LOCKFILE_REL_PATH} changed since merge-base ${mergeBase.slice(0, 12)} alongside a changeset-consumed bump, but it covers every workspace package and is judged only on a full run -- ` +
+        "rerun without positional package arguments to judge its shape",
+    };
+  }
+
   if (bumps.length === 0) {
     return {
       status: "not-release-shaped",
-      detail: `${LOCKFILE_REL_PATH} changed since merge-base ${mergeBase.slice(0, 12)}, but no package in this diff bumped its version -- nothing justifies any lockfile change`,
+      detail: `${LOCKFILE_REL_PATH} changed since merge-base ${mergeBase.slice(0, 12)}, but no changeset-consumed bump was given -- nothing justifies any lockfile change`,
     };
   }
 
@@ -183,13 +201,14 @@ export function evaluateLockfileShape({ gitRoot, mergeBase, bumps }) {
     return {
       status: "not-release-shaped",
       detail:
-        `${LOCKFILE_REL_PATH} changes are not limited to the bumped package(s)' (${bumpedDirs.join(", ")}) version fields and any allowed dependency-range rewrites -- a release PR's lockfile change must be exactly what ` +
-        "scripts/apply-release-changesets.mjs's `npm install --package-lock-only` would produce for this diff's own bumps (issue #1439)",
+        `${LOCKFILE_REL_PATH} changes go beyond the version fields and allowed dependency-range rewrites of this diff's changeset-consumed bump(s) (${bumpedDirs.join(", ")}). ` +
+        "A release commit's lockfile may change only as scripts/apply-release-changesets.mjs's `npm install --package-lock-only` on the pinned release runtime (Node 24.19.0 / npm 11.17.0) changes it for those bumps -- " +
+        "any other edit, such as metadata rewritten by a different npm, is refused (issue #1439)",
     };
   }
 
   return {
     status: "pass",
-    detail: `${LOCKFILE_REL_PATH} changes are limited to the bumped package(s)' (${bumpedDirs.join(", ")}) version fields and allowed dependency-range rewrites`,
+    detail: `${LOCKFILE_REL_PATH} changes are limited to the version fields and allowed dependency-range rewrites of this diff's changeset-consumed bump(s) (${bumpedDirs.join(", ")})`,
   };
 }

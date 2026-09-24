@@ -301,19 +301,39 @@ test("a consumed major-level changeset's Breaking changes section is read from d
 // --base origin/<default>` invocation uses. `cwd: root` is required for that
 // discovery to find the fixture's own packages/ directory rather than this
 // repository's real one.
+//
+// The lockfile is judged only in the release-PR case -- when a bump consumed
+// a changeset. A direct, changelog-justified bump may legitimately change the
+// lockfile (for example by adding a dependency), so it gets no lockfile
+// verdict at all and is reported exactly as it was before the check existed.
+
+const lock = (probeVersion, extra = {}) =>
+  JSON.stringify({ name: "fixture", lockfileVersion: 3, requires: true, packages: { "": { name: "fixture" }, "packages/probe": { name: "@gate-fixture/probe", version: probeVersion }, ...extra } }, null, 2) + "\n";
+
+// The release PR's own shape: a pending changeset at base, applied (deleted)
+// at head alongside the bump.
+function releaseBumpProbe(root, pkgDir, { lockfile } = {}) {
+  const manifest = readManifest(pkgDir);
+  manifest.version = "1.0.1";
+  writeManifest(pkgDir, manifest);
+  rmSync(join(root, ".changesets", "probe-fix.md"));
+  writeChangelog(pkgDir, "# Changelog\n\n## 1.0.1\n\n- Fixed a bug.\n\n## 1.0.0\n\n- Initial release.\n");
+  if (lockfile !== undefined) writeFileSync(join(root, "package-lock.json"), lockfile);
+}
+
+function pendingProbeChangeset(root) {
+  mkdirSync(join(root, ".changesets"), { recursive: true });
+  writeFileSync(join(root, ".changesets", "probe-fix.md"), "---\nprobe: patch\n---\n\nFix a bug.\n");
+}
 
 test("a release-PR-shaped package-lock.json change (only the bumped package's version) does not affect the overall verdict", () => {
   withRepo((root) => {
     const pkgDir = makeFixture(root);
     writeChangelog(pkgDir, "# Changelog\n\n## 1.0.0\n\n- Initial release.\n");
-    writeFileSync(join(root, "package-lock.json"), JSON.stringify({ name: "fixture", lockfileVersion: 3, requires: true, packages: { "": { name: "fixture" }, "packages/probe": { name: "@gate-fixture/probe", version: "1.0.0" } } }, null, 2) + "\n");
-    const base = gitCommit(root, "initial release at 1.0.0");
-
-    const manifest = readManifest(pkgDir);
-    manifest.version = "1.0.1";
-    writeManifest(pkgDir, manifest);
-    writeChangelog(pkgDir, "# Changelog\n\n## 1.0.1\n\n- Fixed a bug.\n\n## 1.0.0\n\n- Initial release.\n");
-    writeFileSync(join(root, "package-lock.json"), JSON.stringify({ name: "fixture", lockfileVersion: 3, requires: true, packages: { "": { name: "fixture" }, "packages/probe": { name: "@gate-fixture/probe", version: "1.0.1" } } }, null, 2) + "\n");
+    pendingProbeChangeset(root);
+    writeFileSync(join(root, "package-lock.json"), lock("1.0.0"));
+    const base = gitCommit(root, "initial release at 1.0.0, one pending changeset");
+    releaseBumpProbe(root, pkgDir, { lockfile: lock("1.0.1") });
 
     const r = run(["--json", "--base", base], root);
     const report = JSON.parse(r.out);
@@ -321,49 +341,22 @@ test("a release-PR-shaped package-lock.json change (only the bumped package's ve
     const lockResult = report.results.find((x) => x.package === "package-lock.json");
     assert.ok(lockResult, "expected a package-lock.json entry in the report");
     assert.equal(lockResult.status, "pass", lockResult.detail);
+    assert.match(lockResult.detail, /changeset-consumed bump\(s\) \(probe\)/);
   });
 });
 
-test("a package-lock.json change that rewrites an UNRELATED entry's metadata alongside a legitimate bump fails the overall check", () => {
+test("a release PR's package-lock.json change that rewrites an UNRELATED entry's metadata alongside a legitimate bump fails the overall check", () => {
   withRepo((root) => {
     const pkgDir = makeFixture(root);
     writeChangelog(pkgDir, "# Changelog\n\n## 1.0.0\n\n- Initial release.\n");
-    writeFileSync(
-      join(root, "package-lock.json"),
-      JSON.stringify(
-        {
-          name: "fixture",
-          lockfileVersion: 3,
-          requires: true,
-          packages: { "": { name: "fixture" }, "packages/probe": { name: "@gate-fixture/probe", version: "1.0.0" }, "node_modules/left-pad": { version: "1.3.0", resolved: "https://registry.example/left-pad-1.3.0.tgz" } },
-        },
-        null,
-        2,
-      ) + "\n",
-    );
-    const base = gitCommit(root, "initial release at 1.0.0");
-
-    const manifest = readManifest(pkgDir);
-    manifest.version = "1.0.1";
-    writeManifest(pkgDir, manifest);
-    writeChangelog(pkgDir, "# Changelog\n\n## 1.0.1\n\n- Fixed a bug.\n\n## 1.0.0\n\n- Initial release.\n");
-    writeFileSync(
-      join(root, "package-lock.json"),
-      JSON.stringify(
-        {
-          name: "fixture",
-          lockfileVersion: 3,
-          requires: true,
-          // The bump itself is fine, but a different npm also rewrote an
-          // unrelated third-party entry's resolved URL -- exactly the #1439
-          // defect-3 incident shape (26 stray "peer" flags, 14 dropped "libc"
-          // fields from a Node-20-bundled npm regenerating the whole file).
-          packages: { "": { name: "fixture" }, "packages/probe": { name: "@gate-fixture/probe", version: "1.0.1" }, "node_modules/left-pad": { version: "1.3.0", resolved: "https://evil.example/left-pad-1.3.0.tgz" } },
-        },
-        null,
-        2,
-      ) + "\n",
-    );
+    pendingProbeChangeset(root);
+    writeFileSync(join(root, "package-lock.json"), lock("1.0.0", { "node_modules/left-pad": { version: "1.3.0", resolved: "https://registry.example/left-pad-1.3.0.tgz" } }));
+    const base = gitCommit(root, "initial release at 1.0.0, one pending changeset");
+    // The bump itself is fine, but a different npm also rewrote an unrelated
+    // third-party entry's resolved URL -- exactly the #1439 defect-3 incident
+    // shape (26 stray "peer" flags, 14 dropped "libc" fields from a
+    // Node-20-bundled npm regenerating the whole file).
+    releaseBumpProbe(root, pkgDir, { lockfile: lock("1.0.1", { "node_modules/left-pad": { version: "1.3.0", resolved: "https://evil.example/left-pad-1.3.0.tgz" } }) });
 
     const r = run(["--json", "--base", base], root);
     const report = JSON.parse(r.out);
@@ -371,5 +364,97 @@ test("a package-lock.json change that rewrites an UNRELATED entry's metadata alo
     const lockResult = report.results.find((x) => x.package === "package-lock.json");
     assert.ok(lockResult, "expected a package-lock.json entry in the report");
     assert.equal(lockResult.status, "not-release-shaped", lockResult.detail);
+    assert.match(lockResult.detail, /A release commit's lockfile may change only as scripts\/apply-release-changesets\.mjs/);
+  });
+});
+
+test("a direct, changelog-justified bump that also adds a dependency gets no lockfile verdict -- judged exactly as before the lockfile check", () => {
+  withRepo((root) => {
+    const pkgDir = makeFixture(root);
+    writeChangelog(pkgDir, "# Changelog\n\n## 1.0.0\n\n- Initial release.\n");
+    writeFileSync(join(root, "package-lock.json"), lock("1.0.0"));
+    const base = gitCommit(root, "initial release at 1.0.0");
+
+    const manifest = readManifest(pkgDir);
+    manifest.version = "1.0.1";
+    manifest.dependencies = { "added-dep": "^1.0.0" };
+    writeManifest(pkgDir, manifest);
+    writeChangelog(pkgDir, "# Changelog\n\n## 1.0.1\n\n- Added a dependency.\n\n## 1.0.0\n\n- Initial release.\n");
+    writeFileSync(
+      join(root, "package-lock.json"),
+      JSON.stringify({ name: "fixture", lockfileVersion: 3, requires: true, packages: { "": { name: "fixture" }, "packages/probe": { name: "@gate-fixture/probe", version: "1.0.1", dependencies: { "added-dep": "^1.0.0" } }, "node_modules/added-dep": { version: "1.0.0", resolved: "https://registry.example/added-dep-1.0.0.tgz" } } }, null, 2) + "\n",
+    );
+
+    const r = run(["--json", "--base", base], root);
+    const report = JSON.parse(r.out);
+    assert.equal(r.code, 0, r.out);
+    assert.equal(report.results.find((x) => x.package === "package-lock.json"), undefined, "no lockfile verdict for a direct bump");
+    assert.deepEqual(report.results, [{ package: "@gate-fixture/probe", status: "pass", detail: report.results[0].detail }], "only the per-package result, with only its public fields");
+    assert.match(report.results[0].detail, /accepted under the pre-existing docs\/PUBLISHING\.md convention/);
+  });
+});
+
+test("a direct bump does not justify lockfile edits inside a release commit: only changeset-consumed bumps do", () => {
+  withRepo((root) => {
+    const pkgDir = makeFixture(root);
+    const otherDir = makeFixture(root, { name: "other" });
+    writeChangelog(pkgDir, "# Changelog\n\n## 1.0.0\n\n- Initial release.\n");
+    writeChangelog(otherDir, "# Changelog\n\n## 1.0.0\n\n- Initial release.\n");
+    pendingProbeChangeset(root);
+    const other = (v) => ({ "packages/other": { name: "@gate-fixture/other", version: v } });
+    writeFileSync(join(root, "package-lock.json"), lock("1.0.0", other("1.0.0")));
+    const base = gitCommit(root, "two packages at 1.0.0, one pending changeset for probe");
+
+    releaseBumpProbe(root, pkgDir, { lockfile: lock("1.0.1", other("1.0.1")) });
+    const manifest = readManifest(otherDir);
+    manifest.version = "1.0.1";
+    writeManifest(otherDir, manifest);
+    writeChangelog(otherDir, "# Changelog\n\n## 1.0.1\n\n- Direct bump.\n\n## 1.0.0\n\n- Initial release.\n");
+
+    const r = run(["--json", "--base", base], root);
+    const report = JSON.parse(r.out);
+    assert.equal(r.code, 1, r.out);
+    const lockResult = report.results.find((x) => x.package === "package-lock.json");
+    assert.equal(lockResult.status, "not-release-shaped", lockResult.detail);
+    assert.match(lockResult.detail, /changeset-consumed bump\(s\) \(probe\)/);
+  });
+});
+
+test("a positional package subset with a changeset-consumed bump and a CHANGED lockfile refuses to judge it (exit 2) rather than judge it against a partial bump set", () => {
+  withRepo((root) => {
+    const pkgDir = makeFixture(root);
+    writeChangelog(pkgDir, "# Changelog\n\n## 1.0.0\n\n- Initial release.\n");
+    pendingProbeChangeset(root);
+    writeFileSync(join(root, "package-lock.json"), lock("1.0.0"));
+    const base = gitCommit(root, "initial release at 1.0.0, one pending changeset");
+    releaseBumpProbe(root, pkgDir, { lockfile: lock("1.0.1") });
+
+    const r = run(["--json", "--base", base, pkgDir], root);
+    const report = JSON.parse(r.out);
+    assert.equal(r.code, 2, r.out);
+    assert.equal(report.results[0].status, "pass", "the package's own verdict is unchanged");
+    const lockResult = report.results.find((x) => x.package === "package-lock.json");
+    assert.equal(lockResult.status, "error");
+    assert.match(lockResult.detail, /judged only on a full run -- rerun without positional package arguments/);
+    assert.equal(run(["--json", "--base", base], root).code, 0, "the same tree passes on a full run");
+  });
+});
+
+test("a positional package subset with only a direct bump is judged exactly as before (no lockfile verdict)", () => {
+  withRepo((root) => {
+    const pkgDir = makeFixture(root);
+    writeChangelog(pkgDir, "# Changelog\n\n## 1.0.0\n\n- Initial release.\n");
+    writeFileSync(join(root, "package-lock.json"), lock("1.0.0"));
+    const base = gitCommit(root, "initial release at 1.0.0");
+    const manifest = readManifest(pkgDir);
+    manifest.version = "1.0.1";
+    writeManifest(pkgDir, manifest);
+    writeChangelog(pkgDir, "# Changelog\n\n## 1.0.1\n\n- Fixed a bug.\n\n## 1.0.0\n\n- Initial release.\n");
+    writeFileSync(join(root, "package-lock.json"), lock("1.0.1", { "node_modules/anything": { version: "2.0.0" } }));
+
+    const r = run(["--json", "--base", base, pkgDir], root);
+    const report = JSON.parse(r.out);
+    assert.equal(r.code, 0, r.out);
+    assert.equal(report.results.length, 1);
   });
 });
