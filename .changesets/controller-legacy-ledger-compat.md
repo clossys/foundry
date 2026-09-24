@@ -2,23 +2,31 @@
 controller: patch
 ---
 
-Breaking: a caller-supplied contract is now refused unless it exactly
-matches what this version ships, in three call forms --
+A caller-supplied role or position contract that exactly matches a
+previously shipped canonical contract is now accepted instead of refused
+outright, in the same three call forms --
 `foundry-position-check <ledger> [role-contract.json]`'s optional second
 argument; `validateInstalledPositionLedger`'s `roleContract` argument,
 which takes a role contract; and the exported
 `validateInstalledPositionContract(contract)`, which takes a position
-contract. A 0.9.10 copy of either shipped contract --
-`role-loop-archetypes.json` or `installed-position-contract.json` -- now
-fails with `noncanonical-role-contract` or
-`noncanonical-installed-position-contract`, the same exact-match rule that
-already refused any other drifted copy; the contracts' own content changed
-(the `learn` rename below, the added `@clossys/customer` role, and
-reworded Designer/Publisher `boundary.owns` prose). This refusal is new
-for every npm consumer, since 0.9.10 is npm's latest published version of
-this package. Drop the argument to use the contract shipped inside
-`@clossys/controller`, or re-copy it from this version. Everything else
-here is backward compatible:
+contract. A caller's exact copy of either shipped contract --
+`role-loop-archetypes.json` or `installed-position-contract.json` -- is
+now recognized against a small, explicit, embedded table of historical
+canonical contracts, keyed by the version each one shipped in (currently
+only 0.9.10, npm's latest published version of this package), matched by
+deep equality, never a loose comparison. A recognized copy validates
+against this version's CURRENT canonical contract and its rules -- already
+compatible with a 0.9.10 ledger via the advisories below -- and reports a
+new, non-failing `legacy-contract-copy` advisory naming the matched
+shipped version instead of failing; the same advisory channel used for
+everything else in this changeset. Anything that is not an exact match to
+a known shipped contract -- including a historical copy with even one
+field changed, such as the `learn` rename below, the added
+`@clossys/customer` role, or the reworded Designer/Publisher
+`boundary.owns` prose -- still fails with `noncanonical-role-contract` or
+`noncanonical-installed-position-contract`, exactly as before. Drop the
+argument to use the contract shipped inside `@clossys/controller`, or
+re-copy it from this version. Everything else here is backward compatible:
 `validateInstalledPositionLedger` -- and everything built on it,
 `foundry-position-check`, `foundry-completion-evidence-check`, and
 onboarding's `authorizeMutation` -- accepts a real 0.9.10
