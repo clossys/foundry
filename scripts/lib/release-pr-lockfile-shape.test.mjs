@@ -71,7 +71,7 @@ test("package-lock.json changed but no package in this diff bumped a version: re
 
     const r = evaluateLockfileShape({ gitRoot: root, mergeBase: base, bumps: [] });
     assert.equal(r.status, "not-release-shaped");
-    assert.match(r.detail, /no changeset-consumed bump was given/);
+    assert.match(r.detail, /no package in this diff bumped/);
   });
 });
 
@@ -121,7 +121,7 @@ test("a lockfile change that ALSO tampers with an unrelated third-party entry is
       bumps: [{ dir: "alpha", name: "@x/alpha", version: "1.0.1", manifest: headManifest }],
     });
     assert.equal(r.status, "not-release-shaped");
-    assert.match(r.detail, /go beyond the version fields and allowed dependency-range rewrites of this diff's changeset-consumed bump/);
+    assert.match(r.detail, /go beyond the version fields and allowed dependency-range rewrites of this release diff's bumped package/);
   });
 });
 

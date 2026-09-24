@@ -341,7 +341,7 @@ test("a release-PR-shaped package-lock.json change (only the bumped package's ve
     const lockResult = report.results.find((x) => x.package === "package-lock.json");
     assert.ok(lockResult, "expected a package-lock.json entry in the report");
     assert.equal(lockResult.status, "pass", lockResult.detail);
-    assert.match(lockResult.detail, /changeset-consumed bump\(s\) \(probe\)/);
+    assert.match(lockResult.detail, /release diff's bumped package\(s\) \(probe\)/);
   });
 });
 
@@ -394,29 +394,49 @@ test("a direct, changelog-justified bump that also adds a dependency gets no loc
   });
 });
 
-test("a direct bump does not justify lockfile edits inside a release commit: only changeset-consumed bumps do", () => {
+// Round-2 finding R2-1: apply-release-changesets.mjs's sibling-range pass
+// gives a dependent whose range the release breaks a patch bump and a
+// `^<new>` range rewrite, with no changeset naming it. That dependent-only
+// bump belongs to the same release commit and must justify its own lockfile
+// edits (reproduced for real from 4aa89cdd with only `controller: minor`
+// pending: controller 0.10.0 plus builder/inspector/publisher patch bumps).
+test("a release commit's consumed minor bump plus dependent-only patch bumps with ^range rewrites passes the lockfile check", () => {
   withRepo((root) => {
-    const pkgDir = makeFixture(root);
-    const otherDir = makeFixture(root, { name: "other" });
-    writeChangelog(pkgDir, "# Changelog\n\n## 1.0.0\n\n- Initial release.\n");
-    writeChangelog(otherDir, "# Changelog\n\n## 1.0.0\n\n- Initial release.\n");
-    pendingProbeChangeset(root);
-    const other = (v) => ({ "packages/other": { name: "@gate-fixture/other", version: v } });
-    writeFileSync(join(root, "package-lock.json"), lock("1.0.0", other("1.0.0")));
-    const base = gitCommit(root, "two packages at 1.0.0, one pending changeset for probe");
+    const coreDir = makeFixture(root, { name: "core", version: "0.9.0" });
+    const depDir = makeFixture(root, { name: "dep", version: "1.0.0" });
+    const depManifest = readManifest(depDir);
+    depManifest.dependencies = { "@gate-fixture/core": "^0.9.0" };
+    writeManifest(depDir, depManifest);
+    writeChangelog(coreDir, "# Changelog\n\n## 0.9.0\n\n- Initial release.\n");
+    writeChangelog(depDir, "# Changelog\n\n## 1.0.0\n\n- Initial release.\n");
+    mkdirSync(join(root, ".changesets"), { recursive: true });
+    writeFileSync(join(root, ".changesets", "core-feature.md"), "---\ncore: minor\n---\n\nA feature.\n");
+    const lockAt = (coreVersion, depVersion, depRange) =>
+      JSON.stringify({ name: "fixture", lockfileVersion: 3, requires: true, packages: { "": { name: "fixture" }, "packages/core": { name: "@gate-fixture/core", version: coreVersion }, "packages/dep": { name: "@gate-fixture/dep", version: depVersion, dependencies: { "@gate-fixture/core": depRange } } } }, null, 2) + "\n";
+    writeFileSync(join(root, "package-lock.json"), lockAt("0.9.0", "1.0.0", "^0.9.0"));
+    const base = gitCommit(root, "core 0.9.0, dep 1.0.0 on ^0.9.0, one pending minor changeset for core");
 
-    releaseBumpProbe(root, pkgDir, { lockfile: lock("1.0.1", other("1.0.1")) });
-    const manifest = readManifest(otherDir);
-    manifest.version = "1.0.1";
-    writeManifest(otherDir, manifest);
-    writeChangelog(otherDir, "# Changelog\n\n## 1.0.1\n\n- Direct bump.\n\n## 1.0.0\n\n- Initial release.\n");
+    // What apply-release-changesets.mjs writes: core consumes its changeset
+    // (0.9.0 -> 0.10.0); dep's ^0.9.0 no longer covers 0.10.0, so dep gets a
+    // patch bump and a ^0.10.0 rewrite with a changelog entry but no changeset.
+    const coreManifest = readManifest(coreDir);
+    coreManifest.version = "0.10.0";
+    writeManifest(coreDir, coreManifest);
+    rmSync(join(root, ".changesets", "core-feature.md"));
+    writeChangelog(coreDir, "# Changelog\n\n## 0.10.0\n\n- A feature.\n\n## 0.9.0\n\n- Initial release.\n");
+    const headDep = readManifest(depDir);
+    headDep.version = "1.0.1";
+    headDep.dependencies = { "@gate-fixture/core": "^0.10.0" };
+    writeManifest(depDir, headDep);
+    writeChangelog(depDir, "# Changelog\n\n## 1.0.1\n\n- Track @gate-fixture/core ^0.10.0.\n\n## 1.0.0\n\n- Initial release.\n");
+    writeFileSync(join(root, "package-lock.json"), lockAt("0.10.0", "1.0.1", "^0.10.0"));
 
     const r = run(["--json", "--base", base], root);
     const report = JSON.parse(r.out);
-    assert.equal(r.code, 1, r.out);
+    assert.equal(r.code, 0, r.out);
     const lockResult = report.results.find((x) => x.package === "package-lock.json");
-    assert.equal(lockResult.status, "not-release-shaped", lockResult.detail);
-    assert.match(lockResult.detail, /changeset-consumed bump\(s\) \(probe\)/);
+    assert.equal(lockResult.status, "pass", lockResult.detail);
+    assert.match(lockResult.detail, /release diff's bumped package\(s\) \(core, dep\)/);
   });
 });
 
