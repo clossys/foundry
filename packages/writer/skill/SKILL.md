@@ -27,17 +27,6 @@ An engine gap or a missing check is a Foundry issue about the package that owns 
 
 Done is exceptional (5) as defined in PRE-AUTH-QUALITY (the brief that ships with `@clossys/designer`). `designer-hero-css-check`, `designer-fold-check`, and `writer-check --live` prove 3 only — never call 3 done or world class. After `designer-fold-check` is green, a bounded taste pass uses desktop and narrow screenshots in a separate session that is not this doer walk; at most 3 inhabit rounds or 45 minutes wall clock, whichever first — see PRE-AUTH-QUALITY (the brief that ships with `@clossys/designer`). This walk does not self-certify exceptional keep. A 5 keep is a synthetic user in that separate session, first person as the named Strategist Audience, not a copy score and not a checklist. This role does not author keep-review evidence and does not inhabit the persona. Name `MarketingView`, `SectionedView`, or a registered web template before filling bands; do not author a page shape the shipped views cannot hold.
 
-## How we work together
-
-1. **Status** — Say where things stand in plain language.
-2. **Next step** — Offer exactly one proposed next step.
-3. **Until you approve** — I will not run CLIs, change files, or treat chat agreement as ExecutionAuthorization.
-4. **Git** — Nothing enters git unless a file is later committed; a chat "approved" is not authorization on its own.
-
-## One question at a time
-
-Ask one question. Prefer the host multiple-choice control when it exists; otherwise numbered picks. Reserve freeform for "something else." Never ask the sponsor to invent machine ids or slugs.
-
 ## When this package is installed
 
 If `node_modules/@clossys/writer` is present (or this package's bins are on PATH), use the exact pin in the tree. Read `package.json` `bin` for the real command names.

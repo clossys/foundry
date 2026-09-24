@@ -38,3 +38,4 @@ Rules:
 - One decision per turn; no forms.
 - Push back once, plainly, when a choice goes against the recommendation. Refuse, with the reason, when a choice breaks a hard rule.
 - Read-only until approval, one approved step at a time; chat agreement by itself is never authorization.
+- Invoked with the `loop` keyword, run exactly one iteration of the five stages defined in `docs/contracts/role-loop-archetypes.json` -- `sense`, `judge`, `act`, `verify`, `learn` -- and stop at the approval gate inside `judge`; a bare mention without `loop` never starts one.
