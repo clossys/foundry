@@ -133,7 +133,18 @@ const namesOf = (identities) => [...new Set(identities.map((item) => item.slice(
 
 // Every publication-record path ever introduced on HEAD's history. A retained
 // record is permanent, so each of these must still exist; the set only grows.
+// This needs full history: in a shallow clone the boundary commit reports
+// every file it holds as added, so "ever retained" would equal "present now"
+// and a deletion could never be seen. A shallow checkout is therefore refused
+// rather than passed (CI's gate job checks out with fetch-depth: 0). Any
+// rename or move under the directory, or a record added and removed within
+// one branch, also trips this check -- deliberately, since the validator
+// already ties each record's file name to its identity.
 function everRetainedPublicationPaths(root) {
+  const shallow = execFileSync("git", ["rev-parse", "--is-shallow-repository"], { cwd: root, encoding: "utf8" }).trim();
+  if (shallow !== "false") {
+    throw new Error("the retained-record deletion check needs full Git history, and this checkout is shallow; fetch it with fetch-depth: 0 (or git fetch --unshallow)");
+  }
   return [...new Set(execFileSync(
     "git",
     ["log", "--full-history", "--diff-filter=A", "--name-only", "--format=", "HEAD", "--", PUBLICATION_DIRECTORY],
@@ -172,6 +183,17 @@ test("no publication record retained on this history has been deleted", () => {
   assert.ok(everRetained.includes(TRIO_PUBLICATION_PATH), "the history read must reach the sealed Trio record");
   assert.ok(everRetained.some((path) => path.startsWith(`${LATER_PUBLICATION_DIRECTORY}/`)), "the history read must reach the later records");
   assert.deepEqual(missingRetainedPublicationPaths(repoRoot), []);
+});
+
+test("the retained-record deletion check refuses a shallow checkout instead of passing vacuously", () => {
+  const dir = mkdtempSync(join(tmpdir(), "shallow-later-publication-"));
+  const fixtureRoot = join(dir, "repository");
+  try {
+    execFileSync("git", ["clone", "--depth", "1", `file://${repoRoot}`, fixtureRoot], { stdio: "ignore" });
+    assert.throws(() => missingRetainedPublicationPaths(fixtureRoot), /needs full Git history, and this checkout is shallow/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test("deleting a retained publication record is caught even though the validated set stays self-consistent", () => {
