@@ -70,6 +70,8 @@ export const GATE_TEST_EXCLUSIONS = Object.freeze({
     "already run transitively -- scripts/publish-workflow.test.mjs, which check:gates does run, imports this file directly (`import \"./check-public-npm-provenance.test.mjs\"`). Listing it again here would run its tests a second time.",
   "scripts/lib/public-npm-aggregate-canary.test.mjs":
     "already covered by its own check:public-npm-aggregate-canary script, which chains the canary/closure/transcript checks before this test (`node scripts/check-public-npm-aggregate-canary.mjs && ... && node --test scripts/lib/public-npm-aggregate-canary.test.mjs`). Running it again here would run it a second time, in isolation from that chain.",
+  "scripts/lib/import-purity.test.mjs":
+    "imports scripts/lib/import-purity.mjs, which parses sources with the TypeScript compiler API -- needs `npm ci` for typescript, which check:gates' dependency-free safety job never runs. Already covered by its own check:import-purity script, which ci.yml's build job runs after `npm ci`.",
   "scripts/lib/public-npm-aggregate-canary-v2.test.mjs":
     "already covered by its own check:public-npm-aggregate-canary-v2 script, same reason as the v1 canary test above.",
 });
