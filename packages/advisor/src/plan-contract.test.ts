@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { assertImplementedContract, ContractDocumentError, readContractDocument } from "./contract-schema.js";
 import { PLAN_CONTRACTS } from "./generated/plan-contracts.generated.js";
-import { ADVISOR_BLOCKER_KINDS, PLAN_DIGEST_EXCLUDED_FIELDS, canonicalJson, planDigest, validateAdvisorPlan, validateEngagementBrief } from "./index.js";
+import { ADVISOR_BLOCKER_KINDS, PLAN_DIGEST_EXCLUDED_FIELDS, PUBLIC_PROBLEM_PLACEHOLDER, canonicalJson, planDigest, validateAdvisorPlan, validateEngagementBrief } from "./index.js";
 import type { AdvisorPlan, EngagementBrief } from "./index.js";
 
 /*
@@ -45,6 +45,18 @@ describe("packed plan, brief and inventory contracts", () => {
     for (const contract of Object.values(PLAN_CONTRACTS)) expect(() => assertImplementedContract(contract)).not.toThrow();
   });
 
+  it("declare one kit verdict and the two package acts, so a later value fails closed in this reader", () => {
+    const definitions = PLAN_CONTRACTS["advisor-plan.json"]!.definitions as Record<string, { properties: Record<string, { enum: unknown }> }>;
+    expect(definitions.kit!.properties.verdict!.enum).toEqual(["recommended"]);
+    expect(definitions.packageAct!.properties.act!.enum).toEqual(["install", "pin-starter"]);
+  });
+
+  it("export the brief contract's public problem placeholder, and a brief carrying it validates", () => {
+    const definitions = PLAN_CONTRACTS["engagement-brief.json"]!.definitions as Record<string, { const: unknown }>;
+    expect(PUBLIC_PROBLEM_PLACEHOLDER).toBe(definitions.publicProblemPlaceholder!.const);
+    expect(validateEngagementBrief({ ...BRIEF, problem: PUBLIC_PROBLEM_PLACEHOLDER, staffedHere: ["strategist"] })).toEqual([]);
+  });
+
   it("list exactly ADVISOR_BLOCKER_KINDS as the blocker kinds, in order", () => {
     const definitions = PLAN_CONTRACTS["advisor-plan.json"]!.definitions as Record<string, { enum: unknown }>;
     expect(definitions.blockerKind!.enum).toEqual([...ADVISOR_BLOCKER_KINDS]);
@@ -63,7 +75,7 @@ describe("validateAdvisorPlan against the plan contract", () => {
   });
 
   it("refuses an unknown field at any depth, naming it", () => {
-    expect(messages(validateAdvisorPlan({ ...PLAN, staffing: [] }))).toEqual(["plan.staffing is not a field the contract declares, and unknown fields are refused"]);
+    expect(messages(validateAdvisorPlan({ ...PLAN, notes: [] }))).toEqual(["plan.notes is not a field the contract declares, and unknown fields are refused"]);
     const blocker = { ...PLAN.blockers[0], nextAction: { ...PLAN.blockers[0]!.nextAction, note: "x" } };
     expect(messages(validateAdvisorPlan({ ...PLAN, blockers: [blocker] }))).toEqual([
       "plan.blockers[0].nextAction.note is not a field the contract declares, and unknown fields are refused",
@@ -340,6 +352,16 @@ describe("canonical plan digest (docs/contracts/advisor-plan-digest.md)", () => 
     expect(digest("later-asof-and-new-decisions")).toBe(digest("blockers-without-due"));
     expect(digest("roles-reordered")).not.toBe(digest("blockers-without-due"));
     expect(digest("unicode-decomposed")).not.toBe(digest("unicode-precomposed"));
+  });
+
+  it("covers kits, staffing, packages and resolution, and excludes a decision's subjectDigest (#1178)", () => {
+    const digest = (name: string) => planDigest(corpusPlan(name).plan);
+    const base = digest("staffed-with-packages");
+    expect(digest("staffed-with-packages-keys-reversed")).toBe(base);
+    expect(digest("staffed-with-packages-new-subject-digest")).toBe(base);
+    for (const name of ["staffed-with-packages-version-changed", "staffed-with-packages-integrity-changed", "staffed-with-packages-staffing-reordered", "staffed-without-packages"]) {
+      expect(digest(name), name).not.toBe(base);
+    }
   });
 
   it("has no digest for an invalid plan", () => {

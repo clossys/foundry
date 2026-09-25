@@ -111,13 +111,13 @@ describe("apply-plan-cli main", () => {
     const workDir = tempDir();
     const planPath = join(workDir, "plan.json");
     const briefPath = join(workDir, "brief.json");
-    writeFileSync(planPath, JSON.stringify({ ...VALID_PLAN, staffing: [] }));
+    writeFileSync(planPath, JSON.stringify({ ...VALID_PLAN, notes: [] }));
     writeFileSync(briefPath, JSON.stringify(VALID_BRIEF));
     const err = vi.spyOn(console, "error").mockImplementation(() => {});
     const code = main(["--plan", planPath, "--brief", briefPath, "--repo", workDir], createNodeHost());
     expect(code).toBe(1);
     expect(String(err.mock.calls[0]?.[0])).toBe(
-      "launcher-apply-plan: --plan does not validate: plan.staffing is not a field the contract declares, and unknown fields are refused",
+      "launcher-apply-plan: --plan does not validate: plan.notes is not a field the contract declares, and unknown fields are refused",
     );
   });
 

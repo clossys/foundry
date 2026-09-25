@@ -1,4 +1,5 @@
 import { contractFindings } from "./plan-contract.js";
+import { planRuleViolations } from "./plan-rules.js";
 import type { AdvisorFinding } from "./types.js";
 
 /**
@@ -76,6 +77,44 @@ export interface AdvisorPlanDecision {
   recommended: string;
   chosen: string;
   by: string;
+  /**
+   * On an approving decision, the digest of the exact change the approver
+   * was shown (`sha256:` and 64 lowercase hex digits). An approval without it
+   * binds nothing.
+   */
+  subjectDigest?: string;
+}
+
+/** A kit Advisor recommends for this plan. `verdict` has one value for now; a later one widens it. */
+export interface AdvisorPlanKit {
+  id: string;
+  source: "preset" | "composed";
+  verdict: "recommended";
+}
+
+/** Which roles work in one repository, named by its repository inventory id. */
+export interface AdvisorPlanStaffing {
+  repository: string;
+  roles: readonly string[];
+}
+
+/** One exact package act: one version and one sha512 integrity value, never a range or a tag. */
+export interface AdvisorPlanPackageAct {
+  planItem: string;
+  /** One of `staffing[].repository`, spelled exactly the same. */
+  repository: string;
+  act: "install" | "pin-starter";
+  name: string;
+  /** An exact release version such as `1.2.3`, with no prerelease or build suffix. */
+  version: string;
+  /** One `sha512-` integrity value. */
+  integrity: string;
+  placement: "dependencies" | "devDependencies";
+}
+
+/** Where the exact versions in `packages` came from. */
+export interface AdvisorPlanResolution {
+  snapshotDigest: string;
 }
 
 /** Who does it, how, and by when. Field-for-field the same as the Controller role's own `NextAction` record -- named distinctly here only to avoid colliding with this file's own plan-level `AdvisorPlanNextAction`, which is a different concept (the one pending step for the whole plan, not one blocker's). */
@@ -109,6 +148,14 @@ export interface AdvisorPlan {
   recommendedNext: AdvisorPlanNextAction | null;
   decisions: readonly AdvisorPlanDecision[];
   blockers: readonly AdvisorPlanBlocker[];
+  /** Optional. The kits recommended for this plan. */
+  kits?: readonly AdvisorPlanKit[];
+  /** Optional. Which roles work in which repository. */
+  staffing?: readonly AdvisorPlanStaffing[];
+  /** Optional. The exact package acts this plan authorizes; present only with `resolution`. */
+  packages?: readonly AdvisorPlanPackageAct[];
+  /** Optional. Present exactly when `packages` is. */
+  resolution?: AdvisorPlanResolution;
 }
 
 function section(title: string, body: readonly string[]): string {
@@ -126,14 +173,27 @@ function section(title: string, body: readonly string[]): string {
  *
  * Never throws; returns every finding it can locate rather than stopping at
  * the first one, matching this package's other validators
- * (`validateAdvisorAssessmentInput`, `validateKitProposal`). Every finding
- * has the rule `advisor-plan-contract`; `path` names the field at fault
- * when there is one (for example `blockers[0].nextAction.byWhen`; a plan
- * that is not an object has none), and `message` says what is
- * wrong with it without echoing its value.
+ * (`validateAdvisorAssessmentInput`, `validateKitProposal`). A schema
+ * finding has the rule `advisor-plan-contract`; `path` names the field at
+ * fault when there is one (for example `blockers[0].nextAction.byWhen`; a
+ * plan that is not an object has none), and `message` says what is wrong
+ * with it without echoing its value.
+ *
+ * Once the schema passes, the contract's code rules R1-R10 run too (issue
+ * #1178; see `planRuleViolations()`): staffing and package entries that
+ * repeat, a mandate role named twice, and joins between staffing, the mandate
+ * and packages. Each of
+ * those findings has the rule `advisor-plan-rule-r1` to `-r10` and a `path`.
  */
 export function validateAdvisorPlan(value: unknown): AdvisorFinding[] {
-  return contractFindings("advisor-plan.json", "advisor-plan-contract", "plan", value);
+  const findings = contractFindings("advisor-plan.json", "advisor-plan-contract", "plan", value);
+  if (findings.length > 0) return findings;
+  return planRuleViolations(value as AdvisorPlan).map((violation) => ({
+    rule: `advisor-plan-rule-${violation.rule.toLowerCase()}`,
+    severity: "error",
+    message: `plan.${violation.path} ${violation.message} (rule ${violation.rule})`,
+    path: violation.path,
+  }));
 }
 
 /**

@@ -118,9 +118,22 @@ export function assertImplementedContract(schema: ContractSchema, at = "#"): voi
   }
 }
 
+/** Whether an array has a hole: an index below its length with no own element. JSON never produces one. */
+function hasHoles(value: readonly unknown[]): boolean {
+  for (let index = 0; index < value.length; index += 1) if (!Object.hasOwn(value, index)) return true;
+  return false;
+}
+
+/**
+ * The JSON type of a value. An array with holes (`[1, , 3]`, or one whose
+ * length was set past its last element) is "sparse array", not "array": code
+ * that walks it with forEach skips the holes while an indexed loop reads
+ * undefined, so two readers could judge it differently. No JSON text
+ * produces one, so a document read from a file is never affected.
+ */
 function typeOf(value: unknown): string {
   if (value === null) return "null";
-  if (Array.isArray(value)) return "array";
+  if (Array.isArray(value)) return hasHoles(value) ? "sparse array" : "array";
   if (typeof value === "number") return Number.isInteger(value) ? "integer" : "number";
   return typeof value;
 }
@@ -195,6 +208,8 @@ function check(input: ContractSchema, value: unknown, inputScope: Scope, path: s
   if (typeof expected === "string" && !(expected === kind || (expected === "number" && kind === "integer"))) {
     return [{ path, message: `must be ${describeType(expected, schema.title)}, got ${kind}` }];
   }
+  // A schema node with no `type` still never accepts an array with holes.
+  if (kind === "sparse array") return [{ path, message: "must not be an array with holes" }];
   const violations: ContractViolation[] = [];
   if (Object.hasOwn(schema, "const") && JSON.stringify(schema.const) !== JSON.stringify(value)) violations.push({ path, message: `must equal ${JSON.stringify(schema.const)}` });
   if (Array.isArray(schema.enum) && !schema.enum.some((option) => JSON.stringify(option) === JSON.stringify(value))) {
@@ -210,11 +225,12 @@ function check(input: ContractSchema, value: unknown, inputScope: Scope, path: s
       violations.push({ path, message: typeof schema.title === "string" ? `must be ${schema.title}` : `must be a valid ${schema.format}` });
     }
   }
-  if (Array.isArray(value)) {
-    if (typeof schema.minItems === "number" && value.length < schema.minItems) violations.push({ path, message: `must have at least ${schema.minItems} item(s)` });
-    if (typeof schema.maxItems === "number" && value.length > schema.maxItems) violations.push({ path, message: `must have at most ${schema.maxItems} item(s)` });
-    if (schema.items !== undefined) value.forEach((item, index) => violations.push(...check(schema.items as ContractSchema, item, scope, `${path}[${index}]`)));
-    if (schema.contains !== undefined && !value.some((item, index) => check(schema.contains as ContractSchema, item, scope, `${path}[${index}]`).length === 0)) {
+  if (kind === "array") {
+    const items = value as readonly unknown[];
+    if (typeof schema.minItems === "number" && items.length < schema.minItems) violations.push({ path, message: `must have at least ${schema.minItems} item(s)` });
+    if (typeof schema.maxItems === "number" && items.length > schema.maxItems) violations.push({ path, message: `must have at most ${schema.maxItems} item(s)` });
+    if (schema.items !== undefined) items.forEach((item, index) => violations.push(...check(schema.items as ContractSchema, item, scope, `${path}[${index}]`)));
+    if (schema.contains !== undefined && !items.some((item, index) => check(schema.contains as ContractSchema, item, scope, `${path}[${index}]`).length === 0)) {
       violations.push({ path, message: `must contain an item matching ${JSON.stringify(schema.contains)}` });
     }
   }
