@@ -216,7 +216,10 @@ describe("no repository id text in inventory-choice messages (#1179)", () => {
     };
     const baseline = describe_("acme/example-new", "acme/example-old");
     expect(baseline).toContain("--repositories[1]");
-    expect(baseline).toContain("repositories[1] in the stored inventory");
+    // The success line names the removed position against the inventory this run just
+    // replaced, not "the stored inventory" (that label is reserved for the refusal,
+    // where the file on disk is still the one being compared) (#1179).
+    expect(baseline).toContain("repositories[1] in the replaced inventory");
     for (const [name, id] of Object.entries(HOSTILE_REPOSITORY_IDS)) {
       const hostileAdded = describe_(id, "acme/example-old");
       expect(hostileAdded, name).toBe(baseline);

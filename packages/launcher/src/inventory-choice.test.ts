@@ -214,10 +214,34 @@ describe("resolveChosenInventory (#1179)", () => {
     });
     if (result.kind !== "resolved" || result.chosen.kind !== "write") return;
     expect(JSON.parse(result.chosen.document).repositories).toEqual([{ id: `${OWNER}/example-new` }, kept]);
-    // "example-new" sits at --repositories[0]; "example-old" sits at repositories[1] in the stored inventory (#1179).
+    // "example-new" sits at --repositories[0]; "example-old" sat at position 1 in the
+    // inventory this run just replaced -- named "in the replaced inventory", distinct
+    // from "in the stored inventory", because the file on disk is already the new one
+    // by the time this success line prints (#1179).
     const describedLine = describeChosenInventory(result.chosen);
-    expect(describedLine).toBe("inventory: replaced 2 with the 2 repositories you chose -- 1 added (--repositories[0]), 1 removed (repositories[1] in the stored inventory)");
+    expect(describedLine).toBe(
+      "inventory: replaced 2 with the 2 repositories you chose -- 1 added (--repositories[0]), 1 removed (repositories[1] in the replaced inventory)",
+    );
     expect(describedLine).not.toMatch(/example-new|example-old/);
+  });
+
+  it("labels a removed position against the inventory this run just replaced, not the stored one (#1179)", () => {
+    // Stored: [acme/alpha, acme/beta]. Chosen: acme/gamma, acme/alpha -- so "beta" (the
+    // only removed id) sat at position 1 in the OLD inventory, which this call
+    // overwrites. The removed label must say "in the replaced inventory", never "in the
+    // stored inventory" (that label is reserved for a file that is still the one on
+    // disk, as in the refusal step this success follows).
+    const onDisk = inventoryText([{ id: "acme/alpha" }, { id: "acme/beta" }]);
+    const result = resolveChosenInventory(onDisk, ["acme/gamma", "acme/alpha"], "acme", true);
+    expect(result).toMatchObject({
+      kind: "resolved",
+      chosen: { kind: "write", count: 2, previousCount: 2, added: ["acme/gamma"], removed: ["acme/beta"], removedPositions: [1], replaced: "differing" },
+    });
+    if (result.kind !== "resolved" || result.chosen.kind !== "write") return;
+    const describedLine = describeChosenInventory(result.chosen);
+    expect(describedLine).toContain("1 removed (repositories[1] in the replaced inventory)");
+    expect(describedLine).not.toContain("in the stored inventory");
+    expect(describedLine).not.toMatch(/acme\/beta|acme\/alpha|acme\/gamma/);
   });
 
   it("refuses to replace an inventory that fails its contract without --replace-inventory, and replaces it with it", () => {
@@ -312,7 +336,11 @@ describe("launcher --repositories (#1179)", () => {
 
     expect(main(["--repositories", `${OWNER}/example-app,${OWNER}/example-new`, "--replace-inventory"], host(directory), skeletonRoot)).toBe(0);
     const successLine = String(log.mock.calls[0]?.[0]);
-    expect(successLine).toMatch(/inventory: replaced 2 with the 2 repositories you chose -- 1 added \(--repositories\[1\]\), 1 removed \(repositories\[1\] in the stored inventory\)/);
+    // The file on disk is already the replaced inventory by the time this line
+    // prints, so the removed position is labeled distinctly from the refusal above (#1179).
+    expect(successLine).toMatch(
+      /inventory: replaced 2 with the 2 repositories you chose -- 1 added \(--repositories\[1\]\), 1 removed \(repositories\[1\] in the replaced inventory\)/,
+    );
     expect(successLine).not.toMatch(/example-new|example-old/);
     expect(readInventoryRepositories(host(directory), join(directory, WORKSPACE_INVENTORY_REL), "the hub inventory")).toEqual([
       `${OWNER}/example-app`,
@@ -564,11 +592,12 @@ describe("one repository identity (#1179)", () => {
     const directory = resumableHub([{ id: `${OWNER}/example-app` }]);
     const external = join(directory, "external.json");
     writeFileSync(external, inventoryText([{ id: "Example-App" }, { id: "example-site" }]));
+    // external: "Example-App"(0), "example-site"(1). launcher: the hub's own single entry.
     expect(reportInventoryDrift(host(directory), directory, { path: external, shape: "foundry" }, WORKSPACE_INVENTORY_REL, OWNER)).toEqual({
       status: "reconciled",
-      externalOnly: ["example-site"],
-      launcherOnly: [],
-      agreeing: ["Example-App"],
+      externalOnly: { count: 1, positions: ["externalInventory[1]"] },
+      launcherOnly: { count: 0, positions: [] },
+      agreeing: { count: 1, positions: ["externalInventory[0]"] },
     });
   });
 
@@ -696,7 +725,12 @@ describe("one repository identity for the roster, the merge and drift (#1179)", 
     const external = join(directory, "external.json");
     writeFileSync(external, inventoryText([{ id: `${OWNER}/example-app` }]));
     const report = reportInventoryDrift(host(directory), directory, { path: external, shape: "foundry" }, WORKSPACE_INVENTORY_REL, OWNER);
-    expect(report).toMatchObject({ status: "indeterminate", externalOnly: [], launcherOnly: [], agreeing: [] });
+    expect(report).toMatchObject({
+      status: "indeterminate",
+      externalOnly: { count: 0, positions: [] },
+      launcherOnly: { count: 0, positions: [] },
+      agreeing: { count: 0, positions: [] },
+    });
     expect(report.note).toMatch(/^the hub's own inventory repositories\[0\] has a field the contract does not declare \(key \d+ of this object\)/);
     writeFileSync(join(directory, WORKSPACE_INVENTORY_REL), invalidUtf8Inventory());
     expect(reportInventoryDrift(host(directory), directory, { path: external, shape: "foundry" }, WORKSPACE_INVENTORY_REL, OWNER).status).toBe("indeterminate");
@@ -709,9 +743,9 @@ describe("one repository identity for the roster, the merge and drift (#1179)", 
     writeFileSync(external, inventoryText([{ id: `${OWNER}/example-app` }]));
     expect(reportInventoryDrift(host(directory), directory, { path: external, shape: "foundry" }, WORKSPACE_INVENTORY_REL, OWNER)).toEqual({
       status: "reconciled",
-      externalOnly: [`${OWNER}/example-app`],
-      launcherOnly: [],
-      agreeing: [],
+      externalOnly: { count: 1, positions: ["externalInventory[0]"] },
+      launcherOnly: { count: 0, positions: [] },
+      agreeing: { count: 0, positions: [] },
     });
   });
 });

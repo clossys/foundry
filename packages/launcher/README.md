@@ -299,10 +299,18 @@ built, so the same run lists the repositories just chosen as `sibling` lines.
   stored inventory file or its own `--repositories` argument to learn which
   repository it names, and tells the founder that name -- never the
   position string itself, and never text read back out of the inventory
-  file or the argument without that lookup. The same rule, and the same
-  position wording, applies to every other message this command prints
-  that names a repository from the stored inventory -- the `skill roster
-  written` / `skill roster skipped` / `skill preserved` health-report lines
+  file or the argument without that lookup. That replacement run's own
+  success line reports the same removed positions again, distinctly
+  labeled `repositories[<i>] in the replaced inventory`: by the time that
+  line prints, `clossys/.state/inventory.json` is already the new file, so
+  reusing "in the stored inventory" there would point a reader at the
+  wrong document. The positions still index into the file as it stood
+  before this run -- the same one the refusal step already named -- so an
+  agent that already looked a position up there does not need to look it
+  up again. The same position-only rule, and the same "in the stored
+  inventory" wording, applies to every other message this command prints
+  that names a repository from the file currently on disk -- the `skill
+  roster written` health-report line, each `sibling (...)` line beside it,
   and `launcher --clone-missing`'s output.
 - An inventory that fails its contract is likewise replaced only with
   `--replace-inventory`.

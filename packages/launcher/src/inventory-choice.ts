@@ -45,9 +45,18 @@ function listAddedPositions(positions: readonly number[]): string {
   return positions.length === 0 ? "" : ` (${positions.map((index) => `--repositories[${index}]`).join(", ")})`;
 }
 
-/** Removed ids are named by their position in the stored inventory's `repositories` array, never by the id itself. */
-function listRemovedPositions(positions: readonly number[]): string {
-  return positions.length === 0 ? "" : ` (${positions.map((index) => `repositories[${index}] in the stored inventory`).join(", ")})`;
+/**
+ * Removed ids are named by their position in an inventory's `repositories`
+ * array, never by the id itself. `label` distinguishes which file that
+ * position indexes into: `"stored inventory"` for the refusal, where the
+ * file on disk is still the one the positions were computed against, and
+ * `"replaced inventory"` for the success line after `--replace-inventory`
+ * writes -- by the time that line prints, the file on disk is already the
+ * new one, so reusing "stored inventory" there would point a reader at the
+ * wrong document (#1179).
+ */
+function listRemovedPositions(positions: readonly number[], label: "stored inventory" | "replaced inventory"): string {
+  return positions.length === 0 ? "" : ` (${positions.map((index) => `repositories[${index}] in the ${label}`).join(", ")})`;
 }
 
 /**
@@ -127,7 +136,7 @@ export function resolveChosenInventory(
             kind: "refuse",
             message:
               `the hub inventory already lists ${repositories(stored.ids.length)} and the choice has ${chosenIds.length}: ` +
-              `${added.length} to add${listAddedPositions(addedPositions)}, ${removed.length} to remove${listRemovedPositions(removedPositions)}. ` +
+              `${added.length} to add${listAddedPositions(addedPositions)}, ${removed.length} to remove${listRemovedPositions(removedPositions, "stored inventory")}. ` +
               `Launcher never merges or overwrites an inventory silently; to replace it with the choice, run again with ${REPLACE_INVENTORY_FLAG}`,
           };
         }
@@ -156,7 +165,7 @@ export function describeChosenInventory(chosen: ChosenInventory): string {
   if (chosen.replaced === "differing") {
     return (
       `inventory: replaced ${chosen.previousCount} with the ${count} you chose -- ` +
-      `${chosen.added.length} added${listAddedPositions(chosen.addedPositions)}, ${chosen.removed.length} removed${listRemovedPositions(chosen.removedPositions)}`
+      `${chosen.added.length} added${listAddedPositions(chosen.addedPositions)}, ${chosen.removed.length} removed${listRemovedPositions(chosen.removedPositions, "replaced inventory")}`
     );
   }
   return `inventory: wrote the ${count} you chose`;
