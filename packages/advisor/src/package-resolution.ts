@@ -98,12 +98,15 @@ export const STARTER_PACKAGE_DIRECTORY = "starter";
 /**
  * Role packages that live in the engagement hub only and are never installed
  * in a product repository. The apply-approved-plan RFC (issue #1178) decides
- * this for Advisor in decision D24: Advisor is pinned once, in the hub, and a
+ * this for two packages: decision D24 pins Advisor once, in the hub, and a
  * product repository runs its commands through `npx` at the hub's exact
- * version rather than installing it. The capability catalogue carries no flag
- * for this, so this one list is where it is recorded.
+ * version rather than installing it; decision D23 does the same for
+ * Integrator, whose provenance check the hub runs and a product repository's
+ * CI runs through `npx` at the hub's exact version, pinning nothing. The
+ * capability catalogue carries no flag for this, so this one list is where it
+ * is recorded.
  */
-export const HUB_ONLY_PACKAGE_DIRECTORIES: readonly string[] = ["advisor"];
+export const HUB_ONLY_PACKAGE_DIRECTORIES: readonly string[] = ["advisor", "integrator"];
 /** Where every resolved act is placed in a repository's package.json. */
 export const RESOLVED_PLACEMENT = "devDependencies";
 

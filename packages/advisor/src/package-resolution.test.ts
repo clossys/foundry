@@ -220,7 +220,7 @@ describe("resolvePackages: every refusal", () => {
   });
 
   it("a staffed role whose package lives in the hub only: violated hub-only-package, by position, before any snapshot is read", () => {
-    expect(HUB_ONLY_PACKAGE_DIRECTORIES).toEqual(["advisor"]);
+    expect(HUB_ONLY_PACKAGE_DIRECTORIES).toEqual(["advisor", "integrator"]);
     const plan = { ...PLAN, mandate: { ...PLAN.mandate, roles: ["writer", "designer", "advisor"] }, staffing: [PLAN.staffing![0]!, { repository: "example-owner/docs", roles: ["writer", "advisor"] }] };
     const expected = { state: "violated", findings: [{ rule: "hub-only-package", verdict: "violated", path: "staffing[1].roles[1]" }] };
     expect(refusal(resolvePackages(plan, base))).toEqual(expected);

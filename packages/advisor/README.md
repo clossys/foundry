@@ -421,8 +421,8 @@ the plan contract (`plan-shape`), a plan with no `staffing`
 (`role-not-in-catalogue`), and a staffed role whose package lives in the
 engagement hub only and is never installed in a product repository
 (`hub-only-package`, listed in `HUB_ONLY_PACKAGE_DIRECTORIES`: Advisor
-itself, which is pinned once in the hub and run elsewhere through `npx` at
-the hub's exact version). Its result, a `PackageRequestResult`, is
+itself and Integrator, each pinned once in the hub and run in a product
+repository through `npx` at the hub's exact version). Its result, a `PackageRequestResult`, is
 `{ state: "satisfied", names, findings: [] }` or
 `{ state: "violated", findings }`.
 
