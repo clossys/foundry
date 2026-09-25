@@ -17,7 +17,7 @@
   "definitions": {
     "repositoryId": {
       "title": "a bare repository name or owner/name, with no \".\" or \"..\" segment, empty segment, whitespace, or more than one \"/\"",
-      "description": "Identifies one repository: a bare repository name (read as belonging to the hub's own owner), or `owner/name`. The owner segment follows GitHub's owner rule (letters, digits and single inner hyphens, at most 39 characters) and the name segment GitHub's repository rule (letters, digits, `.`, `_`, `-`), the same rules @clossys/launcher applies when it resolves a sibling clone beside the hub -- so a document's ids and the repositories Launcher clones or composes skills into are governed by one rule. Valid: `app`, `acme/app`. Refused: `\"\"`, `  app`, `app `, `acme/app/extra`, `acme/`, `/app`, `.`, `..`, `acme/..`.",
+      "description": "Identifies one repository: a bare repository name (read as belonging to the hub's own owner), or `owner/name`. The owner segment follows this pattern's own owner rule (letters, digits and hyphens, never leading or trailing, at most 39 characters -- this pattern does not reject a run of consecutive hyphens) and the name segment GitHub's repository rule (letters, digits, `.`, `_`, `-`), the same rules @clossys/launcher applies when it resolves a sibling clone beside the hub -- so a document's ids and the repositories Launcher clones or composes skills into are governed by one rule. Valid: `app`, `acme/app`. Refused: `\"\"`, `  app`, `app `, `acme/app/extra`, `acme/`, `/app`, `.`, `..`, `acme/..`.",
       "type": "string",
       "pattern": "^(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?/)?(?!\\.\\.?$)[A-Za-z0-9._-]+$"
     },
