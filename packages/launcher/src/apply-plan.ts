@@ -78,7 +78,7 @@ export function applyEngagementBrief(
     return { state: "refused", reason: `plan does not validate: ${planValidation.reason}` };
   }
   if (!isPlanApproved(plan)) {
-    return { state: "refused", reason: "the plan's most recent decision is not \"approved\"" };
+    return { state: "refused", reason: "the plan's most recent decision is not \"approved\", or decisions made at that same time disagree" };
   }
   const validation = validateEngagementBrief(brief);
   if (!validation.valid) {

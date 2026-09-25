@@ -130,7 +130,7 @@ const LONE_SURROGATE = /[\uD800-\uDFFF]/u;
 const NOT_WELL_FORMED = "must be well-formed Unicode, and contains a lone surrogate";
 
 /** C1 controls, line and paragraph separators, and bidirectional overrides: JSON.stringify leaves these as they are, and a terminal may act on them. */
-const UNSAFE_FOR_TERMINAL = /[\u007f-\u009f\u2028\u2029\u200e\u200f\u202a-\u202e\u2066-\u2069]/g;
+const UNSAFE_FOR_TERMINAL = /[\u007f-\u009f\u2028\u2029\u061c\u200e\u200f\u202a-\u202e\u2066-\u2069]/g;
 
 /**
  * A key as it may appear in a message: a JSON string, with every control

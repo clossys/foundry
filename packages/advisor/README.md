@@ -300,8 +300,8 @@ a plan Launcher accepts. It checks every field, including each blocker's
 `capabilityId`, `owner`, `since`, and full `nextAction`, and `kind`
 membership in `AdvisorBlockerKind` (`ADVISOR_BLOCKER_KINDS` lists the five
 values in order, and a test keeps it equal to the contract). Blank strings
-are refused. Every time must be a real ISO 8601 calendar time, checked
-field by field rather than by shape: month 01-12, a day that month has
+are refused. Every time must be a real calendar time in ISO 8601 form,
+with `Z` or a `±hh:mm` offset on a date-time, checked field by field rather than by shape: month 01-12, a day that month has
 (leap years included), hours 00-23, minutes and seconds 00-59, and a time
 zone offset of at most 23:59, so `2026-02-30` or `T24:30` is refused
 (`recommendedNext.due` and a blocker's `nextAction.byWhen` may be a plain

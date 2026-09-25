@@ -232,6 +232,17 @@ describe("keys in messages are escaped, never raw (#1475)", () => {
     expect(message).not.toMatch(/[\u0000-\u001f\u007f-\u009f‮]/);
   });
 
+  it("escapes the Arabic letter mark, a bidi control, in a repeated key", () => {
+    let message = "";
+    try {
+      readContractDocument(bytes('{"a\\u061cb":1,"a\\u061cb":2}'));
+    } catch (cause) {
+      message = (cause as Error).message;
+    }
+    expect(message).toBe('repeats the key "a\\u061cb" in the top-level object; every key may appear once');
+    expect(message).not.toContain("\u061c");
+  });
+
   it("refuses a leading byte order mark instead of stripping it", () => {
     const withBom = new Uint8Array([0xef, 0xbb, 0xbf, ...bytes("{}")]);
     expect(() => readContractDocument(withBom)).toThrow("is not valid JSON at position 0: it starts with a byte order mark, which strict JSON refuses");

@@ -249,7 +249,7 @@ Exit codes preserve the ternary:
 | `readHostModelProfile()` | Reads a packed `model-profiles/<host>.json`; returns `undefined`, never throws, on a missing or malformed file. |
 | `resolveModelForTier()` | Resolves a tier and budget preference to one model name for a host, reporting `belowFloor` rather than silently substituting a weaker tier's model. |
 | `validateAdvisorPlan()` / `validateEngagementBrief()` | Validation of `clossys/advisor/plan.json` and `clossys/brief.json` (with its `context` snapshot) against the shared plan and brief contracts Advisor also validates against. Unknown fields are refused; the reason names every field at fault. |
-| `isPlanApproved()` | True only when a plan's most recent decision (by timestamp) has `chosen === "approved"`. |
+| `isPlanApproved()` | True only when a plan's most recent decision (by timestamp) has `chosen === "approved"`. False when decisions at that latest time disagree, or when any decision time does not parse. |
 | `applyEngagementBrief()` | Writes `clossys/brief.json` into a repository directory once the plan validates and is approved and the brief validates; refuses and writes nothing otherwise. Reports the plan's canonical digest. |
 | `planDigest()` / `canonicalJson()` / `PLAN_DIGEST_EXCLUDED_FIELDS` | The canonical plan digest an approval binds: `sha256:` over the RFC 8785 canonical JSON of the plan without `asOf` and `decisions`. Identical to Advisor's for every plan. |
 | `CloneMissingOutcome` / `DoctorCheckHost` / `DoctorReport` / `DoctorStepId` / `DoctorStepResult` / `CloudBootstrapCheck` / `CloudBootstrapReport` / `ExternalInventoryDeclaration` / `InventoryDriftReport` / `DiscoveredHost` / `HostRecord` / `BudgetPreference` / `HostModelProfile` / `HostTierMapping` / `ModelResolution` / `PreferencesDocument` / `ReasoningTier` / `SupportedHost` / `AdvisorPlan` / `ApplyBriefResult` / `BlockerKind` / `EngagementBrief` / `EngagementBriefRole` / `EngagementContext` / `EngagementContextField` / `EngagementContextFieldId` / `GoalDirection` / `PlanBlocker` / `PlanDecision` / `ValidationResult` | Typed contracts for the sections above. |
@@ -345,7 +345,8 @@ Every object is closed: a field the contracts do not declare is refused,
 and a known context value must be one of that field's fixed choice ids,
 because the brief is committed in every staffed repository. A string or
 key containing a lone surrogate is refused, so every plan that validates has
-a digest. Every plan time must be a real ISO 8601 calendar time, checked
+a digest. Every plan time must be a real calendar date or date-time in
+ISO 8601 form, a date-time with `Z` or a `±hh:mm` offset, checked
 field by field (so `2026-02-30` or `T24:30` is refused). A brief's
 `problem`, `role`, `why` and `metric` must contain a non-whitespace
 character, and an item of `inputsFrom`, `outputsTo`, `sequence` or
