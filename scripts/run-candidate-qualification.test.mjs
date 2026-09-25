@@ -88,8 +88,14 @@ test("repository Trio policy, adapters, and current-candidate fixtures bind the 
   // (exercised via this same fixture in accept-qualification-handoff.test.mjs
   // and validate-candidate-publish.test.mjs) is for. Which exact off-version
   // it uses is arbitrary, so the only thing worth asserting is that it still
-  // disagrees with the authority, not which literal value that is.
-  assert.notEqual(duplicateLock.packages["node_modules/@example/consumer/node_modules/@clossys/controller"].version, controllerVersion);
+  // disagrees with the authority, not which literal value that is. notEqual
+  // alone passes vacuously if the entry has no "version" at all (undefined
+  // disagrees with anything) -- issue #1504 review -- so the shape is
+  // checked first: it must be an actual exact semver string, not merely
+  // "not this string".
+  const duplicateVersion = duplicateLock.packages["node_modules/@example/consumer/node_modules/@clossys/controller"].version;
+  assert.match(duplicateVersion, /^\d+\.\d+\.\d+$/);
+  assert.notEqual(duplicateVersion, controllerVersion);
 });
 
 test("every publishable package is exact-source bound to the catalogue and qualification policy", async () => {
