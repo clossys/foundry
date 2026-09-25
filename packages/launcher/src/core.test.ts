@@ -2266,7 +2266,7 @@ describe("cloneMissingInventoryRepositories (#1179)", () => {
       directory,
       "acme",
     );
-    expect(outcomes).toEqual([{ inventoryId: "app", position: 0, result: "cloned", note: `cloned to ${siblingPath}` }]);
+    expect(outcomes).toEqual([{ inventoryId: "app", position: 0, result: "cloned", note: "cloned beside the hub" }]);
   });
 
   it("never attempts a clone for an id skipped for a DIFFERENT reason (wrong account)", () => {
@@ -2289,9 +2289,39 @@ describe("cloneMissingInventoryRepositories (#1179)", () => {
       directory,
       "acme",
     );
-    expect(outcomes).toEqual([
-      { inventoryId: "app", position: 0, result: "failed", note: "gh repo clone exited 1: repository not found" },
-    ]);
+    expect(outcomes).toEqual([{ inventoryId: "app", position: 0, result: "failed", note: "gh repo clone exited 1" }]);
+  });
+
+  it("keeps the note fixed text on both success and failure, even for a hostile id (see cli.test.ts for the printed-output check)", () => {
+    // `note` never repeats the folder name (success) or `gh`'s own stderr (failure),
+    // which would otherwise carry the inventory id straight through (#1179).
+    // `inventoryId` itself stays on the outcome for internal use only -- see its own
+    // doc comment -- so cli.test.ts is what actually proves a hostile id never reaches
+    // printed --clone-missing output.
+    const hostileId = "acme/run.rm-rf-home-x";
+    const directory = tempDir();
+    mkdirSync(join(directory, ".git"));
+    writeInventory(directory, [{ id: hostileId }]);
+    const siblingPath = join(dirname(directory), "run.rm-rf-home-x");
+    const succeeded = cloneMissingInventoryRepositories(
+      host(directory, { [`gh repo clone ${hostileId} ${siblingPath}`]: { status: 0, stdout: "Cloning...\n", stderr: "" } }),
+      directory,
+      "acme",
+    );
+    expect(succeeded).toEqual([{ inventoryId: hostileId, position: 0, result: "cloned", note: "cloned beside the hub" }]);
+
+    const failed = cloneMissingInventoryRepositories(
+      host(directory, {
+        [`gh repo clone ${hostileId} ${siblingPath}`]: {
+          status: 1,
+          stdout: "",
+          stderr: `gh: repository ${hostileId} not found (or you do not have access)\n`,
+        },
+      }),
+      directory,
+      "acme",
+    );
+    expect(failed).toEqual([{ inventoryId: hostileId, position: 0, result: "failed", note: "gh repo clone exited 1" }]);
   });
 
   it("leaves a checkout already beside the hub out of its outcomes, and clones only the missing one", () => {
@@ -2312,7 +2342,7 @@ describe("cloneMissingInventoryRepositories (#1179)", () => {
           : base.run(command, args, options),
     };
     expect(cloneMissingInventoryRepositories(cloneHost, hub, "acme")).toEqual([
-      { inventoryId: "absent", position: 1, result: "cloned", note: `cloned to ${join(parent, "absent")}` },
+      { inventoryId: "absent", position: 1, result: "cloned", note: "cloned beside the hub" },
     ]);
   });
 

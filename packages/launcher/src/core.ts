@@ -1560,16 +1560,21 @@ export function cloneMissingInventoryRepositories(
       outcomes.push({ inventoryId: skip.inventoryId, position: skip.position, result: "failed", note: "inventory id is not a valid repository slug" });
       continue;
     }
+    // Cloning itself still uses the raw id and the real path -- that is the whole
+    // point of this action -- but the *reported* note never repeats either: the
+    // folder name comes straight from the inventory (a document), and `gh`'s own
+    // stderr on failure names the repository it could not find or clone. Both are
+    // fixed text instead (#1179); `position` is still how this outcome is named.
     const siblingPath = join(parent, parsed.repository);
     const result = host.run("gh", ["repo", "clone", `${hubOwner}/${parsed.repository}`, siblingPath]);
     if (result.status === 0) {
-      outcomes.push({ inventoryId: skip.inventoryId, position: skip.position, result: "cloned", note: `cloned to ${siblingPath}` });
+      outcomes.push({ inventoryId: skip.inventoryId, position: skip.position, result: "cloned", note: "cloned beside the hub" });
     } else {
       outcomes.push({
         inventoryId: skip.inventoryId,
         position: skip.position,
         result: "failed",
-        note: `gh repo clone exited ${result.status ?? "null"}: ${result.stderr.trim() || "no stderr"}`,
+        note: `gh repo clone exited ${result.status ?? "null"}`,
       });
     }
   }
