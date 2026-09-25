@@ -44,15 +44,26 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+/** One `externalInventory` entry with a usable id, paired with its own index in that document's `repositories` array. */
+interface ForeignId {
+  readonly id: string;
+  readonly index: number;
+}
+
 /**
  * Reads a foundry-shaped inventory document's repository ids. Malformed or
  * missing is null, never []. The file is read as bytes by the shared strict
  * reader, so bytes that are not valid UTF-8, a repeated key, or a byte order
  * mark make it unreadable rather than silently repaired (#1179). Its shape
  * is read leniently on purpose: an external source is not Launcher's own
- * document.
+ * document -- a non-object entry, or one with a missing, blank or non-string
+ * `id`, is skipped rather than refusing the whole document. Skipped entries
+ * still occupy a slot in `repositories`, so each kept id is paired with its
+ * own original array index, never a count of ids kept so far: the file's
+ * fourth entry (index 3) must be reported as `externalInventory[3]` even
+ * when it is the second entry actually kept (#1179).
  */
-function readForeignIds(host: WorkspaceHost, path: string): readonly string[] | null {
+function readForeignIds(host: WorkspaceHost, path: string): readonly ForeignId[] | null {
   const raw = host.readBytes(path);
   if (raw === null) return null;
   let parsed: unknown;
@@ -62,10 +73,10 @@ function readForeignIds(host: WorkspaceHost, path: string): readonly string[] | 
     return null;
   }
   if (!isRecord(parsed) || parsed.schemaVersion !== 1 || !Array.isArray(parsed.repositories)) return null;
-  const ids: string[] = [];
-  for (const entry of parsed.repositories) {
-    if (isRecord(entry) && typeof entry.id === "string" && entry.id.trim() !== "") ids.push(entry.id);
-  }
+  const ids: ForeignId[] = [];
+  parsed.repositories.forEach((entry, index) => {
+    if (isRecord(entry) && typeof entry.id === "string" && entry.id.trim() !== "") ids.push({ id: entry.id, index });
+  });
   return ids;
 }
 
@@ -95,17 +106,17 @@ export function reportInventoryDrift(
       externalOnly: NO_DRIFT,
       launcherOnly: NO_DRIFT,
       agreeing: NO_DRIFT,
-      note: `externalInventory at ${declaration.path} declares shape "custom"; launcher has no mapping for a non-foundry inventory shape yet and will not guess one. Reconcile by hand or file the mapping gap.`,
+      note: `the declared \`externalInventory\` declares a shape launcher has no mapping for yet; launcher will not guess one. Reconcile by hand or file the mapping gap.`,
     };
   }
-  const externalIds = readForeignIds(host, declaration.path);
-  if (externalIds === null) {
+  const externalEntries = readForeignIds(host, declaration.path);
+  if (externalEntries === null) {
     return {
       status: "indeterminate",
       externalOnly: NO_DRIFT,
       launcherOnly: NO_DRIFT,
       agreeing: NO_DRIFT,
-      note: `externalInventory at ${declaration.path} could not be read as a populated schemaVersion:1 inventory document.`,
+      note: `the declared \`externalInventory\` could not be read as a populated schemaVersion:1 inventory document.`,
     };
   }
   // Launcher's own inventory is read by its own strict reader. A missing one
@@ -122,26 +133,30 @@ export function reportInventoryDrift(
         externalOnly: NO_DRIFT,
         launcherOnly: NO_DRIFT,
         agreeing: NO_DRIFT,
-        note: `the hub's own inventory ${launcher.reason}, so it cannot be compared with externalInventory at ${declaration.path}.`,
+        note: `the hub's own inventory ${launcher.reason}, so it cannot be compared with the declared \`externalInventory\`.`,
       };
     }
     launcherIds = launcher.ids;
   }
   // One repository identity, as everywhere in Launcher (identity.ts): a bare id is the hub owner's, and case is ignored.
   const agrees = (id: string, others: readonly string[]) => others.some((other) => sameRepository(id, other, hubOwner));
+  const externalIds = externalEntries.map((entry) => entry.id);
   // Every position below is the id's own index in the array a caller can already read
-  // (externalIds from `externalInventory`'s document, launcherIds from the hub's own
-  // stored inventory) -- never the id, per InventoryDriftPositions' own doc comment.
-  const externalOnly = externalIds.reduce<{ count: number; positions: string[] }>(
-    (acc, id, index) => (agrees(id, launcherIds) ? acc : { count: acc.count + 1, positions: [...acc.positions, `externalInventory[${index}]`] }),
+  // (externalEntries.index is `externalInventory`'s document's own `repositories` index --
+  // readForeignIds() pairs it with the id precisely because that array is filtered, so a
+  // count of ids kept so far would not match the file (#1179); launcherIds is never
+  // filtered, so its own array index already is that position) -- never the id, per
+  // InventoryDriftPositions' own doc comment.
+  const externalOnly = externalEntries.reduce<{ count: number; positions: string[] }>(
+    (acc, entry) => (agrees(entry.id, launcherIds) ? acc : { count: acc.count + 1, positions: [...acc.positions, `externalInventory[${entry.index}]`] }),
     { count: 0, positions: [] },
   );
   const launcherOnly = launcherIds.reduce<{ count: number; positions: string[] }>(
     (acc, id, index) => (agrees(id, externalIds) ? acc : { count: acc.count + 1, positions: [...acc.positions, `repositories[${index}]`] }),
     { count: 0, positions: [] },
   );
-  const agreeing = externalIds.reduce<{ count: number; positions: string[] }>(
-    (acc, id, index) => (agrees(id, launcherIds) ? { count: acc.count + 1, positions: [...acc.positions, `externalInventory[${index}]`] } : acc),
+  const agreeing = externalEntries.reduce<{ count: number; positions: string[] }>(
+    (acc, entry) => (agrees(entry.id, launcherIds) ? { count: acc.count + 1, positions: [...acc.positions, `externalInventory[${entry.index}]`] } : acc),
     { count: 0, positions: [] },
   );
   return { status: "reconciled", externalOnly, launcherOnly, agreeing };

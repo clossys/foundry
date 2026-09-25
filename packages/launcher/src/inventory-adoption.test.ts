@@ -74,4 +74,23 @@ describe("reportInventoryDrift", () => {
     expect(report.launcherOnly).toEqual({ count: 0, positions: [] });
     expect(report.agreeing).toEqual({ count: 1, positions: ["externalInventory[0]"] });
   });
+
+  it("positions an externalInventory id by its own index in that document's array, not by how many usable ids came before it (D2)", () => {
+    // readForeignIds() skips a non-object entry (index 0), a blank id (index 1),
+    // and keeps "acme/app" at index 2 and "acme/legacy" at index 3. A naive
+    // count of *kept* ids would misreport these as externalInventory[0] and
+    // externalInventory[1]; the correct positions are the file's own indices.
+    const host = fakeHost({
+      "/hub/external.json": JSON.stringify({
+        schemaVersion: 1,
+        repositories: [{ note: "no id" }, { id: "" }, { id: "acme/app" }, { id: "acme/legacy" }],
+      }),
+      "/hub/clossys/.state/inventory.json": FOUNDRY_INVENTORY(["acme/app"]),
+    });
+    const report = reportInventoryDrift(host, "/hub", { path: "/hub/external.json", shape: "foundry" }, "clossys/.state/inventory.json");
+    expect(report.status).toBe("reconciled");
+    expect(report.externalOnly).toEqual({ count: 1, positions: ["externalInventory[3]"] });
+    expect(report.agreeing).toEqual({ count: 1, positions: ["externalInventory[2]"] });
+    expect(report.launcherOnly).toEqual({ count: 0, positions: [] });
+  });
 });

@@ -309,9 +309,11 @@ built, so the same run lists the repositories just chosen as `sibling` lines.
   agent that already looked a position up there does not need to look it
   up again. The same position-only rule, and the same "in the stored
   inventory" wording, applies to every other message this command prints
-  that names a repository from the file currently on disk -- the `skill
-  roster written` health-report line, each `sibling (...)` line beside it,
-  and `launcher --clone-missing`'s output.
+  that names a repository from the file currently on disk -- each
+  `sibling (...)` line and `launcher --clone-missing`'s output. (Since
+  #1511 the `skill roster written` health-report line names only the
+  hub's own id, never a stored-inventory position, so it is no longer on
+  this list.)
 - An inventory that fails its contract is likewise replaced only with
   `--replace-inventory`.
 - `--repositories` and `--inventory` each supply the whole inventory, so
