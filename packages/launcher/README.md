@@ -257,7 +257,7 @@ Exit codes preserve the ternary:
 | `projectEngagementBrief()` / `serializeEngagementBrief()` / `PUBLIC_PROBLEM_PLACEHOLDER` | One repository's brief: the hub brief with `staffedHere` set to that repository's roles in plan order, and `problem` replaced by the brief contract's fixed placeholder unless the repository is private, members in the brief contract's order at every depth; and the exact bytes written for it (two-space JSON and a final newline). |
 | `changeSetDigest()` / `changeSetDigestSubject()` / `CHANGE_SET_DIGEST_EXCLUDED_FIELDS` / `DERIVED_FILE_DIGEST_FIELDS` | The change-set digest: `canonicalDigest()` of the change set without `changeSetDigest`, `branch`, `bundle`, `pullRequest`, `inverse` and `tooling`, with each derived file reduced to `path`, `mode`, `derived`, `item` and `invariants`. |
 | `bundleDigest()` | The bundle digest an approval binds: `canonicalDigest()` of the plan digest and, sorted by id, the id and change-set digest of each repository that has a change set. Nothing else. |
-| `validateRepositoryChangeSet()` / `validateApplyBundle()` | Validation of a change set and a bundle against the shared change-set and bundle contracts, including their code rules (C1-C10 for a change set: references, allow-list and case-insensitive path rules, the ledger, the digest, only the ledger and lockfile derived, canonical order, each item's writes matching it, and phase; A1-A4 for a bundle: unique ids, the digest, verdicts that are the worst of their checks, and the authorization-mismatch check). Unknown fields are refused; no reason echoes a value. |
+| `validateRepositoryChangeSet()` / `validateApplyBundle()` | Validation of a change set and a bundle against the shared change-set and bundle contracts, including their code rules (C1-C10 for a change set: references, allow-list and case-insensitive path rules, the ledger, the digest, only the ledger and lockfile derived, canonical order, each computed item's writes matching it, a pin-starter in devDependencies and at most once, and phase; A1-A4 for a bundle: unique ids, the digest, verdicts that are the worst of their checks, and the authorization-mismatch and authorization-absent checks). Unknown fields are refused; no reason echoes a value. |
 | `CloneMissingOutcome` / `DoctorCheckHost` / `DoctorReport` / `DoctorStepId` / `DoctorStepResult` / `CloudBootstrapCheck` / `CloudBootstrapReport` / `ExternalInventoryDeclaration` / `InventoryDriftReport` / `DiscoveredHost` / `HostRecord` / `BudgetPreference` / `HostModelProfile` / `HostTierMapping` / `ModelResolution` / `PreferencesDocument` / `ReasoningTier` / `SupportedHost` / `AdvisorPlan` / `ApplyBriefResult` / `BlockerKind` / `EngagementBrief` / `EngagementBriefRole` / `EngagementContext` / `EngagementContextField` / `EngagementContextFieldId` / `GoalDirection` / `PlanBlocker` / `PlanDecision` / `PlanKit` / `PlanPackageAct` / `PlanStaffing` / `ValidationResult` / `PlanApplyBundleInputs` / `PlanApplyBundleResult` / `RepositoryObservation` / `SkippedRepositoryObservation` / `BundleDigestEntry` / `ApplyBundle` / `ApplyBundleRepository` / `ApplyCheck` / `ApplyCheckId` / `ChangeSetDeferral` / `ChangeSetItem` / `ChangeSetPhase` / `ChangeSetRefusal` / `CheckVerdict` / `ContentDigest` / `DependencyPlacement` / `DerivedFileChange` / `FileChange` / `KeyChange` / `LedgerInvariant` / `LockfileName` / `PackageInvariant` / `PackageManagerKind` / `PinnedPackage` / `RefusalReason` / `ReleaseAgeSurfaceKind` / `RepositoryChangeSet` / `RepositoryVisibility` / `WholeFileChange` | Typed contracts for the sections above. |
 
 ## Doctor
@@ -460,18 +460,27 @@ in this package).
 - Every array whose order carries no meaning is written in one canonical
   order, and the contract refuses any other order, so observing the same
   repository twice, in any order, gives the same bytes and the same digest.
-  The contract's code rules also tie each item to exactly what it writes.
+  The contract's code rules also tie each kind of item the planner computes
+  to exactly what it writes; the acts nothing computes yet are declared but
+  not yet tied to their files.
 - The bundle digest covers only the plan digest and each computed
   repository's id and change-set digest, so an approval can bind it and a
   repository can recompute it from digests alone.
 - The bundle's `mode` is `report`, and it records no repository state. The
   checks that would let a repository be called planned -- the installed-state
   ledger and package provenance -- are not run here. The bundle reports the
-  planner's own file-layout check (V6), and a `setup` set is
-  `indeterminate` until the setup template exists. When the authorization
-  names a different plan digest than the plan's, every computed repository
-  gets a violated V3 check (`authorization-plan-mismatch`), and each
-  repository's verdict is the worst of its checks.
+  planner's own dry-materialization check (V6), which covers the file
+  layout only: the part of V6 that regenerates the lockfile and checks its
+  invariants is not run, so a set that changes a lockfile carries V6
+  `indeterminate` with rule `lockfile-not-run`, and V6 is `satisfied` only
+  for a set with no lockfile change. A `setup` set is also `indeterminate`
+  until the setup template exists (`setup-template-unbuilt`). Two V3 checks
+  need no observation: when the authorization names a different plan
+  digest than the plan's, every computed repository gets a violated V3
+  check (`authorization-plan-mismatch`), and when the plan has package acts
+  and no authorization is given, every computed repository gets a violated
+  V3 check (`authorization-absent`). Each repository's verdict is the worst
+  of its checks.
 
 Nothing here writes to a repository, creates a branch or opens a pull
 request; reading the repositories, installing packages and opening one pull

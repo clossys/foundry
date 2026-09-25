@@ -113,8 +113,12 @@ describe("planApplyBundle", () => {
   it("claims no repository state: no entry carries one, and a setup set is reported indeterminate, not planned", () => {
     const { bundle } = run();
     for (const entry of bundle.repositories) expect(Object.keys(entry)).not.toContain("state");
-    expect(bundle.repositories[0]).toMatchObject({ verdict: "satisfied", phase: "apply", checks: [{ check: "V6", verdict: "satisfied" }] });
-    expect(bundle.repositories[1]).toMatchObject({ verdict: "indeterminate", phase: "setup", checks: [{ check: "V6", verdict: "indeterminate", rule: "setup-template-unbuilt" }] });
+    expect(bundle.repositories[0]).toMatchObject({ verdict: "indeterminate", phase: "apply", checks: [{ check: "V6", verdict: "indeterminate", rule: "lockfile-not-run" }] });
+    expect(bundle.repositories[1]).toMatchObject({
+      verdict: "indeterminate",
+      phase: "setup",
+      checks: [{ check: "V6", verdict: "indeterminate", rule: "lockfile-not-run" }, { check: "V6", verdict: "indeterminate", rule: "setup-template-unbuilt" }],
+    });
   });
 
   it("skips a repository with a skip reason or no observation, and leaves it out of the bundle digest", () => {
@@ -189,7 +193,10 @@ describe("planApplyBundle", () => {
       { file: "package.json", pointer: "/devDependencies/@example~1starter", reason: "unowned-existing", item: STARTER.planItem },
     ]);
     expect(site.files.map((file) => file.path)).not.toContain("clossys/brief.json");
-    expect(bundle.repositories[0]).toMatchObject({ verdict: "indeterminate", checks: [{ check: "V6", verdict: "indeterminate", rule: "unowned-existing" }] });
+    expect(bundle.repositories[0]).toMatchObject({
+      verdict: "indeterminate",
+      checks: [{ check: "V6", verdict: "indeterminate", rule: "lockfile-not-run" }, { check: "V6", verdict: "indeterminate", rule: "unowned-existing" }],
+    });
   });
 
   it("gives a public repository the placeholder instead of the problem, and a private one the problem", () => {
@@ -257,6 +264,9 @@ describe("planApplyBundle", () => {
     }
     expect(bundle.snapshot).toBeNull();
     expect(bundle.authorization).toBeNull();
+    // No package acts, so no authorization is needed, and with no lockfile change the layout check is all V6 has to do.
+    expect(bundle.repositories[0]).toMatchObject({ verdict: "satisfied", checks: [{ check: "V6", verdict: "satisfied" }] });
+    for (const entry of bundle.repositories) expect(entry.checks.map((check) => check.rule)).not.toContain("authorization-absent");
   });
 
   it("refuses a role that is not one path segment as an unsafe path, and reports V6 violated", () => {
@@ -352,6 +362,19 @@ describe("canonical output", () => {
   it("treats a base file that differs only in letter case as already there", () => {
     const site = setFor(run(withRepository({ files: [...SITE.files, { path: "Clossys/Brief.json", sha256: sha("a brief") }] })).changeSets, SITE.id);
     expect(site.refused).toContainEqual({ path: "clossys/brief.json", reason: "unowned-existing", item: "brief" });
+  });
+});
+
+describe("no authorization for a plan with package acts", () => {
+  it("is reported as a violated V3 check on every computed repository, so none is satisfied", () => {
+    const { bundle } = run({ ...INPUTS, authorization: null });
+    expect(bundle.snapshot).not.toBeNull();
+    for (const entry of bundle.repositories) {
+      expect(entry.verdict).toBe("violated");
+      expect(entry.checks).toContainEqual({ check: "V3", verdict: "violated", rule: "authorization-absent" });
+    }
+    expect(validateApplyBundle(bundle)).toEqual({ valid: true });
+    for (const entry of run().bundle.repositories) expect(entry.checks.map((check) => check.rule)).not.toContain("authorization-absent");
   });
 });
 

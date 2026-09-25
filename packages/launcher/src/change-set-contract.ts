@@ -275,6 +275,9 @@ export function worstVerdict(verdicts: readonly CheckVerdict[]): CheckVerdict {
 /** The rule a bundle check carries when its authorization is for another plan (code rule A4). */
 export const AUTHORIZATION_PLAN_MISMATCH = "authorization-plan-mismatch";
 
+/** The rule a bundle check carries when the plan has package acts and no authorization permits them (code rule A4). */
+export const AUTHORIZATION_ABSENT = "authorization-absent";
+
 export type ChangeSetRuleId = "C1" | "C2" | "C3" | "C4" | "C5" | "C6" | "C7" | "C8" | "C9" | "C10";
 export type ApplyBundleRuleId = "A1" | "A2" | "A3" | "A4";
 
@@ -423,7 +426,7 @@ export function changeSetRuleViolations(set: RepositoryChangeSet): RuleViolation
   order("items", set.items, CANONICAL_KEYS.item);
   order("files", set.files, CANONICAL_KEYS.file);
   order("keys", set.keys, CANONICAL_KEYS.key);
-  order("refused", set.refused, CANONICAL_KEYS.refusal);
+  order("refused", set.refused, CANONICAL_KEYS.refusal, true);
   order("deferred", set.deferred, CANONICAL_KEYS.deferral);
   set.files.forEach((file, index) => {
     if (isDerived(file)) order(`files[${index}].invariants`, file.invariants, CANONICAL_KEYS.invariant);
@@ -452,6 +455,7 @@ export function changeSetRuleViolations(set: RepositoryChangeSet): RuleViolation
       if (!ok) push("C9", at, "must be named, for each role, by exactly one whole file or path refusal at that role's skill path, and by nothing else");
     } else if (isPackageItem(item)) {
       const pointer = dependencyPointer(item.placement, item.package.name);
+      if (item.act === "pin-starter" && item.placement !== "devDependencies") push("C9", `${at}.placement`, "of a pin-starter item must be devDependencies");
       if (files.some(({ file }) => !isDerived(file))) push("C9", at, "is named by a whole file");
       if (refusals.some(({ refusal }) => "path" in refusal)) push("C9", at, "is named by a path refusal");
       if (keys.some((key) => key.pointer !== pointer || key.after !== item.package.version)) push("C9", at, "is named by a key whose pointer or value is not this item's");
@@ -467,6 +471,9 @@ export function changeSetRuleViolations(set: RepositoryChangeSet): RuleViolation
     }
   });
   const kinds = new Map(set.items.map((item) => [item.id, item]));
+  set.refused.forEach((refusal, index) => {
+    if (kinds.get(refusal.item)?.act === "write-ledger") push("C9", `refused[${index}].item`, "names the write-ledger item, which is derived and never refused");
+  });
   set.keys.forEach((key, index) => {
     const item = kinds.get(key.item);
     if (item !== undefined && !isPackageItem(item)) push("C9", `keys[${index}].item`, "is not a package item");
@@ -486,6 +493,8 @@ export function changeSetRuleViolations(set: RepositoryChangeSet): RuleViolation
   });
 
   // C10
+  const starters = set.items.map((item, index) => ({ item, index })).filter(({ item }) => item.act === "pin-starter");
+  if (starters.length > 1) push("C10", `items[${starters[1]!.index}]`, "is a second pin-starter item; a set pins Starter at most once");
   set.items.forEach((item, index) => {
     if (set.phase === "setup" && item.act === "install") push("C10", `items[${index}]`, "is an install in a setup set, where installs are deferred");
   });
@@ -500,6 +509,8 @@ export function applyBundleRuleViolations(bundle: ApplyBundle): RuleViolation<Ap
   const computed = bundle.repositories.flatMap((entry) => ("changeSet" in entry ? [{ id: entry.id, changeSetDigest: entry.changeSet }] : []));
   if (bundle.bundleDigest !== bundleDigest(bundle.plan.digest, computed)) out.push({ rule: "A2", path: "bundleDigest", message: "is not the digest of plan.digest and the repositories that have a change set" });
   const mismatch = bundle.authorization !== null && bundle.authorization.planDigest !== bundle.plan.digest;
+  // A snapshot is recorded exactly when the plan has package acts (the plan contract's R6), and package acts need an authorization.
+  const absent = bundle.snapshot !== null && bundle.authorization === null;
   bundle.repositories.forEach((entry, index) => {
     const expected = entry.checks.length === 0 && !("changeSet" in entry) ? entry.verdict : worstVerdict(entry.checks.map((check) => check.verdict));
     if (entry.verdict !== expected) out.push({ rule: "A3", path: `repositories[${index}].verdict`, message: "is not the worst of its checks' verdicts" });
@@ -507,6 +518,10 @@ export function applyBundleRuleViolations(bundle: ApplyBundle): RuleViolation<Ap
     const carries = entry.checks.some((check) => check.rule === AUTHORIZATION_PLAN_MISMATCH);
     if ("changeSet" in entry && mismatch && !flagged) out.push({ rule: "A4", path: `repositories[${index}].checks`, message: "lacks the violated V3 check for an authorization issued for another plan" });
     if (!mismatch && carries) out.push({ rule: "A4", path: `repositories[${index}].checks`, message: "reports an authorization mismatch the bundle does not have" });
+    const flaggedAbsent = entry.checks.some((check) => check.check === "V3" && check.verdict === "violated" && check.rule === AUTHORIZATION_ABSENT);
+    const carriesAbsent = entry.checks.some((check) => check.rule === AUTHORIZATION_ABSENT);
+    if ("changeSet" in entry && absent && !flaggedAbsent) out.push({ rule: "A4", path: `repositories[${index}].checks`, message: "lacks the violated V3 check for package acts no authorization permits" });
+    if (!absent && carriesAbsent) out.push({ rule: "A4", path: `repositories[${index}].checks`, message: "reports a missing authorization the bundle does not lack" });
   });
   return out;
 }

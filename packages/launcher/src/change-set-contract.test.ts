@@ -4,7 +4,7 @@ import { assertImplementedContract } from "./generated/contract-schema.generated
 import { PLAN_CONTRACTS } from "./generated/plan-contracts.generated.js";
 import { bundleDigest, changeSetDigest } from "./change-set-digest.js";
 import {
-  AUTHORIZATION_PLAN_MISMATCH, applyBundleViolations, isPathPattern, isSafeRelativePath, lockfilePath, matchesPathPattern, repositoryChangeSetViolations,
+  AUTHORIZATION_ABSENT, AUTHORIZATION_PLAN_MISMATCH, applyBundleViolations, isPathPattern, isSafeRelativePath, lockfilePath, matchesPathPattern, repositoryChangeSetViolations,
   validateApplyBundle, validateRepositoryChangeSet,
 } from "./change-set-contract.js";
 import type { ApplyBundle, RepositoryChangeSet } from "./change-set-contract.js";
@@ -357,6 +357,25 @@ describe("change-set code rules C1-C10", () => {
     });
   });
 
+  it("C9: refuse a pin-starter placed in dependencies, a refusal naming the ledger item, and C8 a repeated refusal", () => {
+    const placement = loose(SET);
+    itemAt(placement, STARTER).placement = "dependencies";
+    expect(rulesOf(reseal(placement))).toContain(`C9 items[${itemIndex(placement, STARTER)}].placement`);
+    const ledger = loose(SET);
+    ledger.refused.push({ path: "clossys/.state/installed.json", reason: "unowned-existing", item: "ledger" });
+    expect(rulesOf(reseal(ledger))).toContain("C9 refused[0].item");
+    const repeated = loose(SETUP);
+    repeated.refused.push({ ...repeated.refused[0] });
+    expect(rulesOf(reseal(repeated))).toContain("C8 refused[1]");
+  });
+
+  it("C10: refuse a second pin-starter item", () => {
+    const set = loose(SET);
+    set.items.push({ ...itemAt(set, STARTER), id: "example-owner/site:@example/starter-2", planItem: "example-owner/site:@example/starter-2" });
+    set.items.sort((a: Loose, b: Loose) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+    expect(rulesOf(reseal(set))).toContain(`C10 items[${itemIndex(set, "example-owner/site:@example/starter-2")}]`);
+  });
+
   it("C10: refuse an install in a setup set, and a deferral in an apply set", () => {
     const setup = loose(SET);
     setup.phase = "setup";
@@ -411,6 +430,21 @@ describe("apply-bundle contract", () => {
     const none = loose(BUNDLE);
     none.repositories[0] = { ...none.repositories[0], verdict: "violated", checks: [] };
     expect(applyBundleViolations(none).map((violation) => violation.rule)).toEqual(["A3"]);
+  });
+
+  it("A4: requires the authorization-absent check when the bundle records a snapshot and no authorization, and refuses it otherwise", () => {
+    const absent = loose(BUNDLE);
+    absent.snapshot = { path: "clossys/.state/apply/registry-snapshot.json", digest: PLAN_DIGEST };
+    expect(applyBundleViolations(absent).map((violation) => `${violation.rule} ${violation.path}`)).toEqual(["A4 repositories[0].checks"]);
+    absent.repositories[0].checks = [{ check: "V3", verdict: "violated", rule: AUTHORIZATION_ABSENT }, { check: "V6", verdict: "satisfied" }];
+    absent.repositories[0].verdict = "violated";
+    expect(applyBundleViolations(absent)).toEqual([]);
+    const authorized = loose(absent);
+    authorized.authorization = { planDigest: PLAN_DIGEST, expiresAt: "2026-10-01T00:00:00Z" };
+    expect(applyBundleViolations(authorized).map((violation) => violation.rule)).toEqual(["A4"]);
+    const staffingOnly = loose(absent);
+    staffingOnly.snapshot = null;
+    expect(applyBundleViolations(staffingOnly).map((violation) => violation.rule)).toEqual(["A4"]);
   });
 
   it("A4: requires the mismatch check when the authorization is for another plan, and refuses it otherwise", () => {
