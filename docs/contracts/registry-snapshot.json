@@ -54,15 +54,16 @@
       "pattern": "^https://[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?(?::[0-9]{1,5})?$"
     },
     "packageName": {
-      "title": "a scoped package name in lowercase, such as @scope/name",
+      "title": "a scoped package name in lowercase, such as @scope/name, of at most 214 characters",
+      "description": "The same rule as the plan contract's packageName (docs/contracts/advisor-plan.json): npm's limit is 214 characters, asserted by the lookahead because the checker has no maxLength.",
       "type": "string",
-      "pattern": "^@[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._-]*$"
+      "pattern": "^(?=.{1,214}$)@[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._-]*$"
     },
     "semver": {
-      "title": "a semantic version such as 1.2.3, which may carry a prerelease or build suffix",
-      "description": "Semantic Versioning 2.0.0's grammar. A prerelease or build suffix is accepted here so that a resolver can refuse it by name, rather than the snapshot failing its shape.",
+      "title": "a semantic version such as 1.2.3, which may carry a prerelease or build suffix, with at most 16 digits in each of its three numbers",
+      "description": "Semantic Versioning 2.0.0's grammar, with the plan contract's limit of 16 digits on each of major, minor and patch (docs/contracts/advisor-plan.json, exactVersion), so a release version recorded here always fits a plan. A prerelease or build suffix is accepted here so that a resolver can refuse it by name, rather than the snapshot failing its shape.",
       "type": "string",
-      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)(?:\\.(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$"
+      "pattern": "^(0|[1-9][0-9]{0,15})\\.(0|[1-9][0-9]{0,15})\\.(0|[1-9][0-9]{0,15})(?:-(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)(?:\\.(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$"
     },
     "packageEntry": {
       "type": "object",

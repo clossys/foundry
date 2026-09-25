@@ -79,6 +79,17 @@ describe("packageRequest", () => {
     expect(packageRequest(plan, { catalogue })).toMatchObject({ state: "violated", findings: [{ rule: "role-not-in-catalogue", path: "staffing[0].roles[0]" }] });
   });
 
+  it("refuses a staffed role whose package lives in the hub only, and names no hub-only package", () => {
+    const plan = { ...PLAN, mandate: { ...PLAN.mandate, roles: [...PLAN.mandate.roles, "advisor"] }, staffing: [{ ...PLAN.staffing![0]!, roles: ["advisor", "writer", "designer"] }, PLAN.staffing![1]!] };
+    expect(packageRequest(plan)).toEqual({
+      state: "violated",
+      findings: [{
+        rule: "hub-only-package", verdict: "violated", path: "staffing[0].roles[0]",
+        message: "plan.staffing[0].roles[0] is a role whose package lives in the hub only and is never installed in a staffed repository",
+      }],
+    });
+  });
+
   it("refuses a catalogue entry whose scoped name is not in the packed scope", () => {
     const catalogue: CapabilityCatalogue = { ...CAPABILITY_CATALOGUE, roles: CAPABILITY_CATALOGUE.roles.map((entry) => (entry.role === "designer" ? { ...entry, scopeName: "@other-scope/designer" } : entry)) };
     expect(packageRequest(PLAN, { catalogue })).toMatchObject({ state: "violated", findings: [{ rule: "catalogue-scope-mismatch", path: "staffing[0].roles[1]" }] });

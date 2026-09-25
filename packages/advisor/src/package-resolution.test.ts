@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { planDigest, resolvePackages, snapshotDigest, validateAdvisorPlan } from "./index.js";
+import { HUB_ONLY_PACKAGE_DIRECTORIES, planDigest, resolvePackages, snapshotDigest, validateAdvisorPlan } from "./index.js";
 import type { AdvisorPlan, PackageResolutionResult, RegistrySnapshot, RegistrySnapshotPackage, RegistrySnapshotVersion } from "./index.js";
 
 /*
@@ -90,10 +90,14 @@ describe("resolvePackages: a resolvable snapshot", () => {
     expect(result.resolution).toEqual({ snapshotDigest: corpusDigest("base") });
   });
 
-  it("gives a plan that passes validateAdvisorPlan, the contract's rules R1-R9 included, and has a digest", () => {
+  it("gives a plan that passes validateAdvisorPlan, the contract's rules R1-R10 included, and has a digest", () => {
     if (result.state !== "satisfied") throw new Error("expected satisfied");
     const resolved = { ...PLAN, packages: result.packages, resolution: result.resolution };
     expect(validateAdvisorPlan(resolved)).toEqual([]);
+    // R10: exactly one pin-starter act per staffed repository, as a devDependency.
+    const pins = result.packages.filter((act) => act.act === "pin-starter");
+    expect(pins.map((act) => act.repository).sort()).toEqual(PLAN.staffing!.map((entry) => entry.repository).sort());
+    expect(new Set(pins.map((act) => act.placement))).toEqual(new Set(["devDependencies"]));
     expect(planDigest(resolved)).toMatch(/^sha256:[0-9a-f]{64}$/);
   });
 
@@ -193,6 +197,35 @@ describe("resolvePackages: every refusal", () => {
         state: "violated", findings: [{ rule: "no-sha512-integrity", verdict: "violated", path: `packages[${W}].versions[0].integrity` }],
       });
     }
+  });
+
+  it("integrity that is not canonical base64 (a second spelling of the same bytes): violated no-sha512-integrity", () => {
+    const canonical = base.packages[W]!.versions[0]!.integrity!;
+    const last = canonical.at(-3)!;
+    expect("AQgw").toContain(last);
+    const respelled = `${canonical.slice(0, -3)}${String.fromCharCode(last.charCodeAt(0) + 1)}==`;
+    expect(Buffer.from(respelled.slice(7), "base64")).toEqual(Buffer.from(canonical.slice(7), "base64"));
+    const snapshot = withPackage(WRITER, (_entry, version) => {
+      version!.integrity = respelled;
+    });
+    expect(refusal(resolvePackages(PLAN, snapshot))).toEqual({ state: "violated", findings: [{ rule: "no-sha512-integrity", verdict: "violated", path: `packages[${W}].versions[0].integrity` }] });
+  });
+
+  it("a version number longer than any plan accepts: violated snapshot-shape", () => {
+    const snapshot = withPackage(WRITER, (entry, version) => {
+      entry.latest = "12345678901234567.0.0";
+      version!.version = "12345678901234567.0.0";
+    });
+    expect(refusal(resolvePackages(PLAN, snapshot)).findings.map((finding) => finding.rule)).toEqual(["snapshot-shape", "snapshot-shape"]);
+  });
+
+  it("a staffed role whose package lives in the hub only: violated hub-only-package, by position, before any snapshot is read", () => {
+    expect(HUB_ONLY_PACKAGE_DIRECTORIES).toEqual(["advisor"]);
+    const plan = { ...PLAN, mandate: { ...PLAN.mandate, roles: ["writer", "designer", "advisor"] }, staffing: [PLAN.staffing![0]!, { repository: "example-owner/docs", roles: ["writer", "advisor"] }] };
+    const expected = { state: "violated", findings: [{ rule: "hub-only-package", verdict: "violated", path: "staffing[1].roles[1]" }] };
+    expect(refusal(resolvePackages(plan, base))).toEqual(expected);
+    expect(refusal(resolvePackages(plan, { not: "a snapshot" }))).toEqual(expected);
+    expect(JSON.stringify(resolvePackages(plan, base))).not.toMatch(/example-owner|FOUNDER/);
   });
 
   it("deprecated: violated deprecated-version", () => {

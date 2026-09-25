@@ -417,8 +417,12 @@ this package's packed capability catalogue, plus the `starter` package
 its pull requests. The scope in each name comes from the publishing scope
 this package was built with, never a literal. It refuses a plan that fails
 the plan contract (`plan-shape`), a plan with no `staffing`
-(`plan-not-staffed`), and a staffed role the catalogue does not list
-(`role-not-in-catalogue`). Its result, a `PackageRequestResult`, is
+(`plan-not-staffed`), a staffed role the catalogue does not list
+(`role-not-in-catalogue`), and a staffed role whose package lives in the
+engagement hub only and is never installed in a product repository
+(`hub-only-package`, listed in `HUB_ONLY_PACKAGE_DIRECTORIES`: Advisor
+itself, which is pinned once in the hub and run elsewhere through `npx` at
+the hub's exact version). Its result, a `PackageRequestResult`, is
 `{ state: "satisfied", names, findings: [] }` or
 `{ state: "violated", findings }`.
 
@@ -458,7 +462,7 @@ version's `sha512-` integrity value and the placement `devDependencies`
 sorted by name, which is exactly what the sponsor's grant permits. The same
 plan and snapshot always give byte-identical output, and so does a re-fetch
 of the same selection. Before it returns, it checks the resolved plan with
-the plan contract and its rules R1 to R9 and refuses rather than return a
+the plan contract and its rules R1 to R10 and refuses rather than return a
 plan that fails them. Each `ResolutionFinding` has a `rule`, a `verdict`
 (`ResolutionVerdict`), a `path` and a message that names positions and, at
 most, a package name derived from the catalogue, never plan text, a
@@ -466,6 +470,7 @@ repository id or a value from the snapshot:
 
 | Condition | Verdict | Rule |
 | --- | --- | --- |
+| A staffed role's package lives in the hub only | violated | `hub-only-package` |
 | The snapshot fails its contract | violated | `snapshot-shape` |
 | Its registry is not the registry this package was built for | violated | `foreign-registry` |
 | A requested package has no entry | indeterminate | `package-not-in-snapshot` |
@@ -473,7 +478,7 @@ repository id or a value from the snapshot:
 | `latest` names no version | indeterminate | `no-latest` |
 | `latest` names a prerelease or build version | violated | `prerelease-latest` |
 | `latest` names a version the snapshot does not record | indeterminate | `tag-points-at-missing-version` |
-| That version has no integrity value, or not exactly one `sha512-` value | violated | `no-sha512-integrity` |
+| That version has no integrity value, or not exactly one `sha512-` value in canonical base64 | violated | `no-sha512-integrity` |
 | That version is deprecated | violated | `deprecated-version` |
 | Its tarball is not served over the registry's own scheme and host, or its URL carries credentials | violated | `foreign-tarball-host` |
 | That version lists no attestations | warning | `no-attestation-yet` |

@@ -76,12 +76,34 @@ export type PackageResolutionResult =
     }
   | { readonly state: "violated" | "indeterminate"; readonly findings: readonly ResolutionFinding[] };
 
-/** The one `sha512-` integrity value a plan accepts: the base64 of 64 bytes, and nothing else. */
-const SHA512_INTEGRITY = /^sha512-[A-Za-z0-9+/]{86}==$/u;
-/** An exact release version: no prerelease and no build suffix. */
-const EXACT_VERSION = /^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/u;
+/** A pattern the packed plan contract defines, read from it so the two can never disagree. */
+function planPattern(definition: string): RegExp {
+  const definitions = loadPlanContract("advisor-plan.json").definitions as Record<string, { pattern?: unknown }> | undefined;
+  const pattern = definitions?.[definition]?.pattern;
+  if (typeof pattern !== "string") throw new Error(`the packed plan contract defines no pattern for ${definition}`);
+  return new RegExp(pattern, "u");
+}
+/** The one integrity value a plan accepts: `sha512-` and the canonical base64 of 64 bytes, and nothing else. */
+const SHA512_INTEGRITY = planPattern("sha512Integrity");
+/**
+ * A prerelease (`-...`) or build (`+...`) suffix on a semantic version. Without
+ * one, a version the snapshot contract accepts is one the plan contract
+ * accepts: both limit each number to 16 digits. The resolved plan is checked
+ * against the plan contract before it is returned, so any disagreement fails
+ * closed.
+ */
+const PRERELEASE_OR_BUILD = /[-+]/u;
 /** The directory name of the package every staffed repository pins to check its pull requests. */
 export const STARTER_PACKAGE_DIRECTORY = "starter";
+/**
+ * Role packages that live in the engagement hub only and are never installed
+ * in a product repository. The apply-approved-plan RFC (issue #1178) decides
+ * this for Advisor in decision D24: Advisor is pinned once, in the hub, and a
+ * product repository runs its commands through `npx` at the hub's exact
+ * version rather than installing it. The capability catalogue carries no flag
+ * for this, so this one list is where it is recorded.
+ */
+export const HUB_ONLY_PACKAGE_DIRECTORIES: readonly string[] = ["advisor"];
 /** Where every resolved act is placed in a repository's package.json. */
 export const RESOLVED_PLACEMENT = "devDependencies";
 
@@ -111,8 +133,10 @@ function planShapeFindings(plan: unknown): ResolutionFinding[] {
 /**
  * The package names a staffed plan needs, sorted and unique: `<scope>/<role>`
  * for every role any staffing entry names, and `<scope>/starter`. A role this
- * package's catalogue does not list is refused, as is a catalogue entry whose
- * own scoped name disagrees with the packed scope. Pure: no file, no network.
+ * package's catalogue does not list is refused, as is a role whose package
+ * lives in the hub only (`HUB_ONLY_PACKAGE_DIRECTORIES`) and a catalogue entry
+ * whose own scoped name disagrees with the packed scope. Pure: no file, no
+ * network.
  */
 export function packageRequest(plan: unknown, options: ResolutionOptions = {}): PackageRequestResult {
   const shape = planShapeFindings(plan);
@@ -132,6 +156,10 @@ export function packageRequest(plan: unknown, options: ResolutionOptions = {}): 
       const known = byRole.get(role);
       if (known === undefined || role === STARTER_PACKAGE_DIRECTORY) {
         findings.push({ rule: "role-not-in-catalogue", verdict: "violated", path, message: `plan.${path} is not a role in this package's capability catalogue` });
+        return;
+      }
+      if (HUB_ONLY_PACKAGE_DIRECTORIES.includes(known.role)) {
+        findings.push({ rule: "hub-only-package", verdict: "violated", path, message: `plan.${path} is a role whose package lives in the hub only and is never installed in a staffed repository` });
         return;
       }
       const name = `${scope}/${known.role}`;
@@ -174,7 +202,7 @@ function selectVersion(
   const refuse = (rule: string, verdict: ResolutionVerdict, path: string, message: string) => ({ version: null, findings: [{ rule, verdict, path, message: `snapshot.${path} ${message} (${name})` }] });
   if (entry.status === "not-found") return refuse("package-not-published", "violated", `${at}.status`, "says the registry has no such package");
   if (entry.latest === null) return refuse("no-latest", "indeterminate", `${at}.latest`, "is null: the registry named no latest version");
-  if (!EXACT_VERSION.test(entry.latest)) return refuse("prerelease-latest", "violated", `${at}.latest`, "names a prerelease or build version, which is never resolved");
+  if (PRERELEASE_OR_BUILD.test(entry.latest)) return refuse("prerelease-latest", "violated", `${at}.latest`, "names a prerelease or build version, which is never resolved");
   const position = entry.versions.findIndex((version) => version.version === entry.latest);
   if (position === -1) return refuse("tag-points-at-missing-version", "indeterminate", `${at}.latest`, "names a version the snapshot does not record");
   const version = entry.versions[position]!;
@@ -246,7 +274,7 @@ export function resolvePackages(plan: unknown, snapshot: unknown, options: Resol
     .sort((left, right) => byCodeUnits(left.repository, right.repository) || byCodeUnits(left.name, right.name));
   const resolution = { snapshotDigest: snapshotDigest(read) };
 
-  // Fail closed: the resolved plan must itself satisfy the plan contract and R1-R9.
+  // Fail closed: the resolved plan must itself satisfy the plan contract and R1-R10.
   const resolved = { ...(plan as AdvisorPlan), packages, resolution };
   const invalid = planShapeFindings(resolved);
   if (invalid.length > 0) return { state: "violated", findings: invalid.map((finding) => ({ ...finding, rule: "resolved-plan-invalid" })) };

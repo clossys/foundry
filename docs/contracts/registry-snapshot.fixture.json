@@ -1828,6 +1828,150 @@
       ]
     },
     {
+      "name": "schema-version-part-too-long",
+      "note": "latest and its version with a 17-digit major number, longer than any plan accepts.",
+      "snapshot": {
+        "schemaVersion": 1,
+        "kind": "clossys.registry-snapshot",
+        "registry": "https://registry.npmjs.org",
+        "fetchedAt": "2026-09-24T12:00:00Z",
+        "fetchedBy": {
+          "name": "@clossys/launcher",
+          "version": "0.9.30"
+        },
+        "packages": [
+          {
+            "name": "@clossys/writer",
+            "status": "found",
+            "latest": "12345678901234567.0.0",
+            "versions": [
+              {
+                "version": "12345678901234567.0.0",
+                "integrity": "sha512-OlVVePUOypHOPe9dj/jjedb5ozGZwOXmAOHb8CGtvxm2YKEJgtBQ5TjI1RFRzNfDJVZGfpvVKhJOuzaDloCxrg==",
+                "tarball": "https://registry.npmjs.org/@clossys/writer/-/writer-0.4.1.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:3fa8a0bf51ecc3d00f28c44c1012dc68c66ba0e87de94553bb2336fa6386e514"
+          },
+          {
+            "name": "@clossys/starter",
+            "status": "found",
+            "latest": "1.3.0",
+            "versions": [
+              {
+                "version": "1.3.0",
+                "integrity": "sha512-TJTam2EghNKkYT2BvJSMw73qkZAt5Sd/F9iI0gG5usyYfk5YuQTGgYGml+rmiaxQ4pPRjnXHOgJ452JQyFH88g==",
+                "tarball": "https://registry.npmjs.org/@clossys/starter/-/starter-1.3.0.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:debfab461f064e5810e7a19a82abbb806e445ae23dfca55df7459b5f72be789e"
+          },
+          {
+            "name": "@clossys/designer",
+            "status": "found",
+            "latest": "0.2.7",
+            "versions": [
+              {
+                "version": "0.2.7",
+                "integrity": "sha512-KCYW7zKvm8K4VBmqoPXz2tm9eFV4AAd3lMue0lCN+bY1AV08rHx8g763ewcy42YQy99oVDmZBs+KQxzavBxzPA==",
+                "tarball": "https://registry.npmjs.org/@clossys/designer/-/designer-0.2.7.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:e5330369529d184b0dcb35d69f0718f18587aa848af56c86e476336d1aef6b54"
+          }
+        ]
+      },
+      "violations": [
+        {
+          "rule": "schema",
+          "path": "packages[0].latest"
+        },
+        {
+          "rule": "schema",
+          "path": "packages[0].versions[0].version"
+        }
+      ]
+    },
+    {
+      "name": "schema-name-too-long",
+      "note": "A package name of 215 characters, over npm's limit.",
+      "snapshot": {
+        "schemaVersion": 1,
+        "kind": "clossys.registry-snapshot",
+        "registry": "https://registry.npmjs.org",
+        "fetchedAt": "2026-09-24T12:00:00Z",
+        "fetchedBy": {
+          "name": "@clossys/launcher",
+          "version": "0.9.30"
+        },
+        "packages": [
+          {
+            "name": "@clossys/writer",
+            "status": "found",
+            "latest": "0.4.1",
+            "versions": [
+              {
+                "version": "0.4.1",
+                "integrity": "sha512-OlVVePUOypHOPe9dj/jjedb5ozGZwOXmAOHb8CGtvxm2YKEJgtBQ5TjI1RFRzNfDJVZGfpvVKhJOuzaDloCxrg==",
+                "tarball": "https://registry.npmjs.org/@clossys/writer/-/writer-0.4.1.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:3fa8a0bf51ecc3d00f28c44c1012dc68c66ba0e87de94553bb2336fa6386e514"
+          },
+          {
+            "name": "@clossys/starter",
+            "status": "found",
+            "latest": "1.3.0",
+            "versions": [
+              {
+                "version": "1.3.0",
+                "integrity": "sha512-TJTam2EghNKkYT2BvJSMw73qkZAt5Sd/F9iI0gG5usyYfk5YuQTGgYGml+rmiaxQ4pPRjnXHOgJ452JQyFH88g==",
+                "tarball": "https://registry.npmjs.org/@clossys/starter/-/starter-1.3.0.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:debfab461f064e5810e7a19a82abbb806e445ae23dfca55df7459b5f72be789e"
+          },
+          {
+            "name": "@clossys/dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+            "status": "found",
+            "latest": "0.2.7",
+            "versions": [
+              {
+                "version": "0.2.7",
+                "integrity": "sha512-KCYW7zKvm8K4VBmqoPXz2tm9eFV4AAd3lMue0lCN+bY1AV08rHx8g763ewcy42YQy99oVDmZBs+KQxzavBxzPA==",
+                "tarball": "https://registry.npmjs.org/@clossys/designer/-/designer-0.2.7.tgz",
+                "deprecated": false,
+                "publishedAt": "2026-09-01T10:00:00.000Z",
+                "hasAttestations": true
+              }
+            ],
+            "responseSha256": "sha256:e5330369529d184b0dcb35d69f0718f18587aa848af56c86e476336d1aef6b54"
+          }
+        ]
+      },
+      "violations": [
+        {
+          "rule": "schema",
+          "path": "packages[2].name"
+        }
+      ]
+    },
+    {
       "name": "schema-bad-fetch-time",
       "note": "A fetch time that is not a real date-time.",
       "snapshot": {
