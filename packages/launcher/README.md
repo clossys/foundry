@@ -556,7 +556,8 @@ registry said; it decides nothing from it. Deciding is
   reader sees the old file or the whole new one.
 
 Messages name packages and positions in the request, never the content of a
-response or of the request. Exit codes: `0` means the snapshot was written;
+response or of the request. Exit codes: `0` means the snapshot was written, or that `--help` printed
+the usage;
 `2` means nothing was written, whether because of a usage error, an
 unreadable or refused request, or a registry answer this step cannot record.
 A snapshot is a record of what the registry answered, not evidence of where
