@@ -288,7 +288,23 @@ const JSON_NUMBER = /-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/y;
 const JSON_ESCAPE = /\\(?:["\\/bfnrt]|u[0-9a-fA-F]{4})/y;
 
 /** A document that is not strict JSON: `syntaxAt` is the offset of the first syntax error, else `duplicate` names a repeated key. */
-class StrictJsonError extends Error {}
+/**
+ * Why `readContractDocument()` refused a file, as data a caller can act on
+ * without parsing the message: `reason` says which rule failed, and
+ * `position` (a character index, never file text) is set only for a syntax
+ * error or a leading byte order mark. A repeated key's message names that
+ * key, escaped, so a caller that must not relay file text should use
+ * `reason` and `position` rather than the message.
+ */
+export class ContractDocumentError extends Error {
+  constructor(
+    message: string,
+    readonly reason: "encoding" | "syntax" | "repeated-key",
+    readonly position?: number,
+  ) {
+    super(message);
+  }
+}
 
 /**
  * Checks that `text` is exactly one JSON value (RFC 8259 grammar) with no
@@ -300,7 +316,7 @@ class StrictJsonError extends Error {}
 function checkStrictJson(text: string): void {
   let index = 0;
   const syntaxError = (): never => {
-    throw new StrictJsonError(`is not valid JSON at position ${index}`);
+    throw new ContractDocumentError(`is not valid JSON at position ${index}`, "syntax", index);
   };
   const skipWhitespace = () => {
     while (index < text.length && JSON_WHITESPACE.includes(text[index]!)) index += 1;
@@ -346,7 +362,7 @@ function checkStrictJson(text: string): void {
           skipWhitespace();
           const key = readString();
           if (seen.has(key)) {
-            throw new StrictJsonError(`repeats the key ${quoteKey(key)} in ${path === "" ? "the top-level object" : path}; every key may appear once`);
+            throw new ContractDocumentError(`repeats the key ${quoteKey(key)} in ${path === "" ? "the top-level object" : path}; every key may appear once`, "repeated-key");
           }
           seen.add(key);
           at = childPath(path, key);
@@ -396,14 +412,9 @@ export function readContractDocument(bytes: Uint8Array): unknown {
   try {
     text = STRICT_UTF8.decode(bytes);
   } catch {
-    throw new Error("is not valid UTF-8");
+    throw new ContractDocumentError("is not valid UTF-8", "encoding");
   }
-  if (text.charCodeAt(0) === 0xfeff) throw new Error("is not valid JSON at position 0: it starts with a byte order mark, which strict JSON refuses");
-  try {
-    checkStrictJson(text);
-  } catch (cause) {
-    if (cause instanceof StrictJsonError) throw new Error(cause.message);
-    throw cause;
-  }
+  if (text.charCodeAt(0) === 0xfeff) throw new ContractDocumentError("is not valid JSON at position 0: it starts with a byte order mark, which strict JSON refuses", "syntax", 0);
+  checkStrictJson(text);
   return JSON.parse(text) as unknown;
 }

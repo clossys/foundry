@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { assertImplementedContract, readContractDocument } from "./contract-schema.js";
+import { assertImplementedContract, ContractDocumentError, readContractDocument } from "./contract-schema.js";
 import { PLAN_CONTRACTS } from "./generated/plan-contracts.generated.js";
 import { ADVISOR_BLOCKER_KINDS, PLAN_DIGEST_EXCLUDED_FIELDS, canonicalJson, planDigest, validateAdvisorPlan, validateEngagementBrief } from "./index.js";
 import type { AdvisorPlan, EngagementBrief } from "./index.js";
@@ -241,6 +241,26 @@ describe("keys in messages are escaped, never raw (#1475)", () => {
     }
     expect(message).toBe('repeats the key "a\\u061cb" in the top-level object; every key may appear once');
     expect(message).not.toContain("\u061c");
+  });
+
+  it("reports why a file was refused as data, with a position only for a syntax error", () => {
+    const refusal = (text: Uint8Array): ContractDocumentError => {
+      try {
+        readContractDocument(text);
+      } catch (cause) {
+        if (cause instanceof ContractDocumentError) return cause;
+        throw cause;
+      }
+      throw new Error("expected a refusal");
+    };
+    expect(refusal(bytes('{"a":1,}'))).toMatchObject({ reason: "syntax", position: 7 });
+    expect(refusal(new Uint8Array([0xef, 0xbb, 0xbf, ...bytes("{}")]))).toMatchObject({ reason: "syntax", position: 0 });
+    expect(refusal(new Uint8Array([0x7b, 0xff, 0x7d]))).toMatchObject({ reason: "encoding", position: undefined });
+    // A key that reads like a position is still a key: the message names it,
+    // but `position` stays unset, so a caller relaying only `position`
+    // never relays file text.
+    const repeated = refusal(bytes('{"position 5551234567":1,"position 5551234567":2}'));
+    expect(repeated).toMatchObject({ reason: "repeated-key", position: undefined });
   });
 
   it("refuses a leading byte order mark instead of stripping it", () => {
