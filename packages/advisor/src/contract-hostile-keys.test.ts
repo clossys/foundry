@@ -10,6 +10,8 @@ import type { AdvisorPlan, EngagementBrief, RegistrySnapshot } from "./index.js"
 import { main as packageRequestMain } from "./package-request-cli.js";
 import { main as renderStatusMain } from "./render-status-cli.js";
 import { main as resolvePackagesMain } from "./resolve-packages-cli.js";
+import { AdvisorRepositoryCardCliInputError, main as repositoryCardMain } from "./repository-card-cli.js";
+import { repositoryChoiceCard } from "./repository-choice.js";
 
 /*
  * The shared contract checker never echoes document text -- in particular an
@@ -136,6 +138,13 @@ const SCENARIOS: Readonly<Record<string, Scenario>> = {
   "undeclared in the snapshot, through resolvePackages()": {
     run: (key) => resolvePackages(PLAN, { [key]: 1, ...SNAPSHOT }),
     expected: () => ({ state: "violated", findings: [{ rule: "snapshot-shape", verdict: "violated", path: "", message: `snapshot ${UNDECLARED(1)}` }] }),
+  },
+  "undeclared in a repository listing entry, through repositoryChoiceCard()": {
+    // repositoryChoiceCard() never uses the checker's own message: listingFindings()
+    // classifies it through classifyListingViolation() into a fixed phrase with no
+    // ordinal at all, so the same finding is expected whatever the key (#1179).
+    run: (key) => repositoryChoiceCard([{ nameWithOwner: "example-owner/example-app", [key]: 1 }]),
+    expected: () => ({ state: "invalid", findings: [{ rule: "repository-listing", severity: "error", message: "listing[0] has a field the contract does not declare", path: "listing[0]" }] }),
   },
   "written first in a file, numbered as written": {
     run: (key) => messages(validateAdvisorPlan(readContractDocument(bytes(`{${q(key)}:true,${JSON.stringify(PLAN).slice(1)}`)))),
@@ -271,6 +280,44 @@ describe("no key text through the bins", () => {
       expect(hostile.map((entry) => entry.renderStatus.thrown?.replace(/position \d+/, "position N")), name).toEqual(baseline.map((entry) => entry.renderStatus.thrown?.replace(/position \d+/, "position N")));
       expect(hostile.map((entry) => [entry.packageRequest, entry.resolvePackages]), name).toEqual(baseline.map((entry) => [entry.packageRequest, entry.resolvePackages]));
       expect(leaks(key, hostile, baseline), name).toEqual([]);
+    }
+  });
+});
+
+describe("no key text through advisor-repository-card", () => {
+  let root: string;
+  beforeEach(() => {
+    root = mkdtempSync(join(tmpdir(), "advisor-repository-card-hostile-"));
+    vi.spyOn(console, "log").mockImplementation(() => {});
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+    rmSync(root, { recursive: true, force: true });
+  });
+
+  const write = (name: string, text: string) => {
+    const path = join(root, name);
+    writeFileSync(path, text);
+    return path;
+  };
+  /** What main() threw for a repositories file whose one entry also carries `key`, with the temporary root taken out. */
+  const refuse = (key: string): string => {
+    const path = write("repositories.json", JSON.stringify([{ nameWithOwner: "example-owner/example-app", [key]: 1 }]));
+    try {
+      repositoryCardMain([path]);
+    } catch (cause) {
+      expect(cause).toBeInstanceOf(AdvisorRepositoryCardCliInputError);
+      return (cause as Error).message.split(root).join("<root>");
+    }
+    throw new Error("expected a refusal");
+  };
+
+  it("refuses an undeclared field in the repository listing by position only", () => {
+    const baseline = refuse(HARMLESS);
+    expect(baseline).toBe("the repository list is invalid: listing[0] has a field the contract does not declare");
+    for (const [name, key] of Object.entries(HOSTILE)) {
+      expect(refuse(key), name).toBe(baseline);
+      expect(leaks(key, refuse(key), baseline), name).toEqual([]);
     }
   });
 });

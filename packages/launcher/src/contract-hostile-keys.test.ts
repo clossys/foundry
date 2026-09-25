@@ -1,12 +1,16 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { main, snapshotMain } from "./apply-plan-cli.js";
+import { main as cliMain } from "./cli.js";
 import { PACKAGE_SCOPE } from "./generated/package-scope.generated.js";
 import { createNodeHost } from "./host.js";
-import { validateAdvisorPlan, validateEngagementBrief } from "./index.js";
+import { inspectInventory, validateAdvisorPlan, validateEngagementBrief, validateInventoryDocument } from "./index.js";
+import { INVENTORY_CONTRACT_POINTER } from "./inventory-contract.js";
 import { registrySnapshotViolations, writeRegistrySnapshot, type RegistrySnapshot, type Transport } from "./registry-snapshot.js";
+import type { CommandResult, WorkspaceHost } from "./types.js";
 
 /*
  * The shared contract checker this package carries a generated copy of
@@ -32,6 +36,7 @@ const HOSTILE: Readonly<Record<string, string>> = {
   "a declared name with a zero-width space": "schemaVersion\u200b",
 };
 const HARMLESS = "k";
+const skeletonRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "skeleton");
 
 const PLAN = {
   schemaVersion: 1,
@@ -101,6 +106,18 @@ const SCENARIOS: Readonly<Record<string, Scenario>> = {
     run: (key) => registrySnapshotViolations({ ...SNAPSHOT, packages: [{ ...SNAPSHOT.packages[0]!, [key]: null }, ...SNAPSHOT.packages.slice(1)] }),
     expected: () => [{ rule: "schema", path: "packages[0]", message: UNDECLARED(Object.keys(SNAPSHOT.packages[0]!).length + 1) }],
   },
+  "undeclared at the top level of an inventory document, through validateInventoryDocument()": {
+    run: (key) => validateInventoryDocument(JSON.stringify({ schemaVersion: 1, repositories: [{ id: "app" }], [key]: 1 })),
+    expected: () => ({ valid: false, reason: `${UNDECLARED(3)} (${INVENTORY_CONTRACT_POINTER})` }),
+  },
+  "undeclared in an inventory entry, through validateInventoryDocument()": {
+    run: (key) => validateInventoryDocument(JSON.stringify({ schemaVersion: 1, repositories: [{ id: "app", [key]: 1 }] })),
+    expected: () => ({ valid: false, reason: `repositories[0] ${UNDECLARED(2)} (${INVENTORY_CONTRACT_POINTER})` }),
+  },
+  "undeclared in an inventory entry, through inspectInventory()": {
+    run: (key) => inspectInventory(JSON.stringify({ schemaVersion: 1, repositories: [{ id: "app", [key]: 1 }] })),
+    expected: () => ({ status: "invalid", count: 0, reason: `repositories[0] ${UNDECLARED(2)} (${INVENTORY_CONTRACT_POINTER})` }),
+  },
 };
 
 describe("no key text in any contract message or reason", () => {
@@ -119,6 +136,97 @@ describe("no key text in any contract message or reason", () => {
       }
     });
   }
+});
+
+function inventoryHost(directory: string, commands: Record<string, CommandResult>): WorkspaceHost {
+  return {
+    cwd: directory,
+    env: {},
+    isTTY: false,
+    now: () => "2026-09-18T00:00:00.000Z",
+    exists: (path) => existsSync(path),
+    isDirectory: (path) => existsSync(path) && statSync(path).isDirectory(),
+    isSymlink: (path) => {
+      try {
+        return lstatSync(path).isSymbolicLink();
+      } catch {
+        return false;
+      }
+    },
+    readText: (path) => {
+      try {
+        return readFileSync(path, "utf8");
+      } catch {
+        return null;
+      }
+    },
+    readBytes: (path) => {
+      try {
+        return readFileSync(path);
+      } catch {
+        return null;
+      }
+    },
+    writeBytes: (path, contents) => {
+      mkdirSync(dirname(path), { recursive: true });
+      writeFileSync(path, contents);
+    },
+    writeText: (path, contents) => {
+      mkdirSync(dirname(path), { recursive: true });
+      writeFileSync(path, contents);
+    },
+    mkdirp: (path) => {
+      mkdirSync(path, { recursive: true });
+    },
+    symlink: (relativeTarget, linkPath) => {
+      mkdirSync(dirname(linkPath), { recursive: true });
+      if (existsSync(linkPath)) rmSync(linkPath, { recursive: true, force: true });
+      symlinkSync(relativeTarget, linkPath, "dir");
+    },
+    remove: (path) => {
+      rmSync(path, { recursive: true, force: true });
+    },
+    readDir: (path) => (existsSync(path) ? readdirSync(path) : []),
+    run: (command, args) => commands[`${command} ${args.join(" ")}`] ?? { status: 1, stdout: "", stderr: "unmocked" },
+    prompt: () => null,
+  };
+}
+
+describe("no key text through launcher --inventory", () => {
+  let root: string;
+  let err: string[];
+  beforeEach(() => {
+    root = mkdtempSync(join(tmpdir(), "launcher-inventory-hostile-"));
+    mkdirSync(join(root, ".git"), { recursive: true });
+    err = [];
+    vi.spyOn(console, "error").mockImplementation((text: string) => void err.push(text));
+    vi.spyOn(console, "log").mockImplementation(() => {});
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+    rmSync(root, { recursive: true, force: true });
+  });
+
+  const COMMANDS: Record<string, CommandResult> = {
+    "git --version": { status: 0, stdout: "git\n", stderr: "" },
+    "git remote get-url origin": { status: 0, stdout: "git@github.com:acme/central.git\n", stderr: "" },
+    "npm view @clossys/advisor version": { status: 0, stdout: "0.1.5\n", stderr: "" },
+  };
+  const refuse = (key: string): string => {
+    writeFileSync(join(root, "inventory.json"), JSON.stringify({ schemaVersion: 1, repositories: [{ id: "app", [key]: 1 }] }));
+    const code = cliMain(["--inventory", "inventory.json"], inventoryHost(root, COMMANDS), skeletonRoot);
+    expect(code).toBe(1);
+    return err.splice(0).join("\n").split(root).join("<root>");
+  };
+
+  it("refuses --inventory whose one entry carries an undeclared field, by position only", () => {
+    const baseline = refuse(HARMLESS);
+    expect(baseline).toContain(`repositories[0] ${UNDECLARED(2)}`);
+    for (const [name, key] of Object.entries(HOSTILE)) {
+      expect(refuse(key), name).toBe(baseline);
+      expect(leaks(key, refuse(key), baseline), name).toEqual([]);
+    }
+  });
 });
 
 describe("no key text through launcher-apply-plan", () => {
