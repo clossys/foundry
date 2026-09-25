@@ -57,6 +57,28 @@ refuses a tree that contains:
   never echoed, so the gate cannot leak a secret into a CI log.
 - **Private identity** — names, domains, handles and internal paths that
   must never become public.
+- **Machine-local path names** — file and directory names in shapes only a
+  machine produces. A flattened name starts with a `-`, `_` or `\`
+  separator and uses it throughout. Five families are refused:
+  1. temp roots — `private` then `tmp` or `var`, `var` then `folders`, or
+     `tmp` then `claude-<n>`, flattened into one name or mirrored as nested
+     `private/tmp`, `var/folders` or `tmp/claude-<n>` directories;
+  2. URL-encoded absolute paths — a name starting with `%2F` (optionally
+     `file%3A%2F%2F`) then `Users`, `home`, `mnt`, `private`, `var` or `tmp`;
+  3. Windows drive homes — a drive letter, `--`, then `Users` (a flattened
+     `C:\Users`), or `C:\Users\` written with backslashes inside one name;
+  4. WSL mounts — `mnt`, a drive letter, then `Users`, flattened or nested;
+  5. flattened macOS homes only when a machine marker follows the name
+     directly: a dot-directory (a doubled separator) or exactly `Library`,
+     `Desktop` or `Downloads`; plus a bare `-Users-<name>` with nothing after.
+
+  Home-directory shapes spelled with ordinary words (a Linux `home/<name>`,
+  a `Users/<name>` directory, or a flattened home followed by `code`,
+  `projects` or similar) are **not** refused: they cannot be told apart from
+  ordinary app layouts. They are recorded as KNOWN-GAP cases in
+  `scripts/test-gates.mjs`, and explicit staging and review cover them. The
+  rule is structural and runs in PARTIAL mode too; the same paths inside
+  file contents are left to the denylist.
 
 A separate gate, `scripts/check-artifact-safety.mjs`, runs the same scan
 against the actual packed tarball rather than the git tree — `dist/` is

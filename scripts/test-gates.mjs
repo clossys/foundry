@@ -317,6 +317,190 @@ try {
     }
   }
 
+  // ------------------------------------------------ machine-local path names
+  console.log("\n# machine-local path names");
+  {
+    // Accuracy is measured here, not argued: a data-driven table of realistic
+    // machine-path names (every one must be caught), ordinary names (every one
+    // must stay clean) and KNOWN-GAP shapes (deliberately not covered; asserted
+    // as currently missed so closing one is noticed). Seeded from three review
+    // rounds' corpora. The rule is limited to shapes only a machine produces
+    // (see MACHINE-LOCAL PATH NAMES in check-public-safety.mjs); every home-
+    // directory shape spelled with ordinary words is a KNOWN-GAP row. Each row
+    // gets its own directory so a file and a directory of the same name can
+    // coexist. Slash-form rows are joined from segments at run time so this
+    // file never holds a literal absolute-path shape; `someone` is a
+    // placeholder.
+    const J = (...parts) => parts.join("/");
+    const MP_POSITIVES = [
+      // 1. temp roots, flattened and mirrored
+      "-private-var-folders-ab-cd-T-x",
+      "_private_tmp_claude-1_scratchpad_x",
+      "-private-tmp-claude-502-x",
+      J("-private-tmp", "x.jsonl"),
+      "-private-var",
+      "-var-folders",
+      "-var-folders-ab-cdef-T-x.txt",
+      "-tmp-claude-501-proj-x",
+      J("private", "var", "folders", "ab", "x"),
+      J("mirror", "private", "tmp", "x", "a.txt"),
+      J("var", "folders", "ab", "x"),
+      J("tmp", "claude-1", "x"),
+      // 2. URL-encoded absolute paths
+      "%2FUsers%2Fsomeone%2Fcode%2Fx.txt",
+      "%2fUsers%2fsomeone%2fx.txt",
+      "file%3A%2F%2F%2FUsers%2Fsomeone%2Fx",
+      "%2Fhome%2Fsomeone%2Fx",
+      // 3. Windows drive homes
+      "C--Users-someone-code",
+      "c--Users-someone-code",
+      "C--users-someone-code",
+      "C--Users-someone-source-repos-x",
+      "C--Users-someone-AppData-Local-Temp-x",
+      "C--Users-someone-OneDrive-x",
+      "C\\Users\\someone\\x.txt",
+      // 4. WSL mounts
+      "-mnt-c-Users-someone-code-x",
+      "_mnt_c_Users_someone_code_x",
+      J("mnt", "c", "Users", "someone", "x.txt"),
+      // 5. flattened macOS homes with a machine marker, and the bare session key
+      "-Users-someone--claude-worktrees-x",
+      "_Users_someone__claude_x",
+      "-Users-someone-Library-Caches-x",
+      "-Users-someone-Desktop-notes.txt",
+      "_Users_mary-jane_Downloads_x.txt",
+      "-Users-someone",
+      J("-Users-someone", "x.jsonl"),
+    ];
+    const MP_NEGATIVES = [
+      // review A
+      "users.md", "home.tsx", J("app", "users", "[id]", "page.tsx"), J("src", "home", "index.ts"), "_home.scss",
+      "private-tmp-notes.md", "var-folders.md", "c-users-guide.md", "tmp-claude.md", "claude-3-notes.md",
+      "home-page-copy.md", "users-guide.md", "Users-Guide-Intro.md", "_home-page-hero.scss", "_home_hero.scss",
+      "_home_page_hero.scss", "_users_list.scss", "private-variables.md", "private_var_names.ts",
+      "no-private-var-access.md", "var-folders-guide.md", "private-tmp-dir-cleanup.test.ts",
+      "tmp-claude-3-output.json", "tmp_claude-4-transcript.json", J("tmp", "claude-3-notes.md"),
+      J("src", "components", "Users", "UserList", "index.tsx"), J("src", "features", "Users", "hooks", "useUsers.ts"),
+      J("app", "Users", "[id]", "page.tsx"), J("src", "Users", "Users.tsx"), "C-Users-Guide-intro.md",
+      "A_Users_manual_v2.pdf", "home_someone.md", "-home-.md", "_Home_Page_Hero.scss",
+      J("docs", "user-home", "setup.md"), "users-home-dir.md", "the-var-folders-explained.md",
+      J("src", "private", "tmp.ts"), J("lib", "private", "var", "x.ts"), "sidebar-home-link.tsx",
+      "_home-someone-page.scss", "__home__.tsx", "-Users.md",
+      // review B, and this suite's earlier ones
+      "_home_hero_banner.scss", "-home-page-hero.md", "a-Users-list-page.tsx", J("src", "Users", "Profile", "index.tsx"),
+      J("docs", "home.md"), J("src", "home", "components", "Hero.tsx"), J("app", "users", "profile", "page.tsx"),
+      "private-tmp.md", "_private_tmp.py", "private-tmp-cleanup.md", J("apps", "home", "web", "src", "x.ts"), "_Users_list.scss",
+      // final review
+      J("src", "features", "Users", "components", "Documents", "index.tsx"),
+      J("app", "home", "(marketing)", "work", "page.tsx"),
+      J("src", "pages", "home", "sections", "projects", "index.tsx"),
+      J("docs", "home", "guides", "dev", "setup.md"),
+      J("app", "_home_sections", "Hero.tsx"),
+      J("_home_components", "index.ts"), J("_home_hero", "index.ts"), J("-home-work", "index.ts"),
+      J("_Users_Avatar", "index.tsx"), "-Users-List-Item.tsx",
+    ];
+    // [name, why it is not covered] — one line each.
+    const HOME_WORD = "home-directory shape spelled with ordinary words: indistinguishable from app layouts";
+    const MP_KNOWN_GAPS = [
+      ["-Users-someone-.claude-x", "a flattener that keeps the dot of a dot-directory (the marker is a doubled separator)"],
+      ["-Users-mary-jane", "a bare session key whose user name contains the separator"],
+      ["-Users-someone-code-notes.txt", `macOS ${HOME_WORD}`],
+      [J("-Users-someone-code-proj", "0b1c2d3e-aaaa-bbbb-cccc-000000000000", "scratchpad", "n.md"), `macOS ${HOME_WORD}`],
+      ["_Users_someone_code_x.md", `macOS ${HOME_WORD}`],
+      ["_Users_mary-jane_code_x.md", `macOS ${HOME_WORD}`],
+      ["-Users-mary_jane-code-x.md", `macOS ${HOME_WORD}`],
+      ["-Users-someone-Documents-x", `macOS ${HOME_WORD}`],
+      [J("_Users_someone", "x.jsonl"), "bare _Users_<name>: only the dash form is an agent session key"],
+      ["\\Users\\someone", "bare backslash Users form: only the dash form is an agent session key"],
+      ["-home-someone-code-x", `Linux ${HOME_WORD}`],
+      ["_home_someone_code_x.md", `Linux ${HOME_WORD}`],
+      ["_home_mary-jane_x.md", `Linux ${HOME_WORD}`],
+      ["-home-someone", `Linux ${HOME_WORD}`],
+      ["-home-user-foundry", `cloud-sandbox Linux ${HOME_WORD}`],
+      [J("home", "someone", "code", "x"), `mirrored Linux ${HOME_WORD}`],
+      [J("Users", "someone", "code", "a.txt"), `mirrored macOS ${HOME_WORD}`],
+      [J("Users", "someone", "AppData", "Local", "x"), `mirrored ${HOME_WORD}`],
+      [J("fixtures", "Users", "someone", "a.txt"), `mirrored ${HOME_WORD}`],
+      ["C_Users_someone_code", "single-separator Windows form: same shape as A_Users_manual_v2.pdf"],
+      ["notes-tmp-claude-501-x.md", "temp root mid-name: unanchored temp rules flagged ordinary names"],
+      ["-tmp-pytest-of-someone-pytest-3", "generic tmp subdirectories: no distinctive token after tmp"],
+      ["-tmp-someone-session", "generic tmp subdirectories: no distinctive token after tmp"],
+      ["%Users%someone%code%x.txt.swp", "vim swap-file flattening (%): rare in a tree"],
+      ["!Users!someone!code!x.txt~", "emacs backup flattening (!): rare in a tree"],
+      [".Users.someone.code.x", "dot-flattened: indistinguishable from ordinary dotted names"],
+      ["-root-code-x", "root's home: `root` is an ordinary word with no anchor"],
+    ];
+
+    const env = { ...process.env };
+    delete env.PUBLIC_SAFETY_DENYLIST; // PARTIAL must mean no denylist at all
+    const plant = (dir, names) => {
+      names.forEach((name, i) => {
+        const rel = J(`r${String(i).padStart(3, "0")}`, name);
+        mkdirSync(dirname(join(dir, rel)), { recursive: true });
+        writeFileSync(join(dir, rel), `Visit ${J("", "users", "settings")} to change it.\n`);
+      });
+      gitInit(dir);
+      return names.map((name, i) => [name, J(`r${String(i).padStart(3, "0")}`, name)]);
+    };
+    const posDir = join(work, "machine-paths-pos");
+    const posRows = plant(posDir, [...MP_POSITIVES, ...MP_KNOWN_GAPS.map(([n]) => n)]);
+    const negDir = join(work, "machine-paths-neg");
+    const negRows = plant(negDir, MP_NEGATIVES);
+
+    for (const [modeLabel, extra] of [["FULL", [...DL, "--require-denylist"]], ["PARTIAL", []]]) {
+      const hitRels = (dir) => {
+        const r = run("node", [SAFETY, dir, ...extra, "--json"], { env });
+        let report;
+        try { report = JSON.parse(r.out); } catch { report = { mode: null, failures: [] }; }
+        return { code: r.code, mode: report.mode, rels: new Set((report.failures ?? []).filter((f) => f.kind === "machine-path").map((f) => f.rel)) };
+      };
+      const pos = hitRels(posDir);
+      check(`${modeLabel}: runs in ${modeLabel} mode`, pos.mode === modeLabel, `mode was ${pos.mode}`);
+      check(`${modeLabel}: fails on machine-local path names`, pos.code === 1, `exit was ${pos.code}`);
+      posRows.forEach(([name, rel], i) => {
+        if (i < MP_POSITIVES.length) {
+          check(`${modeLabel}: flags ${JSON.stringify(name)}`, pos.rels.has(rel), `no machine-path finding for ${rel}`);
+        } else {
+          const why = MP_KNOWN_GAPS[i - MP_POSITIVES.length][1];
+          check(
+            `${modeLabel}: KNOWN-GAP not flagged: ${JSON.stringify(name)}`,
+            !pos.rels.has(rel),
+            `${rel} is now flagged — the gap (${why}) closed; move it to MP_POSITIVES`,
+          );
+        }
+      });
+      const neg = hitRels(negDir);
+      for (const [name, rel] of negRows) {
+        check(`${modeLabel}: does not flag ${JSON.stringify(name)}`, !neg.rels.has(rel), `false-positive machine-path finding for ${rel}`);
+      }
+      // Not an exit-code check: A_Users_manual_v2.pdf is (correctly) refused
+      // as an unacknowledged opaque file, a different rule entirely.
+      check(`${modeLabel}: negative fixture has no machine-path finding`, neg.rels.size === 0, `flagged: ${[...neg.rels].join(", ")}`);
+    }
+
+    const human = run("node", [SAFETY, posDir], { env });
+    check("human report lists the machine-path kind", /## machine-path — \d+ finding/.test(human.out), human.out.slice(0, 300));
+
+    // KNOWN-GAP: the same shapes in file CONTENT are not matched structurally.
+    // Slash-form content paths are left to the denylist (FULL mode); a
+    // structural content backstop measured 22 new findings on this
+    // repository's own tree (placeholder home-directory test fixtures and
+    // prose about the macOS temp symlink), so it was kept out. When a content
+    // rule lands, flip this assertion.
+    const gapDir = join(work, "machine-paths-content-gap");
+    mkdirSync(gapDir, { recursive: true });
+    writeFileSync(join(gapDir, "doc.md"), `notes live at ${J("", "Users", "someone", "code", "notes.md")}\n`);
+    gitInit(gapDir);
+    const gap = run("node", [SAFETY, gapDir, "--json"], { env });
+    let gapReport;
+    try { gapReport = JSON.parse(gap.out); } catch { gapReport = { failures: [] }; }
+    check(
+      "KNOWN-GAP: PARTIAL mode does not flag a slash-form home path in content",
+      gap.code === 0 && !(gapReport.failures ?? []).some((f) => f.kind === "machine-path"),
+      `content is now flagged (exit ${gap.code}) — the gap closed; update this case`,
+    );
+  }
+
   // ------------------------------------------------------------ fail-closed
   console.log("\n# fail-closed behaviour");
   {
