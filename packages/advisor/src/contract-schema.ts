@@ -345,7 +345,8 @@ const JSON_ESCAPE = /\\(?:["\\/bfnrt]|u[0-9a-fA-F]{4})/y;
  * `position` (a character index, never file text) is set only for a syntax
  * error or a leading byte order mark. The message carries no file text
  * either: a repeated key is named by its 1-based position in its object,
- * and that object by its character position, never by any key.
+ * and that object as the top-level object or by its character position,
+ * never by any key.
  */
 export class ContractDocumentError extends Error {
   constructor(
@@ -482,11 +483,11 @@ function recordWrittenKeyOrder(value: unknown, keyOrders: readonly string[][], n
  * Reads a plan or brief file's bytes as strict JSON: UTF-8 that decodes
  * without error (never silently replaced with U+FFFD) and does not start
  * with a byte order mark, exactly one JSON value, and no object that repeats a key at any depth -- the I-JSON rules
- * RFC 8785 canonicalization assumes. Throws a ContractDocumentError whose
- * message says which rule the bytes break, by position only: a syntax error
- * by character position, a repeated key by its 1-based position in its
- * object and that object's character position -- never any text from the
- * file. It does not validate the value against a contract; call
+ * RFC 8785 canonicalization assumes. Refuses bytes that break a rule with a
+ * ContractDocumentError whose message says which rule, by position only: a
+ * syntax error by character position, a repeated key by its 1-based
+ * position in its object and that object's character position (or "the
+ * top-level object") -- never any text from the file. It does not validate the value against a contract; call
  * `validateAgainstContract()` next, which then numbers an undeclared field
  * by its position as written in the file.
  */
