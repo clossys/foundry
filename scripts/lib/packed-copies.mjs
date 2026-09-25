@@ -56,9 +56,9 @@ function checkRelative(value, what, where) {
  * malformed declaration.
  *
  * An explicit entry is returned whether or not its source exists -- the pack
- * step refuses a missing one, and the gate treats a copy whose declared
- * source is missing as a false declaration. A `{package}` entry expands only
- * over packages whose source exists.
+ * step refuses a missing one, and the contamination gate treats a copy whose
+ * declared source is missing as a false declaration when CLASS 1 reads that
+ * copy. A `{package}` entry expands only over packages whose source exists.
  */
 export function loadPackedCopies(packageRoot, repoRoot) {
   const path = join(packageRoot, ...PACKED_COPIES_FILE.split("/"));

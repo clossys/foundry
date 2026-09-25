@@ -446,9 +446,11 @@ const repoRoot = findRepoRoot(rootAbs);
 // Which files are copies, and of what, is never guessed from a path. It is
 // the package's own declaration (scripts/lib/packed-copies.mjs), the same
 // data its pack step copies from, so the two cannot disagree. And the
-// declaration is checked, not trusted: a declared copy whose bytes differ
-// from its declared source -- a wrong mapping, or a stale build -- is a
-// finding, and is judged at its own position. A file merely sitting at a
+// declaration is checked, not trusted: when CLASS 1 reads a declared copy
+// (a shipped file with a scanned extension) and its bytes differ from its
+// declared source -- a wrong mapping, or a stale build -- that is a finding,
+// and the copy is judged at its own position. A declared copy CLASS 1 does
+// not read (for example a .json contract) is not compared here. A file merely sitting at a
 // copy-like path without being declared is an ordinary file of this package.
 //
 // A generated module (src/generated/*.generated.ts) is new text written at
@@ -465,12 +467,13 @@ const copySourceByFile = new Map(declaredCopies.map(({ copy, source }) => [join(
 // The position a declared copy of a package's file is judged from, or null
 // for any other file -- including a declared copy of a repository document,
 // which is judged at its own position (see above). `mismatch` is set when
-// the declaration is false for this file.
+// the declaration is false for this file, whatever kind of source it names:
+// a stale or wrongly mapped copy of a docs/ file is as much a false
+// declaration as one of a package's file, even though both are then judged
+// where they ship.
 function copyPosition(file) {
   const source = copySourceByFile.get(file);
   if (source === undefined) return null;
-  const pkg = /^packages\/([^/]+)\//.exec(source)?.[1];
-  if (!pkg) return null;
   const sourceAbs = join(repoRoot, ...source.split("/"));
   let identical = false;
   try {
@@ -479,6 +482,8 @@ function copyPosition(file) {
     identical = false;
   }
   if (!identical) return { source, mismatch: existsSync(sourceAbs) ? "differs" : "missing" };
+  const pkg = /^packages\/([^/]+)\//.exec(source)?.[1];
+  if (!pkg) return null;
   // A source under packages/ in a directory that is not a package has no
   // published file set to be judged against either.
   if (!existsSync(join(repoRoot, "packages", pkg, "package.json"))) return null;

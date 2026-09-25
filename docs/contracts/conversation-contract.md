@@ -8,7 +8,7 @@ composes a skill, replaces that skill's own `## How we work together` and
 `## One question at a time` sections (if present) with the block below, at
 the same position. Packages keep their own role content; only this shared
 block is owned here. A later, separate migration removes the duplicated
-block from each `packages/*/skill/SKILL.md` on its next natural version
+block from each package's own `skill/SKILL.md` on its next natural version
 bump — no package edit is needed for the contract to take effect, because
 composition already replaces it.
 
