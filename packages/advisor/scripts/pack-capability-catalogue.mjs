@@ -66,7 +66,7 @@ function main() {
   writeFileSync(join(advisorRoot, ...PLAN_CONTRACTS_MODULE_PATH.split("/")), renderPlanContractsModule(repoRoot));
 
   console.log(
-    `pack-capability-catalogue: wrote ${catalogue.roles.length} role(s), ${presets.length} preset(s), and ${clientProblems.length} client problem(s) to src/generated/offering.generated.ts, and the plan and brief contracts to ${PLAN_CONTRACTS_MODULE_PATH}`,
+    `pack-capability-catalogue: wrote ${catalogue.roles.length} role(s), ${presets.length} preset(s), and ${clientProblems.length} client problem(s) to src/generated/offering.generated.ts, and the plan, brief and repository-inventory contracts to ${PLAN_CONTRACTS_MODULE_PATH}`,
   );
 }
 
