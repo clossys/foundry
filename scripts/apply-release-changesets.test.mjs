@@ -1380,6 +1380,83 @@ test("applyReleaseChangesets: a failure DURING changeset deletion itself (after 
   }
 });
 
+// Round-2 review gap on the N5 fix above: that test's OWN failure is
+// injected by having `runNpmInstall` delete the changeset itself, so by the
+// time the deletion loop's `backupFile(changesetPath)` runs, the file is
+// ALREADY gone (`existed: false`) -- `backupFile()` has nothing to restore
+// either way, so removing that line would leave every test in this file
+// green. This test instead has TWO named packages with their OWN pending
+// changesets ("alpha" sorts before "beta", so `namedPackages()`/the write
+// phase's `toDelete` Set processes "alpha-fix.md" first): the deletion loop
+// itself successfully backs up and deletes "alpha-fix.md" (a real deletion,
+// not a no-op), and only THEN fails deleting "beta-fix.md" (removed out
+// from under this run the same way the test above simulates). Without
+// `backupFile(changesetPath)` on the alpha iteration, restoreBackups() has
+// no entry for "alpha-fix.md" at all and cannot put it back.
+test("applyReleaseChangesets: a failure deleting the SECOND of two changesets still restores the FIRST one, byte-identical, alongside the manifest/CHANGELOG/lockfile rollback (issue #1390)", () => {
+  const root = makeRoot();
+  try {
+    makePackage(root, "alpha", "1.0.0");
+    const alphaChangelog = "# Changelog\n\n## 1.0.0\n\n- Initial release.\n";
+    writeFileSync(changelogFile(root, "alpha"), alphaChangelog);
+    const alphaChangesetText = "---\nalpha: patch\n---\n\nFix alpha's bug.\n";
+    writeChangeset(root, "alpha-fix.md", alphaChangesetText);
+
+    makePackage(root, "beta", "2.0.0");
+    const betaChangelog = "# Changelog\n\n## 2.0.0\n\n- Initial release.\n";
+    writeFileSync(changelogFile(root, "beta"), betaChangelog);
+    writeChangeset(root, "beta-fix.md", "---\nbeta: patch\n---\n\nFix beta's bug.\n");
+
+    const originalLock = '{\n  "name": "root",\n  "lockfileVersion": 3,\n  "packages": {}\n}\n';
+    writeFileSync(join(root, "package-lock.json"), originalLock);
+
+    let threw = null;
+    try {
+      applyReleaseChangesets({
+        root,
+        today: () => "2026-09-22",
+        // npm succeeds, and (as in the real implementation) rewrites the
+        // lockfile -- but ALSO simulates an external process that already
+        // removed beta's pending changeset, out from under this run,
+        // before this run's own deletion loop reaches it. Alpha's
+        // changeset is left untouched here, so the deletion loop's own
+        // rmSync(alphaChangesetPath) is a REAL deletion the rollback must
+        // undo, not a no-op against an already-missing file.
+        runNpmInstall: () => {
+          writeFileSync(
+            join(root, "package-lock.json"),
+            '{\n  "name": "root",\n  "lockfileVersion": 3,\n  "packages": {\n    "packages/alpha": { "version": "1.0.1" },\n    "packages/beta": { "version": "2.0.1" }\n  }\n}\n',
+          );
+          rmSync(join(root, ".changesets", "beta-fix.md"));
+        },
+      });
+    } catch (error) {
+      threw = error;
+    }
+
+    assert.ok(threw, "the deletion failure on beta's changeset must still propagate");
+    assert.match(threw.message, /ENOENT|no such file/i);
+
+    // The FIRST changeset -- successfully deleted by this run's own
+    // deletion loop before the SECOND one failed -- must be restored
+    // byte-identical, not left deleted.
+    assert.equal(existsSync(join(root, ".changesets", "alpha-fix.md")), true, "alpha's changeset, deleted earlier in the SAME run, must be restored by the rollback");
+    assert.equal(readFileSync(join(root, ".changesets", "alpha-fix.md"), "utf8"), alphaChangesetText, "alpha's restored changeset must be byte-identical to its pre-run content");
+
+    const alphaManifest = JSON.parse(readFileSync(join(root, "packages", "alpha", "package.json"), "utf8"));
+    assert.equal(alphaManifest.version, "1.0.0", "alpha's manifest must be rolled back");
+    const betaManifest = JSON.parse(readFileSync(join(root, "packages", "beta", "package.json"), "utf8"));
+    assert.equal(betaManifest.version, "2.0.0", "beta's manifest must be rolled back too");
+
+    assert.equal(readFileSync(changelogFile(root, "alpha"), "utf8"), alphaChangelog, "alpha's CHANGELOG must be rolled back");
+    assert.equal(readFileSync(changelogFile(root, "beta"), "utf8"), betaChangelog, "beta's CHANGELOG must be rolled back too");
+
+    assert.equal(readFileSync(join(root, "package-lock.json"), "utf8"), originalLock, "the lockfile npm rewrote must be rolled back too");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 // -------------------------------------------------- CLI: --json output must be pure JSON, even with real npm running
 //
 // Re-review, https://github.com/clossys/foundry/pull/1353#issuecomment-5803894960
