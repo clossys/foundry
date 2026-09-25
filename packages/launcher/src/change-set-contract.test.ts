@@ -60,8 +60,8 @@ const BUNDLE: ApplyBundle = {
 };
 
 describe("packed change-set and bundle contracts", () => {
-  it("are the docs/contracts files, unchanged, packed after the plan and brief contracts", () => {
-    expect(Object.keys(PLAN_CONTRACTS)).toEqual(["advisor-plan.json", "engagement-brief.json", "engagement-context.json", "repository-change-set.json", "apply-bundle.json"]);
+  it("are the docs/contracts files, unchanged, packed after the plan and brief contracts and before the registry snapshot contract", () => {
+    expect(Object.keys(PLAN_CONTRACTS)).toEqual(["advisor-plan.json", "engagement-brief.json", "engagement-context.json", "repository-change-set.json", "apply-bundle.json", "registry-snapshot.json"]);
     for (const name of ["repository-change-set.json", "apply-bundle.json"]) expect(PLAN_CONTRACTS[name], name).toEqual(JSON.parse(read(`docs/contracts/${name}`)));
   });
 
