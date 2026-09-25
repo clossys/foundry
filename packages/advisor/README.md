@@ -99,6 +99,8 @@ This package also ships the `clossys-advisor` Agent Skill at `skill/SKILL.md`.
 In Cursor, mention `@clossys-advisor` to talk to that receptionist voice next
 to the assessment bins below. The skill is a chat voice, not a second engine,
 and it does not replace `advisor-check` or `advisor-execution-readiness`.
+The plan commands `advisor-render-status`, `advisor-package-request` and
+`advisor-resolve-packages` are described with the plan record below.
 
 ```bash
 advisor-check assessment.json
@@ -348,14 +350,25 @@ digits in each part and no prerelease or build suffix, and one canonical
 A decision (`AdvisorPlanDecision`) may carry `subjectDigest`.
 Once the schema passes, `validateAdvisorPlan()` applies the code rules the
 contract's description defines, each finding with the rule
-`advisor-plan-rule-r1` to `-r10` and a `path`: no repository staffed twice
-(ids compare case-insensitively); staffed roles and `mandate.roles` agree in
-both directions; every package act names a staffed repository, spelled
+`advisor-plan-rule-r1` to `-r11` and a `path`: no repository staffed twice
+(ids compare case-insensitively); every staffed role is in `mandate.roles`,
+and every `mandate.roles` entry is staffed somewhere unless it is a hub-only
+role; every package act names a staffed repository, spelled
 exactly the same; no `planItem` repeats; no package appears twice in one
 repository; `resolution` is present exactly when `packages` is; no kit id
 repeats; no role repeats within one staffing entry; no role is named twice
-in `mandate.roles`; and a repository has at most one `pin-starter` act,
-always placed in `devDependencies`. The rules read only a plan's own fields,
+in `mandate.roles`; a repository has at most one `pin-starter` act,
+always placed in `devDependencies`; and no hub-only role is staffed.
+`HUB_ONLY_ROLES` is that list, `["advisor", "integrator"]`, read from the
+plan contract's `definitions.hubOnlyRoles`, the same data Launcher reads.
+The apply-approved-plan RFC places each of them in the engagement hub: its
+package is pinned once there and run in a product repository through `npx`
+at the hub's exact version, never installed in the repository. Launcher's
+appoint step pins Advisor in the hub today; no Launcher release pins
+Integrator there yet. A plan
+whose mandate names only hub-only roles does no work in a product
+repository, so it has no `staffing` (an empty one is refused) and no
+`packages`. The rules read only a plan's own fields,
 as the schema does, so an inherited one is ignored. A plan that breaks
 one has no digest. Launcher implements the same rules separately, and both
 packages are tested against one shared corpus,
@@ -399,6 +412,123 @@ that starts with a byte order mark. A syntax error is reported by position
 only, never quoting the file's text; a repeated key is named, as an escaped
 JSON string, so a control character in it is shown as `\u001b` rather than
 reaching the terminal (#1475).
+
+## Exact packages from a registry snapshot (issue #1178)
+
+A plan's `packages` and `resolution` are never written by hand. Two pure
+steps, on either side of one registry fetch that this package does not
+make, derive them from the plan's `staffing`. This package makes no
+network call and holds no credential: each step is a pure function, and
+its CLI reads only the files it is given. What is checked mechanically, by
+a test in this package's source repository, is narrower. The library's
+import graph: every module it reaches imports no builtin but `node:crypto`
+and no package, and none uses a dynamic `import()`. And, by syntax, that
+none writes one of a listed set of globals directly, such as `fetch`,
+`process` or `Date.now`. That second check is not a proof, because
+JavaScript can reach a global indirectly; the claim that the library makes
+no network call and reads no clock rests on the import graph plus review.
+
+`packageRequest(plan)` names the packages a staffed plan needs, sorted and
+unique: the package of every role any `staffing` entry names, looked up in
+this package's packed capability catalogue, plus the `starter` package
+(`STARTER_PACKAGE_DIRECTORY`), which every staffed repository pins to check
+its pull requests. The scope in each name comes from the publishing scope
+this package was built with, never a literal. It refuses a plan that fails
+the plan contract (`plan-shape`), a plan with no `staffing`
+(`plan-not-staffed`), and a staffed role the catalogue does not list
+(`role-not-in-catalogue`). A hub-only role (`HUB_ONLY_ROLES`) is never
+staffed, so it gets no package here: a plan that staffs one breaks the
+plan contract's rule R11 and is refused as `plan-shape`. The same refusal
+is repeated for a staffed hub-only role (`hub-only-package`) in case a plan
+ever reaches this step without that rule, but a plan that validates never
+does. Its result, a `PackageRequestResult`, is
+`{ state: "satisfied", names, findings: [] }` or
+`{ state: "violated", findings }`.
+
+A registry snapshot records what the registry said about those names at one
+moment: for each package, whether it was found, the version its `latest`
+dist-tag named, and that version's integrity value, tarball URL,
+deprecation, publish time and whether it lists attestations. Its contract is
+[`docs/contracts/registry-snapshot.json`](https://github.com/clossys/foundry/blob/main/docs/contracts/registry-snapshot.json)
+(in the public repository, not shipped in this package; this package packs
+its content into a generated module at build time). `validateRegistrySnapshot(value)`
+checks a snapshot against it: the schema, then its code rules N1 to N3
+(`registrySnapshotRuleViolations()`: no package named twice, no version
+recorded twice for one package, and no `latest` or versions for a package
+that was not found). Each `RegistrySnapshotViolation` names a rule and a
+position, never a value or an undeclared key. `snapshotDigest(snapshot)` is
+the snapshot's canonical digest: `sha256:` and the hex SHA-256 of the RFC
+8785 canonical JSON of `snapshotDigestSubject(snapshot)`, which keeps the
+registry and each package's name, status, `latest` and versions, sorted,
+and leaves out when and by what the snapshot was fetched and the hash of
+each raw registry response. Fetching the same selection again gives the
+same digest; changing anything a resolution reads changes it. It throws for
+a snapshot that does not validate. The types are `RegistrySnapshot`,
+`RegistrySnapshotPackage`, `RegistrySnapshotVersion`,
+`RegistrySnapshotRuleId` and `RegistrySnapshotViolation`. The shared corpus
+[`docs/contracts/registry-snapshot.fixture.json`](https://github.com/clossys/foundry/blob/main/docs/contracts/registry-snapshot.fixture.json)
+(in the public repository, not shipped in this package) holds digests
+computed without this package, and this package is tested against it.
+
+`resolvePackages(plan, snapshot, options?)` reads the snapshot and returns a
+`PackageResolutionResult`. On `state: "satisfied"` it carries `packages`,
+one `pin-starter` act per staffed repository and one `install` act per
+staffed role, sorted by repository and then name, each with `planItem`
+`<repository>:<name>`, the version the registry's `latest` named, that
+version's `sha512-` integrity value and the placement `devDependencies`
+(`RESOLVED_PLACEMENT`); `resolution`, `{ snapshotDigest }`; and
+`permittedPackages`, each distinct `{ name, version, integrity }` once,
+sorted by name, which is exactly what the sponsor's grant permits. The same
+plan and snapshot always give byte-identical output, and so does a re-fetch
+of the same selection, even one that lists packages or versions in another
+order: once the snapshot validates, it is read in its canonical order
+(`canonicalSnapshot()`: packages sorted by name, each package's versions
+sorted by version), and every position a finding names, such as
+`packages[2].versions[0].hasAttestations`, is a position in that order. A
+`snapshot-shape` finding is the one exception: an invalid snapshot has no
+canonical order, so its positions are as the file lists them. Before it returns, it checks the resolved plan with
+the plan contract and its rules R1 to R11 and refuses rather than return a
+plan that fails them. Each `ResolutionFinding` has a `rule`, a `verdict`
+(`ResolutionVerdict`), a `path` and a message that names positions and, at
+most, a package name derived from the catalogue, never plan text, a
+repository id or a value from the snapshot:
+
+| Condition | Verdict | Rule |
+| --- | --- | --- |
+| The snapshot fails its contract | violated | `snapshot-shape` |
+| Its registry is not the registry this package was built for | violated | `foreign-registry` |
+| A requested package has no entry | indeterminate | `package-not-in-snapshot` |
+| The registry has no such package | violated | `package-not-published` |
+| `latest` names no version | indeterminate | `no-latest` |
+| `latest` names a prerelease or build version | violated | `prerelease-latest` |
+| `latest` names a version the snapshot does not record | indeterminate | `tag-points-at-missing-version` |
+| That version has no integrity value, or not exactly one `sha512-` value in canonical base64 | violated | `no-sha512-integrity` |
+| That version is deprecated | violated | `deprecated-version` |
+| Its tarball is not served over the registry's own scheme and host, or its URL carries credentials | violated | `foreign-tarball-host` |
+| That version lists no attestations | warning | `no-attestation-yet` |
+| A staffed role's catalogue entry is not in the packed scope (a defect in this package) | violated | `catalogue-scope-mismatch` |
+| The resolved plan fails the plan contract or its rules (a defect in this package; never expected) | violated | `resolved-plan-invalid` |
+
+Any violated finding makes the result `violated`; otherwise any
+indeterminate one makes it `indeterminate` (`ResolutionState`). A warning
+alone still resolves. A snapshot shows only which bytes were selected, not
+where they came from; the package's provenance has to be verified
+separately. `options` (`ResolutionOptions`) replaces the packed catalogue
+or the packed scope and registry (`PackageScope`), for tests.
+
+```bash
+advisor-package-request clossys/advisor/plan.json
+advisor-resolve-packages clossys/advisor/plan.json clossys/.state/apply/registry-snapshot.json
+```
+
+Both commands read their files as strict JSON, as `advisor-render-status`
+does, and print their result as JSON. `advisor-package-request` exits `0`
+with the names, or `1` for a plan it refuses. `advisor-resolve-packages`
+exits `0` when resolved (warnings included), `1` for a violation, and `2`
+for an indeterminate result. Both exit `2` for a usage error or an
+unreadable file; that message names the input (the plan file or the
+snapshot file) and, for a syntax error, the character position, never the
+file's path or text.
 
 ## Kit verdicts (issue #1177)
 

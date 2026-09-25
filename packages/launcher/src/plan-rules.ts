@@ -1,7 +1,7 @@
 // The plan and brief contracts' code rules (issue #1178): the checks the
 // contracts' JSON Schema keywords cannot express, because each one relates one
 // field to another. They are defined once, as prose in the descriptions of
-// the shared contracts docs/contracts/advisor-plan.json (R1-R10) and
+// the shared contracts docs/contracts/advisor-plan.json (R1-R11) and
 // engagement-brief.json (B1-B2) -- in the public repository, not shipped in
 // this package. @clossys/advisor implements the same rules separately; both
 // packages are tested against one corpus,
@@ -13,10 +13,25 @@
 // position of the field at fault, never a value, because a plan or brief can
 // carry founder text.
 
+import { PLAN_CONTRACTS } from "./generated/plan-contracts.generated.js";
 import type { AdvisorPlan, EngagementBrief } from "./plan-contract.js";
 
-/** A code rule of the plan contract (R1-R10) or the brief contract (B1-B2). */
-export type ContractRuleId = "R1" | "R2" | "R3" | "R4" | "R5" | "R6" | "R7" | "R8" | "R9" | "R10" | "B1" | "B2";
+/** A code rule of the plan contract (R1-R11) or the brief contract (B1-B2). */
+export type ContractRuleId = "R1" | "R2" | "R3" | "R4" | "R5" | "R6" | "R7" | "R8" | "R9" | "R10" | "R11" | "B1" | "B2";
+
+/**
+ * The roles whose package lives in the engagement hub only, read from the
+ * packed plan contract's `definitions.hubOnlyRoles`, the one list every
+ * package that validates a plan reads (issue #1178). Code rules R2 and R11
+ * use it. A packed contract without a well-formed list is a build defect, so
+ * loading this module throws rather than judge plans against a guess.
+ */
+export const HUB_ONLY_ROLES: readonly string[] = (() => {
+  const definitions = PLAN_CONTRACTS["advisor-plan.json"]?.definitions as Record<string, { const?: unknown }> | undefined;
+  const roles = definitions?.hubOnlyRoles?.const;
+  if (!Array.isArray(roles) || roles.some((role) => typeof role !== "string")) throw new Error("the packed plan contract has no well-formed definitions.hubOnlyRoles");
+  return Object.freeze([...(roles as string[])]);
+})();
 
 export interface ContractRuleViolation {
   readonly rule: ContractRuleId;
@@ -46,7 +61,7 @@ function own<T extends object, K extends keyof T>(document: T, name: K): T[K] | 
   return Object.hasOwn(document, name) ? document[name] : undefined;
 }
 
-/** Every violation of R1-R10, for a plan that already passed the plan contract's schema. */
+/** Every violation of R1-R11, for a plan that already passed the plan contract's schema. */
 export function planRuleViolations(plan: AdvisorPlan): ContractRuleViolation[] {
   const out: ContractRuleViolation[] = [];
   const add = (rule: ContractRuleId, path: string, message: string): void => {
@@ -64,7 +79,7 @@ export function planRuleViolations(plan: AdvisorPlan): ContractRuleViolation[] {
     });
   }
 
-  // R2: staffed roles and mandate roles agree, in both directions.
+  // R2: staffed roles and mandate roles agree, in both directions; a hub-only role is never required to be staffed.
   if (staffing !== undefined) {
     const inMandate = new Set<string>(mandateRoles);
     const staffedRoles = new Set<string>();
@@ -76,7 +91,7 @@ export function planRuleViolations(plan: AdvisorPlan): ContractRuleViolation[] {
       }
     }
     for (let position = 0; position < mandateRoles.length; position += 1) {
-      if (!staffedRoles.has(mandateRoles[position]!)) add("R2", `mandate.roles[${position}]`, "is not staffed in any staffing entry");
+      if (!staffedRoles.has(mandateRoles[position]!) && !HUB_ONLY_ROLES.includes(mandateRoles[position]!)) add("R2", `mandate.roles[${position}]`, "is not staffed in any staffing entry");
     }
   }
 
@@ -132,6 +147,16 @@ export function planRuleViolations(plan: AdvisorPlan): ContractRuleViolation[] {
     });
     for (const index of pins) {
       if (packages[index]!.placement !== "devDependencies") add("R10", `packages[${index}].placement`, "must be devDependencies for a pin-starter act");
+    }
+  }
+
+  // R11: a hub-only role is never staffed in a repository.
+  if (staffing !== undefined) {
+    for (let index = 0; index < staffing.length; index += 1) {
+      const roles = staffing[index]!.roles;
+      for (let position = 0; position < roles.length; position += 1) {
+        if (HUB_ONLY_ROLES.includes(roles[position]!)) add("R11", `staffing[${index}].roles[${position}]`, "is a hub-only role, which works from the hub and is never staffed in a repository");
+      }
     }
   }
   return out;

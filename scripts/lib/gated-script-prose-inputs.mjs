@@ -144,6 +144,7 @@ export const GATED_SCRIPT_PROSE_INPUTS = {
   "node:scripts/check-publication-map.test.mjs": { prose: false, reason: "imports packages/publisher's own built entry point, package-internal fixtures only" },
   "node:.github/scripts/assemble-verify-inputs.test.mjs": { prose: false, reason: "verify-inputs assembler unit tests, fixture-only" },
   "node:scripts/collect-review-evidence.integration.test.mjs": { prose: false, reason: "review-evidence collector integration tests against a built validator, fixture-only" },
+  "node:scripts/lib/import-purity.test.mjs": { prose: false, reason: "tests of the import-graph and listed-global purity check, on synthetic TypeScript sources it writes to a temporary directory; reads no docs/ or .changesets/ path" },
   "node:scripts/check-installed-positions.mjs": { prose: false, reason: "reads docs/contracts/{installed-position-ledger.fixture,role-loop-archetypes}.json only" },
   "node:scripts/check-completion-evidence.mjs": { prose: false, reason: "reads docs/contracts/{completion-evidence.fixture,installed-position-ledger.fixture}.json only" },
   "node:packages/controller/dist/cli.js": { prose: false, reason: "package-lifecycle governance against docs/contracts/package-lifecycle.json only" },

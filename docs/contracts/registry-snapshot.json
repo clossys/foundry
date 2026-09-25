@@ -1,0 +1,116 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/clossys/foundry/blob/main/docs/contracts/registry-snapshot.json",
+  "title": "Registry snapshot",
+  "description": "Issue #1178: what the public package registry said, at one moment, about the packages a plan asks for. It is the file clossys/.state/apply/registry-snapshot.json in an engagement hub. It is a projection of each package's registry document, never the document itself. @clossys/advisor reads it to write a plan's exact package acts (advisor-resolve-packages) and never fetches it: Advisor makes no network call. Only Launcher's snapshot step is meant to write it; until a Launcher release ships that step, nothing in this repository writes one. Every object is closed: a key this contract does not declare is refused, never ignored. The registry named here must equal the registry in this repository's package-scope.json; a reader checks that in code, against its own packed copy of that file, rather than trusting a value written here. CODE RULES. The keywords above cannot relate one field to another, so these rules are defined here, once, and checked in code after the schema passes; a snapshot that breaks one is invalid exactly as one that breaks the schema is, and has no digest. The shared corpus is docs/contracts/registry-snapshot.fixture.json. A refusal names the rule and the position of the field at fault, never its value. N1: no two packages share a name. N2: no two entries in one package's versions share a version. N3: a package whose status is not-found has latest null and no versions. SNAPSHOT DIGEST. A plan's resolution.snapshotDigest names the snapshot its exact versions were read from. It is the string sha256: followed by the 64 lowercase hexadecimal digits of the SHA-256 hash of the UTF-8 bytes of canonical(subject), where canonical is the JSON Canonicalization Scheme of RFC 8785, exactly as docs/contracts/advisor-plan-digest.md defines it for the plan digest, and subject is the object {registry, packages} built from the snapshot as follows: registry is kept as it is; packages holds every package, sorted by name, each reduced to exactly its name, status, latest and versions; and each package's versions are sorted by version, each version entry kept whole. Sorting compares strings as sequences of UTF-16 code units, the order RFC 8785 sorts keys in; N1 and N2 make both sorts total. Only a snapshot read strictly (invalid UTF-8 and repeated keys refused) that validates against this contract, code rules included, has a digest; an implementation refuses rather than digest any other. Left out of the digest: fetchedAt and fetchedBy, which change on every fetch; each package's responseSha256, which hashes the registry's whole response, and that response changes whenever anything else about the package changes, such as a newer publish or another dist-tag; and schemaVersion and kind, which are constants. So fetching the same selection again gives the same digest, and a plan resolved from it needs no fresh approval, while a change to any field a resolution reads changes the digest. The order packages and versions are written in does not matter. CANONICAL ORDER. The same sorting defines the snapshot's canonical order: packages sorted by name, and each package's versions sorted by version. A reader that names a position in a valid snapshot, such as packages[2].versions[0].hasAttestations in a resolution finding, names it in this order, so the position is the same however a fetch listed the packages. A violation of this contract names positions as the file lists them, because an invalid snapshot has no canonical order. WHAT A SNAPSHOT PROVES. Only what the fetching step recorded. It is a selection record, not evidence of where a package came from: an edited snapshot can at most select different bytes, and whether those bytes are genuine has to be shown by verifying the package's provenance, which nothing in this file does.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "kind", "registry", "fetchedAt", "fetchedBy", "packages"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "kind": { "const": "clossys.registry-snapshot" },
+    "registry": {
+      "$ref": "#/definitions/registryUrl",
+      "description": "The registry every package was fetched from. A reader refuses a snapshot whose registry is not the one in its packed package-scope.json."
+    },
+    "fetchedAt": { "$ref": "#/definitions/dateTime", "description": "When the fetch finished. Excluded from the snapshot digest." },
+    "fetchedBy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "description": "The package that fetched the snapshot, and its version. Excluded from the snapshot digest.",
+      "properties": {
+        "name": { "$ref": "#/definitions/packageName" },
+        "version": { "$ref": "#/definitions/semver" }
+      }
+    },
+    "packages": {
+      "type": "array",
+      "minItems": 1,
+      "description": "One entry per package asked for, in any order. Code rules N1 and N3.",
+      "items": { "$ref": "#/definitions/packageEntry" }
+    }
+  },
+  "definitions": {
+    "nonBlankString": {
+      "title": "a string with at least one non-whitespace character",
+      "type": "string",
+      "pattern": "\\S"
+    },
+    "dateTime": {
+      "title": "a real ISO 8601 date-time with a time zone, such as 2026-09-24T12:00:00Z",
+      "description": "format date-time, asserted field by field exactly as in the plan contract (docs/contracts/advisor-plan.json).",
+      "type": "string",
+      "format": "date-time"
+    },
+    "sha256Digest": {
+      "title": "sha256: followed by 64 lowercase hexadecimal digits",
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "registryUrl": {
+      "title": "an https registry origin with no path and no trailing slash, such as https://registry.example.com",
+      "type": "string",
+      "pattern": "^https://[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?(?::[0-9]{1,5})?$"
+    },
+    "packageName": {
+      "title": "a scoped package name in lowercase, such as @scope/name, of at most 214 characters",
+      "description": "The same rule as the plan contract's packageName (docs/contracts/advisor-plan.json): npm's limit is 214 characters, asserted by the lookahead because the checker has no maxLength.",
+      "type": "string",
+      "pattern": "^(?=.{1,214}$)@[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._-]*$"
+    },
+    "semver": {
+      "title": "a semantic version such as 1.2.3, which may carry a prerelease or build suffix, with at most 16 digits in each of its three numbers",
+      "description": "Semantic Versioning 2.0.0's grammar, with the plan contract's limit of 16 digits on each of major, minor and patch (docs/contracts/advisor-plan.json, exactVersion), so a release version recorded here always fits a plan. A prerelease or build suffix is accepted here so that a resolver can refuse it by name, rather than the snapshot failing its shape.",
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]{0,15})\\.(0|[1-9][0-9]{0,15})\\.(0|[1-9][0-9]{0,15})(?:-(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)(?:\\.(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$"
+    },
+    "packageEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "status", "latest", "versions", "responseSha256"],
+      "properties": {
+        "name": { "$ref": "#/definitions/packageName" },
+        "status": {
+          "enum": ["found", "not-found"],
+          "description": "found when the registry served the package's document; not-found when it answered that no such package exists. A fetch that gets any other answer writes no snapshot."
+        },
+        "latest": {
+          "description": "The version the registry's latest dist-tag named, or null when it named none. Code rule N3.",
+          "oneOf": [{ "type": "null" }, { "$ref": "#/definitions/semver" }]
+        },
+        "versions": {
+          "type": "array",
+          "description": "Version entries, in any order. A snapshot taken to resolve a plan records the version latest names, when the registry lists it; a later reader may record more. Code rules N2 and N3.",
+          "items": { "$ref": "#/definitions/versionEntry" }
+        },
+        "responseSha256": {
+          "$ref": "#/definitions/sha256Digest",
+          "description": "The SHA-256 of the registry response this entry was projected from, kept for audit. Excluded from the snapshot digest."
+        }
+      }
+    },
+    "versionEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "integrity", "tarball", "deprecated", "publishedAt", "hasAttestations"],
+      "properties": {
+        "version": { "$ref": "#/definitions/semver" },
+        "integrity": {
+          "description": "The integrity value the registry serves for this version's tarball, exactly as served, or null when it serves none. It is recorded even when it is not one sha512 value, so that a resolver can refuse it by name.",
+          "oneOf": [{ "type": "null" }, { "$ref": "#/definitions/nonBlankString" }]
+        },
+        "tarball": { "$ref": "#/definitions/nonBlankString", "description": "The tarball URL the registry serves for this version, exactly as served." },
+        "deprecated": { "type": "boolean", "description": "true when the registry marks this version deprecated. The deprecation message is not recorded." },
+        "publishedAt": {
+          "description": "When the registry says this version was published, or null when it does not say.",
+          "oneOf": [{ "type": "null" }, { "$ref": "#/definitions/dateTime" }]
+        },
+        "hasAttestations": {
+          "type": "boolean",
+          "description": "true when the registry lists attestations for this version. It records presence only; nothing here verifies them."
+        }
+      }
+    }
+  }
+}
