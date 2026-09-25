@@ -1,5 +1,5 @@
 // The registry snapshot step (issue #1178): the one step of applying a plan
-// that reads the network. It fetches each requested package's registry
+// that reads the package registry. It fetches each requested package's registry
 // document anonymously, projects it into the shared registry snapshot
 // contract (docs/contracts/registry-snapshot.json, in the public repository,
 // not shipped in this package; its content is packed into src/generated/ at
