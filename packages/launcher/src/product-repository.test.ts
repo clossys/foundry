@@ -35,6 +35,7 @@ describe("checkCloudSessionBootstrap", () => {
     expect(report.checks).toHaveLength(3);
     expect(report.checks.every((check) => !check.satisfied)).toBe(true);
     expect(report.checks.every((check) => check.note !== undefined)).toBe(true);
+    expect(report.checks.find((check) => check.id === "agents-pointer")?.note).toMatch(/arrives with the setup pull request/);
   });
 
   it("is ready when all three checks pass", () => {

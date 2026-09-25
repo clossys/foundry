@@ -89,13 +89,18 @@ When an engine's live registry version is known, each of its pins is graded
 against it: a pin older than live is a `stale pin` finding, named by package,
 and marks the report **degraded**. The report is also degraded when either
 engine is missing, dual-pinned, or present in any bucket other than
-`devDependencies`, and when apply skipped
-one or more inventoried roster targets (missing sibling clone, origin mismatch,
-and similar — the same `skill roster skipped` lines in the report), and when
-a composed skill was left as is because a client edited it (the
-`skill preserved` lines above, for the hub and every sibling clone). Per-package
+`devDependencies`, when a composed skill in the hub was left as is because a
+client edited it (the `skill preserved` lines above), and when the hub's stored
+inventory fails its contract. Per-package
 skill sources missing from the catalogue are noted but do not by themselves mark
-degraded. Exit stays 0 on resume
+degraded. Each inventoried repository other than the hub gets a `sibling` line
+(and an entry in `skillComposition.siblings`) saying what the run found for it:
+a checkout beside the hub, one not cloned yet, another account's repository,
+the Foundry supplier tree, or a checkout whose git origin does not match; for a
+checkout beside the hub or one not cloned yet, the line says its `@clossys-*`
+team arrives with the setup pull request. A sibling line never marks the report
+degraded, and a sibling's working tree, output an earlier release wrote into it,
+or its old pins do not change the hub run's result. Exit stays 0 on resume
 (the report is advisory); adopt prints the same report and an unparseable
 pin-versus-live comparison is noted as indeterminate rather than stale.
 `checkInventoryEntries()` additionally validates hub inventory ids read-only,
@@ -135,31 +140,36 @@ npm install --save-dev --save-exact @clossys/launcher@0.2.0
 ## Talking to the team
 
 First contact is `npx @clossys/launcher` (empty directory or the checkout you
-appoint as the hub). After apply, the launcher composes the same
-`@clossys-<package>` voices into the hub and into every inventoried repository
-checkout that already sits beside the hub (`.agents/skills/clossys-<package>/`
-plus host discovery links). Composition is per checkout, not machine-wide, and
-is not a catalogue dump into `package.json`.
+appoint as the hub). After apply, the launcher composes the
+`@clossys-<package>` voices into the hub (`.agents/skills/clossys-<package>/`
+plus host discovery links). A launcher run writes no skills, skills manifest,
+discovery links, `AGENTS.md` or `CLAUDE.md` into an inventoried product
+repository, and changes nothing in its checkout beside the hub
+(`--clone-missing`, below, only clones a missing one); a product repository
+receives those files with its setup pull request. Composition is per checkout, not machine-wide, and is not a
+catalogue dump into `package.json`.
 
 Voices are how you talk in a coding agent; they are not engagement engines. The
 `@clossys/advisor` npm package is the engine that grades evidence;
 `@clossys-advisor` in chat is its hiring and compatibility voice. Use
-`@clossys-advisor` and `@clossys-<package>` in the hub or in any inventoried
-product repository. Each voice can talk even when that npm package is not pinned
-in that repo. When composing into a checkout, the launcher reads each skill body
-from that checkout's installed `@clossys/<package>/skill/SKILL.md` when present,
-then from the packed catalogue or a sibling monorepo source. Launcher health
+`@clossys-advisor` and `@clossys-<package>` in the hub, and in a product
+repository once its setup pull request has merged. Each voice can talk even when
+that npm package is not pinned in that repo. When composing into the hub, the
+launcher reads each skill body from the hub's installed
+`@clossys/<package>/skill/SKILL.md` when present, then from the packed catalogue
+or a sibling monorepo source. Launcher health
 notes missing catalogue sources but apply continues.
 
 Run `npx @clossys/launcher` again from the hub for a health report and to
-refresh composed voices on sibling inventoried clones. By default it does
+refresh the voices composed in the hub. By default it does
 not `gh repo clone` missing inventory entries -- that is not how you talk to
 the team. `launcher --clone-missing` is the one explicit, approved
 exception (#1179): on resume only, it clones every inventoried repository
 not yet sitting beside the hub, using `cloneMissingInventoryRepositories()`,
 and only those -- an id skipped for any other reason (wrong account, the
 Foundry supplier tree, a mismatched git origin) is left exactly as skipped,
-never attempted.
+never attempted. Cloning is not composing: a repository cloned this way
+receives its team with its setup pull request, like any other.
 
 ## How to run it
 
@@ -210,8 +220,8 @@ hub and on an existing hub checkout; in an empty directory it is refused,
 because there is no hub to write into yet. Launcher writes the chosen ids to
 `clossys/.state/inventory.json` (a generated hub path, not shipped in this package)
 -- the one inventory location it reads on
-every later run -- and, on resume, writes it before composing skills, so the
-same run composes into the repositories just chosen.
+every later run -- and, on resume, writes it before the health report is
+built, so the same run lists the repositories just chosen as `sibling` lines.
 
 - The ids, and the document built from them, are checked against
   `docs/contracts/repository-inventory.json` (in the public repository;
@@ -231,7 +241,7 @@ same run composes into the repositories just chosen.
   never merged. The hub itself is recognised by its origin's `owner/name`
   (or, without a github.com origin, the repository its marker records),
   never by its folder path, so an inventory that names the hub in another
-  letter case never composes it a second time as its own sibling.
+  letter case never lists it as its own sibling.
 - An inventory that already lists exactly the chosen repositories, in any
   order or letter case, or with a bare id for the hub's own owner, is left
   as it is.
@@ -276,7 +286,7 @@ Exit codes preserve the ternary:
 | Export | Description |
 | --- | --- |
 | `planWorkspace()` | Decides create, resume, or adopt from a cwd observation. Optional `PlanWorkspaceOptions`: `{ repositories, replaceInventory }` (`--repositories` / `--replace-inventory`; appoint or resume) or `{ inventoryPath }` (`--inventory`; appoint only) are the ways to appoint without a populated on-disk inventory. A plan carrying `repositories` holds the resulting `ChosenInventory`: the exact document to write, or `unchanged`. An appoint plan that merges `--inventory` into a populated stored inventory carries `mergedInventoryRepositories`, the merged entries, each kept whole, and `mergedInventoryDocument`, the exact merged document those entries render to, which apply writes. |
-| `applyWorkspacePlan()` | Copies the in-package skeleton or hub marker through a host port and returns a `WorkspaceApplyResult` with health. Composes the same skill voices (with the shared conversation contract injected) on the hub and on inventoried sibling checkouts beside it; refreshes stale hub guidance and the generated `clossys/` README on every path, including resume; migrates a legacy `.clossys/` hub state automatically. Optional `{ skillCatalogueRoot, launcherPackageRoot, contractPath, liveLauncherVersion }` selects where skill and contract bodies are read and grades skill-manifest staleness. |
+| `applyWorkspacePlan()` | Copies the in-package skeleton or hub marker through a host port and returns a `WorkspaceApplyResult` with health. Composes the skill voices (with the shared conversation contract injected) on the hub only, writes nothing into an inventoried checkout beside it, and reports each inventoried repository other than the hub under `skillComposition.siblings`; refreshes stale hub guidance and the generated `clossys/` README on every path, including resume; migrates a legacy `.clossys/` hub state automatically. Optional `{ skillCatalogueRoot, launcherPackageRoot, contractPath, liveLauncherVersion }` selects where skill and contract bodies are read and grades skill-manifest staleness. |
 | `observeWorkspace()` | Reads `gh`, git remotes, cwd, inventory classification, hub-state migration status, and the public Advisor and Integrator versions (`npm view <package> version`). |
 | `readInventoryRepositories()` | Reads repository ids from an inventory file, as bytes, routed through `validateInventoryDocument()` (a missing file reads as no ids; anything present but invalid throws, naming the offending field by position -- never silently accepted or silently emptied). An optional fourth argument, the hub's owner, makes a bare id and `<owner>/<id>` one repository. |
 | `readLiveLauncherVersion()` | Reads the public `@clossys/launcher` registry version, used only to grade catalogue-sourced skill staleness. |
@@ -297,7 +307,7 @@ Exit codes preserve the ternary:
 | `CLOSSYS_README_REL` | Relative path of the generated index README at the root of `clossys/`. |
 | `LEGACY_STATE_DIR_REL` / `LEGACY_WORKSPACE_MARKER_REL` / `LEGACY_WORKSPACE_INVENTORY_REL` | Pre-#1171 `.clossys/` paths, kept only so resume can detect and migrate them. |
 | `CommandResult` / `ChosenInventory` / `CwdObservation` / `DependencyBucket` / `HubDocument` / `HubEnginePin` / `HubHealthReport` / `HubMigrationState` / `InventoryObservation` / `InventoryValidationEntry` / `InventoryValidationReport` / `InventoryReadOptions` / `PinFinding` / `PinGrade` / `PlanWorkspaceOptions` / `SkillManifestDocument` / `SkillManifestEntry` / `SkillsManifestSummary` / `ApplyWorkspaceOptions` / `WorkspaceApplyResult` / `WorkspaceDecision` / `WorkspaceHost` / `WorkspaceObservation` / `WorkspacePlan` / `WorkspaceRefusal` / `WorkspaceState` | Typed host, observation, plan, health, and outcome contracts. A `WorkspaceHost` reads and writes text and, for inventory files, exact bytes (`readBytes()` / `writeBytes()`). |
-| `cloneMissingInventoryRepositories()` | Explicit, approved action (#1179): clones every inventoried repository `resolveSisterCloneTargets` skipped for "not beside the hub", and only those. Returns a `CloneMissingOutcome[]`. |
+| `cloneMissingInventoryRepositories()` | Explicit, approved action (#1179): clones every inventoried repository of the hub's account that is not cloned beside the hub, and only those; every other inventoried repository is reported as skipped or left out, never attempted. Returns a `CloneMissingOutcome[]`. |
 | `runDoctorChecks()` | Read-only prerequisite checks in fix-in-this-order sequence: git, `gh`, signed in, Node.js, npm, then the advisory coding-agent step. Returns a `DoctorReport`. |
 | `renderDoctorReport()` | Renders a `DoctorReport` one step at a time, the way `launcher-doctor` prints it. |
 | `checkCloudSessionBootstrap()` | Read-only: the three product-repository-layout.json cloud-session-bootstrap checks against a directory. Returns a `CloudBootstrapReport`. |
@@ -339,7 +349,10 @@ session needs: a resolvable `package.json` plus `package-lock.json` pair,
 an `AGENTS.md` that mentions `clossys/`, and a hub marker at the same
 relative path as the packed template `skeleton/clossys/.state/workspace.json`.
 It never runs `npm ci` itself and never mutates anything; it only reports
-which of the three is missing.
+which of the three is missing. Before a product repository's setup pull
+request merges, an unsatisfied `agents-pointer` check is the expected state:
+its note says `AGENTS.md` arrives with the setup pull request, since a
+launcher run in the hub writes nothing into a product repository.
 
 ## Inventory: adopting an existing source
 
@@ -369,8 +382,8 @@ presence of `.agents/skills` itself, since Codex reads repository skills
 from that path directly and needs no separate discovery link (verified
 against developers.openai.com/codex/skills, 2026-09-22). The snapshot is
 written to `clossys/.state/hosts.json` (`HOSTS_REL`, via
-`serializeHostRecord()` / `parseHostRecord()`) for the hub and for every
-sibling clone launcher composes skills into -- so a consumer such as
+`serializeHostRecord()` / `parseHostRecord()`) for the hub, the one checkout
+a launcher run composes skills into -- so a consumer such as
 Advisor's next-action phrasing can name the client's actual tool instead
 of guessing.
 

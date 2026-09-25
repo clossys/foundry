@@ -155,16 +155,22 @@ export interface HubHealthReport {
   readonly skillComposition?: {
     readonly composed: readonly string[];
     readonly skipped: readonly { readonly packageDir: string; readonly note: string }[];
+    /** The checkouts this run composed skills into: the hub. */
     readonly rosterTargets?: readonly string[];
-    readonly rosterSkipped?: readonly { readonly inventoryId: string; readonly note: string }[];
+    /**
+     * Each inventoried repository other than the hub, with what this run found
+     * for it (for example, a checkout beside the hub whose team arrives with
+     * its setup pull request). Report-only: a hub run never writes into one,
+     * and no entry marks the report degraded.
+     */
+    readonly siblings?: readonly { readonly inventoryId: string; readonly note: string }[];
     readonly retired?: readonly string[];
     /**
-     * Composed skills left exactly as found because their on-disk content is not
-     * provably what Launcher last wrote (#1473) -- in the hub, or (with `target`
-     * naming the inventory id) in a sibling clone. Any entry marks the report degraded.
+     * Composed skills in the hub left exactly as found because their on-disk
+     * content is not provably what Launcher last wrote (#1473). Any entry
+     * marks the report degraded.
      */
     readonly preserved?: readonly {
-      readonly target?: string;
       readonly packageDir: string;
       readonly action: "rewrite" | "retire";
       readonly path: string;

@@ -30,6 +30,9 @@ const HUB_MARKER_REL = join("clossys", ".state", "workspace.json");
  * against `directory`. Never mutates anything, never runs `npm ci` itself
  * -- it checks that the manifest and lockfile are BOTH present, which is
  * the precondition a real `npm ci` needs, not a substitute for running it.
+ * An unsatisfied check is a readiness report, not a failure: a product
+ * repository's `AGENTS.md` arrives with its setup pull request, since a
+ * launcher run in the hub writes nothing into it.
  */
 export function checkCloudSessionBootstrap(host: WorkspaceHost, directory: string): CloudBootstrapReport {
   const hasManifest = host.exists(join(directory, PACKAGE_JSON_REL));
@@ -57,7 +60,12 @@ export function checkCloudSessionBootstrap(host: WorkspaceHost, directory: strin
     satisfied: agentsPointsAtClossys,
     ...(agentsPointsAtClossys
       ? {}
-      : { note: agentsRaw === null ? "AGENTS.md does not exist at the repository root." : "AGENTS.md exists but does not mention clossys/." }),
+      : {
+          note:
+            agentsRaw === null
+              ? "AGENTS.md does not exist at the repository root yet; it arrives with the setup pull request, not from a launcher run in the hub."
+              : "AGENTS.md exists but does not mention clossys/.",
+        }),
   };
 
   const hasHubMarker = host.exists(join(directory, HUB_MARKER_REL));

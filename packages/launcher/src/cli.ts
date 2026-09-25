@@ -34,12 +34,15 @@ difference, and --replace-inventory is the explicit approval to replace it.
 appointing. Resume refreshes composed skills and stale hub guidance, pins
 the hub's @clossys/advisor and @clossys/integrator at their live versions,
 and migrates a legacy .clossys/ hub state to clossys/.state/ automatically.
-Create may write an empty inventory.
+Create may write an empty inventory. A run composes skills into the hub only
+and changes nothing in an inventoried repository's checkout beside it: a
+product repository receives its team with its setup pull request.
 
 By default launcher never \`gh repo clone\`s a missing inventory entry --
 that is not how you talk to the team. --clone-missing is the one explicit,
 approved exception (#1179): on resume only, it clones every inventoried
-repository not yet sitting beside the hub, and only those.
+repository not yet sitting beside the hub, and only those. Cloning is not
+composing: a cloned repository receives its team with its setup pull request.
 
 GitHub-only. Owner is inferred from \`gh\` and git remotes. Public npm reads
 need no token.

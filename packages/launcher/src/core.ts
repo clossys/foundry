@@ -22,7 +22,7 @@ import type {
   WorkspacePlanCreate,
   WorkspaceRefusal,
 } from "./types.js";
-import { composeSkills, SKILLS_MANIFEST_REL, type SkillCompositionResult, type SkillPreservation } from "./skills.js";
+import { composeSkills, SKILLS_MANIFEST_REL, type SkillCompositionResult } from "./skills.js";
 import { parseSkillManifest, summarizeSkillsManifest } from "./manifest.js";
 import { detectLinkedHosts, serializeHostRecord, HOSTS_REL, type DiscoveredHost } from "./hosts.js";
 import { reportInventoryDrift } from "./inventory-adoption.js";
@@ -71,6 +71,27 @@ export const CONSUMER_AGENTS_MD = `# Account workspace
 
 This folder is the account hub for Foundry packages.
 
+After \`npx @clossys/launcher\`, the \`@clossys-*\` team is composed in this
+hub. Talk with \`@clossys-advisor\` and \`@clossys-<package>\` here. A product
+repository receives the team with its setup pull request, not from a
+launcher run. A missing \`@\` mention is not how we signal incompatibility —
+\`@clossys-advisor\` is the hiring check.
+
+Run \`npx @clossys/launcher\` again for hub health and to refresh the voices
+in this hub, not as how you talk to packages.
+
+The person in this folder is a founder, not an engineer. Speak like a
+person. Do not dump machine identifiers, JSON, hashes, or grant fields
+unless they ask.
+
+Advisor is read-only until the sponsor approves a next action.
+`;
+
+/** The hub guidance written before product repositories received the team with their setup pull request; resume refreshes it. */
+export const SIBLING_COMPOSING_CONSUMER_AGENTS_MD = `# Account workspace
+
+This folder is the account hub for Foundry packages.
+
 After \`npx @clossys/launcher\`, the same \`@clossys-*\` team is composed in
 every inventoried checkout beside this hub. Talk with \`@clossys-advisor\` and
 \`@clossys-<package>\` here or in a product repository. A missing \`@\` mention
@@ -84,15 +105,6 @@ person. Do not dump machine identifiers, JSON, hashes, or grant fields
 unless they ask.
 
 Advisor is read-only until the sponsor approves a next action.
-`;
-
-/** Canned guidance for inventoried product checkouts (not the hub). */
-export const SISTER_CONSUMER_AGENTS_MD = `# Product repository
-
-This repository is part of the same account engagement. The same
-\`@clossys-<package>\` team is here for intro and questions;
-\`@clossys-advisor\` decides hiring and compatibility. This folder is not the
-hub — engines are hired per repository, not dumped here.
 `;
 
 /** Previous generate-time guidance; used to refresh stale hub AGENTS.md on resume. */
@@ -1053,15 +1065,20 @@ export function reportHubHealth(
       ...(liveVersion === undefined ? {} : { live: liveVersion }),
     };
   };
+  const inventory = inspectInventory(host.readBytes(join(directory, WORKSPACE_INVENTORY_REL)), readHub(host, directory)?.owner);
   return {
     marker: readHub(host, directory) === undefined ? "missing" : "present",
-    inventory: inspectInventory(host.readBytes(join(directory, WORKSPACE_INVENTORY_REL)), readHub(host, directory)?.owner),
+    inventory,
     advisorPin: enginePin(ADVISOR_PACKAGE),
     integratorPin: enginePin(INTEGRATOR_PACKAGE),
     dualPin,
     extraClossys: [...extra].sort(),
     pinFindings,
-    degraded: pinFindings.some((finding) => finding.grade === "stale") || dualPin || HUB_ENGINE_PACKAGES.some(misplaced),
+    degraded:
+      pinFindings.some((finding) => finding.grade === "stale") ||
+      dualPin ||
+      HUB_ENGINE_PACKAGES.some(misplaced) ||
+      inventory.status === "invalid",
     ...(migration === undefined ? {} : { migration }),
     skillsManifest,
   };
@@ -1104,15 +1121,14 @@ export function formatHubHealth(report: HubHealthReport): string {
     if (report.skillComposition.rosterTargets !== undefined && report.skillComposition.rosterTargets.length > 0) {
       skillParts.push(`skill roster written: ${report.skillComposition.rosterTargets.join(", ")}`);
     }
-    for (const skip of report.skillComposition.rosterSkipped ?? []) {
-      skillParts.push(`skill roster skipped (${skip.inventoryId}): ${skip.note}`);
+    for (const sibling of report.skillComposition.siblings ?? []) {
+      skillParts.push(`sibling (${sibling.inventoryId}): ${sibling.note}`);
     }
     if (report.skillComposition.retired !== undefined && report.skillComposition.retired.length > 0) {
       skillParts.push(`skills retired: ${report.skillComposition.retired.map((name) => `clossys-${name}`).join(", ")}`);
     }
     for (const kept of report.skillComposition.preserved ?? []) {
-      const where = kept.target === undefined ? "" : ` in ${kept.target}`;
-      skillParts.push(`skill preserved (clossys-${kept.packageDir}${where}, not ${kept.action === "rewrite" ? "rewritten" : "retired"}): ${kept.note}`);
+      skillParts.push(`skill preserved (clossys-${kept.packageDir}, not ${kept.action === "rewrite" ? "rewritten" : "retired"}): ${kept.note}`);
     }
   }
   const skillsManifestLine =
@@ -1156,8 +1172,7 @@ function withHealth(
   directory: string,
   headline: string,
   liveEngines: HubEngineVersions,
-  skillComposition?: Omit<SkillCompositionResult, "preserved"> & {
-    preserved: readonly RosterSkillPreservation[];
+  skillComposition?: SkillCompositionResult & {
     linkedHosts?: readonly DiscoveredHost[];
   },
   liveLauncherVersion?: string,
@@ -1173,14 +1188,13 @@ function withHealth(
     migration,
     liveEngines.integratorVersion,
   );
-  const rosterSkipped = skillComposition?.rosterSkipped ?? [];
   const preserved = skillComposition?.preserved ?? [];
   const health: HubHealthReport = {
     ...base,
     ...(skillComposition === undefined ? {} : { skillComposition }),
     ...(skillComposition?.linkedHosts === undefined ? {} : { linkedHosts: skillComposition.linkedHosts }),
     ...(inventoryDrift === undefined || inventoryDrift.status === "no-external-source" ? {} : { inventoryDrift }),
-    degraded: base.degraded || rosterSkipped.length > 0 || preserved.length > 0,
+    degraded: base.degraded || preserved.length > 0,
   };
   return {
     state: "satisfied",
@@ -1228,6 +1242,7 @@ function shouldRefreshConsumerAgents(existing: string | null): boolean {
   if (existing === null) return true;
   if (existing === CONSUMER_AGENTS_MD) return false;
   if (existing === LEGACY_CONSUMER_AGENTS_MD) return true;
+  if (existing === SIBLING_COMPOSING_CONSUMER_AGENTS_MD) return true;
   if (existing.includes("Run `npx @clossys/launcher` again to resume")) return true;
   return false;
 }
@@ -1238,14 +1253,10 @@ function writeConsumerAgentsIfNeeded(host: WorkspaceHost, directory: string): vo
   writeSkeletonFile(host, directory, "AGENTS.md", CONSUMER_AGENTS_MD);
 }
 
-function writeSisterConsumerAgentsIfNeeded(host: WorkspaceHost, directory: string): void {
-  const existing = host.readText(join(directory, "AGENTS.md"));
-  if (existing !== null && existing.trim() !== "" && existing !== SISTER_CONSUMER_AGENTS_MD) return;
-  writeSkeletonFile(host, directory, "AGENTS.md", SISTER_CONSUMER_AGENTS_MD);
-}
-
-const CLONE_NOT_BESIDE_HUB_NOTE =
-  "clone not next to the hub; voices appear here after this repository is cloned beside the hub and launcher resumes";
+/** What a hub run reports for each inventoried repository other than the hub. It never writes into one. */
+const SETUP_PULL_REQUEST_NOTE = "its @clossys-* team arrives with the setup pull request";
+const BESIDE_HUB_NOTE = `checkout beside the hub; ${SETUP_PULL_REQUEST_NOTE}`;
+const CLONE_NOT_BESIDE_HUB_NOTE = `not cloned beside the hub; ${SETUP_PULL_REQUEST_NOTE}`;
 
 /**
  * Splits an inventory id into owner/repository, trusting a caller that
@@ -1277,58 +1288,73 @@ function hubRepositoryIdentity(host: WorkspaceHost, hubDirectory: string): strin
   return originRepository(host, hubDirectory) ?? readHub(host, hubDirectory)?.repository;
 }
 
-function resolveSisterCloneTargets(
-  host: WorkspaceHost,
-  hubDirectory: string,
-  hubOwner: string,
-): {
-  readonly targets: readonly { readonly inventoryId: string; readonly directory: string }[];
-  readonly skipped: readonly { readonly inventoryId: string; readonly note: string }[];
-} {
+/** Where an inventoried repository other than the hub stands, as a hub run sees it. */
+type SiblingStatus =
+  | "beside-the-hub"
+  | "not-cloned"
+  | "other-account"
+  | "foundry-supplier-tree"
+  | "origin-mismatch"
+  | "invalid-id"
+  | "inventory-invalid";
+
+interface InventoriedSibling {
+  readonly inventoryId: string;
+  readonly status: SiblingStatus;
+  readonly note: string;
+}
+
+/**
+ * Classifies every inventoried repository other than the hub. Read-only:
+ * it looks for a checkout beside the hub and reads that checkout's git
+ * origin, and nothing else, so a sibling's working tree, legacy output or
+ * old pins can neither change the result nor be changed by it. The hub run
+ * reports the result; only `--clone-missing` acts on it, and only on
+ * `not-cloned` entries.
+ */
+function classifyInventoriedSiblings(host: WorkspaceHost, hubDirectory: string, hubOwner: string): readonly InventoriedSibling[] {
   const parent = dirname(resolve(hubDirectory));
   const hubIdentity = hubRepositoryIdentity(host, hubDirectory);
-  const skipped: { inventoryId: string; note: string }[] = [];
-  const targets: { inventoryId: string; directory: string }[] = [];
+  const siblings: InventoriedSibling[] = [];
   const inventoryPath = join(hubDirectory, WORKSPACE_INVENTORY_REL);
   let inventoryIds: readonly string[];
   try {
     inventoryIds = readInventoryRepositories(host, inventoryPath, "the stored inventory", hubOwner);
   } catch (error) {
-    // An invalid stored inventory is reported and skipped, never silently
-    // read for what it happens to look like -- no sibling gets written into
-    // and no clone is attempted from it (#1334).
+    // An invalid stored inventory is reported, never silently read for what
+    // it happens to look like -- no clone is attempted from it (#1334).
     const reason = error instanceof Error ? error.message : String(error);
-    return { targets: [], skipped: [{ inventoryId: WORKSPACE_INVENTORY_REL, note: reason }] };
+    return [{ inventoryId: WORKSPACE_INVENTORY_REL, status: "inventory-invalid", note: reason }];
   }
   for (const id of inventoryIds) {
     const parsed = parseInventoryRepositoryId(id, hubOwner);
     if (parsed === null) {
-      skipped.push({ inventoryId: id, note: "inventory id is not a valid repository slug" });
+      siblings.push({ inventoryId: id, status: "invalid-id", note: "inventory id is not a valid repository slug" });
       continue;
     }
     if (!belongsToOwner(id, hubOwner)) {
-      skipped.push({ inventoryId: id, note: "other account; not this roster" });
+      siblings.push({ inventoryId: id, status: "other-account", note: "other account; not this roster" });
       continue;
     }
-    // The hub itself is already on the roster: recognised by repository identity, not by folder path.
+    // The hub itself is recognised by repository identity, not by folder path.
     if (hubIdentity !== undefined && sameRepository(id, hubIdentity, hubOwner)) continue;
     const candidate = join(parent, parsed.repository);
     if (!host.exists(candidate) || !host.isDirectory(candidate)) {
-      skipped.push({ inventoryId: id, note: CLONE_NOT_BESIDE_HUB_NOTE });
+      siblings.push({ inventoryId: id, status: "not-cloned", note: CLONE_NOT_BESIDE_HUB_NOTE });
       continue;
     }
     if (looksLikeFoundry(host, candidate)) {
-      skipped.push({ inventoryId: id, note: "foundry supplier tree; skills are not written here" });
+      siblings.push({ inventoryId: id, status: "foundry-supplier-tree", note: "foundry supplier tree; skills are not written here" });
       continue;
     }
     const origin = originRepository(host, candidate);
     if (origin === undefined || !sameRepository(origin, id, hubOwner)) {
-      skipped.push({ inventoryId: id, note: "git origin does not match inventory id" });
+      siblings.push({ inventoryId: id, status: "origin-mismatch", note: "git origin does not match inventory id" });
       continue;
     }
-    targets.push({ inventoryId: id, directory: candidate });
+    siblings.push({ inventoryId: id, status: "beside-the-hub", note: BESIDE_HUB_NOTE });
   }
-  return { targets, skipped };
+  return siblings;
 }
 
 export interface CloneMissingOutcome {
@@ -1339,24 +1365,25 @@ export interface CloneMissingOutcome {
 
 /**
  * Explicit, approved action (#1179, the #1045 pattern): clones every
- * inventoried repository that resolveSisterCloneTargets's own skip pass
- * identified as "just needs a clone" (CLONE_NOT_BESIDE_HUB_NOTE), and only
- * those -- every other skip reason (wrong account, foundry supplier tree,
- * origin mismatch, invalid slug) is left exactly as skipped, never
- * attempted. Never called from resume's default path; only from the
- * --clone-missing flag. Reverses the launcher README's own no-clone
- * default for exactly this one approved action.
+ * inventoried repository that classifyInventoriedSiblings found not cloned
+ * beside the hub, and only those -- every other reason (wrong account,
+ * foundry supplier tree, origin mismatch, invalid slug, invalid inventory)
+ * is reported as skipped, never attempted, and a checkout already beside
+ * the hub is left out. Never called from resume's default path; only from
+ * the --clone-missing flag. Reverses the launcher README's own no-clone
+ * default for exactly this one approved action. Cloning is not composing:
+ * a cloned repository receives its team with its setup pull request.
  */
 export function cloneMissingInventoryRepositories(
   host: WorkspaceHost,
   hubDirectory: string,
   hubOwner: string,
 ): readonly CloneMissingOutcome[] {
-  const { skipped } = resolveSisterCloneTargets(host, hubDirectory, hubOwner);
   const parent = dirname(resolve(hubDirectory));
   const outcomes: CloneMissingOutcome[] = [];
-  for (const skip of skipped) {
-    if (skip.note !== CLONE_NOT_BESIDE_HUB_NOTE) {
+  for (const skip of classifyInventoriedSiblings(host, hubDirectory, hubOwner)) {
+    if (skip.status === "beside-the-hub") continue;
+    if (skip.status !== "not-cloned") {
       outcomes.push({ inventoryId: skip.inventoryId, result: "skipped-other-reason", note: skip.note });
       continue;
     }
@@ -1448,18 +1475,22 @@ function recordLinkedHosts(host: WorkspaceHost, directory: string): readonly Dis
   return linkedHosts;
 }
 
-type RosterSkillPreservation = SkillPreservation & { readonly target?: string };
-
+/**
+ * Composes the team in the hub, and only the hub. An inventoried product
+ * repository receives its skills, skills manifest, host discovery links and
+ * guidance through its setup pull request, never from a hub run, so this
+ * writes nothing into any checkout beside the hub. Each inventoried
+ * repository other than the hub is reported, read-only, as a sibling.
+ */
 function composeSkillRoster(
   host: WorkspaceHost,
   hubDirectory: string,
   hubOwner: string,
   hubRepository: string,
   options: { launcherPackageRoot: string; skillCatalogueRoot?: string; contractPath?: string },
-): Omit<SkillCompositionResult, "preserved"> & {
-  readonly preserved: readonly RosterSkillPreservation[];
+): SkillCompositionResult & {
   readonly rosterTargets: readonly string[];
-  readonly rosterSkipped: readonly { readonly inventoryId: string; readonly note: string }[];
+  readonly siblings: readonly { readonly inventoryId: string; readonly note: string }[];
   readonly linkedHosts: readonly DiscoveredHost[];
 } {
   const composeOptions = {
@@ -1472,18 +1503,11 @@ function composeSkillRoster(
   writeConsumerAgentsIfNeeded(host, hubDirectory);
   writeClossysReadme(host, hubDirectory);
   const hubId = hubRosterId(host, hubDirectory, hubOwner, hubRepository);
-  const rosterTargets: string[] = [hubId];
-  const preserved: RosterSkillPreservation[] = [...hubSkill.preserved];
-  const { targets, skipped } = resolveSisterCloneTargets(host, hubDirectory, hubOwner);
-  for (const target of targets) {
-    recordLinkedHosts(host, target.directory);
-    const sisterSkill = composeSkills(host, target.directory, composeOptions);
-    // #1473: a skill left as found in a sibling clone is reported, never dropped silently.
-    for (const entry of sisterSkill.preserved) preserved.push({ ...entry, target: target.inventoryId });
-    writeSisterConsumerAgentsIfNeeded(host, target.directory);
-    rosterTargets.push(target.inventoryId);
-  }
-  return { ...hubSkill, preserved, rosterTargets, rosterSkipped: skipped, linkedHosts };
+  const siblings = classifyInventoriedSiblings(host, hubDirectory, hubOwner)
+    // An invalid stored inventory is a hub finding: the health report's inventory line names it.
+    .filter((sibling) => sibling.status !== "inventory-invalid")
+    .map(({ inventoryId, note }) => ({ inventoryId, note }));
+  return { ...hubSkill, rosterTargets: [hubId], siblings, linkedHosts };
 }
 
 function finishHubApply(
@@ -1542,7 +1566,11 @@ function engineVersionsOf(plan: WorkspacePlan): HubEngineVersions {
   };
 }
 
-/** Applies a create, resume, or adopt plan through the host. Resume refreshes composed skills and stale AGENTS.md guidance. */
+/**
+ * Applies a create, resume, or adopt plan through the host. Resume refreshes
+ * composed skills and stale AGENTS.md guidance. Every path writes only into
+ * the hub checkout, never into an inventoried repository beside it.
+ */
 export function applyWorkspacePlan(
   host: WorkspaceHost,
   plan: WorkspacePlan,
@@ -1562,7 +1590,7 @@ export function applyWorkspacePlan(
     }
     const migration = plan.migrateFrom === "legacy" ? migrateLegacyHubState(host, plan.directory) : undefined;
     // --repositories (#1179): write the chosen inventory before composing, so
-    // this same run composes skills into the repositories just chosen.
+    // this same run's health report lists the repositories just chosen.
     if (plan.chosenInventory?.kind === "write") {
       writeSkeletonFile(host, plan.directory, WORKSPACE_INVENTORY_REL, revalidatedDocument(plan.chosenInventory.document, plan.owner));
     }

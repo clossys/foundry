@@ -1,4 +1,6 @@
-import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
+import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, readlinkSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -8,6 +10,7 @@ import {
   INTEGRATOR_PACKAGE,
   CONSUMER_AGENTS_MD,
   LEGACY_CONSUMER_AGENTS_MD,
+  SIBLING_COMPOSING_CONSUMER_AGENTS_MD,
   applyWorkspacePlan,
   cloneMissingInventoryRepositories,
   checkInventoryEntries,
@@ -104,6 +107,24 @@ function writeInventory(directory: string, repositories: readonly unknown[] = [{
   writeFileSync(
     join(directory, WORKSPACE_INVENTORY_REL),
     `${JSON.stringify({ schemaVersion: 1, repositories }, null, 2)}\n`,
+  );
+}
+
+/** An `acme/hub` hub marker. */
+function writeHubMarker(directory: string): void {
+  mkdirSync(dirname(join(directory, WORKSPACE_MARKER_REL)), { recursive: true });
+  writeFileSync(
+    join(directory, WORKSPACE_MARKER_REL),
+    `${JSON.stringify({ schemaVersion: 1, kind: "account-hub", owner: "acme", repository: "acme/hub" }, null, 2)}\n`,
+  );
+}
+
+/** A hub package.json pinning both engines in devDependencies, so the health report grades only what a test is about. */
+function writeEnginePins(directory: string, advisor = "0.5.0", integrator = "0.8.2"): void {
+  mkdirSync(directory, { recursive: true });
+  writeFileSync(
+    join(directory, "package.json"),
+    `${JSON.stringify({ name: "hub", devDependencies: { [ADVISOR_PACKAGE]: advisor, [INTEGRATOR_PACKAGE]: integrator } }, null, 2)}\n`,
   );
 }
 
@@ -994,8 +1015,9 @@ describe("applyWorkspacePlan", () => {
     expect(manifest.devDependencies?.[ADVISOR_PACKAGE]).toBe("0.2.3");
     expect(result.health.extraClossys).toEqual(["@clossys/starter"]);
     expect(result.health.dualPin).toBe(false);
-    expect(result.health.degraded).toBe(true);
-    expect(result.message).toMatch(/skill roster skipped/);
+    // An inventoried repository not cloned beside the hub is reported, and is not a hub defect.
+    expect(result.message).toMatch(/sibling \(one\): not cloned beside the hub; its @clossys-\* team arrives with the setup pull request/);
+    expect(result.health.degraded).toBe(false);
     expect(result.message).toMatch(/health:/);
   });
 
@@ -1207,9 +1229,8 @@ describe("applyWorkspacePlan", () => {
       composeApplyOptions(catalogue),
     );
     expect(result.health.inventory.status).toBe("invalid");
-    expect(result.health.skillComposition?.rosterSkipped).toEqual([
-      { inventoryId: WORKSPACE_INVENTORY_REL, note: expect.stringContaining("repositories[0].role is not a field the contract declares") },
-    ]);
+    expect(result.message).toMatch(/inventory: invalid -- .*repositories\[0\]\.role is not a field the contract declares/);
+    expect(result.health.skillComposition?.siblings).toEqual([]);
     expect(result.health.degraded).toBe(true);
     // Nothing was written into the sibling: its directory listing is exactly
     // what this test itself seeded, and no skill or guidance file landed.
@@ -1261,11 +1282,11 @@ describe("applyWorkspacePlan", () => {
     expect(agents).toContain("@clossys-advisor");
     expect(agents).not.toMatch(/again to resume/i);
     expect(result.health.degraded).toBe(false);
-    expect(result.message).not.toMatch(/skill roster skipped/);
+    expect(result.message).not.toMatch(/^sibling /m);
     expect(reportHubHealth(host(directory), directory).marker).toBe("present");
   });
 
-  it("composes skills into the hub and sibling clones resolved from inventory", () => {
+  it("composes skills into the hub only, and reports each inventoried sibling without degrading", () => {
     const parent = tempDir();
     const hub = join(parent, "hub");
     const app = join(parent, "app");
@@ -1307,6 +1328,7 @@ describe("applyWorkspacePlan", () => {
         return base.run(command, args, opts);
       },
     };
+    writeEnginePins(hub);
     const catalogue = seedSkillCatalogue(["advisor", "designer"]);
     const result = applyWorkspacePlan(
       workspaceHost,
@@ -1315,16 +1337,20 @@ describe("applyWorkspacePlan", () => {
       composeApplyOptions(catalogue),
     );
     expect(readFileSync(join(hub, ".agents/skills/clossys-advisor/SKILL.md"), "utf8")).toContain("clossys-advisor");
-    expect(readFileSync(join(app, ".agents/skills/clossys-advisor/SKILL.md"), "utf8")).toContain("clossys-advisor");
-    expect(existsSync(join(other, ".agents/skills/clossys-advisor/SKILL.md"))).toBe(false);
-    expect(existsSync(join(foundry, ".agents/skills/clossys-advisor/SKILL.md"))).toBe(false);
-    expect(readFileSync(join(app, "AGENTS.md"), "utf8")).toContain("@clossys-advisor");
-    expect(result.health.skillComposition?.rosterTargets).toEqual(expect.arrayContaining(["acme/hub", "acme/app"]));
-    expect(result.message).toMatch(/skill roster skipped \(acme\/missing\)/);
-    expect(result.message).toMatch(/skill roster skipped \(acme\/other\).*origin does not match/);
-    expect(result.message).toMatch(/skill roster skipped \(acme\/foundry\).*foundry supplier/);
-    expect(result.health.degraded).toBe(true);
-    expect(formatHubHealth(result.health)).toMatch(/degraded: yes/);
+    expect(readdirSync(app)).toEqual([".git"]);
+    expect(readdirSync(other)).toEqual([".git"]);
+    expect(existsSync(join(foundry, ".agents"))).toBe(false);
+    expect(result.health.skillComposition?.rosterTargets).toEqual(["acme/hub"]);
+    expect(result.health.skillComposition?.siblings).toEqual([
+      { inventoryId: "acme/app", note: "checkout beside the hub; its @clossys-* team arrives with the setup pull request" },
+      { inventoryId: "acme/missing", note: "not cloned beside the hub; its @clossys-* team arrives with the setup pull request" },
+      { inventoryId: "acme/other", note: "git origin does not match inventory id" },
+      { inventoryId: "acme/foundry", note: "foundry supplier tree; skills are not written here" },
+    ]);
+    expect(result.message).toMatch(/^skill roster written: acme\/hub$/m);
+    expect(result.message).toMatch(/^sibling \(acme\/app\): checkout beside the hub; its @clossys-\* team arrives with the setup pull request$/m);
+    expect(result.health.degraded).toBe(false);
+    expect(formatHubHealth(result.health)).toMatch(/degraded: no/);
     expect(result.state).toBe("satisfied");
   });
 
@@ -1589,7 +1615,7 @@ describe("preserved composed skills in the health report (#1473)", () => {
     expect(readFileSync(skillPath, "utf8")).toBe(edited);
   });
 
-  it("tags a skill left as is in a sibling clone with that clone's inventory id", () => {
+  it("leaves a skill an earlier release composed into a sibling clone untouched, unreported, and not degrading", () => {
     const parent = tempDir();
     const hub = join(parent, "hub");
     const app = join(parent, "app");
@@ -1611,6 +1637,7 @@ describe("preserved composed skills in the health report (#1473)", () => {
         return base.run(command, args, opts);
       },
     };
+    writeEnginePins(hub);
     const applyOpts = composeApplyOptions(seedSkillCatalogue(["advisor"]));
     const resume = () =>
       applyWorkspacePlan(
@@ -1619,18 +1646,18 @@ describe("preserved composed skills in the health report (#1473)", () => {
         skeletonRoot,
         applyOpts,
       );
-    resume();
+    // Output an earlier Launcher release composed into the sibling, since edited by the client.
     const appSkill = join(app, ".agents", "skills", "clossys-advisor", "SKILL.md");
-    const edited = `${readFileSync(appSkill, "utf8")}\nClient's own note.\n`;
+    mkdirSync(dirname(appSkill), { recursive: true });
+    const edited = `${skillFixture("advisor")}\nClient's own note.\n`;
     writeFileSync(appSkill, edited);
 
     const result = resume();
-    expect(result.health.skillComposition?.preserved).toEqual([
-      expect.objectContaining({ target: "acme/app", packageDir: "advisor", action: "rewrite" }),
-    ]);
-    expect(result.message).toMatch(/skill preserved \(clossys-advisor in acme\/app, not rewritten\): /);
-    expect(result.health.degraded).toBe(true);
+    expect(result.health.skillComposition?.preserved).toEqual([]);
+    expect(result.message).not.toMatch(/skill preserved/);
+    expect(result.health.degraded).toBe(false);
     expect(readFileSync(appSkill, "utf8")).toBe(edited);
+    expect(readdirSync(app).sort()).toEqual([".agents", ".git"]);
   });
 });
 
@@ -1712,6 +1739,264 @@ describe("observeWorkspace", () => {
     expect(seen.cwd.inventory).toEqual({ status: "missing", count: 0 });
     expect(seen.advisorVersion).toBe("0.2.6");
     expect(seen.integratorVersion).toBe("0.8.2");
+  });
+});
+
+describe("a hub run writes nothing into any sibling checkout (S3-7a)", () => {
+  // Real git repositories, so each sibling's state is compared the way a
+  // person would see it: `git status --porcelain` plus a hash over every
+  // path in the working tree (type, mode, mtime, and bytes or link target).
+  const gitEnv = {
+    ...process.env,
+    GIT_CONFIG_GLOBAL: "/dev/null",
+    GIT_CONFIG_NOSYSTEM: "1",
+    GIT_AUTHOR_NAME: "Example Author",
+    GIT_AUTHOR_EMAIL: "author@example.com",
+    GIT_COMMITTER_NAME: "Example Author",
+    GIT_COMMITTER_EMAIL: "author@example.com",
+  };
+
+  function git(cwd: string, ...args: string[]): string {
+    return execFileSync("git", ["-c", "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null", ...args], {
+      cwd,
+      env: gitEnv,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+  }
+
+  function treeHash(root: string): string {
+    const hash = createHash("sha256");
+    const walk = (directory: string, relative: string): void => {
+      for (const name of readdirSync(directory).sort()) {
+        if (relative === "" && name === ".git") continue;
+        const path = join(directory, name);
+        const rel = relative === "" ? name : `${relative}/${name}`;
+        const stat = lstatSync(path);
+        if (stat.isSymbolicLink()) {
+          hash.update(`link ${rel} ${readlinkSync(path)} ${stat.mtimeMs}\n`);
+        } else if (stat.isDirectory()) {
+          hash.update(`dir ${rel} ${stat.mode} ${stat.mtimeMs}\n`);
+          walk(path, rel);
+        } else {
+          hash.update(`file ${rel} ${stat.mode} ${stat.mtimeMs} ${stat.size}\n`);
+          hash.update(readFileSync(path));
+        }
+      }
+    };
+    walk(root, "");
+    return hash.digest("hex");
+  }
+
+  function checkoutState(directory: string): { status: string; head: string; tree: string } {
+    return {
+      status: git(directory, "status", "--porcelain", "--untracked-files=all", "--ignored"),
+      head: git(directory, "rev-parse", "HEAD"),
+      tree: treeHash(directory),
+    };
+  }
+
+  function write(root: string, relative: string, contents: string): void {
+    mkdirSync(dirname(join(root, relative)), { recursive: true });
+    writeFileSync(join(root, relative), contents);
+  }
+
+  function commitAll(directory: string, message: string): void {
+    git(directory, "add", "-A");
+    git(directory, "commit", "-q", "-m", message);
+  }
+
+  const legacyManifest = (skills: readonly string[]): string =>
+    `${JSON.stringify(
+      {
+        schemaVersion: 1,
+        generatedAt: "2026-01-01T00:00:00.000Z",
+        skills: skills.map((name) => ({ name: `clossys-${name}`, source: "catalogue", version: "0.1.0", sha256: createHash("sha256").update(skillFixture(name)).digest("hex") })),
+      },
+      null,
+      2,
+    )}\n`;
+
+  /** Four inventoried product checkouts beside a hub: one clean, three dirty with output and pins an earlier release left. */
+  function siblingsBeside(parent: string): Record<string, string> {
+    const siblings: Record<string, string> = {};
+    for (const name of ["clean-app", "dirty-app", "legacy-app", "pinned-app"]) {
+      const directory = join(parent, name);
+      mkdirSync(directory, { recursive: true });
+      git(directory, "init", "-q");
+      write(directory, "README.md", `# ${name}\n`);
+      write(directory, "package.json", `${JSON.stringify({ name, private: true }, null, 2)}\n`);
+      commitAll(directory, "initial");
+      siblings[name] = directory;
+    }
+    // dirty-app: untracked skills, discovery link and manifest from an earlier appoint, and edited guidance.
+    const dirty = siblings["dirty-app"] as string;
+    write(dirty, ".agents/skills/clossys-advisor/SKILL.md", skillFixture("advisor"));
+    mkdirSync(join(dirty, ".claude", "skills"), { recursive: true });
+    symlinkSync("../../.agents/skills/clossys-advisor", join(dirty, ".claude", "skills", "clossys-advisor"), "dir");
+    write(dirty, "clossys/.state/skills.json", legacyManifest(["advisor", "retired-role"]));
+    write(dirty, "AGENTS.md", "# Product repository\n\nEdited by the client.\n");
+    // legacy-app: a committed legacy hub-state folder and composed skills, then an uncommitted edit to one.
+    const legacy = siblings["legacy-app"] as string;
+    write(legacy, ".clossys/workspace.json", `${JSON.stringify({ schemaVersion: 1, kind: "account-hub", owner: "acme", repository: "acme/legacy-app" }, null, 2)}\n`);
+    write(legacy, ".agents/skills/clossys-designer/SKILL.md", skillFixture("designer"));
+    write(legacy, "clossys/.state/skills.json", legacyManifest(["designer"]));
+    write(legacy, "CLAUDE.md", "@AGENTS.md\n");
+    commitAll(legacy, "legacy output");
+    write(legacy, ".agents/skills/clossys-designer/SKILL.md", `${skillFixture("designer")}\nClient note.\n`);
+    // pinned-app: old engine pins, a staged change, a Cursor discovery link, and a hosts record.
+    const pinned = siblings["pinned-app"] as string;
+    write(pinned, "package.json", `${JSON.stringify({ name: "pinned-app", dependencies: { [INTEGRATOR_PACKAGE]: "0.1.0" }, devDependencies: { [ADVISOR_PACKAGE]: "0.2.6" } }, null, 2)}\n`);
+    commitAll(pinned, "old pins");
+    write(pinned, "src/staged.ts", "export {};\n");
+    git(pinned, "add", "src/staged.ts");
+    mkdirSync(join(pinned, ".cursor"), { recursive: true });
+    symlinkSync("../.agents/skills", join(pinned, ".cursor", "skills"), "dir");
+    write(pinned, "clossys/.state/hosts.json", `${JSON.stringify({ schemaVersion: 1, linkedHosts: ["cursor"], recordedAt: "2026-01-01T00:00:00.000Z" }, null, 2)}\n`);
+    return siblings;
+  }
+
+  /** Answers `git remote get-url origin` for the hub and each sibling; every other command from `commands`. */
+  function hubHost(hub: string, siblings: Record<string, string>, commands: Record<string, CommandResult> = {}): WorkspaceHost {
+    const base = host(hub, commands);
+    const origins = new Map<string, string>([[hub, "acme/hub"], ...Object.entries(siblings).map(([name, path]) => [path, `acme/${name}`] as const)]);
+    return {
+      ...base,
+      run: (command, args, options) => {
+        const origin = origins.get(options?.cwd ?? hub);
+        if (command === "git" && args.join(" ") === "remote get-url origin" && origin !== undefined) {
+          return { status: 0, stdout: `git@github.com:${origin}.git\n`, stderr: "" };
+        }
+        return base.run(command, args, options);
+      },
+    };
+  }
+
+  const inventory = [{ id: "acme/hub" }, { id: "acme/clean-app" }, { id: "acme/dirty-app" }, { id: "acme/legacy-app" }, { id: "acme/pinned-app" }];
+
+  function snapshot(siblings: Record<string, string>): Record<string, ReturnType<typeof checkoutState>> {
+    return Object.fromEntries(Object.entries(siblings).map(([name, path]) => [name, checkoutState(path)]));
+  }
+
+  it("D32: resume with four inventoried siblings, one clean and three dirty with legacy output, writes nothing into any of them and is neither failed nor degraded", () => {
+    const parent = tempDir();
+    const siblings = siblingsBeside(parent);
+    const hub = join(parent, "hub");
+    writeHubMarker(hub);
+    writeInventory(hub, inventory);
+    writeEnginePins(hub);
+    const before = snapshot(siblings);
+    expect(before["clean-app"]?.status).toBe("");
+    for (const name of ["dirty-app", "legacy-app", "pinned-app"]) expect(before[name]?.status).not.toBe("");
+
+    const result = applyWorkspacePlan(
+      hubHost(hub, siblings),
+      { action: "resume", owner: "acme", repository: "hub", directory: hub, clone: false, advisorVersion: "0.5.0", integratorVersion: "0.8.2" },
+      skeletonRoot,
+      composeApplyOptions(seedSkillCatalogue(["advisor", "designer"])),
+    );
+
+    expect(snapshot(siblings)).toEqual(before);
+    expect(result.state).toBe("satisfied");
+    expect(result.health.degraded).toBe(false);
+    expect(result.health.pinFindings).toEqual([]);
+    expect(result.health.skillComposition?.preserved).toEqual([]);
+    expect(result.health.skillComposition?.rosterTargets).toEqual(["acme/hub"]);
+    expect(result.health.skillComposition?.siblings).toEqual(
+      ["clean-app", "dirty-app", "legacy-app", "pinned-app"].map((name) => ({
+        inventoryId: `acme/${name}`,
+        note: "checkout beside the hub; its @clossys-* team arrives with the setup pull request",
+      })),
+    );
+    expect(result.message).not.toMatch(/violated|failed/i);
+    // The hub's own team is still composed.
+    expect(readFileSync(join(hub, ".agents/skills/clossys-designer/SKILL.md"), "utf8")).toContain("name: clossys-designer");
+  });
+
+  it("writes nothing into a sibling on create, resume, or appoint", () => {
+    const catalogue = seedSkillCatalogue(["advisor"]);
+
+    // create: a new hub beside existing checkouts; its fresh inventory lists none of them.
+    const createParent = tempDir();
+    const createSiblings = siblingsBeside(createParent);
+    const created = join(createParent, "workspace");
+    mkdirSync(created);
+    const createBefore = snapshot(createSiblings);
+    const createdResult = applyWorkspacePlan(
+      hubHost(created, createSiblings, {
+        [`gh repo create acme/workspace --private --source ${created} --remote origin --push`]: { status: 0, stdout: "created\n", stderr: "" },
+      }),
+      { action: "create", owner: "acme", repository: "workspace", directory: created, advisorVersion: "0.5.0", integratorVersion: "0.8.2" },
+      skeletonRoot,
+      composeApplyOptions(catalogue),
+    );
+    expect(snapshot(createSiblings)).toEqual(createBefore);
+    expect(createdResult.health.skillComposition?.rosterTargets).toEqual(["acme/workspace"]);
+
+    // resume, with --repositories choosing all four siblings in the same run.
+    const resumeParent = tempDir();
+    const resumeSiblings = siblingsBeside(resumeParent);
+    const resumed = join(resumeParent, "hub");
+    writeHubMarker(resumed);
+    writeInventory(resumed, [{ id: "acme/hub" }]);
+    const resumeBefore = snapshot(resumeSiblings);
+    const resumeResult = applyWorkspacePlan(
+      hubHost(resumed, resumeSiblings),
+      {
+        action: "resume",
+        owner: "acme",
+        repository: "hub",
+        directory: resumed,
+        clone: false,
+        chosenInventory: {
+          kind: "write",
+          document: `${JSON.stringify({ schemaVersion: 1, repositories: inventory }, null, 2)}\n`,
+          count: 5,
+          previousCount: 1,
+          added: ["acme/clean-app", "acme/dirty-app", "acme/legacy-app", "acme/pinned-app"],
+          removed: [],
+          replaced: "nothing",
+        },
+      },
+      skeletonRoot,
+      composeApplyOptions(catalogue),
+    );
+    expect(snapshot(resumeSiblings)).toEqual(resumeBefore);
+    expect(resumeResult.health.skillComposition?.siblings).toHaveLength(4);
+
+    // appoint: the hub checkout is clean; its inventory lists all four siblings.
+    const appointParent = tempDir();
+    const appointSiblings = siblingsBeside(appointParent);
+    const appointed = join(appointParent, "hub");
+    mkdirSync(appointed);
+    writeInventory(appointed, inventory);
+    const appointBefore = snapshot(appointSiblings);
+    const appointResult = applyWorkspacePlan(
+      hubHost(appointed, appointSiblings, { "git status --porcelain": { status: 0, stdout: "", stderr: "" } }),
+      { action: "adopt", owner: "acme", repository: "hub", directory: appointed, advisorVersion: "0.5.0", integratorVersion: "0.8.2" },
+      skeletonRoot,
+      composeApplyOptions(catalogue),
+    );
+    expect(snapshot(appointSiblings)).toEqual(appointBefore);
+    expect(appointResult.state).toBe("satisfied");
+    expect(appointResult.health.degraded).toBe(false);
+    expect(appointResult.health.skillComposition?.siblings).toHaveLength(4);
+  });
+
+  it("resume refreshes hub guidance written when appoint still composed into siblings", () => {
+    const directory = tempDir();
+    writeHubMarker(directory);
+    writeInventory(directory, [{ id: "acme/hub" }]);
+    writeFileSync(join(directory, "AGENTS.md"), SIBLING_COMPOSING_CONSUMER_AGENTS_MD);
+    applyWorkspacePlan(
+      host(directory),
+      { action: "resume", owner: "acme", repository: "hub", directory, clone: false },
+      skeletonRoot,
+      composeApplyOptions(seedSkillCatalogue(["advisor"])),
+    );
+    const agents = readFileSync(join(directory, "AGENTS.md"), "utf8");
+    expect(agents).toBe(CONSUMER_AGENTS_MD);
+    expect(agents).toContain("A product\nrepository receives the team with its setup pull request");
   });
 });
 
@@ -1813,7 +2098,7 @@ describe("host discovery recording, wired into applyWorkspacePlan (#1180)", () =
     expect(hostsRaw.linkedHosts).toEqual(["claude-code"]);
   });
 
-  it("records a hosts.json for a sibling clone too, not only the hub", () => {
+  it("records hosts.json for the hub only, never in a sibling clone", () => {
     const parent = tempDir();
     const hub = join(parent, "hub");
     const app = join(parent, "app");
@@ -1844,7 +2129,8 @@ describe("host discovery recording, wired into applyWorkspacePlan (#1180)", () =
       skeletonRoot,
       composeApplyOptions(catalogue),
     );
-    expect(existsSync(join(app, "clossys", ".state", "hosts.json"))).toBe(true);
+    expect(existsSync(join(hub, "clossys", ".state", "hosts.json"))).toBe(true);
+    expect(existsSync(join(app, "clossys"))).toBe(false);
   });
 });
 
