@@ -12,11 +12,11 @@
  * judge each copy of another package's file from its source's position
  * (#1500), so the two cannot disagree about what is a copy.
  *
- * It also writes src/generated/ (issue #1475): the shared plan and brief
- * contracts as a data module, and a copy of the one contract checker, which
- * lives in @clossys/advisor. This package validates a plan and a brief
- * against the same contracts Advisor does, with no runtime dependency on
- * Advisor. The rendering is shared with Advisor's own packer
+ * It also writes src/generated/ (issue #1475): the shared plan, brief and
+ * repository-inventory contracts as a data module, and a copy of the one
+ * contract checker, which lives in @clossys/advisor. This package validates
+ * a plan, a brief and an inventory against the same contracts Advisor does,
+ * with no runtime dependency on Advisor. The rendering is shared with Advisor's own packer
  * (scripts/lib/plan-contracts.mjs in this repository), so both packages
  * carry byte-identical contract data.
  */
@@ -72,4 +72,4 @@ if (existsSync(generatedDir)) rmSync(generatedDir, { recursive: true, force: tru
 mkdirSync(generatedDir, { recursive: true });
 writeFileSync(join(launcherRoot, ...PLAN_CONTRACTS_MODULE_PATH.split("/")), renderPlanContractsModule(repoRoot));
 writeFileSync(join(launcherRoot, ...CONTRACT_SCHEMA_COPY_PATH.split("/")), renderContractSchemaCopy(repoRoot));
-console.log(`pack-skills: wrote the plan and brief contracts and the contract checker copy into src/generated/`);
+console.log(`pack-skills: wrote the plan, brief and inventory contracts and the contract checker copy into src/generated/`);
