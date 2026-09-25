@@ -20,9 +20,11 @@ owns the v0 Launch pack's definition, inventory, and readiness, plus the
 channel templates that place those assets. The reworded text carries no
 issue numbers or emphasis capitals, because Advisor copies it into
 client-facing deliverables. No schema or field change, but the shipped
-contract text did change: a caller that passes its own copy of the role
-contract must now match this reworded text exactly (see this release's
-Breaking note).
+contract text did change: this was made fully compatible rather than
+breaking, because a caller's exact copy of a previously shipped canonical
+contract keeps working, reported through the non-failing
+`legacy-contract-copy` advisory described in the bullet right after this
+one.
 - A caller-supplied role or position contract that exactly matches a
 previously shipped canonical contract keeps working across an upgrade to
 this version, in the same three call forms --
