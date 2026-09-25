@@ -73,8 +73,8 @@ ratified text; the list and the owner's answers govern):
 - None of the amendment is enforced by code yet. In particular, the
   tier-1 gate reads review records at the exact current head, so a clean
   rebase that keeps clearance under the amendment's item 7 still needs
-  the head re-attested before the gate passes. See the amendment
-  section's implementation-status notes.
+  review records at the new head before the gate passes. See the
+  amendment section's implementation-status notes.
 - "The three tiers" below still describes only what the code classifies.
   Its tier-1 wording, "if they disagree or either says reject, escalate
   to the owner", predates the ratified rule and does not describe current

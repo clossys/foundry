@@ -130,16 +130,19 @@ the record is the source of truth.
 > write to the rule file or the deny hook. Landing and notifying never
 > applies to this rule.
 
-**Amended 2026-09-23 (not part of the ratified text above).** The quoted
-text above is kept exactly as ratified, as history. Two parts of it are
-superseded by the owner-ratified review-convergence amendment, as its
-decision record reads it: the "3 rounds that go nowhere" trigger
-(Accepted item 5, and the "Your approval first" table row) is replaced by
-the amendment's round budget and triggers, and the table's "batched for
-Friday unless urgent" is replaced by the amendment's same-day escalation
-ask. The Friday supersession is that record's reading of item 5, not
-words the owner ratified; with no urgency exception left, urgent asks
-that are not about a review fall under the same twice-a-day limit. See
+**Amended 2026-09-23, updated 2026-09-24 (not part of the ratified text
+above).** The quoted text above is kept exactly as ratified, as history.
+Two parts of it are superseded by the owner-ratified review-convergence
+amendment, as its decision record reads it: the "3 rounds that go
+nowhere" trigger (Accepted item 5, and the "Your approval first" table
+row) is replaced by the amendment's round budget and triggers, and the
+table's "batched for Friday unless urgent" is replaced by the amendment's
+same-day escalation ask. The Friday supersession is that record's reading
+of item 5, not words the owner ratified. On 2026-09-24 the owner answered
+"Restore it" to a follow-up question about the urgency exception dropped
+in that reading: an ask that is genuinely urgent and about credentials or
+publishing may still be raised at any time; every other ask stays under
+item 5's twice-a-day limit. See
 [Amendment (2026-09-23): review convergence](#amendment-2026-09-23-review-convergence)
 below. Everything else above stands unchanged.
 
@@ -439,13 +442,14 @@ those govern.
   reviewer disagreement still does not; item 4 restates both.
 - **Ask timing (the record's reading).** The table's "batched for Friday
   unless urgent" is superseded by item 5: an escalation ask goes out the
-  same day, at most twice a day, with related items merged. Because item
-  5 has no urgency exception, an urgent ask that is not about a review
-  (credentials or publishing, for example) falls under the same
-  twice-a-day limit. The owner saw the timing change called out when
-  ratifying: the amendment followed a red-team whose recommendations were
-  adopted, except that asks go same-day rather than being batched to
-  Friday.
+  same day, at most twice a day, with related items merged. Item 5 itself
+  has no urgency exception, but on 2026-09-24 the owner separately
+  restored one for urgent asks that are not about a review: an ask that
+  is genuinely urgent and about credentials or publishing may be raised
+  at any time, outside the twice-a-day limit; every other ask stays under
+  it. The owner saw the timing change called out when ratifying: the
+  amendment followed a red-team whose recommendations were adopted,
+  except that asks go same-day rather than being batched to Friday.
 - **Everything else stands**, including the fresh strong-class final
   reviewer for governance, security and gate changes (item 3 keeps it),
   the channel rule, and "Changing this rule itself". The quoted rule
@@ -487,10 +491,12 @@ decision-record validator is follow-up owner-tier work, tracked in
 - **A clean rebase and the tier-1 gate.** Item 7 keeps review clearance
   across a clean mechanical rebase, but the tier-1 evidence gate in
   `scripts/land-stack.mjs` reads review records at the exact current head
-  only (see `docs/HITL.md`'s "Where each tier is enforced"). After a
-  rebase, the gate does not pass until the head is re-attested: a
-  range-diff verification comment, plus review records at the new head.
-  The code does not check the range-diff itself.
+  only (see `docs/HITL.md`'s "Where each tier is enforced"). So after any
+  rebase it does not pass until valid review records exist at the new
+  head. The gate does not look for, read, or verify a range-diff. Item 7's
+  range-diff verification is a reviewer obligation that no code currently
+  checks, and no code distinguishes a clean mechanical rebase from any
+  other new head.
 - **Larger round budgets (this repository's reading).** Item 3 says a
   request for more rounds is approved with the charter, and item 6 lists
   budget grants among what is recorded. Because budgets are the owner's
