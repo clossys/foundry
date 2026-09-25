@@ -1,13 +1,13 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { assertImplementedContract } from "./generated/contract-schema.generated.js";
+import { PACKAGE_SCOPE } from "./generated/package-scope.generated.js";
 import { PLAN_CONTRACTS } from "./generated/plan-contracts.generated.js";
-import { bundleDigest, changeSetDigest } from "./change-set-digest.js";
+import { changeSetDigest } from "./change-set-digest.js";
 import {
-  AUTHORIZATION_PLAN_MISMATCH, applyBundleViolations, isPathPattern, isSafeRelativePath, lockfilePath, matchesPathPattern, repositoryChangeSetViolations,
-  validateApplyBundle, validateRepositoryChangeSet,
+  contentDigest, isPathPattern, isSafeRelativePath, lockfilePath, matchesPathPattern, repositoryChangeSetViolations, validateRepositoryChangeSet,
 } from "./change-set-contract.js";
-import type { ApplyBundle, RepositoryChangeSet } from "./change-set-contract.js";
+import type { RepositoryChangeSet } from "./change-set-contract.js";
 
 /*
  * Issue #1178. The shape of the repository change-set and apply-bundle
@@ -21,6 +21,7 @@ const read = (path: string): string => readFileSync(new URL(path, REPO), "utf8")
 const corpus = JSON.parse(read("docs/contracts/apply-change-set-digest.fixture.json")) as { changeSets: { name: string; changeSet: RepositoryChangeSet }[] };
 const SET = corpus.changeSets.find((entry) => entry.name === "apply-with-packages")!.changeSet;
 const SETUP = corpus.changeSets.find((entry) => entry.name === "setup-public")!.changeSet;
+const SETUP_SITE = corpus.changeSets.find((entry) => entry.name === "setup-site")!.changeSet;
 type Loose = Record<string, any>;
 const loose = (value: unknown): Loose => structuredClone(value) as Loose;
 const STRATEGIST = "example-owner/site:@example/strategist";
@@ -42,31 +43,41 @@ const itemIndex = (set: Loose, id: string) => (set.items as Loose[]).findIndex((
 const fileAt = (set: Loose, path: string) => set.files[fileIndex(set, path)] as Loose;
 const itemAt = (set: Loose, id: string) => set.items[itemIndex(set, id)] as Loose;
 
-const PLAN_DIGEST = SET.planDigest;
-const BUNDLE: ApplyBundle = {
-  schemaVersion: 1,
-  kind: "clossys.apply-bundle",
-  mode: "report",
-  plan: { path: "clossys/advisor/plan.json", digest: PLAN_DIGEST, committed: true },
-  snapshot: null,
-  engine: SET.engine,
-  authorization: null,
-  computedAt: "2026-09-24T12:00:00Z",
-  repositories: [
-    { id: "example-owner/site", verdict: "satisfied", phase: "apply", changeSet: SET.changeSetDigest, checks: [{ check: "V6", verdict: "satisfied" }] },
-    { id: "example-owner/docs", verdict: "indeterminate", reason: "not-in-inventory", checks: [] },
-  ],
-  bundleDigest: bundleDigest(PLAN_DIGEST, [{ id: "example-owner/site", changeSetDigest: SET.changeSetDigest }]),
-};
+const byPath = (a: Loose, b: Loose) => ((a.path ?? a.file) < (b.path ?? b.file) ? -1 : (a.path ?? a.file) > (b.path ?? b.file) ? 1 : 0);
+const byId = (a: Loose, b: Loose) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+const SAMPLE = contentDigest("placeholder bytes");
 
-describe("packed change-set and bundle contracts", () => {
+/** SETUP_SITE as a pnpm repository: the lockfile moves, and the release-age exemption item and its file are added. */
+function pnpmSetup(): Loose {
+  const set = loose(SETUP_SITE);
+  set.observed.packageManager = "pnpm";
+  set.observed.lockfile = "pnpm-lock.yaml";
+  fileAt(set, "package-lock.json").path = "pnpm-lock.yaml";
+  set.files.sort(byPath);
+  set.pathAllowList = [...set.pathAllowList.filter((pattern: string) => pattern !== "package-lock.json"), "pnpm-lock.yaml", "pnpm-workspace.yaml"].sort();
+  set.items.push({ id: "release-age", act: "exempt-release-age", scope: PACKAGE_SCOPE.scope, surface: "pnpm-workspace", path: "pnpm-workspace.yaml" });
+  set.items.sort(byId);
+  set.files.push({ path: "pnpm-workspace.yaml", mode: "100644", before: null, after: SAMPLE, item: "release-age" });
+  set.files.sort(byPath);
+  return reseal(set);
+}
+
+describe("packed change-set, bundle and ledger contracts", () => {
   it("are the docs/contracts files, unchanged, packed after the plan, brief and registry snapshot contracts", () => {
-    expect(Object.keys(PLAN_CONTRACTS)).toEqual(["advisor-plan.json", "engagement-brief.json", "engagement-context.json", "registry-snapshot.json", "repository-change-set.json", "apply-bundle.json"]);
-    for (const name of ["repository-change-set.json", "apply-bundle.json"]) expect(PLAN_CONTRACTS[name], name).toEqual(JSON.parse(read(`docs/contracts/${name}`)));
+    expect(Object.keys(PLAN_CONTRACTS)).toEqual([
+      "advisor-plan.json",
+      "engagement-brief.json",
+      "engagement-context.json",
+      "registry-snapshot.json",
+      "repository-change-set.json",
+      "apply-bundle.json",
+      "installed-ledger.json",
+    ]);
+    for (const name of ["repository-change-set.json", "apply-bundle.json", "installed-ledger.json"]) expect(PLAN_CONTRACTS[name], name).toEqual(JSON.parse(read(`docs/contracts/${name}`)));
   });
 
   it("use only keywords the checker implements, in every subschema, with no new keyword", () => {
-    for (const name of ["repository-change-set.json", "apply-bundle.json"]) expect(() => assertImplementedContract(PLAN_CONTRACTS[name]!), name).not.toThrow();
+    for (const name of ["repository-change-set.json", "apply-bundle.json", "installed-ledger.json"]) expect(() => assertImplementedContract(PLAN_CONTRACTS[name]!), name).not.toThrow();
   });
 
   it("declare every item act the apply flow will use, including those nothing computes yet", () => {
@@ -83,7 +94,7 @@ describe("packed change-set and bundle contracts", () => {
   it("accept an item of every act, and optional tooling", () => {
     const set = loose(SET);
     set.items.push(
-      { id: "age", act: "exempt-release-age", scope: "@example", surface: "npmrc", path: ".npmrc" },
+      { id: "age", act: "exempt-release-age", scope: "@example", surface: "pnpm-workspace", path: "pnpm-workspace.yaml" },
       { id: "ci", act: "add-ci-template" },
       { id: "request", act: "write-starter-request" },
       { id: "scope", act: "add-path-scope-job" },
@@ -148,10 +159,12 @@ describe("path patterns", () => {
   });
 });
 
-describe("change-set code rules C1-C10", () => {
+describe("change-set code rules C1-C12", () => {
   it("accept the corpus sets", () => {
     expect(repositoryChangeSetViolations(SET)).toEqual([]);
     expect(repositoryChangeSetViolations(SETUP)).toEqual([]);
+    expect(repositoryChangeSetViolations(SETUP_SITE)).toEqual([]);
+    expect(repositoryChangeSetViolations(pnpmSetup())).toEqual([]);
   });
 
   it("C1: refuse two items with one id", () => {
@@ -194,7 +207,7 @@ describe("change-set code rules C1-C10", () => {
     it("refuses a whole file, a key's file or an item path outside pathAllowList", () => {
       const set = loose(SET);
       set.pathAllowList = set.pathAllowList.filter((pattern: string) => pattern !== "package.json");
-      set.items.push({ id: "age", act: "exempt-release-age", scope: "@example", surface: "npmrc", path: ".npmrc" });
+      set.items.push({ id: "age", act: "exempt-release-age", scope: "@example", surface: "yarnrc", path: ".yarnrc.yml" });
       set.items.sort((a: Loose, b: Loose) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
       set.files.push({ path: "AGENTS.md", mode: "100644", before: null, after: SET.planDigest, item: "brief" });
       set.files.sort((a: Loose, b: Loose) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
@@ -294,6 +307,11 @@ describe("change-set code rules C1-C10", () => {
       expect(swapped((set) => set.pathAllowList.push(set.pathAllowList.at(-1)))).toContain("C8");
     });
 
+    it("refuses symlinkedSkillRoots out of order or repeated", () => {
+      expect(swapped((set) => (set.observed.symlinkedSkillRoots = [".cursor/skills", ".claude/skills"]))).toContain("C8");
+      expect(swapped((set) => (set.observed.symlinkedSkillRoots = [".claude/skills", ".claude/skills"]))).toContain("C8");
+    });
+
     it("refuses refused, deferred, releaseAgeSurfaces and tooling out of order", () => {
       const refused = loose(SETUP);
       refused.refused.push({ path: ".agents/skills/clossys-a/SKILL.md", reason: "unowned-existing", item: "skills" });
@@ -357,6 +375,95 @@ describe("change-set code rules C1-C10", () => {
     });
   });
 
+  describe("C9: discovery links, the skills manifest, the pointer files and the setup templates", () => {
+    const linkAt = (set: Loose) => fileIndex(set, ".claude/skills/clossys-writer");
+    it("refuses a discovery link that is not mode 120000, a regular file that is, and a link to another target", () => {
+      const regular = loose(SET);
+      fileAt(regular, ".claude/skills/clossys-writer").mode = "100644";
+      expect(rulesOf(reseal(regular))).toEqual([`C9 files[${linkAt(regular)}].mode`]);
+      const link = loose(SET);
+      fileAt(link, "clossys/brief.json").mode = "120000";
+      expect(rulesOf(reseal(link))).toEqual([`C9 files[${fileIndex(link, "clossys/brief.json")}].mode`]);
+      const target = loose(SET);
+      fileAt(target, ".claude/skills/clossys-writer").after = contentDigest("../../.agents/skills/clossys-strategist");
+      expect(rulesOf(reseal(target))).toEqual([`C9 files[${linkAt(target)}].after`]);
+      const removed = loose(SET);
+      fileAt(removed, ".claude/skills/clossys-writer").after = null;
+      expect(repositoryChangeSetViolations(reseal(removed))).toEqual([]);
+    });
+
+    it("refuses a missing discovery link, a link under a root observed as a symbolic link, and a missing manifest", () => {
+      const missing = loose(SET);
+      missing.files = missing.files.filter((file: Loose) => file.path !== ".cursor/skills/clossys-writer");
+      expect(rulesOf(reseal(missing))).toEqual([`C9 items[${itemIndex(missing, "skills")}]`]);
+      const underLink = loose(SET);
+      underLink.observed.symlinkedSkillRoots = [".claude/skills"];
+      expect(rulesOf(reseal(underLink))).toEqual([`C9 items[${itemIndex(underLink, "skills")}]`]);
+      const manifest = loose(SET);
+      manifest.files = manifest.files.filter((file: Loose) => file.path !== "clossys/.state/skills.json");
+      expect(rulesOf(reseal(manifest))).toEqual([`C9 items[${itemIndex(manifest, "skills")}]`]);
+      const refusedLink = loose(SET);
+      refusedLink.files = refusedLink.files.filter((file: Loose) => file.path !== ".claude/skills/clossys-writer");
+      refusedLink.refused.push({ path: ".claude/skills/clossys-writer", reason: "unowned-existing", item: "skills" });
+      expect(repositoryChangeSetViolations(reseal(refusedLink))).toEqual([]);
+    });
+
+    it("binds each write-record source to its one file", () => {
+      const pointer = loose(SET);
+      pointer.items.push({ id: "agents", act: "write-record", source: "agents-pointer" }, { id: "claude", act: "write-record", source: "claude-loader" });
+      pointer.items.sort(byId);
+      pointer.files.push({ path: "AGENTS.md", mode: "100644", before: null, after: SAMPLE, item: "agents" }, { path: "CLAUDE.md", mode: "100644", before: null, after: SAMPLE, item: "claude" });
+      pointer.files.sort(byPath);
+      pointer.pathAllowList = [...pointer.pathAllowList, "AGENTS.md", "CLAUDE.md"].sort();
+      expect(repositoryChangeSetViolations(reseal(pointer))).toEqual([]);
+      const swappedFiles = loose(pointer);
+      fileAt(swappedFiles, "AGENTS.md").item = "claude";
+      fileAt(swappedFiles, "CLAUDE.md").item = "agents";
+      expect(ruleIds(reseal(swappedFiles))).toEqual(["C9"]);
+    });
+
+    it("binds each setup template act to exactly its files", () => {
+      for (const [id, path] of [
+        ["caller-workflow", ".github/workflows/clossys-adoption-decision.yml"],
+        ["starter-request", ".starter/request.json"],
+        ["ci-template", ".github/workflows/clossys-ci.yml"],
+        ["path-scope-job", ".github/workflows/clossys-path-scope.yml"],
+      ] as const) {
+        const missing = loose(SETUP_SITE);
+        missing.files = missing.files.filter((file: Loose) => file.path !== path);
+        expect(rulesOf(reseal(missing)), id).toEqual([`C9 items[${itemIndex(missing, id)}]`]);
+        const extra = loose(SETUP_SITE);
+        extra.files.push({ path: ".github/workflows/clossys-extra.yml", mode: "100644", before: null, after: SAMPLE, item: id });
+        extra.files.sort(byPath);
+        expect(rulesOf(reseal(extra)), id).toEqual([`C9 items[${itemIndex(extra, id)}]`]);
+      }
+      const refusedTemplate = loose(SETUP_SITE);
+      refusedTemplate.files = refusedTemplate.files.filter((file: Loose) => file.path !== ".github/workflows/clossys-ci.yml");
+      refusedTemplate.refused.push({ path: ".github/workflows/clossys-ci.yml", reason: "unowned-existing", item: "ci-template" });
+      expect(repositoryChangeSetViolations(reseal(refusedTemplate))).toEqual([]);
+    });
+
+    it("lets an exempt-release-age item write at most its own file, or nothing when the base already lists the entry", () => {
+      const none = pnpmSetup();
+      none.files = none.files.filter((file: Loose) => file.path !== "pnpm-workspace.yaml");
+      expect(repositoryChangeSetViolations(reseal(none))).toEqual([]);
+      const elsewhere = pnpmSetup();
+      fileAt(elsewhere, "pnpm-workspace.yaml").item = "brief";
+      expect(ruleIds(reseal(elsewhere))).toEqual(["C9"]);
+      const two = pnpmSetup();
+      two.files.push({ path: ".npmrc", mode: "100644", before: null, after: SAMPLE, item: "release-age" });
+      two.files.sort(byPath);
+      two.pathAllowList = [...two.pathAllowList, ".npmrc"].sort();
+      expect(rulesOf(reseal(two))).toEqual([`C9 items[${itemIndex(two, "release-age")}]`]);
+    });
+
+    it("refuses a key naming an item that is not a package item", () => {
+      const set = loose(SETUP_SITE);
+      set.keys[0].item = "ci-template";
+      expect(rulesOf(reseal(set))).toContain("C9 keys[0].item");
+    });
+  });
+
   it("C10: refuse an install in a setup set, and a deferral in an apply set", () => {
     const setup = loose(SET);
     setup.phase = "setup";
@@ -366,62 +473,94 @@ describe("change-set code rules C1-C10", () => {
     expect(ruleIds(reseal(apply))).toContain("C10");
   });
 
+  describe("C11: a setup set is complete", () => {
+    it("refuses a setup set missing any template act or the Starter pin", () => {
+      for (const act of ["add-caller-workflow", "write-starter-request", "add-ci-template", "add-path-scope-job", "pin-starter"]) {
+        const set = loose(SETUP_SITE);
+        const item = set.items.find((entry: Loose) => entry.act === act);
+        set.items = set.items.filter((entry: Loose) => entry !== item);
+        set.files = set.files.filter((file: Loose) => file.item !== item.id);
+        set.keys = set.keys.filter((key: Loose) => key.item !== item.id);
+        expect(ruleIds(reseal(set)), act).toEqual(["C11"]);
+      }
+    });
+
+    it("requires the release-age exemption for pnpm and yarn, and refuses it for npm", () => {
+      const pnpm = pnpmSetup();
+      pnpm.items = pnpm.items.filter((item: Loose) => item.act !== "exempt-release-age");
+      pnpm.files = pnpm.files.filter((file: Loose) => file.path !== "pnpm-workspace.yaml");
+      expect(ruleIds(reseal(pnpm))).toEqual(["C11"]);
+      const npm = loose(SETUP_SITE);
+      npm.items.push({ id: "release-age", act: "exempt-release-age", scope: PACKAGE_SCOPE.scope, surface: "pnpm-workspace", path: "pnpm-workspace.yaml" });
+      npm.items.sort(byId);
+      npm.pathAllowList = [...npm.pathAllowList, "pnpm-workspace.yaml"].sort();
+      expect(ruleIds(reseal(npm))).toEqual(["C11", "C12"]);
+    });
+
+    it("does not apply to an apply set, which may hold the templates as no-ops or not at all", () => {
+      expect(repositoryChangeSetViolations(SET)).toEqual([]);
+      expect(SET.items.some((item) => item.act === "add-ci-template")).toBe(false);
+    });
+  });
+
+  describe("C12: the release-age exemption's surface, path and scope", () => {
+    it("refuses a path that is not its surface's file, a surface its package manager does not read, and another scope", () => {
+      const moved = pnpmSetup();
+      Object.assign(itemAt(moved, "release-age"), { surface: "yarnrc", path: ".yarnrc.yml" });
+      fileAt(moved, "pnpm-workspace.yaml").path = ".yarnrc.yml";
+      moved.files.sort(byPath);
+      moved.pathAllowList = [...moved.pathAllowList, ".yarnrc.yml"].sort();
+      expect(rulesOf(reseal(moved))).toEqual([`C12 items[${itemIndex(moved, "release-age")}].surface`]);
+      const mismatch = pnpmSetup();
+      itemAt(mismatch, "release-age").path = ".yarnrc.yml";
+      fileAt(mismatch, "pnpm-workspace.yaml").path = ".yarnrc.yml";
+      mismatch.files.sort(byPath);
+      mismatch.pathAllowList = [...mismatch.pathAllowList, ".yarnrc.yml"].sort();
+      expect(rulesOf(reseal(mismatch))).toEqual([`C12 items[${itemIndex(mismatch, "release-age")}].path`]);
+      const scope = pnpmSetup();
+      itemAt(scope, "release-age").scope = "@example";
+      expect(rulesOf(reseal(scope))).toEqual([`C12 items[${itemIndex(scope, "release-age")}].scope`]);
+    });
+
+    it("refuses .npmrc as a surface: npm has no exemption key", () => {
+      const set = pnpmSetup();
+      Object.assign(itemAt(set, "release-age"), { surface: "npmrc", path: ".npmrc" });
+      expect(ruleIds(reseal(set))).toEqual(["schema"]);
+    });
+  });
+
+  describe("the members the apply flow added", () => {
+    it("require the Integrator pin, consumerCi and symlinkedSkillRoots, and refuse mode 100755 and a derived link", () => {
+      const mutations: ((set: Loose) => void)[] = [
+        (set) => delete set.integrator,
+        (set) => delete set.observed.consumerCi,
+        (set) => delete set.observed.symlinkedSkillRoots,
+        (set) => (set.observed.symlinkedSkillRoots = [".agents/skills"]),
+        (set) => (fileAt(set, "clossys/brief.json").mode = "100755"),
+        (set) => (fileAt(set, "package-lock.json").mode = "120000"),
+      ];
+      mutations.forEach((mutate, index) => {
+        const set = loose(SET);
+        mutate(set);
+        expect(ruleIds(reseal(set)), String(index)).toEqual(["schema"]);
+      });
+    });
+
+    it("accept the new refusal reasons", () => {
+      for (const reason of ["deleted", "release-age-surface-conflict", "release-age-surface-unparseable"]) {
+        const set = pnpmSetup();
+        set.files = set.files.filter((file: Loose) => file.path !== "pnpm-workspace.yaml");
+        set.refused.push({ path: "pnpm-workspace.yaml", reason, item: "release-age" });
+        expect(repositoryChangeSetViolations(reseal(set)), reason).toEqual([]);
+      }
+    });
+  });
+
   it("never echo a value in a reason", () => {
     const set = loose(SET);
     fileAt(set, "clossys/brief.json").item = "a-secret-value";
     const validation = validateRepositoryChangeSet(reseal(set));
     expect(validation.valid).toBe(false);
     if (!validation.valid) expect(validation.reason).not.toContain("a-secret-value");
-  });
-});
-
-describe("apply-bundle contract", () => {
-  it("accepts a report-mode bundle with a computed and a skipped repository", () => {
-    expect(validateApplyBundle(BUNDLE)).toEqual({ valid: true });
-  });
-
-  it("has no repository state: a state field, a planned mode or a skipped verdict of satisfied is refused", () => {
-    const state = loose(BUNDLE);
-    state.repositories[0].state = "planned";
-    expect(validateApplyBundle(state).valid).toBe(false);
-    const mode = loose(BUNDLE);
-    mode.mode = "planned";
-    expect(validateApplyBundle(mode).valid).toBe(false);
-    const skipped = loose(BUNDLE);
-    skipped.repositories[1].verdict = "satisfied";
-    expect(validateApplyBundle(skipped).valid).toBe(false);
-  });
-
-  it("A1: refuses two entries for one repository, compared case-insensitively", () => {
-    const bundle = loose(BUNDLE);
-    bundle.repositories[1].id = "Example-Owner/Site";
-    expect(applyBundleViolations(bundle).map((violation) => `${violation.rule} ${violation.path}`)).toEqual(["A1 repositories[1].id"]);
-  });
-
-  it("A2: refuses a bundle digest that is not over the plan digest and the computed repositories", () => {
-    const bundle = loose(BUNDLE);
-    bundle.bundleDigest = bundleDigest(PLAN_DIGEST, []);
-    expect(applyBundleViolations(bundle).map((violation) => violation.rule)).toEqual(["A2"]);
-  });
-
-  it("A3: refuses a verdict that is not the worst of its checks", () => {
-    const bundle = loose(BUNDLE);
-    bundle.repositories[0].checks = [{ check: "V6", verdict: "indeterminate", rule: "unowned-existing" }];
-    expect(applyBundleViolations(bundle).map((violation) => `${violation.rule} ${violation.path}`)).toEqual(["A3 repositories[0].verdict"]);
-    const none = loose(BUNDLE);
-    none.repositories[0] = { ...none.repositories[0], verdict: "violated", checks: [] };
-    expect(applyBundleViolations(none).map((violation) => violation.rule)).toEqual(["A3"]);
-  });
-
-  it("A4: requires the mismatch check when the authorization is for another plan, and refuses it otherwise", () => {
-    const mismatched = loose(BUNDLE);
-    mismatched.authorization = { planDigest: SET.changeSetDigest, expiresAt: "2026-10-01T00:00:00Z" };
-    expect(applyBundleViolations(mismatched).map((violation) => violation.rule)).toEqual(["A4"]);
-    mismatched.repositories[0].checks = [{ check: "V3", verdict: "violated", rule: AUTHORIZATION_PLAN_MISMATCH }, { check: "V6", verdict: "satisfied" }];
-    mismatched.repositories[0].verdict = "violated";
-    expect(applyBundleViolations(mismatched)).toEqual([]);
-    const spurious = loose(mismatched);
-    spurious.authorization = { planDigest: PLAN_DIGEST, expiresAt: "2026-10-01T00:00:00Z" };
-    expect(applyBundleViolations(spurious).map((violation) => violation.rule)).toEqual(["A4"]);
   });
 });

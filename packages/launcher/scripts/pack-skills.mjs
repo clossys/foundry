@@ -18,7 +18,7 @@
  * from there, never from a hardcoded value, and validates what it writes
  * against the contract. After those come the repository change-set and
  * apply-bundle contracts (issue #1178), which it computes and Advisor never
- * reads.
+ * reads, and the installed-state ledger contract, which it validates.
  */
 import { cpSync, existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -79,4 +79,4 @@ mkdirSync(generatedDir, { recursive: true });
 writeFileSync(join(launcherRoot, ...PLAN_CONTRACTS_MODULE_PATH.split("/")), renderPlanContractsModule(repoRoot, LAUNCHER_CONTRACT_FILES));
 writeFileSync(join(launcherRoot, ...CONTRACT_SCHEMA_COPY_PATH.split("/")), renderContractSchemaCopy(repoRoot));
 writeFileSync(join(launcherRoot, ...PACKAGE_SCOPE_MODULE_PATH.split("/")), renderPackageScopeModule(repoRoot));
-console.log(`pack-skills: wrote the plan, brief, registry snapshot, change-set and bundle contracts, the contract checker copy, and the publishing scope and registry into src/generated/`);
+console.log(`pack-skills: wrote the plan, brief, registry snapshot, change-set, bundle and ledger contracts, the contract checker copy, and the publishing scope and registry into src/generated/`);

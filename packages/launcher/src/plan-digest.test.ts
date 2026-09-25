@@ -75,8 +75,16 @@ describe("canonical plan digest (docs/contracts/advisor-plan-digest.md)", () => 
 });
 
 describe("packed plan and brief contracts", () => {
-  it("are the docs/contracts files, unchanged, with the registry snapshot, change-set and bundle contracts after them (#1178)", () => {
-    expect(Object.keys(PLAN_CONTRACTS)).toEqual(["advisor-plan.json", "engagement-brief.json", "engagement-context.json", "registry-snapshot.json", "repository-change-set.json", "apply-bundle.json"]);
+  it("are the docs/contracts files, unchanged, with the registry snapshot, change-set, bundle and ledger contracts after them (#1178)", () => {
+    expect(Object.keys(PLAN_CONTRACTS)).toEqual([
+      "advisor-plan.json",
+      "engagement-brief.json",
+      "engagement-context.json",
+      "registry-snapshot.json",
+      "repository-change-set.json",
+      "apply-bundle.json",
+      "installed-ledger.json",
+    ]);
     for (const [name, contract] of Object.entries(PLAN_CONTRACTS)) expect(contract).toEqual(JSON.parse(read(`docs/contracts/${name}`)));
   });
 

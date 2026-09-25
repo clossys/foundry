@@ -6,9 +6,9 @@ import { describe, expect, it } from "vitest";
 // file that vitest transpiles without typechecking.
 import { checkImportPurity } from "../../../scripts/lib/import-purity.mjs";
 import { bundleDigest, changeSetDigest, changeSetDigestSubject } from "./change-set-digest.js";
-import { validateApplyBundle, validateRepositoryChangeSet } from "./change-set-contract.js";
+import { contentDigest, validateApplyBundle, validateRepositoryChangeSet } from "./change-set-contract.js";
 import type { RepositoryChangeSet } from "./change-set-contract.js";
-import { PUBLIC_PROBLEM_PLACEHOLDER, planApplyBundle, projectEngagementBrief, serializeEngagementBrief } from "./plan-bundle.js";
+import { PUBLIC_PROBLEM_PLACEHOLDER, planApplyBundle, projectEngagementBrief, serializeComposedSkillsManifest, serializeEngagementBrief } from "./plan-bundle.js";
 import type { PlanApplyBundleInputs, RepositoryObservation } from "./plan-bundle.js";
 import type { AdvisorPlan, EngagementBrief } from "./plan-contract.js";
 import { planDigest } from "./plan-digest.js";
@@ -49,6 +49,8 @@ const SITE: RepositoryObservation = {
   packageManager: "npm",
   lockfile: "package-lock.json",
   releaseAgeSurfaces: [],
+  consumerCi: true,
+  symlinkedSkillRoots: [],
   files: [{ path: "package-lock.json", sha256: sha("site lock") }],
   manifestEntries: [{ placement: "devDependencies", name: STARTER.name, value: STARTER.version }],
   lockedPackages: [{ name: STARTER.name, version: STARTER.version, integrity: STARTER.integrity }],
@@ -61,10 +63,12 @@ const DOCS: RepositoryObservation = {
   visibility: "public",
   defaultBranch: "trunk",
   baseCommit: "b".repeat(40),
-  phase: "setup",
+  phase: "apply",
   packageManager: "pnpm",
   lockfile: "none",
   releaseAgeSurfaces: [{ surface: "pnpm-workspace", path: "pnpm-workspace.yaml" }],
+  consumerCi: false,
+  symlinkedSkillRoots: [],
   files: [],
   manifestEntries: [],
   lockedPackages: [],
@@ -81,6 +85,7 @@ const INPUTS: PlanApplyBundleInputs = {
   ],
   producer: { name: "@example/launcher", version: "0.4.0" },
   engine: { name: "@example/advisor", version: "0.8.0", integrity: STARTER.integrity },
+  integrator: { name: "@example/integrator", version: "0.6.0", integrity: PLAN.packages![1]!.integrity },
   planCommitted: true,
   authorization: { planDigest: planDigest(PLAN), expiresAt: "2026-10-01T00:00:00Z" },
   computedAt: "2026-09-24T12:00:00Z",
@@ -110,11 +115,21 @@ describe("planApplyBundle", () => {
     expect(bundle.snapshot).toEqual({ path: "clossys/.state/apply/registry-snapshot.json", digest: PLAN.resolution!.snapshotDigest });
   });
 
-  it("claims no repository state: no entry carries one, and a setup set is reported indeterminate, not planned", () => {
+  it("claims no repository state and records no binding: no entry carries either", () => {
     const { bundle } = run();
-    for (const entry of bundle.repositories) expect(Object.keys(entry)).not.toContain("state");
+    for (const entry of bundle.repositories) {
+      expect(Object.keys(entry)).not.toContain("state");
+      expect(Object.keys(entry)).not.toContain("binding");
+    }
     expect(bundle.repositories[0]).toMatchObject({ verdict: "satisfied", phase: "apply", checks: [{ check: "V6", verdict: "satisfied" }] });
-    expect(bundle.repositories[1]).toMatchObject({ verdict: "indeterminate", phase: "setup", checks: [{ check: "V6", verdict: "indeterminate", rule: "setup-template-unbuilt" }] });
+  });
+
+  it("skips a setup-phase repository as setup-template-unbuilt, outside the bundle digest, because a setup set must carry the templates it does not compute", () => {
+    const { bundle, changeSets } = run(withRepository({ phase: "setup" }, DOCS.id));
+    expect(changeSets.map((set) => set.repository.id)).toEqual([SITE.id]);
+    expect(bundle.repositories[1]).toEqual({ id: DOCS.id, verdict: "indeterminate", reason: "setup-template-unbuilt", checks: [] });
+    expect(bundle.bundleDigest).toBe(bundleDigest(planDigest(PLAN), [{ id: SITE.id, changeSetDigest: changeSets[0]!.changeSetDigest }]));
+    expect(validateApplyBundle(bundle)).toEqual({ valid: true });
   });
 
   it("skips a repository with a skip reason or no observation, and leaves it out of the bundle digest", () => {
@@ -240,9 +255,12 @@ describe("planApplyBundle", () => {
       }
     }
     const docs = setFor(changeSets, DOCS.id);
-    expect(docs.deferred).toEqual([{ planItem: "example-owner/docs:@example/writer", reason: "after-setup" }]);
-    expect(docs.keys).toEqual([{ file: "package.json", pointer: "/devDependencies/@example~1starter", before: null, after: "0.9.2", item: "example-owner/docs:@example/starter" }]);
-    expect(docs.pathAllowList).toEqual([".agents/skills/clossys-*/**", "clossys/**", "package.json", "pnpm-lock.yaml"]);
+    expect(docs.deferred).toEqual([]);
+    expect(docs.keys).toEqual([
+      { file: "package.json", pointer: "/devDependencies/@example~1starter", before: null, after: "0.9.2", item: "example-owner/docs:@example/starter" },
+      { file: "package.json", pointer: "/devDependencies/@example~1writer", before: null, after: "0.7.0", item: "example-owner/docs:@example/writer" },
+    ]);
+    expect(docs.pathAllowList).toEqual([".agents/skills/clossys-*/**", ".claude/skills/clossys-*", ".cursor/skills/clossys-*", "clossys/**", "package.json", "pnpm-lock.yaml"]);
   });
 
   it("writes only brief, skills and the ledger for a plan with no package acts", () => {
@@ -253,7 +271,7 @@ describe("planApplyBundle", () => {
     for (const set of changeSets) {
       expect(set.items.map((item) => item.act)).toEqual(["write-record", "write-ledger", "compose-skills"]);
       expect(set.keys).toEqual([]);
-      expect(set.pathAllowList).toEqual([".agents/skills/clossys-*/**", "clossys/**"]);
+      expect(set.pathAllowList).toEqual([".agents/skills/clossys-*/**", ".claude/skills/clossys-*", ".cursor/skills/clossys-*", "clossys/**"]);
     }
     expect(bundle.snapshot).toBeNull();
     expect(bundle.authorization).toBeNull();
@@ -266,8 +284,66 @@ describe("planApplyBundle", () => {
     const brief = clone(HUB_BRIEF) as unknown as { roles: unknown[] };
     brief.roles.push({ ...HUB_BRIEF.roles[1]!, role: "a/b" });
     const { bundle, changeSets } = run({ ...INPUTS, plan: plan as unknown as AdvisorPlan, hubBrief: brief as unknown as EngagementBrief, skills: [...INPUTS.skills, { role: "a/b", content: "x" }] });
-    expect(setFor(changeSets, DOCS.id).refused).toEqual([{ path: ".agents/skills/clossys-a/b/SKILL.md", reason: "unsafe-path", item: "skills" }]);
+    expect(setFor(changeSets, DOCS.id).refused).toEqual([
+      { path: ".agents/skills/clossys-a/b/SKILL.md", reason: "unsafe-path", item: "skills" },
+      { path: ".claude/skills/clossys-a/b", reason: "unsafe-path", item: "skills" },
+      { path: ".cursor/skills/clossys-a/b", reason: "unsafe-path", item: "skills" },
+    ]);
     expect(bundle.repositories[1]).toMatchObject({ verdict: "violated" });
+  });
+
+  it("carries the hub's Integrator pin and whether the base runs CI of its own", () => {
+    const { changeSets } = run();
+    for (const set of changeSets) expect(set.integrator).toEqual(INPUTS.integrator);
+    expect(setFor(changeSets, SITE.id).observed.consumerCi).toBe(true);
+    expect(setFor(changeSets, DOCS.id).observed.consumerCi).toBe(false);
+    const bumped = run({ ...INPUTS, integrator: { ...INPUTS.integrator, version: "0.6.1" } });
+    for (const id of [SITE.id, DOCS.id]) expect(setFor(bumped.changeSets, id).changeSetDigest).not.toBe(setFor(changeSets, id).changeSetDigest);
+  });
+
+  it("writes each role's discovery links, as links to its skill, and the composed-skill manifest", () => {
+    const site = setFor(run().changeSets, SITE.id);
+    for (const role of ["strategist", "writer"]) {
+      for (const root of [".claude/skills", ".cursor/skills"]) {
+        expect(site.files.find((file) => file.path === `${root}/clossys-${role}`)).toEqual({
+          path: `${root}/clossys-${role}`,
+          mode: "120000",
+          before: null,
+          after: contentDigest(`../../.agents/skills/clossys-${role}`),
+          item: "skills",
+        });
+      }
+    }
+    const manifest = serializeComposedSkillsManifest(
+      [
+        { role: "writer", sha256: sha("# Writer\n") },
+        { role: "strategist", sha256: sha("# Strategist\n") },
+      ],
+      "0.4.0",
+    );
+    expect(site.files.find((file) => file.path === "clossys/.state/skills.json")).toEqual({ path: "clossys/.state/skills.json", mode: "100644", before: null, after: sha(manifest), item: "skills" });
+  });
+
+  it("writes the composed-skill manifest's exact bytes: sorted by name, no time, and only skills the set writes", () => {
+    expect(serializeComposedSkillsManifest([{ role: "writer", sha256: sha("w") }, { role: "strategist", sha256: sha("s") }], "0.4.0")).toBe(
+      `{\n  "schemaVersion": 1,\n  "skills": [\n    {\n      "name": "strategist",\n      "source": "catalogue",\n      "sha256": "${sha("s").slice(7)}",\n      "version": "0.4.0"\n    },\n    {\n      "name": "writer",\n      "source": "catalogue",\n      "sha256": "${sha("w").slice(7)}",\n      "version": "0.4.0"\n    }\n  ]\n}\n`,
+    );
+    const refused = setFor(run(withRepository({ files: [...SITE.files, { path: ".agents/skills/clossys-writer/SKILL.md", sha256: sha("theirs") }] })).changeSets, SITE.id);
+    const manifest = serializeComposedSkillsManifest([{ role: "strategist", sha256: sha("# Strategist\n") }], "0.4.0");
+    expect(refused.files.find((file) => file.path === "clossys/.state/skills.json")!.after).toBe(sha(manifest));
+  });
+
+  it("writes no discovery link under a root the base has as a symbolic link, and refuses one where the base has a directory", () => {
+    const linked = setFor(run(withRepository({ symlinkedSkillRoots: [".claude/skills"] })).changeSets, SITE.id);
+    expect(linked.observed.symlinkedSkillRoots).toEqual([".claude/skills"]);
+    expect(linked.files.map((file) => file.path).filter((path) => path.startsWith(".claude/"))).toEqual([]);
+    expect(linked.pathAllowList).not.toContain(".claude/skills/clossys-*");
+    expect(linked.files.map((file) => file.path).filter((path) => path.startsWith(".cursor/"))).toEqual([".cursor/skills/clossys-strategist", ".cursor/skills/clossys-writer"]);
+    expect(validateRepositoryChangeSet(linked)).toEqual({ valid: true });
+
+    const copied = setFor(run(withRepository({ files: [...SITE.files, { path: ".claude/skills/clossys-writer/SKILL.md", sha256: sha("a copy") }] })).changeSets, SITE.id);
+    expect(copied.refused).toContainEqual({ path: ".claude/skills/clossys-writer", reason: "unowned-existing", item: "skills" });
+    expect(validateRepositoryChangeSet(copied)).toEqual({ valid: true });
   });
 
   it("starts the ledger from the observed generation", () => {
@@ -397,7 +473,17 @@ describe("the planner is pure", () => {
 
   it("reaches exactly the planner, the contract and digest modules, and the generated contract data", () => {
     expect([...result.visited].sort()).toEqual(
-      ["change-set-contract.ts", "change-set-digest.ts", "generated/contract-schema.generated.ts", "generated/plan-contracts.generated.ts", "plan-bundle.ts", "plan-contract.ts", "plan-digest.ts", "plan-rules.ts"]
+      [
+        "change-set-contract.ts",
+        "change-set-digest.ts",
+        "generated/contract-schema.generated.ts",
+        "generated/package-scope.generated.ts",
+        "generated/plan-contracts.generated.ts",
+        "plan-bundle.ts",
+        "plan-contract.ts",
+        "plan-digest.ts",
+        "plan-rules.ts",
+      ]
         .map(at)
         .sort(),
     );

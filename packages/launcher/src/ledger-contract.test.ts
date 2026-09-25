@@ -1,0 +1,191 @@
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { describe, expect, it } from "vitest";
+import { PLAN_CONTRACTS } from "./generated/plan-contracts.generated.js";
+import type { ApprovalBinding, RepositoryChangeSet } from "./change-set-contract.js";
+import { LEDGER_MEMBER_ORDER, installedLedgerViolations, ledgerSuccession, serializeInstalledLedger, validateInstalledLedger } from "./ledger-contract.js";
+import type { InstalledLedger } from "./ledger-contract.js";
+
+/*
+ * Issue #1178. The installed-state ledger contract, packed into this
+ * package: its code rules L1-L8, its byte serialization and its SUCCESSION
+ * rules, checked against the shared corpus
+ * docs/contracts/installed-ledger.fixture.json, whose valid ledgers were
+ * rendered and hashed independently of this package. Reading repository files
+ * here is test-only.
+ */
+const REPO = new URL("../../../", import.meta.url);
+const read = (path: string): string => readFileSync(new URL(path, REPO), "utf8");
+const sha = (text: string) => `sha256:${createHash("sha256").update(text, "utf8").digest("hex")}`;
+
+interface Corpus {
+  ledgers: { name: string; note: string; valid: boolean; rules?: string[]; ledger: InstalledLedger; bytes?: string; sha256?: string }[];
+  renders: {
+    name: string;
+    previous: string | null;
+    changeSet: string;
+    binding: ApprovalBinding;
+    planPackages: { planItem: string; act: string; name: string; version: string; integrity: string; placement: string }[];
+    ledger: string;
+  }[];
+  successions: { name: string; base: string | null; head: string; change: "none" | "next-generation"; rules: string[] }[];
+}
+const CORPUS = JSON.parse(read("docs/contracts/installed-ledger.fixture.json")) as Corpus;
+const SETS = (JSON.parse(read("docs/contracts/apply-change-set-digest.fixture.json")) as { changeSets: { name: string; changeSet: RepositoryChangeSet }[] }).changeSets;
+const ledger = (name: string) => CORPUS.ledgers.find((entry) => entry.name === name)!.ledger;
+const setNamed = (name: string) => SETS.find((entry) => entry.name === name)!.changeSet;
+const ruleIds = (value: unknown) => [...new Set(installedLedgerViolations(value).map((violation) => violation.rule))].sort();
+type Loose = Record<string, any>;
+const loose = (value: unknown): Loose => structuredClone(value) as Loose;
+
+type Definitions = Record<string, Loose>;
+const LEDGER = PLAN_CONTRACTS["installed-ledger.json"]! as Loose;
+const DEFINITIONS = LEDGER.definitions as Definitions;
+const PLAN_DEFINITIONS = (PLAN_CONTRACTS["advisor-plan.json"]! as Loose).definitions as Definitions;
+const SET_CONTRACT = PLAN_CONTRACTS["repository-change-set.json"]! as Loose;
+const withoutDescription = ({ description: _description, ...rest }: Loose) => rest;
+
+describe("installed-ledger contract", () => {
+  it("keeps every definition it copies equal to its source, so it can be packed alone", () => {
+    for (const name of ["sha256Digest", "sha512Integrity", "exactVersion", "packageName", "repositoryId", "nonBlankString"]) expect(DEFINITIONS[name], name).toEqual(PLAN_DEFINITIONS[name]);
+    const setDefinitions = SET_CONTRACT.definitions as Definitions;
+    expect(DEFINITIONS.safePath).toEqual(setDefinitions.safePath);
+    expect(DEFINITIONS.nodeId).toEqual(withoutDescription(setDefinitions.repository!.properties.nodeId));
+    expect(DEFINITIONS.commit).toEqual(withoutDescription(setDefinitions.repository!.properties.baseCommit));
+    expect(DEFINITIONS.keyRow!.properties.pointer).toEqual(setDefinitions.key!.properties.pointer);
+    expect(DEFINITIONS.ownedPattern!.enum).toEqual(setDefinitions.ownedPattern!.allOf[1].enum);
+    expect(DEFINITIONS.placement!.enum).toEqual(setDefinitions.packageItem!.properties.placement.enum);
+    expect(JSON.stringify(LEDGER)).not.toContain("advisor-plan.json#");
+    expect(JSON.stringify(LEDGER)).not.toContain("repository-change-set.json#");
+  });
+
+  it("declares every object's members in the order the serializer writes them", () => {
+    const keys = (node: Loose) => Object.keys(node.properties);
+    expect(LEDGER_MEMBER_ORDER.ledger).toEqual(keys(LEDGER));
+    expect(LEDGER_MEMBER_ORDER.repository).toEqual(keys(LEDGER.properties.repository));
+    expect(LEDGER_MEMBER_ORDER.history).toEqual(keys(DEFINITIONS.historyEntry!));
+    expect(LEDGER_MEMBER_ORDER.approvedBinding).toEqual(keys(DEFINITIONS.approvedBinding!));
+    expect(LEDGER_MEMBER_ORDER.admittedBinding).toEqual(keys(DEFINITIONS.admittedBinding!));
+    expect(LEDGER_MEMBER_ORDER.file).toEqual(keys(DEFINITIONS.fileRow!));
+    expect(LEDGER_MEMBER_ORDER.key).toEqual(keys(DEFINITIONS.keyRow!));
+    for (const branch of DEFINITIONS.entryRow!.oneOf) expect(LEDGER_MEMBER_ORDER.entry).toEqual(keys(branch));
+    expect(LEDGER_MEMBER_ORDER.package).toEqual(keys(DEFINITIONS.packageRow!));
+    expect(LEDGER_MEMBER_ORDER.deferred).toEqual(keys(DEFINITIONS.deferredRow!));
+  });
+
+  it("agrees with the corpus on every ledger: valid ones pass, and each refused one breaks exactly the rules it names", () => {
+    for (const entry of CORPUS.ledgers) {
+      if (entry.valid) expect(installedLedgerViolations(entry.ledger), entry.name).toEqual([]);
+      else expect(ruleIds(entry.ledger), entry.name).toEqual([...entry.rules!].sort());
+    }
+    const covered = new Set(CORPUS.ledgers.flatMap((entry) => entry.rules ?? []));
+    for (const rule of ["schema", "L1", "L2", "L3", "L4", "L5", "L6", "L7", "L8"]) expect(covered.has(rule), rule).toBe(true);
+  });
+
+  it("names positions, never values, in a refusal", () => {
+    const forged = loose(ledger("setup-generation-1"));
+    forged.files[0].changeSet = sha("a-secret-value");
+    forged.repository.id = "a secret value";
+    const validation = validateInstalledLedger(forged);
+    expect(validation.valid).toBe(false);
+    if (!validation.valid) expect(validation.reason).not.toMatch(/secret/);
+  });
+
+  it("is well formed, not trusted: a row naming a change set in its own history passes, whatever the hub holds", () => {
+    // Trust needs the hub's change sets (TRUST in the contract); validation cannot see them.
+    const claimed = loose(ledger("setup-generation-1"));
+    claimed.files[0].after = sha("bytes no change set wrote");
+    expect(validateInstalledLedger(claimed)).toEqual({ valid: true });
+  });
+});
+
+describe("ledger bytes (RENDER)", () => {
+  it("are the corpus's independently computed bytes for every valid ledger, whatever order its members were given in", () => {
+    for (const entry of CORPUS.ledgers.filter((candidate) => candidate.valid)) {
+      const bytes = serializeInstalledLedger(entry.ledger);
+      expect(bytes, entry.name).toBe(entry.bytes);
+      expect(sha(bytes), entry.name).toBe(entry.sha256);
+      const reversed = JSON.parse(JSON.stringify(entry.ledger), (_key, value) =>
+        value !== null && typeof value === "object" && !Array.isArray(value) ? Object.fromEntries(Object.entries(value).reverse()) : value,
+      ) as InstalledLedger;
+      expect(Object.keys(reversed)[0]).toBe("deferred");
+      expect(serializeInstalledLedger(reversed), entry.name).toBe(entry.bytes);
+    }
+  });
+
+  it("are never given to a refused ledger", () => {
+    expect(() => serializeInstalledLedger(ledger("admitted-other-plan"))).toThrow(/refused ledger has no bytes/);
+  });
+
+  it("hold what each corpus render names: the set's generation, digest, phase, plan, bundle, base and binding, and the plan's identity for each deferral", () => {
+    for (const render of CORPUS.renders) {
+      const set = setNamed(render.changeSet);
+      const previous = render.previous === null ? null : ledger(render.previous);
+      const next = ledger(render.ledger);
+      expect(validateInstalledLedger(next), render.name).toEqual({ valid: true });
+      expect(set.ledger.generation, render.name).toBe(previous?.generation ?? 0);
+      expect(next.history.at(-1), render.name).toEqual({
+        generation: set.ledger.generation + 1,
+        changeSet: set.changeSetDigest,
+        phase: set.phase,
+        planDigest: set.planDigest,
+        bundle: set.bundle,
+        baseCommit: set.repository.baseCommit,
+        binding: render.binding,
+      });
+      expect(next.repository).toEqual({ id: set.repository.id, nodeId: set.repository.nodeId });
+      expect(next.deferred.map((row) => row.planItem)).toEqual(set.deferred.map((deferral) => deferral.planItem));
+      for (const row of next.deferred) {
+        const { planItem: _planItem, ...identity } = render.planPackages.find((entry) => entry.planItem === row.planItem)!;
+        expect(row).toMatchObject(identity);
+      }
+      expect(ledgerSuccession(previous, next), render.name).toEqual({ change: "next-generation", violations: [] });
+    }
+  });
+
+  it("record no row for the ledger or the lockfile, and every whole file the set writes at its after", () => {
+    const set = setNamed("setup-site");
+    const rows = ledger("setup-generation-1").files;
+    expect(rows.map((row) => row.path)).not.toContain("clossys/.state/installed.json");
+    expect(rows.map((row) => row.path)).not.toContain("package-lock.json");
+    const whole = set.files.filter((file) => !("derived" in file));
+    expect(rows.map((row) => [row.path, row.mode, row.after])).toEqual(whole.map((file) => [file.path, file.mode, "after" in file ? file.after : null]));
+  });
+});
+
+describe("ledger succession (a pull request's head against its base)", () => {
+  const label = (violation: { rule: string; side?: string }) => (violation.side === undefined ? violation.rule : `${violation.side}.${violation.rule}`);
+  it("gives every corpus pair its change and exactly the rules it names", () => {
+    for (const pair of CORPUS.successions) {
+      const result = ledgerSuccession(pair.base === null ? null : ledger(pair.base), ledger(pair.head));
+      expect(result.change, pair.name).toBe(pair.change);
+      expect([...new Set(result.violations.map(label))].sort(), pair.name).toEqual([...pair.rules].sort());
+    }
+  });
+
+  it("admits a generation only when it installs exactly what the setup deferred and changes nothing else", () => {
+    const base = ledger("setup-generation-1");
+    const head = ledger("admitted-generation-2");
+    expect(ledgerSuccession(base, head).violations).toEqual([]);
+    const deferred = base.deferred.map(({ reason: _reason, changeSet: _changeSet, ...identity }) => identity);
+    const added = head.packages.filter((row) => !base.packages.some((other) => JSON.stringify(other) === JSON.stringify(row))).map(({ changeSet: _changeSet, ...identity }) => identity);
+    expect(added).toEqual(deferred);
+    expect(head.files).toEqual(base.files);
+  });
+
+  it("refuses an admitted generation that installs a deferred package at another placement", () => {
+    const head = loose(ledger("admitted-generation-2"));
+    const last = head.history.at(-1).changeSet;
+    head.keys = head.keys.map((row: Loose) => (row.pointer === "/devDependencies/@example~1writer" ? { ...row, pointer: "/dependencies/@example~1writer" } : row));
+    head.packages = head.packages.map((row: Loose) => (row.name === "@example/writer" ? { ...row, placement: "dependencies", changeSet: last } : row));
+    head.keys.sort((a: Loose, b: Loose) => (a.pointer < b.pointer ? -1 : 1));
+    const result = ledgerSuccession(ledger("setup-generation-1"), head);
+    expect(result.violations.map(label)).toContain("S3");
+  });
+
+  it("reports only the refused ledger's own reasons when either ledger breaks the contract", () => {
+    const result = ledgerSuccession(ledger("row-foreign-change-set"), ledger("admitted-generation-2"));
+    expect([...new Set(result.violations.map(label))]).toEqual(["base.L4"]);
+    expect(result.violations[0]!.message).toMatch(/^base\./);
+  });
+});

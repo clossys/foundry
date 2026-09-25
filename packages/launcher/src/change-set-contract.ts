@@ -6,7 +6,9 @@
 // of the one contract checker. The TypeScript types below describe the same
 // shapes for callers; they validate nothing.
 
+import { createHash } from "node:crypto";
 import { formatContractViolation, validateAgainstContract } from "./generated/contract-schema.generated.js";
+import { PACKAGE_SCOPE } from "./generated/package-scope.generated.js";
 import { bundleDigest, changeSetDigest } from "./change-set-digest.js";
 import { loadPackedContract } from "./plan-contract.js";
 import type { ValidationResult } from "./plan-contract.js";
@@ -16,7 +18,12 @@ export type ChangeSetPhase = "setup" | "apply";
 export type PackageManagerKind = "npm" | "pnpm" | "yarn" | "none";
 export type LockfileName = "package-lock.json" | "pnpm-lock.yaml" | "yarn.lock" | "none";
 export type ReleaseAgeSurfaceKind = "pnpm-workspace" | "yarnrc" | "npmrc";
+/** The surfaces an exempt-release-age item can write: npm has no exemption key, so never .npmrc. */
+export type ExemptionSurfaceKind = "pnpm-workspace" | "yarnrc";
 export type DependencyPlacement = "dependencies" | "devDependencies";
+/** A discovery root: a directory agent hosts read skills from, holding a link to each composed skill. */
+export type DiscoveryRoot = ".claude/skills" | ".cursor/skills";
+export type WriteRecordSource = "engagement-brief" | "agents-pointer" | "claude-loader";
 
 /** One exact package: one version and one sha512 integrity value. */
 export interface PinnedPackage {
@@ -26,7 +33,7 @@ export interface PinnedPackage {
 }
 
 export type ChangeSetItem =
-  | { readonly id: string; readonly act: "write-record"; readonly source: "engagement-brief" }
+  | { readonly id: string; readonly act: "write-record"; readonly source: WriteRecordSource }
   | { readonly id: string; readonly act: "compose-skills"; readonly roles: readonly string[] }
   | {
       readonly id: string;
@@ -37,16 +44,16 @@ export type ChangeSetItem =
       /** True when the default branch already has this exact version and integrity at this placement; such an item writes nothing. */
       readonly satisfiedInBase: boolean;
     }
-  | { readonly id: string; readonly act: "exempt-release-age"; readonly scope: string; readonly surface: ReleaseAgeSurfaceKind; readonly path: string }
+  | { readonly id: string; readonly act: "exempt-release-age"; readonly scope: string; readonly surface: ExemptionSurfaceKind; readonly path: string }
   | { readonly id: string; readonly act: "write-ledger" | "add-caller-workflow" | "write-starter-request" | "add-ci-template" | "add-path-scope-job" };
 
 /** `sha256:` and 64 hex digits of a file's bytes, or null when the file is absent. */
 export type ContentDigest = string | null;
 
-/** A file whose exact bytes the set writes. */
+/** A file whose exact bytes the set writes; mode 120000 is a discovery link, whose bytes are its target. */
 export interface WholeFileChange {
   readonly path: string;
-  readonly mode: "100644" | "100755";
+  readonly mode: "100644" | "120000";
   readonly before: ContentDigest;
   readonly after: ContentDigest;
   readonly item: string;
@@ -65,7 +72,7 @@ export interface LedgerInvariant {
 /** A file checked by its invariants, never by its bytes; its `before` and `after` are outside the digest. */
 export interface DerivedFileChange {
   readonly path: string;
-  readonly mode: "100644" | "100755";
+  readonly mode: "100644";
   readonly derived: true;
   readonly item: string;
   readonly invariants: readonly (PackageInvariant | LedgerInvariant)[];
@@ -84,7 +91,14 @@ export interface KeyChange {
   readonly item: string;
 }
 
-export type RefusalReason = "unowned-existing" | "client-edited" | "manifest-absent" | "unsafe-path";
+export type RefusalReason =
+  | "unowned-existing"
+  | "client-edited"
+  | "deleted"
+  | "manifest-absent"
+  | "unsafe-path"
+  | "release-age-surface-conflict"
+  | "release-age-surface-unparseable";
 
 export type ChangeSetRefusal =
   | { readonly path: string; readonly reason: RefusalReason; readonly item: string }
@@ -111,10 +125,16 @@ export interface RepositoryChangeSet {
   readonly ledger: { readonly generation: number };
   readonly phase: ChangeSetPhase;
   readonly engine: PinnedPackage;
+  /** The exact Integrator package the hub pins; a product repository's CI runs its provenance check by this version. */
+  readonly integrator: PinnedPackage;
   readonly observed: {
     readonly packageManager: PackageManagerKind;
     readonly lockfile: LockfileName;
     readonly releaseAgeSurfaces: readonly { readonly surface: ReleaseAgeSurfaceKind; readonly path: string }[];
+    /** Whether the default branch has a workflow of its own, one whose file name does not start with clossys-. */
+    readonly consumerCi: boolean;
+    /** The discovery roots that are, or lie under, a symbolic link on the default branch; no link is written under them. */
+    readonly symlinkedSkillRoots: readonly DiscoveryRoot[];
   };
   readonly items: readonly ChangeSetItem[];
   readonly files: readonly FileChange[];
@@ -140,15 +160,40 @@ export interface ApplyCheck {
   readonly rule?: string;
 }
 
+/**
+ * On what authority a change set is written (installed-ledger.json,
+ * definitions.binding): approved as a member of the bundle whose digest the
+ * approving decision names, or admitted as the apply set that follows an
+ * approved setup set under the one-approval rule.
+ */
+export type ApprovalBinding =
+  | { readonly kind: "approved"; readonly subjectDigest: string }
+  | { readonly kind: "admitted"; readonly subjectDigest: string; readonly setupChangeSet: string };
+
 export type ApplyBundleRepository =
-  | { readonly id: string; readonly verdict: CheckVerdict; readonly phase: ChangeSetPhase; readonly changeSet: string; readonly checks: readonly ApplyCheck[] }
+  | {
+      readonly id: string;
+      readonly verdict: CheckVerdict;
+      readonly phase: ChangeSetPhase;
+      readonly changeSet: string;
+      readonly checks: readonly ApplyCheck[];
+      /** Only in a planned bundle, when V1 to V9 all passed and an approval binds the set (code rule A6). */
+      readonly state?: "planned";
+      /** Only in a planned bundle, when every V3 check passed (code rule A7). */
+      readonly binding?: ApprovalBinding;
+    }
   | { readonly id: string; readonly verdict: "violated" | "indeterminate"; readonly reason: string; readonly checks: readonly ApplyCheck[] };
 
-/** One application attempt (apply-bundle.json, in the public repository, not shipped in this package). It has no repository state: see its contract. */
+/**
+ * One application attempt (apply-bundle.json, in the public repository, not
+ * shipped in this package). A report bundle claims no repository state; a
+ * planned bundle records which repositories passed V1 to V9 and are bound by
+ * an approval. See its contract.
+ */
 export interface ApplyBundle {
   readonly schemaVersion: 1;
   readonly kind: "clossys.apply-bundle";
-  readonly mode: "report";
+  readonly mode: "report" | "planned";
   readonly plan: { readonly path: "clossys/advisor/plan.json"; readonly digest: string; readonly committed: boolean };
   readonly snapshot: { readonly path: "clossys/.state/apply/registry-snapshot.json"; readonly digest: string } | null;
   readonly engine: PinnedPackage;
@@ -186,6 +231,61 @@ export function lockfilePath(observed: { readonly packageManager: PackageManager
 /** Where a composed skill is written for a role. */
 export function skillPath(role: string): string {
   return `.agents/skills/clossys-${role}/SKILL.md`;
+}
+
+/** Where the composed-skill manifest is written: one per compose-skills item (code rule C9). */
+export const SKILLS_MANIFEST_PATH = "clossys/.state/skills.json";
+
+/** The discovery roots, in canonical order. */
+export const DISCOVERY_ROOTS: readonly DiscoveryRoot[] = [".claude/skills", ".cursor/skills"];
+
+/** Where a role's discovery link is written under a discovery root. */
+export function discoveryLinkPath(root: DiscoveryRoot, role: string): string {
+  return `${root}/clossys-${role}`;
+}
+
+/** A discovery link's target: its exact bytes, with no line feed. */
+export function discoveryLinkTarget(role: string): string {
+  return `../../.agents/skills/clossys-${role}`;
+}
+
+const DISCOVERY_LINK = /^\.(?:claude|cursor)\/skills\/clossys-([^/]+)$/u;
+
+/** The role a discovery link path names, or null when the path is not a discovery link. */
+export function discoveryLinkRole(path: string): string | null {
+  if (!isSafeRelativePath(path)) return null;
+  return DISCOVERY_LINK.exec(path)?.[1] ?? null;
+}
+
+/** The file each write-record source writes (code rule C9). */
+export const WRITE_RECORD_PATHS: Readonly<Record<WriteRecordSource, string>> = {
+  "engagement-brief": BRIEF_PATH,
+  "agents-pointer": "AGENTS.md",
+  "claude-loader": "CLAUDE.md",
+};
+
+/** The setup template acts, each with exactly the files it writes (code rule C9). */
+export type TemplateAct = "add-caller-workflow" | "write-starter-request" | "add-ci-template" | "add-path-scope-job";
+export const TEMPLATE_PATHS: Readonly<Record<TemplateAct, readonly string[]>> = {
+  "add-caller-workflow": [
+    ".github/workflows/clossys-adoption-evidence.yml",
+    ".github/workflows/clossys-adoption-decision.yml",
+    ".github/scripts/clossys-collect-adoption-snapshot.mjs",
+  ],
+  "write-starter-request": [".starter/request.json"],
+  "add-ci-template": [".github/workflows/clossys-ci.yml"],
+  "add-path-scope-job": [".github/workflows/clossys-path-scope.yml"],
+};
+
+/** For each surface an exempt-release-age item writes: its file, the list key in it, and the package manager that reads it (code rule C12). */
+export const EXEMPTION_SURFACES: Readonly<Record<ExemptionSurfaceKind, { readonly path: string; readonly key: string; readonly packageManager: PackageManagerKind }>> = {
+  "pnpm-workspace": { path: "pnpm-workspace.yaml", key: "minimumReleaseAgeExclude", packageManager: "pnpm" },
+  yarnrc: { path: ".yarnrc.yml", key: "npmPreapprovedPackages", packageManager: "yarn" },
+};
+
+/** `sha256:` and the hex SHA-256 of a text's UTF-8 bytes: a file's content digest. */
+export function contentDigest(text: string): string {
+  return `sha256:${createHash("sha256").update(Buffer.from(text, "utf8")).digest("hex")}`;
 }
 
 /** The JSON pointer of one dependency entry in package.json. */
@@ -257,6 +357,7 @@ export const CANONICAL_KEYS = {
   invariant: (invariant: PackageInvariant | LedgerInvariant): string[] => ("name" in invariant ? [invariant.name] : [""]),
   pattern: (pattern: string): string[] => [pattern],
   surface: (surface: { readonly surface: string; readonly path: string }): string[] => [surface.surface, surface.path],
+  root: (root: string): string[] => [root],
   tool: (tool: { readonly tool: string }): string[] => [tool.tool],
 } as const;
 
@@ -275,8 +376,8 @@ export function worstVerdict(verdicts: readonly CheckVerdict[]): CheckVerdict {
 /** The rule a bundle check carries when its authorization is for another plan (code rule A4). */
 export const AUTHORIZATION_PLAN_MISMATCH = "authorization-plan-mismatch";
 
-export type ChangeSetRuleId = "C1" | "C2" | "C3" | "C4" | "C5" | "C6" | "C7" | "C8" | "C9" | "C10";
-export type ApplyBundleRuleId = "A1" | "A2" | "A3" | "A4";
+export type ChangeSetRuleId = "C1" | "C2" | "C3" | "C4" | "C5" | "C6" | "C7" | "C8" | "C9" | "C10" | "C11" | "C12";
+export type ApplyBundleRuleId = "A1" | "A2" | "A3" | "A4" | "A5" | "A6" | "A7";
 
 /** One reason a change set or bundle is refused: `rule` is "schema" for the contract's keywords, else the code rule's id. */
 export interface ChangeSetViolation {
@@ -318,7 +419,7 @@ function firstOutOfOrder<T>(values: readonly T[], key: (value: T) => readonly st
   return undefined;
 }
 
-/** Code rules C1-C10 of repository-change-set.json, over a set whose schema already passes. Messages name positions, never values. */
+/** Code rules C1-C12 of repository-change-set.json, over a set whose schema already passes. Messages name positions, never values. */
 export function changeSetRuleViolations(set: RepositoryChangeSet): RuleViolation<ChangeSetRuleId>[] {
   const out: RuleViolation<ChangeSetRuleId>[] = [];
   const push = (rule: ChangeSetRuleId, path: string, message: string) => out.push({ rule, path, message });
@@ -430,26 +531,44 @@ export function changeSetRuleViolations(set: RepositoryChangeSet): RuleViolation
   });
   order("pathAllowList", set.pathAllowList, CANONICAL_KEYS.pattern, true);
   order("observed.releaseAgeSurfaces", set.observed.releaseAgeSurfaces, CANONICAL_KEYS.surface, true);
+  order("observed.symlinkedSkillRoots", set.observed.symlinkedSkillRoots, CANONICAL_KEYS.root, true);
   if (set.tooling !== undefined) order("tooling", set.tooling, CANONICAL_KEYS.tool, true);
 
   // C9
+  set.files.forEach((file, index) => {
+    if (isDerived(file)) return;
+    const role = discoveryLinkRole(file.path);
+    if ((file.mode === "120000") !== (role !== null)) push("C9", `files[${index}].mode`, role === null ? "is 120000, which only a discovery link has" : "is not 120000, and this path is a discovery link");
+    else if (role !== null && file.after !== null && file.after !== contentDigest(discoveryLinkTarget(role))) push("C9", `files[${index}].after`, "is not the content digest of this discovery link's target");
+  });
+  const linkedRoots = DISCOVERY_ROOTS.filter((root) => !set.observed.symlinkedSkillRoots.includes(root));
   set.items.forEach((item, index) => {
     const files = set.files.map((file, at) => ({ file, at })).filter(({ file }) => file.item === item.id);
     const refusals = set.refused.map((refusal, at) => ({ refusal, at })).filter(({ refusal }) => refusal.item === item.id);
     const keys = set.keys.filter((key) => key.item === item.id);
     const invariants = set.files.flatMap((file) => (isDerived(file) ? file.invariants.filter((invariant) => isPackageInvariant(invariant) && invariant.item === item.id) : []));
     const at = `items[${index}]`;
-    if (item.act === "write-record") {
-      const paths = [...files.map(({ file }) => ({ path: file.path, whole: !isDerived(file) })), ...refusals.map(({ refusal }) => ({ path: "path" in refusal ? refusal.path : "", whole: "path" in refusal }))];
-      if (keys.length > 0 || paths.length !== 1 || paths[0]!.path !== BRIEF_PATH || !paths[0]!.whole) push("C9", at, `must be named by exactly one whole file or path refusal, at ${BRIEF_PATH}`);
-    } else if (item.act === "compose-skills") {
-      for (const { index: repeat, first } of repeats(item.roles, (role) => role)) push("C9", `${at}.roles[${repeat}]`, `repeats roles[${first}]`);
-      const expected = new Set(item.roles.map(skillPath));
-      const named = [...files.map(({ file }) => (isDerived(file) ? "" : file.path)), ...refusals.map(({ refusal }) => ("path" in refusal ? refusal.path : ""))];
+    // Every path an item names: a whole file's or a path refusal's; a derived file or a key refusal counts as a name at no path.
+    const named = [...files.map(({ file }) => (isDerived(file) ? "" : file.path)), ...refusals.map(({ refusal }) => ("path" in refusal ? refusal.path : ""))];
+    const namedExactly = (expected: readonly string[]) => {
       const counts = new Map<string, number>();
       for (const path of named) counts.set(path, (counts.get(path) ?? 0) + 1);
-      const ok = keys.length === 0 && named.length === expected.size && [...expected].every((path) => counts.get(path) === 1);
-      if (!ok) push("C9", at, "must be named, for each role, by exactly one whole file or path refusal at that role's skill path, and by nothing else");
+      return keys.length === 0 && named.length === expected.length && new Set(expected).size === expected.length && expected.every((path) => counts.get(path) === 1);
+    };
+    if (item.act === "write-record") {
+      const path = WRITE_RECORD_PATHS[item.source];
+      if (!namedExactly([path])) push("C9", at, `must be named by exactly one whole file or path refusal, at ${path}, and by nothing else`);
+    } else if (item.act === "compose-skills") {
+      for (const { index: repeat, first } of repeats(item.roles, (role) => role)) push("C9", `${at}.roles[${repeat}]`, `repeats roles[${first}]`);
+      const roles = [...new Set(item.roles)];
+      const expected = [...roles.flatMap((role) => [skillPath(role), ...linkedRoots.map((root) => discoveryLinkPath(root, role))]), SKILLS_MANIFEST_PATH];
+      if (!namedExactly(expected)) {
+        push("C9", at, `must be named, for each role, by exactly one whole file or path refusal at that role's skill path and at its discovery link under each root not observed as a symbolic link, by exactly one at ${SKILLS_MANIFEST_PATH}, and by nothing else`);
+      }
+    } else if (item.act === "add-caller-workflow" || item.act === "write-starter-request" || item.act === "add-ci-template" || item.act === "add-path-scope-job") {
+      if (!namedExactly(TEMPLATE_PATHS[item.act])) push("C9", at, `must be named by exactly one whole file or path refusal at each file an ${item.act} item writes, and by nothing else`);
+    } else if (item.act === "exempt-release-age") {
+      if (!(keys.length === 0 && named.length <= 1 && named.every((path) => path === item.path))) push("C9", at, "must be named by at most one whole file or path refusal, at its own path, and by nothing else");
     } else if (isPackageItem(item)) {
       const pointer = dependencyPointer(item.placement, item.package.name);
       if (files.some(({ file }) => !isDerived(file))) push("C9", at, "is named by a whole file");
@@ -490,10 +609,33 @@ export function changeSetRuleViolations(set: RepositoryChangeSet): RuleViolation
     if (set.phase === "setup" && item.act === "install") push("C10", `items[${index}]`, "is an install in a setup set, where installs are deferred");
   });
   if (set.phase === "apply") set.deferred.forEach((_, index) => push("C10", `deferred[${index}]`, "is deferred in an apply set, which defers nothing"));
+
+  // C11
+  if (set.phase === "setup") {
+    const count = (act: ChangeSetItem["act"]) => set.items.filter((item) => item.act === act).length;
+    for (const act of ["add-caller-workflow", "write-starter-request", "add-ci-template", "add-path-scope-job", "pin-starter"] as const) {
+      const held = count(act);
+      if (held !== 1) push("C11", "items", `must hold exactly one ${act} item in a setup set, and holds ${held}`);
+    }
+    const exempts = count("exempt-release-age");
+    const wanted = set.observed.packageManager === "pnpm" || set.observed.packageManager === "yarn" ? 1 : 0;
+    if (exempts !== wanted) push("C11", "items", `must hold ${wanted} exempt-release-age item(s) in a setup set for this package manager, and holds ${exempts}`);
+  }
+
+  // C12
+  set.items.forEach((item, index) => {
+    if (item.act !== "exempt-release-age") return;
+    const surface = EXEMPTION_SURFACES[item.surface];
+    if (item.path !== surface.path) push("C12", `items[${index}].path`, "is not the file of the item's surface");
+    if (set.observed.packageManager !== surface.packageManager) push("C12", `items[${index}].surface`, "is not a surface this repository's package manager reads");
+    if (item.scope !== PACKAGE_SCOPE.scope) push("C12", `items[${index}].scope`, "is not the publishing scope this package packs");
+  });
   return out;
 }
 
-/** Code rules A1-A4 of apply-bundle.json, over a bundle whose schema already passes. */
+const PRE_APPLY_CHECKS: readonly ApplyCheckId[] = ["V1", "V2", "V3", "V4", "V5", "V6", "V7", "V8", "V9"];
+
+/** Code rules A1-A7 of apply-bundle.json, over a bundle whose schema already passes. */
 export function applyBundleRuleViolations(bundle: ApplyBundle): RuleViolation<ApplyBundleRuleId>[] {
   const out: RuleViolation<ApplyBundleRuleId>[] = [];
   for (const { index, first } of repeats(bundle.repositories, (entry) => entry.id.toLowerCase())) out.push({ rule: "A1", path: `repositories[${index}].id`, message: `repeats repositories[${first}].id` });
@@ -507,7 +649,31 @@ export function applyBundleRuleViolations(bundle: ApplyBundle): RuleViolation<Ap
     const carries = entry.checks.some((check) => check.rule === AUTHORIZATION_PLAN_MISMATCH);
     if ("changeSet" in entry && mismatch && !flagged) out.push({ rule: "A4", path: `repositories[${index}].checks`, message: "lacks the violated V3 check for an authorization issued for another plan" });
     if (!mismatch && carries) out.push({ rule: "A4", path: `repositories[${index}].checks`, message: "reports an authorization mismatch the bundle does not have" });
+    if (!("changeSet" in entry)) return;
+    const hasState = entry.state !== undefined;
+    const hasBinding = entry.binding !== undefined;
+    if (bundle.mode === "report") {
+      if (hasState) out.push({ rule: "A5", path: `repositories[${index}].state`, message: "is a repository state, which a report bundle never claims" });
+      if (hasBinding) out.push({ rule: "A5", path: `repositories[${index}].binding`, message: "is a binding, which a report bundle never records" });
+      return;
+    }
+    const planned = entry.verdict === "satisfied" && hasBinding;
+    if (hasState && !planned) out.push({ rule: "A6", path: `repositories[${index}].state`, message: "is planned, but the verdict is not satisfied or no approval binds the change set" });
+    if (!hasState && planned) out.push({ rule: "A6", path: `repositories[${index}]`, message: "is satisfied and bound by an approval, so it must be planned" });
+    if (hasState && !PRE_APPLY_CHECKS.every((id) => entry.checks.some((check) => check.check === id && check.verdict === "satisfied"))) {
+      out.push({ rule: "A6", path: `repositories[${index}].checks`, message: "lacks a satisfied check for each of V1 to V9, which a planned repository needs" });
+    }
+    const v3 = entry.checks.filter((check) => check.check === "V3");
+    const authorityHolds = v3.length > 0 && v3.every((check) => check.verdict === "satisfied");
+    if (hasBinding !== authorityHolds) {
+      out.push({ rule: "A7", path: `repositories[${index}]${hasBinding ? ".binding" : ""}`, message: hasBinding ? "is recorded, but V3 is missing or not satisfied" : "has V3 satisfied, so it must record the binding V3 found" });
+    }
+    if (entry.binding?.kind === "admitted") {
+      if (entry.phase !== "apply") out.push({ rule: "A7", path: `repositories[${index}].binding`, message: "is admitted, which only an apply set can be" });
+      if (entry.binding.setupChangeSet === entry.changeSet) out.push({ rule: "A7", path: `repositories[${index}].binding.setupChangeSet`, message: "is this repository's own change set, not the setup set it follows" });
+    }
   });
+  if (bundle.mode === "planned" && !bundle.plan.committed) out.push({ rule: "A6", path: "plan.committed", message: "must be true in a planned bundle" });
   return out;
 }
 
@@ -522,22 +688,22 @@ function result(violations: readonly ChangeSetViolation[]): ValidationResult {
   return { valid: false, reason: violations.map((violation) => violation.message).join("; ") };
 }
 
-/** Every reason a change set is refused: the change-set contract's schema, then, once that passes, its code rules C1-C10. */
+/** Every reason a change set is refused: the change-set contract's schema, then, once that passes, its code rules C1-C12. */
 export function repositoryChangeSetViolations(value: unknown): ChangeSetViolation[] {
   return violationsOf<RepositoryChangeSet, ChangeSetRuleId>("repository-change-set.json", "changeSet", value, changeSetRuleViolations);
 }
 
-/** Every reason a bundle is refused: the bundle contract's schema, then, once that passes, its code rules A1-A4. */
+/** Every reason a bundle is refused: the bundle contract's schema, then, once that passes, its code rules A1-A7. */
 export function applyBundleViolations(value: unknown): ChangeSetViolation[] {
   return violationsOf<ApplyBundle, ApplyBundleRuleId>("apply-bundle.json", "bundle", value, applyBundleRuleViolations);
 }
 
-/** Validates a change set against repository-change-set.json and its code rules C1-C10. No reason echoes a value. */
+/** Validates a change set against repository-change-set.json and its code rules C1-C12. No reason echoes a value. */
 export function validateRepositoryChangeSet(value: unknown): ValidationResult {
   return result(repositoryChangeSetViolations(value));
 }
 
-/** Validates a bundle against apply-bundle.json and its code rules A1-A4. No reason echoes a value. */
+/** Validates a bundle against apply-bundle.json and its code rules A1-A7. No reason echoes a value. */
 export function validateApplyBundle(value: unknown): ValidationResult {
   return result(applyBundleViolations(value));
 }
