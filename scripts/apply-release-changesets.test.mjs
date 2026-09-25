@@ -1325,6 +1325,61 @@ test("applyReleaseChangesets: a restore failure surfaces BOTH the original and t
   }
 });
 
+// Fix-round non-blocking note N5: the `.changesets/` deletion loop used to
+// run AFTER the try/catch that backs up and rolls back every manifest and
+// CHANGELOG write, so a failure IN the deletion itself (a permissions
+// error, or a changeset unexpectedly already gone -- e.g. an external
+// process/second invocation racing this one) propagated uncaught, past the
+// rollback logic entirely, leaving every already-bumped manifest and
+// already-regenerated lockfile on disk with no matching rollback -- exactly
+// the double-bump trap the surrounding comments describe npm failures being
+// protected against. The deletion loop now runs INSIDE the same try block
+// and backs up each changeset file (with the same generic `backupFile()`)
+// immediately before removing it, so a failure there is rolled back the
+// same way a write or an `npm install` failure already was.
+test("applyReleaseChangesets: a failure DURING changeset deletion itself (after a successful npm run) still rolls back the manifest/CHANGELOG/lockfile, not just an npm failure (issue #1390)", () => {
+  const root = makeRoot();
+  try {
+    makePackage(root, "alpha", "1.0.0");
+    const alphaChangelog = "# Changelog\n\n## 1.0.0\n\n- Initial release.\n";
+    writeFileSync(changelogFile(root, "alpha"), alphaChangelog);
+    writeChangeset(root, "alpha-fix.md", "---\nalpha: patch\n---\n\nFix a bug.\n");
+    const originalLock = '{\n  "name": "root",\n  "lockfileVersion": 3,\n  "packages": {}\n}\n';
+    writeFileSync(join(root, "package-lock.json"), originalLock);
+
+    let threw = null;
+    try {
+      applyReleaseChangesets({
+        root,
+        today: () => "2026-09-22",
+        // npm itself SUCCEEDS (and, exactly like the real implementation,
+        // is where the lockfile gets rewritten) -- but it also simulates an
+        // external process that already removed the pending changeset
+        // file, out from under this run, before this run's own deletion
+        // loop reaches it.
+        runNpmInstall: () => {
+          writeFileSync(join(root, "package-lock.json"), '{\n  "name": "root",\n  "lockfileVersion": 3,\n  "packages": {\n    "packages/alpha": { "version": "1.0.1" }\n  }\n}\n');
+          rmSync(join(root, ".changesets", "alpha-fix.md"));
+        },
+      });
+    } catch (error) {
+      threw = error;
+    }
+
+    assert.ok(threw, "the deletion failure (the changeset is already gone) must still propagate, not be silently swallowed");
+    assert.match(threw.message, /ENOENT|no such file/i);
+
+    const alphaManifest = JSON.parse(readFileSync(join(root, "packages", "alpha", "package.json"), "utf8"));
+    assert.equal(alphaManifest.version, "1.0.0", "the manifest must be rolled back even though the failure happened AFTER a successful npm run, during deletion");
+
+    assert.equal(readFileSync(changelogFile(root, "alpha"), "utf8"), alphaChangelog, "the CHANGELOG must be rolled back too");
+
+    assert.equal(readFileSync(join(root, "package-lock.json"), "utf8"), originalLock, "the lockfile npm rewrote must be rolled back too");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 // -------------------------------------------------- CLI: --json output must be pure JSON, even with real npm running
 //
 // Re-review, https://github.com/clossys/foundry/pull/1353#issuecomment-5803894960

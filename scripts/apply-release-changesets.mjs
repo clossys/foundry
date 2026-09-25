@@ -952,14 +952,19 @@ export function applyReleaseChangesets({
     // `.changesets/` staying untouched on failure (deliberate, see below)
     // did not help, because the SAME still-pending changesets re-plan
     // against the ALREADY-bumped manifests on a naive rerun.
-    // `backupFile()`/`restoreBackups()` capture each file's PRE-WRITE state
-    // (its exact prior text, or "did not exist yet") before this loop
-    // writes anything, so a failure anywhere in the write phase -- a write
-    // itself, or `runNpmInstall()` -- restores every file this run touched
-    // to exactly what it was, and the thrown error is then RE-THROWN
-    // unchanged: the failure is still visible to the caller (nothing here
-    // papers over a real npm/network problem), it just no longer leaves the
-    // working tree in a state a plain rerun would double-bump.
+    // `backupFile()`/`restoreBackups()` capture each file's PRE-WRITE (or
+    // pre-delete) state (its exact prior text, or "did not exist yet")
+    // before this loop touches it, so a failure anywhere in the try block
+    // below -- a manifest/CHANGELOG write, `runNpmInstall()`, or a
+    // changeset deletion -- restores every file this run touched (written
+    // OR deleted) to exactly what it was, and the thrown error is then
+    // RE-THROWN unchanged: the failure is still visible to the caller
+    // (nothing here papers over a real npm/network/filesystem problem), it
+    // just no longer leaves the working tree in a state a plain rerun would
+    // double-bump. `backupFile()` is generic -- it works the same way for a
+    // path this run is about to delete as for one it is about to overwrite
+    // -- so the changeset-deletion loop below reuses it rather than needing
+    // its own restore path.
     //
     // package-lock.json IS BACKED UP TOO (review A, re-review of #1390) --
     // real `npm install --package-lock-only` writes the lockfile LAST, so
@@ -1035,6 +1040,20 @@ export function applyReleaseChangesets({
         backupFile(join(root, "package-lock.json"));
         runNpmInstall(root);
       }
+      // The deletion itself stays inside this SAME try block, and each file
+      // is backed up (via the same generic `backupFile()`) immediately
+      // before it is removed: a failure here (e.g. a permissions error, or
+      // a file already gone) is otherwise exactly the double-bump trap this
+      // whole write phase exists to close -- npm would have already
+      // regenerated the lockfile against the bumped manifests, so leaving
+      // those bumps in place while some changesets are unexpectedly still
+      // pending (a partial deletion) would silently re-plan a second bump
+      // on the next run.
+      for (const file of toDelete) {
+        const changesetPath = join(root, ".changesets", file);
+        backupFile(changesetPath);
+        rmSync(changesetPath);
+      }
     } catch (error) {
       const restoreError = restoreBackups();
       if (restoreError) {
@@ -1046,7 +1065,7 @@ export function applyReleaseChangesets({
         // handling already knows to unwrap); `restoreError` is attached
         // directly since there is no equally standard second channel.
         const combined = new Error(
-          `apply-release-changesets: write phase failed (${errorMessage(error)}), and restoring the working tree afterward ALSO failed (${errorMessage(restoreError)}) -- some manifests/changelogs/the lockfile may be left partially written; check \`git status\` before rerunning`,
+          `apply-release-changesets: write phase failed (${errorMessage(error)}), and restoring the working tree afterward ALSO failed (${errorMessage(restoreError)}) -- some manifests/changelogs/the lockfile/the pending changesets may be left partially written or deleted; check \`git status\` before rerunning`,
           { cause: error },
         );
         combined.originalError = error;
@@ -1055,7 +1074,6 @@ export function applyReleaseChangesets({
       }
       throw error;
     }
-    for (const file of toDelete) rmSync(join(root, ".changesets", file));
   }
 
   return { applied, findings: [], changesetFindings: [] };
