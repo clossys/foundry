@@ -209,7 +209,11 @@ and its `context` snapshot against `engagement-context.json` (issue
 #1475). Launcher validates against the same files where it writes the
 brief. Unknown fields are refused, and each finding has the rule
 `engagement-brief-contract` and a message that never echoes a value from
-the brief.
+the brief. `problem`, each role's `role` and `why`, and each goal's `metric`
+must contain a non-whitespace character; an item of `inputsFrom`,
+`outputsTo`, `sequence` or `deliverables` must not be empty. Messages name
+fields, and a key that is not a plain identifier is shown as an escaped
+JSON string.
 
 ## Shared engagement context
 
@@ -296,8 +300,12 @@ a plan Launcher accepts. It checks every field, including each blocker's
 `capabilityId`, `owner`, `since`, and full `nextAction`, and `kind`
 membership in `AdvisorBlockerKind` (`ADVISOR_BLOCKER_KINDS` lists the five
 values in order, and a test keeps it equal to the contract). Blank strings
-are refused, times must be ISO 8601 (`recommendedNext.due` and a
-blocker's `nextAction.byWhen` may be a plain date), and every object is
+are refused. Every time must be a real ISO 8601 calendar time, checked
+field by field rather than by shape: month 01-12, a day that month has
+(leap years included), hours 00-23, minutes and seconds 00-59, and a time
+zone offset of at most 23:59, so `2026-02-30` or `T24:30` is refused
+(`recommendedNext.due` and a blocker's `nextAction.byWhen` may be a plain
+date). Every object is
 closed: a field the contract does not declare is refused, never ignored.
 It returns every finding it locates, the same pattern as this package's
 other validators; each finding has the rule `advisor-plan-contract`, a
@@ -332,8 +340,11 @@ It prints the rendered STATUS document to stdout and exits `0`, or exits
 so a blocker in the old, local shape is rejected the same way). It reads
 the file as strict JSON: bytes that are not valid UTF-8, and an object
 that repeats a key at any depth, are refused rather than decoded with a
-replacement character or resolved to the last value, and a syntax error
-is reported by position only, never quoting the file (#1475).
+replacement character or resolved to the last value, and so is a file
+that starts with a byte order mark. A syntax error is reported by position
+only, never quoting the file's text; a repeated key is named, as an escaped
+JSON string, so a control character in it is shown as `\u001b` rather than
+reaching the terminal (#1475).
 
 ## Kit verdicts (issue #1177)
 

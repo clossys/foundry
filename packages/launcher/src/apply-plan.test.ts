@@ -182,7 +182,7 @@ describe("validateAdvisorPlan", () => {
 
   it("refuses a decision whose time is not an ISO 8601 date-time", () => {
     const plan = { ...VALID_PLAN, decisions: [{ ...VALID_PLAN.decisions[0]!, at: "last week" }] };
-    expect(validateAdvisorPlan(plan)).toEqual({ valid: false, reason: "plan.decisions[0].at must be an ISO 8601 date-time with a time zone, such as 2026-09-24T12:00:00Z" });
+    expect(validateAdvisorPlan(plan)).toEqual({ valid: false, reason: "plan.decisions[0].at must be a real ISO 8601 date-time with a time zone, such as 2026-09-24T12:00:00Z" });
   });
 
   it("rejects a decision missing any of its four required fields", () => {
@@ -206,6 +206,67 @@ describe("well-formed Unicode (#1475): a plan or brief that validates always has
   });
 });
 
+describe("plan times through Launcher's generated checker copy (#1475)", () => {
+  const BAD_DATE_TIMES = [
+    "2026-13-01T00:00:00Z", "2026-09-32T00:00:00Z", "2026-02-30T00:00:00Z", "2026-02-29T00:00:00Z", "2026-09-24T24:30:00Z",
+    "2026-09-24T12:00:60Z", "2026-09-24T12:00:00+24:00", "2026-09-24T12:00:00+05:60", "2026-13-45T25:61:61Z",
+  ];
+  const withByWhen = (byWhen: string) => ({
+    ...ADVISOR_SHAPED_PLAN,
+    blockers: [{ ...ADVISOR_SHAPED_PLAN.blockers[0]!, nextAction: { ...ADVISOR_SHAPED_PLAN.blockers[0]!.nextAction, byWhen } }],
+  });
+
+  it("refuses every out-of-range time and accepts Feb 29 of a leap year", () => {
+    for (const asOf of BAD_DATE_TIMES) {
+      expect(validateAdvisorPlan({ ...ADVISOR_SHAPED_PLAN, asOf }), asOf).toEqual({
+        valid: false,
+        reason: "plan.asOf must be a real ISO 8601 date-time with a time zone, such as 2026-09-24T12:00:00Z",
+      });
+    }
+    for (const byWhen of ["2026-02-30", "2026-02-29", "2026-13-01", ...BAD_DATE_TIMES]) expect(validateAdvisorPlan(withByWhen(byWhen)).valid, byWhen).toBe(false);
+    expect(validateAdvisorPlan({ ...ADVISOR_SHAPED_PLAN, asOf: "2028-02-29T00:00:00Z" })).toEqual({ valid: true });
+    expect(validateAdvisorPlan(withByWhen("2028-02-29"))).toEqual({ valid: true });
+  });
+
+  it("refuses the NaN-ordering repro at validation, in isPlanApproved, and in applyEngagementBrief", () => {
+    const plan = {
+      ...ADVISOR_SHAPED_PLAN,
+      decisions: [
+        { at: "2026-09-25T00:00:00Z", recommended: "x", chosen: "rejected", by: "sponsor" },
+        { at: "2026-09-24T24:30:00Z", recommended: "x", chosen: "approved", by: "sponsor" },
+      ],
+    };
+    expect(validateAdvisorPlan(plan)).toEqual({ valid: false, reason: "plan.decisions[1].at must be a real ISO 8601 date-time with a time zone, such as 2026-09-24T12:00:00Z" });
+    expect(isPlanApproved(plan)).toBe(false);
+    const host = fakeHost();
+    expect(applyEngagementBrief(host, "/repo", plan, VALID_BRIEF, "clossys/brief.json").state).toBe("refused");
+    expect(Object.keys(host.written)).toHaveLength(0);
+  });
+});
+
+describe("whitespace-only brief strings and escaped keys (#1475)", () => {
+  it("refuses a whitespace-only problem, role, why, or metric, as 0.3.1 did", () => {
+    const role = VALID_BRIEF.roles[0]!;
+    expect(validateEngagementBrief({ ...VALID_BRIEF, problem: "  " })).toEqual({ valid: false, reason: "brief.problem must be a string with at least one non-whitespace character" });
+    expect(validateEngagementBrief({ ...VALID_BRIEF, roles: [{ ...role, role: " " }] }).valid).toBe(false);
+    expect(validateEngagementBrief({ ...VALID_BRIEF, roles: [{ ...role, why: "\t" }] }).valid).toBe(false);
+    expect(validateEngagementBrief({ ...VALID_BRIEF, roles: [{ ...role, goal: { ...role.goal, metric: " " } }] }).valid).toBe(false);
+  });
+
+  it("refuses an empty string in inputsFrom, outputsTo, sequence, or deliverables", () => {
+    const role = VALID_BRIEF.roles[0]!;
+    expect(validateEngagementBrief({ ...VALID_BRIEF, roles: [{ ...role, inputsFrom: [""] }] }).valid).toBe(false);
+    expect(validateEngagementBrief({ ...VALID_BRIEF, roles: [{ ...role, outputsTo: [""] }] }).valid).toBe(false);
+    expect(validateEngagementBrief({ ...VALID_BRIEF, sequence: [""] }).valid).toBe(false);
+    expect(validateEngagementBrief({ ...VALID_BRIEF, deliverables: [""] })).toEqual({ valid: false, reason: "brief.deliverables[0] must be at least 1 character(s) long" });
+  });
+
+  it("names an unknown key with control characters escaped, never raw", () => {
+    const result = validateEngagementBrief({ ...VALID_BRIEF, "\u001b[2J": 1 });
+    expect(result).toEqual({ valid: false, reason: 'brief["\\u001b[2J"] is not a field the contract declares, and unknown fields are refused' });
+  });
+});
+
 describe("isPlanApproved", () => {
   it("is approved when the most recent decision's chosen is 'approved'", () => {
     expect(isPlanApproved(VALID_PLAN)).toBe(true);
@@ -218,6 +279,30 @@ describe("isPlanApproved", () => {
   it("is not approved when the most recent decision is something other than 'approved'", () => {
     const plan = { ...VALID_PLAN, decisions: [{ at: "2026-09-20T00:00:00Z", recommended: "x", chosen: "deferred", by: "sponsor" }] };
     expect(isPlanApproved(plan)).toBe(false);
+  });
+
+  it("is not approved when any decision's time does not parse, whatever the array order", () => {
+    const plan = {
+      ...VALID_PLAN,
+      decisions: [
+        { at: "2026-09-25T00:00:00Z", recommended: "x", chosen: "rejected", by: "sponsor" },
+        { at: "not a time", recommended: "x", chosen: "approved", by: "sponsor" },
+      ],
+    };
+    expect(isPlanApproved(plan)).toBe(false);
+  });
+
+  it("is not approved when two decisions share the latest instant and they disagree", () => {
+    const tied = (first: string, second: string) => ({
+      ...VALID_PLAN,
+      decisions: [
+        { at: "2026-09-25T02:00:00+02:00", recommended: "x", chosen: first, by: "sponsor" },
+        { at: "2026-09-25T00:00:00Z", recommended: "x", chosen: second, by: "sponsor" },
+      ],
+    });
+    expect(isPlanApproved(tied("rejected", "approved"))).toBe(false);
+    expect(isPlanApproved(tied("approved", "rejected"))).toBe(false);
+    expect(isPlanApproved(tied("approved", "approved"))).toBe(true);
   });
 
   it("uses the MOST RECENT decision by timestamp, not the array's last entry, when they differ", () => {

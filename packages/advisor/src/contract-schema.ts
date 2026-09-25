@@ -11,7 +11,10 @@
  * __proto__) is never mistaken for a declared or present property.
  *
  * Messages never echo a value from the document under test: a brief can
- * carry founder text, and a refusal message can end up in a log.
+ * carry founder text, and a refusal message can end up in a log. They do
+ * name keys, in paths and in a repeated-key refusal; a key that is not a
+ * plain identifier is shown as a JSON string with every control character
+ * escaped (quoteKey()), so it cannot act on a terminal.
  *
  * Every string, and every object key, must be well-formed Unicode: a lone
  * surrogate is refused whatever the contract says, because it has no UTF-8
@@ -42,8 +45,51 @@ export type ContractLoader = (name: string) => ContractSchema;
 const ANNOTATIONS = new Set(["$schema", "$id", "title", "description"]);
 const IMPLEMENTED = new Set([
   "$ref", "type", "const", "enum", "required", "properties", "additionalProperties",
-  "items", "minItems", "maxItems", "contains", "minLength", "pattern", "oneOf", "allOf", "not", "definitions",
+  "items", "minItems", "maxItems", "contains", "minLength", "pattern", "format", "oneOf", "allOf", "not", "definitions",
 ]);
+
+/**
+ * The `format` values this checker asserts (JSON Schema leaves `format`
+ * optional to assert; these contracts require it). Both are ISO 8601 as
+ * RFC 3339 profiles it, checked field by field rather than by shape alone:
+ *
+ * - `date`: `YYYY-MM-DD`, with month 01-12 and a day that exists in that
+ *   month of that year (leap years included, so `2028-02-29` is a date and
+ *   `2026-02-29` is not).
+ * - `date-time`: a `date`, then `T`, then `hh:mm` with optional `:ss` and
+ *   fraction, then `Z` or `+hh:mm` / `-hh:mm`; hours 00-23, minutes 00-59,
+ *   seconds 00-59 (no leap second), offset hours 00-23 and offset minutes
+ *   00-59.
+ *
+ * Either must also give a finite `Date.parse`, so a time that validates can
+ * always be ordered.
+ */
+const FORMATS = new Set(["date", "date-time"]);
+const DATE_TIME = /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?(?:Z|[+-](\d{2}):(\d{2})))?$/;
+
+function inRange(text: string | undefined, low: number, high: number): boolean {
+  if (text === undefined) return true;
+  const value = Number(text);
+  return value >= low && value <= high;
+}
+
+function daysInMonth(year: number, month: number): number {
+  if (month === 2) return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0) ? 29 : 28;
+  return [4, 6, 9, 11].includes(month) ? 30 : 31;
+}
+
+function matchesFormat(format: string, value: string): boolean {
+  const match = DATE_TIME.exec(value);
+  if (match === null) return false;
+  const [, year, month, day, hour, minute, second, offsetHour, offsetMinute] = match;
+  const isDateTime = hour !== undefined;
+  if (isDateTime !== (format === "date-time")) return false;
+  if (!inRange(month, 1, 12)) return false;
+  if (!inRange(day, 1, daysInMonth(Number(year), Number(month)))) return false;
+  if (!inRange(hour, 0, 23) || !inRange(minute, 0, 59) || !inRange(second, 0, 59)) return false;
+  if (!inRange(offsetHour, 0, 23) || !inRange(offsetMinute, 0, 59)) return false;
+  return Number.isFinite(Date.parse(value));
+}
 
 /** Throws on any keyword, or keyword form, this checker does not implement -- for this node only. */
 function assertImplementedNode(schema: ContractSchema, at: string): void {
@@ -55,6 +101,9 @@ function assertImplementedNode(schema: ContractSchema, at: string): void {
     throw new Error(`contract checker implements only a boolean "additionalProperties" (at ${at})`);
   }
   if (Object.hasOwn(schema, "items") && Array.isArray(schema.items)) throw new Error(`contract checker does not implement tuple "items" (at ${at})`);
+  if (Object.hasOwn(schema, "format") && !FORMATS.has(schema.format as string)) {
+    throw new Error(`contract checker does not implement format ${JSON.stringify(schema.format)} (at ${at})`);
+  }
 }
 
 /** Walks every subschema of `schema`, visited by a value or not, and throws on the first keyword this checker does not implement. */
@@ -80,7 +129,21 @@ function typeOf(value: unknown): string {
 const LONE_SURROGATE = /[\uD800-\uDFFF]/u;
 const NOT_WELL_FORMED = "must be well-formed Unicode, and contains a lone surrogate";
 
+/** C1 controls, line and paragraph separators, and bidirectional overrides: JSON.stringify leaves these as they are, and a terminal may act on them. */
+const UNSAFE_FOR_TERMINAL = /[\u007f-\u009f\u2028\u2029\u200e\u200f\u202a-\u202e\u2066-\u2069]/g;
+
+/**
+ * A key as it may appear in a message: a JSON string, with every control
+ * character escaped (`\u001b`, not a raw escape sequence), so a key from a
+ * file can never write to a terminal as anything but text.
+ */
+function quoteKey(name: string): string {
+  return JSON.stringify(name).replace(UNSAFE_FOR_TERMINAL, (character) => `\\u${character.charCodeAt(0).toString(16).padStart(4, "0")}`);
+}
+
+/** `path.name` for a plain identifier-like key; otherwise `path["..."]`, quoted by quoteKey(). */
 function childPath(path: string, name: string): string {
+  if (!/^[A-Za-z_$][A-Za-z0-9_$-]*$/.test(name)) return `${path}[${quoteKey(name)}]`;
   return path === "" ? name : `${path}.${name}`;
 }
 
@@ -143,6 +206,9 @@ function check(input: ContractSchema, value: unknown, inputScope: Scope, path: s
     if (typeof schema.pattern === "string" && !new RegExp(schema.pattern, "u").test(value)) {
       violations.push({ path, message: typeof schema.title === "string" ? `must be ${schema.title}` : `must match the pattern ${schema.pattern}` });
     }
+    if (typeof schema.format === "string" && !matchesFormat(schema.format, value)) {
+      violations.push({ path, message: typeof schema.title === "string" ? `must be ${schema.title}` : `must be a valid ${schema.format}` });
+    }
   }
   if (Array.isArray(value)) {
     if (typeof schema.minItems === "number" && value.length < schema.minItems) violations.push({ path, message: `must have at least ${schema.minItems} item(s)` });
@@ -168,7 +234,7 @@ function check(input: ContractSchema, value: unknown, inputScope: Scope, path: s
       else if (schema.additionalProperties === false) violations.push({ path: childPath(path, name), message: "is not a field the contract declares, and unknown fields are refused" });
     }
   }
-  if (Array.isArray(schema.oneOf)) violations.push(...checkOneOf(schema.oneOf as ContractSchema[], value, scope, path));
+  if (Array.isArray(schema.oneOf)) violations.push(...checkOneOf(schema.oneOf as ContractSchema[], value, scope, path, schema.title));
   if (Array.isArray(schema.allOf)) for (const branch of schema.allOf as ContractSchema[]) violations.push(...check(branch, value, scope, path));
   if (schema.not !== undefined && check(schema.not as ContractSchema, value, scope, path).length === 0) violations.push({ path, message: `must not match ${JSON.stringify(schema.not)}` });
   return violations;
@@ -179,8 +245,10 @@ function check(input: ContractSchema, value: unknown, inputScope: Scope, path: s
  * closest branch are reported -- the branch whose `type` fits the value, or
  * failing that the unique branch with the fewest violations -- so a refusal
  * names the actual field at fault rather than only "no branch matched".
+ * When no single branch is closest, the node's own `title` says what the
+ * value must be, if it has one.
  */
-function checkOneOf(branches: readonly ContractSchema[], value: unknown, scope: Scope, path: string): ContractViolation[] {
+function checkOneOf(branches: readonly ContractSchema[], value: unknown, scope: Scope, path: string, title: unknown): ContractViolation[] {
   const results = branches.map((branch) => check(branch, value, scope, path));
   const passing = results.filter((result) => result.length === 0).length;
   if (passing === 1) return [];
@@ -193,6 +261,7 @@ function checkOneOf(branches: readonly ContractSchema[], value: unknown, scope: 
   const fewest = Math.min(...results.map((result) => result.length));
   const closest = results.filter((result) => result.length === fewest);
   if (closest.length === 1) return closest[0]!;
+  if (typeof title === "string") return [{ path, message: `must be ${title}` }];
   return [{ path, message: `does not match any of the ${branches.length} allowed forms` }];
 }
 
@@ -212,7 +281,8 @@ export function formatContractViolation(label: string, violation: ContractViolat
   return `${where} ${violation.message}`;
 }
 
-const STRICT_UTF8 = new TextDecoder("utf-8", { fatal: true });
+// ignoreBOM keeps a leading byte order mark in the text, so it is refused below rather than silently stripped.
+const STRICT_UTF8 = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true });
 const JSON_WHITESPACE = " \t\n\r";
 const JSON_NUMBER = /-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/y;
 const JSON_ESCAPE = /\\(?:["\\/bfnrt]|u[0-9a-fA-F]{4})/y;
@@ -276,7 +346,7 @@ function checkStrictJson(text: string): void {
           skipWhitespace();
           const key = readString();
           if (seen.has(key)) {
-            throw new StrictJsonError(`repeats the key ${JSON.stringify(key)} in ${path === "" ? "the top-level object" : path}; every key may appear once`);
+            throw new StrictJsonError(`repeats the key ${quoteKey(key)} in ${path === "" ? "the top-level object" : path}; every key may appear once`);
           }
           seen.add(key);
           at = childPath(path, key);
@@ -314,8 +384,8 @@ function checkStrictJson(text: string): void {
 
 /**
  * Reads a plan or brief file's bytes as strict JSON: UTF-8 that decodes
- * without error (never silently replaced with U+FFFD), exactly one JSON
- * value, and no object that repeats a key at any depth -- the I-JSON rules
+ * without error (never silently replaced with U+FFFD) and does not start
+ * with a byte order mark, exactly one JSON value, and no object that repeats a key at any depth -- the I-JSON rules
  * RFC 8785 canonicalization assumes. Throws an Error whose message says
  * which rule the bytes break: a syntax error by position only, a repeated
  * key by name and where it is. It does not validate the value against a
@@ -328,6 +398,7 @@ export function readContractDocument(bytes: Uint8Array): unknown {
   } catch {
     throw new Error("is not valid UTF-8");
   }
+  if (text.charCodeAt(0) === 0xfeff) throw new Error("is not valid JSON at position 0: it starts with a byte order mark, which strict JSON refuses");
   try {
     checkStrictJson(text);
   } catch (cause) {

@@ -140,6 +140,24 @@ describe("apply-plan-cli main", () => {
     }
   });
 
+  it("prints a repeated key with its control characters escaped, never raw, and refuses a byte order mark (#1475)", () => {
+    const workDir = tempDir();
+    const planPath = join(workDir, "plan.json");
+    const briefPath = join(workDir, "brief.json");
+    writeFileSync(planPath, JSON.stringify(VALID_PLAN));
+    writeFileSync(briefPath, '{"\\u001b[2J":1,"\\u001b[2J":2}');
+    const err = vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(main(["--plan", planPath, "--brief", briefPath, "--repo", workDir], createNodeHost())).toBe(2);
+    const message = String(err.mock.calls[0]?.[0]);
+    expect(message).toBe(`launcher-apply-plan: --brief repeats the key "\\u001b[2J" in the top-level object; every key may appear once: ${briefPath}`);
+    expect(message).not.toContain("\u001b");
+    writeFileSync(briefPath, Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), Buffer.from(JSON.stringify(VALID_BRIEF))]));
+    expect(main(["--plan", planPath, "--brief", briefPath, "--repo", workDir], createNodeHost())).toBe(2);
+    expect(String(err.mock.calls.at(-1)?.[0])).toBe(
+      `launcher-apply-plan: --brief is not valid JSON at position 0: it starts with a byte order mark, which strict JSON refuses: ${briefPath}`,
+    );
+  });
+
   it("exits 2 for malformed JSON with a position only, never quoting the file", () => {
     const workDir = tempDir();
     const planPath = join(workDir, "plan.json");

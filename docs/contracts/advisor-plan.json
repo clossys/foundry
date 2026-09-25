@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/clossys/foundry/blob/main/docs/contracts/advisor-plan.json",
   "title": "Advisor plan",
-  "description": "Issue #1175 and #1475: the plan record at clossys/advisor/plan.json that Advisor writes and renders into its STATUS document, and that Launcher reads before it applies an approved plan. packages/advisor/src/status.ts's AdvisorPlan type is the shape's owner; this file is the one definition both @clossys/advisor and @clossys/launcher validate against (each package packs it at build time, so neither depends on the other). Every object is closed: a key this contract does not declare is refused, never ignored, because an unknown key is either a typo or a field some other reader would silently drop. A later field is added here first, in the same change as its reader. The canonical plan digest, which an approval binds, is defined in docs/contracts/advisor-plan-digest.md; its fixture corpus is docs/contracts/advisor-plan-digest.fixture.json.",
+  "description": "Issue #1175 and #1475: the plan record at clossys/advisor/plan.json that Advisor writes and renders into its STATUS document, and that Launcher reads before it applies an approved plan. packages/advisor/src/status.ts's AdvisorPlan type is the shape's owner; this file is the one definition both @clossys/advisor and @clossys/launcher validate against (each package packs it at build time, so neither depends on the other). Every object is closed: a key this contract does not declare is refused, never ignored, because an unknown key is either a typo or a field some other reader would silently drop. A later field is added here first, in the same change as its reader. Every time is a real calendar time, asserted field by field through `format` (see definitions.dateTime and definitions.date), never by shape alone, so each one parses and can be ordered. The canonical plan digest, which an approval binds, is defined in docs/contracts/advisor-plan-digest.md; its fixture corpus is docs/contracts/advisor-plan-digest.fixture.json.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schemaVersion", "asOf", "mandate", "whereWeAre", "recommendedNext", "decisions", "blockers"],
@@ -36,14 +36,20 @@
       "pattern": "\\S"
     },
     "dateTime": {
-      "title": "an ISO 8601 date-time with a time zone, such as 2026-09-24T12:00:00Z",
+      "title": "a real ISO 8601 date-time with a time zone, such as 2026-09-24T12:00:00Z",
+      "description": "format date-time, asserted field by field: YYYY-MM-DDThh:mm, optional :ss and fraction, then Z or +hh:mm/-hh:mm. Month 01-12; a day that exists in that month of that year (leap years included); hours 00-23; minutes and seconds 00-59 (no leap second); offset hours 00-23 and minutes 00-59; and Date.parse must give a finite time. So 2026-02-30, 2026-09-24T24:30:00Z and +24:00 are refused, and every accepted time can be ordered.",
       "type": "string",
-      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(:\\d{2}(\\.\\d+)?)?(Z|[+-]\\d{2}:\\d{2})$"
+      "format": "date-time"
+    },
+    "date": {
+      "title": "a real ISO 8601 date such as 2026-09-24",
+      "description": "format date, asserted field by field: YYYY-MM-DD with month 01-12 and a day that exists in that month of that year (leap years included), and a finite Date.parse.",
+      "type": "string",
+      "format": "date"
     },
     "dateOrDateTime": {
-      "title": "an ISO 8601 date such as 2026-09-24, or a date-time with a time zone such as 2026-09-24T12:00:00Z",
-      "type": "string",
-      "pattern": "^\\d{4}-\\d{2}-\\d{2}(T\\d{2}:\\d{2}(:\\d{2}(\\.\\d+)?)?(Z|[+-]\\d{2}:\\d{2}))?$"
+      "title": "a real ISO 8601 date such as 2026-09-24, or a date-time with a time zone such as 2026-09-24T12:00:00Z",
+      "oneOf": [{ "$ref": "#/definitions/date" }, { "$ref": "#/definitions/dateTime" }]
     },
     "mandate": {
       "type": "object",

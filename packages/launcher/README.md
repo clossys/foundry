@@ -345,15 +345,23 @@ Every object is closed: a field the contracts do not declare is refused,
 and a known context value must be one of that field's fixed choice ids,
 because the brief is committed in every staffed repository. A string or
 key containing a lone surrogate is refused, so every plan that validates has
-a digest. A refusal names each field at fault and never echoes its value.
+a digest. Every plan time must be a real ISO 8601 calendar time, checked
+field by field (so `2026-02-30` or `T24:30` is refused). A brief's
+`problem`, `role`, `why` and `metric` must contain a non-whitespace
+character, and an item of `inputsFrom`, `outputsTo`, `sequence` or
+`deliverables` must not be empty. A refusal names each field at fault and
+never echoes its value; a key that is not a plain identifier is shown as an
+escaped JSON string, so a control character in it cannot reach a terminal.
 `launcher-apply-plan` reads both files as strict JSON: bytes that are not
-valid UTF-8, or an object that repeats a key at any depth, exit `2` with the
-repeated key named (a syntax error is reported by position only, never
-quoting the file), so the value validated is exactly the one a reader of
-the file sees.
+valid UTF-8, a leading byte order mark, or an object that repeats a key at
+any depth exit `2`, with a repeated key named (escaped) and a syntax error
+reported by position only, never quoting the file's text, so the value
+validated is exactly the one a reader of the file sees.
 `isPlanApproved()` reads a plan's most recent decision (by
 timestamp, not array position) and requires it to be `"approved"` --
-absence of any decision is never treated as approval.
+absence of any decision is never treated as approval, and neither is a
+decision time that does not parse or a tie at the latest instant between
+decisions that disagree.
 `applyEngagementBrief()` refuses, and writes nothing, unless all three
 checks pass and the plan's digest is computed; only then does it write the brief byte-identically -- it never re-authors
 its prose -- and reports `planDigest()` of the plan it applied, which the

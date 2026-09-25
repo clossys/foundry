@@ -42,12 +42,17 @@ export type {
  * The plan is approved when its most recent decision (by `at`) records
  * chosen === "approved". No decisions, or a most-recent decision that
  * isn't "approved", is not approved -- this never assumes approval from
- * absence.
+ * absence. Fails closed on anything that would let array order decide
+ * instead of time: a decision whose `at` does not parse to a finite time
+ * (the plan contract already refuses one; this does not rely on that), or
+ * two decisions at the same latest instant that do not all say "approved".
  */
 export function isPlanApproved(plan: AdvisorPlan): boolean {
   if (plan.decisions.length === 0) return false;
-  const mostRecent = [...plan.decisions].sort((left, right) => Date.parse(left.at) - Date.parse(right.at)).at(-1);
-  return mostRecent?.chosen === "approved";
+  const times = plan.decisions.map((decision) => Date.parse(decision.at));
+  if (!times.every(Number.isFinite)) return false;
+  const latest = Math.max(...times);
+  return plan.decisions.every((decision, index) => times[index] !== latest || decision.chosen === "approved");
 }
 
 export type ApplyBriefResult =

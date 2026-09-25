@@ -74,7 +74,7 @@ describe("validateAdvisorPlan against the plan contract", () => {
     const blank = validateAdvisorPlan({ ...PLAN, mandate: { ...PLAN.mandate, problem: "   " } });
     expect(messages(blank)).toEqual(["plan.mandate.problem must be a string with at least one non-whitespace character"]);
     const badDate = validateAdvisorPlan({ ...PLAN, decisions: [{ ...PLAN.decisions[0], at: "yesterday" }] });
-    expect(messages(badDate)).toEqual(["plan.decisions[0].at must be an ISO 8601 date-time with a time zone, such as 2026-09-24T12:00:00Z"]);
+    expect(messages(badDate)).toEqual(["plan.decisions[0].at must be a real ISO 8601 date-time with a time zone, such as 2026-09-24T12:00:00Z"]);
   });
 
   it("says what a whole document must be in plain words, with no path", () => {
@@ -162,12 +162,107 @@ describe("readContractDocument: strict JSON for plan and brief files (#1475)", (
   });
 });
 
+/** Out-of-range times the contract's shape alone once accepted (#1475): each must be refused. */
+const BAD_DATE_TIMES = [
+  "2026-13-01T00:00:00Z", // month 13
+  "2026-00-10T00:00:00Z", // month 0
+  "2026-09-32T00:00:00Z", // day 32
+  "2026-09-31T00:00:00Z", // September has 30 days
+  "2026-02-30T00:00:00Z", // February 30
+  "2026-02-29T00:00:00Z", // February 29 in a non-leap year
+  "2100-02-29T00:00:00Z", // 2100 is not a leap year
+  "2026-09-24T24:30:00Z", // hour 24
+  "2026-09-24T12:60:00Z", // minute 60
+  "2026-09-24T12:00:60Z", // second 60
+  "2026-09-24T12:00:00+24:00", // offset hour 24
+  "2026-09-24T12:00:00+05:60", // offset minute 60
+  "2026-13-45T25:61:61Z",
+];
+const GOOD_DATE_TIMES = ["2028-02-29T00:00:00Z", "2000-02-29T12:00:00Z", "2026-09-24T23:59:59.999+23:59", "2026-09-24T12:00Z", "2026-09-24T12:00:00-05:00"];
+const BAD_DATES = ["2026-02-30", "2026-02-29", "2026-13-01", "2026-09-31", "2026-9-01"];
+const GOOD_DATES = ["2028-02-29", "2026-09-30"];
+const DATE_TIME_MESSAGE = "must be a real ISO 8601 date-time with a time zone, such as 2026-09-24T12:00:00Z";
+const DATE_OR_DATE_TIME_MESSAGE = "must be a real ISO 8601 date such as 2026-09-24, or a date-time with a time zone such as 2026-09-24T12:00:00Z";
+
+describe("plan times are real calendar times, checked field by field (#1475)", () => {
+  const withByWhen = (byWhen: string) => ({ ...PLAN, blockers: [{ ...PLAN.blockers[0]!, nextAction: { ...PLAN.blockers[0]!.nextAction, byWhen } }] });
+
+  it("refuses every out-of-range date-time, and accepts real ones including Feb 29 of a leap year", () => {
+    for (const asOf of BAD_DATE_TIMES) expect(messages(validateAdvisorPlan({ ...PLAN, asOf })), asOf).toEqual([`plan.asOf ${DATE_TIME_MESSAGE}`]);
+    for (const asOf of GOOD_DATE_TIMES) expect(validateAdvisorPlan({ ...PLAN, asOf }), asOf).toEqual([]);
+  });
+
+  it("refuses an out-of-range date or date-time where either is allowed", () => {
+    for (const byWhen of [...BAD_DATES, ...BAD_DATE_TIMES]) {
+      expect(messages(validateAdvisorPlan(withByWhen(byWhen))), byWhen).toEqual([`plan.blockers[0].nextAction.byWhen ${DATE_OR_DATE_TIME_MESSAGE}`]);
+    }
+    for (const byWhen of [...GOOD_DATES, ...GOOD_DATE_TIMES]) expect(validateAdvisorPlan(withByWhen(byWhen)), byWhen).toEqual([]);
+  });
+
+  it("refuses the decision time that used to sort as NaN and let array order decide approval", () => {
+    const decisions = [
+      { at: "2026-09-25T00:00:00Z", recommended: "x", chosen: "rejected", by: "sponsor" },
+      { at: "2026-09-24T24:30:00Z", recommended: "x", chosen: "approved", by: "sponsor" },
+    ];
+    expect(messages(validateAdvisorPlan({ ...PLAN, decisions }))).toEqual([`plan.decisions[1].at ${DATE_TIME_MESSAGE}`]);
+  });
+
+  it("every accepted time parses to a finite instant", () => {
+    for (const text of [...GOOD_DATE_TIMES, ...GOOD_DATES]) expect(Number.isFinite(Date.parse(text)), text).toBe(true);
+  });
+});
+
+describe("keys in messages are escaped, never raw (#1475)", () => {
+  const bytes = (text: string) => new TextEncoder().encode(text);
+
+  it("shows an unknown key with control characters as an escaped JSON string", () => {
+    const [message] = messages(validateEngagementBrief({ ...BRIEF, "\u001b[2J\u009b": 1 }));
+    expect(message).toBe('brief["\\u001b[2J\\u009b"] is not a field the contract declares, and unknown fields are refused');
+    expect(message).not.toMatch(/[\u0000-\u001f\u007f-\u009f]/);
+  });
+
+  it("shows a repeated key and its path escaped", () => {
+    let message = "";
+    try {
+      readContractDocument(bytes('{"\\u001b]0;x\\u0007":{"k\\u202e":1,"k\\u202e":2}}'));
+    } catch (cause) {
+      message = (cause as Error).message;
+    }
+    expect(message).toBe('repeats the key "k\\u202e" in ["\\u001b]0;x\\u0007"]; every key may appear once');
+    expect(message).not.toMatch(/[\u0000-\u001f\u007f-\u009f‮]/);
+  });
+
+  it("refuses a leading byte order mark instead of stripping it", () => {
+    const withBom = new Uint8Array([0xef, 0xbb, 0xbf, ...bytes("{}")]);
+    expect(() => readContractDocument(withBom)).toThrow("is not valid JSON at position 0: it starts with a byte order mark, which strict JSON refuses");
+  });
+});
+
 describe("validateEngagementBrief against the brief contract", () => {
   it("accepts every goal direction the contract lists", () => {
     for (const direction of ["increase", "decrease", "maintain", "target-range"]) {
       const role = { ...BRIEF.roles[0]!, goal: { metric: "message-clarity-score", direction } };
       expect(validateEngagementBrief({ ...BRIEF, roles: [role] }), direction).toEqual([]);
     }
+  });
+
+  it("refuses a whitespace-only problem, role, why, or metric", () => {
+    const role = BRIEF.roles[0]!;
+    const cases: [string, unknown][] = [
+      ["brief.problem", { ...BRIEF, problem: "   " }],
+      ["brief.roles[0].role", { ...BRIEF, roles: [{ ...role, role: " " }] }],
+      ["brief.roles[0].why", { ...BRIEF, roles: [{ ...role, why: "\t\n" }] }],
+      ["brief.roles[0].goal.metric", { ...BRIEF, roles: [{ ...role, goal: { ...role.goal, metric: " " } }] }],
+    ];
+    for (const [where, brief] of cases) expect(messages(validateEngagementBrief(brief)), where).toEqual([`${where} must be a string with at least one non-whitespace character`]);
+  });
+
+  it("refuses an empty string in inputsFrom, outputsTo, sequence, or deliverables", () => {
+    const role = BRIEF.roles[0]!;
+    expect(messages(validateEngagementBrief({ ...BRIEF, roles: [{ ...role, inputsFrom: [""] }] }))).toEqual(["brief.roles[0].inputsFrom[0] must be at least 1 character(s) long"]);
+    expect(messages(validateEngagementBrief({ ...BRIEF, roles: [{ ...role, outputsTo: [""] }] }))).toEqual(["brief.roles[0].outputsTo[0] must be at least 1 character(s) long"]);
+    expect(messages(validateEngagementBrief({ ...BRIEF, deliverables: [""] }))).toEqual(["brief.deliverables[0] must be at least 1 character(s) long"]);
+    expect(messages(validateEngagementBrief({ ...BRIEF, sequence: [""] }))).toEqual(["brief.sequence[0] must be at least 1 character(s) long"]);
   });
 
   it("refuses an unknown top-level field", () => {
