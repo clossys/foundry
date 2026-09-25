@@ -75,6 +75,18 @@ function writeManifest(dir, manifest) {
   writeFileSync(join(dir, "package.json"), JSON.stringify(manifest, null, 2) + "\n");
 }
 
+function lockfileText(alphaVersion, extra = {}) {
+  return JSON.stringify({
+    name: "root",
+    lockfileVersion: 3,
+    packages: {
+      "": { name: "root" },
+      "packages/alpha": { name: "@x/alpha", version: alphaVersion },
+      ...extra,
+    },
+  });
+}
+
 // 2026-01-07 is a Wednesday, 2026-01-03 a Saturday, in America/Los_Angeles, at 20:00 UTC.
 const WEDNESDAY = "2026-01-07T20:00:00Z";
 const SATURDAY = "2026-01-03T20:00:00Z";
@@ -99,7 +111,14 @@ test("fails an ordinary PR on release day with no label", () => {
   });
 });
 
-test("passes a real release-shaped diff on release day -- label AND a verified footprint (real git content, no lockfile involved)", () => {
+// issues #1331/#1389: a real release diff always carries a package-lock.json
+// change AND a docs/changelogs/<dir>.md entry alongside the manifest bump --
+// this fixture includes both, matching what apply-release-changesets.mjs's
+// real producer output actually looks like end to end (previously titled
+// "no lockfile involved", which was itself stale evidence of the #1331 gap
+// this branch closes: a release-shaped diff with no lockfile change is no
+// longer accepted, by design).
+test("passes a real release-shaped diff on release day -- label AND a verified footprint (real git content, lockfile and changelog both present)", () => {
   withGitRoot((root) => {
     const pkgDir = join(root, "packages", "alpha");
     mkdirSync(pkgDir, { recursive: true });
@@ -107,6 +126,7 @@ test("passes a real release-shaped diff on release day -- label AND a verified f
     // The package changelog lives outside the package, at docs/changelogs/<dir>.md.
     mkdirSync(join(root, "docs", "changelogs"), { recursive: true });
     writeFileSync(join(root, "docs", "changelogs", "alpha.md"), "# Changelog\n\n## 1.0.0\n\n- Initial release.\n");
+    writeFileSync(join(root, "package-lock.json"), lockfileText("1.0.0"));
     mkdirSync(join(root, ".changesets"), { recursive: true });
     writeFileSync(join(root, ".changesets", "alpha-fix.md"), "---\nalpha: patch\n---\n\nFix a bug.\n");
     const base = gitCommit(root, "base");
@@ -116,6 +136,43 @@ test("passes a real release-shaped diff on release day -- label AND a verified f
     // changeset's own bullet -- evaluateReleasePrFootprint() now rebuilds
     // this byte for byte (re-review, https://github.com/clossys/foundry/pull/1353#issuecomment-5803854341).
     writeFileSync(join(root, "docs", "changelogs", "alpha.md"), "# Changelog\n\n## 1.0.1 - 2026-01-10\n\n- Fix a bug.\n\n## 1.0.0\n\n- Initial release.\n");
+    writeFileSync(join(root, "package-lock.json"), lockfileText("1.0.1"));
+    rmSync(join(root, ".changesets", "alpha-fix.md"));
+    const head = gitCommit(root, "release");
+
+    const changedFiles = [
+      { path: "packages/alpha/package.json", status: "modified" },
+      { path: "docs/changelogs/alpha.md", status: "modified" },
+      { path: "package-lock.json", status: "modified" },
+      { path: ".changesets/alpha-fix.md", status: "removed" },
+    ];
+    const r = run(["--json", "--now", SATURDAY, "--base", base, "--head", head, "--changed-files", JSON.stringify(changedFiles), "--labels", "release:weekly"], root);
+    assert.equal(r.code, 0, r.out);
+    assert.equal(JSON.parse(r.out).status, "pass");
+  });
+});
+
+// issue #1331: the SAME fixture as above, but with package-lock.json
+// removed from the diff entirely, must now refuse.
+test("ADVERSARIAL (issue #1331): the SAME release-shaped diff, with package-lock.json dropped from the diff entirely, fails closed", () => {
+  withGitRoot((root) => {
+    const pkgDir = join(root, "packages", "alpha");
+    mkdirSync(pkgDir, { recursive: true });
+    writeManifest(pkgDir, { name: "@x/alpha", version: "1.0.0" });
+    mkdirSync(join(root, "docs", "changelogs"), { recursive: true });
+    writeFileSync(join(root, "docs", "changelogs", "alpha.md"), "# Changelog\n\n## 1.0.0\n\n- Initial release.\n");
+    writeFileSync(join(root, "package-lock.json"), lockfileText("1.0.0"));
+    mkdirSync(join(root, ".changesets"), { recursive: true });
+    writeFileSync(join(root, ".changesets", "alpha-fix.md"), "---\nalpha: patch\n---\n\nFix a bug.\n");
+    const base = gitCommit(root, "base");
+
+    writeManifest(pkgDir, { name: "@x/alpha", version: "1.0.1" });
+    writeFileSync(join(root, "docs", "changelogs", "alpha.md"), "# Changelog\n\n## 1.0.1 - 2026-01-10\n\n- Fix a bug.\n\n## 1.0.0\n\n- Initial release.\n");
+    // NOTE: package-lock.json is deliberately left unbumped on disk here --
+    // its real-file content still changes underneath (irrelevant, since the
+    // diff below never names it), but the point is the DIFF this run is
+    // told about omits it entirely, exactly like a producer run whose
+    // npm install --package-lock-only step never happened.
     rmSync(join(root, ".changesets", "alpha-fix.md"));
     const head = gitCommit(root, "release");
 
@@ -123,10 +180,49 @@ test("passes a real release-shaped diff on release day -- label AND a verified f
       { path: "packages/alpha/package.json", status: "modified" },
       { path: "docs/changelogs/alpha.md", status: "modified" },
       { path: ".changesets/alpha-fix.md", status: "removed" },
+      // package-lock.json deliberately omitted from the diff.
     ];
     const r = run(["--json", "--now", SATURDAY, "--base", base, "--head", head, "--changed-files", JSON.stringify(changedFiles), "--labels", "release:weekly"], root);
-    assert.equal(r.code, 0, r.out);
-    assert.equal(JSON.parse(r.out).status, "pass");
+    assert.equal(r.code, 1, r.out);
+    const report = JSON.parse(r.out);
+    assert.equal(report.footprintVerified, false);
+    assert.match(report.footprintReason, /package-lock\.json is absent from the diff/);
+  });
+});
+
+// issue #1389: the SAME fixture, but with docs/changelogs/alpha.md dropped
+// from the diff entirely, must now refuse.
+test("ADVERSARIAL (issue #1389): the SAME release-shaped diff, with docs/changelogs/alpha.md dropped from the diff entirely, fails closed", () => {
+  withGitRoot((root) => {
+    const pkgDir = join(root, "packages", "alpha");
+    mkdirSync(pkgDir, { recursive: true });
+    writeManifest(pkgDir, { name: "@x/alpha", version: "1.0.0" });
+    mkdirSync(join(root, "docs", "changelogs"), { recursive: true });
+    writeFileSync(join(root, "docs", "changelogs", "alpha.md"), "# Changelog\n\n## 1.0.0\n\n- Initial release.\n");
+    writeFileSync(join(root, "package-lock.json"), lockfileText("1.0.0"));
+    mkdirSync(join(root, ".changesets"), { recursive: true });
+    writeFileSync(join(root, ".changesets", "alpha-fix.md"), "---\nalpha: patch\n---\n\nFix a bug.\n");
+    const base = gitCommit(root, "base");
+
+    writeManifest(pkgDir, { name: "@x/alpha", version: "1.0.1" });
+    writeFileSync(join(root, "package-lock.json"), lockfileText("1.0.1"));
+    // NOTE: docs/changelogs/alpha.md deliberately left unbumped -- the diff
+    // below never names it, exactly like a release PR that silently
+    // discarded the pending changeset without a release note.
+    rmSync(join(root, ".changesets", "alpha-fix.md"));
+    const head = gitCommit(root, "release");
+
+    const changedFiles = [
+      { path: "packages/alpha/package.json", status: "modified" },
+      { path: "package-lock.json", status: "modified" },
+      { path: ".changesets/alpha-fix.md", status: "removed" },
+      // docs/changelogs/alpha.md deliberately omitted from the diff.
+    ];
+    const r = run(["--json", "--now", SATURDAY, "--base", base, "--head", head, "--changed-files", JSON.stringify(changedFiles), "--labels", "release:weekly"], root);
+    assert.equal(r.code, 1, r.out);
+    const report = JSON.parse(r.out);
+    assert.equal(report.footprintVerified, false);
+    assert.match(report.footprintReason, /absent from the diff/);
   });
 });
 
@@ -168,33 +264,34 @@ test("ADVERSARIAL: a new (added) changeset smuggled in among an otherwise-clean 
   });
 });
 
-function lockfileText(alphaVersion, extra = {}) {
-  return JSON.stringify({
-    name: "root",
-    lockfileVersion: 3,
-    packages: {
-      "": { name: "root" },
-      "packages/alpha": { name: "@x/alpha", version: alphaVersion },
-      ...extra,
-    },
-  });
-}
-
+// issue #1389: the footprint also requires a docs/changelogs/<dir>.md entry
+// for the bumped package alongside its manifest and lockfile change -- this
+// fixture writes one so the test keeps isolating its own point (a pure
+// lockfile diff is accepted), rather than tripping the newer, unrelated
+// absent-changelog refusal.
 test("a legitimate package-lock.json bump (pure diff, no npm) passes alongside the manifest bump", () => {
   withGitRoot((root) => {
     const pkgDir = join(root, "packages", "alpha");
     mkdirSync(pkgDir, { recursive: true });
     writeManifest(pkgDir, { name: "@x/alpha", version: "1.0.0" });
     writeFileSync(join(root, "package-lock.json"), lockfileText("1.0.0"));
+    mkdirSync(join(root, "docs", "changelogs"), { recursive: true });
+    writeFileSync(join(root, "docs", "changelogs", "alpha.md"), "# Changelog\n\n## 1.0.0\n\n- Initial release.\n");
     const base = gitCommit(root, "base");
 
     writeManifest(pkgDir, { name: "@x/alpha", version: "1.0.1" });
     writeFileSync(join(root, "package-lock.json"), lockfileText("1.0.1"));
+    // No changeset is consumed in this fixture (a pure lockfile/manifest
+    // diff, the point of this test) -- reconstructExpectedChangelogText()
+    // therefore expects ZERO bullets under the new heading, exactly what
+    // prependChangelogEntry({ bullets: [] }) itself produces.
+    writeFileSync(join(root, "docs", "changelogs", "alpha.md"), "# Changelog\n\n## 1.0.1 - 2026-01-10\n\n\n## 1.0.0\n\n- Initial release.\n");
     const head = gitCommit(root, "release");
 
     const changedFiles = [
       { path: "packages/alpha/package.json", status: "modified" },
       { path: "package-lock.json", status: "modified" },
+      { path: "docs/changelogs/alpha.md", status: "modified" },
     ];
     const r = run(["--json", "--now", SATURDAY, "--base", base, "--head", head, "--changed-files", JSON.stringify(changedFiles), "--labels", "release:weekly"], root);
     assert.equal(r.code, 0, r.out);
@@ -282,6 +379,9 @@ test("PAGINATION: the same fixture with the smuggled file removed (a genuinely c
     mkdirSync(join(root, "docs", "changelogs"), { recursive: true });
     const changelogPath = join(root, "docs", "changelogs", "alpha.md");
     writeFileSync(changelogPath, "# Changelog\n\n## 1.0.0\n\n- Initial release.\n");
+    // issue #1331: the footprint also requires a package-lock.json change
+    // alongside the manifest bump.
+    writeFileSync(join(root, "package-lock.json"), lockfileText("1.0.0"));
     mkdirSync(join(root, ".changesets"), { recursive: true });
     const changesetNames = [];
     const summaries = [];
@@ -295,6 +395,7 @@ test("PAGINATION: the same fixture with the smuggled file removed (a genuinely c
     const base = gitCommit(root, "base with 120 pending changesets");
 
     writeManifest(pkgDir, { name: "@x/alpha", version: "1.0.1" });
+    writeFileSync(join(root, "package-lock.json"), lockfileText("1.0.1"));
     // The real producer's CHANGELOG bullets are every consumed changeset's
     // own summary -- isChangesetDeletionLegitimate() now cross-checks each
     // deleted changeset's summary landed here (re-review,
@@ -309,6 +410,7 @@ test("PAGINATION: the same fixture with the smuggled file removed (a genuinely c
     const changedFiles = [
       { path: "packages/alpha/package.json", status: "modified" },
       { path: "docs/changelogs/alpha.md", status: "modified" },
+      { path: "package-lock.json", status: "modified" },
       ...changesetNames.map((name) => ({ path: `.changesets/${name}`, status: "removed" })),
     ];
     assert.ok(changedFiles.length > 100, "fixture must exceed 100 files");

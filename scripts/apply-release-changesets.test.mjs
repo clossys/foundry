@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import test from "node:test";
@@ -972,6 +972,486 @@ test("COMPOSITION (mixed run): an owner-approved out-of-band minor releases, its
     const standaloneManifest = JSON.parse(readFileSync(join(root, "packages", "standalone", "package.json"), "utf8"));
     assert.equal(standaloneManifest.version, "3.0.0");
     assert.equal(existsSync(join(root, ".changesets", "standalone-feature.md")), true);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// -------------------------------------------------- issue #1377: PHASE B fixed point (third-level dependents)
+//
+// PHASE B's sibling-range scan used to be a single pass: `bumpedVersions`
+// was built once, from PHASE A alone, and never grew to include a
+// dependent-only patch bump THAT SAME PHASE produced. A THIRD package
+// depending on a dependent-only-bumped package via an exact pin (or any
+// range a one-step patch bump does not already cover) was left pointing at
+// the now-stale pinned version -- see the issue's own concrete case,
+// reproduced here verbatim: core (real minor bump) -> mid (dependent-only
+// patch bump, ^0.9.0 no longer covers core's 0.10.0) -> pinned (exact pin
+// on mid, "1.2.0", which a patch bump to 1.2.1 does not satisfy).
+
+test("applyReleaseChangesets: a THIRD-level dependent pinned via an EXACT VERSION on a dependent-only-bumped package is also rewritten (issue #1377)", () => {
+  const root = makeRoot();
+  try {
+    makePackage(root, "core", "0.9.0");
+    writeChangeset(root, "core-feature.md", "---\ncore: minor\n---\n\nAdd a feature.\n");
+
+    // mid: NOT named by any changeset -- depends on core via a range core's
+    // minor bump breaks, so mid gets a dependent-only patch bump.
+    makePackageWithDependency(root, "mid", "1.2.0", "@x/core", "^0.9.0");
+
+    // pinned: NOT named by any changeset -- depends on mid via an EXACT
+    // pin, "1.2.0". mid's dependent-only bump (1.2.0 -> 1.2.1) is a fact
+    // PHASE B could only discover about ITSELF in a first pass; without
+    // feeding it back in, pinned's stale reference to mid@1.2.0 was never
+    // detected or rewritten.
+    makePackageWithDependency(root, "pinned", "2.0.0", "@x/mid", "1.2.0");
+
+    const result = applyReleaseChangesets({ root, runNpmInstall: () => {}, today: () => "2026-09-24" });
+
+    assert.equal(result.findings.length, 0, JSON.stringify(result.findings));
+    assert.deepEqual(
+      result.applied.map((a) => a.package).sort(),
+      ["core", "mid", "pinned"],
+    );
+
+    const midApplied = result.applied.find((a) => a.package === "mid");
+    assert.equal(midApplied.toVersion, "1.2.1");
+    assert.deepEqual(midApplied.dependencyUpdates, [{ section: "dependencies", name: "@x/core", fromRange: "^0.9.0", toRange: "^0.10.0" }]);
+
+    const pinnedApplied = result.applied.find((a) => a.package === "pinned");
+    assert.equal(pinnedApplied.toVersion, "2.0.1", "pinned must itself get a dependent-only patch bump too");
+    assert.equal(pinnedApplied.bump, "patch");
+    assert.deepEqual(pinnedApplied.changesetFiles, []);
+    assert.deepEqual(pinnedApplied.dependencyUpdates, [{ section: "dependencies", name: "@x/mid", fromRange: "1.2.0", toRange: "^1.2.1" }]);
+
+    const pinnedManifest = JSON.parse(readFileSync(join(root, "packages", "pinned", "package.json"), "utf8"));
+    assert.equal(pinnedManifest.version, "2.0.1");
+    assert.equal(pinnedManifest.dependencies["@x/mid"], "^1.2.1");
+
+    const pinnedChangelog = readFileSync(changelogFile(root, "pinned"), "utf8");
+    assert.match(pinnedChangelog, /Updated dependency @x\/mid to \^1\.2\.1/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("applyReleaseChangesets: a FOUR-level chain of dependent-only bumps converges when alphabetical scan order already matches dependency order (a<b<c<d resolves within a single round -- see the REVERSE-order test below for the case that actually needs `grew` to carry a bump across rounds)", () => {
+  const root = makeRoot();
+  try {
+    makePackage(root, "a", "0.9.0");
+    writeChangeset(root, "a-feature.md", "---\na: minor\n---\n\nAdd a feature.\n");
+    makePackageWithDependency(root, "b", "1.0.0", "@x/a", "^0.9.0");
+    makePackageWithDependency(root, "c", "1.0.0", "@x/b", "1.0.0"); // exact pin on b
+    makePackageWithDependency(root, "d", "1.0.0", "@x/c", "1.0.0"); // exact pin on c
+
+    const result = applyReleaseChangesets({ root, runNpmInstall: () => {}, today: () => "2026-09-24" });
+
+    assert.equal(result.findings.length, 0, JSON.stringify(result.findings));
+    assert.deepEqual(
+      result.applied.map((a) => a.package).sort(),
+      ["a", "b", "c", "d"],
+    );
+    assert.equal(result.applied.find((x) => x.package === "b").toVersion, "1.0.1");
+    assert.equal(result.applied.find((x) => x.package === "c").toVersion, "1.0.1");
+    assert.equal(result.applied.find((x) => x.package === "d").toVersion, "1.0.1");
+
+    const dManifest = JSON.parse(readFileSync(join(root, "packages", "d", "package.json"), "utf8"));
+    assert.equal(dManifest.dependencies["@x/c"], "^1.0.1");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// Fix-round regression probe (strong blind review, round 1): every package
+// in the FOUR-level chain test just above sorts alphabetically in the SAME
+// order as the dependency chain (a -> b -> c -> d), so `workspaceDirs`'s
+// single alphabetical scan discovers b's bump, then c's, then d's, all
+// within round 1 -- the outer `while (grew)` loop never actually needs to
+// run a second time for that test to pass. That means the line which feeds
+// a round's OWN new dependent-only bumps back into `bumpedVersions` for a
+// LATER round (`grew = true;`, just above the loop over `workspaceDirs`)
+// was never exercised by any existing test: flipping it to `grew = false;`
+// still left all of them green.
+//
+// This test forces the real multi-round path: `z` is named (a minor
+// changeset), `y` depends on `^z` and sorts BEFORE it, and `a` pins
+// `y@1.0.0` exactly and sorts before `y` too -- so every dependent sorts
+// alphabetically BEFORE the package it depends on. Round 1's scan visits
+// "a" first, but "y" has not bumped yet this round, so "a" finds nothing;
+// it then visits "y", finds z's real bump, and gives y its own
+// dependent-only bump. Only because `grew = true` carries that fact into
+// round 2 does round 2's scan of "a" find y's now-stale pin and bump "a"
+// too. With `grew = true` mutated to `grew = false`, the loop would stop
+// after round 1 and "a" would never be rewritten -- the assertions below on
+// "a" are what the existing FOUR-level (forward-order) test could never
+// catch.
+test("applyReleaseChangesets: a THREE-level REVERSE chain (each dependent sorts BEFORE its dependency) needs a second round to bump the outermost dependent", () => {
+  const root = makeRoot();
+  try {
+    makePackage(root, "z", "0.9.0");
+    writeChangeset(root, "z-feature.md", "---\nz: minor\n---\n\nAdd a feature.\n");
+    makePackageWithDependency(root, "y", "1.0.0", "@x/z", "^0.9.0"); // "y" < "z" alphabetically, but y depends on z
+    makePackageWithDependency(root, "a", "2.0.0", "@x/y", "1.0.0"); // exact pin on y; "a" < "y" alphabetically, but a depends on y
+
+    const result = applyReleaseChangesets({ root, runNpmInstall: () => {}, today: () => "2026-09-24" });
+
+    assert.equal(result.findings.length, 0, JSON.stringify(result.findings));
+    assert.deepEqual(
+      result.applied.map((x) => x.package).sort(),
+      ["a", "y", "z"],
+    );
+
+    const yApplied = result.applied.find((x) => x.package === "y");
+    assert.equal(yApplied.toVersion, "1.0.1");
+    assert.deepEqual(yApplied.dependencyUpdates, [{ section: "dependencies", name: "@x/z", fromRange: "^0.9.0", toRange: "^0.10.0" }]);
+
+    // This is the assertion the existing forward-order test structurally
+    // cannot exercise: "a" only gets bumped because round 2 sees the round-1
+    // bump of "y".
+    const aApplied = result.applied.find((x) => x.package === "a");
+    assert.ok(aApplied, "\"a\" must be rewritten once \"y\" moves past its exact pin -- this requires a second round");
+    assert.equal(aApplied.toVersion, "2.0.1");
+    assert.equal(aApplied.bump, "patch");
+    assert.deepEqual(aApplied.dependencyUpdates, [{ section: "dependencies", name: "@x/y", fromRange: "1.0.0", toRange: "^1.0.1" }]);
+
+    const aManifest = JSON.parse(readFileSync(join(root, "packages", "a", "package.json"), "utf8"));
+    assert.equal(aManifest.version, "2.0.1");
+    assert.equal(aManifest.dependencies["@x/y"], "^1.0.1");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// -------------------------------------------------- issue #1390: npm failure must not leave a partial write (double-bump trap)
+//
+// The write phase used to write every bumped package's manifest and
+// CHANGELOG.md first, then call runNpmInstall(), and only delete the
+// consumed changesets after that call returned. If npm failed midway
+// (network, registry, a locally broken npm), the manifests/CHANGELOGs it
+// already wrote stayed on disk while the changesets were (deliberately)
+// left pending -- a plain rerun then re-planned from those still-pending
+// changesets and re-bumped the already-bumped manifests a second time.
+
+test("applyReleaseChangesets: when npm fails, every manifest and CHANGELOG this run would have written is rolled back to its exact pre-run state (issue #1390)", () => {
+  const root = makeRoot();
+  try {
+    makePackage(root, "alpha", "1.0.0");
+    const alphaChangelog = "# Changelog\n\n## 1.0.0\n\n- Initial release.\n";
+    writeFileSync(changelogFile(root, "alpha"), alphaChangelog);
+    writeChangeset(root, "alpha-fix.md", "---\nalpha: patch\n---\n\nFix a bug.\n");
+
+    let threw = null;
+    try {
+      applyReleaseChangesets({
+        root,
+        today: () => "2026-09-22",
+        runNpmInstall: () => {
+          throw new Error("simulated npm install --package-lock-only failure");
+        },
+      });
+    } catch (error) {
+      threw = error;
+    }
+
+    assert.ok(threw, "the npm failure must still propagate -- this is not silently swallowed");
+    assert.match(threw.message, /simulated npm install/);
+
+    // The manifest is back to its pre-run version -- not left bumped.
+    const alphaManifest = JSON.parse(readFileSync(join(root, "packages", "alpha", "package.json"), "utf8"));
+    assert.equal(alphaManifest.version, "1.0.0", "the manifest must be rolled back to its pre-run version, not left bumped");
+
+    // The CHANGELOG is back to its pre-run content -- not left with a new entry.
+    assert.equal(readFileSync(changelogFile(root, "alpha"), "utf8"), alphaChangelog, "the CHANGELOG must be rolled back to its pre-run content");
+
+    // The changeset is still pending -- deliberately unchanged (see the write phase's own comment).
+    assert.equal(existsSync(join(root, ".changesets", "alpha-fix.md")), true, "the changeset must still be pending after a failed run");
+
+    // A clean rerun (npm succeeding this time) must see the TRUE starting
+    // version, not double-bump on top of a partially-applied first attempt.
+    const rerun = applyReleaseChangesets({ root, today: () => "2026-09-22", runNpmInstall: () => {} });
+    assert.equal(rerun.findings.length, 0, JSON.stringify(rerun.findings));
+    assert.equal(rerun.applied.length, 1);
+    assert.equal(rerun.applied[0].fromVersion, "1.0.0", "a rerun after a failed run must still see the TRUE original version, not a partially-bumped one");
+    assert.equal(rerun.applied[0].toVersion, "1.0.1");
+
+    const rerunChangelog = readFileSync(changelogFile(root, "alpha"), "utf8");
+    const entryCount = (rerunChangelog.match(/^## 1\.0\.1/gm) ?? []).length;
+    assert.equal(entryCount, 1, "the rerun must produce exactly ONE 1.0.1 entry, not a double-bumped duplicate");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// A brand-new changelog (no prior file at all) must be REMOVED by the
+// rollback, not left behind as an empty/partial file -- "did not exist
+// before" and "existed with different content before" are different
+// pre-run states, and restoreBackups() must handle both.
+test("applyReleaseChangesets: when npm fails, a BRAND-NEW CHANGELOG this run would have created (no prior file) is removed by the rollback, not left behind", () => {
+  const root = makeRoot();
+  try {
+    makePackage(root, "alpha", "1.0.0"); // no pre-existing docs/changelogs/alpha.md at all
+    writeChangeset(root, "alpha-fix.md", "---\nalpha: patch\n---\n\nFix a bug.\n");
+
+    let threw = null;
+    try {
+      applyReleaseChangesets({
+        root,
+        today: () => "2026-09-22",
+        runNpmInstall: () => {
+          throw new Error("simulated npm failure");
+        },
+      });
+    } catch (error) {
+      threw = error;
+    }
+
+    assert.ok(threw);
+    assert.equal(existsSync(join(root, "docs", "changelogs", "alpha.md")), false, "a changelog this run would have CREATED must not survive a rolled-back run");
+
+    const alphaManifest = JSON.parse(readFileSync(join(root, "packages", "alpha", "package.json"), "utf8"));
+    assert.equal(alphaManifest.version, "1.0.0");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// review A, re-review of #1390: package-lock.json itself must be backed up
+// and rolled back too -- real `npm install --package-lock-only` writes the
+// lockfile LAST, so this is unlikely with the real implementation, but
+// `runNpmInstall` is injectable (every test in this file injects one), and
+// nothing here should assume every implementation writes the lockfile only
+// at the very end.
+test("applyReleaseChangesets: when npm fails AFTER writing a partial package-lock.json, the lockfile is rolled back too (issue #1390)", () => {
+  const root = makeRoot();
+  try {
+    makePackage(root, "alpha", "1.0.0");
+    writeFileSync(changelogFile(root, "alpha"), "# Changelog\n\n## 1.0.0\n\n- Initial release.\n");
+    writeChangeset(root, "alpha-fix.md", "---\nalpha: patch\n---\n\nFix a bug.\n");
+    const originalLock = '{\n  "name": "root",\n  "lockfileVersion": 3,\n  "packages": {}\n}\n';
+    writeFileSync(join(root, "package-lock.json"), originalLock);
+
+    let threw = null;
+    try {
+      applyReleaseChangesets({
+        root,
+        today: () => "2026-09-22",
+        runNpmInstall: (r) => {
+          // Simulate a real npm process that writes (part of) the lockfile
+          // before failing partway through -- the exact shape #1390 is
+          // about: something on disk changed, then the process died.
+          writeFileSync(join(r, "package-lock.json"), "{ partially written, then npm died\n");
+          throw new Error("simulated npm install --package-lock-only failure mid-write");
+        },
+      });
+    } catch (error) {
+      threw = error;
+    }
+
+    assert.ok(threw, "the npm failure must still propagate");
+    assert.equal(readFileSync(join(root, "package-lock.json"), "utf8"), originalLock, "package-lock.json must be rolled back to its exact pre-run content, not left with npm's partial write");
+
+    // Manifest/changeset must be rolled back too, same as any other #1390 case.
+    const alphaManifest = JSON.parse(readFileSync(join(root, "packages", "alpha", "package.json"), "utf8"));
+    assert.equal(alphaManifest.version, "1.0.0");
+    assert.equal(existsSync(join(root, ".changesets", "alpha-fix.md")), true);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// review A, re-review of #1390: a restore failure must not (a) silently
+// swallow the ORIGINAL npm/network error, or (b) abandon restoring every
+// OTHER file just because one restore attempt failed. Forces a restore
+// failure deterministically (portable across permission models/sandboxes,
+// unlike chmod) by having the injected npm failure replace one already-
+// written manifest path with a DIRECTORY before throwing -- restoring that
+// path (writeFileSync of the original text) then fails with EISDIR, while
+// every other backed-up file (a second package's manifest/changelog, and
+// the lockfile) must still be fully restored around it.
+test("applyReleaseChangesets: a restore failure surfaces BOTH the original and the restore error, and still restores every OTHER file (issue #1390)", () => {
+  const root = makeRoot();
+  try {
+    makePackage(root, "alpha", "1.0.0");
+    writeFileSync(changelogFile(root, "alpha"), "# Changelog\n\n## 1.0.0\n\n- Initial release.\n");
+    writeChangeset(root, "alpha-fix.md", "---\nalpha: patch\n---\n\nFix a bug.\n");
+
+    makePackage(root, "beta", "2.0.0");
+    const betaChangelog = "# Changelog\n\n## 2.0.0\n\n- Initial release.\n";
+    writeFileSync(changelogFile(root, "beta"), betaChangelog);
+    writeChangeset(root, "beta-fix.md", "---\nbeta: patch\n---\n\nFix a bug.\n");
+
+    const alphaManifestPath = join(root, "packages", "alpha", "package.json");
+
+    let threw = null;
+    try {
+      applyReleaseChangesets({
+        root,
+        today: () => "2026-09-22",
+        runNpmInstall: () => {
+          // At this point alpha's and beta's manifests/changelogs are
+          // already written (backed up). Replace alpha's manifest PATH
+          // with a directory so restoring it (a plain writeFileSync of the
+          // backed-up original text) fails deterministically with EISDIR,
+          // regardless of file permissions or which user this runs as.
+          rmSync(alphaManifestPath, { force: true });
+          mkdirSync(alphaManifestPath);
+          throw new Error("simulated npm install --package-lock-only failure");
+        },
+      });
+    } catch (error) {
+      threw = error;
+    }
+
+    assert.ok(threw, "the failure must still propagate");
+    assert.match(threw.message, /simulated npm install/, "the ORIGINAL error's message must be visible, not swallowed by the restore failure");
+    assert.match(threw.message, /restoring the working tree afterward ALSO failed/);
+    assert.equal(threw.cause?.message, "simulated npm install --package-lock-only failure", "the original error must be reachable via `cause`");
+    assert.ok(threw.restoreError, "the restore error must be attached too, not discarded");
+    assert.ok(threw.originalError, "the original error must also be attached directly, not only via `cause`");
+
+    // beta: a DIFFERENT file than the one whose restore failed -- must
+    // still be fully rolled back, proving the failure on alpha's manifest
+    // did not abandon the rest of the restore.
+    const betaManifest = JSON.parse(readFileSync(join(root, "packages", "beta", "package.json"), "utf8"));
+    assert.equal(betaManifest.version, "2.0.0", "beta's manifest must still be restored even though alpha's restore failed");
+    assert.equal(readFileSync(changelogFile(root, "beta"), "utf8"), betaChangelog, "beta's CHANGELOG must still be restored even though alpha's restore failed");
+
+    // alpha's manifest PATH is still a directory -- the restore attempt
+    // failed as expected, and (correctly) did not corrupt it any further.
+    assert.equal(statSync(alphaManifestPath).isDirectory(), true, "the failed restore must not have silently succeeded or crashed uncontrolled");
+  } finally {
+    rmSync(join(root, "packages", "alpha", "package.json"), { recursive: true, force: true });
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// Fix-round non-blocking note N5: the `.changesets/` deletion loop used to
+// run AFTER the try/catch that backs up and rolls back every manifest and
+// CHANGELOG write, so a failure IN the deletion itself (a permissions
+// error, or a changeset unexpectedly already gone -- e.g. an external
+// process/second invocation racing this one) propagated uncaught, past the
+// rollback logic entirely, leaving every already-bumped manifest and
+// already-regenerated lockfile on disk with no matching rollback -- exactly
+// the double-bump trap the surrounding comments describe npm failures being
+// protected against. The deletion loop now runs INSIDE the same try block
+// and backs up each changeset file (with the same generic `backupFile()`)
+// immediately before removing it, so a failure there is rolled back the
+// same way a write or an `npm install` failure already was.
+test("applyReleaseChangesets: a failure DURING changeset deletion itself (after a successful npm run) still rolls back the manifest/CHANGELOG/lockfile, not just an npm failure (issue #1390)", () => {
+  const root = makeRoot();
+  try {
+    makePackage(root, "alpha", "1.0.0");
+    const alphaChangelog = "# Changelog\n\n## 1.0.0\n\n- Initial release.\n";
+    writeFileSync(changelogFile(root, "alpha"), alphaChangelog);
+    writeChangeset(root, "alpha-fix.md", "---\nalpha: patch\n---\n\nFix a bug.\n");
+    const originalLock = '{\n  "name": "root",\n  "lockfileVersion": 3,\n  "packages": {}\n}\n';
+    writeFileSync(join(root, "package-lock.json"), originalLock);
+
+    let threw = null;
+    try {
+      applyReleaseChangesets({
+        root,
+        today: () => "2026-09-22",
+        // npm itself SUCCEEDS (and, exactly like the real implementation,
+        // is where the lockfile gets rewritten) -- but it also simulates an
+        // external process that already removed the pending changeset
+        // file, out from under this run, before this run's own deletion
+        // loop reaches it.
+        runNpmInstall: () => {
+          writeFileSync(join(root, "package-lock.json"), '{\n  "name": "root",\n  "lockfileVersion": 3,\n  "packages": {\n    "packages/alpha": { "version": "1.0.1" }\n  }\n}\n');
+          rmSync(join(root, ".changesets", "alpha-fix.md"));
+        },
+      });
+    } catch (error) {
+      threw = error;
+    }
+
+    assert.ok(threw, "the deletion failure (the changeset is already gone) must still propagate, not be silently swallowed");
+    assert.match(threw.message, /ENOENT|no such file/i);
+
+    const alphaManifest = JSON.parse(readFileSync(join(root, "packages", "alpha", "package.json"), "utf8"));
+    assert.equal(alphaManifest.version, "1.0.0", "the manifest must be rolled back even though the failure happened AFTER a successful npm run, during deletion");
+
+    assert.equal(readFileSync(changelogFile(root, "alpha"), "utf8"), alphaChangelog, "the CHANGELOG must be rolled back too");
+
+    assert.equal(readFileSync(join(root, "package-lock.json"), "utf8"), originalLock, "the lockfile npm rewrote must be rolled back too");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// Round-2 review gap on the N5 fix above: that test's OWN failure is
+// injected by having `runNpmInstall` delete the changeset itself, so by the
+// time the deletion loop's `backupFile(changesetPath)` runs, the file is
+// ALREADY gone (`existed: false`) -- `backupFile()` has nothing to restore
+// either way, so removing that line would leave every test in this file
+// green. This test instead has TWO named packages with their OWN pending
+// changesets ("alpha" sorts before "beta", so `namedPackages()`/the write
+// phase's `toDelete` Set processes "alpha-fix.md" first): the deletion loop
+// itself successfully backs up and deletes "alpha-fix.md" (a real deletion,
+// not a no-op), and only THEN fails deleting "beta-fix.md" (removed out
+// from under this run the same way the test above simulates). Without
+// `backupFile(changesetPath)` on the alpha iteration, restoreBackups() has
+// no entry for "alpha-fix.md" at all and cannot put it back.
+test("applyReleaseChangesets: a failure deleting the SECOND of two changesets still restores the FIRST one, byte-identical, alongside the manifest/CHANGELOG/lockfile rollback (issue #1390)", () => {
+  const root = makeRoot();
+  try {
+    makePackage(root, "alpha", "1.0.0");
+    const alphaChangelog = "# Changelog\n\n## 1.0.0\n\n- Initial release.\n";
+    writeFileSync(changelogFile(root, "alpha"), alphaChangelog);
+    const alphaChangesetText = "---\nalpha: patch\n---\n\nFix alpha's bug.\n";
+    writeChangeset(root, "alpha-fix.md", alphaChangesetText);
+
+    makePackage(root, "beta", "2.0.0");
+    const betaChangelog = "# Changelog\n\n## 2.0.0\n\n- Initial release.\n";
+    writeFileSync(changelogFile(root, "beta"), betaChangelog);
+    writeChangeset(root, "beta-fix.md", "---\nbeta: patch\n---\n\nFix beta's bug.\n");
+
+    const originalLock = '{\n  "name": "root",\n  "lockfileVersion": 3,\n  "packages": {}\n}\n';
+    writeFileSync(join(root, "package-lock.json"), originalLock);
+
+    let threw = null;
+    try {
+      applyReleaseChangesets({
+        root,
+        today: () => "2026-09-22",
+        // npm succeeds, and (as in the real implementation) rewrites the
+        // lockfile -- but ALSO simulates an external process that already
+        // removed beta's pending changeset, out from under this run,
+        // before this run's own deletion loop reaches it. Alpha's
+        // changeset is left untouched here, so the deletion loop's own
+        // rmSync(alphaChangesetPath) is a REAL deletion the rollback must
+        // undo, not a no-op against an already-missing file.
+        runNpmInstall: () => {
+          writeFileSync(
+            join(root, "package-lock.json"),
+            '{\n  "name": "root",\n  "lockfileVersion": 3,\n  "packages": {\n    "packages/alpha": { "version": "1.0.1" },\n    "packages/beta": { "version": "2.0.1" }\n  }\n}\n',
+          );
+          rmSync(join(root, ".changesets", "beta-fix.md"));
+        },
+      });
+    } catch (error) {
+      threw = error;
+    }
+
+    assert.ok(threw, "the deletion failure on beta's changeset must still propagate");
+    assert.match(threw.message, /ENOENT|no such file/i);
+
+    // The FIRST changeset -- successfully deleted by this run's own
+    // deletion loop before the SECOND one failed -- must be restored
+    // byte-identical, not left deleted.
+    assert.equal(existsSync(join(root, ".changesets", "alpha-fix.md")), true, "alpha's changeset, deleted earlier in the SAME run, must be restored by the rollback");
+    assert.equal(readFileSync(join(root, ".changesets", "alpha-fix.md"), "utf8"), alphaChangesetText, "alpha's restored changeset must be byte-identical to its pre-run content");
+
+    const alphaManifest = JSON.parse(readFileSync(join(root, "packages", "alpha", "package.json"), "utf8"));
+    assert.equal(alphaManifest.version, "1.0.0", "alpha's manifest must be rolled back");
+    const betaManifest = JSON.parse(readFileSync(join(root, "packages", "beta", "package.json"), "utf8"));
+    assert.equal(betaManifest.version, "2.0.0", "beta's manifest must be rolled back too");
+
+    assert.equal(readFileSync(changelogFile(root, "alpha"), "utf8"), alphaChangelog, "alpha's CHANGELOG must be rolled back");
+    assert.equal(readFileSync(changelogFile(root, "beta"), "utf8"), betaChangelog, "beta's CHANGELOG must be rolled back too");
+
+    assert.equal(readFileSync(join(root, "package-lock.json"), "utf8"), originalLock, "the lockfile npm rewrote must be rolled back too");
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

@@ -50,7 +50,13 @@
 //     why "a valid split range" (this module's own first-draft approach)
 //     was not strict enough.
 //   package-lock.json  -- status "modified"; isLockfilePureVersionBump()
-//     -- see above and that function's own header.
+//     -- see above and that function's own header. MUST APPEAR IN THE DIFF
+//     AT ALL whenever any packages/<dir>/package.json bumps a version
+//     (issue #1331) -- a version bump that never ran `npm install
+//     --package-lock-only` at all has nothing here for isLockfilePureVersionBump()
+//     to judge, and a footprint check that stays silent about an absent
+//     file is not "no opinion", it is a pass by omission. See the absent-
+//     lockfile check at the end of evaluateReleasePrFootprint() below.
 //   .changesets/<slug>.md  -- status "removed" ONLY, AND its content AT
 //     BASE must name only packages this diff actually bumps -- deleting
 //     an unrelated PENDING changeset (one that names some other package
@@ -61,14 +67,47 @@
 //     changesets.mjs's own parser (reused, not reimplemented) and
 //     requiring every package it names to be among this diff's bumped
 //     set.
+//   governance/release-qualification-deferrals/<pkg>@<version>.json
+//     (issue #1439) -- NOT written by apply-release-changesets.mjs itself;
+//     the real weekly release PR (#1438) separately adds one of these per
+//     bumped package, acknowledging that the qualification record for the
+//     new version does not exist yet (governance/release-qualification-
+//     deferrals/README.md's own "Layout" section -- schema
+//     `{ package, version, reason, issue }`, filename `<pkg>@<version>.json`
+//     where `<pkg>` is the packages/<dir> directory name). Before this,
+//     the footprint check had NO opinion on this file class at all, so it
+//     fell through to the generic "anything else fails" rule below and
+//     refused every real release PR outright -- this repository's release-
+//     calendar footprint check could never actually verify a real release.
+//     Admitted ONLY when: status is "added" (never modified or removed --
+//     a deferral is acknowledged once, and removed only by qualify-
+//     candidate.yml's own separate `remove-qualification-deferral.mjs`
+//     run, never by the release PR that created it); AT MOST ONE per
+//     bumped package (a second one for the same package@version, or one
+//     naming a package@version this diff never bumped to exactly that
+//     version, is refused, same "any single non-conforming aspect fails
+//     everything" discipline as every other file class here); and its own
+//     JSON content's `package`/`version` fields exactly match the
+//     filename. Deliberately NOT required for every bumped package --
+//     check-qualification-record-required.mjs's own contract is "a record
+//     OR a deferral", so a package that already has a retained record at
+//     release time legitimately has neither a deferral NOR a footprint
+//     opinion on one -- only presence is constrained, never absence.
+//     `governance/release-qualification-deferrals/README.md`, and every
+//     other path under `governance/`, matches no pattern here and falls
+//     through to "anything else fails" exactly as before.
 //   anything else -- fails outright, regardless of status.
 import { parseChangesetText } from "../collect-changesets.mjs";
 import { computeBumpLevel } from "../check-release-pr-shape.mjs";
 import { DEPENDENCY_RANGE_SECTIONS, prependChangelogEntry } from "../apply-release-changesets.mjs";
-import { CHANGELOG_REL_PATH_RE } from "./changelog-location.mjs";
+import { CHANGELOG_REL_PATH_RE, changelogRelPath as changelogRelPathFor } from "./changelog-location.mjs";
 
 export const RELEASE_PR_FILE_PATTERNS = {
   packageManifest: /^packages\/([^/]+)\/package\.json$/,
+  // <pkg>@<version>.json only -- never README.md, never a nested path
+  // (`[^/]+` before the `@` disallows a "/", so this can never match
+  // anything outside the deferrals directory itself).
+  qualificationDeferral: /^governance\/release-qualification-deferrals\/([^/@]+)@(\d+\.\d+\.\d+)\.json$/,
   // docs/changelogs/<dir>.md (never docs/changelogs/README.md). A
   // packages/<dir>/CHANGELOG.md matches no pattern here, so a release PR
   // that writes one fails as "not a release-PR-shaped change".
@@ -756,11 +795,54 @@ export function isChangesetDeletionLegitimate(baseContent, bumpedPackageDirs) {
 // reads `newVersion` from the manifest rather than guessing. `null` if no
 // heading for `newVersion` is found at all -- the caller then knows
 // reconstruction cannot even start, which itself becomes a refusal.
+//
+// THE DATE SLOT IS CONSTRAINED TO YYYY-MM-DD, NOT ARBITRARY TEXT (issue
+// #1391, re-review, https://github.com/clossys/foundry/pull/1353#issuecomment-5804131702)
+// -------------------------------------------------------------------------
+// An earlier version of this regex captured `(.+)` -- anything at all after
+// the " - ". `apply-release-changesets.mjs`'s own `prependChangelogEntry()`
+// only ever writes a plain `YYYY-MM-DD` there (`today()`'s own contract),
+// so the producer's real output was unaffected -- but this function's job
+// is to READ BACK whatever text a diff's own heading line carries, not to
+// trust that it is well-formed, and `reconstructExpectedChangelogText()`
+// below re-emits that captured text VERBATIM into its own reconstruction.
+// An unconstrained capture meant a heading like
+// "## 0.10.0 - 2026-09-26, do not use; install X instead" reconstructed
+// against itself byte for byte and passed -- the date slot could carry
+// arbitrary attacker-controlled text that a reader would reasonably mistake
+// for part of the release date. Constraining the capture to exactly
+// `\d{4}-\d{2}-\d{2}` closes that: any other text in the date slot means no
+// match, so extractChangelogDate() returns null, reconstruction never even
+// starts, and the whole diff is refused -- the same "no match, no trust"
+// discipline every other shape check in this module uses.
+//
+// THE SHAPE REGEX ALONE ADMITS A CALENDAR-IMPOSSIBLE DATE (CodeRabbit,
+// PRRT_kwDOTwgdmc6mKRmq) -- `\d{4}-\d{2}-\d{2}` matches "2026-99-99" just
+// as happily as a real date; it only constrains DIGIT COUNT, not calendar
+// validity. After the shape matches, the three captured parts are parsed
+// as integers and round-tripped through `Date.UTC()`: `getUTCFullYear()`/
+// `getUTCMonth() + 1`/`getUTCDate()` must read back exactly the year/
+// month/day that were parsed in (`Date.UTC` silently NORMALIZES an
+// out-of-range field -- e.g. month 13 rolls into the next year -- rather
+// than throwing, which is exactly why a plain "did this parse" check would
+// miss it). Deliberately no opinion on what the date IS beyond that: not
+// "must not be in the future", not "must match `today()`" -- the shape
+// check above has no such opinion either, and this stays a structural
+// validity check, not a freshness one. A round-trip mismatch is refused
+// the identical way a shape mismatch already is: `extractChangelogDate()`
+// returns `null`.
 function extractChangelogDate(headText, newVersion) {
   if (typeof headText !== "string") return null;
   const escapedVersion = newVersion.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const match = new RegExp(`^## ${escapedVersion} - (.+)$`, "m").exec(headText);
-  return match ? match[1] : null;
+  const match = new RegExp(`^## ${escapedVersion} - (\\d{4})-(\\d{2})-(\\d{2})$`, "m").exec(headText);
+  if (!match) return null;
+  const [, yearStr, monthStr, dayStr] = match;
+  const year = Number(yearStr);
+  const month = Number(monthStr);
+  const day = Number(dayStr);
+  const roundTrip = new Date(Date.UTC(year, month - 1, day));
+  if (roundTrip.getUTCFullYear() !== year || roundTrip.getUTCMonth() + 1 !== month || roundTrip.getUTCDate() !== day) return null;
+  return `${yearStr}-${monthStr}-${dayStr}`;
 }
 
 /**
@@ -981,12 +1063,37 @@ export function evaluateReleasePrFootprint({ files }) {
     }
   }
 
+  // Set by the lockfile branch below the moment ANY file in this diff
+  // matches RELEASE_PR_FILE_PATTERNS.lockfile -- checked once, after this
+  // loop, against `bumpedDirs` (issue #1331: a version bump whose diff
+  // never touches package-lock.json at all has nothing for the lockfile
+  // branch to run against, so without this check the footprint's silence
+  // on an absent file was indistinguishable from "nothing to object to").
+  let sawLockfile = false;
+
+  // Every `dir` whose docs/changelogs/<dir>.md appears in this diff at all
+  // -- checked once, after this loop, against `bumpedDirs` (issue #1389:
+  // a release PR that deletes an unconsumed changeset for a bumped package
+  // while leaving that package's docs/changelogs/<dir>.md OUT of the diff
+  // entirely has, again, nothing here for the changelog branch below to
+  // run isChangelogPureNewSection()/reconstruction against -- the loop
+  // simply never visits a file that was never in the diff, and silence
+  // about a missing file is not the same as nothing being wrong).
+  const changelogSeenForDir = new Set();
+
+  // Every `<pkg>@<version>` key a qualification-deferral file has already
+  // been accepted for -- see RELEASE_PR_FILE_PATTERNS.qualificationDeferral
+  // and its branch below (issue #1439): a second deferral for the SAME
+  // bumped package is refused as a duplicate, never silently allowed.
+  const seenDeferralKeys = new Set();
+
   for (const file of files) {
     if (RELEASE_PR_FILE_PATTERNS.packageManifest.test(file.path)) continue; // already validated above
 
     const changelogMatch = RELEASE_PR_FILE_PATTERNS.changelog.exec(file.path);
     if (changelogMatch) {
       const dir = changelogMatch[1];
+      changelogSeenForDir.add(dir);
       const expectedVersion = bumpedVersions[dir];
       if (!expectedVersion) return { ok: false, reason: `"${file.path}" changed, but packages/${dir} was not bumped in this diff` };
       if (file.status !== "modified" && file.status !== "added") return { ok: false, reason: `"${file.path}" has status "${file.status}" -- expected modified or added` };
@@ -1017,6 +1124,7 @@ export function evaluateReleasePrFootprint({ files }) {
     }
 
     if (RELEASE_PR_FILE_PATTERNS.lockfile.test(file.path)) {
+      sawLockfile = true;
       if (file.status !== "modified") return { ok: false, reason: `"${file.path}" has status "${file.status}" -- expected modified` };
       if (!isLockfilePureVersionBump(file.baseContent, file.headContent, bumpedDirs, bumpedVersionsByName, bumpedManifestsByName, devDependencyOnlyDirs, devDependencyOnlyManifestsByName)) {
         return { ok: false, reason: `"${file.path}" changes are not limited to the bumped workspace packages' version fields` };
@@ -1032,7 +1140,111 @@ export function evaluateReleasePrFootprint({ files }) {
       continue;
     }
 
+    const deferralMatch = RELEASE_PR_FILE_PATTERNS.qualificationDeferral.exec(file.path);
+    if (deferralMatch) {
+      const [, pkg, version] = deferralMatch;
+      if (file.status !== "added") {
+        return { ok: false, reason: `"${file.path}" has status "${file.status}" -- a qualification deferral may only be added, never modified or removed` };
+      }
+      if (bumpedVersions[pkg] !== version) {
+        return {
+          ok: false,
+          reason: `"${file.path}" names "${pkg}@${version}", but this diff did not bump packages/${pkg} to exactly that version`,
+        };
+      }
+      const key = `${pkg}@${version}`;
+      if (seenDeferralKeys.has(key)) {
+        return { ok: false, reason: `"${file.path}" is a SECOND qualification deferral for ${key} -- at most one is admitted` };
+      }
+      seenDeferralKeys.add(key);
+      let content;
+      try {
+        content = JSON.parse(file.headContent);
+      } catch {
+        return { ok: false, reason: `"${file.path}" is not valid JSON` };
+      }
+      if (!content || typeof content !== "object" || Array.isArray(content)) {
+        return { ok: false, reason: `"${file.path}" is not a JSON object` };
+      }
+      // Nothing more than the producer's own documented schema (this file's
+      // header, and governance/release-qualification-deferrals/README.md's
+      // "Layout" section): exactly `package`, `version`, `reason`, `issue`,
+      // never an extra field -- the same "any single non-conforming aspect
+      // fails everything" discipline this function applies to every other
+      // file class.
+      const allowedDeferralKeys = ["package", "version", "reason", "issue"];
+      const extraDeferralKeys = Object.keys(content).filter((k) => !allowedDeferralKeys.includes(k));
+      if (extraDeferralKeys.length > 0) {
+        return {
+          ok: false,
+          reason: `"${file.path}" has field(s) beyond the producer's documented shape (${extraDeferralKeys.join(", ")}) -- only package/version/reason/issue are admitted`,
+        };
+      }
+      if (content.package !== pkg || content.version !== version) {
+        return {
+          ok: false,
+          reason: `"${file.path}"'s own "package"/"version" fields do not name "${pkg}"/"${version}", matching its own filename`,
+        };
+      }
+      if (typeof content.reason !== "string" || content.reason.trim().length === 0) {
+        return { ok: false, reason: `"${file.path}" has no non-empty "reason" string` };
+      }
+      if (!Number.isInteger(content.issue) || content.issue <= 0) {
+        return { ok: false, reason: `"${file.path}"'s "issue" field must be a positive integer` };
+      }
+      continue;
+    }
+
     return { ok: false, reason: `"${file.path}" (${file.status}) is not a release-PR-shaped change` };
+  }
+
+  // ABSENT LOCKFILE IS A REFUSAL, NOT SILENCE (issue #1331)
+  // -----------------------------------------------------------------------
+  // `bumpedDirs` is non-empty by construction at this point (checked right
+  // after PASS 1 above). Every one of those bumps came from a real
+  // `packages/<dir>/package.json` version change this diff makes, and
+  // scripts/apply-release-changesets.mjs -- the only producer this shape is
+  // ever checked against -- always regenerates package-lock.json in the
+  // same run whenever it applies anything at all. A diff that bumps a
+  // manifest's version but never touches package-lock.json in the same
+  // diff (`sawLockfile` stays false) skipped that regeneration -- the
+  // per-file loop above had nothing to run isLockfilePureVersionBump()
+  // against, because there was no lockfile FILE to run it against, and
+  // silently having "no opinion" about a missing file is exactly the gap
+  // this closes: the footprint's whole job is to prove a diff is NOTHING
+  // MORE than the producer's shape, and a diff with no lockfile change at
+  // all is missing a piece the producer always writes, not merely quiet
+  // about one. (check-lock-workspace-versions.mjs already refuses this
+  // shape too, independently, in CI's separate "workspace link integrity"
+  // job -- this is defense in depth for the SAME gap inside this module,
+  // not the only place it is caught.)
+  if (!sawLockfile) {
+    return {
+      ok: false,
+      reason: `package-lock.json is absent from the diff, but ${bumpedDirs.map((d) => `packages/${d}`).join(", ")} bumped a version in this diff -- a release PR must regenerate the lockfile in the same diff`,
+    };
+  }
+
+  // ABSENT CHANGELOG IS A REFUSAL, NOT SILENCE (issue #1389)
+  // -----------------------------------------------------------------------
+  // Same shape as the absent-lockfile check just above: `bumpedDirs` is
+  // non-empty by construction, and apply-release-changesets.mjs -- the
+  // only producer this shape is ever checked against -- always writes a
+  // docs/changelogs/<dir>.md entry for every package it bumps, named or
+  // dependent-only alike. A dir bumped in this diff whose changelog was
+  // never touched at all (`changelogSeenForDir` stays without it) means a
+  // release PR could delete an unconsumed changeset for that package while
+  // leaving its changelog out of the diff entirely -- silently discarding
+  // the pending change with no note of it anywhere -- and every OTHER gate
+  // (isChangesetDeletionLegitimate() above included) has nothing to object
+  // to, because none of them require the changelog FILE to be present, only
+  // that IF one is present it reconstructs correctly.
+  const bumpedDirsMissingChangelog = bumpedDirs.filter((d) => !changelogSeenForDir.has(d));
+  if (bumpedDirsMissingChangelog.length > 0) {
+    return {
+      ok: false,
+      reason: `${bumpedDirsMissingChangelog.map((d) => changelogRelPathFor(d)).join(", ")} absent from the diff, but ${bumpedDirsMissingChangelog.map((d) => `packages/${d}`).join(", ")} bumped a version in this diff -- a release PR must add or update the changelog entry in the same diff`,
+    };
   }
 
   return { ok: true, reason: "every changed file is release-PR shaped" };
