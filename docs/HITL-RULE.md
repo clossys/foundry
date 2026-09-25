@@ -26,7 +26,8 @@ for why.
 ## Escalation rule (owner-ratified 2026-09-23)
 
 The rule below **supersedes** the informal decision-tier prose this
-document opened with through round 6 (kept, unchanged, as `docs/HITL.md`'s
+document opened with through round 6 (kept, unchanged apart from one
+2026-09-23 pointer to the amendment below, as `docs/HITL.md`'s
 "The three tiers" section — moved there in round 3 along with the rest of
 this document's non-rule content — since it is what the CODE in this
 slice actually classifies today — see "What this rule changes about the
@@ -128,6 +129,22 @@ the record is the source of truth.
 > ratify them, in this chat or later by a signed commit. Agents can't
 > write to the rule file or the deny hook. Landing and notifying never
 > applies to this rule.
+
+**Amended 2026-09-23, updated 2026-09-24 (not part of the ratified text
+above).** The quoted text above is kept exactly as ratified, as history.
+Two parts of it are superseded by the owner-ratified review-convergence
+amendment, as its decision record reads it: the "3 rounds that go
+nowhere" trigger (Accepted item 5, and the "Your approval first" table
+row) is replaced by the amendment's round budget and triggers, and the
+table's "batched for Friday unless urgent" is replaced by the amendment's
+same-day escalation ask. The Friday supersession is that record's reading
+of item 5, not words the owner ratified. On 2026-09-24 the owner answered
+"Restore it" to a follow-up question about the urgency exception dropped
+in that reading: an ask that is genuinely urgent and about credentials or
+publishing may still be raised at any time; every other ask stays under
+item 5's twice-a-day limit. See
+[Amendment (2026-09-23): review convergence](#amendment-2026-09-23-review-convergence)
+below. Everything else above stands unchanged.
 
 ### Implementation notes (not part of the ratified text)
 
@@ -236,7 +253,10 @@ every part of it:
   path landing in `tier2.globs` is treated as owner-approve-first; a
   change the RULE would put in this row by its own judgment, but that
   touches no `tier2.globs` path, is not currently caught by any code in
-  this repository at all.
+  this repository at all. The row's 3-round trigger is superseded by the
+  review-convergence amendment's budget and triggers (see
+  [Amendment (2026-09-23): review convergence](#amendment-2026-09-23-review-convergence));
+  no code in this repository counts review rounds under either version.
 - **"Land, log and notify"** has NO code implementation in this slice —
   see "Implementation notes" above.
 - **"The coordinator shouldn't pick the tier for its own work"** (Accepted
@@ -350,3 +370,166 @@ same gap this section describes for the files above), since it documents
 the gate mechanics generally and does not itself carry the rule text, the
 hook definition, or the record.
 
+## Amendment (2026-09-23): review convergence
+
+The owner ratified this amendment in owner chat on 2026-09-23, selecting
+the answer "Ratify as written (Recommended)" to a structured question
+that asked for ratification of the list below. Later the same day, the
+owner answered three follow-up questions in owner chat, on the caps (Q1),
+on how the record declares `relaxesGateOrPolicy` (Q2), and on recording
+deadline defaults (Q3).
+[`governance/decisions/hitl-review-convergence.json`](../governance/decisions/hitl-review-convergence.json)
+is the durable record. It quotes every question, answer and selected
+option's description from the 2026-09-23 exchange, and the list, all
+verbatim, with `channel: "owner-chat"`, not independently verifiable, as
+the rule above requires of every owner-chat record, and the 2026-09-24
+answer, quoted as the answer only. That record is the source of truth if
+this section and it ever disagree. It does not edit or replace
+`governance/decisions/hitl-escalation-rule.json`: that record, and the
+rule quoted above, stay in force except for the two parts named below.
+
+The ratification's option description speaks of amending `docs/HITL.md`.
+The ratified text sits here instead because the rule moved from
+`docs/HITL.md` into this file in round 3 of #1354; `docs/HITL.md` links
+here.
+
+**The ratified list, reproduced VERBATIM**, with one invisible markup
+comment on one line (see "Implementation status" below). It is written in
+the coordinator's voice, addressed to the owner: *you* and *your* mean
+the owner, *me* and *my* mean the coordinator.
+
+> 1. **Charter before round 1.** Required for gate, governance, security or release paths, or over about 300 lines across the stack. It states the goal, adversary, non-goals, what "done" means, the blocking bar and the round budget. Five clauses are always on and can't be removed: harm, authority or permission effects, false claims, rule fidelity, and correctness. Reviewers first review the charter itself; they can add clauses, never remove them, and a charter defect blocks.
+> 2. **Structured findings.** Each blocking finding cites a charter clause. The reviewer, not the author, labels it a new class or a known class, and a known class must cite its earlier instance. A finding with no clause becomes an issue.
+> 3. **Budget.**
+>    - The default is 2 rounds. A charter can ask for more, and that request is approved with the charter.
+>    - In round 2, the same reviewers check their own findings, and one fresh strong-class final reviewer joins, as your rule requires. New findings block only under the always-on clauses.
+>    - One automatic extra round is allowed only when blockers strictly shrink and every blocker is a new harm-class finding. Otherwise the PR goes to you.
+> 4. **Triggers.** An item goes to you when any of these happens:
+>    - the budget is exhausted;
+>    - the review-run cap is hit;
+>    - it stalls, with no progress since the last push, CI and queue time excluded;
+>    - there's a value dispute.
+>
+>    Reviewer disagreement doesn't go to you. The stricter view wins, as your rule already says. A repeat of a known class makes me close that class by design, or document it as residual risk; it doesn't reach you either.
+> 5. **Escalation packet.** One question, with options, my recommendation, a default and a deadline. It's asked same-day, at most twice a day, with related items merged.
+>    - **Default for ordinary PRs:** park it and ship the parts that have converged.
+>    - **Authority or governance PRs:** park the whole PR, never a partial landing.
+>    - **Live-harm fixes:** ship the smallest fix and file the rest. <!-- facts-gate:ignore -->
+> 6. **Records.** Your answers, budget grants and deadline defaults are all recorded. A deadline default is recorded as `decidedBy: default`, so it can never count as your authority.
+> 7. **Beyond reviews.** CI reruns, rebase churn and queue ejections get their own caps. A clean mechanical rebase, verified by a range-diff, keeps its review clearance.
+> 8. **Tooling.** `review-loop-status` starts report-only, with its own charter. A quote-fidelity test checks that quoted rule text is word for word, and that reviewers receive the rule and charter verbatim.
+> 9. **Metrics.** Reviewed at the Friday cut:
+>    - rounds to converge;
+>    - escalations;
+>    - your decision latency;
+>    - agent runs per merged PR;
+>    - escaped defects;
+>    - park rate.
+>
+>    Pairing speed with escaped defects keeps the speed targets from pushing reviewers to approve.
+
+### What the amendment changes in the rule above (not part of the ratified text)
+
+This subsection and the two after it are this repository's own
+explanation, and where they settle an ambiguity they say so. They add no
+authority beyond the list above and the owner's answers recorded in
+`governance/decisions/hitl-review-convergence.json`; where they seem to,
+those govern.
+
+- **The 3-round trigger.** Accepted item 5 ("after 3 rounds that go
+  nowhere") and the "Your approval first" table row ("or 3 rounds that go
+  nowhere") are superseded by the list's item 3 (the round budget) and
+  item 4 (the triggers). Value disputes still go to the owner, and
+  reviewer disagreement still does not; item 4 restates both.
+- **Ask timing (the record's reading).** The table's "batched for Friday
+  unless urgent" is superseded by item 5: an escalation ask goes out the
+  same day, at most twice a day, with related items merged. Item 5 itself
+  has no urgency exception, but on 2026-09-24 the owner separately
+  restored one: an ask that is genuinely urgent and about credentials or
+  publishing may be raised at any time, outside the twice-a-day limit;
+  every other ask stays under it. The owner saw the timing change called
+  out when ratifying: the
+  amendment followed a red-team whose recommendations were adopted,
+  except that asks go same-day rather than being batched to Friday.
+- **Everything else stands**, including the fresh strong-class final
+  reviewer for governance, security and gate changes (item 3 keeps it),
+  the channel rule, and "Changing this rule itself". The quoted rule
+  text above is not edited.
+
+### Owner-set values and interim recording (owner answers, 2026-09-23)
+
+**Caps and stall window.** Set by the owner on 2026-09-23 in answer to
+Q1, as budgets and thresholds are the owner's standing settings under
+Accepted item 4. Each value is in Q1's own words:
+
+- review-run cap (item 4): "6 agent review runs per PR";
+- stall (item 4): "60 min with no new push or verdict, CI and queue time
+  excluded";
+- CI flake reruns (item 7): "capped at 1 per failing check per head, so a
+  second failure is treated as real and diagnosed";
+- rebase or merge-main churn (item 7): "capped at 2 per PR per day";
+- queue ejections (item 7): "capped at 2 per PR, after which it's
+  diagnosed before re-queueing".
+
+They apply now and are reviewed with data at the Friday cut. Changing
+them is an owner decision, like any other standing setting.
+
+**Deadline defaults, until the validator accepts `decidedBy: default`.**
+Per the owner's answer to Q3, a deadline default is recorded as a pull
+request or issue comment labelled `hitl:default`, and it never counts as
+authority. The label name is this repository's choice; the owner's answer
+says a labelled comment. Adding `decidedBy: default` to the
+decision-record validator is follow-up owner-tier work, tracked in
+#1408.
+
+### Implementation status (not part of the ratified text)
+
+- **Nothing in the list is enforced by code yet.** No script checks for a
+  charter, counts rounds, applies a trigger, caps CI reruns or rebases,
+  or collects the metrics. They bind agent work as process only. The
+  option the owner selected also says the coordinator will "apply the
+  budget to live work immediately, starting with #1354".
+- **A clean rebase and the tier-1 gate.** Item 7 keeps review clearance
+  across a clean mechanical rebase, but the tier-1 evidence gate in
+  `scripts/land-stack.mjs` reads review records at the exact current head
+  only (see `docs/HITL.md`'s "Where each tier is enforced"). So after any
+  rebase it does not pass until valid review records exist at the new
+  head. The gate does not look for, read, or verify a range-diff. Item 7's
+  range-diff verification is a reviewer obligation that no code currently
+  checks, and no code distinguishes a clean mechanical rebase from any
+  other new head.
+- **Larger round budgets (this repository's reading).** Item 3 says a
+  request for more rounds is approved with the charter, and item 6 lists
+  budget grants among what is recorded. Because budgets are the owner's
+  standing settings under Accepted item 4, a larger budget is approved by
+  the owner together with the charter, and recorded as a decision record
+  under `governance/decisions/`.
+- **The fresh reviewer in the extra round (this repository's reading).**
+  A reviewer counts as fresh only if they have no history on the PR
+  before the round they join. The round-2 fresh final reviewer has
+  history by the time of item 3's one automatic extra round, so they are
+  no longer fresh then. Accepted item 6 still applies: for governance,
+  security or gate changes, the last approval has to come from a fresh
+  strong-class reviewer with no history on the PR.
+- **Charter template.** [`docs/templates/pr-charter.md`](templates/pr-charter.md)
+  holds the empty charter fields and links to item 1 above. It does not
+  copy item 1 or the always-on clauses, so the list is quoted in one
+  place in the docs.
+- **Follow-up work, not in the pull request that added this section:**
+  the `review-loop-status` script and the quote-fidelity test named in
+  item 8, issue or pull-request template changes under `.github/`, and
+  the validator change in #1408.
+- **One markup comment inside the quote.** The line quoting item 5's
+  live-harm default ends with an HTML comment, `facts-gate:ignore`, so
+  the strategist facts gate (`npm run check:strategist-subject`) does
+  not read the ratified wording as an untraced superlative claim. It
+  renders as nothing and changes no word of the quote. A byte-for-byte
+  comparison has to strip HTML comments first; the decision record's
+  copy has no comment.
+- **Tier and hook coverage of the amendment record.**
+  `governance/decisions/hitl-review-convergence.json` is tier-2 through
+  the `governance/decisions/**` glob in `governance/review-tiers.json`.
+  Its name does not match the narrower `hitl-escalation-rule*.json` glob,
+  and it is not in the protected basenames of the deny hook described in
+  [`docs/HITL-HOOKS.md`](HITL-HOOKS.md). Widening the hook is a change to
+  the hook itself and is left to a separate pull request.
