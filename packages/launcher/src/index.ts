@@ -39,9 +39,12 @@ export { validateApplyBundle, validateRepositoryChangeSet } from "./change-set-c
 export type {
   ApplyBundle, ApplyBundleRepository, ApplyCheck, ApplyCheckId, ApprovalBinding, ChangeSetDeferral, ChangeSetItem, ChangeSetPhase, ChangeSetRefusal, CheckVerdict, ContentDigest,
   DependencyPlacement, DerivedFileChange, DiscoveryRoot, ExemptionSurfaceKind, FileChange, KeyChange, LedgerInvariant, LockfileName, PackageInvariant, PackageManagerKind,
-  PinnedPackage, RefusalReason, ReleaseAgeSurfaceKind, RepositoryChangeSet, RepositoryVisibility, WholeFileChange, WriteRecordSource,
+  PinnedPackage, RefusalReason, ReleaseAgeSurfaceKind, RepositoryChangeSet, RepositoryProfileObservation, RepositoryVisibility, RootEntryDeclaration, WholeFileChange,
+  WriteRecordSource,
 } from "./change-set-contract.js";
 export { ledgerSuccession, serializeInstalledLedger, validateInstalledLedger } from "./ledger-contract.js";
+export { isRootEntryName, wouldViolateRootEntries } from "./root-entries.js";
+export type { RootEntriesVerdict } from "./root-entries.js";
 export type { InstalledLedger, LedgerSuccession, LedgerViolation } from "./ledger-contract.js";
 export { PUBLIC_PROBLEM_PLACEHOLDER, planApplyBundle, projectEngagementBrief, serializeEngagementBrief } from "./plan-bundle.js";
 export type { PlanApplyBundleInputs, PlanApplyBundleResult, RepositoryObservation, SkippedRepositoryObservation } from "./plan-bundle.js";

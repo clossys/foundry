@@ -41,10 +41,11 @@ export interface LedgerKeyRow {
   readonly changeSet: string;
 }
 
-/** An entry the flow added to a release-age exemption list. */
+/** An entry the flow added to a release-age exemption list, or to a Controller profile's root vocabulary. */
 export type LedgerEntryRow =
   | { readonly file: "pnpm-workspace.yaml"; readonly key: "minimumReleaseAgeExclude"; readonly value: string; readonly changeSet: string }
-  | { readonly file: ".yarnrc.yml"; readonly key: "npmPreapprovedPackages"; readonly value: string; readonly changeSet: string };
+  | { readonly file: ".yarnrc.yml"; readonly key: "npmPreapprovedPackages"; readonly value: string; readonly changeSet: string }
+  | { readonly file: string; readonly key: "rootEntries"; readonly value: string; readonly changeSet: string };
 
 /** One exact package identity, as a package act names it. */
 export interface LedgerPackageIdentity {
@@ -232,7 +233,7 @@ export function ledgerRuleViolations(ledger: InstalledLedger): RuleViolation[] {
   order("files", ledger.files, (row) => [row.path]);
   for (const { index, first } of repeats(ledger.files, (row) => row.path.toLowerCase())) push("L8", `files[${index}].path`, `repeats files[${first}].path, compared case-insensitively`);
   order("keys", ledger.keys, (row) => [row.file, row.pointer]);
-  order("entries", ledger.entries, (row) => [row.file]);
+  order("entries", ledger.entries, (row) => [row.file, row.key, row.value]);
   order("packages", ledger.packages, (row) => [row.planItem]);
   order("deferred", ledger.deferred, (row) => [row.planItem]);
   return out;

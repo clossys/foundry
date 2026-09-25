@@ -51,6 +51,8 @@ const SITE: RepositoryObservation = {
   releaseAgeSurfaces: [],
   consumerCi: true,
   symlinkedSkillRoots: [],
+  repositoryProfile: null,
+  linkedAgentsPaths: [],
   files: [{ path: "package-lock.json", sha256: sha("site lock") }],
   manifestEntries: [{ placement: "devDependencies", name: STARTER.name, value: STARTER.version }],
   lockedPackages: [{ name: STARTER.name, version: STARTER.version, integrity: STARTER.integrity }],
@@ -69,6 +71,8 @@ const DOCS: RepositoryObservation = {
   releaseAgeSurfaces: [{ surface: "pnpm-workspace", path: "pnpm-workspace.yaml" }],
   consumerCi: false,
   symlinkedSkillRoots: [],
+  repositoryProfile: null,
+  linkedAgentsPaths: [],
   files: [],
   manifestEntries: [],
   lockedPackages: [],
@@ -344,6 +348,58 @@ describe("planApplyBundle", () => {
     const copied = setFor(run(withRepository({ files: [...SITE.files, { path: ".claude/skills/clossys-writer/SKILL.md", sha256: sha("a copy") }] })).changeSets, SITE.id);
     expect(copied.refused).toContainEqual({ path: ".claude/skills/clossys-writer", reason: "unowned-existing", item: "skills" });
     expect(validateRepositoryChangeSet(copied)).toEqual({ valid: true });
+  });
+
+  it("records the observed repository profile, and adds no act when it declares every root name or has no root vocabulary", () => {
+    for (const rootVocabulary of ["none", "checked"] as const) {
+      const profile = { path: "governance/repository-profile.json", rootVocabulary, undeclaredRoots: [], prohibitedRoots: [] };
+      const { bundle, changeSets } = run(withRepository({ repositoryProfile: profile }));
+      const site = setFor(changeSets, SITE.id);
+      expect(site.observed.repositoryProfile).toEqual(profile);
+      expect(site.items.map((item) => item.act)).not.toContain("declare-root-entry");
+      expect(bundle.repositories[0]).toMatchObject({ verdict: "satisfied" });
+    }
+  });
+
+  it("skips a repository whose profile needs root entries added, because the edited profile's bytes are not computed yet", () => {
+    const profile = { path: "governance/repository-profile.json", rootVocabulary: "checked" as const, undeclaredRoots: ["clossys"], prohibitedRoots: [] };
+    const { bundle, changeSets } = run(withRepository({ repositoryProfile: profile }));
+    expect(changeSets.map((set) => set.repository.id)).toEqual([DOCS.id]);
+    expect(bundle.repositories[0]).toEqual({ id: SITE.id, verdict: "indeterminate", reason: "root-entry-edit-unbuilt", checks: [] });
+    expect(validateApplyBundle(bundle)).toEqual({ valid: true });
+  });
+
+  it("refuses the declaration of an unparseable profile, or of one that prohibits a root name the set introduces", () => {
+    for (const [profile, reason] of [
+      [{ path: "governance/repository-profile.json", rootVocabulary: "unparseable" as const, undeclaredRoots: [], prohibitedRoots: [] }, "root-vocabulary-unknown"],
+      [{ path: "governance/repository-profile.json", rootVocabulary: "checked" as const, undeclaredRoots: [".cursor"], prohibitedRoots: [".claude"] }, "unowned-existing"],
+    ] as const) {
+      const { bundle, changeSets } = run(withRepository({ repositoryProfile: profile }));
+      const site = setFor(changeSets, SITE.id);
+      expect(validateRepositoryChangeSet(site)).toEqual({ valid: true });
+      expect(site.items.find((item) => item.act === "declare-root-entry")).toEqual({
+        id: "root-entries",
+        act: "declare-root-entry",
+        path: "governance/repository-profile.json",
+        entries: profile.rootVocabulary === "unparseable" ? [] : [{ name: ".cursor", classification: "extension", disposition: "allowed" }],
+      });
+      expect(site.refused).toContainEqual({ path: "governance/repository-profile.json", reason, item: "root-entries" });
+      expect(bundle.repositories[0]).toMatchObject({ verdict: "indeterminate" });
+    }
+  });
+
+  it("never writes a skill through a symbolic link: each one under it is refused as skills-root-is-link", () => {
+    const { bundle, changeSets } = run(withRepository({ linkedAgentsPaths: [".agents/skills/clossys-writer"] }));
+    const site = setFor(changeSets, SITE.id);
+    expect(validateRepositoryChangeSet(site)).toEqual({ valid: true });
+    expect(site.refused).toContainEqual({ path: ".agents/skills/clossys-writer/SKILL.md", reason: "skills-root-is-link", item: "skills" });
+    expect(site.files.map((file) => file.path)).toContain(".agents/skills/clossys-strategist/SKILL.md");
+    expect(site.files.find((file) => file.path === "clossys/.state/skills.json")!.after).toBe(
+      sha(serializeComposedSkillsManifest([{ role: "strategist", sha256: sha("# Strategist\n") }], "0.4.0")),
+    );
+    expect(bundle.repositories[0]).toMatchObject({ verdict: "indeterminate", checks: [{ check: "V6", verdict: "indeterminate", rule: "skills-root-is-link" }] });
+    const whole = setFor(run(withRepository({ linkedAgentsPaths: [".agents"] })).changeSets, SITE.id);
+    expect(whole.refused.filter((refusal) => refusal.reason === "skills-root-is-link")).toHaveLength(2);
   });
 
   it("starts the ledger from the observed generation", () => {

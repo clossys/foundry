@@ -21,7 +21,9 @@
 //
 // A setup-phase repository is skipped, not computed: the change-set
 // contract requires a setup set to carry the setup templates (code rule
-// C11), and this module does not compute them yet.
+// C11), and this module does not compute them yet. So is a repository whose
+// Controller profile needs root entries added (code rule C13): this module
+// does not compute the edited profile's bytes yet.
 
 import type { AdvisorPlan, EngagementBrief, EngagementBriefRole, EngagementContext, PlanPackageAct } from "./plan-contract.js";
 import { loadPackedContract, validateAdvisorPlan, validateEngagementBrief } from "./plan-contract.js";
@@ -34,7 +36,8 @@ import {
 } from "./change-set-contract.js";
 import type {
   ApplyBundle, ApplyBundleRepository, ApplyCheck, ChangeSetItem, ChangeSetPhase, ChangeSetRefusal, DependencyPlacement, DiscoveryRoot,
-  FileChange, KeyChange, LockfileName, PackageInvariant, PackageManagerKind, PinnedPackage, ReleaseAgeSurfaceKind, RepositoryChangeSet, RepositoryVisibility,
+  FileChange, KeyChange, LockfileName, PackageInvariant, PackageManagerKind, PinnedPackage, ReleaseAgeSurfaceKind, RepositoryChangeSet, RepositoryProfileObservation,
+  RepositoryVisibility,
 } from "./change-set-contract.js";
 
 /** What was read from one staffed repository's default branch. The planner trusts it as given. */
@@ -56,6 +59,15 @@ export interface RepositoryObservation {
   readonly consumerCi: boolean;
   /** The discovery roots that are, or lie under, a symbolic link on the default branch; no discovery link is written under them. */
   readonly symlinkedSkillRoots: readonly DiscoveryRoot[];
+  /**
+   * The Controller repository profile the default branch declares, or null:
+   * its path, whether it has a root vocabulary Controller checks, and which
+   * root names this set introduces that it does not declare or prohibits
+   * (`wouldViolateRootEntries()` judges these from the profile).
+   */
+  readonly repositoryProfile: RepositoryProfileObservation | null;
+  /** Which of `.agents`, `.agents/skills` and `.agents/skills/clossys-<role>` is a symbolic link on the default branch. */
+  readonly linkedAgentsPaths: readonly string[];
   /**
    * Every file on the default branch that the apply flow may write -- under
    * `clossys/`, under `.agents/skills/`, under `.claude/skills/` and
@@ -117,7 +129,8 @@ export const PUBLIC_PROBLEM_PLACEHOLDER: string = (() => {
 })();
 
 const BASE_ALLOW_LIST = [".agents/skills/clossys-*/**", "clossys/**"];
-const RESERVED_ITEM_IDS = new Set(["brief", "skills", "ledger"]);
+const RESERVED_ITEM_IDS = new Set(["brief", "skills", "ledger", "root-entries"]);
+const ROOT_ENTRIES_ITEM = "root-entries";
 
 function projectRole(role: EngagementBriefRole): EngagementBriefRole {
   return {
@@ -244,14 +257,17 @@ function computeChangeSet(
       for (const path of paths) refused.push({ path, reason: "unsafe-path", item: "skills" });
       continue;
     }
-    if (writeWhole(skillPath(role), content, "skills")) composed.push({ role, sha256: contentDigest(content) });
+    const skill = skillPath(role);
+    // Never write through a symbolic link: the bytes would land wherever it points.
+    if (observation.linkedAgentsPaths.some((link) => skill.startsWith(`${link}/`))) refused.push({ path: skill, reason: "skills-root-is-link", item: "skills" });
+    else if (writeWhole(skill, content, "skills")) composed.push({ role, sha256: contentDigest(content) });
     for (const root of linkedRoots) writeWhole(discoveryLinkPath(root, role), discoveryLinkTarget(role), "skills", "120000");
   }
   writeWhole(SKILLS_MANIFEST_PATH, serializeComposedSkillsManifest(composed, inputs.producer.version), "skills");
 
   const invariants: PackageInvariant[] = [];
   for (const act of acts) {
-    if (RESERVED_ITEM_IDS.has(act.planItem)) throw new TypeError("a package act's planItem is an item id the change set reserves (brief, skills or ledger)");
+    if (RESERVED_ITEM_IDS.has(act.planItem)) throw new TypeError("a package act's planItem is an item id the change set reserves (brief, skills, ledger or root-entries)");
     const pinned: PinnedPackage = { name: act.name, version: act.version, integrity: act.integrity };
     const entries = observation.manifestEntries.filter((entry) => entry.name === act.name);
     const satisfiedInBase =
@@ -292,11 +308,25 @@ function computeChangeSet(
     before: existingAt(LEDGER_PATH) ?? null,
   });
 
+  // A profile that needs no new entry needs no item; one that needs entries added is skipped by the caller, so only a refused declaration is written here.
+  const profile = observation.repositoryProfile;
+  if (profile !== null && (profile.rootVocabulary === "unparseable" || profile.prohibitedRoots.length > 0)) {
+    items.push({
+      id: ROOT_ENTRIES_ITEM,
+      act: "declare-root-entry",
+      path: profile.path,
+      entries: profile.rootVocabulary === "unparseable" ? [] : profile.undeclaredRoots.map((name) => ({ name, classification: "extension", disposition: "allowed" })),
+    });
+    refused.push({ path: profile.path, reason: profile.rootVocabulary === "unparseable" ? "root-vocabulary-unknown" : "unowned-existing", item: ROOT_ENTRIES_ITEM });
+  }
+
   const checks: ApplyCheck[] = [];
   const reasons = new Set(refused.map((refusal) => refusal.reason));
   if (reasons.has("unsafe-path")) checks.push({ check: "V6", verdict: "violated", rule: "unsafe-path" });
   if (reasons.has("unowned-existing")) checks.push({ check: "V6", verdict: "indeterminate", rule: "unowned-existing" });
   if (reasons.has("manifest-absent")) checks.push({ check: "V6", verdict: "indeterminate", rule: "manifest-absent" });
+  if (reasons.has("root-vocabulary-unknown")) checks.push({ check: "V6", verdict: "indeterminate", rule: "root-vocabulary-unknown" });
+  if (reasons.has("skills-root-is-link")) checks.push({ check: "V6", verdict: "indeterminate", rule: "skills-root-is-link" });
   if (checks.length === 0) checks.push({ check: "V6", verdict: "satisfied" });
 
   return {
@@ -325,6 +355,16 @@ function computeChangeSet(
         ),
         consumerCi: observation.consumerCi,
         symlinkedSkillRoots: canonicalOrder([...new Set(observation.symlinkedSkillRoots)], CANONICAL_KEYS.root),
+        repositoryProfile:
+          profile === null
+            ? null
+            : {
+                path: profile.path,
+                rootVocabulary: profile.rootVocabulary,
+                undeclaredRoots: canonicalOrder([...new Set(profile.undeclaredRoots)], CANONICAL_KEYS.name),
+                prohibitedRoots: canonicalOrder([...new Set(profile.prohibitedRoots)], CANONICAL_KEYS.name),
+              },
+        linkedAgentsPaths: canonicalOrder([...new Set(observation.linkedAgentsPaths)], CANONICAL_KEYS.name),
       },
       // Every array whose order carries no meaning is written in the contract's canonical order (code rule C8).
       items: canonicalOrder(items, CANONICAL_KEYS.item),
@@ -351,13 +391,21 @@ function computeChangeSet(
  *   item, never dropped, and no act the plan does not name is ever added.
  * - A setup-phase repository is skipped as `setup-template-unbuilt`, with
  *   verdict indeterminate: a setup set must carry the setup templates, which
- *   this planner does not compute yet.
+ *   this planner does not compute yet. A repository whose Controller profile
+ *   needs root entries added is skipped as `root-entry-edit-unbuilt` for the
+ *   same reason: the edited profile's bytes are not computed yet. A profile
+ *   that is unparseable, or that prohibits a root name the set introduces,
+ *   gets a declare-root-entry item refused as `root-vocabulary-unknown` or
+ *   `unowned-existing`.
+ * - A role's skill under a symbolic link (`.agents`, `.agents/skills` or its
+ *   own directory) is refused as `skills-root-is-link`, never written.
  * - A package act the default branch already satisfies exactly is kept as an
  *   item with `satisfiedInBase: true` and writes nothing.
  * - A path or key the default branch already has is refused as
  *   `unowned-existing` (the installed-state ledger is read as empty).
- * - A staffed repository with no observation, with a skip reason, or in the
- *   setup phase is skipped and left out of the bundle digest.
+ * - A staffed repository with no observation, with a skip reason, in the
+ *   setup phase, or whose profile needs root entries added is skipped and
+ *   left out of the bundle digest.
  *
  * Throws, naming positions and never values, when the plan or hub brief does
  * not validate, the plan has no staffing, the hub brief has `staffedHere`, an
@@ -399,6 +447,12 @@ export function planApplyBundle(inputs: PlanApplyBundleInputs): PlanApplyBundleR
         reason: observation === undefined ? "not-observed" : observation.skipped,
         checks: [],
       });
+      continue;
+    }
+    const profile = observation.repositoryProfile;
+    if (profile !== null && profile.rootVocabulary === "checked" && profile.undeclaredRoots.length > 0 && profile.prohibitedRoots.length === 0) {
+      // Adding the entries needs the edited profile's bytes (code rule C13), which this planner does not compute yet.
+      entries.push({ id: staffingEntry.repository, verdict: "indeterminate", reason: "root-entry-edit-unbuilt", checks: [] });
       continue;
     }
     if (observation.phase === "setup") {

@@ -159,7 +159,7 @@ describe("path patterns", () => {
   });
 });
 
-describe("change-set code rules C1-C12", () => {
+describe("change-set code rules C1-C14", () => {
   it("accept the corpus sets", () => {
     expect(repositoryChangeSetViolations(SET)).toEqual([]);
     expect(repositoryChangeSetViolations(SETUP)).toEqual([]);
@@ -307,9 +307,11 @@ describe("change-set code rules C1-C12", () => {
       expect(swapped((set) => set.pathAllowList.push(set.pathAllowList.at(-1)))).toContain("C8");
     });
 
-    it("refuses symlinkedSkillRoots out of order or repeated", () => {
+    it("refuses symlinkedSkillRoots and linkedAgentsPaths out of order or repeated", () => {
       expect(swapped((set) => (set.observed.symlinkedSkillRoots = [".cursor/skills", ".claude/skills"]))).toContain("C8");
       expect(swapped((set) => (set.observed.symlinkedSkillRoots = [".claude/skills", ".claude/skills"]))).toContain("C8");
+      expect(swapped((set) => (set.observed.linkedAgentsPaths = [".agents/skills", ".agents"]))).toContain("C8");
+      expect(swapped((set) => (set.observed.linkedAgentsPaths = [".agents", ".agents"]))).toContain("C8");
     });
 
     it("refuses refused, deferred, releaseAgeSurfaces and tooling out of order", () => {
@@ -529,12 +531,119 @@ describe("change-set code rules C1-C12", () => {
     });
   });
 
+  describe("C13: a Controller profile's root vocabulary", () => {
+    const ROOTS = corpus.changeSets.find((entry) => entry.name === "setup-site-root-entries")!.changeSet;
+    const rootItem = (set: Loose) => itemIndex(set, "root-entries");
+    it("accepts the corpus cases: entries added, refused as unparseable or prohibited, or not needed", () => {
+      for (const name of ["setup-site-root-entries", "apply-profile-no-vocabulary", "apply-profile-declares-all", "apply-profile-unparseable", "apply-profile-prohibits"]) {
+        expect(repositoryChangeSetViolations(corpus.changeSets.find((entry) => entry.name === name)!.changeSet), name).toEqual([]);
+      }
+    });
+
+    it("requires the item when the profile needs entries, and refuses it when it does not", () => {
+      const missing = loose(ROOTS);
+      missing.items = missing.items.filter((item: Loose) => item.act !== "declare-root-entry");
+      missing.files = missing.files.filter((file: Loose) => file.item !== "root-entries");
+      expect(rulesOf(reseal(missing))).toEqual(["C13 items"]);
+      const unneeded = loose(ROOTS);
+      unneeded.observed.repositoryProfile.undeclaredRoots = [];
+      expect(rulesOf(reseal(unneeded))).toEqual([`C13 items[${rootItem(unneeded)}]`]);
+      const absent = loose(ROOTS);
+      absent.observed.repositoryProfile = null;
+      expect(rulesOf(reseal(absent))).toEqual([`C13 items[${rootItem(absent)}]`]);
+    });
+
+    it("binds the item to the observed profile's path and exactly its undeclared names, in order", () => {
+      const path = loose(ROOTS);
+      itemAt(path, "root-entries").path = "other/repository-profile.json";
+      fileAt(path, "governance/repository-profile.json").path = "other/repository-profile.json";
+      path.files.sort(byPath);
+      expect(rulesOf(reseal(path))).toEqual([`C13 items[${rootItem(path)}].path`]);
+      const fewer = loose(ROOTS);
+      itemAt(fewer, "root-entries").entries.pop();
+      expect(rulesOf(reseal(fewer))).toEqual([`C13 items[${rootItem(fewer)}].entries`]);
+      const reordered = loose(ROOTS);
+      itemAt(reordered, "root-entries").entries.reverse();
+      expect(rulesOf(reseal(reordered))).toEqual([`C13 items[${rootItem(reordered)}].entries`]);
+      const other = loose(ROOTS);
+      itemAt(other, "root-entries").entries[0].disposition = "required";
+      expect(ruleIds(reseal(other))).toEqual(["schema"]);
+    });
+
+    it("requires a profile the base has, and the refusal reason the observation calls for", () => {
+      const created = loose(ROOTS);
+      fileAt(created, "governance/repository-profile.json").before = null;
+      expect(rulesOf(reseal(created))).toEqual([`C13 items[${rootItem(created)}]`]);
+      const written = loose(corpus.changeSets.find((entry) => entry.name === "apply-profile-unparseable")!.changeSet);
+      written.refused[0].reason = "unowned-existing";
+      expect(rulesOf(reseal(written))).toEqual([`C13 items[${rootItem(written)}]`]);
+      const prohibited = loose(corpus.changeSets.find((entry) => entry.name === "apply-profile-prohibits")!.changeSet);
+      prohibited.refused[0].reason = "root-vocabulary-unknown";
+      expect(rulesOf(reseal(prohibited))).toEqual([`C13 items[${rootItem(prohibited)}]`]);
+    });
+
+    it("refuses observed names under a vocabulary that is not checked, in both lists, or naming no path the set touches", () => {
+      const unchecked = loose(ROOTS);
+      unchecked.observed.repositoryProfile.rootVocabulary = "none";
+      expect(ruleIds(reseal(unchecked))).toEqual(["C13"]);
+      const both = loose(ROOTS);
+      both.observed.repositoryProfile.prohibitedRoots = ["clossys"];
+      expect(rulesOf(reseal(both))).toContain("C13 observed.repositoryProfile");
+      const foreign = loose(ROOTS);
+      foreign.observed.repositoryProfile.undeclaredRoots = [...foreign.observed.repositoryProfile.undeclaredRoots, "src"];
+      itemAt(foreign, "root-entries").entries.push({ name: "src", classification: "extension", disposition: "allowed" });
+      expect(rulesOf(reseal(foreign))).toEqual(["C13 observed.repositoryProfile.undeclaredRoots[6]"]);
+    });
+
+    it("refuses a profile at an unknown file name, and names out of order", () => {
+      const name = loose(ROOTS);
+      name.observed.repositoryProfile.path = "governance/profile.json";
+      expect(ruleIds(reseal(name))).toContain("schema");
+      const order = loose(ROOTS);
+      order.observed.repositoryProfile.undeclaredRoots.reverse();
+      expect(ruleIds(reseal(order))).toContain("C8");
+    });
+  });
+
+  describe("C14: never write through a symbolic link to the skills", () => {
+    const LINKED = corpus.changeSets.find((entry) => entry.name === "apply-agents-skills-link")!.changeSet;
+    it("accepts every skill refused as skills-root-is-link, and refuses a skill written through the link", () => {
+      expect(repositoryChangeSetViolations(LINKED)).toEqual([]);
+      const through = corpus.changeSets.find((entry) => entry.name === "apply-skill-through-link")!.changeSet;
+      expect(ruleIds(through)).toEqual(["C14"]);
+    });
+
+    it("refuses another reason under a link, the link reason elsewhere, and a skill directory of no staffed role", () => {
+      const reason = loose(LINKED);
+      reason.refused[0].reason = "unowned-existing";
+      expect(rulesOf(reseal(reason))).toEqual(["C14 refused[0].reason"]);
+      const elsewhere = loose(SET);
+      elsewhere.files = elsewhere.files.filter((file: Loose) => file.path !== "clossys/brief.json");
+      elsewhere.refused.push({ path: "clossys/brief.json", reason: "skills-root-is-link", item: "brief" });
+      expect(rulesOf(reseal(elsewhere))).toEqual(["C14 refused[0].reason"]);
+      const stranger = loose(SET);
+      stranger.observed.linkedAgentsPaths = [".agents/skills/clossys-designer"];
+      expect(rulesOf(reseal(stranger))).toEqual(["C14 observed.linkedAgentsPaths[0]"]);
+      const outside = loose(SET);
+      outside.observed.linkedAgentsPaths = [".claude"];
+      expect(ruleIds(reseal(outside))).toEqual(["schema"]);
+    });
+
+    it("treats a link at .agents as covering every skill", () => {
+      const set = loose(LINKED);
+      set.observed.linkedAgentsPaths = [".agents"];
+      expect(repositoryChangeSetViolations(reseal(set))).toEqual([]);
+    });
+  });
+
   describe("the members the apply flow added", () => {
     it("require the Integrator pin, consumerCi and symlinkedSkillRoots, and refuse mode 100755 and a derived link", () => {
       const mutations: ((set: Loose) => void)[] = [
         (set) => delete set.integrator,
         (set) => delete set.observed.consumerCi,
         (set) => delete set.observed.symlinkedSkillRoots,
+        (set) => delete set.observed.repositoryProfile,
+        (set) => delete set.observed.linkedAgentsPaths,
         (set) => (set.observed.symlinkedSkillRoots = [".agents/skills"]),
         (set) => (fileAt(set, "clossys/brief.json").mode = "100755"),
         (set) => (fileAt(set, "package-lock.json").mode = "120000"),

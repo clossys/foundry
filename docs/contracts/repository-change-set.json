@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/clossys/foundry/blob/main/docs/contracts/repository-change-set.json",
   "title": "Repository change set",
-  "description": "Issue #1178: everything one pull request would change in one repository when an approved plan is applied, computed from the plan and from observations of the repository's default branch, never from a working tree. @clossys/launcher computes it (planApplyBundle()) and validates it against this file, which its build packs. It is a computed record, not a claim that anything was written: nothing in it says a file exists, a pull request is open, or a change was applied, and none of the repository states (planned, materialized, proposed, applied and so on) appear in it. Those are derived later, from evidence. It carries no approval either: which approval binds a set is recorded in the bundle (apply-bundle.json) and in the installed-state ledger (installed-ledger.json), never here, because every member but the six the digest excludes is inside the digest an approval names. No field holds a time, so computing the same set from the same inputs gives the same bytes. Every object is closed: a key this contract does not declare is refused. A map is written as an array of records, because the contract checker implements additionalProperties only as a boolean. Every item act the apply flow will use is declared here, including acts no package computes yet (add-caller-workflow, write-starter-request, add-ci-template, add-path-scope-job, exempt-release-age, and the agents-pointer and claude-loader records), so a later producer of those acts needs no contract change. DIGEST. changeSetDigest is defined in apply-change-set-digest.md, beside this file, with its corpus apply-change-set-digest.fixture.json. It covers every member except changeSetDigest, branch, bundle, pullRequest, inverse and tooling, and it reduces a derived file to path, mode, derived, item and invariants; that page gives the reason for each exclusion. Because a derived file's bytes are outside the digest, only two files may be derived (code rule C7): the installed-state ledger and the repository's lockfile. PATHS. A path is relative to the repository root, uses / between segments, and has no empty, . or .. segment. A pathAllowList entry is one of the patterns the apply flow may own, listed in definitions.ownedPattern: * matches any characters within one segment, and a segment that is exactly ** matches any number of whole segments, including none; no other segment contains **. DISCOVERY LINKS. A discovery link is a file of mode 120000, a symbolic link as git stores it: its bytes are its target. For a role, it is <root>/clossys-<role> for each discovery root, .claude/skills and .cursor/skills, and its target is ../../.agents/skills/clossys-<role>. LOCKFILE PATH. A repository's lockfile path is observed.lockfile, or, when that is none, the file its package manager writes: package-lock.json for npm, pnpm-lock.yaml for pnpm, yarn.lock for yarn. A repository whose packageManager is none has no lockfile path. CANONICAL ORDER. Arrays whose order carries no meaning are written in one order, so the same change always has the same bytes and the same digest. Strings compare by UTF-16 code units, and a pair compares its first member, then its second. CODE RULES, checked in code after the schema passes, because the keywords above cannot relate one field to another. A refusal names the rule and the position of the field at fault, never its value. C1: no two items share an id. C2: every files[].item, keys[].item and refused[].item, and the item of every package invariant, is the id of an item in items. C3: no two files share a path and no two keys share a pointer; paths compare case-insensitively, so two paths that differ only in letter case are the same path. No path is both in files and in refused, and no pointer is both in keys and in refused. Every path the set touches is matched by some pathAllowList entry: every files[].path, the file of every keys[] entry, and the path of every item that names one (exempt-release-age). C4: ledger.generation is 0 or more; exactly one item has act write-ledger, and exactly one file names it: a derived file at clossys/.state/installed.json whose invariants are exactly one ledgerGeneration equal to ledger.generation plus 1. C5: changeSetDigest is the digest apply-change-set-digest.md defines, branch is clossys/apply- followed by the first 12 hexadecimal digits of changeSetDigest, and pullRequest.title ends with the same 12 digits. C6: no planItem appears twice across items and deferred. C7: every derived file is either the ledger (C4) or the lockfile: at most one derived file is at the repository's lockfile path (see LOCKFILE PATH), and every one of its invariants is a package invariant; no other file is derived, and no whole file is at the ledger path, at package.json, or at any lockfile name. C8: items are sorted by id; files by path; keys by file, then pointer; refused by path (or file), then pointer (a path refusal has none, which sorts first); deferred by planItem; each file's invariants by package name; pathAllowList by value, observed.releaseAgeSurfaces by surface, then path, observed.symlinkedSkillRoots by value, and tooling by tool, each with no entry repeated. C9: each item's writes match the item. A file naming an item that is not an install, pin-starter or write-ledger item is a whole file. A whole file has mode 100644, except a discovery link, which has mode 120000, and a discovery link's after, unless null, is the content digest of its target text, with no line feed. Each of the following items is named by exactly one whole file or one path refusal at each path it binds, and by nothing else: a write-record item binds clossys/brief.json for source engagement-brief, AGENTS.md for agents-pointer, and CLAUDE.md for claude-loader; a compose-skills item names each of its roles once, with no role repeated, and binds, for each role, .agents/skills/clossys-<role>/SKILL.md and the discovery link under each discovery root that observed.symlinkedSkillRoots does not list, and binds clossys/.state/skills.json once; an add-caller-workflow item binds .github/workflows/clossys-adoption-evidence.yml, .github/workflows/clossys-adoption-decision.yml and .github/scripts/clossys-collect-adoption-snapshot.mjs; a write-starter-request item binds .starter/request.json; an add-ci-template item binds .github/workflows/clossys-ci.yml; and an add-path-scope-job item binds .github/workflows/clossys-path-scope.yml. An exempt-release-age item is named by at most one whole file or path refusal, at its own path, and by nothing else: by none when the default branch already lists its entry. No key and no key refusal names an item that is not an install or pin-starter item. An install or pin-starter item is never named by a whole file or a path refusal. Every keys[] entry and every package invariant names such an item: a key's pointer is /<placement>/<name with / written ~1> and its after is the item's version; an invariant's name, version and integrity are the item's. An item with satisfiedInBase true is named by no key, invariant or refusal; one with satisfiedInBase false is named either by exactly one key and exactly one invariant and no refusal, or by at least one key refusal and no key or invariant. A derived lockfile's item is the item of its first invariant. C10: a setup set has no install item (an install waits in deferred), and an apply set defers nothing. C11: a setup set has exactly one item of each act add-caller-workflow, write-starter-request, add-ci-template and add-path-scope-job, exactly one pin-starter item, and exactly one exempt-release-age item when observed.packageManager is pnpm or yarn, and none otherwise, because npm has no key that exempts a scope from its release-age window. C12: an exempt-release-age item's surface is pnpm-workspace with path pnpm-workspace.yaml in a repository whose observed.packageManager is pnpm, or yarnrc with path .yarnrc.yml in one whose packageManager is yarn; and its scope is the publishing scope the validating package packs from this repository's package-scope.json. This contract sees content digests, not bytes, so it does not check that the file an exempt-release-age item writes differs from its before only by that one entry; that check needs the file's bytes and belongs to the step that writes them.",
+  "description": "Issue #1178: everything one pull request would change in one repository when an approved plan is applied, computed from the plan and from observations of the repository's default branch, never from a working tree. @clossys/launcher computes it (planApplyBundle()) and validates it against this file, which its build packs. It is a computed record, not a claim that anything was written: nothing in it says a file exists, a pull request is open, or a change was applied, and none of the repository states (planned, materialized, proposed, applied and so on) appear in it. Those are derived later, from evidence. It carries no approval either: which approval binds a set is recorded in the bundle (apply-bundle.json) and in the installed-state ledger (installed-ledger.json), never here, because every member but the six the digest excludes is inside the digest an approval names. No field holds a time, so computing the same set from the same inputs gives the same bytes. Every object is closed: a key this contract does not declare is refused. A map is written as an array of records, because the contract checker implements additionalProperties only as a boolean. Every item act the apply flow will use is declared here, including acts no package computes yet (add-caller-workflow, write-starter-request, add-ci-template, add-path-scope-job, exempt-release-age, declare-root-entry, and the agents-pointer and claude-loader records), so a later producer of those acts needs no contract change. DIGEST. changeSetDigest is defined in apply-change-set-digest.md, beside this file, with its corpus apply-change-set-digest.fixture.json. It covers every member except changeSetDigest, branch, bundle, pullRequest, inverse and tooling, and it reduces a derived file to path, mode, derived, item and invariants; that page gives the reason for each exclusion. Because a derived file's bytes are outside the digest, only two files may be derived (code rule C7): the installed-state ledger and the repository's lockfile. PATHS. A path is relative to the repository root, uses / between segments, and has no empty, . or .. segment. A pathAllowList entry is one of the patterns the apply flow may own, listed in definitions.ownedPattern: * matches any characters within one segment, and a segment that is exactly ** matches any number of whole segments, including none; no other segment contains **. DISCOVERY LINKS. A discovery link is a file of mode 120000, a symbolic link as git stores it: its bytes are its target. For a role, it is <root>/clossys-<role> for each discovery root, .claude/skills and .cursor/skills, and its target is ../../.agents/skills/clossys-<role>. REPOSITORY PROFILE. A repository may declare a Controller repository profile (repository-profile.json, or the known alternate name repository-declaration.json; Controller checks governance/repository-profile.json first and otherwise searches the tree for either name). A profile of schema version 3 with a non-empty rootEntries list is a closed vocabulary of the repository's direct children, and Controller's repository-profile check fails on any direct child it does not declare, or declares as prohibited. observed.repositoryProfile records the profile Controller would locate, or null when there is none: its path; rootVocabulary, which is none when the profile has no root vocabulary Controller checks (schema version 1 or 2, or an empty rootEntries), checked when it has one, and unparseable when the profile cannot be read as a profile with a well-formed rootEntries; and, when checked, undeclaredRoots and prohibitedRoots, the root names this set introduces (direct children absent from the default branch) that the vocabulary does not declare, or declares as prohibited. LOCKFILE PATH. A repository's lockfile path is observed.lockfile, or, when that is none, the file its package manager writes: package-lock.json for npm, pnpm-lock.yaml for pnpm, yarn.lock for yarn. A repository whose packageManager is none has no lockfile path. CANONICAL ORDER. Arrays whose order carries no meaning are written in one order, so the same change always has the same bytes and the same digest. Strings compare by UTF-16 code units, and a pair compares its first member, then its second. CODE RULES, checked in code after the schema passes, because the keywords above cannot relate one field to another. A refusal names the rule and the position of the field at fault, never its value. C1: no two items share an id. C2: every files[].item, keys[].item and refused[].item, and the item of every package invariant, is the id of an item in items. C3: no two files share a path and no two keys share a pointer; paths compare case-insensitively, so two paths that differ only in letter case are the same path. No path is both in files and in refused, and no pointer is both in keys and in refused. Every path the set touches is matched by some pathAllowList entry: every files[].path, the file of every keys[] entry, and the path of every item that names one (exempt-release-age). C4: ledger.generation is 0 or more; exactly one item has act write-ledger, and exactly one file names it: a derived file at clossys/.state/installed.json whose invariants are exactly one ledgerGeneration equal to ledger.generation plus 1. C5: changeSetDigest is the digest apply-change-set-digest.md defines, branch is clossys/apply- followed by the first 12 hexadecimal digits of changeSetDigest, and pullRequest.title ends with the same 12 digits. C6: no planItem appears twice across items and deferred. C7: every derived file is either the ledger (C4) or the lockfile: at most one derived file is at the repository's lockfile path (see LOCKFILE PATH), and every one of its invariants is a package invariant; no other file is derived, and no whole file is at the ledger path, at package.json, or at any lockfile name. C8: items are sorted by id; files by path; keys by file, then pointer; refused by path (or file), then pointer (a path refusal has none, which sorts first); deferred by planItem; each file's invariants by package name; pathAllowList by value, observed.releaseAgeSurfaces by surface, then path, observed.symlinkedSkillRoots by value, and tooling by tool, each with no entry repeated. C9: each item's writes match the item. A file naming an item that is not an install, pin-starter or write-ledger item is a whole file. A whole file has mode 100644, except a discovery link, which has mode 120000, and a discovery link's after, unless null, is the content digest of its target text, with no line feed. Each of the following items is named by exactly one whole file or one path refusal at each path it binds, and by nothing else: a write-record item binds clossys/brief.json for source engagement-brief, AGENTS.md for agents-pointer, and CLAUDE.md for claude-loader; a compose-skills item names each of its roles once, with no role repeated, and binds, for each role, .agents/skills/clossys-<role>/SKILL.md and the discovery link under each discovery root that observed.symlinkedSkillRoots does not list, and binds clossys/.state/skills.json once; an add-caller-workflow item binds .github/workflows/clossys-adoption-evidence.yml, .github/workflows/clossys-adoption-decision.yml and .github/scripts/clossys-collect-adoption-snapshot.mjs; a write-starter-request item binds .starter/request.json; an add-ci-template item binds .github/workflows/clossys-ci.yml; and an add-path-scope-job item binds .github/workflows/clossys-path-scope.yml. An exempt-release-age item is named by at most one whole file or path refusal, at its own path, and by nothing else: by none when the default branch already lists its entry. A declare-root-entry item is named by exactly one whole file or path refusal, at its own path, and by nothing else. No key and no key refusal names an item that is not an install or pin-starter item. An install or pin-starter item is never named by a whole file or a path refusal. Every keys[] entry and every package invariant names such an item: a key's pointer is /<placement>/<name with / written ~1> and its after is the item's version; an invariant's name, version and integrity are the item's. An item with satisfiedInBase true is named by no key, invariant or refusal; one with satisfiedInBase false is named either by exactly one key and exactly one invariant and no refusal, or by at least one key refusal and no key or invariant. A derived lockfile's item is the item of its first invariant. C10: a setup set has no install item (an install waits in deferred), and an apply set defers nothing. C11: a setup set has exactly one item of each act add-caller-workflow, write-starter-request, add-ci-template and add-path-scope-job, exactly one pin-starter item, and exactly one exempt-release-age item when observed.packageManager is pnpm or yarn, and none otherwise, because npm has no key that exempts a scope from its release-age window. C12: an exempt-release-age item's surface is pnpm-workspace with path pnpm-workspace.yaml in a repository whose observed.packageManager is pnpm, or yarnrc with path .yarnrc.yml in one whose packageManager is yarn; and its scope is the publishing scope the validating package packs from this repository's package-scope.json. This contract sees content digests, not bytes, so it does not check that the file an exempt-release-age item writes differs from its before only by that one entry; that check needs the file's bytes and belongs to the step that writes them. C13: a set has at most one declare-root-entry item, and has one exactly when observed.repositoryProfile is not null and its rootVocabulary is unparseable, or is checked with a non-empty undeclaredRoots or prohibitedRoots. Its path is observed.repositoryProfile.path, and its entries' names are exactly undeclaredRoots, in that order. When rootVocabulary is unparseable, its entries are empty and it is named by a path refusal with reason root-vocabulary-unknown; when prohibitedRoots is not empty, it is named by a path refusal with reason unowned-existing, because the flow never overrides a name the repository prohibits; otherwise it is named by a whole file whose before is not null. undeclaredRoots and prohibitedRoots are empty unless rootVocabulary is checked, share no name, and each name in them is the first segment of a path the set writes or refuses. When no declare-root-entry item is needed, as when the profile already declares every root name the set introduces, the set has none. This contract sees content digests, not bytes, so it does not check that the profile's after differs from its before only by those entries; that check belongs to the step that writes them. C14: every path in observed.linkedAgentsPaths is .agents, .agents/skills, or .agents/skills/clossys-<role> for a role of a compose-skills item; a SKILL.md at or under such a path is never written, and is named by a path refusal with reason skills-root-is-link; and no other path refusal has that reason. A write through a symbolic link would land wherever it points.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -287,7 +287,9 @@
         "lockfile",
         "releaseAgeSurfaces",
         "consumerCi",
-        "symlinkedSkillRoots"
+        "symlinkedSkillRoots",
+        "repositoryProfile",
+        "linkedAgentsPaths"
       ],
       "description": "Technical facts read from the repository's default branch.",
       "properties": {
@@ -345,6 +347,26 @@
               ".cursor/skills"
             ]
           }
+        },
+        "repositoryProfile": {
+          "description": "The Controller repository profile the default branch declares, or null when it declares none (see REPOSITORY PROFILE, and code rule C13). Covered by the digest.",
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/definitions/repositoryProfile"
+            }
+          ]
+        },
+        "linkedAgentsPaths": {
+          "type": "array",
+          "description": "Which of .agents, .agents/skills and each .agents/skills/clossys-<role> the set would write under is a symbolic link on the default branch (code rule C14). Sorted, with no entry repeated (code rule C8). Covered by the digest.",
+          "items": {
+            "title": "a path of .agents, .agents/skills or .agents/skills/clossys-<role>",
+            "type": "string",
+            "pattern": "^\\.agents(?:/skills(?:/clossys-[^/\\\\\\u0000-\\u001f]+)?)?$"
+          }
         }
       }
     },
@@ -361,6 +383,9 @@
         },
         {
           "$ref": "#/definitions/exemptReleaseAgeItem"
+        },
+        {
+          "$ref": "#/definitions/declareRootEntryItem"
         },
         {
           "$ref": "#/definitions/plainItem"
@@ -764,9 +789,11 @@
         "manifest-absent",
         "unsafe-path",
         "release-age-surface-conflict",
-        "release-age-surface-unparseable"
+        "release-age-surface-unparseable",
+        "root-vocabulary-unknown",
+        "skills-root-is-link"
       ],
-      "description": "unowned-existing: the default branch already has the path or key, and nothing shows the apply flow wrote it, so the flow will not take it over. client-edited: the flow wrote it, and it has changed since. deleted: the flow wrote it and the ledger still names it, but the default branch no longer has it; this drift is reported, never folded into another change. manifest-absent: a key would go in a package.json the repository does not have. unsafe-path: the computed path is not a safe relative path, or is outside pathAllowList. release-age-surface-conflict: the repository already sets the same exemption in another surface, which the list written here would silently replace. release-age-surface-unparseable: the release-age surface has a shape the restricted editor does not edit, such as a flow sequence, an anchor, a tag, or a comment inside the list."
+      "description": "unowned-existing: the default branch already has the path or key, and nothing shows the apply flow wrote it, so the flow will not take it over. client-edited: the flow wrote it, and it has changed since. deleted: the flow wrote it and the ledger still names it, but the default branch no longer has it; this drift is reported, never folded into another change. manifest-absent: a key would go in a package.json the repository does not have. unsafe-path: the computed path is not a safe relative path, or is outside pathAllowList. release-age-surface-conflict: the repository already sets the same exemption in another surface, which the list written here would silently replace. release-age-surface-unparseable: the release-age surface has a shape the restricted editor does not edit, such as a flow sequence, an anchor, a tag, or a comment inside the list. root-vocabulary-unknown: the repository's Controller profile cannot be read as a profile with a well-formed root vocabulary, so which root names it allows is unknown. skills-root-is-link: .agents, .agents/skills or a role's skill directory is a symbolic link on the default branch, and the flow never writes through one."
     },
     "deferral": {
       "type": "object",
@@ -788,7 +815,7 @@
       }
     },
     "ownedPattern": {
-      "description": "A path pattern the apply flow may own, per the apply design's ownership table: Launcher's clossys/ folder, composed skills and their discovery links, the agent pointer files, the Starter request, keys in package.json, the lockfile, a created-only-when-absent workflow or workflow script, and a release-age surface. installed-ledger.json holds a copy of this list.",
+      "description": "A path pattern the apply flow may own, per the apply design's ownership table: Launcher's clossys/ folder, composed skills and their discovery links, the agent pointer files, the Starter request, keys in package.json, the lockfile, a created-only-when-absent workflow or workflow script, a release-age surface, and a Controller repository profile, of which the flow edits only the root entries it adds. installed-ledger.json holds a copy of this list.",
       "allOf": [
         {
           "$ref": "#/definitions/pathPattern"
@@ -810,10 +837,111 @@
             "yarn.lock",
             ".npmrc",
             ".yarnrc.yml",
-            "pnpm-workspace.yaml"
+            "pnpm-workspace.yaml",
+            "**/repository-profile.json",
+            "**/repository-declaration.json"
           ]
         }
       ]
+    },
+    "repositoryProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "rootVocabulary",
+        "undeclaredRoots",
+        "prohibitedRoots"
+      ],
+      "properties": {
+        "path": {
+          "allOf": [
+            {
+              "$ref": "#/definitions/safePath"
+            },
+            {
+              "$ref": "#/definitions/profileName"
+            }
+          ]
+        },
+        "rootVocabulary": {
+          "enum": [
+            "none",
+            "checked",
+            "unparseable"
+          ]
+        },
+        "undeclaredRoots": {
+          "type": "array",
+          "description": "Sorted, with no entry repeated (code rule C8).",
+          "items": {
+            "$ref": "#/definitions/rootEntryName"
+          }
+        },
+        "prohibitedRoots": {
+          "type": "array",
+          "description": "Sorted, with no entry repeated (code rule C8).",
+          "items": {
+            "$ref": "#/definitions/rootEntryName"
+          }
+        }
+      }
+    },
+    "rootEntryName": {
+      "title": "one direct-child name: 1 to 255 characters, no / or \\, no control character, not . or .., and no leading or trailing whitespace",
+      "type": "string",
+      "pattern": "^(?!\\.\\.?$)(?=[^\\s])(?=.*[^\\s]$)[^/\\\\\\u0000-\\u001f\\u007f]{1,255}$"
+    },
+    "declareRootEntryItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "act",
+        "path",
+        "entries"
+      ],
+      "description": "Adds a root entry to the repository's Controller profile for each root name the set introduces that the profile's vocabulary does not declare, changing nothing else in the file (code rules C9 and C13).",
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/nonBlankString"
+        },
+        "act": {
+          "const": "declare-root-entry"
+        },
+        "path": {
+          "$ref": "#/definitions/safePath"
+        },
+        "entries": {
+          "type": "array",
+          "description": "The entries added, in the order of observed.repositoryProfile.undeclaredRoots. Each is an extension the repository allows, never requires: the flow adds these names, and must be able to remove them.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "classification",
+              "disposition"
+            ],
+            "properties": {
+              "name": {
+                "$ref": "#/definitions/rootEntryName"
+              },
+              "classification": {
+                "const": "extension"
+              },
+              "disposition": {
+                "const": "allowed"
+              }
+            }
+          }
+        }
+      }
+    },
+    "profileName": {
+      "title": "a path whose last segment is repository-profile.json or repository-declaration.json",
+      "type": "string",
+      "pattern": "(?:^|/)repository-(?:profile|declaration)\\.json$"
     }
   }
 }

@@ -45,7 +45,27 @@ export type ChangeSetItem =
       readonly satisfiedInBase: boolean;
     }
   | { readonly id: string; readonly act: "exempt-release-age"; readonly scope: string; readonly surface: ExemptionSurfaceKind; readonly path: string }
+  | { readonly id: string; readonly act: "declare-root-entry"; readonly path: string; readonly entries: readonly RootEntryDeclaration[] }
   | { readonly id: string; readonly act: "write-ledger" | "add-caller-workflow" | "write-starter-request" | "add-ci-template" | "add-path-scope-job" };
+
+/** One root entry a declare-root-entry item adds to a Controller profile: always an extension the repository allows. */
+export interface RootEntryDeclaration {
+  readonly name: string;
+  readonly classification: "extension";
+  readonly disposition: "allowed";
+}
+
+/** What was observed of the Controller repository profile on the default branch (code rule C13). */
+export interface RepositoryProfileObservation {
+  /** The profile Controller would locate. */
+  readonly path: string;
+  /** none: no root vocabulary Controller checks; checked: one it checks; unparseable: not readable as a profile with a well-formed rootEntries. */
+  readonly rootVocabulary: "none" | "checked" | "unparseable";
+  /** Root names the set introduces that the vocabulary does not declare. */
+  readonly undeclaredRoots: readonly string[];
+  /** Root names the set introduces that the vocabulary declares as prohibited. */
+  readonly prohibitedRoots: readonly string[];
+}
 
 /** `sha256:` and 64 hex digits of a file's bytes, or null when the file is absent. */
 export type ContentDigest = string | null;
@@ -98,7 +118,9 @@ export type RefusalReason =
   | "manifest-absent"
   | "unsafe-path"
   | "release-age-surface-conflict"
-  | "release-age-surface-unparseable";
+  | "release-age-surface-unparseable"
+  | "root-vocabulary-unknown"
+  | "skills-root-is-link";
 
 export type ChangeSetRefusal =
   | { readonly path: string; readonly reason: RefusalReason; readonly item: string }
@@ -135,6 +157,10 @@ export interface RepositoryChangeSet {
     readonly consumerCi: boolean;
     /** The discovery roots that are, or lie under, a symbolic link on the default branch; no link is written under them. */
     readonly symlinkedSkillRoots: readonly DiscoveryRoot[];
+    /** The Controller repository profile the default branch declares, or null. */
+    readonly repositoryProfile: RepositoryProfileObservation | null;
+    /** Which of .agents, .agents/skills and .agents/skills/clossys-<role> is a symbolic link on the default branch. */
+    readonly linkedAgentsPaths: readonly string[];
   };
   readonly items: readonly ChangeSetItem[];
   readonly files: readonly FileChange[];
@@ -358,6 +384,7 @@ export const CANONICAL_KEYS = {
   pattern: (pattern: string): string[] => [pattern],
   surface: (surface: { readonly surface: string; readonly path: string }): string[] => [surface.surface, surface.path],
   root: (root: string): string[] => [root],
+  name: (name: string): string[] => [name],
   tool: (tool: { readonly tool: string }): string[] => [tool.tool],
 } as const;
 
@@ -376,7 +403,7 @@ export function worstVerdict(verdicts: readonly CheckVerdict[]): CheckVerdict {
 /** The rule a bundle check carries when its authorization is for another plan (code rule A4). */
 export const AUTHORIZATION_PLAN_MISMATCH = "authorization-plan-mismatch";
 
-export type ChangeSetRuleId = "C1" | "C2" | "C3" | "C4" | "C5" | "C6" | "C7" | "C8" | "C9" | "C10" | "C11" | "C12";
+export type ChangeSetRuleId = "C1" | "C2" | "C3" | "C4" | "C5" | "C6" | "C7" | "C8" | "C9" | "C10" | "C11" | "C12" | "C13" | "C14";
 export type ApplyBundleRuleId = "A1" | "A2" | "A3" | "A4" | "A5" | "A6" | "A7";
 
 /** One reason a change set or bundle is refused: `rule` is "schema" for the contract's keywords, else the code rule's id. */
@@ -419,7 +446,7 @@ function firstOutOfOrder<T>(values: readonly T[], key: (value: T) => readonly st
   return undefined;
 }
 
-/** Code rules C1-C12 of repository-change-set.json, over a set whose schema already passes. Messages name positions, never values. */
+/** Code rules C1-C14 of repository-change-set.json, over a set whose schema already passes. Messages name positions, never values. */
 export function changeSetRuleViolations(set: RepositoryChangeSet): RuleViolation<ChangeSetRuleId>[] {
   const out: RuleViolation<ChangeSetRuleId>[] = [];
   const push = (rule: ChangeSetRuleId, path: string, message: string) => out.push({ rule, path, message });
@@ -532,6 +559,11 @@ export function changeSetRuleViolations(set: RepositoryChangeSet): RuleViolation
   order("pathAllowList", set.pathAllowList, CANONICAL_KEYS.pattern, true);
   order("observed.releaseAgeSurfaces", set.observed.releaseAgeSurfaces, CANONICAL_KEYS.surface, true);
   order("observed.symlinkedSkillRoots", set.observed.symlinkedSkillRoots, CANONICAL_KEYS.root, true);
+  order("observed.linkedAgentsPaths", set.observed.linkedAgentsPaths, CANONICAL_KEYS.name, true);
+  if (set.observed.repositoryProfile !== null) {
+    order("observed.repositoryProfile.undeclaredRoots", set.observed.repositoryProfile.undeclaredRoots, CANONICAL_KEYS.name, true);
+    order("observed.repositoryProfile.prohibitedRoots", set.observed.repositoryProfile.prohibitedRoots, CANONICAL_KEYS.name, true);
+  }
   if (set.tooling !== undefined) order("tooling", set.tooling, CANONICAL_KEYS.tool, true);
 
   // C9
@@ -569,6 +601,8 @@ export function changeSetRuleViolations(set: RepositoryChangeSet): RuleViolation
       if (!namedExactly(TEMPLATE_PATHS[item.act])) push("C9", at, `must be named by exactly one whole file or path refusal at each file an ${item.act} item writes, and by nothing else`);
     } else if (item.act === "exempt-release-age") {
       if (!(keys.length === 0 && named.length <= 1 && named.every((path) => path === item.path))) push("C9", at, "must be named by at most one whole file or path refusal, at its own path, and by nothing else");
+    } else if (item.act === "declare-root-entry") {
+      if (!namedExactly([item.path])) push("C9", at, "must be named by exactly one whole file or path refusal, at its own path, and by nothing else");
     } else if (isPackageItem(item)) {
       const pointer = dependencyPointer(item.placement, item.package.name);
       if (files.some(({ file }) => !isDerived(file))) push("C9", at, "is named by a whole file");
@@ -629,6 +663,70 @@ export function changeSetRuleViolations(set: RepositoryChangeSet): RuleViolation
     if (item.path !== surface.path) push("C12", `items[${index}].path`, "is not the file of the item's surface");
     if (set.observed.packageManager !== surface.packageManager) push("C12", `items[${index}].surface`, "is not a surface this repository's package manager reads");
     if (item.scope !== PACKAGE_SCOPE.scope) push("C12", `items[${index}].scope`, "is not the publishing scope this package packs");
+  });
+
+  // C13
+  const profile = set.observed.repositoryProfile;
+  const declarers = set.items.map((item, index) => ({ item, index })).filter(({ item }) => item.act === "declare-root-entry");
+  if (declarers.length > 1) push("C13", `items[${declarers[1]!.index}]`, "is a second declare-root-entry item");
+  const needed =
+    profile !== null && (profile.rootVocabulary === "unparseable" || (profile.rootVocabulary === "checked" && (profile.undeclaredRoots.length > 0 || profile.prohibitedRoots.length > 0)));
+  if (needed && declarers.length === 0) push("C13", "items", "must hold a declare-root-entry item for the observed repository profile");
+  if (!needed) for (const { index } of declarers) push("C13", `items[${index}]`, "is a declare-root-entry item the observed repository profile does not need");
+  if (profile !== null) {
+    if (profile.rootVocabulary !== "checked" && profile.undeclaredRoots.length + profile.prohibitedRoots.length > 0) {
+      push("C13", "observed.repositoryProfile", "lists root names, but its root vocabulary is not checked");
+    }
+    if (profile.undeclaredRoots.some((name) => profile.prohibitedRoots.includes(name))) push("C13", "observed.repositoryProfile", "lists one root name as both undeclared and prohibited");
+    const roots = new Set([
+      ...set.files.map((file) => file.path),
+      ...set.keys.map((key) => key.file),
+      ...set.refused.map((refusal) => ("path" in refusal ? refusal.path : refusal.file)),
+    ].map((path) => path.split("/")[0]!));
+    for (const [name, list] of [["undeclaredRoots", profile.undeclaredRoots], ["prohibitedRoots", profile.prohibitedRoots]] as const) {
+      list.forEach((root, at) => {
+        if (!roots.has(root)) push("C13", `observed.repositoryProfile.${name}[${at}]`, "is not the first segment of any path the set writes or refuses");
+      });
+    }
+  }
+  if (profile !== null && needed && declarers.length === 1) {
+    const { item, index } = declarers[0]! as { item: Extract<ChangeSetItem, { act: "declare-root-entry" }>; index: number };
+    const at = `items[${index}]`;
+    if (item.path !== profile.path) push("C13", `${at}.path`, "is not the observed repository profile's path");
+    if (item.entries.length !== profile.undeclaredRoots.length || item.entries.some((entry, position) => entry.name !== profile.undeclaredRoots[position])) {
+      push("C13", `${at}.entries`, "do not name exactly the observed undeclared root names, in their order");
+    }
+    const whole = set.files.find((file) => file.item === item.id && !isDerived(file));
+    const refusal = set.refused.find((entry) => entry.item === item.id && "path" in entry);
+    const expected = profile.rootVocabulary === "unparseable" ? "root-vocabulary-unknown" : profile.prohibitedRoots.length > 0 ? "unowned-existing" : null;
+    if (expected === null) {
+      if (whole === undefined || ("before" in whole && whole.before === null)) push("C13", at, "must be named by a whole file that edits the profile the default branch has");
+    } else if (refusal === undefined || refusal.reason !== expected) {
+      push("C13", at, `must be named by a path refusal with reason ${expected}`);
+    }
+  }
+
+  // C14
+  const linked = set.observed.linkedAgentsPaths;
+  const skillRoles = new Set(set.items.flatMap((item) => (item.act === "compose-skills" ? item.roles : [])));
+  linked.forEach((path, at) => {
+    const role = /^\.agents\/skills\/clossys-(.+)$/u.exec(path)?.[1];
+    if (role !== undefined && !skillRoles.has(role)) push("C14", `observed.linkedAgentsPaths[${at}]`, "is a skill directory of no role this set composes");
+  });
+  const underLink = (path: string) => linked.some((link) => path === link || path.startsWith(`${link}/`));
+  const skillPaths = new Set([...skillRoles].map(skillPath));
+  set.files.forEach((file, at) => {
+    if (skillPaths.has(file.path) && underLink(file.path)) push("C14", `files[${at}].path`, "is written through a symbolic link on the default branch");
+  });
+  set.refused.forEach((refusal, at) => {
+    if (!("path" in refusal)) {
+      if (refusal.reason === "skills-root-is-link") push("C14", `refused[${at}].reason`, "is skills-root-is-link on a key, which names no path");
+      return;
+    }
+    const shouldBe = skillPaths.has(refusal.path) && underLink(refusal.path);
+    if (shouldBe !== (refusal.reason === "skills-root-is-link")) {
+      push("C14", `refused[${at}].reason`, shouldBe ? "is not skills-root-is-link, and this skill lies under a symbolic link" : "is skills-root-is-link, but this path is no skill under a symbolic link");
+    }
   });
   return out;
 }

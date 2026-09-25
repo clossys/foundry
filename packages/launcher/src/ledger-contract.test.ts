@@ -19,7 +19,7 @@ const read = (path: string): string => readFileSync(new URL(path, REPO), "utf8")
 const sha = (text: string) => `sha256:${createHash("sha256").update(text, "utf8").digest("hex")}`;
 
 interface Corpus {
-  ledgers: { name: string; note: string; valid: boolean; rules?: string[]; ledger: InstalledLedger; bytes?: string; sha256?: string }[];
+  ledgers: { name: string; note: string; valid: boolean; rules?: string[]; ledger: InstalledLedger; sha256?: string }[];
   renders: {
     name: string;
     previous: string | null;
@@ -55,6 +55,8 @@ describe("installed-ledger contract", () => {
     expect(DEFINITIONS.keyRow!.properties.pointer).toEqual(setDefinitions.key!.properties.pointer);
     expect(DEFINITIONS.ownedPattern!.enum).toEqual(setDefinitions.ownedPattern!.allOf[1].enum);
     expect(DEFINITIONS.placement!.enum).toEqual(setDefinitions.packageItem!.properties.placement.enum);
+    expect(DEFINITIONS.rootEntryName).toEqual(setDefinitions.rootEntryName);
+    expect(DEFINITIONS.profileName).toEqual(setDefinitions.profileName);
     expect(JSON.stringify(LEDGER)).not.toContain("advisor-plan.json#");
     expect(JSON.stringify(LEDGER)).not.toContain("repository-change-set.json#");
   });
@@ -103,13 +105,13 @@ describe("ledger bytes (RENDER)", () => {
   it("are the corpus's independently computed bytes for every valid ledger, whatever order its members were given in", () => {
     for (const entry of CORPUS.ledgers.filter((candidate) => candidate.valid)) {
       const bytes = serializeInstalledLedger(entry.ledger);
-      expect(bytes, entry.name).toBe(entry.bytes);
       expect(sha(bytes), entry.name).toBe(entry.sha256);
+      expect(bytes.endsWith("}\n") && !bytes.endsWith("\n\n"), entry.name).toBe(true);
       const reversed = JSON.parse(JSON.stringify(entry.ledger), (_key, value) =>
         value !== null && typeof value === "object" && !Array.isArray(value) ? Object.fromEntries(Object.entries(value).reverse()) : value,
       ) as InstalledLedger;
       expect(Object.keys(reversed)[0]).toBe("deferred");
-      expect(serializeInstalledLedger(reversed), entry.name).toBe(entry.bytes);
+      expect(serializeInstalledLedger(reversed), entry.name).toBe(bytes);
     }
   });
 
@@ -141,6 +143,15 @@ describe("ledger bytes (RENDER)", () => {
       }
       expect(ledgerSuccession(previous, next), render.name).toEqual({ change: "next-generation", violations: [] });
     }
+  });
+
+  it("record one entries row per root entry a set declares, in the profile it edits", () => {
+    const set = setNamed("setup-site-root-entries");
+    const item = set.items.find((entry) => entry.act === "declare-root-entry")!;
+    expect(item.act === "declare-root-entry" ? item.entries.map((entry) => entry.name) : []).toEqual([".agents", ".claude", ".cursor", ".github", ".starter", "clossys"]);
+    expect(ledger("setup-with-root-entries").entries).toEqual(
+      [".agents", ".claude", ".cursor", ".github", ".starter", "clossys"].map((value) => ({ file: "governance/repository-profile.json", key: "rootEntries", value, changeSet: set.changeSetDigest })),
+    );
   });
 
   it("record no row for the ledger or the lockfile, and every whole file the set writes at its after", () => {

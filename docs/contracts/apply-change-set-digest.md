@@ -97,9 +97,12 @@ approval:
 - `integrator`: a product repository's CI runs the hub's exact Integrator
   version, so that version is inside the digest as well as inside the
   workflow's bytes.
-- `observed`, including `consumerCi` and `symlinkedSkillRoots`: whether the
-  repository runs CI of its own decides what the CI template writes, and a
-  discovery root that is a symbolic link gets no discovery link.
+- `observed`, including `consumerCi`, `symlinkedSkillRoots`,
+  `repositoryProfile` and `linkedAgentsPaths`: whether the repository runs CI
+  of its own decides what the CI template writes, a discovery root that is a
+  symbolic link gets no discovery link, the repository's Controller profile
+  decides which root entries the set must declare, and a skill directory
+  behind a symbolic link is refused rather than written through.
 - `engine`, `planDigest`, `phase`, `items`, `files`, `keys`,
   `refused`, `deferred` and `pathAllowList`: what the set does, where, why
   it does not do something, and on whose authority. A staffing change moves
@@ -218,15 +221,17 @@ same way, and asserts every `sameDigestAs` and `differsFrom` relation in
 the corpus before writing it.
 
 The members the contract added later -- `integrator`,
-`observed.consumerCi`, `observed.symlinkedSkillRoots`, each compose-skills
-item's discovery links and `clossys/.state/skills.json`, and a setup set's
-template files -- were added to each case by a second stand-alone script of
+`observed.consumerCi`, `observed.symlinkedSkillRoots`,
+`observed.repositoryProfile`, `observed.linkedAgentsPaths`, each
+compose-skills item's discovery links and `clossys/.state/skills.json`, a
+setup set's template files, and declare-root-entry items with the profile
+they edit or the refusal that names it -- were added to each case by a second stand-alone script of
 the same kind, from the rules on this page and in the contract, before it
 recomputed every subject, digest, branch, title and bundle digest and
 asserted every relation again. The template files' bytes are placeholder
-text. The same script renders the ledger corpus
+text, and so are the repository profile's. The same script renders the ledger corpus
 ([`installed-ledger.fixture.json`](installed-ledger.fixture.json)) from the
-`setup-site` and `apply-after-setup` cases.
+`setup-site`, `setup-site-root-entries` and `apply-after-setup` cases.
 
 The first script builds each brief case from `hubBrief`, whose members are
 deliberately out of order and whose text includes `’`, an emoji, a quotation
