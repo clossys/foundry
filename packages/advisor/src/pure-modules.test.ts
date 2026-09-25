@@ -6,13 +6,18 @@ import { describe, expect, it } from "vitest";
 import { checkImportPurity } from "../../../scripts/lib/import-purity.mjs";
 
 /*
- * Issue #1178: this package's library -- everything index.ts exports, the
- * registry snapshot reader and the package resolution included -- makes no
- * network call, reads no file, and has no clock, randomness or ambient
- * global. The check walks the real import graph from the entry files with
- * the TypeScript compiler API. The only builtin allowed is node:crypto, for
- * hashing. The bins (the *-cli.ts files) read the files they are given, so
- * they are outside this check, and the check is shown to catch them.
+ * Issue #1178: two checks on this package's library, everything index.ts
+ * exports, the registry snapshot reader and the package resolution included.
+ * (a) Its import graph, walked with the TypeScript compiler API: every module
+ * it reaches imports no builtin but node:crypto (for hashing) and no package,
+ * and none uses a dynamic import(). (b) A syntactic check that none writes one
+ * of a listed set of globals directly (fetch, process, globalThis, the timers,
+ * Date.now, Math.random and the others scripts/lib/import-purity.mjs lists).
+ * (b) is not a proof: JavaScript can reach a global indirectly, in forms the
+ * check does not see. That the library makes no network call and uses no
+ * clock or randomness rests on (a) plus review of its code. The bins (the
+ * *-cli.ts files) read the files they are given, so they are outside this
+ * check, and the check is shown to catch them.
  */
 const repoRoot = fileURLToPath(new URL("../../../", import.meta.url));
 const at = (file: string) => `packages/advisor/src/${file}`;
@@ -27,7 +32,7 @@ const check = (entries: string[]): Result => checkImportPurity({ entries, allowe
 describe("the library's pure modules", () => {
   const result = check(PURE_ENTRIES);
 
-  it("import no builtin but node:crypto, and use no network, process, clock or randomness", () => {
+  it("import no builtin but node:crypto and no package, and write none of the listed globals directly", () => {
     expect(result.findings).toEqual([]);
   });
 

@@ -37,13 +37,13 @@
     "staffing": {
       "type": "array",
       "minItems": 1,
-      "description": "Optional. Which roles work in which repository: one entry per repository, named by its repository inventory id, never a URL or a path. Code rules R1, R2 and R8.",
+      "description": "Optional. Which roles work in which repository: one entry per repository, named by its repository inventory id, never a URL or a path. Code rules R1, R2, R8 and R11.",
       "items": { "$ref": "#/definitions/staffingEntry" }
     },
     "packages": {
       "type": "array",
       "minItems": 1,
-      "description": "Optional. The exact package acts this plan authorizes, each one version and one integrity value, never a range or a tag. Code rules R3, R4, R5 and R6.",
+      "description": "Optional. The exact package acts this plan authorizes, each one version and one integrity value, never a range or a tag. Code rules R3, R4, R5, R6 and R10.",
       "items": { "$ref": "#/definitions/packageAct" }
     },
     "resolution": {

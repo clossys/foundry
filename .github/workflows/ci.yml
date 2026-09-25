@@ -1923,11 +1923,14 @@ jobs:
       # immediately above.
       - name: Review-evidence collector proves all three real verdicts
         run: node --test scripts/collect-review-evidence.integration.test.mjs
-      # scripts/lib/import-purity.mjs walks a module's import graph with the
-      # TypeScript compiler API, so its own tests need `npm ci` (typescript)
-      # -- they do not belong in check:gates, which runs in the
-      # dependency-free `safety` job. They need no build.
-      - name: Import purity checker refuses every known bypass
+      # scripts/lib/import-purity.mjs checks a module's import graph against
+      # an allowlist, and refuses a listed set of direct global references by
+      # syntax (not a proof: a global can be reached indirectly; its tests
+      # record those forms as known limits). It uses the TypeScript compiler
+      # API, so its own tests need `npm ci` (typescript) -- they do not belong
+      # in check:gates, which runs in the dependency-free `safety` job. They
+      # need no build.
+      - name: Import-graph and listed-global purity check
         run: npm run check:import-purity
       # "Packed consumer readiness" used to run here. It now runs in the
       # `packed-consumer-readiness` job (see its own header for why, and for

@@ -419,7 +419,14 @@ A plan's `packages` and `resolution` are never written by hand. Two pure
 steps, on either side of one registry fetch that this package does not
 make, derive them from the plan's `staffing`. This package makes no
 network call and holds no credential: each step is a pure function, and
-its CLI reads only the files it is given.
+its CLI reads only the files it is given. What is checked mechanically, by
+a test in this package's source repository, is narrower. The library's
+import graph: every module it reaches imports no builtin but `node:crypto`
+and no package, and none uses a dynamic `import()`. And, by syntax, that
+none writes one of a listed set of globals directly, such as `fetch`,
+`process` or `Date.now`. That second check is not a proof, because
+JavaScript can reach a global indirectly; the claim that the library makes
+no network call and reads no clock rests on the import graph plus review.
 
 `packageRequest(plan)` names the packages a staffed plan needs, sorted and
 unique: the package of every role any `staffing` entry names, looked up in

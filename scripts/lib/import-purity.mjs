@@ -1,10 +1,29 @@
 /**
- * Import purity: prove that a set of modules is pure -- no network, no
- * process, no clock, no randomness, no ambient global -- by reading their
- * real import graph, not by searching their text.
+ * Import purity: two checks on a set of modules, made by reading their
+ * syntax trees with the TypeScript compiler API, never by searching text.
+ * It enforces exactly these, and no more:
  *
- * `checkImportPurity({ entries, allowedBuiltins })` parses each entry file
- * with the TypeScript compiler API and walks every module it reaches:
+ * (a) THE IMPORT GRAPH. Every module reachable from the entries imports only
+ *     allowlisted builtins and packages. This is sound for static imports:
+ *     every static import is found and followed, and a dynamic `import()` is
+ *     refused outright, so no module is reached by a path the check did not
+ *     see.
+ * (b) A LISTED SET OF DIRECT GLOBAL REFERENCES, refused by syntax: the names
+ *     and forms listed below, written directly. This is NOT a proof that the
+ *     code never reaches a global. JavaScript can reach one indirectly --
+ *     `(Date).now()`, `const D = Date; D.now()`, `new (Date)()`,
+ *     `Reflect.construct(Date, [])`, `new Intl.DateTimeFormat().format()`,
+ *     `[].constructor.constructor("return fetch")()`, or a computed member
+ *     name on an allowed builtin -- and (b) does not see those forms. The
+ *     tests record them as known limits.
+ *
+ * So a clean result means: nothing outside the allowlist is imported, and
+ * none of the listed globals is written directly. Any stronger claim about a
+ * module (that it has no clock, no randomness, no network) rests on (a) plus
+ * review of the code, not on this check alone.
+ *
+ * `checkImportPurity({ entries, allowedBuiltins })` walks every module it
+ * reaches:
  *
  * - Static imports, side-effect imports (`import "x"`), re-exports
  *   (`export ... from "x"`) and `import x = require("x")`. A relative
@@ -13,8 +32,8 @@
  * - Every Node.js builtin reached, bare (`fs`) or prefixed (`node:fs`), must
  *   be on the caller's allowlist, which may name it either way. Any other
  *   bare specifier (a package) is refused unless the caller allows it.
- * - By syntax tree, never by text, so a string or comment that looks like
- *   code changes nothing, it refuses: dynamic `import()`, `require`,
+ * - Check (b), by syntax tree, so a string or comment that looks like code
+ *   changes nothing: it refuses dynamic `import()`, `require`,
  *   `fetch`, `process`, `globalThis`, `global`, `window`, `self`,
  *   `performance`, `eval`, `Function`, `XMLHttpRequest`, `WebSocket`, the
  *   timers (`setTimeout`, `setInterval`, `setImmediate`, `queueMicrotask`),

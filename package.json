@@ -84,7 +84,7 @@
     "check:candidate-runner-acceptance": "node --test scripts/lib/candidate-runner-acceptance.test.mjs",
     "//check-verify-inputs": "The collector half of this repository's own verify-standards run: does .github/scripts/assemble-verify-inputs.mjs still aim a work-item lookup at the repository the reference NAMES, and does the built CLI still refuse what it could not aim there? Both halves, because a collector that reports the right thing and a decision that ignores it is still a false pass (issue #363). Runs the real script and the real bin.js, so it needs `npm run build` first and lives after it in the chain -- not in check:gates, which runs before anything is compiled.",
     "check:verify-inputs": "node --test .github/scripts/assemble-verify-inputs.test.mjs",
-    "//check:import-purity": "scripts/lib/import-purity.mjs parses sources with the TypeScript compiler API, so its tests need npm ci (typescript) and do not run in check:gates' dependency-free safety job; ci.yml's build job runs this instead.",
+    "//check:import-purity": "Tests of the import-graph and listed-global purity check (the listed-global part is syntactic, not a proof). scripts/lib/import-purity.mjs parses sources with the TypeScript compiler API, so its tests need npm ci (typescript) and do not run in check:gates' dependency-free safety job; ci.yml's build job runs this instead.",
     "check:import-purity": "node --test scripts/lib/import-purity.test.mjs",
     "check:packed-consumer": "node scripts/check-packed-consumer-readiness.mjs --skip-build",
     "check:later-publications": "node scripts/check-later-publications.mjs",

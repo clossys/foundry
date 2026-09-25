@@ -119,3 +119,23 @@ describe("what stays allowed", () => {
   });
   it("reports an entry that does not exist", () => assert.deepEqual(rules(check({ "other.ts": "" })), ["entry.ts:0 missing-entry"]));
 });
+
+// KNOWN LIMITS. The listed-global check (b) is syntactic, not a proof: each
+// form below reaches a global indirectly and is NOT caught today. These
+// assertions record that boundary. A future hardening that catches a form
+// flips its assertion; until then, a module's freedom from these rests on
+// the import-graph check (a) plus review.
+describe("known limits: indirect global access the listed-global check does not see", () => {
+  const notCaught = (source) => assert.deepEqual(rules(check({ "entry.ts": source })), [], source);
+  it("a parenthesized global: (Date).now() and (Math).random()", () => {
+    notCaught("export const a = (Date).now();\n");
+    notCaught("export const b = (Math).random();\n");
+  });
+  it("new (Date)() with no argument", () => notCaught("export const c = new (Date)();\n"));
+  it("a global reached through the Function constructor of a literal", () => notCaught('export const d = [].constructor.constructor("return fetch")();\n'));
+  it("a global held in a local first: const D = Date; D.now()", () => notCaught("const D = Date;\nexport const e = D.now();\n"));
+  it("Reflect.construct(Date, [])", () => notCaught("export const f = Reflect.construct(Date, []);\n"));
+  it("the clock through Intl: new Intl.DateTimeFormat().format()", () => notCaught("export const g = new Intl.DateTimeFormat().format();\n"));
+  it("a computed member name on the allowed node:crypto", () =>
+    notCaught('import * as c from "node:crypto";\nconst k = "random" + "UUID";\nexport const h = (c as unknown as Record<string, () => string>)[k]();\n'));
+});
