@@ -86,6 +86,41 @@ describe("apply-plan-cli main", () => {
     expect(String(err.mock.calls[0]?.[0])).toMatch(/--brief does not validate/);
   });
 
+  it("applies an Advisor-shaped plan with a blocker and no recommendedNext.due, and prints its canonical digest (#1475)", () => {
+    const workDir = tempDir();
+    const planPath = join(workDir, "plan.json");
+    const briefPath = join(workDir, "brief.json");
+    const repoDir = join(workDir, "repo");
+    mkdirSync(repoDir);
+    const plan = {
+      ...VALID_PLAN,
+      recommendedNext: { action: "Approve the first-wave plan.", owner: "sponsor" },
+      blockers: [
+        { capabilityId: "engagement", kind: "missing-authority", owner: "sponsor", nextAction: { who: "sponsor", how: "approve the plan", byWhen: "2026-09-29" }, since: "2026-09-20T00:00:00Z" },
+      ],
+    };
+    writeFileSync(planPath, JSON.stringify(plan));
+    writeFileSync(briefPath, JSON.stringify(VALID_BRIEF));
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const code = main(["--plan", planPath, "--brief", briefPath, "--repo", repoDir], createNodeHost());
+    expect(code).toBe(0);
+    expect(String(log.mock.calls[1]?.[0])).toMatch(/^plan digest sha256:[0-9a-f]{64}$/);
+  });
+
+  it("exits 1 naming the field when --plan carries a field the contract does not declare", () => {
+    const workDir = tempDir();
+    const planPath = join(workDir, "plan.json");
+    const briefPath = join(workDir, "brief.json");
+    writeFileSync(planPath, JSON.stringify({ ...VALID_PLAN, staffing: [] }));
+    writeFileSync(briefPath, JSON.stringify(VALID_BRIEF));
+    const err = vi.spyOn(console, "error").mockImplementation(() => {});
+    const code = main(["--plan", planPath, "--brief", briefPath, "--repo", workDir], createNodeHost());
+    expect(code).toBe(1);
+    expect(String(err.mock.calls[0]?.[0])).toBe(
+      "launcher-apply-plan: --plan does not validate: plan.staffing is not a field the contract declares, and unknown fields are refused",
+    );
+  });
+
   it("--help prints usage and exits 0", () => {
     const log = vi.spyOn(console, "log").mockImplementation(() => {});
     const code = main(["--help"], createNodeHost());

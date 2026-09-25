@@ -248,10 +248,11 @@ Exit codes preserve the ternary:
 | `parsePreferences()` | Reads `clossys/preferences.json`'s budget stance; defaults to `"balanced"` on absence or malformed input. |
 | `readHostModelProfile()` | Reads a packed `model-profiles/<host>.json`; returns `undefined`, never throws, on a missing or malformed file. |
 | `resolveModelForTier()` | Resolves a tier and budget preference to one model name for a host, reporting `belowFloor` rather than silently substituting a weaker tier's model. |
-| `validateAdvisorPlan()` / `validateEngagementBrief()` | Shape validation against the #1175 "Plan file contract" for `clossys/advisor/plan.json` and `clossys/brief.json`. |
+| `validateAdvisorPlan()` / `validateEngagementBrief()` | Validation of `clossys/advisor/plan.json` and `clossys/brief.json` (with its `context` snapshot) against the shared plan and brief contracts Advisor also validates against. Unknown fields are refused; the reason names every field at fault. |
 | `isPlanApproved()` | True only when a plan's most recent decision (by timestamp) has `chosen === "approved"`. |
-| `applyEngagementBrief()` | Writes `clossys/brief.json` into a repository directory once both the plan and the brief validate; refuses and writes nothing otherwise. |
-| `CloneMissingOutcome` / `DoctorCheckHost` / `DoctorReport` / `DoctorStepId` / `DoctorStepResult` / `CloudBootstrapCheck` / `CloudBootstrapReport` / `ExternalInventoryDeclaration` / `InventoryDriftReport` / `DiscoveredHost` / `HostRecord` / `BudgetPreference` / `HostModelProfile` / `HostTierMapping` / `ModelResolution` / `PreferencesDocument` / `ReasoningTier` / `SupportedHost` / `AdvisorPlan` / `ApplyBriefResult` / `BlockerKind` / `EngagementBrief` / `EngagementBriefRole` / `PlanBlocker` / `PlanDecision` / `ValidationResult` | Typed contracts for the sections above. |
+| `applyEngagementBrief()` | Writes `clossys/brief.json` into a repository directory once the plan validates and is approved and the brief validates; refuses and writes nothing otherwise. Reports the plan's canonical digest. |
+| `planDigest()` / `canonicalJson()` / `PLAN_DIGEST_EXCLUDED_FIELDS` | The canonical plan digest an approval binds: `sha256:` over the RFC 8785 canonical JSON of the plan without `asOf` and `decisions`. Identical to Advisor's for every plan. |
+| `CloneMissingOutcome` / `DoctorCheckHost` / `DoctorReport` / `DoctorStepId` / `DoctorStepResult` / `CloudBootstrapCheck` / `CloudBootstrapReport` / `ExternalInventoryDeclaration` / `InventoryDriftReport` / `DiscoveredHost` / `HostRecord` / `BudgetPreference` / `HostModelProfile` / `HostTierMapping` / `ModelResolution` / `PreferencesDocument` / `ReasoningTier` / `SupportedHost` / `AdvisorPlan` / `ApplyBriefResult` / `BlockerKind` / `EngagementBrief` / `EngagementBriefRole` / `EngagementContext` / `EngagementContextField` / `EngagementContextFieldId` / `GoalDirection` / `PlanBlocker` / `PlanDecision` / `ValidationResult` | Typed contracts for the sections above. |
 
 ## Doctor
 
@@ -334,16 +335,29 @@ tier cannot be met.
 `launcher-apply-plan --plan <plan.json> --brief <brief.json> --repo <dir>`
 writes `clossys/brief.json` into a staffed repository once the plan is
 approved (#1178). `validateAdvisorPlan()` and `validateEngagementBrief()`
-check both files against the exact shapes recorded on issue #1175's "Plan
-file contract"; `isPlanApproved()` reads a plan's most recent decision (by
+check both files against the shared contracts in this repository's
+`docs/contracts/` -- `advisor-plan.json`, `engagement-brief.json`, and
+`engagement-context.json` for the brief's `context` snapshot (#1475). This
+package's build packs those files, with a copy of the one contract checker
+`@clossys/advisor` uses, so Launcher and Advisor accept exactly the same
+plans and briefs while Launcher keeps no runtime dependency on Advisor.
+Every object is closed: a field the contracts do not declare is refused,
+and a known context value must be one of that field's fixed choice ids,
+because the brief is committed in every staffed repository. A refusal
+names each field at fault and never echoes its value.
+`isPlanApproved()` reads a plan's most recent decision (by
 timestamp, not array position) and requires it to be `"approved"` --
 absence of any decision is never treated as approval.
-`applyEngagementBrief()` refuses, and writes nothing, unless both checks
-pass, then writes the brief byte-identically -- it never re-authors its
-prose. This package does not compute a brief's content (that is
-`@clossys/advisor`'s `EngagementBrief`, landing in #1193) and does not
-decide whether a plan should be approved (that is Advisor's job); it only
-validates the two landed shapes and writes the one file. Multi-repository
+`applyEngagementBrief()` refuses, and writes nothing, unless all three
+checks pass, then writes the brief byte-identically -- it never re-authors
+its prose -- and reports `planDigest()` of the plan it applied, which the
+CLI prints as `plan digest sha256:...`. That digest is defined once, in
+`docs/contracts/advisor-plan-digest.md`; this package and Advisor each
+implement it and are tested against the same fixture corpus. This package
+does not compute a brief's content (that is `@clossys/advisor`'s
+`toEngagementBrief()`) and does not decide whether a plan should be
+approved (that is Advisor's job); it only validates the two shapes and
+writes the one file. Multi-repository
 orchestration -- branch creation, exact package installs, adding Starter's
 caller workflow, and opening one pull request per repository -- is
 deferred: the landed contract does not yet specify how a plan's approved

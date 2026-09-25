@@ -28,7 +28,11 @@ export {
 export type { CloneMissingOutcome, InventoryValidation } from "./core.js";
 export { runDoctorChecks, renderDoctorReport } from "./doctor.js";
 export { applyEngagementBrief, isPlanApproved, validateAdvisorPlan, validateEngagementBrief } from "./apply-plan.js";
-export type { AdvisorPlan, ApplyBriefResult, BlockerKind, EngagementBrief, EngagementBriefRole, PlanBlocker, PlanDecision, ValidationResult } from "./apply-plan.js";
+export type {
+  AdvisorPlan, ApplyBriefResult, BlockerKind, EngagementBrief, EngagementBriefRole, EngagementContext, EngagementContextField, EngagementContextFieldId, GoalDirection, PlanBlocker,
+  PlanDecision, ValidationResult,
+} from "./apply-plan.js";
+export { PLAN_DIGEST_EXCLUDED_FIELDS, canonicalJson, planDigest } from "./plan-digest.js";
 export type { DoctorCheckHost, DoctorReport, DoctorStepId, DoctorStepResult } from "./doctor.js";
 export { checkCloudSessionBootstrap } from "./product-repository.js";
 export type { CloudBootstrapCheck, CloudBootstrapReport } from "./product-repository.js";

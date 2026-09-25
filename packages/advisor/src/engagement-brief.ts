@@ -3,6 +3,8 @@ import type { ComposedRole, ComposeKitResult } from "./composition.js";
 import { ENGAGEMENT_CONTEXT_FIELD_IDS } from "./context.js";
 import type { EngagementContext, EngagementContextField, EngagementContextFieldId } from "./context.js";
 import { applyContextChoice } from "./context-questions.js";
+import { contractFindings } from "./plan-contract.js";
+import type { AdvisorFinding } from "./types.js";
 
 /**
  * The kit output shape (issue #1176, owner redirect 2026-09-22): the
@@ -39,6 +41,21 @@ export interface EngagementBrief {
    * {@link contextFromBrief}, never directly.
    */
   context?: EngagementContext;
+}
+
+/**
+ * Validates a candidate brief against the shared brief contract,
+ * `docs/contracts/engagement-brief.json` with its `context` snapshot's
+ * `engagement-context.json` (issue #1475), packed into this package at build
+ * time. @clossys/launcher validates against the same files where it writes
+ * `clossys/brief.json`, so a brief this accepts is a brief Launcher accepts.
+ * Unknown fields are refused, and a known context value must be one of that
+ * field's fixed choice ids. Never throws; every finding has the rule
+ * `engagement-brief-contract`, and no message echoes a value from the brief,
+ * which can carry founder text.
+ */
+export function validateEngagementBrief(value: unknown): AdvisorFinding[] {
+  return contractFindings("engagement-brief.json", "engagement-brief-contract", "brief", value);
 }
 
 function toBriefRole(role: ComposedRole): EngagementBriefRole {

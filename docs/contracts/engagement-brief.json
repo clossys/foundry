@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/clossys/foundry/blob/main/docs/contracts/engagement-brief.json",
   "title": "Engagement brief",
-  "description": "Issue #1176 (owner redirect, 2026-09-22): the kit output shape a composed or proposed kit reduces to -- the client's problem, which roles are staffed and why, what the client gets, and how the roles hand off to each other. Matches packages/advisor/src/engagement-brief.ts's EngagementBrief type and its toEngagementBrief() transform. This is a wave-1 type-and-schema contract only: writing this shape to clossys/brief.json in each staffed repository is wave 2 (issues #1175, #1178). Advisor does not write files.",
+  "description": "Issue #1176 (owner redirect, 2026-09-22): the kit output shape a composed or proposed kit reduces to -- the client's problem, which roles are staffed and why, what the client gets, and how the roles hand off to each other. Matches packages/advisor/src/engagement-brief.ts's EngagementBrief type and its toEngagementBrief() transform. Issue #1475: this file, with engagement-context.json for `context`, is the one definition both @clossys/advisor (validateEngagementBrief()) and @clossys/launcher validate a brief against; each package packs it at build time. Launcher writes this shape to clossys/brief.json in each staffed repository (issues #1175, #1178), and refuses a brief that does not validate, including a key this contract does not declare. Advisor does not write files.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schemaVersion", "problem", "roles", "sequence", "deliverables"],

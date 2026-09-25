@@ -200,8 +200,16 @@ to enforce once real evidence exists.
 client-facing `EngagementBrief`: the client's problem, which roles the kit
 staffs and why, the handoff sequence, and one deliverable line per staffed
 role, drawn from that role's own `boundary.owns` text in the catalogue —
-never invented copy. This is a wave-1 type-and-transform export only;
-writing it to `clossys/brief.json` in each staffed repository is wave 2.
+never invented copy. This package does not write files; `@clossys/launcher`
+writes the brief to `clossys/brief.json` in each staffed repository.
+`validateEngagementBrief(value)` checks a candidate brief against the
+shared brief contract,
+[`docs/contracts/engagement-brief.json`](https://github.com/clossys/foundry/blob/main/docs/contracts/engagement-brief.json),
+and its `context` snapshot against `engagement-context.json` (issue
+#1475). Launcher validates against the same files where it writes the
+brief. Unknown fields are refused, and each finding has the rule
+`engagement-brief-contract` and a message that never echoes a value from
+the brief.
 
 ## Shared engagement context
 
@@ -279,14 +287,37 @@ shape as the Controller role's own `Blocker` record, defined for issue
 on #1187 (2026-09-23) is that an order-dependent change may carry no
 local copy of a shared definition once that definition is on `main`,
 and a blocker record is exactly that kind of definition.
-`validateAdvisorPlan(value)` checks a candidate plan against this shape
-— every blocker's `capabilityId`, `owner`, `since`, and full
-`nextAction`, plus `kind` membership in `AdvisorBlockerKind`
-(`ADVISOR_BLOCKER_KINDS` lists the five values in order) — and returns
-every finding it locates, the same pattern as this package's other
-validators. This package still carries no runtime dependency on the
-Controller package: the shape is duplicated structurally, never the
+`validateAdvisorPlan(value)` checks a candidate plan against the shared
+plan contract, [`docs/contracts/advisor-plan.json`](https://github.com/clossys/foundry/blob/main/docs/contracts/advisor-plan.json)
+(issue #1475), which this package packs at build time. That file is the one
+definition of the record: `@clossys/launcher` validates against the same
+file before it applies an approved plan, so a plan this package accepts is
+a plan Launcher accepts. It checks every field, including each blocker's
+`capabilityId`, `owner`, `since`, and full `nextAction`, and `kind`
+membership in `AdvisorBlockerKind` (`ADVISOR_BLOCKER_KINDS` lists the five
+values in order, and a test keeps it equal to the contract). Blank strings
+are refused, times must be ISO 8601 (`recommendedNext.due` and a
+blocker's `nextAction.byWhen` may be a plain date), and every object is
+closed: a field the contract does not declare is refused, never ignored.
+It returns every finding it locates, the same pattern as this package's
+other validators; each finding has the rule `advisor-plan-contract`, a
+`path` naming the field at fault (for example
+`blockers[0].nextAction.byWhen`), and a message that never echoes the
+field's value. This package still carries no runtime dependency on the
+Controller package: the blocker shape is duplicated structurally, never the
 owner-per-kind mapping, which stays owned by Controller.
+
+`planDigest(plan)` is the canonical digest of a plan, the value an
+approval binds so that it names exactly which plan was approved:
+`sha256:` and the hex SHA-256 of the plan's RFC 8785 canonical JSON,
+leaving out `asOf` and `decisions` (`PLAN_DIGEST_EXCLUDED_FIELDS`), because
+an approval is itself recorded in `decisions`. It throws for a plan that
+does not validate. `canonicalJson(value)` is that serialization on its
+own, and refuses a lone surrogate or a non-finite number rather than
+repairing it. The definition is
+[`docs/contracts/advisor-plan-digest.md`](https://github.com/clossys/foundry/blob/main/docs/contracts/advisor-plan-digest.md);
+Launcher implements it separately, and both packages are tested against
+the same fixture corpus, so they compute identical digests.
 
 The `advisor-render-status` CLI wraps this renderer:
 

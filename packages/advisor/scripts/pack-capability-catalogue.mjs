@@ -14,12 +14,18 @@
  * `renderOfferingModule` is exported so a test can render a catalogue built
  * from changed manifests and typecheck it against this package's own types
  * without writing the generated file.
+ *
+ * It also writes src/generated/plan-contracts.generated.ts (issue #1475):
+ * the shared plan and brief contracts as plain data, rendered by the same
+ * function @clossys/launcher's own packer uses, so both packages validate
+ * against byte-identical contracts.
  */
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { buildCapabilityCatalogue, loadClientProblems } from "../../../scripts/lib/capability-catalogue.mjs";
+import { PLAN_CONTRACTS_MODULE_PATH, renderPlanContractsModule } from "../../../scripts/lib/plan-contracts.mjs";
 
 const advisorRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const repoRoot = join(advisorRoot, "..", "..");
@@ -57,8 +63,10 @@ function main() {
   mkdirSync(dirname(GENERATED_MODULE_PATH), { recursive: true });
   writeFileSync(GENERATED_MODULE_PATH, renderOfferingModule({ catalogue, presets, clientProblems }));
 
+  writeFileSync(join(advisorRoot, ...PLAN_CONTRACTS_MODULE_PATH.split("/")), renderPlanContractsModule(repoRoot));
+
   console.log(
-    `pack-capability-catalogue: wrote ${catalogue.roles.length} role(s), ${presets.length} preset(s), and ${clientProblems.length} client problem(s) to src/generated/offering.generated.ts`,
+    `pack-capability-catalogue: wrote ${catalogue.roles.length} role(s), ${presets.length} preset(s), and ${clientProblems.length} client problem(s) to src/generated/offering.generated.ts, and the plan and brief contracts to ${PLAN_CONTRACTS_MODULE_PATH}`,
   );
 }
 

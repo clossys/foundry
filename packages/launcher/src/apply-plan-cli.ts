@@ -11,8 +11,10 @@ nothing, otherwise.
 
 Deterministic mechanics only: this does not decide whether a plan should be
 approved (that is Advisor's job) and does not compute the brief's content
-(that is @clossys/advisor's EngagementBrief, #1193) -- it validates the
-exact shapes recorded on issue #1175 and writes the one file.
+(that is @clossys/advisor's EngagementBrief) -- it validates both files
+against the same plan and brief contracts Advisor uses, refusing any field
+those contracts do not declare, writes the one file, and prints the plan's
+canonical digest.
 
 Exit codes: 0 = applied, 1 = refused (not approved, or a shape does not
 validate), 2 = a given file could not be read as JSON.`;
@@ -80,6 +82,7 @@ export function main(argv: readonly string[], host: ReturnType<typeof createNode
     return 1;
   }
   console.log(`wrote ${result.path}`);
+  console.log(`plan digest ${result.planDigest}`);
   return 0;
 }
 

@@ -1,0 +1,452 @@
+{
+  "description": "Issue #1475: the shared corpus for the canonical plan digest defined in docs/contracts/advisor-plan-digest.md. Both @clossys/advisor and @clossys/launcher test their own implementation against every case here, so the two packages compute identical digests. Expected values were produced independently of either package.",
+  "canonicalJson": [
+    {
+      "name": "key-order",
+      "value": {
+        "b": 1,
+        "a": [
+          3,
+          2,
+          1
+        ],
+        "c": {
+          "z": null,
+          "y": true,
+          "x": false
+        }
+      },
+      "canonical": "{\"a\":[3,2,1],\"b\":1,\"c\":{\"x\":false,\"y\":true,\"z\":null}}"
+    },
+    {
+      "name": "key-order-permuted",
+      "value": {
+        "c": {
+          "x": false,
+          "z": null,
+          "y": true
+        },
+        "a": [
+          3,
+          2,
+          1
+        ],
+        "b": 1
+      },
+      "canonical": "{\"a\":[3,2,1],\"b\":1,\"c\":{\"x\":false,\"y\":true,\"z\":null}}"
+    },
+    {
+      "name": "nested-arrays",
+      "value": [
+        [
+          1,
+          [
+            2,
+            [
+              3,
+              []
+            ]
+          ]
+        ],
+        {},
+        [
+          {
+            "b": [],
+            "a": {}
+          }
+        ]
+      ],
+      "canonical": "[[1,[2,[3,[]]]],{},[{\"a\":{},\"b\":[]}]]"
+    },
+    {
+      "name": "unicode-as-written",
+      "value": {
+        "separator": "\u2028",
+        "pr\u00e9compos\u00e9": "\u00e9",
+        "decomposed": "e\u0301",
+        "emoji": "\ud83d\ude00",
+        "cjk": "\u65e5\u672c\u8a9e"
+      },
+      "canonical": "{\"cjk\":\"\u65e5\u672c\u8a9e\",\"decomposed\":\"e\u0301\",\"emoji\":\"\ud83d\ude00\",\"pr\u00e9compos\u00e9\":\"\u00e9\",\"separator\":\"\u2028\"}"
+    },
+    {
+      "name": "escapes",
+      "value": "q\"b\\s/\b\f\n\r\t\u0001\u001f\u007f",
+      "canonical": "\"q\\\"b\\\\s/\\b\\f\\n\\r\\t\\u0001\\u001f\u007f\""
+    },
+    {
+      "name": "literals-and-empties",
+      "value": {
+        "f": false,
+        "e": true,
+        "d": null,
+        "c": "",
+        "b": {},
+        "a": []
+      },
+      "canonical": "{\"a\":[],\"b\":{},\"c\":\"\",\"d\":null,\"e\":true,\"f\":false}"
+    },
+    {
+      "name": "keys-sort-by-utf16-code-units",
+      "value": {
+        "\uff61": 1,
+        "\ud83d\ude00": 2,
+        "a": 3
+      },
+      "canonical": "{\"a\":3,\"\ud83d\ude00\":2,\"\uff61\":1}",
+      "note": "U+1F600 is the surrogate pair D83D DE00 in UTF-16, which sorts before U+FF61; code-point order would put U+FF61 first."
+    },
+    {
+      "name": "numbers",
+      "value": {
+        "zero": 0,
+        "neg": -5,
+        "int": 1,
+        "frac": 0.5,
+        "big": 1e+21,
+        "small": 1e-07,
+        "negzero": -0.0
+      },
+      "canonical": "{\"big\":1e+21,\"frac\":0.5,\"int\":1,\"neg\":-5,\"negzero\":0,\"small\":1e-7,\"zero\":0}",
+      "note": "Numbers use ECMAScript Number.prototype.toString, and -0 is written 0. The plan contract itself admits only one number, schemaVersion 1."
+    }
+  ],
+  "refused": [
+    {
+      "name": "lone-high-surrogate",
+      "json": "\"\\ud800\""
+    },
+    {
+      "name": "lone-low-surrogate-in-a-key",
+      "json": "{\"\\udc00\":1}"
+    }
+  ],
+  "plans": [
+    {
+      "name": "blockers-without-due",
+      "note": "Advisor's current shape: blockers carry capabilityId, nextAction and since, and recommendedNext has no due.",
+      "plan": {
+        "schemaVersion": 1,
+        "asOf": "2026-09-24T09:00:00Z",
+        "mandate": {
+          "problem": "Our site doesn't explain what we do.",
+          "primaryProblemId": "strategist-unclear-direction",
+          "roles": [
+            "strategist",
+            "writer"
+          ]
+        },
+        "whereWeAre": [
+          "Fit and readiness both satisfied."
+        ],
+        "recommendedNext": {
+          "action": "Approve the first-wave plan.",
+          "owner": "sponsor"
+        },
+        "decisions": [
+          {
+            "at": "2026-09-24T10:00:00Z",
+            "recommended": "compose from confirmed problems",
+            "chosen": "approved",
+            "by": "sponsor"
+          }
+        ],
+        "blockers": [
+          {
+            "capabilityId": "engagement",
+            "kind": "missing-authority",
+            "owner": "sponsor",
+            "nextAction": {
+              "who": "sponsor",
+              "how": "approve the plan",
+              "byWhen": "2026-09-29"
+            },
+            "since": "2026-09-20T00:00:00Z"
+          }
+        ]
+      },
+      "canonical": "{\"blockers\":[{\"capabilityId\":\"engagement\",\"kind\":\"missing-authority\",\"nextAction\":{\"byWhen\":\"2026-09-29\",\"how\":\"approve the plan\",\"who\":\"sponsor\"},\"owner\":\"sponsor\",\"since\":\"2026-09-20T00:00:00Z\"}],\"mandate\":{\"primaryProblemId\":\"strategist-unclear-direction\",\"problem\":\"Our site doesn't explain what we do.\",\"roles\":[\"strategist\",\"writer\"]},\"recommendedNext\":{\"action\":\"Approve the first-wave plan.\",\"owner\":\"sponsor\"},\"schemaVersion\":1,\"whereWeAre\":[\"Fit and readiness both satisfied.\"]}",
+      "digest": "sha256:92af7a1b566210f7d2f6ebdc49faa59332b8191d651e812972f5d671497e0409"
+    },
+    {
+      "name": "every-key-order-reversed",
+      "note": "The same plan with every object's keys in reverse order: the same digest.",
+      "plan": {
+        "blockers": [
+          {
+            "since": "2026-09-20T00:00:00Z",
+            "nextAction": {
+              "byWhen": "2026-09-29",
+              "how": "approve the plan",
+              "who": "sponsor"
+            },
+            "owner": "sponsor",
+            "kind": "missing-authority",
+            "capabilityId": "engagement"
+          }
+        ],
+        "decisions": [
+          {
+            "by": "sponsor",
+            "chosen": "approved",
+            "recommended": "compose from confirmed problems",
+            "at": "2026-09-24T10:00:00Z"
+          }
+        ],
+        "recommendedNext": {
+          "owner": "sponsor",
+          "action": "Approve the first-wave plan."
+        },
+        "whereWeAre": [
+          "Fit and readiness both satisfied."
+        ],
+        "mandate": {
+          "roles": [
+            "strategist",
+            "writer"
+          ],
+          "primaryProblemId": "strategist-unclear-direction",
+          "problem": "Our site doesn't explain what we do."
+        },
+        "asOf": "2026-09-24T09:00:00Z",
+        "schemaVersion": 1
+      },
+      "canonical": "{\"blockers\":[{\"capabilityId\":\"engagement\",\"kind\":\"missing-authority\",\"nextAction\":{\"byWhen\":\"2026-09-29\",\"how\":\"approve the plan\",\"who\":\"sponsor\"},\"owner\":\"sponsor\",\"since\":\"2026-09-20T00:00:00Z\"}],\"mandate\":{\"primaryProblemId\":\"strategist-unclear-direction\",\"problem\":\"Our site doesn't explain what we do.\",\"roles\":[\"strategist\",\"writer\"]},\"recommendedNext\":{\"action\":\"Approve the first-wave plan.\",\"owner\":\"sponsor\"},\"schemaVersion\":1,\"whereWeAre\":[\"Fit and readiness both satisfied.\"]}",
+      "digest": "sha256:92af7a1b566210f7d2f6ebdc49faa59332b8191d651e812972f5d671497e0409"
+    },
+    {
+      "name": "later-asof-and-new-decisions",
+      "note": "The same plan re-approved later: asOf and decisions are excluded, so the same digest.",
+      "plan": {
+        "schemaVersion": 1,
+        "asOf": "2026-10-02T17:45:10.250+02:00",
+        "mandate": {
+          "problem": "Our site doesn't explain what we do.",
+          "primaryProblemId": "strategist-unclear-direction",
+          "roles": [
+            "strategist",
+            "writer"
+          ]
+        },
+        "whereWeAre": [
+          "Fit and readiness both satisfied."
+        ],
+        "recommendedNext": {
+          "action": "Approve the first-wave plan.",
+          "owner": "sponsor"
+        },
+        "decisions": [
+          {
+            "at": "2026-09-24T10:00:00Z",
+            "recommended": "compose from confirmed problems",
+            "chosen": "deferred",
+            "by": "sponsor"
+          },
+          {
+            "at": "2026-10-02T15:40:00Z",
+            "recommended": "compose from confirmed problems",
+            "chosen": "approved",
+            "by": "sponsor"
+          }
+        ],
+        "blockers": [
+          {
+            "capabilityId": "engagement",
+            "kind": "missing-authority",
+            "owner": "sponsor",
+            "nextAction": {
+              "who": "sponsor",
+              "how": "approve the plan",
+              "byWhen": "2026-09-29"
+            },
+            "since": "2026-09-20T00:00:00Z"
+          }
+        ]
+      },
+      "canonical": "{\"blockers\":[{\"capabilityId\":\"engagement\",\"kind\":\"missing-authority\",\"nextAction\":{\"byWhen\":\"2026-09-29\",\"how\":\"approve the plan\",\"who\":\"sponsor\"},\"owner\":\"sponsor\",\"since\":\"2026-09-20T00:00:00Z\"}],\"mandate\":{\"primaryProblemId\":\"strategist-unclear-direction\",\"problem\":\"Our site doesn't explain what we do.\",\"roles\":[\"strategist\",\"writer\"]},\"recommendedNext\":{\"action\":\"Approve the first-wave plan.\",\"owner\":\"sponsor\"},\"schemaVersion\":1,\"whereWeAre\":[\"Fit and readiness both satisfied.\"]}",
+      "digest": "sha256:92af7a1b566210f7d2f6ebdc49faa59332b8191d651e812972f5d671497e0409"
+    },
+    {
+      "name": "roles-reordered",
+      "note": "Array order is significant: a different digest.",
+      "plan": {
+        "schemaVersion": 1,
+        "asOf": "2026-09-24T09:00:00Z",
+        "mandate": {
+          "problem": "Our site doesn't explain what we do.",
+          "primaryProblemId": "strategist-unclear-direction",
+          "roles": [
+            "writer",
+            "strategist"
+          ]
+        },
+        "whereWeAre": [
+          "Fit and readiness both satisfied."
+        ],
+        "recommendedNext": {
+          "action": "Approve the first-wave plan.",
+          "owner": "sponsor"
+        },
+        "decisions": [
+          {
+            "at": "2026-09-24T10:00:00Z",
+            "recommended": "compose from confirmed problems",
+            "chosen": "approved",
+            "by": "sponsor"
+          }
+        ],
+        "blockers": [
+          {
+            "capabilityId": "engagement",
+            "kind": "missing-authority",
+            "owner": "sponsor",
+            "nextAction": {
+              "who": "sponsor",
+              "how": "approve the plan",
+              "byWhen": "2026-09-29"
+            },
+            "since": "2026-09-20T00:00:00Z"
+          }
+        ]
+      },
+      "canonical": "{\"blockers\":[{\"capabilityId\":\"engagement\",\"kind\":\"missing-authority\",\"nextAction\":{\"byWhen\":\"2026-09-29\",\"how\":\"approve the plan\",\"who\":\"sponsor\"},\"owner\":\"sponsor\",\"since\":\"2026-09-20T00:00:00Z\"}],\"mandate\":{\"primaryProblemId\":\"strategist-unclear-direction\",\"problem\":\"Our site doesn't explain what we do.\",\"roles\":[\"writer\",\"strategist\"]},\"recommendedNext\":{\"action\":\"Approve the first-wave plan.\",\"owner\":\"sponsor\"},\"schemaVersion\":1,\"whereWeAre\":[\"Fit and readiness both satisfied.\"]}",
+      "digest": "sha256:d8c177b8df241db76c3bfddb40df06767aaeb8812d6c832135aa97a02f99080c"
+    },
+    {
+      "name": "unicode-decomposed",
+      "note": "Non-ASCII text is digested as written, never escaped or normalized.",
+      "plan": {
+        "schemaVersion": 1,
+        "asOf": "2026-09-24T09:00:00Z",
+        "mandate": {
+          "problem": "Caf\u00e9 \u2014 na\u00efve \u65e5\u672c\u8a9e \ud83d\ude00",
+          "primaryProblemId": "strategist-unclear-direction",
+          "roles": [
+            "strategist",
+            "writer"
+          ]
+        },
+        "whereWeAre": [
+          "Re\u0301sume\u0301 reviewed.",
+          "Line\u2028separator and \"quotes\" and \\ backslash and \t tab."
+        ],
+        "recommendedNext": {
+          "action": "Approve the first-wave plan.",
+          "owner": "sponsor"
+        },
+        "decisions": [
+          {
+            "at": "2026-09-24T10:00:00Z",
+            "recommended": "compose from confirmed problems",
+            "chosen": "approved",
+            "by": "sponsor"
+          }
+        ],
+        "blockers": [
+          {
+            "capabilityId": "engagement",
+            "kind": "missing-authority",
+            "owner": "sponsor",
+            "nextAction": {
+              "who": "sponsor",
+              "how": "approve the plan",
+              "byWhen": "2026-09-29"
+            },
+            "since": "2026-09-20T00:00:00Z"
+          }
+        ]
+      },
+      "canonical": "{\"blockers\":[{\"capabilityId\":\"engagement\",\"kind\":\"missing-authority\",\"nextAction\":{\"byWhen\":\"2026-09-29\",\"how\":\"approve the plan\",\"who\":\"sponsor\"},\"owner\":\"sponsor\",\"since\":\"2026-09-20T00:00:00Z\"}],\"mandate\":{\"primaryProblemId\":\"strategist-unclear-direction\",\"problem\":\"Caf\u00e9 \u2014 na\u00efve \u65e5\u672c\u8a9e \ud83d\ude00\",\"roles\":[\"strategist\",\"writer\"]},\"recommendedNext\":{\"action\":\"Approve the first-wave plan.\",\"owner\":\"sponsor\"},\"schemaVersion\":1,\"whereWeAre\":[\"Re\u0301sume\u0301 reviewed.\",\"Line\u2028separator and \\\"quotes\\\" and \\\\ backslash and \\t tab.\"]}",
+      "digest": "sha256:9a3f02d92049c017cf62b3e7c21d040c4ea0f98931b3fbe663cb10a05e347b8e"
+    },
+    {
+      "name": "unicode-precomposed",
+      "note": "The same words with precomposed characters: a different digest, because nothing is normalized.",
+      "plan": {
+        "schemaVersion": 1,
+        "asOf": "2026-09-24T09:00:00Z",
+        "mandate": {
+          "problem": "Caf\u00e9 \u2014 na\u00efve \u65e5\u672c\u8a9e \ud83d\ude00",
+          "primaryProblemId": "strategist-unclear-direction",
+          "roles": [
+            "strategist",
+            "writer"
+          ]
+        },
+        "whereWeAre": [
+          "R\u00e9sum\u00e9 reviewed.",
+          "Line\u2028separator and \"quotes\" and \\ backslash and \t tab."
+        ],
+        "recommendedNext": {
+          "action": "Approve the first-wave plan.",
+          "owner": "sponsor"
+        },
+        "decisions": [
+          {
+            "at": "2026-09-24T10:00:00Z",
+            "recommended": "compose from confirmed problems",
+            "chosen": "approved",
+            "by": "sponsor"
+          }
+        ],
+        "blockers": [
+          {
+            "capabilityId": "engagement",
+            "kind": "missing-authority",
+            "owner": "sponsor",
+            "nextAction": {
+              "who": "sponsor",
+              "how": "approve the plan",
+              "byWhen": "2026-09-29"
+            },
+            "since": "2026-09-20T00:00:00Z"
+          }
+        ]
+      },
+      "canonical": "{\"blockers\":[{\"capabilityId\":\"engagement\",\"kind\":\"missing-authority\",\"nextAction\":{\"byWhen\":\"2026-09-29\",\"how\":\"approve the plan\",\"who\":\"sponsor\"},\"owner\":\"sponsor\",\"since\":\"2026-09-20T00:00:00Z\"}],\"mandate\":{\"primaryProblemId\":\"strategist-unclear-direction\",\"problem\":\"Caf\u00e9 \u2014 na\u00efve \u65e5\u672c\u8a9e \ud83d\ude00\",\"roles\":[\"strategist\",\"writer\"]},\"recommendedNext\":{\"action\":\"Approve the first-wave plan.\",\"owner\":\"sponsor\"},\"schemaVersion\":1,\"whereWeAre\":[\"R\u00e9sum\u00e9 reviewed.\",\"Line\u2028separator and \\\"quotes\\\" and \\\\ backslash and \\t tab.\"]}",
+      "digest": "sha256:994c8e8696c1ab8b4ac15bca8ea4d5f0aa8961466b0abb87c139a9410493ade7"
+    },
+    {
+      "name": "nothing-pending",
+      "note": "recommendedNext null, empty arrays, and two blockers.",
+      "plan": {
+        "schemaVersion": 1,
+        "asOf": "2026-09-24T09:00:00Z",
+        "mandate": {
+          "problem": "Our site doesn't explain what we do.",
+          "primaryProblemId": "strategist-unclear-direction",
+          "roles": []
+        },
+        "whereWeAre": [],
+        "recommendedNext": null,
+        "decisions": [],
+        "blockers": [
+          {
+            "capabilityId": "engagement",
+            "kind": "missing-authority",
+            "owner": "sponsor",
+            "nextAction": {
+              "who": "sponsor",
+              "how": "approve the plan",
+              "byWhen": "2026-09-29T12:00:00-05:00"
+            },
+            "since": "2026-09-20T00:00:00Z"
+          },
+          {
+            "capabilityId": "publishing",
+            "kind": "unavailable-environment",
+            "owner": "controller",
+            "nextAction": {
+              "who": "operator",
+              "how": "restore the staging host",
+              "byWhen": "2026-10-01"
+            },
+            "since": "2026-09-21T08:30:00Z"
+          }
+        ]
+      },
+      "canonical": "{\"blockers\":[{\"capabilityId\":\"engagement\",\"kind\":\"missing-authority\",\"nextAction\":{\"byWhen\":\"2026-09-29T12:00:00-05:00\",\"how\":\"approve the plan\",\"who\":\"sponsor\"},\"owner\":\"sponsor\",\"since\":\"2026-09-20T00:00:00Z\"},{\"capabilityId\":\"publishing\",\"kind\":\"unavailable-environment\",\"nextAction\":{\"byWhen\":\"2026-10-01\",\"how\":\"restore the staging host\",\"who\":\"operator\"},\"owner\":\"controller\",\"since\":\"2026-09-21T08:30:00Z\"}],\"mandate\":{\"primaryProblemId\":\"strategist-unclear-direction\",\"problem\":\"Our site doesn't explain what we do.\",\"roles\":[]},\"recommendedNext\":null,\"schemaVersion\":1,\"whereWeAre\":[]}",
+      "digest": "sha256:429aaf7f0429bec46d0d1bf7bc55702ac2b29b18980ad821c3d803ca141252a5"
+    }
+  ]
+}
