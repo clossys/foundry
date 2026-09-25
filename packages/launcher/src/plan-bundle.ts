@@ -21,7 +21,7 @@
 
 import { createHash } from "node:crypto";
 import type { AdvisorPlan, EngagementBrief, EngagementBriefRole, EngagementContext, PlanPackageAct } from "./plan-contract.js";
-import { loadPackedContract, validateAdvisorPlan, validateEngagementBrief } from "./plan-contract.js";
+import { loadContract, validateAdvisorPlan, validateEngagementBrief } from "./plan-contract.js";
 import { planDigest } from "./plan-digest.js";
 import { bundleDigest, changeSetDigest } from "./change-set-digest.js";
 import {
@@ -99,7 +99,7 @@ export interface PlanApplyBundleResult {
 
 /** The fixed text a brief carries as its problem in a repository that is not private, read from the packed brief contract. */
 export const PUBLIC_PROBLEM_PLACEHOLDER: string = (() => {
-  const definitions = loadPackedContract("engagement-brief.json").definitions as Record<string, { const?: unknown }> | undefined;
+  const definitions = loadContract("engagement-brief.json").definitions as Record<string, { const?: unknown }> | undefined;
   const text = definitions?.publicProblemPlaceholder?.const;
   if (typeof text !== "string") throw new Error("the packed brief contract has no publicProblemPlaceholder text");
   return text;

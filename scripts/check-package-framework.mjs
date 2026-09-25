@@ -449,7 +449,29 @@ function safeRead(readPackageFile, role, relativePath) {
   catch (error) { return error instanceof SyntaxError ? { missing: false, value: undefined, unparseable: true } : { missing: true }; }
 }
 
-/** docs/contracts/intake-question-cards.json, as a shape check. */
+/** Every key a static intake card, and each of its choices, may carry (docs/contracts/intake-question-cards.json cardShape / choiceShape). */
+const INTAKE_CARD_KEYS = new Set(["id", "prompt", "choices", "recommendedChoiceId", "somethingElseFollowUp"]);
+const INTAKE_CHOICE_KEYS = new Set(["id", "label"]);
+/** Fields only an engine's runtime-choices card carries (the contract's runtimeChoicesCard); a static file never does. */
+const RUNTIME_ONLY_INTAKE_KEYS = new Set(["selection", "detail"]);
+
+function unknownIntakeKeys(record, allowed, where, fail) {
+  for (const key of Object.keys(record)) {
+    if (allowed.has(key)) continue;
+    if (RUNTIME_ONLY_INTAKE_KEYS.has(key)) {
+      fail("intake-card-runtime-only-field", `${where} carries ${JSON.stringify(key)}, a field only an engine-built runtime-choices card carries (docs/contracts/intake-question-cards.json runtimeChoicesCard); a static intake file never does`);
+    } else {
+      fail("intake-card-unknown-field", `${where} carries ${JSON.stringify(key)}, which docs/contracts/intake-question-cards.json does not declare`);
+    }
+  }
+}
+
+/**
+ * docs/contracts/intake-question-cards.json, as a shape check. A static
+ * card and each of its choices are closed: a key the contract's cardShape
+ * or choiceShape does not declare is refused, and the runtime-only fields
+ * (`selection`, a choice's `detail`) are named as such (#1179).
+ */
 export function validateIntakeCardsShape(document, role) {
   const findings = [];
   const fail = (rule, message) => findings.push({ rule, role, message });
@@ -462,6 +484,7 @@ export function validateIntakeCardsShape(document, role) {
       fail("invalid-intake-card", `card is missing a required field or has fewer than two choices`);
       continue;
     }
+    unknownIntakeKeys(card, INTAKE_CARD_KEYS, `card ${JSON.stringify(card.id)}`, fail);
     if (!SLUG_ID_FORMAT.test(card.id)) {
       fail("invalid-intake-card-id", `card id ${JSON.stringify(card.id)} must be a lowercase slug (${SLUG_ID_FORMAT.source}): an id is stable vocabulary a stored answer is keyed on, and the duplicate-question check compares ids`);
     }
@@ -469,6 +492,7 @@ export function validateIntakeCardsShape(document, role) {
       fail("invalid-intake-card-choice", `card "${card.id}" has a choice missing an id or label`);
       continue;
     }
+    card.choices.forEach((choice, index) => unknownIntakeKeys(choice, INTAKE_CHOICE_KEYS, `card ${JSON.stringify(card.id)} choices[${index}]`, fail));
     if (card.recommendedChoiceId !== card.choices[0].id) {
       fail("intake-card-recommendation-not-first", `card "${card.id}" must list its recommendedChoiceId as choices[0]`);
     }

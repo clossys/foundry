@@ -620,6 +620,121 @@ produces the exact `clossys/preferences.json` shape. Advisor never names a
 model here or anywhere else in this package; a host maps the stance to
 models through its own per-host profile.
 
+## Choosing the hub's repositories (issue #1179)
+
+A founder chooses which repositories the team works on from a card; nobody
+types a repository name. This package holds no credentials and makes no
+network call, so it states only what the list it is given shows. The agent
+asks GitHub's `user/repos` API for the repositories the founder's sign-in
+owns, collaborates on, or reaches through an organization, on every page,
+archived ones left out:
+
+```bash
+gh api --paginate 'user/repos?affiliation=owner,collaborator,organization_member&per_page=100' \
+  --jq '.[] | select(.archived | not) | {nameWithOwner: .full_name, description} | tojson'
+```
+
+(`gh api` refuses `--slurp` together with `--jq`, so each entry is printed
+as one JSON line.) The agent writes that list to a temporary directory
+outside the repository and deletes it afterwards, because it names private
+repositories. It uses the file only when that command exits 0: the shell
+creates the file even when `gh` fails, and a page that fails partway
+leaves it partial, which nothing in the file shows. It then hands the
+entries to `repositoryChoiceCard(listing, { current? })`, which returns a
+`RepositoryChoiceCardResult`: `{ state: "card", card }`,
+`{ state: "empty", skippedCount? }` when the list given is empty, or every
+entry in it was skipped (below) -- which says nothing about any account --
+or `{ state: "invalid", findings }`.
+
+The `RepositoryChoiceCard` follows the intake card model
+([`docs/contracts/intake-question-cards.json`](https://github.com/clossys/foundry/blob/main/docs/contracts/intake-question-cards.json)
+-- in the public repository, not shipped in this package),
+extended there for this card: `selection: "many"`, because the founder may
+choose several repositories, and choices supplied at runtime rather than
+from a static file. Its id is `REPOSITORY_CHOICE_CARD_ID` (`hub-repositories`).
+Each `RepositoryChoice` is a repository's `owner/name` as its id and label.
+Its description, when it has one, is the choice's `detail`: it is text
+written by whoever controls that repository, so it is cleaned by Unicode
+property, not by a hand-kept list. Each control character (`\p{Cc}`, tab
+and line breaks included) and each line or paragraph separator (`\p{Zl}`,
+`\p{Zp}`) is replaced with a space. Each format character (`\p{Cf}`: for
+example bidirectional marks and overrides, zero-width spaces and joiners,
+the word joiner, soft hyphen, the byte order mark, and the tag characters
+U+E0000-U+E007F that can carry hidden text), each default-ignorable code
+point (for example variation selectors and the combining grapheme joiner),
+each private-use or surrogate code point, each noncharacter
+(`\p{Noncharacter_Code_Point}`, permanently reserved and never assigned a
+glyph), and U+2800 (BRAILLE PATTERN BLANK, a real printable character that
+renders as blank, so no invisible-character property matches it) is
+removed, not replaced, so it cannot split a word. Removing the zero-width
+joiner and non-joiner is
+deliberate: an emoji sequence joined by U+200D shows as its separate emoji,
+and text that needs U+200C, such as some Persian, shows unjoined. Whitespace
+is then collapsed, the ends trimmed, and the result cut to 200 characters
+with a closing ellipsis. When `current` names the
+repository the founder is working in and that repository is on the list,
+it is the `recommendedChoiceId` and listed first. When it is not on the
+list, the card is built without a recommendation, never refused. The other
+repositories follow sorted by id, and `REPOSITORY_SOMETHING_ELSE_ID`
+(`something-else`, "a repository I need is not on this list") is last; its
+follow-up asks whether the missing repository's owner has given the
+founder's sign-in access to it, and makes no claim that the list is
+complete.
+
+Each `RepositoryListingEntry` must be `{ nameWithOwner, description? }`
+and nothing else -- a listing that is not that shape refuses the whole
+list, since that means the file was built wrong. Each such finding names
+only `listing` or `listing[<i>]` and a fixed reason from a closed set
+("is missing a required field", "has a field the contract does not
+declare", ...); it never relays the shared checker's own message or path,
+either of which can otherwise carry an undeclared field's own name
+straight from the document (#1179). Each
+`nameWithOwner` that is that shape must also satisfy the repository
+inventory contract's id rule
+([`docs/contracts/repository-inventory.json`](https://github.com/clossys/foundry/blob/main/docs/contracts/repository-inventory.json)
+`definitions/repositoryId` -- in the public repository, not shipped in this package --
+which this package packs beside the plan and
+brief contracts and checks with the same contract checker) and be
+qualified by its owner, as GitHub lists it, so every id the card offers is
+one `@clossys/launcher` accepts -- but an id that does not is not a shape
+problem: that one entry is left off the card, not the rest of the list, and
+counted in `skippedCount` (present on the card, or on an empty result,
+only when at least one entry was skipped; #1179). Two entries naming the
+same repository in any letter case, once skipped entries are set aside,
+are refused, naming both positions (`listing[3].nameWithOwner` and the
+earlier position it repeats) -- safe, since `nameWithOwner` is this
+contract's own field name, never the document's. Every finding carries
+the rule `repository-listing` and never a repository name.
+
+`applyRepositoryChoice(card, chosen)` checks the founder's chosen ids
+against exactly the ids the card offered. It refuses an empty choice, an id
+the card did not offer, and an id chosen twice, by position only, with the
+rule `repository-choice`. Its `RepositoryChoiceApplyResult` is `chosen`
+(the repositories in the card's order, and `somethingElse` when the founder
+also said one is missing), `something-else` alone, or `refused`. This
+package does not write the choice anywhere: `@clossys/launcher` writes the
+chosen ids into the hub inventory with `launcher --repositories`.
+
+The `advisor-repository-card` CLI wraps both functions for an agent that
+has no hub yet, and so no pinned package to import:
+
+```bash
+advisor-repository-card "$tmp/repositories.jsonl" --current example-owner/example-app
+advisor-repository-card "$tmp/repositories.jsonl" --current example-owner/example-app --choose example-owner/example-app,example-owner/example-site
+```
+
+Without `--choose` it prints the card as JSON; with `--choose` it prints
+the checked choice as JSON. Pass the same `--current` both times, so the
+order it returns matches the card the founder saw. The file is either one
+JSON array of entries or JSON Lines, one entry per line, as the command
+above writes it. It is read with the same strict reader as
+`advisor-render-status`, and a bad line is named by its number and
+position, never quoted. It cannot tell a complete list from a partial one,
+so it claims neither. It exits `0` for a card or an accepted choice, `1`
+when the repository list given is empty, no listed repository has a
+usable id, or the choice is refused, and `2` for unreadable or invalid
+input.
+
 ## Evolution
 
 The package evolves through normal versioned releases. Keep source evidence and content-addressed bases in the consumer's durable control plane, then reassess when scope, evidence, initiatives, readiness observations, or cadence changes.

@@ -4,6 +4,9 @@
 // it. Launcher writes only what that inventory lacks (a later apply step,
 // not this module) and reports drift instead of silently merging.
 
+import { readContractDocument } from "./generated/contract-schema.generated.js";
+import { sameRepository } from "./identity.js";
+import { validateInventoryDocument } from "./inventory-contract.js";
 import type { WorkspaceHost } from "./types.js";
 
 export interface ExternalInventoryDeclaration {
@@ -23,13 +26,20 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-/** Reads a foundry-shaped inventory document's repository ids. Malformed or missing is null, never []. */
+/**
+ * Reads a foundry-shaped inventory document's repository ids. Malformed or
+ * missing is null, never []. The file is read as bytes by the shared strict
+ * reader, so bytes that are not valid UTF-8, a repeated key, or a byte order
+ * mark make it unreadable rather than silently repaired (#1179). Its shape
+ * is read leniently on purpose: an external source is not Launcher's own
+ * document.
+ */
 function readForeignIds(host: WorkspaceHost, path: string): readonly string[] | null {
-  const raw = host.readText(path);
+  const raw = host.readBytes(path);
   if (raw === null) return null;
   let parsed: unknown;
   try {
-    parsed = JSON.parse(raw);
+    parsed = readContractDocument(raw);
   } catch {
     return null;
   }
@@ -45,13 +55,18 @@ function readForeignIds(host: WorkspaceHost, path: string): readonly string[] | 
  * Compares the declared external inventory against the launcher-written
  * inventory at `directory/launcherInventoryRelPath`. Read-only -- callers
  * decide whether and how to write the reconciled set, as an explicit,
- * approved apply step (same #1045 pattern as clone-on-approval).
+ * approved apply step (same #1045 pattern as clone-on-approval). Ids are
+ * compared with `sameRepository()` (identity.ts): case-insensitively, and,
+ * when `hubOwner` is given, with a bare id read as that owner's repository.
+ * The hub's own inventory is read by `validateInventoryDocument()`; when it
+ * is present but invalid the report is indeterminate.
  */
 export function reportInventoryDrift(
   host: WorkspaceHost,
   directory: string,
   declaration: ExternalInventoryDeclaration | undefined,
   launcherInventoryRelPath: string,
+  hubOwner?: string,
 ): InventoryDriftReport {
   if (declaration === undefined) {
     return { status: "no-external-source", externalOnly: [], launcherOnly: [], agreeing: [] };
@@ -75,11 +90,29 @@ export function reportInventoryDrift(
       note: `externalInventory at ${declaration.path} could not be read as a populated schemaVersion:1 inventory document.`,
     };
   }
-  const launcherIds = readForeignIds(host, `${directory}/${launcherInventoryRelPath}`) ?? [];
-  const externalSet = new Set(externalIds);
-  const launcherSet = new Set(launcherIds);
-  const externalOnly = externalIds.filter((id) => !launcherSet.has(id));
-  const launcherOnly = launcherIds.filter((id) => !externalSet.has(id));
-  const agreeing = externalIds.filter((id) => launcherSet.has(id));
+  // Launcher's own inventory is read by its own strict reader. A missing one
+  // lists nothing; one that is present but cannot be read makes the
+  // comparison indeterminate, never a comparison against an empty list.
+  const launcherPath = `${directory}/${launcherInventoryRelPath}`;
+  const launcherBytes = host.readBytes(launcherPath);
+  let launcherIds: readonly string[] = [];
+  if (launcherBytes !== null) {
+    const launcher = validateInventoryDocument(launcherBytes, hubOwner === undefined ? {} : { hubOwner });
+    if (!launcher.valid) {
+      return {
+        status: "indeterminate",
+        externalOnly: [],
+        launcherOnly: [],
+        agreeing: [],
+        note: `the hub's own inventory ${launcher.reason}, so it cannot be compared with externalInventory at ${declaration.path}.`,
+      };
+    }
+    launcherIds = launcher.ids;
+  }
+  // One repository identity, as everywhere in Launcher (identity.ts): a bare id is the hub owner's, and case is ignored.
+  const agrees = (id: string, others: readonly string[]) => others.some((other) => sameRepository(id, other, hubOwner));
+  const externalOnly = externalIds.filter((id) => !agrees(id, launcherIds));
+  const launcherOnly = launcherIds.filter((id) => !agrees(id, externalIds));
+  const agreeing = externalIds.filter((id) => agrees(id, launcherIds));
   return { status: "reconciled", externalOnly, launcherOnly, agreeing };
 }

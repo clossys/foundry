@@ -8,7 +8,7 @@
 
 import { formatContractViolation, validateAgainstContract } from "./generated/contract-schema.generated.js";
 import { bundleDigest, changeSetDigest } from "./change-set-digest.js";
-import { loadPackedContract } from "./plan-contract.js";
+import { loadContract } from "./plan-contract.js";
 import type { ValidationResult } from "./plan-contract.js";
 
 export type RepositoryVisibility = "private" | "internal" | "public";
@@ -527,7 +527,7 @@ export function applyBundleRuleViolations(bundle: ApplyBundle): RuleViolation<Ap
 }
 
 function violationsOf<T, R extends ChangeSetRuleId | ApplyBundleRuleId>(contractName: string, label: string, value: unknown, rules: (document: T) => readonly RuleViolation<R>[]): ChangeSetViolation[] {
-  const schema = validateAgainstContract(loadPackedContract(contractName), value, loadPackedContract);
+  const schema = validateAgainstContract(loadContract(contractName), value, loadContract);
   if (schema.length > 0) return schema.map((violation) => ({ rule: "schema", path: violation.path, message: formatContractViolation(label, violation) }));
   return rules(value as T).map((violation) => ({ rule: violation.rule, path: violation.path, message: `${label}.${violation.path} ${violation.message} (rule ${violation.rule})` }));
 }

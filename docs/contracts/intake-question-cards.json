@@ -11,9 +11,18 @@
     "recommendedChoiceId": "string -- must equal choices[0].id; explicit so a reordering by an editor cannot silently change the recommendation",
     "somethingElseFollowUp": "string -- the one-sentence follow-up prompt when none of the listed choices fit"
   },
+  "runtimeChoicesCard": {
+    "$comment": "Issue #1179: an extension for a card whose choices are only known at runtime, which a static intake file cannot express. Only an engine builds one; a role's static intake file never does. scripts/check-package-framework.mjs's validateIntakeCardsShape() enforces that: a static card and each of its choices are closed to the keys cardShape and choiceShape declare, `selection` on a card or `detail` on a choice is refused as intake-card-runtime-only-field, and any other undeclared key as intake-card-unknown-field.",
+    "builtBy": "@clossys/advisor's repositoryChoiceCard() (packages/advisor/src/repository-choice.ts): a list of repositories the agent gathers from GitHub for the client's sign-in and handed to the engine, never typed by the client",
+    "selection": "\"many\" -- the client may choose any nonempty set of the choices, not exactly one. A card without `selection` is a single-choice card, as every static intake card is.",
+    "choices": "Each choice id is the stable id of the runtime value it stands for (for the repository card, the repository's owner/name, which must satisfy docs/contracts/repository-inventory.json definitions/repositoryId). The `something-else` choice is always last. Because the values are supplied at runtime, a card may offer a single value plus `something-else`.",
+    "recommendedChoiceId": "Present, and equal to choices[0].id, only when the engine has evidence for one choice (for the repository card, the repository the client is working in, and only when it is on the list; a current repository that is not listed leaves the card without a recommendation, never refused). Absent otherwise: an engine never invents a recommendation, and the remaining choices are sorted by id so the client is never asked to pick from an unordered list.",
+    "answer": "The client's answer is the list of chosen ids, checked against exactly the ids the card offered (applyRepositoryChoice()): an id the card did not offer, or one chosen twice, is refused by position, never echoed."
+  },
   "choiceShape": {
     "id": "string -- stable, unique within the card",
-    "label": "string -- the client-facing option text"
+    "label": "string -- the client-facing option text",
+    "detail": "runtime-choices cards only (see runtimeChoicesCard): optional supporting text for the choice, for example a repository's own description, cleaned by Unicode property class and capped by the engine that builds the card (@clossys/advisor's cleanDescription()); refused in a static intake file"
   },
   "engagementContext": {
     "contract": "docs/contracts/engagement-context.json",
