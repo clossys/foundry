@@ -235,21 +235,89 @@ function readHub(host: WorkspaceHost, directory: string): HubDocument | undefine
 }
 
 /**
- * The inventory document's own schema (documented in docs/ADOPTION.md and the
- * launcher README): `{ schemaVersion: 1, repositories: [{ id: <nonempty
- * string> }, ...] }`, nothing more. No other top-level or per-entry field is
- * part of this shape -- a document that merely happens to carry a
- * `repositories` array of similarly-shaped objects (for example a
- * governance record with `id`, `role`, `visibility`, `status`, and `notes`
- * fields) is not a launcher inventory and must be refused, not adopted
- * (#1334).
+ * The inventory document's own schema: docs/contracts/repository-inventory.json,
+ * v1 (#996, #1334). `{ schemaVersion: 1, repositories: [{ id, packages? },
+ * ...] }`, nothing more. No other top-level or per-entry field is part of
+ * this shape -- a document that merely happens to carry a `repositories`
+ * array of similarly-shaped objects (for example a governance record whose
+ * entries also carry `role`, `visibility`, `status`, and `notes` fields) is
+ * not a launcher inventory and must be refused, not adopted. This function
+ * IS that contract's implementation; the two must never diverge (see the
+ * contract's own "shape.rule").
  */
 export type InventoryValidation =
   | { readonly valid: true; readonly ids: readonly string[] }
   | { readonly valid: false; readonly reason: string };
 
+/** Points a validation failure at the one place the shape is written down. */
+const INVENTORY_CONTRACT_POINTER = "see docs/contracts/repository-inventory.json";
+
 const INVENTORY_TOP_LEVEL_KEYS = new Set(["schemaVersion", "repositories"]);
-const INVENTORY_ENTRY_KEYS = new Set(["id"]);
+const INVENTORY_ENTRY_KEYS = new Set(["id", "packages"]);
+/** Exactly @clossys/integrator's InventoryPackageEntry keys (packages/integrator/src/delta.ts, #996). */
+const INVENTORY_PACKAGE_ENTRY_KEYS = new Set(["name", "version", "wiring"]);
+/** Exactly @clossys/integrator's InventoryPackageWiring (packages/integrator/src/delta.ts, #996). */
+const INVENTORY_PACKAGE_WIRINGS = new Set(["dependencies", "devDependencies", "optionalDependencies", "peerDependencies", "unknown"]);
+
+/**
+ * The `id` format the inventory schema and Launcher's own sibling/clone
+ * resolution (`parseInventoryRepositoryId`, below) both enforce: a bare
+ * repository name, or `owner/name`, using the exact same GitHub owner and
+ * repository name rules (`OWNER` / `REPO`) Launcher already applies when it
+ * resolves a sibling clone target beside the hub. Neither `.` nor `..` is
+ * ever a valid segment (regardless of what OWNER/REPO's own character
+ * classes would otherwise allow), an id may carry at most one `/`, no
+ * segment may be empty, and no whitespace is tolerated anywhere in the id
+ * (OWNER/REPO's character classes already exclude it, and this function
+ * does not trim before checking, so leading/trailing whitespace is refused
+ * rather than silently dropped). `parseInventoryRepositoryId` trusts a
+ * caller that already ran this check rather than re-deriving the rule, so
+ * the two can never drift apart.
+ */
+function isValidInventoryId(id: string): boolean {
+  if (id.length === 0) return false;
+  const segments = id.split("/");
+  if (segments.length > 2) return false;
+  if (segments.some((segment) => segment === "" || segment === "." || segment === "..")) return false;
+  if (segments.length === 2) {
+    const owner = segments[0] ?? "";
+    const repository = segments[1] ?? "";
+    return OWNER.test(owner) && REPO.test(repository);
+  }
+  return REPO.test(id);
+}
+
+function validateInventoryPackages(value: unknown, entryIndex: number): { valid: true } | { valid: false; reason: string } {
+  if (!Array.isArray(value)) {
+    return { valid: false, reason: `repositories[${entryIndex}].packages must be an array (${INVENTORY_CONTRACT_POINTER})` };
+  }
+  for (const [packageIndex, entry] of value.entries()) {
+    const where = `repositories[${entryIndex}].packages[${packageIndex}]`;
+    if (!isRecord(entry)) {
+      return { valid: false, reason: `${where} must be an object (${INVENTORY_CONTRACT_POINTER})` };
+    }
+    const unknownKey = Object.keys(entry).find((key) => !INVENTORY_PACKAGE_ENTRY_KEYS.has(key));
+    if (unknownKey !== undefined) {
+      return {
+        valid: false,
+        reason: `${where} has an unrecognized field "${unknownKey}" (only name, version, and wiring are allowed; ${INVENTORY_CONTRACT_POINTER})`,
+      };
+    }
+    if (!isText(entry.name)) {
+      return { valid: false, reason: `${where}.name must be a nonempty string (${INVENTORY_CONTRACT_POINTER})` };
+    }
+    if (entry.version !== undefined && !isText(entry.version)) {
+      return { valid: false, reason: `${where}.version must be a nonempty string when present (${INVENTORY_CONTRACT_POINTER})` };
+    }
+    if (entry.wiring !== undefined && (typeof entry.wiring !== "string" || !INVENTORY_PACKAGE_WIRINGS.has(entry.wiring))) {
+      return {
+        valid: false,
+        reason: `${where}.wiring must be one of dependencies/devDependencies/optionalDependencies/peerDependencies/unknown when present (${INVENTORY_CONTRACT_POINTER})`,
+      };
+    }
+  }
+  return { valid: true };
+}
 
 /**
  * Strictly validates an inventory document's text against the schema above.
@@ -257,53 +325,69 @@ const INVENTORY_ENTRY_KEYS = new Set(["id"]);
  * reason }`, naming the offending field, before a caller ever gets to a list
  * of ids. This is the one place inventory documents -- supplied via
  * `--inventory` or read back from `clossys/.state/inventory.json` -- are
- * validated; both `inspectInventory` and the `--inventory` adopt path route
- * through it so neither can silently accept a shape-alike document.
+ * validated; `inspectInventory`, the `--inventory` adopt path, and every
+ * other read of the stored inventory (`readInventoryRepositories`, and
+ * through it resume's sibling composition and `--clone-missing`) route
+ * through it so nothing can silently accept a shape-alike document (#1334).
  */
 export function validateInventoryDocument(raw: string): InventoryValidation {
   let parsed: unknown;
   try {
     parsed = JSON.parse(raw);
   } catch {
-    return { valid: false, reason: "is not valid JSON" };
+    return { valid: false, reason: `is not valid JSON (${INVENTORY_CONTRACT_POINTER})` };
   }
   if (!isRecord(parsed)) {
-    return { valid: false, reason: "must be a JSON object with schemaVersion and repositories" };
+    return { valid: false, reason: `must be a JSON object with schemaVersion and repositories (${INVENTORY_CONTRACT_POINTER})` };
   }
   const unknownTopLevel = Object.keys(parsed).find((key) => !INVENTORY_TOP_LEVEL_KEYS.has(key));
   if (unknownTopLevel !== undefined) {
     return {
       valid: false,
-      reason: `has an unrecognized field "${unknownTopLevel}" (only schemaVersion and repositories are allowed)`,
+      reason: `has an unrecognized field "${unknownTopLevel}" (only schemaVersion and repositories are allowed; ${INVENTORY_CONTRACT_POINTER})`,
     };
   }
   if (parsed.schemaVersion !== 1) {
-    return { valid: false, reason: `schemaVersion must be 1, got ${JSON.stringify(parsed.schemaVersion)}` };
+    return { valid: false, reason: `schemaVersion must be 1, got ${JSON.stringify(parsed.schemaVersion)} (${INVENTORY_CONTRACT_POINTER})` };
   }
   if (!Array.isArray(parsed.repositories)) {
-    return { valid: false, reason: "repositories must be an array" };
+    return { valid: false, reason: `repositories must be an array (${INVENTORY_CONTRACT_POINTER})` };
   }
   const ids: string[] = [];
   const seen = new Set<string>();
   for (const [index, entry] of parsed.repositories.entries()) {
     if (!isRecord(entry)) {
-      return { valid: false, reason: `repositories[${index}] must be an object` };
+      return { valid: false, reason: `repositories[${index}] must be an object (${INVENTORY_CONTRACT_POINTER})` };
     }
     const unknownEntryKey = Object.keys(entry).find((key) => !INVENTORY_ENTRY_KEYS.has(key));
     if (unknownEntryKey !== undefined) {
       return {
         valid: false,
-        reason: `repositories[${index}] has an unrecognized field "${unknownEntryKey}" (only id is allowed)`,
+        reason: `repositories[${index}] has an unrecognized field "${unknownEntryKey}" (entries allow only id and packages; ${INVENTORY_CONTRACT_POINTER})`,
       };
     }
     if (!isText(entry.id)) {
-      return { valid: false, reason: `repositories[${index}].id must be a nonempty string` };
+      return { valid: false, reason: `repositories[${index}].id must be a nonempty string (${INVENTORY_CONTRACT_POINTER})` };
     }
-    const id = entry.id.trim();
-    if (seen.has(id)) {
-      return { valid: false, reason: `repositories[${index}].id "${id}" duplicates an earlier entry` };
+    const id = entry.id;
+    if (!isValidInventoryId(id)) {
+      return {
+        valid: false,
+        reason: `repositories[${index}].id "${id}" is not a valid repository id -- a bare name or "owner/name", with no ".", "..", empty segment, whitespace, or more than one "/" (${INVENTORY_CONTRACT_POINTER})`,
+      };
     }
-    seen.add(id);
+    const key = id.toLowerCase();
+    if (seen.has(key)) {
+      return {
+        valid: false,
+        reason: `repositories[${index}].id "${id}" duplicates an earlier entry (repository ids are compared case-insensitively; ${INVENTORY_CONTRACT_POINTER})`,
+      };
+    }
+    seen.add(key);
+    if (entry.packages !== undefined) {
+      const packagesResult = validateInventoryPackages(entry.packages, index);
+      if (!packagesResult.valid) return packagesResult;
+    }
     ids.push(id);
   }
   return { valid: true, ids };
@@ -461,19 +545,21 @@ function resolveOwner(observation: WorkspaceObservation, host: WorkspaceHost): {
  * Decides create, resume, or adopt from a cwd observation.
  * Appointing means: run this from the GitHub repository that should own the hub.
  */
+/**
+ * Reads repository ids from a `schemaVersion: 1` inventory document, routed
+ * through `validateInventoryDocument` -- the same schema check `--inventory`
+ * and `inspectInventory` apply, so a caller here can never end up trusting a
+ * document neither of those would have accepted (#1334). Throws, naming the
+ * offending field, on anything present but invalid; a missing file is `[]`,
+ * not a throw -- an absent inventory is a fact about the hub, not a
+ * malformed one.
+ */
 export function readInventoryRepositories(host: WorkspaceHost, source: string, label: string): readonly string[] {
   const raw = host.readText(source);
   if (raw === null) return [];
-  try {
-    const parsed: unknown = JSON.parse(raw);
-    if (!isRecord(parsed) || !Array.isArray(parsed.repositories)) return [];
-    return parsed.repositories.map((entry) => {
-      if (isRecord(entry) && isText(entry.id)) return entry.id.trim();
-      return "";
-    });
-  } catch {
-    throw new Error(`${label} is not readable inventory JSON (schemaVersion 1, repositories array)`);
-  }
+  const validated = validateInventoryDocument(raw);
+  if (!validated.valid) throw new Error(`${label} ${validated.reason}`);
+  return validated.ids;
 }
 
 /**
@@ -488,10 +574,16 @@ function resolveAdoptInventory(
   host: WorkspaceHost,
   cwd: CwdObservation,
   inventoryPath: string | undefined,
-): { inventorySource?: string; mergedInventoryIds?: readonly string[] } | WorkspaceRefusal {
+): { inventorySource?: string; mergedInventoryIds?: readonly string[]; replacesInvalidInventory?: boolean } | WorkspaceRefusal {
   const trimmed = inventoryPath?.trim();
   const onDiskPopulated = cwd.inventory?.status === "populated";
   if (!onDiskPopulated && !trimmed) {
+    if (cwd.inventory?.status === "invalid") {
+      return refuse(
+        "violated",
+        `the on-disk hub inventory ${cwd.inventory.reason} -- fix it, or supply --inventory <path> to a populated inventory document to replace it`,
+      );
+    }
     return refuse(
       "violated",
       "appointing requires a populated generated hub inventory (packed template skeleton/clossys/.state/inventory.json; the generated path does not ship), or --inventory <path> to a populated inventory document",
@@ -513,7 +605,12 @@ function resolveAdoptInventory(
       `--inventory at ${resolved} must be a populated inventory document (nonempty repositories)`,
     );
   }
-  if (!onDiskPopulated) return { inventorySource: resolved };
+  if (!onDiskPopulated) {
+    return {
+      inventorySource: resolved,
+      ...(cwd.inventory?.status === "invalid" ? { replacesInvalidInventory: true } : {}),
+    };
+  }
   const onDiskRaw = host.readText(join(cwd.absolutePath, WORKSPACE_INVENTORY_REL));
   const onDisk = onDiskRaw === null ? undefined : validateInventoryDocument(onDiskRaw);
   if (onDisk !== undefined && !onDisk.valid) {
@@ -594,6 +691,7 @@ export function planWorkspace(
       advisorVersion: observation.advisorVersion,
       ...(imported.inventorySource === undefined ? {} : { inventorySource: imported.inventorySource }),
       ...(imported.mergedInventoryIds === undefined ? {} : { mergedInventoryIds: imported.mergedInventoryIds }),
+      ...(imported.replacesInvalidInventory === undefined ? {} : { replacesInvalidInventory: imported.replacesInvalidInventory }),
     };
   }
   if (cwd.git) {
@@ -1044,18 +1142,18 @@ function writeSisterConsumerAgentsIfNeeded(host: WorkspaceHost, directory: strin
 const CLONE_NOT_BESIDE_HUB_NOTE =
   "clone not next to the hub; voices appear here after this repository is cloned beside the hub and launcher resumes";
 
+/**
+ * Splits an inventory id into owner/repository, trusting a caller that
+ * already validated it with `isValidInventoryId` (every id reaching here
+ * comes from a document `validateInventoryDocument` already accepted)
+ * rather than re-deriving that rule -- but still runs it, so a caller that
+ * somehow supplies an unvalidated id gets `null`, never a wrong split.
+ */
 function parseInventoryRepositoryId(id: string, hubOwner: string): { owner: string; repository: string } | null {
-  const trimmed = id.trim();
-  if (trimmed === "") return null;
-  if (trimmed.includes("/")) {
-    const slash = trimmed.indexOf("/");
-    const owner = trimmed.slice(0, slash);
-    const repository = trimmed.slice(slash + 1);
-    if (!OWNER.test(owner) || !REPO.test(repository)) return null;
-    return { owner, repository };
-  }
-  if (!REPO.test(trimmed)) return null;
-  return { owner: hubOwner, repository: trimmed };
+  if (!isValidInventoryId(id)) return null;
+  const slash = id.indexOf("/");
+  if (slash === -1) return { owner: hubOwner, repository: id };
+  return { owner: id.slice(0, slash), repository: id.slice(slash + 1) };
 }
 
 function resolveSisterCloneTargets(
@@ -1073,12 +1171,15 @@ function resolveSisterCloneTargets(
   const inventoryPath = join(hubDirectory, WORKSPACE_INVENTORY_REL);
   let inventoryIds: readonly string[];
   try {
-    inventoryIds = readInventoryRepositories(host, inventoryPath, "the hub inventory");
-  } catch {
-    return { targets: [], skipped: [] };
+    inventoryIds = readInventoryRepositories(host, inventoryPath, "the stored inventory");
+  } catch (error) {
+    // An invalid stored inventory is reported and skipped, never silently
+    // read for what it happens to look like -- no sibling gets written into
+    // and no clone is attempted from it (#1334).
+    const reason = error instanceof Error ? error.message : String(error);
+    return { targets: [], skipped: [{ inventoryId: WORKSPACE_INVENTORY_REL, note: reason }] };
   }
   for (const id of inventoryIds) {
-    if (id === "") continue;
     const parsed = parseInventoryRepositoryId(id, hubOwner);
     if (parsed === null) {
       skipped.push({ inventoryId: id, note: "inventory id is not a valid repository slug" });
@@ -1368,10 +1469,13 @@ export function applyWorkspacePlan(
     );
   }
   adoptHubFiles(host, skeletonRoot, plan);
+  const inventoryReplacedNote = plan.replacesInvalidInventory === true
+    ? " The on-disk inventory failed schema validation; --inventory replaced it."
+    : "";
   return finishHubApply(
     host,
     plan.directory,
-    `appointed ${plan.owner}/${plan.repository} as the account hub\nExisting project files were kept. This hub inventories engagement; it does not install the catalogue into the repo.`,
+    `appointed ${plan.owner}/${plan.repository} as the account hub\nExisting project files were kept. This hub inventories engagement; it does not install the catalogue into the repo.${inventoryReplacedNote}`,
     launcherPackageRoot,
     plan.owner,
     plan.repository,
