@@ -89,6 +89,9 @@ export function parseObservation(value: unknown): WorkspaceObservation {
   if (value.advisorVersion !== undefined && !isText(value.advisorVersion)) {
     throw new LauncherCheckInputError("observation.advisorVersion must be a string");
   }
+  if (value.integratorVersion !== undefined && !isText(value.integratorVersion)) {
+    throw new LauncherCheckInputError("observation.integratorVersion must be a string");
+  }
   return {
     cwd: parseCwd(value.cwd),
     ownerCandidates: value.ownerCandidates,
@@ -96,6 +99,7 @@ export function parseObservation(value: unknown): WorkspaceObservation {
     gitAvailable: value.gitAvailable,
     ...(isText(value.envOwner) ? { envOwner: value.envOwner } : {}),
     ...(isText(value.advisorVersion) ? { advisorVersion: value.advisorVersion } : {}),
+    ...(isText(value.integratorVersion) ? { integratorVersion: value.integratorVersion } : {}),
   };
 }
 

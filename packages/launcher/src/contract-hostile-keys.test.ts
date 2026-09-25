@@ -301,6 +301,7 @@ describe("no key text through launcher --inventory", () => {
     "git --version": { status: 0, stdout: "git\n", stderr: "" },
     "git remote get-url origin": { status: 0, stdout: "git@github.com:acme/central.git\n", stderr: "" },
     "npm view @clossys/advisor version": { status: 0, stdout: "0.1.5\n", stderr: "" },
+    "npm view @clossys/integrator version": { status: 0, stdout: "0.8.2\n", stderr: "" },
   };
   const refuse = (key: string): string => {
     writeFileSync(join(root, "inventory.json"), JSON.stringify({ schemaVersion: 1, repositories: [{ id: "app", [key]: 1 }] }));

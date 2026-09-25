@@ -6,7 +6,10 @@ import type {
   CommandResult,
   CwdObservation,
   DependencyBucket,
+  EngineInstallFinding,
+  EnginePinChange,
   HubDocument,
+  HubEnginePin,
   HubHealthReport,
   InventoryObservation,
   InventoryValidationEntry,
@@ -17,10 +20,11 @@ import type {
   WorkspaceHost,
   WorkspaceObservation,
   WorkspacePlan,
+  WorkspacePlanAdopt,
   WorkspacePlanCreate,
   WorkspaceRefusal,
 } from "./types.js";
-import { composeSkills, SKILLS_MANIFEST_REL, type SkillCompositionResult, type SkillPreservation } from "./skills.js";
+import { composeSkills, SKILLS_MANIFEST_REL, type SkillCompositionResult } from "./skills.js";
 import { parseSkillManifest, summarizeSkillsManifest } from "./manifest.js";
 import { detectLinkedHosts, serializeHostRecord, HOSTS_REL, type DiscoveredHost } from "./hosts.js";
 import { reportInventoryDrift } from "./inventory-adoption.js";
@@ -41,7 +45,11 @@ export const LEGACY_STATE_DIR_REL = ".clossys";
 export const LEGACY_WORKSPACE_MARKER_REL = join(LEGACY_STATE_DIR_REL, "workspace.json");
 export const LEGACY_WORKSPACE_INVENTORY_REL = join(LEGACY_STATE_DIR_REL, "inventory.json");
 export const ADVISOR_PACKAGE = "@clossys/advisor";
+export const INTEGRATOR_PACKAGE = "@clossys/integrator";
 export const LAUNCHER_PACKAGE = "@clossys/launcher";
+/** The engines a hub pins: each exactly, once, in `devDependencies`, at its live registry version. */
+export const HUB_ENGINE_PACKAGES = [ADVISOR_PACKAGE, INTEGRATOR_PACKAGE] as const;
+type HubEnginePackage = (typeof HUB_ENGINE_PACKAGES)[number];
 
 const DEPENDENCY_BUCKETS: readonly DependencyBucket[] = [
   "dependencies",
@@ -65,6 +73,30 @@ export const CONSUMER_AGENTS_MD = `# Account workspace
 
 This folder is the account hub for Foundry packages.
 
+After \`npx @clossys/launcher\`, the \`@clossys-*\` team is composed in this
+hub. Talk with \`@clossys-advisor\` and \`@clossys-<package>\` here. A launcher
+run writes nothing into a product repository; once a repository is staffed
+in an approved plan, it gets \`@clossys-advisor\` and the voices of the roles
+staffed there, with that plan's setup pull request. A missing \`@\` mention
+is a bug only here in the hub; in a product repository, a role that is not
+staffed there is expected to be absent. \`@clossys-advisor\` is the hiring
+check.
+
+Run \`npx @clossys/launcher\` again for hub health and to refresh the voices
+in this hub, not as how you talk to packages.
+
+The person in this folder is a founder, not an engineer. Speak like a
+person. Do not dump machine identifiers, JSON, hashes, or grant fields
+unless they ask.
+
+Advisor is read-only until the sponsor approves a next action.
+`;
+
+/** The hub guidance written while a launcher run still composed the team into checkouts beside the hub; resume refreshes it. */
+export const SIBLING_COMPOSING_CONSUMER_AGENTS_MD = `# Account workspace
+
+This folder is the account hub for Foundry packages.
+
 After \`npx @clossys/launcher\`, the same \`@clossys-*\` team is composed in
 every inventoried checkout beside this hub. Talk with \`@clossys-advisor\` and
 \`@clossys-<package>\` here or in a product repository. A missing \`@\` mention
@@ -78,15 +110,6 @@ person. Do not dump machine identifiers, JSON, hashes, or grant fields
 unless they ask.
 
 Advisor is read-only until the sponsor approves a next action.
-`;
-
-/** Canned guidance for inventoried product checkouts (not the hub). */
-export const SISTER_CONSUMER_AGENTS_MD = `# Product repository
-
-This repository is part of the same account engagement. The same
-\`@clossys-<package>\` team is here for intro and questions;
-\`@clossys-advisor\` decides hiring and compatibility. This folder is not the
-hub — engines are hired per repository, not dumped here.
 `;
 
 /** Previous generate-time guidance; used to refresh stale hub AGENTS.md on resume. */
@@ -295,20 +318,30 @@ function commandAvailable(host: WorkspaceHost, command: string): boolean {
 /** True when the tree already pins Advisor in some bucket, so adopt would not need a new version. */
 export function hasAdvisorPin(manifest: unknown): boolean {
   if (!isRecord(manifest)) return false;
-  return DEPENDENCY_BUCKETS.some((bucket) => clossysNames(manifest[bucket], new Set()) !== undefined);
+  return DEPENDENCY_BUCKETS.some((bucket) => enginePinsIn(manifest[bucket], new Set())[ADVISOR_PACKAGE] !== undefined);
 }
 
-/** Collects GitHub owner, cwd shape, default-hub presence, and the public Advisor pin. */
+/**
+ * The one place Launcher learns a package's live version: the public npm
+ * registry (`npm view <name> version`). A failed or unparseable read is
+ * `undefined`, never a guess.
+ */
+function readRegistryVersion(host: WorkspaceHost, name: string): string | undefined {
+  const viewed = host.run("npm", ["view", name, "version"]);
+  const version = viewed.stdout.trim();
+  return viewed.status === 0 && /^\d+\.\d+\.\d+$/.test(version) ? version : undefined;
+}
+
 /**
  * Reads the public `@clossys/launcher` registry version, used only to grade
  * catalogue-sourced skill staleness in the health report (#1183). A missing
  * or unparseable read leaves staleness ungraded rather than refusing.
  */
 export function readLiveLauncherVersion(host: WorkspaceHost): string | undefined {
-  const viewed = host.run("npm", ["view", LAUNCHER_PACKAGE, "version"]);
-  const version = viewed.stdout.trim();
-  return viewed.status === 0 && /^\d+\.\d+\.\d+$/.test(version) ? version : undefined;
+  return readRegistryVersion(host, LAUNCHER_PACKAGE);
 }
+
+/** Collects GitHub owner, cwd shape, default-hub presence, and the public Advisor and Integrator versions. */
 
 export function observeWorkspace(host: WorkspaceHost): WorkspaceObservation {
   const cwd = host.cwd;
@@ -342,15 +375,13 @@ export function observeWorkspace(host: WorkspaceHost): WorkspaceObservation {
   const candidates = new Set(distinctOwners(seenOwners));
 
   let remoteDefaultHub: WorkspaceObservation["remoteDefaultHub"];
-  let advisorVersion: string | undefined;
   const ownerGuess = envOwner ?? (candidates.size === 1 ? [...candidates][0] : githubOwner);
   if (ghAvailable && ownerGuess) {
     const viewed = host.run("gh", ["repo", "view", `${ownerGuess}/${DEFAULT_REPOSITORY_NAME}`, "--json", "name"]);
     if (viewed.status === 0) remoteDefaultHub = { owner: ownerGuess, repository: DEFAULT_REPOSITORY_NAME };
   }
-  const viewedAdvisor = host.run("npm", ["view", ADVISOR_PACKAGE, "version"]);
-  const version = viewedAdvisor.stdout.trim();
-  if (viewedAdvisor.status === 0 && /^\d+\.\d+\.\d+$/.test(version)) advisorVersion = version;
+  const advisorVersion = readRegistryVersion(host, ADVISOR_PACKAGE);
+  const integratorVersion = readRegistryVersion(host, INTEGRATOR_PACKAGE);
 
   const hubLocation = locateHub(host, cwd);
   // While only the legacy `.clossys/` marker exists, its sibling inventory is
@@ -379,6 +410,7 @@ export function observeWorkspace(host: WorkspaceHost): WorkspaceObservation {
     ...(envOwner === undefined ? {} : { envOwner }),
     ...(remoteDefaultHub === undefined ? {} : { remoteDefaultHub }),
     ...(advisorVersion === undefined ? {} : { advisorVersion }),
+    ...(integratorVersion === undefined ? {} : { integratorVersion }),
     ghAvailable,
     gitAvailable,
   };
@@ -546,6 +578,30 @@ export interface PlanWorkspaceOptions {
   readonly replaceInventory?: boolean;
 }
 
+/** The hub engine versions a plan carries, only those the observation read. */
+function observedEngineVersions(observation: WorkspaceObservation): { advisorVersion?: string; integratorVersion?: string } {
+  return {
+    ...(observation.advisorVersion === undefined ? {} : { advisorVersion: observation.advisorVersion }),
+    ...(observation.integratorVersion === undefined ? {} : { integratorVersion: observation.integratorVersion }),
+  };
+}
+
+/**
+ * Create and appoint pin both hub engines, so each needs its live version:
+ * the refusal names the first one the registry did not answer for.
+ */
+function requireEngineVersions(
+  observation: WorkspaceObservation,
+): { advisorVersion: string; integratorVersion: string } | WorkspaceRefusal {
+  if (!observation.advisorVersion) {
+    return refuse("indeterminate", `cannot read a public ${ADVISOR_PACKAGE} version from the npm registry`);
+  }
+  if (!observation.integratorVersion) {
+    return refuse("indeterminate", `cannot read a public ${INTEGRATOR_PACKAGE} version from the npm registry`);
+  }
+  return { advisorVersion: observation.advisorVersion, integratorVersion: observation.integratorVersion };
+}
+
 export function planWorkspace(
   observation: WorkspaceObservation,
   host: WorkspaceHost,
@@ -603,15 +659,14 @@ export function planWorkspace(
       repository: repoNameFromSlug(cwd.hub.repository, DEFAULT_REPOSITORY_NAME),
       directory: cwd.absolutePath,
       clone: false,
-      ...(observation.advisorVersion === undefined ? {} : { advisorVersion: observation.advisorVersion }),
+      ...observedEngineVersions(observation),
       ...(cwd.hubMigration === "legacy" ? { migrateFrom: "legacy" as const } : {}),
       ...(chosen ?? {}),
     };
   }
   if (cwd.git && cwd.githubOwner && cwd.githubRepository) {
-    if (!observation.advisorVersion) {
-      return refuse("indeterminate", `cannot read a public ${ADVISOR_PACKAGE} version from the npm registry`);
-    }
+    const engines = requireEngineVersions(observation);
+    if ("action" in engines) return engines;
     if (options.repositories !== undefined) {
       const resolved = resolveChosenRepositories(host, cwd.absolutePath, cwd.githubOwner, options.repositories, options.replaceInventory === true);
       if ("action" in resolved) return resolved;
@@ -620,7 +675,7 @@ export function planWorkspace(
         owner: cwd.githubOwner,
         repository: cwd.githubRepository,
         directory: cwd.absolutePath,
-        advisorVersion: observation.advisorVersion,
+        ...engines,
         chosenInventory: resolved.chosenInventory,
       };
     }
@@ -631,7 +686,7 @@ export function planWorkspace(
       owner: cwd.githubOwner,
       repository: cwd.githubRepository,
       directory: cwd.absolutePath,
-      advisorVersion: observation.advisorVersion,
+      ...engines,
       ...(imported.inventorySource === undefined ? {} : { inventorySource: imported.inventorySource }),
       ...(imported.mergedInventoryIds === undefined ? {} : { mergedInventoryIds: imported.mergedInventoryIds }),
       ...(imported.mergedInventoryRepositories === undefined ? {} : { mergedInventoryRepositories: imported.mergedInventoryRepositories }),
@@ -663,21 +718,20 @@ export function planWorkspace(
       repository: observation.remoteDefaultHub.repository,
       directory: cwd.absolutePath,
       clone: true,
-      ...(observation.advisorVersion === undefined ? {} : { advisorVersion: observation.advisorVersion }),
+      ...observedEngineVersions(observation),
     };
   }
   if (!observation.ghAvailable) {
     return refuse("indeterminate", "`gh` is required to create a GitHub repository for a new hub");
   }
-  if (!observation.advisorVersion) {
-    return refuse("indeterminate", `cannot read a public ${ADVISOR_PACKAGE} version from the npm registry`);
-  }
+  const engines = requireEngineVersions(observation);
+  if ("action" in engines) return engines;
   return {
     action: "create",
     owner: ownerResult.owner,
     repository: DEFAULT_REPOSITORY_NAME,
     directory: cwd.absolutePath,
-    advisorVersion: observation.advisorVersion,
+    ...engines,
   };
 }
 
@@ -690,11 +744,15 @@ function containedPath(root: string, relativePath: string): string {
   return resolved;
 }
 
-function substitute(contents: string, plan: { owner: string; repository: string; advisorVersion?: string }): string {
+function substitute(
+  contents: string,
+  plan: { owner: string; repository: string; advisorVersion?: string; integratorVersion?: string },
+): string {
   return contents
     .replaceAll("__OWNER__", plan.owner)
     .replaceAll("__REPOSITORY_NAME__", plan.repository)
-    .replaceAll("__ADVISOR_VERSION__", plan.advisorVersion ?? "0.0.0");
+    .replaceAll("__ADVISOR_VERSION__", plan.advisorVersion ?? "0.0.0")
+    .replaceAll("__INTEGRATOR_VERSION__", plan.integratorVersion ?? "0.0.0");
 }
 
 function writeSkeletonFile(host: WorkspaceHost, directory: string, relativePath: string, contents: string): void {
@@ -722,40 +780,71 @@ function pinString(value: unknown): string | undefined {
   return typeof value === "string" && value.trim() !== "" ? value.trim() : undefined;
 }
 
-function clossysNames(bucket: unknown, extra: Set<string>): string | undefined {
-  if (!isRecord(bucket)) return undefined;
-  let advisor: string | undefined;
+/**
+ * The hub engine pins in one dependency bucket, by engine. Every other
+ * `@clossys/*` name found there is added to `extra`.
+ */
+function enginePinsIn(bucket: unknown, extra: Set<string>): Partial<Record<HubEnginePackage, string>> {
+  const pins: Partial<Record<HubEnginePackage, string>> = {};
+  if (!isRecord(bucket)) return pins;
   for (const [name, version] of Object.entries(bucket)) {
-    if (name === ADVISOR_PACKAGE) {
-      advisor = pinString(version);
+    const engine = HUB_ENGINE_PACKAGES.find((candidate) => candidate === name);
+    if (engine !== undefined) {
+      const pinned = pinString(version);
+      if (pinned !== undefined) pins[engine] = pinned;
       continue;
     }
     if (name.startsWith("@clossys/")) extra.add(name);
   }
-  return advisor;
+  return pins;
+}
+
+/** The live engine versions to pin; an engine whose version is unknown is left as the manifest has it. */
+interface HubEngineVersions {
+  readonly advisorVersion?: string;
+  readonly integratorVersion?: string;
+}
+
+function engineVersionEntries(versions: HubEngineVersions): readonly (readonly [HubEnginePackage, string])[] {
+  const entries: (readonly [HubEnginePackage, string])[] = [];
+  if (versions.advisorVersion !== undefined) entries.push([ADVISOR_PACKAGE, versions.advisorVersion]);
+  if (versions.integratorVersion !== undefined) entries.push([INTEGRATOR_PACKAGE, versions.integratorVersion]);
+  return entries;
 }
 
 /**
- * Pins live Advisor in `devDependencies` only. Relocates a pin left in any
- * other bucket and overwrites a frozen version. Does not touch other
- * `@clossys/*` names. A dedicated `{owner}/workspace` hub is named
- * `@owner/workspace`.
+ * Pins each hub engine (Advisor and Integrator) exactly, in `devDependencies`
+ * only, and returns what it changed. It only raises a pin: one older than
+ * live, or not a plain version (a range, a tag), becomes the live version;
+ * one newer than live is kept as it is. A pin left in any other bucket is
+ * moved to `devDependencies`. Other `@clossys/*` names are not touched. The
+ * manifest is written as 2-space-indented JSON with a final LF.
+ *
+ * `appoint` writes the packed skeleton manifest when the hub has none,
+ * refuses a manifest that is not a JSON object, names a dedicated
+ * `{owner}/workspace` hub `@owner/workspace`, and rewrites the manifest.
+ * `resume` changes only the engine pins (never the `name`), writes the
+ * manifest only when a pin changed, and leaves a missing or unreadable
+ * manifest as it is (the health report then shows the engine pins as
+ * missing).
  */
-function mergeAdvisorPin(
+function mergeHubEnginePins(
   host: WorkspaceHost,
   directory: string,
   skeletonRoot: string,
-  advisorVersion: string,
+  versions: HubEngineVersions,
   owner: string,
   repository: string,
-): void {
+  mode: "appoint" | "resume",
+): readonly EnginePinChange[] {
   const path = join(directory, "package.json");
   const raw = host.readText(path);
   if (raw === null) {
+    if (mode === "resume") return [];
     const skeleton = host.readText(join(skeletonRoot, "package.json"));
     if (skeleton === null) throw new Error("missing skeleton package.json");
-    writeSkeletonFile(host, directory, "package.json", substitute(skeleton, { owner, repository, advisorVersion }));
-    return;
+    writeSkeletonFile(host, directory, "package.json", substitute(skeleton, { owner, repository, ...versions }));
+    return engineVersionEntries(versions).map(([engine, version]) => ({ package: engine, to: version }));
   }
   let manifest: Record<string, unknown>;
   try {
@@ -763,24 +852,116 @@ function mergeAdvisorPin(
     if (!isRecord(parsed)) throw new Error("package.json is not an object");
     manifest = parsed;
   } catch {
+    if (mode === "resume") return [];
     throw new Error("existing package.json is unreadable JSON");
   }
-  for (const bucket of DEPENDENCY_BUCKETS) {
-    if (bucket === "devDependencies") continue;
-    const current = manifest[bucket];
-    if (!isRecord(current) || !(ADVISOR_PACKAGE in current)) continue;
-    const next = { ...current };
-    delete next[ADVISOR_PACKAGE];
-    if (Object.keys(next).length === 0) delete manifest[bucket];
-    else manifest[bucket] = next;
+  const changes: EnginePinChange[] = [];
+  for (const [engine, live] of engineVersionEntries(versions)) {
+    const devPin = isRecord(manifest.devDependencies) ? pinString(manifest.devDependencies[engine]) : undefined;
+    let movedFrom: DependencyBucket | undefined;
+    let movedPin: string | undefined;
+    for (const bucket of DEPENDENCY_BUCKETS) {
+      if (bucket === "devDependencies") continue;
+      const current = manifest[bucket];
+      if (!isRecord(current) || !(engine in current)) continue;
+      if (movedFrom === undefined) {
+        movedFrom = bucket;
+        movedPin = pinString(current[engine]);
+      }
+      const next = { ...current };
+      delete next[engine];
+      if (Object.keys(next).length === 0) delete manifest[bucket];
+      else manifest[bucket] = next;
+    }
+    const existing = devPin ?? movedPin;
+    // Only raise: a pin newer than live stays, as the health grader treats it as current.
+    const to = existing !== undefined && compareVersions(existing, live) === 1 ? existing : live;
+    const devDependencies = isRecord(manifest.devDependencies) ? { ...manifest.devDependencies } : {};
+    devDependencies[engine] = to;
+    manifest.devDependencies = devDependencies;
+    if (to !== devPin || movedFrom !== undefined) {
+      changes.push({
+        package: engine,
+        ...(existing === undefined ? {} : { from: existing }),
+        to,
+        ...(devPin === undefined && movedFrom !== undefined ? { movedFrom } : {}),
+      });
+    }
   }
-  const devDependencies = isRecord(manifest.devDependencies) ? { ...manifest.devDependencies } : {};
-  devDependencies[ADVISOR_PACKAGE] = advisorVersion;
-  manifest.devDependencies = devDependencies;
-  if (repository === DEFAULT_REPOSITORY_NAME) {
+  if (mode === "appoint" && repository === DEFAULT_REPOSITORY_NAME) {
     manifest.name = `@${owner}/${repository}`;
   }
+  if (mode === "resume" && changes.length === 0) return changes;
   host.writeText(path, `${JSON.stringify(manifest, null, 2)}\n`);
+  return changes;
+}
+
+/** Lockfiles Launcher recognises in a hub, with the install command that updates each. */
+const HUB_LOCKFILES: readonly (readonly [string, string])[] = [
+  // npm reads npm-shrinkwrap.json instead of package-lock.json when both exist.
+  ["npm-shrinkwrap.json", "npm install"],
+  ["package-lock.json", "npm install"],
+  ["pnpm-lock.yaml", "pnpm install"],
+  ["yarn.lock", "yarn install"],
+  ["bun.lock", "bun install"],
+  ["bun.lockb", "bun install"],
+];
+
+function describeEnginePinChange(change: EnginePinChange): string {
+  const moved = change.movedFrom === undefined ? "" : ` (moved from ${change.movedFrom} to devDependencies)`;
+  if (change.from === undefined) return `${change.package} added at ${change.to}${moved}`;
+  if (change.from === change.to) return `${change.package} ${change.to}${moved}`;
+  return `${change.package} ${change.from} -> ${change.to}${moved}`;
+}
+
+/** The one next step after a run changed engine pins: install with the hub's package manager, then commit the manifest with its lockfile. */
+function enginePinNextStep(host: WorkspaceHost, directory: string): string {
+  const lockfile = HUB_LOCKFILES.find(([name]) => host.exists(join(directory, name)));
+  return lockfile === undefined
+    ? "run your package manager's install in the hub, then commit package.json together with the lockfile it writes"
+    : `run \`${lockfile[1]}\` in the hub, then commit package.json together with ${lockfile[0]}`;
+}
+
+/**
+ * Whether the hub's lockfile resolves its engine pins. An npm lockfile is
+ * read: each engine pinned to a plain version in `devDependencies` must
+ * resolve to that version. Any other lockfile is not read, so it counts as
+ * not resolving the engines this run changed. No lockfile, no finding.
+ */
+function engineInstallFinding(
+  host: WorkspaceHost,
+  directory: string,
+  changes: readonly EnginePinChange[],
+): EngineInstallFinding | undefined {
+  const found = HUB_LOCKFILES.find(([name]) => host.exists(join(directory, name)));
+  if (found === undefined) return undefined;
+  const [lockfile, command] = found;
+  const changed = [...new Set(changes.map((change) => change.package))];
+  let packages: readonly string[] = changed;
+  if (lockfile === "package-lock.json" || lockfile === "npm-shrinkwrap.json") {
+    const lock = readJson(host, join(directory, lockfile));
+    const manifest = readJson(host, join(directory, "package.json"));
+    const devDependencies = isRecord(manifest) && isRecord(manifest.devDependencies) ? manifest.devDependencies : {};
+    if (isRecord(lock)) {
+      packages = HUB_ENGINE_PACKAGES.filter((engine) => {
+        const pinned = pinString(devDependencies[engine]);
+        if (pinned === undefined || compareVersions(pinned, pinned) === null) return false;
+        const lockPackages = isRecord(lock.packages) ? lock.packages : {};
+        const lockDependencies = isRecord(lock.dependencies) ? lock.dependencies : {};
+        const entry = lockPackages[`node_modules/${engine}`] ?? lockDependencies[engine];
+        const locked = isRecord(entry) ? pinString(entry.version) : undefined;
+        return locked === undefined || compareVersions(locked, pinned) !== 0;
+      });
+    }
+  }
+  if (packages.length === 0) return undefined;
+  return {
+    kind: "engine-pins-changed-install-needed",
+    lockfile,
+    command,
+    packages,
+    note: `${lockfile} does not resolve the pinned ${packages.join(" and ")} yet; run \`${command}\` in the hub, then commit package.json together with ${lockfile}`,
+  };
 }
 
 function copySkeleton(host: WorkspaceHost, skeletonRoot: string, plan: WorkspacePlanCreate): void {
@@ -826,7 +1007,7 @@ function revalidatedDocument(document: string, hubOwner: string, label = "the ch
   return document;
 }
 
-function adoptHubFiles(host: WorkspaceHost, skeletonRoot: string, plan: WorkspacePlan & { advisorVersion: string }): void {
+function adoptHubFiles(host: WorkspaceHost, skeletonRoot: string, plan: WorkspacePlanAdopt): readonly EnginePinChange[] {
   assertCleanTree(host, plan.directory);
   // Resolve and strictly re-validate the inventory document BEFORE writing
   // anything, including the hub marker -- planWorkspace already validated it
@@ -883,7 +1064,15 @@ function adoptHubFiles(host: WorkspaceHost, skeletonRoot: string, plan: Workspac
     const ignore = host.readText(join(skeletonRoot, ".gitignore"));
     if (ignore !== null) writeSkeletonFile(host, plan.directory, ".gitignore", ignore);
   }
-  mergeAdvisorPin(host, plan.directory, skeletonRoot, plan.advisorVersion, plan.owner, plan.repository);
+  return mergeHubEnginePins(
+    host,
+    plan.directory,
+    skeletonRoot,
+    { advisorVersion: plan.advisorVersion, integratorVersion: plan.integratorVersion },
+    plan.owner,
+    plan.repository,
+    "appoint",
+  );
 }
 
 function requireZero(result: CommandResult, label: string): void {
@@ -894,9 +1083,11 @@ function requireZero(result: CommandResult, label: string): void {
 
 /**
  * Read-only pin and inventory report. Does not install or uninstall. Scans all
- * four dependency buckets; grades each pinned advisor version against the live
- * registry version, marking a pin older than live as a stale-pin finding and a
- * degraded report.
+ * four dependency buckets for both hub engines (Advisor and Integrator);
+ * grades each pinned version against that engine's live registry version,
+ * when known, marking a pin older than live as a stale-pin finding and a
+ * degraded report. `liveIntegratorVersion` is the last parameter so earlier
+ * callers keep their argument positions.
  */
 export function reportHubHealth(
   host: WorkspaceHost,
@@ -905,71 +1096,101 @@ export function reportHubHealth(
   liveLauncherVersion?: string,
   retiredThisRun: readonly string[] = [],
   migration?: HubHealthReport["migration"],
+  liveIntegratorVersion?: string,
 ): HubHealthReport {
   const extra = new Set<string>();
-  const pins: Partial<Record<DependencyBucket, string>> = {};
+  const pins: Record<HubEnginePackage, Partial<Record<DependencyBucket, string>>> = {
+    [ADVISOR_PACKAGE]: {},
+    [INTEGRATOR_PACKAGE]: {},
+  };
   const manifestRaw = host.readText(join(directory, "package.json"));
   if (manifestRaw !== null) {
     try {
       const parsed: unknown = JSON.parse(manifestRaw);
       if (isRecord(parsed)) {
         for (const bucket of DEPENDENCY_BUCKETS) {
-          const pin = clossysNames(parsed[bucket], extra);
-          if (pin !== undefined) pins[bucket] = pin;
+          const found = enginePinsIn(parsed[bucket], extra);
+          for (const engine of HUB_ENGINE_PACKAGES) {
+            const pinned = found[engine];
+            if (pinned !== undefined) pins[engine][bucket] = pinned;
+          }
         }
       }
     } catch {
       /* unreadable manifest is reported as missing pins */
     }
   }
-  const pinFindings: PinFinding[] = Object.entries(pins).flatMap(([bucket, pinned]): PinFinding[] => {
-    if (liveAdvisorVersion === undefined) return [];
-    const comparison = compareVersions(pinned, liveAdvisorVersion);
-    if (comparison === null) {
-      return [{ bucket: bucket as DependencyBucket, pinned, grade: "indeterminate", note: `cannot compare ${pinned} with live ${liveAdvisorVersion}` }];
-    }
-    return comparison < 0
-      ? [{ bucket: bucket as DependencyBucket, pinned, grade: "stale", note: `pinned ${pinned} is older than live ${liveAdvisorVersion}` }]
-      : [];
-  });
+  const live: Record<HubEnginePackage, string | undefined> = {
+    [ADVISOR_PACKAGE]: liveAdvisorVersion,
+    [INTEGRATOR_PACKAGE]: liveIntegratorVersion,
+  };
+  const pinFindings: PinFinding[] = HUB_ENGINE_PACKAGES.flatMap((engine) =>
+    DEPENDENCY_BUCKETS.flatMap((bucket): PinFinding[] => {
+      const pinned = pins[engine][bucket];
+      const liveVersion = live[engine];
+      if (pinned === undefined || liveVersion === undefined) return [];
+      const comparison = compareVersions(pinned, liveVersion);
+      if (comparison === null) {
+        return [{ package: engine, bucket, pinned, grade: "indeterminate", note: `cannot compare ${pinned} with live ${liveVersion}` }];
+      }
+      return comparison < 0
+        ? [{ package: engine, bucket, pinned, grade: "stale", note: `pinned ${pinned} is older than live ${liveVersion}` }]
+        : [];
+    }),
+  );
+  const pinCount = (engine: HubEnginePackage): number => Object.values(pins[engine]).filter((value) => value !== undefined).length;
+  const misplaced = (engine: HubEnginePackage): boolean =>
+    pins[engine].devDependencies === undefined ||
+    pins[engine].dependencies !== undefined ||
+    pins[engine].optionalDependencies !== undefined ||
+    pins[engine].peerDependencies !== undefined;
+  const dualPin = HUB_ENGINE_PACKAGES.some((engine) => pinCount(engine) > 1);
   const skillsManifest = summarizeSkillsManifest(
     parseSkillManifest(host.readText(join(directory, SKILLS_MANIFEST_REL))),
     liveLauncherVersion,
     retiredThisRun,
   );
+  const enginePin = (engine: HubEnginePackage): HubEnginePin => {
+    const found = pins[engine];
+    const liveVersion = live[engine];
+    return {
+      ...(found.dependencies === undefined ? {} : { dependencies: found.dependencies }),
+      ...(found.devDependencies === undefined ? {} : { devDependencies: found.devDependencies }),
+      ...(found.optionalDependencies === undefined ? {} : { optionalDependencies: found.optionalDependencies }),
+      ...(found.peerDependencies === undefined ? {} : { peerDependencies: found.peerDependencies }),
+      ...(liveVersion === undefined ? {} : { live: liveVersion }),
+    };
+  };
+  const inventory = inspectInventory(host.readBytes(join(directory, WORKSPACE_INVENTORY_REL)), readHub(host, directory)?.owner);
   return {
     marker: readHub(host, directory) === undefined ? "missing" : "present",
-    inventory: inspectInventory(host.readBytes(join(directory, WORKSPACE_INVENTORY_REL)), readHub(host, directory)?.owner),
-    advisorPin: {
-      ...(pins.dependencies === undefined ? {} : { dependencies: pins.dependencies }),
-      ...(pins.devDependencies === undefined ? {} : { devDependencies: pins.devDependencies }),
-      ...(pins.optionalDependencies === undefined ? {} : { optionalDependencies: pins.optionalDependencies }),
-      ...(pins.peerDependencies === undefined ? {} : { peerDependencies: pins.peerDependencies }),
-      ...(liveAdvisorVersion === undefined ? {} : { live: liveAdvisorVersion }),
-    },
-    dualPin: Object.values(pins).filter((value) => value !== undefined).length > 1,
+    inventory,
+    advisorPin: enginePin(ADVISOR_PACKAGE),
+    integratorPin: enginePin(INTEGRATOR_PACKAGE),
+    dualPin,
     extraClossys: [...extra].sort(),
     pinFindings,
     degraded:
       pinFindings.some((finding) => finding.grade === "stale") ||
-      Object.values(pins).filter((value) => value !== undefined).length > 1 ||
-      pins.devDependencies === undefined ||
-      pins.dependencies !== undefined ||
-      pins.optionalDependencies !== undefined ||
-      pins.peerDependencies !== undefined,
+      dualPin ||
+      HUB_ENGINE_PACKAGES.some(misplaced) ||
+      inventory.status === "invalid",
     ...(migration === undefined ? {} : { migration }),
     skillsManifest,
   };
 }
 
-export function formatHubHealth(report: HubHealthReport): string {
+function formatEnginePin(pin: HubEnginePin): string {
   const pinParts: string[] = [];
   for (const bucket of DEPENDENCY_BUCKETS) {
-    const pinned = report.advisorPin[bucket];
+    const pinned = pin[bucket];
     if (pinned !== undefined) pinParts.push(`${bucket} ${pinned}`);
   }
-  const pin = pinParts.length === 0 ? "missing" : pinParts.join(" and ");
-  const live = report.advisorPin.live === undefined ? "" : `; live ${report.advisorPin.live}`;
+  const pinned = pinParts.length === 0 ? "missing" : pinParts.join(" and ");
+  return `${pinned}${pin.live === undefined ? "" : `; live ${pin.live}`}`;
+}
+
+export function formatHubHealth(report: HubHealthReport): string {
   const extra = report.extraClossys.length === 0 ? "none" : report.extraClossys.join(", ");
   const inventory =
     report.inventory.status === "populated"
@@ -978,9 +1199,20 @@ export function formatHubHealth(report: HubHealthReport): string {
         ? `invalid${report.inventory.reason === undefined ? "" : ` -- ${report.inventory.reason}`}`
         : report.inventory.status;
   const findings = report.pinFindings.map((finding) =>
-    finding.note !== undefined ? `${finding.bucket} ${finding.note}` : `${finding.bucket} ${finding.grade}`,
+    finding.note !== undefined
+      ? `${finding.package} ${finding.bucket} ${finding.note}`
+      : `${finding.package} ${finding.bucket} ${finding.grade}`,
   );
   const findingLine = findings.length === 0 ? "none" : findings.join("; ");
+  const enginePinLines =
+    report.enginePins === undefined
+      ? []
+      : [
+          `engine pins changed in package.json: ${report.enginePins.changed.map(describeEnginePinChange).join("; ")}`,
+          `next: ${report.enginePins.nextStep}`,
+        ];
+  const installLine =
+    report.installNeeded === undefined ? [] : [`install needed (${report.installNeeded.kind}): ${report.installNeeded.note}`];
   const skillParts: string[] = [];
   if (report.skillComposition !== undefined) {
     skillParts.push(
@@ -992,25 +1224,24 @@ export function formatHubHealth(report: HubHealthReport): string {
       // skip.packageDir names one of this package's own known package directories, never document text (see skills.ts).
       skillParts.push(`skill skipped (${skip.packageDir}): ${skip.note}`);
     }
-    // rosterTargets, rosterSkipped's inventoryId, and preserved's target are
-    // already position-safe by the time they reach here: composeSkillRoster
-    // redacts every stored-inventory id to `inventoryPositionLabel()`'s
-    // position label before putting it in this report, because this whole
-    // report is also JSON-dumped into the `health:` line below -- an id left
-    // raw in the structured report would still reach the message that way
-    // even if this prose line named it safely.
+    // rosterTargets and siblings' inventoryId are already position-safe by
+    // the time they reach here: composeSkillRoster redacts every
+    // stored-inventory id to `inventoryPositionLabel()`'s position label
+    // before putting it in this report, because this whole report is also
+    // JSON-dumped into the `health:` line below -- an id left raw in the
+    // structured report would still reach the message that way even if this
+    // prose line named it safely.
     if (report.skillComposition.rosterTargets !== undefined && report.skillComposition.rosterTargets.length > 0) {
       skillParts.push(`skill roster written: ${report.skillComposition.rosterTargets.join(", ")}`);
     }
-    for (const skip of report.skillComposition.rosterSkipped ?? []) {
-      skillParts.push(`skill roster skipped (${skip.inventoryId}): ${skip.note}`);
+    for (const sibling of report.skillComposition.siblings ?? []) {
+      skillParts.push(`sibling (${sibling.inventoryId}): ${sibling.note}`);
     }
     if (report.skillComposition.retired !== undefined && report.skillComposition.retired.length > 0) {
       skillParts.push(`skills retired: ${report.skillComposition.retired.map((name) => `clossys-${name}`).join(", ")}`);
     }
     for (const kept of report.skillComposition.preserved ?? []) {
-      const where = kept.target === undefined ? "" : ` in ${kept.target}`;
-      skillParts.push(`skill preserved (clossys-${kept.packageDir}${where}, not ${kept.action === "rewrite" ? "rewritten" : "retired"}): ${kept.note}`);
+      skillParts.push(`skill preserved (clossys-${kept.packageDir}, not ${kept.action === "rewrite" ? "rewritten" : "retired"}): ${kept.note}`);
     }
   }
   const skillsManifestLine =
@@ -1034,10 +1265,13 @@ export function formatHubHealth(report: HubHealthReport): string {
   return [
     `hub marker: ${report.marker}`,
     `inventory: ${inventory}`,
-    `advisor pin: ${pin}${live}`,
+    `advisor pin: ${formatEnginePin(report.advisorPin)}`,
+    `integrator pin: ${formatEnginePin(report.integratorPin)}`,
     `dual pin: ${report.dualPin ? "yes" : "no"}`,
     `extra @clossys/*: ${extra}`,
     `pin findings: ${findingLine}`,
+    ...enginePinLines,
+    ...installLine,
     `degraded: ${report.degraded ? "yes" : "no"}`,
     ...(migrationLine === undefined ? [] : [migrationLine]),
     ...(linkedHostsLine === undefined ? [] : [linkedHostsLine]),
@@ -1052,24 +1286,36 @@ function withHealth(
   host: WorkspaceHost,
   directory: string,
   headline: string,
-  liveAdvisorVersion?: string,
-  skillComposition?: Omit<SkillCompositionResult, "preserved"> & {
-    preserved: readonly RosterSkillPreservation[];
+  liveEngines: HubEngineVersions,
+  skillComposition?: SkillCompositionResult & {
     linkedHosts?: readonly DiscoveredHost[];
   },
   liveLauncherVersion?: string,
   migration?: HubHealthReport["migration"],
   inventoryDrift?: HubHealthReport["inventoryDrift"],
+  enginePinChanges: readonly EnginePinChange[] = [],
 ): WorkspaceApplyResult {
-  const base = reportHubHealth(host, directory, liveAdvisorVersion, liveLauncherVersion, skillComposition?.retired ?? [], migration);
-  const rosterSkipped = skillComposition?.rosterSkipped ?? [];
+  const base = reportHubHealth(
+    host,
+    directory,
+    liveEngines.advisorVersion,
+    liveLauncherVersion,
+    skillComposition?.retired ?? [],
+    migration,
+    liveEngines.integratorVersion,
+  );
   const preserved = skillComposition?.preserved ?? [];
+  const installNeeded = engineInstallFinding(host, directory, enginePinChanges);
   const health: HubHealthReport = {
     ...base,
+    ...(enginePinChanges.length === 0
+      ? {}
+      : { enginePins: { changed: enginePinChanges, nextStep: enginePinNextStep(host, directory) } }),
+    ...(installNeeded === undefined ? {} : { installNeeded }),
     ...(skillComposition === undefined ? {} : { skillComposition }),
     ...(skillComposition?.linkedHosts === undefined ? {} : { linkedHosts: skillComposition.linkedHosts }),
     ...(inventoryDrift === undefined || inventoryDrift.status === "no-external-source" ? {} : { inventoryDrift }),
-    degraded: base.degraded || rosterSkipped.length > 0 || preserved.length > 0,
+    degraded: base.degraded || preserved.length > 0 || installNeeded !== undefined,
   };
   return {
     state: "satisfied",
@@ -1117,6 +1363,7 @@ function shouldRefreshConsumerAgents(existing: string | null): boolean {
   if (existing === null) return true;
   if (existing === CONSUMER_AGENTS_MD) return false;
   if (existing === LEGACY_CONSUMER_AGENTS_MD) return true;
+  if (existing === SIBLING_COMPOSING_CONSUMER_AGENTS_MD) return true;
   if (existing.includes("Run `npx @clossys/launcher` again to resume")) return true;
   return false;
 }
@@ -1127,14 +1374,11 @@ function writeConsumerAgentsIfNeeded(host: WorkspaceHost, directory: string): vo
   writeSkeletonFile(host, directory, "AGENTS.md", CONSUMER_AGENTS_MD);
 }
 
-function writeSisterConsumerAgentsIfNeeded(host: WorkspaceHost, directory: string): void {
-  const existing = host.readText(join(directory, "AGENTS.md"));
-  if (existing !== null && existing.trim() !== "" && existing !== SISTER_CONSUMER_AGENTS_MD) return;
-  writeSkeletonFile(host, directory, "AGENTS.md", SISTER_CONSUMER_AGENTS_MD);
-}
-
-const CLONE_NOT_BESIDE_HUB_NOTE =
-  "clone not next to the hub; voices appear here after this repository is cloned beside the hub and launcher resumes";
+/** What a hub run reports for each inventoried repository other than the hub. It never writes into one. */
+const SETUP_PULL_REQUEST_NOTE =
+  "a hub run writes nothing here; once this repository is staffed in an approved plan, @clossys-advisor and the voices of the roles staffed there arrive with that plan's setup pull request";
+const BESIDE_HUB_NOTE = `checkout beside the hub; ${SETUP_PULL_REQUEST_NOTE}`;
+const CLONE_NOT_BESIDE_HUB_NOTE = `not cloned beside the hub; ${SETUP_PULL_REQUEST_NOTE}`;
 
 /**
  * Splits an inventory id into owner/repository, trusting a caller that
@@ -1166,72 +1410,110 @@ function hubRepositoryIdentity(host: WorkspaceHost, hubDirectory: string): strin
   return originRepository(host, hubDirectory) ?? readHub(host, hubDirectory)?.repository;
 }
 
+/** Where an inventoried repository other than the hub stands, as a hub run sees it. */
+type SiblingStatus =
+  | "beside-the-hub"
+  | "not-cloned"
+  | "other-account"
+  | "foundry-supplier-tree"
+  | "origin-mismatch"
+  | "not-a-git-checkout"
+  | "git-refused"
+  | "invalid-id"
+  | "inventory-invalid";
+
 /**
- * `inventoryId` stays on every target and skip entry below for internal use
- * only (a `gh repo clone` argument, a directory lookup, a structured result
- * a caller inspects programmatically) -- never put directly in text a
- * founder or agent reads. `position` is the id's 0-based index in the
- * stored inventory's own `repositories` array; every message built from
- * these entries (skill-roster lines, `--clone-missing` output) names that
+ * `inventoryId` stays on every entry below for internal use only (a
+ * `gh repo clone` argument, a directory lookup, a structured result a
+ * caller inspects programmatically) -- never put directly in text a founder
+ * or agent reads. `position` is the id's 0-based index in the stored
+ * inventory's own `repositories` array; every message built from these
+ * entries (skill-roster lines, `--clone-missing` output) names that
  * position instead, per the rule at the top of ./inventory-choice.ts.
  * `position` is `undefined` only for the one entry below that is not a
  * document id at all, the stored-inventory-file-itself failure.
  */
-function resolveSisterCloneTargets(
-  host: WorkspaceHost,
-  hubDirectory: string,
-  hubOwner: string,
-): {
-  readonly targets: readonly { readonly inventoryId: string; readonly position: number; readonly directory: string }[];
-  readonly skipped: readonly { readonly inventoryId: string; readonly position?: number; readonly note: string }[];
-} {
+interface InventoriedSibling {
+  readonly inventoryId: string;
+  readonly position?: number;
+  readonly status: SiblingStatus;
+  readonly note: string;
+}
+
+/**
+ * Classifies every inventoried repository other than the hub. Read-only:
+ * it looks for a checkout beside the hub and reads that checkout's git
+ * origin, and nothing else, so a sibling's working tree, legacy output or
+ * old pins can neither change the result nor be changed by it. The hub run
+ * reports the result; only `--clone-missing` acts on it, and only on
+ * `not-cloned` entries.
+ */
+function classifyInventoriedSiblings(host: WorkspaceHost, hubDirectory: string, hubOwner: string): readonly InventoriedSibling[] {
   const parent = dirname(resolve(hubDirectory));
   const hubIdentity = hubRepositoryIdentity(host, hubDirectory);
-  const skipped: { inventoryId: string; position?: number; note: string }[] = [];
-  const targets: { inventoryId: string; position: number; directory: string }[] = [];
+  const siblings: InventoriedSibling[] = [];
   const inventoryPath = join(hubDirectory, WORKSPACE_INVENTORY_REL);
   let inventoryIds: readonly string[];
   try {
     inventoryIds = readInventoryRepositories(host, inventoryPath, "the stored inventory", hubOwner);
   } catch (error) {
-    // An invalid stored inventory is reported and skipped, never silently
-    // read for what it happens to look like -- no sibling gets written into
-    // and no clone is attempted from it (#1334). WORKSPACE_INVENTORY_REL is
-    // Launcher's own constant path, not document content, so it is safe to
-    // name directly; there is no per-id position for a failure at the file
-    // level, so `position` stays undefined.
+    // An invalid stored inventory is reported, never silently read for what
+    // it happens to look like -- no clone is attempted from it (#1334).
+    // WORKSPACE_INVENTORY_REL is Launcher's own constant path, not document
+    // content, so it is safe to name directly; there is no per-id position
+    // for a failure at the file level, so `position` stays undefined.
     const reason = error instanceof Error ? error.message : String(error);
-    return { targets: [], skipped: [{ inventoryId: WORKSPACE_INVENTORY_REL, note: reason }] };
+    return [{ inventoryId: WORKSPACE_INVENTORY_REL, status: "inventory-invalid", note: reason }];
   }
   for (const [position, id] of inventoryIds.entries()) {
     const parsed = parseInventoryRepositoryId(id, hubOwner);
     if (parsed === null) {
-      skipped.push({ inventoryId: id, position, note: "inventory id is not a valid repository slug" });
+      siblings.push({ inventoryId: id, position, status: "invalid-id", note: "inventory id is not a valid repository slug" });
       continue;
     }
     if (!belongsToOwner(id, hubOwner)) {
-      skipped.push({ inventoryId: id, position, note: "other account; not this roster" });
+      siblings.push({ inventoryId: id, position, status: "other-account", note: "other account; not this roster" });
       continue;
     }
-    // The hub itself is already on the roster: recognised by repository identity, not by folder path.
+    // The hub itself is recognised by repository identity, not by folder path.
     if (hubIdentity !== undefined && sameRepository(id, hubIdentity, hubOwner)) continue;
     const candidate = join(parent, parsed.repository);
     if (!host.exists(candidate) || !host.isDirectory(candidate)) {
-      skipped.push({ inventoryId: id, position, note: CLONE_NOT_BESIDE_HUB_NOTE });
+      siblings.push({ inventoryId: id, position, status: "not-cloned", note: CLONE_NOT_BESIDE_HUB_NOTE });
       continue;
     }
     if (looksLikeFoundry(host, candidate)) {
-      skipped.push({ inventoryId: id, position, note: "foundry supplier tree; skills are not written here" });
+      siblings.push({ inventoryId: id, position, status: "foundry-supplier-tree", note: "foundry supplier tree; skills are not written here" });
       continue;
     }
-    const origin = originRepository(host, candidate);
+    if (!host.exists(join(candidate, ".git"))) {
+      siblings.push({
+        inventoryId: id,
+        position,
+        status: "not-a-git-checkout",
+        note: "the folder beside the hub with this name is not a git checkout, so it cannot be matched to this inventory id",
+      });
+      continue;
+    }
+    const remote = host.run("git", ["remote", "get-url", "origin"], { cwd: candidate });
+    if (remote.status !== 0 && /dubious ownership/i.test(remote.stderr)) {
+      siblings.push({
+        inventoryId: id,
+        position,
+        status: "git-refused",
+        note: "git refuses to read this checkout (it reports dubious ownership), so its origin could not be matched to this inventory id",
+      });
+      continue;
+    }
+    const parsedOrigin = remote.status === 0 ? parseGitHubRemote(remote.stdout.trim()) : null;
+    const origin = parsedOrigin === null ? undefined : `${parsedOrigin.owner}/${parsedOrigin.repository}`;
     if (origin === undefined || !sameRepository(origin, id, hubOwner)) {
-      skipped.push({ inventoryId: id, position, note: "git origin does not match inventory id" });
+      siblings.push({ inventoryId: id, position, status: "origin-mismatch", note: "git origin does not match inventory id" });
       continue;
     }
-    targets.push({ inventoryId: id, position, directory: candidate });
+    siblings.push({ inventoryId: id, position, status: "beside-the-hub", note: BESIDE_HUB_NOTE });
   }
-  return { targets, skipped };
+  return siblings;
 }
 
 /** The position a message names instead of a document-sourced inventory id, matching `inventory-choice.ts`'s `listRemovedPositions`. `undefined` only for the stored-inventory-file-itself failure, which names the file by its own constant path instead. */
@@ -1250,24 +1532,26 @@ export interface CloneMissingOutcome {
 
 /**
  * Explicit, approved action (#1179, the #1045 pattern): clones every
- * inventoried repository that resolveSisterCloneTargets's own skip pass
- * identified as "just needs a clone" (CLONE_NOT_BESIDE_HUB_NOTE), and only
- * those -- every other skip reason (wrong account, foundry supplier tree,
- * origin mismatch, invalid slug) is left exactly as skipped, never
- * attempted. Never called from resume's default path; only from the
- * --clone-missing flag. Reverses the launcher README's own no-clone
- * default for exactly this one approved action.
+ * inventoried repository that classifyInventoriedSiblings found not cloned
+ * beside the hub, and only those -- every other reason (wrong account,
+ * foundry supplier tree, origin mismatch, invalid slug, invalid inventory)
+ * is reported as skipped, never attempted, and a checkout already beside
+ * the hub is left out. Never called from resume's default path; only from
+ * the --clone-missing flag. Reverses the launcher README's own no-clone
+ * default for exactly this one approved action. Cloning is not composing:
+ * a cloned repository receives its team only once it is staffed in an
+ * approved plan, with that plan's setup pull request.
  */
 export function cloneMissingInventoryRepositories(
   host: WorkspaceHost,
   hubDirectory: string,
   hubOwner: string,
 ): readonly CloneMissingOutcome[] {
-  const { skipped } = resolveSisterCloneTargets(host, hubDirectory, hubOwner);
   const parent = dirname(resolve(hubDirectory));
   const outcomes: CloneMissingOutcome[] = [];
-  for (const skip of skipped) {
-    if (skip.note !== CLONE_NOT_BESIDE_HUB_NOTE) {
+  for (const skip of classifyInventoriedSiblings(host, hubDirectory, hubOwner)) {
+    if (skip.status === "beside-the-hub") continue;
+    if (skip.status !== "not-cloned") {
       outcomes.push({ inventoryId: skip.inventoryId, position: skip.position, result: "skipped-other-reason", note: skip.note });
       continue;
     }
@@ -1361,29 +1645,24 @@ function recordLinkedHosts(host: WorkspaceHost, directory: string): readonly Dis
 }
 
 /**
- * `target` holds what `composeSkillRoster` below puts in the health report
- * -- `inventoryPositionLabel()`'s position label, never the raw stored
+ * Composes the team in the hub, and only the hub: this writes nothing into
+ * any checkout beside the hub. An inventoried product repository receives
+ * its skills, skills manifest, host discovery links and guidance only once
+ * it is staffed in an approved plan, with that plan's setup pull request. Each inventoried
+ * repository other than the hub is reported, read-only, as a sibling, named
+ * by its `inventoryPositionLabel()` position -- never its raw stored
  * inventory id -- because the whole report is JSON-dumped into the apply
- * message's `health:` line (see `formatHubHealth`), so a raw id kept here
- * for "structured data, not prose" would still reach that message.
+ * message's `health:` line (see `formatHubHealth`).
  */
-type RosterSkillPreservation = SkillPreservation & { readonly target?: string };
-
 function composeSkillRoster(
   host: WorkspaceHost,
   hubDirectory: string,
   hubOwner: string,
   hubRepository: string,
   options: { launcherPackageRoot: string; skillCatalogueRoot?: string; contractPath?: string },
-): Omit<SkillCompositionResult, "preserved"> & {
-  readonly preserved: readonly RosterSkillPreservation[];
-  /**
-   * The hub's own id first (safe: it comes from the hub's own git origin or
-   * hub marker, never a document), then each sister's `inventoryPositionLabel()`
-   * position label -- never a raw stored-inventory id; see the type comment above.
-   */
+): SkillCompositionResult & {
   readonly rosterTargets: readonly string[];
-  readonly rosterSkipped: readonly { readonly inventoryId: string; readonly note: string }[];
+  readonly siblings: readonly { readonly inventoryId: string; readonly note: string }[];
   readonly linkedHosts: readonly DiscoveredHost[];
 } {
   const composeOptions = {
@@ -1396,20 +1675,11 @@ function composeSkillRoster(
   writeConsumerAgentsIfNeeded(host, hubDirectory);
   writeClossysReadme(host, hubDirectory);
   const hubId = hubRosterId(host, hubDirectory, hubOwner, hubRepository);
-  const rosterTargets: string[] = [hubId];
-  const preserved: RosterSkillPreservation[] = [...hubSkill.preserved];
-  const { targets, skipped } = resolveSisterCloneTargets(host, hubDirectory, hubOwner);
-  for (const target of targets) {
-    recordLinkedHosts(host, target.directory);
-    const sisterSkill = composeSkills(host, target.directory, composeOptions);
-    const targetLabel = inventoryPositionLabel(target.inventoryId, target.position);
-    // #1473: a skill left as found in a sibling clone is reported, never dropped silently.
-    for (const entry of sisterSkill.preserved) preserved.push({ ...entry, target: targetLabel });
-    writeSisterConsumerAgentsIfNeeded(host, target.directory);
-    rosterTargets.push(targetLabel);
-  }
-  const rosterSkipped = skipped.map((skip) => ({ inventoryId: inventoryPositionLabel(skip.inventoryId, skip.position), note: skip.note }));
-  return { ...hubSkill, preserved, rosterTargets, rosterSkipped, linkedHosts };
+  const siblings = classifyInventoriedSiblings(host, hubDirectory, hubOwner)
+    // An invalid stored inventory is a hub finding: the health report's inventory line names it.
+    .filter((sibling) => sibling.status !== "inventory-invalid")
+    .map(({ inventoryId, position, note }) => ({ inventoryId: inventoryPositionLabel(inventoryId, position), note }));
+  return { ...hubSkill, rosterTargets: [hubId], siblings, linkedHosts };
 }
 
 function finishHubApply(
@@ -1419,11 +1689,12 @@ function finishHubApply(
   launcherPackageRoot: string,
   hubOwner: string,
   hubRepository: string,
-  liveAdvisorVersion?: string,
+  liveEngines: HubEngineVersions,
   skillCatalogueRoot?: string,
   contractPath?: string,
   liveLauncherVersion?: string,
   migration?: HubHealthReport["migration"],
+  enginePinChanges: readonly EnginePinChange[] = [],
 ): WorkspaceApplyResult {
   const skillComposition = composeSkillRoster(host, directory, hubOwner, hubRepository, {
     launcherPackageRoot,
@@ -1434,7 +1705,7 @@ function finishHubApply(
   // it on every apply (create's fresh marker never declares one, so this is a no-op there).
   const hubDocument = readHub(host, directory);
   const inventoryDrift = reportInventoryDrift(host, directory, hubDocument?.externalInventory, WORKSPACE_INVENTORY_REL, hubOwner);
-  return withHealth(host, directory, headline, liveAdvisorVersion, skillComposition, liveLauncherVersion, migration, inventoryDrift);
+  return withHealth(host, directory, headline, liveEngines, skillComposition, liveLauncherVersion, migration, inventoryDrift, enginePinChanges);
 }
 
 /**
@@ -1461,7 +1732,18 @@ function chosenInventoryNote(chosen: ChosenInventory | undefined): string {
   return chosen === undefined ? "" : `\n${describeChosenInventory(chosen)}`;
 }
 
-/** Applies a create, resume, or adopt plan through the host. Resume refreshes composed skills and stale AGENTS.md guidance. */
+function engineVersionsOf(plan: WorkspacePlan): HubEngineVersions {
+  return {
+    ...(plan.advisorVersion === undefined ? {} : { advisorVersion: plan.advisorVersion }),
+    ...(plan.integratorVersion === undefined ? {} : { integratorVersion: plan.integratorVersion }),
+  };
+}
+
+/**
+ * Applies a create, resume, or adopt plan through the host. Resume refreshes
+ * composed skills and stale AGENTS.md guidance. Every path writes only into
+ * the hub checkout, never into an inventoried repository beside it.
+ */
 export function applyWorkspacePlan(
   host: WorkspaceHost,
   plan: WorkspacePlan,
@@ -1481,10 +1763,15 @@ export function applyWorkspacePlan(
     }
     const migration = plan.migrateFrom === "legacy" ? migrateLegacyHubState(host, plan.directory) : undefined;
     // --repositories (#1179): write the chosen inventory before composing, so
-    // this same run composes skills into the repositories just chosen.
+    // this same run's health report lists the repositories just chosen.
     if (plan.chosenInventory?.kind === "write") {
       writeSkeletonFile(host, plan.directory, WORKSPACE_INVENTORY_REL, revalidatedDocument(plan.chosenInventory.document, plan.owner));
     }
+    // Resume raises the hub's engine pins to live: a frozen Advisor is
+    // bumped and Integrator is added, for each engine whose live version
+    // observeWorkspace could read. The health report says what changed and
+    // that the install, and a commit with the lockfile, come next.
+    const enginePinChanges = mergeHubEnginePins(host, plan.directory, skeletonRoot, engineVersionsOf(plan), plan.owner, plan.repository, "resume");
     return finishHubApply(
       host,
       plan.directory,
@@ -1492,11 +1779,12 @@ export function applyWorkspacePlan(
       launcherPackageRoot,
       plan.owner,
       plan.repository,
-      plan.advisorVersion,
+      engineVersionsOf(plan),
       skillCatalogueRoot,
       contractPath,
       liveLauncherVersion,
       migration,
+      enginePinChanges,
     );
   }
   if (plan.action === "create") {
@@ -1516,13 +1804,13 @@ export function applyWorkspacePlan(
       launcherPackageRoot,
       plan.owner,
       plan.repository,
-      plan.advisorVersion,
+      engineVersionsOf(plan),
       skillCatalogueRoot,
       contractPath,
       liveLauncherVersion,
     );
   }
-  adoptHubFiles(host, skeletonRoot, plan);
+  const enginePinChanges = adoptHubFiles(host, skeletonRoot, plan);
   const inventoryReplacedNote = plan.replacesInvalidInventory === true
     ? " The on-disk inventory failed schema validation; --inventory replaced it."
     : "";
@@ -1533,10 +1821,12 @@ export function applyWorkspacePlan(
     launcherPackageRoot,
     plan.owner,
     plan.repository,
-    plan.advisorVersion,
+    engineVersionsOf(plan),
     skillCatalogueRoot,
     contractPath,
     liveLauncherVersion,
+    undefined,
+    enginePinChanges,
   );
 }
 

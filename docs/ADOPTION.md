@@ -43,8 +43,10 @@ Advisor has three parts, and each has one home:
   The package has no bin named after itself, so name the bin you need;
   `advisor-execution-readiness` and `advisor-render-status` run the same way.
 - **The voice**, the `@clossys-advisor` skill, is composed by the launcher into
-  every inventoried repository and needs no install there. That is where you
-  talk to Advisor.
+  the hub with the whole team. A product repository staffed in an approved
+  plan gets it, with the voices of the roles staffed there, once that plan's
+  setup pull request has merged; it needs no install in either. That is
+  where you talk to Advisor.
 
 The design is that Advisor decides in the hub, the launcher applies the plan
 as pull requests, and each product repository verifies the change against the
