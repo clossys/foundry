@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { readFileSync, readdirSync } from "node:fs";
 import { blobOid, parseStrictJson, qualificationPath, realPathTouches, sealedQualificationPathsAtTransitionBase, validatePrepublicationPrTail, validateRetainedCandidateQualification, validateTrioPublicationClosure } from "./lib/candidate-qualification.mjs";
-import { assignedToShard, resolveShardArgs } from "./lib/candidate-qualification-shard.mjs";
+import { findUnrecognisedArgument, resolvePackageArgs, resolveShardArgs, selectedForRederivation } from "./lib/candidate-qualification-shard.mjs";
 import { loadTransitionPolicy } from "./lib/package-identity-transition.mjs";
 import { TRIO_PUBLICATION_PATH, TRIO_PUBLICATION_TRANSITION_BASE, validateTrioFirstPublication } from "./lib/release-publication-cohort.mjs";
 import { TRIO_COHORT_PATH, TRIO_QUARANTINE_PATH, validateTrioQualificationState } from "./lib/release-qualification-cohort.mjs";
@@ -15,12 +15,30 @@ import { readValidatedLaterPublishedPackages } from "./lib/release-later-publica
 // script skip RE-DERIVING a record that belongs to a different shard while
 // still counting it as present for the cross-record checks that need to see
 // every record's path.
+// An argument this script does not recognise is refused, never ignored: an
+// ignored `--package=writer` (the equals form) would silently fall back to
+// the full, unscoped walk.
+const unrecognised = findUnrecognisedArgument(process.argv.slice(2));
+if (unrecognised !== null) {
+  console.error(`check-candidate-qualification: unrecognised argument ${JSON.stringify(unrecognised)} (accepted: --shard-index <n> --shard-count <n>, or --package <key> [--allow-missing-record])`);
+  process.exit(2);
+}
 const shardResult = resolveShardArgs(process.argv.slice(2));
 if (shardResult.error) {
   console.error("check-candidate-qualification: " + shardResult.error);
   process.exit(2);
 }
 const shard = shardResult.shard;
+// `--package <key>` (publish.yml's `qualify` job): re-derive only that
+// package's current-version record -- see resolvePackageArgs's own header in
+// scripts/lib/candidate-qualification-shard.mjs for why that is everything
+// the unscoped walk proved that is specific to one publication.
+const packageResult = resolvePackageArgs(process.argv.slice(2));
+if (packageResult.error) {
+  console.error("check-candidate-qualification: " + packageResult.error);
+  process.exit(2);
+}
+const packageScope = packageResult.packageScope;
 
 const transition = loadTransitionPolicy("governance/package-identity-transition.json");
 const sourceIdentity = JSON.parse(readFileSync("package-scope.json", "utf8"));
@@ -47,8 +65,30 @@ const directory = "governance/release-qualifications";
 let paths;
 try { paths = readdirSync(directory).filter((name) => name.endsWith(".json")).sort().map((name) => directory + "/" + name); } catch (error) { console.error("CANDIDATE QUALIFICATION INDETERMINATE — cannot read records"); process.exit(2); }
 if (paths.length === 0) { console.error("CANDIDATE QUALIFICATION INDETERMINATE — no versioned records."); process.exit(2); }
+let packageRecordPath = null;
+if (packageScope) {
+  let candidate;
+  try {
+    const manifest = parseStrictJson(readFileSync(`packages/${packageScope.packageKey}/package.json`, "utf8"));
+    candidate = { name: manifest?.name, version: manifest?.version };
+    if (typeof candidate.name !== "string" || typeof candidate.version !== "string") throw new Error("manifest declares no name/version pair");
+    packageRecordPath = qualificationPath(process.cwd(), candidate);
+  } catch (error) {
+    console.error(`CANDIDATE QUALIFICATION INDETERMINATE — cannot derive the record path for --package ${packageScope.packageKey}: ` + (error instanceof Error ? error.message : "unknown error"));
+    process.exit(2);
+  }
+  console.log(`--package ${packageScope.packageKey}: re-deriving only ${packageRecordPath} (${candidate.name}@${candidate.version}) of ${paths.length} retained records; every other record's re-derivation is CI's \`candidate qualification records\` job's, on this commit or its nearest non-prose ancestor, which the required \`build and test\` check fans in. Cross-record checks run in full.`);
+}
 const records = [];
 let failed = false;
+if (packageScope && !paths.includes(packageRecordPath)) {
+  if (packageScope.allowMissingRecord) {
+    console.log(`[package-record-missing] ${packageRecordPath}: absent, allowed by --allow-missing-record (a dry run that produces this record).`);
+  } else {
+    console.error(`[package-record-missing] ${packageRecordPath}: no retained qualification record for --package ${packageScope.packageKey}'s current version.`);
+    failed = true;
+  }
+}
 for (const path of paths) {
   try { records.push({ path, bytes: readFileSync(path, "utf8"), record: parseStrictJson(readFileSync(path, "utf8")) }); }
   catch (error) { console.error("Cannot read " + path + ": " + (error instanceof Error ? error.message : "unknown error")); failed = true; }
@@ -75,9 +115,11 @@ for (const sealedPath of sealedQualificationPaths) {
 }
 const recordFindings = new Map();
 for (const [index, { path, record }] of records.entries()) {
-  if (!assignedToShard(index, shard)) {
+  if (!selectedForRederivation(index, path, { shard, packageRecordPath })) {
     // A DIFFERENT shard owns re-deriving this record for real (see the
-    // header comment on assignedToShard above). Recording `[]` -- not
+    // header comment on assignedToShard above) -- or, under `--package`, the
+    // required CI shards already did, on this commit or its nearest
+    // non-prose ancestor. Recording `[]` -- not
     // skipping the map entry -- is deliberate: validatedRecordPaths below
     // reads recordFindings.get(path)?.length === 0 to decide whether a path
     // counts as validated for cross-record purposes, and an ABSENT entry
@@ -135,7 +177,7 @@ if (publication && publicationClosureFindings.length > 0) {
 }
 for (const [index, { path, record }] of records.entries()) {
   const findings = recordFindings.get(path) ?? [];
-  if (assignedToShard(index, shard) && record.timing === "pre-publication" && record.candidate?.name?.startsWith(`${sourceIdentity.scope}/`)) findings.push(...validatePrepublicationPrTail(record, { recordPath: path, trioRecords, forwardRecords, cohort: cohort?.value, cohortBytes: cohort?.bytes, quarantine: quarantine?.value, controlTailAuthorization: controlTailAuthorization?.value, publication: publication?.value, publicationClosureValid: publicationStateValid }));
+  if (selectedForRederivation(index, path, { shard, packageRecordPath }) && record.timing === "pre-publication" && record.candidate?.name?.startsWith(`${sourceIdentity.scope}/`)) findings.push(...validatePrepublicationPrTail(record, { recordPath: path, trioRecords, forwardRecords, cohort: cohort?.value, cohortBytes: cohort?.bytes, quarantine: quarantine?.value, controlTailAuthorization: controlTailAuthorization?.value, publication: publication?.value, publicationClosureValid: publicationStateValid }));
   for (const finding of findings) console.error("[" + finding.rule + "] " + path + ": " + finding.message);
   failed ||= findings.length > 0;
 }

@@ -406,6 +406,11 @@ commit, and that introduction changes exactly the jointly retained new
 qualification records. Their content joins are measured at the reviewed
 commit; their retained bytes must remain their introduction blobs, with no
 later touch, including a rewrite followed by restoration.
+CI's `candidate qualification records` job, which the required `build and test`
+check fans in, re-derives every retained record on this commit or its nearest
+non-prose ancestor, so the publish workflow's `qualify` job re-derives only the
+dispatched package's current-version record
+(`check-candidate-qualification.mjs --package`), with the cross-record checks.
 
 This is release qualification only. It does not claim real consumer adoption,
 provider truth, independent grounding, or closure; a provider-specific review
