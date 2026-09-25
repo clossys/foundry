@@ -302,6 +302,22 @@ describe("planApplyBundle", () => {
       expect(String(error)).not.toContain("not a commit");
     }
   });
+
+  it("names the failing set's staffing position, not its position among computed sets, when an earlier staffed repository is skipped or unobserved", () => {
+    // staffing is [SITE, DOCS] (positions 0 and 1). SITE is left unobserved here, so only DOCS
+    // reaches computeChangeSet -- and DOCS's invalid baseCommit is what fails contract validation.
+    // The computed-set array therefore holds one entry at its own index 0, which must not be
+    // reported as the failing position: DOCS is staffing position 1.
+    try {
+      run({ ...INPUTS, repositories: [{ ...DOCS, baseCommit: "not a commit" }] });
+      expect.unreachable();
+    } catch (error) {
+      expect(String(error)).toMatch(/staffed repository 1 does not validate/);
+      expect(String(error)).toMatch(/changeSet\.repository\.baseCommit/);
+      expect(String(error)).not.toContain(DOCS.id);
+      expect(String(error)).not.toContain("not a commit");
+    }
+  });
 });
 
 describe("canonical output", () => {
