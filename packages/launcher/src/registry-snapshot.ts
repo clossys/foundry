@@ -9,9 +9,10 @@
 // Credentials: every read goes through an injected `Transport` whose default
 // is Node's own `fetch`. Nothing here runs the npm CLI, reads an `.npmrc`,
 // reads an environment variable, or sets an `Authorization` header; the only
-// headers sent are `accept` and `accept-encoding: identity`, which asks for
-// the body uncompressed so its hash and the size cap apply to the bytes
-// received. Redirects are refused (`redirect: "error"`, and a
+// headers this step sets are `accept` and `accept-encoding: identity`, and
+// Node's fetch adds its own default, non-credential headers. Identity asks
+// for the body uncompressed, so when the server honours it the hash and the
+// size cap apply to the bytes received. Redirects are refused (`redirect: "error"`, and a
 // 3xx answer from any transport is refused too), each response is read as a
 // stream and abandoned the moment it passes MAX_RESPONSE_BYTES (counted after
 // any decoding, so a server that compresses anyway is still bounded), and each
@@ -287,7 +288,8 @@ export function projectPackument(name: string, document: unknown): { latest: str
         tarball,
         deprecated,
         publishedAt: time === undefined ? null : optionalString(time, latest, "has a latest-version publish time that is not a string"),
-        hasAttestations: isPlainObject(attestations),
+        // Listed only when the registry names where the attestations are: an empty object lists none.
+        hasAttestations: isPlainObject(attestations) && typeof own(attestations, "url") === "string" && /\S/.test(own(attestations, "url") as string),
       },
     ],
   };
@@ -346,9 +348,11 @@ async function readCapped(body: ReadableStream<Uint8Array> | null, cap: number, 
 }
 
 /**
- * The request every registry read sends: `accept`, and `accept-encoding:
- * identity` so the body arrives uncompressed and `responseSha256` and the
- * size cap apply to the exact bytes received; no credential, no redirect.
+ * The request options this step sets on every registry read: `accept`, and
+ * `accept-encoding: identity` so that a server that honours it sends the body
+ * uncompressed and `responseSha256` and the size cap apply to the exact bytes
+ * received; no credential, no redirect. Node's fetch adds its own default,
+ * non-credential headers.
  */
 function requestInit(signal: AbortSignal): RequestInit {
   return { method: "GET", headers: { accept: "application/json", "accept-encoding": "identity" }, redirect: "error", credentials: "omit", signal };

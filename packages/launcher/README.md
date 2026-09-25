@@ -509,15 +509,17 @@ registry said; it decides nothing from it. Deciding is
   in the name percent-encoded (`@scope%2Fname`), the same encoding
   `@clossys/integrator` uses. The registry is the one in this repository's
   `package-scope.json`, packed into this package at build time.
-- **Transport.** Node's own `fetch`. The only headers sent are
+- **Transport.** Node's own `fetch`. The only headers this step sets are
   `accept: application/json` and `accept-encoding: identity`, and never an
-  `Authorization` header. The step does not run the npm CLI, and reads no
+  `Authorization` header; Node's fetch adds its own default, non-credential
+  headers. The step does not run the npm CLI, and reads no
   `.npmrc` and no token from the environment. If Node is started with an
   environment proxy (`NODE_USE_ENV_PROXY`), requests go through that proxy.
   No registry credential is ever sent; a username and password written in
   the proxy URL itself are sent only to that proxy, as Node's fetch does. A redirect is refused, never followed.
-  `accept-encoding: identity` asks for the body uncompressed, so the size cap
-  and `responseSha256` apply to the exact bytes received. A response body is
+  `accept-encoding: identity` asks for the body uncompressed, so when the
+  server honours it the size cap and `responseSha256` apply to the exact
+  bytes received. A response body is
   read as a stream and abandoned as soon as it passes 10 MiB; a declared
   length over that is refused before any of the body is read. If a server
   compresses the body anyway, Node's `fetch` decodes it and the 10 MiB cap

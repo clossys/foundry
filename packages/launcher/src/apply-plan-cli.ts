@@ -120,7 +120,7 @@ Takes the registry snapshot a plan's exact packages are resolved from
 file: every name in it must be a package in this package's publishing scope,
 named once. For each name, in name order, this fetches the package's full
 registry document from the registry this package was built for, with no
-credential, no .npmrc and no npm CLI, refusing any redirect, any response
+registry credential, no .npmrc and no npm CLI, refusing any redirect, any response
 over ${MAX_RESPONSE_BYTES / (1024 * 1024)} MiB and any request that takes too long. It records only what
 the registry snapshot contract declares, validates the whole snapshot against
 that contract, and writes it atomically to --out, by default
