@@ -12,6 +12,10 @@ function fakeHost(files: Record<string, string>): WorkspaceHost {
     isDirectory: () => false,
     isSymlink: () => false,
     readText: (p) => files[p] ?? null,
+    readBytes: (p) => (files[p] === undefined ? null : new TextEncoder().encode(files[p])),
+    writeBytes: () => {
+      throw new Error("read-only in this test");
+    },
     writeText: () => {
       throw new Error("read-only in this test");
     },
@@ -31,6 +35,7 @@ describe("checkCloudSessionBootstrap", () => {
     expect(report.checks).toHaveLength(3);
     expect(report.checks.every((check) => !check.satisfied)).toBe(true);
     expect(report.checks.every((check) => check.note !== undefined)).toBe(true);
+    expect(report.checks.find((check) => check.id === "agents-pointer")?.note).toMatch(/arrives with that plan's setup pull request/);
   });
 
   it("is ready when all three checks pass", () => {

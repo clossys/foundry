@@ -88,9 +88,11 @@ on:
         type: string
 
 permissions:
-  # Identical to conversation-safety.yml's: enough to read issue/PR text
-  # through the API and to label a finding, and nothing else. Nothing here
-  # writes code, packages, or contents.
+  # Enough to read issue/PR text through the API and to label a finding, and
+  # nothing else. Nothing here writes code, packages, or contents. This one job
+  # holds what conversation-safety.yml splits across its read-only scan job and
+  # its write-only label job; that is safe here because the sweep only runs
+  # from the default branch, on a schedule or a manual dispatch.
   issues: write
   pull-requests: write
   contents: read
@@ -179,9 +181,9 @@ jobs:
           fi
 
       # Never fails on its own exit code, for the same reason
-      # conversation-safety.yml's gate step does not: the labeling step below
-      # must get its chance to run on a finding before the job's status is
-      # decided. The last step turns the recorded status into the real result.
+      # conversation-safety.yml's gate step does not: the labeling (there, a
+      # separate label job; here, the step below) must get its chance to run on
+      # a finding before the job's status is decided. The last step turns the recorded status into the real result.
       #
       # --json is used rather than the human report because the labeling step
       # needs the issue/PR numbers as data. The JSON carries no matched text —

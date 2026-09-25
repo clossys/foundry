@@ -1,6 +1,6 @@
 {
   "name": "@clossys/giver",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -25,7 +25,6 @@
     "dist",
     "src",
     "!src/**/*.test.ts",
-    "CHANGELOG.md",
     "README.md",
     "LICENSE",
     "skill"

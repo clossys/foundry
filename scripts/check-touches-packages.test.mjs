@@ -224,7 +224,7 @@ test("control (e): candidate-qualification-shard/candidate-qualification and pac
   const build = workflowJob(workflow, "build");
 
   assert.match(build, /^\s+name: build and test$/m, "the required context name must be present");
-  assert.match(build, /needs: \[push-tree, candidate-qualification, readme-examples-typecheck, packed-consumer-readiness\]/);
+  assert.match(build, /needs: \[push-tree, candidate-qualification, readme-examples-typecheck, packed-consumer-readiness, classify\]/);
   assert.doesNotMatch(build, /needs: \[safety, scope\]/, "build must not wait for safety/scope before starting");
 
   for (const [jobName, stepName] of [

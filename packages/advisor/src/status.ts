@@ -1,3 +1,5 @@
+import { contractFindings } from "./plan-contract.js";
+import { planRuleViolations } from "./plan-rules.js";
 import type { AdvisorFinding } from "./types.js";
 
 /**
@@ -30,26 +32,25 @@ import type { AdvisorFinding } from "./types.js";
  * carries no runtime dependency on the Controller package: the shape is
  * duplicated structurally (TypeScript has no cross-package interface
  * import without a dependency), not the *values* -- the owner-per-kind
- * mapping stays owned by Controller; `validateAdvisorPlan()` below
+ * mapping stays owned by Controller; the plan contract
  * checks membership and required fields, never a hardcoded
  * owner-per-kind mapping, so this file has nothing further to keep in
  * sync if Controller's own mapping ever changes.
  *
  * #1237 has since landed on `main` (the loop engine, issues
- * #1195/#1194/#1228), so `docs/contracts/loop.json` now exists in this
- * repository's tree -- but it is not shipped with this package (it is
- * not part of `packages/advisor`'s own `files` allowlist), so the check
- * below still cannot read it from an installed copy and instead checks
- * the shape against the literal fields above. Replacing this with a
- * build- or test-time structural comparison against the real,
- * not-shipped `docs/contracts/loop.json` remains open, tracked in the
- * #1175 plan-file-contract follow-up.
+ * #1195/#1194/#1228). The plan record itself is now defined once, in
+ * `docs/contracts/advisor-plan.json` (issue #1475), which this package
+ * packs at build time and `validateAdvisorPlan()` below validates
+ * against; @clossys/launcher validates against the same file. Its blocker
+ * kinds are kept equal to `ADVISOR_BLOCKER_KINDS` by a test. A build- or
+ * test-time structural comparison against `docs/contracts/loop.json`'s own
+ * Blocker remains open, tracked in the #1175 plan-file-contract follow-up.
  */
 
 /** Reuses #1195's own five blocker kinds verbatim, so a later migration to loop.json is a rename, not a redesign. */
 export type AdvisorBlockerKind = "missing-input" | "missing-authority" | "failing-evidence" | "unavailable-environment" | "contradiction";
 
-/** Every `AdvisorBlockerKind` value, in the fixed order #1195/#1237 declare them. Kept here so validation never hardcodes the list twice. */
+/** Every `AdvisorBlockerKind` value, in the fixed order #1195/#1237 declare them. A test keeps this equal to the plan contract's own `blockerKind` list. */
 export const ADVISOR_BLOCKER_KINDS: readonly AdvisorBlockerKind[] = [
   "missing-input",
   "missing-authority",
@@ -76,6 +77,44 @@ export interface AdvisorPlanDecision {
   recommended: string;
   chosen: string;
   by: string;
+  /**
+   * On an approving decision, the digest of the exact change the approver
+   * was shown (`sha256:` and 64 lowercase hex digits). An approval without it
+   * binds nothing.
+   */
+  subjectDigest?: string;
+}
+
+/** A kit Advisor recommends for this plan. `verdict` has one value for now; a later one widens it. */
+export interface AdvisorPlanKit {
+  id: string;
+  source: "preset" | "composed";
+  verdict: "recommended";
+}
+
+/** Which roles work in one repository, named by its repository inventory id. */
+export interface AdvisorPlanStaffing {
+  repository: string;
+  roles: readonly string[];
+}
+
+/** One exact package act: one version and one sha512 integrity value, never a range or a tag. */
+export interface AdvisorPlanPackageAct {
+  planItem: string;
+  /** One of `staffing[].repository`, spelled exactly the same. */
+  repository: string;
+  act: "install" | "pin-starter";
+  name: string;
+  /** An exact release version such as `1.2.3`, with no prerelease or build suffix. */
+  version: string;
+  /** One `sha512-` integrity value. */
+  integrity: string;
+  placement: "dependencies" | "devDependencies";
+}
+
+/** Where the exact versions in `packages` came from. */
+export interface AdvisorPlanResolution {
+  snapshotDigest: string;
 }
 
 /** Who does it, how, and by when. Field-for-field the same as the Controller role's own `NextAction` record -- named distinctly here only to avoid colliding with this file's own plan-level `AdvisorPlanNextAction`, which is a different concept (the one pending step for the whole plan, not one blocker's). */
@@ -109,82 +148,52 @@ export interface AdvisorPlan {
   recommendedNext: AdvisorPlanNextAction | null;
   decisions: readonly AdvisorPlanDecision[];
   blockers: readonly AdvisorPlanBlocker[];
+  /** Optional. The kits recommended for this plan. */
+  kits?: readonly AdvisorPlanKit[];
+  /** Optional. Which roles work in which repository. */
+  staffing?: readonly AdvisorPlanStaffing[];
+  /** Optional. The exact package acts this plan authorizes; present only with `resolution`. */
+  packages?: readonly AdvisorPlanPackageAct[];
+  /** Optional. Present exactly when `packages` is. */
+  resolution?: AdvisorPlanResolution;
 }
 
 function section(title: string, body: readonly string[]): string {
   return [`## ${title}`, "", ...body, ""].join("\n");
 }
 
-function isNonEmptyString(value: unknown): value is string {
-  return typeof value === "string" && value.trim() !== "";
-}
-
 /**
- * Structural validation for an `AdvisorPlan`, most of all its
- * `blockers[]` -- required fields present, `kind` a real
- * `AdvisorBlockerKind`, `nextAction` carrying all three of `who` /
- * `how` / `byWhen`. Never throws; returns every finding it can locate
- * rather than stopping at the first one, matching this package's other
- * validators (`validateAdvisorAssessmentInput`, `validateKitProposal`).
+ * Validates a candidate plan against the shared plan contract,
+ * `docs/contracts/advisor-plan.json` (issue #1475; in the public repository, not shipped in this package).
+ * This package packs its content into a generated module at build time.
+ * That contract is the one definition of this
+ * record: @clossys/launcher validates against the same file before it
+ * applies an approved plan, so the two packages cannot drift apart. Every
+ * object in it is closed, so an unknown field is refused, never ignored.
+ *
+ * Never throws; returns every finding it can locate rather than stopping at
+ * the first one, matching this package's other validators
+ * (`validateAdvisorAssessmentInput`, `validateKitProposal`). A schema
+ * finding has the rule `advisor-plan-contract`; `path` names the field at
+ * fault when there is one (for example `blockers[0].nextAction.byWhen`; a
+ * plan that is not an object has none), and `message` says what is wrong
+ * with it without echoing its value.
+ *
+ * Once the schema passes, the contract's code rules R1-R11 run too (issue
+ * #1178; see `planRuleViolations()`): staffing and package entries that
+ * repeat, a mandate role named twice, and joins between staffing, the mandate
+ * and packages. Each of
+ * those findings has the rule `advisor-plan-rule-r1` to `-r10` and a `path`.
  */
 export function validateAdvisorPlan(value: unknown): AdvisorFinding[] {
-  const findings: AdvisorFinding[] = [];
-  if (typeof value !== "object" || value === null) {
-    return [{ rule: "plan-not-an-object", severity: "error", message: "plan must be an object" }];
-  }
-  const plan = value as Partial<AdvisorPlan>;
-
-  if (plan.schemaVersion !== 1) {
-    findings.push({ rule: "plan-schema-version", severity: "error", message: `schemaVersion must be 1, got ${JSON.stringify(plan.schemaVersion)}`, path: "schemaVersion" });
-  }
-  if (!isNonEmptyString(plan.asOf)) {
-    findings.push({ rule: "plan-as-of", severity: "error", message: "asOf must be a nonempty ISO 8601 datetime", path: "asOf" });
-  }
-  if (!plan.mandate || typeof plan.mandate !== "object") {
-    findings.push({ rule: "plan-mandate", severity: "error", message: "mandate is required", path: "mandate" });
-  }
-  if (!Array.isArray(plan.whereWeAre)) {
-    findings.push({ rule: "plan-where-we-are", severity: "error", message: "whereWeAre must be an array", path: "whereWeAre" });
-  }
-  if (!Array.isArray(plan.decisions)) {
-    findings.push({ rule: "plan-decisions", severity: "error", message: "decisions must be an array", path: "decisions" });
-  }
-  if (!Array.isArray(plan.blockers)) {
-    findings.push({ rule: "plan-blockers", severity: "error", message: "blockers must be an array", path: "blockers" });
-    return findings;
-  }
-
-  plan.blockers.forEach((blocker, index) => {
-    const path = `blockers[${index}]`;
-    if (typeof blocker !== "object" || blocker === null) {
-      findings.push({ rule: "blocker-not-an-object", severity: "error", message: "each blocker must be an object", path });
-      return;
-    }
-    const record = blocker as Partial<AdvisorPlanBlocker>;
-    if (!isNonEmptyString(record.capabilityId)) {
-      findings.push({ rule: "blocker-capability-id", severity: "error", message: "capabilityId is required", path: `${path}.capabilityId` });
-    }
-    if (!ADVISOR_BLOCKER_KINDS.includes(record.kind as AdvisorBlockerKind)) {
-      findings.push({ rule: "blocker-kind", severity: "error", message: `kind must be one of ${ADVISOR_BLOCKER_KINDS.join(", ")}, got ${JSON.stringify(record.kind)}`, path: `${path}.kind` });
-    }
-    if (!isNonEmptyString(record.owner)) {
-      findings.push({ rule: "blocker-owner", severity: "error", message: "owner is required", path: `${path}.owner` });
-    }
-    if (!isNonEmptyString(record.since)) {
-      findings.push({ rule: "blocker-since", severity: "error", message: "since is required", path: `${path}.since` });
-    }
-    const nextAction = record.nextAction;
-    if (typeof nextAction !== "object" || nextAction === null) {
-      findings.push({ rule: "blocker-next-action", severity: "error", message: "nextAction is required", path: `${path}.nextAction` });
-    } else {
-      const action = nextAction as Partial<AdvisorBlockerNextAction>;
-      if (!isNonEmptyString(action.who)) findings.push({ rule: "blocker-next-action-who", severity: "error", message: "nextAction.who is required", path: `${path}.nextAction.who` });
-      if (!isNonEmptyString(action.how)) findings.push({ rule: "blocker-next-action-how", severity: "error", message: "nextAction.how is required", path: `${path}.nextAction.how` });
-      if (!isNonEmptyString(action.byWhen)) findings.push({ rule: "blocker-next-action-by-when", severity: "error", message: "nextAction.byWhen is required", path: `${path}.nextAction.byWhen` });
-    }
-  });
-
-  return findings;
+  const findings = contractFindings("advisor-plan.json", "advisor-plan-contract", "plan", value);
+  if (findings.length > 0) return findings;
+  return planRuleViolations(value as AdvisorPlan).map((violation) => ({
+    rule: `advisor-plan-rule-${violation.rule.toLowerCase()}`,
+    severity: "error",
+    message: `plan.${violation.path} ${violation.message} (rule ${violation.rule})`,
+    path: violation.path,
+  }));
 }
 
 /**

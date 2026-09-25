@@ -11,11 +11,17 @@
 // With no positional arguments, every packages/*/package.json in this repo
 // is checked. Exit 0 = every version-bumped package's bump is either
 // justified by consumed changesets whose bump level matches, or is
-// accompanied by a matching CHANGELOG.md entry (the pre-existing, documented
+// accompanied by a matching changelog entry in docs/changelogs/<dir>.md (the
+// package changelog, kept in this public repository rather than the tarball
+// -- see scripts/lib/changelog-location.mjs; the pre-existing, documented
 // convention -- see docs/PUBLISHING.md section 4). Exit 1 = at least one
 // version-bumped package's bump is neither. Exit 2 = the question could not
 // be answered for at least one package (a git failure, an unreadable
 // changeset, a version field that is not a plain X.Y.Z semver triple).
+// When a bump consumed a changeset (the release-PR case), package-lock.json
+// is judged too, as one extra result: exit 1 if it changed beyond the
+// version and range edits of the diff's bumps, exit 2 if it changed on a
+// positional (partial) run that cannot see every bump. See main().
 //
 // WHY THIS IS A SEPARATE SCRIPT FROM check-release-readiness.mjs
 // -----------------------------------------------------------------
@@ -48,12 +54,12 @@
 //      major, computed structurally from the two version triples). This is
 //      the shape scripts/apply-release-changesets.mjs's release PR produces.
 //      If any consumed changeset for this package named `major`,
-//      packages/<dir>/CHANGELOG.md's entry for the new version must also
+//      docs/changelogs/<dir>.md's entry for the new version must also
 //      carry a "### Breaking changes" subsection
 //      (scripts/apply-release-changesets.mjs's prependChangelogEntry()
 //      writes exactly that).
 //
-//   2. A MATCHING CHANGELOG ENTRY. packages/<dir>/CHANGELOG.md, at HEAD,
+//   2. A MATCHING CHANGELOG ENTRY. docs/changelogs/<dir>.md, at HEAD,
 //      has a heading for the new version ("## <version>" or
 //      "## [<version>] ..."). This is the pre-existing, already-documented
 //      requirement (docs/PUBLISHING.md section 4), which this script
@@ -78,6 +84,8 @@ import { basename, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { evaluatePackageDiff } from "./check-release-readiness.mjs";
 import { parseChangesetText, CHANGESETS_DIR } from "./collect-changesets.mjs";
+import { changelogPathForPackageDir, changelogRelPath } from "./lib/changelog-location.mjs";
+import { evaluateLockfileShape, LOCKFILE_REL_PATH } from "./lib/release-pr-lockfile-shape.mjs";
 
 function git(args, cwd) {
   return execFileSync("git", args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
@@ -160,13 +168,13 @@ function changesetFileNamesAtHead(gitRoot) {
   return new Set(readdirSync(dir, { withFileTypes: true }).filter((d) => d.isFile()).map((d) => d.name));
 }
 
-// The full text of packages/<dir>/CHANGELOG.md's entry for `version` (the
+// The full text of docs/changelogs/<dir>.md's entry for `version` (the
 // text between its "## <version>" heading and the next "## " heading, or
 // end of file), or null if there is no such heading at HEAD. Accepts
 // "## <version>" and "## [<version>] ..." (Keep a Changelog), with or
 // without a leading "v".
 function changelogEntrySection(absPkgDir, version) {
-  const path = join(absPkgDir, "CHANGELOG.md");
+  const path = changelogPathForPackageDir(absPkgDir);
   if (!existsSync(path)) return null;
   const escaped = version.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const headingRe = new RegExp(`^##\\s*\\[?v?${escaped}\\]?(\\s|$).*$`, "m");
@@ -182,7 +190,7 @@ function hasChangelogEntry(absPkgDir, version) {
   return changelogEntrySection(absPkgDir, version) !== null;
 }
 
-// Does packages/<dir>/CHANGELOG.md's entry for `version` carry the
+// Does docs/changelogs/<dir>.md's entry for `version` carry the
 // "### Breaking changes" subsection scripts/apply-release-changesets.mjs's
 // prependChangelogEntry() writes for a consumed `major`-level changeset?
 function changelogEntryHasBreakingSection(absPkgDir, version) {
@@ -201,22 +209,39 @@ function evaluatePackage(pkgDir, requestedBase) {
   }
 
   const { gitRoot, mergeBase, baseVersion, version } = diff;
+  const packageKey = basename(pkgDir);
+  // Threaded onto every return below (not just the "pass" ones) so
+  // main()'s lockfile-shape check (see evaluateLockfileShape() and its own
+  // call site) can learn every package this diff bumped -- and how --
+  // without recomputing merge-base/version-diff logic a second time. This
+  // is additive to the shape earlier callers/tests already read (`package`,
+  // `status`, `detail`); nothing existing reads these fields, so nothing
+  // existing can break by their addition.
+  // `changesetConsumed` is overridden to true only on the returns below that
+  // follow a consumed changeset. Any such bump marks the diff as a release
+  // commit, the only case whose lockfile main() judges.
+  const bumpFields = { versionChanged: true, changesetConsumed: false, dir: packageKey, gitRoot, mergeBase, baseVersion, version };
+
   const bumpLevel = computeBumpLevel(baseVersion, version);
   if (bumpLevel === null) {
     return {
       package: diff.package,
       status: "error",
       detail: `version changed from ${baseVersion} to ${version}, which is not a clean single-step patch/minor/major semver bump -- cannot judge its shape`,
+      ...bumpFields,
     };
   }
-
-  const packageKey = basename(pkgDir);
 
   let baseChangesets;
   try {
     baseChangesets = changesetsAtCommit(gitRoot, mergeBase);
   } catch (error) {
-    return { package: diff.package, status: "error", detail: `could not read ${CHANGESETS_DIR}/ at merge-base ${mergeBase.slice(0, 12)}: ${error instanceof Error ? error.message : String(error)}` };
+    return {
+      package: diff.package,
+      status: "error",
+      detail: `could not read ${CHANGESETS_DIR}/ at merge-base ${mergeBase.slice(0, 12)}: ${error instanceof Error ? error.message : String(error)}`,
+      ...bumpFields,
+    };
   }
   const headFiles = changesetFileNamesAtHead(gitRoot);
   const consumed = baseChangesets.filter((c) => Object.hasOwn(c.packages, packageKey) && !headFiles.has(c.file));
@@ -232,6 +257,8 @@ function evaluatePackage(pkgDir, requestedBase) {
         package: diff.package,
         status: "not-release-shaped",
         detail: `version bumped from ${baseVersion} to ${version} (${bumpLevel}), but the consumed changeset(s) ${consumed.map((c) => c.file).join(", ")} specify ${consumedLevel} -- levels must match`,
+        ...bumpFields,
+        changesetConsumed: true,
       };
     }
 
@@ -242,7 +269,9 @@ function evaluatePackage(pkgDir, requestedBase) {
         status: "not-release-shaped",
         detail:
           `version bumped from ${baseVersion} to ${version}, consuming changeset(s) flagged "major" (${breakingConsumed.map((c) => c.file).join(", ")}), ` +
-          `but CHANGELOG.md's entry for ${version} has no "### Breaking changes" subsection`,
+          `but ${changelogRelPath(packageKey)}'s entry for ${version} has no "### Breaking changes" subsection`,
+        ...bumpFields,
+        changesetConsumed: true,
       };
     }
 
@@ -250,6 +279,8 @@ function evaluatePackage(pkgDir, requestedBase) {
       package: diff.package,
       status: "pass",
       detail: `version bumped from ${baseVersion} to ${version} (${bumpLevel}), matching the consumed changeset(s) ${consumed.map((c) => c.file).join(", ")} -- release-PR shaped`,
+      ...bumpFields,
+      changesetConsumed: true,
     };
   }
 
@@ -257,7 +288,8 @@ function evaluatePackage(pkgDir, requestedBase) {
     return {
       package: diff.package,
       status: "pass",
-      detail: `version bumped from ${baseVersion} to ${version} (${bumpLevel}) with a matching CHANGELOG.md entry -- accepted under the pre-existing docs/PUBLISHING.md convention`,
+      detail: `version bumped from ${baseVersion} to ${version} (${bumpLevel}) with a matching ${changelogRelPath(packageKey)} entry -- accepted under the pre-existing docs/PUBLISHING.md convention`,
+      ...bumpFields,
     };
   }
 
@@ -265,8 +297,9 @@ function evaluatePackage(pkgDir, requestedBase) {
     package: diff.package,
     status: "not-release-shaped",
     detail:
-      `version bumped from ${baseVersion} to ${version} (${bumpLevel}) since merge-base ${mergeBase.slice(0, 12)}, but no changeset naming "${packageKey}" was consumed and CHANGELOG.md has no entry for ${version}. ` +
-      "A version change outside a release PR is refused (issue #1255) -- add a .changesets/<slug>.md instead of bumping directly, or add the CHANGELOG.md entry this bump requires.",
+      `version bumped from ${baseVersion} to ${version} (${bumpLevel}) since merge-base ${mergeBase.slice(0, 12)}, but no changeset naming "${packageKey}" was consumed and ${changelogRelPath(packageKey)} has no entry for ${version}. ` +
+      "A version change outside a release PR is refused (issue #1255) -- add a .changesets/<slug>.md instead of bumping directly, or add the changelog entry this bump requires.",
+    ...bumpFields,
   };
 }
 
@@ -291,14 +324,62 @@ function main() {
 
   const results = targets.map((dir) => evaluatePackage(dir, requestedBase));
 
-  if (json) {
-    console.log(JSON.stringify({ results }, null, 2));
-  } else {
-    const labels = { pass: "READY", skip: "SKIP ", "not-release-shaped": "FAIL ", error: "ERROR" };
-    for (const r of results) console.log(`  [${labels[r.status]}] ${r.package} -- ${r.detail}`);
+  // ONE lockfile-shape check, for the release-PR case only. Its charter is
+  // the release commit (issue #1439, defect 3): there, package-lock.json may
+  // change only in the version fields (and allowed dependency-range
+  // rewrites) of the diff's bumps, and anything else means the lockfile was
+  // regenerated by the wrong npm. A direct, changelog-justified bump is a
+  // different case -- it may legitimately add or change a dependency in the
+  // same pull request -- so when no bump in this diff consumed a changeset,
+  // no lockfile verdict is added and the result is exactly what it was
+  // before this check existed.
+  //
+  // When at least one bump consumed a changeset, EVERY bump in the diff
+  // justifies lockfile edits, not only the changeset-consumed ones:
+  // apply-release-changesets.mjs's own sibling-range pass gives a dependent
+  // whose range the release breaks a patch bump and a `^<new>` range
+  // rewrite with no changeset naming it, and that dependent-only bump is a
+  // legitimate part of the same release commit.
+  //
+  // package-lock.json is one file covering every workspace package, so a
+  // CHANGED lockfile is judged only on a full discovery run: a positional
+  // package subset cannot see every bump that might account for an edit,
+  // so it is refused (exit 2) rather than judged against a partial set.
+  // See scripts/lib/release-pr-lockfile-shape.mjs.
+  const isReleaseDiff = results.some((r) => r.versionChanged === true && r.changesetConsumed === true);
+  const releaseBumps = [];
+  for (let i = 0; i < targets.length && isReleaseDiff; i += 1) {
+    const r = results[i];
+    if (r.versionChanged !== true) continue;
+    let manifest;
+    try {
+      manifest = JSON.parse(readFileSync(join(targets[i], "package.json"), "utf8"));
+    } catch {
+      continue; // evaluatePackage() above already reports this package's own error; skip it here rather than fail twice
+    }
+    releaseBumps.push({ dir: r.dir, name: manifest.name, version: r.version, manifest });
+  }
+  if (isReleaseDiff) {
+    // gitRoot/mergeBase are the same for every bumped package in a single
+    // invocation (one repo, one --base) -- any versionChanged result's copy
+    // of them will do.
+    const { gitRoot, mergeBase } = results.find((r) => r.versionChanged === true);
+    const lockfileVerdict = evaluateLockfileShape({ gitRoot, mergeBase, bumps: releaseBumps, partialBumpSet: positional.length > 0 });
+    results.push({ package: LOCKFILE_REL_PATH, ...lockfileVerdict });
   }
 
-  const worst = results.reduce((acc, r) => (r.status === "error" ? 2 : r.status === "not-release-shaped" && acc !== 2 ? 1 : acc), 0);
+  // Report only the public fields, so a run with no lockfile verdict prints
+  // exactly what it printed before the lockfile check existed.
+  const reported = results.map(({ package: pkg, status, detail }) => ({ package: pkg, status, detail }));
+
+  if (json) {
+    console.log(JSON.stringify({ results: reported }, null, 2));
+  } else {
+    const labels = { pass: "READY", skip: "SKIP ", "not-release-shaped": "FAIL ", error: "ERROR" };
+    for (const r of reported) console.log(`  [${labels[r.status]}] ${r.package} -- ${r.detail}`);
+  }
+
+  const worst = reported.reduce((acc, r) => (r.status === "error" ? 2 : r.status === "not-release-shaped" && acc !== 2 ? 1 : acc), 0);
 
   if (!json) {
     console.log("");

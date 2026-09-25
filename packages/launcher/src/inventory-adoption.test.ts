@@ -12,6 +12,10 @@ function fakeHost(files: Record<string, string>): WorkspaceHost {
     isDirectory: () => false,
     isSymlink: () => false,
     readText: (p) => files[p] ?? null,
+    readBytes: (p) => (files[p] === undefined ? null : new TextEncoder().encode(files[p])),
+    writeBytes: () => {
+      throw new Error("read-only in this test");
+    },
     writeText: () => {
       throw new Error("read-only in this test");
     },
@@ -46,26 +50,47 @@ describe("reportInventoryDrift", () => {
     expect(report.status).toBe("indeterminate");
   });
 
-  it("splits into external-only, launcher-only, and agreeing -- all three, even when one is empty", () => {
+  it("splits into external-only, launcher-only, and agreeing -- named by position, count plus positions, never the ids", () => {
+    // external: app(0), site(1), admin(2). stored (launcher): site(0), legacy(1).
     const host = fakeHost({
       "/hub/external.json": FOUNDRY_INVENTORY(["app", "site", "admin"]),
       "/hub/clossys/.state/inventory.json": FOUNDRY_INVENTORY(["site", "legacy"]),
     });
     const report = reportInventoryDrift(host, "/hub", { path: "/hub/external.json", shape: "foundry" }, "clossys/.state/inventory.json");
     expect(report.status).toBe("reconciled");
-    expect(report.externalOnly).toEqual(["app", "admin"]);
-    expect(report.launcherOnly).toEqual(["legacy"]);
-    expect(report.agreeing).toEqual(["site"]);
+    expect(report.externalOnly).toEqual({ count: 2, positions: ["externalInventory[0]", "externalInventory[2]"] });
+    expect(report.launcherOnly).toEqual({ count: 1, positions: ["repositories[1]"] });
+    expect(report.agreeing).toEqual({ count: 1, positions: ["externalInventory[1]"] });
+    expect(JSON.stringify(report)).not.toMatch(/app|site|admin|legacy/);
   });
 
-  it("perfect agreement reports empty external-only and launcher-only arrays, not their absence", () => {
+  it("perfect agreement reports zero-count external-only and launcher-only, not their absence", () => {
     const host = fakeHost({
       "/hub/external.json": FOUNDRY_INVENTORY(["app"]),
       "/hub/clossys/.state/inventory.json": FOUNDRY_INVENTORY(["app"]),
     });
     const report = reportInventoryDrift(host, "/hub", { path: "/hub/external.json", shape: "foundry" }, "clossys/.state/inventory.json");
-    expect(report.externalOnly).toEqual([]);
-    expect(report.launcherOnly).toEqual([]);
-    expect(report.agreeing).toEqual(["app"]);
+    expect(report.externalOnly).toEqual({ count: 0, positions: [] });
+    expect(report.launcherOnly).toEqual({ count: 0, positions: [] });
+    expect(report.agreeing).toEqual({ count: 1, positions: ["externalInventory[0]"] });
+  });
+
+  it("positions an externalInventory id by its own index in that document's array, not by how many usable ids came before it (D2)", () => {
+    // readForeignIds() skips a non-object entry (index 0), a blank id (index 1),
+    // and keeps "acme/app" at index 2 and "acme/legacy" at index 3. A naive
+    // count of *kept* ids would misreport these as externalInventory[0] and
+    // externalInventory[1]; the correct positions are the file's own indices.
+    const host = fakeHost({
+      "/hub/external.json": JSON.stringify({
+        schemaVersion: 1,
+        repositories: [{ note: "no id" }, { id: "" }, { id: "acme/app" }, { id: "acme/legacy" }],
+      }),
+      "/hub/clossys/.state/inventory.json": FOUNDRY_INVENTORY(["acme/app"]),
+    });
+    const report = reportInventoryDrift(host, "/hub", { path: "/hub/external.json", shape: "foundry" }, "clossys/.state/inventory.json");
+    expect(report.status).toBe("reconciled");
+    expect(report.externalOnly).toEqual({ count: 1, positions: ["externalInventory[3]"] });
+    expect(report.agreeing).toEqual({ count: 1, positions: ["externalInventory[2]"] });
+    expect(report.launcherOnly).toEqual({ count: 0, positions: [] });
   });
 });

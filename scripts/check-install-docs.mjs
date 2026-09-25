@@ -19,8 +19,9 @@
 // edits, version bumps, and qualification records a catalogue-integrity
 // session cannot produce.
 //
-// Scans packages/*/README.md only. Root README, CONTRIBUTING, and CHANGELOG
-// historical predecessor-scope GitHub Packages lanes are out of scope.
+// Scans packages/*/README.md only. Root README, CONTRIBUTING, and the package
+// changelogs under docs/changelogs/ (which record historical predecessor-scope
+// GitHub Packages lanes) are out of scope.
 //
 // WHAT THIS DOES NOT CLAIM
 // ------------------------

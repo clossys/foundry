@@ -507,6 +507,26 @@ test("a fully shaped role assessment document has no findings", () => {
 
 // --- direct shape-check unit coverage ---
 
+test("validateIntakeCardsShape refuses the runtime-only selection and detail fields in a static file (#1179)", () => {
+  const card = VALID_CARDS.cards[0];
+  const withSelection = { ...VALID_CARDS, cards: [{ ...card, selection: "many" }] };
+  assert.deepEqual(validateIntakeCardsShape(withSelection, "@scope/alpha").map((f) => f.rule), ["intake-card-runtime-only-field"]);
+  const withDetail = { ...VALID_CARDS, cards: [{ ...card, choices: [{ ...card.choices[0], detail: "More." }, card.choices[1]] }] };
+  const findings = validateIntakeCardsShape(withDetail, "@scope/alpha");
+  assert.deepEqual(findings.map((f) => f.rule), ["intake-card-runtime-only-field"]);
+  assert.match(findings[0].message, /card "q1" choices\[0\] carries "detail"/);
+});
+
+test("validateIntakeCardsShape refuses any card or choice key the contract does not declare (#1179)", () => {
+  const card = VALID_CARDS.cards[0];
+  const cardExtra = validateIntakeCardsShape({ ...VALID_CARDS, cards: [{ ...card, hint: "x" }] }, "@scope/alpha");
+  assert.deepEqual(cardExtra.map((f) => f.rule), ["intake-card-unknown-field"]);
+  assert.match(cardExtra[0].message, /card "q1" carries "hint"/);
+  const choiceExtra = validateIntakeCardsShape({ ...VALID_CARDS, cards: [{ ...card, choices: [card.choices[0], { ...card.choices[1], weight: 2 }] }] }, "@scope/alpha");
+  assert.deepEqual(choiceExtra.map((f) => f.rule), ["intake-card-unknown-field"]);
+  assert.deepEqual(validateIntakeCardsShape(VALID_CARDS, "@scope/alpha"), []);
+});
+
 test("validateIntakeCardsShape rejects a card with fewer than two choices", () => {
   const document = { schemaVersion: 1, role: "@scope/alpha", cards: [{ id: "q1", prompt: "x", choices: [{ id: "a", label: "A" }], recommendedChoiceId: "a", somethingElseFollowUp: "y" }] };
   const findings = validateIntakeCardsShape(document, "@scope/alpha");

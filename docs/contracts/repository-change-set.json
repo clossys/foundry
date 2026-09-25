@@ -1,0 +1,788 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/clossys/foundry/blob/main/docs/contracts/repository-change-set.json",
+  "title": "Repository change set",
+  "description": "Issue #1178: everything one pull request would change in one repository when an approved plan is applied, computed from the plan and from observations of the repository's default branch, never from a working tree. @clossys/launcher computes it (planApplyBundle()) and validates it against this file, which its build packs. It is a computed record, not a claim that anything was written: nothing in it says a file exists, a pull request is open, or a change was applied, and none of the repository states (planned, materialized, proposed, applied and so on) appear in it. Those are derived later, from evidence. No field holds a time, so computing the same set from the same inputs gives the same bytes. Every object is closed: a key this contract does not declare is refused. A map is written as an array of records, because the contract checker implements additionalProperties only as a boolean. Every item act the apply flow will use is declared here, including acts no package computes yet (add-caller-workflow, write-starter-request, add-ci-template, add-path-scope-job, exempt-release-age), so a later producer of those acts needs no contract change. DIGEST. changeSetDigest is defined in apply-change-set-digest.md, beside this file, with its corpus apply-change-set-digest.fixture.json. It covers every member except changeSetDigest, branch, bundle, pullRequest, inverse and tooling, and it reduces a derived file to path, mode, derived, item and invariants; that page gives the reason for each exclusion. Because a derived file's bytes are outside the digest, only two files may be derived (code rule C7): the installed-state ledger and the repository's lockfile. PATHS. A path is relative to the repository root, uses / between segments, and has no empty, . or .. segment. A pathAllowList entry is one of the patterns the apply flow may own, listed in definitions.ownedPattern: * matches any characters within one segment, and a segment that is exactly ** matches any number of whole segments, including none; no other segment contains **. LOCKFILE PATH. A repository's lockfile path is observed.lockfile, or, when that is none, the file its package manager writes: package-lock.json for npm, pnpm-lock.yaml for pnpm, yarn.lock for yarn. A repository whose packageManager is none has no lockfile path. CANONICAL ORDER. Arrays whose order carries no meaning are written in one order, so the same change always has the same bytes and the same digest. Strings compare by UTF-16 code units, and a pair compares its first member, then its second. CODE RULES, checked in code after the schema passes, because the keywords above cannot relate one field to another. A refusal names the rule and the position of the field at fault, never its value. C1: no two items share an id. C2: every files[].item, keys[].item and refused[].item, and the item of every package invariant, is the id of an item in items. C3: no two files share a path and no two keys share a pointer; paths compare case-insensitively, so two paths that differ only in letter case are the same path. No path is both in files and in refused, and no pointer is both in keys and in refused. Every path the set touches is matched by some pathAllowList entry: every files[].path, the file of every keys[] entry, and the path of every item that names one (exempt-release-age). C4: ledger.generation is 0 or more; exactly one item has act write-ledger, and exactly one file names it: a derived file at clossys/.state/installed.json whose invariants are exactly one ledgerGeneration equal to ledger.generation plus 1. C5: changeSetDigest is the digest apply-change-set-digest.md defines, branch is clossys/apply- followed by the first 12 hexadecimal digits of changeSetDigest, and pullRequest.title ends with the same 12 digits. C6: no planItem appears twice across items and deferred. C7: every derived file is either the ledger (C4) or the lockfile: at most one derived file is at the repository's lockfile path (see LOCKFILE PATH), and every one of its invariants is a package invariant; no other file is derived, and no whole file is at the ledger path, at package.json, or at any lockfile name. C8: items are sorted by id; files by path; keys by file, then pointer; deferred by planItem; each file's invariants by package name; and, each with no entry repeated, refused by path (or file), then pointer (a path refusal has none, which sorts first), pathAllowList by value, observed.releaseAgeSurfaces by surface, then path, and tooling by tool. C9: the writes of each item of the acts below match the item; the acts nothing computes yet are not tied to their files by this rule. A write-record item is named by exactly one file or one refusal, at clossys/brief.json. A compose-skills item names each of its roles once, with no role repeated, and is named, for each role, by exactly one file or one refusal at .agents/skills/clossys-<role>/SKILL.md, and by nothing else. An install or pin-starter item is never named by a whole file or a path refusal, and a pin-starter item's placement is devDependencies. No refusal names the write-ledger item. Every keys[] entry and every package invariant names such an item: a key's pointer is /<placement>/<name with / written ~1> and its after is the item's version; an invariant's name, version and integrity are the item's. An item with satisfiedInBase true is named by no key, invariant or refusal; one with satisfiedInBase false is named either by exactly one key and exactly one invariant and no refusal, or by at least one key refusal and no key or invariant. A derived lockfile's item is the item of its first invariant. C10: a setup set has no install item (an install waits in deferred), an apply set defers nothing, and a set has at most one pin-starter item.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "kind",
+    "producer",
+    "planDigest",
+    "repository",
+    "ledger",
+    "phase",
+    "engine",
+    "observed",
+    "items",
+    "files",
+    "keys",
+    "refused",
+    "deferred",
+    "pathAllowList",
+    "branch",
+    "bundle",
+    "pullRequest",
+    "changeSetDigest"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "kind": {
+      "const": "clossys.repository-change-set"
+    },
+    "producer": {
+      "$ref": "#/definitions/packageVersion",
+      "description": "The package and exact version that computed this set. Covered by the digest: composed skill bytes depend on it, so a different producer version is a different set."
+    },
+    "planDigest": {
+      "$ref": "advisor-plan.json#/definitions/sha256Digest",
+      "description": "The canonical digest of the plan this set applies (advisor-plan-digest.md)."
+    },
+    "repository": {
+      "$ref": "#/definitions/repository"
+    },
+    "ledger": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "generation"
+      ],
+      "description": "The installed-state ledger this set starts from. generation is 0 when the repository has none yet (code rule C4).",
+      "properties": {
+        "generation": {
+          "type": "integer"
+        }
+      }
+    },
+    "phase": {
+      "enum": [
+        "setup",
+        "apply"
+      ],
+      "description": "setup when the repository's default branch does not yet carry what proves a later pull request; apply once it does."
+    },
+    "engine": {
+      "$ref": "#/definitions/pinnedPackage",
+      "description": "The exact Advisor package the hub pins, whose bins decide what the plan authorizes."
+    },
+    "observed": {
+      "$ref": "#/definitions/observed"
+    },
+    "items": {
+      "type": "array",
+      "description": "What this set does, one act per item (code rules C1 and C6).",
+      "items": {
+        "$ref": "#/definitions/item"
+      }
+    },
+    "files": {
+      "type": "array",
+      "description": "Every whole file this set writes, and every derived file it changes (code rules C2 to C4).",
+      "items": {
+        "$ref": "#/definitions/file"
+      }
+    },
+    "keys": {
+      "type": "array",
+      "description": "Every key this set writes inside a file the repository owns: a JSON pointer and its value, never the whole file (code rules C2 and C3).",
+      "items": {
+        "$ref": "#/definitions/key"
+      }
+    },
+    "refused": {
+      "type": "array",
+      "description": "Every path or key this set would have written but will not, and why. A set with a refusal writes nothing until someone decides.",
+      "items": {
+        "$ref": "#/definitions/refusal"
+      }
+    },
+    "deferred": {
+      "type": "array",
+      "description": "Package acts the plan authorizes for this repository that belong to a later set, and why. Together with the package items they account for every package act the plan names for this repository (code rule C6).",
+      "items": {
+        "$ref": "#/definitions/deferral"
+      }
+    },
+    "pathAllowList": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Every path this set may touch, each an owned pattern (definitions.ownedPattern). A path outside it is refused (code rules C3 and C8).",
+      "items": {
+        "$ref": "#/definitions/ownedPattern"
+      }
+    },
+    "branch": {
+      "type": "string",
+      "pattern": "^clossys/apply-[0-9a-f]{12}$",
+      "description": "The branch this set is proposed from. Excluded from the digest: it is a function of it (code rule C5)."
+    },
+    "bundle": {
+      "$ref": "advisor-plan.json#/definitions/sha256Digest",
+      "description": "The digest of the bundle this set belongs to. Excluded from the digest: the bundle digest covers this set's digest."
+    },
+    "pullRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "title"
+      ],
+      "description": "The pull request text, rendered from ids and digests only. Excluded from the digest: the title carries the digest's first 12 digits and the body carries the digest itself.",
+      "properties": {
+        "title": {
+          "type": "string",
+          "pattern": "^Clossys: apply plan [0-9a-f]{12}$"
+        },
+        "bodySha256": {
+          "$ref": "advisor-plan.json#/definitions/sha256Digest",
+          "description": "Optional until the body is rendered."
+        }
+      }
+    },
+    "inverse": {
+      "$ref": "advisor-plan.json#/definitions/sha256Digest",
+      "description": "Optional. The digest of the change set that reverts this one. Excluded from the digest: it is computed from this set."
+    },
+    "tooling": {
+      "type": "array",
+      "description": "Optional. The tool versions that materialized the set, recorded for diagnosis when a derived file's bytes are regenerated (for example the npm version that rewrote the lockfile). Excluded from the digest: tooling is expected to vary between machines, and the derived files' invariants, not their bytes, are what the set promises. Sorted by tool (code rule C8).",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "tool",
+          "version"
+        ],
+        "properties": {
+          "tool": {
+            "enum": [
+              "node",
+              "npm",
+              "pnpm",
+              "yarn"
+            ]
+          },
+          "version": {
+            "title": "a release version such as 10.9.2",
+            "type": "string",
+            "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?$"
+          }
+        }
+      }
+    },
+    "changeSetDigest": {
+      "$ref": "advisor-plan.json#/definitions/sha256Digest",
+      "description": "This set's digest (apply-change-set-digest.md; code rule C5)."
+    }
+  },
+  "definitions": {
+    "nonBlankString": {
+      "title": "a string with at least one non-whitespace character",
+      "type": "string",
+      "pattern": "\\S"
+    },
+    "idToken": {
+      "title": "a lowercase id such as unowned-existing",
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "safePath": {
+      "title": "a relative path with / between segments and no empty, . or .. segment",
+      "type": "string",
+      "pattern": "^(?:(?!\\.\\.?/)[^/\\\\\\u0000-\\u001f]+/)*(?!\\.\\.?$)[^/\\\\\\u0000-\\u001f]+$"
+    },
+    "pathPattern": {
+      "title": "a path pattern: a relative path whose segments may use *, where a segment containing ** is exactly **, and which is not ** alone",
+      "type": "string",
+      "pattern": "^(?!\\*\\*$)(?:(?:\\*\\*|(?!\\.\\.?/)(?:(?!\\*\\*)[^/\\\\\\u0000-\\u001f])+)/)*(?:\\*\\*|(?!\\.\\.?$)(?:(?!\\*\\*)[^/\\\\\\u0000-\\u001f])+)$"
+    },
+    "packageVersion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "version"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "advisor-plan.json#/definitions/packageName"
+        },
+        "version": {
+          "$ref": "advisor-plan.json#/definitions/exactVersion"
+        }
+      }
+    },
+    "pinnedPackage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "version",
+        "integrity"
+      ],
+      "properties": {
+        "name": {
+          "$ref": "advisor-plan.json#/definitions/packageName"
+        },
+        "version": {
+          "$ref": "advisor-plan.json#/definitions/exactVersion"
+        },
+        "integrity": {
+          "$ref": "advisor-plan.json#/definitions/sha512Integrity"
+        }
+      }
+    },
+    "repository": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "nodeId",
+        "visibility",
+        "defaultBranch",
+        "baseCommit"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "advisor-plan.json#/definitions/repositoryId",
+          "description": "The repository inventory id, spelled as in the plan's staffing."
+        },
+        "nodeId": {
+          "title": "an opaque GitHub node id",
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_=+/-]+$",
+          "description": "GitHub's immutable id for the repository, observed when the set was computed, so a renamed repository is never mistaken for another one with the old name."
+        },
+        "visibility": {
+          "enum": [
+            "private",
+            "internal",
+            "public"
+          ],
+          "description": "Observed. Anything but private gets the brief's public problem placeholder. Covered by the digest."
+        },
+        "defaultBranch": {
+          "$ref": "#/definitions/nonBlankString"
+        },
+        "baseCommit": {
+          "title": "a full commit id in lowercase hexadecimal",
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}(?:[0-9a-f]{24})?$",
+          "description": "The default branch's head the set was computed against. Covered by the digest, so a moved base is a new set."
+        }
+      }
+    },
+    "observed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "packageManager",
+        "lockfile",
+        "releaseAgeSurfaces"
+      ],
+      "description": "Technical facts read from the repository's default branch.",
+      "properties": {
+        "packageManager": {
+          "enum": [
+            "npm",
+            "pnpm",
+            "yarn",
+            "none"
+          ],
+          "description": "none when the repository has no package.json."
+        },
+        "lockfile": {
+          "enum": [
+            "package-lock.json",
+            "pnpm-lock.yaml",
+            "yarn.lock",
+            "none"
+          ]
+        },
+        "releaseAgeSurfaces": {
+          "type": "array",
+          "description": "Which package-manager configuration files that can hold a minimum release age exist.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "surface",
+              "path"
+            ],
+            "properties": {
+              "surface": {
+                "enum": [
+                  "pnpm-workspace",
+                  "yarnrc",
+                  "npmrc"
+                ]
+              },
+              "path": {
+                "$ref": "#/definitions/safePath"
+              }
+            }
+          }
+        }
+      }
+    },
+    "item": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/writeRecordItem"
+        },
+        {
+          "$ref": "#/definitions/composeSkillsItem"
+        },
+        {
+          "$ref": "#/definitions/packageItem"
+        },
+        {
+          "$ref": "#/definitions/exemptReleaseAgeItem"
+        },
+        {
+          "$ref": "#/definitions/plainItem"
+        }
+      ]
+    },
+    "writeRecordItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "act",
+        "source"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/nonBlankString"
+        },
+        "act": {
+          "const": "write-record"
+        },
+        "source": {
+          "enum": [
+            "engagement-brief"
+          ],
+          "description": "engagement-brief writes the repository's projection of the hub brief to clossys/brief.json."
+        }
+      }
+    },
+    "composeSkillsItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "act",
+        "roles"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/nonBlankString"
+        },
+        "act": {
+          "const": "compose-skills"
+        },
+        "roles": {
+          "type": "array",
+          "minItems": 1,
+          "description": "The roles staffed in this repository, in plan order.",
+          "items": {
+            "$ref": "#/definitions/nonBlankString"
+          }
+        }
+      }
+    },
+    "packageItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "act",
+        "planItem",
+        "package",
+        "placement",
+        "satisfiedInBase"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/nonBlankString"
+        },
+        "act": {
+          "enum": [
+            "install",
+            "pin-starter"
+          ],
+          "description": "The plan's own package act, carried unchanged."
+        },
+        "planItem": {
+          "$ref": "#/definitions/nonBlankString",
+          "description": "The plan's packages[].planItem this item carries out."
+        },
+        "package": {
+          "$ref": "#/definitions/pinnedPackage"
+        },
+        "placement": {
+          "enum": [
+            "dependencies",
+            "devDependencies"
+          ]
+        },
+        "satisfiedInBase": {
+          "type": "boolean",
+          "description": "True when the default branch already has this exact version, with this exact integrity, at this placement. Such an item writes nothing: it is kept, not dropped, so every act the plan authorizes is accounted for."
+        }
+      }
+    },
+    "exemptReleaseAgeItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "act",
+        "scope",
+        "surface",
+        "path"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/nonBlankString"
+        },
+        "act": {
+          "const": "exempt-release-age"
+        },
+        "scope": {
+          "type": "string",
+          "pattern": "^@[a-z0-9][a-z0-9._-]*$"
+        },
+        "surface": {
+          "enum": [
+            "pnpm-workspace",
+            "yarnrc",
+            "npmrc"
+          ]
+        },
+        "path": {
+          "$ref": "#/definitions/safePath"
+        }
+      }
+    },
+    "plainItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "act"
+      ],
+      "description": "An act whose bytes are all in files: the files naming this item say exactly what it writes.",
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/nonBlankString"
+        },
+        "act": {
+          "enum": [
+            "write-ledger",
+            "add-caller-workflow",
+            "write-starter-request",
+            "add-ci-template",
+            "add-path-scope-job"
+          ]
+        }
+      }
+    },
+    "fileMode": {
+      "enum": [
+        "100644",
+        "100755"
+      ]
+    },
+    "contentDigest": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "advisor-plan.json#/definitions/sha256Digest"
+        }
+      ]
+    },
+    "file": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/wholeFile"
+        },
+        {
+          "$ref": "#/definitions/derivedFile"
+        }
+      ]
+    },
+    "wholeFile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "mode",
+        "before",
+        "after",
+        "item"
+      ],
+      "description": "A file whose exact bytes this set writes. before is the default branch's content digest (null when absent); after is the content digest written (null to remove). A content digest is sha256: and the hex SHA-256 of the file's bytes.",
+      "properties": {
+        "path": {
+          "$ref": "#/definitions/safePath"
+        },
+        "mode": {
+          "$ref": "#/definitions/fileMode"
+        },
+        "before": {
+          "$ref": "#/definitions/contentDigest"
+        },
+        "after": {
+          "$ref": "#/definitions/contentDigest"
+        },
+        "item": {
+          "$ref": "#/definitions/nonBlankString"
+        }
+      }
+    },
+    "derivedFile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "mode",
+        "derived",
+        "item",
+        "invariants"
+      ],
+      "description": "A file whose bytes depend on tooling or on this set's own digest -- the installed-state ledger, or the lockfile -- checked by its invariants, never by byte equality. before and after are optional and excluded from the digest, which is why no other file may be derived (code rule C7).",
+      "properties": {
+        "path": {
+          "enum": [
+            "clossys/.state/installed.json",
+            "package-lock.json",
+            "pnpm-lock.yaml",
+            "yarn.lock"
+          ],
+          "description": "The ledger or the lockfile, and nothing else (code rule C7)."
+        },
+        "mode": {
+          "$ref": "#/definitions/fileMode"
+        },
+        "derived": {
+          "const": true
+        },
+        "item": {
+          "$ref": "#/definitions/nonBlankString"
+        },
+        "invariants": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/invariant"
+          }
+        },
+        "before": {
+          "$ref": "#/definitions/contentDigest"
+        },
+        "after": {
+          "$ref": "#/definitions/contentDigest"
+        }
+      }
+    },
+    "invariant": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "item",
+            "name",
+            "version",
+            "integrity"
+          ],
+          "description": "The lockfile resolves this package to this exact version with this exact integrity, whichever package manager wrote it.",
+          "properties": {
+            "item": {
+              "$ref": "#/definitions/nonBlankString"
+            },
+            "name": {
+              "$ref": "advisor-plan.json#/definitions/packageName"
+            },
+            "version": {
+              "$ref": "advisor-plan.json#/definitions/exactVersion"
+            },
+            "integrity": {
+              "$ref": "advisor-plan.json#/definitions/sha512Integrity"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "ledgerGeneration"
+          ],
+          "description": "The ledger this set writes has this generation (code rule C4).",
+          "properties": {
+            "ledgerGeneration": {
+              "type": "integer"
+            }
+          }
+        }
+      ]
+    },
+    "key": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "file",
+        "pointer",
+        "before",
+        "after",
+        "item"
+      ],
+      "properties": {
+        "file": {
+          "const": "package.json"
+        },
+        "pointer": {
+          "title": "a JSON pointer to one dependency entry, such as /devDependencies/@scope~1name",
+          "type": "string",
+          "pattern": "^/(?:dependencies|devDependencies)/@[a-z0-9][a-z0-9._-]*~1[a-z0-9][a-z0-9._-]*$"
+        },
+        "before": {
+          "description": "The default branch's value at the pointer, or null when the key is absent.",
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "string",
+              "minLength": 1
+            }
+          ]
+        },
+        "after": {
+          "description": "The value written, or null to remove the key.",
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "advisor-plan.json#/definitions/exactVersion"
+            }
+          ]
+        },
+        "item": {
+          "$ref": "#/definitions/nonBlankString"
+        }
+      }
+    },
+    "refusal": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "path",
+            "reason",
+            "item"
+          ],
+          "properties": {
+            "path": {
+              "type": "string",
+              "minLength": 1,
+              "description": "The path as computed. It may be unsafe: that can be why it is refused."
+            },
+            "reason": {
+              "$ref": "#/definitions/refusalReason"
+            },
+            "item": {
+              "$ref": "#/definitions/nonBlankString"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "file",
+            "pointer",
+            "reason",
+            "item"
+          ],
+          "properties": {
+            "file": {
+              "const": "package.json"
+            },
+            "pointer": {
+              "type": "string",
+              "minLength": 1
+            },
+            "reason": {
+              "$ref": "#/definitions/refusalReason"
+            },
+            "item": {
+              "$ref": "#/definitions/nonBlankString"
+            }
+          }
+        }
+      ]
+    },
+    "refusalReason": {
+      "enum": [
+        "unowned-existing",
+        "client-edited",
+        "manifest-absent",
+        "unsafe-path"
+      ],
+      "description": "unowned-existing: the default branch already has the path or key, and nothing shows the apply flow wrote it, so the flow will not take it over. client-edited: the flow wrote it, and it has changed since. manifest-absent: a key would go in a package.json the repository does not have. unsafe-path: the computed path is not a safe relative path, or is outside pathAllowList."
+    },
+    "deferral": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "planItem",
+        "reason"
+      ],
+      "properties": {
+        "planItem": {
+          "$ref": "#/definitions/nonBlankString"
+        },
+        "reason": {
+          "enum": [
+            "after-setup"
+          ],
+          "description": "after-setup: an install waits for the apply-phase set, because a setup set only prepares what proves later pull requests."
+        }
+      }
+    },
+    "ownedPattern": {
+      "description": "A path pattern the apply flow may own, per the apply design's ownership table: Launcher's clossys/ folder and composed skills, the agent pointer files, the Starter request, keys in package.json, the lockfile, a created-only-when-absent workflow, and a release-age surface.",
+      "allOf": [
+        {
+          "$ref": "#/definitions/pathPattern"
+        },
+        {
+          "enum": [
+            "clossys/**",
+            ".agents/skills/clossys-*/**",
+            "AGENTS.md",
+            "CLAUDE.md",
+            ".starter/request.json",
+            ".github/workflows/*",
+            "package.json",
+            "package-lock.json",
+            "pnpm-lock.yaml",
+            "yarn.lock",
+            ".npmrc",
+            ".yarnrc.yml",
+            "pnpm-workspace.yaml"
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -1,5 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { assertImplementedContract, formatContractViolation, validateAgainstContract } from "./contract-schema.js";
+import type { ContractSchema } from "./contract-schema.js";
 import {
   CAPABILITY_CATALOGUE,
   ENGAGEMENT_CONTEXT_FIELD_IDS,
@@ -8,6 +10,7 @@ import {
   contextFromBrief,
   nextContextQuestion,
   toEngagementBrief,
+  validateEngagementBrief,
 } from "./index.js";
 import type { ComposeKitResult, EngagementBrief, EngagementContext, EngagementContextField, EngagementContextFieldId } from "./index.js";
 
@@ -15,45 +18,18 @@ import type { ComposeKitResult, EngagementBrief, EngagementContext, EngagementCo
  * The brief and engagement-context contracts, checked against the real
  * output of toEngagementBrief() (issue #1173 follow-up, decision 28).
  *
- * No JSON-schema validator is a dependency of this repository, so this is a
- * deliberately minimal draft-07 checker covering exactly the keywords those
- * two contracts use. Every contract is walked in full when it is loaded, so a
- * keyword it does not implement -- or a keyword form it does not implement,
- * such as an array-valued `type` or a schema-valued `additionalProperties` --
- * throws even under a property the value under test never carries, rather
- * than being half-checked. Property lookups use Object.hasOwn, so an
- * inherited name (toString, constructor, __proto__) is never mistaken for a
- * declared property or a present required one.
+ * No JSON-schema validator is a dependency of this repository. The checker
+ * is this package's own minimal draft-07 implementation (contract-schema.ts,
+ * issue #1475) -- the same one validateEngagementBrief() and
+ * validateAdvisorPlan() use, and the one @clossys/launcher carries a
+ * generated copy of -- so these tests exercise the shipped checker, not a
+ * test-only double. Contracts are read here from docs/contracts/ directly,
+ * and every contract is walked in full when it is loaded, so a keyword the
+ * checker does not implement throws even under a property the value under
+ * test never carries.
  */
-type Schema = Record<string, unknown>;
-
-const ANNOTATIONS = new Set(["$schema", "$id", "title", "description"]);
-const IMPLEMENTED = new Set([
-  "$ref", "type", "const", "enum", "required", "properties", "additionalProperties",
-  "items", "minItems", "maxItems", "contains", "minLength", "pattern", "oneOf", "allOf", "not", "definitions",
-]);
-
-/** Throws on any keyword, or keyword form, the checker does not implement -- for this node only. */
-function assertImplementedNode(schema: Schema, at: string): void {
-  for (const key of Object.keys(schema)) {
-    if (!ANNOTATIONS.has(key) && !IMPLEMENTED.has(key)) throw new Error(`minimal validator does not implement "${key}" (at ${at})`);
-  }
-  if (Object.hasOwn(schema, "type") && typeof schema.type !== "string") throw new Error(`minimal validator implements only a string "type" (at ${at})`);
-  if (Object.hasOwn(schema, "additionalProperties") && typeof schema.additionalProperties !== "boolean") {
-    throw new Error(`minimal validator implements only a boolean "additionalProperties" (at ${at})`);
-  }
-  if (Object.hasOwn(schema, "items") && Array.isArray(schema.items)) throw new Error(`minimal validator does not implement tuple "items" (at ${at})`);
-}
-
-/** Walks every subschema of `schema`, visited by a value or not, through assertImplementedNode. */
-function assertImplemented(schema: Schema, at = "#"): void {
-  assertImplementedNode(schema, at);
-  for (const key of ["properties", "definitions"]) {
-    for (const [name, child] of Object.entries((schema[key] ?? {}) as Record<string, Schema>)) assertImplemented(child, `${at}/${key}/${name}`);
-  }
-  for (const key of ["items", "contains", "not"]) if (Object.hasOwn(schema, key)) assertImplemented(schema[key] as Schema, `${at}/${key}`);
-  for (const key of ["oneOf", "allOf"]) (Array.isArray(schema[key]) ? (schema[key] as Schema[]) : []).forEach((child, index) => assertImplemented(child, `${at}/${key}/${index}`));
-}
+type Schema = ContractSchema;
+const assertImplemented = (schema: Schema) => assertImplementedContract(schema);
 
 const CONTRACTS = new URL("../../../docs/contracts/", import.meta.url);
 function loadContract(name: string): Schema {
@@ -62,62 +38,9 @@ function loadContract(name: string): Schema {
   return schema;
 }
 
-function typeOf(value: unknown): string {
-  if (value === null) return "null";
-  if (Array.isArray(value)) return "array";
-  if (typeof value === "number") return Number.isInteger(value) ? "integer" : "number";
-  return typeof value;
-}
-
-/** Returns the validation errors for `value` under `schema`; `root` resolves "#/..." refs, `load` resolves file refs. */
-function validate(schema: Schema, value: unknown, root: Schema, load: (name: string) => Schema, at = "$"): string[] {
-  assertImplementedNode(schema, at);
-  if (typeof schema.$ref === "string") {
-    // Draft-07: $ref replaces every sibling keyword (siblings are annotations only).
-    const [file = "", pointer = ""] = schema.$ref.split("#");
-    const docRoot = file === "" ? root : load(file);
-    let target: unknown = docRoot;
-    for (const segment of pointer.split("/").filter(Boolean)) {
-      if (!Object.hasOwn(target as Schema, segment)) throw new Error(`unresolvable $ref ${schema.$ref} (at ${at})`);
-      target = (target as Schema)[segment];
-    }
-    return validate(target as Schema, value, docRoot, load, at);
-  }
-  const errors: string[] = [];
-  const kind = typeOf(value);
-  if (typeof schema.type === "string" && !(schema.type === kind || (schema.type === "number" && kind === "integer"))) {
-    return [`${at}: expected ${schema.type}, got ${kind}`];
-  }
-  if (Object.hasOwn(schema, "const") && JSON.stringify(schema.const) !== JSON.stringify(value)) errors.push(`${at}: must equal ${JSON.stringify(schema.const)}`);
-  if (Array.isArray(schema.enum) && !schema.enum.some((option) => JSON.stringify(option) === JSON.stringify(value))) errors.push(`${at}: not in enum`);
-  if (typeof value === "string") {
-    if (typeof schema.minLength === "number" && value.length < schema.minLength) errors.push(`${at}: shorter than ${schema.minLength}`);
-    if (typeof schema.pattern === "string" && !new RegExp(schema.pattern, "u").test(value)) errors.push(`${at}: does not match ${schema.pattern}`);
-  }
-  if (Array.isArray(value)) {
-    if (typeof schema.minItems === "number" && value.length < schema.minItems) errors.push(`${at}: fewer than ${schema.minItems} item(s)`);
-    if (typeof schema.maxItems === "number" && value.length > schema.maxItems) errors.push(`${at}: more than ${schema.maxItems} item(s)`);
-    if (schema.items !== undefined) value.forEach((item, index) => errors.push(...validate(schema.items as Schema, item, root, load, `${at}[${index}]`)));
-    if (schema.contains !== undefined && !value.some((item, index) => validate(schema.contains as Schema, item, root, load, `${at}[${index}]`).length === 0)) {
-      errors.push(`${at}: no item matches "contains"`);
-    }
-  }
-  if (kind === "object") {
-    const record = value as Record<string, unknown>;
-    const properties = (schema.properties ?? {}) as Record<string, Schema>;
-    for (const name of (schema.required ?? []) as string[]) if (!Object.hasOwn(record, name)) errors.push(`${at}: missing required "${name}"`);
-    for (const [name, child] of Object.entries(record)) {
-      if (Object.hasOwn(properties, name)) errors.push(...validate(properties[name] as Schema, child, root, load, `${at}.${name}`));
-      else if (schema.additionalProperties === false) errors.push(`${at}: additional property "${name}"`);
-    }
-  }
-  if (Array.isArray(schema.oneOf)) {
-    const passing = (schema.oneOf as Schema[]).filter((branch) => validate(branch, value, root, load, at).length === 0).length;
-    if (passing !== 1) errors.push(`${at}: matches ${passing} oneOf branch(es), expected exactly 1`);
-  }
-  if (Array.isArray(schema.allOf)) for (const branch of schema.allOf as Schema[]) errors.push(...validate(branch, value, root, load, at));
-  if (schema.not !== undefined && validate(schema.not as Schema, value, root, load, at).length === 0) errors.push(`${at}: matches a "not" schema`);
-  return errors;
+/** The violations of `value` under `schema`, formatted from the document root `$`; `load` resolves file refs. */
+function validate(schema: Schema, value: unknown, _root: Schema, load: (name: string) => Schema): string[] {
+  return validateAgainstContract(schema, value, load).map((violation) => formatContractViolation("$", violation));
 }
 
 const briefSchema = loadContract("engagement-brief.json");
@@ -146,7 +69,7 @@ const SLUGIFIED_PROSE = "mostly-dentists-near-our-office-on-main-street";
 const OVERLONG_SLUG = Array.from({ length: 2000 }, (_, index) => `w${index % 10}`).join("-").slice(0, 9999);
 const PROTOTYPE_KEYS = ["toString", "constructor", "hasOwnProperty", "__proto__"];
 
-describe("minimal draft-07 checker", () => {
+describe("minimal draft-07 contract checker", () => {
   it("applies a sibling additionalProperties:false to sibling properties only, as draft-07 does", () => {
     const misplaced: Schema = { type: "object", additionalProperties: false, oneOf: [{ required: ["id"], properties: { id: { type: "string" } } }] };
     expect(validate(misplaced, { id: "x" }, misplaced, loadContract)).not.toEqual([]);
@@ -160,7 +83,7 @@ describe("minimal draft-07 checker", () => {
     for (const key of PROTOTYPE_KEYS) {
       const value = JSON.parse(`{"id":"x",${JSON.stringify(key)}:"free text"}`) as unknown;
       expect(Object.hasOwn(value as object, key)).toBe(true);
-      expect(validate(closed, value, closed, loadContract)).toContain(`$: additional property "${key}"`);
+      expect(validate(closed, value, closed, loadContract)).toEqual(["$ has a field the contract does not declare (key 2 of this object), and unknown fields are refused"]);
     }
     const needs: Schema = { type: "object", required: ["toString", "constructor"] };
     expect(validate(needs, {}, needs, loadContract)).toHaveLength(2);
@@ -312,6 +235,14 @@ describe("toEngagementBrief() keeps founder text out of the committed brief", ()
     expect(snapshot?.fields.map((field) => field.id)).toEqual([...ENGAGEMENT_CONTEXT_FIELD_IDS]);
     expect(snapshot?.fields.filter((field) => field.state === "unknown")).toHaveLength(ENGAGEMENT_CONTEXT_FIELD_IDS.length - 2);
     expect(validateContext(JSON.parse(JSON.stringify(snapshot)))).toEqual([]);
+  });
+});
+
+describe("toEngagementBrief() writes the hub brief only (#1178)", () => {
+  it("has no staffedHere option, and never writes staffedHere", () => {
+    const brief = toEngagementBrief({ problem: PROBLEM, composed, catalogue: CAPABILITY_CATALOGUE, staffedHere: ["writer"] } as unknown as Parameters<typeof toEngagementBrief>[0]);
+    expect(brief).not.toHaveProperty("staffedHere");
+    expect(validateEngagementBrief(JSON.parse(JSON.stringify(brief)))).toEqual([]);
   });
 });
 

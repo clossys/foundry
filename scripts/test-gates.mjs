@@ -317,6 +317,190 @@ try {
     }
   }
 
+  // ------------------------------------------------ machine-local path names
+  console.log("\n# machine-local path names");
+  {
+    // Accuracy is measured here, not argued: a data-driven table of realistic
+    // machine-path names (every one must be caught), ordinary names (every one
+    // must stay clean) and KNOWN-GAP shapes (deliberately not covered; asserted
+    // as currently missed so closing one is noticed). Seeded from three review
+    // rounds' corpora. The rule is limited to shapes only a machine produces
+    // (see MACHINE-LOCAL PATH NAMES in check-public-safety.mjs); every home-
+    // directory shape spelled with ordinary words is a KNOWN-GAP row. Each row
+    // gets its own directory so a file and a directory of the same name can
+    // coexist. Slash-form rows are joined from segments at run time so this
+    // file never holds a literal absolute-path shape; `someone` is a
+    // placeholder.
+    const J = (...parts) => parts.join("/");
+    const MP_POSITIVES = [
+      // 1. temp roots, flattened and mirrored
+      "-private-var-folders-ab-cd-T-x",
+      "_private_tmp_claude-1_scratchpad_x",
+      "-private-tmp-claude-502-x",
+      J("-private-tmp", "x.jsonl"),
+      "-private-var",
+      "-var-folders",
+      "-var-folders-ab-cdef-T-x.txt",
+      "-tmp-claude-501-proj-x",
+      J("private", "var", "folders", "ab", "x"),
+      J("mirror", "private", "tmp", "x", "a.txt"),
+      J("var", "folders", "ab", "x"),
+      J("tmp", "claude-1", "x"),
+      // 2. URL-encoded absolute paths
+      "%2FUsers%2Fsomeone%2Fcode%2Fx.txt",
+      "%2fUsers%2fsomeone%2fx.txt",
+      "file%3A%2F%2F%2FUsers%2Fsomeone%2Fx",
+      "%2Fhome%2Fsomeone%2Fx",
+      // 3. Windows drive homes
+      "C--Users-someone-code",
+      "c--Users-someone-code",
+      "C--users-someone-code",
+      "C--Users-someone-source-repos-x",
+      "C--Users-someone-AppData-Local-Temp-x",
+      "C--Users-someone-OneDrive-x",
+      "C\\Users\\someone\\x.txt",
+      // 4. WSL mounts
+      "-mnt-c-Users-someone-code-x",
+      "_mnt_c_Users_someone_code_x",
+      J("mnt", "c", "Users", "someone", "x.txt"),
+      // 5. flattened macOS homes with a machine marker, and the bare session key
+      "-Users-someone--claude-worktrees-x",
+      "_Users_someone__claude_x",
+      "-Users-someone-Library-Caches-x",
+      "-Users-someone-Desktop-notes.txt",
+      "_Users_mary-jane_Downloads_x.txt",
+      "-Users-someone",
+      J("-Users-someone", "x.jsonl"),
+    ];
+    const MP_NEGATIVES = [
+      // review A
+      "users.md", "home.tsx", J("app", "users", "[id]", "page.tsx"), J("src", "home", "index.ts"), "_home.scss",
+      "private-tmp-notes.md", "var-folders.md", "c-users-guide.md", "tmp-claude.md", "claude-3-notes.md",
+      "home-page-copy.md", "users-guide.md", "Users-Guide-Intro.md", "_home-page-hero.scss", "_home_hero.scss",
+      "_home_page_hero.scss", "_users_list.scss", "private-variables.md", "private_var_names.ts",
+      "no-private-var-access.md", "var-folders-guide.md", "private-tmp-dir-cleanup.test.ts",
+      "tmp-claude-3-output.json", "tmp_claude-4-transcript.json", J("tmp", "claude-3-notes.md"),
+      J("src", "components", "Users", "UserList", "index.tsx"), J("src", "features", "Users", "hooks", "useUsers.ts"),
+      J("app", "Users", "[id]", "page.tsx"), J("src", "Users", "Users.tsx"), "C-Users-Guide-intro.md",
+      "A_Users_manual_v2.pdf", "home_someone.md", "-home-.md", "_Home_Page_Hero.scss",
+      J("docs", "user-home", "setup.md"), "users-home-dir.md", "the-var-folders-explained.md",
+      J("src", "private", "tmp.ts"), J("lib", "private", "var", "x.ts"), "sidebar-home-link.tsx",
+      "_home-someone-page.scss", "__home__.tsx", "-Users.md",
+      // review B, and this suite's earlier ones
+      "_home_hero_banner.scss", "-home-page-hero.md", "a-Users-list-page.tsx", J("src", "Users", "Profile", "index.tsx"),
+      J("docs", "home.md"), J("src", "home", "components", "Hero.tsx"), J("app", "users", "profile", "page.tsx"),
+      "private-tmp.md", "_private_tmp.py", "private-tmp-cleanup.md", J("apps", "home", "web", "src", "x.ts"), "_Users_list.scss",
+      // final review
+      J("src", "features", "Users", "components", "Documents", "index.tsx"),
+      J("app", "home", "(marketing)", "work", "page.tsx"),
+      J("src", "pages", "home", "sections", "projects", "index.tsx"),
+      J("docs", "home", "guides", "dev", "setup.md"),
+      J("app", "_home_sections", "Hero.tsx"),
+      J("_home_components", "index.ts"), J("_home_hero", "index.ts"), J("-home-work", "index.ts"),
+      J("_Users_Avatar", "index.tsx"), "-Users-List-Item.tsx",
+    ];
+    // [name, why it is not covered] — one line each.
+    const HOME_WORD = "home-directory shape spelled with ordinary words: indistinguishable from app layouts";
+    const MP_KNOWN_GAPS = [
+      ["-Users-someone-.claude-x", "a flattener that keeps the dot of a dot-directory (the marker is a doubled separator)"],
+      ["-Users-mary-jane", "a bare session key whose user name contains the separator"],
+      ["-Users-someone-code-notes.txt", `macOS ${HOME_WORD}`],
+      [J("-Users-someone-code-proj", "0b1c2d3e-aaaa-bbbb-cccc-000000000000", "scratchpad", "n.md"), `macOS ${HOME_WORD}`],
+      ["_Users_someone_code_x.md", `macOS ${HOME_WORD}`],
+      ["_Users_mary-jane_code_x.md", `macOS ${HOME_WORD}`],
+      ["-Users-mary_jane-code-x.md", `macOS ${HOME_WORD}`],
+      ["-Users-someone-Documents-x", `macOS ${HOME_WORD}`],
+      [J("_Users_someone", "x.jsonl"), "bare _Users_<name>: only the dash form is an agent session key"],
+      ["\\Users\\someone", "bare backslash Users form: only the dash form is an agent session key"],
+      ["-home-someone-code-x", `Linux ${HOME_WORD}`],
+      ["_home_someone_code_x.md", `Linux ${HOME_WORD}`],
+      ["_home_mary-jane_x.md", `Linux ${HOME_WORD}`],
+      ["-home-someone", `Linux ${HOME_WORD}`],
+      ["-home-user-foundry", `cloud-sandbox Linux ${HOME_WORD}`],
+      [J("home", "someone", "code", "x"), `mirrored Linux ${HOME_WORD}`],
+      [J("Users", "someone", "code", "a.txt"), `mirrored macOS ${HOME_WORD}`],
+      [J("Users", "someone", "AppData", "Local", "x"), `mirrored ${HOME_WORD}`],
+      [J("fixtures", "Users", "someone", "a.txt"), `mirrored ${HOME_WORD}`],
+      ["C_Users_someone_code", "single-separator Windows form: same shape as A_Users_manual_v2.pdf"],
+      ["notes-tmp-claude-501-x.md", "temp root mid-name: unanchored temp rules flagged ordinary names"],
+      ["-tmp-pytest-of-someone-pytest-3", "generic tmp subdirectories: no distinctive token after tmp"],
+      ["-tmp-someone-session", "generic tmp subdirectories: no distinctive token after tmp"],
+      ["%Users%someone%code%x.txt.swp", "vim swap-file flattening (%): rare in a tree"],
+      ["!Users!someone!code!x.txt~", "emacs backup flattening (!): rare in a tree"],
+      [".Users.someone.code.x", "dot-flattened: indistinguishable from ordinary dotted names"],
+      ["-root-code-x", "root's home: `root` is an ordinary word with no anchor"],
+    ];
+
+    const env = { ...process.env };
+    delete env.PUBLIC_SAFETY_DENYLIST; // PARTIAL must mean no denylist at all
+    const plant = (dir, names) => {
+      names.forEach((name, i) => {
+        const rel = J(`r${String(i).padStart(3, "0")}`, name);
+        mkdirSync(dirname(join(dir, rel)), { recursive: true });
+        writeFileSync(join(dir, rel), `Visit ${J("", "users", "settings")} to change it.\n`);
+      });
+      gitInit(dir);
+      return names.map((name, i) => [name, J(`r${String(i).padStart(3, "0")}`, name)]);
+    };
+    const posDir = join(work, "machine-paths-pos");
+    const posRows = plant(posDir, [...MP_POSITIVES, ...MP_KNOWN_GAPS.map(([n]) => n)]);
+    const negDir = join(work, "machine-paths-neg");
+    const negRows = plant(negDir, MP_NEGATIVES);
+
+    for (const [modeLabel, extra] of [["FULL", [...DL, "--require-denylist"]], ["PARTIAL", []]]) {
+      const hitRels = (dir) => {
+        const r = run("node", [SAFETY, dir, ...extra, "--json"], { env });
+        let report;
+        try { report = JSON.parse(r.out); } catch { report = { mode: null, failures: [] }; }
+        return { code: r.code, mode: report.mode, rels: new Set((report.failures ?? []).filter((f) => f.kind === "machine-path").map((f) => f.rel)) };
+      };
+      const pos = hitRels(posDir);
+      check(`${modeLabel}: runs in ${modeLabel} mode`, pos.mode === modeLabel, `mode was ${pos.mode}`);
+      check(`${modeLabel}: fails on machine-local path names`, pos.code === 1, `exit was ${pos.code}`);
+      posRows.forEach(([name, rel], i) => {
+        if (i < MP_POSITIVES.length) {
+          check(`${modeLabel}: flags ${JSON.stringify(name)}`, pos.rels.has(rel), `no machine-path finding for ${rel}`);
+        } else {
+          const why = MP_KNOWN_GAPS[i - MP_POSITIVES.length][1];
+          check(
+            `${modeLabel}: KNOWN-GAP not flagged: ${JSON.stringify(name)}`,
+            !pos.rels.has(rel),
+            `${rel} is now flagged — the gap (${why}) closed; move it to MP_POSITIVES`,
+          );
+        }
+      });
+      const neg = hitRels(negDir);
+      for (const [name, rel] of negRows) {
+        check(`${modeLabel}: does not flag ${JSON.stringify(name)}`, !neg.rels.has(rel), `false-positive machine-path finding for ${rel}`);
+      }
+      // Not an exit-code check: A_Users_manual_v2.pdf is (correctly) refused
+      // as an unacknowledged opaque file, a different rule entirely.
+      check(`${modeLabel}: negative fixture has no machine-path finding`, neg.rels.size === 0, `flagged: ${[...neg.rels].join(", ")}`);
+    }
+
+    const human = run("node", [SAFETY, posDir], { env });
+    check("human report lists the machine-path kind", /## machine-path — \d+ finding/.test(human.out), human.out.slice(0, 300));
+
+    // KNOWN-GAP: the same shapes in file CONTENT are not matched structurally.
+    // Slash-form content paths are left to the denylist (FULL mode); a
+    // structural content backstop measured 22 new findings on this
+    // repository's own tree (placeholder home-directory test fixtures and
+    // prose about the macOS temp symlink), so it was kept out. When a content
+    // rule lands, flip this assertion.
+    const gapDir = join(work, "machine-paths-content-gap");
+    mkdirSync(gapDir, { recursive: true });
+    writeFileSync(join(gapDir, "doc.md"), `notes live at ${J("", "Users", "someone", "code", "notes.md")}\n`);
+    gitInit(gapDir);
+    const gap = run("node", [SAFETY, gapDir, "--json"], { env });
+    let gapReport;
+    try { gapReport = JSON.parse(gap.out); } catch { gapReport = { failures: [] }; }
+    check(
+      "KNOWN-GAP: PARTIAL mode does not flag a slash-form home path in content",
+      gap.code === 0 && !(gapReport.failures ?? []).some((f) => f.kind === "machine-path"),
+      `content is now flagged (exit ${gap.code}) — the gap closed; update this case`,
+    );
+  }
+
   // ------------------------------------------------------------ fail-closed
   console.log("\n# fail-closed behaviour");
   {
@@ -2171,6 +2355,88 @@ try {
       `packages/pkg/CHANGELOG.md was flagged: ${JSON.stringify(anchorReport.findings)}`,
     );
 
+    // (b3) the package changelog at docs/changelogs/<name>.md. It no longer
+    // sits under the scanned package directory, and it must not leave this
+    // gate with it: scanning packages/<name> also scans
+    // docs/changelogs/<name>.md, judged exactly as packages/<name>/CHANGELOG.md
+    // was (same-sentence rot disclosure still exempts; a different sentence
+    // still does not), with findings reported under the real path. A bare
+    // `CHANGELOG.md` inside that changelog names the changelog itself; the
+    // same bare name in shipped package text still reports, since the
+    // tarball no longer carries it.
+    const compRepo = join(work, "contam-class1-companion-changelog");
+    const compPkg = join(compRepo, "packages", "pkg");
+    mkdirSync(join(compPkg, "src"), { recursive: true });
+    mkdirSync(join(compRepo, "docs", "changelogs"), { recursive: true });
+    writeFileSync(
+      join(compPkg, "package.json"),
+      JSON.stringify({ name: `${FIXTURE_SCOPE}/companion`, version: "1.0.0", files: ["src", "README.md"] }, null, 2) + "\n",
+    );
+    writeFileSync(join(compPkg, "src", "index.ts"), "export const companion = 1;\n");
+    writeFileSync(join(compPkg, "README.md"), "# companion\n\nRelease notes are in CHANGELOG.md.\n");
+    writeFileSync(
+      join(compRepo, "docs", "changelogs", "pkg.md"),
+      [
+        "# Changelog",
+        "",
+        "## [1.0.0] - 2026-01-01",
+        "",
+        "### Fixed",
+        "",
+        "- Dropped a citation of `packages/retired/src/gone.ts`, which no longer",
+        "  exists at any commit in this repository.",
+        "",
+        "- Dropped a second citation, of `packages/retired/src/also-gone.ts`. The",
+        "  path named in the entry above no longer exists, but that sentence says",
+        "  nothing whatever about this one.",
+        "",
+        "- Recorded this entry in `CHANGELOG.md`, as every release does.",
+        "",
+      ].join("\n"),
+    );
+    gitInit(compRepo);
+    gitRetirePackageDir(compRepo, "retired");
+    const compRun = run("node", [CONTAM, compPkg, "--class", "1", "--json"]);
+    let compReport;
+    try {
+      compReport = JSON.parse(compRun.out);
+    } catch {
+      compReport = { findings: [] };
+    }
+    const compCites = (file, path) =>
+      (compReport.findings ?? []).some((x) => x.file === file && x.detail.includes(`cites "${path}"`));
+    check(
+      "docs/changelogs/<name>.md is scanned with packages/<name>: rot in it is a finding, reported under its real path",
+      compCites("docs/changelogs/pkg.md", "packages/retired/src/also-gone.ts"),
+      `the moved changelog was not scanned: ${compRun.out.slice(0, 600)}`,
+    );
+    check(
+      "…and a same-sentence rot disclosure in it is still exempt, exactly as in packages/<name>/CHANGELOG.md",
+      !compCites("docs/changelogs/pkg.md", "packages/retired/src/gone.ts"),
+      `the same-sentence disclosure was flagged in the moved changelog: ${JSON.stringify(compReport.findings)}`,
+    );
+    check(
+      "…a bare `CHANGELOG.md` inside the moved changelog names itself and is not a finding",
+      !compCites("docs/changelogs/pkg.md", "CHANGELOG.md"),
+      `the changelog's self-reference was flagged: ${JSON.stringify(compReport.findings)}`,
+    );
+    check(
+      "…but a bare `CHANGELOG.md` in shipped package text IS a finding — the tarball no longer carries one",
+      compCites("README.md", "CHANGELOG.md"),
+      `a shipped pointer at the removed in-package changelog was not flagged: ${JSON.stringify(compReport.findings)}`,
+    );
+    check("…and the run fails", compRun.code === 1, `exit was ${compRun.code}: ${compRun.out.slice(0, 400)}`);
+
+    // Both an in-package CHANGELOG.md and docs/changelogs/<name>.md: two
+    // files claim the one changelog position — refused, never guessed.
+    writeFileSync(join(compPkg, "CHANGELOG.md"), "# Changelog\n");
+    const bothRun = run("node", [CONTAM, compPkg, "--class", "1", "--json"]);
+    check(
+      "a package with BOTH its own CHANGELOG.md and docs/changelogs/<name>.md cannot run (exit 2)",
+      bothRun.code === 2 && /a package changelog lives only at/.test(bothRun.out),
+      `exit was ${bothRun.code}: ${bothRun.out.slice(0, 400)}`,
+    );
+
     // (c) `packages/…` is a SHAPE, not proof of self-reference. A package whose
     // job is walking other repositories' `packages/` trees documents its own
     // parameters with placeholder paths that name the READER's tree — the same
@@ -2454,6 +2720,12 @@ try {
     // inside this synthetic repo to pick up ITS history instead of the real
     // repo's -- copying the file, not just referencing CONTAM's real path.
     cpSync(CONTAM, join(srcRepo, "scripts", "check-contamination-classes.mjs"));
+    // ...along with the modules it imports (where a package changelog lives,
+    // and how a package declares the files its build copies in).
+    mkdirSync(join(srcRepo, "scripts", "lib"), { recursive: true });
+    for (const lib of ["changelog-location.mjs", "packed-copies.mjs"]) {
+      cpSync(join(scriptDir, "lib", lib), join(srcRepo, "scripts", "lib", lib));
+    }
     writeFileSync(
       join(srcRepo, "packages", "probe-lib", "package.json"),
       JSON.stringify({ name: `${FIXTURE_SCOPE}/probe-lib`, version: "1.0.0" }, null, 2) + "\n",
@@ -5464,22 +5736,28 @@ try {
         `expected exit 1 on review comment 50101 alongside a clean summary, got exit ${summaryAndInline.code}: ${summaryAndInline.out.slice(0, 400)}`,
       );
 
+      // Review events reach conversation-safety.yml through
+      // conversation-safety-review-relay.yml and a workflow_run trigger, so
+      // the subscription is asserted on the relay and the --pr --review scan
+      // on the workflow_run branch of the gate step.
       const eventWorkflowPath = join(repoRoot, ".github", "workflows", "conversation-safety.yml");
       const eventWorkflow = readFileSync(eventWorkflowPath, "utf8");
+      const relayWorkflow = readFileSync(join(repoRoot, ".github", "workflows", "conversation-safety-review-relay.yml"), "utf8");
       const gateStep = eventWorkflow.split("name: Run conversation safety gate")[1]?.split("- name: Redact denylist")[0] ?? "";
       const gateRun = gateStep.split("run: |")[1] ?? "";
       check(
         "#944: pull_request_review fetches and scans inline comments attached to a submitted review in this run",
         /inline comments attached to a submitted review are fetched and scanned in this run/i.test(eventWorkflow) &&
-          /printf '%s' "\$REVIEW_TEXT" \| node scripts\/check-conversation-safety\.mjs --pr "\$PR_NUMBER" --review "\$REVIEW_ID"/.test(gateRun) &&
+          /node scripts\/check-conversation-safety\.mjs --pr "\$RELAY_PR_NUMBER" --review "\$RELAY_REVIEW_ID" --edit-history --require-denylist/.test(gateRun) &&
+          /^ {2}pull_request_review:\n {4}types: \[submitted, edited\]/m.test(relayWorkflow) &&
           !/still arrive as their own/.test(eventWorkflow) &&
           !/separate pull_request_review_comment events and are scanned by/.test(eventWorkflow),
         "conversation-safety.yml does not fetch this review's inline comments, or it still claims they always arrive as separate events",
       );
       check(
         "#944: pull_request_review_comment stays subscribed — a comment that also arrives on its own is still scanned",
-        /^ {2}pull_request_review_comment:\n {4}types: \[created, edited\]/m.test(eventWorkflow),
-        "the per-comment event was dropped from conversation-safety.yml",
+        /^ {2}pull_request_review_comment:\n {4}types: \[created, edited\]/m.test(relayWorkflow),
+        "the per-comment event was dropped from conversation-safety-review-relay.yml",
       );
       check(
         "#944: the gate run script does not interpolate event text via ${{ }}",

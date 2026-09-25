@@ -28,6 +28,35 @@ the wrong bucket:
 npx @clossys/launcher
 ```
 
+Advisor has three parts, and each has one home:
+
+- **Engagement state** — Advisor's assessment input, plan and next action in
+  `clossys/advisor/` — lives only in the hub. There is one engagement, so
+  there is one record. The apply-plan step writes each staffed repository
+  its own `clossys/brief.json` (why each role is staffed there, plus a
+  snapshot of the hub's engagement context); the hub's record stays the
+  source.
+- **The engine**, the `@clossys/advisor` package, is pinned in the hub. A
+  repository that needs one of its bins can run
+  `npx --package=@clossys/advisor@<the hub's exact version> advisor-check`
+  rather than pinning a second copy that could reach a different verdict.
+  The package has no bin named after itself, so name the bin you need;
+  `advisor-execution-readiness` and `advisor-render-status` run the same way.
+- **The voice**, the `@clossys-advisor` skill, is composed by the launcher into
+  the hub with the whole team. A product repository staffed in an approved
+  plan gets it, with the voices of the roles staffed there, once that plan's
+  setup pull request has merged; it needs no install in either. That is
+  where you talk to Advisor.
+
+The design is that Advisor decides in the hub, the launcher applies the plan
+as pull requests, and each product repository verifies the change against the
+hub's approved plan rather than re-running the assessment. That last step is
+not built yet: `@clossys/starter`'s request validates Advisor's exact manifest
+and lockfile identity in the repository it proves, so today every
+Starter-proved repository keeps an exact `@clossys/advisor` pin in
+`devDependencies`. That pin is a transitional allowance, removed once Starter
+verifies the hub's approved plan instead (#1492).
+
 Appointing an existing tree also requires a populated inventory: the
 launcher refuses when the checkout has none, so point it at one:
 
@@ -85,6 +114,18 @@ repository. Waiting is a substitute for verification only until verification
 exists. It now does, and a consumer that verifies provenance for a specific
 `@clossys` release has already obtained what a release-age wait was a proxy
 for — it may skip the wait for that release.
+
+**Consumer configuration.** A consumer that enforces a release-age wait
+should exempt the `@clossys` scope from it and verify provenance instead, so a
+new `@clossys` release can be installed the day it ships. With pnpm, list the
+scope in `minimumReleaseAgeExclude` next to `minimumReleaseAge` (as
+`"@clossys/*"` on a pnpm version that accepts name patterns there), and run
+`integrator-provenance-check` in CI after install. It exits 1 for a
+`@clossys` package whose provenance is missing or does not match, so a
+version from a package's first identity publication (the one exception
+above, which carries none) keeps failing it: provenance cannot be added
+to a version after it is published. The fix is to upgrade to a later
+version of that package published through `publish.yml`.
 
 **What "verifiable anonymously" means, exactly.** The public npm registry
 serves `GET https://registry.npmjs.org/-/npm/v1/attestations/<pkg>@<version>`

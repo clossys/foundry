@@ -3,6 +3,9 @@ import type { ComposedRole, ComposeKitResult } from "./composition.js";
 import { ENGAGEMENT_CONTEXT_FIELD_IDS } from "./context.js";
 import type { EngagementContext, EngagementContextField, EngagementContextFieldId } from "./context.js";
 import { applyContextChoice } from "./context-questions.js";
+import { contractFindings, loadPlanContract } from "./plan-contract.js";
+import { briefRuleViolations } from "./plan-rules.js";
+import type { AdvisorFinding } from "./types.js";
 
 /**
  * The kit output shape (issue #1176, owner redirect 2026-09-22): the
@@ -30,6 +33,15 @@ export interface EngagementBrief {
   /** What the client gets, one line per staffed role, grounded in that role's own boundary.owns. */
   deliverables: readonly string[];
   /**
+   * The roles staffed in the repository this brief is written to, in plan
+   * order (issue #1178). Absent in the hub brief, which is the only brief
+   * this package builds. A repository's own brief is derived from it by
+   * Launcher's apply planner, `planApplyBundle()`, as the brief contract's
+   * description defines.
+   * Every entry is one of `roles[].role`, and none repeats.
+   */
+  staffedHere?: readonly string[];
+  /**
    * A contract-shaped snapshot of the hub's `clossys/advisor/context.json`
    * (issue #1173 follow-up): how a role running in a product repository,
    * with no hub checkout, reads what the founder already answered. Exactly
@@ -40,6 +52,50 @@ export interface EngagementBrief {
    */
   context?: EngagementContext;
 }
+
+/**
+ * Validates a candidate brief against the shared brief contract,
+ * `docs/contracts/engagement-brief.json` with its `context` snapshot's
+ * `engagement-context.json` (issue #1475; in the public repository, not shipped in this package).
+ * This package packs their content into a generated module at build
+ * time. @clossys/launcher validates against the same files where it writes
+ * `clossys/brief.json`, so a brief this accepts is a brief Launcher accepts.
+ * Unknown fields are refused, and a known context value must be one of that
+ * field's fixed choice ids. Never throws; a schema finding has the rule
+ * `engagement-brief-contract`, and no message echoes a value from the brief,
+ * which can carry founder text.
+ *
+ * Once the schema passes, the contract's code rules run too (issue #1178):
+ * every `staffedHere` entry is one of `roles[].role` (rule
+ * `engagement-brief-rule-b1`) and none repeats (`engagement-brief-rule-b2`).
+ */
+export function validateEngagementBrief(value: unknown): AdvisorFinding[] {
+  const findings = contractFindings("engagement-brief.json", "engagement-brief-contract", "brief", value);
+  if (findings.length > 0) return findings;
+  return briefRuleViolations(value as EngagementBrief).map((violation) => ({
+    rule: `engagement-brief-rule-${violation.rule.toLowerCase()}`,
+    severity: "error",
+    message: `brief.${violation.path} ${violation.message} (rule ${violation.rule})`,
+    path: violation.path,
+  }));
+}
+
+/**
+ * The fixed text a brief carries as its `problem` in a repository whose
+ * visibility is not private (issue #1178), read from the shared brief
+ * contract's `definitions.publicProblemPlaceholder`. Launcher's apply
+ * planner, `planApplyBundle()`, puts it in place of the client's own words
+ * for such a repository when it computes that repository's brief. The
+ * planner writes no file, and Launcher's brief-only `applyEngagementBrief()`,
+ * the only brief writer today, commits `problem` unchanged. It says where the
+ * problem is kept, and nothing about what it is.
+ */
+export const PUBLIC_PROBLEM_PLACEHOLDER: string = (() => {
+  const definitions = loadPlanContract("engagement-brief.json").definitions as Record<string, { const?: unknown }> | undefined;
+  const text = definitions?.publicProblemPlaceholder?.const;
+  if (typeof text !== "string") throw new Error("the packed brief contract has no publicProblemPlaceholder text");
+  return text;
+})();
 
 function toBriefRole(role: ComposedRole): EngagementBriefRole {
   return { role: role.role, why: role.why, goal: role.goal, inputsFrom: role.inputsFrom, outputsTo: role.outputsTo };

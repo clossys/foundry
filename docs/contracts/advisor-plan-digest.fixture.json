@@ -1,0 +1,1158 @@
+{
+  "description": "Issue #1475: the shared corpus for the canonical plan digest defined in docs/contracts/advisor-plan-digest.md. Both @clossys/advisor and @clossys/launcher test their own implementation against every case here, so the two packages compute identical digests. Expected values were produced independently of either package. The plans that carry kits, staffing, packages, resolution or a decision's subjectDigest (issue #1178) were added later and computed the same way, independently of either package: a stand-alone Python 3 script took each plan without asOf and decisions, serialized it with json.dumps(subject, ensure_ascii=False, sort_keys=True, separators=(',', ':')) -- which is RFC 8785 for these plans, because every key is ASCII (so code-point order equals UTF-16 order) and the only number is the integer 1 -- and hashed its UTF-8 bytes with hashlib.sha256.",
+  "canonicalJson": [
+    {
+      "name": "key-order",
+      "value": {
+        "b": 1,
+        "a": [
+          3,
+          2,
+          1
+        ],
+        "c": {
+          "z": null,
+          "y": true,
+          "x": false
+        }
+      },
+      "canonical": "{\"a\":[3,2,1],\"b\":1,\"c\":{\"x\":false,\"y\":true,\"z\":null}}"
+    },
+    {
+      "name": "key-order-permuted",
+      "value": {
+        "c": {
+          "x": false,
+          "z": null,
+          "y": true
+        },
+        "a": [
+          3,
+          2,
+          1
+        ],
+        "b": 1
+      },
+      "canonical": "{\"a\":[3,2,1],\"b\":1,\"c\":{\"x\":false,\"y\":true,\"z\":null}}"
+    },
+    {
+      "name": "nested-arrays",
+      "value": [
+        [
+          1,
+          [
+            2,
+            [
+              3,
+              []
+            ]
+          ]
+        ],
+        {},
+        [
+          {
+            "b": [],
+            "a": {}
+          }
+        ]
+      ],
+      "canonical": "[[1,[2,[3,[]]]],{},[{\"a\":{},\"b\":[]}]]"
+    },
+    {
+      "name": "unicode-as-written",
+      "value": {
+        "separator": "\u2028",
+        "pr\u00e9compos\u00e9": "\u00e9",
+        "decomposed": "e\u0301",
+        "emoji": "\ud83d\ude00",
+        "cjk": "\u65e5\u672c\u8a9e"
+      },
+      "canonical": "{\"cjk\":\"\u65e5\u672c\u8a9e\",\"decomposed\":\"e\u0301\",\"emoji\":\"\ud83d\ude00\",\"pr\u00e9compos\u00e9\":\"\u00e9\",\"separator\":\"\u2028\"}"
+    },
+    {
+      "name": "escapes",
+      "value": "q\"b\\s/\b\f\n\r\t\u0001\u001f\u007f",
+      "canonical": "\"q\\\"b\\\\s/\\b\\f\\n\\r\\t\\u0001\\u001f\u007f\""
+    },
+    {
+      "name": "literals-and-empties",
+      "value": {
+        "f": false,
+        "e": true,
+        "d": null,
+        "c": "",
+        "b": {},
+        "a": []
+      },
+      "canonical": "{\"a\":[],\"b\":{},\"c\":\"\",\"d\":null,\"e\":true,\"f\":false}"
+    },
+    {
+      "name": "keys-sort-by-utf16-code-units",
+      "value": {
+        "\uff61": 1,
+        "\ud83d\ude00": 2,
+        "a": 3
+      },
+      "canonical": "{\"a\":3,\"\ud83d\ude00\":2,\"\uff61\":1}",
+      "note": "U+1F600 is the surrogate pair D83D DE00 in UTF-16, which sorts before U+FF61; code-point order would put U+FF61 first."
+    },
+    {
+      "name": "numbers",
+      "value": {
+        "zero": 0,
+        "neg": -5,
+        "int": 1,
+        "frac": 0.5,
+        "big": 1e+21,
+        "small": 1e-07,
+        "negzero": -0.0
+      },
+      "canonical": "{\"big\":1e+21,\"frac\":0.5,\"int\":1,\"neg\":-5,\"negzero\":0,\"small\":1e-7,\"zero\":0}",
+      "note": "Numbers use ECMAScript Number.prototype.toString, and -0 is written 0. The plan contract itself admits only one number, schemaVersion 1."
+    }
+  ],
+  "refused": [
+    {
+      "name": "lone-high-surrogate",
+      "json": "\"\\ud800\""
+    },
+    {
+      "name": "lone-low-surrogate-in-a-key",
+      "json": "{\"\\udc00\":1}"
+    }
+  ],
+  "plans": [
+    {
+      "name": "blockers-without-due",
+      "note": "Advisor's current shape: blockers carry capabilityId, nextAction and since, and recommendedNext has no due.",
+      "plan": {
+        "schemaVersion": 1,
+        "asOf": "2026-09-24T09:00:00Z",
+        "mandate": {
+          "problem": "Our site doesn't explain what we do.",
+          "primaryProblemId": "strategist-unclear-direction",
+          "roles": [
+            "strategist",
+            "writer"
+          ]
+        },
+        "whereWeAre": [
+          "Fit and readiness both satisfied."
+        ],
+        "recommendedNext": {
+          "action": "Approve the first-wave plan.",
+          "owner": "sponsor"
+        },
+        "decisions": [
+          {
+            "at": "2026-09-24T10:00:00Z",
+            "recommended": "compose from confirmed problems",
+            "chosen": "approved",
+            "by": "sponsor"
+          }
+        ],
+        "blockers": [
+          {
+            "capabilityId": "engagement",
+            "kind": "missing-authority",
+            "owner": "sponsor",
+            "nextAction": {
+              "who": "sponsor",
+              "how": "approve the plan",
+              "byWhen": "2026-09-29"
+            },
+            "since": "2026-09-20T00:00:00Z"
+          }
+        ]
+      },
+      "canonical": "{\"blockers\":[{\"capabilityId\":\"engagement\",\"kind\":\"missing-authority\",\"nextAction\":{\"byWhen\":\"2026-09-29\",\"how\":\"approve the plan\",\"who\":\"sponsor\"},\"owner\":\"sponsor\",\"since\":\"2026-09-20T00:00:00Z\"}],\"mandate\":{\"primaryProblemId\":\"strategist-unclear-direction\",\"problem\":\"Our site doesn't explain what we do.\",\"roles\":[\"strategist\",\"writer\"]},\"recommendedNext\":{\"action\":\"Approve the first-wave plan.\",\"owner\":\"sponsor\"},\"schemaVersion\":1,\"whereWeAre\":[\"Fit and readiness both satisfied.\"]}",
+      "digest": "sha256:92af7a1b566210f7d2f6ebdc49faa59332b8191d651e812972f5d671497e0409"
+    },
+    {
+      "name": "every-key-order-reversed",
+      "note": "The same plan with every object's keys in reverse order: the same digest.",
+      "plan": {
+        "blockers": [
+          {
+            "since": "2026-09-20T00:00:00Z",
+            "nextAction": {
+              "byWhen": "2026-09-29",
+              "how": "approve the plan",
+              "who": "sponsor"
+            },
+            "owner": "sponsor",
+            "kind": "missing-authority",
+            "capabilityId": "engagement"
+          }
+        ],
+        "decisions": [
+          {
+            "by": "sponsor",
+            "chosen": "approved",
+            "recommended": "compose from confirmed problems",
+            "at": "2026-09-24T10:00:00Z"
+          }
+        ],
+        "recommendedNext": {
+          "owner": "sponsor",
+          "action": "Approve the first-wave plan."
+        },
+        "whereWeAre": [
+          "Fit and readiness both satisfied."
+        ],
+        "mandate": {
+          "roles": [
+            "strategist",
+            "writer"
+          ],
+          "primaryProblemId": "strategist-unclear-direction",
+          "problem": "Our site doesn't explain what we do."
+        },
+        "asOf": "2026-09-24T09:00:00Z",
+        "schemaVersion": 1
+      },
+      "canonical": "{\"blockers\":[{\"capabilityId\":\"engagement\",\"kind\":\"missing-authority\",\"nextAction\":{\"byWhen\":\"2026-09-29\",\"how\":\"approve the plan\",\"who\":\"sponsor\"},\"owner\":\"sponsor\",\"since\":\"2026-09-20T00:00:00Z\"}],\"mandate\":{\"primaryProblemId\":\"strategist-unclear-direction\",\"problem\":\"Our site doesn't explain what we do.\",\"roles\":[\"strategist\",\"writer\"]},\"recommendedNext\":{\"action\":\"Approve the first-wave plan.\",\"owner\":\"sponsor\"},\"schemaVersion\":1,\"whereWeAre\":[\"Fit and readiness both satisfied.\"]}",
+      "digest": "sha256:92af7a1b566210f7d2f6ebdc49faa59332b8191d651e812972f5d671497e0409"
+    },
+    {
+      "name": "later-asof-and-new-decisions",
+      "note": "The same plan re-approved later: asOf and decisions are excluded, so the same digest.",
+      "plan": {
+        "schemaVersion": 1,
+        "asOf": "2026-10-02T17:45:10.250+02:00",
+        "mandate": {
+          "problem": "Our site doesn't explain what we do.",
+          "primaryProblemId": "strategist-unclear-direction",
+          "roles": [
+            "strategist",
+            "writer"
+          ]
+        },
+        "whereWeAre": [
+          "Fit and readiness both satisfied."
+        ],
+        "recommendedNext": {
+          "action": "Approve the first-wave plan.",
+          "owner": "sponsor"
+        },
+        "decisions": [
+          {
+            "at": "2026-09-24T10:00:00Z",
+            "recommended": "compose from confirmed problems",
+            "chosen": "deferred",
+            "by": "sponsor"
+          },
+          {
+            "at": "2026-10-02T15:40:00Z",
+            "recommended": "compose from confirmed problems",
+            "chosen": "approved",
+            "by": "sponsor"
+          }
+        ],
+        "blockers": [
+          {
+            "capabilityId": "engagement",
+            "kind": "missing-authority",
+            "owner": "sponsor",
+            "nextAction": {
+              "who": "sponsor",
+              "how": "approve the plan",
+              "byWhen": "2026-09-29"
+            },
+            "since": "2026-09-20T00:00:00Z"
+          }
+        ]
+      },
+      "canonical": "{\"blockers\":[{\"capabilityId\":\"engagement\",\"kind\":\"missing-authority\",\"nextAction\":{\"byWhen\":\"2026-09-29\",\"how\":\"approve the plan\",\"who\":\"sponsor\"},\"owner\":\"sponsor\",\"since\":\"2026-09-20T00:00:00Z\"}],\"mandate\":{\"primaryProblemId\":\"strategist-unclear-direction\",\"problem\":\"Our site doesn't explain what we do.\",\"roles\":[\"strategist\",\"writer\"]},\"recommendedNext\":{\"action\":\"Approve the first-wave plan.\",\"owner\":\"sponsor\"},\"schemaVersion\":1,\"whereWeAre\":[\"Fit and readiness both satisfied.\"]}",
+      "digest": "sha256:92af7a1b566210f7d2f6ebdc49faa59332b8191d651e812972f5d671497e0409"
+    },
+    {
+      "name": "roles-reordered",
+      "note": "Array order is significant: a different digest.",
+      "plan": {
+        "schemaVersion": 1,
+        "asOf": "2026-09-24T09:00:00Z",
+        "mandate": {
+          "problem": "Our site doesn't explain what we do.",
+          "primaryProblemId": "strategist-unclear-direction",
+          "roles": [
+            "writer",
+            "strategist"
+          ]
+        },
+        "whereWeAre": [
+          "Fit and readiness both satisfied."
+        ],
+        "recommendedNext": {
+          "action": "Approve the first-wave plan.",
+          "owner": "sponsor"
+        },
+        "decisions": [
+          {
+            "at": "2026-09-24T10:00:00Z",
+            "recommended": "compose from confirmed problems",
+            "chosen": "approved",
+            "by": "sponsor"
+          }
+        ],
+        "blockers": [
+          {
+            "capabilityId": "engagement",
+            "kind": "missing-authority",
+            "owner": "sponsor",
+            "nextAction": {
+              "who": "sponsor",
+              "how": "approve the plan",
+              "byWhen": "2026-09-29"
+            },
+            "since": "2026-09-20T00:00:00Z"
+          }
+        ]
+      },
+      "canonical": "{\"blockers\":[{\"capabilityId\":\"engagement\",\"kind\":\"missing-authority\",\"nextAction\":{\"byWhen\":\"2026-09-29\",\"how\":\"approve the plan\",\"who\":\"sponsor\"},\"owner\":\"sponsor\",\"since\":\"2026-09-20T00:00:00Z\"}],\"mandate\":{\"primaryProblemId\":\"strategist-unclear-direction\",\"problem\":\"Our site doesn't explain what we do.\",\"roles\":[\"writer\",\"strategist\"]},\"recommendedNext\":{\"action\":\"Approve the first-wave plan.\",\"owner\":\"sponsor\"},\"schemaVersion\":1,\"whereWeAre\":[\"Fit and readiness both satisfied.\"]}",
+      "digest": "sha256:d8c177b8df241db76c3bfddb40df06767aaeb8812d6c832135aa97a02f99080c"
+    },
+    {
+      "name": "unicode-decomposed",
+      "note": "Non-ASCII text is digested as written, never escaped or normalized.",
+      "plan": {
+        "schemaVersion": 1,
+        "asOf": "2026-09-24T09:00:00Z",
+        "mandate": {
+          "problem": "Caf\u00e9 \u2014 na\u00efve \u65e5\u672c\u8a9e \ud83d\ude00",
+          "primaryProblemId": "strategist-unclear-direction",
+          "roles": [
+            "strategist",
+            "writer"
+          ]
+        },
+        "whereWeAre": [
+          "Re\u0301sume\u0301 reviewed.",
+          "Line\u2028separator and \"quotes\" and \\ backslash and \t tab."
+        ],
+        "recommendedNext": {
+          "action": "Approve the first-wave plan.",
+          "owner": "sponsor"
+        },
+        "decisions": [
+          {
+            "at": "2026-09-24T10:00:00Z",
+            "recommended": "compose from confirmed problems",
+            "chosen": "approved",
+            "by": "sponsor"
+          }
+        ],
+        "blockers": [
+          {
+            "capabilityId": "engagement",
+            "kind": "missing-authority",
+            "owner": "sponsor",
+            "nextAction": {
+              "who": "sponsor",
+              "how": "approve the plan",
+              "byWhen": "2026-09-29"
+            },
+            "since": "2026-09-20T00:00:00Z"
+          }
+        ]
+      },
+      "canonical": "{\"blockers\":[{\"capabilityId\":\"engagement\",\"kind\":\"missing-authority\",\"nextAction\":{\"byWhen\":\"2026-09-29\",\"how\":\"approve the plan\",\"who\":\"sponsor\"},\"owner\":\"sponsor\",\"since\":\"2026-09-20T00:00:00Z\"}],\"mandate\":{\"primaryProblemId\":\"strategist-unclear-direction\",\"problem\":\"Caf\u00e9 \u2014 na\u00efve \u65e5\u672c\u8a9e \ud83d\ude00\",\"roles\":[\"strategist\",\"writer\"]},\"recommendedNext\":{\"action\":\"Approve the first-wave plan.\",\"owner\":\"sponsor\"},\"schemaVersion\":1,\"whereWeAre\":[\"Re\u0301sume\u0301 reviewed.\",\"Line\u2028separator and \\\"quotes\\\" and \\\\ backslash and \\t tab.\"]}",
+      "digest": "sha256:9a3f02d92049c017cf62b3e7c21d040c4ea0f98931b3fbe663cb10a05e347b8e"
+    },
+    {
+      "name": "unicode-precomposed",
+      "note": "The same words with precomposed characters: a different digest, because nothing is normalized.",
+      "plan": {
+        "schemaVersion": 1,
+        "asOf": "2026-09-24T09:00:00Z",
+        "mandate": {
+          "problem": "Caf\u00e9 \u2014 na\u00efve \u65e5\u672c\u8a9e \ud83d\ude00",
+          "primaryProblemId": "strategist-unclear-direction",
+          "roles": [
+            "strategist",
+            "writer"
+          ]
+        },
+        "whereWeAre": [
+          "R\u00e9sum\u00e9 reviewed.",
+          "Line\u2028separator and \"quotes\" and \\ backslash and \t tab."
+        ],
+        "recommendedNext": {
+          "action": "Approve the first-wave plan.",
+          "owner": "sponsor"
+        },
+        "decisions": [
+          {
+            "at": "2026-09-24T10:00:00Z",
+            "recommended": "compose from confirmed problems",
+            "chosen": "approved",
+            "by": "sponsor"
+          }
+        ],
+        "blockers": [
+          {
+            "capabilityId": "engagement",
+            "kind": "missing-authority",
+            "owner": "sponsor",
+            "nextAction": {
+              "who": "sponsor",
+              "how": "approve the plan",
+              "byWhen": "2026-09-29"
+            },
+            "since": "2026-09-20T00:00:00Z"
+          }
+        ]
+      },
+      "canonical": "{\"blockers\":[{\"capabilityId\":\"engagement\",\"kind\":\"missing-authority\",\"nextAction\":{\"byWhen\":\"2026-09-29\",\"how\":\"approve the plan\",\"who\":\"sponsor\"},\"owner\":\"sponsor\",\"since\":\"2026-09-20T00:00:00Z\"}],\"mandate\":{\"primaryProblemId\":\"strategist-unclear-direction\",\"problem\":\"Caf\u00e9 \u2014 na\u00efve \u65e5\u672c\u8a9e \ud83d\ude00\",\"roles\":[\"strategist\",\"writer\"]},\"recommendedNext\":{\"action\":\"Approve the first-wave plan.\",\"owner\":\"sponsor\"},\"schemaVersion\":1,\"whereWeAre\":[\"R\u00e9sum\u00e9 reviewed.\",\"Line\u2028separator and \\\"quotes\\\" and \\\\ backslash and \\t tab.\"]}",
+      "digest": "sha256:994c8e8696c1ab8b4ac15bca8ea4d5f0aa8961466b0abb87c139a9410493ade7"
+    },
+    {
+      "name": "nothing-pending",
+      "note": "recommendedNext null, empty arrays, and two blockers.",
+      "plan": {
+        "schemaVersion": 1,
+        "asOf": "2026-09-24T09:00:00Z",
+        "mandate": {
+          "problem": "Our site doesn't explain what we do.",
+          "primaryProblemId": "strategist-unclear-direction",
+          "roles": []
+        },
+        "whereWeAre": [],
+        "recommendedNext": null,
+        "decisions": [],
+        "blockers": [
+          {
+            "capabilityId": "engagement",
+            "kind": "missing-authority",
+            "owner": "sponsor",
+            "nextAction": {
+              "who": "sponsor",
+              "how": "approve the plan",
+              "byWhen": "2026-09-29T12:00:00-05:00"
+            },
+            "since": "2026-09-20T00:00:00Z"
+          },
+          {
+            "capabilityId": "publishing",
+            "kind": "unavailable-environment",
+            "owner": "controller",
+            "nextAction": {
+              "who": "operator",
+              "how": "restore the staging host",
+              "byWhen": "2026-10-01"
+            },
+            "since": "2026-09-21T08:30:00Z"
+          }
+        ]
+      },
+      "canonical": "{\"blockers\":[{\"capabilityId\":\"engagement\",\"kind\":\"missing-authority\",\"nextAction\":{\"byWhen\":\"2026-09-29T12:00:00-05:00\",\"how\":\"approve the plan\",\"who\":\"sponsor\"},\"owner\":\"sponsor\",\"since\":\"2026-09-20T00:00:00Z\"},{\"capabilityId\":\"publishing\",\"kind\":\"unavailable-environment\",\"nextAction\":{\"byWhen\":\"2026-10-01\",\"how\":\"restore the staging host\",\"who\":\"operator\"},\"owner\":\"controller\",\"since\":\"2026-09-21T08:30:00Z\"}],\"mandate\":{\"primaryProblemId\":\"strategist-unclear-direction\",\"problem\":\"Our site doesn't explain what we do.\",\"roles\":[]},\"recommendedNext\":null,\"schemaVersion\":1,\"whereWeAre\":[]}",
+      "digest": "sha256:429aaf7f0429bec46d0d1bf7bc55702ac2b29b18980ad821c3d803ca141252a5"
+    },
+    {
+      "name": "staffed-with-packages",
+      "note": "Kits, staffing, exact packages, a resolution, and an approval carrying subjectDigest.",
+      "plan": {
+        "schemaVersion": 1,
+        "asOf": "2026-09-24T09:00:00Z",
+        "mandate": {
+          "problem": "Our site doesn't explain what we do.",
+          "primaryProblemId": "strategist-unclear-direction",
+          "roles": [
+            "strategist",
+            "writer"
+          ]
+        },
+        "whereWeAre": [
+          "Fit and readiness both satisfied."
+        ],
+        "recommendedNext": {
+          "action": "Approve the first-wave plan.",
+          "owner": "sponsor"
+        },
+        "decisions": [
+          {
+            "at": "2026-09-24T10:00:00Z",
+            "recommended": "the Launch kit",
+            "chosen": "approved",
+            "by": "sponsor",
+            "subjectDigest": "sha256:e4e985337f21499c7bd0ab342ade9b5c07569a8984cee1db39cf86ed5df27925"
+          }
+        ],
+        "blockers": [],
+        "kits": [
+          {
+            "id": "launch",
+            "source": "preset",
+            "verdict": "recommended"
+          }
+        ],
+        "staffing": [
+          {
+            "repository": "example-owner/site",
+            "roles": [
+              "strategist",
+              "writer"
+            ]
+          },
+          {
+            "repository": "example-owner/docs",
+            "roles": [
+              "writer"
+            ]
+          }
+        ],
+        "packages": [
+          {
+            "planItem": "example-owner/site:@example/starter",
+            "repository": "example-owner/site",
+            "act": "pin-starter",
+            "name": "@example/starter",
+            "version": "0.9.2",
+            "integrity": "sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w==",
+            "placement": "devDependencies"
+          },
+          {
+            "planItem": "example-owner/site:@example/strategist",
+            "repository": "example-owner/site",
+            "act": "install",
+            "name": "@example/strategist",
+            "version": "1.4.0",
+            "integrity": "sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ==",
+            "placement": "devDependencies"
+          },
+          {
+            "planItem": "example-owner/site:@example/writer",
+            "repository": "example-owner/site",
+            "act": "install",
+            "name": "@example/writer",
+            "version": "0.7.0",
+            "integrity": "sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==",
+            "placement": "devDependencies"
+          },
+          {
+            "planItem": "example-owner/docs:@example/starter",
+            "repository": "example-owner/docs",
+            "act": "pin-starter",
+            "name": "@example/starter",
+            "version": "0.9.2",
+            "integrity": "sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w==",
+            "placement": "devDependencies"
+          },
+          {
+            "planItem": "example-owner/docs:@example/writer",
+            "repository": "example-owner/docs",
+            "act": "install",
+            "name": "@example/writer",
+            "version": "0.7.0",
+            "integrity": "sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==",
+            "placement": "devDependencies"
+          }
+        ],
+        "resolution": {
+          "snapshotDigest": "sha256:fbdb8854d5a4603d838e3f56479b58dbe52b5391330e3875049c4c685db7f2a9"
+        }
+      },
+      "canonical": "{\"blockers\":[],\"kits\":[{\"id\":\"launch\",\"source\":\"preset\",\"verdict\":\"recommended\"}],\"mandate\":{\"primaryProblemId\":\"strategist-unclear-direction\",\"problem\":\"Our site doesn't explain what we do.\",\"roles\":[\"strategist\",\"writer\"]},\"packages\":[{\"act\":\"pin-starter\",\"integrity\":\"sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w==\",\"name\":\"@example/starter\",\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/starter\",\"repository\":\"example-owner/site\",\"version\":\"0.9.2\"},{\"act\":\"install\",\"integrity\":\"sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ==\",\"name\":\"@example/strategist\",\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/strategist\",\"repository\":\"example-owner/site\",\"version\":\"1.4.0\"},{\"act\":\"install\",\"integrity\":\"sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==\",\"name\":\"@example/writer\",\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/writer\",\"repository\":\"example-owner/site\",\"version\":\"0.7.0\"},{\"act\":\"pin-starter\",\"integrity\":\"sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w==\",\"name\":\"@example/starter\",\"placement\":\"devDependencies\",\"planItem\":\"example-owner/docs:@example/starter\",\"repository\":\"example-owner/docs\",\"version\":\"0.9.2\"},{\"act\":\"install\",\"integrity\":\"sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==\",\"name\":\"@example/writer\",\"placement\":\"devDependencies\",\"planItem\":\"example-owner/docs:@example/writer\",\"repository\":\"example-owner/docs\",\"version\":\"0.7.0\"}],\"recommendedNext\":{\"action\":\"Approve the first-wave plan.\",\"owner\":\"sponsor\"},\"resolution\":{\"snapshotDigest\":\"sha256:fbdb8854d5a4603d838e3f56479b58dbe52b5391330e3875049c4c685db7f2a9\"},\"schemaVersion\":1,\"staffing\":[{\"repository\":\"example-owner/site\",\"roles\":[\"strategist\",\"writer\"]},{\"repository\":\"example-owner/docs\",\"roles\":[\"writer\"]}],\"whereWeAre\":[\"Fit and readiness both satisfied.\"]}",
+      "digest": "sha256:834434fb2b492ac904029841194f4cacec1acd4ce4f422c8f87301096d22b414"
+    },
+    {
+      "name": "staffed-with-packages-keys-reversed",
+      "note": "The same plan with every object's keys in reverse order: the same digest.",
+      "plan": {
+        "resolution": {
+          "snapshotDigest": "sha256:fbdb8854d5a4603d838e3f56479b58dbe52b5391330e3875049c4c685db7f2a9"
+        },
+        "packages": [
+          {
+            "placement": "devDependencies",
+            "integrity": "sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w==",
+            "version": "0.9.2",
+            "name": "@example/starter",
+            "act": "pin-starter",
+            "repository": "example-owner/site",
+            "planItem": "example-owner/site:@example/starter"
+          },
+          {
+            "placement": "devDependencies",
+            "integrity": "sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ==",
+            "version": "1.4.0",
+            "name": "@example/strategist",
+            "act": "install",
+            "repository": "example-owner/site",
+            "planItem": "example-owner/site:@example/strategist"
+          },
+          {
+            "placement": "devDependencies",
+            "integrity": "sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==",
+            "version": "0.7.0",
+            "name": "@example/writer",
+            "act": "install",
+            "repository": "example-owner/site",
+            "planItem": "example-owner/site:@example/writer"
+          },
+          {
+            "placement": "devDependencies",
+            "integrity": "sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w==",
+            "version": "0.9.2",
+            "name": "@example/starter",
+            "act": "pin-starter",
+            "repository": "example-owner/docs",
+            "planItem": "example-owner/docs:@example/starter"
+          },
+          {
+            "placement": "devDependencies",
+            "integrity": "sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==",
+            "version": "0.7.0",
+            "name": "@example/writer",
+            "act": "install",
+            "repository": "example-owner/docs",
+            "planItem": "example-owner/docs:@example/writer"
+          }
+        ],
+        "staffing": [
+          {
+            "roles": [
+              "strategist",
+              "writer"
+            ],
+            "repository": "example-owner/site"
+          },
+          {
+            "roles": [
+              "writer"
+            ],
+            "repository": "example-owner/docs"
+          }
+        ],
+        "kits": [
+          {
+            "verdict": "recommended",
+            "source": "preset",
+            "id": "launch"
+          }
+        ],
+        "blockers": [],
+        "decisions": [
+          {
+            "subjectDigest": "sha256:e4e985337f21499c7bd0ab342ade9b5c07569a8984cee1db39cf86ed5df27925",
+            "by": "sponsor",
+            "chosen": "approved",
+            "recommended": "the Launch kit",
+            "at": "2026-09-24T10:00:00Z"
+          }
+        ],
+        "recommendedNext": {
+          "owner": "sponsor",
+          "action": "Approve the first-wave plan."
+        },
+        "whereWeAre": [
+          "Fit and readiness both satisfied."
+        ],
+        "mandate": {
+          "roles": [
+            "strategist",
+            "writer"
+          ],
+          "primaryProblemId": "strategist-unclear-direction",
+          "problem": "Our site doesn't explain what we do."
+        },
+        "asOf": "2026-09-24T09:00:00Z",
+        "schemaVersion": 1
+      },
+      "canonical": "{\"blockers\":[],\"kits\":[{\"id\":\"launch\",\"source\":\"preset\",\"verdict\":\"recommended\"}],\"mandate\":{\"primaryProblemId\":\"strategist-unclear-direction\",\"problem\":\"Our site doesn't explain what we do.\",\"roles\":[\"strategist\",\"writer\"]},\"packages\":[{\"act\":\"pin-starter\",\"integrity\":\"sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w==\",\"name\":\"@example/starter\",\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/starter\",\"repository\":\"example-owner/site\",\"version\":\"0.9.2\"},{\"act\":\"install\",\"integrity\":\"sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ==\",\"name\":\"@example/strategist\",\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/strategist\",\"repository\":\"example-owner/site\",\"version\":\"1.4.0\"},{\"act\":\"install\",\"integrity\":\"sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==\",\"name\":\"@example/writer\",\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/writer\",\"repository\":\"example-owner/site\",\"version\":\"0.7.0\"},{\"act\":\"pin-starter\",\"integrity\":\"sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w==\",\"name\":\"@example/starter\",\"placement\":\"devDependencies\",\"planItem\":\"example-owner/docs:@example/starter\",\"repository\":\"example-owner/docs\",\"version\":\"0.9.2\"},{\"act\":\"install\",\"integrity\":\"sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==\",\"name\":\"@example/writer\",\"placement\":\"devDependencies\",\"planItem\":\"example-owner/docs:@example/writer\",\"repository\":\"example-owner/docs\",\"version\":\"0.7.0\"}],\"recommendedNext\":{\"action\":\"Approve the first-wave plan.\",\"owner\":\"sponsor\"},\"resolution\":{\"snapshotDigest\":\"sha256:fbdb8854d5a4603d838e3f56479b58dbe52b5391330e3875049c4c685db7f2a9\"},\"schemaVersion\":1,\"staffing\":[{\"repository\":\"example-owner/site\",\"roles\":[\"strategist\",\"writer\"]},{\"repository\":\"example-owner/docs\",\"roles\":[\"writer\"]}],\"whereWeAre\":[\"Fit and readiness both satisfied.\"]}",
+      "digest": "sha256:834434fb2b492ac904029841194f4cacec1acd4ce4f422c8f87301096d22b414"
+    },
+    {
+      "name": "staffed-with-packages-new-subject-digest",
+      "note": "The same plan with a later asOf and a second approval naming a different subjectDigest: decisions and asOf are excluded, so the same digest.",
+      "plan": {
+        "schemaVersion": 1,
+        "asOf": "2026-10-01T08:30:00+02:00",
+        "mandate": {
+          "problem": "Our site doesn't explain what we do.",
+          "primaryProblemId": "strategist-unclear-direction",
+          "roles": [
+            "strategist",
+            "writer"
+          ]
+        },
+        "whereWeAre": [
+          "Fit and readiness both satisfied."
+        ],
+        "recommendedNext": {
+          "action": "Approve the first-wave plan.",
+          "owner": "sponsor"
+        },
+        "decisions": [
+          {
+            "at": "2026-09-24T10:00:00Z",
+            "recommended": "the Launch kit",
+            "chosen": "approved",
+            "by": "sponsor",
+            "subjectDigest": "sha256:e4e985337f21499c7bd0ab342ade9b5c07569a8984cee1db39cf86ed5df27925"
+          },
+          {
+            "at": "2026-09-30T16:00:00Z",
+            "recommended": "the Launch kit",
+            "chosen": "approved",
+            "by": "sponsor",
+            "subjectDigest": "sha256:9cf03866eef1fc6a0ff61fbb1c0d736f9ddb7557df693b90556d2e86a6f0b8f1"
+          }
+        ],
+        "blockers": [],
+        "kits": [
+          {
+            "id": "launch",
+            "source": "preset",
+            "verdict": "recommended"
+          }
+        ],
+        "staffing": [
+          {
+            "repository": "example-owner/site",
+            "roles": [
+              "strategist",
+              "writer"
+            ]
+          },
+          {
+            "repository": "example-owner/docs",
+            "roles": [
+              "writer"
+            ]
+          }
+        ],
+        "packages": [
+          {
+            "planItem": "example-owner/site:@example/starter",
+            "repository": "example-owner/site",
+            "act": "pin-starter",
+            "name": "@example/starter",
+            "version": "0.9.2",
+            "integrity": "sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w==",
+            "placement": "devDependencies"
+          },
+          {
+            "planItem": "example-owner/site:@example/strategist",
+            "repository": "example-owner/site",
+            "act": "install",
+            "name": "@example/strategist",
+            "version": "1.4.0",
+            "integrity": "sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ==",
+            "placement": "devDependencies"
+          },
+          {
+            "planItem": "example-owner/site:@example/writer",
+            "repository": "example-owner/site",
+            "act": "install",
+            "name": "@example/writer",
+            "version": "0.7.0",
+            "integrity": "sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==",
+            "placement": "devDependencies"
+          },
+          {
+            "planItem": "example-owner/docs:@example/starter",
+            "repository": "example-owner/docs",
+            "act": "pin-starter",
+            "name": "@example/starter",
+            "version": "0.9.2",
+            "integrity": "sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w==",
+            "placement": "devDependencies"
+          },
+          {
+            "planItem": "example-owner/docs:@example/writer",
+            "repository": "example-owner/docs",
+            "act": "install",
+            "name": "@example/writer",
+            "version": "0.7.0",
+            "integrity": "sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==",
+            "placement": "devDependencies"
+          }
+        ],
+        "resolution": {
+          "snapshotDigest": "sha256:fbdb8854d5a4603d838e3f56479b58dbe52b5391330e3875049c4c685db7f2a9"
+        }
+      },
+      "canonical": "{\"blockers\":[],\"kits\":[{\"id\":\"launch\",\"source\":\"preset\",\"verdict\":\"recommended\"}],\"mandate\":{\"primaryProblemId\":\"strategist-unclear-direction\",\"problem\":\"Our site doesn't explain what we do.\",\"roles\":[\"strategist\",\"writer\"]},\"packages\":[{\"act\":\"pin-starter\",\"integrity\":\"sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w==\",\"name\":\"@example/starter\",\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/starter\",\"repository\":\"example-owner/site\",\"version\":\"0.9.2\"},{\"act\":\"install\",\"integrity\":\"sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ==\",\"name\":\"@example/strategist\",\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/strategist\",\"repository\":\"example-owner/site\",\"version\":\"1.4.0\"},{\"act\":\"install\",\"integrity\":\"sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==\",\"name\":\"@example/writer\",\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/writer\",\"repository\":\"example-owner/site\",\"version\":\"0.7.0\"},{\"act\":\"pin-starter\",\"integrity\":\"sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w==\",\"name\":\"@example/starter\",\"placement\":\"devDependencies\",\"planItem\":\"example-owner/docs:@example/starter\",\"repository\":\"example-owner/docs\",\"version\":\"0.9.2\"},{\"act\":\"install\",\"integrity\":\"sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==\",\"name\":\"@example/writer\",\"placement\":\"devDependencies\",\"planItem\":\"example-owner/docs:@example/writer\",\"repository\":\"example-owner/docs\",\"version\":\"0.7.0\"}],\"recommendedNext\":{\"action\":\"Approve the first-wave plan.\",\"owner\":\"sponsor\"},\"resolution\":{\"snapshotDigest\":\"sha256:fbdb8854d5a4603d838e3f56479b58dbe52b5391330e3875049c4c685db7f2a9\"},\"schemaVersion\":1,\"staffing\":[{\"repository\":\"example-owner/site\",\"roles\":[\"strategist\",\"writer\"]},{\"repository\":\"example-owner/docs\",\"roles\":[\"writer\"]}],\"whereWeAre\":[\"Fit and readiness both satisfied.\"]}",
+      "digest": "sha256:834434fb2b492ac904029841194f4cacec1acd4ce4f422c8f87301096d22b414"
+    },
+    {
+      "name": "staffed-with-packages-version-changed",
+      "note": "One package's exact version changed (and its integrity with it): a different digest.",
+      "plan": {
+        "schemaVersion": 1,
+        "asOf": "2026-09-24T09:00:00Z",
+        "mandate": {
+          "problem": "Our site doesn't explain what we do.",
+          "primaryProblemId": "strategist-unclear-direction",
+          "roles": [
+            "strategist",
+            "writer"
+          ]
+        },
+        "whereWeAre": [
+          "Fit and readiness both satisfied."
+        ],
+        "recommendedNext": {
+          "action": "Approve the first-wave plan.",
+          "owner": "sponsor"
+        },
+        "decisions": [
+          {
+            "at": "2026-09-24T10:00:00Z",
+            "recommended": "the Launch kit",
+            "chosen": "approved",
+            "by": "sponsor",
+            "subjectDigest": "sha256:e4e985337f21499c7bd0ab342ade9b5c07569a8984cee1db39cf86ed5df27925"
+          }
+        ],
+        "blockers": [],
+        "kits": [
+          {
+            "id": "launch",
+            "source": "preset",
+            "verdict": "recommended"
+          }
+        ],
+        "staffing": [
+          {
+            "repository": "example-owner/site",
+            "roles": [
+              "strategist",
+              "writer"
+            ]
+          },
+          {
+            "repository": "example-owner/docs",
+            "roles": [
+              "writer"
+            ]
+          }
+        ],
+        "packages": [
+          {
+            "planItem": "example-owner/site:@example/starter",
+            "repository": "example-owner/site",
+            "act": "pin-starter",
+            "name": "@example/starter",
+            "version": "0.9.2",
+            "integrity": "sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w==",
+            "placement": "devDependencies"
+          },
+          {
+            "planItem": "example-owner/site:@example/strategist",
+            "repository": "example-owner/site",
+            "act": "install",
+            "name": "@example/strategist",
+            "version": "1.4.1",
+            "integrity": "sha512-I71kslJ0DaI6ge1ly2HPU13wj0Rjny0I+241z72t2eEmQ9hXHhQ/TJpSHtmZBLYjiPq29A/xlXkGi3v76ZFFtw==",
+            "placement": "devDependencies"
+          },
+          {
+            "planItem": "example-owner/site:@example/writer",
+            "repository": "example-owner/site",
+            "act": "install",
+            "name": "@example/writer",
+            "version": "0.7.0",
+            "integrity": "sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==",
+            "placement": "devDependencies"
+          },
+          {
+            "planItem": "example-owner/docs:@example/starter",
+            "repository": "example-owner/docs",
+            "act": "pin-starter",
+            "name": "@example/starter",
+            "version": "0.9.2",
+            "integrity": "sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w==",
+            "placement": "devDependencies"
+          },
+          {
+            "planItem": "example-owner/docs:@example/writer",
+            "repository": "example-owner/docs",
+            "act": "install",
+            "name": "@example/writer",
+            "version": "0.7.0",
+            "integrity": "sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==",
+            "placement": "devDependencies"
+          }
+        ],
+        "resolution": {
+          "snapshotDigest": "sha256:fbdb8854d5a4603d838e3f56479b58dbe52b5391330e3875049c4c685db7f2a9"
+        }
+      },
+      "canonical": "{\"blockers\":[],\"kits\":[{\"id\":\"launch\",\"source\":\"preset\",\"verdict\":\"recommended\"}],\"mandate\":{\"primaryProblemId\":\"strategist-unclear-direction\",\"problem\":\"Our site doesn't explain what we do.\",\"roles\":[\"strategist\",\"writer\"]},\"packages\":[{\"act\":\"pin-starter\",\"integrity\":\"sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w==\",\"name\":\"@example/starter\",\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/starter\",\"repository\":\"example-owner/site\",\"version\":\"0.9.2\"},{\"act\":\"install\",\"integrity\":\"sha512-I71kslJ0DaI6ge1ly2HPU13wj0Rjny0I+241z72t2eEmQ9hXHhQ/TJpSHtmZBLYjiPq29A/xlXkGi3v76ZFFtw==\",\"name\":\"@example/strategist\",\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/strategist\",\"repository\":\"example-owner/site\",\"version\":\"1.4.1\"},{\"act\":\"install\",\"integrity\":\"sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==\",\"name\":\"@example/writer\",\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/writer\",\"repository\":\"example-owner/site\",\"version\":\"0.7.0\"},{\"act\":\"pin-starter\",\"integrity\":\"sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w==\",\"name\":\"@example/starter\",\"placement\":\"devDependencies\",\"planItem\":\"example-owner/docs:@example/starter\",\"repository\":\"example-owner/docs\",\"version\":\"0.9.2\"},{\"act\":\"install\",\"integrity\":\"sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==\",\"name\":\"@example/writer\",\"placement\":\"devDependencies\",\"planItem\":\"example-owner/docs:@example/writer\",\"repository\":\"example-owner/docs\",\"version\":\"0.7.0\"}],\"recommendedNext\":{\"action\":\"Approve the first-wave plan.\",\"owner\":\"sponsor\"},\"resolution\":{\"snapshotDigest\":\"sha256:fbdb8854d5a4603d838e3f56479b58dbe52b5391330e3875049c4c685db7f2a9\"},\"schemaVersion\":1,\"staffing\":[{\"repository\":\"example-owner/site\",\"roles\":[\"strategist\",\"writer\"]},{\"repository\":\"example-owner/docs\",\"roles\":[\"writer\"]}],\"whereWeAre\":[\"Fit and readiness both satisfied.\"]}",
+      "digest": "sha256:5a48de33ccf1dc88a66855e1cb2ed47753d30c8b5236fb7214f2323dbea70365"
+    },
+    {
+      "name": "staffed-with-packages-integrity-changed",
+      "note": "Only one package's integrity changed: a different digest.",
+      "plan": {
+        "schemaVersion": 1,
+        "asOf": "2026-09-24T09:00:00Z",
+        "mandate": {
+          "problem": "Our site doesn't explain what we do.",
+          "primaryProblemId": "strategist-unclear-direction",
+          "roles": [
+            "strategist",
+            "writer"
+          ]
+        },
+        "whereWeAre": [
+          "Fit and readiness both satisfied."
+        ],
+        "recommendedNext": {
+          "action": "Approve the first-wave plan.",
+          "owner": "sponsor"
+        },
+        "decisions": [
+          {
+            "at": "2026-09-24T10:00:00Z",
+            "recommended": "the Launch kit",
+            "chosen": "approved",
+            "by": "sponsor",
+            "subjectDigest": "sha256:e4e985337f21499c7bd0ab342ade9b5c07569a8984cee1db39cf86ed5df27925"
+          }
+        ],
+        "blockers": [],
+        "kits": [
+          {
+            "id": "launch",
+            "source": "preset",
+            "verdict": "recommended"
+          }
+        ],
+        "staffing": [
+          {
+            "repository": "example-owner/site",
+            "roles": [
+              "strategist",
+              "writer"
+            ]
+          },
+          {
+            "repository": "example-owner/docs",
+            "roles": [
+              "writer"
+            ]
+          }
+        ],
+        "packages": [
+          {
+            "planItem": "example-owner/site:@example/starter",
+            "repository": "example-owner/site",
+            "act": "pin-starter",
+            "name": "@example/starter",
+            "version": "0.9.2",
+            "integrity": "sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w==",
+            "placement": "devDependencies"
+          },
+          {
+            "planItem": "example-owner/site:@example/strategist",
+            "repository": "example-owner/site",
+            "act": "install",
+            "name": "@example/strategist",
+            "version": "1.4.0",
+            "integrity": "sha512-YQlUpVedr81Cqp/g2YQ8+WZG8/4AZ0WlacTY8C70fYz4YWEnQOo/0IPecsiibzYlnWpYyHwpKa4av9YZR8/T4w==",
+            "placement": "devDependencies"
+          },
+          {
+            "planItem": "example-owner/site:@example/writer",
+            "repository": "example-owner/site",
+            "act": "install",
+            "name": "@example/writer",
+            "version": "0.7.0",
+            "integrity": "sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==",
+            "placement": "devDependencies"
+          },
+          {
+            "planItem": "example-owner/docs:@example/starter",
+            "repository": "example-owner/docs",
+            "act": "pin-starter",
+            "name": "@example/starter",
+            "version": "0.9.2",
+            "integrity": "sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w==",
+            "placement": "devDependencies"
+          },
+          {
+            "planItem": "example-owner/docs:@example/writer",
+            "repository": "example-owner/docs",
+            "act": "install",
+            "name": "@example/writer",
+            "version": "0.7.0",
+            "integrity": "sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==",
+            "placement": "devDependencies"
+          }
+        ],
+        "resolution": {
+          "snapshotDigest": "sha256:fbdb8854d5a4603d838e3f56479b58dbe52b5391330e3875049c4c685db7f2a9"
+        }
+      },
+      "canonical": "{\"blockers\":[],\"kits\":[{\"id\":\"launch\",\"source\":\"preset\",\"verdict\":\"recommended\"}],\"mandate\":{\"primaryProblemId\":\"strategist-unclear-direction\",\"problem\":\"Our site doesn't explain what we do.\",\"roles\":[\"strategist\",\"writer\"]},\"packages\":[{\"act\":\"pin-starter\",\"integrity\":\"sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w==\",\"name\":\"@example/starter\",\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/starter\",\"repository\":\"example-owner/site\",\"version\":\"0.9.2\"},{\"act\":\"install\",\"integrity\":\"sha512-YQlUpVedr81Cqp/g2YQ8+WZG8/4AZ0WlacTY8C70fYz4YWEnQOo/0IPecsiibzYlnWpYyHwpKa4av9YZR8/T4w==\",\"name\":\"@example/strategist\",\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/strategist\",\"repository\":\"example-owner/site\",\"version\":\"1.4.0\"},{\"act\":\"install\",\"integrity\":\"sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==\",\"name\":\"@example/writer\",\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/writer\",\"repository\":\"example-owner/site\",\"version\":\"0.7.0\"},{\"act\":\"pin-starter\",\"integrity\":\"sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w==\",\"name\":\"@example/starter\",\"placement\":\"devDependencies\",\"planItem\":\"example-owner/docs:@example/starter\",\"repository\":\"example-owner/docs\",\"version\":\"0.9.2\"},{\"act\":\"install\",\"integrity\":\"sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==\",\"name\":\"@example/writer\",\"placement\":\"devDependencies\",\"planItem\":\"example-owner/docs:@example/writer\",\"repository\":\"example-owner/docs\",\"version\":\"0.7.0\"}],\"recommendedNext\":{\"action\":\"Approve the first-wave plan.\",\"owner\":\"sponsor\"},\"resolution\":{\"snapshotDigest\":\"sha256:fbdb8854d5a4603d838e3f56479b58dbe52b5391330e3875049c4c685db7f2a9\"},\"schemaVersion\":1,\"staffing\":[{\"repository\":\"example-owner/site\",\"roles\":[\"strategist\",\"writer\"]},{\"repository\":\"example-owner/docs\",\"roles\":[\"writer\"]}],\"whereWeAre\":[\"Fit and readiness both satisfied.\"]}",
+      "digest": "sha256:56e047273253e4e88deea2b3dd754e448544433e1cd620d2608d3e803b6075e4"
+    },
+    {
+      "name": "staffed-with-packages-staffing-reordered",
+      "note": "The staffing entries in the other order: array order is significant, so a different digest.",
+      "plan": {
+        "schemaVersion": 1,
+        "asOf": "2026-09-24T09:00:00Z",
+        "mandate": {
+          "problem": "Our site doesn't explain what we do.",
+          "primaryProblemId": "strategist-unclear-direction",
+          "roles": [
+            "strategist",
+            "writer"
+          ]
+        },
+        "whereWeAre": [
+          "Fit and readiness both satisfied."
+        ],
+        "recommendedNext": {
+          "action": "Approve the first-wave plan.",
+          "owner": "sponsor"
+        },
+        "decisions": [
+          {
+            "at": "2026-09-24T10:00:00Z",
+            "recommended": "the Launch kit",
+            "chosen": "approved",
+            "by": "sponsor",
+            "subjectDigest": "sha256:e4e985337f21499c7bd0ab342ade9b5c07569a8984cee1db39cf86ed5df27925"
+          }
+        ],
+        "blockers": [],
+        "kits": [
+          {
+            "id": "launch",
+            "source": "preset",
+            "verdict": "recommended"
+          }
+        ],
+        "staffing": [
+          {
+            "repository": "example-owner/docs",
+            "roles": [
+              "writer"
+            ]
+          },
+          {
+            "repository": "example-owner/site",
+            "roles": [
+              "strategist",
+              "writer"
+            ]
+          }
+        ],
+        "packages": [
+          {
+            "planItem": "example-owner/site:@example/starter",
+            "repository": "example-owner/site",
+            "act": "pin-starter",
+            "name": "@example/starter",
+            "version": "0.9.2",
+            "integrity": "sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w==",
+            "placement": "devDependencies"
+          },
+          {
+            "planItem": "example-owner/site:@example/strategist",
+            "repository": "example-owner/site",
+            "act": "install",
+            "name": "@example/strategist",
+            "version": "1.4.0",
+            "integrity": "sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ==",
+            "placement": "devDependencies"
+          },
+          {
+            "planItem": "example-owner/site:@example/writer",
+            "repository": "example-owner/site",
+            "act": "install",
+            "name": "@example/writer",
+            "version": "0.7.0",
+            "integrity": "sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==",
+            "placement": "devDependencies"
+          },
+          {
+            "planItem": "example-owner/docs:@example/starter",
+            "repository": "example-owner/docs",
+            "act": "pin-starter",
+            "name": "@example/starter",
+            "version": "0.9.2",
+            "integrity": "sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w==",
+            "placement": "devDependencies"
+          },
+          {
+            "planItem": "example-owner/docs:@example/writer",
+            "repository": "example-owner/docs",
+            "act": "install",
+            "name": "@example/writer",
+            "version": "0.7.0",
+            "integrity": "sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==",
+            "placement": "devDependencies"
+          }
+        ],
+        "resolution": {
+          "snapshotDigest": "sha256:fbdb8854d5a4603d838e3f56479b58dbe52b5391330e3875049c4c685db7f2a9"
+        }
+      },
+      "canonical": "{\"blockers\":[],\"kits\":[{\"id\":\"launch\",\"source\":\"preset\",\"verdict\":\"recommended\"}],\"mandate\":{\"primaryProblemId\":\"strategist-unclear-direction\",\"problem\":\"Our site doesn't explain what we do.\",\"roles\":[\"strategist\",\"writer\"]},\"packages\":[{\"act\":\"pin-starter\",\"integrity\":\"sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w==\",\"name\":\"@example/starter\",\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/starter\",\"repository\":\"example-owner/site\",\"version\":\"0.9.2\"},{\"act\":\"install\",\"integrity\":\"sha512-UWlOIr0jGHG4u420oMkUOeVW5r6Ab4kxuaUU4UWjjGebkzXM634IHDtxqLqMGCRebanNaxZBudK29XyAQgk5sQ==\",\"name\":\"@example/strategist\",\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/strategist\",\"repository\":\"example-owner/site\",\"version\":\"1.4.0\"},{\"act\":\"install\",\"integrity\":\"sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==\",\"name\":\"@example/writer\",\"placement\":\"devDependencies\",\"planItem\":\"example-owner/site:@example/writer\",\"repository\":\"example-owner/site\",\"version\":\"0.7.0\"},{\"act\":\"pin-starter\",\"integrity\":\"sha512-hJiP5Qe0sBUnWOs7+hC2bcIg2ye4C0X3hmWVHIo4IfibnbGns3pFL8QPV4R3MuWxVlbU9dWJ/HeYE42ABQie/w==\",\"name\":\"@example/starter\",\"placement\":\"devDependencies\",\"planItem\":\"example-owner/docs:@example/starter\",\"repository\":\"example-owner/docs\",\"version\":\"0.9.2\"},{\"act\":\"install\",\"integrity\":\"sha512-GW995IgPwvbujjoIUYbT6dge9ZrLCEa1JOYNnU+LYrdaWcbU9wOs0vpm53wXR1kQBUbFftpxA8LkpD4AtU/dQQ==\",\"name\":\"@example/writer\",\"placement\":\"devDependencies\",\"planItem\":\"example-owner/docs:@example/writer\",\"repository\":\"example-owner/docs\",\"version\":\"0.7.0\"}],\"recommendedNext\":{\"action\":\"Approve the first-wave plan.\",\"owner\":\"sponsor\"},\"resolution\":{\"snapshotDigest\":\"sha256:fbdb8854d5a4603d838e3f56479b58dbe52b5391330e3875049c4c685db7f2a9\"},\"schemaVersion\":1,\"staffing\":[{\"repository\":\"example-owner/docs\",\"roles\":[\"writer\"]},{\"repository\":\"example-owner/site\",\"roles\":[\"strategist\",\"writer\"]}],\"whereWeAre\":[\"Fit and readiness both satisfied.\"]}",
+      "digest": "sha256:d314c27fb4f23efc459d7cc7b6957f16c580149df20b5b239312766e1c415101"
+    },
+    {
+      "name": "staffed-without-packages",
+      "note": "Kits and staffing only, before any package is resolved.",
+      "plan": {
+        "schemaVersion": 1,
+        "asOf": "2026-09-24T09:00:00Z",
+        "mandate": {
+          "problem": "Our site doesn't explain what we do.",
+          "primaryProblemId": "strategist-unclear-direction",
+          "roles": [
+            "strategist",
+            "writer"
+          ]
+        },
+        "whereWeAre": [
+          "Fit and readiness both satisfied."
+        ],
+        "recommendedNext": {
+          "action": "Approve the first-wave plan.",
+          "owner": "sponsor"
+        },
+        "decisions": [
+          {
+            "at": "2026-09-24T10:00:00Z",
+            "recommended": "the Launch kit",
+            "chosen": "approved",
+            "by": "sponsor",
+            "subjectDigest": "sha256:e4e985337f21499c7bd0ab342ade9b5c07569a8984cee1db39cf86ed5df27925"
+          }
+        ],
+        "blockers": [],
+        "kits": [
+          {
+            "id": "launch",
+            "source": "preset",
+            "verdict": "recommended"
+          }
+        ],
+        "staffing": [
+          {
+            "repository": "example-owner/site",
+            "roles": [
+              "strategist",
+              "writer"
+            ]
+          },
+          {
+            "repository": "example-owner/docs",
+            "roles": [
+              "writer"
+            ]
+          }
+        ]
+      },
+      "canonical": "{\"blockers\":[],\"kits\":[{\"id\":\"launch\",\"source\":\"preset\",\"verdict\":\"recommended\"}],\"mandate\":{\"primaryProblemId\":\"strategist-unclear-direction\",\"problem\":\"Our site doesn't explain what we do.\",\"roles\":[\"strategist\",\"writer\"]},\"recommendedNext\":{\"action\":\"Approve the first-wave plan.\",\"owner\":\"sponsor\"},\"schemaVersion\":1,\"staffing\":[{\"repository\":\"example-owner/site\",\"roles\":[\"strategist\",\"writer\"]},{\"repository\":\"example-owner/docs\",\"roles\":[\"writer\"]}],\"whereWeAre\":[\"Fit and readiness both satisfied.\"]}",
+      "digest": "sha256:112aa3633987200a416ca5e6e894ddc95c4aee881e82210025c2aad5603dcced"
+    }
+  ]
+}

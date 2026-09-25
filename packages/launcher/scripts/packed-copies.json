@@ -1,0 +1,8 @@
+{
+  "note": "Every file scripts/pack-skills.mjs copies verbatim into this package, and where from. The pack step copies exactly this list; scripts/check-contamination-classes.mjs reads the same list to judge each copy of another package's file from its source's position (#1500); a copy of a repository document is judged where it sits in this package. A generated module under src/generated/ is not a verbatim copy and does not belong here. Format: scripts/lib/packed-copies.mjs.",
+  "copies": [
+    { "copy": "skill-catalogue/{package}/SKILL.md", "source": "packages/{package}/skill/SKILL.md" },
+    { "copy": "contracts/conversation-contract.md", "source": "docs/contracts/conversation-contract.md" },
+    { "copy": "contracts/repository-inventory.json", "source": "docs/contracts/repository-inventory.json" }
+  ]
+}
