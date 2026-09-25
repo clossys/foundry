@@ -190,10 +190,10 @@ with a write token, OIDC or the denylist (D2, adopted).
 
 1. **Release PR.** `release-pr.yml` bumps only packages that will ship (R8).
    CI runs as today. On release PRs, a credential-free cohort qualification
-   (the same runner as step 3) joins the `build and test` fan-in
-   (`ci.yml:1724`), so it is required without a ruleset change. It is
-   report-only for one release first. Its merge-group commit is the release
-   commit.
+   (the same runner as step 3, given no `PUBLIC_SAFETY_DENYLIST_B64`) joins
+   the `build and test` fan-in (`ci.yml:1724`), so it is required without a
+   ruleset change. It is report-only for one release first. Its merge-group
+   commit is the release commit.
 2. **Anchor.** On push to `main`, a small job that runs no package code finds
    the release PR's merge commit in the pushed range, creates the protected
    tag `release/<date>` there, and dispatches `publish.yml` on the tag (R7).
@@ -213,15 +213,17 @@ with a write token, OIDC or the denylist (D2, adopted).
    - `pack` (read, pinned runtime): `npm ci --ignore-scripts`, build, lifecycle
      rehearsal (`publish.yml:306`), `npm pack --ignore-scripts`. Digests
      become **job outputs**. It never installs or imports a candidate's
-     closure, so nothing later in the run can rewrite them.
+     closure, so nothing later in the run can rewrite them. It restores no
+     Actions cache.
    - `qualify` (read, no token, no environment): each leg downloads the
      tarballs, refuses unless they match the `pack` outputs, and installs the
      candidate together with its cohort siblings' tarballs. It asserts that
      every first-party dependency resolved to the cohort integrity (R5).
      First-party dependencies outside the cohort resolve from the registry as
-     today.
+     today. It saves no Actions cache.
    - `reproduce` (read, fresh runner): deletes every `dist/`, rebuilds from
-     the tag commit, packs, and emits digests (**I6**).
+     the tag commit, packs, and emits digests (**I6**). It restores no
+     Actions cache.
    - `publish` (`environment: npm-publish`, `id-token: write`, `contents:
      read`): installs nothing and runs no candidate code. It requires `pack`,
      `reproduce` and the artifact to agree (**I1**, **I6**), validates the
@@ -229,15 +231,20 @@ with a write token, OIDC or the denylist (D2, adopted).
      the tag commit (**I5**), and runs the FULL gates (unchanged,
      `publish.yml:555-611`). It takes **one approval** for the set (R6), then
      uploads in dependency order. A rerun skips versions already live with
-     identical bytes.
+     identical bytes, and fails the run if a version already live has
+     different bytes. It restores no Actions cache.
    - `verify` (read): anonymous parity and provenance checks as today, plus
      the post-upload public-npm install of each dependent (R5).
+
+   No job in this pipeline restores or saves an Actions cache: a cache
+   written by a job that ran candidate code is itself a write channel, so
+   the boundary in 3.1 would otherwise leak through it.
 4. **Evidence.** A job that runs no candidate code writes one self-contained
    record per version under `governance/release-publications/later/` (R2).
    The records go into one pull request per release, opened by the repository
-   App (R4), and merge on a required mechanical re-derivation check with no
-   independent agent review (R3). A sweep alarms on any registry version
-   without a record.
+   App (R4), and merge on a required mechanical re-derivation check (R3). A
+   sweep, running from phase 1, alarms on any registry version without a
+   record.
 5. **First identities.** npm cannot bind a trusted publisher to a name that
    does not exist yet, so a brand-new package still goes through the
    owner-present path (`docs/PUBLISHING.md:804`). The owner uploads the
@@ -287,7 +294,7 @@ Attestation is not added until third-party verification is actually wanted.
 
 ### 3.5 Existing records
 
-The 192 retained records stay valid historical evidence under their own
+The retained records stay valid historical evidence under their own
 schema. After cutover, a rule refuses any new file under
 `governance/release-qualifications/`. CI checks the frozen set by one sealed
 digest instead of re-walking it, and the full history walk moves to a weekly
@@ -318,6 +325,7 @@ required check) stays only if it is wanted for itself.
 | --- | --- | --- |
 | `.github/workflows/publish.yml` | `pack`, per-package `qualify` legs, `reproduce` and in-run validation (1); a package set, one approval, ordered resumable upload, post-upload dependent install (2); `plan` and runs on `release/*` tags (3). The `npm-publish` environment, `id-token: write` scope, `dry_run` and `verify_only` inputs are kept. | 1-3 |
 | `scripts/lib/candidate-runner.mjs` | Gains a cohort-install mode that installs siblings' tarballs and asserts cohort integrity. The literal child environment is unchanged. | 2 |
+| `scripts/lib/candidate-runner.mjs` (`assertCredentialFree()`) | Adds `ACTIONS_ID_TOKEN_REQUEST_TOKEN` and `ACTIONS_ID_TOKEN_REQUEST_URL` to the refused-variable list, as defence in depth. The job boundary (D2, 3.1) stays the actual control. | 0 |
 | `scripts/validate-candidate-publish.mjs`, `scripts/publish-qualified-directory.mjs` | Accept in-run evidence (joins at the run's commit, two transcripts, digests from job outputs) in place of a committed record (`exactRecord`, `:318-328`). Everything else is unchanged. | 1 |
 | `record-publication-evidence.yml`, `scripts/lib/publication-evidence-run.mjs` | Write the self-contained record kind; one PR per release, opened by the App; a fresh branch from the default branch (#1468). | 0-1, 4 |
 | New anchor job | Finds the release merge commit, creates `release/<date>`, dispatches `publish.yml`. Runs no package code. | 3 |
@@ -327,7 +335,7 @@ required check) stays only if it is wanted for itself.
 | `auto-qualify.yml`, `select-unqualified-packages.mjs`, `filter-qualification-dispatch.mjs` | Stop re-dispatching a known-failing candidate (#1476); stopped at phase 1; **deleted** at phase 5. | 0, 1, 5 |
 | `generate-qualification-record.mjs`, `check-qualification-record-present.mjs` and the `publish.yml:136-149` preflight | **Deleted.** Reproducibility moves to `reproduce`. | 5 |
 | `check-qualification-record-required.mjs` and its required context | Report-only under the same name from phase 1; context removed from the ruleset by the owner at phase 5 (R10), then deleted. | 1, 5 |
-| 86 deferral files, `remove-qualification-deferral.mjs`, `check-qualification-deferral-issues.mjs`, `qualification-deferral-sweep.yml` | **Deleted.** | 5 |
+| Every deferral file (86 observed 2026-09-24), `remove-qualification-deferral.mjs`, `check-qualification-deferral-issues.mjs`, `qualification-deferral-sweep.yml` | **Deleted.** | 5 |
 | `governance/release-qualifications/` and `check-candidate-qualification.mjs` | **Frozen** (3.5). The history walk leaves `publish.yml` in phase 0 (#1479). | 0, 5 |
 | `docs/PUBLISHING.md` (`:78-80`, section 6 from `:346`), `docs/RELEASING.md:551-556`, `docs/LIFECYCLE.md:167-190`, `AGENTS.md` #833 paragraph | Rewritten in the same pull request as each behaviour change. `LIFECYCLE.md:167-190` needs a new staged site for `@clossys/starter`, whose site is a retained record today. | 2-5 |
 
@@ -378,17 +386,19 @@ No release depends on a cloud sandbox.
 ### R4. Offline audit
 
 - *Mitigation.* The self-contained record (3.4), and a sweep extending
-  `check-later-publications.mjs` that fails when a registry version has no
-  record. Sigstore signature checks still need the network, as today.
+  `check-later-publications.mjs`, running from phase 1, that fails when a
+  registry version has no record. Sigstore signature checks still need the
+  network, as today.
 
 ### R5. Tag trust
 
 - *Risk.* A `release/*` tag is moved or created by someone else, and the run
   publishes the wrong commit.
 - *Mitigation.* A tag ruleset (owner-only) protects `release/*`. The
-  `npm-publish` environment admits only `release/*` tags, and the approval
-  still applies. `plan` refuses a tag that is not a first-parent merge commit
-  on `main`.
+  `npm-publish` environment admits `release/*` tags; `refs/heads/main` is
+  removed from it only after the phase 3 gate passes (owner-only). The
+  approval still applies. `plan` refuses a tag that is not a first-parent
+  merge commit on `main`.
 
 ### R6. Concurrency
 
@@ -442,12 +452,12 @@ publishable. "Gate" is the evidence that proves the phase works, recorded in
 
 | Phase | Adds | Deletes | Gate | Revert | Issues |
 | --- | --- | --- | --- | --- | --- |
-| **0. No-regret, in flight** | The qualify-candidate job split (#1480). Release-workflow fixes (#1481). A fresh evidence branch per batch (#1468). | The history re-walk from `publish.yml`'s `qualify` job (#1479). `auto-qualify.yml`'s blind re-dispatch of a candidate whose last run for that exact version failed (#1476). | Each PR's own tests. The next publish run's `qualify` job no longer contains `check:candidate-qualification`. | One PR each. | Closes #1480, #1481 (with #1439, #1392, #1462), #1468, #1479, #1476. |
-| **1. In-run evidence** (#1435's design) | `pack`, two `qualify` legs, `reproduce`, in-run validation behind `evidence: record \| in-run` (default `record`). The self-contained record kind. Then default `in-run`; `qualification record required` report-only under the same name; `publish-qualified-set.mjs` on in-run evidence. | `auto-qualify.yml` stops dispatching. | `dry_run: true` for every package and `verify_only: true` for published ones; one leaf package published with `evidence: in-run`, `verify-published` green; its record re-derived from a clone offline. | Set the default back to `record`. | Closes #948. Makes #1477 moot for qualify PRs. |
+| **0. No-regret, in flight** | The qualify-candidate job split (#1480). Release-workflow fixes (#1481). A fresh evidence branch per batch (#1468). `assertCredentialFree()` refuses `ACTIONS_ID_TOKEN_REQUEST_TOKEN` and `ACTIONS_ID_TOKEN_REQUEST_URL` as defence in depth (D4). | The history re-walk from `publish.yml`'s `qualify` job (#1479). `auto-qualify.yml`'s blind re-dispatch of a candidate whose last run for that exact version failed (#1476). | Each PR's own tests. The next publish run's `qualify` job no longer contains `check:candidate-qualification`. | One PR each. | Closes #1480, #1481 (with #1439, #1392, #1462), #1468, #1479, #1476. |
+| **1. In-run evidence** (#1435's design) | `pack`, two `qualify` legs, `reproduce`, in-run validation behind `evidence: record \| in-run` (default `record`). The self-contained record kind. Then default `in-run`; `qualification record required` report-only under the same name; `publish-qualified-set.mjs` on in-run evidence. The registry sweep (extending `check-later-publications.mjs`) that fails when a registry version has no record. | `auto-qualify.yml` stops dispatching. | `dry_run: true` for every package and `verify_only: true` for published ones; one leaf package published with `evidence: in-run`, `verify-published` green; its record re-derived from a clone offline; sweep green. | Set the default back to `record`. | Closes #948. Makes #1477 moot for qualify PRs. |
 | **2. Cohort** | Cohort-install mode and the integrity assertion. `publish.yml` takes a package set: one `publish` job, one approval, topological resumable upload, post-upload public-npm install of dependents. `PUBLISHING.md:78-80` amended. | Per-package dispatch and approval. | A `dry_run` of a set with a runtime edge; then the initial cohort run publishes every deferral still current, re-derived from the manifest at run time (14 of 86, observed 2026-09-24; R9), every dependent's install green in `verify`. | Dispatch single packages. | Makes #1476 moot (no `ETARGET` rounds). |
-| **3. Anchor** | The anchor job, `plan`, runs on `release/*` tags. The release-PR cohort qualification in the `build and test` fan-in, report-only for one release. | Manual publish dispatch. | One release published from its tag; provenance names the tag commit; a merge landing between tag and approval does not change the uploaded bytes. | Remove the trigger; dispatch from `main` as in phase 2. | |
+| **3. Anchor** | The anchor job, `plan`, runs on `release/*` tags. The release-PR cohort qualification in the `build and test` fan-in, report-only for one release. | Manual publish dispatch. The freeze as a correctness rule, once the phase 3 gate passes (R11). | One release published from its tag; provenance names the tag commit; a merge landing between tag and approval does not change the uploaded bytes. | Remove the trigger; dispatch from `main` as in phase 2, restoring `refs/heads/main` in the `npm-publish` environment's admission. | Makes #1331, #1389 and #1391 moot once the freeze ends. |
 | **4. Generator** | `release-pr.yml` bumps only shipping packages and writes no deferrals. The App opens release and evidence PRs. The evidence re-derivation check becomes required through the fan-in. | Hand-written deferrals. | A release PR opened by the App gets full CI on its first run; the evidence PR merges on the check alone. #1377 and #1390 land first. | Revert the PR; the workflow token opens PRs as today. | Closes #1477. Reshapes #941: a citation fix needs only a changeset, not its own record or deferral. |
-| **5. Delete and freeze** | Sealed digest for the 192 records <!-- facts-gate:ignore -->, weekly full walk. Docs rewritten (section 4). | After one report-only release and the owner's ruleset change (R10): everything marked deleted in section 4, including `qualify-candidate.yml` (D6) and the 86 deferrals. The freeze as a correctness rule (R11). | CI green without the deleted files; the sweep finds a record for every registry version; CI no longer re-walks history per run. | Restore the files from history; the owner re-adds the context. | Makes #1331, #1389 and #1391 moot once the freeze ends. |
+| **5. Delete and freeze** | Sealed digest for the records retained at cutover (192 observed 2026-09-24), weekly full walk. Docs rewritten (section 4). | After one report-only release and the owner's ruleset change (R10): everything marked deleted in section 4, including `qualify-candidate.yml` (D6, open — see 8.1) and every deferral file (86 observed 2026-09-24). | CI green without the deleted files; the sweep finds a record for every registry version; CI no longer re-walks history per run. | Restore the files from history; the owner re-adds the context. | |
 | **6. Optional** | Artifact attestation, only if third-party verification is wanted. | Leg B, after 3 releases with zero disagreement. | The recorded leg-agreement measurement. | Remove the job; restore the leg. | |
 
 Estimated steady state, from today's measured job timings, not measured: about
@@ -460,7 +470,8 @@ decided option, R3).
 
 ## 8. Decisions (recorded 2026-09-24)
 
-The owner accepted every recommendation on 2026-09-24.
+The owner accepted every recommendation on 2026-09-24, except D6, which
+offered no recommendation and stays open.
 
 ### 8.1 The draft's D1 to D8
 
@@ -469,9 +480,9 @@ The owner accepted every recommendation on 2026-09-24.
 | D1. Adopt proposal C | Adopted as **phase 1** of a larger target: one release run at the merged release commit. A and B rejected; a fourth option (D in section 6) also rejected. | R1 |
 | D2. "Publish run, separate credential-free job" | Adopted. Qualify in the run, not the job. | technical recommendation |
 | D3. Remove `qualification record required` from the ruleset | Adopted: at cutover (phase 5), after one release in which it was report-only. | R10 |
-| D4. Extend `assertCredentialFree()` | Adopted as defence in depth only: add the Actions token variables to the refused list. It makes the check stricter and nothing else; the job boundary (D2) stays the control. Its own pull request. | technical recommendation |
+| D4. Extend `assertCredentialFree()` | Adopted as defence in depth only: add `ACTIONS_ID_TOKEN_REQUEST_TOKEN` and `ACTIONS_ID_TOKEN_REQUEST_URL` to the refused list. It makes the check stricter and nothing else; the job boundary (D2) stays the control. Its own pull request, phase 0. | technical recommendation |
 | D5. Evidence carriers | The committed post-publish record only. No attestation until third-party verification is wanted. Release assets rejected. | R2; technical recommendation |
-| D6. Diagnostic qualification dispatch | Delete `qualify-candidate.yml` at the last phase. Diagnose with `publish.yml` and `dry_run: true`. | technical recommendation |
+| D6. Diagnostic qualification dispatch | Open: the draft offered two options (delete `qualify-candidate.yml` and diagnose with `publish.yml` `dry_run`; or keep it) and recommended neither. The technical recommendation is delete; the owner confirms at phase 5. | open, confirm at phase 5 |
 | D7. Deferred versions | Rule: every deferral superseded is formally abandoned; every deferral still current publishes in the initial cohort run. The cohort run re-derives the current list from the manifest at run time — the decision does not depend on a count. (Observed 2026-09-24: 72 of 86 superseded, 14 current — 1.2. The draft's earlier commit observed 72 files, 53 superseded and 19 current, on its own measurement date.) | R9 |
 | D8. Record location | `governance/release-publications/later/`, one self-contained file per version. | R2 |
 
@@ -481,7 +492,7 @@ The owner accepted every recommendation on 2026-09-24.
 | --- | --- | --- |
 | R1 | The target is one release run at the merged release commit. #1435's design is phase 1. | 1 |
 | R2 | The durable proof is a git record written after upload: one self-contained file per version under `governance/release-publications/later/`. | 1 |
-| R3 | The per-release evidence PR merges on a required mechanical re-derivation check, with no independent agent review. | 4 |
+| R3 | The per-release evidence PR merges on a required mechanical re-derivation check. | 4 |
 | R4 | A GitHub App scoped to this repository (contents and pull-requests write), used only in jobs that run no package code, opens release and evidence PRs. | 4 |
 | R5 | Dependents are proven before upload against their siblings' exact candidate tarballs. The public-npm install moves to a post-upload check (amends `docs/PUBLISHING.md:78-80`). | 2 |
 | R6 | One `npm-publish` approval per release set. | 2 |
@@ -489,13 +500,15 @@ The owner accepted every recommendation on 2026-09-24.
 | R8 | A release publishes every version it bumps. Unready packages keep their changesets pending. | 4 |
 | R9 | Rule: every deferral still current publishes in the initial cohort run; every deferral superseded is formally abandoned. The cohort run re-derives the current list from the manifest at run time, not from a recorded count. (Observed 2026-09-24: 14 current, 72 superseded, of 86 — 1.2.) | 2, 5 |
 | R10 | Remove `qualification record required` from the `main` ruleset at cutover, after one report-only release. | 5 |
-| R11 | End the weekend merge freeze as a correctness rule once publish reads the release tag. Keep the calendar cadence only if it is wanted for itself. | 5 |
+| R11 | End the weekend merge freeze as a correctness rule once publish reads the release tag. Keep the calendar cadence only if it is wanted for itself. | 3 |
 
 Technical recommendations adopted with them: qualify in the run, not the job
-(D2); delete `qualify-candidate.yml` at the last phase and diagnose with
-`publish.yml` `dry_run` (D6); keep the second qualification leg until 3 clean
-releases; freeze the existing records with a sealed digest and a weekly walk;
-no attestation until third-party verification is wanted; do phase 0 now.
+(D2); extend `assertCredentialFree()` as defence in depth (D4, phase 0); keep
+the second qualification leg until 3 clean releases; freeze the existing
+records with a sealed digest and a weekly walk; no attestation until
+third-party verification is wanted; do phase 0 now. D6 (delete
+`qualify-candidate.yml`, diagnose with `publish.yml` `dry_run`) is not among
+these: it is open, and the owner confirms it at phase 5 (8.1).
 
 ### 8.3 Owner-only actions
 
@@ -506,7 +519,20 @@ Only the owner can do these. No phase that needs one lands before it is done.
 | 0 | None. |
 | 1 | None new. Publish approvals as today. |
 | 2 | None new. One approval per release set replaces one per package. |
-| 3 | Allow `release/*` tags in the `npm-publish` environment's deployment rule. Create a tag ruleset protecting `release/*`, with creation limited to the anchor job's identity. |
+| 3 | Allow `release/*` tags in the `npm-publish` environment's deployment rule. Create a tag ruleset protecting `release/*`, with creation limited to the anchor job's identity. After the phase 3 gate passes, remove `refs/heads/main` from the `npm-publish` environment's deployment rule. |
 | 4 | Create the GitHub App: this repository only, contents and pull-requests write. Install it and store its credentials as repository secrets. |
 | 5 | Remove `qualification record required (version bump vs. retained record)` from the `main` ruleset, after one report-only release. Say whether the Saturday cadence stays. |
 | 6 | Decide whether third-party verification is wanted before any attestation job is added. |
+
+**Phase 3 anchor identity.** Until the GitHub App arrives in phase 4, the
+anchor job creates the `release/<date>` tag using the workflow's own
+`GITHUB_TOKEN`, scoped to that job's `contents: write` permission. Risk: any
+job in this repository holding `contents: write` could, in principle, create
+a tag matching `release/*`. The limits on that risk are the two checks
+already in this design: `plan` refuses a tag that is not a first-parent
+merge commit on `main` (5, R5), and the run still stops for the
+`npm-publish` approval before anything uploads.
+
+**First identities stay owner-only.** The owner-present upload for a
+brand-new package's first identity (3.2 step 5) is unchanged by any phase:
+it remains owner-only, as today.
