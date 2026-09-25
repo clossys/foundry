@@ -298,29 +298,41 @@ what they want right now, and any constraints (`business`, `product`,
 `audience`, `stage`, `intent`, `constraints`). Every staffed repository
 carries a snapshot of that answer set in its own `clossys/brief.json`
 (`docs/contracts/engagement-brief.json`'s `context` property,
-`docs/DECISIONS.md` decision 28). `readEngagementContext` reads it as
-plain JSON — this package still has no `dependencies` entry in
-`package.json`, so this stays dependency-free of `@clossys/advisor` at
-runtime:
+`docs/DECISIONS.md` decision 28). `readEngagementContext` reads it against
+the one shared brief contract (issue #1475: `docs/contracts/engagement-brief.json`
+with `engagement-context.json`) — the same definition `@clossys/advisor`
+and `@clossys/launcher` validate against. This package's own build
+(`scripts/pack-brief-contract.mjs`) packs a generated copy of those two
+contract files, and of their one checker implementation
+(`packages/advisor/src/contract-schema.ts`), into `src/generated/` (gitignored)
+at build time — this package still has no `dependencies` entry in
+`package.json`, so it stays dependency-free of `@clossys/advisor` at
+runtime even though it validates against the exact contract Advisor owns:
 
 ```ts
 import { readEngagementContext, audienceContextValue } from "@clossys/strategist";
 
 const { context, note } = readEngagementContext(repositoryRoot); // default path: clossys/brief.json
-if (note) console.warn(note); // brief present but unreadable/malformed — asking everything, same as no brief
+if (note) console.warn(note); // brief present but unreadable or invalid — asking everything, same as no brief
 audienceContextValue(context); // "consumers" | "businesses" | undefined
 ```
 
-A missing `clossys/brief.json`, a brief with no `context` yet, and an
-individual field the brief doesn't carry all read as `unknown` — never
-invented — with no `note`. `note` appears only when the brief itself, or
-its `context`, does not match its own contract's shape: not an object,
-missing a required key, an unexpected key, the wrong `schemaVersion`, more
-than six fields, or a field object carrying any key beyond `{id, state,
-value}` — the contracts refuse all of these, and this reader reads them
-as unknown rather than accept what they refuse. The caller still treats
-every field as unknown, exactly as it would with no brief, and relays the
-note once.
+**All-or-nothing.** A missing `clossys/brief.json`, and a brief with no
+`context` property yet, both read as every field `unknown` with no `note`
+— neither is an error. Anything else is validated against the shared
+contract as a whole; a brief that does not fully validate reads as every
+field `unknown` too, with a fixed `note`, even when only one field is at
+fault — for example a duplicate context field id (the contract's own
+`contains`/`maxItems` rule refuses that outright, so this reader has no
+separate duplicate-id rule of its own to drift from it), an unknown
+top-level key, or a field object carrying any key beyond `{id, state,
+value}`. Only a brief that fully validates seeds anything; nothing is
+ever read from a field that happened to look fine inside an otherwise
+invalid document. The `note` itself never carries file text or founder
+text — only a fixed reason, an OS error code (`readEngagementContext`'s
+own file read), or a JSON syntax position (`readContractDocument`'s
+own strict-JSON check, which also refuses invalid UTF-8 and a
+repeated object key at any depth).
 
 ### Not a renamed context question
 
@@ -945,13 +957,15 @@ anyone extending this package with their own entity.
 
 ### Engagement context (`engagement-context.ts`, `audience-intake.ts`)
 
-See "Reading the engagement context before asking" above. Dependency-free
-of `@clossys/advisor`: these read `clossys/brief.json` as data against
-this repository's own contracts, never a typed import.
+See "Reading the engagement context before asking" above.
+`scripts/pack-brief-contract.mjs` packs a generated copy of the shared
+brief contract and its checker into `src/generated/` at build time, and
+these read `clossys/brief.json` against that packed copy, so this package
+stays dependency-free of `@clossys/advisor` at runtime.
 
 | Export | Kind | Purpose |
 | --- | --- | --- |
-| `readEngagementContext(repositoryRoot, briefRelPath?)` | function | Reads `<repositoryRoot>/<briefRelPath>` (default `clossys/brief.json`). Never throws; a missing file reads as every field `unknown` with no `note`, an unreadable/malformed one the same but with a `note`. |
+| `readEngagementContext(repositoryRoot, briefRelPath?)` | function | Reads `<repositoryRoot>/<briefRelPath>` (default `clossys/brief.json`) as strict JSON and validates it against the shared brief contract. Never throws; a missing file reads as every field `unknown` with no `note`; an unreadable file, a file that is not strict JSON, or one that does not validate reads the same but with a `note` (all-or-nothing — see above). |
 | `readEngagementContextFromBriefData(rawBrief)` | function | The pure half of the above — takes an already-parsed `clossys/brief.json` value (or `undefined` for "no brief"). |
 | `engagementContextFieldById(context, id)` | function | The field with this id from a snapshot, or `undefined`. |
 | `audienceContextValue(context)` | function | The known `audience` field value (`"consumers" \| "businesses"`), or `undefined`. The one field id currently wired into a Strategist seed. |

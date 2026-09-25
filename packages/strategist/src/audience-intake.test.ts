@@ -1,11 +1,33 @@
 import { describe, expect, it } from "vitest";
 import { pendingAudienceIntakeQuestions, seedAudienceFromContext } from "./audience-intake.js";
-import { readEngagementContextFromBriefData } from "./engagement-context.js";
+import { ENGAGEMENT_CONTEXT_FIELD_IDS, readEngagementContextFromBriefData } from "./engagement-context.js";
 import type { EngagementContextSnapshot } from "./engagement-context.js";
 
+const validRole = {
+  role: "strategist",
+  why: "chosen",
+  goal: { metric: "strategy traceability rate", direction: "increase" },
+  inputsFrom: [],
+  outputsTo: [],
+};
+
+/**
+ * Builds a fully valid brief (docs/contracts/engagement-brief.json — a
+ * non-empty `roles`) whose context carries the given fields as `known`
+ * and every other field id as `unknown` — the contract requires exactly
+ * one entry per id, so this fills in what the caller didn't ask for
+ * rather than omitting it.
+ */
 function contextWith(known: Record<string, string>): EngagementContextSnapshot {
-  const fields = Object.entries(known).map(([id, value]) => ({ id, state: "known", value }));
-  return readEngagementContextFromBriefData({ schemaVersion: 1, problem: "p", roles: [], sequence: [], deliverables: [], context: { schemaVersion: 1, fields } }).context;
+  const fields = ENGAGEMENT_CONTEXT_FIELD_IDS.map((id) => (Object.hasOwn(known, id) ? { id, state: "known", value: known[id] } : { id, state: "unknown" }));
+  return readEngagementContextFromBriefData({
+    schemaVersion: 1,
+    problem: "Founders can't tell if the landing page is working.",
+    roles: [validRole],
+    sequence: ["strategist"],
+    deliverables: ["A cited direction record."],
+    context: { schemaVersion: 1, fields },
+  }).context;
 }
 
 const noBrief = readEngagementContextFromBriefData(undefined).context;

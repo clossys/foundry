@@ -1,33 +1,33 @@
 /**
  * Reads the shared engagement context (issue #1173) out of a consumer's own
- * `clossys/brief.json`, as data. This package stays dependency-free of
- * `@clossys/advisor` at runtime (see `package.json` — no `dependencies`
- * entry at all): it never imports Advisor's `EngagementContext` type or
- * `contextFromBrief()`, it re-derives the same read defensively against
- * this repository's own contracts (`docs/contracts/engagement-brief.json`,
- * `docs/contracts/engagement-context.json`, `docs/DECISIONS.md` decision
- * 28), the same "read the file as data, not as a typed import" split
- * `packages/launcher/src/apply-plan.ts` already draws for the rest of the
- * brief.
+ * `clossys/brief.json`, validated against the one shared brief contract
+ * (issue #1475): `docs/contracts/engagement-brief.json`, with
+ * `engagement-context.json` for its optional `context` property. Both
+ * `@clossys/advisor` and `@clossys/launcher` validate a brief against the
+ * same two files; this package's own build (`scripts/pack-brief-contract.mjs`)
+ * packs a copy of them, and of the one contract checker
+ * (`packages/advisor/src/contract-schema.ts`), into `src/generated/` at
+ * build time (see `brief-contract.ts`), so Strategist validates against the
+ * same definition with no runtime dependency on `@clossys/advisor` (see
+ * `package.json` -- no `dependencies` entry at all). This package only
+ * reads a brief; it never writes one.
  *
- * A founder answers each engagement-context question once, through
- * Advisor's own cards (`business`, `product`, `audience`, `stage`,
- * `intent`, `constraints`); the brief in every staffed repository carries
- * a snapshot so a role running there — with no hub checkout — can read
- * what is already known instead of asking again. A known field's value is
- * always one of that field's own fixed choice ids (never founder prose);
- * anything that does not exactly match both contracts' shape is read as
- * unknown rather than trusted — stricter than Advisor's own
- * `contextFromBrief()`, which is permissive about a hand-edited file, but
- * consistent with never accepting what the contract itself refuses: a
- * field object carrying any key beyond `{id, state, value}` (or
- * `{id, state}` when unknown), a `context` envelope with the wrong
- * `schemaVersion`, an unexpected top-level key, or more than six fields,
- * all read as unknown, with a note when the whole envelope is at fault.
+ * All-or-nothing: a brief that does not fully validate against the shared
+ * contract is never partially trusted -- every field reads unknown, the
+ * same starting point as no brief at all, with a note naming only a fixed
+ * reason, an OS error code, or a JSON syntax position, never file text or
+ * founder text. A brief that fully validates is a brief `@clossys/launcher`
+ * would also accept, so seeding from it never reads a value the shared
+ * contract itself refuses -- for example, a duplicate context field id,
+ * which the contract's own `contains`/`maxItems` rule refuses outright, so
+ * this reader has no separate duplicate-id rule of its own to drift from
+ * it.
  */
 
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { readContractDocument } from "./generated/contract-schema.generated.js";
+import { validateEngagementBrief } from "./brief-contract.js";
 import { isPlainObject } from "./validation.js";
 
 export type EngagementContextFieldId = "business" | "product" | "audience" | "stage" | "intent" | "constraints";
@@ -41,24 +41,6 @@ export const ENGAGEMENT_CONTEXT_FIELD_IDS: readonly EngagementContextFieldId[] =
   "constraints",
 ];
 
-/**
- * Each field's fixed choice vocabulary, mirroring
- * `docs/contracts/engagement-context.json`'s `definitions.field.oneOf` per
- * field `value.enum` (kept equal to it by this package's own
- * `engagement-context.test.ts`, which reads that contract file directly —
- * this package does not import it as code). A known field's value must be
- * one of these; nothing else, including a slugified founder sentence, is
- * ever accepted.
- */
-export const ENGAGEMENT_CONTEXT_KNOWN_CHOICES: Readonly<Record<EngagementContextFieldId, readonly string[]>> = {
-  business: ["product-or-service", "agency-or-services"],
-  product: ["software", "physical-or-in-person"],
-  audience: ["consumers", "businesses"],
-  stage: ["building", "established"],
-  intent: ["validate", "grow"],
-  constraints: ["none-known", "tight-budget-or-time"],
-};
-
 export type EngagementContextField =
   | { readonly id: EngagementContextFieldId; readonly state: "known"; readonly value: string }
   | { readonly id: EngagementContextFieldId; readonly state: "unknown" };
@@ -69,13 +51,11 @@ export interface EngagementContextSnapshot {
 
 /**
  * The result of reading `clossys/brief.json`. `context` always has one
- * entry per field id, in the fixed field order — a missing brief, a
- * missing `context` property, and an individually malformed field all
- * degrade to `unknown`, never an invented value. `note` is present only
- * when the brief file itself could not be treated as a well-formed brief
- * (or its `context` as a well-formed context) at all: the caller relays
- * it once and otherwise reads every field unknown, the same starting
- * point as a repository with no brief yet.
+ * entry per field id, in the fixed field order. `note` is present only
+ * when the brief exists but does not fully validate against the shared
+ * contract, or could not be read as a file or as strict JSON at all: the
+ * caller relays it once and otherwise reads every field unknown, the same
+ * starting point as a repository with no brief yet.
  */
 export interface EngagementContextRead {
   readonly context: EngagementContextSnapshot;
@@ -98,98 +78,48 @@ export function audienceContextValue(context: Pick<EngagementContextSnapshot, "f
   return undefined;
 }
 
-/** `docs/contracts/engagement-brief.json`'s own top-level `required`/`additionalProperties: false` — the keys a well-formed brief may and must have. `context` is the one optional member. */
-const BRIEF_REQUIRED_KEYS = ["schemaVersion", "problem", "roles", "sequence", "deliverables"] as const;
-const BRIEF_ALLOWED_KEYS = new Set<string>([...BRIEF_REQUIRED_KEYS, "context"]);
-/** `docs/contracts/engagement-context.json`'s own top-level `additionalProperties: false` — no key besides these two. */
-const CONTEXT_ALLOWED_KEYS = new Set<string>(["schemaVersion", "fields"]);
-/** A known field's `oneOf` branch in the contract is `additionalProperties: false` over exactly these three keys. */
-const KNOWN_FIELD_KEYS = new Set<string>(["id", "state", "value"]);
-/** The contract's `fields` array is `maxItems: 6` — one entry per field id, no more. */
-const MAX_CONTEXT_FIELDS = 6;
-
-const NOTE_BRIEF_SHAPE = "clossys/brief.json does not match docs/contracts/engagement-brief.json's shape; asking every engagement-context question as usual.";
-const NOTE_CONTEXT_SHAPE = "clossys/brief.json's context does not match docs/contracts/engagement-context.json's shape; asking every engagement-context question as usual.";
+const NOTE_BRIEF_INVALID = "clossys/brief.json does not match docs/contracts/engagement-brief.json; asking every engagement-context question as usual.";
 const NOTE_UNPARSEABLE = "clossys/brief.json is not valid JSON; asking every engagement-context question as usual.";
 
-/** Every required key present, no key beyond the contract's allowed set, and `schemaVersion` exactly `1`. */
-function isWellFormedBriefEnvelope(rawBrief: Record<string, unknown>): boolean {
-  for (const key of BRIEF_REQUIRED_KEYS) {
-    if (!(key in rawBrief)) return false;
-  }
-  for (const key of Object.keys(rawBrief)) {
-    if (!BRIEF_ALLOWED_KEYS.has(key)) return false;
-  }
-  return rawBrief.schemaVersion === 1;
-}
-
-/** No key beyond `{schemaVersion, fields}`, `schemaVersion` exactly `1`, and `fields` an array of at most six entries. */
-function isWellFormedContextEnvelope(rawContext: Record<string, unknown>): rawContext is { schemaVersion: 1; fields: readonly unknown[] } {
-  for (const key of Object.keys(rawContext)) {
-    if (!CONTEXT_ALLOWED_KEYS.has(key)) return false;
-  }
-  if (rawContext.schemaVersion !== 1) return false;
-  if (!Array.isArray(rawContext.fields)) return false;
-  return rawContext.fields.length <= MAX_CONTEXT_FIELDS;
-}
-
 /**
- * Builds a snapshot from an already-envelope-checked `context.fields`
- * array. A duplicate id reads as unknown (the same per-field leniency
- * `@clossys/advisor`'s own `contextFromBrief()` applies for a duplicate,
- * which this package's own envelope checks above do not otherwise catch).
- * A known-state entry reads as unknown unless its own object has exactly
- * `{id, state, value}` — nothing more — and `value` is one of that
- * field's fixed choices: this is what keeps founder prose, or any other
- * extra data riding alongside a field, out.
+ * Maps an already-validated context's `fields` array into a snapshot. The
+ * contract guarantees, by construction, exactly one entry per field id
+ * (`maxItems: 6` plus a `contains` requirement for each of the six ids
+ * leaves no room for a duplicate or a missing one) and a known entry's
+ * `value` already one of that field's fixed choice ids. The `byId.get(id)
+ * ?? {id, state:"unknown"}` fallback below is defensive only, never a
+ * second shape check duplicating what validation already enforced.
  */
-function snapshotFromFields(rawFields: readonly unknown[]): EngagementContextSnapshot {
-  const occurrences = new Map<string, number>();
-  for (const entry of rawFields) {
-    const id = isPlainObject(entry) ? entry.id : undefined;
-    if (typeof id === "string") occurrences.set(id, (occurrences.get(id) ?? 0) + 1);
+function snapshotFromValidatedFields(rawFields: readonly unknown[]): EngagementContextSnapshot {
+  const byId = new Map<string, EngagementContextField>();
+  for (const raw of rawFields) {
+    if (!isPlainObject(raw) || typeof raw.id !== "string") continue;
+    const id = raw.id as EngagementContextFieldId;
+    byId.set(id, raw.state === "known" && typeof raw.value === "string" ? { id, state: "known", value: raw.value } : { id, state: "unknown" });
   }
-  return {
-    fields: ENGAGEMENT_CONTEXT_FIELD_IDS.map((id): EngagementContextField => {
-      if (occurrences.get(id) !== 1) return { id, state: "unknown" };
-      const entry = rawFields.find((candidate) => isPlainObject(candidate) && candidate.id === id) as Record<string, unknown> | undefined;
-      if (entry === undefined || entry.state !== "known") return { id, state: "unknown" };
-      const keys = Object.keys(entry);
-      const exactlyKnownShape = keys.length === KNOWN_FIELD_KEYS.size && keys.every((key) => KNOWN_FIELD_KEYS.has(key));
-      if (exactlyKnownShape && typeof entry.value === "string" && ENGAGEMENT_CONTEXT_KNOWN_CHOICES[id].includes(entry.value)) {
-        return { id, state: "known", value: entry.value };
-      }
-      return { id, state: "unknown" };
-    }),
-  };
+  return { fields: ENGAGEMENT_CONTEXT_FIELD_IDS.map((id) => byId.get(id) ?? { id, state: "unknown" }) };
 }
 
 /**
  * Reads the engagement context out of an already-parsed `clossys/brief.json`
  * value. `rawBrief === undefined` means no brief file exists (the ordinary
  * case before #1178's writer runs, or in a repository Advisor has not
- * staffed): every field reads unknown, with no note. A brief that is not a
- * well-formed object matching `docs/contracts/engagement-brief.json`'s own
- * required keys, allowed keys, and `schemaVersion` is reported once via
- * `note`, and still reads as every field unknown. A well-formed brief with
- * no `context` property at all (written before #1178, or before a founder
- * has answered anything) is not an error — `context` is documented
- * optional and reads as unknown, unremarked. A `context` that does not
- * match `docs/contracts/engagement-context.json`'s own envelope (wrong or
- * missing `schemaVersion`, an unexpected key, or more than six fields) is
- * reported the same way as a malformed brief.
+ * staffed): every field reads unknown, with no note. Anything else is
+ * validated against the shared brief contract (`validateEngagementBrief`);
+ * a brief that does not fully validate reads as every field unknown with a
+ * fixed note -- never partially trusted, and the violation detail is never
+ * relayed, only the fixed text. A valid brief with no `context` property
+ * yet (written before #1178, or before a founder has answered anything) is
+ * not an error -- `context` is documented optional and reads as unknown,
+ * unremarked.
  */
 export function readEngagementContextFromBriefData(rawBrief: unknown): EngagementContextRead {
   if (rawBrief === undefined) return { context: allUnknown() };
-  if (!isPlainObject(rawBrief) || !isWellFormedBriefEnvelope(rawBrief)) {
-    return { context: allUnknown(), note: NOTE_BRIEF_SHAPE };
-  }
-  if (rawBrief.context === undefined) return { context: allUnknown() };
-  const rawContext = rawBrief.context;
-  if (!isPlainObject(rawContext) || !isWellFormedContextEnvelope(rawContext)) {
-    return { context: allUnknown(), note: NOTE_CONTEXT_SHAPE };
-  }
-  return { context: snapshotFromFields(rawContext.fields) };
+  const validation = validateEngagementBrief(rawBrief);
+  if (!validation.valid) return { context: allUnknown(), note: NOTE_BRIEF_INVALID };
+  const context = (rawBrief as { context?: { fields?: readonly unknown[] } }).context;
+  if (context === undefined) return { context: allUnknown() };
+  return { context: snapshotFromValidatedFields(context.fields ?? []) };
 }
 
 /**
@@ -205,27 +135,47 @@ export function unreadableBriefNote(error: unknown): string {
 }
 
 /**
+ * The note text for a `clossys/brief.json` that exists but is not strict
+ * JSON (`readContractDocument()`'s own rules: valid UTF-8, one JSON value,
+ * no object that repeats a key). Its error message can be a syntax
+ * position (safe — a number) or a repeated key's own name (not safe — a
+ * key can be founder text), so only a position is ever relayed; anything
+ * else falls back to a fixed note with no dynamic content at all.
+ */
+function unparseableBriefNote(error: unknown): string {
+  const message = error instanceof Error ? error.message : "";
+  const position = /position (\d+)/.exec(message)?.[1];
+  return position !== undefined
+    ? `clossys/brief.json is not valid JSON at position ${position}; asking every engagement-context question as usual.`
+    : NOTE_UNPARSEABLE;
+}
+
+/**
  * Reads `<repositoryRoot>/<briefRelPath>` (default `clossys/brief.json`,
  * the path every staffed repository carries it at) and returns its
  * engagement context. A missing file is the ordinary "no brief" case, not
- * a note; an unreadable file reports its OS error code via
- * {@link unreadableBriefNote}, and an unparseable one a fixed note — in
- * both cases every field reads unknown.
+ * a note. An unreadable file reports its OS error code via
+ * {@link unreadableBriefNote}; a file that is not strict JSON
+ * (`readContractDocument`) reports a position or a fixed note via
+ * {@link unparseableBriefNote}; a well-formed JSON value that does not
+ * validate against the shared contract reports the same fixed note
+ * `readEngagementContextFromBriefData` does. Every field reads unknown in
+ * all three cases.
  */
 export function readEngagementContext(repositoryRoot: string, briefRelPath = "clossys/brief.json"): EngagementContextRead {
   const path = join(repositoryRoot, briefRelPath);
   if (!existsSync(path)) return { context: allUnknown() };
-  let raw: string;
+  let bytes: Uint8Array;
   try {
-    raw = readFileSync(path, "utf8");
+    bytes = readFileSync(path);
   } catch (error) {
     return { context: allUnknown(), note: unreadableBriefNote(error) };
   }
   let parsed: unknown;
   try {
-    parsed = JSON.parse(raw);
-  } catch {
-    return { context: allUnknown(), note: NOTE_UNPARSEABLE };
+    parsed = readContractDocument(bytes);
+  } catch (error) {
+    return { context: allUnknown(), note: unparseableBriefNote(error) };
   }
   return readEngagementContextFromBriefData(parsed);
 }

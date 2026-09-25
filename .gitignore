@@ -39,3 +39,7 @@ packages/launcher/src/generated/
 # Generated advisor capability catalogue, kit presets snapshot, and plan and
 # brief contracts (packages/advisor/scripts/pack-capability-catalogue.mjs).
 packages/advisor/src/generated/
+
+# Generated brief and engagement-context contracts with their checker
+# (packages/strategist/scripts/pack-brief-contract.mjs, issue #1173).
+packages/strategist/src/generated/
