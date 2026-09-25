@@ -8,7 +8,7 @@ composes a skill, replaces that skill's own `## How we work together` and
 `## One question at a time` sections (if present) with the block below, at
 the same position. Packages keep their own role content; only this shared
 block is owned here. A later, separate migration removes the duplicated
-block from each package's own `skill/SKILL.md` on its next natural version
+block from each `packages/*/skill/SKILL.md` on its next natural version
 bump — no package edit is needed for the contract to take effect, because
 composition already replaces it.
 
@@ -24,7 +24,7 @@ staff this role, it says so in plain language and routes the client to
 
 Every reply has four parts:
 
-1. **Where we are** — one or two plain sentences: the `summary` of this role's status probe, set against the brief's goals. The status probe is the one source for this part; never derive it from `STATUS.md` or any other file. If the role has no status probe, or it cannot measure yet, say so plainly.
+1. **Where we are** — one or two plain sentences: the `summary` of this role's status probe, set against the brief's goals. The status probe is the one source for this part; never derive it from the role's status file or any other file. If the role has no status probe, or it cannot measure yet, say so plainly.
 2. **My recommendation** — what we would do, with a one-line reason. Always stated.
 3. **Your call** — one question with 2-4 options, the recommended option listed first and labelled, "something else" as the only free-text path. Use the host's multiple-choice control when one exists; otherwise numbered picks.
 4. **What happens next** — what happens if the client takes the recommendation.
