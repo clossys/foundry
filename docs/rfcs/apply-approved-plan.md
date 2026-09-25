@@ -250,15 +250,15 @@ today (`capability-catalogue.ts:129-145`) and would move into the shared
 contract. The canonical digest closes the gap in 1.3 where `planDigest` is
 opaque.
 
-The bundle is `mode: "report"`, and only `report`
-(`docs/contracts/apply-bundle.json`). It says what was computed and what
-the pre-write checks V1 to V9 found; it claims nothing about any
-repository's tree, branch or pull request. A `report` bundle carries no
-field that could be read as "applied" or "planned" — those are the states
-of section 4.4, and they stay derived later, from `status`, never stored
-here. A later mode adds a `state` field once V8 (ledger and ownership) and
-V9 (provenance) exist to earn it, and a reader built for `report` refuses
-any other mode.
+A bundle is `mode: "report"` or `mode: "planned"`
+(`docs/contracts/apply-bundle.json`). A report bundle says what was
+computed and what the pre-write checks found, and claims nothing about any
+repository: no repository in it has a `state` or a `binding` (rule A5). In a
+planned bundle, a repository that passed all of V1 to V9 and whose set an
+approval binds carries `state: "planned"` and that `binding` (approved by
+membership, or admitted under D26; rules A6 and A7); every other repository
+carries neither. Neither `state` nor `binding` is inside `bundleDigest`, so
+recording them never moves what the approval binds.
 
 Each repository's own `verdict` is the worst of its checks — `satisfied`,
 then `indeterminate`, then `violated` — and a computed repository with no
@@ -551,7 +551,7 @@ only and writes nothing into it.
 | --- | --- | --- | --- |
 | V1 | **Inventory is a launcher inventory.** Validate against a new `docs/contracts/repository-inventory.json`: `schemaVersion`, `repositories[].id` as an `owner/name` slug, no unknown top-level keys, validated by `validateInventoryDocument()` (`packages/launcher/src/core.ts:335`); the per-entry `status` and immutable id arrive with inventory v2 (#1179). Until then the immutable id is observed at plan time and recorded in the change set (D19). This reverses the earlier requirement of a declared `status` per entry, which the landed v1 inventory contract refuses. Shape-alike documents are refused. The same validator replaces `inspectInventory()`'s count-only rule for appoint's `--inventory` (`core.ts:237-249`, `:434-439`). | `violated` (inventory), whole bundle | **#1334**. Its expected behaviour, "refuse … and write nothing to the target repository", becomes a hard precondition of apply. It lands as migration step 1, so the apply path is never built on the lax check. |
 | V2 | **Plan and brief shape, one definition.** Launcher validates `plan.json` and the brief against the same contract Advisor uses. The drifted copies (`apply-plan.ts:26-131`) are removed. The brief's `context` is checked with Advisor's fixed-choice-id rule, and unknown top-level keys are refused (the #1178 review note). | `violated` | #1175, #1173 |
-| V3 | **Authority is current and binds these bytes.** Recompute `plan.digest` canonically. For bundles with package acts, run execution readiness at the current instant (exit `0` required) and check `planDigest` equality. The plan's `packages` must equal `permittedPackages` exactly (Advisor's own exact-equality rule, `authorization.ts:60`), and every package act in the bundle must be one of them; a plan package the base already satisfies exactly is recorded as a no-op item, not dropped, so a Starter pin one repository already has does not break the equality. The repositories must be a subset of `permittedRepositoryIds`. For staffing-only bundles, see D2. | `violated` or `indeterminate`, keeping readiness's own ternary | #1178 step 1 |
+| V3 | **Authority is current and binds these bytes: approved by membership or admitted (D26).** Recompute `plan.digest` canonically. For bundles with package acts, run execution readiness at the current instant (exit `0` required) and check `planDigest` equality. The plan's `packages` must equal `permittedPackages` exactly (Advisor's own exact-equality rule, `authorization.ts:60`), and every package act in the bundle must be one of them; a plan package the base already satisfies exactly is recorded as a no-op item, not dropped, so a Starter pin one repository already has does not break the equality. The repositories must be a subset of `permittedRepositoryIds`. For staffing-only bundles, see D2. The set's digest must be a member of the bundle the latest committed decision approved, or the set must be admitted under D26 (rule L3, and rules A6/A7 for how a planned bundle records it). | `violated` or `indeterminate`, keeping readiness's own ternary | #1178 step 1 |
 | V4 | **The clone is the repository, and it is clean.** Origin matches the id (existing). `git status --porcelain` is empty; this check is new for siblings. The local default-branch head equals the remote's (read-only fetch). A missing clone is `indeterminate`, and cloning stays the explicit `--clone-missing` (#1179). | `indeterminate` (missing) or `violated` (dirty, mismatched) | #1179 |
 | V5 | **Visibility and privacy.** Observe visibility. For a public target, apply the D4 rule to `problem`. Render the pull request text from ids and digests only, and scan it with the same identity rules as the brief. | `violated` | #1173, `AGENTS.md` "Conversation surface" |
 | V6 | **Dry materialization.** Materialize into a temporary worktree, compute the digest, and regenerate the lockfile with `--ignore-scripts`. Check the lockfile invariants (SRI equality, no other top-level changes) and that every changed path is in `pathAllowList`. | `violated` | T7 |
@@ -799,20 +799,40 @@ content-addressed and append-only, under
   "schemaVersion": 1,
   "kind": "clossys.installed-ledger",
   "repository": { "id": "example-owner/product", "nodeId": "R_<opaque>" },
-  "generation": 3,
-  "changeSets": ["sha256:<gen 1>", "sha256:<gen 2>", "sha256:<gen 3>"],
+  "generation": 2,
+  "history": [
+    { "generation": 1, "changeSet": "sha256:<setup>", "phase": "setup", "planDigest": "sha256:<plan>",
+      "bundle": "sha256:<approved bundle>", "baseCommit": "<40 hex>",
+      "binding": { "kind": "approved", "subjectDigest": "sha256:<approved bundle>" } },
+    { "generation": 2, "changeSet": "sha256:<apply>", "phase": "apply", "planDigest": "sha256:<plan>",
+      "bundle": "sha256:<later bundle>", "baseCommit": "<40 hex>",
+      "binding": { "kind": "admitted", "subjectDigest": "sha256:<approved bundle>", "setupChangeSet": "sha256:<setup>" } }
+  ],
   "files": [
-    { "path": "clossys/brief.json", "after": "sha256:…", "changeSet": "sha256:<gen 3>" },
-    { "path": ".agents/skills/clossys-writer/SKILL.md", "after": "sha256:…", "changeSet": "sha256:<gen 2>" }
+    { "path": "clossys/brief.json", "mode": "100644", "after": "sha256:…", "changeSet": "sha256:<setup>" },
+    { "path": ".claude/skills/clossys-writer", "mode": "120000", "after": "sha256:…", "changeSet": "sha256:<setup>" }
   ],
   "keys": [
-    { "file": "package.json", "pointer": "/devDependencies/@clossys~1writer", "value": "0.4.1", "changeSet": "sha256:<gen 2>" }
+    { "file": "package.json", "pointer": "/devDependencies/@clossys~1writer", "value": "0.4.1", "changeSet": "sha256:<apply>" }
   ],
+  "entries": [],
   "packages": [
-    { "name": "@clossys/writer", "version": "0.4.1", "integrity": "sha512-…", "placement": "devDependencies", "planItem": "wi-3" }
-  ]
+    { "planItem": "example-owner/product:@clossys/writer", "act": "install", "name": "@clossys/writer", "version": "0.4.1", "integrity": "sha512-…",
+      "placement": "devDependencies", "changeSet": "sha256:<apply>" }
+  ],
+  "deferred": []
 }
 ```
+
+`history[].binding` records on what authority each generation was written
+(D26, rule L3). Each `packages` and `deferred` row's `planItem` is the
+repository id, a colon and the package name, exactly and in the same letter
+case (rule L10) — never a plan work-item id. `packages` lists every package
+act in effect, including one the base already satisfied; `keys` lists only
+the keys the flow wrote. `deferred` holds the installs the latest setup set
+deferred, with the plan's identity for each, so the apply set can be
+compared with them without the plan. `entries` holds each release-age
+exemption entry the flow added (D25).
 
 - **Where "installed" truth lives.** For packages, the truth is the
   manifest and the lockfile. Integrator already reads both formats and
@@ -828,7 +848,7 @@ content-addressed and append-only, under
   | --- | --- |
   | The ledger parses against its contract. | `indeterminate` (`ledger-unreadable`). Never read as an empty install. |
   | Every `changeSet` digest is one the hub holds, and the row's `after` appears in that change set's `files`. | The row is ignored as unowned (`ledger-foreign-row`). This is T9. |
-  | `generation` equals the length of `changeSets`, and the last entry is the change set of the last merged apply pull request that `status` observes. | `indeterminate` (`ledger-chain`). |
+  | `generation` equals the length of `history`, and the last entry is the change set of the last merged apply pull request that `status` observes. | `indeterminate` (`ledger-chain`). |
   | `repository.nodeId` equals the observed repository's immutable id. | `indeterminate` (`identity`). This is T11. |
 
   The ledger's own protection is the client's default-branch protection:
@@ -899,7 +919,11 @@ The lifecycle view changes five things in sections 4 to 9.
 5. **The bundle digest is defined without the authorization, too.** It is
    the digest of the plan digest and the sorted repository change-set
    digests. D2's `subjectDigest` binds that value. That removes a loop in
-   which the approval would have to contain its own result.
+   which the approval would have to contain its own result. D26 binds per
+   repository (installed-ledger.json's BINDING; rule L3): a later run whose
+   bundle digest differs only because a sibling moved on to its apply set
+   still binds each set that is a member of the approved bundle, and admits
+   the apply set that follows each setup set.
 
 ### 12.4 Updates
 
@@ -1059,7 +1083,9 @@ bundle digest (12.3), and, when the bundle has package acts, the execution
 authorization. Its packages and repositories must equal the plan's work
 items exactly (`authorization.ts:58-61`), and those work items are the
 bundle's package acts. Then the client merges each repository's pull
-request. The merge stays the final approval, as #1187 says.
+request. The merge stays the final approval, as #1187 says. It also admits
+the apply set that follows each setup set in the bundle, under D26 (rule
+L3), with no second approval.
 
 **Batching.** Pending items collect until the client asks, or until
 Advisor's reassessment cadence (`ReassessmentPolicy.cadenceDays`,
@@ -1288,7 +1314,7 @@ end of section 11, and D2 and D3 each gained one sentence from section
   With (c), an update can pick up a release that was not built by the
   publish workflow.
 
-D21 to D25 are new. Unlike D1 to D20, these arrived from the owner already
+D21 to D26 are new. Unlike D1 to D20, these arrived from the owner already
 decided, not as open options.
 
 - **D21. Version policy.** Each package resolves to the public registry's
@@ -1324,38 +1350,65 @@ decided, not as open options.
   Integrator verifies its provenance (D23). The setup step writes the
   exemption into whichever release-age surface the repository uses.
 
-### Open question
+- **D26. One approval per first install.** Decided by the owner. The
+  founder approves once: the approving decision's `subjectDigest` is the
+  digest of the bundle that holds each staffed repository's `setup` change
+  set (or its `apply` set, when its base is already set up). A later `plan`
+  run binds each repository's set on its own. A set whose digest is a member
+  of the approved bundle is **approved**. An `apply` set is **admitted**,
+  with no second approval, if and only if all three of these hold:
 
-Unlike D1 to D25, this one has no recommendation. It is raised because the
-built contracts made it visible, not because this RFC has a preferred
-answer.
+  1. **Same approved plan.** It is computed from the same approved plan
+     digest, the approving decision is still the latest committed one
+     (D22), and the execution authorization is current.
+  2. **Same authorized package acts, and no other change.** Its package
+     items equal, act for act and byte for byte, the setup set's package
+     items and deferred entries; it defers nothing; it has the same
+     `producer` (the same Launcher version); and it writes nothing but those
+     `package.json` keys, the lockfile and the ledger, so every other file
+     it names is unchanged.
+  3. **Its base contains the merged setup, shown by content.** The ledger at
+     its `baseCommit` ends with that setup set's digest, bound to the
+     approved bundle, and every byte the setup set wrote is present there.
+     Ancestry is not used, because a squash or rebase merge leaves no
+     ancestor commit.
 
-**Does a repository's first install need one approval or two?** D3 already
-decides that a repository's initial application is two pull requests,
-`setup` then `apply`, because Starter proves only from a base that already
-carries its own pin. Each of those pull requests is its own change set with
-its own `changeSetDigest`, so under section 4.2's bundle shape they belong
-to two different bundles with two different `bundleDigest` values, computed
-one after the other. Section 12.7 says "the client merges each
-repository's pull request" and D2 binds an approval's `subjectDigest` to
-one bundle digest, so read literally, a first install already asks for two
-separate approvals where a later update asks for one. Options, none
-decided here:
+  Any other set waits for a new approval. An expired authorization, a moved
+  base under an unmerged setup set, or a different `producer` each still
+  needs the founder's approval of the recomputed bytes.
 
-  (a) **Two approvals.** The `setup` bundle is approved and merged on its
-      own; only then is the `apply` bundle computed, approved and merged.
-      This matches D2's binding exactly, at the cost of a second approval
-      step on every repository's first install.
-  (b) **One approval over a bundle that carries both phases.** Extend the
-      bundle shape so one `computedAt` bundle holds both a repository's
-      `setup` and `apply` change sets, and one `subjectDigest` covers both
-      digests together. Neither `apply-bundle.json` nor
-      `apply-change-set-digest.md` defines that pairing today.
-  (c) **Setup approved separately, as infrastructure.** Treat `setup` the
-      way D5 treats `gh repo create --push`: a documented, once-per-repository
-      exception the owner clears outside the per-bundle approval in D2,
-      which is then reserved for `apply` bundles, the ones that carry
-      package acts.
+  Launcher checks all three in V3, before `materialize` and again at
+  `verify`, because only the hub holds the decision and the bundles. Each
+  generation of the installed-state ledger
+  (`docs/contracts/installed-ledger.json`) records its binding: `approved`
+  with the approved bundle's `subjectDigest`, or `admitted` with that same
+  `subjectDigest` and the setup set's digest, and an admitted generation must
+  come directly after its approved setup generation, from the same plan
+  (rule L3). That `subjectDigest` need not equal the entry's `bundle`:
+  `bundle` records the run that computed the set, and a later run's bundle
+  differs whenever a sibling repository's set has moved on to its own
+  `apply` set, while this set is still a member of the approved bundle.
+
+  Starter re-checks the admission in the repository's own trusted CI job
+  (#1492), from the protected base's ledger and the pull request's ledger,
+  comparing each by its exact canonical bytes rather than any other
+  schema-valid spelling of it: the pull request's ledger is the base's plus
+  one admitted generation that installs exactly the packages the setup
+  deferred and changes no other row. That comparison can report one of
+  three results: no new generation, an admitted generation it has proved, or
+  a claimed approval. A claimed approval is never authenticated by a reader
+  without the hub, so Starter refuses a head whose last generation labels
+  itself `approved` on an apply pull request instead of `admitted`, or
+  treats that pull request as one needing the client's own review. Starter
+  cannot see the private hub, so it authenticates no decision beyond that
+  comparison. No Starter request and no other whole file carries the
+  approval, because every whole file is inside the digest the approval
+  names; the ledger is derived, outside that digest, so it can.
+
+  There is no second Clossys approval. The agent requests auto-merge once
+  `verify` passes, and, for the apply pull request, once Starter's admission
+  check is also green. The repository's own branch protection still governs
+  the merge, so a repository that requires a human review keeps it.
 
 ### Noted for step 3
 
@@ -1363,29 +1416,16 @@ These are gaps the built contracts surfaced, not owner decisions. Each is
 for migration step 3 (section 11), `materialize` and `verify`, to close
 when it makes the acts below real.
 
-- **Write-binding for the five acts no package computes yet.**
-  `repository-change-set.json` already declares `add-caller-workflow`,
-  `write-starter-request`, `add-ci-template`, `add-path-scope-job` and
-  `exempt-release-age` as item acts precisely so a later producer needs no
-  contract change, by its own description. Its code rule C9 already binds
-  a `write-record` item and a `compose-skills` item to the files that
-  carry them out; it says nothing yet about which file or files bind to
-  each of these five. Step 3 must add that binding, one act at a time, the
-  same way C9 already does for the acts `materialize` needs today.
-- **The hub skeleton is missing Integrator's pin.** D23 places
-  `@clossys/integrator` in the hub next to `@clossys/advisor`, but the
-  packed skeleton `gh repo create --push` writes today (section 5.3, D5)
-  pins only Advisor — the `hubOnlyRoles` definition in
-  `docs/contracts/advisor-plan.json` says so directly ("no Launcher
-  release pins it in the hub yet"). Step 3 must add Integrator's pin to
-  that skeleton, or D23's placement has no hub to run from.
-- **Composed-skill manifests and host-discovery links are not yet named in
-  any change set.** Section 12.1's ownership table covers the whole files
-  the flow owns, but the composed-skill manifest Launcher already keeps
-  per checkout (`clossys/.state/skills.json`,
-  `packages/launcher/src/skills.ts:199-205`) and the host discovery links
-  it writes alongside each composed skill (`packages/launcher/README.md`)
-  are not yet declared as `files` or bound to an item in
-  `repository-change-set.json`; code rule C9 binds a `compose-skills` item
-  only to each role's `SKILL.md`. Step 3 must add them before a
-  skills-only refresh (12.4) can be computed as a change set at all.
+- The write binding for the five acts no package computed, the
+  `agents-pointer` and `claude-loader` records, the composed-skill manifest
+  and the host discovery links is code rule C9 of
+  `docs/contracts/repository-change-set.json`; C11 requires a setup set to
+  be complete, and C12 binds the release-age exemption to its surface and
+  scope.
+- The hub skeleton still pins only Advisor. Adding Integrator's exact pin
+  next to it remains part of step 3, and D23's placement needs it.
+- Decided by the owner: appoint stops composing skills into product
+  checkouts, so skills reach a product repository only through a setup or
+  apply pull request, as a compose-skills item with its discovery links and
+  `clossys/.state/skills.json` (C9). Appoint still composes into sibling
+  checkouts until step 3 changes it.
