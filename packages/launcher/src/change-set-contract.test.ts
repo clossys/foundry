@@ -410,6 +410,23 @@ describe("change-set code rules C1-C14", () => {
       expect(repositoryChangeSetViolations(reseal(refusedLink))).toEqual([]);
     });
 
+    it("binds no discovery link to a role whose skill is refused, and refuses one that is written", () => {
+      const refusedSkill = loose(SET);
+      refusedSkill.files = refusedSkill.files.filter((file: Loose) => file.path !== ".agents/skills/clossys-writer/SKILL.md");
+      refusedSkill.refused.push({ path: ".agents/skills/clossys-writer/SKILL.md", reason: "unowned-existing", item: "skills" });
+      expect(rulesOf(reseal(refusedSkill))).toEqual([`C9 items[${itemIndex(refusedSkill, "skills")}]`]);
+      refusedSkill.files = refusedSkill.files.filter((file: Loose) => !file.path.endsWith("/clossys-writer"));
+      expect(repositoryChangeSetViolations(reseal(refusedSkill))).toEqual([]);
+    });
+
+    it("limits owned workflows to clossys-* names, and owns no .npmrc", () => {
+      for (const pattern of [".github/workflows/*", ".npmrc"]) {
+        const set = loose(SETUP_SITE);
+        set.pathAllowList = [...set.pathAllowList, pattern].sort();
+        expect(ruleIds(reseal(set)), pattern).toEqual(["schema"]);
+      }
+    });
+
     it("binds each write-record source to its one file", () => {
       const pointer = loose(SET);
       pointer.items.push({ id: "agents", act: "write-record", source: "agents-pointer" }, { id: "claude", act: "write-record", source: "claude-loader" });
@@ -453,9 +470,9 @@ describe("change-set code rules C1-C14", () => {
       fileAt(elsewhere, "pnpm-workspace.yaml").item = "brief";
       expect(ruleIds(reseal(elsewhere))).toEqual(["C9"]);
       const two = pnpmSetup();
-      two.files.push({ path: ".npmrc", mode: "100644", before: null, after: SAMPLE, item: "release-age" });
+      two.files.push({ path: ".yarnrc.yml", mode: "100644", before: null, after: SAMPLE, item: "release-age" });
       two.files.sort(byPath);
-      two.pathAllowList = [...two.pathAllowList, ".npmrc"].sort();
+      two.pathAllowList = [...two.pathAllowList, ".yarnrc.yml"].sort();
       expect(rulesOf(reseal(two))).toEqual([`C9 items[${itemIndex(two, "release-age")}]`]);
     });
 
@@ -633,6 +650,69 @@ describe("change-set code rules C1-C14", () => {
       const set = loose(LINKED);
       set.observed.linkedAgentsPaths = [".agents"];
       expect(repositoryChangeSetViolations(reseal(set))).toEqual([]);
+    });
+  });
+
+  describe("each remaining rule check, on a set that breaks only it", () => {
+    it("C4: refuses a ledger item named by no file, or by two", () => {
+      const none = loose(SET);
+      none.files = none.files.filter((file: Loose) => file.path !== "clossys/.state/installed.json");
+      expect(rulesOf(reseal(none))).toEqual([`C4 items[${itemIndex(none, "ledger")}]`]);
+    });
+
+    it("C7: refuses a second derived lockfile", () => {
+      const set = loose(SET);
+      set.files.push({ ...fileAt(set, "package-lock.json") });
+      set.files.sort(byPath);
+      expect(rulesOf(reseal(set))).toContain(`C7 files[${fileIndex(set, "package-lock.json") + 1}]`);
+    });
+
+    it("C9: refuses a repeated role, a declaration named twice, a package item named by a whole file or a path refusal", () => {
+      const roles = loose(SET);
+      itemAt(roles, "skills").roles.push("writer");
+      expect(rulesOf(reseal(roles))).toEqual([`C9 items[${itemIndex(roles, "skills")}].roles[2]`]);
+      const declared = loose(corpus.changeSets.find((entry) => entry.name === "setup-site-root-entries")!.changeSet);
+      declared.files.push({ path: "governance/repository-declaration.json", mode: "100644", before: SAMPLE, after: SAMPLE, item: "root-entries" });
+      declared.files.sort(byPath);
+      declared.pathAllowList = [...declared.pathAllowList, "**/repository-declaration.json"].sort();
+      expect(rulesOf(reseal(declared))).toEqual([`C9 items[${itemIndex(declared, "root-entries")}]`]);
+      const whole = loose(SET);
+      whole.files.push({ path: "clossys/extra.json", mode: "100644", before: null, after: SAMPLE, item: STARTER });
+      whole.files.sort(byPath);
+      const messages = (value: unknown) => repositoryChangeSetViolations(value).map((violation) => violation.message);
+      expect(messages(reseal(whole))).toContain(`changeSet.items[${itemIndex(whole, STARTER)}] is named by a whole file (rule C9)`);
+      const refusal = loose(SET);
+      refusal.refused.push({ path: "clossys/extra.json", reason: "unowned-existing", item: STARTER });
+      expect(messages(reseal(refusal))).toContain(`changeSet.items[${itemIndex(refusal, STARTER)}] is named by a path refusal (rule C9)`);
+    });
+
+    it("C9: refuses a key refusal, or a lockfile invariant, naming an item that is not a package item", () => {
+      const key = loose(SET);
+      key.refused.push({ file: "package.json", pointer: "/devDependencies/@example~1zz", reason: "unowned-existing", item: "brief" });
+      expect(rulesOf(reseal(key))).toContain(`C9 refused[${key.refused.length - 1}].item`);
+      const invariant = loose(SET);
+      const lock = fileAt(invariant, "package-lock.json");
+      lock.invariants[1].item = "brief";
+      expect(rulesOf(reseal(invariant))).toContain(`C9 files[${fileIndex(invariant, "package-lock.json")}].invariants[1].item`);
+    });
+
+    it("C13: refuses a second declare-root-entry item, and names listed under a vocabulary that is not checked", () => {
+      const ROOTS = corpus.changeSets.find((entry) => entry.name === "setup-site-root-entries")!.changeSet;
+      const second = loose(ROOTS);
+      second.items.push({ id: "root-entries-2", act: "declare-root-entry", path: "governance/repository-profile.json", entries: [] });
+      second.items.sort(byId);
+      second.refused.push({ path: "governance/repository-profile.json", reason: "unowned-existing", item: "root-entries-2" });
+      expect(rulesOf(reseal(second))).toContain(`C13 items[${itemIndex(second, "root-entries-2")}]`);
+      const unchecked = loose(ROOTS);
+      unchecked.observed.repositoryProfile.rootVocabulary = "none";
+      expect(rulesOf(reseal(unchecked))).toEqual([`C13 items[${itemIndex(unchecked, "root-entries")}]`, "C13 observed.repositoryProfile"]);
+    });
+
+    it("C14: refuses skills-root-is-link on a key refusal", () => {
+      const set = loose(SET);
+      set.refused.push({ file: "package.json", pointer: "/devDependencies/@example~1zz", reason: "skills-root-is-link", item: STARTER });
+      itemAt(set, STARTER).satisfiedInBase = true;
+      expect(rulesOf(reseal(set))).toContain(`C14 refused[${set.refused.length - 1}].reason`);
     });
   });
 

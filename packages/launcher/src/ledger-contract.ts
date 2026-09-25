@@ -86,9 +86,9 @@ export interface InstalledLedger {
 export type LedgerRuleId = "L1" | "L2" | "L3" | "L4" | "L5" | "L6" | "L7" | "L8";
 export type LedgerSuccessionRuleId = "S2" | "S3";
 
-/** One reason a ledger, or a pair of ledgers, is refused: `rule` is "schema" for the contract's keywords, else the rule's id. */
+/** One reason a ledger, or a pair of ledgers, is refused: `rule` is "schema" for the contract's keywords, "bytes" for text that is not a ledger's exact bytes, else the rule's id. */
 export interface LedgerViolation {
-  readonly rule: "schema" | LedgerRuleId | LedgerSuccessionRuleId;
+  readonly rule: "schema" | "bytes" | LedgerRuleId | LedgerSuccessionRuleId;
   /** In a succession, which ledger breaks a contract rule; absent for S2 and S3, which relate the two. */
   readonly side?: "base" | "head";
   readonly path: string;
@@ -163,10 +163,8 @@ export function ledgerRuleViolations(ledger: InstalledLedger): RuleViolation[] {
       push("L3", at, "is not approved, and a setup entry's binding must be");
       return;
     }
-    if (binding.kind === "approved") {
-      if (binding.subjectDigest !== entry.bundle) push("L3", `${at}.subjectDigest`, "is not the entry's bundle");
-      return;
-    }
+    // An approved binding's subjectDigest may differ from the entry's bundle: bundle is the run that computed the set, subjectDigest the approval.
+    if (binding.kind === "approved") return;
     const previous = index > 0 ? history[index - 1] : undefined;
     if (previous === undefined) {
       push("L3", at, "is admitted, but no setup entry comes before it");
@@ -203,7 +201,8 @@ export function ledgerRuleViolations(ledger: InstalledLedger): RuleViolation[] {
   // L5
   ledger.files.forEach((row, index) => {
     const at = `files[${index}]`;
-    if (row.path === LEDGER_PATH || row.path === "package.json" || LOCKFILE_NAMES.includes(row.path)) push("L5", `${at}.path`, "is the ledger, package.json or a lockfile, which no files row names");
+    const lowered = row.path.toLowerCase();
+    if (lowered === LEDGER_PATH.toLowerCase() || lowered === "package.json" || LOCKFILE_NAMES.includes(lowered)) push("L5", `${at}.path`, "is the ledger, package.json or a lockfile, which no files row names");
     else if (!OWNED_PATTERNS.some((pattern) => matchesPathPattern(row.path, pattern))) push("L5", `${at}.path`, "is not matched by any owned pattern");
     const link = discoveryLinkRole(row.path) !== null;
     if ((row.mode === "120000") !== link) push("L5", `${at}.mode`, link ? "is not 120000, and this path is a discovery link" : "is 120000, which only a discovery link has");
@@ -262,9 +261,18 @@ export function validateInstalledLedger(value: unknown): ValidationResult {
   return { valid: false, reason: violations.map((violation) => violation.message).join("; ") };
 }
 
-/** What a pull request's head ledger does to its base's: nothing, or one next generation. */
+/**
+ * What a pull request's head ledger does to its base's. `change` is none only
+ * when both are valid, exactly canonical, and byte for byte the same.
+ * `admission` says what was proved about a next generation that breaks no
+ * rule: admitted when it is admitted and S3 held; approval-claimed when it is
+ * bound approved, which a reader without the hub cannot authenticate, so it
+ * is a claim, never an admission or a pass; null for no change, or when any
+ * rule refuses the pair.
+ */
 export interface LedgerSuccession {
   readonly change: "none" | "next-generation";
+  readonly admission: "admitted" | "approval-claimed" | null;
   readonly violations: readonly LedgerViolation[];
 }
 
@@ -274,8 +282,8 @@ function successionRuleViolations(base: InstalledLedger | null, head: InstalledL
 
   // S2
   if (base !== null && !sameValue(head.repository, base.repository)) push("S2", "head.repository", "is not the base ledger's repository");
-  if (head.generation !== (base?.generation ?? 0) + 1) push("S2", "head.generation", "is not one more than the base ledger's");
-  if (!sameValue(head.history.slice(0, -1), base?.history ?? [])) push("S2", "head.history", "does not keep the base ledger's history unchanged before its last entry");
+  // head.generation is base.generation plus 1 exactly when this holds, because L1 ties each ledger's generation to its history's length.
+  if (!sameValue(head.history.slice(0, -1), base?.history ?? [])) push("S2", "head.history", "does not keep the base ledger's history unchanged before its last entry, or is not one generation past it");
 
   // S3
   const last = head.history.at(-1)!;
@@ -285,8 +293,8 @@ function successionRuleViolations(base: InstalledLedger | null, head: InstalledL
     push("S3", at, "is admitted, but the base has no ledger holding the setup it follows");
     return out;
   }
-  if (base.history.at(-1)!.changeSet !== last.binding.setupChangeSet) push("S3", `${at}.setupChangeSet`, "is not the base ledger's latest change set");
-  if (head.deferred.length > 0) push("S3", "head.deferred", "must be empty in an admitted generation");
+  // Already proved: L3 on the head makes the entry before an admitted one its approved setup entry, and S2 makes that entry the base's latest;
+  // L3 makes an admitted entry an apply entry, and L4 leaves no deferred row after one.
   if (!sameValue(head.files, base.files)) push("S3", "head.files", "differ from the base ledger's, and an admitted generation changes no file");
   if (!sameValue(head.entries, base.entries)) push("S3", "head.entries", "differ from the base ledger's, and an admitted generation changes no entry");
   const kept = <T>(rows: readonly T[], from: readonly T[]) => from.every((row) => rows.some((other) => sameValue(other, row)));
@@ -304,27 +312,49 @@ function successionRuleViolations(base: InstalledLedger | null, head: InstalledL
   return out;
 }
 
+/** Reads one side's ledger from its bytes: valid under the contract, and exactly the bytes RENDER gives it. */
+function readLedgerBytes(text: unknown, side: "base" | "head"): { ledger: InstalledLedger | null; violations: LedgerViolation[] } {
+  const refuse = (message: string) => ({ ledger: null, violations: [{ rule: "bytes" as const, side, path: "", message: `${side} ${message} (rule bytes)` }] });
+  if (typeof text !== "string") return refuse("is not a ledger's bytes as text");
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    return refuse("is not JSON");
+  }
+  const violations = contractViolations(parsed, side, side);
+  if (violations.length > 0) return { ledger: null, violations };
+  if (serializeInstalledLedger(parsed as InstalledLedger) !== text) return refuse("is not the exact bytes the ledger contract's RENDER section gives this ledger");
+  return { ledger: parsed as InstalledLedger, violations: [] };
+}
+
 /**
- * Compares a pull request's head ledger with its base's (null when the base
- * has none), under the ledger contract's SUCCESSION rules: identical, or one
- * next generation that keeps the base's history; and when that generation is
+ * Compares a pull request's head ledger with its base's, each given as the
+ * exact text of clossys/.state/installed.json (base null when the base has
+ * none), under the ledger contract's SUCCESSION rules. Each side must be
+ * valid and exactly canonical, or only those reasons are returned: a repeated
+ * key, a byte order mark or a second spelling is never read as an unchanged
+ * ledger. Then the head is either byte-identical to the base, or one next
+ * generation that keeps the base's history; and when that generation is
  * admitted, it installs exactly what the base's setup deferred and changes no
- * other row. Each ledger is first validated against the contract; when
- * either is refused, only those reasons are returned. It checks what the
- * ledgers claim, not the files: whether the tree matches the head ledger is
- * a separate check.
+ * other row. An approved next generation is reported as approval-claimed: an
+ * unauthenticated claim, never an admission. It checks what the ledgers
+ * claim, not the files: whether the tree matches the head ledger is a
+ * separate check.
  */
-export function ledgerSuccession(base: unknown, head: unknown): LedgerSuccession {
-  const change = base !== null && sameValue(base, head) ? "none" : "next-generation";
-  const invalid = [...(base === null ? [] : contractViolations(base, "base", "base")), ...contractViolations(head, "head", "head")];
-  if (invalid.length > 0 || change === "none") return { change, violations: invalid };
-  return {
-    change,
-    violations: successionRuleViolations(base as InstalledLedger | null, head as InstalledLedger).map((violation) => ({
-      ...violation,
-      message: `${violation.path} ${violation.message} (rule ${violation.rule})`,
-    })),
-  };
+export function ledgerSuccession(baseBytes: string | null, headBytes: string): LedgerSuccession {
+  const base = baseBytes === null ? { ledger: null, violations: [] } : readLedgerBytes(baseBytes, "base");
+  const head = readLedgerBytes(headBytes, "head");
+  const invalid = [...base.violations, ...head.violations];
+  if (invalid.length > 0 || head.ledger === null) return { change: "next-generation", admission: null, violations: invalid };
+  if (baseBytes !== null && baseBytes === headBytes) return { change: "none", admission: null, violations: [] };
+  const violations = successionRuleViolations(base.ledger, head.ledger).map((violation) => ({
+    ...violation,
+    message: `${violation.path} ${violation.message} (rule ${violation.rule})`,
+  }));
+  if (violations.length > 0) return { change: "next-generation", admission: null, violations };
+  const admitted = head.ledger.history.at(-1)!.binding.kind === "admitted";
+  return { change: "next-generation", admission: admitted ? "admitted" : "approval-claimed", violations: [] };
 }
 
 /** Every object's members, in the order installed-ledger.json declares them (RENDER). */

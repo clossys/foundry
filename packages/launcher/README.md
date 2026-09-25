@@ -262,7 +262,7 @@ Exit codes preserve the ternary:
 | `bundleDigest()` | The bundle digest an approval binds: `canonicalDigest()` of the plan digest and, sorted by id, the id and change-set digest of each repository that has a change set. Nothing else. |
 | `validateRepositoryChangeSet()` / `validateApplyBundle()` | Validation of a change set and a bundle against the shared change-set and bundle contracts, including their code rules (C1-C14 for a change set: references, allow-list and case-insensitive path rules, the ledger, the digest, only the ledger and lockfile derived, canonical order, each item's writes matching it -- discovery links, the skills manifest, the pointer files and the setup templates included -- phase, a complete setup set, the release-age exemption's surface and scope, the root entries a Controller profile needs, and no skill written through a symbolic link; A1-A7 for a bundle: unique ids, the digest, verdicts that are the worst of their checks, the authorization-mismatch check, no state or binding in a report bundle, and in a planned bundle a state only where all nine checks passed and a binding exactly where V3 passed). Unknown fields are refused; no reason echoes a value. |
 | `wouldViolateRootEntries()` / `isRootEntryName()` | Whether the root names some paths introduce (each path's first segment) would fail a Controller repository profile's closed root vocabulary: `satisfied` when the profile has no vocabulary Controller checks (schema version 1 or 2, or an empty `rootEntries`) or declares every name allowed or required; `violated`, with the undeclared and the prohibited names, sorted; `indeterminate` (`root-vocabulary-unknown`) for anything Controller could not read as a root vocabulary. Reads only `schemaVersion` and `rootEntries`, by the rules Controller's README states; pure. `isRootEntryName()` is Controller's rule for one direct-child name. |
-| `validateInstalledLedger()` / `ledgerSuccession()` / `serializeInstalledLedger()` | The installed-state ledger (`clossys/.state/installed.json`): validation against the shared ledger contract and its code rules L1-L8 (history, each generation's approval binding, rows naming history, owned paths and link modes, keys matching packages, no act twice, canonical order); the contract's succession rules for a pull request's head ledger against its base's (unchanged, or one next generation keeping the base's history, and an admitted generation installing exactly what the setup deferred and changing nothing else); and the exact bytes of a valid ledger. A valid ledger is well formed, not trusted: trusting a row needs the hub's change sets, which none of these read. Nothing in this package writes a ledger yet. |
+| `validateInstalledLedger()` / `ledgerSuccession()` / `serializeInstalledLedger()` | The installed-state ledger (`clossys/.state/installed.json`): validation against the shared ledger contract and its code rules L1-L8 (history, each generation's approval binding, rows naming history, owned paths and link modes, keys matching packages, no act twice, canonical order); the contract's succession rules for a pull request's head ledger against its base's, each given as its exact bytes (both must be exactly canonical; then unchanged, or one next generation keeping the base's history, and an admitted generation installing exactly what the setup deferred and changing nothing else), reporting whether a next generation was proved `admitted` or only claims an approval (`approval-claimed`); and the exact bytes of a valid ledger. A valid ledger is well formed, not trusted: trusting a row needs the hub's change sets, which none of these read. Nothing in this package writes a ledger yet. |
 | `CloneMissingOutcome` / `DoctorCheckHost` / `DoctorReport` / `DoctorStepId` / `DoctorStepResult` / `CloudBootstrapCheck` / `CloudBootstrapReport` / `ExternalInventoryDeclaration` / `InventoryDriftReport` / `DiscoveredHost` / `HostRecord` / `BudgetPreference` / `HostModelProfile` / `HostTierMapping` / `ModelResolution` / `PreferencesDocument` / `ReasoningTier` / `SupportedHost` / `AdvisorPlan` / `ApplyBriefResult` / `BlockerKind` / `EngagementBrief` / `EngagementBriefRole` / `EngagementContext` / `EngagementContextField` / `EngagementContextFieldId` / `GoalDirection` / `PlanBlocker` / `PlanDecision` / `PlanKit` / `PlanPackageAct` / `PlanStaffing` / `ValidationResult` / `PlanApplyBundleInputs` / `PlanApplyBundleResult` / `RepositoryObservation` / `SkippedRepositoryObservation` / `BundleDigestEntry` / `ApplyBundle` / `ApplyBundleRepository` / `ApplyCheck` / `ApplyCheckId` / `ChangeSetDeferral` / `ChangeSetItem` / `ChangeSetPhase` / `ChangeSetRefusal` / `CheckVerdict` / `ContentDigest` / `DependencyPlacement` / `DerivedFileChange` / `FileChange` / `KeyChange` / `LedgerInvariant` / `LockfileName` / `PackageInvariant` / `PackageManagerKind` / `PinnedPackage` / `RefusalReason` / `ReleaseAgeSurfaceKind` / `RepositoryChangeSet` / `RepositoryVisibility` / `WholeFileChange` / `ApprovalBinding` / `DiscoveryRoot` / `ExemptionSurfaceKind` / `WriteRecordSource` / `InstalledLedger` / `LedgerSuccession` / `LedgerViolation` / `RepositoryProfileObservation` / `RootEntryDeclaration` / `RootEntriesVerdict` | Typed contracts for the sections above. |
 
 ## Doctor
@@ -515,12 +515,13 @@ shared contract `docs/contracts/installed-ledger.json`, with a corpus
 computed independently of this package (both in the public repository, not
 shipped in this package). This package validates a ledger against it
 (`validateInstalledLedger()`), compares a pull request's ledger with its
-base's (`ledgerSuccession()`), and gives a valid ledger its exact bytes
+base's from their exact bytes (`ledgerSuccession()`), and gives a valid ledger its exact bytes
 (`serializeInstalledLedger()`). Nothing here renders a ledger from a change
 set, reads one from a repository, or trusts one yet.
 
 - Each generation records the change set that wrote it and its binding:
-  `approved`, with the digest of the bundle the founder approved, or
+  `approved`, with the digest of the bundle the founder approved (which
+  may be an earlier run's bundle than the one the set was computed in), or
   `admitted`, for the apply set that follows an approved setup set under
   one approval, naming that setup set. An admitted generation must come
   right after its setup generation, from the same plan and the same
@@ -532,6 +533,17 @@ set, reads one from a repository, or trusts one yet.
   admitted generation must install exactly the packages its setup deferred
   and change no other row, but whether the pull request's tree matches its
   ledger is a separate check.
+- For a reader without the hub, an `approved` head generation is an
+  unauthenticated claim, never an admission or a pass: a pull request
+  could relabel an admitted generation `approved` to escape the admission
+  rules. `ledgerSuccession()` therefore reports such a head as
+  `approval-claimed`, and `admitted` only for an admitted generation that
+  every rule proved. A caller that decides without the hub refuses an
+  `approval-claimed` head on an apply pull request, or treats the pull
+  request as one that needs the client's own review.
+- Each ledger is read from its bytes and must be exactly the bytes the
+  contract renders for it: a repeated key, a byte order mark or any other
+  spelling is refused (`bytes`), never read as an unchanged ledger.
 
 ## Taking the registry snapshot
 

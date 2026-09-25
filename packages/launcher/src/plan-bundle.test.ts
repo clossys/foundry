@@ -288,11 +288,7 @@ describe("planApplyBundle", () => {
     const brief = clone(HUB_BRIEF) as unknown as { roles: unknown[] };
     brief.roles.push({ ...HUB_BRIEF.roles[1]!, role: "a/b" });
     const { bundle, changeSets } = run({ ...INPUTS, plan: plan as unknown as AdvisorPlan, hubBrief: brief as unknown as EngagementBrief, skills: [...INPUTS.skills, { role: "a/b", content: "x" }] });
-    expect(setFor(changeSets, DOCS.id).refused).toEqual([
-      { path: ".agents/skills/clossys-a/b/SKILL.md", reason: "unsafe-path", item: "skills" },
-      { path: ".claude/skills/clossys-a/b", reason: "unsafe-path", item: "skills" },
-      { path: ".cursor/skills/clossys-a/b", reason: "unsafe-path", item: "skills" },
-    ]);
+    expect(setFor(changeSets, DOCS.id).refused).toEqual([{ path: ".agents/skills/clossys-a/b/SKILL.md", reason: "unsafe-path", item: "skills" }]);
     expect(bundle.repositories[1]).toMatchObject({ verdict: "violated" });
   });
 
@@ -335,6 +331,17 @@ describe("planApplyBundle", () => {
     const refused = setFor(run(withRepository({ files: [...SITE.files, { path: ".agents/skills/clossys-writer/SKILL.md", sha256: sha("theirs") }] })).changeSets, SITE.id);
     const manifest = serializeComposedSkillsManifest([{ role: "strategist", sha256: sha("# Strategist\n") }], "0.4.0");
     expect(refused.files.find((file) => file.path === "clossys/.state/skills.json")!.after).toBe(sha(manifest));
+  });
+
+  it("writes no discovery link for a role whose skill is refused, so no link exposes a skill the flow does not own", () => {
+    const site = setFor(run(withRepository({ files: [...SITE.files, { path: ".agents/skills/clossys-writer/SKILL.md", sha256: sha("theirs") }] })).changeSets, SITE.id);
+    expect(site.refused).toContainEqual({ path: ".agents/skills/clossys-writer/SKILL.md", reason: "unowned-existing", item: "skills" });
+    const paths = [...site.files.map((file) => file.path), ...site.refused.map((refusal) => ("path" in refusal ? refusal.path : refusal.pointer))];
+    expect(paths.filter((path) => path.endsWith("/clossys-writer"))).toEqual([]);
+    expect(paths).toContain(".claude/skills/clossys-strategist");
+    expect(validateRepositoryChangeSet(site)).toEqual({ valid: true });
+    const linked = setFor(run(withRepository({ linkedAgentsPaths: [".agents"] })).changeSets, SITE.id);
+    expect(linked.files.map((file) => file.path).filter((path) => path.includes("/clossys-"))).toEqual([]);
   });
 
   it("writes no discovery link under a root the base has as a symbolic link, and refuses one where the base has a directory", () => {

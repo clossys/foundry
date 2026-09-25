@@ -593,9 +593,15 @@ export function changeSetRuleViolations(set: RepositoryChangeSet): RuleViolation
     } else if (item.act === "compose-skills") {
       for (const { index: repeat, first } of repeats(item.roles, (role) => role)) push("C9", `${at}.roles[${repeat}]`, `repeats roles[${first}]`);
       const roles = [...new Set(item.roles)];
-      const expected = [...roles.flatMap((role) => [skillPath(role), ...linkedRoots.map((root) => discoveryLinkPath(root, role))]), SKILLS_MANIFEST_PATH];
+      // A role whose SKILL.md is refused gets no discovery link: a link would expose a skill the flow does not own.
+      const written = (role: string) => files.some(({ file }) => !isDerived(file) && file.path === skillPath(role));
+      const expected = [...roles.flatMap((role) => [skillPath(role), ...(written(role) ? linkedRoots.map((root) => discoveryLinkPath(root, role)) : [])]), SKILLS_MANIFEST_PATH];
       if (!namedExactly(expected)) {
-        push("C9", at, `must be named, for each role, by exactly one whole file or path refusal at that role's skill path and at its discovery link under each root not observed as a symbolic link, by exactly one at ${SKILLS_MANIFEST_PATH}, and by nothing else`);
+        push(
+          "C9",
+          at,
+          `must be named, for each role, by exactly one whole file or path refusal at that role's skill path, by one whole file or path refusal at its discovery link under each root not observed as a symbolic link when its skill is a whole file and by none when it is refused, by exactly one at ${SKILLS_MANIFEST_PATH}, and by nothing else`,
+        );
       }
     } else if (item.act === "add-caller-workflow" || item.act === "write-starter-request" || item.act === "add-ci-template" || item.act === "add-path-scope-job") {
       if (!namedExactly(TEMPLATE_PATHS[item.act])) push("C9", at, `must be named by exactly one whole file or path refusal at each file an ${item.act} item writes, and by nothing else`);
@@ -769,9 +775,18 @@ export function applyBundleRuleViolations(bundle: ApplyBundle): RuleViolation<Ap
     if (entry.binding?.kind === "admitted") {
       if (entry.phase !== "apply") out.push({ rule: "A7", path: `repositories[${index}].binding`, message: "is admitted, which only an apply set can be" });
       if (entry.binding.setupChangeSet === entry.changeSet) out.push({ rule: "A7", path: `repositories[${index}].binding.setupChangeSet`, message: "is this repository's own change set, not the setup set it follows" });
+      if (entry.binding.subjectDigest === bundle.bundleDigest) out.push({ rule: "A7", path: `repositories[${index}].binding.subjectDigest`, message: "is this bundle's own digest, but the approved bundle held the setup set, not this apply set" });
     }
   });
   if (bundle.mode === "planned" && !bundle.plan.committed) out.push({ rule: "A6", path: "plan.committed", message: "must be true in a planned bundle" });
+  if (bundle.mode === "planned") {
+    const bound = bundle.repositories.flatMap((entry, index) => ("changeSet" in entry && entry.binding !== undefined ? [{ subject: entry.binding.subjectDigest, index }] : []));
+    const first = bound[0];
+    for (const { subject, index } of bound) {
+      if (first !== undefined && subject !== first.subject) out.push({ rule: "A7", path: `repositories[${index}].binding.subjectDigest`, message: `is not the approval repositories[${first.index}] is bound by, and one bundle has one approval` });
+    }
+    if (first !== undefined && bundle.authorization === null) out.push({ rule: "A7", path: "authorization", message: "is null, but V3 passed for a bound change set, which needs a current execution authorization" });
+  }
   return out;
 }
 

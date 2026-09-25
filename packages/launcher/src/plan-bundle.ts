@@ -251,17 +251,19 @@ function computeChangeSet(
   for (const role of roles) {
     const content = skillContent.get(role);
     if (content === undefined) throw new TypeError("a staffed role has no composed skill content in skills");
-    const paths = [skillPath(role), ...linkedRoots.map((root) => discoveryLinkPath(root, role))];
     // A role must be one path segment: `a/b` would still match the allow-list's `clossys-*/**`.
     if (/[/\\]/.test(role)) {
-      for (const path of paths) refused.push({ path, reason: "unsafe-path", item: "skills" });
+      refused.push({ path: skillPath(role), reason: "unsafe-path", item: "skills" });
       continue;
     }
     const skill = skillPath(role);
     // Never write through a symbolic link: the bytes would land wherever it points.
     if (observation.linkedAgentsPaths.some((link) => skill.startsWith(`${link}/`))) refused.push({ path: skill, reason: "skills-root-is-link", item: "skills" });
-    else if (writeWhole(skill, content, "skills")) composed.push({ role, sha256: contentDigest(content) });
-    for (const root of linkedRoots) writeWhole(discoveryLinkPath(root, role), discoveryLinkTarget(role), "skills", "120000");
+    else if (writeWhole(skill, content, "skills")) {
+      composed.push({ role, sha256: contentDigest(content) });
+      // Links only to a skill the set writes: a link to a refused skill would expose one the flow does not own.
+      for (const root of linkedRoots) writeWhole(discoveryLinkPath(root, role), discoveryLinkTarget(role), "skills", "120000");
+    }
   }
   writeWhole(SKILLS_MANIFEST_PATH, serializeComposedSkillsManifest(composed, inputs.producer.version), "skills");
 

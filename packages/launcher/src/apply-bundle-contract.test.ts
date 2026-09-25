@@ -45,6 +45,7 @@ const ADMITTED = { kind: "admitted" as const, subjectDigest: SETUP.bundle, setup
 const PLANNED: ApplyBundle = {
   ...BUNDLE,
   mode: "planned",
+  authorization: { planDigest: PLAN_DIGEST, expiresAt: "2026-10-01T00:00:00Z" },
   repositories: [
     { id: "example-owner/site", verdict: "satisfied", phase: "apply", changeSet: APPLY.changeSetDigest, checks: ALL_SATISFIED, state: "planned", binding: ADMITTED },
     {
@@ -173,6 +174,25 @@ describe("apply-bundle contract: report and planned modes (A5-A7)", () => {
     const self = loose(PLANNED);
     self.repositories[0].binding.setupChangeSet = APPLY.changeSetDigest;
     expect(rules(self)).toEqual(["A7 repositories[0].binding.setupChangeSet"]);
+  });
+
+  it("A7: refuses an admitted binding to this bundle's own digest, two approvals in one bundle, and a binding with no authorization", () => {
+    const own = loose(PLANNED);
+    own.repositories[0].binding.subjectDigest = own.bundleDigest;
+    expect(rules(own)).toEqual(["A7 repositories[0].binding.subjectDigest"]);
+    const two = loose(PLANNED);
+    two.repositories[1] = { ...two.repositories[1], verdict: "satisfied", checks: ALL_SATISFIED, state: "planned", binding: { kind: "approved", subjectDigest: SET.changeSetDigest } };
+    expect(rules(two)).toEqual(["A7 repositories[1].binding.subjectDigest"]);
+    two.repositories[1].binding.subjectDigest = SETUP.bundle;
+    expect(rules(two)).toEqual([]);
+    const unauthorized = loose(PLANNED);
+    unauthorized.authorization = null;
+    expect(rules(unauthorized)).toEqual(["A7 authorization"]);
+    const waiting = loose(PLANNED);
+    waiting.authorization = null;
+    waiting.repositories = [waiting.repositories[1]];
+    waiting.bundleDigest = bundleDigest(PLAN_DIGEST, [{ id: "example-owner/docs", changeSetDigest: SET.changeSetDigest }]);
+    expect(rules(waiting)).toEqual([]);
   });
 
   it("refuses a binding of the wrong shape: an admitted binding with no setup set, or an unknown kind", () => {
