@@ -1,9 +1,10 @@
-// The hub repository inventory (issues #996 and #1334), validated against
-// the shared contract docs/contracts/repository-inventory.json. This
-// package's build packs that file into src/generated/ beside the plan and
-// brief contracts, and checks it with the generated copy of the one
+// The hub repository inventory (issues #996, #1334 and #1179), validated
+// against the shared contract docs/contracts/repository-inventory.json.
+// This package's build packs that file into src/generated/ beside the plan
+// and brief contracts, and checks it with the generated copy of the one
 // contract checker @clossys/advisor also uses -- so an inventory Launcher
-// writes and an inventory Launcher reads back are judged by one definition.
+// writes, an inventory Launcher reads back, and a repository id Advisor
+// offers on its repository-choice card are all judged by one definition.
 //
 // Refusals follow the checker's conventions: they name a field by its
 // position (for example `repositories[2].id`), never quote a repository id
@@ -84,7 +85,8 @@ export function validateInventoryValue(value: unknown): InventoryValidation {
  * repeated in any object, or a leading byte order mark is refused -- and
  * the value is then checked by the shared contract checker. Every read of
  * an inventory document goes through this: `--inventory`, the stored
- * `clossys/.state/inventory.json` on every resume, and `readInventoryRepositories()`.
+ * `clossys/.state/inventory.json` on every resume, `readInventoryRepositories()`,
+ * and the document `launcher --repositories` writes, before it writes it.
  */
 export function validateInventoryDocument(raw: string): InventoryValidation {
   let value: unknown;

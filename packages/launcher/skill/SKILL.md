@@ -19,6 +19,7 @@ The same team is in every inventoried repo. Name another `@clossys-<package>` to
 - You can talk about hub setup from any inventoried repo; creating, appointing, resuming, and health are still your job.
 - On a blank machine with no hub yet, `npx @clossys/launcher` runs once from the hub directory or an empty folder; only then are skills composed on the hub.
 - After bootstrap, resume from the hub refreshes voices everywhere sibling clones sit beside it.
+- Appointing needs the repositories the hub covers. The client chooses them on `@clossys-advisor`'s repository card, and `launcher --repositories <id>,<id>` writes the inventory; nobody hand-writes `clossys/.state/inventory.json`. When the hub's inventory already lists different repositories, Launcher refuses and names what would change; run again with `--replace-inventory` only after the client approves that replacement.
 - Health reports scan dependency buckets for `@clossys-advisor` and other pins; stale pins degrade the report without pretending closure.
 - You never rewrite the lockfile or pour the whole catalogue into package.json.
 

@@ -2,6 +2,7 @@ import { dirname, join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import type {
   ApplyWorkspaceOptions,
+  ChosenInventory,
   CommandResult,
   CwdObservation,
   DependencyBucket,
@@ -24,6 +25,7 @@ import { parseSkillManifest, summarizeSkillsManifest } from "./manifest.js";
 import { detectLinkedHosts, serializeHostRecord, HOSTS_REL, type DiscoveredHost } from "./hosts.js";
 import { reportInventoryDrift } from "./inventory-adoption.js";
 import { isValidInventoryId, validateInventoryDocument } from "./inventory-contract.js";
+import { describeChosenInventory, resolveChosenInventory } from "./inventory-choice.js";
 
 export const DEFAULT_REPOSITORY_NAME = "workspace";
 /** The one visible, per-repository Clossys folder (#1171). Every role's output lives under it. */
@@ -413,6 +415,21 @@ export function readInventoryRepositories(host: WorkspaceHost, source: string, l
 }
 
 /**
+ * How a founder gives Launcher the repositories a hub covers (#1179): they
+ * choose them on Advisor's repository-choice card, and `--repositories`
+ * writes the inventory. Named by every refusal that needs an inventory,
+ * instead of `--inventory <path>`, which still works but asks for a
+ * document a founder will not write.
+ */
+function chooseRepositoriesHint(extraFlag = ""): string {
+  return (
+    "choose the repositories this hub covers on Advisor's repository card, which lists the ones your GitHub account can see " +
+    "(`npx -p @clossys/advisor advisor-repository-card`), then run " +
+    `\`launcher --repositories <owner/name>[,<owner/name>...]${extraFlag}\`, and Launcher writes the inventory for you`
+  );
+}
+
+/**
  * Resolves which repositories the adopt plan inventories. When the on-disk hub
  * inventory is populated AND --inventory is supplied, the two are merged by id:
  * on-disk entries keep their order, ids not already on disk are appended in
@@ -431,12 +448,12 @@ function resolveAdoptInventory(
     if (cwd.inventory?.status === "invalid") {
       return refuse(
         "violated",
-        `the on-disk hub inventory ${cwd.inventory.reason} -- fix it, or supply --inventory <path> to a populated inventory document to replace it`,
+        `the on-disk hub inventory ${cwd.inventory.reason} -- to replace it, ${chooseRepositoriesHint(" --replace-inventory")}`,
       );
     }
     return refuse(
       "violated",
-      "appointing requires a populated generated hub inventory (packed template skeleton/clossys/.state/inventory.json; the generated path does not ship), or --inventory <path> to a populated inventory document",
+      `appointing needs the repositories this hub covers, and it has no inventory yet: ${chooseRepositoriesHint()}`,
     );
   }
   if (!trimmed) return {};
@@ -484,12 +501,43 @@ function resolveAdoptInventory(
   return { mergedInventoryIds: merged };
 }
 
+/**
+ * Resolves `--repositories` against the inventory stored in `directory`, or
+ * returns a refusal. See `resolveChosenInventory()`.
+ */
+function resolveChosenRepositories(
+  host: WorkspaceHost,
+  directory: string,
+  owner: string,
+  repositories: readonly string[],
+  replaceInventory: boolean,
+): { chosenInventory: ChosenInventory } | WorkspaceRefusal {
+  const resolution = resolveChosenInventory(host.readText(join(directory, WORKSPACE_INVENTORY_REL)), repositories, owner, replaceInventory);
+  if (resolution.kind === "refuse") return refuse("violated", resolution.message);
+  return { chosenInventory: resolution.chosen };
+}
+
+export interface PlanWorkspaceOptions {
+  /** `--inventory <path>`: a prepared inventory document, appoint only. */
+  readonly inventoryPath?: string;
+  /** `--repositories`: the repository ids a founder chose on Advisor's repository card (#1179). Appoint or resume of a hub checkout. */
+  readonly repositories?: readonly string[];
+  /** `--replace-inventory`: explicit approval for `repositories` to replace a stored inventory that lists a different set, or one that fails its contract. */
+  readonly replaceInventory?: boolean;
+}
+
 export function planWorkspace(
   observation: WorkspaceObservation,
   host: WorkspaceHost,
-  options: { inventoryPath?: string } = {},
+  options: PlanWorkspaceOptions = {},
 ): WorkspaceDecision {
   const { cwd } = observation;
+  if (options.repositories !== undefined && options.inventoryPath !== undefined) {
+    return refuse("violated", "--repositories and --inventory each supply the whole inventory; use one, not both");
+  }
+  if (options.replaceInventory === true && options.repositories === undefined) {
+    return refuse("violated", "--replace-inventory approves replacing the inventory with --repositories, and means nothing without it");
+  }
   if (cwd.hubMigration === "indeterminate") {
     return refuse(
       "indeterminate",
@@ -517,6 +565,18 @@ export function planWorkspace(
     );
   }
   if (cwd.hub) {
+    let chosen: { chosenInventory: ChosenInventory } | undefined;
+    if (options.repositories !== undefined) {
+      if (cwd.hubMigration === "legacy") {
+        return refuse(
+          "violated",
+          "this hub's state is still in the legacy .clossys/ folder; run launcher once without --repositories to move it to clossys/.state/, then choose the repositories again",
+        );
+      }
+      const resolved = resolveChosenRepositories(host, cwd.absolutePath, cwd.hub.owner, options.repositories, options.replaceInventory === true);
+      if ("action" in resolved) return resolved;
+      chosen = resolved;
+    }
     return {
       action: "resume",
       owner: cwd.hub.owner,
@@ -525,11 +585,24 @@ export function planWorkspace(
       clone: false,
       ...(observation.advisorVersion === undefined ? {} : { advisorVersion: observation.advisorVersion }),
       ...(cwd.hubMigration === "legacy" ? { migrateFrom: "legacy" as const } : {}),
+      ...(chosen ?? {}),
     };
   }
   if (cwd.git && cwd.githubOwner && cwd.githubRepository) {
     if (!observation.advisorVersion) {
       return refuse("indeterminate", `cannot read a public ${ADVISOR_PACKAGE} version from the npm registry`);
+    }
+    if (options.repositories !== undefined) {
+      const resolved = resolveChosenRepositories(host, cwd.absolutePath, cwd.githubOwner, options.repositories, options.replaceInventory === true);
+      if ("action" in resolved) return resolved;
+      return {
+        action: "adopt",
+        owner: cwd.githubOwner,
+        repository: cwd.githubRepository,
+        directory: cwd.absolutePath,
+        advisorVersion: observation.advisorVersion,
+        chosenInventory: resolved.chosenInventory,
+      };
     }
     const imported = resolveAdoptInventory(host, cwd, options.inventoryPath);
     if ("action" in imported) return imported;
@@ -551,6 +624,12 @@ export function planWorkspace(
     return refuse(
       "violated",
       "the current directory is not empty and is not a GitHub repository; run from the repo you want to appoint, or from an empty directory",
+    );
+  }
+  if (options.repositories !== undefined) {
+    return refuse(
+      "violated",
+      "--repositories writes the inventory of a hub checkout, and this directory is empty; run launcher here first to create or clone the hub, then choose its repositories from inside it",
     );
   }
   const ownerResult = resolveOwner(observation, host);
@@ -699,6 +778,17 @@ function assertCleanTree(host: WorkspaceHost, directory: string): void {
   }
 }
 
+/**
+ * The chosen inventory document, checked again at write time by the same
+ * function every later read of it uses, so a document Launcher writes is
+ * always one Launcher reads back.
+ */
+function revalidatedChosenDocument(document: string): string {
+  const validated = validateInventoryDocument(document);
+  if (!validated.valid) throw new Error(`the chosen inventory ${validated.reason}`);
+  return document;
+}
+
 function adoptHubFiles(host: WorkspaceHost, skeletonRoot: string, plan: WorkspacePlan & { advisorVersion: string }): void {
   assertCleanTree(host, plan.directory);
   // Resolve and strictly re-validate the inventory document BEFORE writing
@@ -708,7 +798,9 @@ function adoptHubFiles(host: WorkspaceHost, skeletonRoot: string, plan: Workspac
   // cannot land a mismatched shape, and it means this function alone
   // guarantees "fail before any file is touched" (#1334).
   let inventoryDocument: string | undefined;
-  if ("mergedInventoryIds" in plan && Array.isArray(plan.mergedInventoryIds)) {
+  if (plan.action === "adopt" && plan.chosenInventory !== undefined) {
+    if (plan.chosenInventory.kind === "write") inventoryDocument = revalidatedChosenDocument(plan.chosenInventory.document);
+  } else if ("mergedInventoryIds" in plan && Array.isArray(plan.mergedInventoryIds)) {
     const document = { schemaVersion: 1, repositories: plan.mergedInventoryIds.map((id) => ({ id })) };
     inventoryDocument = `${JSON.stringify(document, null, 2)}\n`;
   } else if ("inventorySource" in plan && typeof plan.inventorySource === "string") {
@@ -1262,6 +1354,11 @@ function migrateLegacyHubState(host: WorkspaceHost, directory: string): HubHealt
   return { status: "migrated", from: LEGACY_STATE_DIR_REL, to: STATE_DIR_REL };
 }
 
+/** The apply message's line saying what `--repositories` did to the inventory, or nothing without it. */
+function chosenInventoryNote(chosen: ChosenInventory | undefined): string {
+  return chosen === undefined ? "" : `\n${describeChosenInventory(chosen)}`;
+}
+
 /** Applies a create, resume, or adopt plan through the host. Resume refreshes composed skills and stale AGENTS.md guidance. */
 export function applyWorkspacePlan(
   host: WorkspaceHost,
@@ -1281,10 +1378,15 @@ export function applyWorkspacePlan(
       );
     }
     const migration = plan.migrateFrom === "legacy" ? migrateLegacyHubState(host, plan.directory) : undefined;
+    // --repositories (#1179): write the chosen inventory before composing, so
+    // this same run composes skills into the repositories just chosen.
+    if (plan.chosenInventory?.kind === "write") {
+      writeSkeletonFile(host, plan.directory, WORKSPACE_INVENTORY_REL, revalidatedChosenDocument(plan.chosenInventory.document));
+    }
     return finishHubApply(
       host,
       plan.directory,
-      `resumed ${plan.owner}/${plan.repository} as the account hub\nOpen this folder in your coding agent. Advisor stays read-only until you approve a next action.`,
+      `resumed ${plan.owner}/${plan.repository} as the account hub\nOpen this folder in your coding agent. Advisor stays read-only until you approve a next action.${chosenInventoryNote(plan.chosenInventory)}`,
       launcherPackageRoot,
       plan.owner,
       plan.repository,
@@ -1325,7 +1427,7 @@ export function applyWorkspacePlan(
   return finishHubApply(
     host,
     plan.directory,
-    `appointed ${plan.owner}/${plan.repository} as the account hub\nExisting project files were kept. This hub inventories engagement; it does not install the catalogue into the repo.${inventoryReplacedNote}`,
+    `appointed ${plan.owner}/${plan.repository} as the account hub\nExisting project files were kept. This hub inventories engagement; it does not install the catalogue into the repo.${inventoryReplacedNote}${chosenInventoryNote(plan.chosenInventory)}`,
     launcherPackageRoot,
     plan.owner,
     plan.repository,

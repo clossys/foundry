@@ -123,7 +123,7 @@ describe("launcher CLI", () => {
     const err = vi.spyOn(console, "error").mockImplementation(() => {});
     const code = main(["--inventory", "elsewhere.json"], host(directory, {}), skeletonRoot);
     expect(code).toBe(1);
-    expect(String(err.mock.calls[0]?.[0])).toMatch(/already appointed; edit clossys\/\.state\/inventory\.json/);
+    expect(String(err.mock.calls[0]?.[0])).toMatch(/already appointed; to change the repositories it covers, choose them again .* launcher --repositories/);
     expect(String(err.mock.calls[0]?.[0])).not.toMatch(/only valid when appointing/);
   });
 

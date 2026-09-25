@@ -201,6 +201,29 @@ export interface WorkspacePlanCreate {
   readonly advisorVersion: string;
 }
 
+/**
+ * What `launcher --repositories` does to the hub inventory (#1179): write
+ * the chosen repositories, or leave an inventory that already lists exactly
+ * those repositories as it is. Decided by `resolveChosenInventory()`.
+ */
+export type ChosenInventory =
+  | { readonly kind: "unchanged"; readonly count: number }
+  | {
+      readonly kind: "write";
+      /** The exact document text to write to `clossys/.state/inventory.json`, already validated against the inventory contract. */
+      readonly document: string;
+      /** Repositories in the written document. */
+      readonly count: number;
+      /** Repositories the inventory listed before; 0 when there was none, it was empty, or it failed its contract. */
+      readonly previousCount: number;
+      /** Chosen ids the previous inventory did not list. */
+      readonly added: readonly string[];
+      /** Previous ids the choice leaves out. */
+      readonly removed: readonly string[];
+      /** What the write replaces: nothing (no inventory, or an empty one), a differing valid inventory, or one that failed its contract. The last two happen only with an explicit replace approval. */
+      readonly replaced: "nothing" | "differing" | "invalid";
+    };
+
 export interface WorkspacePlanResume {
   readonly action: "resume";
   readonly owner: string;
@@ -211,6 +234,8 @@ export interface WorkspacePlanResume {
   readonly advisorVersion?: string;
   /** Set when the hub marker was found only at the legacy `.clossys/` path; apply migrates it. */
   readonly migrateFrom?: "legacy";
+  /** Set by `--repositories`: the inventory apply writes before it composes skills, or confirms is unchanged. */
+  readonly chosenInventory?: ChosenInventory;
 }
 
 export interface WorkspacePlanAdopt {
@@ -225,6 +250,8 @@ export interface WorkspacePlanAdopt {
   readonly mergedInventoryIds?: readonly string[];
   /** Set when `inventorySource` is about to replace an on-disk inventory that failed schema validation, so the apply message can say it was replaced rather than merely written (#1334). */
   readonly replacesInvalidInventory?: boolean;
+  /** Set by `--repositories`: the inventory apply writes, or confirms is unchanged (#1179). */
+  readonly chosenInventory?: ChosenInventory;
 }
 
 export type WorkspacePlan = WorkspacePlanCreate | WorkspacePlanResume | WorkspacePlanAdopt;

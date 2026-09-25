@@ -253,7 +253,12 @@ describe("planWorkspace", () => {
       silent,
     );
     expect(missing).toMatchObject({ action: "refuse", state: "violated" });
-    if (missing.action === "refuse") expect(missing.message).toMatch(/generated hub inventory/);
+    if (missing.action === "refuse") {
+      // #1179: point the founder at choosing repositories, not at hand-writing a document.
+      expect(missing.message).toMatch(/has no inventory yet: choose the repositories this hub covers on Advisor's repository card/);
+      expect(missing.message).toMatch(/launcher --repositories/);
+      expect(missing.message).not.toMatch(/--inventory/);
+    }
   });
 
   it("accepts --inventory when the cwd inventory is missing", () => {
