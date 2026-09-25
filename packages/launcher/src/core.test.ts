@@ -388,6 +388,39 @@ describe("planWorkspace", () => {
     expect(decision).toMatchObject({ action: "adopt", mergedInventoryIds: ["hub-a", "hub-c", "hub-b", "hub-d"] });
     expect(decision).not.toHaveProperty("inventorySource");
   });
+
+  it("merges ids that differ only in letter case as one repository, keeping the on-disk entry and its packages, and writes a document the validator accepts", () => {
+    const directory = tempDir();
+    const kept = [{ name: "@example-scope/writer", version: "1.2.3", wiring: "devDependencies" }];
+    writeInventory(directory, [{ id: "Example-Owner/App", packages: kept }, { id: "hub-c" }]);
+    const source = join(directory, "supplied.json");
+    writeFileSync(source, `${JSON.stringify({ schemaVersion: 1, repositories: [{ id: "example-owner/app" }, { id: "hub-d", packages: [] }] }, null, 2)}\n`);
+    const decision = planWorkspace(
+      observation({
+        cwd: {
+          absolutePath: directory,
+          empty: false,
+          git: true,
+          githubOwner: "acme",
+          githubRepository: "central",
+          looksLikeFoundry: false,
+          inventory: { status: "populated", count: 2 },
+        },
+      }),
+      host(directory),
+      { inventoryPath: "supplied.json" },
+    );
+    expect(decision).toMatchObject({
+      action: "adopt",
+      mergedInventoryIds: ["Example-Owner/App", "hub-c", "hub-d"],
+      mergedInventoryRepositories: [{ id: "Example-Owner/App", packages: kept }, { id: "hub-c" }, { id: "hub-d", packages: [] }],
+    });
+    if (!("action" in decision) || decision.action !== "adopt") throw new Error("expected an adopt plan");
+    applyWorkspacePlan(host(directory), decision, skeletonRoot);
+    const written = readFileSync(join(directory, WORKSPACE_INVENTORY_REL), "utf8");
+    expect(validateInventoryDocument(written)).toEqual({ valid: true, ids: ["Example-Owner/App", "hub-c", "hub-d"] });
+    expect((JSON.parse(written) as { repositories: { packages?: unknown }[] }).repositories[0]?.packages).toEqual(kept);
+  });
 });
 
 describe("validateInventoryDocument (#1334)", () => {
@@ -861,6 +894,51 @@ describe("applyWorkspacePlan", () => {
     const ids = (JSON.parse(readFileSync(join(directory, WORKSPACE_INVENTORY_REL), "utf8")) as { repositories: { id: string }[] })
       .repositories.map((entry) => entry.id);
     expect(ids).toEqual(["hub-a", "hub-c", "hub-b"]);
+  });
+
+  it("writes merged entries whole from a plan carrying mergedInventoryRepositories without mergedInventoryDocument", () => {
+    const directory = tempDir();
+    writeInventory(directory, [{ id: "hub-a" }]);
+    const kept = [{ name: "@example-scope/writer", version: "1.2.3", wiring: "devDependencies" }];
+    applyWorkspacePlan(
+      host(directory),
+      {
+        action: "adopt",
+        owner: "acme",
+        repository: "hub",
+        directory,
+        advisorVersion: "0.2.3",
+        mergedInventoryIds: ["hub-a", "hub-b"],
+        mergedInventoryRepositories: [{ id: "hub-a", packages: kept }, { id: "hub-b" }],
+      },
+      skeletonRoot,
+    );
+    const written = readFileSync(join(directory, WORKSPACE_INVENTORY_REL), "utf8");
+    expect(validateInventoryDocument(written, { hubOwner: "acme" })).toEqual({ valid: true, ids: ["hub-a", "hub-b"] });
+    expect((JSON.parse(written) as { repositories: { packages?: unknown }[] }).repositories[0]?.packages).toEqual(kept);
+  });
+
+  it("refuses to write a plan's mergedInventoryRepositories that fail the inventory contract, before touching any file", () => {
+    const directory = tempDir();
+    writeInventory(directory, [{ id: "hub-a" }]);
+    const before = readFileSync(join(directory, WORKSPACE_INVENTORY_REL), "utf8");
+    expect(() =>
+      applyWorkspacePlan(
+        host(directory),
+        {
+          action: "adopt",
+          owner: "acme",
+          repository: "hub",
+          directory,
+          advisorVersion: "0.2.3",
+          mergedInventoryIds: ["hub-a", "acme/hub-a"],
+          mergedInventoryRepositories: [{ id: "hub-a" }, { id: "acme/hub-a" }],
+        },
+        skeletonRoot,
+      ),
+    ).toThrow(/the merged inventory repositories\[1\]\.id names the same repository as repositories\[0\]\.id/);
+    expect(readFileSync(join(directory, WORKSPACE_INVENTORY_REL), "utf8")).toBe(before);
+    expect(existsSync(join(directory, WORKSPACE_MARKER_REL))).toBe(false);
   });
 
   it("reportHubHealth reports a corrupted stored inventory as invalid, not silently as empty (#1334)", () => {

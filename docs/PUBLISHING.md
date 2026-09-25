@@ -406,6 +406,11 @@ commit, and that introduction changes exactly the jointly retained new
 qualification records. Their content joins are measured at the reviewed
 commit; their retained bytes must remain their introduction blobs, with no
 later touch, including a rewrite followed by restoration.
+CI's `candidate qualification records` job, which the required `build and test`
+check fans in, re-derives every retained record on this commit or its nearest
+non-prose ancestor, so the publish workflow's `qualify` job re-derives only the
+dispatched package's current-version record
+(`check-candidate-qualification.mjs --package`), with the cross-record checks.
 
 This is release qualification only. It does not claim real consumer adoption,
 provider truth, independent grounding, or closure; a provider-specific review
@@ -1239,42 +1244,64 @@ event (GitHub does occasionally redeliver webhooks) or a re-run of this
 workflow after its evidence already merged therefore never produces a red
 run or a duplicate pull request.
 
-**Batching.** `publish.yml` dispatches exactly one package per run, so "N
+**Batching, guarded by "the base contains the source" (issues #1346,
+#1468).** `publish.yml` dispatches exactly one package per run, so "N
 packages published close together" means N separate, potentially
 *concurrent* triggers of this workflow — job scheduling does not serialize
 them (the job's own `concurrency:` group is keyed per publish run, precisely
-so it never evicts a different publish's pending follow-up). Each trigger
-looks for an already-open pull request whose branch carries the reserved
-`automation/publication-evidence/` prefix (never this repository's ordinary
-`claude/*` agent-branch namespace, which a plain prefix match would also
-have matched), is not from a fork, and is authored by `github-actions[bot]`
-— and independently verifies, via `scripts/lib/publication-evidence-
-branch.sh`'s `verify_branch_is_ours`, that every commit on that branch past
-its merge-base with the default branch is bot-authored **and** touches only
-`governance/release-publications/later/`, before adding to it. The author
-check alone is not trustworthy — any write-access actor can forge a commit's
-author identity — so path confinement is the check that actually bounds an
-adopted branch's blast radius, and it is never loosened. This verification
-runs again on every fetch inside the push-retry loop, not only at the
-initial lookup, so a branch that was legitimate a moment ago but is no
-longer (someone else pushed to it in between) is abandoned mid-retry rather
-than built on. A branch that fails verification, at any point, is abandoned
-in favor of a fresh branch named from the run's ID plus a random suffix from
-the runner's own entropy source — never a predictable name (the run ID
-alone) an attacker could pre-create ahead of time. Pushing itself is
-retry-safe: each trigger keeps its built record outside git until it lands,
-and retries the whole fetch/stage/commit/push cycle on a non-fast-forward
-rejection rather than assuming it has exclusive write access. Once a push lands, the
-workflow looks up the branch's open pull request fresh, by exact head branch
-and the same same-repository/bot-author filters, and edits it by NUMBER —
-never by resolving a branch name at `gh pr edit` time, which can otherwise
-resolve to an unrelated same-named fork PR or to a PR that merged during
-this very run. Only when that lookup finds nothing open is a new PR opened.
-Merging or closing the open pull request is what starts the next one fresh;
-a branch left with no open PR (for example after a transient `gh` failure)
-is not later rediscovered automatically — a human must open its PR directly
-from the branch, the same graceful-degradation shape this repository already
-uses when Actions is not permitted to open pull requests at all.
+so it never evicts a different publish's pending follow-up). To keep them in
+one pull request, each trigger lists the open pull requests whose branch
+carries the reserved `automation/publication-evidence/` prefix (never this
+repository's ordinary `claude/*` agent-branch namespace), are not from a
+fork, and are authored by `github-actions[bot]`, and classifies every one
+with `scripts/lib/publication-evidence-branch.sh`'s
+`classify_open_evidence_branch`. That calls `verify_branch_is_ours`: every
+commit on the branch past its merge-base with the default branch must be
+bot-authored **and** touch only `governance/release-publications/later/`.
+The author check alone is not trustworthy — any write-access actor can
+forge a commit's author identity — so path confinement is the check that
+actually bounds an adopted branch's blast radius, and it is never loosened.
+It also asks whether the branch's fork point already contains this publish
+run's source commit, and whether every record already on the branch has its
+own `publication.provenance.sourceSha` in that fork point.
+
+That last question is the #1468 fix. An earlier revision adopted the newest
+open evidence branch unconditionally, and that branch keeps the base it was
+first cut from. When a later record's qualification record merged after the
+cut, the later record was introduced on a commit that did not descend from
+its qualification's introduction. `check:later-publications` rejects exactly
+that, and no merge can repair ancestry: #1461 had to be closed and its
+records re-introduced as #1466.
+
+| Open evidence pull requests | Action |
+| --- | --- |
+| Any one carries this record with different bytes, or on a branch `verify_branch_is_ours` refuses | Fail the run; nothing is pushed |
+| Any verified one carries a record whose *own* source commit is not in its branch's base (the #1461 shape) | Fail the run with a distinct error; nothing is pushed. A human closes that pull request and re-introduces its records on the current default branch |
+| Otherwise, any one carries this record byte-identically, verified, on a base containing its source | Clean no-op |
+| The newest is verified, every record on it is sourced in its base, its base contains this record's source, and it lacks this record | Add the record on top of it with an ordinary fast-forward push, then update that pull request |
+| The newest predates this record's source, fails verification, cannot be fetched, or there is none | Cut a fresh branch from the default branch's current tip and open a new pull request |
+| Any one that predates this record's source | A notice names it. It stays open and remains valid for its own records — merge it normally; only this record goes to the new pull request |
+
+A fresh branch is named from the run's ID plus a random suffix from the
+runner's own entropy source — never a predictable name an attacker could
+pre-create. Before any push, the committed result must pass the default
+branch's own `scripts/check-later-publications.mjs`; an adopted branch that
+fails it is abandoned for a fresh branch, and a fresh branch that fails it
+fails the run. Pushing is retry-safe: each trigger keeps its built record
+outside git until it lands, and on a rejected push re-fetches the adopted
+branch and re-classifies it — the ownership check runs on every attempt, not
+only at the initial lookup — before rebuilding, re-checking, and pushing
+again. This workflow never force-pushes, and never closes a pull request.
+Once a push lands, the workflow looks up the branch's open pull request
+fresh, by exact head branch and the same same-repository/bot-author filters,
+and edits it by NUMBER — never by resolving a branch name at `gh pr edit`
+time, which can otherwise resolve to an unrelated same-named fork PR or to a
+PR that merged during this very run. Only when that lookup finds nothing
+open is a new PR opened. A branch left with no open PR (for example after a
+transient `gh` failure) is not later rediscovered automatically — a human
+must open its PR directly from the branch, the same graceful-degradation
+shape this repository already uses when Actions is not permitted to open
+pull requests at all.
 
 This workflow requires no secret beyond the ambient `GITHUB_TOKEN`: no
 `PUBLIC_SAFETY_DENYLIST`, no npm token, nothing — the same posture

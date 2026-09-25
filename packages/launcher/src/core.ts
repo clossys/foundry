@@ -453,14 +453,22 @@ function resolveAdoptInventory(
   host: WorkspaceHost,
   cwd: CwdObservation,
   inventoryPath: string | undefined,
-): { inventorySource?: string; mergedInventoryIds?: readonly string[]; mergedInventoryDocument?: string; replacesInvalidInventory?: boolean } | WorkspaceRefusal {
+):
+  | {
+      inventorySource?: string;
+      mergedInventoryIds?: readonly string[];
+      mergedInventoryRepositories?: readonly InventoryEntry[];
+      mergedInventoryDocument?: string;
+      replacesInvalidInventory?: boolean;
+    }
+  | WorkspaceRefusal {
   const trimmed = inventoryPath?.trim();
   const onDiskPopulated = cwd.inventory?.status === "populated";
   if (!onDiskPopulated && !trimmed) {
     if (cwd.inventory?.status === "invalid") {
       return refuse(
         "violated",
-        `the on-disk hub inventory ${cwd.inventory.reason} -- to replace it, ${chooseRepositoriesHint(" --replace-inventory")}`,
+        `the on-disk hub inventory ${cwd.inventory.reason ?? "does not conform to the inventory contract"} -- to replace it, ${chooseRepositoriesHint(" --replace-inventory")}`,
       );
     }
     return refuse(
@@ -497,13 +505,20 @@ function resolveAdoptInventory(
     return refuse("violated", `the on-disk hub inventory ${onDisk.reason}`);
   }
   const onDiskEntries: readonly InventoryEntry[] = onDisk !== undefined && onDisk.valid ? onDisk.entries : [];
-  // One repository identity (identity.ts), and every kept entry kept whole --
-  // its `packages` included -- the first occurrence of a repository winning.
+  // Merge whole entries, not ids: an entry's `packages` travels with it.
+  // Entries are keyed by Launcher's one repository identity (identity.ts),
+  // the same rule validateInventoryDocument() applies to ids, so the merge
+  // can never write a document the validator then refuses; the first
+  // occurrence -- the on-disk spelling and entry -- wins (#1334, #1179).
   const merged: InventoryEntry[] = [];
   for (const entry of [...onDiskEntries, ...imported.entries]) {
     if (!merged.some((kept) => sameRepository(kept.id, entry.id, cwd.githubOwner))) merged.push(entry);
   }
-  return { mergedInventoryIds: merged.map((entry) => entry.id), mergedInventoryDocument: renderInventoryDocument(merged) };
+  return {
+    mergedInventoryIds: merged.map((entry) => entry.id),
+    mergedInventoryRepositories: merged,
+    mergedInventoryDocument: renderInventoryDocument(merged),
+  };
 }
 
 /**
@@ -619,6 +634,7 @@ export function planWorkspace(
       advisorVersion: observation.advisorVersion,
       ...(imported.inventorySource === undefined ? {} : { inventorySource: imported.inventorySource }),
       ...(imported.mergedInventoryIds === undefined ? {} : { mergedInventoryIds: imported.mergedInventoryIds }),
+      ...(imported.mergedInventoryRepositories === undefined ? {} : { mergedInventoryRepositories: imported.mergedInventoryRepositories }),
       ...(imported.mergedInventoryDocument === undefined ? {} : { mergedInventoryDocument: imported.mergedInventoryDocument }),
       ...(imported.replacesInvalidInventory === undefined ? {} : { replacesInvalidInventory: imported.replacesInvalidInventory }),
     };
@@ -823,6 +839,11 @@ function adoptHubFiles(host: WorkspaceHost, skeletonRoot: string, plan: Workspac
     if (plan.chosenInventory.kind === "write") inventoryDocument = revalidatedDocument(plan.chosenInventory.document, plan.owner);
   } else if (plan.action === "adopt" && plan.mergedInventoryDocument !== undefined) {
     inventoryDocument = revalidatedDocument(plan.mergedInventoryDocument, plan.owner, "the merged inventory");
+  } else if (plan.action === "adopt" && plan.mergedInventoryRepositories !== undefined) {
+    // A plan carrying the merged entries without the rendered document: each entry is written whole, `packages`
+    // included, in the same layout renderInventoryDocument() writes; the contract check decides whether it is valid.
+    const repositories = plan.mergedInventoryRepositories;
+    inventoryDocument = revalidatedDocument(`${JSON.stringify({ schemaVersion: 1, repositories }, null, 2)}\n`, plan.owner, "the merged inventory");
   } else if ("mergedInventoryIds" in plan && Array.isArray(plan.mergedInventoryIds)) {
     // A plan built by hand with ids only: there are no entries to keep, so each id is written alone.
     inventoryDocument = revalidatedDocument(renderInventoryDocument(plan.mergedInventoryIds.map((id) => ({ id }))), plan.owner, "the merged inventory");

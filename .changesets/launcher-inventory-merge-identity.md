@@ -2,4 +2,4 @@
 launcher: patch
 ---
 
-When appointing merges an `--inventory` document into a populated stored inventory, an id already present under that identity -- `App` for `app`, or `app` for `<owner>/app` -- is no longer appended as a second entry; the first occurrence is kept, as the merge already did for identical ids (#1179).
+When appointing merges an `--inventory` document into a populated stored inventory, a bare id and `<owner>/<id>` for the hub's own owner now count as one repository, and the merge keeps the first occurrence (#1179).
