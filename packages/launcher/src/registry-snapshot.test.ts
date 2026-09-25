@@ -210,7 +210,7 @@ describe("the snapshot request", () => {
 });
 
 describe("what a registry read sends (threat: a credential leaks)", () => {
-  it("sends one GET per name, in name order, with only an accept header, no credential, and redirects refused", async () => {
+  it("sends one GET per name, in name order, with only the accept headers, no credential, and redirects refused", async () => {
     const { transport, calls } = fakeRegistry((name) => jsonResponse(packumentOf(name)));
     await takeRegistrySnapshot([STARTER, DESIGNER], options(transport));
     expect(calls.map((call) => call.url)).toEqual([packumentUrl(REGISTRY, DESIGNER).href, packumentUrl(REGISTRY, STARTER).href]);
@@ -219,13 +219,30 @@ describe("what a registry read sends (threat: a credential leaks)", () => {
       expect(new URL(url).username + new URL(url).password).toBe("");
       expect(new URL(url).search).toBe("");
       expect(init.method).toBe("GET");
-      expect(init.headers).toEqual({ accept: "application/json" });
+      expect(init.headers).toEqual({ accept: "application/json", "accept-encoding": "identity" });
       expect(Object.keys(init.headers as Record<string, string>).some((key) => key.toLowerCase() === "authorization")).toBe(false);
       expect(init.redirect).toBe("error");
       expect(init.credentials).toBe("omit");
       expect(init.signal).toBeInstanceOf(AbortSignal);
       expect(Object.keys(init).sort()).toEqual(["credentials", "headers", "method", "redirect", "signal"]);
     }
+  });
+
+  it("asks for the body uncompressed, so the hash and the size cap apply to the exact bytes received", async () => {
+    const { transport, calls } = fakeRegistry((name) => jsonResponse(packumentOf(name)));
+    await takeRegistrySnapshot([DESIGNER, STARTER], options(transport));
+    expect(calls).toHaveLength(2);
+    for (const { init } of calls) expect((init.headers as Record<string, string>)["accept-encoding"]).toBe("identity");
+  });
+
+  it("still bounds a body a server compressed anyway: the cap counts the bytes read after decoding", async () => {
+    const { gzipSync } = await import("node:zlib");
+    const huge = JSON.stringify({ ...packumentOf(DESIGNER), readme: "x".repeat(MAX_RESPONSE_BYTES) });
+    const compressed = gzipSync(huge);
+    expect(compressed.byteLength).toBeLessThan(MAX_RESPONSE_BYTES / 100);
+    const decoded = new Response(new Blob([compressed]).stream().pipeThrough(new DecompressionStream("gzip")), { status: 200, headers: { "content-encoding": "gzip" } });
+    const { transport } = fakeRegistry(() => decoded);
+    await expect(takeRegistrySnapshot([DESIGNER], options(transport))).rejects.toThrow(/larger than 10 MiB/);
   });
 
   it("adds nothing from the environment: tokens in every variable npm reads never reach a request", async () => {
@@ -268,12 +285,13 @@ describe("what a registry read sends (threat: a credential leaks)", () => {
       return jsonResponse(packumentOf(DESIGNER));
     });
     const url = packumentUrl(REGISTRY, DESIGNER);
-    const init: RequestInit = { method: "GET", headers: { accept: "application/json" }, redirect: "error" };
+    const init: RequestInit = { method: "GET", headers: { accept: "application/json", "accept-encoding": "identity" }, redirect: "error" };
     await nodeFetchTransport(url, init);
     expect(seen).toEqual([[url, init]]);
     seen.length = 0;
     await takeRegistrySnapshot([DESIGNER], { now: () => FIXED_NOW, fetchedBy: FETCHED_BY });
     expect((seen[0]?.[1] as RequestInit).redirect).toBe("error");
+    expect(((seen[0]?.[1] as RequestInit).headers as Record<string, string>)["accept-encoding"]).toBe("identity");
   });
 });
 
