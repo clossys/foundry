@@ -48,29 +48,51 @@ test("repository Trio policy, adapters, and current-candidate fixtures bind the 
     assert.equal(adapter.retainRawCaseEvidence, key === "starter" ? true : undefined);
   }
 
-  for (const state of ["satisfied", "violated", "indeterminate"]) {
-    const request = await repositoryJson(`governance/release-qualification-fixtures/starter/current-direct/request-${state}.json`);
-    assert.deepEqual([request.advisor.name, request.advisor.version], ["@clossys/advisor", "0.1.5"]);
-  }
+  // The synthetic @clossys/advisor this current-direct fixture set exercises
+  // is a fixed input the fixture itself owns (issue #1504), not
+  // packages/advisor's real, currently-published version -- a real advisor
+  // release does not touch these files and must not need a hand-edit here.
+  // overlay/advisor-package.json is the file run-candidate-qualification.mjs
+  // actually installs into node_modules as @clossys/advisor, so it is that
+  // identity's record; what this proves is that the request fixtures, the
+  // overlay manifest, and the overlay lock all still agree with THAT record,
+  // not that any particular version string is currently in effect.
   const starterManifest = await repositoryJson("governance/release-qualification-fixtures/starter/current-direct/overlay/package.json");
   const starterLock = await repositoryJson("governance/release-qualification-fixtures/starter/current-direct/overlay/package-lock.json");
   const advisorManifest = await repositoryJson("governance/release-qualification-fixtures/starter/current-direct/overlay/advisor-package.json");
-  assert.equal(starterManifest.devDependencies["@clossys/advisor"], "0.1.5");
-  assert.equal(starterLock.packages[""].devDependencies["@clossys/advisor"], "0.1.5");
-  assert.equal(starterLock.packages["node_modules/@clossys/advisor"].version, "0.1.5");
-  assert.deepEqual([advisorManifest.name, advisorManifest.version], ["@clossys/advisor", "0.1.5"]);
+  assert.equal(advisorManifest.name, "@clossys/advisor");
+  for (const state of ["satisfied", "violated", "indeterminate"]) {
+    const request = await repositoryJson(`governance/release-qualification-fixtures/starter/current-direct/request-${state}.json`);
+    assert.deepEqual([request.advisor.name, request.advisor.version], [advisorManifest.name, advisorManifest.version]);
+  }
+  assert.equal(starterManifest.devDependencies["@clossys/advisor"], advisorManifest.version);
+  assert.equal(starterLock.packages[""].devDependencies["@clossys/advisor"], advisorManifest.version);
+  assert.equal(starterLock.packages["node_modules/@clossys/advisor"].version, advisorManifest.version);
 
   const declarations = await repositoryJson("governance/release-qualification-fixtures/controller/current-direct/authority-declarations.json");
   const validLock = await repositoryJson("governance/release-qualification-fixtures/controller/current-direct/authority-valid-package-lock.json");
   const duplicateLock = await repositoryJson("governance/release-qualification-fixtures/controller/current-direct/authority-duplicate-package-lock.json");
   assert.deepEqual(declarations.declarations, [{ packageName: "@clossys/controller", authority: "controller" }]);
-  assert.deepEqual(declarations.target, { authority: "controller", version: "0.8.23" });
-  assert.equal(validLock.packages["node_modules/@clossys/controller"].version, "0.8.23");
-  assert.equal(duplicateLock.packages["node_modules/@clossys/controller"].version, "0.8.23");
-  assert.equal(duplicateLock.packages["node_modules/@example/consumer/node_modules/@clossys/controller"].version, "0.8.22");
+  // declarations.target.version is likewise this fixture set's own fixed
+  // synthetic controller version (issue #1504), unrelated to
+  // packages/controller's real version. It is the authority-declarations.json
+  // record's own target, so the two lock fixtures below are checked against
+  // THAT record instead of a literal repeated a third time.
+  const controllerVersion = declarations.target.version;
+  assert.deepEqual(declarations.target, { authority: "controller", version: controllerVersion });
+  assert.equal(validLock.packages["node_modules/@clossys/controller"].version, controllerVersion);
+  assert.equal(duplicateLock.packages["node_modules/@clossys/controller"].version, controllerVersion);
+  // The nested entry's entire purpose is to be a second, conflicting
+  // @clossys/controller at a version that disagrees with the declared
+  // authority -- that mismatch is what duplicate-authority detection
+  // (exercised via this same fixture in accept-qualification-handoff.test.mjs
+  // and validate-candidate-publish.test.mjs) is for. Which exact off-version
+  // it uses is arbitrary, so the only thing worth asserting is that it still
+  // disagrees with the authority, not which literal value that is.
+  assert.notEqual(duplicateLock.packages["node_modules/@example/consumer/node_modules/@clossys/controller"].version, controllerVersion);
 });
 
-test("all 21 publishable packages are exact-source bound to the catalogue and qualification policy", async () => {
+test("every publishable package is exact-source bound to the catalogue and qualification policy", async () => {
   const policy = await repositoryJson("governance/release-qualification-policy.json");
   const catalog = await repositoryJson("governance/release-catalog.json");
 
@@ -85,7 +107,11 @@ test("all 21 publishable packages are exact-source bound to the catalogue and qu
   // packages/ directory scan already found for that name — not that any
   // particular version string is currently in effect.
   const expectedVersions = Object.fromEntries(manifests.filter((manifest) => manifest.private !== true).map((manifest) => [manifest.name, manifest.version]));
-  assert.equal(manifests.filter((manifest) => manifest.private !== true).length, 21);
+  // The count this line asserted (issue #1504) tracked packages/ and had to
+  // be bumped on every new package; the deepEqual right below already fails
+  // if policy.packages names anything other than exactly this scan's
+  // non-private manifests -- a package present in one set and not the other
+  // fails there regardless of how many there are on either side.
   assert.deepEqual(Object.keys(policy.packages).sort(), Object.keys(expectedVersions).sort());
   assert.deepEqual(validateReleaseQualificationPolicy(policy), []);
   assert.deepEqual(validateReleaseQualificationPortfolio({ policy, manifests, releasePackages: target.packages }), []);

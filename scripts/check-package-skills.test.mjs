@@ -5,7 +5,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 
-import { evaluatePackageSkills, scanPackageSkills } from "./check-package-skills.mjs";
+import { collectPackageSkills, evaluatePackageSkills, scanPackageSkills } from "./check-package-skills.mjs";
 import { makeTmpDirSync } from "./lib/tmp-fixture.mjs";
 import { spawnCapture } from "./lib/spawn-capture.mjs";
 
@@ -358,7 +358,12 @@ test("strategist skill must list directory output files and handoff", () => {
 test("live repository package skills pass", () => {
   const result = scanPackageSkills(repoRoot);
   assert.equal(result.exitCode, 0, result.findings.map((f) => `${f.packageDir}:${f.rule}`).join(", "));
-  assert.equal(result.passed.length, 21);
+  // Derived from the packages/ directories collectPackageSkills itself
+  // discovers (issue #1504), not a literal count: adding a package must not
+  // need a hand-edit here. This proves every discovered package directory
+  // is among the ones that passed, not just that some fixed number did.
+  const discovered = collectPackageSkills(repoRoot).map((entry) => entry.packageDir).sort();
+  assert.deepEqual(result.passed.map((entry) => entry.packageDir).sort(), discovered);
 });
 
 test("CLI exits 0 on this repository", async () => {

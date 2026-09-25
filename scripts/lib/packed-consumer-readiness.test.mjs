@@ -293,7 +293,14 @@ test("a new export subpath is a clearable optional-peer policy finding, not an u
 
 test("the repository omission matrix is closed against every current publishable manifest", async () => {
   const packages = await discoverPublishablePackages(process.cwd());
-  assert.equal(packages.length, 21);
+  // The count this asserted (issue #1504) tracked packages/ and had to be
+  // bumped on every new package. validateOptionalPeerPolicy already checks
+  // both directions without allowUnselected: an optional peer on a
+  // discovered package with no omission row fails here, and an
+  // OPTIONAL_PEER_POLICY entry naming a package discoverPublishablePackages
+  // didn't return ("<name> omission policy is stale") fails here too -- so
+  // adding, removing, or renaming a publishable package is caught by this
+  // one deepEqual regardless of how many packages exist.
   assert.deepEqual(validateOptionalPeerPolicy(packages, OPTIONAL_PEER_POLICY), []);
 });
 
