@@ -34,7 +34,7 @@ export { ADVISOR_BLOCKER_KINDS, renderAdvisorStatus, validateAdvisorPlan } from 
 export { PLAN_DIGEST_EXCLUDED_FIELDS, canonicalJson, planDigest } from "./plan-digest.js";
 export { HUB_ONLY_ROLES } from "./plan-rules.js";
 export { recommendKit } from "./kit-verdicts.js";
-export { registrySnapshotRuleViolations, snapshotDigest, snapshotDigestSubject, validateRegistrySnapshot } from "./registry-snapshot.js";
+export { canonicalSnapshot, registrySnapshotRuleViolations, snapshotDigest, snapshotDigestSubject, validateRegistrySnapshot } from "./registry-snapshot.js";
 export { RESOLVED_PLACEMENT, STARTER_PACKAGE_DIRECTORY, packageRequest, resolvePackages } from "./package-resolution.js";
 export { nextStepInstruction } from "./next-step.js";
 export { validateManagedEngagement, proposalReadyForClient } from "./managed-engagement.js";

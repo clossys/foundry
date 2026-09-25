@@ -120,18 +120,29 @@ export function byCodeUnits(left: string, right: string): number {
   return left < right ? -1 : left > right ? 1 : 0;
 }
 
-/** The subject the snapshot digest hashes: registry, and each package's name, status, latest and versions, both sorted. */
-export function snapshotDigestSubject(snapshot: RegistrySnapshot): unknown {
+/**
+ * The snapshot in its canonical order, as the registry snapshot contract
+ * defines it: packages sorted by name, and each package's versions sorted by
+ * version, comparing UTF-16 code units. Every other member is kept as it is.
+ * For a valid snapshot (N1 and N2 hold) the order is total, so two snapshots
+ * that differ only in the order they list packages or versions have the same
+ * canonical form. The digest and every resolution position read this form.
+ */
+export function canonicalSnapshot(snapshot: RegistrySnapshot): RegistrySnapshot {
   return {
-    registry: snapshot.registry,
+    ...snapshot,
     packages: [...snapshot.packages]
       .sort((left, right) => byCodeUnits(left.name, right.name))
-      .map((entry) => ({
-        name: entry.name,
-        status: entry.status,
-        latest: entry.latest,
-        versions: [...entry.versions].sort((left, right) => byCodeUnits(left.version, right.version)),
-      })),
+      .map((entry) => ({ ...entry, versions: [...entry.versions].sort((left, right) => byCodeUnits(left.version, right.version)) })),
+  };
+}
+
+/** The subject the snapshot digest hashes: registry, and each package's name, status, latest and versions, in canonical order. */
+export function snapshotDigestSubject(snapshot: RegistrySnapshot): unknown {
+  const canonical = canonicalSnapshot(snapshot);
+  return {
+    registry: canonical.registry,
+    packages: canonical.packages.map((entry) => ({ name: entry.name, status: entry.status, latest: entry.latest, versions: entry.versions })),
   };
 }
 

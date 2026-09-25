@@ -4,7 +4,7 @@ import { validateAgainstContract } from "./contract-schema.js";
 import { PACKAGE_SCOPE } from "./generated/package-scope.generated.js";
 import { loadPlanContract } from "./plan-contract.js";
 import { HUB_ONLY_ROLES, planRuleViolations } from "./plan-rules.js";
-import { byCodeUnits, positionOnly, snapshotDigest, validateRegistrySnapshot } from "./registry-snapshot.js";
+import { byCodeUnits, canonicalSnapshot, positionOnly, snapshotDigest, validateRegistrySnapshot } from "./registry-snapshot.js";
 import type { RegistrySnapshot, RegistrySnapshotVersion } from "./registry-snapshot.js";
 import type { AdvisorPlan, AdvisorPlanPackageAct, AdvisorPlanResolution } from "./status.js";
 import type { ImmutablePackageRef } from "./types.js";
@@ -222,7 +222,10 @@ function selectVersion(
  * `latest`, or whose `latest` is a prerelease, deprecated, carries no single
  * sha512 integrity value, or is served from another host, is refused. The
  * snapshot's registry must be the packed registry. Pure and deterministic:
- * the same plan and snapshot always give byte-identical output.
+ * the same plan and snapshot always give byte-identical output, and so does a
+ * snapshot that lists the same packages and versions in another order, because
+ * it is read in its canonical order (`canonicalSnapshot()`) and every position
+ * a finding names is a position in that order.
  */
 export function resolvePackages(plan: unknown, snapshot: unknown, options: ResolutionOptions = {}): PackageResolutionResult {
   const request = packageRequest(plan, options);
@@ -241,7 +244,9 @@ export function resolvePackages(plan: unknown, snapshot: unknown, options: Resol
       })),
     };
   }
-  const read = snapshot as RegistrySnapshot;
+  // Read the canonical order from here on, so every position a finding names
+  // (packages[i], versions[j]) is the same however a fetch listed them.
+  const read = canonicalSnapshot(snapshot as RegistrySnapshot);
   if (read.registry !== registry) {
     return { state: "violated", findings: [{ rule: "foreign-registry", verdict: "violated", path: "registry", message: "snapshot.registry is not the registry this package was built for" }] };
   }

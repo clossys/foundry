@@ -470,7 +470,13 @@ version's `sha512-` integrity value and the placement `devDependencies`
 `permittedPackages`, each distinct `{ name, version, integrity }` once,
 sorted by name, which is exactly what the sponsor's grant permits. The same
 plan and snapshot always give byte-identical output, and so does a re-fetch
-of the same selection. Before it returns, it checks the resolved plan with
+of the same selection, even one that lists packages or versions in another
+order: once the snapshot validates, it is read in its canonical order
+(`canonicalSnapshot()`: packages sorted by name, each package's versions
+sorted by version), and every position a finding names, such as
+`packages[2].versions[0].hasAttestations`, is a position in that order. A
+`snapshot-shape` finding is the one exception: an invalid snapshot has no
+canonical order, so its positions are as the file lists them. Before it returns, it checks the resolved plan with
 the plan contract and its rules R1 to R11 and refuses rather than return a
 plan that fails them. Each `ResolutionFinding` has a `rule`, a `verdict`
 (`ResolutionVerdict`), a `path` and a message that names positions and, at

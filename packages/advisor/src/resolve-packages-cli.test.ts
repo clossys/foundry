@@ -99,6 +99,18 @@ describe("advisor-resolve-packages", () => {
     expect(out.join("\n")).toBe(first);
   });
 
+  it("prints byte-identical output for a re-fetch that lists packages in another order, warning included", () => {
+    const warned = structuredClone(BASE) as { fetchedAt: string; packages: { name: string; versions: { hasAttestations: boolean }[] }[] };
+    warned.packages.find((entry) => entry.name.endsWith("/writer"))!.versions[0]!.hasAttestations = false;
+    const refetched = { ...structuredClone(warned), fetchedAt: "2026-09-30T00:00:00Z", packages: [...structuredClone(warned).packages].reverse() };
+    expect(resolvePackagesMain([write("plan.json", PLAN), write("snapshot.json", warned)])).toBe(0);
+    const first = out.join("\n");
+    expect(printed().findings.map((finding) => finding.rule)).toEqual(["no-attestation-yet"]);
+    out.length = 0;
+    expect(resolvePackagesMain([write("plan.json", PLAN), write("snapshot.json", refetched)])).toBe(0);
+    expect(out.join("\n")).toBe(first);
+  });
+
   it("exits 1 when a package is refused", () => {
     const snapshot = structuredClone(BASE) as { packages: { versions: { deprecated: boolean }[] }[] };
     snapshot.packages[0]!.versions[0]!.deprecated = true;

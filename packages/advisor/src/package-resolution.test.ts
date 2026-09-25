@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { HUB_ONLY_ROLES, KIT_PRESETS, planDigest, resolvePackages, snapshotDigest, validateAdvisorPlan } from "./index.js";
+import { HUB_ONLY_ROLES, KIT_PRESETS, canonicalSnapshot, planDigest, resolvePackages, snapshotDigest, validateAdvisorPlan } from "./index.js";
 import type { AdvisorPlan, PackageResolutionResult, RegistrySnapshot, RegistrySnapshotPackage, RegistrySnapshotVersion } from "./index.js";
 
 /*
@@ -46,10 +46,13 @@ function withPackage(name: string, edit: (entry: Mutable<RegistrySnapshotPackage
   return snapshot;
 }
 const indexOf = (snapshot: RegistrySnapshot, name: string) => snapshot.packages.findIndex((entry) => entry.name === name);
+/** A package entry by name, wherever the file lists it. */
+const entryOf = (snapshot: RegistrySnapshot, name: string) => snapshot.packages.find((entry) => entry.name === name)!;
 const base = corpusSnapshot("base");
-const W = indexOf(base, WRITER);
-const D = indexOf(base, DESIGNER);
-const S = indexOf(base, STARTER);
+// Resolution positions name the snapshot's canonical order (packages by name), not the order the file lists them in.
+const W = indexOf(canonicalSnapshot(base), WRITER);
+const D = indexOf(canonicalSnapshot(base), DESIGNER);
+const S = indexOf(canonicalSnapshot(base), STARTER);
 
 function refusal(result: PackageResolutionResult) {
   return { state: result.state, findings: result.findings.map(({ rule, verdict, path }) => ({ rule, verdict, path })) };
@@ -119,13 +122,24 @@ describe("resolvePackages: a resolvable snapshot", () => {
 
   it("ignores packages in the snapshot the plan does not ask for, but they stay in the digest", () => {
     const extra = corpusSnapshot("base");
-    (extra.packages as RegistrySnapshotPackage[]).push({ ...extra.packages[W]!, name: `${SCOPE}/publisher` });
+    (extra.packages as RegistrySnapshotPackage[]).push({ ...entryOf(extra, WRITER), name: `${SCOPE}/publisher` });
     const resolved = resolvePackages(PLAN, extra);
     expect(resolved.state).toBe("satisfied");
     if (resolved.state !== "satisfied" || result.state !== "satisfied") return;
     expect(resolved.packages.map((act) => act.name)).toEqual(result.packages.map((act) => act.name));
     expect(resolved.resolution.snapshotDigest).toBe(snapshotDigest(extra));
     expect(resolved.resolution.snapshotDigest).not.toBe(result.resolution.snapshotDigest);
+  });
+
+  it("names canonical positions, so a re-fetch in another order with a warning gives byte-identical output", () => {
+    const warned = withPackage(WRITER, (_entry, version) => {
+      version!.hasAttestations = false;
+    });
+    const refetched = { ...structuredClone(warned), fetchedAt: "2026-09-30T00:00:00Z", packages: [...structuredClone(warned).packages].reverse() };
+    const first = resolvePackages(PLAN, warned);
+    expect(first.findings.map((finding) => finding.path)).toEqual([`packages[${W}].versions[0].hasAttestations`]);
+    expect(W).toBe(2);
+    expect(JSON.stringify(resolvePackages(PLAN, refetched))).toBe(JSON.stringify(first));
   });
 
   it("makes no network call", () => {
@@ -150,7 +164,7 @@ describe("resolvePackages: the ship-safely preset, whose integrator role is hub-
   /** The base snapshot's starter entry, plus one entry per staffed role, each at its own version and integrity. */
   function shipSafelySnapshot(): RegistrySnapshot {
     const snapshot = corpusSnapshot("base");
-    const template = snapshot.packages[S]!;
+    const template = entryOf(snapshot, STARTER);
     const entries = staffed.map((role, index) => {
       const name = `${SCOPE}/${role}`;
       const version = `1.${index}.0`;
@@ -184,7 +198,7 @@ describe("resolvePackages: every refusal", () => {
     const { kind: _kind, ...shapeless } = base;
     expect(refusal(resolvePackages(PLAN, shapeless))).toEqual({ state: "violated", findings: [{ rule: "snapshot-shape", verdict: "violated", path: "kind" }] });
     const repeated = corpusSnapshot("base");
-    (repeated.packages as RegistrySnapshotPackage[]).push(repeated.packages[W]!);
+    (repeated.packages as RegistrySnapshotPackage[]).push(entryOf(repeated, WRITER));
     expect(refusal(resolvePackages(PLAN, repeated))).toEqual({ state: "violated", findings: [{ rule: "snapshot-shape", verdict: "violated", path: "packages[3].name" }] });
   });
 
@@ -230,7 +244,7 @@ describe("resolvePackages: every refusal", () => {
   });
 
   it("integrity missing, sha1 only, or more than one token: violated no-sha512-integrity", () => {
-    const sha512 = base.packages[W]!.versions[0]!.integrity!;
+    const sha512 = entryOf(base, WRITER).versions[0]!.integrity!;
     for (const integrity of [null, "sha1-dGhpcyBpcyBub3QgYSBzaGE1MTI=", `${sha512} sha1-dGhpcyBpcyBub3QgYSBzaGE1MTI=`, sha512.replace("sha512-", "sha384-"), `${sha512}x`]) {
       const snapshot = withPackage(WRITER, (_entry, version) => {
         version!.integrity = integrity;
@@ -242,7 +256,7 @@ describe("resolvePackages: every refusal", () => {
   });
 
   it("integrity that is not canonical base64 (a second spelling of the same bytes): violated no-sha512-integrity", () => {
-    const canonical = base.packages[W]!.versions[0]!.integrity!;
+    const canonical = entryOf(base, WRITER).versions[0]!.integrity!;
     const last = canonical.at(-3)!;
     expect("AQgw").toContain(last);
     const respelled = `${canonical.slice(0, -3)}${String.fromCharCode(last.charCodeAt(0) + 1)}==`;
@@ -278,7 +292,7 @@ describe("resolvePackages: every refusal", () => {
   });
 
   it("tarball host, scheme or credentials not the registry's: violated foreign-tarball-host", () => {
-    const tarball = base.packages[W]!.versions[0]!.tarball;
+    const tarball = entryOf(base, WRITER).versions[0]!.tarball;
     const foreign = [
       tarball.replace("https://registry.npmjs.org", "https://registry.npmjs.org.example.com"),
       tarball.replace("https://registry.npmjs.org", "https://cdn.example.com"),
@@ -306,7 +320,7 @@ describe("resolvePackages: every refusal", () => {
 
   it("reports every refused package, and violated outranks indeterminate", () => {
     const snapshot = withPackage(WRITER, (entry) => Object.assign(entry, { latest: null }));
-    const designer = snapshot.packages[D]! as Mutable<RegistrySnapshotPackage>;
+    const designer = entryOf(snapshot, DESIGNER) as Mutable<RegistrySnapshotPackage>;
     (designer.versions[0] as Mutable<RegistrySnapshotVersion>).deprecated = true;
     const result = refusal(resolvePackages(PLAN, snapshot));
     expect(result.state).toBe("violated");
