@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "id": "weekly-release-calendar-owner-chat",
+  "tier": "tier-2",
+  "question": "governance/decisions/weekly-release-calendar.json sources its owner sign-off on PR #1316 to a GitHub comment (5801304853). The escalation rule (ratified 2026-09-23, governance/decisions/hitl-escalation-rule.json) item 1 states a GitHub comment is not proof of an owner decision, because every agent posts under the same shared identity. Does weekly-release-calendar.json's authorization survive, and if not, how should it be re-sourced?",
+  "options": [
+    "Supersede weekly-release-calendar.json with a record that sources the sign-off to the coordinator chat directly, since the GitHub comment only relays a decision made there -- the decided record itself is immutable (scripts/land-stack.mjs's evaluateChangedDecisionRecords refuses an in-place edit), so re-sourcing requires a new record naming it in supersedes, not an edit.",
+    "Leave weekly-release-calendar.json exactly as decided, citing only the GitHub comment, and accept that its authorization no longer meets the ratified rule's own bar.",
+    "Treat the original record as void until the owner re-confirms in a channel the rule accepts, blocking anything that depends on it in the meantime."
+  ],
+  "recommendation": "Option 1 -- supersede with an owner-chat-sourced record carrying the same links and patch-id pin, since the underlying decision content is unchanged; only its documented source needed correcting, and the escalation rule's own item 1 says exactly this: owner decisions are recorded from chat or a signed commit, and a GitHub comment posted under the shared identity 'proves nothing', including 'the two I posted today for #1316 and #1329'.",
+  "reviews": [
+    {
+      "role": "primary",
+      "instance": "unrecorded-predates-schema",
+      "provider": "unrecorded-predates-schema",
+      "model": "unrecorded-predates-schema",
+      "effort": "unrecorded-predates-schema",
+      "verdict": "approve",
+      "link": "https://github.com/clossys/foundry/pull/1316#issuecomment-5801218972"
+    },
+    {
+      "role": "secondary",
+      "instance": "unrecorded-predates-schema",
+      "provider": "anthropic",
+      "model": "opus",
+      "effort": "unrecorded-predates-schema",
+      "verdict": "approve",
+      "link": "https://github.com/clossys/foundry/pull/1316#issuecomment-5801170709"
+    }
+  ],
+  "status": "decided",
+  "decidedBy": "owner",
+  "channel": "owner-chat",
+  "decision": "The owner approved PR #1316 directly in the coordinator chat, replying \"yes\" to \"If you say yes, I'll mark it ready\" (relayed to this session by the coordinator on 2026-09-23, in the same conversation that ratified the escalation rule itself). The GitHub comment quoted in the superseded record's own `decision` field (5801304853, \"Owner sign-off: the owner approved this weekly release calendar …\") only RELAYS that chat approval into a durable, public artifact -- it was never itself the primary channel the decision came from, and per the escalation rule's own item 1 (\"Every agent posts as you, so an 'Owner sign-off' comment an agent wrote proves nothing … That includes the two I posted today for #1316 and #1329: they reflect what you said in this chat, but GitHub can't show that\"), it could not have served as that primary channel regardless of when it was written. This record changes nothing about WHAT was decided -- the weekly release calendar itself (Monday-Friday merge window, Saturday release, Sunday consumer adoption, and the out-of-band mechanics), still stated in full in the superseded record's own `decision` field, which this record does not repeat -- only WHERE the sign-off on PR #1316 is now correctly sourced from. `links` below (including `links.patchIds`) are carried forward unchanged from the superseded record: the underlying pull request and its patch-id pin are exactly the same; only the channel attribution changed. Transparency note, not itself part of this re-sourcing: the superseded record's `decision` field also cites two further comments (#1187 comments 5799538912 and 5800369031) for the calendar's own substantive content (the Monday-Friday/Saturday/Sunday specifics and the out-of-band mechanics), posted under the same shared GitHub identity every comment in this repository is posted under. This record does not re-litigate that sourcing -- the ratified rule's own item 1 names only the two sign-off comments for #1316 and #1329 explicitly (\"the two I posted today\") -- but the same shared-identity caveat applies to those two comments in principle, and re-confirming them in chat, if ever challenged, would need the same treatment this record gives the sign-off.",
+  "relaxesGateOrPolicy": false,
+  "sunset": null,
+  "expiry": null,
+  "supersedes": [
+    "weekly-release-calendar"
+  ],
+  "links": {
+    "pullRequests": [
+      "1316"
+    ],
+    "issues": [
+      "1187",
+      "1265",
+      "1266",
+      "1263"
+    ],
+    "paths": [],
+    "patchIds": [
+      "d5d54f8f0af09275cdfe985793140d8c295bf94f"
+    ]
+  },
+  "notes": "Supersedes governance/decisions/weekly-release-calendar.json, which is `status: \"decided\"` on this pull request's own base branch and therefore immutable -- scripts/land-stack.mjs's `evaluateChangedDecisionRecords` refuses any in-place content edit to a record already decided at the base, comparing by parsed value; an earlier draft of this pull request violated exactly that rule by editing the original record's `channel` and `notes` fields directly, caught by two independent round-2 reviews of #1354 (both blocking). That edit is reverted; the original record now reads on this branch exactly as it does on the base branch, unchanged. This record is the correction instead: a new, separate, owner-chat-sourced record naming the original in `supersedes`, per docs/contracts/decision-record.json's own rule that the only sanctioned way to change a decided record's effective content is a new record, never an edit in place. channel: owner-chat, not independently verifiable (the ratified text's own required disclosure, \"Where I'm pushing back\" > hardware-signed commits, restated here rather than merely implied)."
+}

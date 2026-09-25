@@ -247,6 +247,63 @@ jobs:
           fi
           node scripts/check-release-catalog.mjs --package "$PKG"
 
+      # Re-derives ONE retained qualification record: the dispatched
+      # package's current version, on the pinned runtime asserted above.
+      # This step used to run the unscoped `check:candidate-qualification`,
+      # which re-derives all ~190 retained records from git history -- 25m24s
+      # of writer run 36038887231's qualify job, against 3s for the
+      # qualification itself. That walk reads only the git history at HEAD,
+      # the tracked tree, and the git/npm toolchain; nothing in it depends on
+      # the dispatched package, an input, or the time of the run. So on the
+      # only ref that can upload (`publish` requires refs/heads/main) it
+      # re-proved what required CI had already proved: main advances only
+      # through the merge queue (ruleset 20924588: merge_queue, no bypass
+      # actors), the merge-group commit IS the main commit, and ci.yml's
+      # `candidate-qualification-shard` matrix, fanned in to the required
+      # `build and test`, runs every record on every non-prose merge-group
+      # commit (check-touches-packages never skips outside a pull_request;
+      # classify-change-tier skips the shards only for tier `prose`, never
+      # `packed-prose`). Prose-tier paths are disjoint from the walk's
+      # inputs: at HEAD the sharded walk reads only governance/**,
+      # package-scope.json and scripts/**, and the prose paths the trio
+      # records bind are read only at fixed historical commits once the trio
+      # publication closure is valid, as it is on main (see
+      # gated-script-prose-inputs.mjs's entry for this script). A prose-only
+      # main commit therefore relies on its nearest non-prose ancestor's
+      # proof.
+      #
+      # Where each invariant is now proven:
+      #   - every retained record's joins, single introduction and unchanged
+      #     bytes, the sealed-record set, cohort/quarantine/publication
+      #     consistency and the prepublication PR tail: required CI, all
+      #     records, on this commit or its nearest non-prose ancestor;
+      #   - the same per-record invariants for THIS package's current-version
+      #     record, re-derived here on the pinned publish runtime (not CI's
+      #     Node 20), plus the cross-record checks in full: this step;
+      #   - that record exists and still matches the current tree: discover's
+      #     "Preflight retained qualification records" (non-dry-run);
+      #   - the exact tarball bytes and joins against that record:
+      #     validate-candidate-publish.mjs and publish-qualified-directory.mjs
+      #     in the `publish` job.
+      #
+      # A missing record is refused except on a dry run, which is how a new
+      # version's record is produced in the first place (the #777 regression
+      # discover's preflight comment describes). A dispatch against a branch
+      # other than main can never reach `publish`, and any record it helps
+      # produce is re-derived by required CI before it can reach main.
+      - name: Re-derive the dispatched package's qualification record
+        if: ${{ !inputs.verify_only }}
+        env:
+          PKG: ${{ matrix.package }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          if [ "$DRY_RUN" = true ]; then
+            node scripts/check-candidate-qualification.mjs --package "$PKG" --allow-missing-record
+          else
+            node scripts/check-candidate-qualification.mjs --package "$PKG"
+          fi
+
       - name: Install repository dependencies without lifecycle scripts
         if: ${{ !inputs.verify_only }}
         run: npm ci --ignore-scripts
@@ -254,10 +311,10 @@ jobs:
       # `npm run build` stays unscoped: a candidate package can have a
       # first-party dependency (e.g. builder and inspector resolve through
       # controller) whose own dist/ must exist before typecheck or test can
-      # even start. `check:candidate-qualification` and
-      # `check:package-governance` stay unscoped too -- they are repository-
-      # wide governance gates, not one package's own test suite, and are
-      # fast (no real subprocess/network round trip).
+      # even start. `check:package-governance` stays unscoped too -- it is a
+      # repository-wide governance gate, not one package's own test suite,
+      # and is fast (no real subprocess/network round trip). Retained
+      # qualification records are the step above's, scoped to this package.
       #
       # `typecheck` and `test`, below, are scoped to the CANDIDATE package's
       # own workspace rather than every workspace. This job's job is to
@@ -279,7 +336,6 @@ jobs:
           PKG: ${{ matrix.package }}
         run: |
           npm run build
-          npm run check:candidate-qualification
           npm run check:package-governance
           npm run typecheck --workspace="packages/$PKG" --if-present
           npm run test --workspace="packages/$PKG" --if-present

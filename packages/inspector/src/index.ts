@@ -44,6 +44,7 @@ export type { ParsedTaskReference, TaskItemLookupOutcome, TaskItemObservation, T
 
 export { checkReviewEvidence, reviewEvidenceReasons } from "./review-evidence.js";
 export type {
+  ReviewEvidenceCarriedApproval,
   ReviewEvidenceFinding,
   ReviewEvidenceMergeGroup,
   ReviewEvidenceOptions,

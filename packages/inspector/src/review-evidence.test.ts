@@ -510,6 +510,58 @@ describe("checkReviewEvidence", () => {
       expect(checkReviewEvidence(bundle, policy, options).result.verdict).not.toBe("satisfied");
     }
   });
+
+  // #1428: the collector (scripts/collect-review-evidence.mjs) proves a
+  // mechanical-merge carry over real git history and REBINDS the carried
+  // review's own headSha before this package ever sees the evidence bundle
+  // -- so the decision itself needs no change here. `carriedApproval` is
+  // reporting only: it makes the carry VISIBLE, and this package trusts it
+  // exactly as it already trusts `mergeGroup.containsHeadShaUnderTest`,
+  // never re-deriving it (this package performs no I/O and never could).
+  describe("carriedApproval (#1428) — reporting only, never a second source of decision", () => {
+    const carriedFromHead = "f".repeat(40);
+
+    it("passes a well-formed carriedApproval straight through to the report on the satisfied path", () => {
+      const report = checkReviewEvidence(evidence(), policy, { ...options, carriedApproval: { fromHeadSha: carriedFromHead, toHeadSha: HEAD } });
+      expect(report.result.verdict).toBe("satisfied");
+      expect(report.carriedApproval).toEqual({ fromHeadSha: carriedFromHead, toHeadSha: HEAD });
+    });
+
+    it("passes carriedApproval through on a violated verdict too — the carry and an unrelated violation are independent facts", () => {
+      const report = checkReviewEvidence(
+        evidence({ threads: [{ id: "THREAD_1", isResolved: false, headSha: HEAD }] }),
+        policy,
+        { ...options, carriedApproval: { fromHeadSha: carriedFromHead, toHeadSha: HEAD } },
+      );
+      expect(report.result.verdict).toBe("violated");
+      expect(report.carriedApproval).toEqual({ fromHeadSha: carriedFromHead, toHeadSha: HEAD });
+    });
+
+    it("omits carriedApproval from the report when none was supplied", () => {
+      const report = checkReviewEvidence(evidence(), policy, options);
+      expect(report.carriedApproval).toBeUndefined();
+    });
+
+    it("silently drops a malformed carriedApproval rather than failing the check over a report-only field", () => {
+      for (const malformed of [
+        { fromHeadSha: "not-a-sha", toHeadSha: HEAD },
+        { fromHeadSha: carriedFromHead, toHeadSha: "not-a-sha" },
+        { fromHeadSha: carriedFromHead },
+        "not-an-object",
+        42,
+      ]) {
+        const report = checkReviewEvidence(evidence(), policy, { ...options, carriedApproval: malformed as never });
+        expect(report.result.verdict).toBe("satisfied"); // never turned into a check failure
+        expect(report.carriedApproval).toBeUndefined();
+      }
+    });
+
+    it("is absent on an early indeterminate return that never reached the evidence bundle at all", () => {
+      const report = checkReviewEvidence(undefined, policy, { ...options, carriedApproval: { fromHeadSha: carriedFromHead, toHeadSha: HEAD } });
+      expect(report.result).toMatchObject({ verdict: "indeterminate", reason: "no-evidence-supplied" });
+      expect(report.carriedApproval).toBeUndefined();
+    });
+  });
 });
 
 // Merge-queue runs (#1253). The group commit is a synthetic merge nobody

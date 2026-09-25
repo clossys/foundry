@@ -29,10 +29,30 @@ full tier verdict for every pull request it evaluates, but does not block a
 merge unless `governance/review-tiers.json`'s `"enforcement"` field is
 `"enforce"`.
 
+## Escalation rule
+
+The owner-ratified escalation rule — the verbatim ratified text,
+implementation notes, the code-mapping ("What this rule changes about the
+code, and what it does not"), channel enforcement, and tier coverage for
+changing the rule itself — now lives in its own file,
+[`docs/HITL-RULE.md`](HITL-RULE.md), **tier-2** and hook-protected (see
+[`docs/HITL-HOOKS.md`](HITL-HOOKS.md), also tier-2). This document (`docs/HITL.md`) is
+**tier-1**: it documents the gate mechanics `scripts/land-stack.mjs`
+actually enforces, links to the rule rather than containing it, so that
+an ordinary edit here (fixing a typo, adding a cross-reference,
+documenting a new gate behavior) never needs owner-only review the way an
+edit to the rule text itself does.
+
 ## The three tiers
 
-The decision-tier rule (#1187 comment 5800142871) defines three tiers of
-agent decision:
+**This is the CODE-LEVEL classification `scripts/land-stack.mjs` actually
+enforces today** (kept, unchanged, from before the ratified "Escalation
+rule" ([`docs/HITL-RULE.md`](HITL-RULE.md)) existed) — not a restatement
+of the ratified rule itself. The decision-tier rule (#1187 comment
+5800142871) it derives from predates ratification; see
+[`docs/HITL-RULE.md`](HITL-RULE.md)'s own "What this rule changes about
+the code, and what it does not" for exactly how the two relate. It
+defines three tiers of agent decision:
 
 - **Tier 0 — act autonomously.** Reversible, inside established rules,
   verified by gates: ordinary code in author lanes, reviews, merges under the
@@ -68,18 +88,18 @@ paths that skip it entirely.
 | Change-then-revert past a sticky reject | `scripts/land-stack.mjs`'s `isTreeIdenticalToRejectedHead` (round 5, should-fix) | A no-op COMMIT is refused (above), but a commit that changes a file and then a LATER commit that reverts it produces a genuinely different, non-empty head commit — `isNoOpHeadCommit` alone does not catch it. `runStatus` now also fetches the git TREE sha (not the commit sha) of the current head and of every prior authorized reject's headSha (capped at 10 candidates) and refuses the merge if the current tree matches any rejected tree exactly — a content-identical head, however it was produced, never counts as "a real change" for the purpose of clearing a sticky reject. **Known limitation:** this compares whole-tree identity, not the specific files a reviewer rejected — a change-then-revert of files OUTSIDE what the reviewer actually objected to, combined with a genuine unrelated fix, produces a different tree and is not caught; this closes the pure "revert to exactly what was rejected" case, not every way to launder a rejected diff into looking new. |
 | Decided-record immutability | `scripts/land-stack.mjs`'s `evaluateChangedDecisionRecords` | A pull request that changes the CONTENT (by parsed value, not raw text) of a `governance/decisions/*.json` record whose base-branch version already has `status: "decided"` is refused — a decision can be changed only by a new record whose `supersedes` names the old one, never by editing it in place. A record still `"open"` on the base branch may be freely edited. |
 | Self-inclusion | This file, `scripts/land-stack.mjs` (and its test), `docs/contracts/decision-record.json`, `scripts/check-decision-records.mjs` (and its test), `package-scope.json`, and `scripts/lib/**` are all **tier-2**, not tier-1 — a tier-1 change (two agent reviewers) could otherwise narrow `tier2.globs` (for example, drop `governance/model-qualifications/**` from it) and remove the owner-only boundary without the owner. See "Bootstrapping this gate" below for the one case this cannot cover: this pull request's own first landing. |
-| `governance/decisions/**` classification | `governance/review-tiers.json`'s `tier1.globs` (`governance/**`) | **Tier-1, not tier-0.** Deliberately NOT listed in `tier1RecordExempt` (the carve-out for pure record files) — adding or changing any decision record needs the same two-independent-reviewer bar as any other governance path — closing a self-issue-then-spend loophole (see "What changed after the 8e6d97ea review" below). |
+| `governance/decisions/**` classification | `governance/review-tiers.json`'s `tier2.globs` (round 8: promoted from `tier1.globs`'s broad `governance/**`) | **Tier-2, not tier-0 or tier-1.** Deliberately NOT listed in `tier1RecordExempt` (the carve-out for pure record files) — adding or changing any decision record needs owner-decision-record authorization, the same bar as any other tier-2 path — closing both a self-issue-then-spend loophole (see "What changed after the 8e6d97ea review" below) and, as of round 8, the gap where a fresh, agent-authored `decidedBy: "owner"` record for some OTHER tier-2 path could itself land with only two ordinary reviewers (see `governance/review-tiers.json`'s own `$comment`). |
 | Record authorship | `scripts/land-stack.mjs`'s `defaultAnnotateCommentAuthorization` / `isAuthorizedCollaboratorPermission` | A `foundry-review-record` comment counts toward tier-1 ONLY when its author's collaborator permission on this repository (`repos/{owner}/{repo}/collaborators/{username}/permission`) is `admin` or `write` (`"authorized"`). A confirmed `read`/`none`, or an unresolved login, is `"unauthorized"` — never counts toward anything, approval or rejection, and is never itself suspicious (a stranger cannot block the PR by posting garbage). A FAILED permission lookup (the check itself errored, not a confirmed "no") is the third, distinct state `"unknown"` and refuses the whole gate outright, for any record — collapsing it into `"unauthorized"` would silently drop a genuine reject this module simply could not verify. This is a public repository; without any of this, a comment from any GitHub account with no relationship to it at all satisfied tier-1 independence. |
 | Record block parsing | `scripts/land-stack.mjs`'s `findReviewRecordBlocks` and `hasUnaccountedMarkerContent` | A POSITIVE grammar, not a strip-then-scan regex (round 5 replaced `stripQuotedAndFencedContent` — see "What changed after the round-5 reviews" below): a record counts only when its `<!-- foundry-review-record` opener sits at literal column 0 (no leading whitespace at all — an indented opener, including one inside a classic 4-space-indented code block, never matches), outside any fenced code block (backtick or tilde, any indent), `<details>`, or `<pre>` region, with its `-->` closer present. The JSON body is parsed with `JSON.parse`, so any indentation inside the block is fine — nothing is stripped or rewritten to make it parse. A marker (`foundry-review-record`, matched CASE-INSENSITIVELY — round 6, second reviewer: a differently-cased opener was previously invisible to the parser entirely) that appears in an AUTHORIZED comment but never resolves to a valid block — fenced, quoted, indented past what the grammar accepts, malformed JSON, or JSON that parses but is not a plain object (an array, `null`, a string, or a number — round 6, blocking, first reviewer, item (c)-1: a reject wrapped in `[{ …, "state": "reject" }]` is spread by `{ ...parsed }` into index keys with no `role`/`state` at all otherwise) — REFUSES THE GATE via a `_parseError` marker, the same as an edited-at-head record does; it is never silently dropped. A reject must never vanish just because it shares a comment with an earlier genuine block (round 6, blocking, both reviewers): `hasUnaccountedMarkerContent` separately checks, for every comment that produced at least one valid block, whether the raw body still contains MORE marker-opener occurrences than `findReviewRecordBlocks` accounted for (a fenced or quoted second marker alongside a genuine one), or ends with a fence/`<details>`/`<pre>` region still open (including a ONE-LINE `<details>...</details>`, whose same-line close this module's line-based tracker never sees, silently swallowing everything after it) — either signal adds an extra `_parseError`, refusing the gate rather than treating the comment as fully accounted for. An unauthorized comment's marker is never suspicious this way (see "Honour-system limits" below for the DoS this closes). A bare-word PROSE mention of the marker name (no `<!--` opener at all) also currently refuses the gate under the same `_parseError` fallback — harmless under report-only, but listed as a must-fix before enforce (see "Before switching to enforce" below). |
 | Tier-1 review requirement | `scripts/land-stack.mjs`'s `evaluateTier1Independence` | Reads `foundry-review-record` comments (`docs/contracts/review-record.json`) on the pull request at its exact current head, from AUTHORIZED comments only. Refuses outright if any edited-at-head or unparseable record block exists at all (`findSuspiciousRecordComments`) — rather than silently dropping it and continuing. AMBIGUOUS-HEADSHA HANDLING, PRECISE (round 6, blocking, first reviewer, items (c)-2/3/4 — an earlier version of this row overclaimed the exact conditions): for any record whose state is NOT a recognized approval-path spelling (`approved`/`commented`/`declared`) — a reject spelling, or any other unrecognized value, WHATEVER its `role` — `isConfirmedDifferentHeadSha` is the sole test for "safely stale, ignore it": a full, well-formed 40-character hex SHA that provably does not equal the current head. A missing `headSha`, a non-hex value, the literal string `"HEAD"`, or a prefix shorter than 7 characters is NEVER treated as stale just because it fails to match the current head. From there the two spellings split: a RECOGNIZED reject spelling that clearly matches the current head (the same lenient 7+-character-prefix rule `findStickyRejections` uses) is NOT flagged suspicious here — it is the legitimate case, handled below with its own sticky reason; a TRULY UNRECOGNIZED state is suspicious even at a clean, exact match to the current head, since nothing else in this module interprets it as meaningful evidence. Refuses outright, and STICKY (never superseded by any later record, from the same `instanceId` or otherwise, however that later record is dated), if any authorized record at (or an unambiguous 7+ character prefix of) the current head has a reject-shaped state, matched case-insensitively AND spelling-insensitively (`findStickyRejections` via `normalizeStateSpelling`: `reject`, `rejected`, `changes-requested`, and `changes_requested` all count as the same reject state — round 5, both reviewers) — regardless of what else about the record (missing `depth`, missing `model`) is wrong. Requires exactly one author record. Otherwise requires one `primary` and one `secondary` record, both `state: "approved"` (`"commented"` never counts), differing in model or provider, ordered by the comment's own `created_at` (not the self-declared `submittedAt`) when an instance supersedes its own earlier record. |
-| Tier-0 fast path | `scripts/land-stack.mjs`'s `runStatus` | A genuinely tier-0 classification skips fetching PR comments, resolving any collaborator permission, and reading the base-branch decision log entirely — no path in a tier-0 diff can match `governance/decisions/**` (that glob alone is tier-1), so none of those reads would find anything to check. This also means one malformed record anywhere in the decision log no longer breaks `--status` for every pull request, tier-0 included. |
+| Tier-0 fast path | `scripts/land-stack.mjs`'s `runStatus` | A genuinely tier-0 classification skips fetching PR comments, resolving any collaborator permission, and reading the base-branch decision log entirely — no path in a tier-0 diff can match `governance/decisions/**` (that glob is tier-2 as of round 8; see `governance/review-tiers.json`'s own `$comment`), so none of those reads would find anything to check. This also means one malformed record anywhere in the decision log no longer breaks `--status` for every pull request, tier-0 included. |
 | Tier-2 owner-decision requirement | `scripts/land-stack.mjs`'s `evaluateTier2Decision` | Reads decision records from the pull request's base commit for one that is itself schema-valid (checked against its real filename on the base branch, not against its own self-reported `id`), `tier: "tier-2"`, `status: "decided"`, `decidedBy: "owner"`, not superseded, not a relaxation past its sunset, unexpired (an unparseable `expiry` counts as expired), and linked to the PR EITHER by number PLUS a matching patch-id (`links.pullRequests` + `links.patchIds`) OR by a path glob that is either a literal path or exactly one of `tier2.globs` verbatim, on a record whose own `expiry` is non-null (`isOverbroadPathGlob`, computed against the real tier config). The patch-id is `git patch-id --verbatim` of the pull request's own net diff against its merge base, recomputed fresh at gate time (never trusted from a cached value) — see "Tier-2 authorization survives restacks: patch-id, not head sha" below for why this replaced a head-sha pin in round 5. A PR-scoped record with no patch-id pin, or a path-scoped record with `expiry: null`, authorizes nothing at all. **Known limitation, not solved:** a merge-train batch pull request carries a different PR number, head sha, AND patch-id than any original constituent PR a decision record might name — this gate checks the batch PR's own single patch-id against its own single merge base; it does not decompose a batch into per-constituent patch-ids or resolve one PR's authorization through another's. A batch containing a tier-2 change needs its own decision record (naming the batch's own patch-id) or its own fresh review, even when an original constituent PR was already authorized. |
 | Changed-decision-record validation | `scripts/land-stack.mjs`'s `evaluateChangedDecisionRecords`, reusing `scripts/check-decision-records.mjs`'s own `validateDecisionRecordShape` | Runs on **every** pull request, any tier: any `governance/decisions/**` file the PR adds, edits, deletes, or renames must be schema-valid, checked against its content at the PR's own **head** commit. A path deleted or renamed OUT of `governance/decisions/` is treated the same as a malformed record (decision records are append-only — superseded, never deleted or renamed away). |
 | Changed-file completeness | `scripts/land-stack.mjs`'s `verifyChangedFilesComplete` | Files are paginated directly against `repos/{owner}/{repo}/pulls/{n}/files` (never `gh pr view --json files`, which silently truncates at 100 entries) and cross-checked against the PR's own `changedFiles` count; an empty list, a short list, OR a non-number `changedFiles` value all refuse the merge rather than classifying blind. |
 | Merge-time head match | `gh pr merge --match-head-commit <sha>` in `runMerge` | Closes the window between the status check above and the actual merge call — a push landing in between is refused rather than silently merged uncovered by any of the checks above. |
 | Decision log | `governance/decisions/*.json` | Append-only; one file per decision; validated by `node scripts/check-decision-records.mjs` (run by hand — see that script's own header for why it is not a `check:*` npm script yet) and, for any record a pull request itself touches, inline inside the merge-train gate (see above). |
 | Reviewer model qualification (draft) | `governance/model-qualifications/allowlist.json` | Every row is `status: "proposed"` until the owner approves it. **`land-stack.mjs` does not read this file or report on it at all in this slice** — an earlier draft of this document claimed it did; that was wrong and has been removed. Wiring model-qualification reporting or enforcement into the gate is a later slice's work. |
-| Always-human commands | This document's deny-hook example below | **Not installed anywhere in this repository.** The owner installs it at Claude Code's user level, on their own machine, if they choose to. It is a seatbelt with named gaps — see "What it does and does not block" below. |
+| Always-human command shapes (`gh api`/`npm publish`/`git push --force`, ...) | none | **No mechanism in this repository catches these at all.** A Bash-matched hook attempting this was removed by owner decision in round 8 — see `docs/HITL-HOOKS.md`'s history section, and the separate, low-priority issue it links (#1405), for why. The remaining `docs/HITL-HOOKS.md` deny hook only covers `Edit`/`Write`/`MultiEdit`/`NotebookEdit` calls to a protected PATH, not arbitrary shell commands. |
 
 This is deliberately **not** a CI workflow. AGENTS.md's own rule —
 "Model-assisted code review is manually initiated. Do not add a background
@@ -118,8 +138,9 @@ revision:
   incomplete or empty list.
 - `governance/decisions/**` was tier-0 (no review of any kind), so a session
   could add a self-authorizing `decidedBy: "owner"` decision record with
-  zero review, then spend it on a real tier-2 change in a later PR. It is
-  now tier-1, and `evaluateTier2Decision` additionally refuses a record that
+  zero review, then spend it on a real tier-2 change in a later PR. It was
+  made tier-1 here, then tier-2 in round 8 (see "Honour-system limits"
+  below), and `evaluateTier2Decision` additionally refuses a record that
   is itself malformed, superseded, past its sunset, not `tier: "tier-2"`, or
   whose `expiry` fails to parse.
 - Tier config and decision records were read from the local checkout, which
@@ -724,7 +745,122 @@ its own, until the comment carrying it is edited to the full SHA or
 deleted — fail-closed, and harmless under report-only, but worth knowing
 before relying on `"enforce"`.
 
-Filed as a single tracking issue listing all four items (searched for
+The items below, numbered 5 through 12 for stable cross-reference with
+issue #1350, are new: gaps between the owner-ratified "Escalation rule"
+([`docs/HITL-RULE.md`](HITL-RULE.md)) and what `scripts/land-stack.mjs`
+actually enforces today (see that file's own "What this rule changes
+about the code, and what it does not" for the full mapping). None of
+them is a bug in the code that exists — they are refinements the
+ratified rule ADDS on top of the original decision-tier rule, not yet
+implemented, so there is nothing to "fix" before enforce so much as
+something to BUILD. Listed here because the same principle applies:
+shipping `"enforce"` on the existing tier-1 gate should not be read as
+also having shipped these. **Item 8 has since been retracted** (see
+below) — the numbering is kept stable rather than renumbered so this
+list's item numbers keep matching issue #1350's own.
+
+5. **The fresh-final-reviewer requirement (Accepted item 6) is not
+   implemented.** The ratified text: "For governance, security or gate
+   changes, the last approval has to come from a fresh strong-class
+   reviewer with no history on the PR…" (#1187 escalation-rule round 11,
+   fresh final reviewer, non-blocking N1: an earlier draft closed this
+   quote with a period; the source continues with a comma -- "…, and
+   both verdicts are given before either sees the other's" -- so the
+   quote now ends before the punctuation instead of supplying its own).
+   Nothing in `scripts/land-stack.mjs`
+   tracks which reviewer instances have already posted on a given pull
+   request, so nothing could enforce "fresh" even in principle today —
+   `evaluateTier1Independence` only checks that the two independent
+   records differ from each other and from the author, not that either is
+   new to the thread. **Needs before enforce, for governance/security/gate
+   paths specifically:** a way to identify reviewer history on a PR
+   (likely a third, distinct `role` or a `historyOnPr` field on the review
+   record) and a rule that refuses a qualifying pair whose "final" record
+   has posted before.
+6. **Blind verdicts (Accepted item 6) are not implemented or checkable.**
+   The ratified text: "both verdicts are given before either sees the
+   other's." This describes a PROCESS constraint on how a reviewing
+   session forms its opinion, not a fact the review record's own JSON
+   shape can carry or that `land-stack.mjs` could verify after the fact
+   from GitHub's API alone — there is no timestamp-of-first-read a comment
+   records. **Needs a design before enforce**: most likely an
+   honour-system field (`blindVerdict: true`, self-declared, the same
+   class of self-declared field `docs/contracts/decision-record.json`'s
+   own `relaxesGateOrPolicy` note already discusses) rather than a
+   mechanically-verifiable one, documented as such rather than implied to
+   be checked.
+7. **Both reviewers being strong-class (the "Two reviews" table row's
+   own "both strong-class" -- not Accepted item 6, which does not say
+   this at all) is not implemented or checkable** (#1187 escalation-rule
+   round 9, both reviewers, blocking: an earlier draft of this heading
+   quoted "Both reviewers strong-class" and cited item 6 for it; neither
+   the wording nor the citation is accurate). Nothing in
+   `scripts/land-stack.mjs` or `docs/contracts/review-record.json` checks
+   a reviewer's `model`/`provider` against any notion of being
+   strong-class (#1187 escalation-rule round 8, strong-class reviewer,
+   blocking B7: an earlier draft of this sentence put a paraphrase,
+   "strong-reasoning class", in quotation marks as if it were the
+   ratified text's own term -- it is not; "strong-class" is) — the
+   schema records those fields but never validates them against a
+   qualification list. **Needs before enforce:** a model
+   allowlist that actually feeds this check (see
+   `governance/model-qualifications/allowlist.json`, drafted but not yet
+   read by any gate), or an equivalent honour-system declaration,
+   documented as such.
+8. **RETRACTED — this item attributed a requirement to the ratified rule
+   that the rule does not contain (#1187 escalation-rule round 8,
+   strong-class reviewer, blocking B7).** An earlier draft of this
+   document, and of `docs/HITL-RULE.md`, described "model-diversity
+   recording" as one of the refinements "the ratified rule ADDS." The
+   ratified text has no such requirement — that phrase traces back to a
+   round-1 paraphrase of the rule, already replaced by the verbatim
+   quote in round 2, that should never have been restated here as
+   something the RULE itself calls for. Separately, and unrelated to
+   this retraction: `evaluateTier1Independence` already requires a
+   qualifying tier-1 review pair to differ in `model`/`provider` — real,
+   current code behavior, not a gap, and not itself part of what item 7
+   above (the ratified rule's own "strong-class" requirement) describes.
+9. **The land-log-and-notify digest cap of 5 items, ranked by risk, is
+   not implemented.** The ratified text (Accepted item 7): "at most 5
+   items per digest, ranked by risk, each with its revert" — and the
+   "Land, log and notify" table row: "Two reviews, a decision-log entry,
+   and at most 5 digest items you can veto" (#1187 escalation-rule round
+   9, strong-class reviewer, non-blocking: an earlier draft added a
+   trailing period the source's table cell does not have). No digest
+   artifact, no
+   revert-tracking, and no risk-ranking exists anywhere in this
+   repository. **Needs before enforce (or before this mode is used at
+   all):** the whole land-log-and-notify mechanism is new work, not a fix
+   to something existing; scope it as its own slice.
+10. **The 8-week notify-scope narrowing is not implemented.** The
+    ratified text (Accepted item 7): "if you veto nothing for 8 weeks,
+    the notify category gets narrower." Depends entirely on item 9 above
+    existing first (there is no notify category to narrow without a
+    digest), so this is downstream of that work, not a separate gap to
+    close independently.
+11. **Accepted item 3's requirement that an enforce ask include measured
+    report-only results is not automated** (#1187 escalation-rule round
+    9, both reviewers, blocking: an earlier draft of this heading put
+    that paraphrase in quotation marks as if it were the rule's own
+    words; the body immediately below already quotes item 3 correctly).
+    The ratified text: "When you're asked to
+    switch a gate to enforce, the ask must show the combined change since
+    you last approved that gate, plus measured results from its
+    report-only run." Nothing in this repository currently generates that
+    combined-change summary or gathers report-only measurements
+    automatically — any future ask to flip `governance/review-tiers.json`'s
+    `"enforcement"` to `"enforce"` would need to assemble this by hand.
+    **Needs before enforce:** tooling that diffs the tier-2 surface since
+    the last owner approval and summarizes a period of report-only
+    verdicts (false positives and misses), so the ask itself is not the
+    first place this evidence gets assembled.
+12. **The rule's own living copy and record were, until this pull
+    request, mechanically classified below owner-approve-first.** Fixed
+    in this same pull request — see [`docs/HITL-RULE.md`](HITL-RULE.md)'s
+    own "Tier coverage for changing this rule" — listed here only so the
+    gap this closes is on record, not because it remains open.
+
+Filed as a single tracking issue listing all twelve items (searched for
 duplicates first, none found): issue
 [#1350](https://github.com/clossys/foundry/issues/1350).
 
@@ -869,12 +1005,20 @@ limit this design accepts on purpose, not a bug it missed.)
   actually said either.
 - **The tier-2 owner-decision requirement can be satisfied by a session
   writing its own decision record and claiming `decidedBy: "owner"`.**
-  `governance/decisions/**` is now tier-1 (two independent reviewers), which
-  raises the bar from "zero review" to "two reviewers, neither the owner,
-  approving a record that claims owner authority" — a durable, reviewable,
-  committed artifact that says something false, not a private lie. It does
-  not make the claim itself unforgeable: nothing in this slice
-  cryptographically ties a decision record to the owner's real identity.
+  `governance/decisions/**` is now tier-2 as of round 8 (previously
+  tier-1) — since `evaluateTier2Decision` reads authorizing records from
+  the pull request's BASE commit, never its head, adding a NEW
+  `decidedBy: "owner"` record no longer merely needs two ordinary
+  reviewers; the pull request adding it now itself needs an
+  ALREADY-EXISTING, pre-decided tier-2 owner record to authorize the
+  addition — the new record can never authorize itself. This closes most
+  of what this bullet originally described. It does not make the claim
+  itself unforgeable: nothing in this slice cryptographically ties a
+  decision record to the owner's real identity, so a session that DOES
+  hold current tier-2 authority (a valid PR-number or path-glob link to
+  an existing owner record) can still spend it to add a further,
+  false `decidedBy: "owner"` record — the honour-system boundary just
+  moves one level up, it does not disappear.
 - **The one identity mechanism agents genuinely cannot forge is a
   hardware-backed, owner-signed commit.** An agent's commits in this
   repository are unsigned; the owner's real signing key needs a physical
@@ -892,177 +1036,40 @@ limit this design accepts on purpose, not a bug it missed.)
   entirely.** Repeated from above because it is a major honour-system
   gap of all: nothing about this slice is a server-side enforcement
   mechanism.
-- **A user-level deny hook is a seatbelt, not a lock (see below).** It runs
-  in the same session it is meant to constrain, in a settings file that
-  session (or any other on the same machine) could in principle edit, and it
-  covers a fixed, named list of command shapes — not every way to
-  accomplish the same end.
+- **A user-level deny hook is a seatbelt, not a lock (see
+  `docs/HITL-HOOKS.md`).** It runs in the same session it is meant to
+  constrain, in a settings file that session (or any other on the same
+  machine) could in principle edit, and it covers a fixed list of
+  protected PATHS (#1187 escalation-rule round 9, fresh final reviewer,
+  blocking B3: this sentence still described the removed Bash hook's
+  "fixed, named list of command shapes" -- the remaining Edit/Write hook
+  covers paths, not shell command shapes at all) — not every way to
+  write to one.
 
 None of this is a reason not to build the slice — the alternative is no
 structure and no trail at all. It is a reason to say, in this document,
 exactly what "enforced" does and does not mean here.
 
-## User-level deny hook (ready to install — the owner installs this, not an agent)
+## User-level deny hook
 
-This is a Claude Code **user-level** `PreToolUse` hook example. It blocks a
-fixed, named list of command shapes that are always tier-2 (credentials,
-deployment approval, repository/branch-protection settings, publish, and
-destructive force-pushes or branch deletes) at the tool layer, before the
-command runs. It is a seatbelt: it runs inside the same permission boundary
-as every other command a session issues, in a file a session with shell
-access could in principle edit. Its value is catching an *accidental*
-tier-2 command an agent didn't mean to run, not resisting a session that has
-decided to defeat it.
-
-**This repository does not install it, anywhere, for anyone.** No commit in
-this pull request adds it to `.claude/settings.json` (repo-scoped) or any
-other tracked file. It is documented here, in prose, as an example the
-owner may copy into their own **user-level** settings if they choose to.
-
-### What it does and does not block
-
-It blocks, tested directly against each pattern:
-
-- `gh api .../pending_deployments` — approving a deployment (npm-publish
-  approval gate)
-- `gh api .../rulesets` — reading or writing branch rulesets
-- `gh api .../environments` — environment configuration
-- `gh api ... .../branches/<branch>/protection` — branch-protection reads or
-  edits via the REST API directly, including a slash-named branch such as
-  `claude/foo` (an earlier pattern stopped at the initial `/` and missed this)
-- `gh api -X DELETE .../git/refs/heads/<branch>` or `gh api --method DELETE
-  .../git/refs/heads/<branch>` (both forms) — deleting a branch via the raw
-  Git refs API, a second path to the same end `git push --delete` already
-  covers
-- `gh secret set` — repository/environment secret writes
-- `gh repo edit` — repository settings edits
-- `gh pr merge ... --admin` — an admin-override merge that bypasses required
-  checks
-- `npm publish`, `npm unpublish`, `npm dist-tag` — direct publish,
-  unpublish, or dist-tag moves, bypassing the qualification/publish gates
-- `git push --force` / `git push -f` (but not `--force-with-lease`, treated
-  as the safer, intentionally-scoped variant)
-- `git push origin +main` (or any `+refspec` force-push shorthand)
-- `git push --delete <branch>` or `git push origin :<branch>` (including a
-  branch name containing a slash, such as `claude/foo`)
-
-It does **not** block, and an owner relying on it should know this:
-
-- Any of the above run through a wrapper script, a Makefile target, `npm
-  run <script>` that shells out to one of these commands, `node -e "..."`,
-  or any other indirection the regex list does not literally match.
-  `git push --force-with-lease` is deliberately not blocked at all.
-- The same actions performed through the GitHub web UI, a different tool
-  entirely (Claude in Chrome, a browser), or any MCP server with its own
-  credentials.
-- A plain `gh pr merge` (no `--admin`) or a direct push to a branch with no
-  force flag — this hook is about the specific always-tier-2 command
-  *shapes* in `docs/HITL.md`, not a general merge gate; `scripts/land-stack.mjs`
-  is the merge gate, and it has its own, separately documented, skip paths
-  (see "Where each tier is enforced" above).
-- Anything typed directly into a terminal outside a Claude Code session, or
-  run by a different agent or human entirely.
-
-### Example hook body
-
-Save this as (for example) `~/.claude/hooks/deny-tier2.mjs`:
-
-```js
-#!/usr/bin/env node
-// User-level PreToolUse hook: deny the always-human (tier-2) command shapes
-// from docs/HITL.md in clossys/foundry. Reads the tool-call JSON Claude Code
-// passes on stdin; exits 2 (block) with a reason on stderr for a match,
-// exit 0 (allow) otherwise. This is a SEATBELT, not a lock -- see
-// docs/HITL.md's "What it does and does not block" for the named gaps.
-
-const DENY_PATTERNS = [
-  /\bgh\s+api\b[^\n]*\/pending_deployments\b/i,
-  /\bgh\s+api\b[^\n]*\/rulesets\b/i,
-  /\bgh\s+api\b[^\n]*\/environments\b/i,
-  // branches/<branch>/protection -- <branch> can itself contain a "/"
-  // (e.g. claude/foo), so this must NOT stop at the first slash the way
-  // [^/\s]+ would (#1187 review at df15ab87, should-fix nit).
-  /\bgh\s+api\b[^\n]*\/branches\/\S+\/protection\b/i,
-  // Deleting a branch via the raw Git refs API instead of `git push
-  // --delete` -- a second way to the same always-tier-2 end this hook's
-  // git-push patterns below do not see at all (#1187 review at df15ab87,
-  // should-fix nit). Matches both gh's short (`-X`) and long (`--method`)
-  // form -- an earlier pattern caught only `-X DELETE` and missed `--method
-  // DELETE`, which exits 0 (#1187 review round 4, should-fix nit 8).
-  /\bgh\s+api\b[^\n]*(?:-X|--method)\s+DELETE[^\n]*\/git\/refs\/heads\/\S+/i,
-  /\bgh\s+secret\s+set\b/i,
-  /\bgh\s+repo\s+edit\b/i,
-  /\bgh\s+pr\s+merge\b[^\n]*--admin\b/i,
-  /\bnpm\s+publish\b/i,
-  /\bnpm\s+unpublish\b/i,
-  /\bnpm\s+dist-tag\b/i,
-  // --force, or a standalone -f token, but not --force-with-lease.
-  /\bgit\s+push\b[^\n]*(--force(?!-with-lease)\b|(?:^|\s)-f\b)/i,
-  // A "+refspec" force-push shorthand anywhere after "git push".
-  /\bgit\s+push\b[^\n]*\s\+\S+/,
-  // "--delete <branch>", or ":branch" (including a slash-named branch).
-  /\bgit\s+push\b[^\n]*(--delete\b|\s:\S+)/i,
-];
-
-let input = "";
-process.stdin.on("data", (chunk) => (input += chunk));
-process.stdin.on("end", () => {
-  let payload;
-  try {
-    payload = JSON.parse(input);
-  } catch {
-    process.exit(0); // fail open on unparseable input -- this hook only ever narrows, never widens, so unparseable input is not this hook's problem to solve
-  }
-  const command = typeof payload?.tool_input?.command === "string" ? payload.tool_input.command : "";
-  if (!command) process.exit(0);
-
-  const hit = DENY_PATTERNS.find((re) => re.test(command));
-  if (hit) {
-    process.stderr.write(
-      `Blocked by user-level deny hook (docs/HITL.md, clossys/foundry): this command shape is tier-2 (owner only). Pattern: ${hit}\n`,
-    );
-    process.exit(2);
-  }
-  process.exit(0);
-});
-```
-
-### Install steps
-
-1. Save the script above to `~/.claude/hooks/deny-tier2.mjs` and make it
-   executable: `chmod +x ~/.claude/hooks/deny-tier2.mjs`.
-2. Open your **user-level** Claude Code settings —
-   `~/.claude/settings.json` (create it if it does not exist; this is your
-   personal machine-wide settings file, not anything tracked in this or any
-   other repository).
-3. Add a `PreToolUse` hook entry matching the `Bash` tool:
-
-   ```json
-   {
-     "hooks": {
-       "PreToolUse": [
-         {
-           "matcher": "Bash",
-           "hooks": [
-             {
-               "type": "command",
-               "command": "node ~/.claude/hooks/deny-tier2.mjs"
-             }
-           ]
-         }
-       ]
-     }
-   }
-   ```
-
-4. Restart or reload Claude Code so it picks up the new user-level setting.
-5. Verify it: ask a session to run `git push --force origin main` in any
-   repository. It should be blocked before the command executes, with the
-   reason printed above. Also try `git push origin :some/branch`, `gh repo
-   edit --description x`, `gh api repos/OWNER/REPO/branches/claude/foo/protection`,
-   and `gh api -X DELETE repos/OWNER/REPO/git/refs/heads/claude/foo` to
-   confirm the slash-branch, repo-edit, and refs-DELETE cases all block.
-
-If you already have other `PreToolUse` hooks configured, add this as an
-additional entry under the same `matcher` rather than replacing what is
-there — Claude Code runs every matching hook.
+The user-level `PreToolUse` deny hook — the Edit/Write/MultiEdit/NotebookEdit-matched
+path blocklist, its protected-path list, the real, tested script that
+implements it, and the install steps — now lives in its own file,
+[`docs/HITL-HOOKS.md`](HITL-HOOKS.md), **tier-2** and hook-protected (see
+that file for why). A companion Bash-matched command-shape/text-analysis
+hook existed through round 7; it was REMOVED by owner decision in round 8
+(recorded in the coordinator chat, 2026-09-23) after seven review rounds
+kept finding another shell-parsing gap or another false positive on an
+ordinary command in an unrelated repository — see `docs/HITL-HOOKS.md`'s
+own history section, and the separate, low-priority issue it links
+(#1405), for the full reasoning. This document (`docs/HITL.md`) is
+**tier-1**: it
+still documents which paths the remaining hook covers and does not, in
+outline, but the normative definition — the pattern the deny hook
+actually runs, and the protected-path list — is `docs/HITL-HOOKS.md`'s
+alone, backed by `scripts/hooks/deny-tier2-edit.mjs` and its tests
+(#1187 escalation-rule round 4, both reviewers, blocking: round 3 moved
+the ratified rule text to a tier-2 file but left the deny hook that is
+supposed to protect it defined only here, in tier-1 — a two-ordinary-
+reviewer change could have silently weakened it without ever reaching
+the owner).

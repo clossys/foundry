@@ -25,9 +25,15 @@ declarations.
 
 1. Fork and branch from `main`.
 2. Keep the change focused — one concern per pull request.
-3. Add or update tests. Every package uses [Vitest](https://vitest.dev); run
+3. If the change touches an already-published package's packed content, add
+   a `.changesets/<slug>.md` file instead of bumping that package's version
+   yourself — see [`.changesets/README.md`](.changesets/README.md) for the
+   format, and its ["Style"](.changesets/README.md#style) section for the
+   one-factual-sentence, no-unproven-absolutes rule a changeset summary is
+   held to (it becomes a `docs/changelogs/<dir>.md` line verbatim).
+4. Add or update tests. Every package uses [Vitest](https://vitest.dev); run
    `npm test` from the repository root.
-4. Run the checks below before pushing.
+5. Run the checks below before pushing.
 
 ```bash
 npm run typecheck
@@ -134,6 +140,41 @@ Nothing here changes what you do before the queue: push a head you've
 verified locally, post `Ready for independent review at <sha>.`, wait for an
 APPROVE, and let CI run. The queue only changes what happens after both of
 those are true.
+
+### A mechanical merge from `main` does not need a fresh review (#1428)
+
+If your pull request only needs a merge from `main` — GitHub flagged it
+stale, or a sibling entry landed first — you do not need to re-request
+review, and a maintainer does not need to hand-verify an empty `git show
+--remerge-diff` and post a carry-forward comment. `review-evidence`'s
+collector proves the merge is mechanical from this repository's own git
+history and carries the earlier approval forward on its own, by requiring
+every commit between your last-approved head and your current head, walking
+strict first parent, to be a plain two-parent merge whose:
+
+1. **second parent is an ancestor of `main`'s true tip** — resolved fresh
+   from this job's own fetched history, never from your pull request's own
+   claimed base, so retargeting your pull request's base branch does not
+   help route around this; and
+2. **`git show --remerge-diff` is EMPTY** — no hand-resolved conflict,
+   nothing added on top of the merge.
+
+Both must hold for every merge commit in the chain, or nothing carries: a
+side-branch merge, a hand-resolved conflict, an extra edit folded into the
+merge, or a genuine follow-up commit after the approved head all require a
+fresh review, exactly as before. (An earlier version of this design also
+compared `git patch-id` at both heads. It was dropped — condition 1 already
+proves a mechanical chain can only introduce content the target branch
+already carries, so patch-id was strictly redundant with that proof at
+best; at worst it was both a real hole, since `git patch-id` ignores
+whitespace and so missed a side-branch merge that only changed indentation,
+and a false-negative machine, since it failed closed on the great majority
+of this repository's own real clean merges from `main` — their nearby
+changeset and version-bump lines shifted the diff context even though
+nothing reviewed had changed.) When a carry does apply, the
+`verify-standards` job summary says so directly (`approval carried from
+<sha> (#1428 mechanical merge)`) — check there before assuming you need to
+ping a reviewer again.
 
 ## Conversation surface
 
