@@ -687,9 +687,6 @@ export function changeSetRuleViolations(set: RepositoryChangeSet): RuleViolation
     }
   });
   const kinds = new Map(set.items.map((item) => [item.id, item]));
-  set.refused.forEach((refusal, index) => {
-    if (kinds.get(refusal.item)?.act === "write-ledger") push("C9", `refused[${index}].item`, "names the write-ledger item, which is derived and never refused");
-  });
   set.keys.forEach((key, index) => {
     const item = kinds.get(key.item);
     if (item !== undefined && !isPackageItem(item)) push("C9", `keys[${index}].item`, "is not a package item");

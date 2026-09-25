@@ -496,7 +496,7 @@ describe("change-set code rules C1-C16", () => {
     expect(rulesOf(reseal(placement))).toContain(`C9 items[${itemIndex(placement, STARTER)}].placement`);
     const ledger = loose(SET);
     ledger.refused.push({ path: "clossys/.state/installed.json", reason: "unowned-existing", item: "ledger" });
-    expect(rulesOf(reseal(ledger))).toContain("C9 refused[0].item");
+    expect(rulesOf(reseal(ledger))).toContain(`C9 items[${itemIndex(ledger, "ledger")}]`);
     const repeated = loose(SETUP);
     repeated.refused.push({ ...repeated.refused[0] });
     expect(rulesOf(reseal(repeated))).toContain("C8 refused[1]");

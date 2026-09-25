@@ -203,7 +203,8 @@ describe("apply-bundle contract: report and planned modes (A5-A7)", () => {
     const unauthorized = loose(PLANNED);
     unauthorized.snapshot = { path: "clossys/.state/apply/registry-snapshot.json", digest: SET.planDigest };
     unauthorized.authorization = null;
-    expect(rules(unauthorized)).toEqual(["A7 authorization"]);
+    // A snapshot with no authorization also lacks the A4 authorization-absent check on each computed repository.
+    expect(rules(unauthorized)).toEqual(["A4 repositories[0].checks", "A4 repositories[1].checks", "A7 authorization"]);
     const noPackages = loose(PLANNED);
     noPackages.authorization = null;
     expect(rules(noPackages)).toEqual([]);
