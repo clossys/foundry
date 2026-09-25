@@ -239,7 +239,11 @@ only the fields the contract declares: a field it does not declare is
 reported at the object that holds it, by its 1-based position there, as
 in `brief.roles[0].goal has a field the contract does not declare (key 3
 of this object), and unknown fields are refused`, never by its own name,
-because a key is document text and can carry anything.
+because a key is document text and can carry anything. Keys are counted in
+the order the file wrote them when this package's plan or snapshot bins
+read the file; a value a caller passes to a validator directly is
+counted in JavaScript's own key order, which lists array-index keys such
+as `"7"` first.
 
 A brief may carry `staffedHere` (issue #1178): the roles staffed in the one
 repository it is written to, in plan order. `toEngagementBrief()` builds the
@@ -436,8 +440,11 @@ that starts with a byte order mark. A syntax error is reported by position
 only, never quoting the file's text, and a repeated key by position too,
 never by name: `repeats a key (key 2 of the object at position 57); every
 key may appear once` gives the key's 1-based position in its object and
-that object's character position (a key repeated at the top level is in
-`the top-level object`) (#1475).
+that object's position (a key repeated at the top level is in `the
+top-level object`) (#1475). A position, in this and every other strict-JSON
+message, is a 0-based index into the decoded text in UTF-16 code units
+(JavaScript's string index): it equals the byte offset only for ASCII
+text, and a character outside the Basic Multilingual Plane counts as two.
 
 ## Exact packages from a registry snapshot (issue #1178)
 
@@ -553,8 +560,8 @@ with the names, or `1` for a plan it refuses. `advisor-resolve-packages`
 exits `0` when resolved (warnings included), `1` for a violation, and `2`
 for an indeterminate result. Both exit `2` for a usage error or an
 unreadable file; that message names the input (the plan file or the
-snapshot file) and, for a syntax error, the character position, never the
-file's path or text.
+snapshot file) and, for a syntax error, the position (as defined above),
+never the file's path or text.
 
 ## Kit verdicts (issue #1177)
 

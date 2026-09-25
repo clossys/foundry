@@ -192,6 +192,21 @@ describe("no key text in any contract message, path or error", () => {
     // The same value built in memory has no file order: its own key order is used.
     expect(messages(validateAdvisorPlan(JSON.parse(text)))).toEqual([`plan ${UNDECLARED(1)}`]);
   });
+
+  it("lists undeclared fields in the order the file wrote them, and in JavaScript's order for a value built in memory", () => {
+    const text = `{"zz":1,${JSON.stringify(PLAN).slice(1, -1)},"7":1}`;
+    const written = Object.keys(PLAN).length + 2;
+    expect(messages(validateAdvisorPlan(readContractDocument(bytes(text))))).toEqual([`plan ${UNDECLARED(1)}`, `plan ${UNDECLARED(written)}`]);
+    // JavaScript lists "7" first and "zz" second, so that is the order, and the numbering, of a value not read from a file.
+    expect(messages(validateAdvisorPlan(JSON.parse(text)))).toEqual([`plan ${UNDECLARED(1)}`, `plan ${UNDECLARED(2)}`]);
+  });
+
+  it("gives every position as a 0-based UTF-16 code-unit index, not a byte offset", () => {
+    // U+1F600 is 2 UTF-16 code units and 4 UTF-8 bytes, so each position below is 2 less than the byte offset.
+    const emoji = String.fromCodePoint(0x1f600);
+    expect(refusal(`{"a":"${emoji}",}`)).toMatchObject({ reason: "syntax", position: 10, message: "is not valid JSON at position 10" });
+    expect(refusal(`{"x":"${emoji}","o":{"a":1,"a":2}}`)).toMatchObject({ reason: "repeated-key", message: "repeats a key (key 2 of the object at position 14); every key may appear once" });
+  });
 });
 
 describe("no key text through the bins", () => {

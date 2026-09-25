@@ -363,13 +363,19 @@ character, and an item of `inputsFrom`, `outputsTo`, `sequence` or
 fault and never echoes its value, and never names a key the contracts do
 not declare: such a field is reported at the object that holds it, by its
 1-based position there (`plan.mandate has a field the contract does not
-declare (key 4 of this object), and unknown fields are refused`).
+declare (key 4 of this object), and unknown fields are refused`), counted
+in the order the file wrote the keys when `launcher-apply-plan` reads it; a
+value a caller passes to a validator directly is counted in JavaScript's
+own key order, which lists array-index keys such as `"7"` first.
 `launcher-apply-plan` reads both files as strict JSON: bytes that are not
 valid UTF-8, a leading byte order mark, or an object that repeats a key at
 any depth exit `2`, with a repeated key reported by its position in its
-object and, below the top level, that object's character position, never
-by name, and a syntax error by position only, never quoting the file's
-text, so the value validated is exactly the one a reader of the file sees.
+object and, below the top level, that object's position, never by name,
+and a syntax error by position only, never quoting the file's text, so the
+value validated is exactly the one a reader of the file sees. A position is
+a 0-based index into the decoded text in UTF-16 code units (JavaScript's
+string index): the byte offset for ASCII text, with a character outside
+the Basic Multilingual Plane counting as two.
 A plan may say which roles work in which repository (`staffing`, by
 repository inventory id), which kits were recommended (`kits`), which exact
 package acts are authorized (`packages`, each one exact version and one

@@ -170,19 +170,20 @@ function declaredPath(path: string, name: string): string {
 const WRITTEN_KEY_ORDER = new WeakMap<object, readonly string[]>();
 
 /**
- * Each of `record`'s keys, mapped to its 1-based position: as the file
- * wrote them when `record` came from `readContractDocument()` and still has
- * exactly the keys it was read with, else in the object's own key order.
- * Linear in the number of keys, however many of them are undeclared.
+ * `record`'s keys in the order the checker visits them, which is also the
+ * order their 1-based positions count in: as the file wrote them when
+ * `record` came from `readContractDocument()` and still has exactly the keys
+ * it was read with, else the object's own key order (JavaScript's, which
+ * lists array-index keys such as "7" first). Linear in the number of keys.
  */
-function keyOrdinals(record: object): ReadonlyMap<string, number> {
+function keyOrder(record: object): readonly string[] {
   const own = Object.keys(record);
   const written = WRITTEN_KEY_ORDER.get(record);
   if (written !== undefined && written.length === own.length) {
-    const ordinals = new Map(written.map((key, index) => [key, index + 1]));
-    if (own.every((key) => ordinals.has(key))) return ordinals;
+    const writtenSet = new Set(written);
+    if (own.every((key) => writtenSet.has(key))) return written;
   }
-  return new Map(own.map((key, index) => [key, index + 1]));
+  return own;
 }
 
 const TYPE_NOUNS: Readonly<Record<string, string>> = {
@@ -267,24 +268,21 @@ function check(input: ContractSchema, value: unknown, inputScope: Scope, path: s
   if (kind === "object") {
     const record = value as Record<string, unknown>;
     const properties = (schema.properties ?? {}) as Record<string, ContractSchema>;
-    let ordinals: ReadonlyMap<string, number> | undefined;
     for (const name of (schema.required ?? []) as string[]) {
       if (!Object.hasOwn(record, name)) violations.push({ path: declaredPath(path, name), message: "is required" });
     }
-    for (const [name, child] of Object.entries(record)) {
+    keyOrder(record).forEach((name, index) => {
+      const child = record[name];
       if (LONE_SURROGATE.test(name)) {
         // The key itself is never echoed (see the header), and this one cannot even be written as UTF-8.
         violations.push({ path, message: `has a key that ${NOT_WELL_FORMED}` });
-        continue;
+        return;
       }
       if (Object.hasOwn(properties, name)) violations.push(...check(properties[name] as ContractSchema, child, scope, declaredPath(path, name)));
       // The key is document text, so it is never named: the violation is
       // placed at the object that holds it, with the key's position there.
-      else if (schema.additionalProperties === false) {
-        ordinals ??= keyOrdinals(record);
-        violations.push({ path, message: undeclaredFieldMessage(ordinals.get(name)!) });
-      }
-    }
+      else if (schema.additionalProperties === false) violations.push({ path, message: undeclaredFieldMessage(index + 1) });
+    });
   }
   if (Array.isArray(schema.oneOf)) violations.push(...checkOneOf(schema.oneOf as ContractSchema[], value, scope, path, schema.title));
   if (Array.isArray(schema.allOf)) for (const branch of schema.allOf as ContractSchema[]) violations.push(...check(branch, value, scope, path));
@@ -318,8 +316,10 @@ function checkOneOf(branches: readonly ContractSchema[], value: unknown, scope: 
 }
 
 /**
- * Every violation of `value` against `contract`, in document order; empty
- * when it conforms. Never throws for a bad value. Throws only when the
+ * Every violation of `value` against `contract`; empty when it conforms.
+ * Within an object, a missing required field comes first, then each
+ * present key's violations in the order the keys were written (see
+ * `keyOrder()`), then any from `oneOf`, `allOf` and `not`. Never throws for a bad value. Throws only when the
  * contract itself uses a keyword this checker does not implement, or a
  * `$ref` it cannot resolve -- a defect in the contract, not in the value.
  */
@@ -342,11 +342,15 @@ const JSON_ESCAPE = /\\(?:["\\/bfnrt]|u[0-9a-fA-F]{4})/y;
 /**
  * Why `readContractDocument()` refused a file, as data a caller can act on
  * without parsing the message: `reason` says which rule failed, and
- * `position` (a character index, never file text) is set only for a syntax
- * error or a leading byte order mark. The message carries no file text
- * either: a repeated key is named by its 1-based position in its object,
- * and that object as the top-level object or by its character position,
- * never by any key.
+ * `position` (never file text) is set only for a syntax error or a leading
+ * byte order mark. The message carries no file text either: a repeated key
+ * is named by its 1-based position in its object, and that object as the
+ * top-level object or by its position, never by any key.
+ *
+ * A position, here and in every message, is a 0-based index into the
+ * decoded text in UTF-16 code units: JavaScript's string index. It equals
+ * the byte offset only for ASCII text; a character outside the Basic
+ * Multilingual Plane (an emoji, say) counts as two.
  */
 export class ContractDocumentError extends Error {
   constructor(
@@ -485,9 +489,10 @@ function recordWrittenKeyOrder(value: unknown, keyOrders: readonly string[][], n
  * with a byte order mark, exactly one JSON value, and no object that repeats a key at any depth -- the I-JSON rules
  * RFC 8785 canonicalization assumes. Refuses bytes that break a rule with a
  * ContractDocumentError whose message says which rule, by position only: a
- * syntax error by character position, a repeated key by its 1-based
- * position in its object and that object's character position (or "the
- * top-level object") -- never any text from the file. It does not validate the value against a contract; call
+ * syntax error by its position (a UTF-16 code-unit index, see
+ * ContractDocumentError), a repeated key by its 1-based position in its
+ * object and that object's position (or "the top-level object") -- never
+ * any text from the file. It does not validate the value against a contract; call
  * `validateAgainstContract()` next, which then numbers an undeclared field
  * by its position as written in the file.
  */
