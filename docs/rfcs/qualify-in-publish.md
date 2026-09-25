@@ -331,7 +331,7 @@ required check) stays only if it is wanted for itself.
 | New anchor job | Finds the release merge commit, creates `release/<date>`, dispatches `publish.yml`. Runs no package code. | 3 |
 | `ci.yml` `build and test` fan-in | Gains the release-PR cohort qualification (report-only for one release) and the evidence re-derivation check. | 3, 4 |
 | `.github/workflows/release-pr.yml`, `scripts/apply-release-changesets.mjs` | Bump only shipping packages; write no deferrals; open the PR with the App token. | 4 |
-| `.github/workflows/qualify-candidate.yml` | Job split now (#1480); **deleted** at phase 5. Diagnosis uses `publish.yml` with `dry_run: true` (D6). | 0, 5 |
+| `.github/workflows/qualify-candidate.yml` | Job split now (#1480). Deleting it at phase 5 and diagnosing with `publish.yml` `dry_run: true` is the recommendation; D6 is open until the owner confirms (8.1). | 0, 5 |
 | `auto-qualify.yml`, `select-unqualified-packages.mjs`, `filter-qualification-dispatch.mjs` | Stop re-dispatching a known-failing candidate (#1476); stopped at phase 1; **deleted** at phase 5. | 0, 1, 5 |
 | `generate-qualification-record.mjs`, `check-qualification-record-present.mjs` and the `publish.yml:136-149` preflight | **Deleted.** Reproducibility moves to `reproduce`. | 5 |
 | `check-qualification-record-required.mjs` and its required context | Report-only under the same name from phase 1; context removed from the ruleset by the owner at phase 5 (R10), then deleted. | 1, 5 |
@@ -519,9 +519,9 @@ Only the owner can do these. No phase that needs one lands before it is done.
 | 0 | None. |
 | 1 | None new. Publish approvals as today. |
 | 2 | None new. One approval per release set replaces one per package. |
-| 3 | Allow `release/*` tags in the `npm-publish` environment's deployment rule. Create a tag ruleset protecting `release/*`, with creation limited to the anchor job's identity. After the phase 3 gate passes, remove `refs/heads/main` from the `npm-publish` environment's deployment rule. |
+| 3 | Allow `release/*` tags in the `npm-publish` environment's deployment rule. Create a tag ruleset protecting `release/*`, with creation limited to the identity the anchor job uses (`GITHUB_TOKEN` until phase 4, then the App; see below). After the phase 3 gate passes, remove `refs/heads/main` from the `npm-publish` environment's deployment rule. |
 | 4 | Create the GitHub App: this repository only, contents and pull-requests write. Install it and store its credentials as repository secrets. |
-| 5 | Remove `qualification record required (version bump vs. retained record)` from the `main` ruleset, after one report-only release. Say whether the Saturday cadence stays. |
+| 5 | Remove `qualification record required (version bump vs. retained record)` from the `main` ruleset, after one report-only release. Say whether the Saturday cadence stays. Confirm D6: delete `qualify-candidate.yml`, or keep it. |
 | 6 | Decide whether third-party verification is wanted before any attestation job is added. |
 
 **Phase 3 anchor identity.** Until the GitHub App arrives in phase 4, the
