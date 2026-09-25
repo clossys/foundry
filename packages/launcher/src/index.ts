@@ -27,7 +27,7 @@ export {
 } from "./core.js";
 export type { CloneMissingOutcome, InventoryValidation } from "./core.js";
 export { runDoctorChecks, renderDoctorReport } from "./doctor.js";
-export { applyEngagementBrief, approvedSubject, validateAdvisorPlan, validateEngagementBrief } from "./apply-plan.js";
+export { applyEngagementBrief, approvedSubject, isPlanApproved, validateAdvisorPlan, validateEngagementBrief } from "./apply-plan.js";
 export type {
   AdvisorPlan, ApplyBriefResult, BlockerKind, EngagementBrief, EngagementBriefRole, EngagementContext, EngagementContextField, EngagementContextFieldId, GoalDirection, PlanBlocker,
   PlanDecision, PlanKit, PlanPackageAct, PlanStaffing, ValidationResult,

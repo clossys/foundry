@@ -25,11 +25,13 @@ hexadecimal digits of the SHA-256 hash of the UTF-8 bytes of
    digested could differ from the one a reader of the file sees. The plan
    must then validate against `advisor-plan.json`, which also refuses a lone
    surrogate in any string, so every valid plan has a digest. Validating
-   includes the code rules R1 to R8 that the contract's description defines
-   (issue #1178). Each of them relates fields a plan without `kits`,
-   `staffing`, `packages` or `resolution` does not have, so they refuse no
-   such plan, and every plan that had a digest before they were added has
-   the same digest now. An implementation refuses (throws) rather than
+   includes the code rules R1 to R9 that the contract's description defines
+   (issue #1178). R1 to R8 relate fields a plan without `kits`, `staffing`,
+   `packages` or `resolution` does not have, so they refuse no such plan.
+   R9 refuses a plan that names one role twice in `mandate.roles`, which
+   used to validate; such a plan no longer has a digest. Every other plan
+   that had a digest before the rules were added has the same digest now,
+   because the computation below is unchanged. An implementation refuses (throws) rather than
    digest a plan that does not validate.
 2. **`subject(plan)` is the plan without its top-level `asOf` and `decisions`
    members.** Every other member is kept exactly as it is, including every

@@ -179,10 +179,11 @@ function section(title: string, body: readonly string[]): string {
  * plan that is not an object has none), and `message` says what is wrong
  * with it without echoing its value.
  *
- * Once the schema passes, the contract's code rules R1-R8 run too (issue
+ * Once the schema passes, the contract's code rules R1-R9 run too (issue
  * #1178; see `planRuleViolations()`): staffing and package entries that
- * repeat, and joins between staffing, the mandate and packages. Each of
- * those findings has the rule `advisor-plan-rule-r1` to `-r8` and a `path`.
+ * repeat, a mandate role named twice, and joins between staffing, the mandate
+ * and packages. Each of
+ * those findings has the rule `advisor-plan-rule-r1` to `-r9` and a `path`.
  */
 export function validateAdvisorPlan(value: unknown): AdvisorFinding[] {
   const findings = contractFindings("advisor-plan.json", "advisor-plan-contract", "plan", value);

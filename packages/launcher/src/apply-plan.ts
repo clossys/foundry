@@ -80,12 +80,21 @@ export function approvedSubject(plan: AdvisorPlan): string | null {
 }
 
 /**
- * The legacy brief-only path's approval test, kept exactly as it was: the
- * latest decision (every one at that instant) has chosen "approved", with or
- * without a `subjectDigest`. It binds no bytes, which is why nothing but
- * `applyEngagementBrief()` uses it and nothing new may.
+ * The plan is approved when its most recent decision (by `at`) records
+ * chosen === "approved". No decisions, or a most-recent decision that
+ * isn't "approved", is not approved -- this never assumes approval from
+ * absence. Fails closed on anything that would let array order decide
+ * instead of time: a decision whose `at` does not parse to a finite time
+ * (the plan contract already refuses one; this does not rely on that), or
+ * two decisions at the same latest instant that do not all say "approved".
+ *
+ * It binds no bytes (#1178): it does not look at `subjectDigest`, so it is
+ * true for an approval that names no change at all. It says only that the
+ * latest decision is an approval. Anything that applies a plan must use
+ * `approvedSubject()` instead, and compare the subject it returns with the
+ * digest of the change it holds.
  */
-function latestDecisionApproves(plan: AdvisorPlan): boolean {
+export function isPlanApproved(plan: AdvisorPlan): boolean {
   const latest = latestDecisions(plan);
   return latest !== null && latest.every((decision) => decision.chosen === "approved");
 }
@@ -103,8 +112,9 @@ export type ApplyBriefResult =
  *
  * LEGACY (#1178): this path predates the approval binding. It accepts an
  * approval whether or not it carries a `subjectDigest` and checks no
- * binding, exactly as before; it is kept working, not extended. Anything
- * that must know what an approval binds uses `approvedSubject()`.
+ * binding (it uses `isPlanApproved()`), exactly as before; it is kept
+ * working, not extended. Anything that must know what an approval binds uses
+ * `approvedSubject()`.
  */
 export function applyEngagementBrief(
   host: WorkspaceHost,
@@ -117,7 +127,7 @@ export function applyEngagementBrief(
   if (!planValidation.valid) {
     return { state: "refused", reason: `plan does not validate: ${planValidation.reason}` };
   }
-  if (!latestDecisionApproves(plan)) {
+  if (!isPlanApproved(plan)) {
     return { state: "refused", reason: "the plan's most recent decision is not \"approved\", or decisions made at that same time disagree" };
   }
   const validation = validateEngagementBrief(brief);

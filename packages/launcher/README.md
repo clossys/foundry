@@ -248,8 +248,9 @@ Exit codes preserve the ternary:
 | `parsePreferences()` | Reads `clossys/preferences.json`'s budget stance; defaults to `"balanced"` on absence or malformed input. |
 | `readHostModelProfile()` | Reads a packed `model-profiles/<host>.json`; returns `undefined`, never throws, on a missing or malformed file. |
 | `resolveModelForTier()` | Resolves a tier and budget preference to one model name for a host, reporting `belowFloor` rather than silently substituting a weaker tier's model. |
-| `validateAdvisorPlan()` / `validateEngagementBrief()` | Validation of `clossys/advisor/plan.json` and `clossys/brief.json` (with its `context` snapshot) against the shared plan and brief contracts Advisor also validates against, including the contracts' code rules (R1-R8 for a plan, B1-B2 for a brief). Unknown fields are refused; the reason names every field at fault. |
-| `approvedSubject()` | What an approval binds: the `subjectDigest` of the plan's latest decision (by timestamp) when that decision has `chosen === "approved"`, else `null`. `null` when the approval has no `subjectDigest`, when decisions at the latest time disagree or name different subjects, or when any decision time does not parse. Replaces `isPlanApproved()`. |
+| `validateAdvisorPlan()` / `validateEngagementBrief()` | Validation of `clossys/advisor/plan.json` and `clossys/brief.json` (with its `context` snapshot) against the shared plan and brief contracts Advisor also validates against, including the contracts' code rules (R1-R9 for a plan, B1-B2 for a brief). Unknown fields are refused; the reason names every field at fault. |
+| `approvedSubject()` | What an approval binds: the `subjectDigest` of the plan's latest decision (by timestamp) when that decision has `chosen === "approved"`, else `null`. `null` when the approval has no `subjectDigest`, when decisions at the latest time disagree or name different subjects, or when any decision time does not parse. Anything that applies a plan uses this, never `isPlanApproved()`. |
+| `isPlanApproved()` | True only when a plan's most recent decision (by timestamp) has `chosen === "approved"`. False when decisions at that latest time disagree, or when any decision time does not parse. It binds no bytes: it ignores `subjectDigest`, so it is also true for an approval that names no change. |
 | `applyEngagementBrief()` | Writes `clossys/brief.json` into a repository directory once the plan validates and is approved and the brief validates; refuses and writes nothing otherwise. Reports the plan's canonical digest. |
 | `planDigest()` / `canonicalJson()` / `PLAN_DIGEST_EXCLUDED_FIELDS` | The canonical plan digest: `sha256:` over the RFC 8785 canonical JSON of the plan without `asOf` and `decisions`. Identical to Advisor's for every plan. |
 | `CloneMissingOutcome` / `DoctorCheckHost` / `DoctorReport` / `DoctorStepId` / `DoctorStepResult` / `CloudBootstrapCheck` / `CloudBootstrapReport` / `ExternalInventoryDeclaration` / `InventoryDriftReport` / `DiscoveredHost` / `HostRecord` / `BudgetPreference` / `HostModelProfile` / `HostTierMapping` / `ModelResolution` / `PreferencesDocument` / `ReasoningTier` / `SupportedHost` / `AdvisorPlan` / `ApplyBriefResult` / `BlockerKind` / `EngagementBrief` / `EngagementBriefRole` / `EngagementContext` / `EngagementContextField` / `EngagementContextFieldId` / `GoalDirection` / `PlanBlocker` / `PlanDecision` / `PlanKit` / `PlanPackageAct` / `PlanStaffing` / `ValidationResult` | Typed contracts for the sections above. |
@@ -367,8 +368,9 @@ run: no repository is staffed twice (ids compare case-insensitively),
 staffed roles and the mandate's roles agree in both directions, every
 package act names a staffed repository spelled exactly the same, no
 `planItem` repeats, no package appears twice in one repository,
-`resolution` is present exactly when `packages` is, no kit id repeats, and
-no role repeats within one staffing entry. A brief's optional `staffedHere`
+`resolution` is present exactly when `packages` is, no kit id repeats, no
+role repeats within one staffing entry, and no role is named twice in
+`mandate.roles`. A brief's optional `staffedHere`
 must name only the brief's own roles, each once. This package implements
 those rules separately from Advisor, and both are tested against the same
 corpus, `docs/contracts/advisor-plan-rules.fixture.json` (in the public
@@ -380,10 +382,14 @@ does no decision at all, a decision time that does not parse, or a tie at
 the latest instant between decisions that disagree or name different
 subjects. It says what was approved, not that it matches: a caller must
 recompute the digest of the change it holds and compare.
+`isPlanApproved()` reads the same most recent decision and is true when it
+is `"approved"`, with the same rules for ties and unreadable times, but it
+binds no bytes: it ignores `subjectDigest`, so it is also true for an
+approval that names no change. Anything that applies a plan must use
+`approvedSubject()` instead.
 `applyEngagementBrief()` and `launcher-apply-plan` are the brief-only path,
 which predates that binding and is kept as it was, not extended: they
-require the most recent decision to be `"approved"`, with the same rules
-for ties and unreadable times, and accept it with or without a
+require `isPlanApproved()` and accept an approval with or without a
 `subjectDigest`, checking no binding.
 `applyEngagementBrief()` refuses, and writes nothing, unless all three
 checks pass and the plan's digest is computed; only then does it write the brief byte-identically -- it never re-authors

@@ -344,12 +344,13 @@ prerelease or build suffix, and one `sha512-` integrity value each) and
 A decision (`AdvisorPlanDecision`) may carry `subjectDigest`.
 Once the schema passes, `validateAdvisorPlan()` applies the code rules the
 contract's description defines, each finding with the rule
-`advisor-plan-rule-r1` to `-r8` and a `path`: no repository staffed twice
+`advisor-plan-rule-r1` to `-r9` and a `path`: no repository staffed twice
 (ids compare case-insensitively); staffed roles and `mandate.roles` agree in
 both directions; every package act names a staffed repository, spelled
 exactly the same; no `planItem` repeats; no package appears twice in one
 repository; `resolution` is present exactly when `packages` is; no kit id
-repeats; and no role repeats within one staffing entry. A plan that breaks
+repeats; no role repeats within one staffing entry; and no role is named
+twice in `mandate.roles`. A plan that breaks
 one has no digest. Launcher implements the same rules separately, and both
 packages are tested against one shared corpus,
 [`docs/contracts/advisor-plan-rules.fixture.json`](https://github.com/clossys/foundry/blob/main/docs/contracts/advisor-plan-rules.fixture.json)

@@ -1,7 +1,7 @@
 // The plan and brief contracts' code rules (issue #1178): the checks the
 // contracts' JSON Schema keywords cannot express, because each one relates one
 // field to another. They are defined once, as prose in the descriptions of
-// the shared contracts docs/contracts/advisor-plan.json (R1-R8) and
+// the shared contracts docs/contracts/advisor-plan.json (R1-R9) and
 // engagement-brief.json (B1-B2) -- in the public repository, not shipped in
 // this package. @clossys/advisor implements the same rules separately; both
 // packages are tested against one corpus,
@@ -15,8 +15,8 @@
 
 import type { AdvisorPlan, EngagementBrief } from "./plan-contract.js";
 
-/** A code rule of the plan contract (R1-R8) or the brief contract (B1-B2). */
-export type ContractRuleId = "R1" | "R2" | "R3" | "R4" | "R5" | "R6" | "R7" | "R8" | "B1" | "B2";
+/** A code rule of the plan contract (R1-R9) or the brief contract (B1-B2). */
+export type ContractRuleId = "R1" | "R2" | "R3" | "R4" | "R5" | "R6" | "R7" | "R8" | "R9" | "B1" | "B2";
 
 export interface ContractRuleViolation {
   readonly rule: ContractRuleId;
@@ -31,7 +31,7 @@ function firstEarlier(keys: readonly string[]): number[] {
   return keys.map((key, index) => keys.indexOf(key) === index ? -1 : keys.indexOf(key));
 }
 
-/** Every violation of R1-R8, for a plan that already passed the plan contract's schema. */
+/** Every violation of R1-R9, for a plan that already passed the plan contract's schema. */
 export function planRuleViolations(plan: AdvisorPlan): ContractRuleViolation[] {
   const out: ContractRuleViolation[] = [];
   const staffing = plan.staffing;
@@ -94,6 +94,11 @@ export function planRuleViolations(plan: AdvisorPlan): ContractRuleViolation[] {
     firstEarlier(entry.roles).forEach((earlier, position) => {
       if (earlier >= 0) out.push({ rule: "R8", path: `staffing[${index}].roles[${position}]`, message: `repeats staffing[${index}].roles[${earlier}]` });
     });
+  });
+
+  // R9: no role twice in mandate.roles.
+  firstEarlier(plan.mandate.roles).forEach((earlier, position) => {
+    if (earlier >= 0) out.push({ rule: "R9", path: `mandate.roles[${position}]`, message: `repeats mandate.roles[${earlier}]` });
   });
   return out;
 }

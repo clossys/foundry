@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { applyEngagementBrief, approvedSubject, validateAdvisorPlan, validateEngagementBrief, type AdvisorPlan, type EngagementBrief, type EngagementContext } from "./apply-plan.js";
+import { applyEngagementBrief, approvedSubject, isPlanApproved, validateAdvisorPlan, validateEngagementBrief, type AdvisorPlan, type EngagementBrief, type EngagementContext } from "./apply-plan.js";
 import type { WorkspaceHost } from "./types.js";
 
 /** The shared digest corpus (docs/contracts/advisor-plan-digest.fixture.json); @clossys/advisor is tested against the same file. */
@@ -231,7 +231,7 @@ describe("plan times through Launcher's generated checker copy (#1475)", () => {
     expect(validateAdvisorPlan(withByWhen("2028-02-29"))).toEqual({ valid: true });
   });
 
-  it("refuses the NaN-ordering repro at validation, in approvedSubject, and in applyEngagementBrief", () => {
+  it("refuses the NaN-ordering repro at validation, in isPlanApproved and approvedSubject, and in applyEngagementBrief", () => {
     const plan = {
       ...ADVISOR_SHAPED_PLAN,
       decisions: [
@@ -240,6 +240,7 @@ describe("plan times through Launcher's generated checker copy (#1475)", () => {
       ],
     };
     expect(validateAdvisorPlan(plan)).toEqual({ valid: false, reason: "plan.decisions[1].at must be a real ISO 8601 date-time with a time zone, such as 2026-09-24T12:00:00Z" });
+    expect(isPlanApproved(plan)).toBe(false);
     expect(approvedSubject({ ...plan, decisions: plan.decisions.map((decision) => ({ ...decision, subjectDigest: SUBJECT })) })).toBeNull();
     const host = fakeHost();
     expect(applyEngagementBrief(host, "/repo", plan, VALID_BRIEF, "clossys/brief.json").state).toBe("refused");
@@ -267,6 +268,61 @@ describe("whitespace-only brief strings and escaped keys (#1475)", () => {
   it("names an unknown key with control characters escaped, never raw", () => {
     const result = validateEngagementBrief({ ...VALID_BRIEF, "\u001b[2J": 1 });
     expect(result).toEqual({ valid: false, reason: 'brief["\\u001b[2J"] is not a field the contract declares, and unknown fields are refused' });
+  });
+});
+
+describe("isPlanApproved", () => {
+  it("is approved when the most recent decision's chosen is 'approved'", () => {
+    expect(isPlanApproved(VALID_PLAN)).toBe(true);
+  });
+
+  it("is not approved when there are no decisions -- never assumed from absence", () => {
+    expect(isPlanApproved({ ...VALID_PLAN, decisions: [] })).toBe(false);
+  });
+
+  it("is not approved when the most recent decision is something other than 'approved'", () => {
+    const plan = { ...VALID_PLAN, decisions: [{ at: "2026-09-20T00:00:00Z", recommended: "x", chosen: "deferred", by: "sponsor" }] };
+    expect(isPlanApproved(plan)).toBe(false);
+  });
+
+  it("is not approved when any decision's time does not parse, whatever the array order", () => {
+    const plan = {
+      ...VALID_PLAN,
+      decisions: [
+        { at: "2026-09-25T00:00:00Z", recommended: "x", chosen: "rejected", by: "sponsor" },
+        { at: "not a time", recommended: "x", chosen: "approved", by: "sponsor" },
+      ],
+    };
+    expect(isPlanApproved(plan)).toBe(false);
+  });
+
+  it("is not approved when two decisions share the latest instant and they disagree", () => {
+    const tied = (first: string, second: string) => ({
+      ...VALID_PLAN,
+      decisions: [
+        { at: "2026-09-25T02:00:00+02:00", recommended: "x", chosen: first, by: "sponsor" },
+        { at: "2026-09-25T00:00:00Z", recommended: "x", chosen: second, by: "sponsor" },
+      ],
+    });
+    expect(isPlanApproved(tied("rejected", "approved"))).toBe(false);
+    expect(isPlanApproved(tied("approved", "rejected"))).toBe(false);
+    expect(isPlanApproved(tied("approved", "approved"))).toBe(true);
+  });
+
+  it("uses the MOST RECENT decision by timestamp, not the array's last entry, when they differ", () => {
+    const plan = {
+      ...VALID_PLAN,
+      decisions: [
+        { at: "2026-09-22T00:00:00Z", recommended: "x", chosen: "approved", by: "sponsor" },
+        { at: "2026-09-20T00:00:00Z", recommended: "y", chosen: "deferred", by: "sponsor" },
+      ],
+    };
+    expect(isPlanApproved(plan)).toBe(true);
+  });
+
+  it("binds no bytes: it is true for an approval with no subjectDigest, where approvedSubject is null (#1178)", () => {
+    expect(isPlanApproved(VALID_PLAN)).toBe(true);
+    expect(approvedSubject(VALID_PLAN)).toBeNull();
   });
 });
 

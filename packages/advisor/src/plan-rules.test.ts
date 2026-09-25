@@ -4,7 +4,7 @@ import { planDigest, validateAdvisorPlan, validateEngagementBrief } from "./inde
 import type { AdvisorFinding, AdvisorPlan } from "./index.js";
 
 /*
- * Issue #1178: the plan and brief contracts' code rules (R1-R8, B1-B2),
+ * Issue #1178: the plan and brief contracts' code rules (R1-R9, B1-B2),
  * defined once in the contracts' descriptions and checked here against the
  * shared corpus docs/contracts/advisor-plan-rules.fixture.json.
  * @clossys/launcher implements the same rules separately and is tested
@@ -23,7 +23,7 @@ const CORPUS = JSON.parse(readFileSync(new URL("../../../docs/contracts/advisor-
 
 /** A finding as the corpus writes it: "schema" for the contract's keywords, else the code rule's id. */
 function asExpected(finding: AdvisorFinding): Expected {
-  const rule = /^(?:advisor-plan|engagement-brief)-rule-([rb][1-8])$/.exec(finding.rule);
+  const rule = /^(?:advisor-plan|engagement-brief)-rule-([rb][1-9])$/.exec(finding.rule);
   if (rule) return { rule: rule[1]!.toUpperCase(), path: finding.path ?? "" };
   expect(["advisor-plan-contract", "engagement-brief-contract"]).toContain(finding.rule);
   return { rule: "schema", path: finding.path ?? "" };
@@ -43,7 +43,7 @@ function at(document: unknown, path: string): unknown {
 describe("the shared rules corpus", () => {
   it("covers every code rule with at least one refused case, and has accepted cases for plans and briefs", () => {
     const rules = new Set([...CORPUS.plans, ...CORPUS.briefs].flatMap((entry) => entry.violations.map((violation) => violation.rule)));
-    for (const rule of ["R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "B1", "B2", "schema"]) expect(rules, rule).toContain(rule);
+    for (const rule of ["R1", "R2", "R3", "R4", "R5", "R6", "R7", "R8", "R9", "B1", "B2", "schema"]) expect(rules, rule).toContain(rule);
     expect(CORPUS.plans.some((entry) => entry.violations.length === 0)).toBe(true);
     expect(CORPUS.briefs.some((entry) => entry.violations.length === 0)).toBe(true);
   });

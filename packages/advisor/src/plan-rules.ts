@@ -18,8 +18,8 @@ import type { AdvisorPlan } from "./status.js";
  * text.
  */
 
-/** A code rule of the plan contract (R1-R8) or the brief contract (B1-B2). */
-export type ContractRuleId = "R1" | "R2" | "R3" | "R4" | "R5" | "R6" | "R7" | "R8" | "B1" | "B2";
+/** A code rule of the plan contract (R1-R9) or the brief contract (B1-B2). */
+export type ContractRuleId = "R1" | "R2" | "R3" | "R4" | "R5" | "R6" | "R7" | "R8" | "R9" | "B1" | "B2";
 
 export interface ContractRuleViolation {
   readonly rule: ContractRuleId;
@@ -40,7 +40,7 @@ function eachRepeat<T>(items: readonly T[], key: (item: T) => string, onRepeat: 
   });
 }
 
-/** Every violation of the plan contract's code rules R1-R8, for a plan that already passed the schema. */
+/** Every violation of the plan contract's code rules R1-R9, for a plan that already passed the schema. */
 export function planRuleViolations(plan: AdvisorPlan): ContractRuleViolation[] {
   const violations: ContractRuleViolation[] = [];
   const add = (rule: ContractRuleId, path: string, message: string) => violations.push({ rule, path, message });
@@ -84,6 +84,8 @@ export function planRuleViolations(plan: AdvisorPlan): ContractRuleViolation[] {
       add("R8", `staffing[${index}].roles[${position}]`, `repeats staffing[${index}].roles[${first}]`),
     ),
   );
+
+  eachRepeat(plan.mandate.roles, (role) => role, (position, first) => add("R9", `mandate.roles[${position}]`, `repeats mandate.roles[${first}]`));
   return violations;
 }
 
