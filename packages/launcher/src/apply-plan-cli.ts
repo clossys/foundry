@@ -129,7 +129,7 @@ ${REGISTRY_SNAPSHOT_REL} under the current directory (the hub).
 This is the only step of applying a plan that reads the package registry. Messages
 name packages and positions only, never a response's content.
 
-Exit codes: 0 = the snapshot was written, 2 = no snapshot was written
+Exit codes: 0 = the snapshot was written (or --help was shown), 2 = no snapshot was written
 (a usage error, an unreadable or invalid request, or any registry answer
 this step cannot record: a transport error, a timeout, a redirect, an
 answer other than 200 or 404, an oversize or non-JSON body, or a snapshot

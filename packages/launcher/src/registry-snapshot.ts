@@ -41,7 +41,7 @@ export const DEFAULT_TIMEOUT_MS = 30_000;
  */
 export type Transport = (input: URL, init: RequestInit) => Promise<Response>;
 
-/** Node's own `fetch`. It reads no npm configuration and adds no credential. */
+/** Node's own `fetch`. It reads no npm configuration and adds no registry credential (a proxy URL's own username and password, if any, go only to that proxy). */
 export const nodeFetchTransport: Transport = (input, init) => fetch(input, init);
 
 /** One version of a package, projected from the registry's document. */

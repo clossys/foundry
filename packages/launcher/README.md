@@ -513,8 +513,9 @@ registry said; it decides nothing from it. Deciding is
   `accept: application/json` and `accept-encoding: identity`, and never an
   `Authorization` header. The step does not run the npm CLI, and reads no
   `.npmrc` and no token from the environment. If Node is started with an
-  environment proxy (`NODE_USE_ENV_PROXY`), requests go through that proxy;
-  no credential is sent either way. A redirect is refused, never followed.
+  environment proxy (`NODE_USE_ENV_PROXY`), requests go through that proxy.
+  No registry credential is ever sent; a username and password written in
+  the proxy URL itself are sent only to that proxy, as Node's fetch does. A redirect is refused, never followed.
   `accept-encoding: identity` asks for the body uncompressed, so the size cap
   and `responseSha256` apply to the exact bytes received. A response body is
   read as a stream and abandoned as soon as it passes 10 MiB; a declared
