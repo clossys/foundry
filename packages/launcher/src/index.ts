@@ -41,6 +41,8 @@ export type {
   DependencyPlacement, DerivedFileChange, FileChange, KeyChange, LedgerInvariant, LockfileName, PackageInvariant, PackageManagerKind, PinnedPackage, RefusalReason,
   ReleaseAgeSurfaceKind, RepositoryChangeSet, RepositoryVisibility, WholeFileChange,
 } from "./change-set-contract.js";
+export { PUBLIC_PROBLEM_PLACEHOLDER, planApplyBundle, projectEngagementBrief, serializeEngagementBrief } from "./plan-bundle.js";
+export type { PlanApplyBundleInputs, PlanApplyBundleResult, RepositoryObservation, SkippedRepositoryObservation } from "./plan-bundle.js";
 export type { DoctorCheckHost, DoctorReport, DoctorStepId, DoctorStepResult } from "./doctor.js";
 export { checkCloudSessionBootstrap } from "./product-repository.js";
 export type { CloudBootstrapCheck, CloudBootstrapReport } from "./product-repository.js";

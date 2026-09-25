@@ -253,10 +253,12 @@ Exit codes preserve the ternary:
 | `isPlanApproved()` | True only when a plan's most recent decision (by timestamp) has `chosen === "approved"`. False when decisions at that latest time disagree, or when any decision time does not parse. It binds no bytes: it ignores `subjectDigest`, so it is also true for an approval that names no change. |
 | `applyEngagementBrief()` | Writes `clossys/brief.json` into a repository directory once the plan validates and is approved and the brief validates; refuses and writes nothing otherwise. Reports the plan's canonical digest. |
 | `planDigest()` / `canonicalJson()` / `canonicalDigest()` / `PLAN_DIGEST_EXCLUDED_FIELDS` | The canonical plan digest: `sha256:` over the RFC 8785 canonical JSON of the plan without `asOf` and `decisions`. Identical to Advisor's for every plan. `canonicalDigest()` is the shared step: `sha256:` over the canonical JSON of any value, which the plan, change-set and bundle digests all use. |
+| `planApplyBundle()` | The pure apply planner: from a validated plan, the hub brief, observations of each staffed repository's default branch, the composed skill text, the producer version and the hub's Advisor pin, computes one change set per staffed repository and a report-mode bundle. Reads no file, network, process or clock; the same inputs give the same bytes. Throws, naming positions and never values, on inputs it cannot plan from. |
+| `projectEngagementBrief()` / `serializeEngagementBrief()` / `PUBLIC_PROBLEM_PLACEHOLDER` | One repository's brief: the hub brief with `staffedHere` set to that repository's roles in plan order, and `problem` replaced by the brief contract's fixed placeholder unless the repository is private, members in the brief contract's order at every depth; and the exact bytes written for it (two-space JSON and a final newline). |
 | `changeSetDigest()` / `changeSetDigestSubject()` / `CHANGE_SET_DIGEST_EXCLUDED_FIELDS` / `DERIVED_FILE_DIGEST_FIELDS` | The change-set digest: `canonicalDigest()` of the change set without `changeSetDigest`, `branch`, `bundle`, `pullRequest` and `inverse`, with each derived file reduced to `path`, `mode`, `derived`, `item` and `invariants`. |
 | `bundleDigest()` | The bundle digest an approval binds: `canonicalDigest()` of the plan digest and, sorted by id, the id and change-set digest of each repository that has a change set. Nothing else. |
 | `validateRepositoryChangeSet()` / `validateApplyBundle()` | Validation of a change set and a bundle against the shared change-set and bundle contracts, including their code rules (C1-C6 for a change set, A1-A2 for a bundle). Unknown fields are refused; no reason echoes a value. |
-| `CloneMissingOutcome` / `DoctorCheckHost` / `DoctorReport` / `DoctorStepId` / `DoctorStepResult` / `CloudBootstrapCheck` / `CloudBootstrapReport` / `ExternalInventoryDeclaration` / `InventoryDriftReport` / `DiscoveredHost` / `HostRecord` / `BudgetPreference` / `HostModelProfile` / `HostTierMapping` / `ModelResolution` / `PreferencesDocument` / `ReasoningTier` / `SupportedHost` / `AdvisorPlan` / `ApplyBriefResult` / `BlockerKind` / `EngagementBrief` / `EngagementBriefRole` / `EngagementContext` / `EngagementContextField` / `EngagementContextFieldId` / `GoalDirection` / `PlanBlocker` / `PlanDecision` / `PlanKit` / `PlanPackageAct` / `PlanStaffing` / `ValidationResult` / `BundleDigestEntry` / `ApplyBundle` / `ApplyBundleRepository` / `ApplyCheck` / `ApplyCheckId` / `ChangeSetDeferral` / `ChangeSetItem` / `ChangeSetPhase` / `ChangeSetRefusal` / `CheckVerdict` / `ContentDigest` / `DependencyPlacement` / `DerivedFileChange` / `FileChange` / `KeyChange` / `LedgerInvariant` / `LockfileName` / `PackageInvariant` / `PackageManagerKind` / `PinnedPackage` / `RefusalReason` / `ReleaseAgeSurfaceKind` / `RepositoryChangeSet` / `RepositoryVisibility` / `WholeFileChange` | Typed contracts for the sections above. |
+| `CloneMissingOutcome` / `DoctorCheckHost` / `DoctorReport` / `DoctorStepId` / `DoctorStepResult` / `CloudBootstrapCheck` / `CloudBootstrapReport` / `ExternalInventoryDeclaration` / `InventoryDriftReport` / `DiscoveredHost` / `HostRecord` / `BudgetPreference` / `HostModelProfile` / `HostTierMapping` / `ModelResolution` / `PreferencesDocument` / `ReasoningTier` / `SupportedHost` / `AdvisorPlan` / `ApplyBriefResult` / `BlockerKind` / `EngagementBrief` / `EngagementBriefRole` / `EngagementContext` / `EngagementContextField` / `EngagementContextFieldId` / `GoalDirection` / `PlanBlocker` / `PlanDecision` / `PlanKit` / `PlanPackageAct` / `PlanStaffing` / `ValidationResult` / `PlanApplyBundleInputs` / `PlanApplyBundleResult` / `RepositoryObservation` / `SkippedRepositoryObservation` / `BundleDigestEntry` / `ApplyBundle` / `ApplyBundleRepository` / `ApplyCheck` / `ApplyCheckId` / `ChangeSetDeferral` / `ChangeSetItem` / `ChangeSetPhase` / `ChangeSetRefusal` / `CheckVerdict` / `ContentDigest` / `DependencyPlacement` / `DerivedFileChange` / `FileChange` / `KeyChange` / `LedgerInvariant` / `LockfileName` / `PackageInvariant` / `PackageManagerKind` / `PinnedPackage` / `RefusalReason` / `ReleaseAgeSurfaceKind` / `RepositoryChangeSet` / `RepositoryVisibility` / `WholeFileChange` | Typed contracts for the sections above. |
 
 ## Doctor
 
@@ -410,17 +412,56 @@ implement it and are tested against the same fixture corpus. This package
 does not compute a brief's content (that is `@clossys/advisor`'s
 `toEngagementBrief()`) and does not decide whether a plan should be
 approved (that is Advisor's job); it only validates the two shapes and
-writes the one file. Multi-repository
-orchestration -- computing each repository's change from `staffing` and
-`packages`, branch creation, exact package installs, adding Starter's
-caller workflow, and opening one pull request per repository -- is not
-built yet. The shapes and digests that change will have are defined:
-`validateRepositoryChangeSet()` and `validateApplyBundle()` check a change
-set and a bundle against the shared contracts
-`docs/contracts/repository-change-set.json` and `apply-bundle.json`, which
-this package packs, and `changeSetDigest()` and `bundleDigest()` implement
-the digests defined in `docs/contracts/apply-change-set-digest.md` (in the
-public repository, not shipped in this package) (#1178).
+writes the one file.
+
+### Computing each repository's change
+
+`planApplyBundle()` computes, for each repository a plan staffs, the change
+set one pull request would make there, and a bundle that holds them (#1178).
+It is pure: it takes the plan, the hub brief (`clossys/advisor/brief.json`),
+what the caller observed on each repository's default branch, the composed
+skill text for each role, this package's version and the hub's Advisor pin,
+and it reads nothing itself. The shapes are the shared contracts
+`docs/contracts/repository-change-set.json` and `apply-bundle.json`, packed
+into this package, and every set and the bundle are validated against them,
+code rules included, before they are returned. The digests are defined in
+`docs/contracts/apply-change-set-digest.md`, with a corpus computed
+independently of this package (both in the public repository, not shipped
+in this package).
+
+- Each set writes the repository's brief, projected from the hub brief with
+  `staffedHere` set to its roles and, unless the repository is private, the
+  brief contract's fixed placeholder in place of the client's problem. It
+  composes each staffed role's skill, carries every package act the plan
+  names for that repository, and writes the installed-state ledger as a
+  derived file. In a `setup` set an `install` is listed under `deferred`
+  for the later `apply` set, so no act the plan authorizes is dropped and no
+  other act is added. An act the default branch already satisfies exactly
+  is kept with `satisfiedInBase: true` and writes nothing.
+- A file the set would write whole, or a `package.json` key it would
+  change, that the default branch already has is refused as
+  `unowned-existing`: the planner treats the installed-state ledger as empty
+  and never takes over bytes it cannot show the flow wrote. The lockfile and
+  the ledger are derived files, checked by their invariants, and are not
+  refused this way.
+- The change-set digest leaves out only what is computed from it, or from
+  what it covers: the digest itself, the branch, the bundle digest, the pull
+  request text, the inverse set, and a derived file's `before` and `after`.
+  So a moved base, a different Launcher version, a visibility change, a
+  staffing change, different package bytes or a different ledger generation
+  is a new set, and recomputing any excluded value is not.
+- The bundle digest covers only the plan digest and each computed
+  repository's id and change-set digest, so an approval can bind it and a
+  repository can recompute it from digests alone.
+- The bundle's `mode` is `report`, and it records no repository state. The
+  checks that would let a repository be called planned -- the installed-state
+  ledger and package provenance -- are not run here, so the bundle reports
+  its own file-layout check (V6) only, and a `setup` set is `indeterminate`
+  until the setup template exists.
+
+Nothing here writes to a repository, creates a branch or opens a pull
+request; reading the repositories, installing packages and opening one pull
+request per repository are not built yet.
 
 ## Why this is not Advisor, Starter, Builder, installer, creator, or a connector
 
