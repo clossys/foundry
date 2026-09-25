@@ -30,7 +30,7 @@ import { loadPackedContract, validateAdvisorPlan, validateEngagementBrief } from
 import { planDigest } from "./plan-digest.js";
 import { bundleDigest, changeSetDigest } from "./change-set-digest.js";
 import {
-  AUTHORIZATION_PLAN_MISMATCH, BRIEF_PATH, CANONICAL_KEYS, DISCOVERY_ROOTS, ID_TOKEN, LEDGER_PATH, derivedPlanItem, SKILLS_MANIFEST_PATH, canonicalOrder, contentDigest, dependencyPointer,
+  AUTHORIZATION_ABSENT, AUTHORIZATION_PLAN_MISMATCH, BRIEF_PATH, CANONICAL_KEYS, DISCOVERY_ROOTS, ID_TOKEN, LEDGER_PATH, derivedPlanItem, SKILLS_MANIFEST_PATH, canonicalOrder, contentDigest, dependencyPointer,
   discoveryLinkPath, discoveryLinkTarget, isSafeRelativePath, lockfilePath, matchesPathPattern, skillPath, validateApplyBundle, validateRepositoryChangeSet,
   worstVerdict,
 } from "./change-set-contract.js";
@@ -325,6 +325,8 @@ function computeChangeSet(
   if (reasons.has("root-vocabulary-unknown")) checks.push({ check: "V6", verdict: "indeterminate", rule: "root-vocabulary-unknown" });
   if (reasons.has("root-entry-prohibited")) checks.push({ check: "V6", verdict: "indeterminate", rule: "root-entry-prohibited" });
   if (reasons.has("skills-root-is-link")) checks.push({ check: "V6", verdict: "indeterminate", rule: "skills-root-is-link" });
+  // V6 also regenerates the lockfile and checks its invariants; that part is not run here, so a set that changes a lockfile is not satisfied.
+  if (files.some((file) => "derived" in file && file.path !== LEDGER_PATH)) checks.push({ check: "V6", verdict: "indeterminate", rule: "lockfile-not-run" });
   if (checks.length === 0) checks.push({ check: "V6", verdict: "satisfied" });
 
   return {
@@ -482,6 +484,8 @@ export function planApplyBundle(inputs: PlanApplyBundleInputs): PlanApplyBundleR
   }
 
   const authorizationMismatch = inputs.authorization !== null && inputs.authorization.planDigest !== digestOfPlan;
+  // Package acts need an execution authorization; a plan that has them and no authorization permits none of them (code rule A4).
+  const authorizationAbsent = inputs.plan.packages !== undefined && inputs.authorization === null;
   const digestOfBundle = bundleDigest(digestOfPlan, computed.map((entry) => ({ id: entry.id, changeSetDigest: entry.set.changeSetDigest })));
   const changeSets: RepositoryChangeSet[] = computed.map((entry) => ({ ...entry.set, bundle: digestOfBundle }));
   changeSets.forEach((set, index) => {
@@ -501,8 +505,13 @@ export function planApplyBundle(inputs: PlanApplyBundleInputs): PlanApplyBundleR
     repositories: entries.map((entry) => {
       if (!("pending" in entry)) return entry;
       const { id, phase, set, checks: own } = computed[entry.pending]!;
-      // A pure check that needs no observation: an authorization issued for another plan permits none of this one (code rule A4).
-      const checks = sortChecks(authorizationMismatch ? [...own, { check: "V3", verdict: "violated", rule: AUTHORIZATION_PLAN_MISMATCH }] : own);
+      // Pure checks that need no observation (code rule A4): an authorization issued for another plan permits none of this one,
+      // and a plan with package acts and no authorization permits none of them.
+      const authority: ApplyCheck[] = [
+        ...(authorizationMismatch ? [{ check: "V3", verdict: "violated", rule: AUTHORIZATION_PLAN_MISMATCH } as const] : []),
+        ...(authorizationAbsent ? [{ check: "V3", verdict: "violated", rule: AUTHORIZATION_ABSENT } as const] : []),
+      ];
+      const checks = sortChecks([...own, ...authority]);
       return { id, verdict: worstVerdict(checks.map((check) => check.verdict)), phase, changeSet: set.changeSetDigest, checks };
     }),
     bundleDigest: digestOfBundle,

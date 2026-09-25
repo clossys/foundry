@@ -125,7 +125,9 @@ describe("planApplyBundle", () => {
       expect(Object.keys(entry)).not.toContain("state");
       expect(Object.keys(entry)).not.toContain("binding");
     }
-    expect(bundle.repositories[0]).toMatchObject({ verdict: "satisfied", phase: "apply", checks: [{ check: "V6", verdict: "satisfied" }] });
+    // Both repositories have an uninstalled package, so both change a lockfile the planner does not regenerate.
+    expect(bundle.repositories[0]).toMatchObject({ verdict: "indeterminate", phase: "apply", checks: [{ check: "V6", verdict: "indeterminate", rule: "lockfile-not-run" }] });
+    expect(bundle.repositories[1]).toMatchObject({ verdict: "indeterminate", phase: "apply", checks: [{ check: "V6", verdict: "indeterminate", rule: "lockfile-not-run" }] });
   });
 
   it("skips a setup-phase repository as setup-template-unbuilt, outside the bundle digest, because a setup set must carry the templates it does not compute", () => {
@@ -208,7 +210,10 @@ describe("planApplyBundle", () => {
       { file: "package.json", pointer: "/devDependencies/@example~1starter", reason: "unowned-existing", item: STARTER.planItem },
     ]);
     expect(site.files.map((file) => file.path)).not.toContain("clossys/brief.json");
-    expect(bundle.repositories[0]).toMatchObject({ verdict: "indeterminate", checks: [{ check: "V6", verdict: "indeterminate", rule: "unowned-existing" }] });
+    expect(bundle.repositories[0]).toMatchObject({
+      verdict: "indeterminate",
+      checks: [{ check: "V6", verdict: "indeterminate", rule: "lockfile-not-run" }, { check: "V6", verdict: "indeterminate", rule: "unowned-existing" }],
+    });
   });
 
   it("gives a public repository the placeholder instead of the problem, and a private one the problem", () => {
@@ -279,6 +284,9 @@ describe("planApplyBundle", () => {
     }
     expect(bundle.snapshot).toBeNull();
     expect(bundle.authorization).toBeNull();
+    // No package acts, so no authorization is needed, and with no lockfile change the layout check is all V6 has to do.
+    expect(bundle.repositories[0]).toMatchObject({ verdict: "satisfied", checks: [{ check: "V6", verdict: "satisfied" }] });
+    for (const entry of bundle.repositories) expect(entry.checks.map((check) => check.rule)).not.toContain("authorization-absent");
   });
 
   it("refuses, before computing anything, a staffed role that is not a lowercase id token, and a planItem that is not derived", () => {
@@ -376,7 +384,8 @@ describe("planApplyBundle", () => {
       const site = setFor(changeSets, SITE.id);
       expect(site.observed.repositoryProfile).toEqual(profile);
       expect(site.items.map((item) => item.act)).not.toContain("declare-root-entry");
-      expect(bundle.repositories[0]).toMatchObject({ verdict: "satisfied" });
+      // An uninstalled package still changes the lockfile, which this check does not regenerate.
+      expect(bundle.repositories[0]).toMatchObject({ verdict: "indeterminate", checks: [{ check: "V6", verdict: "indeterminate", rule: "lockfile-not-run" }] });
     }
   });
 
@@ -416,7 +425,10 @@ describe("planApplyBundle", () => {
     expect(site.files.find((file) => file.path === "clossys/.state/skills.json")!.after).toBe(
       sha(serializeComposedSkillsManifest([{ role: "strategist", sha256: sha("# Strategist\n") }], "0.4.0")),
     );
-    expect(bundle.repositories[0]).toMatchObject({ verdict: "indeterminate", checks: [{ check: "V6", verdict: "indeterminate", rule: "skills-root-is-link" }] });
+    expect(bundle.repositories[0]).toMatchObject({
+      verdict: "indeterminate",
+      checks: [{ check: "V6", verdict: "indeterminate", rule: "lockfile-not-run" }, { check: "V6", verdict: "indeterminate", rule: "skills-root-is-link" }],
+    });
     const whole = setFor(run(withRepository({ linkedAgentsPaths: [".agents"] })).changeSets, SITE.id);
     expect(whole.refused.filter((refusal) => refusal.reason === "skills-root-is-link")).toHaveLength(2);
   });
@@ -503,6 +515,19 @@ describe("canonical output", () => {
   it("treats a base file that differs only in letter case as already there", () => {
     const site = setFor(run(withRepository({ files: [...SITE.files, { path: "Clossys/Brief.json", sha256: sha("a brief") }] })).changeSets, SITE.id);
     expect(site.refused).toContainEqual({ path: "clossys/brief.json", reason: "unowned-existing", item: "brief" });
+  });
+});
+
+describe("no authorization for a plan with package acts", () => {
+  it("is reported as a violated V3 check on every computed repository, so none is satisfied", () => {
+    const { bundle } = run({ ...INPUTS, authorization: null });
+    expect(bundle.snapshot).not.toBeNull();
+    for (const entry of bundle.repositories) {
+      expect(entry.verdict).toBe("violated");
+      expect(entry.checks).toContainEqual({ check: "V3", verdict: "violated", rule: "authorization-absent" });
+    }
+    expect(validateApplyBundle(bundle)).toEqual({ valid: true });
+    for (const entry of run().bundle.repositories) expect(entry.checks.map((check) => check.rule)).not.toContain("authorization-absent");
   });
 });
 

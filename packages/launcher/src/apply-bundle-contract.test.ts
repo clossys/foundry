@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { bundleDigest } from "./change-set-digest.js";
-import { AUTHORIZATION_PLAN_MISMATCH, applyBundleViolations, validateApplyBundle } from "./change-set-contract.js";
+import { AUTHORIZATION_ABSENT, AUTHORIZATION_PLAN_MISMATCH, applyBundleViolations, validateApplyBundle } from "./change-set-contract.js";
 import type { ApplyBundle, RepositoryChangeSet } from "./change-set-contract.js";
 
 /*
@@ -103,6 +103,21 @@ describe("apply-bundle contract", () => {
     const none = loose(BUNDLE);
     none.repositories[0] = { ...none.repositories[0], verdict: "violated", checks: [] };
     expect(applyBundleViolations(none).map((violation) => violation.rule)).toEqual(["A3"]);
+  });
+
+  it("A4: requires the authorization-absent check when the bundle records a snapshot and no authorization, and refuses it otherwise", () => {
+    const absent = loose(BUNDLE);
+    absent.snapshot = { path: "clossys/.state/apply/registry-snapshot.json", digest: PLAN_DIGEST };
+    expect(rules(absent)).toEqual(["A4 repositories[0].checks"]);
+    absent.repositories[0].checks = [{ check: "V3", verdict: "violated", rule: AUTHORIZATION_ABSENT }, { check: "V6", verdict: "satisfied" }];
+    absent.repositories[0].verdict = "violated";
+    expect(applyBundleViolations(absent)).toEqual([]);
+    const authorized = loose(absent);
+    authorized.authorization = { planDigest: PLAN_DIGEST, expiresAt: "2026-10-01T00:00:00Z" };
+    expect(rules(authorized)).toEqual(["A4 repositories[0].checks"]);
+    const staffingOnly = loose(absent);
+    staffingOnly.snapshot = null;
+    expect(rules(staffingOnly)).toEqual(["A4 repositories[0].checks"]);
   });
 
   it("A4: requires the mismatch check when the authorization is for another plan, and refuses it otherwise", () => {

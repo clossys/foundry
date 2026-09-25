@@ -367,6 +367,23 @@ describe("what a snapshot records (threat: a packument selects something latest 
     expect(projectPackument(DESIGNER, timeless).versions[0]?.publishedAt).toBeNull();
   });
 
+  it("records attestations only when the registry lists where they are: an empty or url-less object lists none", () => {
+    const withAttestations = (attestations: unknown) => {
+      const document = packumentOf(DESIGNER);
+      ((document.versions as Record<string, Record<string, Record<string, unknown>>>)["1.2.0"]!.dist!).attestations = attestations;
+      return projectPackument(DESIGNER, document).versions[0]?.hasAttestations;
+    };
+    expect(withAttestations({})).toBe(false);
+    expect(withAttestations({ url: "" })).toBe(false);
+    expect(withAttestations({ url: "  " })).toBe(false);
+    expect(withAttestations({ url: 5 })).toBe(false);
+    expect(withAttestations({ provenance: { predicateType: "https://slsa.dev/provenance/v1" } })).toBe(false);
+    expect(withAttestations(null)).toBe(false);
+    const listed = ((packumentOf(DESIGNER).versions as Record<string, Record<string, Record<string, unknown>>>)["1.2.0"]!.dist!).attestations;
+    expect(typeof (listed as { url?: unknown }).url).toBe("string");
+    expect(withAttestations(listed)).toBe(true);
+  });
+
   it("refuses a document for another package, a latest entry that names another version, or a field of the wrong type", async () => {
     const cases: [string, (document: Record<string, unknown>) => void, RegExp][] = [
       ["another package", (document) => (document.name = STARTER), /does not name the package that was requested/],
@@ -427,11 +444,12 @@ describe("failures write nothing (threats: redirect, oversize, slow, non-JSON)",
   ];
 
   for (const [name, answer, expected] of failures) {
-    it(`${name}: the step stops, names the package and position, and quotes nothing it received`, async () => {
+    it(`${name}: the step stops, names the package's position but not its name, and quotes nothing it received`, async () => {
       const { transport } = fakeRegistry(answer);
       const failure = await takeRegistrySnapshot([DESIGNER], options(transport)).then(() => undefined, (cause: unknown) => cause as Error);
       expect(failure).toBeInstanceOf(RegistrySnapshotError);
-      expect(failure?.message).toMatch(new RegExp(`^names\\[0\\] ${DESIGNER}: `));
+      expect(failure?.message).toMatch(/^names\[0\]: /);
+      expect(failure?.message).not.toContain(DESIGNER);
       expect(failure?.message).toMatch(expected);
       expect(failure?.message).not.toContain(BODY_MARKER);
     });
@@ -439,7 +457,7 @@ describe("failures write nothing (threats: redirect, oversize, slow, non-JSON)",
 
   it("stops at the first failure and fetches no further package", async () => {
     const { transport, calls } = fakeRegistry(() => jsonResponse("", 500));
-    await expect(takeRegistrySnapshot([STARTER, DESIGNER], options(transport))).rejects.toThrow(/^names\[1\] /);
+    await expect(takeRegistrySnapshot([STARTER, DESIGNER], options(transport))).rejects.toThrow(/^names\[1\]: /);
     expect(calls).toHaveLength(1);
   });
 

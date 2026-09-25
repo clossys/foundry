@@ -120,16 +120,17 @@ Takes the registry snapshot a plan's exact packages are resolved from
 file: every name in it must be a package in this package's publishing scope,
 named once. For each name, in name order, this fetches the package's full
 registry document from the registry this package was built for, with no
-credential, no .npmrc and no npm CLI, refusing any redirect, any response
+registry credential, no .npmrc and no npm CLI, refusing any redirect, any response
 over ${MAX_RESPONSE_BYTES / (1024 * 1024)} MiB and any request that takes too long. It records only what
 the registry snapshot contract declares, validates the whole snapshot against
 that contract, and writes it atomically to --out, by default
 ${REGISTRY_SNAPSHOT_REL} under the current directory (the hub).
 
-This is the only step of applying a plan that reads the package registry. Messages
-name packages and positions only, never a response's content.
+This is the only step of applying a plan that reads the package registry. A
+message names a package by its position in the request, names[<n>], never by
+its name, and never quotes the request or a response.
 
-Exit codes: 0 = the snapshot was written, 2 = no snapshot was written
+Exit codes: 0 = the snapshot was written (or --help was shown), 2 = no snapshot was written
 (a usage error, an unreadable or invalid request, or any registry answer
 this step cannot record: a transport error, a timeout, a redirect, an
 answer other than 200 or 404, an oversize or non-JSON body, or a snapshot

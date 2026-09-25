@@ -74,11 +74,14 @@ describe("validateAdvisorPlan against the plan contract", () => {
     for (const entry of CORPUS.plans) expect(validateAdvisorPlan(entry.plan), entry.name).toEqual([]);
   });
 
-  it("refuses an unknown field at any depth, naming it", () => {
-    expect(messages(validateAdvisorPlan({ ...PLAN, notes: [] }))).toEqual(["plan.notes is not a field the contract declares, and unknown fields are refused"]);
-    const blocker = { ...PLAN.blockers[0], nextAction: { ...PLAN.blockers[0]!.nextAction, note: "x" } };
+  it("refuses an unknown field at any depth, at the object that holds it, by its position there, never by its name", () => {
+    const top = validateAdvisorPlan({ ...PLAN, notes: [] });
+    expect(messages(top)).toEqual([`plan has a field the contract does not declare (key ${Object.keys(PLAN).length + 1} of this object), and unknown fields are refused`]);
+    expect(top[0]).not.toHaveProperty("path");
+    const nextAction = { note: "x", ...PLAN.blockers[0]!.nextAction };
+    const blocker = { ...PLAN.blockers[0], nextAction };
     expect(messages(validateAdvisorPlan({ ...PLAN, blockers: [blocker] }))).toEqual([
-      "plan.blockers[0].nextAction.note is not a field the contract declares, and unknown fields are refused",
+      "plan.blockers[0].nextAction has a field the contract does not declare (key 1 of this object), and unknown fields are refused",
     ]);
   });
 
@@ -127,15 +130,18 @@ describe("readContractDocument: strict JSON for plan and brief files (#1475)", (
     expect(readContractDocument(bytes(JSON.stringify(PLAN)))).toEqual(PLAN);
   });
 
-  it("refuses a key repeated at the top level or nested, naming the key and where", () => {
-    expect(() => readContractDocument(bytes('{"a":1,"b":2,"a":3}'))).toThrow('repeats the key "a" in the top-level object; every key may appear once');
+  it("refuses a key repeated at the top level or nested, by the key's position and its object's, never naming either key", () => {
+    expect(() => readContractDocument(bytes('{"a":1,"b":2,"a":3}'))).toThrow(/^repeats a key \(key 3 of the top-level object\); every key may appear once$/);
     const nested = JSON.stringify(PLAN).replace('"problem":', '"problem":"EVIL","problem":');
-    expect(() => readContractDocument(bytes(nested))).toThrow('repeats the key "problem" in mandate; every key may appear once');
-    expect(() => readContractDocument(bytes('{"blockers":[{"kind":"a"},{"kind":"b","kind":"c"}]}'))).toThrow('repeats the key "kind" in blockers[1]');
+    const mandateAt = nested.indexOf('"mandate":') + '"mandate":'.length;
+    expect(() => readContractDocument(bytes(nested))).toThrow(new RegExp(`^repeats a key \\(key 2 of the object at position ${mandateAt}\\); every key may appear once$`));
+    expect(() => readContractDocument(bytes('{"blockers":[{"kind":"a"},{"kind":"b","kind":"c"}]}'))).toThrow(
+      /^repeats a key \(key 2 of the object at position 26\); every key may appear once$/,
+    );
   });
 
   it("compares keys after unescaping, and allows the same key in different objects", () => {
-    expect(() => readContractDocument(bytes('{"a":1,"\\u0061":2}'))).toThrow('repeats the key "a"');
+    expect(() => readContractDocument(bytes('{"a":1,"\\u0061":2}'))).toThrow("repeats a key (key 2 of the top-level object)");
     expect(readContractDocument(bytes('{"a":{"a":1},"b":[{"a":1},{"a":2}],"s":"\\"{\\"a\\":1,\\"a\\":2}"}'))).toEqual({ a: { a: 1 }, b: [{ a: 1 }, { a: 2 }], s: '"{"a":1,"a":2}' });
   });
 
@@ -224,35 +230,23 @@ describe("plan times are real calendar times, checked field by field (#1475)", (
   });
 });
 
-describe("keys in messages are escaped, never raw (#1475)", () => {
+describe("keys in messages: never shown, escaped or not (#1475)", () => {
   const bytes = (text: string) => new TextEncoder().encode(text);
 
-  it("shows an unknown key with control characters as an escaped JSON string", () => {
+  it("reports an unknown key with control characters by its position, with none of its text", () => {
     const [message] = messages(validateEngagementBrief({ ...BRIEF, "\u001b[2J\u009b": 1 }));
-    expect(message).toBe('brief["\\u001b[2J\\u009b"] is not a field the contract declares, and unknown fields are refused');
-    expect(message).not.toMatch(/[\u0000-\u001f\u007f-\u009f]/);
+    expect(message).toBe(`brief has a field the contract does not declare (key ${Object.keys(BRIEF).length + 1} of this object), and unknown fields are refused`);
+    expect(message).not.toMatch(/[\u0000-\u001f\u007f-\u009f]|2J/);
   });
 
-  it("shows a repeated key and its path escaped", () => {
+  it("reports a repeated key, and the key that holds its object, by position only", () => {
     let message = "";
     try {
       readContractDocument(bytes('{"\\u001b]0;x\\u0007":{"k\\u202e":1,"k\\u202e":2}}'));
     } catch (cause) {
       message = (cause as Error).message;
     }
-    expect(message).toBe('repeats the key "k\\u202e" in ["\\u001b]0;x\\u0007"]; every key may appear once');
-    expect(message).not.toMatch(/[\u0000-\u001f\u007f-\u009f‮]/);
-  });
-
-  it("escapes the Arabic letter mark, a bidi control, in a repeated key", () => {
-    let message = "";
-    try {
-      readContractDocument(bytes('{"a\\u061cb":1,"a\\u061cb":2}'));
-    } catch (cause) {
-      message = (cause as Error).message;
-    }
-    expect(message).toBe('repeats the key "a\\u061cb" in the top-level object; every key may appear once');
-    expect(message).not.toContain("\u061c");
+    expect(message).toBe("repeats a key (key 2 of the object at position 20); every key may appear once");
   });
 
   it("reports why a file was refused as data, with a position only for a syntax error", () => {
@@ -268,11 +262,10 @@ describe("keys in messages are escaped, never raw (#1475)", () => {
     expect(refusal(bytes('{"a":1,}'))).toMatchObject({ reason: "syntax", position: 7 });
     expect(refusal(new Uint8Array([0xef, 0xbb, 0xbf, ...bytes("{}")]))).toMatchObject({ reason: "syntax", position: 0 });
     expect(refusal(new Uint8Array([0x7b, 0xff, 0x7d]))).toMatchObject({ reason: "encoding", position: undefined });
-    // A key that reads like a position is still a key: the message names it,
-    // but `position` stays unset, so a caller relaying only `position`
-    // never relays file text.
+    // A key that reads like a position is still a key: neither the message
+    // nor `position` carries it.
     const repeated = refusal(bytes('{"position 5551234567":1,"position 5551234567":2}'));
-    expect(repeated).toMatchObject({ reason: "repeated-key", position: undefined });
+    expect(repeated).toMatchObject({ reason: "repeated-key", position: undefined, message: "repeats a key (key 2 of the top-level object); every key may appear once" });
   });
 
   it("refuses a leading byte order mark instead of stripping it", () => {
@@ -308,8 +301,10 @@ describe("validateEngagementBrief against the brief contract", () => {
     expect(messages(validateEngagementBrief({ ...BRIEF, sequence: [""] }))).toEqual(["brief.sequence[0] must be at least 1 character(s) long"]);
   });
 
-  it("refuses an unknown top-level field", () => {
-    expect(messages(validateEngagementBrief({ ...BRIEF, notes: "x" }))).toEqual(["brief.notes is not a field the contract declares, and unknown fields are refused"]);
+  it("refuses an unknown top-level field, by its position, never its name", () => {
+    expect(messages(validateEngagementBrief({ ...BRIEF, notes: "x" }))).toEqual([
+      `brief has a field the contract does not declare (key ${Object.keys(BRIEF).length + 1} of this object), and unknown fields are refused`,
+    ]);
   });
 
   it("refuses a context value that is not one of the field's fixed choice ids, without echoing it", () => {

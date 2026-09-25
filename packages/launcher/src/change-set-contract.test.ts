@@ -110,7 +110,7 @@ describe("packed change-set, bundle and ledger contracts", () => {
     expect(validateRepositoryChangeSet(act).valid).toBe(false);
     const key = loose(SET);
     key.state = "planned";
-    expect(validateRepositoryChangeSet(key)).toEqual({ valid: false, reason: "changeSet.state is not a field the contract declares, and unknown fields are refused" });
+    expect(validateRepositoryChangeSet(key)).toEqual({ valid: false, reason: `changeSet has a field the contract does not declare (key ${Object.keys(key).length} of this object), and unknown fields are refused` });
     const derived = loose(SET);
     fileAt(derived, "package-lock.json").derived = false;
     expect(validateRepositoryChangeSet(derived).valid).toBe(false);
@@ -488,6 +488,25 @@ describe("change-set code rules C1-C16", () => {
       set.keys[0].item = "ci-template";
       expect(rulesOf(reseal(set))).toContain("C9 keys[0].item");
     });
+  });
+
+  it("C9: refuse a pin-starter placed in dependencies, a refusal naming the ledger item, and C8 a repeated refusal", () => {
+    const placement = loose(SET);
+    itemAt(placement, STARTER).placement = "dependencies";
+    expect(rulesOf(reseal(placement))).toContain(`C9 items[${itemIndex(placement, STARTER)}].placement`);
+    const ledger = loose(SET);
+    ledger.refused.push({ path: "clossys/.state/installed.json", reason: "unowned-existing", item: "ledger" });
+    expect(rulesOf(reseal(ledger))).toContain("C9 refused[0].item");
+    const repeated = loose(SETUP);
+    repeated.refused.push({ ...repeated.refused[0] });
+    expect(rulesOf(reseal(repeated))).toContain("C8 refused[1]");
+  });
+
+  it("C10: refuse a second pin-starter item", () => {
+    const set = loose(SET);
+    set.items.push({ ...itemAt(set, STARTER), id: "example-owner/site:@example/starter-2", planItem: "example-owner/site:@example/starter-2" });
+    set.items.sort((a: Loose, b: Loose) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+    expect(rulesOf(reseal(set))).toContain(`C10 items[${itemIndex(set, "example-owner/site:@example/starter-2")}]`);
   });
 
   it("C10: refuse an install in a setup set, and a deferral in an apply set", () => {

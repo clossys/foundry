@@ -180,7 +180,8 @@ repository's change set moved.
 
 Each value is computed only from values computed before it:
 
-1. Each change set without its six excluded members, and with its derived
+1. Each change set without its six excluded members (`changeSetDigest`,
+   `branch`, `bundle`, `pullRequest`, `inverse` and `tooling`), and with its derived
    files reduced, gives its `changeSetDigest`.
 2. That digest gives the set's `branch` and pull request title.
 3. The change-set digests and the plan digest give the `bundleDigest`, which

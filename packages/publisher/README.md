@@ -2041,7 +2041,7 @@ minor release (the identity-kit generator and its checks, issue #1210), and
 a `^0.4.0` range does not resolve a `0.5.x` package under 0.x caret semver.
 A move like that last one, which only follows a sibling's new minor release
 rather than a new imported contract, is recorded as an "Updated dependency"
-entry in this package's CHANGELOG, not here. These ranges are independent;
+entry in this package's [changelog](https://github.com/clossys/foundry/blob/main/docs/changelogs/publisher.md), not here. These ranges are independent;
 leaving any one behind would still resolve an older package without any
 install failure, silently withholding a required contract.
 

@@ -110,7 +110,7 @@ describe("apply-plan-cli main", () => {
     expect(String(log.mock.calls[1]?.[0])).toMatch(/^plan digest sha256:[0-9a-f]{64}$/);
   });
 
-  it("exits 1 naming the field when --plan carries a field the contract does not declare", () => {
+  it("exits 1 when --plan carries a field the contract does not declare, placing it by position, never by name", () => {
     const workDir = tempDir();
     const planPath = join(workDir, "plan.json");
     const briefPath = join(workDir, "brief.json");
@@ -120,30 +120,33 @@ describe("apply-plan-cli main", () => {
     const code = main(["--plan", planPath, "--brief", briefPath, "--repo", workDir], createNodeHost());
     expect(code).toBe(1);
     expect(String(err.mock.calls[0]?.[0])).toBe(
-      "launcher-apply-plan: --plan does not validate: plan.notes is not a field the contract declares, and unknown fields are refused",
+      `launcher-apply-plan: --plan does not validate: plan has a field the contract does not declare (key ${Object.keys(VALID_PLAN).length + 1} of this object), and unknown fields are refused`,
     );
   });
 
-  it("exits 2, naming the key, when --plan or --brief repeats a key at the top level or nested (#1475)", () => {
+  it("exits 2 when --plan or --brief repeats a key at the top level or nested, by position, never naming a key (#1475)", () => {
     const workDir = tempDir();
     const planPath = join(workDir, "plan.json");
     const briefPath = join(workDir, "brief.json");
-    const cases: [string, string, string, RegExp][] = [
-      ["plan nested", JSON.stringify(VALID_PLAN).replace('"problem":', '"problem":"EVIL","problem":'), JSON.stringify(VALID_BRIEF), /^launcher-apply-plan: --plan repeats the key "problem" in mandate; every key may appear once: /],
-      ["plan top level", JSON.stringify(VALID_PLAN).replace('"schemaVersion":1', '"schemaVersion":1,"blockers":[]'), JSON.stringify(VALID_BRIEF), /--plan repeats the key "blockers" in the top-level object/],
-      ["brief nested", JSON.stringify(VALID_PLAN), JSON.stringify(VALID_BRIEF).replace('"direction":', '"direction":"decrease","direction":'), /--brief repeats the key "direction" in roles\[0\]\.goal/],
+    const plan = JSON.stringify(VALID_PLAN);
+    const brief = JSON.stringify(VALID_BRIEF);
+    const after = (text: string, marker: string) => text.indexOf(marker) + marker.length;
+    const cases: [string, string, string, string][] = [
+      ["plan nested", plan.replace('"problem":', '"problem":"EVIL","problem":'), brief, `--plan repeats a key (key 2 of the object at position ${after(plan, '"mandate":')}); every key may appear once: ${planPath}`],
+      ["plan top level", plan.replace('"schemaVersion":1', '"schemaVersion":1,"blockers":[]'), brief, `--plan repeats a key (key ${Object.keys(VALID_PLAN).indexOf("blockers") + 2} of the top-level object); every key may appear once: ${planPath}`],
+      ["brief nested", plan, brief.replace('"direction":', '"direction":"decrease","direction":'), `--brief repeats a key (key 3 of the object at position ${after(brief, '"goal":')}); every key may appear once: ${briefPath}`],
     ];
-    for (const [name, plan, brief, expected] of cases) {
-      writeFileSync(planPath, plan);
-      writeFileSync(briefPath, brief);
+    for (const [name, planText, briefText, expected] of cases) {
+      writeFileSync(planPath, planText);
+      writeFileSync(briefPath, briefText);
       const err = vi.spyOn(console, "error").mockImplementation(() => {});
       expect(main(["--plan", planPath, "--brief", briefPath, "--repo", workDir], createNodeHost()), name).toBe(2);
-      expect(String(err.mock.calls.at(-1)?.[0]), name).toMatch(expected);
+      expect(String(err.mock.calls.at(-1)?.[0]), name).toBe(`launcher-apply-plan: ${expected}`);
       expect(existsSync(join(workDir, "clossys")), name).toBe(false);
     }
   });
 
-  it("prints a repeated key with its control characters escaped, never raw, and refuses a byte order mark (#1475)", () => {
+  it("never prints a repeated key, escaped or raw, and refuses a byte order mark (#1475)", () => {
     const workDir = tempDir();
     const planPath = join(workDir, "plan.json");
     const briefPath = join(workDir, "brief.json");
@@ -152,8 +155,8 @@ describe("apply-plan-cli main", () => {
     const err = vi.spyOn(console, "error").mockImplementation(() => {});
     expect(main(["--plan", planPath, "--brief", briefPath, "--repo", workDir], createNodeHost())).toBe(2);
     const message = String(err.mock.calls[0]?.[0]);
-    expect(message).toBe(`launcher-apply-plan: --brief repeats the key "\\u001b[2J" in the top-level object; every key may appear once: ${briefPath}`);
-    expect(message).not.toContain("\u001b");
+    expect(message).toBe(`launcher-apply-plan: --brief repeats a key (key 2 of the top-level object); every key may appear once: ${briefPath}`);
+    expect(message).not.toMatch(/\u001b|2J/);
     writeFileSync(briefPath, Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), Buffer.from(JSON.stringify(VALID_BRIEF))]));
     expect(main(["--plan", planPath, "--brief", briefPath, "--repo", workDir], createNodeHost())).toBe(2);
     expect(String(err.mock.calls.at(-1)?.[0])).toBe(
@@ -332,7 +335,8 @@ describe("launcher-apply-plan snapshot (#1178)", () => {
       const { hub } = hubWithRequest();
       expect(await snapshotMain(["--request", "request.json"], { transport: registry(answer).transport, cwd: hub, now: NOW })).toBe(2);
       const message = String(err.mock.calls.at(-1)?.[0]);
-      expect(message).toMatch(new RegExp(`^launcher-apply-plan snapshot: names\\[1\\] ${DESIGNER}: `));
+      expect(message).toMatch(/^launcher-apply-plan snapshot: names\[1\]: /);
+      expect(message).not.toContain(DESIGNER);
       expect(message).toMatch(expected);
       expect(message).not.toContain(MARKER);
       expect(existsSync(join(hub, "clossys"))).toBe(false);

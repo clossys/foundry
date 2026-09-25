@@ -372,6 +372,39 @@ describe("planWorkspace", () => {
     expect(decision).toMatchObject({ action: "adopt", mergedInventoryIds: ["hub-a", "hub-c", "hub-b", "hub-d"] });
     expect(decision).not.toHaveProperty("inventorySource");
   });
+
+  it("merges ids that differ only in letter case as one repository, keeping the on-disk entry and its packages, and writes a document the validator accepts", () => {
+    const directory = tempDir();
+    const kept = [{ name: "@example-scope/writer", version: "1.2.3", wiring: "devDependencies" }];
+    writeInventory(directory, [{ id: "Example-Owner/App", packages: kept }, { id: "hub-c" }]);
+    const source = join(directory, "supplied.json");
+    writeFileSync(source, `${JSON.stringify({ schemaVersion: 1, repositories: [{ id: "example-owner/app" }, { id: "hub-d", packages: [] }] }, null, 2)}\n`);
+    const decision = planWorkspace(
+      observation({
+        cwd: {
+          absolutePath: directory,
+          empty: false,
+          git: true,
+          githubOwner: "acme",
+          githubRepository: "central",
+          looksLikeFoundry: false,
+          inventory: { status: "populated", count: 2 },
+        },
+      }),
+      host(directory),
+      { inventoryPath: "supplied.json" },
+    );
+    expect(decision).toMatchObject({
+      action: "adopt",
+      mergedInventoryIds: ["Example-Owner/App", "hub-c", "hub-d"],
+      mergedInventoryRepositories: [{ id: "Example-Owner/App", packages: kept }, { id: "hub-c" }, { id: "hub-d", packages: [] }],
+    });
+    if (!("action" in decision) || decision.action !== "adopt") throw new Error("expected an adopt plan");
+    applyWorkspacePlan(host(directory), decision, skeletonRoot);
+    const written = readFileSync(join(directory, WORKSPACE_INVENTORY_REL), "utf8");
+    expect(validateInventoryDocument(written)).toEqual({ valid: true, ids: ["Example-Owner/App", "hub-c", "hub-d"] });
+    expect((JSON.parse(written) as { repositories: { packages?: unknown }[] }).repositories[0]?.packages).toEqual(kept);
+  });
 });
 
 describe("validateInventoryDocument (#1334)", () => {

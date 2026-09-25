@@ -250,6 +250,14 @@ function runCheck(check: StandardsCheckName, inputs: VerifyStandardsInputs | und
         report.staleReviews.length === 0
           ? undefined
           : `stale reviews excluded from verdict: ${report.staleReviews.map((item) => item.path).join(", ")}`,
+        // #1428: which earlier approved head this run's collector proved
+        // carries forward under the mechanical-merge rule, if any. Reported
+        // for the same reason as the two notes above — a decision this
+        // consequential is never left for a reader to infer from silence.
+        // See ReviewEvidenceReport.carriedApproval's own doc comment.
+        report.carriedApproval === undefined
+          ? undefined
+          : `approval carried from ${report.carriedApproval.fromHeadSha} (#1428 mechanical merge)`,
       ].filter((value): value is string => value !== undefined);
       const note = notes.length === 0 ? undefined : notes.join("; ");
       return { row: check, result: attribute(check, report.result), ...(note === undefined ? {} : { note }) };

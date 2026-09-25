@@ -1,7 +1,7 @@
 /**
  * The shared plan and brief contracts (issue #1475), packed into each
  * package that validates against them. Launcher also packs the registry
- * snapshot contract, which its snapshot step writes, the repository
+ * snapshot contract, which its snapshot step writes, and the repository
  * change-set and apply-bundle contracts (issue #1178), which only it
  * computes, and the installed-state ledger contract they refer to; see
  * LAUNCHER_CONTRACT_FILES.

@@ -228,7 +228,7 @@ Exit codes preserve the ternary:
 | `parseGitHubRemote()` | Parses a github.com remote and rejects any other host. |
 | `isHubDocument()` | Type guard for the generated hub marker (packed template: `skeleton/clossys/.state/workspace.json`). |
 | `inspectInventory()` | Classifies inventory JSON as missing, empty, populated, or invalid (malformed or schema-mismatched -- never silently folded into empty; see `validateInventoryDocument()`). |
-| `validateInventoryDocument()` | Strictly validates an inventory document's text against `docs/contracts/repository-inventory.json` (in the public repository, not shipped in this package; `schemaVersion: 1`, a `repositories` array of `{ id, packages? }` entries -- `id` a bare repository name or `owner/name` in the same format Launcher's own sibling/clone resolution requires, case-insensitively unique; `packages`, when present, shaped exactly as `@clossys/integrator`'s `InventoryPackageEntry`, no other key). Returns `{ valid: true, ids }` or `{ valid: false, reason }` naming the offending field. Every read of an inventory document -- `--inventory`, the on-disk `clossys/.state/inventory.json` on every resume, and `readInventoryRepositories()` -- routes through this; a document that merely resembles an inventory (for example a governance record whose entries also carry `role`, `visibility`, `status`, `notes`) is refused, never adopted or silently read as though it validated (#1334). |
+| `validateInventoryDocument()` | Strictly validates an inventory document's text against the inventory contract (#1334), which ships with this package (`schemaVersion: 1`, a `repositories` array of `{ id, packages? }` entries -- `id` a bare repository name or `owner/name` in the same format Launcher's own sibling/clone resolution requires, case-insensitively unique; `packages`, when present, shaped exactly as `@clossys/integrator`'s `InventoryPackageEntry`, no other key). Returns `{ valid: true, ids }` or `{ valid: false, reason }` naming the offending field. Every read of an inventory document -- `--inventory`, the on-disk `clossys/.state/inventory.json` (a hub path, not shipped in this package) on every resume, and `readInventoryRepositories()` -- routes through this; a document that merely resembles an inventory (for example a governance record whose entries also carry `role`, `visibility`, `status`, `notes`) is refused, never adopted or silently read as though it validated (#1334). |
 | `reportHubHealth()` | Read-only pin, inventory, migration, and skills-manifest report. Does not install or uninstall. |
 | `formatHubHealth()` | Human lines plus a `health:` JSON line for the same report. |
 | `hasAdvisorPin()` | True when a manifest already pins Advisor in any dependency bucket. |
@@ -260,7 +260,7 @@ Exit codes preserve the ternary:
 | `projectEngagementBrief()` / `serializeEngagementBrief()` / `PUBLIC_PROBLEM_PLACEHOLDER` | One repository's brief: the hub brief with `staffedHere` set to that repository's roles in plan order, and `problem` replaced by the brief contract's fixed placeholder unless the repository is private, members in the brief contract's order at every depth; and the exact bytes written for it (two-space JSON and a final newline). |
 | `changeSetDigest()` / `changeSetDigestSubject()` / `CHANGE_SET_DIGEST_EXCLUDED_FIELDS` / `DERIVED_FILE_DIGEST_FIELDS` | The change-set digest: `canonicalDigest()` of the change set without `changeSetDigest`, `branch`, `bundle`, `pullRequest`, `inverse` and `tooling`, with each derived file reduced to `path`, `mode`, `derived`, `item` and `invariants`. |
 | `bundleDigest()` | The bundle digest an approval binds: `canonicalDigest()` of the plan digest and, sorted by id, the id and change-set digest of each repository that has a change set. Nothing else. |
-| `validateRepositoryChangeSet()` / `validateApplyBundle()` | Validation of a change set and a bundle against the shared change-set and bundle contracts, including their code rules (C1-C16 for a change set: references, allow-list and case-insensitive path rules, the ledger, the digest, only the ledger and lockfile derived, canonical order, each item's writes matching it -- discovery links, the skills manifest, the pointer files and the setup templates included -- phase, a complete setup set, the release-age exemption's surface and scope, the root entries a Controller profile needs, no skill written through a symbolic link, every refusal at a path or key its item binds, every whole file changed only as its act's write kind allows (none deletes), and each planItem derived from the repository id and package name; A1-A7 for a bundle: unique ids, the digest, verdicts that are the worst of their checks, the authorization-mismatch check, no state or binding in a report bundle, and in a planned bundle a state only where all nine checks passed and a binding exactly where V3 passed). Unknown fields are refused; no reason echoes a value. |
+| `validateRepositoryChangeSet()` / `validateApplyBundle()` | Validation of a change set and a bundle against the shared change-set and bundle contracts, including their code rules (C1-C16 for a change set: references, allow-list and case-insensitive path rules, the ledger, the digest, only the ledger and lockfile derived, canonical order, each item's writes matching it -- discovery links, the skills manifest, the pointer files and the setup templates included -- a pin-starter in devDependencies and at most once, phase, a complete setup set, the release-age exemption's surface and scope, the root entries a Controller profile needs, no skill written through a symbolic link, every refusal at a path or key its item binds, every whole file changed only as its act's write kind allows (none deletes), and each planItem derived from the repository id and package name; A1-A7 for a bundle: unique ids, the digest, verdicts that are the worst of their checks, the authorization-mismatch and authorization-absent checks, no state or binding in a report bundle, and in a planned bundle a state only where all nine checks passed and a binding exactly where V3 passed). Unknown fields are refused; no reason echoes a value. |
 | `wouldViolateRootEntries()` / `isRootEntryName()` | Whether the root names some paths introduce (each path's first segment) would fail a Controller repository profile's closed root vocabulary: `satisfied` when the profile has no vocabulary Controller checks (schema version 1 or 2, or an empty `rootEntries`) or declares every name allowed or required; `violated`, with the undeclared and the prohibited names, sorted; `indeterminate` (`root-vocabulary-unknown`) for anything Controller could not read as a root vocabulary. Reads only `schemaVersion` and `rootEntries`, by the rules Controller's README states; pure. `isRootEntryName()` is Controller's rule for one direct-child name. |
 | `validateInstalledLedger()` / `ledgerSuccession()` / `serializeInstalledLedger()` | The installed-state ledger (`clossys/.state/installed.json`): validation against the shared ledger contract and its code rules L1-L10 (history, each generation's approval binding, rows naming history, owned paths and link modes, keys matching packages, no act twice, canonical order, root entries in one Controller profile among fixed names, id-token roles in skill paths, and derived planItems); the contract's succession rules for a pull request's head ledger against its base's, each given as its exact bytes (both must be exactly canonical; then unchanged, or one next generation keeping the base's history, and an admitted generation installing exactly what the setup deferred and changing nothing else), reporting whether a next generation was proved `admitted` or only claims an approval (`approval-claimed`); and the exact bytes of a valid ledger. A valid ledger is well formed, not trusted: trusting a row needs the hub's change sets, which none of these read. Nothing in this package writes a ledger yet. |
 | `CloneMissingOutcome` / `DoctorCheckHost` / `DoctorReport` / `DoctorStepId` / `DoctorStepResult` / `CloudBootstrapCheck` / `CloudBootstrapReport` / `ExternalInventoryDeclaration` / `InventoryDriftReport` / `DiscoveredHost` / `HostRecord` / `BudgetPreference` / `HostModelProfile` / `HostTierMapping` / `ModelResolution` / `PreferencesDocument` / `ReasoningTier` / `SupportedHost` / `AdvisorPlan` / `ApplyBriefResult` / `BlockerKind` / `EngagementBrief` / `EngagementBriefRole` / `EngagementContext` / `EngagementContextField` / `EngagementContextFieldId` / `GoalDirection` / `PlanBlocker` / `PlanDecision` / `PlanKit` / `PlanPackageAct` / `PlanStaffing` / `ValidationResult` / `PlanApplyBundleInputs` / `PlanApplyBundleResult` / `RepositoryObservation` / `SkippedRepositoryObservation` / `BundleDigestEntry` / `ApplyBundle` / `ApplyBundleRepository` / `ApplyCheck` / `ApplyCheckId` / `ChangeSetDeferral` / `ChangeSetItem` / `ChangeSetPhase` / `ChangeSetRefusal` / `CheckVerdict` / `ContentDigest` / `DependencyPlacement` / `DerivedFileChange` / `FileChange` / `KeyChange` / `LedgerInvariant` / `LockfileName` / `PackageInvariant` / `PackageManagerKind` / `PinnedPackage` / `RefusalReason` / `ReleaseAgeSurfaceKind` / `RepositoryChangeSet` / `RepositoryVisibility` / `WholeFileChange` / `ApprovalBinding` / `DiscoveryRoot` / `ExemptionSurfaceKind` / `WriteRecordSource` / `InstalledLedger` / `LedgerSuccession` / `LedgerViolation` / `RepositoryProfileObservation` / `RootEntryDeclaration` / `RootEntriesVerdict` | Typed contracts for the sections above. |
@@ -361,14 +361,23 @@ ISO 8601 form, a date-time with `Z` or a `±hh:mm` offset, checked
 field by field (so `2026-02-30` or `T24:30` is refused). A brief's
 `problem`, `role`, `why` and `metric` must contain a non-whitespace
 character, and an item of `inputsFrom`, `outputsTo`, `sequence` or
-`deliverables` must not be empty. A refusal names each field at fault and
-never echoes its value; a key that is not a plain identifier is shown as an
-escaped JSON string, so a control character in it cannot reach a terminal.
+`deliverables` must not be empty. A refusal names each declared field at
+fault and never echoes its value, and never names a key the contracts do
+not declare: such a field is reported at the object that holds it, by its
+1-based position there (`plan.mandate has a field the contract does not
+declare (key 4 of this object), and unknown fields are refused`), counted
+in the order the file wrote the keys when `launcher-apply-plan` reads it; a
+value a caller passes to a validator directly is counted in JavaScript's
+own key order, which lists array-index keys such as `"7"` first.
 `launcher-apply-plan` reads both files as strict JSON: bytes that are not
 valid UTF-8, a leading byte order mark, or an object that repeats a key at
-any depth exit `2`, with a repeated key named (escaped) and a syntax error
-reported by position only, never quoting the file's text, so the value
-validated is exactly the one a reader of the file sees.
+any depth exit `2`, with a repeated key reported by its position in its
+object and, below the top level, that object's position, never by name,
+and a syntax error by position only, never quoting the file's text, so the
+value validated is exactly the one a reader of the file sees. A position is
+a 0-based index into the decoded text in UTF-16 code units (JavaScript's
+string index): the byte offset for ASCII text, with a character outside
+the Basic Multilingual Plane counting as two.
 A plan may say which roles work in which repository (`staffing`, by
 repository inventory id), which kits were recommended (`kits`), which exact
 package acts are authorized (`packages`, each one exact version and one
@@ -486,7 +495,9 @@ in this package).
 - Every array whose order carries no meaning is written in one canonical
   order, and the contract refuses any other order, so observing the same
   repository twice, in any order, gives the same bytes and the same digest.
-  The contract's code rules also tie each item to exactly what it writes.
+  The contract's code rules also tie each kind of item the planner computes
+  to exactly what it writes; the acts nothing computes yet are declared but
+  not yet tied to their files.
 - The bundle digest covers only the plan digest and each computed
   repository's id and change-set digest, so an approval can bind it and a
   repository can recompute it from digests alone.
@@ -496,10 +507,18 @@ in this package).
   approval is `planned`, with that binding; nothing writes a planned bundle
   yet, because the checks that would earn it -- the installed-state ledger
   and package provenance -- are not run here. The bundle reports the
-  planner's own file-layout check (V6). When the authorization
-  names a different plan digest than the plan's, every computed repository
-  gets a violated V3 check (`authorization-plan-mismatch`), and each
-  repository's verdict is the worst of its checks.
+  planner's own dry-materialization check (V6), which covers the file
+  layout only: the part of V6 that regenerates the lockfile and checks its
+  invariants is not run, so a set that changes a lockfile carries V6
+  `indeterminate` with rule `lockfile-not-run`, and V6 is `satisfied` only
+  for a set with no lockfile change. A `setup` set is also `indeterminate`
+  until the setup template exists (`setup-template-unbuilt`). Two V3 checks
+  need no observation: when the authorization names a different plan
+  digest than the plan's, every computed repository gets a violated V3
+  check (`authorization-plan-mismatch`), and when the plan has package acts
+  and no authorization is given, every computed repository gets a violated
+  V3 check (`authorization-absent`). Each repository's verdict is the worst
+  of its checks.
 
 Nothing here writes to a repository, creates a branch or opens a pull
 request; reading the repositories, installing packages and opening one pull
@@ -569,14 +588,17 @@ registry said; it decides nothing from it. Deciding is
   in the name percent-encoded (`@scope%2Fname`), the same encoding
   `@clossys/integrator` uses. The registry is the one in this repository's
   `package-scope.json`, packed into this package at build time.
-- **Transport.** Node's own `fetch`. The only headers sent are
+- **Transport.** Node's own `fetch`. The only headers this step sets are
   `accept: application/json` and `accept-encoding: identity`, and never an
-  `Authorization` header. The step does not run the npm CLI, and reads no
+  `Authorization` header; Node's fetch adds its own default, non-credential
+  headers. The step does not run the npm CLI, and reads no
   `.npmrc` and no token from the environment. If Node is started with an
-  environment proxy (`NODE_USE_ENV_PROXY`), requests go through that proxy;
-  no credential is sent either way. A redirect is refused, never followed.
-  `accept-encoding: identity` asks for the body uncompressed, so the size cap
-  and `responseSha256` apply to the exact bytes received. A response body is
+  environment proxy (`NODE_USE_ENV_PROXY`), requests go through that proxy.
+  No registry credential is ever sent; a username and password written in
+  the proxy URL itself are sent only to that proxy, as Node's fetch does. A redirect is refused, never followed.
+  `accept-encoding: identity` asks for the body uncompressed, so when the
+  server honours it the size cap and `responseSha256` apply to the exact
+  bytes received. A response body is
   read as a stream and abandoned as soon as it passes 10 MiB; a declared
   length over that is refused before any of the body is read. If a server
   compresses the body anyway, Node's `fetch` decodes it and the 10 MiB cap
@@ -612,8 +634,11 @@ registry said; it decides nothing from it. Deciding is
   directory is written, flushed to disk and renamed over the target, so a
   reader sees the old file or the whole new one.
 
-Messages name packages and positions in the request, never the content of a
-response or of the request. Exit codes: `0` means the snapshot was written;
+A message names a package by its position in the request, `names[<n>]`,
+never by its name, and never quotes a response or the request: a name is
+request text, so the caller looks position `<n>` up in the request file it
+wrote. Exit codes: `0` means the snapshot was written, or that `--help` printed
+the usage;
 `2` means nothing was written, whether because of a usage error, an
 unreadable or refused request, or a registry answer this step cannot record.
 A snapshot is a record of what the registry answered, not evidence of where

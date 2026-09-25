@@ -9,9 +9,10 @@
 // Credentials: every read goes through an injected `Transport` whose default
 // is Node's own `fetch`. Nothing here runs the npm CLI, reads an `.npmrc`,
 // reads an environment variable, or sets an `Authorization` header; the only
-// headers sent are `accept` and `accept-encoding: identity`, which asks for
-// the body uncompressed so its hash and the size cap apply to the bytes
-// received. Redirects are refused (`redirect: "error"`, and a
+// headers this step sets are `accept` and `accept-encoding: identity`, and
+// Node's fetch adds its own default, non-credential headers. Identity asks
+// for the body uncompressed, so when the server honours it the hash and the
+// size cap apply to the bytes received. Redirects are refused (`redirect: "error"`, and a
 // 3xx answer from any transport is refused too), each response is read as a
 // stream and abandoned the moment it passes MAX_RESPONSE_BYTES (counted after
 // any decoding, so a server that compresses anyway is still bounded), and each
@@ -21,7 +22,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { closeSync, fsyncSync, mkdirSync, openSync, readFileSync, renameSync, rmSync, writeSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 import { ContractDocumentError, readContractDocument, validateAgainstContract } from "./generated/contract-schema.generated.js";
-import type { ContractSchema, ContractViolation } from "./generated/contract-schema.generated.js";
+import type { ContractSchema } from "./generated/contract-schema.generated.js";
 import { PACKAGE_SCOPE } from "./generated/package-scope.generated.js";
 import { PLAN_CONTRACTS } from "./generated/plan-contracts.generated.js";
 
@@ -41,7 +42,7 @@ export const DEFAULT_TIMEOUT_MS = 30_000;
  */
 export type Transport = (input: URL, init: RequestInit) => Promise<Response>;
 
-/** Node's own `fetch`. It reads no npm configuration and adds no credential. */
+/** Node's own `fetch`. It reads no npm configuration and adds no registry credential (a proxy URL's own username and password, if any, go only to that proxy). */
 export const nodeFetchTransport: Transport = (input, init) => fetch(input, init);
 
 /** One version of a package, projected from the registry's document. */
@@ -82,27 +83,18 @@ export interface RegistrySnapshotViolation {
   readonly message: string;
 }
 
-/** Why the snapshot step stopped. The message names packages and positions only, never registry or request content. */
+/**
+ * Why the snapshot step stopped. The message names a package only by its
+ * position in the request (`names[<n>]`), never by its name: a name is
+ * request text, and a request is a file anyone could have written. It
+ * never carries registry content either.
+ */
 export class RegistrySnapshotError extends Error {}
 
 function loadContract(name: string): ContractSchema {
   const contract = Object.hasOwn(PLAN_CONTRACTS, name) ? PLAN_CONTRACTS[name] : undefined;
   if (contract === undefined) throw new Error(`no packed contract named ${JSON.stringify(name)}`);
   return contract;
-}
-
-const UNDECLARED_FIELD = "is not a field the contract declares, and unknown fields are refused";
-
-/**
- * A contract violation with no document text in it, as @clossys/advisor
- * reports one: the checker names an undeclared key in its path, and that key
- * is document text, so the violation is placed at the object holding it.
- */
-function positionOnly(violation: ContractViolation): { path: string; message: string } {
-  if (violation.message !== UNDECLARED_FIELD) return { path: violation.path, message: violation.message };
-  const { path } = violation;
-  const cut = path.endsWith('"]') ? path.lastIndexOf('["') : path.lastIndexOf(".");
-  return { path: cut === -1 ? "" : path.slice(0, cut), message: "has a field the contract does not declare, and unknown fields are refused" };
 }
 
 function eachRepeat<T>(items: readonly T[], key: (item: T) => string, onRepeat: (index: number, firstIndex: number) => void): void {
@@ -126,7 +118,8 @@ function eachRepeat<T>(items: readonly T[], key: (item: T) => string, onRepeat: 
  */
 export function registrySnapshotViolations(value: unknown): RegistrySnapshotViolation[] {
   const schema = validateAgainstContract(loadContract("registry-snapshot.json"), value, loadContract);
-  if (schema.length > 0) return schema.map((violation) => ({ rule: "schema", ...positionOnly(violation) }));
+  // The shared checker's path and message never carry document text: an undeclared field is placed at its object, by position.
+  if (schema.length > 0) return schema.map((violation) => ({ rule: "schema", path: violation.path, message: violation.message }));
   const snapshot = value as RegistrySnapshot;
   const violations: RegistrySnapshotViolation[] = [];
   eachRepeat(snapshot.packages, (entry) => entry.name, (index, first) =>
@@ -287,7 +280,8 @@ export function projectPackument(name: string, document: unknown): { latest: str
         tarball,
         deprecated,
         publishedAt: time === undefined ? null : optionalString(time, latest, "has a latest-version publish time that is not a string"),
-        hasAttestations: isPlainObject(attestations),
+        // Listed only when the registry names where the attestations are: an empty object lists none.
+        hasAttestations: isPlainObject(attestations) && typeof own(attestations, "url") === "string" && /\S/.test(own(attestations, "url") as string),
       },
     ],
   };
@@ -346,9 +340,11 @@ async function readCapped(body: ReadableStream<Uint8Array> | null, cap: number, 
 }
 
 /**
- * The request every registry read sends: `accept`, and `accept-encoding:
- * identity` so the body arrives uncompressed and `responseSha256` and the
- * size cap apply to the exact bytes received; no credential, no redirect.
+ * The request options this step sets on every registry read: `accept`, and
+ * `accept-encoding: identity` so that a server that honours it sends the body
+ * uncompressed and `responseSha256` and the size cap apply to the exact bytes
+ * received; no credential, no redirect. Node's fetch adds its own default,
+ * non-credential headers.
  */
 function requestInit(signal: AbortSignal): RequestInit {
   return { method: "GET", headers: { accept: "application/json", "accept-encoding": "identity" }, redirect: "error", credentials: "omit", signal };
@@ -446,7 +442,8 @@ export async function takeRegistrySnapshot(names: readonly string[], options: Fe
   const ordered = names.map((name, index) => ({ name, index })).sort((left, right) => byCodeUnits(left.name, right.name));
   const packages: RegistrySnapshotPackage[] = [];
   for (const { name, index } of ordered) {
-    const where = `names[${index}] ${name}`;
+    // The position only: the name itself is request text.
+    const where = `names[${index}]`;
     const { status, bytes } = await fetchOne(transport, packumentUrl(registry, name), where, timeoutMs);
     const responseSha256 = `sha256:${createHash("sha256").update(bytes).digest("hex")}`;
     if (status === 404) {

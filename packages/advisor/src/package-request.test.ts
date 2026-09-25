@@ -115,7 +115,7 @@ describe("packageRequest", () => {
     const shape = packageRequest({ ...PLAN, "FOUNDER-KEY secret": "FOUNDER-PROSE" });
     expect(shape).toEqual({
       state: "violated",
-      findings: [{ rule: "plan-shape", verdict: "violated", path: "", message: "plan has a field the contract does not declare, and unknown fields are refused" }],
+      findings: [{ rule: "plan-shape", verdict: "violated", path: "", message: `plan has a field the contract does not declare (key ${Object.keys(PLAN).length + 1} of this object), and unknown fields are refused` }],
     });
     const nested = packageRequest({ ...PLAN, staffing: [{ ...PLAN.staffing![0]!, "FOUNDER-KEY": 1 }, PLAN.staffing![1]!] });
     expect(nested).toMatchObject({ state: "violated", findings: [{ rule: "plan-shape", path: "staffing[0]" }] });
