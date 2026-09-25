@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { AdvisorRepositoryCardCliInputError, main } from "./repository-card-cli.js";
+import { AdvisorRepositoryCardCliInputError, LIST_REPOSITORIES_COMMAND, USAGE, main } from "./repository-card-cli.js";
 
 let root: string;
 let log: ReturnType<typeof vi.spyOn>;
@@ -36,6 +36,40 @@ describe("advisor-repository-card (#1179)", () => {
     const card = JSON.parse(String(log.mock.calls[0]?.[0])) as { recommendedChoiceId: string; choices: { id: string }[] };
     expect(card.recommendedChoiceId).toBe("example-owner/example-site");
     expect(card.choices.map((choice) => choice.id)).toEqual(["example-owner/example-site", "example-owner/example-app", "something-else"]);
+  });
+
+  it("reads JSON Lines, one entry per line, as the skill's gh api --jq ... | tojson command writes them", () => {
+    const lines = `${LISTING.map((entry) => JSON.stringify(entry)).join("\n")}\n\n`;
+    expect(main([write(lines), "--current", "example-owner/example-site"])).toBe(0);
+    const card = JSON.parse(String(log.mock.calls[0]?.[0])) as { choices: { id: string }[] };
+    expect(card.choices.map((choice) => choice.id)).toEqual(["example-owner/example-site", "example-owner/example-app", "something-else"]);
+  });
+
+  it("refuses a JSON Lines file with a bad line, naming the line and position, not the text", () => {
+    const text = `${JSON.stringify(LISTING[0])}\n{"nameWithOwner": "example-owner/secret-name"\n`;
+    expect(() => main([write(text)])).toThrow(/line 2 is not valid JSON at position \d+$/);
+    expect(() => main([write(text)])).not.toThrow(/secret-name/);
+    expect(() => main([write(new Uint8Array([0x7b, 0xff, 0x7d, 0x0a]))])).toThrow(/is not valid UTF-8/);
+  });
+
+  it("says an empty list is empty (exit 1), for an empty file or an empty array", () => {
+    for (const contents of ["", "[]"]) {
+      error.mockClear();
+      expect(main([write(contents)])).toBe(1);
+      expect(String(error.mock.calls[0]?.[0])).toMatch(/the list is empty: this GitHub account can see no repositories/);
+    }
+  });
+
+  it("builds the card without a recommendation when --current is not on the list", () => {
+    expect(main([write(JSON.stringify(LISTING)), "--current", "example-owner/not-listed"])).toBe(0);
+    expect(JSON.parse(String(log.mock.calls[0]?.[0]))).not.toHaveProperty("recommendedChoiceId");
+  });
+
+  it("names the exact listing command in its usage", () => {
+    expect(USAGE).toContain(LIST_REPOSITORIES_COMMAND);
+    expect(LIST_REPOSITORIES_COMMAND).toBe(
+      "gh api --paginate 'user/repos?affiliation=owner,collaborator,organization_member&per_page=100' --jq '.[] | select(.archived | not) | {nameWithOwner: .full_name, description} | tojson'",
+    );
   });
 
   it("prints the checked choice, in the card's order, ready for launcher --repositories", () => {
@@ -82,7 +116,7 @@ describe("advisor-repository-card (#1179)", () => {
     expect(() => main([path, "--choose"])).toThrow(/only --current <owner\/name> and --choose/);
     expect(() => main([path, "--choose", "example-owner/example-app", "--choose", "example-owner/example-site"])).toThrow(/each once/);
     expect(() => main([path, "--limit", "5"])).toThrow(/only --current/);
-    expect(() => main([])).toThrow(/exactly one repositories\.json file/);
+    expect(() => main([])).toThrow(/exactly one repositories file/);
     expect(() => main([join(root, "absent.json")])).toThrow(/does not exist/);
   });
 });

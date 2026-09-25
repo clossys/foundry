@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   REPOSITORY_CHOICE_CARD_ID,
+  REPOSITORY_DETAIL_MAX_LENGTH,
+  cleanDescription,
   REPOSITORY_SOMETHING_ELSE_ID,
   applyRepositoryChoice,
   repositoryChoiceCard,
@@ -71,7 +73,6 @@ describe("repositoryChoiceCard (#1179)", () => {
 
   it.each([
     ["not an array", { nameWithOwner: "example-owner/example-repo" }, /^listing must be an array \(the list of repositories\), got object$/],
-    ["an empty list", [], /^listing must have at least 1 item\(s\)$/],
     ["an entry that is not an object", ["example-owner/example-repo"], /^listing\[0\] must be an object \(the repository entry\), got string$/],
     ["an entry with no nameWithOwner", [{ description: "x" }], /^listing\[0\]\.nameWithOwner is required$/],
     ["an entry with an unknown field", [{ nameWithOwner: "example-owner/example-repo", url: "x" }], /^listing\[0\]\.url is not a field the contract declares/],
@@ -109,11 +110,17 @@ describe("repositoryChoiceCard (#1179)", () => {
     ]);
   });
 
-  it("refuses a current repository that is not on the list, or is not a valid id, without echoing it", () => {
-    expect(messagesOf(repositoryChoiceCard(LISTING, { current: "example-owner/not-listed" }))).toEqual(["current is not one of the listed repositories"]);
-    const invalid = messagesOf(repositoryChoiceCard(LISTING, { current: "example-owner/a/b" }));
-    expect(invalid).toEqual([expect.stringMatching(/^current must be a bare repository name or owner\/name/)]);
-    expect(invalid.join(" ")).not.toContain("example-owner/a/b");
+  it("builds the card without a recommendation when the current repository is not on the list, never refusing it", () => {
+    for (const current of ["example-owner/not-listed", "example-owner/a/b"]) {
+      const card = cardFor(LISTING, { current });
+      expect(card).not.toHaveProperty("recommendedChoiceId");
+      expect(card.choices.map((choice) => choice.id)).toEqual(cardFor(LISTING).choices.map((choice) => choice.id));
+    }
+  });
+
+  it("says a well-formed empty list is empty, not unreadable", () => {
+    expect(repositoryChoiceCard([])).toEqual({ state: "empty" });
+    expect(repositoryChoiceCard([], { current: "example-owner/example-app" })).toEqual({ state: "empty" });
   });
 });
 
@@ -168,5 +175,28 @@ describe("applyRepositoryChoice (#1179)", () => {
       kind: "refused",
       findings: [expect.objectContaining({ rule: "repository-choice", message })],
     });
+  });
+});
+
+describe("repository descriptions are untrusted data (#1179)", () => {
+  it("removes control, bidirectional and invisible formatting characters", () => {
+    const hostile = "Site\u0007\u001b[31m red\u0085 \u061c\u200b\u200e\u202e\u2066reversed\u2069\ufeff\u2028end\nnext";
+    expect(cleanDescription(hostile)).toBe("Site [31m red reversed end next");
+    const card = cardFor([{ nameWithOwner: "example-owner/example-app", description: hostile }]);
+    expect(card.choices[0]?.detail).toBe("Site [31m red reversed end next");
+  });
+
+  it("caps a long description, ending it with an ellipsis", () => {
+    const long = "word ".repeat(100);
+    const detail = cleanDescription(long);
+    expect([...(detail ?? "")].length).toBeLessThanOrEqual(REPOSITORY_DETAIL_MAX_LENGTH);
+    expect(detail?.endsWith("\u2026")).toBe(true);
+    expect(cleanDescription("x".repeat(REPOSITORY_DETAIL_MAX_LENGTH))).toBe("x".repeat(REPOSITORY_DETAIL_MAX_LENGTH));
+    expect([...(cleanDescription("\u{1F600}".repeat(300)) ?? "")].length).toBe(REPOSITORY_DETAIL_MAX_LENGTH);
+  });
+
+  it("drops a description with nothing left once cleaned", () => {
+    expect(cleanDescription("\u200b\u202e \n")).toBeUndefined();
+    expect(cleanDescription(null)).toBeUndefined();
   });
 });

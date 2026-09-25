@@ -410,23 +410,42 @@ models through its own per-host profile.
 
 A founder chooses which repositories the team works on from a card; nobody
 types a repository name. This package holds no credentials and makes no
-network call: the agent lists the repositories the founder's GitHub account
-can see (for example `gh repo list --json nameWithOwner,description`) and
-hands that list to `repositoryChoiceCard(listing, { current? })`, which
-returns a `RepositoryChoiceCardResult`: `{ state: "card", card }` or
-`{ state: "invalid", findings }`.
+network call: the agent lists every repository the founder's GitHub
+account can see -- the ones it owns, collaborates on, and reaches through
+an organization, on every page, archived ones left out -- with GitHub's
+`user/repos` API:
+
+```bash
+gh api --paginate 'user/repos?affiliation=owner,collaborator,organization_member&per_page=100' \
+  --jq '.[] | select(.archived | not) | {nameWithOwner: .full_name, description} | tojson'
+```
+
+(`gh api` refuses `--slurp` together with `--jq`, so each entry is printed
+as one JSON line.) The agent writes that list to a temporary directory
+outside the repository and deletes it afterwards, because it names private
+repositories, and hands the entries to
+`repositoryChoiceCard(listing, { current? })`, which returns a
+`RepositoryChoiceCardResult`: `{ state: "card", card }`,
+`{ state: "empty" }` when the account can see no repositories -- a fact to
+tell the founder, not a reading error -- or `{ state: "invalid", findings }`.
 
 The `RepositoryChoiceCard` follows the intake card model
 ([`docs/contracts/intake-question-cards.json`](https://github.com/clossys/foundry/blob/main/docs/contracts/intake-question-cards.json)),
 extended there for this card: `selection: "many"`, because the founder may
 choose several repositories, and choices supplied at runtime rather than
 from a static file. Its id is `REPOSITORY_CHOICE_CARD_ID` (`hub-repositories`).
-Each `RepositoryChoice` is a repository's `owner/name` as its id and label,
-with its description, when it has one, as `detail`. When `current` names
-the repository the founder is working in, it is the `recommendedChoiceId`
-and listed first; otherwise no recommendation is invented. The other
+Each `RepositoryChoice` is a repository's `owner/name` as its id and label.
+Its description, when it has one, is the choice's `detail`: it is text
+written by whoever controls that repository, so control characters,
+bidirectional and invisible formatting characters are removed, and it is
+cut to 200 characters with a closing ellipsis. When `current` names the
+repository the founder is working in and that repository is on the list,
+it is the `recommendedChoiceId` and listed first. When it is not on the
+list, the card is built without a recommendation, never refused. The other
 repositories follow sorted by id, and `REPOSITORY_SOMETHING_ELSE_ID`
-(`something-else`, "a repository I need is not on this list") is last.
+(`something-else`, "a repository I need is not on this list") is last; its
+follow-up asks whether the missing repository is one the founder has not
+been added to yet.
 
 Each `RepositoryListingEntry` must be `{ nameWithOwner, description? }`
 and nothing else, and each `nameWithOwner` must satisfy the repository
@@ -453,14 +472,19 @@ The `advisor-repository-card` CLI wraps both functions for an agent that
 has no hub yet, and so no pinned package to import:
 
 ```bash
-advisor-repository-card repositories.json --current example-owner/example-app
-advisor-repository-card repositories.json --choose example-owner/example-app,example-owner/example-site
+advisor-repository-card "$tmp/repositories.jsonl" --current example-owner/example-app
+advisor-repository-card "$tmp/repositories.jsonl" --current example-owner/example-app --choose example-owner/example-app,example-owner/example-site
 ```
 
 Without `--choose` it prints the card as JSON; with `--choose` it prints
-the checked choice as JSON. It reads the file as strict JSON, the same way
-`advisor-render-status` does, and exits `0` for a card or an accepted
-choice, `1` for a refused choice, and `2` for unreadable or invalid input.
+the checked choice as JSON. Pass the same `--current` both times, so the
+order it returns matches the card the founder saw. The file is either one
+JSON array of entries or JSON Lines, one entry per line, as the command
+above writes it. It is read with the same strict reader as
+`advisor-render-status`, and a bad line is named by its number and
+position, never quoted. It exits `0` for a card or an accepted choice, `1`
+when the list is empty or the choice is refused, and `2` for unreadable or
+invalid input.
 
 ## Evolution
 

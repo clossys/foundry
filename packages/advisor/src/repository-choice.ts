@@ -6,11 +6,13 @@ import type { AdvisorFinding } from "./types.js";
 /**
  * The hub's repository-choice card (issue #1179): which repositories the
  * team works on, chosen from the repositories the client's GitHub account
- * can see, so nobody types a repository name.
+ * can see -- the ones it owns, collaborates on, or reaches through an
+ * organization -- so nobody types a repository name.
  *
  * This package holds no credentials and makes no network call. The agent
- * gathers the list (for example `gh repo list --json nameWithOwner,description`)
- * and hands it to `repositoryChoiceCard()`; `applyRepositoryChoice()` then
+ * gathers the list with GitHub's `user/repos` API, every page of it (the
+ * package's skill gives the exact `gh api --paginate` command), and hands
+ * it to `repositoryChoiceCard()`; `applyRepositoryChoice()` then
  * checks the client's choice against the choices the card offered.
  * `@clossys/launcher` writes the chosen ids into the hub inventory
  * (`launcher --repositories`); this package writes nothing.
@@ -28,6 +30,11 @@ import type { AdvisorFinding } from "./types.js";
  * Findings name a position only (for example `listing[3].nameWithOwner`),
  * never a repository name: a repository list can include private names,
  * and a finding can end up in a log.
+ *
+ * A repository's description is text written by whoever controls that
+ * repository, so the card treats it as untrusted data: it is shown only as
+ * a choice's `detail`, with control, bidirectional and invisible
+ * formatting characters removed and its length capped.
  */
 
 /** Stable id of the repository-choice card. */
@@ -35,7 +42,7 @@ export const REPOSITORY_CHOICE_CARD_ID = "hub-repositories";
 /** The choice a client picks when a repository they expected is not on the list. */
 export const REPOSITORY_SOMETHING_ELSE_ID = "something-else";
 
-/** One repository as the agent lists it: `gh repo list --json nameWithOwner,description` output, entry for entry. */
+/** One repository as the agent lists it: GitHub's `full_name` as `nameWithOwner`, and its `description`. */
 export interface RepositoryListingEntry {
   readonly nameWithOwner: string;
   readonly description?: string | null;
@@ -46,7 +53,7 @@ export interface RepositoryChoice {
   readonly id: string;
   /** Client-facing text: the repository's `owner/name`. */
   readonly label: string;
-  /** The repository's own description, when it has one. */
+  /** The repository's own description, when it has one: untrusted text, cleaned and capped by `cleanDescription()`. */
   readonly detail?: string;
 }
 
@@ -65,6 +72,8 @@ export interface RepositoryChoiceCard {
 
 export type RepositoryChoiceCardResult =
   | { readonly state: "card"; readonly card: RepositoryChoiceCard }
+  /** The list was well formed and empty: the account can see no repositories, so there is nothing to choose. */
+  | { readonly state: "empty" }
   | { readonly state: "invalid"; readonly findings: readonly AdvisorFinding[] };
 
 export type RepositoryChoiceApplyResult =
@@ -80,7 +89,36 @@ const CHOICE_RULE = "repository-choice";
 const PROMPT = "Which of these repositories should the team work on? Choose every one that applies.";
 const SOMETHING_ELSE_LABEL = "A repository I need is not on this list.";
 const SOMETHING_ELSE_FOLLOW_UP =
-  "Is the missing repository owned by an organization or account your GitHub sign-in cannot see yet? If so, ask its owner to add you, and I will list the repositories again.";
+  "This list has every repository your GitHub sign-in can reach: the ones you own, the ones you were added to as a collaborator, and your organizations' (archived ones are left out). Is the missing one somewhere you have not been added yet, or where your organization membership is still pending? If so, ask its owner to add you, and I will list the repositories again.";
+
+/** The longest `detail` shown, in characters; a longer description is cut and ends with an ellipsis. */
+export const REPOSITORY_DETAIL_MAX_LENGTH = 200;
+
+/**
+ * Characters a description may not carry into a card: C0 and C1 controls
+ * (and DEL), the Arabic letter mark, zero-width and directional marks
+ * (U+200B-U+200F), line and paragraph separators, bidirectional embeddings,
+ * overrides and isolates, and the byte order mark. A superset of the shared
+ * contract checker's own terminal-unsafe set, because a detail is shown as
+ * plain text, not as an escaped JSON string.
+ */
+const UNSAFE_IN_DETAIL = /[\u0000-\u001f\u007f-\u009f\u061c\u200b-\u200f\u2028\u2029\u202a-\u202e\u2066-\u2069\ufeff]/gu;
+
+/**
+ * A repository description as a card may show it: every unsafe character
+ * becomes a space, runs of whitespace become one space, the ends are
+ * trimmed, and anything past `REPOSITORY_DETAIL_MAX_LENGTH` characters is
+ * cut to leave room for a closing ellipsis. `undefined` when nothing is
+ * left. The description is data, never an instruction.
+ */
+export function cleanDescription(description: string | null | undefined): string | undefined {
+  if (typeof description !== "string") return undefined;
+  const cleaned = description.replace(UNSAFE_IN_DETAIL, " ").replace(/\s+/gu, " ").trim();
+  if (cleaned === "") return undefined;
+  const characters = [...cleaned];
+  if (characters.length <= REPOSITORY_DETAIL_MAX_LENGTH) return cleaned;
+  return `${characters.slice(0, REPOSITORY_DETAIL_MAX_LENGTH - 1).join("").trimEnd()}\u2026`;
+}
 
 /** A repository id as GitHub lists it: the inventory contract's id rule, and always qualified by its owner. */
 const QUALIFIED_REPOSITORY_ID: ContractSchema = {
@@ -93,7 +131,6 @@ const QUALIFIED_REPOSITORY_ID: ContractSchema = {
 const LISTING_SCHEMA: ContractSchema = {
   title: "list of repositories",
   type: "array",
-  minItems: 1,
   items: {
     title: "repository entry",
     type: "object",
@@ -140,23 +177,25 @@ function byId(left: RepositoryListingEntry, right: RepositoryListingEntry): numb
 /**
  * Builds the repository-choice card from the repositories the client's
  * GitHub account can see, as the agent listed them. Refuses, with findings
- * that name positions only, a listing that is not a nonempty array of
+ * that name positions only, a listing that is not an array of
  * `{ nameWithOwner, description? }` entries, an id that breaks the
  * inventory contract's id rule or is not `owner/name`, and two entries
- * naming the same repository (compared case-insensitively).
+ * naming the same repository (compared case-insensitively). A well-formed
+ * empty list is `{ state: "empty" }`: the account can see no repositories,
+ * which is a fact to tell the client, not a reading error.
  *
  * `options.current` is the repository the client is working in (for
- * example the one being appointed as the hub). When given, it must be on
- * the list; it is then the recommended choice, listed first. The other
- * repositories follow sorted by id, so the list is never in an arbitrary
- * order, and `something-else` is always last.
+ * example the one being appointed as the hub). It only ever adds a
+ * recommendation: when it is on the list (compared case-insensitively) it
+ * is the recommended choice, listed first; when it is not -- the client may
+ * be in a repository the account cannot list -- the card is built without
+ * a recommendation. It never refuses the card. The other repositories
+ * follow sorted by id, so the list is never in an arbitrary order, and
+ * `something-else` is always last.
  */
 export function repositoryChoiceCard(listing: unknown, options: { readonly current?: string } = {}): RepositoryChoiceCardResult {
   const violations = validateAgainstContract(LISTING_SCHEMA, listing, loadPlanContract);
   const problems = findings(LISTING_RULE, "listing", violations);
-  if (options.current !== undefined) {
-    problems.push(...findings(LISTING_RULE, "current", validateAgainstContract(QUALIFIED_REPOSITORY_ID, options.current, loadPlanContract)));
-  }
   if (problems.length > 0) return { state: "invalid", findings: problems };
 
   const entries = listing as readonly RepositoryListingEntry[];
@@ -172,20 +211,17 @@ export function repositoryChoiceCard(listing: unknown, options: { readonly curre
       seen.set(key, index);
     }
   }
-  const currentIndex = options.current === undefined ? undefined : seen.get(repositoryKey(options.current));
-  if (options.current !== undefined && currentIndex === undefined) {
-    problems.push(finding(LISTING_RULE, "current", "is not one of the listed repositories"));
-  }
   if (problems.length > 0) return { state: "invalid", findings: problems };
+  if (entries.length === 0) return { state: "empty" };
 
+  const currentIndex = typeof options.current === "string" ? seen.get(repositoryKey(options.current)) : undefined;
   const recommended = currentIndex === undefined ? undefined : entries[currentIndex];
   const rest = entries.filter((entry) => entry !== recommended).sort(byId);
   const ordered = recommended === undefined ? rest : [recommended, ...rest];
-  const choices: RepositoryChoice[] = ordered.map((entry) => ({
-    id: entry.nameWithOwner,
-    label: entry.nameWithOwner,
-    ...(typeof entry.description === "string" && entry.description.trim() !== "" ? { detail: entry.description.trim() } : {}),
-  }));
+  const choices: RepositoryChoice[] = ordered.map((entry) => {
+    const detail = cleanDescription(entry.description);
+    return { id: entry.nameWithOwner, label: entry.nameWithOwner, ...(detail === undefined ? {} : { detail }) };
+  });
   choices.push({ id: REPOSITORY_SOMETHING_ELSE_ID, label: SOMETHING_ELSE_LABEL });
   return {
     state: "card",

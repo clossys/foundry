@@ -5,44 +5,96 @@ import { fileURLToPath } from "node:url";
 import { readContractDocument } from "./contract-schema.js";
 import { applyRepositoryChoice, repositoryChoiceCard } from "./repository-choice.js";
 
-export const USAGE = `Usage: advisor-repository-card <repositories.json> [--current <owner/name>] [--choose <id>[,<id>...]]
+/**
+ * The command the skill uses to list every repository the signed-in
+ * account can see -- owned, collaborator, and organization member -- on
+ * every page, archived ones left out, as one JSON object per line.
+ * `--slurp` cannot be combined with `--jq`, so each page's objects are
+ * written with `tojson`, which gh prints as one compact line each.
+ */
+export const LIST_REPOSITORIES_COMMAND =
+  "gh api --paginate 'user/repos?affiliation=owner,collaborator,organization_member&per_page=100' --jq '.[] | select(.archived | not) | {nameWithOwner: .full_name, description} | tojson'";
+
+export const USAGE = `Usage: advisor-repository-card <repositories-file> [--current <owner/name>] [--choose <id>[,<id>...]]
 
 Builds the hub's repository-choice card from the repositories a GitHub
 account can see, and checks a client's choice against it. It reads only the
-file it is given: no credentials, no network. Make the file with, for example:
+file it is given: no credentials, no network. The file is either a JSON array
+of { nameWithOwner, description } entries or one such entry per line, which
+is what this command writes:
 
-  gh repo list --no-archived --limit 200 --json nameWithOwner,description > repositories.json
+  ${LIST_REPOSITORIES_COMMAND} > "$TMPDIR/repositories.jsonl"
+
+Keep that file outside the repository and delete it afterwards: it lists
+private repository names.
 
 Without --choose, prints the card as JSON. With --choose, prints the checked
 choice as JSON: the repositories to pass to \`launcher --repositories\`, in the
-card's order. --current names the repository the client is working in; it
-is recommended first.
+card's order. --current names the repository the client is working in; when
+it is on the list it is recommended first, and when it is not, the card has
+no recommendation. Pass the same --current with --choose as when the card was
+shown, so the order matches.
 
-Exit codes: 0 = card built or choice accepted, 1 = the choice is refused,
-2 = unreadable or invalid input.`;
+Exit codes: 0 = card built or choice accepted, 1 = the list is empty (the
+account can see no repositories) or the choice is refused, 2 = unreadable or
+invalid input.`;
 
 export class AdvisorRepositoryCardCliInputError extends Error {}
 
+const STRICT_UTF8 = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true });
+
+function describeCause(cause: unknown): string {
+  return cause instanceof Error ? cause.message : String(cause);
+}
+
 /**
- * Reads the agent-supplied repository list as strict JSON (#1475's reader):
- * invalid UTF-8, a syntax error (reported by position only), or a repeated
- * key is refused.
+ * Reads the agent-supplied repository list with #1475's strict reader:
+ * invalid UTF-8, a byte order mark, a syntax error (reported by position
+ * only), or a repeated key is refused. A file whose first non-blank
+ * character is `[` is one JSON array; any other file is JSON Lines, one
+ * entry per non-blank line, as `gh api --jq '... | tojson'` writes it. A
+ * file with no entries at all reads as an empty list.
  */
 export function readRepositoryListing(path: string): unknown {
   const resolved = resolve(path);
   if (!existsSync(resolved)) throw new AdvisorRepositoryCardCliInputError(`repositories file "${path}" does not exist`);
+  const unreadable = (detail: string) => new AdvisorRepositoryCardCliInputError(`repositories file "${path}" is unreadable as strict JSON: ${detail}`);
+  let bytes: Uint8Array;
   try {
     if (!statSync(resolved).isFile()) throw new AdvisorRepositoryCardCliInputError(`repositories file "${path}" is not a file`);
-    return readContractDocument(readFileSync(resolved));
+    bytes = readFileSync(resolved);
   } catch (cause) {
     if (cause instanceof AdvisorRepositoryCardCliInputError) throw cause;
-    throw new AdvisorRepositoryCardCliInputError(`repositories file "${path}" is unreadable as strict JSON: it ${cause instanceof Error ? cause.message : String(cause)}`);
+    throw unreadable(`it ${describeCause(cause)}`);
   }
+  let text: string;
+  try {
+    text = STRICT_UTF8.decode(bytes);
+  } catch {
+    throw unreadable("it is not valid UTF-8");
+  }
+  if (text.trimStart().startsWith("[") || text.startsWith("\ufeff")) {
+    try {
+      return readContractDocument(bytes);
+    } catch (cause) {
+      throw unreadable(`it ${describeCause(cause)}`);
+    }
+  }
+  const entries: unknown[] = [];
+  for (const [index, line] of text.split("\n").entries()) {
+    if (line.trim() === "") continue;
+    try {
+      entries.push(readContractDocument(new TextEncoder().encode(line)));
+    } catch (cause) {
+      throw unreadable(`line ${index + 1} ${describeCause(cause)}`);
+    }
+  }
+  return entries;
 }
 
 function parseArgs(argv: readonly string[]): { listingPath: string; current?: string; choose?: readonly string[] } {
   const [listingPath, ...rest] = argv;
-  if (listingPath === undefined || listingPath.startsWith("--")) throw new AdvisorRepositoryCardCliInputError("exactly one repositories.json file is required first");
+  if (listingPath === undefined || listingPath.startsWith("--")) throw new AdvisorRepositoryCardCliInputError("exactly one repositories file is required first");
   let current: string | undefined;
   let choose: readonly string[] | undefined;
   for (let index = 0; index < rest.length; index += 2) {
@@ -65,6 +117,10 @@ export function main(argv: readonly string[]): number {
   const built = repositoryChoiceCard(readRepositoryListing(args.listingPath), args.current === undefined ? {} : { current: args.current });
   if (built.state === "invalid") {
     throw new AdvisorRepositoryCardCliInputError(`the repository list is invalid: ${built.findings.map((finding) => finding.message).join("; ")}`);
+  }
+  if (built.state === "empty") {
+    console.error("advisor-repository-card: the list is empty: this GitHub account can see no repositories, so there is nothing to choose from");
+    return 1;
   }
   if (args.choose === undefined) {
     console.log(JSON.stringify(built.card, null, 2));
