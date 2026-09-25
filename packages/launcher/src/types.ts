@@ -21,8 +21,18 @@ export interface WorkspaceHost {
   isDirectory(path: string): boolean;
   /** True when path exists and is a symlink (lstat; does not follow). Missing path is false. */
   isSymlink(path: string): boolean;
+  /** Decodes a file as UTF-8 text. Missing or unreadable is null. Not for contract documents: invalid bytes are silently replaced. */
   readText(path: string): string | null;
+  /**
+   * A file's exact bytes, never decoded. Missing or unreadable is null. Every
+   * inventory document is read this way and handed to the shared strict
+   * reader, so bytes that are not valid UTF-8 are refused rather than
+   * silently replaced with U+FFFD before anything checks them (#1179).
+   */
+  readBytes(path: string): Uint8Array | null;
   writeText(path: string, contents: string): void;
+  /** Writes these exact bytes, so a copied document stays byte-identical. */
+  writeBytes(path: string, contents: Uint8Array): void;
   mkdirp(path: string): void;
   /** Creates a relative symlink at linkPath pointing at relativeTarget (directory link). */
   symlink(relativeTarget: string, linkPath: string): void;
@@ -75,8 +85,17 @@ export interface SkillsManifestSummary {
 }
 
 export interface InventoryObservation {
-  readonly status: "missing" | "empty" | "populated";
+  /**
+   * "invalid" means a document was found but does not conform to the
+   * inventory schema (bad JSON, wrong shape, an unrecognized field, or a
+   * duplicate repository id) -- distinct from "empty" (a well-formed,
+   * zero-entry document) so a malformed document is reported, never
+   * silently treated as if it were merely empty.
+   */
+  readonly status: "missing" | "empty" | "populated" | "invalid";
   readonly count: number;
+  /** Present only when status is "invalid"; names the offending field. */
+  readonly reason?: string;
 }
 
 /** A package.json dependency bucket scanned for the advisor pin. */
@@ -132,6 +151,18 @@ export interface HubHealthReport {
     readonly rosterTargets?: readonly string[];
     readonly rosterSkipped?: readonly { readonly inventoryId: string; readonly note: string }[];
     readonly retired?: readonly string[];
+    /**
+     * Composed skills left exactly as found because their on-disk content is not
+     * provably what Launcher last wrote (#1473) -- in the hub, or (with `target`
+     * naming the inventory id) in a sibling clone. Any entry marks the report degraded.
+     */
+    readonly preserved?: readonly {
+      readonly target?: string;
+      readonly packageDir: string;
+      readonly action: "rewrite" | "retire";
+      readonly path: string;
+      readonly note: string;
+    }[];
   };
   /** Present only on the run that performed the `.clossys/` -> `clossys/.state/` migration. */
   readonly migration?: { readonly status: "migrated"; readonly from: string; readonly to: string };
@@ -180,6 +211,29 @@ export interface WorkspacePlanCreate {
   readonly advisorVersion: string;
 }
 
+/**
+ * What `launcher --repositories` does to the hub inventory (#1179): write
+ * the chosen repositories, or leave an inventory that already lists exactly
+ * those repositories as it is. Decided by `resolveChosenInventory()`.
+ */
+export type ChosenInventory =
+  | { readonly kind: "unchanged"; readonly count: number }
+  | {
+      readonly kind: "write";
+      /** The exact document text to write to `clossys/.state/inventory.json` (a generated hub path, not shipped in this package), already validated against the inventory contract. */
+      readonly document: string;
+      /** Repositories in the written document. */
+      readonly count: number;
+      /** Repositories the inventory listed before; 0 when there was none, it was empty, or it failed its contract. */
+      readonly previousCount: number;
+      /** Chosen ids the previous inventory did not list. */
+      readonly added: readonly string[];
+      /** Previous ids the choice leaves out. */
+      readonly removed: readonly string[];
+      /** What the write replaces: nothing (no inventory, or an empty one), a differing valid inventory, or one that failed its contract. The last two happen only with an explicit replace approval. */
+      readonly replaced: "nothing" | "differing" | "invalid";
+    };
+
 export interface WorkspacePlanResume {
   readonly action: "resume";
   readonly owner: string;
@@ -190,6 +244,8 @@ export interface WorkspacePlanResume {
   readonly advisorVersion?: string;
   /** Set when the hub marker was found only at the legacy `.clossys/` path; apply migrates it. */
   readonly migrateFrom?: "legacy";
+  /** Set by `--repositories`: the inventory apply writes before it composes skills, or confirms is unchanged. */
+  readonly chosenInventory?: ChosenInventory;
 }
 
 export interface WorkspacePlanAdopt {
@@ -202,6 +258,22 @@ export interface WorkspacePlanAdopt {
   readonly inventorySource?: string;
   /** Merged repository ids (on-disk first, then new ids from --inventory) written when both sources are populated. */
   readonly mergedInventoryIds?: readonly string[];
+  /**
+   * The merged entries themselves (each entry's `packages` kept), in the same order as `mergedInventoryIds` (#1334).
+   * Apply writes them when the plan carries no `mergedInventoryDocument`.
+   */
+  readonly mergedInventoryRepositories?: readonly { readonly id: string; readonly packages?: unknown }[];
+  /**
+   * The merged inventory document to write, when both sources are populated: every kept entry whole, its `packages`
+   * included, each repository once by Launcher's one identity rule (#1179) -- `mergedInventoryRepositories`, rendered.
+   * Preferred over `mergedInventoryRepositories` and `mergedInventoryIds`, which a hand-built plan may still carry
+   * without it; with ids alone, each id is written without packages.
+   */
+  readonly mergedInventoryDocument?: string;
+  /** Set when `inventorySource` is about to replace an on-disk inventory that failed schema validation, so the apply message can say it was replaced rather than merely written (#1334). */
+  readonly replacesInvalidInventory?: boolean;
+  /** Set by `--repositories`: the inventory apply writes, or confirms is unchanged (#1179). */
+  readonly chosenInventory?: ChosenInventory;
 }
 
 export type WorkspacePlan = WorkspacePlanCreate | WorkspacePlanResume | WorkspacePlanAdopt;

@@ -569,7 +569,11 @@ launcher reading an inventory document sees `repositories[{ id }]` whose
 entries it can only count, because nothing promised what an entry means.
 `emitCurrencyDelta` closes that gap: one shared v1 document shape, defined
 once and shipped from here, so the emitter and any consumer read the same
-definition.
+definition. [`docs/contracts/repository-inventory.json`](https://github.com/clossys/foundry/blob/main/docs/contracts/repository-inventory.json)
+(#1334; in the public repository, not shipped in this package) is that
+consumer-side contract: `@clossys/launcher` validates every inventory
+document it reads or writes against it, and its `packages` entry field is
+this package's `InventoryPackageEntry` exactly.
 
 The document is deliberately a serialization contract, not a judgment
 envelope — flat, JSON-shaped, and versioned:

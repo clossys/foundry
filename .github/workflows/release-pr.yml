@@ -75,13 +75,20 @@ name: Release PR
 #
 # WHY THIS NEEDS NO CREDENTIAL-FREE CARE THE WAY qualify-candidate.yml DOES
 # -----------------------------------------------------------------------
-# This workflow never packs a tarball, never runs candidate qualification,
-# and never touches the pinned release runtime -- it only edits
-# package.json version fields, docs/changelogs/<dir>.md files, and package-lock.json,
-# all ordinary source edits. It uses the ambient GITHUB_TOKEN, scoped to
-# this repository only, purely to push a branch and open a pull request --
-# the same version-control-only credential qualify-candidate.yml's own
-# "Push branch and open pull request" step uses, for the identical reason.
+# This workflow never packs a tarball and never runs candidate
+# qualification -- it only edits package.json version fields,
+# docs/changelogs/<dir>.md files, and package-lock.json, all ordinary
+# source edits. It DOES pin the same 24.19.0 npm qualify-candidate.yml and
+# publish.yml pin (see the "Pinned to the same 24.19.0 release runtime"
+# comment on the setup-node step below, issue #1439 defect 3) so its own
+# package-lock.json writes are consistent with theirs, but it never calls
+# scripts/lib/release-runtime.mjs's assertReleaseRuntime() the way those
+# two workflows' own scripts do -- there is no qualification record here
+# for a runtime mismatch to invalidate. It uses the ambient GITHUB_TOKEN,
+# scoped to this repository only, purely to push a branch and open a pull
+# request -- the same version-control-only credential qualify-candidate.yml's
+# own "Push branch and open pull request" step uses, for the identical
+# reason.
 on:
   workflow_dispatch:
     inputs:
@@ -116,9 +123,24 @@ jobs:
         with:
           persist-credentials: false
 
+      # Pinned to the same 24.19.0 release runtime qualify-candidate.yml and
+      # publish.yml already pin (issue #1439, defect 3): this job's own
+      # `npm ci` (below) and `npm install --package-lock-only` (inside
+      # scripts/apply-release-changesets.mjs) write package-lock.json, and a
+      # DIFFERENT npm version rewrites unrelated lockfile metadata even when
+      # nothing it resolves actually changed -- confirmed for real on run
+      # 36024191110/#1438, where Node 20's bundled npm added 26 spurious
+      # "peer": true flags and dropped the "libc" field from 14
+      # platform-specific entries that Node 24.19.0's npm (11.17.0) had
+      # written. Unlike qualify-candidate.yml/publish.yml, nothing this job
+      # calls invokes scripts/lib/release-runtime.mjs's assertReleaseRuntime()
+      # -- neither apply-release-changesets.mjs nor check-release-pr-shape.mjs
+      # packs a tarball or produces a qualification record -- so there is no
+      # matching "Assert release runtime" step here; only the exact npm
+      # version needs to match, not the full qualification-grade tuple.
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: 20
+          node-version: 24.19.0
 
       - name: Install repository dependencies without lifecycle scripts
         run: npm ci --ignore-scripts
@@ -155,17 +177,51 @@ jobs:
           # narrowing that down to real release-PR branches, per
           # `RELEASE_PR_BRANCH_PATTERN` -- see that function's own header.
           branch_refs="$(git ls-remote --heads origin 'claude/release-*')"
-          proceed="$(OPEN_COUNT="$open_count" BRANCH_REFS="$branch_refs" node --input-type=module -e '
-            import { loadReleaseCalendar, shouldOpenReleasePr, filterReleasePrBranchRefs } from "./scripts/lib/release-calendar.mjs";
+          # Issue #1392: the visible skip message below used to print only
+          # a COUNT of matched branches (the actual names went to this
+          # step's own stderr, via console.error() alone), so a maintainer
+          # investigating why the guard skipped had to dig through workflow
+          # logs instead of reading the cause in the summary. It also
+          # counted EVERY matched branch as "in progress" forever, even one
+          # whose release PR was closed WITHOUT merging -- delete_branch_on_
+          # merge only cleans up a branch on a real merge, so that leftover
+          # branch would otherwise block every subsequent Saturday, silently
+          # and permanently. Both are fixed the same way: every pull request
+          # `gh pr list --head <branch> --state all` returns for a matched
+          # branch is handed to inProgressReleaseBranches()
+          # (`scripts/lib/release-calendar.mjs` -- see that function's own
+          # header, which also owns the gh arguments and ignores same-named
+          # fork PRs), and its result is printed on two stdout lines this
+          # step reads back below, rather than only to stderr. A gh or API
+          # failure throws here and fails the step under `set -e`.
+          result="$(OPEN_COUNT="$open_count" BRANCH_REFS="$branch_refs" GH_TOKEN="$GH_TOKEN" node --input-type=module -e '
+            import { execFileSync } from "node:child_process";
+            import { loadReleaseCalendar, shouldOpenReleasePr, filterReleasePrBranchRefs, inProgressReleaseBranches, releaseBranchPrListArgs } from "./scripts/lib/release-calendar.mjs";
             const calendar = loadReleaseCalendar(process.cwd());
             const matchingBranches = filterReleasePrBranchRefs(process.env.BRANCH_REFS);
             console.error(`matched ${matchingBranches.length} real release-PR branch(es) among the claude/release-* candidates on the remote`);
-            const hasReleaseInProgress = Number(process.env.OPEN_COUNT) > 0 || matchingBranches.length > 0;
+
+            const prsByBranch = {};
+            for (const branch of matchingBranches) {
+              prsByBranch[branch] = JSON.parse(execFileSync("gh", releaseBranchPrListArgs(process.env.GITHUB_REPOSITORY, branch), { encoding: "utf8" }));
+            }
+            const inProgressBranches = inProgressReleaseBranches(matchingBranches, prsByBranch);
+            const leftoverBranches = matchingBranches.filter((b) => !inProgressBranches.includes(b));
+            if (leftoverBranches.length > 0) console.error(`ignoring ${leftoverBranches.length} leftover (closed-without-merging or already-merged) release branch(es): ${leftoverBranches.join(", ")}`);
+
+            const hasReleaseInProgress = Number(process.env.OPEN_COUNT) > 0 || inProgressBranches.length > 0;
             console.log(shouldOpenReleasePr({ now: new Date(), calendar, hasReleaseInProgress }));
+            console.log(inProgressBranches.join(", "));
           ')"
+          proceed="$(sed -n '1p' <<< "$result")"
+          in_progress_branches="$(sed -n '2p' <<< "$result")"
           echo "proceed=$proceed" >> "$GITHUB_OUTPUT"
           if [ "$proceed" != "true" ]; then
-            echo "Not proceeding today: release day is Saturday, calendar timezone America/Los_Angeles (governance/release-calendar.json); currently open release:weekly PR(s): $open_count."
+            if [ -n "$in_progress_branches" ]; then
+              echo "Not proceeding today: release day is Saturday, calendar timezone America/Los_Angeles (governance/release-calendar.json); currently open release:weekly PR(s): $open_count; in-progress release branch(es): $in_progress_branches."
+            else
+              echo "Not proceeding today: release day is Saturday, calendar timezone America/Los_Angeles (governance/release-calendar.json); currently open release:weekly PR(s): $open_count."
+            fi
           fi
 
       # Refuses (exit 2) rather than run against a malformed changeset, and
@@ -259,7 +315,7 @@ jobs:
             printf '%s\n' "regenerates package-lock.json, and deletes the applied changesets --"
             printf '%s\n\n' "via node scripts/apply-release-changesets.mjs, per issue #1255."
             cat "$SUMMARY_PATH"
-            printf '\n%s\n' "Ref: #1255, #1187"
+            printf '\n%s\n' "Refs: #1255, #1187"
           } > "$message_file"
           git commit -F "$message_file"
 
@@ -290,7 +346,7 @@ jobs:
             printf '\n%s\n' "Each package's changelog (docs/changelogs/<dir>.md) gained a matching entry (with its own Breaking changes subsection where applicable), and the consumed changeset files are deleted -- \`scripts/check-release-pr-shape.mjs\` verifies both on this pull request itself."
             printf '\n%s\n' "This publishes nothing. Qualification (per package version, via \`qualify-candidate.yml\`) and publication (\`publish.yml\`) remain separate, manually-gated steps."
             printf '%s\n' "Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}"
-            printf '%s\n' "Ref: #1255, #1187"
+            printf '%s\n' "Refs: #1255, #1187"
           } > "$body_file"
 
           # release:weekly is applied to EVERY release PR this workflow
@@ -303,33 +359,43 @@ jobs:
           # consumed at least one out-of-band changeset, which is what lets
           # THIS pull request land on any day, not only the Saturday/merge-
           # window shape an ordinary release PR needs. Labels are created
-          # here (idempotent -- already-exists is swallowed) even though
-          # the PR itself is not, since label creation carries none of this
-          # step's GITHUB_TOKEN PR-creation concern and the owner-
-          # authenticated step below needs both labels to already exist.
-          gh label create "release:weekly" --color "0e8a16" \
-            --description "The weekly release PR (docs/RELEASING.md). Combined with its file-change shape, proves it may land outside the Mon-Fri merge window on release day." \
-            >/dev/null 2>&1 || true
+          # here (idempotent -- see below) even though the PR itself is
+          # not, since label creation carries none of this step's
+          # GITHUB_TOKEN PR-creation concern and the owner-authenticated
+          # step below needs both labels to already exist.
+          #
+          # `--force` (create-or-update), NOT `|| true` (issue #1439,
+          # defect 2) -----------------------------------------------------
+          # An earlier version piped stdout/stderr to /dev/null and added
+          # `|| true`, which is what made the description-length failure
+          # below invisible in the first place: `gh label create` returned
+          # 422 (over GitHub's 100-character description limit) and the
+          # step swallowed it unconditionally, so `release:weekly` was
+          # never actually created by this workflow -- it had to be added
+          # by hand. `--force` is the idempotent primitive this step
+          # actually wants ("create it, or update it if it's already
+          # there") -- with it, a genuine failure (an invalid color, a
+          # missing `issues: write` permission, a real GitHub outage) still
+          # fails this step loudly instead of being silently absorbed
+          # alongside the merely-expected "already exists" case.
+          gh label create "release:weekly" --color "0e8a16" --force \
+            --description "The weekly release PR (docs/RELEASING.md); its verified diff shape may land outside the merge window"
           labels="release:weekly"
           if [ "$OUT_OF_BAND" = "true" ]; then
-            gh label create "release:out-of-band" --color "d73a4a" \
-              --description "Admitted any day, outside the weekly merge window too (docs/RELEASING.md) -- security fix, a fix for a broken published release, or an owner-approved urgent update only. Owner-applied only, standing rule." \
-              >/dev/null 2>&1 || true
+            gh label create "release:out-of-band" --color "d73a4a" --force \
+              --description "Security or broken-release fix, owner-applied only (docs/RELEASING.md); may land any day, any window"
             labels="release:weekly,release:out-of-band"
           fi
           echo "labels=$labels" >> "$GITHUB_OUTPUT"
 
-          node -e '
-            const fs = require("node:fs");
-            const [, , materialsDir, branchArg, baseArg, labelsArg] = process.argv;
-            fs.writeFileSync(materialsDir + "/manifest.json", JSON.stringify({
-              branch: branchArg,
-              base: baseArg,
-              title: "Release: apply pending changesets",
-              labels: labelsArg.split(","),
-              bodyFile: "body.txt",
-            }, null, 2) + "\n");
-          ' "$MATERIALS_DIR" "$branch" "$GITHUB_BASE_REF_OR_DEFAULT" "$labels"
+          # scripts/write-release-pr-materials-manifest.mjs -- extracted out
+          # of an inline `node -e` step (issue #1439, defect 1: that
+          # step's own argv destructuring was off by one under `node -e`'s
+          # different argv shape, so manifest.json was never written; see
+          # that script's own header for the incident and
+          # scripts/write-release-pr-materials-manifest.test.mjs for the
+          # regression test an inline step could not have).
+          node scripts/write-release-pr-materials-manifest.mjs "$MATERIALS_DIR" "$branch" "$GITHUB_BASE_REF_OR_DEFAULT" "$labels"
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         if: (github.event_name != 'schedule' || steps.gate.outputs.proceed == 'true') && steps.apply.outputs.applied_count != '0'

@@ -199,6 +199,25 @@ describe("verifyStandards", () => {
     },
   );
 
+  it("surfaces a #1428 carried approval as a visible note on the review-evidence row", () => {
+    const inputs = goodInputs();
+    const carriedFromHead = "f".repeat(40);
+    const report = verifyStandards(
+      {
+        ...inputs,
+        reviewEvidence: {
+          ...inputs.reviewEvidence,
+          options: { ...inputs.reviewEvidence!.options, carriedApproval: { fromHeadSha: carriedFromHead, toHeadSha: HEAD } },
+        },
+      },
+      currentBuild,
+    );
+    const row = report.rows.find((item) => item.row === "review-evidence");
+    expect(row?.result.verdict).toBe("satisfied");
+    expect(row?.note).toContain(carriedFromHead);
+    expect(row?.note).toContain("#1428");
+  });
+
   it("runs only the selected checks and reports exactly those rows", () => {
     const report = verifyStandards(goodInputs(), { ...currentBuild, selectedChecks: ["secret-scan"] });
     expect(report.rows.map((row) => row.row)).toEqual(["version-floor", "secret-scan"]);

@@ -14,6 +14,7 @@ export {
   readInventoryRepositories,
   readLiveLauncherVersion,
   reportHubHealth,
+  validateInventoryDocument,
   CLOSSYS_DIR_REL,
   CLOSSYS_README_REL,
   DEFAULT_REPOSITORY_NAME,
@@ -24,10 +25,15 @@ export {
   WORKSPACE_INVENTORY_REL,
   WORKSPACE_MARKER_REL,
 } from "./core.js";
-export type { CloneMissingOutcome } from "./core.js";
+export type { CloneMissingOutcome, InventoryValidation, PlanWorkspaceOptions } from "./core.js";
+export type { InventoryReadOptions } from "./inventory-contract.js";
 export { runDoctorChecks, renderDoctorReport } from "./doctor.js";
-export { applyEngagementBrief, isPlanApproved, validateAdvisorPlan, validateEngagementBrief } from "./apply-plan.js";
-export type { AdvisorPlan, ApplyBriefResult, BlockerKind, EngagementBrief, EngagementBriefRole, PlanBlocker, PlanDecision, ValidationResult } from "./apply-plan.js";
+export { applyEngagementBrief, approvedSubject, isPlanApproved, validateAdvisorPlan, validateEngagementBrief } from "./apply-plan.js";
+export type {
+  AdvisorPlan, ApplyBriefResult, BlockerKind, EngagementBrief, EngagementBriefRole, EngagementContext, EngagementContextField, EngagementContextFieldId, GoalDirection, PlanBlocker,
+  PlanDecision, PlanKit, PlanPackageAct, PlanStaffing, ValidationResult,
+} from "./apply-plan.js";
+export { PLAN_DIGEST_EXCLUDED_FIELDS, canonicalJson, planDigest } from "./plan-digest.js";
 export type { DoctorCheckHost, DoctorReport, DoctorStepId, DoctorStepResult } from "./doctor.js";
 export { checkCloudSessionBootstrap } from "./product-repository.js";
 export type { CloudBootstrapCheck, CloudBootstrapReport } from "./product-repository.js";
@@ -47,6 +53,7 @@ export type {
 } from "./model-profile.js";
 export type {
   ApplyWorkspaceOptions,
+  ChosenInventory,
   CommandResult,
   CwdObservation,
   DependencyBucket,

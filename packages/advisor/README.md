@@ -99,6 +99,8 @@ This package also ships the `clossys-advisor` Agent Skill at `skill/SKILL.md`.
 In Cursor, mention `@clossys-advisor` to talk to that receptionist voice next
 to the assessment bins below. The skill is a chat voice, not a second engine,
 and it does not replace `advisor-check` or `advisor-execution-readiness`.
+The plan commands `advisor-render-status`, `advisor-package-request` and
+`advisor-resolve-packages` are described with the plan record below.
 
 ```bash
 advisor-check assessment.json
@@ -200,8 +202,37 @@ to enforce once real evidence exists.
 client-facing `EngagementBrief`: the client's problem, which roles the kit
 staffs and why, the handoff sequence, and one deliverable line per staffed
 role, drawn from that role's own `boundary.owns` text in the catalogue —
-never invented copy. This is a wave-1 type-and-transform export only;
-writing it to `clossys/brief.json` in each staffed repository is wave 2.
+never invented copy. This package does not write files; `@clossys/launcher`
+writes the brief to `clossys/brief.json` in each staffed repository.
+`validateEngagementBrief(value)` checks a candidate brief against the
+shared brief contract,
+[`docs/contracts/engagement-brief.json`](https://github.com/clossys/foundry/blob/main/docs/contracts/engagement-brief.json)
+(in the public repository, not shipped in this package), and its
+`context` snapshot against `engagement-context.json` (issue #1475).
+Launcher validates against the same files where it writes the
+brief. Unknown fields are refused, and each finding has the rule
+`engagement-brief-contract` and a message that never echoes a value from
+the brief. `problem`, each role's `role` and `why`, and each goal's `metric`
+must contain a non-whitespace character; an item of `inputsFrom`,
+`outputsTo`, `sequence` or `deliverables` must not be empty. Messages name
+fields, and a key that is not a plain identifier is shown as an escaped
+JSON string.
+
+A brief may carry `staffedHere` (issue #1178): the roles staffed in the one
+repository it is written to, in plan order. `toEngagementBrief()` builds the
+hub brief only, which has none; this package never builds or writes a
+repository's own brief. Launcher's apply planner, which is not built yet,
+will derive that from the hub brief and the plan, as the brief contract's
+description defines; today the only brief writer is Launcher's brief-only
+`applyEngagementBrief()`, which writes the brief it is given unchanged.
+`validateEngagementBrief()` checks a `staffedHere` wherever it appears, once
+the schema passes: every entry is one of `roles[].role` (rule
+`engagement-brief-rule-b1`) and none repeats (`engagement-brief-rule-b2`).
+`PUBLIC_PROBLEM_PLACEHOLDER` is the fixed text, read from the brief
+contract, that the apply planner will write in place of `problem` for a
+repository whose visibility is not private, once that planner is built.
+Nothing writes it yet: `applyEngagementBrief()` commits `problem` unchanged,
+whatever the repository's visibility.
 
 ## Shared engagement context
 
@@ -279,14 +310,91 @@ shape as the Controller role's own `Blocker` record, defined for issue
 on #1187 (2026-09-23) is that an order-dependent change may carry no
 local copy of a shared definition once that definition is on `main`,
 and a blocker record is exactly that kind of definition.
-`validateAdvisorPlan(value)` checks a candidate plan against this shape
-— every blocker's `capabilityId`, `owner`, `since`, and full
-`nextAction`, plus `kind` membership in `AdvisorBlockerKind`
-(`ADVISOR_BLOCKER_KINDS` lists the five values in order) — and returns
-every finding it locates, the same pattern as this package's other
-validators. This package still carries no runtime dependency on the
-Controller package: the shape is duplicated structurally, never the
+`validateAdvisorPlan(value)` checks a candidate plan against the shared
+plan contract, [`docs/contracts/advisor-plan.json`](https://github.com/clossys/foundry/blob/main/docs/contracts/advisor-plan.json)
+(issue #1475; in the public repository, not shipped in this package —
+this package packs its content into a generated module at build time).
+That file is the one definition of the record: `@clossys/launcher` validates against the same
+file before it applies an approved plan, so a plan this package accepts is
+a plan Launcher accepts. It checks every field, including each blocker's
+`capabilityId`, `owner`, `since`, and full `nextAction`, and `kind`
+membership in `AdvisorBlockerKind` (`ADVISOR_BLOCKER_KINDS` lists the five
+values in order, and a test keeps it equal to the contract). Blank strings
+are refused. Every time must be a real calendar time in ISO 8601 form,
+with `Z` or a `±hh:mm` offset on a date-time, checked field by field rather than by shape: month 01-12, a day that month has
+(leap years included), hours 00-23, minutes and seconds 00-59, and a time
+zone offset of at most 23:59, so `2026-02-30` or `T24:30` is refused
+(`recommendedNext.due` and a blocker's `nextAction.byWhen` may be a plain
+date). Every object is
+closed: a field the contract does not declare is refused, never ignored.
+It returns every finding it locates, the same pattern as this package's
+other validators; each finding has the rule `advisor-plan-contract`, a
+`path` naming the field at fault, when there is one (for example
+`blockers[0].nextAction.byWhen`; a plan that is not an object at all has
+none), and a message that never echoes the
+field's value. A string or object key containing a lone surrogate is
+refused too, so every plan that validates has a digest. This package still carries no runtime dependency on the
+Controller package: the blocker shape is duplicated structurally, never the
 owner-per-kind mapping, which stays owned by Controller.
+
+A plan may also say who works where, and what exactly may be installed
+(issue #1178), in four optional fields: `kits` (each `{ id, source, verdict }`,
+with `verdict` only `"recommended"` for now), `staffing` (one
+`{ repository, roles }` entry per repository, by repository inventory id),
+`packages` (exact acts: `install` or `pin-starter`, each with a lowercase
+scoped name of at most 214 characters, one exact version with at most 16
+digits in each part and no prerelease or build suffix, and one canonical
+`sha512-` integrity value) and
+`resolution` (`{ snapshotDigest }`), typed as `AdvisorPlanKit`,
+`AdvisorPlanStaffing`, `AdvisorPlanPackageAct` and `AdvisorPlanResolution`.
+A decision (`AdvisorPlanDecision`) may carry `subjectDigest`.
+Once the schema passes, `validateAdvisorPlan()` applies the code rules the
+contract's description defines, each finding with the rule
+`advisor-plan-rule-r1` to `-r11` and a `path`: no repository staffed twice
+(ids compare case-insensitively); every staffed role is in `mandate.roles`,
+and every `mandate.roles` entry is staffed somewhere unless it is a hub-only
+role; every package act names a staffed repository, spelled
+exactly the same; no `planItem` repeats; no package appears twice in one
+repository; `resolution` is present exactly when `packages` is; no kit id
+repeats; no role repeats within one staffing entry; no role is named twice
+in `mandate.roles`; a repository has at most one `pin-starter` act,
+always placed in `devDependencies`; and no hub-only role is staffed.
+`HUB_ONLY_ROLES` is that list, `["advisor", "integrator"]`, read from the
+plan contract's `definitions.hubOnlyRoles`, the same data Launcher reads.
+The apply-approved-plan RFC places each of them in the engagement hub: its
+package is pinned once there and run in a product repository through `npx`
+at the hub's exact version, never installed in the repository. Launcher's
+appoint step pins Advisor in the hub today; no Launcher release pins
+Integrator there yet. A plan
+whose mandate names only hub-only roles does no work in a product
+repository, so it has no `staffing` (an empty one is refused) and no
+`packages`. The rules read only a plan's own fields,
+as the schema does, so an inherited one is ignored. A plan that breaks
+one has no digest. Launcher implements the same rules separately, and both
+packages are tested against one shared corpus,
+[`docs/contracts/advisor-plan-rules.fixture.json`](https://github.com/clossys/foundry/blob/main/docs/contracts/advisor-plan-rules.fixture.json)
+(in the public repository, not shipped in this package).
+
+An approval binds bytes only through its `subjectDigest`, the digest of the
+exact change the approver was shown; an approval without one binds nothing.
+From an approving decision until apply completes, Advisor changes no field
+the plan digest covers: recording the approval appends a decision and may
+update `asOf`, which the digest excludes, so the digest at approval equals
+the digest at apply. The Advisor skill follows this rule.
+
+`planDigest(plan)` is the canonical digest of a plan, the value the
+assessment basis's `planDigest` records and an execution authorization must
+equal, so that it names exactly which plan is meant:
+`sha256:` and the hex SHA-256 of the plan's RFC 8785 canonical JSON,
+leaving out `asOf` and `decisions` (`PLAN_DIGEST_EXCLUDED_FIELDS`), because
+an approval is itself recorded in `decisions`. It throws for a plan that
+does not validate. `canonicalJson(value)` is that serialization on its
+own, and refuses a lone surrogate or a non-finite number rather than
+repairing it. The definition is
+[`docs/contracts/advisor-plan-digest.md`](https://github.com/clossys/foundry/blob/main/docs/contracts/advisor-plan-digest.md)
+(in the public repository, not shipped in this package).
+Launcher implements it separately, and both packages are tested against
+the same fixture corpus, so they compute identical digests.
 
 The `advisor-render-status` CLI wraps this renderer:
 
@@ -296,7 +404,131 @@ advisor-render-status plan.json
 
 It prints the rendered STATUS document to stdout and exits `0`, or exits
 `2` for unreadable or malformed input (now via `validateAdvisorPlan`,
-so a blocker in the old, local shape is rejected the same way).
+so a blocker in the old, local shape is rejected the same way). It reads
+the file as strict JSON: bytes that are not valid UTF-8, and an object
+that repeats a key at any depth, are refused rather than decoded with a
+replacement character or resolved to the last value, and so is a file
+that starts with a byte order mark. A syntax error is reported by position
+only, never quoting the file's text; a repeated key is named, as an escaped
+JSON string, so a control character in it is shown as `\u001b` rather than
+reaching the terminal (#1475).
+
+## Exact packages from a registry snapshot (issue #1178)
+
+A plan's `packages` and `resolution` are never written by hand. Two pure
+steps, on either side of one registry fetch that this package does not
+make, derive them from the plan's `staffing`. This package makes no
+network call and holds no credential: each step is a pure function, and
+its CLI reads only the files it is given. What is checked mechanically, by
+a test in this package's source repository, is narrower. The library's
+import graph: every module it reaches imports no builtin but `node:crypto`
+and no package, and none uses a dynamic `import()`. And, by syntax, that
+none writes one of a listed set of globals directly, such as `fetch`,
+`process` or `Date.now`. That second check is not a proof, because
+JavaScript can reach a global indirectly; the claim that the library makes
+no network call and reads no clock rests on the import graph plus review.
+
+`packageRequest(plan)` names the packages a staffed plan needs, sorted and
+unique: the package of every role any `staffing` entry names, looked up in
+this package's packed capability catalogue, plus the `starter` package
+(`STARTER_PACKAGE_DIRECTORY`), which every staffed repository pins to check
+its pull requests. The scope in each name comes from the publishing scope
+this package was built with, never a literal. It refuses a plan that fails
+the plan contract (`plan-shape`), a plan with no `staffing`
+(`plan-not-staffed`), and a staffed role the catalogue does not list
+(`role-not-in-catalogue`). A hub-only role (`HUB_ONLY_ROLES`) is never
+staffed, so it gets no package here: a plan that staffs one breaks the
+plan contract's rule R11 and is refused as `plan-shape`. The same refusal
+is repeated for a staffed hub-only role (`hub-only-package`) in case a plan
+ever reaches this step without that rule, but a plan that validates never
+does. Its result, a `PackageRequestResult`, is
+`{ state: "satisfied", names, findings: [] }` or
+`{ state: "violated", findings }`.
+
+A registry snapshot records what the registry said about those names at one
+moment: for each package, whether it was found, the version its `latest`
+dist-tag named, and that version's integrity value, tarball URL,
+deprecation, publish time and whether it lists attestations. Its contract is
+[`docs/contracts/registry-snapshot.json`](https://github.com/clossys/foundry/blob/main/docs/contracts/registry-snapshot.json)
+(in the public repository, not shipped in this package; this package packs
+its content into a generated module at build time). `validateRegistrySnapshot(value)`
+checks a snapshot against it: the schema, then its code rules N1 to N3
+(`registrySnapshotRuleViolations()`: no package named twice, no version
+recorded twice for one package, and no `latest` or versions for a package
+that was not found). Each `RegistrySnapshotViolation` names a rule and a
+position, never a value or an undeclared key. `snapshotDigest(snapshot)` is
+the snapshot's canonical digest: `sha256:` and the hex SHA-256 of the RFC
+8785 canonical JSON of `snapshotDigestSubject(snapshot)`, which keeps the
+registry and each package's name, status, `latest` and versions, sorted,
+and leaves out when and by what the snapshot was fetched and the hash of
+each raw registry response. Fetching the same selection again gives the
+same digest; changing anything a resolution reads changes it. It throws for
+a snapshot that does not validate. The types are `RegistrySnapshot`,
+`RegistrySnapshotPackage`, `RegistrySnapshotVersion`,
+`RegistrySnapshotRuleId` and `RegistrySnapshotViolation`. The shared corpus
+[`docs/contracts/registry-snapshot.fixture.json`](https://github.com/clossys/foundry/blob/main/docs/contracts/registry-snapshot.fixture.json)
+(in the public repository, not shipped in this package) holds digests
+computed without this package, and this package is tested against it.
+
+`resolvePackages(plan, snapshot, options?)` reads the snapshot and returns a
+`PackageResolutionResult`. On `state: "satisfied"` it carries `packages`,
+one `pin-starter` act per staffed repository and one `install` act per
+staffed role, sorted by repository and then name, each with `planItem`
+`<repository>:<name>`, the version the registry's `latest` named, that
+version's `sha512-` integrity value and the placement `devDependencies`
+(`RESOLVED_PLACEMENT`); `resolution`, `{ snapshotDigest }`; and
+`permittedPackages`, each distinct `{ name, version, integrity }` once,
+sorted by name, which is exactly what the sponsor's grant permits. The same
+plan and snapshot always give byte-identical output, and so does a re-fetch
+of the same selection, even one that lists packages or versions in another
+order: once the snapshot validates, it is read in its canonical order
+(`canonicalSnapshot()`: packages sorted by name, each package's versions
+sorted by version), and every position a finding names, such as
+`packages[2].versions[0].hasAttestations`, is a position in that order. A
+`snapshot-shape` finding is the one exception: an invalid snapshot has no
+canonical order, so its positions are as the file lists them. Before it returns, it checks the resolved plan with
+the plan contract and its rules R1 to R11 and refuses rather than return a
+plan that fails them. Each `ResolutionFinding` has a `rule`, a `verdict`
+(`ResolutionVerdict`), a `path` and a message that names positions and, at
+most, a package name derived from the catalogue, never plan text, a
+repository id or a value from the snapshot:
+
+| Condition | Verdict | Rule |
+| --- | --- | --- |
+| The snapshot fails its contract | violated | `snapshot-shape` |
+| Its registry is not the registry this package was built for | violated | `foreign-registry` |
+| A requested package has no entry | indeterminate | `package-not-in-snapshot` |
+| The registry has no such package | violated | `package-not-published` |
+| `latest` names no version | indeterminate | `no-latest` |
+| `latest` names a prerelease or build version | violated | `prerelease-latest` |
+| `latest` names a version the snapshot does not record | indeterminate | `tag-points-at-missing-version` |
+| That version has no integrity value, or not exactly one `sha512-` value in canonical base64 | violated | `no-sha512-integrity` |
+| That version is deprecated | violated | `deprecated-version` |
+| Its tarball is not served over the registry's own scheme and host, or its URL carries credentials | violated | `foreign-tarball-host` |
+| That version lists no attestations | warning | `no-attestation-yet` |
+| A staffed role's catalogue entry is not in the packed scope (a defect in this package) | violated | `catalogue-scope-mismatch` |
+| The resolved plan fails the plan contract or its rules (a defect in this package; never expected) | violated | `resolved-plan-invalid` |
+
+Any violated finding makes the result `violated`; otherwise any
+indeterminate one makes it `indeterminate` (`ResolutionState`). A warning
+alone still resolves. A snapshot shows only which bytes were selected, not
+where they came from; the package's provenance has to be verified
+separately. `options` (`ResolutionOptions`) replaces the packed catalogue
+or the packed scope and registry (`PackageScope`), for tests.
+
+```bash
+advisor-package-request clossys/advisor/plan.json
+advisor-resolve-packages clossys/advisor/plan.json clossys/.state/apply/registry-snapshot.json
+```
+
+Both commands read their files as strict JSON, as `advisor-render-status`
+does, and print their result as JSON. `advisor-package-request` exits `0`
+with the names, or `1` for a plan it refuses. `advisor-resolve-packages`
+exits `0` when resolved (warnings included), `1` for a violation, and `2`
+for an indeterminate result. Both exit `2` for a usage error or an
+unreadable file; that message names the input (the plan file or the
+snapshot file) and, for a syntax error, the character position, never the
+file's path or text.
 
 ## Kit verdicts (issue #1177)
 
@@ -354,6 +586,121 @@ inventing a preference the client did not choose, and `toPreferencesFile()`
 produces the exact `clossys/preferences.json` shape. Advisor never names a
 model here or anywhere else in this package; a host maps the stance to
 models through its own per-host profile.
+
+## Choosing the hub's repositories (issue #1179)
+
+A founder chooses which repositories the team works on from a card; nobody
+types a repository name. This package holds no credentials and makes no
+network call, so it states only what the list it is given shows. The agent
+asks GitHub's `user/repos` API for the repositories the founder's sign-in
+owns, collaborates on, or reaches through an organization, on every page,
+archived ones left out:
+
+```bash
+gh api --paginate 'user/repos?affiliation=owner,collaborator,organization_member&per_page=100' \
+  --jq '.[] | select(.archived | not) | {nameWithOwner: .full_name, description} | tojson'
+```
+
+(`gh api` refuses `--slurp` together with `--jq`, so each entry is printed
+as one JSON line.) The agent writes that list to a temporary directory
+outside the repository and deletes it afterwards, because it names private
+repositories. It uses the file only when that command exits 0: the shell
+creates the file even when `gh` fails, and a page that fails partway
+leaves it partial, which nothing in the file shows. It then hands the
+entries to `repositoryChoiceCard(listing, { current? })`, which returns a
+`RepositoryChoiceCardResult`: `{ state: "card", card }`,
+`{ state: "empty", skippedCount? }` when the list given is empty, or every
+entry in it was skipped (below) -- which says nothing about any account --
+or `{ state: "invalid", findings }`.
+
+The `RepositoryChoiceCard` follows the intake card model
+([`docs/contracts/intake-question-cards.json`](https://github.com/clossys/foundry/blob/main/docs/contracts/intake-question-cards.json)
+-- in the public repository, not shipped in this package),
+extended there for this card: `selection: "many"`, because the founder may
+choose several repositories, and choices supplied at runtime rather than
+from a static file. Its id is `REPOSITORY_CHOICE_CARD_ID` (`hub-repositories`).
+Each `RepositoryChoice` is a repository's `owner/name` as its id and label.
+Its description, when it has one, is the choice's `detail`: it is text
+written by whoever controls that repository, so it is cleaned by Unicode
+property, not by a hand-kept list. Each control character (`\p{Cc}`, tab
+and line breaks included) and each line or paragraph separator (`\p{Zl}`,
+`\p{Zp}`) is replaced with a space. Each format character (`\p{Cf}`: for
+example bidirectional marks and overrides, zero-width spaces and joiners,
+the word joiner, soft hyphen, the byte order mark, and the tag characters
+U+E0000-U+E007F that can carry hidden text), each default-ignorable code
+point (for example variation selectors and the combining grapheme joiner),
+each private-use or surrogate code point, each noncharacter
+(`\p{Noncharacter_Code_Point}`, permanently reserved and never assigned a
+glyph), and U+2800 (BRAILLE PATTERN BLANK, a real printable character that
+renders as blank, so no invisible-character property matches it) is
+removed, not replaced, so it cannot split a word. Removing the zero-width
+joiner and non-joiner is
+deliberate: an emoji sequence joined by U+200D shows as its separate emoji,
+and text that needs U+200C, such as some Persian, shows unjoined. Whitespace
+is then collapsed, the ends trimmed, and the result cut to 200 characters
+with a closing ellipsis. When `current` names the
+repository the founder is working in and that repository is on the list,
+it is the `recommendedChoiceId` and listed first. When it is not on the
+list, the card is built without a recommendation, never refused. The other
+repositories follow sorted by id, and `REPOSITORY_SOMETHING_ELSE_ID`
+(`something-else`, "a repository I need is not on this list") is last; its
+follow-up asks whether the missing repository's owner has given the
+founder's sign-in access to it, and makes no claim that the list is
+complete.
+
+Each `RepositoryListingEntry` must be `{ nameWithOwner, description? }`
+and nothing else -- a listing that is not that shape refuses the whole
+list, since that means the file was built wrong. Each such finding names
+only `listing` or `listing[<i>]` and a fixed reason from a closed set
+("is missing a required field", "has a field the contract does not
+declare", ...); it never relays the shared checker's own message or path,
+either of which can otherwise carry an undeclared field's own name
+straight from the document (#1179). Each
+`nameWithOwner` that is that shape must also satisfy the repository
+inventory contract's id rule
+([`docs/contracts/repository-inventory.json`](https://github.com/clossys/foundry/blob/main/docs/contracts/repository-inventory.json)
+`definitions/repositoryId` -- in the public repository, not shipped in this package --
+which this package packs beside the plan and
+brief contracts and checks with the same contract checker) and be
+qualified by its owner, as GitHub lists it, so every id the card offers is
+one `@clossys/launcher` accepts -- but an id that does not is not a shape
+problem: that one entry is left off the card, not the rest of the list, and
+counted in `skippedCount` (present on the card, or on an empty result,
+only when at least one entry was skipped; #1179). Two entries naming the
+same repository in any letter case, once skipped entries are set aside,
+are refused, naming both positions (`listing[3].nameWithOwner` and the
+earlier position it repeats) -- safe, since `nameWithOwner` is this
+contract's own field name, never the document's. Every finding carries
+the rule `repository-listing` and never a repository name.
+
+`applyRepositoryChoice(card, chosen)` checks the founder's chosen ids
+against exactly the ids the card offered. It refuses an empty choice, an id
+the card did not offer, and an id chosen twice, by position only, with the
+rule `repository-choice`. Its `RepositoryChoiceApplyResult` is `chosen`
+(the repositories in the card's order, and `somethingElse` when the founder
+also said one is missing), `something-else` alone, or `refused`. This
+package does not write the choice anywhere: `@clossys/launcher` writes the
+chosen ids into the hub inventory with `launcher --repositories`.
+
+The `advisor-repository-card` CLI wraps both functions for an agent that
+has no hub yet, and so no pinned package to import:
+
+```bash
+advisor-repository-card "$tmp/repositories.jsonl" --current example-owner/example-app
+advisor-repository-card "$tmp/repositories.jsonl" --current example-owner/example-app --choose example-owner/example-app,example-owner/example-site
+```
+
+Without `--choose` it prints the card as JSON; with `--choose` it prints
+the checked choice as JSON. Pass the same `--current` both times, so the
+order it returns matches the card the founder saw. The file is either one
+JSON array of entries or JSON Lines, one entry per line, as the command
+above writes it. It is read with the same strict reader as
+`advisor-render-status`, and a bad line is named by its number and
+position, never quoted. It cannot tell a complete list from a partial one,
+so it claims neither. It exits `0` for a card or an accepted choice, `1`
+when the repository list given is empty, no listed repository has a
+usable id, or the choice is refused, and `2` for unreadable or invalid
+input.
 
 ## Evolution
 

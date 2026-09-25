@@ -46,13 +46,64 @@ name: Qualify candidate
 # so it does not forward a CA-trust variable, and instead runs on a
 # GitHub-hosted runner talking to the real, credential-free public registry.
 #
-# The later "Push branch and open pull request" step DOES use a token — the
-# ambient GITHUB_TOKEN, scoped to this repository only, to push a branch and
-# open a PR through the GitHub API. That is a version-control credential, not
-# a registry-publish one, and it is deliberately scoped to that one step's
-# own `env:` (never the job's), after qualification has already produced and
-# validated its transcript — so it can never reach assertCredentialFree()'s
-# check.
+# THE WRITE TOKEN LIVES IN A DIFFERENT JOB FROM THE CANDIDATE
+# ----------------------------------------------------------
+# The rule this workflow is built to: no job that executes candidate code
+# holds a write-scoped token. Qualification deliberately imports and runs
+# the candidate package and its registry dependency closure, and nothing
+# about sanitizedEnv(), assertCredentialFree() or --ignore-scripts stops
+# code the qualification imports on purpose. So the work is split in two
+# jobs, and the boundary between them is the job, not a step:
+#
+#   qualify           permissions: contents: read, no secrets, checkout with
+#                     persist-credentials: false. Installs, builds, packs,
+#                     qualifies and generates the record, then uploads that
+#                     one record file as an artifact. Everything it produces
+#                     is untrusted from here on.
+#   open-pull-request needs: qualify. permissions: contents: write and
+#                     pull-requests: write. A FRESH checkout of the dispatched
+#                     commit (github.sha); never runs npm ci, npm install or
+#                     any package script, and never executes anything from
+#                     the artifact. It downloads the artifact outside the
+#                     workspace and hands it to
+#                     scripts/accept-qualification-handoff.mjs, run from that
+#                     fresh checkout, which accepts exactly one bounded
+#                     qualification-record.json, re-derives its destination
+#                     path, and validates it with validateCandidateQualification
+#                     against joins recomputed from the trusted tree — failing
+#                     closed on anything else. The stale deferral file, if
+#                     any, is removed here by the trusted
+#                     remove-qualification-deferral.mjs; no file removal
+#                     crosses the hand-off.
+#
+# An earlier revision ran all of this in ONE job with contents: write and
+# pull-requests: write granted workflow-wide, and argued the token was safe
+# because it appeared only in the push step's own `env:`. Step-scoped env is
+# not an isolation boundary: steps in one job share a runner, a workspace
+# and a $HOME. A job is the boundary: the second job gets a fresh runner and
+# a token the first job never had.
+#
+# The worst a malicious candidate can still achieve is a pull request
+# carrying a qualification record that passes every acceptance check above;
+# that pull request still needs human review and this repository's required
+# CI before it can merge. Acceptance re-derives every join the trusted tree
+# determines; it cannot re-derive candidate.tarball's digests or the
+# transcript's observations without re-running qualification, so those are
+# only as trustworthy as the qualify job that produced them, and publish.yml
+# independently re-verifies the exact tarball bytes against them before any
+# upload. scripts/qualify-candidate-workflow.test.mjs pins this shape.
+#
+# Three operating constraints follow from the split:
+# - Retry with "Re-run all jobs". "Re-run failed jobs" on open-pull-request
+#   alone fails closed by design: the artifact name and the review reference
+#   the record must carry both include github.run_attempt, and a re-run
+#   attempt has no qualify job of its own.
+# - The split relies on actions/download-artifact refusing zip entries that
+#   would extract outside its download path (CVE-2024-42471, fixed in
+#   v4.1.7); the pinned 37930b1c... is v7.0.0.
+# - open-pull-request must never restore a cache: its actions/setup-node
+#   step has no `cache:` input and must not gain one, because a cache entry
+#   is a channel any earlier job on this ref could have written.
 #
 # WHAT THIS WORKFLOW DOES NOT DO
 # -------------------------------
@@ -80,9 +131,9 @@ on:
         default: ""
         type: string
 
-permissions:
-  contents: write
-  pull-requests: write
+# Nothing workflow-wide: each job below declares exactly what it needs, so
+# a job added later starts with no token scope rather than inheriting write.
+permissions: {}
 
 # Serial per package. Earlier revisions of this workflow needed this because
 # two dispatches for the same package raced on governance/release-
@@ -99,6 +150,10 @@ concurrency:
 
 jobs:
   qualify:
+    # Executes the candidate and its dependency closure: read-only, no
+    # secrets. See the header's job-split section.
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
@@ -231,6 +286,125 @@ jobs:
           fi
           echo "record_path=$new_files" >> "$GITHUB_OUTPUT"
 
+      # Cheap self-verification before spending an upload and a second job:
+      # does the record this job just wrote actually join against the
+      # candidate the way check-qualification-record-present.mjs (the same
+      # join publish.yml's own discover job uses) says it should. This is an
+      # early failure signal only -- this job is untrusted, and the
+      # open-pull-request job re-validates the record from its own checkout.
+      - name: Verify the retained record now matches the candidate
+        env:
+          PKG: ${{ inputs.package }}
+        run: node scripts/check-qualification-record-present.mjs --package "$PKG"
+
+      # The one product that crosses to the write job. Copied to a directory
+      # of its own so the artifact's layout is exactly one file;
+      # scripts/accept-qualification-handoff.mjs refuses anything else.
+      - name: Stage qualification record for hand-off
+        env:
+          RECORD_PATH: ${{ steps.record.outputs.record_path }}
+        run: |
+          set -euo pipefail
+          handoff="$RUNNER_TEMP/handoff"
+          mkdir -p "$handoff"
+          cp "$RECORD_PATH" "$handoff/qualification-record.json"
+
+      - name: Upload qualification record
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: qualification-record-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/handoff/qualification-record.json
+          if-no-files-found: error
+          retention-days: 7
+
+  open-pull-request:
+    # Holds the write token and executes nothing the qualify job produced.
+    # See the header's job-split section before adding any step here: no
+    # npm ci/install, no package script, no build, no cache restore, and
+    # the artifact is data for accept-qualification-handoff.mjs only.
+    needs: qualify
+    permissions:
+      contents: write
+      pull-requests: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # A fresh checkout of the exact commit the dispatch ran on -- the same
+      # commit the qualify job qualified and the record must name as its
+      # reviewedCommit.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      # Re-validated here rather than trusted from the qualify job: that
+      # job's outputs are as untrusted as its artifact.
+      - name: Validate package input
+        env:
+          PKG: ${{ inputs.package }}
+        run: |
+          if ! [[ "$PKG" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+            echo "::error title=Invalid package input::package must match ^[a-zA-Z0-9_-]+\$ (got: $PKG)"
+            exit 1
+          fi
+          if [ ! -f "packages/$PKG/package.json" ]; then
+            echo "::error title=Unknown package::packages/$PKG/package.json does not exist."
+            exit 1
+          fi
+
+      # The pinned runtime only runs this repository's own scripts from the
+      # fresh checkout. No npm command runs in this job.
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24.19.0
+
+      - name: Assert pinned Node runtime
+        run: test "$(node --version)" = 'v24.19.0'
+
+      # Same derivation as the qualify job's own step, recomputed from this
+      # job's trusted checkout instead of read from that job's outputs.
+      - name: Resolve target version
+        id: candidate
+        env:
+          PKG: ${{ inputs.package }}
+          REQUESTED_VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          manifest_version="$(node -p "require('./packages/' + process.env.PKG + '/package.json').version")"
+          if [ -n "$REQUESTED_VERSION" ] && [ "$REQUESTED_VERSION" != "$manifest_version" ]; then
+            echo "::error title=Version mismatch::Requested version $REQUESTED_VERSION does not match packages/$PKG/package.json's current version $manifest_version."
+            exit 1
+          fi
+          echo "version=$manifest_version" >> "$GITHUB_OUTPUT"
+
+      # Downloaded OUTSIDE the workspace, into a directory nothing else
+      # uses, and never executed or sourced. The name carries this run
+      # attempt, matching the review reference the record must carry, so a
+      # retry is "re-run all jobs": a re-run of this job alone finds no
+      # artifact for its own attempt and fails closed.
+      - name: Download qualification record
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: qualification-record-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/handoff
+
+      - name: Accept qualification record hand-off
+        id: record
+        env:
+          PKG: ${{ inputs.package }}
+          VERSION: ${{ steps.candidate.outputs.version }}
+          REVIEWED_COMMIT: ${{ github.sha }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          set -euo pipefail
+          reference="github-actions-dispatch:qualify-candidate.yml;run:${RUN_ID};attempt:${RUN_ATTEMPT}"
+          record_path="$(node scripts/accept-qualification-handoff.mjs --package "$PKG" --version "$VERSION" --handoff-dir "$RUNNER_TEMP/handoff" --reviewed-commit "$REVIEWED_COMMIT" --review-reference "$reference")"
+          echo "record_path=$record_path" >> "$GITHUB_OUTPUT"
+
+      # Run here, from the trusted checkout, rather than carried across the
+      # hand-off: no file removal is ever accepted from the qualify job.
       # A retained record makes the matching deferral file (if any) stale by
       # check-qualification-record-required.mjs's own `stale-deferral` rule
       # — removed here, in the SAME change, so this pull request does not
@@ -243,16 +417,27 @@ jobs:
           VERSION: ${{ steps.candidate.outputs.version }}
         run: node scripts/remove-qualification-deferral.mjs --package "$PKG" --version "$VERSION"
 
-      # Cheap self-verification before spending a push and a pull request:
-      # does the record this job just wrote actually join against the
-      # candidate the way check-qualification-record-present.mjs (the same
-      # join publish.yml's own discover job uses) says it should.
-      - name: Verify the retained record now matches the candidate
+      # The only changes this job may commit: the accepted record, and the
+      # one deferral file for this package@version if it existed. Anything
+      # else in the tree fails closed.
+      - name: Verify the change set is exactly the record and its deferral
         env:
           PKG: ${{ inputs.package }}
-        run: node scripts/check-qualification-record-present.mjs --package "$PKG"
+          VERSION: ${{ steps.candidate.outputs.version }}
+          RECORD_PATH: ${{ steps.record.outputs.record_path }}
+        run: |
+          set -euo pipefail
+          deferral_path="governance/release-qualification-deferrals/${PKG}@${VERSION}.json"
+          unexpected="$(git status --porcelain --untracked-files=all | awk -v record="?? $RECORD_PATH" -v deferral=" D $deferral_path" '$0 != record && $0 != deferral')"
+          if [ -n "$unexpected" ]; then
+            echo "::error title=Unexpected change set::only $RECORD_PATH and $deferral_path may change; found:"
+            printf '%s\n' "$unexpected"
+            exit 1
+          fi
+          git status --porcelain --untracked-files=all | grep -qxF "?? $RECORD_PATH"
 
       - name: Push branch and open pull request
+        # The only step that sees the write token.
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PKG: ${{ inputs.package }}

@@ -2,15 +2,14 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/clossys/foundry/blob/main/docs/contracts/engagement-brief.json",
   "title": "Engagement brief",
-  "description": "Issue #1176 (owner redirect, 2026-09-22): the kit output shape a composed or proposed kit reduces to -- the client's problem, which roles are staffed and why, what the client gets, and how the roles hand off to each other. Matches packages/advisor/src/engagement-brief.ts's EngagementBrief type and its toEngagementBrief() transform. This is a wave-1 type-and-schema contract only: writing this shape to clossys/brief.json in each staffed repository is wave 2 (issues #1175, #1178). Advisor does not write files.",
+  "description": "Issue #1176 (owner redirect, 2026-09-22): the kit output shape a composed or proposed kit reduces to -- the client's problem, which roles are staffed and why, what the client gets, and how the roles hand off to each other. Matches packages/advisor/src/engagement-brief.ts's EngagementBrief type and its toEngagementBrief() transform. Issue #1475: this file, with engagement-context.json for `context`, is the one definition @clossys/advisor (validateEngagementBrief()), @clossys/launcher, and @clossys/strategist validate a brief against; each package packs it at build time. Launcher writes this shape to clossys/brief.json in each staffed repository (issues #1175, #1178), and refuses a brief that does not validate, including a key this contract does not declare. Strategist (issue #1173) only reads an already-written clossys/brief.json, to seed its own audience intake from the brief's context snapshot when the whole brief validates; it never writes one. Advisor does not write files. PER-REPOSITORY PROJECTION (issue #1178), owned here so every reader agrees. Advisor writes only the hub brief (clossys/advisor/brief.json), which has no staffedHere. The one producer of a per-repository brief will be Launcher's apply planner, which is not built yet; it will derive each one mechanically from the hub brief and the plan, as set out here. Until it is built, the only brief writer is the legacy brief-only path described at the end of this section, which applies none of this projection. For a repository whose inventory id is R: (1) its staffing entry is the plan's staffing entry whose repository is spelled exactly as R, the same exact match R3 uses; a repository with no such entry gets no brief. (2) staffedHere is that entry's roles, in the order the plan lists them. (3) problem is replaced by exactly the text of definitions.publicProblemPlaceholder unless the repository's observed visibility is exactly private; an unknown visibility counts as not private. (4) Every other member is copied from the hub brief unchanged. (5) The brief is written as UTF-8 JSON with two-space indentation and one trailing newline, its members in this order: schemaVersion, problem, roles, sequence, deliverables, staffedHere, context (context only when the hub brief has one); each roles entry as role, why, goal (metric, direction), inputsFrom, outputsTo; and context as schemaVersion, fields, each field as id, state, value (value only when known). The legacy brief-only path (launcher-apply-plan --plan --brief --repo, applyEngagementBrief()) is not this projection: it does not know a repository's visibility and commits the brief it is given unchanged, problem included, whatever the visibility. The apply step will supersede it once built. CODE RULES, checked in code by both packages after the schema passes and proved by the shared corpus docs/contracts/advisor-plan-rules.fixture.json (a refusal names the rule and position, never a value): B1: every staffedHere entry is one of roles[].role. B2: no role appears twice in staffedHere.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schemaVersion", "problem", "roles", "sequence", "deliverables"],
   "properties": {
     "schemaVersion": { "const": 1 },
     "problem": {
-      "type": "string",
-      "minLength": 1,
+      "$ref": "#/definitions/nonBlankString",
       "description": "The client's problem, in their own words."
     },
     "roles": {
@@ -28,21 +27,35 @@
       "description": "What the client gets, one line per staffed role, grounded in that role's own boundary.owns from docs/contracts/role-loop-archetypes.json -- never invented copy.",
       "items": { "type": "string", "minLength": 1 }
     },
+    "staffedHere": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Optional. The roles staffed in the repository this brief is written to, in plan order; absent in the hub brief. Code rules B1 and B2.",
+      "items": { "$ref": "#/definitions/nonBlankString" }
+    },
     "context": {
       "$ref": "engagement-context.json",
       "description": "Issue #1173 follow-up (docs/DECISIONS.md decision 28): a contract-shaped snapshot of the hub's clossys/advisor/context.json, taken when the brief is written: one entry per field id, and a known value is always one of that field's fixed choice ids, never founder text. The hub record stays the single source of truth and is written only by Advisor; this copy is how a role running in a product repository -- which has no hub checkout -- reads what the founder already answered. Refreshed by re-applying the plan, never edited in place. Optional: when absent, every context field is read as unknown (packages/advisor/src/engagement-brief.ts's contextFromBrief()), never invented."
     }
   },
   "definitions": {
+    "publicProblemPlaceholder": {
+      "description": "The fixed text Launcher's apply planner will write as a brief's problem for a repository whose visibility is not private, once that planner is built (see PER-REPOSITORY PROJECTION in this contract's description). Nothing writes it today: the only brief writer now, the legacy brief-only path, commits problem unchanged. It says where the problem is kept, and nothing about what it is.",
+      "const": "Held in the engagement hub; not published here."
+    },
+    "nonBlankString": {
+      "title": "a string with at least one non-whitespace character",
+      "type": "string",
+      "pattern": "\\S"
+    },
     "role": {
       "type": "object",
       "additionalProperties": false,
       "required": ["role", "why", "goal", "inputsFrom", "outputsTo"],
       "properties": {
-        "role": { "type": "string", "minLength": 1, "description": "Package directory (short name), e.g. \"publisher\"." },
+        "role": { "$ref": "#/definitions/nonBlankString", "description": "Package directory (short name), e.g. \"publisher\"." },
         "why": {
-          "type": "string",
-          "minLength": 1,
+          "$ref": "#/definitions/nonBlankString",
           "description": "For an explicitly chosen role, its own job question. For a role pulled in only to satisfy another role's need, a mechanical explanation naming who needed it."
         },
         "goal": {
@@ -50,7 +63,7 @@
           "additionalProperties": false,
           "required": ["metric", "direction"],
           "properties": {
-            "metric": { "type": "string", "minLength": 1, "description": "Must match a metric.name in docs/contracts/role-loop-archetypes.json." },
+            "metric": { "$ref": "#/definitions/nonBlankString", "description": "Must match a metric.name in docs/contracts/role-loop-archetypes.json." },
             "direction": { "enum": ["increase", "decrease", "maintain", "target-range"] }
           }
         },
