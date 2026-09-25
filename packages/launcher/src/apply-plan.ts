@@ -79,8 +79,19 @@ export function applyEngagementBrief(
   if (!validation.valid) {
     return { state: "refused", reason: `brief does not validate: ${validation.reason}` };
   }
+  // Everything that can refuse runs before the first write, so a refusal
+  // never leaves a brief behind. A plan that validates always has a digest
+  // (the contract refuses what canonical JSON cannot carry); this catch is
+  // the backstop that keeps that a refusal rather than a throw after writing.
+  let digest: string;
+  try {
+    digest = planDigest(plan);
+  } catch (cause) {
+    return { state: "refused", reason: `plan has no canonical digest: ${cause instanceof Error ? cause.message : String(cause)}` };
+  }
+  const contents = `${JSON.stringify(brief, null, 2)}\n`;
   const path = `${repositoryDirectory}/${briefRelPath}`;
   host.mkdirp(path.slice(0, path.lastIndexOf("/")));
-  host.writeText(path, `${JSON.stringify(brief, null, 2)}\n`);
-  return { state: "applied", path, planDigest: planDigest(plan) };
+  host.writeText(path, contents);
+  return { state: "applied", path, planDigest: digest };
 }

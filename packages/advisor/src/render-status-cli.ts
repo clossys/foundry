@@ -2,22 +2,27 @@
 import { existsSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { readContractDocument } from "./contract-schema.js";
 import { renderAdvisorStatus, validateAdvisorPlan, type AdvisorPlan } from "./status.js";
 
 const USAGE = `Usage: advisor-render-status <plan.json>\n\nRenders clossys/advisor/STATUS.md from an Advisor plan record.\nPrints the rendered markdown to stdout; the caller writes it verbatim.\nExit codes: 0 = rendered, 2 = unreadable or invalid input.`;
 
 export class AdvisorRenderStatusCliInputError extends Error {}
 
-/** Reads caller-owned plan data without treating it as validated beyond basic JSON parsing. */
+/**
+ * Reads caller-owned plan data as strict JSON (#1475) -- invalid UTF-8, a
+ * syntax error, or a key repeated in any object is refused -- without
+ * treating it as validated against the plan contract.
+ */
 export function readAdvisorPlanJson(path: string): unknown {
   const resolved = resolve(path);
   if (!existsSync(resolved)) throw new AdvisorRenderStatusCliInputError(`plan file "${path}" does not exist`);
   try {
     if (!statSync(resolved).isFile()) throw new AdvisorRenderStatusCliInputError(`plan file "${path}" is not a file`);
-    return JSON.parse(readFileSync(resolved, "utf8"));
+    return readContractDocument(readFileSync(resolved));
   } catch (cause) {
     if (cause instanceof AdvisorRenderStatusCliInputError) throw cause;
-    throw new AdvisorRenderStatusCliInputError(`plan file "${path}" is unreadable JSON: ${cause instanceof Error ? cause.message : String(cause)}`);
+    throw new AdvisorRenderStatusCliInputError(`plan file "${path}" is unreadable as strict JSON: it ${cause instanceof Error ? cause.message : String(cause)}`);
   }
 }
 

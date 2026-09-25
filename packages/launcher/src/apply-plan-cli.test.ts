@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -119,6 +119,39 @@ describe("apply-plan-cli main", () => {
     expect(String(err.mock.calls[0]?.[0])).toBe(
       "launcher-apply-plan: --plan does not validate: plan.staffing is not a field the contract declares, and unknown fields are refused",
     );
+  });
+
+  it("exits 2, naming the key, when --plan or --brief repeats a key at the top level or nested (#1475)", () => {
+    const workDir = tempDir();
+    const planPath = join(workDir, "plan.json");
+    const briefPath = join(workDir, "brief.json");
+    const cases: [string, string, string, RegExp][] = [
+      ["plan nested", JSON.stringify(VALID_PLAN).replace('"problem":', '"problem":"EVIL","problem":'), JSON.stringify(VALID_BRIEF), /^launcher-apply-plan: --plan repeats the key "problem" in mandate; every key may appear once: /],
+      ["plan top level", JSON.stringify(VALID_PLAN).replace('"schemaVersion":1', '"schemaVersion":1,"blockers":[]'), JSON.stringify(VALID_BRIEF), /--plan repeats the key "blockers" in the top-level object/],
+      ["brief nested", JSON.stringify(VALID_PLAN), JSON.stringify(VALID_BRIEF).replace('"direction":', '"direction":"decrease","direction":'), /--brief repeats the key "direction" in roles\[0\]\.goal/],
+    ];
+    for (const [name, plan, brief, expected] of cases) {
+      writeFileSync(planPath, plan);
+      writeFileSync(briefPath, brief);
+      const err = vi.spyOn(console, "error").mockImplementation(() => {});
+      expect(main(["--plan", planPath, "--brief", briefPath, "--repo", workDir], createNodeHost()), name).toBe(2);
+      expect(String(err.mock.calls.at(-1)?.[0]), name).toMatch(expected);
+      expect(existsSync(join(workDir, "clossys")), name).toBe(false);
+    }
+  });
+
+  it("exits 2 when --plan is not valid UTF-8, instead of reading a replacement character (#1475)", () => {
+    const workDir = tempDir();
+    const planPath = join(workDir, "plan.json");
+    const briefPath = join(workDir, "brief.json");
+    const bytes = Buffer.from(JSON.stringify(VALID_PLAN), "utf8");
+    bytes[bytes.indexOf(Buffer.from('"x"')) + 1] = 0xff;
+    writeFileSync(planPath, bytes);
+    writeFileSync(briefPath, JSON.stringify(VALID_BRIEF));
+    const err = vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(main(["--plan", planPath, "--brief", briefPath, "--repo", workDir], createNodeHost())).toBe(2);
+    expect(String(err.mock.calls[0]?.[0])).toMatch(/^launcher-apply-plan: --plan is not valid UTF-8: /);
+    expect(existsSync(join(workDir, "clossys"))).toBe(false);
   });
 
   it("--help prints usage and exits 0", () => {

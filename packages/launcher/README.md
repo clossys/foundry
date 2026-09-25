@@ -343,13 +343,18 @@ package's build packs those files, with a copy of the one contract checker
 plans and briefs while Launcher keeps no runtime dependency on Advisor.
 Every object is closed: a field the contracts do not declare is refused,
 and a known context value must be one of that field's fixed choice ids,
-because the brief is committed in every staffed repository. A refusal
-names each field at fault and never echoes its value.
+because the brief is committed in every staffed repository. A string or
+key containing a lone surrogate is refused, so every plan that validates has
+a digest. A refusal names each field at fault and never echoes its value.
+`launcher-apply-plan` reads both files as strict JSON: bytes that are not
+valid UTF-8, or an object that repeats a key at any depth, exit `2` with the
+repeated key named, so the value validated is exactly the one a reader of
+the file sees.
 `isPlanApproved()` reads a plan's most recent decision (by
 timestamp, not array position) and requires it to be `"approved"` --
 absence of any decision is never treated as approval.
 `applyEngagementBrief()` refuses, and writes nothing, unless all three
-checks pass, then writes the brief byte-identically -- it never re-authors
+checks pass and the plan's digest is computed; only then does it write the brief byte-identically -- it never re-authors
 its prose -- and reports `planDigest()` of the plan it applied, which the
 CLI prints as `plan digest sha256:...`. That digest is defined once, in
 `docs/contracts/advisor-plan-digest.md`; this package and Advisor each

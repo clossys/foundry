@@ -1,5 +1,7 @@
 #!/usr/bin/env node
+import { readFileSync } from "node:fs";
 import { isDirectInvocation } from "./cli.js";
+import { readContractDocument } from "./generated/contract-schema.generated.js";
 import { createNodeHost } from "./host.js";
 import { applyEngagementBrief, validateAdvisorPlan, validateEngagementBrief, type AdvisorPlan, type EngagementBrief } from "./apply-plan.js";
 
@@ -17,7 +19,8 @@ those contracts do not declare, writes the one file, and prints the plan's
 canonical digest.
 
 Exit codes: 0 = applied, 1 = refused (not approved, or a shape does not
-validate), 2 = a given file could not be read as JSON.`;
+validate), 2 = a given file could not be read as strict JSON (unreadable,
+not valid UTF-8, not valid JSON, or an object repeats a key).`;
 
 export class ApplyPlanInputError extends Error {}
 
@@ -41,13 +44,23 @@ function parseArgs(argv: readonly string[]): { help: boolean; planPath?: string;
   return { help: false, planPath, briefPath, repoDirectory };
 }
 
-function readJson(readText: (path: string) => string | null, path: string, label: string): unknown {
-  const raw = readText(path);
-  if (raw === null) throw new ApplyPlanInputError(`${label} could not be read: ${path}`);
+/**
+ * Reads a plan or brief file as strict JSON (#1475): invalid UTF-8, a JSON
+ * syntax error, or an object that repeats a key at any depth is refused, so
+ * the value validated and digested is exactly the one a reader of the file
+ * sees.
+ */
+function readJson(path: string, label: string): unknown {
+  let bytes: Uint8Array;
   try {
-    return JSON.parse(raw);
+    bytes = readFileSync(path);
   } catch {
-    throw new ApplyPlanInputError(`${label} is not valid JSON: ${path}`);
+    throw new ApplyPlanInputError(`${label} could not be read: ${path}`);
+  }
+  try {
+    return readContractDocument(bytes);
+  } catch (cause) {
+    throw new ApplyPlanInputError(`${label} ${cause instanceof Error ? cause.message : String(cause)}: ${path}`);
   }
 }
 
@@ -60,8 +73,8 @@ export function main(argv: readonly string[], host: ReturnType<typeof createNode
   let planRaw: unknown;
   let briefRaw: unknown;
   try {
-    planRaw = readJson(host.readText, parsed.planPath as string, "--plan");
-    briefRaw = readJson(host.readText, parsed.briefPath as string, "--brief");
+    planRaw = readJson(parsed.planPath as string, "--plan");
+    briefRaw = readJson(parsed.briefPath as string, "--brief");
   } catch (cause) {
     console.error(`launcher-apply-plan: ${cause instanceof Error ? cause.message : String(cause)}`);
     return 2;

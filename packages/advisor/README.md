@@ -303,7 +303,8 @@ It returns every finding it locates, the same pattern as this package's
 other validators; each finding has the rule `advisor-plan-contract`, a
 `path` naming the field at fault (for example
 `blockers[0].nextAction.byWhen`), and a message that never echoes the
-field's value. This package still carries no runtime dependency on the
+field's value. A string or object key containing a lone surrogate is
+refused too, so every plan that validates has a digest. This package still carries no runtime dependency on the
 Controller package: the blocker shape is duplicated structurally, never the
 owner-per-kind mapping, which stays owned by Controller.
 
@@ -327,7 +328,10 @@ advisor-render-status plan.json
 
 It prints the rendered STATUS document to stdout and exits `0`, or exits
 `2` for unreadable or malformed input (now via `validateAdvisorPlan`,
-so a blocker in the old, local shape is rejected the same way).
+so a blocker in the old, local shape is rejected the same way). It reads
+the file as strict JSON: bytes that are not valid UTF-8, and an object
+that repeats a key at any depth, are refused rather than decoded with a
+replacement character or resolved to the last value (#1475).
 
 ## Kit verdicts (issue #1177)
 

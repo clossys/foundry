@@ -15,9 +15,15 @@ two packages compute identical digests.
 hexadecimal digits of the SHA-256 hash of the UTF-8 bytes of
 `canonical(subject(plan))`, where:
 
-1. **Only a valid plan has a digest.** The plan must first validate against
-   `advisor-plan.json`. An implementation refuses (throws) rather than digest
-   a plan that does not.
+1. **Only a valid plan, read strictly, has a digest.** The digest is defined
+   only over a plan read from its file with invalid UTF-8 and repeated object
+   keys refused, because RFC 8785 requires I-JSON input, which forbids both;
+   `JSON.parse` alone would keep the last of two repeated keys, so the value
+   digested could differ from the one a reader of the file sees. The plan
+   must then validate against `advisor-plan.json`, which also refuses a lone
+   surrogate in any string, so every valid plan has a digest. An
+   implementation refuses (throws) rather than digest a plan that does not
+   validate.
 2. **`subject(plan)` is the plan without its top-level `asOf` and `decisions`
    members.** Every other member is kept exactly as it is, including every
    nested member: no trimming, no Unicode normalization, and array order
@@ -51,6 +57,15 @@ hexadecimal digits of the SHA-256 hash of the UTF-8 bytes of
      `0`. A non-finite number is refused. (A valid plan's only number is
      `schemaVersion`, which is `1`.)
    - **Literals:** `true`, `false` and `null`.
+
+## Open for the approval binding
+
+Two questions stay open until an approval record binds this digest (the
+next step of #1178): because `decisions` is excluded entirely, earlier
+decision entries can be rewritten without changing the digest, so the
+approval record must be made append-only or bound separately; and recording
+an approval must not change any covered field, such as `recommendedNext`,
+or the digest at approval will not equal the digest at apply.
 
 ## Why these choices
 

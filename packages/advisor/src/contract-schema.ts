@@ -13,6 +13,17 @@
  * Messages never echo a value from the document under test: a brief can
  * carry founder text, and a refusal message can end up in a log.
  *
+ * Every string, and every object key, must be well-formed Unicode: a lone
+ * surrogate is refused whatever the contract says, because it has no UTF-8
+ * encoding and so no canonical form. A document this checker accepts can
+ * always be digested.
+ *
+ * `readContractDocument()` is the one way to turn a plan or brief FILE into
+ * a value: it refuses bytes that are not valid UTF-8 and any object that
+ * repeats a key, at any depth. `JSON.parse` alone would silently keep the
+ * last of two duplicate keys, so a reviewer reading the file could see a
+ * value that is not the one validated and digested.
+ *
  * This file imports nothing. It is the one implementation: a package that
  * cannot import it carries a generated, byte-identical copy.
  */
@@ -65,6 +76,10 @@ function typeOf(value: unknown): string {
   return typeof value;
 }
 
+/** With the `u` flag a surrogate pair is one code point, so this matches only a lone surrogate. */
+const LONE_SURROGATE = /[\uD800-\uDFFF]/u;
+const NOT_WELL_FORMED = "must be well-formed Unicode, and contains a lone surrogate";
+
 function childPath(path: string, name: string): string {
   return path === "" ? name : `${path}.${name}`;
 }
@@ -107,6 +122,7 @@ function check(input: ContractSchema, value: unknown, inputScope: Scope, path: s
     violations.push({ path, message: `must be one of: ${schema.enum.map((option) => JSON.stringify(option)).join(", ")}` });
   }
   if (typeof value === "string") {
+    if (LONE_SURROGATE.test(value)) violations.push({ path, message: NOT_WELL_FORMED });
     if (typeof schema.minLength === "number" && value.length < schema.minLength) violations.push({ path, message: `must be at least ${schema.minLength} character(s) long` });
     if (typeof schema.pattern === "string" && !new RegExp(schema.pattern, "u").test(value)) {
       violations.push({ path, message: typeof schema.title === "string" ? `must be ${schema.title}` : `must match the pattern ${schema.pattern}` });
@@ -127,6 +143,11 @@ function check(input: ContractSchema, value: unknown, inputScope: Scope, path: s
       if (!Object.hasOwn(record, name)) violations.push({ path: childPath(path, name), message: "is required" });
     }
     for (const [name, child] of Object.entries(record)) {
+      if (LONE_SURROGATE.test(name)) {
+        // The key itself is not echoed: it cannot be written as UTF-8.
+        violations.push({ path, message: `has a key that ${NOT_WELL_FORMED}` });
+        continue;
+      }
       if (Object.hasOwn(properties, name)) violations.push(...check(properties[name] as ContractSchema, child, scope, childPath(path, name)));
       else if (schema.additionalProperties === false) violations.push({ path: childPath(path, name), message: "is not a field the contract declares, and unknown fields are refused" });
     }
@@ -173,4 +194,95 @@ export function validateAgainstContract(contract: ContractSchema, value: unknown
 export function formatContractViolation(label: string, violation: ContractViolation): string {
   const where = violation.path === "" ? label : violation.path.startsWith("[") ? `${label}${violation.path}` : `${label}.${violation.path}`;
   return `${where} ${violation.message}`;
+}
+
+const STRICT_UTF8 = new TextDecoder("utf-8", { fatal: true });
+const JSON_WHITESPACE = " \t\n\r";
+
+/**
+ * The first repeated object key in `text`, which must already be valid
+ * JSON, with the path of the object that repeats it; `null` when no object
+ * does. Keys are compared after unescaping, so `"a"` and `"\u0061"` are the
+ * same key.
+ */
+function findDuplicateKey(text: string): { key: string; path: string } | null {
+  let index = 0;
+  const skipWhitespace = () => {
+    while (index < text.length && JSON_WHITESPACE.includes(text[index]!)) index += 1;
+  };
+  const readString = (): string => {
+    const start = index;
+    index += 1;
+    while (text[index] !== '"') index += text[index] === "\\" ? 2 : 1;
+    index += 1;
+    return JSON.parse(text.slice(start, index)) as string;
+  };
+  const scan = (path: string): { key: string; path: string } | null => {
+    skipWhitespace();
+    const opening = text[index];
+    if (opening === "{" || opening === "[") {
+      const closing = opening === "{" ? "}" : "]";
+      const seen = new Set<string>();
+      index += 1;
+      skipWhitespace();
+      if (text[index] === closing) {
+        index += 1;
+        return null;
+      }
+      for (let position = 0; ; position += 1) {
+        let at = `${path}[${position}]`;
+        if (opening === "{") {
+          skipWhitespace();
+          const key = readString();
+          if (seen.has(key)) return { key, path };
+          seen.add(key);
+          at = childPath(path, key);
+          skipWhitespace();
+          index += 1; // the colon
+        }
+        const found = scan(at);
+        if (found !== null) return found;
+        skipWhitespace();
+        const separator = text[index];
+        index += 1;
+        if (separator === closing) return null;
+      }
+    }
+    if (opening === '"') {
+      readString();
+      return null;
+    }
+    while (index < text.length && !`,]}${JSON_WHITESPACE}`.includes(text[index]!)) index += 1;
+    return null;
+  };
+  return scan("");
+}
+
+/**
+ * Reads a plan or brief file's bytes as strict JSON: UTF-8 that decodes
+ * without error (never silently replaced with U+FFFD), JSON that parses,
+ * and no object that repeats a key at any depth -- the I-JSON rules RFC 8785
+ * canonicalization assumes. Throws an Error whose message says which rule
+ * the bytes break and, for a repeated key, names the key and where it is.
+ * It does not validate the value against a contract; call
+ * `validateAgainstContract()` next.
+ */
+export function readContractDocument(bytes: Uint8Array): unknown {
+  let text: string;
+  try {
+    text = STRICT_UTF8.decode(bytes);
+  } catch {
+    throw new Error("is not valid UTF-8");
+  }
+  let value: unknown;
+  try {
+    value = JSON.parse(text);
+  } catch (cause) {
+    throw new Error(`is not valid JSON: ${cause instanceof Error ? cause.message : String(cause)}`);
+  }
+  const duplicate = findDuplicateKey(text);
+  if (duplicate !== null) {
+    throw new Error(`repeats the key ${JSON.stringify(duplicate.key)} in ${duplicate.path === "" ? "the top-level object" : duplicate.path}; every key may appear once`);
+  }
+  return value;
 }

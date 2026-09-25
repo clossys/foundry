@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { assertImplementedContract } from "./contract-schema.js";
+import { assertImplementedContract, readContractDocument } from "./contract-schema.js";
 import { PLAN_CONTRACTS } from "./generated/plan-contracts.generated.js";
 import { ADVISOR_BLOCKER_KINDS, PLAN_DIGEST_EXCLUDED_FIELDS, canonicalJson, planDigest, validateAdvisorPlan, validateEngagementBrief } from "./index.js";
 import type { AdvisorPlan, EngagementBrief } from "./index.js";
@@ -80,6 +80,55 @@ describe("validateAdvisorPlan against the plan contract", () => {
   it("names the field at fault inside recommendedNext rather than only saying no form matched", () => {
     expect(messages(validateAdvisorPlan({ ...PLAN, recommendedNext: { owner: "sponsor" } }))).toEqual(["plan.recommendedNext.action is required"]);
     expect(validateAdvisorPlan({ ...PLAN, recommendedNext: null })).toEqual([]);
+  });
+});
+
+describe("well-formed Unicode: a plan or brief that validates always has a digest (#1475)", () => {
+  const LONE = { high: "x\ud800", low: "\udc00x" };
+
+  it("refuses a lone high or low surrogate in any plan string, so no valid plan is undigestible", () => {
+    for (const [name, text] of Object.entries(LONE)) {
+      const plan = { ...PLAN, mandate: { ...PLAN.mandate, problem: text } };
+      expect(messages(validateAdvisorPlan(plan)), name).toEqual(["plan.mandate.problem must be well-formed Unicode, and contains a lone surrogate"]);
+      expect(() => planDigest(plan as AdvisorPlan), name).toThrow(/invalid plan has no digest/);
+    }
+  });
+
+  it("refuses a lone surrogate in a brief string or object key", () => {
+    for (const [name, text] of Object.entries(LONE)) {
+      expect(messages(validateEngagementBrief({ ...BRIEF, problem: text })), name).toEqual(["brief.problem must be well-formed Unicode, and contains a lone surrogate"]);
+    }
+    expect(messages(validateEngagementBrief({ ...BRIEF, [LONE.high]: 1 }))).toEqual(["brief has a key that must be well-formed Unicode, and contains a lone surrogate"]);
+  });
+});
+
+describe("readContractDocument: strict JSON for plan and brief files (#1475)", () => {
+  const bytes = (text: string) => new TextEncoder().encode(text);
+
+  it("reads a well-formed document", () => {
+    expect(readContractDocument(bytes(JSON.stringify(PLAN)))).toEqual(PLAN);
+  });
+
+  it("refuses a key repeated at the top level or nested, naming the key and where", () => {
+    expect(() => readContractDocument(bytes('{"a":1,"b":2,"a":3}'))).toThrow('repeats the key "a" in the top-level object; every key may appear once');
+    const nested = JSON.stringify(PLAN).replace('"problem":', '"problem":"EVIL","problem":');
+    expect(() => readContractDocument(bytes(nested))).toThrow('repeats the key "problem" in mandate; every key may appear once');
+    expect(() => readContractDocument(bytes('{"blockers":[{"kind":"a"},{"kind":"b","kind":"c"}]}'))).toThrow('repeats the key "kind" in blockers[1]');
+  });
+
+  it("compares keys after unescaping, and allows the same key in different objects", () => {
+    expect(() => readContractDocument(bytes('{"a":1,"\\u0061":2}'))).toThrow('repeats the key "a"');
+    expect(readContractDocument(bytes('{"a":{"a":1},"b":[{"a":1},{"a":2}],"s":"\\"{\\"a\\":1,\\"a\\":2}"}'))).toEqual({ a: { a: 1 }, b: [{ a: 1 }, { a: 2 }], s: '"{"a":1,"a":2}' });
+  });
+
+  it("refuses bytes that are not valid UTF-8 instead of replacing them with U+FFFD", () => {
+    const raw = bytes('{"problem":"xy"}');
+    raw[12] = 0xff;
+    expect(() => readContractDocument(raw)).toThrow("is not valid UTF-8");
+  });
+
+  it("refuses JSON that does not parse", () => {
+    expect(() => readContractDocument(bytes('{"a":'))).toThrow(/^is not valid JSON/);
   });
 });
 

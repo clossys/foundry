@@ -191,6 +191,21 @@ describe("validateAdvisorPlan", () => {
   });
 });
 
+describe("well-formed Unicode (#1475): a plan or brief that validates always has a digest", () => {
+  const LONE = { high: "x\ud800", low: "\udc00x" };
+
+  it("refuses a lone high or low surrogate in the plan and in the brief", () => {
+    for (const [name, text] of Object.entries(LONE)) {
+      const plan = { ...ADVISOR_SHAPED_PLAN, mandate: { ...ADVISOR_SHAPED_PLAN.mandate, problem: text } };
+      expect(validateAdvisorPlan(plan), name).toEqual({ valid: false, reason: "plan.mandate.problem must be well-formed Unicode, and contains a lone surrogate" });
+      expect(validateEngagementBrief({ ...VALID_BRIEF, problem: text }), name).toEqual({
+        valid: false,
+        reason: "brief.problem must be well-formed Unicode, and contains a lone surrogate",
+      });
+    }
+  });
+});
+
 describe("isPlanApproved", () => {
   it("is approved when the most recent decision's chosen is 'approved'", () => {
     expect(isPlanApproved(VALID_PLAN)).toBe(true);
@@ -254,6 +269,27 @@ describe("applyEngagementBrief", () => {
     const result = applyEngagementBrief(host, "/repo", ADVISOR_SHAPED_PLAN, brief, "clossys/brief.json");
     expect(result).toEqual({ state: "applied", path: "/repo/clossys/brief.json", planDigest: corpusPlan("blockers-without-due").digest });
     expect(JSON.parse(host.written["/repo/clossys/brief.json"] as string)).toEqual(brief);
+  });
+
+  it("writes nothing, and never throws, on any refusal -- including a lone surrogate in the plan or the brief", () => {
+    const refusals: [string, AdvisorPlan, EngagementBrief][] = [
+      ["plan lone high surrogate", { ...ADVISOR_SHAPED_PLAN, mandate: { ...ADVISOR_SHAPED_PLAN.mandate, problem: "x\ud800" } }, VALID_BRIEF],
+      ["plan lone low surrogate", { ...ADVISOR_SHAPED_PLAN, whereWeAre: ["\udc00"] }, VALID_BRIEF],
+      ["brief lone surrogate", ADVISOR_SHAPED_PLAN, { ...VALID_BRIEF, problem: "x\ud800" }],
+      ["context lone surrogate", ADVISOR_SHAPED_PLAN, { ...VALID_BRIEF, context: { ...CONTEXT, fields: [...CONTEXT.fields.slice(0, 5), { id: "constraints", state: "known", value: "\ud800" }] } }],
+      ["not approved", { ...ADVISOR_SHAPED_PLAN, decisions: [] }, VALID_BRIEF],
+      ["plan unknown field", { ...ADVISOR_SHAPED_PLAN, extra: 1 } as unknown as AdvisorPlan, VALID_BRIEF],
+      ["brief unknown field", ADVISOR_SHAPED_PLAN, { ...VALID_BRIEF, extra: 1 } as unknown as EngagementBrief],
+    ];
+    for (const [name, plan, brief] of refusals) {
+      const host = fakeHost();
+      let result: ReturnType<typeof applyEngagementBrief> | undefined;
+      expect(() => {
+        result = applyEngagementBrief(host, "/repo", plan, brief, "clossys/brief.json");
+      }, name).not.toThrow();
+      expect(result?.state, name).toBe("refused");
+      expect(Object.keys(host.written), name).toHaveLength(0);
+    }
   });
 
   it("writes clossys/brief.json byte-identically from the validated brief when both pass", () => {
