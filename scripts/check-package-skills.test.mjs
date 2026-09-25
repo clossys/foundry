@@ -1,6 +1,6 @@
 // Regression tests for check-package-skills.mjs.
 import assert from "node:assert/strict";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
@@ -358,7 +358,24 @@ test("strategist skill must list directory output files and handoff", () => {
 test("live repository package skills pass", () => {
   const result = scanPackageSkills(repoRoot);
   assert.equal(result.exitCode, 0, result.findings.map((f) => `${f.packageDir}:${f.rule}`).join(", "));
-  assert.equal(result.passed.length, 21);
+  // Deliberately NOT collectPackageSkills(repoRoot) (issue #1504 review):
+  // scanPackageSkills is evaluatePackageSkills(collectPackageSkills(root)),
+  // so collectPackageSkills' own directory scan feeds BOTH `result.passed`
+  // and, if used here too, this test's expectation. A bug in that scan --
+  // say it silently skips a directory that has no skill/ subfolder yet,
+  // instead of surfacing it as a missing-skill finding -- would drop the
+  // same package from both sides, and this assertion would stay green
+  // while the package quietly stopped being checked at all. Reading
+  // packages/ directly with readdirSync instead keeps the expectation
+  // independent of the code under test, so a package this scan can see on
+  // disk but collectPackageSkills silently dropped still shows up as a
+  // mismatch.
+  const packagesDir = join(repoRoot, "packages");
+  const discovered = readdirSync(packagesDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && existsSync(join(packagesDir, entry.name, "package.json")))
+    .map((entry) => entry.name)
+    .sort();
+  assert.deepEqual(result.passed.map((entry) => entry.packageDir).sort(), discovered);
 });
 
 test("CLI exits 0 on this repository", async () => {

@@ -223,6 +223,8 @@ export interface WorkspacePlanAdopt {
   readonly inventorySource?: string;
   /** Merged repository ids (on-disk first, then new ids from --inventory) written when both sources are populated. */
   readonly mergedInventoryIds?: readonly string[];
+  /** The merged entries themselves (each entry's `packages` kept), in the same order as `mergedInventoryIds`; what apply writes (#1334). */
+  readonly mergedInventoryRepositories?: readonly { readonly id: string; readonly packages?: unknown }[];
   /** Set when `inventorySource` is about to replace an on-disk inventory that failed schema validation, so the apply message can say it was replaced rather than merely written (#1334). */
   readonly replacesInvalidInventory?: boolean;
 }

@@ -235,9 +235,8 @@ function readHub(host: WorkspaceHost, directory: string): HubDocument | undefine
 }
 
 /**
- * The inventory document's own schema: docs/contracts/repository-inventory.json
- * (in the public repository, not shipped in this package),
- * v1 (#996, #1334). `{ schemaVersion: 1, repositories: [{ id, packages? },
+ * The inventory document's own schema: the inventory contract, which ships
+ * with this package, v1 (#996, #1334). `{ schemaVersion: 1, repositories: [{ id, packages? },
  * ...] }`, nothing more. No other top-level or per-entry field is part of
  * this shape -- a document that merely happens to carry a `repositories`
  * array of similarly-shaped objects (for example a governance record whose
@@ -393,6 +392,18 @@ export function validateInventoryDocument(raw: string): InventoryValidation {
     ids.push(id);
   }
   return { valid: true, ids };
+}
+
+/** One inventory entry as written: its id and, when present, its packages, carried whole. */
+export interface InventoryDocumentEntry {
+  readonly id: string;
+  readonly packages?: unknown;
+}
+
+/** The entries of an inventory document that validateInventoryDocument() has already accepted. */
+function inventoryEntriesOf(raw: string): InventoryDocumentEntry[] {
+  const parsed = JSON.parse(raw) as { repositories: { id: string; packages?: unknown }[] };
+  return parsed.repositories.map((entry) => (entry.packages === undefined ? { id: entry.id } : { id: entry.id, packages: entry.packages }));
 }
 
 /** Classifies a generated hub inventory (packed template skeleton/clossys/.state/inventory.json; the generated path does not ship) without inventing repositories. Malformed input is "invalid", never silently folded into "empty" (#1334). */
@@ -576,14 +587,14 @@ function resolveAdoptInventory(
   host: WorkspaceHost,
   cwd: CwdObservation,
   inventoryPath: string | undefined,
-): { inventorySource?: string; mergedInventoryIds?: readonly string[]; replacesInvalidInventory?: boolean } | WorkspaceRefusal {
+): { inventorySource?: string; mergedInventoryIds?: readonly string[]; mergedInventoryRepositories?: readonly InventoryDocumentEntry[]; replacesInvalidInventory?: boolean } | WorkspaceRefusal {
   const trimmed = inventoryPath?.trim();
   const onDiskPopulated = cwd.inventory?.status === "populated";
   if (!onDiskPopulated && !trimmed) {
     if (cwd.inventory?.status === "invalid") {
       return refuse(
         "violated",
-        `the on-disk hub inventory ${cwd.inventory.reason} -- fix it, or supply --inventory <path> to a populated inventory document to replace it`,
+        `the on-disk hub inventory ${cwd.inventory.reason ?? "does not conform to the inventory contract"} -- fix it, or supply --inventory <path> to a populated inventory document to replace it`,
       );
     }
     return refuse(
@@ -618,22 +629,21 @@ function resolveAdoptInventory(
   if (onDisk !== undefined && !onDisk.valid) {
     return refuse("violated", `the on-disk hub inventory ${onDisk.reason}`);
   }
-  const onDiskIds: readonly string[] = onDisk !== undefined && onDisk.valid ? onDisk.ids : [];
-  const merged: string[] = [];
+  // Merge whole entries, not ids: an entry's `packages` travels with it.
+  // Entries are keyed exactly as validateInventoryDocument() compares ids
+  // (case-insensitively), so the merge can never write a document the
+  // validator then refuses; the on-disk spelling and entry win (#1334).
+  const onDiskEntries = onDisk !== undefined && onDisk.valid && onDiskRaw !== null ? inventoryEntriesOf(onDiskRaw) : [];
+  const mergedEntries: InventoryDocumentEntry[] = [];
   const seen = new Set<string>();
-  for (const id of onDiskIds) {
-    if (!seen.has(id)) {
-      seen.add(id);
-      merged.push(id);
+  for (const entry of [...onDiskEntries, ...inventoryEntriesOf(importedRaw)]) {
+    const key = entry.id.toLowerCase();
+    if (!seen.has(key)) {
+      seen.add(key);
+      mergedEntries.push(entry);
     }
   }
-  for (const id of imported.ids) {
-    if (!seen.has(id)) {
-      seen.add(id);
-      merged.push(id);
-    }
-  }
-  return { mergedInventoryIds: merged };
+  return { mergedInventoryIds: mergedEntries.map((entry) => entry.id), mergedInventoryRepositories: mergedEntries };
 }
 
 export function planWorkspace(
@@ -693,6 +703,7 @@ export function planWorkspace(
       advisorVersion: observation.advisorVersion,
       ...(imported.inventorySource === undefined ? {} : { inventorySource: imported.inventorySource }),
       ...(imported.mergedInventoryIds === undefined ? {} : { mergedInventoryIds: imported.mergedInventoryIds }),
+      ...(imported.mergedInventoryRepositories === undefined ? {} : { mergedInventoryRepositories: imported.mergedInventoryRepositories }),
       ...(imported.replacesInvalidInventory === undefined ? {} : { replacesInvalidInventory: imported.replacesInvalidInventory }),
     };
   }
@@ -861,8 +872,14 @@ function adoptHubFiles(host: WorkspaceHost, skeletonRoot: string, plan: Workspac
   // guarantees "fail before any file is touched" (#1334).
   let inventoryDocument: string | undefined;
   if ("mergedInventoryIds" in plan && Array.isArray(plan.mergedInventoryIds)) {
-    const document = { schemaVersion: 1, repositories: plan.mergedInventoryIds.map((id) => ({ id })) };
-    inventoryDocument = `${JSON.stringify(document, null, 2)}\n`;
+    const repositories =
+      "mergedInventoryRepositories" in plan && Array.isArray(plan.mergedInventoryRepositories)
+        ? plan.mergedInventoryRepositories
+        : plan.mergedInventoryIds.map((id) => ({ id }));
+    const document = `${JSON.stringify({ schemaVersion: 1, repositories }, null, 2)}\n`;
+    const validated = validateInventoryDocument(document);
+    if (!validated.valid) throw new Error(`merged inventory ${validated.reason}`);
+    inventoryDocument = document;
   } else if ("inventorySource" in plan && typeof plan.inventorySource === "string") {
     const raw = host.readText(plan.inventorySource);
     if (raw === null) throw new Error(`inventory source is not readable: ${plan.inventorySource}`);

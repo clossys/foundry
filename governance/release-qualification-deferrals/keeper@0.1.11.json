@@ -1,6 +1,0 @@
-{
-  "package": "keeper",
-  "version": "0.1.11",
-  "reason": "Bumped by the release PR (scripts/apply-release-changesets.mjs), which only edits versions, dependency ranges, docs/changelogs/<dir>.md entries and the lockfile, and deletes the consumed changesets; the record is produced after merge by auto-qualify.yml -> qualify-candidate.yml on the pinned release runtime, which removes this file in the same PR. Merge acknowledgement, never publication: 0.1.11 may not be published before the record exists.",
-  "issue": 948
-}

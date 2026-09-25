@@ -223,7 +223,7 @@ except `facts.json` — see "Why facts.json is the one required file" below.
 The consumer-facing default is `clossys/strategist/` (see #1171); the CLI
 falls back to a retired `strategy/` directory, still read in this release,
 with a notice, when `clossys/strategist/` does not exist yet — see "The
-`strategist-check` CLI" below and this package's CHANGELOG for when the
+`strategist-check` CLI" below and this package's [changelog](https://github.com/clossys/foundry/blob/main/docs/changelogs/strategist.md) for when the
 fallback is removed.
 
 ```
@@ -423,7 +423,7 @@ directory:
 2. `clossys/strategist/` does not exist but the retired `strategy/` does —
    read `strategy/` instead, and print a plain-language notice to move it.
    This bridge is still read in this release; its removal will be
-   announced beforehand in this package's CHANGELOG.
+   announced beforehand in this package's [changelog](https://github.com/clossys/foundry/blob/main/docs/changelogs/strategist.md).
 3. Both exist — refused as indeterminate (exit `2`), never a silent pick:
    remove `strategy/` once its contents have moved to `clossys/strategist/`,
    or pass `strategy-dir` explicitly to force a choice.
