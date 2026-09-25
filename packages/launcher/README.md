@@ -102,8 +102,8 @@ the Foundry supplier tree, a folder that is not a git checkout, a checkout git
 refuses to read (dubious ownership), or a checkout whose git origin does not
 match. For a checkout beside the hub or one not cloned yet, the line says a hub
 run writes nothing there, and that once the repository is staffed in an
-approved plan, its `@clossys-*` team arrives with that plan's setup pull
-request. A sibling line never marks the report
+approved plan, `@clossys-advisor` and the voices of the roles staffed there
+arrive with that plan's setup pull request. A sibling line never marks the report
 degraded, and a sibling's working tree, output an earlier release wrote into it,
 or its old pins do not change the hub run's result. Exit stays 0 on resume
 (the report is advisory); adopt prints the same report and an unparseable
@@ -180,9 +180,11 @@ catalogue dump into `package.json`.
 Voices are how you talk in a coding agent; they are not engagement engines. The
 `@clossys/advisor` npm package is the engine that grades evidence;
 `@clossys-advisor` in chat is its hiring and compatibility voice. Use
-`@clossys-advisor` and `@clossys-<package>` in the hub, and in a product
-repository once the setup pull request of an approved plan that staffs it has
-merged. Each voice can talk even when
+`@clossys-advisor` and `@clossys-<package>` in the hub, where the whole team
+is composed. A product repository staffed in an approved plan gets
+`@clossys-advisor` and the voices of the roles staffed there, once that plan's
+setup pull request has merged; a role not staffed there is expected to be
+absent. Each voice can talk even when
 that npm package is not pinned in that repo. When composing into the hub, the
 launcher reads each skill body from the hub's installed
 `@clossys/<package>/skill/SKILL.md` when present, then from the packed catalogue

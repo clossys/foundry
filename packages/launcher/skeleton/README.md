@@ -5,9 +5,11 @@ This folder is the account hub for Foundry packages.
 After `npx @clossys/launcher`, the `@clossys-*` team is composed in this
 hub. Talk with `@clossys-advisor` and `@clossys-<package>` here. A launcher
 run writes nothing into a product repository; once a repository is staffed
-in an approved plan, the team arrives there with that plan's setup pull
-request. A missing `@` mention is not how we signal incompatibility —
-`@clossys-advisor` is the hiring check.
+in an approved plan, it gets `@clossys-advisor` and the voices of the roles
+staffed there, with that plan's setup pull request. A missing `@` mention
+is a bug only here in the hub; in a product repository, a role that is not
+staffed there is expected to be absent. `@clossys-advisor` is the hiring
+check.
 
 Run `npx @clossys/launcher` again for hub health and to refresh the voices
 in this hub, not as how you talk to packages.

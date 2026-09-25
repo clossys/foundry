@@ -1179,7 +1179,7 @@ describe("applyWorkspacePlan", () => {
     expect(result.health.extraClossys).toEqual(["@clossys/starter"]);
     expect(result.health.dualPin).toBe(false);
     // An inventoried repository not cloned beside the hub is reported, and is not a hub defect.
-    expect(result.message).toMatch(/sibling \(one\): not cloned beside the hub; a hub run writes nothing here; once this repository is staffed in an approved plan, its @clossys-\* team arrives with that plan's setup pull request/);
+    expect(result.message).toMatch(/sibling \(one\): not cloned beside the hub; a hub run writes nothing here; once this repository is staffed in an approved plan, @clossys-advisor and the voices of the roles staffed there arrive with that plan's setup pull request/);
     expect(result.health.degraded).toBe(false);
     expect(result.message).toMatch(/health:/);
   });
@@ -1505,13 +1505,13 @@ describe("applyWorkspacePlan", () => {
     expect(existsSync(join(foundry, ".agents"))).toBe(false);
     expect(result.health.skillComposition?.rosterTargets).toEqual(["acme/hub"]);
     expect(result.health.skillComposition?.siblings).toEqual([
-      { inventoryId: "acme/app", note: "checkout beside the hub; a hub run writes nothing here; once this repository is staffed in an approved plan, its @clossys-* team arrives with that plan's setup pull request" },
-      { inventoryId: "acme/missing", note: "not cloned beside the hub; a hub run writes nothing here; once this repository is staffed in an approved plan, its @clossys-* team arrives with that plan's setup pull request" },
+      { inventoryId: "acme/app", note: "checkout beside the hub; a hub run writes nothing here; once this repository is staffed in an approved plan, @clossys-advisor and the voices of the roles staffed there arrive with that plan's setup pull request" },
+      { inventoryId: "acme/missing", note: "not cloned beside the hub; a hub run writes nothing here; once this repository is staffed in an approved plan, @clossys-advisor and the voices of the roles staffed there arrive with that plan's setup pull request" },
       { inventoryId: "acme/other", note: "git origin does not match inventory id" },
       { inventoryId: "acme/foundry", note: "foundry supplier tree; skills are not written here" },
     ]);
     expect(result.message).toMatch(/^skill roster written: acme\/hub$/m);
-    expect(result.message).toMatch(/^sibling \(acme\/app\): checkout beside the hub; a hub run writes nothing here; once this repository is staffed in an approved plan, its @clossys-\* team arrives with that plan's setup pull request$/m);
+    expect(result.message).toMatch(/^sibling \(acme\/app\): checkout beside the hub; a hub run writes nothing here; once this repository is staffed in an approved plan, @clossys-advisor and the voices of the roles staffed there arrive with that plan's setup pull request$/m);
     expect(result.health.degraded).toBe(false);
     expect(formatHubHealth(result.health)).toMatch(/degraded: no/);
     expect(result.state).toBe("satisfied");
@@ -2068,7 +2068,7 @@ describe("a hub run writes nothing into any sibling checkout (S3-7a)", () => {
     expect(result.health.skillComposition?.siblings).toEqual(
       ["clean-app", "dirty-app", "legacy-app", "pinned-app"].map((name) => ({
         inventoryId: `acme/${name}`,
-        note: "checkout beside the hub; a hub run writes nothing here; once this repository is staffed in an approved plan, its @clossys-* team arrives with that plan's setup pull request",
+        note: "checkout beside the hub; a hub run writes nothing here; once this repository is staffed in an approved plan, @clossys-advisor and the voices of the roles staffed there arrive with that plan's setup pull request",
       })),
     );
     expect(result.message).not.toMatch(/violated|failed/i);
@@ -2159,7 +2159,7 @@ describe("a hub run writes nothing into any sibling checkout (S3-7a)", () => {
     );
     const agents = readFileSync(join(directory, "AGENTS.md"), "utf8");
     expect(agents).toBe(CONSUMER_AGENTS_MD);
-    expect(agents).toContain("once a repository is staffed\nin an approved plan, the team arrives there with that plan's setup pull\nrequest");
+    expect(agents).toContain("it gets `@clossys-advisor` and the voices of the roles\nstaffed there, with that plan's setup pull request. A missing `@` mention\nis a bug only here in the hub");
   });
 });
 
