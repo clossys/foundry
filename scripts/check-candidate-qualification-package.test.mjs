@@ -119,7 +119,17 @@ async function recordingGit(parent) {
   await mkdir(bin, { recursive: true });
   await writeFile(join(bin, "git"), `#!/bin/sh\nprintf '%s\\n' "$*" >> '${log}'\nexec '${realGit}' "$@"\n`);
   await chmod(join(bin, "git"), 0o755);
-  return { env: { ...process.env, PATH: `${bin}:${process.env.PATH}` }, introductionBlobReads: (path) => (existsSync(log) ? readFileSync(log, "utf8") : "").split("\n").filter((line) => new RegExp(`^show [0-9a-f]{40}:${path.replace(/[.]/g, "\\.")}$`).test(line)).length };
+  return {
+    env: { ...process.env, PATH: `${bin}:${process.env.PATH}` },
+    // Structural match, not a regex built from `path`: a fixed pattern
+    // isolates the `show <sha40>:<rest>` shape, then the remainder after the
+    // colon is compared to `path` with plain string equality.
+    introductionBlobReads: (path) => (existsSync(log) ? readFileSync(log, "utf8") : "").split("\n")
+      .filter((line) => {
+        const match = /^show [0-9a-f]{40}:(.*)$/.exec(line);
+        return match !== null && match[1] === path;
+      }).length,
+  };
 }
 
 // Same parsed object, different bytes: the retained blob no longer equals its
