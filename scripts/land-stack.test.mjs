@@ -4,6 +4,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { execFileSync } from "node:child_process";
+import { validateDecisionRecordShape } from "./check-decision-records.mjs";
 
 import {
   permittedMergeMethod,
@@ -287,7 +288,7 @@ test("classifyTier: union over paths, max over tiers, exemption carve-out applie
   assert.deepEqual(mixed.tier2Paths, ["governance/model-qualifications/allowlist.json"]);
 });
 
-test("classifyTier against the real governance/review-tiers.json: the enforcement surface is tier-2 (self-inclusion), decisions/ is tier-1 (not tier-0)", () => {
+test("classifyTier against the real governance/review-tiers.json: the enforcement surface is tier-2 (self-inclusion), decisions/ is tier-2 (not tier-0 or tier-1)", () => {
   const config = JSON.parse(readFileSync(join(repoRoot, "governance", "review-tiers.json"), "utf8"));
   const tierGlobs = {
     tier1: config.tier1.globs,
@@ -303,10 +304,43 @@ test("classifyTier against the real governance/review-tiers.json: the enforcemen
   assert.equal(classifyTier(["docs/contracts/decision-record.json"], tierGlobs).tier, "tier-2");
   assert.equal(classifyTier(["package-scope.json"], tierGlobs).tier, "tier-2");
   assert.equal(classifyTier(["scripts/lib/anything.mjs"], tierGlobs).tier, "tier-2");
-  // governance/decisions/** is tier-1, not tier-0 (#1187 review at 8e6d97ea,
-  // blocking finding 4) -- adding or changing a decision record needs real
-  // independent review, not a free pass.
-  assert.equal(classifyTier(["governance/decisions/some-decision.json"], tierGlobs).tier, "tier-1");
+  // docs/HITL-RULE.md ("the rule file") and any hitl-escalation-rule*.json
+  // decision record are tier-2 (#1187 escalation-rule round 2/3, both
+  // reviewers, blocking) -- this is the whole point of moving the ratified
+  // rule's text out of docs/HITL.md (which classifies tier-0/tier-1 by
+  // itself, matching no glob here on its own) into its own, dedicated,
+  // tier-2 file. A successor record that follows the naming convention
+  // (prefixed with the id it supersedes) also classifies tier-2 through
+  // the same glob.
+  assert.equal(classifyTier(["docs/HITL-RULE.md"], tierGlobs).tier, "tier-2");
+  assert.equal(classifyTier(["governance/decisions/hitl-escalation-rule.json"], tierGlobs).tier, "tier-2");
+  assert.equal(classifyTier(["governance/decisions/hitl-escalation-rule-v2.json"], tierGlobs).tier, "tier-2");
+  assert.equal(classifyTier(["docs/HITL.md"], tierGlobs).tier, "tier-1");
+  // The deny hook that is meant to write-protect docs/HITL-RULE.md is
+  // ALSO tier-2 (#1187 escalation-rule round 4, both reviewers, blocking):
+  // its definition (the script and its protected-path list) moved out of
+  // tier-1 docs/HITL.md, where a two-ordinary-reviewer change could
+  // silently have weakened it, into docs/HITL-HOOKS.md and a real,
+  // tracked script under scripts/hooks/ -- including its test, matching
+  // this file's own existing precedent for scripts/land-stack.mjs/.test.mjs.
+  // The companion Bash-matched deny-tier2.mjs was REMOVED in round 8
+  // (owner decision) -- only deny-tier2-edit.mjs (and its test) remain,
+  // still covered by the same scripts/hooks/** directory glob.
+  assert.equal(classifyTier(["docs/HITL-HOOKS.md"], tierGlobs).tier, "tier-2");
+  assert.equal(classifyTier(["scripts/hooks/deny-tier2-edit.mjs"], tierGlobs).tier, "tier-2");
+  assert.equal(classifyTier(["scripts/hooks/deny-tier2-edit.test.mjs"], tierGlobs).tier, "tier-2");
+  // governance/decisions/** is tier-2, not tier-0 or tier-1 (#1187 review
+  // at 8e6d97ea, blocking finding 4, promoted from tier-1 to tier-2 in
+  // round 8, both reviewers, blocking): adding or changing ANY decision
+  // record -- not only one matching the narrower hitl-escalation-rule*.json
+  // glob -- needs owner-decision-record authorization, since any record
+  // with decidedBy: "owner" carries real tier-2 authority regardless of
+  // which path it lives under or what it is named. This also closes the
+  // narrower gap where a record superseding the escalation rule itself,
+  // under a name that does NOT match the hitl-escalation-rule* naming
+  // convention, would otherwise fall back to a lower tier.
+  assert.equal(classifyTier(["governance/decisions/some-decision.json"], tierGlobs).tier, "tier-2");
+  assert.equal(classifyTier(["governance/decisions/hitl-rule-amendment.json"], tierGlobs).tier, "tier-2");
   // Ordinary governance record files stay exempt (tier-0).
   assert.equal(classifyTier(["governance/release-catalog.json"], tierGlobs).tier, "tier-0");
   assert.equal(classifyTier(["governance/model-qualifications/allowlist.json"], tierGlobs).tier, "tier-2");
@@ -552,6 +586,7 @@ function decisionRecord(overrides = {}) {
     reviews: [],
     status: "decided",
     decidedBy: "owner",
+    channel: "owner-chat",
     decision: "Yes.",
     relaxesGateOrPolicy: false,
     sunset: null,
@@ -1257,6 +1292,39 @@ test("MUST ALLOW: a patch-id-pinned PR-scoped authorization survives a restack (
     tierConfig: SAMPLE_TIER_CONFIG,
   });
   assert.equal(afterContentChange.ok, false, "a genuine content change must break the patch-id pin");
+});
+
+test('MUST REFUSE: land-stack counts tier-2 authority only from channel "owner-chat" records -- a grandfathered, channel-less legacy record is valid AS HISTORY (it passes shape validation via LEGACY_CHANNEL_EXEMPT) but authorizes nothing (#1187 escalation-rule round 2, both reviewers, blocking)', () => {
+  // Use the REAL, committed weekly-release-calendar.json -- it is on
+  // LEGACY_CHANNEL_EXEMPT (content-hash pinned) and carries no `channel`
+  // field, so it passes shape validation cleanly (proven below), yet must
+  // still never authorize a tier-2 change through evaluateTier2Decision.
+  const realLegacyRecord = JSON.parse(readFileSync(join(repoRoot, "governance", "decisions", "weekly-release-calendar.json"), "utf8"));
+  assert.equal("channel" in realLegacyRecord, false, "fixture assumption: the real file must still have no channel field");
+  assert.deepEqual(validateDecisionRecordShape(realLegacyRecord, "weekly-release-calendar"), [], "the real record must pass shape validation via the legacy grandfather clause");
+
+  const result = evaluateTier2Decision({
+    decisionRecords: [realLegacyRecord],
+    prNumber: "1316",
+    patchId: realLegacyRecord.links.patchIds[0],
+    tier2Paths: ["governance/model-qualifications/allowlist.json"],
+    tierConfig: SAMPLE_TIER_CONFIG,
+  });
+  assert.equal(result.ok, false, "a channel-less legacy record must never authorize a tier-2 change, even one that passes shape validation via the grandfather clause");
+
+  // The positive case, for contrast: an otherwise-identical record with
+  // channel: "owner-chat" (the actual superseding record).
+  const supersedingRecord = JSON.parse(readFileSync(join(repoRoot, "governance", "decisions", "weekly-release-calendar-owner-chat.json"), "utf8"));
+  assert.equal(supersedingRecord.channel, "owner-chat");
+  const authorized = evaluateTier2Decision({
+    decisionRecords: [realLegacyRecord, supersedingRecord],
+    prNumber: "1316",
+    patchId: supersedingRecord.links.patchIds[0],
+    tier2Paths: ["governance/model-qualifications/allowlist.json"],
+    tierConfig: SAMPLE_TIER_CONFIG,
+  });
+  assert.equal(authorized.ok, true, "the owner-chat-sourced superseding record must authorize");
+  assert.match(authorized.reason, /weekly-release-calendar-owner-chat/);
 });
 
 test("MUST REFUSE: a path-scoped tier-2 authorization with expiry: null is a standing blank cheque and must be refused (#1187 review round 4, should-fix)", () => {
