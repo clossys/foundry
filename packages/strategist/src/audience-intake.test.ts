@@ -11,27 +11,38 @@ function contextWith(known: Record<string, string>): EngagementContextSnapshot {
 const noBrief = readEngagementContextFromBriefData(undefined).context;
 
 describe("pendingAudienceIntakeQuestions", () => {
-  it("asks every audience question when there is no brief (unchanged behaviour)", () => {
-    const questions = pendingAudienceIntakeQuestions(noBrief);
-    expect(questions.map((q) => q.id)).toEqual(["audience-type", "audience-name", "audience-situation", "audience-pains"]);
+  it("leads with a pointer to Advisor's own audience context card, plus the three genuinely distinct questions, when there is no brief", () => {
+    const steps = pendingAudienceIntakeQuestions(noBrief);
+    expect(steps[0]).toEqual({ kind: "context-pointer", fieldId: "audience", note: expect.any(String) });
+    expect(steps.slice(1).map((s) => (s.kind === "question" ? s.id : s.kind))).toEqual(["audience-name", "audience-situation", "audience-pains"]);
   });
 
-  it("drops only audience-type when the brief's audience field is known (no duplicate question)", () => {
+  it("never asks a Strategist-owned consumers-or-businesses question, even when the brief's audience field is unknown", () => {
+    const steps = pendingAudienceIntakeQuestions(noBrief);
+    for (const step of steps) {
+      if (step.kind === "question") expect(step.id as string).not.toBe("audience-type");
+    }
+  });
+
+  it("drops the pointer, and asks only the three genuinely distinct questions, when the brief's audience field is known", () => {
     const context = contextWith({ audience: "consumers", business: "product-or-service" });
-    const questions = pendingAudienceIntakeQuestions(context);
-    expect(questions.map((q) => q.id)).toEqual(["audience-name", "audience-situation", "audience-pains"]);
+    const steps = pendingAudienceIntakeQuestions(context);
+    expect(steps.every((s) => s.kind === "question")).toBe(true);
+    expect(steps.map((s) => (s as { id: string }).id)).toEqual(["audience-name", "audience-situation", "audience-pains"]);
   });
 
-  it("still asks audience-type when other context fields are known but audience itself is not (partial context)", () => {
+  it("still leads with the pointer when other context fields are known but audience itself is not (partial context)", () => {
     const context = contextWith({ business: "product-or-service", stage: "building" });
-    const questions = pendingAudienceIntakeQuestions(context);
-    expect(questions.map((q) => q.id)).toEqual(["audience-type", "audience-name", "audience-situation", "audience-pains"]);
+    const steps = pendingAudienceIntakeQuestions(context);
+    expect(steps[0]).toMatchObject({ kind: "context-pointer", fieldId: "audience" });
+    expect(steps).toHaveLength(4);
   });
 
-  it("asks every audience question when the brief is invalid (unchanged behaviour)", () => {
+  it("leads with the pointer when the brief is invalid, the same starting point as no brief at all", () => {
     const invalid = readEngagementContextFromBriefData("not an object").context;
-    const questions = pendingAudienceIntakeQuestions(invalid);
-    expect(questions.map((q) => q.id)).toEqual(["audience-type", "audience-name", "audience-situation", "audience-pains"]);
+    const steps = pendingAudienceIntakeQuestions(invalid);
+    expect(steps[0]).toMatchObject({ kind: "context-pointer", fieldId: "audience" });
+    expect(steps).toHaveLength(4);
   });
 });
 
@@ -49,18 +60,22 @@ describe("seedAudienceFromContext", () => {
       expect(result.audience).toEqual({
         id: "consumers",
         name: "Consumers",
-        situation: "Everyday consumers (B2C).",
+        situation: "Consumers, per the engagement brief's audience answer — situation not yet described.",
         notes: expect.stringContaining("engagement brief"),
       });
       expect(result.provenance).toEqual({ audience: "brief" });
     }
   });
 
-  it("seeds a businesses audience from a known context field", () => {
+  it("seeds a businesses audience from a known context field, with its own situation text", () => {
     const context = contextWith({ audience: "businesses" });
     const result = seedAudienceFromContext(context, []);
     expect(result.seeded).toBe(true);
-    if (result.seeded) expect(result.audience.id).toBe("businesses");
+    if (result.seeded) {
+      expect(result.audience.id).toBe("businesses");
+      expect(result.audience.name).toBe("Businesses");
+      expect(result.audience.situation).toBe("Businesses, per the engagement brief's audience answer — situation not yet described.");
+    }
   });
 
   it("never overwrites an existing detailed audiences.json record", () => {

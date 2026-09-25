@@ -172,7 +172,13 @@ export type {
 } from "./engagement-context.js";
 
 export { pendingAudienceIntakeQuestions, seedAudienceFromContext } from "./audience-intake.js";
-export type { AudienceIntakeQuestion, AudienceIntakeQuestionId, AudienceSeedResult } from "./audience-intake.js";
+export type {
+  AudienceContextPointer,
+  AudienceIntakeQuestion,
+  AudienceIntakeQuestionId,
+  AudienceIntakeStep,
+  AudienceSeedResult,
+} from "./audience-intake.js";
 
 export {
   STRATEGY_RECORD_KINDS,

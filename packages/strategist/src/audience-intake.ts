@@ -1,18 +1,17 @@
 /**
  * Strategist's audience intake, made aware of the shared engagement context
- * (issue #1173): the founder already told Advisor, once, whether this is
- * for everyday consumers or other businesses (the `audience` context
- * field, `docs/contracts/engagement-context.json`). Strategist reads that
- * coarse choice through {@link EngagementContextSnapshot} and asks only
- * for what it does not provide — `audiences.json`'s detailed record
- * (`id`, `name`, `situation`, `pains`; see `schema.ts`'s `Audience`) still
- * needs a specific situation and at least one pain, because a B2C/B2B
- * choice alone cannot honestly answer those without inventing founder
- * words. This mirrors decision 28's own duplicate-question rule: the
- * reserved context field id is `audience`; this package's own intake
- * question ids below (`audience-type`, `audience-name`,
- * `audience-situation`, `audience-pains`) are a different, narrower
- * vocabulary, so none of them collides with it.
+ * (issue #1173). A founder already told `@clossys/advisor`, once, whether
+ * this is for everyday consumers or other businesses — Advisor's own
+ * `audience` context field (`docs/contracts/engagement-context.json`).
+ * Strategist does not ask that question again under a different id:
+ * `docs/DECISIONS.md` decision 28's duplicate-question rule matches on
+ * stable ids, but explicitly leaves a genuine rename of a context
+ * question to review, not the gate — and a Strategist card prompting
+ * "consumers (B2C) or businesses (B2B)?" with Advisor's own two choices
+ * is exactly that: Advisor's `audience` card under a new name. When the
+ * brief's `audience` field is unknown, {@link pendingAudienceIntakeQuestions}
+ * returns a pointer back to Advisor's own context card instead of a
+ * Strategist-owned substitute for it.
  *
  * Only `audience` maps into a Strategist record today. The other five
  * context fields (`business`, `product`, `stage`, `intent`, `constraints`)
@@ -25,39 +24,79 @@ import type { Audience } from "./schema.js";
 import { audienceContextValue } from "./engagement-context.js";
 import type { EngagementContextSnapshot } from "./engagement-context.js";
 
-export type AudienceIntakeQuestionId = "audience-type" | "audience-name" | "audience-situation" | "audience-pains";
+/**
+ * Strategist's own audience intake questions. Nothing here asks "consumers
+ * or businesses" — that is Advisor's own `audience` context question; see
+ * this module's header comment for why a Strategist-owned rename of it is
+ * not offered as an alternative. Each of these three is genuinely
+ * distinct from every context field id (`business`, `product`, `audience`,
+ * `stage`, `intent`, `constraints`): none of the six answers a specific
+ * audience's name, situation, or pains.
+ */
+export type AudienceIntakeQuestionId = "audience-name" | "audience-situation" | "audience-pains";
 
 export interface AudienceIntakeQuestion {
+  readonly kind: "question";
   readonly id: AudienceIntakeQuestionId;
   readonly prompt: string;
 }
 
-const AUDIENCE_INTAKE_QUESTIONS: readonly AudienceIntakeQuestion[] = [
-  { id: "audience-type", prompt: "Is this audience everyday consumers (B2C) or other businesses (B2B)?" },
-  { id: "audience-name", prompt: "What should we call this audience?" },
-  { id: "audience-situation", prompt: "What is this audience's situation right now?" },
-  { id: "audience-pains", prompt: "What pains does this audience have? (at least one)" },
-];
-
 /**
- * The audience intake questions still worth asking, in the fixed order
- * above, given what the engagement context already answered. Only
- * `audience-type` can be dropped — it is the one question the context's
- * coarse `audience` field answers; a `business`, `stage`, `intent`, or
- * any other known context field never drops it, because none of them
- * answers "consumers or businesses". `audience-name`, `-situation`, and
- * `-pains` are always asked: the context's fixed choice ids never carry
- * founder prose, so this package never invents them.
+ * Not a question Strategist asks — a pointer. Presented in place of a
+ * Strategist-owned audience-type question when the brief does not yet
+ * answer Advisor's `audience` context field: the founder answers it once,
+ * on Advisor's own card, and every role reads the brief afterward.
  */
-export function pendingAudienceIntakeQuestions(context: EngagementContextSnapshot): readonly AudienceIntakeQuestion[] {
-  const typeKnown = audienceContextValue(context) !== undefined;
-  return AUDIENCE_INTAKE_QUESTIONS.filter((question) => !(typeKnown && question.id === "audience-type"));
+export interface AudienceContextPointer {
+  readonly kind: "context-pointer";
+  readonly fieldId: "audience";
+  readonly note: string;
 }
 
-const AUDIENCE_TYPE_LABEL: Record<"consumers" | "businesses", { name: string; situation: string }> = {
-  consumers: { name: "Consumers", situation: "Everyday consumers (B2C)." },
-  businesses: { name: "Businesses", situation: "Other businesses (B2B)." },
+export type AudienceIntakeStep = AudienceIntakeQuestion | AudienceContextPointer;
+
+const AUDIENCE_INTAKE_QUESTIONS: readonly AudienceIntakeQuestion[] = [
+  { kind: "question", id: "audience-name", prompt: "What should we call this audience?" },
+  { kind: "question", id: "audience-situation", prompt: "What is this audience's situation right now?" },
+  { kind: "question", id: "audience-pains", prompt: "What pains does this audience have? (at least one)" },
+];
+
+const AUDIENCE_CONTEXT_POINTER: AudienceContextPointer = {
+  kind: "context-pointer",
+  fieldId: "audience",
+  note: 'Not recorded yet — answer Advisor\'s own "audience" context card (packages/advisor/src/context-questions.ts); Strategist does not ask this again under its own card.',
 };
+
+/**
+ * The audience intake steps still worth taking, given what the engagement
+ * context already answered. When `audience` is unknown, the first step is
+ * {@link AudienceContextPointer} — never a Strategist question that
+ * duplicates Advisor's own card. The three genuinely distinct questions
+ * (name, situation, at least one pain) are always included: no context
+ * field answers any of them, brief present or not.
+ */
+export function pendingAudienceIntakeQuestions(context: EngagementContextSnapshot): readonly AudienceIntakeStep[] {
+  const typeKnown = audienceContextValue(context) !== undefined;
+  return typeKnown ? AUDIENCE_INTAKE_QUESTIONS : [AUDIENCE_CONTEXT_POINTER, ...AUDIENCE_INTAKE_QUESTIONS];
+}
+
+const AUDIENCE_TYPE_NAME: Record<"consumers" | "businesses", string> = {
+  consumers: "Consumers",
+  businesses: "Businesses",
+};
+
+/**
+ * A neutral, package-owned seed sentence built from the coarse choice id —
+ * deliberately not a copy of Advisor's own card label text
+ * (`packages/advisor/src/context-questions.ts`'s `CHOICES`), which would
+ * need a cross-package test to keep the two packages' strings in sync and
+ * would blur which package owns the words a founder never actually said.
+ * `pains` is still required and not seeded here — see
+ * {@link seedAudienceFromContext}.
+ */
+function seedSituation(value: "consumers" | "businesses"): string {
+  return `${AUDIENCE_TYPE_NAME[value]}, per the engagement brief's audience answer — situation not yet described.`;
+}
 
 export type AudienceSeedResult =
   | { readonly seeded: true; readonly audience: Pick<Audience, "id" | "name" | "situation" | "notes">; readonly provenance: { readonly audience: "brief" } }
@@ -67,32 +106,24 @@ export type AudienceSeedResult =
  * Proposes a starting `audiences.json` entry from the brief's coarse
  * `audience` context field, never overwriting an existing detailed
  * record: when `existingAudiences` already has one or more entries, this
- * refuses to seed at all, on the theory that Strategist's own governed
- * record — built from the founder's specific answers — always outranks
- * a coarse B2C/B2B guess (`clossys/strategist/audiences.json` is the
- * detailed record; the brief's `audience` field is not).
+ * refuses to seed at all — a governed record built from the founder's own
+ * specific answers always outranks a coarse B2C/B2B guess.
  *
- * The proposed `situation` is Advisor's own fixed-choice label text
- * (`packages/advisor/src/context-questions.ts`'s recorded choice labels,
- * mirrored in this package's `AUDIENCE_TYPE_LABEL`) — a recorded answer,
- * not invented prose — and `pains` is deliberately left off the returned
- * shape: it is `Audience`'s one required field this seed cannot honestly
- * fill, so the caller still asks `audience-pains` (see
- * {@link pendingAudienceIntakeQuestions}) before writing a valid entry.
- * `notes` records where the seed came from, so a reader of
- * `audiences.json` can see the entry started from the brief.
+ * `pains` is deliberately left off the returned shape: it is `Audience`'s
+ * one required field this seed cannot honestly fill from a coarse choice,
+ * so `audience-pains` (see {@link pendingAudienceIntakeQuestions}) stays
+ * asked until it is answered. `notes` records where the seed came from.
  */
 export function seedAudienceFromContext(context: EngagementContextSnapshot, existingAudiences: readonly Pick<Audience, "id">[]): AudienceSeedResult {
   if (existingAudiences.length > 0) return { seeded: false, reason: "audiences-already-recorded" };
   const value = audienceContextValue(context);
   if (value === undefined) return { seeded: false, reason: "no-audience-context" };
-  const label = AUDIENCE_TYPE_LABEL[value];
   return {
     seeded: true,
     audience: {
       id: value,
-      name: label.name,
-      situation: label.situation,
+      name: AUDIENCE_TYPE_NAME[value],
+      situation: seedSituation(value),
       notes: "Seeded from the engagement brief's audience context field (issue #1173) — pains and a more specific situation are still needed before handoff.",
     },
     provenance: { audience: "brief" },

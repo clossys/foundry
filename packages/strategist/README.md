@@ -313,41 +313,52 @@ audienceContextValue(context); // "consumers" | "businesses" | undefined
 
 A missing `clossys/brief.json`, a brief with no `context` yet, and an
 individual field the brief doesn't carry all read as `unknown` — never
-invented — with no `note`. `note` appears only when the brief file itself
-could not be read as a brief at all (not JSON, wrong `schemaVersion`, or a
-`context` that doesn't match the contract's shape); the caller still
-treats every field as unknown, exactly as it would with no brief, and
-relays the note once.
+invented — with no `note`. `note` appears only when the brief itself, or
+its `context`, does not match its own contract's shape: not an object,
+missing a required key, an unexpected key, the wrong `schemaVersion`, more
+than six fields, or a field object carrying any key beyond `{id, state,
+value}` — the contracts refuse all of these, and this reader reads them
+as unknown rather than accept what they refuse. The caller still treats
+every field as unknown, exactly as it would with no brief, and relays the
+note once.
 
-### Seeding the audience intake, never overwriting a detailed record
+### Not a renamed context question
 
-The brief's `audience` field is a coarse fixed choice — everyday
-consumers, or other businesses — Advisor's own vocabulary, never founder
-prose. `clossys/strategist/audiences.json` is the detailed record
-(`id`, `name`, `situation`, `pains`). `pendingAudienceIntakeQuestions`
-drops only the one audience question the context already answers; the
-other three — a specific name, situation, and at least one pain — stay,
-because a B2C/B2B choice alone cannot honestly answer them without
-inventing founder words:
+The brief's `audience` field is Advisor's own coarse fixed choice —
+everyday consumers, or other businesses — never founder prose. Strategist
+does not ask "consumers or businesses" again under its own id: `docs/DECISIONS.md`
+decision 28 reserves a genuine rename of a context question for review,
+and a Strategist-owned card with Advisor's own two choices would be
+exactly that. When `audience` is unknown, `pendingAudienceIntakeQuestions`
+leads with a pointer back to Advisor's own context card instead, followed
+by the three questions that are genuinely distinct from every context
+field — a specific name, situation, and at least one pain, none of which
+any of the six context fields answers:
 
 ```ts
 import { pendingAudienceIntakeQuestions, seedAudienceFromContext } from "@clossys/strategist";
 
-pendingAudienceIntakeQuestions(context); // audience-type dropped when context.audience is known
+pendingAudienceIntakeQuestions(context);
+// [{ kind: "context-pointer", fieldId: "audience", note }, ...the 3 questions]  — audience unknown
+// [...the 3 questions]                                                          — audience known
+
 seedAudienceFromContext(context, bundle.audiences ?? []);
 // { seeded: false, reason: "audiences-already-recorded" } — bundle.audiences already has entries; never overwritten
 // { seeded: false, reason: "no-audience-context" }         — context.audience is unknown
 // { seeded: true, audience: { id, name, situation, notes }, provenance: { audience: "brief" } }
 ```
 
-A seeded entry's `situation` is Advisor's own recorded choice label, never
-prose the founder never said; it still lacks `pains` (`Audience`'s one
-required field this seed cannot fill), so it is not yet a valid
-`audiences.json` entry on its own — the pains question stays asked until
-it is. Only the `audience` field maps into a Strategist record today; the
-other five context fields are readable through the same
-`EngagementContextSnapshot` but are not wired into any
-`clossys/strategist/*.json` seed yet.
+A seeded entry's `situation` is a neutral sentence this package builds
+from the coarse choice id itself (`"Consumers, per the engagement brief's
+audience answer — situation not yet described."`), not a copy of
+Advisor's own card label text — copying it would need a cross-package
+test to keep two packages' strings in sync for words a founder never
+actually said. It still lacks `pains` (`Audience`'s one required field
+this seed cannot fill), so it is not yet a valid `audiences.json` entry on
+its own — `audience-pains` stays asked until it is. Only the `audience`
+field maps into a Strategist record today; the other five context fields
+are readable through the same `EngagementContextSnapshot` but are not
+wired into any `clossys/strategist/*.json` seed yet.
 
 ## The `Fact` entity
 
@@ -946,9 +957,9 @@ this repository's own contracts, never a typed import.
 | `audienceContextValue(context)` | function | The known `audience` field value (`"consumers" \| "businesses"`), or `undefined`. The one field id currently wired into a Strategist seed. |
 | `ENGAGEMENT_CONTEXT_FIELD_IDS` | const | `readonly EngagementContextFieldId[]` — `business`, `product`, `audience`, `stage`, `intent`, `constraints`, in the fixed field order. |
 | `EngagementContextSnapshot`, `EngagementContextField`, `EngagementContextFieldId`, `EngagementContextRead` | types | The snapshot shape — one entry per field id, `{ id, state: "known", value }` or `{ id, state: "unknown" }` — and the `{ context, note? }` read result. |
-| `pendingAudienceIntakeQuestions(context)` | function | The audience intake questions still worth asking, given the context — drops only `audience-type` when `context`'s `audience` field is known. |
+| `pendingAudienceIntakeQuestions(context)` | function | The audience intake steps still worth taking. When `context`'s `audience` field is unknown, the first step is a `context-pointer` back to Advisor's own card — never a Strategist question that duplicates it; the three genuinely distinct questions (`audience-name`, `audience-situation`, `audience-pains`) always follow. |
 | `seedAudienceFromContext(context, existingAudiences)` | function | Proposes a starting `audiences.json` entry from the coarse `audience` field. Refuses (`seeded: false`) when `existingAudiences` already has entries, or when `audience` is unknown. Never fills `pains` — `Audience`'s one required field a coarse choice cannot honestly answer. |
-| `AudienceIntakeQuestion`, `AudienceIntakeQuestionId`, `AudienceSeedResult` | types | The question shape (`id`, `prompt`) and the seed result union. |
+| `AudienceIntakeQuestion`, `AudienceContextPointer`, `AudienceIntakeStep`, `AudienceIntakeQuestionId`, `AudienceSeedResult` | types | `AudienceIntakeStep` is `AudienceIntakeQuestion \| AudienceContextPointer` — a Strategist question (`kind: "question"`, `id`, `prompt`) or a pointer back to Advisor's context card (`kind: "context-pointer"`, `fieldId`, `note`) — and the seed result union. |
 
 ### Handoff (`handoff.ts`)
 
