@@ -9,7 +9,7 @@
 // the contract's shapes for callers; they validate nothing.
 
 import { formatContractViolation, validateAgainstContract } from "./generated/contract-schema.generated.js";
-import { LEDGER_PATH, LOCKFILE_NAMES, MAX_ROOT_NAME_UNITS, compareTuples, dependencyPointer, discoveryLinkRole, matchesPathPattern } from "./change-set-contract.js";
+import { ID_TOKEN, INTRODUCIBLE_ROOTS, LEDGER_PATH, LOCKFILE_NAMES, compareTuples, derivedPlanItem, dependencyPointer, discoveryLinkRole, matchesPathPattern } from "./change-set-contract.js";
 import type { ApprovalBinding, ChangeSetPhase, DependencyPlacement } from "./change-set-contract.js";
 import { loadPackedContract } from "./plan-contract.js";
 import type { ValidationResult } from "./plan-contract.js";
@@ -83,7 +83,7 @@ export interface InstalledLedger {
   readonly deferred: readonly LedgerDeferredRow[];
 }
 
-export type LedgerRuleId = "L1" | "L2" | "L3" | "L4" | "L5" | "L6" | "L7" | "L8" | "L9";
+export type LedgerRuleId = "L1" | "L2" | "L3" | "L4" | "L5" | "L6" | "L7" | "L8" | "L9" | "L10";
 export type LedgerSuccessionRuleId = "S2" | "S3";
 
 /** One reason a ledger, or a pair of ledgers, is refused: `rule` is "schema" for the contract's keywords, "bytes" for text that is not a ledger's exact bytes, else the rule's id. */
@@ -140,7 +140,7 @@ function sameValue(left: unknown, right: unknown): boolean {
 
 const IDENTITY: readonly (keyof LedgerPackageIdentity | "act")[] = ["planItem", "act", "name", "version", "integrity", "placement"];
 
-/** Code rules L1-L9 of installed-ledger.json, over a ledger whose schema already passes. Messages name positions, never values. */
+/** Code rules L1-L10 of installed-ledger.json, over a ledger whose schema already passes. Messages name positions, never values. */
 export function ledgerRuleViolations(ledger: InstalledLedger): RuleViolation[] {
   const out: RuleViolation[] = [];
   const push = (rule: LedgerRuleId, path: string, message: string) => out.push({ rule, path, message });
@@ -204,6 +204,8 @@ export function ledgerRuleViolations(ledger: InstalledLedger): RuleViolation[] {
     const lowered = row.path.toLowerCase();
     if (lowered === LEDGER_PATH.toLowerCase() || lowered === "package.json" || LOCKFILE_NAMES.includes(lowered)) push("L5", `${at}.path`, "is the ledger, package.json or a lockfile, which no files row names");
     else if (!OWNED_PATTERNS.some((pattern) => matchesPathPattern(row.path, pattern))) push("L5", `${at}.path`, "is not matched by any owned pattern");
+    const role = discoveryLinkRole(row.path) ?? /^\.agents\/skills\/clossys-([^/]+)\//u.exec(row.path)?.[1];
+    if (role !== undefined && !ID_TOKEN.test(role)) push("L5", `${at}.path`, "names a role that is not a lowercase id token");
     const link = discoveryLinkRole(row.path) !== null;
     if ((row.mode === "120000") !== link) push("L5", `${at}.mode`, link ? "is not 120000, and this path is a discovery link" : "is 120000, which only a discovery link has");
   });
@@ -217,7 +219,7 @@ export function ledgerRuleViolations(ledger: InstalledLedger): RuleViolation[] {
 
   // L7
   const acts = [...ledger.packages.map((row, index) => ({ row, path: `packages[${index}]` })), ...ledger.deferred.map((row, index) => ({ row, path: `deferred[${index}]` }))];
-  for (const { index, first } of repeats(acts, (entry) => entry.row.planItem)) push("L7", `${acts[index]!.path}.planItem`, `repeats ${acts[first]!.path}.planItem`);
+  // A repeated planItem is a repeated name: L10 derives each planItem from its name.
   for (const { index, first } of repeats(acts, (entry) => entry.row.name)) push("L7", `${acts[index]!.path}.name`, `repeats ${acts[first]!.path}.name`);
 
   // L8
@@ -241,7 +243,14 @@ export function ledgerRuleViolations(ledger: InstalledLedger): RuleViolation[] {
   const profileFile = profileRows[0]?.row.file;
   for (const { row, index } of profileRows) {
     if (row.file !== profileFile) push("L9", `entries[${index}].file`, "is a second Controller profile, and the flow edits one");
-    if (row.value.length > MAX_ROOT_NAME_UNITS) push("L9", `entries[${index}].value`, "is longer than 255 UTF-16 code units");
+    if (!INTRODUCIBLE_ROOTS.has(row.value)) push("L9", `entries[${index}].value`, "is not a root name an owned pattern can introduce");
+  }
+
+  // L10: a planItem is derived from this repository's id and the package, never free text.
+  for (const [name, rows] of [["packages", ledger.packages], ["deferred", ledger.deferred]] as const) {
+    rows.forEach((row, index) => {
+      if (row.planItem !== derivedPlanItem(ledger.repository.id, row.name)) push("L10", `${name}[${index}].planItem`, "is not repository.id, a colon and the row's name");
+    });
   }
   return out;
 }
@@ -257,12 +266,12 @@ function contractViolations(value: unknown, label: string, side?: "base" | "head
   }));
 }
 
-/** Every reason a ledger is refused: the ledger contract's schema, then, once that passes, its code rules L1-L9. */
+/** Every reason a ledger is refused: the ledger contract's schema, then, once that passes, its code rules L1-L10. */
 export function installedLedgerViolations(value: unknown): LedgerViolation[] {
   return contractViolations(value, "ledger");
 }
 
-/** Validates a ledger against installed-ledger.json and its code rules L1-L9. A valid ledger is well formed, not trusted. No reason echoes a value. */
+/** Validates a ledger against installed-ledger.json and its code rules L1-L10. A valid ledger is well formed, not trusted. No reason echoes a value. */
 export function validateInstalledLedger(value: unknown): ValidationResult {
   const violations = installedLedgerViolations(value);
   if (violations.length === 0) return { valid: true };

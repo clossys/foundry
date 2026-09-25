@@ -8,7 +8,7 @@ import type { InstalledLedger } from "./ledger-contract.js";
 
 /*
  * Issue #1178. The installed-state ledger contract, packed into this
- * package: its code rules L1-L8, its byte serialization and its SUCCESSION
+ * package: its code rules L1-L10, its byte serialization and its SUCCESSION
  * rules, checked against the shared corpus
  * docs/contracts/installed-ledger.fixture.json, whose valid ledgers were
  * rendered and hashed independently of this package. Reading repository files

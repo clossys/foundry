@@ -30,7 +30,7 @@ import { loadPackedContract, validateAdvisorPlan, validateEngagementBrief } from
 import { planDigest } from "./plan-digest.js";
 import { bundleDigest, changeSetDigest } from "./change-set-digest.js";
 import {
-  AUTHORIZATION_PLAN_MISMATCH, BRIEF_PATH, CANONICAL_KEYS, DISCOVERY_ROOTS, LEDGER_PATH, SKILLS_MANIFEST_PATH, canonicalOrder, contentDigest, dependencyPointer,
+  AUTHORIZATION_PLAN_MISMATCH, BRIEF_PATH, CANONICAL_KEYS, DISCOVERY_ROOTS, ID_TOKEN, LEDGER_PATH, derivedPlanItem, SKILLS_MANIFEST_PATH, canonicalOrder, contentDigest, dependencyPointer,
   discoveryLinkPath, discoveryLinkTarget, isSafeRelativePath, lockfilePath, matchesPathPattern, skillPath, validateApplyBundle, validateRepositoryChangeSet,
   worstVerdict,
 } from "./change-set-contract.js";
@@ -251,11 +251,6 @@ function computeChangeSet(
   for (const role of roles) {
     const content = skillContent.get(role);
     if (content === undefined) throw new TypeError("a staffed role has no composed skill content in skills");
-    // A role must be one path segment: `a/b` would still match the allow-list's `clossys-*/**`.
-    if (/[/\\]/.test(role)) {
-      refused.push({ path: skillPath(role), reason: "unsafe-path", item: "skills" });
-      continue;
-    }
     const skill = skillPath(role);
     // Never write through a symbolic link: the bytes would land wherever it points.
     if (observation.linkedAgentsPaths.some((link) => skill.startsWith(`${link}/`))) refused.push({ path: skill, reason: "skills-root-is-link", item: "skills" });
@@ -411,7 +406,9 @@ function computeChangeSet(
  *   left out of the bundle digest.
  *
  * Throws, naming positions and never values, when the plan or hub brief does
- * not validate, the plan has no staffing, the hub brief has `staffedHere`, an
+ * not validate, the plan has no staffing, a staffed role is not a lowercase id
+ * token (`role-not-an-id`), a package act's planItem is not its repository id,
+ * a colon and its package name (`plan-item-not-derived`), the hub brief has `staffedHere`, an
  * observation repeats or names an unstaffed repository, a staffed role has
  * no skill content, or a computed set or the bundle fails its contract.
  */
@@ -423,6 +420,18 @@ export function planApplyBundle(inputs: PlanApplyBundleInputs): PlanApplyBundleR
   const briefValidation = validateEngagementBrief(inputs.hubBrief);
   if (!briefValidation.valid) throw new TypeError(`the hub brief does not validate: ${briefValidation.reason}`);
   if (inputs.hubBrief.staffedHere !== undefined) throw new TypeError("the hub brief must not have staffedHere; each repository's brief is projected from it");
+
+  // Plan text never reaches a public ledger: a role becomes part of paths, and a planItem is written as it is (code rules C16, L5 and L10).
+  staffing.forEach((entry, index) => {
+    entry.roles.forEach((role, at) => {
+      if (!ID_TOKEN.test(role)) throw new TypeError(`staffing[${index}].roles[${at}] is not a lowercase id token (role-not-an-id)`);
+    });
+  });
+  (inputs.plan.packages ?? []).forEach((act, index) => {
+    if (act.planItem !== derivedPlanItem(act.repository, act.name)) {
+      throw new TypeError(`packages[${index}].planItem is not the repository id, a colon and the package name (plan-item-not-derived)`);
+    }
+  });
 
   const skillContent = new Map<string, string>();
   inputs.skills.forEach((skill, index) => {

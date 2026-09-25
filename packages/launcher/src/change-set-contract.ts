@@ -266,6 +266,26 @@ export const SKILLS_MANIFEST_PATH = "clossys/.state/skills.json";
 /** Controller's limit on a root entry name, in UTF-16 code units. */
 export const MAX_ROOT_NAME_UNITS = 255;
 
+/** A lowercase id token, such as a role: the contracts' idToken. */
+export const ID_TOKEN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
+
+/**
+ * The root names a change set can introduce: the first segment of each
+ * owned pattern other than `**`, read from the packed contract. A fixed list,
+ * so no plan or brief text can become a root entry (code rules C13 and L9).
+ */
+export const INTRODUCIBLE_ROOTS: ReadonlySet<string> = (() => {
+  const definitions = loadPackedContract("repository-change-set.json").definitions as Record<string, { allOf?: { enum?: unknown }[] }> | undefined;
+  const patterns = definitions?.ownedPattern?.allOf?.[1]?.enum;
+  if (!Array.isArray(patterns) || !patterns.every((entry) => typeof entry === "string")) throw new Error("the packed change-set contract has no ownedPattern list");
+  return new Set((patterns as string[]).map((pattern) => pattern.split("/")[0]!).filter((root) => root !== "**"));
+})();
+
+/** The planItem a package act for this repository and package has: `${repositoryId}:${name}`, exactly (code rules C16 and L10). */
+export function derivedPlanItem(repositoryId: string, name: string): string {
+  return `${repositoryId}:${name}`;
+}
+
 /** The discovery roots, in canonical order. */
 export const DISCOVERY_ROOTS: readonly DiscoveryRoot[] = [".claude/skills", ".cursor/skills"];
 
@@ -436,7 +456,7 @@ export function worstVerdict(verdicts: readonly CheckVerdict[]): CheckVerdict {
 /** The rule a bundle check carries when its authorization is for another plan (code rule A4). */
 export const AUTHORIZATION_PLAN_MISMATCH = "authorization-plan-mismatch";
 
-export type ChangeSetRuleId = "C1" | "C2" | "C3" | "C4" | "C5" | "C6" | "C7" | "C8" | "C9" | "C10" | "C11" | "C12" | "C13" | "C14" | "C15";
+export type ChangeSetRuleId = "C1" | "C2" | "C3" | "C4" | "C5" | "C6" | "C7" | "C8" | "C9" | "C10" | "C11" | "C12" | "C13" | "C14" | "C15" | "C16";
 export type ApplyBundleRuleId = "A1" | "A2" | "A3" | "A4" | "A5" | "A6" | "A7";
 
 /** One reason a change set or bundle is refused: `rule` is "schema" for the contract's keywords, else the code rule's id. */
@@ -479,7 +499,7 @@ function firstOutOfOrder<T>(values: readonly T[], key: (value: T) => readonly st
   return undefined;
 }
 
-/** Code rules C1-C15 of repository-change-set.json, over a set whose schema already passes. Messages name positions, never values. */
+/** Code rules C1-C16 of repository-change-set.json, over a set whose schema already passes. Messages name positions, never values. */
 export function changeSetRuleViolations(set: RepositoryChangeSet): RuleViolation<ChangeSetRuleId>[] {
   const out: RuleViolation<ChangeSetRuleId>[] = [];
   const push = (rule: ChangeSetRuleId, path: string, message: string) => out.push({ rule, path, message });
@@ -721,12 +741,12 @@ export function changeSetRuleViolations(set: RepositoryChangeSet): RuleViolation
       push("C13", "observed.repositoryProfile", "lists root names, but its root vocabulary is not checked");
     }
     if (profile.undeclaredRoots.some((name) => profile.prohibitedRoots.includes(name))) push("C13", "observed.repositoryProfile", "lists one root name as both undeclared and prohibited");
-    // Only paths the set writes introduce a root name: a refused path is not written.
-    const roots = new Set([...set.files.map((file) => file.path), ...set.keys.map((key) => key.file)].map((path) => path.split("/")[0]!));
+    // Only a path the set creates introduces a root name: a refused path is not written, and a key's file or an edited file already exists.
+    const roots = new Set(set.files.filter((file) => isDerived(file) || file.before === null).map((file) => file.path.split("/")[0]!));
     for (const [name, list] of [["undeclaredRoots", profile.undeclaredRoots], ["prohibitedRoots", profile.prohibitedRoots]] as const) {
       list.forEach((root, at) => {
-        if (!roots.has(root)) push("C13", `observed.repositoryProfile.${name}[${at}]`, "is not the first segment of any path the set writes");
-        if (root.length > MAX_ROOT_NAME_UNITS) push("C13", `observed.repositoryProfile.${name}[${at}]`, "is longer than 255 UTF-16 code units");
+        if (!roots.has(root)) push("C13", `observed.repositoryProfile.${name}[${at}]`, "is not the first segment of any path the set creates");
+        if (!INTRODUCIBLE_ROOTS.has(root)) push("C13", `observed.repositoryProfile.${name}[${at}]`, "is not a root name an owned pattern can introduce");
       });
     }
   }
@@ -735,7 +755,7 @@ export function changeSetRuleViolations(set: RepositoryChangeSet): RuleViolation
     const at = `items[${index}]`;
     if (item.path !== profile.path) push("C13", `${at}.path`, "is not the observed repository profile's path");
     item.entries.forEach((entry, position) => {
-      if (entry.name.length > MAX_ROOT_NAME_UNITS) push("C13", `${at}.entries[${position}].name`, "is longer than 255 UTF-16 code units");
+      if (!INTRODUCIBLE_ROOTS.has(entry.name)) push("C13", `${at}.entries[${position}].name`, "is not a root name an owned pattern can introduce");
     });
     if (item.entries.length !== profile.undeclaredRoots.length || item.entries.some((entry, position) => entry.name !== profile.undeclaredRoots[position])) {
       push("C13", `${at}.entries`, "do not name exactly the observed undeclared root names, in their order");
@@ -788,8 +808,20 @@ export function changeSetRuleViolations(set: RepositoryChangeSet): RuleViolation
     if ((kind === "edit" || kind === "create-or-edit") && file.after === file.before) push("C15", `${at}.after`, `equals before, but a ${kind} writes only a change`);
     if (kind === "link" && file.before !== null && file.before !== file.after) push("C15", `${at}.before`, "is another target, but a discovery link is only created or kept");
   });
+
+  // C16: a planItem reaches the public ledger, so it is derived, never free text.
+  set.items.forEach((item, index) => {
+    if (isPackageItem(item) && item.planItem !== derivedPlanItem(set.repository.id, item.package.name)) push("C16", `items[${index}].planItem`, "is not the repository id, a colon and the package name");
+  });
+  const prefix = `${set.repository.id}:`;
+  set.deferred.forEach((deferral, index) => {
+    const name = deferral.planItem.startsWith(prefix) ? deferral.planItem.slice(prefix.length) : "";
+    if (!PACKAGE_NAME.test(name)) push("C16", `deferred[${index}].planItem`, "is not the repository id, a colon and a package name");
+  });
   return out;
 }
+
+const PACKAGE_NAME = /^(?=.{1,214}$)@[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*$/u;
 
 const PRE_APPLY_CHECKS: readonly ApplyCheckId[] = ["V1", "V2", "V3", "V4", "V5", "V6", "V7", "V8", "V9"];
 
@@ -839,7 +871,10 @@ export function applyBundleRuleViolations(bundle: ApplyBundle): RuleViolation<Ap
     for (const { subject, index } of bound) {
       if (first !== undefined && subject !== first.subject) out.push({ rule: "A7", path: `repositories[${index}].binding.subjectDigest`, message: `is not the approval repositories[${first.index}] is bound by, and one bundle has one approval` });
     }
-    if (first !== undefined && bundle.authorization === null) out.push({ rule: "A7", path: "authorization", message: "is null, but V3 passed for a bound change set, which needs a current execution authorization" });
+    // A plan with package acts has a snapshot; V3 passes for package acts only with a current execution authorization (a plan with none is bound by its decision alone).
+    if (first !== undefined && bundle.snapshot !== null && bundle.authorization === null) {
+      out.push({ rule: "A7", path: "authorization", message: "is null, but V3 passed for a bound change set of a plan with package acts, which needs a current execution authorization" });
+    }
   }
   return out;
 }
@@ -855,7 +890,7 @@ function result(violations: readonly ChangeSetViolation[]): ValidationResult {
   return { valid: false, reason: violations.map((violation) => violation.message).join("; ") };
 }
 
-/** Every reason a change set is refused: the change-set contract's schema, then, once that passes, its code rules C1-C12. */
+/** Every reason a change set is refused: the change-set contract's schema, then, once that passes, its code rules C1-C16. */
 export function repositoryChangeSetViolations(value: unknown): ChangeSetViolation[] {
   return violationsOf<RepositoryChangeSet, ChangeSetRuleId>("repository-change-set.json", "changeSet", value, changeSetRuleViolations);
 }
@@ -865,7 +900,7 @@ export function applyBundleViolations(value: unknown): ChangeSetViolation[] {
   return violationsOf<ApplyBundle, ApplyBundleRuleId>("apply-bundle.json", "bundle", value, applyBundleRuleViolations);
 }
 
-/** Validates a change set against repository-change-set.json and its code rules C1-C12. No reason echoes a value. */
+/** Validates a change set against repository-change-set.json and its code rules C1-C16. No reason echoes a value. */
 export function validateRepositoryChangeSet(value: unknown): ValidationResult {
   return result(repositoryChangeSetViolations(value));
 }

@@ -186,13 +186,23 @@ describe("apply-bundle contract: report and planned modes (A5-A7)", () => {
     two.repositories[1].binding.subjectDigest = SETUP.bundle;
     expect(rules(two)).toEqual([]);
     const unauthorized = loose(PLANNED);
+    unauthorized.snapshot = { path: "clossys/.state/apply/registry-snapshot.json", digest: SET.planDigest };
     unauthorized.authorization = null;
     expect(rules(unauthorized)).toEqual(["A7 authorization"]);
+    const noPackages = loose(PLANNED);
+    noPackages.authorization = null;
+    expect(rules(noPackages)).toEqual([]);
     const waiting = loose(PLANNED);
     waiting.authorization = null;
     waiting.repositories = [waiting.repositories[1]];
     waiting.bundleDigest = bundleDigest(PLAN_DIGEST, [{ id: "example-owner/docs", changeSetDigest: SET.changeSetDigest }]);
     expect(rules(waiting)).toEqual([]);
+  });
+
+  it("A7: refuses a binding on a repository with no V3 check at all", () => {
+    const noV3 = loose(PLANNED);
+    noV3.repositories[0].checks = noV3.repositories[0].checks.filter((check: Loose) => check.check !== "V3");
+    expect(rules(noV3)).toContain("A7 repositories[0].binding");
   });
 
   it("refuses a binding of the wrong shape: an admitted binding with no setup set, or an unknown kind", () => {

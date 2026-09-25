@@ -281,15 +281,27 @@ describe("planApplyBundle", () => {
     expect(bundle.authorization).toBeNull();
   });
 
-  it("refuses a role that is not one path segment as an unsafe path, and reports V6 violated", () => {
-    const plan = clone(PLAN) as unknown as { mandate: { roles: string[] }; staffing: { roles: string[] }[] };
-    plan.mandate.roles = ["strategist", "writer", "a/b"];
-    plan.staffing[1]!.roles = ["writer", "a/b"];
-    const brief = clone(HUB_BRIEF) as unknown as { roles: unknown[] };
-    brief.roles.push({ ...HUB_BRIEF.roles[1]!, role: "a/b" });
-    const { bundle, changeSets } = run({ ...INPUTS, plan: plan as unknown as AdvisorPlan, hubBrief: brief as unknown as EngagementBrief, skills: [...INPUTS.skills, { role: "a/b", content: "x" }] });
-    expect(setFor(changeSets, DOCS.id).refused).toEqual([{ path: ".agents/skills/clossys-a/b/SKILL.md", reason: "unsafe-path", item: "skills" }]);
-    expect(bundle.repositories[1]).toMatchObject({ verdict: "violated" });
+  it("refuses, before computing anything, a staffed role that is not a lowercase id token, and a planItem that is not derived", () => {
+    for (const role of ["a/b", "Writer", "ship the site"]) {
+      const plan = clone(PLAN) as unknown as { mandate: { roles: string[] }; staffing: { roles: string[] }[] };
+      plan.mandate.roles = ["strategist", "writer", role];
+      plan.staffing[1]!.roles = ["writer", role];
+      const brief = clone(HUB_BRIEF) as unknown as { roles: unknown[] };
+      brief.roles.push({ ...HUB_BRIEF.roles[1]!, role });
+      const inputs = { ...INPUTS, plan: plan as unknown as AdvisorPlan, hubBrief: brief as unknown as EngagementBrief, skills: [...INPUTS.skills, { role, content: "x" }] };
+      expect(() => run(inputs), role).toThrow(/^staffing\[1\]\.roles\[1\] is not a lowercase id token \(role-not-an-id\)$/);
+    }
+    for (const planItem of ["example-owner/private-sibling:@example/writer", "Ship the writer first", "example-owner/site:@example/editor", "Example-Owner/site:@example/writer"]) {
+      const plan = clone(PLAN) as unknown as { packages: { planItem: string; name: string }[] };
+      const index = plan.packages.findIndex((act) => act.name === "@example/writer" && act.planItem.startsWith("example-owner/site:"));
+      plan.packages[index]!.planItem = planItem;
+      try {
+        run({ ...INPUTS, plan: plan as unknown as AdvisorPlan });
+        expect.unreachable();
+      } catch (error) {
+        expect(String(error), planItem).toBe(`TypeError: packages[${index}].planItem is not the repository id, a colon and the package name (plan-item-not-derived)`);
+      }
+    }
   });
 
   it("carries the hub's Integrator pin and whether the base runs CI of its own", () => {

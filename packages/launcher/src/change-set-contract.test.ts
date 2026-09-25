@@ -159,7 +159,7 @@ describe("path patterns", () => {
   });
 });
 
-describe("change-set code rules C1-C14", () => {
+describe("change-set code rules C1-C16", () => {
   it("refuse each invalid corpus set for exactly the rules it names", () => {
     const all = (JSON.parse(read("docs/contracts/apply-change-set-digest.fixture.json")) as { changeSets: { name: string; valid: boolean; rules?: string[]; changeSet: unknown }[] }).changeSets;
     for (const entry of all.filter((candidate) => !candidate.valid)) expect(ruleIds(entry.changeSet), entry.name).toEqual([...entry.rules!].sort());
@@ -620,7 +620,9 @@ describe("change-set code rules C1-C14", () => {
       const foreign = loose(ROOTS);
       foreign.observed.repositoryProfile.undeclaredRoots = [...foreign.observed.repositoryProfile.undeclaredRoots, "src"];
       itemAt(foreign, "root-entries").entries.push({ name: "src", classification: "extension", disposition: "allowed" });
-      expect(rulesOf(reseal(foreign))).toEqual(["C13 observed.repositoryProfile.undeclaredRoots[6]"]);
+      expect(repositoryChangeSetViolations(reseal(foreign)).map((violation) => violation.message)).toContain(
+        "changeSet.observed.repositoryProfile.undeclaredRoots[6] is not the first segment of any path the set creates (rule C13)",
+      );
     });
 
     it("refuses a profile at an unknown file name, and names out of order", () => {
@@ -712,16 +714,24 @@ describe("change-set code rules C1-C14", () => {
       expect(rulesOf(ledger)).toEqual([`C9 items[${itemIndex(ledger as unknown as Loose, "ledger")}]`]);
     });
 
-    it("C13: refuses a root name longer than 255 UTF-16 code units, which the schema's code-point bound lets through", () => {
-      const long = "\u{1d4b3}".repeat(200);
-      const set = loose(corpus.changeSets.find((entry) => entry.name === "setup-site-root-entries")!.changeSet);
-      set.observed.repositoryProfile.undeclaredRoots = [...set.observed.repositoryProfile.undeclaredRoots, long];
-      itemAt(set, "root-entries").entries.push({ name: long, classification: "extension", disposition: "allowed" });
-      const messages = repositoryChangeSetViolations(reseal(set)).map((violation) => violation.message);
-      expect(messages).toEqual(expect.arrayContaining([
-        "changeSet.observed.repositoryProfile.undeclaredRoots[6] is longer than 255 UTF-16 code units (rule C13)",
-        `changeSet.items[${itemIndex(set, "root-entries")}].entries[6].name is longer than 255 UTF-16 code units (rule C13)`,
+    it("C13: refuses a root name no owned pattern can introduce, and counts neither a key's file nor an edited file", () => {
+      const ROOTS = corpus.changeSets.find((entry) => entry.name === "setup-site-root-entries")!.changeSet;
+      const messages = (value: unknown) => repositoryChangeSetViolations(value).map((violation) => violation.message);
+      const foreign = loose(ROOTS);
+      foreign.observed.repositoryProfile.undeclaredRoots = [...foreign.observed.repositoryProfile.undeclaredRoots, "src"];
+      itemAt(foreign, "root-entries").entries.push({ name: "src", classification: "extension", disposition: "allowed" });
+      expect(messages(reseal(foreign))).toEqual(expect.arrayContaining([
+        "changeSet.observed.repositoryProfile.undeclaredRoots[6] is not a root name an owned pattern can introduce (rule C13)",
+        `changeSet.items[${itemIndex(foreign, "root-entries")}].entries[6].name is not a root name an owned pattern can introduce (rule C13)`,
       ]));
+      const keyFile = loose(ROOTS);
+      keyFile.observed.repositoryProfile.undeclaredRoots = [...keyFile.observed.repositoryProfile.undeclaredRoots, "package.json"].sort();
+      itemAt(keyFile, "root-entries").entries = keyFile.observed.repositoryProfile.undeclaredRoots.map((name: string) => ({ name, classification: "extension", disposition: "allowed" }));
+      const at = keyFile.observed.repositoryProfile.undeclaredRoots.indexOf("package.json");
+      expect(rulesOf(reseal(keyFile))).toEqual([`C13 observed.repositoryProfile.undeclaredRoots[${at}]`]);
+      const edited = loose(ROOTS);
+      fileAt(edited, ".starter/request.json").before = SAMPLE;
+      expect(rulesOf(reseal(edited))).toEqual([`C13 observed.repositoryProfile.undeclaredRoots[${edited.observed.repositoryProfile.undeclaredRoots.indexOf(".starter")}]`]);
     });
 
     it("C9: refuses a key refusal, or a lockfile invariant, naming an item that is not a package item", () => {
