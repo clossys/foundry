@@ -46,7 +46,8 @@ export interface EngagementBrief {
 /**
  * Validates a candidate brief against the shared brief contract,
  * `docs/contracts/engagement-brief.json` with its `context` snapshot's
- * `engagement-context.json` (issue #1475), packed into this package at build
+ * `engagement-context.json` (issue #1475; in the public repository, not shipped in this package).
+ * This package packs their content into a generated module at build
  * time. @clossys/launcher validates against the same files where it writes
  * `clossys/brief.json`, so a brief this accepts is a brief Launcher accepts.
  * Unknown fields are refused, and a known context value must be one of that

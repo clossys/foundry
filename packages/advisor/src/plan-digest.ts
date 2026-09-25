@@ -9,7 +9,7 @@ import type { AdvisorPlan } from "./status.js";
  * approved. @clossys/launcher implements the same definition separately,
  * and both packages are tested against the same fixture corpus
  * (`docs/contracts/advisor-plan-digest.fixture.json`), so they compute
- * identical digests.
+ * identical digests. Both files are in the public repository, not shipped in this package.
  */
 
 /** The top-level plan members the digest leaves out: when the file was written, and the decisions an approval is recorded in. */

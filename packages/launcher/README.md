@@ -225,7 +225,7 @@ Exit codes preserve the ternary:
 | `parseGitHubRemote()` | Parses a github.com remote and rejects any other host. |
 | `isHubDocument()` | Type guard for the generated hub marker (packed template: `skeleton/clossys/.state/workspace.json`). |
 | `inspectInventory()` | Classifies inventory JSON as missing, empty, populated, or invalid (malformed or schema-mismatched -- never silently folded into empty; see `validateInventoryDocument()`). |
-| `validateInventoryDocument()` | Strictly validates an inventory document's text against `docs/contracts/repository-inventory.json` (`schemaVersion: 1`, a `repositories` array of `{ id, packages? }` entries -- `id` a bare repository name or `owner/name` in the same format Launcher's own sibling/clone resolution requires, case-insensitively unique; `packages`, when present, shaped exactly as `@clossys/integrator`'s `InventoryPackageEntry`, no other key). Returns `{ valid: true, ids }` or `{ valid: false, reason }` naming the offending field. Every read of an inventory document -- `--inventory`, the on-disk `clossys/.state/inventory.json` on every resume, and `readInventoryRepositories()` -- routes through this; a document that merely resembles an inventory (for example a governance record whose entries also carry `role`, `visibility`, `status`, `notes`) is refused, never adopted or silently read as though it validated (#1334). |
+| `validateInventoryDocument()` | Strictly validates an inventory document's text against `docs/contracts/repository-inventory.json` (in the public repository, not shipped in this package; `schemaVersion: 1`, a `repositories` array of `{ id, packages? }` entries -- `id` a bare repository name or `owner/name` in the same format Launcher's own sibling/clone resolution requires, case-insensitively unique; `packages`, when present, shaped exactly as `@clossys/integrator`'s `InventoryPackageEntry`, no other key). Returns `{ valid: true, ids }` or `{ valid: false, reason }` naming the offending field. Every read of an inventory document -- `--inventory`, the on-disk `clossys/.state/inventory.json` on every resume, and `readInventoryRepositories()` -- routes through this; a document that merely resembles an inventory (for example a governance record whose entries also carry `role`, `visibility`, `status`, `notes`) is refused, never adopted or silently read as though it validated (#1334). |
 | `reportHubHealth()` | Read-only pin, inventory, migration, and skills-manifest report. Does not install or uninstall. |
 | `formatHubHealth()` | Human lines plus a `health:` JSON line for the same report. |
 | `hasAdvisorPin()` | True when a manifest already pins Advisor in any dependency bucket. |
@@ -367,7 +367,8 @@ decisions that disagree.
 checks pass and the plan's digest is computed; only then does it write the brief byte-identically -- it never re-authors
 its prose -- and reports `planDigest()` of the plan it applied, which the
 CLI prints as `plan digest sha256:...`. That digest is defined once, in
-`docs/contracts/advisor-plan-digest.md`; this package and Advisor each
+`docs/contracts/advisor-plan-digest.md` (in the public repository, not shipped in this package);
+this package and Advisor each
 implement it and are tested against the same fixture corpus. This package
 does not compute a brief's content (that is `@clossys/advisor`'s
 `toEngagementBrief()`) and does not decide whether a plan should be

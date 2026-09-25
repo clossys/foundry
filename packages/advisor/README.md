@@ -204,9 +204,10 @@ never invented copy. This package does not write files; `@clossys/launcher`
 writes the brief to `clossys/brief.json` in each staffed repository.
 `validateEngagementBrief(value)` checks a candidate brief against the
 shared brief contract,
-[`docs/contracts/engagement-brief.json`](https://github.com/clossys/foundry/blob/main/docs/contracts/engagement-brief.json),
-and its `context` snapshot against `engagement-context.json` (issue
-#1475). Launcher validates against the same files where it writes the
+[`docs/contracts/engagement-brief.json`](https://github.com/clossys/foundry/blob/main/docs/contracts/engagement-brief.json)
+(in the public repository, not shipped in this package), and its
+`context` snapshot against `engagement-context.json` (issue #1475).
+Launcher validates against the same files where it writes the
 brief. Unknown fields are refused, and each finding has the rule
 `engagement-brief-contract` and a message that never echoes a value from
 the brief. `problem`, each role's `role` and `why`, and each goal's `metric`
@@ -293,8 +294,9 @@ local copy of a shared definition once that definition is on `main`,
 and a blocker record is exactly that kind of definition.
 `validateAdvisorPlan(value)` checks a candidate plan against the shared
 plan contract, [`docs/contracts/advisor-plan.json`](https://github.com/clossys/foundry/blob/main/docs/contracts/advisor-plan.json)
-(issue #1475), which this package packs at build time. That file is the one
-definition of the record: `@clossys/launcher` validates against the same
+(issue #1475; in the public repository, not shipped in this package —
+this package packs its content into a generated module at build time).
+That file is the one definition of the record: `@clossys/launcher` validates against the same
 file before it applies an approved plan, so a plan this package accepts is
 a plan Launcher accepts. It checks every field, including each blocker's
 `capabilityId`, `owner`, `since`, and full `nextAction`, and `kind`
@@ -325,7 +327,8 @@ an approval is itself recorded in `decisions`. It throws for a plan that
 does not validate. `canonicalJson(value)` is that serialization on its
 own, and refuses a lone surrogate or a non-finite number rather than
 repairing it. The definition is
-[`docs/contracts/advisor-plan-digest.md`](https://github.com/clossys/foundry/blob/main/docs/contracts/advisor-plan-digest.md);
+[`docs/contracts/advisor-plan-digest.md`](https://github.com/clossys/foundry/blob/main/docs/contracts/advisor-plan-digest.md)
+(in the public repository, not shipped in this package).
 Launcher implements it separately, and both packages are tested against
 the same fixture corpus, so they compute identical digests.
 

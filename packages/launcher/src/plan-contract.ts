@@ -1,6 +1,7 @@
 // The plan record and the engagement brief (issue #1475), validated against
 // the shared contracts docs/contracts/advisor-plan.json, engagement-brief.json
-// and engagement-context.json. This package's build packs those files into
+// and engagement-context.json -- in the public repository, not shipped in this package.
+// This package's build packs their content into
 // src/generated/ as plain data, with a generated copy of the one contract
 // checker @clossys/advisor also uses, so Launcher and Advisor validate
 // against the same definition with no runtime dependency between them.
@@ -11,7 +12,7 @@ import { formatContractViolation, validateAgainstContract } from "./generated/co
 import type { ContractSchema } from "./generated/contract-schema.generated.js";
 import { PLAN_CONTRACTS } from "./generated/plan-contracts.generated.js";
 
-/** An engagement-context field id (docs/contracts/engagement-context.json). */
+/** An engagement-context field id (docs/contracts/engagement-context.json, in the public repository, not shipped in this package). */
 export type EngagementContextFieldId = "business" | "product" | "audience" | "stage" | "intent" | "constraints";
 
 /** An unknown context field, or a known one whose value is one of that field's fixed choice ids -- never founder text. */
@@ -19,7 +20,7 @@ export type EngagementContextField =
   | { readonly id: EngagementContextFieldId; readonly state: "unknown" }
   | { readonly id: EngagementContextFieldId; readonly state: "known"; readonly value: string };
 
-/** The engagement-context snapshot a brief may carry (docs/contracts/engagement-context.json). */
+/** The engagement-context snapshot a brief may carry (docs/contracts/engagement-context.json, in the public repository, not shipped in this package). */
 export interface EngagementContext {
   readonly schemaVersion: 1;
   readonly fields: readonly EngagementContextField[];
@@ -35,7 +36,7 @@ export interface EngagementBriefRole {
   readonly outputsTo: readonly string[];
 }
 
-/** clossys/brief.json (docs/contracts/engagement-brief.json). */
+/** clossys/brief.json (docs/contracts/engagement-brief.json, in the public repository, not shipped in this package). */
 export interface EngagementBrief {
   readonly schemaVersion: 1;
   readonly problem: string;
@@ -65,7 +66,7 @@ export interface PlanDecision {
   readonly by: string;
 }
 
-/** clossys/advisor/plan.json (docs/contracts/advisor-plan.json). */
+/** clossys/advisor/plan.json (docs/contracts/advisor-plan.json, in the public repository, not shipped in this package). */
 export interface AdvisorPlan {
   readonly schemaVersion: 1;
   readonly asOf: string;
@@ -95,14 +96,15 @@ function validateAgainst(contractName: string, label: string, value: unknown): V
  * Validates a brief against docs/contracts/engagement-brief.json, including
  * its optional `context` snapshot against engagement-context.json: a known
  * context value must be one of that field's fixed choice ids, because the
- * brief is committed in every staffed repository. Never mutates, never
+ * brief is committed in every staffed repository. Both contracts are in the public repository, not shipped in this package.
+ * Never mutates, never
  * re-derives content, and no reason echoes a value from the brief.
  */
 export function validateEngagementBrief(value: unknown): ValidationResult {
   return validateAgainst("engagement-brief.json", "brief", value);
 }
 
-/** Validates a plan against docs/contracts/advisor-plan.json. */
+/** Validates a plan against docs/contracts/advisor-plan.json (in the public repository, not shipped in this package). */
 export function validateAdvisorPlan(value: unknown): ValidationResult {
   return validateAgainst("advisor-plan.json", "plan", value);
 }
