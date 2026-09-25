@@ -359,14 +359,17 @@ ISO 8601 form, a date-time with `Z` or a `±hh:mm` offset, checked
 field by field (so `2026-02-30` or `T24:30` is refused). A brief's
 `problem`, `role`, `why` and `metric` must contain a non-whitespace
 character, and an item of `inputsFrom`, `outputsTo`, `sequence` or
-`deliverables` must not be empty. A refusal names each field at fault and
-never echoes its value; a key that is not a plain identifier is shown as an
-escaped JSON string, so a control character in it cannot reach a terminal.
+`deliverables` must not be empty. A refusal names each declared field at
+fault and never echoes its value, and never names a key the contracts do
+not declare: such a field is reported at the object that holds it, by its
+1-based position there (`plan.mandate has a field the contract does not
+declare (key 4 of this object), and unknown fields are refused`).
 `launcher-apply-plan` reads both files as strict JSON: bytes that are not
 valid UTF-8, a leading byte order mark, or an object that repeats a key at
-any depth exit `2`, with a repeated key named (escaped) and a syntax error
-reported by position only, never quoting the file's text, so the value
-validated is exactly the one a reader of the file sees.
+any depth exit `2`, with a repeated key reported by its position in its
+object and, below the top level, that object's character position, never
+by name, and a syntax error by position only, never quoting the file's
+text, so the value validated is exactly the one a reader of the file sees.
 A plan may say which roles work in which repository (`staffing`, by
 repository inventory id), which kits were recommended (`kits`), which exact
 package acts are authorized (`packages`, each one exact version and one

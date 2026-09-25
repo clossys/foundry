@@ -227,12 +227,15 @@ shared brief contract,
 `context` snapshot against `engagement-context.json` (issue #1475).
 Launcher validates against the same files where it writes the
 brief. Unknown fields are refused, and each finding has the rule
-`engagement-brief-contract` and a message that never echoes a value from
-the brief. `problem`, each role's `role` and `why`, and each goal's `metric`
+`engagement-brief-contract` and a message that never echoes a value or a
+key from the brief. `problem`, each role's `role` and `why`, and each goal's `metric`
 must contain a non-whitespace character; an item of `inputsFrom`,
 `outputsTo`, `sequence` or `deliverables` must not be empty. Messages name
-fields, and a key that is not a plain identifier is shown as an escaped
-JSON string.
+only the fields the contract declares: a field it does not declare is
+reported at the object that holds it, by its 1-based position there, as
+in `brief.roles[0].goal has a field the contract does not declare (key 3
+of this object), and unknown fields are refused`, never by its own name,
+because a key is document text and can carry anything.
 
 A brief may carry `staffedHere` (issue #1178): the roles staffed in the one
 repository it is written to, in plan order. `toEngagementBrief()` builds the
@@ -426,9 +429,11 @@ the file as strict JSON: bytes that are not valid UTF-8, and an object
 that repeats a key at any depth, are refused rather than decoded with a
 replacement character or resolved to the last value, and so is a file
 that starts with a byte order mark. A syntax error is reported by position
-only, never quoting the file's text; a repeated key is named, as an escaped
-JSON string, so a control character in it is shown as `\u001b` rather than
-reaching the terminal (#1475).
+only, never quoting the file's text, and a repeated key by position too,
+never by name: `repeats a key (key 2 of the object at position 57); every
+key may appear once` gives the key's 1-based position in its object and
+that object's character position (a key repeated at the top level is in
+`the top-level object`) (#1475).
 
 ## Exact packages from a registry snapshot (issue #1178)
 
