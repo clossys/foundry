@@ -216,6 +216,12 @@ state. Each gets a contract file in `docs/contracts/`.
 - The `EngagementBrief` from `toEngagementBrief()`
   (`engagement-brief.ts:55-89`), with `staffedHere` per repository.
 - `clossys/.state/inventory.json`, strictly validated (section 7).
+- `clossys/.state/apply/registry-snapshot.json`, fetched anonymously from
+  the public registry by Launcher and turned into exact
+  `name@version#sha512` package references by a pure Advisor function.
+- `clossys/advisor/brief.json`, the engagement-level brief from
+  `toEngagementBrief()` without `staffedHere`; Launcher projects it per
+  repository (section 8).
 
 ### 4.2 `ApplyBundle`: one per application attempt
 
@@ -295,6 +301,14 @@ Notes on the shape:
 - Every change set also writes the repository's ledger,
   `clossys/.state/installed.json`, and records the ledger generation it
   starts from. Section 12.2 defines both.
+- The `changeSetDigest` excludes `changeSetDigest`, `branch`, `bundle`,
+  `pullRequest.bodySha256` and `inverse`, and reduces every `derived: true`
+  file to `{path, mode, derived, item, invariants}`. Without these
+  exclusions the shape is circular: the ledger cites this set's digest, the
+  bundle digest covers every change-set digest, the pull request body
+  carries the digest marker, and the branch name carries the digest too.
+  Ledger and lockfile `after`/`before` are excluded for the same reason;
+  their `invariants` stay covered.
 
 ### 4.4 Repository states (derived, never declared)
 
@@ -382,7 +396,8 @@ The resulting split:
 | --- | --- | --- | --- |
 | Decide what to change, staffing, work items, brief | Advisor (pure) | none | existing |
 | Authorize | Human (sponsor) | their GitHub identity, via merged plan or grant | existing |
-| Validate inputs and compute the bundle and change sets | Launcher | none | `launcher-apply-plan plan` |
+| Derive exact versions and SRI from the snapshot | Advisor (pure) | none | `advisor-resolve-packages` |
+| Validate inputs and compute the bundle and change sets | Launcher | none; one anonymous read of the public registry (the registry snapshot fetch) | `launcher-apply-plan plan` |
 | Write bytes into a clean local clone | Launcher | none (local file writes; lockfile via `--ignore-scripts`) | `launcher-apply-plan materialize --repo <id>` |
 | Verify the working tree against the digest | Launcher | none | `launcher-apply-plan verify --repo <id>` |
 | Branch, commit, push, open the pull request with the rendered body | Client's agent | client's | host's own git and GitHub tools |
@@ -455,13 +470,13 @@ only and writes nothing into it.
 
 | # | Check | Result on failure | Fits with |
 | --- | --- | --- | --- |
-| V1 | **Inventory is a launcher inventory.** Validate against a new `docs/contracts/repository-inventory.json`: `schemaVersion`, `repositories[].id` as an `owner/name` slug, no unknown top-level keys, and a declared `status` per entry. Shape-alike documents are refused. The same validator replaces `inspectInventory()`'s count-only rule for appoint's `--inventory` (`core.ts:237-249`, `:434-439`). | `violated` (inventory), whole bundle | **#1334**. Its expected behaviour, "refuse … and write nothing to the target repository", becomes a hard precondition of apply. It lands as migration step 1, so the apply path is never built on the lax check. |
+| V1 | **Inventory is a launcher inventory.** Validate against a new `docs/contracts/repository-inventory.json`: `schemaVersion`, `repositories[].id` as an `owner/name` slug, no unknown top-level keys, validated by `validateInventoryDocument()` (`packages/launcher/src/core.ts:335`); the per-entry `status` and immutable id arrive with inventory v2 (#1179). Until then the immutable id is observed at plan time and recorded in the change set (D19). This reverses the earlier requirement of a declared `status` per entry, which the landed v1 inventory contract refuses. Shape-alike documents are refused. The same validator replaces `inspectInventory()`'s count-only rule for appoint's `--inventory` (`core.ts:237-249`, `:434-439`). | `violated` (inventory), whole bundle | **#1334**. Its expected behaviour, "refuse … and write nothing to the target repository", becomes a hard precondition of apply. It lands as migration step 1, so the apply path is never built on the lax check. |
 | V2 | **Plan and brief shape, one definition.** Launcher validates `plan.json` and the brief against the same contract Advisor uses. The drifted copies (`apply-plan.ts:26-131`) are removed. The brief's `context` is checked with Advisor's fixed-choice-id rule, and unknown top-level keys are refused (the #1178 review note). | `violated` | #1175, #1173 |
-| V3 | **Authority is current and binds these bytes.** Recompute `plan.digest` canonically. For bundles with package acts, run execution readiness at the current instant (exit `0` required) and check `planDigest` equality. The union of the bundle's package acts must equal `permittedPackages`, and the repositories must be a subset of `permittedRepositoryIds`. For staffing-only bundles, see D2. | `violated` or `indeterminate`, keeping readiness's own ternary | #1178 step 1 |
+| V3 | **Authority is current and binds these bytes.** Recompute `plan.digest` canonically. For bundles with package acts, run execution readiness at the current instant (exit `0` required) and check `planDigest` equality. The plan's `packages` must equal `permittedPackages` exactly (Advisor's own exact-equality rule, `authorization.ts:60`), and every package act in the bundle must be one of them; a plan package the base already satisfies exactly is recorded as a no-op item, not dropped, so a Starter pin one repository already has does not break the equality. The repositories must be a subset of `permittedRepositoryIds`. For staffing-only bundles, see D2. | `violated` or `indeterminate`, keeping readiness's own ternary | #1178 step 1 |
 | V4 | **The clone is the repository, and it is clean.** Origin matches the id (existing). `git status --porcelain` is empty; this check is new for siblings. The local default-branch head equals the remote's (read-only fetch). A missing clone is `indeterminate`, and cloning stays the explicit `--clone-missing` (#1179). | `indeterminate` (missing) or `violated` (dirty, mismatched) | #1179 |
 | V5 | **Visibility and privacy.** Observe visibility. For a public target, apply the D4 rule to `problem`. Render the pull request text from ids and digests only, and scan it with the same identity rules as the brief. | `violated` | #1173, `AGENTS.md` "Conversation surface" |
 | V6 | **Dry materialization.** Materialize into a temporary worktree, compute the digest, and regenerate the lockfile with `--ignore-scripts`. Check the lockfile invariants (SRI equality, no other top-level changes) and that every changed path is in `pathAllowList`. | `violated` | T7 |
-| V7 | **Proof path exists.** For an `apply` phase, the base already carries Starter's caller workflow, Starter and Advisor pinned exactly, and a request whose packages are installed in that base. Otherwise the repository gets a `setup` phase set first. The set updates the request to name its own target, which Starter proves on the next pull request (section 12.3). | Re-planned to `setup` | Starter, section 9 |
+| V7 | **Proof path exists.** For an `apply` phase, the base already carries Starter's caller workflow, Starter pinned exactly at a version that implements #1492, and a request whose packages are installed in that base. The base is never required to pin `@clossys/advisor`. Otherwise the repository gets a `setup` phase set first. The set updates the request to name its own target, which Starter proves on the next pull request (section 12.3). | Re-planned to `setup` | Starter, section 9 |
 | V8 | **Ledger and ownership.** The ledger at the default-branch head parses, joins to change sets the hub holds, and matches the tree on every path and key the set changes. Every write is compare-and-swap: the current bytes must equal the ledger's `after`, or be absent where the ledger has nothing. | `held` for the refused paths; `indeterminate` if the ledger cannot be read | Section 12.2 |
 | V9 | **Provenance of every new version.** Each package version the set installs or updates to has registry provenance that Integrator verifies (`inspectProvenanceStatement`, #885). | `violated`, unless D20 allows the named first-publication exception | T12, section 12.4 |
 
@@ -521,7 +536,7 @@ working tree and the default branch may have moved since `plan`.
   (`caller-workflow.md:12-29`, `:141`). A pull request that introduces the
   request cannot be proved by it. So a repository's initial application is
   two pull requests: `setup` (layout, brief, skills, caller workflow,
-  request, and exact Starter and Advisor pins; proved by the template CI),
+  request, and an exact Starter pin; proved by the template CI),
   then `apply` (the exact package acts). Later applications are one pull
   request per repository, as #1178 describes. This deviation from #1178's
   literal wording is D3.
@@ -592,7 +607,12 @@ repository until step 4.
    `docs/contracts/repository-change-set.json` and a pure
    `planApplyBundle()`). `launcher-apply-plan plan` runs V1 to V7 against a
    fixture hub with two repositories. It writes only
-   `clossys/.state/apply/` in the hub and nothing in any target. *Revert:*
+   `clossys/.state/apply/` in the hub and nothing in any target. In this
+   step V6 is a pure dry materialization of every non-derived file (brief,
+   skills, owned `package.json` keys); lockfile regeneration and its
+   invariants, and the setup-template bytes, arrive with `materialize` in
+   step 3. A repository that needs `setup` is reported with V6
+   `indeterminate` (`setup-template-unbuilt`) until then. *Revert:*
    remove the subcommand; the hub file is inert.
 3. **`materialize` and `verify`** (Launcher). Write the change set into a
    clean clone on the named branch, including the `setup` template from
@@ -611,7 +631,7 @@ repository until step 4.
    section; any pull requests already opened are ordinary pull requests the
    client can close.
 5. **Starter bootstrap end to end.** The setup set carries the caller
-   workflow, the request, and exact Starter and Advisor pins. Starter
+   workflow, the request, and an exact Starter pin. Starter
    activation then passes on each apply pull request, proving the merged
    setup state; each apply install is proved on the next pull request
    (section 12.3). This meets #1178's done-when on the fixture hub: two
@@ -767,17 +787,22 @@ The lifecycle view changes five things in sections 4 to 9.
    verdict on any pull request is therefore a verdict on the base's
    installed packages, joined to that pull request's evidence files. Three
    consequences:
-   - `setup` must pin Starter and Advisor exactly, because the request
-     names both and Starter validates them from the base
-     (`packages/starter/README.md:37-70`). Those pins are package acts, so
-     they need a work item and an execution authorization. They are not
-     implied by the template, and a staffing-only bundle (D2) cannot carry
-     them.
-   - Each change set that changes a pin the request names (Starter,
-     Advisor, or the target) also updates `.starter/request.json`. The
-     Starter run on that pull request proves the *previous*
-     state. The new state is proved on the next pull request after merge.
-     `status` reports `applied` until then, and `proved` after (4.4).
+   - `setup` must pin Starter exactly, at a version that verifies the
+     hub-issued approval carried by the pull request (#1492), because
+     Starter validates its own identity from the base. Advisor is not
+     pinned in a product repository: its engine is pinned once in the hub,
+     and a product repository that needs an Advisor bin runs
+     `npx --package=@clossys/advisor@<the hub's exact version> <bin>`
+     (D24). The Starter pin is a package act, so it needs a work item and
+     an execution authorization. It is not implied by the template, and a
+     staffing-only bundle (D2) cannot carry it. This reverses the earlier
+     text in this bullet and in sections 9 and 11, which had Starter's
+     request naming and validating both pins.
+   - Each change set that changes a pin the request names (Starter or the
+     target) also updates `.starter/request.json`. The Starter run on that
+     pull request proves the *previous* state. The new state is proved on
+     the next pull request after merge. `status` reports `applied` until
+     then, and `proved` after (4.4).
    - The request has one `target` (`packages/starter/README.md:58-64`). In
      a repository with several pinned packages, one is Starter-proved. The
      others are covered by the lockfile invariants (V6), provenance (V9)
@@ -1073,7 +1098,7 @@ end of section 11, and D2 and D3 each gained one sentence from section
   digest-free `chosen: "approved"` for staffing-only sets. Recommended: (a).
   Package acts always additionally require a current execution
   authorization. The bundle digest excludes the authorization (12.3), and a
-  `setup` set is never staffing-only, because it pins Starter and Advisor.
+  `setup` set is never staffing-only, because it pins Starter.
 - **D3. Two pull requests on a repository's initial application** (setup,
   then apply), because Starter runs from the protected base. The
   alternative is one pull request whose install goes unproved by Starter
@@ -1180,3 +1205,34 @@ end of section 11, and D2 and D3 each gained one sentence from section
   Recommended: (a). With (b), a brand-new package can never be installed.
   With (c), an update can pick up a release that was not built by the
   publish workflow.
+
+D21 to D25 are new. Unlike D1 to D20, these arrived from the owner already
+decided, not as open options.
+
+- **D21. Version policy.** Each package resolves to the public registry's
+  `latest` dist-tag when the registry snapshot is taken. Prerelease and
+  deprecated versions are refused. The exact version and its sha512
+  integrity are bound into the approval.
+- **D22. Freeze after approval.** From the approving decision until every
+  repository in the bundle is applied, or the plan is re-made, Advisor
+  changes nothing the plan digest covers. Progress is derived by `status`
+  (4.4), never written into the plan. The plan digest definition (4.2) is
+  unchanged.
+- **D23. Integrator placement for V9.** `@clossys/integrator` is pinned
+  exactly once, in the hub, next to `@clossys/advisor` (D24). The apply
+  step runs `integrator-provenance-check` from the hub against each
+  materialized repository, after the lockfile is regenerated (V9). The
+  check reads the manifest, the lockfile and the public registry; it does
+  not need Integrator installed in the repository it checks. A product
+  repository's own CI runs the hub's exact version with
+  `npx --package=@clossys/integrator@<the hub's exact version>
+  integrator-provenance-check`, and pins nothing.
+- **D24. Advisor bins in product repositories.** Invoke them as
+  `npx --package=@clossys/advisor@<the hub's exact version> <bin>`. The
+  package has no bin named after itself. This is the same shift the
+  amendments to section 9, section 11 and section 12.3 already make:
+  Advisor is pinned once, in the hub, never per product repository.
+- **D25. Release-age exemption.** Every `@clossys/*` package installed in a
+  consumer is exempt from any minimum-release-age window, because
+  Integrator verifies its provenance (D23). The setup step writes the
+  exemption into whichever release-age surface the repository uses.
