@@ -708,10 +708,13 @@ export function applyReleaseChangesets({
 
   // Safety bound, per issue #1377's own suggested fix: a cycle should be
   // structurally impossible (a range can never resolve to a version of the
-  // package that declares it), and at most one NEW package can be proven
-  // bumped per round, so `workspaceDirs.length` rounds is already generous
-  // -- this fails closed with a finding rather than loop indefinitely if
-  // that assumption is ever wrong.
+  // package that declares it), and every round in which convergence has NOT
+  // yet been reached bumps at least one package that was not already bumped
+  // (that is what `grew` records) -- a diamond can bump more than one in a
+  // single round, but never zero, so with only `workspaceDirs.length`
+  // packages to exhaust, `workspaceDirs.length` rounds is already generous.
+  // This fails closed with a finding rather than loop indefinitely if that
+  // assumption is ever wrong.
   const MAX_ROUNDS = workspaceDirs.length + 1;
   let round = 0;
   let grew = true;

@@ -1035,7 +1035,7 @@ test("applyReleaseChangesets: a THIRD-level dependent pinned via an EXACT VERSIO
   }
 });
 
-test("applyReleaseChangesets: a FOUR-level chain of dependent-only bumps converges (each level triggered only by the previous round's bump)", () => {
+test("applyReleaseChangesets: a FOUR-level chain of dependent-only bumps converges when alphabetical scan order already matches dependency order (a<b<c<d resolves within a single round -- see the REVERSE-order test below for the case that actually needs `grew` to carry a bump across rounds)", () => {
   const root = makeRoot();
   try {
     makePackage(root, "a", "0.9.0");
@@ -1057,6 +1057,66 @@ test("applyReleaseChangesets: a FOUR-level chain of dependent-only bumps converg
 
     const dManifest = JSON.parse(readFileSync(join(root, "packages", "d", "package.json"), "utf8"));
     assert.equal(dManifest.dependencies["@x/c"], "^1.0.1");
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// Fix-round regression probe (strong blind review, round 1): every package
+// in the FOUR-level chain test just above sorts alphabetically in the SAME
+// order as the dependency chain (a -> b -> c -> d), so `workspaceDirs`'s
+// single alphabetical scan discovers b's bump, then c's, then d's, all
+// within round 1 -- the outer `while (grew)` loop never actually needs to
+// run a second time for that test to pass. That means the line which feeds
+// a round's OWN new dependent-only bumps back into `bumpedVersions` for a
+// LATER round (`grew = true;`, just above the loop over `workspaceDirs`)
+// was never exercised by any existing test: flipping it to `grew = false;`
+// still left all of them green.
+//
+// This test forces the real multi-round path: `z` is named (a minor
+// changeset), `y` depends on `^z` and sorts BEFORE it, and `a` pins
+// `y@1.0.0` exactly and sorts before `y` too -- so every dependent sorts
+// alphabetically BEFORE the package it depends on. Round 1's scan visits
+// "a" first, but "y" has not bumped yet this round, so "a" finds nothing;
+// it then visits "y", finds z's real bump, and gives y its own
+// dependent-only bump. Only because `grew = true` carries that fact into
+// round 2 does round 2's scan of "a" find y's now-stale pin and bump "a"
+// too. With `grew = true` mutated to `grew = false`, the loop would stop
+// after round 1 and "a" would never be rewritten -- the assertions below on
+// "a" are what the existing FOUR-level (forward-order) test could never
+// catch.
+test("applyReleaseChangesets: a THREE-level REVERSE chain (each dependent sorts BEFORE its dependency) needs a second round to bump the outermost dependent", () => {
+  const root = makeRoot();
+  try {
+    makePackage(root, "z", "0.9.0");
+    writeChangeset(root, "z-feature.md", "---\nz: minor\n---\n\nAdd a feature.\n");
+    makePackageWithDependency(root, "y", "1.0.0", "@x/z", "^0.9.0"); // "y" < "z" alphabetically, but y depends on z
+    makePackageWithDependency(root, "a", "2.0.0", "@x/y", "1.0.0"); // exact pin on y; "a" < "y" alphabetically, but a depends on y
+
+    const result = applyReleaseChangesets({ root, runNpmInstall: () => {}, today: () => "2026-09-24" });
+
+    assert.equal(result.findings.length, 0, JSON.stringify(result.findings));
+    assert.deepEqual(
+      result.applied.map((x) => x.package).sort(),
+      ["a", "y", "z"],
+    );
+
+    const yApplied = result.applied.find((x) => x.package === "y");
+    assert.equal(yApplied.toVersion, "1.0.1");
+    assert.deepEqual(yApplied.dependencyUpdates, [{ section: "dependencies", name: "@x/z", fromRange: "^0.9.0", toRange: "^0.10.0" }]);
+
+    // This is the assertion the existing forward-order test structurally
+    // cannot exercise: "a" only gets bumped because round 2 sees the round-1
+    // bump of "y".
+    const aApplied = result.applied.find((x) => x.package === "a");
+    assert.ok(aApplied, "\"a\" must be rewritten once \"y\" moves past its exact pin -- this requires a second round");
+    assert.equal(aApplied.toVersion, "2.0.1");
+    assert.equal(aApplied.bump, "patch");
+    assert.deepEqual(aApplied.dependencyUpdates, [{ section: "dependencies", name: "@x/y", fromRange: "1.0.0", toRange: "^1.0.1" }]);
+
+    const aManifest = JSON.parse(readFileSync(join(root, "packages", "a", "package.json"), "utf8"));
+    assert.equal(aManifest.version, "2.0.1");
+    assert.equal(aManifest.dependencies["@x/y"], "^1.0.1");
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
