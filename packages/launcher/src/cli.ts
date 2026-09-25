@@ -112,7 +112,16 @@ export function main(argv: readonly string[], host: WorkspaceHost, skeletonRoot:
     return 0;
   }
   const observation = observeWorkspace(host);
+  // A bare `launcher`, with no flags at all, in a directory that is none of
+  // empty, a git repository, an existing hub, or the Foundry supplier tree
+  // itself: there is nothing to plan, so show usage and exit 0 -- that is
+  // someone finding out what this command does, not a refused request. But
+  // when a flag IS present (--inventory, --repositories, ...), the caller
+  // asked for something specific here; fall through to planWorkspace()
+  // instead, which refuses it with exit 1 and says why, the same as any
+  // other unsatisfiable request (#1179).
   if (
+    argv.length === 0 &&
     !observation.cwd.empty &&
     !observation.cwd.git &&
     observation.cwd.hub === undefined &&

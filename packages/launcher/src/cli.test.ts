@@ -88,6 +88,30 @@ describe("launcher CLI", () => {
     expect(log.mock.calls[0]?.[0]).toBe(USAGE);
   });
 
+  it("refuses (exit 1), rather than printing usage, when --repositories is given in a non-empty non-git directory (#1179)", () => {
+    const directory = mkdtempSync(join(tmpdir(), "launcher-files-"));
+    roots.push(directory);
+    writeFileSync(join(directory, "notes.txt"), "keep\n");
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(main(["--repositories", "example-owner/example-app"], host(directory, {}), skeletonRoot)).toBe(1);
+    expect(String(error.mock.calls[0]?.[0])).toMatch(/not empty and is not a GitHub repository/);
+    expect(log).not.toHaveBeenCalled();
+  });
+
+  it("refuses (exit 1) for --inventory too, in the same non-empty non-git directory (#1179)", () => {
+    const directory = mkdtempSync(join(tmpdir(), "launcher-files-"));
+    roots.push(directory);
+    writeFileSync(join(directory, "notes.txt"), "keep\n");
+    const inventoryPath = join(directory, "inventory.json");
+    writeFileSync(inventoryPath, JSON.stringify({ schemaVersion: 1, repositories: [{ id: "example-owner/example-app" }] }));
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(main(["--inventory", inventoryPath], host(directory, {}), skeletonRoot)).toBe(1);
+    expect(String(error.mock.calls[0]?.[0])).toMatch(/not empty and is not a GitHub repository/);
+    expect(log).not.toHaveBeenCalled();
+  });
+
   it("creates a hub from an empty directory through the CLI", () => {
     const directory = mkdtempSync(join(tmpdir(), "launcher-cli-"));
     roots.push(directory);
